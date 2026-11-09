@@ -37,6 +37,9 @@ pub struct UdpFilters {
     pub always_show_calls: Vec<String>,
     /// Tutti i filtri sospesi senza perderne le impostazioni.
     pub bypass: bool,
+    /// Novita' scelte in Attivita' di banda (etichette come `new_dxcc`, `cq`...), logica «o»; vuoto = tutte le righe. Gli altri campi
+    /// nuovi della pagina (SNR, distanza, bande, messaggi a me) restano solo nella pagina: senza `deny_unknown_fields` il core li ignora.
+    pub tags: Vec<String>,
 }
 
 /// Lo stesso insieme di filtri visto da Attivita' di banda (e dalle Automazioni).
@@ -116,6 +119,27 @@ fn signoff(text: &str, strict: bool) -> bool {
     last == "RR73" || last == "73" || (!strict && last == "RRR")
 }
 
+/// Il nome dell'etichetta come lo scrive la pagina (lo stesso `snake_case` di serde), senza allocare.
+fn tag_name(tag: DecodeTag) -> &'static str {
+    match tag {
+        DecodeTag::Cq => "cq",
+        DecodeTag::NewDxcc => "new_dxcc",
+        DecodeTag::NewDxccBand => "new_dxcc_band",
+        DecodeTag::NewZone => "new_zone",
+        DecodeTag::NewZoneBand => "new_zone_band",
+        DecodeTag::NewItu => "new_itu",
+        DecodeTag::NewItuBand => "new_itu_band",
+        DecodeTag::NewGrid => "new_grid",
+        DecodeTag::NewGridBand => "new_grid_band",
+        DecodeTag::NewPx => "new_px",
+        DecodeTag::NewPxBand => "new_px_band",
+        DecodeTag::NewCall => "new_call",
+        DecodeTag::NewCallBand => "new_call_band",
+        DecodeTag::WorkedCall => "worked_call",
+        DecodeTag::Auto => "auto",
+    }
+}
+
 impl UdpFilters {
     /// Vero se la riga resta visibile con questi filtri (e quindi esce via UDP). `own_continent`: il continente di chi opera.
     pub fn allows(&self, d: &DecodedMessage, own_continent: Option<&str>) -> bool {
@@ -134,6 +158,13 @@ impl UdpFilters {
         }
         if self.hide_worked && d.tag == Some(DecodeTag::WorkedCall) && (self.hide_worked_all || cq) {
             return false;
+        }
+        if !self.tags.is_empty() {
+            // «cq» comprende ogni CQ, anche quelli con un'etichetta di novita'
+            let tagged = d.tag.is_some_and(|tag| self.tags.iter().any(|t| t == tag_name(tag)));
+            if !tagged && !(cq && self.tags.iter().any(|t| t == "cq")) {
+                return false;
+            }
         }
         true
     }

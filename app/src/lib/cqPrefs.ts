@@ -1,13 +1,10 @@
 import { create } from 'zustand';
 import type { DecodedMessage } from '../api/schemas';
-import { callMatches, callOf } from './filters';
+import { CQ_TAG_LIST, callMatches, callOf } from './filters';
 import { browserStorage } from './theme';
 
-/** Le categorie di messaggio che la finestra «CQ e novità» può elencare (le etichette del motore). */
-export const CQ_TAGS = [
-  'cq', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_zone_band', 'new_itu', 'new_itu_band',
-  'new_grid', 'new_grid_band', 'new_px', 'new_px_band', 'new_call', 'new_call_band', 'worked_call',
-] as const;
+/** Le categorie di messaggio che la finestra «CQ e novità» può elencare (le etichette del motore), le stesse del filtro di Attività di banda: una sola lista in `filters.ts`. */
+export const CQ_TAGS = CQ_TAG_LIST;
 export type CqTag = (typeof CQ_TAGS)[number];
 
 /** Cosa elencare in «CQ e novità»: categorie, e due liste di nominativi (con * finale) per includere o escludere stazioni. */

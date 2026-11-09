@@ -28,6 +28,17 @@ export interface Filters {
   highlightCountries: string[];
   /** Sospende tutti i filtri senza perderne le impostazioni (il «Bypass» di WSJT-X). */
   bypass: boolean;
+  /** Novità da mostrare in Attività di banda (etichette del motore, logica «o»); vuoto = tutte le righe (pulsantino «Filtro»). */
+  tags: string[];
+  /** SNR minimo in dB; null = nessun limite. */
+  minSnr: number | null;
+  /** Distanza minima e massima in km (solo righe con locatore noto); null = nessun limite. */
+  minKm: number | null;
+  maxKm: number | null;
+  /** Bande in cui Attività di banda mostra le righe; vuoto = tutte. */
+  bands: string[];
+  /** Nasconde i messaggi diretti a me (di solito restano evidenziati). */
+  hideToMe: boolean;
 }
 
 const KEY = 'aurora-filters';
@@ -37,7 +48,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultFilters(): Filters {
-  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false, hideWorkedAll: false, showOnlyCalls: [], alwaysShowCalls: [], highlightCalls: [], highlightCountries: [], bypass: false };
+  return { hideContinents: [], hideCountries: [], hideCalls: [], only: 'all', hideNonStandard: false, hideOwnContinent: false, hideWorked: false, hideWorkedAll: false, showOnlyCalls: [], alwaysShowCalls: [], highlightCalls: [], highlightCountries: [], bypass: false, tags: [], minSnr: null, minKm: null, maxKm: null, bands: [], hideToMe: false };
 }
 
 const isCallToken = (token: string) =>
@@ -121,6 +132,55 @@ export function applyFilters(decodes: DecodedMessage[], filters: Filters, ownCon
 
 const strings = (value: unknown): string[] => (Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : []);
 
+const numberOrNull = (v: unknown, min: number, max: number): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, Math.round(v))) : null;
+
+/** Le etichette delle novità che il filtro di Attività di banda sa scegliere (le stesse di «CQ e novità»). */
+export const CQ_TAG_LIST = [
+  'cq', 'new_dxcc', 'new_dxcc_band', 'new_zone', 'new_zone_band', 'new_itu', 'new_itu_band',
+  'new_grid', 'new_grid_band', 'new_px', 'new_px_band', 'new_call', 'new_call_band', 'worked_call',
+] as const;
+
+/** Quello che serve ai filtri propri di Attività di banda e che il messaggio da solo non dice. */
+export interface ActivityContext {
+  /** Banda corrente (es. «20m»), se nota. */
+  band: string | null;
+  /** Il mio nominativo, per «nascondi i messaggi a me». */
+  isToMe: (text: string) => boolean;
+  /** Distanza in km dalla stazione che trasmette, se se ne conosce il locatore. */
+  distance: (text: string) => number | null;
+}
+
+/**
+ * Filtri propri di Attività di banda, dopo `applyFilters` (che vale anche per «CQ e novità»): novità in «o»,
+ * SNR, distanza, bande, messaggi a me. Rispetta il bypass e «sempre mostrati».
+ */
+export function applyActivityFilters(decodes: DecodedMessage[], filters: Filters, ctx: ActivityContext): DecodedMessage[] {
+  if (filters.bypass) return decodes;
+  const tags = filters.tags.length > 0 ? new Set(filters.tags) : null;
+  const useKm = filters.minKm !== null || filters.maxKm !== null;
+  if (!tags && filters.minSnr === null && !useKm && !filters.hideToMe && filters.bands.length === 0) return decodes;
+  // banda esclusa: nessuna riga (si vede soltanto la propria trasmissione)
+  if (filters.bands.length > 0 && ctx.band !== null && !filters.bands.includes(ctx.band)) return [];
+  return decodes.filter((d) => {
+    if (filters.alwaysShowCalls.length > 0 && anyMatch(callOf(d.text), filters.alwaysShowCalls)) return true;
+    if (tags) {
+      // «CQ» comprende ogni CQ, anche quelli con un'etichetta di novità
+      const hit = (d.tag !== null && tags.has(d.tag)) || (tags.has('cq') && isCq(d.text));
+      if (!hit) return false;
+    }
+    if (filters.minSnr !== null && d.snr < filters.minSnr) return false;
+    if (filters.hideToMe && ctx.isToMe(d.text)) return false;
+    if (useKm) {
+      const km = ctx.distance(d.text);
+      if (km === null) return false;
+      if (filters.minKm !== null && km < filters.minKm) return false;
+      if (filters.maxKm !== null && km > filters.maxKm) return false;
+    }
+    return true;
+  });
+}
+
 export function readFilters(storage: ReadableStorage): Filters {
   const filters = defaultFilters();
   try {
@@ -140,6 +200,12 @@ export function readFilters(storage: ReadableStorage): Filters {
     filters.highlightCalls = strings(parsed.highlightCalls);
     filters.highlightCountries = strings(parsed.highlightCountries);
     filters.bypass = parsed.bypass === true;
+    filters.tags = strings(parsed.tags).filter((t) => (CQ_TAG_LIST as readonly string[]).includes(t));
+    filters.minSnr = numberOrNull(parsed.minSnr, -40, 40);
+    filters.minKm = numberOrNull(parsed.minKm, 0, 25000);
+    filters.maxKm = numberOrNull(parsed.maxKm, 0, 25000);
+    filters.bands = strings(parsed.bands);
+    filters.hideToMe = parsed.hideToMe === true;
   } catch {
     return defaultFilters();
   }

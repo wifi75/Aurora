@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Attivita' di banda**: pulsantino «Filtro» nella barra con le pillole delle novita' (nuovo DXCC, DXCC su banda, nuova griglia, gia' lavorata...; «Tutte» = nessun filtro), seguito anche dalle Automazioni; nella scheda Filtri una sezione completa con novita', SNR minimo, distanza minima e massima, bande, messaggi a me e mie trasmissioni.
 
 ## 0.11.209 - 2026-11-09
 - **Automazioni**: in modo reale «Abilita Tx» resta acceso a fine QSO (se il motore lo spegne lo riaccendono; STOP le ferma come prima) e il motore non risponde piu' a chi ci chiama ed e' escluso da continenti, paesi o nominativi delle regole o nascosto dai filtri di Attivita' di banda; lo scarto resta nel registro delle decisioni.

@@ -1,6 +1,8 @@
 import { CQ_TAGS, useCqPrefs } from '../lib/cqPrefs';
 import { useT, type Key } from '../i18n';
-import { CONTINENTS, useFilters, type OnlyMode } from '../lib/filters';
+import { CONTINENTS, CQ_TAG_LIST, useFilters, type OnlyMode } from '../lib/filters';
+import { useBandFilter } from '../lib/bandFilter';
+import { usePrefs } from '../lib/prefs';
 import { Check, Help } from './common';
 import { EngineValues } from './EngineValues';
 import { NativeDecodeOptions } from './JtdxTabs';
@@ -14,6 +16,16 @@ const ONLY: ReadonlyArray<{ value: OnlyMode; label: Key }> = [
   { value: 'cq_rr73', label: 'fil.onlyCqRr73' },
 ];
 
+/** Pillola come nelle Automazioni: la casella resta per tastiera e lettori di schermo, si vede la pillola. */
+function Pill({ label, checked, onChange }: { label: string; checked: boolean; onChange(): void }) {
+  return (
+    <label className="sw-check au-chip">
+      <input type="checkbox" checked={checked} onChange={onChange} />
+      {label}
+    </label>
+  );
+}
+
 const list = (text: string) => text.split(',').map((x) => x.trim()).filter(Boolean);
 
 /** Scheda Filtri: cosa nascondere o mostrare soltanto negli elenchi, come nel motore. */
@@ -23,10 +35,50 @@ export function FiltersTab() {
   const set = useFilters.getState().set;
   const csv = (text: string) => text.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean);
   const native = useIsNative();
+  const myBands = useBandFilter((s) => s.bands);
+  const showTx = usePrefs((s) => s.prefs.showTx);
+  const toggleIn = (items: string[], item: string) => (items.includes(item) ? items.filter((x) => x !== item) : [...items, item]);
+  const num = (text: string, min: number, max: number): number | null => {
+    if (text.trim() === '') return null;
+    const n = Number(text);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : null;
+  };
   const toggleContinent = (code: string) =>
     set({ hideContinents: filters.hideContinents.includes(code) ? filters.hideContinents.filter((c) => c !== code) : [...filters.hideContinents, code] });
   return (
     <Page>
+      <Group title={t('bfl.title')} span={3}>
+        <div className="au-chips" role="group" aria-label={t('bfl.tags')} title={t('tip.bfl.tags')}>
+          <Pill label={t('bfl.all')} checked={filters.tags.length === 0} onChange={() => set({ tags: [] })} />
+          {CQ_TAG_LIST.map((tag) => (
+            <Pill key={tag} label={t(`kind.${tag}` as Key)} checked={filters.tags.includes(tag)} onChange={() => set({ tags: toggleIn(filters.tags, tag) })} />
+          ))}
+        </div>
+        <Cells min={13}>
+          <Field label={t('bfl.minSnr')} hint={t('tip.bfl.minSnr')} stack>
+            <input type="number" min={-40} max={40} value={filters.minSnr ?? ''} placeholder="—" onChange={(e) => set({ minSnr: num(e.target.value, -40, 40) })} />
+          </Field>
+          <Field label={t('bfl.minKm')} hint={t('tip.bfl.km')} stack>
+            <input type="number" min={0} max={25000} value={filters.minKm ?? ''} placeholder="—" onChange={(e) => set({ minKm: num(e.target.value, 0, 25000) })} />
+          </Field>
+          <Field label={t('bfl.maxKm')} hint={t('tip.bfl.km')} stack>
+            <input type="number" min={0} max={25000} value={filters.maxKm ?? ''} placeholder="—" onChange={(e) => set({ maxKm: num(e.target.value, 0, 25000) })} />
+          </Field>
+          <Check label={t('bfl.hideToMe')} hint={t('tip.bfl.hideToMe')} checked={filters.hideToMe} onChange={(v) => set({ hideToMe: v })} />
+          {/* le mie trasmissioni: e' la stessa scelta di «Mostra i miei Tx» delle preferenze, non una copia */}
+          <Check label={t('bfl.hideOwnTx')} hint={t('tip.bfl.hideOwnTx')} checked={!showTx} onChange={(v) => usePrefs.getState().set({ showTx: !v })} />
+        </Cells>
+        <div title={t('tip.bfl.bands')}>
+          <Field label={t('bfl.bands')} stack>
+            <Cells min={7}>
+              {myBands.map((band) => (
+                <Check key={band} label={band} checked={filters.bands.includes(band)} onChange={() => set({ bands: toggleIn(filters.bands, band) })} />
+              ))}
+            </Cells>
+          </Field>
+        </div>
+        <Help>{t('bfl.help')}</Help>
+      </Group>
       <Group title={t('fil.continents')} span={2}>
         <div title={t('tip.fil.continent')}>
           <Cells min={10}>
