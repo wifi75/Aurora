@@ -1,10 +1,11 @@
 //! Doppi, punti, moltiplicatori e punteggio di un log di contest secondo le regole; valore di una stazione decodificata; rate e previsione.
 //! Funzioni pure: il log entra, i numeri escono.
 
-use crate::geo;
 use crate::regole::Regole;
+use crate::{geo, liste};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::sync::Arc;
 
 /// Lo stato di un QSO del log del contest.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -46,14 +47,25 @@ pub struct ContestQso {
     pub modificato: bool,
 }
 
+/// Il paese DXCC di un nominativo (prefisso principale di cty.dat, `None` se non si trova).
+pub type PaeseFn = Arc<dyn Fn(&str) -> Option<String> + Send + Sync>;
+
 /// I dati della propria stazione e le scelte che toccano il punteggio.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct Contesto {
     pub mio_grid: String,
     /// Potenza in watt (moltiplicatore di potenza del Field Day).
     pub potenza_w: f64,
     /// Punti bonus spuntati a mano (Field Day).
     pub bonus: u32,
+    /// Ricerca del paese DXCC (moltiplicatori `dxcc`); senza, quei moltiplicatori non si contano.
+    pub paese: Option<PaeseFn>,
+}
+
+impl std::fmt::Debug for Contesto {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Contesto").field("mio_grid", &self.mio_grid).field("potenza_w", &self.potenza_w).field("bonus", &self.bonus).field("paese", &self.paese.is_some()).finish()
+    }
 }
 
 /// Un QSO con i suoi numeri.
@@ -69,6 +81,8 @@ pub struct Valutato {
     pub molt_nuovi: Vec<String>,
     /// Lo scambio ricevuto ha la forma che il regolamento chiede.
     pub scambio_ok: bool,
+    /// Perche' lo scambio non va (vuoto se va bene): sezione, stato o provincia fuori lista, classe sbagliata...
+    pub scambio_nota: String,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -122,18 +136,64 @@ fn chiave_doppio(r: &Regole, q: &ContestQso) -> String {
 
 /// Lo scambio ricevuto ha la forma richiesta (un locatore dove serve, la classe e la sezione al Field Day...).
 pub fn scambio_valido(r: &Regole, q: &ContestQso) -> bool {
+    problema_scambio(r, q).is_none()
+}
+
+/// Cosa non va nello scambio ricevuto (`None` se va bene): la forma e, dove il regolamento usa una lista ufficiale (sezioni ARRL/RAC,
+/// stati e province, province olandesi), il valore.
+pub fn problema_scambio(r: &Regole, q: &ContestQso) -> Option<String> {
     let x: Vec<&str> = q.exch_rcvd.split_whitespace().collect();
+    let forma = |ok: bool, cosa: &str| if ok { None } else { Some(format!("scambio incompleto: serve {cosa}")) };
     match r.messaggi.attivita.as_str() {
-        "na-vhf" | "arrl-digi" | "ww-digi" => !grid_ricevuto(q).is_empty(),
-        "field-day" => x.len() == 2,
-        "roundup" => x.len() == 2,
-        "eu-vhf" => x.len() == 2 && geo::grid_valido(x[1]),
+        "na-vhf" | "arrl-digi" | "ww-digi" => forma(!grid_ricevuto(q).is_empty(), "il locatore"),
+        "field-day" => {
+            if x.len() != 2 {
+                return forma(false, "classe e sezione");
+            }
+            if !liste::classe_fd_valida(x[0]) {
+                return Some(format!("classe del Field Day non valida: {}", x[0]));
+            }
+            if !x[1].eq_ignore_ascii_case("DX") && !liste::sezione_valida(x[1]) {
+                return Some(format!("sezione ARRL/RAC sconosciuta: {}", x[1]));
+            }
+            None
+        }
+        "roundup" => {
+            if x.len() != 2 {
+                return forma(false, "rapporto e stato, provincia o numero");
+            }
+            let v = x[1];
+            if v.eq_ignore_ascii_case("DX") || liste::seriale_valido(v) || liste::stato_valido(v) {
+                None
+            } else {
+                Some(format!("stato USA o provincia canadese sconosciuti: {v}"))
+            }
+        }
+        "eu-vhf" => forma(x.len() == 2 && geo::grid_valido(x[1]), "rapporto, numero e locatore"),
         _ => {
             // messaggi normali: basta il rapporto; se il regolamento chiede il locatore deve esserci
             let vuole_grid = r.scambio.ricevuto.iter().any(|c| c == "grid4" || c == "grid6");
-            !q.rst_rcvd.trim().is_empty() && (!vuole_grid || !grid_ricevuto(q).is_empty() || r.contest.id == "ft-challenge")
+            if q.rst_rcvd.trim().is_empty() {
+                return forma(false, "il rapporto");
+            }
+            if vuole_grid && grid_ricevuto(q).is_empty() && r.contest.id != "ft-challenge" {
+                return forma(false, "il locatore");
+            }
+            // PACC: chi manda una sigla di due lettere al posto del numero deve mandare una provincia olandese
+            if r.scambio.ricevuto.iter().any(|c| c == "provincia")
+                && let Some(p) = sigla_provincia(&x)
+                && !liste::provincia_olanda_valida(p)
+            {
+                return Some(format!("provincia olandese sconosciuta: {p}"));
+            }
+            None
         }
     }
+}
+
+/// La sigla di due lettere nello scambio ricevuto (provincia del PACC), se c'e'.
+fn sigla_provincia<'a>(x: &[&'a str]) -> Option<&'a str> {
+    x.iter().rev().find(|t| t.len() == 2 && t.chars().all(|c| c.is_ascii_alphabetic())).copied()
 }
 
 /// I punti di un QSO (senza guardare i doppi) e la distanza.
@@ -169,7 +229,8 @@ pub fn punti_qso(r: &Regole, ctx: &Contesto, q: &ContestQso) -> (u32, f64) {
 }
 
 /// I valori dei moltiplicatori di un QSO: (chiave dell'ambito + tipo, valore).
-fn molt_di(r: &Regole, q: &ContestQso) -> Vec<(String, String)> {
+/// Un valore fuori dalle liste ufficiali non apre moltiplicatori.
+fn molt_di(r: &Regole, ctx: &Contesto, q: &ContestQso) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for m in &r.moltiplicatori {
         let ambito = match m.ambito.as_str() {
@@ -182,8 +243,15 @@ fn molt_di(r: &Regole, q: &ContestQso) -> Vec<(String, String)> {
             "campo2" => geo::campo(&grid_ricevuto(q)).filter(|c| c != "ZZ"),
             "grid4" => geo::quadrato(&grid_ricevuto(q)),
             "prefisso" => Some(geo::prefisso_wpx(&q.call)).filter(|p| !p.is_empty()),
-            "sezione" | "stato" => x.last().map(|s| s.to_ascii_uppercase()).filter(|s| s != "DX"),
-            "provincia-pa" => x.iter().rev().find(|t| t.len() == 2 && t.chars().all(|c| c.is_ascii_alphabetic())).map(|s| s.to_ascii_uppercase()),
+            "sezione" => x.last().filter(|s| liste::sezione_valida(s)).map(|s| s.to_ascii_uppercase()),
+            "stato" => x.last().filter(|s| liste::stato_valido(s)).map(|s| s.to_ascii_uppercase()),
+            "provincia-pa" => sigla_provincia(&x).filter(|s| liste::provincia_olanda_valida(s)).map(|s| s.to_ascii_uppercase()),
+            // paesi DXCC: dove lo scambio porta gia' uno stato o una provincia (Roundup) quelli contano al posto del paese
+            "dxcc" => {
+                let ha_stato = x.last().is_some_and(|s| liste::stato_valido(s));
+                // USA (K) e Canada (VE) non contano come paesi nemmeno con lo stato sbagliato
+                if ha_stato { None } else { ctx.paese.as_ref().and_then(|f| f(&q.call)).filter(|p| p != "K" && p != "VE") }
+            }
             _ => None,
         };
         if let Some(v) = valore {
@@ -233,7 +301,7 @@ pub fn valuta_log(r: &Regole, ctx: &Contesto, log: &[ContestQso]) -> (Vec<Valuta
         if !valido || doppio {
             punti = 0;
         } else {
-            for (k, v) in molt_di(r, q) {
+            for (k, v) in molt_di(r, ctx, q) {
                 if molt.insert((k, v.clone())) {
                     nuovi.push(v);
                 }
@@ -255,7 +323,8 @@ pub fn valuta_log(r: &Regole, ctx: &Contesto, log: &[ContestQso]) -> (Vec<Valuta
         if q.stato == Stato::Incerto {
             tot.incerti += 1;
         }
-        out.push(Valutato { qso: q.clone(), doppio, punti, km, molt_nuovi: nuovi, scambio_ok: scambio_valido(r, q) });
+        let nota = problema_scambio(r, q);
+        out.push(Valutato { qso: q.clone(), doppio, punti, km, molt_nuovi: nuovi, scambio_ok: nota.is_none(), scambio_nota: nota.unwrap_or_default() });
     }
     tot.molt = molt.len() as u32;
     tot.punteggio = punteggio(r, ctx, tot.punti, tot.molt);
@@ -287,9 +356,9 @@ pub fn valore(r: &Regole, ctx: &Contesto, log: &[ContestQso], call: &str, grid: 
     let (punti, km) = punti_qso(r, ctx, &prova);
     let mut aperti: BTreeSet<(String, String)> = BTreeSet::new();
     for q in &validi {
-        aperti.extend(molt_di(r, q));
+        aperti.extend(molt_di(r, ctx, q));
     }
-    let molt_nuovi = if doppio || fuori { Vec::new() } else { molt_di(r, &prova).into_iter().filter(|m| !aperti.contains(m)).map(|(_, v)| v).collect() };
+    let molt_nuovi = if doppio || fuori { Vec::new() } else { molt_di(r, ctx, &prova).into_iter().filter(|m| !aperti.contains(m)).map(|(_, v)| v).collect() };
     let bande_utili = r
         .bande
         .ammesse
@@ -304,15 +373,15 @@ pub fn valore(r: &Regole, ctx: &Contesto, log: &[ContestQso], call: &str, grid: 
 }
 
 /// I moltiplicatori gia' presi su una banda (per la mappa dei mancanti): (tipo, valori).
-pub fn molt_lavorati(r: &Regole, log: &[ContestQso], banda: &str) -> Vec<(String, Vec<String>)> {
-    let (valutati, _) = valuta_log(r, &Contesto::default(), log);
+pub fn molt_lavorati(r: &Regole, ctx: &Contesto, log: &[ContestQso], banda: &str) -> Vec<(String, Vec<String>)> {
+    let (valutati, _) = valuta_log(r, ctx, log);
     r.moltiplicatori
         .iter()
         .map(|m| {
             let mut set = BTreeSet::new();
             for v in valutati.iter().filter(|v| !v.doppio && v.qso.stato != Stato::Errore) {
                 if m.ambito == "per-log" || v.qso.band.eq_ignore_ascii_case(banda) {
-                    for (k, val) in molt_di(r, &v.qso) {
+                    for (k, val) in molt_di(r, ctx, &v.qso) {
                         if k.starts_with(&format!("{}|", m.tipo)) {
                             set.insert(val);
                         }
@@ -424,7 +493,7 @@ mod tests {
     #[test]
     fn field_day_potenza() {
         let r = regole("arrl-fd");
-        let ctx = Contesto { mio_grid: "IO91".into(), potenza_w: 100.0, bonus: 50 };
+        let ctx = Contesto { mio_grid: "IO91".into(), potenza_w: 100.0, bonus: 50, ..Default::default() };
         let mut q = qso(1, "K1ABC", "20m", "");
         q.exch_rcvd = "2A EMA".into();
         let (_, t) = valuta_log(&r, &ctx, &[q]);

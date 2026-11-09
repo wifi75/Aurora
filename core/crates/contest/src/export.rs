@@ -21,6 +21,8 @@ pub struct Intestazione {
     pub nome: String,
     pub location: String,
     pub soapbox: String,
+    /// Antenna (EDI: `SAnte`).
+    pub antenna: String,
     /// `CATEGORY-STATION` (`FIXED`, `PORTABLE`, `MOBILE`, `ROVER`).
     pub stazione: String,
     /// `ADDRESS` (piu' righe) ed `EMAIL`.
@@ -125,7 +127,37 @@ pub fn cabrillo(r: &Regole, h: &Intestazione, log: &[Valutato], tot: &Totali) ->
     out
 }
 
-/// Il file EDI (REG1TEST) di una banda. I QSO segnati come errore restano come righe `ERROR` per tenere la sequenza dei numeri.
+/// La sezione dell'EDI (`PSect`): `SINGLE` o `MULTI` come chiede il formato REG1TEST (IARU Regione 1, VHF Managers Handbook).
+fn psect(h: &Intestazione) -> String {
+    if h.operatore.eq_ignore_ascii_case("MULTI-OP") { "MULTI".into() } else { "SINGLE".into() }
+}
+
+/// Il numero progressivo inviato (`RRNNNN` nello scambio, come in [`edi`]).
+fn seriale_inviato(v: &Valutato) -> Option<u32> {
+    let x = v.qso.exch_sent.split_whitespace().next()?;
+    if x.len() == 6 { x[2..].parse().ok() } else { None }
+}
+
+/// I numeri progressivi inviati che mancano nella sequenza di tutto il log (da 1 al piu' alto), ognuno con il QSO prima del quale
+/// cade (quello col primo numero piu' alto): numeri dati in aria a un QSO che poi non e' stato registrato.
+pub fn seriali_persi(log: &[Valutato]) -> Vec<(u32, &Valutato)> {
+    let mut con: Vec<(u32, &Valutato)> = log.iter().filter_map(|v| seriale_inviato(v).map(|n| (n, v))).collect();
+    con.sort_by_key(|(n, v)| (*n, v.qso.time_ms));
+    let presenti: std::collections::BTreeSet<u32> = con.iter().map(|(n, _)| *n).collect();
+    let mut out = Vec::new();
+    let Some(&massimo) = presenti.iter().next_back() else { return out };
+    for n in 1..massimo {
+        if !presenti.contains(&n)
+            && let Some((_, v)) = con.iter().find(|(m, _)| *m > n)
+        {
+            out.push((n, *v));
+        }
+    }
+    out
+}
+
+/// Il file EDI (REG1TEST) di una banda. I QSO segnati come errore restano come righe `ERROR` per tenere la sequenza dei numeri, e cosi'
+/// i numeri progressivi persi (dati in aria a un QSO non registrato): una riga `ERROR` col numero, nella banda del QSO che lo segue.
 pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> String {
     let qsos: Vec<&Valutato> = log.iter().filter(|v| v.qso.band.eq_ignore_ascii_case(banda)).collect();
     let validi: Vec<&&Valutato> = qsos.iter().filter(|v| !v.doppio && v.qso.stato != Stato::Errore).collect();
@@ -144,7 +176,7 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
         ("PCall", h.call.to_ascii_uppercase()),
         ("PWWLo", h.grid.to_ascii_uppercase()),
         ("PExch", String::new()),
-        ("PSect", h.operatore.clone()),
+        ("PSect", psect(h)),
         ("PBand", geo::banda_edi(banda)),
         ("PClub", h.club.clone()),
         ("RName", h.nome.clone()),
@@ -154,6 +186,7 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
         ("RHBBS", h.email.clone()),
         ("MOpe1", h.operatori.clone()),
         ("SPowe", h.potenza.clone()),
+        ("SAnte", h.antenna.trim().to_string()),
         ("CQSOs", format!("{};1", validi.len())),
         ("CQSOP", punti.to_string()),
         ("CWWLs", format!("{};0;1", quadrati.len())),
@@ -167,7 +200,8 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
     for s in h.soapbox.lines() {
         out.push_str(&format!("{s}\r\n"));
     }
-    out.push_str(&format!("[QSORecords;{}]\r\n", qsos.len()));
+    let persi = seriali_persi(log);
+    let mut righe: Vec<String> = Vec::with_capacity(qsos.len());
     let mut visti_q: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     for v in qsos {
         let x: Vec<&str> = v.qso.exch_sent.split_whitespace().collect();
@@ -181,12 +215,15 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
             _ => (non_vuoto(&v.qso.rst_rcvd, ""), String::new()),
         };
         let grid = crate::punteggio::grid_ricevuto(&v.qso);
+        for (n, _) in persi.iter().filter(|(_, dopo)| std::ptr::eq(*dopo, v)) {
+            righe.push(format!("{};{};ERROR;{modo};;{n:03};;;;;0;;;;\r\n", &d8(v.qso.time_ms)[2..], hhmm(v.qso.time_ms)));
+        }
         if v.qso.stato == Stato::Errore {
-            out.push_str(&format!("{};{};ERROR;{modo};{rs};{nr};;;;;0;;;;\r\n", &d8(v.qso.time_ms)[2..], hhmm(v.qso.time_ms)));
+            righe.push(format!("{};{};ERROR;{modo};{rs};{nr};;;;;0;;;;\r\n", &d8(v.qso.time_ms)[2..], hhmm(v.qso.time_ms)));
             continue;
         }
         let nuovo_q = if !v.doppio && geo::quadrato(&grid).is_some_and(|q| visti_q.insert(q)) { "N" } else { "" };
-        out.push_str(&format!(
+        righe.push(format!(
             "{};{};{};{modo};{rs};{nr};{rr};{nrr};;{grid};{};;{nuovo_q};;{}\r\n",
             &d8(v.qso.time_ms)[2..],
             hhmm(v.qso.time_ms),
@@ -194,6 +231,10 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
             v.punti,
             if v.doppio { "D" } else { "" }
         ));
+    }
+    out.push_str(&format!("[QSORecords;{}]\r\n", righe.len()));
+    for riga in righe {
+        out.push_str(&riga);
     }
     out
 }
@@ -241,10 +282,32 @@ pub fn controlla(r: &Regole, h: &Intestazione, log: &[Valutato]) -> Vec<String> 
     if r.export.formato == "edi" && h.grid.trim().len() < 6 {
         e.push("l'EDI vuole il locatore a 6 caratteri (PWWLo)".into());
     }
+    if r.export.formato == "edi" {
+        // PSect: SINGLE o MULTI (sezioni del REG1TEST); SAnte: l'antenna, chiesta dai regolamenti VHF IARU
+        if h.operatore.trim().is_empty() {
+            e.push("manca la sezione dell'EDI (PSect): scegli la categoria singolo o multi operatore".into());
+        } else if !["SINGLE-OP", "MULTI-OP", "ROVER"].contains(&h.operatore.as_str()) {
+            e.push(format!("sezione dell'EDI (PSect) non valida: {} (servono SINGLE o MULTI)", h.operatore));
+        }
+        let ante = h.antenna.trim();
+        if ante.is_empty() {
+            e.push("manca l'antenna (SAnte dell'EDI)".into());
+        } else if ante.contains([';', '[', ']']) || ante.len() > 80 {
+            e.push("antenna (SAnte) non valida: niente punto e virgola o parentesi quadre, al massimo 80 caratteri".into());
+        }
+        let persi = seriali_persi(log).len();
+        if persi > 0 {
+            e.push(format!("{persi} numeri progressivi inviati senza QSO nel log: nell'EDI diventano righe ERROR"));
+        }
+    }
+    let fuori_lista: Vec<&Valutato> = log.iter().filter(|v| v.qso.stato != Stato::Errore && !v.scambio_nota.is_empty() && !v.scambio_nota.starts_with("scambio incompleto")).collect();
+    if let Some(v) = fuori_lista.first() {
+        e.push(format!("{} QSO con lo scambio fuori dalle liste ufficiali (non valgono come moltiplicatore), per esempio {}: {}", fuori_lista.len(), v.qso.call, v.scambio_nota));
+    }
     if h.operatore == "MULTI-OP" && h.operatori.trim().is_empty() {
         e.push("categoria multi-operatore: manca l'elenco degli operatori (OPERATORS)".into());
     }
-    let senza = log.iter().filter(|v| v.qso.stato != Stato::Errore && !v.scambio_ok).count();
+    let senza = log.iter().filter(|v| v.qso.stato != Stato::Errore && v.scambio_nota.starts_with("scambio incompleto")).count();
     if senza > 0 {
         e.push(format!("{senza} QSO senza lo scambio richiesto (rischio di QSO non validi)"));
     }

@@ -3,6 +3,7 @@
 //! - [`regole`]: i file TOML di `core/crates/contest/regole` (uno per contest), letti e controllati;
 //! - [`calendario`]: le date del contest dalla regola del file;
 //! - [`geo`]: locatori, distanze, prefissi WPX;
+//! - [`liste`]: sezioni ARRL/RAC, stati USA, province canadesi e olandesi per controllare lo scambio ricevuto;
 //! - [`punteggio`]: doppi, punti, moltiplicatori, punteggio, valore di una stazione, rate e previsione;
 //! - [`export`]: Cabrillo 3.0, EDI e ADIF, con il controllo prima dell'invio;
 //! - [`servizio`]: contest attivo, impostazioni per contest, log del contest e ascolto del bus.
@@ -12,6 +13,7 @@
 pub mod calendario;
 pub mod export;
 pub mod geo;
+pub mod liste;
 pub mod punteggio;
 pub mod regole;
 pub mod servizio;

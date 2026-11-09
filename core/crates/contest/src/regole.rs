@@ -202,7 +202,8 @@ pub struct Punti {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Moltiplicatore {
-    /// `campo2`, `grid4`, `prefisso`, `sezione`, `stato`, `provincia-pa`.
+    /// `campo2`, `grid4`, `prefisso`, `sezione`, `stato`, `provincia-pa`, `dxcc` (paesi DXCC da cty.dat; dove lo scambio porta uno stato
+    /// USA o una provincia canadese conta quello).
     pub tipo: String,
     /// `per-banda`, `per-log`, `per-banda-modo`.
     pub ambito: String,
@@ -326,7 +327,7 @@ const ATTIVITA: &[&str] = &["standard", "na-vhf", "arrl-digi", "ww-digi", "eu-vh
 const CAMPI: &[&str] = &["grid4", "grid6", "rst", "snr", "seriale", "classe", "sezione", "stato", "provincia", "scambio"];
 const DOPPI: &[&str] = &["banda", "banda+modo", "banda+griglia", "log"];
 const PUNTI: &[&str] = &["fisso", "distanza", "per-banda", "km"];
-const MOLT: &[&str] = &["campo2", "grid4", "prefisso", "sezione", "stato", "provincia-pa"];
+const MOLT: &[&str] = &["campo2", "grid4", "prefisso", "sezione", "stato", "provincia-pa", "dxcc"];
 const AMBITI: &[&str] = &["per-banda", "per-log", "per-banda-modo"];
 const FORMULE: &[&str] = &["punti*molt", "punti", "punti*potenza+bonus"];
 const FORMATI: &[&str] = &["cabrillo", "edi", "adif"];

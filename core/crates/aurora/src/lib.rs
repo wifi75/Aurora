@@ -1731,6 +1731,11 @@ pub async fn run(
         }), aurora_core::version::APP_VERSION)
     };
     contest_service.spawn(&bus);
+    // moltiplicatori DXCC dei contest: il paese del nominativo dal cty.dat gia' caricato
+    if let Some((db, _)) = &enrichment {
+        let db = Arc::clone(db);
+        contest_service.imposta_paese(Arc::new(move |call: &str| db.lookup(call).map(|l| db.entity(l.entity).prefix.clone())));
+    }
     if let Some(setup) = contest_service.setup()
         && bus.commands().try_send(aurora_core::Command::Contest(Some(setup))).is_err()
     {

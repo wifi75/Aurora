@@ -14,8 +14,8 @@ famiglia = "hf"
 da_verificare = ["calendario", "scambio", "punti", "moltiplicatori", "export"]
 
 [sintesi]
-it = "Febbraio, 24 ore (2026: 21 febbraio 12:00 - 22 febbraio 12:00 UTC). Solo FT4 su 80/40/20/15/10 m, una volta per banda. Scambio come il Roundup: rapporto e numero progressivo (USA stato, Canada provincia). 1 punto a QSO; moltiplicatori stati, province e paesi DXCC una volta nel log (i DXCC qui non si calcolano). Categorie SO/MO LOW (100 W) e QRP (5 W). Log Cabrillo via email. Frequenze, scambio, punteggio e scadenza da verificare sul regolamento dell'anno."
-en = "February, 24 hours (2026: 21 February 1200 - 22 February 1200 UTC). FT4 only on 80/40/20/15/10 m, once per band. Roundup-style exchange: report and serial (USA state, Canada province). 1 point per QSO; multipliers states, provinces and DXCC entities once per log (DXCC not computed here). Categories SO/MO LOW (100 W) and QRP (5 W). Cabrillo log by email. Frequencies, exchange, scoring and deadline to be checked on the year's rules."
+it = "Febbraio, 24 ore (2026: 21 febbraio 12:00 - 22 febbraio 12:00 UTC). Solo FT4 su 80/40/20/15/10 m, una volta per banda. Scambio come il Roundup: rapporto e numero progressivo (USA stato, Canada provincia). 1 punto a QSO; moltiplicatori stati, province e paesi DXCC una volta nel log. Categorie SO/MO LOW (100 W) e QRP (5 W). Log Cabrillo via email. Frequenze, scambio, punteggio e scadenza da verificare sul regolamento dell'anno."
+en = "February, 24 hours (2026: 21 February 1200 - 22 February 1200 UTC). FT4 only on 80/40/20/15/10 m, once per band. Roundup-style exchange: report and serial (USA state, Canada province). 1 point per QSO; multipliers states, provinces and DXCC entities once per log. Categories SO/MO LOW (100 W) and QRP (5 W). Cabrillo log by email. Frequencies, exchange, scoring and deadline to be checked on the year's rules."
 
 [calendario]
 # data che cambia ogni anno: da verificare sul regolamento dell'anno
@@ -61,9 +61,13 @@ log_doppi = "no"
 tipo = "fisso"
 fisso = 1
 
-# stati USA (piu' DC) e province canadesi una volta nel log; i paesi DXCC contano anch'essi, ma qui non si calcolano
+# stati USA (piu' DC) e province canadesi una volta nel log, piu' i paesi DXCC (da cty.dat; USA e Canada contano come stati)
 [[moltiplicatori]]
 tipo = "stato"
+ambito = "per-log"
+
+[[moltiplicatori]]
+tipo = "dxcc"
 ambito = "per-log"
 
 [punteggio]

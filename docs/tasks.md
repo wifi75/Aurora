@@ -40,13 +40,13 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 
 - Piano completo in `docs/piano-contest.md`. Prototipo approvato (`anteprime/contest-prototipo.html`).
 - Fatto (2026-11-08, ramo `lavoro/contest`, fasi 0-6 del piano): crate `core/crates/contest` (regole TOML di 17 contest in `contest/regole` con controllo dei campi, calendario, punti, doppi, moltiplicatori, punteggio, valore di una stazione, rate, ore usate, previsione, log del contest in `<dati>/contest/log-<id>-<anno>.json`, export Cabrillo 3.0/EDI/ADIF con controllo); sequenza di contest in `qso-native::contest` (attivita' di WSJT-X 3.0.1, scambio ricevuto tradotto in rapporto per la sequenza, seriale, Fox/Hound spenti in contest); API `/api/v1/contest/*`; pagina `#/contest` con impostazioni per contest e ritorno a quelle normali; Guida «Contest».
+- Fatto (2026-11-09, ramo `lavoro/contest-scambi`): liste ufficiali in `contest/src/liste.rs` (sezioni ARRL/RAC, stati USA, province canadesi e olandesi) per controllare lo scambio ricevuto (nota nel log, niente moltiplicatore se fuori lista); moltiplicatori `dxcc` da cty.dat (FT8/FT4 DX Contest dell'European FT8 Club); EDI con righe `ERROR` per i seriali persi, `PSect` SINGLE/MULTI, `SAnte` e controllo di entrambi.
 - Resta:
   - verifica dal vivo di ogni attivita' (soprattutto EU VHF con i due hash, Field Day e Roundup) e del reinvio di RR73;
   - avvio umano vero (oggi c'e' solo il watchdog: un CQ che si ferma dopo N minuti senza intervento e la risposta «con un clic» del piano 5.2);
   - avviso prima del PTT per i nominativi composti (oggi si torna in silenzio ai messaggi normali) e per banda/modo/sottobanda fuori regola (oggi solo nella barra);
   - menu delle frequenze filtrato sulle bande del contest (oggi le frequenze del regolamento sono nella scheda «Impostazioni del contest»);
-  - liste di sezioni ARRL/RAC, stati e province olandesi per validare lo scambio ricevuto; moltiplicatori DXCC;
-  - EDI: righe `ERROR` per i seriali persi (oggi solo per i QSO segnati come errore) e controllo dei campi `PSect`/`SAnte`;
+  - grafica: mostrare nel log del contest la nota `scambio_nota` dei QSO con lo scambio fuori lista e il campo «Antenna» (`antenna`, EDI `SAnte`) nella scheda «Impostazioni del contest»;
   - fasi 7-12 del piano: consiglio di banda e modo, mappa con PSK Reporter, ponte N1MM, simulatore («Allenamento»), analisi del dopo-gara («Analisi»), scheda per il telefono, multi-op in rete;
   - date e valori segnati «da verificare» nei file di regole (FT Challenge, ARRL Jan/Sep VHF, RSGB FT4, PACCdigi, EU VHF).
 

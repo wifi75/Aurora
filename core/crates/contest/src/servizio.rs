@@ -48,6 +48,8 @@ pub struct Impostazioni {
     /// `LOCATION` del Cabrillo (sezione ARRL/RAC o `DX`).
     pub location: String,
     pub soapbox: String,
+    /// Antenna (EDI: `SAnte`), per i contest VHF.
+    pub antenna: String,
     /// `CATEGORY-ASSISTED` (vuoto = quello della categoria).
     pub assistenza: String,
     /// Nome del contest nel Cabrillo (vuoto = quello delle regole; serve al «Personalizzato»).
@@ -144,6 +146,8 @@ pub struct ContestService {
     stazione: StazioneFn,
     versione: String,
     dentro: Mutex<Dentro>,
+    /// Ricerca del paese DXCC (cty.dat) per i moltiplicatori `dxcc`: la imposta chi apre il servizio.
+    paese: Mutex<Option<punteggio::PaeseFn>>,
 }
 
 fn ora_ms() -> i64 {
@@ -168,12 +172,18 @@ impl ContestService {
             dir,
             stazione,
             versione: versione.to_string(),
+            paese: Mutex::new(None),
             dentro: Mutex::new(Dentro { regole, errori_regole, stato, log: Vec::new(), log_di: None, recenti: Vec::new(), non_contest: Vec::new() }),
         });
         if let Ok(mut d) = s.dentro.lock() {
             s.carica_log(&mut d);
         }
         s
+    }
+
+    /// Da usare per i moltiplicatori DXCC: il paese di un nominativo (prefisso principale di cty.dat).
+    pub fn imposta_paese(&self, f: punteggio::PaeseFn) {
+        *self.paese.lock().unwrap_or_else(|e| e.into_inner()) = Some(f);
     }
 
     fn lock(&self) -> MutexGuard<'_, Dentro> {
@@ -415,7 +425,8 @@ impl ContestService {
     fn contesto(&self, d: &Dentro, r: &Regole, grid: &str) -> Contesto {
         let imp = imp_di(&d.stato, r);
         let g = if imp.grid6.len() == 6 && r.punti.tipo == "km" { imp.grid6.clone() } else { grid.to_string() };
-        Contesto { mio_grid: g, potenza_w: imp.potenza_w, bonus: imp.bonus }
+        let paese = self.paese.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        Contesto { mio_grid: g, potenza_w: imp.potenza_w, bonus: imp.bonus, paese }
     }
 
     /// Il log del contest attivo con i numeri di ogni QSO e i totali.
@@ -524,11 +535,13 @@ impl ContestService {
 
     /// I moltiplicatori gia' presi su una banda.
     pub fn lavorati(&self, banda: &str) -> Vec<(String, Vec<String>)> {
+        let (_, grid) = (self.stazione)();
         let mut d = self.lock();
         self.carica_log(&mut d);
         let Some(id) = d.stato.attivo.clone() else { return Vec::new() };
         let Some(r) = d.regole.iter().find(|r| r.id() == id).cloned() else { return Vec::new() };
-        punteggio::molt_lavorati(&r, &d.log, banda)
+        let ctx = self.contesto(&d, &r, &grid);
+        punteggio::molt_lavorati(&r, &ctx, &d.log, banda)
     }
 
     /// Corregge a mano un QSO del log (scambio ricevuto, locatore, stato). Resta segnato come modificato.
@@ -604,6 +617,7 @@ impl ContestService {
             nome: imp.nome.clone(),
             location: imp.location.clone(),
             soapbox: imp.soapbox.clone(),
+            antenna: imp.antenna.clone(),
             cabrillo_contest: imp.cabrillo_contest.clone(),
             versione: self.versione.clone(),
         }
