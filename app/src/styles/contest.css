@@ -242,3 +242,22 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 @media (max-width: 1100px) {
   .ctc-adv { max-height: none; }
 }
+
+/* linguette In gara / Allenamento / Analisi */
+.ctc-views { display: flex; gap: 5px; }
+.ctc-views button { padding: 3px 11px; border-radius: 14px; border: 1px solid var(--ct-line); background: transparent; color: var(--text); font: 500 12px var(--font-ui); cursor: pointer; }
+.ctc-views button.on { border-color: var(--ct-violet); background: color-mix(in srgb, var(--ct-violet) 22%, transparent); }
+.ctc-extra { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; min-height: 0; }
+.ctc-extra-wide { flex: 1; min-height: 0; }
+.ctc-kpi { display: flex; flex-wrap: wrap; gap: 16px; padding: 8px 10px; }
+.ctc-kpi small { display: block; color: var(--text-muted); font-size: 11px; }
+.ctc-kpi b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.ctc-rate--an { height: 80px; }
+.ctc-rate i.best { background: var(--ok); opacity: 1; }
+.ctc-rate i.low { background: var(--warn); opacity: 1; }
+.ctc-tabs--flat { border: 0; padding: 0; }
+.ctc-tabs button:disabled { opacity: 0.55; cursor: default; }
+.ctc-sim-form { padding: 8px 10px; }
+.ctc-sim-badge { background: color-mix(in srgb, var(--ct-yellow) 22%, transparent); color: var(--ct-yellow); font-size: 10px; letter-spacing: 0.08em; }
+.ctc tr.ctc-sim-tx td { color: var(--ct-violet); }
+@media (max-width: 900px) { .ctc-extra { grid-template-columns: minmax(0, 1fr); } }

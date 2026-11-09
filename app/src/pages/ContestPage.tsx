@@ -35,6 +35,7 @@ import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
 import { TxQuickControls } from '../components/TxQuickControls';
+import { Allenamento, AnalisiGara } from './ContestExtra';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
@@ -91,6 +92,8 @@ export function ContestPage() {
   const switches = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false }).data;
   const [scelto, setScelto] = useState('');
   const [modale, setModale] = useState<'' | 'regole' | 'calendario' | 'export' | 'impostazioni'>('');
+  // linguetta della pagina: in gara, allenamento (simulatore senza trasmettere) o analisi dopo la gara
+  const [vista, setVista] = useState<'gara' | 'allena' | 'analisi'>('gara');
   const s = stato.data;
   const attivo = s?.attivo ?? null;
   const refresh = () => void qc.invalidateQueries({ queryKey: ['contest'] });
@@ -142,10 +145,19 @@ export function ContestPage() {
           </>
         )}
       </div>
+      <div className="ctc-views" role="tablist">
+        {(['gara', 'allena', 'analisi'] as const).map((v) => (
+          <button key={v} type="button" role="tab" aria-selected={vista === v} className={vista === v ? 'on' : undefined} onClick={() => setVista(v)}>
+            {t(v === 'gara' ? 'contest.tab.race' : v === 'allena' ? 'contest.training' : 'contest.analysis')}
+          </button>
+        ))}
+      </div>
       {s?.errori_regole?.length ? <p className="ctc-note ctc-bad">{s.errori_regole.join(' · ')}</p> : null}
 
-      {attivo && s?.regole ? (
-        <Corpo s={s} t={t} decodes={decodes} dx={status?.dx_call ?? null} dxGrid={status?.dx_grid ?? null} transmitting={!!status?.transmitting} switches={switches} apri={setModale} fine={() => void fine()} />
+      {vista === 'allena' ? <Allenamento s={s} t={t} /> : null}
+      {vista === 'analisi' ? <AnalisiGara s={s} t={t} /> : null}
+      {vista === 'gara' && attivo && s?.regole ? (
+        <Corpo s={s} t={t} vai={setVista} decodes={decodes} dx={status?.dx_call ?? null} dxGrid={status?.dx_grid ?? null} transmitting={!!status?.transmitting} switches={switches} apri={setModale} fine={() => void fine()} />
       ) : null}
 
       {modale === 'regole' && s?.regole ? <ModaleRegole r={s.regole} t={t} chiudi={() => setModale('')} /> : null}
@@ -464,7 +476,7 @@ function BarraPunteggio({ s, t }: { s: ContestStato; t: T }) {
   );
 }
 
-function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }: { s: ContestStato; t: T; decodes: DecodedMessage[]; dx: string | null; dxGrid: string | null; transmitting: boolean; switches?: Partial<Record<string, boolean>>; apri: (m: 'regole' | 'calendario' | 'export' | 'impostazioni') => void; fine: () => void }) {
+function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, fine }: { s: ContestStato; t: T; vai: (v: 'allena' | 'analisi') => void; decodes: DecodedMessage[]; dx: string | null; dxGrid: string | null; transmitting: boolean; switches?: Partial<Record<string, boolean>>; apri: (m: 'regole' | 'calendario' | 'export' | 'impostazioni') => void; fine: () => void }) {
   const r = s.regole as Regole;
   const [campo, setCampo] = useState('');
   // le decodifiche degli ultimi due periodi (al piu' 45 s prima dell'ultima)
@@ -686,10 +698,10 @@ function Corpo({ s, t, decodes, dx, dxGrid, transmitting, switches, apri, fine }
           <button type="button" className="ctc-btn" title={t('tip.contest.settings')} onClick={() => apri('impostazioni')}>
             {t('contest.settings')}
           </button>
-          <button type="button" className="ctc-btn" disabled title={t('contest.soon')}>
+          <button type="button" className="ctc-btn" onClick={() => vai('allena')}>
             {t('contest.training')}
           </button>
-          <button type="button" className="ctc-btn" disabled title={t('contest.soon')}>
+          <button type="button" className="ctc-btn" onClick={() => vai('analisi')}>
             {t('contest.analysis')}
           </button>
           <button type="button" className="ctc-btn ctc-btn--stop" title={t('tip.contest.end')} onClick={fine}>
