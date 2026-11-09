@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Contest**: avviso quando un nominativo composto (tuo o del DX) non permette i messaggi di contest; PACCdigi con 3 punti per le stazioni olandesi (nuovo tipo di punti «per paese»).
+
 - **Contest**: con il contest acceso, su una banda o in un modo non ammessi dal regolamento la trasmissione non parte (Abilita Tx si spegne, con un avviso); il menu delle frequenze mostra solo le bande del contest; lo scambio ricevuto si controlla con le liste di sezioni ARRL/RAC, stati, province canadesi e olandesi (fuori lista: segnato nel log con il motivo e niente moltiplicatore); moltiplicatori DXCC; EDI con righe ERROR per i seriali persi, PSect e antenna (SAnte).
 
 - **Regione IARU**: al primo avvio, se e' ancora «Tutte», si imposta da sola dal nominativo (IU3WJQ -> Regione 1); nelle Impostazioni ogni regione dice a cosa corrisponde (1 Europa, Africa, Medio Oriente, Russia; 2 Americhe; 3 Asia e Oceania).

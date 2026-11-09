@@ -44,7 +44,6 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 - Resta:
   - verifica dal vivo di ogni attivita' (soprattutto EU VHF con i due hash, Field Day e Roundup) e del reinvio di RR73;
   - avvio umano vero (oggi c'e' solo il watchdog: un CQ che si ferma dopo N minuti senza intervento e la risposta «con un clic» del piano 5.2);
-  - avviso prima del PTT per i nominativi composti (oggi si torna in silenzio ai messaggi normali); banda e modo fuori regola: fatto 2026-11-09 (Abilita Tx si spegne con un avviso);
   - fasi 7-12 del piano: consiglio di banda e modo, mappa con PSK Reporter, ponte N1MM, simulatore («Allenamento»), analisi del dopo-gara («Analisi»), scheda per il telefono, multi-op in rete;
   - date e valori segnati «da verificare» nei file di regole (FT Challenge, ARRL Jan/Sep VHF, RSGB FT4, PACCdigi, EU VHF).
 

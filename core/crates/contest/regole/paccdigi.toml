@@ -11,10 +11,10 @@ url_regole = "https://veron.nl/vereniging/commissies-en-werkgroepen/traffic-bure
 verificato_il = "2026-11-08"
 famiglia = "hf"
 # da verificare sul regolamento dell'anno
-da_verificare = ["punti"]
+da_verificare = []
 
 [sintesi]
-it = "Aprile (2026: 18 aprile 12:00 - 19 aprile 11:59 UTC; singolo operatore al massimo 18 ore, pause di almeno 1 ora). RTTY e FT4/FT8 (FT4 e FT8 sono lo stesso modo per i doppi) su 160-10 m senza WARC. Si lavorano le stazioni olandesi: moltiplicatori = 12 province per banda e per modo (al massimo 24 per banda). Scambio: rapporto e numero progressivo (le olandesi rapporto e provincia). Punti: 1 con stazioni non olandesi, 3 con le olandesi (qui contati 1). FT8 su 1,843-3,577-7,077-14,077-21,077-28,077 MHz, FT4 su 1,840-3,580-7,080-14,083-21,080-28,080, messaggi standard. Log Cabrillo al VERON entro una settimana."
+it = "Aprile (2026: 18 aprile 12:00 - 19 aprile 11:59 UTC; singolo operatore al massimo 18 ore, pause di almeno 1 ora). RTTY e FT4/FT8 (FT4 e FT8 sono lo stesso modo per i doppi) su 160-10 m senza WARC. Si lavorano le stazioni olandesi: moltiplicatori = 12 province per banda e per modo (al massimo 24 per banda). Scambio: rapporto e numero progressivo (le olandesi rapporto e provincia). Punti: 1 con stazioni non olandesi, 3 con le olandesi. FT8 su 1,843-3,577-7,077-14,077-21,077-28,077 MHz, FT4 su 1,840-3,580-7,080-14,083-21,080-28,080, messaggi standard. Log Cabrillo al VERON entro una settimana."
 en = "April (2026: 18 April 1200 - 19 April 1159 UTC; single operators 18 hours max, off-times of at least 1 hour). RTTY and FT4/FT8 (FT4 and FT8 are the same mode for dupes) on 160-10 m, no WARC. Work Dutch stations: multipliers = 12 provinces per band and mode (max 24 per band). Exchange: report and serial number (Dutch stations report and province). Points: 1 for non-Dutch, 3 for Dutch stations (counted here as 1). FT8 on 1.843-3.577-7.077-14.077-21.077-28.077 MHz, FT4 on 1.840-3.580-7.080-14.083-21.080-28.080, standard messages. Cabrillo log to VERON within a week."
 
 [calendario]
@@ -60,9 +60,10 @@ chiave = "banda"
 log_doppi = "no"
 
 [punti]
-# 1 punto con le non olandesi, 3 con le olandesi: il tipo a tabella per paese non c'e', si conta 1
-tipo = "fisso"
+# 1 punto con le non olandesi, 3 con le olandesi (paese DXCC con prefisso principale PA)
+tipo = "per-paese"
 fisso = 1
+tabella = { PA = 3 }
 
 [[moltiplicatori]]
 tipo = "provincia-pa"

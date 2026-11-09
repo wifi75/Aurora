@@ -204,6 +204,13 @@ pub fn punti_qso(r: &Regole, ctx: &Contesto, q: &ContestQso) -> (u32, f64) {
     let punti = match p.tipo.as_str() {
         "fisso" => p.fisso.max(1),
         "per-banda" => p.tabella.iter().find(|(b, _)| b.eq_ignore_ascii_case(&q.band)).map_or(1, |(_, v)| *v),
+        // punti secondo il paese DXCC (prefisso principale di cty.dat): PACC 3 con le olandesi (`PA = 3`), `fisso` con le altre
+        "per-paese" => ctx
+            .paese
+            .as_ref()
+            .and_then(|f| f(&q.call))
+            .and_then(|px| p.tabella.iter().find(|(k, _)| k.eq_ignore_ascii_case(&px)).map(|(_, v)| *v))
+            .unwrap_or(p.fisso.max(1)),
         "distanza" => {
             if suo.is_empty() || ctx.mio_grid.is_empty() {
                 // senza locatore (FT Challenge: ZZ00) vale solo la base

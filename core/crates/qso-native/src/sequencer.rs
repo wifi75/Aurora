@@ -1743,6 +1743,11 @@ impl Sequencer {
     pub fn my_call_is_standard(&self) -> bool {
         is_std_call(&self.my.call)
     }
+
+    /// Il nominativo del DX in corso non e' standard (composto, `DL/IU3ABC`): in contest i messaggi di gara non si possono comporre.
+    pub fn his_call_is_compound(&self) -> bool {
+        !self.his_call.is_empty() && !is_std_call(&self.his_call)
+    }
 }
 
 /// `isAutoSeq73`: una delle prime quattro parole e' `73`, `TNX`, `TKS` o `TU`.

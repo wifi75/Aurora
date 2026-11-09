@@ -955,6 +955,21 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         if let Some((bands, modes)) = &self.contest_limits {
             let band_lc = band.to_ascii_lowercase();
             let mode = self.mode.name().to_ascii_uppercase();
+            // nominativo composto (mio o del DX): WSJT-X non compone i messaggi di contest e si torna ai normali, che in gara non valgono
+            let compound = if !self.seq.my_call_is_standard() {
+                Some("il tuo nominativo composto non permette i messaggi di contest: i QSO restano normali e in gara potrebbero non valere".to_string())
+            } else if self.seq.his_call_is_compound() {
+                Some("il nominativo composto del DX non permette i messaggi di contest: il QSO usa i messaggi normali".to_string())
+            } else {
+                None
+            };
+            if let Some(why) = compound
+                && self.contest_warned.as_deref() != Some(why.as_str())
+            {
+                aurora_core::notice::notice("contest", format!("Contest: {why}."));
+                log.push(format!("contest: {why}"));
+                self.contest_warned = Some(why);
+            }
             let bad = if !band_lc.is_empty() && !bands.is_empty() && !bands.contains(&band_lc) {
                 Some(format!("la banda {band} non e' ammessa dal regolamento del contest"))
             } else if !modes.is_empty() && !modes.contains(&mode) {
@@ -974,7 +989,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.contest_warned = Some(why);
                     }
                 }
-                None => self.contest_warned = None,
+                // si azzera solo l'avviso di banda o modo (quello del nominativo composto resta finche' non cambia)
+                None if self.contest_warned.as_deref().is_some_and(|w| w.contains("ammess")) => self.contest_warned = None,
+                None => {}
             }
         }
         if self.controls.switch_on("fox") {
