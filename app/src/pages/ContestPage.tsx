@@ -1116,7 +1116,6 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
                     >
                       <span className="ctc-mult">{chiave}</span>
                       <b>{s.call}</b>
-                      <span className="ctc-mtile-snr">{s.snr}</span>
                     </button>
                   ))}
                 </div>

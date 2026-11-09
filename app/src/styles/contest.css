@@ -420,3 +420,5 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtiles { gap: 3px !important; }
 .ctc-mtile { height: 24px !important; font-size: 12px !important; padding: 0 5px !important; grid-template-columns: 2.8em minmax(0, 1fr) 2em !important; }
 .ctc-mtile .ctc-mult, .ctc-mtile-snr { font-size: 10.5px !important; }
+/* senza i dB (restano nel suggerimento): prefisso e nominativo */
+.ctc-mtile { grid-template-columns: 2.8em minmax(0, 1fr) !important; }
