@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getDxcc, getOnline, getPsk, getWorkedMap } from '../api/client';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
+import { jumpToQueued } from '../components/TxPanel';
 import { DxMap, LIVE_COLORS, type DxMapSettings, type DxLink, type DxLiveGrid, type LiveStatus, type DxSpot, type DxSquare, type DxStation } from '../components/DxMap';
 import { useT } from '../i18n';
 import { useGroups } from '../lib/detached';
@@ -69,7 +70,16 @@ export function DxMapPage({ solo = false, bare = false, inPanel = false }: { sol
 
 function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boolean; inPanel?: boolean }) {
   const t = useT();
-  const decodes = useStation((s) => s.decodes);
+  const allDecodes = useStation((s) => s.decodes);
+  const dial = useStation((s) => s.status?.dial_hz ?? null);
+  // nel pannello Log la mappa si pulisce a ogni cambio di frequenza: contano solo i messaggi arrivati dopo
+  const [since, setSince] = useState<{ dial: number | null; id: number }>({ dial: null, id: 0 });
+  useEffect(() => {
+    if (!inPanel || dial === since.dial) return;
+    const last = useStation.getState().decodes.reduce((m, d) => Math.max(m, d.id), 0);
+    setSince({ dial, id: since.dial === null ? 0 : last });
+  }, [inPanel, dial, since.dial]);
+  const decodes = useMemo(() => (inPanel && since.id > 0 ? allDecodes.filter((d) => d.id > since.id) : allDecodes), [allDecodes, inPanel, since.id]);
   const status = useStatusPick(['de_call', 'de_grid', 'dx_call', 'dx_grid', 'tx_enabled', 'transmitting']);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
@@ -384,7 +394,8 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
         </div>
       ) : null}
       <DxMap
-        whole={bare}
+        whole={bare && !inPanel}
+        onPick={inPanel ? (call) => jumpToQueued(call, status?.de_call ?? undefined, t) : undefined}
         settings={bare ? { ...settings, links: false } : settings}
         stations={stations}
         links={links}

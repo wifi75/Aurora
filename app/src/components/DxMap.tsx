@@ -120,6 +120,8 @@ export interface DxMapSettings {
 interface Props {
   /** Tutto il mondo sempre intero nella finestra (con una fascia vuota sopra e sotto se serve), anche se e' stretta o alta: per la finestra della pagina a blocchi. */
   whole?: boolean;
+  /** Pannello Log: nominativo scritto accanto a ogni stazione e clic = chiamala. */
+  onPick?: (call: string) => void;
   settings: DxMapSettings;
   stations: readonly DxStation[];
   links: readonly DxLink[];
@@ -153,7 +155,9 @@ function cssColor(variable: string | null, fallback: string): string {
 const wrap = (lon: number) => ((((lon + 180) % 360) + 360) % 360) - 180;
 
 /** Mappa DX: sfondi a scelta, linea grigia con i crepuscoli, Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate. */
-export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels, whole = false }: Props) {
+export function DxMap({ settings, stations, links, spots, live, squares, homeGrid, labels, whole = false, onPick }: Props) {
+  const pickRef = useRef(onPick);
+  pickRef.current = onPick;
   const box = useRef<HTMLDivElement | null>(null);
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<string, L.Layer | null>>({});
@@ -179,7 +183,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     const m = whole
       ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
         L.map(el, { zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
-      : L.map(el, { zoomControl: false, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
+      : L.map(el, { zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
@@ -328,7 +332,19 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         L.polyline(path, { interactive: false, className: `dxmap-arc${settings.arcsAnimated ? ' dxmap-arc--anim' : ''}`, color, weight: 1.6, opacity: 0.75 * fade }).addTo(group);
       }
       const far = home ? ` · ${distanceKm(home, pos)} km · ${bearingDeg(home, pos)}°` : '';
-      L.circleMarker([pos.lat, pos.lon], { radius: 5.5, color: '#0b1322', weight: 1.5, fillColor: color, fillOpacity: fade, opacity: fade, bubblingMouseEvents: false })
+      const dot = L.circleMarker([pos.lat, pos.lon], { radius: 5.5, color: '#0b1322', weight: 1.5, fillColor: color, fillOpacity: fade, opacity: fade, bubblingMouseEvents: false });
+      if (pickRef.current) {
+        // pannello Log: il nominativo sempre scritto, nel colore della novita'; clic = chiamala
+        dot
+          .bindTooltip(s.call, { permanent: true, direction: 'right', offset: [5, 0], className: `dxmap-call${s.cq ? ' dxmap-call--cq' : ''}`, opacity: fade })
+          .on('click', () => pickRef.current?.(s.call))
+          .addTo(group);
+        const tip = dot.getTooltip()?.getElement() as HTMLElement | undefined;
+        tip?.style.setProperty('--call-color', color);
+        tip?.addEventListener('click', () => pickRef.current?.(s.call));
+        continue;
+      }
+      dot
         .bindTooltip(`${s.call} · ${s.grid} · ${s.snr} dB${s.country ? ` · ${s.country}` : ''}${far}`, { sticky: true })
         .bindPopup(`<strong>${s.call}</strong><br>${s.grid}${s.country ? ` · ${s.country}` : ''}<br>${s.snr} dB${far}`, { className: 'dxmap-popup' })
         // le zone CQ e ITU dal file dei paesi, quando si apre
