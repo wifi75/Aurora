@@ -58,6 +58,16 @@ impl std::fmt::Debug for UpdateInstallerHandle {
 #[derive(Clone)]
 pub struct SaveDialogHandle(pub remote_api::SaveFileDialog);
 
+/// La finestra «Apri file» del sistema (dal programma Windows): serve a scegliere il database di Log4OM2 dalle Impostazioni.
+#[derive(Clone)]
+pub struct OpenDialogHandle(pub remote_api::OpenFileDialog);
+
+impl std::fmt::Debug for OpenDialogHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "OpenDialogHandle")
+    }
+}
+
 impl std::fmt::Debug for SaveDialogHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SaveDialogHandle")
@@ -80,6 +90,7 @@ pub struct Config {
     pub update_installer: Option<UpdateInstallerHandle>,
     /// Se presente, «Salva ADIF…» apre la finestra «Salva con nome» del programma (solo dal PC stesso).
     pub save_dialog: Option<SaveDialogHandle>,
+    pub open_dialog: Option<OpenDialogHandle>,
     /// Se presente, Impostazioni > Aggiornamenti mostra «Apri la cartella dei crash» (solo dal PC stesso).
     pub crash_folder: Option<CrashFolderHandle>,
     pub bind: SocketAddr,
@@ -138,6 +149,9 @@ pub struct Config {
     pub ptt_port: Option<String>,
     /// Database SQLite di Log4OM2, letto solo in lettura per mostrare gli ultimi QSO.
     pub log4om_db: Option<PathBuf>,
+    /// `log4om_db` l'ha trovato da solo il programma Windows (`AURORA_LOG4OM_DB_AUTO=1`): la scelta fatta nelle Impostazioni vince.
+    /// Scritto a mano in aurora.env invece vince lui.
+    pub log4om_db_auto: bool,
     /// Con il motore proprio: Aurora manda a `udp_forward` il flusso WSJT-X che mandava JTDX (Heartbeat, Status, Decode, QSO Logged...).
     /// Di base acceso; `AURORA_UDP_EMIT=0` lo spegne. Con il motore JTDX non serve: l'hub inoltra i pacchetti di JTDX.
     pub udp_emit: bool,
@@ -174,6 +188,7 @@ impl Config {
         Config {
             update_installer: None,
             save_dialog: None,
+            open_dialog: None,
             crash_folder: None,
             bind: SocketAddr::from(([127, 0, 0, 1], 8787)),
             data_dir: PathBuf::from("data"),
@@ -204,6 +219,7 @@ impl Config {
             ptt_method: "vox".to_string(),
             ptt_port: None,
             log4om_db: None,
+            log4om_db_auto: false,
             udp_emit: true,
             udp_accept_requests: false,
             udp_accept_reply: 1,
@@ -274,6 +290,7 @@ impl Config {
         Ok(Config {
             update_installer: None,
             save_dialog: None,
+            open_dialog: None,
             crash_folder: None,
             bind,
             data_dir: PathBuf::from(get("AURORA_DATA_DIR").unwrap_or_else(|| "data".to_string())),
@@ -291,6 +308,7 @@ impl Config {
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
             log4om_db: get("AURORA_LOG4OM_DB").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
+            log4om_db_auto: get("AURORA_LOG4OM_DB_AUTO").is_some_and(|v| v.trim() == "1"),
             export_udp,
             open_access: match get("AURORA_OPEN_ACCESS").as_deref() {
                 None | Some("0") => false,
@@ -687,7 +705,8 @@ const MANUAL_DIAL_FILE: &str = "frequenza-a-mano.txt";
 struct LogSources {
     files: Vec<PathBuf>,
     logbook: Arc<Logbook>,
-    log4om: Option<PathBuf>,
+    /// Cambia a caldo dalle Impostazioni («Database di Log4OM»).
+    log4om: Arc<std::sync::RwLock<Option<PathBuf>>>,
     /// Il filtro del log della scheda Generali (nominativo, griglia, data di partenza): cambia a caldo con le impostazioni.
     filter: Arc<std::sync::RwLock<engine_jtdx::worked::LogFilter>>,
 }
@@ -818,7 +837,8 @@ fn load_worked(sources: &LogSources, db: &DxccDb) -> WorkedLog {
         }
         Err(e) => tracing::warn!("log interno non letto: {e}"),
     }
-    if let Some(path) = &sources.log4om {
+    let log4om = sources.log4om.read().ok().and_then(|p| p.clone());
+    if let Some(path) = &log4om {
         match logbook::log4om::read_all(path) {
             Ok(rows) => {
                 for q in rows.iter().filter(|q| filter.accepts(q)) {
@@ -886,6 +906,75 @@ fn iaru_region(e: &dxcc::Entity) -> Option<&'static str> {
         "OC" => Some("R3"),
         "AS" => Some(if REGION1_ASIA.iter().any(|n| name.contains(n)) { "R1" } else { "R3" }),
         _ => None,
+    }
+}
+
+/// Il file nella cartella dei dati con il database di Log4OM2 scelto nelle Impostazioni (una riga vuota = «non usarlo»).
+const LOG4OM_CHOICE_FILE: &str = "log4om-db.txt";
+
+/// Il database di Log4OM2 in uso e da dove viene: rilevamento automatico, aurora.env (bloccato) o scelta delle Impostazioni.
+struct Log4omChoice {
+    current: Arc<std::sync::RwLock<Option<PathBuf>>>,
+    source: Arc<std::sync::RwLock<&'static str>>,
+    locked: bool,
+    file: PathBuf,
+}
+
+impl Log4omChoice {
+    fn start(config: &Config) -> Log4omChoice {
+        let file = config.data_dir.join(LOG4OM_CHOICE_FILE);
+        let locked = config.log4om_db.is_some() && !config.log4om_db_auto;
+        let (path, source) = match std::fs::read_to_string(&file) {
+            Ok(text) if !locked => {
+                let line = text.trim();
+                if line.is_empty() { (None, "none") } else { (Some(PathBuf::from(line)), "chosen") }
+            }
+            _ => match &config.log4om_db {
+                Some(p) => (Some(p.clone()), if locked { "env" } else { "auto" }),
+                None => (None, "none"),
+            },
+        };
+        Log4omChoice { current: Arc::new(std::sync::RwLock::new(path)), source: Arc::new(std::sync::RwLock::new(source)), locked, file }
+    }
+
+    fn control(&self, live: Option<(Arc<DxccDb>, SharedWorked, LogSources)>) -> remote_api::Log4omDbControl {
+        let view = {
+            let (current, source, locked) = (Arc::clone(&self.current), Arc::clone(&self.source), self.locked);
+            Arc::new(move || {
+                let path = current.read().ok().and_then(|p| p.clone());
+                serde_json::json!({
+                    "path": path.as_ref().map(|p| p.display().to_string()),
+                    "exists": path.as_ref().is_some_and(|p| p.is_file()),
+                    "source": source.read().map(|s| *s).unwrap_or("none"),
+                    "locked": locked,
+                })
+            })
+        };
+        let get = Arc::clone(&view);
+        let (current, source, file) = (Arc::clone(&self.current), Arc::clone(&self.source), self.file.clone());
+        let set = Arc::new(move |path: Option<PathBuf>| -> Result<serde_json::Value, String> {
+            let count = match &path {
+                Some(p) => Some(logbook::log4om::check(p)?),
+                None => None,
+            };
+            let line = path.as_ref().map(|p| p.display().to_string()).unwrap_or_default();
+            std::fs::write(&file, format!("{line}\n")).map_err(|e| format!("{}: {e}", file.display()))?;
+            if let Ok(mut c) = current.write() {
+                *c = path.clone();
+            }
+            if let Ok(mut s) = source.write() {
+                *s = if path.is_some() { "chosen" } else { "none" };
+            }
+            tracing::info!("database di Log4OM2: {}", if line.is_empty() { "non usato" } else { line.as_str() });
+            // i QSO gia' fatti si rileggono subito: le etichette «gia' lavorato / nuovo» seguono il database nuovo
+            if let Some((db, worked, sources)) = &live {
+                refresh_worked(sources, db, worked);
+            }
+            let mut v = view();
+            v["count"] = serde_json::json!(count);
+            Ok(v)
+        });
+        remote_api::Log4omDbControl { get, set }
     }
 }
 
@@ -1524,7 +1613,9 @@ pub async fn run(
     let log_filter = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| s.reports().log_filter).unwrap_or_default()));
     // le evidenziazioni di «nuovo» (scheda Notifiche): decidono le etichette delle decodifiche, anche «gia' lavorato»; cambiano a caldo
     let highlight_flags: engine_jtdx::enrich::SharedFlags = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| s.reports().highlights).unwrap_or_default()));
-    let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: config.log4om_db.clone(), filter: Arc::clone(&log_filter) };
+    // il database di Log4OM2: quello scelto nelle Impostazioni vince sul rilevamento automatico, non su aurora.env
+    let log4om_choice = Log4omChoice::start(&config);
+    let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: Arc::clone(&log4om_choice.current), filter: Arc::clone(&log_filter) };
     let enrichment: Option<(Arc<DxccDb>, SharedWorked)> = load_dxcc(config.cty_path.as_deref()).map(|db| {
         let worked = Arc::new(std::sync::RwLock::new(load_worked(&log_sources, &db)));
         (db, worked)
@@ -1863,35 +1954,36 @@ pub async fn run(
             Some((db, worked, sources)) => Arc::new(move || refresh_worked(&sources, &db, &worked)),
             None => Arc::new(|| {}),
         })
-        .with_log4om_if(Some(match config.log4om_db.clone() {
-            Some(path) => Arc::new(move |limit: usize| {
-                logbook::log4om::read_recent(&path, limit)
+        .with_log4om_if(Some({
+            // il pannello Log segue il database scelto a caldo: con Log4OM2 i suoi QSO, senza il log interno di Aurora (con l'esportazione ADIF)
+            let own = Arc::clone(&own_log);
+            let dxcc = enrichment.as_ref().map(|(db, _)| Arc::clone(db));
+            let current = Arc::clone(&log4om_choice.current);
+            Arc::new(move |limit: usize| {
+                if let Some(path) = current.read().ok().and_then(|p| p.clone()) {
+                    return logbook::log4om::read_recent(&path, limit)
+                        .map(|view| {
+                            let mut v = serde_json::json!(view);
+                            v["source"] = serde_json::json!("log4om");
+                            v
+                        })
+                        .map_err(|e| e.to_string());
+                }
+                let country = |call: &str| dxcc.as_ref().and_then(|db| db.lookup(call).map(|l| db.entity(l.entity).name.clone())).unwrap_or_default();
+                own.recent_view(limit, &country)
                     .map(|view| {
                         let mut v = serde_json::json!(view);
-                        v["source"] = serde_json::json!("log4om");
+                        v["source"] = serde_json::json!("aurora");
                         v
                     })
                     .map_err(|e| e.to_string())
-            }) as remote_api::Log4omProvider,
-            // nessun log esterno collegato: il pannello Log mostra il log interno di Aurora (con l'esportazione ADIF)
-            None => {
-                let own = Arc::clone(&own_log);
-                let dxcc = enrichment.as_ref().map(|(db, _)| Arc::clone(db));
-                Arc::new(move |limit: usize| {
-                    let country = |call: &str| dxcc.as_ref().and_then(|db| db.lookup(call).map(|l| db.entity(l.entity).name.clone())).unwrap_or_default();
-                    own.recent_view(limit, &country)
-                        .map(|view| {
-                            let mut v = serde_json::json!(view);
-                            v["source"] = serde_json::json!("aurora");
-                            v
-                        })
-                        .map_err(|e| e.to_string())
-                }) as remote_api::Log4omProvider
-            }
+            }) as remote_api::Log4omProvider
         }))
+        .with_open_dialog_if(config.open_dialog.clone().map(|h| h.0))
+        .with_log4om_db(log4om_choice.control(live_log.clone()))
         // i quadrati lavorati: dagli stessi log della scheda DXCC (Aurora, file ADIF, Log4OM2), anche per banda, modo e conferma (Mappa DX);
         // senza paesi caricati, solo da Log4OM2 come prima
-        .with_worked_map_if(match (live_log.clone(), config.log4om_db.clone()) {
+        .with_worked_map_if(match (live_log.clone(), log4om_choice.current.read().ok().and_then(|p| p.clone())) {
             (Some((db, worked, sources)), _) => Some(Arc::new(move || {
                 refresh_worked(&sources, &db, &worked);
                 let w = worked.read().map_err(|_| "QSO gia' fatti non disponibili".to_string())?;

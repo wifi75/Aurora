@@ -160,6 +160,7 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
             config.update_installer = Some(aurora::UpdateInstallerHandle(installer.clone()));
         }
         config.save_dialog = Some(aurora::SaveDialogHandle(save_dialog::dialog(handle.clone())));
+        config.open_dialog = Some(aurora::OpenDialogHandle(save_dialog::open_dialog(handle.clone())));
         config.crash_folder = Some(aurora::CrashFolderHandle(crash::folder_opener()));
         let (tx, rx) = oneshot::channel::<()>();
         let server = tauri::async_runtime::block_on(aurora::run(config, async move {

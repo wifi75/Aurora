@@ -3,6 +3,7 @@
 ## Non rilasciato
 
 - **TCI**: niente avviso «audio muto» quando l'audio TCI arriva basso ma c'e' (issue #9); resta solo con zeri veri.
+- Impostazioni, scheda del Log: nuovo riquadro «Database di Log4OM» per scegliere (finestra «Apri file» o percorso a mano) o togliere il file di Log4OM 2; si controlla, si ricorda e i QSO già fatti si ricaricano subito.
 
 ## 0.11.209 - 2026-11-09
 - **Contest**: nuovi regolamenti YBDXPI FT8 Contest, VHF-UHF FT8 Activity Contest (Europa e Nord America, 144/432/1296 MHz a rotazione) e NCCC FT4 Sprint settimanale; il calendario accetta piu' ordinali («primo,secondo,terzo-mercoledi») e i contest settimanali («ogni-giovedi»); punti per paese e continente.

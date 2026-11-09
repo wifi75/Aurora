@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi))]
+#[openapi(paths(update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -80,6 +80,8 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/log/qsos", get(log_qsos).post(log_add).delete(log_delete))
         .route("/api/v1/log/export.adi", get(log_export))
         .route("/api/v1/log/export-save", post(log_export_save))
+        .route("/api/v1/log4om-db", get(log4om_db_get).put(log4om_db_put))
+        .route("/api/v1/log4om-db/choose", post(log4om_db_choose))
         .route("/api/v1/diagnostics", get(diagnostics_get))
         .route("/api/v1/diagnostics/crash-folder", post(diagnostics_crash_folder))
         .route("/api/v1/diagnostics/support-bundle", post(diagnostics_support_bundle))
@@ -2738,6 +2740,70 @@ async fn log_export_save(State(state): State<AppState>, _: Authed, Peer(peer): P
         }
         None => json!({ "ok": true, "cancelled": true }),
     }))
+}
+
+/// `GET /api/v1/log4om-db`: il database di Log4OM2 in uso `{path, source, locked, dialog}`. `source` e' `auto` (trovato da solo),
+/// `chosen` (scelto dalle Impostazioni), `env` (scritto in aurora.env: `locked`, si cambia solo li') o `none`; `dialog` dice se da qui
+/// si puo' aprire la finestra «Apri file».
+#[utoipa::path(get, path = "/api/v1/log4om-db", responses((status = 200, description = "{path, source, locked, dialog}"), (status = 404, description = "Non disponibile (log4om_db_unavailable)")))]
+async fn log4om_db_get(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    let control = state.log4om_db.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "log4om_db_unavailable"))?;
+    let mut v = tokio::task::spawn_blocking(move || (control.get)()).await.map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?;
+    v["dialog"] = json!(state.open_dialog.is_some() && from_this_pc(peer, &headers));
+    Ok(Json(v))
+}
+
+#[derive(Deserialize, utoipa::ToSchema)]
+struct Log4omDbBody {
+    /// Il percorso del file; vuoto o assente = non usare piu' Log4OM2.
+    path: Option<String>,
+}
+
+/// Cambia (o toglie, con `path` vuoto) il database di Log4OM2: lo controlla, lo ricorda e ricarica subito i QSO gia' fatti. Solo
+/// dalla rete di casa. Risponde come il `GET`.
+#[utoipa::path(put, path = "/api/v1/log4om-db", request_body = Log4omDbBody, responses((status = 200, description = "{path, source, locked}"), (status = 400, description = "File mancante o non di Log4OM2 (log4om_db_invalid)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 409, description = "Scritto in aurora.env (log4om_db_locked)")))]
+async fn log4om_db_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<Log4omDbBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let path = body.path.map(|p| p.trim().trim_matches('"').to_string()).filter(|p| !p.is_empty()).map(std::path::PathBuf::from);
+    apply_log4om_db(&state, path).await
+}
+
+/// Apre la finestra «Apri file» del programma Windows per scegliere il database di Log4OM2, poi fa come il `PUT`. Solo dal PC stesso.
+/// Annullata: `{cancelled: true}`.
+#[utoipa::path(post, path = "/api/v1/log4om-db/choose", responses((status = 200, description = "{path, source, locked} o {cancelled}"), (status = 400, description = "File non di Log4OM2 (log4om_db_invalid)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Finestra non disponibile (open_unavailable)"), (status = 409, description = "Finestra gia' aperta (save_busy) o aurora.env (log4om_db_locked)")))]
+async fn log4om_db_choose(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
+    if !from_this_pc(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let dialog = state.open_dialog.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "open_unavailable"))?;
+    if state.save_open.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "save_busy"));
+    }
+    let open = SaveOpen(std::sync::Arc::clone(&state.save_open));
+    let chosen = tokio::task::spawn_blocking(move || {
+        let _open = open;
+        dialog("Database di Log4OM")
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?;
+    match chosen {
+        Some(path) => apply_log4om_db(&state, Some(path)).await,
+        None => Ok(Json(json!({ "cancelled": true }))),
+    }
+}
+
+async fn apply_log4om_db(state: &AppState, path: Option<std::path::PathBuf>) -> Result<Json<Value>, ApiError> {
+    let control = state.log4om_db.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "log4om_db_unavailable"))?;
+    if (control.get)()["locked"] == json!(true) {
+        return Err(ApiError::new(StatusCode::CONFLICT, "log4om_db_locked"));
+    }
+    tokio::task::spawn_blocking(move || (control.set)(path))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map(Json)
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "log4om_db_invalid").with_message(e))
 }
 
 /// Aggiunge al log interno i QSO di un file ADIF (corpo della richiesta, per esempio il `wsjtx_log.adi` di JTDX), senza doppioni.

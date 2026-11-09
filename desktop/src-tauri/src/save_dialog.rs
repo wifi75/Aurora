@@ -24,3 +24,19 @@ pub fn dialog(app: AppHandle) -> remote_api::SaveFileDialog {
         picker.save_file()
     })
 }
+
+/// La finestra «Apri file» per scegliere il database di Log4OM2 (filtri `*.SQLite`, `*.db`), legata alla finestra principale.
+/// `None` = annullata.
+pub fn open_dialog(app: AppHandle) -> remote_api::OpenFileDialog {
+    Arc::new(move |title: &str| -> Option<PathBuf> {
+        let mut picker = rfd::FileDialog::new()
+            .set_title(title)
+            .add_filter("Log4OM (*.SQLite, *.db)", &["SQLite", "sqlite", "db"])
+            .add_filter("*.*", &["*"]);
+        if let Some(window) = app.get_webview_window("main") {
+            picker = picker.set_parent(&window);
+        }
+        let _modal = crate::crash::modal("finestra Apri file");
+        picker.pick_file()
+    })
+}
