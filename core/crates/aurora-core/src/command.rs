@@ -41,6 +41,10 @@ pub struct ContestSetup {
     pub grid6: String,
     /// Chiusura con RRR invece di RR73.
     pub rrr: bool,
+    /// Bande ammesse dal regolamento (`20m`...); vuota = tutte. Fuori da queste la trasmissione non parte.
+    pub bands: Vec<String>,
+    /// Modi ammessi (`FT8`, `FT4`...); vuota = tutti.
+    pub modes: Vec<String>,
 }
 
 /// I comandi della pagina Fox.

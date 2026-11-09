@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- **Contest**: con il contest acceso, su una banda o in un modo non ammessi dal regolamento la trasmissione non parte (Abilita Tx si spegne, con un avviso); il menu delle frequenze mostra solo le bande del contest.
+
 - **Regione IARU**: al primo avvio, se e' ancora «Tutte», si imposta da sola dal nominativo (IU3WJQ -> Regione 1); nelle Impostazioni ogni regione dice a cosa corrisponde (1 Europa, Africa, Medio Oriente, Russia; 2 Americhe; 3 Asia e Oceania).
 - **OmniRig**: scelta della radio Rig 1 o Rig 2 nella scheda Radio e con il blocchetto «RIG 1 / RIG 2» a sinistra del display, nei colori dello stile del display (frequenza e PTT; richiesta di IK1SOW).
 

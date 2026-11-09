@@ -304,6 +304,9 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     fox_log: VecDeque<aurora_core::FoxLogView>,
     /// La zona protetta in cui cade la sintonia (`FoxGuardBands`), se c'e'.
     fox_guard: Option<String>,
+    /// Bande e modi ammessi dal contest acceso (vuote = tutti); l'ultimo avviso dato, per non ripeterlo a ogni periodo.
+    contest_limits: Option<(Vec<String>, Vec<String>)>,
+    contest_warned: Option<String>,
 }
 
 /// Per quanti periodi (cicli) un segnale sentito conta come presente: 4, cioe' 60 s in FT8.
@@ -348,7 +351,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None, contest_limits: None, contest_warned: None };
         driver.seq.set_rx_freq(rx_published);
         if let Some(setup) = driver.controls.contest() {
             driver.seq.set_contest(Some(contest_seq(&setup)));
@@ -842,6 +845,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     None => log.push("contest spento: QSO normali".to_string()),
                 }
                 self.seq.set_contest(setup.as_ref().map(contest_seq));
+                self.contest_limits = setup.as_ref().map(|c| (c.bands.clone(), c.modes.clone()));
+                self.contest_warned = None;
                 self.enforce_contest_rules(&mut log);
                 self.publish_view();
             }
@@ -946,6 +951,32 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             return (Vec::new(), log);
         }
         self.enforce_contest_rules(&mut log);
+        // contest acceso: banda o modo fuori regolamento = niente trasmissione (prima solo un avviso nella barra, e i QSO non valevano)
+        if let Some((bands, modes)) = &self.contest_limits {
+            let band_lc = band.to_ascii_lowercase();
+            let mode = self.mode.name().to_ascii_uppercase();
+            let bad = if !band_lc.is_empty() && !bands.is_empty() && !bands.contains(&band_lc) {
+                Some(format!("la banda {band} non e' ammessa dal regolamento del contest"))
+            } else if !modes.is_empty() && !modes.contains(&mode) {
+                Some(format!("il modo {mode} non e' ammesso dal regolamento del contest"))
+            } else {
+                None
+            };
+            match bad {
+                Some(why) => {
+                    if self.seq.is_enabled() {
+                        self.seq.set_enabled(false);
+                        self.halt_tx();
+                        log.push(format!("contest: niente trasmissione, {why}"));
+                    }
+                    if self.contest_warned.as_deref() != Some(why.as_str()) {
+                        aurora_core::notice::notice("contest", format!("Contest: {why}. Cambia banda o modo prima di trasmettere."));
+                        self.contest_warned = Some(why);
+                    }
+                }
+                None => self.contest_warned = None,
+            }
+        }
         if self.controls.switch_on("fox") {
             // la Fox trasmette da after_slot (fox_slot): qui niente avvio anticipato della sequenza normale
             return (Vec::new(), log);

@@ -2,6 +2,7 @@ import type { DecodedMessage } from '../api/schemas';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FreqPicker } from '../components/FreqPicker';
+import { getContest } from '../api/contest';
 import { getCat, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
 import { ClusterPanel } from '../components/ClusterPanel';
 import { CqStrip } from '../components/CqStrip';
@@ -72,6 +73,9 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const connection = useStation((s) => s.connection);
   const displayHidden = useRadioDisplay((s) => s.pref.hidden);
   const chosenBands = useBandFilter((s) => s.bands);
+  // contest acceso: il menu delle frequenze mostra solo le bande del regolamento
+  const contest = useQuery({ queryKey: ['contest'], queryFn: getContest, refetchInterval: 15_000, retry: false });
+  const contestBands = contest.data?.attivo ? contest.data.regole?.bande.ammesse : undefined;
   const filters = useFilters((s) => s.filters);
   const cqPrefs = useCqPrefs((s) => s.prefs);
   const shown = applyFilters(decodes, filters, status?.own_continent);
@@ -388,7 +392,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           />
           {info.data?.engine === 'native' && q65Parts(status?.mode ?? '') ? <Q65Extras disabled={status?.transmitting ?? false} /> : null}
           <FreqPicker
-            bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
+            bands={contestBands?.length ? contestBands : visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}
             mode={status?.mode ?? ''}
             locked={status?.transmitting ?? false}

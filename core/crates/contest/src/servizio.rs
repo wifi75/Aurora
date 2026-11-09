@@ -332,6 +332,8 @@ impl ContestService {
             next_serial: (usati + 1).max(imp.seriale_partenza.max(1)),
             grid6: imp.grid6.clone(),
             rrr: imp.rrr || r.messaggi.chiusura == "RRR",
+            bands: r.bande.ammesse.iter().map(|b| b.to_ascii_lowercase()).collect(),
+            modes: r.modi.ammessi.iter().map(|m| m.to_ascii_uppercase()).collect(),
         })
     }
 
