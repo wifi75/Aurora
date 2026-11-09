@@ -54,3 +54,11 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 
 - Fatto (0.11.203): nessun errore durante il cambio di banda, DATA-USB rimandato a ogni cambio di banda, frequenze dei 70 cm.
 - Resta: prova dal vivo con FTLink 4.16 e lo S-meter `SM0;`.
+
+# Richieste degli utenti (2026-11-09)
+
+- **Finestra RX**: bandierina e paese 10 punti a destra (prototipo sulla 8787, `onair.css`, in attesa del sì).
+- **Nuovo stato / nuovo stato sulla banda** (Luc): stato USA da QRZ/HamQTH (`Person` non lo legge ancora), stati lavorati dal log, tag, pillole del filtro e regola delle Automazioni.
+- **Mappa** (CT1BXX): zoom (rotella e +/−), trascinamento, ridimensionamento, pannello a se' da mettere al posto del DX Cluster.
+- **Coda TX** (CT1BXX): nominativi della coda cliccabili e pulsantino «»» per passare al prossimo.
+- **Suoni** (CT1BXX): file WAV/MP3 propri per ogni avviso; voce Ava (Microsoft Multilingual) nella lingua di Aurora o in inglese a scelta, con avviso, paese e nominativo.
