@@ -76,7 +76,9 @@ export class HeatLayer extends L.Layer {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, size.x, size.y);
-    if (this.points.length === 0) return;
+    // mappa nascosta o non ancora misurata (pannello in una pagina nascosta): niente da disegnare. Con misura 0 `getImageData`
+    // andava in errore e la pagina restava vuota (2026-11-09)
+    if (this.points.length === 0 || size.x < 1 || size.y < 1) return;
     // macchie in scala di grigi (solo trasparenza), poi la trasparenza diventa colore
     const r = this.radius + this.blur;
     const stamp = document.createElement('canvas');

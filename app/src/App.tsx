@@ -24,6 +24,7 @@ import { browserStorage } from './lib/theme';
 import { emitSpectrum } from './lib/spectrumFeed';
 import { FoxPage } from './pages/FoxPage';
 import { ContestPage } from './pages/ContestPage';
+import { PageGuard } from './components/PageGuard';
 import { QmapPage } from './pages/QmapPage';
 import { useStation } from './state/station';
 import { usePrefs } from './lib/prefs';
@@ -242,10 +243,12 @@ export function App() {
             mappa, liste) e il passaggio Contest -> Stazione era lento (2026-11-09) */}
         {keepLive ? (
           <div className="live-keep" style={content === LIVE ? undefined : { display: 'none' }}>
-            <Live />
+            <PageGuard resetKey={route.name}>
+              <Live />
+            </PageGuard>
           </div>
         ) : null}
-        {keepLive && content === LIVE ? null : content}
+        {keepLive && content === LIVE ? null : <PageGuard resetKey={route.name}>{content}</PageGuard>}
       </main>
       {REMOTE_TOUCH ? null : <Footer />}
       <Toaster />
