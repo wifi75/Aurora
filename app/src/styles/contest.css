@@ -422,3 +422,7 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mtile .ctc-mult, .ctc-mtile-snr { font-size: 10.5px !important; }
 /* senza i dB (restano nel suggerimento): prefisso e nominativo */
 .ctc-mtile { grid-template-columns: 2.8em minmax(0, 1fr) !important; }
+/* il nominativo sempre intero: niente puntini, il prefisso prende solo lo spazio che gli serve */
+.ctc-mtile { grid-template-columns: auto minmax(max-content, 1fr) !important; gap: 5px !important; }
+.ctc-mtile b { overflow: visible !important; text-overflow: clip !important; }
+.ctc-mtile .ctc-mult { max-width: 3.2em; }
