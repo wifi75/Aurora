@@ -1,13 +1,16 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-09)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-09 notte)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-09 sera
+## Stato al 2026-11-09 notte (0.11.218 pubblicata)
 
-- **0.11.214** pubblicata: mappa del pannello Log con nominativi e clic per chiamare, coda TX cliccabile, voce degli avvisi (frasi di Ava in `app/public/voice/<lingua>/<funzione>.mp3`, nominativo con l'alfabeto fonetico in `voice/nato/`, `lib/voice.ts`) e file audio propri (IndexedDB), avviso del DXCC nuovo una volta sola con posizione a scelta, «Nuovo stato» USA (stato da QRZ/HamQTH, stati lavorati da Log4OM, `lib/usStates.ts`), filtro di chi risponde al CQ anche senza Auto (`filter_callers_always`), conteggio delle persone (`rapporti::codice_persona`, colonna `persona` su D1 gia' aggiunta, segreto `PERSONA_SEGRETO` impostato, Worker pubblicato).
-- Le frasi della voce sono generate con la sintesi vocale di Microsoft (edge-tts, voce Ava Multilingual): controllare che le condizioni ne permettano la distribuzione.
-- **Prossimo passo**: «nuovo stato» anche nelle Automazioni (oggi solo pillole di Attivita' di banda); stato anche dal log interno di Aurora; prove del proprietario sulla 0.11.214.
-- Wrangler: con la 4.45 `d1 execute --file` fallisce con «Authentication error» (via di importazione); usare `--command`.
+- **Versioni del giorno**: 0.11.205-0.11.218. Ultime: 0.11.215 nuovo stato in Auto e pagina Contest ordinata, voce degli avvisi rifatta con Kokoro (licenza Apache 2.0, `scripts/genera-voce-kokoro.py`; le frasi di Edge/Ava sono state tolte); 0.11.216 correzioni dai rapporti di Cloudflare (PowerShell con percorso intero per l'installatore, niente falsi blocchi/panic in chiusura `crash::exiting`, rapporti senza «radio non collegata»); 0.11.217 paesi non confermati come DXCC nuovo (`newDXCCUnconfirmed`), Mappa DX con banda in uso, «solo chi mi sente», linea rossa in TX; 0.11.218 Contest da tastiera (F1 Auto CQ, F2-F4, Esc), «Come funziona», avvisi sopra le Impostazioni, ricarica che resta sulla pagina.
+- **Contest**: nel log del contest entrano solo i QSO avviati dalla pagina Contest (intestazione `x-aurora-origine: contest` su reply e CQ) e fatti durante la gara; chi non fa il contest entra a 0 punti (errore, fuori dal Cabrillo). Da provare dal vivo al DARC FT4 del 2026-11-10, 19:00 UTC.
+- **Conteggio delle persone**: `rapporti::codice_persona` (SHA-256 del nominativo sul PC) nel segnale `/v1/attivo`; sul Worker HMAC con `PERSONA_SEGRETO` (impostato) e colonne `persona` su D1 (aggiunte). Rapporti degli errori svuotati il 2026-11-09 dopo la lettura.
+- **Riordino**: in `D:\progetti` restano `Aurora` e `Aurora-archivio` (LEGGIMI dentro); copie di lavoro git chiuse (i rami restano), compilazioni vecchie di `D:uild` cancellate.
+- **Test**: i test del motore toccati passano; nell'interfaccia 39 test falliscono gia' da prima del 2026-11-09 (elenco confrontato con la 0.11.212), da sistemare a parte.
+- **In attesa**: issue #9 (TCI «Audio silent», avllucken: chieste versione e pacchetto); risposte di Luc sulle sue richieste; frase «Virus free» dei README da rivedere (VirusTotal non si fa piu').
+- **Prossimo passo**: prove del proprietario al contest; poi i lavori di `docs/tasks.md`.
 
 ## Stato al 2026-11-08 mattina (passaggio ad altro account)
 
