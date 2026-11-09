@@ -7419,3 +7419,13 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 .log-rx .decode-where { justify-content: flex-start !important; padding-left: 0.4rem; }
 /* pannello Log con la RX sopra: un filo di respiro sopra l'intestazione del log, che sembrava tagliata contro la RX */
 .dock-panel--log .log-rx + .log-dxcc-top { padding-top: 0.35rem; }
+/* linee che separano le parti dei pannelli (RX, log, scheda DXCC): ben visibili anche nel tema scuro */
+.log-rx { border-bottom: 1px solid #3d5078 !important; }
+.dock-panel--log .log-dxcc-bottom { border-top: 1px solid #3d5078 !important; }
+html[data-theme='light'] .log-rx { border-bottom-color: #9fb0c8 !important; }
+html[data-theme='light'] .dock-panel--log .log-dxcc-bottom { border-top-color: #9fb0c8 !important; }
+/* pannello Log con la RX: due blocchi ben separati. La RX ha un fondo appena diverso, scorre dentro il suo spazio e non invade il log */
+.dock-panel--log .log-rx { flex: 0 0 40%; overflow: hidden; background: rgb(255 255 255 / 0.025); border-bottom: 2px solid #3d5078 !important; margin-bottom: 0.3rem; }
+.dock-panel--log .log-rx > .decode-list, .dock-panel--log .log-rx > section { flex: 1 1 0; min-height: 0; overflow-y: auto !important; }
+.dock-panel--log .log-rx + .log-dxcc-top { flex: 1 1 0; min-height: 6rem; overflow: auto; }
+html[data-theme='light'] .dock-panel--log .log-rx { background: rgb(0 0 0 / 0.03); border-bottom-color: #9fb0c8 !important; }
