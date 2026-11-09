@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.207',
-    released: '2026-11-09T08:17:21Z',
+    released: '2026-11-09T08:20:47Z',
     kind: 'fixed',
     title: ['Versione nuova in verde fluo e km interi', 'New version in fluo green and whole km', 'Neue Version in Neongrün und ganze km', 'Nouvelle version en vert fluo et km entiers', 'Versión nueva en verde flúor y km enteros', 'Versão nova em verde flúor e km inteiros'],
     text: [
