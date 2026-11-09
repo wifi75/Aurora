@@ -343,6 +343,9 @@ impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for Strato {
         }
         let mut testo = Testo(String::new());
         event.record(&mut testo);
+        if scelta_dell_operatore(&testo.0) {
+            return;
+        }
         let livello = if *meta.level() == tracing::Level::ERROR { "error" } else { "warn" };
         registra(Evento { livello, origine: meta.target().to_string(), messaggio: testo.0 });
     }
@@ -365,6 +368,15 @@ impl tracing::field::Visit for Testo {
             self.0.push_str(&format!(" {}={value:?}", field.name()));
         }
     }
+}
+
+/// Situazioni che dipendono da come e' configurata la stazione, non da un errore del programma: la radio non ancora collegata o non
+/// accesa (nei rapporti del 2026-11-09 erano un terzo delle righe, da 80 installazioni). L'interfaccia le dice gia' all'operatore.
+fn scelta_dell_operatore(testo: &str) -> bool {
+    let t = testo.to_lowercase();
+    ["nessuna radio collegata", "radio non collegata", "nessuna radio tci collegata", "radio tci non collegata", "link non collegata", "radio non in linea", "scegli prima il modello della radio"]
+        .iter()
+        .any(|p| t.contains(p))
 }
 
 /// Gli errori sempre; gli avvisi solo di radio, PTT e audio. Mai quelli dei rapporti stessi e delle librerie di rete che usano.
@@ -1069,6 +1081,13 @@ fn scrivi_json<T: Serialize>(path: &Path, valore: &T) {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn la_radio_non_collegata_non_e_un_errore_da_segnalare() {
+        assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: nessuna radio collegata: scegli il CAT in Impostazioni"));
+        assert!(super::scelta_dell_operatore("PTT: spegnimento fallito (x): PTT: radio non collegata"));
+        assert!(!super::scelta_dell_operatore("errore del flusso di uscita audio: Failed to get current padding"));
+    }
 
     #[test]
     fn il_nominativo_si_normalizza_prima_del_codice() {

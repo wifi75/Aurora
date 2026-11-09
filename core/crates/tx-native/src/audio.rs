@@ -421,7 +421,14 @@ impl CpalSink {
                         return;
                     }
                     err_shared.failed.store(true, Ordering::SeqCst);
-                    tracing::warn!("errore del flusso di uscita audio: {e}");
+                    // Windows ha rifatto il dispositivo (cambio del predefinito, ritorno dalla sospensione, driver ricaricato): l'uscita si
+                    // riapre da sola prima della trasmissione seguente (`recover_if_lost`), non e' un errore da segnalare
+                    let testo = e.to_string();
+                    if testo.contains("no longer valid") || testo.contains("current padding") {
+                        tracing::info!("uscita audio da riaprire: {testo}");
+                    } else {
+                        tracing::warn!("errore del flusso di uscita audio: {testo}");
+                    }
                 };
                 let mut scratch: Vec<f32> = Vec::new();
                 let mut prev_gain = 1.0f32;
