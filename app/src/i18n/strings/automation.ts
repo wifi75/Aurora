@@ -101,10 +101,10 @@ export const automationStrings = {
   'auto.saveRules': ['Salva le regole', 'Save the rules', 'Regeln speichern', 'Enregistrer les règles', 'Guardar las reglas', 'Guardar as regras'],
   'auto.rejected': ['Modifica non accettata da Aurora.', 'Aurora did not accept the change.', 'Aurora hat die Änderung nicht akzeptiert.', "Aurora n'a pas accepté la modification.", 'Aurora no aceptó el cambio.', 'A Aurora não aceitou a alteração.'],
   'auto.log': ['Registro delle decisioni', 'Decision log', 'Entscheidungsprotokoll', 'Journal des décisions', 'Registro de decisiones', 'Registo de decisões'],
-  'autoSwitch.live': ['Automatico ON', 'Auto ON', 'Automatik AN', 'Auto ON', 'Automático ON', 'Automático ON'],
-  'autoSwitch.dry': ['Automatico (prova)', 'Auto (test)', 'Automatik (Test)', 'Auto (test)', 'Automático (prueba)', 'Automático (teste)'],
+  'autoSwitch.live': ['Auto', 'Auto', 'Auto', 'Auto', 'Auto', 'Auto'],
+  'autoSwitch.dry': ['Auto', 'Auto', 'Auto', 'Auto', 'Auto', 'Auto'],
   'autoSwitch.failed': ['Automazioni non accese: controlla le regole in Impostazioni → Automazioni (per il modo reale serve confermare l’avviso)', 'Automation not switched on: check the rules in Settings → Automation (live mode needs the notice confirmed)', 'Automatik nicht eingeschaltet: Regeln in Einstellungen → Automatik prüfen (Echtbetrieb braucht die Bestätigung)', 'Automatisations non activées : vérifie les règles dans Réglages → Automatisations (le mode réel demande de confirmer l’avis)', 'Automatizaciones no encendidas: revisa las reglas en Ajustes → Automatizaciones (el modo real requiere confirmar el aviso)', 'Automatizações não ligadas: verifica as regras em Definições → Automatizações (o modo real pede confirmação do aviso)'],
-  'autoSwitch.off': ['Automatico', 'Auto', 'Automatik', 'Auto', 'Automático', 'Automático'],
+  'autoSwitch.off': ['Auto', 'Auto', 'Auto', 'Auto', 'Auto', 'Auto'],
   'tip.autoSwitch': [
     'Accende o spegne le Automazioni con le regole scelte in Impostazioni → Automazioni: in modo reale rispondono da sole e Abilita Tx si accende.',
     'Turns Automation on or off with the rules chosen in Settings → Automation: in live mode it answers by itself and Enable Tx turns on.',
