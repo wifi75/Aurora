@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.209',
-    released: '2026-11-09T10:34:45Z',
+    released: '2026-11-09T11:35:05Z',
     kind: 'new',
     title: ["Filtri, Aspetto, finestra RX e Automazioni più affidabili", "Filters, Appearance, RX window and more reliable Automation", "Filter, Aussehen, RX-Fenster und zuverlässigere Automatik", "Filtres, Apparence, fenêtre RX et Automatisations plus fiables", "Filtros, Apariencia, ventana RX y Automatizaciones más fiables", "Filtros, Aparência, janela RX e Automatizações mais fiáveis"],
     text: [
