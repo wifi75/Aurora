@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.218',
-    released: '2026-11-10T00:00:00Z',
+    released: '2026-11-09T21:02:53Z',
     kind: 'new',
     title: ["Contest da tastiera", "Contest from the keyboard", "Contest per Tastatur", "Contest au clavier", "Concurso con el teclado", "Concurso pelo teclado"],
     text: [
