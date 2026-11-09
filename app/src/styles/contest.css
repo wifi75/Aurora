@@ -393,3 +393,8 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mkeys i.k-preso { background: var(--ok, #2cf5a4); opacity: 0.6; }
 .ctc-mkeys i.k-doppio { background: #5b6b85; }
 .ctc-mkeys i.k-cq { background: #1e2c44; box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); }
+/* «Come funziona»: riassunto breve e QSO d'esempio */
+.ctc-dates-pop { max-width: 420px; }
+.ctc-how-text { font-size: 11.5px; line-height: 1.4; opacity: 0.9; }
+.ctc-how-title { margin-top: 4px; font-weight: 700; font-size: 11px; }
+.ctc-how-qso { display: block; padding: 4px 8px; border-radius: 6px; background: color-mix(in srgb, var(--ct-line, #2a3a55) 45%, transparent); font-size: 11.5px; line-height: 1.5; }

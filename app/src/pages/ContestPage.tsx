@@ -134,7 +134,7 @@ export function ContestPage() {
           {t(attivo ? 'contest.toggleOn' : 'contest.toggleOff')}
         </button>
         <SceltaContest elenco={s?.contest ?? []} valore={attivo ?? scelto} t={t} onScegli={(id) => (attivo ? void attiva(id) : setScelto(id))} />
-        <DateContest c={(s?.contest ?? []).find((c) => c.id === (attivo ?? scelto))} finestra={attivo ? s?.finestra : undefined} t={t} />
+        <DateContest c={(s?.contest ?? []).find((c) => c.id === (attivo ?? scelto))} finestra={attivo ? s?.finestra : undefined} t={t} regole={attivo ? s?.regole : undefined} scambio={s?.scambio_inviato ?? ''} />
         {attivo && s ? (
           <BarraPunteggio s={s} t={t} />
         ) : (
@@ -416,7 +416,9 @@ function SceltaContest({ elenco, valore, t, onScegli }: { elenco: ContestRef[]; 
  * Le date del contest scelto, compatte («29–30 ago 2026»), calcolate ogni anno dalla regola del calendario. Il clic apre un piccolo
  * pannello con orari UTC e locali, durata, ore massime e pausa minima, link al regolamento. «?» se le date vanno ricontrollate.
  */
-function DateContest({ c, finestra, t }: { c: ContestRef | undefined; finestra?: { inizio_ms: number; fine_ms: number } | null; t: T }) {
+function DateContest({ c, finestra, t, regole, scambio = '' }: { c: ContestRef | undefined; finestra?: { inizio_ms: number; fine_ms: number } | null; t: T; regole?: Regole | null; scambio?: string }) {
+  const mio = useStation((x) => x.status?.de_call ?? '');
+  const loc = useStation((x) => x.status?.de_grid?.slice(0, 4) ?? '');
   const lang = useLang((x) => x.lang);
   const [aperto, setAperto] = useState(false);
   const f = finestra ?? c?.finestra;
@@ -429,12 +431,26 @@ function DateContest({ c, finestra, t }: { c: ContestRef | undefined; finestra?:
   return (
     <span className="ctc-dates">
       <button type="button" className="ctc-chip ctc-chip--phase" title={t('contest.dates.tip')} aria-expanded={aperto} onClick={() => setAperto(!aperto)}>
-        <span aria-label={giorno.formatRange(f.inizio_ms, fine)}>ⓘ</span>
+        <span aria-label={giorno.formatRange(f.inizio_ms, fine)}>{t('contest.how')}</span>
         {c.da_verificare ? <sup className="ctc-warn" title={t('contest.dates.verify')}>?</sup> : null}
       </button>
       {aperto ? (
         <div className="ctc-dates-pop" role="dialog" onMouseLeave={() => setAperto(false)}>
           <b>{c.nome}</b>
+          {regole ? (
+            <>
+              {/* come funziona, in breve: il riassunto del regolamento e un QSO d'esempio con quello che Aurora trasmette */}
+              <span className="ctc-how-text">{lang === 'it' ? regole.sintesi.it : regole.sintesi.en || regole.sintesi.it}</span>
+              <span className="ctc-how-title">{t('contest.how.tx')}</span>
+              <code className="ctc-how-qso">
+                {`CQ ${regole.messaggi.parola_cq ? regole.messaggi.parola_cq + ' ' : ''}${mio || 'IU3ABC'} ${loc || 'JN55'}`}
+                <br />
+                {`DL1ABC ${mio || 'IU3ABC'} ${(scambio || 'dB').replace(/bdBb/, '-10')}`}
+                <br />
+                {`DL1ABC ${mio || 'IU3ABC'} ${regole.messaggi.chiusura || 'RR73'}`}
+              </code>
+            </>
+          ) : null}
           <span>{t('contest.dates.utc')}: {quando('UTC').format(f.inizio_ms)} → {quando('UTC').format(fine)}</span>
           <span>{t('contest.dates.local')}: {quando().format(f.inizio_ms)} → {quando().format(fine)}</span>
           <span>{t('contest.dates.duration')}: {Math.round(ore * 10) / 10} h</span>
