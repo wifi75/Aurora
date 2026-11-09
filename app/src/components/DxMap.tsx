@@ -188,8 +188,8 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     if (!el) return;
     const m = whole
       ? // finestra della pagina a blocchi: la mappa e' fissa, tutto il mondo intero (proporzioni giuste), niente trascinamento ne' zoom
-        L.map(el, { zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
-      : L.map(el, { zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
+        L.map(el, { fadeAnimation: false, zoomControl: false, attributionControl: true, minZoom: -2, maxZoom: 10, zoomAnimation: false, zoomSnap: 0, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
+      : L.map(el, { fadeAnimation: false, zoomControl: true, attributionControl: true, minZoom: 1, maxZoom: 10, zoomAnimation: false, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 100, maxBounds: WORLD_PAN, maxBoundsViscosity: 1 });
     m.attributionControl.setPrefix(false);
     m.createPane('landPane').style.zIndex = '150';
     m.getPane('landPane')!.style.pointerEvents = 'none';
@@ -221,8 +221,13 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
       ].filter(Boolean);
       L.popup({ className: 'dxmap-popup' }).setLatLng(e.latlng).setContent(lines.join('<br>')).openOn(m);
     });
+    // la mappa resta nascosta finche' non ha la misura giusta: prima si vedeva un planisfero sbagliato e poi quello giusto sopra
+    // (il «fantasma» sotto la mappa); le tessere non sfumano (`fadeAnimation: false`), cosi' quelle vecchie non restano visibili sotto
+    el.style.visibility = 'hidden';
+    const show = () => window.requestAnimationFrame(() => (el.style.visibility = 'visible'));
     const fit = () => {
       if (el.clientWidth < 10 || el.clientHeight < 10) return;
+      show();
       m.invalidateSize(false);
       if (whole) {
         m.fitBounds(WORLD, { animate: false, padding: [0, 0] });
