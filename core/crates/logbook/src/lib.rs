@@ -309,6 +309,54 @@ impl Logbook {
 
     /// Come `export_jtdx_adif`, ma con i soli QSO il cui numero (`id`, quello di `entries`) e' in `ids` (`None` = tutti). Un numero che
     /// non c'e' nel log si ignora.
+    /// Il log come Cabrillo 3.0 generico (per i contest senza regole in Aurora o per chi lo chiede in un formato solo): una riga `QSO:` per
+    /// collegamento con frequenza in kHz, modo `DG` (digitale), data, ora, nominativo, rapporto e locatore inviati e ricevuti.
+    /// Stessi filtri di `export_jtdx_adif_selected` (date `AAAAMMGG` comprese, `ids` scelti). Restituisce il testo e il numero di QSO.
+    pub fn export_cabrillo_selected(&self, station: &adif::Station, from: Option<&str>, to: Option<&str>, ids: Option<&[i64]>) -> Result<(String, usize), LogError> {
+        let wanted: Option<std::collections::HashSet<i64>> = ids.map(|ids| ids.iter().copied().collect());
+        let (from, to) = (from.unwrap_or(""), to.unwrap_or(""));
+        let mut rows: Vec<LogEntry> = self
+            .entries()?
+            .into_iter()
+            .filter(|e| (from.is_empty() || e.date.as_str() >= from) && (to.is_empty() || e.date.as_str() <= to))
+            .filter(|e| wanted.as_ref().is_none_or(|w| w.contains(&e.id)))
+            .collect();
+        rows.sort_by(|a, b| (a.date.as_str(), a.time.as_str(), a.id).cmp(&(b.date.as_str(), b.time.as_str(), b.id)));
+        let me = station.call.trim().to_uppercase();
+        let my_grid: String = station.grid.trim().chars().take(4).collect::<String>().to_uppercase();
+        let mut out = String::new();
+        out.push_str("START-OF-LOG: 3.0\r\n");
+        out.push_str(&format!("CALLSIGN: {me}\r\n"));
+        out.push_str("CATEGORY-MODE: DIGI\r\n");
+        if !my_grid.is_empty() {
+            out.push_str(&format!("GRID-LOCATOR: {my_grid}\r\n"));
+        }
+        out.push_str(&format!("CREATED-BY: Aurora {}\r\n", env!("CARGO_PKG_VERSION")));
+        let field = |s: &str, dflt: &str| -> String {
+            let t = s.trim().to_uppercase();
+            if t.is_empty() { dflt.to_string() } else { t }
+        };
+        for e in &rows {
+            let date = match (e.date.get(0..4), e.date.get(4..6), e.date.get(6..8)) {
+                (Some(y), Some(m), Some(d)) => format!("{y}-{m}-{d}"),
+                _ => e.date.clone(),
+            };
+            let hhmm: String = e.time.chars().take(4).collect();
+            out.push_str(&format!(
+                "QSO: {:>5} DG {date} {hhmm} {:<13} {:>3} {:<6} {:<13} {:>3} {:<6}\r\n",
+                e.freq_hz / 1000,
+                me,
+                field(&e.rst_sent, "-"),
+                field(&my_grid, "-"),
+                field(&e.call, "-"),
+                field(&e.rst_rcvd, "-"),
+                field(&e.grid.chars().take(4).collect::<String>(), "-"),
+            ));
+        }
+        out.push_str("END-OF-LOG:\r\n");
+        Ok((out, rows.len()))
+    }
+
     pub fn export_jtdx_adif_selected(&self, station: &adif::Station, from: Option<&str>, to: Option<&str>, ids: Option<&[i64]>) -> Result<(String, usize), LogError> {
         let wanted: Option<std::collections::HashSet<i64>> = ids.map(|ids| ids.iter().copied().collect());
         let conn = self.conn()?;

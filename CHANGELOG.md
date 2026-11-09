@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- **Esporta log**: «Salva Cabrillo…» accanto a «Salva ADIF…» (Cabrillo 3.0 con frequenza, data, ora, rapporto e locatore inviati e ricevuti).
+- **Q65**: deriva di frequenza (max_drift di W3SZ), ritardo EME fino a 5,5 s nel sincronismo e lista dei messaggi dei contest (q65_set_list2) nel motore.
+
 - **Automazioni**: filtri di caccia a pulsanti a pillola riquadri «Prossime stazioni» (i CQ interessanti non scelti, dal migliore) e «Ultime stazioni chiamate in automatico» (idee di ON7KEC, issue #6).
 
 ## 0.11.207 - 2026-11-09

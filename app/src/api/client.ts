@@ -1213,8 +1213,8 @@ export async function addLogQso(q: ManualQso): Promise<void> {
 export type LogSaveResult = { ok: true; cancelled: true } | { ok: true; cancelled: false; path: string; count: number };
 
 /** Salva i QSO scelti (o tutti) con la finestra «Salva con nome» del programma Windows. */
-export async function saveLogAdif(choice: { ids: number[] } | { all: true }): Promise<LogSaveResult> {
-  return (await (await request('/log/export-save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(choice) })).json()) as LogSaveResult;
+export async function saveLogAdif(choice: { ids: number[] } | { all: true }, format: 'adif' | 'cabrillo' = 'adif'): Promise<LogSaveResult> {
+  return (await (await request('/log/export-save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...choice, format }) })).json()) as LogSaveResult;
 }
 
 export async function getStats(): Promise<StatsResponse> {

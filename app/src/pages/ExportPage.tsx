@@ -108,14 +108,14 @@ export function ExportPage() {
       return next;
     });
 
-  const save = async () => {
+  const save = async (format: 'adif' | 'cabrillo' = 'adif') => {
     if (selected.size === 0) {
       toast(t('exp.noneSelected'), 'info');
       return;
     }
     setBusy(true);
     try {
-      const r = await saveLogAdif(everything ? { all: true } : { ids: [...selected] });
+      const r = await saveLogAdif(everything ? { all: true } : { ids: [...selected] }, format);
       if (r.cancelled) toast(t('exp.cancelled'), 'info');
       else toast(t('exp.saved', { n: r.count, path: r.path }), 'ok');
     } catch (error) {
@@ -289,9 +289,14 @@ export function ExportPage() {
               {t('exp.clearLog')}
             </button>
             {log.data?.save_dialog ? (
-              <button type="button" className="glass glass--on export-save" title={t('exp.saveTip')} disabled={busy || selected.size === 0} onClick={() => void save()}>
-                {t('exp.save')}
-              </button>
+              <>
+                <button type="button" className="glass export-save" title={t('exp.saveCbrTip')} disabled={busy || selected.size === 0} onClick={() => void save('cabrillo')}>
+                  {t('exp.saveCbr')}
+                </button>
+                <button type="button" className="glass glass--on export-save" title={t('exp.saveTip')} disabled={busy || selected.size === 0} onClick={() => void save()}>
+                  {t('exp.save')}
+                </button>
+              </>
             ) : selected.size > 0 ? (
               <a
                 className="glass glass--on export-save"

@@ -2550,6 +2550,19 @@ async fn export_text(state: &AppState, from: Option<String>, to: Option<String>,
         })
 }
 
+/// Come `export_text`, ma in Cabrillo 3.0 generico (`logbook::Logbook::export_cabrillo_selected`).
+async fn cabrillo_text(state: &AppState, from: Option<String>, to: Option<String>, ids: Option<Vec<i64>>) -> Result<(String, usize), ApiError> {
+    let station = state.log_station.as_ref().map(|s| s()).unwrap_or_default();
+    let book = state.logbook.clone();
+    tokio::task::spawn_blocking(move || book.export_cabrillo_selected(&station, from.as_deref(), to.as_deref(), ids.as_deref()))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("log Cabrillo non esportato: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_read")
+        })
+}
+
 /// `AAAAMMGG` -> `AAAA-MM-GG` (cio' che non ha la forma attesa resta com'e').
 fn shown_date(d: &str) -> String {
     match (d.len(), d.get(0..4), d.get(4..6), d.get(6..8)) {
@@ -2636,6 +2649,9 @@ struct ExportSaveBody {
     all: bool,
     from: Option<String>,
     to: Option<String>,
+    /// `cabrillo` per il Cabrillo 3.0 generico; altrimenti ADIF.
+    #[serde(default)]
+    format: Option<String>,
 }
 
 /// Toglie il segno «finestra aperta» anche se la richiesta si interrompe a meta'.
@@ -2664,7 +2680,9 @@ async fn log_export_save(State(state): State<AppState>, _: Authed, Peer(peer): P
             _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "no_selection")),
         }
     };
-    let (text, count) = export_text(&state, from, to, ids).await?;
+    let cabrillo = body.format.as_deref() == Some("cabrillo");
+    let (text, count) = if cabrillo { cabrillo_text(&state, from, to, ids).await? } else { export_text(&state, from, to, ids).await? };
+    let ext = if cabrillo { "log" } else { "adi" };
     if count == 0 {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "empty_export"));
     }
@@ -2673,13 +2691,13 @@ async fn log_export_save(State(state): State<AppState>, _: Authed, Peer(peer): P
     }
     let open = SaveOpen(std::sync::Arc::clone(&state.save_open));
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
-    let name = format!("aurora_log_{}.adi", logbook::adif::utc_date(now));
+    let name = format!("aurora_log_{}.{ext}", logbook::adif::utc_date(now));
     let written = tokio::task::spawn_blocking(move || -> Result<Option<std::path::PathBuf>, String> {
         let _open = open;
         let Some(mut path) = dialog(&name) else { return Ok(None) };
         // senza estensione il file diventa `.adi`, come dice il filtro della finestra
         if path.extension().is_none() {
-            path.set_extension("adi");
+            path.set_extension(ext);
         }
         std::fs::write(&path, text.as_bytes()).map_err(|e| format!("{}: {e}", path.display()))?;
         Ok(Some(path))

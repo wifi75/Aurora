@@ -9,7 +9,13 @@ use tauri::{AppHandle, Manager};
 /// filtro dei file ADIF; la cartella iniziale e' l'ultima usata (la ricorda Windows). `None` = annullato.
 pub fn dialog(app: AppHandle) -> remote_api::SaveFileDialog {
     Arc::new(move |name: &str| -> Option<PathBuf> {
-        let mut picker = rfd::FileDialog::new().set_file_name(name).add_filter("ADIF (*.adi)", &["adi"]).add_filter("ADIF (*.adif)", &["adif"]);
+        // il filtro segue il nome proposto: Cabrillo (`.log`) o ADIF
+        let mut picker = rfd::FileDialog::new().set_file_name(name);
+        picker = if name.ends_with(".log") {
+            picker.add_filter("Cabrillo (*.log)", &["log"]).add_filter("Cabrillo (*.cbr)", &["cbr"])
+        } else {
+            picker.add_filter("ADIF (*.adi)", &["adi"]).add_filter("ADIF (*.adif)", &["adif"])
+        };
         if let Some(window) = app.get_webview_window("main") {
             picker = picker.set_parent(&window);
         }

@@ -56,6 +56,15 @@ export const logExportStrings = {
     '{n} seleccionados están ocultos por los filtros y se guardan igualmente.',
     '{n} selecionados estão ocultos pelos filtros e são guardados na mesma.',
   ],
+  'exp.saveCbr': ['Salva Cabrillo…', 'Save Cabrillo…', 'Cabrillo speichern…', 'Enregistrer Cabrillo…', 'Guardar Cabrillo…', 'Guardar Cabrillo…'],
+  'exp.saveCbrTip': [
+    'Salva i QSO scelti in Cabrillo 3.0 (frequenza, data, ora, rapporto e locatore inviati e ricevuti). Per un contest con le sue regole usa la pagina Contest.',
+    'Save the chosen QSOs as Cabrillo 3.0 (frequency, date, time, report and locator sent and received). For a contest with its own rules use the Contest page.',
+    'Speichert die gewählten QSOs als Cabrillo 3.0 (Frequenz, Datum, Zeit, gesendeter und empfangener Rapport und Locator). Für einen Contest mit eigenen Regeln die Contest-Seite verwenden.',
+    'Enregistre les QSO choisis en Cabrillo 3.0 (fréquence, date, heure, report et locator envoyés et reçus). Pour un concours avec ses règles, utilise la page Contest.',
+    'Guarda los QSO elegidos en Cabrillo 3.0 (frecuencia, fecha, hora, informe y locator enviados y recibidos). Para un concurso con sus reglas usa la página Contest.',
+    'Guarda os QSO escolhidos em Cabrillo 3.0 (frequência, data, hora, relatório e locator enviados e recebidos). Para um concurso com as suas regras usa a página Contest.',
+  ],
   'exp.save': ['Salva ADIF…', 'Save ADIF…', 'ADIF speichern…', 'Enregistrer ADIF…', 'Guardar ADIF…', 'Guardar ADIF…'],
   'exp.saveTip': [
     'Apre la finestra di Windows per scegliere cartella e nome del file, poi salva i QSO selezionati.',
