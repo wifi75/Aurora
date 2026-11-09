@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.219',
+    released: '2026-11-10T01:00:00Z',
+    kind: 'changed',
+    title: ["Mappa del Log più pulita e pagine più rapide", "Cleaner Log map and faster pages", "Aufgeräumte Log-Karte und schnellere Seiten", "Carte du Journal plus nette et pages plus rapides", "Mapa del Log más limpio y páginas más rápidas", "Mapa do Log mais limpo e páginas mais rápidas"],
+    text: [
+      "La mappa del pannello Log segue la banda in uso con pochi comandi e si apre già pronta; quando un QSO va a log il pannello mostra la riga e torna alla Mappa. Banda e frequenza si leggono meglio, il modo è grigio in trasmissione, il Contest spento è pulito. Ricaricando non resta più la pagina vuota e la Stazione torna più in fretta.",
+      "The Log panel map follows the band in use with few controls and opens ready; when a QSO is logged the panel shows the row and goes back to the Map. Band and frequency are easier to read, the mode is grey while transmitting, the Contest page is clean when off. Reloading no longer leaves an empty page and the Station comes back faster.",
+      "Die Karte im Log-Bereich folgt dem aktuellen Band mit wenigen Schaltern und öffnet sich fertig; wird ein QSO geloggt, zeigt der Bereich die Zeile und kehrt zur Karte zurück. Band und Frequenz sind besser lesbar, der Modus ist beim Senden grau, die Contest-Seite ist ausgeschaltet aufgeräumt. Neu laden lässt keine leere Seite mehr, die Station kommt schneller zurück.",
+      "La carte du panneau Journal suit la bande utilisée avec peu de commandes et s’ouvre prête ; quand un QSO est enregistré le panneau montre la ligne puis revient à la Carte. Bande et fréquence se lisent mieux, le mode est gris en émission, la page Contest éteinte est épurée. Recharger ne laisse plus de page vide et la Station revient plus vite.",
+      "El mapa del panel Log sigue la banda en uso con pocos controles y se abre listo; cuando un QSO va al log el panel muestra la fila y vuelve al Mapa. Banda y frecuencia se leen mejor, el modo se ve gris al transmitir, el Contest apagado queda limpio. Al recargar ya no queda la página vacía y la Estación vuelve más rápido.",
+      "O mapa do painel Log segue a banda em uso com poucos comandos e abre já pronto; quando um QSO vai para o log o painel mostra a linha e volta ao Mapa. Banda e frequência lêem-se melhor, o modo fica cinzento a transmitir, o Contest desligado fica limpo. Ao recarregar já não fica a página vazia e a Estação volta mais depressa.",
+    ],
+  },
+  {
     version: '0.11.218',
     released: '2026-11-09T21:02:53Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Corrections internes, sans changement dans l’usage quotidien.",
       "Correcciones internas, sin cambios en el uso diario.",
       "Correções internas, sem mudanças no uso diário.",
-    ],
-  },
-  {
-    version: '0.11.179',
-    released: '2026-11-07T13:24:26Z',
-    kind: 'new',
-    title: ['Scheda DXCC più compatta', 'More compact DXCC card', 'Kompaktere DXCC-Karte', 'Fiche DXCC plus compacte', 'Ficha DXCC más compacta', 'Cartão DXCC mais compacto'],
-    text: [
-      "La scheda DXCC nel pannello Log è un po’ più compatta: nominativo e paese, bandiera, campo Prova e caselle più piccoli.",
-      "The DXCC card in the Log panel is a little more compact: callsign and country, flag, Try field and boxes are smaller.",
-      "Die DXCC-Karte im Log-Bereich ist etwas kompakter: Rufzeichen und Land, Flagge, Testfeld und Kästchen sind kleiner.",
-      "La fiche DXCC du panneau Log est un peu plus compacte : indicatif et pays, drapeau, champ d’essai et cases plus petits.",
-      "La ficha DXCC del panel Log es algo más compacta: indicativo y país, bandera, campo de prueba y casillas más pequeños.",
-      "O cartão DXCC do painel Log está um pouco mais compacto: indicativo e país, bandeira, campo de teste e caixas mais pequenos.",
     ],
   },
 ];

@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.219 - 2026-11-09
+- **Mappa del pannello Log**: sempre sulla banda in uso, una riga sola di comandi (Linee, Chi chiama chi, Solo chi mi sente, Nominativi), niente legenda ne' coordinate al passaggio; si apre gia' della misura giusta (niente mappa «fantasma»); tolto dalla Mappa DX il riquadro degli spot, la durata e' tra le opzioni.
+- **QSO a log**: con la Mappa aperta il pannello passa da solo al Log (o «Log interno»), mostra la riga che lampeggia e torna alla Mappa; l'animazione riconosce la riga dal nominativo.
+- **Selettori**: banda e frequenza piu' leggibili con sfondo pieno nei due temi; il modo diventa grigio in trasmissione.
+- **Contest**: spento e' pulito (niente schede ne' frequenza); RX/TX quadrato a fondo pieno e centrato, pulsanti senza pallini, Abilita Tx e Auto CQ rossi da accesi, STOP TX con Esc, moltiplicatori con prefisso e nominativo in colonne fisse.
+- **Ricarica**: niente pagina vuota ricaricando sul Contest; un errore in una pagina non svuota piu' tutta l'interfaccia.
+- **Prestazioni**: Attivita' di banda disegna prima le righe visibili e non impagina quelle fuori schermo; con la finestra nascosta si fermano le misure periodiche.
+
 ## 0.11.218 - 2026-11-09
 - **Contest, tastiera**: F1 Auto CQ, F2/F3/F4 scambio, R + scambio e chiusura; Esc ferma, doppio Esc cancella il QSO; i tasti sono scritti accanto ai pulsanti.
 - **Contest, pagina**: frequenza e quadratino RX/TX sopra le decodifiche (clic su TX ferma, su RX cancella il QSO); «Come funziona» con il riassunto del regolamento e un QSO d'esempio; Abilita Tx e Auto CQ rossi quando accesi; tolta la scritta Fox/Hound (vietato da tutti i regolamenti, il blocco resta); moltiplicatori 4 per riga con legenda a quadratini nel titolo; tabella con dB, Hz, km, Novita' e Valore a sinistra.
