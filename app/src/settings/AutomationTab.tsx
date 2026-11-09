@@ -147,6 +147,13 @@ export function AutomationTab() {
   const toggleContinent = (c: string) => edit({ continents: rules.continents.includes(c) ? rules.continents.filter((x) => x !== c) : [...rules.continents, c] });
   const live = a.mode === 'live';
 
+  // le ultime stazioni chiamate dalle Automazioni (anche quelle «avrei risposto» della prova a vuoto), una volta sola ciascuna, la piu' recente prima
+  const recent = [...a.log]
+    .reverse()
+    .filter((d) => (d.kind === 'reply' || d.kind === 'would_reply') && d.call)
+    .filter((d, i, all) => all.findIndex((x) => x.call === d.call) === i)
+    .slice(0, 10);
+
   // l'ultima azione vera (risposta o CQ, anche in prova a vuoto)
   const last = [...a.log].reverse().find((d) => tone(d.kind) === 'go');
   const lastText = last ? `${formatClock((last.at % 86_400) * 1000).slice(0, 5)} ${last.call ?? 'CQ'}` : '—';
@@ -204,16 +211,16 @@ export function AutomationTab() {
 
       <div className="au-grid">
         <Block title={t('auto.b1')} tip={t('tip.auto.b1')}>
-          <div className="au-checks">
+          <div className="au-checks au-chips">
             {TAGS.map((w) => (
-              <label key={w.tag} className="sw-check" title={t(w.tip)}>
+              <label key={w.tag} className="sw-check au-chip" title={t(w.tip)}>
                 <input type="checkbox" checked={rules.reply_to.includes(w.tag)} onChange={() => toggleTag(w.tag)} /> {t(w.label)}
               </label>
             ))}
-            <label className="sw-check" title={t('tip.auto.newMode')}>
+            <label className="sw-check au-chip" title={t('tip.auto.newMode')}>
               <input type="checkbox" checked={rules.reply_to_new_mode} onChange={(e) => edit({ reply_to_new_mode: e.target.checked })} /> {t('auto.newMode')}
             </label>
-            <label className="sw-check" title={t('tip.auto.wanted')}>
+            <label className="sw-check au-chip" title={t('tip.auto.wanted')}>
               <input type="checkbox" checked={rules.reply_to_wanted} onChange={(e) => edit({ reply_to_wanted: e.target.checked })} /> {t('tab.wishlist')}
             </label>
           </div>
@@ -314,9 +321,9 @@ export function AutomationTab() {
           </div>
           <div className="sw-field" title={t('tip.auto.continents')}>
             <span className="sw-label">{t('auto.continents')}</span>
-            <div className="au-conts">
+            <div className="au-conts au-chips">
               {CONTINENTS.map((c) => (
-                <label key={c} className="sw-check" title={t(`auto.cont.${c}` as Key)}>
+                <label key={c} className="sw-check au-chip" title={t(`auto.cont.${c}` as Key)}>
                   <input type="checkbox" checked={rules.continents.includes(c)} onChange={() => toggleContinent(c)} /> {c}
                 </label>
               ))}
@@ -350,6 +357,18 @@ export function AutomationTab() {
           </div>
         </Block>
       </div>
+
+      <section className="sw-box au-recent" aria-label={t('auto.recent')}>
+        <h3>{t('auto.recent')}</h3>
+        <ul className="au-chips au-recent-list">
+          {recent.map((d) => (
+            <li key={`${d.at}-${d.call}`} className="au-recent-item" data-live={d.kind === 'reply' ? 'si' : 'no'}>
+              <span className="num muted">{formatClock((d.at % 86_400) * 1000).slice(0, 5)}</span> <strong>{d.call}</strong>
+            </li>
+          ))}
+          {recent.length === 0 ? <li className="muted">{t('auto.noRecent')}</li> : null}
+        </ul>
+      </section>
 
       <section className="sw-box au-logbox" aria-label={t('auto.log')}>
         <h3>
