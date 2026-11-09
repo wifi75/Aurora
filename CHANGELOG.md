@@ -2,27 +2,20 @@
 
 ## Non rilasciato
 
+## 0.11.208 - 2026-11-09
 - **TCI**: niente piu' avviso «segnale debole: alza il volume di registrazione» con l'audio dal TCI (non c'e' un volume di Windows da alzare e il segnale si decodifica); restano gli avvisi di ingresso muto e saturo.
 - **Contest**: linguette «Allenamento» (pile-up finto leggero, medio o fitto per 15, 30 o 60 minuti con lo scambio del contest scelto, errori, doppi e chi non riceve RR73: niente trasmissione e niente log, punteggio a parte) e «Analisi» (dal log del contest: QSO, moltiplicatori, punteggio, QSO incerti, QSO ora per ora, per banda rate migliore e tempo perso, un consiglio).
-
 - **Contest**: consiglio di banda e modo (per ogni banda del regolamento rate stimato e moltiplicatori nuovi in ascolto, FT4 quando il pile-up e' fitto, pulsante «Porta la radio su …» con le frequenze del regolamento, cambi di banda nell'ora se limitati) e mappa dei moltiplicatori della banda (gia' lavorati, nuovi in ascolto in arancio, sentiti non nuovi; per sezioni, stati e paesi l'elenco dei nuovi): un clic chiama la stazione.
-
 - **Contest**: avviso quando un nominativo composto (tuo o del DX) non permette i messaggi di contest; PACCdigi con 3 punti per le stazioni olandesi (nuovo tipo di punti «per paese»).
-
 - **Contest**: con il contest acceso, su una banda o in un modo non ammessi dal regolamento la trasmissione non parte (Abilita Tx si spegne, con un avviso); il menu delle frequenze mostra solo le bande del contest; lo scambio ricevuto si controlla con le liste di sezioni ARRL/RAC, stati, province canadesi e olandesi (fuori lista: segnato nel log con il motivo e niente moltiplicatore); moltiplicatori DXCC; EDI con righe ERROR per i seriali persi, PSect e antenna (SAnte).
-
 - **Regione IARU**: al primo avvio, se e' ancora «Tutte», si imposta da sola dal nominativo (IU3WJQ -> Regione 1); nelle Impostazioni ogni regione dice a cosa corrisponde (1 Europa, Africa, Medio Oriente, Russia; 2 Americhe; 3 Asia e Oceania).
 - **OmniRig**: scelta della radio Rig 1 o Rig 2 nella scheda Radio e con il blocchetto «RIG 1 / RIG 2» a sinistra del display, nei colori dello stile del display (frequenza e PTT; richiesta di IK1SOW).
-
 - **Meno lavoro inutile**: le riletture del log che arrivano insieme si uniscono (dopo un QSO se ne facevano quattro, ognuna con decine di migliaia di QSO); niente confronto con JTDX quando JTDX non c'e' (una riga e una scrittura ogni periodo); registrazioni WAV di ogni periodo spente di base (circa 144 MB e una scrittura ogni 15 s, si riaccendono con AURORA_NATIVE_RECORD=1).
-
 - **Contest e Fox**: interruttore verde «acceso / spento» ben visibile; a contest spento i QSO non vanno nel log del contest e il servizio non lavora sulle decodifiche.
 - **Impostazioni**: scheda «CQ e novità» tutta sua (prima era dentro Filtri); scheda Frequenze con i comandi in alto, tabella alta quanto la finestra e righe fitte.
 - **Novità**: le etichette «su nuova banda» si chiamano «su nuova banda o modo» (valgono anche per modo con «per modo» in Segnalazioni).
-
 - **Esporta log**: «Salva Cabrillo…» accanto a «Salva ADIF…» (Cabrillo 3.0 con frequenza, data, ora, rapporto e locatore inviati e ricevuti).
 - **Q65**: deriva di frequenza (max_drift di W3SZ), ritardo EME fino a 5,5 s nel sincronismo e lista dei messaggi dei contest (q65_set_list2), con i pulsanti «EME», «Deriva» e «Cont» accanto a «Lor/Gau».
-
 - **Automazioni**: filtri di caccia a pulsanti a pillola riquadri «Prossime stazioni» (i CQ interessanti non scelti, dal migliore) e «Ultime stazioni chiamate in automatico» (idee di ON7KEC, issue #6).
 
 ## 0.11.207 - 2026-11-09
