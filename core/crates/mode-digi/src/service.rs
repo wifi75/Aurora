@@ -120,9 +120,9 @@ pub struct DigiMacro {
 }
 
 /// I nomi validi di una macro: i 48 tasti e le macro evento.
-const EVENT_NAMES: [&str; 11] = ["OnStart", "OnEnd", "OnTX", "OnCR", "OnClickAny", "OnAlarm", "OnSP0", "OnSP1", "Gray+", "Hello", "AutoCqText"];
+const EVENT_NAMES: [&str; 12] = ["OnStart", "OnEnd", "OnTX", "OnCR", "OnClickAny", "OnAlarm", "OnSP0", "OnSP1", "Gray+", "Hello", "AutoCqText", "OM"];
 
-fn valid_macro_name(name: &str) -> bool {
+pub(crate) fn valid_macro_name(name: &str) -> bool {
     if EVENT_NAMES.contains(&name) {
         return true;
     }
@@ -141,6 +141,13 @@ pub struct DigiSettings {
     pub tx_freq_hz: f32,
     pub rtty_shift_hz: f32,
     pub rtty_baud: f32,
+    /// AFC: la ricezione segue la deriva del segnale (Options › AFC).
+    pub afc_on: bool,
+    /// Squelch: si stampa solo sopra la soglia `squelch_db`.
+    pub squelch_on: bool,
+    pub squelch_db: f32,
+    /// Snap: un clic sulla cascata porta sul segnale piu' vicino (lo fa l'interfaccia).
+    pub snap_on: bool,
     /// Ascolto acceso all'avvio di Aurora.
     pub auto_receive: bool,
     /// L'insieme di macro per tutti i modi.
@@ -206,6 +213,10 @@ impl Default for DigiSettings {
             tx_freq_hz: 1000.0,
             rtty_shift_hz: 170.0,
             rtty_baud: 45.45,
+            afc_on: true,
+            squelch_on: false,
+            squelch_db: -45.0,
+            snap_on: true,
             auto_receive: false,
             macros: default_macros(),
             mode_macros: default_mode_macros(),
@@ -221,6 +232,9 @@ impl DigiSettings {
         }
         if !self.rtty_shift_hz.is_finite() || !(50.0..=1000.0).contains(&self.rtty_shift_hz) {
             return Err(DigiError::BadValue("spostamento RTTY fuori da 50-1000 Hz".into()));
+        }
+        if !self.squelch_db.is_finite() || !(-90.0..=0.0).contains(&self.squelch_db) {
+            return Err(DigiError::BadValue("soglia dello squelch fuori da -90..0 dB".into()));
         }
         if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
             return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
@@ -253,6 +267,10 @@ impl DigiSettings {
 pub struct RxStatus {
     pub listening: bool,
     pub level_db: f32,
+    /// La frequenza su cui si ascolta adesso (con l'AFC puo' essere diversa da quella scelta).
+    pub freq_hz: f32,
+    /// Lo squelch lascia passare il segnale.
+    pub squelch_open: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -319,7 +337,8 @@ impl Inner {
             listening: Some(st.listening),
             level_db: Some(st.level_db),
             mode: Some(s.mode.id().into()),
-            freq_hz: Some(s.rx_freq_hz),
+            freq_hz: Some(st.freq_hz),
+            squelch_open: Some(st.squelch_open),
             ..DigiEvent::default()
         });
     }
@@ -352,7 +371,7 @@ impl DigiService {
             tx_active: AtomicBool::new(false),
             tx_abort: AtomicBool::new(false),
             queue,
-            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0 }),
+            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0, freq_hz: settings.rx_freq_hz, squelch_open: true }),
             tx: Mutex::new(TxStatus { state: "idle".into(), ..TxStatus::default() }),
             port: Mutex::new(None),
             emit: Mutex::new(None),
@@ -408,6 +427,24 @@ impl DigiService {
         *lock(&self.inner.settings) = s;
         self.inner.rx_status_event();
         Ok(())
+    }
+
+    /// Importa le macro da una cartella (di base `%APPDATA%\`): l'insieme di base e quelli per modo sostituiscono i nostri.
+    pub fn import_macros(&self, folder: Option<&std::path::Path>) -> Result<crate::macro_files::Imported, DigiError> {
+        let folder = match folder {
+            Some(f) => f.to_path_buf(),
+            None => crate::macro_files::default_folder().ok_or_else(|| DigiError::BadValue("cartella non nota".into()))?,
+        };
+        let (base, modes, report) = crate::macro_files::read_folder(&folder)?;
+        let mut next = self.settings();
+        if !base.is_empty() {
+            next.macros = base;
+        }
+        for (mode, set) in modes {
+            next.mode_macros.insert(mode, set);
+        }
+        self.apply_settings(next)?;
+        Ok(report)
     }
 
     pub fn start_rx(&self) {
@@ -521,9 +558,36 @@ enum Demod {
 
 impl Demod {
     fn new(s: &DigiSettings) -> Demod {
+        let squelch = s.squelch_on.then_some(s.squelch_db);
         match s.mode.psk() {
-            Some(mode) => Demod::Psk(Box::new(PskDemodulator::new(mode, s.rx_freq_hz))),
-            None => Demod::Rtty(Box::new(RttyDemodulator::new(s.rtty(s.rx_freq_hz)))),
+            Some(mode) => {
+                let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
+                d.set_afc(s.afc_on);
+                d.set_squelch_db(squelch);
+                Demod::Psk(Box::new(d))
+            }
+            None => {
+                let mut d = RttyDemodulator::new(s.rtty(s.rx_freq_hz));
+                d.set_afc(s.afc_on);
+                d.set_squelch_db(squelch);
+                Demod::Rtty(Box::new(d))
+            }
+        }
+    }
+
+    /// La frequenza su cui si ascolta adesso.
+    fn frequency(&self) -> f32 {
+        match self {
+            Demod::Psk(d) => d.frequency(),
+            Demod::Rtty(d) => d.frequency(),
+        }
+    }
+
+    /// Livello (dB) e squelch aperto.
+    fn signal(&self) -> (f32, bool) {
+        match self {
+            Demod::Psk(d) => d.signal(),
+            Demod::Rtty(d) => d.signal(),
         }
     }
 
@@ -578,9 +642,14 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
             Some(Msg::Reset) => demod = Demod::new(&lock(&inner.settings).clone()),
             None => {}
         }
-        if last_status.elapsed() >= Duration::from_millis(700) {
+        if last_status.elapsed() >= Duration::from_millis(400) {
             last_status = Instant::now();
-            lock(&inner.rx).level_db = peak_db;
+            {
+                let mut rx = lock(&inner.rx);
+                rx.level_db = peak_db;
+                rx.freq_hz = demod.frequency();
+                rx.squelch_open = demod.signal().1;
+            }
             peak_db = -90.0;
             if inner.listening.load(Ordering::Relaxed) {
                 inner.rx_status_event();

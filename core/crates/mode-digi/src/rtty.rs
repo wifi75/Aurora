@@ -4,7 +4,7 @@
 //! 27 (FIGS) e 31 (LTRS) cambiano la tabella. Tabelle riprese da fldigi (`src/rtty/rtty.cxx`, Dave Freese W1HKJ e altri; GPL 3 o
 //! successiva), versione americana delle cifre.
 
-use crate::psk::RATE;
+use crate::psk::{AFC_LIMIT_HZ, RATE};
 use std::f64::consts::PI;
 
 const LETTERS: [u8; 32] = [
@@ -15,6 +15,8 @@ const FIGURES: [u8; 32] = [
     0, b'3', b'\n', b'-', b' ', 7, b'8', b'7', b'\r', b'$', b'4', b'\'', b',', b'!', b':', b'(', b'5', b'"', b')', b'2', b'#', b'6', b'0',
     b'1', b'9', b'?', b'&', b' ', b'.', b'/', b';', b' ',
 ];
+/// Distanza dei filtri di controllo dell'AFC dai due toni (Hz).
+const PROBE_HZ: f32 = 8.0;
 const FIGS: u8 = 27;
 const LTRS: u8 = 31;
 
@@ -97,6 +99,11 @@ impl Tone {
     fn new(freq_hz: f32, len: usize) -> Self {
         Self { step: 2.0 * PI * f64::from(freq_hz) / f64::from(RATE), phase: 0.0, ring_i: vec![0.0; len], ring_q: vec![0.0; len], sum_i: 0.0, sum_q: 0.0 }
     }
+    /// Cambia la frequenza senza perdere la fase.
+    fn retune(&mut self, freq_hz: f32) {
+        self.step = 2.0 * PI * f64::from(freq_hz) / f64::from(RATE);
+    }
+
     fn push(&mut self, s: f32, pos: usize) -> f32 {
         let i = s * self.phase.cos() as f32;
         let q = -s * self.phase.sin() as f32;
@@ -121,6 +128,16 @@ enum State {
 }
 
 pub struct RttyDemodulator {
+    params: RttyParams,
+    /// Correzione dell'AFC sulla frequenza scelta (Hz).
+    offset_hz: f32,
+    afc: bool,
+    squelch_db: Option<f32>,
+    level_db: f32,
+    open: bool,
+    /// Quattro filtri appena sopra e sotto i due toni: dicono da che parte la portante e' scivolata.
+    probes: [Tone; 4],
+    probe_count: usize,
     len: usize,
     pos: usize,
     mark: Tone,
@@ -134,7 +151,21 @@ pub struct RttyDemodulator {
 impl RttyDemodulator {
     pub fn new(params: RttyParams) -> Self {
         let len = (f64::from(RATE) / f64::from(params.baud)).round() as usize;
+        let s = params.mark_hz + params.shift_hz;
         Self {
+            params,
+            offset_hz: 0.0,
+            afc: false,
+            squelch_db: None,
+            level_db: -90.0,
+            open: true,
+            probes: [
+                Tone::new(params.mark_hz + PROBE_HZ, len),
+                Tone::new(params.mark_hz - PROBE_HZ, len),
+                Tone::new(s + PROBE_HZ, len),
+                Tone::new(s - PROBE_HZ, len),
+            ],
+            probe_count: 0,
             len,
             pos: 0,
             mark: Tone::new(params.mark_hz, len),
@@ -146,19 +177,64 @@ impl RttyDemodulator {
         }
     }
 
+    /// Il mark su cui si sta ascoltando adesso (con l'AFC: la frequenza scelta piu' la correzione).
+    pub fn frequency(&self) -> f32 {
+        self.params.mark_hz + self.offset_hz
+    }
+
+    pub fn set_afc(&mut self, on: bool) {
+        self.afc = on;
+        if !on && self.offset_hz != 0.0 {
+            self.offset_hz = 0.0;
+            self.retune_all();
+        }
+    }
+
+    /// `None` spegne lo squelch.
+    pub fn set_squelch_db(&mut self, db: Option<f32>) {
+        self.squelch_db = db;
+    }
+
+    /// Livello del segnale in dB e se lo squelch lo lascia passare.
+    pub fn signal(&self) -> (f32, bool) {
+        (self.level_db, self.open)
+    }
+
+    fn retune_all(&mut self) {
+        let mark = self.params.mark_hz + self.offset_hz;
+        let space = mark + self.params.shift_hz;
+        self.mark.retune(mark);
+        self.space.retune(space);
+        for (i, t) in self.probes.iter_mut().enumerate() {
+            let f = if i < 2 { mark } else { space };
+            t.retune(f + if i % 2 == 0 { PROBE_HZ } else { -PROBE_HZ });
+        }
+    }
+
     /// Elabora altro audio; restituisce i caratteri nuovi.
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
         for &s in samples {
             let m = self.mark.push(s, self.pos);
             let sp = self.space.push(s, self.pos);
+            let p: [f32; 4] = std::array::from_fn(|i| self.probes[i].push(s, self.pos));
             self.pos = (self.pos + 1) % self.len;
             let d = m - sp;
             let level = m + sp;
+            self.level_db = (20.0 * level.max(1e-6).log10()).max(-90.0);
+            self.open = self.squelch_db.is_none_or(|t| self.level_db >= t);
+            self.probe_count += 1;
+            if self.afc && self.open && level > 1e-3 && self.probe_count >= self.len {
+                self.probe_count = 0;
+                // sopra > sotto: la portante e' piu' in alto di dove ascoltiamo
+                let err = ((p[0] - p[1]) + (p[2] - p[3])) / (m + sp).max(1e-6);
+                self.offset_hz = (self.offset_hz + 6.0 * err).clamp(-AFC_LIMIT_HZ, AFC_LIMIT_HZ);
+                self.retune_all();
+            }
             match self.state {
                 State::Idle => {
                     // il filtro vede il bit a metà finestra: l'inizio del carattere è mezzo bit prima, il primo campionamento un bit dopo
-                    if self.prev_d > 0.0 && d <= 0.0 && level > 1e-3 {
+                    if self.prev_d > 0.0 && d <= 0.0 && level > 1e-3 && self.open {
                         self.state = State::Frame { wait: self.len / 2, bit: 0 };
                         self.data = 0;
                     }
@@ -233,6 +309,38 @@ mod tests {
         let p = RttyParams { mark_hz: 1275.0, shift_hz: 170.0, baud: 45.45 };
         let r = andata_e_ritorno(p, "THE QUICK BROWN FOX 1234567890");
         assert!(r.contains("THE QUICK BROWN FOX 1234567890"), "ricevuto: {r:?}");
+    }
+
+    #[test]
+    fn l_afc_insegue_i_toni() {
+        let tx = RttyParams { mark_hz: 2137.0, shift_hz: 170.0, baud: 45.45 };
+        let audio = modulate(b"RYRYRY CQ CQ DE IU3ABC IU3ABC PSE K RYRYRY", tx, 0.5);
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_afc(true);
+        let mut all = vec![0.0; 4000];
+        all.extend(audio);
+        all.extend(vec![0.0; 4000]);
+        let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
+        assert!((rx.frequency() - 2137.0).abs() < 6.0, "frequenza raggiunta: {}", rx.frequency());
+        assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
+    }
+
+    #[test]
+    fn lo_squelch_tiene_chiusa_la_ricezione_senza_segnale() {
+        let mut seed = 7_u32;
+        let noise: Vec<f32> = (0..24_000)
+            .map(|_| {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed as f32 / u32::MAX as f32 - 0.5) * 0.2
+            })
+            .collect();
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_squelch_db(Some(-35.0));
+        assert!(rx.process(&noise).is_empty());
+        assert!(!rx.signal().1);
+        let audio = modulate(b"CQ DE IU3ABC", RttyParams::default(), 0.5);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
     }
 
     #[test]

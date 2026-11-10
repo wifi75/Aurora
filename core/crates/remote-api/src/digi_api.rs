@@ -4,13 +4,14 @@
 use std::sync::Arc;
 
 use axum::{Json, extract::State, http::{HeaderMap, StatusCode}};
+use std::path::PathBuf;
 use mode_digi::{DigiError, DigiService, DigiSettings};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::{
     AppState,
-    routes::{ApiError, Authed, check_tx_allowed},
+    routes::{ApiError, Authed, Peer, check_tx_allowed, is_proxied},
 };
 
 /// Lunghezza massima del testo di una trasmissione.
@@ -88,4 +89,25 @@ pub(crate) async fn digi_tx_abort(State(state): State<AppState>, _: Authed) -> R
     let svc = service(&state)?;
     blocking(move || svc.abort_tx()).await?;
     Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize, Default)]
+pub(crate) struct ImportBody {
+    /// La cartella dei file; senza, `%APPDATA%\`.
+    #[serde(default)]
+    folder: Option<String>,
+}
+
+/// Importa le macro (`Default.mc`, `rtty.mc`, `bpsk31.mc`, `bpsk63.mc`...) dalla cartella dell'utente. Solo dal PC stesso.
+#[utoipa::path(post, path = "/api/v1/digi/import-macros", responses((status = 200, description = "`{imported: {folder, default_count, default_file, modes, skipped}, ...snapshot}`"), (status = 400, description = "Cartella non trovata o senza file (bad_value)"), (status = 403, description = "Solo dal PC (local_only)")))]
+pub(crate) async fn digi_import_macros(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: Option<Json<ImportBody>>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if !local {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let folder = body.and_then(|b| b.0.folder).filter(|f| !f.trim().is_empty()).map(PathBuf::from);
+    let s = Arc::clone(&svc);
+    let report = blocking(move || s.import_macros(folder.as_deref())).await?.map_err(api_error)?;
+    Ok(Json(json!({ "imported": report, "snapshot": svc.snapshot() })))
 }

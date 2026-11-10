@@ -53,6 +53,13 @@ export type MacroAction =
   | { type: 'beep' }
   | { type: 'seek'; direction: 'left' | 'right' }
   | { type: 'bookmark' }
+  /** AFC, Snap, Squelch e Lock: acceso, spento o commutato. */
+  | { type: 'toggle'; what: 'afc' | 'snap' | 'squelch' | 'lock'; value: boolean | 'toggle' }
+  | { type: 'scan'; run: boolean }
+  /** Salva (`write`) o rilegge le impostazioni nella memoria n (1-20). */
+  | { type: 'memory'; write: boolean; slot: number }
+  | { type: 'modeSettings' }
+  | { type: 'threshold' }
   | { type: 'cursor'; target: string }
   | { type: 'macros'; file: string }
   /** Un comando che Aurora non conosce ancora: resta nell'elenco per dirlo all'utente. */
@@ -155,6 +162,28 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'SEEKLEFT': return { type: 'seek', direction: 'left' };
     case 'SEEKRIGHT': return { type: 'seek', direction: 'right' };
     case 'BOOKMARK': return { type: 'bookmark' };
+    case 'AFCON': return { type: 'toggle', what: 'afc', value: true };
+    case 'AFCOFF': return { type: 'toggle', what: 'afc', value: false };
+    case 'AFC': return { type: 'toggle', what: 'afc', value: 'toggle' };
+    case 'SNAPON': return { type: 'toggle', what: 'snap', value: true };
+    case 'SNAPOFF': return { type: 'toggle', what: 'snap', value: false };
+    case 'SNAP': return { type: 'toggle', what: 'snap', value: 'toggle' };
+    case 'SQUELCHON': return { type: 'toggle', what: 'squelch', value: true };
+    case 'SQUELCHOFF': return { type: 'toggle', what: 'squelch', value: false };
+    case 'SQUELCH': return { type: 'toggle', what: 'squelch', value: 'toggle' };
+    // «Lock» e' la frequenza di trasmissione fissa: LOCKTX
+    case 'LOCKTX': return { type: 'toggle', what: 'lock', value: true };
+    case 'UNLOCKTX': return { type: 'toggle', what: 'lock', value: false };
+    case 'LOCKTXTOGGLE': return { type: 'toggle', what: 'lock', value: 'toggle' };
+    case 'STARTSCAN': return { type: 'scan', run: true };
+    case 'STOPSCAN': return { type: 'scan', run: false };
+    case 'MODESETTINGS': return { type: 'modeSettings' };
+    case 'THRESHOLD': return { type: 'threshold' };
+    case 'MEMW':
+    case 'MEMR': {
+      const slot = number(arg);
+      return slot === null || !Number.isInteger(slot) || slot < 1 || slot > 20 ? null : { type: 'memory', write: tag === 'MEMW', slot };
+    }
     case 'TUNE': return { type: 'tune', seconds: number(arg) };
     case 'MODE': return arg === undefined ? null : { type: 'mode', mode: arg.trim().toUpperCase() };
     case 'CURSOR': return arg === undefined ? null : { type: 'cursor', target: arg.trim().toUpperCase() };

@@ -6,8 +6,10 @@
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
 //! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore);
+//! - [``]: importa le macro dai file dell'utente;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
+pub mod macro_files;
 pub mod psk;
 pub mod rtty;
 pub mod service;

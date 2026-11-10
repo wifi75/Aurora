@@ -367,6 +367,9 @@ pub struct DigiEvent {
     pub freq_hz: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listening: Option<bool>,
+    /// Lo squelch lascia passare il segnale (`Sq *` nella barra di stato).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squelch_open: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

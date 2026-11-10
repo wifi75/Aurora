@@ -7,6 +7,9 @@
 use crate::varicode;
 use std::f64::consts::PI;
 
+/// Di quanto l'AFC puo' allontanarsi dalla frequenza scelta (Hz).
+pub const AFC_LIMIT_HZ: f32 = 30.0;
+
 /// Frequenza di campionamento dell'audio dei modi testuali.
 pub const RATE: f32 = 12000.0;
 
@@ -69,7 +72,17 @@ pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> 
 
 /// Ricevitore: si alimenta con l'audio a 12 kHz e restituisce i caratteri man mano che si decodificano.
 pub struct PskDemodulator {
+    /// La frequenza scelta dall'utente e quella che l'AFC ha raggiunto.
+    base_hz: f32,
     freq_hz: f32,
+    /// AFC: segue la deriva della portante entro `AFC_LIMIT_HZ` dalla frequenza scelta.
+    afc: bool,
+    /// Squelch: sotto questo livello (dB) non si decodifica.
+    squelch_db: Option<f32>,
+    /// Ultimo livello del segnale (dB) e se supera lo squelch.
+    level_db: f32,
+    open: bool,
+    symbol_hz: f32,
     decim: usize,
     box_len: usize,
     ring_i: Vec<f32>,
@@ -91,7 +104,13 @@ impl PskDemodulator {
         let decim = mode.symbol_samples() / 16;
         let box_len = decim * 2;
         Self {
+            base_hz: freq_hz,
             freq_hz,
+            afc: false,
+            squelch_db: None,
+            level_db: -90.0,
+            open: true,
+            symbol_hz: RATE / mode.symbol_samples() as f32,
             decim,
             box_len,
             ring_i: vec![0.0; box_len],
@@ -109,19 +128,40 @@ impl PskDemodulator {
         }
     }
 
+    /// La frequenza scelta dall'utente: l'AFC riparte da qui.
     pub fn set_frequency(&mut self, freq_hz: f32) {
+        self.base_hz = freq_hz;
         self.freq_hz = freq_hz;
     }
 
+    /// La frequenza su cui si sta ascoltando adesso (con l'AFC puo' essere vicina a quella scelta, non uguale).
     pub fn frequency(&self) -> f32 {
         self.freq_hz
+    }
+
+    pub fn set_afc(&mut self, on: bool) {
+        self.afc = on;
+        if !on {
+            self.freq_hz = self.base_hz;
+        }
+    }
+
+    /// `None` spegne lo squelch.
+    pub fn set_squelch_db(&mut self, db: Option<f32>) {
+        self.squelch_db = db;
+    }
+
+    /// Livello del segnale in dB e se lo squelch lo lascia passare.
+    pub fn signal(&self) -> (f32, bool) {
+        (self.level_db, self.open)
     }
 
     /// Elabora altro audio; restituisce i caratteri nuovi (Latin-1).
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
-        let step = 2.0 * PI * f64::from(self.freq_hz) / f64::from(RATE);
         for &s in samples {
+            // la frequenza puo' cambiare dentro il blocco (AFC): il passo si ricalcola a ogni campione
+            let step = 2.0 * PI * f64::from(self.freq_hz) / f64::from(RATE);
             let i = s * self.phase.cos() as f32;
             let q = -s * self.phase.sin() as f32;
             self.phase += step;
@@ -150,9 +190,20 @@ impl PskDemodulator {
             let min = (0..16).min_by(|&a, &c| self.mags[a].total_cmp(&self.mags[c])).unwrap_or(0);
             if b == (min + 8) % 16 {
                 let dot = z.0 * self.prev.0 + z.1 * self.prev.1;
+                let cross = z.1 * self.prev.0 - z.0 * self.prev.1;
                 self.prev = z;
-                if mag > 1e-4 {
-                    self.push_bit(dot > 0.0, &mut out);
+                self.level_db = (20.0 * mag.max(1e-6).log10()).max(-90.0);
+                self.open = self.squelch_db.is_none_or(|t| self.level_db >= t);
+                if mag > 1e-4 && self.open {
+                    let one = dot > 0.0;
+                    self.push_bit(one, &mut out);
+                    if self.afc {
+                        // errore di fase rimasto dopo aver tolto il bit (0 = inversione di 180 gradi): e' la deriva della portante
+                        let delta = cross.atan2(dot) - if one { 0.0 } else { PI as f32 };
+                        let wrapped = (delta + PI as f32).rem_euclid(2.0 * PI as f32) - PI as f32;
+                        let err_hz = wrapped * self.symbol_hz / (2.0 * PI as f32);
+                        self.freq_hz = (self.freq_hz + 0.08 * err_hz).clamp(self.base_hz - AFC_LIMIT_HZ, self.base_hz + AFC_LIMIT_HZ);
+                    }
                 }
             }
         }
@@ -207,6 +258,47 @@ mod tests {
     fn psk31_regge_qualche_hertz_di_errore() {
         let r = andata_e_ritorno(PskMode::Psk31, 1000.0, 1003.0, "CQ DE IU3ABC");
         assert!(r.contains("CQ DE IU3ABC"), "ricevuto: {r:?}");
+    }
+
+    #[test]
+    fn l_afc_insegue_la_portante() {
+        // l'AFC segue la deriva entro circa 7 Hz (un quarto della velocita'): oltre ci pensa lo Snap, che porta vicino alla stazione
+        for offset in [5.0_f32, -5.0] {
+            let audio = modulate(b"CQ CQ CQ DE IU3ABC IU3ABC PSE K", 1000.0 + offset, PskMode::Psk31, 0.5);
+            let mut rx = PskDemodulator::new(PskMode::Psk31, 1000.0);
+            rx.set_afc(true);
+            let mut all = vec![0.0; 4000];
+            all.extend(audio);
+            all.extend(vec![0.0; 4000]);
+            let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
+            assert!((rx.frequency() - (1000.0 + offset)).abs() < 1.5, "offset {offset}: frequenza raggiunta {}", rx.frequency());
+            assert!(r.contains("IU3ABC"), "offset {offset}: ricevuto {r:?}");
+        }
+        // spegnendo l'AFC si torna alla frequenza scelta
+        let mut rx = PskDemodulator::new(PskMode::Psk31, 1000.0);
+        rx.set_afc(true);
+        rx.set_afc(false);
+        assert_eq!(rx.frequency(), 1000.0);
+    }
+
+    #[test]
+    fn lo_squelch_ferma_il_rumore_e_lascia_passare_il_segnale() {
+        let mut seed = 99_u32;
+        let noise: Vec<f32> = (0..48_000)
+            .map(|_| {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed as f32 / u32::MAX as f32 - 0.5) * 0.2
+            })
+            .collect();
+        let mut rx = PskDemodulator::new(PskMode::Psk31, 1000.0);
+        rx.set_squelch_db(Some(-35.0));
+        let from_noise = rx.process(&noise);
+        assert!(from_noise.is_empty(), "il rumore non deve stampare: {from_noise:?}");
+        assert!(!rx.signal().1, "con solo rumore lo squelch e' chiuso");
+        let audio = modulate(b"CQ DE IU3ABC", 1000.0, PskMode::Psk31, 0.5);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
+        assert!(rx.signal().1, "con il segnale lo squelch e' aperto");
     }
 
     #[test]

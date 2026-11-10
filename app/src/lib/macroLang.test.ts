@@ -83,6 +83,33 @@ describe('runMacro: comandi di programma', () => {
     expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'WPM:20' }, { type: 'unknown', tag: 'CATCMD:AN1;' }]);
   });
 
+  it('AFC, Snap, Squelch, Lock, Scan, memorie e finestre', () => {
+    expect(runMacro('<AFCON><AFCOFF><AFC>', ctx).actions).toEqual([
+      { type: 'toggle', what: 'afc', value: true },
+      { type: 'toggle', what: 'afc', value: false },
+      { type: 'toggle', what: 'afc', value: 'toggle' },
+    ]);
+    expect(runMacro('<SNAP><SQUELCHON><LOCKTX><UNLOCKTX>', ctx).actions).toEqual([
+      { type: 'toggle', what: 'snap', value: 'toggle' },
+      { type: 'toggle', what: 'squelch', value: true },
+      { type: 'toggle', what: 'lock', value: true },
+      { type: 'toggle', what: 'lock', value: false },
+    ]);
+    expect(runMacro('<STARTSCAN><STOPSCAN><MEMW:3><MEMR:20><MODESETTINGS><THRESHOLD>', ctx).actions).toEqual([
+      { type: 'scan', run: true },
+      { type: 'scan', run: false },
+      { type: 'memory', write: true, slot: 3 },
+      { type: 'memory', write: false, slot: 20 },
+      { type: 'modeSettings' },
+      { type: 'threshold' },
+    ]);
+  });
+
+  it('una memoria fuori da 1-20 non e\' valida', () => {
+    expect(runMacro('<MEMW:0>', ctx).actions).toEqual([{ type: 'unknown', tag: 'MEMW:0' }]);
+    expect(runMacro('<MEMR:21>', ctx).actions).toEqual([{ type: 'unknown', tag: 'MEMR:21' }]);
+  });
+
   it('il testo senza comandi passa com\'e\'', () => {
     expect(runMacro('Hello world', ctx)).toEqual({ text: 'Hello world', actions: [] });
   });
