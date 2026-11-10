@@ -21,6 +21,7 @@ import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
 import '../styles/digi.css';
 import '../styles/digi-dark.css';
+import '../styles/digi-log-corta.css';
 
 const FIELDS_KEY = 'aurora.digi.campi';
 const VIEWS_KEY = 'aurora.digi.viste';
@@ -649,7 +650,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     <>
       <MenuBar menus={menus} />
 
-      {/* banda e frequenze dal piano di banda IARU: la radio si porta sulla frequenza scelta */}
+      {/* macro a sinistra (colonne fisse e piu' corte), a fianco il selettore di banda con le frequenze del piano IARU */}
+      <div className="digi-topline">
+      {views.controlBar ? (
+        <ControlBar
+          macros={macros}
+          extended={views.extended}
+          onToggleExtended={() => setView({ extended: !views.extended })}
+          onRun={(m) => execute(m.text)}
+          onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
+        />
+      ) : null}
+      {/* la radio si porta sulla frequenza scelta */}
       <div className="digi-bandbar">
         <FreqPicker
           dialHz={status?.dial_hz ?? 0}
@@ -660,16 +672,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         />
         <small className="muted">{t('digi.band.hint')}</small>
       </div>
-
-      {views.controlBar ? (
-        <ControlBar
-          macros={macros}
-          extended={views.extended}
-          onToggleExtended={() => setView({ extended: !views.extended })}
-          onRun={(m) => execute(m.text)}
-          onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
-        />
-      ) : null}
+      </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-windows">
@@ -729,6 +732,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             rstr={saved.rstr}
             modeName={MODE_NAMES[s.mode]}
             dialHz={status?.dial_hz ?? 0}
+            audioHz={rxHz}
             onQso={(patch) => setQso({ ...qso, ...patch })}
             onRst={(patch) => setSavedField(patch)}
             onSave={saveQso}

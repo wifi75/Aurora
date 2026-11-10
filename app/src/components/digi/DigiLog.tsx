@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
+import { SpotDialog } from './SpotDialog';
 import { getLogQsos, type LogQso } from '../../api/client';
 import { useT } from '../../i18n';
 
@@ -20,6 +21,8 @@ interface Props {
   modeName: string;
   /** Frequenza della radio in Hz (0 se non nota). */
   dialHz: number;
+  /** Frequenza audio del segnale ricevuto (Hz): serve alla frequenza dello spot. */
+  audioHz: number;
   onQso(patch: Partial<Qso>): void;
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;
@@ -69,11 +72,12 @@ function cell(q: LogQso, c: LogCol): React.ReactNode {
 }
 
 /** Il log di lato: la riga del QSO in corso (si scrive qui) e sotto i QSO fatti, piu' recenti per primi. */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
   const [picking, setPicking] = useState(false);
+  const [spotOpen, setSpotOpen] = useState(false);
   // linguette: DX Cluster o Log (la scelta resta ricordata)
   const [tab, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
   const setTab = (next: 'cluster' | 'log') => {
@@ -138,6 +142,13 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
         <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
           {t('digi.log.title')}
         </button>
+        {tab === 'cluster' ? (
+          <span className="digi-log-tabtools">
+            <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
+              {t('ctl.spot')}
+            </button>
+          </span>
+        ) : null}
         {tab === 'log' ? (
           <span className="digi-log-tabtools">
             <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
@@ -224,6 +235,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
         </table>
         {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
       </div>
+      {spotOpen ? <SpotDialog call={qso.call} dialHz={dialHz} audioHz={audioHz} modeName={modeName} onClose={() => setSpotOpen(false)} /> : null}
     </aside>
   );
 }

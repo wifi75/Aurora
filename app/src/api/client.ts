@@ -931,7 +931,7 @@ export async function getEngineSettings(): Promise<EngineSettings> {
 }
 
 /** Segnala la stazione su DXSummit (solo dalla rete di casa): frequenza e modo li sa il core, qui servono la stazione, il suo locatore e il testo. */
-export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string }): Promise<SpotResult> {
+export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string; freq_khz?: number; info?: string }): Promise<SpotResult> {
   return SpotResultSchema.parse(await (await request('/spot/dxsummit', jsonInit(body))).json());
 }
 

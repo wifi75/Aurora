@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK e RTTY, tutto in una schermata**: la pagina sta nell'altezza della finestra senza scroll; RX/TX e la colonna di destra si dividono lo spazio e le liste (DX Cluster, Log) scorrono nel loro riquadro. Le macro hanno colonne fisse piu' corte e il selettore di banda sta a fianco.
+- **Invia spot (PSK e RTTY)**: nella linguetta DX Cluster il pulsante «Spot DX» apre la finestra (nominativo, la tua stazione, frequenza in kHz, info) e manda lo spot a DXSummit; il motore accetta frequenza e testo scelti a mano (`freq_khz`, `info` nella rotta `/api/v1/spot/dxsummit`).
 - **PSK e RTTY, cascata con RX e TX**: la ricezione e' una coppia di triangoli blu uniti da una linea (nell'RTTY i toni mark e space, negli altri modi la larghezza del segnale); con lo split acceso (Lock) compare la coppia rossa della trasmissione e un clic sulla cascata sposta la trasmissione, mentre la ricezione resta ferma; con Ctrl si sposta la ricezione.
 - **PSK e RTTY, restyling scuro**: aspetto nello stile di Aurora al posto del grigio, macro a blocchetti in griglia, colonna di destra con le linguette DX Cluster e Log e il QSO in corso sotto.
 - **SSTV, linea di posizione in trasmissione**: mentre si trasmette sull'anteprima scende una linea rossa che mostra a che riga si e' arrivati; la parte gia' inviata si scurisce un poco.

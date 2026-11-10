@@ -1707,6 +1707,12 @@ struct SpotDxsummitBody {
     /// La propagazione (`Es`, `F2`...), come il campo di JTDX.
     #[serde(default)]
     prop: String,
+    /// Frequenza dello spot in kHz, scelta a mano (finestra «Invia spot» dei modi testuali): senza, si usa radio piu' frequenza di ricezione del motore.
+    #[serde(default)]
+    freq_khz: Option<f64>,
+    /// Il campo `info` completo (modo e testo), insieme a `freq_khz`.
+    #[serde(default)]
+    info: Option<String>,
 }
 
 /// Segnala la stazione scelta su DXSummit, come il pulsante «DX Call» di JTDX: frequenza = radio piu' frequenza di ricezione, `info` = modo e testo.
@@ -1720,8 +1726,26 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
     if body.text.chars().count() > 120 || body.prop.chars().count() > 10 || body.dx_grid.chars().count() > 8 {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot"));
     }
-    let params = reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop };
-    match service.spot_current(params).await {
+    // frequenza e testo scelti a mano (PSK, RTTY...): lo spot parte com'e', senza i dati dell'FT8 del motore
+    let manual = match body.freq_khz {
+        Some(khz) if khz.is_finite() && (100.0..=1_000_000.0).contains(&khz) => {
+            let info = body.info.clone().unwrap_or_default();
+            if info.chars().count() > 120 {
+                return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot"));
+            }
+            Some(((khz * 1000.0).round() as u64, info))
+        }
+        Some(_) => return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot")),
+        None => None,
+    };
+    let sent = if let Some((freq_hz, info)) = manual {
+        let call = body.dx_call.trim().to_uppercase();
+        service.spot_dxsummit(&call, freq_hz, &info).await.map(|()| reporting::SpotDone { dx_call: call, freq_hz, info })
+    } else {
+        let params = reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop };
+        service.spot_current(params).await
+    };
+    match sent {
         Ok(done) => Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info }))),
         Err(e) => {
             use reporting::SpotError;

@@ -1,0 +1,27 @@
+/* PSK e RTTY: tutto in una schermata, senza scroll di pagina. La finestra e' alta quanto lo schermo; RX/TX e la colonna di destra si
+   dividono l'altezza che resta, e le liste (DX Cluster, Log) scorrono dentro il loro riquadro. */
+.app-shell:has(.digi-page) { height: 100dvh; min-height: 0; overflow: hidden; }
+.app-shell:has(.digi-page) .app-main { min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 2px; }
+.app-shell:has(.digi-page) .app-main > * { min-height: 0; }
+.digi-page { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 6px 8px 4px; gap: 8px; }
+.digi-page > * { flex: none; }
+
+/* macro piu' corte (colonne fisse) con il selettore di banda a fianco */
+.digi-topline { display: flex; align-items: stretch; gap: 10px; flex-wrap: nowrap; }
+.digi-classica .digi-bar-keys { flex: 0 0 auto; width: auto; padding: 6px 10px; }
+.digi-classica .digi-keys { gap: 3px; }
+.digi-classica .digi-keyrow { grid-template-columns: repeat(12, 4.2rem) 4.6rem; }
+.digi-classica .digi-key { height: 24px; }
+.digi-topline .digi-bandbar { flex: 1 1 12rem; min-width: 10rem; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 8px 12px; }
+
+/* area centrale: prende tutta l'altezza che resta */
+.digi-main { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+.digi-windows { min-height: 0; }
+.digi-rxwin { flex: 1 1 55%; min-height: 0; max-height: none; overflow: auto; }
+.digi-txwrap { flex: 1 1 45%; min-height: 0; }
+.digi-txwin { min-height: 0; }
+.digi-log { align-self: stretch; min-height: 0; }
+.digi-log-cluster, .digi-log-table { flex: 1 1 0; min-height: 0; height: auto; max-height: none; overflow: auto; }
+.digi-log-table[hidden] { display: none; }
+.digi-log-qsohead, .digi-log-current { flex: none; }
+.digi-wf { flex: none; }

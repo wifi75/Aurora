@@ -27,15 +27,17 @@
 .digi-bandbar { padding: 5px 10px; }
 .digi-bandbar small { color: var(--text-muted); }
 
-/* blocchetti delle macro: stessa griglia 4 x 12, angoli arrotondati */
-.digi-classica .digi-bar-keys { padding: 8px 10px; }
-.digi-classica .digi-keys, .digi-classica .digi-keyrow { gap: 4px; }
-.digi-classica .digi-key { flex: 1 1 0; min-width: 0; height: 28px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; background: #16233f; color: var(--text-muted); }
-.digi-classica .digi-key--gap { margin-left: 8px; }
+/* blocchetti delle macro: griglia 4 x 12 con colonne di larghezza fissa uguale, etichette a destra */
+.digi-classica .digi-bar-keys { padding: 10px 12px; background: linear-gradient(180deg, #121e36, #0f192d); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.digi-classica .digi-keys { gap: 4px; min-width: 0; }
+.digi-classica .digi-keyrow { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)) 5rem; column-gap: 4px; align-items: center; position: relative; }
+.digi-classica .digi-key { min-width: 0; width: 100%; height: 28px; padding: 0 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; background: #16233f; color: var(--text-muted); }
+.digi-classica .digi-key--gap { margin-left: 0; }
+.digi-classica .digi-key:nth-child(4n + 1):not(:first-child) { margin-left: 8px; width: calc(100% - 8px); }
 .digi-classica .digi-key--blank { background: #131f38; border: 1px solid #1d2c4d; opacity: 1; }
 .digi-classica .digi-key:hover:not(:disabled) { outline: 0; filter: brightness(1.25); border-color: var(--accent); }
-.digi-classica .digi-keyrow-label { color: var(--text-muted); width: 4.6rem; flex: none; font-size: 11px; }
-.digi-classica .digi-gear { color: #ffcf5c; }
+.digi-classica .digi-keyrow-label { color: var(--text-muted); width: auto; margin-left: 8px; font-size: 11px; }
+.digi-classica .digi-gear { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin: 0; color: #ffcf5c; }
 
 /* area principale: RX/TX a sinistra, linguette a destra */
 .digi-main { gap: 10px; min-height: 26rem; overflow: visible; }
