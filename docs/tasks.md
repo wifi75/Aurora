@@ -57,3 +57,20 @@ Ordinati per priorita'. Analisi completa in `docs/analisi-wsjtx-3.md`. Sorgenti 
 
 # Richieste degli utenti (2026-11-09)
 
+
+# Progetti grossi (decisi dal proprietario, da fare dopo che Aurora e' stabile)
+
+Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo grafico da approvare prima del codice.
+
+## P1. Satelliti: orbite, passaggi e correzione Doppler (richiesta di UN7MBV, RS-44)
+
+- Fase 1, solo da guardare: dati delle orbite (TLE da Celestrak, aggiornati ogni giorno), calcolo SGP4 (libreria Rust `sgp4`, licenza MIT da verificare), passaggi dal locatore, pagina Satelliti con elenco dei passaggi, azimut ed elevazione in tempo reale, scelta del satellite.
+- Fase 2: correzione Doppler sulla radio con Hamlib (VFO di trasmissione in 2 m e di ricezione in 70 cm, aggiornati ogni secondo; transponder invertente come RS-44), per i satelliti lineari piu' usati.
+- Fase 3: full duplex vero per le radio che lo fanno (IC-9700, IC-910, TS-2000, FT-847) e rotore con `rotctld` di Hamlib.
+- Prova: serve un tester con radio da satellite (UN7MBV ha un FT-991A: split su due bande, non full duplex).
+
+## P2. Altri modi: RTTY, PSK, CW, SSTV
+
+- Il proprietario ha gia' il materiale da cui riprendere le tabelle per codifica e decodifica in trasmissione e ricezione: prima di cominciare va controllata la licenza di ogni fonte (deve essere compatibile con la GPL-3 di Aurora).
+- Ordine proposto: PSK31/PSK63 e RTTY (testo, simili per interfaccia), poi CW (decodifica e trasmissione), poi SSTV (immagini, interfaccia a parte).
+- Per ognuno: motore di modulazione e demodulazione in `core/crates`, finestra di ricezione testo (o immagine), macro di trasmissione, log come per FT8, Guida e Novita' nelle sei lingue.
