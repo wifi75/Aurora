@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.226',
+    released: '2026-11-10T12:00:00Z',
+    kind: 'changed',
+    title: ["Primo avvio aggiornato e Finestra RX leggibile", "Updated first start and readable RX window", "Aktualisierter Erststart und lesbares RX-Fenster", "Premier démarrage à jour et fenêtre RX lisible", "Primer arranque actualizado y ventana RX legible", "Primeiro arranque atualizado e janela RX legível"],
+    text: [
+      "Con un installatore vecchio, al primo avvio Aurora propone prima l’aggiornamento e poi la guida iniziale, senza due finestre una sopra l’altra. Nella Finestra RX il messaggio sta subito dopo l’ora e non viene più tagliato. La cartolina dell’aggiornamento nel tray è più semplice.",
+      "With an old installer, at the first start Aurora offers the update first and then the setup guide, without two windows on top of each other. In the RX window the message sits right after the time and is no longer cut. The update card in the tray is simpler.",
+      "Mit einem alten Installationsprogramm bietet Aurora beim ersten Start zuerst das Update und dann die Einrichtung an, ohne zwei Fenster übereinander. Im RX-Fenster steht die Meldung direkt nach der Uhrzeit und wird nicht mehr abgeschnitten. Die Update-Karte im Tray ist einfacher.",
+      "Avec un ancien installateur, au premier démarrage Aurora propose d’abord la mise à jour puis le guide, sans deux fenêtres l’une sur l’autre. Dans la fenêtre RX le message suit l’heure et n’est plus coupé. La carte de mise à jour dans la barre est plus simple.",
+      "Con un instalador antiguo, en el primer arranque Aurora propone primero la actualización y después la guía, sin dos ventanas una encima de otra. En la ventana RX el mensaje va justo después de la hora y ya no se corta. La tarjeta de actualización de la bandeja es más sencilla.",
+      "Com um instalador antigo, no primeiro arranque o Aurora propõe primeiro a atualização e depois o guia, sem duas janelas uma em cima da outra. Na janela RX a mensagem fica logo a seguir à hora e já não é cortada. O cartão de atualização na bandeja é mais simples.",
+    ],
+  },
+  {
     version: '0.11.225',
     released: '2026-11-10T11:38:42Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Le bouton Tune réapparaît dans Commandes quand tu l'actives dans Réglages > Général > Écran, et devient rouge pendant l'émission de la porteuse. Si le spot DXSummit est activé il y a aussi « Spot DX » ; Log QSO n'apparaît que si tu le choisis. Sur la carte DX la ligne « qui appelle qui » part aussi de toi vers la station que tu appelles, et la légende tient sur une ligne en bas.",
       "El botón Tune vuelve a aparecer en Comandos cuando lo activas en Ajustes > General > Pantalla, y se pone rojo mientras emite la portadora. Si el spot en DXSummit está activo también está «Spot DX»; Log QSO aparece solo si lo eliges. En el mapa DX la línea «quién llama a quién» sale también de ti hacia la estación que llamas, y la leyenda va en una sola línea abajo.",
       "O botão Tune volta a aparecer nos Comandos quando o ligas em Definições > Geral > Ecrã, e fica vermelho enquanto emite a portadora. Se o spot no DXSummit estiver ligado há também «Spot DX»; Log QSO só aparece se o escolheres. No mapa DX a linha «quem chama quem» parte também de ti para a estação que estás a chamar, e a legenda fica numa só linha em baixo.",
-    ],
-  },
-  {
-    version: '0.11.186',
-    released: '2026-11-07T17:56:12Z',
-    kind: 'fixed',
-    title: ['Schede staccate: le altre si ridimensionano', 'Detached panels: the others can be resized', 'Abgetrennte Fenster: die anderen lassen sich anpassen', 'Fenêtres détachées : les autres se redimensionnent', 'Ventanas separadas: las demás se redimensionan', 'Janelas separadas: as outras redimensionam-se'],
-    text: [
-      "Quando porti una scheda sul secondo schermo, quelle rimaste nella Stazione si possono spostare dalla barra del titolo e allargare dall'angolo in basso a destra, per usare il posto libero. Le misure si ricordano per ogni combinazione di schede staccate; rimesse tutte a posto, la Stazione torna com'era. Il menu per staccare una scheda non resta più nascosto e Bande aperte staccata apre Bande aperte, non la Mappa DX.",
-      "When you move a panel to the second screen, the ones left in the Station can be moved by their title bar and resized from the bottom-right corner to use the free space. The sizes are remembered for each set of detached panels; once they are all back, the Station returns as it was. The menu to detach a panel is no longer hidden, and detaching Open bands opens Open bands, not the DX map.",
-      "Wenn du ein Fenster auf den zweiten Bildschirm bringst, lassen sich die übrigen in der Station an der Titelleiste verschieben und an der Ecke unten rechts vergrößern, um den freien Platz zu nutzen. Die Größen werden für jede Kombination abgetrennter Fenster gespeichert; sind alle zurück, ist die Station wie vorher. Das Menü zum Abtrennen ist nicht mehr verdeckt, und abgetrennte Offene Bänder öffnen Offene Bänder, nicht die DX-Karte.",
-      "Quand tu places un panneau sur le second écran, ceux qui restent dans la Station se déplacent par leur barre de titre et s'agrandissent par le coin en bas à droite pour occuper la place libre. Les tailles sont mémorisées pour chaque ensemble de panneaux détachés ; une fois tous revenus, la Station redevient comme avant. Le menu pour détacher un panneau n'est plus caché, et Bandes ouvertes détachée ouvre Bandes ouvertes, pas la carte DX.",
-      "Cuando llevas un panel a la segunda pantalla, los que quedan en la Estación se mueven por su barra de título y se agrandan desde la esquina inferior derecha para usar el espacio libre. Las medidas se recuerdan para cada conjunto de paneles separados; cuando vuelven todos, la Estación queda como antes. El menú para separar un panel ya no queda oculto, y Bandas abiertas separada abre Bandas abiertas, no el mapa DX.",
-      "Quando levas um painel para o segundo ecrã, os que ficam na Estação movem-se pela barra de título e aumentam-se pelo canto inferior direito para usar o espaço livre. As medidas ficam guardadas para cada conjunto de painéis separados; quando voltam todos, a Estação fica como antes. O menu para separar um painel já não fica escondido, e Bandas abertas separada abre Bandas abertas, não o mapa DX.",
     ],
   },
 ];
