@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.227',
-    released: '2026-11-10T12:00:00Z',
+    released: '2026-11-10T13:33:59Z',
     kind: 'changed',
     title: ["Età da quando il messaggio compare e nominativo in grassetto", "Age from when the message appears and bold callsign", "Alter ab Erscheinen der Meldung und fettes Rufzeichen", "Âge depuis l’apparition du message et indicatif en gras", "Edad desde que aparece el mensaje e indicativo en negrita", "Idade desde que a mensagem aparece e indicativo a negrito"],
     text: [
