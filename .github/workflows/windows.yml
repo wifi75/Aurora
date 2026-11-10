@@ -155,3 +155,16 @@ jobs:
           Get-ChildItem rilascio -Filter '*-setup.exe' | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content rilascio/SHA256SUMS.txt -Encoding ascii
           Get-ChildItem rilascio | ForEach-Object { Write-Host $_.Name }
           gh release upload $env:TAG (Get-ChildItem rilascio | ForEach-Object FullName) --clobber
+
+      - name: Release segnata come ultima solo con installatore e firma
+        if: env.TIMBRO_ON == 'true' || env.SIGNPATH_ON == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # la release si crea con --latest=false: finche' qui non c'e' il pacchetto con la firma, le copie installate vedono ancora la
+          # versione precedente (completa) e non dicono «la release non ha il pacchetto di installazione con la sua firma»
+          $nomi = gh release view $env:TAG --json assets --jq '.assets[].name'
+          $setup = $nomi | Where-Object { $_ -like '*-setup.exe' -and $_ -ne 'Aurora-Setup.exe' } | Select-Object -First 1
+          if (-not $setup -or -not ($nomi -contains "$setup.sig")) { throw "manca l'installatore o la sua firma: la release non diventa l'ultima" }
+          gh release edit $env:TAG --latest
