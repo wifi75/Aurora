@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.229',
-    released: '2026-11-10T17:40:00Z',
+    released: '2026-11-10T17:31:58Z',
     kind: 'new',
     title: ["Rotore d’antenna e filtri «sulla banda» corretti", "Antenna rotator and fixed «on a new band» filters", "Antennenrotor und korrigierte Filter «auf neuem Band»", "Rotor d’antenne et filtres « sur une nouvelle bande » corrigés", "Rotor de antena y filtros «en una banda nueva» corregidos", "Rotor de antena e filtros «numa banda nova» corrigidos"],
     text: [
