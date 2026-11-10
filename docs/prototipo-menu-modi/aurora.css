@@ -1,0 +1,81 @@
+/* Copia dell'aspetto della Stazione di Aurora 0.11.227 (tema scuro), per i prototipi del menu dei modi. */
+:root {
+  --bg: #070b16; --bg2: #0a0f1d; --panel: #0b1120; --line: #26314f; --line2: #3a3f7a; --text: #e6edf6; --muted: #8fa0b5;
+  --accent: #2cf5a4; --purple: #8e7bff; --blue: #27a0f5; --orange: #ff8a3d; --yellow: #fff35c; --red: #e5484d; --green: #22c55e;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 12px/1.35 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+/* testata */
+.top { display: flex; align-items: center; gap: 10px; padding: 6px 10px; }
+.brand { font: 700 15px var(--mono); letter-spacing: .32em; background: linear-gradient(100deg, var(--accent), var(--blue) 55%, var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1; }
+.brand small { display: block; font-size: 9.5px; letter-spacing: .18em; margin-top: 3px; }
+.nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.navp { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line2); background: #0d1328; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.navp::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.navp.sel { background: linear-gradient(90deg, #4c5bd8, #6b55e0); border-color: #8e7bff; }
+.navp.sel::before { background: var(--accent); }
+.navp.mode::before { background: var(--c); }
+.navp.soon { opacity: .5; }
+.vol { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+/* seconda riga */
+.row2 { display: flex; align-items: center; gap: 10px; padding: 4px 10px 8px; }
+.modepill { padding: 7px 14px; border-radius: 99px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; cursor: pointer; }
+.mhz { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line2); color: var(--muted); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg span { padding: 6px 11px; font-weight: 700; border-right: 1px solid var(--line); background: #0d1328; }
+.seg span:last-child { border-right: 0; }
+.seg span.on { background: #0f3b2c; color: var(--accent); }
+/* tavola */
+.board { display: grid; gap: 6px; padding: 0 10px 10px; height: calc(100vh - 98px); grid-template-columns: 1.15fr 1fr 1.25fr .8fr; grid-template-rows: 1fr 1fr .62fr; }
+.p { background: var(--panel); border: 1px solid #2c3470; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.p > h3 { margin: 0; padding: 5px 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: linear-gradient(90deg, #12304a, #2a2a62); }
+.p > h3::before { content: '⠿'; color: var(--muted); font-size: 10px; }
+.p > h3 .r { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.mini { padding: 1px 8px; border-radius: 6px; border: 1px solid #4a5d82; font-size: 11px; font-weight: 700; }
+.mini.on { background: var(--accent); color: #04201c; border-color: var(--accent); }
+.p .b { flex: 1; overflow: auto; min-height: 0; }
+.empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+td, th { padding: 3px 6px; text-align: left; border-bottom: 1px solid #172042; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+th { color: var(--text); font-weight: 700; font-size: 11px; }
+tr.hl td { background: var(--yellow); color: #222; font-weight: 700; }
+.cq-dx { display: grid; grid-template-columns: auto auto 1fr auto; gap: 2px 8px; padding: 5px 8px; margin: 3px 6px; border-radius: 6px; background: #5a2a10; border: 1px solid var(--orange); align-items: center; }
+.cq-dx b { color: var(--orange); font-family: var(--mono); }
+.cq-dx .live { grid-column: 1 / 5; color: var(--orange); font: 700 11px var(--mono); }
+.fino { background: var(--green); color: #052e14; font-weight: 800; border-radius: 6px; padding: 0 6px; font-size: 10.5px; }
+.txrow { display: flex; justify-content: space-between; margin: 3px 6px; padding: 4px 10px; border-radius: 6px; background: #1b2238; }
+.txrow i { font-style: normal; background: #2a3354; border-radius: 50%; width: 18px; height: 18px; display: inline-grid; place-items: center; font-size: 10px; }
+.txrow.sel { border: 2px solid var(--accent); }
+.rxbadge { padding: 2px 12px; border-radius: 99px; border: 2px solid var(--accent); color: var(--accent); font-weight: 800; }
+.wf { height: 100%; min-height: 60px; background: linear-gradient(180deg, #1018a8, #0a1270 60%, #060b40); position: relative; }
+.wf .rx { position: absolute; left: 47%; top: 0; bottom: 0; width: 3px; border-left: 1px solid #ff4d4d; border-right: 1px solid #ff4d4d; }
+.bands td { font-size: 12px; }
+.bar { display: inline-block; width: 4px; margin-right: 1px; border-radius: 2px; background: var(--orange); vertical-align: bottom; }
+.note { position: fixed; right: 12px; bottom: 12px; max-width: 380px; padding: 10px 12px; border-radius: 10px; background: #1b2440; border: 1px solid var(--purple); font-size: 12px; z-index: 50; box-shadow: 0 8px 24px rgb(0 0 0 / .5); }
+.note b { color: var(--accent); }
+.note .x { float: right; cursor: pointer; color: var(--muted); }
+.mtext { font: 15px/1.7 var(--mono); padding: 10px 12px; }
+.mtext .me { color: var(--yellow); }
+.soonbox { margin: 10px; padding: 12px; border: 1px dashed var(--line2); border-radius: 10px; color: var(--muted); }
+
+/* B3: barra sottile in fondo con volume, cursore e tema; la tavola lascia il suo spazio */
+.piede { position: fixed; left: 0; right: 0; bottom: 0; height: 26px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 0 12px; background: #080d1a; border-top: 1px solid var(--line); z-index: 20; }
+.piede input { width: 110px; accent-color: var(--accent); }
+.pbtn { cursor: pointer; font-size: 13px; }
+body.conpiede .board { height: calc(100vh - 126px) !important; }
+.icons { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.grp { display: flex; gap: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line2); }
+.sep { width: 1px; height: 22px; background: var(--line2); margin: 0 6px; }
+
+/* barra in fondo come quella di Aurora, con la barra del periodo accorciata e volume/tema al centro */
+.piede { justify-content: flex-start !important; gap: 12px !important; height: 30px !important; font-size: 11.5px; }
+.piede .periodo { width: 34%; height: 8px; border-radius: 99px; background: #1b2238; overflow: hidden; }
+.piede .periodo i { display: block; width: 14%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue)); border-radius: inherit; }
+.piede .vgrp { display: flex; align-items: center; gap: 8px; margin-left: auto; padding: 2px 10px; border: 1px solid var(--line2); border-radius: 99px; }
+.piede .ora { font-size: 15px; font-weight: 800; }
+.piede .ora small { font-size: 10px; color: var(--muted); }
+.piede .ver { color: #b9c6dd; font-weight: 700; }
+body.conpiede .board { height: calc(100vh - 130px) !important; }

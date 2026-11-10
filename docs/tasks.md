@@ -85,3 +85,13 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 - Il proprietario ha gia' tutto il materiale per la gestione dei rotori: prima di cominciare va visto cosa contiene (protocolli, modelli, codice) e controllata la licenza (compatibile con la GPL-3 di Aurora).
 - Base proposta: `rotctld` di Hamlib (gia' dentro Aurora per il CAT), che comanda centinaia di rotori; pulsante «Punta» sulla stazione scelta (azimut dal locatore), sulla Mappa DX e sui passaggi dei satelliti (P1, fase 3).
 - Da fare come gli altri progetti grossi: piano scritto e prototipo grafico da approvare prima del codice.
+
+## P4. Menu nuovo: i modi in alto (scelto dal proprietario il 2026-11-10)
+
+- Prototipo approvato: `docs/prototipo-menu-modi/index.html` (aprire nel browser; i pulsanti funzionano). Costruito sulla Stazione di oggi.
+- In alto, al posto di Stazione · Fox · Contest · Statistiche · Mappa DX · Log · Propagazione · Impostazioni · Guida · Novita': i **modi** (FT8, VHF, CW, RTTY, PSK, SSTV, Satelliti) come pillole con il pallino del colore del modo; quelli non ancora fatti in grigio.
+- A destra, con lo stesso aspetto dei pulsanti di oggi (pillola scura con il pallino): le pagine del **modo scelto** (FT8: Fox · Contest · Statistiche; CW/RTTY: Macro · Contest; Satelliti: Doppler · Mappa), pallino del colore del modo, aperta = viola come oggi; poi le pagine comuni **Log · Mappa DX · Propagazione** (pallino blu) e il menu **⚙ ▾** con Impostazioni, Guida e Novita' (il menu resta dentro lo schermo).
+- Niente seconda riga. Un clic su una pagina aperta (o sul modo) torna alla Stazione del modo.
+- Orario tolto dalla testata; volume, cursore e tema (🌙/☀) nella barra in fondo, dove la barra del periodo diventa piu' corta (circa un terzo).
+- Ogni modo ha la sua pagina e il suo motore; DX Cluster, Bande aperte, Comandi, CQ/DXpedition, Log, radio e rotore sono in comune.
+- Da fare a passi: prima la testata nuova con FT8 e VHF (le pagine di oggi spostate, nessuna funzione persa, telefono compreso), poi i modi nuovi uno alla volta (P1, P2). Guida, Novita' e i testi nelle sei lingue.

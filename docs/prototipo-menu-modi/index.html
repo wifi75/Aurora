@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><title>B3-3 · Come i pulsanti dei modi</title><link rel="stylesheet" href="aurora.css">
+<style>
+  .pp { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line2); background: #0d1328; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .pp::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+  .pp.mod::before { background: var(--c); }
+  .pp.sel { background: linear-gradient(90deg, #4c5bd8, #6b55e0); border-color: #8e7bff; }
+  .pp.alt::before { display: none; }
+  .pp.alt { color: var(--muted); }
+</style></head><body class="conpiede">
+<div id="top"></div><div id="board"></div>
+<div class="note"><span class="x" onclick="this.parentNode.style.display='none'">✕</span><b>B3-3 · Come i pulsanti di oggi.</b> Le voci a destra hanno lo stesso aspetto dei pulsanti del menu di adesso (pillola scura con il pallino): le pagine del modo con il pallino del colore del modo, quelle comuni con il pallino blu, la pagina aperta viola come oggi. Niente di nuovo da imparare a vedere. In fondo volume, cursore e tema.</div>
+<script>window.STILE = { mod: 'pp mod', com: 'pp', altro: 'pp alt', icone: false, gruppi: false };</script>
+<script src="aurora.js"></script><script src="variante.js"></script><script src="b3-stili.js"></script>
+<script>ridisegna();</script>
+</body></html>
