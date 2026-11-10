@@ -527,7 +527,7 @@ impl Drop for Rigctld {
 }
 
 /// Dove si trova `rigctld`: cartella accanto al programma (e la sua sottocartella `hamlib`, dove l'installatore mette l'Hamlib ufficiale incluso
-/// in Aurora), poi la variabile `AURORA_RIGCTLD` (file o cartella), poi, su Linux, l'Hamlib del sistema. Mai le cartelle di altri programmi.
+/// in Aurora), poi quello ripristinato nella cartella dei dati dell'utente, poi la variabile `AURORA_RIGCTLD` (file o cartella), poi, su Linux, l'Hamlib del sistema. Mai le cartelle di altri programmi.
 pub fn locate_rigctld() -> Option<PathBuf> {
     let mut dirs: Vec<PathBuf> = Vec::new();
     if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)) {
@@ -536,6 +536,8 @@ pub fn locate_rigctld() -> Option<PathBuf> {
         dirs.push(dir.join("..").join("Resources").join("hamlib"));
         dirs.push(dir);
     }
+    // l'Hamlib ripristinato dal programma (Windows, `hamlib_restore`): dopo quello dell'installatore, prima della variabile d'ambiente
+    dirs.extend(crate::hamlib_restore::restored_dir());
     let env = std::env::var("AURORA_RIGCTLD").ok().filter(|v| !v.trim().is_empty()).map(PathBuf::from);
     locate_rigctld_in(&dirs, env.as_deref(), &system_dirs())
 }

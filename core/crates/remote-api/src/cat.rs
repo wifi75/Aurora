@@ -104,6 +104,21 @@ pub(crate) async fn cat_disconnect(State(state): State<AppState>, _: Authed, Pee
     .await?)))
 }
 
+/// Ripristina Hamlib (Windows): riscarica il pacchetto ufficiale, ne controlla l'impronta e lo copia nella cartella dei dati dell'utente.
+/// Solo dal PC. Risponde con lo stato del CAT riletto, cosi' l'interfaccia vede subito `rigctld_found`.
+pub(crate) async fn cat_hamlib_restore(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    require_local(peer, &headers)?;
+    if !rig_control::hamlib_restore::available() {
+        return Err(CatApiError { status: StatusCode::CONFLICT, code: "restore_unavailable", message: "su questo sistema Hamlib si installa dal gestore dei pacchetti".to_string() });
+    }
+    let done = blocking(move || rig_control::hamlib_restore::restore().map(|_| cat.snapshot())).await?;
+    match done {
+        Ok(snapshot) => Ok(Json(json!(snapshot))),
+        Err(message) => Err(CatApiError { status: StatusCode::BAD_GATEWAY, code: "restore_failed", message }),
+    }
+}
+
 #[derive(Deserialize)]
 pub(crate) struct ProfileBody {
     /// `save`, `load`, `new` o `delete`.

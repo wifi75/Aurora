@@ -7,6 +7,7 @@ import {
   connectCat,
   detectCat,
   disconnectCat,
+  restoreHamlib,
   getCat,
   getCatModels,
   getCatPorts,
@@ -251,6 +252,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
     onError: failed,
   });
   const disconnect = useMutation({ mutationFn: () => disconnectCat(), onSuccess: () => done(''), onError: failed });
+  // Hamlib sparito (di solito l'antivirus): lo si riscarica dal pacchetto ufficiale, con controllo dell'impronta
+  const restore = useMutation({ mutationFn: () => restoreHamlib(), onSuccess: () => done(t('cat.restore.done')), onError: failed });
   const profile = useMutation({
     mutationFn: ({ action, name }: { action: 'save' | 'load' | 'new' | 'delete'; name?: string }) => catProfile(action, name),
     onSuccess: (_, { action }) => {
@@ -290,7 +293,19 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
 
   const link = (
     <Group title={t('cat.grp.link')} span={2}>
-      {hamlib && !snap.data.status.rigctld_found ? <Message kind="alert">{t('cat.missing')}</Message> : null}
+      {hamlib && !snap.data.status.rigctld_found ? (
+        <Message kind="alert">
+          {t('cat.missing')}
+          {windows ? (
+            <>
+              {' '}
+              <button type="button" className="btn" disabled={restore.isPending} onClick={() => restore.mutate()}>
+                {restore.isPending ? t('cat.restore.busy') : t('cat.restore')}
+              </button>
+            </>
+          ) : null}
+        </Message>
+      ) : null}
       <Cells min={17} className="cat-link">
         <Field label={t('cat.backend')} className="cat-w-l" hint={t('tip.cat.backend')}>
           <select value={config.backend} onChange={(e) => set({ backend: e.target.value as CatConfig['backend'] })}>

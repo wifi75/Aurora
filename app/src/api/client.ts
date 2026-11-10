@@ -837,6 +837,11 @@ export async function connectCat(): Promise<CatSnapshot> {
   return (await (await request('/cat/connect', { method: 'POST' })).json()) as CatSnapshot;
 }
 
+/** Ripristina Hamlib (Windows, solo dal PC): riscarica il pacchetto ufficiale, ne controlla l'impronta e lo copia nei dati dell'utente. */
+export async function restoreHamlib(): Promise<CatSnapshot> {
+  return (await (await request('/cat/hamlib/restore', { method: 'POST' })).json()) as CatSnapshot;
+}
+
 export async function disconnectCat(): Promise<CatSnapshot> {
   return (await (await request('/cat/disconnect', { method: 'POST' })).json()) as CatSnapshot;
 }

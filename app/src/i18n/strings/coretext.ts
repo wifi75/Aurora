@@ -1,12 +1,12 @@
 // Messaggi del core (CAT, Hamlib, OmniRig, PTT) tradotti nell'interfaccia: it, en, de, fr, es, pt.
 export const coreTextStrings = {
   'core.rigctld': [
-    'Manca rigctld (Hamlib): mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.',
-    'rigctld (Hamlib) is missing: put it next to Aurora or give its path in the AURORA_RIGCTLD variable.',
-    'rigctld (Hamlib) fehlt: Lege es neben Aurora oder gib den Pfad in der Variable AURORA_RIGCTLD an.',
-    'rigctld (Hamlib) est absent : place-le à côté d’Aurora ou indique son chemin dans la variable AURORA_RIGCTLD.',
-    'Falta rigctld (Hamlib): ponlo junto a Aurora o indica la ruta en la variable AURORA_RIGCTLD.',
-    'Falta o rigctld (Hamlib): coloca-o junto ao Aurora ou indica o caminho na variável AURORA_RIGCTLD.',
+    'Manca rigctld (Hamlib): probabilmente l\'antivirus l\'ha tolto. Su Windows premi «Ripristina Hamlib»; altrimenti mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.',
+    'rigctld (Hamlib) is missing: the antivirus probably removed it. On Windows press “Restore Hamlib”; otherwise put it next to Aurora or give its path in the AURORA_RIGCTLD variable.',
+    'rigctld (Hamlib) fehlt: wahrscheinlich hat es der Virenscanner entfernt. Unter Windows „Hamlib wiederherstellen“ drücken; sonst lege es neben Aurora oder gib den Pfad in der Variable AURORA_RIGCTLD an.',
+    'rigctld (Hamlib) est absent : l’antivirus l’a probablement supprimé. Sous Windows, appuie sur « Restaurer Hamlib » ; sinon place-le à côté d’Aurora ou indique son chemin dans la variable AURORA_RIGCTLD.',
+    'Falta rigctld (Hamlib): probablemente lo quitó el antivirus. En Windows pulsa «Restaurar Hamlib»; si no, ponlo junto a Aurora o indica la ruta en la variable AURORA_RIGCTLD.',
+    'Falta o rigctld (Hamlib): provavelmente foi o antivírus que o removeu. No Windows prime «Restaurar o Hamlib»; senão coloca-o junto ao Aurora ou indica o caminho na variável AURORA_RIGCTLD.',
   ],
   'core.portBusy': [
     'La porta seriale è occupata da un altro programma: chiudilo (o scegli un’altra porta) e riprova.',

@@ -15,9 +15,10 @@ vi.mock('../api/client', async (original) => {
     getCatModels: vi.fn(),
     getCatPorts: vi.fn(),
     detectCat: vi.fn(),
+    restoreHamlib: vi.fn(),
   };
 });
-import { ApiError, catProfile, connectCat, detectCat, disconnectCat, getCat, getCatModels, getCatPorts, putCat, type CatSnapshot } from '../api/client';
+import { ApiError, catProfile, connectCat, detectCat, disconnectCat, getCat, getCatModels, getCatPorts, putCat, restoreHamlib, type CatSnapshot } from '../api/client';
 import { DEFAULT_CAT } from '../lib/cat';
 import { CatTab } from './CatTab';
 
@@ -66,6 +67,15 @@ describe('CatTab', () => {
     render(<CatTab />);
     expect(await screen.findByText('Non collegata')).toBeInTheDocument();
     expect(screen.getByText(/Manca rigctld/)).toBeInTheDocument();
+  });
+
+  it('restores Hamlib with one click when rigctld is missing (Windows)', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...idle, status: { ...idle.status, rigctld_found: false } });
+    vi.mocked(restoreHamlib).mockResolvedValue({ ...idle, status: { ...idle.status, rigctld_found: true } });
+    render(<CatTab />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Ripristina Hamlib' }));
+    expect(await screen.findByText(/Hamlib ripristinato/)).toBeInTheDocument();
+    expect(restoreHamlib).toHaveBeenCalledTimes(1);
   });
 
   it('does not warn about rigctld when it is there, and Connect needs a radio first', async () => {

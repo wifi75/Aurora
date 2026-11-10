@@ -7,7 +7,7 @@ type T = (key: Key, vars?: Record<string, string | number>) => string;
  * Un messaggio sconosciuto resta com'e'. I messaggi composti («Collegamento perso: <causa> Nuovo tentativo ...») si traducono a pezzi.
  */
 export const EXACT: ReadonlyArray<[string, Key]> = [
-  ["Manca rigctld (Hamlib): mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.", 'core.rigctld'],
+  ["Manca rigctld (Hamlib): probabilmente l'antivirus l'ha tolto. Su Windows premi «Ripristina Hamlib»; altrimenti mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.", 'core.rigctld'],
   ["La porta seriale e' occupata da un altro programma: chiudilo (o scegli un'altra porta) e riprova.", 'core.portBusy'],
   ["La porta seriale non esiste: controlla il numero (Windows puo' rinumerarla) e che la radio sia accesa e collegata.", 'core.portMissing'],
   ["La radio non risponde: controlla accensione, cavo, porta, velocita' (baud) e, per le Yaesu, le impostazioni CAT della radio.", 'core.noAnswer'],

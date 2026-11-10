@@ -45,7 +45,7 @@ OmniRig resta disponibile come secondo sistema (il percorso storico di Aurora): 
 2. nella variabile `AURORA_RIGCTLD` (il file o la cartella che lo contiene);
 3. **solo per lo sviluppo**, nelle installazioni gia' presenti: `C:\JTDX64\<versione>\bin\rigctld-*.exe` (la piu' recente) e `C:\WSJT\wsjtx\bin\rigctld-*.exe`.
 
-Va bene qualunque nome che inizia per `rigctld` e finisce in `.exe` (anche `rigctld-jtdx.exe`). Se non lo trova la scheda lo scrive in alto e **Collega** risponde «Manca rigctld».
+Va bene qualunque nome che inizia per `rigctld` e finisce in `.exe` (anche `rigctld-jtdx.exe`). Se non lo trova la scheda lo scrive in alto e **Collega** risponde «Manca rigctld». Su Windows, accanto all'avviso c'e' **Ripristina Hamlib**: riscarica Hamlib ufficiale 4.7.2 (impronta SHA-256 controllata) e lo rimette in `%LOCALAPPDATA%\Aurora\hamlib`, utile quando l'antivirus ha tolto `rigctld.exe`.
 L'elenco dei modelli viene da `rigctl -l` della stessa cartella.
 
 ## Hamlib incluso nell'installatore

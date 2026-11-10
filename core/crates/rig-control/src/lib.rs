@@ -11,6 +11,7 @@ pub mod extras;
 pub mod fake_rigctld;
 pub mod ft991link;
 pub mod hamlib;
+pub mod hamlib_restore;
 pub mod hamlib_rig;
 pub mod meters;
 pub mod modes;

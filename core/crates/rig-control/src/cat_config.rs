@@ -347,7 +347,7 @@ pub fn friendly_error(raw: &str) -> String {
     if has(&["porta di condivisione"]) {
         raw.to_string()
     } else if has(&["rigctld non trovato"]) {
-        "Manca rigctld (Hamlib): mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.".into()
+        "Manca rigctld (Hamlib): probabilmente l'antivirus l'ha tolto. Su Windows premi «Ripristina Hamlib»; altrimenti mettilo accanto ad Aurora o indica il percorso nella variabile AURORA_RIGCTLD.".into()
     } else if has(&["already open", "access denied", "accesso negato", "occupata", "in uso", "sharing violation"]) {
         "La porta seriale e' occupata da un altro programma: chiudilo (o scegli un'altra porta) e riprova.".into()
     } else if has(&["no such file", "cannot find", "non trova", "invalid port", "does not exist", "specificato"]) {

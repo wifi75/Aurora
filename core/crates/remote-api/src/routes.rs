@@ -124,6 +124,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat", get(crate::cat::cat_get).put(crate::cat::cat_put))
         .route("/api/v1/cat/connect", post(crate::cat::cat_connect))
         .route("/api/v1/cat/disconnect", post(crate::cat::cat_disconnect))
+        .route("/api/v1/cat/hamlib/restore", post(crate::cat::cat_hamlib_restore))
         .route("/api/v1/cat/profiles", post(crate::cat::cat_profiles))
         .route("/api/v1/cat/models", get(crate::cat::cat_models))
         .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
