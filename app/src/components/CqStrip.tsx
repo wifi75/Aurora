@@ -131,8 +131,8 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
               onQueue(d.id);
             }}
           >
-            <span className="cq-chip-text">{talker?.call ?? d.text}</span>
             <span className="cq-chip-flag">{code ? <span className={`fi fi-${code}`} aria-hidden="true" /> : null}</span>
+            <span className="cq-chip-text">{talker?.call ?? d.text}</span>
             {d.country ? <span className="cq-chip-country">{d.country}</span> : null}
           </button>
         );
