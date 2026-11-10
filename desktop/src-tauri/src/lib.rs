@@ -48,6 +48,19 @@ pub fn run() {
         .on_window_event(|window, event| {
             // la finestra sta ricevendo eventi (anche durante un trascinamento lungo): e' viva, non e' un blocco
             crash::WINDOW.touch();
+            // cosa sta facendo la finestra, per il rapporto di un eventuale blocco (prima molti blocchi dicevano solo «nessuna»)
+            crash::activity(match event {
+                WindowEvent::Resized(_) => "ridimensionamento della finestra",
+                WindowEvent::Moved(_) => "spostamento della finestra",
+                WindowEvent::Focused(true) => "finestra in primo piano",
+                WindowEvent::Focused(false) => "finestra in secondo piano",
+                WindowEvent::ScaleFactorChanged { .. } => "cambio di scala dello schermo",
+                WindowEvent::ThemeChanged(_) => "cambio di tema di Windows",
+                WindowEvent::DragDrop(_) => "trascinamento di un file",
+                WindowEvent::CloseRequested { .. } => "chiusura di una finestra",
+                WindowEvent::Destroyed => "finestra chiusa",
+                _ => "evento della finestra",
+            });
             match event {
             // come una normale applicazione: la X chiude la finestra e con lei tutto (il core si ferma all'uscita)
             WindowEvent::CloseRequested { .. } => {

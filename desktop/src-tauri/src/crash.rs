@@ -84,9 +84,33 @@ pub fn is_exiting_pub() -> bool {
 
 /// Segna cosa sta per fare il thread della finestra (aprire una finestra a parte, salvarne la posizione...).
 pub fn activity(what: &'static str) {
+    let now = now_ms();
     if let Ok(mut a) = ACTIVITY.lock() {
-        *a = (what, now_ms());
+        *a = (what, now);
     }
+    // le ultime attivita' (le stesse di fila contano una volta): nel rapporto di un blocco dicono cosa faceva la finestra prima
+    if let Ok(mut trail) = TRAIL.lock() {
+        if trail.back().is_none_or(|(w, _)| *w != what) {
+            if trail.len() >= TRAIL_LEN {
+                trail.pop_front();
+            }
+            trail.push_back((what, now));
+        } else if let Some(last) = trail.back_mut() {
+            last.1 = now;
+        }
+    }
+}
+
+/// Quante attivita' recenti si tengono per il rapporto di un blocco.
+const TRAIL_LEN: usize = 12;
+static TRAIL: Mutex<std::collections::VecDeque<(&'static str, u64)>> = Mutex::new(std::collections::VecDeque::new());
+
+/// Le attivita' recenti, dalla piu' vecchia: «nome (12.3 s fa)».
+fn trail_text(now: u64) -> String {
+    TRAIL
+        .lock()
+        .map(|t| t.iter().map(|(w, at)| format!("{w} ({:.1} s fa)", now.saturating_sub(*at) as f64 / 1000.0)).collect::<Vec<_>>().join(" > "))
+        .unwrap_or_default()
 }
 
 fn last_activity() -> (&'static str, u64) {
@@ -270,6 +294,7 @@ fn report_hang(stale: &[(&str, u64)], beats: &[(&str, u64)]) {
     let _ = writeln!(text, "fermi: {}", names.join(", "));
     let (what, at) = last_activity();
     let _ = writeln!(text, "ultima attivita' della finestra: {what} ({:.1} s fa)", now.saturating_sub(at) as f64 / 1000.0);
+    let _ = writeln!(text, "attivita' recenti: {}", trail_text(now));
     let _ = writeln!(text, "minidump: {}", describe(&dump, &dump_result));
     let _ = std::fs::write(dir.join(format!("{base}.txt")), text);
     prune(dir);
