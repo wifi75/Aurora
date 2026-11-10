@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.231',
+    released: '2026-11-10T20:55:00Z',
+    kind: 'changed',
+    title: ["Contest: il TX resta sempre acceso", "Contest: TX always stays on", "Contest: Senden bleibt immer an", "Concours : l’émission reste toujours active", "Concurso: el TX siempre activo", "Concurso: o TX fica sempre ligado"],
+    text: [
+      "In gara Abilita Tx e Auto CQ non si spengono più da soli: dopo un QSO, o se il DX risponde a un altro, la stazione si libera e si torna subito al CQ; ferma solo l’operatore (Esc). Con i messaggi standard (DARC FT4) «Salta Tx1» si spegne da solo, così lo scambio parte per intero.",
+      "In a contest Enable Tx and Auto CQ no longer switch off by themselves: after a QSO, or if the DX answers someone else, the station is freed and goes straight back to CQ; only the operator stops it (Esc). With standard messages (DARC FT4) “Skip Tx1” switches itself off, so the exchange is sent in full.",
+      "Im Contest schalten sich Tx freigeben und Auto CQ nicht mehr von selbst aus: nach einem QSO oder wenn die DX-Station einer anderen antwortet, wird die Station freigegeben und es geht sofort zurück zum CQ; nur der Bediener stoppt (Esc). Bei Standardnachrichten (DARC FT4) schaltet sich „Tx1 überspringen“ selbst aus, so wird der Austausch vollständig gesendet.",
+      "En concours Activer Tx et Auto CQ ne s’éteignent plus tout seuls : après un QSO, ou si le DX répond à un autre, la station est libérée et on revient aussitôt au CQ ; seul l’opérateur arrête (Échap). Avec les messages standard (DARC FT4) « Sauter Tx1 » s’éteint tout seul, l’échange part donc en entier.",
+      "En concurso Habilitar Tx y Auto CQ ya no se apagan solos: tras un QSO, o si el DX responde a otro, la estación se libera y se vuelve enseguida al CQ; solo para el operador (Esc). Con los mensajes estándar (DARC FT4) «Saltar Tx1» se apaga solo, así el intercambio se envía completo.",
+      "Em concurso Ativar Tx e Auto CQ já não se desligam sozinhos: depois de um QSO, ou se o DX responde a outro, a estação fica livre e volta-se logo ao CQ; só o operador pára (Esc). Com as mensagens padrão (DARC FT4) «Saltar Tx1» desliga-se sozinho, assim a troca é enviada por inteiro.",
+    ],
+  },
+  {
     version: '0.11.230',
     released: '2026-11-10T19:37:42Z',
     kind: 'new',
@@ -562,20 +576,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans les Paramètres « Enregistrer » est toujours actif ; si tout est déjà enregistré, il le dit.',
       'En los Ajustes «Guardar» está siempre activo; si todo ya está guardado, lo dice.',
       'Nas Definições «Guardar» está sempre ativo; se tudo já está guardado, diz isso.',
-    ],
-  },
-  {
-    version: '0.11.191',
-    released: '2026-11-07T21:56:52Z',
-    kind: 'new',
-    title: ['Bande anche senza CAT', 'Bands without CAT too', 'Bänder auch ohne CAT', 'Bandes même sans CAT', 'Bandas también sin CAT', 'Bandas também sem CAT'],
-    text: [
-      'Senza radio collegata via CAT i pulsanti delle bande cambiano la frequenza di Aurora (per log, spot e mappa); la radio la sposti a mano. Spiegato nella Guida.',
-      'Without a radio connected via CAT the band buttons change Aurora’s frequency (for log, spots and map); you tune the radio by hand. Explained in the Guide.',
-      'Ohne per CAT verbundenes Funkgerät ändern die Bandtasten Auroras Frequenz (für Log, Spots und Karte); das Funkgerät stellst du von Hand ein. In der Anleitung erklärt.',
-      'Sans radio reliée en CAT les boutons de bande changent la fréquence d’Aurora (pour log, spots et carte) ; la radio se règle à la main. Expliqué dans le Guide.',
-      'Sin radio conectada por CAT los botones de banda cambian la frecuencia de Aurora (para log, spots y mapa); la radio la mueves a mano. Explicado en la Guía.',
-      'Sem rádio ligado por CAT os botões de banda mudam a frequência do Aurora (para log, spots e mapa); o rádio mudas à mão. Explicado no Guia.',
     ],
   },
 ];

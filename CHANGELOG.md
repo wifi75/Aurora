@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.231 - 2026-11-10
 - **Contest: il TX resta sempre acceso** (richiesta di IU3WJQ): in gara Abilita Tx e Auto CQ non si spengono da soli; finito un QSO (o se il DX risponde a un altro, o con il watchdog) si libera la stazione e si torna subito al CQ, e il CQ continua finche' nessuno risponde. Ferma solo l'operatore (STOP TX, Esc).
 - **Contest con messaggi standard (DARC FT4...)**: all'attivazione «Salta Tx1» si spegne da solo, cosi' il primo messaggio porta il locatore e lo scambio (rapporto + locatore) parte per intero.
 
