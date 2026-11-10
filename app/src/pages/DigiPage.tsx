@@ -118,12 +118,6 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
 }
 
 /** La larghezza del segnale (Hz): le freccette ai lati della bandierina nella cascata. */
-function bandwidthOf(s: DigiSettings): number {
-  if (s.mode === 'psk31') return 31;
-  if (s.mode === 'psk63') return 63;
-  return s.rtty_shift_hz + 2 * s.rtty_baud;
-}
-
 /** La pagina dei modi testuali, nella disposizione: menu, barra dei comandi, finestre RX e TX, log di lato, cascata e barra di stato. */
 export function DigiPage() {
   const t = useT();
@@ -855,7 +849,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       {views.waterfall ? (
-        <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
+        <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
       ) : null}
 
       {views.statusBar ? (

@@ -201,3 +201,8 @@ button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0b
 
 .digi-bandbar { display: flex; align-items: center; gap: 10px; padding: 3px 6px; background: #d4d0c8; border-bottom: 1px solid #808080; }
 .digi-bandbar small { font-size: 11px; color: #444; }
+
+/* senza coppia (PSK, CW): un solo rombo, niente linea */
+.digi-wf-pair--single { border-top: 0; }
+.digi-wf-pair--single::after { display: none; }
+.digi-wf-pair--single::before { left: -4px; }

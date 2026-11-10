@@ -23,6 +23,8 @@ interface Props {
   onRow?(row: SpectrumRow): void;
   /** Un clic sulla cascata (`ctrl`: con il tasto Ctrl premuto). */
   onPick(hz: number, ctrl: boolean, commit?: boolean): void;
+  /** Frequenza della radio (Hz): la scala mostra le frequenze vere in kHz (radio + audio, in USB); 0 = scala in Hz dell'audio. */
+  dialHz?: number;
   /** Cambia l'altezza della cascata (si trascina la barra sul bordo alto). */
   onHeight?(px: number): void;
 }
@@ -40,7 +42,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, transmitting, height = 150, onRow, onPick, onHeight }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -83,6 +85,20 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     const hzToX = (hz: number) => ((hz - minHz) / (maxHz - minHz)) * width;
+    if (dialHz > 0) {
+      // frequenze vere: un tacco ogni 100 Hz, le cifre ogni kHz (14022, 14023...); radio + audio, in USB
+      const first = Math.ceil((dialHz + minHz) / 100) * 100;
+      for (let real = first; real <= dialHz + maxHz; real += 100) {
+        const x = Math.round(hzToX(real - dialHz)) + 0.5;
+        const major = real % 1000 === 0;
+        ctx.beginPath();
+        ctx.moveTo(x, SCALE_H);
+        ctx.lineTo(x, SCALE_H - (major ? 9 : 4));
+        ctx.stroke();
+        if (major) ctx.fillText(String(real / 1000), x, 11);
+      }
+      return;
+    }
     for (let hz = Math.ceil(minHz / 100) * 100; hz <= maxHz; hz += 100) {
       const x = Math.round(hzToX(hz)) + 0.5;
       const major = hz % 500 === 0;
@@ -92,7 +108,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       ctx.stroke();
       if (major) ctx.fillText(String(hz), x, 11);
     }
-  }, [width, minHz, maxHz]);
+  }, [width, minHz, maxHz, dialHz]);
 
   useEffect(() => {
     const c = flow.current;
@@ -148,10 +164,12 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
   // la coppia di marcatori uniti da una linea, ai due lati della frequenza (mark e space dell'RTTY): il triangolo blu (ricezione) sta sotto
   // la linea e il rosso (trasmissione) sopra, cosi' quando coincidono formano un rombo; in split la coppia rossa va per conto suo
   const pair = (hz: number, kind: 'rx' | 'tx', title: string) => {
-    const left = xOf(hz - bandwidthHz / 2);
-    const right = xOf(hz + bandwidthHz / 2);
+    // senza coppia di toni (PSK, CW) si mostra un solo rombo sulla frequenza: la banda passante non si disegna
+    const single = bandwidthHz <= 0;
+    const left = xOf(hz - (single ? 0 : bandwidthHz / 2));
+    const right = xOf(hz + (single ? 0 : bandwidthHz / 2));
     if (right < 0 || left > width) return null;
-    return <span key={kind} className={`digi-wf-pair digi-wf-pair--${kind}`} style={{ left, width: Math.max(8, right - left) }} title={title} aria-hidden="true" />;
+    return <span key={kind} className={`digi-wf-pair digi-wf-pair--${kind}${single ? ' digi-wf-pair--single' : ''}`} style={{ left, width: single ? 0 : Math.max(8, right - left) }} title={title} aria-hidden="true" />;
   };
 
   const hzAt = (e: React.PointerEvent<HTMLCanvasElement>) => {
