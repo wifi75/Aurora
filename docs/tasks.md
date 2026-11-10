@@ -79,3 +79,9 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 
 - Oggi MSK144 usa solo periodi di 15 s (`engine-native`: `Mode::Msk144 => 15`, `mskrt.rs`, `rig.rs` «TX 00/30»). Da aggiungere la scelta 15/30 s (30 s TX, 30 s RX, molto usata per il meteor scatter in VHF), come per Q65: motore, trasmissione (quadro ripetuto per tutto il periodo), decodifica in tempo reale, selettore accanto al modo.
 - Quando e' fatta: commento nella issue #27 (UN7MBV riceve la notifica) e chiusura.
+
+## P3. Rotori d'antenna
+
+- Il proprietario ha gia' tutto il materiale per la gestione dei rotori: prima di cominciare va visto cosa contiene (protocolli, modelli, codice) e controllata la licenza (compatibile con la GPL-3 di Aurora).
+- Base proposta: `rotctld` di Hamlib (gia' dentro Aurora per il CAT), che comanda centinaia di rotori; pulsante «Punta» sulla stazione scelta (azimut dal locatore), sulla Mappa DX e sui passaggi dei satelliti (P1, fase 3).
+- Da fare come gli altri progetti grossi: piano scritto e prototipo grafico da approvare prima del codice.
