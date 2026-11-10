@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.223',
-    released: '2026-11-10T12:00:00Z',
+    released: '2026-11-10T10:17:50Z',
     kind: 'new',
     title: ["Età dei messaggi, messaggi nuovi in fondo e Automazioni che si salvano", "Message age, new messages at the bottom and Automation that saves", "Alter der Meldungen, neue Meldungen unten und Automatik, die speichert", "Âge des messages, nouveaux messages en bas et Automatisations qui s’enregistrent", "Edad de los mensajes, mensajes nuevos abajo y Automatizaciones que se guardan", "Idade das mensagens, mensagens novas em baixo e Automatizações que se guardam"],
     text: [
