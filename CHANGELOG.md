@@ -2,6 +2,8 @@
 
 ## 0.11.224 - 2026-11-10
 - **Hamlib, PTT**: se rigctld manda in ritardo la risposta di una lettura precedente, lo spegnimento del PTT non fallisce piu' al primo tentativo (dai rapporti: «risposta inattesa a "T 0": 0»): la riga vecchia si scarta e vale la risposta vera.
+- **TCI, chiusura**: Aurora chiude il collegamento con la SDR in modo ordinato, cosi' l'ultimo comando («Spegni», PTT spento) arriva anche se la SDR sta ancora mandando sensori e audio (prima a volte andava perso).
+- **Prove**: le due prove del TCI che fallivano ogni tanto sono di nuovo stabili.
 
 ## 0.11.223 - 2026-11-10
 - **Automazioni**: «Griglia su nuova banda», «Nuovo nominativo» e «Nominativo su nuova banda o modo» ora si salvano (il motore le rifiutava e non salvava nessuna regola; segnalato da Luc ON7KEC); «Nuova stazione» si chiama «Nuovo nominativo».
