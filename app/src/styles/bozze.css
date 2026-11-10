@@ -1377,3 +1377,7 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 /* «CQ e novita'» su due righe indipendenti: le caselle di ogni riga sono accostate, ognuna larga quanto il suo contenuto */
 .cq-strip.cq-strip--rows { display: flex; flex-direction: column; gap: 4px; }
 .cq-strip-row { display: flex; gap: 4px; height: 26px; flex: none; width: max-content; }
+
+/* tema scuro: tinte ancora piu' chiare (il viola del nuovo DXCC sembrava scuro; richiesta del proprietario, 2026-11-10) */
+html:not([data-theme='light']) .cq-chip { background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 38%, #ffffff); }
+html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 30%, #ffffff); }
