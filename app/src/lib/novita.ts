@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.228',
-    released: '2026-11-10T18:00:00Z',
+    released: '2026-11-10T15:23:19Z',
     kind: 'changed',
     title: ["Cascata ferma in trasmissione, filtro Spotter e MSK144", "Waterfall paused in TX, Spotter filter and MSK144", "Wasserfall pausiert beim Senden, Spotter-Filter und MSK144", "Cascade en pause en émission, filtre Spotteur et MSK144", "Cascada en pausa al transmitir, filtro Spotter y MSK144", "Cascata em pausa ao transmitir, filtro Spotter e MSK144"],
     text: [
