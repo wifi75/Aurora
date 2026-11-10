@@ -1393,3 +1393,6 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 .cq-chip-flag { width: 24px; }
 .cq-chip-flag .fi { width: 24px; height: 18px; background-size: cover; border-radius: 2px; }
 .cq-chip-country { font-size: 13px; }
+
+/* lo scorrimento automatico lo fa il programma: niente scorrimento «smooth» del browser che lo renderebbe a scatti */
+.cq-strip { scroll-behavior: auto; }
