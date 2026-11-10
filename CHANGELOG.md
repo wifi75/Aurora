@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Rotore d'antenna** (Hamlib rotctld): nuova pagina «Rotore» con una rosa dei venti grande e cliccabile (ago dell'antenna, destinazione tratteggiata, segni della stazione DX per il percorso corto e la via lunga), letture grandi di antenna e destinazione e pulsanti «Gira», «Via lunga», «Ferma», passi di ±2° e ±10° e gradi a mano; si stacca in una finestra a parte. Nuova scheda «Rotore» nelle Impostazioni: Aurora lancia rotctld (modello con ricerca, porta, velocita') o si collega a un rotctld gia' acceso (di base 127.0.0.1:4533); la posizione si rilegge ogni secondo e il collegamento caduto si rifa' da solo.
 
 ## 0.11.228 - 2026-11-10
 - **Cascata in trasmissione**: mentre si trasmette la cascata si ferma invece di scorrere nera; alla ripresa una riga gialla segna la pausa. Nel menu «Spec» la voce «Spento» nasconde lo spettro; la barretta per cambiarne l'altezza e' piu' visibile. Tra le impostazioni consigliate di FT-991 e IC-9700: shift dei ripetitori (ARS/DUP) e split spenti.
