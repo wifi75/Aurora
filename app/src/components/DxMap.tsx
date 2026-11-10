@@ -412,25 +412,32 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
 
   // propagazione: la mappa di calore di chi ci ha ricevuto e il suo quadratino
   useEffect(() => {
-    if (!settings.heat) {
+    // «Solo chi mi sente» mostra le linee di PSK Reporter anche con la propagazione spenta: prima con «Linee» e «Solo chi mi sente»
+    // accesi non si vedeva nessuna linea (Luc, 2026-11-10), perche' le linee di PSK Reporter c'erano solo con la mappa di calore accesa
+    const onlyMe = !!settings.onlyHeardMe;
+    if (!settings.heat && !onlyMe) {
       replace('heat', null);
       replace('spots', null);
       return;
     }
     const limit = settings.spotMaxMin * 60;
     const live = spots.filter((p) => p.age <= limit);
-    const heat = new HeatLayer();
-    replace('heat', heat);
-    const points: Array<{ lat: number; lon: number; weight: number }> = [];
-    for (const p of live) {
-      const pos = gridToLatLon(p.grid.slice(0, 6)) ?? gridToLatLon(p.grid.slice(0, 4));
-      if (pos) points.push({ lat: pos.lat, lon: pos.lon, weight: 0.35 });
+    if (settings.heat) {
+      const heat = new HeatLayer();
+      replace('heat', heat);
+      const points: Array<{ lat: number; lon: number; weight: number }> = [];
+      for (const p of live) {
+        const pos = gridToLatLon(p.grid.slice(0, 6)) ?? gridToLatLon(p.grid.slice(0, 4));
+        if (pos) points.push({ lat: pos.lat, lon: pos.lon, weight: 0.35 });
+      }
+      heat.setPoints(points);
+    } else {
+      replace('heat', null);
     }
-    heat.setPoints(points);
     const group = L.layerGroup();
     // linee da noi a chi ci ha ricevuto (le «PSK Spot Paths» di GridTracker2): tratteggio che scorre verso il ricevitore, cerchietto nero
     const from = homeRef.current;
-    if (settings.spotPaths && from) {
+    if ((settings.spotPaths || onlyMe) && from) {
       for (const p of live) {
         const to = gridToLatLon(p.grid.slice(0, 6)) ?? gridToLatLon(p.grid.slice(0, 4));
         if (!to) continue;
@@ -447,7 +454,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         .addTo(group);
     }
     replace('spots', group);
-  }, [spots, settings.heat, settings.spotMaxMin, settings.spotPaths, settings.spotColor, settings.linkWidth, settings.arcsAnimated, home?.lat, home?.lon]);
+  }, [spots, settings.heat, settings.onlyHeardMe, settings.spotMaxMin, settings.spotPaths, settings.spotColor, settings.linkWidth, settings.arcsAnimated, home?.lat, home?.lon]);
 
   // casa
   useEffect(() => {

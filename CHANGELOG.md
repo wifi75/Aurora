@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Mappe, «Solo chi mi sente»** (segnalato da Luc): mostra le linee verso chi ti ha ricevuto su PSK Reporter anche con la propagazione spenta; prima con «Linee» e «Solo chi mi sente» accesi non si vedeva nessuna linea.
 - **Suono del QSO a log** (richiesta di Luc): si sceglie in Impostazioni > Avvisi, «QSO a log», come gli altri avvisi (un suono, la voce, un proprio file o nessun suono); di fabbrica resta la fanfara.
 - **CQ e novita'**: ogni casella mostra solo nominativo, bandierina e paese (messaggio, rapporto e ora nel suggerimento); una stazione che non si sente da 15 minuti sparisce da sola.
 
