@@ -111,3 +111,9 @@ Luc: «Where can I find this option? More and more options are added, maybe thin
 - Scelta del proprietario (2026-11-10): cercare **ogni singola opzione**, non solo schede e sezioni. Serve un elenco delle etichette delle opzioni (testi nelle sei lingue, scheda e sezione di appartenenza), tenuto allineato alle schede: meglio ricavarlo dai testi che le schede gia' usano, cosi' non si dimentica niente.
 - Il proprietario ha scelto di farla; si dice a Luc quando esce.
 
+## P6. «Lavorato ma non confermato = nuovo» anche per le griglie (richiesta di Luc, issue #17, 2026-11-10)
+
+Oggi l'interruttore `newDXCCUnconfirmed` (Impostazioni → Notifiche → «Già lavorati», `settings/JtdxTabs.tsx`, `worked.rs`) vale solo per il DXCC. Luc: «Yes please, the same for grids» (nel primo messaggio: «new DXCC», «new GRID»,...).
+- Da fare: lo stesso per «nuova griglia» e «nuova griglia sulla banda»; chiedere a Luc se vuole anche zona CQ, zona ITU e prefisso. Un solo interruttore o uno per tipo: da decidere.
+- Serve che il log dica le conferme (LoTW o QSL per griglia). Testi nelle sei lingue, Guida («Paesi non confermati») e Novita'.
+
