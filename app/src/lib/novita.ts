@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.230',
+    released: '2026-11-10T20:00:00Z',
+    kind: 'new',
+    title: ["Ricerca nelle Impostazioni, schede in ordine e griglie non confermate", "Settings search, tidier tabs and unconfirmed grids", "Suche in den Einstellungen, geordnete Reiter und unbestätigte Felder", "Recherche dans les Réglages, onglets rangés et locators non confirmés", "Búsqueda en los Ajustes, pestañas ordenadas y locators no confirmados", "Pesquisa nas Definições, separadores arrumados e locators não confirmados"],
+    text: [
+      "In Impostazioni c’è il campo «Cerca nelle impostazioni»: scrivi una parola e trova ogni opzione in tutte le schede; un clic apre la scheda e illumina l’opzione. Le schede sono divise in gruppi con un titolo. Nuova casella in Colori › «Già lavorati»: una griglia lavorata ma non confermata conta ancora come nuova, come «New + Unconfirmed» di GridTracker. La Guida indica le schede giuste (Colori e Avvisi).",
+      "Settings now has a “Search settings” box: type a word and it finds every option in all the tabs; a click opens the tab and lights up the option. The tabs are split into titled groups. New checkbox in Colors › “Already worked”: a grid worked but not confirmed still counts as new, like GridTracker’s “New + Unconfirmed”. The Guide now points to the right tabs (Colors and Alerts).",
+      "In den Einstellungen gibt es das Feld „Einstellungen durchsuchen“: ein Wort eintippen und es findet jede Option in allen Reitern; ein Klick öffnet den Reiter und lässt die Option aufleuchten. Die Reiter sind in Gruppen mit Titel geteilt. Neues Kästchen unter Farben › „Schon gearbeitet“: ein gearbeitetes, nicht bestätigtes Feld zählt weiter als neu, wie „New + Unconfirmed“ bei GridTracker. Die Anleitung nennt jetzt die richtigen Reiter (Farben und Hinweise).",
+      "Dans les Réglages il y a le champ « Chercher dans les réglages » : tape un mot et il trouve chaque option dans tous les onglets ; un clic ouvre l’onglet et illumine l’option. Les onglets sont répartis en groupes avec un titre. Nouvelle case dans Couleurs › « Déjà contactés » : un locator contacté mais non confirmé compte encore comme nouveau, comme « New + Unconfirmed » de GridTracker. Le Guide indique les bons onglets (Couleurs et Alertes).",
+      "En los Ajustes hay el campo «Buscar en los ajustes»: escribe una palabra y encuentra cada opción en todas las pestañas; un clic abre la pestaña e ilumina la opción. Las pestañas están divididas en grupos con título. Nueva casilla en Colores › «Ya contactados»: un locator trabajado pero no confirmado sigue contando como nuevo, como «New + Unconfirmed» de GridTracker. La Guía indica las pestañas correctas (Colores y Avisos).",
+      "Nas Definições há o campo «Procurar nas definições»: escreve uma palavra e encontra cada opção em todos os separadores; um clique abre o separador e ilumina a opção. Os separadores estão divididos em grupos com título. Nova caixa em Cores › «Já contactados»: um locator trabalhado mas não confirmado continua a contar como novo, como «New + Unconfirmed» do GridTracker. O Guia indica os separadores certos (Cores e Avisos).",
+    ],
+  },
+  {
     version: '0.11.229',
     released: '2026-11-10T17:31:58Z',
     kind: 'new',
@@ -562,20 +576,6 @@ export const NOVITA: readonly Novita[] = [
       'Sans radio reliée en CAT les boutons de bande changent la fréquence d’Aurora (pour log, spots et carte) ; la radio se règle à la main. Expliqué dans le Guide.',
       'Sin radio conectada por CAT los botones de banda cambian la frecuencia de Aurora (para log, spots y mapa); la radio la mueves a mano. Explicado en la Guía.',
       'Sem rádio ligado por CAT os botões de banda mudam a frequência do Aurora (para log, spots e mapa); o rádio mudas à mão. Explicado no Guia.',
-    ],
-  },
-  {
-    version: '0.11.190',
-    released: '2026-11-07T21:39:53Z',
-    kind: 'new',
-    title: ['QSO a mano e pulizia del log', 'Manual QSOs and log cleanup', 'QSOs von Hand und Log aufräumen', 'QSO à la main et nettoyage du log', 'QSO a mano y limpieza del log', 'QSO à mão e limpeza do log'],
-    text: [
-      'Nella pagina Log: «Aggiungi QSO» per scriverne uno a mano, «Elimina selezionati» e «Svuota il log». Guida di BBLogger rifatta, passo per passo.',
-      'On the Log page: “Add QSO” to type one in, “Delete selected” and “Clear the log”. BBLogger guide redone, step by step.',
-      'Auf der Seite Log: „QSO hinzufügen“ zum Eintippen, „Ausgewählte löschen“ und „Log leeren“. BBLogger-Anleitung neu, Schritt für Schritt.',
-      'Dans la page Log : « Ajouter un QSO » pour en saisir un, « Supprimer la sélection » et « Vider le log ». Guide BBLogger refait, pas à pas.',
-      'En la página Log: «Añadir QSO» para escribir uno a mano, «Eliminar seleccionados» y «Vaciar el log». Guía de BBLogger rehecha, paso a paso.',
-      'Na página Log: «Adicionar QSO» para escrever um à mão, «Eliminar selecionados» e «Esvaziar o log». Guia do BBLogger refeito, passo a passo.',
     ],
   },
 ];
