@@ -2,6 +2,10 @@
 
 Stato al 2026-11-10, versione 0.11.222 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
+## Decisioni del 2026-11-10
+
+- **Release mai vuota per le copie installate** (dopo l'errore «la release non ha il pacchetto di installazione con la sua firma» della 0.11.221 e 0.11.222): la release si crea SEMPRE con `gh release create vX.Y.Z --latest=false` e senza file; il lavoro `Windows` allega installatore e `.sig` e solo allora la segna come ultima (passo «Release segnata come ultima solo con installatore e firma» di `windows.yml`). Mai creare una release come ultima senza installatore e firma. Se il lavoro Windows fallisce, la release resta non ultima e le copie installate restano sulla versione precedente, completa. In piu', dalla 0.11.222, Aurora richiede la release a GitHub se al momento di scaricare manca il pacchetto (`updater::prepare_locked`).
+
 ## Decisioni del 2026-11-09
 - Aggiornamenti: controllo 1 s dopo l'avvio e ogni ora; locandina con nastrino «Nuova versione», installazione silenziosa (`/S`) dopo 5 s con «Annulla», mai in trasmissione; striscia verde fluo in testata (0.11.205-0.11.207).
 - Un Aurora vecchio rimasto acceso (anche `aurora.exe`, il core da solo) si prendeva la finestra: all'avvio, nell'installatore e nell'aggiornamento si chiude (`desktop/src-tauri/src/stale.rs`, `installer/hooks.nsh`; 0.11.205-0.11.206).
