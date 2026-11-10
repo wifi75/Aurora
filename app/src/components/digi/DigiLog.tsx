@@ -82,7 +82,7 @@ function cell(q: LogQso, c: LogCol): React.ReactNode {
 }
 
 /**
- * Il log di lato: la tabella dei QSO dal piu' vecchio e, in fondo, la riga azzurra del QSO in corso che si scrive sul posto.
+ * Il log di lato: la riga azzurra del QSO in corso (si scrive sul posto) e sotto i QSO del log, il piu' recente in testa.
  * Nell'altra linguetta c'e' il DX Cluster, con il QSO in corso in un riquadro sotto.
  */
 export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
@@ -122,21 +122,21 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     }
   };
   const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchInterval: 20_000 });
-  // dal piu' vecchio al piu' recente (l'elenco arriva dal piu' recente), gli ultimi 300
+  // dal log, il piu' recente in testa (l'elenco arriva gia' cosi'): i primi 300
   const rows = useMemo(() => {
-    const all = [...(log.data?.qsos ?? [])].reverse();
+    const all = log.data?.qsos ?? [];
     const f = filter.trim().toUpperCase();
-    return (f === '' ? all : all.filter((q) => q.call.includes(f))).slice(-300);
+    return (f === '' ? all : all.filter((q) => q.call.includes(f))).slice(0, 300);
   }, [log.data, filter]);
   const nextNum = (log.data?.total ?? 0) + 1;
   const now = new Date();
   const nowDate = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`;
   const nowTime = now.toISOString().slice(11, 19);
 
-  // la tabella resta in fondo: l'ultimo QSO e la riga in corso si vedono sempre
+  // la tabella parte dall'alto: la riga in corso e l'ultimo QSO si vedono sempre
   useEffect(() => {
     const el = body.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el) el.scrollTop = 0;
   }, [rows.length, tab]);
 
   const input = (value: string, max: number, onChange: (v: string) => void, upper = false) => (
@@ -269,6 +269,11 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                 </tr>
               </thead>
               <tbody>
+                <tr className="digi-log-cur">
+                  {cols.map((c) => (
+                    <td key={c}>{current(c)}</td>
+                  ))}
+                </tr>
                 {rows.map((q) => (
                   <tr key={q.id}>
                     {cols.map((c) => (
@@ -276,11 +281,6 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                     ))}
                   </tr>
                 ))}
-                <tr className="digi-log-cur">
-                  {cols.map((c) => (
-                    <td key={c}>{current(c)}</td>
-                  ))}
-                </tr>
               </tbody>
             </table>
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
