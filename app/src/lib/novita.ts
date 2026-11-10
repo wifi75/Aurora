@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.229',
+    released: '2026-11-10T17:40:00Z',
+    kind: 'new',
+    title: ["Rotore d’antenna e filtri «sulla banda» corretti", "Antenna rotator and fixed «on a new band» filters", "Antennenrotor und korrigierte Filter «auf neuem Band»", "Rotor d’antenne et filtres « sur une nouvelle bande » corrigés", "Rotor de antena y filtros «en una banda nueva» corregidos", "Rotor de antena e filtros «numa banda nova» corrigidos"],
+    text: [
+      "Nuova pagina «Rotore» (Hamlib rotctld): rosa dei venti cliccabile, «Gira», «Via lunga», «Ferma» e gradi a mano; la configurazione è nella scheda «Rotore» delle Impostazioni. In Attività di banda i filtri «… su nuova banda» ora comprendono anche ciò che è nuovo in assoluto (una griglia nuova è nuova anche sulla banda). Nella Finestra RX il «×N» delle tue trasmissioni ripetute sta prima della bandiera.",
+      "New «Rotator» page (Hamlib rotctld): clickable compass rose, «Turn», «Long path», «Stop» and degrees by hand; setup is in the «Rotator» tab of Settings. In Band activity the «… on a new band» filters now also include what is new overall (a new grid is also new on the band). In the RX window the «×N» of your repeated transmissions sits before the flag.",
+      "Neue Seite «Rotor» (Hamlib rotctld): anklickbare Windrose, «Drehen», «Langer Weg», «Stopp» und Grad von Hand; die Einrichtung steht im Reiter «Rotor» der Einstellungen. In der Bandaktivität enthalten die Filter «… auf neuem Band» jetzt auch, was insgesamt neu ist (ein neues Feld ist auch auf dem Band neu). Im RX-Fenster steht das «×N» deiner wiederholten Sendungen vor der Flagge.",
+      "Nouvelle page « Rotor » (Hamlib rotctld) : rose des vents cliquable, « Tourner », « Grand chemin », « Stop » et degrés à la main ; la configuration est dans l’onglet « Rotor » des Réglages. Dans l’activité de bande les filtres « … sur une nouvelle bande » incluent maintenant aussi ce qui est nouveau en absolu (un nouveau locator est aussi nouveau sur la bande). Dans la fenêtre RX le « ×N » de tes émissions répétées est avant le drapeau.",
+      "Nueva página «Rotor» (Hamlib rotctld): rosa de los vientos clicable, «Girar», «Camino largo», «Parar» y grados a mano; la configuración está en la pestaña «Rotor» de los Ajustes. En Actividad de banda los filtros «… en una banda nueva» ahora incluyen también lo nuevo en absoluto (un locator nuevo es nuevo también en la banda). En la ventana RX el «×N» de tus transmisiones repetidas va antes de la bandera.",
+      "Nova página «Rotor» (Hamlib rotctld): rosa dos ventos clicável, «Rodar», «Caminho longo», «Parar» e graus à mão; a configuração está no separador «Rotor» das Definições. Na Atividade de banda os filtros «… numa banda nova» passam a incluir também o que é novo em absoluto (um locator novo é novo também na banda). Na janela RX o «×N» das tuas transmissões repetidas fica antes da bandeira.",
+    ],
+  },
+  {
     version: '0.11.228',
     released: '2026-11-10T15:23:19Z',
     kind: 'changed',
@@ -562,20 +576,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans la page Log : « Ajouter un QSO » pour en saisir un, « Supprimer la sélection » et « Vider le log ». Guide BBLogger refait, pas à pas.',
       'En la página Log: «Añadir QSO» para escribir uno a mano, «Eliminar seleccionados» y «Vaciar el log». Guía de BBLogger rehecha, paso a paso.',
       'Na página Log: «Adicionar QSO» para escrever um à mão, «Eliminar selecionados» e «Esvaziar o log». Guia do BBLogger refeito, passo a passo.',
-    ],
-  },
-  {
-    version: '0.11.189',
-    released: '2026-11-07T21:22:09Z',
-    kind: 'new',
-    title: ['Testo più grande', 'Bigger text', 'Größerer Text', 'Texte plus grand', 'Texto más grande', 'Texto maior'],
-    text: [
-      'In Impostazioni › Generali si sceglie la dimensione del testo di tutto il programma (da 90% a 160%), anche con Ctrl + e Ctrl −. «Salva» non chiude più le Impostazioni.',
-      'In Settings › General you choose the text size of the whole program (90% to 160%), also with Ctrl + and Ctrl −. «Save» no longer closes Settings.',
-      'Unter Einstellungen › Allgemein wählst du die Textgröße des ganzen Programms (90 % bis 160 %), auch mit Strg + und Strg −. «Speichern» schließt die Einstellungen nicht mehr.',
-      'Dans Paramètres › Général tu choisis la taille du texte de tout le programme (90 % à 160 %), aussi avec Ctrl + et Ctrl −. « Enregistrer » ne ferme plus les Paramètres.',
-      'En Ajustes › Generales eliges el tamaño del texto de todo el programa (del 90 % al 160 %), también con Ctrl + y Ctrl −. «Guardar» ya no cierra los Ajustes.',
-      'Em Definições › Gerais escolhes o tamanho do texto de todo o programa (de 90 % a 160 %), também com Ctrl + e Ctrl −. «Guardar» já não fecha as Definições.',
     ],
   },
 ];
