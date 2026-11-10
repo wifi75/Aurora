@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK e RTTY, cascata con RX e TX**: la ricezione e' una coppia di triangoli blu uniti da una linea (nell'RTTY i toni mark e space, negli altri modi la larghezza del segnale); con lo split acceso (Lock) compare la coppia rossa della trasmissione e un clic sulla cascata sposta la trasmissione, mentre la ricezione resta ferma; con Ctrl si sposta la ricezione.
+- **PSK e RTTY, restyling scuro**: aspetto nello stile di Aurora al posto del grigio, macro a blocchetti in griglia, colonna di destra con le linguette DX Cluster e Log e il QSO in corso sotto.
 - **SSTV, linea di posizione in trasmissione**: mentre si trasmette sull'anteprima scende una linea rossa che mostra a che riga si e' arrivati; la parte gia' inviata si scurisce un poco.
 - **Banda e frequenze nei modi testuali e nell'SSTV**: le pagine «PSK e RTTY» e «SSTV» hanno il selettore di banda e frequenze (lo stesso dell'FT8) con le frequenze di chiamata dei piani IARU per PSK31/PSK63, RTTY e SSTV, con le righe delle regioni 1, 2 e 3; un clic porta la radio sulla frequenza. La tabella (`app/src/lib/bandplan.ts`) comprende anche la CW, pronta per quando ci sara' la sua pagina.
 - **Cambio di modo: la frequenza segue il modo**: passando da FT8 a MSK144 (o a un altro modo VHF) dalla pillola VHF o dal menu del modo, la radio resta sui 40 m e il pulsante della frequenza mostrava 7,074 MHz mentre la lista era quella VHF. Ora, se la frequenza non e' del nuovo modo, Aurora porta la radio su quella della stessa banda, o sull'ultima usata nel gruppo, o sulla principale della tabella (MSK144: 6 m, 50,260 MHz).

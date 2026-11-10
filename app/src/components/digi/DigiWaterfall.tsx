@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../../i18n';
 import { registerSpectrum } from '../../lib/spectrumFeed';
 import type { SpectrumRow } from '../../lib/digiSpectrum';
 
@@ -9,15 +10,17 @@ interface Props {
   /** La frequenza di ricezione (bandierina verde) e, se e' diversa (Lock), quella di trasmissione (rossa). */
   rxHz: number;
   txHz: number | null;
-  /** La larghezza del segnale che si decodifica (Hz): le due freccette ai lati della bandierina. */
+  /** La distanza fra i due triangoli di ogni coppia (Hz): lo shift dell'RTTY (mark e space) o la larghezza del segnale che si decodifica. */
   bandwidthHz: number;
+  /** Split acceso: la coppia rossa della trasmissione sta altrove e il clic la sposta; con Ctrl si sposta la ricezione. */
+  split?: boolean;
   /** In ricezione la bandierina e' verde, in trasmissione rossa. */
   transmitting: boolean;
   height?: number;
   /** Ogni riga che arriva (per Snap, Seek e Scan). */
   onRow?(row: SpectrumRow): void;
-  /** Un clic sulla cascata. */
-  onPick(hz: number): void;
+  /** Un clic sulla cascata (`ctrl`: con il tasto Ctrl premuto). */
+  onPick(hz: number, ctrl: boolean): void;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso (come la cascata). */
@@ -33,7 +36,8 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, transmitting, height = 150, onRow, onPick }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, transmitting, height = 150, onRow, onPick }: Props) {
+  const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
   const scale = useRef<HTMLCanvasElement>(null);
@@ -124,6 +128,14 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, transmitt
       </span>
     ) : null;
 
+  // la coppia di triangoli uniti da una linea: blu (ricezione) o rossa (trasmissione), ai due lati della frequenza (mark e space dell'RTTY)
+  const pair = (hz: number, kind: 'rx' | 'tx', title: string) => {
+    const left = xOf(hz - bandwidthHz / 2);
+    const right = xOf(hz + bandwidthHz / 2);
+    if (right < 0 || left > width) return null;
+    return <span key={kind} className={`digi-wf-pair digi-wf-pair--${kind}`} style={{ left, width: Math.max(8, right - left) }} title={title} aria-hidden="true" />;
+  };
+
   return (
     <div className="digi-wf" ref={wrap} style={{ height }}>
       <canvas ref={scale} className="digi-wf-scale" />
@@ -132,17 +144,13 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, transmitt
         className="digi-wf-flow"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
-          onPick(Math.round((minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz)) * 10) / 10);
+          onPick(Math.round((minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz)) * 10) / 10, e.ctrlKey);
         }}
       />
       {flag(rxHz, transmitting ? '#e5484d' : '#22c55e', 'rx')}
       {txHz !== null ? flag(txHz, '#e5484d', 'tx') : null}
-      {rxHz >= minHz && rxHz <= maxHz ? (
-        <span className="digi-wf-band" style={{ left: xOf(rxHz - bandwidthHz / 2), width: Math.max(6, xOf(rxHz + bandwidthHz / 2) - xOf(rxHz - bandwidthHz / 2)) }} aria-hidden="true">
-          <b>◂</b>
-          <b>▸</b>
-        </span>
-      ) : null}
+      {pair(rxHz, 'rx', t('digi.wf.rxTip'))}
+      {split && txHz !== null ? pair(txHz, 'tx', t('digi.wf.txTip')) : null}
     </div>
   );
 }

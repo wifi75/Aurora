@@ -238,10 +238,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   };
 
   // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
-  const pickFreq = (hz: number, viaClick: boolean) => {
+  const pickFreq = (hz: number, viaClick: boolean, ctrl = false) => {
     const l = live.current;
     const snapped = viaClick && l.snap.settings.snap_on && avg.current.ready && lastRow.current ? snapToPeak(avg.current.values(), lastRow.current, hz) : hz;
     const f = Math.max(200, Math.min(3500, snapped));
+    // in split (Lock) la ricezione resta ferma e il clic sposta la trasmissione; con Ctrl si sposta invece la ricezione
+    if (viaClick && !l.snap.settings.tx_follow_rx && !ctrl) {
+      save({ tx_freq_hz: f });
+      return;
+    }
     // con Lock la trasmissione resta dov'e': si sposta solo l'ascolto
     save({ rx_freq_hz: f, ...(l.snap.settings.tx_follow_rx ? { tx_freq_hz: f } : {}) });
   };
@@ -736,7 +741,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       {views.waterfall ? (
-        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={bandwidthOf(s)} transmitting={sending} onRow={onRow} onPick={(hz) => pickFreq(hz, true)} />
+        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} transmitting={sending} onRow={onRow} onPick={(hz, ctrl) => pickFreq(hz, true, ctrl)} />
       ) : null}
 
       {views.statusBar ? (

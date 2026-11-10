@@ -162,8 +162,15 @@
 .digi-wf-flow { display: block; width: 100%; cursor: crosshair; }
 .digi-wf-flag { position: absolute; top: 3px; width: 0; height: 0; pointer-events: none; border-left: 2px solid transparent; }
 .digi-wf-flag i { position: absolute; left: -2px; top: 0; width: 11px; height: 7px; }
-.digi-wf-band { position: absolute; top: 24px; height: 16px; pointer-events: none; display: flex; justify-content: space-between; align-items: center; border-left: 1px solid rgba(255, 255, 255, 0.8); border-right: 1px solid rgba(255, 255, 255, 0.8); color: #fff; font-size: 11px; }
-.digi-wf-band b { font-weight: 400; line-height: 1; }
+.digi-wf-pair { position: absolute; top: 23px; height: 10px; pointer-events: none; }
+.digi-wf-pair::before, .digi-wf-pair::after { content: ''; position: absolute; top: 0; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.digi-wf-pair::before { left: -4px; }
+.digi-wf-pair::after { right: -4px; }
+.digi-wf-pair > * { display: none; }
+.digi-wf-pair { background: linear-gradient(#fff, #fff) center 3px / 100% 1px no-repeat; }
+/* ricezione: triangoli blu in basso verso la cascata; trasmissione: rossi */
+.digi-wf-pair--rx::before, .digi-wf-pair--rx::after { border-top: 8px solid #3b7bff; }
+.digi-wf-pair--tx::before, .digi-wf-pair--tx::after { border-bottom: 8px solid #ff4d4d; top: 2px; }
 
 /* barra di stato a caselle */
 .digi-status { display: flex; align-items: stretch; gap: 2px; padding: 2px; background: #d4d0c8; border-top: 1px solid #fff; font: 12px Tahoma, Arial, sans-serif; color: #000; flex-wrap: wrap; justify-content: flex-end; }
