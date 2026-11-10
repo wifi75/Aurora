@@ -2,7 +2,9 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-10 mattina (0.11.220 pubblicata)
+## Stato al 2026-11-10 mattina (0.11.221 pubblicata)
+
+- **0.11.221** (08:03 UTC): solo dipendenze aggiornate (`cargo update` nei due workspace; interfaccia con react-query 5.107, zustand 5.1, vite 8.3.7, vitest 5.1; servizio dei rapporti con wrangler 4.159 e workers-types 5). jsdom resta alla 30 e typescript del servizio alla 5.9.
 
 - **0.11.220** (07:52 UTC): «Ripristina Hamlib» su Windows, trasmissione che riparte da sola se la scheda audio della radio manca all'avvio, finestre a parte aperte fuori dal thread della finestra, decodifica con un processore libero, primi messaggi dopo il cambio di banda, voce della Guida «Che computer serve», tipo di computer nei rapporti.
 - **Installatore da GitHub**: la release si crea senza file; il lavoro `Windows` (`windows.yml`) compila l'installatore, lo firma con il segreto `AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY` e allega `Aurora_x.y.z_x64-setup.exe`, `.sig`, `Aurora-Setup.exe` e `SHA256SUMS.txt`. Sul PC dell'ufficio la chiave di firma non c'e': `scripts/rilascio-windows.ps1` li' non si puo' usare.
