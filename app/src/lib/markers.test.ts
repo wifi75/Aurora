@@ -52,7 +52,7 @@ describe('filterWindowHz', () => {
 });
 
 describe('MSK144 sulla cascata', () => {
-  it('e'' centrato sulla frequenza: la barra parte 1000 Hz prima, la Finestra RX e'' larga ±100', async () => {
+  it('is centred on the frequency: the bar starts 1000 Hz earlier, the RX window is ±100 Hz', async () => {
     const m = await import('./markers');
     expect(m.signalStartOffsetHz('MSK144')).toBe(-1000);
     expect(m.signalStartOffsetHz('FT8')).toBe(0);
