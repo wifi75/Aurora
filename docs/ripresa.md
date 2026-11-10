@@ -1,6 +1,16 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-10 mattina)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-10 notte)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-10 notte (0.11.232 in pubblicazione, ramo sviluppo con la CW)
+
+- **Release del 2026-11-10**: 0.11.229 (rotore, filtri «sulla banda»), 0.11.230 (ricerca nelle Impostazioni, schede in gruppi, griglie non confermate), **0.11.231** (Contest: TX e Auto CQ sempre accesi, «Salta Tx1» da solo con i messaggi standard), **0.11.232** (PTT: una lettura mancata della radio non scarta piu' il PTT e, se non parte, un avviso a schermo dice il motivo; menu dei contest in ordine di data; il «×N» non sposta la bandiera). La 0.11.232 e' stata creata alle 22:29 UTC: **controllare che i tre lavori (Windows, Linux, macOS) siano verdi e che la release abbia `Aurora-Setup.exe` e il `.sig`**, poi correggere l'ora vera nelle Novita' (`gh release view v0.11.232 --json publishedAt`), commit e push.
+- **Origine del fix PTT**: commenti su Facebook di Jeff Cadwalader (IC non specificato, «cambia frequenza ma niente PTT») e Michał Siarkiewicz (IC-7300). Nel codice: `HamlibRig::set_ptt` scartava il PTT con `failures > 0` e l'errore di trasmissione finiva solo nel log. Resta da vedere il pacchetto di assistenza per sapere se era proprio quella la causa; risposta pronta ai due utenti (Impostazioni › Radio, «Test PTT», 0.11.232, pacchetto di assistenza).
+- **Ramo `sviluppo`** (repository privato `wifi75/Aurora-sviluppo`, remote `sviluppo`; mai su `origin`): contiene tutto `main` piu' i modi nuovi. Va fuso con `git merge main` dopo ogni versione di `main` (non farlo mentre una compilazione e' in corso: un nuovo push la annulla; l'installatore si rifa a ogni push, circa 11 minuti, release `sviluppo-ultima`). Nome ambiguo: usare `refs/heads/sviluppo`.
+- **Contenuto di sviluppo**: SSTV (`mode-sstv`), PSK31/63, RTTY e CW (`mode-digi`, CW in `cw.rs`), Satelliti (`mode-sat`), menu nuovo con i modi in alto (un solo pulsante «PSK · RTTY · SSTV»), pagina PSK/RTTY/CW (macro  a blocchetti con i sottoinsiemi, selettore di banda IARU in `app/src/lib/bandplan.ts`, log dello stesso log del pannello Log, DX Cluster con «Spot DX», cascata con rombi RX/TX e scala in kHz veri, opzioni della Vista, tema chiaro e scuro). Il dettaglio e' in `docs/ripresa.md` sul ramo `sviluppo`.
+- **Da provare dal vivo** (le prove con la radio le fa il proprietario): CW (trasmissione e decodifica), spot a DXSummit, log di Log4OM con frequenza/nome/QTH, split con «up N», rotori.
+- **Da fare**: linguetta «Mappa» nella colonna di destra; opzioni della Vista rimaste fuori (Word mode, stick cursor, IMD); comandi di macro dell'SSTV; split vero della radio per «up» oltre 3,5 kHz; fondere `sviluppo` in `main` solo quando il proprietario lo decide.
+- **Attenzione alla pagina PSK/RTTY**: la finestra e' `position: fixed; inset: 0` (`styles/digi-log-corta.css`) perche' `100dvh` non segue lo zoom di `lib/uiScale.ts`; non tornare a `100dvh`.
 
 ## Ramo sviluppo - stato al 2026-11-10 notte (PSK, RTTY, CW, SSTV, Satelliti)
 

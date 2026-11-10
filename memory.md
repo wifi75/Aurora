@@ -1,6 +1,14 @@
 # Memoria di progetto
 
-Stato al 2026-11-10, versione 0.11.231 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-10, versione 0.11.232 (creata alle 22:29 UTC del 2026-11-10; da controllare i lavori Windows e macOS). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+
+## Decisioni del 2026-11-10 notte (CW, log, PTT)
+
+- **PTT**: una lettura mancata della radio non scarta piu' il PTT (`HamlibRig::set_ptt`); se la trasmissione fallisce per il PTT, un avviso `ptt_failed` a schermo dice il motivo. Nessuna prova su radio vera: aspettare i pacchetti di assistenza di chi lo segnalava (IC-7300 e altri).
+- **CW** (ramo `sviluppo`): tono audio keyed (non linea DTR/RTS ne' Winkeyer, per ora), velocita' in WPM, ricevitore a soglia adattiva; da provare con la radio.
+- **Log della pagina PSK/RTTY/CW**: e' lo stesso del pannello Log (Log4OM2 se configurato, altrimenti il log interno, schema v4 con nome e QTH); la frequenza registrata e' quella vera del segnale (radio + tono).
+- **Aspetto delle pagine dei modi**: restyling scuro/chiaro nello stile di Aurora (non il grigio), ma con le stesse funzioni e le macro a blocchetti 4 x 12;  si guarda solo per le funzioni.
+- **Regola dei rami**: `sviluppo` riceve ogni versione di `main` con un merge; il merge non si spinge mentre l'installatore di sviluppo si sta compilando.
 
 ## Decisioni del 2026-11-10
 
