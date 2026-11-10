@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Una sola compilazione alla volta: un nuovo push ferma quella ancora in corso.
+concurrency:
+  group: sviluppo-installatore
+  cancel-in-progress: true
+
 jobs:
   windows:
     runs-on: windows-latest
