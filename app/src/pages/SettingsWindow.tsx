@@ -43,8 +43,8 @@ interface TabDef {
   id: string;
   label: Key;
   icon: string;
-  /** `extra`: funzioni che Aurora ha in piu' rispetto alle schede di riferimento, ognuna nella sua scheda e mai dentro un'altra. */
-  extra?: boolean;
+  /** Il gruppo della barra: il titolo compare davanti alla prima scheda di ogni gruppo. */
+  section?: Key;
   /** L'ultima voce della barra, staccata dalle altre. */
   last?: boolean;
   render(): ReactNode;
@@ -52,40 +52,36 @@ interface TabDef {
 
 /** Le schede di riferimento (ognuna con solo il suo contenuto) e poi quelle che sono solo di Aurora, nell'ordine di `docs/prototipo-impostazioni.html`. */
 const TABS: readonly TabDef[] = [
-  { id: 'general', label: 'sw.tab.general', icon: '⚙', render: () => <GeneralWindowTab /> },
-  { id: 'radio', label: 'sw.tab.radio', icon: '▭', render: () => <RadioTab part="link" /> },
-  { id: 'profiles', label: 'sw.tab.profiles', icon: '☰', render: () => <RadioTab part="profiles" /> },
-  { id: 'rotator', label: 'sw.tab.rotator', icon: '⊕', render: () => <RotatorTab /> },
-  { id: 'audio', label: 'sw.tab.audio', icon: '∿', render: () => <AudioTab /> },
-  // chi ha una SDR: TCI, QMAP e radio adatte in un posto solo (stessi dati delle schede Radio e Audio)
-  { id: 'sdr', label: 'sw.tab.sdr', icon: '⌁', render: () => <SdrTab /> },
-  { id: 'macros', label: 'sw.tab.macros', icon: '≡', render: () => <MacrosTab /> },
-  { id: 'reporting', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
-  { id: 'freq', label: 'sw.tab.freq', icon: '∼', render: () => <FrequenciesTab /> },
-  { id: 'aspetto', label: 'sw.tab.appearance', icon: 'Aa', render: () => <AppearanceTab /> },
-  { id: 'colors', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
-  { id: 'logbooks', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
-  { id: 'files', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
-  { id: 'autocq', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
-  { id: 'alerts', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
-  // l'agente nel tray: la pagina con le sue scelte (lette dall'agente dal file delle impostazioni)
-  { id: 'agent', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
-  { id: 'filters', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
-  { id: 'cqnews', label: 'panel.cq', icon: '◉', render: () => <CqNewsTab /> },
-  // solo di Aurora
-  { id: 'waterfall', label: 'tab.waterfall', icon: '▥', extra: true, render: () => <WaterfallTab /> },
-  { id: 'automation', label: 'nav.automation', icon: '⚡', extra: true, render: () => <AutomationTab /> },
-  { id: 'sequence', label: 'tab.sequence', icon: '↻', extra: true, render: () => <SequenceTab /> },
-  { id: 'bands', label: 'tab.bands', icon: '▦', extra: true, render: () => <BandsTab /> },
-  { id: 'online', label: 'tab.online', icon: '☁', extra: true, render: () => <OnlineTab /> },
-  { id: 'cluster', label: 'tab.cluster', icon: '✦', extra: true, render: () => <ClusterTab /> },
-  { id: 'wishlist', label: 'tab.wishlist', icon: '★', extra: true, render: () => <WishlistTab /> },
-  { id: 'dxcc', label: 'tab.dxcc', icon: '◎', extra: true, render: () => <DxccTab /> },
-  { id: 'clock', label: 'tab.clock', icon: '◔', extra: true, render: () => <ClockTab /> },
-  { id: 'windows', label: 'tab.windows', icon: '▢', extra: true, render: () => <WindowsTab /> },
-  { id: 'phone', label: 'sw.tab.phone', icon: '☎', extra: true, render: () => <AccessTab /> },
-  { id: 'support', label: 'tab.support', icon: '✚', extra: true, render: () => <SupportTab /> },
-  // sempre l'ultima della barra
+  { id: 'general', section: 'sw.sec.station', label: 'sw.tab.general', icon: '⚙', render: () => <GeneralWindowTab /> },
+  { id: 'radio', section: 'sw.sec.station', label: 'sw.tab.radio', icon: '▭', render: () => <RadioTab part="link" /> },
+  { id: 'profiles', section: 'sw.sec.station', label: 'sw.tab.profiles', icon: '☰', render: () => <RadioTab part="profiles" /> },
+  { id: 'rotator', section: 'sw.sec.station', label: 'sw.tab.rotator', icon: '⊕', render: () => <RotatorTab /> },
+  { id: 'sdr', section: 'sw.sec.station', label: 'sw.tab.sdr', icon: '⌁', render: () => <SdrTab /> },
+  { id: 'audio', section: 'sw.sec.station', label: 'sw.tab.audio', icon: '∿', render: () => <AudioTab /> },
+  { id: 'freq', section: 'sw.sec.station', label: 'sw.tab.freq', icon: '∼', render: () => <FrequenciesTab /> },
+  { id: 'bands', section: 'sw.sec.station', label: 'tab.bands', icon: '▦', render: () => <BandsTab /> },
+  { id: 'macros', section: 'sw.sec.operate', label: 'sw.tab.macros', icon: '≡', render: () => <MacrosTab /> },
+  { id: 'sequence', section: 'sw.sec.operate', label: 'tab.sequence', icon: '↻', render: () => <SequenceTab /> },
+  { id: 'autocq', section: 'sw.sec.operate', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
+  { id: 'automation', section: 'sw.sec.operate', label: 'nav.automation', icon: '⚡', render: () => <AutomationTab /> },
+  { id: 'filters', section: 'sw.sec.operate', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
+  { id: 'cqnews', section: 'sw.sec.operate', label: 'panel.cq', icon: '◉', render: () => <CqNewsTab /> },
+  { id: 'wishlist', section: 'sw.sec.operate', label: 'tab.wishlist', icon: '★', render: () => <WishlistTab /> },
+  { id: 'dxcc', section: 'sw.sec.operate', label: 'tab.dxcc', icon: '◎', render: () => <DxccTab /> },
+  { id: 'aspetto', section: 'sw.sec.look', label: 'sw.tab.appearance', icon: 'Aa', render: () => <AppearanceTab /> },
+  { id: 'colors', section: 'sw.sec.look', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
+  { id: 'alerts', section: 'sw.sec.look', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
+  { id: 'waterfall', section: 'sw.sec.look', label: 'tab.waterfall', icon: '▥', render: () => <WaterfallTab /> },
+  { id: 'windows', section: 'sw.sec.look', label: 'tab.windows', icon: '▢', render: () => <WindowsTab /> },
+  { id: 'clock', section: 'sw.sec.look', label: 'tab.clock', icon: '◔', render: () => <ClockTab /> },
+  { id: 'logbooks', section: 'sw.sec.log', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
+  { id: 'files', section: 'sw.sec.log', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
+  { id: 'reporting', section: 'sw.sec.log', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
+  { id: 'online', section: 'sw.sec.log', label: 'tab.online', icon: '☁', render: () => <OnlineTab /> },
+  { id: 'cluster', section: 'sw.sec.log', label: 'tab.cluster', icon: '✦', render: () => <ClusterTab /> },
+  { id: 'phone', section: 'sw.sec.access', label: 'sw.tab.phone', icon: '☎', render: () => <AccessTab /> },
+  { id: 'agent', section: 'sw.sec.access', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
+  { id: 'support', section: 'sw.sec.access', label: 'tab.support', icon: '✚', render: () => <SupportTab /> },
   { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', last: true, render: () => <AboutTab /> },
 ];
 
@@ -284,7 +280,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
         <nav className="sw-nav" role="tablist" aria-orientation="vertical">
           {shownTabs.map((x, i) => (
             <Fragment key={x.id}>
-              {x.extra && !shownTabs[i - 1]?.extra ? <span className="sw-nav-sep">{t('sw.extra')}</span> : null}
+              {x.section && x.section !== shownTabs[i - 1]?.section ? <span className="sw-nav-sep">{t(x.section)}</span> : null}
               {x.last ? <span className="sw-nav-sep sw-nav-sep--line" aria-hidden="true" /> : null}
               <button
                 type="button"

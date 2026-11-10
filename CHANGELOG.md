@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni in ordine**: le schede sono divise in gruppi con un titolo (Stazione, Operare, Aspetto e avvisi, Log e servizi, Accesso e assistenza) al posto dell'elenco unico con «Funzioni di Aurora».
 - **Guida**: le voci che mandavano alla scheda «Notifiche» (che non c'e' piu') ora indicano la scheda giusta: «Colori» per «Paese lavorato ma non confermato = DXCC nuovo», «Avvisi» per i suoni e per i toast (segnalato da Luc, issue #17).
 
 ## 0.11.229 - 2026-11-10
