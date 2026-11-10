@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.224',
-    released: '2026-11-10T12:00:00Z',
+    released: '2026-11-10T10:35:38Z',
     kind: 'fixed',
     title: ["PTT con Hamlib e chiusura del TCI più affidabili", "More reliable Hamlib PTT and TCI closing", "Zuverlässigere Hamlib-PTT und TCI-Beenden", "PTT Hamlib et fermeture TCI plus fiables", "PTT con Hamlib y cierre TCI más fiables", "PTT com o Hamlib e fecho do TCI mais fiáveis"],
     text: [
