@@ -32,7 +32,8 @@ const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63
 const AUTOCQ_DELAY_S = 8;
 /** Il tratto di audio che si ascolta e si mostra (Hz). */
 const WF_MIN = 0;
-const WF_MAX = 3500;
+/**: la cascata arriva fino al massimo che il motore calcola (5 kHz), cosi' ogni kHz e' piu' stretto e si vede una banda piu' larga. */
+const WF_MAX = 5000;
 const SEEK_LIMITS = { min: 300, max: 3300 };
 
 interface Views {
@@ -450,6 +451,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       rst_rcvd: l.saved.rstr,
       grid: l.qso.wwloc,
       name: l.qso.name,
+      qth: l.qso.qth,
       comment: l.qso.notes,
     }).then(
       () => {

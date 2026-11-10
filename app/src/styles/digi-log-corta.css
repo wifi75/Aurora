@@ -51,3 +51,13 @@
 .digi-wf { position: relative; }
 .digi-wf-grip { position: absolute; left: 0; right: 0; top: -3px; height: 7px; cursor: row-resize; z-index: 5; touch-action: none; }
 .digi-wf-grip:hover, .digi-wf-grip:active { background: rgb(142 123 255 / 0.55); }
+
+/* il log: righe giallo chiaro con il testo viola, in fondo la riga azzurra del QSO in corso con i campi sul posto */
+.digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #f7f4b4; }
+.digi-log-table--completa table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.digi-log-table--completa th { position: sticky; top: 0; background: #d4d0c8; color: #000; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; border: 1px solid #808080; padding: 2px 6px; text-align: left; z-index: 1; }
+.digi-log-table--completa td { background: #f7f4b4; color: #4b0a96; padding: 2px 6px; border: 1px solid #d8d494; white-space: nowrap; }
+.digi-log-table--completa td b { color: #4b0a96; font-weight: 700; }
+.digi-log-table--completa tr.digi-log-cur td { background: #8ff; color: #000; border-color: #5cc; }
+.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #0a8; background: #fff; color: #000; font: inherit; padding: 0 3px; height: 20px; }
+.digi-log-bar { flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--border); }

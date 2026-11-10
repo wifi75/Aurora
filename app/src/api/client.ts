@@ -1240,6 +1240,9 @@ export interface LogQso {
   rst_rcvd: string;
   grid: string;
   country: string;
+  /** Nome e QTH del corrispondente (assenti con un core vecchio). */
+  name?: string;
+  qth?: string;
 }
 
 export interface LogQsos {
@@ -1270,6 +1273,7 @@ export interface ManualQso {
   rst_rcvd: string;
   grid: string;
   name: string;
+  qth?: string;
   comment: string;
 }
 

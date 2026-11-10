@@ -34,10 +34,11 @@ interface Props {
   onWidth(px: number): void;
 }
 
-export type LogCol = 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'country' | 'grid' | 'rst';
-const ALL_COLS: readonly LogCol[] = ['mode', 'band', 'freq', 'date', 'utc', 'call', 'country', 'grid', 'rst'];
-const DEFAULT_COLS: readonly LogCol[] = ['mode', 'freq', 'date', 'utc', 'call', 'country', 'rst'];
-const COLS_KEY = 'aurora.digi.logcols';
+export type LogCol = 'num' | 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'name' | 'qth' | 'country' | 'grid' | 'rstS' | 'rstR';
+const ALL_COLS: readonly LogCol[] = ['num', 'mode', 'band', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'country', 'grid', 'rstS', 'rstR'];
+/** Le colonne del log: numero, modo, frequenza, data, UTC, nominativo, nome, QTH e i due rapporti. */
+const DEFAULT_COLS: readonly LogCol[] = ['num', 'mode', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'rstS', 'rstR'];
+const COLS_KEY = 'aurora.digi.logcols2';
 
 function savedCols(): LogCol[] {
   try {
@@ -52,28 +53,38 @@ function savedCols(): LogCol[] {
   return [...DEFAULT_COLS];
 }
 
-const mhz = (hz: number) => (hz > 0 ? (hz / 1_000_000).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') : '');
+/** Frequenza in kHz con la virgola, come nel log (7042,988). */
+const khz = (hz: number) => (hz > 0 ? (hz / 1000).toFixed(3).replace('.', ',') : '');
+/** `2023-03-19` -> `19/03/2023`. */
+const dmy = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : d);
 
 const COL_LABEL = {
-  mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
-  call: 'digi.log.call', country: 'digi.log.country', grid: 'digi.log.grid', rst: 'digi.log.rst',
+  num: 'digi.log.num', mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
+  call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr',
 } as const;
 
 function cell(q: LogQso, c: LogCol): React.ReactNode {
   switch (c) {
+    case 'num': return q.id;
     case 'mode': return q.mode;
     case 'band': return q.band;
-    case 'freq': return mhz(q.freq_hz);
-    case 'date': return q.date;
-    case 'utc': return q.time.slice(0, 5);
+    case 'freq': return khz(q.freq_hz);
+    case 'date': return dmy(q.date);
+    case 'utc': return q.time.length === 5 ? `${q.time}:00` : q.time;
     case 'call': return <b>{q.call}</b>;
+    case 'name': return q.name ?? '';
+    case 'qth': return q.qth ?? '';
     case 'country': return q.country;
     case 'grid': return q.grid;
-    case 'rst': return `${q.rst_sent}/${q.rst_rcvd}`;
+    case 'rstS': return q.rst_sent;
+    case 'rstR': return q.rst_rcvd;
   }
 }
 
-/** Il log di lato: la riga del QSO in corso (si scrive qui) e sotto i QSO fatti, piu' recenti per primi. */
+/**
+ * Il log di lato: la tabella dei QSO dal piu' vecchio e, in fondo, la riga azzurra del QSO in corso che si scrive sul posto.
+ * Nell'altra linguetta c'e' il DX Cluster, con il QSO in corso in un riquadro sotto.
+ */
 export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
@@ -91,6 +102,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     }
   };
   const pop = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!picking) return;
     const out = (e: PointerEvent) => {
@@ -110,12 +122,43 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     }
   };
   const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchInterval: 20_000 });
+  // dal piu' vecchio al piu' recente (l'elenco arriva dal piu' recente), gli ultimi 300
   const rows = useMemo(() => {
     const all = [...(log.data?.qsos ?? [])].reverse();
     const f = filter.trim().toUpperCase();
-    return (f === '' ? all : all.filter((q) => q.call.includes(f))).slice(0, 80);
+    return (f === '' ? all : all.filter((q) => q.call.includes(f))).slice(-300);
   }, [log.data, filter]);
+  const nextNum = (log.data?.total ?? 0) + 1;
   const now = new Date();
+  const nowDate = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`;
+  const nowTime = now.toISOString().slice(11, 19);
+
+  // la tabella resta in fondo: l'ultimo QSO e la riga in corso si vedono sempre
+  useEffect(() => {
+    const el = body.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [rows.length, tab]);
+
+  const input = (value: string, max: number, onChange: (v: string) => void, upper = false) => (
+    <input className="digi-cur-in" value={value} maxLength={max} onChange={(e) => onChange(upper ? e.target.value.toUpperCase() : e.target.value)} />
+  );
+  const current = (c: LogCol): React.ReactNode => {
+    switch (c) {
+      case 'num': return nextNum;
+      case 'mode': return modeName;
+      case 'band': return '';
+      case 'freq': return khz(dialHz);
+      case 'date': return nowDate;
+      case 'utc': return nowTime;
+      case 'call': return input(qso.call, 16, (v) => onQso({ call: v }), true);
+      case 'name': return input(qso.name, 30, (v) => onQso({ name: v }));
+      case 'qth': return input(qso.qth, 40, (v) => onQso({ qth: v }));
+      case 'country': return '';
+      case 'grid': return input(qso.wwloc, 8, (v) => onQso({ wwloc: v }), true);
+      case 'rstS': return input(rsts, 4, (v) => onRst({ rsts: v }));
+      case 'rstR': return input(rstr, 4, (v) => onRst({ rstr: v }));
+    }
+  };
 
   return (
     <aside className="digi-log" aria-label={t('digi.log.title')}>
@@ -154,89 +197,104 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
         {tab === 'log' ? (
           <span className="digi-log-tabtools">
             <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
-        <span className="digi-colwrap" ref={pop}>
-          <button type="button" className="digi-tool" title={t('digi.log.cols')} aria-label={t('digi.log.cols')} aria-expanded={picking} onClick={() => setPicking(!picking)}>
-            ✎
-          </button>
-          {picking ? (
-            <div className="digi-colpop" role="dialog" aria-label={t('digi.log.cols')}>
-              {ALL_COLS.map((c) => (
-                <label key={c}>
-                  <input type="checkbox" checked={cols.includes(c)} onChange={() => toggleCol(c)} /> {t(COL_LABEL[c])}
-                </label>
-              ))}
-              <p>{t('digi.log.colsHint')}</p>
-            </div>
-          ) : null}
-        </span>
+            <span className="digi-colwrap" ref={pop}>
+              <button type="button" className="digi-tool" title={t('digi.log.cols')} aria-label={t('digi.log.cols')} aria-expanded={picking} onClick={() => setPicking(!picking)}>
+                ✎
+              </button>
+              {picking ? (
+                <div className="digi-colpop" role="dialog" aria-label={t('digi.log.cols')}>
+                  {ALL_COLS.map((c) => (
+                    <label key={c}>
+                      <input type="checkbox" checked={cols.includes(c)} onChange={() => toggleCol(c)} /> {t(COL_LABEL[c])}
+                    </label>
+                  ))}
+                  <p>{t('digi.log.colsHint')}</p>
+                </div>
+              ) : null}
+            </span>
           </span>
         ) : null}
       </div>
-      <div className="digi-log-qsohead">
-        <strong>{t('digi.log.current')}</strong>
-        <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
-          💾
-        </button>
-        <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
-          ✕
-        </button>
-      </div>
-      <div className="digi-log-current" role="group" aria-label={t('digi.log.current')}>
-        <label>
-          <span>{t('digi.log.call')}</span>
-          <input value={qso.call} maxLength={16} onChange={(e) => onQso({ call: e.target.value.toUpperCase() })} className="digi-call" />
-        </label>
-        <label>
-          <span>{t('digi.log.name')}</span>
-          <input value={qso.name} maxLength={30} onChange={(e) => onQso({ name: e.target.value })} />
-        </label>
-        <label>
-          <span>{t('digi.log.qth')}</span>
-          <input value={qso.qth} maxLength={40} onChange={(e) => onQso({ qth: e.target.value })} />
-        </label>
-        <label className="digi-rst">
-          <span>{t('digi.f.rsts')}</span>
-          <input value={rsts} maxLength={4} onChange={(e) => onRst({ rsts: e.target.value })} />
-        </label>
-        <label className="digi-rst">
-          <span>{t('digi.f.rstr')}</span>
-          <input value={rstr} maxLength={4} onChange={(e) => onRst({ rstr: e.target.value })} />
-        </label>
-        <label className="digi-wide">
-          <span>{t('digi.f.notes')}</span>
-          <input value={qso.notes} maxLength={80} onChange={(e) => onQso({ notes: e.target.value })} />
-        </label>
-        <p className="digi-log-now">
-          {modeName} · {mhz(dialHz) || '—'} MHz · {now.toISOString().slice(0, 10)} {now.toISOString().slice(11, 16)}z
-        </p>
-      </div>
 
       {tab === 'cluster' ? (
-        <div className="digi-log-cluster">
-          <ClusterPanel onSpot={onSpot} />
-        </div>
-      ) : null}
-      <div className="digi-log-table" hidden={tab !== 'log'}>
-        <table>
-          <thead>
-            <tr>
-              {cols.map((c) => (
-                <th key={c}>{t(COL_LABEL[c])}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((q) => (
-              <tr key={q.id}>
-                {cols.map((c) => (
-                  <td key={c}>{cell(q, c)}</td>
+        <>
+          <div className="digi-log-cluster">
+            <ClusterPanel onSpot={onSpot} />
+          </div>
+          <div className="digi-log-qsohead">
+            <strong>{t('digi.log.current')}</strong>
+            <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
+              💾
+            </button>
+            <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
+              ✕
+            </button>
+          </div>
+          <div className="digi-log-current" role="group" aria-label={t('digi.log.current')}>
+            <label>
+              <span>{t('digi.log.call')}</span>
+              <input value={qso.call} maxLength={16} onChange={(e) => onQso({ call: e.target.value.toUpperCase() })} className="digi-call" />
+            </label>
+            <label>
+              <span>{t('digi.log.name')}</span>
+              <input value={qso.name} maxLength={30} onChange={(e) => onQso({ name: e.target.value })} />
+            </label>
+            <label>
+              <span>{t('digi.log.qth')}</span>
+              <input value={qso.qth} maxLength={40} onChange={(e) => onQso({ qth: e.target.value })} />
+            </label>
+            <label className="digi-rst">
+              <span>{t('digi.f.rsts')}</span>
+              <input value={rsts} maxLength={4} onChange={(e) => onRst({ rsts: e.target.value })} />
+            </label>
+            <label className="digi-rst">
+              <span>{t('digi.f.rstr')}</span>
+              <input value={rstr} maxLength={4} onChange={(e) => onRst({ rstr: e.target.value })} />
+            </label>
+            <label className="digi-wide">
+              <span>{t('digi.f.notes')}</span>
+              <input value={qso.notes} maxLength={80} onChange={(e) => onQso({ notes: e.target.value })} />
+            </label>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="digi-log-table digi-log-table--completa" ref={body}>
+            <table>
+              <thead>
+                <tr>
+                  {cols.map((c) => (
+                    <th key={c}>{t(COL_LABEL[c])}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((q) => (
+                  <tr key={q.id}>
+                    {cols.map((c) => (
+                      <td key={c}>{cell(q, c)}</td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
-      </div>
+                <tr className="digi-log-cur">
+                  {cols.map((c) => (
+                    <td key={c}>{current(c)}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+            {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
+          </div>
+          <div className="digi-log-bar">
+            <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
+              💾
+            </button>
+            <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
+              ✕
+            </button>
+          </div>
+        </>
+      )}
       {spotOpen ? <SpotDialog call={qso.call} dialHz={dialHz} audioHz={audioHz} modeName={modeName} onClose={() => setSpotOpen(false)} /> : null}
     </aside>
   );
