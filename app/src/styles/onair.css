@@ -7530,3 +7530,7 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 /* Finestra RX: ogni colonna larga quanto il suo contenuto, il messaggio subito dopo l'ora e i dB, bandierina e paese subito dopo il messaggio:
    niente spazio perso e niente messaggi tagliati (proprietario, 2026-11-10) */
 .log-rx .decode-row { grid-template-columns: max-content max-content minmax(0, max-content) minmax(0, 1fr) !important; column-gap: 0.4rem !important; }
+
+/* Finestra RX: colonne uguali per tutte le righe (ogni riga e' una griglia a se'): ora, dB e messaggio a misura fissa in caratteri, cosi'
+   bandierina e paese stanno in colonna; il messaggio FT8 piu' lungo (circa 22 caratteri, con «×N») entra intero */
+.log-rx .decode-row { grid-template-columns: 8.5ch 3.5ch minmax(0, 23ch) minmax(0, 1fr) !important; }
