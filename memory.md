@@ -4,6 +4,9 @@ Stato al 2026-11-10, versione 0.11.228 (pubblicata). Per riprendere il lavoro le
 
 ## Decisioni del 2026-11-10
 
+- **Ramo privato `sviluppo`** (github.com/wifi75/Aurora-sviluppo, remote `sviluppo`): SSTV e i modi nuovi stanno solo li', non sono pubblici ne' scaricabili finche' il proprietario non decide. `main` pubblico: FT8, Rotore, correzioni; le correzioni si portano poi su `sviluppo`. L'installatore del proprietario lo fa `sviluppo.yml` (release `sviluppo-ultima`) senza aggiornamento automatico.
+- **SSTV** (crate `mode-sstv`, da QSSTV di ON4QZ): modi Martin, Scottie, Robot, PD, Wraase; storico 200 ricevute e 20 inviate; editor grafico nella pagina SSTV.
+
 - **Rotori con Hamlib rotctld** (proprietario): niente codice;  solo come elenco di funzioni (Gira, Via lunga, ±2°, rosa cliccabile). `rotctld.exe` va nell'installatore con rigctld.
 - **Codice di altri programmi**: mai copiare o ritoccare codice proprietario (); per i modi nuovi codice GPL (QSSTV, fldigi, slowrx) citando gli autori, o scritto da zero.
 
@@ -18,7 +21,7 @@ Stato al 2026-11-10, versione 0.11.228 (pubblicata). Per riprendere il lavoro le
 - Meno lavoro inutile: riletture del log unite, niente confronto JTDX senza JTDX, registrazioni WAV spente di base.
 - 0.11.210-0.11.211: filtro ed Automazioni accendono da soli le evidenziazioni delle novita' scelte (prima filtro vuoto, ON7KEC #7); eccezioni del filtro come GridTracker; database di Log4OM a scelta; cascata con etichette in basso; Aurora si riapre se l'installatore silenzioso non lo fa (portatile, aggiornamento dal tray); RX pannello separato sopra il Log.
 - 0.11.212: il pulsante «Auto» accende le Automazioni nel modo scelto nelle Impostazioni (prima chiedeva sempre il modo reale senza la conferma dell'avviso e il core rifiutava in silenzio); sempre colorato (viola/arancio/verde).
-- Rifiutato: RTTY, CW, SSTV (prima si finisce il lavoro in corso).
+- RTTY, CW, SSTV: prima rifiutati, poi decisi il 2026-11-10 come modi a parte sul ramo privato `sviluppo`.
 
 ## Decisioni del 2026-11-08
 - Le issue di GitHub le gestisce il proprietario: il controllo automatico ogni ora e' stato eliminato (aveva risposto con informazioni superate); mai rispondere sulle issue senza il suo via libera.
