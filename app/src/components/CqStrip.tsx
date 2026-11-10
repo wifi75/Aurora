@@ -112,7 +112,7 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
       {/* due righe indipendenti (una casella si, una no): ogni casella larga quanto il suo contenuto, senza i vuoti delle colonne */}
       {[0, 1].map((row) => (
       <div key={row} className="cq-strip-row">
-      {items.filter((_, i) => i % 2 === row).map((d) => {
+      {items.filter((_, i) => i % 2 === row).map((d, k) => {
         const accent = d.tag ? ACCENT[d.tag] : undefined;
         const code = flagCode(d.country);
         const talker = senderOf(d.text);
@@ -120,7 +120,7 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
           <button
             key={d.id}
             type="button"
-            className={`cq-chip${d.tag && d.tag !== 'cq' ? ' cq-chip--new' : ''}${d.tag === 'worked_call' ? ' cq-chip--worked' : ''}${d.tag === 'new_dxcc' || d.tag === 'new_dxcc_band' ? ' cq-chip--flash' : ''}`}
+            className={`cq-chip cq-chip--${(k + row) % 2 === 0 ? 'a' : 'b'}${d.tag && d.tag !== 'cq' ? ' cq-chip--new' : ''}${d.tag === 'worked_call' ? ' cq-chip--worked' : ''}${d.tag === 'new_dxcc' || d.tag === 'new_dxcc_band' ? ' cq-chip--flash' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as React.CSSProperties) : undefined}
             // solo nominativo, bandierina e paese (scelta del proprietario); il messaggio intero, il rapporto e l'ora nel suggerimento
             title={`${d.text} · ${d.snr} dB · ${utcTime(d.time_ms)} UTC${d.country ? ` · ${d.country}` : ''}`}

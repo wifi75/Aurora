@@ -1381,3 +1381,15 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 /* tema scuro: tinte ancora piu' chiare (il viola del nuovo DXCC sembrava scuro; richiesta del proprietario, 2026-11-10) */
 html:not([data-theme='light']) .cq-chip { background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 38%, #ffffff); }
 html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 30%, #ffffff); }
+
+/* «CQ e novita'»: due soli colori chiari fissi, alternati (lilla e verde acqua), uguali nei due temi; il tipo resta nel suggerimento e nel grassetto */
+.cq-chip.cq-chip--a, html[data-theme='light'] .cq-chip.cq-chip--a, html:not([data-theme='light']) .cq-chip.cq-chip--a { background: #e2dbff; border-color: #c7bbff; color: #0b1220; }
+.cq-chip.cq-chip--b, html[data-theme='light'] .cq-chip.cq-chip--b, html:not([data-theme='light']) .cq-chip.cq-chip--b { background: #cdf3e6; border-color: #a6e6d0; color: #0b1220; }
+.cq-chip.cq-chip--a:hover, .cq-chip.cq-chip--b:hover { filter: brightness(1.05); }
+
+/* caselle un po' piu' grandi: bandierina, nominativo e paese piu' leggibili */
+.cq-strip-row { height: 30px; }
+.cq-chip { height: 30px; font-size: 13px; gap: 7px; padding: 0 10px; }
+.cq-chip-flag { width: 24px; }
+.cq-chip-flag .fi { width: 24px; height: 18px; background-size: cover; border-radius: 2px; }
+.cq-chip-country { font-size: 13px; }
