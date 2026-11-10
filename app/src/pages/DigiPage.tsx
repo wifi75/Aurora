@@ -144,6 +144,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
+  // larghezza del log di lato (si allarga trascinando il bordo), ricordata fra un avvio e l'altro
+  const [logW, setLogW] = useState<number>(() => {
+    const n = Number(browserStorage()?.getItem('aurora.digi.logw') ?? '');
+    return Number.isFinite(n) && n >= 300 ? n : 432;
+  });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
   const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
   const [startAt, setStartAt] = useState<Date | null>(null);
@@ -646,7 +651,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         />
       ) : null}
 
-      <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`}>
+      <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-windows">
           <pre className="digi-rxwin" ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
             {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : text}
@@ -689,6 +694,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         </div>
         {views.log ? (
           <DigiLog
+            width={logW}
+            onWidth={(px) => {
+              const w = Math.round(Math.min(Math.max(px, 300), Math.max(320, window.innerWidth - 320)));
+              setLogW(w);
+              try {
+                browserStorage()?.setItem('aurora.digi.logw', String(w));
+              } catch {
+                // la larghezza vale comunque finche' la pagina e' aperta
+              }
+            }}
             qso={qso}
             rsts={saved.rsts}
             rstr={saved.rstr}

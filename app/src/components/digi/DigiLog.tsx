@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { getLogQsos } from '../../api/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { browserStorage } from '../../lib/theme';
+import { getLogQsos, type LogQso } from '../../api/client';
 import { useT } from '../../i18n';
 
 export interface Qso {
@@ -22,14 +23,75 @@ interface Props {
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;
   onClear(): void;
+  /** Larghezza del log in px e come cambiarla (barra di trascinamento sul bordo sinistro). */
+  width: number;
+  onWidth(px: number): void;
+}
+
+export type LogCol = 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'country' | 'grid' | 'rst';
+const ALL_COLS: readonly LogCol[] = ['mode', 'band', 'freq', 'date', 'utc', 'call', 'country', 'grid', 'rst'];
+const DEFAULT_COLS: readonly LogCol[] = ['mode', 'freq', 'date', 'utc', 'call', 'country', 'rst'];
+const COLS_KEY = 'aurora.digi.logcols';
+
+function savedCols(): LogCol[] {
+  try {
+    const raw = JSON.parse(browserStorage()?.getItem(COLS_KEY) ?? 'null') as unknown;
+    if (Array.isArray(raw)) {
+      const ok = ALL_COLS.filter((c) => raw.includes(c));
+      if (ok.length > 0) return ok;
+    }
+  } catch {
+    // senza archivio restano le colonne di base
+  }
+  return [...DEFAULT_COLS];
 }
 
 const mhz = (hz: number) => (hz > 0 ? (hz / 1_000_000).toFixed(6).replace(/0+$/, '').replace(/\.$/, '') : '');
 
+const COL_LABEL = {
+  mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
+  call: 'digi.log.call', country: 'digi.log.country', grid: 'digi.log.grid', rst: 'digi.log.rst',
+} as const;
+
+function cell(q: LogQso, c: LogCol): React.ReactNode {
+  switch (c) {
+    case 'mode': return q.mode;
+    case 'band': return q.band;
+    case 'freq': return mhz(q.freq_hz);
+    case 'date': return q.date;
+    case 'utc': return q.time.slice(0, 5);
+    case 'call': return <b>{q.call}</b>;
+    case 'country': return q.country;
+    case 'grid': return q.grid;
+    case 'rst': return `${q.rst_sent}/${q.rst_rcvd}`;
+  }
+}
+
 /** Il log di lato: la riga del QSO in corso (si scrive qui) e sotto i QSO fatti, piu' recenti per primi. */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSave, onClear }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
+  const [cols, setCols] = useState<LogCol[]>(savedCols);
+  const [picking, setPicking] = useState(false);
+  const pop = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!picking) return;
+    const out = (e: PointerEvent) => {
+      if (!pop.current?.contains(e.target as Node)) setPicking(false);
+    };
+    document.addEventListener('pointerdown', out);
+    return () => document.removeEventListener('pointerdown', out);
+  }, [picking]);
+  const toggleCol = (c: LogCol) => {
+    const next = cols.includes(c) ? cols.filter((x) => x !== c) : ALL_COLS.filter((x) => x === c || cols.includes(x));
+    if (next.length === 0) return;
+    setCols(next);
+    try {
+      browserStorage()?.setItem(COLS_KEY, JSON.stringify(next));
+    } catch {
+      // la scelta vale comunque finche' la pagina e' aperta
+    }
+  };
   const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchInterval: 20_000 });
   const rows = useMemo(() => {
     const all = [...(log.data?.qsos ?? [])].reverse();
@@ -40,6 +102,24 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
 
   return (
     <aside className="digi-log" aria-label={t('digi.log.title')}>
+      <div
+        className="digi-log-grip"
+        role="separator"
+        aria-orientation="vertical"
+        title={t('digi.log.resize')}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          const startX = e.clientX;
+          const startW = width;
+          const move = (m: PointerEvent) => onWidth(startW + (startX - m.clientX));
+          const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', up);
+        }}
+      />
       <div className="digi-log-tools">
         <strong>{t('digi.log.title')}</strong>
         <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
@@ -48,6 +128,21 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
         <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
           ✕
         </button>
+        <span className="digi-colwrap" ref={pop}>
+          <button type="button" className="digi-tool" title={t('digi.log.cols')} aria-label={t('digi.log.cols')} aria-expanded={picking} onClick={() => setPicking(!picking)}>
+            ✎
+          </button>
+          {picking ? (
+            <div className="digi-colpop" role="dialog" aria-label={t('digi.log.cols')}>
+              {ALL_COLS.map((c) => (
+                <label key={c}>
+                  <input type="checkbox" checked={cols.includes(c)} onChange={() => toggleCol(c)} /> {t(COL_LABEL[c])}
+                </label>
+              ))}
+              <p>{t('digi.log.colsHint')}</p>
+            </div>
+          ) : null}
+        </span>
         <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
       </div>
 
@@ -85,27 +180,17 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
         <table>
           <thead>
             <tr>
-              <th>{t('digi.log.mode')}</th>
-              <th>{t('digi.log.freq')}</th>
-              <th>{t('digi.log.date')}</th>
-              <th>{t('digi.log.utc')}</th>
-              <th>{t('digi.log.call')}</th>
-              <th>{t('digi.log.country')}</th>
-              <th>{t('digi.log.rst')}</th>
+              {cols.map((c) => (
+                <th key={c}>{t(COL_LABEL[c])}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((q) => (
               <tr key={q.id}>
-                <td>{q.mode}</td>
-                <td>{mhz(q.freq_hz)}</td>
-                <td>{q.date}</td>
-                <td>{q.time.slice(0, 5)}</td>
-                <td>
-                  <b>{q.call}</b>
-                </td>
-                <td>{q.country}</td>
-                <td>{`${q.rst_sent}/${q.rst_rcvd}`}</td>
+                {cols.map((c) => (
+                  <td key={c}>{cell(q, c)}</td>
+                ))}
               </tr>
             ))}
           </tbody>

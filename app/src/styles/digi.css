@@ -118,7 +118,7 @@
 .digi-classica .digi-gear { color: #1e66c8; }
 
 /* area principale: finestre RX e TX a sinistra, il log di lato */
-.digi-main { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; min-height: 24rem; }
+.digi-main { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; /* la larghezza vera la mette la pagina (log trascinabile) */ min-height: 24rem; }
 .digi-main--nolog { grid-template-columns: minmax(0, 1fr); }
 .digi-windows { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #808080; }
 .digi-rxwin, .digi-txwin { margin: 0; padding: 4px 6px; background: #fff; color: #000; font: 15px/1.35 "Courier New", Consolas, monospace; white-space: pre-wrap; word-break: break-word; border: 0; border-radius: 0; resize: none; overflow: auto; }
@@ -131,7 +131,14 @@
 .digi-txprogress { margin: 3px; height: 1.6rem; border-radius: 0; }
 
 /* il log di lato: righe gialline, QSO in corso in azzurro */
-.digi-log { display: flex; flex-direction: column; min-width: 0; background: #d4d0c8; }
+.digi-log { position: relative; display: flex; flex-direction: column; min-width: 0; background: #d4d0c8; }
+/* barra sottile sul bordo sinistro: trascinandola si allarga o si stringe il log */
+.digi-log-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; touch-action: none; }
+.digi-log-grip:hover, .digi-log-grip:active { background: rgb(30 102 200 / .35); }
+.digi-colwrap { position: relative; display: inline-flex; }
+.digi-colpop { position: absolute; top: 100%; right: 0; z-index: 20; display: flex; flex-direction: column; gap: 2px; min-width: 11rem; padding: 6px 8px; background: #d4d0c8; color: #000; border: 2px outset #fff; box-shadow: 2px 2px 4px rgb(0 0 0 / .4); font-size: 12px; }
+.digi-colpop label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.digi-colpop p { margin: 4px 0 0; font-size: 11px; color: #444; max-width: 14rem; }
 .digi-log-tools { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-bottom: 1px solid #808080; }
 .digi-log-tools strong { margin-right: auto; }
 .digi-tool { width: 26px; height: 22px; padding: 0; border: 2px outset #f4f4f4; background: #d4d0c8; cursor: default; font-size: 13px; line-height: 1; }
@@ -143,7 +150,7 @@
 .digi-log-current .digi-rst input { width: 100%; }
 .digi-log-current .digi-wide { grid-column: 1 / -1; }
 .digi-log-now { grid-column: 1 / -1; margin: 0; font-size: 11px; color: #003a3a; }
-.digi-log-table { flex: 1; overflow: auto; background: #f8f8c8; max-height: 22rem; }
+.digi-log-table { flex: 1; min-height: 0; overflow: auto; background: #f8f8c8; }
 .digi-log-table table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
 .digi-log-table th { position: sticky; top: 0; background: #d4d0c8; border: 1px solid #808080; text-align: left; padding: 1px 4px; font-weight: 400; color: #000; }
 .digi-log-table td { padding: 1px 4px; border-bottom: 1px solid #c8c890; color: #4b0a96; white-space: nowrap; }
@@ -185,4 +192,4 @@ button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0b
 .digi-log-current label { min-width: 0; }
 .digi-hint { white-space: normal; flex: 1; min-width: 0; font-size: 11px; }
 .digi-main { overflow: hidden; }
-.digi-log { overflow: hidden; }
+.digi-log { overflow: visible; }
