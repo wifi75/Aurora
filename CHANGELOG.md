@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.222 - 2026-11-10
 - **Aggiornamento**: se Aurora controlla mentre GitHub sta ancora allegando l'installatore alla release, non resta piu' per un'ora su «la release non ha il pacchetto di installazione con la sua firma»: al momento di scaricare richiede subito la release.
 
 ## 0.11.221 - 2026-11-10

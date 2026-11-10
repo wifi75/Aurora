@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.222',
+    released: '2026-11-10T09:00:00Z',
+    kind: 'fixed',
+    title: ["Aggiornamento che non resta bloccato", "Update that no longer gets stuck", "Update bleibt nicht mehr hängen", "Mise à jour qui ne reste plus bloquée", "Actualización que ya no se queda bloqueada", "Atualização que já não fica bloqueada"],
+    text: [
+      "Se Aurora controllava gli aggiornamenti nei minuti in cui la versione nuova veniva preparata, per un'ora diceva «la release non ha il pacchetto di installazione con la sua firma». Ora al momento di scaricare richiede subito la versione e la trova completa.",
+      "If Aurora checked for updates in the minutes while the new version was being prepared, for an hour it said “the release has no installer package with its signature”. Now, when downloading, it asks again at once and finds the version complete.",
+      "Prüfte Aurora in den Minuten, in denen die neue Version vorbereitet wurde, auf Updates, meldete es eine Stunde lang „die Version hat kein Installationspaket mit Signatur“. Jetzt fragt es beim Herunterladen sofort neu nach und findet die Version vollständig.",
+      "Si Aurora vérifiait les mises à jour pendant les minutes où la nouvelle version était préparée, pendant une heure il indiquait « la version n'a pas le paquet d'installation avec sa signature ». Désormais, au téléchargement, il redemande tout de suite et trouve la version complète.",
+      "Si Aurora buscaba actualizaciones en los minutos en que se preparaba la versión nueva, durante una hora decía «la versión no tiene el paquete de instalación con su firma». Ahora, al descargar, vuelve a preguntar enseguida y la encuentra completa.",
+      "Se a Aurora procurava atualizações nos minutos em que a versão nova estava a ser preparada, durante uma hora dizia «a versão não tem o pacote de instalação com a sua assinatura». Agora, ao transferir, pergunta logo de novo e encontra a versão completa.",
+    ],
+  },
+  {
     version: '0.11.221',
     released: '2026-11-10T08:03:35Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Envoyer RRR ne met plus le QSO au log : il est enregistré à l'arrivée de son 73, comme dans WSJT-X. Si le 73 n'arrive pas, le QSO est enregistré à la dernière tentative de clôture ; rien ne change avec RR73 et 73.",
       "Enviar RRR ya no pone el QSO en el log: se registra cuando llega su 73, como en WSJT-X. Si el 73 no llega, el QSO se registra en el último intento de cierre; con RR73 y 73 no cambia nada.",
       "Enviar RRR já não põe o QSO no log: regista-se quando chega o 73 dele, como no WSJT-X. Se o 73 não chegar, o QSO regista-se na última tentativa de fecho; com RR73 e 73 nada muda.",
-    ],
-  },
-  {
-    version: '0.11.182',
-    released: '2026-11-07T15:00:44Z',
-    kind: 'fixed',
-    title: ['Piccole correzioni', 'Small fixes', 'Kleine Korrekturen', 'Petites corrections', 'Pequeñas correcciones', 'Pequenas correções'],
-    text: [
-      "Correzioni interne, senza cambiamenti nell’uso di tutti i giorni.",
-      "Internal fixes, with no change in everyday use.",
-      "Interne Korrekturen, ohne Änderungen im täglichen Gebrauch.",
-      "Corrections internes, sans changement dans l’usage quotidien.",
-      "Correcciones internas, sin cambios en el uso diario.",
-      "Correções internas, sem mudanças no uso diário.",
     ],
   },
 ];
