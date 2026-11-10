@@ -1618,7 +1618,9 @@ export interface DigiMacro {
 }
 
 export interface DigiSettings {
-  mode: 'psk31' | 'psk63' | 'rtty';
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
+  /** Velocita' della CW in parole al minuto. */
+  cw_wpm: number;
   rx_freq_hz: number;
   tx_follow_rx: boolean;
   tx_freq_hz: number;

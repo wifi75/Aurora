@@ -87,10 +87,11 @@ function SstvBody({ solo }: { solo: boolean }) {
           {t(`sstv.state.${badge}`)}
         </span>
         {/* il modo si cambia da qui: un modo testuale apre la loro pagina */}
-        <select className="sstv-modesel" value="sstv" aria-label={t('digi.menu.mode')} onChange={(e) => void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty')}>
+        <select className="sstv-modesel" value="sstv" aria-label={t('digi.menu.mode')} onChange={(e) => void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw')}>
           <option value="psk31">PSK31</option>
           <option value="psk63">PSK63</option>
           <option value="rtty">RTTY</option>
+          <option value="cw">CW</option>
           <option value="sstv">SSTV</option>
         </select>
         {/* banda e frequenze SSTV dal piano di banda IARU */}

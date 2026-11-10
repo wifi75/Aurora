@@ -72,6 +72,12 @@ export function ModeSettings({ settings: s, personal, levelDb, onSave, onPersona
               <span>{t('digi.freq.tx')}</span>
               <input type="number" min={200} max={3500} value={tx} disabled={s.tx_follow_rx} onChange={(e) => setTx(Number(e.target.value))} onBlur={() => (tx >= 200 && tx <= 3500 && tx !== s.tx_freq_hz ? onSave({ tx_freq_hz: tx }) : setTx(s.tx_freq_hz))} />
             </label>
+            {s.mode === 'cw' ? (
+              <label>
+                <span>{t('digi.cw.wpm', { wpm: Math.round(s.cw_wpm) })}</span>
+                <input type="range" min={5} max={60} step={1} value={s.cw_wpm} onChange={(e) => onSave({ cw_wpm: Number(e.target.value) })} />
+              </label>
+            ) : null}
             {s.mode === 'rtty' ? (
               <>
                 <label>

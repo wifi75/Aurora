@@ -16,7 +16,7 @@ use aurora_core::DigiEvent;
 use mode_sstv::resample::Resampler;
 use serde::{Deserialize, Serialize};
 
-use crate::{PskDemodulator, PskMode, RATE, RttyDemodulator, RttyParams, psk, rtty};
+use crate::{CwDemodulator, PskDemodulator, PskMode, RATE, RttyDemodulator, RttyParams, cw, psk, rtty};
 
 /// La catena di trasmissione vista dai modi testuali (la fornisce il programma: `tx-native` con il PTT scelto).
 pub trait DigiTxPort: Send + Sync {
@@ -34,16 +34,18 @@ pub enum DigiMode {
     Psk31,
     Psk63,
     Rtty,
+    Cw,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 3] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty];
+    pub const ALL: [DigiMode; 4] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw];
 
     pub fn id(self) -> &'static str {
         match self {
             DigiMode::Psk31 => "psk31",
             DigiMode::Psk63 => "psk63",
             DigiMode::Rtty => "rtty",
+            DigiMode::Cw => "cw",
         }
     }
 
@@ -52,6 +54,7 @@ impl DigiMode {
             DigiMode::Psk31 => "PSK31",
             DigiMode::Psk63 => "PSK63",
             DigiMode::Rtty => "RTTY",
+            DigiMode::Cw => "CW",
         }
     }
 
@@ -63,7 +66,7 @@ impl DigiMode {
         match self {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
-            DigiMode::Rtty => None,
+            DigiMode::Rtty | DigiMode::Cw => None,
         }
     }
 }
@@ -141,6 +144,8 @@ pub struct DigiSettings {
     pub tx_freq_hz: f32,
     pub rtty_shift_hz: f32,
     pub rtty_baud: f32,
+    /// Velocita' della CW in parole al minuto (trasmissione; in ricezione e' il valore di partenza, poi si adatta al segnale).
+    pub cw_wpm: f32,
     /// AFC: la ricezione segue la deriva del segnale (Options › AFC).
     pub afc_on: bool,
     /// Squelch: si stampa solo sopra la soglia `squelch_db`.
@@ -197,6 +202,7 @@ fn default_mode_macros() -> std::collections::BTreeMap<String, Vec<DigiMacro>> {
     let mut m = std::collections::BTreeMap::new();
     m.insert("psk31".to_string(), vec![mac("F10", "PSK31", "<BAUDRATE:31.25>", CIANO), mac("F11", "PSK63", "<BAUDRATE:62.5>", CIANO)]);
     m.insert("psk63".to_string(), vec![mac("F10", "PSK31", "<BAUDRATE:31.25>", CIANO), mac("F11", "PSK63", "<BAUDRATE:62.5>", CIANO)]);
+    m.insert("cw".to_string(), vec![mac("F10", "WPM 15", "<WPM:15>", CIANO), mac("F11", "WPM 20", "<WPM:20>", CIANO), mac("F12", "WPM 25", "<WPM:25>", CIANO)]);
     m.insert(
         "rtty".to_string(),
         vec![mac("F10", "BAUD45", "<BAUDRATE:45.45>", CIANO), mac("F11", "BAUD 50", "<BAUDRATE:50>", CIANO), mac("F12", "BAUD 75", "<BAUDRATE:75>", CIANO)],
@@ -213,6 +219,7 @@ impl Default for DigiSettings {
             tx_freq_hz: 1000.0,
             rtty_shift_hz: 170.0,
             rtty_baud: 45.45,
+            cw_wpm: 20.0,
             afc_on: true,
             squelch_on: false,
             squelch_db: -45.0,
@@ -238,6 +245,9 @@ impl DigiSettings {
         }
         if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
             return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
+        }
+        if !self.cw_wpm.is_finite() || !(cw::WPM_MIN..=cw::WPM_MAX).contains(&self.cw_wpm) {
+            return Err(DigiError::BadValue("velocita' CW fuori da 5-60 WPM".into()));
         }
         let sets = std::iter::once(&self.macros).chain(self.mode_macros.values());
         for set in sets {
@@ -463,9 +473,10 @@ impl DigiService {
     /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti.
     pub fn wave_of(text: &str, s: &DigiSettings) -> Vec<f32> {
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
-        match s.mode.psk() {
-            Some(mode) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
-            None => rtty::modulate(&bytes, s.rtty(s.tx_freq()), 0.9),
+        match (s.mode.psk(), s.mode) {
+            (Some(mode), _) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
+            (None, DigiMode::Cw) => cw::modulate(&bytes, s.tx_freq(), s.cw_wpm, 0.9),
+            (None, _) => rtty::modulate(&bytes, s.rtty(s.tx_freq()), 0.9),
         }
     }
 
@@ -554,11 +565,18 @@ fn tx_monitor(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, total: f32) {
 enum Demod {
     Psk(Box<PskDemodulator>),
     Rtty(Box<RttyDemodulator>),
+    Cw(Box<CwDemodulator>),
 }
 
 impl Demod {
     fn new(s: &DigiSettings) -> Demod {
         let squelch = s.squelch_on.then_some(s.squelch_db);
+        if s.mode == DigiMode::Cw {
+            let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
+            d.set_afc(s.afc_on);
+            d.set_squelch_db(squelch);
+            return Demod::Cw(Box::new(d));
+        }
         match s.mode.psk() {
             Some(mode) => {
                 let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
@@ -580,6 +598,7 @@ impl Demod {
         match self {
             Demod::Psk(d) => d.frequency(),
             Demod::Rtty(d) => d.frequency(),
+            Demod::Cw(d) => d.frequency(),
         }
     }
 
@@ -588,6 +607,7 @@ impl Demod {
         match self {
             Demod::Psk(d) => d.signal(),
             Demod::Rtty(d) => d.signal(),
+            Demod::Cw(d) => d.signal(),
         }
     }
 
@@ -595,6 +615,7 @@ impl Demod {
         match self {
             Demod::Psk(d) => d.process(audio),
             Demod::Rtty(d) => d.process(audio),
+            Demod::Cw(d) => d.process(audio),
         }
     }
 }
@@ -666,7 +687,8 @@ mod tests {
     fn i_modi_si_riconoscono_dal_nome() {
         assert_eq!(DigiMode::from_id("PSK31"), Some(DigiMode::Psk31));
         assert_eq!(DigiMode::from_id("rtty"), Some(DigiMode::Rtty));
-        assert_eq!(DigiMode::from_id("cw"), None);
+        assert_eq!(DigiMode::from_id("cw"), Some(DigiMode::Cw));
+        assert_eq!(DigiMode::from_id("olivia"), None);
     }
 
     #[test]
@@ -677,6 +699,9 @@ mod tests {
         assert!(s.validate().is_err());
         s.rx_freq_hz = 1000.0;
         s.rtty_baud = 5.0;
+        assert!(s.validate().is_err());
+        s.rtty_baud = 45.45;
+        s.cw_wpm = 2.0;
         assert!(s.validate().is_err());
     }
 

@@ -86,6 +86,8 @@ export const digiMenuStrings = {
   'digi.log.num': ['QSO', 'QSO', 'QSO', 'QSO', 'QSO', 'QSO'],
   'digi.log.rsts': ['RST inv.', 'RST sent', 'RST ges.', 'RST env.', 'RST env.', 'RST env.'],
   'digi.log.rstr': ['RST ric.', 'RST rcvd', 'RST emp.', 'RST reçu', 'RST rec.', 'RST rec.'],
+  'digi.cw.wpm': ['Velocità CW: {wpm} WPM', 'CW speed: {wpm} WPM', 'CW-Tempo: {wpm} WPM', 'Vitesse CW : {wpm} WPM', 'Velocidad CW: {wpm} WPM', 'Velocidade CW: {wpm} WPM'],
+  'digi.mi.wideWaterfall': ['Cascata larga (0-5 kHz)', 'Wide waterfall (0-5 kHz)', 'Breiter Wasserfall (0-5 kHz)', 'Cascade large (0-5 kHz)', 'Cascada ancha (0-5 kHz)', 'Cascata larga (0-5 kHz)'],
   'digi.tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'digi.log.band': ['Banda', 'Band', 'Band', 'Bande', 'Banda', 'Banda'],
   'digi.log.grid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],

@@ -54,7 +54,7 @@ function savedCols(): LogCol[] {
 }
 
 /** Frequenza in kHz con la virgola, come nel log (7042,988). */
-const khz = (hz: number) => (hz > 0 ? (hz / 1000).toFixed(3).replace('.', ',') : '');
+const khz = (hz: number) => (hz > 0 ? (hz / 1000).toFixed(3).replace(/(\.\d)0+$/, '$1').replace('.', ',') : '');
 /** `2023-03-19` -> `19/03/2023`. */
 const dmy = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : d);
 
@@ -147,7 +147,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       case 'num': return nextNum;
       case 'mode': return modeName;
       case 'band': return '';
-      case 'freq': return khz(dialHz);
+      case 'freq': return khz(dialHz > 0 ? dialHz + Math.round(audioHz) : 0);
       case 'date': return nowDate;
       case 'utc': return nowTime;
       case 'call': return input(qso.call, 16, (v) => onQso({ call: v }), true);
@@ -220,41 +220,6 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
         <>
           <div className="digi-log-cluster">
             <ClusterPanel onSpot={onSpot} />
-          </div>
-          <div className="digi-log-qsohead">
-            <strong>{t('digi.log.current')}</strong>
-            <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
-              💾
-            </button>
-            <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
-              ✕
-            </button>
-          </div>
-          <div className="digi-log-current" role="group" aria-label={t('digi.log.current')}>
-            <label>
-              <span>{t('digi.log.call')}</span>
-              <input value={qso.call} maxLength={16} onChange={(e) => onQso({ call: e.target.value.toUpperCase() })} className="digi-call" />
-            </label>
-            <label>
-              <span>{t('digi.log.name')}</span>
-              <input value={qso.name} maxLength={30} onChange={(e) => onQso({ name: e.target.value })} />
-            </label>
-            <label>
-              <span>{t('digi.log.qth')}</span>
-              <input value={qso.qth} maxLength={40} onChange={(e) => onQso({ qth: e.target.value })} />
-            </label>
-            <label className="digi-rst">
-              <span>{t('digi.f.rsts')}</span>
-              <input value={rsts} maxLength={4} onChange={(e) => onRst({ rsts: e.target.value })} />
-            </label>
-            <label className="digi-rst">
-              <span>{t('digi.f.rstr')}</span>
-              <input value={rstr} maxLength={4} onChange={(e) => onRst({ rstr: e.target.value })} />
-            </label>
-            <label className="digi-wide">
-              <span>{t('digi.f.notes')}</span>
-              <input value={qso.notes} maxLength={80} onChange={(e) => onQso({ notes: e.target.value })} />
-            </label>
           </div>
         </>
       ) : (

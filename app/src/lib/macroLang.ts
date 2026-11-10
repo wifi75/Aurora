@@ -47,6 +47,8 @@ export type MacroAction =
   | { type: 'mode'; mode: string }
   | { type: 'baud'; baud: number }
   | { type: 'shift'; hz: number }
+  /** Velocita' della CW: assoluta o relativa (`+n`, `-n`). */
+  | { type: 'wpm'; wpm: number; relative: boolean }
   | { type: 'audioFq'; hz: number; relative: boolean }
   | { type: 'autoCq' }
   | { type: 'tune'; seconds: number | null }
@@ -195,6 +197,10 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'SHIFT': {
       const hz = number(arg);
       return hz === null || hz <= 0 ? null : { type: 'shift', hz };
+    }
+    case 'WPM': {
+      const wpm = number(arg);
+      return wpm === null || wpm === 0 ? null : { type: 'wpm', wpm, relative: /^[+-]/.test((arg ?? '').trim()) };
     }
     case 'AUDIOFQ': {
       const hz = number(arg);

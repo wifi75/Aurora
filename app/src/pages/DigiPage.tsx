@@ -27,13 +27,14 @@ const FIELDS_KEY = 'aurora.digi.campi';
 const VIEWS_KEY = 'aurora.digi.viste';
 const SCAN_KEY = 'aurora.digi.scansione';
 const MEM_KEY = 'aurora.digi.memorie';
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 /** Il tratto di audio che si ascolta e si mostra (Hz). */
 const WF_MIN = 0;
-/** Il tratto di audio della cascata: 0-3,5 kHz bastano per i modi testuali ( ne mostra circa 6). */
-const WF_MAX = 3500;
+/** Il tratto di audio della cascata: di base 0-5 kHz (il massimo del motore;  ne mostra circa 6), oppure 0-3,5 kHz dal menu Vista. */
+const WF_MAX_WIDE = 5000;
+const WF_MAX_NARROW = 3500;
 const SEEK_LIMITS = { min: 300, max: 3300 };
 
 interface Views {
@@ -49,6 +50,8 @@ interface Views {
   flashTx: boolean;
   hairlines: boolean;
   defaultRst: boolean;
+  /** Cascata larga (0-5 kHz) o stretta (0-3,5 kHz). */
+  wideWaterfall: boolean;
 }
 
 interface ScanProps {
@@ -58,7 +61,7 @@ interface ScanProps {
   freqMarks: boolean;
 }
 
-const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true };
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
 const DEFAULT_SCAN: ScanProps = { dwell: 10, once: false, timeMarks: true, freqMarks: true };
 
 /** Le righe trasmesse (iniziano con «» ») sottolineate nella finestra di ricezione. */
@@ -114,6 +117,7 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'PSK63':
     case 'BPSK63': return 'psk63';
     case 'RTTY': return 'rtty';
+    case 'CW': return 'cw';
     default: return null;
   }
 }
@@ -146,6 +150,7 @@ function withDefaults(snap: DigiSnapshot): DigiSnapshot {
     rx_freq_hz: raw.rx_freq_hz ?? 1000,
     tx_follow_rx: raw.tx_follow_rx ?? true,
     tx_freq_hz: raw.tx_freq_hz ?? 1000,
+    cw_wpm: raw.cw_wpm ?? 20,
     rtty_shift_hz: raw.rtty_shift_hz ?? 170,
     rtty_baud: raw.rtty_baud ?? 45.45,
     afc_on: raw.afc_on ?? true,
@@ -328,7 +333,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const want = (spot.mode ?? '').toUpperCase();
     const cur = l.snap.settings.mode;
     if (want === 'RTTY' && cur !== 'rtty') save({ mode: 'rtty' });
-    else if (want.startsWith('PSK') && cur === 'rtty') save({ mode: 'psk31' });
+    else if (want === 'CW' && cur !== 'cw') save({ mode: 'cw' });
+    else if (want.startsWith('PSK') && (cur === 'rtty' || cur === 'cw')) save({ mode: 'psk31' });
     const signalHz = Math.round(spot.freq_khz * 1000);
     const dial = signalHz - Math.round(l.rxHz);
     useStation.getState().patchStatus({ dial_hz: dial });
@@ -445,7 +451,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       date: at.toISOString().slice(0, 10),
       time: at.toISOString().slice(11, 16),
       band: dial > 0 ? (bandOf(dial) ?? '') : '',
-      freq_hz: dial,
+      //: la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
+      freq_hz: dial > 0 ? dial + Math.round(l.rxHz) : 0,
       mode: MODE_NAMES[l.snap.settings.mode],
       rst_sent: l.saved.rsts,
       rst_rcvd: l.saved.rstr,
@@ -521,6 +528,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           break;
         }
         case 'shift': save({ rtty_shift_hz: a.hz }); break;
+        case 'wpm': {
+          const next = Math.round(Math.min(60, Math.max(5, a.relative ? l.snap.settings.cw_wpm + a.wpm : a.wpm)));
+          if (l.snap.settings.mode !== 'cw') save({ mode: 'cw', cw_wpm: next });
+          else save({ cw_wpm: next });
+          break;
+        }
         case 'audioFq': pickFreq(Math.max(200, Math.min(3500, a.relative ? l.rxHz + a.hz : a.hz)), false); break;
         case 'cursor': if (a.target === 'TX') txBox.current?.focus(); break;
         case 'beep': beep(); break;
@@ -677,7 +690,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
         'sep' as const,
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
-        ...['CW', 'QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
+        ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
         { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
@@ -729,6 +742,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.slashedZero'), checked: views.slashedZero, onSelect: () => setView({ slashedZero: !views.slashedZero }) },
         { label: t('digi.mi.flashTx'), checked: views.flashTx, onSelect: () => setView({ flashTx: !views.flashTx }) },
         { label: t('digi.mi.hairlines'), checked: views.hairlines, onSelect: () => setView({ hairlines: !views.hairlines }) },
+        { label: t('digi.mi.wideWaterfall'), checked: views.wideWaterfall, onSelect: () => setView({ wideWaterfall: !views.wideWaterfall }) },
         { label: t('digi.mi.defaultRst'), checked: views.defaultRst, onSelect: () => setView({ defaultRst: !views.defaultRst }) },
       ],
     },
@@ -748,7 +762,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     },
   ];
 
-  const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'psk63' ? '63 bd' : '31 bd';
+  const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'cw' ? `${Math.round(s.cw_wpm)} WPM` : s.mode === 'psk63' ? '63 bd' : '31 bd';
 
   return (
     <>
@@ -770,7 +784,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <FreqPicker
           dialHz={status?.dial_hz ?? 0}
           mode={s.mode.toUpperCase()}
-          rows={bandPlanRows(s.mode.toUpperCase() === 'RTTY' ? 'RTTY' : s.mode.toUpperCase() === 'PSK63' ? 'PSK63' : 'PSK31')}
+          rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
           locked={sending}
           onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
         />
@@ -811,7 +825,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           </div>
         </div>
         {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
         ) : null}
         </div>
         {views.log ? (

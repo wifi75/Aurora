@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **CW (nuova)**: nel menu «Modo» di PSK · RTTY · SSTV c'e' la CW. Trasmissione con un tono audio dai fronti arrotondati e velocita' in WPM (impostazioni del modo, comando `<WPM:n>` delle macro con i tasti F10-F12 a 15, 20 e 25 WPM); ricezione con un decodificatore a soglia adattiva che si adatta alla velocita' del segnale (crate `mode-digi`, prove di andata e ritorno a 12, 20 e 30 WPM, con rumore, tono diverso e squelch). Le frequenze CW sono nel selettore di banda.
+- **Log PSK, RTTY e CW**: la frequenza e' quella vera del segnale (radio + tono); il log interno salva anche nome e QTH del corrispondente (nuova versione 4 del database, che si aggiorna da sola); la riga in corso in cima, i QSO piu' recenti sotto; un solo zero dopo la virgola nella frequenza.
+- **Cascata PSK e RTTY**: di base 0-5 kHz (oppure 0-3,5 kHz dal menu Vista, «Cascata larga»).
 - **PSK e RTTY, opzioni della Vista** (menu «Vista»): sottolinea il testo trasmesso, solo maiuscole, zero barrato, TX lampeggiante, linee sottili sulla cascata alle frequenze di RX (e TX in split) e rapporti di base 599 dopo ogni QSO. Di base sono accese: sottolineato, zero barrato, TX lampeggiante e rapporti 599. Nella Guida la voce «PSK e RTTY: pagina e opzioni della Vista».
 - **PSK e RTTY, divisore regolabile**: il divisore fra la finestra di ricezione e quella di trasmissione si trascina (la proporzione resta salvata).
 - **DX Cluster nei modi testuali**: nell'elenco dei modi c'e' anche PSK (comprende PSK31 e PSK63) e un nuovo filtro «Solo nuovi» mostra solo gli spot nuovi per la lista dei desideri. Nella pagina PSK e RTTY il clic su uno spot porta la radio in modo che il segnale cada sul tono di ricezione, mette il nominativo nel QSO e, se il commento dice «up N», sposta la trasmissione di N kHz (split nell'audio fino a 3,5 kHz; oltre serve lo split della radio, non ancora fatto).
