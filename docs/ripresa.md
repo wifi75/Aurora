@@ -4,6 +4,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 ## Stato al 2026-11-10 pomeriggio (0.11.227 pubblicata)
 
+- **Menu nuovo deciso** (P4 in docs/tasks.md): modi in alto (FT8, VHF, CW, RTTY, PSK, SSTV, Satelliti), a destra le pagine del modo e Log · Mappa DX · Propagazione · menu ⚙, niente seconda riga, volume e tema nella barra in fondo. Prototipo approvato in docs/prototipo-menu-modi/index.html: e' il prossimo lavoro grosso, da fare a passi (prima FT8/VHF con le pagine di oggi spostate).
 - **0.11.227**: eta' dei messaggi da quando compaiono (come GridTracker), righe Tx all'inizio del periodo, nominativo di chi trasmette in grassetto, Finestra RX con colonne fisse. Contest di prova: DARC FT4, 2026-11-10 19:00 UTC (Luc ON7KEC). Progetti grossi in docs/tasks.md: satelliti, altri modi, rotori; MSK144 a 30 s (issue #27).
 
 - **0.11.226** (12:19 UTC): al primo avvio con un installatore vecchio prima la locandina dell'aggiornamento e poi la guida iniziale; Finestra RX con colonne larghe quanto il contenuto (messaggio mai tagliato); cartolina del tray senza i passi.
