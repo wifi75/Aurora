@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'fox' } | { name: 'contest' } | { name: 'qmap' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
+export type Route = { name: 'fox' } | { name: 'contest' } | { name: 'qmap' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'rotator' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
 export function parseRoute(hash: string): Route {
@@ -23,6 +23,7 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/mappa-dx') return { name: 'dxmap' };
   if (hash === '#/storico') return { name: 'history' };
   if (hash === '#/propagazione') return { name: 'propagation' };
+  if (hash === '#/rotore') return { name: 'rotator' };
   // `#/guida/<sezione>`: la Guida aperta su una sezione (per esempio dalla scheda SDR delle Impostazioni)
   if (hash === '#/guida' || /^#\/guida\/[a-z0-9-]{1,30}$/.test(hash)) return { name: 'guide' };
   if (hash === '#/novita') return { name: 'news' };

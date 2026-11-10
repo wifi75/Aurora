@@ -26,6 +26,7 @@ import { saveErrorOf, useSettings, type SaveError } from '../settings/NativeSett
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
 import { RadioTab } from '../settings/RadioTab';
+import { RotatorTab } from '../settings/RotatorTab';
 import { SdrTab } from '../settings/SdrTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
@@ -54,6 +55,7 @@ const TABS: readonly TabDef[] = [
   { id: 'general', label: 'sw.tab.general', icon: '⚙', render: () => <GeneralWindowTab /> },
   { id: 'radio', label: 'sw.tab.radio', icon: '▭', render: () => <RadioTab part="link" /> },
   { id: 'profiles', label: 'sw.tab.profiles', icon: '☰', render: () => <RadioTab part="profiles" /> },
+  { id: 'rotator', label: 'sw.tab.rotator', icon: '⊕', render: () => <RotatorTab /> },
   { id: 'audio', label: 'sw.tab.audio', icon: '∿', render: () => <AudioTab /> },
   // chi ha una SDR: TCI, QMAP e radio adatte in un posto solo (stessi dati delle schede Radio e Audio)
   { id: 'sdr', label: 'sw.tab.sdr', icon: '⌁', render: () => <SdrTab /> },

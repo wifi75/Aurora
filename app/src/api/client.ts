@@ -875,6 +875,56 @@ export async function detectCat(): Promise<CatDetection> {
   return (await (await request('/cat/detect', { method: 'POST' })).json()) as CatDetection;
 }
 
+/** Configurazione del rotore d'antenna (`rotore.json`): `launch` = Aurora lancia rotctld, `remote` = rotctld gia' acceso. */
+export interface RotatorConfig {
+  enabled: boolean;
+  connection: 'launch' | 'remote';
+  model: number;
+  model_name: string;
+  port: string;
+  baud: number;
+  host: string;
+  tcp_port: number;
+}
+
+export interface RotatorStatus {
+  state: 'off' | 'connecting' | 'connected' | 'error';
+  connected: boolean;
+  az: number | null;
+  el: number | null;
+  target: number | null;
+  moving: boolean;
+  error: string | null;
+  rotctld_found: boolean;
+}
+
+export interface RotatorSnapshot {
+  status: RotatorStatus;
+  config: RotatorConfig;
+}
+
+export async function getRotator(): Promise<RotatorSnapshot> {
+  return (await (await request('/rotator')).json()) as RotatorSnapshot;
+}
+
+/** Salva la configurazione del rotore e rifa' il collegamento (solo dal PC). */
+export async function putRotator(config: RotatorConfig): Promise<RotatorSnapshot> {
+  return (await (await request('/rotator', { ...jsonInit(config), method: 'PUT' })).json()) as RotatorSnapshot;
+}
+
+/** Manda l'antenna a un azimut (gradi, 0 = nord). */
+export async function rotatorGoto(az: number): Promise<RotatorStatus> {
+  return ((await (await request('/rotator/goto', jsonInit({ az }))).json()) as { status: RotatorStatus }).status;
+}
+
+export async function rotatorStop(): Promise<RotatorStatus> {
+  return ((await (await request('/rotator/stop', { method: 'POST' })).json()) as { status: RotatorStatus }).status;
+}
+
+export async function getRotatorModels(): Promise<CatModel[]> {
+  return ((await (await request('/rotator/models')).json()) as { models: CatModel[] }).models;
+}
+
 /** Le impostazioni del motore di Aurora (nel suo file). */
 export async function getEngineSettings(): Promise<EngineSettings> {
   return EngineSettingsSchema.parse(await (await request('/engine-settings')).json());
