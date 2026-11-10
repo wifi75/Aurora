@@ -170,11 +170,86 @@ fn single_instance() -> bool {
     }
 }
 
+/// La lingua scelta in Aurora (`aurora-lang` in `ui-settings.json`): 0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt. Come l'interfaccia, senza scelta
+/// vale l'italiano. Si rilegge a ogni cartolina, cosi' un cambio di lingua in Aurora vale subito (il menu del tray al prossimo avvio).
+fn lang() -> usize {
+    let Some(base) = std::env::var_os("APPDATA") else { return 0 };
+    let code = std::fs::read_to_string(PathBuf::from(base).join("Aurora").join("ui-settings.json"))
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| v.get("desktop")?.get("aurora-lang")?.as_str().map(|s| s.trim().trim_matches('"').to_string()))
+        .unwrap_or_default();
+    lang_index(&code)
+}
+
+fn lang_index(code: &str) -> usize {
+    ["it", "en", "de", "fr", "es", "pt"].iter().position(|c| *c == code).unwrap_or(0)
+}
+
+/// I testi dell'agente nelle sei lingue di Aurora (it, en, de, fr, es, pt). `{v}` e' il valore da mettere dentro.
+fn tr_in(lang: usize, key: &str) -> &'static str {
+    let row: [&'static str; 6] = match key {
+        "open" => ["Apri Aurora", "Open Aurora", "Aurora öffnen", "Ouvrir Aurora", "Abrir Aurora", "Abrir o Aurora"],
+        "check" => ["Cerca aggiornamenti", "Check for updates", "Nach Updates suchen", "Rechercher des mises à jour", "Buscar actualizaciones", "Procurar atualizações"],
+        "quit" => ["Esci dall'agente", "Quit the agent", "Agent beenden", "Quitter l'agent", "Salir del agente", "Sair do agente"],
+        "err_tx" => ["Aurora sta trasmettendo: riprova a fine trasmissione.", "Aurora is transmitting: try again when the transmission ends.", "Aurora sendet gerade: nach dem Senden erneut versuchen.", "Aurora est en émission : réessaie à la fin de l'émission.", "Aurora está transmitiendo: inténtalo al terminar la transmisión.", "O Aurora está a transmitir: tenta de novo no fim da transmissão."],
+        "err_local" => ["L'aggiornamento si avvia solo dal PC dove gira Aurora.", "The update can only be started on the PC where Aurora runs.", "Das Update startet nur auf dem PC, auf dem Aurora läuft.", "La mise à jour ne démarre que sur le PC où tourne Aurora.", "La actualización solo se inicia en el PC donde funciona Aurora.", "A atualização só arranca no PC onde corre o Aurora."],
+        "err_noinstall" => ["Questa Aurora non sa installare gli aggiornamenti da sola.", "This Aurora cannot install updates by itself.", "Diese Aurora kann Updates nicht selbst installieren.", "Cette Aurora ne sait pas installer les mises à jour toute seule.", "Esta Aurora no sabe instalar las actualizaciones sola.", "Este Aurora não sabe instalar as atualizações sozinho."],
+        "err_status" => ["Aurora ha risposto {v}", "Aurora answered {v}", "Aurora hat {v} geantwortet", "Aurora a répondu {v}", "Aurora ha respondido {v}", "O Aurora respondeu {v}"],
+        "err_noresp" => ["Aurora non risponde.", "Aurora does not answer.", "Aurora antwortet nicht.", "Aurora ne répond pas.", "Aurora no responde.", "O Aurora não responde."],
+        "k_update" => ["Aggiornamento", "Update", "Update", "Mise à jour", "Actualización", "Atualização"],
+        "upd_ready" => ["Aurora {v} è pronta", "Aurora {v} is ready", "Aurora {v} ist bereit", "Aurora {v} est prête", "Aurora {v} está lista", "O Aurora {v} está pronto"],
+        "upd_now" => ["Aggiorna ora", "Update now", "Jetzt aktualisieren", "Mettre à jour", "Actualizar ahora", "Atualizar agora"],
+        "k_updates" => ["Aggiornamenti", "Updates", "Updates", "Mises à jour", "Actualizaciones", "Atualizações"],
+        "uptodate" => ["Aurora è aggiornata ({v})", "Aurora is up to date ({v})", "Aurora ist aktuell ({v})", "Aurora est à jour ({v})", "Aurora está actualizada ({v})", "O Aurora está atualizado ({v})"],
+        "uptodate_t" => ["Hai già l'ultima versione.", "You already have the latest version.", "Du hast schon die neueste Version.", "Tu as déjà la dernière version.", "Ya tienes la última versión.", "Já tens a última versão."],
+        "fail" => ["Controllo non riuscito", "Check failed", "Prüfung fehlgeschlagen", "Vérification impossible", "Comprobación fallida", "Verificação falhou"],
+        "fail_t" => ["GitHub in questo momento non risponde. Riprova tra qualche minuto: Aurora controlla comunque da sola.", "GitHub is not answering right now. Try again in a few minutes: Aurora checks by itself anyway.", "GitHub antwortet gerade nicht. In ein paar Minuten erneut versuchen: Aurora prüft ohnehin selbst.", "GitHub ne répond pas pour le moment. Réessaie dans quelques minutes : Aurora vérifie de toute façon toute seule.", "GitHub no responde en este momento. Inténtalo en unos minutos: Aurora comprueba sola de todos modos.", "O GitHub não responde neste momento. Tenta daqui a uns minutos: o Aurora verifica sozinho de qualquer forma."],
+        "open_btn" => ["Apri", "Open", "Öffnen", "Ouvrir", "Abrir", "Abrir"],
+        "k_prop" => ["Propagazione", "Propagation", "Ausbreitung", "Propagation", "Propagación", "Propagação"],
+        "storm" => ["Tempesta geomagnetica (K {v})", "Geomagnetic storm (K {v})", "Geomagnetischer Sturm (K {v})", "Tempête géomagnétique (K {v})", "Tormenta geomagnética (K {v})", "Tempestade geomagnética (K {v})"],
+        "storm_t" => ["Le bande HF sono disturbate: meglio le bande basse e i segnali forti.", "The HF bands are disturbed: better the low bands and strong signals.", "Die KW-Bänder sind gestört: besser die unteren Bänder und starke Signale.", "Les bandes HF sont perturbées : mieux vaut les bandes basses et les signaux forts.", "Las bandas HF están perturbadas: mejor las bandas bajas y las señales fuertes.", "As bandas HF estão perturbadas: melhor as bandas baixas e os sinais fortes."],
+        "ten" => ["12 e 10 metri aperti", "12 and 10 metres open", "12 und 10 Meter offen", "12 et 10 mètres ouverts", "12 y 10 metros abiertos", "12 e 10 metros abertos"],
+        "ten_t" => ["Le condizioni di oggi danno buone le bande alte di giorno.", "Today's conditions give good high bands during the day.", "Die heutigen Bedingungen sind tagsüber gut für die hohen Bänder.", "Les conditions du jour sont bonnes sur les bandes hautes en journée.", "Las condiciones de hoy dan buenas las bandas altas de día.", "As condições de hoje dão boas as bandas altas de dia."],
+        "dxped" => ["Domani parte {v}", "{v} starts tomorrow", "Morgen startet {v}", "{v} démarre demain", "Mañana empieza {v}", "Amanhã começa {v}"],
+        "k_daily" => ["Riepilogo", "Summary", "Zusammenfassung", "Résumé", "Resumen", "Resumo"],
+        "daily" => ["Ieri: {v} QSO", "Yesterday: {v} QSOs", "Gestern: {v} QSOs", "Hier : {v} QSO", "Ayer: {v} QSO", "Ontem: {v} QSO"],
+        "daily_t" => ["{v} paesi diversi. Buoni DX anche oggi!", "{v} different countries. Good DX today too!", "{v} verschiedene Länder. Auch heute gutes DX!", "{v} pays différents. Bons DX aujourd'hui aussi !", "{v} países distintos. ¡Buenos DX también hoy!", "{v} países diferentes. Bons DX também hoje!"],
+        "close" => ["Chiudi", "Close", "Schließen", "Fermer", "Cerrar", "Fechar"],
+        "retry" => ["Riprova", "Retry", "Erneut", "Réessayer", "Reintentar", "Tentar de novo"],
+        "start" => ["Avvio…", "Starting…", "Start…", "Démarrage…", "Inicio…", "Início…"],
+        "s1" => ["Scarico", "Download", "Download", "Téléchargement", "Descarga", "Transferência"],
+        "s2" => ["Controllo", "Check", "Prüfung", "Contrôle", "Control", "Verificação"],
+        "s3" => ["Installo", "Install", "Installation", "Installation", "Instalación", "Instalação"],
+        "s4" => ["Riavvio", "Restart", "Neustart", "Redémarrage", "Reinicio", "Reinício"],
+        "left" => ["mancano {v} s", "{v} s left", "noch {v} s", "encore {v} s", "faltan {v} s", "faltam {v} s"],
+        "p_opening" => ["Apro Aurora…", "Opening Aurora…", "Aurora wird geöffnet…", "J'ouvre Aurora…", "Abriendo Aurora…", "A abrir o Aurora…"],
+        "p_preparing" => ["Preparo lo scaricamento…", "Preparing the download…", "Download wird vorbereitet…", "Je prépare le téléchargement…", "Preparando la descarga…", "A preparar a transferência…"],
+        "p_downloading" => ["Scarico la versione nuova…", "Downloading the new version…", "Neue Version wird geladen…", "Je télécharge la nouvelle version…", "Descargando la versión nueva…", "A transferir a versão nova…"],
+        "p_verifying" => ["Controllo la firma del pacchetto…", "Checking the package signature…", "Signatur des Pakets wird geprüft…", "Je vérifie la signature du paquet…", "Comprobando la firma del paquete…", "A verificar a assinatura do pacote…"],
+        "p_ready" => ["Pacchetto pronto e firmato: avvio l'installazione…", "Package ready and signed: starting the installation…", "Paket bereit und signiert: Installation startet…", "Paquet prêt et signé : je lance l'installation…", "Paquete listo y firmado: iniciando la instalación…", "Pacote pronto e assinado: a iniciar a instalação…"],
+        "p_installing" => ["Avvio l'installatore: Aurora si chiude e si riapre da sola.", "Starting the installer: Aurora closes and reopens by itself.", "Installationsprogramm startet: Aurora schließt sich und öffnet sich wieder.", "Je lance l'installateur : Aurora se ferme et se rouvre toute seule.", "Iniciando el instalador: Aurora se cierra y se vuelve a abrir sola.", "A iniciar o instalador: o Aurora fecha-se e volta a abrir sozinho."],
+        "p_restart" => ["Aurora si sta riavviando…", "Aurora is restarting…", "Aurora startet neu…", "Aurora redémarre…", "Aurora se está reiniciando…", "O Aurora está a reiniciar…"],
+        "p_failed" => ["Aggiornamento non riuscito.", "Update failed.", "Update fehlgeschlagen.", "Mise à jour impossible.", "La actualización ha fallado.", "A atualização falhou."],
+        _ => return "",
+    };
+    row[lang.min(5)]
+}
+
+fn tr(key: &str) -> &'static str {
+    tr_in(lang(), key)
+}
+
+/// Un testo con il suo valore (`{v}`).
+fn trv(key: &str, value: impl std::fmt::Display) -> String {
+    tr(key).replace("{v}", &value.to_string())
+}
+
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Apri Aurora", true, None::<&str>)?;
-    let check_now = MenuItem::with_id(app, "check", "Cerca aggiornamenti", true, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", tr("open"), true, None::<&str>)?;
+    let check_now = MenuItem::with_id(app, "check", tr("check"), true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
-    let quit = MenuItem::with_id(app, "quit", "Esci dall'agente", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", tr("quit"), true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &check_now, &sep, &quit])?;
     let mut tray = TrayIconBuilder::with_id("aurora-agente").tooltip("Aurora").menu(&menu).show_menu_on_left_click(false);
     if let Some(icon) = app.default_window_icon() {
@@ -219,10 +294,10 @@ fn install_refusal(status: u16, body: &serde_json::Value) -> String {
         return m.to_string();
     }
     match code {
-        "transmitting" => "Aurora sta trasmettendo: riprova a fine trasmissione.".into(),
-        "local_only" => "L'aggiornamento si avvia solo dal PC dove gira Aurora.".into(),
-        "install_unavailable" => "Questa Aurora non sa installare gli aggiornamenti da sola.".into(),
-        _ => format!("Aurora ha risposto {status}{}", if code.is_empty() { String::new() } else { format!(" ({code})") }),
+        "transmitting" => tr("err_tx").into(),
+        "local_only" => tr("err_local").into(),
+        "install_unavailable" => tr("err_noinstall").into(),
+        _ => trv("err_status", format!("{status}{}", if code.is_empty() { String::new() } else { format!(" ({code})") })),
     }
 }
 
@@ -265,7 +340,7 @@ fn install_update(app: AppHandle) {
                 let body = r.body_mut().read_json::<serde_json::Value>().unwrap_or_default();
                 Err(install_refusal(status, &body))
             }
-            Err(e) => Err(format!("Aurora non risponde: {e}")),
+            Err(e) => Err(format!("{} ({e})", tr("err_noresp"))),
         };
         let _ = tx.send(outcome);
     });
@@ -307,7 +382,7 @@ fn install_update(app: AppHandle) {
             (None, None) => {
                 misses += 1;
                 if misses > 20 {
-                    card_state(&app, &serde_json::json!({ "phase": "error", "error": "Aurora non risponde." }));
+                    card_state(&app, &serde_json::json!({ "phase": "error", "error": tr("err_noresp") }));
                     break;
                 }
                 true
@@ -467,18 +542,18 @@ fn check(app: &AppHandle, asked: bool) {
                 .take(3)
                 .collect::<Vec<_>>()
                 .join(" · ");
-            show_card(app, Card { kind: "Aggiornamento", title: format!("Aurora {tag} è pronta"), text: summary, main: "Aggiorna ora", main_action: "update", update: true, theme: String::new() });
+            show_card(app, Card { kind: tr("k_update"), title: trv("upd_ready", &tag), text: summary, main: tr("upd_now"), main_action: "update", update: true, theme: String::new() });
             seen.versions.push(tag);
             shown = true;
         } else if asked {
-            show_card(app, Card { kind: "Aggiornamenti", title: format!("Aurora è aggiornata ({VERSION})"), text: "Hai già l'ultima versione.".into(), main: "OK", main_action: "close", update: false, theme: String::new() });
+            show_card(app, Card { kind: tr("k_updates"), title: trv("uptodate", VERSION), text: tr("uptodate_t").into(), main: "OK", main_action: "close", update: false, theme: String::new() });
             shown = true;
         }
     }
     else if asked {
         // GitHub non risponde (l'8/11/2026 dava 504 anche all'API): dal menu si chiede un controllo, quindi si risponde sempre, anche con un errore
         agent_log("controllo degli aggiornamenti non riuscito: GitHub non risponde");
-        show_card(app, Card { kind: "Aggiornamenti", title: "Controllo non riuscito".into(), text: "GitHub in questo momento non risponde. Riprova tra qualche minuto: Aurora controlla comunque da sola.".into(), main: "OK", main_action: "close", update: false, theme: String::new() });
+        show_card(app, Card { kind: tr("k_updates"), title: tr("fail").into(), text: tr("fail_t").into(), main: "OK", main_action: "close", update: false, theme: String::new() });
         shown = true;
     }
     if !shown && !open && let Some(list) = get_json(&format!("{MESSAGES}?v={VERSION}")) {
@@ -489,7 +564,7 @@ fn check(app: &AppHandle, asked: bool) {
             let id = m.get("id").and_then(|i| i.as_str()).unwrap_or("").to_string();
             let text = |key: &str| {
                 let t = m.get(key);
-                t.and_then(|t| t.get("it")).or_else(|| t.and_then(|t| t.get("en"))).and_then(|v| v.as_str()).unwrap_or("").to_string()
+                t.and_then(|t| t.get(["it", "en", "de", "fr", "es", "pt"][lang()])).or_else(|| t.and_then(|t| t.get("en"))).or_else(|| t.and_then(|t| t.get("it"))).and_then(|v| v.as_str()).unwrap_or("").to_string()
             };
             let link = m.get("link").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let festive = m.get("tema").and_then(|v| v.as_str()) == Some("festa");
@@ -497,7 +572,7 @@ fn check(app: &AppHandle, asked: bool) {
                 kind: if festive { "✦ IU3WJQ" } else { "IU3WJQ" },
                 title: text("titolo"),
                 text: text("testo"),
-                main: if link.is_empty() { "OK" } else { "Apri" },
+                main: if link.is_empty() { "OK" } else { tr("open_btn") },
                 main_action: if link.is_empty() { "close" } else { "link" },
                 update: false,
                 theme: m
@@ -534,10 +609,10 @@ fn check(app: &AppHandle, asked: bool) {
         // propagazione (hamqsl.com): tempesta geomagnetica e 12-10 m aperti di giorno, una volta al giorno
         if let Some(sol) = get_text(online_info::solar::URL).and_then(|b| online_info::solar::parse(&b)) {
             if let Some(k) = sol.k_index.filter(|k| *k >= 5) {
-                want("prop", format!("prop-{today}-k"), Card { kind: "Propagazione", title: format!("Tempesta geomagnetica (K {k})"), text: "Le bande HF sono disturbate: meglio le bande basse e i segnali forti.".into(), main: "OK", main_action: "close", update: false, theme: String::new() }, &mut seen);
+                want("prop", format!("prop-{today}-k"), Card { kind: tr("k_prop"), title: trv("storm", k), text: tr("storm_t").into(), main: "OK", main_action: "close", update: false, theme: String::new() }, &mut seen);
             }
             if sol.bands.iter().any(|b| b.name.contains("12m-10m") && b.time == "day" && b.condition == "Good") {
-                want("prop", format!("prop-{today}-10m"), Card { kind: "Propagazione", title: "12 e 10 metri aperti".into(), text: "Le condizioni di oggi danno buone le bande alte di giorno.".into(), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
+                want("prop", format!("prop-{today}-10m"), Card { kind: tr("k_prop"), title: tr("ten").into(), text: tr("ten_t").into(), main: tr("open"), main_action: "open", update: false, theme: String::new() }, &mut seen);
             }
         }
         // DXpedition che partono domani (NG3K)
@@ -550,12 +625,12 @@ fn check(app: &AppHandle, asked: bool) {
                 .filter(|d| missing.as_ref().is_none_or(|m| m.iter().any(|c| c.eq_ignore_ascii_case(&d.call))))
                 .take(3)
             {
-                want("dxped", format!("dxped-{}-{}", d.call, d.start), Card { kind: "DXpedition", title: format!("Domani parte {} · {}", d.call, d.country), text: d.info.chars().take(160).collect(), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
+                want("dxped", format!("dxped-{}-{}", d.call, d.start), Card { kind: "DXpedition", title: trv("dxped", format!("{} · {}", d.call, d.country)), text: d.info.chars().take(160).collect(), main: tr("open"), main_action: "open", update: false, theme: String::new() }, &mut seen);
             }
         }
         // riepilogo di ieri (dal log di Aurora), dopo le 8 del mattino
         if local_minutes() >= 8 * 60 && let Some((n, countries)) = yesterday_summary() {
-            want("daily", format!("daily-{today}"), Card { kind: "Riepilogo", title: format!("Ieri: {n} QSO"), text: format!("{countries} paesi diversi. Buoni DX anche oggi!"), main: "Apri Aurora", main_action: "open", update: false, theme: String::new() }, &mut seen);
+            want("daily", format!("daily-{today}"), Card { kind: tr("k_daily"), title: trv("daily", n), text: trv("daily_t", countries), main: tr("open"), main_action: "open", update: false, theme: String::new() }, &mut seen);
         }
         if !icon_notes.is_empty() {
             let note = format!("Aurora · {}", icon_notes.join(" · "));
@@ -658,6 +733,23 @@ fn percent(s: &str) -> String {
     out
 }
 
+/// I testi della barra dell'aggiornamento nella cartolina, nella lingua di Aurora.
+fn card_texts() -> serde_json::Value {
+    let l = lang();
+    serde_json::json!({
+        "steps": [tr_in(l, "s1"), tr_in(l, "s2"), tr_in(l, "s3"), tr_in(l, "s4")],
+        "left": tr_in(l, "left"),
+        "opening": tr_in(l, "p_opening"),
+        "preparing": tr_in(l, "p_preparing"),
+        "downloading": tr_in(l, "p_downloading"),
+        "verifying": tr_in(l, "p_verifying"),
+        "ready": tr_in(l, "p_ready"),
+        "installing": tr_in(l, "p_installing"),
+        "restart": tr_in(l, "p_restart"),
+        "failed": tr_in(l, "p_failed"),
+    })
+}
+
 /// La cartolina sopra l'orologio: finestra senza cornice, sempre davanti, si chiude da sola dopo 20 s (non col mouse sopra).
 fn show_card(app: &AppHandle, card: Card) {
     let html = CARD_HTML
@@ -668,6 +760,10 @@ fn show_card(app: &AppHandle, card: Card) {
         .replace("{ACTION}", card.main_action)
         .replace("{UPDATE}", if card.update { "1" } else { "0" })
         .replace("{THEME}", if card.theme.is_empty() { "" } else { &card.theme })
+        .replace("{L_CLOSE}", &esc(tr("close")))
+        .replace("{L_RETRY}", &esc(tr("retry")))
+        .replace("{L_START}", &esc(tr("start")))
+        .replace("{L_JSON}", &card_texts().to_string().replace('<', "\\u003c"))
         .replace("{SECONDS}", &(prefs().seconds.clamp(3, 60) * 1000).to_string());
     // la cartolina come file nella cartella temporanea: un indirizzo `data:` non sempre si apre come pagina principale
     let file = std::env::temp_dir().join("aurora-cartolina.html");
@@ -776,10 +872,10 @@ button.m{background:#2cf5a4;border-color:#2cf5a4;color:#04342c}.t{position:absol
 .pg{display:none}.on .pg{display:block}.on #tx,.on #ac{display:none}.br{height:7px;border-radius:99px;background:#1e2c44;overflow:hidden;margin:6px 0 7px}#bf{display:block;height:100%;width:0;background:linear-gradient(90deg,#2cf5a4,#27a0f5);border-radius:inherit;transition:width .3s}#bf.w{width:35%;animation:wt 1.2s ease-in-out infinite}#bf.ko{background:#e5484d}@keyframes wt{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
 .mt{font-size:12px;color:#aab6c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}.mt.ko{color:#ffb4a8;white-space:normal;max-height:32px}.ps{display:flex;align-items:center;gap:3px;white-space:nowrap;margin-top:9px;font-size:11.5px}.ps span{padding:3px 7px;border-radius:99px;border:1px solid #2a3850;color:#8fa0b5}.ps span.cur{border-color:#2cf5a4;color:#2cf5a4;background:rgb(44 245 164/.12);font-weight:600}.ps span.ok{color:#dbe6f2;border-color:#24533f}.ps span.ko{border-color:#e5484d;color:#ffb4a8}.ps b{color:#4a5a72;font-weight:400}#ra{display:none;margin-top:8px}
 </style></head><body><div class="c {THEME}" id="c"><div class="b"><i class="dc"></i><div class="l"></div><div class="k"><b>AURORA</b><span>{KIND}</span></div><button class="x" onclick="go('close')">×</button></div>
-<div class="d"><h3>{TITLE}</h3><p id="tx">{TEXT}</p><div class="a" id="ac"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('{ACTION}')">{MAIN}</button></div>
-<div class="pg" id="pg"><div class="br"><i id="bf"></i></div><div class="mt" id="mt">Avvio…</div><div class="ps" id="ps"></div><div class="a" id="ra"><button class="n" onclick="go('close')">Chiudi</button><button class="n m" onclick="go('update')">Riprova</button></div></div></div><i class="t" id="t"></i></div>
+<div class="d"><h3>{TITLE}</h3><p id="tx">{TEXT}</p><div class="a" id="ac"><button class="n" onclick="go('close')">{L_CLOSE}</button><button class="n m" onclick="go('{ACTION}')">{MAIN}</button></div>
+<div class="pg" id="pg"><div class="br"><i id="bf"></i></div><div class="mt" id="mt">{L_START}</div><div class="ps" id="ps"></div><div class="a" id="ra"><button class="n" onclick="go('close')">{L_CLOSE}</button><button class="n m" onclick="go('update')">{L_RETRY}</button></div></div></div><i class="t" id="t"></i></div>
 <script>
-var prog=false,last=0,STEPS=['Scarico','Controllo','Installo','Riavvio'];
+var L={L_JSON},prog=false,last=0,STEPS=L.steps;
 function $(i){return document.getElementById(i)}
 function go(a){if(a==='update')startProg();location.href='https://aurora-'+a+'/'}
 function mb(b){return (b/1048576).toFixed(1).replace('.',',')}
@@ -788,13 +884,13 @@ function upd(s){if(!prog){prog=true;$('c').classList.add('on');$('t').style.disp
 var ph=s.phase||'idle',i={starting:0,idle:0,downloading:0,verifying:1,ready:2,installing:2,restart:3}[ph],err=ph==='error';if(err)i=last;else last=i;
 var h='';STEPS.forEach(function(n,k){var c=k<i?'ok':k===i?(err?'ko':'cur'):'';h+=(k?'<b>›</b>':'')+'<span class="'+c+'">'+(c==='ok'?'✓ ':'')+n+'</span>'});$('ps').innerHTML=h;
 var bf=$('bf'),pc=s.percent==null?null:s.percent,m='';bf.className='';
-if(ph==='downloading'&&pc!=null){bf.style.width=pc+'%';m=pc+'%';if(s.total)m+=' · '+mb(s.done)+' / '+mb(s.total)+' MB';if(s.speed_bps)m+=' · '+mb(s.speed_bps)+' MB/s';if(s.eta_s)m+=' · mancano '+s.eta_s+' s'}
-else if(ph==='starting'||ph==='idle'||ph==='downloading'){bf.className='w';m=ph==='starting'?'Apro Aurora…':ph==='idle'?'Preparo lo scaricamento…':'Scarico la versione nuova…'}
-else if(ph==='verifying'){bf.className='w';m='Controllo la firma del pacchetto…'}
-else if(ph==='ready'){bf.style.width='100%';m='Pacchetto pronto e firmato: avvio l’installazione…'}
-else if(ph==='installing'){bf.style.width='100%';m='Avvio l’installatore: Aurora si chiude e si riapre da sola.'}
-else if(ph==='restart'){bf.style.width='100%';m='Aurora si sta riavviando…'}
-else{bf.style.width='100%';bf.className='ko';m=s.error||'Aggiornamento non riuscito.'}
+if(ph==='downloading'&&pc!=null){bf.style.width=pc+'%';m=pc+'%';if(s.total)m+=' · '+mb(s.done)+' / '+mb(s.total)+' MB';if(s.speed_bps)m+=' · '+mb(s.speed_bps)+' MB/s';if(s.eta_s)m+=' · '+L.left.replace('{v}',s.eta_s)}
+else if(ph==='starting'||ph==='idle'||ph==='downloading'){bf.className='w';m=ph==='starting'?L.opening:ph==='idle'?L.preparing:L.downloading}
+else if(ph==='verifying'){bf.className='w';m=L.verifying}
+else if(ph==='ready'){bf.style.width='100%';m=L.ready}
+else if(ph==='installing'){bf.style.width='100%';m=L.installing}
+else if(ph==='restart'){bf.style.width='100%';m=L.restart}
+else{bf.style.width='100%';bf.className='ko';m=s.error||L.failed}
 $('mt').textContent=m;$('mt').title=m;$('mt').className=err?'mt ko':'mt';$('ra').style.display=err?'flex':'none'}
 var total={SECONDS},left=total,hover=false,c=$('c'),t=$('t');
 c.onmouseenter=function(){hover=true};c.onmouseleave=function(){hover=false};
@@ -802,3 +898,33 @@ setInterval(function(){if(hover||prog)return;left-=100;t.style.width=Math.max(0,
 try{var x=new AudioContext(),o=x.createGain();o.gain.value=.9;o.connect(x.destination);var n={UPDATE}?[523.25,659.25,783.99,1046.5,1318.5]:[523.25,659.25,783.99,1046.5],s=x.currentTime+.05;
 n.forEach(function(f,i){var at=s+i*.085,g=x.createGain(),v=x.createOscillator();v.type='triangle';v.frequency.value=f;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.16,at+.015);g.gain.exponentialRampToValueAtTime(.0001,at+.9);v.connect(g);g.connect(o);v.start(at);v.stop(at+.95)})}catch(e){}
 </script></body></html>"#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn la_lingua_di_aurora_sceglie_i_testi_e_senza_scelta_vale_l_italiano() {
+        assert_eq!(lang_index("en"), 1);
+        assert_eq!(lang_index("pt"), 5);
+        assert_eq!(lang_index(""), 0);
+        assert_eq!(lang_index("klingon"), 0);
+        assert_eq!(tr_in(1, "open"), "Open Aurora");
+        assert_eq!(tr_in(0, "open"), "Apri Aurora");
+    }
+
+    #[test]
+    fn ogni_testo_c_e_in_tutte_e_sei_le_lingue() {
+        let keys = [
+            "open", "check", "quit", "err_tx", "err_local", "err_noinstall", "err_status", "err_noresp", "k_update", "upd_ready", "upd_now",
+            "k_updates", "uptodate", "uptodate_t", "fail", "fail_t", "open_btn", "k_prop", "storm", "storm_t", "ten", "ten_t", "dxped",
+            "k_daily", "daily", "daily_t", "close", "retry", "start", "s1", "s2", "s3", "s4", "left", "p_opening", "p_preparing",
+            "p_downloading", "p_verifying", "p_ready", "p_installing", "p_restart", "p_failed",
+        ];
+        for key in keys {
+            for l in 0..6 {
+                assert!(!tr_in(l, key).is_empty(), "manca {key} nella lingua {l}");
+            }
+        }
+    }
+}
