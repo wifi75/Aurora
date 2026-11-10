@@ -1,0 +1,90 @@
+# Versione di sviluppo del proprietario (ramo privato `sviluppo`): a ogni push compila l'installatore per Windows e lo mette nella
+# prerelease `sviluppo-ultima`, rifatta ogni volta sul commit appena spinto. La versione e' compilata con AURORA_SVILUPPO: non cerca
+# aggiornamenti su GitHub, cosi' non torna mai da sola alle release pubbliche. Niente firme (ne' SignPath ne' aggiornamenti).
+name: Sviluppo
+
+on:
+  push:
+    branches: [sviluppo]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            core
+            desktop/src-tauri
+
+      - name: File dei paesi (cty.dat)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force desktop/src-tauri/cty | Out-Null
+          foreach ($i in 1..3) {
+            try { Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile desktop/src-tauri/cty/cty.dat -UserAgent 'Mozilla/5.0 (Aurora build)' -TimeoutSec 90; break }
+            catch { Write-Host "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; Start-Sleep 20 }
+          }
+          # sito irraggiungibile: copia di riserva del repository
+          if (-not (Test-Path desktop/src-tauri/cty/cty.dat)) {
+            Write-Host '::warning::country-files.com non risponde: uso la copia di riserva di cty.dat'
+            Copy-Item desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat
+          }
+          if ((Get-Item desktop/src-tauri/cty/cty.dat).Length -lt 50000) { throw 'cty.dat troppo piccolo' }
+
+      - name: Hamlib ufficiale (rigctld, SHA-256 verificato)
+        shell: pwsh
+        run: ./scripts/prepara-hamlib.ps1
+
+      - name: Interfaccia
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Programma e installatore (versione di sviluppo)
+        working-directory: desktop
+        shell: pwsh
+        env:
+          AURORA_SVILUPPO: '1'
+          AURORA_REQUIRE_HAMLIB: '1'
+        run: |
+          npm ci
+          # la configurazione in un file: passata come testo, pwsh 7 rovina le virgolette del JSON
+          '{"bundle":{"createUpdaterArtifacts":false}}' | Set-Content -Encoding utf8NoBOM senza-aggiornamenti.json
+          npx tauri build --config senza-aggiornamenti.json
+          if ($LASTEXITCODE -ne 0) { throw 'compilazione fallita' }
+          $exe = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'installatore non trovato' }
+          New-Item -ItemType Directory -Force ../sviluppo | Out-Null
+          Copy-Item $exe.FullName ../sviluppo/
+          Copy-Item $exe.FullName ../sviluppo/Aurora-Setup.exe
+
+      - name: Prerelease sviluppo-ultima
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # si rifa' da capo: tag e allegati sempre del commit appena spinto
+          gh release delete sviluppo-ultima --cleanup-tag -y 2>$null
+          $global:LASTEXITCODE = 0
+          $quando = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm') + ' UTC'
+          $corto = $env:GITHUB_SHA.Substring(0, 7)
+          gh release create sviluppo-ultima --prerelease --target $env:GITHUB_SHA --title "Aurora sviluppo ($quando, $corto)" --notes "Versione di sviluppo, solo per il proprietario" (Get-ChildItem sviluppo | ForEach-Object FullName)
+          if ($LASTEXITCODE -ne 0) { throw 'prerelease non creata' }
