@@ -1,0 +1,148 @@
+import { useEffect, useRef, useState } from 'react';
+import { registerSpectrum } from '../../lib/spectrumFeed';
+import type { SpectrumRow } from '../../lib/digiSpectrum';
+
+interface Props {
+  /** Il tratto di frequenza audio mostrato (Hz). */
+  minHz: number;
+  maxHz: number;
+  /** La frequenza di ricezione (bandierina verde) e, se e' diversa (Lock), quella di trasmissione (rossa). */
+  rxHz: number;
+  txHz: number | null;
+  /** La larghezza del segnale che si decodifica (Hz): le due freccette ai lati della bandierina. */
+  bandwidthHz: number;
+  /** In ricezione la bandierina e' verde, in trasmissione rossa. */
+  transmitting: boolean;
+  height?: number;
+  /** Ogni riga che arriva (per Snap, Seek e Scan). */
+  onRow?(row: SpectrumRow): void;
+  /** Un clic sulla cascata. */
+  onPick(hz: number): void;
+}
+
+/** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso (come la cascata). */
+function paletteColor(v: number): [number, number, number] {
+  const x = v / 255;
+  if (x < 0.25) return [0, 0, Math.round(60 + x * 4 * 150)];
+  if (x < 0.5) return [0, Math.round((x - 0.25) * 4 * 255), 210];
+  if (x < 0.75) return [Math.round((x - 0.5) * 4 * 255), 255, Math.round(210 * (1 - (x - 0.5) * 4))];
+  return [255, Math.round(255 * (1 - (x - 0.75) * 4)), 0];
+}
+
+const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
+const SCALE_H = 22;
+
+/** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, transmitting, height = 150, onRow, onPick }: Props) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const flow = useRef<HTMLCanvasElement>(null);
+  const scale = useRef<HTMLCanvasElement>(null);
+  const [width, setWidth] = useState(800);
+  const view = useRef({ minHz, maxHz });
+  view.current = { minHz, maxHz };
+  const rowCb = useRef(onRow);
+  rowCb.current = onRow;
+
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(Math.max(200, Math.floor(el.clientWidth))));
+    ro.observe(el);
+    setWidth(Math.max(200, Math.floor(el.clientWidth)));
+    return () => ro.disconnect();
+  }, []);
+
+  // la scala: un tacco ogni 100 Hz, le cifre ogni 500
+  useEffect(() => {
+    const c = scale.current;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
+    c.width = width;
+    c.height = SCALE_H;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, SCALE_H);
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#fff';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    const hzToX = (hz: number) => ((hz - minHz) / (maxHz - minHz)) * width;
+    for (let hz = Math.ceil(minHz / 100) * 100; hz <= maxHz; hz += 100) {
+      const x = Math.round(hzToX(hz)) + 0.5;
+      const major = hz % 500 === 0;
+      ctx.beginPath();
+      ctx.moveTo(x, SCALE_H);
+      ctx.lineTo(x, SCALE_H - (major ? 9 : 4));
+      ctx.stroke();
+      if (major) ctx.fillText(String(hz), x, 11);
+    }
+  }, [width, minHz, maxHz]);
+
+  useEffect(() => {
+    const c = flow.current;
+    if (!c) return;
+    c.width = width;
+    c.height = height - SCALE_H;
+    const ctx = c.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#000040';
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+  }, [width, height]);
+
+  useEffect(
+    () =>
+      registerSpectrum((bins, fMinHz, fMaxHz) => {
+        rowCb.current?.({ bins, fMinHz, fMaxHz });
+        const c = flow.current;
+        const ctx = c?.getContext('2d');
+        if (!c || !ctx || c.width < 2) return;
+        // tutto scende di una riga, la nuova va in cima
+        ctx.drawImage(c, 0, 0, c.width, c.height - 1, 0, 1, c.width, c.height - 1);
+        const img = ctx.createImageData(c.width, 1);
+        const { minHz: a, maxHz: b } = view.current;
+        const hzPerBin = (fMaxHz - fMinHz) / Math.max(1, bins.length);
+        for (let x = 0; x < c.width; x++) {
+          const hz = a + (x / c.width) * (b - a);
+          const v = bins[Math.min(bins.length - 1, Math.max(0, Math.floor((hz - fMinHz) / hzPerBin)))] ?? 0;
+          const [r, g, bl] = PALETTE[v] ?? [0, 0, 0];
+          const o = x * 4;
+          img.data[o] = r;
+          img.data[o + 1] = g;
+          img.data[o + 2] = bl;
+          img.data[o + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+      }),
+    [],
+  );
+
+  const xOf = (hz: number) => ((hz - minHz) / (maxHz - minHz)) * width;
+  const flag = (hz: number, color: string, key: string) =>
+    hz >= minHz && hz <= maxHz ? (
+      <span key={key} className="digi-wf-flag" style={{ left: xOf(hz), borderLeftColor: color }}>
+        <i style={{ background: color }} />
+      </span>
+    ) : null;
+
+  return (
+    <div className="digi-wf" ref={wrap} style={{ height }}>
+      <canvas ref={scale} className="digi-wf-scale" />
+      <canvas
+        ref={flow}
+        className="digi-wf-flow"
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          onPick(Math.round((minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz)) * 10) / 10);
+        }}
+      />
+      {flag(rxHz, transmitting ? '#e5484d' : '#22c55e', 'rx')}
+      {txHz !== null ? flag(txHz, '#e5484d', 'tx') : null}
+      {rxHz >= minHz && rxHz <= maxHz ? (
+        <span className="digi-wf-band" style={{ left: xOf(rxHz - bandwidthHz / 2), width: Math.max(6, xOf(rxHz + bandwidthHz / 2) - xOf(rxHz - bandwidthHz / 2)) }} aria-hidden="true">
+          <b>◂</b>
+          <b>▸</b>
+        </span>
+      ) : null}
+    </div>
+  );
+}

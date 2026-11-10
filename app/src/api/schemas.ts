@@ -187,6 +187,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     level_db: z.number().optional(),
     freq_hz: z.number().optional(),
     listening: z.boolean().optional(),
+    squelch_open: z.boolean().optional(),
     message: z.string().optional(),
   }),
   z.object({ type: z.literal('tx_halted') }),

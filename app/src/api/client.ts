@@ -1620,6 +1620,10 @@ export interface DigiSettings {
   tx_freq_hz: number;
   rtty_shift_hz: number;
   rtty_baud: number;
+  afc_on: boolean;
+  squelch_on: boolean;
+  squelch_db: number;
+  snap_on: boolean;
   auto_receive: boolean;
   macros: DigiMacro[];
   /** Le macro di un modo (`psk31`, `psk63`, `rtty`): sostituiscono quelle di base con lo stesso nome. */
@@ -1627,7 +1631,7 @@ export interface DigiSettings {
 }
 
 export interface DigiSnapshot {
-  rx: { listening: boolean; level_db: number };
+  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean };
   tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
   settings: DigiSettings;
   can_transmit: boolean;
@@ -1648,6 +1652,19 @@ export async function digiRx(action: 'start' | 'stop'): Promise<void> {
 
 export async function digiTransmit(text: string): Promise<void> {
   await request('/digi/tx', jsonInit({ text }));
+}
+
+export interface DigiImported {
+  folder: string;
+  default_count: number;
+  default_file: string | null;
+  modes: Record<string, number>;
+  skipped: number;
+}
+
+/** Importa le macro dai file dell'utente (di base `%APPDATA%\`); solo dal PC di Aurora. */
+export async function importMacros(folder?: string): Promise<{ imported: DigiImported; snapshot: DigiSnapshot }> {
+  return (await (await request('/digi/import-macros', jsonInit(folder ? { folder } : {}))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
 }
 
 export async function digiAbort(): Promise<void> {

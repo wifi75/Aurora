@@ -31,6 +31,12 @@ export function appendDigiTx(sent: string): void {
   setText(`${text}${sep}» ${sent.trim()}\n`);
 }
 
+/** Una nota nella finestra di ricezione (ora, frequenza della stazione trovata dalla scansione...), su una riga a parte. */
+export function appendDigiNote(note: string): void {
+  const sep = text === '' || text.endsWith('\n') ? '' : '\n';
+  setText(`${text}${sep}[${note}]\n`);
+}
+
 /** Chi mostra il testo si iscrive qui: cambia a ogni carattere nuovo. */
 export function onDigiText(listener: () => void): () => void {
   textListeners.add(listener);

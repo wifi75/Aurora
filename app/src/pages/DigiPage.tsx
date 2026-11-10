@@ -1,10 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { addLogQso, ApiError, digiAbort, digiRx, digiTransmit, getDigi, putDigi, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, ApiError, digiAbort, digiRx, digiTransmit, getDigi, importMacros, putDigi, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
+import { DigiLog, type Qso } from '../components/digi/DigiLog';
+import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor, type MacroScope } from '../components/digi/MacroEditor';
+import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
+import { ModeSettings, type Personal } from '../components/digi/ModeSettings';
+import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
+import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
+import { RowAverager, seekSignal, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
 import { formatDuration } from '../lib/sstv';
@@ -14,53 +20,60 @@ import { useStation } from '../state/station';
 import '../styles/digi.css';
 
 const FIELDS_KEY = 'aurora.digi.campi';
-const BAR_KEY = 'aurora.digi.barraEstesa';
-const RTTY_SHIFTS = [85, 170, 200, 425, 450, 850];
-const RTTY_BAUDS = [45, 45.45, 50, 75, 100];
+const VIEWS_KEY = 'aurora.digi.viste';
+const SCAN_KEY = 'aurora.digi.scansione';
+const MEM_KEY = 'aurora.digi.memorie';
 const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
+/** Il tratto di audio che si ascolta e si mostra (Hz). */
+const WF_MIN = 0;
+const WF_MAX = 3500;
+const SEEK_LIMITS = { min: 300, max: 3300 };
+
+interface Views {
+  controlBar: boolean;
+  extended: boolean;
+  log: boolean;
+  waterfall: boolean;
+  statusBar: boolean;
+}
+
+interface ScanProps {
+  dwell: number;
+  once: boolean;
+  timeMarks: boolean;
+  freqMarks: boolean;
+}
+
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true };
+const DEFAULT_SCAN: ScanProps = { dwell: 10, once: false, timeMarks: true, freqMarks: true };
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = browserStorage()?.getItem(key);
+    if (raw) return { ...fallback, ...(JSON.parse(raw) as Partial<T>) };
+  } catch {
+    // senza archivio si riparte dai valori di base
+  }
+  return fallback;
+}
+
+function writeJson(key: string, value: unknown): void {
+  try {
+    browserStorage()?.setItem(key, JSON.stringify(value));
+  } catch {
+    // senza archivio la scelta vale finche' la pagina e' aperta
+  }
+}
 
 /** I dati della stazione che non cambiano da un QSO all'altro: restano salvati. */
-interface Personal {
-  myname: string;
-  myqth: string;
+interface Saved extends Personal {
   rsts: string;
   rstr: string;
 }
 
-/** I dati del QSO in corso. */
-interface Qso {
-  call: string;
-  name: string;
-  qth: string;
-  wwloc: string;
-  notes: string;
-}
-
 const EMPTY_QSO: Qso = { call: '', name: '', qth: '', wwloc: '', notes: '' };
-
-function readPersonal(): Personal {
-  try {
-    const raw = browserStorage()?.getItem(FIELDS_KEY);
-    if (raw) {
-      const p = JSON.parse(raw) as Partial<Personal>;
-      return { myname: p.myname ?? '', myqth: p.myqth ?? '', rsts: p.rsts ?? '599', rstr: p.rstr ?? '599' };
-    }
-  } catch {
-    // senza archivio si riparte dai valori di base
-  }
-  return { myname: '', myqth: '', rsts: '599', rstr: '599' };
-}
-
-function readExtended(): boolean {
-  try {
-    return browserStorage()?.getItem(BAR_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
 const toMacro = (m: DigiMacro): Macro => ({ name: m.name, label: m.label, text: m.text, color: m.color });
 
 /** Il modo del programma per il nome che si usa nelle macro (BPSK31, RTTY...), o `null` se non lo conosce. */
@@ -75,7 +88,14 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
   }
 }
 
-/** La pagina dei modi testuali: PSK31, PSK63 e RTTY. Barra dei comandi, ricezione del testo, trasmissione e dati del QSO. */
+/** La larghezza del segnale (Hz): le freccette ai lati della bandierina nella cascata. */
+function bandwidthOf(s: DigiSettings): number {
+  if (s.mode === 'psk31') return 31;
+  if (s.mode === 'psk63') return 63;
+  return s.rtty_shift_hz + 2 * s.rtty_baud;
+}
+
+/** La pagina dei modi testuali, nella disposizione: menu, barra dei comandi, finestre RX e TX, log di lato, cascata e barra di stato. */
 export function DigiPage() {
   const t = useT();
   const client = useQueryClient();
@@ -87,52 +107,83 @@ export function DigiPage() {
   useEffect(() => onDigi((ev) => (ev.kind === 'rx_status' || ev.kind === 'tx' ? refresh() : undefined)), [refresh]);
 
   return (
-    <div className="digi-page">
+    <div className="digi-page digi-classica">
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
       {data ? <DigiBody snap={data} onChanged={refresh} /> : null}
     </div>
   );
 }
 
-function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => void }) {
+/** Un core piu' vecchio puo' mandare meno campi: i mancanti si riempiono con i valori di base (macro senza tasto = nessuna). */
+function withDefaults(snap: DigiSnapshot): DigiSnapshot {
+  const raw = snap.settings as Partial<DigiSettings>;
+  const settings: DigiSettings = {
+    mode: raw.mode ?? 'psk31',
+    rx_freq_hz: raw.rx_freq_hz ?? 1000,
+    tx_follow_rx: raw.tx_follow_rx ?? true,
+    tx_freq_hz: raw.tx_freq_hz ?? 1000,
+    rtty_shift_hz: raw.rtty_shift_hz ?? 170,
+    rtty_baud: raw.rtty_baud ?? 45.45,
+    afc_on: raw.afc_on ?? true,
+    squelch_on: raw.squelch_on ?? false,
+    squelch_db: raw.squelch_db ?? -45,
+    snap_on: raw.snap_on ?? true,
+    auto_receive: raw.auto_receive ?? false,
+    macros: (raw.macros ?? []).filter((m) => typeof m.name === 'string' && m.name !== ''),
+    mode_macros: raw.mode_macros ?? {},
+  };
+  return { ...snap, settings, rx: { ...snap.rx, freq_hz: snap.rx.freq_hz ?? 0, squelch_open: snap.rx.squelch_open ?? true } };
+}
+
+function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged: () => void }) {
+  const snap = useMemo(() => withDefaults(rawSnap), [rawSnap]);
   const t = useT();
   const client = useQueryClient();
   const status = useStation((s) => s.status);
   const text = useSyncExternalStore(onDigiText, getDigiText);
-  const box = useRef<HTMLPreElement>(null);
+  const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
-  const [personal, setPersonal] = useState<Personal>(readPersonal);
+  const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
   const [startAt, setStartAt] = useState<Date | null>(null);
-  const [extended, setExtended] = useState(readExtended);
+  const [views, setViews] = useState<Views>(() => readJson(VIEWS_KEY, DEFAULT_VIEWS));
+  const [scanProps, setScanProps] = useState<ScanProps>(() => readJson(SCAN_KEY, DEFAULT_SCAN));
   const [problem, setProblem] = useState('');
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [scanDialog, setScanDialog] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
-  const [rxFreq, setRxFreq] = useState(snap.settings.rx_freq_hz);
-  const [txFreq, setTxFreq] = useState(snap.settings.tx_freq_hz);
+  const [scanning, setScanning] = useState(false);
   const s = snap.settings;
   const sending = snap.tx.state === 'sending';
-  const badge = sending ? 'sending' : snap.rx.listening ? 'listening' : 'off';
-  const level = Math.max(0, Math.min(100, ((snap.rx.level_db + 60) / 60) * 100));
-  const rtty = s.mode === 'rtty';
+  const lock = !s.tx_follow_rx;
+  const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
 
-  const macros = useMemo(
-    () => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro)),
-    [s.macros, s.mode_macros, s.mode],
-  );
+  const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro)), [s.macros, s.mode_macros, s.mode]);
 
-  // l'ultimo stato, per i comandi dei tasti e del CQ automatico (che non devono usare valori vecchi)
-  const live = useRef({ snap, tx, qso, personal, startAt, status, macros });
-  live.current = { snap, tx, qso, personal, startAt, status, macros };
+  // lo spettro: la media delle righe recenti serve a Snap, Seek e Scan
+  const avg = useRef(new RowAverager());
+  const lastRow = useRef<SpectrumRow | null>(null);
+  const onRow = useCallback((row: SpectrumRow) => {
+    lastRow.current = row;
+    avg.current.push(row);
+  }, []);
+
+  // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
+  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz });
+  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz };
 
   useEffect(() => {
-    const el = box.current;
+    const el = rxBox.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [text]);
 
-  useEffect(() => setRxFreq(s.rx_freq_hz), [s.rx_freq_hz]);
-  useEffect(() => setTxFreq(s.tx_freq_hz), [s.tx_freq_hz]);
+  const setView = (patch: Partial<Views>) => {
+    const next = { ...views, ...patch };
+    setViews(next);
+    writeJson(VIEWS_KEY, next);
+  };
 
   const save = useCallback(
     (patch: Partial<DigiSettings>) => {
@@ -147,14 +198,10 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     [client, onChanged, t],
   );
 
-  const setPersonalField = (patch: Partial<Personal>) => {
-    const next = { ...personal, ...patch };
-    setPersonal(next);
-    try {
-      browserStorage()?.setItem(FIELDS_KEY, JSON.stringify(next));
-    } catch {
-      // senza archivio i dati restano finche' la pagina e' aperta
-    }
+  const setSavedField = (patch: Partial<Saved>) => {
+    const next = { ...saved, ...patch };
+    setSaved(next);
+    writeJson(FIELDS_KEY, next);
   };
 
   const send = useCallback(
@@ -177,20 +224,92 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     [onChanged, t],
   );
 
+  const toggleTx = () => {
+    if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
+    else send(live.current.tx);
+  };
+
+  // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
+  const pickFreq = (hz: number, viaClick: boolean) => {
+    const l = live.current;
+    const snapped = viaClick && l.snap.settings.snap_on && avg.current.ready && lastRow.current ? snapToPeak(avg.current.values(), lastRow.current, hz) : hz;
+    const f = Math.max(200, Math.min(3500, snapped));
+    // con Lock la trasmissione resta dov'e': si sposta solo l'ascolto
+    save({ rx_freq_hz: f, ...(l.snap.settings.tx_follow_rx ? { tx_freq_hz: f } : {}) });
+  };
+
+  const seek = (direction: 'left' | 'right', quiet = false): number | null => {
+    const row = lastRow.current;
+    if (!row || !avg.current.ready) {
+      if (!quiet) toast(t('digi.run.noSpectrum'), 'info');
+      return null;
+    }
+    const found = seekSignal(avg.current.values(), row, live.current.rxHz, direction, SEEK_LIMITS);
+    if (found === null) {
+      if (!quiet) toast(t('digi.run.seekNone'), 'info');
+      return null;
+    }
+    pickFreq(found, false);
+    return found;
+  };
+
+  // la scansione: a ogni sosta si passa al segnale successivo a destra, e dalla fine si riparte dall'inizio
+  useEffect(() => {
+    if (!scanning) return;
+    const timer = window.setInterval(() => {
+      const l = live.current;
+      const row = lastRow.current;
+      if (!row || !avg.current.ready) return;
+      let found = seekSignal(avg.current.values(), row, l.rxHz, 'right', SEEK_LIMITS);
+      if (found === null) found = seekSignal(avg.current.values(), row, SEEK_LIMITS.min - 40, 'right', SEEK_LIMITS);
+      if (found === null) return;
+      pickFreq(found, false);
+      const now = new Date();
+      const marks = [l.scanProps.timeMarks ? `${now.toISOString().slice(11, 19)}z` : '', l.scanProps.freqMarks ? `${Math.round(found)} Hz` : ''].filter(Boolean);
+      if (marks.length > 0) appendDigiNote(marks.join(' '));
+      if (l.scanProps.once) setScanning(false);
+    }, Math.max(2, scanProps.dwell) * 1000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning, scanProps.dwell]);
+
+  useEffect(() => {
+    if (scanning) toast(t('digi.run.scanOn'), 'info');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanning]);
+
+  // ---- memorie delle impostazioni (1-20) ----
+  const memories = (): Record<string, Partial<DigiSettings>> => readJson<Record<string, Partial<DigiSettings>>>(MEM_KEY, {});
+  const memory = (write: boolean, slot: number) => {
+    const all = memories();
+    if (write) {
+      const c = live.current.snap.settings;
+      all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, squelch_db: c.squelch_db };
+      writeJson(MEM_KEY, all);
+      toast(t('digi.run.memSaved', { n: slot }), 'ok');
+    } else if (all[String(slot)]) {
+      save(all[String(slot)] as Partial<DigiSettings>);
+      toast(t('digi.run.memLoaded', { n: slot }), 'ok');
+    } else {
+      toast(t('digi.run.memEmpty', { n: slot }), 'info');
+    }
+  };
+
+  // ---- macro ----
   const context = (): MacroContext => {
     const l = live.current;
     const dial = l.status?.dial_hz ?? 0;
     return {
       mycall: l.status?.de_call ?? '',
-      myname: l.personal.myname,
-      myqth: l.personal.myqth,
+      myname: l.saved.myname,
+      myqth: l.saved.myqth,
       mywwloc: l.status?.de_grid ?? '',
       call: l.qso.call,
       name: l.qso.name,
       qth: l.qso.qth,
       wwloc: l.qso.wwloc,
-      rstr: l.personal.rstr,
-      rsts: l.personal.rsts,
+      rstr: l.saved.rstr,
+      rsts: l.saved.rsts,
       notes: l.qso.notes,
       nrr: '',
       nrs: '',
@@ -203,7 +322,7 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     };
   };
 
-  const saveQso = (when: Date) => {
+  const saveQso = () => {
     const l = live.current;
     const call = l.qso.call.trim().toUpperCase();
     if (call === '') {
@@ -211,7 +330,7 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
       return;
     }
     const dial = l.status?.dial_hz ?? 0;
-    const at = l.startAt ?? when;
+    const at = l.startAt ?? new Date();
     void addLogQso({
       call,
       date: at.toISOString().slice(0, 10),
@@ -219,13 +338,16 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
       band: dial > 0 ? (bandOf(dial) ?? '') : '',
       freq_hz: dial,
       mode: MODE_NAMES[l.snap.settings.mode],
-      rst_sent: l.personal.rsts,
-      rst_rcvd: l.personal.rstr,
+      rst_sent: l.saved.rsts,
+      rst_rcvd: l.saved.rstr,
       grid: l.qso.wwloc,
       name: l.qso.name,
       comment: l.qso.notes,
     }).then(
-      () => toast(t('digi.run.saved', { call }), 'ok'),
+      () => {
+        toast(t('digi.run.saved', { call }), 'ok');
+        void client.invalidateQueries({ queryKey: ['log-qsos'] });
+      },
       () => toast(t('digi.tx.error'), 'error'),
     );
   };
@@ -242,6 +364,17 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     } catch {
       // senza audio nel browser il comando non fa niente
     }
+  };
+
+  const toggleSetting = (what: 'afc' | 'snap' | 'squelch' | 'lock', value: boolean | 'toggle') => {
+    const c = live.current.snap.settings;
+    const cur = { afc: c.afc_on, snap: c.snap_on, squelch: c.squelch_on, lock: !c.tx_follow_rx }[what];
+    const on = value === 'toggle' ? !cur : value;
+    if (what === 'afc') save({ afc_on: on });
+    else if (what === 'snap') save({ snap_on: on });
+    else if (what === 'squelch') save({ squelch_on: on });
+    // il Lock fissa la trasmissione dove si e' adesso
+    else save({ tx_follow_rx: !on, tx_freq_hz: on ? live.current.rxHz : c.tx_freq_hz });
   };
 
   /** Una macro: i comandi di programma nell'ordine, il testo in trasmissione o nella casella, poi il salvataggio e la pulizia. */
@@ -278,14 +411,16 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
           break;
         }
         case 'shift': save({ rtty_shift_hz: a.hz }); break;
-        case 'audioFq': {
-          const hz = Math.max(200, Math.min(3500, a.relative ? l.snap.settings.rx_freq_hz + a.hz : a.hz));
-          save({ rx_freq_hz: hz });
-          break;
-        }
+        case 'audioFq': pickFreq(Math.max(200, Math.min(3500, a.relative ? l.rxHz + a.hz : a.hz)), false); break;
         case 'cursor': if (a.target === 'TX') txBox.current?.focus(); break;
         case 'beep': beep(); break;
         case 'autoCq': setAutoCq((on) => !on); break;
+        case 'seek': seek(a.direction); break;
+        case 'toggle': toggleSetting(a.what, a.value); break;
+        case 'scan': setScanning(a.run); break;
+        case 'memory': memory(a.write, a.slot); break;
+        case 'modeSettings':
+        case 'threshold': setSettingsOpen(true); break;
         case 'txe':
         case 'rxe': break;
         case 'unknown': toast(t('digi.run.unknown', { tag: a.tag }), 'info'); break;
@@ -303,7 +438,7 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
       setTx('');
     }
     if (clearTx && toTx) setTx('');
-    if (wantSave) saveQso(new Date());
+    if (wantSave) saveQso();
     if (rxClear && !toTx) setTx('');
   };
 
@@ -314,12 +449,17 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     return true;
   };
 
-  // i tasti F1-F12 con Ctrl e Shift, il «+» del tastierino (macro Gray+) e Esc che ferma la trasmissione
+  // i tasti F1-F12 con Ctrl e Shift, il «+» del tastierino (macro Gray+), Pausa (RX/TX) e Esc che ferma la trasmissione
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editing !== null) return;
+      if (editing !== null || settingsOpen || scanDialog) return;
       if (e.key === 'Escape' && live.current.snap.tx.state === 'sending') {
         void digiAbort().then(onChanged, onChanged);
+        return;
+      }
+      if (e.key === 'Pause') {
+        e.preventDefault();
+        toggleTx();
         return;
       }
       const name = e.code === 'NumpadAdd' ? 'Gray+' : macroNameForKey(e);
@@ -343,29 +483,24 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCq, sending, snap.can_transmit, snap.tx.state]);
 
+  // l'avviso del CQ automatico solo quando cambia, non all'apertura della pagina
+  const autoCqFirst = useRef(true);
   useEffect(() => {
+    if (autoCqFirst.current) {
+      autoCqFirst.current = false;
+      return;
+    }
     toast(autoCq ? t('digi.run.autoCqOn', { s: AUTOCQ_DELAY_S }) : t('digi.run.autoCqOff'), 'info');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCq]);
 
-  const toggleExtended = () => {
-    const next = !extended;
-    setExtended(next);
-    try {
-      browserStorage()?.setItem(BAR_KEY, next ? '1' : '0');
-    } catch {
-      // senza archivio la scelta vale finche' la pagina e' aperta
-    }
-  };
-
   const editedMacro: Macro | null = useMemo(() => {
     if (editing === null) return null;
-    return macros.get(editing) ?? { name: editing, label: '', text: '', color: null };
+    return macros.get(editing.name) ?? { name: editing.name, label: '', text: '', color: null };
   }, [editing, macros]);
-  const editedScope: MacroScope = editing !== null && (s.mode_macros[s.mode] ?? []).some((m) => m.name === editing) ? 'mode' : 'all';
 
   const saveMacro = (m: Macro, where: MacroScope) => {
-    const original = editing ?? m.name;
+    const original = editing?.name ?? m.name;
     const blank = m.label.trim() === '' && m.text.trim() === '';
     const strip = (list: DigiMacro[], name: string) => list.filter((x) => x.name !== name);
     const entry: DigiMacro = { name: m.name, label: m.label, text: m.text, color: m.color };
@@ -391,209 +526,238 @@ function DigiBody({ snap, onChanged }: { snap: DigiSnapshot; onChanged: () => vo
     setEditing(null);
   };
 
+  const importFrom = () => {
+    importMacros().then(
+      (r) => {
+        client.setQueryData(['digi'], r.snapshot);
+        onChanged();
+        const modes = Object.values(r.imported.modes).reduce((a, b) => a + b, 0);
+        toast(t('digi.mi.importDone', { base: r.imported.default_count, modes }), 'ok');
+      },
+      (e: unknown) => {
+        const code = e instanceof ApiError ? e.code : '';
+        toast(code === 'local_only' ? t('digi.mi.importLocal') : t('digi.mi.importErr', { why: e instanceof ApiError ? (e.message ?? code) : String(e) }), 'error');
+      },
+    );
+  };
+
+  const copyRx = () => {
+    void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined);
+  };
+
+  // ---- i menu, come quelli ----
+  const slots = Array.from({ length: 20 }, (_, i) => i + 1);
+  const menus: MenuDef[] = [
+    {
+      label: t('digi.menu.file'),
+      items: [{ label: t('digi.mi.import'), onSelect: importFrom }],
+    },
+    {
+      label: t('digi.menu.edit'),
+      items: [
+        { label: t('digi.mi.clearRx'), onSelect: () => clearDigiText() },
+        { label: t('digi.mi.clearTx'), onSelect: () => setTx('') },
+        'sep',
+        { label: t('digi.mi.copyRx'), onSelect: copyRx },
+      ],
+    },
+    {
+      label: t('digi.menu.mode'),
+      items: [
+        ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
+        'sep' as const,
+        ...['CW', 'QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
+        'sep' as const,
+        { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
+        { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
+      ],
+    },
+    {
+      label: t('digi.menu.options'),
+      items: [
+        { label: t('digi.mi.afc'), checked: s.afc_on, onSelect: () => toggleSetting('afc', 'toggle') },
+        { label: t('digi.mi.lock'), checked: lock, onSelect: () => toggleSetting('lock', 'toggle') },
+        { label: t('digi.mi.snap'), checked: s.snap_on, onSelect: () => toggleSetting('snap', 'toggle') },
+        { label: t('digi.mi.squelch'), checked: s.squelch_on, onSelect: () => toggleSetting('squelch', 'toggle') },
+        { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
+        'sep',
+        { label: t('digi.mi.rx'), checked: !sending, onSelect: () => (sending ? toggleTx() : undefined) },
+        { label: t('digi.mi.tx'), checked: sending, shortcut: 'Pausa', onSelect: () => (sending ? undefined : toggleTx()) },
+        'sep',
+        { label: t('digi.mi.seekLeft'), onSelect: () => seek('left') },
+        { label: t('digi.mi.seekRight'), onSelect: () => seek('right') },
+        {
+          label: t('digi.mi.scan'),
+          items: [
+            { label: t('digi.mi.scanStart'), disabled: scanning, onSelect: () => setScanning(true) },
+            { label: t('digi.mi.scanStop'), disabled: !scanning, onSelect: () => { setScanning(false); toast(t('digi.run.scanOff'), 'info'); } },
+            { label: t('digi.mi.scanProps'), onSelect: () => setScanDialog(true) },
+          ],
+        },
+        'sep',
+        {
+          label: t('digi.mi.memory'),
+          items: [
+            { label: t('digi.mi.memWrite'), items: slots.map((n) => ({ label: t('digi.mi.slot', { n }), onSelect: () => memory(true, n) })) },
+            { label: t('digi.mi.memRead'), items: slots.map((n) => ({ label: t('digi.mi.slot', { n }), onSelect: () => memory(false, n) })) },
+          ],
+        },
+      ],
+    },
+    {
+      label: t('digi.menu.view'),
+      items: [
+        { label: t('digi.mi.controlBar'), checked: views.controlBar, onSelect: () => setView({ controlBar: !views.controlBar }) },
+        { label: t('digi.bar.extended'), checked: views.extended, onSelect: () => setView({ extended: !views.extended }) },
+        { label: t('digi.mi.log'), checked: views.log, onSelect: () => setView({ log: !views.log }) },
+        { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
+        { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
+      ],
+    },
+    {
+      label: t('digi.menu.configure'),
+      items: [
+        { label: t('digi.mi.macrosMode'), onSelect: () => setEditing({ name: 'F1', scope: 'mode' }) },
+        { label: t('digi.mi.macrosDefault'), onSelect: () => setEditing({ name: 'F1', scope: 'all' }) },
+        'sep',
+        { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
+        { label: t('digi.mi.personal'), onSelect: () => setSettingsOpen(true) },
+      ],
+    },
+    {
+      label: t('digi.menu.help'),
+      items: [{ label: t('digi.mi.guide'), onSelect: () => { location.hash = '#/guida'; } }],
+    },
+  ];
+
+  const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'psk63' ? '63 bd' : '31 bd';
+
   return (
     <>
-      <header className="digi-head">
-        <h1>{t('digi.title')}</h1>
-        <span className={`sstv-badge sstv-badge--${badge}`} role="status">
-          <span className="sstv-dot" aria-hidden="true" />
-          {t(`digi.state.${badge}`)}
-        </span>
-        <div className="sstv-views" role="tablist" aria-label={t('digi.mode')}>
-          {snap.modes.map((m) => (
-            <button key={m.id} type="button" role="tab" aria-selected={s.mode === m.id} className={s.mode === m.id ? 'on' : ''} onClick={() => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] }))}>
-              {m.name}
-            </button>
-          ))}
-        </div>
-      </header>
+      <MenuBar menus={menus} />
 
-      <ControlBar macros={macros} extended={extended} onToggleExtended={toggleExtended} onRun={(m) => execute(m.text)} onEdit={setEditing} />
+      {views.controlBar ? (
+        <ControlBar
+          macros={macros}
+          extended={views.extended}
+          onToggleExtended={() => setView({ extended: !views.extended })}
+          onRun={(m) => execute(m.text)}
+          onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
+        />
+      ) : null}
 
-      <section className="digi-qso" aria-label={t('digi.f.call')}>
-        <label>
-          <span>{t('digi.f.call')}</span>
-          <input value={qso.call} maxLength={16} className="digi-call" onChange={(e) => setQso({ ...qso, call: e.target.value.toUpperCase() })} />
-        </label>
-        <label>
-          <span>{t('digi.f.name')}</span>
-          <input value={qso.name} maxLength={30} onChange={(e) => setQso({ ...qso, name: e.target.value })} />
-        </label>
-        <label>
-          <span>{t('digi.f.qth')}</span>
-          <input value={qso.qth} maxLength={40} onChange={(e) => setQso({ ...qso, qth: e.target.value })} />
-        </label>
-        <label>
-          <span>{t('digi.f.rsts')}</span>
-          <input value={personal.rsts} maxLength={4} className="digi-rst" onChange={(e) => setPersonalField({ rsts: e.target.value })} />
-        </label>
-        <label>
-          <span>{t('digi.f.rstr')}</span>
-          <input value={personal.rstr} maxLength={4} className="digi-rst" onChange={(e) => setPersonalField({ rstr: e.target.value })} />
-        </label>
-        <label>
-          <span>{t('digi.f.notes')}</span>
-          <input value={qso.notes} maxLength={80} onChange={(e) => setQso({ ...qso, notes: e.target.value })} />
-        </label>
-      </section>
-
-      <div className="digi-grid">
-        <section className="digi-rx" aria-label={t('digi.rx.title')}>
-          <div className="digi-bar">
-            <strong>{t('digi.rx.title')}</strong>
-            <span className="sstv-meter digi-level" title={`${t('digi.level')}: ${Math.round(snap.rx.level_db)} dB`}>
-              <span style={{ width: `${level}%` }} />
-            </span>
-            <button type="button" className="glass sstv-btn" onClick={() => void (snap.rx.listening ? digiRx('stop') : digiRx('start')).then(onChanged, onChanged)}>
-              {snap.rx.listening ? t('digi.rx.stop') : t('digi.rx.start')}
-            </button>
-            <button type="button" className="glass sstv-btn" onClick={() => clearDigiText()}>
-              {t('digi.rx.clear')}
-            </button>
-          </div>
-          <pre className="digi-text" ref={box} aria-live="off">
+      <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`}>
+        <div className="digi-windows">
+          <pre className="digi-rxwin" ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
             {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : text}
           </pre>
-        </section>
-
-        <aside className="digi-side">
-          <div className="digi-freq">
-            <label>
-              <span>{t('digi.freq.rx')}</span>
-              <input
-                type="number"
-                min={200}
-                max={3500}
-                step={1}
-                value={rxFreq}
-                onChange={(e) => setRxFreq(Number(e.target.value))}
-                onBlur={() => (rxFreq !== s.rx_freq_hz && rxFreq >= 200 && rxFreq <= 3500 ? save({ rx_freq_hz: rxFreq }) : setRxFreq(s.rx_freq_hz))}
-                onKeyDown={(e) => (e.key === 'Enter' ? e.currentTarget.blur() : undefined)}
-              />
-            </label>
-            <input
-              type="range"
-              min={200}
-              max={3500}
-              step={1}
-              value={rxFreq}
-              aria-label={t('digi.freq.rx')}
-              onChange={(e) => setRxFreq(Number(e.target.value))}
-              onPointerUp={() => (rxFreq !== s.rx_freq_hz ? save({ rx_freq_hz: rxFreq }) : undefined)}
-              onKeyUp={() => (rxFreq !== s.rx_freq_hz ? save({ rx_freq_hz: rxFreq }) : undefined)}
+          <div className="digi-txwrap">
+            <textarea
+              ref={txBox}
+              className="digi-txwin"
+              value={tx}
+              aria-label={t('digi.tx.title')}
+              placeholder={t('digi.tx.placeholder')}
+              onChange={(e) => setTx(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
+              }}
             />
-            <p className="sstv-hint">{t('digi.freq.hint')}</p>
-            <label className="sstv-check">
-              <input type="checkbox" checked={s.tx_follow_rx} onChange={(e) => save({ tx_follow_rx: e.target.checked })} />
-              {t('digi.freq.follow')}
-            </label>
-            {s.tx_follow_rx ? null : (
-              <label>
-                <span>{t('digi.freq.tx')}</span>
-                <input
-                  type="number"
-                  min={200}
-                  max={3500}
-                  step={1}
-                  value={txFreq}
-                  onChange={(e) => setTxFreq(Number(e.target.value))}
-                  onBlur={() => (txFreq !== s.tx_freq_hz && txFreq >= 200 && txFreq <= 3500 ? save({ tx_freq_hz: txFreq }) : setTxFreq(s.tx_freq_hz))}
-                  onKeyDown={(e) => (e.key === 'Enter' ? e.currentTarget.blur() : undefined)}
-                />
-              </label>
-            )}
-            {rtty ? (
-              <div className="digi-two">
-                <label>
-                  <span>{t('digi.rtty.shift')}</span>
-                  <select value={s.rtty_shift_hz} onChange={(e) => save({ rtty_shift_hz: Number(e.target.value) })}>
-                    {(RTTY_SHIFTS.includes(s.rtty_shift_hz) ? RTTY_SHIFTS : [...RTTY_SHIFTS, s.rtty_shift_hz].sort((a, b) => a - b)).map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>{t('digi.rtty.baud')}</span>
-                  <select value={s.rtty_baud} onChange={(e) => save({ rtty_baud: Number(e.target.value) })}>
-                    {(RTTY_BAUDS.includes(s.rtty_baud) ? RTTY_BAUDS : [...RTTY_BAUDS, s.rtty_baud].sort((a, b) => a - b)).map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            ) : null}
-            <div className="digi-two">
-              <label>
-                <span>{t('digi.f.myname')}</span>
-                <input value={personal.myname} maxLength={30} onChange={(e) => setPersonalField({ myname: e.target.value })} />
-              </label>
-              <label>
-                <span>{t('digi.f.myqth')}</span>
-                <input value={personal.myqth} maxLength={40} onChange={(e) => setPersonalField({ myqth: e.target.value })} />
-              </label>
-            </div>
-            <label className="sstv-check">
-              <input type="checkbox" checked={s.auto_receive} onChange={(e) => save({ auto_receive: e.target.checked })} />
-              {t('digi.autoReceive')}
-            </label>
-          </div>
-        </aside>
-      </div>
-
-      <section className="digi-tx" aria-label={t('digi.tx.title')}>
-        <div className="digi-bar">
-          <strong>{t('digi.tx.title')}</strong>
-        </div>
-        <textarea
-          ref={txBox}
-          className="digi-box"
-          rows={4}
-          value={tx}
-          placeholder={t('digi.tx.placeholder')}
-          onChange={(e) => setTx(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
-          }}
-        />
-        <div className="sstv-sendbar">
-          {sending ? (
-            <>
-              <div className="sstv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
+            {sending ? (
+              <div className="sstv-progress digi-txprogress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
                 <span style={{ width: `${snap.tx.progress * 100}%` }} />
                 <em>{t('digi.tx.progress', { done: formatDuration(snap.tx.elapsed_s), total: formatDuration(snap.tx.total_s) })}</em>
               </div>
-              <button type="button" className="glass sstv-btn sstv-btn--danger sstv-btn--big" onClick={() => void digiAbort().then(onChanged, onChanged)}>
-                {t('digi.tx.stop')}
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="sstv-sendinfo">
-                {snap.tx.state === 'done' ? <span className="sstv-ok">{t('digi.tx.done')}</span> : null}
-                {snap.tx.state === 'aborted' ? <span className="sstv-warn">{t('digi.tx.aborted')}</span> : null}
-                {snap.tx.state === 'error' ? <span className="sstv-bad">{snap.tx.message ?? t('digi.tx.error')}</span> : null}
-              </span>
-              <button type="button" className="glass sstv-btn sstv-btn--primary sstv-btn--big" disabled={!snap.can_transmit || tx.trim() === ''} onClick={() => send(tx)}>
-                {t('digi.tx.send')}
-              </button>
-            </>
-          )}
+            ) : null}
+            {!snap.can_transmit ? <p className="notice">{t('digi.tx.notReady')}</p> : null}
+            {problem ? (
+              <p className="notice sstv-bad" role="alert">
+                {problem}
+              </p>
+            ) : null}
+          </div>
         </div>
-        {!snap.can_transmit ? <p className="notice">{t('digi.tx.notReady')}</p> : null}
-        {problem ? (
-          <p className="notice sstv-bad" role="alert">
-            {problem}
-          </p>
+        {views.log ? (
+          <DigiLog
+            qso={qso}
+            rsts={saved.rsts}
+            rstr={saved.rstr}
+            modeName={MODE_NAMES[s.mode]}
+            dialHz={status?.dial_hz ?? 0}
+            onQso={(patch) => setQso({ ...qso, ...patch })}
+            onRst={(patch) => setSavedField(patch)}
+            onSave={saveQso}
+            onClear={() => {
+              setQso(EMPTY_QSO);
+              setStartAt(null);
+            }}
+          />
         ) : null}
-        <p className="sstv-hint">{t('digi.macros.hint')}</p>
-      </section>
+      </div>
+
+      {views.waterfall ? (
+        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={bandwidthOf(s)} transmitting={sending} onRow={onRow} onPick={(hz) => pickFreq(hz, true)} />
+      ) : null}
+
+      {views.statusBar ? (
+        <DigiStatusBar
+          transmitting={sending}
+          squelchOn={s.squelch_on}
+          squelchOpen={snap.rx.squelch_open}
+          afc={s.afc_on}
+          lock={lock}
+          snap={s.snap_on}
+          freqHz={rxHz}
+          modeData={modeData}
+          modeName={MODE_NAMES[s.mode]}
+          onToggleTx={toggleTx}
+          onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
+          onToggleAfc={() => toggleSetting('afc', 'toggle')}
+          onToggleLock={() => toggleSetting('lock', 'toggle')}
+          onToggleSnap={() => toggleSetting('snap', 'toggle')}
+          onFreq={(hz) => pickFreq(hz, false)}
+          onModeSettings={() => setSettingsOpen(true)}
+          onThreshold={() => setSettingsOpen(true)}
+        />
+      ) : null}
+
+      <div className="digi-rxctl">
+        <button type="button" className="glass sstv-btn" onClick={() => void (snap.rx.listening ? digiRx('stop') : digiRx('start')).then(onChanged, onChanged)}>
+          {snap.rx.listening ? t('digi.rx.stop') : t('digi.rx.start')}
+        </button>
+        <span className="sstv-hint digi-hint">{t('digi.macros.hint')}</span>
+      </div>
 
       {editing !== null && editedMacro ? (
-        <MacroEditor key={editing} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editedScope} onSave={saveMacro} onCancel={() => setEditing(null)} />
+        <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
+      ) : null}
+
+      {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
+
+      {scanDialog ? (
+        <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('digi.scan.title')}>
+          <div className="digi-dialog digi-dialog--small">
+            <header>
+              <strong>{t('digi.scan.title')}</strong>
+            </header>
+            <label>
+              <span>{t('digi.scan.dwell')}</span>
+              <input type="number" min={2} max={600} value={scanProps.dwell} onChange={(e) => { const next = { ...scanProps, dwell: Math.max(2, Number(e.target.value) || 10) }; setScanProps(next); writeJson(SCAN_KEY, next); }} />
+            </label>
+            {(['once', 'timeMarks', 'freqMarks'] as const).map((k) => (
+              <label key={k} className="sstv-check">
+                <input type="checkbox" checked={scanProps[k]} onChange={(e) => { const next = { ...scanProps, [k]: e.target.checked }; setScanProps(next); writeJson(SCAN_KEY, next); }} />
+                {t(`digi.scan.${k}` as 'digi.scan.once')}
+              </label>
+            ))}
+            <footer>
+              <span style={{ flex: 1 }} />
+              <button type="button" className="glass sstv-btn sstv-btn--primary" onClick={() => setScanDialog(false)}>
+                {t('digi.ms.close')}
+              </button>
+            </footer>
+          </div>
+        </div>
       ) : null}
     </>
   );

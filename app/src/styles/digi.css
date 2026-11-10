@@ -73,3 +73,114 @@
 .digi-qso input { font: inherit; font-weight: 600; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0; }
 @media (max-width: 62rem) { .digi-edit-body { grid-template-columns: minmax(0, 1fr); } }
 
+
+/* ======== disposizione e aspetto (grigio classico di Windows) ======== */
+.digi-classica {
+  --text: #000; --text-muted: #3a3a3a; --panel: #d4d0c8; --panel-raised: #ffffff; --border: #808080; --accent: #0a246a;
+  --font-data: "Courier New", Consolas, monospace;
+  gap: 0; padding: 0; background: #d4d0c8; color: #000; font: 12px/1.3 Tahoma, "Segoe UI", Arial, sans-serif; border: 1px solid #808080; border-radius: 0;
+}
+.digi-classica .notice { margin: 4px; color: #000; }
+.digi-classica .sstv-hint { color: #3a3a3a; }
+.digi-classica .sstv-bad { color: #a00000; }
+.digi-classica .sstv-btn { background: #d4d0c8; color: #000; border: 2px outset #f4f4f4; border-radius: 0; font-size: 12px; padding: 2px 10px; }
+.digi-classica .sstv-btn:active { border-style: inset; }
+.digi-classica .sstv-btn--primary { font-weight: 700; }
+.digi-classica .sstv-btn--danger { background: #c0392b; color: #fff; }
+
+/* barra dei menu */
+.digi-menubar { display: flex; gap: 0; background: #d4d0c8; border-bottom: 1px solid #808080; padding: 1px 2px; position: relative; z-index: 30; }
+.digi-menu { position: relative; }
+.digi-menu > button { padding: 2px 9px; border: 1px solid transparent; background: none; color: #000; font: inherit; cursor: default; }
+.digi-menu > button:hover, .digi-menu > button.on { border-color: #808080 #fff #fff #808080; background: #e6e3dc; }
+.digi-menu-list { position: absolute; top: 100%; left: 0; min-width: 15rem; margin: 0; padding: 2px; list-style: none; background: #d4d0c8; border: 2px outset #fff; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3); z-index: 40; }
+.digi-menu-list li { position: relative; }
+.digi-menu-list li button { display: flex; align-items: center; width: 100%; gap: 6px; padding: 3px 10px 3px 4px; border: 0; background: none; color: #000; font: inherit; text-align: left; cursor: default; }
+.digi-menu-list li button:hover:not(:disabled) { background: #0a246a; color: #fff; }
+.digi-menu-list li button:disabled { color: #808080; }
+.digi-menu-check { width: 14px; text-align: center; }
+.digi-menu-label { flex: 1; white-space: nowrap; }
+.digi-menu-key { color: inherit; opacity: 0.7; margin-left: 12px; }
+.digi-menu-arrow { margin-left: 8px; }
+.digi-menu-sep { height: 1px; margin: 3px 2px; background: #808080; border-bottom: 1px solid #fff; }
+.digi-menu-sub { position: absolute; top: -2px; left: 100%; }
+
+/* barra dei comandi: pulsanti rettangolari, 4 righe, etichette a destra */
+.digi-classica .digi-bar-keys { border: 0; border-bottom: 1px solid #808080; border-radius: 0; background: #d4d0c8; padding: 4px 6px; }
+.digi-classica .digi-keys { gap: 3px; }
+.digi-classica .digi-keyrow { gap: 3px; }
+.digi-classica .digi-key { min-width: 5.9rem; height: 1.7rem; border: 2px outset #f4f4f4; border-radius: 0; font-weight: 400; font-size: 12px; background: #d4d0c8; }
+.digi-classica .digi-key:active:not(:disabled) { border-style: inset; }
+.digi-classica .digi-key--gap { margin-left: 0.55rem; }
+.digi-classica .digi-key--blank { background: #d4d0c8; border: 2px outset #f4f4f4; opacity: 1; }
+.digi-classica .digi-key:hover:not(:disabled) { filter: none; outline: 1px solid #0a246a; }
+.digi-classica .digi-keyrow-label { color: #000; width: 5rem; }
+.digi-classica .digi-gear { color: #1e66c8; }
+
+/* area principale: finestre RX e TX a sinistra, il log di lato */
+.digi-main { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; min-height: 24rem; }
+.digi-main--nolog { grid-template-columns: minmax(0, 1fr); }
+.digi-windows { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #808080; }
+.digi-rxwin, .digi-txwin { margin: 0; padding: 4px 6px; background: #fff; color: #000; font: 15px/1.35 "Courier New", Consolas, monospace; white-space: pre-wrap; word-break: break-word; border: 0; border-radius: 0; resize: none; overflow: auto; }
+.digi-rxwin { flex: 1 1 55%; min-height: 12rem; max-height: 38vh; border-bottom: 2px solid #404040; }
+.digi-empty { color: #7a7a7a; font-family: Tahoma, Arial, sans-serif; font-size: 12px; }
+.digi-txwrap { display: flex; flex-direction: column; flex: 1 1 45%; min-height: 9rem; background: #fff; }
+.digi-txwin { flex: 1; width: 100%; box-sizing: border-box; outline: none; min-height: 9rem; }
+.digi-txprogress { margin: 3px; height: 1.6rem; border-radius: 0; }
+
+/* il log di lato: righe gialline, QSO in corso in azzurro */
+.digi-log { display: flex; flex-direction: column; min-width: 0; background: #d4d0c8; }
+.digi-log-tools { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-bottom: 1px solid #808080; }
+.digi-log-tools strong { margin-right: auto; }
+.digi-tool { width: 26px; height: 22px; padding: 0; border: 2px outset #f4f4f4; background: #d4d0c8; cursor: default; font-size: 13px; line-height: 1; }
+.digi-tool--red { color: #c00000; font-weight: 700; }
+.digi-log-search { width: 9rem; font: inherit; padding: 1px 3px; border: 2px inset #fff; background: #fff; }
+.digi-log-current { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 4px; padding: 5px; background: #8ff; border-bottom: 1px solid #808080; }
+.digi-log-current label { display: flex; flex-direction: column; gap: 1px; font-size: 11px; color: #000; }
+.digi-log-current input { font: 12px "Courier New", monospace; padding: 1px 3px; border: 2px inset #fff; background: #fff; color: #000; min-width: 0; }
+.digi-log-current .digi-rst input { width: 100%; }
+.digi-log-current .digi-wide { grid-column: 1 / -1; }
+.digi-log-now { grid-column: 1 / -1; margin: 0; font-size: 11px; color: #003a3a; }
+.digi-log-table { flex: 1; overflow: auto; background: #f8f8c8; max-height: 22rem; }
+.digi-log-table table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.digi-log-table th { position: sticky; top: 0; background: #d4d0c8; border: 1px solid #808080; text-align: left; padding: 1px 4px; font-weight: 400; color: #000; }
+.digi-log-table td { padding: 1px 4px; border-bottom: 1px solid #c8c890; color: #4b0a96; white-space: nowrap; }
+.digi-log-empty { margin: 8px; color: #555; }
+
+/* cascata: scala nera in alto, righe che scorrono, bandierina */
+.digi-wf { position: relative; border-top: 2px solid #404040; background: #000; overflow: hidden; }
+.digi-wf-scale { display: block; width: 100%; height: 22px; }
+.digi-wf-flow { display: block; width: 100%; cursor: crosshair; }
+.digi-wf-flag { position: absolute; top: 3px; width: 0; height: 0; pointer-events: none; border-left: 2px solid transparent; }
+.digi-wf-flag i { position: absolute; left: -2px; top: 0; width: 11px; height: 7px; }
+.digi-wf-band { position: absolute; top: 24px; height: 16px; pointer-events: none; display: flex; justify-content: space-between; align-items: center; border-left: 1px solid rgba(255, 255, 255, 0.8); border-right: 1px solid rgba(255, 255, 255, 0.8); color: #fff; font-size: 11px; }
+.digi-wf-band b { font-weight: 400; line-height: 1; }
+
+/* barra di stato a caselle */
+.digi-status { display: flex; align-items: stretch; gap: 2px; padding: 2px; background: #d4d0c8; border-top: 1px solid #fff; font: 12px Tahoma, Arial, sans-serif; color: #000; flex-wrap: wrap; justify-content: flex-end; }
+.digi-st { min-width: 2.2rem; padding: 1px 6px; border: 1px solid; border-color: #808080 #fff #fff #808080; background: #d4d0c8; color: #000; font: inherit; text-align: center; cursor: default; }
+button.digi-st { border: 2px outset #f4f4f4; }
+button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0bcb4; font-weight: 700; }
+.digi-st--rx { color: #000; }
+.digi-st--tx { background: #ff4040; color: #fff; font-weight: 700; }
+.digi-st--freq { display: inline-flex; align-items: center; min-width: 6rem; }
+.digi-st--freq input { width: 4.6rem; border: 0; background: transparent; font: inherit; text-align: right; color: #000; padding: 0; outline: none; }
+.digi-st--info { border-style: inset; }
+.digi-rxctl { display: flex; align-items: center; gap: 10px; padding: 3px 6px; background: #d4d0c8; border-top: 1px solid #808080; }
+
+/* finestre di dialogo nello stesso grigio */
+.digi-classica .digi-dialog { background: #d4d0c8; color: #000; border: 2px outset #fff; border-radius: 0; }
+.digi-classica .digi-dialog input, .digi-classica .digi-dialog select, .digi-classica .digi-dialog textarea { background: #fff; color: #000; border: 2px inset #fff; border-radius: 0; }
+.digi-classica .digi-cmd-list { background: #fff; border: 2px inset #fff; border-radius: 0; }
+.digi-classica .digi-cmd-list button { color: #000; }
+.digi-classica .digi-cmd-list button:hover, .digi-classica .digi-cmd-list button.on { background: #0a246a; color: #fff; }
+.digi-ms-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.digi-ms-grid fieldset { display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid #808080; padding: 0.6rem; }
+.digi-dialog--small { width: min(26rem, 94vw); }
+@media (max-width: 62rem) { .digi-main { grid-template-columns: minmax(0, 1fr); } .digi-ms-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.digi-log-current input { width: 100%; box-sizing: border-box; }
+.digi-log-current label { min-width: 0; }
+.digi-hint { white-space: normal; flex: 1; min-width: 0; font-size: 11px; }
+.digi-main { overflow: hidden; }
+.digi-log { overflow: hidden; }
