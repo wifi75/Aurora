@@ -1451,6 +1451,30 @@ impl tx_native::Ptt for AutoPtt {
     }
 }
 
+/// La catena di trasmissione vista dall'SSTV: trasmissione libera (fuori dai periodi FT8) con lo stesso PTT, la stessa uscita e lo stesso Pwr.
+struct SstvTx {
+    transmitter: Arc<tx_native::Transmitter>,
+    volume: Option<Arc<WindowsVolumePort>>,
+}
+
+impl mode_sstv::SstvTxPort for SstvTx {
+    fn start(&self, wave: Vec<f32>) -> Result<(), String> {
+        if let Some(v) = &self.volume {
+            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        }
+        // le immagini piu' lunghe (PD 290, Scottie DX) durano meno di 5 minuti
+        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn halt(&self) {
+        self.transmitter.halt();
+    }
+
+    fn is_busy(&self) -> bool {
+        matches!(self.transmitter.state(), tx_native::TxState::Waiting | tx_native::TxState::Transmitting)
+    }
+}
+
 /// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
 /// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
 fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
@@ -1475,7 +1499,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     }
 }
 
-fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
+fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
@@ -1554,6 +1578,14 @@ pub async fn run(
     }
     let bus = Bus::new(4096);
     aurora_core::notice::install(bus.events());
+    // SSTV: modo a parte (crate mode-sstv); riceve una copia dell'audio solo con l'ascolto acceso e trasmette con la stessa catena dell'FT8
+    let sstv = Arc::new(mode_sstv::SstvService::open(&config.data_dir));
+    {
+        let events = bus.events();
+        sstv.set_emitter(Arc::new(move |ev| {
+            let _ = events.send(Event::Sstv(ev));
+        }));
+    }
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
     // il blocco della trasmissione chiesto dai controller UDP (TxInhibit): sta tra la catena di trasmissione e il PTT vero per tutta la vita del programma
@@ -2144,11 +2176,28 @@ pub async fn run(
         })
         .with_cat(Arc::clone(&cat))
         .with_rotator(Arc::clone(&rotator))
+        .with_sstv(Arc::clone(&sstv))
         .with_automation(automation);
     // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
     qmap_service.set_tx_probe(state.transmitting_probe());
     // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
-    let (native_tx, native_rx) = std::sync::mpsc::channel();
+    let (native_tx, captured) = std::sync::mpsc::channel::<audio_spectrum::AudioChunk>();
+    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV
+    let (to_engine, native_rx) = std::sync::mpsc::channel();
+    {
+        let sstv = Arc::clone(&sstv);
+        let spawned = std::thread::Builder::new().name("aurora-audio-tap".into()).spawn(move || {
+            while let Ok(chunk) = captured.recv() {
+                sstv.feed(chunk.rate, &chunk.samples);
+                if to_engine.send(chunk).is_err() {
+                    break;
+                }
+            }
+        });
+        if let Err(e) = spawned {
+            tracing::error!("passaggio dell'audio verso l'SSTV non avviato: {e}");
+        }
+    }
     let audio_manager: Option<Arc<audio_control::AudioManager>> = engine_settings.as_ref().map(|store| {
         let level = input_level.clone();
         let hook: audio_control::InputHook = Arc::new(move |name| {
@@ -2245,12 +2294,18 @@ pub async fn run(
                     let manager = Arc::clone(m);
                     // su Windows Pwr e' il volume della scheda; altrove quel comando non c'e' e il cursore attenua il segnale, come JTDX
                     // (senza, su Linux si trasmetteva sempre al massimo)
-                    transmitter.map(|inner| {
+                    transmitter.map(|transmitter| {
+                        let inner = Arc::clone(&transmitter) as Arc<dyn engine_native::TxPort>;
                         if cfg!(windows) {
-                            let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()), controls: Arc::clone(&native_controls) };
+                            let output: Arc<dyn Fn() -> Option<String> + Send + Sync> = Arc::new(move || manager.output_name());
+                            // l'SSTV trasmette con la stessa catena: prima di partire riallinea il volume di Windows al cursore Pwr
+                            let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls) });
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter, volume: Some(volume) }));
+                            let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls) };
                             Arc::new(port) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter, volume: None }));
                             inner
                         }
                     })

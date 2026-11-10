@@ -328,6 +328,59 @@ impl Transmitter {
         Ok(())
     }
 
+    /// Trasmissione libera, subito e fuori dai periodi FT8/FT4 (SSTV): l'onda a 12 kHz puo' durare fino a `max_len`. Stesse regole di
+    /// `schedule` per il permesso, il livello, il PTT, il controllo a tempo e `halt`.
+    pub fn start_now(&self, wave: Vec<f32>, max_len: Duration) -> Result<TxPlan, TxError> {
+        if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
+            return Err(TxError::Busy);
+        }
+        let cfg = self.config();
+        cfg.validate()?;
+        if !cfg.allow_tx {
+            return Err(TxError::NotAllowed);
+        }
+        let attenuation_tenths = cfg.attenuation_tenths.ok_or(TxError::LevelNotSet)?;
+        if wave.is_empty() {
+            return Err(TxError::EmptyWave);
+        }
+        if wave.iter().any(|v| !v.is_finite()) {
+            return Err(TxError::InvalidWave);
+        }
+        let wave_len = Duration::from_secs_f64(wave.len() as f64 / f64::from(WAVE_RATE));
+        let limit = max_len.min(Duration::from_secs(600));
+        if wave_len > limit {
+            return Err(TxError::TooLong { wave_ms: wave_len.as_millis() as u64, limit_ms: limit.as_millis() as u64 });
+        }
+        let inner = &self.inner;
+        let now = inner.clock.now();
+        let ptt_at = now;
+        let audio_at = now + cfg.ptt_lead;
+        {
+            let mut st = lock(&inner.status);
+            if matches!(st.state, TxState::Waiting | TxState::Transmitting) {
+                return Err(TxError::Busy);
+            }
+            st.state = TxState::Waiting;
+            st.outcome = None;
+        }
+        inner.halt.store(false, Ordering::SeqCst);
+        *lock(&inner.replacement) = None;
+        if let Some(old) = lock(&inner.worker).take() {
+            let _ = old.join();
+        }
+        let job = Job { wave, attenuation_tenths, lead: cfg.ptt_lead, tail: cfg.ptt_tail, grace: cfg.watchdog_grace, fade: cfg.fade, ptt_at, audio_at };
+        let worker_inner = Arc::clone(inner);
+        match std::thread::Builder::new().name("aurora-tx-free".into()).spawn(move || run_job(&worker_inner, &job)) {
+            Ok(handle) => *lock(&inner.worker) = Some(handle),
+            Err(e) => {
+                inner.finish(TxOutcome::Failed(e.to_string()));
+                return Err(TxError::Thread(e.to_string()));
+            }
+        }
+        inner.notify(TxState::Waiting);
+        Ok(TxPlan { slot_start: now, ptt_on: ptt_at, audio_start: audio_at, wave_len, late: Duration::ZERO })
+    }
+
     /// Accetta una trasmissione e la fa partire al momento giusto, in un thread proprio.
     pub fn schedule(&self, request: TxRequest) -> Result<TxPlan, TxError> {
         let inner = &self.inner;
@@ -653,6 +706,22 @@ mod tests {
         fn live_gain(&self) -> Option<Arc<AtomicU32>> {
             Some(Arc::clone(&self.gain))
         }
+    }
+
+    #[test]
+    fn a_free_transmission_starts_at_once_and_may_be_longer_than_a_slot() {
+        let b = bench(config());
+        let start = b.clock.now();
+        b.tx.start_now(tone(40.0), Duration::from_secs(60)).expect("partita");
+        b.run_to(start + ms(400));
+        assert_eq!(b.tx.state(), TxState::Transmitting);
+        assert!(b.ptt.is_on());
+        assert!(matches!(b.tx.start_now(tone(1.0), Duration::from_secs(60)), Err(TxError::Busy)));
+        b.tx.halt();
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(!b.ptt.is_on());
+        // oltre il limite chiesto: rifiutata
+        assert!(matches!(b.tx.start_now(tone(5.0), Duration::from_secs(2)), Err(TxError::TooLong { .. })));
     }
 
     #[test]

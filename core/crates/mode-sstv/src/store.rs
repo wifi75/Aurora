@@ -49,8 +49,10 @@ pub struct ImageStore {
     entries: Vec<ImageEntry>,
 }
 
-/// Al massimo tante immagini nell'indice: le piu' vecchie si tolgono (anche il file).
-const MAX_ENTRIES: usize = 500;
+/// Immagini ricevute tenute: le piu' vecchie si tolgono (anche il file).
+pub const MAX_RECEIVED: usize = 200;
+/// Immagini trasmesse tenute.
+pub const MAX_SENT: usize = 20;
 
 pub fn now_ms() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
@@ -129,8 +131,11 @@ impl ImageStore {
             call: extra.call.filter(|c| !c.trim().is_empty()).map(|c| c.trim().to_uppercase()),
         };
         self.entries.push(entry.clone());
-        while self.entries.len() > MAX_ENTRIES {
-            let oldest = self.entries.iter().enumerate().min_by_key(|(_, e)| e.time_ms).map(|(i, _)| i).unwrap_or(0);
+        // cronologie separate: si tengono le ultime ricevute e le ultime trasmesse, le altre si cancellano con il file
+        let keep = if direction == "tx" { MAX_SENT } else { MAX_RECEIVED };
+        while self.entries.iter().filter(|e| e.direction == direction).count() > keep {
+            let oldest = self.entries.iter().enumerate().filter(|(_, e)| e.direction == direction).min_by_key(|(_, e)| e.time_ms).map(|(i, _)| i);
+            let Some(oldest) = oldest else { break };
             let gone = self.entries.remove(oldest);
             let _ = std::fs::remove_file(self.dir.join(gone.file));
         }
@@ -175,6 +180,16 @@ mod tests {
         assert!(!again.png(&e.id).expect("png").is_empty());
         store.delete(&e.id).expect("cancellata");
         assert!(ImageStore::open(&dir).list().is_empty());
+        // le trasmesse oltre la ventesima si tolgono, le ricevute restano
+        store.add("rx", SstvMode::Martin1, &img, EntryExtra::default()).expect("ricevuta");
+        for _ in 0..MAX_SENT + 3 {
+            store.add("tx", SstvMode::Robot36, &img, EntryExtra::default()).expect("trasmessa");
+        }
+        let all = store.list();
+        assert_eq!(all.iter().filter(|e| e.direction == "tx").count(), MAX_SENT);
+        assert_eq!(all.iter().filter(|e| e.direction == "rx").count(), 1);
+        let files = std::fs::read_dir(&dir).map(|d| d.filter(|f| f.as_ref().is_ok_and(|f| f.path().extension().is_some_and(|x| x == "png"))).count()).unwrap_or(0);
+        assert_eq!(files, MAX_SENT + 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
