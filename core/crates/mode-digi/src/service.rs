@@ -108,11 +108,26 @@ impl DigiError {
     }
 }
 
-/// Un testo pronto da trasmettere con un pulsante. Le parole fra `<` e `>` (`<MYCALL>`, `<CALL>`...) le sostituisce l'interfaccia.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+/// Una macro: `name` e' il tasto («F5», «Ctrl-F5», «Shift-F5», «Ctrl-Shift-F5») oppure un evento («OnTX», «OnStart»...),
+/// `label` quello che si legge sul pulsante, `text` lo script (parole fra `<` e `>`), `color` lo sfondo del pulsante (RGB, 0xRRGGBB).
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[serde(default)]
 pub struct DigiMacro {
+    pub name: String,
     pub label: String,
     pub text: String,
+    pub color: Option<u32>,
+}
+
+/// I nomi validi di una macro: i 48 tasti e le macro evento.
+const EVENT_NAMES: [&str; 11] = ["OnStart", "OnEnd", "OnTX", "OnCR", "OnClickAny", "OnAlarm", "OnSP0", "OnSP1", "Gray+", "Hello", "AutoCqText"];
+
+fn valid_macro_name(name: &str) -> bool {
+    if EVENT_NAMES.contains(&name) {
+        return true;
+    }
+    let key = name.strip_prefix("Ctrl-Shift-").or_else(|| name.strip_prefix("Ctrl-")).or_else(|| name.strip_prefix("Shift-")).unwrap_or(name);
+    key.strip_prefix('F').and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (1..=12).contains(&n))
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -128,12 +143,62 @@ pub struct DigiSettings {
     pub rtty_baud: f32,
     /// Ascolto acceso all'avvio di Aurora.
     pub auto_receive: bool,
+    /// L'insieme di macro per tutti i modi.
     pub macros: Vec<DigiMacro>,
+    /// Le macro di un modo (chiave: `psk31`, `psk63`, `rtty`): sostituiscono quelle con lo stesso nome dell'insieme di base.
+    pub mode_macros: std::collections::BTreeMap<String, Vec<DigiMacro>>,
+}
+
+fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
+    DigiMacro { name: name.into(), label: label.into(), text: text.into(), color: Some(color) }
+}
+
+/// Le macro di base, nelle posizioni: prima riga AutoCQ · CQ · Call 3 · Call | Info · Brag · Bye · Clear | TX · RX · « · »;
+/// seconda riga (Ctrl) MyCall · MyName · MyQTH | Call · Name · QTH | BM. I testi sono modelli: le parole fra < > le riempie il programma.
+fn default_macros() -> Vec<DigiMacro> {
+    const GIALLO: u32 = 0xFFFF80;
+    const VERDE: u32 = 0x80FF80;
+    const GRIGIO: u32 = 0xF0F0F0;
+    const ROSSO: u32 = 0xFF8080;
+    vec![
+        mac("F1", "AutoCQ", "<AUTOCQ>", ROSSO),
+        mac("F2", "CQ", "<TX>CQ CQ CQ DE <MYCALL> <MYCALL> <MYCALL> PSE K<RX>", GIALLO),
+        mac("F3", "Call 3", "<TX><CALL> <CALL> <CALL> DE <MYCALL> K<RX>", GIALLO),
+        mac("F4", "Call", "<TX><FIXSTARTTIME><CALL> DE <MYCALL> K<RX>", GIALLO),
+        mac("F5", "Info", "<TX><CALL> DE <MYCALL> TNX FER CALL UR <RSTS> <RSTS> NAME <MYNAME> <MYNAME> QTH <MYQTH> <MYQTH> LOC <MYWWLOC> HW? <CALL> DE <MYCALL> K<RX>", VERDE),
+        mac("F6", "Brag", "<TX><CALL> DE <MYCALL> RIG HERE IS ... ANT IS ... PWR ... W <CALL> DE <MYCALL> K<RX>", VERDE),
+        mac("F7", "Bye", "<TX><CALL> DE <MYCALL> TNX FER NICE QSO <NAME> BEST 73 <CALL> DE <MYCALL> SK<SAVEQSO><RXANDCLEAR>", VERDE),
+        mac("F8", "Clear", "<CLEARRXWINDOW><CLEARTXWINDOW><CLEARQSO>", GRIGIO),
+        mac("F9", "TX", "<TX>", ROSSO),
+        mac("F10", "RX", "<RX>", VERDE),
+        mac("F11", "<<", "<SEEKLEFT>", GRIGIO),
+        mac("F12", ">>", "<SEEKRIGHT>", GRIGIO),
+        mac("Ctrl-F1", "MyCall", "<TX><MYCALL> <MYCALL> <MYCALL><RX>", GIALLO),
+        mac("Ctrl-F2", "MyName", "<TX>MY NAME IS <MYNAME> <MYNAME> <MYNAME><RX>", GIALLO),
+        mac("Ctrl-F3", "MyQTH", "<TX>MY QTH IS <MYQTH> <MYQTH> LOC <MYWWLOC><RX>", GIALLO),
+        mac("Ctrl-F5", "Call", "<CALL>", GRIGIO),
+        mac("Ctrl-F6", "Name", "<NAME>", GRIGIO),
+        mac("Ctrl-F7", "QTH", "<QTH>", GRIGIO),
+        mac("Ctrl-F12", "BM", "<BOOKMARK>", GRIGIO),
+        mac("Gray+", "Save", "<FIXSTARTTIME><SAVEQSO>", GRIGIO),
+    ]
+}
+
+/// Le macro per modo, come i file di macro: i tasti della velocita' per PSK e per RTTY.
+fn default_mode_macros() -> std::collections::BTreeMap<String, Vec<DigiMacro>> {
+    const CIANO: u32 = 0xFFFF80;
+    let mut m = std::collections::BTreeMap::new();
+    m.insert("psk31".to_string(), vec![mac("F10", "PSK31", "<BAUDRATE:31.25>", CIANO), mac("F11", "PSK63", "<BAUDRATE:62.5>", CIANO)]);
+    m.insert("psk63".to_string(), vec![mac("F10", "PSK31", "<BAUDRATE:31.25>", CIANO), mac("F11", "PSK63", "<BAUDRATE:62.5>", CIANO)]);
+    m.insert(
+        "rtty".to_string(),
+        vec![mac("F10", "BAUD45", "<BAUDRATE:45.45>", CIANO), mac("F11", "BAUD 50", "<BAUDRATE:50>", CIANO), mac("F12", "BAUD 75", "<BAUDRATE:75>", CIANO)],
+    );
+    m
 }
 
 impl Default for DigiSettings {
     fn default() -> Self {
-        let m = |label: &str, text: &str| DigiMacro { label: label.into(), text: text.into() };
         DigiSettings {
             mode: DigiMode::Psk31,
             rx_freq_hz: 1000.0,
@@ -142,12 +207,8 @@ impl Default for DigiSettings {
             rtty_shift_hz: 170.0,
             rtty_baud: 45.45,
             auto_receive: false,
-            macros: vec![
-                m("CQ", "CQ CQ CQ DE <MYCALL> <MYCALL> <MYCALL> PSE K"),
-                m("Risposta", "<CALL> DE <MYCALL> GM OM TNX FER CALL UR RST <RST> <RST> NAME <MYNAME> QTH <MYQTH> HW? <CALL> DE <MYCALL> K"),
-                m("73", "<CALL> DE <MYCALL> TNX FER QSO 73 SK"),
-                m("Mio nominativo", "DE <MYCALL> <MYCALL>"),
-            ],
+            macros: default_macros(),
+            mode_macros: default_mode_macros(),
         }
     }
 }
@@ -164,8 +225,17 @@ impl DigiSettings {
         if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
             return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
         }
-        if self.macros.len() > 40 || self.macros.iter().any(|m| m.label.len() > 60 || m.text.len() > 2000) {
-            return Err(DigiError::BadValue("macro troppo lunghe o troppe".into()));
+        let sets = std::iter::once(&self.macros).chain(self.mode_macros.values());
+        for set in sets {
+            if set.len() > 100 || set.iter().any(|m| m.label.len() > 60 || m.text.len() > 4000) {
+                return Err(DigiError::BadValue("macro troppo lunghe o troppe".into()));
+            }
+            if let Some(bad) = set.iter().find(|m| !valid_macro_name(&m.name)) {
+                return Err(DigiError::BadValue(format!("nome di macro non valido: {}", bad.name)));
+            }
+        }
+        if self.mode_macros.keys().any(|k| DigiMode::from_id(k).is_none()) {
+            return Err(DigiError::BadValue("insieme di macro per un modo sconosciuto".into()));
         }
         Ok(())
     }
@@ -269,7 +339,11 @@ impl DigiService {
     /// Legge `digi.json` dalla cartella dei dati e accende il thread di ricezione.
     pub fn open(data_dir: &std::path::Path) -> DigiService {
         let settings_path = data_dir.join("digi.json");
-        let settings: DigiSettings = std::fs::read(&settings_path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        let mut settings: DigiSettings = std::fs::read(&settings_path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+        // le macro della prima versione non avevano il tasto: si riparte dall'insieme di base
+        if settings.macros.iter().any(|m| m.name.is_empty()) {
+            settings.macros = default_macros();
+        }
         let (queue, rx) = sync_channel::<Msg>(128);
         let inner = Arc::new(Inner {
             settings_path,
@@ -535,6 +609,26 @@ mod tests {
         s.rx_freq_hz = 1000.0;
         s.rtty_baud = 5.0;
         assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn le_macro_di_base_hanno_nomi_validi_e_le_posizioni_di_() {
+        let s = DigiSettings::default();
+        assert!(s.validate().is_ok());
+        let nomi: Vec<&str> = s.macros.iter().map(|m| m.name.as_str()).collect();
+        assert_eq!(&nomi[..4], ["F1", "F2", "F3", "F4"]);
+        assert_eq!(s.macros[0].label, "AutoCQ");
+        assert!(s.mode_macros.contains_key("rtty"));
+    }
+
+    #[test]
+    fn i_nomi_delle_macro_si_controllano() {
+        for ok in ["F1", "F12", "Ctrl-F5", "Shift-F9", "Ctrl-Shift-F12", "OnTX", "Gray+", "AutoCqText"] {
+            assert!(valid_macro_name(ok), "{ok}");
+        }
+        for bad in ["F0", "F13", "Alt-F1", "", "ontx", "Ctrl-"] {
+            assert!(!valid_macro_name(bad), "{bad}");
+        }
     }
 
     #[test]

@@ -36,3 +36,40 @@
   .digi-grid { grid-template-columns: minmax(0, 1fr); }
   .digi-edit-row { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* barra dei comandi come quella: 12 tasti per riga a gruppi di 4, 4 righe, etichette colorate */
+.digi-bar-keys { padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-raised); overflow-x: auto; }
+.digi-keys { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
+.digi-keyrow { display: flex; align-items: center; gap: 4px; }
+.digi-key {
+  min-width: 5.6rem; height: 2rem; padding: 0 0.4rem; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 6px;
+  background: #d4d0c8; color: #101418; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.digi-key--gap { margin-left: 0.7rem; }
+.digi-key--blank { background: color-mix(in srgb, var(--panel) 60%, #888 40%); border-style: dashed; opacity: 0.55; cursor: default; }
+.digi-key:hover:not(:disabled) { filter: brightness(1.08); outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); }
+.digi-key:disabled { opacity: 0.5; cursor: not-allowed; }
+.digi-keyrow-label { width: 5rem; margin-left: 0.5rem; color: var(--text-muted); font-size: 0.8rem; }
+.digi-gear { margin-left: 0.2rem; border: 0; background: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; line-height: 1; }
+.digi-gear[aria-pressed='true'] { color: #ff9f1c; }
+
+/* finestra «Modifica macro» */
+.digi-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
+.digi-dialog { display: flex; flex-direction: column; gap: 0.8rem; width: min(52rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.digi-dialog header strong { font-size: 1.1rem; }
+.digi-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-dialog input, .digi-dialog select, .digi-dialog textarea { font: inherit; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.55rem; min-width: 0; }
+.digi-dialog input[type='color'] { padding: 0; width: 3rem; height: 2.1rem; }
+.digi-edit-top { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+.digi-edit-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; }
+.digi-edit-text textarea { font-family: var(--font-data); min-height: 14rem; resize: vertical; }
+.digi-edit-cmds { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.digi-cmd-list { list-style: none; margin: 0; padding: 0.2rem; height: 12rem; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-raised); }
+.digi-cmd-list button { display: block; width: 100%; text-align: left; padding: 0.25rem 0.45rem; border: 0; border-radius: 5px; background: none; color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; }
+.digi-cmd-list button:hover, .digi-cmd-list button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.digi-dialog footer { display: flex; gap: 0.6rem; align-items: center; }
+.digi-qso { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.digi-qso label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-qso input { font: inherit; font-weight: 600; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0; }
+@media (max-width: 62rem) { .digi-edit-body { grid-template-columns: minmax(0, 1fr); } }
+

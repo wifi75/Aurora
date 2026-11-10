@@ -1,0 +1,241 @@
+/**
+ * Il linguaggio delle macro: uno script è testo con comandi fra `<` e `>` in maiuscolo. I comandi di testo (`<CALL>`,
+ * `<MYCALL>`, `<RSTS>`...) diventano le parole dei dati; i comandi di programma (`<TX>`, `<RX>`, `<MODE:RTTY>`, `<SAVEQSO>`...) si
+ * raccolgono in un elenco di azioni che la pagina esegue. Funzioni e nomi dei comandi ripresi dalla Guida (solo il comportamento).
+ */
+
+/** I dati con cui si riempiono i comandi di testo. */
+export interface MacroContext {
+  mycall: string;
+  myname: string;
+  myqth: string;
+  mywwloc: string;
+  /** Il corrispondente. */
+  call: string;
+  name: string;
+  qth: string;
+  wwloc: string;
+  rstr: string;
+  rsts: string;
+  notes: string;
+  /** Scambio ricevuto e da mandare (contest). */
+  nrr: string;
+  nrs: string;
+  /** Inizio del QSO, se gia' fissato. */
+  startTime: Date | null;
+  now: Date;
+  /** Frequenza della radio in Hz (0 se non nota). */
+  dialHz: number;
+  band: string;
+  /** Il modo in uso, come si legge a schermo (PSK31, RTTY...). */
+  modeName: string;
+  qsoNumber: number;
+}
+
+export type MacroAction =
+  | { type: 'tx' }
+  | { type: 'txe' }
+  | { type: 'txToggle' }
+  | { type: 'rx'; clear: boolean }
+  | { type: 'rxe' }
+  | { type: 'clearTx' }
+  | { type: 'clearRx' }
+  | { type: 'clearQso' }
+  | { type: 'clearWindow' }
+  | { type: 'fixStartTime' }
+  | { type: 'saveQso' }
+  | { type: 'mode'; mode: string }
+  | { type: 'baud'; baud: number }
+  | { type: 'shift'; hz: number }
+  | { type: 'audioFq'; hz: number; relative: boolean }
+  | { type: 'autoCq' }
+  | { type: 'tune'; seconds: number | null }
+  | { type: 'beep' }
+  | { type: 'seek'; direction: 'left' | 'right' }
+  | { type: 'bookmark' }
+  | { type: 'cursor'; target: string }
+  | { type: 'macros'; file: string }
+  /** Un comando che Aurora non conosce ancora: resta nell'elenco per dirlo all'utente. */
+  | { type: 'unknown'; tag: string };
+
+export interface MacroResult {
+  /** Il testo da trasmettere (o da mettere nella casella di trasmissione). */
+  text: string;
+  actions: MacroAction[];
+}
+
+const pad = (n: number, w = 2) => String(n).padStart(w, '0');
+const utcDate = (d: Date) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+const utcTime = (d: Date) => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+
+/** Il nominativo senza i suffissi (/P, /M...) e senza il prefisso di un altro paese. */
+export function mainCall(call: string): string {
+  const parts = call.toUpperCase().split('/').filter(Boolean);
+  if (parts.length <= 1) return parts[0] ?? '';
+  // si tiene la parte piu' lunga e con una cifra: quella e' il nominativo vero
+  return [...parts].sort((a, b) => Number(/\d/.test(b)) - Number(/\d/.test(a)) || b.length - a.length)[0] ?? '';
+}
+
+/** Saluto secondo l'ora: GM, GA, GE (breve) o la frase lunga. */
+function greeting(now: Date, long: boolean): string {
+  const h = now.getUTCHours();
+  const slot = h < 12 ? 0 : h < 18 ? 1 : 2;
+  return long ? ['Good Morning', 'Good Afternoon', 'Good Evening'][slot]! : ['GM', 'GA', 'GE'][slot]!;
+}
+
+function fixed(value: number, digits: string | undefined): string {
+  const n = digits === undefined ? 0 : Math.max(0, Math.min(6, Number.parseInt(digits, 10) || 0));
+  return value.toFixed(n);
+}
+
+/** Il valore di un comando di testo, o `null` se non e' un comando di testo. */
+function textTag(tag: string, arg: string | undefined, c: MacroContext): string | null {
+  switch (tag) {
+    case 'CALL': return c.call.toUpperCase();
+    case 'NAME': return c.name;
+    case 'QTH': return c.qth;
+    case 'WWLOC': return c.wwloc.toUpperCase();
+    case 'RSTR': return c.rstr;
+    case 'RSTS': return c.rsts;
+    case 'NOTES': return c.notes;
+    case 'NRR': return c.nrr;
+    case 'NRS': return c.nrs;
+    case 'DATE': return utcDate(c.now);
+    case 'TIME': return utcTime(c.now);
+    case 'LOCALTIME': return `${pad(c.now.getHours())}:${pad(c.now.getMinutes())}`;
+    case 'STARTTIME': return utcTime(c.startTime ?? c.now);
+    case 'CTIME': return `${pad(c.now.getUTCHours())}${pad(c.now.getUTCMinutes())}`;
+    case 'MYCALL': return c.mycall.toUpperCase();
+    case 'MYMAINCALL': return mainCall(c.mycall);
+    case 'MYNAME': return c.myname;
+    case 'MYQTH': return c.myqth;
+    case 'MYWWLOC': return c.mywwloc.toUpperCase();
+    case 'CR': return '\r';
+    case 'CRLF': return '\r\n';
+    case 'LF': return '\n';
+    case 'TAB': return '\t';
+    case '[': return '<';
+    case ']': return '>';
+    case 'GA': return greeting(c.now, false);
+    case 'GAL': return greeting(c.now, true);
+    case 'KHZ': return c.dialHz > 0 ? fixed(c.dialHz / 1000, arg) : '';
+    case 'MHZ': return c.dialHz > 0 ? fixed(c.dialHz / 1_000_000, arg) : '';
+    case 'BAND': return c.band;
+    case 'MODE': return arg === undefined ? c.modeName : null;
+    case 'QSONR': return String(c.qsoNumber);
+    case 'VER': return 'Aurora';
+    default: return null;
+  }
+}
+
+const number = (v: string | undefined): number | null => {
+  if (v === undefined) return null;
+  const n = Number(v.replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Il comando di programma come azione, o `null` se non lo e'. */
+function actionOf(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'TX': return { type: 'tx' };
+    case 'TXE': return { type: 'txe' };
+    case 'TXTOGGLE': return { type: 'txToggle' };
+    case 'RX': return { type: 'rx', clear: false };
+    case 'RXANDCLEAR':
+    case 'RXC': return { type: 'rx', clear: true };
+    case 'RXE': return { type: 'rxe' };
+    case 'CLEARTXWINDOW': return { type: 'clearTx' };
+    case 'CLEARRXWINDOW': return { type: 'clearRx' };
+    case 'CLEARQSO': return { type: 'clearQso' };
+    case 'CLEARWINDOW': return { type: 'clearWindow' };
+    case 'FIXSTARTTIME': return { type: 'fixStartTime' };
+    case 'SAVEQSO': return { type: 'saveQso' };
+    case 'AUTOCQ': return { type: 'autoCq' };
+    case 'BEEP': return arg === 'ON' ? { type: 'beep' } : null;
+    case 'SEEKLEFT': return { type: 'seek', direction: 'left' };
+    case 'SEEKRIGHT': return { type: 'seek', direction: 'right' };
+    case 'BOOKMARK': return { type: 'bookmark' };
+    case 'TUNE': return { type: 'tune', seconds: number(arg) };
+    case 'MODE': return arg === undefined ? null : { type: 'mode', mode: arg.trim().toUpperCase() };
+    case 'CURSOR': return arg === undefined ? null : { type: 'cursor', target: arg.trim().toUpperCase() };
+    case 'MACROS': return arg === undefined ? null : { type: 'macros', file: arg.trim() };
+    case 'BAUDRATE': {
+      const baud = number(arg);
+      return baud === null || baud <= 0 ? null : { type: 'baud', baud };
+    }
+    case 'SHIFT': {
+      const hz = number(arg);
+      return hz === null || hz <= 0 ? null : { type: 'shift', hz };
+    }
+    case 'AUDIOFQ': {
+      const hz = number(arg);
+      return hz === null ? null : { type: 'audioFq', hz, relative: /^[+-]/.test((arg ?? '').trim()) };
+    }
+    default: return null;
+  }
+}
+
+/** Un comando: lettere maiuscole, cifre e qualche segno, con un argomento dopo i due punti. Le parentesi `<[>` e `<]>` sono comandi di testo. */
+const TAG = /<(\[|\]|[A-Z][A-Z0-9_/+-]*)(?::([^<>]*))?>/g;
+
+/** Esegue uno script: restituisce il testo e le azioni, nell'ordine in cui compaiono. */
+export function runMacro(script: string, ctx: MacroContext): MacroResult {
+  const actions: MacroAction[] = [];
+  const text = script.replace(TAG, (_whole, tag: string, arg: string | undefined) => {
+    const value = textTag(tag, arg, ctx);
+    if (value !== null) return value;
+    const action = actionOf(tag, arg);
+    if (action) {
+      actions.push(action);
+      return '';
+    }
+    actions.push({ type: 'unknown', tag: arg === undefined ? tag : `${tag}:${arg}` });
+    return '';
+  });
+  return { text: text.replace(/ {2,}/g, ' ').replace(/^ /, '').replace(/ $/, '').replace(/ ([\r\n])/g, '$1'), actions };
+}
+
+/** I nomi dei 48 tasti, nell'ordine: F1-F12, poi Ctrl, Shift e Ctrl-Shift. */
+export const MACRO_ROWS = ['', 'Ctrl-', 'Shift-', 'Ctrl-Shift-'] as const;
+
+export function keyNames(): string[] {
+  return MACRO_ROWS.flatMap((p) => Array.from({ length: 12 }, (_, i) => `${p}F${i + 1}`));
+}
+
+/** I nomi delle macro evento (non legate a un tasto). */
+export const EVENT_MACROS = ['OnStart', 'OnEnd', 'OnTX', 'OnCR', 'OnClickAny', 'OnAlarm', 'OnSP0', 'OnSP1', 'Gray+', 'Hello', 'AutoCqText'] as const;
+
+/** Il nome della macro per un tasto premuto (`F5` con i modificatori), o `null` se non e' un tasto di funzione. */
+export function macroNameForKey(e: { key: string; ctrlKey: boolean; shiftKey: boolean }): string | null {
+  const m = /^F([1-9]|1[0-2])$/.exec(e.key);
+  if (!m) return null;
+  return `${e.ctrlKey ? 'Ctrl-' : ''}${e.shiftKey ? 'Shift-' : ''}F${m[1]}`;
+}
+
+export interface Macro {
+  name: string;
+  label: string;
+  text: string;
+  color: number | null;
+}
+
+/** L'insieme in uso: le macro del modo sostituiscono quelle di base con lo stesso nome; le altre restano. */
+export function effectiveMacros(base: readonly Macro[], forMode: readonly Macro[] | undefined): Map<string, Macro> {
+  const map = new Map<string, Macro>();
+  for (const m of base) map.set(m.name, m);
+  for (const m of forMode ?? []) map.set(m.name, m);
+  return map;
+}
+
+/** Il colore per un testo leggibile sullo sfondo `0xRRGGBB`. */
+export function textColorFor(color: number | null): string {
+  if (color === null) return 'inherit';
+  const r = (color >> 16) & 255;
+  const g = (color >> 8) & 255;
+  const b = color & 255;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 140 ? '#101418' : '#ffffff';
+}
+
+export function cssColor(color: number | null): string | undefined {
+  return color === null ? undefined : `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
+}

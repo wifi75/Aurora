@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Barra dei comandi** nella pagina «PSK e RTTY»: 4 righe per 12 tasti (F1-F12, Ctrl, Shift, Ctrl+Shift) a gruppi di 4, pulsanti colorati con etichetta, tasti della tastiera, clic destro per modificare (tasto, etichetta, colore, script, elenco dei comandi con spiegazioni nelle sei lingue), macro di base e per modo (PSK31/PSK63, RTTY), «Extended Bar», macro tasto grigio `Gray+`, CQ automatico. Motore delle macro (`<CALL>`, `<MYCALL>`, `<RSTS>`, `<TX>`, `<RX>`, `<RXANDCLEAR>`, `<MODE:..>`, `<BAUDRATE:..>`, `<SAVEQSO>`...); i comandi non ancora fatti (CAT, scansione, contest...) si segnalano. Analisi in `docs/analisi-config.md`.
 - **PSK31, PSK63 e RTTY** (nuova pagina «PSK e RTTY», modo separato dai motori FT8; crate `mode-digi`): ricezione del testo, casella di trasmissione, macro con <MYCALL>, <CALL>, <RST>, <MYNAME>, <MYQTH>, frequenza di ricezione e di trasmissione, spostamento e velocita' RTTY. Stessa scheda audio e stesso PTT dell'FT8; rotte `/api/v1/digi` ed eventi `digi` (vedi `docs/api.md`). Tabelle di varicode e Baudot riprese da fldigi (GPL 3).
 - **Menu nuovo, primo passo**: i modi in alto (FT8, VHF, RTTY, PSK, SSTV; CW e Satelliti in grigio), a destra le pagine del modo, Log · Mappa DX · Propagazione · Rotore e il menu delle impostazioni (Impostazioni, Guida, Novita').
 - **SSTV**: pagina piu' larga; a fine trasmissione torna da sola alla ricezione; pulsante «TX» nella ricezione che trasmette l'immagine preparata e porta alla trasmissione.

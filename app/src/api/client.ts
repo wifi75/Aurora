@@ -1605,9 +1605,12 @@ export async function sstvAbort(): Promise<void> {
 
 // ---- Modi testuali (PSK31/PSK63, RTTY): vedi docs/api.md ----
 
+/** Una macro: `name` e' il tasto («F5», «Ctrl-F5»...) o un evento, `color` lo sfondo (0xRRGGBB). */
 export interface DigiMacro {
+  name: string;
   label: string;
   text: string;
+  color: number | null;
 }
 
 export interface DigiSettings {
@@ -1619,6 +1622,8 @@ export interface DigiSettings {
   rtty_baud: number;
   auto_receive: boolean;
   macros: DigiMacro[];
+  /** Le macro di un modo (`psk31`, `psk63`, `rtty`): sostituiscono quelle di base con lo stesso nome. */
+  mode_macros: Record<string, DigiMacro[]>;
 }
 
 export interface DigiSnapshot {
