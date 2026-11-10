@@ -71,6 +71,7 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 
 ## P2. Altri modi: RTTY, PSK, CW, SSTV
 
+- Regola (proprietario, 2026-11-10): si prendono solo funzioni, parametri e comportamento (elenco di cosa offrire, `D:\progetti\pc\-analisi\documentazione`), mai il codice ne' codice decompilato e ritoccato. Il codice viene da progetti liberi compatibili con la GPL-3 (QSSTV, fldigi, slowrx), citandone gli autori, o si scrive da zero dalle specifiche.
 - Il proprietario ha gia' il materiale da cui riprendere le tabelle per codifica e decodifica in trasmissione e ricezione: prima di cominciare va controllata la licenza di ogni fonte (deve essere compatibile con la GPL-3 di Aurora).
 - Ordine proposto: PSK31/PSK63 e RTTY (testo, simili per interfaccia), poi CW (decodifica e trasmissione), poi SSTV (immagini, interfaccia a parte).
 - Per ognuno: motore di modulazione e demodulazione in `core/crates`, finestra di ricezione testo (o immagine), macro di trasmissione, log come per FT8, Guida e Novita' nelle sei lingue.
@@ -80,11 +81,11 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 - Oggi MSK144 usa solo periodi di 15 s (`engine-native`: `Mode::Msk144 => 15`, `mskrt.rs`, `rig.rs` «TX 00/30»). Da aggiungere la scelta 15/30 s (30 s TX, 30 s RX, molto usata per il meteor scatter in VHF), come per Q65: motore, trasmissione (quadro ripetuto per tutto il periodo), decodifica in tempo reale, selettore accanto al modo.
 - Quando e' fatta: commento nella issue #27 (UN7MBV riceve la notifica) e chiusura.
 
-## P3. Rotori d'antenna
+## P3. Rotori d'antenna (fatto il 2026-11-10, da provare dal vivo)
 
-- Il proprietario ha gia' tutto il materiale per la gestione dei rotori: prima di cominciare va visto cosa contiene (protocolli, modelli, codice) e controllata la licenza (compatibile con la GPL-3 di Aurora).
-- Base proposta: `rotctld` di Hamlib (gia' dentro Aurora per il CAT), che comanda centinaia di rotori; pulsante «Punta» sulla stazione scelta (azimut dal locatore), sulla Mappa DX e sui passaggi dei satelliti (P1, fase 3).
-- Da fare come gli altri progetti grossi: piano scritto e prototipo grafico da approvare prima del codice.
+- Fatto con Hamlib `rotctld` (`core/crates/rig-control/src/rotator.rs`, API `/api/v1/rotator`, pagina «Rotore», scheda nelle Impostazioni); `rotctld.exe` ora e' nell'installatore (`scripts/prepara-hamlib.ps1`, `linux.yml`).
+- Da provare con un rotore vero: posizione, «Gira», «Via lunga», passi, clic sulla rosa, «Ferma», riconnessione, rotori oltre 360 gradi.
+- Ancora da fare: pulsante «Punta» sulla Mappa DX e sui passaggi dei satelliti (P1).
 
 ## P4. Menu nuovo: i modi in alto (scelto dal proprietario il 2026-11-10)
 

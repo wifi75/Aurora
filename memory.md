@@ -4,6 +4,9 @@ Stato al 2026-11-10, versione 0.11.228 (pubblicata). Per riprendere il lavoro le
 
 ## Decisioni del 2026-11-10
 
+- **Rotori con Hamlib rotctld** (proprietario): niente codice;  solo come elenco di funzioni (Gira, Via lunga, ±2°, rosa cliccabile). `rotctld.exe` va nell'installatore con rigctld.
+- **Codice di altri programmi**: mai copiare o ritoccare codice proprietario (); per i modi nuovi codice GPL (QSSTV, fldigi, slowrx) citando gli autori, o scritto da zero.
+
 - **Release mai vuota per le copie installate** (dopo l'errore «la release non ha il pacchetto di installazione con la sua firma» della 0.11.221 e 0.11.222): la release si crea SEMPRE con `gh release create vX.Y.Z --latest=false` e senza file; il lavoro `Windows` allega installatore e `.sig` e solo allora la segna come ultima (passo «Release segnata come ultima solo con installatore e firma» di `windows.yml`). Mai creare una release come ultima senza installatore e firma. Se il lavoro Windows fallisce, la release resta non ultima e le copie installate restano sulla versione precedente, completa. In piu', dalla 0.11.222, Aurora richiede la release a GitHub se al momento di scaricare manca il pacchetto (`updater::prepare_locked`).
 
 ## Decisioni del 2026-11-09

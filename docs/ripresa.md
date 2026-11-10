@@ -2,6 +2,13 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-10 sera (0.11.228 pubblicata, rotori su main)
+
+- **0.11.228** (15:23 UTC): cascata ferma in trasmissione e spettro spegnibile (UN7MBV), filtro «Spotter» del DX Cluster (Luc ON7KEC), MSK144 centrato, chiusura di tutte le finestre con la principale, consigli ARS/split per FT-991 e IC-9700.
+- **Rotori (P3) su main, non pubblicati**: Hamlib `rotctld` (`rig-control/src/rotator.rs`), API `/api/v1/rotator`, pagina «Rotore» con rosa dei venti, scheda «Rotore» nelle Impostazioni, Guida. `rotctld.exe` aggiunto all'installatore. Da provare dal vivo prima della prossima versione.
+- **Regola sugli altri modi (P2)**: solo funzioni e parametri, mai codice; il codice da QSSTV, fldigi, slowrx (GPL) o scritto da zero.
+- **In attesa del proprietario**: avviso nel pannello Log sulla fonte (Log4OM) per Luc; blocchi delle finestre al cambio di primo piano.
+
 ## Stato al 2026-11-10 pomeriggio (0.11.227 pubblicata)
 
 - **Menu nuovo deciso** (P4 in docs/tasks.md): modi in alto (FT8, VHF, CW, RTTY, PSK, SSTV, Satelliti), a destra le pagine del modo e Log · Mappa DX · Propagazione · menu ⚙, niente seconda riga, volume e tema nella barra in fondo. Prototipo approvato in docs/prototipo-menu-modi/index.html: e' il prossimo lavoro grosso, da fare a passi (prima FT8/VHF con le pagine di oggi spostate).

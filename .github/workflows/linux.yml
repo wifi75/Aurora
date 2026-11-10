@@ -86,8 +86,8 @@ jobs:
           sudo apt-get install -y libhamlib-utils patchelf
           B=desktop/src-tauri/hamlib-bundle
           mkdir -p "$B/libs"
-          cp "$(command -v rigctld)" "$(command -v rigctl)" "$B/"
-          for exe in rigctld rigctl; do
+          cp "$(command -v rigctld)" "$(command -v rigctl)" "$(command -v rotctld)" "$B/"
+          for exe in rigctld rigctl rotctld; do
             ldd "$B/$exe" | awk '/=> \//{print $3}' | grep -Ev '/(libc|libm|libdl|libpthread|librt|libresolv|libutil|libgcc_s|ld-linux[^/]*|libudev)\.so' | while read -r lib; do cp -L "$lib" "$B/libs/"; done
             patchelf --set-rpath '$ORIGIN/libs' "$B/$exe"
           done

@@ -70,6 +70,9 @@ function Scegli-Exe([string]$prefisso) {
 }
 $rigctld = Scegli-Exe 'rigctld'
 $rigctl = Scegli-Exe 'rigctl'
+# rotctld: il comando dei rotori d'antenna (pagina Rotore)
+$rotctld = Get-ChildItem -LiteralPath $Hamlib -Filter 'rotctld*.exe' -File | Sort-Object { $_.Name.Length } | Select-Object -First 1
+if (-not $rotctld) { throw "Manca rotctld*.exe in $Hamlib" }
 
 # --- importazioni di un file PE (nomi delle DLL) ---
 function Importazioni([string]$path) {
@@ -115,7 +118,7 @@ function E-Di-Windows([string]$dll) {
 # chiusura delle dipendenze: partendo dai due eseguibili, tutte le DLL non di Windows che servono
 $servono = [ordered]@{}
 $coda = New-Object System.Collections.Queue
-$coda.Enqueue($rigctld.FullName); $coda.Enqueue($rigctl.FullName)
+$coda.Enqueue($rigctld.FullName); $coda.Enqueue($rigctl.FullName); $coda.Enqueue($rotctld.FullName)
 while ($coda.Count -gt 0) {
     $file = $coda.Dequeue()
     foreach ($dll in (Importazioni $file)) {
@@ -136,6 +139,7 @@ New-Item -ItemType Directory -Force $bundle | Out-Null
 Get-ChildItem -LiteralPath $bundle -Force | Where-Object { $_.Name -ne '.gitkeep' } | Remove-Item -Recurse -Force
 Copy-Item $rigctld.FullName (Join-Path $bundle 'rigctld.exe')
 Copy-Item $rigctl.FullName (Join-Path $bundle 'rigctl.exe')
+Copy-Item $rotctld.FullName (Join-Path $bundle 'rotctld.exe')
 foreach ($p in $servono.Values) { Copy-Item $p (Join-Path $bundle ([System.IO.Path]::GetFileName($p))) }
 if (-not (Test-Path $licenze)) { throw "Cartella delle licenze mancante: $licenze" }
 Copy-Item (Join-Path $licenze '*') $bundle -Force
