@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Senza CAT**: con «Nessuno (senza CAT, frequenza a mano)» il display della radio non compare piu' (non aveva niente da mostrare); torna scegliendo Hamlib, OmniRig o TCI.
+
 ## 0.11.222 - 2026-11-10
 - **Aggiornamento**: se Aurora controlla mentre GitHub sta ancora allegando l'installatore alla release, non resta piu' per un'ora su «la release non ha il pacchetto di installazione con la sua firma»: al momento di scaricare richiede subito la release.
 

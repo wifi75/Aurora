@@ -49,6 +49,8 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const model = { ...raw, meters };
   // radio mai configurata: un solo riquadro che porta alla configurazione. Radio configurata ma spenta o che non risponde: resta il display,
   // spento, con la scritta «Radio non risponde» (il CAT riprova da solo; il riquadro «configura» qui era fuorviante)
+  // «Nessuno (senza CAT)» scelto apposta: il display non ha niente da mostrare (frequenza, S-meter, potenza arrivano dal CAT) e sparisce
+  if (cat.data?.config.backend === 'none') return null;
   const state = cat.data?.status.state;
   const configured = !!cat.data && (cat.data.config.backend === 'omnirig' || cat.data.config.model !== 0);
   if (!phone && cat.data && !configured && (state === 'disconnected' || state === 'error')) {
