@@ -4,6 +4,9 @@ import type { Entry } from '../core';
 export const appStrings = {
   'confirm.ok': ['OK', 'OK', 'OK', 'OK', 'Aceptar', 'OK'],
   'confirm.cancel': ['Annulla', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Cancelar'],
+  'nav.modeSoon': ['In arrivo', 'Coming soon', 'Demnächst', 'Bientôt', 'Próximamente', 'Em breve'],
+  'nav.sat': ['Satelliti', 'Satellites', 'Satelliten', 'Satellites', 'Satélites', 'Satélites'],
+  'nav.more': ['Impostazioni, Guida e Novità', 'Settings, Guide and News', 'Einstellungen, Anleitung und Neuigkeiten', 'Réglages, Guide et Nouveautés', 'Ajustes, Guía y Novedades', 'Definições, Guia e Novidades'],
   'nav.pages': ['Pagine', 'Pages', 'Seiten', 'Pages', 'Páginas', 'Páginas'],
   'nav.station': ['Stazione', 'Station', 'Station', 'Station', 'Estación', 'Estação'],
   'nav.automation': ['Automazioni', 'Automation', 'Automatik', 'Automatisation', 'Automatización', 'Automação'],
