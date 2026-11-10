@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
-import { applyFilters, callOf, isFilterHighlight, defaultFilters, readFilters, saveFilters, useFilters, type Filters } from './filters';
+import { applyActivityFilters, applyFilters, callOf, isFilterHighlight, defaultFilters, readFilters, saveFilters, useFilters, type Filters } from './filters';
 
 const d = (id: number, text: string, over: Partial<DecodedMessage> = {}): DecodedMessage => ({
   id, time_ms: id, snr: -10, delta_time: 0, freq_hz: 1500, text, tag: null, country: null, continent: null, ...over,
@@ -145,5 +145,20 @@ describe('remembered filters', () => {
     expect(JSON.parse(localStorage.getItem('aurora-filters') ?? '{}').only).toBe('cq');
     useFilters.getState().reset();
     expect(useFilters.getState().filters).toEqual(defaultFilters());
+  });
+});
+
+describe('applyActivityFilters: nuove sulla banda', () => {
+  const ctx = { band: '20m', isToMe: () => false, distance: () => null };
+  const list = [
+    d(1, 'CQ AA1AA FN42', { tag: 'new_grid' }),
+    d(2, 'CQ BB2BB FN43', { tag: 'new_grid_band' }),
+    d(3, 'CQ CC3CC FN44', { tag: null }),
+  ];
+  it('«nuova griglia sulla banda» mostra anche la griglia nuova in assoluto', () => {
+    expect(ids(applyActivityFilters(list, f({ tags: ['new_grid_band'] }), ctx))).toEqual([1, 2]);
+  });
+  it('«nuova griglia» da sola non comprende quella solo nuova sulla banda', () => {
+    expect(ids(applyActivityFilters(list, f({ tags: ['new_grid'] }), ctx))).toEqual([1]);
   });
 });
