@@ -2,6 +2,14 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-10 pomeriggio (0.11.225 pubblicata)
+
+- **Versioni del giorno**: 0.11.220-0.11.225. Ultime: 0.11.223 eta' dei messaggi e messaggi nuovi in fondo, Filtri divisi per elenco, Automazioni che salvano «nuovo nominativo» e «griglia su nuova banda», agente del tray nella lingua di Aurora; 0.11.224 PTT Hamlib con risposte in ritardo, chiusura ordinata del TCI; 0.11.225 «CQ e novita'» (bandierina, nominativo, paese, due colori chiari, via dopo 15 minuti, scorrimento), riquadro RX che in trasmissione diventa «STOP TX (Esc)», Auto con conferma del modo reale sulla Stazione, suono del QSO a log a scelta, mappe che seguono la banda della radio, OmniRig mancante detto con il link.
+- **Release**: si creano con --latest=false e diventano «ultime» da sole dopo installatore e firma (passo di windows.yml): provato con 0.11.223-0.11.225.
+- **cty.dat**: copia di riserva in desktop/cty-riserva usata quando country-files.com non risponde.
+- **Rapporti su Cloudflare**: letti e cancellati (errori e pacchetti) il 2026-11-10 pomeriggio. Da guardare: blocco della finestra sulla 0.11.224 (i3-1005G1, 36 s dopo «finestra in primo piano»).
+- **Richieste degli utenti** (Luc ON7KEC e altri): le decide il proprietario, non vanno fatte tutte; prima si propongono.
+- **In attesa**: risposta di Luc sullo stop di emergenza; STOP TX in fondo sempre rosso e locandina dell'aggiornamento al primo avvio non decisi; Aurora in giapponese e cinese da decidere.
 ## Stato al 2026-11-10 mattina (0.11.222 pubblicata)
 
 - **0.11.222** (08:39 UTC): l'aggiornamento non resta piu' bloccato su «la release non ha il pacchetto di installazione con la sua firma».
