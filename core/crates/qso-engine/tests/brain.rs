@@ -29,6 +29,10 @@ fn rules_validation_rejects_dangerous_or_absurd_rules() {
     assert!(Rules::default().is_valid());
     assert!(!Rules { reply_to: vec![], ..Rules::default() }.is_valid(), "senza etichette non risponderebbe mai");
     assert!(!Rules { reply_to: vec![DecodeTag::Cq], ..Rules::default() }.is_valid(), "rispondere a ogni CQ non e' ammesso");
+    // le scelte offerte dalla pagina Automazioni devono potersi salvare tutte (Luc ON7KEC, 2026-11-10)
+    for tag in [DecodeTag::NewGridBand, DecodeTag::NewCall, DecodeTag::NewCallBand] {
+        assert!(Rules { reply_to: vec![tag], ..Rules::default() }.is_valid(), "{tag:?} si deve poter salvare");
+    }
     assert!(!Rules { min_snr: -90, ..Rules::default() }.is_valid());
     assert!(!Rules { max_attempts_per_call: 0, ..Rules::default() }.is_valid());
     assert!(!Rules { excluded_calls: vec!["NON UN NOMINATIVO".into()], ..Rules::default() }.is_valid());

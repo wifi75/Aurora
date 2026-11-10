@@ -166,7 +166,14 @@ impl Rules {
             && self
                 .reply_to
                 .iter()
-                .all(|t| matches!(t, DecodeTag::NewDxcc | DecodeTag::NewDxccBand | DecodeTag::NewZone | DecodeTag::NewGrid));
+                // anche griglia su nuova banda e nominativo nuovo o su nuova banda: la pagina le offriva ma qui mancavano, e le regole con una
+                // di loro venivano rifiutate in blocco (Luc ON7KEC, 2026-11-10: «non si possono salvare»)
+                .all(|t| {
+                    matches!(
+                        t,
+                        DecodeTag::NewDxcc | DecodeTag::NewDxccBand | DecodeTag::NewZone | DecodeTag::NewGrid | DecodeTag::NewGridBand | DecodeTag::NewCall | DecodeTag::NewCallBand
+                    )
+                });
         let calls_ok = self.excluded_calls.len() <= 200
             && self
                 .excluded_calls

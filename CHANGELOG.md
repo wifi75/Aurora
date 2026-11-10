@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Automazioni**: «Griglia su nuova banda», «Nuovo nominativo» e «Nominativo su nuova banda o modo» ora si salvano (il motore le rifiutava e non salvava nessuna regola; segnalato da Luc ON7KEC); «Nuova stazione» si chiama «Nuovo nominativo».
 - **Finestra RX e Attivita' di banda**: di fabbrica i messaggi a me e della stazione del QSO si vedono in tutti e due gli elenchi (prima con la Finestra RX aperta sparivano da Attivita' di banda e sembrava un errore); chi li vuole solo nella Finestra RX accende «Messaggi del QSO solo nella Finestra RX» in Impostazioni > Filtri.
 - **Testi**: l'interfaccia e la Guida non fanno piu' paragoni con altri programmi; i pulsanti della cascata si chiamano «Stile compatto» e «Stile veloce».
 - **Eta' dei messaggi** (richiesta di Luc): a scelta, in Attivita' di banda e nella Finestra RX la prima colonna mostra quanto e' vecchio il messaggio (45 s, 3 min) invece dell'ora UTC, con l'ora nel suggerimento (Impostazioni > Filtri).
