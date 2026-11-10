@@ -1,6 +1,13 @@
 # Changelog
 
 ## Non rilasciato
+- **Hamlib**: su Windows, se `rigctld.exe` sparisce (di solito l'antivirus), il pulsante «Ripristina Hamlib» nella scheda Radio lo riscarica dalla release ufficiale 4.7.2 con impronta SHA-256 controllata. Su Linux Hamlib e' dentro l'AppImage e obbligatorio nel .deb; la compilazione si ferma se manca.
+- **Blocchi**: le finestre a parte si aprono senza fermare la finestra principale (blocchi «apertura di una finestra a parte» della 0.11.219); il rapporto di un blocco elenca le ultime attivita' della finestra.
+- **Audio**: con la radio spenta o il cavo USB staccato all'avvio la trasmissione non resta piu' spenta: riparte da sola sulla stessa scheda appena la radio si accende.
+- **Decodifica**: un processore resta libero per audio, CAT e finestra, i thread sono a priorita' piu' bassa e non si ricreano a ogni periodo.
+- **Attivita' di banda**: dopo un cambio di banda non si perdono piu' i primi messaggi della banda nuova.
+- **PC lento**: l'avviso suggerisce anche di spegnere a7/a8; nuova voce della Guida «Che computer serve».
+- **Rapporti**: tipo di computer (processore, core, memoria) con il segnale giornaliero e con gli errori; il PTT fermo nei primi secondi dopo il collegamento non e' piu' un errore.
 
 ## 0.11.219 - 2026-11-09
 - **Mappa del pannello Log**: sempre sulla banda in uso, una riga sola di comandi (Linee, Chi chiama chi, Solo chi mi sente, Nominativi), niente legenda ne' coordinate al passaggio; si apre gia' della misura giusta (niente mappa «fantasma»); tolto dalla Mappa DX il riquadro degli spot, la durata e' tra le opzioni.
