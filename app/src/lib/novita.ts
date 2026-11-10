@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.225',
-    released: '2026-11-10T12:00:00Z',
+    released: '2026-11-10T11:38:42Z',
     kind: 'new',
     title: ["CQ più chiari, STOP TX in vista e Auto con un clic", "Clearer CQs, visible STOP TX and one-click Auto", "Klarere CQs, sichtbares STOP TX und Auto mit einem Klick", "CQ plus clairs, STOP TX visible et Auto en un clic", "CQ más claros, STOP TX a la vista y Auto con un clic", "CQ mais claros, STOP TX à vista e Auto com um clique"],
     text: [
