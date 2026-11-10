@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.222',
-    released: '2026-11-10T09:00:00Z',
+    released: '2026-11-10T08:39:50Z',
     kind: 'fixed',
     title: ["Aggiornamento che non resta bloccato", "Update that no longer gets stuck", "Update bleibt nicht mehr hängen", "Mise à jour qui ne reste plus bloquée", "Actualización que ya no se queda bloqueada", "Atualização que já não fica bloqueada"],
     text: [
