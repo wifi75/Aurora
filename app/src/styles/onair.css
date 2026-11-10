@@ -7509,3 +7509,6 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 }
 .decode-row .c-age .c-age-n { text-align: right; }
 .decode-row .c-age .c-age-u { text-align: left; opacity: 0.75; }
+
+/* Finestra RX: bandierina e paese 20 px piu' a sinistra (richiesta del proprietario, 2026-11-10) */
+.log-rx .decode-row { grid-template-columns: 3.7rem 1.8rem calc(9.8rem - 20px) minmax(0, 1fr) !important; }
