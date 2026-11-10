@@ -70,11 +70,13 @@ function rowTitle(state: string | undefined, hint: string | undefined): string |
   return state ?? hint;
 }
 
-function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }): ReactNode {
+function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }, sender = ''): ReactNode {
   const wanted = call.trim().toUpperCase();
   const answeredCall = answered?.call.trim().toUpperCase() ?? '';
   const wantedGrid = grid.trim().toUpperCase().slice(0, 4);
-  if (wanted === '' && wantedGrid.length < 4 && answeredCall === '') return text;
+  // chi trasmette, in grassetto dentro il messaggio (l'ordine resta quello di FT8): si trova subito un nominativo (Luc ON7AVL, 2026-11-10)
+  const from = sender.trim().toUpperCase();
+  if (wanted === '' && wantedGrid.length < 4 && answeredCall === '' && from === '') return text;
   return text.split(/(\s+)/).map((part, i) => {
     const up = part.toUpperCase();
     // chi mi ha risposto: etichetta viola con il suo tooltip (vale anche se non e' la stazione DX in corso)
@@ -97,6 +99,13 @@ function highlightCall(text: string, call: string, grid: string, answered?: { ca
         <mark key={i} className="dx-call dx-grid">
           {part}
         </mark>
+      );
+    }
+    if (from !== '' && up.replace(/[<>]/g, '') === from) {
+      return (
+        <b key={i} className="decode-sender">
+          {part}
+        </b>
       );
     }
     return part;
@@ -510,7 +519,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? '')}>
             <span className="decode-text">
               {queueMark}
-              <span className="data">{view.highlightDxCall || view.highlightDxGrid || answered ? highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined) : d.text}</span>
+              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''))}</span>
               {own && txRepeat(d) > 1 ? (
                 <small className="tx-rep" title={t('tip.row.txRepeat', { n: txRepeat(d) })}>
                   ×{txRepeat(d)}
