@@ -37,7 +37,7 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
     const box = host.current?.closest('.dock-panel, .grid-block, .grid-panel')?.getBoundingClientRect();
     detach(item, into, box && box.width > 50 && box.height > 50 ? { w: Math.round(box.width), h: Math.round(box.height) } : undefined);
     // una pagina intera staccata: la finestra principale torna alla Stazione
-    if (item === 'map' || item === 'propagation' || item === 'rotator') location.hash = '#/';
+    if (item === 'map' || item === 'propagation' || item === 'rotator' || item === 'sstv') location.hash = '#/';
   };
   return (
     <span className="dock-detach-host" ref={host} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>

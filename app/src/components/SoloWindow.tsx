@@ -7,6 +7,7 @@ import { attach, groupFromUrl, markClosed, restoreGroup, updateGroup, useGroups,
 import { Live } from '../pages/Live';
 import { PropagationPage } from '../pages/PropagationPage';
 import { RotatorPage } from '../pages/RotatorPage';
+import { SstvPage } from '../pages/SstvPage';
 import '../styles/solo.css';
 import { freeCell, GridBoard, type Cell } from './GridBoard';
 
@@ -25,6 +26,7 @@ export const ITEM_TITLE: Record<ItemId, Key> = {
   propagation: 'prop.psk',
   display: 'win.display',
   rotator: 'nav.rotator',
+  sstv: 'nav.sstv',
 };
 
 function Item({ item }: { item: ItemId }) {
@@ -33,6 +35,7 @@ function Item({ item }: { item: ItemId }) {
   if (item === 'dxmap') return <DxMapPage solo />;
   if (item === 'propagation') return <PropagationPage solo />;
   if (item === 'rotator') return <RotatorPage solo />;
+  if (item === 'sstv') return <SstvPage solo />;
   // Bande aperte della Stazione (nella Stazione il suo blocco si chiama `dxmap` per storia, ma staccato e' lei, non la Mappa DX)
   if (item === 'bands') {
     return (

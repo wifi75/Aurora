@@ -1484,3 +1484,121 @@ export async function postQmapClearAverage(): Promise<void> {
 export async function postQmapTune(rf_hz: number, period_s: number, submode: number): Promise<{ ok: boolean; dial_hz: number; mode: string }> {
   return (await (await request('/qmap/tune', jsonInit({ rf_hz, period_s, submode }))).json()) as { ok: boolean; dial_hz: number; mode: string };
 }
+
+// --- SSTV (crate mode-sstv) ---
+
+export interface SstvModeInfo {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  vis: number;
+  seconds: number;
+  color: 'rgb' | 'yuv';
+}
+
+export interface SstvSettings {
+  default_mode: string;
+  auto_save: boolean;
+  save_tx: boolean;
+  auto_receive: boolean;
+  lock_mode: string | null;
+  folder: string;
+  rx_offset_hz: number;
+  tx_offset_hz: number;
+  slant_ppm: number;
+}
+
+export interface SstvRxStatus {
+  listening: boolean;
+  receiving: boolean;
+  mode: string | null;
+  width: number;
+  height: number;
+  rows: number;
+  sync: number;
+  offset_hz: number;
+  level_db: number;
+  last_image: string | null;
+}
+
+export interface SstvTxStatus {
+  state: string;
+  mode: string | null;
+  progress: number;
+  elapsed_s: number;
+  total_s: number;
+  message: string | null;
+}
+
+export interface SstvSnapshot {
+  rx: SstvRxStatus;
+  tx: SstvTxStatus;
+  settings: SstvSettings;
+  folder: string;
+  can_transmit: boolean;
+  modes: SstvModeInfo[];
+}
+
+export interface SstvImageEntry {
+  id: string;
+  file: string;
+  direction: string;
+  mode: string;
+  width: number;
+  height: number;
+  time_ms: number;
+  sync_quality?: number;
+  offset_hz?: number;
+  complete: boolean;
+  call?: string;
+}
+
+export async function getSstv(): Promise<SstvSnapshot> {
+  return (await (await request('/sstv')).json()) as SstvSnapshot;
+}
+
+export async function putSstv(settings: SstvSettings): Promise<SstvSnapshot> {
+  return (await (await request('/sstv', { ...jsonInit(settings), method: 'PUT' })).json()) as SstvSnapshot;
+}
+
+export async function sstvRx(action: 'start' | 'stop' | 'cancel'): Promise<void> {
+  await request(`/sstv/rx/${action}`, { method: 'POST' });
+}
+
+export async function sstvForce(mode: string): Promise<void> {
+  await request('/sstv/rx/force', jsonInit({ mode }));
+}
+
+export async function getSstvImages(): Promise<SstvImageEntry[]> {
+  return ((await (await request('/sstv/images')).json()) as { images: SstvImageEntry[] }).images;
+}
+
+/** Indirizzo del PNG di un'immagine dell'archivio (per <img>). */
+export function sstvImageUrl(id: string): string {
+  return `${BASE}/sstv/images/${encodeURIComponent(id)}`;
+}
+
+export async function getSstvImageBlob(id: string): Promise<Blob> {
+  return (await request(`/sstv/images/${encodeURIComponent(id)}`)).blob();
+}
+
+export async function getSstvCurrentBlob(): Promise<Blob> {
+  return (await request('/sstv/rx/current')).blob();
+}
+
+export async function deleteSstvImage(id: string): Promise<void> {
+  await request(`/sstv/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Trasmette l'immagine composta (PNG alla risoluzione del modo). */
+export async function sstvTransmit(mode: string, png: Blob, call?: string | null): Promise<SstvTxStatus> {
+  const q = new URLSearchParams({ mode });
+  if (call) q.set('call', call);
+  const res = await request(`/sstv/tx?${q.toString()}`, { method: 'POST', headers: { 'content-type': 'image/png' }, body: png });
+  return ((await res.json()) as { tx: SstvTxStatus }).tx;
+}
+
+export async function sstvAbort(): Promise<void> {
+  await request('/sstv/tx/abort', { method: 'POST' });
+}

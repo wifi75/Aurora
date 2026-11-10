@@ -34,6 +34,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
+import { SstvPage } from './pages/SstvPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { ExportPage } from './pages/ExportPage';
@@ -165,6 +166,8 @@ export function App() {
     content = <PropagationPage />;
   } else if (route.name === 'rotator') {
     content = <RotatorPage />;
+  } else if (route.name === 'sstv') {
+    content = <SstvPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else if (route.name === 'fox') {
@@ -211,6 +214,9 @@ export function App() {
           <a className={`glass${route.name === 'export' ? ' glass--on' : ''}`} aria-current={route.name === 'export' ? 'page' : undefined} href="#/esporta">{t('nav.log')}</a>
           <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
           <a className={`glass${route.name === 'rotator' ? ' glass--on' : ''}`} aria-current={route.name === 'rotator' ? 'page' : undefined} href="#/rotore" title={t('tip.nav.rotator')}>{t('nav.rotator')}</a>
+          <a className={`glass${route.name === 'sstv' ? ' glass--on' : ''}`} aria-current={route.name === 'sstv' ? 'page' : undefined} href="#/sstv" title={t('tip.nav.sstv')}>
+            {t('nav.sstv')}
+          </a>
           {REMOTE ? null : (
             <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
           )}
