@@ -532,6 +532,8 @@ export interface ClusterSpot {
   mode: string | null;
   country: string | null;
   continent: string | null;
+  /** Continente di chi ha mandato lo spot (assente con un core vecchio). */
+  spotter_continent?: string | null;
 }
 
 export interface ClusterServerStatus {

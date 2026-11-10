@@ -79,3 +79,13 @@ describe('spotsOnWaterfall', () => {
     expect(apart.map((s) => s.row)).toEqual([0, 0]);
   });
 });
+
+describe('spotter continent filter', () => {
+  const spot = (id: number, cont: string | null) => ({ id, received_ms: 0, server: 's', spotter: 'X', freq_khz: 14074, dx_call: 'K1ABC', comment: '', time_utc: '1200Z', grid: null, band: '20m', mode: 'FT8', country: null, continent: null, spotter_continent: cont });
+  it('keeps only the spots from the chosen continents, «mine» being the own one', () => {
+    const all = [spot(1, 'EU'), spot(2, 'NA'), spot(3, 'AS'), spot(4, null)];
+    expect(filterSpots(all, { bands: [], modes: [], search: '', spotters: ['mine'] }, null, 'EU').map((s) => s.id)).toEqual([1, 4]);
+    expect(filterSpots(all, { bands: [], modes: [], search: '', spotters: ['NA', 'AS'] }, null, 'EU').map((s) => s.id)).toEqual([2, 3, 4]);
+    expect(filterSpots(all, { bands: [], modes: [], search: '' }, null, 'EU')).toHaveLength(4);
+  });
+});

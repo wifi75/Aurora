@@ -88,6 +88,9 @@ export const clusterStrings = {
   'cluster.filter.bandAll': ['Tutte', 'All', 'Alle', 'Toutes', 'Todas', 'Todas'],
   'cluster.filter.bandNow': ['La mia banda', 'My band', 'Mein Band', 'Ma bande', 'Mi banda', 'A minha banda'],
   'cluster.filter.mode': ['Modo', 'Mode', 'Modus', 'Mode', 'Modo', 'Modo'],
+  'cluster.filter.spotter': ['Spotter', 'Spotter', 'Spotter', 'Spotteur', 'Spotter', 'Spotter'],
+  'cluster.filter.spotterAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
+  'cluster.filter.spotterMine': ['Solo il mio continente', 'Only my continent', 'Nur mein Kontinent', 'Seulement mon continent', 'Solo mi continente', 'Só o meu continente'],
   'cluster.filter.modeAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
   'cluster.filter.search': [
     'Cerca nominativo',

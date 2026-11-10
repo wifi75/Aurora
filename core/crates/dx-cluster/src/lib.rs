@@ -216,6 +216,8 @@ pub struct Spot {
     pub mode: Option<String>,
     pub country: Option<String>,
     pub continent: Option<String>,
+    /// Continente di chi ha mandato lo spot (dal suo nominativo senza «-1», «-#»): per il filtro «Spotter» (Luc ON7KEC, 2026-11-10).
+    pub spotter_continent: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -365,6 +367,8 @@ impl ClusterService {
             (c.max_spots, u64::from(c.max_age_min) * 60_000)
         };
         let enriched = lock(&self.enricher).as_ref().and_then(|e| e(&parsed.dx_call));
+        let spotter_base = parsed.spotter.split('-').next().unwrap_or(&parsed.spotter).to_string();
+        let spotter_continent = lock(&self.enricher).as_ref().and_then(|e| e(&spotter_base)).map(|(_, k)| k);
         let now = unix_ms();
         let mut spots = lock(&self.spots);
         // lo stesso spot arriva da piu' cluster: si tiene il primo
@@ -390,6 +394,7 @@ impl ClusterService {
             mode: parsed.mode,
             country,
             continent,
+            spotter_continent,
         });
         spots.truncate(max_spots);
         while spots.back().is_some_and(|s| now.saturating_sub(s.received_ms) > max_age_ms) {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, memo } from 'react';
 import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
-import { useT } from '../i18n';
+import { useT, type Key } from '../i18n';
 import { MultiPick } from './MultiPick';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
@@ -22,13 +22,13 @@ const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { bands: [], modes: [], search: '' };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [] };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown };
     // le versioni precedenti salvavano una sola banda e un solo modo
-    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '' };
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters) };
   } catch {
     return defaults;
   }
@@ -66,7 +66,7 @@ function ClusterPanelInner() {
   const day = today();
   const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
-  const status = useStatusPick(['dial_hz', 'mode']);
+  const status = useStatusPick(['dial_hz', 'mode', 'own_continent']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
@@ -75,13 +75,13 @@ function ClusterPanelInner() {
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
   // tutto quello che si vede nel cluster (DX e chi ha fatto lo spot) si carica in anticipo: al passaggio del mouse il riquadro e' gia' pronto
   useEffect(() => {
-    const visible = cluster.data ? filterSpots(cluster.data.spots, filters, myBand) : [];
+    const visible = cluster.data ? filterSpots(cluster.data.spots, filters, myBand, status?.own_continent) : [];
     prefetchCallsigns(visible.flatMap((s) => [s.dx_call, s.spotter]));
-  }, [cluster.data, filters, myBand]);
+  }, [cluster.data, filters, myBand, status?.own_continent]);
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [] }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }
@@ -126,7 +126,7 @@ function ClusterPanelInner() {
   }
 
   const linked = servers.filter((s) => s.state === 'connected').length;
-  const shown = filterSpots(spots, filters, myBand);
+  const shown = filterSpots(spots, filters, myBand, status?.own_continent);
 
   const tune = async (spot: ClusterSpot) => {
     if (!info.data?.rig_control && !info.data?.manual_dial) {
@@ -157,6 +157,14 @@ function ClusterPanelInner() {
           options={MODES.map((m) => ({ value: m, label: m }))}
           selected={filters.modes}
           onChange={(modes) => change({ ...filters, modes })}
+        />
+        {/* chi manda lo spot: il proprio continente o quelli scelti (Luc ON7KEC: gli spot degli europei dicono cosa si sente qui) */}
+        <MultiPick
+          label={t('cluster.filter.spotter')}
+          allLabel={t('cluster.filter.spotterAll')}
+          options={[{ value: 'mine', label: t('cluster.filter.spotterMine') }, ...['EU', 'NA', 'SA', 'AS', 'AF', 'OC'].map((c) => ({ value: c, label: t(`cont.${c}` as Key) }))]}
+          selected={filters.spotters ?? []}
+          onChange={(spotters) => change({ ...filters, spotters })}
         />
         <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>

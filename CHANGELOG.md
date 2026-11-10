@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster, filtro «Spotter»** (Luc ON7KEC): accanto a banda e modo si scelgono i continenti di chi manda lo spot; «Solo il mio continente» mostra cosa si sente dove sei.
 - **MSK144 sulla cascata** (UN7MBV): le barre Rx e Tx sono centrate sulla frequenza (1000-2000 Hz attorno ai 1500), non piu' da 1500 a 3500 come se fosse FT8; la Finestra RX mostra ±100 Hz.
 
 ## 0.11.227 - 2026-11-10

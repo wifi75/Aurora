@@ -6,11 +6,14 @@ export interface SpotFilters {
   /** Modi scelti (FT8, FT4, CW, SSB, RTTY...); vuoto = tutti. */
   modes: string[];
   search: string;
+  /** Continenti di chi manda lo spot: `mine` e' il proprio; vuoto = tutti. */
+  spotters?: string[];
 }
 
 /** Gli spot che passano i filtri della vista (l'ordine non cambia). */
-export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters, currentBand: string | null): ClusterSpot[] {
+export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters, currentBand: string | null, ownContinent?: string | null): ClusterSpot[] {
   const search = filters.search.trim().toUpperCase();
+  const wanted = new Set((filters.spotters ?? []).map((c) => (c === 'mine' ? (ownContinent ?? '') : c)).filter(Boolean));
   return spots.filter((s) => {
     if (filters.bands.length > 0) {
       const mine = filters.bands.includes('now') && s.band === currentBand;
@@ -18,6 +21,8 @@ export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters,
     }
     if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.includes(s.mode))) return false;
     if (search !== '' && !s.dx_call.includes(search)) return false;
+    // spot di chi sta sui continenti scelti; senza continente noto (core vecchio, nominativo strano) lo spot resta
+    if (wanted.size > 0 && s.spotter_continent && !wanted.has(s.spotter_continent)) return false;
     return true;
   });
 }
