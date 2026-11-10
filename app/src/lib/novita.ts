@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.227',
+    released: '2026-11-10T12:00:00Z',
+    kind: 'changed',
+    title: ["Età da quando il messaggio compare e nominativo in grassetto", "Age from when the message appears and bold callsign", "Alter ab Erscheinen der Meldung und fettes Rufzeichen", "Âge depuis l’apparition du message et indicatif en gras", "Edad desde que aparece el mensaje e indicativo en negrita", "Idade desde que a mensagem aparece e indicativo a negrito"],
+    text: [
+      "L’età dei messaggi parte da 0 s quando il messaggio compare, così il blocco nuovo e quello di prima si distinguono subito. Il nominativo di chi trasmette è in grassetto. Nella Finestra RX le tue righe Tx hanno l’ora dell’inizio del periodo e bandierina e paese sono in colonna su tutte le righe.",
+      "Message age starts at 0 s when the message appears, so the new block and the previous one are clearly apart. The sender’s callsign is in bold. In the RX window your Tx rows show the start of the period, and flag and country line up on every row.",
+      "Das Alter der Meldungen beginnt bei 0 s, wenn die Meldung erscheint, so unterscheiden sich der neue und der vorige Block sofort. Das Rufzeichen des Senders ist fett. Im RX-Fenster zeigen deine Tx-Zeilen den Beginn des Intervalls, Flagge und Land stehen in jeder Zeile untereinander.",
+      "L’âge des messages part de 0 s quand le message apparaît : le nouveau bloc et le précédent se distinguent tout de suite. L’indicatif de celui qui émet est en gras. Dans la fenêtre RX, tes lignes Tx ont l’heure du début de la période, et drapeau et pays sont alignés sur toutes les lignes.",
+      "La edad de los mensajes empieza en 0 s cuando aparece el mensaje, así el bloque nuevo y el anterior se distinguen enseguida. El indicativo de quien transmite está en negrita. En la ventana RX tus filas Tx tienen la hora del inicio del periodo, y bandera y país quedan alineados en todas las filas.",
+      "A idade das mensagens começa em 0 s quando a mensagem aparece, assim o bloco novo e o anterior distinguem-se logo. O indicativo de quem transmite está a negrito. Na janela RX as tuas linhas Tx têm a hora do início do período, e bandeira e país ficam alinhados em todas as linhas.",
+    ],
+  },
+  {
     version: '0.11.226',
     released: '2026-11-10T12:19:04Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les messages des Commandes (Tune, Spot DX, erreurs) s'affichent en notifications au lieu d'une ligne sous les boutons, et les boutons ne dépassent plus du bord de la fenêtre.",
       "Los mensajes de Comandos (Tune, Spot DX, errores) aparecen como avisos emergentes en lugar de una línea bajo los botones, y los botones ya no se salen del borde de la ventana.",
       "As mensagens dos Comandos (Tune, Spot DX, erros) aparecem como avisos em vez de uma linha por baixo dos botões, e os botões já não saem da borda da janela.",
-    ],
-  },
-  {
-    version: '0.11.187',
-    released: '2026-11-07T18:55:46Z',
-    kind: 'new',
-    title: ['Tune e Spot DX nei Comandi', 'Tune and Spot DX in Commands', 'Tune und DX-Spot in Befehle', 'Tune et Spot DX dans Commandes', 'Tune y Spot DX en Comandos', 'Tune e Spot DX nos Comandos'],
-    text: [
-      "Il pulsante Tune compare di nuovo nei Comandi quando lo accendi in Impostazioni > Generali > Schermo, e diventa rosso mentre trasmette la portante. Se lo spot su DXSummit è acceso c'è anche «Spot DX»; Log QSO compare solo se lo scegli. Nella Mappa DX la linea «chi chiama chi» parte anche da te verso la stazione che stai chiamando, e la legenda sta in una riga sola in basso.",
-      "The Tune button shows again in Commands when you turn it on in Settings > General > Screen, and turns red while sending the carrier. If DXSummit spotting is on there is also «Spot DX»; Log QSO shows only if you choose it. On the DX map the «who calls whom» line also goes from you to the station you are calling, and the legend sits on one line at the bottom.",
-      "Die Tune-Taste erscheint wieder in Befehle, wenn du sie unter Einstellungen > Allgemein > Bildschirm einschaltest, und wird rot, solange der Träger gesendet wird. Ist DXSummit an, gibt es auch «DX spotten»; Log QSO erscheint nur, wenn du es wählst. Auf der DX-Karte geht die Linie «wer ruft wen» auch von dir zur gerufenen Station, und die Legende steht in einer Zeile unten.",
-      "Le bouton Tune réapparaît dans Commandes quand tu l'actives dans Réglages > Général > Écran, et devient rouge pendant l'émission de la porteuse. Si le spot DXSummit est activé il y a aussi « Spot DX » ; Log QSO n'apparaît que si tu le choisis. Sur la carte DX la ligne « qui appelle qui » part aussi de toi vers la station que tu appelles, et la légende tient sur une ligne en bas.",
-      "El botón Tune vuelve a aparecer en Comandos cuando lo activas en Ajustes > General > Pantalla, y se pone rojo mientras emite la portadora. Si el spot en DXSummit está activo también está «Spot DX»; Log QSO aparece solo si lo eliges. En el mapa DX la línea «quién llama a quién» sale también de ti hacia la estación que llamas, y la leyenda va en una sola línea abajo.",
-      "O botão Tune volta a aparecer nos Comandos quando o ligas em Definições > Geral > Ecrã, e fica vermelho enquanto emite a portadora. Se o spot no DXSummit estiver ligado há também «Spot DX»; Log QSO só aparece se o escolheres. No mapa DX a linha «quem chama quem» parte também de ti para a estação que estás a chamar, e a legenda fica numa só linha em baixo.",
     ],
   },
 ];

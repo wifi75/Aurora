@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-10, versione 0.11.226 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-10, versione 0.11.227 (pubblicata). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-10
 

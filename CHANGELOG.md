@@ -1,6 +1,7 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.227 - 2026-11-10
+- **Finestra RX**: bandierina e paese in colonna su tutte le righe, ora/dB/messaggio a misura fissa.
 - **Nominativo di chi trasmette in grassetto** (Luc ON7AVL): in Attivita' di banda e nella Finestra RX il nominativo di chi manda il messaggio e' in grassetto, cosi' si trova subito; l'ordine del messaggio non cambia.
 - **Righe Tx** (Luc ON7KEC): hanno l'ora dell'inizio del periodo come i messaggi ricevuti (13:14:45 e non 13:14:46).
 - **Eta' dei messaggi** (Luc Buytaert): parte da 0 s quando il messaggio compare, come in GridTracker; il blocco nuovo e quello di prima si distinguono subito (15 s di differenza in FT8). L'ora UTC nel suggerimento resta l'inizio del periodo.
