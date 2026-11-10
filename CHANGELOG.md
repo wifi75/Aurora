@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.225 - 2026-11-10
 - **Pulsante Auto** (richiesta di Luc): spento e in prova a vuoto, il clic chiede subito sulla Stazione se accendere il modo reale (la stessa conferma di sicurezza delle Impostazioni); con «Si'» parte in modo reale, poi i clic accendono e spengono senza domande.
 - **STOP TX**: nel pannello Trasmissione il riquadro RX, mentre si trasmette, diventa il pulsante rosso «STOP TX (Esc)» (prima diceva solo «TX» e non si capiva che fermava); appena fermato torna RX.
 - **Mappe, quadrati lavorati** (segnalato da Luc): cambiando banda sulla radio la mappa mostra subito i quadrati lavorati della banda nuova (prima restavano quelli della banda di prima).
