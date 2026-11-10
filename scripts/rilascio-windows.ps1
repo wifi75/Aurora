@@ -42,7 +42,8 @@ if ($SoloControllo) { Write-Host 'Versioni allineate.'; return }
 Write-Host '0/3 File dei paesi (cty.dat di AD1C, country-files.com), incluso nel programma...'
 $ctyDir = "$root\desktop\src-tauri\cty"
 New-Item -ItemType Directory -Force $ctyDir | Out-Null
-Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile "$ctyDir\cty.dat" -UseBasicParsing
+try { Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile "$ctyDir\cty.dat" -UseBasicParsing -TimeoutSec 90 }
+catch { Write-Warning "country-files.com non risponde ($($_.Exception.Message)): uso la copia di riserva di cty.dat"; Copy-Item "$root\desktop\cty-riserva\cty.dat" "$ctyDir\cty.dat" -Force }
 if ((Get-Item "$ctyDir\cty.dat").Length -lt 50000) { throw 'cty.dat scaricato ma troppo piccolo: senza il file dei paesi non si fa l''installatore.' }
 
 Write-Host '0/3 Hamlib (rigctld per la radio CAT, incluso nell''installatore)...'

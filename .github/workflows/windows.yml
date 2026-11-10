@@ -55,9 +55,14 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force desktop/src-tauri/cty | Out-Null
-          foreach ($i in 1..6) {
-            try { Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile desktop/src-tauri/cty/cty.dat -UserAgent 'Mozilla/5.0 (Aurora build)'; break }
+          foreach ($i in 1..3) {
+            try { Invoke-WebRequest -Uri 'https://www.country-files.com/cty/cty.dat' -OutFile desktop/src-tauri/cty/cty.dat -UserAgent 'Mozilla/5.0 (Aurora build)' -TimeoutSec 90; break }
             catch { Write-Host "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; Start-Sleep 20 }
+          }
+          # sito irraggiungibile: si usa la copia di riserva del repository (desktop/cty-riserva), invece di fermare la compilazione
+          if (-not (Test-Path desktop/src-tauri/cty/cty.dat)) {
+            Write-Host '::warning::country-files.com non risponde: uso la copia di riserva di cty.dat'
+            Copy-Item desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat
           }
           if ((Get-Item desktop/src-tauri/cty/cty.dat).Length -lt 50000) { throw 'cty.dat troppo piccolo' }
 

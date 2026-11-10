@@ -50,10 +50,12 @@ jobs:
         run: |
           mkdir -p desktop/src-tauri/cty
           # il sito a volte rifiuta le macchine di GitHub: piu' tentativi distanziati, con un nome di programma normale
-          for i in 1 2 3 4 5 6; do
-            if curl -fsSL --retry 3 --retry-delay 5 -A "Mozilla/5.0 (Aurora build)" -o desktop/src-tauri/cty/cty.dat https://www.country-files.com/cty/cty.dat; then break; fi
+          for i in 1 2 3; do
+            if curl -fsSL --connect-timeout 20 --max-time 90 -A "Mozilla/5.0 (Aurora build)" -o desktop/src-tauri/cty/cty.dat https://www.country-files.com/cty/cty.dat; then break; fi
             echo "cty.dat non scaricato (tentativo $i), riprovo tra 20 s"; sleep 20
           done
+          # sito irraggiungibile: si usa la copia di riserva del repository (desktop/cty-riserva), invece di fermare la compilazione
+          if [ ! -s desktop/src-tauri/cty/cty.dat ]; then echo "::warning::country-files.com non risponde: uso la copia di riserva di cty.dat"; cp desktop/cty-riserva/cty.dat desktop/src-tauri/cty/cty.dat; fi
           test "$(stat -c %s desktop/src-tauri/cty/cty.dat)" -gt 50000
 
       - name: Interfaccia

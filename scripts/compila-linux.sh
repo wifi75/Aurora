@@ -88,7 +88,8 @@ mkdir -p "$root/desktop/src-tauri/cty"
 if curl -fsSL -o "$root/desktop/src-tauri/cty/cty.dat.new" https://www.country-files.com/cty/cty.dat; then
     mv "$root/desktop/src-tauri/cty/cty.dat.new" "$root/desktop/src-tauri/cty/cty.dat"
 elif [ ! -s "$root/desktop/src-tauri/cty/cty.dat" ]; then
-    echo "Attenzione: cty.dat non scaricato (country-files.com non raggiungibile): Aurora partira' senza paesi ne' bandiere."
+    echo "Attenzione: country-files.com non raggiungibile: uso la copia di riserva di cty.dat (desktop/cty-riserva)."
+    cp "$root/desktop/cty-riserva/cty.dat" "$root/desktop/src-tauri/cty/cty.dat"
 fi
 cd "$root/app"
 npm ci
