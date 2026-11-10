@@ -40,6 +40,10 @@ const IC705_MENU = ICOM_MENU.filter((v) => !v.startsWith('CI-V USB Baud'));
 // sorgente audio dati e PTT dei dati) cambia tra i modelli e non e' verificato qui: indicazioni generiche e `generic`.
 const YAESU_MENU = ['CAT RATE: 38400', 'CAT RTS: OFF', 'DATA (audio): USB', 'Mode: DATA-U'] as const;
 
+// Radio con VHF/UHF: lo shift automatico dei ripetitori (ARS) sposta la trasmissione di 600 kHz sui 2 m; va spento, e niente split/duplex
+// (UN7MBV con FT-991A su 144.174, 2026-11-10).
+const VHF_MENU = ['ARS (repeater shift): OFF', 'Split / Duplex: OFF'] as const;
+
 // Kenwood TS-590SG e TS-890: 115200 sulla USB; DATA VOX spento, audio dati dalla USB. Nomi esatti dei menu da verificare (`generic`).
 const KENWOOD_MENU = ['USB COM speed: 115200', 'DATA VOX: OFF', 'Data audio input: USB', 'Mode: USB-DATA'] as const;
 
@@ -47,8 +51,8 @@ export const RIG_PRESETS: readonly RigPreset[] = [
   { id: 'ic7300', match: /ic7300/, aurora: { baud: 115200, ptt: 'cat', civ_address: 0 }, civFactory: 148, radio: ICOM_MENU, audio: 'codec' },
   { id: 'ic7610', match: /ic7610/, aurora: { baud: 115200, ptt: 'cat', civ_address: 0 }, civFactory: 152, radio: ICOM_MENU, audio: 'codec' },
   { id: 'ic705', match: /ic705(?!\d)/, aurora: { baud: 115200, ptt: 'cat', civ_address: 0 }, civFactory: 164, radio: IC705_MENU, audio: 'codec' },
-  { id: 'ic9700', match: /ic9700/, aurora: { baud: 115200, ptt: 'cat', civ_address: 0 }, civFactory: 162, radio: ICOM_MENU, audio: 'codec' },
-  { id: 'ft991', match: /ft991/, aurora: { baud: 38400, ptt: 'cat' }, radio: YAESU_MENU, audio: 'codec', generic: true },
+  { id: 'ic9700', match: /ic9700/, aurora: { baud: 115200, ptt: 'cat', civ_address: 0 }, civFactory: 162, radio: [...ICOM_MENU, 'Duplex (DUP): OFF'], audio: 'codec' },
+  { id: 'ft991', match: /ft991/, aurora: { baud: 38400, ptt: 'cat' }, radio: [...YAESU_MENU, ...VHF_MENU], audio: 'codec', generic: true },
   { id: 'ft710', match: /ft710/, aurora: { baud: 38400, ptt: 'cat' }, radio: YAESU_MENU, audio: 'codec', generic: true },
   { id: 'ftdx101', match: /ftdx101/, aurora: { baud: 38400, ptt: 'cat' }, radio: YAESU_MENU, audio: 'codec', generic: true },
   { id: 'ftdx10', match: /ftdx10(?!\d)/, aurora: { baud: 38400, ptt: 'cat' }, radio: YAESU_MENU, audio: 'codec', generic: true },

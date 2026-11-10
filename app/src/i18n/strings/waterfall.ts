@@ -140,6 +140,7 @@ export const waterfallStrings = {
     '«Actual»: el último espectro (de fábrica). «Acumulada»: la media de todo el periodo en curso, que hace destacar las señales estables y vuelve a empezar en cada periodo nuevo.',
     '«Atual»: o último espectro (de fábrica). «Acumulada»: a média de todo o período em curso, que faz sobressair os sinais estáveis e recomeça em cada novo período.',
   ],
+  'wfs.specOff': ['Spento', 'Off', 'Aus', 'Masqué', 'Oculto', 'Oculto'],
   'wfs.current': ['Corrente', 'Current', 'Aktuell', 'Courant', 'Actual', 'Atual'],
   'wfs.cumulative': ['Cumulativa', 'Cumulative', 'Kumulativ', 'Cumulé', 'Acumulada', 'Acumulada'],
   'wfs.gain2d': ['Guadagno spettro', 'Spectrum gain', 'Spektrum-Verstärkung', 'Gain du spectre', 'Ganancia del espectro', 'Ganho do espectro'],

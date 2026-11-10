@@ -309,7 +309,7 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .waterfall--bar .wf-spectrum { min-height: 36px; }
 .waterfall--bar .wf-main { min-height: 64px; }
 .wf-splitter { flex: 0 0 7px; position: relative; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--border) 60%, transparent); }
-.wf-splitter::after { content: ''; position: absolute; left: 50%; top: 2px; width: 44px; height: 3px; margin-left: -22px; border-radius: 3px; background: color-mix(in srgb, var(--text) 45%, transparent); }
+.wf-splitter::after { content: ''; position: absolute; left: 50%; top: 1px; width: 80px; height: 5px; margin-left: -40px; border-radius: 3px; background: color-mix(in srgb, var(--text) 70%, transparent); }
 .wf-splitter:hover::after { background: #8e7bff; }
 /* la riga in basso un po' piu' alta, per dare spazio allo spettro */
 .live-bottom { height: clamp(18rem, 37vh, 26rem); }

@@ -71,10 +71,16 @@ export function WaterfallToolbar() {
         <span>{t('wft.spec')}</span>
         <select
           className="wft-select"
-          value={prefs.spectrumMode}
+          value={prefs.spectrumPercent === 0 ? 'off' : prefs.spectrumMode}
           aria-label={t('wft.spec')}
-          onChange={(e) => set({ spectrumMode: e.target.value === 'cumulative' ? 'cumulative' : 'current' })}
+          onChange={(e) =>
+            // «Off» nasconde lo spettro e lascia tutta l'altezza alla cascata (UN7MBV, 2026-11-10)
+            e.target.value === 'off'
+              ? set({ spectrumPercent: 0 })
+              : set({ spectrumMode: e.target.value === 'cumulative' ? 'cumulative' : 'current', spectrumPercent: prefs.spectrumPercent === 0 ? 30 : prefs.spectrumPercent })
+          }
         >
+          <option value="off">{t('wfs.specOff')}</option>
           <option value="current">{t('wfs.current')}</option>
           <option value="cumulative">{t('wfs.cumulative')}</option>
         </select>

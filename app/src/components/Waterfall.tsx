@@ -7,6 +7,7 @@ import { drawSpectrum } from '../render/spectrumPlot';
 import { WATERFALL_WIDTH, rowsPerPixel } from '../render/webgl2';
 import { periodSecs } from '../lib/period';
 import { type SpectrumListener, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
+import { useStatusPick } from '../state/station';
 import { ROW_SECS, WF_LIMITS, clampWf, paletteColors, useWfPrefs } from '../lib/wfPrefs';
 
 interface Props {
@@ -46,8 +47,10 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const specPercent = Math.min(prefs.spectrumPercent, MAX_SPECTRUM_SHARE);
 
   // le opzioni correnti per il ricevitore delle righe, che vive per tutta la vita del renderer
-  const live = useRef({ prefs, from: range.from, to: range.to, mode, band });
-  live.current = { prefs, from: range.from, to: range.to, mode, band };
+  // in trasmissione dalla radio non arriva audio: la cascata si ferma invece di scorrere nera (UN7MBV, 2026-11-10)
+  const transmitting = useStatusPick(['transmitting'])?.transmitting === true;
+  const live = useRef({ prefs, from: range.from, to: range.to, mode, band, transmitting });
+  live.current = { prefs, from: range.from, to: range.to, mode, band, transmitting };
   // «Time stamp»: l'ora di ogni inizio di periodo scende con la cascata; `age` conta le righe arrivate dopo
   const stampsRef = useRef<HTMLCanvasElement>(null);
   const marks = useRef<Array<{ label: string; age: number }>>([]);
@@ -148,8 +151,19 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
         let lastPhase = 0;
         // l'inizio del periodo resta in attesa finche' non e' pronta una riga (con WSJT-X una ogni 0,288 s)
         let pendingWrap = false;
+        let wasTx = false;
         unregister = register((bins, fMinHz, fMaxHz) => {
-          const { prefs: p, from, to, mode: m } = live.current;
+          const { prefs: p, from, to, mode: m, transmitting: tx } = live.current;
+          if (tx) {
+            wasTx = true;
+            return;
+          }
+          if (wasTx) {
+            // fine della trasmissione: una riga gialla segna dove la cascata si e' fermata
+            wasTx = false;
+            b.pushRow(new Uint8Array(1), 2);
+            bumpStamps(false);
+          }
           // inizio del periodo (come `tr < m_tr0` di WideGraph::dataSink2): una riga verde al posto dei dati
           const period = periodSecs(m ?? 'FT8');
           const inPeriod = (Date.now() / 1000) % period;
@@ -252,7 +266,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const bar = !spectrumPx;
   return (
     <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx || (bar && specPercent === 0) ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {bar && specPercent > 0 ? (
         <div
           className="wf-splitter"
