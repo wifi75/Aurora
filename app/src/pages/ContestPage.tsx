@@ -338,7 +338,12 @@ function SceltaContest({ elenco, valore, t, onScegli }: { elenco: ContestRef[]; 
   const [att, setAtt] = useState(0);
   const radice = useRef<HTMLDivElement>(null);
   const ora = Date.now();
-  const ordinati = GRUPPI.flatMap((g) => elenco.filter((c) => gruppoDi(c) === g));
+  // in ogni categoria per data di inizio, dal piu' vicino; senza data in fondo (a pari data, l'ordine dell'elenco)
+  const perInizio = (g: string) =>
+    elenco
+      .filter((c) => gruppoDi(c) === g)
+      .sort((x, y) => (x.finestra?.inizio_ms ?? Number.MAX_SAFE_INTEGER) - (y.finestra?.inizio_ms ?? Number.MAX_SAFE_INTEGER));
+  const ordinati = GRUPPI.flatMap((g) => perInizio(g));
   const giorno = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', timeZone: 'UTC' });
   const data = (c: ContestRef) => (c.finestra ? giorno.formatRange(c.finestra.inizio_ms, c.finestra.fine_ms - 60_000) : '');
   const scelto = elenco.find((c) => c.id === valore);
@@ -392,7 +397,7 @@ function SceltaContest({ elenco, valore, t, onScegli }: { elenco: ContestRef[]; 
       {aperto ? (
         <div className="ctc-pick-pop" role="listbox" aria-label={t('contest.choose')}>
           {GRUPPI.map((g) => {
-            const voci = elenco.filter((c) => gruppoDi(c) === g);
+            const voci = perInizio(g);
             if (voci.length === 0) return null;
             return (
               <div key={g} role="group" aria-label={t(`contest.group.${g}`)}>
