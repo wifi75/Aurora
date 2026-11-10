@@ -38,6 +38,26 @@ export const GUIDE: readonly GuideChapter[] = [
         ],
       },
       {
+        id: 'requirements',
+        title: ['Che computer serve', 'Which computer you need', 'Welcher Computer nötig ist', 'Quel ordinateur faut-il', 'Qué ordenador hace falta', 'Que computador é preciso'],
+        text: [
+          'Aurora decodifica con tutti i processori meno uno. Consigliati: 4 core e 8 GB di memoria. Con 2 core o 4 GB funziona, ma con molti segnali la decodifica può non finire in tempo.',
+          'Aurora decodes with all processors but one. Recommended: 4 cores and 8 GB of memory. With 2 cores or 4 GB it works, but with many signals decoding may not finish in time.',
+          'Aurora dekodiert mit allen Prozessoren außer einem. Empfohlen: 4 Kerne und 8 GB Arbeitsspeicher. Mit 2 Kernen oder 4 GB geht es, aber bei vielen Signalen wird die Dekodierung eventuell nicht rechtzeitig fertig.',
+          'Aurora décode avec tous les processeurs sauf un. Conseillé : 4 cœurs et 8 Go de mémoire. Avec 2 cœurs ou 4 Go cela fonctionne, mais avec beaucoup de signaux le décodage peut ne pas finir à temps.',
+          'Aurora decodifica con todos los procesadores menos uno. Recomendado: 4 núcleos y 8 GB de memoria. Con 2 núcleos o 4 GB funciona, pero con muchas señales la decodificación puede no terminar a tiempo.',
+          'A Aurora descodifica com todos os processadores menos um. Recomendado: 4 núcleos e 8 GB de memória. Com 2 núcleos ou 4 GB funciona, mas com muitos sinais a descodificação pode não terminar a tempo.',
+        ],
+        tip: [
+          'Se compare l’avviso «Il PC decodifica troppo lentamente»: accendi Multithread, spegni SWL e a7/a8, chiudi i programmi pesanti (browser con molte schede, giochi, videochiamate).',
+          'If the warning “The PC decodes too slowly” appears: turn on Multithread, turn off SWL and a7/a8, close heavy programs (browsers with many tabs, games, video calls).',
+          'Erscheint die Warnung „Der PC dekodiert zu langsam“: Multithread einschalten, SWL und a7/a8 ausschalten, schwere Programme schließen (Browser mit vielen Tabs, Spiele, Videoanrufe).',
+          'Si l’avertissement « Le PC décode trop lentement » apparaît : active Multithread, désactive SWL et a7/a8, ferme les programmes lourds (navigateur avec beaucoup d’onglets, jeux, appels vidéo).',
+          'Si aparece el aviso «El PC decodifica demasiado despacio»: activa Multithread, desactiva SWL y a7/a8, cierra los programas pesados (navegador con muchas pestañas, juegos, videollamadas).',
+          'Se aparecer o aviso «O PC descodifica demasiado devagar»: liga o Multithread, desliga o SWL e o a7/a8, fecha os programas pesados (navegador com muitos separadores, jogos, videochamadas).',
+        ],
+      },
+      {
         id: 'station',
         title: ['La tua stazione', 'Your station', 'Deine Station', 'Ta station', 'Tu estación', 'A tua estação'],
         text: ['Nominativo e locatore: la prima cosa da scrivere.', 'Callsign and locator: the first thing to enter.', 'Rufzeichen und Locator: das Erste, was du einträgst.', 'Indicatif et locator : la première chose à saisir.', 'Indicativo y localizador: lo primero que hay que escribir.', 'Indicativo e locator: a primeira coisa a escrever.'],

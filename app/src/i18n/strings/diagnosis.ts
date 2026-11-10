@@ -119,12 +119,12 @@ export const diagnosisStrings = {
     'A saída de áudio para transmitir perdeu-se (rádio desligado ou cabo USB desligado?): o Aurora reabre-a sozinho na próxima transmissão assim que voltar.',
   ],
   'diag.slow_pc': [
-    'Il PC decodifica troppo lentamente ({detail} s per periodo): si perdono i segnali deboli. Accendi Multithread, spegni Modo SWL e chiudi i programmi pesanti.',
-    'The PC decodes too slowly ({detail} s per period): weak signals are lost. Turn on Multithread, turn off SWL mode and close heavy programs.',
-    'Der PC dekodiert zu langsam ({detail} s pro Periode): schwache Signale gehen verloren. Schalte Multithread ein, SWL-Modus aus und schließe schwere Programme.',
-    'Le PC décode trop lentement ({detail} s par période) : les signaux faibles sont perdus. Active Multithread, désactive le mode SWL et ferme les programmes lourds.',
-    'El PC decodifica demasiado despacio ({detail} s por periodo): se pierden las señales débiles. Activa Multithread, desactiva el modo SWL y cierra los programas pesados.',
-    'O PC descodifica demasiado devagar ({detail} s por período): perdem-se os sinais fracos. Liga o Multithread, desliga o modo SWL e fecha os programas pesados.',
+    'Il PC decodifica troppo lentamente ({detail} s per periodo): si perdono i segnali deboli. Accendi Multithread, spegni SWL e a7/a8 e chiudi i programmi pesanti. Se succede spesso, il PC è sotto i requisiti consigliati (4 core e 8 GB, vedi la Guida).',
+    'The PC decodes too slowly ({detail} s per period): weak signals are lost. Turn on Multithread, turn off SWL and a7/a8 and close heavy programs. If it happens often, the PC is below the recommended requirements (4 cores and 8 GB, see the Guide).',
+    'Der PC dekodiert zu langsam ({detail} s pro Periode): schwache Signale gehen verloren. Schalte Multithread ein, SWL und a7/a8 aus und schließe schwere Programme. Passiert es oft, liegt der PC unter den empfohlenen Anforderungen (4 Kerne und 8 GB, siehe Anleitung).',
+    'Le PC décode trop lentement ({detail} s par période) : les signaux faibles sont perdus. Active Multithread, désactive SWL et a7/a8 et ferme les programmes lourds. Si cela arrive souvent, le PC est en dessous de la configuration conseillée (4 cœurs et 8 Go, voir le Guide).',
+    'El PC decodifica demasiado despacio ({detail} s por periodo): se pierden las señales débiles. Activa Multithread, desactiva SWL y a7/a8 y cierra los programas pesados. Si pasa a menudo, el PC está por debajo de los requisitos recomendados (4 núcleos y 8 GB, mira la Guía).',
+    'O PC descodifica demasiado devagar ({detail} s por período): perdem-se os sinais fracos. Liga o Multithread, desliga o SWL e o a7/a8 e fecha os programas pesados. Se acontecer muitas vezes, o PC está abaixo dos requisitos recomendados (4 núcleos e 8 GB, vê o Guia).',
   ],
   'diag.omnirig': [
     'OmniRig non risponde anche dopo tre tentativi ({detail}): controlla che in OmniRig la radio risulti «On-line», oppure passa a Hamlib in Impostazioni › Radio.',
