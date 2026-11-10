@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getDigi, postMode, putDigi, type DigiSettings } from '../api/client';
+import { getDigi, getFrequencies, postMode, putDigi, type DigiSettings } from '../api/client';
 import { useT } from '../i18n';
 import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
+import { rememberDial, retuneForMode } from '../lib/modeRetune';
 
 /** I modi in alto: ognuno ha le sue pagine; i gruppi FT8 e VHF dividono i modi del motore. Gli altri modi arrivano uno alla volta. */
 export type ModeGroup = 'ft8' | 'vhf';
@@ -55,6 +56,16 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   const digi = useQuery({ queryKey: ['digi'], queryFn: getDigi, retry: false, enabled: route.name === 'digi', staleTime: 5000 });
   const digiMode = digi.data?.settings.mode ?? null;
 
+  // si ricorda l'ultima frequenza di ogni gruppo (solo se e' una frequenza del modo in uso)
+  const dialHz = useStation((s) => s.status?.dial_hz ?? 0);
+  const freqTable = useQuery({ queryKey: ['frequencies'], queryFn: getFrequencies, staleTime: 60_000, retry: false });
+  useEffect(() => {
+    if (!mode || dialHz <= 0) return;
+    const known = (freqTable.data ?? []).some((r) => r.mode.toUpperCase() === mode.toUpperCase() && r.hz === dialHz);
+    if (!known) return;
+    rememberDial(groupOf(mode), dialHz);
+  }, [mode, dialHz, freqTable.data]);
+
   // si ricorda l'ultimo modo di ogni gruppo
   useEffect(() => {
     if (!mode) return;
@@ -88,9 +99,11 @@ export function ModeNav({ route, showQmap, remote }: Props) {
     const store = useStation.getState();
     const before = store.status?.mode;
     store.patchStatus({ mode: next });
-    void postMode(next).catch(() => {
-      if (before !== undefined) useStation.getState().revertStatus(['mode'], { mode: before });
-    });
+    void postMode(next)
+      .then(() => retuneForMode(client, next, target))
+      .catch(() => {
+        if (before !== undefined) useStation.getState().revertStatus(['mode'], { mode: before });
+      });
   };
 
   const onModePage = MODE_ROUTES.includes(route.name);

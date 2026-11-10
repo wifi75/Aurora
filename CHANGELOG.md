@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cambio di modo: la frequenza segue il modo**: passando da FT8 a MSK144 (o a un altro modo VHF) dalla pillola VHF o dal menu del modo, la radio resta sui 40 m e il pulsante della frequenza mostrava 7,074 MHz mentre la lista era quella VHF. Ora, se la frequenza non e' del nuovo modo, Aurora porta la radio su quella della stessa banda, o sull'ultima usata nel gruppo, o sulla principale della tabella (MSK144: 6 m, 50,260 MHz).
 - **PSK e RTTY, log di lato**: il bordo sinistro si trascina per allargarlo (la larghezza resta salvata) e il log riempie l'altezza disponibile, cosi' i dati non sono piu' tagliati; la matita (✎) apre la scelta delle colonne (modo, banda, frequenza, data, UTC, nominativo, paese, locatore, RST).
 - **Barra in fondo solo per FT8**: nelle pagine SSTV, PSK e RTTY e Satelliti non compaiono piu' decodifiche, avanzamento del periodo e watchdog (restano volume, tema, ora e versione).
 - **PSK e RTTY**: sotto la finestra di trasmissione i pulsanti «Trasmetti» e «STOP» (il PTT parte da solo con il metodo scelto in Impostazioni > Radio; prima si trasmetteva solo da Modo > TX, Ctrl+Invio, tasti F o Pausa).
