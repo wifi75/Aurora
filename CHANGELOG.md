@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **CQ e novita'**: ogni casella mostra solo nominativo, bandierina e paese (messaggio, rapporto e ora nel suggerimento); una stazione che non si sente da 15 minuti sparisce da sola.
+
 ## 0.11.224 - 2026-11-10
 - **Hamlib, PTT**: se rigctld manda in ritardo la risposta di una lettura precedente, lo spegnimento del PTT non fallisce piu' al primo tentativo (dai rapporti: «risposta inattesa a "T 0": 0»): la riga vecchia si scarta e vale la risposta vera.
 - **TCI, chiusura**: Aurora chiude il collegamento con la SDR in modo ordinato, cosi' l'ultimo comando («Spegni», PTT spento) arriva anche se la SDR sta ancora mandando sensori e audio (prima a volte andava perso).

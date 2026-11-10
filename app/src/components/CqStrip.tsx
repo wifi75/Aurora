@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
@@ -35,21 +35,35 @@ const ACCENT: Partial<Record<DecodeTag, string>> = {
  * scorre da sola (avanti e indietro, si ferma col mouse sopra). Una stazione compare una volta sola, col suo messaggio piu' recente.
  * Doppio clic: risponde; tasto destro: in coda.
  */
+/** Una stazione che non si sente piu' da tanto esce da sola dalla fascia (richiesta del proprietario, 2026-11-10). */
+const SILENT_MS = 15 * 60_000;
+
+/** Da quanti millisecondi e' arrivato un messaggio (ora in ms dalla mezzanotte UTC), anche a cavallo della mezzanotte. */
+function ageMs(timeMs: number, now: number): number {
+  return ((((now % 86_400_000) - timeMs) % 86_400_000) + 86_400_000) % 86_400_000;
+}
+
 export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
   const t = useT();
   const box = useRef<HTMLDivElement>(null);
+  // l'elenco si ricontrolla ogni 30 s anche senza decodifiche nuove, cosi' chi tace da 15 minuti sparisce
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
   const items = useMemo(() => {
     const seen = new Set<string>();
     const out: DecodedMessage[] = [];
     for (const d of decodes) {
-      if (d.id < 0) continue;
+      if (d.id < 0 || ageMs(d.time_ms, now) > SILENT_MS) continue;
       const key = senderOf(d.text)?.call.toUpperCase() ?? `#${d.id}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(d);
     }
     return out;
-  }, [decodes]);
+  }, [decodes, now]);
 
   // scorrimento automatico: solo se c'e' qualcosa fuori vista; avanti e indietro, ~28 px al secondo
   useEffect(() => {
@@ -105,7 +119,8 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
             type="button"
             className={`cq-chip${d.tag && d.tag !== 'cq' ? ' cq-chip--new' : ''}${d.tag === 'worked_call' ? ' cq-chip--worked' : ''}${d.tag === 'new_dxcc' || d.tag === 'new_dxcc_band' ? ' cq-chip--flash' : ''}`}
             style={accent ? ({ '--row-accent': `var(--tag-${accent})` } as React.CSSProperties) : undefined}
-            title={d.country ?? undefined}
+            // solo nominativo, bandierina e paese (scelta del proprietario); il messaggio intero, il rapporto e l'ora nel suggerimento
+            title={`${d.text} · ${d.snr} dB · ${utcTime(d.time_ms)} UTC${d.country ? ` · ${d.country}` : ''}`}
             onDoubleClick={() => onReply(d.id)}
             onContextMenu={(e) => {
               if (!talker || !onQueue) return;
@@ -113,12 +128,9 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
               onQueue(d.id);
             }}
           >
+            <span className="cq-chip-text">{talker?.call ?? d.text}</span>
             <span className="cq-chip-flag">{code ? <span className={`fi fi-${code}`} aria-hidden="true" /> : null}</span>
-            <span className="cq-chip-text">{d.text}</span>
-            <span className="cq-chip-snr num muted">{d.snr}</span>
             {d.country ? <span className="cq-chip-country">{d.country}</span> : null}
-            {/* l'ora dell'ultima ricezione: la casella mostra sempre il messaggio piu' recente della stazione */}
-            <span className="cq-chip-time num">{utcTime(d.time_ms)}</span>
           </button>
         );
       })}
