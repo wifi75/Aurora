@@ -1,6 +1,13 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-09 notte)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-10 mattina)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-10 mattina (0.11.220 pubblicata)
+
+- **0.11.220** (07:52 UTC): «Ripristina Hamlib» su Windows, trasmissione che riparte da sola se la scheda audio della radio manca all'avvio, finestre a parte aperte fuori dal thread della finestra, decodifica con un processore libero, primi messaggi dopo il cambio di banda, voce della Guida «Che computer serve», tipo di computer nei rapporti.
+- **Installatore da GitHub**: la release si crea senza file; il lavoro `Windows` (`windows.yml`) compila l'installatore, lo firma con il segreto `AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY` e allega `Aurora_x.y.z_x64-setup.exe`, `.sig`, `Aurora-Setup.exe` e `SHA256SUMS.txt`. Sul PC dell'ufficio la chiave di firma non c'e': `scripts/rilascio-windows.ps1` li' non si puo' usare.
+- **Identita' dei commit**: nel repository `user.email` deve essere l'indirizzo noreply di GitHub; il 2026-11-10 autore e committer dei commit dopo `ef9510e9` sono stati riscritti (push forzato di main).
+- **Prossimo passo**: prove del proprietario al DARC FT4 (2026-11-10 19:00 UTC); controllare i rapporti dopo la 0.11.220 (blocchi delle finestre a parte, PC lenti con il tipo di computer); poi i lavori di `docs/tasks.md`.
 
 ## Stato al 2026-11-09 notte (0.11.219 pubblicata)
 

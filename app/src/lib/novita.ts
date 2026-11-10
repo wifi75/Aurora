@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.220',
-    released: '2026-11-10T08:30:00Z',
+    released: '2026-11-10T07:52:29Z',
     kind: 'new',
     title: ["Ripristina Hamlib e trasmissione che riparte da sola", "Restore Hamlib and transmission that recovers by itself", "Hamlib wiederherstellen und Senden, das von selbst zurückkommt", "Restaurer Hamlib et émission qui repart toute seule", "Restaurar Hamlib y transmisión que se recupera sola", "Restaurar o Hamlib e transmissão que recupera sozinha"],
     text: [
