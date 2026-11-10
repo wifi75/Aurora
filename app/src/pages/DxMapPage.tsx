@@ -254,7 +254,9 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
       confirmed: g.confirmed > 0,
       text: `${g.confirmed > 0 ? confirmedText : workedText}: ${g.qsos} QSO${g.confirmed > 0 ? ` (${g.confirmed} ✓)` : ''} · ${[...g.bands].join(', ')}${g.modes.size ? ` · ${[...g.modes].join(', ')}` : ''}`,
     }));
-  }, [squares, cells, band, mode, showSquares, t]);
+    // effBand e non band: con «banda in uso» (e nel pannello Log) la banda cambia con la radio, non con il menu; prima i quadrati lavorati
+    // restavano quelli della banda di prima mentre le linee di PSK Reporter si aggiornavano (Luc, 2026-11-10)
+  }, [squares, cells, effBand, mode, showSquares, t]);
   const confirmedCount = shown.filter((s) => s.confirmed).length;
 
   return (

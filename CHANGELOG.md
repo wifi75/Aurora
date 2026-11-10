@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **Mappe, quadrati lavorati** (segnalato da Luc): cambiando banda sulla radio la mappa mostra subito i quadrati lavorati della banda nuova (prima restavano quelli della banda di prima).
+- **OmniRig**: se non e' installato la scheda Radio lo dice («non installato») con il link per scaricarlo e il consiglio di usare Hamlib; l'errore e' riconosciuto in tutte le lingue di Windows.
+- **Compilazione**: copia di riserva di cty.dat quando country-files.com non risponde.
 - **Mappe, «Solo chi mi sente»** (segnalato da Luc): mostra le linee verso chi ti ha ricevuto su PSK Reporter anche con la propagazione spenta; prima con «Linee» e «Solo chi mi sente» accesi non si vedeva nessuna linea.
 - **Suono del QSO a log** (richiesta di Luc): si sceglie in Impostazioni > Avvisi, «QSO a log», come gli altri avvisi (un suono, la voce, un proprio file o nessun suono); di fabbrica resta la fanfara.
 - **CQ e novita'**: ogni casella mostra solo nominativo, bandierina e paese (messaggio, rapporto e ora nel suggerimento); una stazione che non si sente da 15 minuti sparisce da sola.
