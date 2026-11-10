@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **STOP TX**: nel pannello Trasmissione il riquadro RX, mentre si trasmette, diventa il pulsante rosso «STOP TX (Esc)» (prima diceva solo «TX» e non si capiva che fermava); appena fermato torna RX.
 - **Mappe, quadrati lavorati** (segnalato da Luc): cambiando banda sulla radio la mappa mostra subito i quadrati lavorati della banda nuova (prima restavano quelli della banda di prima).
 - **OmniRig**: se non e' installato la scheda Radio lo dice («non installato») con il link per scaricarlo e il consiglio di usare Hamlib; l'errore e' riconosciuto in tutte le lingue di Windows.
 - **Compilazione**: copia di riserva di cty.dat quando country-files.com non risponde.

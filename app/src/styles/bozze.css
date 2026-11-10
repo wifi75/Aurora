@@ -1399,3 +1399,6 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 
 /* la fascia resta larga quanto il pannello e scorre lei: le ultime caselle non restano tagliate fuori senza scorrimento */
 .cq-strip.cq-strip--rows { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; align-items: flex-start; box-sizing: border-box; }
+
+/* il riquadro RX / STOP TX non tocca il bordo destro della scheda Trasmissione */
+.dock-panel--tx .tx-dx .rxtx-flag { margin-right: 8px !important; }

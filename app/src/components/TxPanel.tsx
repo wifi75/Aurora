@@ -192,10 +192,11 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
             {status.queue && status.queue.length > 0 ? (
               <button type="button" className="tx-queue-next" title={t('txq.next', { call: (status.queue?.[0] ?? "") })} aria-label={t('txq.next', { call: (status.queue?.[0] ?? "") })} onClick={() => jumpToQueued((status.queue?.[0] ?? ""), status.de_call ?? undefined, t)}>»</button>
             ) : null}
-            {/* accanto al DX: RX verde in ascolto; in onda TX rosso lampeggiante, ed e' anche lo STOP (un clic ferma la trasmissione) */}
+            {/* accanto al DX: RX verde in ascolto; in onda diventa il pulsante rosso «STOP TX (Esc)» (un clic ferma la trasmissione), e appena
+                fermato torna RX. Prima c'era scritto solo «TX» e non si capiva che era lo stop (Luc ON7KEC, 2026-11-10) */}
             {status.transmitting ? (
               <button type="button" className="rxtx-flag rxtx-flag--stop" data-state="tx" title={t('tip.txStop')} aria-label={t('stop.button')} onClick={() => void postHalt().catch(() => toast(t('stop.fail'), 'error'))}>
-                TX
+                {t('stop.button')} (Esc)
               </button>
             ) : (
               // doppio clic su RX: come «Canc DX», libera la stazione e cancella i dati del QSO in corso (richiesta del proprietario)

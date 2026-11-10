@@ -7520,3 +7520,9 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .log-rx .decode-row { padding-left: 4px !important; grid-template-columns: 3.7rem 1.8rem calc(9.8rem - 40px) minmax(0, 1fr) !important; }
 .log-rx .decode-row .c-time { justify-self: start; text-align: left; padding-left: 0 !important; margin-left: 0 !important; }
 .log-rx .decode-row .c-age { justify-content: start; }
+
+/* in trasmissione il riquadro accanto al DX dice «STOP TX (Esc)»: su una riga sola */
+.tx-dx .rxtx-flag--stop { white-space: nowrap; letter-spacing: 0.04em; }
+
+/* il riquadro RX / STOP TX non tocca il bordo destro della scheda Trasmissione */
+.tx-dx .rxtx-flag { margin-right: 8px; }
