@@ -31,6 +31,8 @@ jobs:
       actions: read
     env:
       SIGNPATH_ON: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+      # la chiave degli aggiornamenti nei segreti: senza SignPath, l'installatore si allega lo stesso (come quello fatto sul PC)
+      TIMBRO_ON: ${{ secrets.AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY != '' }}
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - uses: actions/checkout@v4
@@ -123,6 +125,31 @@ jobs:
           Copy-Item $exe.FullName rilascio/
           Push-Location desktop
           npx tauri signer sign ("../rilascio/" + $exe.Name)
+          Pop-Location
+          Copy-Item ("rilascio/" + $exe.Name) rilascio/Aurora-Setup.exe
+          Get-ChildItem rilascio -Filter '*-setup.exe' | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content rilascio/SHA256SUMS.txt -Encoding ascii
+          Get-ChildItem rilascio | ForEach-Object { Write-Host $_.Name }
+          gh release upload $env:TAG (Get-ChildItem rilascio | ForEach-Object FullName) --clobber
+
+      - name: Senza SignPath, allegati come dal PC (se il PC non li ha gia' messi)
+        if: env.SIGNPATH_ON != 'true' && env.TIMBRO_ON == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.AURORA_TIMBRO_AGGIORNAMENTI_AURORA_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.AURORA_PASSWORD_TIMBRO_AGGIORNAMENTI }}
+        run: |
+          # la release puo' essere pubblicata da qualunque PC, anche senza la chiave: l'installatore (senza firma di Windows, come quello
+          # del PC) e la firma degli aggiornamenti li fa GitHub. Se il PC ha gia' allegato l'installatore non si tocca niente.
+          $gia = gh release view $env:TAG --json assets --jq '.assets[].name' | Where-Object { $_ -like '*-setup.exe' }
+          if ($gia) { Write-Host "installatore gia' allegato dal PC: $gia"; return }
+          $exe = Get-ChildItem non-firmato -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'installatore non trovato' }
+          New-Item -ItemType Directory -Force rilascio | Out-Null
+          Copy-Item $exe.FullName rilascio/
+          Push-Location desktop
+          npx tauri signer sign ("../rilascio/" + $exe.Name)
+          if ($LASTEXITCODE -ne 0) { throw 'firma degli aggiornamenti fallita' }
           Pop-Location
           Copy-Item ("rilascio/" + $exe.Name) rilascio/Aurora-Setup.exe
           Get-ChildItem rilascio -Filter '*-setup.exe' | ForEach-Object { '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content rilascio/SHA256SUMS.txt -Encoding ascii
