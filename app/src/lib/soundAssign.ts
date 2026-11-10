@@ -39,12 +39,13 @@ export const SOUND_EVENTS = [
   'first_message',
   'wanted',
   'new_dx_popup',
+  'qso_logged',
 ] as const;
 export type SoundEvent = (typeof SOUND_EVENTS)[number];
 export type Assign = Record<SoundEvent, string | null>;
 
 /** Le funzioni che non sono un tipo di messaggio con colore: il loro nome sta nei testi `snd.ev.*`. */
-export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted', 'new_dx_popup'] as const satisfies readonly SoundEvent[];
+export const EXTRA_EVENTS = ['alert_my_call', 'alert_dx_call', 'first_message', 'wanted', 'new_dx_popup', 'qso_logged'] as const satisfies readonly SoundEvent[];
 export type ExtraEvent = (typeof EXTRA_EVENTS)[number];
 
 export function isTagEvent(event: SoundEvent): event is Extract<SoundEvent, ColorKey> {
@@ -66,6 +67,8 @@ export function legacySound(event: SoundEvent, alertSound: string): string {
       return 'rise4';
     case 'new_dx_popup':
       return 'dxalarm';
+    case 'qso_logged':
+      return 'fanfare';
     case 'alert_my_call':
     case 'alert_dx_call':
       return alertSound;
@@ -98,6 +101,8 @@ export const AUTO_SOUNDS: Record<SoundEvent, string> = {
   first_message: 'chirp',
   wanted: 'rise4',
   new_dx_popup: 'dxalarm',
+  // con «suoni diversi automaticamente» ognuno ha il suo (la fanfara e' gia' del DXCC nuovo); di fabbrica resta la fanfara
+  qso_logged: 'trumpet',
 };
 
 export function emptyAssign(): Assign {
@@ -140,6 +145,9 @@ export function gateOn(event: SoundEvent, sound: Partial<Record<string, boolean>
       return true;
     case 'new_dx_popup':
       return view.popNew || view.popNewBand;
+    // il QSO a log suona sempre (se ha un suono): «Nessun suono» lo spegne
+    case 'qso_logged':
+      return true;
     default: {
       const alert = ALERT_OF_TAG[event];
       return sound[event] === true || (alert !== undefined && view[alert]);
@@ -193,8 +201,11 @@ export function readAssign(storage: ReadableStorage): Assign {
           }
           // l'avviso del DXCC nuovo e' arrivato dopo: chi non l'ha mai scelto ha il suo suono di fabbrica (null salvato = nessun suono, scelto a mano)
           if (!('new_dx_popup' in map)) assign.new_dx_popup = 'dxalarm';
+          // il suono del QSO a log era fisso (la fanfara): chi non l'ha mai scelto lo tiene (richiesta di Luc, 2026-11-10)
+          if (!('qso_logged' in map)) assign.qso_logged = 'fanfare';
         } else {
           assign.new_dx_popup = 'dxalarm';
+          assign.qso_logged = 'fanfare';
         }
         return assign;
       }
@@ -202,7 +213,7 @@ export function readAssign(storage: ReadableStorage): Assign {
   } catch {
     return emptyAssign();
   }
-  return { ...migrateLegacy(storage), new_dx_popup: 'dxalarm' };
+  return { ...migrateLegacy(storage), new_dx_popup: 'dxalarm', qso_logged: 'fanfare' };
 }
 
 export function saveAssign(storage: WritableStorage, assign: Assign): void {
@@ -229,6 +240,8 @@ export function enableGate(event: SoundEvent): void {
       break;
     case 'new_dx_popup':
       useNotifyView.getState().set({ popNew: true });
+      break;
+    case 'qso_logged':
       break;
     default:
       useNotify.getState().setFlag('sound', event, true);

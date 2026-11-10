@@ -6,6 +6,7 @@ export const soundStrings = {
   'snd.ev.alert_dx_call': ['Avviso: nominativo DX scelto', 'Alert: chosen DX call', 'Hinweis: gewähltes DX-Rufzeichen', 'Alerte : indicatif DX choisi', 'Aviso: indicativo DX elegido', 'Alerta: indicativo DX escolhido'],
   'snd.ev.first_message': ['Primo messaggio decodificato', 'First decoded message', 'Erste dekodierte Nachricht', 'Premier message décodé', 'Primer mensaje decodificado', 'Primeira mensagem descodificada'],
   'snd.ev.wanted': ['Stazione desiderata', 'Wanted station', 'Gesuchte Station', 'Station recherchée', 'Estación deseada', 'Estação desejada'],
+  'snd.ev.qso_logged': ['QSO a log', 'QSO logged', 'QSO geloggt', 'QSO enregistré', 'QSO registrado', 'QSO registado'],
   'snd.ev.new_dx_popup': ['Avviso in evidenza: DXCC nuovo', 'Highlighted alert: new DXCC', 'Hervorgehobener Hinweis: neues DXCC', 'Alerte en évidence : nouveau DXCC', 'Aviso destacado: DXCC nuevo', 'Alerta em destaque: DXCC novo'],
   'newdx.dxcc': ['DXCC nuovo', 'New DXCC', 'Neues DXCC', 'Nouveau DXCC', 'DXCC nuevo', 'DXCC novo'],
   'newdx.band': ['DXCC nuovo sulla banda', 'New DXCC on the band', 'Neues DXCC auf dem Band', 'Nouveau DXCC sur la bande', 'DXCC nuevo en la banda', 'DXCC novo na banda'],

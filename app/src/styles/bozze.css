@@ -1396,3 +1396,6 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 
 /* lo scorrimento automatico lo fa il programma: niente scorrimento «smooth» del browser che lo renderebbe a scatti */
 .cq-strip { scroll-behavior: auto; }
+
+/* la fascia resta larga quanto il pannello e scorre lei: le ultime caselle non restano tagliate fuori senza scorrimento */
+.cq-strip.cq-strip--rows { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; align-items: flex-start; box-sizing: border-box; }

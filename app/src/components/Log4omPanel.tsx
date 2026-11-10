@@ -5,8 +5,8 @@ import { getLog4om } from '../api/client';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
-import { playSound } from '../lib/soundBank';
-import { ringState } from '../lib/soundAssign';
+import { playAlert } from '../lib/voice';
+import { ringState, soundFor } from '../lib/soundAssign';
 
 /** Effetto del QSO appena messo a log: aurora che scorre dentro la riga e scie viola sul bordo per 5 s, poi si dissolve (vedi `.qso-fx`). */
 const FLASH_MS = 6600;
@@ -54,8 +54,10 @@ function Log4omPanelInner() {
     // si riconosce dal nominativo (la prima riga con quel nominativo): l'ora scritta nel log puo' essere quella di fine QSO, un minuto
     // dopo quella dell'evento, e con l'ora la riga non si trovava (2026-11-09, BG4UCZ: niente animazione)
     setFlash(lastLogged.call.toUpperCase());
+    // il suono scelto in Impostazioni > Avvisi, «QSO a log» (di fabbrica la fanfara; «Nessun suono» lo spegne)
     const st = ringState(false);
-    if (st.enabled) playSound('fanfare', st.volume);
+    const id = soundFor('qso_logged', st);
+    if (id) playAlert(id, st.volume, { event: 'qso_logged', call: lastLogged.call });
     const timer = window.setTimeout(() => setFlash(null), FLASH_MS);
     return () => window.clearTimeout(timer);
   }, [lastLogged]);

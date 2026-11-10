@@ -682,6 +682,7 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
           <Check label={t('not2.popNewBand')} hint={t('tip.not2.popNew')} checked={view.popNewBand} onChange={(v) => setView({ popNewBand: v })} />
           <NewDxPosPick />
           <SoundPicker event="new_dx_popup" label={t('not2.popSound')} />
+          <SoundPicker event="qso_logged" label={t('snd.ev.qso_logged')} />
           <Check
             label={t('not2.soundFirst')}
             hint={t('tip.not2.soundFirst')}

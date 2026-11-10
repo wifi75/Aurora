@@ -50,7 +50,7 @@ describe('migration of the old preferences', () => {
     expect(migrateLegacy(memory())).toEqual(emptyAssign());
     expect(migrateLegacy(null)).toEqual(emptyAssign());
     // solo l'avviso in evidenza del DXCC nuovo ha il suo suono di fabbrica
-    expect(readAssign(memory())).toEqual({ ...emptyAssign(), new_dx_popup: 'dxalarm' });
+    expect(readAssign(memory())).toEqual({ ...emptyAssign(), new_dx_popup: 'dxalarm', qso_logged: 'fanfare' });
   });
 
   it('gives the old standard sound to every type that had its sound on', () => {
