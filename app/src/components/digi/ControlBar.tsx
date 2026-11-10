@@ -60,10 +60,9 @@ export function ControlBar({ macros, extended, disabled = false, onToggleExtende
                   style={
                     !blank && macro?.color != null
                       ? {
-                          // sul fondo scuro il colore della macro tinge il blocchetto e il testo (non piu' pastello pieno)
-                          background: `color-mix(in srgb, ${cssColor(macro.color)} 24%, #101a2e)`,
+                          // il colore della macro tinge lo sfondo e il bordo; il testo e' bianco col tema scuro e nero col chiaro
+                          background: `color-mix(in srgb, ${cssColor(macro.color)} 26%, var(--key-base))`,
                           borderColor: `color-mix(in srgb, ${cssColor(macro.color)} 70%, transparent)`,
-                          color: `color-mix(in srgb, ${cssColor(macro.color)} 75%, #ffffff)`,
                         }
                       : undefined
                   }

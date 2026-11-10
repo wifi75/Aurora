@@ -2,6 +2,7 @@
 .digi-classica {
   --text: #e8eefc; --text-muted: #8b9cc0; --panel: #111b30; --panel-raised: #0d1628; --border: #25365d; --accent: #2cf5a4;
   --font-data: Consolas, "Cascadia Mono", "Courier New", monospace;
+  --key-base: #101a2e; --key-ink: #ffffff;
   gap: 10px; padding: 10px; background: transparent; color: var(--text); font: 13px/1.35 "Segoe UI", system-ui, sans-serif; border: 0; border-radius: 0;
 }
 .digi-classica .sstv-hint { color: var(--text-muted); }
@@ -31,7 +32,7 @@
 .digi-classica .digi-bar-keys { padding: 10px 12px; background: linear-gradient(180deg, #121e36, #0f192d); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .digi-classica .digi-keys { gap: 4px; min-width: 0; }
 .digi-classica .digi-keyrow { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)) 5rem; column-gap: 4px; align-items: center; position: relative; }
-.digi-classica .digi-key { min-width: 0; width: 100%; height: 28px; padding: 0 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; background: #16233f; color: var(--text-muted); }
+.digi-classica .digi-key { min-width: 0; width: 100%; height: 28px; padding: 0 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; background: #16233f; color: var(--key-ink); }
 .digi-classica .digi-key--gap { margin-left: 0; }
 .digi-classica .digi-key:nth-child(4n + 1):not(:first-child) { margin-left: 8px; width: calc(100% - 8px); }
 .digi-classica .digi-key--blank { background: #131f38; border: 1px solid #1d2c4d; opacity: 1; }
@@ -96,3 +97,33 @@ button.digi-st.on, button.digi-st:active { background: #8e7bff33; border-color: 
 .digi-classica .digi-cmd-list button { color: var(--text); }
 .digi-classica .digi-cmd-list button:hover, .digi-classica .digi-cmd-list button.on { background: #8e7bff40; color: #fff; }
 .digi-classica .digi-ms-grid fieldset { border-color: var(--border); }
+
+/* tema chiaro: stesso disegno, colori chiari e testo nero */
+html[data-theme='light'] .digi-classica {
+  --text: #0b1322; --text-muted: #46556f; --panel: #ffffff; --panel-raised: #f3f6fc; --border: #b9c6df; --accent: #1b6ef3;
+  --key-base: #ffffff; --key-ink: #000000;
+}
+html[data-theme='light'] .digi-menubar, html[data-theme='light'] .digi-bandbar, html[data-theme='light'] .digi-bar-keys, html[data-theme='light'] .digi-windows,
+html[data-theme='light'] .digi-log, html[data-theme='light'] .digi-wf, html[data-theme='light'] .digi-status, html[data-theme='light'] .digi-rxctl,
+html[data-theme='light'] .digi-classica .digi-bar-keys {
+  background: #ffffff; border-color: var(--border); box-shadow: 0 4px 14px rgb(20 40 90 / 0.1); color: var(--text);
+}
+html[data-theme='light'] .digi-topline .digi-bandbar { background: none; box-shadow: none; }
+html[data-theme='light'] .digi-menu-list { background: #ffffff; box-shadow: 0 10px 26px rgb(20 40 90 / 0.2); }
+html[data-theme='light'] .digi-menu-list li button:hover:not(:disabled) { color: #000; background: #dfe7ff; }
+html[data-theme='light'] .digi-menu > button:hover, html[data-theme='light'] .digi-menu > button.on { background: #e5e9ff; }
+html[data-theme='light'] .digi-classica .digi-key { background: #eef2fa; border-color: var(--border); color: #000; }
+html[data-theme='light'] .digi-classica .digi-key--blank { background: #f6f8fd; border-color: #dde4f3; }
+html[data-theme='light'] .digi-rxwin, html[data-theme='light'] .digi-txwin { color: #0b1322; }
+html[data-theme='light'] .digi-txbtns { background: #f3f6fc; }
+html[data-theme='light'] .digi-log-tabs > button.on { background: #e5e9ff; color: #000; }
+html[data-theme='light'] .digi-log-current input, html[data-theme='light'] .digi-log-search { background: #ffffff; color: #000; }
+html[data-theme='light'] .digi-tool { background: #f3f6fc; color: #000; }
+html[data-theme='light'] .digi-log-table th { background: #eef2fa; color: #46556f; }
+html[data-theme='light'] .digi-log-table td { color: #0b1322; border-bottom-color: #e3e9f6; }
+html[data-theme='light'] .digi-log-table td b { color: #000; }
+html[data-theme='light'] .digi-st { background: #f3f6fc; color: #0b1322; }
+html[data-theme='light'] .digi-colpop { background: #ffffff; color: #000; }
+html[data-theme='light'] .digi-classica .digi-dialog { background: #ffffff; color: #0b1322; }
+html[data-theme='light'] .digi-classica .digi-dialog input, html[data-theme='light'] .digi-classica .digi-dialog select, html[data-theme='light'] .digi-classica .digi-dialog textarea { background: #ffffff; color: #000; }
+html[data-theme='light'] .digi-classica .sstv-btn { background: #eef2fa; color: #000; }
