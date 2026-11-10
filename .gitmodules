@@ -1,0 +1,6 @@
+[submodule "terze-parti/qsstv"]
+	path = terze-parti/qsstv
+	url = https://github.com/ON4QZ/QSSTV
+[submodule "terze-parti/fldigi"]
+	path = terze-parti/fldigi
+	url = https://git.code.sf.net/p/fldigi/fldigi

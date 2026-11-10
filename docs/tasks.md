@@ -73,6 +73,8 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 
 - Regola (proprietario, 2026-11-10): si prendono solo funzioni, parametri e comportamento (elenco di cosa offrire, `D:\progetti\pc\-analisi\documentazione`), mai il codice ne' codice decompilato e ritoccato. Il codice viene da progetti liberi compatibili con la GPL-3 (QSSTV, fldigi, slowrx), citandone gli autori, o si scrive da zero dalle specifiche.
 - Il proprietario ha gia' il materiale da cui riprendere le tabelle per codifica e decodifica in trasmissione e ricezione: prima di cominciare va controllata la licenza di ogni fonte (deve essere compatibile con la GPL-3 di Aurora).
+- Struttura decisa dal proprietario (2026-11-10): ogni modo ha il suo motore in un crate a parte (`core/crates/mode-sstv`, `mode-fldigi`...) che non tocca FT8/engine-native; in comune restano Log, Mappa DX, DX Cluster. Ogni modo ha la sua pagina; RTTY, PSK e CW possono stare in una pagina unica che cambia modo, con macro e pulsanti per modo (`MACRO_E_COMANDI.md`, `MACRO_DETTAGLIO.md` dell'analisi).
+- Si comincia dall'SSTV: pagina con ricezione, galleria, trasmissione di foto caricate con testo e scritte grafiche sopra.
 - Ordine proposto: PSK31/PSK63 e RTTY (testo, simili per interfaccia), poi CW (decodifica e trasmissione), poi SSTV (immagini, interfaccia a parte).
 - Per ognuno: motore di modulazione e demodulazione in `core/crates`, finestra di ricezione testo (o immagine), macro di trasmissione, log come per FT8, Guida e Novita' nelle sei lingue.
 
@@ -80,6 +82,10 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 
 - Oggi MSK144 usa solo periodi di 15 s (`engine-native`: `Mode::Msk144 => 15`, `mskrt.rs`, `rig.rs` «TX 00/30»). Da aggiungere la scelta 15/30 s (30 s TX, 30 s RX, molto usata per il meteor scatter in VHF), come per Q65: motore, trasmissione (quadro ripetuto per tutto il periodo), decodifica in tempo reale, selettore accanto al modo.
 - Quando e' fatta: commento nella issue #27 (UN7MBV riceve la notifica) e chiusura.
+
+## Controllo periodico delle librerie di terze parti (ogni 6 mesi, prossimo maggio 2027)
+
+- QSSTV, fldigi (`terze-parti/`, vedi `terze-parti/LEGGIMI.md`) e Hamlib: nuove versioni, correzioni da riportare nei crate `mode-*`.
 
 ## P3. Rotori d'antenna (fatto il 2026-11-10, da provare dal vivo)
 
