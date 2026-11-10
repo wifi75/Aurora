@@ -76,7 +76,16 @@ pub(crate) async fn contest_attiva(State(state): State<AppState>, _: Authed, Jso
     let imp = s.impostazioni(&body.id).unwrap_or_default();
     let mut avvisi: Vec<String> = Vec::new();
     if let Some(rig) = &rig {
-        for (id, on) in [("fox", false), ("hound", false), ("autoseq", true), ("hold_tx", imp.hold_tx), ("rrr", imp.rrr)] {
+        // con i messaggi standard (DARC FT4...) lo scambio e' rapporto e locatore: il locatore va nel primo messaggio (Tx1), quindi «Salta Tx1»
+        // si spegne da solo; le attivita' speciali di WSJT-X (WW Digi, NA VHF...) hanno la loro sequenza e se la scelgono nel motore
+        let attivita = s.regola(&body.id).map(|r| r.messaggi.attivita.clone()).unwrap_or_default();
+        let attivita = if imp.attivita.is_empty() { attivita } else { imp.attivita.clone() };
+        let standard = attivita.trim().is_empty() || attivita.trim().eq_ignore_ascii_case("standard");
+        let mut controlli = vec![("fox", false), ("hound", false), ("autoseq", true), ("hold_tx", imp.hold_tx), ("rrr", imp.rrr)];
+        if standard {
+            controlli.push(("skip_tx1", false));
+        }
+        for (id, on) in controlli {
             if let Err(e) = rig.set_control(id, Some(on)) {
                 avvisi.push(format!("{id}: {e}"));
             }
