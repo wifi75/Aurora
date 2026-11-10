@@ -63,6 +63,7 @@ export const digiMenuStrings = {
   'digi.log.call': ['Nominativo', 'Call', 'Rufzeichen', 'Indicatif', 'Indicativo', 'Indicativo'],
   'digi.log.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
   'digi.log.rst': ['RST', 'RST', 'RST', 'RST', 'RST', 'RST'],
+  'digi.tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'digi.log.band': ['Banda', 'Band', 'Band', 'Bande', 'Banda', 'Banda'],
   'digi.log.grid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],
   'digi.log.cols': ['Colonne del log (matita)', 'Log columns (pencil)', 'Log-Spalten (Stift)', 'Colonnes du journal (crayon)', 'Columnas del log (lápiz)', 'Colunas do log (lápis)'],

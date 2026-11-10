@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';
-import { cssColor, MACRO_ROWS, textColorFor, type Macro } from '../../lib/macroLang';
+import { cssColor, MACRO_ROWS, type Macro } from '../../lib/macroLang';
 
 const ROW_LABELS = ['', 'Ctrl', 'Shift', 'Ctrl+Shift'] as const;
 
@@ -57,7 +57,16 @@ export function ControlBar({ macros, extended, disabled = false, onToggleExtende
                   key={name}
                   type="button"
                   className={`digi-key${blank ? ' digi-key--blank' : ''}${i % 4 === 0 && i > 0 ? ' digi-key--gap' : ''}`}
-                  style={!blank && macro?.color != null ? { background: cssColor(macro.color), color: textColorFor(macro.color) } : undefined}
+                  style={
+                    !blank && macro?.color != null
+                      ? {
+                          // sul fondo scuro il colore della macro tinge il blocchetto e il testo (non piu' pastello pieno)
+                          background: `color-mix(in srgb, ${cssColor(macro.color)} 24%, #101a2e)`,
+                          borderColor: `color-mix(in srgb, ${cssColor(macro.color)} 70%, transparent)`,
+                          color: `color-mix(in srgb, ${cssColor(macro.color)} 75%, #ffffff)`,
+                        }
+                      : undefined
+                  }
                   title={blank ? `${name} — ${t('digi.bar.emptyHint')}` : `${name} — ${macro?.text ?? ''}`}
                   disabled={disabled && !blank}
                   onClick={() => (macro && !blank ? onRun(macro) : undefined)}

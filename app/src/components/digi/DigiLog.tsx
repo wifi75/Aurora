@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { browserStorage } from '../../lib/theme';
+import { ClusterPanel } from '../ClusterPanel';
 import { getLogQsos, type LogQso } from '../../api/client';
 import { useT } from '../../i18n';
 
@@ -73,6 +74,16 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
   const [picking, setPicking] = useState(false);
+  // linguette: DX Cluster o Log (la scelta resta ricordata)
+  const [tab, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
+  const setTab = (next: 'cluster' | 'log') => {
+    setTabState(next);
+    try {
+      browserStorage()?.setItem('aurora.digi.tab', next);
+    } catch {
+      // la scelta vale comunque finche' la pagina e' aperta
+    }
+  };
   const pop = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!picking) return;
@@ -120,14 +131,16 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
           window.addEventListener('pointerup', up);
         }}
       />
-      <div className="digi-log-tools">
-        <strong>{t('digi.log.title')}</strong>
-        <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
-          💾
+      <div className="digi-log-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'cluster'} className={tab === 'cluster' ? 'on' : ''} onClick={() => setTab('cluster')}>
+          {t('digi.tab.cluster')}
         </button>
-        <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
-          ✕
+        <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
+          {t('digi.log.title')}
         </button>
+        {tab === 'log' ? (
+          <span className="digi-log-tabtools">
+            <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
         <span className="digi-colwrap" ref={pop}>
           <button type="button" className="digi-tool" title={t('digi.log.cols')} aria-label={t('digi.log.cols')} aria-expanded={picking} onClick={() => setPicking(!picking)}>
             ✎
@@ -143,9 +156,18 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
             </div>
           ) : null}
         </span>
-        <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
+          </span>
+        ) : null}
       </div>
-
+      <div className="digi-log-qsohead">
+        <strong>{t('digi.log.current')}</strong>
+        <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
+          💾
+        </button>
+        <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
+          ✕
+        </button>
+      </div>
       <div className="digi-log-current" role="group" aria-label={t('digi.log.current')}>
         <label>
           <span>{t('digi.log.call')}</span>
@@ -176,7 +198,12 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, onQso, onRst, onSav
         </p>
       </div>
 
-      <div className="digi-log-table">
+      {tab === 'cluster' ? (
+        <div className="digi-log-cluster">
+          <ClusterPanel />
+        </div>
+      ) : null}
+      <div className="digi-log-table" hidden={tab !== 'log'}>
         <table>
           <thead>
             <tr>

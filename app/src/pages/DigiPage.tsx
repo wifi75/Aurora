@@ -20,6 +20,7 @@ import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
 import '../styles/digi.css';
+import '../styles/digi-dark.css';
 
 const FIELDS_KEY = 'aurora.digi.campi';
 const VIEWS_KEY = 'aurora.digi.viste';
