@@ -487,10 +487,10 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   );
   const blockExtra = (id: BoardId): ReactNode => (id === 'all' ? (
     <>
-    {orderButton('bandBottom')}
     <button type="button" className={tagPills || tagFilterOn ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={tagPills} aria-expanded={tagPills} title={t('tip.bfl.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setTagPills(!tagPills)}>
       {t('bfl.button')}{tagFilterOn ? ` ${filters.tags.length}` : ''}
     </button>
+    {orderButton('bandBottom')}
     </>
   ) : id === 'log' ? (
     <>

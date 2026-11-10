@@ -7393,6 +7393,8 @@ html[data-theme='light'] .dock-mini--on { color: #ffffff; }
 /* in ogni pannello con pulsantini nella barra (Filtro, linguette...) i pulsantini stanno in fondo a destra, prima del ⧉ */
 .dock-grip:has(.dock-mini) .dock-detach-host { margin-left: 0.35rem !important; }
 .dock-grip > .dock-mini:first-of-type { margin-left: auto; }
+/* i pulsantini che seguono il primo restano accostati (Filtro e Nuovi in Attivita' di banda) */
+.dock-grip > .dock-mini ~ .dock-mini { margin-left: 0.25rem; }
 
 /* finestra RX: stretta dentro il pannello Log; si tolgono paese, km ed etichette perche' il messaggio si legga intero */
 .log-rx .w-country, .log-rx .w-km, .log-rx .badge-cell, .log-rx .c-dt, .log-rx .c-freq { display: none !important; }
