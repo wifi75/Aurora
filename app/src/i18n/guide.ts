@@ -841,7 +841,37 @@ export const GUIDE: readonly GuideChapter[] = [
       {
         id: 'unconfirmed',
         title: ['Paesi non confermati', 'Unconfirmed countries', 'Nicht bestätigte Länder', 'Pays non confirmés', 'Países no confirmados', 'Países não confirmados'],
-        text: ['In [[nav.settings]] → [[sw.tab.colors]] accendi «[[not2.unconfirmed]]»: un paese lavorato ma senza conferma (LoTW o QSL nel log) resta «DXCC nuovo» nei colori, nel filtro di Attività di banda e nelle Automazioni. Nella Mappa DX i quadrati confermati sono verdi, quelli solo lavorati gialli.', 'In [[nav.settings]] → [[sw.tab.colors]] turn on “[[not2.unconfirmed]]”: a country worked but not confirmed (LoTW or QSL in the log) stays “new DXCC” in the colours, the Band activity filter and Automation. On the DX Map confirmed squares are green, only worked ones yellow.', 'Unter [[nav.settings]] → [[sw.tab.colors]] „[[not2.unconfirmed]]“ einschalten: ein gearbeitetes, nicht bestätigtes Land (LoTW oder QSL im Log) bleibt „neues DXCC“ in Farben, Filter der Bandaktivität und Automatik. Auf der DX-Karte sind bestätigte Felder grün, nur gearbeitete gelb.', 'Dans [[nav.settings]] → [[sw.tab.colors]] active « [[not2.unconfirmed]] » : un pays contacté mais non confirmé (LoTW ou QSL dans le journal) reste « nouveau DXCC » dans les couleurs, le filtre d’Activité de bande et les Automatisations. Sur la carte DX les carrés confirmés sont verts, ceux seulement contactés jaunes.', 'En [[nav.settings]] → [[sw.tab.colors]] activa «[[not2.unconfirmed]]»: un país trabajado pero no confirmado (LoTW o QSL en el log) sigue siendo «DXCC nuevo» en los colores, el filtro de Actividad de banda y las Automatizaciones. En el mapa DX los cuadros confirmados son verdes, los solo trabajados amarillos.', 'Em [[nav.settings]] → [[sw.tab.colors]] liga «[[not2.unconfirmed]]»: um país trabalhado mas não confirmado (LoTW ou QSL no log) continua «DXCC novo» nas cores, no filtro da Atividade de banda e nas Automatizações. No mapa DX os quadrados confirmados são verdes, os só trabalhados amarelos.'],
+        text: ['In [[nav.settings]] → [[sw.tab.colors]] accendi «[[not2.unconfirmed]]» (e «[[not2.unconfirmedGrid]]» per le griglie): un paese lavorato ma senza conferma (LoTW o QSL nel log) resta «DXCC nuovo» nei colori, nel filtro di Attività di banda e nelle Automazioni. Nella Mappa DX i quadrati confermati sono verdi, quelli solo lavorati gialli.', 'In [[nav.settings]] → [[sw.tab.colors]] turn on “[[not2.unconfirmed]]” (and “[[not2.unconfirmedGrid]]” for grids): a country worked but not confirmed (LoTW or QSL in the log) stays “new DXCC” in the colours, the Band activity filter and Automation. On the DX Map confirmed squares are green, only worked ones yellow.', 'Unter [[nav.settings]] → [[sw.tab.colors]] „[[not2.unconfirmed]]“ (und „[[not2.unconfirmedGrid]]“ für die Felder) einschalten: ein gearbeitetes, nicht bestätigtes Land (LoTW oder QSL im Log) bleibt „neues DXCC“ in Farben, Filter der Bandaktivität und Automatik. Auf der DX-Karte sind bestätigte Felder grün, nur gearbeitete gelb.', 'Dans [[nav.settings]] → [[sw.tab.colors]] active « [[not2.unconfirmed]] » (et « [[not2.unconfirmedGrid]] » pour les locators) : un pays contacté mais non confirmé (LoTW ou QSL dans le journal) reste « nouveau DXCC » dans les couleurs, le filtre d’Activité de bande et les Automatisations. Sur la carte DX les carrés confirmés sont verts, ceux seulement contactés jaunes.', 'En [[nav.settings]] → [[sw.tab.colors]] activa «[[not2.unconfirmed]]» (y «[[not2.unconfirmedGrid]]» para los locators): un país trabajado pero no confirmado (LoTW o QSL en el log) sigue siendo «DXCC nuevo» en los colores, el filtro de Actividad de banda y las Automatizaciones. En el mapa DX los cuadros confirmados son verdes, los solo trabajados amarillos.', 'Em [[nav.settings]] → [[sw.tab.colors]] liga «[[not2.unconfirmed]]» (e «[[not2.unconfirmedGrid]]» para os locators): um país trabalhado mas não confirmado (LoTW ou QSL no log) continua «DXCC novo» nas cores, no filtro da Atividade de banda e nas Automatizações. No mapa DX os quadrados confirmados são verdes, os só trabalhados amarelos.'],
+      },
+      {
+        id: 'settingssearch',
+        title: ['Trovare un’opzione nelle Impostazioni', 'Finding an option in Settings', 'Eine Option in den Einstellungen finden', 'Trouver une option dans les Réglages', 'Encontrar una opción en los Ajustes', 'Encontrar uma opção nas Definições'],
+        text: [
+          'Le Impostazioni hanno molte schede, divise in gruppi. In alto c’è il campo «[[sw.search]]»: scrivi una parola dell’opzione (anche senza accenti) e compare l’elenco delle opzioni trovate in tutte le schede.',
+          'Settings has many tabs, split into groups. At the top there is the “[[sw.search]]” box: type a word of the option (accents do not matter) and the list of options found in all the tabs appears.',
+          'Die Einstellungen haben viele Reiter, in Gruppen geteilt. Oben steht das Feld „[[sw.search]]“: ein Wort der Option eintippen (Akzente spielen keine Rolle) und die Liste der in allen Reitern gefundenen Optionen erscheint.',
+          'Les Réglages ont beaucoup d’onglets, répartis en groupes. En haut il y a le champ « [[sw.search]] » : tape un mot de l’option (les accents ne comptent pas) et la liste des options trouvées dans tous les onglets apparaît.',
+          'Los Ajustes tienen muchas pestañas, divididas en grupos. Arriba está el campo «[[sw.search]]»: escribe una palabra de la opción (los acentos no importan) y aparece la lista de opciones halladas en todas las pestañas.',
+          'As Definições têm muitos separadores, divididos em grupos. Em cima está o campo «[[sw.search]]»: escreve uma palavra da opção (os acentos não contam) e aparece a lista das opções encontradas em todos os separadores.',
+        ],
+        steps: [
+          [
+            'Un clic su un risultato (o Invio per il primo) apre la scheda giusta e porta in vista l’opzione, che si illumina per un momento.',
+            'A click on a result (or Enter for the first) opens the right tab and brings the option into view, lit up for a moment.',
+            'Ein Klick auf ein Ergebnis (oder Eingabe für das erste) öffnet den richtigen Reiter und holt die Option ins Bild, sie leuchtet kurz auf.',
+            'Un clic sur un résultat (ou Entrée pour le premier) ouvre le bon onglet et amène l’option à l’écran, qui s’illumine un instant.',
+            'Un clic en un resultado (o Intro para el primero) abre la pestaña correcta y lleva la opción a la vista, que se ilumina un momento.',
+            'Um clique num resultado (ou Enter para o primeiro) abre o separador certo e traz a opção à vista, que se ilumina por um momento.',
+          ],
+        ],
+        tip: [
+          'La prima volta il campo legge le schede e ci mette un secondo e mezzo; poi la ricerca è subito pronta. Si cerca anche il nome delle schede.',
+          'The first time the box reads the tabs and takes a second and a half; after that search is instant. Tab names are searched too.',
+          'Beim ersten Mal liest das Feld die Reiter und braucht anderthalb Sekunden; danach ist die Suche sofort da. Auch die Namen der Reiter werden durchsucht.',
+          'La première fois le champ lit les onglets et met une seconde et demie ; ensuite la recherche est immédiate. Les noms des onglets sont cherchés aussi.',
+          'La primera vez el campo lee las pestañas y tarda segundo y medio; después la búsqueda es inmediata. También se buscan los nombres de las pestañas.',
+          'Da primeira vez o campo lê os separadores e demora um segundo e meio; depois a pesquisa é imediata. Procuram-se também os nomes dos separadores.',
+        ],
       },
       {
         id: 'dxmapoptions',

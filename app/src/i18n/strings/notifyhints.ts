@@ -118,6 +118,14 @@ export const notifyHintStrings = {
     'Un país trabajado pero no confirmado (LoTW o QSL en el log de Log4OM o en el ADIF) sigue siendo «DXCC nuevo» y «DXCC nuevo en la banda», en los colores, el filtro de Actividad de banda y las Automatizaciones. Solo si el log tiene las confirmaciones.',
     'Um país trabalhado mas não confirmado (LoTW ou QSL no log do Log4OM ou no ADIF) continua «DXCC novo» e «DXCC novo na banda», nas cores, no filtro da Atividade de banda e nas Automatizações. Só se o log tiver as confirmações.',
   ],
+  'jxh.newGridUnconfirmed': [
+    'Una griglia lavorata ma senza conferma (LoTW o QSL nel log di Log4OM o nell’ADIF) resta «griglia nuova» e «griglia nuova sulla banda», nei colori, nel filtro di Attività di banda e nelle Automazioni. Vale solo se il log dice le conferme.',
+    'A grid worked but not confirmed (LoTW or QSL in the Log4OM log or ADIF) stays “new grid” and “new grid on band”, in the colours, the Band activity filter and Automation. Only if the log has the confirmations.',
+    'Ein gearbeitetes, nicht bestätigtes Feld (LoTW oder QSL im Log4OM-Log oder ADIF) bleibt „neues Feld“ und „neues Feld auf dem Band“, in Farben, Filter der Bandaktivität und Automatik. Nur wenn das Log Bestätigungen enthält.',
+    'Un locator contacté mais non confirmé (LoTW ou QSL dans le journal Log4OM ou l’ADIF) reste « nouveau locator » et « nouveau locator sur la bande », dans les couleurs, le filtre d’Activité de bande et les Automatisations. Seulement si le journal indique les confirmations.',
+    'Un locator trabajado pero no confirmado (LoTW o QSL en el log de Log4OM o en el ADIF) sigue siendo «locator nuevo» y «locator nuevo en la banda», en los colores, el filtro de Actividad de banda y las Automatizaciones. Solo si el log tiene las confirmaciones.',
+    'Um locator trabalhado mas não confirmado (LoTW ou QSL no log do Log4OM ou no ADIF) continua «locator novo» e «locator novo na banda», nas cores, no filtro da Atividade de banda e nas Automatizações. Só se o log tiver as confirmações.',
+  ],
   'jxh.newPotential': [
     'Colora le novità (paese, zona, griglia...) anche nei messaggi fra altre stazioni, non solo nelle chiamate CQ.',
     'Highlights novelties (country, zone, grid...) also in messages between other stations, not only CQ calls.',
