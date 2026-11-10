@@ -1,3 +1,5 @@
+import { HeaderAlertSwitch } from './AlertSwitch';
+import { ThemeToggle } from './ThemeToggle';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getCat, getEngineSettings, getHealth } from '../api/client';
@@ -64,6 +66,11 @@ export function Footer() {
       ) : (
         <div className="app-bar-left" />
       )}
+      {/* avvisi e tema: nel menu nuovo stanno qui, a destra, vicino all'ora */}
+      <span className="bar-tools">
+        <HeaderAlertSwitch />
+        <ThemeToggle />
+      </span>
       <span className="bar-utc num" title="UTC">
         {new Date(now).toISOString().slice(11, 19)} <i>UTC</i>
       </span>

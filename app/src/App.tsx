@@ -9,9 +9,7 @@ import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
 import { ModeNav } from './components/ModeNav';
-import { HeaderAlertSwitch } from './components/AlertSwitch';
 import { useT } from './i18n';
-import { ThemeToggle } from './components/ThemeToggle';
 import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
 import { applyColors, readColors } from './lib/colors';
@@ -222,9 +220,7 @@ export function App() {
             </button>
           ) : null}
           {session.data ? <UpdateBar /> : null}
-          {/* la lingua si sceglie in Impostazioni (Generali): nella barra in alto non serve (richiesta del proprietario) */}
-          <HeaderAlertSwitch />
-          <ThemeToggle />
+          {/* avvisi e tema stanno nella barra in fondo (menu nuovo); la lingua si sceglie in Impostazioni (Generali) */}
         </span>
       </header>
       )}

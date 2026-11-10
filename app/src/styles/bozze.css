@@ -1445,3 +1445,7 @@ html .cq-strip .cq-chip.cq-chip--b:hover { background: #dcf8ee; border-color: #8
 .nav-more-menu a:hover { background: rgba(142, 123, 255, .22); }
 html[data-theme='light'] .nav-soon, html[data-theme='light'] .nav-more-btn { background: #ffffff; border-color: #7a8aa6; color: #0b1322; }
 html[data-theme='light'] .nav-more-menu { background: #ffffff; border-color: #aab6cc; }
+
+/* barra in fondo del menu nuovo: la barra del periodo piu' corta (circa un terzo), avvisi e tema a destra vicino all'ora */
+.app-bar .bar-progress { flex: 0 1 34%; min-width: 120px; max-width: none; }
+.bar-tools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
