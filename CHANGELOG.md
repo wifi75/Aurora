@@ -2,7 +2,12 @@
 
 ## Non rilasciato
 - **SSTV** (nuova pagina «SSTV», modo separato dai motori FT8): riceve e trasmette Martin 1/2, Scottie 1/2/DX, Robot 36/72, PD 50/90/120/160/180/240/290 e Wraase SC2-180 con la stessa scheda audio e lo stesso PTT dell'FT8 (algoritmi ripresi da QSSTV di Johan Maes ON4QZ). In ricezione il modo si riconosce dal VIS, l'immagine si riempie riga per riga a risoluzione vera, il sincronismo si insegue riga per riga e l'inclinazione si corregge da sola; si puo' partire anche senza VIS. Il compositore prepara l'immagine da trasmettere: foto da file, trascinamento o Ctrl+V, inquadratura e ritocchi, testi con dieci caratteri inclusi, sfumature, contorni, ombre e riquadri, forme, cornici e barre di colore, maniglie per spostare e ruotare, annulla e ripeti, modelli con nominativo, rapporto, locatore e data. «Trasmetti» con avanzamento e «Ferma». Sotto, le cronologie delle ultime 200 immagini ricevute e delle ultime 20 trasmesse, con «Rispondi». Nuova scheda «SSTV» nelle Impostazioni.
+
+## 0.11.229 - 2026-11-10
 - **Rotore d'antenna** (Hamlib rotctld): nuova pagina «Rotore» con una rosa dei venti grande e cliccabile (ago dell'antenna, destinazione tratteggiata, segni della stazione DX per il percorso corto e la via lunga), letture grandi di antenna e destinazione e pulsanti «Gira», «Via lunga», «Ferma», passi di ±2° e ±10° e gradi a mano; si stacca in una finestra a parte. Nuova scheda «Rotore» nelle Impostazioni: Aurora lancia rotctld (modello con ricerca, porta, velocita') o si collega a un rotctld gia' acceso (di base 127.0.0.1:4533); la posizione si rilegge ogni secondo e il collegamento caduto si rifa' da solo.
+- **Filtri «su nuova banda»** (issue di avllucken): in Attivita' di banda «Nuova griglia sulla banda» e gli altri filtri «sulla banda» comprendono anche la novita' assoluta (una griglia nuova e' nuova anche sulla banda); prima la scartavano e le decodifiche erano meno di quelle di GridTracker.
+- **Finestra RX**: il «×N» delle trasmissioni ripetute sta prima della bandiera, a 7 px.
+- **Sorgenti di QSSTV e fldigi** come sottomoduli in `terze-parti` (solo sorgenti GPL di riferimento).
 
 ## 0.11.228 - 2026-11-10
 - **Cascata in trasmissione**: mentre si trasmette la cascata si ferma invece di scorrere nera; alla ripresa una riga gialla segna la pausa. Nel menu «Spec» la voce «Spento» nasconde lo spettro; la barretta per cambiarne l'altezza e' piu' visibile. Tra le impostazioni consigliate di FT-991 e IC-9700: shift dei ripetitori (ARS/DUP) e split spenti.

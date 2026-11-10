@@ -102,3 +102,18 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 - Orario tolto dalla testata; volume, cursore e tema (🌙/☀) nella barra in fondo, dove la barra del periodo diventa piu' corta (circa un terzo).
 - Ogni modo ha la sua pagina e il suo motore; DX Cluster, Bande aperte, Comandi, CQ/DXpedition, Log, radio e rotore sono in comune.
 - Da fare a passi: prima la testata nuova con FT8 e VHF (le pagine di oggi spostate, nessuna funzione persa, telefono compreso), poi i modi nuovi uno alla volta (P1, P2). Guida, Novita' e i testi nelle sei lingue.
+
+## P5. Ricerca nelle Impostazioni (richiesta di Luc ON7KEC, 2026-11-10)
+
+Luc: «Where can I find this option? More and more options are added, maybe thinking on a SEARCH button in the options/settings!». Da fare, come funzione accendibile con «?» (non ancora cominciata):
+- Un campo «Cerca» in cima alla finestra Impostazioni (`app/src/pages/SettingsWindow.tsx`, circa 50 schede).
+- Scrivendo, compare l'elenco delle opzioni che corrispondono, in tutte le schede e nelle sei lingue; un clic apre la scheda giusta.
+- Scelta del proprietario (2026-11-10): cercare **ogni singola opzione**, non solo schede e sezioni. Serve un elenco delle etichette delle opzioni (testi nelle sei lingue, scheda e sezione di appartenenza), tenuto allineato alle schede: meglio ricavarlo dai testi che le schede gia' usano, cosi' non si dimentica niente.
+- Il proprietario ha scelto di farla; si dice a Luc quando esce.
+
+## P6. «Lavorato ma non confermato = nuovo» anche per le griglie (richiesta di Luc, issue #17, 2026-11-10)
+
+Oggi l'interruttore `newDXCCUnconfirmed` (Impostazioni → Notifiche → «Già lavorati», `settings/JtdxTabs.tsx`, `worked.rs`) vale solo per il DXCC. Luc: «Yes please, the same for grids» (nel primo messaggio: «new DXCC», «new GRID»,...).
+- Da fare: lo stesso per «nuova griglia» e «nuova griglia sulla banda»; chiedere a Luc se vuole anche zona CQ, zona ITU e prefisso. Un solo interruttore o uno per tipo: da decidere.
+- Serve che il log dica le conferme (LoTW o QSL per griglia). Testi nelle sei lingue, Guida («Paesi non confermati») e Novita'.
+
