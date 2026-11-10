@@ -1336,3 +1336,14 @@ html[data-theme='light'] .cluster-table td.cluster-comment { border-left-color: 
 .newdx.newdx--bottom-right { top: auto; bottom: 16px; }
 .newdx.newdx--bottom-left { top: auto; bottom: 16px; right: auto; left: 16px; }
 .newdx.newdx--bottom-center { top: auto; bottom: 16px; right: auto; left: 50%; transform: translateX(-50%); }
+
+/* CQ e novita': casella tutta del colore del tipo (sfondo pieno tenue e bordo), senza la barretta a sinistra (scelta del proprietario, 2026-11-10) */
+.cq-chip,
+html[data-theme='light'] .cq-chip {
+  border: 1px solid color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 70%, transparent);
+  background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 28%, transparent);
+}
+.cq-chip:hover,
+html[data-theme='light'] .cq-chip:hover {
+  background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 42%, transparent);
+}
