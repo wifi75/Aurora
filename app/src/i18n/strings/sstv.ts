@@ -17,6 +17,9 @@ export const sstvStrings = {
   'sstv.view.rx': ['Ricevi', 'Receive', 'Empfangen', 'Recevoir', 'Recibir', 'Receber'],
   'sstv.view.tx': ['Componi e trasmetti', 'Compose and send', 'Gestalten und senden', 'Composer et émettre', 'Componer y transmitir', 'Compor e transmitir'],
 
+  'sstv.rx.tx': ['TX', 'TX', 'TX', 'TX', 'TX', 'TX'],
+  'sstv.rx.txHint': ['Trasmette l’immagine preparata in «Trasmetti» e porta lì', 'Transmits the image prepared in “Transmit” and goes there', 'Sendet das in „Senden“ vorbereitete Bild und wechselt dorthin', 'Émet l’image préparée dans « Émettre » et y va', 'Transmite la imagen preparada en «Transmitir» y va allí', 'Transmite a imagem preparada em «Transmitir» e vai para lá'],
+  'sstv.rx.txWait': ['Si sta ricevendo un’immagine: aspetta che finisca', 'An image is being received: wait until it ends', 'Es wird ein Bild empfangen: warte, bis es fertig ist', 'Une image est en cours de réception : attends la fin', 'Se está recibiendo una imagen: espera a que termine', 'Está a receber uma imagem: espera que termine'],
   'sstv.rx.start': ['Avvia ascolto', 'Start listening', 'Empfang starten', 'Démarrer l’écoute', 'Iniciar escucha', 'Iniciar escuta'],
   'sstv.rx.stop': ['Ferma ascolto', 'Stop listening', 'Empfang stoppen', 'Arrêter l’écoute', 'Detener escucha', 'Parar escuta'],
   'sstv.rx.cancel': ['Scarta immagine', 'Discard image', 'Bild verwerfen', 'Abandonner l’image', 'Descartar imagen', 'Descartar imagem'],

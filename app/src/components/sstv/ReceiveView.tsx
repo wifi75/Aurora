@@ -8,7 +8,7 @@ import { onSstv } from '../../lib/sstvBus';
  * Ricezione: l'immagine in arrivo si riempie riga per riga su un canvas alla risoluzione vera del modo, ingrandito senza sfocare
  * (pixel netti; «ingrandimento morbido» a scelta). Accanto: modo, righe, sincronismo, livello, sintonia, comandi.
  */
-export function ReceiveView({ snap, onChanged, onSaved }: { snap: SstvSnapshot; onChanged: () => void; onSaved: () => void }) {
+export function ReceiveView({ snap, onChanged, onSaved, onTransmit }: { snap: SstvSnapshot; onChanged: () => void; onSaved: () => void; onTransmit: () => void }) {
   const t = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<ImageData | null>(null);
@@ -152,6 +152,16 @@ export function ReceiveView({ snap, onChanged, onSaved }: { snap: SstvSnapshot; 
         </dl>
 
         <div className="sstv-actions">
+          {/* TX: trasmette l'immagine preparata nella pagina Trasmetti e porta li' */}
+          <button
+            type="button"
+            className="glass sstv-btn sstv-btn--primary sstv-btn--tx"
+            disabled={!snap.can_transmit || rx.receiving || snap.tx.state === 'sending'}
+            title={rx.receiving ? t('sstv.rx.txWait') : t('sstv.rx.txHint')}
+            onClick={onTransmit}
+          >
+            {t('sstv.rx.tx')}
+          </button>
           {rx.listening ? (
             <button type="button" className="glass sstv-btn" onClick={act(() => sstvRx('stop'))}>
               {t('sstv.rx.stop')}

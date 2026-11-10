@@ -10,7 +10,7 @@
 @font-face { font-family: 'Pacifico'; src: url('../assets/fonts/sstv/Pacifico-Regular.ttf') format('truetype'); font-display: swap; }
 @font-face { font-family: 'Great Vibes'; src: url('../assets/fonts/sstv/GreatVibes-Regular.ttf') format('truetype'); font-display: swap; }
 
-.sstv-page { display: flex; flex-direction: column; gap: 1rem; max-width: 1480px; margin: 0 auto; padding: 0.4rem 0 2rem; }
+.sstv-page { display: flex; flex-direction: column; gap: 1rem; max-width: none; margin: 0; padding: 0.4rem 0.6rem 2rem; }
 .sstv-page--solo { padding: 0.75rem 1rem; max-width: none; }
 .sstv-head { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
 .sstv-head h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.02em; display: flex; align-items: center; gap: 0.6rem; }
@@ -43,9 +43,9 @@
 .sstv-check { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; cursor: pointer; }
 
 /* ricezione */
-.sstv-rx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 1.2rem; align-items: start; }
+.sstv-rx { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); gap: 1.4rem; align-items: start; }
 .sstv-stage { display: flex; flex-direction: column; gap: 0.5rem; }
-.sstv-screen { position: relative; width: 100%; max-height: 72vh; margin: 0 auto; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
+.sstv-screen { position: relative; width: 100%; max-height: 80vh; margin: 0 auto; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
 .sstv-canvas { display: block; width: 100%; height: 100%; }
 .sstv-canvas--crisp, .sstv-crisp { image-rendering: pixelated; image-rendering: crisp-edges; }
 .sstv-scanline { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); box-shadow: 0 0 12px var(--accent); pointer-events: none; transition: top 0.25s linear; }
@@ -91,7 +91,7 @@
 .sstv-field--mode { min-width: min(100%, 330px); }
 .sstv-field--call input { width: 9rem; text-transform: uppercase; font-family: var(--font-data); }
 .sstv-toolbar-edit { display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
-.sstv-editor { display: grid; grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(250px, 300px); gap: 1rem; align-items: start; }
+.sstv-editor { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(290px, 380px); gap: 1.2rem; align-items: start; }
 .sstv-panel { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); max-height: 82vh; overflow: auto; }
 .sstv-panel h3 { margin: 0.2rem 0 0; font-size: 1rem; }
 .sstv-panel h4 { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -109,7 +109,7 @@
 .sstv-templates li { display: flex; gap: 0.4rem; align-items: center; }
 
 .sstv-center { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
-.sstv-artboard { position: relative; width: 100%; max-height: 70vh; margin: 0 auto; border-radius: 12px; overflow: hidden; background: repeating-conic-gradient(#2a3442 0% 25%, #1d2530 0% 50%) 50% / 22px 22px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border); }
+.sstv-artboard { position: relative; width: 100%; max-height: 78vh; margin: 0 auto; border-radius: 12px; overflow: hidden; background: repeating-conic-gradient(#2a3442 0% 25%, #1d2530 0% 50%) 50% / 22px 22px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border); }
 .sstv-artboard--drop { box-shadow: 0 0 0 3px var(--accent), 0 14px 40px rgba(0, 0, 0, 0.4); }
 .sstv-canvas--edit { position: absolute; inset: 0; image-rendering: pixelated; }
 .sstv-overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: move; touch-action: none; }
@@ -164,3 +164,5 @@
   .sstv-strip { grid-auto-columns: minmax(140px, 46vw); }
   .sstv-lightbox img { min-width: 0; }
 }
+
+.sstv-btn--tx { min-width: 5rem; font-weight: 800; letter-spacing: .06em; }

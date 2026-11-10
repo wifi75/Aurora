@@ -57,7 +57,7 @@ function loadTemplates(): SavedTemplate[] {
 }
 
 /** Il compositore: foto di sfondo inquadrata, livelli di testo e forme, modelli, anteprima alla risoluzione del modo, «Trasmetti». */
-export function Composer({ snap, incoming, onChanged }: { snap: SstvSnapshot; incoming: IncomingImage | null; onChanged: () => void }) {
+export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: SstvSnapshot; incoming: IncomingImage | null; onChanged: () => void; sendRequest?: number }) {
   const t = useT();
   const station = useStatusPick(['de_call', 'de_grid', 'dx_call', 'report']);
   const [modeId, setModeId] = useState(snap.settings.default_mode);
@@ -348,6 +348,13 @@ export function Composer({ snap, incoming, onChanged }: { snap: SstvSnapshot; in
         });
     }, 'image/png');
   };
+  // il pulsante TX della pagina di ricezione chiede di trasmettere l'immagine preparata qui: parte da sola, senza premere ancora «Trasmetti»
+  const lastRequest = useRef(sendRequest ?? 0);
+  useEffect(() => {
+    if (sendRequest === undefined || sendRequest === lastRequest.current) return;
+    lastRequest.current = sendRequest;
+    if (snap.can_transmit && !sending) transmit();
+  });
 
   const saveTemplate = () => {
     const name = window.prompt(t('sstv.tpl.name'), '')?.trim();

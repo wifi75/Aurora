@@ -27,6 +27,7 @@ function SstvBody({ solo }: { solo: boolean }) {
   const images = useQuery({ queryKey: ['sstv-images'], queryFn: getSstvImages, retry: false });
   const [view, setView] = useState<'rx' | 'tx'>('rx');
   const [incoming, setIncoming] = useState<IncomingImage | null>(null);
+  const [sendRequest, setSendRequest] = useState(0);
   const seq = useRef(0);
   const started = useRef(false);
 
@@ -47,6 +48,11 @@ function SstvBody({ solo }: { solo: boolean }) {
         if (ev.kind === 'tx') {
           refresh();
           if (ev.state === 'sending' || ev.state === 'done') refreshImages();
+          // finita la trasmissione (anche fermata o in errore) si torna subito alla ricezione, che non si e' mai fermata
+          if (ev.state === 'done' || ev.state === 'aborted' || ev.state === 'error') {
+            setView('rx');
+            void sstvRx('start').then(refresh, refresh);
+          }
         }
       }),
     [refresh, refreshImages],
@@ -90,11 +96,19 @@ function SstvBody({ solo }: { solo: boolean }) {
       {data ? (
         <>
           <div hidden={view !== 'rx'}>
-            <ReceiveView snap={data} onChanged={refresh} onSaved={refreshImages} />
+            <ReceiveView
+              snap={data}
+              onChanged={refresh}
+              onSaved={refreshImages}
+              onTransmit={() => {
+                setView('tx');
+                setSendRequest((n) => n + 1);
+              }}
+            />
           </div>
           {/* il compositore resta montato: il lavoro non si perde passando a Ricevi */}
           <div hidden={view !== 'tx'}>
-            <Composer snap={data} incoming={incoming} onChanged={refresh} />
+            <Composer snap={data} incoming={incoming} onChanged={refresh} sendRequest={sendRequest} />
           </div>
           <History images={images.data ?? []} modes={data.modes} onChanged={refreshImages} onReuse={reuse} />
           <details className="sstv-more">
