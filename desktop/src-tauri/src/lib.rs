@@ -65,6 +65,11 @@ pub fn run() {
             // come una normale applicazione: la X chiude la finestra e con lei tutto (il core si ferma all'uscita)
             WindowEvent::CloseRequested { .. } => {
                 remember_window(window);
+                // chiudendo la finestra principale si chiude tutta Aurora, anche le finestre a parte sul secondo schermo: prima restavano
+                // aperte e Aurora non usciva (segnalato dal proprietario, 2026-11-10). L'uscita salva la posizione di ognuna (RunEvent::Exit)
+                if window.label() == "main" {
+                    window.app_handle().exit(0);
+                }
             }
             // dimensione e posizione si ricordano per il prossimo avvio (senza scrivere a ogni pixel)
             WindowEvent::Resized(_) | WindowEvent::Moved(_) => {
