@@ -766,6 +766,8 @@ export interface CatStatus {
   message: string;
   /** Senza `rigctld` Hamlib non puo' collegare nessuna radio. */
   rigctld_found: boolean;
+  /** OmniRig installato su questo PC (solo Windows); assente nelle versioni vecchie del core. */
+  omnirig_found?: boolean;
   rig: CatRigStatus | null;
   /** Dove collegare gli altri programmi, se la condivisione e' accesa e la radio e' collegata con Hamlib. */
   share?: { host: string; port: number } | null;

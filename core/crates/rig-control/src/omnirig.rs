@@ -50,10 +50,46 @@ pub fn script(hz: u64) -> String {
     )
 }
 
+/// Dove si scarica OmniRig (sito del suo autore).
+pub const OMNIRIG_URL: &str = "https://www./omnirig/";
+
+/// OmniRig e' installato su questo PC? Si guarda nel registro di Windows se c'e' il suo oggetto (`OmniRig.OmniRigX`), al massimo una volta
+/// al minuto: lo stato del CAT si chiede ogni pochi secondi. Fuori da Windows OmniRig non esiste.
+pub fn installed() -> bool {
+    #[cfg(windows)]
+    {
+        use std::sync::Mutex;
+        use std::time::{Duration, Instant};
+        static LAST: Mutex<Option<(Instant, bool)>> = Mutex::new(None);
+        if let Ok(mut last) = LAST.lock() {
+            if let Some((at, found)) = *last
+                && at.elapsed() < Duration::from_secs(60)
+            {
+                return found;
+            }
+            let found = {
+                use std::os::windows::process::CommandExt;
+                Command::new("reg.exe")
+                    .args(["query", r"HKCR\OmniRig.OmniRigX"])
+                    .creation_flags(0x0800_0000)
+                    .output()
+                    .is_ok_and(|o| o.status.success())
+            };
+            *last = Some((Instant::now(), found));
+            return found;
+        }
+        false
+    }
+    #[cfg(not(windows))]
+    {
+        false
+    }
+}
+
 /// Un errore di PowerShell con OmniRig detto in chiaro: «classe non registrata» (in qualunque lingua di Windows) vuol dire che OmniRig non c'e'.
 pub fn explain_omnirig(why: &str) -> String {
-    if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || (why.contains("CLSID") && why.contains("New-Object")) {
-        "OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig".to_string()
+    if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || why.contains("CLSID") {
+        format!("OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig da {OMNIRIG_URL}")
     } else {
         why.to_string()
     }

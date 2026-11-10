@@ -91,6 +91,15 @@ export const catStrings = {
     'Falta rigctld (el programa de Hamlib): sin él, Aurora no puede conectar la radio con Hamlib. Normalmente lo ha quitado el antivirus. En Windows pulsa «Restaurar Hamlib»; si no, ponlo junto a Aurora o indica su ruta en la variable AURORA_RIGCTLD.',
     'Falta o rigctld (o programa do Hamlib): sem ele, a Aurora não consegue ligar o rádio com o Hamlib. Normalmente foi o antivírus que o removeu. No Windows prime «Restaurar o Hamlib»; senão põe-no junto da Aurora ou indica o caminho na variável AURORA_RIGCTLD.',
   ],
+  'cat.omnirig.absent': ['non installato', 'not installed', 'nicht installiert', 'non installé', 'no instalado', 'não instalado'],
+  'cat.omnirig.missing': [
+    'OmniRig non è installato su questo PC, quindi con questa scelta Aurora non può comandare la radio. Scegli Hamlib (già incluso in Aurora, oltre 300 radio) oppure installa OmniRig dal sito del suo autore:',
+    'OmniRig is not installed on this PC, so with this choice Aurora cannot control the radio. Choose Hamlib (already included in Aurora, over 300 radios) or install OmniRig from its author’s website:',
+    'OmniRig ist auf diesem PC nicht installiert, daher kann Aurora mit dieser Wahl das Funkgerät nicht steuern. Wähle Hamlib (in Aurora enthalten, über 300 Funkgeräte) oder installiere OmniRig von der Seite seines Autors:',
+    'OmniRig n’est pas installé sur ce PC : avec ce choix Aurora ne peut pas piloter la radio. Choisis Hamlib (déjà inclus dans Aurora, plus de 300 radios) ou installe OmniRig depuis le site de son auteur :',
+    'OmniRig no está instalado en este PC, así que con esta opción Aurora no puede controlar la radio. Elige Hamlib (ya incluido en Aurora, más de 300 radios) o instala OmniRig desde la web de su autor:',
+    'O OmniRig não está instalado neste PC, por isso com esta opção o Aurora não consegue comandar o rádio. Escolhe o Hamlib (já incluído no Aurora, mais de 300 rádios) ou instala o OmniRig a partir do site do autor:',
+  ],
   'cat.restore': ['Ripristina Hamlib', 'Restore Hamlib', 'Hamlib wiederherstellen', 'Restaurer Hamlib', 'Restaurar Hamlib', 'Restaurar o Hamlib'],
   'cat.restore.busy': ['Scarico Hamlib…', 'Downloading Hamlib…', 'Hamlib wird geladen…', 'Téléchargement de Hamlib…', 'Descargando Hamlib…', 'A transferir o Hamlib…'],
   'cat.restore.done': [

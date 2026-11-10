@@ -293,6 +293,15 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
 
   const link = (
     <Group title={t('cat.grp.link')} span={2}>
+      {/* OmniRig scelto ma non installato: lo si dice subito, con dove scaricarlo e il consiglio di usare Hamlib (gia' incluso) */}
+      {config.backend === 'omnirig' && snap.data.status.omnirig_found === false ? (
+        <Message kind="alert">
+          {t('cat.omnirig.missing')}{' '}
+          <a href="https://www./omnirig/" target="_blank" rel="noreferrer">
+            /omnirig
+          </a>
+        </Message>
+      ) : null}
       {hamlib && !snap.data.status.rigctld_found ? (
         <Message kind="alert">
           {t('cat.missing')}
@@ -311,7 +320,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           <select value={config.backend} onChange={(e) => set({ backend: e.target.value as CatConfig['backend'] })}>
             <option value="hamlib">{t('cat.backend.hamlib')}</option>
             {/* OmniRig e' un programma di Windows: su Linux non si propone (se era gia' scelto resta visibile per cambiarlo) */}
-            {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}</option> : null}
+            {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}{snap.data.status.omnirig_found === false ? `  ·  ${t('cat.omnirig.absent')}` : ''}</option> : null}
             <option value="tci">{t('cat.backend.tci')}</option>
             <option value="ft991link">{t('cat.backend.ft991link')}</option>
             <option value="none">{t('cat.backend.none')}</option>
