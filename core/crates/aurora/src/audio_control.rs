@@ -409,6 +409,19 @@ impl AudioManager {
                 Err(e) => tracing::warn!("uscita audio per la trasmissione non disponibile: {e}"),
             }
         }
+        // l'uscita scelta non c'e' ancora (radio spenta, cavo USB staccato): la trasmissione si prepara lo stesso con un'uscita «in attesa»
+        // che si riapre da sola appena la scheda compare. Prima la trasmissione restava spenta fino al riavvio di Aurora.
+        let stored = self.initial.output.trim().to_string();
+        if !stored.is_empty() && !is_system_default(&stored) {
+            let backend = Arc::clone(&self.backend);
+            let (gain, channel, hint) = (Arc::clone(&self.gain), Arc::clone(&self.out_channel), stored.clone());
+            let reopen: tx_native::ReopenFn = Arc::new(move || backend.open_output(Some(&hint), Arc::clone(&gain), Arc::clone(&channel)).map(|(sink, _)| sink).map_err(tx_native::TxError::Audio));
+            let (switchable, switch) = SwitchableSink::new(Box::new(tx_native::PendingSink::new(stored.clone(), reopen)), Arc::clone(&self.gain));
+            let mut st = lock(&self.state);
+            st.switch = Some(switch);
+            st.out_cur = Current { value: stored, from_env: false, name: None };
+            return Some(Box::new(switchable));
+        }
         // senza catena di trasmissione si tiene almeno traccia di cio' che e' scelto
         let mut st = lock(&self.state);
         st.out_cur = Current { value: self.initial.output.trim().to_string(), from_env: false, name: None };
@@ -751,7 +764,14 @@ mod tests {
         let r = rig("fallback", values("Rotto", "Rotta"), Some("USB Audio"), None, &["Rotto", "Rotta"]);
         r.manager.open_initial_input();
         assert_eq!(r.manager.input_name().as_deref(), Some("USB Audio!"));
-        assert!(r.manager.build_output().is_none(), "uscita scelta e rotta, nessun ambiente: niente trasmissione, non si trasmette su un'altra uscita");
+        // uscita scelta assente (radio spenta), nessun ambiente: la trasmissione resta in attesa di quella scheda, mai un'altra uscita
+        let mut sink = r.manager.build_output().expect("uscita in attesa");
+        assert!(sink.start(vec![0.0; 10]).is_err(), "finche' la scheda manca non si suona");
+        assert!(!lock(&r.backend.opened).contains(&"out:default".to_string()));
+        // la radio si accende: alla trasmissione seguente si riapre proprio quella scheda
+        lock(&r.backend.broken).retain(|b| b != "Rotta");
+        let _ = sink.sample_rate();
+        assert!(sink.start(vec![0.0; 10]).is_ok(), "scheda ritrovata: si trasmette");
         assert!(!lock(&r.backend.opened).contains(&"out:default".to_string()));
         let r = rig("nothing-left", values("Rotto", ""), None, None, &["Rotto"]);
         r.manager.open_initial_input();
@@ -850,8 +870,9 @@ mod tests {
         assert_eq!(r.manager.apply(&next).output.status, PartStatus::Applied);
         assert_eq!(OutputChannel::load(&r.manager.out_channel), OutputChannel::Both);
 
-        let r = rig("no-tx", values("", "Rotta"), None, None, &["Rotta"]);
-        assert!(r.manager.build_output().is_none());
+        // senza nessuna uscita scelta e nessuna aperta, la trasmissione non c'e' e la scelta si salva soltanto
+        let r = rig("no-tx", values("", ""), None, None, &[]);
+        r.manager.output_closed();
         let out = r.manager.apply(&values("", "Altra"));
         assert_eq!((out.output.status, out.output.in_use), (PartStatus::SavedOnly, None));
         assert_eq!(r.manager.apply(&values("", "Altra")).output.status, PartStatus::Unchanged);

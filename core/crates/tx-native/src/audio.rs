@@ -542,6 +542,42 @@ impl Drop for CpalSink {
     }
 }
 
+/// Come si riapre un'uscita: la stessa scelta dell'utente, ritentata quando serve.
+pub type ReopenFn = Arc<dyn Fn() -> Result<Box<dyn AudioSink>, TxError> + Send + Sync>;
+
+/// Un'uscita scelta ma non presente all'avvio (radio spenta, cavo USB staccato): non suona e si dichiara persa, cosi' `SwitchableSink`
+/// la riapre da sola tra una trasmissione e l'altra appena la scheda compare. Prima, senza uscita all'avvio, la trasmissione restava
+/// spenta fino al riavvio di Aurora.
+pub struct PendingSink {
+    name: String,
+    open: ReopenFn,
+}
+
+impl PendingSink {
+    pub fn new(name: impl Into<String>, open: ReopenFn) -> PendingSink {
+        PendingSink { name: name.into(), open }
+    }
+}
+
+impl AudioSink for PendingSink {
+    fn sample_rate(&self) -> u32 {
+        48_000
+    }
+    fn start(&mut self, _samples: Vec<f32>) -> Result<(), TxError> {
+        Err(TxError::Audio(format!("{}: uscita audio non trovata (radio spenta o cavo USB staccato?)", self.name)))
+    }
+    fn is_playing(&self) -> bool {
+        false
+    }
+    fn stop(&mut self) {}
+    fn has_failed(&self) -> bool {
+        true
+    }
+    fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
+        Some((self.open)())
+    }
+}
+
 /// Com'e' andato un cambio di uscita.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SwitchOutcome {
