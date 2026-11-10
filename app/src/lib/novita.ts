@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.220',
+    released: '2026-11-10T08:30:00Z',
+    kind: 'new',
+    title: ["Ripristina Hamlib e trasmissione che riparte da sola", "Restore Hamlib and transmission that recovers by itself", "Hamlib wiederherstellen und Senden, das von selbst zurückkommt", "Restaurer Hamlib et émission qui repart toute seule", "Restaurar Hamlib y transmisión que se recupera sola", "Restaurar o Hamlib e transmissão que recupera sozinha"],
+    text: [
+      "Se l'antivirus toglie rigctld, su Windows il pulsante «Ripristina Hamlib» nella scheda Radio lo riscarica dalla versione ufficiale, con l'impronta controllata. Con la radio spenta o il cavo USB staccato all'avvio, la trasmissione riparte da sola appena la radio si accende. Le finestre a parte si aprono senza fermare quella principale, la decodifica lascia un processore libero per audio e radio, dopo un cambio di banda non si perdono più i primi messaggi. Nuova voce della Guida «Che computer serve».",
+      "If the antivirus removes rigctld, on Windows the “Restore Hamlib” button in the Radio tab downloads it again from the official release, with its checksum verified. With the radio off or the USB cable unplugged at start, transmission recovers by itself as soon as the radio is switched on. Separate windows open without freezing the main one, decoding leaves one processor free for audio and radio, and the first messages after a band change are no longer lost. New Guide item “Which computer you need”.",
+      "Entfernt der Virenscanner rigctld, lädt unter Windows die Schaltfläche „Hamlib wiederherstellen“ im Reiter Funkgerät es aus der offiziellen Version neu, mit geprüfter Prüfsumme. Ist das Funkgerät beim Start aus oder das USB-Kabel abgezogen, kommt das Senden von selbst zurück, sobald das Funkgerät eingeschaltet wird. Eigene Fenster öffnen sich, ohne das Hauptfenster anzuhalten, die Dekodierung lässt einen Prozessor für Audio und Funkgerät frei, nach einem Bandwechsel gehen die ersten Meldungen nicht mehr verloren. Neuer Eintrag in der Anleitung „Welcher Computer nötig ist“.",
+      "Si l'antivirus supprime rigctld, sous Windows le bouton « Restaurer Hamlib » de l'onglet Radio le retélécharge depuis la version officielle, avec l'empreinte vérifiée. Radio éteinte ou câble USB débranché au démarrage : l'émission repart toute seule dès que la radio s'allume. Les fenêtres séparées s'ouvrent sans bloquer la fenêtre principale, le décodage laisse un processeur libre pour l'audio et la radio, et après un changement de bande les premiers messages ne sont plus perdus. Nouvelle entrée du Guide « Quel ordinateur faut-il ».",
+      "Si el antivirus quita rigctld, en Windows el botón «Restaurar Hamlib» de la pestaña Radio lo descarga de nuevo de la versión oficial, con la huella comprobada. Con la radio apagada o el cable USB desconectado al iniciar, la transmisión se recupera sola en cuanto se enciende la radio. Las ventanas aparte se abren sin detener la principal, la decodificación deja un procesador libre para audio y radio, y tras un cambio de banda ya no se pierden los primeros mensajes. Nueva entrada de la Guía «Qué ordenador hace falta».",
+      "Se o antivírus remover o rigctld, no Windows o botão «Restaurar o Hamlib» no separador Rádio volta a transferi-lo da versão oficial, com a impressão digital verificada. Com o rádio desligado ou o cabo USB desligado no arranque, a transmissão recupera sozinha assim que o rádio se liga. As janelas à parte abrem-se sem parar a principal, a descodificação deixa um processador livre para áudio e rádio, e depois de mudar de banda já não se perdem as primeiras mensagens. Nova entrada do Guia «Que computador é preciso».",
+    ],
+  },
+  {
     version: '0.11.219',
     released: '2026-11-09T21:56:50Z',
     kind: 'changed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand un QSO est mis au log, sa ligne s'allume 5 secondes : une aurore violette et bleue défile dans la ligne, deux traînées violettes courent sur le bord et « AU LOG » apparaît au bout. La page Statistiques s'ouvre avec les fiches déjà à leur place, sans sauts pendant l'arrivée des chiffres.",
       "Cuando un QSO entra en el log, su fila se ilumina 5 segundos: una aurora violeta y azul recorre la fila, dos estelas violetas corren por el borde y al final aparece «EN LOG». La página Estadísticas se abre con las fichas ya en su sitio, sin saltos mientras llegan los números.",
       "Quando um QSO vai para o log, a sua linha acende-se 5 segundos: uma aurora violeta e azul percorre a linha, dois rastos violeta correm pela borda e no fim aparece «NO LOG». A página Estatísticas abre com os cartões já no lugar, sem saltos enquanto chegam os números.",
-    ],
-  },
-  {
-    version: '0.11.180',
-    released: '2026-11-07T14:06:24Z',
-    kind: 'new',
-    title: ['Piccole correzioni', 'Small fixes', 'Kleine Korrekturen', 'Petites corrections', 'Pequeñas correcciones', 'Pequenas correções'],
-    text: [
-      "Correzioni interne, senza cambiamenti nell’uso di tutti i giorni.",
-      "Internal fixes, with no change in everyday use.",
-      "Interne Korrekturen, ohne Änderungen im täglichen Gebrauch.",
-      "Corrections internes, sans changement dans l’usage quotidien.",
-      "Correcciones internas, sin cambios en el uso diario.",
-      "Correções internas, sem mudanças no uso diário.",
     ],
   },
 ];

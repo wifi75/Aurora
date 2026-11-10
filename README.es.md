@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20831%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20835%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -46,7 +46,7 @@ Diseño y desarrollo: Tiziano Cassone (IU3WJQ)
 
 ## Estado
 
-Versión 0.11.219: motor propio FT8, FT4, JT65 y JT9 con recepción y transmisión, CAT para todas las radios y pantalla de la radio. La transmisión con la radio real todavía debe probarla el propietario.
+Versión 0.11.220: motor propio FT8, FT4, JT65 y JT9 con recepción y transmisión, CAT para todas las radios y pantalla de la radio. La transmisión con la radio real todavía debe probarla el propietario.
 
 - **Estación**: lista de mensajes como en JTDX (país con bandera, distancia, filas coloreadas por tipo, indicativo llamado y llamadas dirigidas a ti resaltados), cascada WebGPU/WebGL2 con barras Rx/Tx arrastrables, Tx1–Tx6 con la fase del QSO, barra de bandas y modo (FT8/FT4) con cambio desde la página.
 - **Cola de llamantes**: clic derecho sobre una estación que llama para ponerla en cola (etiqueta «IN CODA» con su puesto); con el QSO registrado, Aurora responde a la primera; el interruptor «Risp. a tutti» pone en cola automáticamente a quien te llama; «Canc DX» detiene al instante la transmisión. Solo con el motor propio.
@@ -60,7 +60,7 @@ Versión 0.11.219: motor propio FT8, FT4, JT65 y JT9 con recepción y transmisi�
 - **DX Cluster, reloj, registro**: ventana DX Cluster (servidores telnet públicos o propios, doble clic = la radio va a la frecuencia del spot), cliente NTP con indicador del reloj, ventana Log de Log4OM2 de solo lectura.
 - **Herramientas de la estación**: nivel del audio de entrada con control deslizante y AUTO sobre el volumen de grabación de Windows, historial de mensajes recibidos (30 días, con búsqueda), spots del cluster en la cascada, diagnóstico automático (reloj, audio, indicativo), página Propagación con PSK Reporter y hamqsl.com (**encendidos de fábrica, se pueden apagar**) y mapa de los QSO y de las estaciones recibidas.
 - **Mapa DX** (al estilo GridTracker): 15 fondos, mapa nocturno automático, línea gris con crepúsculos, Sol y Luna, estaciones en el aire que se desvanecen, líneas en arco animadas, cuadrículas trabajadas y confirmadas por banda y modo, clic con cuadrícula, distancia, país y zonas CQ/UIT; separable.
-- **Radio**: pantalla de la radio arriba con la pantalla ampliada (segundo VFO, instrumentos, PRE/ATT, AGC, NB/NR/notch, ganancias, RIT/XIT), cada elemento se activa en Ajustes > General; la cascada sigue el ancho del filtro de la radio leído por CAT; un rigctld huérfano se cierra solo.
+- **Radio**: pantalla de la radio arriba con la pantalla ampliada (segundo VFO, instrumentos, PRE/ATT, AGC, NB/NR/notch, ganancias, RIT/XIT), cada elemento se activa en Ajustes > General; la cascada sigue el ancho del filtro de la radio leído por CAT; un rigctld huérfano se cierra solo; en Windows «Restaurar Hamlib» vuelve a descargar rigctld si el antivirus lo quita.
 - **DXpediciones**: calendario NG3K (Servicios en línea, apagado por defecto) junto a los CQ: en el aire, escuchadas ahora, próximas e historial.
 - **Ajustes**: barra lateral con búsqueda, «?» con la explicación de cada elemento, página Información (versión, autor, licencia, enlaces).
 - **Teléfono**: PWA en la misma red, con la página Estación en pestañas y botones pensados para el dedo (pantallas de hasta 640 px); vinculación con código (duración decidida por ti) o acceso sin código para las pruebas.

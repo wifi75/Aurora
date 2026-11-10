@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20831%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20835%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -46,7 +46,7 @@ Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
 ## Stand
 
-Version 0.11.219: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
+Version 0.11.220: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
 
 - **Station**: Nachrichtenliste wie in JTDX (Land mit Flagge, Entfernung, nach Typ gefärbte Zeilen, gerufenes Rufzeichen und Anrufe an dich hervorgehoben), WebGPU/WebGL2-Wasserfall mit verschiebbaren Rx/Tx-Balken, Tx1–Tx6 mit der QSO-Phase, Band- und Modusleiste (FT8/FT4) mit Umschaltung direkt auf der Seite.
 - **Anruferwarteschlange**: Rechtsklick auf eine rufende Station reiht sie ein (Kennzeichnung «IN CODA» mit Platz); nach dem geloggten QSO antwortet Aurora dem Ersten in der Schlange; der Schalter «Risp. a tutti» reiht automatisch jeden ein, der dich ruft; «Canc DX» stoppt das Senden sofort. Nur mit der eigenen Engine.
@@ -60,7 +60,7 @@ Version 0.11.219: eigene Engine für FT8, FT4, JT65 und JT9 mit Empfang und Send
 - **DX-Cluster, Uhr, Log**: DX-Cluster-Fenster (öffentliche oder eigene Telnet-Server, Doppelklick = das Funkgerät geht auf die Frequenz des Spots), NTP-Client mit Uhrenanzeige, schreibgeschütztes Log-Fenster von Log4OM2.
 - **Stationswerkzeuge**: Eingangspegel des Audiosignals mit Regler und AUTO auf der Windows-Aufnahmelautstärke, Verlauf der empfangenen Nachrichten (30 Tage, durchsuchbar), Cluster-Spots im Wasserfall, automatische Diagnose (Uhr, Audio, Rufzeichen), Ausbreitungsseite mit PSK Reporter und hamqsl.com (**ab Werk an, abschaltbar**) und Karte der QSOs und empfangenen Stationen.
 - **DX-Karte** (wie GridTracker): 15 Hintergründe, automatische Nachtkarte, Grauzone mit Dämmerung, Sonne und Mond, verblassende Stationen auf Sendung, animierte Bogenlinien, gearbeitete und bestätigte Felder nach Band und Betriebsart, Klick zeigt Feld, Entfernung, Land und CQ/ITU-Zonen; abtrennbar.
-- **Funkgerät**: Anzeige des Funkgeräts oben mit erweiterter Anzeige (zweites VFO, Instrumente, PRE/ATT, AGC, NB/NR/Notch, Verstärkungen, RIT/XIT), jeder Eintrag unter Einstellungen > Allgemein einschaltbar; der Wasserfall folgt der per CAT gelesenen Filterbreite des Funkgeräts; ein verwaister rigctld beendet sich selbst.
+- **Funkgerät**: Anzeige des Funkgeräts oben mit erweiterter Anzeige (zweites VFO, Instrumente, PRE/ATT, AGC, NB/NR/Notch, Verstärkungen, RIT/XIT), jeder Eintrag unter Einstellungen > Allgemein einschaltbar; der Wasserfall folgt der per CAT gelesenen Filterbreite des Funkgeräts; ein verwaister rigctld beendet sich selbst; unter Windows lädt „Hamlib wiederherstellen“ rigctld neu, wenn der Virenscanner es entfernt.
 - **DXpeditionen**: NG3K-Kalender (Online-Dienste, standardmäßig aus) neben den CQs: in der Luft, jetzt gehört, kommende und Verlauf.
 - **Einstellungen**: Seitenleiste mit Suche, «?» mit Erklärung zu jedem Eintrag, Infoseite (Version, Autor, Lizenz, Links).
 - **Smartphone**: PWA im selben Netzwerk, mit der Stationsseite in Reitern und fingergroßen Schaltflächen (Bildschirme bis 640 px); Kopplung mit Code (Gültigkeitsdauer legst du fest) oder Zugang ohne Code zum Testen.

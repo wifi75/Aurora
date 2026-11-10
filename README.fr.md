@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20831%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20835%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -46,7 +46,7 @@ Conception et développement : Tiziano Cassone (IU3WJQ)
 
 ## État
 
-Version 0.11.219 : moteur propre FT8, FT4, JT65 et JT9 avec réception et émission, CAT pour toutes les radios et affichage de la radio. L'émission avec une vraie radio reste à tester par le propriétaire.
+Version 0.11.220 : moteur propre FT8, FT4, JT65 et JT9 avec réception et émission, CAT pour toutes les radios et affichage de la radio. L'émission avec une vraie radio reste à tester par le propriétaire.
 
 - **Station** : liste des messages comme dans JTDX (pays avec drapeau, distance, lignes colorées par type, indicatif appelé et appels qui te sont adressés mis en évidence), cascade WebGPU/WebGL2 avec barres Rx/Tx déplaçables, Tx1–Tx6 avec la phase du QSO, barre de bandes et de mode (FT8/FT4) avec changement depuis la page.
 - **File des appelants** : clic droit sur une station qui appelle pour la mettre en file (étiquette «IN CODA» avec sa place) ; une fois le QSO enregistré, Aurora répond au premier ; l'interrupteur «Risp. a tutti» met automatiquement en file qui t'appelle ; «Canc DX» arrête aussitôt l'émission. Moteur propre uniquement.
@@ -60,7 +60,7 @@ Version 0.11.219 : moteur propre FT8, FT4, JT65 et JT9 avec réception et émiss
 - **DX Cluster, horloge, journal** : fenêtre DX Cluster (serveurs telnet publics ou personnels, double-clic = la radio se place sur la fréquence du spot), client NTP avec indicateur d'horloge, fenêtre Log de Log4OM2 en lecture seule.
 - **Outils de la station** : niveau de l'audio en entrée avec curseur et AUTO sur le volume d'enregistrement de Windows, historique des messages reçus (30 jours, avec recherche), spots du cluster sur la cascade, diagnostic automatique (horloge, audio, indicatif), page Propagation avec PSK Reporter et hamqsl.com (**activés d’usine, désactivables**) et carte des QSO et des stations reçues.
 - **Carte DX** (façon GridTracker) : 15 fonds, carte de nuit automatique, ligne grise avec crépuscules, Soleil et Lune, stations en l’air qui s’effacent, lignes en arc animées, carrés travaillés et confirmés par bande et mode, clic avec carré, distance, pays et zones CQ/UIT ; détachable.
-- **Radio** : affichage de la radio en haut avec l'affichage étendu (second VFO, instruments, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), chaque élément activable dans Paramètres > Général ; la cascade suit la largeur du filtre de la radio lue par CAT ; un rigctld resté orphelin se ferme tout seul.
+- **Radio** : affichage de la radio en haut avec l'affichage étendu (second VFO, instruments, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), chaque élément activable dans Paramètres > Général ; la cascade suit la largeur du filtre de la radio lue par CAT ; un rigctld resté orphelin se ferme tout seul ; sous Windows, « Restaurer Hamlib » retélécharge rigctld si l'antivirus le supprime.
 - **DXpéditions** : calendrier NG3K (Services en ligne, éteint par défaut) à côté des CQ : en ondes, entendues maintenant, à venir et historique.
 - **Paramètres** : barre latérale avec recherche, «?» avec l'explication de chaque élément, page À propos (version, auteur, licence, liens).
 - **Téléphone** : PWA sur le même réseau, avec la page Station en onglets et des boutons adaptés au doigt (écrans jusqu'à 640 px) ; association par code (durée choisie par toi) ou accès sans code pour les essais.

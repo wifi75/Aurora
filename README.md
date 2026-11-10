@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20831%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20835%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -46,7 +46,7 @@ Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.219: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.220: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.
@@ -60,7 +60,7 @@ Version 0.11.219: own FT8, FT4, JT65 and JT9 engine with receive and transmit, C
 - **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency), NTP client with clock indicator, read-only Log4OM2 Log window.
 - **Station tools**: input audio level with slider and AUTO on the Windows recording volume, history of received messages (30 days, searchable), cluster spots on the waterfall, automatic diagnostics (clock, audio, callsign), Propagation page with PSK Reporter and hamqsl.com (**on from the factory, can be switched off**) and the DX Map (below).
 - **DX Map** (GridTracker-style): 15 backgrounds, automatic night map, greyline with twilight, Sun and Moon, fading on-air stations colored by status, animated arc lines, worked and confirmed squares by band and mode, click for square, distance, country and CQ/ITU zones, propagation heat map from PSK Reporter with lines to who receives you, customizable «Who calls whom» lines, on-air squares QSX/CQ/CQDX/QRZ with legend; detachable to another screen.
-- **Radio**: radio display at the top with the extended display (second VFO, meters, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), every item can be switched on in Settings > General; the waterfall follows the radio's filter width read over CAT; an orphaned rigctld shuts itself down.
+- **Radio**: radio display at the top with the extended display (second VFO, meters, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), every item can be switched on in Settings > General; the waterfall follows the radio's filter width read over CAT; an orphaned rigctld shuts itself down; on Windows “Restore Hamlib” downloads rigctld again if the antivirus removes it.
 - **DXpeditions**: NG3K calendar (Online services, off by default) next to the CQs: on the air, heard now, upcoming and history.
 - **Settings**: sidebar with search, «?» with an explanation on every item, About page (version, author, licence, links).
 - **Phone**: PWA on the same network, with the Station page in tabs and finger-sized buttons (screens up to 640 px); pairing with a code (duration decided by you) or code-free access for testing.

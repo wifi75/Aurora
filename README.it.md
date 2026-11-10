@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20831%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-1414%20Rust%20%C2%B7%20835%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -46,7 +46,7 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.219: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.220: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.
@@ -60,7 +60,7 @@ Versione 0.11.219: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissi
 - **DX Cluster, orologio, log**: finestra DX Cluster (server telnet pubblici o propri, doppio clic = la radio va sulla frequenza dello spot), client NTP con indicatore dell'orologio, finestra Log di Log4OM2 in sola lettura.
 - **Strumenti della stazione**: livello dell'audio in ingresso con cursore e AUTO sul volume di registrazione di Windows, storico dei messaggi ricevuti (30 giorni, ricercabile), spot del cluster sulla cascata, diagnosi automatica (orologio, audio, nominativo), pagina Propagazione con PSK Reporter e hamqsl.com (**accesi di fabbrica, si spengono quando vuoi**) e la Mappa DX (sotto).
 - **Mappa DX** (alla GridTracker): 15 sfondi, notte automatica, linea grigia con i crepuscoli, Sole e Luna, stazioni in onda colorate che sbiadiscono, linee ad arco animate, quadrati lavorati e confermati per banda e modo, clic con quadrato, distanza, paese e zone CQ/ITU, propagazione con mappa di calore PSK Reporter e linee verso chi ti riceve, linee «Chi chiama chi» personalizzabili, quadrati in onda QSX/CQ/CQDX/QRZ con legenda; si stacca su un altro schermo.
-- **Radio**: display della radio in alto con il display esteso (secondo VFO, strumenti, PRE/ATT, AGC, NB/NR/notch, guadagni, RIT/XIT), ogni voce accendibile in Impostazioni > Generali; la cascata segue la larghezza del filtro della radio letta col CAT; un rigctld rimasto orfano si chiude da solo.
+- **Radio**: display della radio in alto con il display esteso (secondo VFO, strumenti, PRE/ATT, AGC, NB/NR/notch, guadagni, RIT/XIT), ogni voce accendibile in Impostazioni > Generali; la cascata segue la larghezza del filtro della radio letta col CAT; un rigctld rimasto orfano si chiude da solo; su Windows «Ripristina Hamlib» riscarica rigctld se l'antivirus lo toglie.
 - **DXpedition**: calendario NG3K (Servizi online, spento di base) accanto ai CQ: in onda, sentite adesso, in arrivo e storico.
 - **Impostazioni**: barra laterale con ricerca, «?» con la spiegazione su ogni voce, pagina Informazioni (versione, autore, licenza, collegamenti).
 - **Telefono**: PWA sulla stessa rete, con la pagina Stazione a schede e pulsanti da dito (schermi fino a 640 px); associazione con codice (durata decisa da te) oppure accesso senza codice per le prove.

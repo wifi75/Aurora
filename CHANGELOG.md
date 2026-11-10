@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.220 - 2026-11-10
 - **Hamlib**: su Windows, se `rigctld.exe` sparisce (di solito l'antivirus), il pulsante «Ripristina Hamlib» nella scheda Radio lo riscarica dalla release ufficiale 4.7.2 con impronta SHA-256 controllata. Su Linux Hamlib e' dentro l'AppImage e obbligatorio nel .deb; la compilazione si ferma se manca.
 - **Blocchi**: le finestre a parte si aprono senza fermare la finestra principale (blocchi «apertura di una finestra a parte» della 0.11.219); il rapporto di un blocco elenca le ultime attivita' della finestra.
 - **Audio**: con la radio spenta o il cavo USB staccato all'avvio la trasmissione non resta piu' spenta: riparte da sola sulla stessa scheda appena la radio si accende.
