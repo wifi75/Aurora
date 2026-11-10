@@ -580,6 +580,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       items: [
         ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
         'sep' as const,
+        { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
         ...['CW', 'QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
         { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
@@ -670,7 +671,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           locked={sending}
           onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
         />
-        <small className="muted">{t('digi.band.hint')}</small>
       </div>
       </div>
 

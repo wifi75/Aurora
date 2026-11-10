@@ -25,3 +25,7 @@
 .digi-log-table[hidden] { display: none; }
 .digi-log-qsohead, .digi-log-current { flex: none; }
 .digi-wf { flex: none; }
+
+/* niente riquadro intorno al selettore di banda: resta solo il selettore */
+.digi-topline .digi-bandbar { background: none; border: 0; box-shadow: none; padding: 0; flex: 0 0 auto; align-self: center; }
+.sstv-modesel { background: #16233f; color: var(--text, #e8eefc); border: 1px solid var(--border, #25365d); border-radius: 10px; padding: 4px 10px; font: inherit; font-weight: 600; }

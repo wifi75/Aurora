@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getDigi, getFrequencies, postMode, putDigi, type DigiSettings } from '../api/client';
+import { getFrequencies, postMode } from '../api/client';
 import { useT } from '../i18n';
 import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
@@ -52,10 +52,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
   const client = useQueryClient();
-  // il modo testuale scelto (PSK31, PSK63 o RTTY), per accendere la pillola giusta
-  const digi = useQuery({ queryKey: ['digi'], queryFn: getDigi, retry: false, enabled: route.name === 'digi', staleTime: 5000 });
-  const digiMode = digi.data?.settings.mode ?? null;
-
   // si ricorda l'ultima frequenza di ogni gruppo (solo se e' una frequenza del modo in uso)
   const dialHz = useStation((s) => s.status?.dial_hz ?? 0);
   const freqTable = useQuery({ queryKey: ['frequencies'], queryFn: getFrequencies, staleTime: 60_000, retry: false });
@@ -119,34 +115,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       {label}
     </a>
   );
-  // PSK e RTTY stanno nella stessa pagina: la pillola sceglie il modo e apre la pagina
-  const pickText = (family: 'psk' | 'rtty') => {
-    void getDigi()
-      .then((snap) => {
-        const current = snap.settings.mode;
-        if ((family === 'rtty') === (current === 'rtty')) return undefined;
-        const mode: DigiSettings['mode'] = family === 'rtty' ? 'rtty' : 'psk31';
-        return putDigi({ ...snap.settings, mode }).then((next) => client.setQueryData(['digi'], next));
-      })
-      .catch(() => undefined);
-  };
-  const textPill = (family: 'psk' | 'rtty', label: string) => (
-    <a
-      key={family}
-      {...current(route.name === 'digi' && (family === 'rtty' ? digiMode === 'rtty' : digiMode !== null && digiMode !== 'rtty'))}
-      data-mode={family}
-      href="#/testo"
-      title={t('tip.nav.digi')}
-      onClick={() => pickText(family)}
-    >
-      {label}
-    </a>
-  );
-  const soon = (id: string, label: string) => (
-    <span key={id} className="nav-soon" data-mode={id} title={t('nav.modeSoon')}>
-      {label}
-    </span>
-  );
   const page = (name: Route['name'], href: string, label: string, tip?: string) => (
     <a key={name} {...current(route.name === name)} data-pagina="modo" href={href} title={tip}>
       {label}
@@ -163,11 +131,9 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       <span className="nav-modes">
         {pill('ft8', 'FT8')}
         {pill('vhf', 'VHF')}
-        {soon('cw', 'CW')}
-        {textPill('rtty', 'RTTY')}
-        {textPill('psk', 'PSK')}
-        <a {...current(route.name === 'sstv')} data-mode="sstv" href="#/sstv" title={t('tip.nav.sstv')}>
-          {t('nav.sstv')}
+        {/* PSK, RTTY, CW e SSTV stanno insieme: il modo si sceglie dal menu «Modo» della loro pagina */}
+        <a {...current(route.name === 'digi' || route.name === 'sstv')} data-mode="psk" href={route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')}>
+          {t('nav.textModes')}
         </a>
         <a {...current(route.name === 'sat')} data-mode="sat" href="#/satelliti" title={t('tip.nav.sat')}>
           {t('nav.sat')}

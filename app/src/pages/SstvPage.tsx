@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
 import { FreqPicker } from '../components/FreqPicker';
+import { gotoTextMode } from '../lib/digiGoto';
 import { bandPlanRows } from '../lib/bandplan';
 import { useStation } from '../state/station';
 import { DetachButton } from '../components/DetachButton';
@@ -85,6 +86,13 @@ function SstvBody({ solo }: { solo: boolean }) {
           <span className="sstv-dot" aria-hidden="true" />
           {t(`sstv.state.${badge}`)}
         </span>
+        {/* il modo si cambia da qui: un modo testuale apre la loro pagina */}
+        <select className="sstv-modesel" value="sstv" aria-label={t('digi.menu.mode')} onChange={(e) => void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty')}>
+          <option value="psk31">PSK31</option>
+          <option value="psk63">PSK63</option>
+          <option value="rtty">RTTY</option>
+          <option value="sstv">SSTV</option>
+        </select>
         {/* banda e frequenze SSTV dal piano di banda IARU */}
         <FreqPicker dialHz={dialHz} mode="SSTV" rows={bandPlanRows('SSTV')} locked={sending} onPick={(hz) => void postFrequency(hz).catch(() => undefined)} />
         <div className="sstv-views" role="tablist">
