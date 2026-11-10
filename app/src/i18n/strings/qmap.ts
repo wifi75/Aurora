@@ -4,12 +4,12 @@ import type { Entry } from '../core';
 export const qmapStrings = {
   'nav.qmap': ['QMAP', 'QMAP', 'QMAP', 'QMAP', 'QMAP', 'QMAP'],
   'tip.nav.qmap': [
-    'Ricezione panoramica Q65 come QMAP di WSJT-X: decodifica tutta una fetta fino a 90 kHz da un SDR (flusso I/Q via TCI o file) e con un clic porta la radio sul segnale.',
-    'Q65 panoramic receive like WSJT-X QMAP: decodes a whole slice up to 90 kHz from an SDR (I/Q stream via TCI or a file) and one click tunes the radio to the signal.',
-    'Q65-Panoramaempfang wie QMAP von WSJT-X: dekodiert einen ganzen Bereich bis 90 kHz von einem SDR (I/Q-Strom über TCI oder Datei); ein Klick stellt das Funkgerät auf das Signal.',
-    'Réception panoramique Q65 comme QMAP de WSJT-X : décode toute une tranche jusqu’à 90 kHz depuis un SDR (flux I/Q via TCI ou fichier) et un clic règle la radio sur le signal.',
-    'Recepción panorámica Q65 como QMAP de WSJT-X: decodifica toda una franja de hasta 90 kHz desde un SDR (flujo I/Q por TCI o archivo) y un clic lleva la radio a la señal.',
-    'Receção panorâmica Q65 como o QMAP do WSJT-X: descodifica toda uma fatia até 90 kHz de um SDR (fluxo I/Q via TCI ou ficheiro) e um clique leva o rádio ao sinal.',
+    'Ricezione panoramica Q65: decodifica tutta una fetta fino a 90 kHz da un SDR (flusso I/Q via TCI o file) e con un clic porta la radio sul segnale.',
+    'Q65 panoramic receive: decodes a whole slice up to 90 kHz from an SDR (I/Q stream via TCI or a file) and one click tunes the radio to the signal.',
+    'Q65-Panoramaempfang: dekodiert einen ganzen Bereich bis 90 kHz von einem SDR (I/Q-Strom über TCI oder Datei); ein Klick stellt das Funkgerät auf das Signal.',
+    'Réception panoramique Q65 : décode toute une tranche jusqu’à 90 kHz depuis un SDR (flux I/Q via TCI ou fichier) et un clic règle la radio sur le signal.',
+    'Recepción panorámica Q65: decodifica toda una franja de hasta 90 kHz desde un SDR (flujo I/Q por TCI o archivo) y un clic lleva la radio a la señal.',
+    'Receção panorâmica Q65: descodifica toda uma fatia até 90 kHz de um SDR (fluxo I/Q via TCI ou ficheiro) e um clique leva o rádio ao sinal.',
   ],
   'qmap.title': ['QMAP · Q65 panoramico', 'QMAP · Q65 panoramic', 'QMAP · Q65-Panorama', 'QMAP · Q65 panoramique', 'QMAP · Q65 panorámico', 'QMAP · Q65 panorâmico'],
   'qmap.needSdr': [

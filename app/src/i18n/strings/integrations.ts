@@ -69,12 +69,12 @@ export const integrationStrings = {
   ],
   'int.adif': ['ADIF su UDP', 'ADIF over UDP', 'ADIF über UDP', 'ADIF sur UDP', 'ADIF por UDP', 'ADIF por UDP'],
   'int.adif.help': [
-    'Il record ADIF in testo semplice, un datagramma per QSO, come il server UDP secondario di JTDX (Log4OM 2, WaveLogGate).',
-    'The ADIF record as plain text, one datagram per QSO, like JTDX’s secondary UDP server (Log4OM 2, WaveLogGate).',
-    'Der ADIF-Datensatz als einfacher Text, ein Datagramm pro QSO, wie der sekundäre UDP-Server von JTDX (Log4OM 2, WaveLogGate).',
-    'L’enregistrement ADIF en texte simple, un datagramme par QSO, comme le serveur UDP secondaire de JTDX (Log4OM 2, WaveLogGate).',
-    'El registro ADIF en texto plano, un datagrama por QSO, como el servidor UDP secundario de JTDX (Log4OM 2, WaveLogGate).',
-    'O registo ADIF em texto simples, um datagrama por QSO, como o servidor UDP secundário do JTDX (Log4OM 2, WaveLogGate).',
+    'Il record ADIF in testo semplice, un datagramma per QSO (Log4OM 2, WaveLogGate).',
+    'The ADIF record as plain text, one datagram per QSO (Log4OM 2, WaveLogGate).',
+    'Der ADIF-Datensatz als einfacher Text, ein Datagramm pro QSO (Log4OM 2, WaveLogGate).',
+    'L’enregistrement ADIF en texte simple, un datagramme par QSO (Log4OM 2, WaveLogGate).',
+    'El registro ADIF en texto plano, un datagrama por QSO (Log4OM 2, WaveLogGate).',
+    'O registo ADIF em texto simples, um datagrama por QSO (Log4OM 2, WaveLogGate).',
   ],
   'int.n1mm': ['XML N1MM', 'N1MM XML', 'N1MM-XML', 'XML N1MM', 'XML N1MM', 'XML N1MM'],
   'int.n1mm.help': [

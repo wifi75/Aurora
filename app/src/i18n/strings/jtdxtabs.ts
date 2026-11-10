@@ -103,7 +103,7 @@ export const jtdxTabStrings = {
   'gen2.prefix': ['Mostra il prefisso e non il nome del paese', 'Show the prefix, not the country name', 'Präfix statt Ländername anzeigen', 'Afficher le préfixe et non le nom du pays', 'Mostrar el prefijo y no el nombre del país', 'Mostrar o prefixo e não o nome do país'],
   'gen2.azimuth': ['Mostra l’azimut nei messaggi con locatore', 'Show azimuth in messages with a locator', 'Azimut bei Nachrichten mit Locator anzeigen', 'Afficher l’azimut dans les messages avec locator', 'Mostrar el acimut en los mensajes con locator', 'Mostrar o azimute nas mensagens com locator'],
   'gen2.align': ['Allinea DXCC / distanza / azimut', 'Align DXCC / distance / azimuth', 'DXCC / Entfernung / Azimut ausrichten', 'Aligner DXCC / distance / azimut', 'Alinear DXCC / distancia / acimut', 'Alinhar DXCC / distância / azimute'],
-  'gen2.wsjtx3': ['Decodifica e attesa (WSJT-X 3)', 'Decoding and waiting (WSJT-X 3)', 'Dekodierung und Warten (WSJT-X 3)', 'Décodage et attente (WSJT-X 3)', 'Decodificación y espera (WSJT-X 3)', 'Descodificação e espera (WSJT-X 3)'],
+  'gen2.wsjtx3': ['Decodifica e attesa', 'Decoding and waiting', 'Dekodierung und Warten', 'Décodage et attente', 'Decodificación y espera', 'Descodificação e espera'],
   'gen2.decStart': ['Avvio della decodifica FT8', 'FT8 decoder start', 'Start der FT8-Dekodierung', 'Début du décodage FT8', 'Inicio de la decodificación FT8', 'Início da descodificação FT8'],
   'gen2.decStartEarly': ['Presto (13,8 s)', 'Early (13.8 s)', 'Früh (13,8 s)', 'Tôt (13,8 s)', 'Pronto (13,8 s)', 'Cedo (13,8 s)'],
   'gen2.decStartNormal': ['Normale (14,1 s)', 'Normal (14.1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)', 'Normal (14,1 s)'],
