@@ -12,7 +12,7 @@ Ogni versione che aggiunge, modifica o corregge qualcosa si chiude con questi pa
 
 4. **Portale web** <https://aurora.iu3wjq.com/> (senza `/it`): il progetto «Portale web Aurora» lo tiene aggiornato; a ogni versione con funzioni nuove gli si passano le novita' (testi in `app/src/lib/novita.ts` e `app/src/i18n/guide.ts`). Dopo la pubblicazione si controlla che la pagina risponda.
 5. **README** nelle sei lingue (`README.md` in inglese, `README.it.md`, `.de`, `.fr`, `.es`, `.pt`): riga dello stato con la versione, badge con le versioni vere (Rust, librerie, numero dei test), funzioni nuove nella sezione Stato.
-6. **Release**: installatore firmato, firma, `SHA256SUMS.txt` e la copia con nome fisso `Aurora-Setup.exe`, cosi' il link <https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe> scarica sempre l'ultima versione.
+6. **Release**: tag e release su GitHub senza allegati; installatore, firma, `SHA256SUMS.txt` e la copia con nome fisso `Aurora-Setup.exe` li allega GitHub (lavoro Windows), cosi' il link <https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe> scarica sempre l'ultima versione. Si controlla che i tre lavori (Windows, Linux, macOS) finiscano verdi.
 
 ## Controlli prima di pubblicare
 
