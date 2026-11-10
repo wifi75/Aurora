@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.226',
-    released: '2026-11-10T12:00:00Z',
+    released: '2026-11-10T12:19:04Z',
     kind: 'changed',
     title: ["Primo avvio aggiornato e Finestra RX leggibile", "Updated first start and readable RX window", "Aktualisierter Erststart und lesbares RX-Fenster", "Premier démarrage à jour et fenêtre RX lisible", "Primer arranque actualizado y ventana RX legible", "Primeiro arranque atualizado e janela RX legível"],
     text: [
