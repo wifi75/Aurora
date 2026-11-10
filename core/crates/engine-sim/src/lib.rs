@@ -20,6 +20,31 @@ const CALLS: &[&str] = &[
     "I2ABC", "F5XYZ", "G3AAA", "UA3DJY", "LU1ZZ", "HB9AA", "OK1ZZ", "SP9ZZ", "9A1AA", "VE3XX",
 ];
 const RARE_PREFIXES: &[&str] = &["JA", "VK", "PY", "ZS", "LU"];
+/// Paese e continente dei nominativi finti, con i nomi di `cty.dat`: nelle prove si vedono bandierine e paesi come con il motore vero.
+fn country_of(call: &str) -> Option<(&'static str, &'static str)> {
+    Some(match call {
+        "JA1XYZ" => ("Japan", "AS"),
+        "DL2ABC" => ("Fed. Rep. of Germany", "EU"),
+        "K1ABC" | "W9XYZ" => ("United States", "NA"),
+        "PY2XX" => ("Brazil", "SA"),
+        "EA3FOO" => ("Spain", "EU"),
+        "VK3ZZ" => ("Australia", "OC"),
+        "OH2BBB" => ("Finland", "EU"),
+        "SM5QQ" => ("Sweden", "EU"),
+        "ZS6AA" => ("South Africa", "AF"),
+        "I2ABC" => ("Italy", "EU"),
+        "F5XYZ" => ("France", "EU"),
+        "G3AAA" => ("England", "EU"),
+        "UA3DJY" => ("European Russia", "EU"),
+        "LU1ZZ" => ("Argentina", "SA"),
+        "HB9AA" => ("Switzerland", "EU"),
+        "OK1ZZ" => ("Czech Republic", "EU"),
+        "SP9ZZ" => ("Poland", "EU"),
+        "9A1AA" => ("Croatia", "EU"),
+        "VE3XX" => ("Canada", "NA"),
+        _ => return None,
+    })
+}
 const GRIDS: &[&str] = &["PM95", "JO31", "FN42", "GG66", "JN11", "QF22", "KP20", "EN34", "JO89", "KG33"];
 
 #[derive(Debug, Clone, Copy)]
@@ -161,8 +186,8 @@ impl State {
             freq_hz: if index == 1 { 1500 } else { (bin as u32 * F_MAX_HZ) / BINS as u32 },
             text,
             tag,
-            country: None,
-            continent: None,
+            country: country_of(&call).map(|(c, _)| c.to_string()),
+            continent: country_of(&call).map(|(_, k)| k.to_string()),
             hint: false,
         }
     }

@@ -1361,3 +1361,7 @@ html[data-theme='light'] .cq-chip {
   color: #0b1220;
 }
 html[data-theme='light'] .cq-chip:hover { background: color-mix(in srgb, var(--row-accent, var(--tag-cq, #4aa3ff)) 50%, #ffffff); filter: none; }
+
+/* ogni casella larga quanto il suo contenuto (nominativo, bandierina, paese): niente larghezza presa dalla colonna ne' paese tagliato */
+.cq-strip { justify-items: start; }
+.cq-chip-country { max-width: none; overflow: visible; }
