@@ -534,6 +534,8 @@ pub fn locate_rigctld() -> Option<PathBuf> {
         dirs.push(dir.join("hamlib"));
         // macOS: l'app tiene le risorse in Contents/Resources (il programma e' in Contents/MacOS), Hamlib incluso in Resources/hamlib
         dirs.push(dir.join("..").join("Resources").join("hamlib"));
+        // Linux: .deb e AppImage tengono le risorse in <prefisso>/lib/Aurora (il programma e' in <prefisso>/bin), Hamlib incluso in lib/Aurora/hamlib
+        dirs.push(dir.join("..").join("lib").join("Aurora").join("hamlib"));
         dirs.push(dir);
     }
     // l'Hamlib ripristinato dal programma (Windows, `hamlib_restore`): dopo quello dell'installatore, prima della variabile d'ambiente

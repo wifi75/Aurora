@@ -76,9 +76,28 @@ jobs:
           path: ~/.cache/tauri
           key: tauri-appimage-tools-v1
 
+      - name: Hamlib dentro l'AppImage e il .deb (rigctld, rigctl e librerie)
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        run: |
+          # rigctld e rigctl ufficiali del pacchetto Ubuntu con le librerie che servono copiate accanto e il percorso riscritto ($ORIGIN/libs):
+          # l'AppImage funziona senza installare Hamlib. Si lasciano al sistema le librerie di base (glibc) e libudev.
+          sudo apt-get install -y libhamlib-utils patchelf
+          B=desktop/src-tauri/hamlib-bundle
+          mkdir -p "$B/libs"
+          cp "$(command -v rigctld)" "$(command -v rigctl)" "$B/"
+          for exe in rigctld rigctl; do
+            ldd "$B/$exe" | awk '/=> \//{print $3}' | grep -Ev '/(libc|libm|libdl|libpthread|librt|libresolv|libutil|libgcc_s|ld-linux[^/]*|libudev)\.so' | while read -r lib; do cp -L "$lib" "$B/libs/"; done
+            patchelf --set-rpath '$ORIGIN/libs' "$B/$exe"
+          done
+          for f in "$B"/libs/*.so*; do patchelf --set-rpath '$ORIGIN' "$f"; done
+          "$B/rigctld" --version
+          ls -la "$B" "$B/libs"
+
       - name: AppImage e .deb
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         working-directory: desktop
+        env:
+          AURORA_REQUIRE_HAMLIB: '1'
         run: |
           npm ci
           # se lo scaricamento degli strumenti non riesce si riprova (fino a 5 volte, un minuto fra un tentativo e l'altro)
