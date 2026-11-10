@@ -73,7 +73,9 @@ solo a sapere quante persone usano Aurora e con quale versione. È **acceso di f
 → «Invia statistiche».
 
 **Cosa contiene**: l'identificativo casuale dell'installazione (lo stesso dei rapporti, rigenerabile), la versione di Aurora e
-quella di Windows, il giorno e, dalla 0.11.214, se hai impostato il nominativo, un **codice ricavato dal nominativo**. **Niente
+quella di Windows, il giorno, dalla 0.11.214, se hai impostato il nominativo, un **codice ricavato dal nominativo** e, dalla
+0.11.220, il **tipo di computer**: modello del processore, numero di core e memoria in GB (niente numeri di serie, nome del computer o
+indirizzi). Gli stessi dati del computer accompagnano i rapporti degli errori, per capire su quali macchine Aurora fatica. **Niente
 altro**: il nominativo, il locatore, la radio, il log e le impostazioni non si mandano. Il servizio non registra l'indirizzo IP.
 Le righe restano 90 giorni, poi la pulizia notturna le cancella.
 

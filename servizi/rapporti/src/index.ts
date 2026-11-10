@@ -3,7 +3,7 @@
  *
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
- * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema e, facoltativo, il codice della persona
+ * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema, computer (processore, core, memoria) e, facoltativo, il codice della persona
  *   (SHA-256 del nominativo fatto sul PC, salvato solo dopo un HMAC con PERSONA_SEGRETO); una riga al giorno
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
  * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
@@ -33,7 +33,7 @@ interface Env {
 const MAX_REPORT = 32 * 1024;
 const MAX_BUNDLE = 10 * 1024 * 1024;
 /** I campi di un rapporto che si tengono; tutto il resto si scarta. */
-const CAMPI = ['schema', 'id', 'installazione', 'giorno', 'versione', 'sistema', 'motore', 'radio', 'ptt', 'cat', 'audio_in', 'audio_out', 'area', 'livello', 'origine', 'messaggio', 'conteggio'] as const;
+const CAMPI = ['schema', 'id', 'installazione', 'giorno', 'versione', 'sistema', 'pc', 'motore', 'radio', 'ptt', 'cat', 'audio_in', 'audio_out', 'area', 'livello', 'origine', 'messaggio', 'conteggio'] as const;
 
 function risposta(status: number, corpo: unknown): Response {
   return new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -119,14 +119,16 @@ async function report(req: Request, env: Env): Promise<Response> {
   // l'ultimo esempio intero: il raggruppamento toglie le cifre, qui restano (quanti ms, quante volte, quale frequenza)
   const esempio = corto(dati.messaggio, 600);
   const sistema = corto(dati.sistema, 80);
+  // il computer dell'ultimo esempio (processore, core, memoria: dalla 0.11.220), vuoto per i client vecchi
+  const pc = corto(dati.pc, 120);
   const ultimo = new Date().toISOString().slice(0, 19) + 'Z';
   await env.INDICE.prepare(
-    `INSERT INTO errori (giorno, versione, area, messaggio, conteggio, rapporti, installazioni, esempio, sistema, ultimo) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?8, ?9)
+    `INSERT INTO errori (giorno, versione, area, messaggio, conteggio, rapporti, installazioni, esempio, sistema, ultimo, pc) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?8, ?9, ?10)
      ON CONFLICT (giorno, versione, area, messaggio) DO UPDATE SET conteggio = conteggio + ?5, rapporti = rapporti + 1,
        installazioni = CASE WHEN instr(installazioni, ?6) > 0 OR length(installazioni) > 3700 THEN installazioni ELSE installazioni || ',' || ?6 END,
-       esempio = ?7, sistema = ?8, ultimo = ?9`,
+       esempio = ?7, sistema = ?8, ultimo = ?9, pc = ?10`,
   )
-    .bind(giorno, versione, area, messaggio, conteggio, installazione, esempio, sistema, ultimo)
+    .bind(giorno, versione, area, messaggio, conteggio, installazione, esempio, sistema, ultimo, pc)
     .run();
   return risposta(200, { ok: true });
 }
@@ -233,8 +235,13 @@ async function attivo(req: Request, env: Env): Promise<Response> {
     .run();
   // la nazione la dice Cloudflare (`cf.country`, sigla di due lettere): ne' l'indirizzo IP ne' la citta' si salvano
   const paese = corto((req as Request & { cf?: { country?: string } }).cf?.country, 2).toUpperCase() || 'XX';
-  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese, persona) VALUES (?1, ?2, ?2, ?3, ?4) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese, persona = COALESCE(excluded.persona, installazioni.persona)')
-    .bind(id, oggi(), paese, chi)
+  // il computer (dalla 0.11.220): modello del processore, processori logici, memoria in GB. Null per i client vecchi
+  const cpu = corto(dati.cpu, 80) || null;
+  const numero = (v: unknown, max: number) => (typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= max ? v : null);
+  const core = numero(dati.core, 1024);
+  const ram = numero(dati.ram_gb, 65536);
+  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese, persona, cpu, core, ram_gb) VALUES (?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese, persona = COALESCE(excluded.persona, installazioni.persona), cpu = COALESCE(excluded.cpu, installazioni.cpu), core = COALESCE(excluded.core, installazioni.core), ram_gb = COALESCE(excluded.ram_gb, installazioni.ram_gb)')
+    .bind(id, oggi(), paese, chi, cpu, core, ram)
     .run();
   return risposta(200, { ok: true });
 }

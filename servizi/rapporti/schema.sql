@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS errori (
   esempio TEXT NOT NULL DEFAULT '',
   sistema TEXT NOT NULL DEFAULT '',
   ultimo TEXT NOT NULL DEFAULT '',
+  -- il computer dell'ultimo esempio: «processore · core · GB» (dalla 0.11.220)
+  pc TEXT NOT NULL DEFAULT '',
   PRIMARY KEY (giorno, versione, area, messaggio)
 );
 CREATE INDEX IF NOT EXISTS errori_versione ON errori (versione, giorno);
@@ -49,7 +51,11 @@ CREATE TABLE IF NOT EXISTS installazioni (
   -- la nazione (sigla di due lettere data da Cloudflare, `XX` se non si sa): niente IP, niente citta'
   paese TEXT,
   -- codice della persona (HMAC), null se il nominativo non e' impostato o per i client vecchi
-  persona TEXT
+  persona TEXT,
+  -- il computer (dalla 0.11.220): modello del processore, processori logici, memoria in GB; null per i client vecchi
+  cpu TEXT,
+  core INTEGER,
+  ram_gb INTEGER
 );
 -- Conteggi di ogni giorno (per versione e sistema, senza identificativi), salvati prima che la pulizia tolga le righe di `attivi`.
 CREATE TABLE IF NOT EXISTS storico (

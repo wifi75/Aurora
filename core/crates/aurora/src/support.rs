@@ -362,6 +362,47 @@ pub(crate) fn windows_version() -> String {
     format!("{product} {release} (build {build}{})", ubr.map(|u| format!(".{u}")).unwrap_or_default())
 }
 
+/// Il modello del processore (come lo scrive il sistema), se si legge.
+pub(crate) fn cpu_model() -> Option<String> {
+    #[cfg(windows)]
+    {
+        reg_value(r"HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString")
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let out = std::process::Command::new("sysctl").args(["-n", "machdep.cpu.brand_string"]).output().ok()?;
+        Some(String::from_utf8_lossy(&out.stdout).trim().to_string()).filter(|s| !s.is_empty())
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        let text = std::fs::read_to_string("/proc/cpuinfo").ok()?;
+        text.lines().find_map(|l| l.strip_prefix("model name").and_then(|r| r.split_once(':')).map(|(_, v)| v.trim().to_string()))
+    }
+}
+
+/// La memoria del computer in byte, se si legge.
+pub(crate) fn ram_bytes() -> Option<u64> {
+    #[cfg(windows)]
+    {
+        use windows::Win32::System::SystemInformation::{GlobalMemoryStatusEx, MEMORYSTATUSEX};
+        let mut st = MEMORYSTATUSEX { dwLength: u32::try_from(std::mem::size_of::<MEMORYSTATUSEX>()).ok()?, ..Default::default() };
+        // SAFETY: la struttura e' nostra, inizializzata e con la sua misura in dwLength, come chiede la funzione
+        unsafe { GlobalMemoryStatusEx(&mut st) }.ok()?;
+        Some(st.ullTotalPhys)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let out = std::process::Command::new("sysctl").args(["-n", "hw.memsize"]).output().ok()?;
+        String::from_utf8_lossy(&out.stdout).trim().parse().ok()
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        let text = std::fs::read_to_string("/proc/meminfo").ok()?;
+        let kb: u64 = text.lines().find_map(|l| l.strip_prefix("MemTotal:"))?.split_whitespace().next()?.parse().ok()?;
+        Some(kb * 1024)
+    }
+}
+
 /// Il Desktop vero dell'utente (anche se spostato in OneDrive); `None` se non c'e'.
 pub(crate) fn desktop_dir() -> Option<PathBuf> {
     let from_shell = reg_value(r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders", "Desktop").map(PathBuf::from);

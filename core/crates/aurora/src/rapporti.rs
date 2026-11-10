@@ -284,7 +284,8 @@ pub fn corpo_attivo(acceso: bool, installazione: &str, nominativo: &str) -> Opti
     if !acceso {
         return None;
     }
-    let mut corpo = json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "sistema": sistema() });
+    let pc = pc();
+    let mut corpo = json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "sistema": sistema(), "cpu": pc.cpu, "core": pc.core, "ram_gb": pc.ram_gb });
     if let Some(persona) = codice_persona(nominativo) {
         corpo["persona"] = json!(persona);
     }
@@ -903,6 +904,7 @@ fn rapporto(id: &str, c: &Contesto, giorno: &str, g: &Gruppo) -> Value {
         "giorno": giorno,
         "versione": c.versione,
         "sistema": c.sistema,
+        "pc": pc().descrizione(),
         "motore": c.motore,
         "radio": c.radio,
         "ptt": c.ptt,
@@ -1038,6 +1040,33 @@ fn comprimi(file: &[(String, Vec<u8>)]) -> Result<Vec<u8>, String> {
     Ok(zip.finish().map_err(|e| e.to_string())?.into_inner())
 }
 
+/// Il computer, a grandi linee, per capire su che macchine Aurora fatica (decodifica lenta, blocchi): modello del processore, processori
+/// logici e memoria. Niente che identifichi la persona o il PC (nessun numero di serie, nome del computer o indirizzo).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pc {
+    pub cpu: String,
+    pub core: u32,
+    pub ram_gb: u32,
+}
+
+impl Pc {
+    /// «Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz · 8 core · 8 GB»
+    pub fn descrizione(&self) -> String {
+        format!("{} · {} core · {} GB", self.cpu, self.core, self.ram_gb)
+    }
+}
+
+/// Il computer, letto una volta.
+pub fn pc() -> &'static Pc {
+    static PC: OnceLock<Pc> = OnceLock::new();
+    PC.get_or_init(|| {
+        let cpu = crate::support::cpu_model().map(|c| c.split_whitespace().collect::<Vec<_>>().join(" ")).filter(|c| !c.is_empty()).unwrap_or_else(|| "?".into());
+        let core = std::thread::available_parallelism().map_or(0, |n| u32::try_from(n.get()).unwrap_or(u32::MAX));
+        let ram_gb = crate::support::ram_bytes().map_or(0, |b| u32::try_from((b + (1 << 29)) >> 30).unwrap_or(u32::MAX));
+        Pc { cpu: cpu.chars().take(80).collect(), core, ram_gb }
+    })
+}
+
 /// La versione di Windows, letta una volta.
 fn sistema() -> &'static str {
     static SISTEMA: OnceLock<String> = OnceLock::new();
@@ -1082,6 +1111,17 @@ fn scrivi_json<T: Serialize>(path: &Path, valore: &T) {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn il_pc_si_descrive_senza_dati_personali() {
+        let pc = super::pc();
+        assert!(pc.core >= 1 && !pc.cpu.is_empty(), "{pc:?}");
+        let d = super::Pc { cpu: "Intel(R) Celeron(R) N4020".into(), core: 2, ram_gb: 4 }.descrizione();
+        assert_eq!(d, "Intel(R) Celeron(R) N4020 · 2 core · 4 GB");
+        let corpo = super::corpo_attivo(true, "00000000-0000-4000-8000-000000000000", "").expect("corpo");
+        let v: serde_json::Value = serde_json::from_str(&corpo).expect("json");
+        assert!(v["cpu"].is_string() && v["core"].is_u64() && v["ram_gb"].is_u64(), "{v}");
+    }
 
     #[test]
     fn la_radio_non_collegata_non_e_un_errore_da_segnalare() {
