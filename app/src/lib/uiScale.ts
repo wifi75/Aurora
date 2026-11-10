@@ -26,6 +26,8 @@ export function readScale(): number {
 
 function apply(scale: number): void {
   document.documentElement.style.setProperty('zoom', scale === 1 ? '' : String(scale));
+  // le unita' vh/dvh non seguono lo zoom: le pagine che riempiono lo schermo dividono per questo valore
+  document.documentElement.style.setProperty('--ui-zoom', String(scale));
 }
 
 interface ScaleState {

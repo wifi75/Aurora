@@ -1,6 +1,6 @@
 /* PSK e RTTY: tutto in una schermata, senza scroll di pagina. La finestra e' alta quanto lo schermo; RX/TX e la colonna di destra si
    dividono l'altezza che resta, e le liste (DX Cluster, Log) scorrono dentro il loro riquadro. */
-.app-shell:has(.digi-page) { height: 100dvh; min-height: 0; overflow: hidden; }
+.app-shell:has(.digi-page) { height: calc(100dvh / var(--ui-zoom, 1)); min-height: 0; overflow: hidden; }
 .app-shell:has(.digi-page) .app-main { min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 2px; }
 .app-shell:has(.digi-page) .app-main > * { min-height: 0; }
 .digi-page { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 6px 8px 4px; gap: 8px; }
