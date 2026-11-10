@@ -1532,6 +1532,8 @@ pub async fn run(
     let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
     // il CAT: configurazione e profili in radio.json; la scelta salvata con «collega all'avvio» vale come AURORA_RIG
     let cat = rig_control::cat::CatService::open(&config.data_dir.join("radio.json"));
+    // il rotore d'antenna: configurazione in rotore.json, collegamento in un thread suo (rotctld lanciato da Aurora o gia' acceso)
+    let rotator = Arc::new(rig_control::rotator::RotatorService::open(&config.data_dir.join("rotore.json")));
     let mut config = config;
     let stored = cat.config();
     // la scelta salvata dall'operatore nella pagina della radio vince su AURORA_RIG: il programma Windows la imposta da solo a «omnirig»
@@ -2141,6 +2143,7 @@ pub async fn run(
             EngineKind::Sim => config.rig_hamlib.then(|| Arc::clone(&cat) as Arc<dyn rig_control::Rig>),
         })
         .with_cat(Arc::clone(&cat))
+        .with_rotator(Arc::clone(&rotator))
         .with_automation(automation);
     // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
     qmap_service.set_tx_probe(state.transmitting_probe());

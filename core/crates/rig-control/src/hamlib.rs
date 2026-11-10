@@ -56,7 +56,7 @@ pub fn rigctld_args(config: &RigctldConfig, tcp_port: u16) -> Result<Vec<String>
     Ok(args)
 }
 
-fn check_token(text: &str, what: &str) -> Result<(), RigError> {
+pub(crate) fn check_token(text: &str, what: &str) -> Result<(), RigError> {
     let ok = !text.is_empty() && text.len() <= 64 && text.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':' | '/' | '\\'));
     ok.then_some(()).ok_or_else(|| RigError(format!("{what} non valido per rigctld: {text:?}")))
 }

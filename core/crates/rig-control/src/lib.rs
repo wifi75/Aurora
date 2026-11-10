@@ -16,6 +16,7 @@ pub mod hamlib_rig;
 pub mod meters;
 pub mod modes;
 pub mod omnirig;
+pub mod rotator;
 pub mod schedule;
 pub mod session;
 pub mod table;
