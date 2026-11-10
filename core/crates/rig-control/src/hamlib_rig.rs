@@ -780,11 +780,8 @@ impl HamlibRig {
         let link = inner.connected_link()?;
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         if on {
-            // dopo un guasto della radio un PTT rimasto in attesa non parte (WSJT-X 3.2: «After a rig failure, pending PTT, Tune,
-            // and Stop TX commands are discarded»): si accende solo con la radio che ha risposto all'ultima lettura
-            if inner.snapshot().failures > 0 {
-                return Err(RigError("la radio non ha risposto all'ultima lettura: PTT scartato".into()));
-            }
+            // una lettura mancata (modo, frequenza, timeout) non e' un guasto della radio: il PTT si prova lo stesso. Se il collegamento
+            // e' davvero caduto lo dice `connected_link()`, e se la radio non risponde lo dice l'errore del comando, che arriva a schermo
             if let Some(left) = inner.ptt_blocked() {
                 return Err(RigError(format!("PTT bloccato per altri {} s dopo il collegamento", left.as_secs_f32().ceil())));
             }
@@ -1293,16 +1290,13 @@ mod tests {
     }
 
     #[test]
-    fn after_a_failed_read_a_pending_ptt_is_discarded() {
+    fn after_a_failed_read_the_ptt_is_still_tried() {
         let fake = FakeRigctld::start(14_074_000);
         let rig = start(&fake, RigConfig::default());
         std::thread::sleep(Duration::from_millis(300));
         rig.inner.update(|s| s.failures = 1);
-        let e = rig.set_ptt(true).expect_err("PTT scartato");
-        assert!(e.0.contains("scartato"), "{e}");
-        assert!(!fake.ptt());
-        rig.inner.update(|s| s.failures = 0);
-        rig.set_ptt(true).expect("PTT con la radio che risponde");
+        rig.set_ptt(true).expect("PTT acceso anche dopo una lettura mancata");
+        assert!(fake.ptt());
         rig.set_ptt(false).expect("PTT spento");
     }
 

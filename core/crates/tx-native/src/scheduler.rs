@@ -467,6 +467,9 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
             let lower = why.to_lowercase();
             if lower.contains("radio non collegata") || lower.contains("nessuna radio collegata") {
                 aurora_core::notice::notice("no_cat", "");
+            } else if lower.contains("ptt") {
+                // il PTT non e' partito (o non si e' spento): lo schermo dice perche', invece di lasciarlo solo nel log
+                aurora_core::notice::notice("ptt_failed", why.clone());
             }
         }
     }
