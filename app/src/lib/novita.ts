@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.230',
-    released: '2026-11-10T20:00:00Z',
+    released: '2026-11-10T19:37:42Z',
     kind: 'new',
     title: ["Ricerca nelle Impostazioni, schede in ordine e griglie non confermate", "Settings search, tidier tabs and unconfirmed grids", "Suche in den Einstellungen, geordnete Reiter und unbestätigte Felder", "Recherche dans les Réglages, onglets rangés et locators non confirmés", "Búsqueda en los Ajustes, pestañas ordenadas y locators no confirmados", "Pesquisa nas Definições, separadores arrumados e locators não confirmados"],
     text: [
