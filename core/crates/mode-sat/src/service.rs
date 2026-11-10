@@ -134,6 +134,8 @@ pub struct Now {
     pub radio_active: bool,
     pub rotor: RotorState,
     pub next_pass: Option<Pass>,
+    /// La traccia del passaggio nel cielo: coppie (azimut, elevazione) ogni 10 secondi, per il radar.
+    pub next_path: Vec<(f64, f64)>,
 }
 
 struct Inner {
@@ -448,6 +450,7 @@ struct LoopState {
     prepointed_for: Option<f64>,
     rotor_was_on: bool,
     pass_cache: Option<(u64, f64, Option<Pass>)>,
+    path_cache: Vec<(f64, f64)>,
     radio_error: Option<String>,
     rotor_error: Option<String>,
 }
@@ -492,8 +495,22 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     let stale = !matches!(&st.pass_cache, Some((n, at, p)) if *n == norad && t - *at < 60.0 && p.is_none_or(|p| p.los_unix > t));
     if stale {
         let next = orbit::passes(&sat, &obs, t, 24.0, settings.min_el_deg.max(0.0)).into_iter().find(|p| p.los_unix > t);
+        st.path_cache = next
+            .map(|p| {
+                let mut path = Vec::new();
+                let mut x = p.aos_unix;
+                while x <= p.los_unix {
+                    if let Some(l) = orbit::look(&sat, &obs, x) {
+                        path.push((l.az_deg, l.el_deg));
+                    }
+                    x += 10.0;
+                }
+                path
+            })
+            .unwrap_or_default();
         st.pass_cache = Some((norad, t, next));
     }
+    now.next_path = st.path_cache.clone();
     now.next_pass = st.pass_cache.as_ref().and_then(|(_, _, p)| *p);
 
     // il transponder e la frequenza di discesa scelta

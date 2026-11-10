@@ -35,6 +35,7 @@ import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
 import { SstvPage } from './pages/SstvPage';
 import { DigiPage } from './pages/DigiPage';
+import { SatPage } from './pages/SatPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { ExportPage } from './pages/ExportPage';
@@ -170,6 +171,8 @@ export function App() {
     content = <SstvPage />;
   } else if (route.name === 'digi') {
     content = <DigiPage />;
+  } else if (route.name === 'sat') {
+    content = <SatPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else if (route.name === 'fox') {

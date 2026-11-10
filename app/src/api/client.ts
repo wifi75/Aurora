@@ -1670,3 +1670,139 @@ export async function importMacros(folder?: string): Promise<{ imported: DigiImp
 export async function digiAbort(): Promise<void> {
   await request('/digi/tx/abort', { method: 'POST' });
 }
+
+// ---- Satelliti (orbite, passaggi, Doppler sulla radio e rotore): vedi docs/api.md ----
+
+export interface SatTransponder {
+  name: string;
+  mode: string;
+  up_low_hz: number;
+  up_high_hz: number;
+  down_low_hz: number;
+  down_high_hz: number;
+  inverting: boolean;
+  tone_hz: number | null;
+}
+
+export interface SatInfo {
+  norad: number;
+  name: string;
+  transponders: SatTransponder[];
+  notes: string;
+}
+
+export interface SatSettings {
+  selected: number | null;
+  tracked: number[];
+  transponder: number;
+  down_hz: number | null;
+  tx_offset_hz: number;
+  doppler_on: boolean;
+  rotor_on: boolean;
+  rotor_preposition: boolean;
+  min_el_deg: number;
+  map: string;
+}
+
+export interface SatLook {
+  az_deg: number;
+  el_deg: number;
+  range_km: number;
+  range_rate_kms: number;
+  lat_deg: number;
+  lon_deg: number;
+  alt_km: number;
+  speed_kms: number;
+  rising: boolean;
+}
+
+export interface SatPass {
+  aos_unix: number;
+  los_unix: number;
+  max_el_deg: number;
+  max_el_unix: number;
+  aos_az_deg: number;
+  los_az_deg: number;
+  max_az_deg: number;
+  duration_s: number;
+}
+
+export interface SatPlan {
+  down_nominal_hz: number;
+  up_nominal_hz: number;
+  rx_hz: number;
+  tx_hz: number;
+  rx_shift_hz: number;
+  tx_shift_hz: number;
+}
+
+export interface SatNow {
+  time_unix: number;
+  norad: number | null;
+  name: string;
+  look: SatLook | null;
+  visible: boolean;
+  plan: SatPlan | null;
+  radio: { ready: boolean; error: string | null };
+  radio_active: boolean;
+  rotor: { ready: boolean; active: boolean; az_deg: number; el_deg: number; error: string | null };
+  next_pass: SatPass | null;
+  next_path: [number, number][];
+}
+
+export interface SatSnapshot {
+  observer: { lat_deg: number; lon_deg: number } | null;
+  tle: { count: number; age_s: number | null };
+  listing: { norad: number; name: string; has_tle: boolean }[];
+  catalog: SatInfo[];
+  settings: SatSettings;
+  now: SatNow;
+  sky: { sun_lat_deg: number; sun_lon_deg: number; moon_lat_deg: number; moon_lon_deg: number; time_unix: number };
+  details: { norad: number; name: string; inclination_deg: number; eccentricity: number; revs_per_day: number; period_min: number; epoch_unix: number } | null;
+  maps: string[];
+}
+
+export interface SatPosition {
+  norad: number;
+  name: string;
+  lat_deg: number;
+  lon_deg: number;
+  alt_km: number;
+  az_deg: number;
+  el_deg: number;
+  footprint_km: number;
+  visible: boolean;
+}
+
+export async function getSat(): Promise<SatSnapshot> {
+  return (await (await request('/sat')).json()) as SatSnapshot;
+}
+
+export async function putSat(settings: SatSettings): Promise<SatSnapshot> {
+  return (await (await request('/sat', { ...jsonInit(settings), method: 'PUT' })).json()) as SatSnapshot;
+}
+
+export async function satRefreshTle(): Promise<number> {
+  return ((await (await request('/sat/tle/refresh', { method: 'POST' })).json()) as { count: number }).count;
+}
+
+export async function getSatPasses(norad: number, hours: number, minEl: number): Promise<SatPass[]> {
+  return ((await (await request(`/sat/passes?norad=${norad}&hours=${hours}&min_el=${minEl}`)).json()) as { passes: SatPass[] }).passes;
+}
+
+export async function getSatTrack(norad: number, minutes: number): Promise<[number, number][]> {
+  return ((await (await request(`/sat/track?norad=${norad}&minutes=${minutes}`)).json()) as { points: [number, number][] }).points;
+}
+
+export async function getSatPositions(): Promise<SatPosition[]> {
+  return ((await (await request('/sat/positions')).json()) as { positions: SatPosition[] }).positions;
+}
+
+/** L'indirizzo di una mappa del mondo (per <img>). */
+export function satMapUrl(name: string): string {
+  return `${BASE}/sat/maps/${encodeURIComponent(name)}`;
+}
+
+export async function satUploadMap(name: string, file: Blob): Promise<string[]> {
+  return ((await (await request(`/sat/maps?name=${encodeURIComponent(name)}`, { method: 'POST', body: file })).json()) as { maps: string[] }).maps;
+}

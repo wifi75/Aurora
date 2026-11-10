@@ -156,11 +156,13 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         <a {...current(route.name === 'sstv')} data-mode="sstv" href="#/sstv" title={t('tip.nav.sstv')}>
           {t('nav.sstv')}
         </a>
-        {soon('sat', t('nav.sat'))}
+        <a {...current(route.name === 'sat')} data-mode="sat" href="#/satelliti" title={t('tip.nav.sat')}>
+          {t('nav.sat')}
+        </a>
       </span>
       <span className="nav-pages">
         {/* le pagine del modo scelto */}
-        {route.name === 'sstv' || route.name === 'digi' ? null : (
+        {route.name === 'sstv' || route.name === 'digi' || route.name === 'sat' ? null : (
           <>
             {group === 'ft8' ? page('fox', '#/fox', t('nav.fox'), t('tip.nav.fox')) : null}
             {page('contest', '#/contest', t('nav.contest'), t('tip.nav.contest'))}
@@ -169,7 +171,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
           </>
         )}
         {/* le pagine di tutti i modi, divise da quelle del modo come nel prototipo */}
-        {route.name === 'sstv' || route.name === 'digi' ? null : <span className="nav-sep" aria-hidden="true" />}
+        {route.name === 'sstv' || route.name === 'digi' || route.name === 'sat' ? null : <span className="nav-sep" aria-hidden="true" />}
         {common('export', '#/esporta', t('nav.log'))}
         {common('dxmap', '#/mappa-dx', t('nav.dxmap'))}
         {common('propagation', '#/propagazione', t('nav.propagation'))}
