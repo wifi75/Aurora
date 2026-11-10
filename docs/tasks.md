@@ -102,3 +102,12 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 - Orario tolto dalla testata; volume, cursore e tema (🌙/☀) nella barra in fondo, dove la barra del periodo diventa piu' corta (circa un terzo).
 - Ogni modo ha la sua pagina e il suo motore; DX Cluster, Bande aperte, Comandi, CQ/DXpedition, Log, radio e rotore sono in comune.
 - Da fare a passi: prima la testata nuova con FT8 e VHF (le pagine di oggi spostate, nessuna funzione persa, telefono compreso), poi i modi nuovi uno alla volta (P1, P2). Guida, Novita' e i testi nelle sei lingue.
+
+## P5. Ricerca nelle Impostazioni (richiesta di Luc ON7KEC, 2026-11-10)
+
+Luc: «Where can I find this option? More and more options are added, maybe thinking on a SEARCH button in the options/settings!». Da fare, come funzione accendibile con «?» (non ancora cominciata):
+- Un campo «Cerca» in cima alla finestra Impostazioni (`app/src/pages/SettingsWindow.tsx`, circa 50 schede).
+- Scrivendo, compare l'elenco delle opzioni che corrispondono, in tutte le schede e nelle sei lingue; un clic apre la scheda giusta.
+- Primo passo: cercare tra nomi delle schede e titoli delle sezioni. Secondo passo: ogni singola opzione, con un elenco delle etichette (piu' lavoro, va tenuto allineato alle sei lingue).
+- Le richieste degli utenti le decide il proprietario: prima si propone a Luc (risposta pronta in inglese), poi si fa.
+
