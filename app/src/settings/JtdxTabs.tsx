@@ -627,6 +627,7 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
           <Check label={t('not2.invert')} hint={t('tip.not2.invert')} checked={view.invert} onChange={(v) => setView({ invert: v })} />
           <EngineBox k="newPotential" label={t('not2.potential')} doc={doc} draft={draft} />
           <EngineBox k="newDXCCUnconfirmed" label={t('not2.unconfirmed')} doc={doc} draft={draft} />
+          <EngineBox k="newGridUnconfirmed" label={t('not2.unconfirmedGrid')} doc={doc} draft={draft} />
         </Cells>
       </Group>
 
