@@ -9,7 +9,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 - **cty.dat**: copia di riserva in desktop/cty-riserva usata quando country-files.com non risponde.
 - **Rapporti su Cloudflare**: letti e cancellati (errori e pacchetti) il 2026-11-10 pomeriggio. Da guardare: blocco della finestra sulla 0.11.224 (i3-1005G1, 36 s dopo «finestra in primo piano»).
 - **Richieste degli utenti** (Luc ON7KEC e altri): le decide il proprietario, non vanno fatte tutte; prima si propongono.
-- **In attesa**: risposta di Luc sullo stop di emergenza; STOP TX in fondo sempre rosso e locandina dell'aggiornamento al primo avvio non decisi; Aurora in giapponese e cinese da decidere.
+- **In attesa**: STOP TX in fondo sempre rosso e locandina dell'aggiornamento al primo avvio non decisi; Aurora in giapponese e cinese da decidere.
 ## Stato al 2026-11-10 mattina (0.11.222 pubblicata)
 
 - **0.11.222** (08:39 UTC): l'aggiornamento non resta piu' bloccato su «la release non ha il pacchetto di installazione con la sua firma».
