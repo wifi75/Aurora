@@ -94,6 +94,14 @@ export const diagnosisStrings = {
     "Atención: no puedes transmitir porque la radio no está conectada (CAT sin configurar). La recepción funciona igual: para transmitir elige la radio en Ajustes › Radio y pulsa Conectar.",
     "Atenção: não podes transmitir porque o rádio não está ligado (CAT não configurado). A receção funciona na mesma: para transmitir escolhe o rádio em Definições › Rádio e carrega em Ligar.",
   ],
+  'diag.ptt_failed': [
+    "La radio non è andata in trasmissione: {detail}. Controlla in Impostazioni › Radio che il metodo PTT sia lo stesso di WSJT-X (CAT, oppure RTS/DTR sulla stessa porta) e prova «Test PTT» in fondo alle Impostazioni.",
+    "The radio did not go into transmit: {detail}. In Settings › Radio check that the PTT method is the same as in WSJT-X (CAT, or RTS/DTR on the same port) and try “Test PTT” at the bottom of Settings.",
+    "Das Funkgerät ist nicht auf Senden gegangen: {detail}. Prüfe unter Einstellungen › Funkgerät, ob die PTT-Methode dieselbe wie in WSJT-X ist (CAT oder RTS/DTR am selben Anschluss), und probiere „PTT testen“ unten in den Einstellungen.",
+    "La radio n’est pas passée en émission : {detail}. Dans Réglages › Radio, vérifie que la méthode PTT est la même que dans WSJT-X (CAT, ou RTS/DTR sur le même port) et essaie « Test PTT » en bas des Réglages.",
+    "La radio no pasó a transmitir: {detail}. En Ajustes › Radio comprueba que el método PTT sea el mismo que en WSJT-X (CAT, o RTS/DTR en el mismo puerto) y prueba «Probar PTT» al final de los Ajustes.",
+    "O rádio não passou a transmitir: {detail}. Em Definições › Rádio confirma que o método PTT é o mesmo do WSJT-X (CAT, ou RTS/DTR na mesma porta) e experimenta «Testar PTT» no fim das Definições.",
+  ],
   'diag.no_radio': [
     'Stai trasmettendo senza una radio collegata: il PTT non viene comandato (va bene solo con il VOX). Scegli la radio in Impostazioni › Radio.',
     'You are transmitting without a connected radio: PTT is not keyed (fine only with VOX). Choose the radio in Settings › Radio.',
