@@ -75,6 +75,9 @@ pub struct LogEntry {
     pub rst_sent: String,
     pub rst_rcvd: String,
     pub grid: String,
+    /// Nome e QTH del corrispondente (vuoti se il log non li ha).
+    pub name: String,
+    pub qth: String,
 }
 
 pub struct Logbook {
@@ -139,6 +142,14 @@ impl Logbook {
                  PRAGMA user_version = 3;",
             )?;
         }
+        if version < 4 {
+            // quarta versione: nome e QTH del corrispondente, per mostrarli nell'elenco dei QSO (pagina dei modi testuali)
+            conn.execute_batch(
+                "ALTER TABLE qso ADD COLUMN name TEXT NOT NULL DEFAULT '';
+                 ALTER TABLE qso ADD COLUMN qth TEXT NOT NULL DEFAULT '';
+                 PRAGMA user_version = 4;",
+            )?;
+        }
         Ok(Logbook { conn: Mutex::new(conn) })
     }
 
@@ -157,8 +168,8 @@ impl Logbook {
         let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
         let conn = self.conn()?;
         conn.execute(
-            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 q.call.to_uppercase(),
                 q.grid,
@@ -172,7 +183,9 @@ impl Logbook {
                 time_on,
                 date_off,
                 time_off,
-                q.state.trim().to_uppercase()
+                q.state.trim().to_uppercase(),
+                q.name.trim(),
+                q.qth.trim()
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -249,7 +262,7 @@ impl Logbook {
     pub fn entries(&self) -> Result<Vec<LogEntry>, LogError> {
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
-            "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid FROM qso ORDER BY date DESC, time_on DESC, id DESC",
+            "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth FROM qso ORDER BY date DESC, time_on DESC, id DESC",
         )?;
         let rows = stmt.query_map([], |r| {
             Ok(LogEntry {
@@ -263,6 +276,8 @@ impl Logbook {
                 rst_sent: r.get(7)?,
                 rst_rcvd: r.get(8)?,
                 grid: r.get(9)?,
+                name: r.get(10)?,
+                qth: r.get(11)?,
             })
         })?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
@@ -276,7 +291,7 @@ impl Logbook {
         for &id in ids {
             let row = tx
                 .query_row(
-                    "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid FROM qso WHERE id = ?1",
+                    "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth FROM qso WHERE id = ?1",
                     params![id],
                     |r| {
                         Ok(LogEntry {
@@ -290,6 +305,8 @@ impl Logbook {
                             rst_sent: r.get(7)?,
                             rst_rcvd: r.get(8)?,
                             grid: r.get(9)?,
+                            name: r.get(10)?,
+                            qth: r.get(11)?,
                         })
                     },
                 )

@@ -46,3 +46,8 @@
 .digi-split:hover::after, .digi-split:active::after { border-top: 2px solid #8e7bff; top: 3px; }
 
 .digi-rxwin { border-bottom: 0; }
+
+/* cascata ridimensionabile: barra sul bordo alto */
+.digi-wf { position: relative; }
+.digi-wf-grip { position: absolute; left: 0; right: 0; top: -3px; height: 7px; cursor: row-resize; z-index: 5; touch-action: none; }
+.digi-wf-grip:hover, .digi-wf-grip:active { background: rgb(142 123 255 / 0.55); }

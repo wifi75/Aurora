@@ -239,6 +239,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   };
 
   // il divisore fra ricezione e trasmissione si trascina: la parte alta della colonna (0,2-0,8), ricordata
+  // l'altezza della cascata si regola dalla barra sul suo bordo alto (da 70 a 400 px), ricordata
+  const [wfHeight, setWfHeight] = useState<number>(() => {
+    const n = Number(browserStorage()?.getItem('aurora.digi.wfh') ?? '');
+    return Number.isFinite(n) && n >= 70 && n <= 400 ? n : 120;
+  });
+  const changeWfHeight = (px: number) => {
+    const h = Math.round(Math.min(400, Math.max(70, px)));
+    setWfHeight(h);
+    try {
+      browserStorage()?.setItem('aurora.digi.wfh', String(h));
+    } catch {
+      // l'altezza vale comunque finche' la pagina e' aperta
+    }
+  };
   const windowsRef = useRef<HTMLDivElement>(null);
   const [rxFrac, setRxFrac] = useState<number>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.rxfrac') ?? '');
@@ -841,7 +855,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       {views.waterfall ? (
-        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
+        <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
       ) : null}
 
       {views.statusBar ? (

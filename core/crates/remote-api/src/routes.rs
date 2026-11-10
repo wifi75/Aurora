@@ -2694,7 +2694,8 @@ async fn log_qsos(State(state): State<AppState>, _: Authed, Peer(peer): Peer, he
             .map(|e| {
                 let country = country_of(&e.call);
                 json!({ "id": e.id, "date": shown_date(&e.date), "time": shown_time(&e.time), "call": e.call, "band": e.band, "mode": e.mode,
-                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country })
+                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country,
+                        "name": e.name, "qth": e.qth })
             })
             .collect())
     })
@@ -2986,6 +2987,8 @@ struct LogAddBody {
     #[serde(default)]
     name: String,
     #[serde(default)]
+    qth: String,
+    #[serde(default)]
     comment: String,
 }
 
@@ -3026,6 +3029,7 @@ async fn log_add(State(state): State<AppState>, _: Authed, Peer(peer): Peer, hea
         time_on_unix_ms: start,
         time_off_unix_ms: start,
         name: clip(&b.name, 60),
+        qth: clip(&b.qth, 60),
         comment: clip(&b.comment, 200),
         ..Default::default()
     };

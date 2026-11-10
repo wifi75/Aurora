@@ -82,6 +82,7 @@ export const digiMenuStrings = {
   'digi.mi.hairlines': ['Linee sottili sulla cascata', 'Hairlines on the waterfall', 'Haarlinien im Wasserfall', 'Lignes fines sur la cascade', 'Líneas finas en la cascada', 'Linhas finas na cascata'],
   'digi.mi.defaultRst': ['Rapporti di base (599)', 'Default RST (599)', 'Standard-RST (599)', 'RST par défaut (599)', 'RST por defecto (599)', 'RST predefinido (599)'],
   'digi.split.tip': ['Trascina per cambiare l’altezza di ricezione e trasmissione', 'Drag to change the height of receive and transmit', 'Ziehen, um die Höhe von Empfang und Senden zu ändern', 'Tire pour changer la hauteur de réception et d’émission', 'Arrastra para cambiar la altura de recepción y transmisión', 'Arrasta para mudar a altura de receção e transmissão'],
+  'digi.wf.resize': ['Trascina per cambiare l’altezza della cascata', 'Drag to change the waterfall height', 'Ziehen, um die Höhe des Wasserfalls zu ändern', 'Tire pour changer la hauteur de la cascade', 'Arrastra para cambiar la altura de la cascada', 'Arrasta para mudar a altura da cascata'],
   'digi.tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'digi.log.band': ['Banda', 'Band', 'Band', 'Bande', 'Banda', 'Banda'],
   'digi.log.grid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],

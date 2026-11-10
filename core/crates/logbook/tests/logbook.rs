@@ -94,9 +94,9 @@ fn reopening_keeps_data() {
 }
 
 #[test]
-fn migration_sets_user_version_3() {
+fn migration_sets_user_version_4() {
     let lb = Logbook::open_in_memory().unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 3);
+    assert_eq!(lb.schema_version().unwrap(), 4);
 }
 
 fn station() -> logbook::adif::Station {
@@ -210,7 +210,7 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
         .unwrap();
     }
     let lb = Logbook::open(&path).unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 3);
+    assert_eq!(lb.schema_version().unwrap(), 4);
     let all = lb.all_qsos().unwrap();
     assert_eq!((all.len(), all[0].time_on.as_str(), all[0].date_off.as_str(), all[0].confirmed), (1, "123015", "20261024", None));
     drop(lb);
@@ -234,7 +234,7 @@ fn qsos_are_deleted_by_id_and_the_log_can_be_cleared() {
 #[test]
 fn deleted_qsos_are_removed_from_the_adif_file_too() {
     let text = "Aurora\n<adif_ver:5>3.1.4 <eoh>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <eor>\n<call:6>DL1ABC <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <mode:3>FT8 <eor>\n";
-    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new() }];
+    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new() }];
     let (out, n) = logbook::adif_without(text, &gone);
     assert_eq!(n, 1);
     assert!(!out.contains("K1ABC") && out.contains("DL1ABC") && out.contains("<eoh>"), "{out}");

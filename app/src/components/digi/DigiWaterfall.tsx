@@ -23,6 +23,8 @@ interface Props {
   onRow?(row: SpectrumRow): void;
   /** Un clic sulla cascata (`ctrl`: con il tasto Ctrl premuto). */
   onPick(hz: number, ctrl: boolean, commit?: boolean): void;
+  /** Cambia l'altezza della cascata (si trascina la barra sul bordo alto). */
+  onHeight?(px: number): void;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso (come la cascata). */
@@ -38,7 +40,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, height = 150, onRow, onPick }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, transmitting, height = 150, onRow, onPick, onHeight }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -135,16 +137,16 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
   const rxShown = over?.which === 'rx' ? over.hz : rxHz;
   const txShown = split ? (over?.which === 'tx' ? over.hz : (txHz ?? rxShown)) : rxShown;
 
-  // la bandierina rossa sta sul centro della ricezione
+  // la bandierina sta sul centro della ricezione: verde in ricezione, rossa in trasmissione
   const flag = (hz: number) =>
     hz >= minHz && hz <= maxHz ? (
       <span key="flag" className="digi-wf-flag" style={{ left: xOf(hz) }} title={t('digi.wf.rxTip')}>
-        <i />
+        <i style={{ background: transmitting ? '#ff3b3b' : '#22c55e' }} />
       </span>
     ) : null;
 
-  // la coppia di triangoli uniti da una linea: blu (ricezione, in alto) o rossa (trasmissione, sotto), ai due lati della frequenza (mark e
-  // space dell'RTTY); si vedono sempre tutte e due, insieme, e si sovrappongono quando la trasmissione segue la ricezione
+  // la coppia di marcatori uniti da una linea, ai due lati della frequenza (mark e space dell'RTTY): il triangolo blu (ricezione) sta sotto
+  // la linea e il rosso (trasmissione) sopra, cosi' quando coincidono formano un rombo; in split la coppia rossa va per conto suo
   const pair = (hz: number, kind: 'rx' | 'tx', title: string) => {
     const left = xOf(hz - bandwidthHz / 2);
     const right = xOf(hz + bandwidthHz / 2);
@@ -159,6 +161,26 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
 
   return (
     <div className="digi-wf" ref={wrap} style={{ height }}>
+      {onHeight ? (
+        <div
+          className="digi-wf-grip"
+          role="separator"
+          aria-orientation="horizontal"
+          title={t('digi.wf.resize')}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            const startY = e.clientY;
+            const startH = height;
+            const move = (m: PointerEvent) => onHeight(startH + (startY - m.clientY));
+            const up = () => {
+              window.removeEventListener('pointermove', move);
+              window.removeEventListener('pointerup', up);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+          }}
+        />
+      ) : null}
       <canvas ref={scale} className="digi-wf-scale" />
       <canvas
         ref={flow}
