@@ -234,16 +234,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   };
 
   // il divisore fra ricezione e trasmissione si trascina: la parte alta della colonna (0,2-0,8), ricordata
-  // l'altezza della cascata si regola dalla barra sul suo bordo alto (da 70 a 400 px), ricordata
+  // l'altezza della cascata si regola dalla barra sul suo bordo alto (da 50 a 400 px), ricordata
   const [wfHeight, setWfHeight] = useState<number>(() => {
-    const n = Number(browserStorage()?.getItem('aurora.digi.wfh') ?? '');
-    return Number.isFinite(n) && n >= 70 && n <= 400 ? n : 120;
+    const n = Number(browserStorage()?.getItem('aurora.digi.wfh2') ?? '');
+    return Number.isFinite(n) && n >= 50 && n <= 400 ? n : 80;
   });
   const changeWfHeight = (px: number) => {
-    const h = Math.round(Math.min(400, Math.max(70, px)));
+    const h = Math.round(Math.min(400, Math.max(50, px)));
     setWfHeight(h);
     try {
-      browserStorage()?.setItem('aurora.digi.wfh', String(h));
+      browserStorage()?.setItem('aurora.digi.wfh2', String(h));
     } catch {
       // l'altezza vale comunque finche' la pagina e' aperta
     }
