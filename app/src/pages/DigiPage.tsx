@@ -32,8 +32,8 @@ const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63
 const AUTOCQ_DELAY_S = 8;
 /** Il tratto di audio che si ascolta e si mostra (Hz). */
 const WF_MIN = 0;
-/**: la cascata arriva fino al massimo che il motore calcola (5 kHz), cosi' ogni kHz e' piu' stretto e si vede una banda piu' larga. */
-const WF_MAX = 5000;
+/** Il tratto di audio della cascata: 0-3,5 kHz bastano per i modi testuali ( ne mostra circa 6). */
+const WF_MAX = 3500;
 const SEEK_LIMITS = { min: 300, max: 3300 };
 
 interface Views {
