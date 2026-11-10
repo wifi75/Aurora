@@ -371,10 +371,11 @@ impl tracing::field::Visit for Testo {
 }
 
 /// Situazioni che dipendono da come e' configurata la stazione, non da un errore del programma: la radio non ancora collegata o non
-/// accesa (nei rapporti del 2026-11-09 erano un terzo delle righe, da 80 installazioni). L'interfaccia le dice gia' all'operatore.
+/// accesa (nei rapporti del 2026-11-09 erano un terzo delle righe, da 80 installazioni), o il TX premuto nei primi secondi dopo il
+/// collegamento, quando il PTT e' fermo apposta (protezione voluta, rapporti del 2026-11-10). L'interfaccia le dice gia' all'operatore.
 fn scelta_dell_operatore(testo: &str) -> bool {
     let t = testo.to_lowercase();
-    ["nessuna radio collegata", "radio non collegata", "nessuna radio tci collegata", "radio tci non collegata", "link non collegata", "radio non in linea", "scegli prima il modello della radio"]
+    ["nessuna radio collegata", "radio non collegata", "nessuna radio tci collegata", "radio tci non collegata", "link non collegata", "radio non in linea", "scegli prima il modello della radio", "dopo il collegamento"]
         .iter()
         .any(|p| t.contains(p))
 }
@@ -1086,6 +1087,7 @@ mod tests {
     fn la_radio_non_collegata_non_e_un_errore_da_segnalare() {
         assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: nessuna radio collegata: scegli il CAT in Impostazioni"));
         assert!(super::scelta_dell_operatore("PTT: spegnimento fallito (x): PTT: radio non collegata"));
+        assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: PTT bloccato per altri 3 s dopo il collegamento"));
         assert!(!super::scelta_dell_operatore("errore del flusso di uscita audio: Failed to get current padding"));
     }
 
