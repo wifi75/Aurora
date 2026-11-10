@@ -65,3 +65,8 @@
 /* l'area centrale si restringe quanto serve: la cascata e le barre in fondo salgono e restano tutte in vista */
 .digi-classica .digi-main, .digi-main { min-height: 0; }
 .digi-page { gap: 6px; }
+
+/* colonna di sinistra: ricezione, trasmissione e cascata; la colonna di destra (DX Cluster, Log) prende tutta l'altezza */
+.digi-leftcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+.digi-leftcol .digi-windows { flex: 1 1 0; min-height: 0; }
+.digi-leftcol .digi-wf { flex: none; }

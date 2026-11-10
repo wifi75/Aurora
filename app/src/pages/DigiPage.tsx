@@ -778,6 +778,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
+        <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef}>
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
             {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : views.underlineSent ? withSentUnderlined(text) : text}
@@ -795,16 +796,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}
             />
-            <div className="digi-txbtns">
-              {/* il PTT parte da solo con la trasmissione (metodo scelto in Impostazioni > Radio): qui si avvia e si ferma */}
-              <button type="button" className="glass sstv-btn sstv-btn--primary" disabled={sending || !snap.can_transmit || tx.trim() === ''} title={t('digi.tx.sendTip')} onClick={() => send(tx)}>
-                {t('digi.tx.send')}
-              </button>
-              <button type="button" className="glass sstv-btn" disabled={!sending} onClick={() => void digiAbort().then(onChanged, onChanged)}>
-                {t('digi.tx.stop')}
-              </button>
-              <small className="muted">{t('digi.tx.sendHelp')}</small>
-            </div>
             {sending ? (
               <div className="sstv-progress digi-txprogress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
                 <span style={{ width: `${snap.tx.progress * 100}%` }} />
@@ -818,6 +809,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               </p>
             ) : null}
           </div>
+        </div>
+        {views.waterfall ? (
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
+        ) : null}
         </div>
         {views.log ? (
           <DigiLog
@@ -850,9 +845,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         ) : null}
       </div>
 
-      {views.waterfall ? (
-        <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
-      ) : null}
 
       {views.statusBar ? (
         <DigiStatusBar
