@@ -174,7 +174,9 @@ export function applyActivityFilters(decodes: DecodedMessage[], filters: Filters
     if (tags) {
       // «CQ» comprende ogni CQ, anche quelli con un'etichetta di novità
       const st = tags.has('new_state') || tags.has('new_state_band') ? ctx.stateTag?.(d) ?? null : null;
-      const hit = (d.tag !== null && tags.has(d.tag)) || (tags.has('cq') && isCq(d.text)) || (st !== null && tags.has(st));
+      // una novità assoluta e' anche novità sulla banda: «sulla banda» comprende la sua versione senza banda
+      const widened = (t: string | null): boolean => t !== null && (tags.has(t) || (t.endsWith('_band') === false && tags.has(`${t}_band`)));
+      const hit = widened(d.tag) || (tags.has('cq') && isCq(d.text)) || widened(st);
       if (!hit) return false;
     }
     if (filters.minSnr !== null && d.snr < filters.minSnr) return false;
