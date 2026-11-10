@@ -168,7 +168,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
             {page('stats', '#/statistiche', t('nav.stats'))}
           </>
         )}
-        {/* le pagine di tutti i modi */}
+        {/* le pagine di tutti i modi, divise da quelle del modo come nel prototipo */}
+        {route.name === 'sstv' || route.name === 'digi' ? null : <span className="nav-sep" aria-hidden="true" />}
         {common('export', '#/esporta', t('nav.log'))}
         {common('dxmap', '#/mappa-dx', t('nav.dxmap'))}
         {common('propagation', '#/propagazione', t('nav.propagation'))}
