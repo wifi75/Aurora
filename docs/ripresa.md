@@ -112,5 +112,5 @@ Pannello Comandi (DX scritto a mano, rapporto, Hold Tx Freq, tipo di CQ, Tune e 
 
 - Codice: `D:\progetti\pc\Aurora` (repository pubblico github.com/wifi75/Aurora). Compilazione dell'installatore: `D:\build\Aurora-0.11.1` (cartella di rilascio, si porta sul commit con `git checkout --detach`).
 - Analisi di WSJT-X 3: `D:\build\analisi-wsjtx` (sorgenti e binari), `docs/analisi-wsjtx-3.md`.
-- Chiave di firma degli aggiornamenti: `%USERPROFILE%\.aurora-signing\aurora.key` (fuori dal repository).
+- Chiave di firma degli aggiornamenti: nei segreti di GitHub (installatori compilati da GitHub); copia sul PC di casa in `%USERPROFILE%\.aurora-signing\aurora.key`, solo per prove in locale.
 - Le copie di lavoro `D:\build\wt-*` non elencate sopra sono gia' unite a `main` e si possono cancellare.
