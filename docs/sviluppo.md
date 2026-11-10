@@ -3,7 +3,7 @@
 Dettagli che servono solo quando si lavora su quella parte. Le regole sempre valide sono in `AGENTS.md`.
 
 ## Dove sta
-- Cartella di lavoro: `D:\progetti\Aurora` (spostata da `C:\Users\Tiziano\Desktop\progetti\Aurora` il 2026-10-25; tutti i progetti sono in `D:\progetti`).
+- Cartella di lavoro: `D:\progetti\pc\Aurora` (dal 2026-11-10 i progetti in `D:\progetti` sono divisi in `pc`, `smartphone`, `web` e `archivio`; prima `D:\progetti\Aurora`, e fino al 2026-10-25 `C:\Users\Tiziano\Desktop\progetti\Aurora`).
 - Chiave di firma degli aggiornamenti: `%USERPROFILE%\.aurora-signing\aurora.key` (fuori dal repository, da tenere in un backup). La pubblica e' `desktop/updater.pub`.
 - Dati del programma installato: `%APPDATA%\Aurora` (`aurora.env`, impostazioni, storico, `logs\aurora.log`); programma in `%LOCALAPPDATA%\Aurora`.
 

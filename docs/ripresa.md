@@ -26,7 +26,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 ## Prompt da incollare nella sessione nuova
 
 ```text
-Riprendi il lavoro su Aurora nella cartella D:\progetti\Aurora.
+Riprendi il lavoro su Aurora nella cartella D:\progetti\pc\Aurora.
 1. Leggi AGENTS.md, docs/ripresa.md, memory.md (sezione «Come riprendere»), TODO.md e docs/tasks.md.
 2. Allineati: git fetch, controlla main e i rami in corso elencati sotto.
 3. Dimmi in breve a che punto siamo, poi riprendi dal punto «Prossimo passo» di docs/ripresa.md.
@@ -101,7 +101,7 @@ Pannello Comandi (DX scritto a mano, rapporto, Hold Tx Freq, tipo di CQ, Tune e 
 
 ## Dove stanno le cose
 
-- Codice: `D:\progetti\Aurora` (repository pubblico github.com/wifi75/Aurora). Compilazione dell'installatore: `D:\build\Aurora-0.11.1` (cartella di rilascio, si porta sul commit con `git checkout --detach`).
+- Codice: `D:\progetti\pc\Aurora` (repository pubblico github.com/wifi75/Aurora). Compilazione dell'installatore: `D:\build\Aurora-0.11.1` (cartella di rilascio, si porta sul commit con `git checkout --detach`).
 - Analisi di WSJT-X 3: `D:\build\analisi-wsjtx` (sorgenti e binari), `docs/analisi-wsjtx-3.md`.
 - Chiave di firma degli aggiornamenti: `%USERPROFILE%\.aurora-signing\aurora.key` (fuori dal repository).
 - Le copie di lavoro `D:\build\wt-*` non elencate sopra sono gia' unite a `main` e si possono cancellare.
