@@ -111,6 +111,23 @@ jobs:
           cp src-tauri/target/release/bundle/deb/*.deb ../dist-linux/Aurora-Linux-amd64.deb
           cd ../dist-linux && sha256sum * > SHA256SUMS-linux.txt
 
+      - name: Prova dell'AppImage (Hamlib dentro e che parta da solo)
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+        run: |
+          # si toglie l'Hamlib del sistema: rigctld deve partire con le sue librerie dentro l'AppImage, come sul PC di chi non lo installa
+          sudo apt-get remove -y --purge libhamlib-utils 'libhamlib4*' || true
+          cd "$(mktemp -d)"
+          cp "$GITHUB_WORKSPACE/dist-linux/Aurora-Linux-x86_64.AppImage" aurora.AppImage
+          chmod +x aurora.AppImage
+          ./aurora.AppImage --appimage-extract > /dev/null
+          # Aurora lo cerca in <programma>/../lib/Aurora/hamlib
+          R=squashfs-root/usr/lib/Aurora/hamlib/rigctld
+          if [ ! -x "$R" ]; then
+            echo "rigctld non e' in usr/lib/Aurora/hamlib: Aurora non lo troverebbe"; find squashfs-root -name 'rigctl*'; exit 1
+          fi
+          "$R" --version
+          squashfs-root/usr/lib/Aurora/hamlib/rigctl -l | head -3
+
       - name: Allegati alla release
         if: github.event_name == 'release'
         env:
