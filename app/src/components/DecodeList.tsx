@@ -520,14 +520,15 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <span className="decode-text">
               {queueMark}
               <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''))}</span>
+            </span>
+            </CallsignTip>
+            <span className={`decode-where${own && txRepeat(d) > 1 ? ' decode-where--rep' : ''}`}>
+              {/* «×N» delle mie trasmissioni ripetute: subito prima della bandiera, a 7 px */}
               {own && txRepeat(d) > 1 ? (
                 <small className="tx-rep" title={t('tip.row.txRepeat', { n: txRepeat(d) })}>
                   ×{txRepeat(d)}
                 </small>
               ) : null}
-            </span>
-            </CallsignTip>
-            <span className="decode-where">
               <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
               <span className="w-country">
                 {prefs.showCountry && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}

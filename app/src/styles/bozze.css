@@ -997,7 +997,7 @@ html[data-theme='dark'] .log4om-table tr.log4om-row--flash .log4om-call { color:
 .dxped-heard-dot { background: #2cf5a4; box-shadow: 0 0 6px #2cf5a4; animation: none; }
 
 /* le mie trasmissioni uguali raccolte in una riga: «×N» piccolo accanto a Tx */
-.decode-row--tx .tx-rep { flex: 0 0 auto; margin-left: 6px; padding: 0 5px; border-radius: 8px; font-size: 0.78em; font-weight: 700; line-height: 1.5; background: color-mix(in srgb, currentColor 12%, transparent); opacity: 0.85; }
+.decode-row--tx .tx-rep { flex: 0 0 auto; margin-right: 7px; padding: 0 5px; border-radius: 8px; font-size: 0.78em; font-weight: 700; line-height: 1.5; background: color-mix(in srgb, currentColor 12%, transparent); opacity: 0.85; }
 
 /* scheda DXCC nel pannello Log un po' piu' piccola (richiesta del proprietario): nominativo e paese, bandiera, campo Prova, etichette */
 .dock-panel--log .dxcc-card--panel .dxcc-subject-call { font-size: 13.5px; }
@@ -1406,3 +1406,7 @@ html:not([data-theme='light']) .cq-chip:hover { background: color-mix(in srgb, v
 /* passando il mouse la casella resta del suo colore chiaro, appena piu' chiara (prima tornava il colore del tipo e diventava scura) */
 html .cq-strip .cq-chip.cq-chip--a:hover { background: #ece7ff; border-color: #b9aaff; color: #0b1220; filter: none; }
 html .cq-strip .cq-chip.cq-chip--b:hover { background: #dcf8ee; border-color: #8fdcc1; color: #0b1220; filter: none; }
+
+/* righe Tx ripetute: una colonna in piu' davanti alla bandiera per «×N» (7 px dalla bandiera) */
+.decode-where--rep { grid-template-columns: auto 1.6rem minmax(0, 1fr) calc(6.5rem - 7px); }
+@media (max-width: 63.99rem) { .decode-where--rep .tx-rep { order: -1; } }
