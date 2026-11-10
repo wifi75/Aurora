@@ -1345,6 +1345,11 @@ impl WindowsVolumePort {
     fn apply(&self, tenths: u32) {
         let volume = 1.0 - (tenths.min(450) as f32 / 450.0);
         let Some(name) = (self.output)() else { return };
+        // «TCI (alla radio)» non e' una scheda di Windows: la potenza la regola la SDR (PWR − / + del display). Prima ogni trasmissione
+        // scriveva due volte «Pwr: uscita non trovata» nel registro (pacchetto di assistenza di Luc, 2026-11-10: 498 righe in due giorni)
+        if name == tx_native::TCI_OUTPUT_NAME {
+            return;
+        }
         let out = match audio_spectrum::OutputEndpoint::find(&name) {
             Ok(out) => out,
             Err(e) => {

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **TCI**: il cursore Pwr non cerca piu' una scheda di Windows chiamata «TCI (alla radio)» a ogni trasmissione (due righe di errore per periodo nel registro); con il TCI la potenza la regola la SDR.
 - **Avvisi dell'audio**: in trasmissione non compare piu' «L'ingresso audio e' muto da troppo tempo» (molte radio mettono a zero l'audio USB in TX; segnalato da Luc), ne' l'ingresso saturo o debole.
 - **Senza CAT**: con «Nessuno (senza CAT, frequenza a mano)» il display della radio non compare piu' (non aveva niente da mostrare); torna scegliendo Hamlib, OmniRig o TCI.
 
