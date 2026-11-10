@@ -7515,3 +7515,8 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 
 /* Finestra RX: niente linguette «ti sta chiamando» / «ti ha risposto» (li' i messaggi sono tutti del QSO; scelta del proprietario, 2026-11-10) */
 .log-rx .me-mark { display: none !important; }
+
+/* Finestra RX: ora/eta' a 4 px dal bordo sinistro e allineate a sinistra; bandierina e paese altri 20 px piu' a sinistra (proprietario, 2026-11-10) */
+.log-rx .decode-row { padding-left: 4px !important; grid-template-columns: 3.7rem 1.8rem calc(9.8rem - 40px) minmax(0, 1fr) !important; }
+.log-rx .decode-row .c-time { justify-self: start; text-align: left; padding-left: 0 !important; margin-left: 0 !important; }
+.log-rx .decode-row .c-age { justify-content: start; }
