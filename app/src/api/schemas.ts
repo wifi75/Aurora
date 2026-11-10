@@ -177,6 +177,18 @@ export const EventSchema = z.discriminatedUnion('type', [
   StationStatusSchema.extend({ type: z.literal('status') }),
   DecodedMessageSchema.extend({ type: z.literal('decode') }),
   QsoRecordSchema.extend({ type: z.literal('qso_logged') }),
+  z.object({
+    type: z.literal('digi'),
+    kind: z.string(),
+    mode: z.string().optional(),
+    text: z.string().optional(),
+    state: z.string().optional(),
+    progress: z.number().optional(),
+    level_db: z.number().optional(),
+    freq_hz: z.number().optional(),
+    listening: z.boolean().optional(),
+    message: z.string().optional(),
+  }),
   z.object({ type: z.literal('tx_halted') }),
   z.object({ type: z.literal('notice'), id: z.string(), detail: z.string() }),
   // SSTV: righe in arrivo, immagine finita, stato di ricezione e trasmissione (vedi docs/api.md)

@@ -1,5 +1,6 @@
 import { useFox } from './fox';
 import { periodSecs } from '../lib/period';
+import { emitDigi } from '../lib/digiBus';
 import { emitSstv } from '../lib/sstvBus';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
@@ -284,6 +285,10 @@ export const useStation = create<StationState>((set) => ({
       case 'sstv':
         // fuori dallo stato della Stazione: le righe dell'immagine vanno solo a chi le disegna
         emitSstv(event);
+        break;
+      case 'digi':
+        // come l'SSTV: il testo va solo a chi lo mostra
+        emitDigi(event);
         break;
       case 'tx_halted':
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));

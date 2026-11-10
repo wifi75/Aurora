@@ -36,6 +36,7 @@ import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
 import { SstvPage } from './pages/SstvPage';
+import { DigiPage } from './pages/DigiPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { ExportPage } from './pages/ExportPage';
@@ -169,6 +170,8 @@ export function App() {
     content = <RotatorPage />;
   } else if (route.name === 'sstv') {
     content = <SstvPage />;
+  } else if (route.name === 'digi') {
+    content = <DigiPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else if (route.name === 'fox') {

@@ -1602,3 +1602,49 @@ export async function sstvTransmit(mode: string, png: Blob, call?: string | null
 export async function sstvAbort(): Promise<void> {
   await request('/sstv/tx/abort', { method: 'POST' });
 }
+
+// ---- Modi testuali (PSK31/PSK63, RTTY): vedi docs/api.md ----
+
+export interface DigiMacro {
+  label: string;
+  text: string;
+}
+
+export interface DigiSettings {
+  mode: 'psk31' | 'psk63' | 'rtty';
+  rx_freq_hz: number;
+  tx_follow_rx: boolean;
+  tx_freq_hz: number;
+  rtty_shift_hz: number;
+  rtty_baud: number;
+  auto_receive: boolean;
+  macros: DigiMacro[];
+}
+
+export interface DigiSnapshot {
+  rx: { listening: boolean; level_db: number };
+  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
+  settings: DigiSettings;
+  can_transmit: boolean;
+  modes: { id: string; name: string }[];
+}
+
+export async function getDigi(): Promise<DigiSnapshot> {
+  return (await (await request('/digi')).json()) as DigiSnapshot;
+}
+
+export async function putDigi(settings: DigiSettings): Promise<DigiSnapshot> {
+  return (await (await request('/digi', { ...jsonInit(settings), method: 'PUT' })).json()) as DigiSnapshot;
+}
+
+export async function digiRx(action: 'start' | 'stop'): Promise<void> {
+  await request(`/digi/rx/${action}`, { method: 'POST' });
+}
+
+export async function digiTransmit(text: string): Promise<void> {
+  await request('/digi/tx', jsonInit({ text }));
+}
+
+export async function digiAbort(): Promise<void> {
+  await request('/digi/tx/abort', { method: 'POST' });
+}

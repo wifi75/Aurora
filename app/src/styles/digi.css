@@ -1,0 +1,38 @@
+/* Pagina dei modi testuali (PSK31, PSK63, RTTY): usa gli stessi pulsanti, indicatori e barre dell'SSTV. */
+.digi-page { display: flex; flex-direction: column; gap: 1rem; padding: 0.4rem 0.6rem 2rem; }
+.digi-head { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+.digi-head h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.02em; }
+.digi-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: 1.4rem; align-items: start; }
+.digi-rx, .digi-tx { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.digi-bar { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.digi-bar strong { margin-right: auto; font-size: 1.05rem; }
+.digi-level { width: 9rem; flex: none; }
+.digi-text {
+  margin: 0; min-height: 16rem; max-height: 52vh; overflow: auto; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--panel-raised); color: var(--text); font: 1rem/1.55 var(--font-data); white-space: pre-wrap; word-break: break-word;
+}
+.digi-empty { color: var(--text-muted); font-family: inherit; }
+.digi-side { display: flex; flex-direction: column; gap: 0.8rem; }
+.digi-freq { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-raised); }
+.digi-freq label, .digi-fields label, .digi-two label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-freq input[type='range'] { width: 100%; accent-color: var(--accent); }
+.digi-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.digi-freq input[type='number'], .digi-freq select, .digi-fields input, .digi-edit-row input {
+  font: inherit; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0;
+}
+.digi-fields { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.digi-fields .digi-call { width: 9rem; text-transform: uppercase; font-family: var(--font-data); }
+.digi-fields .digi-rst { width: 4.5rem; }
+.digi-macros { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.digi-sendnow { margin-left: auto; }
+.digi-box {
+  width: 100%; resize: vertical; font: 1rem/1.5 var(--font-data); color: var(--text); background: var(--panel-raised); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.7rem 0.9rem; box-sizing: border-box;
+}
+.digi-edit { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+.digi-edit-row { display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; gap: 0.5rem; }
+.digi-edit-actions { display: flex; gap: 0.6rem; }
+@media (max-width: 62rem) {
+  .digi-grid { grid-template-columns: minmax(0, 1fr); }
+  .digi-edit-row { grid-template-columns: minmax(0, 1fr); }
+}
