@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Ramo sviluppo (privato, 2026-11-10 sera)
+
+- Ramo `sviluppo` su github.com/wifi75/Aurora-sviluppo (remote `sviluppo`): main + SSTV (crate `mode-sstv`, pagina SSTV). Mai su `origin`; le correzioni FT8 si fanno su main e si portano qui. Installatore privato: release `sviluppo-ultima` (workflow `sviluppo.yml`), senza aggiornamento automatico (`AURORA_SVILUPPO`).
+- **Prossimo passo**: menu nuovo P4 (`docs/prototipo-menu-modi/index.html`, B3-3) su questo ramo; non ancora cominciato.
+- 4 prove di `remote-api` `engine_settings` falliscono anche su main: da sistemare.
+
 ## Stato al 2026-11-10 sera (0.11.228 pubblicata, rotori su main)
 
 - **0.11.228** (15:23 UTC): cascata ferma in trasmissione e spettro spegnibile (UN7MBV), filtro «Spotter» del DX Cluster (Luc ON7KEC), MSK144 centrato, chiusura di tutte le finestre con la principale, consigli ARS/split per FT-991 e IC-9700.
