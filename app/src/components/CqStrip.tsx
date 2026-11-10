@@ -66,6 +66,8 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
   }, [decodes, now]);
 
   // scorrimento automatico: solo se c'e' qualcosa fuori vista; avanti e indietro, ~28 px al secondo
+  // si avvia quando la fascia c'e' davvero: con il pannello vuoto all'apertura (nessun CQ ancora) prima non partiva piu'
+  const hasItems = items.length > 0;
   useEffect(() => {
     const el = box.current;
     if (!el || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
@@ -104,7 +106,7 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
     };
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, []);
+  }, [hasItems]);
 
   if (items.length === 0) return <section className="cq-strip cq-strip--empty"><p>{emptyText ?? t('decode.noCq')}</p></section>;
   return (
