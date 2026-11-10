@@ -42,6 +42,69 @@ fn ww_digi_chiamando_cq() {
     assert_eq!((tx.n, tx.text.as_str()), (3, "K1ABC IU3ABC R IO91"));
 }
 
+/// In contest la trasmissione resta sempre accesa: finito un QSO si libera il DX e si torna subito al CQ, senza Stopped, e se nessuno risponde
+/// il CQ continua (richiesta del proprietario, 2026-11-10).
+#[test]
+fn in_contest_dopo_il_qso_si_torna_al_cq_con_la_trasmissione_accesa() {
+    let mut s = seq();
+    s.set_contest(Some(ContestSeq::new(Activity::WwDigi)));
+    s.call_cq(None).expect("CQ");
+    assert_eq!(s.next_tx(Slot(10), at(10)).expect("CQ in onda").text, "CQ WW IU3ABC IO91");
+    s.on_decodes_at(Slot(11), &[Decoded::new("IU3ABC K1ABC FN42", -12, 1400)], Some(at(11) + 13.0));
+    assert_eq!(s.next_tx(Slot(12), at(12)).expect("risposta").text, "K1ABC IU3ABC R IO91");
+    // il DX chiude con RR73: da qui in poi il QSO e' finito
+    s.on_decodes_at(Slot(13), &[Decoded::new("IU3ABC K1ABC RR73", -12, 1400)], Some(at(13) + 13.0));
+    let mut events = s.drain_events();
+    let mut cq_again = None;
+    for slot in [14u64, 16, 18, 20] {
+        let t = s.next_tx(Slot(slot), at(slot));
+        // il periodo dopo arrivano le decodifiche (anche vuote) e la sequenza decide
+        s.on_decodes_at(Slot(slot + 1), &[], Some(at(slot + 1) + 13.0));
+        if let Some(tx) = t {
+            if tx.text.starts_with("CQ ") && cq_again.is_none() {
+                cq_again = Some(slot);
+            }
+        }
+        events.extend(s.drain_events());
+    }
+    assert!(events.iter().any(|e| matches!(e, Event::QsoComplete(_))), "il QSO e' a log: {events:?}");
+    assert!(!events.iter().any(|e| matches!(e, Event::Stopped(_))), "niente arresto in contest: {events:?}");
+    assert!(s.is_enabled(), "Abilita Tx resta acceso");
+    assert!(cq_again.is_some(), "dopo il QSO si torna a chiamare CQ");
+    // e il CQ continua finche' nessuno risponde
+    for slot in [22u64, 24, 26] {
+        let tx = s.next_tx(Slot(slot), at(slot)).unwrap_or_else(|| panic!("CQ al periodo {slot}"));
+        assert_eq!(tx.text, "CQ WW IU3ABC IO91", "periodo {slot}");
+        s.on_decodes_at(Slot(slot + 1), &[], Some(at(slot + 1) + 13.0));
+    }
+    assert!(s.is_enabled());
+}
+
+/// In contest il watchdog non ferma mai il CQ, anche dopo ore di chiamate senza risposta.
+#[test]
+fn in_contest_il_watchdog_non_ferma_il_cq() {
+    let mut s = seq();
+    s.set_contest(Some(ContestSeq::new(Activity::WwDigi)));
+    s.call_cq(None).expect("CQ");
+    for slot in (10..120u64).step_by(2) {
+        assert!(s.next_tx(Slot(slot), at(slot)).is_some(), "periodo {slot}");
+    }
+    assert!(s.is_enabled());
+    assert!(!s.drain_events().iter().any(|e| matches!(e, Event::Stopped(_))));
+}
+
+/// L'operatore invece puo' sempre fermare, anche in contest.
+#[test]
+fn in_contest_l_operatore_ferma_ancora() {
+    let mut s = seq();
+    s.set_contest(Some(ContestSeq::new(Activity::WwDigi)));
+    s.call_cq(None).expect("CQ");
+    assert!(s.next_tx(Slot(10), at(10)).is_some());
+    s.halt();
+    assert!(!s.is_enabled());
+    assert!(s.drain_events().iter().any(|e| matches!(e, Event::Stopped(StopReason::Halt))));
+}
+
 /// Field Day con il seriale che non serve e Roundup con il seriale che avanza a ogni QSO a log.
 #[test]
 fn roundup_seriale_avanza() {

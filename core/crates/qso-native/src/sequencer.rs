@@ -1357,10 +1357,15 @@ impl Sequencer {
         }
         let in_progress = self.last_tx.as_ref().is_some_and(|(s, _)| *s == slot);
         if self.opts.watchdog_min > 0 && self.idle_minutes >= self.opts.watchdog_min && !in_progress {
-            self.txwatchdog(true);
-            self.stop(StopReason::Watchdog);
-            self.note_state();
-            return None;
+            if self.contest.is_some() {
+                // in contest il watchdog non ferma mai la trasmissione: si ricomincia a contare e si continua a chiamare
+                self.idle_minutes = 0;
+            } else {
+                self.txwatchdog(true);
+                self.stop(StopReason::Watchdog);
+                self.note_state();
+                return None;
+            }
         }
         if slot.is_even() != self.tx_even {
             return None;
@@ -1655,6 +1660,14 @@ impl Sequencer {
     }
 
     fn stop(&mut self, reason: StopReason) {
+        // in contest Abilita Tx e l'Auto CQ non si spengono da soli (richiesta del proprietario, 2026-11-10): a fine QSO, con il watchdog,
+        // se il DX risponde a un altro o non c'e' altro da fare, si libera la stazione e si torna subito al CQ. Ferma solo l'operatore.
+        if self.contest.is_some() && reason != StopReason::Halt {
+            self.watchdog_expired = false;
+            self.idle_minutes = 0;
+            self.clear_dx_inner();
+            return;
+        }
         self.enabled = false;
         self.halt_housekeeping();
         self.events.push(Event::Stopped(reason));
