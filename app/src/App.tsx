@@ -231,7 +231,7 @@ export function App() {
       <main className="app-main">
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
-      {REMOTE_TOUCH ? null : <Footer />}
+      {REMOTE_TOUCH ? null : <Footer page={route.name} />}
       <Toaster />
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}

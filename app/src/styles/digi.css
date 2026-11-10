@@ -126,6 +126,8 @@
 .digi-empty { color: #7a7a7a; font-family: Tahoma, Arial, sans-serif; font-size: 12px; }
 .digi-txwrap { display: flex; flex-direction: column; flex: 1 1 45%; min-height: 9rem; background: #fff; }
 .digi-txwin { flex: 1; width: 100%; box-sizing: border-box; outline: none; min-height: 9rem; }
+.digi-txbtns { display: flex; align-items: center; gap: 8px; padding: 4px 6px; background: var(--panel, #0f192b); border-top: 1px solid var(--border, #2d3d66); }
+.digi-txbtns small { margin-left: auto; font-size: 11px; }
 .digi-txprogress { margin: 3px; height: 1.6rem; border-radius: 0; }
 
 /* il log di lato: righe gialline, QSO in corso in azzurro */

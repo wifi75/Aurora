@@ -26,7 +26,9 @@ function usePeriodClock(mode: string | undefined): { elapsed: number; total: num
  * dell'ultimo periodo, l'avanzamento del periodo con i secondi, il profilo della radio e il watchdog; a destra nome, versione e autore
  * dal core (mai scritti a mano qui).
  */
-export function Footer() {
+export function Footer({ page }: { page?: string } = {}) {
+  // decodifiche, avanzamento del periodo e watchdog sono cose dell'FT8: nelle pagine degli altri modi non servono
+  const otherMode = page === 'sstv' || page === 'digi' || page === 'sat';
   const t = useT();
   const { data, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
   const status = useStatusPick(['mode', 'transmitting']);
@@ -43,7 +45,7 @@ export function Footer() {
 
   return (
     <footer className="app-footer app-bar">
-      {status ? (
+      {status && !otherMode ? (
         <div className="app-bar-left">
           <span className="bar-item">
             {t('bar.decodes')}: <b>{periodDecodes}</b>

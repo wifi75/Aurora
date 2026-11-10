@@ -663,6 +663,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}
             />
+            <div className="digi-txbtns">
+              {/* il PTT parte da solo con la trasmissione (metodo scelto in Impostazioni > Radio): qui si avvia e si ferma */}
+              <button type="button" className="glass sstv-btn sstv-btn--primary" disabled={sending || !snap.can_transmit || tx.trim() === ''} title={t('digi.tx.sendTip')} onClick={() => send(tx)}>
+                {t('digi.tx.send')}
+              </button>
+              <button type="button" className="glass sstv-btn" disabled={!sending} onClick={() => void digiAbort().then(onChanged, onChanged)}>
+                {t('digi.tx.stop')}
+              </button>
+              <small className="muted">{t('digi.tx.sendHelp')}</small>
+            </div>
             {sending ? (
               <div className="sstv-progress digi-txprogress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
                 <span style={{ width: `${snap.tx.progress * 100}%` }} />
