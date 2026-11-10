@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Menu dei contest in ordine di data**: in ogni categoria (HF, Field Day, VHF e oltre) i contest sono ordinati per data di inizio, dal piu' vicino; senza data in fondo.
 
 ## 0.11.231 - 2026-11-10
 - **Contest: il TX resta sempre acceso** (richiesta di IU3WJQ): in gara Abilita Tx e Auto CQ non si spengono da soli; finito un QSO (o se il DX risponde a un altro, o con il watchdog) si libera la stazione e si torna subito al CQ, e il CQ continua finche' nessuno risponde. Ferma solo l'operatore (STOP TX, Esc).
