@@ -262,7 +262,10 @@ fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn 
                 if let Some(page) = solo_page(url.as_str()) {
                     let app = app.clone();
                     let url = url.clone();
-                    let _ = app.clone().run_on_main_thread(move || open_solo_window(&app, &page, url));
+                    // la finestra si costruisce da un thread a parte, non dal thread della finestra: su Windows `build()` chiamato dal
+                    // thread principale (dentro un gestore di eventi) aspetta WebView2 e puo' fermare tutto (blocchi «apertura di una
+                    // finestra a parte» dai rapporti della 0.11.219). Tauri passa da solo al thread giusto e aspetta il risultato.
+                    let _ = std::thread::Builder::new().name("aurora-finestra".into()).spawn(move || open_solo_window(&app, &page, url));
                 } else {
                     links::open_in_browser(url.as_str());
                 }
@@ -286,6 +289,9 @@ fn solo_page(url: &str) -> Option<String> {
 
 /// Apre (o porta davanti, se c'e' gia') la finestra di una pagina da sola: ridimensionabile, sul secondo schermo se c'e'.
 fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
+    // una apertura alla volta: con due clic veloci la seconda trova la finestra gia' fatta e la porta davanti
+    static OPENING: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _one_at_a_time = OPENING.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     crash::activity("apertura di una finestra a parte");
     let label = format!("finestra-{page}");
     if let Some(window) = app.get_webview_window(&label) {
