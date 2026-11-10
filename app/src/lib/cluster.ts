@@ -8,6 +8,8 @@ export interface SpotFilters {
   search: string;
   /** Continenti di chi manda lo spot: `mine` e' il proprio; vuoto = tutti. */
   spotters?: string[];
+  /** Solo gli spot nuovi per la lista dei desideri (paese, griglia, banda). */
+  newOnly?: boolean;
 }
 
 /** Gli spot che passano i filtri della vista (l'ordine non cambia). */
@@ -19,7 +21,8 @@ export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters,
       const mine = filters.bands.includes('now') && s.band === currentBand;
       if (!mine && !(s.band !== null && filters.bands.includes(s.band))) return false;
     }
-    if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.includes(s.mode))) return false;
+    // «PSK» comprende PSK31, PSK63 e gli altri PSK
+    if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.some((m) => m === s.mode || (m === 'PSK' && s.mode?.startsWith('PSK'))))) return false;
     if (search !== '' && !s.dx_call.includes(search)) return false;
     // spot di chi sta sui continenti scelti; senza continente noto (core vecchio, nominativo strano) lo spot resta
     if (wanted.size > 0 && s.spotter_continent && !wanted.has(s.spotter_continent)) return false;

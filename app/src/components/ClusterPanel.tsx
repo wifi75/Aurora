@@ -18,17 +18,17 @@ import { useStation, useStatusPick } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 
 const KEY = 'aurora-cluster-filters';
-const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
+const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY', 'PSK'] as const;
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [] };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown };
     // le versioni precedenti salvavano una sola banda e un solo modo
-    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters) };
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true };
   } catch {
     return defaults;
   }
@@ -59,7 +59,8 @@ export async function tuneSpot(spot: ClusterSpot): Promise<void> {
 }
 
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
-function ClusterPanelInner() {
+/** `onSpot`: cosa fare al clic su uno spot al posto di portare la radio sulla sua frequenza (la pagina dei modi testuali la porta con il segnale sul suo tono). */
+function ClusterPanelInner({ onSpot }: { onSpot?: (spot: ClusterSpot) => Promise<void> } = {}) {
   const t = useT();
   // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
   const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
@@ -81,7 +82,7 @@ function ClusterPanelInner() {
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [] }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }
@@ -126,7 +127,8 @@ function ClusterPanelInner() {
   }
 
   const linked = servers.filter((s) => s.state === 'connected').length;
-  const shown = filterSpots(spots, filters, myBand, status?.own_continent);
+  // «solo nuovi»: gli spot che la lista dei desideri considera nuovi (paese, griglia, banda...)
+  const shown = filterSpots(spots, filters, myBand, status?.own_continent).filter((s) => !filters.newOnly || wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null);
 
   const tune = async (spot: ClusterSpot) => {
     if (!info.data?.rig_control && !info.data?.manual_dial) {
@@ -135,7 +137,7 @@ function ClusterPanelInner() {
     }
     try {
       // niente riga «Radio portata su…» sopra la tabella: si vede gia' sul display; gli errori in un avviso che sparisce
-      await tuneSpot(spot);
+      await (onSpot ?? tuneSpot)(spot);
     } catch (error) {
       toast(replyErrorMessage(error, t), 'error');
     }
@@ -166,6 +168,9 @@ function ClusterPanelInner() {
           selected={filters.spotters ?? []}
           onChange={(spotters) => change({ ...filters, spotters })}
         />
+        <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
+          {t('cluster.filter.newOnly')}
+        </button>
         <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}

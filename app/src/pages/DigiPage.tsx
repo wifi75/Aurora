@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { addLogQso, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -250,6 +250,32 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
     // con Lock la trasmissione resta dov'e': si sposta solo l'ascolto
     save({ rx_freq_hz: f, ...(l.snap.settings.tx_follow_rx ? { tx_freq_hz: f } : {}) });
+  };
+
+  // clic su uno spot del DX Cluster: la radio si porta in modo che il segnale cada sul tono di ricezione; con «up N» nel commento la
+  // trasmissione si sposta di N kHz (split dentro l'audio, fino a 3,5 kHz); il nominativo va nel QSO
+  const tuneToSpot = async (spot: ClusterSpot) => {
+    const l = live.current;
+    const want = (spot.mode ?? '').toUpperCase();
+    const cur = l.snap.settings.mode;
+    if (want === 'RTTY' && cur !== 'rtty') save({ mode: 'rtty' });
+    else if (want.startsWith('PSK') && cur === 'rtty') save({ mode: 'psk31' });
+    const signalHz = Math.round(spot.freq_khz * 1000);
+    const dial = signalHz - Math.round(l.rxHz);
+    useStation.getState().patchStatus({ dial_hz: dial });
+    await postFrequency(dial);
+    setQso({ ...l.qso, call: spot.dx_call });
+    const up = /\bup\s*(\d+(?:[.,]\d+)?)/i.exec(spot.comment ?? '');
+    if (up) {
+      const khz = Number((up[1] ?? '').replace(',', '.'));
+      const txAudio = Math.round(l.rxHz + khz * 1000);
+      if (khz > 0 && txAudio <= 3500) {
+        save({ tx_follow_rx: false, tx_freq_hz: txAudio });
+        toast(t('digi.spot.splitUp', { khz: String(khz) }), 'info');
+      } else {
+        toast(t('digi.spot.splitFar', { khz: String(khz) }), 'info');
+      }
+    }
   };
 
   const seek = (direction: 'left' | 'right', quiet = false): number | null => {
@@ -733,6 +759,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             modeName={MODE_NAMES[s.mode]}
             dialHz={status?.dial_hz ?? 0}
             audioHz={rxHz}
+            onSpot={tuneToSpot}
             onQso={(patch) => setQso({ ...qso, ...patch })}
             onRst={(patch) => setSavedField(patch)}
             onSave={saveQso}

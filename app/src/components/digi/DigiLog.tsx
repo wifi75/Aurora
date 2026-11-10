@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
-import { getLogQsos, type LogQso } from '../../api/client';
+import { getLogQsos, type ClusterSpot, type LogQso } from '../../api/client';
 import { useT } from '../../i18n';
 
 export interface Qso {
@@ -23,6 +23,8 @@ interface Props {
   dialHz: number;
   /** Frequenza audio del segnale ricevuto (Hz): serve alla frequenza dello spot. */
   audioHz: number;
+  /** Clic su uno spot del DX Cluster: porta la radio e, con «up N», lo split. */
+  onSpot(spot: ClusterSpot): Promise<void>;
   onQso(patch: Partial<Qso>): void;
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;
@@ -72,7 +74,7 @@ function cell(q: LogQso, c: LogCol): React.ReactNode {
 }
 
 /** Il log di lato: la riga del QSO in corso (si scrive qui) e sotto i QSO fatti, piu' recenti per primi. */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
@@ -211,7 +213,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onQso, onR
 
       {tab === 'cluster' ? (
         <div className="digi-log-cluster">
-          <ClusterPanel />
+          <ClusterPanel onSpot={onSpot} />
         </div>
       ) : null}
       <div className="digi-log-table" hidden={tab !== 'log'}>
