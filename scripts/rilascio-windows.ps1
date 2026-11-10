@@ -48,7 +48,9 @@ if ((Get-Item "$ctyDir\cty.dat").Length -lt 50000) { throw 'cty.dat scaricato ma
 Write-Host '0/3 Hamlib (rigctld per la radio CAT, incluso nell''installatore)...'
 & "$PSScriptRoot\prepara-hamlib.ps1" -Hamlib $Hamlib
 if (-not $?) { throw 'Preparazione di Hamlib fallita: senza non si fa l''installatore (vedi il messaggio sopra).' }
+if (-not (Get-ChildItem "$root\desktop\src-tauri\hamlib-bundle" -Filter 'rigctld*.exe' -File -ErrorAction SilentlyContinue)) { throw 'Hamlib non e'' nella cartella hamlib-bundle: senza non si fa l''installatore.' }
 if ($SoloHamlib) { return }
+$env:AURORA_REQUIRE_HAMLIB = '1'
 
 if (-not (Test-Path $Chiave)) { throw "Chiave di firma non trovata: $Chiave" }
 

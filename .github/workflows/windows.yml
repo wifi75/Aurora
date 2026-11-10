@@ -72,6 +72,8 @@ jobs:
       - name: Programma e installatore (senza firma degli aggiornamenti, che si fa dopo la firma di SignPath)
         working-directory: desktop
         shell: pwsh
+        env:
+          AURORA_REQUIRE_HAMLIB: '1'
         run: |
           npm ci
           # la configurazione in un file: passata come testo, pwsh 7 rovina le virgolette del JSON
