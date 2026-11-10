@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.231',
-    released: '2026-11-10T20:55:00Z',
+    released: '2026-11-10T20:51:07Z',
     kind: 'changed',
     title: ["Contest: il TX resta sempre acceso", "Contest: TX always stays on", "Contest: Senden bleibt immer an", "Concours : l’émission reste toujours active", "Concurso: el TX siempre activo", "Concurso: o TX fica sempre ligado"],
     text: [
