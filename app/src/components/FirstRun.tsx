@@ -1,7 +1,8 @@
 import '../styles/first-run.css';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { getAudioDevices, getEngineSettings, putAudioSettings, putEngineSettings } from '../api/client';
+import { useEffect, useState } from 'react';
+import { getAudioDevices, getEngineSettings, getUpdate, putAudioSettings, putEngineSettings } from '../api/client';
+import { LATER_EVENT, readSeenVersion } from './UpdatePoster';
 import { useLang, useT } from '../i18n';
 import { LANGS, LANG_NAMES, type Lang } from '../i18n/core';
 import { browserStorage } from '../lib/theme';
@@ -41,7 +42,28 @@ export function FirstRun() {
   const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, enabled: !done });
   const audio = useQuery({ queryKey: ['audio-devices'], queryFn: getAudioDevices, retry: false, enabled: !done && step === 2 });
 
+  // prima l'aggiornamento, poi la guida: con un installatore vecchio la locandina della versione nuova compare da sola e la guida parte
+  // quando Aurora si riapre aggiornata, o subito con «Piu' tardi». Si aspetta il primo controllo delle versioni, al massimo 12 secondi
+  // (senza rete la guida parte lo stesso). Prima le due finestre si aprivano una sopra l'altra.
+  const update = useQuery({ queryKey: ['update'], queryFn: getUpdate, retry: false, enabled: !done });
+  const [waitOver, setWaitOver] = useState(false);
+  const [, setLaterSeen] = useState(0);
+  useEffect(() => {
+    if (done) return;
+    const timer = window.setTimeout(() => setWaitOver(true), 12_000);
+    const later = () => setLaterSeen((n) => n + 1);
+    window.addEventListener(LATER_EVENT, later);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener(LATER_EVENT, later);
+    };
+  }, [done]);
+
   if (done || !engine.data || (engine.data.values.MyCall ?? '').trim() !== '') return null;
+  const checked = (update.data?.checked_at_ms ?? 0) > 0 || update.isError || waitOver;
+  if (!checked) return null;
+  const newer = update.data?.available;
+  if (newer && !update.data?.quiet && readSeenVersion() !== newer.version) return null;
 
   const finish = () => {
     try {

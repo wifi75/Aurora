@@ -260,3 +260,6 @@
 .upd-poster__cancel { margin-left: auto; }
 @keyframes upd-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .upd-poster__spin { animation: none; } }
+
+/* primo avvio con una versione vecchia: la frase che dice di aggiornare prima di configurare */
+.upd-poster__first { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent, #2cf5a4) 16%, transparent); font-weight: 600; line-height: 1.4; }

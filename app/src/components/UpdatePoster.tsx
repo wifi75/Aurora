@@ -12,6 +12,27 @@ import { InstallProgress } from './InstallProgress';
 const SEEN_KEY = 'aurora-update-poster-seen';
 const OPEN_EVENT = 'aurora-update-poster-open';
 
+/** «Piu' tardi» premuto: la guida del primo avvio, che aspettava la locandina, puo' partire. */
+export const LATER_EVENT = 'aurora-update-later';
+
+/** La versione rimandata con «Piu' tardi» (vuoto se nessuna). */
+export function readSeenVersion(): string {
+  try {
+    return browserStorage()?.getItem(SEEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** La guida del primo avvio non e' ancora stata fatta (stessa chiave di FirstRun). */
+function firstRunPending(): boolean {
+  try {
+    return browserStorage()?.getItem('aurora-first-run-done') !== '1';
+  } catch {
+    return false;
+  }
+}
+
 /** «Controlla aggiornamenti» premuto a mano: la locandina si riapre sempre (anche se rimandata con «Piu' tardi», o se si e' gia' aggiornati). */
 export function openUpdatePoster(): void {
   window.dispatchEvent(new Event(OPEN_EVENT));
@@ -79,6 +100,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
     }
     setSeen(release.version);
     setForced(false);
+    window.dispatchEvent(new Event(LATER_EVENT));
   };
   const install = async () => {
     setInstalling(true);
@@ -115,6 +137,8 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
           </div>
         </div>
         <div className="upd-poster__body">
+          {/* primo avvio con un installatore vecchio: prima l'aggiornamento, poi la guida (scelta del proprietario, 2026-11-10) */}
+          {firstRunPending() && !forced ? <p className="upd-poster__first">{t('upd.poster.firstRun')}</p> : null}
           {lines.length > 0 ? (
             <>
               <span className="upd-poster__pill">{t('upd.poster.news')}</span>

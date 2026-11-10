@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Primo avvio con una versione vecchia**: prima compare solo la locandina della versione nuova («Prima di iniziare installa la versione piu' recente»); la guida iniziale parte quando Aurora si riapre aggiornata, o subito con «Piu' tardi». Prima le due finestre si aprivano una sopra l'altra.
+
 ## 0.11.225 - 2026-11-10
 - **Pulsante Auto** (richiesta di Luc): spento e in prova a vuoto, il clic chiede subito sulla Stazione se accendere il modo reale (la stessa conferma di sicurezza delle Impostazioni); con «Si'» parte in modo reale, poi i clic accendono e spengono senza domande.
 - **STOP TX**: nel pannello Trasmissione il riquadro RX, mentre si trasmette, diventa il pulsante rosso «STOP TX (Esc)» (prima diceva solo «TX» e non si capiva che fermava); appena fermato torna RX.
