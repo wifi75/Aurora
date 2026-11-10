@@ -881,6 +881,12 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// La frequenza del VFO di trasmissione (split), in Hz: i satelliti la correggono col Doppler.
+    pub fn set_split_frequency(&self, hz: u64) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        link.client().set_split_frequency(hz).map_err(|e| RigError(friendly_error(&e.0)))
+    }
+
     pub fn set_split(&self, on: bool, tx_vfo: &str) -> Result<(), RigError> {
         let link = self.inner.connected_link()?;
         self.inner.epoch.fetch_add(1, Ordering::SeqCst);

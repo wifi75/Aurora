@@ -1451,6 +1451,49 @@ impl tx_native::Ptt for AutoPtt {
     }
 }
 
+/// Il rotore visto dai satelliti: azimut ed elevazione verso il satellite che passa.
+struct SatRotorAdapter {
+    rotator: Arc<rig_control::rotator::RotatorService>,
+}
+
+impl mode_sat::SatRotator for SatRotorAdapter {
+    fn ready(&self) -> bool {
+        self.rotator.status().connected
+    }
+
+    fn point(&self, az_deg: f64, el_deg: f64) -> Result<(), String> {
+        self.rotator.goto(az_deg, Some(el_deg)).map_err(|e| e.to_string())
+    }
+
+    fn stop(&self) {
+        let _ = self.rotator.stop();
+    }
+}
+
+/// La radio vista dai satelliti: Hamlib, con il VFO principale in ricezione e quello di split in trasmissione (correzione Doppler).
+struct SatRadioAdapter {
+    cat: Arc<rig_control::cat::CatService>,
+}
+
+impl mode_sat::SatRadio for SatRadioAdapter {
+    fn ready(&self) -> bool {
+        self.cat.hamlib().is_ok()
+    }
+
+    fn set_rx_hz(&self, hz: u64) -> Result<(), String> {
+        use rig_control::Rig;
+        self.cat.hamlib().map_err(|e| e.0)?.set_frequency(hz).map_err(|e| e.0)
+    }
+
+    fn set_tx_hz(&self, hz: u64) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_split_frequency(hz).map_err(|e| e.0)
+    }
+
+    fn set_split(&self, on: bool) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_split(on, "VFOB").map_err(|e| e.0)
+    }
+}
+
 /// La catena di trasmissione vista dai modi testuali (PSK31/PSK63, RTTY): come l'SSTV, trasmissione libera con lo stesso PTT e la stessa uscita.
 struct DigiTx {
     transmitter: Arc<tx_native::Transmitter>,
@@ -1681,6 +1724,18 @@ pub async fn run(
     };
     // finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
     let station = Station { call: my_call.clone(), grid: my_grid.clone(), tx_power: config.tx_power.clone().unwrap_or_default() };
+    // satelliti (crate mode-sat): tracking ogni secondo con la correzione Doppler della radio e il rotore che segue
+    let sat = {
+        let store = engine_settings.clone();
+        let observer: Arc<dyn Fn() -> Option<mode_sat::Observer> + Send + Sync> = Arc::new(move || {
+            let grid = store.as_ref().map(|s| s.reports().grid).unwrap_or_default();
+            mode_sat::maidenhead_to_latlon(&grid).map(|(lat_deg, lon_deg)| mode_sat::Observer { lat_deg, lon_deg, alt_m: 0.0 })
+        });
+        let svc = Arc::new(mode_sat::SatService::open(&config.data_dir, observer));
+        svc.set_rotor(Arc::new(SatRotorAdapter { rotator: Arc::clone(&rotator) }));
+        svc.set_radio(Arc::new(SatRadioAdapter { cat: Arc::clone(&cat) }));
+        svc
+    };
     // il log di Aurora si riempie sempre; i log esterni solo se configurati. Con il motore proprio il server UDP secondario delle impostazioni
     // si cambia a programma acceso: l'esportatore rilegge la lista a ogni QSO.
     let shared_targets = Arc::new(std::sync::RwLock::new(match &engine_settings {
@@ -2210,6 +2265,7 @@ pub async fn run(
         .with_rotator(Arc::clone(&rotator))
         .with_sstv(Arc::clone(&sstv))
         .with_digi(Arc::clone(&digi))
+        .with_sat(Arc::clone(&sat))
         .with_automation(automation);
     // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
     qmap_service.set_tx_probe(state.transmitting_probe());

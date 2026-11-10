@@ -1,0 +1,16 @@
+[package]
+name = "mode-sat"
+description = "Satelliti di Aurora: orbite SGP4, passaggi, azimut ed elevazione, correzione Doppler e tracking con rotore e radio"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+sgp4 = "2"
+ureq = { version = "3.5.0", default-features = false, features = ["rustls"] }

@@ -4,6 +4,7 @@ pub mod audio_api;
 mod cat;
 mod rotator_api;
 mod digi_api;
+mod sat_api;
 mod sstv_api;
 pub mod engine_settings;
 mod frames;
@@ -182,6 +183,8 @@ pub struct AppState {
     pub sstv: Option<Arc<mode_sstv::SstvService>>,
     /// I modi testuali (PSK31/PSK63, RTTY).
     pub digi: Option<Arc<mode_digi::DigiService>>,
+    /// I satelliti: tracking, Doppler e rotore.
+    pub sat: Option<Arc<mode_sat::SatService>>,
     /// Salva le regole dell'automazione quando cambiano (per ritrovarle al riavvio).
     /// Calcola le statistiche del log (premi e paesi mancanti) a ogni richiesta.
     pub stats: Option<StatsProvider>,
@@ -309,7 +312,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -570,6 +573,11 @@ impl AppState {
 
     pub fn with_digi(mut self, digi: Arc<mode_digi::DigiService>) -> AppState {
         self.digi = Some(digi);
+        self
+    }
+
+    pub fn with_sat(mut self, sat: Arc<mode_sat::SatService>) -> AppState {
+        self.sat = Some(sat);
         self
     }
 

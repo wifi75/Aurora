@@ -43,6 +43,7 @@ remote-api = { path = "../remote-api" }
 qmap = { path = "../qmap" }
 mode-sstv = { path = "../mode-sstv" }
 mode-digi = { path = "../mode-digi" }
+mode-sat = { path = "../mode-sat" }
 contest = { path = "../contest" }
 tokio = { workspace = true }
 serde_json = { workspace = true }
