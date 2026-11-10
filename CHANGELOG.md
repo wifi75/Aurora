@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.221 - 2026-11-10
+- **Dipendenze aggiornate**: librerie Rust alle ultime versioni compatibili (`cargo update` in `core` e `desktop/src-tauri`); interfaccia con @tanstack/react-query 5.107, zustand 5.1, d3-geo 3.1.2, vite 8.3.7, vitest 5.1, @vitejs/plugin-react 6.3; servizio dei rapporti con wrangler 4.159 e @cloudflare/workers-types 5. Nessun cambiamento nell'uso.
+
 ## 0.11.220 - 2026-11-10
 - **Hamlib**: su Windows, se `rigctld.exe` sparisce (di solito l'antivirus), il pulsante «Ripristina Hamlib» nella scheda Radio lo riscarica dalla release ufficiale 4.7.2 con impronta SHA-256 controllata. Su Linux Hamlib e' dentro l'AppImage e obbligatorio nel .deb; la compilazione si ferma se manca.
 - **Blocchi**: le finestre a parte si aprono senza fermare la finestra principale (blocchi «apertura di una finestra a parte» della 0.11.219); il rapporto di un blocco elenca le ultime attivita' della finestra.

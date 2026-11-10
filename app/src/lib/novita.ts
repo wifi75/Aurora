@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.221',
+    released: '2026-11-10T08:15:00Z',
+    kind: 'changed',
+    title: ["Librerie aggiornate", "Updated libraries", "Aktualisierte Bibliotheken", "Bibliothèques mises à jour", "Bibliotecas actualizadas", "Bibliotecas atualizadas"],
+    text: [
+      "Le librerie su cui Aurora è costruita (programma, interfaccia e servizio dei rapporti) sono alle ultime versioni compatibili, con le loro correzioni. Nessun cambiamento nell'uso di tutti i giorni.",
+      "The libraries Aurora is built on (program, interface and report service) are at their latest compatible versions, with their fixes. No change in everyday use.",
+      "Die Bibliotheken, auf denen Aurora aufbaut (Programm, Oberfläche und Berichtsdienst), sind auf den neuesten kompatiblen Versionen, mit deren Korrekturen. Keine Änderung im täglichen Gebrauch.",
+      "Les bibliothèques sur lesquelles Aurora est construite (programme, interface et service des rapports) sont aux dernières versions compatibles, avec leurs corrections. Aucun changement dans l'usage quotidien.",
+      "Las bibliotecas sobre las que está hecha Aurora (programa, interfaz y servicio de informes) están en sus últimas versiones compatibles, con sus correcciones. Sin cambios en el uso diario.",
+      "As bibliotecas em que a Aurora assenta (programa, interface e serviço de relatórios) estão nas últimas versões compatíveis, com as suas correções. Sem mudanças no uso diário.",
+    ],
+  },
+  {
     version: '0.11.220',
     released: '2026-11-10T07:52:29Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Corrections internes, sans changement dans l’usage quotidien.",
       "Correcciones internas, sin cambios en el uso diario.",
       "Correções internas, sem mudanças no uso diário.",
-    ],
-  },
-  {
-    version: '0.11.181',
-    released: '2026-11-07T14:52:45Z',
-    kind: 'new',
-    title: ["QSO a log con l'aurora", 'Logged QSO with the aurora', 'Geloggtes QSO mit Polarlicht', "QSO au log avec l'aurore", 'QSO en el log con la aurora', 'QSO no log com a aurora'],
-    text: [
-      "Quando un QSO va a log, la sua riga nel Log si accende per 5 secondi: un'aurora viola-azzurra scorre dentro la riga, due scie viola corrono sul bordo e in fondo compare «A LOG». La pagina Statistiche si apre con le schede già al loro posto, senza salti mentre arrivano i numeri.",
-      "When a QSO is logged, its row in the Log lights up for 5 seconds: a purple-blue aurora flows inside the row, two purple trails run along the edge and «LOGGED» appears at the end. The Statistics page opens with the cards already in place, with no jumps while the numbers arrive.",
-      "Wenn ein QSO geloggt wird, leuchtet seine Zeile im Log 5 Sekunden lang: Ein violett-blaues Polarlicht zieht durch die Zeile, zwei violette Spuren laufen am Rand entlang und am Ende erscheint «GELOGGT». Die Statistikseite öffnet sich mit den Karten schon an ihrem Platz, ohne Sprünge, während die Zahlen kommen.",
-      "Quand un QSO est mis au log, sa ligne s'allume 5 secondes : une aurore violette et bleue défile dans la ligne, deux traînées violettes courent sur le bord et « AU LOG » apparaît au bout. La page Statistiques s'ouvre avec les fiches déjà à leur place, sans sauts pendant l'arrivée des chiffres.",
-      "Cuando un QSO entra en el log, su fila se ilumina 5 segundos: una aurora violeta y azul recorre la fila, dos estelas violetas corren por el borde y al final aparece «EN LOG». La página Estadísticas se abre con las fichas ya en su sitio, sin saltos mientras llegan los números.",
-      "Quando um QSO vai para o log, a sua linha acende-se 5 segundos: uma aurora violeta e azul percorre a linha, dois rastos violeta correm pela borda e no fim aparece «NO LOG». A página Estatísticas abre com os cartões já no lugar, sem saltos enquanto chegam os números.",
     ],
   },
 ];
