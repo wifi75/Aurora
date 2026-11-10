@@ -438,7 +438,8 @@ impl Session {
             | Event::HighlightCallsign { .. }
             | Event::ClearDecodes { .. }
             | Event::Fox(_)
-            | Event::Notice { .. } => Vec::new(),
+            | Event::Notice { .. }
+            | Event::Sstv(_) => Vec::new(),
         }
     }
 

@@ -1,0 +1,17 @@
+[package]
+name = "mode-sstv"
+description = "SSTV di Aurora: codifica e decodifica delle immagini (Martin, Scottie, Robot, PD, Wraase), algoritmi ripresi da QSSTV di Johan Maes ON4QZ (GPL 3)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+png = "0.18.1"
+jpeg-decoder = { version = "0.3.2", default-features = false }
+base64 = "0.22.1"

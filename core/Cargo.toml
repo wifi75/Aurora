@@ -29,3 +29,7 @@ qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
 mdns-sd = "0.21.7"
 if-addrs = "0.15.0"
 utoipa = "6.0.0"
+
+# l'SSTV elabora minuti di audio: anche in debug (e nelle prove) va ottimizzato
+[profile.dev.package.mode-sstv]
+opt-level = 2

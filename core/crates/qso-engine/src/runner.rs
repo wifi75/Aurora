@@ -331,6 +331,7 @@ fn handle_event(inner: &Inner, event: Event) {
         | Event::HighlightCallsign { .. }
         | Event::ClearDecodes { .. }
         | Event::Fox(_)
-        | Event::Notice { .. } => {}
+        | Event::Notice { .. }
+        | Event::Sstv(_) => {}
     }
 }
