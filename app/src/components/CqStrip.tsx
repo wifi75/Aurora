@@ -108,8 +108,11 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
 
   if (items.length === 0) return <section className="cq-strip cq-strip--empty"><p>{emptyText ?? t('decode.noCq')}</p></section>;
   return (
-    <div className="cq-strip" ref={box} aria-label={t('panel.cq')}>
-      {items.map((d) => {
+    <div className="cq-strip cq-strip--rows" ref={box} aria-label={t('panel.cq')}>
+      {/* due righe indipendenti (una casella si, una no): ogni casella larga quanto il suo contenuto, senza i vuoti delle colonne */}
+      {[0, 1].map((row) => (
+      <div key={row} className="cq-strip-row">
+      {items.filter((_, i) => i % 2 === row).map((d) => {
         const accent = d.tag ? ACCENT[d.tag] : undefined;
         const code = flagCode(d.country);
         const talker = senderOf(d.text);
@@ -134,6 +137,8 @@ export function CqStrip({ decodes, onReply, onQueue, emptyText }: Props) {
           </button>
         );
       })}
+      </div>
+      ))}
     </div>
   );
 }
