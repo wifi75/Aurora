@@ -7526,3 +7526,7 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 
 /* il riquadro RX / STOP TX non tocca il bordo destro della scheda Trasmissione */
 .tx-dx .rxtx-flag { margin-right: 8px; }
+
+/* Finestra RX: ogni colonna larga quanto il suo contenuto, il messaggio subito dopo l'ora e i dB, bandierina e paese subito dopo il messaggio:
+   niente spazio perso e niente messaggi tagliati (proprietario, 2026-11-10) */
+.log-rx .decode-row { grid-template-columns: max-content max-content minmax(0, max-content) minmax(0, 1fr) !important; column-gap: 0.4rem !important; }
