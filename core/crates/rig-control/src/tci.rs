@@ -1078,6 +1078,18 @@ fn run(inner: &Inner) {
                 let reason = serve(inner, &mut ws);
                 let _ = ws.close(None);
                 let _ = ws.flush();
+                // chiusura ordinata: si legge (e si scarta) quel che il server manda ancora finche' risponde alla chiusura, al massimo
+                // mezzo secondo. Chiudendo subito con dati non letti (sensori, audio) Windows manda un reset e il server poteva perdere
+                // gli ultimi comandi, compreso lo `stop;` di «Spegni» (la prova split_and_power_follow_the_config falliva a volte)
+                let until = Instant::now() + Duration::from_millis(500);
+                while Instant::now() < until {
+                    match ws.read() {
+                        Ok(Message::Close(_)) | Err(tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed) => break,
+                        Err(tungstenite::Error::Io(e)) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {}
+                        Err(_) => break,
+                        Ok(_) => {}
+                    }
+                }
                 reset_link(inner);
                 if inner.stop.load(Ordering::SeqCst) {
                     break;
@@ -1561,6 +1573,8 @@ mod tests {
         let err = rig.set_ptt(true).expect_err("nessuna eco del PTT");
         assert!(err.0.contains("trx"), "{err:?}");
         assert!(!rig.transmitting());
+        // lo spegnimento chiesto dopo il PTT non confermato va in coda: si aspetta che arrivi al server prima di guardare
+        assert!(wait(|| text.lock().unwrap().iter().any(|c| c == "trx:0,false;")), "senza conferma si chiede comunque lo spegnimento");
         let seen = text.lock().unwrap().clone();
         assert_eq!(seen.iter().filter(|c| *c == "vfo:0,0,7074000;").count(), 2, "ripetuto una volta: {seen:?}");
         assert_eq!(seen.iter().filter(|c| *c == "trx:0,true;").count(), 2, "{seen:?}");
