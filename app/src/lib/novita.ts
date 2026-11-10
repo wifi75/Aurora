@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.224',
+    released: '2026-11-10T12:00:00Z',
+    kind: 'fixed',
+    title: ["PTT con Hamlib più affidabile", "More reliable PTT with Hamlib", "Zuverlässigere PTT mit Hamlib", "PTT plus fiable avec Hamlib", "PTT más fiable con Hamlib", "PTT mais fiável com o Hamlib"],
+    text: [
+      "Con Hamlib, se la radio risponde in ritardo a una lettura, lo spegnimento della trasmissione non fallisce più al primo tentativo: Aurora scarta la risposta vecchia e usa quella giusta.",
+      "With Hamlib, if the radio answers a reading late, switching transmission off no longer fails on the first try: Aurora discards the old answer and uses the right one.",
+      "Mit Hamlib schlägt das Ausschalten des Sendens nicht mehr beim ersten Versuch fehl, wenn das Funkgerät verspätet auf eine Abfrage antwortet: Aurora verwirft die alte Antwort und nimmt die richtige.",
+      "Avec Hamlib, si la radio répond en retard à une lecture, l’arrêt de l’émission n’échoue plus au premier essai : Aurora écarte l’ancienne réponse et utilise la bonne.",
+      "Con Hamlib, si la radio responde tarde a una lectura, el apagado de la transmisión ya no falla al primer intento: Aurora descarta la respuesta vieja y usa la correcta.",
+      "Com o Hamlib, se o rádio responder tarde a uma leitura, o desligar da transmissão já não falha à primeira: o Aurora descarta a resposta antiga e usa a certa.",
+    ],
+  },
+  {
     version: '0.11.223',
     released: '2026-11-10T10:17:50Z',
     kind: 'new',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Les Commandes ont maintenant leur propre fenêtre sous Bandes ouvertes. Avec un DX en cours, les stations qui t'appellent vont toujours en file (jusqu'à 4, en colonne à côté du DX), même avec Tx désactivé. Double-clic sur le point RX efface le DX et les messages. Dans Transmission le bloc ne descend plus quand tu émets. Bandes ouvertes a des graphiques Jour/Nuit plus grands et alignés, un soleil et une lune en couleur et jusqu'à 5 stations lointaines s'il y a de la place. Les barres de titre ont les couleurs de l'aurore et la liste des DXpéditions revient en haut toute seule.",
       "Los Comandos tienen ahora su propia ventana bajo Bandas abiertas. Con un DX en curso, las estaciones que te llaman van siempre a la cola (hasta 4, en columna junto al DX), incluso con Tx apagado. Doble clic en el punto RX borra el DX y los mensajes. En Transmisión el bloque ya no baja al transmitir. Bandas abiertas tiene gráficos Día/Noche más grandes y alineados, sol y luna en color y hasta 5 estaciones lejanas si caben. Las barras de título tienen los colores de la aurora y la lista de DXpediciones vuelve arriba sola.",
       "Os Comandos têm agora uma janela própria sob Bandas abertas. Com um DX em curso, as estações que te chamam vão sempre para a fila (até 4, em coluna ao lado do DX), mesmo com Tx desligado. Duplo clique no ponto RX apaga o DX e as mensagens. Em Transmissão o bloco já não desce ao transmitir. Bandas abertas tem gráficos Dia/Noite maiores e alinhados, sol e lua a cores e até 5 estações distantes se couberem. As barras de título têm as cores da aurora e a lista das DXpedições volta ao topo sozinha.",
-    ],
-  },
-  {
-    version: '0.11.184',
-    released: '2026-11-07T16:03:36Z',
-    kind: 'new',
-    title: ['Chiusura del QSO più pulita', 'Cleaner QSO closing', 'Saubererer QSO-Abschluss', 'Clôture du QSO plus propre', 'Cierre del QSO más limpio', 'Fecho do QSO mais limpo'],
-    text: [
-      "Dopo il tuo RR73 Aurora non lo ripete più da sola: aspetta il suo 73, e risponde solo se lui ripete il suo rapporto. «Wait and Reply / Wait and Call» è spento di serie. In Bande aperte le 3 stazioni più lontane hanno colonne allineate e il nome del paese; il piè di pagina è più leggibile e il logo ha l'aurora che scorre.",
-      "After your RR73 Aurora no longer repeats it on its own: it waits for his 73 and answers only if he repeats his report. «Wait and Reply / Wait and Call» is off by default. In Open bands the 3 farthest stations have aligned columns and the country name; the footer is easier to read and the logo has a flowing aurora.",
-      "Nach deinem RR73 wiederholt Aurora es nicht mehr von selbst: Es wartet auf seine 73 und antwortet nur, wenn er seinen Rapport wiederholt. «Wait and Reply / Wait and Call» ist standardmäßig aus. In Offene Bänder haben die 3 entferntesten Stationen ausgerichtete Spalten und den Ländernamen; die Fußzeile ist besser lesbar und das Logo hat ein fließendes Polarlicht.",
-      "Après ton RR73 Aurora ne le répète plus toute seule : elle attend son 73 et ne répond que s'il répète son report. « Wait and Reply / Wait and Call » est désactivé par défaut. Dans Bandes ouvertes les 3 stations les plus lointaines ont des colonnes alignées et le nom du pays ; le pied de page est plus lisible et le logo a une aurore qui défile.",
-      "Después de tu RR73 Aurora ya no lo repite sola: espera su 73 y solo responde si él repite su reporte. «Wait and Reply / Wait and Call» está apagado de serie. En Bandas abiertas las 3 estaciones más lejanas tienen columnas alineadas y el nombre del país; el pie de página se lee mejor y el logo tiene una aurora que fluye.",
-      "Depois do teu RR73 a Aurora já não o repete sozinha: espera o 73 dele e só responde se ele repetir o relatório. «Wait and Reply / Wait and Call» vem desligado. Em Bandas abertas as 3 estações mais distantes têm colunas alinhadas e o nome do país; o rodapé lê-se melhor e o logótipo tem uma aurora a deslizar.",
     ],
   },
 ];

@@ -212,7 +212,19 @@ impl RigctldClient {
             out.push(line.trim().to_string());
         }
         if lines == 0 {
-            // un comando che doveva rispondere solo RPRT ha risposto con altro: si riallinea il flusso
+            // un comando che doveva rispondere solo RPRT ha trovato prima un'altra riga: e' la risposta in ritardo di una lettura precedente
+            // (rapporti del 2026-11-10: «risposta inattesa a "T 0": 0», lo stato del PTT chiesto prima). Si scartano al massimo due righe
+            // cosi' e vale il RPRT che segue: prima lo spegnimento del PTT falliva e doveva riprovare
+            for _ in 0..2 {
+                let mut line = String::new();
+                reader.read_line(&mut line).map_err(|e| RigError(format!("rigctld: risposta inattesa a «{command}»: {} ({e})", out[0])))?;
+                if let Some(rprt) = parse_rprt(&line) {
+                    return match rprt {
+                        Ok(()) => Ok(Vec::new()),
+                        Err(code) => Err(RigError(format!("{}: {} ({code})", command.split_whitespace().next().unwrap_or(command), hamlib_error(code)))),
+                    };
+                }
+            }
             return Err(RigError(format!("rigctld: risposta inattesa a «{command}»: {}", out[0])));
         }
         Ok(out)

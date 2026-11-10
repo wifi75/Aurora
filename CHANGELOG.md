@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.11.224 - 2026-11-10
+- **Hamlib, PTT**: se rigctld manda in ritardo la risposta di una lettura precedente, lo spegnimento del PTT non fallisce piu' al primo tentativo (dai rapporti: «risposta inattesa a "T 0": 0»): la riga vecchia si scarta e vale la risposta vera.
+
 ## 0.11.223 - 2026-11-10
 - **Automazioni**: «Griglia su nuova banda», «Nuovo nominativo» e «Nominativo su nuova banda o modo» ora si salvano (il motore le rifiutava e non salvava nessuna regola; segnalato da Luc ON7KEC); «Nuova stazione» si chiama «Nuovo nominativo».
 - **Finestra RX e Attivita' di banda**: di fabbrica i messaggi a me e della stazione del QSO si vedono in tutti e due gli elenchi (prima con la Finestra RX aperta sparivano da Attivita' di banda e sembrava un errore); chi li vuole solo nella Finestra RX accende «Messaggi del QSO solo nella Finestra RX» in Impostazioni > Filtri.
