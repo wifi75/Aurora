@@ -1013,6 +1013,10 @@ export interface Log4omQso {
   rst_rcvd: string;
   country: string;
   grid: string;
+  /** Frequenza in Hz, nome e QTH (assenti con un core vecchio o se il log non li ha). */
+  freq_hz?: number;
+  name?: string;
+  qth?: string;
 }
 
 export interface Log4omView {

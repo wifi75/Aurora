@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
-import { getLogQsos, type ClusterSpot, type LogQso } from '../../api/client';
+import { getLog4om, type ClusterSpot, type Log4omQso } from '../../api/client';
 import { useT } from '../../i18n';
 
 export interface Qso {
@@ -39,6 +39,8 @@ const ALL_COLS: readonly LogCol[] = ['num', 'mode', 'band', 'freq', 'date', 'utc
 /** Le colonne del log: numero, modo, frequenza, data, UTC, nominativo, nome, QTH e i due rapporti. */
 const DEFAULT_COLS: readonly LogCol[] = ['num', 'mode', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'rstS', 'rstR'];
 const COLS_KEY = 'aurora.digi.logcols2';
+/** Quanti QSO si leggono dal log (il massimo che il core da': i piu' recenti). */
+const LOG_ROWS = 500;
 
 function savedCols(): LogCol[] {
   try {
@@ -63,14 +65,14 @@ const COL_LABEL = {
   call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr',
 } as const;
 
-function cell(q: LogQso, c: LogCol): React.ReactNode {
+function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
   switch (c) {
-    case 'num': return q.id;
+    case 'num': return nr;
     case 'mode': return q.mode;
     case 'band': return q.band;
-    case 'freq': return khz(q.freq_hz);
-    case 'date': return dmy(q.date);
-    case 'utc': return q.time.length === 5 ? `${q.time}:00` : q.time;
+    case 'freq': return khz(q.freq_hz ?? 0);
+    case 'date': return dmy(q.date.slice(0, 10));
+    case 'utc': return q.date.slice(11, 19);
     case 'call': return <b>{q.call}</b>;
     case 'name': return q.name ?? '';
     case 'qth': return q.qth ?? '';
@@ -121,14 +123,17 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       // la scelta vale comunque finche' la pagina e' aperta
     }
   };
-  const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchInterval: 20_000 });
+  // lo stesso log del pannello Log (Log4OM2 o il log di Aurora): il totale e gli ultimi QSO, il piu' recente in testa
+  const log = useQuery({ queryKey: ['log4om', LOG_ROWS], queryFn: () => getLog4om(LOG_ROWS), retry: false, refetchInterval: 10_000 });
   // dal log, il piu' recente in testa (l'elenco arriva gia' cosi'): i primi 300
+  const total = log.data?.total ?? 0;
   const rows = useMemo(() => {
-    const all = log.data?.qsos ?? [];
+    // il numero del QSO e' la sua posizione nel log (l'ultimo = il totale), anche cercando un nominativo
+    const all = (log.data?.qsos ?? []).map((q, i) => ({ q, nr: total - i }));
     const f = filter.trim().toUpperCase();
-    return (f === '' ? all : all.filter((q) => q.call.includes(f))).slice(0, 300);
-  }, [log.data, filter]);
-  const nextNum = (log.data?.total ?? 0) + 1;
+    return (f === '' ? all : all.filter((x) => x.q.call.includes(f))).slice(0, 300);
+  }, [log.data, filter, total]);
+  const nextNum = total + 1;
   const now = new Date();
   const nowDate = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`;
   const nowTime = now.toISOString().slice(11, 19);
@@ -239,10 +244,10 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                     <td key={c}>{current(c)}</td>
                   ))}
                 </tr>
-                {rows.map((q) => (
-                  <tr key={q.id}>
+                {rows.map(({ q, nr }) => (
+                  <tr key={nr}>
                     {cols.map((c) => (
-                      <td key={c}>{cell(q, c)}</td>
+                      <td key={c}>{cell(q, nr, c)}</td>
                     ))}
                   </tr>
                 ))}

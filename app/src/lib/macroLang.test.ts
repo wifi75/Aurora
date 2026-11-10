@@ -78,9 +78,17 @@ describe('runMacro: comandi di programma', () => {
   });
 
   it('i comandi non ancora fatti restano nell\'elenco', () => {
-    const r = runMacro('<TX>CQ<WPM:20><CATCMD:AN1;>', ctx);
+    const r = runMacro('<TX>CQ<LETTERS><CATCMD:AN1;>', ctx);
     expect(r.text).toBe('CQ');
-    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'WPM:20' }, { type: 'unknown', tag: 'CATCMD:AN1;' }]);
+    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'LETTERS' }, { type: 'unknown', tag: 'CATCMD:AN1;' }]);
+  });
+
+  it('la velocita della CW, assoluta o relativa', () => {
+    expect(runMacro('<WPM:20><WPM:+3><WPM:-2>', ctx).actions).toEqual([
+      { type: 'wpm', wpm: 20, relative: false },
+      { type: 'wpm', wpm: 3, relative: true },
+      { type: 'wpm', wpm: -2, relative: true },
+    ]);
   });
 
   it('AFC, Snap, Squelch, Lock, Scan, memorie e finestre', () => {
