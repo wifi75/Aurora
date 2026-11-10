@@ -1,4 +1,5 @@
 import { foxCalls, lineSender } from '../lib/fox';
+import { periodSecs } from '../lib/period';
 import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
@@ -199,11 +200,11 @@ function watchAge(el: HTMLElement, time: number): () => void {
 
 /** L'eta' del messaggio al posto dell'ora: numero allineato a destra e unita' a sinistra in colonne fisse, cosi' «6 s» e «1 min» stanno in
  *  colonna; il suggerimento (fisso, cosi' resta aperto) spiega cos'e' e dice l'ora UTC di arrivo. */
-function AgeCell({ time }: { time: number }) {
+function AgeCell({ time, shownAt }: { time: number; shownAt: number }) {
   const t = useT();
   const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => (ref.current ? watchAge(ref.current, time) : undefined), [time]);
-  const [value = '', unit = ''] = formatAge(time).split(' ', 2);
+  useEffect(() => (ref.current ? watchAge(ref.current, shownAt) : undefined), [shownAt]);
+  const [value = '', unit = ''] = formatAge(shownAt).split(' ', 2);
   return (
     <span ref={ref} className="c-time c-age num muted" title={t('tip.row.age', { utc: formatClock(time) })}>
       <span className="c-age-n">{value}</span>
@@ -501,7 +502,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               onQueue(d.id);
             }}
           >
-            {prefs.showAge ? <AgeCell time={d.time_ms} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>}
+            {prefs.showAge ? <AgeCell time={d.time_ms} shownAt={d.time_ms + periodSecs(mode) * 1000} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>}
             <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>

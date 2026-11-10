@@ -1,5 +1,9 @@
 # Changelog
 
+## Non rilasciato
+- **Righe Tx** (Luc ON7KEC): hanno l'ora dell'inizio del periodo come i messaggi ricevuti (13:14:45 e non 13:14:46).
+- **Eta' dei messaggi** (Luc Buytaert): parte da 0 s quando il messaggio compare, come in GridTracker; il blocco nuovo e quello di prima si distinguono subito (15 s di differenza in FT8). L'ora UTC nel suggerimento resta l'inizio del periodo.
+
 ## 0.11.226 - 2026-11-10
 - **Finestra RX**: colonne larghe quanto il contenuto, il messaggio subito dopo l'ora e i dB e mai tagliato (nella 0.11.225 la riga Tx finiva con i puntini).
 - **Cartolina dell'aggiornamento nel tray**: tolti i passi «Scarico › Controllo › Installo › Riavvio», che non si vedevano mai accendere perche' la cartolina si chiudeva prima; restano la barra e il messaggio.

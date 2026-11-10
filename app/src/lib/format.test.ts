@@ -9,6 +9,9 @@ describe('formatAge', () => {
     expect(formatAge(t, day + t + 3 * 60_000 + 10_000)).toBe('3 min');
     expect(formatAge(t, day + t + 65 * 60_000)).toBe('1 h 05');
   });
+  it('a moment just in the future (age counted from the end of the period) is 0 s', () => {
+    expect(formatAge(12 * 3_600_000 + 2_000, Date.UTC(2026, 10, 10) + 12 * 3_600_000)).toBe('0 s');
+  });
   it('crosses midnight: a message at 23:59:50 is 15 s old at 00:00:05', () => {
     expect(formatAge(86_390_000, day + 5_000)).toBe('15 s');
   });

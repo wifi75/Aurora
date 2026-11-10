@@ -24,7 +24,10 @@ export function formatClock(ms: number): string {
 /** Quanto e' vecchio un messaggio (ora in ms dalla mezzanotte UTC) adesso: «45 s», «3 min», «1 h 05». Passata la mezzanotte si conta dal giorno prima. */
 export function formatAge(timeMs: number, nowMs: number = Date.now(), exact = false): string {
   const sinceMidnight = nowMs % 86_400_000;
-  const ms = (((sinceMidnight - timeMs) % 86_400_000) + 86_400_000) % 86_400_000;
+  let ms = sinceMidnight - timeMs;
+  // a cavallo della mezzanotte si conta dal giorno prima; un momento appena nel futuro (eta' contata dalla fine del periodo) vale 0
+  if (ms < -43_200_000) ms += 86_400_000;
+  if (ms < 0) ms = 0;
   const s = Math.floor(ms / 1000);
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60);

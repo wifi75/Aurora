@@ -1,4 +1,5 @@
 import { useFox } from './fox';
+import { periodSecs } from '../lib/period';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
@@ -221,7 +222,12 @@ export const useStation = create<StationState>((set) => ({
           if (!starts) return { status, ...session, ...cleared, ...keep, ...settledPending(s, status.dx_call) };
           const row: DecodedMessage = {
             id: nextTxId--,
-            time_ms: Date.now() % 86_400_000,
+            // l'inizio del periodo, come i messaggi ricevuti (13:14:45 e non 13:14:46): la trasmissione si vede partire un attimo dopo
+            // (Luc ON7KEC, 2026-11-10). Un secondo di margine se lo stato arriva appena prima del cambio di periodo
+            time_ms: (() => {
+              const p = periodSecs(status.mode) * 1000;
+              return Math.floor(((Date.now() % 86_400_000) + 1000) / p) * p;
+            })(),
             snr: 0,
             delta_time: 0,
             freq_hz: status.tx_df ?? 0,
