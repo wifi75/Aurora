@@ -301,7 +301,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       case 'all': {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
-        const rxShown = rxOn && !soloPanel;
+        const rxShown = rxOn && !soloPanel && prefs.rxExclusive;
         const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }

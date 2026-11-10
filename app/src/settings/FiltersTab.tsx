@@ -40,6 +40,7 @@ export function FiltersTab() {
   const showAge = usePrefs((s) => s.prefs.showAge);
   const bandBottom = usePrefs((s) => s.prefs.bandBottom);
   const rxBottom = usePrefs((s) => s.prefs.rxBottom);
+  const rxExclusive = usePrefs((s) => s.prefs.rxExclusive);
   const toggleIn = (items: string[], item: string) => (items.includes(item) ? items.filter((x) => x !== item) : [...items, item]);
   const num = (text: string, min: number, max: number): number | null => {
     if (text.trim() === '') return null;
@@ -87,6 +88,7 @@ export function FiltersTab() {
           {/* le mie trasmissioni: e' la stessa scelta di «Mostra i miei Tx» delle preferenze, non una copia */}
           <Check label={t('bfl.hideOwnTx')} hint={t('tip.bfl.hideOwnTx')} checked={!showTx} onChange={(v) => usePrefs.getState().set({ showTx: !v })} />
           <Check label={t('list.bottom')} hint={t('tip.list.bottom')} checked={rxBottom} onChange={(v) => usePrefs.getState().set({ rxBottom: v })} />
+          <Check label={t('rxw.exclusive')} hint={t('tip.rxw.exclusive')} checked={rxExclusive} onChange={(v) => usePrefs.getState().set({ rxExclusive: v })} />
         </Cells>
       </Group>
       <Group title={t('fil.grp.both')} span={2}>

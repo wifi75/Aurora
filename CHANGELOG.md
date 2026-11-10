@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Finestra RX e Attivita' di banda**: di fabbrica i messaggi a me e della stazione del QSO si vedono in tutti e due gli elenchi (prima con la Finestra RX aperta sparivano da Attivita' di banda e sembrava un errore); chi li vuole solo nella Finestra RX accende «Messaggi del QSO solo nella Finestra RX» in Impostazioni > Filtri.
+- **Testi**: l'interfaccia e la Guida non fanno piu' paragoni con altri programmi; i pulsanti della cascata si chiamano «Stile compatto» e «Stile veloce».
 - **Eta' dei messaggi** (richiesta di Luc): a scelta, in Attivita' di banda e nella Finestra RX la prima colonna mostra quanto e' vecchio il messaggio (45 s, 3 min) invece dell'ora UTC, con l'ora nel suggerimento (Impostazioni > Filtri).
 - **Messaggi nuovi in fondo** (richiesta di Luc): pulsantino «Nuovi ↑/↓» nella barra del titolo di Attivita' di banda e della Finestra RX, e la stessa scelta in Impostazioni > Filtri, separata per i due elenchi.
 - **Scorrimento**: l'elenco torna all'ultimo messaggio dopo che le righe nuove sono disegnate (la Finestra RX non sempre scorreva); «Inverti colore» cambia solo i colori e non sposta piu' le righe del QSO in fondo.
