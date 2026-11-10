@@ -160,8 +160,8 @@
 .digi-wf { position: relative; border-top: 2px solid #404040; background: #000; overflow: hidden; }
 .digi-wf-scale { display: block; width: 100%; height: 22px; }
 .digi-wf-flow { display: block; width: 100%; cursor: crosshair; }
-.digi-wf-flag { position: absolute; top: 3px; width: 0; height: 0; pointer-events: none; border-left: 2px solid transparent; }
-.digi-wf-flag i { position: absolute; left: -2px; top: 0; width: 11px; height: 7px; }
+.digi-wf-flag { position: absolute; top: 2px; width: 0; height: 18px; pointer-events: none; border-left: 1px solid #e8e8e8; z-index: 3; }
+.digi-wf-flag i { position: absolute; left: 0; top: 0; width: 11px; height: 8px; background: #ff3b3b; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .digi-wf-pair { position: absolute; top: 23px; height: 10px; pointer-events: none; }
 .digi-wf-pair::before, .digi-wf-pair::after { content: ''; position: absolute; top: 0; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; }
 .digi-wf-pair::before { left: -4px; }
@@ -169,6 +169,8 @@
 .digi-wf-pair > * { display: none; }
 .digi-wf-pair { background: linear-gradient(#fff, #fff) center 3px / 100% 1px no-repeat; }
 /* ricezione: triangoli blu in basso verso la cascata; trasmissione: rossi */
+.digi-wf-pair--rx { top: 23px; }
+.digi-wf-pair--tx { top: 33px; }
 .digi-wf-pair--rx::before, .digi-wf-pair--rx::after { border-top: 8px solid #3b7bff; }
 .digi-wf-pair--tx::before, .digi-wf-pair--tx::after { border-bottom: 8px solid #ff4d4d; top: 2px; }
 

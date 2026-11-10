@@ -22,7 +22,7 @@ interface Props {
   /** Ogni riga che arriva (per Snap, Seek e Scan). */
   onRow?(row: SpectrumRow): void;
   /** Un clic sulla cascata (`ctrl`: con il tasto Ctrl premuto). */
-  onPick(hz: number, ctrl: boolean): void;
+  onPick(hz: number, ctrl: boolean, commit?: boolean): void;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso (come la cascata). */
@@ -38,12 +38,21 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, transmitting, height = 150, onRow, onPick }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, height = 150, onRow, onPick }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
   const scale = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(800);
+  // spostamento fluido: mentre si trascina i marcatori seguono il mouse subito (senza aspettare il motore); il valore vero torna dopo
+  const [over, setOver] = useState<{ which: 'rx' | 'tx'; hz: number } | null>(null);
+  const dragging = useRef(false);
+  const lastSent = useRef(0);
+  useEffect(() => {
+    if (over === null || dragging.current) return;
+    const timer = window.setTimeout(() => setOver(null), 700);
+    return () => window.clearTimeout(timer);
+  }, [over]);
   const view = useRef({ minHz, maxHz });
   view.current = { minHz, maxHz };
   const rowCb = useRef(onRow);
@@ -123,19 +132,29 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
   );
 
   const xOf = (hz: number) => ((hz - minHz) / (maxHz - minHz)) * width;
-  const flag = (hz: number, color: string, key: string) =>
+  const rxShown = over?.which === 'rx' ? over.hz : rxHz;
+  const txShown = split ? (over?.which === 'tx' ? over.hz : (txHz ?? rxShown)) : rxShown;
+
+  // la bandierina rossa sta sul centro della ricezione
+  const flag = (hz: number) =>
     hz >= minHz && hz <= maxHz ? (
-      <span key={key} className="digi-wf-flag" style={{ left: xOf(hz), borderLeftColor: color }}>
-        <i style={{ background: color }} />
+      <span key="flag" className="digi-wf-flag" style={{ left: xOf(hz) }} title={t('digi.wf.rxTip')}>
+        <i />
       </span>
     ) : null;
 
-  // la coppia di triangoli uniti da una linea: blu (ricezione) o rossa (trasmissione), ai due lati della frequenza (mark e space dell'RTTY)
+  // la coppia di triangoli uniti da una linea: blu (ricezione, in alto) o rossa (trasmissione, sotto), ai due lati della frequenza (mark e
+  // space dell'RTTY); si vedono sempre tutte e due, insieme, e si sovrappongono quando la trasmissione segue la ricezione
   const pair = (hz: number, kind: 'rx' | 'tx', title: string) => {
     const left = xOf(hz - bandwidthHz / 2);
     const right = xOf(hz + bandwidthHz / 2);
     if (right < 0 || left > width) return null;
     return <span key={kind} className={`digi-wf-pair digi-wf-pair--${kind}`} style={{ left, width: Math.max(8, right - left) }} title={title} aria-hidden="true" />;
+  };
+
+  const hzAt = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    return Math.round(Math.min(maxHz, Math.max(minHz, minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz))) * 10) / 10;
   };
 
   return (
@@ -144,17 +163,41 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       <canvas
         ref={flow}
         className="digi-wf-flow"
-        onClick={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          onPick(Math.round((minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz)) * 10) / 10, e.ctrlKey);
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          dragging.current = true;
+          const hz = hzAt(e);
+          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
+          lastSent.current = Date.now();
+          onPick(hz, e.ctrlKey, false);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging.current) return;
+          const hz = hzAt(e);
+          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
+          // al motore al massimo dieci volte al secondo: il marcatore segue il mouse lo stesso
+          if (Date.now() - lastSent.current >= 100) {
+            lastSent.current = Date.now();
+            onPick(hz, e.ctrlKey, false);
+          }
+        }}
+        onPointerUp={(e) => {
+          if (!dragging.current) return;
+          dragging.current = false;
+          const hz = hzAt(e);
+          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
+          onPick(hz, e.ctrlKey, true);
+        }}
+        onPointerCancel={() => {
+          dragging.current = false;
+          setOver(null);
         }}
       />
-      {flag(rxHz, transmitting ? '#e5484d' : '#22c55e', 'rx')}
-      {txHz !== null ? flag(txHz, '#e5484d', 'tx') : null}
-      {hairlines && rxHz >= minHz && rxHz <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxHz) }} aria-hidden="true" /> : null}
-      {hairlines && split && txHz !== null && txHz >= minHz && txHz <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txHz) }} aria-hidden="true" /> : null}
-      {pair(rxHz, 'rx', t('digi.wf.rxTip'))}
-      {split && txHz !== null ? pair(txHz, 'tx', t('digi.wf.txTip')) : null}
+      {flag(rxShown)}
+      {hairlines && rxShown >= minHz && rxShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxShown) }} aria-hidden="true" /> : null}
+      {hairlines && split && txShown >= minHz && txShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txShown) }} aria-hidden="true" /> : null}
+      {pair(rxShown, 'rx', t('digi.wf.rxTip'))}
+      {pair(txShown, 'tx', t('digi.wf.txTip'))}
     </div>
   );
 }
