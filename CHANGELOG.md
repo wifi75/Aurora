@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Ricerca nelle Impostazioni** (richiesta di Luc, issue #17): il campo «Cerca nelle impostazioni» in alto trova ogni singola opzione in tutte le schede, nella lingua in uso, senza badare a maiuscole e accenti; un clic apre la scheda giusta e illumina l'opzione. I testi si leggono dalle schede stesse, quindi non ci sono elenchi da tenere aggiornati.
 - **Griglia lavorata ma non confermata = griglia nuova** (richiesta di Luc, issue #17): nuova casella in Impostazioni › Colori › «Già lavorati», come «Hunting: New + Unconfirmed» di GridTracker; vale per «griglia nuova» e «griglia nuova sulla banda», nei colori, nel filtro di Attività di banda e nelle Automazioni, se il log dice le conferme (LoTW o QSL).
 - **Impostazioni in ordine**: le schede sono divise in gruppi con un titolo (Stazione, Operare, Aspetto e avvisi, Log e servizi, Accesso e assistenza) al posto dell'elenco unico con «Funzioni di Aurora».
 - **Guida**: le voci che mandavano alla scheda «Notifiche» (che non c'e' piu') ora indicano la scheda giusta: «Colori» per «Paese lavorato ma non confermato = DXCC nuovo», «Avvisi» per i suoni e per i toast (segnalato da Luc, issue #17).

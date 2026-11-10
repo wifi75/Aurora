@@ -5,6 +5,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { connectCat, getCat, postTune, putAutomation, putEngineSettings } from '../api/client';
 import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
+import { SettingsSearch } from '../settings/SettingsSearch';
 import { usePrefs } from '../lib/prefs';
 import { rememberTab } from '../lib/lastPage';
 import { SETTINGS_TAB_EVENT } from '../lib/settingsWindow';
@@ -272,6 +273,28 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
       <header className="sw-top" data-tauri-drag-region>
         <strong>{t('set.title')}</strong>
         <small>{t(tab.label)}</small>
+        {/* cerca ogni singola opzione in tutte le schede: un clic apre la scheda e porta all'opzione */}
+        <SettingsSearch
+          tabs={TABS}
+          wrap={(node) => <SessionDraft.Provider value={draft}>{node}</SessionDraft.Provider>}
+          onPick={(tabId, text) => {
+            setId(tabId);
+            rememberTab(browserStorage(), tabId);
+            // la scheda ha bisogno di un momento per disegnarsi: poi si porta in vista l'opzione e la si illumina
+            window.setTimeout(() => {
+              const panel = document.getElementById('sw-panel');
+              if (!panel) return;
+              const norm = (v: string) => v.replace(/\s+/g, ' ').trim();
+              const target = Array.from(panel.querySelectorAll<HTMLElement>('label, legend, h2, h3, h4, summary, th, [data-opt], input[aria-label], select[aria-label]')).find(
+                (el) => norm(el.getAttribute('aria-label') ?? el.textContent ?? '') === text,
+              );
+              if (!target) return;
+              target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+              target.classList.add('sw-flash');
+              window.setTimeout(() => target.classList.remove('sw-flash'), 2200);
+            }, 250);
+          }}
+        />
         <button type="button" className="sw-x" aria-label={t('sw.close')} title={t('sw.close')} onClick={cancel}>
           ✕
         </button>
