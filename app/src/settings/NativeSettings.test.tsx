@@ -3,7 +3,8 @@ import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-librar
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/client')>()),
   getStationInfo: vi.fn(),
   getEngineSettings: vi.fn(),
   putEngineSettings: vi.fn(),

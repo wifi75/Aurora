@@ -146,7 +146,9 @@ function clearedOnChange(s: { clearedBand: string | null }, before: StationStatu
     return { ...clearedForBand(bandOfStatus(after)), clearedDx: call ? { call, until: Date.now() + STALE_DX_MS } : null };
   }
   // cambio di frequenza nella stessa banda (per esempio 14.074 -> 14.090): i messaggi della frequenza di prima non servono piu', si svuota sempre
-  if (dialChanged(before, after)) {
+  // (un cambio di banda gia' svuotato, per esempio dall'avviso band_changed del motore, non svuota di nuovo: lo stato che lo conferma
+  // non deve cancellare i primi messaggi della banda nuova)
+  if (dialChanged(before, after) && !bandChanged(before, after)) {
     dropPending();
     return { decodes: [], txLog: [] };
   }

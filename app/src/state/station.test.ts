@@ -138,7 +138,7 @@ describe('useStation', () => {
     const { apply } = useStation.getState();
     apply({ type: 'status', ...status });
     apply({ type: 'decode', ...decode(1) }); flushDecodes();
-    apply({ type: 'status', ...status, dial_hz: 14_075_000 }); // stessa banda: resta
+    apply({ type: 'status', ...status, dial_hz: 14_074_500 }); // stessa frequenza (ritocco sotto 1 kHz): resta
     expect(useStation.getState().decodes).toHaveLength(1);
     apply({ type: 'status', ...status, dial_hz: 7_074_000 }); // un'altra banda: si svuota
     expect(useStation.getState().decodes).toHaveLength(0);
@@ -182,7 +182,7 @@ describe('useStation', () => {
     apply({ type: 'status', ...status, dx_call: 'K1ABC', dx_grid: 'FN42', report: '-10' });
     apply({ type: 'decode', ...decode(1) }); flushDecodes();
     setPendingDx('K1ABC');
-    apply({ type: 'status', ...status, dial_hz: 14_075_000, dx_call: 'K1ABC', dx_grid: 'FN42' });
+    apply({ type: 'status', ...status, dial_hz: 14_074_500, dx_call: 'K1ABC', dx_grid: 'FN42' });
     expect(useStation.getState().decodes).toHaveLength(1);
     expect(useStation.getState().status?.dx_call).toBe('K1ABC');
     apply({ type: 'status', ...status, dial_hz: 7_074_000, dx_call: 'K1ABC', dx_grid: 'FN42', report: '-10' });

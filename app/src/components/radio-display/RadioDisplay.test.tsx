@@ -119,7 +119,7 @@ describe('RadioDisplayHeader', () => {
     vi.useFakeTimers();
     act(() => useStation.setState({ status }));
     const { container } = render(<RadioDisplayHeader />, { wrapper });
-    const root = container.firstElementChild as HTMLElement;
+    const root = container.querySelector('.rd-zoom-host') as HTMLElement;
     expect(screen.queryByRole('group', { name: 'Display della radio ingrandito' })).toBeNull();
     fireEvent.mouseEnter(root);
     act(() => void vi.advanceTimersByTime(300));

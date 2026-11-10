@@ -24,12 +24,13 @@ import { RigSwitch } from './RigSwitch';
  */
 export function RadioDisplayHeader({ solo = false }: { solo?: boolean } = {}) {
   const pref = useRadioDisplay((s) => s.pref);
-  const inner = <RadioDisplayHeaderInner solo={solo} />;
+  // display nascosto: niente, nemmeno il contenitore vuoto
+  if (pref.hidden) return null;
   // con OmniRig il blocchetto Rig 1 / Rig 2 sta a sinistra del display, nello stesso stile
   return (
     <div className="rd-with-rig">
-      {!pref.hidden ? <RigSwitch style={pref.style} /> : null}
-      {inner}
+      <RigSwitch style={pref.style} />
+      <RadioDisplayHeaderInner solo={solo} />
     </div>
   );
 }

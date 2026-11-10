@@ -63,7 +63,7 @@ describe('ExportPage', () => {
     show();
     expect(await screen.findByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Salva ADIF…' }));
-    expect(vi.mocked(saveLogAdif)).toHaveBeenCalledWith({ all: true });
+    expect(vi.mocked(saveLogAdif)).toHaveBeenCalledWith({ all: true }, 'adif');
     await waitFor(() => expect(vi.mocked(toast)).toHaveBeenCalledWith('Salvati 3 QSO in C:\\log\\aurora.adi', 'ok'));
   });
 

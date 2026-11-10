@@ -10,7 +10,9 @@ import { defaultMacros, useMacros } from '../lib/macros';
 import { defaultNotify, useNotify } from '../lib/notify';
 import { defaultPrefs, usePrefs } from '../lib/prefs';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client', async (importOriginal) => ({
+  // le funzioni nuove del client che queste prove non toccano restano quelle vere (prima mancavano e la pagina si fermava)
+  ...(await importOriginal<typeof import('../api/client')>()),
   getHealth: vi.fn().mockResolvedValue({ status: 'ok', name: 'Aurora', version: '0', author: '', os: 'windows' }),
   getStationInfo: vi.fn().mockResolvedValue({
     tx_allowed: false,
@@ -39,9 +41,9 @@ vi.mock('../api/client', () => ({
   putSchedule: vi.fn().mockResolvedValue(undefined),
   getAutomation: vi.fn().mockResolvedValue({
     enabled: false, mode: 'dry_run', live_allowed: false,
-    rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false, prefer: 'rarity' as const, cooldown_secs: 900, respect_cq_direction: true },
+    rules: { reply_to: ['new_dxcc'], min_snr: -18, excluded_calls: [], max_attempts_per_call: 2, reply_to_wanted: false, prefer: 'rarity' as const, cooldown_secs: 900, respect_cq_direction: true, excluded_countries: [], continents: [] },
     limits: { max_consecutive_cycles: 6, max_per_day: 40, dead_man_secs: 120, run_unattended: false },
-    replies_today: 0, consecutive: 0, log: [],
+    replies_today: 0, consecutive: 0, log: [], queue: [],
   }),
   putAutomation: vi.fn().mockResolvedValue({}),
   getAccess: vi.fn().mockResolvedValue({ open: false }),
@@ -101,7 +103,7 @@ describe('Settings tabs', () => {
     // sei gruppi per argomento; Radio CAT e' dentro Radio, Avanzate non c'e' piu'
     expect(names).toEqual([
       'Generali', 'Radio', 'Audio', 'Orologio',
-      'Cascata', 'Filtri', 'Bande', 'Frequenze',
+      'Cascata', 'Filtri', 'CQ e novità', 'Bande', 'Frequenze',
       'Sequenza', 'Macro TX', 'Programmazione',
       'Notifiche', 'Desiderati', 'DXCC',
       'DX Cluster', 'Servizi online', 'Servizi di log', 'Programmi collegati',

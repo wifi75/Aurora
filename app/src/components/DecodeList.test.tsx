@@ -109,7 +109,7 @@ describe('DecodeList', () => {
   it('keeps the badge short and puts the full name in its tooltip', () => {
     render(<DecodeList decodes={[decode({ tag: 'new_px_band' })]} onReply={() => {}} />);
     const badge = screen.getByText('PREF. BANDA');
-    expect(badge).toHaveAttribute('title', 'Prefisso su nuova banda');
+    expect(badge).toHaveAttribute('title', 'Prefisso su nuova banda o modo');
     expect(badge.textContent!.length).toBeLessThanOrEqual(14);
   });
 
