@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cartolina dell'aggiornamento nel tray**: tolti i passi «Scarico › Controllo › Installo › Riavvio», che non si vedevano mai accendere perche' la cartolina si chiudeva prima; restano la barra e il messaggio.
 - **Primo avvio con una versione vecchia**: prima compare solo la locandina della versione nuova («Prima di iniziare installa la versione piu' recente»); la guida iniziale parte quando Aurora si riapre aggiornata, o subito con «Piu' tardi». Prima le due finestre si aprivano una sopra l'altra.
 
 ## 0.11.225 - 2026-11-10
