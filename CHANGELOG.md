@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK, RTTY e CW: ascolto automatico**: entrando nella pagina l'ascolto parte da solo; si ferma e riparte dal menu Opzioni › Ascolto (tolta la barra «Avvia ascolto»).
+- **Macro, sottoinsiemi**: l'editor ha i sottoinsiemi del menu «Subset» (testo, programma, frequenza, Auto CQ, macro, impostazioni del modo, rotore, RTTY, SSTV, CW, HELL); nuovi comandi eseguiti: `<FQ:kHz>`, `<SPLIT:0|1>`, `<ROTOR:gradi|SP|LP>`, `<EDITMACRO:nome>`, `<ALARM:testo>`, `<ACQ>`; gli altri comandi sono in elenco con «non ancora».
 - **CW (nuova)**: nel menu «Modo» di PSK · RTTY · SSTV c'e' la CW. Trasmissione con un tono audio dai fronti arrotondati e velocita' in WPM (impostazioni del modo, comando `<WPM:n>` delle macro con i tasti F10-F12 a 15, 20 e 25 WPM); ricezione con un decodificatore a soglia adattiva che si adatta alla velocita' del segnale (crate `mode-digi`, prove di andata e ritorno a 12, 20 e 30 WPM, con rumore, tono diverso e squelch). Le frequenze CW sono nel selettore di banda.
 - **Log PSK, RTTY e CW**: la frequenza e' quella vera del segnale (radio + tono); il log interno salva anche nome e QTH del corrispondente (nuova versione 4 del database, che si aggiorna da sola); la riga in corso in cima, i QSO piu' recenti sotto; un solo zero dopo la virgola nella frequenza.
 - **Cascata PSK e RTTY**: di base 0-5 kHz (oppure 0-3,5 kHz dal menu Vista, «Cascata larga»).

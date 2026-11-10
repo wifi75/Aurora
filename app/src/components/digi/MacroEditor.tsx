@@ -16,7 +16,7 @@ interface Props {
   onCancel(): void;
 }
 
-const GROUPS: readonly (CommandGroup | '')[] = ['', 'text', 'program', 'frequency', 'mode'];
+const GROUPS: readonly (CommandGroup | '')[] = ['', 'text', 'program', 'frequency', 'autocq', 'macros', 'mode', 'rotor', 'rtty', 'sstv', 'cw', 'hell'];
 
 /** La finestra «Edit user macro»: tasto, etichetta, colore, testo dello script, elenco dei comandi e per chi vale (tutti i modi o questo). */
 export function MacroEditor({ macro, modeName, scope, onSave, onCancel }: Props) {
@@ -99,7 +99,7 @@ export function MacroEditor({ macro, modeName, scope, onSave, onCancel }: Props)
               {commands.map((c) => (
                 <li key={c.tag}>
                   <button type="button" role="option" aria-selected={picked === c.tag} className={picked === c.tag ? 'on' : ''} onClick={() => setPicked(c.tag)} onDoubleClick={() => { setPicked(c.tag); window.setTimeout(insert, 0); }}>
-                    <b>{c.tag}</b> — {c.desc[idx]}
+                    <b>{c.tag}</b> — {c.desc[idx]}{c.soon ? ` (${t('digi.edit.soon')})` : ''}
                   </button>
                 </li>
               ))}

@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { addLogQso, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { bearingDeg } from '../lib/geo';
+import { gridToLatLon } from '../lib/maidenhead';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -279,6 +281,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     window.addEventListener('pointerup', up);
   };
 
+  // entrando nella pagina l'ascolto parte da solo (una volta): si ferma e riparte dal menu Opzioni
+  const autoListen = useRef(false);
+  useEffect(() => {
+    if (autoListen.current) return;
+    autoListen.current = true;
+    if (!live.current.snap.rx.listening) void digiRx('start').then(onChanged, onChanged);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const caps = useRef(false);
   caps.current = views.capsOnly;
 
@@ -528,6 +539,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           break;
         }
         case 'shift': save({ rtty_shift_hz: a.hz }); break;
+        case 'fq': {
+          // la frequenza del segnale: la radio si porta in modo che cada sul tono di ricezione
+          const dial = Math.round(a.khz * 1000) - Math.round(l.rxHz);
+          useStation.getState().patchStatus({ dial_hz: dial });
+          void postFrequency(dial).then(onChanged, onChanged);
+          break;
+        }
+        case 'rotor': {
+          const goto = (az: number) => void rotatorGoto(az).catch(() => toast(t('digi.run.rotorFail'), 'error'));
+          if (typeof a.az === 'number') goto(a.az);
+          else {
+            const from = gridToLatLon(l.status?.de_grid ?? '');
+            const to = gridToLatLon(l.qso.wwloc);
+            if (!from || !to) toast(t('digi.run.rotorNoGrid'), 'info');
+            else goto(a.az === 'LP' ? (bearingDeg(from, to) + 180) % 360 : bearingDeg(from, to));
+          }
+          break;
+        }
+        case 'editMacro': setEditing({ name: a.name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === a.name) ? 'mode' : 'all' }); break;
+        case 'alarm': toast(a.text, 'info'); break;
         case 'wpm': {
           const next = Math.round(Math.min(60, Math.max(5, a.relative ? l.snap.settings.cw_wpm + a.wpm : a.wpm)));
           if (l.snap.settings.mode !== 'cw') save({ mode: 'cw', cw_wpm: next });
@@ -699,6 +730,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     {
       label: t('digi.menu.options'),
       items: [
+        { label: t('digi.mi.listen'), checked: snap.rx.listening, onSelect: () => void (snap.rx.listening ? digiRx('stop') : digiRx('start')).then(onChanged, onChanged) },
+        'sep' as const,
         { label: t('digi.mi.afc'), checked: s.afc_on, onSelect: () => toggleSetting('afc', 'toggle') },
         { label: t('digi.mi.lock'), checked: lock, onSelect: () => toggleSetting('lock', 'toggle') },
         { label: t('digi.mi.snap'), checked: s.snap_on, onSelect: () => toggleSetting('snap', 'toggle') },
@@ -882,13 +915,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           onThreshold={() => setSettingsOpen(true)}
         />
       ) : null}
-
-      <div className="digi-rxctl">
-        <button type="button" className="glass sstv-btn" onClick={() => void (snap.rx.listening ? digiRx('stop') : digiRx('start')).then(onChanged, onChanged)}>
-          {snap.rx.listening ? t('digi.rx.stop') : t('digi.rx.start')}
-        </button>
-        <span className="sstv-hint digi-hint">{t('digi.macros.hint')}</span>
-      </div>
 
       {editing !== null && editedMacro ? (
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />

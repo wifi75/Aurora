@@ -49,6 +49,12 @@ export type MacroAction =
   | { type: 'shift'; hz: number }
   /** Velocita' della CW: assoluta o relativa (`+n`, `-n`). */
   | { type: 'wpm'; wpm: number; relative: boolean }
+  /** Porta la radio in modo che il segnale cada su questa frequenza (kHz). */
+  | { type: 'fq'; khz: number }
+  /** Gira il rotore: gradi, o `SP` / `LP` verso la stazione del QSO per la via corta o lunga. */
+  | { type: 'rotor'; az: number | 'SP' | 'LP' }
+  | { type: 'editMacro'; name: string }
+  | { type: 'alarm'; text: string }
   | { type: 'audioFq'; hz: number; relative: boolean }
   | { type: 'autoCq' }
   | { type: 'tune'; seconds: number | null }
@@ -159,7 +165,8 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'CLEARWINDOW': return { type: 'clearWindow' };
     case 'FIXSTARTTIME': return { type: 'fixStartTime' };
     case 'SAVEQSO': return { type: 'saveQso' };
-    case 'AUTOCQ': return { type: 'autoCq' };
+    case 'AUTOCQ':
+    case 'ACQ': return { type: 'autoCq' };
     case 'BEEP': return arg === 'ON' ? { type: 'beep' } : null;
     case 'SEEKLEFT': return { type: 'seek', direction: 'left' };
     case 'SEEKRIGHT': return { type: 'seek', direction: 'right' };
@@ -198,6 +205,19 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
       const hz = number(arg);
       return hz === null || hz <= 0 ? null : { type: 'shift', hz };
     }
+    case 'FQ': {
+      const khz = number(arg);
+      return khz === null || khz <= 0 ? null : { type: 'fq', khz };
+    }
+    case 'SPLIT': return arg === '1' ? { type: 'toggle', what: 'lock', value: true } : arg === '0' ? { type: 'toggle', what: 'lock', value: false } : null;
+    case 'ROTOR': {
+      const a = (arg ?? '').trim().toUpperCase();
+      if (a === 'SP' || a === 'LP') return { type: 'rotor', az: a };
+      const az = number(arg);
+      return az === null ? null : { type: 'rotor', az: ((Math.round(az) % 360) + 360) % 360 };
+    }
+    case 'EDITMACRO': return arg === undefined || arg.trim() === '' ? null : { type: 'editMacro', name: arg.trim() };
+    case 'ALARM': return arg === undefined ? null : { type: 'alarm', text: arg };
     case 'WPM': {
       const wpm = number(arg);
       return wpm === null || wpm === 0 ? null : { type: 'wpm', wpm, relative: /^[+-]/.test((arg ?? '').trim()) };
