@@ -74,3 +74,8 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 - Il proprietario ha gia' il materiale da cui riprendere le tabelle per codifica e decodifica in trasmissione e ricezione: prima di cominciare va controllata la licenza di ogni fonte (deve essere compatibile con la GPL-3 di Aurora).
 - Ordine proposto: PSK31/PSK63 e RTTY (testo, simili per interfaccia), poi CW (decodifica e trasmissione), poi SSTV (immagini, interfaccia a parte).
 - Per ognuno: motore di modulazione e demodulazione in `core/crates`, finestra di ricezione testo (o immagine), macro di trasmissione, log come per FT8, Guida e Novita' nelle sei lingue.
+
+## 28. MSK144 con periodo di 30 s (issue #27, UN7MBV)
+
+- Oggi MSK144 usa solo periodi di 15 s (`engine-native`: `Mode::Msk144 => 15`, `mskrt.rs`, `rig.rs` «TX 00/30»). Da aggiungere la scelta 15/30 s (30 s TX, 30 s RX, molto usata per il meteor scatter in VHF), come per Q65: motore, trasmissione (quadro ripetuto per tutto il periodo), decodifica in tempo reale, selettore accanto al modo.
+- Quando e' fatta: commento nella issue #27 (UN7MBV riceve la notifica) e chiusura.
