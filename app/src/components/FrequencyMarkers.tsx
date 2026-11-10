@@ -10,6 +10,8 @@ interface Props {
   txHz?: number | null;
   /** Larghezza del segnale del modo in uso (Hz): le barre la occupano a destra della frequenza. 0 o assente = barra sottile. */
   bandwidthHz?: number;
+  /** Dove comincia il segnale rispetto alla frequenza (Hz, MSK144 -1000: centrato). */
+  startOffsetHz?: number;
   /** Con il Filtro acceso: Hz sotto e sopra Rx della finestra decodificata (asimmetrica come in JTDX); fuori la cascata si scurisce. */
   filter?: { below: number; above: number } | null;
   /** «Bars» del Wide Graph: le linee verticali Rx e Tx e le due linee che seguono il puntatore. Spento restano solo le etichette. */
@@ -32,7 +34,7 @@ const SEND_EVERY_MS = 80;
 /** Dopo il rilascio la barra resta dove l'ha lasciata l'operatore finche' il motore non conferma (al massimo questo tempo). */
 const HOLD_MS = 1500;
 
-export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngine, bandwidthHz = 0, filter = null, showBars = true, showFreq = false, onRx: sendRx, onTx: sendTx }: Props) {
+export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngine, bandwidthHz = 0, startOffsetHz = 0, filter = null, showBars = true, showFreq = false, onRx: sendRx, onTx: sendTx }: Props) {
   const t = useT();
   // posizione mostrata subito durante il trascinamento: non si aspetta la risposta del motore a ogni movimento (prima la barra andava a scatti)
   const [local, setLocal] = useState<{ rx?: number; tx?: number }>({});
@@ -126,7 +128,7 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
         key={kind}
         className={`wf-marker wf-marker--${kind}${bandwidthHz > 0 ? ' wf-marker--band' : ''}${showBars ? '' : ' wf-marker--nobars'}${dragging === kind ? ' wf-marker--dragging' : ''}`}
         style={{
-          left: `${leftPercent(hz, fMinHz, fMaxHz)}%`,
+          left: `${leftPercent(hz + startOffsetHz, fMinHz, fMaxHz)}%`,
           ...(bandwidthHz > 0 ? { width: `${(bandwidthHz / (fMaxHz - fMinHz)) * 100}%` } : {}),
         }}
         role="slider"

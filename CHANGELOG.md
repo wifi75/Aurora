@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **MSK144 sulla cascata** (UN7MBV): le barre Rx e Tx sono centrate sulla frequenza (1000-2000 Hz attorno ai 1500), non piu' da 1500 a 3500 come se fosse FT8; la Finestra RX mostra ±100 Hz.
+
 ## 0.11.227 - 2026-11-10
 - **Finestra RX**: bandierina e paese in colonna su tutte le righe, ora/dB/messaggio a misura fissa.
 - **Nominativo di chi trasmette in grassetto** (Luc ON7AVL): in Attivita' di banda e nella Finestra RX il nominativo di chi manda il messaggio e' in grassetto, cosi' si trova subito; l'ordine del messaggio non cambia.

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getCat, getControls, postRxFrequency, postTxFrequency } from '../api/client';
 import { bandOf } from '../lib/format';
-import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
+import { filterWindowHz, signalBandwidthHz, signalStartOffsetHz } from '../lib/markers';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
 import { useStation } from '../state/station';
@@ -36,7 +36,7 @@ export function WaterfallStack() {
           fMaxHz={to}
           rxHz={status?.rx_df}
           txHz={status?.tx_df}
-          bandwidthHz={signalBandwidthHz(status?.mode)}
+          bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)}
           filter={filterWindow}
           showBars={wf.bars}
           showFreq={wf.freq}
@@ -45,7 +45,7 @@ export function WaterfallStack() {
         />
         <SpotMarkers fMinHz={from} fMaxHz={to} dialHz={status?.dial_hz} onPick={(hz) => void postRxFrequency(hz)} />
       </div>
-      <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} />
+      <FrequencyRuler fMinHz={from} fMaxHz={to} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)} />
     </>
   );
 }

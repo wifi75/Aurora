@@ -50,3 +50,13 @@ describe('filterWindowHz', () => {
     expect(filterWindowHz(undefined)).toBeNull();
   });
 });
+
+describe('MSK144 sulla cascata', () => {
+  it('e'' centrato sulla frequenza: la barra parte 1000 Hz prima, la Finestra RX e'' larga ±100', async () => {
+    const m = await import('./markers');
+    expect(m.signalStartOffsetHz('MSK144')).toBe(-1000);
+    expect(m.signalStartOffsetHz('FT8')).toBe(0);
+    expect(m.rxWindowHz('MSK144')).toBe(100);
+    expect(m.rxWindowHz('FT8')).toBe(50);
+  });
+});

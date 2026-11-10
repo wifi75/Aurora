@@ -3,7 +3,7 @@ import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Waterfall } from '../components/Waterfall';
 import { useT } from '../i18n';
-import { signalBandwidthHz } from '../lib/markers';
+import { signalBandwidthHz, signalStartOffsetHz } from '../lib/markers';
 import { registerSpectrum, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
 import { useStation } from '../state/station';
@@ -75,7 +75,7 @@ function LivePreview() {
           fMaxHz={to}
           rxHz={status?.rx_df}
           txHz={status?.tx_df}
-          bandwidthHz={signalBandwidthHz(status?.mode)}
+          bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)}
           showBars={wf.bars}
           showFreq={wf.freq}
           onRx={() => {}}

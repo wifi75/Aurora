@@ -47,6 +47,20 @@ export function signalBandwidthHz(mode: string | undefined): number {
 }
 
 /**
+ * Dove comincia il segnale rispetto alla frequenza indicata (Hz). Nei modi FT8, FT4, JT65... la frequenza e' quella del tono piu' basso
+ * (0); MSK144 invece e' centrato sulla frequenza (toni a 1000 e 2000 Hz attorno ai 1500): la barra parte 1000 Hz prima. Prima la barra
+ * di MSK144 andava da 1500 a 3500 Hz (UN7MBV, 2026-11-10: «la cascata e' rimasta come in FT8»).
+ */
+export function signalStartOffsetHz(mode: string | undefined): number {
+  return mode === 'MSK144' ? -signalBandwidthHz(mode) / 2 : 0;
+}
+
+/** Quanto lontano dalla frequenza RX la Finestra RX mostra i messaggi (Hz): ±50 come la finestra «Rx Frequency», MSK144 ±100 (la tolleranza di base). */
+export function rxWindowHz(mode: string | undefined): number {
+  return mode === 'MSK144' ? 100 : 50;
+}
+
+/**
  * La finestra del Filtro attorno alla frequenza Rx (Hz sotto e sopra), come i segni blu di `DrawOverlay`: FT8 -60/+110 (Hound -290/+340),
  * FT4 -95/+179, JT65 -200/+375, JT9 -50/+65,6, T10 -80/+142,4. Per gli altri modi null (nessun filtro disegnato).
  */

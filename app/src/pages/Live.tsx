@@ -49,7 +49,7 @@ import { playAlert } from '../lib/voice';
 import { loadWorkedStates, prefetchUsStations, stateTag, useUsStates } from '../lib/usStates';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { bandOf } from '../lib/format';
-import { filterWindowHz, signalBandwidthHz } from '../lib/markers';
+import { filterWindowHz, rxWindowHz, signalBandwidthHz, signalStartOffsetHz } from '../lib/markers';
 import { useLayout, type PanelId } from '../lib/layout';
 import { replyErrorMessage } from '../lib/replyError';
 import { usePhone, useStationView } from '../lib/phone';
@@ -70,8 +70,6 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 }
 
 const LOG_TAB_KEY = 'aurora-log-linguetta';
-/** Mezza larghezza della finestra RX attorno alla barretta Rx (come la finestra «Rx Frequency» di WSJT-X). */
-const RX_WINDOW_HZ = 50;
 
 /** Il messaggio contiene il nominativo della stazione con cui si sta facendo il QSO: con la finestra RX aperta lo si vede lì e si toglie da Attività di banda. */
 function fromDx(text: string, dx: string | null | undefined): boolean {
@@ -245,7 +243,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                 fMaxHz={F_MAX_HZ}
                 rxHz={status?.rx_df}
                 txHz={status?.tx_df}
-                bandwidthHz={signalBandwidthHz(status?.mode)}
+                bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)}
                 filter={filterWindow}
                 showBars={wf.bars}
                 showFreq={wf.freq}
@@ -254,7 +252,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               />
               <SpotMarkers fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} dialHz={status?.dial_hz} onPick={(hz) => void setFrequency('Rx', hz, postRxFrequency)} />
             </div>
-            <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} />
+            <FrequencyRuler fMinHz={F_MIN_HZ} fMaxHz={F_MAX_HZ} decodes={decodes} rxHz={status?.rx_df} txHz={status?.tx_df} bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)} />
           </>
         );
       case 'station':
@@ -404,7 +402,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
               fMaxHz={F_MAX_HZ}
               rxHz={status?.rx_df}
               txHz={status?.tx_df}
-              bandwidthHz={signalBandwidthHz(status?.mode)}
+              bandwidthHz={signalBandwidthHz(status?.mode)} startOffsetHz={signalStartOffsetHz(status?.mode)}
               filter={filterWindow}
               showBars
               showFreq={false}
@@ -435,7 +433,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     return (
       <div className="log-rx">
         <DecodeList
-          decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= RX_WINDOW_HZ) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
+          decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= rxWindowHz(status?.mode)) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
           myGrid={status?.de_grid}
           myCall={status?.de_call}
           dxCall={status?.dx_call}
@@ -607,7 +605,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                 <header className="dock-grip dock-grip--fixed">
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{t('rxw.title')}</h2>
-                  <span className="log-rx-freq" title={t('rxw.tip')}>{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+                  <span className="log-rx-freq" title={t('rxw.tip')}>{rxHz !== null ? `${rxHz} Hz ±${rxWindowHz(status?.mode)}` : ''}</span>
                   {orderButton('rxBottom')}
                 </header>
                 <div className="dock-body">{rxBody()}</div>
