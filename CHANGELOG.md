@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK e RTTY, opzioni della Vista** (menu «Vista»): sottolinea il testo trasmesso, solo maiuscole, zero barrato, TX lampeggiante, linee sottili sulla cascata alle frequenze di RX (e TX in split) e rapporti di base 599 dopo ogni QSO. Di base sono accese: sottolineato, zero barrato, TX lampeggiante e rapporti 599. Nella Guida la voce «PSK e RTTY: pagina e opzioni della Vista».
+- **PSK e RTTY, divisore regolabile**: il divisore fra la finestra di ricezione e quella di trasmissione si trascina (la proporzione resta salvata).
 - **DX Cluster nei modi testuali**: nell'elenco dei modi c'e' anche PSK (comprende PSK31 e PSK63) e un nuovo filtro «Solo nuovi» mostra solo gli spot nuovi per la lista dei desideri. Nella pagina PSK e RTTY il clic su uno spot porta la radio in modo che il segnale cada sul tono di ricezione, mette il nominativo nel QSO e, se il commento dice «up N», sposta la trasmissione di N kHz (split nell'audio fino a 3,5 kHz; oltre serve lo split della radio, non ancora fatto).
 - **PSK, RTTY, CW e SSTV in un solo posto**: in alto un solo pulsante «PSK · RTTY · SSTV» al posto di quattro; il modo si cambia dal menu «Modo» della pagina (scegliendo SSTV si apre la pagina SSTV) e, nella pagina SSTV, dal selettore del modo accanto al titolo. Il selettore di banda resta da solo, senza riquadro.
 - **PSK e RTTY, tutto in una schermata**: la pagina sta nell'altezza della finestra senza scroll; RX/TX e la colonna di destra si dividono lo spazio e le liste (DX Cluster, Log) scorrono nel loro riquadro. Le macro hanno colonne fisse piu' corte e il selettore di banda sta a fianco.

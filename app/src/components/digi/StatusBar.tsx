@@ -3,6 +3,8 @@ import { useT } from '../../i18n';
 
 interface Props {
   transmitting: boolean;
+  /** «Flashing TX»: l'indicatore TX lampeggia durante la trasmissione. */
+  flashTx?: boolean;
   squelchOn: boolean;
   /** Il segnale e' sopra la soglia: nella barra si legge «Sq *». */
   squelchOpen: boolean;
@@ -58,7 +60,7 @@ export function DigiStatusBar(p: Props) {
         p.onThreshold();
       }}
     >
-      <button type="button" className={`digi-st digi-st--${p.transmitting ? 'tx' : 'rx'}`} title={t('digi.st.txrx')} onClick={p.onToggleTx}>
+      <button type="button" className={`digi-st digi-st--${p.transmitting ? 'tx' : 'rx'}${p.transmitting && p.flashTx ? ' digi-st--flash' : ''}`} title={t('digi.st.txrx')} onClick={p.onToggleTx}>
         {p.transmitting ? 'TX' : 'RX'}
       </button>
       <button type="button" className={`digi-st${p.squelchOn ? ' on' : ''}`} aria-pressed={p.squelchOn} title={t('digi.st.squelch')} onClick={p.onToggleSquelch}>

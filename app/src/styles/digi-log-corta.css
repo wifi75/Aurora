@@ -17,8 +17,8 @@
 /* area centrale: prende tutta l'altezza che resta */
 .digi-main { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
 .digi-windows { min-height: 0; }
-.digi-rxwin { flex: 1 1 55%; min-height: 0; max-height: none; overflow: auto; }
-.digi-txwrap { flex: 1 1 45%; min-height: 0; }
+.digi-rxwin { flex: 1 1 0; min-height: 3rem; max-height: none; overflow: auto; }
+.digi-txwrap { flex: 1 1 0; min-height: 4rem; }
 .digi-txwin { min-height: 0; }
 .digi-log { align-self: stretch; min-height: 0; }
 .digi-log-cluster, .digi-log-table { flex: 1 1 0; min-height: 0; height: auto; max-height: none; overflow: auto; }
@@ -29,3 +29,20 @@
 /* niente riquadro intorno al selettore di banda: resta solo il selettore */
 .digi-topline .digi-bandbar { background: none; border: 0; box-shadow: none; padding: 0; flex: 0 0 auto; align-self: center; }
 .sstv-modesel { background: #16233f; color: var(--text, #e8eefc); border: 1px solid var(--border, #25365d); border-radius: 10px; padding: 4px 10px; font: inherit; font-weight: 600; }
+
+/* opzioni della Vista */
+.digi-zero { font-variant-numeric: slashed-zero; font-feature-settings: "zero" 1; }
+.digi-caps { text-transform: uppercase; }
+.digi-sent { text-decoration: underline; text-decoration-color: #6f81a8; text-underline-offset: 3px; }
+.digi-st--flash { animation: digi-flash 0.8s steps(2, start) infinite; }
+@keyframes digi-flash { 50% { background: #7a1d27; } }
+.digi-wf-hair { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgba(255, 255, 255, 0.55); pointer-events: none; z-index: 2; }
+.digi-wf-hair--rx { border-left-color: rgba(80, 140, 255, 0.9); }
+.digi-wf-hair--tx { border-left-color: rgba(255, 90, 90, 0.9); }
+
+/* divisore regolabile fra ricezione e trasmissione */
+.digi-split { flex: none; height: 9px; margin: -4px 0; position: relative; z-index: 3; cursor: row-resize; touch-action: none; }
+.digi-split::after { content: ''; position: absolute; left: 0; right: 0; top: 4px; border-top: 1px dashed var(--border, #25365d); }
+.digi-split:hover::after, .digi-split:active::after { border-top: 2px solid #8e7bff; top: 3px; }
+
+.digi-rxwin { border-bottom: 0; }

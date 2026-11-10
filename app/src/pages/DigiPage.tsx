@@ -41,6 +41,13 @@ interface Views {
   log: boolean;
   waterfall: boolean;
   statusBar: boolean;
+  /** Opzioni della Vista. */
+  underlineSent: boolean;
+  capsOnly: boolean;
+  slashedZero: boolean;
+  flashTx: boolean;
+  hairlines: boolean;
+  defaultRst: boolean;
 }
 
 interface ScanProps {
@@ -50,8 +57,26 @@ interface ScanProps {
   freqMarks: boolean;
 }
 
-const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true };
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true };
 const DEFAULT_SCAN: ScanProps = { dwell: 10, once: false, timeMarks: true, freqMarks: true };
+
+/** Le righe trasmesse (iniziano con «» ») sottolineate nella finestra di ricezione. */
+function withSentUnderlined(text: string): React.ReactNode {
+  return text.split('\n').map((line, i, all) => {
+    const nl = i < all.length - 1 ? '\n' : '';
+    return line.startsWith('» ') ? (
+      <u key={i} className="digi-sent">
+        {line}
+        {nl}
+      </u>
+    ) : (
+      <span key={i}>
+        {line}
+        {nl}
+      </span>
+    );
+  });
+}
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -156,7 +181,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
   const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
   const [startAt, setStartAt] = useState<Date | null>(null);
-  const [views, setViews] = useState<Views>(() => readJson(VIEWS_KEY, DEFAULT_VIEWS));
+  const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
   const [scanProps, setScanProps] = useState<ScanProps>(() => readJson(SCAN_KEY, DEFAULT_SCAN));
   const [problem, setProblem] = useState('');
   const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
@@ -213,9 +238,44 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     writeJson(FIELDS_KEY, next);
   };
 
+  // il divisore fra ricezione e trasmissione si trascina: la parte alta della colonna (0,2-0,8), ricordata
+  const windowsRef = useRef<HTMLDivElement>(null);
+  const [rxFrac, setRxFrac] = useState<number>(() => {
+    const n = Number(browserStorage()?.getItem('aurora.digi.rxfrac') ?? '');
+    return Number.isFinite(n) && n >= 0.2 && n <= 0.8 ? n : 0.55;
+  });
+  const dragSplit = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const box = windowsRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const move = (m: PointerEvent) => setRxFrac(Math.min(0.8, Math.max(0.2, (m.clientY - box.top) / box.height)));
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setRxFrac((f) => {
+        try {
+          browserStorage()?.setItem('aurora.digi.rxfrac', String(f));
+        } catch {
+          // la proporzione vale comunque finche' la pagina e' aperta
+        }
+        return f;
+      });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  const caps = useRef(false);
+  caps.current = views.capsOnly;
+
+  // «Use default RST»: dopo ogni QSO (azzerato o salvato) i rapporti tornano 599
+  const resetRst = () => {
+    if (views.defaultRst) setSavedField({ rsts: '599', rstr: '599' });
+  };
+
   const send = useCallback(
     (body: string) => {
-      const message = body.trim();
+      const message = (caps.current ? body.toUpperCase() : body).trim();
       if (message === '') return;
       setProblem('');
       digiTransmit(message).then(
@@ -433,7 +493,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'clearTx': clearTx = true; break;
         case 'clearRx': clearDigiText(); break;
         case 'clearWindow': clearDigiText(); clearTx = true; break;
-        case 'clearQso': setQso(EMPTY_QSO); setStartAt(null); break;
+        case 'clearQso': setQso(EMPTY_QSO); setStartAt(null); resetRst(); break;
         case 'fixStartTime': setStartAt(new Date()); break;
         case 'saveQso': wantSave = true; break;
         case 'mode': {
@@ -653,6 +713,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.log'), checked: views.log, onSelect: () => setView({ log: !views.log }) },
         { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
+        'sep' as const,
+        { label: t('digi.mi.underlineSent'), checked: views.underlineSent, onSelect: () => setView({ underlineSent: !views.underlineSent }) },
+        { label: t('digi.mi.capsOnly'), checked: views.capsOnly, onSelect: () => setView({ capsOnly: !views.capsOnly }) },
+        { label: t('digi.mi.slashedZero'), checked: views.slashedZero, onSelect: () => setView({ slashedZero: !views.slashedZero }) },
+        { label: t('digi.mi.flashTx'), checked: views.flashTx, onSelect: () => setView({ flashTx: !views.flashTx }) },
+        { label: t('digi.mi.hairlines'), checked: views.hairlines, onSelect: () => setView({ hairlines: !views.hairlines }) },
+        { label: t('digi.mi.defaultRst'), checked: views.defaultRst, onSelect: () => setView({ defaultRst: !views.defaultRst }) },
       ],
     },
     {
@@ -701,18 +768,19 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
-        <div className="digi-windows">
-          <pre className="digi-rxwin" ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
-            {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : text}
+        <div className="digi-windows" ref={windowsRef}>
+          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
+            {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : views.underlineSent ? withSentUnderlined(text) : text}
           </pre>
-          <div className="digi-txwrap">
+          <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
+          <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
             <textarea
               ref={txBox}
-              className="digi-txwin"
+              className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
               value={tx}
               aria-label={t('digi.tx.title')}
               placeholder={t('digi.tx.placeholder')}
-              onChange={(e) => setTx(e.target.value)}
+              onChange={(e) => setTx(views.capsOnly ? e.target.value.toUpperCase() : e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}
@@ -766,18 +834,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             onClear={() => {
               setQso(EMPTY_QSO);
               setStartAt(null);
+              resetRst();
             }}
           />
         ) : null}
       </div>
 
       {views.waterfall ? (
-        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} transmitting={sending} onRow={onRow} onPick={(hz, ctrl) => pickFreq(hz, true, ctrl)} />
+        <DigiWaterfall minHz={WF_MIN} maxHz={WF_MAX} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : bandwidthOf(s)} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl) => pickFreq(hz, true, ctrl)} />
       ) : null}
 
       {views.statusBar ? (
         <DigiStatusBar
           transmitting={sending}
+          flashTx={views.flashTx}
           squelchOn={s.squelch_on}
           squelchOpen={snap.rx.squelch_open}
           afc={s.afc_on}

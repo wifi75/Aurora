@@ -14,6 +14,8 @@ interface Props {
   bandwidthHz: number;
   /** Split acceso: la coppia rossa della trasmissione sta altrove e il clic la sposta; con Ctrl si sposta la ricezione. */
   split?: boolean;
+  /** «Show hairlines»: due righe sottili su tutta la cascata alle frequenze di ricezione (e di trasmissione in split). */
+  hairlines?: boolean;
   /** In ricezione la bandierina e' verde, in trasmissione rossa. */
   transmitting: boolean;
   height?: number;
@@ -36,7 +38,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, transmitting, height = 150, onRow, onPick }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, transmitting, height = 150, onRow, onPick }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -149,6 +151,8 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       />
       {flag(rxHz, transmitting ? '#e5484d' : '#22c55e', 'rx')}
       {txHz !== null ? flag(txHz, '#e5484d', 'tx') : null}
+      {hairlines && rxHz >= minHz && rxHz <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxHz) }} aria-hidden="true" /> : null}
+      {hairlines && split && txHz !== null && txHz >= minHz && txHz <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txHz) }} aria-hidden="true" /> : null}
       {pair(rxHz, 'rx', t('digi.wf.rxTip'))}
       {split && txHz !== null ? pair(txHz, 'tx', t('digi.wf.txTip')) : null}
     </div>
