@@ -897,10 +897,12 @@ fn write_traffic_log(all_txt: &mut AllTxt, driver: Option<&mut TxDriver<dyn TxPo
 /// FT8 alterna periodi che cominciano a un multiplo pari o dispari di 15 s dall'inizio dei tempi, `docs/analisi-jtdx-reverse-rea.md` 7.2.3).
 /// «a7/a8» (`ap_list`, acceso di base come l'analisi a priori di WSJT-X) accende le decodifiche a liste di WSJT-X: "a7" sui seguiti
 /// dei QSO del periodo precedente della stessa parita', "a8" sul DX alla frequenza di ricezione quando DX Call e DX Grid sono
-/// noti (non in Hound, come `ncontest` 6/7 di WSJT-X). «Multithread» (`mtd`, acceso di base) usa tutti i processori: i decode
+/// noti (non in Hound, come `ncontest` 6/7 di WSJT-X). «Multithread» (`mtd`, acceso di base) usa tutti i processori meno uno: i decode
 /// sono gli stessi del singolo thread.
 fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str, slot_start_ms: u64) -> Options {
-    let threads = if controls.switch_on("mtd") { std::thread::available_parallelism().map_or(1, std::num::NonZero::get) } else { 1 };
+    // tutti i processori meno uno: quello lasciato libero tiene pronti audio, CAT e finestra (rapporti «decodifica lenta» con 4 e 8
+    // processori tutti occupati dalla decodifica)
+    let threads = if controls.switch_on("mtd") { ft8::pool::decode_threads() } else { 1 };
     let list = controls.switch_on("ap_list");
     let view = tx::view_of(controls);
     let a8 = (list && !controls.switch_on("hound")).then(|| ft8::a8::A8Query {

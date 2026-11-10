@@ -264,7 +264,7 @@ pub fn decode_slot_streaming(
     let mut residual = audio.clone();
     // thread: un gruppo di candidati per volta, due per thread
     let threads = options.threads.max(1);
-    let pool = if threads > 1 { rayon::ThreadPoolBuilder::new().num_threads(threads).build().ok() } else { None };
+    let pool = crate::pool::shared(threads);
     let batch = if pool.is_some() { 2 * threads } else { 1 };
 
     for ipass in 1..=npass {

@@ -280,7 +280,7 @@ pub fn a8_decode(ds: &Downsampler, query: &A8Query, hashes: &CallHashes) -> Opti
     }
 
     let peaks: Vec<Peak> = if query.threads > 1 {
-        let pool = rayon::ThreadPoolBuilder::new().num_threads(query.threads).build().ok();
+        let pool = crate::pool::shared(query.threads);
         match pool {
             Some(p) => p.install(|| hyps.par_iter().map(|(_, w)| correlate(&cd, w, f1)).collect()),
             None => hyps.iter().map(|(_, w)| correlate(&cd, w, f1)).collect(),

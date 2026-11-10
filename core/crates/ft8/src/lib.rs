@@ -18,6 +18,7 @@ pub mod history;
 pub mod ldpc;
 pub mod message;
 pub mod modem;
+pub mod pool;
 pub mod subtract;
 pub mod sync;
 
