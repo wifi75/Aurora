@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.232',
+    released: '2026-11-10T23:00:00Z',
+    kind: 'fixed',
+    title: ['PTT: avviso con il motivo e niente scarto, contest in ordine di data', 'PTT: notice with the reason and no discarding, contests in date order', 'PTT: Hinweis mit Grund und kein Verwerfen, Contests nach Datum', 'PTT : avis avec le motif et sans rejet, concours par date', 'PTT: aviso con el motivo y sin descartar, concursos por fecha', 'PTT: aviso com o motivo e sem descartar, concursos por data'],
+    text: [
+      'Se il PTT non faceva trasmettere la radio (la frequenza cambiava ma niente PTT), ora Aurora lo prova lo stesso anche dopo una lettura mancata della radio, e se non parte compare un avviso in alto con il motivo e il rimando a Impostazioni › Radio e «Test PTT». Il menu dei contest è in ordine di data di inizio in ogni categoria, e il «×N» delle trasmissioni ripetute non sposta più la bandiera.',
+      'If the PTT did not key the radio (the frequency changed but no PTT), Aurora now tries it anyway even after a missed radio read, and if it does not start a notice appears at the top with the reason and a pointer to Settings › Radio and “Test PTT”. The contest menu is in start-date order in each category, and the “×N” of repeated transmissions no longer moves the flag.',
+      'Wenn das PTT das Funkgerät nicht auf Senden schaltete (die Frequenz wechselte, aber kein PTT), probiert Aurora es jetzt trotzdem, auch nach einer verpassten Funkgerätelesung; startet es nicht, erscheint oben ein Hinweis mit dem Grund und dem Verweis auf Einstellungen › Funkgerät und „PTT testen“. Das Contest-Menü ist in jeder Kategorie nach Startdatum sortiert, und das „×N“ wiederholter Sendungen verschiebt die Flagge nicht mehr.',
+      'Si le PTT ne faisait pas émettre la radio (la fréquence changeait mais pas de PTT), Aurora l’essaie maintenant quand même, même après une lecture manquée de la radio, et s’il ne part pas un avis apparaît en haut avec le motif et le renvoi à Réglages › Radio et « Test PTT ». Le menu des concours est classé par date de début dans chaque catégorie, et le « ×N » des émissions répétées ne déplace plus le drapeau.',
+      'Si el PTT no hacía transmitir la radio (la frecuencia cambiaba pero sin PTT), Aurora ahora lo prueba igualmente incluso tras una lectura fallida de la radio, y si no sale aparece un aviso arriba con el motivo y la referencia a Ajustes › Radio y «Probar PTT». El menú de concursos está ordenado por fecha de inicio en cada categoría, y el «×N» de las transmisiones repetidas ya no mueve la bandera.',
+      'Se o PTT não fazia o rádio transmitir (a frequência mudava mas sem PTT), o Aurora agora tenta na mesma, mesmo depois de uma leitura falhada do rádio, e se não arrancar aparece um aviso em cima com o motivo e a indicação de Definições › Rádio e «Testar PTT». O menu dos concursos está por data de início em cada categoria, e o «×N» das transmissões repetidas já não move a bandeira.',
+    ],
+  },
+  {
     version: '0.11.231',
     released: '2026-11-10T20:51:07Z',
     kind: 'changed',
@@ -562,20 +576,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Réglages > Radio le système de contrôle peut être « Aucun » : les boutons de bande changent la fréquence d’Aurora et la radio se règle à la main. Corrigé : les bandes ne changeaient pas. Dans le Log, liste complète des modes dans « Ajouter un QSO ».',
       'En Ajustes > Radio el sistema de control puede ser «Ninguno»: los botones de banda cambian la frecuencia de Aurora y la radio la mueves a mano. Corregido: las bandas no cambiaban. En el Log, lista completa de modos en «Añadir QSO».',
       'Em Definições > Rádio o sistema de controlo pode ser «Nenhum»: os botões de banda mudam a frequência do Aurora e o rádio mudas à mão. Corrigido: as bandas não mudavam. No Log, lista completa de modos em «Adicionar QSO».',
-    ],
-  },
-  {
-    version: '0.11.192',
-    released: '2026-11-07T22:02:42Z',
-    kind: 'fixed',
-    title: ['Salva sempre attivo', 'Save always available', 'Speichern immer aktiv', 'Enregistrer toujours actif', 'Guardar siempre activo', 'Guardar sempre ativo'],
-    text: [
-      'Nelle Impostazioni «Salva» è sempre attivo; se tutto è già salvato lo dice.',
-      'In Settings “Save” is always available; if everything is already saved it says so.',
-      'In den Einstellungen ist „Speichern“ immer aktiv; ist schon alles gespeichert, sagt es das.',
-      'Dans les Paramètres « Enregistrer » est toujours actif ; si tout est déjà enregistré, il le dit.',
-      'En los Ajustes «Guardar» está siempre activo; si todo ya está guardado, lo dice.',
-      'Nas Definições «Guardar» está sempre ativo; se tudo já está guardado, diz isso.',
     ],
   },
 ];
