@@ -20,6 +20,19 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.228',
+    released: '2026-11-10T18:00:00Z',
+    kind: 'changed',
+    title: ["Cascata ferma in trasmissione, filtro Spotter e MSK144", "Waterfall paused in TX, Spotter filter and MSK144", "Wasserfall pausiert beim Senden, Spotter-Filter und MSK144", "Cascade en pause en émission, filtre Spotteur et MSK144", "Cascada en pausa al transmitir, filtro Spotter y MSK144", "Cascata em pausa ao transmitir, filtro Spotter e MSK144"],
+    text: [
+      "Mentre trasmetti la cascata si ferma invece di scorrere nera; una riga gialla segna la pausa. Nel menu «Spec» puoi spegnere lo spettro. Nel DX Cluster il filtro «Spotter» mostra solo gli spot mandati dal tuo continente. In MSK144 le barre Rx e Tx sono centrate sul segnale. Chiudendo la finestra principale si chiudono anche le finestre sul secondo schermo.",
+      "While you transmit the waterfall pauses instead of scrolling black; a yellow line marks the pause. In the «Spec» menu you can turn the spectrum off. In the DX Cluster the «Spotter» filter shows only spots sent from your continent. In MSK144 the Rx and Tx bars are centred on the signal. Closing the main window also closes the windows on the second screen.",
+      "Beim Senden pausiert der Wasserfall, statt schwarz weiterzulaufen; eine gelbe Linie markiert die Pause. Im Menü «Spec» lässt sich das Spektrum ausschalten. Im DX-Cluster zeigt der Filter «Spotter» nur Spots von deinem Kontinent. In MSK144 sind die Rx- und Tx-Balken auf das Signal zentriert. Schließt du das Hauptfenster, schließen sich auch die Fenster auf dem zweiten Bildschirm.",
+      "Pendant l’émission la cascade se met en pause au lieu de défiler en noir ; une ligne jaune marque la pause. Dans le menu « Spec » tu peux masquer le spectre. Dans le DX Cluster le filtre « Spotteur » ne montre que les spots envoyés depuis ton continent. En MSK144 les barres Rx et Tx sont centrées sur le signal. Fermer la fenêtre principale ferme aussi les fenêtres du second écran.",
+      "Mientras transmites la cascada se detiene en lugar de avanzar en negro; una línea amarilla marca la pausa. En el menú «Spec» puedes ocultar el espectro. En el DX Cluster el filtro «Spotter» muestra solo los spots enviados desde tu continente. En MSK144 las barras Rx y Tx quedan centradas en la señal. Al cerrar la ventana principal se cierran también las ventanas de la segunda pantalla.",
+      "Enquanto transmites a cascata pára em vez de correr a preto; uma linha amarela marca a pausa. No menu «Spec» podes ocultar o espectro. No DX Cluster o filtro «Spotter» mostra só os spots enviados do teu continente. Em MSK144 as barras Rx e Tx ficam centradas no sinal. Ao fechar a janela principal fecham-se também as janelas do segundo ecrã.",
+    ],
+  },  {
     version: '0.11.227',
     released: '2026-11-10T13:33:59Z',
     kind: 'changed',
@@ -563,20 +576,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans Paramètres › Général tu choisis la taille du texte de tout le programme (90 % à 160 %), aussi avec Ctrl + et Ctrl −. « Enregistrer » ne ferme plus les Paramètres.',
       'En Ajustes › Generales eliges el tamaño del texto de todo el programa (del 90 % al 160 %), también con Ctrl + y Ctrl −. «Guardar» ya no cierra los Ajustes.',
       'Em Definições › Gerais escolhes o tamanho do texto de todo o programa (de 90 % a 160 %), também com Ctrl + e Ctrl −. «Guardar» já não fecha as Definições.',
-    ],
-  },
-  {
-    version: '0.11.188',
-    released: '2026-11-07T19:45:14Z',
-    kind: 'fixed',
-    title: ['Comandi più ordinati', 'Tidier Commands', 'Aufgeräumtere Befehle', 'Commandes plus nettes', 'Comandos más ordenados', 'Comandos mais arrumados'],
-    text: [
-      "I messaggi dei Comandi (Tune, Spot DX, errori) compaiono come avvisi a comparsa invece che in una riga sotto i pulsanti, e i pulsanti non escono più dal bordo della finestra.",
-      "Messages from Commands (Tune, Spot DX, errors) appear as pop-up notices instead of a line under the buttons, and the buttons no longer run past the window edge.",
-      "Meldungen der Befehle (Tune, DX spotten, Fehler) erscheinen als Hinweise statt als Zeile unter den Tasten, und die Tasten ragen nicht mehr über den Fensterrand.",
-      "Les messages des Commandes (Tune, Spot DX, erreurs) s'affichent en notifications au lieu d'une ligne sous les boutons, et les boutons ne dépassent plus du bord de la fenêtre.",
-      "Los mensajes de Comandos (Tune, Spot DX, errores) aparecen como avisos emergentes en lugar de una línea bajo los botones, y los botones ya no se salen del borde de la ventana.",
-      "As mensagens dos Comandos (Tune, Spot DX, erros) aparecem como avisos em vez de uma linha por baixo dos botões, e os botões já não saem da borda da janela.",
     ],
   },
 ];

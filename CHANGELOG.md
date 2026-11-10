@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.228 - 2026-11-10
 - **Cascata in trasmissione**: mentre si trasmette la cascata si ferma invece di scorrere nera; alla ripresa una riga gialla segna la pausa. Nel menu «Spec» la voce «Spento» nasconde lo spettro; la barretta per cambiarne l'altezza e' piu' visibile. Tra le impostazioni consigliate di FT-991 e IC-9700: shift dei ripetitori (ARS/DUP) e split spenti.
 - **Doppio schermo**: chiudendo la finestra principale si chiude tutta Aurora, comprese le finestre a parte sul secondo schermo (prima restavano aperte e Aurora non usciva).
 - **DX Cluster, filtro «Spotter»** (Luc ON7KEC): accanto a banda e modo si scelgono i continenti di chi manda lo spot; «Solo il mio continente» mostra cosa si sente dove sei.
