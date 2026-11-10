@@ -15,6 +15,15 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://
 - A ogni versione si seguono i passi di `TASK.md`.
 - Linux (non provata dall'autore, senza assistenza) usa lo stesso codice: ogni API di Windows va in `#[cfg(windows)]`; il controllo `Linux` di GitHub Actions deve restare verde (vedi `docs/sviluppo.md`).
 
+## Due rami: main (pubblico) e sviluppo (privato)
+Questa sezione esiste solo nel ramo `sviluppo`. I modi nuovi (SSTV, RTTY, PSK, CW, menu nuovo...) non devono essere pubblici ne' scaricabili finche' il proprietario non lo dice.
+- Remote: `origin` = github.com/wifi75/Aurora (pubblico), `sviluppo` = github.com/wifi75/Aurora-sviluppo (privato). Il ramo `sviluppo` va SOLO su `git push sviluppo sviluppo`, mai su `origin`.
+- **«modifica / aggiungi / correggi ... per FT8»** (o FT4, Rotore, una correzione da pubblicare): si lavora su `main`. `git switch main`, `git pull`, modifiche, controlli, commit, `git push origin main`; poi si porta su sviluppo: `git switch sviluppo`, `git pull`, `git merge main`, `git push sviluppo sviluppo`.
+- **«continua lo sviluppo»** (o SSTV, RTTY, menu nuovo, modi nuovi): si lavora su `sviluppo`. `git switch sviluppo`, `git pull`, lavoro, commit, `git push sviluppo sviluppo`.
+- **«pubblica»**: release solo da `main` seguendo `TASK.md`; niente di `sviluppo` deve finirci.
+- **«dammi la versione da installare»**: dopo il push di `sviluppo` il lavoro `Sviluppo` (`.github/workflows/sviluppo.yml`) compila l'installatore nella pre-release `sviluppo-ultima` del repository privato (`gh run list -R wifi75/Aurora-sviluppo`, `gh release view sviluppo-ultima -R wifi75/Aurora-sviluppo`); se fallisce si legge il log e si corregge; al proprietario si da' il link https://github.com/wifi75/Aurora-sviluppo/releases/tag/sviluppo-ultima. Quella versione non si aggiorna da sola (`AURORA_SVILUPPO`).
+- Prima di ogni push controllare ramo e remote (`git status -sb`). Allineare il PC: `git switch main && git pull && git switch sviluppo && git pull` (oppure `/wifi75-git-start` sul ramo in uso).
+
 ## Per riprendere il lavoro
 Leggi per primo `docs/ripresa.md`: stato attuale, lavoro in corso e prossimo passo.
 
