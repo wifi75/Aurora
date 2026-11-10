@@ -35,6 +35,14 @@ describe('diagnose', () => {
     expect(ids(base({ audio: audio('good') }))).toEqual([]);
   });
 
+  it('says nothing about the input while transmitting (many radios mute the USB audio in TX)', () => {
+    const audio = (state: 'overdrive' | 'silent' | 'low') => ({ peak: 0, rms: 0, clipped: 0, state });
+    const tx = status({ transmitting: true });
+    expect(ids(base({ status: tx, audio: audio('silent') }))).toEqual([]);
+    expect(ids(base({ status: tx, audio: audio('overdrive') }))).toEqual([]);
+    expect(ids(base({ status: tx, audio: audio('low') }))).toEqual([]);
+  });
+
   it('notices a missing callsign in the engine', () => {
     expect(ids(base({ status: status({ de_call: '  ' }) }))).toEqual(['callsign:warning']);
   });

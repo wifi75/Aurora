@@ -64,9 +64,12 @@ export function diagnose(i: DiagnosisInput): Issue[] {
     }
   }
 
-  if (i.audio?.state === 'overdrive') issues.push({ id: 'audio', severity: 'problem', vars: { state: 'overdrive' } });
-  else if (i.audio?.state === 'silent') issues.push({ id: 'audio', severity: 'warning', vars: { state: 'silent' } });
-  else if (i.audio?.state === 'low') issues.push({ id: 'audio', severity: 'info', vars: { state: 'low' } });
+  // in trasmissione l'ingresso dice poco: molte radio mettono a zero l'audio USB in TX (un periodo FT8 dura piu' degli 8 s del «muto»), altre
+  // rimandano il segnale trasmesso. Luc, 2026-11-10: «L'ingresso audio e' muto da troppo tempo» compariva a ogni trasmissione
+  const audio = i.status?.transmitting ? null : i.audio;
+  if (audio?.state === 'overdrive') issues.push({ id: 'audio', severity: 'problem', vars: { state: 'overdrive' } });
+  else if (audio?.state === 'silent') issues.push({ id: 'audio', severity: 'warning', vars: { state: 'silent' } });
+  else if (audio?.state === 'low') issues.push({ id: 'audio', severity: 'info', vars: { state: 'low' } });
 
   if (i.status && i.status.de_call.trim() === '') issues.push({ id: 'callsign', severity: 'warning', href: '#/impostazioni/general', vars: {} });
 
