@@ -37,6 +37,9 @@ export function FiltersTab() {
   const native = useIsNative();
   const myBands = useBandFilter((s) => s.bands);
   const showTx = usePrefs((s) => s.prefs.showTx);
+  const showAge = usePrefs((s) => s.prefs.showAge);
+  const bandBottom = usePrefs((s) => s.prefs.bandBottom);
+  const rxBottom = usePrefs((s) => s.prefs.rxBottom);
   const toggleIn = (items: string[], item: string) => (items.includes(item) ? items.filter((x) => x !== item) : [...items, item]);
   const num = (text: string, min: number, max: number): number | null => {
     if (text.trim() === '') return null;
@@ -65,8 +68,7 @@ export function FiltersTab() {
             <input type="number" min={0} max={25000} value={filters.maxKm ?? ''} placeholder="—" onChange={(e) => set({ maxKm: num(e.target.value, 0, 25000) })} />
           </Field>
           <Check label={t('bfl.hideToMe')} hint={t('tip.bfl.hideToMe')} checked={filters.hideToMe} onChange={(v) => set({ hideToMe: v })} />
-          {/* le mie trasmissioni: e' la stessa scelta di «Mostra i miei Tx» delle preferenze, non una copia */}
-          <Check label={t('bfl.hideOwnTx')} hint={t('tip.bfl.hideOwnTx')} checked={!showTx} onChange={(v) => usePrefs.getState().set({ showTx: !v })} />
+          <Check label={t('list.bottom')} hint={t('tip.list.bottom')} checked={bandBottom} onChange={(v) => usePrefs.getState().set({ bandBottom: v })} />
         </Cells>
         <div title={t('tip.bfl.bands')}>
           <Field label={t('bfl.bands')} stack>
@@ -78,6 +80,19 @@ export function FiltersTab() {
           </Field>
         </div>
         <Help>{t('bfl.help')}</Help>
+      </Group>
+      {/* separati da Attivita' di banda: cosa vale solo per la Finestra RX, e come si vedono tutti e due gli elenchi */}
+      <Group title={t('fil.grp.rx')}>
+        <Cells min={13}>
+          {/* le mie trasmissioni: e' la stessa scelta di «Mostra i miei Tx» delle preferenze, non una copia */}
+          <Check label={t('bfl.hideOwnTx')} hint={t('tip.bfl.hideOwnTx')} checked={!showTx} onChange={(v) => usePrefs.getState().set({ showTx: !v })} />
+          <Check label={t('list.bottom')} hint={t('tip.list.bottom')} checked={rxBottom} onChange={(v) => usePrefs.getState().set({ rxBottom: v })} />
+        </Cells>
+      </Group>
+      <Group title={t('fil.grp.both')} span={2}>
+        <Cells min={13}>
+          <Check label={t('gen.showAge')} hint={t('tip.gen.age')} checked={showAge} onChange={(v) => usePrefs.getState().set({ showAge: v })} />
+        </Cells>
       </Group>
       <Group title={t('fil.continents')} span={2}>
         <div title={t('tip.fil.continent')}>

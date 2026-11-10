@@ -21,6 +21,19 @@ export function formatClock(ms: number): string {
   return `${pad(Math.floor(total / 3600))}:${pad(Math.floor(total / 60) % 60)}:${pad(total % 60)}`;
 }
 
+/** Quanto e' vecchio un messaggio (ora in ms dalla mezzanotte UTC) adesso: «45 s», «3 min», «1 h 05». Passata la mezzanotte si conta dal giorno prima. */
+export function formatAge(timeMs: number, nowMs: number = Date.now(), exact = false): string {
+  const sinceMidnight = nowMs % 86_400_000;
+  const ms = (((sinceMidnight - timeMs) % 86_400_000) + 86_400_000) % 86_400_000;
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  // per il suggerimento: anche i secondi («1 min 12 s»)
+  if (exact && m < 60) return `${m} min ${s % 60} s`;
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+}
+
 // [nome, da (kHz), a (kHz)]
 const BANDS: ReadonlyArray<readonly [string, number, number]> = [
   ['2200m', 135.7, 137.8],

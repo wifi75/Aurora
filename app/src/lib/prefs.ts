@@ -8,6 +8,11 @@ export interface Prefs {
   showFlag: boolean;
   showDistance: boolean;
   showDt: boolean;
+  /** La colonna dell'ora mostra quanto e' vecchio il messaggio (45 s, 3 min) invece dell'ora UTC (richiesta di Luc). */
+  showAge: boolean;
+  /** Il messaggio piu' recente in fondo, (richiesta di Luc): Attivita' di banda e Finestra RX separate. */
+  bandBottom: boolean;
+  rxBottom: boolean;
   /** Il doppio clic su un messaggio risponde a quella stazione (come nel motore); spento seleziona soltanto. */
   doubleClickReply: boolean;
   /** Il tasto Esc ferma la trasmissione e spegne AutoTX e Abilita Tx. */
@@ -40,7 +45,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, supportEmail: '' };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, supportEmail: '' };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -50,7 +55,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));

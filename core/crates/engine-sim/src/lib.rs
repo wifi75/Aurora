@@ -128,7 +128,10 @@ impl State {
         let call = self.rng.pick(CALLS).to_string();
         let other = self.rng.pick(CALLS).to_string();
         let grid = self.rng.pick(GRIDS);
-        let text = match self.rng.below(6) {
+        // per le prove della Finestra RX: ogni periodo il primo messaggio chiama la stazione (de_call) e il secondo sta fisso a 1500 Hz
+        let me = self.status.de_call.clone();
+        let text = match if index == 0 { 6 } else { self.rng.below(6) } {
+            6 => format!("{me} {call} {grid}"),
             0 => format!("CQ {call} {grid}"),
             1 => format!("CQ DX {call} {grid}"),
             2 => format!("CQ TEST {call} {grid}"),
@@ -155,7 +158,7 @@ impl State {
             time_ms: ms_since_midnight_utc(),
             snr: -(self.rng.below(25) as i32) - 1,
             delta_time: (self.rng.below(20) as f32 - 5.0) / 10.0,
-            freq_hz: (bin as u32 * F_MAX_HZ) / BINS as u32,
+            freq_hz: if index == 1 { 1500 } else { (bin as u32 * F_MAX_HZ) / BINS as u32 },
             text,
             tag,
             country: None,

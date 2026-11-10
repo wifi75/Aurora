@@ -218,6 +218,14 @@ export const stationStrings = {
     'Esta estação respondeu-te: duplo clique para continuar o QSO.',
   ],
   'tip.row.answeredCall': ['Ti ha risposto', 'Has answered you', 'Hat dir geantwortet', 'T’a répondu', 'Te ha respondido', 'Respondeu-te'],
+  'tip.row.age': [
+    'Età del messaggio: quanto tempo è passato da quando è arrivato (alle {utc} UTC). Si aggiorna da sola; per rivedere l’ora togli «Età dei messaggi al posto dell’ora» in Impostazioni › Filtri.',
+    'Message age: how long ago it arrived (at {utc} UTC). It updates by itself; to see the time again turn off “Message age instead of the time” in Settings › Filters.',
+    'Alter der Meldung: wie lange es her ist, dass sie ankam (um {utc} UTC). Aktualisiert sich selbst; für die Uhrzeit „Alter der Meldungen statt der Uhrzeit“ unter Einstellungen › Filter ausschalten.',
+    'Âge du message : le temps écoulé depuis son arrivée (à {utc} UTC). Se met à jour tout seul ; pour revoir l’heure, désactive « Âge des messages au lieu de l’heure » dans Réglages › Filtres.',
+    'Edad del mensaje: cuánto tiempo ha pasado desde que llegó (a las {utc} UTC). Se actualiza sola; para volver a ver la hora quita «Edad de los mensajes en lugar de la hora» en Ajustes › Filtros.',
+    'Idade da mensagem: quanto tempo passou desde que chegou (às {utc} UTC). Atualiza-se sozinha; para voltar a ver a hora desliga «Idade das mensagens em vez da hora» em Definições › Filtros.',
+  ],
   'tip.row.queue': [
     'Tasto destro: metti in coda questa stazione (di nuovo per toglierla).',
     'Right-click: queue this station (again to remove it).',

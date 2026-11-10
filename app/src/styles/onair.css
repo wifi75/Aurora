@@ -7496,3 +7496,14 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 /* righe delle decodifiche fuori dallo schermo: il browser non le impagina ne' le disegna finche' non si scorre li' (meno lavoro a ogni
    periodo e al ritorno sulla Stazione); l'altezza stimata tiene giusta la barra di scorrimento */
 .decode-list .decode-row { content-visibility: auto; contain-intrinsic-size: auto 26px; }
+
+/* eta' del messaggio al posto dell'ora: numero a destra e unita' a sinistra in colonne fisse («6 s» e «1 min» in colonna) */
+.decode-row .c-age {
+  display: inline-grid;
+  grid-template-columns: 3ch 3ch;
+  column-gap: 0.35ch;
+  justify-content: start;
+  cursor: help;
+}
+.decode-row .c-age .c-age-n { text-align: right; }
+.decode-row .c-age .c-age-u { text-align: left; opacity: 0.75; }

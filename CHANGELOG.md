@@ -1,6 +1,10 @@
 # Changelog
 
 ## Non rilasciato
+- **Eta' dei messaggi** (richiesta di Luc): a scelta, in Attivita' di banda e nella Finestra RX la prima colonna mostra quanto e' vecchio il messaggio (45 s, 3 min) invece dell'ora UTC, con l'ora nel suggerimento (Impostazioni > Filtri).
+- **Messaggi nuovi in fondo** (richiesta di Luc): pulsantino «Nuovi ↑/↓» nella barra del titolo di Attivita' di banda e della Finestra RX, e la stessa scelta in Impostazioni > Filtri, separata per i due elenchi.
+- **Scorrimento**: l'elenco torna all'ultimo messaggio dopo che le righe nuove sono disegnate (la Finestra RX non sempre scorreva); «Inverti colore» cambia solo i colori e non sposta piu' le righe del QSO in fondo.
+- **Impostazioni > Filtri**: riquadri separati per Attivita' di banda, Finestra RX e cio' che vale per tutti e due.
 - **Agente nel tray**: menu, cartoline e barra dell'aggiornamento nella lingua scelta in Aurora (prima sempre in italiano; richiesta di Luc). I messaggi dell'autore usano la stessa lingua, poi l'inglese.
 - **TCI**: il cursore Pwr non cerca piu' una scheda di Windows chiamata «TCI (alla radio)» a ogni trasmissione (due righe di errore per periodo nel registro); con il TCI la potenza la regola la SDR.
 - **Avvisi dell'audio**: in trasmissione non compare piu' «L'ingresso audio e' muto da troppo tempo» (molte radio mettono a zero l'audio USB in TX; segnalato da Luc), ne' l'ingresso saturo o debole.

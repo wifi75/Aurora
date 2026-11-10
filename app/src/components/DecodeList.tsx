@@ -4,7 +4,7 @@ import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { flagCode } from '../lib/flags';
-import { formatClock } from '../lib/format';
+import { formatAge, formatClock } from '../lib/format';
 import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { isCq, isFilterHighlight, useFilters } from '../lib/filters';
 import { useNotifyView, workedLook } from '../lib/notifyView';
@@ -164,12 +164,54 @@ interface Props {
   tapReply?: boolean;
   /** Telefono: il nome del paese anche come suggerimento (la colonna e' stretta). Bandiera e paese seguono comunque le preferenze. */
   forceFlag?: boolean;
+  /** Il messaggio piu' recente in fondo: l'elenco scorre verso l'alto. Spento: il piu' recente in cima. */
+  newestAtBottom?: boolean;
 }
 
 /** Righe disegnate al primo colpo; le altre al giro dopo. */
 const FIRST_ROWS = 40;
 
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false }: Props) {
+/** Un solo orologio per tutte le celle dell'eta': ogni secondo (finestra visibile) si scrive il testo direttamente nelle celle, senza
+ *  ridisegnare l'elenco (ridisegnarlo ogni secondo faceva lampeggiare la pagina e chiudeva il suggerimento). */
+const ageCells = new Map<HTMLElement, number>();
+let ageTimer: number | undefined;
+function writeAge(el: HTMLElement, time: number): void {
+  const [value = '', unit = ''] = formatAge(time).split(' ', 2);
+  const n = el.firstElementChild;
+  const u = el.lastElementChild;
+  if (n && n.textContent !== value) n.textContent = value;
+  if (u && u.textContent !== unit) u.textContent = unit;
+}
+function watchAge(el: HTMLElement, time: number): () => void {
+  ageCells.set(el, time);
+  writeAge(el, time);
+  ageTimer ??= window.setInterval(() => {
+    if (document.visibilityState === 'visible') ageCells.forEach((t, cell) => writeAge(cell, t));
+  }, 1000);
+  return () => {
+    ageCells.delete(el);
+    if (ageCells.size === 0 && ageTimer !== undefined) {
+      window.clearInterval(ageTimer);
+      ageTimer = undefined;
+    }
+  };
+}
+
+/** L'eta' del messaggio al posto dell'ora: numero allineato a destra e unita' a sinistra in colonne fisse, cosi' «6 s» e «1 min» stanno in
+ *  colonna; il suggerimento (fisso, cosi' resta aperto) spiega cos'e' e dice l'ora UTC di arrivo. */
+function AgeCell({ time }: { time: number }) {
+  const t = useT();
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => (ref.current ? watchAge(ref.current, time) : undefined), [time]);
+  const [value = '', unit = ''] = formatAge(time).split(' ', 2);
+  return (
+    <span ref={ref} className="c-time c-age num muted" title={t('tip.row.age', { utc: formatClock(time) })}>
+      <span className="c-age-n">{value}</span>
+      <span className="c-age-u">{unit}</span>
+    </span>
+  );
+}
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false }: Props) {
   const [firstPaint, setFirstPaint] = useState(true);
   useEffect(() => {
     const id = window.setTimeout(() => setFirstPaint(false), 60);
@@ -187,7 +229,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   useEffect(() => {
     const list = listEl;
     if (!list) return;
-    const invert = () => list.classList.contains('decode-list--invert');
+    const invert = () => list.classList.contains('decode-list--bottom');
     // chi scorre davvero: la lista stessa oppure il primo contenitore sopra di lei che ha la barra di scorrimento (pannello, blocco
     // della pagina a blocchi, finestra staccata). Si cerca ogni volta, perche' la disposizione puo' cambiare.
     const scroller = (): HTMLElement | null => {
@@ -224,16 +266,30 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   useEffect(() => {
     const list = listEl;
     if (!list || newestId === null) return;
-    const invert = list.classList.contains('decode-list--invert');
-    for (let el: HTMLElement | null = list; el && el !== document.body; el = el.parentElement) {
-      const oy = getComputedStyle(el).overflowY;
-      if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
-        el.scrollTop = invert ? el.scrollHeight : 0;
-        break;
+    const bottom = list.classList.contains('decode-list--bottom');
+    // dopo che le righe nuove sono disegnate (prima l'altezza era quella vecchia e lo scorrimento si fermava a meta': Luc, 2026-11-10,
+    // «la Finestra RX non scorre a ogni ricezione»); due volte, perche' le righe fuori schermo hanno un'altezza stimata
+    const scroll = () => {
+      for (let el: HTMLElement | null = list; el && el !== document.body; el = el.parentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+          el.scrollTop = bottom ? el.scrollHeight : 0;
+          break;
+        }
       }
-    }
+    };
+    scroll();
+    const a = window.requestAnimationFrame(() => {
+      scroll();
+      b = window.requestAnimationFrame(scroll);
+    });
+    let b = 0;
     window.clearTimeout(backTimer.current);
-  }, [newestId, listEl]);
+    return () => {
+      window.cancelAnimationFrame(a);
+      window.cancelAnimationFrame(b);
+    };
+  }, [newestId, listEl, newestAtBottom]);
   const tapOnce = (id: number) => {
     const now = Date.now();
     if (lastTap.current && lastTap.current.id === id && now - lastTap.current.at < 2000) return;
@@ -357,13 +413,14 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   }
   const txRepeat = (d: DecodedMessage) => (d.id < 0 ? (txCount.get(txKey(d)) ?? 1) : 1);
   const shown = (d: DecodedMessage) => d.id >= 0 || d === pin || txNewest.get(txKey(d)) === d;
-  const allRows = (view.invert ? [...rest, ...[...top].reverse()] : [...top, ...rest]).filter(shown);
+  // «Inverti colore» cambia solo i colori; l'ordine lo decide «piu' recente in fondo» (prima il colore invertito spostava anche lo scorrimento)
+  const allRows = (newestAtBottom ? [...[...rest].reverse(), ...[...top].reverse()] : [...top, ...rest]).filter(shown);
   // all'apertura della pagina si disegnano subito le righe che si vedono e le altre un attimo dopo: con 200 righe la Stazione
   // impiegava quasi un secondo a comparire tornando dal Contest (2026-11-09)
-  const rows = firstPaint ? (view.invert ? allRows.slice(-FIRST_ROWS) : allRows.slice(0, FIRST_ROWS)) : allRows;
+  const rows = firstPaint ? (newestAtBottom ? allRows.slice(-FIRST_ROWS) : allRows.slice(0, FIRST_ROWS)) : allRows;
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
   return (
-    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}${newestAtBottom ? ' decode-list--bottom' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
       {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
         const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');
@@ -444,7 +501,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               onQueue(d.id);
             }}
           >
-            <span className="c-time num muted">{formatClock(d.time_ms)}</span>
+            {prefs.showAge ? <AgeCell time={d.time_ms} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>}
             <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>

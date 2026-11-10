@@ -302,7 +302,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
         const rxShown = rxOn && !soloPanel;
-        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} />;
+        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
@@ -443,6 +443,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           onReply={onReply}
           onQueue={onQueue}
           emptyText={t('rxw.empty')}
+          newestAtBottom={prefs.rxBottom}
         />
       </div>
     );
@@ -478,8 +479,15 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     );
   const blockTitle = (id: BoardId): string => (id === 'dxmap' ? t('bands.title') : id === 'cmds' ? t('panel.station') : titles[id]);
   const tagFilterOn = filters.tags.length > 0;
+  // dove stanno i messaggi nuovi, in cima o in fondo: un pulsantino nella barra del titolo di Attivita' di banda e della Finestra RX
+  const orderButton = (key: 'bandBottom' | 'rxBottom') => (
+    <button type="button" className={prefs[key] ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={prefs[key]} title={t('tip.list.bottom')} onPointerDown={(e) => e.stopPropagation()} onClick={() => usePrefs.getState().set({ [key]: !prefs[key] })}>
+      {t(prefs[key] ? 'list.bottom.on' : 'list.bottom.off')}
+    </button>
+  );
   const blockExtra = (id: BoardId): ReactNode => (id === 'all' ? (
     <>
+    {orderButton('bandBottom')}
     <button type="button" className={tagPills || tagFilterOn ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={tagPills} aria-expanded={tagPills} title={t('tip.bfl.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setTagPills(!tagPills)}>
       {t('bfl.button')}{tagFilterOn ? ` ${filters.tags.length}` : ''}
     </button>
@@ -600,6 +608,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{t('rxw.title')}</h2>
                   <span className="log-rx-freq" title={t('rxw.tip')}>{rxHz !== null ? `${rxHz} Hz ±${RX_WINDOW_HZ}` : ''}</span>
+                  {orderButton('rxBottom')}
                 </header>
                 <div className="dock-body">{rxBody()}</div>
               </section>

@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { bandOf, formatClock, formatDial, formatKhz, formatKhzWhole } from './format';
+import { bandOf, formatAge, formatClock, formatDial, formatKhz, formatKhzWhole } from './format';
+
+describe('formatAge', () => {
+  const day = Date.UTC(2026, 10, 10);
+  it('counts seconds, then minutes, then hours from the message time', () => {
+    const t = 12 * 3_600_000;
+    expect(formatAge(t, day + t + 45_000)).toBe('45 s');
+    expect(formatAge(t, day + t + 3 * 60_000 + 10_000)).toBe('3 min');
+    expect(formatAge(t, day + t + 65 * 60_000)).toBe('1 h 05');
+  });
+  it('crosses midnight: a message at 23:59:50 is 15 s old at 00:00:05', () => {
+    expect(formatAge(86_390_000, day + 5_000)).toBe('15 s');
+  });
+});
 
 describe('format', () => {
   it('formats the dial frequency in MHz', () => {
