@@ -20,6 +20,20 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.223',
+    released: '2026-11-10T12:00:00Z',
+    kind: 'new',
+    title: ["Età dei messaggi, messaggi nuovi in fondo e Automazioni che si salvano", "Message age, new messages at the bottom and Automation that saves", "Alter der Meldungen, neue Meldungen unten und Automatik, die speichert", "Âge des messages, nouveaux messages en bas et Automatisations qui s’enregistrent", "Edad de los mensajes, mensajes nuevos abajo y Automatizaciones que se guardan", "Idade das mensagens, mensagens novas em baixo e Automatizações que se guardam"],
+    text: [
+      "In Attività di banda e nella Finestra RX puoi vedere quanto è vecchio ogni messaggio invece dell’ora, e scegliere se i messaggi nuovi arrivano in cima o in fondo (pulsantino «Nuovi» nella barra del titolo). La stazione del QSO si vede in tutti e due gli elenchi, la Finestra RX va sempre all’ultimo messaggio e Impostazioni › Filtri è divisa per elenco. Nelle Automazioni «Griglia su nuova banda» e «Nuovo nominativo» si salvano. L’agente nel tray parla la lingua di Aurora; con il TCI niente più errori del Pwr, in trasmissione niente avviso «ingresso muto», senza CAT il display sparisce.",
+      "In Band activity and the RX window you can see how old each message is instead of the time, and choose whether new messages come at the top or at the bottom (“New” button in the title bar). The QSO station shows in both lists, the RX window always goes to the latest message and Settings › Filters is split by list. In Automation “Grid on a new band” and “New call” are saved. The tray agent speaks Aurora’s language; with TCI no more Pwr errors, no “input silent” warning while transmitting, and without CAT the display disappears.",
+      "In Bandaktivität und RX-Fenster siehst du statt der Uhrzeit, wie alt jede Meldung ist, und wählst, ob neue Meldungen oben oder unten erscheinen (Schaltfläche „Neu“ in der Titelleiste). Die QSO-Station erscheint in beiden Listen, das RX-Fenster springt immer zur neuesten Meldung und Einstellungen › Filter ist nach Liste geteilt. In der Automatik werden „Locator auf neuem Band“ und „Neues Rufzeichen“ gespeichert. Der Tray-Agent spricht Auroras Sprache; mit TCI keine Pwr-Fehler mehr, kein „Eingang stumm“ beim Senden, ohne CAT verschwindet die Anzeige.",
+      "Dans Activité de bande et la fenêtre RX tu peux voir l’âge de chaque message au lieu de l’heure, et choisir si les nouveaux messages arrivent en haut ou en bas (bouton « Nouv. » dans la barre de titre). La station du QSO apparaît dans les deux listes, la fenêtre RX va toujours au dernier message et Réglages › Filtres est divisé par liste. Dans les Automatisations, « Locator sur nouvelle bande » et « Nouvel indicatif » s’enregistrent. L’agent de la barre parle la langue d’Aurora ; avec le TCI plus d’erreurs Pwr, plus d’alerte « entrée muette » en émission, et sans CAT l’affichage disparaît.",
+      "En Actividad de banda y en la ventana RX puedes ver la edad de cada mensaje en lugar de la hora, y elegir si los mensajes nuevos llegan arriba o abajo (botón «Nuevos» en la barra de título). La estación del QSO se ve en las dos listas, la ventana RX va siempre al último mensaje y Ajustes › Filtros está dividido por lista. En Automatizaciones «Locator en nueva banda» y «Nuevo indicativo» se guardan. El agente de la bandeja usa el idioma de Aurora; con TCI no más errores de Pwr, ni aviso de «entrada muda» al transmitir, y sin CAT la pantalla desaparece.",
+      "Na Atividade de banda e na janela RX podes ver a idade de cada mensagem em vez da hora, e escolher se as mensagens novas chegam em cima ou em baixo (botão «Novas» na barra de título). A estação do QSO vê-se nas duas listas, a janela RX vai sempre para a última mensagem e Definições › Filtros está dividida por lista. Nas Automatizações «Locator em nova banda» e «Novo indicativo» guardam-se. O agente na bandeja usa a língua do Aurora; com TCI acabaram os erros do Pwr, o aviso de «entrada muda» ao transmitir, e sem CAT o display desaparece.",
+    ],
+  },
+  {
     version: '0.11.222',
     released: '2026-11-10T08:39:50Z',
     kind: 'fixed',
@@ -563,20 +577,6 @@ export const NOVITA: readonly Novita[] = [
       "Après ton RR73 Aurora ne le répète plus toute seule : elle attend son 73 et ne répond que s'il répète son report. « Wait and Reply / Wait and Call » est désactivé par défaut. Dans Bandes ouvertes les 3 stations les plus lointaines ont des colonnes alignées et le nom du pays ; le pied de page est plus lisible et le logo a une aurore qui défile.",
       "Después de tu RR73 Aurora ya no lo repite sola: espera su 73 y solo responde si él repite su reporte. «Wait and Reply / Wait and Call» está apagado de serie. En Bandas abiertas las 3 estaciones más lejanas tienen columnas alineadas y el nombre del país; el pie de página se lee mejor y el logo tiene una aurora que fluye.",
       "Depois do teu RR73 a Aurora já não o repete sozinha: espera o 73 dele e só responde se ele repetir o relatório. «Wait and Reply / Wait and Call» vem desligado. Em Bandas abertas as 3 estações mais distantes têm colunas alinhadas e o nome do país; o rodapé lê-se melhor e o logótipo tem uma aurora a deslizar.",
-    ],
-  },
-  {
-    version: '0.11.183',
-    released: '2026-11-07T15:44:08Z',
-    kind: 'fixed',
-    title: ['RRR come WSJT-X', 'RRR like WSJT-X', 'RRR wie WSJT-X', 'RRR comme WSJT-X', 'RRR como WSJT-X', 'RRR como o WSJT-X'],
-    text: [
-      "Mandare RRR non mette più il QSO a log: si registra quando arriva il suo 73, come fa WSJT-X. Se il 73 non arriva, il QSO va a log all'ultimo tentativo di chiusura; con RR73 e 73 non cambia nulla.",
-      "Sending RRR no longer logs the QSO: it is logged when his 73 arrives, as WSJT-X does. If the 73 never comes, the QSO is logged at the last closing attempt; nothing changes with RR73 and 73.",
-      "RRR zu senden loggt das QSO nicht mehr: Es wird geloggt, wenn seine 73 ankommt, wie bei WSJT-X. Kommt die 73 nie, wird das QSO beim letzten Abschlussversuch geloggt; bei RR73 und 73 ändert sich nichts.",
-      "Envoyer RRR ne met plus le QSO au log : il est enregistré à l'arrivée de son 73, comme dans WSJT-X. Si le 73 n'arrive pas, le QSO est enregistré à la dernière tentative de clôture ; rien ne change avec RR73 et 73.",
-      "Enviar RRR ya no pone el QSO en el log: se registra cuando llega su 73, como en WSJT-X. Si el 73 no llega, el QSO se registra en el último intento de cierre; con RR73 y 73 no cambia nada.",
-      "Enviar RRR já não põe o QSO no log: regista-se quando chega o 73 dele, como no WSJT-X. Se o 73 não chegar, o QSO regista-se na última tentativa de fecho; com RR73 e 73 nada muda.",
     ],
   },
 ];
