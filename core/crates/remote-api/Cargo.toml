@@ -18,6 +18,7 @@ qso-engine = { path = "../qso-engine" }
 rig-control = { path = "../rig-control" }
 qmap = { path = "../qmap" }
 mode-sstv = { path = "../mode-sstv" }
+mode-digi = { path = "../mode-digi" }
 contest = { path = "../contest" }
 jt = { path = "../jt" }
 wishlist = { path = "../wishlist" }

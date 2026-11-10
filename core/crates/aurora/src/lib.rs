@@ -1451,6 +1451,30 @@ impl tx_native::Ptt for AutoPtt {
     }
 }
 
+/// La catena di trasmissione vista dai modi testuali (PSK31/PSK63, RTTY): come l'SSTV, trasmissione libera con lo stesso PTT e la stessa uscita.
+struct DigiTx {
+    transmitter: Arc<tx_native::Transmitter>,
+    volume: Option<Arc<WindowsVolumePort>>,
+}
+
+impl mode_digi::DigiTxPort for DigiTx {
+    fn start(&self, wave: Vec<f32>) -> Result<(), String> {
+        if let Some(v) = &self.volume {
+            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        }
+        // un testo lungo in PSK31 dura qualche minuto: lo stesso tetto dell'SSTV
+        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn halt(&self) {
+        self.transmitter.halt();
+    }
+
+    fn is_busy(&self) -> bool {
+        matches!(self.transmitter.state(), tx_native::TxState::Waiting | tx_native::TxState::Transmitting)
+    }
+}
+
 /// La catena di trasmissione vista dall'SSTV: trasmissione libera (fuori dai periodi FT8) con lo stesso PTT, la stessa uscita e lo stesso Pwr.
 struct SstvTx {
     transmitter: Arc<tx_native::Transmitter>,
@@ -1584,6 +1608,14 @@ pub async fn run(
         let events = bus.events();
         sstv.set_emitter(Arc::new(move |ev| {
             let _ = events.send(Event::Sstv(ev));
+        }));
+    }
+    // modi testuali (crate mode-digi): stesso schema dell'SSTV, ascolto acceso solo a richiesta
+    let digi = Arc::new(mode_digi::DigiService::open(&config.data_dir));
+    {
+        let events = bus.events();
+        digi.set_emitter(Arc::new(move |ev| {
+            let _ = events.send(Event::Digi(ev));
         }));
     }
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
@@ -2177,6 +2209,7 @@ pub async fn run(
         .with_cat(Arc::clone(&cat))
         .with_rotator(Arc::clone(&rotator))
         .with_sstv(Arc::clone(&sstv))
+        .with_digi(Arc::clone(&digi))
         .with_automation(automation);
     // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
     qmap_service.set_tx_probe(state.transmitting_probe());
@@ -2186,9 +2219,11 @@ pub async fn run(
     let (to_engine, native_rx) = std::sync::mpsc::channel();
     {
         let sstv = Arc::clone(&sstv);
+        let digi = Arc::clone(&digi);
         let spawned = std::thread::Builder::new().name("aurora-audio-tap".into()).spawn(move || {
             while let Ok(chunk) = captured.recv() {
                 sstv.feed(chunk.rate, &chunk.samples);
+                digi.feed(chunk.rate, &chunk.samples);
                 if to_engine.send(chunk).is_err() {
                     break;
                 }
@@ -2300,12 +2335,14 @@ pub async fn run(
                             let output: Arc<dyn Fn() -> Option<String> + Send + Sync> = Arc::new(move || manager.output_name());
                             // l'SSTV trasmette con la stessa catena: prima di partire riallinea il volume di Windows al cursore Pwr
                             let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls) });
-                            sstv.set_tx_port(Arc::new(SstvTx { transmitter, volume: Some(volume) }));
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume) }));
                             let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls) };
                             Arc::new(port) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
-                            sstv.set_tx_port(Arc::new(SstvTx { transmitter, volume: None }));
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: None }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None }));
                             inner
                         }
                     })

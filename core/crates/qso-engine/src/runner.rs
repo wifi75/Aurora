@@ -332,6 +332,7 @@ fn handle_event(inner: &Inner, event: Event) {
         | Event::ClearDecodes { .. }
         | Event::Fox(_)
         | Event::Notice { .. }
-        | Event::Sstv(_) => {}
+        | Event::Sstv(_)
+        | Event::Digi(_) => {}
     }
 }

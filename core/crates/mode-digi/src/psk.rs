@@ -8,7 +8,7 @@ use crate::varicode;
 use std::f64::consts::PI;
 
 /// Frequenza di campionamento dell'audio dei modi testuali.
-pub const RATE: f32 = 8000.0;
+pub const RATE: f32 = 12000.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PskMode {
@@ -17,11 +17,11 @@ pub enum PskMode {
 }
 
 impl PskMode {
-    /// Campioni per simbolo a 8 kHz (31,25 e 62,5 baud).
+    /// Campioni per simbolo a 12 kHz (31,25 e 62,5 baud).
     pub fn symbol_samples(self) -> usize {
         match self {
-            PskMode::Psk31 => 256,
-            PskMode::Psk63 => 128,
+            PskMode::Psk31 => 384,
+            PskMode::Psk63 => 192,
         }
     }
     pub fn name(self) -> &'static str {
@@ -46,7 +46,7 @@ fn bits_of(text: &[u8]) -> Vec<bool> {
     bits
 }
 
-/// Audio (a 8 kHz) del testo, con la portante a `freq_hz`; `amp` è l'ampiezza di picco (0..1).
+/// Audio (a 12 kHz) del testo, con la portante a `freq_hz`; `amp` è l'ampiezza di picco (0..1).
 pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> {
     let n = mode.symbol_samples();
     let bits = bits_of(text);
@@ -67,7 +67,7 @@ pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> 
     out
 }
 
-/// Ricevitore: si alimenta con l'audio a 8 kHz e restituisce i caratteri man mano che si decodificano.
+/// Ricevitore: si alimenta con l'audio a 12 kHz e restituisce i caratteri man mano che si decodificano.
 pub struct PskDemodulator {
     freq_hz: f32,
     decim: usize,

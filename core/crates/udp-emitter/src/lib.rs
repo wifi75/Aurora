@@ -439,7 +439,8 @@ impl Session {
             | Event::ClearDecodes { .. }
             | Event::Fox(_)
             | Event::Notice { .. }
-            | Event::Sstv(_) => Vec::new(),
+            | Event::Sstv(_)
+            | Event::Digi(_) => Vec::new(),
         }
     }
 

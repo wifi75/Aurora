@@ -5,11 +5,14 @@
 //!
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
-//! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore).
+//! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore);
+//! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod psk;
 pub mod rtty;
+pub mod service;
 pub mod varicode;
 
 pub use psk::{PskDemodulator, PskMode, RATE};
 pub use rtty::{RttyDemodulator, RttyParams};
+pub use service::{DigiError, DigiMacro, DigiMode, DigiService, DigiSettings, DigiTxPort};

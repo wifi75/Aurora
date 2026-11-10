@@ -49,7 +49,7 @@ fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
     seq.push((true, 1.5));
 }
 
-/// Audio (a 8 kHz) del testo; `amp` è l'ampiezza di picco (0..1). I caratteri che il Baudot non ha si saltano.
+/// Audio (a 12 kHz) del testo; `amp` è l'ampiezza di picco (0..1). I caratteri che il Baudot non ha si saltano.
 pub fn modulate(text: &[u8], params: RttyParams, amp: f32) -> Vec<f32> {
     // (tono mark?, durata in bit)
     let mut seq: Vec<(bool, f64)> = vec![(true, 8.0)];
