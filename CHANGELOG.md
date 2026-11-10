@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Aggiornamento**: se Aurora controlla mentre GitHub sta ancora allegando l'installatore alla release, non resta piu' per un'ora su «la release non ha il pacchetto di installazione con la sua firma»: al momento di scaricare richiede subito la release.
+
 ## 0.11.221 - 2026-11-10
 - **Dipendenze aggiornate**: librerie Rust alle ultime versioni compatibili (`cargo update` in `core` e `desktop/src-tauri`); interfaccia con @tanstack/react-query 5.107, zustand 5.1, d3-geo 3.1.2, vite 8.3.7, vitest 5.1, @vitejs/plugin-react 6.3; servizio dei rapporti con wrangler 4.159 e @cloudflare/workers-types 5. Nessun cambiamento nell'uso.
 

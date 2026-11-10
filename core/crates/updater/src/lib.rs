@@ -652,10 +652,15 @@ impl UpdateService {
 
     fn prepare_locked(&self, pubkey: &str, dir: &Path, max_bytes: u64) -> Result<Prepared, String> {
         // l'ultimo controllo puo' essere di prima della pubblicazione: se non si conosce una versione nuova, si chiede subito a GitHub
-        let release = match self.available() {
+        let mut release = match self.available() {
             Some(r) => r,
             None => self.check().available.ok_or("nessuna versione nuova trovata")?,
         };
+        // la release si pubblica senza file e GitHub allega pacchetto e firma una decina di minuti dopo: se il controllo ricordato e'
+        // di quei minuti, si richiede subito la release invece di aspettare il prossimo controllo
+        if installer_assets(&release).is_none() {
+            release = self.check().available.ok_or("nessuna versione nuova trovata")?;
+        }
         // gia' pronta: si ricontrolla il file sul disco (qualcuno puo' averlo toccato) e non si riscarica
         let ready = {
             let st = lock(&self.stage);
