@@ -568,7 +568,14 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
               onWheel={onWheel}
               aria-label={t('sstv.p.hint')}
             />
-            {!bg ? <div className="sstv-drop-hint">{t('sstv.bg.drop')}</div> : null}
+            {/* in trasmissione: la linea che scende dove si e' arrivati; sopra, la parte gia' inviata e' piu' scura */}
+            {sending ? (
+              <>
+                <div className="sstv-txsent" style={{ height: `${Math.min(100, snap.tx.progress * 100)}%` }} aria-hidden="true" />
+                <div className="sstv-txline" style={{ top: `${Math.min(100, snap.tx.progress * 100)}%` }} aria-hidden="true" />
+              </>
+            ) : null}
+            {!bg && !sending ? <div className="sstv-drop-hint">{t('sstv.bg.drop')}</div> : null}
           </div>
           <p className="sstv-hint sstv-preview-cap">{t('sstv.preview', { w: W, h: H })}</p>
 
