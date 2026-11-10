@@ -103,6 +103,8 @@ struct State {
     status: StationStatus,
     tracks: Vec<Track>,
     seq: u64,
+    /// Periodi passati: uno si', uno no la stazione finta trasmette.
+    cycles: u64,
     next_decode_id: u64,
     known: BTreeMap<u64, ()>,
 }
@@ -123,6 +125,7 @@ impl State {
             },
             tracks: Vec::new(),
             seq: 0,
+            cycles: 0,
             next_decode_id: 1,
             known: BTreeMap::new(),
         }
@@ -137,6 +140,12 @@ impl State {
         self.tracks = (0..n_tracks)
             .map(|_| Track { bin: 20 + self.rng.below(BINS - 40), amp: 120 + self.rng.below(100) as u8 })
             .collect();
+        // per le prove: un periodo si', uno no, la stazione «trasmette» un messaggio del QSO (righe Tx e STOP TX nella Finestra RX)
+        self.cycles += 1;
+        const TX: [&str; 5] = ["CQ {me} FN42", "K1ABC {me} FN42", "K1ABC {me} R-10", "K1ABC {me} RR73", "K1ABC {me} 73"];
+        let transmitting = self.cycles % 2 == 0;
+        self.status.transmitting = transmitting;
+        self.status.tx_message = transmitting.then(|| TX[(self.cycles as usize / 2) % TX.len()].replace("{me}", &self.status.de_call));
         self.emit_status(io);
         let n_decodes = 5 + self.rng.below(8);
         for i in 0..n_decodes {
@@ -156,7 +165,14 @@ impl State {
         // per le prove della Finestra RX: ogni periodo il primo messaggio chiama la stazione (de_call) e il secondo sta fisso a 1500 Hz
         let me = self.status.de_call.clone();
         let text = match if index == 0 { 6 } else { self.rng.below(6) } {
-            6 => format!("{me} {call} {grid}"),
+            // a me, di tutti i tipi: locatore, rapporto, R+rapporto, RR73, 73
+            6 => match self.rng.below(5) {
+                0 => format!("{me} {call} {grid}"),
+                1 => format!("{me} {call} -{:02}", 1 + self.rng.below(24)),
+                2 => format!("{me} {call} R-{:02}", 1 + self.rng.below(24)),
+                3 => format!("{me} {call} RR73"),
+                _ => format!("{me} {call} 73"),
+            },
             0 => format!("CQ {call} {grid}"),
             1 => format!("CQ DX {call} {grid}"),
             2 => format!("CQ TEST {call} {grid}"),
