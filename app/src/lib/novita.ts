@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.232',
-    released: '2026-11-10T23:00:00Z',
+    released: '2026-11-10T22:29:19Z',
     kind: 'fixed',
     title: ['PTT: avviso con il motivo e niente scarto, contest in ordine di data', 'PTT: notice with the reason and no discarding, contests in date order', 'PTT: Hinweis mit Grund und kein Verwerfen, Contests nach Datum', 'PTT : avis avec le motif et sans rejet, concours par date', 'PTT: aviso con el motivo y sin descartar, concursos por fecha', 'PTT: aviso com o motivo e sem descartar, concursos por data'],
     text: [
