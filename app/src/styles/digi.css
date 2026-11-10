@@ -193,3 +193,6 @@ button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0b
 .digi-hint { white-space: normal; flex: 1; min-width: 0; font-size: 11px; }
 .digi-main { overflow: hidden; }
 .digi-log { overflow: visible; }
+
+.digi-bandbar { display: flex; align-items: center; gap: 10px; padding: 3px 6px; background: #d4d0c8; border-bottom: 1px solid #808080; }
+.digi-bandbar small { font-size: 11px; color: #444; }

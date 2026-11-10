@@ -1,6 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSstv, getSstvImageBlob, getSstvImages, sstvRx, type SstvImageEntry } from '../api/client';
+import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
+import { FreqPicker } from '../components/FreqPicker';
+import { bandPlanRows } from '../lib/bandplan';
+import { useStation } from '../state/station';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
 import { Composer, type IncomingImage } from '../components/sstv/Composer';
@@ -69,6 +72,7 @@ function SstvBody({ solo }: { solo: boolean }) {
   const data = snap.data;
   const rx = data?.rx;
   const sending = data?.tx.state === 'sending';
+  const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
   const badge = sending ? 'sending' : rx?.receiving ? 'receiving' : rx?.listening ? 'listening' : 'off';
 
   return (
@@ -81,6 +85,8 @@ function SstvBody({ solo }: { solo: boolean }) {
           <span className="sstv-dot" aria-hidden="true" />
           {t(`sstv.state.${badge}`)}
         </span>
+        {/* banda e frequenze SSTV dal piano di banda IARU */}
+        <FreqPicker dialHz={dialHz} mode="SSTV" rows={bandPlanRows('SSTV')} locked={sending} onPick={(hz) => void postFrequency(hz).catch(() => undefined)} />
         <div className="sstv-views" role="tablist">
           <button type="button" role="tab" aria-selected={view === 'rx'} className={view === 'rx' ? 'on' : ''} onClick={() => setView('rx')}>
             {t('sstv.view.rx')}

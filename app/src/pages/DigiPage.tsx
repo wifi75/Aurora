@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { addLogQso, ApiError, digiAbort, digiRx, digiTransmit, getDigi, importMacros, putDigi, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
+import { FreqPicker } from '../components/FreqPicker';
+import { bandPlanRows } from '../lib/bandplan';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor, type MacroScope } from '../components/digi/MacroEditor';
@@ -640,6 +642,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   return (
     <>
       <MenuBar menus={menus} />
+
+      {/* banda e frequenze dal piano di banda IARU: la radio si porta sulla frequenza scelta */}
+      <div className="digi-bandbar">
+        <FreqPicker
+          dialHz={status?.dial_hz ?? 0}
+          mode={s.mode.toUpperCase()}
+          rows={bandPlanRows(s.mode.toUpperCase() === 'RTTY' ? 'RTTY' : s.mode.toUpperCase() === 'PSK63' ? 'PSK63' : 'PSK31')}
+          locked={sending}
+          onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
+        />
+        <small className="muted">{t('digi.band.hint')}</small>
+      </div>
 
       {views.controlBar ? (
         <ControlBar
