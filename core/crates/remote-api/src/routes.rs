@@ -1509,14 +1509,16 @@ async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Pa
 
 /// Paese da `cty.dat` e, se accese, nome e citta' da QRZ.com (prima) o HamQTH (se QRZ e' spento o non lo trova). Del nominativo cercato
 /// si restituiscono solo nome, cognome, citta' e paese. Nessuna richiesta verso internet con le ricerche spente.
-#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `lotw`, `eqsl`, `direct`, `bureau` (true/false/null; da HamQTH se QRZ non li da'), `qsl_via`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`"), (status = 400, description = "Nominativo non valido (bad_call)")))]
+#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `lotw`, `eqsl`, `direct`, `bureau` (true/false/null; da HamQTH se QRZ non li da'), `qsl_via`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`, `lotw_last_upload` (ultimo invio a LoTW dall'elenco dell'ARRL, `AAAA-MM-GG`, o null)"), (status = 400, description = "Nominativo non valido (bad_call)")))]
 async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
     if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_call"));
     }
     let call = call.to_uppercase();
     let dxcc = state.dxcc.as_ref().and_then(|lookup| lookup(&call));
-    let mut out = json!({ "call": call, "dxcc": dxcc, "person": null, "lookup": "off", "subscriber": null, "message": null });
+    // ultimo invio a LoTW dall'elenco pubblico dell'ARRL: vale anche per i nominativi che non vengono da una decodifica (DX Cluster)
+    let lotw_last_upload = state.lotw.as_ref().and_then(|lookup| lookup(&call));
+    let mut out = json!({ "call": call, "dxcc": dxcc, "person": null, "lookup": "off", "subscriber": null, "message": null, "lotw_last_upload": lotw_last_upload });
     let Some(settings) = state.engine_settings.clone() else { return Ok(Json(out)) };
     let now = unix_ms() / 1000;
     // QRZ senza abbonamento non manda le QSL: se mancano si completano con HamQTH (gratis), senza cambiare nome e citta' gia' trovati

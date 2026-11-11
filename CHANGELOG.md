@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Riquadro del nominativo**: LoTW compare solo se la stazione lo usa, in verde e senza data; se non lo usa non compare. Anche dal DX Cluster si guarda l'elenco pubblico dell'ARRL (prima solo QRZ.com, e una stazione su LoTW poteva risultare «✖ LoTW»).
 
 ## 0.11.238 - 2026-11-11
 - **Griglie spostabili nella Finestra RX e nel Log**: come nel DX Cluster e nel contest, linee ben visibili tra righe e colonne (tema scuro e chiaro) e colonne che si spostano trascinando il titolo e si allargano trascinandone il bordo (doppio clic: larga quanto il contenuto; Alt+frecce da tastiera; tasto destro: «Ripristina colonne»), ricordate su questo dispositivo. La Finestra RX ha ora i titoli UTC (o «Età»), dB, DT (con «Mostra la colonna DT» acceso), Messaggio e Paese; clic, doppio clic per rispondere, righe Tx con «×N», LoTW e tasto destro restano come prima. Anche il log della Stazione (Data, Nominativo, Banda, Modo, Rapporti, Paese) e il log di PSK·RTTY·CW, che si allargava gia', ora si riordinano.

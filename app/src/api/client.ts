@@ -616,6 +616,8 @@ export interface CallsignInfo {
   lookup: 'off' | 'found' | 'not_found' | 'error';
   subscriber: boolean | null;
   message: string | null;
+  /** Ultimo invio a LoTW dall'elenco pubblico dell'ARRL (`AAAA-MM-GG`); assente con un motore vecchio. */
+  lotw_last_upload?: string | null;
 }
 
 export async function getCallsign(call: string): Promise<CallsignInfo> {
