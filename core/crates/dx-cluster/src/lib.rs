@@ -361,7 +361,32 @@ impl ClusterService {
         all.insert(key.clone(), ServerStatus { key, name: server.name.clone(), state, detail, spots, since_ms: unix_ms() });
     }
 
+    /// Uno spot mandato da noi (pulsante «Spot» di Aurora, via DXSummit): entra subito nell'elenco con il nostro nominativo come spotter. Prima si
+    /// vedeva solo se e quando un cluster collegato lo ripeteva, cioe' spesso mai.
+    pub fn add_own_spot(&self, dx_call: &str, freq_khz: f64, comment: &str, source: &str) {
+        let spotter = self.callsign();
+        if spotter.is_empty() || dx_call.trim().is_empty() {
+            return;
+        }
+        let secs = unix_ms() / 1000 % 86_400;
+        let parsed = spot::Parsed {
+            spotter,
+            freq_khz,
+            dx_call: dx_call.trim().to_uppercase(),
+            comment: comment.trim().to_string(),
+            time_utc: format!("{:02}{:02}", secs / 3600, secs / 60 % 60),
+            grid: None,
+            band: spot::band_of_khz(freq_khz),
+            mode: spot::guess_mode(comment, freq_khz),
+        };
+        self.push_parsed(source, None, parsed);
+    }
+
     fn push_spot(&self, server: &ServerCfg, parsed: spot::Parsed) {
+        self.push_parsed(&server.name, Some(server.key()), parsed);
+    }
+
+    fn push_parsed(&self, server_name: &str, status_key: Option<String>, parsed: spot::Parsed) {
         let (max_spots, max_age_ms) = {
             let c = lock(&self.config);
             (c.max_spots, u64::from(c.max_age_min) * 60_000)
@@ -383,7 +408,7 @@ impl ClusterService {
         spots.push_front(Spot {
             id: self.next_id.fetch_add(1, Ordering::SeqCst),
             received_ms: now,
-            server: server.name.clone(),
+            server: server_name.to_string(),
             spotter: parsed.spotter,
             freq_khz: parsed.freq_khz,
             dx_call: parsed.dx_call,
@@ -401,7 +426,9 @@ impl ClusterService {
             spots.pop_back();
         }
         drop(spots);
-        if let Some(s) = lock(&self.status).get_mut(&server.key()) {
+        if let Some(key) = status_key
+            && let Some(s) = lock(&self.status).get_mut(&key)
+        {
             s.spots += 1;
         }
     }

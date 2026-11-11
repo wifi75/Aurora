@@ -1757,7 +1757,13 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
         service.spot_current(params).await
     };
     match sent {
-        Ok(done) => Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info }))),
+        Ok(done) => {
+            // lo spot mandato si vede subito nell'elenco del DX Cluster, con il nostro nominativo
+            if let Some(cluster) = &state.cluster {
+                cluster.add_own_spot(&done.dx_call, done.freq_hz as f64 / 1000.0, &done.info, "DXSummit");
+            }
+            Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info })))
+        }
         Err(e) => {
             use reporting::SpotError;
             let status = match e {
