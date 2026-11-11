@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Uscita audio per la trasmissione: se la scheda scelta non c'e' ancora all'avvio (radio spenta, USB staccato) e' un'attesa normale e non finisce piu' nei rapporti degli errori, come il «Not found» di WSJT-X; l'uscita si riapre da sola quando la scheda compare.
 
 ## 0.11.233 - 2026-11-11
 ### Corretto

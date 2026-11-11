@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.233',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T09:35:43Z',
     kind: 'fixed',
     title: [
       'Clic sulla cascata, CAT dopo il riavvio della radio, elenchi e avvisi',
