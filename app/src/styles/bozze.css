@@ -1414,3 +1414,8 @@ html .cq-strip .cq-chip.cq-chip--b:hover { background: #dcf8ee; border-color: #8
 /* «×N» nella Finestra RX: resta fuori dalla griglia (a fianco della bandiera, nello spazio a fine messaggio) e non sposta la bandiera */
 .log-rx .decode-row .decode-where--rep { position: relative; overflow: visible !important; }
 .log-rx .decode-row .decode-where--rep .tx-rep { position: absolute !important; right: 100%; top: 50%; transform: translateY(-50%); margin: 0 7px 0 0 !important; white-space: nowrap; }
+
+/* «Spec: Off»: lo spettro sparisce del tutto e la cascata prende tutta l'altezza (le regole sopra con !important lo tenevano visibile) */
+.waterfall.waterfall--nospec .wf-spectrum { display: none !important; flex: 0 0 0 !important; min-height: 0 !important; border: 0 !important; }
+.waterfall.waterfall--nospec .wf-splitter { display: none !important; }
+.waterfall.waterfall--nospec .wf-main { flex: 1 1 0 !important; min-height: 0 !important; }

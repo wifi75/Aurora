@@ -265,8 +265,8 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   // la barra dei comandi sopra la cascata (non sul telefono, dove lo spazio e' poco)
   const bar = !spectrumPx;
   return (
-    <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}`} data-backend={kind} data-phase={phase}>
-      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx || (bar && specPercent === 0) ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
+    <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}${prefs.spectrumPercent === 0 ? ' waterfall--nospec' : ''}`} data-backend={kind} data-phase={phase}>
+      <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx || specPercent === 0 ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {bar && specPercent > 0 ? (
         <div
           className="wf-splitter"
@@ -281,7 +281,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
         ref={plotRef}
         className="wf-spectrum"
         aria-hidden="true"
-        style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: 'block' } : { flex: bar ? '1 1 0px' : `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
+        style={spectrumPx ? { flex: `0 0 ${spectrumPx}px`, display: specPercent > 0 ? 'block' : 'none' } : { flex: bar ? '1 1 0px' : `${specPercent} 1 0px`, display: specPercent > 0 ? 'block' : 'none' }}
       />
       <canvas ref={stampsRef} className="wf-stamps" aria-hidden="true" />
       {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
