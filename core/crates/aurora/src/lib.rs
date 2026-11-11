@@ -1810,7 +1810,7 @@ pub async fn run(
     // le regole nuove dell'automazione: ora locale per la fascia oraria, paesi per le esclusioni, «nuovo modo» dal log come la scheda DXCC
     automation.set_local_offset(Arc::new(local_offset_secs));
     if let Some((db, worked)) = &enrichment {
-        automation.set_countries((0..db.len()).map(|i| db.entity(i).name.clone()).collect());
+        automation.set_countries((0..db.len()).filter(|&i| !db.entity(i).wae).map(|i| db.entity(i).name.clone()).collect());
         let (db, worked) = (Arc::clone(db), Arc::clone(worked));
         automation.set_new_mode_matcher(Arc::new(move |call, mode| {
             // log vuoto: tutto sarebbe «nuovo», come per le etichette delle decodifiche non si segnala nulla

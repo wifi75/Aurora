@@ -107,3 +107,63 @@ fn rejects_a_file_without_entities() {
 fn reading_a_missing_file_is_an_error_not_a_panic() {
     assert!(matches!(DxccDb::from_file(std::path::Path::new("non/esiste/cty.dat")), Err(DxccError::Io(_))));
 }
+
+/// Le entita' solo WAE (prefisso con `*`) non sono paesi DXCC: i loro nominativi vanno al paese genitore, come la vista DXCC di WSJT-X.
+#[test]
+fn wae_only_entities_resolve_to_their_dxcc_parent() {
+    let cty = "\
+Italy:                    15:  28:  EU:   42.82:   -12.58:    -1.0:  I:
+    I,IK,IU,IW,IZ,=IU0ABC;
+Sicily:                   15:  28:  EU:   37.50:   -14.00:    -1.0:  *IT9:
+    IT9,IU9,IW9,=IW0HBY/9;
+";
+    let db = DxccDb::parse(cty).unwrap();
+    assert_eq!(name_of(&db, "IU9ABC").as_deref(), Some("Italy"));
+    assert_eq!(name_of(&db, "IT9XYZ").as_deref(), Some("Italy"));
+    assert_eq!(name_of(&db, "IW0HBY/9").as_deref(), Some("Italy"));
+    assert_eq!(name_of(&db, "IU3ABC").as_deref(), Some("Italy"));
+    assert_eq!((db.len(), db.dxcc_count()), (2, 1));
+}
+
+/// I suffissi operativi di WSJT-X non diventano prefissi di paese.
+#[test]
+fn operating_suffixes_do_not_change_the_country() {
+    let cty = "\
+Italy:                    15:  28:  EU:   42.82:   -12.58:    -1.0:  I:
+    I,IU;
+European Russia:          16:  29:  EU:   53.65:   -41.37:    -4.0:  R:
+    R,UA;
+France:                   14:  27:  EU:   46.00:    -2.00:    -1.0:  F:
+    F;
+Norway:                   14:  18:  EU:   61.00:    -9.00:    -1.0:  LA:
+    LA,LG;
+";
+    let db = DxccDb::parse(cty).unwrap();
+    for call in ["IU3ABC/R", "IU3ABC/FD", "IU3ABC/FF", "IU3ABC/LGT", "IU3ABC/LT", "IU3ABC/Q", "IU3ABC/QRP"] {
+        assert_eq!(name_of(&db, call).as_deref(), Some("Italy"), "{call}");
+    }
+}
+
+#[test]
+fn a_new_suffix_in_front_is_still_a_country_prefix() {
+    let cty = "\
+Italy:                    15:  28:  EU:   42.82:   -12.58:    -1.0:  I:
+    I,IU;
+Argentina:                13:  14:  SA:  -34.80:    65.92:     3.0:  LU:
+    LU,LT;
+";
+    let db = DxccDb::parse(cty).unwrap();
+    assert_eq!(name_of(&db, "LT/IU3ABC").as_deref(), Some("Argentina"));
+    assert_eq!(name_of(&db, "IU3ABC/LT").as_deref(), Some("Italy"));
+}
+
+/// Con il `cty.dat` vero (quello di riserva dell'installatore): le entita' WAE italiane, turche e scozzesi vanno al paese DXCC.
+#[test]
+fn the_real_cty_dat_resolves_wae_entities_to_dxcc_countries() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../desktop/cty-riserva/cty.dat");
+    let Ok(db) = DxccDb::from_file(&path) else { return };
+    assert_eq!(name_of(&db, "IU9ABC").as_deref(), Some("Italy"));
+    assert_eq!(name_of(&db, "IT9XYZ").as_deref(), Some("Italy"));
+    assert_eq!(name_of(&db, "TA1ABC").as_deref(), Some("Asiatic Turkey"));
+    assert!(db.dxcc_count() < db.len(), "le entita' WAE non contano tra i paesi DXCC");
+}
