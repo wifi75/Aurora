@@ -1030,7 +1030,16 @@ struct HistoryParams {
 async fn history_get(State(state): State<AppState>, _: Authed, axum::extract::Query(p): axum::extract::Query<HistoryParams>) -> Result<Json<Value>, ApiError> {
     let store = history_store(&state)?;
     let query = decode_history::Query { text: p.q, band: p.band, mode: p.mode, from_ms: p.from_ms, to_ms: p.to_ms, limit: p.limit.unwrap_or(100), offset: p.offset.unwrap_or(0) };
-    match tokio::task::spawn_blocking(move || store.query(&query)).await {
+    let lotw = state.lotw.clone();
+    // la data di LoTW si calcola qui, con l'elenco di adesso: non sta nel database
+    let read = move || {
+        let mut page = store.query(&query)?;
+        if let Some(lookup) = lotw {
+            page.fill_lotw(&*lookup);
+        }
+        Ok::<_, decode_history::HistoryError>(page)
+    };
+    match tokio::task::spawn_blocking(read).await {
         Ok(Ok(page)) => Ok(Json(json!(page))),
         Ok(Err(e)) => Err(history_error(e)),
         Err(_) => Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "history_task")),

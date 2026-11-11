@@ -96,21 +96,32 @@ fn cache_is_fresh(path: &Path) -> bool {
         .is_some_and(|age| age < MAX_AGE)
 }
 
+/// Legge la copia nella cartella dei dati, se c'e' e se l'elenco e' vuoto (file locale: si puo' chiamare in modo sincrono all'avvio,
+/// cosi' le prime decodifiche gia' hanno l'elenco). Restituisce vero se l'elenco e' stato caricato.
+pub fn load_cache(shared: &SharedLotw, data_dir: &Path) -> bool {
+    if !shared.read().map(|u| u.is_empty()).unwrap_or(true) {
+        return false;
+    }
+    let Ok(text) = std::fs::read_to_string(data_dir.join(CACHE_FILE)) else { return false };
+    let users = LotwUsers::parse(&text);
+    if users.len() < MIN_ENTRIES {
+        return false;
+    }
+    tracing::info!("elenco LoTW letto dalla copia: {} nominativi", users.len());
+    match shared.write() {
+        Ok(mut w) => {
+            *w = users;
+            true
+        }
+        Err(_) => false,
+    }
+}
+
 /// Carica la copia nella cartella dei dati (se c'e') e, se ha piu' di 24 ore o manca, prova a riscaricarla. Bloccante: va in un thread.
 /// Un errore di rete lascia la copia vecchia.
 pub fn refresh(shared: &SharedLotw, data_dir: &Path, app_version: &str) {
     let path: PathBuf = data_dir.join(CACHE_FILE);
-    if shared.read().map(|u| u.is_empty()).unwrap_or(true) {
-        if let Ok(text) = std::fs::read_to_string(&path) {
-            let users = LotwUsers::parse(&text);
-            if users.len() >= MIN_ENTRIES {
-                tracing::info!("elenco LoTW letto dalla copia: {} nominativi", users.len());
-                if let Ok(mut w) = shared.write() {
-                    *w = users;
-                }
-            }
-        }
-    }
+    load_cache(shared, data_dir);
     if cache_is_fresh(&path) {
         return;
     }
@@ -137,6 +148,8 @@ pub fn refresh(shared: &SharedLotw, data_dir: &Path, app_version: &str) {
 
 /// Avvia il lavoro in un thread: subito all'avvio e poi ogni ora controlla se la copia ha piu' di 24 ore.
 pub fn spawn(shared: SharedLotw, data_dir: PathBuf, app_version: String) {
+    // la copia su disco si legge subito, prima che il motore pubblichi le prime decodifiche; nel thread resta solo il download
+    load_cache(&shared, &data_dir);
     let spawned = std::thread::Builder::new().name("lotw".into()).spawn(move || loop {
         refresh(&shared, &data_dir, &app_version);
         std::thread::sleep(Duration::from_secs(3600));
@@ -160,6 +173,23 @@ mod tests {
         assert_eq!(u.last_upload("EA4XYZ").as_deref(), Some("2024-01-05"));
         assert_eq!(u.last_upload("K1ABC"), None);
         assert_eq!(u.last_upload("W9ZZZ"), None);
+    }
+
+    #[test]
+    fn load_cache_reads_the_local_copy_synchronously() {
+        let dir = std::env::temp_dir().join(format!("aurora-lotw-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let shared: SharedLotw = Arc::default();
+        assert!(!load_cache(&shared, &dir), "senza file non carica");
+        let mut csv = String::from(CSV);
+        for i in 0..MIN_ENTRIES {
+            csv.push_str(&format!("N{i}ZZ,2025-01-01,00:00:00\n"));
+        }
+        std::fs::write(dir.join(CACHE_FILE), csv).unwrap();
+        assert!(load_cache(&shared, &dir));
+        assert_eq!(shared.read().unwrap().last_upload("IU3ABC").as_deref(), Some("2026-10-28"));
+        assert!(!load_cache(&shared, &dir), "gia' carico: non rilegge");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

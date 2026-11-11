@@ -1841,7 +1841,7 @@ pub async fn run(
     // PSK Reporter e propagazione: spenti finche' non si accendono
     let online = online_info::OnlineService::open(&config.data_dir.join("online.json"), Arc::new(online_info::HttpFetch::new(env!("CARGO_PKG_VERSION"))));
     online::spawn_refresher(Arc::clone(&online), bus.subscribe_events());
-    // chi usa LoTW (elenco pubblico dell'ARRL): scaricato in un thread, mai bloccante; la copia vecchia resta se la rete manca
+    // chi usa LoTW (elenco pubblico dell'ARRL): la copia su disco si legge subito, il download va in un thread, mai bloccante; la copia vecchia resta se la rete manca
     let lotw: online_info::lotw::SharedLotw = Arc::default();
     online_info::lotw::spawn(Arc::clone(&lotw), config.data_dir.clone(), aurora_core::version::APP_VERSION.to_string());
     // lo storico dei messaggi ricevuti: se il file non si apre Aurora parte lo stesso e lo dice
@@ -1963,6 +1963,10 @@ pub async fn run(
         .with_error_reports_if(Some(Arc::clone(&rapporti) as remote_api::ErrorReportsHandle))
         .with_online(online)
         .with_history_if(history)
+        .with_lotw({
+            let lotw = Arc::clone(&lotw);
+            Arc::new(move |call: &str| lotw.read().ok()?.last_upload(call))
+        })
         .with_updates(Arc::clone(&updates))
         .with_dxcc_if(enrichment.as_ref().map(|(db, _)| {
             let db = Arc::clone(db);
