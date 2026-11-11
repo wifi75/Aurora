@@ -78,6 +78,14 @@ pub struct SavedControls {
     pub fst4_period: u32,
     #[serde(default = "default_fst4w_period")]
     pub fst4w_period: u32,
+    /// WSPR: potenza nel messaggio (dBm), percentuale dei periodi in trasmissione e «Prefer type 1 messages». Nei file scritti prima mancano:
+    /// restano i valori di fabbrica di WSJT-X (37 dBm, 20%, tipo 1).
+    #[serde(default)]
+    pub wspr_dbm: Option<u8>,
+    #[serde(default)]
+    pub wspr_pct: Option<u8>,
+    #[serde(default)]
+    pub wspr_type1: Option<bool>,
 }
 
 fn default_fst4_period() -> u32 {
@@ -562,6 +570,7 @@ impl NativeControls {
             // codici lontani dai prossimi modi per non scontrarsi con altri lavori in corso
             20 => Mode::Fst4,
             21 => Mode::Fst4w,
+            7 => Mode::Wspr,
             _ => Mode::Ft8,
         }
     }
@@ -577,6 +586,7 @@ impl NativeControls {
             Mode::Msk144 => 6,
             Mode::Fst4 => 20,
             Mode::Fst4w => 21,
+            Mode::Wspr => 7,
         };
         self.mode_code.store(code, Ordering::Relaxed);
     }
@@ -602,6 +612,7 @@ impl NativeControls {
                 Mode::Msk144 => 5,
                 Mode::Fst4 => 20,
                 Mode::Fst4w => 21,
+                Mode::Wspr => 6,
                 _ => 0,
             },
             attenuation: self.attenuation.load(Ordering::Relaxed),
@@ -614,6 +625,9 @@ impl NativeControls {
             msk144_periods: std::array::from_fn(|i| MSK144_PERIODS[i].load(Ordering::Relaxed)),
             fst4_period: qso_native::slot::fst4_period_s(false),
             fst4w_period: qso_native::slot::fst4_period_s(true),
+            wspr_dbm: Some(crate::wspr::power_dbm()),
+            wspr_pct: Some(crate::wspr::tx_pct()),
+            wspr_type1: Some(crate::wspr::prefer_type1()),
         }
     }
 
@@ -638,6 +652,7 @@ impl NativeControls {
             (5, _) => Mode::Msk144,
             (20, _) => Mode::Fst4,
             (21, _) => Mode::Fst4w,
+            (6, _) => Mode::Wspr,
             (_, true) => Mode::Ft4,
             _ => Mode::Ft8,
         });
@@ -649,6 +664,15 @@ impl NativeControls {
         set_fst4_period(true, saved.fst4w_period);
         if let Some(drift) = saved.q65_max_drift {
             self.set_value("q65_drift", u32::from(drift));
+        }
+        if let Some(dbm) = saved.wspr_dbm {
+            crate::wspr::set_power_dbm(u32::from(dbm));
+        }
+        if let Some(pct) = saved.wspr_pct {
+            crate::wspr::set_tx_pct(u32::from(pct));
+        }
+        if let Some(on) = saved.wspr_type1 {
+            crate::wspr::set_prefer_type1(on);
         }
         for (slot, period) in MSK144_PERIODS.iter().zip(saved.msk144_periods) {
             if qso_native::slot::MSK144_PERIODS_S.contains(&period) {
@@ -845,6 +869,14 @@ impl NativeControls {
                 use_msk144_period(value);
                 true
             }
+            // WSPR: potenza nel messaggio (dBm, i valori della tendina di WSJT-X) e «Tx Pct» (0-100)
+            "wspr_dbm" => crate::wspr::set_power_dbm(value),
+            "wspr_pct" => crate::wspr::set_tx_pct(value),
+            // «Prefer type 1 messages» (1 acceso, 0 spento)
+            "wspr_type1" if value <= 1 => {
+                crate::wspr::set_prefer_type1(value == 1);
+                true
+            }
             _ => false,
         }
     }
@@ -866,6 +898,9 @@ impl NativeControls {
         vec![
             ("q65_drift".to_string(), u32::from(Q65_DRIFT.load(Ordering::Relaxed))),
             ("msk144_period".to_string(), qso_native::slot::msk144_period_s()),
+            ("wspr_dbm".to_string(), u32::from(crate::wspr::power_dbm())),
+            ("wspr_pct".to_string(), u32::from(crate::wspr::tx_pct())),
+            ("wspr_type1".to_string(), u32::from(crate::wspr::prefer_type1())),
         ]
     }
 
@@ -1197,6 +1232,10 @@ impl Rig for NativeRig {
                 self.controls.set_mode(if wspr { Mode::Fst4w } else { Mode::Fst4 });
                 Ok(())
             }
+            "WSPR" | "WSPR-2" => {
+                self.controls.set_mode(Mode::Wspr);
+                Ok(())
+            }
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -1229,6 +1268,8 @@ impl Rig for NativeRig {
             (Mode::Msk144, even) => msk144_minute_label(qso_native::slot::msk144_period_s(), even),
             (Mode::Fst4 | Mode::Fst4w, true) => "TX even",
             (Mode::Fst4 | Mode::Fst4w, false) => "TX odd",
+            // WSPR: i periodi in trasmissione li sceglie la percentuale, non la parita'
+            (Mode::Wspr, _) => "Tx Pct",
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),

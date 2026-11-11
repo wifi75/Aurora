@@ -139,6 +139,8 @@ pub enum Mode {
     Fst4,
     /// FST4W: periodi da 120 a 1800 s, messaggi di tipo WSPR (radiofaro, senza QSO).
     Fst4w,
+    /// WSPR-2: radiofaro senza QSO, periodi di due minuti che cominciano ai minuti pari, messaggio a un secondo dall'inizio.
+    Wspr,
 }
 
 impl Mode {
@@ -152,6 +154,7 @@ impl Mode {
             Mode::Q65 => u64::from(q65_period_s()) * 1000,
             Mode::Fst4 => u64::from(fst4_period_s(false)) * 1000,
             Mode::Fst4w => u64::from(fst4_period_s(true)) * 1000,
+            Mode::Wspr => 120_000,
         }
     }
 
@@ -171,6 +174,7 @@ impl Mode {
             Mode::Msk144 => "MSK144",
             Mode::Fst4 => "FST4",
             Mode::Fst4w => "FST4W",
+            Mode::Wspr => "WSPR",
         }
     }
 }

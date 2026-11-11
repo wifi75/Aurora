@@ -91,6 +91,8 @@ pub enum Mode {
     Msk144,
     Fst4,
     Fst4w,
+    /// WSPR-2: periodi di due minuti, messaggio a un secondo dall'inizio.
+    Wspr,
 }
 
 impl Mode {
@@ -98,6 +100,7 @@ impl Mode {
         match self {
             Mode::Ft8 => Duration::from_millis(15_000),
             Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 1000),
+            Mode::Wspr => Duration::from_millis(120_000),
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
             Mode::Q65 => Duration::from_millis(u64::from(q65_period_s()) * 1000),
@@ -114,7 +117,7 @@ impl Mode {
             Mode::Q65 if q65_period_s() < 60 => Duration::from_millis(500),
             // FST4: 0,5 s in FST4-15, 1 s negli altri e in FST4W (`Modulator.cpp:163-164`)
             Mode::Fst4 if fst4_period_s(false) == 15 => Duration::from_millis(500),
-            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 | Mode::Fst4 | Mode::Fst4w => Duration::from_millis(1_000),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 | Mode::Fst4 | Mode::Fst4w | Mode::Wspr => Duration::from_millis(1_000),
         }
     }
 
@@ -136,6 +139,9 @@ impl Mode {
             // 160 simboli dopo il ritardo d'inizio
             Mode::Fst4 => Mode::Fst4.tx_delay() + Duration::from_millis(fst4_message_ms(fst4_period_s(false))),
             Mode::Fst4w => Mode::Fst4w.tx_delay() + Duration::from_millis(fst4_message_ms(fst4_period_s(true))),
+            // WSPR: il radiofaro parte solo a inizio periodo (WSJT-X lo arma con `m_bTxTime` dal pianificatore, `WSPRBandHopping.cpp:256-272`);
+            // un secondo di margine oltre il ritardo d'inizio
+            Mode::Wspr => Duration::from_millis(2_000),
         }
     }
 }

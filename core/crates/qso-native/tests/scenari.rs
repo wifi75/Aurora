@@ -47,6 +47,7 @@ impl Bench {
             // FST4-60 e FST4W-120 di fabbrica
             Mode::Fst4 => 720,
             Mode::Fst4w => 360,
+            Mode::Wspr => 360,
         };
         Bench {
             seq,

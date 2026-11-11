@@ -51,6 +51,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "FST4" => Some("fst4Button"),
         "FST4W" => Some("fst4wButton"),
         m if is_fst4_period(m) => Some(if m.starts_with("FST4W") { "fst4wButton" } else { "fst4Button" }),
+        // WSPR-2 solo con il motore proprio
+        "WSPR" => Some("wsprButton"),
         _ => None,
     }
 }

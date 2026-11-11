@@ -60,6 +60,8 @@ impl FreeTxParams {
                 Mode::Fst4w => crate::slot::fst4_bandwidth_hz(true).ceil() as f32 + 3.0,
                 // MSK144 occupa tutta la banda audio (toni a 1000 e 2000 Hz)
                 Mode::Msk144 => 1000.0,
+                // WSPR: 6 Hz di segnale
+                Mode::Wspr => 10.0,
             },
             sweet_lo: 800,
             sweet_hi: 2200,

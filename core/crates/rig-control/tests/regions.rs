@@ -100,7 +100,7 @@ fn an_old_saved_table_moves_to_the_jtdx_one_and_a_custom_one_stays() {
     // le righe dell'utente restano com'erano; si aggiungono solo quelle dei modi e delle bande arrivati dopo (JT65, JT9, Q65, FST4, bande nuove)
     let upgraded = FrequencyTable::upgraded(custom.clone());
     assert_eq!(&upgraded[..custom.len()], &custom[..], "una tabella modificata dall'utente non si tocca");
-    assert!(upgraded[custom.len()..].iter().all(|e| matches!(e.mode.as_str(), "JT65" | "JT9" | "Q65" | "MSK144" | "FST4" | "FST4W") || !matches!(e.band.as_str(), "160m" | "80m" | "60m" | "40m" | "30m" | "20m" | "17m" | "15m" | "12m" | "10m" | "6m" | "2m")) && upgraded.len() > custom.len());
+    assert!(upgraded[custom.len()..].iter().all(|e| matches!(e.mode.as_str(), "JT65" | "JT9" | "Q65" | "MSK144" | "FST4" | "FST4W" | "WSPR") || !matches!(e.band.as_str(), "160m" | "80m" | "60m" | "40m" | "30m" | "20m" | "17m" | "15m" | "12m" | "10m" | "6m" | "2m")) && upgraded.len() > custom.len());
     // una tabella che ha gia' le righe JT resta esattamente com'e'
     assert_eq!(FrequencyTable::upgraded(upgraded.clone()), upgraded);
 }
@@ -129,4 +129,17 @@ fn rows_saved_without_region_read_as_all_and_preferred() {
     assert_eq!((rows[0].region, rows[0].preferred), (Region::All, true));
     assert_eq!((rows[1].region, rows[1].preferred), (Region::R3, false));
     assert_eq!(serde_json::to_value(&rows[1]).unwrap()["region"], "R3");
+}
+
+/// WSPR: le frequenze di dial dell'elenco di WSJT-X (`models/FrequencyList.cpp`), 6 m solo nelle regioni 2 e 3.
+#[test]
+fn wspr_has_the_wsjtx_dial_frequencies() {
+    let t = FrequencyTable::default();
+    assert!(t.is_valid());
+    assert_eq!(t.frequency("20m", "WSPR"), Some(14_095_600));
+    assert_eq!(t.frequency("30m", "WSPR"), Some(10_138_700));
+    assert_eq!(t.frequency("630m", "WSPR"), Some(474_200));
+    assert_eq!(t.frequency_in(Region::R2, "6m", "WSPR"), Some(50_293_000));
+    assert_eq!(t.frequency_in(Region::R1, "6m", "WSPR"), None);
+    assert_eq!(rig_control::modes::button_id("wspr"), Some("wsprButton"));
 }

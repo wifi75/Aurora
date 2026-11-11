@@ -51,6 +51,9 @@ export function signalBandwidthHz(mode: string | undefined): number {
       return (65 * 12000) / 3600;
     case 'MSK144':
       return 2000;
+    // WSPR: quattro toni a 12000/8192 Hz
+    case 'WSPR':
+      return (4 * 12000) / 8192;
     case 'T10':
       return (9 * 4 * 12000) / 6912;
     default:
@@ -64,7 +67,8 @@ export function signalBandwidthHz(mode: string | undefined): number {
  * di MSK144 andava da 1500 a 3500 Hz (UN7MBV, 2026-11-10: «la cascata e' rimasta come in FT8»).
  */
 export function signalStartOffsetHz(mode: string | undefined): number {
-  return mode === 'MSK144' ? -signalBandwidthHz(mode) / 2 : 0;
+  // WSPR: anche qui la frequenza Tx e' il centro del segnale (`mainwindow.cpp:13591`)
+  return mode === 'MSK144' || mode === 'WSPR' ? -signalBandwidthHz(mode) / 2 : 0;
 }
 
 /** Quanto lontano dalla frequenza RX la Finestra RX mostra i messaggi (Hz): ±50 come la finestra «Rx Frequency», MSK144 ±100 (la tolleranza di base). */

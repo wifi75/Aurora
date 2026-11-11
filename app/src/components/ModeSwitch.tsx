@@ -33,7 +33,7 @@ export function fst4Parts(mode: string): ['FST4' | 'FST4W', string] | null {
   return list.includes(m[2]) ? [m[1] as 'FST4' | 'FST4W', m[2]] : null;
 }
 
-export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W'] as const;
+export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR'] as const;
 
 /** Il modo in uso: JTDX con il pulsante JT puo' riportare «JT65+JT9» (si accendono tutti e due) o «JT» (il vecchio nome, acceso JT65). */
 const isActive = (m: string, mode: string) => {
@@ -59,7 +59,7 @@ interface Props {
   locked?: boolean;
 }
 
-/** Selettore compatto del modo: un pulsante col modo in uso che apre una tendina con FT8 / FT4 / JT65 / JT9 / JT4 / Q65 / MSK144 / FST4 / FST4W. */
+/** Selettore compatto del modo: un pulsante col modo in uso che apre una tendina con FT8 / FT4 / JT65 / JT9 / JT4 / Q65 / MSK144 / FST4 / FST4W / WSPR. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);

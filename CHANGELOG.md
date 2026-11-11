@@ -1,12 +1,13 @@
 # Changelog
 
 ## Non rilasciato
+- **WSPR-2** (WSJT-X 3.3): radiofaro con potenza, «Tx Pct» e messaggi di tipo 1/2/3, decodificatore di wsprd verificato su 48 file audio con wsprd.exe di WSJT-X (risultati identici); nessun invio a WSPRnet.
 - **Rapporto**: il campo dei Comandi segue il rapporto che Aurora invia, preso dal segnale della stazione scelta come WSJT-X (prima restava fermo a -10); si puo' cambiare a mano (#38, F1DSZ).
 - **Tasto destro sul nominativo** (Attivita' di banda, finestra Rx, DX Cluster): «Apri su QRZ.com»; in Attivita' di banda e finestra Rx anche «Metti in coda».
 - **SSTV, compositore**: il testo e' centrato davvero e il riquadro di selezione avvolge le lettere (contorno, ombra e targhetta compresi); l'immagine non si deforma piu' nelle finestre basse, e quella trasmessa coincide con quella mostrata.
 - Riquadro del nominativo: LoTW compare anche se la stazione non l'ha indicato su QRZ.com, preso dall'elenco pubblico dell'ARRL con la data dell'ultimo invio, una volta sola (tolto il fumetto doppio del browser sul nominativo).
 - **FST4 e FST4W** (WSJT-X 3.3), periodi da 15 s a 30 minuti, verificati su 72 file audio con jt9.exe di WSJT-X; FST4 con le risposte automatiche come FT8, FST4W in ricezione (radiofaro in trasmissione da completare).
-- La tendina del modo mostra solo i modi del gruppo scelto in alto (FT8: FT8, FT4, JT65, JT9, FST4, FST4W; VHF: JT65, JT4, Q65, MSK144): prima li mostrava tutti e i due gruppi erano doppioni.
+- La tendina del modo mostra solo i modi del gruppo scelto in alto (FT8: FT8, FT4, JT65, JT9, FST4, FST4W, WSPR; VHF: JT65, JT4, Q65, MSK144): prima li mostrava tutti e i due gruppi erano doppioni.
 
 ## 0.11.237 - 2026-11-11
 - **Split vero (Hamlib, «Rig»): al cambio di banda la radio esce dallo split**; il VFO di trasmissione si porta sulla banda nuova e lo split si riaccende solo un attimo prima della trasmissione. Prima la radio restava in split subito dopo il cambio di banda.
