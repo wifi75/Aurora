@@ -7,6 +7,40 @@ import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
 import { playAlert } from '../lib/voice';
 import { ringState, soundFor } from '../lib/soundAssign';
+import type { Log4omQso } from '../api/client';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
+import '../styles/log-grid.css';
+
+/** Colonne del log: si spostano e si allargano trascinando i titoli, come nel DX Cluster; ordine e larghezze restano su questo dispositivo. */
+export const LOG_COLUMNS = ['date', 'call', 'band', 'mode', 'rst', 'country'] as const;
+type LogCol = (typeof LOG_COLUMNS)[number];
+/** Larghezze di partenza in em; il paese prende lo spazio che avanza. */
+const LOG_EM: Record<LogCol, number> = { date: 6.6, call: 7, band: 3.8, mode: 3.8, rst: 4.8, country: 4 };
+export const LOG_COLS_KEY = 'aurora.log.cols';
+const LOG_LABEL = { date: 'log.col.date', call: 'log.col.call', band: 'log.col.band', mode: 'log.col.mode', rst: 'log.col.rst', country: 'log.col.country' } as const;
+
+/** Una cella del log: sa a quale colonna appartiene, cosi' segue la colonna quando cambia posto. */
+function logCell(q: Log4omQso, c: LogCol) {
+  switch (c) {
+    case 'date':
+      // giorno/mese e ora, senza l'anno: la data intera nel suggerimento
+      return (
+        <td key={c} className="data log4om-date lg-c--date" title={q.date.replace('Z', '').slice(0, 16)}>
+          {`${q.date.slice(8, 10)}/${q.date.slice(5, 7)} ${q.date.slice(11, 16)}`}
+        </td>
+      );
+    case 'call':
+      return <td key={c} className="data log4om-call lg-c--call">{q.call}</td>;
+    case 'band':
+      return <td key={c} className="data lg-c--band">{q.band}</td>;
+    case 'mode':
+      return <td key={c} className="data lg-c--mode">{q.mode}</td>;
+    case 'rst':
+      return <td key={c} className="data log4om-rst lg-c--rst">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join('/')}</td>;
+    case 'country':
+      return <td key={c} className="log4om-country lg-c--country" title={q.country}>{q.country}</td>;
+  }
+}
 
 /** Effetto del QSO appena messo a log: aurora che scorre dentro la riga e scie viola sul bordo per 5 s, poi si dissolve (vedi `.qso-fx`). */
 const FLASH_MS = 6600;
@@ -16,6 +50,7 @@ function Log4omPanelInner() {
   const t = useT();
   const count = usePrefs((s) => s.prefs.log4omCount);
   const log = useQuery({ queryKey: ['log4om', count], queryFn: () => getLog4om(count), refetchInterval: 10_000, retry: false });
+  const cols = useMovableColumns({ storageKey: LOG_COLS_KEY, columns: LOG_COLUMNS, defaultEm: LOG_EM, elastic: 'country' });
   const client = useQueryClient();
   // appena un QSO viene messo a log il pannello si rilegge subito, senza aspettare il giro dei 10 secondi
   const logged = useStation((st) => st.qsosLogged);
@@ -98,33 +133,26 @@ function Log4omPanelInner() {
           <b className="qso-fx-badge">{t('log.loggedBadge')}</b>
         </div>
       ) : null}
-      <table className="log4om-table">
-        <thead>
+      <table ref={cols.tableRef} className="log4om-table log4om-grid mv-grid" style={cols.tableStyle}>
+        <MovableColGroup cols={cols} />
+        <thead onContextMenu={cols.openMenu}>
           <tr>
-            <th>{t('log.col.date')}</th>
-            <th>{t('log.col.call')}</th>
-            <th>{t('log.col.band')}</th>
-            <th>{t('log.col.mode')}</th>
-            <th title={t('tip.ui.colRst')}>{t('log.col.rst')}</th>
-            <th>{t('log.col.country')}</th>
+            {cols.visible.map((c, i) => (
+              <MovableTh key={c} cols={cols} col={c} index={i} className={`lg-c--${c}`} title={c === 'rst' ? t('tip.ui.colRst') : undefined}>
+                {t(LOG_LABEL[c])}
+              </MovableTh>
+            ))}
           </tr>
         </thead>
         <tbody>
           {shownQsos.map((q, i) => (
             <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && i === shownQsos.findIndex((x) => x.call.toUpperCase() === flash) ? 'log4om-row--flash' : undefined}>
-              {/* giorno/mese e ora, senza l'anno: la data intera nel suggerimento */}
-              <td className="data log4om-date" title={q.date.replace('Z', '').slice(0, 16)}>
-                {`${q.date.slice(8, 10)}/${q.date.slice(5, 7)} ${q.date.slice(11, 16)}`}
-              </td>
-              <td className="data log4om-call">{q.call}</td>
-              <td className="data">{q.band}</td>
-              <td className="data">{q.mode}</td>
-              <td className="data log4om-rst">{[q.rst_sent, q.rst_rcvd].filter(Boolean).join('/')}</td>
-              <td className="log4om-country" title={q.country}>{q.country}</td>
+              {cols.visible.map((c) => logCell(q, c))}
             </tr>
           ))}
         </tbody>
       </table>
+      <ColumnsMenu cols={cols} />
     </div>
   );
 }

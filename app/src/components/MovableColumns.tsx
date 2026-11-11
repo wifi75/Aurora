@@ -18,6 +18,8 @@ export interface MovableColumnsSpec<C extends string> {
   elastic?: C;
   /** Colonne da non disegnare (restano al loro posto nell'ordine). */
   hidden?: readonly C[];
+  /** Le celle da misurare per adattare la colonna al contenuto (doppio clic sul bordo): di base quelle della tabella in quella posizione. */
+  fitCells?: (col: C, index: number) => Iterable<Element>;
 }
 
 export interface MovableColumns<C extends string> {
@@ -36,6 +38,8 @@ export interface MovableColumns<C extends string> {
   startMove: (e: ReactPointerEvent<HTMLTableCellElement>, col: C) => void;
   startResize: (e: ReactPointerEvent<HTMLSpanElement>, col: C) => void;
   autoFit: (col: C) => void;
+  /** Sostituisce tutte le larghezze scelte a mano (`{}`: tutte di partenza) e le ricorda. */
+  setWidths: (widths: Partial<Record<C, number>>) => void;
   keyMove: (e: ReactKeyboardEvent<HTMLTableCellElement>, col: C) => void;
   /** Tasto destro (o il tasto Menu) sui titoli: apre il menu con «Ripristina colonne». */
   openMenu: (e: ReactMouseEvent<HTMLElement>) => void;
@@ -48,7 +52,7 @@ export interface MovableColumns<C extends string> {
  * doppio clic sul bordo la adatta al contenuto; da tastiera Alt+frecce e Alt+Maiusc+frecce; tasto destro «Ripristina colonne».
  * Va chiamato prima di ogni `return` anticipato del componente: la tabella si aggancia con `tableRef` quando c'e'.
  */
-export function useMovableColumns<C extends string>({ storageKey, columns, defaultEm, elastic: elasticCol, hidden }: MovableColumnsSpec<C>): MovableColumns<C> {
+export function useMovableColumns<C extends string>({ storageKey, columns, defaultEm, elastic: elasticCol, hidden, fitCells }: MovableColumnsSpec<C>): MovableColumns<C> {
   const [layout, setLayoutState] = useState<ColumnLayout<C>>(() => readColumnLayout(storageKey, columns));
   const [drag, setDrag] = useState<{ col: C; before: C | null } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
@@ -165,10 +169,18 @@ export function useMovableColumns<C extends string>({ storageKey, columns, defau
     const i = visible.indexOf(col);
     if (!el || i < 0) return;
     let max = 0;
-    el.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((cell) => {
-      max = Math.max(max, (cell as HTMLElement).scrollWidth);
-    });
+    for (const cell of fitCells ? fitCells(col, i) : el.querySelectorAll(`tr > :nth-child(${i + 1})`)) {
+      if (cell instanceof HTMLElement) max = Math.max(max, contentWidth(cell));
+    }
     if (max > 0) setWidth(col, max / emPx() + 0.3);
+  };
+  const setWidths = (widths: Partial<Record<C, number>>) => {
+    const next: Partial<Record<C, number>> = {};
+    for (const c of columns) {
+      const v = widths[c];
+      if (v !== undefined) next[c] = clampColumnEm(v);
+    }
+    setLayout((l) => ({ ...l, widths: next }));
   };
 
   /** Da tastiera, sul titolo: Alt+frecce sposta la colonna, Alt+Maiusc+frecce la allarga o la stringe. */
@@ -203,7 +215,23 @@ export function useMovableColumns<C extends string>({ storageKey, columns, defau
     setLayout(() => defaultColumnLayout(columns));
   };
 
-  return { layout, visible, widthOf, elastic, elasticCol, tableRef, tableStyle, drag, menu, startMove, startResize, autoFit, keyMove, openMenu, closeMenu, reset };
+  return { layout, visible, widthOf, elastic, elasticCol, tableRef, tableStyle, drag, menu, startMove, startResize, autoFit, setWidths, keyMove, openMenu, closeMenu, reset };
+}
+
+/**
+ * Quanto e' largo il contenuto di una cella, in px: anche quello nascosto dai «…» di un elemento interno (il messaggio della Finestra RX
+ * sta in uno span che si accorcia da se'), contando da dove l'elemento comincia dentro la cella piu' il margine destro della cella.
+ */
+export function contentWidth(cell: HTMLElement): number {
+  let w = cell.scrollWidth;
+  const inner = cell.querySelectorAll<HTMLElement>('*');
+  if (inner.length === 0) return w;
+  const left = cell.getBoundingClientRect().left;
+  const pad = parseFloat(getComputedStyle(cell).paddingRight) || 0;
+  inner.forEach((el) => {
+    if (el.scrollWidth > el.clientWidth) w = Math.max(w, el.getBoundingClientRect().left - left + el.scrollWidth + pad);
+  });
+  return w;
 }
 
 /** Le larghezze delle colonne, nell'ordine scelto (la colonna elastica senza larghezza prende lo spazio che avanza). */

@@ -20,6 +20,8 @@ import { formatDistance, usePrefs } from '../lib/prefs';
 import { CallsignTip, prefetchCallsigns } from './CallsignTip';
 import { CallMenu, callMenuAt, type CallMenuState } from './CallMenu';
 import { cleanCall } from '../lib/callsignPage';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
+import '../styles/decode-grid.css';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
 const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
@@ -187,7 +189,18 @@ interface Props {
   forceFlag?: boolean;
   /** Il messaggio piu' recente in fondo: l'elenco scorre verso l'alto. Spento: il piu' recente in cima. */
   newestAtBottom?: boolean;
+  /**
+   * Righe a griglia con i titoli delle colonne (Ora, dB, DT, Messaggio, Paese) che si spostano e si allargano trascinandoli, come nel
+   * DX Cluster; ordine e larghezze restano sotto questa chiave. Senza, l'elenco di sempre (le etichette e la frequenza ci sono solo li').
+   */
+  columnsKey?: string;
 }
+
+/** Le colonne dell'elenco a griglia (Finestra RX), nell'ordine di partenza. */
+export const DECODE_COLUMNS = ['time', 'snr', 'dt', 'msg', 'country'] as const;
+export type DecodeCol = (typeof DECODE_COLUMNS)[number];
+/** Larghezze di partenza in em (le misure di prima della Finestra RX); il paese prende lo spazio che avanza. */
+const DECODE_EM: Record<DecodeCol, number> = { time: 5.8, snr: 3, dt: 3, msg: 14.5, country: 5 };
 
 /** Righe disegnate al primo colpo; le altre al giro dopo. */
 const FIRST_ROWS = 40;
@@ -232,7 +245,7 @@ function AgeCell({ time, shownAt }: { time: number; shownAt: number }) {
     </span>
   );
 }
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false }: Props) {
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey }: Props) {
   const [firstPaint, setFirstPaint] = useState(true);
   useEffect(() => {
     const id = window.setTimeout(() => setFirstPaint(false), 60);
@@ -245,6 +258,18 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   // l'ordine e' invertito)
   const backTimer = useRef<number | undefined>(undefined);
   const [listEl, setListEl] = useState<HTMLElement | null>(null);
+  const showDt = usePrefs((s) => s.prefs.showDt);
+  // le colonne a griglia: l'hook si chiama sempre (prima dei return anticipati), si usa solo con `columnsKey`
+  const grid = columnsKey !== undefined;
+  const cols = useMovableColumns<DecodeCol>({
+    storageKey: columnsKey ?? 'aurora.decodes.cols',
+    columns: DECODE_COLUMNS,
+    defaultEm: DECODE_EM,
+    elastic: 'country',
+    hidden: showDt ? undefined : ['dt'],
+    // per adattare la colonna si misurano il suo titolo e le sue celle in tutte le righe
+    fitCells: (col) => (listEl ? listEl.querySelectorAll(`.dl-head th[data-col="${col}"], [data-dl-col="${col}"]`) : []),
+  });
   // a scorrere puo' essere la lista o il riquadro del pannello che la contiene: si ascoltano entrambi (in cattura, perche' lo
   // scorrimento non risale), e si riporta in cima quello che si e' mosso
   useEffect(() => {
@@ -459,8 +484,48 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   // impiegava quasi un secondo a comparire tornando dal Contest (2026-11-09)
   const rows = firstPaint ? (newestAtBottom ? allRows.slice(-FIRST_ROWS) : allRows.slice(0, FIRST_ROWS)) : allRows;
   const pinClass = ` decode-row--pin decode-row--pin-${stage}`;
+  // a griglia: le stesse colonne nei titoli (una tabella fissa in alto) e in ogni riga (una griglia CSS); la colonna elastica prende lo
+  // spazio che avanza, come nel titolo, cosi' le linee verticali dei titoli e delle righe coincidono
+  const gridStyle = grid
+    ? ({
+        '--dl-cols': cols.visible.map((c) => (cols.elastic && c === cols.elasticCol ? `minmax(${DECODE_EM[c]}em, 1fr)` : `${cols.widthOf(c)}em`)).join(' '),
+        '--dl-w': cols.tableStyle.width ?? '100%',
+        '--dl-min': cols.tableStyle.minWidth ?? cols.tableStyle.width ?? '0',
+      } as CSSProperties)
+    : undefined;
+  const head = (c: DecodeCol): { label: string; tip?: string } => {
+    switch (c) {
+      case 'time':
+        return { label: t(prefs.showAge ? 'rxw.col.age' : 'rxw.col.utc') };
+      case 'snr':
+        return { label: 'dB', tip: t('tip.ui.colSnr') };
+      case 'dt':
+        return { label: 'DT', tip: t('rxw.col.dtTip') };
+      case 'msg':
+        return { label: t('rxw.col.msg'), tip: t('tip.ui.colText') };
+      case 'country':
+        return { label: t('rxw.col.country') };
+    }
+  };
   return (
-    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}${newestAtBottom ? ' decode-list--bottom' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
+    <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}${newestAtBottom ? ' decode-list--bottom' : ''}${grid ? ' decode-list--cols' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl} style={gridStyle}>
+      {grid ? (
+        <table ref={cols.tableRef} className="dl-head mv-grid" style={{ ...cols.tableStyle, width: cols.tableStyle.width ?? '100%' }}>
+          <MovableColGroup cols={cols} />
+          <thead onContextMenu={cols.openMenu}>
+            <tr>
+              {cols.visible.map((c, i) => {
+                const h = head(c);
+                return (
+                  <MovableTh key={c} cols={cols} col={c} index={i} title={h.tip}>
+                    {h.label}
+                  </MovableTh>
+                );
+              })}
+            </tr>
+          </thead>
+        </table>
+      ) : null}
       {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
         const foxCall = foxOf(d);
@@ -525,6 +590,57 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         if (accent) rowStyle['--row-accent'] = `var(--tag-${accent})`;
         if (hl?.background) rowStyle['--hl-bg'] = hl.background;
         if (hl?.foreground) rowStyle['--hl-fg'] = hl.foreground;
+        // le celle della riga: nell'elenco di sempre una dopo l'altra, a griglia nell'ordine delle colonne scelto
+        const timeCell = prefs.showAge ? <AgeCell time={d.time_ms} shownAt={d.time_ms + periodSecs(mode) * 1000} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>;
+        const snrCell = <span className="c-snr num">{own ? 'Tx' : d.snr}</span>;
+        const dtCell = <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span>;
+        // passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta)
+        const msgCell = (
+          <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={own ? null : (lotwMark(d)?.date ?? null)}>
+            <span className="decode-text">
+              {queueMark}
+              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>
+            </span>
+          </CallsignTip>
+        );
+        const whereCell = (
+          <span className={`decode-where${own && txRepeat(d) > 1 ? ' decode-where--rep' : ''}`}>
+            {/* «×N» delle mie trasmissioni ripetute: subito prima della bandiera, a 7 px */}
+            {own && txRepeat(d) > 1 ? (
+              <small className="tx-rep" title={t('tip.row.txRepeat', { n: txRepeat(d) })}>
+                ×{txRepeat(d)}
+              </small>
+            ) : null}
+            <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
+            <span className="w-country">
+              {prefs.showCountry && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}
+            </span>
+            <span className="w-km num muted">
+              {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
+              {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
+            </span>
+          </span>
+        );
+        const badgeCell = inQueue ? (
+          // in coda: etichetta ben visibile con il posto (1 = la prossima)
+          <span className="badge badge--tag badge-cell badge--queue" title={t('tip.row.queuedPos', { n: queuePos })}>
+            {t('tag.queued', { n: queuePos })}
+          </span>
+        ) : fox ? (
+          <span className="badge badge--tag badge-cell badge--fox" title={t('tip.row.fox')}>
+            FOX
+          </span>
+        ) : badge ? (
+          <span
+            className={`badge badge--tag badge-cell${quiet ? ' badge--quiet' : ''}`}
+            title={t(`kind.${lit}` as Key)}
+            style={quiet ? undefined : { background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
+          >
+            {t(badge.label)}
+          </span>
+        ) : (
+          <span className="badge-cell" />
+        );
         return (
           <Fragment key={d.id}>
           {gap ? <div className="decode-gap" role="separator" /> : null}
@@ -554,52 +670,23 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               onQueue(d.id);
             }}
           >
-            {prefs.showAge ? <AgeCell time={d.time_ms} shownAt={d.time_ms + periodSecs(mode) * 1000} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>}
-            <span className="c-snr num">{own ? 'Tx' : d.snr}</span>
-            {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
-            <span className="c-freq num muted">{d.freq_hz}</span>
-            {/* passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta) */}
-            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={own ? null : (lotwMark(d)?.date ?? null)}>
-            <span className="decode-text">
-              {queueMark}
-              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>
-            </span>
-            </CallsignTip>
-            <span className={`decode-where${own && txRepeat(d) > 1 ? ' decode-where--rep' : ''}`}>
-              {/* «×N» delle mie trasmissioni ripetute: subito prima della bandiera, a 7 px */}
-              {own && txRepeat(d) > 1 ? (
-                <small className="tx-rep" title={t('tip.row.txRepeat', { n: txRepeat(d) })}>
-                  ×{txRepeat(d)}
-                </small>
-              ) : null}
-              <span className="w-flag">{code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}</span>
-              <span className="w-country">
-                {prefs.showCountry && country ? <span className="decode-country" title={forceFlag ? country : undefined}>{country}</span> : null}
-              </span>
-              <span className="w-km num muted">
-                {km !== null ? formatDistance(km, prefs.distanceUnit) : ''}
-                {azimuth !== null ? `${km !== null ? ' ' : ''}${azimuth}°` : ''}
-              </span>
-            </span>
-            {inQueue ? (
-              // in coda: etichetta ben visibile con il posto (1 = la prossima)
-              <span className="badge badge--tag badge-cell badge--queue" title={t('tip.row.queuedPos', { n: queuePos })}>
-                {t('tag.queued', { n: queuePos })}
-              </span>
-            ) : fox ? (
-              <span className="badge badge--tag badge-cell badge--fox" title={t('tip.row.fox')}>
-                FOX
-              </span>
-            ) : badge ? (
-              <span
-                className={`badge badge--tag badge-cell${quiet ? ' badge--quiet' : ''}`}
-                title={t(`kind.${lit}` as Key)}
-                style={quiet ? undefined : { background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
-              >
-                {t(badge.label)}
-              </span>
+            {grid ? (
+              // a griglia: ogni cella sa a quale colonna appartiene, le colonne cambiano posto e le celle le seguono
+              cols.visible.map((c, i) => (
+                <span key={c} className={`dl-cell dl-cell--${c}${i === cols.visible.length - 1 ? ' dl-cell--last' : ''}`} data-dl-col={c}>
+                  {c === 'time' ? timeCell : c === 'snr' ? snrCell : c === 'dt' ? dtCell : c === 'msg' ? msgCell : whereCell}
+                </span>
+              ))
             ) : (
-              <span className="badge-cell" />
+              <>
+                {timeCell}
+                {snrCell}
+                {prefs.showDt ? dtCell : null}
+                <span className="c-freq num muted">{d.freq_hz}</span>
+                {msgCell}
+                {whereCell}
+                {badgeCell}
+              </>
             )}
             {toMe && view.redMarker && !isClosingMessage(d.text) ? (
               <span className={`me-mark${answered ? ' me-mark--answer' : view.blueMarker && dxCall && namesCall(d.text, dxCall) ? ' me-mark--blue' : ''}`} aria-hidden="true" />
@@ -609,6 +696,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         );
       })}
       <CallMenu menu={callMenu} onClose={closeCallMenu} />
+      {grid ? <ColumnsMenu cols={cols} /> : null}
     </section>
   );
 }
+

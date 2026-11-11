@@ -1,0 +1,64 @@
+/* Log della Stazione a griglia, come il DX Cluster: linee piene tra righe e colonne (--grid-row-line, --grid-col-line, ben visibili nei due
+   temi) e colonne che si spostano e si allargano trascinando i titoli (meccanismo comune: movable-grid.css). Le colonne cambiano posto: le
+   vecchie regole per posizione (nth-child: larghezze, allineamenti, il colore e la linea del paese, le colonne nascoste nel pannello stretto)
+   non le seguirebbero e qui si rimettono a zero; le larghezze vengono dal <colgroup>, il paese prende lo spazio che avanza. */
+.log4om-table.log4om-grid {
+  table-layout: fixed !important;
+  width: 100%;
+  max-width: none !important;
+  border-collapse: collapse;
+}
+
+.log4om-table.log4om-grid th,
+.log4om-table.log4om-grid td {
+  display: table-cell !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0.15em 0.45em !important;
+  text-align: left !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0 !important;
+  border-right: var(--border-width) solid var(--grid-col-line) !important;
+  border-bottom: var(--border-width) solid var(--grid-row-line) !important;
+}
+
+/* niente linea sul bordo destro della tabella: solo tra una colonna e l'altra */
+.log4om-table.log4om-grid tr > :last-child {
+  border-right: 0 !important;
+}
+
+/* sotto i titoli la linea forte delle colonne */
+.log4om-table.log4om-grid thead th {
+  border-bottom-color: var(--grid-col-line) !important;
+}
+
+/* il titolo fa da riferimento alla maniglia della larghezza; con peso minimo, cosi' nel pannello Log resta fisso in cima (sticky) */
+:where(.log4om-table.log4om-grid) thead th {
+  position: relative;
+}
+
+/* colori per classe di colonna, non piu' per posizione: la sesta colonna prendeva l'azzurrino del paese anche quando era un'altra
+   (il nominativo che lampeggia dopo il QSO tiene il suo colore) */
+.log4om-table.log4om-grid td:nth-child(6):not(.lg-c--country):not(.log4om-call) {
+  color: inherit;
+}
+
+.log4om-table.log4om-grid td.lg-c--country {
+  color: #9fb3d9;
+}
+
+html[data-theme='light'] .log4om-table.log4om-grid td.lg-c--country {
+  color: #3d5583;
+}
+
+.log4om-table.log4om-grid td.lg-c--rst {
+  font-variant-numeric: tabular-nums;
+}
+
+/* il QSO appena messo a log: a destra della riga resta lo spazio per l'etichetta dell'effetto */
+.log4om-table.log4om-grid tr.log4om-row--flash td:last-child {
+  padding-right: 62px !important;
+}

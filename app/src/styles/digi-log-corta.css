@@ -210,3 +210,9 @@ html[data-theme='light'] .digi-classica .digi-key--blank { background: transpare
 html[data-theme='light'] .digi-classica .digi-keyrow-label { color: #3d4a66; font-weight: 600; }
 html[data-theme='light'] .digi-classica .digi-gear { color: #b4530a; }
 html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; background: #fff1e0; }
+/* Log a griglia come il DX Cluster: le colonne si spostano e si allargano trascinando i titoli (movable-grid.css) e le linee tra righe e
+   colonne sono quelle piene del cluster e del contest (--grid-*), ben visibili nei due temi; resta la barra colorata della banda a sinistra */
+.digi-log-table--completa table.mv-grid th,
+.digi-log-table--completa table.mv-grid td { border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
+.digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
+.digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
