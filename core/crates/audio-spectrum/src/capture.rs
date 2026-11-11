@@ -255,6 +255,38 @@ pub fn run_capture_with(
     events: broadcast::Sender<Event>,
     tap: Option<mpsc::Sender<AudioChunk>>,
 ) -> Result<CaptureHandle, CaptureError> {
+    // prima con un buffer piu' largo del predefinito (regge i rallentamenti del PC senza perdere campioni); se la scheda lo rifiuta, come prima
+    match run_capture_inner(device_hint, Arc::clone(&channel), rows.clone(), events.clone(), tap.clone(), true) {
+        Err(CaptureError::Stream(why)) => {
+            tracing::info!("ingresso audio: buffer piu' largo non accettato ({why}), si riprova con quello predefinito");
+            run_capture_inner(device_hint, channel, rows, events, tap, false)
+        }
+        other => other,
+    }
+}
+
+/// Il buffer della cattura che si chiede alla scheda: circa 40 ms. Il predefinito della modalita' condivisa di Windows (10 ms) basta un attimo a svuotarsi
+/// se il PC e' impegnato (blocchi persi, causa `Xrun`); WSJT-X lo allarga in Full Duplex per lo stesso motivo (`RxAudioBufferPolicy.hpp`, 1 s lo' dove serve).
+/// Resta piccolo perche' l'ora di arrivo dei blocchi guida i periodi.
+const WIDER_BUFFER_MS: u32 = 40;
+
+fn stream_config(supported: &cpal::SupportedStreamConfig, wider: bool) -> cpal::StreamConfig {
+    let mut config: cpal::StreamConfig = supported.clone().into();
+    if wider && let cpal::SupportedBufferSize::Range { min, max } = supported.buffer_size() {
+        let frames = supported.sample_rate() / 1000 * WIDER_BUFFER_MS;
+        config.buffer_size = cpal::BufferSize::Fixed(frames.clamp(*min, *max));
+    }
+    config
+}
+
+fn run_capture_inner(
+    device_hint: Option<&str>,
+    channel: Arc<AtomicU8>,
+    rows: broadcast::Sender<SpectrumRow>,
+    events: broadcast::Sender<Event>,
+    tap: Option<mpsc::Sender<AudioChunk>>,
+    wider: bool,
+) -> Result<CaptureHandle, CaptureError> {
     let host = cpal::default_host();
     let device = match device_hint.filter(|h| !is_default_name(h)) {
         None => host.default_input_device(),
@@ -273,6 +305,7 @@ pub fn run_capture_with(
     let rate = supported.sample_rate();
     let channels = usize::from(supported.channels()).max(1);
     let format = supported.sample_format();
+    let config = stream_config(&supported, wider);
     let mut analyzer = SpectrumAnalyzer::new(rate).map_err(CaptureError::Analyzer)?;
     let mut meter = LevelMeter::new(rate);
 
@@ -323,7 +356,7 @@ pub fn run_capture_with(
                 let channel = Arc::clone(&channel);
                 let free = std::mem::replace(&mut free_rx_slot, None);
                 device.build_input_stream(
-                    supported.into(),
+                    config.clone(),
                     move |data: &[f32], _| {
                         let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
                         mono.clear();
@@ -340,7 +373,7 @@ pub fn run_capture_with(
                 let free = std::mem::replace(&mut free_rx_slot, None);
                 let mut floats: Vec<f32> = Vec::new();
                 device.build_input_stream(
-                    supported.into(),
+                    config.clone(),
                     move |data: &[i16], _| {
                         floats.clear();
                         floats.extend(data.iter().map(|&s| f32::from(s) / 32768.0));
