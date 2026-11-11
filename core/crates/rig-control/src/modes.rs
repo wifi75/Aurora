@@ -36,6 +36,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "Q65" => Some("q65Button"),
         m if is_q65_submode(m) => Some("q65Button"),
         "MSK144" => Some("msk144Button"),
+        // WSPR-2 solo con il motore proprio
+        "WSPR" => Some("wsprButton"),
         _ => None,
     }
 }

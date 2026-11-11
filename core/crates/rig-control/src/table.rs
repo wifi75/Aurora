@@ -180,6 +180,27 @@ const MSK144_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("70cm", "MSK144", 432_360_000, Region::All, true),
 ];
 
+/// Le righe WSPR dell'elenco di WSJT-X 3.3.0-beta6 (`models/FrequencyList.cpp:55-356`, una per banda; 6 m in R2 e R3, 4 m in R1).
+const WSPR_ROWS: &[(&str, &str, u64, Region, bool)] = &[
+    ("2200m", "WSPR", 136_000, Region::All, true),
+    ("630m", "WSPR", 474_200, Region::All, true),
+    ("160m", "WSPR", 1_836_600, Region::All, true),
+    ("80m", "WSPR", 3_568_600, Region::All, true),
+    ("40m", "WSPR", 7_038_600, Region::All, true),
+    ("30m", "WSPR", 10_138_700, Region::All, true),
+    ("20m", "WSPR", 14_095_600, Region::All, true),
+    ("17m", "WSPR", 18_104_600, Region::All, true),
+    ("15m", "WSPR", 21_094_600, Region::All, true),
+    ("12m", "WSPR", 24_924_600, Region::All, true),
+    ("10m", "WSPR", 28_124_600, Region::All, true),
+    ("6m", "WSPR", 50_293_000, Region::R2, true),
+    ("6m", "WSPR", 50_293_000, Region::R3, true),
+    ("4m", "WSPR", 70_091_000, Region::R1, true),
+    ("2m", "WSPR", 144_489_000, Region::All, true),
+    ("70cm", "WSPR", 432_300_000, Region::All, true),
+    ("23cm", "WSPR", 1_296_500_000, Region::All, true),
+];
+
 /// Le bande da 2200 m, 630 m, 8 m, 4 m e da 1,25 m in su (UHF, microonde): tutte le righe di questi modi nell'elenco di WSJT-X (`FrequencyList.cpp`).
 const EXTRA_BAND_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("2200m", "JT9", 136_000, Region::All, false),
@@ -260,7 +281,7 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
 
 impl Default for FrequencyTable {
     fn default() -> Self {
-        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).chain(MSK144_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
+        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).chain(MSK144_ROWS.iter()).chain(WSPR_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
     }
 }
 
@@ -275,7 +296,7 @@ fn valid_entries(entries: &[Entry]) -> bool {
         let Some(band) = canonical_band(&entry.band) else { return false };
         let mode = entry.mode.trim().to_uppercase();
         let in_band = band_limits(&band).is_some_and(|(lo, hi)| (lo..=hi).contains(&entry.hz));
-        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4" | "MSK144") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
+        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4" | "MSK144" | "WSPR") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
     })
 }
 
@@ -323,6 +344,10 @@ impl FrequencyTable {
         // lo stesso per Q65
         if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("Q65")) {
             entries.extend(Q65_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
+        }
+        // e per WSPR
+        if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("WSPR")) {
+            entries.extend(WSPR_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
         }
         entries
     }

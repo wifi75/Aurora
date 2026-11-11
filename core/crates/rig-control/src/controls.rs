@@ -83,6 +83,10 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("msk_sh"),
     // MSK144: il periodo T/R (5, 10, 15, 30 s, `sbTR` di WSJT-X): si imposta solo con un valore
     own_press("msk144_period"),
+    // WSPR: potenza nel messaggio (dBm), «Tx Pct» (percentuale dei periodi in trasmissione) e «Prefer type 1 messages» (1/0): solo con un valore
+    own_press("wspr_dbm"),
+    own_press("wspr_pct"),
+    own_press("wspr_type1"),
     // JT65: «Include averaging» (`ndepth & 16`) e «Auto Clear Avg» (`ndepth & 128`) di WSJT-X, la media dei periodi (`avg65`)
     own_toggle("jt65_avg"),
     own_toggle("jt65_auto_clr"),
