@@ -22,7 +22,6 @@ import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
 import { ModeSwitch, q65Parts } from '../components/ModeSwitch';
-import { groupOf } from '../components/ModeNav';
 import { retuneForMode } from '../lib/modeRetune';
 import { Q65Extras } from '../components/Q65Extras';
 import { PhoneTabs } from '../components/PhoneTabs';
@@ -340,7 +339,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       try {
         await postMode(mode);
         // la radio porta con se' la frequenza del modo di prima: se non e' del nuovo modo, si sposta su una che lo e'
-        await retuneForMode(client, mode, groupOf(mode)).catch(() => undefined);
+        await retuneForMode(client, mode).catch(() => undefined);
       } catch (error) {
         if (before !== undefined) useStation.getState().revertStatus(['mode'], { mode: before });
         throw error;

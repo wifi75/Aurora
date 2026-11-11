@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getFrequencies, postMode } from '../api/client';
+import { getDigi, getFrequencies, postMode } from '../api/client';
+import { toast } from '../lib/toast';
+import type { TextMode } from '../lib/bandplan';
 import { useT } from '../i18n';
 import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
-import { rememberDial, retuneForMode } from '../lib/modeRetune';
+import { rememberDial, retuneForMode, retuneForText } from '../lib/modeRetune';
 
 /** I modi in alto: ognuno ha le sue pagine; i gruppi FT8 e VHF dividono i modi del motore. Gli altri modi arrivano uno alla volta. */
 export type ModeGroup = 'ft8' | 'vhf';
@@ -89,20 +91,38 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   }, [open]);
 
   // il pulsante del gruppo accende subito il modo; se il comando fallisce torna com'era
+  const onModePage = MODE_ROUTES.includes(route.name);
+  /** La radio resta dov'era: se il modo non ha frequenze sulla banda di adesso va alla prima banda dove esiste; un errore si dice, non toglie il modo. */
+  const retune = (run: () => Promise<number | null>, name: string) => {
+    void run().catch(() => toast(t('mode.retuneFail', { mode: name }), 'error'));
+  };
   const pickGroup = (target: ModeGroup) => {
-    if (target === group || transmitting) return;
+    if (transmitting) return;
+    if (target === group) {
+      // si torna da PSK, RTTY, SSTV o Satelliti allo stesso gruppo di prima: il modo c'e' gia', ma la radio e' rimasta sulla frequenza dell'altro modo
+      if (!onModePage && mode) retune(() => retuneForMode(client, mode), mode);
+      return;
+    }
     const next = lastMode(target);
     const store = useStation.getState();
     const before = store.status?.mode;
     store.patchStatus({ mode: next });
-    void postMode(next)
-      .then(() => retuneForMode(client, next, target))
-      .catch(() => {
+    void postMode(next).then(
+      () => retune(() => retuneForMode(client, next), next),
+      () => {
         if (before !== undefined) useStation.getState().revertStatus(['mode'], { mode: before });
-      });
+      },
+    );
   };
-
-  const onModePage = MODE_ROUTES.includes(route.name);
+  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
+  /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
+  const enterText = () => {
+    if (transmitting || route.name === 'digi' || route.name === 'sstv') return;
+    void (async () => {
+      const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
+      await retuneForText(client, TEXT_MODES[digi.settings.mode] ?? 'PSK31');
+    })().catch(() => toast(t('mode.retuneFail', { mode: 'PSK' }), 'error'));
+  };
   const pill = (target: ModeGroup, label: string) => (
     <a
       key={target}
@@ -132,7 +152,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {pill('ft8', 'FT8')}
         {pill('vhf', 'VHF')}
         {/* PSK, RTTY, CW e SSTV stanno insieme: il modo si sceglie dal menu «Modo» della loro pagina */}
-        <a {...current(route.name === 'digi' || route.name === 'sstv')} data-mode="psk" href={route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')}>
+        <a {...current(route.name === 'digi' || route.name === 'sstv')} data-mode="psk" href={route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')} onClick={enterText}>
           {t('nav.textModes')}
         </a>
         <a {...current(route.name === 'sat')} data-mode="sat" href="#/satelliti" title={t('tip.nav.sat')}>

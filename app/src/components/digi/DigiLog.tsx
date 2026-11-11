@@ -81,8 +81,8 @@ function savedWidths(): Partial<Record<LogCol, number>> {
   return {};
 }
 
-/** Frequenza in kHz con la virgola, come nel log (7042,988). */
-const khz = (hz: number) => (hz > 0 ? (hz / 1000).toFixed(3).replace(/(\.\d)0+$/, '$1').replace('.', ',') : '');
+/** Frequenza in kHz interi, senza i decimali dopo la virgola (7048 invece di 7048,783). */
+const khz = (hz: number) => (hz > 0 ? String(Math.round(hz / 1000)) : '');
 /** `2023-03-19` -> `19/03/2023`. */
 const dmy = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : d);
 

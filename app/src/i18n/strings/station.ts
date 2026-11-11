@@ -562,6 +562,7 @@ export const stationStrings = {
   ],
   'mode.group': ['Modo', 'Mode', 'Betriebsart', 'Mode', 'Modo', 'Modo'],
   'mode.pick': ['Passa a {mode}', 'Switch to {mode}', 'Wechsle zu {mode}', 'Passer à {mode}', 'Cambiar a {mode}', 'Mudar para {mode}'],
+  'mode.retuneFail': ['La radio non si è spostata su una frequenza di {mode}: controlla il collegamento con la radio.', 'The radio did not move to a {mode} frequency: check the radio connection.', 'Das Funkgerät ist nicht auf eine {mode}-Frequenz gewechselt: Verbindung zum Funkgerät prüfen.', 'La radio ne s’est pas déplacée sur une fréquence {mode} : vérifie la liaison avec la radio.', 'La radio no se movió a una frecuencia de {mode}: revisa la conexión con la radio.', 'O rádio não mudou para uma frequência de {mode}: verifica a ligação ao rádio.'],
   'mode.locked': [
     'Non si cambia modo in trasmissione',
     'The mode cannot be changed while transmitting',
