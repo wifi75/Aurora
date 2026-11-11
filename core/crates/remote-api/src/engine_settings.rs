@@ -112,6 +112,9 @@ pub const EXTRA_KEYS: &[&str] = &[
     "OTPUrl",
     "BandHopping",
     "BandHopList",
+    // «gia' lavorato ma non confermato = nuovo» per paese e griglia (scheda Colori): voci di Aurora, non di JTDX (issue #17 e #37)
+    "newDXCCUnconfirmed",
+    "newGridUnconfirmed",
 ];
 
 /// La voce con l'elenco dei destinatari UDP (JSON, vedi [`UdpDestination`]).
@@ -827,7 +830,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
@@ -1700,6 +1703,22 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert!(store.update(&map(&[("newPx", "true"), ("SeqSentRReportCounterValue", "9")])).is_err());
         assert!(!store.reports().highlights.px.on, "la griglia e' accesa di fabbrica: si prova con il prefisso");
         assert_ne!(before.highlights, store.reports().highlights);
+    }
+
+    /// Issue #37: le caselle «non confermato» di paese e griglia erano grigie perche' le due voci non avevano uno stato nel documento.
+    #[test]
+    fn the_unconfirmed_dxcc_and_grid_flags_are_live_and_reach_the_highlights() {
+        let store = EngineSettingsStore::open(&temp("unconfirmed"), defaults);
+        let doc = store.document();
+        for key in ["newDXCCUnconfirmed", "newGridUnconfirmed"] {
+            assert_eq!(doc["items"][key]["state"], "live", "{key}");
+            assert_eq!(doc["values"][key], "false", "{key}");
+        }
+        assert!(store.update(&map(&[("newDXCCUnconfirmed", "si")])).is_err());
+        store.update(&map(&[("newDXCCUnconfirmed", "true"), ("newGridUnconfirmed", "true")])).unwrap();
+        let h = store.reports().highlights;
+        assert!(h.dxcc_unconfirmed && h.grid_unconfirmed);
+        assert_eq!(store.document()["values"]["newGridUnconfirmed"], "true");
     }
 
     #[test]

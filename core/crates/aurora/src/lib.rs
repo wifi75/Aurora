@@ -405,6 +405,9 @@ fn load_dxcc(path: Option<&Path>) -> Option<Arc<DxccDb>> {
     match DxccDb::from_file(path) {
         Ok(db) => {
             tracing::info!("cty.dat letto: {} paesi", db.len());
+            if db.skipped_headers() > 0 {
+                tracing::warn!("cty.dat: {} paesi scartati perche' l'intestazione non e' valida (con i loro prefissi)", db.skipped_headers());
+            }
             Some(Arc::new(db))
         }
         Err(e) => {

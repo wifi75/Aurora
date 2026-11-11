@@ -33,18 +33,27 @@ pub struct KnownCalls {
     book: Option<Arc<CallBook>>,
     book_len: usize,
     last_build: Option<Instant>,
+    limit_warned: bool,
 }
 
 impl KnownCalls {
     /// Legge il file (un nominativo per riga); se non c'e' parte vuoto.
     pub fn load(path: PathBuf) -> KnownCalls {
-        let calls = std::fs::read_to_string(&path).map(|t| t.lines().map(|l| l.trim().to_uppercase()).filter(|l| !l.is_empty()).collect()).unwrap_or_default();
-        KnownCalls { calls, path: Some(path), dirty: false, last_save: Instant::now(), book: None, book_len: 0, last_build: None }
+        let (calls, path) = match std::fs::read(&path) {
+            Ok(bytes) => (String::from_utf8_lossy(&bytes).lines().map(|l| l.trim().to_uppercase()).filter(|l| !l.is_empty()).collect(), Some(path)),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => (HashSet::new(), Some(path)),
+            Err(e) => {
+                // un file che c'e' ma non si legge non va riscritto con un elenco vuoto: si lavora in memoria e si dice perche'
+                tracing::warn!("elenco dei nominativi conosciuti non leggibile ({}): {e}; resta solo in memoria e il file non si tocca", path.display());
+                (HashSet::new(), None)
+            }
+        };
+        KnownCalls { calls, path, dirty: false, last_save: Instant::now(), book: None, book_len: 0, last_build: None, limit_warned: false }
     }
 
     #[cfg(test)]
     pub fn in_memory() -> KnownCalls {
-        KnownCalls { calls: HashSet::new(), path: None, dirty: false, last_save: Instant::now(), book: None, book_len: 0, last_build: None }
+        KnownCalls { calls: HashSet::new(), path: None, dirty: false, last_save: Instant::now(), book: None, book_len: 0, last_build: None, limit_warned: false }
     }
 
     #[cfg(test)]
@@ -61,7 +70,14 @@ impl KnownCalls {
 
     fn insert(&mut self, call: &str) {
         let call = call.trim().to_uppercase();
-        if call.is_empty() || self.calls.len() >= MAX_CALLS {
+        if call.is_empty() {
+            return;
+        }
+        if self.calls.len() >= MAX_CALLS {
+            if !self.limit_warned {
+                self.limit_warned = true;
+                tracing::warn!("elenco dei nominativi conosciuti pieno ({MAX_CALLS}): i nominativi nuovi non si imparano piu'");
+            }
             return;
         }
         // la forma nuda (senza /P, /R...) conta come la completa: una stazione conosciuta e' conosciuta anche in portatile

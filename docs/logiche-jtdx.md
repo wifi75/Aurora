@@ -243,6 +243,8 @@ che resta com'e' per la storia. Tutto cio' che segue vale per JTDX 2.2.159; la s
 
 - **Il cervello della sequenza e' `QsoHistory`** (17 stati, tabella per stazione), alimentato da `displayDecodedText` (ricevuto) e `displayTransmittedText` (inviato) e letto da `process_Auto`: stati, classificazione dei messaggi e transizioni
   completi in sez. 2.1-2.4. FIN solo se le due chiusure si sono incrociate; RR73/73 senza rapporto ricevuto non fanno niente.
+- **Log senza rapporto ricevuto** (Aurora, diverso da JTDX): la registrazione automatica non registra un QSO senza il rapporto dell'altro (commit 6a139da5, 2026-11-08); il pulsante «Log QSO»
+  registra comunque, come `on_logQSOButton_clicked` di WSJT-X (scelta del proprietario, 2026-11-11).
 - **Contatori** (sez. 2.5): AnswerCQ **non vale per le stazioni volute (priorita' 2-4 e 17-19) ne' per i nuovi DXCC**; `reply_other` libera il DX solo se il contatore e' acceso, ma `readFromStdout` **ferma Tx** quando il DX parla con un altro entro la
   **banda di guardia (FT8 51 Hz, FT4 84)** o sempre con `SeqHaltTxReplyOther`; cooldown dopo una rinuncia; CQ diretto a un'altra zona = `count 1`; «1 QSO» ferma anche quando un contatore libera il DX.
 - **Watchdog** (sez. 2.7): conta **minuti con trasmissione recente** (32 s FT8, 16 s FT4), si azzera con un messaggio **diverso dal precedente** e con RCALL/RREPORT.

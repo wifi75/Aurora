@@ -40,8 +40,7 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": [
-          "Italian",
-          "English"
+          "Italian", "English", "German", "French", "Spanish", "Portuguese"
         ],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
