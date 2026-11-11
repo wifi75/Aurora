@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.234',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T10:51:01Z',
     kind: 'fixed',
     title: [
       'PSK Reporter in tempo reale, OmniRig stabile, avvio e audio più tranquilli',
