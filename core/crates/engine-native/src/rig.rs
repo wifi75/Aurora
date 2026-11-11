@@ -814,8 +814,8 @@ impl Rig for NativeRig {
             return Err(RigError(format!("frequenza audio fuori campo: {hz} Hz")));
         }
         self.controls.rx_df.store(hz, Ordering::Relaxed);
-        // con Tx = Rx (Split spento) la trasmissione segue la ricezione
-        if !self.controls.switch_on("split") {
+        // con Tx = Rx (Split spento) la trasmissione segue la ricezione, salvo «Hold Tx Freq»
+        if !self.controls.switch_on("split") && !self.controls.switch_on("hold_tx") {
             self.controls.tx_df.store(hz, Ordering::Relaxed);
         }
         Ok(())
