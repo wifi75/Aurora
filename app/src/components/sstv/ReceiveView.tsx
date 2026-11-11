@@ -1,21 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getSstvCurrentBlob, sstvForce, sstvRx, type SstvSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
+import { usePrefs } from '../../lib/prefs';
 import { base64ToBytes, rgbIntoRgba } from '../../lib/sstv';
 import { onSstv } from '../../lib/sstvBus';
 
 /**
  * Ricezione: l'immagine in arrivo si riempie riga per riga su un canvas alla risoluzione vera del modo, ingrandito senza sfocare
- * (pixel netti; «ingrandimento morbido» a scelta). Accanto: modo, righe, sincronismo, livello, sintonia, comandi.
+ * (pixel netti; «ingrandimento morbido» a scelta nelle Impostazioni SSTV). Accanto: modo, righe, sincronismo, livello, sintonia, comandi.
+ * `spectrum` sta sotto il visore, nella stessa colonna (stessi bordi); `log` e' una terza colonna a destra della scheda del modo.
  */
-export function ReceiveView({ snap, onChanged, onSaved, onTransmit }: { snap: SstvSnapshot; onChanged: () => void; onSaved: () => void; onTransmit: () => void }) {
+export function ReceiveView({
+  snap,
+  onChanged,
+  onSaved,
+  onTransmit,
+  spectrum,
+  log,
+}: {
+  snap: SstvSnapshot;
+  onChanged: () => void;
+  onSaved: () => void;
+  onTransmit: () => void;
+  spectrum?: ReactNode;
+  log?: ReactNode;
+}) {
   const t = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<ImageData | null>(null);
   const [mode, setMode] = useState<string | null>(snap.rx.mode);
   const [rows, setRows] = useState(snap.rx.rows);
   const [size, setSize] = useState({ w: snap.rx.width || 320, h: snap.rx.height || 256 });
-  const [smooth, setSmooth] = useState(false);
+  const smooth = usePrefs((s) => s.prefs.sstvSmooth);
   const [note, setNote] = useState<'saved' | 'lost' | null>(null);
   const [forceMode, setForceMode] = useState(snap.settings.lock_mode ?? snap.settings.default_mode);
   const rx = snap.rx;
@@ -97,7 +113,7 @@ export function ReceiveView({ snap, onChanged, onSaved, onTransmit }: { snap: Ss
   };
 
   return (
-    <section className="sstv-rx">
+    <section className={log ? 'sstv-rx sstv-rx--log' : 'sstv-rx'}>
       <div className="sstv-stage">
         <div className="sstv-screen" style={{ aspectRatio: `${size.w} / ${size.h}` }}>
           <canvas ref={canvas} width={size.w} height={size.h} className={smooth ? 'sstv-canvas' : 'sstv-canvas sstv-canvas--crisp'} aria-label={t('sstv.view.rx')} />
@@ -109,6 +125,7 @@ export function ReceiveView({ snap, onChanged, onSaved, onTransmit }: { snap: Ss
             {note === 'saved' ? t('sstv.rx.saved') : t('sstv.rx.lost')}
           </p>
         ) : null}
+        {spectrum}
       </div>
 
       <aside className="sstv-side">
@@ -192,12 +209,8 @@ export function ReceiveView({ snap, onChanged, onSaved, onTransmit }: { snap: Ss
           </button>
           <p className="sstv-hint">{t('sstv.rx.forceHint')}</p>
         </div>
-
-        <label className="sstv-check">
-          <input type="checkbox" checked={smooth} onChange={(e) => setSmooth(e.target.checked)} />
-          {t('sstv.rx.smooth')}
-        </label>
       </aside>
+      {log}
     </section>
   );
 }

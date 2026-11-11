@@ -44,6 +44,8 @@ export interface Prefs {
   contestOnlyCq: boolean;
   /** Indirizzo di chi aiuta, per «Manda per email» del pacchetto per l'assistenza (vuoto di fabbrica). */
   supportEmail: string;
+  /** SSTV, «Ingrandimento morbido»: l'immagine ingrandita nel visore sfumata invece che a pixel netti (spento di base). */
+  sstvSmooth: boolean;
 }
 
 const KEY = 'aurora-prefs';
@@ -52,7 +54,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '' };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -62,7 +64,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (parsed.contestOrder === 'valore' || parsed.contestOrder === 'ora') prefs.contestOrder = parsed.contestOrder;

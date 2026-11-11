@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
-import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { FreqPicker } from '../components/FreqPicker';
 import { gotoTextMode } from '../lib/digiGoto';
 import { bandPlanRows } from '../lib/bandplan';
@@ -12,10 +11,12 @@ import { Composer, type IncomingImage } from '../components/sstv/Composer';
 import { SstvLogCard } from '../components/sstv/LogCard';
 import { History } from '../components/sstv/History';
 import { ReceiveView } from '../components/sstv/ReceiveView';
+import { SstvSpectrum } from '../components/sstv/SstvSpectrum';
 import { useT } from '../i18n';
 import { useGroups } from '../lib/detached';
+import { REMOTE_HOST } from '../lib/phone';
+import { openSettingsWindow } from '../lib/settingsWindow';
 import { onSstv } from '../lib/sstvBus';
-import { SstvSettingsForm } from '../settings/SstvTab';
 import '../styles/sstv.css';
 
 /** La pagina SSTV: ricezione o compositore nell'area principale, sotto le cronologie delle ricevute e delle trasmesse. */
@@ -117,6 +118,12 @@ function SstvBody({ solo }: { solo: boolean }) {
             {t('sstv.view.tx')}
           </button>
         </div>
+        {/* la rotella di sempre: apre le Impostazioni sulle schede dell'SSTV (finestra a parte, cosi' la pagina e l'ascolto restano) */}
+        {REMOTE_HOST ? null : (
+          <button type="button" className="solo-btn sstv-gear" title={t('sstv.set.title')} aria-label={t('sstv.set.title')} onClick={() => openSettingsWindow('sstv')}>
+            ⚙
+          </button>
+        )}
         {solo ? null : <DetachButton item="sstv" />}
       </header>
 
@@ -125,6 +132,7 @@ function SstvBody({ solo }: { solo: boolean }) {
         <div className="sstv-body">
           <div className="sstv-main">
           <div hidden={view !== 'rx'}>
+            {/* sotto il visore lo spettro sottile, largo quanto la scheda; a destra della scheda del modo il log del QSO */}
             <ReceiveView
               snap={data}
               onChanged={refresh}
@@ -133,6 +141,8 @@ function SstvBody({ solo }: { solo: boolean }) {
                 setView('tx');
                 setSendRequest((n) => n + 1);
               }}
+              spectrum={<SstvSpectrum />}
+              log={<SstvLogCard dialHz={dialHz} />}
             />
           </div>
           {/* il compositore resta montato: il lavoro non si perde passando a Ricevi */}
@@ -140,20 +150,9 @@ function SstvBody({ solo }: { solo: boolean }) {
             <Composer snap={data} incoming={incoming} onChanged={refresh} sendRequest={sendRequest} />
           </div>
           </div>
-          {/* la cascata: il segnale ricevuto e quello trasmesso, con i toni dell'SSTV (sincronismo a 1200 Hz, immagine da 1500 a 2300 Hz) */}
-          <div className="sstv-wfrow">
-            <div className="sstv-wf">
-              <DigiWaterfall minHz={300} maxHz={2800} rxHz={1200} txHz={null} bandwidthHz={1100} transmitting={sending} height={84} onPick={() => undefined} />
-            </div>
-            <SstvLogCard dialHz={dialHz} />
-          </div>
-          {/* le immagini ricevute e trasmesse e le impostazioni stanno sotto: tutto resta in una pagina */}
+          {/* le immagini ricevute e trasmesse stanno sotto: tutto resta in una pagina; le impostazioni sono nelle Impostazioni (rotella) */}
           <aside className="sstv-side-col">
             <History images={images.data ?? []} modes={data.modes} onChanged={refreshImages} onReuse={reuse} />
-            <details className="sstv-more">
-              <summary>{t('sstv.set.title')}</summary>
-              <SstvSettingsForm snap={data} />
-            </details>
           </aside>
         </div>
       ) : null}

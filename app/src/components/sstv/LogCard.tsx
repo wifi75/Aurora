@@ -48,7 +48,7 @@ export function SstvLogCard({ dialHz }: { dialHz: number }) {
   return (
     <section className="sstv-log" aria-label={t('sstv.log.title')}>
       <div className="sstv-log-title">{t('sstv.log.title')}</div>
-      <label className="sstv-log-f">
+      <label className="sstv-log-f sstv-log-call">
         <span>{t('sstv.log.call')}</span>
         <input value={f.call} onChange={(e) => set('call', e.target.value.toUpperCase())} autoCapitalize="characters" spellCheck={false} />
       </label>
