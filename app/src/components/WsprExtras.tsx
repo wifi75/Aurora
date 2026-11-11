@@ -8,7 +8,13 @@ export const WSPR_POWERS: readonly (readonly [number, string])[] = [
   [30, '1 W'], [33, '2 W'], [37, '5 W'], [40, '10 W'], [43, '20 W'], [47, '50 W'], [50, '100 W'], [53, '200 W'], [57, '500 W'], [60, '1 kW'],
 ];
 
-/** Accanto al modo, in WSPR: la potenza dichiarata nel messaggio, «Tx Pct» (percentuale dei periodi in trasmissione) e «Prefer type 1 messages», come WSJT-X. */
+/** I modi del radiofaro: WSPR e FST4W (anche con il periodo, «FST4W-300»). */
+export function isBeaconMode(mode: string): boolean {
+  return /^(WSPR|FST4W)(-\d+)?$/i.test(mode.trim());
+}
+
+/** Accanto al modo, in WSPR e FST4W: la potenza dichiarata nel messaggio, «Tx Pct» (percentuale dei periodi in trasmissione) e «Prefer type 1
+ *  messages», come WSJT-X (in FST4W la stessa pagina dei controlli, `WSPR_config`). */
 export function WsprExtras({ disabled = false }: { disabled?: boolean }) {
   const t = useT();
   const dbm = useControlValues((s) => s.values.wspr_dbm) ?? 37;

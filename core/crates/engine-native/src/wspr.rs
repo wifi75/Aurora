@@ -8,8 +8,15 @@
 //! - la percentuale dei periodi in trasmissione («Tx Pct», di fabbrica 20, `mainwindow_settings.cpp:584`) con la tabella di due ore di
 //!   `next_tx_state` (`WSPR/WsprTxScheduler.cpp`), quella che WSJT-X usa in WSPR senza il salto di banda (`mainwindow.cpp:14452`).
 //!
-//! WSJT-X non manda niente a WSPRnet se non lo si chiede («Upload spots», di fabbrica spento, `mainwindow_settings.cpp:594`): Aurora non ha
-//! il caricamento su WSPRnet.
+//! FST4W usa lo stesso radiofaro (`MainWindow::WSPR_message`, `mainwindow.cpp:8079-8085`: il tipo 3 senza la potenza, riga 16606), la stessa
+//! potenza e la stessa frequenza Tx (`WSPRfreqSpinBox`, 1400-1600 Hz, `mainwindow.cpp:8105`), ma i periodi in trasmissione li sceglie lo
+//! scheduler semplice di `WSPRBandHopping::next_is_tx(true)` (`WSPR/WSPRBandHopping.cpp:256-272,486-491`, chiamato da
+//! `beaconScheduleProposal`, `mainwindow.cpp:14443`): un tiro a caso per periodo con la percentuale e, sotto il 40%, mai due di fila
+//! (il periodo saltato si recupera al giro dopo). Il «Round Robin» fisso di WSJT-X (1/2, 2/3...) non c'e': vale «random», quello di fabbrica.
+//!
+//! L'invio degli spot a WSPRnet (facoltativo, spento di fabbrica come «Upload spots» di WSJT-X, `mainwindow_settings.cpp:594`) lo fa il crate
+//! `reporting` dall'evento `aurora_core::WsprCycle`; qui si tiene solo la deriva dei messaggi WSPR dell'ultimo periodo, che l'elenco dei
+//! messaggi non porta.
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -26,6 +33,10 @@ static PREFER_TYPE1: AtomicBool = AtomicBool::new(true);
 static ALTERNATE: AtomicBool = AtomicBool::new(false);
 static DECODER: Mutex<Option<Decoder>> = Mutex::new(None);
 static SCHEDULER: Mutex<Option<Scheduler>> = Mutex::new(None);
+/// Lo scheduler semplice di FST4W, con l'ultimo periodo gia' deciso (un periodo si decide una volta sola).
+static SIMPLE: Mutex<Option<(SimpleScheduler, Option<(u64, bool)>)>> = Mutex::new(None);
+/// La deriva (Hz) dei messaggi WSPR dell'ultimo periodo decodificato, per WSPRnet (la colonna «Drift» di `wspr_spots.txt`).
+static LAST_DRIFTS: Mutex<Vec<(String, f32)>> = Mutex::new(Vec::new());
 
 /// I valori della tendina della potenza di WSJT-X: `int(10 * i / 3 + 0,5)` per 1 mW ... 1 kW.
 pub const POWERS_DBM: [u8; 19] = [0, 3, 7, 10, 13, 17, 20, 23, 27, 30, 33, 37, 40, 43, 47, 50, 53, 57, 60];
@@ -68,12 +79,13 @@ pub fn set_prefer_type1(on: bool) {
     PREFER_TYPE1.store(on, Ordering::Relaxed);
 }
 
-/// Il messaggio del radiofaro (`WSPR_message`, `mainwindow.cpp:16591-16613`), alternando tipo 2 e tipo 3 quando serve.
-pub fn beacon_message(call: &str, grid: &str) -> String {
-    compose(call, grid, power_dbm(), prefer_type1(), &ALTERNATE)
+/// Il messaggio del radiofaro (`WSPR_message`, `mainwindow.cpp:16591-16613`), alternando tipo 2 e tipo 3 quando serve. In FST4W
+/// (`fst4w` vero) il tipo 3 non porta la potenza (`if(m_mode=="WSPR") msg0 += sdBm`, riga 16606).
+pub fn beacon_message(call: &str, grid: &str, fst4w: bool) -> String {
+    compose(call, grid, power_dbm(), prefer_type1(), fst4w, &ALTERNATE)
 }
 
-fn compose(call: &str, grid: &str, dbm: u8, prefer_type1: bool, alternate: &AtomicBool) -> String {
+fn compose(call: &str, grid: &str, dbm: u8, prefer_type1: bool, fst4w: bool, alternate: &AtomicBool) -> String {
     let call = call.trim().to_ascii_uppercase();
     // il locatore a 6 caratteri come lo scrive WSJT-X (`AA00aa`): nel messaggio maiuscolo
     let grid = grid.trim().to_ascii_uppercase();
@@ -84,6 +96,8 @@ fn compose(call: &str, grid: &str, dbm: u8, prefer_type1: bool, alternate: &Atom
         let type2 = !alternate.fetch_xor(true, Ordering::Relaxed);
         if type2 {
             if compound { format!("{call} {dbm}") } else { format!("{call} {grid4} {dbm}") }
+        } else if fst4w {
+            format!("<{call}> {grid}")
         } else {
             format!("<{call}> {grid} {dbm}")
         }
@@ -98,7 +112,14 @@ pub fn decode(samples: &[f32], depth: u8) -> Vec<jt::wspr::rx::Decode> {
     let mut opts = Options::depth(depth);
     opts.deadline = Some(std::time::Instant::now() + std::time::Duration::from_secs(60));
     let mut guard = DECODER.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-    guard.get_or_insert_with(Decoder::new).decode(samples, &opts)
+    let found = guard.get_or_insert_with(Decoder::new).decode(samples, &opts);
+    *LAST_DRIFTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = found.iter().map(|d| (d.message.clone(), d.drift_hz)).collect();
+    found
+}
+
+/// La deriva di un messaggio WSPR dell'ultimo periodo decodificato (0 se non c'e').
+pub fn last_drift(message: &str) -> f32 {
+    LAST_DRIFTS.lock().unwrap_or_else(std::sync::PoisonError::into_inner).iter().find(|(m, _)| m == message).map_or(0.0, |(_, d)| *d)
 }
 
 /// Il periodo che comincia a `slot_start_unix_s` va trasmesso? `next_tx_state` di `WsprTxScheduler.cpp` con la percentuale scelta.
@@ -109,6 +130,52 @@ pub fn next_is_tx(slot_start_unix_s: u64) -> bool {
     }
     let mut guard = SCHEDULER.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     guard.get_or_insert_with(Scheduler::from_clock).next_tx_state(pct, slot_start_unix_s)
+}
+
+/// FST4W: il periodo che comincia a `slot_start_ms` va trasmesso? Lo scheduler semplice di WSJT-X con la percentuale scelta, una volta per
+/// periodo (la stessa domanda sullo stesso periodo ha la stessa risposta).
+pub fn next_is_tx_fst4w(slot_start_ms: u64) -> bool {
+    let pct = tx_pct();
+    let mut guard = SIMPLE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let (scheduler, last) = guard.get_or_insert_with(|| (SimpleScheduler::new(clock_seed()), None));
+    if let Some((slot, tx)) = *last
+        && slot == slot_start_ms
+    {
+        return tx;
+    }
+    let tx = scheduler.next(pct);
+    *last = Some((slot_start_ms, tx));
+    tx
+}
+
+fn clock_seed() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(0x9E37_79B9)
+}
+
+/// `WSPRBandHopping::impl::simple_scheduler` (`WSPR/WSPRBandHopping.cpp:256-272`): trasmette se un numero a caso fra 0 e 99 e' sotto la
+/// percentuale; sotto il 40% una trasmissione subito dopo un'altra si rimanda al periodo seguente (`carry_`), che allora trasmette di sicuro.
+pub struct SimpleScheduler {
+    last_was_tx: bool,
+    carry: bool,
+    rng: Rng,
+}
+
+impl SimpleScheduler {
+    pub fn new(seed: u64) -> Self {
+        SimpleScheduler { last_was_tx: false, carry: false, rng: Rng(seed | 1) }
+    }
+
+    pub fn next(&mut self, pct: u8) -> bool {
+        let mut tx = self.carry || u32::from(pct) > self.rng.next() % 100;
+        if self.carry {
+            self.carry = false;
+        } else if pct < 40 && self.last_was_tx && tx {
+            tx = false;
+            self.carry = true;
+        }
+        self.last_was_tx = tx;
+        tx
+    }
 }
 
 /// Generatore pseudo-casuale (xorshift64*) al posto di `rand()` del C.
@@ -140,8 +207,7 @@ impl Scheduler {
     }
 
     fn from_clock() -> Self {
-        let seed = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos() as u64).unwrap_or(0x9E37_79B9);
-        Scheduler::new(seed)
+        Scheduler::new(clock_seed())
     }
 
     fn rand(&mut self) -> usize {
@@ -303,17 +369,51 @@ mod tests {
     #[test]
     fn the_message_follows_wsjtx() {
         let alt = AtomicBool::new(false);
-        assert_eq!(compose("iu3abc", "JN55wm", 37, true, &alt), "IU3ABC JN55 37");
+        assert_eq!(compose("iu3abc", "JN55wm", 37, true, false, &alt), "IU3ABC JN55 37");
         // nominativo composto: prima il tipo 2, poi il tipo 3
-        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, &alt), "PJ4/K1ABC 37");
-        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, &alt), "<PJ4/K1ABC> FK52UD 37");
+        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, false, &alt), "PJ4/K1ABC 37");
+        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, false, &alt), "<PJ4/K1ABC> FK52UD 37");
         // locatore a 6 caratteri senza «Prefer type 1»
-        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, &alt), "IU3ABC JN55 23");
-        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, &alt), "<IU3ABC> JN55WM 23");
+        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, false, &alt), "IU3ABC JN55 23");
+        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, false, &alt), "<IU3ABC> JN55WM 23");
         for m in ["IU3ABC JN55 37", "PJ4/K1ABC 37", "<PJ4/K1ABC> FK52UD 37", "<IU3ABC> JN55WM 23"] {
             assert!(jt::wspr::tx::tones(m).is_some(), "{m}");
         }
         assert!(!set_power_dbm(36));
         assert!(!set_tx_pct(101));
+    }
+
+    /// FST4W: lo stesso radiofaro, ma il tipo 3 senza la potenza (`WSPR_message`, riga 16606); ogni forma si codifica in FST4W.
+    #[test]
+    fn the_fst4w_beacon_drops_the_power_from_type_3() {
+        let alt = AtomicBool::new(false);
+        assert_eq!(compose("IU3ABC", "IO91wm", 37, true, true, &alt), "IU3ABC IO91 37");
+        assert_eq!(compose("IU3ABC", "IO91wm", 30, false, true, &alt), "IU3ABC IO91 30");
+        assert_eq!(compose("IU3ABC", "IO91wm", 30, false, true, &alt), "<IU3ABC> IO91WM");
+        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 30, true, true, &alt), "PJ4/K1ABC 30");
+        assert_eq!(compose("PJ4/K1ABC", "FK52ud", 30, true, true, &alt), "<PJ4/K1ABC> FK52UD");
+        let mut hashes = ft8::message::CallHashes::default();
+        for m in ["IU3ABC IO91 37", "<IU3ABC> IO91WM", "PJ4/K1ABC 30", "<PJ4/K1ABC> FK52UD"] {
+            assert!(jt::fst4::encode(m, true, &mut hashes).is_ok(), "{m}");
+        }
+    }
+
+    /// FST4W: lo scheduler semplice tiene la percentuale e sotto il 40% non trasmette mai due periodi di fila; al 100% sempre, a 0 mai.
+    #[test]
+    fn the_fst4w_scheduler_follows_the_percentage() {
+        for seed in 1..20u64 {
+            let mut s = SimpleScheduler::new(seed);
+            let flags: Vec<bool> = (0..1000).map(|_| s.next(20)).collect();
+            let n = flags.iter().filter(|&&f| f).count();
+            assert!((150..=250).contains(&n), "{n}");
+            assert!(!flags.windows(2).any(|w| w[0] && w[1]));
+            let mut s = SimpleScheduler::new(seed);
+            let n = (0..1000).filter(|_| s.next(60)).count();
+            assert!((540..=660).contains(&n), "{n}");
+        }
+        let mut s = SimpleScheduler::new(5);
+        assert!((0..100).all(|_| s.next(100)));
+        let mut s = SimpleScheduler::new(5);
+        assert!((0..100).all(|_| !s.next(0)));
     }
 }
