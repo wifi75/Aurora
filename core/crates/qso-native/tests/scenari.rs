@@ -44,6 +44,9 @@ impl Bench {
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 720,
             Mode::Q65 => 1440,
             Mode::Msk144 => 2880,
+            // FST4-60 e FST4W-120 di fabbrica
+            Mode::Fst4 => 720,
+            Mode::Fst4w => 360,
         };
         Bench {
             seq,

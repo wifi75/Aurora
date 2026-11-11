@@ -462,6 +462,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Jt4 => tx_native::Mode::Jt4,
             Mode::Q65 => tx_native::Mode::Q65,
             Mode::Msk144 => tx_native::Mode::Msk144,
+            Mode::Fst4 => tx_native::Mode::Fst4,
+            Mode::Fst4w => tx_native::Mode::Fst4w,
         };
         let before = self.controls.tx_audio_planned.load(Ordering::Relaxed);
         match self.encode(&text, hz, free) {
@@ -962,6 +964,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Jt4 => tx_native::Mode::Jt4,
             Mode::Q65 => tx_native::Mode::Q65,
             Mode::Msk144 => tx_native::Mode::Msk144,
+            Mode::Fst4 => tx_native::Mode::Fst4,
+            Mode::Fst4w => tx_native::Mode::Fst4w,
         };
         let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).max(1.0);
         let rate = f64::from(tx_native::WAVE_RATE);
@@ -1114,6 +1118,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Jt4 => tx_native::Mode::Jt4,
                     Mode::Q65 => tx_native::Mode::Q65,
                     Mode::Msk144 => tx_native::Mode::Msk144,
+                    Mode::Fst4 => tx_native::Mode::Fst4,
+                    Mode::Fst4w => tx_native::Mode::Fst4w,
                 };
                 self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
                 match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
@@ -1714,6 +1720,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     Mode::Jt4 => tx_native::Mode::Jt4,
                     Mode::Q65 => tx_native::Mode::Q65,
                     Mode::Msk144 => tx_native::Mode::Msk144,
+                    Mode::Fst4 => tx_native::Mode::Fst4,
+                    Mode::Fst4w => tx_native::Mode::Fst4w,
                 };
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
@@ -1816,6 +1824,18 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     check_exact(t, &self.hashes)?;
                     let tones = jt::msk144::tones(t, &mut self.hashes)?;
                     Ok(jt::msk144::modulate(&tones, 1500.0, msk144_frames(period_s, MSK144_FRAME_MS), 1.0))
+                }
+                // FST4: `freq` e' il tono 0 come in WSJT-X (`f0 = TxFreq + 1.5*dfreq` e' il centro, `mainwindow.cpp:8104`), quattro toni alla
+                // velocita' di simbolo del periodo. FST4W: solo messaggi di tipo WSPR (`CALL LOC4 dBm`, `PFX/CALL dBm`, `<CALL> LOC6`)
+                Mode::Fst4 | Mode::Fst4w => {
+                    let wspr = mode == Mode::Fst4w;
+                    if !wspr {
+                        check_exact(t, &self.hashes)?;
+                    }
+                    let period_s = tx_native::slot::fst4_period_s(wspr);
+                    jt_check_frequency(freq, 4.0 * jt::fst4::tone_spacing_hz(period_s))?;
+                    let e = jt::fst4::encode(t, wspr, &mut self.hashes)?;
+                    Ok(jt::fst4::modulate(&e.tones, f64::from(freq), period_s, 1.0, 12_000.0))
                 }
             }
         };
@@ -2051,6 +2071,17 @@ mod tests {
                     audio[6_000 + i] += 0.05 * w;
                 }
                 jt::q65::decode(&audio, &jt::q65::Options { setup, ..jt::q65::Options::default() }, &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
+            }
+            tx_native::Mode::Fst4 | tx_native::Mode::Fst4w => {
+                let wspr = req.mode == tx_native::Mode::Fst4w;
+                let period_s = tx_native::slot::fst4_period_s(wspr);
+                let mut audio = noise(period_s as usize * 12_000, 19);
+                let start = (jt::fst4::start_s(period_s) * 12_000.0) as usize;
+                for (i, w) in req.wave.iter().enumerate() {
+                    audio[start + i] += 0.05 * w;
+                }
+                let o = jt::fst4::Options { period_s, wspr, f_low_hz: 1000, f_high_hz: 2000, rx_hz: 1500, ..jt::fst4::Options::default() };
+                jt::fst4::decode(&audio, &o, &mut CallHashes::default(), &mut jt::fst4::State::default()).into_iter().map(|d| d.text).collect()
             }
         }
     }
@@ -2619,6 +2650,19 @@ mod tests {
         let requests = port.requests.lock().expect("richieste");
         assert_eq!(requests.len(), 1);
         assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Q65, Parity::Odd));
+        assert_eq!(decode_request(&requests[0]), vec!["K1ABC IU3ABC IO91".to_string()]);
+    }
+
+    /// FST4-60: risposta nel minuto opposto, l'onda (160 simboli GFSK) si ridecodifica con il ricevitore FST4.
+    #[test]
+    fn an_fst4_reply_goes_out_in_the_opposite_minute_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Fst4);
+        d.remember(1, "CQ K1ABC FN42", -10, 1500, JT_SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 1 }, JT_BASE + 59.0);
+        d.after_slot(JT_SLOT_MS, &[("CQ K1ABC FN42".to_string(), -10, 1500)], JT_BASE + 59.3, 1_839_000, "160m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1);
+        assert_eq!((requests[0].mode, requests[0].parity), (tx_native::Mode::Fst4, Parity::Odd));
         assert_eq!(decode_request(&requests[0]), vec!["K1ABC IU3ABC IO91".to_string()]);
     }
 

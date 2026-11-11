@@ -72,6 +72,20 @@ pub struct SavedControls {
     /// `mainwindow_settings.cpp:396-398`): le altre bande, 6 m e 4 m, 2 m. Nei file scritti prima manca (30, 15, 30 come WSJT-X).
     #[serde(default = "default_msk144_periods")]
     pub msk144_periods: [u32; 3],
+    /// Periodi di FST4 e FST4W ricordati per modo come WSJT-X (`TRPeriod_FST4`, `mainwindow.cpp:11395,13870`). Nei file scritti prima mancano
+    /// (60 e 120 s).
+    #[serde(default = "default_fst4_period")]
+    pub fst4_period: u32,
+    #[serde(default = "default_fst4w_period")]
+    pub fst4w_period: u32,
+}
+
+fn default_fst4_period() -> u32 {
+    60
+}
+
+fn default_fst4w_period() -> u32 {
+    120
 }
 
 fn default_q65_period() -> u32 {
@@ -199,6 +213,16 @@ static Q65_CONTEST: AtomicBool = AtomicBool::new(false);
 /// Q65: i chiamanti sentiti in contest (`q65_callers.F90`), in memoria per tutto il programma come nel motore di WSJT-X.
 static Q65_CALLERS: std::sync::Mutex<Option<jt::q65::Callers>> = std::sync::Mutex::new(None);
 
+/// FST4W: i nominativi/locatori sentiti per la decodifica con Keff 50 (`wcalls` di `fst4_decode.f90`, il `fst4w_calls.txt` di WSJT-X),
+/// in memoria per tutto il programma.
+static FST4_STATE: std::sync::Mutex<Option<jt::fst4::State>> = std::sync::Mutex::new(None);
+
+/// Lavora sullo stato di FST4/FST4W fra un periodo e l'altro.
+pub fn with_fst4_state<R>(f: impl FnOnce(&mut jt::fst4::State) -> R) -> R {
+    let mut guard = FST4_STATE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    f(guard.get_or_insert_with(jt::fst4::State::default))
+}
+
 /// Ritardo EME acceso per Q65.
 pub fn q65_eme() -> bool {
     Q65_EME.load(Ordering::Relaxed)
@@ -259,6 +283,25 @@ pub fn parse_q65(mode: &str) -> Option<(u32, u8)> {
     jt::q65::Setup::new(period, sub).map(|s| (s.period_s, s.submode))
 }
 
+/// Sceglie il periodo di FST4 (`wspr` = false) o FST4W per sequenza, trasmissione e ricezione. Valori fuori campo si ignorano.
+pub fn set_fst4_period(wspr: bool, period_s: u32) {
+    if qso_native::slot::set_fst4_period_s(wspr, period_s) {
+        tx_native::slot::set_fst4_period_s(wspr, period_s);
+    }
+}
+
+/// «FST4-60» -> (false, Some(60)), «FST4W» -> (true, None): il nome di WSJT-X con il periodo facoltativo.
+pub fn parse_fst4(mode: &str) -> Option<(bool, Option<u32>)> {
+    let up = mode.trim().to_uppercase();
+    let (wspr, rest) = if let Some(r) = up.strip_prefix("FST4W") { (true, r) } else { (false, up.strip_prefix("FST4")?) };
+    if rest.is_empty() {
+        return Some((wspr, None));
+    }
+    let period: u32 = rest.strip_prefix('-')?.parse().ok()?;
+    let list: &[u32] = if wspr { &qso_native::slot::FST4W_PERIODS_S } else { &qso_native::slot::FST4_PERIODS_S };
+    list.contains(&period).then_some((wspr, Some(period)))
+}
+
 /// Il nome del modo come lo mostrano pagina e log: JT4 con la lettera del sottomodo, Q65 con periodo e sottomodo («Q65-30A»).
 pub fn mode_label(mode: Mode) -> String {
     match mode {
@@ -269,6 +312,9 @@ pub fn mode_label(mode: Mode) -> String {
             let s = q65_setup();
             format!("Q65-{}{}", s.period_s, char::from(b'A' + s.submode))
         }
+        // FST4 e FST4W con il periodo («FST4-60», «FST4W-120»), come le scrive la pagina
+        Mode::Fst4 => format!("FST4-{}", qso_native::slot::fst4_period_s(false)),
+        Mode::Fst4w => format!("FST4W-{}", qso_native::slot::fst4_period_s(true)),
         other => other.name().to_string(),
     }
 }
@@ -513,6 +559,9 @@ impl NativeControls {
             4 => Mode::Jt4,
             5 => Mode::Q65,
             6 => Mode::Msk144,
+            // codici lontani dai prossimi modi per non scontrarsi con altri lavori in corso
+            20 => Mode::Fst4,
+            21 => Mode::Fst4w,
             _ => Mode::Ft8,
         }
     }
@@ -526,6 +575,8 @@ impl NativeControls {
             Mode::Jt4 => 4,
             Mode::Q65 => 5,
             Mode::Msk144 => 6,
+            Mode::Fst4 => 20,
+            Mode::Fst4w => 21,
         };
         self.mode_code.store(code, Ordering::Relaxed);
     }
@@ -549,6 +600,8 @@ impl NativeControls {
                 Mode::Jt4 => 3,
                 Mode::Q65 => 4,
                 Mode::Msk144 => 5,
+                Mode::Fst4 => 20,
+                Mode::Fst4w => 21,
                 _ => 0,
             },
             attenuation: self.attenuation.load(Ordering::Relaxed),
@@ -559,6 +612,8 @@ impl NativeControls {
             q65_sub: q65_setup().submode,
             q65_max_drift: Some(Q65_DRIFT.load(Ordering::Relaxed)),
             msk144_periods: std::array::from_fn(|i| MSK144_PERIODS[i].load(Ordering::Relaxed)),
+            fst4_period: qso_native::slot::fst4_period_s(false),
+            fst4w_period: qso_native::slot::fst4_period_s(true),
         }
     }
 
@@ -581,6 +636,8 @@ impl NativeControls {
             (3, _) => Mode::Jt4,
             (4, _) => Mode::Q65,
             (5, _) => Mode::Msk144,
+            (20, _) => Mode::Fst4,
+            (21, _) => Mode::Fst4w,
             (_, true) => Mode::Ft4,
             _ => Mode::Ft8,
         });
@@ -588,6 +645,8 @@ impl NativeControls {
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
         JT65_SUBMODE.store(saved.jt65_sub.min(2), Ordering::Relaxed);
         set_q65(saved.q65_period, saved.q65_sub);
+        set_fst4_period(false, saved.fst4_period);
+        set_fst4_period(true, saved.fst4w_period);
         if let Some(drift) = saved.q65_max_drift {
             self.set_value("q65_drift", u32::from(drift));
         }
@@ -1129,6 +1188,15 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Msk144);
                 Ok(())
             }
+            // FST4, FST4W e i nomi con il periodo («FST4-300», «FST4W-900»): il motore cambia periodi al blocco di audio dopo
+            m if m.starts_with("FST4") => {
+                let (wspr, period) = parse_fst4(m).ok_or_else(|| RigError(format!("modo non gestito: {m}")))?;
+                if let Some(p) = period {
+                    set_fst4_period(wspr, p);
+                }
+                self.controls.set_mode(if wspr { Mode::Fst4w } else { Mode::Fst4 });
+                Ok(())
+            }
             other => Err(RigError(format!("modo non gestito: {other}"))),
         }
     }
@@ -1159,6 +1227,8 @@ impl Rig for NativeRig {
             (Mode::Q65, true) => "TX even",
             (Mode::Q65, false) => "TX odd",
             (Mode::Msk144, even) => msk144_minute_label(qso_native::slot::msk144_period_s(), even),
+            (Mode::Fst4 | Mode::Fst4w, true) => "TX even",
+            (Mode::Fst4 | Mode::Fst4w, false) => "TX odd",
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),
@@ -1268,6 +1338,17 @@ mod tests {
             assert!((1500..2000).contains(&audio), "tx {tx}: tono {audio} fuori da 1500-2000");
         }
         assert_eq!(c.tx_audio_hz(2300, false), 2300, "JT65, JT9, Q65: niente XIT");
+    }
+
+    /// FST4 e FST4W con o senza periodo; i periodi che il modo non ha si scartano.
+    #[test]
+    fn fst4_names_carry_the_period() {
+        assert_eq!(parse_fst4("FST4"), Some((false, None)));
+        assert_eq!(parse_fst4("fst4-300"), Some((false, Some(300))));
+        assert_eq!(parse_fst4("FST4W-1800"), Some((true, Some(1800))));
+        for bad in ["FST4-45", "FST4W-15", "FST4-", "FST", "FST4X"] {
+            assert_eq!(parse_fst4(bad), None, "{bad}");
+        }
     }
 
     /// I nomi di WSJT-X «Q65-60B»: periodo e sottomodo; quelli che non esistono si scartano.
