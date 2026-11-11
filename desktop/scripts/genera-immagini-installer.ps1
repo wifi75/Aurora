@@ -61,7 +61,7 @@ $white = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(2
 $muted = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(170, 188, 214))
 $center = New-Object System.Drawing.StringFormat; $center.Alignment = 'Center'
 $g.DrawString('AURORA', $title, $white, (New-Object System.Drawing.RectangleF(0, 150, 164, 30)), $center)
-$g.DrawString("Stazione digitale`nFT8 / FT4", $small, $muted, (New-Object System.Drawing.RectangleF(0, 184, 164, 40)), $center)
+$g.DrawString("Stazione radioamatoriale`nmultimodo", $small, $muted, (New-Object System.Drawing.RectangleF(0, 184, 164, 40)), $center)
 if ($Versione) { $g.DrawString("Versione $Versione", $tiny, $muted, (New-Object System.Drawing.RectangleF(0, 262, 164, 16)), $center) }
 $g.DrawString('Tiziano Cassone - IU3WJQ', $tiny, $white, (New-Object System.Drawing.RectangleF(0, 280, 164, 16)), $center)
 $bmp.Save((Join-Path $out 'sidebar.bmp'), [System.Drawing.Imaging.ImageFormat]::Bmp)

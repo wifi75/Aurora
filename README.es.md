@@ -42,13 +42,13 @@
 >
 > 🍎 **[macOS (no probada por el autor, sin soporte): Aurora-macOS.dmg para Apple Silicon e Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — no firmada por Apple: en el primer arranque clic derecho › Abrir (o `xattr -cr /Applications/Aurora.app`). Para el CAT instala Hamlib con `brew install hamlib`. Las actualizaciones se instalan desde la app («Instalar y reiniciar»), como en Windows: deja Aurora en Aplicaciones, no abierta desde el .dmg; en el primer arranque tras una actualización macOS puede volver a pedir confirmación, porque Aurora no está firmada por Apple.
 
-Una estación digital FT8, FT4, JT65 y JT9 de nuevo concepto: interfaz de impacto, automatización de los QSO y control remoto desde el teléfono. Tiene un motor propio de decodificación y transmisión FT8; Aurora es cerebro, motor y pantalla.
+Una estación de radioaficionado multimodo de nuevo concepto (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV y satélites): interfaz de impacto, automatización de los QSO y control remoto desde el teléfono. Tiene un motor propio de decodificación y transmisión; Aurora es cerebro, motor y pantalla.
 
 Diseño y desarrollo: Tiziano Cassone (IU3WJQ)
 
 ## Estado
 
-Versión 0.11.236: motor propio FT8, FT4, JT65 y JT9 con recepción y transmisión, CAT para todas las radios y pantalla de la radio, además de las páginas PSK31/PSK63, RTTY, CW, SSTV y Satélites. La transmisión con la radio real todavía debe probarla el propietario.
+Versión 0.11.236: motor propio multimodo (FT8, FT4, JT65, JT9, JT4, Q65 y MSK144) con recepción y transmisión, CAT para todas las radios y pantalla de la radio, además de las páginas PSK31/PSK63, RTTY, CW, SSTV y Satélites. La transmisión con la radio real todavía debe probarla el propietario.
 
 - **Estación**: lista de mensajes como en JTDX (país con bandera, distancia, filas coloreadas por tipo, indicativo llamado y llamadas dirigidas a ti resaltados), cascada WebGPU/WebGL2 con barras Rx/Tx arrastrables, Tx1–Tx6 con la fase del QSO, barra de bandas y modo (FT8/FT4) con cambio desde la página.
 - **Cola de llamantes**: clic derecho sobre una estación que llama para ponerla en cola (etiqueta «IN CODA» con su puesto); con el QSO registrado, Aurora responde a la primera; el interruptor «Risp. a tutti» pone en cola automáticamente a quien te llama; «Canc DX» detiene al instante la transmisión. Solo con el motor propio.

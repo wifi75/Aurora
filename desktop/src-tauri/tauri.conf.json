@@ -34,8 +34,8 @@
     "copyright": "© 2026 Tiziano Cassone (IU3WJQ) — GNU GPL 3.0",
     "homepage": "https://github.com/wifi75/Aurora",
     "category": "Utility",
-    "shortDescription": "Stazione digitale FT8/FT4",
-    "longDescription": "Aurora è una stazione digitale FT8/FT4 con un motore proprio di decodifica e trasmissione, automazione dei QSO e controllo da telefono. Funziona da sola, senza altri programmi.",
+    "shortDescription": "Stazione radioamatoriale multimodo",
+    "longDescription": "Aurora è una stazione radioamatoriale multimodo (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK, RTTY, CW, SSTV, satelliti) con un motore proprio di decodifica e trasmissione, automazione dei QSO e controllo da telefono. Funziona da sola, senza altri programmi.",
     "licenseFile": "../../LICENSE",
     "windows": {
       "nsis": {

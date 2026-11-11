@@ -19,12 +19,12 @@ export const aboutStrings = {
     'Quem fez Aurora, a versão em uso, a licença e onde encontrar fontes e atualizações.',
   ],
   'about.tagline': [
-    'Stazione digitale FT8, FT4, JT65 e JT9 con automazione dei QSO e controllo remoto',
-    'FT8, FT4, JT65 and JT9 digital station with QSO automation and remote control',
-    'Digitale FT8-, FT4-, JT65- und JT9-Station mit QSO-Automatik und Fernsteuerung',
-    'Station numérique FT8, FT4, JT65 et JT9 avec automatisation des QSO et contrôle à distance',
-    'Estación digital FT8, FT4, JT65 y JT9 con automatización de QSO y control remoto',
-    'Estação digital FT8, FT4, JT65 e JT9 com automação de QSO e controlo remoto',
+    'Stazione radioamatoriale multimodo con automazione dei QSO e controllo remoto',
+    'Multimode ham radio station with QSO automation and remote control',
+    'Multimode-Amateurfunkstation mit QSO-Automatik und Fernsteuerung',
+    'Station radioamateur multimode avec automatisation des QSO et contrôle à distance',
+    'Estación de radioaficionado multimodo con automatización de QSO y control remoto',
+    'Estação de radioamador multimodo com automação de QSO e controlo remoto',
   ],
   'about.dedica': [
     'Ad Aurora, mia figlia: la luce da cui prende il nome questo programma.',

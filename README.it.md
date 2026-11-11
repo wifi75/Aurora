@@ -42,13 +42,13 @@
 >
 > 🍎 **[macOS (non provata dall'autore, senza assistenza): Aurora-macOS.dmg per Apple Silicon e Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — non firmata da Apple: al primo avvio tasto destro › Apri (oppure `xattr -cr /Applications/Aurora.app`). Per il CAT installa Hamlib con `brew install hamlib`. Gli aggiornamenti si installano dall’app («Installa e riavvia»), come su Windows: tieni Aurora in Applicazioni, non aperta dal .dmg; al primo avvio dopo un aggiornamento macOS potrebbe chiedere di nuovo conferma, perché Aurora non è firmata da Apple.
 
-Stazione digitale FT8, FT4, JT65 e JT9 di nuova concezione: interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione FT8; Aurora è cervello, motore e schermo.
+Stazione radioamatoriale multimodo di nuova concezione (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV e satelliti): interfaccia d'impatto, automazione dei QSO e controllo remoto da telefono. Ha un motore proprio di decodifica e trasmissione; Aurora è cervello, motore e schermo.
 
 Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.236: motore proprio FT8, FT4, JT65 e JT9 con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW, SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.236: motore proprio multimodo (FT8, FT4, JT65, JT9, JT4, Q65 e MSK144) con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW, SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.

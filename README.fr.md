@@ -42,13 +42,13 @@
 >
 > 🍎 **[macOS (non testé par l'auteur, sans assistance) : Aurora-macOS.dmg pour Apple Silicon et Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — non signé par Apple : au premier lancement clic droit › Ouvrir (ou `xattr -cr /Applications/Aurora.app`). Pour le CAT installe Hamlib avec `brew install hamlib`. Les mises à jour s’installent depuis l’app (« Installer et redémarrer »), comme sous Windows : garde Aurora dans Applications, pas ouverte depuis le .dmg ; au premier lancement après une mise à jour, macOS peut redemander une confirmation, car Aurora n’est pas signée par Apple.
 
-Une station numérique FT8, FT4, JT65 et JT9 d'un genre nouveau : interface percutante, automatisation des QSO et commande à distance depuis un téléphone. Elle possède son propre moteur de décodage et d'émission FT8 ; Aurora est cerveau, moteur et écran.
+Une station radioamateur multimode d'un genre nouveau (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV et satellites) : interface percutante, automatisation des QSO et commande à distance depuis un téléphone. Elle possède son propre moteur de décodage et d'émission ; Aurora est cerveau, moteur et écran.
 
 Conception et développement : Tiziano Cassone (IU3WJQ)
 
 ## État
 
-Version 0.11.236 : moteur propre FT8, FT4, JT65 et JT9 avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
+Version 0.11.236 : moteur propre multimode (FT8, FT4, JT65, JT9, JT4, Q65 et MSK144) avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
 
 - **Station** : liste des messages comme dans JTDX (pays avec drapeau, distance, lignes colorées par type, indicatif appelé et appels qui te sont adressés mis en évidence), cascade WebGPU/WebGL2 avec barres Rx/Tx déplaçables, Tx1–Tx6 avec la phase du QSO, barre de bandes et de mode (FT8/FT4) avec changement depuis la page.
 - **File des appelants** : clic droit sur une station qui appelle pour la mettre en file (étiquette «IN CODA» avec sa place) ; une fois le QSO enregistré, Aurora répond au premier ; l'interrupteur «Risp. a tutti» met automatiquement en file qui t'appelle ; «Canc DX» arrête aussitôt l'émission. Moteur propre uniquement.

@@ -42,13 +42,13 @@
 >
 > 🍎 **[macOS (not tested by the author, no support): Aurora-macOS.dmg for Apple Silicon and Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — not signed by Apple: on first launch right-click › Open (or `xattr -cr /Applications/Aurora.app`). For CAT install Hamlib with `brew install hamlib`. Updates install from inside the app (“Install and restart”), as on Windows: keep Aurora in Applications, not opened from the .dmg; on the first start after an update macOS may ask for confirmation again, because Aurora is not signed by Apple.
 
-A new kind of FT8, FT4, JT65 and JT9 digital station: a striking interface, QSO automation and remote control from your phone. It has its own FT8 decode and transmit engine; Aurora is brain, engine and screen.
+A new kind of multimode ham radio station (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV and satellites): a striking interface, QSO automation and remote control from your phone. It has its own decode and transmit engine; Aurora is brain, engine and screen.
 
 Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.236: own FT8, FT4, JT65 and JT9 engine with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW, SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.236: own multimode engine (FT8, FT4, JT65, JT9, JT4, Q65 and MSK144) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW, SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.
