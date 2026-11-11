@@ -259,9 +259,67 @@ fn station_info(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Re
     }
 }
 
-/// Le stazioni della chiave lette dal server (bloccante): servono alla tendina della stazione nelle Impostazioni.
+/// Le stazioni della chiave lette dal server (bloccante): servono alla tendina della stazione nelle Impostazioni. Con un token v2 (`wl2_...`)
+/// si chiede `GET /index.php/api/v2/station` con `Authorization: Bearer`, come `startV2Station` di `Cloudlog.cpp` (WSJT-X 3.3): la vecchia
+/// `station_info/{chiave}` non conosce i token v2.
 pub fn stations(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Result<Vec<Station>, String> {
+    if uses_api_v2(key) {
+        return v2_stations(url, key, timeout, user_agent);
+    }
     parse_stations(&station_info(url, key, timeout, user_agent)?)
+}
+
+fn v2_stations(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Result<Vec<Station>, String> {
+    let base = api_base(url).ok_or("indirizzo non valido: serve http:// o https://")?;
+    let request = agent(timeout, user_agent).get(format!("{base}/index.php/api/v2/station")).header("Accept", "application/json").header("Authorization", &format!("Bearer {}", key.trim()));
+    let mut response = request.call().map_err(|e| crate::eqsl::describe(&e))?;
+    let status = response.status().as_u16();
+    let text = response.body_mut().read_to_string().unwrap_or_default();
+    read_v2_stations(status, &text)
+}
+
+/// Le stazioni dalla risposta di `api/v2/station` (`reply_v2_station` e `collectStationProfiles` di WSJT-X 3.3): in `data`, un elenco o un
+/// oggetto con `stations`/`station_profiles`/`stationProfiles`/`profiles`; numero da `station_id`, `station_profile_id` o `id`.
+pub fn read_v2_stations(status: u16, body: &str) -> Result<Vec<Station>, String> {
+    let v: Value = serde_json::from_str(body).unwrap_or(Value::Null);
+    match status {
+        200 if v.is_object() => {}
+        401 => return Err(v2_detail(&v, "token API v2 non valido".into())),
+        403 => return Err(v2_detail(&v, "il token API v2 non ha il permesso di leggere le stazioni".into())),
+        _ => return Err(v2_detail(&v, format!("risposta {status} inattesa dall'API v2"))),
+    }
+    let text = |o: &Value, keys: &[&str]| {
+        keys.iter()
+            .find_map(|k| match o.get(*k) {
+                Some(Value::String(t)) if !t.trim().is_empty() => Some(t.trim().to_string()),
+                Some(Value::Number(n)) => Some(n.to_string()),
+                _ => None,
+            })
+            .unwrap_or_default()
+    };
+    fn collect(value: &Value, out: &mut Vec<Station>, text: &dyn Fn(&Value, &[&str]) -> String) {
+        match value {
+            Value::Array(list) => list.iter().for_each(|e| collect(e, out, text)),
+            Value::Object(o) => {
+                let id = text(value, &["station_id", "station_profile_id", "id"]);
+                if !id.is_empty() && id != "0" {
+                    out.push(Station { id, name: text(value, &["station_profile_name", "profile_name", "name"]), call: text(value, &["station_callsign", "callsign", "call"]) });
+                    return;
+                }
+                for k in ["stations", "station_profiles", "stationProfiles", "profiles"] {
+                    if let Some(child) = o.get(k) {
+                        collect(child, out, text);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    if let Some(data) = v.get("data") {
+        collect(data, &mut out, &text);
+    }
+    Ok(out)
 }
 
 /// La prova (bloccante): chiave, permesso di scrittura e stazione, senza scrivere nel log.
@@ -330,6 +388,20 @@ mod tests {
         assert!(matches!(read_v2_reply(401, r#"{"error":{"message":"bad token"}}"#), Outcome::Rejected(m) if m == "bad token"));
         assert!(matches!(read_v2_reply(503, ""), Outcome::Retry(_)));
         assert_eq!(civil_from_days(20_403), (2025, 11, 11));
+    }
+
+    #[test]
+    fn v2_station_list_is_read_like_wsjtx() {
+        let flat = r#"{"data":[{"station_id":3,"station_profile_name":"Casa","station_callsign":"IU3ABC"},{"id":"5","name":"Portatile","callsign":"IU3ABC/P"}]}"#;
+        let list = read_v2_stations(200, flat).expect("elenco");
+        assert_eq!(list, vec![
+            Station { id: "3".into(), name: "Casa".into(), call: "IU3ABC".into() },
+            Station { id: "5".into(), name: "Portatile".into(), call: "IU3ABC/P".into() },
+        ]);
+        let nested = r#"{"data":{"stations":[{"station_profile_id":7,"profile_name":"Club","call":"IU3ABC"}]}}"#;
+        assert_eq!(read_v2_stations(200, nested).expect("annidato")[0].id, "7");
+        assert!(read_v2_stations(401, r#"{"error":{"message":"bad token"}}"#).expect_err("rifiutato").contains("bad token"));
+        assert!(read_v2_stations(500, "").is_err());
     }
 
     #[test]
