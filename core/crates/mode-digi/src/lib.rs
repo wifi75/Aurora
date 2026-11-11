@@ -20,4 +20,4 @@ pub mod varicode;
 pub use cw::CwDemodulator;
 pub use psk::{PskDemodulator, PskMode, RATE};
 pub use rtty::{RttyDemodulator, RttyParams};
-pub use service::{DigiError, DigiMacro, DigiMode, DigiService, DigiSettings, DigiTxPort};
+pub use service::{DigiError, ImportHow, DigiMacro, DigiMode, DigiService, DigiSettings, DigiTxPort};

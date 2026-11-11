@@ -275,9 +275,10 @@ export interface Macro {
 }
 
 /** L'insieme in uso: le macro del modo sostituiscono quelle di base con lo stesso nome; le altre restano. */
-export function effectiveMacros(base: readonly Macro[], forMode: readonly Macro[] | undefined): Map<string, Macro> {
+export function effectiveMacros(base: readonly Macro[], forMode: readonly Macro[] | undefined, merge = true): Map<string, Macro> {
   const map = new Map<string, Macro>();
-  for (const m of base) map.set(m.name, m);
+  // senza «Merge» le macro del modo sostituiscono del tutto quelle di base; se il modo non ne ha, restano quelle di base
+  if (merge || !forMode || forMode.length === 0) for (const m of base) map.set(m.name, m);
   for (const m of forMode ?? []) map.set(m.name, m);
   return map;
 }

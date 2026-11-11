@@ -96,11 +96,57 @@ pub fn read_folder(folder: &Path) -> Result<(Vec<DigiMacro>, std::collections::B
     for set in modes.values_mut() {
         set.retain(|m| crate::service::valid_macro_name(&m.name));
     }
+    // un tasto compare una volta sola: se il file lo ripete vale l'ultima voce (come sulla tastiera)
+    dedupe_by_name(&mut base);
+    for set in modes.values_mut() {
+        dedupe_by_name(set);
+    }
     let after = base.len() + modes.values().map(Vec::len).sum::<usize>();
     report.skipped = before - after;
     report.default_count = base.len();
     report.modes = modes.iter().map(|(k, v)| (k.clone(), v.len())).collect();
     Ok((base, modes, report))
+}
+
+fn dedupe_by_name(list: &mut Vec<DigiMacro>) {
+    let mut seen = std::collections::HashSet::new();
+    let mut out: Vec<DigiMacro> = Vec::with_capacity(list.len());
+    for m in list.drain(..).rev() {
+        if seen.insert(m.name.clone()) {
+            out.push(m);
+        }
+    }
+    out.reverse();
+    *list = out;
+}
+
+/// L'opzione «Merge» per modo (`BPSK31-Merge`, `BPSK63-Merge`, `RTTY-Merge`, `CW-Merge` nella sezione `[Macros]` di `2.ini`):
+/// 1 = le macro del modo si uniscono a quelle di base, 0 = le sostituiscono. Chiave: il modo di Aurora.
+pub fn read_merge_flags(folder: &Path) -> std::collections::BTreeMap<String, bool> {
+    let mut flags = std::collections::BTreeMap::new();
+    let Ok(bytes) = std::fs::read(folder.join("2.ini")) else { return flags };
+    let text = text_of(&bytes);
+    let mut in_macros = false;
+    for raw in text.lines() {
+        let line = raw.trim_end_matches('\r').trim();
+        if let Some(section) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            in_macros = section.eq_ignore_ascii_case("Macros");
+            continue;
+        }
+        if !in_macros {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else { continue };
+        let mode = match key.trim().to_ascii_uppercase().as_str() {
+            "BPSK31-MERGE" => "psk31",
+            "BPSK63-MERGE" => "psk63",
+            "RTTY-MERGE" => "rtty",
+            "CW-MERGE" => "cw",
+            _ => continue,
+        };
+        flags.insert(mode.to_string(), value.trim() != "0");
+    }
+    flags
 }
 
 /// La cartella di base: `%APPDATA%\`.
@@ -125,6 +171,33 @@ mod tests {
         assert_eq!(m[0].color, Some(0xFF0000));
         // 16777088 = 0xFFFF80 in Windows (blu FF, verde FF, rosso 80) = 0x80FFFF
         assert_eq!(m[1].color, Some(0x80FFFF));
+    }
+
+    #[test]
+    fn l_opzione_merge_di__si_legge_per_modo() {
+        let dir = std::env::temp_dir().join("aurora-prova--merge");
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        std::fs::write(dir.join("2.ini"), "[Other]\r\nRTTY-Merge=0\r\n[Macros]\r\nRTTY-Merge=1\r\nCW-Merge=0\r\nBPSK31-Merge=1\r\nSSB-Merge=0\r\n").expect("file");
+        let flags = read_merge_flags(&dir);
+        assert_eq!(flags.get("rtty"), Some(&true));
+        assert_eq!(flags.get("cw"), Some(&false));
+        assert_eq!(flags.get("psk31"), Some(&true));
+        assert_eq!(flags.len(), 3, "gli altri modi non sono di Aurora");
+        assert!(read_merge_flags(&dir.join("non-esiste")).is_empty());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn un_tasto_ripetuto_vale_una_volta_sola() {
+        let mut list = vec![
+            DigiMacro { name: "F3".into(), label: "73".into(), text: "a".into(), color: None },
+            DigiMacro { name: "F4".into(), label: "x".into(), text: "b".into(), color: None },
+            DigiMacro { name: "F3".into(), label: "INFO".into(), text: "c".into(), color: None },
+        ];
+        dedupe_by_name(&mut list);
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].name, "F4");
+        assert_eq!(list[1].label, "INFO");
     }
 
     #[test]

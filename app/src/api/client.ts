@@ -1638,6 +1638,8 @@ export interface DigiSettings {
   macros: DigiMacro[];
   /** Le macro di un modo (`psk31`, `psk63`, `rtty`): sostituiscono quelle di base con lo stesso nome. */
   mode_macros: Record<string, DigiMacro[]>;
+  /** Per modo: `false` = le macro del modo sostituiscono quelle di base (opzione «Merge»); senza voce si uniscono. */
+  merge_macros: Record<string, boolean>;
 }
 
 export interface DigiSnapshot {
@@ -1673,8 +1675,8 @@ export interface DigiImported {
 }
 
 /** Importa le macro dai file dell'utente (di base `%APPDATA%\`); solo dal PC di Aurora. */
-export async function importMacros(folder?: string): Promise<{ imported: DigiImported; snapshot: DigiSnapshot }> {
-  return (await (await request('/digi/import-macros', jsonInit(folder ? { folder } : {}))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
+export async function importMacros(how: 'replace' | 'add' | 'defaults' = 'replace', folder?: string): Promise<{ imported: DigiImported; snapshot: DigiSnapshot }> {
+  return (await (await request('/digi/import-macros', jsonInit({ how, ...(folder ? { folder } : {}) }))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
 }
 
 export async function digiAbort(): Promise<void> {

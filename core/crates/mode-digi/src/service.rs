@@ -71,6 +71,16 @@ impl DigiMode {
     }
 }
 
+/// Come si importano le macro: `replace` (default) sostituisce le mie, `add` tiene le mie e aggiunge solo i tasti che mancano, `defaults` rimette quelle di Aurora.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImportHow {
+    #[default]
+    Replace,
+    Add,
+    Defaults,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum DigiError {
     UnknownMode(String),
@@ -159,6 +169,8 @@ pub struct DigiSettings {
     pub macros: Vec<DigiMacro>,
     /// Le macro di un modo (chiave: `psk31`, `psk63`, `rtty`): sostituiscono quelle con lo stesso nome dell'insieme di base.
     pub mode_macros: std::collections::BTreeMap<String, Vec<DigiMacro>>,
+    /// Per modo: le macro del modo si uniscono a quelle di base (`true`, come l'opzione «Merge») oppure le sostituiscono del tutto (`false`). Un modo senza voce unisce.
+    pub merge_macros: std::collections::BTreeMap<String, bool>,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -227,6 +239,7 @@ impl Default for DigiSettings {
             auto_receive: false,
             macros: default_macros(),
             mode_macros: default_mode_macros(),
+            merge_macros: std::collections::BTreeMap::new(),
         }
     }
 }
@@ -439,19 +452,52 @@ impl DigiService {
         Ok(())
     }
 
-    /// Importa le macro da una cartella (di base `%APPDATA%\`): l'insieme di base e quelli per modo sostituiscono i nostri.
-    pub fn import_macros(&self, folder: Option<&std::path::Path>) -> Result<crate::macro_files::Imported, DigiError> {
+    /// Importa le macro da una cartella (di base `%APPDATA%\`) nel modo scelto; con `Defaults` non legge niente e rimette le macro di Aurora.
+    pub fn import_macros(&self, folder: Option<&std::path::Path>, how: ImportHow) -> Result<crate::macro_files::Imported, DigiError> {
+        if how == ImportHow::Defaults {
+            let mut next = self.settings();
+            next.macros = default_macros();
+            next.mode_macros = default_mode_macros();
+            next.merge_macros.clear();
+            self.apply_settings(next)?;
+            return Ok(crate::macro_files::Imported::default());
+        }
         let folder = match folder {
             Some(f) => f.to_path_buf(),
             None => crate::macro_files::default_folder().ok_or_else(|| DigiError::BadValue("cartella non nota".into()))?,
         };
         let (base, modes, report) = crate::macro_files::read_folder(&folder)?;
         let mut next = self.settings();
-        if !base.is_empty() {
-            next.macros = base;
-        }
-        for (mode, set) in modes {
-            next.mode_macros.insert(mode, set);
+        match how {
+            ImportHow::Replace => {
+                if !base.is_empty() {
+                    next.macros = base;
+                }
+                for (mode, set) in &modes {
+                    next.mode_macros.insert(mode.clone(), set.clone());
+                }
+                // «Merge» per ogni modo importato (solo per quelli di cui si sono lette le macro)
+                for (mode, merge) in crate::macro_files::read_merge_flags(&folder) {
+                    if modes.contains_key(&mode) {
+                        next.merge_macros.insert(mode, merge);
+                    }
+                }
+            }
+            // le mie macro restano: si aggiungono solo i tasti che non ho
+            ImportHow::Add => {
+                let add = |mine: &mut Vec<DigiMacro>, theirs: Vec<DigiMacro>| {
+                    for m in theirs {
+                        if !mine.iter().any(|x| x.name == m.name) {
+                            mine.push(m);
+                        }
+                    }
+                };
+                add(&mut next.macros, base);
+                for (mode, set) in modes {
+                    add(next.mode_macros.entry(mode).or_default(), set);
+                }
+            }
+            ImportHow::Defaults => {}
         }
         self.apply_settings(next)?;
         Ok(report)

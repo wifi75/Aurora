@@ -162,6 +162,7 @@ function withDefaults(snap: DigiSnapshot): DigiSnapshot {
     auto_receive: raw.auto_receive ?? false,
     macros: (raw.macros ?? []).filter((m) => typeof m.name === 'string' && m.name !== ''),
     mode_macros: raw.mode_macros ?? {},
+    merge_macros: raw.merge_macros ?? {},
   };
   return { ...snap, settings, rx: { ...snap.rx, freq_hz: snap.rx.freq_hz ?? 0, squelch_open: snap.rx.squelch_open ?? true } };
 }
@@ -196,7 +197,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const lock = !s.tx_follow_rx;
   const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
 
-  const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro)), [s.macros, s.mode_macros, s.mode]);
+  const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);
 
   // lo spettro: la media delle righe recenti serve a Snap, Seek e Scan
   const avg = useRef(new RowAverager());
@@ -689,11 +690,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     setEditing(null);
   };
 
-  const importFrom = () => {
-    importMacros().then(
+  const importFrom = (how: 'replace' | 'add' | 'defaults') => {
+    importMacros(how).then(
       (r) => {
         client.setQueryData(['digi'], r.snapshot);
         onChanged();
+        if (how === 'defaults') {
+          toast(t('digi.mi.macrosRestored'), 'ok');
+          return;
+        }
         const modes = Object.values(r.imported.modes).reduce((a, b) => a + b, 0);
         toast(t('digi.mi.importDone', { base: r.imported.default_count, modes }), 'ok');
       },
@@ -713,7 +718,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const menus: MenuDef[] = [
     {
       label: t('digi.menu.file'),
-      items: [{ label: t('digi.mi.import'), onSelect: importFrom }],
+      items: [
+        { label: t('digi.mi.import'), onSelect: () => importFrom('replace') },
+        { label: t('digi.mi.importAdd'), onSelect: () => importFrom('add') },
+        { label: t('digi.mi.macrosMerge'), checked: s.merge_macros[s.mode] !== false, onSelect: () => save({ merge_macros: { ...s.merge_macros, [s.mode]: s.merge_macros[s.mode] === false } }) },
+        'sep',
+        { label: t('digi.mi.macrosReset'), onSelect: () => importFrom('defaults') },
+      ],
     },
     {
       label: t('digi.menu.edit'),

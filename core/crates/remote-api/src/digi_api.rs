@@ -96,6 +96,9 @@ pub(crate) struct ImportBody {
     /// La cartella dei file; senza, `%APPDATA%\`.
     #[serde(default)]
     folder: Option<String>,
+    /// `replace` (di base), `add` o `defaults`.
+    #[serde(default)]
+    how: mode_digi::ImportHow,
 }
 
 /// Importa le macro (`Default.mc`, `rtty.mc`, `bpsk31.mc`, `bpsk63.mc`...) dalla cartella dell'utente. Solo dal PC stesso.
@@ -106,8 +109,9 @@ pub(crate) async fn digi_import_macros(State(state): State<AppState>, _: Authed,
     if !local {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
+    let how = body.as_ref().map(|b| b.0.how).unwrap_or_default();
     let folder = body.and_then(|b| b.0.folder).filter(|f| !f.trim().is_empty()).map(PathBuf::from);
     let s = Arc::clone(&svc);
-    let report = blocking(move || s.import_macros(folder.as_deref())).await?.map_err(api_error)?;
+    let report = blocking(move || s.import_macros(folder.as_deref(), how)).await?.map_err(api_error)?;
     Ok(Json(json!({ "imported": report, "snapshot": svc.snapshot() })))
 }
