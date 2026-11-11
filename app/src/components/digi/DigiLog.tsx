@@ -4,7 +4,6 @@ import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
 import { getLog4om, type ClusterSpot, type Log4omQso } from '../../api/client';
-import { RotorCard } from './RotorCard';
 import { ClusterOptionsDialog } from './ClusterOptionsDialog';
 import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
@@ -396,7 +395,6 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
           </div>
         </>
       )}
-      <RotorCard call={qso.call} grid={qso.wwloc} />
       {optionsOpen ? <ClusterOptionsDialog options={clusterOptions} onChange={setClusterOptions} onClose={() => setOptionsOpen(false)} /> : null}
       {spotOpen ? <SpotDialog call={qso.call} dialHz={dialHz} audioHz={audioHz} modeName={modeName} onClose={() => setSpotOpen(false)} /> : null}
     </aside>

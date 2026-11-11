@@ -148,8 +148,11 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .cop-dialog .cop-cols { display: grid; grid-template-columns: 1fr 1fr; }
 
 /* la scheda del rotore: sempre in vista in fondo alla colonna di destra, scura e ben leggibile come la bussola ma piu' grande e con la lancetta che si muove */
-.digi-rotor { flex: none; border-top: 2px solid #26345f; background: #0f1629; color: #d7e3ff; }
-.digi-rotor-head { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.2rem 0.6rem; font-size: 0.9em; border: 0; background: #172040; color: #d7e3ff; font: inherit; cursor: pointer; text-align: left; }
+.digi-rotor { position: fixed; right: 1rem; bottom: 3.2rem; width: 23rem; max-width: calc(100vw - 1rem); z-index: 1500; border: 1px solid #34457a; border-radius: 12px; overflow: hidden; background: #0f1629; color: #d7e3ff; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6); }
+.digi-rotor-head { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.2rem 0.5rem 0.2rem 0.6rem; font-size: 0.9em; border: 0; background: #172040; color: #d7e3ff; font: inherit; cursor: grab; text-align: left; user-select: none; touch-action: none; }
+.digi-rotor-head:active { cursor: grabbing; }
+.digi-rotor-fold { border: 0; background: transparent; color: #9db0da; font: inherit; cursor: pointer; padding: 0 0.3rem; border-radius: 4px; }
+.digi-rotor-fold:hover { background: #26345f; color: #fff; }
 .digi-rotor-head strong { font-weight: 700; }
 .digi-rotor-headval { margin-left: auto; font-family: var(--font-data); color: #ffb41f; }
 .digi-rotor-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #5b6785; }

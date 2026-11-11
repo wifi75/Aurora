@@ -6,6 +6,7 @@ import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, get
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
+import { RotorCard, useRotorCardVisible } from '../components/digi/RotorCard';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor, type MacroScope } from '../components/digi/MacroEditor';
@@ -182,6 +183,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return Number.isFinite(n) && n >= 300 ? n : 432;
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
+  const [rotorShown, setRotorShown] = useRotorCardVisible();
   const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
@@ -808,6 +810,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.controlBar'), checked: views.controlBar, onSelect: () => setView({ controlBar: !views.controlBar }) },
         { label: t('digi.bar.extended'), checked: views.extended, onSelect: () => setView({ extended: !views.extended }) },
         { label: t('digi.mi.log'), checked: views.log, onSelect: () => setView({ log: !views.log }) },
+        { label: t('digi.mi.rotor'), checked: rotorShown, onSelect: () => setRotorShown(!rotorShown) },
         { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
         'sep' as const,
@@ -902,6 +905,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
         ) : null}
         </div>
+        <RotorCard call={qso.call} grid={qso.wwloc} />
         {views.log ? (
           <DigiLog
             width={logW}

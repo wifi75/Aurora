@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ApiError, getDxcc, getRotator, rotatorGoto, rotatorStop, type RotatorStatus } from '../../api/client';
 import { useT } from '../../i18n';
 import { bearingDeg, gridCenter, type Point } from '../../lib/geo';
@@ -17,6 +17,49 @@ interface Props {
 }
 
 const CLOSED_KEY = 'aurora.digi.rotor.closed';
+const POS_KEY = 'aurora.digi.rotor.pos';
+const HIDDEN_KEY = 'aurora.digi.rotor.hidden';
+const EVENT = 'aurora-rotor-card';
+
+interface Pos {
+  x: number;
+  y: number;
+}
+
+function readPos(): Pos | null {
+  try {
+    const v = JSON.parse(browserStorage()?.getItem(POS_KEY) ?? 'null') as Partial<Pos> | null;
+    return v && Number.isFinite(v.x) && Number.isFinite(v.y) ? { x: Number(v.x), y: Number(v.y) } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** La scheda e' mostrata? Si accende e si spegne dal menu Vista. */
+export function useRotorCardVisible(): [boolean, (v: boolean) => void] {
+  const read = () => browserStorage()?.getItem(HIDDEN_KEY) !== '1';
+  const [shown, setShown] = useState(read);
+  useEffect(() => {
+    const sync = () => setShown(read());
+    window.addEventListener(EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  return [
+    shown,
+    (v) => {
+      try {
+        browserStorage()?.setItem(HIDDEN_KEY, v ? '0' : '1');
+      } catch {
+        // la scelta vale comunque finche' la pagina e' aperta
+      }
+      window.dispatchEvent(new Event(EVENT));
+    },
+  ];
+}
 
 /** Gli angoli fissi dei pulsanti rapidi: ogni 45 gradi, e per i rotori che vanno oltre il giro anche quelli oltre il nord (360, 405, 450...). */
 function presets(min: number, max: number): number[] {
@@ -43,6 +86,9 @@ export function RotorCard({ call, grid }: Props) {
     }
   };
   const [typed, setTyped] = useState('');
+  const card = useRef<HTMLElement>(null);
+  const [pos, setPos] = useState<Pos | null>(readPos);
+  const [shown, setShown] = useRotorCardVisible();
   // mentre il rotore gira si legge piu' spesso, cosi' la lancetta si muove di continuo
   const snap = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, refetchInterval: (q) => (q.state.data?.status.moving ? 400 : 1000) });
   const station = useStatusPick(['de_grid']);
@@ -71,22 +117,78 @@ export function RotorCard({ call, grid }: Props) {
   const problemText = problem instanceof ApiError && problem.code === 'not_connected' ? t('rot.err.notConnected') : problem ? t('rot.err.failed') : '';
 
   const az = status?.az ?? null;
-  const shown = az === null ? '' : String(Math.round(az));
-  const lcd = shown.padStart(4, ' ');
+  const shown_az = az === null ? '' : String(Math.round(az));
+  const lcd = shown_az.padStart(4, ' ');
   const target = status?.target ?? null;
   const nudge = (step: number) => go.mutate(Math.min(max, Math.max(min, Math.round(base) + step)));
 
+  // se la finestra si rimpicciolisce e la scheda resta fuori, torna al suo posto
+  useEffect(() => {
+    const fit = () => {
+      const el = card.current;
+      if (!el || !pos) return;
+      if (pos.x + 40 > window.innerWidth || pos.y + 30 > window.innerHeight) setPos(null);
+    };
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [pos]);
+
+  /** Si sposta trascinando l'intestazione; la posizione resta ricordata. Con il doppio clic torna al posto di partenza (in basso a destra). */
+  const startDrag = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    const el = card.current;
+    if (!el) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    // con la dimensione del testo cambiata (zoom) le coordinate dello schermo e quelle della pagina non coincidono: si converte
+    const scale = el.offsetWidth > 0 ? r.width / el.offsetWidth : 1;
+    const start = { px: e.clientX, py: e.clientY, x: r.left / scale, y: r.top / scale };
+    let last: Pos = { x: start.x, y: start.y };
+    const move = (m: PointerEvent) => {
+      const maxX = window.innerWidth / scale - el.offsetWidth;
+      const maxY = window.innerHeight / scale - 30;
+      last = { x: Math.min(Math.max(0, start.x + (m.clientX - start.px) / scale), Math.max(0, maxX)), y: Math.min(Math.max(0, start.y + (m.clientY - start.py) / scale), Math.max(0, maxY)) };
+      setPos(last);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      try {
+        browserStorage()?.setItem(POS_KEY, JSON.stringify(last));
+      } catch {
+        // la posizione vale comunque finche' la pagina e' aperta
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  const resetPos = () => {
+    setPos(null);
+    try {
+      browserStorage()?.removeItem(POS_KEY);
+    } catch {
+      // niente da fare
+    }
+  };
+
   const header = (
-    <button type="button" className="digi-rotor-head" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={wide ? t('rot.wide', { min, max }) : closed ? t('rot.open') : t('rot.close')}>
+    <div className="digi-rotor-head" onPointerDown={startDrag} onDoubleClick={resetPos} title={t('rot.move')}>
       <span className={`digi-rotor-dot${moving ? ' digi-rotor-dot--moving' : connected ? ' digi-rotor-dot--on' : ''}`} aria-hidden="true" />
       <strong>{t('digi.tab.rotor')}</strong>
-      <span className="digi-rotor-headval">{az === null ? '—' : `${shown}° ${compassPoint(((az % 360) + 360) % 360)}`}</span>
-      <span aria-hidden="true">{closed ? '▸' : '▾'}</span>
-    </button>
+      <span className="digi-rotor-headval" title={wide ? t('rot.wide', { min, max }) : undefined}>{az === null ? '—' : `${shown_az}° ${compassPoint(((az % 360) + 360) % 360)}`}</span>
+      <button type="button" className="digi-rotor-fold" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={closed ? t('rot.open') : t('rot.close')}>
+        {closed ? '▸' : '▾'}
+      </button>
+      <button type="button" className="digi-rotor-fold" onClick={() => setShown(false)} title={t('rot.hide')} aria-label={t('rot.hide')}>
+        ✕
+      </button>
+    </div>
   );
 
+  if (!shown) return null;
+
   return (
-    <section className={`digi-rotor${moving ? ' digi-rotor--moving' : ''}${connected ? '' : ' digi-rotor--off'}`} aria-label={t('digi.tab.rotor')}>
+    <section ref={card} style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined} className={`digi-rotor${moving ? ' digi-rotor--moving' : ''}${connected ? '' : ' digi-rotor--off'}`} aria-label={t('digi.tab.rotor')}>
       {header}
       {closed ? null : (
         <div className="digi-rotor-body">
