@@ -140,6 +140,8 @@ pub struct Sequencer {
     pending_tx_end: Option<f64>,
 
     worked: HashSet<String>,
+    /// In contest la banda su cui si opera: «gia' lavorato» vale solo su quella banda (su un'altra il QSO conta). Vuoto fuori dal contest.
+    worked_scope: String,
     announced: HashSet<String>,
     /// Cosa il registro dice delle stazioni sentite (per il punteggio di «Best caller first»).
     info_cache: HashMap<String, CallerInfo>,
@@ -219,6 +221,7 @@ impl Sequencer {
             sec_tx_stopped: 0.0,
             pending_tx_end: None,
             worked: HashSet::new(),
+            worked_scope: String::new(),
             announced: HashSet::new(),
             info_cache: HashMap::new(),
             auto_seq_suspended: false,
@@ -300,16 +303,11 @@ impl Sequencer {
         opts.hound = false;
     }
 
-    /// Accende (`Some`) o spegne (`None`) la sequenza di contest. Fuori dal contest nulla cambia rispetto ai QSO normali. Il seriale non
-    /// torna mai indietro: se quello nuovo e' piu' basso di quello in uso resta quello in uso (un QSO a log l'ha gia' consumato).
+    /// Accende (`Some`) o spegne (`None`) la sequenza di contest. Fuori dal contest nulla cambia rispetto ai QSO normali. Il seriale e'
+    /// quello dato: lo decide il log del contest (QSO a log + 1), che lo rimanda dopo ogni QSO registrato o scartato.
     pub fn set_contest(&mut self, contest: Option<ContestSeq>) {
         match (contest, self.contest.take()) {
-            (Some(mut c), old) => {
-                if let Some(o) = &old
-                    && o.activity == c.activity
-                {
-                    c.serial = c.serial.max(o.serial);
-                }
+            (Some(c), _) => {
                 if self.contest_saved.is_none() {
                     self.contest_saved = Some((self.opts.skip_tx1, self.opts.use_rrr, self.opts.hound));
                 }
@@ -585,13 +583,24 @@ impl Sequencer {
         Ok(())
     }
 
+    fn worked_key(&self, call: &str) -> String {
+        if self.worked_scope.is_empty() { base_call(call) } else { format!("{}|{}", self.worked_scope, base_call(call)) }
+    }
+
     pub fn is_worked(&self, call: &str) -> bool {
-        self.worked.contains(&base_call(call))
+        self.worked.contains(&self.worked_key(call))
     }
 
     /// Segna come gia' lavorata una stazione (per esempio dal log all'avvio).
     pub fn mark_worked(&mut self, call: &str) {
-        self.worked.insert(base_call(call));
+        let k = self.worked_key(call);
+        self.worked.insert(k);
+    }
+
+    /// In contest «gia' lavorato» vale per banda (le regole dei contest multibanda contano lo stesso nominativo su ogni banda): `scope` e'
+    /// la banda in uso; vuoto = per nominativo e basta (fuori dal contest).
+    pub fn set_worked_scope(&mut self, scope: &str) {
+        self.worked_scope = scope.trim().to_ascii_lowercase();
     }
 
     /// Gli eventi accumulati dall'ultima chiamata.
@@ -1575,7 +1584,8 @@ impl Sequencer {
             exch_sent,
             exch_rcvd,
         };
-        self.worked.insert(base_call(&self.his_call));
+        let k = self.worked_key(&self.his_call);
+        self.worked.insert(k);
         self.last_logged = Some((self.his_call.clone(), now));
         self.events.push(Event::QsoComplete(record));
     }

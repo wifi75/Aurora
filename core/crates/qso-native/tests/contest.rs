@@ -132,3 +132,30 @@ fn fuori_dal_contest_nulla_cambia() {
     assert_eq!(tx.text, "K1ABC IU3ABC IO91", "Tx1 normale");
     assert!(!s.options().skip_tx1, "«Salta Tx1» torna com'era");
 }
+
+/// Il seriale lo decide il log del contest: se un QSO non entra nel log del contest (fuori orario) la pagina rimanda il seriale giusto,
+/// anche piu' basso di quello che la sequenza aveva gia' fatto avanzare.
+#[test]
+fn il_seriale_si_riallinea_al_log_del_contest() {
+    let mut s = seq();
+    let mut c = ContestSeq::new(Activity::Roundup);
+    c.serial = 8;
+    s.set_contest(Some(c.clone()));
+    c.serial = 7;
+    s.set_contest(Some(c));
+    assert_eq!(s.contest().map(|c| c.serial), Some(7));
+}
+
+/// In contest «gia' lavorato» vale per banda: lo stesso nominativo su un'altra banda e' un QSO nuovo.
+#[test]
+fn in_contest_gia_lavorato_vale_per_banda() {
+    let mut s = seq();
+    s.set_contest(Some(ContestSeq::new(Activity::WwDigi)));
+    s.set_worked_scope("20m");
+    s.mark_worked("K1ABC");
+    assert!(s.is_worked("K1ABC"));
+    s.set_worked_scope("40m");
+    assert!(!s.is_worked("K1ABC"), "su 40 m il QSO conta");
+    s.set_worked_scope("20M");
+    assert!(s.is_worked("K1ABC/P"), "su 20 m e' doppio");
+}

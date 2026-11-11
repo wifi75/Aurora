@@ -247,8 +247,10 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     my_call: String,
     /// «Usa RRR» come lo ha scelto l'operatore: in JT65 e JT9 si manda sempre RRR (RR73 non e' un messaggio di quei modi).
     rrr_user: bool,
-    /// Le stazioni gia' collegate in questa sessione (per «Risp B4» spento).
-    logged: Vec<String>,
+    /// Le stazioni gia' collegate in questa sessione (per «Risp B4» spento), con la banda: in contest conta solo la banda in uso.
+    logged: Vec<(String, String)>,
+    /// La banda dell'ultimo periodo (minuscola).
+    cur_band: String,
     /// «Consenti cambi di frequenza Tx durante la trasmissione» (scheda Generali, `TxQSYAllowed`); di base si'.
     tx_qsy_allowed: bool,
     /// Messaggio libero in coda per la prossima trasmissione.
@@ -351,7 +353,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None, contest_limits: None, contest_warned: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), cur_band: String::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None, contest_limits: None, contest_warned: None };
         driver.seq.set_rx_freq(rx_published);
         if let Some(setup) = driver.controls.contest() {
             driver.seq.set_contest(Some(contest_seq(&setup)));
@@ -847,6 +849,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 self.seq.set_contest(setup.as_ref().map(contest_seq));
                 self.contest_limits = setup.as_ref().map(|c| (c.bands.clone(), c.modes.clone()));
                 self.contest_warned = None;
+                let band = self.cur_band.clone();
+                self.note_band(&band);
                 self.enforce_contest_rules(&mut log);
                 self.publish_view();
             }
@@ -945,8 +949,16 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Comincia il periodo di trasmissione che segue il periodo `rx_slot_start_ms`, **prima** che la sua decodifica sia pronta (avvio anticipato, AutoSeq 3):
     /// parte il messaggio che la sequenza ha in questo momento; se la decodifica lo cambia, [`TxDriver::after_slot`] lo sostituisce con la ritrasmissione.
     /// Con AutoSeq 2 non fa niente: si aspetta la decodifica (`process_Auto` all'inizio della trasmissione).
+    /// La banda in uso: in contest «gia' lavorato» vale per banda (lo stesso nominativo su un'altra banda conta di nuovo).
+    fn note_band(&mut self, band: &str) {
+        self.cur_band = band.to_ascii_lowercase();
+        let scope = if self.contest_limits.is_some() { self.cur_band.clone() } else { String::new() };
+        self.seq.set_worked_scope(&scope);
+    }
+
     pub fn begin_slot(&mut self, rx_slot_start_ms: u64, now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
+        self.note_band(band);
         if self.opts.call_mode == 2 {
             return (Vec::new(), log);
         }
@@ -1152,6 +1164,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         self.last_dial_hz = dial_hz;
+        self.note_band(band);
         // con le Automazioni accese in modo reale chi mi chiama e non va lavorato (regole, filtri di Attivita' di banda) sparisce dalla scelta
         let screened = self.screen_callers(decoded, &mut log);
         let decoded = screened.as_slice();
@@ -1232,7 +1245,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 QEvent::QsoComplete(rec) => {
                     // chi e' stato appena collegato non serve piu' in coda; e' ora di passare alla prossima stazione
                     self.queue.retain(|q| !q.call.eq_ignore_ascii_case(&rec.call));
-                    self.logged.push(rec.call.clone());
+                    self.logged.push((rec.call.clone(), band.to_ascii_lowercase()));
                     if !self.queue.is_empty() {
                         self.queue_gate = Some(slot.next());
                     }
@@ -1468,7 +1481,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
         let policy = crate::features::PouncePolicy::from_code(self.controls.pounce_policy.load(Ordering::Relaxed));
         let grid = self.seq.station().grid.clone();
-        let logged = self.logged.clone();
+        let logged: Vec<String> = self.logged.iter().filter(|(_, b)| self.contest_limits.is_none() || *b == self.cur_band).map(|(c, _)| c.clone()).collect();
         let skip = |c: &str| logged.iter().any(|l| l.eq_ignore_ascii_case(c));
         let Some(i) = crate::features::pounce_pick(policy, decoded, &grid, &skip) else { return false };
         let Some((text, snr, freq)) = decoded.get(i).cloned() else { return false };
@@ -1522,7 +1535,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 continue;
             }
             let known = |c: &str| c.eq_ignore_ascii_case(&from);
-            if self.seq.dx().is_some_and(known) || self.queue.iter().any(|q| known(&q.call)) || (!self.opts.answer_worked_before && self.logged.iter().any(|c| known(c))) {
+            if self.seq.dx().is_some_and(known) || self.queue.iter().any(|q| known(&q.call)) || (!self.opts.answer_worked_before && self.logged.iter().any(|(c, b)| known(c) && (self.contest_limits.is_none() || *b == self.cur_band))) {
                 continue;
             }
             if self.queue.len() >= QUEUE_MAX {
@@ -2092,7 +2105,7 @@ mod tests {
         controls.wait_features.store(true, Ordering::Relaxed);
         controls.set_switch("pounce", true);
         controls.pounce_policy.store(crate::features::PouncePolicy::MaxSignal.code(), Ordering::Relaxed);
-        d.logged.push("DL1AAA".into());
+        d.logged.push(("DL1AAA".into(), "20m".into()));
         let decoded = vec![("CQ DL1AAA JO62".to_string(), 10, 900), ("CQ K1ABC FN42".to_string(), -3, 1200), ("CQ W9XYZ EN52".to_string(), -15, 1500)];
         let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
         assert!(d.seq.is_enabled(), "{log:?}");
@@ -2420,6 +2433,24 @@ mod tests {
         let view = view_of(&b.controls);
         assert_eq!(view.dx.as_deref(), Some("K1ABC"), "{view:?}");
         assert_eq!(view.queue, vec!["N5AAA".to_string()], "{view:?}");
+    }
+
+    /// In contest chi e' gia' a log su 20 m non si richiama su 20 m, ma su 40 m si': ogni banda e' un QSO che conta.
+    #[test]
+    fn in_contest_a_station_worked_on_another_band_is_answered() {
+        let mut b = Bench::new();
+        b.controls.set_switch("answer_all", true);
+        let setup = aurora_core::ContestSetup { activity: "standard".into(), bands: vec!["20m".into(), "40m".into()], modes: vec!["FT8".into()], next_serial: 1, ..Default::default() };
+        b.d.handle(TxCommand::Contest(Some(setup)), BASE);
+        b.d.logged.push(("K1ABC".into(), "20m".into()));
+        b.d.seq.set_worked_scope("20m");
+        b.d.seq.mark_worked("K1ABC");
+        b.d.after_slot(SLOT_MS, &[("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 14.3, 14_074_000, "20m");
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).dx, None, "doppio su 20 m");
+        b.d.after_slot(SLOT_MS * 2, &[("IU3ABC K1ABC FN42".to_string(), -10, 1200)], BASE + 29.3, 7_074_000, "40m");
+        b.d.publish_view();
+        assert_eq!(view_of(&b.controls).dx.as_deref(), Some("K1ABC"), "su 40 m il QSO conta");
     }
 
     /// Spento (di fabbrica), «Rispondi a tutti» non accoda nessuno.
