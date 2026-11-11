@@ -75,12 +75,12 @@ export const TIP_DELAY_MS = 350;
  * Un nominativo con il suo riquadro al passaggio del mouse: bandiera, paese e continente (da `cty.dat`) e, se le ricerche sono accese,
  * nome e citta' da QRZ.com o HamQTH. La ricerca parte solo dopo un breve ritardo e si ricorda.
  */
-export function CallsignTip({ call, children }: { call: string; children: ReactNode }) {
+export function CallsignTip({ call, lotwDate, children }: { call: string; /** Ultimo invio a LoTW dall'elenco pubblico dell'ARRL (gia' filtrato dalle preferenze), se la stazione c'e'. */ lotwDate?: string | null; children: ReactNode }) {
   if (call.trim() === '') return <>{children}</>;
-  return <CallsignTipInner call={call}>{children}</CallsignTipInner>;
+  return <CallsignTipInner call={call} lotwDate={lotwDate ?? null}>{children}</CallsignTipInner>;
 }
 
-function CallsignTipInner({ call, children }: { call: string; children: ReactNode }) {
+function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate: string | null; children: ReactNode }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<CallsignInfo | null | undefined>(undefined);
@@ -134,7 +134,7 @@ function CallsignTipInner({ call, children }: { call: string; children: ReactNod
           {info === undefined ? (
             <span className="muted">{t('calltip.loading')}</span>
           ) : !country && !person ? (
-            <span className="muted">{t('calltip.unknown')}</span>
+            lotwDate ? <QslBadges person={{ lotw: true }} long lotwDate={lotwDate} /> : <span className="muted">{t('calltip.unknown')}</span>
           ) : (
             <>
               {country ? (
@@ -145,7 +145,8 @@ function CallsignTipInner({ call, children }: { call: string; children: ReactNod
               ) : null}
               {fullName ? <span className="calltip-name">{fullName}</span> : null}
               {person?.city ? <span className="calltip-city">{person.city}</span> : null}
-              {person ? <QslBadges person={person} long /> : null}
+              {/* LoTW una volta sola: dal servizio (QRZ.com/HamQTH) o, se la stazione non l'ha indicato li', dall'elenco pubblico dell'ARRL */}
+              {person || lotwDate ? <QslBadges person={{ ...(person ?? {}), lotw: person?.lotw === true || lotwDate !== null }} long lotwDate={lotwDate} /> : null}
             </>
           )}
         </span>,
@@ -161,10 +162,10 @@ type Person = NonNullable<CallsignInfo['person']>;
  * Come la stazione conferma i QSO (da QRZ.com o HamQTH): LoTW, eQSL, QSL diretta e il QSL manager. Acceso = si', grigio = no, assente = il
  * servizio non lo dice. Corto (L E D) nei Comandi, per esteso nel riquadro del nominativo.
  */
-export function QslBadges({ person, long = false }: { person: Person; long?: boolean }) {
+export function QslBadges({ person, long = false, lotwDate = null }: { person: Partial<Person>; long?: boolean; lotwDate?: string | null }) {
   const t = useT();
   const items = [
-    { key: 'L', label: t('qsl.lotw'), on: person.lotw },
+    { key: 'L', label: long && lotwDate ? `${t('qsl.lotw')} (${lotwDate})` : t('qsl.lotw'), on: person.lotw },
     { key: 'E', label: t('qsl.eqsl'), on: person.eqsl },
     { key: 'D', label: t('qsl.direct'), on: person.direct },
     { key: 'B', label: t('qsl.bureau'), on: person.bureau },

@@ -73,6 +73,8 @@ function rowTitle(state: string | undefined, hint: string | undefined): string |
 
 /** Chi trasmette usa LoTW: la barra colorata sotto il suo nominativo e il suggerimento con la data dell'ultimo invio. */
 export interface LotwMark {
+  /** La data dell'ultimo invio, mostrata nel riquadro del nominativo (una volta sola: niente fumetto del browser). */
+  date: string;
   color: string;
   title: string;
 }
@@ -110,7 +112,7 @@ function highlightCall(text: string, call: string, grid: string, answered?: { ca
     }
     if (from !== '' && up.replace(/[<>]/g, '') === from) {
       return (
-        <b key={i} className={lotw ? 'decode-sender decode-sender--lotw' : 'decode-sender'} title={lotw?.title} style={lotw ? { textDecorationColor: lotw.color } : undefined}>
+        <b key={i} className={lotw ? 'decode-sender decode-sender--lotw' : 'decode-sender'} style={lotw ? { textDecorationColor: lotw.color } : undefined}>
           {part}
         </b>
       );
@@ -324,7 +326,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const lotwView = useLotwView((s) => s.view);
   const lotwMark = (d: DecodedMessage): LotwMark | undefined => {
     const date = d.id < 0 ? null : lotwDateToShow(d.lotw_last_upload, lotwView, new Date());
-    return date ? { color: lotwView.color, title: t('lotw.tip', { date }) } : undefined;
+    return date ? { color: lotwView.color, title: t('lotw.tip', { date }), date } : undefined;
   };
   // nominativi, prefissi e paesi da evidenziare (Impostazioni → Filtri)
   const filters = useFilters((s) => s.filters);
@@ -541,7 +543,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
             {/* passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta) */}
-            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')}>
+            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={own ? null : (lotwMark(d)?.date ?? null)}>
             <span className="decode-text">
               {queueMark}
               <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>

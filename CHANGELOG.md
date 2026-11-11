@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Riquadro del nominativo: LoTW compare anche se la stazione non l'ha indicato su QRZ.com, preso dall'elenco pubblico dell'ARRL con la data dell'ultimo invio, una volta sola (tolto il fumetto doppio del browser sul nominativo).
 - **FST4 e FST4W** (WSJT-X 3.3), periodi da 15 s a 30 minuti, verificati su 72 file audio con jt9.exe di WSJT-X; FST4 con le risposte automatiche come FT8, FST4W in ricezione (radiofaro in trasmissione da completare).
 - La tendina del modo mostra solo i modi del gruppo scelto in alto (FT8: FT8, FT4, JT65, JT9, FST4, FST4W; VHF: JT65, JT4, Q65, MSK144): prima li mostrava tutti e i due gruppi erano doppioni.
 
