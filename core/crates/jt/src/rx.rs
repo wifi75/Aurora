@@ -231,10 +231,6 @@ fn db(x: f32) -> f32 {
     if x > 1.0e-10 { 10.0 * x.log10() } else { -99.0 }
 }
 
-/// Da Aurora alle unita' della correlazione di WSJT-X: qui gli spettri si dividono per il 40 per cento dei valori di ogni frequenza
-/// (0,511 volte la media del rumore), in `symspec65.f90:63-74` per `4 * pctile(28)` di `flat65.f90` (1,314 volte la media): 0,511 / 1,314.
-const VHF_CCF_SCALE: f32 = 0.389;
-
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
     bin: usize,
@@ -256,11 +252,22 @@ fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh:
     if ia >= ib {
         return Vec::new();
     }
-    // la potenza di fondo di ogni frequenza (il 40 per cento dei valori: il segnale occupa meno tempo)
+    // la potenza di fondo di ogni frequenza. Fuori dalla VHF il 40 per cento dei valori della frequenza stessa (il segnale occupa meno tempo):
+    // la scala non conta, `slope_normalize` divide per lo scarto della correlazione. In VHF la correlazione non si normalizza e il sincronismo
+    // esce in dB dal suo valore: serve il fondo di WSJT-X (`flat65`, `symspec65.f90:63-74`), che il tono di sincronismo non alza. Con il 40
+    // per cento della frequenza stessa il tono (presente meta' del tempo) alzava il fondo proprio sulla sua frequenza e il sincronismo usciva
+    // 4-6 dB sotto quello di `jt9` (verificato con `jt9.exe` 3.3.0-beta6, esempio `oracolo_jt65`).
     let mut reference = vec![1.0f32; NSZ + 1];
-    for i in ia.saturating_sub(1)..=(ib + 1).min(NSZ) {
-        let col: Vec<f32> = (0..nq).map(|j| ss[j * NSZ + i - 1]).collect();
-        reference[i] = percentile(&col, 40).max(1e-30);
+    if vhf {
+        let flat = flat_reference(ss, nq);
+        for i in ia.saturating_sub(1)..=(ib + 1).min(NSZ) {
+            reference[i] = flat[i - 1].max(1e-30);
+        }
+    } else {
+        for i in ia.saturating_sub(1)..=(ib + 1).min(NSZ) {
+            let col: Vec<f32> = (0..nq).map(|j| ss[j * NSZ + i - 1]).collect();
+            reference[i] = percentile(&col, 40).max(1e-30);
+        }
     }
     let pr: Vec<f32> = SYNC_PATTERN.iter().map(|&p| 2.0 * f32::from(p) - 1.0).collect();
     let nlag = (LAG2 - LAG1 + 1) as usize;
@@ -315,7 +322,7 @@ fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh:
     if vhf {
         // `ccfmax` e' quello prima di togliere la mediana (`sync65.f90:51-54`, `:64`)
         if ipk >= ia && ccfmax >= thresh {
-            out.push(Candidate { bin: ipk, lag: peaks[ipk], sync: db(ccfred[ipk] * VHF_CCF_SCALE) - 16.0 });
+            out.push(Candidate { bin: ipk, lag: peaks[ipk], sync: db(ccfred[ipk]) - 16.0 });
         }
         return out;
     }
@@ -507,12 +514,9 @@ fn bin_spectra(samples: &[f32], f: f64, dt_samples: f64, drift: f64, mode65: usi
     BinSpectra { mode65, rows }
 }
 
-/// Lo spettro medio del periodo diviso per il fondo (`savg` di `symspec65.f90:59-81` con il riferimento di `flat65.f90`: per ogni frequenza
-/// il 28 per cento dei valori, poi il 28 per cento su 33 frequenze vicine, per 4).
-fn average_spectrum(ss: &[f32], nq: usize) -> Vec<f32> {
-    if nq == 0 {
-        return vec![0.0; NSZ];
-    }
+/// Il fondo di ogni frequenza di `flat65.f90`: per ogni frequenza il 28 per cento dei valori, poi il 28 per cento su 33 frequenze vicine, per
+/// 4. Indice da 0 (`ref(i + 1)` di WSJT-X). Il segnale non lo alza: occupa poche frequenze delle 33.
+fn flat_reference(ss: &[f32], nq: usize) -> Vec<f32> {
     let stmp: Vec<f32> = (0..NSZ).map(|i| percentile(&(0..nq).map(|j| ss[j * NSZ + i]).collect::<Vec<f32>>(), 28)).collect();
     let nsmo = 33usize;
     let (ia, ib) = (nsmo / 2, NSZ - nsmo / 2 - 2);
@@ -523,6 +527,15 @@ fn average_spectrum(ss: &[f32], nq: usize) -> Vec<f32> {
     let (first, last) = (reference[ia], reference[ib]);
     reference[..ia].fill(first);
     reference[ib + 1..].fill(last);
+    reference
+}
+
+/// Lo spettro medio del periodo diviso per il fondo (`savg` di `symspec65.f90:59-81` con il riferimento di [`flat_reference`]).
+fn average_spectrum(ss: &[f32], nq: usize) -> Vec<f32> {
+    if nq == 0 {
+        return vec![0.0; NSZ];
+    }
+    let reference = flat_reference(ss, nq);
     (0..NSZ)
         .map(|i| {
             if reference[i] <= 0.0 {
@@ -1435,10 +1448,12 @@ fn decode_candidates(
         let s3 = spectra.s3();
         let snr = |channel: &[u8; NN]| if options.vhf { vhf_snr(c.sync, pass.width_hz) } else { estimate_snr(&s3, channel) };
         let single = extract_smoothed(codec, &mut spectra, smoothing_range(mode65, pass.width_hz), 1, options, lists, pass.trials);
-        // da solo non esce (o esce solo dalla lista): con «Include averaging» si prova la media dei periodi (`jt65_decode.f90:413-440`)
+        // da solo non esce del tutto (o esce solo dalla lista o con l'analisi a priori): con «Include averaging» si prova la media dei periodi
+        // (`jt65_decode.f90:404-440`). La condizione e' `nft /= 1` e una decodifica con l'analisi a priori ha `nft = 1 + 4 * ntype`
+        // (`extract.f90:187`): anche il suo spettro entra nella media (verificato con `jt9.exe` 3.3.0-beta6, esempio `oracolo_jt65`).
         if options.average
             && !printed_avg
-            && single.as_ref().is_none_or(|x| x.hinted)
+            && single.as_ref().is_none_or(|x| x.hinted || x.ap_type > 0)
             && let Some((averager, period)) = avg.as_mut()
         {
             let nfreq = f.round() as i32;
@@ -1838,6 +1853,22 @@ mod tests {
             let out = decode(&audio, &vhf);
             assert!(out.iter().any(|d| d.text == "K1ABC IU3ABC FN42" && d.averaged == 1), "{sub:?} VHF: {out:?}");
             assert!(out.iter().all(|d| (-30..=-1).contains(&d.snr_db)), "{out:?}");
+        }
+    }
+
+    /// In VHF sincronismo (dB) e rapporto come quelli di `jt9.exe` di WSJT-X 3.3.0-beta6 sugli stessi segnali (esempio `oracolo_jt65`):
+    /// a -16 dB sincronismo 16-17 e rapporto -16, a -20 dB 12-14 e -20/-21, a -22 dB 10-11 e -22/-24, in A, B e C.
+    #[test]
+    fn vhf_sync_and_snr_match_jt9() {
+        for (sub, seed) in [(Submode::A, 31), (Submode::B, 32), (Submode::C, 33)] {
+            for (snr, sync_lo, sync_hi) in [(-16.0, 15.5, 18.0), (-20.0, 11.5, 14.5), (-22.0, 8.5, 12.0)] {
+                let audio = minute_sub(&[("CQ IU3ABC IO91", 1500.0, 0.0, snr)], sub, seed);
+                let o = Options { submode: sub, vhf: true, rx_hz: Some(1500.0), tol_hz: 100.0, ..Options::default() };
+                let out = decode(&audio, &o);
+                let d = out.iter().find(|d| d.text == "CQ IU3ABC IO91").unwrap_or_else(|| panic!("{sub:?} {snr}: {out:?}"));
+                assert!((sync_lo..=sync_hi).contains(&d.sync), "{sub:?} {snr}: sincronismo {d:?}");
+                assert!((d.snr_db as f64 - snr).abs() <= 2.0, "{sub:?} {snr}: rapporto {d:?}");
+            }
         }
     }
 
