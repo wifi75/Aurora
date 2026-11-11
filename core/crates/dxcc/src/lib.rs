@@ -41,9 +41,15 @@ pub struct DxccDb {
     exact: std::collections::HashMap<String, Lookup>,
     prefixes: std::collections::HashMap<String, Lookup>,
     longest_prefix: usize,
+    skipped_headers: usize,
 }
 
 impl DxccDb {
+    /// Quante intestazioni di paese di `cty.dat` sono state scartate perche' malformate (con i loro alias): 0 in un file sano.
+    pub fn skipped_headers(&self) -> usize {
+        self.skipped_headers
+    }
+
     pub fn from_file(path: &Path) -> Result<DxccDb, DxccError> {
         let bytes = std::fs::read(path).map_err(|e| DxccError::Io(format!("{}: {e}", path.display())))?;
         Self::parse(&String::from_utf8_lossy(&bytes))
@@ -67,6 +73,7 @@ impl DxccDb {
             exact: Default::default(),
             prefixes: Default::default(),
             longest_prefix: 0,
+            skipped_headers: 0,
         };
         let mut aliases = String::new();
         let mut current: Option<usize> = None;
@@ -76,6 +83,9 @@ impl DxccDb {
                 db.flush(current, &aliases);
                 aliases.clear();
                 current = db.read_header(line);
+                if current.is_none() {
+                    db.skipped_headers += 1;
+                }
             } else if current.is_some() {
                 aliases.push_str(line.trim());
             }
