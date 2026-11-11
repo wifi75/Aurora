@@ -120,7 +120,8 @@ function SstvBody({ solo }: { solo: boolean }) {
 
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
       {data ? (
-        <>
+        <div className="sstv-body">
+          <div className="sstv-main">
           <div hidden={view !== 'rx'}>
             <ReceiveView
               snap={data}
@@ -136,12 +137,16 @@ function SstvBody({ solo }: { solo: boolean }) {
           <div hidden={view !== 'tx'}>
             <Composer snap={data} incoming={incoming} onChanged={refresh} sendRequest={sendRequest} />
           </div>
-          <History images={images.data ?? []} modes={data.modes} onChanged={refreshImages} onReuse={reuse} />
-          <details className="sstv-more">
-            <summary>{t('sstv.set.title')}</summary>
-            <SstvSettingsForm snap={data} />
-          </details>
-        </>
+          </div>
+          {/* le immagini ricevute e trasmesse e le impostazioni stanno a destra: tutto resta in una pagina */}
+          <aside className="sstv-side-col">
+            <History images={images.data ?? []} modes={data.modes} onChanged={refreshImages} onReuse={reuse} />
+            <details className="sstv-more">
+              <summary>{t('sstv.set.title')}</summary>
+              <SstvSettingsForm snap={data} />
+            </details>
+          </aside>
+        </div>
       ) : null}
     </div>
   );
