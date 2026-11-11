@@ -558,6 +558,17 @@ pub fn locate_rigctld() -> Option<PathBuf> {
     // l'Hamlib ripristinato dal programma (Windows, `hamlib_restore`): dopo quello dell'installatore, prima della variabile d'ambiente
     dirs.extend(crate::hamlib_restore::restored_dir());
     let env = std::env::var("AURORA_RIGCTLD").ok().filter(|v| !v.trim().is_empty()).map(PathBuf::from);
+    // Linux: prima l'Hamlib del sistema (il .deb dipende da libhamlib-utils), quello che usano anche WSJT-X e JS8Call della distribuzione,
+    // poi quello incluso (serve all'AppImage senza Hamlib installato). Quello incluso viene da Ubuntu 22.04 (Hamlib 4.4): su Debian 12 e
+    // distribuzioni piu' nuove la radio che va con WSJT-X non si collegava (segnalazione #41). La variabile AURORA_RIGCTLD vince sempre.
+    #[cfg(target_os = "linux")]
+    {
+        if env.is_none()
+            && let Some(found) = system_dirs().iter().find_map(|dir| rigctld_in_dir(dir))
+        {
+            return Some(found);
+        }
+    }
     locate_rigctld_in(&dirs, env.as_deref(), &system_dirs())
 }
 
