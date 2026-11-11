@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- Un clic sulla cascata in sola ricezione non sposta piu' la frequenza di trasmissione se «Hold Tx Freq» e' acceso.
+- CAT: dopo che la radio e' stata ricollegata lo split vero scelto viene rimesso e un ritorno di frequenza dello split simulato rimasto in sospeso non vale piu'.
+- Elenchi che crescevano senza fine in sessioni lunghe: collegamenti gia' fatti, schede delle stazioni; i due registri del motore (`native-decodes.log`, `native-parity.log`) passano a `.old` oltre 20 MB.
+- Elenco dei nominativi conosciuti: un file che c'e' ma non si legge non viene piu' riscritto vuoto, e l'elenco pieno viene detto nel registro. `cty.dat`: i paesi con l'intestazione non valida sono contati e detti nel registro.
+- Wavelog/Cloudlog: avviso nel registro se l'indirizzo e' `http://` verso Internet (la chiave API viaggerebbe in chiaro).
 - **Installatore in sei lingue**: oltre a italiano e inglese anche tedesco, francese, spagnolo e portoghese (scelti dalla lingua di Windows); nella testata il titolo parte dal bordo sinistro e il logo sta a destra.
 - **Chi usa LoTW, tre limiti tolti**: l'elenco su disco si legge subito all'avvio (prima delle prime decodifiche; nel thread resta solo il download) e le righe dello Storico ricevono la data dell'ultimo invio a ogni lettura, con l'elenco di quel momento, e mostrano la stessa barra sotto il nominativo.
 - **Chi usa LoTW** (richiesta di EA4HOS, issue #36): in Attivita' di banda e nella Finestra RX il nominativo di chi trasmette ha una barra colorata sotto se la stazione ha mandato log a LoTW negli ultimi mesi scelti; il suggerimento dice la data dell'ultimo invio. Aurora scarica l'elenco pubblico dell'ARRL all'avvio (se la copia ha piu' di 24 ore) e poi una volta al giorno; se il download fallisce resta la copia vecchia. In Impostazioni, scheda Colori: interruttore (acceso), colore e mesi (3, 6, 12 di base, 24, qualunque). Sei lingue e passo nella Guida.
