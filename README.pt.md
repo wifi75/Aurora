@@ -26,6 +26,7 @@
 *À Aurora, a minha filha: a luz de onde este programa tira o nome.* ♥
 
 [English](README.md) · [Italiano](README.it.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md) · **Português**
+
 🌐 **[Site](https://aurora.iu3wjq.com/en/)**
 
 > ### Baixar o Aurora
