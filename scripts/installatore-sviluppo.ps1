@@ -1,7 +1,7 @@
 # Installatore della versione di sviluppo (ramo privato `sviluppo`) compilato sul PC, senza consumare i minuti di GitHub Actions.
 # Compilato con AURORA_SVILUPPO: non cerca aggiornamenti su GitHub, cosi' non torna mai da sola alle release pubbliche.
 # Niente firme (ne' Windows ne' aggiornamenti). Uso, dalla cartella del ramo sviluppo:
-#   .\scripts\installatore-sviluppo.ps1            -> compila e lascia l'installatore in dist-sviluppo\
+#   .\scripts\installatore-sviluppo.ps1            -> compila e lascia l'installatore in installer (solo l'ultimo: i vecchi si cancellano)
 #   .\scripts\installatore-sviluppo.ps1 -Installa  -> compila e lo avvia subito
 param([switch]$Installa)
 $ErrorActionPreference = 'Stop'
@@ -41,8 +41,10 @@ try {
 
 $exe = Get-ChildItem (Join-Path $root 'desktop\src-tauri\target\release\bundle\nsis') -Filter '*-setup.exe' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $exe) { throw 'installatore non trovato' }
-$dist = Join-Path $root 'dist-sviluppo'
+$dist = Join-Path $root 'installer'
 New-Item -ItemType Directory -Force $dist | Out-Null
+# si tiene solo l'ultimo installatore: i vecchi si cancellano
+Get-ChildItem $dist -Filter '*.exe' -ErrorAction SilentlyContinue | Remove-Item -Force
 $commit = (git rev-parse --short HEAD).Trim()
 $dest = Join-Path $dist ("Aurora-sviluppo-{0}-{1}.exe" -f (Get-Date -Format 'yyyyMMdd-HHmm'), $commit)
 Copy-Item $exe.FullName $dest
