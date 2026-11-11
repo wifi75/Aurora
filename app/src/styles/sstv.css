@@ -244,3 +244,30 @@ html[data-theme='light'] .sstv-modesel { background: #ffffff; color: #0b1322; bo
 html[data-theme='light'] .sstv-page .sstv-field input:not([type='range']):not([type='color']), html[data-theme='light'] .sstv-page .sstv-field select, html[data-theme='light'] .sstv-page .sstv-field textarea, html[data-theme='light'] .sstv-page .sstv-force select { background: #ffffff; color: #0b1322; border-color: #7d8bb0; }
 html[data-theme='light'] .sstv-thumb { background: #ffffff; border-color: #7d8bb0; }
 html[data-theme='light'] .sstv-readouts dt { color: #46556f; }
+
+/* ===== la cascata sotto le due schede, e le miniature in caselle come nell'MMSSTV (le caselle vuote restano visibili) ===== */
+.sstv-wf { flex: none; border: 1px solid #2f4279; border-radius: 14px; overflow: hidden; background: #0a1324; }
+.sstv-wf canvas { display: block; width: 100%; }
+.sstv-side-col .sstv-strip { grid-auto-columns: minmax(6.4rem, 1fr); }
+.sstv-slot { min-height: 5.2rem; border: 1.5px dashed #3f5290; border-radius: 10px; background: rgba(26, 40, 72, 0.35); }
+html[data-theme='light'] .sstv-wf { border-color: #9fb0d4; box-shadow: 0 1px 3px rgba(25, 35, 70, 0.12); }
+html[data-theme='light'] .sstv-slot { border-color: #7d8bb0; background: #f3f5fb; }
+
+/* ===== cascata e scheda del log sulla stessa riga ===== */
+.sstv-wfrow { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 0.6rem; align-items: stretch; }
+.sstv-wfrow .sstv-wf { min-width: 0; }
+.sstv-log { display: grid; grid-template-columns: 1.4fr 0.5fr 0.5fr 1fr 1fr; gap: 0.35rem 0.5rem; align-items: end; padding: 0.5rem 0.8rem; border: 1px solid #2f4279; border-radius: 14px; background: linear-gradient(180deg, #121e36, #0f192d); }
+.sstv-log-title { grid-column: 1 / -1; font-weight: 700; }
+.sstv-log-f { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; font-size: 0.78rem; }
+.sstv-log-f input { min-width: 0; padding: 0.25rem 0.5rem; background: #0a1324; color: #fff; border: 1.5px solid #3f5290; border-radius: 9px; font: inherit; font-size: 0.9rem; }
+.sstv-log-note { grid-column: 1 / 4; }
+.sstv-log-btns { grid-column: 4 / 6; display: flex; gap: 0.4rem; justify-content: flex-end; }
+html[data-theme='light'] .sstv-log { background: #ffffff; border-color: #9fb0d4; box-shadow: 0 1px 3px rgba(25, 35, 70, 0.12); }
+html[data-theme='light'] .sstv-log-f input { background: #ffffff; color: #0b1322; border-color: #7d8bb0; }
+@media (max-width: 1179px) { .sstv-wfrow { grid-template-columns: minmax(0, 1fr); } .sstv-log { grid-template-columns: 1fr 1fr; } .sstv-log-note, .sstv-log-btns { grid-column: 1 / -1; } }
+/* compatto: tutto in una pagina anche a 900 px di altezza */
+.sstv-rx .sstv-side { gap: 0.3rem; padding: 0.5rem 0.8rem; }
+.sstv-rx .sstv-side > * { margin-block: 0; }
+.sstv-slot { min-height: 3.6rem; }
+.sstv-wfrow .sstv-wf { align-self: start; }
+.sstv-log { padding: 0.4rem 0.8rem; }

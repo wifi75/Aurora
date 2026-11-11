@@ -1517,6 +1517,8 @@ export interface SstvSettings {
   auto_receive: boolean;
   lock_mode: string | null;
   folder: string;
+  /** Cartella da cui si prendono le foto da trasmettere (vuota: nessuna). */
+  tx_folder: string;
   rx_offset_hz: number;
   tx_offset_hz: number;
   slant_ppm: number;
@@ -1588,6 +1590,15 @@ export async function getSstvImages(): Promise<SstvImageEntry[]> {
 }
 
 /** Indirizzo del PNG di un'immagine dell'archivio (per <img>). */
+/** Le foto della cartella scelta per la trasmissione (solo dal PC di Aurora). */
+export async function getSstvTxFolder(): Promise<{ folder: string; files: { name: string; size: number }[] }> {
+  return (await (await request('/sstv/tx-folder')).json()) as { folder: string; files: { name: string; size: number }[] };
+}
+
+export async function getSstvTxPhoto(name: string): Promise<Blob> {
+  return await (await request('/sstv/tx-folder/file?name=' + encodeURIComponent(name))).blob();
+}
+
 export function sstvImageUrl(id: string): string {
   return `${BASE}/sstv/images/${encodeURIComponent(id)}`;
 }

@@ -24,7 +24,7 @@ pub use decoder::{DecodedImage, Decoder, DecoderConfig, DecoderEvent};
 pub use demod::RATE;
 pub use encoder::encode;
 pub use modes::{MODES, ModeSpec, SstvMode};
-pub use service::{SstvService, SstvSettings, SstvTxPort};
+pub use service::{SstvService, SstvSettings, TxPhoto, SstvTxPort};
 
 /// Immagine RGB a 8 bit per canale, righe in fila.
 #[derive(Clone, Debug, PartialEq, Eq)]

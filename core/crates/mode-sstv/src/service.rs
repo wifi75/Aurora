@@ -47,8 +47,10 @@ pub struct SstvSettings {
     pub auto_receive: bool,
     /// Solo questo modo in ricezione.
     pub lock_mode: Option<SstvMode>,
-    /// Cartella delle immagini (vuota: `sstv` nella cartella dei dati).
+    /// Cartella delle immagini ricevute (vuota: la cartella `history` dentro la cartella di Aurora).
     pub folder: String,
+    /// Cartella da cui si prendono le foto da trasmettere (vuota: nessuna).
+    pub tx_folder: String,
     /// Correzione della sintonia in ricezione (Hz).
     pub rx_offset_hz: f32,
     /// Spostamento dei toni in trasmissione (Hz).
@@ -59,7 +61,7 @@ pub struct SstvSettings {
 
 impl Default for SstvSettings {
     fn default() -> Self {
-        SstvSettings { default_mode: SstvMode::Martin1, auto_save: true, save_tx: true, auto_receive: false, lock_mode: None, folder: String::new(), rx_offset_hz: 0.0, tx_offset_hz: 0.0, slant_ppm: 0.0 }
+        SstvSettings { default_mode: SstvMode::Martin1, auto_save: true, save_tx: true, auto_receive: false, lock_mode: None, folder: String::new(), tx_folder: String::new(), rx_offset_hz: 0.0, tx_offset_hz: 0.0, slant_ppm: 0.0 }
     }
 }
 
@@ -142,8 +144,59 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
 }
 
+/// La cartella `history` dentro la cartella di Aurora (dove sta il programma); se non si puo' scrivere li' (per esempio un avvio da sviluppo) resta
+/// `sstv` nella cartella dei dati. Con `AURORA_INSTALL_DIR` si sceglie un'altra cartella di Aurora.
+fn default_history(data_dir: &Path) -> PathBuf {
+    let install = std::env::var_os("AURORA_INSTALL_DIR").map(PathBuf::from).or_else(|| std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)));
+    if let Some(dir) = install.map(|d| d.join("history"))
+        && std::fs::create_dir_all(&dir).is_ok()
+    {
+        // prova di scrittura: sotto Program Files una cartella creata da un altro utente puo' non essere scrivibile
+        let probe = dir.join(".scrittura");
+        if std::fs::write(&probe, b"ok").is_ok() {
+            let _ = std::fs::remove_file(&probe);
+            return dir;
+        }
+    }
+    data_dir.join("sstv")
+}
+
 fn folder_of(data_dir: &Path, s: &SstvSettings) -> PathBuf {
-    if s.folder.trim().is_empty() { data_dir.join("sstv") } else { PathBuf::from(s.folder.trim()) }
+    if s.folder.trim().is_empty() { default_history(data_dir) } else { PathBuf::from(s.folder.trim()) }
+}
+
+/// Le immagini gia' salvate nella vecchia cartella dei dati passano (copiate) nella cartella `history` la prima volta che questa e' vuota.
+fn migrate_old_images(data_dir: &Path, target: &Path) {
+    let old = data_dir.join("sstv");
+    if old == target || !old.join("index.json").is_file() || target.join("index.json").is_file() {
+        return;
+    }
+    if std::fs::create_dir_all(target).is_err() {
+        return;
+    }
+    if let Ok(read) = std::fs::read_dir(&old) {
+        for e in read.flatten() {
+            let from = e.path();
+            if from.is_file() && let Some(name) = from.file_name() {
+                let _ = std::fs::copy(&from, target.join(name));
+            }
+        }
+    }
+}
+
+/// Le estensioni delle foto che si possono trasmettere.
+const PHOTO_EXT: [&str; 6] = ["jpg", "jpeg", "png", "webp", "gif", "bmp"];
+const PHOTO_MAX_BYTES: u64 = 20 * 1024 * 1024;
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TxPhoto {
+    pub name: String,
+    pub size: u64,
+}
+
+fn photo_ext(name: &str) -> Option<String> {
+    let ext = name.rsplit_once('.')?.1.to_ascii_lowercase();
+    PHOTO_EXT.contains(&ext.as_str()).then_some(ext)
 }
 
 impl Inner {
@@ -185,7 +238,11 @@ impl SstvService {
         let settings_path = data_dir.join("sstv.json");
         let settings: SstvSettings = std::fs::read(&settings_path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
         let (queue, rx) = sync_channel::<Msg>(128);
-        let store = ImageStore::open(&folder_of(data_dir, &settings));
+        let history = folder_of(data_dir, &settings);
+        if settings.folder.trim().is_empty() {
+            migrate_old_images(data_dir, &history);
+        }
+        let store = ImageStore::open(&history);
         let inner = Arc::new(Inner {
             settings_path,
             data_dir: data_dir.to_path_buf(),
@@ -246,6 +303,46 @@ impl SstvService {
 
     pub fn settings(&self) -> SstvSettings {
         lock(&self.inner.settings).clone()
+    }
+
+    /// Le foto della cartella da cui si trasmette (senza cartelle dentro), per nome, al massimo 500.
+    pub fn tx_photos(&self) -> Result<Vec<TxPhoto>, SstvError> {
+        let folder = lock(&self.inner.settings).tx_folder.trim().to_string();
+        if folder.is_empty() {
+            return Err(SstvError::BadImage("nessuna cartella scelta per le foto da trasmettere".into()));
+        }
+        let read = std::fs::read_dir(&folder).map_err(|_| SstvError::BadImage("cartella delle foto non trovata".into()))?;
+        let mut out: Vec<TxPhoto> = read
+            .flatten()
+            .filter_map(|e| {
+                let name = e.file_name().to_string_lossy().into_owned();
+                let meta = e.metadata().ok()?;
+                (meta.is_file() && photo_ext(&name).is_some() && meta.len() <= PHOTO_MAX_BYTES).then_some(TxPhoto { name, size: meta.len() })
+            })
+            .collect();
+        out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        out.truncate(500);
+        Ok(out)
+    }
+
+    /// Una foto della cartella da cui si trasmette: solo il nome del file (niente percorsi), le estensioni delle immagini e al massimo 20 MB.
+    pub fn tx_photo(&self, name: &str) -> Result<(Vec<u8>, &'static str), SstvError> {
+        let folder = lock(&self.inner.settings).tx_folder.trim().to_string();
+        let ok_name = !name.is_empty() && !name.contains(['/', '\\', ':']) && !name.starts_with('.') && name.len() <= 200;
+        let ext = photo_ext(name).filter(|_| ok_name && !folder.is_empty()).ok_or(SstvError::NotFound)?;
+        let path = Path::new(&folder).join(name);
+        let meta = std::fs::metadata(&path).map_err(|_| SstvError::NotFound)?;
+        if !meta.is_file() || meta.len() > PHOTO_MAX_BYTES {
+            return Err(SstvError::NotFound);
+        }
+        let mime = match ext.as_str() {
+            "jpg" | "jpeg" => "image/jpeg",
+            "png" => "image/png",
+            "webp" => "image/webp",
+            "gif" => "image/gif",
+            _ => "image/bmp",
+        };
+        std::fs::read(&path).map(|b| (b, mime)).map_err(|_| SstvError::NotFound)
     }
 
     pub fn apply_settings(&self, s: SstvSettings) -> Result<(), SstvError> {
@@ -528,5 +625,64 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
             lock(&inner.rx).receiving = false;
             inner.emit(SstvEvent { kind: "rx_lost".into(), ..SstvEvent::default() });
         }
+    }
+}
+
+#[cfg(test)]
+mod cartelle_tests {
+    use super::*;
+
+    fn temp(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("aurora-sstv-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        dir
+    }
+
+    #[test]
+    fn le_estensioni_delle_foto() {
+        assert_eq!(photo_ext("a.JPG").as_deref(), Some("jpg"));
+        assert_eq!(photo_ext("b.png").as_deref(), Some("png"));
+        assert!(photo_ext("c.txt").is_none());
+        assert!(photo_ext("senza_estensione").is_none());
+    }
+
+    #[test]
+    fn le_vecchie_immagini_passano_nella_cartella_history_una_volta() {
+        let data = temp("dati");
+        let old = data.join("sstv");
+        std::fs::create_dir_all(&old).expect("vecchia");
+        std::fs::write(old.join("index.json"), "[]").expect("indice");
+        std::fs::write(old.join("uno.png"), b"png").expect("immagine");
+        let target = temp("history");
+        migrate_old_images(&data, &target);
+        assert!(target.join("index.json").is_file() && target.join("uno.png").is_file());
+        // la seconda volta non copia di nuovo sopra quello che c'e' gia'
+        std::fs::write(target.join("uno.png"), b"nuovo").expect("modifica");
+        migrate_old_images(&data, &target);
+        assert_eq!(std::fs::read(target.join("uno.png")).expect("lettura"), b"nuovo");
+        let _ = std::fs::remove_dir_all(&data);
+        let _ = std::fs::remove_dir_all(&target);
+    }
+
+    #[test]
+    fn le_foto_da_trasmettere_si_leggono_solo_dalla_cartella_scelta() {
+        let data = temp("dati2");
+        let photos = temp("foto");
+        std::fs::write(photos.join("mare.jpg"), b"jpg").expect("foto");
+        std::fs::write(photos.join("note.txt"), b"testo").expect("testo");
+        let svc = SstvService::open(&data);
+        let mut s = svc.settings();
+        s.tx_folder = photos.display().to_string();
+        svc.apply_settings(s).expect("impostazioni");
+        let list = svc.tx_photos().expect("elenco");
+        assert_eq!(list.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), ["mare.jpg"]);
+        assert_eq!(svc.tx_photo("mare.jpg").expect("foto").1, "image/jpeg");
+        // niente percorsi, niente file che non sono immagini
+        assert!(svc.tx_photo(r"..\mare.jpg").is_err());
+        assert!(svc.tx_photo("../mare.jpg").is_err());
+        assert!(svc.tx_photo("note.txt").is_err());
+        let _ = std::fs::remove_dir_all(&data);
+        let _ = std::fs::remove_dir_all(&photos);
     }
 }

@@ -17,9 +17,7 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
 
   const strip = (d: 'rx' | 'tx') => {
     const items = images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx'));
-    return items.length === 0 ? (
-      <p className="sstv-hint sstv-empty">{t('sstv.hist.empty')}</p>
-    ) : (
+    return (
       <ul className="sstv-strip">
         {items.map((img) => (
           <li key={img.id}>
@@ -35,6 +33,9 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
               {!img.complete ? <span className="sstv-thumb-tag">{t('sstv.img.partial')}</span> : null}
             </button>
           </li>
+        ))}
+        {Array.from({ length: Math.max(0, 6 - items.length) }, (_, i) => (
+          <li key={`vuoto${i}`} className="sstv-slot" aria-hidden="true" />
         ))}
       </ul>
     );

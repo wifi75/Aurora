@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
+import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { FreqPicker } from '../components/FreqPicker';
 import { gotoTextMode } from '../lib/digiGoto';
 import { bandPlanRows } from '../lib/bandplan';
@@ -8,6 +9,7 @@ import { useStation } from '../state/station';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
 import { Composer, type IncomingImage } from '../components/sstv/Composer';
+import { SstvLogCard } from '../components/sstv/LogCard';
 import { History } from '../components/sstv/History';
 import { ReceiveView } from '../components/sstv/ReceiveView';
 import { useT } from '../i18n';
@@ -138,7 +140,14 @@ function SstvBody({ solo }: { solo: boolean }) {
             <Composer snap={data} incoming={incoming} onChanged={refresh} sendRequest={sendRequest} />
           </div>
           </div>
-          {/* le immagini ricevute e trasmesse e le impostazioni stanno a destra: tutto resta in una pagina */}
+          {/* la cascata: il segnale ricevuto e quello trasmesso, con i toni dell'SSTV (sincronismo a 1200 Hz, immagine da 1500 a 2300 Hz) */}
+          <div className="sstv-wfrow">
+            <div className="sstv-wf">
+              <DigiWaterfall minHz={300} maxHz={2800} rxHz={1200} txHz={null} bandwidthHz={1100} transmitting={sending} height={84} onPick={() => undefined} />
+            </div>
+            <SstvLogCard dialHz={dialHz} />
+          </div>
+          {/* le immagini ricevute e trasmesse e le impostazioni stanno sotto: tutto resta in una pagina */}
           <aside className="sstv-side-col">
             <History images={images.data ?? []} modes={data.modes} onChanged={refreshImages} onReuse={reuse} />
             <details className="sstv-more">

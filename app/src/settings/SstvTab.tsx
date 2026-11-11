@@ -71,6 +71,11 @@ export function SstvSettingsForm({ snap }: { snap: SstvSnapshot }) {
         <input value={draft.folder} placeholder={snap.folder} onChange={(e) => set('folder', e.target.value)} />
         <small className="sstv-hint">{t('sstv.set.folderHint')}</small>
       </label>
+      <label className="sstv-field sstv-field--wide">
+        <span>{t('sstv.set.txFolder')}</span>
+        <input value={draft.tx_folder ?? ''} placeholder="C:\\Foto\\SSTV" onChange={(e) => set('tx_folder', e.target.value)} />
+        <small className="sstv-hint">{t('sstv.set.txFolderHint')}</small>
+      </label>
       <label className="sstv-field">
         <span>{t('sstv.set.rxOffset')}</span>
         <input type="number" min={-200} max={200} step={5} value={draft.rx_offset_hz} onChange={(e) => set('rx_offset_hz', num(e.target.value, 200))} />

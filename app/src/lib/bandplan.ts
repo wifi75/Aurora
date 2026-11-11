@@ -1,7 +1,7 @@
 import type { FrequencyEntry } from '../api/client';
 
 /**
- * Frequenze di chiamata dei modi testuali e dell'SSTV dai piani di banda IARU (frequenza della manopola in USB, cioe' dove si sente
+ * Frequenze di chiamata dei modi testuali e dell'SSTV dai piani di banda IARU (dal 6 m in su quelli del Band Plan ARI, https://www.ari.it/bandplan.html) (frequenza della manopola in USB, cioe' dove si sente
  * il segnale con la portante audio a circa 1000 Hz). Sono indicative: ogni regione ha le sue sezioni e i QSO si spostano dove c'e' posto.
  * Regione: `ALL` valida ovunque, `R1`, `R2` o `R3` solo li' (come nella tabella dei modi dell'FT8).
  */
@@ -21,7 +21,9 @@ const PSK: readonly Row[] = [
   ['15m', 21_070_000, 'ALL', true],
   ['12m', 24_920_000, 'ALL', true],
   ['10m', 28_120_000, 'ALL', true],
-  ['6m', 50_290_000, 'ALL', true],
+  ['6m', 50_305_000, 'ALL', true],
+  ['70cm', 432_088_000, 'ALL', true],
+  ['23cm', 1_296_138_000, 'ALL', true],
 ];
 
 const RTTY: readonly Row[] = [
@@ -36,7 +38,9 @@ const RTTY: readonly Row[] = [
   ['15m', 21_080_000, 'ALL', true],
   ['12m', 24_920_000, 'ALL', true],
   ['10m', 28_080_000, 'ALL', true],
-  ['6m', 50_300_000, 'ALL', true],
+  ['6m', 50_620_000, 'ALL', true],
+  ['2m', 144_600_000, 'ALL', true],
+  ['23cm', 1_296_600_000, 'ALL', true],
 ];
 
 const SSTV: readonly Row[] = [
@@ -49,7 +53,10 @@ const SSTV: readonly Row[] = [
   ['20m', 14_230_000, 'ALL', true],
   ['15m', 21_340_000, 'ALL', true],
   ['10m', 28_680_000, 'ALL', true],
+  ['6m', 50_510_000, 'ALL', true],
   ['2m', 144_500_000, 'ALL', true],
+  ['70cm', 433_400_000, 'ALL', true],
+  ['23cm', 1_296_500_000, 'ALL', true],
 ];
 
 const CW: readonly Row[] = [
@@ -63,6 +70,8 @@ const CW: readonly Row[] = [
   ['12m', 24_906_000, 'ALL', true],
   ['10m', 28_060_000, 'ALL', true],
   ['6m', 50_090_000, 'ALL', true],
+  ['2m', 144_050_000, 'ALL', true],
+  ['70cm', 432_050_000, 'ALL', true],
 ];
 
 const PLAN: Record<TextMode, readonly Row[]> = { PSK31: PSK, PSK63: PSK, RTTY, SSTV, CW };

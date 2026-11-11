@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode, type WheelEvent as RWheelEvent } from 'react';
-import { ApiError, sstvAbort, sstvTransmit, type SstvSnapshot } from '../../api/client';
+import { useQuery } from '@tanstack/react-query';
+import { ApiError, getSstvTxFolder, getSstvTxPhoto, sstvAbort, sstvTransmit, type SstvSnapshot } from '../../api/client';
 import { useT, type Key } from '../../i18n';
 import {
   angleFrom,
@@ -613,7 +614,7 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
         </div>
 
         <aside className="sstv-panel sstv-panel--right">
-          {sel ? <LayerInspector layer={sel} patch={patchSel} /> : <BackgroundInspector background={comp.background} hasPhoto={bg !== null} patch={patchBg} onPick={() => fileInput.current?.click()} onRemove={() => setBg(null)} />}
+          {sel ? <LayerInspector layer={sel} patch={patchSel} /> : <BackgroundInspector background={comp.background} hasPhoto={bg !== null} patch={patchBg} txFolder={snap.settings.tx_folder ?? ''} onFolderPhoto={(b) => void takeFile(b)} onPick={() => fileInput.current?.click()} onRemove={() => setBg(null)} />}
           <input
             ref={fileInput}
             type="file"
@@ -784,7 +785,38 @@ function LayerInspector({ layer, patch }: { layer: Layer; patch: (p: Partial<Tex
   );
 }
 
-function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove }: { background: Background; hasPhoto: boolean; patch: (p: Partial<Background>, key: string) => void; onPick: () => void; onRemove: () => void }) {
+/** Le foto della cartella scelta nelle Impostazioni SSTV: una tendina con i nomi; la scelta diventa lo sfondo. */
+function TxFolderPhotos({ onPhoto }: { onPhoto: (b: Blob) => void }) {
+  const t = useT();
+  const [problem, setProblem] = useState('');
+  const list = useQuery({ queryKey: ['sstv-tx-folder'], queryFn: getSstvTxFolder, retry: false, staleTime: 15_000 });
+  const files = list.data?.files ?? [];
+  return (
+    <label className="sstv-field">
+      <span>{t('sstv.bg.fromFolder')}</span>
+      <select
+        value=""
+        disabled={list.isError || files.length === 0}
+        onChange={(e) => {
+          const name = e.target.value;
+          if (!name) return;
+          setProblem('');
+          getSstvTxPhoto(name).then(onPhoto, () => setProblem(t('sstv.bg.badFile')));
+        }}
+      >
+        <option value="">{list.isError ? t('sstv.bg.folderMissing') : files.length === 0 ? t('sstv.bg.folderEmpty') : t('sstv.bg.pickFromFolder', { n: files.length })}</option>
+        {files.map((f) => (
+          <option key={f.name} value={f.name}>
+            {f.name}
+          </option>
+        ))}
+      </select>
+      {problem ? <small className="sstv-bad">{problem}</small> : null}
+    </label>
+  );
+}
+
+function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove, txFolder, onFolderPhoto }: { background: Background; hasPhoto: boolean; patch: (p: Partial<Background>, key: string) => void; onPick: () => void; onRemove: () => void; txFolder: string; onFolderPhoto: (b: Blob) => void }) {
   const t = useT();
   const a = background.adjust;
   return (
@@ -793,6 +825,7 @@ function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove }: 
       <button type="button" className="glass sstv-btn sstv-btn--primary sstv-wide" onClick={onPick}>
         {t('sstv.bg.load')}
       </button>
+      {txFolder.trim() !== '' ? <TxFolderPhotos onPhoto={onFolderPhoto} /> : null}
       <p className="sstv-hint">{t('sstv.bg.drop')}</p>
       {hasPhoto ? (
         <>
