@@ -239,7 +239,6 @@ export function App() {
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
       {REMOTE_TOUCH ? null : <Footer page={route.name} />}
-      <Toaster />
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
@@ -249,6 +248,8 @@ export function App() {
       {session.data && !REMOTE ? <OwnerMessages /> : null}
     </div>
     {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? (route.tab ?? rememberedTab(browserStorage())) : undefined} onClose={() => { location.hash = '#/'; }} /> : null}
+    {/* i messaggi brevi fuori da `.app-shell`: con le Impostazioni aperte (pagina sotto inert) si devono poter chiudere */}
+    <Toaster />
     {/* fuori dalla pagina principale, dopo le Impostazioni: quando sono aperte la pagina sotto e' disattivata (inert) e la locandina
         dell'aggiornamento, che stava li' dentro, restava nascosta e non cliccabile */}
     {session.data && !REMOTE ? <UpdatePoster /> : null}

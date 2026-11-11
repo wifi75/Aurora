@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Con le Impostazioni aperte gli avvisi (DXCC nuovo, orologio, messaggi brevi) si possono di nuovo chiudere: stavano nella pagina sotto, che con le Impostazioni aperte e' disattivata.
 - **Orologio**: all'avvio la sincronizzazione aspetta che la rete risponda (riprova ogni 20 s per circa 10 minuti) invece di arrendersi al primo tentativo; mentre l'ora e' fuori tolleranza si ricontrolla ogni minuto, cosi' l'avviso sparisce appena l'ora e' giusta; l'ora si cambia con le API di Windows invece che con PowerShell.
 
 ## 0.11.235 - 2026-11-11
