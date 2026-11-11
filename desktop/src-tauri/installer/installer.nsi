@@ -213,6 +213,71 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 94u 100% 28u "Si spengono in qualunque momento in Impostazioni (Assistenza > Rapporti degli errori, Servizi online, Programmi collegati). Dettagli: docs/privacy.md su github.com/wifi75/Aurora."
     Pop $1
+  ${ElseIf} $LANGUAGE = 1031
+    ${NSD_CreateLabel} 0 0u 100% 12u "Daten, die Aurora ins Netz sendet"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 20u "Aurora speichert Log, Einstellungen und Passwörter auf Ihrem PC. Nur diese Daten verlassen ihn:"
+    Pop $1
+    ${NSD_CreateLabel} 0 36u 100% 34u "- anonyme Fehlerberichte (Version, Funkgerät, Soundkarte, bereinigte Fehlermeldung; nie Rufzeichen, Locator, Log oder Passwörter) und eine Zählung der aktiven Installationen mit einem Zufallscode;"
+    Pop $1
+    ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (empfangene Spots, mit Rufzeichen und Locator), DX-Cluster, Update-Prüfung auf GitHub, Ausbreitung und Nachrichten des Autors;"
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog und die anderen Dienste nur, wenn Sie sie einschalten."
+    Pop $1
+    ${NSD_CreateLabel} 0 112u 100% 28u "Sie lassen sich jederzeit in den Einstellungen ausschalten (Support > Fehlerberichte, Online-Dienste, Verbundene Programme). Details: docs/privacy.md auf github.com/wifi75/Aurora."
+    Pop $1
+  ${ElseIf} $LANGUAGE = 1036
+    ${NSD_CreateLabel} 0 0u 100% 12u "Données qu'Aurora envoie sur le réseau"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 20u "Aurora garde journal, réglages et mots de passe sur votre PC. Seules ces données en sortent :"
+    Pop $1
+    ${NSD_CreateLabel} 0 36u 100% 34u "- rapports d'erreurs anonymes (version, radio, carte son, message d'erreur nettoyé ; jamais indicatif, locator, journal ni mots de passe) et comptage des installations actives avec un code aléatoire ;"
+    Pop $1
+    ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots reçus, avec indicatif et locator), DX Cluster, vérification des mises à jour sur GitHub, propagation et messages de l'auteur ;"
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog et les autres services seulement si vous les activez."
+    Pop $1
+    ${NSD_CreateLabel} 0 112u 100% 28u "Vous pouvez les désactiver à tout moment dans les Réglages (Assistance > Rapports d'erreurs, Services en ligne, Programmes connectés). Détails : docs/privacy.md sur github.com/wifi75/Aurora."
+    Pop $1
+  ${ElseIf} $LANGUAGE = 1034
+    ${NSD_CreateLabel} 0 0u 100% 12u "Datos que Aurora envía a la red"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 20u "Aurora guarda el registro, los ajustes y las contraseñas en tu PC. Solo salen estos datos:"
+    Pop $1
+    ${NSD_CreateLabel} 0 36u 100% 34u "- informes de errores anónimos (versión, radio, tarjeta de sonido, mensaje de error depurado; nunca indicativo, locator, registro ni contraseñas) y recuento de instalaciones activas con un código aleatorio;"
+    Pop $1
+    ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots recibidos, con indicativo y locator), DX Cluster, comprobación de actualizaciones en GitHub, propagación y mensajes del autor;"
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog y los demás servicios solo si los activas tú."
+    Pop $1
+    ${NSD_CreateLabel} 0 112u 100% 28u "Se desactivan en cualquier momento en Ajustes (Asistencia > Informes de errores, Servicios en línea, Programas conectados). Detalles: docs/privacy.md en github.com/wifi75/Aurora."
+    Pop $1
+  ${ElseIf} $LANGUAGE = 2070
+    ${NSD_CreateLabel} 0 0u 100% 12u "Dados que o Aurora envia para a rede"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 20u "O Aurora guarda o registo, as definições e as palavras-passe no seu PC. Só estes dados saem dele:"
+    Pop $1
+    ${NSD_CreateLabel} 0 36u 100% 34u "- relatórios de erros anónimos (versão, rádio, placa de som, mensagem de erro limpa; nunca indicativo, locator, registo nem palavras-passe) e contagem das instalações ativas com um código aleatório;"
+    Pop $1
+    ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots recebidos, com indicativo e locator), DX Cluster, verificação de atualizações no GitHub, propagação e mensagens do autor;"
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e os outros serviços só se os ativar."
+    Pop $1
+    ${NSD_CreateLabel} 0 112u 100% 28u "Pode desativá-los a qualquer momento em Definições (Assistência > Relatórios de erros, Serviços online, Programas ligados). Detalhes: docs/privacy.md em github.com/wifi75/Aurora."
+    Pop $1
+  ${ElseIf} $LANGUAGE = 1043
+    ${NSD_CreateLabel} 0 0u 100% 12u "Gegevens die Aurora het netwerk op stuurt"
+    Pop $1
+    ${NSD_CreateLabel} 0 14u 100% 20u "Aurora bewaart logboek, instellingen en wachtwoorden op je pc. Alleen deze gegevens verlaten die:"
+    Pop $1
+    ${NSD_CreateLabel} 0 36u 100% 34u "- anonieme foutrapporten (versie, radio, geluidskaart, opgeschoond foutbericht; nooit roepnaam, locator, logboek of wachtwoorden) en een telling van actieve installaties met een willekeurige code;"
+    Pop $1
+    ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (ontvangen spots, met roepnaam en locator), DX Cluster, controle op updates op GitHub, propagatie en berichten van de auteur;"
+    Pop $1
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog en de andere diensten alleen als jij ze inschakelt."
+    Pop $1
+    ${NSD_CreateLabel} 0 112u 100% 28u "Je schakelt ze op elk moment uit in Instellingen (Ondersteuning > Foutrapporten, Onlinediensten, Gekoppelde programma's). Details: docs/privacy.md op github.com/wifi75/Aurora."
+    Pop $1
   ${Else}
     ${NSD_CreateLabel} 0 0 100% 12u "Data Aurora sends over the network"
     Pop $1
@@ -572,6 +637,7 @@ LangString auroraUpdate ${LANG_GERMAN} "Aktualisieren (empfohlen)"
 LangString auroraUpdate ${LANG_FRENCH} "Mettre à jour (recommandé)"
 LangString auroraUpdate ${LANG_SPANISH} "Actualizar (recomendado)"
 LangString auroraUpdate ${LANG_PORTUGUESE} "Atualizar (recomendado)"
+LangString auroraUpdate ${LANG_DUTCH} "Bijwerken (aanbevolen)"
 {{#each language_files}}
   !include "{{this}}"
 {{/each}}

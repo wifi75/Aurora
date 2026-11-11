@@ -41,7 +41,7 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": [
-          "Italian", "English", "German", "French", "Spanish", "Portuguese"
+          "Italian", "English", "German", "French", "Spanish", "Portuguese", "Dutch"
         ],
         "displayLanguageSelector": false,
         "installerIcon": "icons/icon.ico",
