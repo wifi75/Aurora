@@ -154,6 +154,8 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 !if "${HEADERIMAGE}" != ""
   !define MUI_HEADERIMAGE_BITMAP "${HEADERIMAGE}"
 !endif
+; AURORA: logo a destra, cosi' titolo e sottotitolo della testata partono dal bordo sinistro come il resto della pagina
+!define MUI_HEADERIMAGE_RIGHT
 
 ; Uninstaller header image
 !if "${UNINSTALLERHEADERIMAGE}" != ""
@@ -566,6 +568,10 @@ LangString choowHowToInstall 0 ""
 ; AURORA: con una versione piu' vecchia installata la scelta si chiama «Aggiorna» e sta sopra
 LangString auroraUpdate ${LANG_ITALIAN} "Aggiorna (consigliato)"
 LangString auroraUpdate ${LANG_ENGLISH} "Update (recommended)"
+LangString auroraUpdate ${LANG_GERMAN} "Aktualisieren (empfohlen)"
+LangString auroraUpdate ${LANG_FRENCH} "Mettre à jour (recommandé)"
+LangString auroraUpdate ${LANG_SPANISH} "Actualizar (recomendado)"
+LangString auroraUpdate ${LANG_PORTUGUESE} "Atualizar (recomendado)"
 {{#each language_files}}
   !include "{{this}}"
 {{/each}}

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Installatore in sei lingue**: oltre a italiano e inglese anche tedesco, francese, spagnolo e portoghese (scelti dalla lingua di Windows); nella testata il titolo parte dal bordo sinistro e il logo sta a destra.
 - **Chi usa LoTW, tre limiti tolti**: l'elenco su disco si legge subito all'avvio (prima delle prime decodifiche; nel thread resta solo il download) e le righe dello Storico ricevono la data dell'ultimo invio a ogni lettura, con l'elenco di quel momento, e mostrano la stessa barra sotto il nominativo.
 - **Chi usa LoTW** (richiesta di EA4HOS, issue #36): in Attivita' di banda e nella Finestra RX il nominativo di chi trasmette ha una barra colorata sotto se la stazione ha mandato log a LoTW negli ultimi mesi scelti; il suggerimento dice la data dell'ultimo invio. Aurora scarica l'elenco pubblico dell'ARRL all'avvio (se la copia ha piu' di 24 ore) e poi una volta al giorno; se il download fallisce resta la copia vecchia. In Impostazioni, scheda Colori: interruttore (acceso), colore e mesi (3, 6, 12 di base, 24, qualunque). Sei lingue e passo nella Guida.
 - **Cascata, «Spec: Off»** (segnalato da ON7KEC, issue #34): con lo spettro su «Off» spariva la curva ma restava l'area nera con la griglia; ora l'area si nasconde in ogni disposizione e la cascata prende tutta l'altezza. Tornando a Current o Cumulative l'altezza di prima ritorna.
