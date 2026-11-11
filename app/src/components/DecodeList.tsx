@@ -1,6 +1,6 @@
 import { foxCalls, lineSender } from '../lib/fox';
 import { periodSecs } from '../lib/period';
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { getDxcc } from '../api/client';
 import type { DecodedMessage, DecodeTag } from '../api/schemas';
 import { useT, type Key } from '../i18n';
@@ -18,6 +18,8 @@ import { senderOf, wishReason } from '../lib/wishlist';
 import { useWishlist } from '../state/wishlist';
 import { formatDistance, usePrefs } from '../lib/prefs';
 import { CallsignTip, prefetchCallsigns } from './CallsignTip';
+import { CallMenu, callMenuAt, type CallMenuState } from './CallMenu';
+import { cleanCall } from '../lib/callsignPage';
 
 /** Etichetta e colore di ogni tipo di messaggio; il CQ semplice ha solo il colore. */
 const BADGES: Partial<Record<DecodeTag, { label: Key; color: string }>> = {
@@ -386,6 +388,9 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const mine = myGrid ? gridCenter(myGrid) : null;
   // un clic seleziona la riga; trasmettere richiede il doppio clic (come nel motore)
   const [selected, setSelected] = useState<number | null>(null);
+  // il menu del tasto destro su un nominativo
+  const [callMenu, setCallMenu] = useState<CallMenuState | null>(null);
+  const closeCallMenu = useCallback(() => setCallMenu(null), []);
   // il periodo della riga mostrata prima: serve alla «riga vuota tra i periodi»
   let previousTime: number | null = null;
   // precaricamento delle informazioni (QRZ.com, HamQTH) di chi trasmette in Attivita' di banda: al passaggio del mouse il riquadro e' gia' pronto
@@ -529,7 +534,17 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             onClick={() => (tapReply && !own ? tapOnce(d.id) : setSelected(d.id))}
             onDoubleClick={() => (tapReply ? undefined : own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}
             onContextMenu={(e) => {
-              // tasto destro: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)
+              // tasto destro sul nominativo (in grassetto o evidenziato): il menu con «Apri su QRZ.com» e, se si puo', «Metti in coda»
+              const callEl = (e.target as HTMLElement).closest('.decode-sender, mark.dx-call:not(.dx-grid)');
+              const clicked = callEl ? cleanCall(callEl.textContent ?? '') : null;
+              if (clicked) {
+                e.preventDefault();
+                setSelected(d.id);
+                const canQueue = !own && !!onQueue && talker?.call.toUpperCase() === clicked;
+                setCallMenu(callMenuAt(e, clicked, canQueue ? () => onQueue?.(d.id) : undefined, inQueue));
+                return;
+              }
+              // tasto destro sul resto della riga: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)
               if (own || !talker || !onQueue) return;
               e.preventDefault();
               setSelected(d.id);
@@ -590,6 +605,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           </Fragment>
         );
       })}
+      <CallMenu menu={callMenu} onClose={closeCallMenu} />
     </section>
   );
 }

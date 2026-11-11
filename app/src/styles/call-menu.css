@@ -1,0 +1,38 @@
+/* Menu del tasto destro su un nominativo (Attivita' di banda, finestra Rx, DX Cluster): stesso aspetto del menu delle colonne del cluster */
+.call-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 10rem;
+  padding: 0.25rem;
+  color: var(--text);
+  background: var(--panel-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--glass-shadow);
+}
+
+.call-menu a,
+.call-menu button {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.call-menu a:hover,
+.call-menu a:focus-visible,
+.call-menu button:hover,
+.call-menu button:focus-visible {
+  background: var(--glass-lo);
+  outline: none;
+}

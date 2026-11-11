@@ -202,6 +202,9 @@ pub struct TxView {
     pub enabled: bool,
     /// Le stazioni in coda per il prossimo QSO, nell'ordine in cui si risponde.
     pub queue: Vec<String>,
+    /// Il rapporto da inviare (dB) che la sequenza usa adesso: dall'SNR del messaggio del DX quando lo si sceglie o risponde, come il
+    /// `rptSpinBox` di WSJT-X (`DecodedMessageReaction.cpp:451-463`, effetto `SetReport`), o quello scritto a mano nel pannello Comandi.
+    pub report: Option<i32>,
 }
 
 /// Quante stazioni si tengono in coda (4, scelta del proprietario 2026-11-07: una colonna accanto al DX): oltre, la prima ha quasi certamente rinunciato.
@@ -585,6 +588,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             dx_grid: self.seq.dx_grid().map(str::to_string),
             enabled: self.seq.is_enabled(),
             queue: self.queue.iter().map(|q| q.call.clone()).collect(),
+            report: Some(self.seq.report()),
         };
         if let Ok(mut slot) = self.controls.tx_view.lock() {
             *slot = view;
@@ -3418,6 +3422,22 @@ mod tests {
         d.handle(TxCommand::Reply { decode_id: 9 }, BASE + 14.5);
         assert_eq!(controls.tx_df.load(Ordering::Relaxed), 1200);
         assert_eq!(d.handle(TxCommand::LogQso, BASE + 15.0).len(), 1);
+    }
+
+    /// Il rapporto da inviare arriva alla pagina (campo «Rapporto» dei Comandi): dall'SNR del messaggio del DX scelto, come il `rptSpinBox`
+    /// di WSJT-X (`DecodedMessageReaction.cpp:451-463`); quello scritto a mano vale finche' una stazione nuova non riporta il suo SNR.
+    #[test]
+    fn the_report_to_send_is_published_from_the_dx_snr_and_from_the_hand() {
+        let (mut d, _port, controls) = driver();
+        d.remember(4, "CQ K1ABC FN42", -17, 1500, SLOT_MS);
+        d.handle(TxCommand::Reply { decode_id: 4 }, BASE + 14.5);
+        assert_eq!(view_of(&controls).report, Some(-17));
+        d.handle(TxCommand::SetReport(3), BASE + 15.0);
+        assert_eq!(view_of(&controls).report, Some(3));
+        assert!(d.seq.tx_texts()[1].ends_with("+03"), "{:?}", d.seq.tx_texts());
+        d.remember(5, "CQ W9XYZ EN52", 8, 1800, SLOT_MS + 15_000);
+        d.handle(TxCommand::Reply { decode_id: 5 }, BASE + 29.5);
+        assert_eq!(view_of(&controls).report, Some(8));
     }
 
     /// Modo Fox: due Hound in coda, la Fox trasmette nel periodo pari un'onda con due segnali FT8 (si decodificano tutti e due); all'R+rapporto
