@@ -147,7 +147,7 @@ Auf dem PC, auf dem Aurora läuft, werden die Core-Tests mit `--target-dir targe
 
 Aurora ist kostenlos und bleibt es. Wenn es Ihnen nützt und Sie die Entwicklung unterstützen möchten, können Sie mit PayPal spenden:
 
-[![PayPal](https://img.shields.io/badge/Spenden-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
+[![Spenden mit PayPal](https://img.shields.io/badge/Spenden_mit-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
 
 Herzlichen Dank an alle, die bereits gespendet haben: Ihre Unterstützung zählt. Unterstützer, die es wünschen, werden in [SOSTENITORI.md](SOSTENITORI.md) genannt.
 

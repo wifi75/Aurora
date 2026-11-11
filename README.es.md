@@ -147,7 +147,7 @@ En el PC con Aurora encendida, las pruebas del core se lanzan con `--target-dir 
 
 Aurora es gratuito y lo seguirá siendo. Si te resulta útil y quieres ayudar a su desarrollo, puedes donar con PayPal:
 
-[![PayPal](https://img.shields.io/badge/Donar-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
+[![Donar con PayPal](https://img.shields.io/badge/Donar_con-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
 
 Muchas gracias a quienes ya han donado: vuestro apoyo cuenta. Los colaboradores que lo deseen aparecen en [SOSTENITORI.md](SOSTENITORI.md).
 
