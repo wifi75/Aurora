@@ -65,10 +65,64 @@ pub struct SavedControls {
     /// Deriva massima di Q65 (0-50 a passi di 5, «Max Drift» di WSJT-X). Nei file scritti prima manca: vale l'interruttore «q65_drift» (acceso = 50).
     #[serde(default)]
     pub q65_max_drift: Option<u8>,
+    /// Periodi di MSK144 in secondi ricordati come WSJT-X per gruppo di bande (`TRPeriod_MSK144`, `TRPeriod_MSK144_6m`, `TRPeriod_MSK144_2m`,
+    /// `mainwindow_settings.cpp:396-398`): le altre bande, 6 m e 4 m, 2 m. Nei file scritti prima manca (30, 15, 30 come WSJT-X).
+    #[serde(default = "default_msk144_periods")]
+    pub msk144_periods: [u32; 3],
 }
 
 fn default_q65_period() -> u32 {
     30
+}
+
+fn default_msk144_periods() -> [u32; 3] {
+    MSK144_DEFAULT_PERIODS
+}
+
+/// MSK144: i periodi di fabbrica di WSJT-X per gruppo di bande (`m_msk144_tr {30}`, `m_msk144_tr6 {15}`, `m_msk144_tr2 {30}`,
+/// `mainwindow.cpp:467-469` e `mainwindow_settings.cpp:396-398`): le altre bande, 6 m e 4 m, 2 m.
+pub const MSK144_DEFAULT_PERIODS: [u32; 3] = [30, 15, 30];
+
+/// MSK144: il periodo ricordato per gruppo di bande (vedi [`MSK144_DEFAULT_PERIODS`]).
+static MSK144_PERIODS: [AtomicU32; 3] = [AtomicU32::new(30), AtomicU32::new(15), AtomicU32::new(30)];
+/// MSK144: «Sh», i messaggi brevi (`m_bShMsgs` di WSJT-X, di fabbrica spento): in ricezione `bshmsg` di `mskrtd`, in trasmissione Tx3-Tx5 brevi.
+static MSK144_SHORT: AtomicBool = AtomicBool::new(false);
+
+/// «Sh» acceso per MSK144.
+pub fn msk144_short() -> bool {
+    MSK144_SHORT.load(Ordering::Relaxed)
+}
+
+/// Il gruppo di bande di cui WSJT-X ricorda il periodo MSK144 (`on_sbTR_valueChanged`, `mainwindow.cpp:13858-13868`): 2 = 2 m, 1 = 6 m e 4 m,
+/// 0 = le altre (e la banda ignota).
+pub fn msk144_band_group(band: Option<&str>) -> usize {
+    match band.map(str::to_ascii_lowercase).as_deref() {
+        Some("2m") => 2,
+        Some("6m" | "4m") => 1,
+        _ => 0,
+    }
+}
+
+/// Mette in uso un periodo MSK144 per sequenza e trasmissione (5, 10, 15, 30 s); valori fuori campo si ignorano.
+fn use_msk144_period(period_s: u32) {
+    if qso_native::slot::set_msk144_period_s(period_s) {
+        tx_native::slot::set_msk144_period_s(period_s);
+    }
+}
+
+/// Il testo del pulsante del periodo in MSK144 con il periodo dato: i secondi d'inizio dei periodi pari o dispari del minuto, come le
+/// etichette di FT8 («TX 00/30»); a 5 s (dodici periodi al minuto) «TX even» e «TX odd» come i modi lenti.
+pub fn msk144_minute_label(period_s: u32, even: bool) -> &'static str {
+    match (period_s, even) {
+        (30, true) => "TX 00",
+        (30, false) => "TX 30",
+        (15, true) => "TX 00/30",
+        (15, false) => "TX 15/45",
+        (10, true) => "TX 00/20/40",
+        (10, false) => "TX 10/30/50",
+        (_, true) => "TX even",
+        (_, false) => "TX odd",
+    }
 }
 
 impl SavedControls {
@@ -453,6 +507,7 @@ impl NativeControls {
             q65_period: q65_setup().period_s,
             q65_sub: q65_setup().submode,
             q65_max_drift: Some(Q65_DRIFT.load(Ordering::Relaxed)),
+            msk144_periods: std::array::from_fn(|i| MSK144_PERIODS[i].load(Ordering::Relaxed)),
         }
     }
 
@@ -483,6 +538,11 @@ impl NativeControls {
         set_q65(saved.q65_period, saved.q65_sub);
         if let Some(drift) = saved.q65_max_drift {
             self.set_value("q65_drift", u32::from(drift));
+        }
+        for (slot, period) in MSK144_PERIODS.iter().zip(saved.msk144_periods) {
+            if qso_native::slot::MSK144_PERIODS_S.contains(&period) {
+                slot.store(period, Ordering::Relaxed);
+            }
         }
         if let Ok(mut memory) = self.levels.lock() {
             memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
@@ -621,7 +681,24 @@ impl NativeControls {
                 }
             }
             "q65_contest" => Q65_CONTEST.store(on, Ordering::Relaxed),
+            "msk_sh" => MSK144_SHORT.store(on, Ordering::Relaxed),
             _ => {}
+        }
+        // «Sh» e «SWL» si escludono come in WSJT-X (`on_cbShMsgs_toggled` e `on_cbSWL_toggled`, `mainwindow.cpp:13967` e `13990`)
+        let other = match (id, on) {
+            ("msk_sh", true) => Some("swl"),
+            ("swl", true) => Some("msk_sh"),
+            _ => None,
+        };
+        if let Some(other) = other {
+            if other == "msk_sh" {
+                MSK144_SHORT.store(false, Ordering::Relaxed);
+            }
+            if let Ok(mut all) = self.switches.lock()
+                && let Some(entry) = all.iter_mut().find(|(name, _)| name == other)
+            {
+                entry.1 = false;
+            }
         }
         if id == "monitor" {
             self.monitor.store(on, Ordering::Relaxed);
@@ -646,13 +723,37 @@ impl NativeControls {
                 }
                 true
             }
+            // MSK144: il periodo T/R (5, 10, 15, 30 s), ricordato per il gruppo della banda in uso come `on_sbTR_valueChanged` di WSJT-X
+            "msk144_period" => {
+                if !qso_native::slot::MSK144_PERIODS_S.contains(&value) {
+                    return false;
+                }
+                MSK144_PERIODS[self.msk144_group()].store(value, Ordering::Relaxed);
+                use_msk144_period(value);
+                true
+            }
             _ => false,
         }
     }
 
+    /// Il gruppo di bande MSK144 della banda in uso.
+    fn msk144_group(&self) -> usize {
+        let band = self.levels.lock().ok().and_then(|m| m.band.clone());
+        msk144_band_group(band.as_deref())
+    }
+
+    /// Mette in uso il periodo MSK144 ricordato per la banda in uso, come WSJT-X entrando in MSK144 e a ogni cambio di banda
+    /// (`mainwindow.cpp:12083-12087` e `12876-12882`). Lo chiama il motore quando il modo e' MSK144: fuori dal modo i periodi non si toccano.
+    pub fn sync_msk144_period(&self) {
+        use_msk144_period(MSK144_PERIODS[self.msk144_group()].load(Ordering::Relaxed));
+    }
+
     /// I controlli a valore numerico con il valore in uso.
     pub fn values(&self) -> Vec<(String, u32)> {
-        vec![("q65_drift".to_string(), u32::from(Q65_DRIFT.load(Ordering::Relaxed)))]
+        vec![
+            ("q65_drift".to_string(), u32::from(Q65_DRIFT.load(Ordering::Relaxed))),
+            ("msk144_period".to_string(), qso_native::slot::msk144_period_s()),
+        ]
     }
 
     /// Registra gli strumenti letti dalla radio; `None` (o nessuna lettura) li spegne. Li legge `meters()` per lo stato della stazione.
@@ -995,8 +1096,7 @@ impl Rig for NativeRig {
             (Mode::Jt65 | Mode::Jt9 | Mode::Jt4, false) => "TX odd",
             (Mode::Q65, true) => "TX even",
             (Mode::Q65, false) => "TX odd",
-            (Mode::Msk144, true) => "TX 00/30",
-            (Mode::Msk144, false) => "TX 15/45",
+            (Mode::Msk144, even) => msk144_minute_label(qso_native::slot::msk144_period_s(), even),
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),
@@ -1039,6 +1139,9 @@ impl Rig for NativeRig {
                     "rrr" => Some(TxCommand::Option(OptionChange::UseRrr(value))),
                     "tx_period" => Some(TxCommand::Option(OptionChange::TxEven(value))),
                     "hound" => Some(TxCommand::Option(OptionChange::Hound(value))),
+                    // «Sh» di MSK144 rifa' i messaggi; «SWL» acceso lo spegne (`on_cbSWL_toggled`)
+                    "msk_sh" => Some(TxCommand::Option(OptionChange::MskShort(value))),
+                    "swl" if value => Some(TxCommand::Option(OptionChange::MskShort(false))),
                     _ => None,
                 };
                 match command {
@@ -1398,5 +1501,43 @@ mod tests {
         controls.set_s_estimate(Some(estimate(4.0)));
         let m = controls.published_meters().expect("misuratori");
         assert_eq!((m.power_w, m.s_points, m.estimated), (Some(10.0), Some(4.0), true));
+    }
+
+    /// MSK144: WSJT-X ricorda il periodo per 2 m, per 6 m e 4 m e per le altre bande (`mainwindow.cpp:13858-13868`).
+    #[test]
+    fn msk144_periods_are_grouped_by_band_like_wsjtx() {
+        assert_eq!(msk144_band_group(Some("2m")), 2);
+        assert_eq!(msk144_band_group(Some("6m")), 1);
+        assert_eq!(msk144_band_group(Some("4m")), 1);
+        assert_eq!(msk144_band_group(Some("10m")), 0);
+        assert_eq!(msk144_band_group(None), 0);
+        assert_eq!(MSK144_DEFAULT_PERIODS, [30, 15, 30]);
+        // un file scritto prima non ha i periodi: valgono quelli di fabbrica di WSJT-X
+        let old: SavedControls = serde_json::from_str(r#"{"version":1,"switches":{},"rx_df":1500,"tx_df":1500,"ft4":false,"attenuation":225,"levels":{}}"#).expect("file vecchio");
+        assert_eq!(old.msk144_periods, [30, 15, 30]);
+    }
+
+    /// Le etichette del pulsante del periodo in MSK144 seguono il periodo scelto.
+    #[test]
+    fn msk144_minute_labels_follow_the_period() {
+        assert_eq!((msk144_minute_label(15, true), msk144_minute_label(15, false)), ("TX 00/30", "TX 15/45"));
+        assert_eq!((msk144_minute_label(30, true), msk144_minute_label(30, false)), ("TX 00", "TX 30"));
+        assert_eq!((msk144_minute_label(10, true), msk144_minute_label(10, false)), ("TX 00/20/40", "TX 10/30/50"));
+        assert_eq!((msk144_minute_label(5, true), msk144_minute_label(5, false)), ("TX even", "TX odd"));
+    }
+
+    /// «Sh» e «SWL» si escludono (`on_cbShMsgs_toggled`, `on_cbSWL_toggled`); un periodo fuori dai valori di WSJT-X si rifiuta.
+    #[test]
+    fn msk144_sh_and_swl_are_exclusive() {
+        let controls = NativeControls::default();
+        assert!(!controls.switch_on("msk_sh"), "Sh di fabbrica spento come WSJT-X");
+        controls.set_switch("swl", true);
+        controls.set_switch("msk_sh", true);
+        assert!(controls.switch_on("msk_sh") && !controls.switch_on("swl"));
+        assert!(msk144_short());
+        controls.set_switch("swl", true);
+        assert!(controls.switch_on("swl") && !controls.switch_on("msk_sh"));
+        assert!(!msk144_short());
+        assert!(!controls.set_value("msk144_period", 20));
     }
 }

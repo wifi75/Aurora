@@ -79,6 +79,8 @@ pub enum OptionChange {
     TxEven(bool),
     /// Modo Hound (DXpedition): niente CQ, niente Salta Tx1, la chiusura e' l'RR73 della spedizione (`Options::hound` del sequenziatore).
     Hound(bool),
+    /// «Sh» di MSK144 (`m_bShMsgs` di WSJT-X): Tx3-Tx5 brevi (`Options::msk_short` del sequenziatore).
+    MskShort(bool),
     /// La scheda Sequenza di Aurora (contatori, ferma se risponde a un altro, CQ rigoroso, watchdog).
     Sequence(SequenceSettings),
 }
@@ -346,7 +348,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// Come `new`, con le opzioni di partenza della sequenza (di base quelle di JTDX: AutoSeq 3, registrazione automatica che ferma a fine QSO...).
     pub fn with_options(call: &str, grid: &str, port: Arc<P>, controls: Arc<NativeControls>, base: Options) -> Result<TxDriver<P>, String> {
         let mode = controls.mode();
-        let mut opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), ..base };
+        let mut opts = Options { tx_freq_hz: controls.tx_df.load(Ordering::Relaxed), msk_short: controls.switch_on("msk_sh"), ..base };
         // la scheda Sequenza di Aurora, se gia' data, vale dall'avvio
         if let Some(settings) = controls.sequence() {
             settings.apply(&mut opts);
@@ -795,6 +797,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                         self.rrr_user = v;
                         self.opts.use_rrr = v || matches!(self.mode, Mode::Jt65 | Mode::Jt9 | Mode::Jt4);
                     }
+                    OptionChange::MskShort(v) => self.opts.msk_short = v,
                     OptionChange::Hound(v) => {
                         self.opts.hound = v;
                         self.hound_manual = Some(self.seq.dx().unwrap_or_default().to_string());
@@ -1800,15 +1803,17 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     let tones = jt::q65::tones(t, &mut self.hashes)?;
                     Ok(jt::q65::modulate(&tones, f64::from(freq), setup, 1.0))
                 }
-                // MSK144: frequenza centrale fissa a 1500 Hz (toni a 1000 e 2000 Hz, come WSJT-X); il quadro di 72 ms si ripete per 14 s
+                // MSK144: frequenza centrale fissa a 1500 Hz (toni a 1000 e 2000 Hz, come WSJT-X); il quadro di 72 ms si ripete fino a
+                // mezzo secondo dalla fine del periodo (vedi `msk144_frames`)
                 Mode::Msk144 => {
-                    // messaggio breve «<IU3ABC K1ABC> R+03» (MSK40): quadri da 20 ms per 14 s
+                    let period_s = tx_native::slot::msk144_period_s();
+                    // messaggio breve «<IU3ABC K1ABC> R+03» (MSK40): quadri da 20 ms
                     if let Some(short) = jt::msk40::tones40(t) {
-                        return Ok(jt::msk40::modulate40(&short, 1500.0, 700, 1.0));
+                        return Ok(jt::msk40::modulate40(&short, 1500.0, msk144_frames(period_s, MSK40_FRAME_MS), 1.0));
                     }
                     check_exact(t, &self.hashes)?;
                     let tones = jt::msk144::tones(t, &mut self.hashes)?;
-                    Ok(jt::msk144::modulate(&tones, 1500.0, 194, 1.0))
+                    Ok(jt::msk144::modulate(&tones, 1500.0, msk144_frames(period_s, MSK144_FRAME_MS), 1.0))
                 }
             }
         };
@@ -1821,6 +1826,18 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Err(e) => Err(e),
         }
     }
+}
+
+/// Durata di un quadro MSK144 (144 bit a 2000 baud) e di un quadro breve MSK40 (40 bit), in millisecondi.
+const MSK144_FRAME_MS: u64 = 72;
+const MSK40_FRAME_MS: u64 = 20;
+
+/// Quanti quadri MSK144 (o MSK40) entrano in una trasmissione: WSJT-X ripete il quadro nei modi veloci fino a `TRperiod*48000 - 24000`
+/// campioni, mezzo secondo prima della fine del periodo (`Modulator.cpp:69` e `387-389`); qui l'onda parte a 0,5 s (`tx_delay`), quindi
+/// dura il periodo meno un secondo: 194 quadri da 72 ms e 700 da 20 ms a 15 s, come prima, 402 e 1450 a 30 s.
+fn msk144_frames(period_s: u32, frame_ms: u64) -> usize {
+    let span_ms = (u64::from(period_s) * 1000).saturating_sub(1000);
+    usize::try_from(span_ms / frame_ms.max(1)).unwrap_or(0).max(1)
 }
 
 /// Il testo come lo leggera' chi riceve, per il confronto: maiuscolo, senza le parentesi dei nominativi con hash, spazi singoli.
@@ -2034,6 +2051,18 @@ mod tests {
                 jt::q65::decode(&audio, &jt::q65::Options { setup, ..jt::q65::Options::default() }, &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
             }
         }
+    }
+
+    /// I quadri MSK144 seguono il periodo (`Modulator.cpp:387-389`): a 15 s quelli di prima (194 e 700), a 30 s il doppio e piu'.
+    #[test]
+    fn msk144_frames_follow_the_period() {
+        assert_eq!(msk144_frames(15, MSK144_FRAME_MS), 194);
+        assert_eq!(msk144_frames(15, MSK40_FRAME_MS), 700);
+        assert_eq!(msk144_frames(30, MSK144_FRAME_MS), 402);
+        assert_eq!(msk144_frames(30, MSK40_FRAME_MS), 1450);
+        assert_eq!(msk144_frames(10, MSK144_FRAME_MS), 125);
+        assert_eq!(msk144_frames(5, MSK144_FRAME_MS), 55);
+        assert_eq!(msk144_frames(5, MSK40_FRAME_MS), 200);
     }
 
     fn last_text(port: &FakePort) -> Vec<String> {

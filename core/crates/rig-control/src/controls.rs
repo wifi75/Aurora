@@ -79,6 +79,10 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("q65_drift"),
     // Q65: contest NA VHF / WW Digi / ARRL Digi (`ncontest = 1`): lista dei messaggi dei chiamanti (`q65_set_list2`)
     own_toggle("q65_contest"),
+    // MSK144: «Sh» di WSJT-X (`cbShMsgs`, `m_bShMsgs`): messaggi brevi MSK40 in trasmissione e in ricezione; esclude «SWL»
+    own_toggle("msk_sh"),
+    // MSK144: il periodo T/R (5, 10, 15, 30 s, `sbTR` di WSJT-X): si imposta solo con un valore
+    own_press("msk144_period"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
