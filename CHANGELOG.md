@@ -1,5 +1,9 @@
 # Changelog
 
+## Non rilasciato
+- **FST4 e FST4W** (WSJT-X 3.3), periodi da 15 s a 30 minuti, verificati su 72 file audio con jt9.exe di WSJT-X; FST4 con le risposte automatiche come FT8, FST4W in ricezione (radiofaro in trasmissione da completare).
+- La tendina del modo mostra solo i modi del gruppo scelto in alto (FT8: FT8, FT4, JT65, JT9, FST4, FST4W; VHF: JT65, JT4, Q65, MSK144): prima li mostrava tutti e i due gruppi erano doppioni.
+
 ## 0.11.237 - 2026-11-11
 - **Split vero (Hamlib, «Rig»): al cambio di banda la radio esce dallo split**; il VFO di trasmissione si porta sulla banda nuova e lo split si riaccende solo un attimo prima della trasmissione. Prima la radio restava in split subito dopo il cambio di banda.
 - **Icona nuova «MULTIMODE»** in tutte le misure (Windows, Linux, macOS, app) e immagini dell'installatore con «Aurora — Multimode Ham Radio Station».

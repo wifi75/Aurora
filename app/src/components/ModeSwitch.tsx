@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useT } from '../i18n';
+import { groupOf } from './ModeNav';
 
 /** I modi che Aurora propone: gli stessi sul PC e sul telefono. */
 /** I sottomodi di JT4: la distanza fra i toni e' 4,375 Hz per 1, 2, 4, 9, 18, 36, 72. */
@@ -194,7 +195,8 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
       ) : null}
       {open && (
         <div className="mode-switch-menu glass" role="menu" aria-label={t('mode.group')}>
-          {MODES.map((m) => (
+          {/* solo i modi del gruppo scelto in alto (FT8 o VHF): prima la tendina li mostrava tutti e i due gruppi erano doppioni. JT65 sta in tutti e due (HF e EME) */}
+          {MODES.filter((m) => groupOf(m) === groupOf(mode || 'FT8') || (m === 'JT65' && groupOf(mode || 'FT8') === 'ft8')).map((m) => (
             <button
               key={m}
               type="button"

@@ -5,14 +5,20 @@ import { ModeSwitch } from './ModeSwitch';
 const openMenu = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('ModeSwitch', () => {
-  it('shows the current mode and opens a menu with FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4 and FST4W', () => {
+  it('shows the current mode and opens a menu with only the modes of its group (FT8 group: FT8, FT4, JT65, JT9, FST4, FST4W)', () => {
     render(<ModeSwitch mode="FT8" onPick={() => {}} />);
     expect(screen.getByRole('button').textContent).toContain('FT8');
     expect(screen.queryByRole('menu')).toBeNull();
     openMenu();
-    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W']);
+    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'FST4', 'FST4W']);
     expect(screen.getByRole('menuitemradio', { name: 'FT8' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('menuitemradio', { name: 'FT4' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('in the VHF group the menu shows only the VHF modes', () => {
+    render(<ModeSwitch mode="MSK144" onPick={() => {}} />);
+    openMenu();
+    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['JT65', 'JT4', 'Q65', 'MSK144']);
   });
 
   it('asks for the clicked mode and closes the menu', () => {
@@ -98,10 +104,12 @@ describe('ModeSwitch', () => {
     for (const [mode, on] of cases) {
       const { unmount } = render(<ModeSwitch mode={mode} onPick={() => {}} />);
       openMenu();
-      for (const m of ['JT65', 'JT9']) {
-        expect(screen.getByRole('menuitemradio', { name: m })).toHaveAttribute('aria-checked', String(on.includes(m)));
+      // ogni gruppo mostra solo i suoi modi: si controllano quelli presenti
+      for (const m of ['JT65', 'JT9', 'FT8']) {
+        const item = screen.queryByRole('menuitemradio', { name: m });
+        if (item) expect(item).toHaveAttribute('aria-checked', String(on.includes(m)));
       }
-      expect(screen.getByRole('menuitemradio', { name: 'FT8' })).toHaveAttribute('aria-checked', 'false');
+      expect(screen.getByRole('menuitemradio', { name: 'JT65' })).toBeInTheDocument();
       unmount();
     }
   });
