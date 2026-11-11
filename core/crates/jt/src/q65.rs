@@ -450,13 +450,6 @@ fn fading_intrinsics(wide: &[f32], spb: usize, b90ts: f32, model: Fading, gain: 
     pix
 }
 
-/// Le larghezze B90·Ts provate, come `q65_decode.f90` (B90 = 1,72^ibw Hz, da ibw 1/3/8 secondo il sottomodo, sette passi).
-fn b90_sweep(setup: Setup) -> impl Iterator<Item = f32> {
-    let ibwa = [1, 3, 8, 8, 8][usize::from(setup.submode.min(4))];
-    let baud = setup.baud() as f32;
-    (ibwa..=(ibwa + 6).min(15)).map(move |ibw| 1.72f32.powi(ibw) / baud)
-}
-
 // ---------------------------------------------------------------- informazioni a priori (AP)
 
 /// Ipotesi sul messaggio atteso (`q65_ap.f90`): bit gia' noti dei 13 simboli di messaggio.
@@ -522,36 +515,69 @@ fn std_call(call: &str) -> bool {
     (1..=2).contains(&iarea) && nplet > 0 && npdig < iarea && nslet <= 3
 }
 
-/// `q65_set_list`: i 206 messaggi possibili del QSO con il DX (solo i due nominativi, RRR, RR73, 73, il CQ del DX, il locatore e i
-/// rapporti da -50 a +49 con e senza R), per la decodifica da lista (`q65_dec_q3`).
+/// `q65_stdcall` (`q65_set_list.f90:97-114`): come `stdcall`, ma un «/R» o «/P» finale (nominativo di piu' di 3 caratteri) non
+/// rende il nominativo non standard: si manda ancora come messaggio di tipo 1 con il bit ipa/ipb acceso.
+fn q65_std_call(call: &str) -> bool {
+    let n = call.len();
+    if n > 3 && (call.ends_with("/R") || call.ends_with("/P")) { std_call(&call[..n - 2]) } else { std_call(call) }
+}
+
+/// Le righe da 1 a 206 di `q65_set_list`: i due nominativi, RRR, RR73, 73, il CQ del DX, il locatore e i rapporti da -50 a +49 con e
+/// senza R.
+fn qso_list_text(i: i32, my: &str, dx: &str, grid: &str, my_std: bool, dx_std: bool) -> String {
+    let pair = if !my_std {
+        if i == 1 || i >= 6 { format!("<{my}> {dx}") } else if (2..=4).contains(&i) { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
+    } else if !dx_std {
+        if i <= 4 || i == 6 { format!("<{my}> {dx}") } else if i >= 7 { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
+    } else {
+        format!("{my} {dx}")
+    };
+    match i {
+        2 => format!("{pair} RRR"),
+        3 => format!("{pair} RR73"),
+        4 => format!("{pair} 73"),
+        5 if dx_std => format!("CQ {dx} {grid}").trim_end().to_string(),
+        5 => format!("CQ {dx}"),
+        6 if dx_std && !grid.is_empty() => format!("{pair} {grid}"),
+        7.. => {
+            let snr = -50 + (i - 7) / 2;
+            if i % 2 == 1 { format!("{pair} {snr:+03}") } else { format!("{pair} R{snr:+03}") }
+        }
+        _ => pair,
+    }
+}
+
+/// `q65_set_list`: i messaggi possibili del QSO con il DX, per la decodifica da lista (`q65_dec_q3`). Sono 206 (`qso_list_text`);
+/// se il DX e' un nominativo standard con «/R» o «/P» (`q65_set_list.f90:19-29`) si tengono anche quelli che dava la vecchia strada
+/// del nominativo non standard: il CQ senza locatore (207) e, se il mio nominativo e' standard, «<MIO> DX» con niente, RRR, RR73 o
+/// 73 (208-211) e «MIO <DX>» con i rapporti con e senza R (212-411, come 7-206): 411 in tutto.
 fn qso_list(my_call: &str, dx_call: &str, dx_grid: &str, hashes: &CallHashes) -> Vec<ListWord> {
     let (my, dx) = (my_call.trim().to_uppercase(), dx_call.trim().to_uppercase());
     let grid: String = dx_grid.trim().to_uppercase().chars().take(4).collect();
     if my.is_empty() || dx.is_empty() {
         return Vec::new();
     }
-    let (my_std, dx_std) = (std_call(&my), std_call(&dx));
+    let (my_std, dx_std) = (q65_std_call(&my), q65_std_call(&dx));
+    let n = dx.len();
+    let mut ncw = 206;
+    if dx_std && n > 3 && (dx.ends_with("/R") || dx.ends_with("/P")) {
+        ncw = if my_std { 411 } else { 207 };
+    }
     let mut out = Vec::new();
-    for i in 1..=206 {
-        let pair = if !my_std {
-            if i == 1 || i >= 6 { format!("<{my}> {dx}") } else if (2..=4).contains(&i) { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
-        } else if !dx_std {
-            if i <= 4 || i == 6 { format!("<{my}> {dx}") } else if i >= 7 { format!("{my} <{dx}>") } else { format!("{my} {dx}") }
-        } else {
-            format!("{my} {dx}")
-        };
+    for i in 1..=ncw {
         let text = match i {
-            2 => format!("{pair} RRR"),
-            3 => format!("{pair} RR73"),
-            4 => format!("{pair} 73"),
-            5 if dx_std => format!("CQ {dx} {grid}").trim_end().to_string(),
-            5 => format!("CQ {dx}"),
-            6 if dx_std && !grid.is_empty() => format!("{pair} {grid}"),
-            7.. => {
-                let snr = -50 + (i - 7) / 2;
-                if i % 2 == 1 { format!("{pair} {snr:+03}") } else { format!("{pair} R{snr:+03}") }
+            ..=206 => qso_list_text(i, &my, &dx, &grid, my_std, dx_std),
+            207 => format!("CQ {dx}"),
+            208 => format!("<{my}> {dx}"),
+            209 => format!("<{my}> {dx} RRR"),
+            210 => format!("<{my}> {dx} RR73"),
+            211 => format!("<{my}> {dx} 73"),
+            _ => {
+                // `isnr = -50 + (i-205-7)/2`, rapporto semplice con `i-205` dispari
+                let k = i - 205;
+                let snr = -50 + (k - 7) / 2;
+                if k % 2 == 1 { format!("{my} <{dx}> {snr:+03}") } else { format!("{my} <{dx}> R{snr:+03}") }
             }
-            _ => pair,
         };
         let Ok(bits) = pack(&text, &mut hashes.clone()) else { continue };
         let msg = bits_to_symbols(&bits);
@@ -728,8 +754,11 @@ pub struct Options {
     pub f_low_hz: f32,
     pub f_high_hz: f32,
     pub max_candidates: usize,
-    /// Soglia del sincronismo della media dei periodi (rapporto dell'energia sui simboli di sincronismo rispetto al rumore).
-    pub min_sync: f32,
+    /// «Auto Clear Avg after decode» di WSJT-X (bit 128 di `ndepth`, `q65_decode.f90:605-606,717-718`): un messaggio nuovo entro
+    /// `rx_tol_hz` dalla frequenza di ricezione svuota la media della sua parita'. In WSJT-X e' spento di fabbrica (`NDepth` vale 3,
+    /// `mainwindow_settings.cpp:529`, letto con lo stesso 3 nel `wsjtx.exe` compilato): spento, la media resta finche' non si preme
+    /// «Clear Avg» o cambiano periodo e sottomodo.
+    pub auto_clear_avg: bool,
     /// Soglia dei candidati di un periodo, come `q65_ccf_22`: altezza del picco della correlazione sui 22 simboli di sincronismo
     /// sopra la mediana, in unita' della dispersione (84° meno 50° percentile). WSJT-X usa 6.
     pub sync_snr: f32,
@@ -768,7 +797,7 @@ impl Default for Options {
             f_low_hz: 200.0,
             f_high_hz: 3000.0,
             max_candidates: 20,
-            min_sync: 2.5,
+            auto_clear_avg: false,
             sync_snr: 6.0,
             rx_hz: None,
             rx_tol_hz: 50.0,
@@ -784,103 +813,6 @@ impl Default for Options {
             callers: Vec::new(),
         }
     }
-}
-
-/// Spettri di potenza di un simbolo (un bin = la velocita' di simbolo) a passi di mezzo simbolo.
-fn spectra(audio: &[f32], nsps: usize, nbins: usize, step: usize) -> Vec<Vec<f32>> {
-    let fft = FftPlanner::<f32>::new().plan_fft_forward(nsps);
-    let mut buf = vec![Complex::new(0f32, 0.0); nsps];
-    let mut out = Vec::new();
-    let mut k = 0usize;
-    while k + nsps <= audio.len() {
-        for (b, &x) in buf.iter_mut().zip(&audio[k..k + nsps]) {
-            *b = Complex::new(x, 0.0);
-        }
-        fft.process(&mut buf);
-        out.push(buf[..nbins].iter().map(|c| c.norm_sqr()).collect());
-        k += step;
-    }
-    out
-}
-
-fn bins_for(options: &Options) -> usize {
-    let setup = options.setup;
-    let top = (f64::from(options.f_high_hz) + setup.bandwidth_hz()) / setup.baud();
-    // 64 bin oltre l'ultimo tono per la metrica dell'evanescenza
-    ((top.ceil() as usize) + M + 4).min(setup.nsps() / 2)
-}
-
-/// Candidati (bin del tono 0, ritardo in passi, sincronismo) dagli spettri fatti a passi di 1/`per_sym` di simbolo.
-fn find_candidates(sp: &[Vec<f32>], options: &Options, per_sym: usize) -> Vec<(usize, i64, f32)> {
-    let setup = options.setup;
-    let nbins = sp.first().map_or(0, Vec::len);
-    if sp.len() < per_sym * NSYM || nbins == 0 {
-        return Vec::new();
-    }
-    let step = setup.nsps() / per_sym;
-    let ps = per_sym as i64;
-    let baud = setup.baud();
-    let spb = 1usize << setup.submode;
-    // rumore di ogni bin: mediana nel tempo (i segnali occupano pochi bin per volta)
-    let noise: Vec<f32> = (0..nbins)
-        .map(|i| {
-            let mut col: Vec<f32> = sp.iter().map(|r| r[i]).collect();
-            col.sort_by(f32::total_cmp);
-            col[col.len() / 2].max(f32::MIN_POSITIVE)
-        })
-        .collect();
-    let start0 = setup.start_s() * FS / step as f64;
-    let lag_lo = (start0 - 2.0 * FS / step as f64).floor().max(0.0) as i64;
-    let late_s = match (options.eme_delay, setup.period_s) {
-        (false, _) => 2.0,
-        (true, 15) => 4.0,
-        (true, _) => 5.5,
-    };
-    let lag_hi = ((start0 + late_s * FS / step as f64).ceil() as i64).min(sp.len() as i64 - ps * NSYM as i64);
-    let ia = ((f64::from(options.f_low_hz) / baud).floor() as usize).max(1);
-    let ib = ((f64::from(options.f_high_hz) / baud).ceil() as usize).min(nbins.saturating_sub(65 * spb + M + 1));
-    let mut found: Vec<(usize, i64, f32)> = Vec::new();
-    for i in ia..=ib {
-        let mut best = (0i64, f32::MIN);
-        for lag in lag_lo..=lag_hi {
-            let s: f32 = ISYNC.iter().map(|&p| sp[(lag + ps * (p as i64 - 1)) as usize][i] / noise[i]).sum::<f32>() / ISYNC.len() as f32;
-            if s > best.1 {
-                best = (lag, s);
-            }
-        }
-        found.push((i, best.0, best.1));
-    }
-    let width = 2 * spb;
-    let mut candidates: Vec<(usize, i64, f32)> = found
-        .iter()
-        .copied()
-        .filter(|c| c.2 >= options.min_sync && found.iter().all(|o| o.0.abs_diff(c.0) > width || o.2 <= c.2))
-        .collect();
-    candidates.sort_by(|a, b| b.2.total_cmp(&a.2));
-    candidates.truncate(options.max_candidates);
-    candidates
-}
-
-/// Energie larghe dei 63 simboli di dati: per ognuno 64·(2+spb) bin a partire da 64 bin sotto il primo tono dei dati.
-/// `symbol(s, bin)` da' l'energia del bin nel simbolo `s` (da 0 a 84).
-fn wide_energies(i: usize, spb: usize, mut symbol: impl FnMut(usize, usize) -> f32) -> Vec<f32> {
-    let wbins = M * (2 + spb);
-    let lo = (i + spb) as i64 - M as i64;
-    let mut out = vec![0f32; NTX * wbins];
-    let mut k = 0;
-    for s in 0..NSYM {
-        if ISYNC.contains(&(s + 1)) {
-            continue;
-        }
-        for (b, o) in out[k * wbins..(k + 1) * wbins].iter_mut().enumerate() {
-            let bin = lo + b as i64;
-            if bin >= 0 {
-                *o = symbol(s, bin as usize);
-            }
-        }
-        k += 1;
-    }
-    out
 }
 
 /// Le energie dei 64 toni (63 x 64) dalle energie larghe.
@@ -900,46 +832,6 @@ struct Hit {
     msg: [i32; NK],
     ap: u8,
     b90_hz: Option<f32>,
-}
-
-/// Prova un candidato: Bessel, poi l'evanescenza rapida, poi le stesse con ogni ipotesi AP (`q65_dec_q012`).
-fn decode_wide(wide: &[f32], options: &Options, aps: &[Ap], gain: f32) -> Option<Hit> {
-    let setup = options.setup;
-    let spb = 1usize << setup.submode;
-    let bessel = bessel_intrinsics(&narrow(wide, spb));
-    let fading: Vec<(f32, Vec<f32>)> = match options.fading {
-        Some(model) => b90_sweep(setup).map(|b| (b * setup.baud() as f32, fading_intrinsics(wide, spb, b, model, gain))).collect(),
-        None => Vec::new(),
-    };
-    for ap in std::iter::once(None).chain(aps.iter().map(Some)) {
-        let kind = ap.map_or(0, |a| a.kind);
-        if let Some(msg) = qra_decode(&bessel, ap) {
-            return Some(Hit { msg, ap: kind, b90_hz: None });
-        }
-        for (b90, pix) in &fading {
-            if let Some(msg) = qra_decode(pix, ap) {
-                return Some(Hit { msg, ap: kind, b90_hz: Some(*b90) });
-            }
-        }
-    }
-    None
-}
-
-/// S/N in 2500 Hz dalla parola decodificata (`q65_esnodb`).
-fn snr_of(wide: &[f32], msg: &[i32; NK], setup: Setup) -> f64 {
-    let energies = narrow(wide, 1usize << setup.submode);
-    let cw = encode_symbols(msg);
-    let (mut sn, mut nn) = (0f64, 0f64);
-    for (r, &y) in cw.iter().enumerate() {
-        for t in 0..M {
-            let e = f64::from(energies[r * M + t]);
-            if t == y as usize { sn += e } else { nn += e }
-        }
-    }
-    sn /= NTX as f64;
-    nn /= (NTX * (M - 1)) as f64;
-    let esno = if nn > 0.0 { ((sn - nn).max(0.316 * nn) / nn).log10() * 10.0 } else { 50.0 };
-    esno - 10.0 * (2500.0 / setup.baud()).log10()
 }
 
 // ---------------------------------------------------------------- un periodo: sincronismo e ricerca come WSJT-X
@@ -1316,9 +1208,10 @@ impl<'a> Searcher<'a> {
     }
 
     /// `q65_dec_q012` sulle energie prese dagli spettri del sincronismo (`q65_s1_to_s3`), al bin `i` del tono 0 e alla riga `jrow`
-    /// del primo simbolo: e' il primo tentativo sulla frequenza di ricezione.
-    fn from_sync_spectra(&self, i: usize, jrow: i64) -> Option<Hit> {
-        let s3 = self.s3_from_sync(self.sp, i, jrow)?;
+    /// del primo simbolo: e' il primo tentativo sulla frequenza di ricezione. `sp` sono gli spettri del periodo o la loro media
+    /// (`s1=s1a(:,:,iseq)` di `q65_dec0` con `iavg=2`).
+    fn from_sync_spectra(&self, sp: &SyncSpectra, i: usize, jrow: i64) -> Option<Hit> {
+        let s3 = self.s3_from_sync(sp, i, jrow)?;
         std::iter::once(None).chain(self.aps.iter().map(Some)).find_map(|ap| self.try_metrics(&s3, ap, |_| true))
     }
 
@@ -1345,12 +1238,18 @@ impl<'a> Searcher<'a> {
 
     /// `q65_loops`: attorno al candidato (tono 0 a `f0`, primo simbolo al campione `start`) prova mezzi bin di frequenza, sedicesimi
     /// di simbolo di tempo e larghezze B90 entro la distanza `MAXDIST`, prima senza AP e poi con ogni ipotesi.
-    fn loops(&self, f0: f64, start: i64) -> Option<(Hit, f64, i64)> {
+    /// `drift_hz` e' la deriva di `q65_ccf_22` (`drift=df*idrift_best`, `q65.f90:894`), tolta in ogni tentativo come fa `twkfreq` con
+    /// `a(2)=-0.5*drift` (`q65_loops.f90:53-57`): alla frequenza si aggiunge `a(2)·x`, con `x` da -1 a +1 lungo tutto il periodo
+    /// (`npts` campioni di `c00`, non i soli 85 simboli) e zero a meta'.
+    fn loops(&self, f0: f64, start: i64, drift_hz: f64) -> Option<(Hit, f64, i64)> {
         let setup = self.setup();
         let nsps = setup.nsps() as f64;
         let baud = setup.baud();
         let (z, fbase) = self.band(f0);
         let fsd = self.nsd as f64 * baud;
+        // fase della rampa: 2π·∫a(2)·x dt = -π·drift·(t² - T·t)/T, con t in secondi dall'inizio del periodo
+        let period = f64::from(setup.period_s);
+        let k2 = -std::f64::consts::PI * drift_hz / period;
         let (ibwa, ibwb) = ibw_range(setup);
         let ibw0 = (ibwa + ibwb) / 2;
         let mut shifted: Vec<Option<Vec<Complex<f32>>>> = vec![None; IDFMAX as usize];
@@ -1373,7 +1272,8 @@ impl<'a> Searcher<'a> {
                             z.iter()
                                 .enumerate()
                                 .map(|(n, v)| {
-                                    let p = w * n as f64;
+                                    let t = n as f64 / fsd;
+                                    let p = w * n as f64 + k2 * (t * t - period * t);
                                     v * Complex::new(p.cos() as f32, p.sin() as f32)
                                 })
                                 .collect()
@@ -1485,8 +1385,9 @@ impl<'a> Searcher<'a> {
         None
     }
 
-    /// `q65_snr`: S/N in 2500 Hz sommando gli spettri dei sincronismi allineati sugli 85 toni del messaggio decodificato.
-    fn snr(&self, msg: &[i32; NK], f0: f64, start: i64) -> i32 {
+    /// `q65_snr`: S/N in 2500 Hz sommando gli spettri dei sincronismi allineati sugli 85 toni del messaggio decodificato. `sp` sono
+    /// gli spettri del periodo o, per un messaggio dalla media, la media (in WSJT-X `s1` ne e' la copia).
+    fn snr(&self, sp: &SyncSpectra, msg: &[i32; NK], f0: f64, start: i64) -> i32 {
         let setup = self.setup();
         let df = setup.baud();
         let mode = 1usize << setup.submode;
@@ -1500,8 +1401,8 @@ impl<'a> Searcher<'a> {
             }
         }
         let nominal = (setup.start_s() * FS).round() as i64;
-        let jrow = self.sp.j0 + ((start - nominal) as f64 / self.sp.istep as f64).round() as i64;
-        let iz = self.sp.w - 1;
+        let jrow = sp.j0 + ((start - nominal) as f64 / sp.istep as f64).round() as i64;
+        let iz = sp.w - 1;
         let nsum = (10 * mode).max((50.0 / df).round() as usize);
         let i0 = (f0 / df).round() as usize;
         let ia = i0.saturating_sub(2 * nsum).max(1);
@@ -1510,7 +1411,7 @@ impl<'a> Searcher<'a> {
             return -35;
         }
         let spec: Vec<f32> = (ia..=ib)
-            .map(|i| tones.iter().enumerate().map(|(s, &t)| self.sp.at(i + mode * t, jrow + (NSTEP * s) as i64)).sum())
+            .map(|i| tones.iter().enumerate().map(|(s, &t)| sp.at(i + mode * t, jrow + (NSTEP * s) as i64)).sum())
             .collect();
         let avg = (spec[..nsum].iter().sum::<f32>() + spec[spec.len() - nsum..].iter().sum::<f32>()) / (2 * nsum) as f32;
         if avg <= 0.0 {
@@ -1521,15 +1422,200 @@ impl<'a> Searcher<'a> {
     }
 }
 
-/// Decodifica di un periodo come `q65_decode.f90`: correlazione sui sincronismi (`q65_ccf_22`), primo tentativo sulla frequenza di
-/// ricezione, poi `q65_loops` sui candidati in ordine di frequenza, saltando quelli che cadono su un segnale gia' decodificato.
-fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]) -> Vec<Found> {
+impl Searcher<'_> {
+    /// Campione dell'inizio del primo simbolo per il ritardo `lag` (in passi di `istep`) di `q65_ccf_22`.
+    fn start_of(&self, lag: i64) -> i64 {
+        (self.setup().start_s() * FS).round() as i64 + lag * self.sp.istep as i64
+    }
+
+    /// Campione dell'inizio del primo simbolo per la riga `jrow` degli spettri del sincronismo.
+    fn start_of_row(&self, jrow: i64) -> i64 {
+        self.start_of(jrow - self.sp.j0)
+    }
+
+    /// Il messaggio trovato con il suo S/N (`q65_snr` su `sp`).
+    fn found(&self, sp: &SyncSpectra, hit: Hit, freq_hz: f64, start: i64, sync: f32, averaged: u32) -> Found {
+        Found { snr_db: self.snr(sp, &hit.msg, freq_hz, start), hit, freq_hz, start, sync, averaged }
+    }
+}
+
+impl SyncSpectra {
+    /// Gli stessi spettri (righe, colonne, ritardi) con altri valori: la media della parita' (`s1=s1a(:,:,iseq)` di `q65_dec0`).
+    fn with_s1(&self, s1: Vec<f32>) -> SyncSpectra {
+        SyncSpectra { s1, ..*self }
+    }
+}
+
+/// La correlazione migliore di `q65_ccf_22` entro `ntol` dalla frequenza di ricezione (`ibest`, `q65.f90:880-886`): servono valori
+/// positivi (`ccfbest` parte da 0) e a parita' vince il bin piu' basso.
+fn rx_peak(ccf2: &[f32], ia: usize, ib: usize, df: f64, options: &Options) -> Option<usize> {
+    let rx = f64::from(options.rx_hz?);
+    (ia..=ib)
+        .filter(|&i| (i as f64 * df - rx).abs() <= f64::from(options.rx_tol_hz) && ccf2[i] > 0.0)
+        .max_by(|&a, &b| ccf2[a].total_cmp(&ccf2[b]).then(b.cmp(&a)))
+}
+
+/// Un passaggio di `q65_ccf_22` su un insieme di spettri (del periodo o della media): correlazioni e ritardi, il picco sulla frequenza
+/// di ricezione, la sua deriva in hertz e i candidati. In WSJT-X sono variabili del modulo (`drift`, `candidates`, `ncand`) che ogni
+/// chiamata riscrive.
+struct Sync22 {
+    ccf2: Vec<f32>,
+    lags: Vec<i64>,
+    rx: Option<usize>,
+    drift_hz: f64,
+    candidates: Vec<(usize, i64, f32)>,
+}
+
+impl Sync22 {
+    fn new(sp: &SyncSpectra, ia: usize, ib: usize, max_drift: i32, options: &Options) -> Sync22 {
+        let setup = options.setup;
+        let df = setup.baud();
+        let (ccf2, lags, drifts) = sp.ccf22(ia, ib, max_drift);
+        let rx = rx_peak(&ccf2, ia, ib, df, options);
+        // `drift=df*idrift_best` (`q65.f90:894`): la deriva del picco migliore entro `ntol`, 0 se non ce n'e'
+        let drift_hz = rx.map_or(0.0, |i| df * f64::from(drifts[i]));
+        let candidates = sync_candidates(&ccf2, &lags, ia, ib, 1usize << setup.submode, options);
+        Sync22 { ccf2, lags, rx, drift_hz, candidates }
+    }
+}
+
+/// Un messaggio trovato va a `emit` (che dice se e' nuovo) e fra i trovati. AutoClrAvg (`q65_decode.f90:605-606,717-718`): se e'
+/// nuovo, l'opzione e' accesa e cade entro `ntol` dalla frequenza di ricezione (`int(abs(f0dec-nfqso)).le.ntol`), la media della
+/// parita' si svuota (`q65_clravg`), qualunque sia la stazione.
+fn report(f: Found, found: &mut Vec<Found>, emit: &mut dyn FnMut(&Found) -> bool, avg: &mut Option<(&mut Averager, u64)>, options: &Options) {
+    if emit(&f)
+        && options.auto_clear_avg
+        && let Some(rx) = options.rx_hz
+        && (f.freq_hz - f64::from(rx)).abs().trunc() <= f64::from(options.rx_tol_hz)
+        && let Some((averager, index)) = avg.as_mut()
+    {
+        averager.clear_parity(*index);
+    }
+    found.push(f);
+}
+
+/// Il giro dei candidati di `q65_decode.f90:630-741`: `q65_loops` (con la deriva `drift_hz`) su ognuno in ordine di frequenza,
+/// saltando quelli che cadono su un segnale gia' trovato. Un tentativo identico gia' fatto (stesso bin, inizio e deriva) non si
+/// ripete: darebbe lo stesso esito.
+fn run_candidates(
+    searcher: &Searcher,
+    candidates: &[(usize, i64, f32)],
+    drift_hz: f64,
+    tried: &mut Vec<(usize, i64, u64)>,
+    found: &mut Vec<Found>,
+    report: &mut dyn FnMut(Found, &mut Vec<Found>),
+) {
+    let setup = searcher.setup();
+    let df = setup.baud();
+    let width = df * (1usize << setup.submode) as f64;
+    let overlaps = |f0: f64, found: &[Found]| found.iter().any(|d| f0 - d.freq_hz > -width && f0 - d.freq_hz < 65.0 * width);
+    let mut todo: Vec<(usize, i64, f32)> = Vec::new();
+    for &(i, lag, snr) in candidates {
+        let key = (i, searcher.start_of(lag), drift_hz.to_bits());
+        if !tried.contains(&key) {
+            tried.push(key);
+            todo.push((i, key.1, snr));
+        }
+    }
+    let threads = searcher.options.threads.max(1).min(todo.len().max(1));
+    if threads <= 1 {
+        for (i, start, snr) in todo {
+            let f0 = i as f64 * df;
+            if overlaps(f0, found) {
+                continue;
+            }
+            if let Some((hit, f, start)) = searcher.loops(f0, start, drift_hz) {
+                report(searcher.found(searcher.sp, hit, f, start, snr, 1), found);
+            }
+        }
+        return;
+    }
+    // in parallelo si provano tutti; poi, in ordine di frequenza, si scartano quelli caduti su un segnale gia' preso
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let mut results: Vec<Option<(Hit, f64, i64)>> = Vec::new();
+    results.resize_with(todo.len(), || None);
+    let slots = std::sync::Mutex::new(results);
+    let before: &[Found] = found;
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| {
+                loop {
+                    let k = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let Some(&(i, start, _)) = todo.get(k) else { break };
+                    if overlaps(i as f64 * df, before) {
+                        continue;
+                    }
+                    let r = searcher.loops(i as f64 * df, start, drift_hz);
+                    if let Ok(mut s) = slots.lock() {
+                        s[k] = r;
+                    }
+                }
+            });
+        }
+    });
+    let results = slots.into_inner().unwrap_or_default();
+    for ((i, _, snr), r) in todo.iter().zip(results) {
+        if overlaps(*i as f64 * df, found) {
+            continue;
+        }
+        if let Some((hit, f, start)) = r {
+            report(searcher.found(searcher.sp, hit, f, start, *snr, 1), found);
+        }
+    }
+}
+
+/// La media della parita' sulla frequenza di ricezione (`iavg=1` e `iavg=2` di `q65_decode.f90:527-556`): prima la lista dei
+/// messaggi del QSO (`q65_ccf_85` + `q65_dec_q3` su `s1a`), poi `q65_ccf_22` sulla media e `q65_dec_q012` sul suo picco migliore
+/// entro `ntol`. Il messaggio va a `report`; ritorna il `q65_ccf_22` della media, i cui candidati e la cui deriva servono al giro dei
+/// candidati che segue. `None` se la media della parita' e' vuota.
+fn try_average(
+    searcher: &Searcher,
+    list: &[ListWord],
+    (ia, ib, max_drift): (usize, usize, i32),
+    avg: &mut Option<(&mut Averager, u64)>,
+    found: &mut Vec<Found>,
+    emit: &mut dyn FnMut(&Found) -> bool,
+) -> Option<Sync22> {
+    let options = searcher.options;
+    let df = options.setup.baud();
+    let (spa, navg) = {
+        let (averager, index) = avg.as_ref()?;
+        let p = (*index % 2) as usize;
+        if averager.navg[p] == 0 {
+            return None;
+        }
+        (searcher.sp.with_s1(averager.s1a[p].clone()), averager.navg[p])
+    };
+    let listed = options.rx_hz.filter(|_| !list.is_empty()).and_then(|f| searcher.list_decode(&spa, list, (f64::from(f) / df).round() as usize, false));
+    let sync = Sync22::new(&spa, ia, ib, max_drift, options);
+    let hit = match listed {
+        Some((hit, i, jrow)) => Some((hit, i, searcher.start_of_row(jrow))),
+        None => sync.rx.and_then(|i| searcher.from_sync_spectra(&spa, i, spa.j0 + sync.lags[i]).map(|hit| (hit, i, searcher.start_of(sync.lags[i])))),
+    };
+    if let Some((hit, i, start)) = hit {
+        let f = searcher.found(&spa, hit, i as f64 * df, start, sync.ccf2.get(i).copied().unwrap_or(0.0), navg);
+        report(f, found, emit, avg, options);
+    }
+    Some(sync)
+}
+
+/// Decodifica di un periodo come `q65_decode.f90`, nello stesso ordine:
+/// 1. sulla frequenza di ricezione la lista dei messaggi del QSO, `q65_dec_q012` sugli spettri del sincronismo e `q65_loops`;
+/// 2. se li' non esce nulla e la media della parita' ha almeno due periodi, la media (`q65_decode.f90:525`);
+/// 3. se nulla e la media non e' stata provata, la fase 5 di W3SZ con `max_drift = 50`;
+/// 4. `q65_loops` sui candidati (quelli della media, se e' gia' stata provata: `q65_ccf_22` li ha riscritti);
+/// 5. se la media non e' stata ancora provata e ha almeno due periodi, la media e poi i suoi candidati (`q65_decode.f90:742`).
+///
+/// `avg` e' la media con il numero del periodo (`None` = senza media, come «Include averaging» spento in WSJT-X); ogni messaggio va a
+/// `emit`, che dice se e' nuovo.
+fn decode_period(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord], mut avg: Option<(&mut Averager, u64)>, emit: &mut dyn FnMut(&Found) -> bool) {
     let setup = options.setup;
     let nsps = setup.nsps();
     let mode = 1usize << setup.submode;
     let df = setup.baud();
     let mut ia = (f64::from(options.f_low_hz).max(100.0) / df) as usize;
     let mut ib = (f64::from(options.f_high_hz).min(4900.0) / df) as usize;
+    let ib_band = ib;
     // con la deriva (`max_drift`, W3SZ) `q65_ccf_22` cerca solo entro `ntol` dalla frequenza di ricezione
     if let Some(rx) = options.rx_hz.filter(|_| options.max_drift != 0) {
         let (rx, tol) = (f64::from(rx), f64::from(options.rx_tol_hz));
@@ -1541,109 +1627,94 @@ fn decode_single(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
         ia = ia.max(1);
     }
     let nsum = (10 * mode).max((50.0 / df).round() as usize);
-    let iz = (ib + 2 * nsum + 66 * mode + M + 2).min(nsps / 2 - 1);
+    // gli spettri coprono sempre tutta la banda di ricerca, anche con la deriva: cosi' la media non cambia forma quando si sposta la
+    // frequenza di ricezione (in WSJT-X arrivano sempre a 5000 Hz, `iz=5000.0/df`)
+    let iz = (ib.max(ib_band) + 2 * nsum + 66 * mode + M + 2).min(nsps / 2 - 1);
     if ia < 1 || ia >= ib || ib >= iz {
-        return Vec::new();
+        return;
     }
     let sp = SyncSpectra::new(audio, setup, iz, options.eme_delay);
+    // `q65_symspec` con dati nuovi (`lnewdat`): il periodo entra nella media della sua parita' (`q65.f90:630-635`)
+    if let Some((averager, index)) = avg.as_mut() {
+        averager.add(setup, *index, &sp);
+    }
     let max_drift = options.max_drift.clamp(0, 50);
-    let (ccf2, lags, drifts) = sp.ccf22(ia, ib, max_drift);
-    let nominal = (setup.start_s() * FS).round() as i64;
-    let start_of = |lag: i64| nominal + lag * sp.istep as i64;
-    let rx = options.rx_hz.and_then(|rx| {
-        (ia..=ib)
-            .filter(|&i| (i as f64 * df - f64::from(rx)).abs() <= f64::from(options.rx_tol_hz) && ccf2[i] > 0.0)
-            .max_by(|&a, &b| ccf2[a].total_cmp(&ccf2[b]).then(b.cmp(&a)))
-    });
-    let candidates = sync_candidates(&ccf2, &lags, ia, ib, mode, options);
+    let single = Sync22::new(&sp, ia, ib, max_drift, options);
     let searcher = Searcher::new(audio, options, aps, &sp);
     let mut found: Vec<Found> = Vec::new();
-    let finish = |hit: Hit, f: f64, start: i64, sync: f32| Found { snr_db: searcher.snr(&hit.msg, f, start), hit, freq_hz: f, start, sync, averaged: 1 };
+    let mut tried: Vec<(usize, i64, u64)> = Vec::new();
+    let navg = |avg: &Option<(&mut Averager, u64)>| avg.as_ref().map_or(0, |(a, index)| a.count(*index));
 
-    // con il DX noto, prima la decodifica da lista sulla frequenza di ricezione (`q65_dec0` con `ncw>0`)
+    // 1. con il DX noto, prima la decodifica da lista sulla frequenza di ricezione (`q65_dec0` con `ncw>0`), poi `q65_dec_q012` e
+    // `q65_loops` sul picco migliore entro `ntol`
     let listed = options.rx_hz.filter(|_| !list.is_empty()).and_then(|f| searcher.list_decode(&sp, list, (f64::from(f) / df).round() as usize, false));
-    let mut rx_tried = None;
+    let mut at_rx = false;
     if let Some((hit, i, jrow)) = listed {
-        let start = nominal + (jrow - sp.j0) * sp.istep as i64;
-        found.push(finish(hit, i as f64 * df, start, ccf2.get(i).copied().unwrap_or(0.0)));
-    } else if let Some(i) = rx {
-        rx_tried = Some(i);
-        let f0 = i as f64 * df;
-        let hit = searcher.from_sync_spectra(i, sp.j0 + lags[i]).map(|h| (h, f0, start_of(lags[i]))).or_else(|| searcher.loops(f0, start_of(lags[i])));
+        let f = searcher.found(&sp, hit, i as f64 * df, searcher.start_of_row(jrow), single.ccf2.get(i).copied().unwrap_or(0.0), 1);
+        report(f, &mut found, emit, &mut avg, options);
+        at_rx = true;
+    } else if let Some(i) = single.rx {
+        let (f0, start) = (i as f64 * df, searcher.start_of(single.lags[i]));
+        let hit = match searcher.from_sync_spectra(&sp, i, sp.j0 + single.lags[i]) {
+            Some(h) => Some((h, f0, start)),
+            None => {
+                tried.push((i, start, single.drift_hz.to_bits()));
+                searcher.loops(f0, start, single.drift_hz)
+            }
+        };
         if let Some((hit, f, start)) = hit {
-            found.push(finish(hit, f, start, ccf2[i]));
+            report(searcher.found(&sp, hit, f, start, single.ccf2[i], 1), &mut found, emit, &mut avg, options);
+            at_rx = true;
         }
     }
-    // fase 5 di W3SZ (`stageno = 5` di `q65_decode.f90`, solo con `max_drift = 50`): niente sulla frequenza di ricezione, si riprova
-    // la lista sugli spettri raddrizzati con la deriva del picco migliore entro `ntol` (`drift = df*idrift_best` di `q65_ccf_22`)
-    if found.is_empty()
+
+    // 2. nulla sulla frequenza di ricezione: subito la media, se ha almeno due periodi
+    let band = (ia, ib, max_drift);
+    let mut avg_sync = None;
+    if !at_rx && navg(&avg) >= 2 {
+        avg_sync = try_average(&searcher, list, band, &mut avg, &mut found, emit);
+    }
+
+    // 3. fase 5 di W3SZ (`stageno = 5`, solo con `max_drift = 50`): si riprova la lista sugli spettri raddrizzati con la deriva del picco
+    // migliore entro `ntol`. Dopo la media `iavg` resta 2 e `q65_dec0` non riprova la lista (`ncw.gt.0 .and. iavg.le.1`,
+    // `q65.f90:541`): in WSJT-X, provata la media, la fase 5 non da' nulla
+    if !at_rx
+        && avg_sync.is_none()
         && max_drift == 50
         && !list.is_empty()
-        && let (Some(f), Some(i)) = (options.rx_hz, rx)
+        && let (Some(f), Some(_)) = (options.rx_hz, single.rx)
     {
-        let s1w = sp.drifted(df * f64::from(drifts[i]), df);
+        let s1w = sp.drifted(single.drift_hz, df);
         if let Some((hit, i, jrow)) = searcher.list_decode(&s1w, list, (f64::from(f) / df).round() as usize, true) {
-            let start = nominal + (jrow - sp.j0) * sp.istep as i64;
-            found.push(finish(hit, i as f64 * df, start, ccf2.get(i).copied().unwrap_or(0.0)));
+            let f = searcher.found(&sp, hit, i as f64 * df, searcher.start_of_row(jrow), single.ccf2.get(i).copied().unwrap_or(0.0), 1);
+            report(f, &mut found, emit, &mut avg, options);
         }
     }
-    let width = df * mode as f64;
-    let overlaps = |f0: f64, found: &[Found]| found.iter().any(|d| f0 - d.freq_hz > -width && f0 - d.freq_hz < 65.0 * width);
-    // il candidato gia' provato sulla frequenza di ricezione non si ripete
-    let todo: Vec<(usize, i64, f32)> = candidates.into_iter().filter(|c| Some(c.0) != rx_tried).collect();
-    let threads = options.threads.max(1).min(todo.len().max(1));
-    if threads <= 1 {
-        for (i, lag, snr) in todo {
-            let f0 = i as f64 * df;
-            if overlaps(f0, &found) {
-                continue;
-            }
-            if let Some((hit, f, start)) = searcher.loops(f0, start_of(lag)) {
-                found.push(finish(hit, f, start, snr));
-            }
-        }
-    } else {
-        // in parallelo si provano tutti; poi, in ordine di frequenza, si scartano quelli caduti su un segnale gia' preso
-        let next = std::sync::atomic::AtomicUsize::new(0);
-        let mut results: Vec<Option<(Hit, f64, i64)>> = Vec::new();
-        results.resize_with(todo.len(), || None);
-        let slots = std::sync::Mutex::new(results);
-        std::thread::scope(|scope| {
-            for _ in 0..threads {
-                scope.spawn(|| {
-                    loop {
-                        let k = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(&(i, lag, _)) = todo.get(k) else { break };
-                        if overlaps(i as f64 * df, &found) {
-                            continue;
-                        }
-                        let r = searcher.loops(i as f64 * df, start_of(lag));
-                        if let Ok(mut s) = slots.lock() {
-                            s[k] = r;
-                        }
-                    }
-                });
-            }
-        });
-        let results = slots.into_inner().unwrap_or_default();
-        for ((i, _, snr), r) in todo.iter().zip(results) {
-            if overlaps(*i as f64 * df, &found) {
-                continue;
-            }
-            if let Some((hit, f, start)) = r {
-                found.push(finish(hit, f, start, *snr));
+
+    // 4. e 5. il giro dei candidati, con la deriva del `q65_ccf_22` che li ha dati
+    match avg_sync {
+        Some(s) => run_candidates(&searcher, &s.candidates, s.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options)),
+        None => {
+            run_candidates(&searcher, &single.candidates, single.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options));
+            if navg(&avg) >= 2
+                && let Some(s) = try_average(&searcher, list, band, &mut avg, &mut found, emit)
+            {
+                run_candidates(&searcher, &s.candidates, s.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options));
             }
         }
     }
-    found
 }
 
-/// Media dei periodi (`q65_avg` di WSJT-X): somma gli spettri dei periodi con la stessa parita' finche' un segnale debole si decodifica.
+/// Media dei periodi (`s1a` e `navg` di `q65.f90`): per ogni parita' la media corrente degli spettri del sincronismo (`q65_symspec`,
+/// `q65.f90:630-635`), con costante di tempo di al piu' 4 periodi (`ntc=min(navg,4)`, `s1a=s1/ntc+(1-1/ntc)·s1a`).
 #[derive(Debug, Default, Clone)]
 pub struct Averager {
     setup: Option<Setup>,
-    /// Per parita' (periodo pari, dispari): spettri sommati e numero di periodi.
-    sums: [Option<(Vec<Vec<f32>>, u32)>; 2],
+    /// Righe e colonne degli spettri: se cambiano la media riparte, come la nuova allocazione di `q65_dec0` (`q65.f90:396-419`).
+    shape: (usize, usize),
+    /// Per parita' (periodo pari, dispari): la media e i periodi entrati.
+    s1a: [Vec<f32>; 2],
+    navg: [u32; 2],
 }
 
 impl Averager {
@@ -1651,35 +1722,40 @@ impl Averager {
         Averager::default()
     }
 
-    /// Svuota la media («Clear Avg» di WSJT-X).
+    /// Svuota la media delle due parita' («Clear Avg» di WSJT-X).
     pub fn clear(&mut self) {
-        self.sums = [None, None];
+        self.s1a = Default::default();
+        self.navg = [0; 2];
     }
 
-    /// Periodi sommati per la parita' di `period_index`.
+    /// `q65_clravg`: svuota la media della parita' di `period_index`.
+    fn clear_parity(&mut self, period_index: u64) {
+        let p = (period_index % 2) as usize;
+        self.s1a[p].clear();
+        self.navg[p] = 0;
+    }
+
+    /// Periodi nella media della parita' di `period_index` (`navg(iseq)`).
     pub fn count(&self, period_index: u64) -> u32 {
-        self.sums[(period_index % 2) as usize].as_ref().map_or(0, |s| s.1)
+        self.navg[(period_index % 2) as usize]
     }
 
-    fn add(&mut self, setup: Setup, period_index: u64, sp: &[Vec<f32>]) -> u32 {
-        if self.setup != Some(setup) {
+    fn add(&mut self, setup: Setup, period_index: u64, sp: &SyncSpectra) -> u32 {
+        let shape = (sp.jz, sp.w);
+        if self.setup != Some(setup) || self.shape != shape {
             self.clear();
             self.setup = Some(setup);
+            self.shape = shape;
         }
-        let slot = &mut self.sums[(period_index % 2) as usize];
-        match slot {
-            Some((sum, n)) if sum.len() == sp.len() && sum.first().map(Vec::len) == sp.first().map(Vec::len) => {
-                for (a, b) in sum.iter_mut().zip(sp) {
-                    a.iter_mut().zip(b).for_each(|(x, y)| *x += y);
-                }
-                *n += 1;
-                *n
-            }
-            _ => {
-                *slot = Some((sp.to_vec(), 1));
-                1
-            }
+        let p = (period_index % 2) as usize;
+        let s1a = &mut self.s1a[p];
+        if s1a.len() != sp.s1.len() {
+            *s1a = vec![0.0; sp.s1.len()];
         }
+        self.navg[p] += 1;
+        let u = 1.0 / self.navg[p].min(4) as f32;
+        s1a.iter_mut().zip(&sp.s1).for_each(|(a, &s)| *a = u * s + (1.0 - u) * *a);
+        self.navg[p]
     }
 }
 
@@ -1688,8 +1764,9 @@ pub fn decode(audio: &[f32], options: &Options, hashes: &mut CallHashes) -> Vec<
     decode_inner(audio, options, hashes, None)
 }
 
-/// Come [`decode`], e in piu' somma il periodo nella media della sua parita' (`period_index` = numero d'ordine del periodo) e prova
-/// a decodificare la somma. Dopo una decodifica dalla media, la media di quella parita' si svuota.
+/// Come [`decode`], e in piu' mette il periodo nella media della sua parita' (`period_index` = numero d'ordine del periodo) e la
+/// prova sulla frequenza di ricezione come WSJT-X con «Include averaging» acceso. La media si svuota da sola solo con
+/// [`Options::auto_clear_avg`].
 pub fn decode_averaged(audio: &[f32], options: &Options, hashes: &mut CallHashes, averager: &mut Averager, period_index: u64) -> Vec<Decoded> {
     decode_inner(audio, options, hashes, Some((averager, period_index)))
 }
@@ -1725,8 +1802,6 @@ fn push_found(out: &mut Vec<Decoded>, f: &Found, setup: Setup, hashes: &mut Call
 
 fn decode_inner(audio: &[f32], options: &Options, hashes: &mut CallHashes, averager: Option<(&mut Averager, u64)>) -> Vec<Decoded> {
     let setup = options.setup;
-    let nsps = setup.nsps();
-    let spb = 1usize << setup.submode;
     let aps = if options.ap { ap_list(&options.my_call, &options.dx_call, hashes) } else { Vec::new() };
     // in contest la lista dei chiamanti (`q65_set_list2`), altrimenti quella del QSO con il DX (`q65_set_list`)
     let list = match (options.ap, options.contest) {
@@ -1735,37 +1810,7 @@ fn decode_inner(audio: &[f32], options: &Options, hashes: &mut CallHashes, avera
         (true, false) => qso_list(&options.my_call, &options.dx_call, &options.dx_grid, hashes),
     };
     let mut out: Vec<Decoded> = Vec::new();
-    for f in decode_single(audio, options, &aps, &list) {
-        push_found(&mut out, &f, setup, hashes);
-    }
-
-    if let Some((averager, index)) = averager {
-        // per la media spettri a quarti di simbolo: si somma solo il ritardo dei passi, senza ritocchi dopo
-        let quarter = nsps / 4;
-        let n = averager.add(setup, index, &spectra(audio, nsps, bins_for(options), quarter));
-        if n >= 2
-            && let Some((sum, _)) = averager.sums[(index % 2) as usize].as_ref()
-        {
-            // le energie sommate non seguono piu' la distribuzione di un periodo solo: si usa la metrica lineare nelle energie
-            // dell'evanescenza (la lorentziana di WSJT-X se non ne e' scelta un'altra), pesata con il numero dei periodi
-            // il rumore delle energie sommate oscilla meno: la soglia del sincronismo scende con la radice dei periodi
-            let min_sync = 1.0 + (options.min_sync - 1.0) / (n as f32).sqrt();
-            let avg_options = Options { fading: Some(options.fading.unwrap_or(Fading::Lorentzian)), min_sync, ..options.clone() };
-            let options = &avg_options;
-            let mut any = false;
-            for (i, lag, sync) in find_candidates(sum, options, 4) {
-                let wide = wide_energies(i, spb, |s, bin| sum[(lag + 4 * s as i64) as usize].get(bin).copied().unwrap_or(0.0));
-                if let Some(hit) = decode_wide(&wide, options, &aps, n as f32) {
-                    let snr_db = snr_of(&wide, &hit.msg, setup).round() as i32;
-                    let f = Found { hit, freq_hz: i as f64 * setup.baud(), start: lag * quarter as i64, snr_db, sync, averaged: n };
-                    any |= push_found(&mut out, &f, setup, hashes);
-                }
-            }
-            if any {
-                averager.sums[(index % 2) as usize] = None;
-            }
-        }
-    }
+    decode_period(audio, options, &aps, &list, averager, &mut |f| push_found(&mut out, f, setup, hashes));
     out
 }
 
@@ -1878,13 +1923,15 @@ mod tests {
         }
     }
 
-    /// Un segnale troppo debole per un periodo solo si decodifica sommando i periodi della stessa parita'.
+    /// Un segnale troppo debole per un periodo solo si decodifica con la media dei periodi della stessa parita', sulla frequenza di
+    /// ricezione come in WSJT-X; senza AutoClrAvg la media resta.
     #[test]
     fn averaging_decodes_a_signal_too_weak_for_one_period() {
         let setup = Setup::new(15, 0).expect("modo");
-        let o = Options { setup, f_low_hz: 950.0, f_high_hz: 1050.0, ap: false, ..Options::default() };
+        let o = Options { setup, f_low_hz: 950.0, f_high_hz: 1050.0, rx_hz: Some(1000.0), ap: false, ..Options::default() };
         let msg = "IU3ABC K1ABC FN42";
-        let wave = modulate(&tones(msg, &mut CallHashes::default()).expect("messaggio"), 1000.0, setup, 0.05);
+        // la media corrente di WSJT-X (al piu' 4 periodi) guadagna meno di una somma senza limite
+        let wave = modulate(&tones(msg, &mut CallHashes::default()).expect("messaggio"), 1000.0, setup, 0.07);
         let make = |seed: u64| {
             let mut audio = noise(15 * 12_000, 1.0, seed);
             let at = (setup.start_s() * FS) as usize;
@@ -1905,8 +1952,129 @@ mod tests {
                 break;
             }
         }
-        assert!(decoded_at.is_some(), "la media non ha decodificato");
-        assert_eq!(avg.count(0), 0, "dopo la decodifica la media si svuota");
+        let k = decoded_at.expect("la media non ha decodificato");
+        assert_eq!(avg.count(0), k as u32 + 1, "senza AutoClrAvg la media resta");
+    }
+
+    /// Il segnale debole di `averaging_decodes_a_signal_too_weak_for_one_period` a 1000 Hz (frequenza di ricezione) e un'altra stazione
+    /// a 1600 Hz (fuori dai 433 Hz del primo), forte, che si decodifica in ogni periodo: la media e i suoi periodi restano, anche con AutoClrAvg (l'altra stazione
+    /// e' fuori da `ntol`).
+    #[test]
+    fn a_decode_of_another_station_keeps_the_average() {
+        let setup = Setup::new(15, 0).expect("modo");
+        let o = Options { setup, f_low_hz: 900.0, f_high_hz: 1700.0, rx_hz: Some(1000.0), ap: false, auto_clear_avg: true, ..Options::default() };
+        let (weak, strong) = ("IU3ABC K1ABC FN42", "CQ K9XYZ EN50");
+        let w1 = modulate(&tones(weak, &mut CallHashes::default()).expect("messaggio"), 1000.0, setup, 0.07);
+        let w2 = modulate(&tones(strong, &mut CallHashes::default()).expect("messaggio"), 1600.0, setup, 0.3);
+        let mut avg = Averager::new();
+        let mut weak_at = None;
+        for k in 0..8u64 {
+            let mut audio = noise(15 * 12_000, 1.0, 100 + k);
+            let at = (setup.start_s() * FS) as usize;
+            audio[at..at + w1.len()].iter_mut().zip(&w1).for_each(|(a, w)| *a += w);
+            audio[at..at + w2.len()].iter_mut().zip(&w2).for_each(|(a, w)| *a += w);
+            let d = decode_averaged(&audio, &o, &mut CallHashes::default(), &mut avg, 2 * k);
+            assert!(d.iter().any(|d| d.text == strong && d.averaged == 1), "periodo {k}: {d:?}");
+            if let Some(hit) = d.iter().find(|d| d.text == weak) {
+                assert!(hit.averaged >= 2, "{hit:?}");
+                weak_at = Some(k);
+                break;
+            }
+            assert_eq!(avg.count(0), k as u32 + 1, "la decodifica dell'altra stazione non svuota la media");
+        }
+        assert!(weak_at.is_some(), "la media non ha decodificato");
+        // il segnale debole cade sulla frequenza di ricezione: con AutoClrAvg la media della parita' si svuota
+        assert_eq!(avg.count(0), 0);
+    }
+
+    /// La media corrente di `q65_symspec`: con `ntc=min(navg,4)` il quinto periodo pesa 1/4.
+    #[test]
+    fn the_average_is_a_running_mean_with_four_periods_at_most() {
+        let setup = Setup::new(15, 0).expect("modo");
+        let mut avg = Averager::new();
+        let base = SyncSpectra { s1: vec![0.0; 6], w: 3, jz: 2, istep: 1, j0: 0, lag1: 0, lag2: 0 };
+        for (k, v) in [4.0f32, 8.0, 0.0, 4.0, 8.0].into_iter().enumerate() {
+            avg.add(setup, 2 * k as u64, &base.with_s1(vec![v; 6]));
+        }
+        // 4, (4+8)/2=6, 6·2/3=4, 4·3/4+1=4, 4·3/4+2=5
+        assert_eq!(avg.count(0), 5);
+        assert!((avg.s1a[0][0] - 5.0).abs() < 1e-5, "{}", avg.s1a[0][0]);
+        assert_eq!(avg.count(1), 0);
+        avg.clear_parity(0);
+        assert_eq!(avg.count(0), 0);
+    }
+
+    fn list_texts(my: &str, dx: &str, grid: &str) -> Vec<String> {
+        let mut h = CallHashes::default();
+        qso_list(my, dx, grid, &h.clone()).iter().map(|w| unpack(&symbols_to_bits(&w.msg), &mut h).expect("spacchettato")).collect()
+    }
+
+    /// `q65_set_list`: 206 messaggi; con il DX standard e «/P» o «/R» 411 (207 se il mio nominativo non e' standard).
+    #[test]
+    fn the_qso_list_grows_for_r_and_p_suffixes() {
+        assert!(q65_std_call("K1ABC/P") && q65_std_call("K1ABC/R") && !std_call("K1ABC/P") && !q65_std_call("PJ4/K1ABC"));
+        let plain = list_texts("IU3ABC", "K1ABC", "FN42");
+        assert_eq!(plain.len(), 206);
+        assert_eq!((plain[0].as_str(), plain[4].as_str(), plain[6].as_str()), ("IU3ABC K1ABC", "CQ K1ABC FN42", "IU3ABC K1ABC -50"));
+        // 411 righe; «IU3ABC K1ABC/P» da solo (riga 1) non si impacchetta con `pack` di Aurora e si salta, come ogni riga che non
+        // si impacchetta
+        let p = list_texts("IU3ABC", "K1ABC/P", "FN42");
+        assert_eq!(p.len(), 410, "{:?}", &p[..8]);
+        assert!(!p.iter().any(|t| t == "IU3ABC K1ABC/P"));
+        assert_eq!(p[0], "IU3ABC K1ABC/P RRR");
+        assert_eq!(p[3], "CQ K1ABC/P FN42");
+        assert_eq!(p[4], "IU3ABC K1ABC/P FN42");
+        assert_eq!(p[5], "IU3ABC K1ABC/P -50");
+        assert_eq!(p[204], "IU3ABC K1ABC/P R+49");
+        assert_eq!(p[205], "CQ K1ABC/P");
+        assert_eq!(p[206], "<IU3ABC> K1ABC/P");
+        assert_eq!(p[207], "<IU3ABC> K1ABC/P RRR");
+        assert_eq!(p[208], "<IU3ABC> K1ABC/P RR73");
+        assert_eq!(p[209], "<IU3ABC> K1ABC/P 73");
+        assert_eq!(p[210], "IU3ABC <K1ABC/P> -50");
+        assert_eq!(p[211], "IU3ABC <K1ABC/P> R-50");
+        assert_eq!(p[409], "IU3ABC <K1ABC/P> R+49");
+        // senza locatore anche la riga 6 e' «IU3ABC K1ABC/R» da sola: due righe saltate
+        let r = list_texts("IU3ABC", "K1ABC/R", "");
+        assert_eq!(r.len(), 409);
+        assert!(r.contains(&"CQ K1ABC/R".to_string()));
+        assert_eq!(r.last().map(String::as_str), Some("IU3ABC <K1ABC/R> R+49"));
+        // il mio nominativo non standard: solo il CQ senza locatore in piu'
+        let ns = list_texts("PJ4/IU3ABC", "K1ABC/P", "FN42");
+        assert!(ns.len() >= 206 && ns.len() <= 207, "{}", ns.len());
+        assert_eq!(ns.last().map(String::as_str), Some("CQ K1ABC/P"));
+        assert!(!ns.iter().any(|t| t.contains("R+49") && t.starts_with("PJ4/IU3ABC <")), "niente righe 212-411");
+    }
+
+    /// La rampa di `twkfreq` in `q65_loops`: un segnale che sale di 8 bin lungo il periodo si decodifica togliendo la deriva, non
+    /// senza.
+    #[test]
+    fn loops_remove_the_frequency_drift() {
+        let setup = Setup::new(15, 0).expect("modo");
+        let tn = tones("IU3ABC K1ABC FN42", &mut CallHashes::default()).expect("messaggio");
+        let (f0, drift) = (1000.0f64, 8.0 * setup.baud());
+        let period = f64::from(setup.period_s);
+        let mut audio = noise(15 * 12_000, 1.0, 11);
+        let at = (setup.start_s() * FS) as usize;
+        let mut phase = 0.0f64;
+        for (s, &t) in tn.iter().enumerate() {
+            for k in 0..setup.nsps() {
+                let n = at + s * setup.nsps() + k;
+                // la stessa deriva lineare che toglie `twkfreq`: zero a meta' periodo
+                let f = f0 + f64::from(t) * setup.tone_spacing_hz() + drift * (n as f64 / FS / period - 0.5);
+                phase += 2.0 * std::f64::consts::PI * f / FS;
+                audio[n] += 0.3 * phase.sin() as f32;
+            }
+        }
+        let o = Options { setup, ap: false, ..Options::default() };
+        let iz = (setup.nsps() / 2 - 1).min((2000.0 / setup.baud()) as usize);
+        let sp = SyncSpectra::new(&audio, setup, iz, false);
+        let searcher = Searcher::new(&audio, &o, &[], &sp);
+        let start = at as i64;
+        assert!(searcher.loops(f0, start, 0.0).is_none(), "senza togliere la deriva non dovrebbe decodificare: aumentarla");
+        let (hit, f, _) = searcher.loops(f0, start, drift).expect("decodificato togliendo la deriva");
+        assert_eq!(unpack(&symbols_to_bits(&hit.msg), &mut CallHashes::default()).expect("spacchettato"), "IU3ABC K1ABC FN42");
+        assert!((f - f0).abs() <= setup.baud(), "{f}");
     }
 
     /// Con il mio nominativo e il DX noti, un segnale sotto la soglia normale si decodifica con le ipotesi AP.
