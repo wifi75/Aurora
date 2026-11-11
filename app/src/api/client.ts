@@ -1714,6 +1714,10 @@ export interface SatSettings {
   rotor_preposition: boolean;
   min_el_deg: number;
   map: string;
+  /** I server da cui si scaricano i dati delle orbite. */
+  tle_sources: string[];
+  /** Ogni quante ore si aggiornano da soli; 0 = solo a mano. */
+  tle_update_hours: number;
 }
 
 export interface SatLook {
@@ -1764,7 +1768,7 @@ export interface SatNow {
 
 export interface SatSnapshot {
   observer: { lat_deg: number; lon_deg: number } | null;
-  tle: { count: number; age_s: number | null };
+  tle: { count: number; age_s: number | null; presets?: { name: string; url: string }[] };
   listing: { norad: number; name: string; has_tle: boolean }[];
   catalog: SatInfo[];
   settings: SatSettings;

@@ -73,3 +73,21 @@
 .sat-status.warn { color: #ffb86b; }
 
 @media (max-width: 62rem) { .sat-grid { grid-template-columns: minmax(0, 1fr); } .sat-tle { margin-left: 0; } }
+
+/* pulsanti tondi dell'intestazione (aggiorna le orbite, impostazioni) */
+.sat-icon-btn { width: 2.2rem; height: 2.2rem; padding: 0; display: grid; place-items: center; border-radius: 50%; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.sat-icon-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* finestra delle impostazioni dei Satelliti */
+.sat-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
+.sat-dialog { display: flex; flex-direction: column; gap: 0.9rem; width: min(36rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.sat-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.sat-dialog header strong { font-size: 1.1rem; }
+.sat-dialog fieldset { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.9rem; }
+.sat-dialog legend { padding: 0 0.4rem; font-weight: 600; }
+.sat-check { display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; }
+.sat-check input { margin-top: 0.2rem; }
+.sat-url { overflow-wrap: anywhere; font-size: 0.85rem; }
+.sat-add { display: flex; gap: 0.5rem; }
+.sat-add input { flex: 1; min-width: 0; }
+.sat-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }

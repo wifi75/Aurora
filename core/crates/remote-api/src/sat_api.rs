@@ -36,7 +36,7 @@ pub(crate) async fn sat_get(State(state): State<AppState>, _: Authed) -> Result<
     let listing: Vec<Value> = svc.listing().into_iter().map(|(norad, name, has_tle)| json!({ "norad": norad, "name": name, "has_tle": has_tle })).collect();
     Ok(Json(json!({
         "observer": svc.observer().map(|o| json!({ "lat_deg": o.lat_deg, "lon_deg": o.lon_deg })),
-        "tle": { "count": count, "age_s": age },
+        "tle": { "count": count, "age_s": age, "presets": mode_sat::tle::PRESETS.iter().map(|(name, url)| json!({ "name": name, "url": url })).collect::<Vec<_>>() },
         "listing": listing,
         "catalog": svc.catalog(),
         "settings": s,

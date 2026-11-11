@@ -57,11 +57,15 @@ pub struct SatSettings {
     pub min_el_deg: f64,
     /// La mappa del mondo (nome del file in `maps`).
     pub map: String,
+    /// I server da cui si scaricano i dati delle orbite (indirizzi http/https con TLE a tre righe).
+    pub tle_sources: Vec<String>,
+    /// Ogni quante ore si aggiornano da soli i dati delle orbite; 0 = solo a mano.
+    pub tle_update_hours: u32,
 }
 
 impl Default for SatSettings {
     fn default() -> Self {
-        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, min_el_deg: 0.0, map: String::new() }
+        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, min_el_deg: 0.0, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
     }
 }
 
@@ -78,6 +82,15 @@ impl SatSettings {
         }
         if self.map.contains(['/', '\\']) || self.map.contains("..") {
             return Err("nome della mappa non valido".into());
+        }
+        if self.tle_sources.len() > 10 {
+            return Err("troppi server per i dati delle orbite".into());
+        }
+        if self.tle_sources.iter().any(|u| u.len() > 300 || !(u.starts_with("https://") || u.starts_with("http://"))) {
+            return Err("ogni server deve essere un indirizzo http o https".into());
+        }
+        if self.tle_update_hours > 720 {
+            return Err("l'aggiornamento automatico non puo' superare 720 ore".into());
         }
         Ok(())
     }
@@ -190,8 +203,7 @@ impl SatService {
         }
         let svc = SatService { inner };
         // dati vecchi o assenti: si scaricano da soli, senza bloccare l'avvio
-        let stale = svc.inner.tle_file.fetched_unix().is_none_or(|t| now_unix() - t > 86_400.0);
-        if stale {
+        if tle_stale(&svc.inner) {
             svc.refresh_tle_background();
         }
         svc
@@ -418,7 +430,11 @@ fn refresh(inner: &Arc<Inner>) -> Result<usize, String> {
     let result = (|| {
         let mut text = String::new();
         let mut last_error = None;
-        for url in tle::SOURCES {
+        let sources = lock(&inner.settings).tle_sources.clone();
+        if sources.is_empty() {
+            return Err("nessun server scelto per i dati delle orbite".into());
+        }
+        for url in &sources {
             match tle::fetch(url) {
                 Ok(t) => {
                     text.push_str(&t);
@@ -455,11 +471,33 @@ struct LoopState {
     rotor_error: Option<String>,
 }
 
+/// I dati delle orbite sono da aggiornare: mancano, oppure l'aggiornamento automatico e' acceso ed e' passato il tempo scelto.
+fn tle_stale(inner: &Inner) -> bool {
+    let hours = lock(&inner.settings).tle_update_hours;
+    match inner.tle_file.fetched_unix() {
+        None => true,
+        Some(t) => hours > 0 && now_unix() - t > f64::from(hours) * 3600.0,
+    }
+}
+
 fn tracking_loop(inner: &Arc<Inner>) {
     let mut st = LoopState::default();
+    let mut ticks: u64 = 0;
+    let mut last_try = 0.0_f64;
     while !inner.stop.load(Ordering::SeqCst) {
         let started = Instant::now();
         tick(inner, &mut st);
+        // ogni minuto si guarda se e' ora di aggiornare i dati delle orbite; dopo un tentativo non si riprova prima di mezz'ora
+        ticks += 1;
+        if ticks % 60 == 0 && now_unix() - last_try > 1800.0 && !inner.fetching.load(Ordering::SeqCst) && tle_stale(inner) {
+            last_try = now_unix();
+            let worker = Arc::clone(inner);
+            let _ = std::thread::Builder::new().name("aurora-sat-tle".into()).spawn(move || {
+                if let Err(e) = refresh(&worker) {
+                    tracing::warn!("satelliti: aggiornamento automatico dei dati delle orbite non riuscito: {e}");
+                }
+            });
+        }
         std::thread::sleep(Duration::from_secs(1).saturating_sub(started.elapsed()).max(Duration::from_millis(100)));
     }
 }

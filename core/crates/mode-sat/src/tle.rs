@@ -17,6 +17,14 @@ pub const SOURCES: [&str; 2] = [
     "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle",
 ];
 
+/// I server proposti nella pagina delle impostazioni: nome e indirizzo.
+pub const PRESETS: [(&str, &str); 4] = [
+    ("CelesTrak Â· radioamatori", "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle"),
+    ("CelesTrak Â· stazioni (ISS)", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"),
+    ("AMSAT Â· nasabare", "https://www.amsat.org/tle/current/nasabare.txt"),
+    ("SatNOGS", "https://db.satnogs.org/api/tle/?format=3le"),
+];
+
 /// Il numero NORAD dalla riga 1 (colonne 3-7).
 pub fn norad_of(line1: &str) -> Option<u64> {
     line1.get(2..7)?.trim().parse().ok()
@@ -44,17 +52,17 @@ pub fn parse(text: &str) -> Vec<TleSet> {
     out
 }
 
-/// Scarica un gruppo da CelesTrak. Bloccante.
+/// Scarica un elenco di TLE da un server (CelesTrak e simili). Bloccante.
 pub fn fetch(url: &str) -> Result<String, String> {
     let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(20))).http_status_as_error(false).build().into();
     let mut response = agent.get(url).header("User-Agent", "Aurora (satelliti)").call().map_err(|e| e.to_string())?;
     let status = response.status().as_u16();
     if status != 200 {
-        return Err(format!("CelesTrak ha risposto {status}"));
+        return Err(format!("il server ha risposto {status}"));
     }
     let body = response.body_mut().read_to_string().map_err(|e| e.to_string())?;
     if parse(&body).is_empty() {
-        return Err("la risposta di CelesTrak non contiene TLE".into());
+        return Err("la risposta del server non contiene TLE".into());
     }
     Ok(body)
 }
