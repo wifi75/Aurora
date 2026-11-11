@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **«Pulisci» in Attivita' di banda e nella Finestra RX** (richiesta di UN7MBV): un pulsantino accanto a «Filtro» e «Nuovi ↑» svuota solo la propria finestra; «Cancella» della barra dei comandi continua a svuotarle tutte e due. Suggerimento, sei lingue e passo nella Guida.
 
 ## 0.11.232 - 2026-11-10
 - **PTT che non parte** (segnalato da chi usa Aurora con Hamlib, es. IC-7300): una lettura mancata della radio (modo, frequenza, timeout) non scarta piu' il PTT, che si prova lo stesso; se la radio non risponde lo dice l'errore del comando. Se il PTT non parte o non si spegne, in alto compare un avviso con il motivo e il rimando a Impostazioni > Radio e «Test PTT» (prima restava solo nel log).
