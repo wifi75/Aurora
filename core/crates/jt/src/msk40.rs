@@ -1,10 +1,11 @@
 //! MSK40: i messaggi brevi di MSK144 («<IU3ABC K1ABC> R+03»), 40 bit in 20 ms: parola di sincronismo rovesciata e codice (32,16) su
 //! un hash a 12 bit dei due nominativi piu' 4 bit di rapporto. Dai sorgenti di WSJT-X (GPL 3): `genmsk40.f90`, `encode_msk40.f90`,
-//! `bpdecode40.f90`, `msk40decodeframe.f90`, `msk40spd.f90`, `hash.f90`.
+//! `bpdecode40.f90`, `msk40decodeframe.f90`, `msk40spd.f90`, `msk40sync.f90`, `msk40_freq_search.f90`, `update_msk40_hasharray.f90`, `hash.f90`.
+//! La ricezione (`spd40`) la chiama `mskrtd` ([`crate::msk144::Rtd`]) quando il blocco non ha dato un messaggio intero e «Sh» o «SWL» sono accesi.
 
-use rustfft::num_complex::Complex;
+use rustfft::{Fft, num_complex::Complex};
 
-use crate::msk144::{BAUD, half_sine, platanh};
+use crate::msk144::{BAUD, MAXRECENT, NAVPATTERNS, candidates, cshift, dithers, half_sine, platanh, sync_search};
 
 const FS: f64 = 12_000.0;
 /// Campioni del quadro breve (40 bit da 6 campioni).
@@ -280,10 +281,24 @@ fn sync_wave40() -> [Complex<f32>; 42] {
     out
 }
 
-/// `msk40decodeframe`: un quadro breve allineato -> «<PRIMO SECONDO> RPT» se l'hash torna con la coppia di nominativi data.
-fn decode_frame40(c: &mut [Complex<f32>], call1: &str, call2: &str) -> Option<String> {
+/// Cio' che serve a riconoscere un messaggio breve: la coppia del QSO, l'ascolto e gli hash delle coppie di nominativi recenti
+/// (`mycall`, `hiscall`, `bswl`, `nhasharray` e `recent_calls` di `msk40decodeframe.f90`).
+pub(crate) struct ShortContext<'a> {
+    pub mycall: &'a str,
+    pub hiscall: &'a str,
+    pub swl: bool,
+    pub nhasharray: &'a [[i32; MAXRECENT]; MAXRECENT],
+    pub recent_calls: &'a [String],
+}
+
+/// `msk40decodeframe`: un quadro breve allineato -> messaggio ed esito. 1 = «<MYCALL HISCALL> RPT» del QSO (l'hash della coppia nell'ordine
+/// proprio nominativo, corrispondente: e' il messaggio che il corrispondente manda a noi); in ascolto 2 = coppia trovata fra i nominativi
+/// recenti, 3 = solo l'hash («<1234> R+03»). Solo i rapporti da «R-03» in su (`nrxrpt.ge.7`).
+fn decode_frame40(c: &mut [Complex<f32>], ctx: &ShortContext, xsnr: f32) -> Option<(String, u8)> {
     let cb = sync_wave40();
     let p = half_sine();
+    // l'hash della coppia del QSO; senza corrispondente non eguaglia nessun hash ricevuto (`ihash=9999`)
+    let ihash = (!ctx.hiscall.trim().is_empty()).then(|| hash40(ctx.mycall, ctx.hiscall));
     let cca: Complex<f32> = (0..42).map(|k| c[k] * cb[k].conj()).sum();
     let ph = cca.im.atan2(cca.re);
     let rot = Complex::new(ph.cos(), -ph.sin());
@@ -307,10 +322,11 @@ fn decode_frame40(c: &mut [Complex<f32>], call1: &str, call2: &str) -> Option<St
     let av = soft.iter().sum::<f32>() / 40.0;
     let s2 = soft.iter().map(|v| v * v).sum::<f32>() / 40.0;
     let sig = (s2 - av * av).sqrt();
-    if sig <= 0.0 {
+    if sig <= 0.0 || !sig.is_finite() {
         return None;
     }
-    let sigma = 0.75f32;
+    // con il ping debole il decodificatore si fida meno dei bit (`msk40decodeframe.f90:110-112`)
+    let sigma = if xsnr < 0.0 { 0.75 - 0.11 * xsnr } else { 0.75 };
     let mut llr = [0f32; 32];
     for i in 0..32 {
         llr[i] = 2.0 * soft[8 + i] / sig / (sigma * sigma);
@@ -326,47 +342,59 @@ fn decode_frame40(c: &mut [Complex<f32>], call1: &str, call2: &str) -> Option<St
     }
     let imsg = decoded.iter().fold(0u32, |a, &b| (a << 1) | u32::from(b));
     let rpt = (imsg & 15) as usize;
-    let h = (imsg >> 4) as u16;
-    (nhamm <= 4 && cord < 0.65 && rpt >= 7 && h == hash40(call1, call2))
-        .then(|| format!("<{} {}> {}", call1.trim().to_uppercase(), call2.trim().to_uppercase(), RPT40[rpt]))
+    let h = (imsg >> 4) as i32;
+    if nhamm > 4 || cord >= 0.65 || rpt < 7 {
+        return None;
+    }
+    if ihash.is_some_and(|x| i32::from(x) == h) {
+        return Some((format!("<{} {}> {}", ctx.mycall.trim(), ctx.hiscall.trim(), RPT40[rpt]), 1));
+    }
+    if !ctx.swl {
+        return None;
+    }
+    // ascolto: la coppia fra i nominativi recenti (vince l'ultima trovata, come il ciclo di WSJT-X), altrimenti il solo hash
+    let mut found = None;
+    for i in 0..MAXRECENT {
+        for j in i + 1..MAXRECENT {
+            if h == ctx.nhasharray[i][j] {
+                found = Some((i, j));
+            } else if h == ctx.nhasharray[j][i] {
+                found = Some((j, i));
+            }
+        }
+    }
+    Some(match found {
+        Some((a, b)) => (format!("<{} {}> {}", ctx.recent_calls[a].trim(), ctx.recent_calls[b].trim(), RPT40[rpt]), 2),
+        None => (format!("<{h:04}> {}", RPT40[rpt]), 3),
+    })
 }
 
-/// I messaggi brevi nelle finestre dei ping (`msk40spd`) per una coppia di nominativi: testo, frequenza, inizio (campioni), forza.
-pub(crate) fn decode_windows(z: &[Complex<f32>], windows: &[(usize, f32)], fc: f64, tol: f64, call1: &str, call2: &str) -> Option<(String, f64, usize, f32)> {
+/// `msk40spd.f90`: il decodificatore dei ping brevi dei messaggi brevi (quadri da 20 ms, passo di 5 ms). Restituisce messaggio, esito,
+/// frequenza e istante (s dall'inizio del blocco).
+pub(crate) fn spd40(cbig: &[Complex<f32>], ntol: u32, fc: f32, ctx: &ShortContext, fft: &dyn Fft<f32>) -> Option<(String, u8, f32, f32)> {
+    let n = cbig.len();
     let cb = sync_wave40();
-    let ntol = (tol / 5.0).round() as i64;
-    for &(start, ratio) in windows {
-        for sub in [0usize, 120, 240, 360] {
-            let a = start + sub;
-            if a + 3 * NSPM40 > z.len() {
+    for cand in candidates(cbig, NSPM40, 60, 150, 3.5, ntol, fc, fft) {
+        let mut ib = cand.nstart.saturating_sub(NSPM40).max(1);
+        let mut ie = ib - 1 + 3 * NSPM40;
+        if ie > n {
+            ie = n;
+            ib = ie + 1 - 3 * NSPM40;
+        }
+        let cdat = &cbig[ib - 1..ie];
+        let fo = fc + cand.ferr;
+        for mask in &NAVPATTERNS {
+            let s = sync_search(cdat, NSPM40, mask, 29.0, 7.2, fo, &cb, None, 24.0);
+            if !s.ok {
                 continue;
             }
-            let seg = &z[a..a + 3 * NSPM40];
-            let (mut best, mut best_c, mut best_x, mut best_f) = (0f32, Vec::new(), Vec::new(), fc);
-            for ifr in -ntol..=ntol {
-                let f = fc + ifr as f64 * 5.0;
-                let w = -2.0 * std::f64::consts::PI * f / FS;
-                let mut c = vec![Complex::new(0f32, 0.0); NSPM40];
-                for (k, v) in seg.iter().enumerate() {
-                    let ph = w * (a + k) as f64;
-                    c[k % NSPM40] += v * Complex::new(ph.cos() as f32, ph.sin() as f32);
+            for &pk in &s.peaks {
+                for ic0 in dithers(pk, NSPM40) {
+                    let mut ct = cshift(&s.c, ic0);
+                    if let Some((text, nsuccess)) = decode_frame40(&mut ct, ctx, cand.snr) {
+                        return Some((text, nsuccess, s.fest, (cand.nstart + NSPM40 / 2) as f32 / 12_000.0));
+                    }
                 }
-                let xcc: Vec<f32> = (0..NSPM40).map(|ish| (0..42).map(|k| c[(ish + k) % NSPM40] * cb[k].conj()).sum::<Complex<f32>>().norm()).collect();
-                let m = xcc.iter().copied().fold(0f32, f32::max);
-                if m > best {
-                    best = m;
-                    best_c = c;
-                    best_x = xcc;
-                    best_f = f;
-                }
-            }
-            if best_x.is_empty() {
-                continue;
-            }
-            let (ic, _) = best_x.iter().enumerate().fold((0, f32::MIN), |acc, (i, &v)| if v > acc.1 { (i, v) } else { acc });
-            let mut frame: Vec<Complex<f32>> = (0..NSPM40).map(|k| best_c[(ic + k) % NSPM40]).collect();
-            if let Some(text) = decode_frame40(&mut frame, call1, call2) {
-                return Some((text, best_f, a, ratio));
             }
         }
     }
