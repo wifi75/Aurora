@@ -388,6 +388,9 @@ impl AudioManager {
                     self.start_engine_once();
                     return;
                 }
+                // una scheda scelta per nome che non c'e' (radio spenta, USB staccato) viene riprovata ogni 5 secondi e l'utente ne vede l'avviso sullo schermo:
+                // non e' un guasto da segnalare. Solo l'ingresso predefinito che non si apre e' un problema vero.
+                Err(e) if log && hint.is_some() => tracing::info!("cascata audio non ancora attiva da {}: {e} (si riprova da sola)", hint.as_deref().unwrap_or_default()),
                 Err(e) if log => tracing::warn!("cascata audio non attiva da {}: {e}", hint.as_deref().unwrap_or("predefinito")),
                 Err(_) => {}
             }
