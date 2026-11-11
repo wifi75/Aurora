@@ -1246,6 +1246,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     // chi e' stato appena collegato non serve piu' in coda; e' ora di passare alla prossima stazione
                     self.queue.retain(|q| !q.call.eq_ignore_ascii_case(&rec.call));
                     self.logged.push((rec.call.clone(), band.to_ascii_lowercase()));
+                    // un tetto largo: in sessioni di giorni l'elenco non cresce senza fine (si perdono solo i collegamenti piu' vecchi)
+                    if self.logged.len() > 5000 {
+                        self.logged.drain(..self.logged.len() - 5000);
+                    }
                     if !self.queue.is_empty() {
                         self.queue_gate = Some(slot.next());
                     }

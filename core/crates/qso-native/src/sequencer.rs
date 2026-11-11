@@ -990,6 +990,10 @@ impl Sequencer {
             return;
         }
         let info = self.info_of(&class.check_call);
+        if self.info_cache.len() >= 5000 {
+            // la scheda si ricostruisce da sola alla prossima decodifica: si evita solo che l'elenco cresca senza fine
+            self.info_cache.clear();
+        }
         self.info_cache.insert(base_call(&class.check_call), info.clone());
         let status = class.status.unwrap_or(Status::None);
         let continent: String = info.continent.chars().take(2).collect();

@@ -754,6 +754,7 @@ pub fn start_with_save(
                         a.write_debug(now_unix_ms(), "Decoding finished");
                     }
                 }
+                rotate_if_big(&log_path);
                 if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&log_path) {
                     for d in &decoded {
                         let _ = file.write_all(format_line(slot.start_unix_ms, d).as_bytes());
@@ -805,6 +806,7 @@ pub fn start_with_save(
                     summary.native,
                     summary.both
                 );
+                rotate_if_big(&comparison_path);
                 if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(&comparison_path) {
                     let _ = writeln!(
                         file,
@@ -816,6 +818,17 @@ pub fn start_with_save(
         }
     });
     engine
+}
+
+/// I due registri del motore (`native-decodes.log`, `native-parity.log`) si scrivono sempre in coda: oltre 20 MB il file diventa `.old` (il vecchio `.old` si
+/// butta), cosi' in sessioni di mesi non riempiono il disco.
+fn rotate_if_big(path: &std::path::Path) {
+    const MAX_BYTES: u64 = 20 * 1024 * 1024;
+    if std::fs::metadata(path).is_ok_and(|m| m.len() > MAX_BYTES) {
+        let mut old = path.as_os_str().to_owned();
+        old.push(".old");
+        let _ = std::fs::rename(path, old);
+    }
 }
 
 /// La priorita' di una stazione come la calcola `displayDecodedText` di JTDX (`REA 0x4eb170`) dalle evidenziazioni di «nuovo»: nuova zona CQ 30, su banda 28,
