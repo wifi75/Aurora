@@ -23,6 +23,14 @@ export const appStrings = {
     'No consigo conectar con Aurora. Comprueba que esté en marcha en el PC y que la red sea accesible.',
     'Não consigo contactar a Aurora. Verifica se está ligado no PC e se a rede está acessível.',
   ],
+  'splash.sub': [
+    'Stazione radioamatoriale multimodo',
+    'Multimode Ham Radio Station',
+    'Multimode-Amateurfunkstation',
+    'Station radioamateur multimode',
+    'Estación de radioaficionado multimodo',
+    'Estação de radioamador multimodo',
+  ],
   'splash.motto': [
     'Stazione multimodo con CAT, DX Cluster e DXpedition: ascolta, decodifica e trasmette per te',
     'Multimode station with CAT, DX Cluster and DXpeditions: it listens, decodes and transmits for you',
