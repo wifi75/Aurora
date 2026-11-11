@@ -461,6 +461,14 @@ export const engineHintStrings = {
     'Envía a PSK Reporter las estaciones que recibes, para que quien transmite vea dónde llega. Contribuyes al mapa de propagación.',
     'Envia ao PSK Reporter as estações que recebes, para quem transmite ver onde chega. Contribuis para o mapa de propagação.',
   ],
+  'jxh.WSPRnetUpload': [
+    'Manda a wsprnet.org i segnali WSPR e FST4W che ricevi, come «Upload spots» di WSJT-X. Spento di fabbrica.',
+    'Sends the WSPR and FST4W signals you receive to wsprnet.org, like WSJT-X “Upload spots”. Off by default.',
+    'Schickt die empfangenen WSPR- und FST4W-Signale an wsprnet.org, wie „Upload spots“ in WSJT-X. Ab Werk aus.',
+    'Envoie à wsprnet.org les signaux WSPR et FST4W que tu reçois, comme « Upload spots » de WSJT-X. Éteint par défaut.',
+    'Envía a wsprnet.org las señales WSPR y FST4W que recibes, como «Upload spots» de WSJT-X. Apagado de fábrica.',
+    'Envia para wsprnet.org os sinais WSPR e FST4W que recebes, como o «Upload spots» do WSJT-X. Desligado de fábrica.',
+  ],
   'jxh.AllowSpotsDXSummit': [
     'Permette di mandare uno spot su DX Summit dal menu di una stazione (viene pubblicato su internet a tuo nome).',
     'Allows sending a spot to DX Summit from a station’s menu (it is published on the internet under your name).',

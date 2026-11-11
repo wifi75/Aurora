@@ -333,6 +333,7 @@ fn handle_event(inner: &Inner, event: Event) {
         | Event::Fox(_)
         | Event::Notice { .. }
         | Event::Sstv(_)
-        | Event::Digi(_) => {}
+        | Event::Digi(_)
+        | Event::WsprCycle(_) => {}
     }
 }

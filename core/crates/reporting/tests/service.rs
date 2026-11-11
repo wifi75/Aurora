@@ -414,3 +414,114 @@ fn percent_decode(s: &str) -> String {
     }
     String::from_utf8_lossy(&out).to_string()
 }
+
+/// Un piccolo server HTTP che legge anche il corpo: manda al canale la prima riga e il corpo della richiesta e risponde con `body`.
+async fn http_server_with_body(status_line: &'static str, body: &'static str) -> (String, mpsc::UnboundedReceiver<(String, String)>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.expect("server");
+    let addr = listener.local_addr().expect("indirizzo");
+    let (tx, rx) = mpsc::unbounded_channel();
+    tokio::spawn(async move {
+        loop {
+            let Ok((mut stream, _)) = listener.accept().await else { break };
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                let mut data = Vec::new();
+                let mut buf = vec![0u8; 4096];
+                loop {
+                    let n = stream.read(&mut buf).await.unwrap_or(0);
+                    if n == 0 {
+                        break;
+                    }
+                    data.extend_from_slice(&buf[..n]);
+                    let text = String::from_utf8_lossy(&data).to_string();
+                    if let Some(end) = text.find("\r\n\r\n") {
+                        let length = text[..end]
+                            .lines()
+                            .find_map(|l| l.to_ascii_lowercase().strip_prefix("content-length:").map(|v| v.trim().parse::<usize>().unwrap_or(0)))
+                            .unwrap_or(0);
+                        if data.len() >= end + 4 + length {
+                            break;
+                        }
+                    }
+                }
+                let text = String::from_utf8_lossy(&data).to_string();
+                let (head, rest) = text.split_once("\r\n\r\n").unwrap_or((text.as_str(), ""));
+                let _ = tx.send((head.lines().next().unwrap_or("").to_string(), rest.to_string()));
+                let response = format!("HTTP/1.1 {status_line}\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
+                let _ = stream.write_all(response.as_bytes()).await;
+                let _ = stream.shutdown().await;
+            });
+        }
+    });
+    (format!("http://{addr}"), rx)
+}
+
+fn wspr_cycle(spots: Vec<aurora_core::WsprSpot>) -> Event {
+    Event::WsprCycle(aurora_core::WsprCycle {
+        mode: "WSPR".into(),
+        period_s: 120,
+        slot_start_unix_ms: (NOW - 125) / 120 * 120 * 1000,
+        dial_hz: 14_095_600,
+        tx_df: 1500,
+        tx_pct: 20,
+        dbm: 37,
+        spots,
+    })
+}
+
+fn wsprnet_endpoints(url: &str) -> Endpoints {
+    Endpoints { wsprnet_url: format!("{url}/post/"), wsprnet_timeout: Duration::from_secs(5), wsprnet_delay: Duration::ZERO, ..Endpoints::default() }
+}
+
+/// WSPRnet acceso: ogni periodo WSPR decodificato diventa una POST a `/post/` con i campi di WSJT-X (uno spot per messaggio, lo stato se
+/// non c'e' niente); la risposta «1 spot(s) added» conta come riuscita.
+#[tokio::test]
+async fn wsprnet_on_posts_the_spots_and_the_station_status_like_wsjtx() {
+    let (url, mut requests) = http_server_with_body("200 OK", "1 spot(s) added").await;
+    let r = rig(wsprnet_endpoints(&url), Config { wsprnet: true, ..config() });
+    let spot = aurora_core::WsprSpot { snr: -21, dt_s: 0.4, audio_hz: 1510.0, drift_hz: 1, message: "K1ABC FN42 37".into() };
+    r.bus.events().send(wspr_cycle(vec![spot])).unwrap();
+    let (line, body) = timeout(Duration::from_secs(5), requests.recv()).await.expect("richiesta entro 5 s").expect("richiesta");
+    assert_eq!(line, "POST /post/ HTTP/1.1");
+    for part in ["function=wspr", "sig=-21", "dt=0.4", "drift=1", "tqrg=14.097110", "tcall=K1ABC", "tgrid=FN42", "dbm=37", "rcall=IU3ABC", "rgrid=JN45", "rqrg=14.097100", "mode=2"] {
+        assert!(body.split('&').any(|f| f == part), "{part} in {body}");
+    }
+    settle().await;
+    assert_eq!(r.status.get("wsprnet").ok, Some(true));
+    r.bus.events().send(wspr_cycle(Vec::new())).unwrap();
+    let (_, body) = timeout(Duration::from_secs(5), requests.recv()).await.expect("stato entro 5 s").expect("stato");
+    assert!(body.starts_with("function=wsprstat&rcall=IU3ABC&rgrid=JN45&rqrg=14.097100&tpct=20&tqrg=14.097100&dbm=37&version=Aurora%20v"), "{body}");
+}
+
+/// WSPRnet spento (di fabbrica): niente richieste, niente in coda, niente stato; acceso a caldo si comincia a mandare.
+#[tokio::test]
+async fn wsprnet_off_sends_nothing() {
+    let (url, mut requests) = http_server_with_body("200 OK", "1 spot(s) added").await;
+    assert!(!Config::default().wsprnet, "spento di fabbrica");
+    let r = rig(wsprnet_endpoints(&url), config());
+    let spot = aurora_core::WsprSpot { snr: -21, dt_s: 0.4, audio_hz: 1510.0, drift_hz: 1, message: "K1ABC FN42 37".into() };
+    r.bus.events().send(wspr_cycle(vec![spot])).unwrap();
+    r.bus.events().send(wspr_cycle(Vec::new())).unwrap();
+    tokio::time::sleep(Duration::from_millis(600)).await;
+    assert!(requests.try_recv().is_err(), "con l'invio spento non parte niente");
+    assert_eq!(r.status.get("wsprnet").ok, None);
+    r.service.set_config(Config { wsprnet: true, ..config() });
+    settle().await;
+    assert!(requests.try_recv().is_err(), "accenderlo non manda i periodi di prima");
+    r.bus.events().send(wspr_cycle(Vec::new())).unwrap();
+    assert!(timeout(Duration::from_secs(5), requests.recv()).await.is_ok(), "acceso, il periodo dopo parte");
+}
+
+/// Uno spot non accettato («spot(s) added» assente) e' un errore nello stato e resta in coda per il nuovo tentativo.
+#[tokio::test]
+async fn wsprnet_refused_spot_is_an_error() {
+    let (url, mut requests) = http_server_with_body("200 OK", "error").await;
+    let r = rig(wsprnet_endpoints(&url), Config { wsprnet: true, ..config() });
+    let spot = aurora_core::WsprSpot { snr: -21, dt_s: 0.4, audio_hz: 1510.0, drift_hz: 1, message: "K1ABC FN42 37".into() };
+    r.bus.events().send(wspr_cycle(vec![spot])).unwrap();
+    assert!(timeout(Duration::from_secs(5), requests.recv()).await.is_ok());
+    settle().await;
+    let st = r.status.get("wsprnet");
+    assert_eq!(st.ok, Some(false), "{st:?}");
+    assert!(st.message.contains("non ha accettato"), "{}", st.message);
+}

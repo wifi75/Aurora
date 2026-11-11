@@ -58,6 +58,8 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
     loop {
         tokio::select! {
             received = events.recv() => match received {
+                // il periodo WSPR/FST4W per WSPRnet resta dentro il programma
+                Ok(Event::WsprCycle(_)) => {}
                 Ok(event) => if !send_event(&mut socket, &event).await { return; },
                 // Un client in ritardo riparte dallo stato corrente, non dagli arretrati.
                 Err(RecvError::Lagged(_)) => {

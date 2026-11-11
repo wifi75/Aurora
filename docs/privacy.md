@@ -22,8 +22,19 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
   Si spegne in Impostazioni → Agente nel tray.
 - **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
 - **Comando della radio** (Hamlib `rigctld`, OmniRig via COM, Cat4OM, TCI): tutto in locale sul PC (di norma `127.0.0.1`, per Cat4OM la porta di gestione `127.0.0.1:17300` e la porta Control del gruppo che indica); niente esce dal computer.
-- **WSPR**: Aurora decodifica e trasmette sul tuo PC e **non manda niente a WSPRnet** (nessun caricamento degli spot, come WSJT-X di fabbrica). Lo stesso vale per FST4 e FST4W.
+- **WSPR e FST4W**: Aurora decodifica e trasmette il radiofaro sul tuo PC e, di fabbrica, **non manda niente a WSPRnet** (come WSJT-X, dove
+  «Upload spots» è spento). FST4 non manda mai niente.
 - **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura. Quando c'e' una versione nuova, Aurora scarica in anticipo da GitHub il pacchetto e la sua firma nella cartella temporanea di Windows (`%TEMP%\Aurora-update`), senza mandare dati; si installa solo quando lo chiedi.
+
+**Spot a WSPRnet** (spento di fabbrica, Impostazioni → Servizi online → «Invia gli spot a WSPRnet»). Acceso, dopo ogni periodo WSPR o FST4W
+ricevuto Aurora manda a `http://wsprnet.org/post/` (http, non cifrato, come WSJT-X) una richiesta per ogni segnale decodificato con:
+nominativo, locatore e potenza di chi trasmette, data e ora del periodo, rapporto S/N, scarto di tempo, deriva, frequenza; il tuo
+nominativo, il tuo locatore, la tua frequenza di ricezione, il modo e la versione di Aurora. Se nel periodo non c'è niente parte una sola
+richiesta di stato con il tuo nominativo, il locatore, le frequenze di ricezione e di trasmissione, la percentuale «Tx Pct» (0 con
+«Abilita Tx» spento), la potenza del radiofaro, il modo e la versione. WSPRnet vede anche il tuo indirizzo IP e pubblica gli spot sul suo
+sito. Le richieste partono fra 0 e 20 s dopo la decodifica; se WSPRnet non risponde si riprova per un'ora al massimo e poi si lasciano
+perdere; spegnendo l'opzione la coda si svuota e non parte più niente. A differenza di WSJT-X 3.3, Aurora non manda gli spot anche al secondo
+indirizzo `wsprnet.eu`.
 
 Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,
 ricerca dei nominativi su QRZ.com e HamQTH. Con la ricerca accesa Aurora manda a quei servizi solo il nominativo da cercare (anche in

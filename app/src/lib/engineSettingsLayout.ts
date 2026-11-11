@@ -148,7 +148,7 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
   },
 ];
 
-/** Gli spot (PSK Reporter e DXSummit), un riquadro ciascuno con la sua spia: stanno nella scheda «Servizi online». */
+/** Gli spot (PSK Reporter, DXSummit e WSPRnet), un riquadro ciascuno con la sua spia: stanno nella scheda «Servizi online». */
 export const SPOT_GROUPS: readonly SettingGroup[] = [
   {
     title: 'ens.g.pskspot',
@@ -159,6 +159,12 @@ export const SPOT_GROUPS: readonly SettingGroup[] = [
     title: 'ens.g.dxsummit',
     upload: { service: 'dxsummit', help: 'ens.dxsummit.help', tip: 'tip.test.dxsummit' },
     rows: [{ key: 'AllowSpotsDXSummit', kind: 'bool' }],
+  },
+  {
+    // WSPRnet: niente «Prova» (uno spot di prova finirebbe nel database pubblico); la spia segue l'ultimo invio
+    title: 'ens.g.wsprnet',
+    help: 'ens.wsprnet.help',
+    rows: [{ key: 'WSPRnetUpload', kind: 'bool' }],
   },
 ];
 

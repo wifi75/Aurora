@@ -1003,8 +1003,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     pub fn begin_slot(&mut self, rx_slot_start_ms: u64, now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
         self.note_band(band);
-        // WSPR: radiofaro senza sequenza, si decide solo se il periodo che comincia ora e' di trasmissione
-        if self.mode == Mode::Wspr {
+        // WSPR e FST4W: radiofaro senza sequenza, si decide solo se il periodo che comincia ora e' di trasmissione
+        if is_beacon(self.mode) {
             let slot = Slot(rx_slot_start_ms / self.mode.period_ms()).next();
             log.extend(self.wspr_plan(slot));
             self.publish_view();
@@ -1219,8 +1219,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mut log = Vec::new();
         self.last_dial_hz = dial_hz;
         self.note_band(band);
-        // WSPR: niente QSO, i messaggi ricevuti non vanno alla sequenza
-        if self.mode == Mode::Wspr {
+        // WSPR e FST4W: niente QSO, i messaggi ricevuti non vanno alla sequenza (in WSJT-X i controlli del QSO spariscono, `WSPR_config`)
+        if is_beacon(self.mode) {
             return (Vec::new(), log);
         }
         // con le Automazioni accese in modo reale chi mi chiama e non va lavorato (regole, filtri di Attivita' di banda) sparisce dalla scelta
@@ -1676,8 +1676,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// questo periodo era gia' partito un messaggio e la sequenza ne da' uno diverso (ritrasmissione) sostituisce quello in corso.
     fn plan(&mut self, slot: Slot, now_s: f64) -> Vec<String> {
         let mut log = Vec::new();
-        // WSPR: il radiofaro parte solo a inizio periodo (`begin_slot`)
-        if self.mode == Mode::Wspr {
+        // WSPR e FST4W: il radiofaro parte solo a inizio periodo (`begin_slot`)
+        if is_beacon(self.mode) {
             return log;
         }
         let already = self.last_planned == Some(slot);
@@ -1794,43 +1794,48 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         log
     }
 
-    /// WSPR: con Abilita Tx acceso il periodo `slot` trasmette il radiofaro se lo vuole la tabella della percentuale (`next_tx_state`), sulla
-    /// frequenza Tx se sta fra 1400 e 1600 Hz (i limiti di WSJT-X in WSPR, `mainwindow.cpp:12159-12160`), altrimenti 1500 Hz.
+    /// WSPR e FST4W: con Abilita Tx acceso il periodo `slot` trasmette il radiofaro se lo vuole la percentuale, sulla frequenza Tx se sta fra
+    /// 1400 e 1600 Hz (la casella `WSPRfreqSpinBox` di WSJT-X, `mainwindow.ui:4242-4249`, usata da WSPR e da FST4W, `mainwindow.cpp:8105`),
+    /// altrimenti 1500 Hz. WSPR decide con la tabella di due ore (`next_tx_state`), FST4W con lo scheduler semplice
+    /// (`next_is_tx(m_mode=="FST4W")`, `mainwindow.cpp:14443`). L'onda parte a un secondo dall'inizio del periodo scelto.
     fn wspr_plan(&mut self, slot: Slot) -> Vec<String> {
         let mut log = Vec::new();
         if !self.seq.is_enabled() || self.last_planned == Some(slot) {
             return log;
         }
+        let fst4w = self.mode == Mode::Fst4w;
+        let (name, tx_mode) = if fst4w { ("FST4W", tx_native::Mode::Fst4w) } else { ("WSPR", tx_native::Mode::Wspr) };
         let start_ms = slot.start_ms(self.mode);
-        if !crate::wspr::next_is_tx(start_ms / 1000) {
+        let tx = if fst4w { crate::wspr::next_is_tx_fst4w(start_ms) } else { crate::wspr::next_is_tx(start_ms / 1000) };
+        if !tx {
             return log;
         }
         let tx_df = self.controls.tx_df.load(Ordering::Relaxed);
         let freq = if (1400..=1600).contains(&tx_df) { tx_df } else { 1500 };
         let grid = self.controls.grid_or(&self.seq.station().grid);
-        let text = crate::wspr::beacon_message(&self.my_call, &grid);
+        let text = crate::wspr::beacon_message(&self.my_call, &grid, fst4w);
         self.last_planned = Some(slot);
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
         match self.encode(&text, freq, false) {
-            Ok((wave, sent)) => match self.port.schedule(TxRequest { wave, mode: tx_native::Mode::Wspr, parity }) {
+            Ok((wave, sent)) => match self.port.schedule(TxRequest { wave, mode: tx_mode, parity }) {
                 Ok(()) => {
                     if let Ok(mut on_air) = self.controls.on_air.lock() {
                         *on_air = Some(sent.clone());
                     }
                     self.notes.push(TxNote { start_ms, mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: false });
-                    log.push(format!("trasmetto WSPR a {freq} Hz: {sent}"));
+                    log.push(format!("trasmetto {name} a {freq} Hz: {sent}"));
                 }
-                Err(e) => log.push(format!("trasmissione WSPR non partita: {e}")),
+                Err(e) => log.push(format!("trasmissione {name} non partita: {e}")),
             },
             Err(e) => {
-                tracing::warn!("messaggio WSPR non codificabile «{text}»: {e}");
+                tracing::warn!("messaggio {name} non codificabile «{text}»: {e}");
                 self.controls.raise_alert(
                     aurora_core::TxAlert { kind: aurora_core::TxAlertKind::Unrepresentable, detail: text.clone(), value: None, limit: None },
                     Some(crate::rig::TX_ALERT_KEEP),
                 );
                 self.seq.set_enabled(false);
-                log.push(format!("messaggio WSPR non codificabile «{text}»: {e}"));
+                log.push(format!("messaggio {name} non codificabile «{text}»: {e}"));
             }
         }
         log
@@ -1919,6 +1924,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Err(e) => Err(e),
         }
     }
+}
+
+/// I modi del radiofaro (WSPR e FST4W): niente sequenza dei QSO, si trasmette il messaggio «CALL GRID4 dBm» con la percentuale scelta.
+fn is_beacon(mode: Mode) -> bool {
+    matches!(mode, Mode::Wspr | Mode::Fst4w)
 }
 
 /// Durata di un quadro MSK144 (144 bit a 2000 baud) e di un quadro breve MSK40 (40 bit), in millisecondi.
@@ -2712,6 +2722,31 @@ mod tests {
         let decoded = decode_request(&requests[0]);
         assert_eq!(decoded.len(), 1, "{decoded:?}");
         assert!(decoded[0].starts_with("IU3ABC IO91 "), "{decoded:?}");
+    }
+
+    /// FST4W-120: con Abilita Tx acceso e «Tx Pct» al 100% il radiofaro «CALL GRID4 dBm» parte all'inizio del periodo, sulla frequenza Tx
+    /// riportata fra 1400 e 1600 Hz, e il ricevitore FST4W lo rilegge; i messaggi ricevuti non avviano un QSO e una risposta chiesta su un
+    /// messaggio FST4W non trasmette altro che il radiofaro.
+    #[test]
+    fn the_fst4w_beacon_goes_out_with_enable_tx_and_decodes_back() {
+        let (mut d, port) = jt_driver(Mode::Fst4w);
+        let rx_ms = 1_700_000_040_000u64 / 120_000 * 120_000;
+        let now_s = (rx_ms + 119_200) as f64 / 1000.0;
+        d.controls.tx_df.store(2200, Ordering::Relaxed);
+        d.begin_slot(rx_ms, now_s, 14_095_600, "20m");
+        assert!(port.requests.lock().expect("richieste").is_empty(), "senza Abilita Tx il radiofaro tace");
+        d.seq.set_enabled(true);
+        crate::wspr::set_tx_pct(100);
+        d.begin_slot(rx_ms, now_s, 14_095_600, "20m");
+        d.after_slot(rx_ms, &[("CQ K1ABC FN42".to_string(), -20, 1500)], now_s + 0.5, 14_095_600, "20m");
+        let requests = port.requests.lock().expect("richieste");
+        assert_eq!(requests.len(), 1, "un solo radiofaro, nessuna risposta al CQ");
+        assert_eq!(requests[0].mode, tx_native::Mode::Fst4w);
+        let decoded = decode_request(&requests[0]);
+        assert_eq!(decoded.len(), 1, "{decoded:?}");
+        assert!(decoded[0].starts_with("IU3ABC IO91 "), "{decoded:?}");
+        let note = d.notes.last().expect("nota della trasmissione");
+        assert_eq!((note.tx_df, note.start_ms), (1500, rx_ms + 120_000), "frequenza riportata a 1500 Hz, periodo che comincia ora");
     }
 
     /// JT9: lo stesso, con 85 simboli da 0,576 s.

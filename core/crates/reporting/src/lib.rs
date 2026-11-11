@@ -1,5 +1,6 @@
-//! Gli invii verso l'esterno della scheda Segnalazioni: spotting su PSK Reporter, spot su DXSummit, QSO al server TCP e a eQSL, invio diretto dei
-//! QSO a Wavelog/Cloudlog, ClubLog, QRZ.com Logbook e LoTW (modulo [`upload`], con coda e nuovi tentativi).
+//! Gli invii verso l'esterno della scheda Segnalazioni: spotting su PSK Reporter, spot su DXSummit, spot WSPR/FST4W su WSPRnet (modulo
+//! [`wsprnet`], facoltativo e spento di fabbrica), QSO al server TCP e a eQSL, invio diretto dei QSO a Wavelog/Cloudlog, ClubLog, QRZ.com
+//! Logbook e LoTW (modulo [`upload`], con coda e nuovi tentativi).
 //!
 //! Regole comuni (decise per tutti gli invii verso internet):
 //! - ognuno si accende e si spegne dalle impostazioni (`Config`), a caldo; spento non parte niente e non si accoda niente;
@@ -20,6 +21,7 @@ pub mod status;
 pub mod tcp;
 pub mod upload;
 pub mod wavelog;
+pub mod wsprnet;
 
 use std::{
     collections::VecDeque,
@@ -93,6 +95,8 @@ pub struct Config {
     pub antenna: String,
     pub psk: bool,
     pub dxsummit: bool,
+    /// Spot WSPR e FST4W a WSPRnet («Upload spots» di WSJT-X, spento di fabbrica).
+    pub wsprnet: bool,
     /// Server TCP a cui mandare ogni QSO (`EnableTCPConnection` acceso e indirizzo valido).
     pub tcp: Option<SocketAddr>,
     /// eQSL acceso con questo account.
@@ -125,6 +129,10 @@ pub struct Endpoints {
     /// Attesa massima delle richieste HTTP (eQSL 20 s, DXSummit 10 s come JTDX).
     pub eqsl_timeout: Duration,
     pub dxsummit_timeout: Duration,
+    /// WSPRnet: indirizzo, attesa massima di una richiesta e ritardo massimo (a caso) dopo la decodifica del periodo.
+    pub wsprnet_url: String,
+    pub wsprnet_timeout: Duration,
+    pub wsprnet_delay: Duration,
     /// Il programma che dichiara l'invio a PSK Reporter.
     pub software: String,
     /// Invio diretto: indirizzi fissi di ClubLog e QRZ, attese massime, il programma dichiarato (User-Agent).
@@ -150,6 +158,9 @@ impl Default for Endpoints {
             dxsummit_url: dxsummit::URL.to_string(),
             eqsl_timeout: eqsl::TIMEOUT,
             dxsummit_timeout: dxsummit::TIMEOUT,
+            wsprnet_url: wsprnet::URL.to_string(),
+            wsprnet_timeout: wsprnet::TIMEOUT,
+            wsprnet_delay: wsprnet::MAX_DELAY,
             software: format!("Aurora v{}", aurora_core::version::APP_VERSION),
             clublog_url: clublog::URL.to_string(),
             qrz_url: qrz::URL.to_string(),
@@ -178,6 +189,9 @@ pub struct Service {
     queue: Arc<upload::Queue>,
     /// Le richieste di mandare subito gli spot PSK Reporter in coda (alla chiusura): il ciclo li manda e risponde.
     flush: tokio::sync::mpsc::Sender<tokio::sync::oneshot::Sender<()>>,
+    /// La coda delle richieste a WSPRnet e la sveglia del suo invio.
+    wsprnet: Mutex<wsprnet::Queue>,
+    wsprnet_wake: tokio::sync::Notify,
 }
 
 /// Lo stato del motore che serve allo spot.
@@ -276,6 +290,11 @@ fn random_id() -> u32 {
     std::collections::hash_map::RandomState::new().build_hasher().finish() as u32
 }
 
+/// Un numero a caso fra 0 e 1 (ritardi e margini di WSPRnet).
+fn random_unit() -> f64 {
+    f64::from(random_id()) / f64::from(u32::MAX)
+}
+
 /// Il nome del modo nello spot: FT4, FST4 e FST4W (anche con il periodo, «FST4-60»: WSJT-X manda il nome senza periodo), gli altri FT8.
 fn spot_mode(mode: &str) -> &'static str {
     let up = mode.trim().to_ascii_uppercase();
@@ -308,9 +327,22 @@ impl Service {
         let (config, rx) = watch::channel(initial);
         let queue = Arc::new(upload::Queue::open(endpoints.queue_file.clone()));
         let (flush, flush_rx) = tokio::sync::mpsc::channel(4);
-        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()), queue, flush });
+        let service = Arc::new(Service {
+            config,
+            status,
+            secrets,
+            endpoints,
+            now,
+            last_spot: Mutex::new(None),
+            live: Mutex::new(Live::default()),
+            queue,
+            flush,
+            wsprnet: Mutex::new(wsprnet::Queue::default()),
+            wsprnet_wake: tokio::sync::Notify::new(),
+        });
         let events = bus.subscribe_events();
         tokio::spawn(run(Arc::clone(&service), events, rx, flush_rx));
+        tokio::spawn(wsprnet_worker(Arc::clone(&service)));
         for target in upload::Target::ALL {
             tokio::spawn(upload::worker(Arc::clone(&service), target));
         }
@@ -517,6 +549,7 @@ async fn run(
                         queue_spot(&mut queue, &d, &period, (service.now)(), Some(&mut spot_cache));
                     }
                 }
+                Ok(Event::WsprCycle(cycle)) => queue_wsprnet(&service, &cycle),
                 Ok(Event::QsoLogged(q)) => {
                     let config = service.config.borrow().clone();
                     let stamp = if q.time_off_unix_ms > 0 { q.time_off_unix_ms } else { (service.now)() * 1000 };
@@ -542,6 +575,11 @@ async fn run(
                 }
                 if !service.config.borrow().psk {
                     queue.clear();
+                }
+                // WSPRnet spento: quello che aspettava non parte piu'
+                if !service.config.borrow().wsprnet {
+                    service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).clear();
+                    service.wsprnet_wake.notify_one();
                 }
             }
         }
@@ -654,6 +692,78 @@ async fn send_psk(target: &str, packets: &[Vec<u8>]) -> Result<(), String> {
             .map_err(|e| format!("invio a PSK Reporter: {e}"))?;
     }
     Ok(())
+}
+
+/// Un periodo WSPR/FST4W decodificato: con l'invio a WSPRnet acceso (e nominativo e locatore noti) le sue richieste entrano in coda dopo un
+/// ritardo a caso fino a 20 s, come `uploadTimer` di WSJT-X. Spento non si prepara niente.
+fn queue_wsprnet(service: &Arc<Service>, cycle: &aurora_core::WsprCycle) {
+    let config = service.config.borrow().clone();
+    if !config.wsprnet {
+        return;
+    }
+    if config.call.is_empty() || config.grid.is_empty() {
+        service.status.fail("wsprnet", "servono il tuo nominativo e il tuo locatore (scheda Generali)");
+        return;
+    }
+    let station = wsprnet::Station { call: config.call.clone(), grid: config.grid.clone(), version: service.endpoints.software.clone() };
+    let requests = wsprnet::requests(cycle, &station);
+    if requests.is_empty() {
+        return;
+    }
+    let delay = service.endpoints.wsprnet_delay.mul_f64(random_unit());
+    let service = Arc::clone(service);
+    tokio::spawn(async move {
+        tokio::time::sleep(delay).await;
+        // spento mentre si aspettava: niente
+        if !service.config.borrow().wsprnet {
+            return;
+        }
+        let dropped = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).push(requests, Instant::now());
+        if dropped > 0 {
+            tracing::warn!("WSPRnet: {dropped} richieste vecchie lasciate perdere");
+        }
+        service.wsprnet_wake.notify_one();
+    });
+}
+
+/// Manda a WSPRnet le richieste in coda, una alla volta, con i nuovi tentativi di WSJT-X. Prima di ogni invio controlla che l'invio sia
+/// ancora acceso: spento, la coda si svuota.
+async fn wsprnet_worker(service: Arc<Service>) {
+    loop {
+        let next = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).next_due();
+        match next {
+            None => service.wsprnet_wake.notified().await,
+            Some(at) => {
+                let wait = at.saturating_duration_since(Instant::now());
+                if !wait.is_zero() {
+                    tokio::select! {
+                        _ = tokio::time::sleep(wait) => {}
+                        _ = service.wsprnet_wake.notified() => continue,
+                    }
+                }
+            }
+        }
+        if !service.config.borrow().wsprnet {
+            service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).clear();
+            continue;
+        }
+        let Some(pending) = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).take_due(Instant::now()) else { continue };
+        let (url, timeout, agent) = (service.endpoints.wsprnet_url.clone(), service.endpoints.wsprnet_timeout, service.endpoints.user_agent.clone());
+        let request = pending.request.clone();
+        let result = tokio::task::spawn_blocking(move || wsprnet::send(&url, &request, timeout, &agent)).await.unwrap_or_else(|e| Err(format!("invio interrotto: {e}")));
+        let what = if pending.request.kind == wsprnet::Kind::Spot { "spot" } else { "stato della stazione" };
+        match result {
+            Ok(_) => service.status.ok("wsprnet", format!("{what} inviato")),
+            Err(e) => {
+                service.status.fail("wsprnet", format!("{what} non inviato: {e}"));
+                let retry = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).retry(pending, Instant::now(), random_unit());
+                match retry {
+                    Some(d) => tracing::info!("WSPRnet: nuovo tentativo fra {} s", d.as_secs()),
+                    None => tracing::warn!("WSPRnet: richiesta lasciata perdere dopo i tentativi"),
+                }
+            }
+        }
+    }
 }
 
 /// Un QSO registrato: lo si manda al server TCP e a eQSL, ognuno in un'attivita' a parte, e lo si mette in coda per l'invio diretto.

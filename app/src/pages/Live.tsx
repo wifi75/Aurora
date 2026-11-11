@@ -26,7 +26,7 @@ import { retuneForMode } from '../lib/modeRetune';
 import { Q65Extras } from '../components/Q65Extras';
 import { DecodeToggles } from '../components/DecodeToggles';
 import { MskExtras } from '../components/MskExtras';
-import { WsprExtras } from '../components/WsprExtras';
+import { WsprExtras, isBeaconMode } from '../components/WsprExtras';
 import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
 import { TxCommands } from '../components/TxCommands';
@@ -580,7 +580,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           {/* JT65: «Enable AP» e «Enable deep search» del menu Decode di WSJT-X, accanto al modo */}
           {info.data?.engine === 'native' && /^JT65/i.test(status?.mode ?? '') ? <DecodeToggles keys={['JT65AP', 'IncludeCorrelation']} disabled={status?.transmitting ?? false} /> : null}
           {info.data?.engine === 'native' && (status?.mode ?? '').toUpperCase() === 'MSK144' ? <MskExtras disabled={status?.transmitting ?? false} /> : null}
-          {info.data?.engine === 'native' && (status?.mode ?? '').toUpperCase() === 'WSPR' ? <WsprExtras disabled={status?.transmitting ?? false} /> : null}
+          {info.data?.engine === 'native' && isBeaconMode(status?.mode ?? '') ? <WsprExtras disabled={status?.transmitting ?? false} /> : null}
           <FreqPicker
             bands={contestBands?.length ? contestBands : visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}

@@ -6,7 +6,7 @@ vi.mock('../api/client', () => ({
 }));
 import { postControlValue } from '../api/client';
 import { useControlValues } from '../state/controlValues';
-import { WsprExtras } from './WsprExtras';
+import { WsprExtras, isBeaconMode } from './WsprExtras';
 
 beforeEach(() => {
   vi.mocked(postControlValue).mockClear();
@@ -14,6 +14,11 @@ beforeEach(() => {
 });
 
 describe('WsprExtras', () => {
+  it('shows up for WSPR and FST4W, with or without the period', () => {
+    for (const m of ['WSPR', 'wspr', 'FST4W', 'FST4W-120', 'FST4W-1800']) expect(isBeaconMode(m), m).toBe(true);
+    for (const m of ['FST4', 'FST4-60', 'FT8', 'JT65', '']) expect(isBeaconMode(m), m).toBe(false);
+  });
+
   it('offers the WSJT-X power list from 0 to 60 dBm and sends the chosen one', async () => {
     render(<WsprExtras />);
     const select = screen.getByRole('combobox');

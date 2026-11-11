@@ -1,4 +1,4 @@
-//! Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, eQSL, server TCP e invio diretto dei QSO a Wavelog/Cloudlog, ClubLog,
+//! Lo stato dell'ultimo invio di ogni servizio (PSK Reporter, DXSummit, WSPRnet, eQSL, server TCP e invio diretto dei QSO a Wavelog/Cloudlog, ClubLog,
 //! QRZ.com e LoTW): serve alla scheda Segnalazioni per dire se funziona.
 
 use std::{collections::BTreeMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
@@ -6,7 +6,7 @@ use std::{collections::BTreeMap, sync::Mutex, time::{SystemTime, UNIX_EPOCH}};
 use serde_json::{json, Value};
 
 /// I servizi di cui si tiene lo stato.
-pub const KINDS: [&str; 9] = ["psk", "dxsummit", "eqsl", "tcp", "wavelog", "clublog", "qrz", "lotw", "hrdlog"];
+pub const KINDS: [&str; 10] = ["psk", "dxsummit", "eqsl", "tcp", "wavelog", "clublog", "qrz", "lotw", "hrdlog", "wsprnet"];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SendState {

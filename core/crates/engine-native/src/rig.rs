@@ -1266,10 +1266,10 @@ impl Rig for NativeRig {
             (Mode::Q65, true) => "TX even",
             (Mode::Q65, false) => "TX odd",
             (Mode::Msk144, even) => msk144_minute_label(qso_native::slot::msk144_period_s(), even),
-            (Mode::Fst4 | Mode::Fst4w, true) => "TX even",
-            (Mode::Fst4 | Mode::Fst4w, false) => "TX odd",
-            // WSPR: i periodi in trasmissione li sceglie la percentuale, non la parita'
-            (Mode::Wspr, _) => "Tx Pct",
+            (Mode::Fst4, true) => "TX even",
+            (Mode::Fst4, false) => "TX odd",
+            // WSPR e FST4W: i periodi in trasmissione li sceglie la percentuale, non la parita'
+            (Mode::Wspr | Mode::Fst4w, _) => "Tx Pct",
         };
         let tx = controls::TxState {
             messages: view.texts.to_vec(),
