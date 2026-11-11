@@ -3,8 +3,9 @@
 //!
 //! # Percorso di un segnale
 //!
-//! 1. [`find_candidates`] media gli spettri del periodo (finestre di 2304 campioni ogni 48 ms), toglie il fondo con un polinomio di quarto
-//!    grado, liscia e cerca i picchi; restituisce la frequenza del tono 0 (a meno di qualche Hz) e il punteggio di ogni picco.
+//! 1. [`find_candidates`] media gli spettri del periodo (finestre di Nuttall di 2304 campioni ogni 48 ms, come `getcandidates4` di WSJT-X
+//!    3.3), toglie il fondo con un polinomio di quarto grado, liscia e cerca i picchi; restituisce la frequenza del tono 0 (a meno di qualche
+//!    Hz) e il punteggio di ogni picco.
 //! 2. [`Downsampler`] porta il periodo a 666,67 Hz di campionamento (32 campioni per simbolo, 4096 campioni in tutto) con il tono 0 a 0 Hz.
 //! 3. [`search`] cerca ritardo e correzione di frequenza (passi di 1 Hz, +-16 Hz) con le quattro matrici di Costas ([`sync4d`]): una
 //!    ricerca grossa a passi di 3 Hz e 4 campioni, poi una fine a passi di 1 Hz e 1 campione.
@@ -28,10 +29,11 @@
 //!
 //! # Differenze rispetto al Fortran
 //!
-//! - `getcandidates4`: stessa finestra (compresa la forma, che sale solo da 1 a 0,707 sui 128 campioni prima del blocco: cosi' e' nel
-//!   sorgente), stessi limiti, `ft4_baseline` con il polinomio risolto con le equazioni normali (eliminazione di Gauss con pivot, variabile
-//!   riscalata) al posto dei determinanti di `polyfit`: stesso polinomio a meno degli arrotondamenti. Se il fondo non si puo' stimare
-//!   (spettro nullo, banda troppo stretta) l'elenco e' vuoto, come il `return` del Fortran.
+//! - `getcandidates4`: e' quello di WSJT-X 3.3 (`lib/ft4/getcandidates4.f90`), non piu' la variante di JTDX (FFT di 2560 punti con 128
+//!   campioni di finestra coseno ai lati, media su 17 bin): FFT di 2304 punti con la finestra di Nuttall, 122 spettri, media mobile su 15 bin,
+//!   limiti di 200 e 4910 Hz anche sul picco interpolato. `ft4_baseline` con il polinomio risolto con le equazioni normali (eliminazione di
+//!   Gauss con pivot, variabile riscalata) al posto dei determinanti di `polyfit`: stesso polinomio a meno degli arrotondamenti. Se il fondo
+//!   non si puo' stimare (spettro nullo, banda troppo stretta) l'elenco e' vuoto, come il `return` del Fortran.
 //! - `sync4d`: sempre con la correzione di frequenza (`itwk = 1`), che e' l'unico uso del decoder; le tabelle (riferimenti di Costas per
 //!   ogni correzione) sono calcolate una volta in [`SyncTables`].
 //! - `get_ft4_bitmetrics`: identica; il controllo `nsync < 8` e il conteggio dei bit di sincronismo (`nsync_qual`) escono insieme in [`Metrics`].
@@ -61,14 +63,17 @@ pub const DOWN_RATE: f32 = 666.67;
 /// Fattore di scala degli LLR di JTDX (`scalefac`).
 const LLR_SCALE: f32 = 2.83;
 
-/// FFT dello spettrogramma dei candidati.
-const NFFT1: usize = 2560;
-/// Bin dello spettrogramma (da 1 a 1280, 4,6875 Hz ciascuno).
+/// FFT dello spettrogramma dei candidati (`NFFT1 = 2304`, WSJT-X 3.3 `lib/ft4/ft4_params.f90`).
+const NFFT1: usize = 2304;
+/// Bin dello spettrogramma (da 1 a 1152, 5,208 Hz ciascuno).
 const NH1: usize = NFFT1 / 2;
 /// Passo dello spettrogramma: un simbolo.
 const NSTEP: usize = NSPS;
-/// Colonne dello spettrogramma.
-const NHSYM: usize = 123;
+/// Colonne dello spettrogramma: `NHSYM = (NMAX - NFFT1) / NSTEP` con l'`NMAX` di WSJT-X (72576), cioe' 122; l'ultima finestra finisce al
+/// campione 72000, dentro l'audio di Aurora qualunque sia il suo `NMAX`.
+const NHSYM: usize = (72_576 - NFFT1) / NSTEP;
+/// Primo bin della ricerca: `nint(200 / df)` di `getcandidates4.f90:45` e `ft4_baseline.f90:15`.
+const BIN_200HZ: usize = 38;
 /// Bit di una serie di metriche: 2 per simbolo.
 const NBM: usize = 2 * NN;
 /// Campioni (a 666,67 Hz) di un blocco di Costas con un campione su due: 4 simboli da 16.
@@ -130,12 +135,12 @@ fn polyfit(x: &[f64], y: &[f64], nterms: usize) -> Option<Vec<f64>> {
 }
 
 /// `ft4_baseline`: fondo dello spettro medio `savg` (potenza lineare) tra i bin `nfa` e `nfb`, come polinomio di quarto grado sui punti piu' bassi
-/// di dieci segmenti, piu' 0,65 dB. Restituisce il fondo (lineare) per i bin da `max(43, nfa)` a `nfb` (gli altri valgono 0).
+/// di dieci segmenti, piu' 0,65 dB. Restituisce il fondo (lineare) per i bin da `max(38, nfa)` a `nfb` (gli altri valgono 0).
 fn baseline(savg: &[f32], nfa: usize, nfb: usize) -> Option<Vec<f32>> {
     const NSEG: usize = 10;
     const NPCT: f32 = 10.0;
     const NTERMS: usize = 5;
-    let ia = nfa.max(43); // nint(200 Hz / 4,6875)
+    let ia = nfa.max(BIN_200HZ); // nint(200 Hz / 5,208), ft4_baseline.f90:15
     let ib = nfb.min(NH1);
     if ib <= ia {
         return None;
@@ -189,10 +194,12 @@ fn baseline(savg: &[f32], nfa: usize, nfb: usize) -> Option<Vec<f32>> {
     Some(sbase)
 }
 
-/// Cerca i candidati tra `f_low_hz` e `f_high_hz` nell'audio del periodo (12 kHz; si usano i primi [`NMAX`] campioni, il resto si completa con zeri).
+/// Cerca i candidati tra `f_low_hz` e `f_high_hz` nell'audio del periodo (12 kHz; si usano i primi 72000 campioni, il resto si completa con zeri):
+/// `getcandidates4` di WSJT-X 3.3 (`lib/ft4/getcandidates4.f90`).
 ///
-/// `min_sync` e' `syncmin` (1,2 in JTDX); `max` il numero massimo di candidati (JTDX 100: i primi trovati salendo di frequenza). L'elenco e' in
-/// ordine di frequenza, ma quelli entro 20 Hz da `qso_freq_hz` (se c'e') vengono per primi. La frequenza e' del tono 0, a passi di circa 1 Hz.
+/// `min_sync` e' `syncmin` (1,18, `ft4_decode.f90:210`); `max` il numero massimo di candidati (`MAXCAND = 200`, `ft4_decode.f90:49`: i primi
+/// trovati salendo di frequenza). L'elenco e' in ordine di frequenza, ma quelli entro 20 Hz da `qso_freq_hz` (`nfqso`, se c'e') vengono per
+/// primi (`getcandidates4.f90:70-81`). La frequenza e' del tono 0, a passi di circa 1 Hz.
 pub fn find_candidates(dd: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32, max: usize, qso_freq_hz: Option<f32>) -> Vec<Candidate> {
     if max == 0 || !f_low_hz.is_finite() || !f_high_hz.is_finite() || f_high_hz <= f_low_hz || !min_sync.is_finite() {
         return Vec::new();
@@ -200,35 +207,23 @@ pub fn find_candidates(dd: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32,
     let df = SAMPLE_RATE as f32 / NFFT1 as f32;
     let at = |i: usize| -> f32 { if i < NMAX { dd.get(i).copied().unwrap_or(0.0) } else { 0.0 } };
 
-    // finestra: sqrt((1 + cos(i * pi / 256)) / 2), i = 1..256
-    let mut window = [0.0f32; 256];
-    for (i, w) in window.iter_mut().enumerate() {
-        *w = ((1.0 + ((i + 1) as f64 * PI / 256.0).cos()) / 2.0).sqrt() as f32;
-    }
+    // finestra di Nuttall su tutti i 2304 campioni (getcandidates4.f90:22, nuttal_window.f90)
+    let window: Vec<f32> = (0..NFFT1)
+        .map(|i| {
+            let x = 2.0 * PI * i as f64 / NFFT1 as f64;
+            (0.3635819 - 0.4891775 * x.cos() + 0.1365995 * (2.0 * x).cos() - 0.0106411 * (3.0 * x).cos()) as f32
+        })
+        .collect();
     let fac = 1.0f32 / 300.0;
     let plan = fft_plan(NFFT1, false);
     let mut scratch = vec![ZERO; plan.get_inplace_scratch_len()];
     let mut buf = vec![ZERO; NFFT1];
     let mut savg = vec![0.0f32; NH1 + 1];
+    // getcandidates4.f90:29-38: spettri di potenza ogni simbolo, poi la media
     for j in 0..NHSYM {
         let ia = j * NSTEP;
-        let ib = ia + 2303;
-        if ib >= NMAX {
-            break;
-        }
-        buf.fill(ZERO);
-        for m in 0..2304 {
-            buf[128 + m].re = fac * at(ia + m);
-        }
-        if j != 0 {
-            for m in 0..128 {
-                buf[m].re = fac * at(ia - 128 + m) * window[m];
-            }
-        }
-        if j != NHSYM - 1 {
-            for m in 0..128 {
-                buf[2432 + m].re = fac * at(ib + 1 + m) * window[128 + m];
-            }
+        for (m, b) in buf.iter_mut().enumerate() {
+            *b = Complex::new(fac * at(ia + m) * window[m], 0.0);
         }
         plan.process_with_scratch(&mut buf, &mut scratch);
         for i in 1..=NH1 {
@@ -239,41 +234,29 @@ pub fn find_candidates(dd: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32,
         *v /= NHSYM as f32;
     }
 
-    // liscia: 17 celle (a meno dei bordi: finestre piu' strette sui primi 8 bin; gli ultimi 8 restano a zero)
+    // getcandidates4.f90:39-42: media mobile su 15 bin (i-7..i+7); i bordi restano a zero
     let mut savsm = vec![0.0f32; NH1 + 1];
-    for i in 9..=NH1 - 8 {
-        savsm[i] = savg[i - 8..=i + 8].iter().sum::<f32>() / 17.0;
-    }
-    for i in 1..=8usize {
-        let k = i - 1;
-        savsm[i] = savg[i - k..=i + k].iter().sum::<f32>() / (2 * k + 1) as f32;
+    for i in 8..=NH1 - 7 {
+        savsm[i] = savg[i - 7..=i + 7].iter().sum::<f32>() / 15.0;
     }
 
-    let nfa = nint(f_low_hz / df).max(1);
-    let nfb = nint(4910.0 / df).min(nint(f_high_hz / df));
-    if nfb <= nfa + 1 || nfb as usize >= NH1 {
+    // getcandidates4.f90:44-47: nfa e nfb troncati (assegnazione a intero), con i limiti di 200 e 4910 Hz
+    let nfa = ((f_low_hz / df) as i64).max(BIN_200HZ as i64);
+    let nfb = ((f_high_hz / df) as i64).min(nint(4910.0 / df));
+    if nfb <= nfa + 1 {
         return Vec::new();
     }
     let (nfa, nfb) = (nfa as usize, nfb as usize);
-    let nfaa = nfa.max(43);
     let Some(sbase) = baseline(&savg, nfa, nfb) else { return Vec::new() };
-    if sbase[nfaa..=nfb].iter().any(|&b| b.is_nan() || b <= 0.0 || !b.is_finite()) {
+    // getcandidates4.f90:49: con un fondo nullo non si cerca niente (qui anche NaN e infiniti)
+    if sbase[nfa..=nfb].iter().any(|&b| b.is_nan() || b <= 0.0 || !b.is_finite()) {
         return Vec::new();
     }
-    if nfa >= 43 {
-        for i in nfa..=nfb {
-            savsm[i] /= sbase[i];
-        }
-    } else {
-        let b43 = sbase[43];
-        for v in &mut savsm[1..=42] {
-            *v /= b43;
-        }
-        for i in 43..=nfb {
-            savsm[i] /= sbase[i];
-        }
+    for i in nfa..=nfb {
+        savsm[i] /= sbase[i];
     }
 
+    // getcandidates4.f90:51-68
     let f_offset = -1.5 * SAMPLE_RATE as f32 / NSPS as f32;
     let mut found: Vec<Candidate> = Vec::new();
     for i in nfa + 1..nfb {
@@ -281,7 +264,7 @@ pub fn find_candidates(dd: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32,
             let den = savsm[i - 1] - 2.0 * savsm[i] + savsm[i + 1];
             let del = if den != 0.0 { 0.5 * (savsm[i - 1] - savsm[i + 1]) / den } else { 0.0 };
             let fpeak = (i as f32 + del) * df + f_offset;
-            if fpeak > 4910.0 {
+            if !(200.0..=4910.0).contains(&fpeak) {
                 continue;
             }
             let speak = savsm[i] - 0.25 * (savsm[i - 1] - savsm[i + 1]) * del;
@@ -291,6 +274,7 @@ pub fn find_candidates(dd: &[f32], f_low_hz: f32, f_high_hz: f32, min_sync: f32,
             }
         }
     }
+    // getcandidates4.f90:69-81: prima quelli entro 20 Hz da nfqso, poi gli altri, ciascun gruppo in ordine di frequenza
     match qso_freq_hz {
         Some(q) if q.is_finite() => {
             let (near, far): (Vec<Candidate>, Vec<Candidate>) = found.into_iter().partition(|c| (c.freq_hz - q).abs() <= 20.0);

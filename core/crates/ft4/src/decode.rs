@@ -19,13 +19,20 @@
 //!   letture senza AP di ogni candidato si provano i tipi del punto del QSO. I bit noti stanno nel messaggio mescolato con [`RVEC`], quindi la
 //!   maschera si porta nel dominio mescolato (segno invertito dove `RVEC` e' 1). Non ci sono i controlli sui toni attesi di `ft8b`: li
 //!   sostituisce un limite ai bit dubbi tra quelli non noti, piu' stretto quanti piu' bit sono noti. Non sono portati i nominativi non standard.
-//! - Filtri sui falsi: i messaggi trovati con l'AP passano sempre per [`filters::reject_message`] (`chkfalse8`); con [`Options::call_book`]
-//!   (l'elenco dei nominativi veri, come `ALLCALL7.TXT`) passano per `chkflscall` anche quelli senza AP. Niente nascondimento di messaggi di
-//!   prova o di telemetria (`lhidetest`, `lhidetelemetry`), ne' il filtro di frequenza dell'interfaccia (`lfilter`: qui `f_low_hz`/`f_high_hz`
-//!   alla ricerca). Non c'e' la media dello scarto di tempo (`avexdt` sempre 0).
+//! - Filtri sui falsi: come in WSJT-X 3.3 (`ft4_decode.f90:443-481`), un messaggio senza AP vale se il CRC torna e il testo si legge, senza
+//!   altri controlli (niente limite ai bit dubbi, niente controllo del locatore ne' dell'elenco dei nominativi). Solo i messaggi trovati con
+//!   l'AP passano per i controlli di Aurora: il limite ai bit dubbi ([`ap_error_limit`]), [`filters::accept_decode`], il locatore
+//!   ([`filters::grid_is_false`]) e [`filters::reject_message`] (`chkfalse8` di JTDX, con `chkflscall` se c'e' [`Options::call_book`]).
+//!   WSJT-X non li ha nemmeno per l'AP (marca solo con `?` quelli con `qual < 0,17`, `decoder_callbacks.f90:755`), ma e' con i bit fissati
+//!   in partenza che il rumore produce messaggi plausibili: si tengono come cintura. Niente nascondimento di messaggi di prova o di
+//!   telemetria (`lhidetest`, `lhidetelemetry`), ne' il filtro di frequenza dell'interfaccia (`lfilter`: qui `f_low_hz`/`f_high_hz` alla
+//!   ricerca). Non c'e' la media dello scarto di tempo (`avexdt` sempre 0).
 //! - Messaggio di tipo 0.1 (DXpedition): JTDX lo spezza in due righe; qui esce com'e' dal decodificatore dei messaggi.
-//! - In piu', come in `ft8::decode`, un controllo opzionale sui bit dubbi ([`Options::max_hard_errors`]): un messaggio vero ha pochi bit diversi
-//!   dalle decisioni dure del segnale, uno falso (CRC a caso) circa la meta'. In JTDX non c'e'.
+//! - Un controllo opzionale sui bit dubbi anche senza AP ([`Options::max_hard_errors`], spento di base come in WSJT-X e JTDX): un messaggio
+//!   vero ha pochi bit diversi dalle decisioni dure del segnale, uno falso (CRC a caso) circa la meta'.
+//! - Ricerca dei candidati con i valori di WSJT-X 3.3: `syncmin = 1,18` (`ft4_decode.f90:210`), al piu' 200 candidati (`MAXCAND`,
+//!   `ft4_decode.f90:49`), i candidati entro 20 Hz dalla frequenza di ricezione per primi ([`Options::qso_freq_hz`], `nfqso`).
+//! - Un limite di tempo opzionale ([`Options::deadline`]): passato, non si prova un altro candidato. In WSJT-X non c'e'.
 //! - L'OSD e' quello di `ft8::ldpc` (stesso algoritmo di `osd4_174_91`, il codice e' identico).
 
 use std::sync::Arc;
@@ -44,20 +51,20 @@ use crate::{NMAX, NN, NSPS, RVEC, SAMPLE_RATE};
 
 /// L'audio di JTDX e' a 16 bit (±32768): i campioni normalizzati a ±1 si riportano a quella scala.
 const SCALE: f32 = 32768.0;
-/// Sincronismo minimo dopo la ricerca fine (`smax >= 1.2` in `ft4_decode`).
+/// Sincronismo minimo dopo la ricerca fine (`if(smax.lt.1.2) cycle`, WSJT-X 3.3 `ft4_decode.f90:294`).
 const MIN_ALIGN_SYNC: f32 = 1.2;
-/// Bit di sincronismo giusti, su 32, sotto i quali il candidato si scarta (`nsync_qual >= 20`).
+/// Bit di sincronismo giusti, su 32, sotto i quali il candidato si scarta (`nsync_qual.lt.20`, `ft4_decode.f90:322`).
 const MIN_SYNC_BITS: usize = 20;
 
 #[derive(Debug, Clone)]
 pub struct Options {
     pub f_low_hz: f32,
     pub f_high_hz: f32,
-    /// Frequenza del QSO in corso: i candidati entro 20 Hz si provano per primi.
+    /// Frequenza di ricezione (`nfqso`): i candidati entro 20 Hz si provano per primi (`getcandidates4.f90:70-81`).
     pub qso_freq_hz: Option<f32>,
-    /// Soglia di altezza dei picchi nello spettro medio (`syncmin`: 1,2).
+    /// Soglia di altezza dei picchi nello spettro medio (`syncmin = 1.18`, WSJT-X 3.3 `ft4_decode.f90:210`).
     pub min_sync: f32,
-    /// Numero massimo di candidati per passata (100).
+    /// Numero massimo di candidati per passata (`MAXCAND = 200`, `ft4_decode.f90:49`).
     pub max_candidates: usize,
     /// Passate con sottrazione (JTDX ne fa tre; 1 = una sola, senza sottrazione).
     pub passes: usize,
@@ -69,7 +76,8 @@ pub struct Options {
     pub osd_order: usize,
     /// Finestre di ricerca del ritardo piu' larghe (`swl`, ascolto): da -1,2 a +1,7 s invece che da -1,0 a +1,4 s.
     pub swl: bool,
-    /// Scarta i messaggi con piu' di questi bit diversi dalle decisioni dure del segnale (`None` = nessun controllo).
+    /// Scarta i messaggi senza AP con piu' di questi bit diversi dalle decisioni dure del segnale (`None` = nessun controllo, come WSJT-X:
+    /// `ft4_decode.f90:443-481` accetta ogni messaggio con CRC giusto che si legge).
     pub max_hard_errors: Option<usize>,
     /// Compensazione AGC (pulsante AGCc): la stessa di FT8 ([`ft8::sync::agc_compensate_len`]) sul tratto del periodo che si decodifica.
     pub agc: bool,
@@ -77,10 +85,12 @@ pub struct Options {
     pub ap: Option<ApOptions>,
     /// Tipo a priori 1, `CQ ??? ???`: non richiede di sapere niente.
     pub ap_cq: bool,
-    /// Elenco dei nominativi veri (come `ALLCALL7.TXT`) per `chkflscall`; con un elenco incompleto si scartano stazioni vere.
+    /// Elenco dei nominativi veri (come `ALLCALL7.TXT`) per `chkflscall`: solo sui messaggi trovati con l'AP.
     pub call_book: Option<Arc<CallBook>>,
-    /// Controllo del locatore sul paese del nominativo (vedi [`filters::grid_is_false`]); solo sui messaggi deboli o a priori.
+    /// Controllo del locatore sul paese del nominativo (vedi [`filters::grid_is_false`]): solo sui messaggi trovati con l'AP.
     pub grid_check: Option<GridCheck>,
+    /// Oltre questo istante non si prova un altro candidato (i messaggi gia' trovati restano): un PC lento non deve restare indietro.
+    pub deadline: Option<std::time::Instant>,
 }
 
 impl Default for Options {
@@ -97,19 +107,20 @@ impl Options {
             f_low_hz: 200.0,
             f_high_hz: 4000.0,
             qso_freq_hz: None,
-            min_sync: 1.2,
-            max_candidates: 100,
+            min_sync: 1.18,
+            max_candidates: 200,
             passes: 3,
             subtract: true,
             bp_iterations: 40,
             osd_order: 3,
             swl: false,
-            max_hard_errors: Some(MAX_HARD_ERRORS),
+            max_hard_errors: None,
             agc: false,
             ap: None,
             ap_cq: false,
             call_book: None,
             grid_check: None,
+            deadline: None,
         };
         match ndepth {
             0 | 1 => {
@@ -124,7 +135,7 @@ impl Options {
     }
 }
 
-/// Un messaggio con piu' bit diversi da quelli decisi dal segnale e' un falso: un vero ne ha pochi, uno casuale circa la meta' (87).
+/// Tetto del limite ai bit dubbi dei messaggi trovati con l'AP ([`ap_error_limit`]): un vero ne ha pochi, uno casuale circa la meta' (87).
 const MAX_HARD_ERRORS: usize = 45;
 
 /// Decodifica i 7,5 secondi di audio di un periodo (12 kHz, campioni normalizzati a ±1; si usano i primi 73728 campioni).
@@ -154,6 +165,9 @@ pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) 
         }
         let ds = Downsampler::new(&audio);
         for cand in candidates {
+            if options.deadline.is_some_and(|d| std::time::Instant::now() >= d) {
+                break;
+            }
             let Some(hit) = try_candidate(&ds, &tables, cand, options, ap.as_ref(), hashes) else { continue };
             // come nel Fortran la sottrazione precede il controllo dei doppioni
             if options.subtract {
@@ -231,14 +245,14 @@ struct Found {
     dmin: f32,
 }
 
-/// I filtri sui falsi: sempre per i messaggi trovati con l'AP (che lavorano su bit decisi in partenza), per gli altri solo se si ha l'elenco
-/// dei nominativi (senza, `chkflscall` non ha niente da controllare).
+/// I filtri sui falsi, solo per i messaggi trovati con l'AP (che lavorano su bit decisi in partenza). Senza AP WSJT-X 3.3 accetta il messaggio
+/// appena il CRC torna e `unpack77` lo legge (`ft4_decode.f90:443-481`), senza altri controlli: qui lo stesso.
 fn rejected(found: &Found, options: &Options, snr: i32, dt_s: f32) -> bool {
+    if found.ap_type == 0 {
+        return false;
+    }
     if filters::grid_is_false(&found.text, snr as f32, found.ap_type, options.grid_check.as_ref()) {
         return true;
-    }
-    if found.ap_type == 0 && options.call_book.is_none() {
-        return false;
     }
     let qual = 1.0 - (found.hard_errors as f32 + found.dmin) / 60.0;
     let check = MessageCheck { text: &found.text, i3: found.i3, n3: found.n3, ap_type: found.ap_type, qual, snr: snr as f32, dt_s };
@@ -561,7 +575,7 @@ mod tests {
 
     #[test]
     fn rumore_senza_il_controllo_sui_bit_dubbi_non_da_falsi() {
-        // il controllo sui bit dubbi e' una cintura in piu': i filtri di JTDX da soli devono bastare sul rumore bianco
+        // come WSJT-X 3.3 (ft4_decode.f90:443-481) senza AP non c'e' nessun filtro dopo CRC e unpack77: sul rumore bianco basta il CRC
         let options = Options { max_hard_errors: None, ..Options::default() };
         for seed in [13u64, 14, 15, 16] {
             let out = decode_slot(&slot(&[], seed, 0.05), &options, &mut CallHashes::default());
@@ -719,15 +733,15 @@ mod tests {
     #[test]
     #[ignore = "misura: cargo test -p ft4 --release -- --ignored --nocapture sensibilita_curva"]
     fn sensibilita_curva() {
-        let senza = Options { max_hard_errors: None, ..Options::default() };
+        let con = Options { max_hard_errors: Some(MAX_HARD_ERRORS), ..Options::default() };
         for snr in [-14.0f32, -16.0, -17.0, -18.0, -19.0] {
             let (mut ok, mut ok_senza) = (0, 0);
             for seed in 100..120u64 {
                 let audio = slot(&[("CQ K1ABC FN42", 1500.0, 0.2, snr)], seed, 0.05);
-                if decode(&audio).iter().any(|d| d.text == "CQ K1ABC FN42") {
+                if decode_slot(&audio, &con, &mut CallHashes::default()).iter().any(|d| d.text == "CQ K1ABC FN42") {
                     ok += 1;
                 }
-                if decode_slot(&audio, &senza, &mut CallHashes::default()).iter().any(|d| d.text == "CQ K1ABC FN42") {
+                if decode(&audio).iter().any(|d| d.text == "CQ K1ABC FN42") {
                     ok_senza += 1;
                 }
             }
@@ -738,12 +752,12 @@ mod tests {
     #[test]
     #[ignore = "misura: cargo test -p ft4 --release -- --ignored --nocapture falsi_su_molti"]
     fn falsi_su_molti_periodi_di_rumore() {
-        let senza = Options { max_hard_errors: None, ..Options::default() };
+        let con = Options { max_hard_errors: Some(MAX_HARD_ERRORS), ..Options::default() };
         let (mut con_controllo, mut senza_controllo) = (0, 0);
         for seed in 1000..1200u64 {
             let audio = slot(&[], seed, 0.05);
-            con_controllo += decode(&audio).len();
-            senza_controllo += decode_slot(&audio, &senza, &mut CallHashes::default()).len();
+            con_controllo += decode_slot(&audio, &con, &mut CallHashes::default()).len();
+            senza_controllo += decode(&audio).len();
         }
         println!("falsi su 200 periodi di solo rumore: {con_controllo} con il controllo, {senza_controllo} senza");
     }
