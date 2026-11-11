@@ -720,17 +720,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     setEditing(null);
   };
 
-  const importFrom = (how: 'replace' | 'add' | 'defaults') => {
-    importMacros(how).then(
+  // le macro di fabbrica di Aurora (l'importazione da altri programmi e' stata tolta dal menu, scelta del proprietario 2026-11-11)
+  const resetMacros = () => {
+    importMacros('defaults').then(
       (r) => {
         client.setQueryData(['digi'], r.snapshot);
         onChanged();
-        if (how === 'defaults') {
-          toast(t('digi.mi.macrosRestored'), 'ok');
-          return;
-        }
-        const modes = Object.values(r.imported.modes).reduce((a, b) => a + b, 0);
-        toast(t('digi.mi.importDone', { base: r.imported.default_count, modes }), 'ok');
+        toast(t('digi.mi.macrosRestored'), 'ok');
       },
       (e: unknown) => {
         const code = e instanceof ApiError ? e.code : '';
@@ -743,17 +739,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined);
   };
 
-  // ---- i menu, come quelli ----
+  // ---- i menu ----
   const slots = Array.from({ length: 20 }, (_, i) => i + 1);
   const menus: MenuDef[] = [
     {
       label: t('digi.menu.file'),
       items: [
-        { label: t('digi.mi.import'), onSelect: () => importFrom('replace') },
-        { label: t('digi.mi.importAdd'), onSelect: () => importFrom('add') },
         { label: t('digi.mi.macrosMerge'), checked: s.merge_macros[s.mode] !== false, onSelect: () => save({ merge_macros: { ...s.merge_macros, [s.mode]: s.merge_macros[s.mode] === false } }) },
         'sep',
-        { label: t('digi.mi.macrosReset'), onSelect: () => importFrom('defaults') },
+        { label: t('digi.mi.macrosReset'), onSelect: resetMacros },
       ],
     },
     {

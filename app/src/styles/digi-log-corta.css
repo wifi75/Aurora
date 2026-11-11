@@ -197,9 +197,9 @@ html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; bord
 .digi-status { align-items: center; flex-wrap: nowrap; }
 .digi-status .digi-st { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 30px; min-height: 30px; min-width: 52px; margin: 0; padding: 0 12px; font: 600 13px/1 var(--font-ui); white-space: nowrap; border-style: solid; }
 .digi-status .digi-st--freq { gap: 4px; min-width: 116px; padding: 0 10px; cursor: text; }
-.digi-status .digi-st--freq input { width: 62px; height: 100%; padding: 0; border: 0; background: transparent; text-align: right; font: 600 13px/1 var(--font-data); outline: none; }
-.digi-status .digi-st-unit { font: 600 12px/1 var(--font-ui); opacity: 0.8; }
-.digi-status .digi-st--info { font: 600 13px/1 var(--font-data); }
+.digi-status .digi-st--freq input { width: 62px; height: 100%; padding: 0; border: 0; background: transparent; text-align: right; font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; outline: none; }
+.digi-status .digi-st-unit { font: 600 13px/1 var(--font-ui); }
+.digi-status .digi-st--info { font: 600 13px/1 var(--font-ui); }
 .digi-status .digi-st--freq:focus-within { border-color: #8e7bff; box-shadow: 0 0 0 2px rgba(142, 123, 255, 0.35); }
 
 /* Macro in tema chiaro: bordo uguale per tutte, testo piu' stretto per le etichette lunghe (meno «…»), caselle vuote tratteggiate
@@ -216,3 +216,5 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-log-table--completa table.mv-grid td { border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
 .digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
 .digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
+/* un solo carattere in tutta la barra (anche frequenza e dati del modo, che prima erano a spaziatura fissa) */
+.digi-status .digi-st, .digi-status .digi-st--freq input, html[data-theme='light'] .digi-status .digi-st--freq input { font-family: var(--font-ui) !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0; }

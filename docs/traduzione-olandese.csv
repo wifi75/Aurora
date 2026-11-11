@@ -739,7 +739,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -4109,12 +4109,9 @@ digi.menu.options,Options,Opties
 digi.menu.view,View,Beeld
 digi.menu.configure,Configure,Configureren
 digi.menu.help,Help,Help
-digi.mi.import,Import  macros…,-macro’s importeren…
-digi.mi.importAdd,"Import  macros, keeping mine…","-macro’s importeren, mijn eigen behouden…"
 digi.mi.macrosMerge,Merge mode macros with the default ones,Modusmacro’s samenvoegen met de standaardmacro’s
 digi.mi.macrosReset,Restore Aurora’s default macros,Standaardmacro’s van Aurora herstellen
 digi.mi.macrosRestored,Aurora’s default macros restored.,Standaardmacro’s van Aurora hersteld.
-digi.mi.importDone,"Macros imported: {base} default, {modes} for the modes.","Macro’s geïmporteerd uit : {base} standaard, {modes} voor de modi."
 digi.mi.importErr,Cannot import: {why},Kan niet importeren: {why}
 digi.mi.importLocal,Importing works only from the Aurora PC itself.,Importeren werkt alleen op de Aurora-pc zelf.
 digi.mi.clearRx,Clear the receive window,Het ontvangstvenster wissen

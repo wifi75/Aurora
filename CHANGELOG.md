@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK·RTTY·CW**: tolte dal menu le voci per importare le macro (resta «Ripristina le macro di Aurora»); barra di stato con un solo carattere in tutte le caselle (anche frequenza e dati del modo).
+- **Rotore**: nella sua pagina e nella finestra a parte e' meno della meta' di prima.
 - **Riquadro del nominativo**: LoTW compare solo se la stazione lo usa, in verde e senza data; se non lo usa non compare. Anche dal DX Cluster si guarda l'elenco pubblico dell'ARRL (prima solo QRZ.com, e una stazione su LoTW poteva risultare «✖ LoTW»).
 
 ## 0.11.238 - 2026-11-11

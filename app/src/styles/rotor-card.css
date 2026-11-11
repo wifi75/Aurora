@@ -62,7 +62,7 @@
 /* dentro la finestra a parte e nella pagina Rotore: non sta sopra la pagina, riempie il suo spazio (la bussola e' quadrata: la larghezza
    segue anche l'altezza della finestra, cosi' la scheda resta tutta in vista) */
 .rotor-card--window, .rotor-card--page { position: relative; right: auto; bottom: auto; z-index: auto; max-width: 100%; margin: 0 auto; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
-.rotor-card--window { width: min(100%, 62vh); }
-.rotor-card--page { width: min(100%, 34rem); }
+.rotor-card--window { width: min(100%, 30vh); min-width: 15rem; }
+.rotor-card--page { width: min(100%, 16rem); }
 .rotor-card--window .rotor-bar, .rotor-card--page .rotor-bar { cursor: default; }
 .rotor-solo { box-sizing: border-box; height: 100%; padding: 0.5rem; overflow: auto; background: var(--bg); }
