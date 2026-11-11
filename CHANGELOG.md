@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **PSK·RTTY·CW, barra di stato**: tolte data e ora (l'ora c'e' gia' in alto); caselle tutte della stessa altezza e dello stesso carattere, testo centrato, frequenza allineata con «Hz».
+- Testi, Guida e Novita': tolti i confronti con  in tutte le lingue (resta solo «Importa le macro», che indica i file da leggere).
 - **DXpedition**: nella riga dell'elenco, nello spazio libero accanto al paese, la via QSL accorciata («LoTW», «OQRS», «via M0OXO»); intera passandoci sopra.
 - **DX Cluster, colonna Modo anche per CW, SSB e gli altri modi**: se il commento non dice il modo, Aurora lo prende dalle frequenze di lavoro di FT8, FT4, JS8, WSPR e PSK31 e poi dal band plan IARU Regione 1 (CW nei tratti solo CW, SSB in quelli della fonia, FM sopra 29,52 MHz); nei tratti misti resta vuoto. Il commento riconosce anche VARA, JS8, Q65, FST4, Olivia, MFSK, FreeDV. Filtro Modo con FM, JS8, VARA, SSTV, JT65, Q65, MSK144, WSPR. Guida in sei lingue.
 - **Cat4OM con la scoperta automatica**: come Decodium, Aurora chiede alla porta di gestione di Cat4OM (127.0.0.1:17300) il gruppo e la sua porta Control (per esempio 5001) e avvia il gruppo se e' fermo; i campi Gruppo e Control vuoti mostrano in grigio quelli trovati. Messaggi chiari se la porta di gestione non risponde o chiede la password.

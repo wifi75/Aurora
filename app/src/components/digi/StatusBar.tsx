@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useT } from '../../i18n';
 
 interface Props {
@@ -29,20 +29,11 @@ interface Props {
   onThreshold(): void;
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** La barra di stato: RX/TX, Sq, AFC, Lock, Snap, frequenza audio, dati del modo, modo, data e ora. */
+/** La barra di stato: RX/TX, Sq, AFC, Lock, Snap, frequenza audio, dati del modo e modo. Data e ora tolte (scelta del proprietario 2026-11-11:
+ * l'ora c'e' gia' nella barra in alto di Aurora). */
 export function DigiStatusBar(p: Props) {
   const t = useT();
-  const [now, setNow] = useState(() => new Date());
-  const [utc, setUtc] = useState(true);
   const [draft, setDraft] = useState<string | null>(null);
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const d = utc ? { day: now.getUTCDate(), month: now.getUTCMonth() + 1, year: now.getUTCFullYear(), h: now.getUTCHours(), m: now.getUTCMinutes(), s: now.getUTCSeconds() } : { day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear(), h: now.getHours(), m: now.getMinutes(), s: now.getSeconds() };
   const freqText = draft ?? p.freqHz.toFixed(1).replace('.', ',');
   const commit = () => {
     if (draft === null) return;
@@ -87,7 +78,7 @@ export function DigiStatusBar(p: Props) {
             if (e.key === 'Escape') setDraft(null);
           }}
         />
-        <span> Hz</span>
+        <span className="digi-st-unit">Hz</span>
       </label>
       {p.modeData !== '' ? (
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>
@@ -95,10 +86,6 @@ export function DigiStatusBar(p: Props) {
         </button>
       ) : null}
       <span className="digi-st digi-st--info">{p.modeName}</span>
-      <span className="digi-st digi-st--info">{`${pad(d.day)}/${pad(d.month)}/${d.year}`}</span>
-      <button type="button" className="digi-st digi-st--info" title={t('digi.st.clock')} onClick={() => setUtc((v) => !v)}>
-        {`${pad(d.h)}:${pad(d.m)}:${pad(d.s)}${utc ? ' z' : ''}`}
-      </button>
     </div>
   );
 }

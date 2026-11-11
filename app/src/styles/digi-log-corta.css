@@ -192,3 +192,12 @@ html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; bord
 .rotor-gear { display: inline-flex; align-items: center; gap: 0.1em; line-height: 0; }
 .rotor-gear .rotor-caret { transition: transform 0.15s; }
 .rotor-gear .rotor-caret--up { transform: rotate(180deg); }
+
+/* Barra di stato: tutte le caselle uguali (altezza, carattere, testo centrato), la frequenza allineata a destra con «Hz» staccato */
+.digi-status { align-items: center; flex-wrap: nowrap; }
+.digi-status .digi-st { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 30px; min-height: 30px; min-width: 52px; margin: 0; padding: 0 12px; font: 600 13px/1 var(--font-ui); white-space: nowrap; border-style: solid; }
+.digi-status .digi-st--freq { gap: 4px; min-width: 116px; padding: 0 10px; cursor: text; }
+.digi-status .digi-st--freq input { width: 62px; height: 100%; padding: 0; border: 0; background: transparent; text-align: right; font: 600 13px/1 var(--font-data); outline: none; }
+.digi-status .digi-st-unit { font: 600 12px/1 var(--font-ui); opacity: 0.8; }
+.digi-status .digi-st--info { font: 600 13px/1 var(--font-data); }
+.digi-status .digi-st--freq:focus-within { border-color: #8e7bff; box-shadow: 0 0 0 2px rgba(142, 123, 255, 0.35); }
