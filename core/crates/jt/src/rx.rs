@@ -1,7 +1,9 @@
 //! JT65: ricezione. Sincronismo sul periodo intero, affinamento di frequenza e ritardo, energie dei 64 toni di ogni simbolo e decodifica
 //! Reed-Solomon a decisione soft con l'analisi a priori (`symspec65`, `sync65`, `demod64a`, `extract.f90`, `ftrsdap.c`, `hint65.f90` e
-//! `jt65_decode.f90` di WSJT-X 3.3, GPL 3).
+//! `jt65_decode.f90` di WSJT-X 3.3, GPL 3). I sottomodi B e C (toni a distanza doppia e quadrupla), la lisciatura degli spettri alla
+//! larghezza del segnale e la media dei periodi (`decode65a.f90`, `lorentzian.f90`, `avg65` di `jt65_decode.f90`) servono all'EME e alle VHF.
 
+pub use crate::jt65::Submode;
 use crate::jt65::{NSYM, SYNC_PATTERN, data_symbols, gray, interleave};
 use crate::pack::{Kind, pack_message, unpack_message};
 use crate::rs::{Codec, DATA, NN};
@@ -18,8 +20,15 @@ const SYMBOL: f64 = 4096.0 * FS / 11_025.0;
 const QSTEP: f64 = SYMBOL / 4.0;
 const WINDOW: usize = 4458;
 const DF_BIN: f64 = FS / NFFT as f64;
-/// Distanza tra i toni in hertz.
+/// Distanza tra i toni del sottomodo A in hertz (un bin dello spettro di un simbolo, `df = 1378.125 / 512` di `decode65a.f90:69`).
 const TONE_DF: f64 = 11_025.0 / 4096.0;
+/// Bin in piu' attorno ai 66 toni negli spettri dei simboli: la lisciatura `smo121` non tocca gli estremi e li si tiene lontani dai toni.
+const MARGIN: usize = 64;
+/// Al massimo quante lisciature si provano per candidato (in WSJT-X fino a `2 * nint(width / df)`, senza tetto): un segnale largo
+/// 30 Hz ne chiede gia' 22; il tetto evita minuti di calcolo con una larghezza stimata sul rumore.
+const MAX_SMOOTHING: i32 = 24;
+/// Periodi tenuti per la media (`MAXAVE = 64` di `avg65`, `jt65_decode.f90:528`).
+pub const MAX_AVERAGE: usize = 64;
 const MAX_QSYM: usize = 600;
 /// Energia media minima dei toni previsti dalla parola decodificata, in unita' di rumore mediano (un segnale a -27 dB ne ha circa 4,6).
 const MIN_TONE_ENERGY: f32 = 3.2;
@@ -48,6 +57,8 @@ pub struct Decoded {
     pub ap_type: u8,
     /// Uscito dalla ricerca profonda sulla lista dei messaggi (`hint65`, `nft = 2`).
     pub hinted: bool,
+    /// Quanti periodi sono serviti: 1 per un periodo solo, da 2 in su per un messaggio uscito dalla media (`nsum` di `avg65`).
+    pub averaged: u32,
 }
 
 /// Livello «Aggressive decoding level» di fabbrica di WSJT-X (`Configuration.cpp:3721`, `settings_->value ("Aggressive", 4)`).
@@ -101,6 +112,22 @@ pub struct Options {
     pub deep_search: bool,
     /// I nominativi noti (nominativo, locatore a 4) per la ricerca profonda (`set_calls`, al massimo 10000).
     pub hint_calls: Vec<(String, String)>,
+    /// Sottomodo A, B o C: la distanza fra i toni di dati (`mode65 = 2**nsubmode`, `jt65_decode.f90:301`).
+    pub submode: Submode,
+    /// «Enable VHF and submode features» (`bVHF`, `nexp_decode & 64`): un solo candidato, il piu' forte entro `rx_hz +- tol_hz` con F Tol
+    /// sotto i 1000 Hz (`jt65_decode.f90:286-290`, `sync65.f90:62-70`), sincronismo in dB, larghezza del segnale (`lorentzian`) e lisciatura
+    /// degli spettri in B e C (`decode65a.f90:98-139`), due passate, niente filtri dell'AFC e del livello «Aggressive». Spento di fabbrica.
+    pub vhf: bool,
+    /// Soglia del sincronismo («Sync», `minsync`, di fabbrica 0, `mainwindow_settings.cpp:508`): un candidato piu' debole non si decodifica
+    /// e non entra nella media (`jt65_decode.f90:347`, `:416`). In VHF il sincronismo e' in dB, altrimenti in deviazioni standard.
+    pub min_sync: i32,
+    /// «Include averaging» (`ndepth & 16`): un candidato che da solo non si decodifica si somma ai periodi della stessa parita', della stessa
+    /// frequenza entro F Tol e dello stesso ritardo entro 0,2 s e si decodifica la media (`jt65_decode.f90:413-440`, `avg65`). Serve
+    /// [`decode_averaged`]. Spento di fabbrica.
+    pub average: bool,
+    /// «Auto Clear Avg» (`ndepth & 128`): dopo un messaggio dalla media entro F Tol dalla frequenza di ricezione la media si svuota
+    /// (`jt65_decode.f90:432-433`). Spento di fabbrica.
+    pub auto_clear_avg: bool,
 }
 
 impl Default for Options {
@@ -117,6 +144,11 @@ impl Default for Options {
             ap: None,
             deep_search: false,
             hint_calls: Vec::new(),
+            submode: Submode::A,
+            vhf: false,
+            min_sync: 0,
+            average: false,
+            auto_clear_avg: false,
         }
     }
 }
@@ -190,6 +222,15 @@ fn slope_normalize(y: &mut [f32], xpk: f64) {
     }
 }
 
+/// `db` di WSJT-X: -99 per valori non positivi.
+fn db(x: f32) -> f32 {
+    if x > 1.0e-10 { 10.0 * x.log10() } else { -99.0 }
+}
+
+/// Da Aurora alle unita' della correlazione di WSJT-X: qui gli spettri si dividono per il 40 per cento dei valori di ogni frequenza
+/// (0,511 volte la media del rumore), in `symspec65.f90:63-74` per `4 * pctile(28)` di `flat65.f90` (1,314 volte la media): 0,511 / 1,314.
+const VHF_CCF_SCALE: f32 = 0.389;
+
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
     bin: usize,
@@ -200,7 +241,9 @@ struct Candidate {
 /// Cerca i segnali: per ogni frequenza correla l'energia del tono di sincronismo con la sequenza pseudocasuale (`sync65`). I candidati
 /// escono in ordine di frequenza, come in `sync65.f90:62-97` (chi li tronca a 50 tiene i piu' bassi, `jt65_decode.f90:324`). `robust`
 /// e' `nrobust` di `xcor.f90:29-40`: ogni valore diventa +1 o -1 rispetto alla mediana (contro i picchi dell'AGC a inizio periodo).
-fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh: f32, robust: bool) -> Vec<Candidate> {
+/// Con `vhf` (`sync65.f90:46-47`, `:62-66`, `:89-90`) la correlazione non si raddrizza, esce il solo picco piu' alto della finestra (se
+/// supera la soglia) e il sincronismo e' in dB (`db(ccfred) - 16`).
+fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh: f32, robust: bool, vhf: bool) -> Vec<Candidate> {
     if nq == 0 {
         return Vec::new();
     }
@@ -220,6 +263,7 @@ fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh:
     let mut ccfred = vec![0.0f32; NSZ + 2];
     let mut peaks = vec![LAG1; NSZ + 2];
     let mut a = vec![0.0f32; nq];
+    let (mut ccfmax, mut ipk) = (0.0f32, 0usize);
     for i in ia..=ib {
         for (j, v) in a.iter_mut().enumerate() {
             *v = ss[j * NSZ + i - 1] / reference[i];
@@ -247,9 +291,15 @@ fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh:
                 lag_best = lag;
             }
         }
-        slope_normalize(&mut ccf, f64::from(lag_best - LAG1) + 1.0);
+        if !vhf {
+            slope_normalize(&mut ccf, f64::from(lag_best - LAG1) + 1.0);
+        }
         ccfred[i] = ccf[(lag_best - LAG1) as usize];
         peaks[i] = lag_best;
+        if ccfred[i] > ccfmax {
+            ccfmax = ccfred[i];
+            ipk = i;
+        }
     }
     let xmed = percentile(&ccfred[ia..=ib], 35);
     for v in ccfred[ia..=ib].iter_mut() {
@@ -258,6 +308,13 @@ fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh:
     ccfred[ia - 1] = ccfred[ia];
     ccfred[ib + 1] = ccfred[ib];
     let mut out: Vec<Candidate> = Vec::new();
+    if vhf {
+        // `ccfmax` e' quello prima di togliere la mediana (`sync65.f90:51-54`, `:64`)
+        if ipk >= ia && ccfmax >= thresh {
+            out.push(Candidate { bin: ipk, lag: peaks[ipk], sync: db(ccfred[ipk] * VHF_CCF_SCALE) - 16.0 });
+        }
+        return out;
+    }
     for i in ia..=ib {
         if ccfred[i] >= thresh && ccfred[i] > ccfred[i - 1] && ccfred[i] > ccfred[i + 1] {
             out.push(Candidate { bin: i, lag: peaks[i], sync: ccfred[i] });
@@ -372,12 +429,54 @@ fn refine(samples: &[f32], c: &Candidate) -> (f64, f64, f64) {
     (f, dt, drift)
 }
 
-/// Le energie dei 64 toni di dati per i 63 simboli di dati: `s3[j][i]`, `j` nell'ordine di trasmissione.
-fn tone_matrix(samples: &[f32], f: f64, dt_samples: f64, drift: f64) -> Vec<[f32; 64]> {
+/// Gli spettri dei 63 simboli di dati attorno al segnale (`s1` di `decode65a.f90:66-86`, un bin = 2,69 Hz = la distanza dei toni di A):
+/// `rows[j][MARGIN + b]` e' il bin `b` sopra il tono di sincronismo, da `-MARGIN` a `65 * mode65 + MARGIN`, gia' corretti di frequenza,
+/// ritardo e deriva. Il tono di dati `i` sta al bin `mode65 * (i + 2)` (`decode65a.f90:126-133`: in C WSJT-X ricampiona una seconda volta a
+/// `f0 + 355,3 Hz` solo perche' a 1378 Hz di campionamento i toni alti non ci starebbero; qui lo spettro e' quello a 12 kHz e non serve).
+#[derive(Debug, Clone)]
+struct BinSpectra {
+    mode65: usize,
+    rows: Vec<Vec<f32>>,
+}
+
+impl BinSpectra {
+    fn bins(mode65: usize) -> usize {
+        65 * mode65 + 2 * MARGIN + 1
+    }
+
+    /// Le energie dei 64 toni di dati (`s3` di `decode65b.f90:15-21`).
+    fn s3(&self) -> Vec<[f32; 64]> {
+        self.rows.iter().map(|row| std::array::from_fn(|i| row[MARGIN + self.mode65 * (i + 2)])).collect()
+    }
+
+    /// Una lisciatura `smo121` di ogni simbolo.
+    fn smooth(&mut self) {
+        for row in self.rows.iter_mut() {
+            smo121(row);
+        }
+    }
+}
+
+/// `smo121.f90`: media pesata 1/4, 1/2, 1/4 con il vicino, gli estremi restano.
+fn smo121(x: &mut [f32]) {
+    if x.len() < 3 {
+        return;
+    }
+    let mut x0 = x[0];
+    for i in 1..x.len() - 1 {
+        let x1 = x[i];
+        x[i] = 0.5 * x[i] + 0.25 * (x0 + x[i + 1]);
+        x0 = x1;
+    }
+}
+
+/// Gli spettri dei simboli di dati per il sottomodo `mode65` (1, 2, 4), con la stessa finestra di un simbolo di `decode65a.f90:71-86`.
+fn bin_spectra(samples: &[f32], f: f64, dt_samples: f64, drift: f64, mode65: usize) -> BinSpectra {
     let mut planner = FftPlanner::<f32>::new();
     let fft = planner.plan_fft_forward(WINDOW);
     let mut scratch = vec![Complex::new(0.0f32, 0.0); fft.get_inplace_scratch_len()];
-    let mut s3 = Vec::with_capacity(NN);
+    let nb = BinSpectra::bins(mode65);
+    let mut rows = Vec::with_capacity(NN);
     let mut buf = vec![Complex::new(0.0f32, 0.0); WINDOW];
     for (k, &p) in SYNC_PATTERN.iter().enumerate() {
         if p == 1 {
@@ -397,14 +496,142 @@ fn tone_matrix(samples: &[f32], f: f64, dt_samples: f64, drift: f64) -> Vec<[f32
             cr = nr;
         }
         fft.process_with_scratch(&mut buf, &mut scratch);
-        let mut row = [0.0f32; 64];
-        for (i, r) in row.iter_mut().enumerate() {
-            // il tono di dati 0 sta due intervalli sopra il sincronismo
-            *r = buf[i + 2].norm_sqr();
-        }
-        s3.push(row);
+        // i bin sotto lo zero stanno in fondo alla trasformata
+        let row: Vec<f32> = (0..nb).map(|b| buf[(b + WINDOW - MARGIN) % WINDOW].norm_sqr()).collect();
+        rows.push(row);
     }
-    s3
+    BinSpectra { mode65, rows }
+}
+
+/// Lo spettro medio del periodo diviso per il fondo (`savg` di `symspec65.f90:59-81` con il riferimento di `flat65.f90`: per ogni frequenza
+/// il 28 per cento dei valori, poi il 28 per cento su 33 frequenze vicine, per 4).
+fn average_spectrum(ss: &[f32], nq: usize) -> Vec<f32> {
+    if nq == 0 {
+        return vec![0.0; NSZ];
+    }
+    let stmp: Vec<f32> = (0..NSZ).map(|i| percentile(&(0..nq).map(|j| ss[j * NSZ + i]).collect::<Vec<f32>>(), 28)).collect();
+    let nsmo = 33usize;
+    let (ia, ib) = (nsmo / 2, NSZ - nsmo / 2 - 2);
+    let mut reference = vec![0.0f32; NSZ];
+    for i in ia..=ib {
+        reference[i] = 4.0 * percentile(&stmp[i - nsmo / 2..i - nsmo / 2 + nsmo], 28);
+    }
+    let (first, last) = (reference[ia], reference[ib]);
+    reference[..ia].fill(first);
+    reference[ib + 1..].fill(last);
+    (0..NSZ)
+        .map(|i| {
+            if reference[i] <= 0.0 {
+                return 0.0;
+            }
+            (0..nq).map(|j| ss[j * NSZ + i]).sum::<f32>() / nq as f32 / reference[i]
+        })
+        .collect()
+}
+
+/// `fchisq0.f90`: lo scarto quadratico da una lorentziana troncata a tre semilarghezze.
+fn fchisq0(y: &[f32], a: &[f32; 5]) -> f32 {
+    let mut chisq = 0.0f32;
+    for (i, &v) in y.iter().enumerate() {
+        let z = ((i + 1) as f32 - a[2]) / (0.5 * a[3]);
+        let mut yfit = a[0];
+        if z.abs() < 3.0 {
+            yfit = a[0] + a[1] * (1.0 / (1.0 + z * z) - 0.1);
+        }
+        chisq += (v - yfit) * (v - yfit);
+    }
+    chisq
+}
+
+/// `lorentzian.f90`: fondo, ampiezza, centro (da 1), larghezza a meta' altezza (in bin) e scarto della lorentziana che meglio segue `y`.
+/// Ne serve la larghezza: quanto il segnale e' allargato (dall'EME, dallo scatter) e quindi quanto lisciare gli spettri.
+fn lorentzian(y: &[f32]) -> [f32; 5] {
+    let mut a = [0.0f32; 5];
+    let npts = y.len();
+    if npts < 40 {
+        return a;
+    }
+    let (mut ipk, mut ymax) = (0usize, f32::MIN);
+    for (i, &v) in y.iter().enumerate() {
+        if v > ymax {
+            ymax = v;
+            ipk = i;
+        }
+    }
+    let base = (y[..20].iter().sum::<f32>() + y[npts - 20..].iter().sum::<f32>()) / 40.0;
+    let stest = ymax - 0.5 * (ymax - base);
+    let mut ssum = y[ipk];
+    for i in 1..=50 {
+        if ipk + i >= npts || y[ipk + i] < stest {
+            break;
+        }
+        ssum += y[ipk + i];
+    }
+    for i in 1..=50 {
+        if i > ipk || y[ipk - i] < stest {
+            break;
+        }
+        ssum += y[ipk - i];
+    }
+    let ww = if y[ipk] != 0.0 { ssum / y[ipk] } else { 0.0 };
+    let t = ww * ww - 5.67;
+    a[0] = base;
+    a[1] = ymax - base;
+    a[2] = (ipk + 1) as f32;
+    a[3] = if t > 0.0 { t.sqrt() } else { 2.0 };
+    // la ricerca a passi di `lorentzian.f90:52-104`, con un tetto ai passi (in Fortran i cicli `go to 10` e `go to 20` non ne hanno)
+    let mut deltaa = [0.1f32, 0.1, 1.0, 1.0];
+    let mut chisqr0 = 1.0e6f32;
+    for _iter in 0..5 {
+        for j in 0..4 {
+            let mut chisq1 = fchisq0(y, &a);
+            let mut fnn = 0.0f32;
+            let mut delta = deltaa[j];
+            let mut chisq2;
+            let mut guard = 0;
+            loop {
+                a[j] += delta;
+                chisq2 = fchisq0(y, &a);
+                guard += 1;
+                if chisq2 != chisq1 || guard > 200 {
+                    break;
+                }
+            }
+            if chisq2 > chisq1 {
+                delta = -delta;
+                a[j] += delta;
+                std::mem::swap(&mut chisq1, &mut chisq2);
+            }
+            let mut chisq3;
+            let mut guard = 0;
+            loop {
+                fnn += 1.0;
+                a[j] += delta;
+                chisq3 = fchisq0(y, &a);
+                guard += 1;
+                if chisq3 < chisq2 && guard < 1000 {
+                    chisq1 = chisq2;
+                    chisq2 = chisq3;
+                } else {
+                    break;
+                }
+            }
+            if chisq3 == chisq2 {
+                delta *= 0.5;
+            } else {
+                delta *= 1.0 / (1.0 + (chisq1 - chisq2) / (chisq3 - chisq2)) + 0.5;
+            }
+            a[j] -= delta;
+            deltaa[j] = deltaa[j] * fnn / 3.0;
+        }
+        let chisqr = fchisq0(y, &a);
+        a[4] = chisqr;
+        if chisqr / chisqr0 > 0.99 {
+            break;
+        }
+        chisqr0 = chisqr;
+    }
+    a
 }
 
 struct Demod {
@@ -725,8 +952,9 @@ fn hint_messages(codec: &Codec, ap: &ApCalls, calls: &[(String, String)]) -> Vec
 }
 
 /// `hint65`: un banco di filtri adattati sulle energie dei simboli, uno per messaggio della lista. Ritorna il migliore e `qual`, quanto
-/// supera il secondo (`hint65.f90:70-113`, con `nadd = 0` e `nflip = 1` di JT65A in HF).
-fn hint_search<'a>(s3: &[[f32; 64]], mrs: &[u8; NN], mrs2: &[u8; NN], hints: &'a [Hint]) -> Option<(&'a Hint, f32)> {
+/// supera il secondo (`hint65.f90:70-123`, `nflip = 1`). `nadd` e' quanti spettri sono stati sommati o lisciati: da 4 e da 8 il margine
+/// richiesto sul secondo scende (`hint65.f90:118-120`).
+fn hint_search<'a>(s3: &[[f32; 64]], mrs: &[u8; NN], mrs2: &[u8; NN], hints: &'a [Hint], nadd: i32) -> Option<(&'a Hint, f32)> {
     let ref0: f32 = (0..NN).map(|j| s3[j][usize::from(mrs[j])]).sum();
     let (mut u1, mut u2) = (-99.0f32, -99.0f32);
     let mut ipk: Option<usize> = None;
@@ -757,7 +985,13 @@ fn hint_search<'a>(s3: &[[f32; 64]], mrs: &[u8; NN], mrs2: &[u8; NN], hints: &'a
             u2 = p;
         }
     }
-    let bias = (1.12 * u2).max(0.35);
+    let bias = if nadd >= 8 {
+        (1.04 * u2).max(0.60)
+    } else if nadd >= 4 {
+        (1.08 * u2).max(0.45)
+    } else {
+        (1.12 * u2).max(0.35)
+    };
     let qual = 100.0 * (u1 - bias);
     ipk.map(|k| (&hints[k], qual))
 }
@@ -774,11 +1008,21 @@ struct Extracted {
     hinted: bool,
     /// Energia media dei toni previsti dalla parola, in unita' di rumore mediano (`pp1`).
     pp: f32,
+    /// `qual` di `hint65` per i messaggi della lista (0 per gli altri).
+    qual: f32,
+}
+
+/// Come si prova un insieme di spettri: `nadd` per `hint65`, `smoothed` se lisciato o sommato su piu' periodi.
+#[derive(Debug, Clone, Copy)]
+struct Trial {
+    trials: u32,
+    nadd: i32,
+    smoothed: bool,
 }
 
 /// `extract.f90`: normalizza le energie, toglie i toni fissi (birdie), prova la decisione soft senza e poi con i tipi a priori del punto del
 /// QSO; senza esito, e con la ricerca profonda accesa, prova la lista dei messaggi.
-fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hints: &[Hint], trials: u32) -> Option<Extracted> {
+fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hints: &[Hint], trial: Trial) -> Option<Extracted> {
     let mut all: Vec<f32> = Vec::with_capacity(64 * NN);
     for row in s3 {
         all.extend_from_slice(row);
@@ -789,6 +1033,19 @@ fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hin
     }
     // `s3a`: le energie normalizzate per `getpp`; `s3w` quelle da cui si tolgono i toni fissi
     let s3a: Vec<[f32; 64]> = s3.iter().map(|row| row.map(|v| v / base)).collect();
+    // il controllo dell'energia dei toni (`pp`, di Aurora) misura i toni in unita' di rumore mediano: per il rumore esponenziale di un periodo
+    // (deviazione = media = mediana / ln 2) la soglia 3,2 vuol dire toni 1,22 deviazioni sopra la media. Uno spettro lisciato o sommato non
+    // e' piu' esponenziale (la deviazione scende molto piu' della media, e la lisciatura spalma il tono sui vicini): lo stesso controllo si fa
+    // allora in deviazioni, `(1 + z) / ln 2`, che sul rumore di un periodo da' lo stesso valore
+    let pp_of = |tone_mean: f32| -> f32 {
+        if !trial.smoothed {
+            return tone_mean;
+        }
+        let n = all.len() as f32;
+        let mean = all.iter().sum::<f32>() / n;
+        let std = (all.iter().map(|v| (v - mean) * (v - mean)).sum::<f32>() / n).sqrt().max(1e-30);
+        (1.0 + (tone_mean * base - mean) / std) / std::f32::consts::LN_2
+    };
     let mut s3w = s3a.clone();
     let mut nfail = 0;
     let d = loop {
@@ -823,7 +1080,7 @@ fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hin
             }
             (t, ap.symbols[t])
         };
-        let Some(res) = soft_decode(codec, &d, &s3a, trials, &known) else { continue };
+        let Some(res) = soft_decode(codec, &d, &s3a, trial.trials, &known) else { continue };
         // la prima accettazione (`extract.f90:158-167`)
         if res.ntotal > nd0 || res.rtt > r0 {
             continue;
@@ -844,15 +1101,15 @@ fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hin
             return None;
         }
         let channel = channel_tones(&res.word);
-        let pp = channel.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32;
-        return Some(Extracted { text, channel, nhard: res.nhard, ntotal: res.ntotal, rtt: res.rtt, ap_type: ntype as u8, hinted: false, pp });
+        let pp = pp_of(channel.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32);
+        return Some(Extracted { text, channel, nhard: res.nhard, ntotal: res.ntotal, rtt: res.rtt, ap_type: ntype as u8, hinted: false, pp, qual: 0.0 });
     }
     if options.deep_search && !hints.is_empty() {
         let qmin = 2.0 - 0.1 * f32::from(options.aggressive.min(10));
-        let (hint, qual) = hint_search(&s3w, &d.mrsym, &d.mr2sym, hints)?;
+        let (hint, qual) = hint_search(&s3w, &d.mrsym, &d.mr2sym, hints, trial.nadd)?;
         if qual >= qmin {
-            let pp = hint.symbols.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32;
-            return Some(Extracted { text: hint.text.clone(), channel: hint.symbols, nhard: 0, ntotal: 0, rtt: 0.0, ap_type: 0, hinted: true, pp });
+            let pp = pp_of(hint.symbols.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32);
+            return Some(Extracted { text: hint.text.clone(), channel: hint.symbols, nhard: 0, ntotal: 0, rtt: 0.0, ap_type: 0, hinted: true, pp, qual });
         }
     }
     None
@@ -915,10 +1172,10 @@ fn demodulate(audio: &[f32], start: i64, freq: f64) -> (f64, f64, usize) {
 }
 
 /// Quanta energia il segnale ricostruito (frequenza `f`, ritardo `dt`) trova nell'audio: serve a rifinire f e dt sul messaggio gia' noto.
-fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64, drift: f64) -> f64 {
+fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64, drift: f64, spacing: f64) -> f64 {
     let mut total = 0.0f64;
     for (k, &tone) in tones.iter().enumerate() {
-        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), symbol_freq(f, drift, k) + f64::from(tone) * TONE_DF);
+        let (re, im, count) = demodulate(audio, symbol_start(dt_samples, k), symbol_freq(f, drift, k) + f64::from(tone) * spacing);
         if count >= WINDOW / 2 {
             total += re * re + im * im;
         }
@@ -929,13 +1186,13 @@ fn tone_fit(audio: &[f32], tones: &[u8; NSYM], f: f64, dt_samples: f64, drift: f
 /// `subtract65`: toglie dall'audio un segnale decodificato. Prima si rifinisce frequenza e ritardo sul messaggio noto (un errore di un decimo di
 /// hertz lascerebbe un residuo di -18 dB), poi per ogni simbolo si stima ampiezza e fase del suo tono e si sottrae l'onda ricostruita; senza questo
 /// un segnale forte lascia ai vicini tanta energia da far «decodificare» messaggi inesistenti.
-fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64) {
+fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64, spacing: f64) {
     let tones = all_tones(channel);
     let (mut f, mut dt) = (f0, dt0);
-    let mut best = tone_fit(audio, &tones, f, dt, drift);
+    let mut best = tone_fit(audio, &tones, f, dt, drift, spacing);
     for d in -6i32..=6 {
         let ff = f0 + f64::from(d) * 0.04;
-        let fit = tone_fit(audio, &tones, ff, dt, drift);
+        let fit = tone_fit(audio, &tones, ff, dt, drift, spacing);
         if fit > best {
             best = fit;
             f = ff;
@@ -944,14 +1201,14 @@ fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64
     let dt_center = dt0;
     for d in -6i32..=6 {
         let t = dt_center + f64::from(d) * 8.0;
-        let fit = tone_fit(audio, &tones, f, t, drift);
+        let fit = tone_fit(audio, &tones, f, t, drift, spacing);
         if fit > best {
             best = fit;
             dt = t;
         }
     }
     for (k, &tone) in tones.iter().enumerate() {
-        let freq = symbol_freq(f, drift, k) + f64::from(tone) * TONE_DF;
+        let freq = symbol_freq(f, drift, k) + f64::from(tone) * spacing;
         let start = symbol_start(dt, k);
         let (re, im, count) = demodulate(audio, start, freq);
         if count < WINDOW / 2 {
@@ -979,15 +1236,34 @@ fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64
 /// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto), con le passate di `jt65_decode.f90:256-291`: due (quattro a
 /// profondita' 3), soglia di sincronismo 2,5 alla prima e 2,0 dopo, l'ultima delle quattro senza sottrazione e con il sincronismo robusto;
 /// dalla seconda in poi ci si ferma alla prima passata che non trova niente di nuovo (`:489`). Ogni messaggio trovato si toglie dall'audio
-/// prima di provare il candidato successivo (`subtract65`).
+/// prima di provare il candidato successivo (`subtract65`). In VHF ([`Options::vhf`]) due passate con 1000 prove (`ntrials`, «Random
+/// erasure patterns» 6 di fabbrica, `Configuration.cpp:3718`; `TwoPass` acceso, `:3901`). Senza la media dei periodi: per quella
+/// [`decode_averaged`].
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
+    decode_inner(samples, options, None)
+}
+
+/// Come [`decode`], con la media dei periodi quando [`Options::average`] e' acceso (`avg65`). `period` e' il numero del periodo (per esempio i
+/// minuti dall'epoca Unix): si sommano solo periodi della stessa parita' (`mod(iutc(i),2)`, `jt65_decode.f90:584`) e due chiamate con lo stesso
+/// numero sono lo stesso periodo (una ridecodifica non lo aggiunge due volte). La media si svuota da sola cambiando sottomodo o VHF
+/// (`jt65_decode.f90:258-259`).
+pub fn decode_averaged(samples: &[f32], options: &Options, averager: &mut Averager, period: u64) -> Vec<Decoded> {
+    averager.check_profile(options.submode, options.vhf);
+    decode_inner(samples, options, Some((averager, period)))
+}
+
+fn decode_inner(samples: &[f32], options: &Options, mut avg: Option<(&mut Averager, u64)>) -> Vec<Decoded> {
     let codec = Codec::new();
     let mut audio = samples.to_vec();
     let mut out: Vec<Decoded> = Vec::new();
-    let (npass, trials) = match options.depth {
-        0 | 1 => (2usize, 100u32),
-        2 => (2, 1000),
-        _ => (4, 1000),
+    let (npass, trials) = if options.vhf {
+        (2usize, 1000u32)
+    } else {
+        match options.depth {
+            0 | 1 => (2, 100),
+            2 => (2, 1000),
+            _ => (4, 1000),
+        }
     };
     let ap = ApTable::new(options.ap.as_ref());
     let hints = match &options.ap {
@@ -1002,8 +1278,8 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
             _ => (2.0, false, true),
         };
         let (mut fa, mut fb) = (options.f_low_hz, options.f_high_hz);
-        // «Single decode»: solo attorno alla frequenza di ricezione, con soglia 1,0 (`jt65_decode.f90:302-306`)
-        if options.single_decode
+        // «Single decode», e in VHF con F Tol sotto i 1000 Hz: solo attorno alla frequenza di ricezione, con soglia 1,0 (`jt65_decode.f90:286-290`)
+        if (options.single_decode || (options.vhf && options.tol_hz < 1000.0))
             && let Some(rx) = options.rx_hz
         {
             fa = (rx - options.tol_hz).max(200.0);
@@ -1014,11 +1290,23 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         if nq == 0 {
             break;
         }
-        let mut candidates = find_candidates(&ss, nq, fa, fb, thresh, robust);
+        // in VHF la larghezza del segnale piu' forte della finestra, da 100 Hz sotto a 100 Hz sopra (`jt65_decode.f90:292-302`)
+        let width_hz = if options.vhf {
+            let ia = ((f64::from(fa) - 100.0) / DF_BIN).round().max(1.0) as usize;
+            let ib = (((f64::from(fb) + 100.0) / DF_BIN).round() as usize).min(NSZ);
+            if ib + 1 < ia + 50 {
+                break;
+            }
+            let savg = average_spectrum(&ss, nq);
+            lorentzian(&savg[ia - 1..ib])[3] * DF_BIN as f32
+        } else {
+            0.0
+        };
+        let mut candidates = find_candidates(&ss, nq, fa, fb, thresh, robust, options.vhf);
         drop(ss);
         candidates.truncate(options.max_candidates / ipass);
-        let pass = Pass { ipass, subtract, trials };
-        if decode_candidates(&codec, &mut audio, &candidates, options, &ap, &hints, &pass, &mut out) {
+        let pass = Pass { ipass, subtract, trials, width_hz };
+        if decode_candidates(&codec, &mut audio, &candidates, options, (&ap, &hints), &pass, &mut out, &mut avg) {
             break;
         }
         if ipass > 1 && out.len() == found_before {
@@ -1034,6 +1322,69 @@ struct Pass {
     ipass: usize,
     subtract: bool,
     trials: u32,
+    /// Larghezza del segnale in hertz (`width`, solo in VHF; 0 altrimenti).
+    width_hz: f32,
+}
+
+/// Quante lisciature provare (`minsmo`, `maxsmo` di `decode65a.f90:98-104`): solo in B e C, da `nint(width / df) - 1` a `2 * nint(width / df)`.
+/// Con larghezza nulla (fuori dalla VHF) WSJT-X prova due volte gli stessi spettri non lisciati (-1 e 0): qui una volta sola.
+fn smoothing_range(mode65: usize, width_hz: f32) -> (i32, i32) {
+    let w = (width_hz / TONE_DF as f32).round() as i32;
+    if mode65 < 2 || 2 * w <= 0 { (0, 0) } else { (w - 1, 2 * w) }
+}
+
+/// Il rapporto segnale/rumore in VHF dal sincronismo in dB e dalla larghezza (`jt65_decode.f90:395-398`), fra -30 e -1 dB (`:402-403`).
+fn vhf_snr(sync_db: f32, width_hz: f32) -> i32 {
+    let s2db = 1.1 * db(10f32.powf((sync_db + 16.0) / 10.0)) + 1.4 * (db(width_hz) - 4.3) - 52.0;
+    (s2db.round() as i32).clamp(-30, -1)
+}
+
+/// La lisciatura degli spettri (`decode65a.f90:105-157`, `avg65` in `jt65_decode.f90:616-646`): per ogni `ismo` da `minsmo` a `maxsmo` si liscia
+/// una volta (due da quattro lisciature in poi) e si prova `extract`; il primo messaggio della decodifica normale chiude, altrimenti vince quello
+/// della lista con `qual` piu' alto e ci si ferma quando `qual` scende. `nsum` e' quanti periodi sono sommati (`nadd = nsum * ismo`). Gli
+/// spettri restano lisciati (sono quelli che `avg65` mette da parte, come il modulo `s1` di WSJT-X). In WSJT-X `qual` di un tentativo fallito
+/// e' `pp2` dell'ultima prova di `ftrsdap`, qui non c'e' e un tentativo fallito vale 0: si provano tutte le lisciature.
+#[allow(clippy::too_many_arguments)]
+fn extract_smoothed(
+    codec: &Codec,
+    spectra: &mut BinSpectra,
+    (minsmo, maxsmo): (i32, i32),
+    nsum: i32,
+    options: &Options,
+    (ap, hints): (&ApTable, &[Hint]),
+    trials: u32,
+) -> Option<Extracted> {
+    let maxsmo = maxsmo.min(minsmo.max(0) + MAX_SMOOTHING);
+    let mut nn = 0;
+    let mut best: Option<Extracted> = None;
+    let mut qual0 = f32::MIN;
+    for ismo in minsmo..=maxsmo {
+        if ismo > 0 {
+            spectra.smooth();
+            nn += 1;
+            if nn >= 4 {
+                spectra.smooth();
+                nn += 1;
+            }
+        }
+        let trial = Trial { trials, nadd: nsum * ismo, smoothed: nn > 0 || nsum > 1 };
+        let qual = match extract(codec, &spectra.s3(), options, ap, hints, trial) {
+            Some(x) if !x.hinted => return Some(x),
+            Some(x) => {
+                let q = x.qual;
+                if best.as_ref().is_none_or(|b| q > b.qual) {
+                    best = Some(x);
+                }
+                q
+            }
+            None => 0.0,
+        };
+        if qual < qual0 {
+            break;
+        }
+        qual0 = qual;
+    }
+    best
 }
 
 /// Prova i candidati di una passata e toglie dall'audio ogni messaggio trovato. Ritorna `true` quando «Single decode» ha il suo messaggio.
@@ -1043,33 +1394,79 @@ fn decode_candidates(
     audio: &mut [f32],
     candidates: &[Candidate],
     options: &Options,
-    ap: &ApTable,
-    hints: &[Hint],
+    lists: (&ApTable, &[Hint]),
     pass: &Pass,
     out: &mut Vec<Decoded>,
+    avg: &mut Option<(&mut Averager, u64)>,
 ) -> bool {
     // `decoded0`, `freq0`: l'ultimo messaggio della passata, per non ripeterlo da un candidato vicino (`jt65_decode.f90:451-452`)
     let mut last: Option<(String, f64)> = None;
+    // `prtavg`: al massimo un messaggio dalla media per passata (`jt65_decode.f90:416`, `:434`)
+    let mut printed_avg = false;
+    let mode65 = options.submode.mode65() as usize;
+    let spacing = TONE_DF * mode65 as f64;
     for c in candidates {
+        // sotto la soglia «Sync» il candidato non si decodifica (`nflip = 0`, `jt65_decode.f90:347`, `decode65a.f90:48`) ne' entra nella media
+        if c.sync < options.min_sync as f32 {
+            continue;
+        }
         let bin_hz = c.bin as f64 * DF_BIN;
         let (f, dt, drift) = refine(audio, c);
-        // il filtro sulle correzioni dell'AFC (`jt65_decode.f90:367-374`): `a(1)` scarto di frequenza, `a(2)` meta' della deriva, `dtx` ritardo
-        // dall'inizio dell'audio
+        // il filtro sulle correzioni dell'AFC (`jt65_decode.f90:358-365`, non in VHF): `a(1)` scarto di frequenza, `a(2)` meta' della deriva,
+        // `dtx` ritardo dall'inizio dell'audio
         let (a1, a2, dtx) = (f - bin_hz, drift / 2.0, dt / FS);
-        if a1.abs() > 10.0 / pass.ipass as f64 {
+        if !options.vhf {
+            if a1.abs() > 10.0 / pass.ipass as f64 {
+                continue;
+            }
+            let ibad = usize::from(a1.abs() > 5.0) + usize::from(a2.abs() > 2.0) + usize::from((dtx - 1.0).abs() > 2.5);
+            if ibad >= 2 {
+                continue;
+            }
+        }
+        let mut spectra = bin_spectra(audio, f, dt, drift, mode65);
+        if spectra.rows.len() != NN {
             continue;
         }
-        let ibad = usize::from(a1.abs() > 5.0) + usize::from(a2.abs() > 2.0) + usize::from((dtx - 1.0).abs() > 2.5);
-        if ibad >= 2 {
-            continue;
+        let s3 = spectra.s3();
+        let snr = |channel: &[u8; NN]| if options.vhf { vhf_snr(c.sync, pass.width_hz) } else { estimate_snr(&s3, channel) };
+        let single = extract_smoothed(codec, &mut spectra, smoothing_range(mode65, pass.width_hz), 1, options, lists, pass.trials);
+        // da solo non esce (o esce solo dalla lista): con «Include averaging» si prova la media dei periodi (`jt65_decode.f90:413-440`)
+        if options.average
+            && !printed_avg
+            && single.as_ref().is_none_or(|x| x.hinted)
+            && let Some((averager, period)) = avg.as_mut()
+        {
+            let nfreq = f.round() as i32;
+            if averager.wants(*period, nfreq, options.tol_hz)
+                && let Some((x, nsum)) = averager.add_and_decode(codec, *period, (nfreq, dtx as f32), &spectra, options, lists, pass)
+                && (x.hinted || x.pp >= MIN_TONE_ENERGY)
+            {
+                printed_avg = true;
+                // «Auto Clear Avg»: un messaggio dalla media vicino alla frequenza di ricezione svuota la media (`jt65_decode.f90:432-433`)
+                if options.auto_clear_avg && options.rx_hz.is_some_and(|rx| (f as f32 - rx).abs() <= options.tol_hz) {
+                    averager.clear();
+                }
+                if !out.iter().any(|o| o.text == x.text) {
+                    out.push(Decoded {
+                        snr_db: snr(&x.channel),
+                        text: x.text,
+                        freq_hz: f as f32,
+                        dt_s: (dtx - 1.0) as f32,
+                        sync: c.sync,
+                        hard_errors: x.nhard.max(0) as u32,
+                        total_distance: x.ntotal,
+                        rtt: x.rtt,
+                        ap_type: x.ap_type,
+                        hinted: x.hinted,
+                        averaged: nsum,
+                    });
+                }
+            }
         }
-        let s3 = tone_matrix(audio, f, dt, drift);
-        if s3.len() != NN {
-            continue;
-        }
-        let Some(x) = extract(codec, &s3, options, ap, hints, pass.trials) else { continue };
-        // la seconda accettazione, per livello «Aggressive», solo senza analisi a priori e senza lista (`nft < 2`)
-        if x.ap_type == 0 && !x.hinted && !passes_aggressive_level(x.nhard, x.ntotal, x.rtt, options.aggressive) {
+        let Some(x) = single else { continue };
+        // la seconda accettazione, per livello «Aggressive», solo senza analisi a priori e senza lista (`nft < 2`) e non in VHF (`:441-448`)
+        if !options.vhf && x.ap_type == 0 && !x.hinted && !passes_aggressive_level(x.nhard, x.ntotal, x.rtt, options.aggressive) {
             continue;
         }
         // l'energia media dei toni che la parola prevede, rispetto al rumore: un messaggio vero ne ha molta, uno inventato dal decodificatore
@@ -1085,23 +1482,24 @@ fn decode_candidates(
         }
         // la sottrazione viene prima del controllo dei doppioni: un residuo gia' decodificato si toglie di nuovo (`jt65_decode.f90:455-467`)
         if pass.subtract {
-            subtract(audio, &x.channel, f, dt, drift);
+            subtract(audio, &x.channel, f, dt, drift, spacing);
         }
         last = Some((x.text.clone(), bin_hz));
         if out.iter().any(|o| o.text == x.text) {
             continue;
         }
         out.push(Decoded {
-            snr_db: estimate_snr(&s3, &x.channel),
+            snr_db: snr(&x.channel),
             text: x.text,
             freq_hz: f as f32,
-            dt_s: (dt / FS - 1.0) as f32,
+            dt_s: (dtx - 1.0) as f32,
             sync: c.sync,
             hard_errors: x.nhard.max(0) as u32,
             total_distance: x.ntotal,
             rtt: x.rtt,
             ap_type: x.ap_type,
             hinted: x.hinted,
+            averaged: 1,
         });
         if options.single_decode {
             return true;
@@ -1110,12 +1508,121 @@ fn decode_candidates(
     false
 }
 
+/// Un periodo messo da parte per la media (`iutc`, `nfsave`, `dtsave`, `s1save` di `avg65`).
+#[derive(Debug, Clone)]
+struct SavedPeriod {
+    period: u64,
+    freq: i32,
+    dt_s: f32,
+    spectra: BinSpectra,
+}
+
+/// La media dei periodi di JT65 (`avg65` di `jt65_decode.f90:497-680`): fino a 64 periodi, gli spettri dei candidati che da soli non si
+/// decodificano. Si tiene fra un periodo e l'altro; [`Averager::clear`] e' «Clear Avg».
+#[derive(Debug, Clone, Default)]
+pub struct Averager {
+    saved: Vec<SavedPeriod>,
+    /// Dove va il prossimo periodo quando i 64 posti sono pieni (il piu' vecchio).
+    next: usize,
+    /// `nutc0`, `nfreq0`: periodo e frequenza dell'ultimo candidato mandato alla media (`jt65_decode.f90:417-424`).
+    last: Option<(u64, i32)>,
+    /// Sottomodo e VHF con cui sono stati presi gli spettri.
+    profile: Option<(Submode, bool)>,
+}
+
+impl Averager {
+    pub fn new() -> Averager {
+        Averager::default()
+    }
+
+    /// «Clear Avg» (`clear_jt65_averages` di `jt65_mod.f90:58-68`).
+    pub fn clear(&mut self) {
+        self.saved.clear();
+        self.next = 0;
+        self.last = None;
+    }
+
+    /// Quanti periodi sono messi da parte.
+    pub fn len(&self) -> usize {
+        self.saved.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.saved.is_empty()
+    }
+
+    fn check_profile(&mut self, submode: Submode, vhf: bool) {
+        if self.profile != Some((submode, vhf)) {
+            self.clear();
+            self.profile = Some((submode, vhf));
+        }
+    }
+
+    /// Un altro periodo o una frequenza piu' lontana di F Tol dall'ultima mandata alla media (`jt65_decode.f90:417-419`).
+    fn wants(&self, period: u64, freq: i32, tol_hz: f32) -> bool {
+        self.last.is_none_or(|(p, f)| p != period || (freq - f).abs() as f32 > tol_hz)
+    }
+
+    /// Mette da parte gli spettri del candidato (se lo stesso periodo non ne ha gia' uno entro F Tol, `avg65:556-563`), somma quelli della
+    /// stessa parita', dello stesso ritardo entro 0,2 s e della stessa frequenza entro F Tol (`:580-601`) e, con almeno due periodi, prova a
+    /// decodificare la somma lisciandola come `decode65a` (`:607-650`, da `nint(width / df)` a due volte tanto). Ritorna il messaggio e quanti
+    /// periodi sono stati sommati.
+    #[allow(clippy::too_many_arguments)]
+    fn add_and_decode(
+        &mut self,
+        codec: &Codec,
+        period: u64,
+        (freq, dt_s): (i32, f32),
+        spectra: &BinSpectra,
+        options: &Options,
+        lists: (&ApTable, &[Hint]),
+        pass: &Pass,
+    ) -> Option<(Extracted, u32)> {
+        self.last = Some((period, freq));
+        let tol = options.tol_hz;
+        if !self.saved.iter().any(|e| e.period == period && (freq - e.freq).abs() as f32 <= tol) {
+            let entry = SavedPeriod { period, freq, dt_s, spectra: spectra.clone() };
+            if self.saved.len() < MAX_AVERAGE {
+                self.saved.push(entry);
+            } else {
+                self.saved[self.next] = entry;
+                self.next = (self.next + 1) % MAX_AVERAGE;
+            }
+        }
+        let mut sum: Option<BinSpectra> = None;
+        let mut nsum = 0u32;
+        for e in &self.saved {
+            if e.period % 2 != period % 2 || (dt_s - e.dt_s).abs() > 0.2 || (freq - e.freq).abs() as f32 > tol || e.spectra.mode65 != spectra.mode65 {
+                continue;
+            }
+            match sum.as_mut() {
+                None => sum = Some(e.spectra.clone()),
+                Some(s) => {
+                    for (row, add) in s.rows.iter_mut().zip(e.spectra.rows.iter()) {
+                        for (v, a) in row.iter_mut().zip(add.iter()) {
+                            *v += a;
+                        }
+                    }
+                }
+            }
+            nsum += 1;
+        }
+        if nsum < 2 {
+            return None;
+        }
+        let mut sum = sum?;
+        let w = (pass.width_hz / TONE_DF as f32).round() as i32;
+        let range = if spectra.mode65 >= 2 { (w.max(0), 2 * w.max(0)) } else { (0, 0) };
+        extract_smoothed(codec, &mut sum, range, nsum as i32, options, lists, pass.trials).map(|x| (x, nsum))
+    }
+}
+
 /// Ritorna le costanti di tempo per chi deve sapere quanto dura un messaggio.
 pub fn transmission_samples() -> usize {
     (NSYM as f64 * SYMBOL).ceil() as usize
 }
 
-/// La distanza tra i toni di JT65 sottomodo A, per chi deve disegnare la banda occupata.
+/// La distanza tra i toni di JT65 sottomodo A, per chi deve disegnare la banda occupata (per B e C [`Submode::tone_spacing_hz`]).
 pub fn tone_spacing_hz() -> f64 {
     TONE_DF
 }
@@ -1123,7 +1630,7 @@ pub fn tone_spacing_hz() -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::jt65::{modulate, tones};
+    use crate::jt65::{modulate_submode, tones};
 
     struct Lcg(u64);
     impl Lcg {
@@ -1140,6 +1647,11 @@ mod tests {
 
     /// Un minuto di audio con rumore bianco (sigma 1) e un messaggio al rapporto dato (dB in 2500 Hz).
     fn minute(messages: &[(&str, f64, f64, f64)], seed: u64) -> Vec<f32> {
+        minute_sub(messages, Submode::A, seed)
+    }
+
+    /// Come [`minute`] nel sottomodo dato.
+    fn minute_sub(messages: &[(&str, f64, f64, f64)], sub: Submode, seed: u64) -> Vec<f32> {
         let codec = Codec::new();
         let mut rng = Lcg(seed);
         let n = 60 * 12_000;
@@ -1147,7 +1659,7 @@ mod tests {
         for &(msg, f0, dt_s, snr_db) in messages {
             let snr = 10f64.powf(snr_db / 10.0);
             let amp = (2.0 * snr * 2500.0 / 6000.0).sqrt() as f32;
-            let wave = modulate(&tones(&codec, msg), f0, amp, 12_000.0);
+            let wave = modulate_submode(&tones(&codec, msg), f0, sub, amp, 12_000.0);
             let start = ((1.0 + dt_s) * 12_000.0) as usize;
             for (i, v) in wave.iter().enumerate() {
                 if start + i < n {
@@ -1294,5 +1806,127 @@ mod tests {
             let out = decode(&minute(&[], seed), &options);
             assert!(out.is_empty(), "il rumore non deve dare messaggi: {out:?}");
         }
+    }
+
+    /// JT65B e JT65C: toni a distanza doppia e quadrupla, trasmessi e ricevuti; anche in VHF (un solo candidato attorno alla frequenza di
+    /// ricezione, lisciatura alla larghezza del segnale).
+    #[test]
+    fn submodes_b_and_c_round_trip() {
+        for (sub, seed) in [(Submode::B, 21), (Submode::C, 22)] {
+            let audio = minute_sub(&[("K1ABC IU3ABC FN42", 1200.0, 0.2, -19.0)], sub, seed);
+            let out = decode(&audio, &Options { submode: sub, ..Options::default() });
+            let d = out.iter().find(|d| d.text == "K1ABC IU3ABC FN42").unwrap_or_else(|| panic!("{sub:?}: {out:?}"));
+            assert!((d.freq_hz - 1200.0).abs() < 1.5 && (d.dt_s - 0.2).abs() < 0.08, "{sub:?}: {d:?}");
+            let vhf = Options { submode: sub, vhf: true, rx_hz: Some(1210.0), ..Options::default() };
+            let out = decode(&audio, &vhf);
+            assert!(out.iter().any(|d| d.text == "K1ABC IU3ABC FN42" && d.averaged == 1), "{sub:?} VHF: {out:?}");
+            assert!(out.iter().all(|d| (-30..=-1).contains(&d.snr_db)), "{out:?}");
+        }
+    }
+
+    /// Un segnale di un sottomodo non si decodifica con un altro: i toni di dati cadono altrove.
+    #[test]
+    fn the_wrong_submode_does_not_decode() {
+        for (sent, tried) in [(Submode::B, Submode::A), (Submode::C, Submode::B), (Submode::A, Submode::C)] {
+            let audio = minute_sub(&[("K1ABC IU3ABC FN42", 1200.0, 0.2, -15.0)], sent, 23);
+            let out = decode(&audio, &Options { submode: tried, ..Options::default() });
+            assert!(out.iter().all(|d| d.text != "K1ABC IU3ABC FN42"), "{sent:?} letto come {tried:?}: {out:?}");
+        }
+    }
+
+    /// Lo stesso segnale in tanti periodi pari, ognuno col suo rumore.
+    fn periods(msg: &str, f0: f64, sub: Submode, snr_db: f64, n: u64) -> Vec<(u64, Vec<f32>)> {
+        (0..n).map(|k| (2 * k, minute_sub(&[(msg, f0, 0.1 + 0.01 * k as f64, snr_db)], sub, 100 + k))).collect()
+    }
+
+    /// JT65B in VHF: un messaggio troppo debole per un periodo esce dalla media di piu' periodi pari (`avg65`); con «Include averaging» spento
+    /// no, e «Clear Avg» ricomincia da capo.
+    #[test]
+    fn averaging_decodes_a_signal_too_weak_for_one_period() {
+        let msg = "K1ABC IU3ABC FN42";
+        let sub = Submode::B;
+        let o = Options { submode: sub, vhf: true, rx_hz: Some(1000.0), average: true, ..Options::default() };
+        let all = periods(msg, 1000.0, sub, -27.0, 6);
+        let alone = decode(&all[0].1, &o);
+        assert!(alone.iter().all(|d| d.text != msg), "un periodo solo non basta: {alone:?}");
+        let mut avg = Averager::new();
+        let mut found = None;
+        for (period, audio) in &all {
+            if let Some(d) = decode_averaged(audio, &o, &mut avg, *period).into_iter().find(|d| d.text == msg) {
+                found = Some(d);
+                break;
+            }
+        }
+        let d = found.expect("decodificato dalla media");
+        assert!(d.averaged >= 2, "{d:?}");
+        assert!((d.freq_hz - 1000.0).abs() < 2.0, "{d:?}");
+        // senza «Include averaging» la media non si usa
+        let mut off = Averager::new();
+        let plain = Options { average: false, ..o.clone() };
+        for (period, audio) in &all {
+            assert!(decode_averaged(audio, &plain, &mut off, *period).iter().all(|d| d.text != msg));
+        }
+        assert!(off.is_empty());
+        avg.clear();
+        assert!(avg.is_empty());
+        // un periodo dispari non si somma ai pari
+        let odd = decode_averaged(&all[1].1, &o, &mut avg, 1);
+        assert!(odd.is_empty() && avg.len() == 1, "{odd:?}");
+        let even = decode_averaged(&all[2].1, &o, &mut avg, 4);
+        assert!(even.iter().all(|d| d.text != msg), "{even:?}");
+    }
+
+    /// Due stazioni deboli a frequenze diverse: ognuna ha la sua media, nessuna somma gli spettri dell'altra.
+    #[test]
+    fn averages_keep_separate_stations() {
+        let o = Options { average: true, ..Options::default() };
+        let mut avg = Averager::new();
+        let mut got: Vec<Decoded> = Vec::new();
+        for k in 0..6u64 {
+            let audio = minute(&[("K1ABC IU3ABC FN42", 800.0, 0.1, -27.5), ("G0XYZ IU3ABC IO91", 1700.0, 0.4, -27.5)], 300 + k);
+            for d in decode_averaged(&audio, &o, &mut avg, 2 * k) {
+                if !got.iter().any(|g| g.text == d.text) {
+                    got.push(d);
+                }
+            }
+        }
+        for (msg, f) in [("K1ABC IU3ABC FN42", 800.0), ("G0XYZ IU3ABC IO91", 1700.0)] {
+            let d = got.iter().find(|d| d.text == msg).unwrap_or_else(|| panic!("{msg}: {got:?}"));
+            assert!((d.freq_hz - f).abs() < 2.0, "{d:?}");
+        }
+        assert!(got.iter().all(|d| d.text == "K1ABC IU3ABC FN42" || d.text == "G0XYZ IU3ABC IO91"), "{got:?}");
+        assert!(got.iter().any(|d| d.averaged >= 2), "{got:?}");
+        // nessuna media somma piu' periodi di quelli della sua stazione: ogni stazione ne ha al massimo uno per periodo
+        assert!(got.iter().all(|d| d.averaged <= 6), "{got:?}");
+        for f in [800, 1700] {
+            let mine: Vec<u64> = avg.saved.iter().filter(|e| (e.freq - f).abs() <= 50).map(|e| e.period).collect();
+            let mut unique = mine.clone();
+            unique.dedup();
+            assert_eq!(mine, unique, "un solo spettro per periodo e stazione a {f} Hz");
+        }
+    }
+
+    /// Con la media accesa il rumore resta rumore, anche sommando tanti periodi.
+    #[test]
+    fn averaging_noise_gives_nothing() {
+        let o = Options { submode: Submode::C, vhf: true, rx_hz: Some(1000.0), average: true, ..Options::default() };
+        let mut avg = Averager::new();
+        for k in 0..6u64 {
+            let out = decode_averaged(&minute_sub(&[], Submode::C, 400 + k), &o, &mut avg, 2 * k);
+            assert!(out.is_empty(), "periodo {k}: {out:?}");
+        }
+    }
+
+    /// `lorentzian`: centro e larghezza a meta' altezza di una lorentziana su un fondo, col modello di `fchisq0` (troncata a tre semilarghezze).
+    #[test]
+    fn the_lorentzian_fit_finds_the_width() {
+        let y: Vec<f32> = (1..=140)
+            .map(|i| {
+                let z = (i as f32 - 70.0) / 4.0;
+                if z.abs() < 3.0 { 1.0 + 5.0 * (1.0 / (1.0 + z * z) - 0.1) } else { 1.0 }
+            })
+            .collect();
+        let a = lorentzian(&y);
+        assert!((a[2] - 70.0).abs() < 1.0 && (a[3] - 8.0).abs() < 1.5, "{a:?}");
     }
 }

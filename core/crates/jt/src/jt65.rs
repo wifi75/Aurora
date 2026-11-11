@@ -15,6 +15,42 @@ pub const TONE_SPACING_HZ: f64 = 11025.0 / 4096.0;
 /// Durata di un simbolo in secondi.
 pub const SYMBOL_S: f64 = 4096.0 / 11025.0;
 
+/// Il sottomodo di JT65: 0 = A, 1 = B, 2 = C. La distanza fra i toni e' quella di A per `mode65 = 2^n` = 1, 2, 4 (`mode65=2**nsubmode`,
+/// `jt65_decode.f90:301`; in trasmissione `toneSpacing = 11025/4096 * 1, 2, 4`, `mainwindow.cpp:13430-13432`). Il sincronismo resta sul tono 0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Submode(pub u8);
+
+impl Submode {
+    pub const A: Submode = Submode(0);
+    pub const B: Submode = Submode(1);
+    pub const C: Submode = Submode(2);
+
+    /// Da una lettera ('A'..='C', anche minuscola).
+    pub fn from_letter(c: char) -> Option<Submode> {
+        let i = (c.to_ascii_uppercase() as u8).checked_sub(b'A')?;
+        (i <= 2).then_some(Submode(i))
+    }
+
+    pub fn letter(self) -> char {
+        char::from(b'A' + self.0.min(2))
+    }
+
+    /// `mode65`: 1, 2 o 4.
+    pub fn mode65(self) -> u32 {
+        1 << self.0.min(2)
+    }
+
+    /// Distanza fra i toni in hertz.
+    pub fn tone_spacing_hz(self) -> f64 {
+        TONE_SPACING_HZ * f64::from(self.mode65())
+    }
+
+    /// Larghezza occupata dal tono di sincronismo all'ultimo tono di dati (65 intervalli).
+    pub fn bandwidth_hz(self) -> f64 {
+        65.0 * self.tone_spacing_hz()
+    }
+}
+
 /// `nprc` di `gen65.f90`: dove cade il sincronismo (1) e dove i dati (0).
 pub const SYNC_PATTERN: [u8; NSYM] = [
     1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0,
@@ -92,19 +128,28 @@ pub fn tones(codec: &Codec, msg: &str) -> [u8; NSYM] {
 /// L'onda audio di un messaggio a 12 kHz (fase continua): `tones` da [`tones`], `f0` la frequenza del tono di sincronismo, `amplitude` il picco.
 /// L'audio comincia al tempo zero della trasmissione e dura `126 * 4096 / 11025` secondi.
 pub fn modulate(tones: &[u8; NSYM], f0: f64, amplitude: f32, sample_rate: f64) -> Vec<f32> {
-    modulate_drifting(tones, f0, amplitude, sample_rate, 0.0)
+    modulate_submode(tones, f0, Submode::A, amplitude, sample_rate)
+}
+
+/// Come [`modulate`] nel sottomodo dato: i toni sono distanziati di `11025 / 4096 * mode65` hertz (JT65B x2, JT65C x4).
+pub fn modulate_submode(tones: &[u8; NSYM], f0: f64, submode: Submode, amplitude: f32, sample_rate: f64) -> Vec<f32> {
+    modulate_with(tones, f0, submode.tone_spacing_hz(), amplitude, sample_rate, 0.0)
 }
 
 /// Come [`modulate`] con una deriva lineare della frequenza: `drift_hz` e' di quanto cambia tra l'inizio e la fine del messaggio (per le prove del
 /// ricevitore, che segue la deriva).
 pub fn modulate_drifting(tones: &[u8; NSYM], f0: f64, amplitude: f32, sample_rate: f64, drift_hz: f64) -> Vec<f32> {
+    modulate_with(tones, f0, TONE_SPACING_HZ, amplitude, sample_rate, drift_hz)
+}
+
+fn modulate_with(tones: &[u8; NSYM], f0: f64, spacing_hz: f64, amplitude: f32, sample_rate: f64, drift_hz: f64) -> Vec<f32> {
     let symbol = 4096.0 * sample_rate / 11_025.0;
     let total = (NSYM as f64 * symbol).round() as usize;
     let mut out = Vec::with_capacity(total);
     let mut phase = 0.0f64;
     for n in 0..total {
         let k = ((n as f64 / symbol) as usize).min(NSYM - 1);
-        let f = f0 + f64::from(tones[k]) * TONE_SPACING_HZ + drift_hz * (n as f64 / total as f64 - 0.5);
+        let f = f0 + f64::from(tones[k]) * spacing_hz + drift_hz * (n as f64 / total as f64 - 0.5);
         phase += 2.0 * std::f64::consts::PI * f / sample_rate;
         if phase > 2.0 * std::f64::consts::PI {
             phase -= 2.0 * std::f64::consts::PI;
@@ -180,6 +225,29 @@ mod tests {
         }
         let (text, nerr) = decode_symbols(&codec, &symbols, &[]).expect("20 errori si correggono");
         assert_eq!((text.as_str(), nerr), ("CQ IU3ABC JN55", 20));
+    }
+
+    /// I sottomodi B e C raddoppiano e quadruplicano la distanza fra i toni (`mainwindow.cpp:13430-13432`).
+    #[test]
+    fn submodes_b_and_c_widen_the_tone_spacing() {
+        assert_eq!(Submode::from_letter('b'), Some(Submode::B));
+        assert_eq!(Submode::from_letter('D'), None);
+        assert_eq!([Submode::A.mode65(), Submode::B.mode65(), Submode::C.mode65()], [1, 2, 4]);
+        assert!((Submode::C.tone_spacing_hz() - 4.0 * 11025.0 / 4096.0).abs() < 1e-12);
+        assert_eq!(Submode::C.letter(), 'C');
+        // il primo simbolo di dati sta su `f0 + tono * distanza`: si misura la frequenza contando i passaggi per zero
+        let codec = Codec::new();
+        let t = tones(&codec, "CQ IU3ABC JN55");
+        let k = SYNC_PATTERN.iter().position(|&p| p == 0).unwrap_or(1);
+        for sub in [Submode::A, Submode::B, Submode::C] {
+            let wave = modulate_submode(&t, 1000.0, sub, 1.0, 12_000.0);
+            let symbol = 4096.0 * 12_000.0 / 11_025.0;
+            let (a, b) = ((k as f64 * symbol) as usize + 200, ((k + 1) as f64 * symbol) as usize - 200);
+            let crossings = wave[a..b].windows(2).filter(|w| w[0] <= 0.0 && w[1] > 0.0).count() as f64;
+            let measured = crossings / ((b - a) as f64 / 12_000.0);
+            let expected = 1000.0 + f64::from(t[k]) * sub.tone_spacing_hz();
+            assert!((measured - expected).abs() < 6.0, "{sub:?}: {measured} invece di {expected}");
+        }
     }
 
     #[test]
