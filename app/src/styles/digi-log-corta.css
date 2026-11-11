@@ -125,3 +125,37 @@ html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):h
 html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-mid { color: #92400e; }
 html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-low { color: #9f1239; }
 html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { background: #cfeaff; }
+
+/* rotella del DX Cluster: finestra e colonne nascoste */
+.cop-dialog { width: min(34rem, 96vw); }
+.cop-dialog fieldset { display: flex; flex-direction: column; gap: 0.3rem; margin: 0; border: 1px solid var(--border, #3a3f7a); border-radius: 10px; padding: 0.6rem 0.9rem; }
+.cop-dialog legend { padding: 0 0.4rem; font-weight: 600; }
+.cop-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.cop-radio { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.1rem 0; }
+.cop-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.cop-hint { margin: 0.2rem 0 0; font-size: 0.85em; color: var(--text-muted, #9aa7c4); }
+.cop-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 1rem; }
+.cluster-table[data-hide~="de"] th:nth-child(1), .cluster-table[data-hide~="de"] td:nth-child(1) { display: none; }
+.cluster-table[data-hide~="freq"] th:nth-child(2), .cluster-table[data-hide~="freq"] td:nth-child(2) { display: none; }
+.cluster-table[data-hide~="dx"] th:nth-child(3), .cluster-table[data-hide~="dx"] td:nth-child(3) { display: none; }
+.cluster-table[data-hide~="country"] th:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(5) { display: none; }
+.cluster-table[data-hide~="mode"] th:nth-child(5), .cluster-table[data-hide~="mode"] td:nth-child(6) { display: none; }
+.cluster-table[data-hide~="comment"] th:nth-child(6), .cluster-table[data-hide~="comment"] td:nth-child(7) { display: none; }
+.cluster-table[data-hide~="time"] th:nth-child(7), .cluster-table[data-hide~="time"] td:nth-child(8) { display: none; }
+.cop-dialog label.cop-radio { flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; gap: 0.6rem; }
+.cop-dialog label.cop-radio input { flex: none; width: auto; margin: 0; }
+.cop-dialog label.cop-row { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; }
+.cop-dialog .cop-cols { display: grid; grid-template-columns: 1fr 1fr; }
+
+/* il blocco quadrato del rotore (terza linguetta del pannello di destra) */
+.digi-rotor { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; align-items: center; }
+.digi-rotor-square { width: min(100%, 24rem); aspect-ratio: 1; }
+.digi-rotor-square .rot-rose-box { max-width: none; width: 100%; }
+.digi-rotor-read { display: flex; gap: 1.4rem; flex-wrap: wrap; justify-content: center; font-size: 1.05em; }
+.digi-rotor-read b { font-family: var(--font-data); color: #fff; }
+html[data-theme='light'] .digi-rotor-read b { color: #000; }
+.digi-rotor-buttons { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; width: 100%; }
+.digi-rotor-btn { padding: 0.45rem 0.8rem; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+.digi-rotor-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.digi-rotor-stop { background: var(--stop, #c0392b); color: var(--stop-ink, #fff); border: 2px solid var(--stop, #c0392b); }
+.digi-rotor-note { margin: 0; font-size: 0.85em; text-align: center; }

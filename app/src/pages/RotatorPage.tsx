@@ -172,7 +172,7 @@ function useUnwrapped(az: number | null | undefined): number | null {
   return last.current;
 }
 
-function Rose({ status, sp, lp, dxCall, disabled, onPick, label }: { status: RotatorStatus | undefined; sp: number | null; lp: number | null; dxCall: string; disabled: boolean; onPick(az: number): void; label: string }) {
+export function Rose({ status, sp, lp, dxCall, disabled, onPick, label }: { status: RotatorStatus | undefined; sp: number | null; lp: number | null; dxCall: string; disabled: boolean; onPick(az: number): void; label: string }) {
   const now = useUnwrapped(status?.az);
   const target = useUnwrapped(status?.target);
   const pick = (e: ReactPointerEvent<SVGSVGElement>) => {

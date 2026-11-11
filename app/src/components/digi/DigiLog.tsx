@@ -4,6 +4,9 @@ import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
 import { getLog4om, type ClusterSpot, type Log4omQso } from '../../api/client';
+import { RotorBlock } from './RotorBlock';
+import { ClusterOptionsDialog } from './ClusterOptionsDialog';
+import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
 import { useT } from '../../i18n';
 
@@ -131,9 +134,14 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const [picking, setPicking] = useState(false);
   const [widths, setWidths] = useState<Partial<Record<LogCol, number>>>(savedWidths);
   const [spotOpen, setSpotOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [clusterOptions, setClusterOptions] = useClusterOptions();
   // linguette: DX Cluster o Log (la scelta resta ricordata)
-  const [tab, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
-  const setTab = (next: 'cluster' | 'log') => {
+  const [tab, setTabState] = useState<'cluster' | 'log' | 'rotor'>(() => {
+    const saved = browserStorage()?.getItem('aurora.digi.tab');
+    return saved === 'log' || saved === 'rotor' ? saved : 'cluster';
+  });
+  const setTab = (next: 'cluster' | 'log' | 'rotor') => {
     setTabState(next);
     try {
       browserStorage()?.setItem('aurora.digi.tab', next);
@@ -301,10 +309,16 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
         <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
           {t('digi.log.title')}
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'rotor'} className={tab === 'rotor' ? 'on' : ''} onClick={() => setTab('rotor')}>
+          {t('digi.tab.rotor')}
+        </button>
         {tab === 'cluster' ? (
           <span className="digi-log-tabtools">
             <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
               {t('ctl.spot')}
+            </button>
+            <button type="button" className="digi-tool" title={t('cop.tip')} aria-label={t('cop.tip')} onClick={() => setOptionsOpen(true)}>
+              ⚙
             </button>
           </span>
         ) : null}
@@ -339,9 +353,13 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       {tab === 'cluster' ? (
         <>
           <div className="digi-log-cluster">
-            <ClusterPanel onSpot={onSpot} />
+            <ClusterPanel onSpot={onSpot} options={clusterOptions} />
           </div>
         </>
+      ) : tab === 'rotor' ? (
+        <div className="digi-log-cluster">
+          <RotorBlock call={qso.call} grid={qso.wwloc} />
+        </div>
       ) : (
         <>
           <div className="digi-log-table digi-log-table--completa" ref={body}>
@@ -388,6 +406,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
           </div>
         </>
       )}
+      {optionsOpen ? <ClusterOptionsDialog options={clusterOptions} onChange={setClusterOptions} onClose={() => setOptionsOpen(false)} /> : null}
       {spotOpen ? <SpotDialog call={qso.call} dialHz={dialHz} audioHz={audioHz} modeName={modeName} onClose={() => setSpotOpen(false)} /> : null}
     </aside>
   );
