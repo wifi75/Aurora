@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Split DX** dal DX Cluster: doppio clic su uno spot con «UP 5», «5UP», «10up», «DN 2» o «QSX 14.030» nei commenti mette la radio in ricezione sullo spot (VFO A) e in trasmissione sul VFO B spostato, con lo split acceso (Hamlib, OmniRig, TCI, Cat4OM); etichetta «UP 5» nella riga, indicatore con «Split DX: spegni», interruttore in Impostazioni › DX Cluster (acceso di fabbrica), Guida in sei lingue.
 - **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.
 - **Rotore unico** in tutte le pagine (quello di PSK·RTTY·CW, con direzione corta e lunga del DX, ±2/±10, gradi): scheda mobile sopra la Stazione o finestra a parte per il secondo schermo.

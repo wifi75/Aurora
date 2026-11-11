@@ -346,8 +346,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   };
 
   // clic su uno spot del DX Cluster: la radio si porta in modo che il segnale cada sul tono di ricezione; con «up N» nel commento la
-  // trasmissione si sposta di N kHz (split dentro l'audio, fino a 3,5 kHz); il nominativo va nel QSO
-  const tuneToSpot = async (spot: ClusterSpot) => {
+  // trasmissione si sposta di N kHz (split dentro l'audio, fino a 3,5 kHz); il nominativo va nel QSO. `splitDx`: doppio clic con lo Split DX,
+  // la radio va subito dopo in split vero (VFO B spostato) e la trasmissione resta sul tono di ricezione
+  const tuneToSpot = async (spot: ClusterSpot, splitDx: boolean) => {
     const l = live.current;
     const want = (spot.mode ?? '').toUpperCase();
     const cur = l.snap.settings.mode;
@@ -359,6 +360,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     useStation.getState().patchStatus({ dial_hz: dial });
     await postFrequency(dial);
     setQso({ ...l.qso, call: spot.dx_call });
+    if (splitDx) {
+      // il segnale trasmesso cade sul VFO B piu' lo stesso tono: dove ascolta la DXpedition
+      if (Math.round(l.snap.settings.tx_freq_hz) !== Math.round(l.rxHz)) save({ tx_freq_hz: Math.round(l.rxHz) });
+      return;
+    }
     const up = /\bup\s*(\d+(?:[.,]\d+)?)/i.exec(spot.comment ?? '');
     if (up) {
       const khz = Number((up[1] ?? '').replace(',', '.'));

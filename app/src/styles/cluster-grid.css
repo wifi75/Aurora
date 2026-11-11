@@ -53,3 +53,40 @@
 .cluster .cluster-table.cluster-grid .cl-c--country .decode-flag {
   margin: 0 0.35em 0 0;
 }
+
+/* Split DX: l'etichetta «UP 5» letta nel commento dello spot (spenta nelle Impostazioni resta solo informativa, piu' tenue) */
+.cluster .cluster-split {
+  display: inline-block;
+  margin-right: 0.35em;
+  padding: 0 0.35em;
+  border-radius: 0.3em;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
+  color: var(--accent-ink);
+  background: var(--warn);
+}
+
+.cluster .cluster-split--off {
+  color: var(--text);
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--border-width) var(--glass-edge);
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* lo Split DX acceso sulla radio: una riga ben visibile sopra la tabella, con il pulsante per spegnerlo */
+.cluster .cluster-splitdx {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  margin: 0.3rem 0 0.2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  box-shadow: inset 0 0 0 var(--border-width) var(--warn);
+}

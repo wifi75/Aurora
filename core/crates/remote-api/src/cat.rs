@@ -182,6 +182,65 @@ pub(crate) async fn cat_extra(State(state): State<AppState>, _: Authed, Peer(pee
     Ok(Json(json!({ "ok": true, "item": body.item.trim(), "extras": result })))
 }
 
+#[derive(Deserialize)]
+pub(crate) struct SplitDxBody {
+    /// Ricezione (VFO A): la frequenza dello spot, in Hz.
+    rx_hz: u64,
+    /// Trasmissione (VFO B), in Hz: ricezione piu' lo spostamento del commento («UP 5») o la frequenza di «QSX».
+    tx_hz: u64,
+}
+
+/// Lo Split DX come lo vede l'interfaccia.
+fn split_dx_json(split: Option<rig_control::cat::DxSplit>) -> Value {
+    match split {
+        Some(s) => json!({ "active": true, "rx_hz": s.rx_hz, "tx_hz": s.tx_hz }),
+        None => json!({ "active": false }),
+    }
+}
+
+/// Un errore della radio sullo Split DX con un codice che l'interfaccia sa tradurre.
+fn split_dx_error(e: rig_control::RigError) -> CatApiError {
+    let lower = e.0.to_lowercase();
+    let (status, code) = if lower.contains("non collegata") || lower.contains("nessuna radio") {
+        (StatusCode::CONFLICT, "not_connected")
+    } else if lower.contains("trasmettendo") {
+        (StatusCode::CONFLICT, "transmitting")
+    } else if lower.contains("non supportat") || lower.contains("esiste solo su windows") {
+        (StatusCode::NOT_IMPLEMENTED, "unsupported")
+    } else if lower.contains("non valid") || lower.contains("fuori dalla banda") {
+        (StatusCode::BAD_REQUEST, "bad_split")
+    } else {
+        (StatusCode::BAD_GATEWAY, "rig_error")
+    };
+    CatApiError { status, code, message: e.0 }
+}
+
+/// Lo Split DX acceso adesso (per l'indicatore del cluster).
+pub(crate) async fn cat_split_dx_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    Ok(Json(split_dx_json(cat.dx_split())))
+}
+
+/// Doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...: la radio riceve sulla frequenza dello spot (VFO A) e trasmette su `tx_hz`
+/// (VFO B) con lo split acceso. Vale come un cambio di frequenza (lo puo' chiedere anche il telefono associato); mai in trasmissione.
+pub(crate) async fn cat_split_dx_set(State(state): State<AppState>, _: Authed, Json(body): Json<SplitDxBody>) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
+    }
+    crate::routes::halt_for_band_change(&state, body.rx_hz);
+    let (rx, tx) = (body.rx_hz, body.tx_hz);
+    let split = blocking(move || cat.set_dx_split(rx, tx)).await?.map_err(split_dx_error)?;
+    Ok(Json(json!({ "ok": true, "split": split_dx_json(Some(split)) })))
+}
+
+/// «Split DX: spegni»: la radio torna in simplex sulla frequenza di ricezione.
+pub(crate) async fn cat_split_dx_clear(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    let was_on = blocking(move || cat.clear_dx_split()).await?.map_err(split_dx_error)?;
+    Ok(Json(json!({ "ok": true, "was_on": was_on, "split": split_dx_json(None) })))
+}
+
 /// I modelli di Hamlib (da `rigctl -l`).
 pub(crate) async fn cat_models(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
     let cat = service(&state)?;

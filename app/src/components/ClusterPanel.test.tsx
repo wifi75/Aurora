@@ -10,9 +10,12 @@ vi.mock('../api/client', () => ({
   getDxped: vi.fn(async () => ({ dxped: { fetched_ms: 1, items: [{ call: 'JA1ABC', country: 'Japan', start: '2000-01-01', end: '2999-12-31', info: '' }], error: null } })),
   getStationInfo: vi.fn().mockResolvedValue({ rig_control: true }),
   postFrequency: vi.fn().mockResolvedValue({ dial_hz: 14_074_000 }),
+  getSplitDx: vi.fn().mockResolvedValue({ active: false }),
+  postSplitDx: vi.fn(),
+  deleteSplitDx: vi.fn().mockResolvedValue(undefined),
   ApiError: class extends Error {},
 }));
-import { getClusterSpots, postFrequency } from '../api/client';
+import { deleteSplitDx, getClusterSpots, postFrequency, postSplitDx } from '../api/client';
 import { useStation } from '../state/station';
 import { ClusterPanel } from './ClusterPanel';
 
@@ -47,6 +50,8 @@ const oneSpot = () => vi.mocked(getClusterSpots).mockResolvedValue({ config: con
 
 beforeEach(() => {
   vi.mocked(postFrequency).mockClear();
+  vi.mocked(postSplitDx).mockReset();
+  vi.mocked(deleteSplitDx).mockClear();
   localStorage.clear();
   useStation.setState({ status: { dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'IU3ABC', de_grid: 'JN55' } });
 });
@@ -94,6 +99,53 @@ describe('ClusterPanel', () => {
     await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_074_000));
     // la riga «Radio portata su…» non c'e' piu': la frequenza si vede sul display
     expect(screen.queryByText(/Radio portata su/)).not.toBeInTheDocument();
+  });
+
+  it('Split DX: «UP 5» in the comment shows a tag and the double-click puts the radio in split; the button turns it off', async () => {
+    const dx = { ...spot(1, 'K1ABC', '20m', 'CW', 'United States'), freq_khz: 14_025, comment: 'QRZ? 5up tnx' };
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [dx] });
+    vi.mocked(postSplitDx).mockResolvedValue({ active: true, rx_hz: 14_025_000, tx_hz: 14_030_000 });
+    show();
+    const tag = await screen.findByText('UP 5');
+    expect(tag).toHaveAttribute('title', expect.stringContaining('VFO B +5 kHz (14.030)'));
+    await waitFor(() => expect(tag.closest('table')).toBeInTheDocument());
+    // aspetta che la pagina sappia che c'e' il CAT
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    fireEvent.doubleClick(screen.getByText('K1ABC'));
+    await waitFor(() => expect(postSplitDx).toHaveBeenCalledWith(14_025_000, 14_030_000));
+    // la ricezione la porta lo split stesso: niente cambio di frequenza a parte
+    expect(postFrequency).not.toHaveBeenCalled();
+    expect(await screen.findByText('Split DX: Tx 14.030')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Split DX: spegni' }));
+    await waitFor(() => expect(deleteSplitDx).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Split DX: Tx 14.030')).not.toBeInTheDocument());
+  });
+
+  it('Split DX switched off in the settings: the tag only informs and the double-click only tunes', async () => {
+    localStorage.setItem('aurora.cluster.splitdx', 'off');
+    const dx = { ...spot(1, 'K1ABC', '20m', 'CW', 'United States'), freq_khz: 14_025, comment: 'UP 1-3' };
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [dx] });
+    show();
+    const tag = await screen.findByText('UP 1-3', { selector: '.cluster-split' });
+    expect(tag).toHaveClass('cluster-split--off');
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    fireEvent.doubleClick(screen.getByText('K1ABC'));
+    await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_025_000));
+    expect(postSplitDx).not.toHaveBeenCalled();
+  });
+
+  it('Split DX is not used on FT8 spots: no tag, the double-click only tunes', async () => {
+    const dx = { ...spot(1, 'JA1ABC', '20m', 'FT8', 'Japan'), comment: 'FT8 UP 5' };
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [dx] });
+    show();
+    fireEvent.doubleClick(await screen.findByText('JA1ABC'));
+    await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_074_000));
+    expect(screen.queryByText('UP 5')).not.toBeInTheDocument();
+    expect(postSplitDx).not.toHaveBeenCalled();
   });
 
   it('a single click only selects: the radio does not move', async () => {

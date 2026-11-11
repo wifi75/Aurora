@@ -130,6 +130,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
         .route("/api/v1/cat/detect", post(crate::cat::cat_detect))
         .route("/api/v1/cat/extra", post(crate::cat::cat_extra))
+        .route("/api/v1/cat/split-dx", get(crate::cat::cat_split_dx_get).post(crate::cat::cat_split_dx_set).delete(crate::cat::cat_split_dx_clear))
         .route("/api/v1/sstv", get(crate::sstv_api::sstv_get).put(crate::sstv_api::sstv_put))
         .route("/api/v1/sstv/rx/start", post(crate::sstv_api::sstv_rx_start))
         .route("/api/v1/sstv/rx/stop", post(crate::sstv_api::sstv_rx_stop))
@@ -1339,6 +1340,16 @@ pub async fn switch_mode(state: &AppState, mode: &str) -> Result<Option<u64>, St
     // si resta nella banda di prima, sulla frequenza che la tabella indica per il nuovo modo
     // la frequenza di adesso si rilegge dalla radio (dopo lo spot di un cluster lo stato della pagina puo' essere indietro); se la radio
     // non risponde si usa l'ultima nota. La banda si cerca nella tabella e, fuori da quella, tra le bande dei radioamatori.
+    // tornando a un modo del motore (FT8, FT4...) lo Split DX del cluster si spegne: in quei modi vale lo split delle Impostazioni (XIT)
+    if let Some(cat) = state.cat.clone()
+        && cat.dx_split().is_some()
+    {
+        match tokio::task::spawn_blocking(move || cat.clear_dx_split()).await {
+            Ok(Ok(_)) => {}
+            Ok(Err(e)) => tracing::warn!("split DX non spento al cambio di modo: {e}"),
+            Err(_) => return Err("rig_task".to_string()),
+        }
+    }
     let status_dial = state.current_status().filter(|s| s.dial_hz > 0).map(|s| s.dial_hz);
     let frequencies = std::sync::Arc::clone(&state.frequencies);
     let region = state.frequency_region();

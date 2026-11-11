@@ -29,6 +29,9 @@ static TX_AUDIO: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::ne
 static EMULATE_RESTORE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 /// Lo split vero e' stato acceso da Aurora (`SetSplitMode`): al distacco si spegne.
 static SPLIT_BY_US: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// Split DX acceso da Aurora (doppio clic su uno spot del cluster con «UP 5», «QSX ...»): finche' resta acceso lo split di FT8 non tocca il
+/// VFO di trasmissione.
+static DX_SPLIT: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 /// Il PTT di OmniRig e' stato acceso da Aurora e non ancora spento.
 static PTT_ON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -225,6 +228,13 @@ fn split_on(r: &dyn RigApi, xit: i64) -> Result<(), RigError> {
     r.call("SetSplitMode", &[rx, tx]).map(|_| ())
 }
 
+/// Lo Split DX: la ricezione come un cambio di frequenza senza split (split spento, frequenza, modo rimesso: vedi [`tune`]), poi
+/// `SetSplitMode (rx, tx)` come `do_tx_frequency` di WSJT-X (`OmniRigTransceiver.cpp:776`), con la trasmissione scelta dallo spot.
+fn dx_split_sequence(r: &dyn RigApi, rx: i32, tx: i32) -> Result<(), RigError> {
+    tune(r, rx, None)?;
+    r.call("SetSplitMode", &[rx, tx]).map(|_| ())
+}
+
 /// Il salto breve dello split simulato: solo la frequenza, senza toccare split e modo.
 fn jump(r: &dyn RigApi, hz: i32) -> Result<(), RigError> {
     require_online(r)?;
@@ -308,6 +318,9 @@ fn split_code() -> u8 {
 
 /// Lo spostamento (XIT) dello split per la frequenza audio scelta, se lo split vero e' attivo e la frequenza audio e' nota.
 fn rig_split_xit() -> Option<i64> {
+    if DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) {
+        return None;
+    }
     let audio = TX_AUDIO.load(std::sync::atomic::Ordering::SeqCst);
     (split_code() == 1 && audio != 0).then(|| crate::cat_config::split_xit_hz(audio))
 }
@@ -321,6 +334,10 @@ pub fn set_tx_audio_frequency(hz: u32) -> Result<(), RigError> {
     }
     TX_AUDIO.store(hz, std::sync::atomic::Ordering::SeqCst);
     if hz == 0 {
+        return Ok(());
+    }
+    // con lo Split DX il VFO di trasmissione e' quello dello spot
+    if DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) {
         return Ok(());
     }
     let xit = crate::cat_config::split_xit_hz(hz);
@@ -347,7 +364,7 @@ pub fn set_tx_audio_frequency(hz: u32) -> Result<(), RigError> {
 /// `EmulateSplitTransceiver` di WSJT-X. Senza split simulato o senza frequenza audio non fa nulla.
 pub fn emulate_begin() -> Result<(), RigError> {
     let audio = TX_AUDIO.load(std::sync::atomic::Ordering::SeqCst);
-    if split_code() != 2 || audio == 0 || EMULATE_RESTORE.load(std::sync::atomic::Ordering::SeqCst) != 0 {
+    if split_code() != 2 || audio == 0 || DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) || EMULATE_RESTORE.load(std::sync::atomic::Ordering::SeqCst) != 0 {
         return Ok(());
     }
     let dial = WindowsRig.frequency()?;
@@ -377,11 +394,38 @@ pub fn reset_split() {
     if let Err(e) = emulate_end() {
         tracing::warn!("OmniRig: ritorno alla frequenza di ricezione non riuscito: {e}");
     }
+    DX_SPLIT.store(false, std::sync::atomic::Ordering::SeqCst);
     if SPLIT_BY_US.swap(false, std::sync::atomic::Ordering::SeqCst)
         && let Err(e) = on_rig(&workers::MAIN, split_off)
     {
         tracing::warn!("OmniRig: split non spento al distacco: {e}");
     }
+}
+
+/// Split DX (doppio clic su uno spot del cluster): ricezione su `rx_hz`, trasmissione su `tx_hz` con `SetSplitMode`.
+pub fn set_dx_split(rx_hz: u64, tx_hz: u64) -> Result<(), RigError> {
+    let (rx, tx) = (hz_i32(rx_hz)?, hz_i32(tx_hz)?);
+    DX_SPLIT.store(true, std::sync::atomic::Ordering::SeqCst);
+    match on_rig(&workers::MAIN, move |r| dx_split_sequence(r, rx, tx)) {
+        Ok(()) => {
+            SPLIT_BY_US.store(true, std::sync::atomic::Ordering::SeqCst);
+            Ok(())
+        }
+        Err(e) => {
+            DX_SPLIT.store(false, std::sync::atomic::Ordering::SeqCst);
+            Err(e)
+        }
+    }
+}
+
+/// Spegne lo Split DX, se acceso (`PM_SPLITOFF`, non `SetSimplexMode`: vedi [`tune`]).
+pub fn clear_dx_split() -> Result<(), RigError> {
+    if !DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) {
+        return Ok(());
+    }
+    on_rig(&workers::MAIN, split_off)?;
+    DX_SPLIT.store(false, std::sync::atomic::Ordering::SeqCst);
+    Ok(())
 }
 
 /// La radio via OmniRig (Rig1 o Rig2, vedi [`set_rig`]): solo frequenza. OmniRig e' un driver CAT facoltativo che l'utente sceglie in Impostazioni › Radio;
@@ -711,6 +755,17 @@ mod tests {
         assert_eq!(read_frequency(&r).unwrap_err().0, "radio non in linea");
         assert_eq!(tune(&r, 7_074_000, None).unwrap_err().0, "radio non in linea");
         assert!(r.log().is_empty(), "a radio non in linea non si scrive nulla: {:?}", r.log());
+    }
+
+    #[test]
+    fn the_dx_split_turns_split_off_tunes_the_rx_and_sets_split_mode_last() {
+        let r = ft2000();
+        r.values.borrow_mut().insert("Split".into(), PM_SPLITON);
+        dx_split_sequence(&r, 14_025_000, 14_030_000).expect("split DX");
+        let log = r.log();
+        assert!(r.index("Split=65536") < r.index("FreqA=14025000"), "prima lo split di prima spento, poi la ricezione: {log:?}");
+        assert_eq!(log.last().map(String::as_str), Some("SetSplitMode[14025000, 14030000]"), "lo split per ultimo: {log:?}");
+        assert!(!log.iter().any(|l| l.starts_with("SetSimplexMode")), "{log:?}");
     }
 
     #[test]

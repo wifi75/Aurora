@@ -464,6 +464,9 @@ struct Inner {
     split_on: AtomicBool,
     /// Lo split vero acceso da Aurora: si spegne alla chiusura, come `do_stop` di WSJT-X.
     split_by_us: AtomicBool,
+    /// Split DX acceso (doppio clic su uno spot del cluster con «UP 5», «QSX ...»): il VFO B l'ha scelto l'operatore e lo split di FT8 non
+    /// lo sposta finche' resta acceso.
+    dx_split: AtomicBool,
     /// La potenza (`drive`) detta dal server, in percento; `NO_DRIVE` = non ancora detta.
     drive: AtomicU32,
     /// Il server scrive `drive:<rx>,<valore>` (e non `drive:<valore>`): Aurora risponde nello stesso modo.
@@ -705,7 +708,7 @@ impl Inner {
     /// La frequenza del VFO B per lo split vero (stessa regola di Hamlib, `split_tx_dial_hz`), se lo split vero e' scelto e la frequenza
     /// audio di trasmissione e' nota.
     fn split_target(&self) -> Option<u64> {
-        if self.split != SplitMode::Rig {
+        if self.split != SplitMode::Rig || self.dx_split.load(Ordering::SeqCst) {
             return None;
         }
         let audio = self.tx_audio_hz.load(Ordering::SeqCst);
@@ -720,6 +723,17 @@ impl Inner {
         self.send(cmd_vfo(self.rx, 1, tx));
         self.send(cmd_split(self.rx, true));
         self.split_by_us.store(true, Ordering::SeqCst);
+    }
+
+    /// Split DX: il VFO B sulla trasmissione scelta dallo spot e `split_enable` per ultimo, ognuno confermato e solo se serve.
+    fn dx_split_tx(&self, tx_hz: u64) -> Result<(), RigError> {
+        if self.vfo1_hz.load(Ordering::SeqCst) != tx_hz {
+            self.confirm_vfo(1, tx_hz)?;
+        }
+        if !self.split_on.load(Ordering::SeqCst) {
+            self.confirm(&cmd_split(self.rx, true), SPLIT_ECHO, |s| s.split_on.load(Ordering::SeqCst))?;
+        }
+        Ok(())
     }
 
     /// Split vero con le conferme: VFO B (1 s) e poi `split_enable` (0,5 s), ognuno solo se diverso da quanto detto dal server.
@@ -837,6 +851,7 @@ impl TciRig {
             vfo1_hz: AtomicU64::new(0),
             split_on: AtomicBool::new(false),
             split_by_us: AtomicBool::new(false),
+            dx_split: AtomicBool::new(false),
             drive: AtomicU32::new(NO_DRIVE),
             drive_with_rx: AtomicBool::new(true),
             tune_on: AtomicBool::new(false),
@@ -874,7 +889,7 @@ impl TciRig {
         let inner = &self.inner;
         inner.connected()?;
         // split simulato: in trasmissione il VFO di ricezione va sulla frequenza di trasmissione (confermata), poi torna
-        if on && inner.split == SplitMode::Emulate {
+        if on && inner.split == SplitMode::Emulate && !inner.dx_split.load(Ordering::SeqCst) {
             let audio = inner.tx_audio_hz.load(Ordering::SeqCst);
             if let Some(dial) = inner.dial()
                 && audio != 0
@@ -924,7 +939,7 @@ impl TciRig {
         if inner.split == SplitMode::Rig {
             inner.connected()?;
             inner.apply_split_confirmed()?;
-        } else if inner.split == SplitMode::Emulate && inner.ptt() {
+        } else if inner.split == SplitMode::Emulate && inner.ptt() && !inner.dx_split.load(Ordering::SeqCst) {
             // split simulato a trasmissione in corso: il VFO va subito sulla nuova frequenza di trasmissione (`EmulateSplitTransceiver` di WSJT-X)
             inner.connected()?;
             let restore = inner.emulate_restore.load(Ordering::SeqCst);
@@ -937,6 +952,42 @@ impl TciRig {
                 inner.emulate_restore.store(if tx != dial { dial } else { 0 }, Ordering::SeqCst);
             }
         }
+        Ok(())
+    }
+
+    /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): il VFO A del ricevitore su `rx_hz` (con il modo scelto,
+    /// come un cambio di frequenza), il VFO B su `tx_hz` e `split_enable` per ultimo, ognuno confermato dall'eco.
+    pub fn set_dx_split(&self, rx_hz: u64, tx_hz: u64) -> Result<(), RigError> {
+        if !valid_dial_hz(tx_hz) {
+            return Err(RigError(format!("frequenza di trasmissione non valida: {tx_hz} Hz")));
+        }
+        self.set_frequency(rx_hz)?;
+        let inner = &self.inner;
+        // da qui lo split di FT8 non tocca piu' il VFO B
+        inner.dx_split.store(true, Ordering::SeqCst);
+        match inner.dx_split_tx(tx_hz) {
+            Ok(()) => {
+                inner.split_by_us.store(true, Ordering::SeqCst);
+                Ok(())
+            }
+            Err(e) => {
+                inner.dx_split.store(false, Ordering::SeqCst);
+                Err(e)
+            }
+        }
+    }
+
+    /// Spegne lo Split DX, se acceso (`split_enable:<rx>,false;`, confermato).
+    pub fn clear_dx_split(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        if !inner.dx_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        inner.connected()?;
+        if inner.split_on.load(Ordering::SeqCst) {
+            inner.confirm(&cmd_split(inner.rx, false), SPLIT_ECHO, |s| !s.split_on.load(Ordering::SeqCst))?;
+        }
+        inner.dx_split.store(false, Ordering::SeqCst);
         Ok(())
     }
 
@@ -1621,6 +1672,26 @@ mod tests {
         // come `do_stop` di WSJT-X: lo split acceso da Aurora si toglie prima di spegnere
         assert!(pos("split_enable:0,false;") < pos("stop;"));
         assert_eq!(seen.last().map(String::as_str), Some("stop;"));
+    }
+
+    #[test]
+    fn dx_split_moves_vfo_a_then_vfo_b_then_enables_split_and_ft8_split_leaves_it_alone() {
+        let (address, text, _) = fake_audio_server("protocol:ExpertSDR3,1.9;vfo:0,0,14074000;ready;");
+        let rig = TciRig::from_config(&RigConfig { tci_address: address, split: SplitMode::Rig, ..RigConfig::default() });
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        rig.set_dx_split(14_025_000, 14_030_000).expect("split DX");
+        assert_eq!(rig.status().split, Some(true), "split confermato dall'eco");
+        // lo split di FT8 non sposta il VFO B scelto dallo spot
+        rig.set_tx_audio_frequency(1500).expect("frequenza audio");
+        rig.clear_dx_split().expect("spento");
+        assert_eq!(rig.status().split, Some(false));
+        let seen: Vec<String> = text.lock().unwrap().iter().filter(|c| !c.contains("sensors")).cloned().collect();
+        let pos = |c: &str| seen.iter().position(|t| t == c).unwrap_or_else(|| panic!("{c} manca: {seen:?}"));
+        assert!(pos("vfo:0,0,14025000;") < pos("vfo:0,1,14030000;"));
+        assert!(pos("vfo:0,1,14030000;") < pos("split_enable:0,true;"));
+        assert!(pos("split_enable:0,true;") < pos("split_enable:0,false;"));
+        assert_eq!(seen.iter().filter(|c| c.starts_with("vfo:0,1,")).count(), 1, "nessun altro VFO B: {seen:?}");
+        rig.shutdown();
     }
 
     #[test]

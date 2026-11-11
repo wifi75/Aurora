@@ -176,6 +176,9 @@ struct Inner {
     /// trasmissione, come `HamlibVfoRoleState` di WSJT-X 3.2 (`Transceiver/HamlibVfoRoleState.hpp`, GPL-3.0): durante il PTT molte radio
     /// riportano il VFO di trasmissione come attivo e i ruoli si scambierebbero.
     vfo_reversed: AtomicBool,
+    /// Split DX acceso (doppio clic su uno spot del cluster con «UP 5», «QSX ...»): il VFO di trasmissione l'ha scelto l'operatore e lo split
+    /// di FT8 (XIT) non lo tocca finche' resta acceso. Si spegne al cambio di frequenza, da «Split DX: spegni» e alla chiusura.
+    dx_split: AtomicBool,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
@@ -687,6 +690,10 @@ impl Inner {
     /// Porta la radio sulla frequenza del VFO di trasmissione per lo split vero, poi accende lo split (per ultimo: alcune radio escono
     /// dallo split quando cambia il VFO di ricezione).
     fn apply_split(&self, link: &Link) -> Result<(), RigError> {
+        // con lo Split DX acceso il VFO di trasmissione e' quello dello spot: lo split di FT8 non lo sposta
+        if self.dx_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
         let (audio, dial) = (self.tx_audio_hz.load(Ordering::SeqCst), self.rx_dial.load(Ordering::SeqCst));
         if audio == 0 || dial == 0 {
             return Ok(());
@@ -757,6 +764,7 @@ impl HamlibRig {
             rx_dial: AtomicU64::new(0),
             emulate_restore: Mutex::new(None),
             vfo_reversed: AtomicBool::new(false),
+            dx_split: AtomicBool::new(false),
             epoch: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
             extras: Mutex::new(crate::extras::ExtrasPoll::default()),
@@ -828,6 +836,9 @@ impl HamlibRig {
 
     /// Split simulato: la radio resta in simplex e durante la trasmissione si sposta sulla frequenza di trasmissione.
     fn emulate_begin(&self, link: &Link) {
+        if self.inner.dx_split.load(Ordering::SeqCst) {
+            return;
+        }
         let (audio, dial) = (self.inner.tx_audio_hz.load(Ordering::SeqCst), self.inner.rx_dial.load(Ordering::SeqCst));
         if audio == 0 || dial == 0 {
             return;
@@ -871,6 +882,9 @@ impl HamlibRig {
     /// Split simulato a trasmissione in corso con la frequenza audio cambiata: la radio va subito sulla nuova frequenza di trasmissione
     /// (in WSJT-X `EmulateSplitTransceiver::set` col PTT acceso porta la radio sulla frequenza Tx a ogni cambio).
     fn emulate_follow(&self, link: &Link) -> Result<(), RigError> {
+        if self.inner.dx_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
         let audio = self.inner.tx_audio_hz.load(Ordering::SeqCst);
         let restore = self.inner.emulate_restore.lock().ok().and_then(|s| *s);
         let dial = restore.unwrap_or_else(|| self.inner.rx_dial.load(Ordering::SeqCst));
@@ -946,6 +960,57 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): la ricezione va su `rx_hz` come un cambio di frequenza
+    /// (controllo dell'arrivo, modo riscritto, split di prima spento), il VFO di trasmissione su `tx_hz` e lo split si accende per ultimo
+    /// (alcune radio escono dallo split quando cambia il VFO di ricezione). Indipendente dallo split di FT8: vedi `dx_split`.
+    pub fn set_dx_split(&self, rx_hz: u64, tx_hz: u64) -> Result<(), RigError> {
+        if !valid_dial_hz(tx_hz) {
+            return Err(RigError(format!("frequenza di trasmissione non valida: {tx_hz} Hz")));
+        }
+        self.set_frequency(rx_hz)?;
+        let inner = &self.inner;
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split rifiutato".into()));
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        // l'operatore puo' ricevere sul VFO B: allora si trasmette sul VFO A
+        if let Ok(active) = link.client().vfo() {
+            inner.vfo_reversed.store(vfo_is_b(&active), Ordering::SeqCst);
+        }
+        let tx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOA" } else { "VFOB" };
+        let fr = |e: RigError| RigError(friendly_error(&e.0));
+        link.client().set_split_frequency(tx_hz).map_err(fr)?;
+        link.client().set_split(true, tx_vfo).map_err(fr)?;
+        inner.dx_split.store(true, Ordering::SeqCst);
+        inner.update(|s| s.split = Some(true));
+        inner.queue_quick_reads();
+        Ok(())
+    }
+
+    /// Spegne lo Split DX, se acceso: la radio torna in simplex sul VFO di ricezione.
+    pub fn clear_dx_split(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        if !inner.dx_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split non spento".into()));
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
+        link.client().set_split(false, rx_vfo).map_err(|e| RigError(friendly_error(&e.0)))?;
+        inner.dx_split.store(false, Ordering::SeqCst);
+        inner.update(|s| s.split = Some(false));
+        Ok(())
+    }
+
+    /// Lo Split DX e' acceso.
+    pub fn dx_split_on(&self) -> bool {
+        self.inner.dx_split.load(Ordering::SeqCst)
+    }
+
     /// Ferma tutto: chiude il supervisore, spegne il PTT (3 tentativi), toglie lo split vero e libera la radio (il demone si ferma).
     /// «Spegni» di JTDX: alla chiusura di Aurora, se scelto, la radio si spegne via CAT. Va chiamata prima di [`HamlibRig::shutdown`].
     pub fn power_off_if_chosen(&self) {
@@ -975,7 +1040,8 @@ impl HamlibRig {
                 return;
             }
             self.emulate_end(&link);
-            if self.inner.config.split == SplitMode::Rig {
+            let dx_split = self.inner.dx_split.swap(false, Ordering::SeqCst);
+            if self.inner.config.split == SplitMode::Rig || dx_split {
                 let _ = link.client().set_split(false, "VFOA");
             }
         }
@@ -1033,7 +1099,9 @@ impl Rig for HamlibRig {
         // split vero: al cambio di frequenza (banda) la radio esce dallo split. Il VFO di trasmissione si rimette sulla banda nuova solo un
         // attimo prima del PTT (`set_tx_audio_frequency`, chiamato da Aurora prima di ogni trasmissione): cosi' la radio non resta mai in split
         // con il VFO B sulla banda vecchia o su una frequenza che il proprietario non si aspetta (segnalazione del 2026-11-11)
-        if inner.config.split == SplitMode::Rig {
+        // lo Split DX di uno spot del cluster finisce al cambio di frequenza (spot senza «UP», cambio di banda), anche senza lo split di FT8
+        let dx_split = inner.dx_split.swap(false, Ordering::SeqCst);
+        if inner.config.split == SplitMode::Rig || dx_split {
             let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
             match link.client().set_split(false, rx_vfo) {
                 Ok(()) => inner.update(|s| s.split = Some(false)),
@@ -1384,6 +1452,67 @@ mod tests {
         assert!(fake.split());
         // alla chiusura lo split si toglie
         rig.shutdown();
+        assert!(!fake.split());
+    }
+
+    fn split_commands(fake: &FakeRigctld) -> Vec<String> {
+        fake.commands().into_iter().filter(|c| c.starts_with("F ") || c.starts_with("I ") || c.starts_with("S ")).collect()
+    }
+
+    #[test]
+    fn dx_split_tunes_the_rx_then_the_tx_vfo_then_switches_split_on() {
+        let fake = FakeRigctld::start(14_074_000);
+        // con lo split di FT8 («Rig») acceso: il cambio di ricezione lo spegne, poi lo Split DX mette il suo VFO di trasmissione
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        fake.clear_commands();
+        rig.set_dx_split(14_025_000, 14_030_000).expect("split DX");
+        assert_eq!(split_commands(&fake), ["F 14025000", "S 0 VFOA", "I 14030000", "S 1 VFOB"]);
+        assert!(fake.split() && rig.dx_split_on() && rig.status().split == Some(true));
+        assert_eq!(fake.frequency(), 14_025_000);
+        // lo split di FT8 non sposta il VFO di trasmissione scelto dallo spot
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(1500).expect("frequenza audio");
+        assert!(split_commands(&fake).is_empty(), "{:?}", fake.commands());
+        // «Split DX: spegni»
+        rig.clear_dx_split().expect("spento");
+        assert!(!fake.split() && !rig.dx_split_on());
+        assert_eq!(split_commands(&fake), ["S 0 VFOA"]);
+        // gia' spento: nessun comando
+        fake.clear_commands();
+        rig.clear_dx_split().expect("niente da fare");
+        assert!(split_commands(&fake).is_empty());
+    }
+
+    #[test]
+    fn dx_split_ends_at_the_next_frequency_change_and_at_close_even_without_ft8_split() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        rig.set_dx_split(7_005_000, 7_007_000).expect("split DX");
+        assert!(fake.split());
+        fake.clear_commands();
+        rig.set_frequency(7_074_000).expect("spot senza UP");
+        assert!(!fake.split() && !rig.dx_split_on(), "{:?}", fake.commands());
+        assert_eq!(split_commands(&fake), ["F 7074000", "S 0 VFOA"]);
+        // un'altra frequenza senza Split DX non manda comandi di split
+        fake.clear_commands();
+        rig.set_frequency(7_075_000).expect("QSY");
+        assert_eq!(split_commands(&fake), ["F 7075000"]);
+        // alla chiusura lo Split DX si toglie
+        rig.set_dx_split(7_005_000, 7_006_000).expect("split DX");
+        rig.shutdown();
+        assert!(!fake.split());
+    }
+
+    #[test]
+    fn dx_split_refuses_a_wrong_tx_frequency_and_while_transmitting() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        fake.clear_commands();
+        assert!(rig.set_dx_split(14_025_000, 0).is_err());
+        assert!(fake.commands().is_empty(), "nulla alla radio: {:?}", fake.commands());
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("PTT");
+        assert!(rig.set_dx_split(14_025_000, 14_026_000).expect_err("in trasmissione").0.contains("trasmettendo"));
         assert!(!fake.split());
     }
 
