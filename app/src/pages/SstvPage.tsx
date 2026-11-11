@@ -1,3 +1,4 @@
+import { Icon } from '../components/Icon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
@@ -108,8 +109,8 @@ function SstvBody({ solo }: { solo: boolean }) {
         </div>
         {/* la rotella di sempre: apre le Impostazioni sulle schede dell'SSTV (finestra a parte, cosi' la pagina e l'ascolto restano) */}
         {REMOTE_HOST ? null : (
-          <button type="button" className="solo-btn sstv-gear" title={t('sstv.set.title')} aria-label={t('sstv.set.title')} onClick={() => openSettingsWindow('sstv')}>
-            ⚙
+          <button type="button" className="solo-btn icon-btn icon-btn--sm sstv-gear" title={t('sstv.set.title')} aria-label={t('sstv.set.title')} onClick={() => openSettingsWindow('sstv')}>
+            <Icon name="gear" />
           </button>
         )}
         {solo ? null : <DetachButton item="sstv" />}

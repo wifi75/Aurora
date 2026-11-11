@@ -1,3 +1,4 @@
+import { Icon } from '../Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { browserStorage } from '../../lib/theme';
@@ -310,8 +311,8 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
               {t('ctl.spot')}
             </button>
-            <button type="button" className="digi-tool" title={t('cop.tip')} aria-label={t('cop.tip')} onClick={() => setOptionsOpen(true)}>
-              ⚙
+            <button type="button" className="digi-tool icon-btn icon-btn--sm" title={t('cop.tip')} aria-label={t('cop.tip')} onClick={() => setOptionsOpen(true)}>
+              <Icon name="gear" />
             </button>
           </span>
         ) : null}

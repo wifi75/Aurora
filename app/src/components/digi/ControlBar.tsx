@@ -1,3 +1,4 @@
+import { Icon } from '../Icon';
 import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';
 import { cssColor, MACRO_ROWS, type Macro } from '../../lib/macroLang';
@@ -80,8 +81,8 @@ export function ControlBar({ macros, extended, disabled = false, onToggleExtende
             })}
             <span className="digi-keyrow-label">{ROW_LABELS[r]}</span>
             {r === rows[0] ? (
-              <button type="button" className="digi-gear" aria-pressed={extended} title={extended ? t('digi.bar.compact') : t('digi.bar.extended')} aria-label={extended ? t('digi.bar.compact') : t('digi.bar.extended')} onClick={onToggleExtended}>
-                ⚙
+              <button type="button" className="digi-gear icon-btn icon-btn--sm" aria-pressed={extended} title={extended ? t('digi.bar.compact') : t('digi.bar.extended')} aria-label={extended ? t('digi.bar.compact') : t('digi.bar.extended')} onClick={onToggleExtended}>
+                <Icon name="gear" />
               </button>
             ) : null}
           </div>

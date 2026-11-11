@@ -1,3 +1,4 @@
+import { Icon } from '../components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { postWavelogStations } from '../api/client';
 import { useT } from '../i18n';
@@ -40,8 +41,8 @@ export function WavelogStationSelect({ id, label, url, value, disabled, onChange
           </option>
         ))}
       </select>
-      <button type="button" className="glass" title={t('ens.wl.read')} aria-label={t('ens.wl.read')} onClick={() => void query.refetch()} disabled={query.isFetching}>
-        ↻
+      <button type="button" className="glass icon-btn" title={t('ens.wl.read')} aria-label={t('ens.wl.read')} onClick={() => void query.refetch()} disabled={query.isFetching}>
+        <Icon name="refresh" />
       </button>
     </span>
   );

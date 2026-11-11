@@ -1,3 +1,4 @@
+import { Icon } from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getDigi, getFrequencies, postMode } from '../api/client';
@@ -185,7 +186,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
             title={t('nav.more')}
             onClick={() => setOpen((o) => !o)}
           >
-            ⚙ <span aria-hidden="true">▾</span>
+            <Icon name="gear" size="1.15em" />
+            <Icon name="chevron-down" size="0.8em" />
           </button>
           {open ? (
             <span className="nav-more-menu" role="menu">

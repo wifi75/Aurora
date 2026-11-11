@@ -1,0 +1,32 @@
+/* Pulsanti quadrati con icona vettoriale: l'SVG occupa ~62% del lato ed e' centrato esattamente. */
+button.icon-btn {
+  --icon-btn-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: var(--icon-btn-size);
+  height: var(--icon-btn-size);
+  min-height: 0;
+  padding: 0;
+  line-height: 0;
+  font-size: 1rem;
+  color: var(--text);
+  opacity: 1;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+button.icon-btn > .icon { width: 62%; height: 62%; flex: none; display: block; }
+button.icon-btn:hover:not(:disabled),
+button.icon-btn:focus-visible {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 35%, transparent);
+}
+button.icon-btn:disabled { opacity: 0.5; cursor: default; }
+button.icon-btn--sm { --icon-btn-size: 1.5rem; border-radius: 0.35rem; }
+button.icon-btn--caret { width: auto; padding: 0 0.4rem; gap: 0.15rem; }
+button.icon-btn--caret > .icon { width: 1.05rem; height: 1.05rem; }
+button.icon-btn--caret > .icon-caret { width: 0.7rem; height: 0.7rem; }
+html[data-theme='light'] button.icon-btn { color: #0b1322; }
