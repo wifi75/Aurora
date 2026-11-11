@@ -790,19 +790,22 @@ pub fn start_with_save(
                 }
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
-                if let Some(r) = slow_watch.record(millis, mode.period_ms()) {
+                let depth = decode_opts::current().depth;
+                if let Some(r) = slow_watch.record(millis, mode.period_ms(), depth) {
                     let swl = live.as_ref().is_some_and(|l| l.controls.switch_on("swl"));
+                    // il rapporto automatico parte al massimo una volta per installazione e versione (`rapporti.rs`): un PC lento e'
+                    // una situazione della stazione, non un errore; la riga resta comunque nel log locale
                     let report = matches!(r.times, 1 | 10 | 100 | 1000);
                     let text = format!(
-                        "decodifica lenta: {} periodi su {} oltre il {:.0}% del tempo ({} in {} ms su {} ms; {} processori, {} thread di decodifica, SWL {}, a8 {})",
-                        r.slow, r.of, slow::SLOW_FRACTION * 100.0, mode.name(), millis, mode.period_ms(), slow::cores(), options.threads, if swl { "acceso" } else { "spento" }, if options.a8.is_some() { "acceso" } else { "spento" }
+                        "decodifica lenta: {} periodi su {} oltre il {:.0}% del tempo ({} in {} ms su {} ms; {} processori, {} thread di decodifica, profondita' {}, SWL {}, a8 {})",
+                        r.slow, r.of, slow::SLOW_FRACTION * 100.0, mode.name(), millis, mode.period_ms(), slow::cores(), options.threads, depth, if swl { "acceso" } else { "spento" }, if options.a8.is_some() { "acceso" } else { "spento" }
                     );
                     if report {
                         tracing::warn!(target: "engine_native::lento", "{text}");
                     } else {
                         tracing::info!(target: "engine_native::lento", "{text}");
                     }
-                    aurora_core::notice::notice("slow_pc", format!("{:.1}", millis as f64 / 1000.0));
+                    aurora_core::notice::notice("slow_pc", slow::notice_detail(millis, depth));
                 }
                 // file audio della scheda Audio (come JTDX): il periodo si tiene se il modo lo vuole, dopo aver saputo quanti messaggi ha dato
                 if let Some(save) = &save {

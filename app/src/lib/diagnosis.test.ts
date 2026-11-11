@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StationStatus } from '../api/schemas';
-import { diagnose, type DiagnosisInput } from './diagnosis';
+import { diagnose, parseSlowPc, slowerDepth, type DiagnosisInput } from './diagnosis';
 
 const status = (over: Partial<StationStatus> = {}): StationStatus => ({ dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: false, de_call: 'IU3ABC', de_grid: 'IO91wm', ...over });
 const base = (over: Partial<DiagnosisInput> = {}): DiagnosisInput => ({
@@ -74,5 +74,34 @@ describe('notices from the engine', () => {
     const recent = diagnose({ ...base, notices: { audio_loss: { detail: '12', at: 990_000 } } });
     expect(recent).toEqual([expect.objectContaining({ id: 'audio_loss', href: '#/impostazioni/audio' })]);
     expect(diagnose({ ...base, now: 990_000 + 11 * 60_000, notices: { audio_loss: { detail: '12', at: 990_000 } } })).toEqual([]);
+  });
+});
+
+describe('slow PC: one step down in decoding depth, never on its own', () => {
+  const base = { now: 1_000_000, status: null, clockOffsetMs: null, periodSecs: 15, audio: null, lastDecodeAt: null, sessionStartAt: null };
+  const slow = (detail: string, extra: Partial<DiagnosisInput> = {}) => diagnose({ ...base, notices: { slow_pc: { detail, at: 990_000 } }, ...extra });
+
+  it('reads seconds and depth from the engine notice (older engines send only the seconds)', () => {
+    expect(parseSlowPc('11.7|3')).toEqual({ secs: '11.7', depth: '3' });
+    expect(parseSlowPc('11.7')).toEqual({ secs: '11.7', depth: null });
+    expect(parseSlowPc('11.7|9')).toEqual({ secs: '11.7', depth: null });
+    expect([slowerDepth('3'), slowerDepth('2'), slowerDepth('1'), slowerDepth(null)]).toEqual(['2', '1', null, null]);
+  });
+
+  it('suggests Normal at Deep and Fast at Normal, with the setting page', () => {
+    expect(slow('11.7|3')).toEqual([{ id: 'slow_pc', severity: 'warning', href: '#/impostazioni/filters', vars: { detail: '11.7', at: 990_000, depth: '3', next: '2' } }]);
+    expect(slow('11.2|2', { decodeDepth: '2' })[0]?.vars).toMatchObject({ depth: '2', next: '1' });
+  });
+
+  it('at Fast or with an older engine keeps the general advice without a depth button', () => {
+    expect(slow('11.0|1')[0]).toEqual({ id: 'slow_pc', severity: 'warning', vars: { detail: '11.0', at: 990_000, depth: '1' } });
+    expect(slow('11.0')[0]).toEqual({ id: 'slow_pc', severity: 'warning', vars: { detail: '11.0', at: 990_000 } });
+  });
+
+  it('stays quiet once the depth has changed or the advice was closed for that depth', () => {
+    expect(slow('11.7|3', { decodeDepth: '2' })).toEqual([]);
+    expect(slow('11.7|3', { slowPcDismissed: ['3'] })).toEqual([]);
+    expect(slow('11.2|2', { slowPcDismissed: ['3'] })).toHaveLength(1);
+    expect(diagnose({ ...base, now: 990_000 + 11 * 60_000, notices: { slow_pc: { detail: '11.7|3', at: 990_000 } } })).toEqual([]);
   });
 });

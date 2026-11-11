@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **PC lento**: l'avviso propone di abbassare la profondita' di decodifica di un gradino, con il pulsante «Passa a Normale» (o «Passa a Veloce» se gia' a Normale) e il collegamento all'impostazione; Aurora non la cambia mai da sola e, chiuso, l'avviso non torna per quella profondita' fino al riavvio.
 - **Rapporti degli errori**: la «decodifica lenta» parte al massimo una volta per installazione e versione (prima a ogni avvio da ogni PC vecchio); la riga resta nel log locale.
 - **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.

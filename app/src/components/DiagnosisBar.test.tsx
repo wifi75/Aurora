@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render as rtlRender, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getClock: vi.fn() }));
-import { getClock } from '../api/client';
+vi.mock('../api/client', () => ({ getClock: vi.fn(), getEngineSettings: vi.fn(), putEngineSettings: vi.fn() }));
+import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
+import { resetSlowPcClosed } from '../lib/diagnosis';
 import { useStation } from '../state/station';
 import { DiagnosisBar } from './DiagnosisBar';
 
@@ -18,9 +19,14 @@ const clock = (offset_ms: number | null) => ({
 });
 const station = (de_call = 'IU3ABC') => useStation.getState().apply({ type: 'status', dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: false, de_call, de_grid: 'IO91wm' });
 
+const engine = (DecodeDepth: string) => ({ version: 1, file: 'x', values: { DecodeDepth }, items: {} });
+
 beforeEach(() => {
   useStation.getState().reset();
+  resetSlowPcClosed();
   vi.mocked(getClock).mockReset().mockResolvedValue(clock(10) as never);
+  vi.mocked(getEngineSettings).mockReset().mockResolvedValue(engine('3') as never);
+  vi.mocked(putEngineSettings).mockReset().mockResolvedValue(engine('2') as never);
 });
 
 describe('DiagnosisBar', () => {
@@ -45,5 +51,33 @@ describe('DiagnosisBar', () => {
     render(<DiagnosisBar />);
     expect(await screen.findByText(/manca il tuo nominativo/)).toBeInTheDocument();
     expect(screen.getByText(/L’ingresso audio è saturo/)).toBeInTheDocument();
+  });
+
+  it('on a slow PC at Deep offers Normal and writes DecodeDepth only when pressed', async () => {
+    station();
+    useStation.getState().apply({ type: 'notice', id: 'slow_pc', detail: '11.7|3' });
+    render(<DiagnosisBar />);
+    expect(await screen.findByText(/Il PC fatica a decodificare in tempo \(11\.7 s per periodo\): passa la profondità a Normale/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Impostazione' })).toHaveAttribute('href', '#/impostazioni/filters');
+    expect(putEngineSettings).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Passa a Normale' }));
+    await vi.waitFor(() => expect(putEngineSettings).toHaveBeenCalledWith({ DecodeDepth: '2' }));
+    // la profondita' e' cambiata: l'avviso vecchio sparisce, se il PC resta lento il motore ne manda uno nuovo con «|2»
+    await vi.waitFor(() => expect(screen.queryByText(/fatica a decodificare/)).toBeNull());
+  });
+
+  it('once closed, the advice does not come back for the same depth', async () => {
+    station();
+    useStation.getState().apply({ type: 'notice', id: 'slow_pc', detail: '11.7|3' });
+    const { unmount } = render(<DiagnosisBar />);
+    await screen.findByText(/fatica a decodificare/);
+    fireEvent.click(screen.getByRole('button', { name: 'Chiudi l’avviso' }));
+    unmount();
+    // un avviso nuovo del motore, stessa profondita', anche con la barra ricreata: niente
+    useStation.getState().apply({ type: 'notice', id: 'slow_pc', detail: '12.0|3' });
+    render(<DiagnosisBar />);
+    await vi.waitFor(() => expect(getEngineSettings).toHaveBeenCalled());
+    expect(screen.queryByText(/fatica a decodificare/)).toBeNull();
+    expect(putEngineSettings).not.toHaveBeenCalled();
   });
 });
