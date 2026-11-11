@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.236 - 2026-11-11
 - **DX Cluster**: tabella con la griglia; le colonne si spostano trascinando il titolo (o Alt+frecce) e si allargano trascinando il bordo (doppio clic: adatta al contenuto); ordine e larghezze restano, tasto destro → «Ripristina colonne».
 - In trasmissione il modo e la frequenza non si cambiano ma i due pulsanti non si spengono piu' di colore: il clic viene solo ignorato.
 - Pannello Comandi: tolto «Spot DX», doppione del pulsante del DX Cluster (che apre la finestra dello spot con DX, frequenza e modo).

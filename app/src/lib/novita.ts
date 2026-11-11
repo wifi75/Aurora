@@ -20,6 +20,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.236',
+    released: '2026-11-11T17:22:47Z',
+    kind: 'fixed',
+    title: [
+      'DX Cluster con colonne spostabili, orologio e avvisi più comodi',
+      'DX Cluster with movable columns, handier clock and alerts',
+      'DX-Cluster mit verschiebbaren Spalten, bequemere Uhr und Hinweise',
+      'DX Cluster avec colonnes déplaçables, horloge et avis plus pratiques',
+      'DX Cluster con columnas movibles, reloj y avisos más cómodos',
+      'DX Cluster com colunas móveis, relógio e avisos mais práticos',
+    ],
+    text: [
+      'DX Cluster: tabella con la griglia, colonne da spostare trascinando il titolo e da allargare trascinando il bordo; tasto destro → «Ripristina colonne». Orologio: all’avvio la sincronizzazione aspetta la rete e, finché l’ora è fuori, si ricontrolla ogni minuto, così l’avviso sparisce da solo. Con le Impostazioni aperte gli avvisi si chiudono di nuovo; il riquadro del nominativo (QRZ.com/HamQTH) si legge sopra gli elenchi. In trasmissione modo e frequenza restano bloccati senza cambiare colore. Tolti i doppioni «Cancella» e «Spot DX» dalle barre dei comandi; «Auto» sta in fondo a Ferma e Decodifica.',
+      'DX Cluster: table with grid lines, columns you move by dragging the header and widen by dragging the edge; right click → «Reset columns». Clock: at start-up the synchronisation waits for the network and, while the time is off, it is checked every minute, so the warning goes away by itself. With Settings open the alerts can be closed again; the callsign box (QRZ.com/HamQTH) is readable above the lists. While transmitting, mode and frequency stay locked without changing colour. Removed the duplicate «Erase» and «Spot DX» from the command bars; «Auto» sits at the end of Stop and Decode.',
+      'DX-Cluster: Tabelle mit Gitterlinien, Spalten durch Ziehen der Überschrift verschieben und durch Ziehen des Rands verbreitern; Rechtsklick → «Spalten zurücksetzen». Uhr: Beim Start wartet die Synchronisierung auf das Netz, und solange die Zeit abweicht, wird jede Minute geprüft, sodass der Hinweis von selbst verschwindet. Bei geöffneten Einstellungen lassen sich die Hinweise wieder schließen; das Rufzeichenfeld (QRZ.com/HamQTH) ist über den Listen lesbar. Beim Senden bleiben Modus und Frequenz gesperrt, ohne die Farbe zu ändern. Doppelte «Löschen» und «Spot DX» aus den Befehlsleisten entfernt; «Auto» steht am Ende von Stopp und Dekodieren.',
+      'DX Cluster : tableau avec grille, colonnes à déplacer en faisant glisser le titre et à élargir en faisant glisser le bord ; clic droit → «Rétablir les colonnes». Horloge : au démarrage la synchronisation attend le réseau et, tant que l’heure est fausse, elle est vérifiée chaque minute, l’avis disparaît donc tout seul. Avec les Réglages ouverts les avis se ferment à nouveau ; la fiche de l’indicatif (QRZ.com/HamQTH) se lit au-dessus des listes. En émission le mode et la fréquence restent bloqués sans changer de couleur. Retirés les doublons «Effacer» et «Spot DX» des barres de commandes ; «Auto» est au bout d’Arrêt et Décoder.',
+      'DX Cluster: tabla con cuadrícula, columnas que se mueven arrastrando el título y se ensanchan arrastrando el borde; clic derecho → «Restablecer columnas». Reloj: al arrancar la sincronización espera a la red y, mientras la hora esté desviada, se comprueba cada minuto, así el aviso desaparece solo. Con los Ajustes abiertos los avisos se vuelven a cerrar; el cuadro del indicativo (QRZ.com/HamQTH) se lee sobre las listas. Al transmitir, modo y frecuencia quedan bloqueados sin cambiar de color. Quitados los duplicados «Borrar» y «Spot DX» de las barras de comandos; «Auto» está al final de Parar y Decodificar.',
+      'DX Cluster: tabela com grelha, colunas que se movem arrastando o título e se alargam arrastando a margem; clique direito → «Repor colunas». Relógio: no arranque a sincronização espera pela rede e, enquanto a hora estiver errada, verifica-se a cada minuto, assim o aviso desaparece sozinho. Com as Definições abertas os avisos voltam a fechar-se; a caixa do indicativo (QRZ.com/HamQTH) lê-se por cima das listas. Em transmissão o modo e a frequência ficam bloqueados sem mudar de cor. Retirados os duplicados «Apagar» e «Spot DX» das barras de comandos; «Auto» fica no fim de Parar e Descodificar.',
+    ],
+  },
+  {
     version: '0.11.235',
     released: '2026-11-11T16:24:32Z',
     kind: 'new',
@@ -660,20 +681,6 @@ export const NOVITA: readonly Novita[] = [
       "Contest : interrupteur marche/arrêt, pas d’émission sur des bandes ou modes non autorisés, avertissement pour les indicatifs composés, fréquences des seules bandes du concours, échanges contrôlés, multiplicateurs DXCC, conseil de bande et de mode, carte des multiplicateurs, entraînement sans émettre et analyse après le concours. Q65 avec EME, dérive 0–50 et liste concours ; Automatisations avec les prochaines stations ; Cabrillo depuis le log ; onglet « CQ et nouveautés » ; région IARU depuis l’indicatif ; OmniRig avec Rig 1 ou Rig 2 ; plus de faux « signal faible » en TCI ; moins de relectures du log et plus d’enregistrements WAV continus.",
       "Concurso: interruptor encendido/apagado, sin transmitir en bandas o modos no permitidos, aviso para indicativos compuestos, solo frecuencias de las bandas del concurso, intercambios comprobados, multiplicadores DXCC, consejo de banda y modo, mapa de multiplicadores, entrenamiento sin transmitir y análisis tras el concurso. Q65 con EME, deriva 0–50 y lista de concursos; Automatizaciones con las próximas estaciones; Cabrillo desde el log; pestaña «CQ y novedades»; región IARU desde el indicativo; OmniRig con Rig 1 o Rig 2; sin falso «señal débil» con TCI; menos lecturas del log y sin grabaciones WAV continuas.",
       "Concurso: interruptor ligado/desligado, sem transmitir em bandas ou modos não permitidos, aviso para indicativos compostos, só frequências das bandas do concurso, trocas verificadas, multiplicadores DXCC, conselho de banda e modo, mapa de multiplicadores, treino sem transmitir e análise depois do concurso. Q65 com EME, deriva 0–50 e lista de concursos; Automatizações com as próximas estações; Cabrillo a partir do log; separador «CQ e novidades»; região IARU a partir do indicativo; OmniRig com Rig 1 ou Rig 2; sem falso «sinal fraco» com TCI; menos leituras do log e sem gravações WAV contínuas.",
-    ],
-  },
-  {
-    version: '0.11.207',
-    released: '2026-11-09T08:20:47Z',
-    kind: 'fixed',
-    title: ['Versione nuova in verde fluo e km interi', 'New version in fluo green and whole km', 'Neue Version in Neongrün und ganze km', 'Nouvelle version en vert fluo et km entiers', 'Versión nueva en verde flúor y km enteros', 'Versão nova em verde flúor e km inteiros'],
-    text: [
-      "Quando la versione nuova è pronta, in testata compare una pillola verde fluo «Nuova» con il numero, il puntino che pulsa e «Installa». Le distanze sono sempre in km interi, senza decimali (nella pagina Contest comparivano con molte cifre dopo la virgola).",
-      "When the new version is ready, a fluo green “New” pill with the number, a pulsing dot and “Install” appears in the header. Distances are always in whole km, without decimals (the Contest page showed many digits after the point).",
-      "Wenn die neue Version bereit ist, erscheint in der Kopfzeile eine neongrüne Pille „Neu“ mit der Nummer, einem pulsierenden Punkt und „Installieren“. Entfernungen stehen immer in ganzen km ohne Nachkommastellen (die Contest-Seite zeigte viele Nachkommastellen).",
-      "Quand la nouvelle version est prête, une pastille vert fluo « Nouvelle » avec le numéro, un point qui pulse et « Installer » apparaît dans l’en-tête. Les distances sont toujours en km entiers, sans décimales (la page Contest affichait beaucoup de chiffres après la virgule).",
-      "Cuando la versión nueva está lista, en la cabecera aparece una píldora verde flúor «Nueva» con el número, un punto que late e «Instalar». Las distancias van siempre en km enteros, sin decimales (la página Contest mostraba muchas cifras tras la coma).",
-      "Quando a versão nova está pronta, no cabeçalho aparece uma pílula verde flúor «Nova» com o número, um ponto a pulsar e «Instalar». As distâncias ficam sempre em km inteiros, sem decimais (a página Contest mostrava muitos algarismos depois da vírgula).",
     ],
   },
 ];
