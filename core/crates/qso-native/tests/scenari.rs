@@ -1510,17 +1510,14 @@ fn two_qsos_in_a_row_each_logged_once() {
     assert_eq!(calls, vec!["AA1AA", "BB2BB"]);
 }
 
-/// `guiUpdate` (REA 0x4c4350): con `m_ntx == 5` e il messaggio che contiene «73» JTDX registra il QSO anche senza aver ricevuto un rapporto
-/// (il campo `RST_RCVD` resta vuoto); una sola volta.
+/// JTDX (`guiUpdate`, REA 0x4c4350) registrerebbe il QSO al 73 anche senza rapporto ricevuto; Aurora no, per scelta del proprietario
+/// (commit 6a139da5, 2026-11-08): senza il rapporto dell'altro il QSO non e' valido, non va a log e si segnala come abbandonato.
 #[test]
-fn sending_73_logs_the_qso_even_without_a_received_report_like_jtdx() {
+fn sending_73_without_a_received_report_does_not_log_the_qso() {
     let mut b = Bench::ft8(opts());
     b.reply(1, "CQ LZ2KSQ KN23", -12);
     b.seq.select_tx(5).expect("Tx5");
     assert_eq!(b.tx(2).as_deref(), Some("LZ2KSQ IU3ABC 73"));
-    let records = b.records();
-    assert_eq!(records.len(), 1);
-    assert_eq!(records[0].call, "LZ2KSQ");
-    assert_eq!(records[0].rst_rcvd, "");
+    assert!(b.records().is_empty());
 }
 
