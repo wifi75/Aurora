@@ -458,6 +458,15 @@ export const stationStrings = {
     'Duración del periodo Q65: 15 y 30 s para scatter y 6 m, 60 s para EME, 120 y 300 s para las señales más débiles. Debe ser la misma que la del corresponsal.',
     'Duração do período Q65: 15 e 30 s para scatter e 6 m, 60 s para EME, 120 e 300 s para os sinais mais fracos. Tem de ser igual à do correspondente.',
   ],
+  'mode.fst4period': ['Periodo FST4 (secondi)', 'FST4 period (seconds)', 'FST4-Periode (Sekunden)', 'Période FST4 (secondes)', 'Periodo FST4 (segundos)', 'Período FST4 (segundos)'],
+  'tip.mode.fst4period': [
+    'Durata del periodo di FST4 o FST4W: più è lungo, più deboli sono i segnali che si decodificano (circa -21 dB a 15 s, -43 dB a 30 minuti). FST4W va da 2 a 30 minuti. Deve essere uguale a quello del corrispondente.',
+    'FST4 or FST4W period length: the longer it is, the weaker the signals that decode (about -21 dB at 15 s, -43 dB at 30 minutes). FST4W runs from 2 to 30 minutes. It must match your partner’s.',
+    'FST4- oder FST4W-Periodendauer: je länger, desto schwächere Signale werden dekodiert (etwa -21 dB bei 15 s, -43 dB bei 30 Minuten). FST4W reicht von 2 bis 30 Minuten. Muss mit der der Gegenstation übereinstimmen.',
+    'Durée de la période FST4 ou FST4W : plus elle est longue, plus les signaux décodés peuvent être faibles (environ -21 dB à 15 s, -43 dB à 30 minutes). FST4W va de 2 à 30 minutes. Elle doit être la même que celle du correspondant.',
+    'Duración del periodo FST4 o FST4W: cuanto más largo, más débiles son las señales que se decodifican (unos -21 dB a 15 s, -43 dB a 30 minutos). FST4W va de 2 a 30 minutos. Debe ser la misma que la del corresponsal.',
+    'Duração do período FST4 ou FST4W: quanto mais longo, mais fracos são os sinais descodificados (cerca de -21 dB a 15 s, -43 dB a 30 minutos). FST4W vai de 2 a 30 minutos. Tem de ser igual à do correspondente.',
+  ],
   'mode.q65sub': ['Sottomodo Q65', 'Q65 submode', 'Q65-Untermodus', 'Sous-mode Q65', 'Submodo Q65', 'Submodo Q65'],
   'tip.mode.q65sub': [
     'Sottomodo di Q65: da A (toni alla distanza più stretta) a E (16 volte più larghi), per l’allargamento Doppler delle bande alte e dell’EME. Deve essere uguale a quello del corrispondente.',

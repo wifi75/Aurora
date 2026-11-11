@@ -23,6 +23,12 @@ export function signalBandwidthHz(mode: string | undefined): number {
     const nsps: Record<string, number> = { '15': 1800, '30': 3600, '60': 7200, '120': 16000, '300': 41472 };
     return (65 * 12000 * 2 ** (q65[2].charCodeAt(0) - 65)) / (nsps[q65[1]] ?? 3600);
   }
+  // FST4-15 ... FST4-1800 e FST4W-120 ... FST4W-1800: 4 toni alla velocita' di simbolo del periodo (`3 * 12000/nsps`)
+  const fst4 = /^FST4W?-(15|30|60|120|300|900|1800)$/.exec(mode?.toUpperCase() ?? '');
+  if (fst4?.[1]) {
+    const nsps: Record<string, number> = { '15': 720, '30': 1680, '60': 3888, '120': 8200, '300': 21504, '900': 66560, '1800': 134400 };
+    return (3 * 12000) / (nsps[fst4[1]] ?? 3888);
+  }
   switch (mode) {
     case 'FT8':
       return (7 * 12000) / 1920;

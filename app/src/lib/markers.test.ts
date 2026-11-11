@@ -34,6 +34,10 @@ describe('signalBandwidthHz', () => {
     expect(signalBandwidthHz('JT65C')).toBeCloseTo(710.6, 1);
     expect(signalBandwidthHz('JT9')).toBeCloseTo(15.6, 1);
     expect(signalBandwidthHz('T10')).toBe(62.5);
+    // FST4: 4 toni alla velocita' di simbolo del periodo
+    expect(signalBandwidthHz('FST4-15')).toBe(50);
+    expect(signalBandwidthHz('FST4-60')).toBeCloseTo(9.26, 2);
+    expect(signalBandwidthHz('FST4W-120')).toBeCloseTo(4.39, 2);
   });
 
   it('is zero for the other modes', () => {

@@ -238,6 +238,8 @@ impl Options {
             // 1 s + 206 simboli da 0,2286 s
             Mode::Jt4 => 48.09,
             Mode::Q65 => crate::slot::q65_message_end_s(),
+            Mode::Fst4 => crate::slot::fst4_message_end_s(false),
+            Mode::Fst4w => crate::slot::fst4_message_end_s(true),
             // MSK144: il quadro si ripete per tutto il periodo; si parte fino ai 4/5 del periodo (12 s su 15, com'era)
             Mode::Msk144 => crate::slot::msk144_period_s() as f64 * 0.8,
         })
@@ -252,6 +254,8 @@ impl Options {
             Mode::Jt9 => 16,
             Mode::Jt4 => 18,
             Mode::Q65 => crate::slot::q65_bandwidth_hz().ceil() as i32,
+            Mode::Fst4 => crate::slot::fst4_bandwidth_hz(false).ceil() as i32,
+            Mode::Fst4w => crate::slot::fst4_bandwidth_hz(true).ceil() as i32,
             Mode::Msk144 => 1000,
         }
     }

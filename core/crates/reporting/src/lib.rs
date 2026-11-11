@@ -276,6 +276,20 @@ fn random_id() -> u32 {
     std::collections::hash_map::RandomState::new().build_hasher().finish() as u32
 }
 
+/// Il nome del modo nello spot: FT4, FST4 e FST4W (anche con il periodo, «FST4-60»: WSJT-X manda il nome senza periodo), gli altri FT8.
+fn spot_mode(mode: &str) -> &'static str {
+    let up = mode.trim().to_ascii_uppercase();
+    if up == "FT4" {
+        "FT4"
+    } else if up.starts_with("FST4W") {
+        "FST4W"
+    } else if up.starts_with("FST4") {
+        "FST4"
+    } else {
+        "FT8"
+    }
+}
+
 /// Quanto dura un periodo, in millisecondi.
 fn period_ms(mode: &str) -> u64 {
     if mode.eq_ignore_ascii_case("FT4") { 7_500 } else { 15_000 }
@@ -594,7 +608,7 @@ fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, period: &Peri
         call,
         grid,
         freq_hz,
-        mode: if mode.eq_ignore_ascii_case("FT4") { "FT4" } else { "FT8" }.to_string(),
+        mode: spot_mode(mode).to_string(),
         snr: d.snr,
         time: u32::try_from(slot_start / 1000).unwrap_or(u32::MAX),
     });
@@ -688,6 +702,15 @@ pub fn server_addr(host: &str, port: u16) -> Option<SocketAddr> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn spot_mode_names_fst4_without_the_period() {
+        assert_eq!(spot_mode("FST4-60"), "FST4");
+        assert_eq!(spot_mode("fst4w-120"), "FST4W");
+        assert_eq!(spot_mode("FT4"), "FT4");
+        assert_eq!(spot_mode("FT8"), "FT8");
+    }
+
     use super::*;
 
     fn decode(time_ms: u32) -> DecodedMessage {

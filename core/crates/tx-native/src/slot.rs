@@ -48,6 +48,38 @@ fn q65_message_ms(period_s: u32) -> u64 {
     85 * nsps / 12
 }
 
+/// Periodi di FST4 e FST4W in uso, in secondi (scelti dal motore; 60 e 120 di fabbrica come WSJT-X).
+static FST4_PERIOD_S: AtomicU32 = AtomicU32::new(60);
+static FST4W_PERIOD_S: AtomicU32 = AtomicU32::new(120);
+
+/// Sceglie il periodo di FST4 (`wspr` = false) o FST4W; valori fuori campo si ignorano.
+pub fn set_fst4_period_s(wspr: bool, period_s: u32) {
+    if wspr && matches!(period_s, 120 | 300 | 900 | 1800) {
+        FST4W_PERIOD_S.store(period_s, Ordering::Relaxed);
+    } else if !wspr && matches!(period_s, 15 | 30 | 60 | 120 | 300 | 900 | 1800) {
+        FST4_PERIOD_S.store(period_s, Ordering::Relaxed);
+    }
+}
+
+/// Periodo in uso di FST4 (`wspr` = false) o FST4W, in secondi.
+pub fn fst4_period_s(wspr: bool) -> u32 {
+    if wspr { FST4W_PERIOD_S.load(Ordering::Relaxed) } else { FST4_PERIOD_S.load(Ordering::Relaxed) }
+}
+
+/// Durata del messaggio FST4 in millisecondi (160 simboli, `mainwindow.cpp:13489-13495` di WSJT-X).
+fn fst4_message_ms(period_s: u32) -> u64 {
+    let nsps: u64 = match period_s {
+        15 => 720,
+        30 => 1_680,
+        60 => 3_888,
+        120 => 8_200,
+        300 => 21_504,
+        900 => 66_560,
+        _ => 134_400,
+    };
+    160 * nsps / 12
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Ft8,
@@ -57,6 +89,8 @@ pub enum Mode {
     Jt4,
     Q65,
     Msk144,
+    Fst4,
+    Fst4w,
 }
 
 impl Mode {
@@ -67,6 +101,8 @@ impl Mode {
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
             Mode::Q65 => Duration::from_millis(u64::from(q65_period_s()) * 1000),
+            Mode::Fst4 => Duration::from_millis(u64::from(fst4_period_s(false)) * 1000),
+            Mode::Fst4w => Duration::from_millis(u64::from(fst4_period_s(true)) * 1000),
         }
     }
 
@@ -76,7 +112,9 @@ impl Mode {
             Mode::Ft8 | Mode::Ft4 | Mode::Msk144 => Duration::from_millis(500),
             // Q65: 0,5 s a 15 e 30 s, 1 s dai 60 s in su
             Mode::Q65 if q65_period_s() < 60 => Duration::from_millis(500),
-            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 => Duration::from_millis(1_000),
+            // FST4: 0,5 s in FST4-15, 1 s negli altri e in FST4W (`Modulator.cpp:163-164`)
+            Mode::Fst4 if fst4_period_s(false) == 15 => Duration::from_millis(500),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 | Mode::Fst4 | Mode::Fst4w => Duration::from_millis(1_000),
         }
     }
 
@@ -95,6 +133,9 @@ impl Mode {
             Mode::Q65 => Mode::Q65.tx_delay() + Duration::from_millis(q65_message_ms(q65_period_s())),
             // il quadro si ripete fino a fine periodo: si puo' partire fino ai 4/5 del periodo (12 s su 15)
             Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 800),
+            // 160 simboli dopo il ritardo d'inizio
+            Mode::Fst4 => Mode::Fst4.tx_delay() + Duration::from_millis(fst4_message_ms(fst4_period_s(false))),
+            Mode::Fst4w => Mode::Fst4w.tx_delay() + Duration::from_millis(fst4_message_ms(fst4_period_s(true))),
         }
     }
 }

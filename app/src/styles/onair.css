@@ -148,6 +148,17 @@
   --mode-ink: var(--mode-q65-ink);
 }
 
+/* FST4 azzurro e FST4W turchese (onde lunghe e radiofari) */
+.mode-switch button[data-mode='FST4'] {
+  --mode: var(--mode-fst4);
+  --mode-ink: var(--mode-fst4-ink);
+}
+
+.mode-switch button[data-mode='FST4W'] {
+  --mode: var(--mode-fst4w);
+  --mode-ink: var(--mode-fst4w-ink);
+}
+
 /* MSK144 giallo meteora */
 .mode-switch button[data-mode='MSK144'] {
   --mode: var(--mode-msk144);

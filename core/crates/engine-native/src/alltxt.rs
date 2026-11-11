@@ -115,6 +115,8 @@ pub fn mode_symbol(mode: &str) -> char {
         "JT4" => '$',
         "Q65" => '!',
         "MSK144" => '&',
+        // FST4 e FST4W: il segno delle righe di `jt9` (`decoder_callbacks.f90:1001,1003`)
+        "FST4" | "FST4W" => '`',
         _ => '~',
     }
 }

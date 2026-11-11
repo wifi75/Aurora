@@ -210,6 +210,8 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                         Mode::Q65 => rig::q65_setup().period_s,
                         // MSK144: il periodo scelto (5, 10, 15 o 30 s, `mainwindow.cpp:12081`)
                         Mode::Msk144 => qso_native::slot::msk144_period_s(),
+                        Mode::Fst4 => qso_native::slot::fst4_period_s(false),
+                        Mode::Fst4w => qso_native::slot::fst4_period_s(true),
                     }),
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
@@ -289,6 +291,8 @@ pub fn start_with_save(
         let mut q65_now = rig::q65_setup();
         // MSK144: il periodo in uso (5, 10, 15 o 30 s): cambiarlo rifa' i periodi come un cambio di modo
         let mut msk_period_now = qso_native::slot::msk144_period_s();
+        // FST4 e FST4W: i periodi in uso (cambiarli rifa' i periodi come un cambio di modo)
+        let mut fst4_now = (qso_native::slot::fst4_period_s(false), qso_native::slot::fst4_period_s(true));
         let mut q65_avg = jt::q65::Averager::new();
         let mut msk_rt = mskrt::Realtime::default();
         let mut hashes = CallHashes::default();
@@ -503,6 +507,23 @@ pub fn start_with_save(
                     q65_now = q65_wanted;
                     q65_avg.clear();
                     if mode == Mode::Q65 {
+                        tracing::info!("motore proprio: {}", rig::mode_label(mode));
+                        assembler = slots::SlotAssembler::new(mode);
+                        last_slot = None;
+                        last_texts.clear();
+                        if let Some(d) = driver.as_mut() {
+                            for line in d.period_changed() {
+                                tracing::info!("trasmissione: {line}");
+                            }
+                        }
+                    }
+                }
+                // FST4/FST4W: un altro periodo rifa' i periodi come un cambio di modo
+                let fst4_wanted = (qso_native::slot::fst4_period_s(false), qso_native::slot::fst4_period_s(true));
+                if fst4_wanted != fst4_now {
+                    let changed_here = (mode == Mode::Fst4 && fst4_wanted.0 != fst4_now.0) || (mode == Mode::Fst4w && fst4_wanted.1 != fst4_now.1);
+                    fst4_now = fst4_wanted;
+                    if changed_here {
                         tracing::info!("motore proprio: {}", rig::mode_label(mode));
                         assembler = slots::SlotAssembler::new(mode);
                         last_slot = None;
@@ -1160,6 +1181,51 @@ fn decode_period(
                 .map(|d| ft8::decode::Decoded { hint: d.ap > 0 || d.averaged > 1, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
                 .collect()
         }
+        // FST4 e FST4W (`fst4_decode.f90`): periodo scelto, frequenza di ricezione e tolleranza (20 Hz in FST4, 100 Hz in FST4W come
+        // `mainwindow.cpp:11385,11437` e `FST4W_FTol`), profondita' e «Single decode» delle Impostazioni, ipotesi AP con il mio nominativo
+        // e il DX al punto del QSO. I messaggi a priori hanno il segno di FT8
+        Mode::Fst4 | Mode::Fst4w => {
+            let wspr = mode == Mode::Fst4w;
+            let o = fst4_options(wspr, ft8_options, &decode_opts::current());
+            rig::with_fst4_state(|st| jt::fst4::decode(samples, &o, hashes, st))
+                .into_iter()
+                .map(|d| ft8::decode::Decoded { hint: d.ap > 0, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
+                .collect()
+        }
+    }
+}
+
+/// Le opzioni di FST4/FST4W per un periodo. La banda di ricerca di FST4 («F Low»/«F High», `nfa`/`nfb`) e' quella del decodificatore
+/// stretta attorno alla frequenza di ricezione alla larghezza che WSJT-X segnala ancora come accettabile (`chk_FST4_freq_range`,
+/// `mainwindow.cpp:12467-12489`: 2000 Hz fino a 60 s, 1000 a 120, 400 a 300, 200 da 900 s): il carico della ricerca cresce con il periodo.
+fn fst4_options(wspr: bool, ft8_options: &Options, settings: &decode_opts::DecodeSettings) -> jt::fst4::Options {
+    let period_s = qso_native::slot::fst4_period_s(wspr);
+    let ap = ft8_options.ap.as_ref();
+    let rx = ap.and_then(|a| a.rx_freq_hz).or(ft8_options.rx_freq_hz).unwrap_or(1500.0).round() as i32;
+    let width = match period_s {
+        0..=60 => 2000,
+        120 => 1000,
+        300 => 400,
+        _ => 200,
+    };
+    let lo_band = ft8_options.f_low_hz.round() as i32;
+    let hi_band = ft8_options.f_high_hz.round() as i32;
+    let f_low = (rx - width / 2).max(lo_band);
+    let f_high = (f_low + width).min(hi_band);
+    jt::fst4::Options {
+        period_s,
+        wspr,
+        f_low_hz: f_low,
+        f_high_hz: f_high,
+        rx_hz: rx,
+        tol_hz: if wspr { 100 } else { 20 },
+        depth: settings.depth.clamp(1, 3),
+        qso_progress: ap.map_or(0, |a| a.qso_progress.min(5)),
+        single_decode: settings.single_decode && !wspr,
+        my_call: ap.map(|a| a.mycall.clone()).unwrap_or_default(),
+        dx_call: ap.map(|a| a.hiscall.clone()).unwrap_or_default(),
+        threads: ft8_options.threads.max(1),
+        ..jt::fst4::Options::default()
     }
 }
 
@@ -1233,6 +1299,17 @@ mod tests {
         assert_eq!(period_options(&base, &controls, "", 0).f_low_hz, base.f_low_hz);
         controls.set_switch("swl", true);
         assert!(period_options(&base, &controls, "", 0).swl);
+    }
+
+    /// FST4: la banda di ricerca attorno alla frequenza di ricezione e' larga quanto WSJT-X accetta per il periodo (2000 Hz a 60 s, 200 Hz da
+    /// 900 s); FST4W cerca solo entro +-100 Hz e non usa le ipotesi AP.
+    #[test]
+    fn fst4_options_follow_the_period_and_the_receive_frequency() {
+        let base = Options { rx_freq_hz: Some(1500.0), f_low_hz: 200.0, f_high_hz: 4000.0, ..Options::default() };
+        let o = fst4_options(false, &base, &decode_opts::DecodeSettings::WSJTX);
+        assert_eq!((o.period_s, o.f_low_hz, o.f_high_hz, o.rx_hz, o.tol_hz, o.depth), (60, 500, 2500, 1500, 20, 3));
+        let w = fst4_options(true, &base, &decode_opts::DecodeSettings::WSJTX);
+        assert!(w.wspr && w.tol_hz == 100 && w.period_s == 120);
     }
 
     /// La parita' del periodo segue il tempo assoluto: alterna ogni 15 s, indipendente dalle altre opzioni.

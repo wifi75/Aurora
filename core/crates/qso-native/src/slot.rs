@@ -73,6 +73,54 @@ pub fn q65_bandwidth_hz() -> f64 {
     65.0 * 12_000.0 / q65_nsps(q65_period_s()) * f64::from(1u32 << q65_submode())
 }
 
+/// Periodi di FST4 in secondi (`ui->sbTR->values ({15, 30, 60, 120, 300, 900, 1800})`, `mainwindow.cpp:11394` di WSJT-X 3.3.0-beta6).
+pub const FST4_PERIODS_S: [u32; 7] = [15, 30, 60, 120, 300, 900, 1800];
+/// Periodi di FST4W (`ui->sbTR_FST4W->values ({120, 300, 900, 1800})`, `mainwindow.cpp:787`).
+pub const FST4W_PERIODS_S: [u32; 4] = [120, 300, 900, 1800];
+/// Periodo di FST4 in uso (di fabbrica 60 s, `TRPeriod_FST4`, `mainwindow.cpp:11395`); lo sceglie il motore.
+static FST4_PERIOD_S: AtomicU32 = AtomicU32::new(60);
+/// Periodo di FST4W in uso (di fabbrica 120 s, il primo della lista).
+static FST4W_PERIOD_S: AtomicU32 = AtomicU32::new(120);
+
+/// Sceglie il periodo di FST4 (`wspr` = false) o FST4W; valori fuori campo si ignorano (`false`).
+pub fn set_fst4_period_s(wspr: bool, period_s: u32) -> bool {
+    let (list, slot): (&[u32], &AtomicU32) = if wspr { (&FST4W_PERIODS_S, &FST4W_PERIOD_S) } else { (&FST4_PERIODS_S, &FST4_PERIOD_S) };
+    let ok = list.contains(&period_s);
+    if ok {
+        slot.store(period_s, Ordering::Relaxed);
+    }
+    ok
+}
+
+/// Periodo in uso di FST4 (`wspr` = false) o FST4W, in secondi.
+pub fn fst4_period_s(wspr: bool) -> u32 {
+    if wspr { FST4W_PERIOD_S.load(Ordering::Relaxed) } else { FST4_PERIOD_S.load(Ordering::Relaxed) }
+}
+
+/// Campioni per simbolo di FST4 a 12 kHz (`fst4_decode.f90:398-433`, `mainwindow.cpp:13489-13495`).
+fn fst4_nsps(period_s: u32) -> f64 {
+    match period_s {
+        15 => 720.0,
+        30 => 1_680.0,
+        60 => 3_888.0,
+        120 => 8_200.0,
+        300 => 21_504.0,
+        900 => 66_560.0,
+        _ => 134_400.0,
+    }
+}
+
+/// Fine del messaggio FST4/FST4W dall'inizio del periodo, in secondi: 0,5 s in FST4-15 e 1 s negli altri (`Modulator.cpp:163-164`) piu' 160 simboli.
+pub fn fst4_message_end_s(wspr: bool) -> f64 {
+    let p = fst4_period_s(wspr);
+    (if p == 15 { 0.5 } else { 1.0 }) + 160.0 * fst4_nsps(p) / 12_000.0
+}
+
+/// Larghezza del segnale FST4/FST4W in uso (4 toni alla velocita' di simbolo), in hertz.
+pub fn fst4_bandwidth_hz(wspr: bool) -> f64 {
+    4.0 * 12_000.0 / fst4_nsps(fst4_period_s(wspr))
+}
+
 /// Modo digitale: cambia solo la durata del periodo, la logica dei QSO e' la stessa.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Mode {
@@ -87,6 +135,10 @@ pub enum Mode {
     Q65,
     /// MSK144 (meteor scatter): periodi di 5, 10, 15 o 30 s ([`set_msk144_period_s`]), quadro di 72 ms ripetuto per tutto il periodo.
     Msk144,
+    /// FST4: periodi da 15 a 1800 s ([`set_fst4_period_s`]), messaggi a 77 bit come FT8.
+    Fst4,
+    /// FST4W: periodi da 120 a 1800 s, messaggi di tipo WSPR (radiofaro, senza QSO).
+    Fst4w,
 }
 
 impl Mode {
@@ -98,6 +150,8 @@ impl Mode {
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
             Mode::Q65 => u64::from(q65_period_s()) * 1000,
+            Mode::Fst4 => u64::from(fst4_period_s(false)) * 1000,
+            Mode::Fst4w => u64::from(fst4_period_s(true)) * 1000,
         }
     }
 
@@ -115,6 +169,8 @@ impl Mode {
             Mode::Jt4 => "JT4",
             Mode::Q65 => "Q65",
             Mode::Msk144 => "MSK144",
+            Mode::Fst4 => "FST4",
+            Mode::Fst4w => "FST4W",
         }
     }
 }
@@ -174,6 +230,18 @@ mod tests {
         assert_eq!(Slot::at(Mode::Ft4, 7.5), Slot(1));
         assert_eq!(Slot(3).start_ms(Mode::Ft4), 22_500);
         assert!((Slot(3).start_s(Mode::Ft4) - 22.5).abs() < 1e-9);
+    }
+
+    #[test]
+    fn fst4_periods_follow_the_choice() {
+        assert!(set_fst4_period_s(false, 300));
+        assert_eq!(Mode::Fst4.period_ms(), 300_000);
+        assert!(!set_fst4_period_s(true, 60), "FST4W non ha 60 s");
+        assert!(set_fst4_period_s(true, 900));
+        assert_eq!(Mode::Fst4w.period_ms(), 900_000);
+        assert!((fst4_message_end_s(true) - (1.0 + 160.0 * 66_560.0 / 12_000.0)).abs() < 1e-9);
+        assert!(set_fst4_period_s(false, 60));
+        assert!(set_fst4_period_s(true, 120));
     }
 
     #[test]
