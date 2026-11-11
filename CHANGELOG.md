@@ -1,5 +1,15 @@
 # Changelog
 
+## Non rilasciato
+- **Aurora diventa una stazione multimodo**: README, installatore, descrizioni e testi dell'app presentano ora FT8/FT4 insieme a JT65, JT9, Q65, MSK144, PSK, RTTY, CW e SSTV.
+- **Un solo ramo**: il lavoro di sviluppo e' ora in main. Nuova pagina SSTV con spettro sottile largo come la ricezione, log QSO compatto accanto a Modo, impostazioni SSTV nella loro categoria con l'ingranaggio, pulizia dal rumore (Originale/Pulita nel visore), calibrazione della scheda audio, foto e immagini ricevute di esempio nell'installatore; ritocchi alla pagina PSK/RTTY/CW (macro, selettore di banda, barra di stato) e Esc ferma la trasmissione (due Esc fermano anche il CQ automatico).
+- **Fox**: le righe delle stazioni Fox sono leggibili in Attivita' di banda e nella finestra Rx (messaggio intero, bandiera e paese della Fox, etichetta FOX); in FT8 il filtro dei falsi sui messaggi DXpedition e' quello di WSJT-X (`chkspecial8var`).
+- **#45**: entrando nella pagina PSK·RTTY·CW e SSTV l'ascolto riparte sempre, anche dopo averlo spento.
+- **Opzioni dei decodificatori di WSJT-X** in Impostazioni › Filtri › Decodifica: profondita' (Veloce, Normale, Profonda), «Single decode», media dei periodi e «Auto Clear Avg» (Q65), AP, ricerca profonda e livello «Aggressive» (JT65), «F Tol» per JT65, JT9, MSK144 e Q65. Le piu' usate sono anche pulsanti accanto al modo («Media» e «Auto ⟲» in Q65, «AP» e «Prof.» in JT65). Come in WSJT-X, la media di Q65 e' ora spenta di fabbrica.
+- **MSK144**: il periodo T/R (5, 10, 15 o 30 s) si sceglie accanto al modo e si ricorda per banda; i messaggi brevi (R+rapporto, RRR, 73) si trasmettono e si decodificano solo con «Sh» acceso, e «Sh» esclude SWL, come in WSJT-X.
+- **JT65**: sottomodi B e C (EME) con la ricerca del solo segnale piu' forte entro F Tol, e media dei periodi (fino a 64, con «Clear Avg»).
+- **Guida**: nuova sezione «Collegare la radio: i controlli»; descritte le opzioni di decodifica, MSK144, i sottomodi JT65 e le righe Fox.
+
 ## 0.11.236 - 2026-11-11
 - **DX Cluster**: tabella con la griglia; le colonne si spostano trascinando il titolo (o Alt+frecce) e si allargano trascinando il bordo (doppio clic: adatta al contenuto); ordine e larghezze restano, tasto destro → «Ripristina colonne».
 - In trasmissione il modo e la frequenza non si cambiano ma i due pulsanti non si spengono piu' di colore: il clic viene solo ignorato.
