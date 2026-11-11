@@ -19,6 +19,9 @@ interface Props {
 const CLOSED_KEY = 'aurora.digi.rotor.closed';
 const POS_KEY = 'aurora.digi.rotor.pos';
 const HIDDEN_KEY = 'aurora.digi.rotor.hidden';
+const WIDTH_KEY = 'aurora.digi.rotor.w';
+const MIN_W = 300;
+const MAX_W = 820;
 const EVENT = 'aurora-rotor-card';
 
 interface Pos {
@@ -88,6 +91,11 @@ export function RotorCard({ call, grid }: Props) {
   const [typed, setTyped] = useState('');
   const card = useRef<HTMLElement>(null);
   const [pos, setPos] = useState<Pos | null>(readPos);
+  // la larghezza si regola dall'angolo in basso a destra: la bussola cresce con la scheda
+  const [width, setWidth] = useState<number | null>(() => {
+    const v = Number(browserStorage()?.getItem(WIDTH_KEY));
+    return Number.isFinite(v) && v >= MIN_W && v <= MAX_W ? v : null;
+  });
   const [shown, setShown] = useRotorCardVisible();
   // mentre il rotore gira si legge piu' spesso, cosi' la lancetta si muove di continuo
   const snap = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, refetchInterval: (q) => (q.state.data?.status.moving ? 400 : 1000) });
@@ -162,7 +170,40 @@ export function RotorCard({ call, grid }: Props) {
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
+  const startResize = (e: React.PointerEvent) => {
+    const el = card.current;
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const r = el.getBoundingClientRect();
+    const scale = el.offsetWidth > 0 ? r.width / el.offsetWidth : 1;
+    const startX = e.clientX;
+    const startW = el.offsetWidth;
+    let last = startW;
+    const move = (m: PointerEvent) => {
+      const room = window.innerWidth / scale - (pos?.x ?? r.left / scale) - 4;
+      last = Math.round(Math.min(Math.max(MIN_W, startW + (m.clientX - startX) / scale), Math.min(MAX_W, Math.max(MIN_W, room))));
+      setWidth(last);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      try {
+        browserStorage()?.setItem(WIDTH_KEY, String(last));
+      } catch {
+        // la misura vale comunque finche' la pagina e' aperta
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
   const resetPos = () => {
+    setWidth(null);
+    try {
+      browserStorage()?.removeItem(WIDTH_KEY);
+    } catch {
+      // niente da fare
+    }
     setPos(null);
     try {
       browserStorage()?.removeItem(POS_KEY);
@@ -188,7 +229,7 @@ export function RotorCard({ call, grid }: Props) {
   if (!shown) return null;
 
   return (
-    <section ref={card} style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined} className={`digi-rotor${moving ? ' digi-rotor--moving' : ''}${connected ? '' : ' digi-rotor--off'}`} aria-label={t('digi.tab.rotor')}>
+    <section ref={card} style={{ ...(pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : {}), ...(width ? { width } : {}) }} className={`digi-rotor${moving ? ' digi-rotor--moving' : ''}${connected ? '' : ' digi-rotor--off'}`} aria-label={t('digi.tab.rotor')}>
       {header}
       {closed ? null : (
         <div className="digi-rotor-body">
@@ -248,6 +289,7 @@ export function RotorCard({ call, grid }: Props) {
           {problemText ? <p className="digi-rotor-note notice" role="alert">{problemText}</p> : null}
         </div>
       )}
+      {closed ? null : <span className="digi-rotor-grip" role="separator" aria-orientation="vertical" title={t('rot.resize')} onPointerDown={startResize} />}
     </section>
   );
 }

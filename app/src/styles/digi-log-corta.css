@@ -148,7 +148,7 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .cop-dialog .cop-cols { display: grid; grid-template-columns: 1fr 1fr; }
 
 /* la scheda del rotore: sempre in vista in fondo alla colonna di destra, scura e ben leggibile come la bussola ma piu' grande e con la lancetta che si muove */
-.digi-rotor { position: fixed; right: 1rem; bottom: 3.2rem; width: 23rem; max-width: calc(100vw - 1rem); z-index: 1500; border: 1px solid #34457a; border-radius: 12px; overflow: hidden; background: #0f1629; color: #d7e3ff; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6); }
+.digi-rotor { position: fixed; right: 1rem; bottom: 3.2rem; width: 26rem; max-width: calc(100vw - 1rem); z-index: 1500; border: 1px solid #34457a; border-radius: 12px; overflow: hidden; background: #0f1629; color: #d7e3ff; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6); }
 .digi-rotor-head { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.2rem 0.5rem 0.2rem 0.6rem; font-size: 0.9em; border: 0; background: #172040; color: #d7e3ff; font: inherit; cursor: grab; text-align: left; user-select: none; touch-action: none; }
 .digi-rotor-head:active { cursor: grabbing; }
 .digi-rotor-fold { border: 0; background: transparent; color: #9db0da; font: inherit; cursor: pointer; padding: 0 0.3rem; border-radius: 4px; }
@@ -159,7 +159,7 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .digi-rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
 .digi-rotor-dot--moving { background: #ffb41f; box-shadow: 0 0 8px #ffb41f; animation: digi-rotor-pulse 0.8s ease-in-out infinite; }
 @keyframes digi-rotor-pulse { 50% { opacity: 0.35; } }
-.digi-rotor-body { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: 0.45rem; padding: 0.3rem 0.5rem 0.4rem; align-items: start; }
+.digi-rotor-body { display: grid; grid-template-columns: 54% minmax(0, 1fr); gap: 0.5rem; padding: 0.4rem 0.5rem 0.9rem; align-items: start; }
 .digi-rotor-dial { position: relative; aspect-ratio: 1; width: 100%; }
 .digi-rotor-dial .rot-rose-box { max-width: none; width: 100%; }
 .digi-rotor-badge { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); padding: 0 0.5rem; border-radius: 6px; border: 2px solid #8a8a8a; background: #d8a400; color: #2a1d00; font: 700 0.9em var(--font-data); }
@@ -204,3 +204,4 @@ html[data-theme='light'] .digi-rotor-headval { color: #9a5b00; }
 html[data-theme='light'] .digi-rotor-go input { background: #fff; color: #000; border-color: #a9b8d6; }
 html[data-theme='light'] .digi-rotor-btn { background: linear-gradient(#ffffff, #e1e9f8); color: #0b1322; border-color: #a9b8d6; }
 html[data-theme='light'] .digi-rotor-btn--stop { background: linear-gradient(#e24a4a, #b42a2a); color: #fff; }
+.digi-rotor-grip { position: absolute; right: 0; bottom: 0; width: 1.1rem; height: 1.1rem; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, #8ea2cf 50%, #8ea2cf 58%, transparent 58%, transparent 72%, #8ea2cf 72%, #8ea2cf 80%, transparent 80%); }

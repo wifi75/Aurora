@@ -136,6 +136,7 @@ export const rotatorStrings = {
     'O computador onde corre o rotctld: 127.0.0.1 se for este, senão o seu endereço de rede.',
   ],
   'rot.move': ['Trascina per spostare; doppio clic per rimetterla al suo posto', 'Drag to move; double-click to put it back', 'Ziehen zum Verschieben; Doppelklick stellt sie zurück', 'Tire pour déplacer ; double clic pour la remettre à sa place', 'Arrastra para mover; doble clic para devolverla a su sitio', 'Arrasta para mover; duplo clique para a repor no sítio'],
+  'rot.resize': ['Trascina l’angolo per ingrandire o rimpicciolire la scheda', 'Drag the corner to make the card bigger or smaller', 'Ecke ziehen, um die Karte zu vergrößern oder zu verkleinern', 'Tire le coin pour agrandir ou réduire la carte', 'Arrastra la esquina para agrandar o reducir la tarjeta', 'Arrasta o canto para aumentar ou diminuir o cartão'],
   'rot.hide': ['Nascondi la scheda (si riaccende dal menu Vista)', 'Hide the card (turn it back on from the View menu)', 'Karte ausblenden (im Menü Ansicht wieder einschalten)', 'Masquer la carte (à rallumer dans le menu Affichage)', 'Ocultar la tarjeta (se vuelve a activar en el menú Ver)', 'Ocultar o cartão (volta a ligar-se no menu Ver)'],
   'digi.mi.rotor': ['Scheda del rotore', 'Rotator card', 'Rotor-Karte', 'Carte du rotor', 'Tarjeta del rotor', 'Cartão do rotor'],
   'rot.open': ['Apri la scheda del rotore', 'Open the rotator card', 'Rotor-Karte öffnen', 'Ouvrir la carte du rotor', 'Abrir la tarjeta del rotor', 'Abrir o cartão do rotor'],
