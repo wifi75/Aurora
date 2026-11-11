@@ -1,6 +1,10 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.237 - 2026-11-11
+- **Split vero (Hamlib, «Rig»): al cambio di banda la radio esce dallo split**; il VFO di trasmissione si porta sulla banda nuova e lo split si riaccende solo un attimo prima della trasmissione. Prima la radio restava in split subito dopo il cambio di banda.
+- **Icona nuova «MULTIMODE»** in tutte le misure (Windows, Linux, macOS, app) e immagini dell'installatore con «Aurora — Multimode Ham Radio Station».
+- **Installatore in olandese** e pagina «Dati che Aurora manda in rete» tradotta in tutte e sette le lingue.
+- **JT65 B/C verificato con jt9.exe di WSJT-X 3.3**: sincronismo e SNR in VHF ora coincidono con WSJT-X (prima 4-6 dB piu' bassi); anche le decodifiche con analisi a priori entrano nella media.
 - **Aurora diventa una stazione multimodo**: README, installatore, descrizioni e testi dell'app presentano ora FT8/FT4 insieme a JT65, JT9, Q65, MSK144, PSK, RTTY, CW e SSTV.
 - **Un solo ramo**: il lavoro di sviluppo e' ora in main. Nuova pagina SSTV con spettro sottile largo come la ricezione, log QSO compatto accanto a Modo, impostazioni SSTV nella loro categoria con l'ingranaggio, pulizia dal rumore (Originale/Pulita nel visore), calibrazione della scheda audio, foto e immagini ricevute di esempio nell'installatore; ritocchi alla pagina PSK/RTTY/CW (macro, selettore di banda, barra di stato) e Esc ferma la trasmissione (due Esc fermano anche il CQ automatico).
 - **Fox**: le righe delle stazioni Fox sono leggibili in Attivita' di banda e nella finestra Rx (messaggio intero, bandiera e paese della Fox, etichetta FOX); in FT8 il filtro dei falsi sui messaggi DXpedition e' quello di WSJT-X (`chkspecial8var`).

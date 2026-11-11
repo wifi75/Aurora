@@ -20,6 +20,48 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.237',
+    released: '2026-11-11T00:00:00Z',
+    kind: 'new',
+    title: [
+      'Aurora multimodo: JT65 B/C per l’EME, MSK144 a 30 s e «Sh», opzioni di decodifica di WSJT-X',
+      'Multimode Aurora: JT65 B/C for EME, MSK144 at 30 s and «Sh», WSJT-X decoding options',
+      'Aurora multimode: JT65 B/C für EME, MSK144 mit 30 s und «Sh», Decoder-Optionen von WSJT-X',
+      'Aurora multimode : JT65 B/C pour l’EME, MSK144 à 30 s et «Sh», options de décodage de WSJT-X',
+      'Aurora multimodo: JT65 B/C para EME, MSK144 a 30 s y «Sh», opciones de decodificación de WSJT-X',
+      'Aurora multimodo: JT65 B/C para EME, MSK144 a 30 s e «Sh», opções de descodificação do WSJT-X',
+    ],
+    text: [
+      'Aurora è ora «Aurora — Multimode Ham Radio Station», con l’icona nuova: tutti i modi (FT8…MSK144, PSK, RTTY, CW, SSTV, satelliti) in un solo programma. JT65 ha i sottomodi A, B e C (EME) e la media dei periodi, verificati con WSJT-X. MSK144 ha il periodo 5/10/15/30 s ricordato per banda e i messaggi brevi «Sh». In Impostazioni › Filtri › Decodifica ci sono le opzioni di WSJT-X: profondità, Single decode, media e Auto Clear Avg, AP e ricerca profonda di JT65, F Tol. Nuova pagina SSTV e Guida «Collegare la radio».',
+      'Aurora is now «Aurora — Multimode Ham Radio Station», with the new icon: every mode (FT8…MSK144, PSK, RTTY, CW, SSTV, satellites) in one program. JT65 has sub-modes A, B and C (EME) and period averaging, checked against WSJT-X. MSK144 has a 5/10/15/30 s period remembered per band and «Sh» short messages. Settings › Filters › Decoding holds the WSJT-X options: depth, Single decode, averaging and Auto Clear Avg, JT65 AP and deep search, F Tol. New SSTV page and «Connecting the radio» guide.',
+      'Aurora ist jetzt «Aurora — Multimode Ham Radio Station», mit neuem Symbol: alle Betriebsarten (FT8…MSK144, PSK, RTTY, CW, SSTV, Satelliten) in einem Programm. JT65 hat die Untermodi A, B und C (EME) und die Mittelung über Perioden, gegen WSJT-X geprüft. MSK144 hat eine Periode von 5/10/15/30 s pro Band und Kurznachrichten «Sh». Unter Einstellungen › Filter › Dekodierung stehen die Optionen von WSJT-X: Tiefe, Single decode, Mittelung und Auto Clear Avg, AP und Tiefensuche für JT65, F Tol. Neue SSTV-Seite und Anleitung «Funkgerät anschließen».',
+      'Aurora devient «Aurora — Multimode Ham Radio Station», avec la nouvelle icône : tous les modes (FT8…MSK144, PSK, RTTY, CW, SSTV, satellites) dans un seul programme. JT65 a les sous-modes A, B et C (EME) et la moyenne des périodes, vérifiés avec WSJT-X. MSK144 a une période de 5/10/15/30 s mémorisée par bande et les messages courts «Sh». Réglages › Filtres › Décodage contient les options de WSJT-X : profondeur, Single decode, moyenne et Auto Clear Avg, AP et recherche approfondie de JT65, F Tol. Nouvelle page SSTV et guide «Connecter la radio».',
+      'Aurora es ahora «Aurora — Multimode Ham Radio Station», con el icono nuevo: todos los modos (FT8…MSK144, PSK, RTTY, CW, SSTV, satélites) en un solo programa. JT65 tiene los submodos A, B y C (EME) y el promedio de periodos, comprobados con WSJT-X. MSK144 tiene un periodo de 5/10/15/30 s recordado por banda y los mensajes cortos «Sh». En Ajustes › Filtros › Decodificación están las opciones de WSJT-X: profundidad, Single decode, promedio y Auto Clear Avg, AP y búsqueda profunda de JT65, F Tol. Nueva página SSTV y guía «Conectar la radio».',
+      'O Aurora é agora «Aurora — Multimode Ham Radio Station», com o ícone novo: todos os modos (FT8…MSK144, PSK, RTTY, CW, SSTV, satélites) num só programa. O JT65 tem os submodos A, B e C (EME) e a média dos períodos, verificados com o WSJT-X. O MSK144 tem um período de 5/10/15/30 s memorizado por banda e as mensagens curtas «Sh». Em Definições › Filtros › Descodificação estão as opções do WSJT-X: profundidade, Single decode, média e Auto Clear Avg, AP e pesquisa profunda do JT65, F Tol. Nova página SSTV e guia «Ligar o rádio».',
+    ],
+  },
+  {
+    version: '0.11.237',
+    released: '2026-11-11T00:00:00Z',
+    kind: 'fixed',
+    title: [
+      'CW/PSK/RTTY che non decodificavano al primo ingresso, righe Fox, installatore in olandese',
+      'CW/PSK/RTTY not decoding on first entry, Fox rows, Dutch installer',
+      'CW/PSK/RTTY ohne Dekodierung beim ersten Aufruf, Fox-Zeilen, Installer auf Niederländisch',
+      'CW/PSK/RTTY qui ne décodaient pas à la première entrée, lignes Fox, installateur en néerlandais',
+      'CW/PSK/RTTY que no decodificaban al primer acceso, líneas Fox, instalador en neerlandés',
+      'CW/PSK/RTTY que não descodificavam à primeira entrada, linhas Fox, instalador em neerlandês',
+    ],
+    text: [
+      'Entrando nella pagina PSK·RTTY·CW o SSTV dall’FT8 l’ascolto riparte sempre (#45). Le righe delle stazioni Fox mostrano il messaggio intero, la bandiera e il paese della Fox, e i messaggi Fox dubbi passano il filtro di WSJT-X. L’installatore è anche in olandese, con la pagina dei dati in rete tradotta in sette lingue.',
+      'Entering the PSK·RTTY·CW or SSTV page from FT8 now always restarts listening (#45). Fox station rows show the whole message, the Fox flag and country, and doubtful Fox messages go through the WSJT-X filter. The installer is also in Dutch, with the network data page translated into seven languages.',
+      'Beim Wechsel von FT8 zur Seite PSK·RTTY·CW oder SSTV startet das Hören jetzt immer (#45). Zeilen von Fox-Stationen zeigen die ganze Nachricht, Flagge und Land der Fox, und zweifelhafte Fox-Nachrichten durchlaufen den Filter von WSJT-X. Der Installer gibt es auch auf Niederländisch, mit der Seite zu den Netzdaten in sieben Sprachen.',
+      'En entrant dans la page PSK·RTTY·CW ou SSTV depuis le FT8, l’écoute redémarre toujours (#45). Les lignes des stations Fox montrent le message entier, le drapeau et le pays de la Fox, et les messages Fox douteux passent le filtre de WSJT-X. L’installateur existe aussi en néerlandais, avec la page des données réseau traduite en sept langues.',
+      'Al entrar en la página PSK·RTTY·CW o SSTV desde FT8 la escucha se reanuda siempre (#45). Las líneas de las estaciones Fox muestran el mensaje completo, la bandera y el país de la Fox, y los mensajes Fox dudosos pasan el filtro de WSJT-X. El instalador está también en neerlandés, con la página de datos en red traducida a siete idiomas.',
+      'Ao entrar na página PSK·RTTY·CW ou SSTV a partir do FT8 a escuta recomeça sempre (#45). As linhas das estações Fox mostram a mensagem inteira, a bandeira e o país da Fox, e as mensagens Fox duvidosas passam pelo filtro do WSJT-X. O instalador está também em neerlandês, com a página dos dados de rede traduzida em sete línguas.',
+    ],
+  },
+  {
     version: '0.11.236',
     released: '2026-11-11T17:22:47Z',
     kind: 'fixed',
@@ -653,34 +695,6 @@ export const NOVITA: readonly Novita[] = [
       "En choisissant une nouveauté dans le Filtre ou les Automatisations, sa mise en évidence s’allume seule ; « nouveau locator » est activé par défaut. Le Filtre a aussi des exceptions : CQ seul, RR73 comme CQ, avec locator, pas mon continent. Les Automatisations répondent aussi aux nouveaux indicatifs et locators sur une nouvelle bande, et la pause par station peut être 0. Dans les Réglages on choisit la base Log4OM. Dans la cascade les repères Rx et Tx sont en bas et les bandes transparentes. Plus de faux « audio muet » avec TCI.",
       "Al elegir una novedad en el Filtro o en las Automatizaciones su resaltado se enciende solo, y «nuevo locator» viene encendido. El Filtro tiene también excepciones: solo CQ, RR73 como CQ, con locator, no mi continente. Las Automatizaciones responden también a indicativos nuevos y locators en banda nueva, y la pausa por estación puede ser 0. En Ajustes se elige la base de Log4OM. En la cascada las etiquetas Rx y Tx están abajo y las bandas son transparentes. Con TCI ya no hay falso «audio mudo».",
       "Ao escolher uma novidade no Filtro ou nas Automatizações o destaque liga-se sozinho, e «novo locator» vem ligado. O Filtro tem também exceções: só CQ, RR73 como CQ, com locator, não o meu continente. As Automatizações respondem também a indicativos novos e locators em banda nova, e a pausa por estação pode ser 0. Nas Definições escolhe-se a base do Log4OM. Na cascata as etiquetas Rx e Tx estão em baixo e as bandas transparentes. Com TCI acabou o falso «áudio mudo».",
-    ],
-  },
-  {
-    version: '0.11.209',
-    released: '2026-11-09T11:35:05Z',
-    kind: 'new',
-    title: ["Filtri, Aspetto, finestra RX e Automazioni più affidabili", "Filters, Appearance, RX window and more reliable Automation", "Filter, Aussehen, RX-Fenster und zuverlässigere Automatik", "Filtres, Apparence, fenêtre RX et Automatisations plus fiables", "Filtros, Apariencia, ventana RX y Automatizaciones más fiables", "Filtros, Aparência, janela RX e Automatizações mais fiáveis"],
-    text: [
-      "Attività di banda ha il pulsantino «Filtro» con le pillole delle novità e nelle Impostazioni → Filtri tutto si personalizza. Nuova scheda «Aspetto» con alto contrasto, carattere, dimensione e colore del testo. Il pannello Log ha le linguette «Log | Mappa» e la finestra RX in alto, come in WSJT-X. Le Automazioni si accendono con «Automatico» nella barra in alto; in modo reale tengono acceso Abilita Tx e non lavorano le stazioni escluse, nemmeno quando rispondono al tuo CQ.",
-      "Band Activity has a «Filter» button with the new-ones pills, and everything can be customised in Settings → Filters. New «Appearance» page with high contrast, font, text size and colour. The Log panel has «Log | Map» tabs and the RX window on top, as in WSJT-X. Automation is switched on with «Auto» in the top bar; in live mode it keeps Enable Tx on and doesn’t work excluded stations, not even when they answer your CQ.",
-      "Die Bandaktivität hat die Schaltfläche «Filter» mit den Neuheiten-Pillen, alles anpassbar unter Einstellungen → Filter. Neue Seite «Aussehen» mit hohem Kontrast, Schrift, Größe und Farbe. Das Log-Fenster hat die Reiter «Log | Karte» und oben das RX-Fenster wie in WSJT-X. Die Automatik schaltet man mit «Automatik» oben ein; im Echtbetrieb bleibt Senden aktivieren an und ausgeschlossene Stationen werden nicht gearbeitet.",
-      "L’Activité de bande a le bouton « Filtre » avec les pastilles des nouveautés, tout se règle dans Réglages → Filtres. Nouvelle page « Apparence » avec contraste élevé, police, taille et couleur du texte. Le panneau Log a les onglets « Log | Carte » et la fenêtre RX en haut, comme dans WSJT-X. Les Automatisations s’activent avec « Auto » en haut ; en mode réel elles gardent Activer Tx allumé et ne contactent pas les stations exclues.",
-      "Actividad de banda tiene el botón «Filtro» con las píldoras de novedades y todo se personaliza en Ajustes → Filtros. Nueva página «Apariencia» con alto contraste, fuente, tamaño y color del texto. El panel Log tiene las pestañas «Log | Mapa» y arriba la ventana RX, como en WSJT-X. Las Automatizaciones se encienden con «Automático» arriba; en modo real mantienen Habilitar Tx y no trabajan las estaciones excluidas.",
-      "A Atividade de banda tem o botão «Filtro» com as pílulas das novidades e tudo se personaliza em Definições → Filtros. Nova página «Aparência» com alto contraste, letra, tamanho e cor do texto. O painel Log tem os separadores «Log | Mapa» e em cima a janela RX, como no WSJT-X. As Automatizações ligam-se com «Automático» em cima; em modo real mantêm Ativar Tx ligado e não trabalham estações excluídas.",
-    ],
-  },
-  {
-    version: '0.11.208',
-    released: '2026-11-09T10:13:17Z',
-    kind: 'new',
-    title: ['Contest completo, Q65, OmniRig a due radio e meno lavoro inutile', 'Full contest page, Q65, two-radio OmniRig and less useless work', 'Vollständige Contest-Seite, Q65, OmniRig mit zwei Geräten und weniger unnötige Arbeit', 'Page Contest complète, Q65, OmniRig à deux radios et moins de travail inutile', 'Página Contest completa, Q65, OmniRig con dos radios y menos trabajo inútil', 'Página Contest completa, Q65, OmniRig com dois rádios e menos trabalho inútil'],
-    text: [
-      "Contest: interruttore acceso/spento, niente trasmissione su bande o modi non ammessi, avviso per i nominativi composti, frequenze solo delle bande della gara, scambi controllati, moltiplicatori DXCC, consiglio di banda e modo, mappa dei moltiplicatori, allenamento senza trasmettere e analisi dopo la gara. Q65 con EME, deriva da 0 a 50 e lista dei contest; Automazioni con le prossime stazioni; Cabrillo dal log; scheda «CQ e novità»; regione IARU dal nominativo; OmniRig con Rig 1 o Rig 2; niente falso «segnale debole» con il TCI; meno letture del log e niente registrazioni WAV continue.",
-      "Contest: on/off switch, no transmission on bands or modes the rules don’t allow, warning for compound callsigns, frequencies of contest bands only, checked exchanges, DXCC multipliers, band and mode advice, multiplier map, training without transmitting and post-contest analysis. Q65 with EME, drift 0–50 and contest list; Automation with next stations; Cabrillo from the log; “CQ and new ones” tab; IARU region from the callsign; OmniRig with Rig 1 or Rig 2; no false “weak signal” with TCI; fewer log reloads and no continuous WAV recordings.",
-      "Contest: Ein/Aus-Schalter, kein Senden auf nicht erlaubten Bändern oder Betriebsarten, Hinweis bei zusammengesetzten Rufzeichen, nur Frequenzen der Contest-Bänder, geprüfter Austausch, DXCC-Multiplikatoren, Band- und Modusempfehlung, Multiplikatorkarte, Training ohne Senden und Auswertung nach dem Contest. Q65 mit EME, Drift 0–50 und Contestliste; Automatik mit nächsten Stationen; Cabrillo aus dem Log; Reiter „CQ und Neues“; IARU-Region aus dem Rufzeichen; OmniRig mit Rig 1 oder Rig 2; kein falsches „schwaches Signal“ mit TCI; weniger Log-Lesungen und keine dauernden WAV-Aufnahmen.",
-      "Contest : interrupteur marche/arrêt, pas d’émission sur des bandes ou modes non autorisés, avertissement pour les indicatifs composés, fréquences des seules bandes du concours, échanges contrôlés, multiplicateurs DXCC, conseil de bande et de mode, carte des multiplicateurs, entraînement sans émettre et analyse après le concours. Q65 avec EME, dérive 0–50 et liste concours ; Automatisations avec les prochaines stations ; Cabrillo depuis le log ; onglet « CQ et nouveautés » ; région IARU depuis l’indicatif ; OmniRig avec Rig 1 ou Rig 2 ; plus de faux « signal faible » en TCI ; moins de relectures du log et plus d’enregistrements WAV continus.",
-      "Concurso: interruptor encendido/apagado, sin transmitir en bandas o modos no permitidos, aviso para indicativos compuestos, solo frecuencias de las bandas del concurso, intercambios comprobados, multiplicadores DXCC, consejo de banda y modo, mapa de multiplicadores, entrenamiento sin transmitir y análisis tras el concurso. Q65 con EME, deriva 0–50 y lista de concursos; Automatizaciones con las próximas estaciones; Cabrillo desde el log; pestaña «CQ y novedades»; región IARU desde el indicativo; OmniRig con Rig 1 o Rig 2; sin falso «señal débil» con TCI; menos lecturas del log y sin grabaciones WAV continuas.",
-      "Concurso: interruptor ligado/desligado, sem transmitir em bandas ou modos não permitidos, aviso para indicativos compostos, só frequências das bandas do concurso, trocas verificadas, multiplicadores DXCC, conselho de banda e modo, mapa de multiplicadores, treino sem transmitir e análise depois do concurso. Q65 com EME, deriva 0–50 e lista de concursos; Automatizações com as próximas estações; Cabrillo a partir do log; separador «CQ e novidades»; região IARU a partir do indicativo; OmniRig com Rig 1 ou Rig 2; sem falso «sinal fraco» com TCI; menos leituras do log e sem gravações WAV contínuas.",
     ],
   },
 ];

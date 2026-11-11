@@ -1030,10 +1030,15 @@ impl Rig for HamlibRig {
                 }
             }
         }
-        if inner.config.split == SplitMode::Rig
-            && let Err(e) = inner.apply_split(&link)
-        {
-            tracing::warn!("split non riposizionato dopo il cambio di frequenza: {e}");
+        // split vero: al cambio di frequenza (banda) la radio esce dallo split. Il VFO di trasmissione si rimette sulla banda nuova solo un
+        // attimo prima del PTT (`set_tx_audio_frequency`, chiamato da Aurora prima di ogni trasmissione): cosi' la radio non resta mai in split
+        // con il VFO B sulla banda vecchia o su una frequenza che il proprietario non si aspetta (segnalazione del 2026-11-11)
+        if inner.config.split == SplitMode::Rig {
+            let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
+            match link.client().set_split(false, rx_vfo) {
+                Ok(()) => inner.update(|s| s.split = Some(false)),
+                Err(e) => tracing::warn!("split non spento dopo il cambio di frequenza: {e}"),
+            }
         }
         inner.queue_quick_reads();
         Ok(())
@@ -1369,10 +1374,14 @@ mod tests {
         let split_commands = |fake: &FakeRigctld| fake.commands().into_iter().filter(|c| c.starts_with("I ") || c.starts_with("S ")).collect::<Vec<_>>();
         assert_eq!(split_commands(&fake), ["I 14074500", "S 1 VFOB"]);
         assert!(fake.split() && rig.status().split == Some(true));
-        // dopo un cambio di frequenza il VFO di trasmissione segue
+        // al cambio di banda la radio esce dallo split (niente VFO B lasciato sulla banda vecchia)...
         rig.set_frequency(7_074_000).expect("QSY");
-        let c = fake.commands();
-        assert!(c.iter().any(|x| x == "I 7074500"), "{c:?}");
+        assert!(!fake.split() && rig.status().split == Some(false), "{:?}", fake.commands());
+        // ...e prima della trasmissione il VFO di trasmissione va sulla banda nuova e lo split si riaccende
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split prima del PTT");
+        assert_eq!(split_commands(&fake), ["I 7074500", "S 1 VFOB"]);
+        assert!(fake.split());
         // alla chiusura lo split si toglie
         rig.shutdown();
         assert!(!fake.split());

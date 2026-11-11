@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-11 sera, versione 0.11.236 pubblicata (Windows e macOS verdi per la 0.11.235; per la 0.11.236 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-11 sera, versione 0.11.237 pubblicata (Windows e macOS verdi per la 0.11.235; per la 0.11.237 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-11 (allineamento a WSJT-X 3.3.0-beta6)
