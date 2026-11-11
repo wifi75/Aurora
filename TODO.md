@@ -2,6 +2,13 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
+## Dopo la 0.11.238 (su `main`, non ancora in una release)
+- [x] Riquadro del nominativo: LoTW solo se c'e', verde e senza data, anche dal DX Cluster (elenco ARRL).
+- [x] Tolte dal menu di PSK·RTTY·CW le voci per importare le macro; barra di stato con un solo carattere; rotore piu' piccolo.
+- [x] Donazioni con PayPal: badge, sezione nei README, `SOSTENITORI.md`, `.github/FUNDING.yml`.
+- [ ] Prossima versione (0.11.239): decidere dove compilare l'installatore firmato (GitHub, oppure PC con la chiave del proprietario).
+- [ ] Allineare `main` nella cartella `Desktop\Progetti\Aurora` a `origin/main` (solo con il via del proprietario).
+
 ## 0.11.238 (2026-11-11 notte, pubblicata)
 - [x] Split DX dal cluster, Cat4OM con la scoperta automatica, olandese (settima lingua), radiofaro FST4W e invio a WSPRnet.
 - [x] Porta COM occupata con il nome del programma, OmniRig lento come avviso, PC lento con «Passa a Normale».
