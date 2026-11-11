@@ -138,6 +138,7 @@ export const contestStrings = {
   'contest.col.call': ['Nominativo', 'Call', 'Rufzeichen', 'Indicatif', 'Indicativo', 'Indicativo'],
   'contest.col.rcvd': ['Ric.', 'Rcvd', 'Empf.', 'Reçu', 'Rec.', 'Rec.'],
   'contest.col.points': ['Punti', 'Points', 'Punkte', 'Points', 'Puntos', 'Pontos'],
+  'contest.col.state': ['Stato', 'Status', 'Status', 'État', 'Estado', 'Estado'],
   'contest.dupe': ['doppio', 'dupe', 'Doppel', 'doublon', 'duplicado', 'duplicado'],
   'contest.dupeUseful': ['Gia\' lavorata su questa banda: vale ancora su {b}', 'Already worked on this band: still counts on {b}', 'Auf diesem Band schon gearbeitet: zählt noch auf {b}', 'Déjà contactée sur cette bande : compte encore sur {b}', 'Ya trabajada en esta banda: aún cuenta en {b}', 'Já trabalhada nesta banda: ainda conta em {b}'],
   'contest.dupeAll': ['Gia\' lavorata su tutte le bande del contest', 'Already worked on every contest band', 'Auf allen Contest-Bändern schon gearbeitet', 'Déjà contactée sur toutes les bandes du concours', 'Ya trabajada en todas las bandas del concurso', 'Já trabalhada em todas as bandas do concurso'],

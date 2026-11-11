@@ -1,12 +1,12 @@
 import { toast } from '../lib/toast';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, memo } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, memo } from 'react';
 import { getClusterSpots, getDxcc, getDxped, getStationInfo, postFrequency, postMode, rotatorGoto, type ClusterSpot } from '../api/client';
 import { bearingDeg, gridCenter, type Point } from '../lib/geo';
 import { normalizeAz } from '../lib/rotator';
-import type { ClusterColumn, ClusterOptions } from '../lib/clusterOptions';
-import { CLUSTER_COL_EM, clampColumnEm, defaultClusterLayout, placeColumn, readClusterLayout, saveClusterLayout, type ClusterColumnLayout } from '../lib/clusterColumns';
+import { CLUSTER_COLUMNS, type ClusterColumn, type ClusterOptions } from '../lib/clusterOptions';
+import { CLUSTER_COL_EM, CLUSTER_COLS_KEY } from '../lib/clusterColumns';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT, type Key } from '../i18n';
@@ -32,8 +32,6 @@ const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY', 'PSK'] as const;
 /** Il titolo di ogni colonna e, per alcune, la spiegazione. */
 const COL_LABEL: Record<ClusterColumn, Key> = { de: 'cluster.col.by', freq: 'cluster.col.freq', dx: 'cluster.col.call', country: 'cluster.col.country', mode: 'cluster.col.mode', comment: 'cluster.col.comment', time: 'cluster.col.time' };
 const COL_TIP: Partial<Record<ClusterColumn, Key>> = { de: 'tip.ui.clusterBy', comment: 'tip.ui.clusterComment' };
-/** Quanto si sposta il mouse prima che il clic sul titolo diventi un trascinamento della colonna. */
-const DRAG_PX = 5;
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
@@ -88,50 +86,10 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
   const [spotOpen, setSpotOpen] = useState(false);
   const wishlist = useWishlist((s) => s.list);
-  // ordine e larghezze delle colonne: si cambiano trascinando i titoli e restano ricordati su questo dispositivo
-  const [layout, setLayoutState] = useState<ClusterColumnLayout>(readClusterLayout);
-  const [drag, setDrag] = useState<{ col: ClusterColumn; before: ClusterColumn | null } | null>(null);
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  // ordine e larghezze delle colonne: si cambiano trascinando i titoli e restano ricordati su questo dispositivo (la chiave di sempre)
+  const cols = useMovableColumns({ storageKey: CLUSTER_COLS_KEY, columns: CLUSTER_COLUMNS, defaultEm: CLUSTER_COL_EM, elastic: 'comment', hidden: options?.hidden });
   const [callMenu, setCallMenu] = useState<CallMenuState | null>(null);
   const closeCallMenu = useCallback(() => setCallMenu(null), []);
-  const table = useRef<HTMLTableElement | null>(null);
-  const menuBox = useRef<HTMLDivElement | null>(null);
-  const focusCol = useRef<ClusterColumn | null>(null);
-  const stopPointer = useRef<(() => void) | null>(null);
-  const setLayout = (update: (l: ClusterColumnLayout) => ClusterColumnLayout) =>
-    setLayoutState((l) => {
-      const next = update(l);
-      saveClusterLayout(next);
-      return next;
-    });
-  // spostata da tastiera la colonna resta quella attiva, anche se React ne sposta il titolo
-  useEffect(() => {
-    const col = focusCol.current;
-    focusCol.current = null;
-    if (col) table.current?.querySelector<HTMLElement>(`th[data-col="${col}"]`)?.focus();
-  }, [layout.order]);
-  // un trascinamento a meta' quando la finestra si chiude non lascia ascoltatori appesi
-  useEffect(() => () => stopPointer.current?.(), []);
-  useEffect(() => {
-    if (!menu) return;
-    const out = (e: PointerEvent) => {
-      if (!menuBox.current?.contains(e.target as Node)) setMenu(null);
-    };
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenu(null);
-    };
-    const close = () => setMenu(null);
-    document.addEventListener('pointerdown', out);
-    window.addEventListener('keydown', key);
-    window.addEventListener('blur', close);
-    window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('pointerdown', out);
-      window.removeEventListener('keydown', key);
-      window.removeEventListener('blur', close);
-      window.removeEventListener('resize', close);
-    };
-  }, [menu]);
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
   // tutto quello che si vede nel cluster (DX e chi ha fatto lo spot) si carica in anticipo: al passaggio del mouse il riquadro e' gia' pronto
@@ -237,143 +195,15 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
   };
 
   // le colonne che si vedono (la rotella delle pagine PSK, RTTY e CW ne puo' nascondere alcune), nell'ordine scelto
-  const visible = layout.order.filter((c) => !options?.hidden.includes(c));
-  const widthOf = (c: ClusterColumn) => layout.widths[c] ?? CLUSTER_COL_EM[c];
-  // Commenti senza una larghezza scelta prende lo spazio che avanza (come prima); con tutte le larghezze scelte la tabella e' larga la somma
-  const elastic = visible.includes('comment') && layout.widths.comment === undefined;
-  const fixedEm = visible.reduce((n, c) => n + (elastic && c === 'comment' ? 0 : widthOf(c)), 0);
-  const tableStyle: CSSProperties = elastic ? { minWidth: `${fixedEm + CLUSTER_COL_EM.comment}em` } : { width: `${fixedEm}em` };
-  /** Il corpo del carattere della tabella in px: le larghezze sono in em. */
-  const emPx = () => parseFloat(getComputedStyle(table.current ?? document.body).fontSize) || 12;
-  const setWidth = (c: ClusterColumn, em: number) => setLayout((l) => ({ ...l, widths: { ...l.widths, [c]: clampColumnEm(em) } }));
+  const { visible } = cols;
 
-  /** Trascinando il titolo la colonna si sposta: lasciata a meta' di un altro titolo, va prima o dopo di quello. Esc la annulla. */
-  const startMove = (e: ReactPointerEvent<HTMLTableCellElement>, col: ClusterColumn) => {
-    if (e.button !== 0) return;
-    const row = e.currentTarget.parentElement;
-    if (!row) return;
-    stopPointer.current?.();
-    const startX = e.clientX;
-    let active = false;
-    let before: ClusterColumn | null = null;
-    const slotAt = (x: number): ClusterColumn | null => {
-      for (const th of Array.from(row.querySelectorAll<HTMLElement>('th[data-col]'))) {
-        const r = th.getBoundingClientRect();
-        if (x < r.left + r.width / 2) return th.dataset.col as ClusterColumn;
-      }
-      return null;
-    };
-    const move = (m: PointerEvent) => {
-      if (!active && Math.abs(m.clientX - startX) < DRAG_PX) return;
-      active = true;
-      before = slotAt(m.clientX);
-      setDrag({ col, before });
-    };
-    const end = (apply: boolean) => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', drop);
-      window.removeEventListener('pointercancel', cancel);
-      window.removeEventListener('keydown', esc);
-      window.removeEventListener('blur', cancel);
-      stopPointer.current = null;
-      setDrag(null);
-      if (apply && active) {
-        const to = before;
-        setLayout((l) => ({ ...l, order: placeColumn(l.order, col, to) }));
-      }
-    };
-    const drop = () => end(true);
-    const cancel = () => end(false);
-    const esc = (k: KeyboardEvent) => {
-      if (k.key === 'Escape') end(false);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', drop);
-    window.addEventListener('pointercancel', cancel);
-    window.addEventListener('keydown', esc);
-    window.addEventListener('blur', cancel);
-    stopPointer.current = cancel;
-  };
-
-  /** Trascinando il bordo destro del titolo la colonna si allarga o si stringe, come in Excel (e come nel log delle pagine PSK). */
-  const startResize = (e: ReactPointerEvent<HTMLSpanElement>, col: ClusterColumn) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    stopPointer.current?.();
-    const startX = e.clientX;
-    // Commenti che prendeva lo spazio che avanza parte dalla larghezza che ha adesso
-    const shown = e.currentTarget.parentElement?.getBoundingClientRect().width ?? 0;
-    const em = emPx();
-    const start = layout.widths[col] ?? (shown > 0 ? shown / em : CLUSTER_COL_EM[col]);
-    let last = start;
-    const move = (m: PointerEvent) => {
-      last = clampColumnEm(start + (m.clientX - startX) / em);
-      setLayoutState((l) => ({ ...l, widths: { ...l.widths, [col]: last } }));
-    };
-    const end = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', end);
-      window.removeEventListener('pointercancel', end);
-      stopPointer.current = null;
-      if (last !== start) setWidth(col, last);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', end);
-    window.addEventListener('pointercancel', end);
-    stopPointer.current = end;
-  };
-
-  /** Doppio clic sul bordo: la colonna prende la larghezza del suo contenuto piu' lungo. */
-  const autoFit = (col: ClusterColumn) => {
-    const el = table.current;
-    const i = visible.indexOf(col);
-    if (!el || i < 0) return;
-    let max = 0;
-    el.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((cell) => {
-      max = Math.max(max, (cell as HTMLElement).scrollWidth);
-    });
-    if (max > 0) setWidth(col, max / emPx() + 0.3);
-  };
-
-  /** Da tastiera, sul titolo: Alt+frecce sposta la colonna, Alt+Maiusc+frecce la allarga o la stringe. */
-  const keyMove = (e: ReactKeyboardEvent<HTMLTableCellElement>, col: ClusterColumn) => {
-    if (!e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
-    e.preventDefault();
-    const left = e.key === 'ArrowLeft';
-    if (e.shiftKey) {
-      setWidth(col, widthOf(col) + (left ? -0.5 : 0.5));
-      return;
-    }
-    const i = visible.indexOf(col);
-    if (left ? i <= 0 : i < 0 || i >= visible.length - 1) return;
-    const before = left ? (visible[i - 1] ?? null) : (visible[i + 2] ?? null);
-    focusCol.current = col;
-    setLayout((l) => ({ ...l, order: placeColumn(l.order, col, before) }));
-  };
-
-  /** Tasto destro (o il tasto Menu) sui titoli: il menu con «Ripristina colonne». */
-  const openMenu = (e: ReactMouseEvent<HTMLTableSectionElement>) => {
-    e.preventDefault();
-    let { clientX: x, clientY: y } = e;
-    if (x === 0 && y === 0) {
-      const r = (e.target as HTMLElement).getBoundingClientRect();
-      x = r.left;
-      y = r.bottom;
-    }
-    setMenu({ x, y });
-  };
   /** Tasto destro sul nominativo (DX o chi l'ha segnalato): il menu con «Apri su QRZ.com». */
   const openCallMenu = (e: ReactMouseEvent<HTMLElement>, call: string) => {
     const clean = cleanCall(call);
     if (!clean) return;
     e.preventDefault();
-    setMenu(null);
+    cols.closeMenu();
     setCallMenu(callMenuAt(e, clean));
-  };
-  const resetColumns = () => {
-    setMenu(null);
-    setLayout(() => defaultClusterLayout());
   };
 
   const cell = (c: ClusterColumn, s: ClusterSpot) => {
@@ -457,32 +287,16 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
       ) : shown.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.none')}</p>
       ) : (
-        <table ref={table} className="cluster-table cluster-grid" style={tableStyle}>
-          <colgroup>
-            {visible.map((c) => (
-              <col key={c} style={elastic && c === 'comment' ? undefined : { width: `${widthOf(c)}em` }} />
-            ))}
-          </colgroup>
-          <thead onContextMenu={openMenu}>
+        <table ref={cols.tableRef} className="cluster-table cluster-grid mv-grid" style={cols.tableStyle}>
+          <MovableColGroup cols={cols} />
+          <thead onContextMenu={cols.openMenu}>
             <tr>
               {visible.map((c, i) => {
                 const tip = COL_TIP[c];
-                const dropBefore = drag !== null && drag.before === c && drag.col !== c;
-                const dropAfter = drag !== null && drag.before === null && i === visible.length - 1 && drag.col !== c;
                 return (
-                  <th
-                    key={c}
-                    data-col={c}
-                    scope="col"
-                    tabIndex={0}
-                    className={`cl-h cl-h--${c}${drag?.col === c ? ' cl-h--dragging' : ''}${dropBefore ? ' cl-h--drop-before' : ''}${dropAfter ? ' cl-h--drop-after' : ''}`}
-                    title={tip ? `${t(tip)}\n${t('tip.cluster.colHead')}` : t('tip.cluster.colHead')}
-                    onPointerDown={(e) => startMove(e, c)}
-                    onKeyDown={(e) => keyMove(e, c)}
-                  >
+                  <MovableTh key={c} cols={cols} col={c} index={i} title={tip ? t(tip) : undefined}>
                     {t(COL_LABEL[c])}
-                    <span className="cl-grip" role="separator" aria-orientation="vertical" title={t('digi.log.colGrip')} onPointerDown={(e) => startResize(e, c)} onDoubleClick={() => autoFit(c)} />
-                  </th>
+                  </MovableTh>
                 );
               })}
             </tr>
@@ -508,16 +322,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
           </tbody>
         </table>
       )}
-      {menu
-        ? createPortal(
-            <div ref={menuBox} className="cl-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
-              <button type="button" role="menuitem" autoFocus onClick={resetColumns}>
-                {t('cluster.cols.reset')}
-              </button>
-            </div>,
-            document.body,
-          )
-        : null}
+      <ColumnsMenu cols={cols} />
       <CallMenu menu={callMenu} onClose={closeCallMenu} />
     </div>
   );

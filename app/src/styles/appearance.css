@@ -25,6 +25,8 @@
   --row-b: #242424;
   --row-line: rgb(255 255 255 / 0.28);
   --col-line: #7a7a7a;
+  --grid-row-line: #8a8a8a;
+  --grid-col-line: #b4b4b4;
   --glass-hi: rgb(255 255 255 / 0.04);
   --glass-lo: rgb(255 255 255 / 0.02);
   --glass-edge: rgb(255 255 255 / 0.55);
@@ -57,6 +59,8 @@
   --row-b: #f1f3f5;
   --row-line: rgb(0 0 0 / 0.35);
   --col-line: #5c636a;
+  --grid-row-line: #6b7178;
+  --grid-col-line: #3d4349;
   --glass-hi: #ffffff;
   --glass-lo: rgb(0 0 0 / 0.03);
   --glass-edge: rgb(0 0 0 / 0.6);

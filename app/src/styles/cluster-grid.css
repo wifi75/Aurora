@@ -1,5 +1,5 @@
-/* DX Cluster a griglia, come un foglio di calcolo: linee sottili tra righe e colonne (gli stessi colori delle linee di Attivita' di banda)
-   e colonne che si spostano e si allargano trascinando i titoli. Le colonne cambiano posto: le vecchie regole per posizione (nth-child)
+/* DX Cluster a griglia, come un foglio di calcolo: linee piene tra righe e colonne (le stesse delle tabelle del contest, --grid-*)
+   e colonne che si spostano e si allargano trascinando i titoli (meccanismo comune: movable-grid.css). Le colonne cambiano posto: le vecchie regole per posizione (nth-child)
    su larghezze, spostamenti, rientri e colonne nascoste non valgono piu' e qui si rimettono a zero; le larghezze vengono dal <colgroup>. */
 .cluster .cluster-table.cluster-grid {
   table-layout: fixed !important;
@@ -21,8 +21,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   border: 0 !important;
-  border-right: var(--border-width) solid var(--col-line) !important;
-  border-bottom: var(--border-width) solid var(--row-line) !important;
+  border-right: var(--border-width) solid var(--grid-col-line) !important;
+  border-bottom: var(--border-width) solid var(--grid-row-line) !important;
 }
 
 /* niente linea sul bordo destro della tabella: solo tra una colonna e l'altra */
@@ -39,29 +39,10 @@
   position: relative !important;
   font-size: 0.66rem !important;
   background: color-mix(in srgb, var(--text) 6%, transparent);
-  border-bottom-color: var(--col-line) !important;
+  border-bottom-color: var(--grid-col-line) !important;
   cursor: grab;
   user-select: none;
   touch-action: none;
-}
-
-.cluster .cluster-table.cluster-grid th:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
-.cluster .cluster-table.cluster-grid th.cl-h--dragging {
-  opacity: 0.55;
-  cursor: grabbing;
-}
-
-/* dove cade la colonna trascinata: una barra del colore d'accento sul bordo */
-.cluster .cluster-table.cluster-grid th.cl-h--drop-before {
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
-.cluster .cluster-table.cluster-grid th.cl-h--drop-after {
-  box-shadow: inset -3px 0 0 var(--accent);
 }
 
 .cluster .cluster-table.cluster-grid .cl-c--freq,
@@ -71,54 +52,4 @@
 
 .cluster .cluster-table.cluster-grid .cl-c--country .decode-flag {
   margin: 0 0.35em 0 0;
-}
-
-/* la maniglia sul bordo destro del titolo: si trascina per la larghezza, doppio clic la adatta al contenuto */
-.cl-grip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 7px;
-  height: 100%;
-  cursor: col-resize;
-  touch-action: none;
-  z-index: 2;
-}
-
-.cl-grip:hover,
-.cluster .cluster-table.cluster-grid th:hover .cl-grip {
-  background: linear-gradient(var(--accent), var(--accent)) right / 2px 100% no-repeat;
-}
-
-/* il menu del tasto destro sui titoli */
-.cl-menu {
-  position: fixed;
-  z-index: 1000;
-  min-width: 10rem;
-  padding: 0.25rem;
-  color: var(--text);
-  background: var(--panel-raised);
-  border: var(--border-width) solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 6px 20px var(--glass-shadow);
-}
-
-.cl-menu button {
-  display: block;
-  width: 100%;
-  padding: 0.35rem 0.6rem;
-  font: inherit;
-  font-size: 0.8rem;
-  text-align: left;
-  color: inherit;
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.cl-menu button:hover,
-.cl-menu button:focus-visible {
-  background: var(--glass-lo);
-  outline: none;
 }

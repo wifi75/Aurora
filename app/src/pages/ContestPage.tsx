@@ -25,7 +25,7 @@ import {
   type ContestRef,
 } from '../api/contest';
 import type { DecodedMessage } from '../api/schemas';
-import { useLang, useT, type T } from '../i18n';
+import { useLang, useT, type Key, type T } from '../i18n';
 import { saveText } from '../lib/foxLog';
 import { toast } from '../lib/toast';
 import { useEngineTx } from '../state/engineTx';
@@ -39,6 +39,7 @@ import { askConfirm } from '../components/ConfirmHost';
 import { TxQuickControls } from '../components/TxQuickControls';
 import { FreqPicker } from '../components/FreqPicker';
 import { Allenamento, AnalisiGara } from './ContestExtra';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../components/MovableColumns';
 import '../styles/contest.css';
 
 const ATTIVITA = ['standard', 'na-vhf', 'arrl-digi', 'ww-digi', 'eu-vhf', 'field-day', 'roundup'] as const;
@@ -315,6 +316,22 @@ function Cascata() {
 /** Il colore di un'etichetta come in Attivita' di banda (variabili --tag-* del tema). */
 const tag = (k: string) => ({ background: `var(--tag-${k})`, color: `var(--tag-${k}-ink)` });
 
+/** Colonne delle Decodifiche e del Log del contest: si spostano e si allargano trascinando i titoli, come nel DX Cluster. */
+const DEC_COLUMNS = ['utc', 'db', 'hz', 'msg', 'country', 'km', 'new', 'value'] as const;
+type DecCol = (typeof DEC_COLUMNS)[number];
+/** Larghezze di partenza in em (a 13 px sono le misure di prima in pixel); Paese prende lo spazio che avanza (al minimo 2,5 em, come prima
+ *  poteva stringersi del tutto: la tabella non diventa piu' larga del riquadro). */
+const DEC_EM: Record<DecCol, number> = { utc: 6.5, db: 3.3, hz: 3.9, msg: 15.8, country: 2.5, km: 5.6, new: 7.1, value: 5.7 };
+const DEC_COLS_KEY = 'aurora.contest.dec.cols';
+const DEC_LABEL: Partial<Record<DecCol, Key>> = { utc: 'contest.col.utc', msg: 'contest.col.msg', country: 'contest.col.country', new: 'contest.col.new', value: 'contest.col.value' };
+const DEC_NUM = new Set<DecCol>(['db', 'hz', 'km', 'value']);
+const LOG_COLUMNS = ['utc', 'band', 'call', 'rcvd', 'points', 'state'] as const;
+type LogCol = (typeof LOG_COLUMNS)[number];
+/** Larghezze di partenza in em, strette perche' il riquadro del log e' piccolo; Ricevuto prende lo spazio che avanza. */
+const LOG_EM: Record<LogCol, number> = { utc: 4.2, band: 3.8, call: 6.5, rcvd: 2.5, points: 5.5, state: 5.5 };
+const LOG_COLS_KEY = 'aurora.contest.log.cols';
+const LOG_LABEL: Record<LogCol, Key> = { utc: 'contest.col.utc', band: 'contest.col.band', call: 'contest.col.call', rcvd: 'contest.col.rcvd', points: 'contest.col.points', state: 'contest.col.state' };
+
 /** Il messaggio con il nominativo di chi trasmette a pastiglia, come la stazione DX nella pagina Stazione. */
 function pastiglia(text: string, call: string) {
   return text.split(/(\s+)/).map((p, i) => (call && p.toUpperCase() === call.toUpperCase() ? <mark key={i} className="dx-call">{p}</mark> : p));
@@ -538,6 +555,93 @@ function SelettoreBanda({ bande, t }: { bande: readonly string[]; t: T }) {
   );
 }
 
+/** La tabella delle Decodifiche: colonne che si spostano e si allargano trascinando i titoli; doppio clic su una riga per chiamare. */
+export function TabellaDecodifiche({ righe, dx, stella, nonContest, rispondi, t }: { righe: Riga[]; dx: string | null; stella: string | undefined; nonContest: ReadonlySet<string>; rispondi: (x: Riga) => void; t: T }) {
+  const prefs = usePrefs((p) => p.prefs);
+  const cols = useMovableColumns({ storageKey: DEC_COLS_KEY, columns: DEC_COLUMNS, defaultEm: DEC_EM, elastic: 'country' });
+  return (
+    <>
+      <table ref={cols.tableRef} className="ctc-dec-table mv-grid" style={cols.tableStyle}>
+        <MovableColGroup cols={cols} />
+        <thead onContextMenu={cols.openMenu}>
+          <tr>
+            {cols.visible.map((c, i) => {
+              const label = c === 'db' ? 'dB' : c === 'hz' ? 'Hz' : c === 'km' ? prefs.distanceUnit : t(DEC_LABEL[c] as Key);
+              return (
+                <MovableTh key={c} cols={cols} col={c} index={i} className={`ctc-c--${c}${DEC_NUM.has(c) ? ' num' : ''}`}>
+                  {label}
+                </MovableTh>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {righe.length === 0 ? (
+            <tr>
+              <td colSpan={cols.visible.length} className="ctc-muted">{t('contest.noDecodes')}</td>
+            </tr>
+          ) : null}
+          {righe.map(({ d, call, v }) => {
+            const inQso = call === dx;
+            const cls = inQso ? 'qso' : v?.doppio ? 'dup' : call === stella ? 'top' : '';
+            // novita' come le etichette di Attivita' di banda: i colori delle etichette (--tag-*) del tema
+            const novita = inQso ? (
+              <span className="badge badge--tag" style={tag('worked')}>{t('contest.inQso')}</span>
+            ) : v?.doppio ? (
+              // doppio su questa banda; se altrove vale ancora, le bande dove serve
+              <span className="badge badge--tag badge--quiet" title={v.bande_utili.length ? t('contest.dupeUseful', { b: v.bande_utili.join(' ') }) : t('contest.dupeAll')}>
+                {t('contest.dupe')}{v.bande_utili.length ? ` → ${v.bande_utili.join(' ')}` : ''}
+              </span>
+            ) : nonContest.has(call) ? (
+              <span className="badge badge--tag badge--quiet">{t('contest.nonContest')}</span>
+            ) : v?.fuori_regola ? (
+              <span className="badge badge--tag ctc-bad">{t('contest.outOfRules')}</span>
+            ) : v?.molt_nuovi.length ? (
+              v.molt_nuovi.map((m) => (
+                <span key={m} className="badge badge--tag" style={tag(/^[A-R]{2}\d{2}$/i.test(m) ? 'new-grid' : 'new-dxcc')}>
+                  {m}
+                </span>
+              ))
+            ) : null;
+            const code = prefs.showFlag ? flagCode(d.country ?? null) : null;
+            // ogni cella sa a quale colonna appartiene: le colonne cambiano posto e le celle le seguono
+            const cella = (c: DecCol) => {
+              switch (c) {
+                case 'utc':
+                  return <td key={c} className="ctc-c--utc ctc-muted">{utc(d.time_ms)}</td>;
+                case 'db':
+                  return <td key={c} className="ctc-c--db num">{d.snr > 0 ? `+${d.snr}` : d.snr}</td>;
+                case 'hz':
+                  return <td key={c} className="ctc-c--hz num ctc-muted">{d.freq_hz}</td>;
+                case 'msg':
+                  return <td key={c} className="ctc-c--msg">{pastiglia(d.text, call)}</td>;
+                case 'country':
+                  return (
+                    <td key={c} className="ctc-c--country ctc-country">
+                      {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {d.country ?? ''}
+                    </td>
+                  );
+                case 'km':
+                  return <td key={c} className="ctc-c--km num ctc-muted">{v && v.km > 0 ? formatDistance(v.km, prefs.distanceUnit) : ''}</td>;
+                case 'new':
+                  return <td key={c} className="ctc-c--new ctc-new-cell"><span className="ctc-new">{novita}</span></td>;
+                case 'value':
+                  return <td key={c} className="ctc-c--value num">{v && v.punti > 0 ? <span className="badge badge--tag ctc-pill">{(call === stella ? '★ ' : '') + t('contest.pt', { n: v.punti })}</span> : v ? t('contest.pt', { n: v.punti }) : ''}</td>;
+              }
+            };
+            return (
+              <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void rispondi({ d, call, grid: '', v })} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
+                {cols.visible.map(cella)}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <ColumnsMenu cols={cols} />
+    </>
+  );
+}
+
 function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, fine }: { s: ContestStato; t: T; vai: (v: 'allena' | 'analisi') => void; decodes: DecodedMessage[]; dx: string | null; dxGrid: string | null; transmitting: boolean; switches?: Partial<Record<string, boolean>>; apri: (m: 'regole' | 'calendario' | 'export' | 'impostazioni') => void; fine: () => void }) {
   const r = s.regole as Regole;
   const [campo, setCampo] = useState('');
@@ -591,7 +695,6 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   const idAdesso = new Set(decodificheVisibili(righe.map((x) => x.d), 'valore', modo).map((d) => d.id));
   const migliori = righe.filter((x) => idAdesso.has(x.d.id) && x.v && !x.v.doppio && !x.v.fuori_regola && x.call !== dx && x.d.text.startsWith('CQ'));
   const stella = migliori[0]?.call;
-  const prefs = usePrefs((p) => p.prefs);
   const tx = useEngineTx((e) => e.tx);
   const autoseq = !!switches?.autoseq;
   // Auto CQ: il CQ del contest ripetuto a ogni periodo finche' qualcuno risponde (messaggio 6 scelto e Abilita Tx acceso); F1 lo avvia,
@@ -675,75 +778,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
         </h2>
         </header>
         <div className="ctc-scroll data" ref={scrollRef} onScroll={(e) => { const el = e.currentTarget; alFondo.current = el.scrollHeight - el.clientHeight - el.scrollTop < 8; }}>
-          <table className="ctc-dec-table">
-            <colgroup>
-              <col className="w-utc" />
-              <col className="w-db" />
-              <col className="w-hz" />
-              <col className="w-msg" />
-              <col className="w-country" />
-              <col className="w-km" />
-              <col className="w-new" />
-              <col className="w-val" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>{t('contest.col.utc')}</th>
-                <th className="num">dB</th>
-                <th className="num">Hz</th>
-                <th>{t('contest.col.msg')}</th>
-                <th>{t('contest.col.country')}</th>
-                <th className="num">{prefs.distanceUnit}</th>
-                <th>{t('contest.col.new')}</th>
-                <th className="num">{t('contest.col.value')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {righe.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="ctc-muted">{t('contest.noDecodes')}</td>
-                </tr>
-              ) : null}
-              {righe.map(({ d, call, v }) => {
-                const inQso = call === dx;
-                const cls = inQso ? 'qso' : v?.doppio ? 'dup' : call === stella ? 'top' : '';
-                // novita' come le etichette di Attivita' di banda: i colori delle etichette (--tag-*) del tema
-                const novita = inQso ? (
-                  <span className="badge badge--tag" style={tag('worked')}>{t('contest.inQso')}</span>
-                ) : v?.doppio ? (
-                  // doppio su questa banda; se altrove vale ancora, le bande dove serve
-                  <span className="badge badge--tag badge--quiet" title={v.bande_utili.length ? t('contest.dupeUseful', { b: v.bande_utili.join(' ') }) : t('contest.dupeAll')}>
-                    {t('contest.dupe')}{v.bande_utili.length ? ` → ${v.bande_utili.join(' ')}` : ''}
-                  </span>
-                ) : nonContest.has(call) ? (
-                  <span className="badge badge--tag badge--quiet">{t('contest.nonContest')}</span>
-                ) : v?.fuori_regola ? (
-                  <span className="badge badge--tag ctc-bad">{t('contest.outOfRules')}</span>
-                ) : v?.molt_nuovi.length ? (
-                  v.molt_nuovi.map((m) => (
-                    <span key={m} className="badge badge--tag" style={tag(/^[A-R]{2}\d{2}$/i.test(m) ? 'new-grid' : 'new-dxcc')}>
-                      {m}
-                    </span>
-                  ))
-                ) : null;
-                const code = prefs.showFlag ? flagCode(d.country ?? null) : null;
-                return (
-                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void rispondi({ d, call, grid: '', v })} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
-                    <td className="ctc-muted">{utc(d.time_ms)}</td>
-                    <td className="num">{d.snr > 0 ? `+${d.snr}` : d.snr}</td>
-                    <td className="num ctc-muted">{d.freq_hz}</td>
-                    <td>{pastiglia(d.text, call)}</td>
-                    <td className="ctc-country">
-                      {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {d.country ?? ''}
-                    </td>
-                    <td className="num ctc-muted">{v && v.km > 0 ? formatDistance(v.km, prefs.distanceUnit) : ''}</td>
-                    <td className="ctc-new-cell"><span className="ctc-new">{novita}</span></td>
-                    <td className="num">{v && v.punti > 0 ? <span className="badge badge--tag ctc-pill">{(call === stella ? '★ ' : '') + t('contest.pt', { n: v.punti })}</span> : v ? t('contest.pt', { n: v.punti }) : ''}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <TabellaDecodifiche righe={righe} dx={dx} stella={stella} nonContest={nonContest} rispondi={(x) => void rispondi(x)} t={t} />
         </div>
       </section>
       <Cascata />
@@ -1206,12 +1241,13 @@ function MappaMoltiplicatori({ r, t, banda, decodes, scegli }: { r: Regole; t: T
   );
 }
 
-function LogContest({ t, qso }: { t: T; qso: number }) {
+export function LogContest({ t, qso }: { t: T; qso: number }) {
   const qc = useQueryClient();
   const log = useQuery({ queryKey: ['contest-log', qso], queryFn: getContestLog, refetchInterval: 10_000, retry: false }).data;
   const [modifica, setModifica] = useState<{ n: number; testo: string } | null>(null);
   // tasto destro su una riga: menu piccolo per segnarla valida, incerta o «non in contest» (0 punti, fuori dal Cabrillo)
   const [menu, setMenu] = useState<{ n: number; x: number; y: number } | null>(null);
+  const cols = useMovableColumns({ storageKey: LOG_COLS_KEY, columns: LOG_COLUMNS, defaultEm: LOG_EM, elastic: 'rcvd' });
   useEffect(() => {
     if (!menu) return;
     const chiudi = () => setMenu(null);
@@ -1229,6 +1265,61 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
     void qc.invalidateQueries({ queryKey: ['contest'] });
   };
   const salva = (n: number, patch: Parameters<typeof modificaQso>[1]) => modificaQso(n, patch).then(aggiorna).catch((e: unknown) => toast(String(e), 'error'));
+  // ogni cella sa a quale colonna appartiene: le colonne cambiano posto e le celle le seguono
+  const cella = (c: LogCol, q: LogQso) => {
+    switch (c) {
+      case 'utc':
+        return <td key={c} className="ctc-c--utc">{utcHm(q.time_ms)}</td>;
+      case 'band':
+        return <td key={c} className="ctc-c--band">{q.band}</td>;
+      case 'call':
+        return <td key={c} className="ctc-c--call">{q.call}</td>;
+      case 'rcvd':
+        return (
+          <td key={c} onClick={() => setModifica({ n: q.n, testo: q.exch_rcvd || q.grid })} className={`ctc-c--rcvd${q.scambio_ok ? '' : ' ctc-bad'}`} title={q.scambio_nota || (q.modificato ? t('contest.edited') : undefined)}>
+            {modifica?.n === q.n ? (
+              <input
+                className="ctc-input"
+                autoFocus
+                value={modifica.testo}
+                onChange={(e) => setModifica({ n: q.n, testo: e.target.value })}
+                onBlur={() => setModifica(null)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void salva(q.n, { exch_rcvd: modifica.testo });
+                    setModifica(null);
+                  }
+                  if (e.key === 'Escape') setModifica(null);
+                }}
+              />
+            ) : (
+              <>
+                {q.exch_rcvd || q.grid || '—'}
+                {q.modificato ? ' ✎' : ''}
+              </>
+            )}
+          </td>
+        );
+      case 'points':
+        return (
+          <td key={c} className={`ctc-c--points num${q.molt_nuovi.length ? ' ctc-val' : ''}`}>
+            {q.doppio ? t('contest.dupe') : `${q.punti}${q.molt_nuovi.length ? ` · ${t('contest.multShort')}` : ''}${q.stato === 'incerto' ? ` · ${t('contest.state.incerto')}` : ''}`}
+          </td>
+        );
+      case 'state':
+        return (
+          <td key={c} className="ctc-c--state">
+            <select className="ctc-mini" aria-label={t('contest.state.valido')} value={q.stato} onChange={(e) => void salva(q.n, { stato: e.target.value as LogQso['stato'] })}>
+              {(['valido', 'incerto', 'errore'] as const).map((x) => (
+                <option key={x} value={x}>
+                  {t(`contest.state.${x}`)}
+                </option>
+              ))}
+            </select>
+          </td>
+        );
+    }
+  };
   return (
     <section className="dock-panel ctc-box ctc-logbox">
       <header className="dock-grip dock-grip--fixed">
@@ -1244,15 +1335,15 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
       </h2>
         </header>
       <div className="ctc-scroll data">
-        <table>
-          <thead>
+        <table ref={cols.tableRef} className="ctc-log-table mv-grid" style={cols.tableStyle}>
+          <MovableColGroup cols={cols} />
+          <thead onContextMenu={cols.openMenu}>
             <tr>
-              <th>{t('contest.col.utc')}</th>
-              <th>{t('contest.col.band')}</th>
-              <th>{t('contest.col.call')}</th>
-              <th>{t('contest.col.rcvd')}</th>
-              <th className="num">{t('contest.col.points')}</th>
-              <th />
+              {cols.visible.map((c, i) => (
+                <MovableTh key={c} cols={cols} col={c} index={i} className={`ctc-c--${c}${c === 'points' ? ' num' : ''}`}>
+                  {t(LOG_LABEL[c])}
+                </MovableTh>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -1263,47 +1354,11 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
                 title={t('tip.contest.rowMenu')}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  cols.closeMenu();
                   setMenu({ n: q.n, x: e.clientX, y: e.clientY });
                 }}
               >
-                <td>{utcHm(q.time_ms)}</td>
-                <td>{q.band}</td>
-                <td>{q.call}</td>
-                <td onClick={() => setModifica({ n: q.n, testo: q.exch_rcvd || q.grid })} className={q.scambio_ok ? undefined : 'ctc-bad'} title={q.scambio_nota || (q.modificato ? t('contest.edited') : undefined)}>
-                  {modifica?.n === q.n ? (
-                    <input
-                      className="ctc-input"
-                      autoFocus
-                      value={modifica.testo}
-                      onChange={(e) => setModifica({ n: q.n, testo: e.target.value })}
-                      onBlur={() => setModifica(null)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          void salva(q.n, { exch_rcvd: modifica.testo });
-                          setModifica(null);
-                        }
-                        if (e.key === 'Escape') setModifica(null);
-                      }}
-                    />
-                  ) : (
-                    <>
-                      {q.exch_rcvd || q.grid || '—'}
-                      {q.modificato ? ' ✎' : ''}
-                    </>
-                  )}
-                </td>
-                <td className={`num${q.molt_nuovi.length ? ' ctc-val' : ''}`}>
-                  {q.doppio ? t('contest.dupe') : `${q.punti}${q.molt_nuovi.length ? ` · ${t('contest.multShort')}` : ''}${q.stato === 'incerto' ? ` · ${t('contest.state.incerto')}` : ''}`}
-                </td>
-                <td>
-                  <select className="ctc-mini" aria-label={t('contest.state.valido')} value={q.stato} onChange={(e) => void salva(q.n, { stato: e.target.value as LogQso['stato'] })}>
-                    {(['valido', 'incerto', 'errore'] as const).map((x) => (
-                      <option key={x} value={x}>
-                        {t(`contest.state.${x}`)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
+                {cols.visible.map((c) => cella(c, q))}
               </tr>
             ))}
           </tbody>
@@ -1316,6 +1371,7 @@ function LogContest({ t, qso }: { t: T; qso: number }) {
           <button type="button" role="menuitem" className="ctc-bad" onClick={() => void salva(menu.n, { stato: 'errore' })}>{t('contest.notInContest')}</button>
         </div>
       ) : null}
+      <ColumnsMenu cols={cols} />
     </section>
   );
 }
