@@ -10,6 +10,13 @@ import { replyErrorMessage } from '../lib/replyError';
 import { TxQuickControls } from './TxQuickControls';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 
+/** Il rapporto del motore («-07», «+05») come lo mostra il campo numerico («-7», «5»); `null` se non c'e' o non e' un numero. */
+function reportField(report: string | null | undefined): string | null {
+  if (report == null) return null;
+  const db = Number.parseInt(report.trim(), 10);
+  return Number.isFinite(db) ? String(db) : null;
+}
+
 interface Props {
   /** La trasmissione e' aperta su questo PC (AURORA_ALLOW_TX=1). */
   txAllowed: boolean;
@@ -32,7 +39,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   const controls = useQuery({ queryKey: ['controls'], queryFn: getControls, refetchInterval: 3000, retry: false });
   const state = useShownControls(controls.data ?? {});
   const reachable = !controls.isError;
-  const [report, setReport] = useState(String(status?.report ?? '-10').replace(/^\+/, ''));
+  const [report, setReport] = useState(reportField(status?.report) ?? '-10');
   const [txHz, setTxHz] = useState(String(status?.tx_df ?? initialFrequency));
   const [rxHz, setRxHz] = useState(String(status?.rx_df ?? initialFrequency));
   // i messaggi dei Comandi come avvisi a comparsa (toast): una riga sotto i pulsanti finiva sopra il bordo della finestra
@@ -63,6 +70,13 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   useEffect(() => {
     if (status?.rx_df != null) setRxHz(String(status.rx_df));
   }, [status?.rx_df]);
+  // anche il rapporto: il motore lo prende dall'SNR del DX quando scegli o rispondi a una stazione (il `rptSpinBox` di WSJT-X); quello
+  // scritto qui a mano torna dal motore uguale e resta finche' il motore non ne prende uno nuovo (stazione dopo, o in FT8/FT4 un nuovo
+  // messaggio del DX con un altro SNR, come WSJT-X). Prima restava fermo al valore d'apertura (-10)
+  useEffect(() => {
+    const shown = reportField(status?.report);
+    if (shown !== null) setReport(shown);
+  }, [status?.report]);
 
   const run = async (what: string, action: () => Promise<void>) => {
     try {

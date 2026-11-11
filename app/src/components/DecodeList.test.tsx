@@ -382,6 +382,36 @@ describe('DecodeList', () => {
     useStation.setState({ status: null });
   });
 
+  it('right-click on the callsign opens a menu with «Apri su QRZ.com» and the queue', () => {
+    const onQueue = vi.fn();
+    render(<DecodeList myCall="AA1AA" onQueue={onQueue} decodes={[decode({ id: 1, text: 'CQ EA8/BB2BB IL18' })]} onReply={() => {}} />);
+    const call = document.querySelector('.decode-sender') as HTMLElement;
+    expect(call).toHaveTextContent('EA8/BB2BB');
+    fireEvent.contextMenu(call);
+    // il tasto destro sul nominativo apre il menu e non mette subito in coda
+    expect(onQueue).not.toHaveBeenCalled();
+    const qrz = screen.getByRole('menuitem', { name: 'Apri su QRZ.com' });
+    expect(qrz).toHaveAttribute('href', 'https://www.qrz.com/db/EA8%2FBB2BB');
+    expect(qrz).toHaveAttribute('target', '_blank');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Metti in coda' }));
+    expect(onQueue).toHaveBeenCalledWith(1);
+    expect(screen.queryByRole('menu')).toBeNull();
+    // sul resto della riga il tasto destro mette in coda come prima, senza menu
+    fireEvent.contextMenu(screen.getByText('-12'));
+    expect(onQueue).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('closes the callsign menu with Esc', () => {
+    render(<DecodeList decodes={[decode({ id: 1, text: 'CQ BB2BB IL18' })]} onReply={() => {}} />);
+    fireEvent.contextMenu(document.querySelector('.decode-sender') as HTMLElement);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    // senza onQueue il menu ha solo QRZ.com
+    expect(screen.getAllByRole('menuitem')).toHaveLength(1);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('shows a Fox row whole, with the FOX tag and the flag and country of the Fox (the call between < >)', async () => {
     // riga DXpedition (i3=0 n3=1) sotto i 1000 Hz: il motore non da' il paese (il mittente e' tra < >), lo si chiede al file dei prefissi
     const text = 'IU3ABC RR73; K1ABC <3X4U> -15';

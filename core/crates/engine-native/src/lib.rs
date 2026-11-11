@@ -196,6 +196,9 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     transmitting: live.controls.transmitting.load(Ordering::Relaxed),
                     dx_call: view.dx.clone(),
                     dx_grid: view.dx_grid.clone(),
+                    // il rapporto che la sequenza manda (Tx2/Tx3), con il segno come in JTDX («-10», «+05»): il campo «Rapporto» dei Comandi
+                    // lo segue, come il `rptSpinBox` di WSJT-X che cambia a ogni stazione scelta
+                    report: view.report.map(|r| format!("{r:+03}")),
                     tx_message: selected_text,
                     decoding: live.controls.is_monitoring(),
                     de_call: live.de_call.clone(),

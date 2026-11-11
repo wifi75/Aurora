@@ -77,6 +77,30 @@ describe('TxCommands', () => {
     await waitFor(() => expect(postReport).toHaveBeenCalledWith(-7));
   });
 
+  it('follows the report the engine uses (from the DX SNR) and keeps a hand-written one until the next station', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (s: StationStatus) => (
+      <QueryClientProvider client={client}>
+        <TxCommands txAllowed status={s} />
+      </QueryClientProvider>
+    );
+    const { rerender } = rtlRender(ui({ ...status, report: '-17' }));
+    const report = screen.getByLabelText(/rapporto/i);
+    expect(report).toHaveValue(-17);
+    // nuova stazione scelta: il motore riporta il suo SNR, il campo lo segue (prima restava fermo a -10)
+    rerender(ui({ ...status, dx_call: 'CC3CC', report: '+05' }));
+    expect(report).toHaveValue(5);
+    // a mano: il valore resta e il motore lo rimanda uguale
+    fireEvent.change(report, { target: { value: '-3' } });
+    fireEvent.keyDown(report, { key: 'Enter' });
+    await waitFor(() => expect(postReport).toHaveBeenCalledWith(-3));
+    rerender(ui({ ...status, dx_call: 'CC3CC', report: '-03' }));
+    expect(report).toHaveValue(-3);
+    // la stazione dopo porta il suo rapporto
+    rerender(ui({ ...status, dx_call: 'DD4DD', report: '-12' }));
+    expect(report).toHaveValue(-12);
+  });
+
   it('turns Hold Tx Freq on and off', async () => {
     render(<TxCommands txAllowed status={status} />);
     fireEvent.click(await screen.findByRole('button', { name: /hold tx freq/i }));

@@ -203,6 +203,19 @@ describe('ClusterPanel', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('right-click on the DX callsign opens «Apri su QRZ.com»', async () => {
+    oneSpot();
+    show();
+    fireEvent.contextMenu(await screen.findByText('JA1ABC'), { clientX: 40, clientY: 10 });
+    const qrz = screen.getByRole('menuitem', { name: 'Apri su QRZ.com' });
+    expect(qrz).toHaveAttribute('href', 'https://www.qrz.com/db/JA1ABC');
+    expect(qrz).toHaveAttribute('target', '_blank');
+    // nel cluster non c'e' una coda: solo QRZ.com
+    expect(screen.getAllByRole('menuitem')).toHaveLength(1);
+    fireEvent.click(qrz);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('the columns hidden by the cog are not drawn, the others keep their order', async () => {
     localStorage.setItem('aurora.cluster.cols', JSON.stringify({ order: ['dx', 'de', 'freq', 'country', 'mode', 'comment', 'time'] }));
     oneSpot();

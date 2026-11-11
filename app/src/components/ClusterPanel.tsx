@@ -1,6 +1,6 @@
 import { toast } from '../lib/toast';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { getClusterSpots, getDxcc, getDxped, getStationInfo, postFrequency, postMode, rotatorGoto, type ClusterSpot } from '../api/client';
 import { bearingDeg, gridCenter, type Point } from '../lib/geo';
@@ -16,6 +16,8 @@ import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
 import { CallsignTip, prefetchCallsigns } from './CallsignTip';
+import { CallMenu, callMenuAt, type CallMenuState } from './CallMenu';
+import { cleanCall } from '../lib/callsignPage';
 import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
@@ -90,6 +92,8 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
   const [layout, setLayoutState] = useState<ClusterColumnLayout>(readClusterLayout);
   const [drag, setDrag] = useState<{ col: ClusterColumn; before: ClusterColumn | null } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [callMenu, setCallMenu] = useState<CallMenuState | null>(null);
+  const closeCallMenu = useCallback(() => setCallMenu(null), []);
   const table = useRef<HTMLTableElement | null>(null);
   const menuBox = useRef<HTMLDivElement | null>(null);
   const focusCol = useRef<ClusterColumn | null>(null);
@@ -359,6 +363,14 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
     }
     setMenu({ x, y });
   };
+  /** Tasto destro sul nominativo (DX o chi l'ha segnalato): il menu con «Apri su QRZ.com». */
+  const openCallMenu = (e: ReactMouseEvent<HTMLElement>, call: string) => {
+    const clean = cleanCall(call);
+    if (!clean) return;
+    e.preventDefault();
+    setMenu(null);
+    setCallMenu(callMenuAt(e, clean));
+  };
   const resetColumns = () => {
     setMenu(null);
     setLayout(() => defaultClusterLayout());
@@ -368,7 +380,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
     switch (c) {
       case 'de':
         return (
-          <td key={c} className="data cluster-de cl-c cl-c--de" title={`${spotAge(s)} s`}>
+          <td key={c} className="data cluster-de cl-c cl-c--de" title={`${spotAge(s)} s`} onContextMenu={(e) => openCallMenu(e, s.spotter)}>
             <CallsignTip call={s.spotter}>{s.spotter}</CallsignTip>
           </td>
         );
@@ -380,7 +392,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
         );
       case 'dx':
         return (
-          <td key={c} className="cl-c cl-c--dx">
+          <td key={c} className="cl-c cl-c--dx" onContextMenu={(e) => openCallMenu(e, s.dx_call)}>
             <CallsignTip call={s.dx_call}><strong className="data cluster-dx">{s.dx_call}</strong></CallsignTip>
           </td>
         );
@@ -506,6 +518,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
             document.body,
           )
         : null}
+      <CallMenu menu={callMenu} onClose={closeCallMenu} />
     </div>
   );
 }
