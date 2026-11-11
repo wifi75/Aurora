@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-11, versione 0.11.233 (2026-11-11; da controllare i lavori Windows, Linux e macOS della release). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-11, versione 0.11.234 (2026-11-11; da controllare i lavori Windows, Linux e macOS della release). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 ## Decisioni del 2026-11-10 notte (CW, log, PTT)
 

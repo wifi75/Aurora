@@ -20,6 +20,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.234',
+    released: '2026-11-11T00:00:00Z',
+    kind: 'fixed',
+    title: [
+      'OmniRig stabile, senza la finestrella che si riapre',
+      'Stable OmniRig, without the little window popping up again',
+      'OmniRig stabil, ohne das ständig wieder aufgehende Fensterchen',
+      'OmniRig stable, sans la petite fenêtre qui se rouvre',
+      'OmniRig estable, sin la ventanita que se reabre',
+      'OmniRig estável, sem a janelinha que volta a abrir',
+    ],
+    text: [
+      'Con OmniRig il collegamento non va più a intermittenza e la sua finestrella non si riapre di continuo: Aurora ora tiene aperto un solo oggetto OmniRig per tutto il collegamento, come WSJT-X, e lo ricrea da sola se OmniRig viene riavviato. Il cambio di frequenza usa anche la radio 2 quando è scelta. Se la scheda audio di trasmissione non c’è ancora all’avvio (radio spenta, USB staccato) è un’attesa normale e non viene più segnalata come errore.',
+      'With OmniRig the connection is no longer intermittent and its little window no longer keeps popping up: Aurora now keeps a single OmniRig object open for the whole connection, like WSJT-X, and recreates it by itself if OmniRig is restarted. Frequency changes also use radio 2 when it is selected. If the transmit audio card is not there yet at start-up (radio off, USB unplugged) this is a normal wait and is no longer reported as an error.',
+      'Mit OmniRig ist die Verbindung nicht mehr unstabil und sein Fensterchen geht nicht mehr ständig auf: Aurora hält jetzt ein einziges OmniRig-Objekt für die ganze Verbindung offen, wie WSJT-X, und erstellt es selbst neu, wenn OmniRig neu gestartet wird. Frequenzwechsel verwenden auch Funkgerät 2, wenn es gewählt ist. Fehlt die Sende-Audiokarte beim Start noch (Funkgerät aus, USB abgezogen), ist das ein normales Warten und wird nicht mehr als Fehler gemeldet.',
+      'Avec OmniRig la connexion n’est plus intermittente et sa petite fenêtre ne se rouvre plus sans cesse : Aurora garde maintenant un seul objet OmniRig ouvert pendant toute la connexion, comme WSJT-X, et le recrée seule si OmniRig est redémarré. Le changement de fréquence utilise aussi la radio 2 quand elle est choisie. Si la carte audio d’émission n’est pas encore là au démarrage (radio éteinte, USB débranché), c’est une attente normale et ce n’est plus signalé comme une erreur.',
+      'Con OmniRig la conexión ya no es intermitente y su ventanita ya no se reabre continuamente: Aurora mantiene ahora un único objeto OmniRig abierto durante toda la conexión, como WSJT-X, y lo recrea sola si OmniRig se reinicia. El cambio de frecuencia usa también la radio 2 cuando está elegida. Si la tarjeta de audio de transmisión aún no está al arrancar (radio apagada, USB desconectado) es una espera normal y ya no se notifica como error.',
+      'Com o OmniRig a ligação já não é intermitente e a sua janelinha já não volta a abrir constantemente: o Aurora mantém agora um único objeto OmniRig aberto durante toda a ligação, como o WSJT-X, e recria-o sozinho se o OmniRig for reiniciado. A mudança de frequência usa também o rádio 2 quando está escolhido. Se a placa de áudio de transmissão ainda não existir no arranque (rádio desligado, USB desligado) é uma espera normal e já não é comunicada como erro.',
+    ],
+  },
+  {
     version: '0.11.233',
     released: '2026-11-11T09:35:43Z',
     kind: 'fixed',
@@ -569,20 +590,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouveaux modes Q65-30A et MSK144 (meteor scatter, avec les messages courts et le décodage en temps réel) ; JT4 avec les sous-modes A à G. Bandes de 2200 m à 24 GHz avec les fréquences de WSJT-X et un seul sélecteur de bande et de fréquence (clic droit : Band Hopping). Interrupteurs de réception dans une barre à segments, « R » plus locator vaut confirmation, au démarrage la radio va sur la fréquence principale. LogHX prêt dans Programmes reliés, avec son guide. Mise à jour automatique plus robuste (réessaie toute seule et dit pourquoi si elle échoue). Version Mac (.dmg) parmi les fichiers de la version.',
       'Nuevos modos Q65-30A y MSK144 (meteor scatter, con los mensajes cortos y la decodificación en tiempo real); JT4 con los submodos A a G. Bandas de 2200 m a 24 GHz con las frecuencias de WSJT-X y un solo selector de banda y frecuencia (clic derecho: Band Hopping). Interruptores de recepción en una barra de segmentos, «R» más locator vale como confirmación, al arrancar la radio va a la frecuencia principal. LogHX listo en Programas conectados, con su guía. Actualización automática más robusta (reintenta sola y dice el motivo si falla). Versión para Mac (.dmg) entre los archivos de la versión.',
       'Novos modos Q65-30A e MSK144 (meteor scatter, com as mensagens curtas e a descodificação em tempo real); JT4 com os submodos A a G. Bandas de 2200 m a 24 GHz com as frequências do WSJT-X e um só seletor de banda e frequência (clique direito: Band Hopping). Interruptores de receção numa barra de segmentos, «R» mais locator vale como confirmação, ao arrancar o rádio vai para a frequência principal. LogHX pronto em Programas ligados, com o seu guia. Atualização automática mais robusta (tenta de novo sozinha e diz o motivo se falhar). Versão para Mac (.dmg) entre os ficheiros da versão.',
-    ],
-  },
-  {
-    version: '0.11.194',
-    released: '2026-11-08T07:01:11Z',
-    kind: 'new',
-    title: ['JT4, tendina delle frequenze e correzione del cambio banda', 'JT4, frequency list and band change fix', 'JT4, Frequenzliste und Korrektur des Bandwechsels', 'JT4, liste des fréquences et correction du changement de bande', 'JT4, lista de frecuencias y corrección del cambio de banda', 'JT4, lista de frequências e correção da mudança de banda'],
-    text: [
-      'Nuovo modo JT4. Accanto alle bande una tendina con tutte le frequenze del modo, come in WSJT-X. Corretto il rimbalzo della radio fra due bande. I tasti del display non diventano più grigi.',
-      'New JT4 mode. Next to the bands a list with all frequencies of the mode, as in WSJT-X. Fixed the radio bouncing between two bands. Display buttons no longer turn grey.',
-      'Neuer Modus JT4. Neben den Bändern eine Liste aller Frequenzen des Modus, wie in WSJT-X. Behoben: Funkgerät sprang zwischen zwei Bändern. Display-Tasten werden nicht mehr grau.',
-      'Nouveau mode JT4. À côté des bandes une liste de toutes les fréquences du mode, comme dans WSJT-X. Corrigé : la radio sautait entre deux bandes. Les touches de l’afficheur ne deviennent plus grises.',
-      'Nuevo modo JT4. Junto a las bandas una lista con todas las frecuencias del modo, como en WSJT-X. Corregido el salto de la radio entre dos bandas. Los botones del display ya no se vuelven grises.',
-      'Novo modo JT4. Ao lado das bandas uma lista com todas as frequências do modo, como no WSJT-X. Corrigido o salto do rádio entre duas bandas. Os botões do display já não ficam cinzentos.',
     ],
   },
 ];
