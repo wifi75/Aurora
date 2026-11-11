@@ -2,6 +2,7 @@
 
 pub mod wake;
 pub mod bands;
+pub mod busy_port;
 pub mod cat;
 pub mod cat4om;
 pub mod cat_config;

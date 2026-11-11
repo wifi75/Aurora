@@ -374,11 +374,24 @@ impl tracing::field::Visit for Testo {
 /// Situazioni che dipendono da come e' configurata la stazione, non da un errore del programma: la radio non ancora collegata o non
 /// accesa (nei rapporti del 2026-11-09 erano un terzo delle righe, da 80 installazioni), o il TX premuto nei primi secondi dopo il
 /// collegamento, quando il PTT e' fermo apposta (protezione voluta, rapporti del 2026-11-10). L'interfaccia le dice gia' all'operatore.
+/// Lo stesso per la porta seriale tenuta da un altro programma («La porta COM8 e' occupata da OmniRig», `rig_control::busy_port`) e per
+/// OmniRig che non risponde mentre si avvia o con la radio non in linea (rapporti del 2026-11-11 da 0.11.236/0.11.237).
 fn scelta_dell_operatore(testo: &str) -> bool {
     let t = testo.to_lowercase();
-    ["nessuna radio collegata", "radio non collegata", "nessuna radio tci collegata", "radio tci non collegata", "link non collegata", "radio non in linea", "scegli prima il modello della radio", "dopo il collegamento"]
-        .iter()
-        .any(|p| t.contains(p))
+    [
+        "nessuna radio collegata",
+        "radio non collegata",
+        "nessuna radio tci collegata",
+        "radio tci non collegata",
+        "link non collegata",
+        "radio non in linea",
+        "scegli prima il modello della radio",
+        "dopo il collegamento",
+        "e' occupata da",
+        "in linea in omnirig?",
+    ]
+    .iter()
+    .any(|p| t.contains(p))
 }
 
 /// Gli errori sempre; gli avvisi solo di radio, PTT e audio. Mai quelli dei rapporti stessi e delle librerie di rete che usano.
@@ -1129,6 +1142,10 @@ mod tests {
         assert!(super::scelta_dell_operatore("PTT: spegnimento fallito (x): PTT: radio non collegata"));
         assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: PTT bloccato per altri 3 s dopo il collegamento"));
         assert!(!super::scelta_dell_operatore("errore del flusso di uscita audio: Failed to get current padding"));
+        // la porta tenuta da un altro programma e OmniRig che si avvia (o con la radio spenta): avvisi a schermo, non rapporti
+        assert!(super::scelta_dell_operatore("PTT sulla seriale non attivo: La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio"));
+        assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: OmniRig non risponde: la radio e' accesa e in linea in OmniRig?"));
+        assert!(!super::scelta_dell_operatore("trasmissione fallita: PTT: OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti"));
     }
 
     #[test]

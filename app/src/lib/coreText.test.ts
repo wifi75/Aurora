@@ -36,6 +36,15 @@ describe('coreText', () => {
     expect(coreText('Cat4OM ha rifiutato setMode: mode not supported (INVALID_MODE)', t as never)).toBe('core.cat4om.refused{"cmd":"setMode","raw":"mode not supported","code":"INVALID_MODE"}');
   });
 
+  it('translates the busy serial port and OmniRig not ready', () => {
+    const omni = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
+    expect(coreText(omni, t as never)).toBe('core.portHeldOmni{"port":"COM8"}');
+    expect(coreText(`${omni} Nuovo tentativo tra 5 s.`, t as never)).toBe('core.retry{"cause":"core.portHeldOmni{\\"port\\":\\"COM8\\"}","s":"5"}');
+    expect(coreText("La porta COM3 e' occupata da N1MM Logger+: chiudi N1MM Logger+ e premi Collega", t as never)).toBe('core.portHeldBy{"port":"COM3","who":"N1MM Logger+"}');
+    expect(coreText("La porta /dev/ttyUSB0 e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e premi Collega", t as never)).toBe('core.portHeld{"port":"/dev/ttyUSB0"}');
+    expect(coreText("OmniRig non risponde: la radio e' accesa e in linea in OmniRig?", t as never)).toBe('core.omniNotReady');
+  });
+
   it('leaves an unknown message as it is', () => {
     expect(coreText('qualcosa di nuovo', t as never)).toBe('qualcosa di nuovo');
     expect(coreText(null, t as never)).toBe('');

@@ -269,7 +269,11 @@ impl CatService {
             Backend::Omnirig => {
                 self.set_omni(LinkState::Connecting, "Collegamento a OmniRig");
                 match WindowsRig.frequency() {
-                    Ok(_) => self.set_omni(LinkState::Connected, ""),
+                    Ok(_) => {
+                        self.set_omni(LinkState::Connected, "");
+                        // l'oggetto del PTT pronto prima della prima trasmissione (il PTT non aspetta mai una creazione lunga)
+                        crate::omnirig::warm_up_ptt_in_background();
+                    }
                     Err(e) => self.set_omni(LinkState::Error, &friendly_error(&e.0)),
                 }
             }

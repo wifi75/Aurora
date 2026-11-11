@@ -7,6 +7,15 @@
 //! `CoInitializeEx(COINIT_APARTMENTTHREADED)`) che riceve i lavori da una coda e risponde su un canale. Chi chiama aspetta al massimo un tempo
 //! fissato: se OmniRig resta bloccato il thread si abbandona e la richiesta dopo ne apre uno nuovo (come la sessione PowerShell che si riapriva).
 //!
+//! Rapporti del 2026-11-11 (i5-3570, Windows 10: «nessuna risposta entro 20 s», «PTT: OmniRig non risponde»). WSJT-X non ha tempi massimi:
+//! le chiamate dell'oggetto `dumpcpp` sono sincrone e, alla partenza, aspetta solo 5 volte 300 ms che `Status` diventi `ST_ONLINE`
+//! (`OmniRigTransceiver.cpp:171-185`); una radio che va fuori linea la aspetta 10 s prima di dirlo (`offline_timer_`, righe 392-404). Qui:
+//! - la prima creazione (che puo' avviare OmniRig.exe) ha piu' tempo (`Worker::first_timeout`) e il thread che la sta facendo non si abbandona;
+//! - un tempo scaduto mentre OmniRig si avvia o con la radio non in linea e' un avviso per l'operatore, non un errore da segnalare: lo e' solo
+//!   quando si ripete con la radio in linea ([`crate::omnirig::timeout_verdict`]);
+//! - un lavoro arrivato in ritardo non parte piu' (`Wait::skip_if_late`), tranne lo spegnimento del PTT;
+//! - con [`MAX_STUCK`] thread ancora bloccati dentro OmniRig non se ne aprono altri.
+//!
 //! Gli eventi di OmniRig (`IOmniRigXEvents`: `StatusChange`, `ParamsChange`...) non si usano: OmniRig li manda a ogni cliente iscritto in modo
 //! sincrono, e un cliente che in quel momento aspetta la radio (le attese a scatti di [`crate::omnirig`]) bloccherebbe OmniRig stesso; in piu'
 //! servirebbe un `IDispatch` scritto in Rust con gli identificativi degli eventi, che su questo PC (senza OmniRig) non si possono verificare.
@@ -16,7 +25,11 @@
 
 use std::{
     mem::ManuallyDrop,
-    sync::{Mutex, mpsc},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicU64, Ordering},
+        mpsc,
+    },
     time::Duration,
 };
 
@@ -38,26 +51,72 @@ use windows::{
 
 use crate::{
     RigError,
-    omnirig::{RigApi, ST_ONLINE, explain_omnirig},
+    omnirig::{RigApi, ST_ONLINE, TimeoutCause, explain_omnirig, last_status, note_status, timeout_verdict},
 };
 
 /// `LOCALE_USER_DEFAULT`: la lingua con cui si cercano i nomi (OmniRig non ne fa uso).
 const LCID: u32 = 0x0400;
 
+/// Thread abbandonati e ancora bloccati dentro OmniRig oltre i quali non se ne apre un altro: OmniRig e' bloccato e ogni thread nuovo si
+/// bloccherebbe allo stesso modo (prima se ne apriva uno a ogni ricontrollo, ogni 10 s, e restavano tutti appesi).
+const MAX_STUCK: usize = 2;
+
 type Job = Box<dyn FnOnce(&mut Com) + Send>;
+
+/// Lo stato di un thread COM: in corso, abbandonato da chi aspettava (ancora bloccato in una chiamata), uscito.
+const RUNNING: u8 = 0;
+const ABANDONED: u8 = 1;
+const EXITED: u8 = 2;
+
+/// Il thread COM vivo: il canale dei lavori, se l'oggetto OmniRig e' pronto (creato e primo contatto fatto) e il suo stato.
+struct Live {
+    generation: u64,
+    tx: mpsc::Sender<Job>,
+    ready: Arc<AtomicBool>,
+    state: Arc<AtomicU8>,
+}
+
+/// Come aspettare un lavoro.
+#[derive(Clone, Copy)]
+pub(crate) struct Wait {
+    /// Un tempo diverso da quello del thread (per esempio la preparazione dell'oggetto del PTT, che puo' avviare OmniRig).
+    pub(crate) allowance: Option<Duration>,
+    /// Il lavoro non parte piu' se chi l'ha chiesto ha gia' smesso di aspettare (cambi di frequenza e letture vecchie, PTT acceso in
+    /// ritardo). Lo spegnimento del PTT invece parte sempre.
+    pub(crate) skip_if_late: bool,
+}
 
 /// Un thread COM con la sua coda, aperto alla prima richiesta.
 pub(crate) struct Worker {
     name: &'static str,
+    /// Il tempo massimo di un lavoro con l'oggetto OmniRig gia' pronto.
     timeout: Duration,
-    /// Il canale verso il thread vivo e il suo numero (per non abbandonare per sbaglio un thread nuovo).
-    slot: Mutex<Option<(u64, mpsc::Sender<Job>)>>,
-    next: std::sync::atomic::AtomicU64,
+    /// Il tempo massimo finche' l'oggetto non e' pronto: la prima creazione puo' dover avviare OmniRig.exe (che mostra la sua finestra e apre
+    /// la porta della radio) e su un PC lento ci vogliono molti secondi (rapporti del 2026-11-11: «nessuna risposta entro 20 s»).
+    first_timeout: Duration,
+    /// Il thread vivo (con il suo numero, per non abbandonare per sbaglio un thread nuovo).
+    slot: Mutex<Option<Live>>,
+    next: AtomicU64,
+    /// Gli stati dei thread abbandonati: quelli ancora `ABANDONED` sono bloccati dentro OmniRig.
+    abandoned: Mutex<Vec<Arc<AtomicU8>>>,
+    /// Tempi scaduti di fila con la radio in linea (solo questi, ripetuti, sono un errore da segnalare).
+    online_timeouts: AtomicU32,
 }
 
+/// Il canale verso il thread vivo con il suo numero, la sua prontezza e il suo stato.
+type Sender = (u64, mpsc::Sender<Job>, Arc<AtomicBool>, Arc<AtomicU8>);
+
 impl Worker {
-    pub(crate) const fn new(name: &'static str, timeout: Duration) -> Worker {
-        Worker { name, timeout, slot: Mutex::new(None), next: std::sync::atomic::AtomicU64::new(0) }
+    pub(crate) const fn new(name: &'static str, timeout: Duration, first_timeout: Duration) -> Worker {
+        Worker {
+            name,
+            timeout,
+            first_timeout,
+            slot: Mutex::new(None),
+            next: AtomicU64::new(0),
+            abandoned: Mutex::new(Vec::new()),
+            online_timeouts: AtomicU32::new(0),
+        }
     }
 
     /// C'e' un thread aperto (quindi, di norma, un oggetto OmniRig tenuto in vita).
@@ -72,60 +131,124 @@ impl Worker {
         }
     }
 
-    fn sender(&self) -> Result<(u64, mpsc::Sender<Job>), RigError> {
+    /// Il thread vivo, o uno nuovo. Con troppi thread ancora bloccati dentro OmniRig non se ne apre un altro.
+    fn sender(&self) -> Result<Sender, RigError> {
         let mut slot = self.slot.lock().unwrap_or_else(|p| p.into_inner());
-        if let Some((generation, tx)) = slot.as_ref() {
-            return Ok((*generation, tx.clone()));
+        if let Some(live) = slot.as_ref() {
+            return Ok((live.generation, live.tx.clone(), Arc::clone(&live.ready), Arc::clone(&live.state)));
+        }
+        if self.stuck() >= MAX_STUCK {
+            tracing::info!("OmniRig ({}): {MAX_STUCK} comandi ancora bloccati dentro OmniRig, non apro un altro thread", self.name);
+            return Err(RigError(explain_omnirig("non risponde")));
         }
         let (tx, rx) = mpsc::channel::<Job>();
-        let generation = self.next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let generation = self.next.fetch_add(1, Ordering::SeqCst);
+        let (ready, state) = (Arc::new(AtomicBool::new(false)), Arc::new(AtomicU8::new(RUNNING)));
+        let (thread_ready, thread_state) = (Arc::clone(&ready), Arc::clone(&state));
         std::thread::Builder::new()
             .name(format!("aurora-{}", self.name))
-            .spawn(move || thread_main(rx))
+            .spawn(move || {
+                // uscito, anche per un panico (anche se era stato abbandonato): non conta piu' tra i bloccati
+                let _exit = ExitMark(thread_state);
+                thread_main(rx, thread_ready);
+            })
             .map_err(|e| RigError(format!("OmniRig: thread non avviato: {e}")))?;
-        *slot = Some((generation, tx.clone()));
-        Ok((generation, tx))
+        *slot = Some(Live { generation, tx: tx.clone(), ready: Arc::clone(&ready), state: Arc::clone(&state) });
+        Ok((generation, tx, ready, state))
     }
 
-    fn abandon(&self, generation: u64) {
+    /// Lascia il thread (bloccato in una chiamata): il prossimo comando ne apre uno nuovo.
+    fn abandon(&self, generation: u64, state: &Arc<AtomicU8>) {
         if let Ok(mut slot) = self.slot.lock()
-            && slot.as_ref().is_some_and(|(g, _)| *g == generation)
+            && slot.as_ref().is_some_and(|l| l.generation == generation)
         {
             *slot = None;
         }
+        if state.compare_exchange(RUNNING, ABANDONED, Ordering::SeqCst, Ordering::SeqCst).is_ok()
+            && let Ok(mut list) = self.abandoned.lock()
+        {
+            list.retain(|s| s.load(Ordering::SeqCst) == ABANDONED);
+            list.push(Arc::clone(state));
+        }
     }
 
-    /// Esegue `f` sul thread COM e ne aspetta il risultato al massimo per il tempo del thread.
-    pub(crate) fn run<T: Send + 'static>(&self, f: impl FnOnce(&mut Com) -> Result<T, RigError> + Send + 'static) -> Result<T, RigError> {
+    /// I thread abbandonati ancora bloccati dentro OmniRig (quelli usciti nel frattempo non contano).
+    fn stuck(&self) -> usize {
+        let Ok(mut list) = self.abandoned.lock() else { return 0 };
+        list.retain(|s| s.load(Ordering::SeqCst) == ABANDONED);
+        list.len()
+    }
+
+    /// Esegue `f` sul thread COM e ne aspetta il risultato per il tempo scelto da `wait` (o quello del thread: normale con l'oggetto pronto,
+    /// piu' lungo mentre si crea). Un tempo scaduto mentre OmniRig si avvia o con la radio non in linea e' un avviso per l'operatore; solo
+    /// i tempi scaduti ripetuti con la radio in linea (OmniRig bloccato) restano un errore ([`timeout_verdict`]).
+    pub(crate) fn run_with<T: Send + 'static>(&self, wait: Wait, f: impl FnOnce(&mut Com) -> Result<T, RigError> + Send + 'static) -> Result<T, RigError> {
         let (reply_tx, reply_rx) = mpsc::sync_channel(1);
+        let late = Arc::new(AtomicBool::new(false));
+        let job_late = Arc::clone(&late);
         let job: Job = Box::new(move |com| {
+            if wait.skip_if_late && job_late.load(Ordering::SeqCst) {
+                return;
+            }
             let _ = reply_tx.send(f(com));
         });
-        let (generation, tx) = self.sender()?;
+        let (mut generation, tx, mut ready, mut state) = self.sender()?;
         if let Err(mpsc::SendError(job)) = tx.send(job) {
             // il thread e' morto (un panico): se ne apre un altro e si riprova una volta
-            self.abandon(generation);
-            let (_, tx) = self.sender()?;
+            self.abandon(generation, &state);
+            let (g, tx, r, s) = self.sender()?;
+            (generation, ready, state) = (g, r, s);
             tx.send(job).map_err(|_| RigError("OmniRig: thread non disponibile".into()))?;
         }
-        match reply_rx.recv_timeout(self.timeout) {
-            Ok(result) => result,
+        let limit = wait.allowance.unwrap_or(if ready.load(Ordering::SeqCst) { self.timeout } else { self.first_timeout });
+        match reply_rx.recv_timeout(limit) {
+            Ok(result) => {
+                self.online_timeouts.store(0, Ordering::SeqCst);
+                result
+            }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                tracing::warn!("OmniRig: nessuna risposta entro {} s ({}): il thread si abbandona, il prossimo comando ne apre uno nuovo", self.timeout.as_secs(), self.name);
-                self.abandon(generation);
-                Err(RigError(explain_omnirig("non risponde")))
+                late.store(true, Ordering::SeqCst);
+                let starting = !ready.load(Ordering::SeqCst);
+                // un thread che sta ancora creando l'oggetto (OmniRig che si avvia) si tiene: i lavori in coda aspettano lui e quelli scaduti
+                // non partono. Uno bloccato in una chiamata a un oggetto gia' pronto si abbandona: il prossimo comando ne apre uno nuovo
+                if !starting {
+                    self.abandon(generation, &state);
+                }
+                let status = last_status();
+                let repeated = if starting || status != ST_ONLINE { 0 } else { self.online_timeouts.fetch_add(1, Ordering::SeqCst) + 1 };
+                let (cause, message) = timeout_verdict(starting, status, repeated);
+                let secs = limit.as_secs();
+                match cause {
+                    TimeoutCause::Starting => tracing::info!("OmniRig: nessuna risposta entro {secs} s ({}) mentre si prepara l'oggetto (OmniRig che si avvia?)", self.name),
+                    TimeoutCause::Offline => tracing::info!("OmniRig: nessuna risposta entro {secs} s ({}) con la radio non in linea (stato {status})", self.name),
+                    TimeoutCause::OnlineOnce => tracing::info!("OmniRig: nessuna risposta entro {secs} s ({}) con la radio in linea: il thread si abbandona", self.name),
+                    TimeoutCause::OnlineRepeated => {
+                        tracing::warn!("OmniRig: nessuna risposta entro {secs} s ({}), {repeated} volte di fila con la radio in linea: il thread si abbandona", self.name)
+                    }
+                }
+                Err(RigError(message))
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
-                self.abandon(generation);
+                // nessuna risposta: il thread e' caduto (un panico nel lavoro)
+                self.abandon(generation, &state);
                 Err(RigError("OmniRig: il comando si e' interrotto".into()))
             }
         }
     }
 }
 
-fn thread_main(rx: mpsc::Receiver<Job>) {
+/// Segna il thread come uscito quando finisce, in ogni modo.
+struct ExitMark(Arc<AtomicU8>);
+
+impl Drop for ExitMark {
+    fn drop(&mut self) {
+        self.0.store(EXITED, Ordering::SeqCst);
+    }
+}
+
+fn thread_main(rx: mpsc::Receiver<Job>, ready: Arc<AtomicBool>) {
     let init = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) };
-    let mut com = Com { init: init.ok().map_err(|e| format!("OmniRig: COM non inizializzato: {e}")), omni: None, rigs: [None, None] };
+    let mut com = Com { init: init.ok().map_err(|e| format!("OmniRig: COM non inizializzato: {e}")), omni: None, rigs: [None, None], ready };
     loop {
         match rx.recv_timeout(Duration::from_millis(50)) {
             Ok(job) => job(&mut com),
@@ -157,10 +280,13 @@ pub(crate) struct Com {
     init: Result<(), String>,
     omni: Option<Disp>,
     rigs: [Option<Disp>; 2],
+    /// L'oggetto e la radio ci sono e il primo contatto e' fatto: da qui i lavori hanno il tempo normale.
+    ready: Arc<AtomicBool>,
 }
 
 impl Com {
     fn forget(&mut self) {
+        self.ready.store(false, Ordering::SeqCst);
         self.rigs = [None, None];
         self.omni = None;
     }
@@ -212,6 +338,7 @@ impl Com {
                 rig.get("WriteableParams").unwrap_or(0)
             );
         }
+        self.ready.store(true, Ordering::SeqCst);
         Ok(rig)
     }
 }
@@ -325,7 +452,12 @@ impl Disp {
 
 impl RigApi for Disp {
     fn get(&self, name: &str) -> Result<i32, RigError> {
-        self.invoke(name, DISPATCH_PROPERTYGET, &[])?.to_i32(name)
+        let value = self.invoke(name, DISPATCH_PROPERTYGET, &[])?.to_i32(name)?;
+        if name == "Status" {
+            // l'ultimo stato letto: dice se un tempo scaduto e' di una radio non in linea (avviso) o di OmniRig bloccato (errore)
+            note_status(value);
+        }
+        Ok(value)
     }
 
     fn put(&self, name: &str, value: i32) -> Result<(), RigError> {

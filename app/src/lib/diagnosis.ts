@@ -1,7 +1,7 @@
 import type { AudioLevel, StationStatus } from '../api/schemas';
 
 export type Severity = 'problem' | 'warning' | 'info';
-export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'no_cat' | 'ptt_failed' | 'power_knob' | 'omnirig' | 'slow_pc' | 'audio_missing' | 'audio_out_missing';
+export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'no_cat' | 'ptt_failed' | 'power_knob' | 'omnirig' | 'port_busy' | 'slow_pc' | 'audio_missing' | 'audio_out_missing';
 
 /** Quanto resta sullo schermo un avviso arrivato dal motore. */
 export const NOTICE_MS = 10 * 60_000;
@@ -15,6 +15,7 @@ const NOTICES: Record<string, { id: IssueId; severity: Severity; href?: string }
   ptt_failed: { id: 'ptt_failed', severity: 'problem', href: '#/impostazioni/radio' },
   power_knob: { id: 'power_knob', severity: 'info' },
   omnirig: { id: 'omnirig', severity: 'problem', href: '#/impostazioni/radio' },
+  port_busy: { id: 'port_busy', severity: 'problem', href: '#/impostazioni/radio' },
 };
 
 export interface Issue {

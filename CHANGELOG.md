@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Porta della radio occupata**: se la porta seriale non si apre perche' la tiene un altro programma («Accesso negato»), «Accendi», Hamlib e il PTT su RTS/DTR dicono quale (OmniRig, WSJT-X, JTDX, MSHV, Log4OM, Cat4OM, HRD, N1MM, JS8Call, fldigi, flrig, ...) e cosa fare, con un avviso a schermo e non piu' come errore da segnalare; un rigctld rimasto orfano da un Aurora chiuso male si chiude da solo e si riprova. L'elenco dei processi si legge con le API di Windows, senza PowerShell.
+- **OmniRig piu' paziente e sicuro**: alla prima creazione (OmniRig che si avvia) 30 s invece di 20 e il thread non si abbandona; un tempo scaduto mentre OmniRig si avvia o con la radio non in linea e' un avviso («la radio e' accesa e in linea in OmniRig?»), non un errore; i comandi arrivati in ritardo non partono piu' e un PTT acceso dopo il tempo massimo si spegne subito; dopo un tempo scaduto il cambio di frequenza non riprova altre due volte; l'oggetto del PTT si prepara al collegamento.
 - **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.
 - **Rotore unico** in tutte le pagine (quello di PSK·RTTY·CW, con direzione corta e lunga del DX, ±2/±10, gradi): scheda mobile sopra la Stazione o finestra a parte per il secondo schermo.

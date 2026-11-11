@@ -419,35 +419,38 @@ pub struct Rigctld {
 }
 
 
-/// Chiude i `rigctld` rimasti orfani (il processo che li aveva avviati non c'e' piu', per esempio dopo un crash di Aurora).
-/// Dice se ne ha chiuso almeno uno. Solo Windows; altrove non fa nulla.
+/// Chiude i `rigctld` rimasti orfani di Aurora (il processo che li aveva avviati non c'e' piu', per esempio dopo un crash di Aurora).
+/// Dice se ne ha chiuso almeno uno. Solo Windows; altrove non fa nulla. L'elenco dei processi si legge con le API di Windows
+/// ([`crate::busy_port`]): prima passava da PowerShell, che i criteri di alcuni PC bloccano.
 pub fn close_orphan_rigctld() -> bool {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        let script = "$n=0; Get-CimInstance Win32_Process -Filter \"Name='rigctld.exe'\" | Where-Object { -not (Get-Process -Id $_.ParentProcessId -ErrorAction SilentlyContinue) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n";
-        let out = Command::new("powershell").args(["-NoProfile", "-NonInteractive", "-Command", script]).creation_flags(0x0800_0000).output();
-        match out {
-            Ok(o) => {
-                let closed = String::from_utf8_lossy(&o.stdout).trim().parse::<u32>().unwrap_or(0);
-                if closed > 0 {
-                    tracing::info!("chiusi {closed} rigctld rimasti orfani");
-                }
-                closed > 0
-            }
-            Err(e) => {
-                tracing::debug!("controllo dei rigctld orfani non riuscito: {e}");
-                false
+    crate::busy_port::close_orphan_rigctld()
+}
+
+impl Rigctld {
+    /// Lancia `rigctld`. Se il demone si ferma perche' la porta seriale e' negata (la tiene un altro programma) l'errore dice quale
+    /// ([`crate::busy_port`]) e l'avviso va a schermo; se la teneva un `rigctld` orfano di Aurora, chiuso quello si riprova una volta.
+    pub fn start(config: &RigctldConfig) -> Result<Rigctld, RigError> {
+        let first = Rigctld::start_once(config);
+        let Err(e) = &first else { return first };
+        let Some(port) = config.port.as_deref().filter(|p| crate::cat_config::is_serial_port(p)) else { return first };
+        let Some(diagnosis) = crate::busy_port::diagnose_open_error(port, &e.0) else { return first };
+        if diagnosis.retry {
+            match Rigctld::start_once(config) {
+                Ok(daemon) => return Ok(daemon),
+                Err(again) => match crate::busy_port::diagnose_open_error(port, &again.0) {
+                    Some(d) => {
+                        crate::busy_port::notify(&d.message);
+                        return Err(d.error());
+                    }
+                    None => return Err(again),
+                },
             }
         }
+        crate::busy_port::notify(&diagnosis.message);
+        Err(diagnosis.error())
     }
-    #[cfg(not(windows))]
-    {
-        false
-    }
-}
-impl Rigctld {
-    pub fn start(config: &RigctldConfig) -> Result<Rigctld, RigError> {
+
+    fn start_once(config: &RigctldConfig) -> Result<Rigctld, RigError> {
         if !Path::new(&config.exe).is_file() {
             return Err(RigError(format!("rigctld non trovato: {}", config.exe.display())));
         }
