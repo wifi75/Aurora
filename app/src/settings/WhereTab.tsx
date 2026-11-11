@@ -3,6 +3,7 @@ import { attach, attachAll, DASHBOARD, detach, openGroupWindow, useGroups, type 
 import { ALL_PANELS, readLayout, saveLayout, toggleHidden, type PanelId } from '../lib/layout';
 import { browserStorage } from '../lib/theme';
 import { ITEM_TITLE } from '../components/SoloWindow';
+import { useRotorCardVisible } from '../components/rotor/RotorCard';
 import { useState } from 'react';
 import { Actions, Group } from './layout';
 
@@ -17,15 +18,22 @@ export function WhereGroups() {
   const groups = useGroups();
   const [layout, setLayout] = useState(() => readLayout(browserStorage()));
   const hidden = layout.hidden ?? [];
+  // il rotore nella finestra principale e' la scheda sopra la Stazione (FT8, FT4, ...): «Nascosto» la spegne, la pagina Rotore resta nel menu
+  const [rotorOnStation, setRotorOnStation] = useRotorCardVisible('station');
   const open = groups.filter((g) => g.open);
   const placeOf = (item: ItemId): string => {
     const g = open.find((x) => x.items.includes(item));
     if (g) return `in:${g.id}`;
     if (hidden.includes(item as PanelId)) return 'hidden';
+    if (item === 'rotator' && !rotorOnStation) return 'hidden';
     return 'main';
   };
   const setHidden = (item: ItemId, want: boolean) => {
-    if (item === 'map' || item === 'dxmap' || item === 'bands' || item === 'propagation' || item === 'display' || item === 'rotator' || item === 'sstv') return;
+    if (item === 'rotator') {
+      if (rotorOnStation === want) setRotorOnStation(!want);
+      return;
+    }
+    if (item === 'map' || item === 'dxmap' || item === 'bands' || item === 'propagation' || item === 'display' || item === 'sstv') return;
     if (hidden.includes(item) !== want) {
       const next = toggleHidden(layout, item);
       saveLayout(browserStorage(), next);

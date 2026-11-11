@@ -1,89 +1,11 @@
-/* Pagina Rotore: rosa dei venti grande, letture grandi, pulsanti con il testo. Solo i colori del tema (chiaro e scuro). */
+/* Pagina Rotore: il titolo con i comandi (nella Stazione, finestra a parte) e sotto la stessa scheda del rotore di PSK/RTTY/CW, piu' grande.
+   Solo i colori del tema (chiaro e scuro); la scheda ha i suoi colori da strumento (styles/rotor-card.css). */
 .rot-page { display: flex; flex-direction: column; gap: 0.9rem; max-width: 1180px; margin: 0 auto; padding: 0.4rem 0 1.5rem; }
-.rot-page--solo { padding: 0.75rem 1rem; max-width: none; }
 .rot-head { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
 .rot-head h1 { margin: 0; font-size: 1.45rem; }
-.rot-head .dock-detach-host { margin-left: auto; }
-
-.rot-badge { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid var(--border); background: var(--panel-raised); font-weight: 600; font-size: 0.95rem; }
-.rot-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--text-muted); }
-.rot-badge--on .rot-dot { background: var(--ok); }
-.rot-badge--moving .rot-dot { background: var(--warn); animation: rot-pulse 0.9s ease-in-out infinite; }
-.rot-badge--connecting .rot-dot { background: var(--accent); animation: rot-pulse 0.9s ease-in-out infinite; }
-.rot-badge--error { border-color: var(--danger); color: var(--danger); }
-.rot-badge--error .rot-dot { background: var(--danger); }
-@keyframes rot-pulse { 50% { opacity: 0.25; } }
-
-.rot-off { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.rot-off p { margin: 0; }
-.rot-error { margin: 0; }
-
-.rot-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.4rem; align-items: start; }
-.rot-rose-box { width: 100%; max-width: 620px; margin: 0 auto; aspect-ratio: 1; }
-.rot-rose { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: manipulation; user-select: none; }
-.rot-rose--off { cursor: default; opacity: 0.75; }
-.rot-face { fill: var(--panel); }
-.rot-ring { fill: none; stroke: var(--border); stroke-width: 2.2; }
-.rot-inner { fill: none; stroke: var(--row-line); stroke-width: 1; stroke-dasharray: 2 3; }
-.rot-tick { stroke: var(--text-muted); stroke-width: 1; }
-.rot-tick--major { stroke: var(--text); stroke-width: 2; }
-.rot-label { fill: var(--text-muted); font-family: var(--font-data); font-size: 9px; font-weight: 600; }
-.rot-label--card { fill: var(--text); font-family: var(--font-ui); font-size: 15px; font-weight: 800; }
-
-.rot-needle { transform-box: view-box; transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1); }
-.rot-needle--now path { fill: var(--accent); stroke: var(--accent-ink); stroke-width: 1; stroke-linejoin: round; }
-.rot-needle--target line { stroke: var(--warn); stroke-width: 2.4; stroke-dasharray: 6 4; }
-.rot-needle--target circle { fill: none; stroke: var(--warn); stroke-width: 2.4; }
-.rot-hub { fill: var(--text); stroke: var(--panel); stroke-width: 2; }
-
-.rot-dxmark line { stroke-width: 2; stroke-dasharray: 2 2; }
-.rot-dxmark text { font-family: var(--font-data); font-size: 9.5px; font-weight: 700; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
-.rot-dxmark--sp line, .rot-dxmark--sp circle { stroke: var(--ok); }
-.rot-dxmark--sp circle, .rot-dxmark--sp text { fill: var(--ok); }
-.rot-dxmark--lp line, .rot-dxmark--lp circle { stroke: var(--rare); }
-.rot-dxmark--lp circle { fill: none; stroke-width: 2; }
-.rot-dxmark--lp text { fill: var(--rare); }
-
-.rot-side { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
-.rot-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
-.rot-read { display: flex; flex-direction: column; padding: 0.7rem 0.9rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
-.rot-read--now { border-left: 6px solid var(--accent); }
-.rot-read--target { border-left: 6px dashed var(--warn); }
-.rot-read-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.rot-read-value { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; line-height: 1.05; }
-.rot-read-sub { font-family: var(--font-data); color: var(--text-muted); min-height: 1.2em; }
-
-.rot-dx { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.6rem 0.9rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
-.rot-dx-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.9rem; font-size: 1.1rem; }
-.rot-dx-line strong { font-size: 1.35rem; }
-.rot-dx-path { font-family: var(--font-data); font-weight: 700; }
-.rot-dx-path--sp { color: var(--ok); }
-.rot-dx-path--lp { color: var(--rare); }
-
-.rot-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
-.rot-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; }
-.rot-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; min-height: 3.2rem; padding: 0.5rem 0.9rem; font-size: 1.1rem; font-weight: 700; border-radius: 10px; text-decoration: none; cursor: pointer; }
-.rot-btn:disabled { cursor: not-allowed; opacity: 0.5; }
-.rot-btn-val { font-family: var(--font-data); font-size: 0.95rem; font-weight: 600; }
-.rot-btn--main { border: 2px solid var(--ok); }
-.rot-btn--stop { background: var(--stop); color: var(--stop-ink); border: 2px solid var(--stop); }
-.rot-btn--stop:not(:disabled):hover { filter: brightness(1.08); }
-.rot-btn--step { font-family: var(--font-data); }
-.rot-manual { display: flex; align-items: end; gap: 0.6rem; }
-.rot-manual label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
-.rot-manual input { font-family: var(--font-data); font-size: 1.3rem; padding: 0.45rem 0.6rem; min-height: 3.2rem; width: 100%; box-sizing: border-box; }
-.rot-hint { margin: 0; font-size: 0.9rem; }
-
-@media (max-width: 860px) {
-  .rot-grid { grid-template-columns: minmax(0, 1fr); }
-  .rot-rose-box { max-width: 460px; }
-}
-@media (max-width: 480px) {
-  .rot-actions { grid-template-columns: 1fr 1fr; }
-  .rot-btn--stop { grid-column: span 2; }
-  .rot-readout { gap: 0.5rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rot-needle { transition: none; }
-  .rot-badge--moving .rot-dot, .rot-badge--connecting .rot-dot { animation: none; }
-}
+.rot-head .dock-detach-host { margin-left: 0; }
+.rot-head-sp { flex: 1; }
+.rot-btn { padding: 0.35rem 0.9rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--panel-raised); color: var(--text); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.rot-btn:hover { border-color: var(--accent); }
+.rot-btn[aria-pressed='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--panel-raised)); }
+.rot-hint { margin: 0; font-size: 0.85rem; text-align: center; }

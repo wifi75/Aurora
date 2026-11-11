@@ -3,22 +3,38 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { ApiError, getDxcc, getRotator, rotatorGoto, rotatorStop, type RotatorStatus } from '../../api/client';
 import { useT } from '../../i18n';
+import { detachedItems, useGroups } from '../../lib/detached';
 import { bearingDeg, gridCenter, type Point } from '../../lib/geo';
+import { REMOTE_HOST } from '../../lib/phone';
 import { azimuthOfPoint, longPath, unwrapAngle } from '../../lib/rotator';
+import { openInMain } from '../../lib/sdr';
 import { browserStorage } from '../../lib/theme';
 import { useStatusPick } from '../../state/station';
+import { DetachButton } from '../DetachButton';
 import { SevenSegment } from '../radio-display/SevenSegment';
+import '../../styles/rotor-card.css';
+
+/**
+ * Dove sta la scheda: `digi` (pagine PSK, RTTY e CW) e `station` (la Stazione di FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, Fox e Contest)
+ * la mettono sopra la pagina, da spostare e ridimensionare; `window` (finestra a parte, secondo schermo) e `page` (la pagina Rotore) la
+ * disegnano dentro il loro spazio, piu' grande.
+ */
+export type RotorPlace = 'digi' | 'station' | 'window' | 'page';
+type Floating = 'digi' | 'station';
 
 interface Props {
-  /** Il nominativo e il locatore del QSO in corso: da li' si calcola la direzione del DX. */
+  /** Il nominativo e il locatore del DX: da li' si calcola la direzione (corta e lunga). */
   call: string;
   grid: string;
+  place: RotorPlace;
 }
 
-const CLOSED_KEY = 'aurora.digi.rotor.closed';
-const POS_KEY = 'aurora.digi.rotor.pos';
-const HIDDEN_KEY = 'aurora.digi.rotor.hidden';
-const WIDTH_KEY = 'aurora.digi.rotor.w';
+/** Le chiavi dell'archivio di una scheda sopra la pagina: PSK/RTTY/CW e Stazione ricordano posto, misura e visibilita' ognuna per se'. */
+function keysOf(place: Floating) {
+  const p = place === 'digi' ? 'aurora.digi.rotor' : 'aurora.station.rotor';
+  return { closed: `${p}.closed`, pos: `${p}.pos`, hidden: `${p}.hidden`, width: `${p}.w` };
+}
+/** La posizione di Park e' del rotore, non della pagina: una sola. */
 const PARK_KEY = 'aurora.digi.rotor.park';
 const EVENT = 'aurora-rotor-card';
 const MIN_W = 240;
@@ -29,9 +45,9 @@ interface Pos {
   y: number;
 }
 
-function readPos(): Pos | null {
+function readPos(key: string): Pos | null {
   try {
-    const v = JSON.parse(browserStorage()?.getItem(POS_KEY) ?? 'null') as Partial<Pos> | null;
+    const v = JSON.parse(browserStorage()?.getItem(key) ?? 'null') as Partial<Pos> | null;
     return v && Number.isFinite(v.x) && Number.isFinite(v.y) ? { x: Number(v.x), y: Number(v.y) } : null;
   } catch {
     return null;
@@ -47,29 +63,41 @@ function remember(key: string, value: string | null): void {
   }
 }
 
-/** La scheda e' mostrata? Si accende e si spegne dal menu Vista. */
-export function useRotorCardVisible(): [boolean, (v: boolean) => void] {
-  const read = () => browserStorage()?.getItem(HIDDEN_KEY) !== '1';
-  const [shown, setShown] = useState(read);
+/**
+ * Accende o spegne la scheda sopra la pagina (PSK/RTTY/CW: menu Vista; Stazione: pagina Rotore e Impostazioni › Finestre). Nella Stazione,
+ * finche' non la si sceglie, si vede quando il rotore e' acceso nelle Impostazioni.
+ */
+export function setRotorCardVisible(place: Floating, shown: boolean): void {
+  remember(keysOf(place).hidden, shown ? '0' : '1');
+  try {
+    window.dispatchEvent(new Event(EVENT));
+  } catch {
+    // fuori dal browser (prove) non c'e' nessuno da avvisare
+  }
+}
+
+/** La scheda e' mostrata? Si aggiorna anche quando la si cambia da un'altra finestra di Aurora. */
+export function useRotorCardVisible(place: Floating = 'digi'): [boolean, (v: boolean) => void] {
+  const key = keysOf(place).hidden;
+  const read = () => browserStorage()?.getItem(key) ?? null;
+  const [stored, setStored] = useState(read);
+  const enabled = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, staleTime: 30_000, enabled: place === 'station' && stored === null }).data?.config.enabled === true;
   useEffect(() => {
-    const sync = () => setShown(read());
+    const sync = () => setStored(read());
     window.addEventListener(EVENT, sync);
     window.addEventListener('storage', sync);
     return () => {
       window.removeEventListener(EVENT, sync);
       window.removeEventListener('storage', sync);
     };
-  }, []);
-  return [
-    shown,
-    (v) => {
-      remember(HIDDEN_KEY, v ? '0' : '1');
-      window.dispatchEvent(new Event(EVENT));
-    },
-  ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  const shown = stored === '1' ? false : stored === '0' ? true : place === 'digi' || enabled;
+  return [shown, (v) => setRotorCardVisible(place, v)];
 }
 
 type Preset = number | 'dx' | 'park';
+
 
 /** I pulsanti: ogni 45 gradi; dopo i 315 il 360 (per i rotori che vanno oltre il giro) oppure il DX, e infine il Park. */
 function presets(max: number, wide: boolean): Preset[] {
@@ -191,32 +219,40 @@ function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: D
   );
 }
 
+
 /**
- * La scheda del rotore nelle pagine PSK, RTTY e CW: come il blocco (bussola nera, striscia gialla con le cifre a sette segmenti, GO e STOP,
- * griglia di pulsanti) ma con la lancetta che si muove piano mentre il rotore gira, la zona di sovrapposizione per i rotori oltre i 360 gradi e,
- * sotto l'ingranaggio, i comandi in piu': gradi a mano, -10/+10, DX corto e lungo, Park. Si sposta e si ridimensiona; e' un riquadro a parte.
+ * La scheda del rotore, una sola per tutta Aurora: come il blocco (bussola nera, striscia gialla con le cifre a sette segmenti, GO e STOP,
+ * griglia di pulsanti) ma con la lancetta che si muove piano mentre il rotore gira, la zona di sovrapposizione per i rotori oltre i 360 gradi,
+ * lo stato, la direzione del DX (corta e lunga) e, sotto l'ingranaggio, i comandi in piu': gradi a mano, -10/-2/+2/+10, DX corto e lungo, Park.
+ * Nelle pagine PSK/RTTY/CW e nella Stazione sta sopra la pagina (si sposta e si ridimensiona) e si stacca in una finestra a parte con ⧉;
+ * nella finestra a parte e nella pagina Rotore riempie il suo spazio.
  */
-export function RotorCard({ call, grid }: Props) {
+export function RotorCard({ call, grid, place }: Props) {
   const t = useT();
   const client = useQueryClient();
-  const [closed, setClosedState] = useState(() => browserStorage()?.getItem(CLOSED_KEY) === '1');
+  const floating = place === 'digi' || place === 'station';
+  const keys = keysOf(place === 'station' ? 'station' : 'digi');
+  const [closed, setClosedState] = useState(() => floating && browserStorage()?.getItem(keys.closed) === '1');
   const setClosed = (v: boolean) => {
     setClosedState(v);
-    remember(CLOSED_KEY, v ? '1' : '0');
+    remember(keys.closed, v ? '1' : '0');
   };
   const [typed, setTyped] = useState('');
-  const [more, setMore] = useState(false);
+  const [more, setMore] = useState(place === 'page');
   const card = useRef<HTMLElement>(null);
-  const [pos, setPos] = useState<Pos | null>(readPos);
+  const [pos, setPos] = useState<Pos | null>(() => (floating ? readPos(keys.pos) : null));
   const [width, setWidth] = useState<number | null>(() => {
-    const v = Number(browserStorage()?.getItem(WIDTH_KEY));
+    if (!floating) return null;
+    const v = Number(browserStorage()?.getItem(keys.width));
     return Number.isFinite(v) && v >= MIN_W && v <= MAX_W ? v : null;
   });
   const [parkAz, setParkAz] = useState(() => {
     const v = Number(browserStorage()?.getItem(PARK_KEY));
     return Number.isFinite(v) ? v : 0;
   });
-  const [visible, setVisible] = useRotorCardVisible();
+  const [visible, setVisible] = useRotorCardVisible(place === 'station' ? 'station' : 'digi');
+  // staccata in una finestra a parte (secondo schermo): sopra la pagina non si mostra, niente doppioni
+  const away = detachedItems(useGroups()).includes('rotator');
 
   // mentre il rotore gira si legge piu' spesso, cosi' la lancetta si muove di continuo
   const snap = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, refetchInterval: (q) => (q.state.data?.status.moving ? 400 : 1000) });
@@ -229,11 +265,12 @@ export function RotorCard({ call, grid }: Props) {
   const connected = status?.connected === true;
   const moving = status?.moving === true;
   const cleanCall = call.trim().toUpperCase();
+  const cleanGrid = grid.trim();
 
   // la direzione del DX: dal suo locatore, altrimenti dal centro del suo paese
-  const dxcc = useQuery({ queryKey: ['dxcc', cleanCall], queryFn: () => getDxcc(cleanCall), enabled: cleanCall.length >= 3 && grid.trim() === '', staleTime: 10 * 60_000, retry: false });
+  const dxcc = useQuery({ queryKey: ['dxcc', cleanCall], queryFn: () => getDxcc(cleanCall), enabled: cleanCall.length >= 3 && cleanGrid === '', staleTime: 10 * 60_000, retry: false });
   const from = station?.de_grid ? gridCenter(station.de_grid) : null;
-  const to: Point | null = gridCenter(grid) ?? (typeof dxcc.data?.lat === 'number' && typeof dxcc.data.lon === 'number' ? { lat: dxcc.data.lat, lon: dxcc.data.lon } : null);
+  const to: Point | null = gridCenter(cleanGrid) ?? (typeof dxcc.data?.lat === 'number' && typeof dxcc.data.lon === 'number' ? { lat: dxcc.data.lat, lon: dxcc.data.lon } : null);
   const sp = from && to ? bearingDeg(from, to) : null;
   const lp = sp === null ? null : longPath(sp);
 
@@ -243,7 +280,7 @@ export function RotorCard({ call, grid }: Props) {
   const stop = useMutation({ mutationFn: rotatorStop, onSuccess: refresh });
   const base = status?.target ?? status?.az ?? 0;
   const problem = go.error ?? stop.error;
-  const problemText = problem instanceof ApiError && problem.code === 'not_connected' ? t('rot.err.notConnected') : problem ? t('rot.err.failed') : '';
+  const problemText = problem instanceof ApiError && problem.code === 'not_connected' ? t('rot.err.notConnected') : problem instanceof ApiError && problem.detail ? problem.detail : problem ? t('rot.err.failed') : '';
   const az = status?.az ?? null;
   // tre cifre (quattro solo con il segno meno o oltre il 999): cosi' le cifre restano grandi
   const lcdText = az === null ? '' : String(Math.round(az));
@@ -254,19 +291,21 @@ export function RotorCard({ call, grid }: Props) {
   // il nome salvato e' «Azienda Modello» (per esempio «Yaesu GS-232B»): al centro della bussola va l'azienda
   const brand = (config?.model_name ?? '').trim().split(' ')[0] || t('digi.tab.rotor');
   const help = `${t('rot.clickHint')}${wide ? ` ${t('rot.wide', { min, max })}` : ''}`;
+  const stateKey = !status ? 'rot.state.off' : status.state === 'connected' ? (moving ? 'rot.state.moving' : 'rot.state.connected') : (`rot.state.${status.state}` as const);
 
   // se la finestra si rimpicciolisce e la scheda resta fuori, torna al suo posto
   useEffect(() => {
+    if (!floating) return;
     const fit = () => {
       if (pos && (pos.x + 40 > window.innerWidth || pos.y + 30 > window.innerHeight)) setPos(null);
     };
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-  }, [pos]);
+  }, [pos, floating]);
 
   /** Si sposta trascinando la barra del titolo; con il doppio clic torna al posto e alla misura di partenza. */
   const startDrag = (e: ReactPointerEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
+    if ((e.target as HTMLElement).closest('button, .dock-detach-host')) return;
     const el = card.current;
     if (!el) return;
     e.preventDefault();
@@ -284,7 +323,7 @@ export function RotorCard({ call, grid }: Props) {
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
-      remember(POS_KEY, JSON.stringify(last));
+      remember(keys.pos, JSON.stringify(last));
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -307,19 +346,19 @@ export function RotorCard({ call, grid }: Props) {
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
-      remember(WIDTH_KEY, String(last));
+      remember(keys.width, String(last));
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
   const resetPlace = () => {
     setWidth(null);
-    remember(WIDTH_KEY, null);
+    remember(keys.width, null);
     setPos(null);
-    remember(POS_KEY, null);
+    remember(keys.pos, null);
   };
 
-  if (!visible) return null;
+  if (floating && (!visible || away)) return null;
 
   const press = (p: Preset) => {
     if (p === 'dx') {
@@ -328,24 +367,33 @@ export function RotorCard({ call, grid }: Props) {
     else go.mutate(p);
   };
   const labelOf = (p: Preset) => (p === 'dx' ? 'DX' : p === 'park' ? 'Park' : String(p));
+  const isOff = !config?.enabled || status?.state === 'off';
 
   return (
     <section
       ref={card}
-      style={{ ...(pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : {}), ...(width ? { width } : {}) }}
-      className={`rotor-card${moving ? ' rotor-card--moving' : ''}${connected ? '' : ' rotor-card--off'}`}
+      style={floating ? { ...(pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : {}), ...(width ? { width } : {}) } : undefined}
+      className={`rotor-card rotor-card--${place}${moving ? ' rotor-card--moving' : ''}${connected ? '' : ' rotor-card--off'}`}
       aria-label={t('digi.tab.rotor')}
     >
-      <div className="rotor-bar" onPointerDown={startDrag} onDoubleClick={resetPlace} title={t('rot.move')}>
-        <span className={`rotor-dot${moving ? ' rotor-dot--moving' : connected ? ' rotor-dot--on' : ''}`} aria-hidden="true" />
+      <div className="rotor-bar" onPointerDown={floating ? startDrag : undefined} onDoubleClick={floating ? resetPlace : undefined} title={floating ? t('rot.move') : undefined}>
+        <span className={`rotor-dot${moving ? ' rotor-dot--moving' : connected ? ' rotor-dot--on' : status?.state === 'error' ? ' rotor-dot--err' : ''}`} aria-hidden="true" />
         <strong>{t('digi.tab.rotor')}</strong>
+        <span className="rotor-state" role="status">
+          {t(stateKey)}
+        </span>
         <span className="rotor-bar-sp" />
-        <button type="button" className="rotor-bar-btn" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={closed ? t('rot.open') : t('rot.close')}>
-          {closed ? '▸' : '▾'}
-        </button>
-        <button type="button" className="rotor-bar-btn" onClick={() => setVisible(false)} title={t('rot.hide')} aria-label={t('rot.hide')}>
-          ✕
-        </button>
+        {floating ? (
+          <>
+            <DetachButton item="rotator" className="dock-detach rotor-detach" />
+            <button type="button" className="rotor-bar-btn" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={closed ? t('rot.open') : t('rot.close')}>
+              {closed ? '▸' : '▾'}
+            </button>
+            <button type="button" className="rotor-bar-btn" onClick={() => setVisible(false)} title={t(place === 'station' ? 'rot.hideStation' : 'rot.hide')} aria-label={t(place === 'station' ? 'rot.hideStation' : 'rot.hide')}>
+              ✕
+            </button>
+          </>
+        ) : null}
       </div>
       {closed ? null : (
         <>
@@ -372,11 +420,31 @@ export function RotorCard({ call, grid }: Props) {
               <Icon name="chevron-down" size="0.8em" className={`rotor-caret${more ? ' rotor-caret--up' : ''}`} />
             </button>
           </div>
+          {/* la stazione DX del QSO in corso: nominativo, locatore e le due direzioni (anche FT8, FT4, ... e PSK/RTTY/CW) */}
+          <div className="rotor-dx" title={t('rot.dx')}>
+            {sp !== null ? (
+              <>
+                <strong className="rotor-dx-call">{cleanCall || 'DX'}</strong>
+                {cleanGrid ? <span className="rotor-dx-grid">{cleanGrid}</span> : null}
+                <span className="rotor-dx-path rotor-dx-path--sp">
+                  {t('rot.sp')} {sp}°
+                </span>
+                <span className="rotor-dx-path rotor-dx-path--lp">
+                  {t('rot.lp')} {lp}°
+                </span>
+              </>
+            ) : (
+              <span className="rotor-dx-none">{!station?.de_grid ? t('rot.noMyGrid') : cleanCall ? `${cleanCall} · —` : t('rot.noDxAny')}</span>
+            )}
+          </div>
           {more ? (
             <div className="rotor-more">
               <div className="rotor-more-row">
                 <button type="button" disabled={!connected} onClick={() => nudge(-10)}>
                   −10
+                </button>
+                <button type="button" disabled={!connected} onClick={() => nudge(-2)}>
+                  −2
                 </button>
                 <input
                   type="number"
@@ -390,15 +458,18 @@ export function RotorCard({ call, grid }: Props) {
                   onChange={(e) => setTyped(e.target.value)}
                   onKeyDown={(e) => (e.key === 'Enter' && typedOk && connected ? go.mutate(typedNumber) : undefined)}
                 />
+                <button type="button" disabled={!connected} onClick={() => nudge(2)}>
+                  +2
+                </button>
                 <button type="button" disabled={!connected} onClick={() => nudge(10)}>
                   +10
                 </button>
               </div>
               <div className="rotor-more-row">
-                <button type="button" disabled={!connected || sp === null} onClick={() => sp !== null && go.mutate(sp)} title={t('rot.sp')}>
+                <button type="button" disabled={!connected || sp === null} onClick={() => sp !== null && go.mutate(sp)} title={t('rot.short')}>
                   {cleanCall || 'DX'} · {t('rot.sp')} {sp !== null ? `${sp}°` : '—'}
                 </button>
-                <button type="button" disabled={!connected || lp === null} onClick={() => lp !== null && go.mutate(lp)} title={t('rot.lp')}>
+                <button type="button" disabled={!connected || lp === null} onClick={() => lp !== null && go.mutate(lp)} title={t('rot.long')}>
                   {t('rot.lp')} {lp !== null ? `${lp}°` : '—'}
                 </button>
               </div>
@@ -420,14 +491,31 @@ export function RotorCard({ call, grid }: Props) {
           ) : null}
           <div className="rotor-presets" role="group" aria-label={t('rot.steps')}>
             {presets(max, wide).map((p) => (
-              <button key={String(p)} type="button" disabled={!connected || (p === 'dx' && sp === null)} onClick={() => press(p)} title={p === 'park' ? t('rot.parkGo', { az: parkAz }) : undefined}>
+              <button key={String(p)} type="button" disabled={!connected || (p === 'dx' && sp === null)} onClick={() => press(p)} title={p === 'park' ? t('rot.parkGo', { az: parkAz }) : p === 'dx' && sp !== null ? `${t('rot.short')} ${sp}°` : undefined}>
                 {labelOf(p)}
               </button>
             ))}
           </div>
-          {!snap.data?.config.enabled || status?.state === 'off' ? (
+          {isOff ? (
             <p className="rotor-note">
-              {t('rot.offText')} <a href="#/impostazioni/rotator">{t('rot.openSettings')}</a>
+              {t('rot.offText')}{' '}
+              {REMOTE_HOST ? null : (
+                <a
+                  href="#/impostazioni/rotator"
+                  onClick={(e) => {
+                    // dalla finestra a parte le Impostazioni si aprono nella finestra principale
+                    e.preventDefault();
+                    openInMain('#/impostazioni/rotator');
+                  }}
+                >
+                  {t('rot.openSettings')}
+                </a>
+              )}
+            </p>
+          ) : null}
+          {status?.state === 'error' && status.error ? (
+            <p className="rotor-note rotor-note--err" role="alert">
+              {status.error}
             </p>
           ) : null}
           {problemText ? (
@@ -435,7 +523,7 @@ export function RotorCard({ call, grid }: Props) {
               {problemText}
             </p>
           ) : null}
-          <span className="rotor-grip" role="separator" aria-orientation="vertical" title={t('rot.resize')} onPointerDown={startResize} />
+          {floating ? <span className="rotor-grip" role="separator" aria-orientation="vertical" title={t('rot.resize')} onPointerDown={startResize} /> : null}
         </>
       )}
     </section>

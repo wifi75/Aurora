@@ -6,7 +6,8 @@ import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, get
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
-import { RotorCard, useRotorCardVisible } from '../components/digi/RotorCard';
+import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
+import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor, type MacroScope } from '../components/digi/MacroEditor';
@@ -183,7 +184,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return Number.isFinite(n) && n >= 300 ? n : 432;
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
-  const [rotorShown, setRotorShown] = useRotorCardVisible();
+  const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
+  // il DX del QSO anche per il rotore staccato in una finestra a parte
+  usePublishRotorDx(qso.call, qso.wwloc);
   // la larghezza della scheda delle macro: si regola dal bordo destro (doppio clic: quella di partenza)
   const macroBox = useRef<HTMLDivElement>(null);
   const [macroW, setMacroW] = useState<number | null>(() => {
@@ -941,7 +944,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
         ) : null}
         </div>
-        <RotorCard call={qso.call} grid={qso.wwloc} />
+        <RotorCard call={qso.call} grid={qso.wwloc} place="digi" />
         {views.log ? (
           <DigiLog
             width={logW}

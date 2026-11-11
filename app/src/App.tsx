@@ -33,6 +33,7 @@ import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
+import { StationRotor } from './components/rotor/StationRotor';
 import { SstvPage } from './pages/SstvPage';
 import { DigiPage } from './pages/DigiPage';
 import { SatPage } from './pages/SatPage';
@@ -238,6 +239,9 @@ export function App() {
       <main className="app-main">
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
+      {/* il rotore sopra la Stazione in tutti i modi del motore (FT8, FT4, JT65, Q65, ...), Fox e Contest: la stessa scheda di PSK/RTTY/CW;
+          con le Impostazioni aperte no (starebbe sopra il loro riquadro) */}
+      {session.data === true && !REMOTE_TOUCH && !settingsOpen && (content === LIVE || route.name === 'fox' || route.name === 'contest') ? <StationRotor /> : null}
       {REMOTE_TOUCH ? null : <Footer page={route.name} />}
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
