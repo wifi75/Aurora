@@ -57,6 +57,8 @@ pub enum Mode {
     Jt4,
     Q65,
     Msk144,
+    /// WSPR-2: periodi di due minuti, messaggio a un secondo dall'inizio.
+    Wspr,
 }
 
 impl Mode {
@@ -64,6 +66,7 @@ impl Mode {
         match self {
             Mode::Ft8 => Duration::from_millis(15_000),
             Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 1000),
+            Mode::Wspr => Duration::from_millis(120_000),
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
             Mode::Q65 => Duration::from_millis(u64::from(q65_period_s()) * 1000),
@@ -76,7 +79,7 @@ impl Mode {
             Mode::Ft8 | Mode::Ft4 | Mode::Msk144 => Duration::from_millis(500),
             // Q65: 0,5 s a 15 e 30 s, 1 s dai 60 s in su
             Mode::Q65 if q65_period_s() < 60 => Duration::from_millis(500),
-            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 => Duration::from_millis(1_000),
+            Mode::Jt65 | Mode::Jt9 | Mode::Jt4 | Mode::Q65 | Mode::Wspr => Duration::from_millis(1_000),
         }
     }
 
@@ -95,6 +98,9 @@ impl Mode {
             Mode::Q65 => Mode::Q65.tx_delay() + Duration::from_millis(q65_message_ms(q65_period_s())),
             // il quadro si ripete fino a fine periodo: si puo' partire fino ai 4/5 del periodo (12 s su 15)
             Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 800),
+            // WSPR: il radiofaro parte solo a inizio periodo (WSJT-X lo arma con `m_bTxTime` dal pianificatore, `WSPRBandHopping.cpp:256-272`);
+            // un secondo di margine oltre il ritardo d'inizio
+            Mode::Wspr => Duration::from_millis(2_000),
         }
     }
 }

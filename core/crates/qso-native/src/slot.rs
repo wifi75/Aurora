@@ -87,6 +87,8 @@ pub enum Mode {
     Q65,
     /// MSK144 (meteor scatter): periodi di 5, 10, 15 o 30 s ([`set_msk144_period_s`]), quadro di 72 ms ripetuto per tutto il periodo.
     Msk144,
+    /// WSPR-2: radiofaro senza QSO, periodi di due minuti che cominciano ai minuti pari, messaggio a un secondo dall'inizio.
+    Wspr,
 }
 
 impl Mode {
@@ -98,6 +100,7 @@ impl Mode {
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
             Mode::Q65 => u64::from(q65_period_s()) * 1000,
+            Mode::Wspr => 120_000,
         }
     }
 
@@ -115,6 +118,7 @@ impl Mode {
             Mode::Jt4 => "JT4",
             Mode::Q65 => "Q65",
             Mode::Msk144 => "MSK144",
+            Mode::Wspr => "WSPR",
         }
     }
 }

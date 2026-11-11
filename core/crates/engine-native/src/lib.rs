@@ -23,6 +23,7 @@ mod slow;
 mod smeter;
 mod tx;
 mod wav;
+mod wspr;
 
 use std::{
     io::Write,
@@ -210,6 +211,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                         Mode::Q65 => rig::q65_setup().period_s,
                         // MSK144: il periodo scelto (5, 10, 15 o 30 s, `mainwindow.cpp:12081`)
                         Mode::Msk144 => qso_native::slot::msk144_period_s(),
+                        Mode::Wspr => 120,
                     }),
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
@@ -1120,6 +1122,15 @@ fn decode_period(
             ),
             hashes,
         ).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
+        // WSPR: wsprd di WSJT-X alla profondita' delle Impostazioni (`-qB`, `-C 500 -o 4`, `-C 500 -o 4 -d`, `mainwindow.cpp:2885-2887`); in
+        // elenco la frequenza audio del centro del segnale e la deriva nel testo come la colonna «Drift» di WSJT-X non c'e': resta nel registro
+        Mode::Wspr => wspr::decode(samples, decode_opts::current().depth)
+            .into_iter()
+            .map(|d| {
+                tracing::debug!("WSPR: {} snr {} dt {:.2} f {:.1} deriva {}", d.message, d.snr_db, d.dt_s, d.audio_hz, d.drift_hz);
+                as_decoded(d.audio_hz as f32, d.dt_s, d.snr_db.round() as i32, d.message)
+            })
+            .collect(),
         // Q65: periodo e sottomodo scelti, ipotesi AP con il mio nominativo e il DX, metrica dell'evanescenza (lorentziana come WSJT-X, o gaussiana)
         // e media dei periodi della stessa parita'; i messaggi da AP o dalla media hanno il segno di quelli a priori di FT8
         Mode::Q65 => {

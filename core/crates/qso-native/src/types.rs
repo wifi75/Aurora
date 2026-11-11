@@ -240,6 +240,8 @@ impl Options {
             Mode::Q65 => crate::slot::q65_message_end_s(),
             // MSK144: il quadro si ripete per tutto il periodo; si parte fino ai 4/5 del periodo (12 s su 15, com'era)
             Mode::Msk144 => crate::slot::msk144_period_s() as f64 * 0.8,
+            // WSPR: 1 s + 162 simboli da 8192 campioni (110,6 s); WSJT-X non comincia in ritardo un radiofaro
+            Mode::Wspr => 1.0,
         })
     }
 
@@ -253,6 +255,8 @@ impl Options {
             Mode::Jt4 => 18,
             Mode::Q65 => crate::slot::q65_bandwidth_hz().ceil() as i32,
             Mode::Msk144 => 1000,
+            // WSPR: quattro toni a 1,46 Hz
+            Mode::Wspr => 6,
         }
     }
 }
