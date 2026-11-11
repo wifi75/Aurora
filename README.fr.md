@@ -143,6 +143,13 @@ cd core && cargo clippy --workspace --all-targets
 
 Sur le PC où Aurora est lancée, les tests du core se lancent avec `--target-dir target/testrun` (sinon Windows verrouille `aurora.exe`).
 
+## Soutenir Aurora
+
+Aurora est gratuit et le restera. S’il vous est utile et que vous souhaitez aider son développement, vous pouvez faire un don avec PayPal :
+
+[![PayPal](https://img.shields.io/badge/Faire%20un%20don-PayPal-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L)
+
+Un grand merci à celles et ceux qui ont déjà donné : votre soutien compte. Les soutiens qui le souhaitent sont remerciés dans [SOSTENITORI.md](SOSTENITORI.md).
 
 ## Licence
 

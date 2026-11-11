@@ -6,7 +6,7 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://
 
 ## Regole
 - Rust edition 2024. Niente `unwrap()`/`expect()` fuori dai test; errori come `Result`.
-- Nessun segreto, locatore vero o email personale nei file e nei commit. Nominativo reale solo come firma d'autore; in test ed esempi IU3ABC e IO91wm.
+- Nessun segreto, locatore vero o email personale nei file e nei commit. Nominativo reale solo come firma d'autore (eccezione: nominativi dei sostenitori che hanno dato il consenso, solo in `SOSTENITORI.md`); in test ed esempi IU3ABC e IO91wm.
 - Nessun riferimento a strumenti di assistenza nel repository ne' nei commit (niente trailer). Il file delle istruzioni si chiama `AGENTS.md`.
 - Commit in italiano, atomici. Push e release autorizzati.
 - Si controlla solo che compili (`cargo check --workspace`, `npx tsc --noEmit`): le prove con radio e telefono le fa il proprietario.
