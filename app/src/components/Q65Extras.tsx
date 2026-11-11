@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getControls, postControl, postControlValue } from '../api/client';
 import { useControlValues } from '../state/controlValues';
 import { useT } from '../i18n';
+import { DecodeToggles } from './DecodeToggles';
 
 /** Gli interruttori Q65 portati da WSJT-X (2026-11-09): ritardo EME e lista dei contest. */
 const FLAGS = [
@@ -12,7 +13,8 @@ const FLAGS = [
 /** I valori della deriva massima, come la tendina «Max Drift» di WSJT-X: 0 (spenta) ... 50 a passi di 5. */
 const DRIFTS = Array.from({ length: 11 }, (_, i) => i * 5);
 
-/** Accanto a periodo e sottomodo di Q65: modello dell'evanescenza (lorentziano come WSJT-X, o gaussiano) e «Clear Avg» della media dei periodi. */
+/** Accanto a periodo e sottomodo di Q65: modello dell'evanescenza (lorentziano come WSJT-X, o gaussiano), «Enable averaging» e «Auto Clear Avg» del
+ * menu Decode di WSJT-X (voci delle Impostazioni, riquadro «Decodifica») e «Clear Avg» della media dei periodi. */
 export function Q65Extras({ disabled = false }: { disabled?: boolean }) {
   const t = useT();
   const client = useQueryClient();
@@ -84,6 +86,7 @@ export function Q65Extras({ disabled = false }: { disabled?: boolean }) {
           </button>
         );
       })}
+      <DecodeToggles keys={['IncludeAveraging', 'AutoClearAvg']} disabled={off} />
       <button
         type="button"
         className="glass mode-switch-sub mode-switch-clear"

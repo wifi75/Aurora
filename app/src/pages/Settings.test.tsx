@@ -186,6 +186,11 @@ describe('Radio, Audio, Reports and Advanced', () => {
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toContain('Servizi online');
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'monitoraggio Tx' } });
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toContain('Sequenza');
+    // le opzioni dei decodificatori di WSJT-X stanno in Filtri, riquadro «Decodifica»
+    for (const text of ['F Tol', 'ricerca profonda', 'livello aggressivo', 'Decodifica singola', 'media dei periodi']) {
+      fireEvent.change(screen.getByRole('searchbox'), { target: { value: text } });
+      expect(screen.getAllByRole('tab').map((t) => t.textContent), text).toEqual(['Filtri']);
+    }
   });
 });
 
