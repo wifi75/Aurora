@@ -1601,6 +1601,22 @@ export async function getSstvTxPhoto(name: string): Promise<Blob> {
   return await (await request('/sstv/tx-folder/file?name=' + encodeURIComponent(name))).blob();
 }
 
+/** Cancella piu' immagini dell'archivio in una volta. */
+export async function deleteSstvImages(ids: string[]): Promise<number> {
+  const res = await request('/sstv/images/delete', jsonInit({ ids }));
+  return ((await res.json()) as { deleted: number }).deleted;
+}
+
+/** Cancella delle foto dalla cartella da cui si trasmette (solo dal PC di Aurora; vanno via dal disco). */
+export async function deleteSstvTxPhotos(names: string[]): Promise<number> {
+  const res = await request('/sstv/tx-folder/delete', jsonInit({ names }));
+  return ((await res.json()) as { deleted: number }).deleted;
+}
+
+export function sstvTxPhotoUrl(name: string): string {
+  return `${BASE}/sstv/tx-folder/file?name=${encodeURIComponent(name)}`;
+}
+
 export function sstvImageUrl(id: string): string {
   return `${BASE}/sstv/images/${encodeURIComponent(id)}`;
 }

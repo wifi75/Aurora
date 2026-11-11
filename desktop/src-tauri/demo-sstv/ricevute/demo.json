@@ -1,0 +1,7 @@
+[
+  {"file": "01-martin1.png", "mode": "M1", "call": "IU3WJQ", "minutes_ago": 55, "sync_quality": 1.00},
+  {"file": "02-scottie1.png", "mode": "S1", "call": "IU3WJQ", "minutes_ago": 40, "sync_quality": 1.00},
+  {"file": "03-pd90.png", "mode": "PD90", "call": "IU3WJQ", "minutes_ago": 28, "sync_quality": 0.99},
+  {"file": "04-robot36.png", "mode": "R36", "call": "IU3WJQ", "minutes_ago": 15, "sync_quality": 1.00},
+  {"file": "05-martin2.png", "mode": "M2", "call": "IU3WJQ", "minutes_ago": 6, "sync_quality": 1.00}
+]

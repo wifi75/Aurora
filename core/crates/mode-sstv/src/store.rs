@@ -110,8 +110,12 @@ impl ImageStore {
     }
 
     pub fn add(&mut self, direction: &str, mode: SstvMode, img: &RgbImage, extra: EntryExtra) -> Result<ImageEntry, SstvError> {
+        self.add_at(direction, mode, img, extra, now_ms())
+    }
+
+    /// Come `add`, con l'ora data (le immagini di esempio sembrano arrivate un po' di tempo fa).
+    pub fn add_at(&mut self, direction: &str, mode: SstvMode, img: &RgbImage, extra: EntryExtra, time_ms: u64) -> Result<ImageEntry, SstvError> {
         std::fs::create_dir_all(&self.dir).map_err(|e| SstvError::Io(e.to_string()))?;
-        let time_ms = now_ms();
         let base = format!("{}_{}_{}", stamp(time_ms), direction, mode.id().replace('-', ""));
         let mut id = base.clone();
         let mut n = 2;

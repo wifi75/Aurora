@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode, type WheelEvent as RWheelEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ApiError, getSstvTxFolder, getSstvTxPhoto, sstvAbort, sstvTransmit, type SstvSnapshot } from '../../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError, deleteSstvTxPhotos, getSstvTxFolder, getSstvTxPhoto, sstvTxPhotoUrl, sstvAbort, sstvTransmit, type SstvSnapshot } from '../../api/client';
 import { useT, type Key } from '../../i18n';
 import {
   angleFrom,
@@ -614,7 +614,7 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
         </div>
 
         <aside className="sstv-panel sstv-panel--right">
-          {sel ? <LayerInspector layer={sel} patch={patchSel} /> : <BackgroundInspector background={comp.background} hasPhoto={bg !== null} patch={patchBg} txFolder={snap.settings.tx_folder ?? ''} onFolderPhoto={(b) => void takeFile(b)} onPick={() => fileInput.current?.click()} onRemove={() => setBg(null)} />}
+          {sel ? <LayerInspector layer={sel} patch={patchSel} /> : <BackgroundInspector background={comp.background} hasPhoto={bg !== null} patch={patchBg} onFolderPhoto={(b) => void takeFile(b)} onPick={() => fileInput.current?.click()} onRemove={() => setBg(null)} />}
           <input
             ref={fileInput}
             type="file"
@@ -785,38 +785,88 @@ function LayerInspector({ layer, patch }: { layer: Layer; patch: (p: Partial<Tex
   );
 }
 
-/** Le foto della cartella scelta nelle Impostazioni SSTV: una tendina con i nomi; la scelta diventa lo sfondo. */
+/** Le foto della cartella scelta nelle Impostazioni SSTV (o gli esempi dell'installatore): una griglia di miniature; un clic e la foto diventa lo sfondo.
+ *  Con «Seleziona» se ne scelgono piu' d'una da cancellare dal disco. */
 function TxFolderPhotos({ onPhoto }: { onPhoto: (b: Blob) => void }) {
   const t = useT();
+  const client = useQueryClient();
   const [problem, setProblem] = useState('');
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const list = useQuery({ queryKey: ['sstv-tx-folder'], queryFn: getSstvTxFolder, retry: false, staleTime: 15_000 });
   const files = list.data?.files ?? [];
+  if (list.isError || files.length === 0) {
+    return list.isError ? null : <p className="sstv-hint">{t('sstv.bg.folderEmpty')}</p>;
+  }
+  const toggle = (name: string) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
+    });
+  const stop = () => {
+    setSelecting(false);
+    setPicked(new Set());
+  };
+  const remove = async () => {
+    if (picked.size === 0 || !window.confirm(t('sstv.sel.confirmPhotos', { n: picked.size }))) return;
+    await deleteSstvTxPhotos([...picked]).catch(() => 0);
+    stop();
+    void client.invalidateQueries({ queryKey: ['sstv-tx-folder'] });
+  };
   return (
-    <label className="sstv-field">
-      <span>{t('sstv.bg.fromFolder')}</span>
-      <select
-        value=""
-        disabled={list.isError || files.length === 0}
-        onChange={(e) => {
-          const name = e.target.value;
-          if (!name) return;
-          setProblem('');
-          getSstvTxPhoto(name).then(onPhoto, () => setProblem(t('sstv.bg.badFile')));
-        }}
-      >
-        <option value="">{list.isError ? t('sstv.bg.folderMissing') : files.length === 0 ? t('sstv.bg.folderEmpty') : t('sstv.bg.pickFromFolder', { n: files.length })}</option>
+    <div className="sstv-field">
+      <span className="sstv-photos-head">
+        {t('sstv.bg.fromFolder')} ({files.length})
+        <span className="sstv-hist-tools">
+          {selecting ? (
+            <>
+              <button type="button" className="glass sstv-btn" onClick={() => setPicked(new Set(files.map((f) => f.name)))}>
+                {t('sstv.sel.all')}
+              </button>
+              <button type="button" className="glass sstv-btn sstv-btn--danger" disabled={picked.size === 0} onClick={() => void remove()}>
+                {t('sstv.sel.delete', { n: picked.size })}
+              </button>
+              <button type="button" className="glass sstv-btn" onClick={stop}>
+                {t('sstv.sel.done')}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="glass sstv-btn" onClick={() => setSelecting(true)}>
+              {t('sstv.sel.start')}
+            </button>
+          )}
+        </span>
+      </span>
+      <ul className="sstv-photos">
         {files.map((f) => (
-          <option key={f.name} value={f.name}>
-            {f.name}
-          </option>
+          <li key={f.name}>
+            <button
+              type="button"
+              className={`sstv-photo${picked.has(f.name) ? ' sstv-photo--picked' : ''}`}
+              title={f.name}
+              onClick={() => {
+                if (selecting) {
+                  toggle(f.name);
+                  return;
+                }
+                setProblem('');
+                getSstvTxPhoto(f.name).then(onPhoto, () => setProblem(t('sstv.bg.badFile')));
+              }}
+            >
+              <img src={sstvTxPhotoUrl(f.name)} alt={f.name} loading="lazy" />
+              {selecting ? <span className="sstv-tick" aria-hidden="true">{picked.has(f.name) ? '✓' : ''}</span> : null}
+            </button>
+          </li>
         ))}
-      </select>
+      </ul>
       {problem ? <small className="sstv-bad">{problem}</small> : null}
-    </label>
+    </div>
   );
 }
 
-function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove, txFolder, onFolderPhoto }: { background: Background; hasPhoto: boolean; patch: (p: Partial<Background>, key: string) => void; onPick: () => void; onRemove: () => void; txFolder: string; onFolderPhoto: (b: Blob) => void }) {
+function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove, onFolderPhoto }: { background: Background; hasPhoto: boolean; patch: (p: Partial<Background>, key: string) => void; onPick: () => void; onRemove: () => void; onFolderPhoto: (b: Blob) => void }) {
   const t = useT();
   const a = background.adjust;
   return (
@@ -825,7 +875,7 @@ function BackgroundInspector({ background, hasPhoto, patch, onPick, onRemove, tx
       <button type="button" className="glass sstv-btn sstv-btn--primary sstv-wide" onClick={onPick}>
         {t('sstv.bg.load')}
       </button>
-      {txFolder.trim() !== '' ? <TxFolderPhotos onPhoto={onFolderPhoto} /> : null}
+      <TxFolderPhotos onPhoto={onFolderPhoto} />
       <p className="sstv-hint">{t('sstv.bg.drop')}</p>
       {hasPhoto ? (
         <>

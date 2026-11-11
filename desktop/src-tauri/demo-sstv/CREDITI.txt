@@ -1,0 +1,12 @@
+Foto di esempio per l'SSTV di Aurora (cartella foto) e immagini «ricevute» di esempio (cartella ricevute).
+
+Le foto sono di pubblico dominio (NASA), prese da Wikimedia Commons:
+- terra-apollo17.jpg         "The Earth seen from Apollo 17" (NASA, Apollo 17, 1972)
+- astronauta-apollo11.jpg    "Aldrin Apollo 11" (NASA, 1969)
+- galassie-hubble.jpg        "Hubble Ultra Deep Field" (NASA/ESA, Hubble)
+- pilastri-creazione.jpg     "Pillars of Creation" (NASA/ESA, Hubble)
+- saturno.jpg                "Saturn during Equinox" (NASA/ESA, Cassini)
+
+Le immagini in «ricevute» sono quelle stesse foto passate dal codificatore SSTV di Aurora, da un po' di rumore e dal suo decoder
+(strumento: core/crates/mode-sstv/tests/genera_demo.rs). Il nominativo che compare e' solo un esempio.
+Si possono cancellare: al primo avvio Aurora le mette nella cronologia una volta sola.

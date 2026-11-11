@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteSstvImage, getSstvImageBlob, getSstvImageCleanBlob, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
+import { deleteSstvImage, deleteSstvImages, getSstvImageBlob, getSstvImageCleanBlob, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
 import { useT } from '../../i18n';
 
 function when(ms: number): string {
@@ -12,6 +12,26 @@ function when(ms: number): string {
 export function History({ images, modes, onChanged, onReuse }: { images: SstvImageEntry[]; modes: SstvModeInfo[]; onChanged: () => void; onReuse: (entry: SstvImageEntry) => void }) {
   const t = useT();
   const [open, setOpen] = useState<SstvImageEntry | null>(null);
+  // selezione per cancellare: una colonna alla volta, piu' immagini insieme
+  const [selecting, setSelecting] = useState<'rx' | 'tx' | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const stopSelecting = () => {
+    setSelecting(null);
+    setPicked(new Set());
+  };
+  const removePicked = async () => {
+    if (picked.size === 0 || !window.confirm(t('sstv.sel.confirmImages', { n: picked.size }))) return;
+    await deleteSstvImages([...picked]);
+    stopSelecting();
+    onChanged();
+  };
   const count = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).length;
   const modeName = (id: string) => modes.find((m) => m.id === id)?.name ?? id;
 
@@ -21,7 +41,14 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
       <ul className="sstv-strip">
         {items.map((img) => (
           <li key={img.id}>
-            <button type="button" className="sstv-thumb" onClick={() => setOpen(img)} title={`${modeName(img.mode)} · ${when(img.time_ms)}`}>
+            <button
+              type="button"
+              className={`sstv-thumb${selecting === d ? ' sstv-thumb--select' : ''}${picked.has(img.id) ? ' sstv-thumb--picked' : ''}`}
+              onClick={() => (selecting === d ? toggle(img.id) : setOpen(img))}
+              aria-pressed={selecting === d ? picked.has(img.id) : undefined}
+              title={`${modeName(img.mode)} · ${when(img.time_ms)}`}
+            >
+              {selecting === d ? <span className="sstv-tick" aria-hidden="true">{picked.has(img.id) ? '✓' : ''}</span> : null}
               <img src={sstvImageUrl(img.id)} alt="" loading="lazy" width={img.width} height={img.height} />
               <span className="sstv-thumb-meta">
                 <b>{img.call ?? modeName(img.mode)}</b>
@@ -48,6 +75,25 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
           <div className="sstv-hist-head">
             {d === 'rx' ? t('sstv.hist.received') : t('sstv.hist.sent')}
             <span className="sstv-count">{count(d)}</span>
+            <span className="sstv-hist-tools">
+              {selecting === d ? (
+                <>
+                  <button type="button" className="glass sstv-btn" onClick={() => setPicked(new Set(images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).map((i) => i.id)))}>
+                    {t('sstv.sel.all')}
+                  </button>
+                  <button type="button" className="glass sstv-btn sstv-btn--danger" disabled={picked.size === 0} onClick={() => void removePicked()}>
+                    {t('sstv.sel.delete', { n: picked.size })}
+                  </button>
+                  <button type="button" className="glass sstv-btn" onClick={stopSelecting}>
+                    {t('sstv.sel.done')}
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="glass sstv-btn" disabled={count(d) === 0} onClick={() => { setSelecting(d); setPicked(new Set()); }}>
+                  {t('sstv.sel.start')}
+                </button>
+              )}
+            </span>
           </div>
           {strip(d)}
         </div>

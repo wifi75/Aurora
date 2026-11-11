@@ -125,7 +125,7 @@ pub(crate) async fn sstv_tx_folder(State(state): State<AppState>, _: Authed, Pee
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
     let svc = service(&state)?;
-    let folder = svc.settings().tx_folder;
+    let folder = svc.tx_folder_in_use();
     let files = blocking(move || svc.tx_photos()).await?.map_err(api_error)?;
     Ok(Json(json!({ "folder": folder, "files": files })))
 }
@@ -144,6 +144,33 @@ pub(crate) async fn sstv_tx_photo(State(state): State<AppState>, _: Authed, Peer
     let svc = service(&state)?;
     let (bytes, mime) = blocking(move || svc.tx_photo(&q.name)).await?.map_err(api_error)?;
     Ok(([(axum::http::header::CONTENT_TYPE, mime)], bytes).into_response())
+}
+
+#[derive(Deserialize)]
+pub(crate) struct DeleteMany {
+    #[serde(default)]
+    ids: Vec<String>,
+    #[serde(default)]
+    names: Vec<String>,
+}
+
+/// Cancella piu' immagini dell'archivio: `{ids: [..]}` → `{deleted}`.
+#[utoipa::path(post, path = "/api/v1/sstv/images/delete", responses((status = 200, description = "`{deleted}`")))]
+pub(crate) async fn sstv_images_delete(State(state): State<AppState>, _: Authed, Json(body): Json<DeleteMany>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let deleted = blocking(move || svc.delete_images(&body.ids)).await?;
+    Ok(Json(json!({ "deleted": deleted })))
+}
+
+/// Cancella delle foto dalla cartella da cui si trasmette: `{names: [..]}` → `{deleted}`. Solo dal PC stesso; i file vanno via davvero (non nel cestino).
+#[utoipa::path(post, path = "/api/v1/sstv/tx-folder/delete", responses((status = 200, description = "`{deleted}`"), (status = 403, description = "Solo dal PC (local_only)")))]
+pub(crate) async fn sstv_tx_folder_delete(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<DeleteMany>) -> Result<Json<Value>, ApiError> {
+    if !(peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers)) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let svc = service(&state)?;
+    let deleted = blocking(move || svc.tx_delete(&body.names)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "deleted": deleted })))
 }
 
 /// Un'immagine dell'archivio in PNG.

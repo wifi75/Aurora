@@ -146,8 +146,38 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 
 /// La cartella `history` dentro la cartella di Aurora (dove sta il programma); se non si puo' scrivere li' (per esempio un avvio da sviluppo) resta
 /// `sstv` nella cartella dei dati. Con `AURORA_INSTALL_DIR` si sceglie un'altra cartella di Aurora.
+fn install_dir() -> Option<PathBuf> {
+    std::env::var_os("AURORA_INSTALL_DIR").map(PathBuf::from).or_else(|| std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)))
+}
+
+/// Le foto di esempio che l'installatore mette accanto al programma (cartella `demo-sstv/foto`).
+fn demo_photos() -> Option<PathBuf> {
+    install_dir().map(|d| d.join("demo-sstv").join("foto")).filter(|d| d.is_dir())
+}
+
+/// Al primo avvio, con la cronologia vuota, mette qualche immagine «ricevuta» di esempio (da `demo-sstv/ricevute`), cosi' la pagina non parte vuota.
+/// Un segno nella cartella evita di rifarlo quando l'operatore le cancella.
+fn seed_demo(store: &mut ImageStore, history: &Path) {
+    let marker = history.join(".demo");
+    if marker.exists() || !store.list().is_empty() {
+        return;
+    }
+    let Some(dir) = install_dir().map(|d| d.join("demo-sstv").join("ricevute")) else { return };
+    let Some(list) = std::fs::read(dir.join("demo.json")).ok().and_then(|b| serde_json::from_slice::<Vec<serde_json::Value>>(&b).ok()) else { return };
+    let now = crate::store::now_ms();
+    for item in list {
+        let (Some(file), Some(mode)) = (item["file"].as_str(), item["mode"].as_str().and_then(SstvMode::from_id)) else { continue };
+        let Some(img) = std::fs::read(dir.join(file)).ok().and_then(|b| decode_image(&b).ok()) else { continue };
+        let ago = item["minutes_ago"].as_u64().unwrap_or(0) * 60_000;
+        let extra = EntryExtra { sync_quality: item["sync_quality"].as_f64().map(|q| q as f32), complete: true, call: item["call"].as_str().map(str::to_string), ..EntryExtra::default() };
+        let _ = store.add_at("rx", mode, &img, extra, now.saturating_sub(ago));
+    }
+    let _ = std::fs::create_dir_all(history);
+    let _ = std::fs::write(marker, b"demo");
+}
+
 fn default_history(data_dir: &Path) -> PathBuf {
-    let install = std::env::var_os("AURORA_INSTALL_DIR").map(PathBuf::from).or_else(|| std::env::current_exe().ok().and_then(|p| p.parent().map(Path::to_path_buf)));
+    let install = install_dir();
     if let Some(dir) = install.map(|d| d.join("history"))
         && std::fs::create_dir_all(&dir).is_ok()
     {
@@ -242,7 +272,8 @@ impl SstvService {
         if settings.folder.trim().is_empty() {
             migrate_old_images(data_dir, &history);
         }
-        let store = ImageStore::open(&history);
+        let mut store = ImageStore::open(&history);
+        seed_demo(&mut store, &history);
         let inner = Arc::new(Inner {
             settings_path,
             data_dir: data_dir.to_path_buf(),
@@ -305,9 +336,37 @@ impl SstvService {
         lock(&self.inner.settings).clone()
     }
 
+    /// La cartella delle foto da trasmettere: quella scelta nelle impostazioni; se e' vuota, le foto di esempio dell'installatore (se ci sono).
+    pub fn tx_folder_in_use(&self) -> String {
+        let chosen = lock(&self.inner.settings).tx_folder.trim().to_string();
+        if chosen.is_empty() { demo_photos().map(|p| p.display().to_string()).unwrap_or_default() } else { chosen }
+    }
+
+    /// Cancella delle foto dalla cartella da cui si trasmette (solo i nomi di file immagine, senza percorsi). Restituisce quante ne ha cancellate.
+    pub fn tx_delete(&self, names: &[String]) -> Result<usize, SstvError> {
+        let folder = self.tx_folder_in_use();
+        if folder.is_empty() {
+            return Err(SstvError::NotFound);
+        }
+        let mut done = 0;
+        for name in names {
+            let ok_name = !name.is_empty() && !name.contains(['/', '\\', ':']) && !name.starts_with('.') && name.len() <= 200 && photo_ext(name).is_some();
+            if ok_name && std::fs::remove_file(Path::new(&folder).join(name)).is_ok() {
+                done += 1;
+            }
+        }
+        Ok(done)
+    }
+
+    /// Cancella piu' immagini dell'archivio in una volta. Restituisce quante ne ha cancellate.
+    pub fn delete_images(&self, ids: &[String]) -> usize {
+        let mut store = lock(&self.inner.store);
+        ids.iter().filter(|id| store.delete(id).is_ok()).count()
+    }
+
     /// Le foto della cartella da cui si trasmette (senza cartelle dentro), per nome, al massimo 500.
     pub fn tx_photos(&self) -> Result<Vec<TxPhoto>, SstvError> {
-        let folder = lock(&self.inner.settings).tx_folder.trim().to_string();
+        let folder = self.tx_folder_in_use();
         if folder.is_empty() {
             return Err(SstvError::BadImage("nessuna cartella scelta per le foto da trasmettere".into()));
         }
@@ -327,7 +386,7 @@ impl SstvService {
 
     /// Una foto della cartella da cui si trasmette: solo il nome del file (niente percorsi), le estensioni delle immagini e al massimo 20 MB.
     pub fn tx_photo(&self, name: &str) -> Result<(Vec<u8>, &'static str), SstvError> {
-        let folder = lock(&self.inner.settings).tx_folder.trim().to_string();
+        let folder = self.tx_folder_in_use();
         let ok_name = !name.is_empty() && !name.contains(['/', '\\', ':']) && !name.starts_with('.') && name.len() <= 200;
         let ext = photo_ext(name).filter(|_| ok_name && !folder.is_empty()).ok_or(SstvError::NotFound)?;
         let path = Path::new(&folder).join(name);
