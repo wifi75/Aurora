@@ -208,3 +208,34 @@ html[data-theme='light'] .digi-classica .digi-gear { color: #9a5b00; }
 .digi-txflag { align-self: flex-start; margin-left: 4px; padding: 0.25rem 1.1rem; border-radius: 10px; background: linear-gradient(135deg, #b3202f, #ff4d57); color: #fff; font: 800 1.5rem/1.2 var(--font-ui); letter-spacing: 0.12em; box-shadow: 0 0 14px rgba(255, 77, 87, 0.55); }
 .digi-txflag--flash { animation: digi-txflag-flash 0.8s steps(2, start) infinite; }
 @keyframes digi-txflag-flash { 50% { background: #7a1d27; box-shadow: none; } }
+
+/* pulsanti delle macro: piu' staccati uno dall'altro e piu' leggibili (nel tema chiaro i colori tenui si confondevano con lo sfondo) */
+.digi-classica .digi-keys { gap: 7px; }
+.digi-classica .digi-keyrow { column-gap: 7px; }
+.digi-classica .digi-key:nth-child(4n + 1):not(:first-child) { margin-left: 12px; width: calc(100% - 12px); }
+.digi-classica .digi-key { height: 26px; }
+html[data-theme='light'] .digi-classica .digi-key:not(.digi-key--blank) { filter: saturate(1.35); box-shadow: inset 0 0 0 1px rgba(25, 35, 70, 0.32), 0 1px 2px rgba(25, 35, 70, 0.22); font-weight: 700; color: #0b1322; }
+html[data-theme='light'] .digi-classica .digi-key--blank { background: #eef1f8; border-color: #c4cde3; box-shadow: none; }
+html[data-theme='light'] .digi-classica .digi-key:hover:not(:disabled) { filter: saturate(1.35) brightness(0.96); border-color: #5b4fe0; box-shadow: inset 0 0 0 1px #5b4fe0, 0 2px 5px rgba(60, 50, 180, 0.3); }
+/* il selettore di banda e frequenza: bordo piu' marcato e ombra, nel tema chiaro (e il suo bordo viola piu' spesso anche nello scuro) */
+.digi-topline .digi-bandbar .freq-picker-btn { border-width: 2px !important; }
+html[data-theme='light'] .digi-topline .digi-bandbar .freq-picker-btn { background: #ffffff !important; border-color: #5b4fe0 !important; box-shadow: 0 2px 7px rgba(70, 55, 200, 0.32) !important; }
+html[data-theme='light'] .digi-topline .digi-bandbar .freq-picker-btn:hover { background: #f1eeff !important; }
+html[data-theme='light'] .digi-topline .digi-bandbar .freq-picker-btn .freq-picker-btn-unit { color: #3a3a6a !important; opacity: 1; }
+
+/* barra di stato in fondo (RX, Sq, AFC, Lock, Snap, frequenza, informazioni): pulsanti piu' grandi, bordo netto e stato acceso ben visibile, nei due temi */
+.digi-status { gap: 8px; }
+.digi-status .digi-st { min-height: 30px; padding: 3px 13px; border-radius: 9px; font: 600 13px var(--font-ui); border: 1.5px solid #3f5290; background: #1a2848; color: #dbe5ff; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
+.digi-status button.digi-st:hover { border-color: #8e7bff; background: #24366a; color: #fff; }
+.digi-status button.digi-st.on { background: linear-gradient(180deg, #7b66f2, #5a47d6); border-color: #b3a6ff; color: #fff; box-shadow: 0 0 10px rgba(142, 123, 255, 0.55); }
+.digi-status .digi-st--rx { background: #0f5a46; border-color: #2cf5a4; color: #c9ffe9; }
+.digi-status .digi-st--tx { background: linear-gradient(180deg, #ff6a77, #d92f42); border-color: #ffb3bb; color: #fff; box-shadow: 0 0 10px rgba(255, 93, 108, 0.6); }
+.digi-status .digi-st--freq input { color: #fff; font: 600 13px var(--font-data); }
+.digi-status .digi-st--info { color: #e6edff; font-family: var(--font-data); font-size: 12.5px; }
+html[data-theme='light'] .digi-status .digi-st { background: #ffffff; border-color: #7d8bb0; color: #0b1322; box-shadow: 0 1px 2px rgba(25, 35, 70, 0.25); }
+html[data-theme='light'] .digi-status button.digi-st:hover { background: #ece9ff; border-color: #5b4fe0; color: #000; }
+html[data-theme='light'] .digi-status button.digi-st.on { background: linear-gradient(180deg, #6a57e8, #4d3ccb); border-color: #3a2db0; color: #fff; box-shadow: 0 1px 4px rgba(60, 45, 190, 0.5); }
+html[data-theme='light'] .digi-status .digi-st--rx { background: #d6f6e8; border-color: #0f9d6b; color: #07412e; }
+html[data-theme='light'] .digi-status .digi-st--tx { background: linear-gradient(180deg, #ef5566, #c71f33); border-color: #8f1222; color: #fff; }
+html[data-theme='light'] .digi-status .digi-st--freq input { color: #000; }
+html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; border-color: #8f9cbf; color: #0b1322; }
