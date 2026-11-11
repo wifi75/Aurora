@@ -127,7 +127,9 @@ pub struct CatService {
     store: RadioStore,
     parts: CatParts,
     current: Mutex<Option<Arc<HamlibRig>>>,
-    omni: Mutex<(LinkState, String)>,
+    omni: Arc<Mutex<(LinkState, String)>>,
+    /// Ricontrollo dello stato di OmniRig (come il timer «offline» di `OmniRigTransceiver.cpp`): l'ultimo e se ce n'e' uno in corso.
+    omni_check: Arc<Mutex<(Option<std::time::Instant>, bool)>>,
     tci: Mutex<Option<Arc<TciRig>>>,
     /// La FT-991/FT-991A collegata attraverso FT-991(A) Link (UDP).
     ft991: Mutex<Option<Arc<Ft991Rig>>>,
@@ -150,7 +152,8 @@ impl CatService {
             store,
             parts,
             current: Mutex::new(None),
-            omni: Mutex::new((LinkState::Disconnected, String::new())),
+            omni: Arc::new(Mutex::new((LinkState::Disconnected, String::new()))),
+            omni_check: Arc::new(Mutex::new((None, false))),
             tci: Mutex::new(None),
             ft991: Mutex::new(None),
             tci_hooks: Mutex::new((None, None)),
@@ -189,6 +192,7 @@ impl CatService {
                 None => CatStatus { backend: Backend::Hamlib, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None },
             },
             Backend::Omnirig => {
+                self.recheck_omni();
                 let (state, message) = self.omni.lock().map(|o| o.clone()).unwrap_or((LinkState::Disconnected, String::new()));
                 CatStatus { backend: Backend::Omnirig, state, message, rigctld_found, omnirig_found, rig: None, share: None }
             }
@@ -268,6 +272,37 @@ impl CatService {
             Backend::None => {}
         }
         Ok(self.status())
+    }
+
+    /// Con OmniRig scelto e collegato (o in errore), al massimo ogni 10 s rilegge la radio in un thread a parte: se si spegne l'interfaccia lo dice, se
+    /// torna si ricollega da sola. Prima lo stato si fissava al collegamento e restava «collegata» anche a radio spenta.
+    fn recheck_omni(&self) {
+        let state = self.omni.lock().map(|o| o.0).unwrap_or(LinkState::Disconnected);
+        if state == LinkState::Disconnected || state == LinkState::Connecting {
+            return;
+        }
+        {
+            let Ok(mut c) = self.omni_check.lock() else { return };
+            if c.1 || c.0.is_some_and(|t| t.elapsed() < std::time::Duration::from_secs(10)) {
+                return;
+            }
+            *c = (Some(std::time::Instant::now()), true);
+        }
+        let (omni, check) = (Arc::clone(&self.omni), Arc::clone(&self.omni_check));
+        let _ = std::thread::Builder::new().name("aurora-omnirig-check".into()).spawn(move || {
+            let result = WindowsRig.frequency();
+            if let Ok(mut o) = omni.lock()
+                && o.0 != LinkState::Disconnected
+            {
+                *o = match result {
+                    Ok(_) => (LinkState::Connected, String::new()),
+                    Err(e) => (LinkState::Error, friendly_error(&e.0)),
+                };
+            }
+            if let Ok(mut c) = check.lock() {
+                c.1 = false;
+            }
+        });
     }
 
     fn set_omni(&self, state: LinkState, message: &str) {
