@@ -41,7 +41,7 @@ pub use score::{CallerFacts, best_index, caller_score};
 pub use report::{format_r_report, format_report, parse_r_report, parse_report};
 pub use sequencer::{CallerInfoFn, Sequencer, is_autoseq_73};
 pub use slot::{Mode, Slot};
-pub use stdmsg::{StdMessages, gen_cq, gen_std_msgs};
+pub use stdmsg::{StdMessages, apply_msk144_short, gen_cq, gen_std_msgs, msk40_report};
 pub use types::{
     AbandonReason, CallerInfo, CallerSelection, Decoded, Event, Options, Phase, QsoRecord, RepeatLimits, ReportPolicy, SeqError,
     Station, StopReason, Tx,

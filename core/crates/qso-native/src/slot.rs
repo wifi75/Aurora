@@ -31,6 +31,26 @@ pub fn q65_submode() -> u8 {
     Q65_SUBMODE.load(Ordering::Relaxed)
 }
 
+/// Periodo di MSK144 in secondi (5, 10, 15, 30: `ui->sbTR->values ({5, 10, 15, 30})` di WSJT-X, `mainwindow.cpp:12081`); lo sceglie il motore.
+static MSK144_PERIOD_S: AtomicU32 = AtomicU32::new(15);
+
+/// I periodi di MSK144 che WSJT-X propone (`mainwindow.cpp:12081`).
+pub const MSK144_PERIODS_S: [u32; 4] = [5, 10, 15, 30];
+
+/// Sceglie il periodo di MSK144; valori fuori campo si ignorano (`false`).
+pub fn set_msk144_period_s(period_s: u32) -> bool {
+    let ok = MSK144_PERIODS_S.contains(&period_s);
+    if ok {
+        MSK144_PERIOD_S.store(period_s, Ordering::Relaxed);
+    }
+    ok
+}
+
+/// Periodo di MSK144 in uso, in secondi.
+pub fn msk144_period_s() -> u32 {
+    MSK144_PERIOD_S.load(Ordering::Relaxed)
+}
+
 /// Campioni per simbolo di Q65 a 12 kHz (`q65params`).
 fn q65_nsps(period_s: u32) -> f64 {
     match period_s {
@@ -65,7 +85,7 @@ pub enum Mode {
     Jt4,
     /// Q65: periodi da 15 a 300 s ([`set_q65`]), messaggi a 77 bit come FT8.
     Q65,
-    /// MSK144 (meteor scatter): periodi di 15 s, quadro di 72 ms ripetuto per tutto il periodo.
+    /// MSK144 (meteor scatter): periodi di 5, 10, 15 o 30 s ([`set_msk144_period_s`]), quadro di 72 ms ripetuto per tutto il periodo.
     Msk144,
 }
 
@@ -73,7 +93,8 @@ impl Mode {
     /// Durata del periodo in millisecondi.
     pub fn period_ms(self) -> u64 {
         match self {
-            Mode::Ft8 | Mode::Msk144 => 15_000,
+            Mode::Ft8 => 15_000,
+            Mode::Msk144 => u64::from(msk144_period_s()) * 1000,
             Mode::Ft4 => 7_500,
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60_000,
             Mode::Q65 => u64::from(q65_period_s()) * 1000,

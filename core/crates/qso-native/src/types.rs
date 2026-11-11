@@ -181,6 +181,9 @@ pub struct Options {
     pub my_prefix: String,
     /// Modo Hound (DXpedition): niente Salta Tx1, niente CQ, la chiusura e' l'RR73 della spedizione.
     pub hound: bool,
+    /// «Sh» di WSJT-X in MSK144 (`m_bShMsgs`, di fabbrica spento): Tx3-Tx5 diventano i messaggi brevi «<DX MIO> R+03», «<DX MIO> RRR»,
+    /// «<DX MIO> 73» (MSK40) e il Tx4 e' sempre RRR (`Rr73Policy.cpp:10-11`). Negli altri modi non conta.
+    pub msk_short: bool,
     /// Come si sceglie tra piu' chiamanti.
     pub caller_selection: CallerSelection,
 }
@@ -217,6 +220,7 @@ impl Default for Options {
             my_continent: String::new(),
             my_prefix: String::new(),
             hound: false,
+            msk_short: false,
             caller_selection: CallerSelection::Jtdx,
         }
     }
@@ -234,7 +238,8 @@ impl Options {
             // 1 s + 206 simboli da 0,2286 s
             Mode::Jt4 => 48.09,
             Mode::Q65 => crate::slot::q65_message_end_s(),
-            Mode::Msk144 => 12.0,
+            // MSK144: il quadro si ripete per tutto il periodo; si parte fino ai 4/5 del periodo (12 s su 15, com'era)
+            Mode::Msk144 => crate::slot::msk144_period_s() as f64 * 0.8,
         })
     }
 

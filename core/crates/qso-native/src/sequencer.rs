@@ -38,7 +38,7 @@ use crate::history::{Autoseq, Qso, QsoHistory, Sec, Status, algo};
 use crate::message::{Body, Message, base_call, is_modifier, is_std_call, is_valid_call, is_valid_locator, parse, same_station};
 use crate::score::{CallerFacts, caller_score};
 use crate::slot::{Mode, Slot};
-use crate::stdmsg::{StdMessages, gen_cq, gen_std_msgs};
+use crate::stdmsg::{StdMessages, apply_msk144_short, gen_cq, gen_std_msgs};
 use crate::types::{AbandonReason, CallerInfo, CallerSelection, Decoded, Event, Options, Phase, QsoRecord, ReportPolicy, SeqError, Station, StopReason, Tx};
 
 /// Chi sa dire cosa ricorda il registro di una stazione (continente, priorita'): le evidenziazioni di JTDX.
@@ -936,7 +936,7 @@ impl Sequencer {
                 if self.auto_seq_effective()
                     && !self.process_auto_done
                     && ((!has73 && !has_rr73)
-                        || (has73 && self.status == Status::Rrreport && self.opts.use_rrr)
+                        || (has73 && self.status == Status::Rrreport && self.tx4_is_rrr())
                         || (has_rr73 && self.status == Status::Rreport)
                         || self.opts.call_mode == 0
                         || self.opts.single_qso
@@ -1118,7 +1118,7 @@ impl Sequencer {
                 && let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call)
                 // anche senza limite scelto, un QSO gia' a log non ripete la chiusura all'infinito: dopo 3 tentativi si pulisce tutto
                 // il nostro RRR e' gia' partito: il QSO e' valido anche se il suo 73 non arriva mai
-                && let rrr_sent = self.opts.use_rrr && self.ntx == 4
+                && let rrr_sent = self.tx4_is_rrr() && self.ntx == 4
                 && let Some(limit) = limits.closing.or((logged || rrr_sent).then_some(LOGGED_CLOSING_TRIES))
                 && limit as i32 <= count
             {
@@ -1244,7 +1244,7 @@ impl Sequencer {
                     let logged = self.last_logged.as_ref().is_some_and(|(c, _)| *c == self.his_call);
                     // dal 2026-11-07 l'RRR non mette a log (come WSJT-X): il limite vale anche dopo un RRR gia' partito, e se il suo 73
                     // non arriva il QSO si registra all'ultima risposta (scelta del proprietario dell'ultimo tentativo, 0.11.124)
-                    let rrr_sent = self.opts.use_rrr && self.ntx == 4;
+                    let rrr_sent = self.tx4_is_rrr() && self.ntx == 4;
                     if logged || rrr_sent {
                         self.rrr_repeats += 1;
                     } else {
@@ -1293,7 +1293,7 @@ impl Sequencer {
                 }
                 // dopo il nostro RRR arriva il suo 73: il QSO e' finito, si registra qui e ci si ferma senza mandare un altro 73 (come
                 // WSJT-X in FT8/FT4; JTDX risponde ancora 73 con il Tx5)
-                Status::R73 if self.opts.use_rrr && self.ntx == 4 => {
+                Status::R73 if self.tx4_is_rrr() && self.ntx == 4 => {
                     // l'RRR non registra piu' (dal 2026-11-07): si registra qui, una volta sola
                     if self.last_logged.as_ref().is_none_or(|(c, _)| *c != self.his_call) {
                         self.log_qso(self.cur_slot, self.cur_slot.start_s(self.mode));
@@ -1637,8 +1637,22 @@ impl Sequencer {
         }
     }
 
+    /// «Sh» in MSK144 (`m_bShMsgs`) fuori dai contest: WSJT-X scrive i messaggi brevi solo con `SpecOp::NONE` (`mainwindow.cpp:10040`).
+    fn msk_short(&self) -> bool {
+        self.mode == Mode::Msk144 && self.opts.msk_short && self.contest.is_none()
+    }
+
+    /// Il Tx4 e' RRR: la casella RRR, oppure «Sh» in MSK144 (`Rr73Policy::tx4AllowsRr73` e' falso con i messaggi brevi, `Rr73Policy.cpp:10-11`).
+    fn tx4_is_rrr(&self) -> bool {
+        self.opts.use_rrr || self.msk_short()
+    }
+
     fn std_msgs(&self) -> StdMessages {
-        gen_std_msgs(&self.my.call, &self.my.grid, &self.his_call, self.rpt_value(), self.opts.use_rrr)
+        let mut msgs = gen_std_msgs(&self.my.call, &self.my.grid, &self.his_call, self.rpt_value(), self.tx4_is_rrr());
+        if self.msk_short() {
+            apply_msk144_short(&mut msgs, &self.my.call, &self.his_call, self.rpt_value());
+        }
+        msgs
     }
 
     fn cq_text(&self) -> String {
