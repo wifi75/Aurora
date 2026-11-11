@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster**: tabella con la griglia; le colonne si spostano trascinando il titolo (o Alt+frecce) e si allargano trascinando il bordo (doppio clic: adatta al contenuto); ordine e larghezze restano, tasto destro → «Ripristina colonne».
 - In trasmissione il modo e la frequenza non si cambiano ma i due pulsanti non si spengono piu' di colore: il clic viene solo ignorato.
 - Pannello Comandi: tolto «Spot DX», doppione del pulsante del DX Cluster (che apre la finestra dello spot con DX, frequenza e modo).
 - Riquadro del nominativo (QRZ.com/HamQTH) nel DX Cluster, in Attivita' di banda e nella finestra Rx: ora sta sopra tutto e si legge; prima finiva sotto le righe dell'elenco e sembrava in filigrana.

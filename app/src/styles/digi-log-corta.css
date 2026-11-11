@@ -137,13 +137,6 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .cop-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .cop-hint { margin: 0.2rem 0 0; font-size: 0.85em; color: var(--text-muted, #9aa7c4); }
 .cop-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 1rem; }
-.cluster-table[data-hide~="de"] th:nth-child(1), .cluster-table[data-hide~="de"] td:nth-child(1) { display: none; }
-.cluster-table[data-hide~="freq"] th:nth-child(2), .cluster-table[data-hide~="freq"] td:nth-child(2) { display: none; }
-.cluster-table[data-hide~="dx"] th:nth-child(3), .cluster-table[data-hide~="dx"] td:nth-child(3) { display: none; }
-.cluster-table[data-hide~="country"] th:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(5) { display: none; }
-.cluster-table[data-hide~="mode"] th:nth-child(5), .cluster-table[data-hide~="mode"] td:nth-child(6) { display: none; }
-.cluster-table[data-hide~="comment"] th:nth-child(6), .cluster-table[data-hide~="comment"] td:nth-child(7) { display: none; }
-.cluster-table[data-hide~="time"] th:nth-child(7), .cluster-table[data-hide~="time"] td:nth-child(8) { display: none; }
 .cop-dialog label.cop-radio { flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; gap: 0.6rem; }
 .cop-dialog label.cop-radio input { flex: none; width: auto; margin: 0; }
 .cop-dialog label.cop-row { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; }
