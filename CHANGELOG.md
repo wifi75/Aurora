@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Rapporti degli errori**: la «decodifica lenta» parte al massimo una volta per installazione e versione (prima a ogni avvio da ogni PC vecchio); la riga resta nel log locale.
 - **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.
 - **Rotore unico** in tutte le pagine (quello di PSK·RTTY·CW, con direzione corta e lunga del DX, ±2/±10, gradi): scheda mobile sopra la Stazione o finestra a parte per il secondo schermo.
