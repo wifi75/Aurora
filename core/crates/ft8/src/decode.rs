@@ -939,7 +939,7 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
             if options.filters {
                 let qual = 1.0 - (quality.hard_errors as f32 + quality.dmin) / 60.0;
                 let check = MessageCheck { text: &text, i3, n3, ap_type: aptype, qual, snr: xsnr, dt_s: refined.dt_s };
-                if filters::reject_message(&check, &o.mycall, options.call_book.as_deref()) || filters::grid_rejected_ft8(&check, options.grid_check.is_some()) {
+                if filters::reject_message(&check, &o.mycall, options.call_book.as_deref()) || filters::grid_rejected_ft8(&check, &o.mycall, &o.hiscall, options.grid_check.is_some()) {
                     return (None, capture);
                 }
             }

@@ -74,15 +74,23 @@ pub fn grid_is_false(text: &str, snr_db: f32, ap_type: u8, check: Option<&GridCh
 
 /// FT8: `true` se il messaggio va scartato per il locatore, con la tabella `chkgridvar` e le condizioni di WSJT-X 3.3.0-beta6 (`ft8bvar.f90`,
 /// `chkfalse8var.f90`): solo sui messaggi dubbi (qualita' sotto 0,39, SNR sotto -20,5 dB, DT fuori da -0,5..1,9 s, trovati con l'analisi a
-/// priori) e sempre sui CQ diretti (`CQ POTA K1ABC FN42`: parola di 3-4 caratteri dopo CQ). Si scarta se il nominativo e' impossibile o il locatore
-/// non e' valido per il suo paese. Non si giudicano `RR73`, i nominativi con `/` e quelli nascosti (`<...>`). `enabled` e' l'interruttore del controllo.
-pub fn grid_rejected_ft8(check: &MessageCheck<'_>, enabled: bool) -> bool {
+/// priori) e sempre sui CQ diretti (`CQ POTA K1ABC FN42`: parola di 3-4 caratteri dopo CQ). Come in `ft8bvar` (`go to 256`), i messaggi dubbi che
+/// contengono il proprio nominativo o quello del DX non si giudicano, salvo i tipi a priori del proprio QSO (2, 3, 11, 21, 40, 41): una risposta debole
+/// a me non si perde per un locatore strano. Si scarta se il nominativo e' impossibile o il locatore non e' valido per il suo paese. Non si giudicano
+/// `RR73`, i nominativi con `/` e quelli sconosciuti (`<...>`). `enabled` e' l'interruttore del controllo.
+pub fn grid_rejected_ft8(check: &MessageCheck<'_>, mycall: &str, hiscall: &str, enabled: bool) -> bool {
     if !enabled {
         return false;
     }
     let words: Vec<&str> = check.text.split_whitespace().collect();
     let directed_cq = check.ap_type == 0 && words.len() == 4 && words[0] == "CQ" && (3..=4).contains(&words[1].len());
-    let dubious = check.qual < 0.39 || check.snr < -20.5 || check.dt_s < -0.5 || check.dt_s > 1.9 || check.ap_type != 0;
+    let own_qso_ap = matches!(check.ap_type, 2 | 3 | 11 | 21 | 40 | 41);
+    let mentions = |call: &str| {
+        let call = call.trim();
+        call.len() >= 3 && words.iter().any(|w| w.trim_matches(|c| c == '<' || c == '>').eq_ignore_ascii_case(call))
+    };
+    let to_or_from_me = !own_qso_ap && (mentions(mycall) || mentions(hiscall));
+    let dubious = !to_or_from_me && (check.qual < 0.39 || check.snr < -20.5 || check.dt_s < -0.5 || check.dt_s > 1.9 || check.ap_type != 0);
     if !dubious && !directed_cq {
         return false;
     }
@@ -1033,18 +1041,22 @@ mod grid_tests {
     fn ft8_usa_la_tabella_di_wsjtx_solo_sui_messaggi_dubbi() {
         let msg = |text, snr, dt, qual, ap| MessageCheck { text, i3: 1, n3: 0, ap_type: ap, qual, snr, dt_s: dt };
         // italiano con un locatore americano: falso se dubbio
-        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -22.0, 0.1, 0.9, 0), true));
-        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 0.1, 0.9, 1), true), "trovato con l'AP");
-        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 2.5, 0.9, 0), true), "DT fuori scala");
-        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 0.1, 0.9, 0), true), "forte, senza AP: non si giudica");
-        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC FN42", -22.0, 0.1, 0.9, 0), false), "controllo spento");
+        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -22.0, 0.1, 0.9, 0), "", "", true));
+        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 0.1, 0.9, 1), "", "", true), "trovato con l'AP");
+        assert!(grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 2.5, 0.9, 0), "", "", true), "DT fuori scala");
+        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC FN42", -5.0, 0.1, 0.9, 0), "", "", true), "forte, senza AP: non si giudica");
+        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC FN42", -22.0, 0.1, 0.9, 0), "", "", false), "controllo spento");
         // locatore giusto per il paese: passa
-        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC JN65", -22.0, 0.1, 0.9, 0), true));
+        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC JN65", -22.0, 0.1, 0.9, 0), "", "", true));
         // CQ diretto: si controlla sempre
-        assert!(grid_rejected_ft8(&msg("CQ POTA IU3ABC FN42", -5.0, 0.1, 0.9, 0), true));
+        assert!(grid_rejected_ft8(&msg("CQ POTA IU3ABC FN42", -5.0, 0.1, 0.9, 0), "", "", true));
         // nominativi con / o nascosti, RR73: non si giudicano
-        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC/P FN42", -22.0, 0.1, 0.9, 0), true));
-        assert!(!grid_rejected_ft8(&msg("K1ABC IU3ABC RR73", -22.0, 0.1, 0.9, 0), true));
+        assert!(!grid_rejected_ft8(&msg("CQ IU3ABC/P FN42", -22.0, 0.1, 0.9, 0), "", "", true));
+        assert!(!grid_rejected_ft8(&msg("K1ABC IU3ABC RR73", -22.0, 0.1, 0.9, 0), "", "", true));
+        // una risposta debole a me (o dal DX) non si giudica, come in WSJT-X; con l'AP del proprio QSO si'
+        assert!(!grid_rejected_ft8(&msg("K1ABC IU3ABC FN42", -22.0, 0.1, 0.9, 0), "K1ABC", "", true));
+        assert!(!grid_rejected_ft8(&msg("W9XYZ IU3ABC FN42", -22.0, 0.1, 0.9, 0), "K1ABC", "IU3ABC", true));
+        assert!(grid_rejected_ft8(&msg("K1ABC IU3ABC FN42", -22.0, 0.1, 0.9, 2), "K1ABC", "", true));
     }
 
     #[test]
