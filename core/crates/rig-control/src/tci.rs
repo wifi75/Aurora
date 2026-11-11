@@ -475,10 +475,6 @@ struct Inner {
     rx2_by_us: AtomicBool,
     /// RX2 chiesto e non ancora confermato: scadenza dell'attesa e tentativi fatti.
     rx2_pending: Mutex<Option<(Instant, u32)>>,
-    /// Il modo voluto da Aurora (`requested_mode_`): se il server ne dice un altro lo si rimanda, come WSJT-X.
-    wanted_mode: Mutex<Option<&'static str>>,
-    /// Un cambio di modo aspetta la sua eco: niente invii automatici nel frattempo (`busy_mode_`).
-    mode_busy: AtomicBool,
     /// PTT, split, accordo e RX2 gia' rimessi a posto per questo collegamento (alla chiusura si fa una volta sola).
     released: AtomicBool,
 }
@@ -848,8 +844,6 @@ impl TciRig {
             rx2_on: AtomicBool::new(false),
             rx2_by_us: AtomicBool::new(false),
             rx2_pending: Mutex::new(None),
-            wanted_mode: Mutex::new(None),
-            mode_busy: AtomicBool::new(false),
             released: AtomicBool::new(false),
         });
         let worker_inner = Arc::clone(&inner);
@@ -926,9 +920,22 @@ impl TciRig {
             return Err(RigError(format!("frequenza audio di trasmissione non valida: {hz} Hz")));
         }
         self.inner.tx_audio_hz.store(hz, Ordering::SeqCst);
-        if self.inner.split == SplitMode::Rig {
-            self.inner.connected()?;
-            self.inner.apply_split_confirmed()?;
+        let inner = &self.inner;
+        if inner.split == SplitMode::Rig {
+            inner.connected()?;
+            inner.apply_split_confirmed()?;
+        } else if inner.split == SplitMode::Emulate && inner.ptt() {
+            // split simulato a trasmissione in corso: il VFO va subito sulla nuova frequenza di trasmissione (`EmulateSplitTransceiver` di WSJT-X)
+            inner.connected()?;
+            let restore = inner.emulate_restore.load(Ordering::SeqCst);
+            let dial = if restore != 0 { Some(restore) } else { inner.dial() };
+            if let Some(dial) = dial
+                && hz != 0
+            {
+                let tx = split_tx_dial_hz(dial, hz);
+                inner.confirm_vfo(0, tx)?;
+                inner.emulate_restore.store(if tx != dial { dial } else { 0 }, Ordering::SeqCst);
+            }
         }
         Ok(())
     }
@@ -1174,14 +1181,8 @@ impl Rig for TciRig {
             inner.confirm_vfo(0, hz)?;
         }
         if let Some(mode) = tci_mode(inner.cat_mode) {
-            if let Ok(mut w) = inner.wanted_mode.lock() {
-                *w = Some(mode);
-            }
             if !inner.mode_is(mode) {
-                inner.mode_busy.store(true, Ordering::SeqCst);
-                let done = inner.confirm(&cmd_modulation(inner.rx, mode), MODE_ECHO, |s| s.mode_is(mode));
-                inner.mode_busy.store(false, Ordering::SeqCst);
-                done?;
+                inner.confirm(&cmd_modulation(inner.rx, mode), MODE_ECHO, |s| s.mode_is(mode))?;
             }
         }
         Ok(())

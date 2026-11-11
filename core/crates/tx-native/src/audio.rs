@@ -414,7 +414,11 @@ impl CpalSink {
                     let n = err_shared.errors.fetch_add(1, Ordering::Relaxed) + 1;
                     // un attimo di ritardo della scheda (underrun) o il cambio del dispositivo predefinito non fermano l'uscita: il flusso
                     // continua. Prima ogni underrun la dava per persa e la trasmissione seguente falliva («il dispositivo non risponde piu'»).
-                    if matches!(e.kind(), cpal::ErrorKind::Xrun | cpal::ErrorKind::DeviceChanged) {
+                    // Linux: «snd_pcm_avail_delay failed» e' un intoppo di ALSA (POLLERR senza EPIPE, errore generico del backend): il flusso di
+                    // cpal continua e un dispositivo staccato arriva a parte come `DeviceNotAvailable`. Prima chiudeva la trasmissione e
+                    // finiva nei rapporti (37 volte con la 0.11.234)
+                    let alsa_glitch = e.kind() == cpal::ErrorKind::BackendError && e.to_string().contains("avail_delay");
+                    if alsa_glitch || matches!(e.kind(), cpal::ErrorKind::Xrun | cpal::ErrorKind::DeviceChanged) {
                         if n == 1 || n.is_power_of_two() && n >= 64 {
                             tracing::info!("uscita audio: {e} ({n} volte finora), il flusso continua");
                         }

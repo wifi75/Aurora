@@ -56,6 +56,11 @@ describe('the fields shown', () => {
     const omni = visibleFields({ ...DEFAULT_CAT, backend: 'omnirig' }, undefined);
     expect([omni.rig, omni.port, omni.serial, omni.ptt, omni.poll, omni.split]).toEqual([false, false, false, false, false, true]);
     expect(visibleFields({ ...DEFAULT_CAT, port: 'COM3' }, models[4]).civ).toBe(true);
+    // lo split vero e simulato c'e' anche con TCI e OmniRig; FT-991(A) Link solo simulato
+    const tci = visibleFields({ ...DEFAULT_CAT, backend: 'tci' }, undefined);
+    expect([tci.split, tci.splitRig, omni.splitRig]).toEqual([true, true, true]);
+    const ft991 = visibleFields({ ...DEFAULT_CAT, backend: 'ft991link' }, undefined);
+    expect([ft991.split, ft991.splitRig]).toEqual([true, false]);
   });
 });
 

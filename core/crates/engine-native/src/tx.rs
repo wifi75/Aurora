@@ -461,18 +461,34 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Q65 => tx_native::Mode::Q65,
             Mode::Msk144 => tx_native::Mode::Msk144,
         };
+        let before = self.controls.tx_audio_planned.load(Ordering::Relaxed);
         match self.encode(&text, hz, free) {
             Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
                 Ok(true) => {
+                    // con lo split della radio l'onda nuova ha l'XIT nuovo: il VFO di trasmissione deve seguirla subito, non al prossimo PTT
+                    // (WSJT-X chiama `setXIT` a ogni cambio della frequenza Tx, anche in trasmissione)
+                    if before != hz && self.controls.radio_split_active() {
+                        self.controls.notify_tx_audio();
+                    }
                     self.opts.tx_freq_hz = hz;
                     self.seq.set_options(self.opts.clone());
                     self.notes.push(TxNote { start_ms, mode: self.mode, tx_df: hz, text: sent.clone(), retransmit: true });
                     vec![format!("frequenza Tx spostata durante la trasmissione: {sent} ora a {hz} Hz")]
                 }
-                Ok(false) => Vec::new(),
-                Err(e) => vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")],
+                // l'onda in onda resta quella di prima: anche la frequenza audio per il CAT torna quella
+                Ok(false) => {
+                    self.controls.tx_audio_planned.store(before, Ordering::Relaxed);
+                    Vec::new()
+                }
+                Err(e) => {
+                    self.controls.tx_audio_planned.store(before, Ordering::Relaxed);
+                    vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")]
+                }
             },
-            Err(e) => vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")],
+            Err(e) => {
+                self.controls.tx_audio_planned.store(before, Ordering::Relaxed);
+                vec![format!("frequenza Tx non spostata durante la trasmissione: {e}")]
+            }
         }
     }
 
@@ -2916,7 +2932,14 @@ mod tests {
     fn erase_forgets_the_remembered_messages_and_decode_without_a_period_is_accepted() {
         let mut b = Bench::new();
         b.d.remember(1, "CQ K1ABC FN42", -10, 1200, SLOT_MS);
+        // «Cancella» premuta qui avvisa anche chi manda il Clear UDP (come `band_activity_cleared` di WSJT-X)
+        let cleared = Arc::new(std::sync::atomic::AtomicU32::new(0));
+        let seen = Arc::clone(&cleared);
+        b.controls.set_erase_hook(Arc::new(move || {
+            seen.fetch_add(1, Ordering::Relaxed);
+        }));
         b.press("erase", None, BASE);
+        assert_eq!(cleared.load(Ordering::Relaxed), 1);
         let log = b.d.handle(TxCommand::Reply { decode_id: 1 }, BASE + 16.0);
         assert!(log[0].contains("non piu' in memoria"), "{log:?}");
         b.press("decode", None, BASE);

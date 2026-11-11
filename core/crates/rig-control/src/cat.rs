@@ -138,6 +138,12 @@ pub struct CatService {
     models: Mutex<Option<Vec<RigModel>>>,
 }
 
+/// Lo split che vale per OmniRig: quello scelto se il sistema di controllo e' OmniRig, altrimenti nessuno (cosi' il distacco di un altro CAT
+/// non tocca OmniRig).
+fn omnirig_split(config: &RigConfig) -> crate::cat_config::SplitMode {
+    if config.backend == Backend::Omnirig { config.split } else { crate::cat_config::SplitMode::None }
+}
+
 impl CatService {
     /// Apre il servizio con il file `radio.json` indicato (se manca si parte dai valori di base).
     pub fn open(path: &Path) -> Arc<CatService> {
@@ -148,6 +154,7 @@ impl CatService {
     pub fn with_parts(path: &Path, parts: CatParts) -> Arc<CatService> {
         let store = RadioStore::open(path);
         crate::omnirig::set_rig(store.config().omnirig_rig);
+        crate::omnirig::set_split_mode(omnirig_split(&store.config()));
         Arc::new(CatService {
             store,
             parts,
@@ -229,6 +236,7 @@ impl CatService {
     pub fn connect(&self) -> Result<CatStatus, CatError> {
         let config = self.store.config();
         self.disconnect();
+        crate::omnirig::set_split_mode(omnirig_split(&config));
         match config.backend {
             Backend::Hamlib => {
                 let Some(exe) = (self.parts.locate)() else {
@@ -333,9 +341,10 @@ impl CatService {
 
     /// Salva la configurazione e la applica: se la radio era collegata (o in errore) la ricollega con i valori nuovi.
     pub fn apply_config(&self, config: RigConfig) -> Result<CatStatus, CatError> {
-        let rig = config.omnirig_rig;
+        let (rig, split) = (config.omnirig_rig, omnirig_split(&config));
         self.store.set_config(config)?;
         crate::omnirig::set_rig(rig);
+        crate::omnirig::set_split_mode(split);
         if self.is_active() { self.connect() } else { Ok(self.status()) }
     }
 

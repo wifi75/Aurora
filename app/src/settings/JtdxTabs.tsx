@@ -361,6 +361,7 @@ export function NativeTxOptions() {
           {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
           {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
           {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
+          {field('TxDelay', 'num', 'gen2.txDelay', { min: 0, max: 0.5, step: 0.1 })}
         </Cells>
       </Group>
 

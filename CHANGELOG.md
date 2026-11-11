@@ -1,6 +1,13 @@
 # Changelog
 
 ## Non rilasciato
+- **Linux (#41)**: si usa prima `rigctld` dell'Hamlib del sistema, lo stesso di WSJT-X e JS8Call della distribuzione, e solo dopo quello incluso (Hamlib 4.4 di Ubuntu 22.04, che serve all'AppImage). Su Debian 12 la radio che andava con WSJT-X non si collegava.
+- **Split con OmniRig e TCI**: Rig (split vero, `SetSplitMode` come WSJT-X) e Fake It ora funzionano anche con OmniRig, e con TCI si possono scegliere nelle Impostazioni; se la frequenza Tx cambia durante la trasmissione la radio la segue subito (`setXIT` di WSJT-X).
+- **Ritardo Tx regolabile** (Impostazioni › Generali, 0-0,5 s, predefinito 0,2 s come «Tx delay» di WSJT-X).
+- «Cancella» manda anche il Clear a GridTracker e JTAlert, come WSJT-X.
+- Wavelog: con il token v2 (`wl2_`) l'elenco delle stazioni ora si legge (`/api/v2/station`).
+- PSK Reporter: alla chiusura di Aurora gli spot in coda vengono inviati (al massimo 2 s di attesa).
+- Mappa DX: i colori dei quadrati cambiano subito, anche nelle finestre staccate; rotatore, la scelta «Personalizzato» mostra e salva i campi Da/A.
 - **FT4 come WSJT-X 3.3**: i messaggi senza analisi a priori non vengono piu' scartati da filtri che WSJT-X non ha (bit dubbi, locatore, elenco nominativi); ricerca dei candidati di `getcandidates4` (soglia 1,18, fino a 200, finestra di Nuttall) con quelli vicini alla frequenza Rx provati per primi; limite di 5 s alla decodifica sui PC lenti.
 - **FT8 come WSJT-X 3.3**: il segnale sulla frequenza Rx viene provato per primo e con soglia di sincronismo 1,1 (entro 3 Hz); OSD di profondita' 4 per le risposte del QSO vicine a Rx/Tx; la ricerca del ritardo segue il ritardo medio delle stazioni sentite (`avexdt`), cosi' i segnali con DT alto non si perdono.
 - **Finestra Rx accesa di fabbrica**, come «Rx Frequency» di WSJT-X: mostra i messaggi intorno alla frequenza di ricezione, quelli diretti a noi e le proprie trasmissioni. Si spegne dal pulsante RX e la scelta resta (segnalazione #42).

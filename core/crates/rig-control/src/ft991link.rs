@@ -618,6 +618,18 @@ impl Ft991Rig {
             return Err(RigError(format!("frequenza audio di trasmissione non valida: {hz} Hz")));
         }
         self.inner.tx_audio_hz.store(hz, Ordering::SeqCst);
+        // a trasmissione in corso il VFO A va subito sulla nuova frequenza di trasmissione (`EmulateSplitTransceiver` di WSJT-X)
+        if self.inner.split && hz != 0 && self.transmitting() {
+            let restore = self.inner.emulate_restore.load(Ordering::SeqCst);
+            let dial = if restore != 0 { Some(restore) } else { self.status().frequency_hz };
+            if let Some(dial) = dial {
+                let tx = split_tx_dial_hz(dial, hz);
+                if tx <= MAX_FA_HZ {
+                    self.inner.write_frequency(tx)?;
+                    self.inner.emulate_restore.store(if tx != dial { dial } else { 0 }, Ordering::SeqCst);
+                }
+            }
+        }
         Ok(())
     }
 

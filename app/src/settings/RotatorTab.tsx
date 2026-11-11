@@ -18,6 +18,8 @@ export function RotatorTab() {
   const [search, setSearch] = useState('');
   const [note, setNote] = useState('');
   const [problem, setProblem] = useState('');
+  // «Personalizzato» scelto a mano: i campi Da/A si vedono anche se i valori coincidono ancora con un campo dell'elenco
+  const [customRange, setCustomRange] = useState(false);
   const config = draft ?? snap.data?.config ?? null;
   const launch = config?.connection === 'launch';
   const models = useQuery({ queryKey: ['rotator-models'], queryFn: getRotatorModels, retry: false, staleTime: Infinity, enabled: launch });
@@ -48,6 +50,7 @@ export function RotatorTab() {
   if (!snap.data || !config) return <p className="muted">{t('set.loading')}</p>;
   const set = (change: Partial<RotatorConfig>) => setDraft({ ...config, ...change });
   const status = snap.data.status;
+  const presetRange = !customRange && RANGES.some(([lo, hi]) => lo === config.min_az && hi === config.max_az);
   const stateText = status.state === 'connected' ? (status.moving ? t('rot.state.moving') : t('rot.state.connected')) : t(`rot.state.${status.state}`);
 
   return (
@@ -138,9 +141,13 @@ export function RotatorTab() {
           )}
           <Field label={t('rot.set.range')} hint={t('tip.rot.range')}>
             <select
-              value={RANGES.some(([lo, hi]) => lo === config.min_az && hi === config.max_az) ? `${config.min_az}:${config.max_az}` : 'custom'}
+              value={presetRange ? `${config.min_az}:${config.max_az}` : 'custom'}
               onChange={(e) => {
-                if (e.target.value === 'custom') return;
+                if (e.target.value === 'custom') {
+                  setCustomRange(true);
+                  return;
+                }
+                setCustomRange(false);
                 const [lo, hi] = e.target.value.split(':').map(Number);
                 set({ min_az: lo ?? 0, max_az: hi ?? 360 });
               }}
@@ -153,7 +160,7 @@ export function RotatorTab() {
               <option value="custom">{t('rot.set.rangeCustom')}</option>
             </select>
           </Field>
-          {RANGES.some(([lo, hi]) => lo === config.min_az && hi === config.max_az) ? null : (
+          {presetRange ? null : (
             <>
               <Field label={t('rot.set.rangeFrom')} hint={t('tip.rot.range')}>
                 <input type="number" min={-360} max={360} value={config.min_az} onChange={(e) => set({ min_az: Number(e.target.value) || 0 })} />
