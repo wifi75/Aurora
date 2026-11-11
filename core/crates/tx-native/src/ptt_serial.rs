@@ -44,8 +44,13 @@ mod sys {
         pub fn open(path: &str) -> Result<Port, TxError> {
             let wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
             // SAFETY: `wide` termina con zero e vive per tutta la chiamata.
-            let handle = unsafe { CreateFileW(PCWSTR(wide.as_ptr()), (GENERIC_READ | GENERIC_WRITE).0, FILE_SHARE_NONE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None) }
-                .map_err(|e| TxError::Ptt(format!("porta {path} non apribile (occupata o assente): {e}")))?;
+            let create = || unsafe { CreateFileW(PCWSTR(wide.as_ptr()), (GENERIC_READ | GENERIC_WRITE).0, FILE_SHARE_NONE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None) };
+            // la porta la tiene un altro programma: il messaggio dice quale; se era un rigctld orfano di Aurora (chiuso) si riprova una volta
+            let describe = |e: &windows::core::Error| format!("porta {path} non apribile (occupata o assente): {} (0x{:08X})", e.message(), e.code().0 as u32);
+            let handle = rig_control::busy_port::open_with_diagnosis(path, create, describe).map_err(|(e, diagnosis)| match diagnosis {
+                Some(d) => TxError::Ptt(d.message),
+                None => TxError::Ptt(describe(&e)),
+            })?;
             Ok(Port(handle))
         }
 

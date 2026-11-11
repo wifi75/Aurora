@@ -2147,6 +2147,7 @@ diag.slow_pc.to1,Switch to Fast,Naar Snel
 diag.slow_pc.setting,Setting,Instelling
 diag.slow_pc.failed,Depth not changed: {message},Diepte niet gewijzigd: {message}
 diag.omnirig,"OmniRig does not answer even after three tries ({detail}): check that OmniRig shows the radio as “On-line”, or switch to Hamlib in Settings › Radio.","OmniRig antwoordt ook na drie pogingen niet ({detail}): controleer of OmniRig de radio als “On-line” toont, of schakel in Instellingen › Radio over op Hamlib."
+diag.port_busy,The radio does not connect: {detail},De radio maakt geen verbinding: {detail}
 rd.title,Radio display style,Weergavestijl van de radio
 rd.intro,"The display in the header shows frequency, mode, receive or transmit and the meters read from the radio (S-meter, power, SWR, ALC). Meters the radio does not provide stay off.","Het display in de kop toont frequentie, mode, ontvangen of zenden en de meters die van de radio worden gelezen (S-meter, vermogen, SWR, ALC). Meters die de radio niet levert, blijven uit."
 rd.preview,Preview with sample data,Voorbeeld met voorbeeldgegevens
@@ -4351,6 +4352,9 @@ ca.phone.warn,“Public” network or no home address: the phone may not reach A
 ca.phone.bad,Windows firewall blocks Aurora: tap “Allow Aurora”.,De Windows-firewall blokkeert Aurora: tik op “Aurora toestaan”.
 core.rigctld,rigctld (Hamlib) is missing: the antivirus probably removed it. On Windows press “Restore Hamlib”; otherwise put it next to Aurora or give its path in the AURORA_RIGCTLD variable.,rigctld (Hamlib) ontbreekt: waarschijnlijk heeft de antivirus het verwijderd. Druk onder Windows op “Hamlib herstellen”; zet het anders naast Aurora of geef het pad op in de variabele AURORA_RIGCTLD.
 core.portBusy,The serial port is in use by another program: close it (or choose another port) and try again.,De seriële poort wordt door een ander programma gebruikt: sluit dat (of kies een andere poort) en probeer opnieuw.
+core.portHeldOmni,Port {port} is in use by OmniRig: close OmniRig or choose OmniRig as the control system in Settings › Radio.,Poort {port} wordt gebruikt door OmniRig: sluit OmniRig of kies OmniRig als besturingssysteem in Instellingen › Radio.
+core.portHeldBy,Port {port} is in use by {who}: close {who} and press Connect.,Poort {port} wordt gebruikt door {who}: sluit {who} en druk op Verbinden.
+core.portHeld,"Port {port} is in use by another program (WSJT-X, JTDX, the logbook…): close it and press Connect.","Poort {port} wordt gebruikt door een ander programma (WSJT-X, JTDX, het logboek…): sluit het en druk op Verbinden."
 core.portMissing,The serial port does not exist: check the number (Windows may renumber it) and that the radio is on and connected.,De seriële poort bestaat niet: controleer het nummer (Windows kan het hernummeren) en of de radio aan staat en verbonden is.
 core.noAnswer,"The radio does not answer: check power, cable, port, speed (baud) and, for Yaesu, the radio CAT settings.","De radio antwoordt niet: controleer voeding, kabel, poort, snelheid (baud) en, bij Yaesu, de CAT-instellingen van de radio."
 core.portError,Serial port error: the connection with the radio was interrupted.,Fout op de seriële poort: de verbinding met de radio is onderbroken.
@@ -4364,6 +4368,7 @@ core.pttMaybeOn,"Closed, but PTT may still be on: check the radio.","Gesloten, m
 core.omniOffline,radio not online,radio niet online
 core.omniMissing,OmniRig is not installed on this PC: in Settings › Radio choose Hamlib (included in Aurora) or install OmniRig.,OmniRig is niet geïnstalleerd op deze pc: kies in Instellingen › Radio Hamlib (zit in Aurora) of installeer OmniRig.
 core.omniNoAnswer,"OmniRig does not answer: open OmniRig and check that Rig1 has the right port and model and the radio is on (status “On-line”), or in Settings › Radio choose Hamlib (included in Aurora).","OmniRig antwoordt niet: open OmniRig en controleer of Rig1 de juiste poort en het juiste model heeft en de radio aan staat (status “On-line”), of kies in Instellingen › Radio Hamlib (zit in Aurora)."
+core.omniNotReady,OmniRig does not answer: is the radio on and on-line in OmniRig?,OmniRig antwoordt niet: staat de radio aan en online in OmniRig?
 core.omniFreqOnly,With OmniRig Aurora controls only the radio frequency.,Met OmniRig bestuurt Aurora alleen de frequentie van de radio.
 core.omniNoExtras,"With OmniRig the radio settings (preamp, AGC, NB, VFO…) cannot be changed from here: choose the Hamlib CAT in Settings › Radio.","Met OmniRig kunnen de radio-instellingen (voorversterker, AGC, NB, VFO…) hier niet worden gewijzigd: kies de Hamlib-CAT in Instellingen › Radio."
 core.noReply,no reply,geen antwoord

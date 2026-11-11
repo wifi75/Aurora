@@ -20,6 +20,7 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['thread del CAT non avviato', 'core.noThread'],
   ['Chiusa, ma il PTT potrebbe essere rimasto acceso: controlla la radio.', 'core.pttMaybeOn'],
   ['radio non in linea', 'core.omniOffline'],
+  ["OmniRig non risponde: la radio e' accesa e in linea in OmniRig?", 'core.omniNotReady'],
   ["OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig", 'core.omniMissing'],
   [
     "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora)",
@@ -68,6 +69,10 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
 
 /** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
 const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
+  // porta seriale tenuta da un altro programma (`rig_control::busy_port`): OmniRig ha il suo consiglio, il nome noto, nessun nome
+  { re: /^La porta (\S+) e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio$/s, key: 'core.portHeldOmni', vars: ['port'] },
+  { re: /^La porta (\S+) e' occupata da un altro programma \(WSJT-X, JTDX, il log\.\.\.\): chiudilo e premi Collega$/s, key: 'core.portHeld', vars: ['port'] },
+  { re: /^La porta (\S+) e' occupata da (.+?): chiudi \2 e premi Collega$/s, key: 'core.portHeldBy', vars: ['port', 'who'] },
   // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
   { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
   // Cat4OM: servizio non raggiungibile, porta sbagliata, radio mancante, scollegata o presa dall'emulazione, collegamento perso, rifiuti

@@ -162,4 +162,12 @@ export const diagnosisStrings = {
     'OmniRig no responde ni tras tres intentos ({detail}): comprueba que OmniRig muestre la radio «On-line», o pasa a Hamlib en Ajustes › Radio.',
     'O OmniRig não responde mesmo após três tentativas ({detail}): verifica se o OmniRig mostra o rádio «On-line», ou passa para Hamlib em Definições › Rádio.',
   ],
+  'diag.port_busy': [
+    'La radio non si collega: {detail}',
+    'The radio does not connect: {detail}',
+    'Das Funkgerät verbindet sich nicht: {detail}',
+    'La radio ne se connecte pas : {detail}',
+    'La radio no se conecta: {detail}',
+    'O rádio não se liga: {detail}',
+  ],
 } as const satisfies Record<string, Entry>;

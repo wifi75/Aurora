@@ -1716,6 +1716,12 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
             let line = if method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
             match tx_native::SerialLinePtt::open(&port, line) {
                 Ok(ptt) => Arc::new(ptt),
+                // la porta la tiene un altro programma: e' la configurazione della stazione, si dice a schermo quale (non un rapporto d'errore)
+                Err(tx_native::TxError::Ptt(why)) if rig_control::busy_port::is_busy_diagnosis(&why) => {
+                    tracing::info!("PTT sulla seriale non attivo: {why}; niente trasmissione, per non rischiare una radio senza comando");
+                    rig_control::busy_port::notify(&why);
+                    return None;
+                }
                 Err(e) => {
                     tracing::error!("PTT sulla seriale non attivo ({e}): niente trasmissione, per non rischiare una radio senza comando");
                     return None;

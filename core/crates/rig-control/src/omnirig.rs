@@ -67,6 +67,61 @@ pub const ST_ONLINE: i32 = 4;
 /// testo di OmniRig (`StatusStr`, come in `OmniRigTransceiver.cpp:184`) va nel registro.
 pub const OFFLINE: &str = "radio non in linea";
 
+/// OmniRig non ha risposto in tempo mentre si avviava o con la radio non in linea (o una volta sola): un avviso per l'operatore, non un errore
+/// da segnalare (`core.omniNotReady` nell'interfaccia; `aurora::rapporti` lo riconosce da «in linea in OmniRig?»).
+pub const NOT_READY: &str = "OmniRig non risponde: la radio e' accesa e in linea in OmniRig?";
+
+/// L'ultimo `Status` letto da OmniRig (-1 = mai letto): dice se un tempo scaduto riguarda una radio non in linea.
+static LAST_STATUS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// Annota l'ultimo `Status` letto (lo fa il cliente COM a ogni lettura).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn note_status(status: i32) {
+    LAST_STATUS.store(status, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// L'ultimo `Status` letto (-1 = mai letto).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn last_status() -> i32 {
+    LAST_STATUS.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Perche' OmniRig non ha risposto in tempo.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) enum TimeoutCause {
+    /// L'oggetto si stava ancora creando (OmniRig.exe che si avvia, la sua finestra, la porta della radio).
+    Starting,
+    /// L'ultimo `Status` letto non era `ST_ONLINE`: OmniRig aspetta una radio spenta o scollegata.
+    Offline,
+    /// Radio in linea, prima volta: puo' essere un attimo di OmniRig occupato.
+    OnlineOnce,
+    /// Radio in linea e di nuovo nessuna risposta: OmniRig e' bloccato (questo si segnala).
+    OnlineRepeated,
+}
+
+/// Il verdetto su un tempo scaduto: la causa e il testo per chi chiama. Solo i tempi scaduti ripetuti con la radio in linea hanno il testo
+/// lungo di [`explain_omnirig`] (che finisce nei rapporti); gli altri hanno [`NOT_READY`], un avviso.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn timeout_verdict(starting: bool, status: i32, repeated: u32) -> (TimeoutCause, String) {
+    let cause = if starting {
+        TimeoutCause::Starting
+    } else if status != ST_ONLINE {
+        TimeoutCause::Offline
+    } else if repeated < 2 {
+        TimeoutCause::OnlineOnce
+    } else {
+        TimeoutCause::OnlineRepeated
+    };
+    let text = if cause == TimeoutCause::OnlineRepeated { explain_omnirig("non risponde") } else { NOT_READY.to_string() };
+    (cause, text)
+}
+
+/// L'errore e' un tempo scaduto di OmniRig (riprovare subito non serve: si aspetterebbe di nuovo tutto il tempo).
+pub fn is_timeout(message: &str) -> bool {
+    message == NOT_READY || message == explain_omnirig("non risponde")
+}
+
 /// Quello che le sequenze usano di una radio di OmniRig (`RigX`): proprieta' intere, testi e metodi. Il thread COM lo implementa con
 /// `IDispatch`; le prove con una radio finta.
 pub(crate) trait RigApi {
@@ -257,6 +312,31 @@ fn ptt(r: &dyn RigApi, on: bool) -> Result<(), RigError> {
     r.put("Tx", ptt_value(on))
 }
 
+/// Il PTT acceso: in attesa, acceso in tempo, chi lo chiedeva ha smesso di aspettare.
+const PTT_PENDING: u8 = 0;
+const PTT_KEYED: u8 = 1;
+const PTT_GAVE_UP: u8 = 2;
+
+/// Il testo di un PTT arrivato a OmniRig dopo che il tempo era scaduto (e subito spento).
+const PTT_LATE: &str = "OmniRig: PTT arrivato in ritardo, spento";
+
+/// Accende il PTT solo se chi lo chiede sta ancora aspettando: un `Tx = PM_TX` rimasto bloccato dentro OmniRig e arrivato dopo il tempo
+/// massimo metterebbe la radio in trasmissione senza audio e senza nessuno che la spenga. Se il tempo scade mentre il comando e' in corso, la
+/// radio torna subito in ricezione.
+fn ptt_on_unless_late(r: &dyn RigApi, state: &std::sync::atomic::AtomicU8) -> Result<(), RigError> {
+    use std::sync::atomic::Ordering;
+    if state.load(Ordering::SeqCst) == PTT_GAVE_UP {
+        return Err(RigError(PTT_LATE.into()));
+    }
+    ptt(r, true)?;
+    if state.compare_exchange(PTT_PENDING, PTT_KEYED, Ordering::SeqCst, Ordering::SeqCst).is_err() {
+        tracing::info!("OmniRig: PTT acceso dopo il tempo massimo, la radio torna subito in ricezione");
+        r.put("Tx", ptt_value(false))?;
+        return Err(RigError(PTT_LATE.into()));
+    }
+    Ok(())
+}
+
 #[cfg(windows)]
 mod workers {
     use std::time::Duration;
@@ -264,17 +344,39 @@ mod workers {
     use crate::omnirig_com::Worker;
 
     /// Il thread dei comandi (frequenza, split, letture). Il tempo massimo e' quello della vecchia sessione: un cambio di banda con le sue
-    /// attese a scatti sta ben sotto.
-    pub(super) static MAIN: Worker = Worker::new("omnirig", Duration::from_secs(20));
-    /// Il thread del PTT, a parte: un PTT non aspetta mai un cambio di banda in corso.
-    pub(super) static PTT: Worker = Worker::new("omnirig-ptt", Duration::from_secs(5));
+    /// attese a scatti sta ben sotto. La prima creazione dell'oggetto, che puo' avviare OmniRig.exe, ha 30 s.
+    pub(super) static MAIN: Worker = Worker::new("omnirig", Duration::from_secs(20), Duration::from_secs(30));
+    /// Il thread del PTT, a parte: un PTT non aspetta mai un cambio di banda in corso. Anche alla prima creazione il PTT non aspetta piu' di
+    /// 5 s (la trasmissione ha i suoi tempi): l'oggetto del PTT si prepara al collegamento ([`super::warm_up_ptt_in_background`]).
+    pub(super) static PTT: Worker = Worker::new("omnirig-ptt", Duration::from_secs(5), Duration::from_secs(5));
 }
 
-/// Esegue una sequenza sulla radio scelta, nel thread COM indicato.
+/// Il tempo concesso alla preparazione dell'oggetto del PTT (puo' dover aspettare l'avvio di OmniRig).
+#[cfg_attr(not(windows), allow(dead_code))]
+const WARM_UP: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// Esegue una sequenza sulla radio scelta, nel thread COM indicato. Se chi chiede smette di aspettare prima che la sequenza parta, non parte
+/// piu' (un cambio di frequenza vecchio non arriva alla radio minuti dopo).
 #[cfg(windows)]
 fn on_rig<T: Send + 'static>(worker: &'static crate::omnirig_com::Worker, f: impl FnOnce(&dyn RigApi) -> Result<T, RigError> + Send + 'static) -> Result<T, RigError> {
+    on_rig_with(worker, None, true, f)
+}
+
+/// Come [`on_rig`], ma la sequenza parte anche in ritardo: spegnimento del PTT, ritorno alla ricezione, split spento al distacco.
+#[cfg(windows)]
+fn on_rig_always<T: Send + 'static>(worker: &'static crate::omnirig_com::Worker, f: impl FnOnce(&dyn RigApi) -> Result<T, RigError> + Send + 'static) -> Result<T, RigError> {
+    on_rig_with(worker, None, false, f)
+}
+
+#[cfg(windows)]
+fn on_rig_with<T: Send + 'static>(
+    worker: &'static crate::omnirig_com::Worker,
+    allowance: Option<std::time::Duration>,
+    skip_if_late: bool,
+    f: impl FnOnce(&dyn RigApi) -> Result<T, RigError> + Send + 'static,
+) -> Result<T, RigError> {
     let n = rig();
-    worker.run(move |com| {
+    worker.run_with(crate::omnirig_com::Wait { allowance, skip_if_late }, move |com| {
         let r = com.rig(n)?;
         f(&r)
     })
@@ -297,6 +399,16 @@ mod workers {
 #[cfg(not(windows))]
 fn on_rig<T>(_worker: &'static workers::Worker, _f: impl FnOnce(&dyn RigApi) -> Result<T, RigError>) -> Result<T, RigError> {
     Err(RigError("OmniRig esiste solo su Windows".into()))
+}
+
+#[cfg(not(windows))]
+fn on_rig_always<T>(worker: &'static workers::Worker, f: impl FnOnce(&dyn RigApi) -> Result<T, RigError>) -> Result<T, RigError> {
+    on_rig(worker, f)
+}
+
+#[cfg(not(windows))]
+fn on_rig_with<T>(worker: &'static workers::Worker, _allowance: Option<std::time::Duration>, _skip_if_late: bool, f: impl FnOnce(&dyn RigApi) -> Result<T, RigError>) -> Result<T, RigError> {
+    on_rig(worker, f)
 }
 
 /// Sceglie lo split per OmniRig (dalla configurazione della radio).
@@ -385,7 +497,7 @@ pub fn emulate_end() -> Result<(), RigError> {
         return Ok(());
     }
     let back = hz_i32(back)?;
-    on_rig(&workers::MAIN, move |r| jump(r, back))
+    on_rig_always(&workers::MAIN, move |r| jump(r, back))
 }
 
 /// Toglie quello che Aurora ha cambiato nello split: con lo split vero acceso da Aurora lo si spegne (`PM_SPLITOFF`), con quello simulato la
@@ -396,7 +508,7 @@ pub fn reset_split() {
     }
     DX_SPLIT.store(false, std::sync::atomic::Ordering::SeqCst);
     if SPLIT_BY_US.swap(false, std::sync::atomic::Ordering::SeqCst)
-        && let Err(e) = on_rig(&workers::MAIN, split_off)
+        && let Err(e) = on_rig_always(&workers::MAIN, split_off)
     {
         tracing::warn!("OmniRig: split non spento al distacco: {e}");
     }
@@ -487,16 +599,43 @@ pub fn explain_omnirig(why: &str) -> String {
     }
 }
 
-/// Il PTT con OmniRig (`Rig<n>.Tx` = PM_TX / PM_RX), sul thread del PTT.
+/// Il PTT con OmniRig (`Rig<n>.Tx` = PM_TX / PM_RX), sul thread del PTT. Lo spegnimento parte sempre, anche in ritardo; l'accensione solo se
+/// chi la chiede sta ancora aspettando ([`ptt_on_unless_late`]): un PTT scaduto non lascia mai la radio in trasmissione.
 pub fn set_ptt(on: bool) -> Result<(), RigError> {
-    on_rig(&workers::PTT, move |r| ptt(r, on))?;
-    PTT_ON.store(on, std::sync::atomic::Ordering::SeqCst);
+    use std::sync::{Arc, atomic::{AtomicU8, Ordering}};
+    if !on {
+        on_rig_always(&workers::PTT, |r| ptt(r, false))?;
+        PTT_ON.store(false, Ordering::SeqCst);
+        return Ok(());
+    }
+    let state = Arc::new(AtomicU8::new(PTT_PENDING));
+    let job_state = Arc::clone(&state);
+    let result = on_rig(&workers::PTT, move |r| ptt_on_unless_late(r, &job_state));
+    if result.is_err() && state.swap(PTT_GAVE_UP, Ordering::SeqCst) == PTT_KEYED {
+        // acceso proprio mentre scadeva il tempo: per Aurora e' acceso, cosi' lo spegnimento che segue (PttGuard, distacco) lo spegne
+        PTT_ON.store(true, Ordering::SeqCst);
+    }
+    result?;
+    PTT_ON.store(true, Ordering::SeqCst);
     Ok(())
 }
 
-/// Apre in anticipo l'oggetto OmniRig del PTT, cosi' il primo PTT non paga la creazione (e l'attesa della prima lettura di OmniRig).
+/// Apre in anticipo l'oggetto OmniRig del PTT, cosi' il primo PTT non paga la creazione (e l'attesa della prima lettura di OmniRig). Ha il
+/// tempo lungo della prima creazione: OmniRig potrebbe essere ancora in avvio.
 pub fn warm_up_ptt() -> Result<(), RigError> {
-    on_rig(&workers::PTT, |r| r.get("Status").map(|_| ()))
+    on_rig_with(&workers::PTT, Some(WARM_UP), true, |r| r.get("Status").map(|_| ()))
+}
+
+/// [`warm_up_ptt`] in un thread a parte (al collegamento di OmniRig): chi collega non aspetta. Gli errori vanno solo nel registro.
+pub fn warm_up_ptt_in_background() {
+    let spawned = std::thread::Builder::new().name("aurora-omnirig-ptt-warm-up".into()).spawn(|| {
+        if let Err(e) = warm_up_ptt() {
+            tracing::info!("OmniRig: oggetto del PTT non preparato in anticipo: {e}");
+        }
+    });
+    if let Err(e) = spawned {
+        tracing::info!("OmniRig: preparazione del PTT non avviata: {e}");
+    }
 }
 
 /// Lascia OmniRig (al distacco del CAT o al cambio di sistema di controllo): si toglie lo split messo da Aurora, si spegne il PTT se era rimasto
@@ -528,13 +667,28 @@ impl Rig for WindowsRig {
             let xit = rig_split_xit();
             on_rig(&workers::MAIN, move |r| tune(r, hz, xit))
         };
-        // OmniRig a volte e' occupato un istante (un altro programma che legge la radio): un secondo tentativo basta
+        // OmniRig a volte e' occupato un istante (un altro programma che legge la radio): un secondo tentativo basta. Dopo un tempo scaduto
+        // (OmniRig che si avvia o bloccato) non si riprova: si aspetterebbe di nuovo tutto il tempo, due volte
+        let give_up = |e: &RigError| {
+            if is_timeout(&e.0) {
+                aurora_core::notice::notice("omnirig", e.0.clone());
+                true
+            } else {
+                false
+            }
+        };
         attempt().or_else(|first| {
-            tracing::warn!("cambio frequenza, primo tentativo fallito: {first}");
+            if give_up(&first) {
+                return Err(first);
+            }
+            tracing::info!("cambio frequenza, primo tentativo fallito: {first}");
             std::thread::sleep(std::time::Duration::from_millis(600));
             // terzo tentativo dopo una pausa piu' lunga: OmniRig a volte si riprende dopo un paio di secondi (radio che si risveglia)
             attempt().or_else(|second| {
-                tracing::warn!("cambio frequenza, secondo tentativo fallito: {second}");
+                if give_up(&second) {
+                    return Err(second);
+                }
+                tracing::info!("cambio frequenza, secondo tentativo fallito: {second}");
                 std::thread::sleep(std::time::Duration::from_millis(2000));
                 attempt().inspect_err(|e| aurora_core::notice::notice("omnirig", e.0.clone()))
             })
@@ -782,6 +936,89 @@ mod tests {
     fn frequencies_beyond_omnirig_integers_are_refused() {
         assert!(hz_i32(2_400_000_000).is_err());
         assert_eq!(hz_i32(144_174_000), Ok(144_174_000));
+    }
+
+    #[test]
+    fn a_timeout_is_a_notice_unless_it_repeats_with_the_radio_online() {
+        assert_eq!(timeout_verdict(true, ST_ONLINE, 0), (TimeoutCause::Starting, NOT_READY.to_string()), "OmniRig che si avvia");
+        assert_eq!(timeout_verdict(true, -1, 0).0, TimeoutCause::Starting);
+        assert_eq!(timeout_verdict(false, 2, 0), (TimeoutCause::Offline, NOT_READY.to_string()), "radio non in linea");
+        assert_eq!(timeout_verdict(false, -1, 0).0, TimeoutCause::Offline, "stato mai letto: non e' una radio in linea");
+        assert_eq!(timeout_verdict(false, ST_ONLINE, 1), (TimeoutCause::OnlineOnce, NOT_READY.to_string()));
+        let (cause, text) = timeout_verdict(false, ST_ONLINE, 2);
+        assert_eq!(cause, TimeoutCause::OnlineRepeated);
+        assert!(text.starts_with("OmniRig non risponde: apri OmniRig"), "{text}");
+        assert!(is_timeout(&text) && is_timeout(NOT_READY) && !is_timeout(OFFLINE));
+    }
+
+    #[test]
+    fn the_last_status_is_remembered() {
+        note_status(3);
+        assert_eq!(last_status(), 3);
+        note_status(ST_ONLINE);
+        assert_eq!(last_status(), ST_ONLINE);
+    }
+
+    #[test]
+    fn a_ptt_that_arrives_late_never_leaves_the_radio_keyed() {
+        use std::sync::atomic::{AtomicU8, Ordering};
+        // in tempo: acceso
+        let r = ft2000();
+        let state = AtomicU8::new(PTT_PENDING);
+        ptt_on_unless_late(&r, &state).expect("ptt");
+        assert_eq!(state.load(Ordering::SeqCst), PTT_KEYED);
+        assert_eq!(r.log(), ["Tx=4194304"]);
+        // chi lo chiedeva ha gia' rinunciato prima che partisse: la radio non si tocca
+        let r = ft2000();
+        let state = AtomicU8::new(PTT_GAVE_UP);
+        assert_eq!(ptt_on_unless_late(&r, &state).unwrap_err().0, PTT_LATE);
+        assert!(r.log().is_empty(), "{:?}", r.log());
+    }
+
+    /// Una radio in cui il tempo scade mentre il PTT e' dentro OmniRig: chi aspettava rinuncia durante `put("Tx")`.
+    struct SlowPtt<'a> {
+        rig: FakeRig,
+        state: &'a std::sync::atomic::AtomicU8,
+    }
+
+    impl RigApi for SlowPtt<'_> {
+        fn get(&self, name: &str) -> Result<i32, RigError> {
+            self.rig.get(name)
+        }
+        fn put(&self, name: &str, value: i32) -> Result<(), RigError> {
+            if value == PM_TX {
+                self.state.store(PTT_GAVE_UP, std::sync::atomic::Ordering::SeqCst);
+            }
+            self.rig.put(name, value)
+        }
+        fn call(&self, name: &str, args: &[i32]) -> Result<i32, RigError> {
+            self.rig.call(name, args)
+        }
+        fn text(&self, name: &str) -> Result<String, RigError> {
+            self.rig.text(name)
+        }
+    }
+
+    #[test]
+    fn a_ptt_keyed_while_the_wait_expires_is_released_at_once() {
+        let state = std::sync::atomic::AtomicU8::new(PTT_PENDING);
+        let r = SlowPtt { rig: ft2000(), state: &state };
+        assert_eq!(ptt_on_unless_late(&r, &state).unwrap_err().0, PTT_LATE);
+        assert_eq!(r.rig.log(), ["Tx=4194304", "Tx=2097152"], "acceso in ritardo e subito spento");
+    }
+
+    #[test]
+    fn an_offline_radio_is_never_keyed_and_nothing_waits_on_it() {
+        let state = std::sync::atomic::AtomicU8::new(PTT_PENDING);
+        let r = ft2000();
+        r.values.borrow_mut().insert("Status".into(), 1);
+        assert_eq!(ptt_on_unless_late(&r, &state).unwrap_err().0, OFFLINE);
+        assert!(r.log().is_empty());
+        assert_eq!(state.load(std::sync::atomic::Ordering::SeqCst), PTT_PENDING);
+        // le sequenze controllano Status per primo: con la radio non in linea non si scrive ne' si legge altro
+        assert_eq!(split_on(&r, 500).unwrap_err().0, OFFLINE);
+        assert_eq!(jump(&r, 7_074_000).unwrap_err().0, OFFLINE);
+        assert!(r.log().is_empty(), "{:?}", r.log());
     }
 
     #[test]

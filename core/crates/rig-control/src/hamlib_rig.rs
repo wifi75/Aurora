@@ -18,7 +18,9 @@ use std::{
 use serde::Serialize;
 
 use crate::{
-    cat_config::{friendly_error, is_io_failure, is_serial_port, split_tx_dial_hz, PttMethod, RigConfig, SplitMode},
+    // `friendly_error` di `busy_port`: lascia intatta la diagnosi di una porta occupata (dice gia' quale programma la tiene)
+    busy_port::friendly_error,
+    cat_config::{is_io_failure, is_serial_port, split_tx_dial_hz, PttMethod, RigConfig, SplitMode},
     hamlib::{Rigctld, RigctldClient},
     meters::{self, Level, LevelMemory, Meters, TX_LEVELS},
     Rig, RigError,
@@ -1346,6 +1348,16 @@ mod tests {
         let s = rig.wait_settled(Duration::from_secs(2));
         assert_eq!(s.state, LinkState::Error);
         assert!(s.message.contains("occupata"), "{}", s.message);
+    }
+
+    #[test]
+    fn a_busy_port_diagnosis_reaches_the_status_unchanged() {
+        let why = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
+        let connector: Connector = Arc::new(move || Err(RigError(why.into())));
+        let rig = HamlibRig::start(RigConfig::default(), connector, fast());
+        let s = rig.wait_settled(Duration::from_secs(2));
+        assert_eq!(s.state, LinkState::Error);
+        assert!(s.message.starts_with(why), "la diagnosi non si riscrive con il testo generico: {}", s.message);
     }
 
     #[test]

@@ -58,7 +58,16 @@ pub fn wake(config: &RigConfig) {
             .stderr(std::process::Stdio::null())
             .status();
         let path = format!("\\\\.\\{port}");
-        match std::fs::OpenOptions::new().write(true).open(&path) {
+        // porta negata: la tiene un altro programma (rapporti del 2026-11-11: OmniRig rimasto aperto con la COM8). Si dice quale, a schermo
+        // e non come errore; un rigctld orfano di Aurora si chiude e si riprova una volta
+        let opened = crate::busy_port::open_with_diagnosis(&port, || std::fs::OpenOptions::new().write(true).open(&path), |e| format!("{e} {}", busy_hint(e)))
+            .map_err(|(e, diagnosis)| {
+                if let Some(d) = diagnosis {
+                    crate::busy_port::notify(&d.message);
+                }
+                e
+            });
+        match opened {
             Ok(mut f) => {
                 for (i, m) in messages.iter().enumerate() {
                     if i > 0 {
@@ -69,6 +78,8 @@ pub fn wake(config: &RigConfig) {
                 }
                 tracing::info!("«Accendi»: comando di accensione mandato sulla {port}");
             }
+            // occupata: gia' detto (avviso e registro); non e' un errore di Aurora da segnalare
+            Err(e) if crate::busy_port::is_access_denied(&format!("{e} {}", busy_hint(&e))) => tracing::info!("«Accendi»: porta {port} occupata, accensione non mandata: {e}"),
             Err(e) => tracing::warn!("«Accendi»: porta {port} non aperta: {e}"),
         }
         // il tempo che la radio si accenda prima che Hamlib la interroghi
@@ -77,6 +88,17 @@ pub fn wake(config: &RigConfig) {
     #[cfg(not(windows))]
     {
         let _ = (messages, Duration::ZERO, std::io::sink().flush());
+    }
+}
+
+/// Il codice di sistema dell'errore detto in parole fisse (il testo di Windows cambia con la lingua): 5 e 32 sono «accesso negato» e
+/// «file usato da un altro processo», cioe' porta di un altro programma.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn busy_hint(e: &std::io::Error) -> &'static str {
+    match e.raw_os_error() {
+        Some(5 | 32) => "access denied",
+        _ if e.kind() == std::io::ErrorKind::PermissionDenied => "access denied",
+        _ => "",
     }
 }
 
@@ -97,5 +119,16 @@ mod tests {
         let m = power_on_bytes(&ic7300).expect("icom");
         assert_eq!(&m[0][m[0].len() - 7..], &[0xFE, 0xFE, 0x94, 0xE0, 0x18, 0x01, 0xFD]);
         assert_eq!(power_on_bytes(&RigConfig { model: 1, ..RigConfig::default() }), None);
+    }
+
+    #[test]
+    fn a_denied_port_is_recognised_whatever_the_language_of_windows() {
+        let denied = std::io::Error::from_raw_os_error(5);
+        assert_eq!(busy_hint(&denied), "access denied");
+        assert!(crate::busy_port::is_access_denied(&format!("Zugriff verweigert {}", busy_hint(&denied))));
+        assert_eq!(busy_hint(&std::io::Error::from_raw_os_error(32)), "access denied");
+        assert_eq!(busy_hint(&std::io::Error::from(std::io::ErrorKind::PermissionDenied)), "access denied");
+        let missing = std::io::Error::from(std::io::ErrorKind::NotFound);
+        assert_eq!(busy_hint(&missing), "");
     }
 }
