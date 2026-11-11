@@ -286,6 +286,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
   const state = snap.data.status.state;
   const active_ = state === 'connected' || state === 'connecting' || state === 'reconnecting';
   const preset = hamlib ? presetFor(config.rig_name) : undefined;
+  // Cat4OM: gruppo e porta Control trovati dalla scoperta (suggeriti nei campi lasciati vuoti)
+  const discovered = snap.data.status.backend === 'cat4om' && snap.data.status.cat4om?.discovered ? snap.data.status.cat4om : undefined;
   const useCandidate = (c: CatCandidate) => {
     setDraft(applyCandidate(config, c, modelForCandidate(modelList, c)));
     setNote(t('cat.detected.pick'));
@@ -369,13 +371,34 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
         ) : null}
         {fields.cat4om ? (
           <>
+            {/* come Decodium: dalla gestione (17300) Aurora trova il gruppo e la sua porta Control; i campi vuoti = scoperta automatica */}
+            <Field label={t('cat.cat4om.management')} className="cat-w-l" hint={t('tip.cat.cat4om.management')}>
+              <input
+                type="text"
+                value={config.cat4om_management ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="127.0.0.1:17300"
+                onChange={(e) => set({ cat4om_management: e.target.value.trim() })}
+              />
+            </Field>
+            <Field label={t('cat.cat4om.group')} className="cat-w-m" hint={t('tip.cat.cat4om.group')}>
+              <input
+                type="text"
+                value={config.cat4om_group ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder={discovered?.group ? t('cat.cat4om.autoFound', { value: discovered.group }) : t('cat.cat4om.auto')}
+                onChange={(e) => set({ cat4om_group: e.target.value })}
+              />
+            </Field>
             <Field label={t('cat.cat4om.address')} className="cat-w-l" hint={t('tip.cat.cat4om.address')}>
               <input
                 type="text"
                 value={config.cat4om_address ?? ''}
                 spellCheck={false}
                 autoComplete="off"
-                placeholder="127.0.0.1:17301"
+                placeholder={discovered?.control ? t('cat.cat4om.autoFound', { value: discovered.control }) : t('cat.cat4om.auto')}
                 onChange={(e) => set({ cat4om_address: e.target.value.trim() })}
               />
             </Field>
@@ -394,6 +417,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
                 value={config.cat4om_radio ?? ''}
                 spellCheck={false}
                 autoComplete="off"
+                placeholder={t('cat.cat4om.firstRadio')}
                 onChange={(e) => set({ cat4om_radio: e.target.value.trim() })}
               />
             </Field>

@@ -27,7 +27,9 @@ export const DEFAULT_CAT: CatConfig = {
   tci_address: '127.0.0.1:40001',
   tci_receiver: 0,
   ft991_address: '127.0.0.1:50001',
-  cat4om_address: '127.0.0.1:17301',
+  cat4om_management: '127.0.0.1:17300',
+  cat4om_group: '',
+  cat4om_address: '',
   cat4om_key: '',
   cat4om_radio: '',
 };
@@ -53,6 +55,8 @@ export function catIssue(c: CatConfig): string | null {
   if (c.tci_address !== undefined && c.tci_address !== '' && !PORT.test(c.tci_address)) return 'bad_tci_address';
   if (c.tci_receiver !== undefined && c.tci_receiver !== 0 && c.tci_receiver !== 1) return 'bad_tci_receiver';
   if (c.ft991_address !== undefined && c.ft991_address !== '' && !PORT.test(c.ft991_address)) return 'bad_ft991_address';
+  if (c.cat4om_management !== undefined && c.cat4om_management !== '' && !PORT.test(c.cat4om_management)) return 'bad_cat4om_management';
+  if (c.cat4om_group !== undefined && ([...c.cat4om_group].length > 64 || CONTROL.test(c.cat4om_group))) return 'bad_cat4om_group';
   if (c.cat4om_address !== undefined && c.cat4om_address !== '' && !PORT.test(c.cat4om_address)) return 'bad_cat4om_address';
   if (c.cat4om_key !== undefined && ([...c.cat4om_key].length > 128 || CONTROL.test(c.cat4om_key))) return 'bad_cat4om_key';
   if (c.cat4om_radio !== undefined && ([...c.cat4om_radio].length > 64 || CONTROL.test(c.cat4om_radio))) return 'bad_cat4om_radio';

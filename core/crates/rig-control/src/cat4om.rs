@@ -14,6 +14,10 @@
 //!   solo quando deve scrivere (frequenza, modo, PTT, split), cosi' Log4OM resta libero di fare QSY e riprende il comando quando gli serve.
 //! - split vero con `setFrequency` sul VFO di trasmissione e `setSplit`, se la radio dichiara `SetSplit` e un secondo VFO; altrimenti lo split
 //!   si simula (la frequenza si sposta solo durante la trasmissione, «Fake It»).
+//! - scoperta come Decodium: la porta Control di un gruppo la assegna Cat4OM (per esempio 5001), quindi Aurora chiede alla porta di gestione
+//!   (`127.0.0.1:17300`, `getServiceStatus`) i gruppi con la loro porta Control, sceglie il gruppo (per nome o il primo), lo avvia se e' fermo
+//!   (`startGroup`) e si collega al suo Control. Ogni riconnessione rifa' la scoperta: al riavvio di Cat4OM la porta puo' cambiare. Una porta
+//!   Control scritta a mano salta la scoperta.
 //!
 //! La chiave del gruppo non si scrive mai nei registri: va solo nella prova SHA-256 dell'`hello`.
 
@@ -29,6 +33,7 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
+use serde::Serialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use tungstenite::{Message, WebSocket};
@@ -40,8 +45,11 @@ use crate::{
     meters::{self, Level, Meters},
 };
 
-/// Il Control Port del primo gruppo di Cat4OM (il manuale: Management 17300, Control da 17301 in su, uno per gruppo).
-pub const DEFAULT_CAT4OM_ADDRESS: &str = "127.0.0.1:17301";
+/// La porta di gestione di Cat4OM (una per servizio): da li' si leggono i gruppi e la porta Control di ciascuno.
+pub const DEFAULT_CAT4OM_MANAGEMENT: &str = "127.0.0.1:17300";
+/// La porta Control che Aurora proponeva fino alla 0.11.237: in una configurazione vecchia vale «non scritta» e la porta vera si scopre
+/// (nelle installazioni vere Cat4OM assegna al gruppo un'altra porta, per esempio 5001).
+pub const LEGACY_CAT4OM_ADDRESS: &str = "127.0.0.1:17301";
 /// La versione del protocollo parlata da Aurora: conta solo il numero principale.
 pub const PROTOCOL_VERSION: &str = "1.0.0";
 /// Lo schema di autenticazione del manuale (§2.2).
@@ -55,14 +63,40 @@ const NO_RADIOS: &str = "Nessuna radio nel gruppo Cat4OM: aggiungila in Cat4OM";
 const AUTH_REQUIRED: &str = "Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio";
 const AUTH_FAILED: &str = "Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC";
 const VERSION_MISMATCH: &str = "Versione del protocollo Cat4OM non compatibile con Aurora (1.0.0)";
-const MANAGEMENT_PORT: &str = "Hai indicato la porta di gestione di Cat4OM: scrivi la porta Control del gruppo (di base 17301)";
+const MANAGEMENT_PORT: &str = "Nel campo «Controllo» c'e' la porta di gestione di Cat4OM: lascialo vuoto, Aurora trova da sola la porta del gruppo";
+const MANAGEMENT_AUTH: &str = "La gestione di Cat4OM chiede una password: scrivi la porta Control del gruppo nel campo «Controllo»";
+const NO_GROUPS: &str = "Nessun gruppo in Cat4OM: crea in Cat4OM un gruppo con la radio";
 
 fn not_answering(address: &str, raw: &str) -> String {
     format!("Cat4OM non raggiungibile su {address}: avvia Cat4OM e controlla la porta Control del gruppo; da un altro PC abilita la rete in Settings → SERVER ({raw})")
 }
 
 fn not_control(address: &str) -> String {
-    format!("Su {address} non risponde il Control di Cat4OM: controlla la porta del gruppo (di base 17301)")
+    format!("Su {address} non risponde il Control di Cat4OM: controlla la porta del gruppo o lascia vuoto il campo «Controllo»")
+}
+
+fn management_unreachable(address: &str, raw: &str) -> String {
+    format!("Gestione di Cat4OM non raggiungibile su {address}: avvia Log4OM e Cat4OM; da un altro PC abilita la rete in Settings → SERVER ({raw})")
+}
+
+fn not_management(address: &str) -> String {
+    format!("Su {address} non risponde la gestione di Cat4OM: controlla la porta di gestione (di base 17300)")
+}
+
+fn group_missing(group: &str, list: &str) -> String {
+    format!("Gruppo «{group}» non trovato in Cat4OM (presenti: {list})")
+}
+
+fn group_stopped(group: &str) -> String {
+    format!("Il gruppo «{group}» di Cat4OM e' fermo: avvialo in Cat4OM")
+}
+
+fn timeout_text(action: &str, timeout: Duration) -> String {
+    format!("Cat4OM non risponde a {action} (nessuna risposta in {} s)", timeout.as_secs())
+}
+
+fn refused_text(action: &str, e: &ServerError) -> String {
+    format!("Cat4OM ha rifiutato {action}: {} ({})", e.message, e.code)
 }
 
 fn claimed(name: &str, by: &str) -> String {
@@ -192,7 +226,7 @@ pub struct Welcome {
 pub enum Incoming {
     Welcome(Welcome),
     /// `managementWelcome`: la porta e' quella di gestione, non il Control di un gruppo.
-    ManagementWelcome,
+    ManagementWelcome { client_id: String, protocol_version: String },
     StateUpdate { seq: Option<u64>, full: bool, master_id: Option<String>, radios: Vec<Value> },
     Response { id: String, success: bool, status: Option<String>, result: Value, error: Option<ServerError> },
     Event { event: String, radio_id: Option<String>, details: Value },
@@ -226,7 +260,10 @@ pub fn parse_message(raw: &str) -> Option<Incoming> {
             keepalive_ms: v.get("keepaliveIntervalMs").and_then(Value::as_u64),
             features: strings(v.get("features")),
         }),
-        "managementWelcome" => Incoming::ManagementWelcome,
+        "managementWelcome" => Incoming::ManagementWelcome {
+            client_id: text(&v, "clientId").unwrap_or_default(),
+            protocol_version: text(&v, "protocolVersion").unwrap_or_default(),
+        },
         "stateUpdate" => Incoming::StateUpdate {
             seq: v.get("seq").and_then(Value::as_u64),
             // `full` assente = stato completo
@@ -420,6 +457,99 @@ pub fn merge_radios(current: &mut Vec<Value>, update: Vec<Value>, full: bool) {
     }
 }
 
+// ---------------------------------------------------------------- scoperta (porta di gestione)
+
+/// Un gruppo di Cat4OM come lo descrive la gestione (`getServiceStatus` → `result.groups[]`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupInfo {
+    pub id: String,
+    pub name: String,
+    /// La porta Control del gruppo (assegnata da Cat4OM); assente se il gruppo e' fermo.
+    pub control_port: Option<u16>,
+    pub running: bool,
+    /// Le radio del gruppo: `radioId` e `radioName`.
+    pub radios: Vec<(String, String)>,
+}
+
+/// I gruppi dal risultato di `getServiceStatus`. `isRunning` assente: il gruppo gira se ha una porta Control.
+pub fn parse_groups(result: &Value) -> Vec<GroupInfo> {
+    let Some(groups) = result.get("groups").and_then(Value::as_array) else { return Vec::new() };
+    groups
+        .iter()
+        .filter_map(|g| {
+            let id = text(g, "id")?;
+            let control_port = g.get("controlPort").and_then(Value::as_u64).and_then(|p| u16::try_from(p).ok()).filter(|p| *p != 0);
+            let radios = g
+                .get("radios")
+                .and_then(Value::as_array)
+                .map(|a| a.iter().filter_map(|r| text(r, "radioId").map(|rid| (rid.clone(), text(r, "radioName").unwrap_or(rid)))).collect())
+                .unwrap_or_default();
+            Some(GroupInfo {
+                name: text(g, "name").unwrap_or_else(|| id.clone()),
+                running: g.get("isRunning").and_then(Value::as_bool).unwrap_or(control_port.is_some()),
+                control_port,
+                radios,
+                id,
+            })
+        })
+        .collect()
+}
+
+/// Sceglie il gruppo: quello scritto (per `id` o per nome); vuoto = quello che contiene la radio scritta, altrimenti il primo in funzione,
+/// altrimenti il primo («Scoperta automatica» di Decodium). L'errore e' il testo per l'utente.
+pub fn choose_group(wanted: &str, wanted_radio: &str, groups: &[GroupInfo]) -> Result<GroupInfo, String> {
+    if groups.is_empty() {
+        return Err(NO_GROUPS.into());
+    }
+    let wanted = wanted.trim();
+    if !wanted.is_empty() {
+        return groups
+            .iter()
+            .find(|g| g.id == wanted)
+            .or_else(|| groups.iter().find(|g| g.id.eq_ignore_ascii_case(wanted) || g.name.eq_ignore_ascii_case(wanted)))
+            .cloned()
+            .ok_or_else(|| group_missing(wanted, &groups.iter().map(|g| g.id.as_str()).collect::<Vec<_>>().join(", ")));
+    }
+    let radio = wanted_radio.trim();
+    let has_radio = |g: &&GroupInfo| !radio.is_empty() && g.radios.iter().any(|(id, name)| id.eq_ignore_ascii_case(radio) || name.eq_ignore_ascii_case(radio));
+    let chosen = groups
+        .iter()
+        .filter(has_radio)
+        .find(|g| g.running)
+        .or_else(|| groups.iter().find(has_radio))
+        .or_else(|| groups.iter().find(|g| g.running))
+        .unwrap_or(&groups[0]);
+    Ok(chosen.clone())
+}
+
+/// L'indirizzo del Control di un gruppo: l'host della porta di gestione con la porta del gruppo.
+pub fn control_address(management: &str, port: u16) -> String {
+    let host = management.trim().rsplit_once(':').map_or(management.trim(), |(host, _)| host);
+    let host = if host.is_empty() { "127.0.0.1" } else { host };
+    format!("{host}:{port}")
+}
+
+/// Dove Aurora si collega: porta di gestione, porta Control (scoperta o scritta a mano), gruppo, radio e ruolo. Serve allo stato
+/// («Collegato — group-1/kenwood/ts-990 — master», come Decodium) e al suggerimento del campo «Controllo».
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct Cat4omEndpoint {
+    pub management: String,
+    /// La porta Control in uso o in prova (vuota finche' la scoperta non la trova).
+    pub control: String,
+    /// `true` = la porta Control viene dalla scoperta, `false` = scritta a mano.
+    pub discovered: bool,
+    pub group: String,
+    pub radio: String,
+    /// `master`, `slave` o vuoto se non collegata.
+    pub role: String,
+}
+
+/// Il testo dello stato a radio collegata: «gruppo/radio — ruolo».
+pub fn link_summary(group: &str, radio: &str, master: bool) -> String {
+    let role = if master { "master" } else { "slave" };
+    if group.is_empty() { format!("{radio} — {role}") } else { format!("{group}/{radio} — {role}") }
+}
+
 // ---------------------------------------------------------------- la radio
 
 /// I tempi del collegamento (le prove li accorciano).
@@ -469,6 +599,8 @@ type Reply = Result<Value, ServerError>;
 struct Session {
     client_id: String,
     instance_id: String,
+    /// Il gruppo del Control (`welcome.groupId`).
+    group_id: String,
     is_master: bool,
     radios: Vec<Value>,
     radio_id: Option<String>,
@@ -477,7 +609,14 @@ struct Session {
 }
 
 struct Inner {
-    address: String,
+    /// La porta di gestione da cui si scoprono i gruppi e la loro porta Control.
+    management: String,
+    /// Il gruppo voluto (`id` o nome); vuoto = scoperta automatica.
+    group: String,
+    /// La porta Control scritta a mano; `None` = quella scoperta dalla gestione.
+    control_override: Option<String>,
+    /// Dove si e' collegati o si prova a collegarsi.
+    endpoint: Mutex<Cat4omEndpoint>,
     /// La chiave del gruppo: mai nei registri ne' nei messaggi.
     key: String,
     wanted_radio: String,
@@ -519,6 +658,14 @@ impl Inner {
         if let Ok(mut s) = self.status.lock() {
             edit(&mut s);
             s.updated_ms = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
+        }
+    }
+
+    fn set_endpoint(&self, control: &str, discovered: bool, group: &str) {
+        if let Ok(mut e) = self.endpoint.lock() {
+            e.control = control.to_string();
+            e.discovered = discovered;
+            e.group = group.to_string();
         }
     }
 
@@ -616,7 +763,7 @@ impl Inner {
     fn rig_error(&self, action: &str, error: CallError) -> RigError {
         RigError(match error {
             CallError::Link(m) => m,
-            CallError::Timeout => format!("Cat4OM non risponde a {action} (nessuna risposta in {} s)", self.timing.request.as_secs()),
+            CallError::Timeout => timeout_text(action, self.timing.request),
             CallError::Server(e) => match e.code.as_str() {
                 "RADIO_CLAIMED" => {
                     let view = self.view();
@@ -625,7 +772,7 @@ impl Inner {
                     claimed(&name, &by)
                 }
                 "TX_IN_PROGRESS" => format!("Cat4OM: un'altra radio o un altro programma sta trasmettendo ({action} rifiutato)"),
-                _ => format!("Cat4OM ha rifiutato {action}: {} ({})", e.message, e.code),
+                _ => refused_text(action, &e),
             },
         })
     }
@@ -649,6 +796,8 @@ impl Inner {
                         return Err(RigError(format!("Cat4OM non ha dato il comando della radio ad Aurora (ruolo {role})")));
                     }
                     tracing::info!("Cat4OM: Aurora ora comanda il gruppo (master)");
+                    // lo stato dice «master»
+                    self.refresh();
                     return Ok(());
                 }
                 Err(CallError::Server(e)) if e.code == "OWNERSHIP_COOLDOWN" && !cooled => {
@@ -708,7 +857,11 @@ impl Inner {
             let Ok(mut s) = self.session.lock() else { return };
             let present = s.radio_id.as_deref().is_some_and(|id| s.radios.iter().any(|r| r.get("radioId").and_then(Value::as_str) == Some(id)));
             if !present {
-                let choice = choose_radio(&self.wanted_radio, &s.radios);
+                let mut choice = choose_radio(&self.wanted_radio, &s.radios);
+                if choice.is_err() && !s.group_id.is_empty() && self.wanted_radio.eq_ignore_ascii_case(&s.group_id) {
+                    // nel campo «Radio» c'e' il nome del gruppo (CT1BXX aveva scritto «group-1»): vale come vuoto, la prima radio disponibile
+                    choice = choose_radio("", &s.radios);
+                }
                 match choice {
                     Ok(id) => s.radio_id = Some(id),
                     Err(message) => {
@@ -742,7 +895,8 @@ impl Inner {
         } else if view.connection_status != "connected" {
             (LinkState::Connecting, format!("Radio Cat4OM «{}» non collegata ({})", view.name, view.connection_status), false)
         } else {
-            (LinkState::Connected, String::new(), true)
+            let (group, master) = self.session.lock().map(|s| (s.group_id.clone(), s.is_master)).unwrap_or_default();
+            (LinkState::Connected, link_summary(&group, &view.id, master), true)
         };
         self.ready.store(ready, Ordering::SeqCst);
         self.update(|s| {
@@ -823,6 +977,7 @@ impl Inner {
                     if let (Some(master), Ok(mut s)) = (details.get("masterId").and_then(Value::as_str), self.session.lock()) {
                         s.is_master = master == s.client_id;
                     }
+                    self.refresh();
                 }
                 "signalUpdate" => {
                     let id = self.session.lock().ok().and_then(|s| s.radio_id.clone());
@@ -879,20 +1034,27 @@ pub struct Cat4omRig {
 }
 
 impl Cat4omRig {
-    pub fn start(address: &str, cat_mode: CatMode) -> Cat4omRig {
-        Cat4omRig::from_config(&RigConfig { cat4om_address: address.to_string(), cat_mode, ..RigConfig::default() })
-    }
-
-    /// Dalla configurazione della radio: indirizzo del Control Port, chiave del gruppo, radio, modo CAT, split e «Spegni».
+    /// Dalla configurazione della radio: porta di gestione, gruppo, porta Control (se scritta), chiave del gruppo, radio, modo CAT, split e
+    /// «Spegni».
     pub fn from_config(config: &RigConfig) -> Cat4omRig {
         Cat4omRig::with_timing(config, Cat4omTiming::default())
     }
 
     pub fn with_timing(config: &RigConfig, timing: Cat4omTiming) -> Cat4omRig {
-        let address = config.cat4om_address.trim();
-        let address = if address.is_empty() { DEFAULT_CAT4OM_ADDRESS.to_string() } else { address.to_string() };
+        let management = config.cat4om_management.trim();
+        let management = if management.is_empty() { DEFAULT_CAT4OM_MANAGEMENT.to_string() } else { management.to_string() };
+        let control_override = config.cat4om_control_override();
+        let endpoint = Cat4omEndpoint {
+            management: management.clone(),
+            control: control_override.clone().unwrap_or_default(),
+            discovered: control_override.is_none(),
+            ..Cat4omEndpoint::default()
+        };
         let inner = Arc::new(Inner {
-            address,
+            management,
+            group: config.cat4om_group.trim().to_string(),
+            control_override,
+            endpoint: Mutex::new(endpoint),
             key: config.cat4om_key.clone(),
             wanted_radio: config.cat4om_radio.trim().to_string(),
             cat_mode: config.cat_mode,
@@ -934,8 +1096,24 @@ impl Cat4omRig {
         Cat4omRig { inner, worker: Mutex::new(worker) }
     }
 
-    pub fn address(&self) -> &str {
-        &self.inner.address
+    /// La porta Control in uso (scoperta o scritta a mano); vuota finche' la scoperta non la trova.
+    pub fn address(&self) -> String {
+        self.inner.endpoint.lock().map(|e| e.control.clone()).unwrap_or_default()
+    }
+
+    /// Gestione, porta Control, gruppo, radio e ruolo (per lo stato e per l'interfaccia).
+    pub fn endpoint(&self) -> Cat4omEndpoint {
+        let mut endpoint = self.inner.endpoint.lock().map(|e| e.clone()).unwrap_or_default();
+        if self.inner.link_up.load(Ordering::SeqCst)
+            && let Ok(s) = self.inner.session.lock()
+        {
+            if !s.group_id.is_empty() {
+                endpoint.group = s.group_id.clone();
+            }
+            endpoint.radio = s.radio_id.clone().unwrap_or_default();
+            endpoint.role = if s.is_master { "master" } else { "slave" }.into();
+        }
+        endpoint
     }
 
     pub fn status(&self) -> RigStatus {
@@ -1137,9 +1315,9 @@ fn would_block(e: &tungstenite::Error) -> bool {
 }
 
 /// `hello` e attesa del `welcome` (il primo messaggio del server). L'errore e' il testo per l'utente.
-fn handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> Result<Welcome, String> {
+fn handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>, address: &str) -> Result<Welcome, String> {
     let hello = hello_message(env!("CARGO_PKG_VERSION"), &inner.key, SystemTime::now());
-    ws.send(Message::text(hello.to_string())).map_err(|e| not_answering(&inner.address, &e.to_string()))?;
+    ws.send(Message::text(hello.to_string())).map_err(|e| not_answering(address, &e.to_string()))?;
     let deadline = Instant::now() + inner.timing.handshake;
     while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
         match ws.read() {
@@ -1149,32 +1327,32 @@ fn handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> Result<Welcome, St
                         if !same_major(&w.protocol_version) {
                             Err(VERSION_MISMATCH.into())
                         } else if w.client_id.is_empty() {
-                            Err(not_control(&inner.address))
+                            Err(not_control(address))
                         } else {
                             Ok(w)
                         }
                     }
-                    Some(Incoming::ManagementWelcome) => Err(MANAGEMENT_PORT.into()),
+                    Some(Incoming::ManagementWelcome { .. }) => Err(MANAGEMENT_PORT.into()),
                     Some(Incoming::Error(e)) => Err(match e.code.as_str() {
                         "AUTH_REQUIRED" => AUTH_REQUIRED.into(),
                         "AUTH_FAILED" => AUTH_FAILED.into(),
                         "PROTOCOL_VERSION_MISMATCH" => VERSION_MISMATCH.into(),
                         _ => format!("Cat4OM ha rifiutato il collegamento: {} ({})", e.message, e.code),
                     }),
-                    _ => Err(not_control(&inner.address)),
+                    _ => Err(not_control(address)),
                 };
             }
-            Ok(Message::Close(_)) => return Err(not_control(&inner.address)),
+            Ok(Message::Close(_)) => return Err(not_control(address)),
             Ok(_) => {}
             Err(e) if would_block(&e) => {}
-            Err(e) => return Err(not_answering(&inner.address, &e.to_string())),
+            Err(e) => return Err(not_answering(address, &e.to_string())),
         }
     }
-    Err(not_control(&inner.address))
+    Err(not_control(address))
 }
 
 /// Il `welcome` ricevuto: nuova sessione (un `instanceId` diverso vuol dire un altro servizio, ma lo stato vecchio si scarta comunque).
-fn adopt_welcome(inner: &Inner, welcome: Welcome) {
+fn adopt_welcome(inner: &Inner, welcome: Welcome, address: &str) {
     if let Ok(mut s) = inner.session.lock() {
         if !s.instance_id.is_empty() && s.instance_id != welcome.instance_id {
             tracing::info!("Cat4OM: servizio diverso dal precedente, stato azzerato");
@@ -1182,6 +1360,7 @@ fn adopt_welcome(inner: &Inner, welcome: Welcome) {
         *s = Session {
             client_id: welcome.client_id,
             instance_id: welcome.instance_id,
+            group_id: welcome.group_id.clone(),
             is_master: welcome.role == "master",
             radios: welcome.radios,
             radio_id: None,
@@ -1189,7 +1368,7 @@ fn adopt_welcome(inner: &Inner, welcome: Welcome) {
             keepalive: Duration::from_millis(welcome.keepalive_ms.filter(|ms| *ms > 0).unwrap_or(10_000)),
         };
     }
-    tracing::info!("Cat4OM: collegato al gruppo «{}» su {} (ruolo {})", welcome.group_id, inner.address, welcome.role);
+    tracing::info!("Cat4OM: collegato al gruppo «{}» su {address} (ruolo {})", welcome.group_id, welcome.role);
     inner.released.store(false, Ordering::SeqCst);
     inner.link_up.store(true, Ordering::SeqCst);
     inner.refresh();
@@ -1219,60 +1398,196 @@ fn reset_link(inner: &Inner) {
     inner.notify();
 }
 
-fn run(inner: &Inner) {
-    let mut attempt = 0u32;
-    while !inner.stop.load(Ordering::SeqCst) {
-        match open(&inner.address) {
-            Ok(mut ws) => match handshake(inner, &mut ws) {
-                Ok(welcome) => {
-                    attempt = 0;
-                    adopt_welcome(inner, welcome);
-                    let reason = serve(inner, &mut ws);
-                    let _ = ws.close(None);
-                    let _ = ws.flush();
-                    // chiusura ordinata: si legge (e si scarta) quel che arriva ancora finche' il server risponde, al massimo 800 ms (Decodium)
-                    let until = Instant::now() + Duration::from_millis(800);
-                    while Instant::now() < until {
-                        match ws.read() {
-                            Ok(Message::Close(_)) => break,
-                            Err(e) if would_block(&e) => {}
-                            Err(_) => break,
-                            Ok(_) => {}
+/// Dove la scoperta ha trovato il gruppo: porta Control e `id` del gruppo.
+#[derive(Debug, Clone, PartialEq)]
+struct Discovered {
+    control: String,
+    group: String,
+}
+
+/// Una richiesta sulla porta di gestione con la sua risposta. Il collegamento serve solo alla scoperta: le risposte si leggono qui.
+fn management_call(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str, client_id: &str, action: &str, params: Value) -> Result<Value, String> {
+    let id = new_request_id();
+    ws.send(Message::text(request_message(&id, client_id, action, None, params))).map_err(|e| management_unreachable(management, &e.to_string()))?;
+    let deadline = Instant::now() + inner.timing.request;
+    while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
+        match ws.read() {
+            Ok(Message::Text(text)) => {
+                // i push (`serviceStatus`) e le risposte d'altro si ignorano
+                if let Some(Incoming::Response { id: answered, success, result, error, .. }) = parse_message(text.as_str())
+                    && answered == id
+                {
+                    return if success {
+                        Ok(result)
+                    } else {
+                        let e = error.unwrap_or(ServerError { code: "UNKNOWN".into(), message: String::new(), retry_after_ms: None, details: Value::Null });
+                        Err(refused_text(action, &e))
+                    };
+                }
+            }
+            Ok(Message::Close(_)) => return Err(management_unreachable(management, "chiuso dal server")),
+            Ok(_) => {}
+            Err(e) if would_block(&e) => {}
+            Err(e) => return Err(management_unreachable(management, &e.to_string())),
+        }
+    }
+    Err(timeout_text(action, inner.timing.request))
+}
+
+/// `hello` sulla porta di gestione (senza chiave: la password di gestione e' un'altra) e attesa del `managementWelcome`; torna il `clientId`.
+fn management_handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -> Result<String, String> {
+    let hello = hello_message(env!("CARGO_PKG_VERSION"), "", SystemTime::now());
+    ws.send(Message::text(hello.to_string())).map_err(|e| management_unreachable(management, &e.to_string()))?;
+    let deadline = Instant::now() + inner.timing.handshake;
+    while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
+        match ws.read() {
+            Ok(Message::Text(text)) => {
+                return match parse_message(text.as_str()) {
+                    Some(Incoming::ManagementWelcome { client_id, protocol_version }) => {
+                        if !protocol_version.is_empty() && !same_major(&protocol_version) {
+                            Err(VERSION_MISMATCH.into())
+                        } else {
+                            Ok(client_id)
                         }
                     }
-                    reset_link(inner);
-                    if inner.stop.load(Ordering::SeqCst) {
-                        break;
+                    Some(Incoming::Error(e)) => Err(match e.code.as_str() {
+                        "AUTH_REQUIRED" | "AUTH_FAILED" => MANAGEMENT_AUTH.into(),
+                        "PROTOCOL_VERSION_MISMATCH" => VERSION_MISMATCH.into(),
+                        _ => format!("Cat4OM ha rifiutato il collegamento: {} ({})", e.message, e.code),
+                    }),
+                    _ => Err(not_management(management)),
+                };
+            }
+            Ok(Message::Close(_)) => return Err(not_management(management)),
+            Ok(_) => {}
+            Err(e) if would_block(&e) => {}
+            Err(e) => return Err(management_unreachable(management, &e.to_string())),
+        }
+    }
+    Err(not_management(management))
+}
+
+/// La scoperta di Decodium: gestione → `getServiceStatus` → gruppo scelto (avviato con `startGroup` se fermo) → la sua porta Control.
+fn discover(inner: &Inner, management: &str) -> Result<Discovered, String> {
+    let mut ws = open(management).map_err(|e| management_unreachable(management, &e))?;
+    let found = discover_on(inner, &mut ws, management);
+    let _ = ws.close(None);
+    let _ = ws.flush();
+    found
+}
+
+fn discover_on(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -> Result<Discovered, String> {
+    let client_id = management_handshake(inner, ws, management)?;
+    let groups = parse_groups(&management_call(inner, ws, management, &client_id, "getServiceStatus", json!({}))?);
+    let mut group = choose_group(&inner.group, &inner.wanted_radio, &groups)?;
+    if !group.running || group.control_port.is_none() {
+        // un gruppo fermo non ha la porta Control aperta: lo si avvia, come Decodium, e si rilegge lo stato finche' la porta compare
+        tracing::info!("Cat4OM: il gruppo «{}» e' fermo, lo avvio", group.id);
+        management_call(inner, ws, management, &client_id, "startGroup", json!({ "groupId": group.id }))?;
+        let until = Instant::now() + inner.timing.request;
+        loop {
+            let groups = parse_groups(&management_call(inner, ws, management, &client_id, "getServiceStatus", json!({}))?);
+            if let Some(again) = groups.into_iter().find(|g| g.id == group.id) {
+                group = again;
+            }
+            if (group.running && group.control_port.is_some()) || Instant::now() >= until || inner.stop.load(Ordering::SeqCst) {
+                break;
+            }
+            let pause = Instant::now() + Duration::from_millis(250);
+            while Instant::now() < pause && !inner.stop.load(Ordering::SeqCst) {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+    match (group.running, group.control_port) {
+        (true, Some(port)) => {
+            let control = control_address(management, port);
+            tracing::info!("Cat4OM: gruppo «{}» trovato sulla porta Control {control} (gestione {management})", group.id);
+            Ok(Discovered { control, group: group.id })
+        }
+        _ => Err(group_stopped(&group.id)),
+    }
+}
+
+/// Il motivo di un errore: alla prima volta errore, poi riconnessione in corso.
+fn report_failure(inner: &Inner, attempt: u32, message: String, keep_error: bool) {
+    tracing::warn!("Cat4OM: {message}");
+    inner.update(|s| {
+        s.state = if keep_error || attempt == 1 { LinkState::Error } else { LinkState::Reconnecting };
+        s.message = message;
+        s.reconnect_attempt = attempt;
+        s.failures = attempt;
+    });
+}
+
+fn run(inner: &Inner) {
+    let mut attempt = 0u32;
+    // la porta scritta in «Controllo» ha risposto come gestione (per esempio 17300): da li' si scopre il gruppo
+    let mut override_is_management = false;
+    while !inner.stop.load(Ordering::SeqCst) {
+        // la porta Control: scritta a mano, oppure scoperta ogni volta (al riavvio di Cat4OM puo' cambiare)
+        let target = match (&inner.control_override, override_is_management) {
+            (Some(address), false) => Ok(address.clone()),
+            (written, _) => {
+                let management = written.clone().filter(|_| override_is_management).unwrap_or_else(|| inner.management.clone());
+                discover(inner, &management).map(|found| {
+                    inner.set_endpoint(&found.control, true, &found.group);
+                    found.control
+                })
+            }
+        };
+        match target {
+            Err(message) => {
+                attempt += 1;
+                report_failure(inner, attempt, message, true);
+            }
+            Ok(address) => match open(&address) {
+                Ok(mut ws) => match handshake(inner, &mut ws, &address) {
+                    Ok(welcome) => {
+                        attempt = 0;
+                        adopt_welcome(inner, welcome, &address);
+                        let reason = serve(inner, &mut ws);
+                        let _ = ws.close(None);
+                        let _ = ws.flush();
+                        // chiusura ordinata: si legge (e si scarta) quel che arriva ancora finche' il server risponde, al massimo 800 ms (Decodium)
+                        let until = Instant::now() + Duration::from_millis(800);
+                        while Instant::now() < until {
+                            match ws.read() {
+                                Ok(Message::Close(_)) => break,
+                                Err(e) if would_block(&e) => {}
+                                Err(_) => break,
+                                Ok(_) => {}
+                            }
+                        }
+                        reset_link(inner);
+                        if inner.stop.load(Ordering::SeqCst) {
+                            break;
+                        }
+                        tracing::warn!("Cat4OM: collegamento perso: {reason}");
+                        inner.update(|s| {
+                            s.state = LinkState::Reconnecting;
+                            s.message = format!("Collegamento con Cat4OM perso ({reason}): nuovo tentativo");
+                            s.ptt = false;
+                        });
                     }
-                    tracing::warn!("Cat4OM: collegamento perso: {reason}");
-                    inner.update(|s| {
-                        s.state = LinkState::Reconnecting;
-                        s.message = format!("Collegamento con Cat4OM perso ({reason}): nuovo tentativo");
-                        s.ptt = false;
-                    });
-                }
-                Err(message) => {
+                    Err(message) => {
+                        let _ = ws.close(None);
+                        let _ = ws.flush();
+                        if message == MANAGEMENT_PORT && inner.control_override.is_some() && !override_is_management {
+                            // la porta scritta e' quella di gestione: si usa per la scoperta, subito
+                            tracing::info!("Cat4OM: {address} e' la porta di gestione, scopro da li' il gruppo e la sua porta Control");
+                            override_is_management = true;
+                            continue;
+                        }
+                        attempt += 1;
+                        report_failure(inner, attempt, message, true);
+                    }
+                },
+                Err(e) => {
                     attempt += 1;
-                    let _ = ws.close(None);
-                    let _ = ws.flush();
-                    tracing::warn!("Cat4OM: {message}");
-                    inner.update(|s| {
-                        s.state = LinkState::Error;
-                        s.message = message;
-                        s.reconnect_attempt = attempt;
-                        s.failures = attempt;
-                    });
+                    report_failure(inner, attempt, not_answering(&address, &e), false);
                 }
             },
-            Err(e) => {
-                attempt += 1;
-                inner.update(|s| {
-                    s.state = if attempt == 1 { LinkState::Error } else { LinkState::Reconnecting };
-                    s.message = not_answering(&inner.address, &e);
-                    s.reconnect_attempt = attempt;
-                    s.failures = attempt;
-                });
-            }
         }
         // attesa prima di riprovare (1; 2,5; 5; 10; 20; 30 s), interrotta subito dalla chiusura
         let wait = inner.timing.backoff[(attempt.max(1) as usize - 1).min(5)];
@@ -1457,7 +1772,10 @@ mod tests {
         let ev = json!({ "type": "event", "event": "ownershipChanged", "radioId": null, "details": { "masterId": "c-1" } });
         assert!(matches!(parse_message(&ev.to_string()), Some(Incoming::Event { event, .. }) if event == "ownershipChanged"));
         assert!(matches!(parse_message(r#"{"type":"error","code":"AUTH_FAILED","message":"no"}"#), Some(Incoming::Error(e)) if e.code == "AUTH_FAILED"));
-        assert_eq!(parse_message(r#"{"type":"managementWelcome","endpoint":"management"}"#), Some(Incoming::ManagementWelcome));
+        assert_eq!(
+            parse_message(r#"{"type":"managementWelcome","endpoint":"management","clientId":"m-1","protocolVersion":"1.0.0"}"#),
+            Some(Incoming::ManagementWelcome { client_id: "m-1".into(), protocol_version: "1.0.0".into() })
+        );
         assert_eq!(parse_message(r#"{"type":"x-nuovo"}"#), Some(Incoming::Other("x-nuovo".into())), "tipi sconosciuti ignorati");
         assert_eq!(parse_message("non json"), None);
     }
@@ -1508,6 +1826,7 @@ mod tests {
     /// Lo stato del Cat4OM finto (un gruppo, Log4OM gia' collegato e master).
     struct FakeState {
         radios: Vec<Value>,
+        group: String,
         master: String,
         seq: u64,
         requests: Vec<Value>,
@@ -1547,6 +1866,7 @@ mod tests {
         let address = listener.local_addr().expect("indirizzo").to_string();
         let state = Arc::new(Mutex::new(FakeState {
             radios,
+            group: "main".into(),
             master: "log4om".into(),
             seq: 0,
             requests: Vec::new(),
@@ -1598,7 +1918,7 @@ mod tests {
                 }
             }
             let client = format!("client-{}", s.connections);
-            let welcome = json!({ "type": "welcome", "endpoint": "control", "protocolVersion": "1.0.0", "groupId": "main", "clientId": client,
+            let welcome = json!({ "type": "welcome", "endpoint": "control", "protocolVersion": "1.0.0", "groupId": s.group, "clientId": client,
                 "role": if s.master == client { "master" } else { "slave" }, "sessionToken": null, "radios": s.radios, "seq": s.seq,
                 "authRequired": s.key.is_some(), "features": ["stateUpdateSeq"], "instanceId": "fake", "keepaliveIntervalMs": 10000 });
             if ws.send(Message::text(welcome.to_string())).is_err() {
@@ -1846,6 +2166,192 @@ mod tests {
         assert!(wait(|| rig.status().state == LinkState::Connected), "{:?}", rig.status());
         rig.set_frequency(14_074_000).expect("frequenza dopo la riconnessione");
         assert_eq!(fake.requests()[0]["clientId"], "client-2");
+    }
+
+    // ------------------------------------------------ scoperta dalla porta di gestione
+
+    #[test]
+    fn groups_are_read_and_chosen_like_decodium() {
+        // il caso di CT1BXX: un gruppo, porta Control 5001 assegnata da Cat4OM, una Kenwood TS-990
+        let status = json!({ "groups": [
+            { "id": "group-1", "name": "Group 1", "controlPort": 5001, "autoStart": true, "isRunning": true, "radioCount": 1,
+              "radios": [ { "radioId": "kenwood/ts-990", "radioName": "kenwood/ts-990", "connectionState": "connected" } ], "x-futuro": 1 },
+            { "id": "spare", "name": "Riserva", "controlPort": 0, "isRunning": false, "radios": [] },
+            { "name": "senza id" }
+        ] });
+        let groups = parse_groups(&status);
+        assert_eq!(groups.len(), 2, "un gruppo senza id si scarta");
+        assert_eq!((groups[0].control_port, groups[0].running), (Some(5001), true));
+        assert_eq!((groups[1].control_port, groups[1].running, groups[1].name.as_str()), (None, false, "Riserva"));
+        let found = choose_group("", "", &groups).expect("scoperta automatica");
+        assert_eq!(found.id, "group-1");
+        assert_eq!(control_address("127.0.0.1:17300", 5001), "127.0.0.1:5001", "la porta del gruppo, non la 17301 di una volta");
+        assert_eq!(control_address("192.168.1.20:17300", 5002), "192.168.1.20:5002", "Cat4OM su un altro PC");
+        assert_eq!(control_address("[::1]:17300", 5001), "[::1]:5001");
+        assert_eq!(choose_group("GROUP 1", "", &groups).expect("per nome").id, "group-1");
+        assert_eq!(choose_group("spare", "", &groups).expect("per id").id, "spare");
+        assert_eq!(choose_group("", "KENWOOD/TS-990", &groups).expect("per radio").id, "group-1");
+        assert_eq!(choose_group("zz", "", &groups), Err("Gruppo «zz» non trovato in Cat4OM (presenti: group-1, spare)".into()));
+        assert_eq!(choose_group("", "", &[]), Err(NO_GROUPS.into()));
+        assert_eq!(parse_groups(&json!({})), vec![]);
+        assert_eq!(link_summary("group-1", "kenwood/ts-990", true), "group-1/kenwood/ts-990 — master");
+        assert_eq!(link_summary("", "run", false), "run — slave");
+    }
+
+    /// Il finto servizio di gestione: `getServiceStatus` con i gruppi dati; `startGroup` avvia il gruppo sulla porta in `x-port`.
+    struct FakeManagement {
+        address: String,
+        state: Arc<Mutex<ManagementState>>,
+    }
+
+    struct ManagementState {
+        groups: Vec<Value>,
+        actions: Vec<String>,
+        connections: u32,
+    }
+
+    impl FakeManagement {
+        fn actions(&self) -> Vec<String> {
+            self.state.lock().unwrap().actions.clone()
+        }
+
+        fn connections(&self) -> u32 {
+            self.state.lock().unwrap().connections
+        }
+    }
+
+    fn fake_management(groups: Vec<Value>) -> FakeManagement {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("porta");
+        let address = listener.local_addr().expect("indirizzo").to_string();
+        let state = Arc::new(Mutex::new(ManagementState { groups, actions: Vec::new(), connections: 0 }));
+        let shared = Arc::clone(&state);
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { continue };
+                let Ok(mut ws) = tungstenite::accept(stream) else { continue };
+                let Ok(Message::Text(hello)) = ws.read() else { continue };
+                let hello: Value = serde_json::from_str(hello.as_str()).unwrap_or_default();
+                assert!(hello.get("auth").is_none(), "alla gestione non va la chiave del gruppo");
+                shared.lock().unwrap().connections += 1;
+                let welcome = json!({ "type": "managementWelcome", "endpoint": "management", "protocolVersion": "1.0.0", "clientId": "m-1",
+                    "serviceVersion": "0.12.6.0", "authRequired": false, "keepaliveIntervalMs": 15000 });
+                if ws.send(Message::text(welcome.to_string())).is_err() {
+                    continue;
+                }
+                while let Ok(Message::Text(t)) = ws.read() {
+                    let r: Value = serde_json::from_str(t.as_str()).unwrap_or_default();
+                    let mut s = shared.lock().unwrap();
+                    let action = r["action"].as_str().unwrap_or_default().to_string();
+                    s.actions.push(action.clone());
+                    let result = match action.as_str() {
+                        "getServiceStatus" => json!({ "groups": s.groups }),
+                        "startGroup" => {
+                            if let Some(g) = s.groups.iter_mut().find(|g| g["id"] == r["params"]["groupId"]) {
+                                g["isRunning"] = json!(true);
+                                g["controlPort"] = g["x-port"].clone();
+                            }
+                            Value::Null
+                        }
+                        _ => Value::Null,
+                    };
+                    // un push prima della risposta: va ignorato
+                    let _ = ws.send(Message::text(json!({ "type": "serviceStatus", "isKeepAlive": true }).to_string()));
+                    let _ = ws.send(Message::text(json!({ "type": "response", "id": r["id"], "success": true, "result": result }).to_string()));
+                }
+            }
+        });
+        FakeManagement { address, state }
+    }
+
+    fn port_of(address: &str) -> u16 {
+        address.rsplit_once(':').and_then(|(_, p)| p.parse().ok()).expect("porta")
+    }
+
+    fn group(id: &str, port: Option<u16>, radios: &[&str]) -> Value {
+        json!({ "id": id, "name": id, "controlPort": port, "isRunning": port.is_some(), "x-port": port,
+            "radios": radios.iter().map(|r| json!({ "radioId": r, "radioName": r, "connectionState": "connected" })).collect::<Vec<_>>() })
+    }
+
+    fn discovering(management: &str, edit: impl FnOnce(&mut RigConfig)) -> Cat4omRig {
+        let mut config = RigConfig { cat4om_management: management.to_string(), ..RigConfig::default() };
+        edit(&mut config);
+        Cat4omRig::with_timing(&config, timing())
+    }
+
+    #[test]
+    fn discovery_finds_the_group_control_port_like_decodium() {
+        let control = fake(vec![radio("kenwood/ts-990", &ALL)], None);
+        control.state.lock().unwrap().group = "group-1".into();
+        let management = fake_management(vec![group("group-1", Some(port_of(&control.address)), &["kenwood/ts-990"])]);
+        let rig = discovering(&management.address, |_| {});
+        assert!(wait(|| rig.status().state == LinkState::Connected), "{:?}", rig.status());
+        assert_eq!(rig.status().message, "group-1/kenwood/ts-990 — slave", "lo stato come Decodium");
+        assert_eq!(management.actions(), ["getServiceStatus"]);
+        let endpoint = rig.endpoint();
+        assert_eq!((endpoint.control.as_str(), endpoint.discovered, endpoint.group.as_str()), (control.address.as_str(), true, "group-1"));
+        assert_eq!((endpoint.radio.as_str(), endpoint.role.as_str()), ("kenwood/ts-990", "slave"));
+        rig.set_frequency(5_357_000).expect("frequenza");
+        assert!(wait(|| rig.status().message == "group-1/kenwood/ts-990 — master"), "{:?}", rig.status());
+        // Cat4OM riparte: la riconnessione rifa' la scoperta (la porta puo' essere cambiata)
+        control.state.lock().unwrap().drop_now = true;
+        assert!(wait(|| control.state.lock().unwrap().connections == 2));
+        assert!(wait(|| rig.status().state == LinkState::Connected), "{:?}", rig.status());
+        assert_eq!(management.connections(), 2, "nuova scoperta a ogni collegamento");
+    }
+
+    #[test]
+    fn the_old_default_17301_is_discovery_and_a_written_port_is_honoured() {
+        let control = fake(vec![radio("run", &ALL)], None);
+        let management = fake_management(vec![group("main", Some(port_of(&control.address)), &["run"])]);
+        let legacy = discovering(&management.address, |c| c.cat4om_address = LEGACY_CAT4OM_ADDRESS.into());
+        assert!(wait(|| legacy.status().state == LinkState::Connected), "{:?}", legacy.status());
+        assert_eq!((legacy.address(), legacy.endpoint().discovered), (control.address.clone(), true));
+        legacy.shutdown();
+        assert_eq!(management.connections(), 1);
+        // la porta scritta a mano si usa senza chiedere alla gestione
+        let written = discovering(&management.address, |c| c.cat4om_address = control.address.clone());
+        assert!(wait(|| written.status().state == LinkState::Connected), "{:?}", written.status());
+        assert_eq!((written.address(), written.endpoint().discovered), (control.address.clone(), false));
+        assert_eq!(management.connections(), 1, "la gestione non si tocca");
+        written.shutdown();
+        // nel campo «Controllo» la porta di gestione (CT1BXX aveva provato 17300): Aurora scopre da li'
+        let closed = TcpListener::bind("127.0.0.1:0").expect("porta");
+        let nobody = closed.local_addr().expect("indirizzo").to_string();
+        drop(closed);
+        let misplaced = discovering(&nobody, |c| c.cat4om_address = management.address.clone());
+        assert!(wait(|| misplaced.status().state == LinkState::Connected), "{:?}", misplaced.status());
+        assert_eq!(misplaced.address(), control.address);
+    }
+
+    #[test]
+    fn a_stopped_group_is_started_and_a_wrong_group_says_so() {
+        let control = fake(vec![radio("run", &ALL)], None);
+        let mut stopped = group("main", None, &["run"]);
+        stopped["x-port"] = json!(port_of(&control.address));
+        let management = fake_management(vec![group("other", None, &[]), stopped]);
+        let rig = discovering(&management.address, |c| c.cat4om_radio = "run".into());
+        assert!(wait(|| rig.status().state == LinkState::Connected), "{:?}", rig.status());
+        assert_eq!(management.actions()[..3], ["getServiceStatus", "startGroup", "getServiceStatus"], "il gruppo con la radio, avviato");
+        rig.shutdown();
+        let wrong = discovering(&management.address, |c| c.cat4om_group = "group-9".into());
+        assert!(wait(|| wrong.status().message == "Gruppo «group-9» non trovato in Cat4OM (presenti: other, main)"), "{:?}", wrong.status());
+        assert_eq!(wrong.status().state, LinkState::Error);
+        assert!(wrong.set_frequency(14_074_000).is_err());
+    }
+
+    #[test]
+    fn an_unreachable_management_port_says_cat4om_is_not_running() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("porta");
+        let address = listener.local_addr().expect("indirizzo").to_string();
+        drop(listener);
+        let rig = discovering(&address, |_| {});
+        assert!(wait(|| rig.status().message.starts_with(&format!("Gestione di Cat4OM non raggiungibile su {address}: avvia Log4OM e Cat4OM"))), "{:?}", rig.status());
+        assert_eq!(rig.status().state, LinkState::Error);
+        assert_eq!(rig.address(), "", "nessuna porta Control scoperta");
+        // un Control al posto della gestione
+        let control = fake(vec![radio("run", &ALL)], None);
+        let swapped = discovering(&control.address, |_| {});
+        assert!(wait(|| swapped.status().message.starts_with(&format!("Su {} non risponde la gestione di Cat4OM", control.address))), "{:?}", swapped.status());
     }
 
     #[test]

@@ -73,11 +73,23 @@ describe('the fields shown', () => {
 
 describe('Cat4OM settings', () => {
   it('have the documented defaults and the same checks as the core', () => {
-    expect([DEFAULT_CAT.cat4om_address, DEFAULT_CAT.cat4om_key, DEFAULT_CAT.cat4om_radio]).toEqual(['127.0.0.1:17301', '', '']);
+    // come il core: gestione 17300 e scoperta automatica di gruppo e porta Control (il vecchio 17301 non c'e' piu')
+    expect([DEFAULT_CAT.cat4om_management, DEFAULT_CAT.cat4om_group, DEFAULT_CAT.cat4om_address, DEFAULT_CAT.cat4om_key, DEFAULT_CAT.cat4om_radio]).toEqual([
+      '127.0.0.1:17300',
+      '',
+      '',
+      '',
+      '',
+    ]);
     const base = { ...DEFAULT_CAT, backend: 'cat4om' as const };
     expect(catIssue(base)).toBeNull();
     expect(catIssue({ ...base, cat4om_address: '192.168.1.20:17302', cat4om_key: 'chiave di prova', cat4om_radio: 'run' })).toBeNull();
     expect(catIssue({ ...base, cat4om_address: '127.0.0.1:17301 x' })).toBe('bad_cat4om_address');
+    expect(catIssue({ ...base, cat4om_management: '127.0.0.1:17300 x' })).toBe('bad_cat4om_management');
+    expect(catIssue({ ...base, cat4om_management: '' })).toBeNull();
+    expect(catIssue({ ...base, cat4om_group: 'Main Station' })).toBeNull();
+    expect(catIssue({ ...base, cat4om_group: 'a\tb' })).toBe('bad_cat4om_group');
+    expect(catIssue({ ...base, cat4om_group: 'g'.repeat(65) })).toBe('bad_cat4om_group');
     expect(catIssue({ ...base, cat4om_key: 'a\nb' })).toBe('bad_cat4om_key');
     expect(catIssue({ ...base, cat4om_key: 'x'.repeat(129) })).toBe('bad_cat4om_key');
     expect(catIssue({ ...base, cat4om_radio: 'x'.repeat(65) })).toBe('bad_cat4om_radio');
