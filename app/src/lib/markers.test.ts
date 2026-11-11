@@ -30,6 +30,8 @@ describe('signalBandwidthHz', () => {
     expect(signalBandwidthHz('FT8')).toBe(43.75);
     expect(signalBandwidthHz('FT4')).toBe(62.5);
     expect(signalBandwidthHz('JT65')).toBeCloseTo(177.65, 1);
+    expect(signalBandwidthHz('JT65B')).toBeCloseTo(355.3, 1);
+    expect(signalBandwidthHz('JT65C')).toBeCloseTo(710.6, 1);
     expect(signalBandwidthHz('JT9')).toBeCloseTo(15.6, 1);
     expect(signalBandwidthHz('T10')).toBe(62.5);
   });

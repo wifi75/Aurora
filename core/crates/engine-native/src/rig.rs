@@ -56,6 +56,9 @@ pub struct SavedControls {
     /// Sottomodo di JT4 (0 = A ... 6 = G). Nei file scritti prima manca (A).
     #[serde(default)]
     pub jt4_sub: u8,
+    /// Sottomodo di JT65 (0 = A, 1 = B, 2 = C, `SubMode_JT65` di WSJT-X). Nei file scritti prima manca (A).
+    #[serde(default)]
+    pub jt65_sub: u8,
     /// Periodo di Q65 in secondi (15, 30, 60, 120, 300). Nei file scritti prima manca (30).
     #[serde(default = "default_q65_period")]
     pub q65_period: u32,
@@ -137,6 +140,51 @@ pub fn jt4_submode() -> jt::jt4::Submode {
     jt::jt4::Submode(JT4_SUBMODE.load(Ordering::Relaxed).min(6))
 }
 
+/// Il sottomodo di JT65 (0 = A, 1 = B, 2 = C): uno solo per programma, lo leggono ricezione e trasmissione.
+static JT65_SUBMODE: AtomicU8 = AtomicU8::new(0);
+/// JT65: «Include averaging» (interruttore «jt65_avg», `ndepth & 16` di WSJT-X, spento di fabbrica).
+static JT65_AVG: AtomicBool = AtomicBool::new(false);
+/// JT65: «Auto Clear Avg» (interruttore «jt65_auto_clr», `ndepth & 128` di WSJT-X, spento di fabbrica).
+static JT65_AUTO_CLR: AtomicBool = AtomicBool::new(false);
+/// JT65: la media dei periodi (`avg65`), in memoria per tutto il programma come nel motore di WSJT-X.
+static JT65_AVERAGER: std::sync::Mutex<Option<jt::rx::Averager>> = std::sync::Mutex::new(None);
+
+/// Il sottomodo di JT65 in uso.
+pub fn jt65_submode() -> jt::jt65::Submode {
+    jt::jt65::Submode(JT65_SUBMODE.load(Ordering::Relaxed).min(2))
+}
+
+/// «Include averaging» e «Auto Clear Avg» di JT65.
+pub fn jt65_averaging() -> (bool, bool) {
+    (JT65_AVG.load(Ordering::Relaxed), JT65_AUTO_CLR.load(Ordering::Relaxed))
+}
+
+/// Lavora sulla media dei periodi di JT65.
+pub fn with_jt65_averager<R>(f: impl FnOnce(&mut jt::rx::Averager) -> R) -> R {
+    let mut guard = JT65_AVERAGER.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    f(guard.get_or_insert_with(jt::rx::Averager::new))
+}
+
+/// L'ultima frequenza della radio vista dal motore per la media di JT65.
+static JT65_DIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// La frequenza della radio in uso: se cambia (non al primo valore, non a 0) la media dei periodi di JT65 si svuota.
+pub fn jt65_dial_seen(dial_hz: u64) {
+    if dial_hz == 0 {
+        return;
+    }
+    let before = JT65_DIAL.swap(dial_hz, Ordering::Relaxed);
+    if before != 0 && before != dial_hz {
+        clear_jt65_average();
+    }
+}
+
+/// Svuota la media dei periodi di JT65 («Clear Avg», cambio di modo o di frequenza della radio come `m_jt65ClearAveragesPending` di
+/// `mainwindow.cpp:13106`).
+pub fn clear_jt65_average() {
+    with_jt65_averager(|a| a.clear());
+}
+
 /// Q65: modello gaussiano dell'evanescenza (interruttore «q65_gauss»); spento = lorentziano, come WSJT-X.
 static Q65_GAUSS: AtomicBool = AtomicBool::new(false);
 /// Q65: richiesta di svuotare la media dei periodi («Clear Avg»), raccolta dal motore al giro successivo.
@@ -215,6 +263,8 @@ pub fn parse_q65(mode: &str) -> Option<(u32, u8)> {
 pub fn mode_label(mode: Mode) -> String {
     match mode {
         Mode::Jt4 => format!("JT4{}", jt4_submode().letter()),
+        // JT65 resta «JT65» in A (il nome di sempre, anche per log e tabella delle frequenze); B e C portano la lettera
+        Mode::Jt65 if jt65_submode() != jt::jt65::Submode::A => format!("JT65{}", jt65_submode().letter()),
         Mode::Q65 => {
             let s = q65_setup();
             format!("Q65-{}{}", s.period_s, char::from(b'A' + s.submode))
@@ -504,6 +554,7 @@ impl NativeControls {
             attenuation: self.attenuation.load(Ordering::Relaxed),
             levels,
             jt4_sub: JT4_SUBMODE.load(Ordering::Relaxed),
+            jt65_sub: JT65_SUBMODE.load(Ordering::Relaxed),
             q65_period: q65_setup().period_s,
             q65_sub: q65_setup().submode,
             q65_max_drift: Some(Q65_DRIFT.load(Ordering::Relaxed)),
@@ -535,6 +586,7 @@ impl NativeControls {
         });
         self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
+        JT65_SUBMODE.store(saved.jt65_sub.min(2), Ordering::Relaxed);
         set_q65(saved.q65_period, saved.q65_sub);
         if let Some(drift) = saved.q65_max_drift {
             self.set_value("q65_drift", u32::from(drift));
@@ -682,6 +734,8 @@ impl NativeControls {
             }
             "q65_contest" => Q65_CONTEST.store(on, Ordering::Relaxed),
             "msk_sh" => MSK144_SHORT.store(on, Ordering::Relaxed),
+            "jt65_avg" => JT65_AVG.store(on, Ordering::Relaxed),
+            "jt65_auto_clr" => JT65_AUTO_CLR.store(on, Ordering::Relaxed),
             _ => {}
         }
         // «Sh» e «SWL» si escludono come in WSJT-X (`on_cbShMsgs_toggled` e `on_cbSWL_toggled`, `mainwindow.cpp:13967` e `13990`)
@@ -1037,6 +1091,14 @@ impl Rig for NativeRig {
                 self.controls.set_mode(Mode::Jt65);
                 Ok(())
             }
+            // JT65A, JT65B, JT65C: il sottomodo cambia la distanza fra i toni (`SubMode_JT65`); un altro sottomodo svuota la media dei periodi
+            // (`jt65_decode.f90:258-259`, lo fa anche il decodificatore)
+            m if m.len() == 5 && m.starts_with("JT65") => {
+                let sub = m.chars().nth(4).and_then(jt::jt65::Submode::from_letter).ok_or_else(|| RigError(format!("modo non gestito: {m}")))?;
+                JT65_SUBMODE.store(sub.0, Ordering::Relaxed);
+                self.controls.set_mode(Mode::Jt65);
+                Ok(())
+            }
             "JT9" => {
                 self.controls.set_mode(Mode::Jt9);
                 Ok(())
@@ -1177,6 +1239,8 @@ impl Rig for NativeRig {
                     // «Decodifica»: rielabora l'ultimo periodo (se non ce n'e' ancora uno, il motore non fa nulla)
                     "decode" => self.controls.redecode.store(true, Ordering::Relaxed),
                     "q65_clear_avg" => Q65_CLEAR_AVG.store(true, Ordering::Relaxed),
+                    // JT65: «Clear Avg» svuota la media dei periodi (`avg65`)
+                    "jt65_clear_avg" => clear_jt65_average(),
                     _ => {}
                 }
                 Ok(())

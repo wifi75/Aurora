@@ -83,6 +83,9 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("msk_sh"),
     // MSK144: il periodo T/R (5, 10, 15, 30 s, `sbTR` di WSJT-X): si imposta solo con un valore
     own_press("msk144_period"),
+    // JT65: «Include averaging» (`ndepth & 16`) e «Auto Clear Avg» (`ndepth & 128`) di WSJT-X, la media dei periodi (`avg65`)
+    own_toggle("jt65_avg"),
+    own_toggle("jt65_auto_clr"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
@@ -107,6 +110,8 @@ pub const CONTROLS: &[Control] = &[
     press("tx_to_rx", "pbT2R"),
     // Q65: «Clear Avg» di WSJT-X, svuota la media dei periodi
     own_press("q65_clear_avg"),
+    // JT65: «Clear Avg» di WSJT-X, svuota la media dei periodi
+    own_press("jt65_clear_avg"),
 ];
 
 pub fn find(id: &str) -> Option<&'static Control> {

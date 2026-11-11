@@ -8,10 +8,17 @@ fn is_q65_submode(m: &str) -> bool {
     })
 }
 
-/// Il modo come lo scrive la tabella delle frequenze: «Q65-60B» -> «Q65» (periodo e sottomodo non cambiano la frequenza).
+/// Il modo come lo scrive la tabella delle frequenze: «Q65-60B» -> «Q65», «JT65B» -> «JT65» (periodo e sottomodo non cambiano la frequenza;
+/// la tabella di WSJT-X ha righe JT65 senza sottomodo).
 pub fn table_mode(mode: &str) -> String {
     let up = mode.trim().to_uppercase();
-    if is_q65_submode(&up) { "Q65".to_string() } else { up }
+    if is_q65_submode(&up) {
+        "Q65".to_string()
+    } else if matches!(up.as_str(), "JT65A" | "JT65B" | "JT65C") {
+        "JT65".to_string()
+    } else {
+        up
+    }
 }
 
 /// Identificativo del pulsante di un modo; `None` per qualunque altro testo.
@@ -21,6 +28,8 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "FT4" => Some("ft4Button"),
         // JT65 e JT9 stanno dietro al pulsante JT (il motore li distingue)
         "JT" | "JT65" | "JT9" => Some("jtButton"),
+        // JT65A, JT65B, JT65C (sottomodo), solo con il motore proprio
+        "JT65A" | "JT65B" | "JT65C" => Some("jtButton"),
         // JT4 (sottomodo A) solo con il motore proprio
         "JT4" | "JT4A" | "JT4B" | "JT4C" | "JT4D" | "JT4E" | "JT4F" | "JT4G" => Some("jt4Button"),
         // Q65 e Q65-15A ... Q65-300E (periodo e sottomodo), solo con il motore proprio

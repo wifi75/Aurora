@@ -430,6 +430,8 @@ pub fn start_with_save(
             // (mescola le due bande) e un evento per l'interfaccia
             if let Some(l) = live.as_ref() {
                 let dial = l.dial_hz.load(Ordering::Relaxed);
+                // JT65: la radio su un'altra frequenza svuota la media dei periodi (`m_jt65ClearAveragesPending`, `mainwindow.cpp:13106`)
+                rig::jt65_dial_seen(dial);
                 // il livello di uscita e' ricordato per banda: con la banda nuova si ripristina quello suo (o si ricorda l'attuale)
                 if dial > 0
                     && let Some(band) = (l.band_of)(dial)
@@ -461,6 +463,7 @@ pub fn start_with_save(
                     last_slot = None;
                     last_texts.clear();
                     q65_avg.clear();
+                    rig::clear_jt65_average();
                     // `lmodechanged` di WSJT-X: il ritardo medio riparte da 0 (`ft8_engine_kernel.f90:254-257`)
                     dt_center.mode_changed();
                     if let Some(d) = driver.as_mut() {
@@ -1079,14 +1082,25 @@ fn decode_period(
         }
         // JT65: frequenza di ricezione (`nfqso`), F Tol, profondita', «Aggressive», «Single decode», «Enable AP» e ricerca profonda dalle
         // Impostazioni (`decode_opts::jt65_options`, di fabbrica come WSJT-X: 50 Hz, Deep, 4, AP e ricerca profonda spente). L'analisi a priori
-        // (`extract.f90`) usa il mio nominativo, il DX e il punto del QSO. I messaggi a priori hanno il segno di FT8
+        // (`extract.f90`) usa il mio nominativo, il DX e il punto del QSO. I messaggi a priori o dalla media hanno il segno di FT8.
+        // Sottomodi B e C (EME, VHF): le funzioni VHF di WSJT-X (`bVHF`). «Include averaging» e «Auto Clear Avg» sono le stesse voci delle
+        // Impostazioni (riquadro Decodifica) che valgono per Q65, oppure gli interruttori «jt65_avg» e «jt65_auto_clr» (`avg65`)
         Mode::Jt65 => {
             let ap = ft8_options.ap.as_ref();
             let calls = ap.map(|a| jt::rx::ApCalls { my_call: a.mycall.clone(), dx_call: a.hiscall.clone(), dx_grid: a.hisgrid.clone(), qso_progress: a.qso_progress });
-            let o = decode_opts::jt65_options(&decode_opts::current(), ft8_options.rx_freq_hz, calls, ap.is_some_and(|a| a.my_call_active));
-            jt::rx::decode(samples, &o)
+            let settings = decode_opts::current();
+            let mut o = decode_opts::jt65_options(&settings, ft8_options.rx_freq_hz, calls, ap.is_some_and(|a| a.my_call_active));
+            let submode = rig::jt65_submode();
+            let (average, auto_clear_avg) = rig::jt65_averaging();
+            o.submode = submode;
+            o.vhf = submode != jt::jt65::Submode::A;
+            o.average = average || settings.include_averaging;
+            o.auto_clear_avg = auto_clear_avg || settings.auto_clear_avg;
+            // il numero del minuto dall'inizio del periodo (`period_key` conta i quarti di minuto): la parita' sceglie i periodi da sommare
+            let minute = ft8_options.period_key.map_or(0, |k| k * 15 / 60);
+            rig::with_jt65_averager(|avg| jt::rx::decode_averaged(samples, &o, avg, minute))
                 .into_iter()
-                .map(|d| ft8::decode::Decoded { hint: d.ap_type > 0 || d.hinted, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
+                .map(|d| ft8::decode::Decoded { hint: d.ap_type > 0 || d.hinted || d.averaged > 1, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
                 .collect()
         }
         // JT9: la finestra di ricezione (`nqd = 1` di `jt9_decode.f90`) attorno a `nfqso` con F Tol e profondita' delle Impostazioni (`Ftol_JT9`, `NDepth`)

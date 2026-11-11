@@ -1780,10 +1780,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                     check_exact(t, &self.hashes)?;
                     ft4::modem::encode_message(t, freq as f32, &mut self.hashes).map_err(|e| format!("{e:?}"))
                 }
-                // JT65 e JT9: `freq` e' il tono di sincronismo (il piu' basso); tutta la banda deve stare entro i 5 kHz
+                // JT65 e JT9: `freq` e' il tono di sincronismo (il piu' basso); tutta la banda deve stare entro i 5 kHz. JT65B e JT65C: toni a
+                // distanza doppia e quadrupla (`mainwindow.cpp:13430-13432`)
                 Mode::Jt65 => {
-                    jt_check_frequency(freq, 65.0 * jt::jt65::TONE_SPACING_HZ)?;
-                    Ok(jt::jt65::modulate(&jt::jt65::tones(&jt::rs::Codec::new(), t), f64::from(freq), 1.0, 12_000.0))
+                    let sub = crate::rig::jt65_submode();
+                    jt_check_frequency(freq, sub.bandwidth_hz())?;
+                    Ok(jt::jt65::modulate_submode(&jt::jt65::tones(&jt::rs::Codec::new(), t), f64::from(freq), sub, 1.0, 12_000.0))
                 }
                 Mode::Jt9 => {
                     jt_check_frequency(freq, 8.0 * jt::jt9::TONE_SPACING_HZ)?;
