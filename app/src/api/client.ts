@@ -887,6 +887,9 @@ export interface RotatorConfig {
   baud: number;
   host: string;
   tcp_port: number;
+  /** Il campo di rotazione in gradi (di base 0..360; i rotori da 450 gradi arrivano a 450). */
+  min_az: number;
+  max_az: number;
 }
 
 export interface RotatorStatus {
