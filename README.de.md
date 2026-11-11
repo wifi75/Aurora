@@ -42,17 +42,18 @@
 >
 > 🍎 **[macOS (vom Autor nicht getestet, ohne Support): Aurora-macOS.dmg für Apple Silicon und Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — nicht von Apple signiert: beim ersten Start Rechtsklick › Öffnen (oder `xattr -cr /Applications/Aurora.app`). Für CAT Hamlib mit `brew install hamlib` installieren. Updates werden wie unter Windows in der App installiert („Installieren und neu starten“): Aurora in Programme lassen, nicht aus dem .dmg öffnen; beim ersten Start nach einem Update kann macOS erneut nachfragen, weil Aurora nicht von Apple signiert ist.
 
-Eine neuartige Multimode-Amateurfunkstation (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV und Satelliten): eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden; Aurora ist Gehirn, Motor und Bildschirm.
+Eine neuartige Multimode-Amateurfunkstation (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK31/PSK63, RTTY, CW, SSTV und Satelliten): eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden; Aurora ist Gehirn, Motor und Bildschirm.
 
 Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
 ## Stand
 
-Version 0.11.237: eigene Multimode-Engine (FT8, FT4, JT65, JT9, JT4, Q65 und MSK144) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW, SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
+Version 0.11.237: eigene Multimode-Engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W und WSPR) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW, SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
 
 - **Station**: Nachrichtenliste wie in JTDX (Land mit Flagge, Entfernung, nach Typ gefärbte Zeilen, gerufenes Rufzeichen und Anrufe an dich hervorgehoben), WebGPU/WebGL2-Wasserfall mit verschiebbaren Rx/Tx-Balken, Tx1–Tx6 mit der QSO-Phase, Band- und Modusleiste (FT8/FT4) mit Umschaltung direkt auf der Seite.
 - **Anruferwarteschlange**: Rechtsklick auf eine rufende Station reiht sie ein (Kennzeichnung «IN CODA» mit Platz); nach dem geloggten QSO antwortet Aurora dem Ersten in der Schlange; der Schalter «Risp. a tutti» reiht automatisch jeden ein, der dich ruft; «Canc DX» stoppt das Senden sofort. Nur mit der eigenen Engine.
-- **Modi**: FT8, FT4, JT65 und JT9 über die Auswahl (JT65 und JT9 dekodieren am Ende der Minute: nach einem Moduswechsel ein bis zwei Minuten einplanen); Schalter «JT65+JT9» zum gemeinsamen Dekodieren; Hound mit Frequenzsprüngen und «Filtro»; SWL-Modus wie in JTDX. Stand und Gleichstand mit JTDX in `docs/2026-10-26-jt65-jt9.md` (Dokumentation auf Italienisch).
+- **Modi**: über die Auswahl FT8, FT4, JT65 (Untermodi A/B/C mit Mittelung über die Perioden, für EME), JT9, JT4 (A–G), Q65, MSK144 (5/10/15/30 s und «Sh»-Nachrichten), FST4 und FST4W (Perioden von 15 s bis 30 min), WSPR-2 (Bake mit Tx-Anteil), dazu die Seiten PSK31/PSK63, RTTY, CW, SSTV und Satelliten (Verfolgung, Doppler, Rotor); Schalter «JT65+JT9» zum gemeinsamen Dekodieren (nach einem Moduswechsel ein bis zwei Minuten einplanen); Fox/Hound (auch UltraFOX) mit Frequenzsprüngen und «Filtro»; SWL-Modus wie in JTDX. Stand und Gleichstand mit JTDX in `docs/2026-10-26-jt65-jt9.md` (Dokumentation auf Italienisch).
+- **Mit WSJT-X 3.3.0-beta6 geprüft**: Decoder an WSJT-X 3.3.0-beta6 angeglichen und damit geprüft (Quelltext und Binärdateien); FST4/FST4W gegen `jt9.exe`, WSPR gegen `wsprd.exe`. WSPR sendet nichts an WSPRnet (kein Hochladen der Spots, bewusst); das Senden der FST4W-Bake gibt es noch nicht. Dekodier-Optionen von WSJT-X unter Einstellungen › Filter › Dekodierung.
 - **Bedienelemente wie in JTDX**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, Tx/Rx-Frequenzen mit Kopieren, Canc DX, Gen.Msgs; ein Doppelklick auf eine Nachricht setzt das DX, und JTDX ruft es im richtigen Moment (Option unter Einstellungen → Allgemein).
 - **Senden**: CQ, freie Nachricht, Tx-Frequenz, vertikaler Pwr-Pegel, STOP TX immer aktiv (dezent in Ruhe, voll beim Senden); die Esc-Taste macht dasselbe und schaltet AutoTX und Abilita Tx aus. Es gibt keine Option: Senden ist immer freigegeben (es bleiben STOP TX, die Obergrenzen und die standardmäßig ausgeschalteten Automatisierungen).
 - **Automatisierungen**: Antworten auf CQ-Rufe mit Neuigkeiten; sie starten ausgeschaltet und im Probelauf ohne Senden, mit Obergrenzen, Dead-Man und STOP.
@@ -69,7 +70,8 @@ Version 0.11.237: eigene Multimode-Engine (FT8, FT4, JT65, JT9, JT4, Q65 und MSK
 - **Logs und Integrationen**: direkter Upload zu Wavelog/Cloudlog, ClubLog, QRZ.com und LoTW (TQSL); UDP-Integrationen mit Multicast und Optionen je Programm, N1MM-XML; ADIF-Exportseite mit „Speichern unter“.
 - **Aus WSJT-X 3**: a7/a8-Dekodierung und Multithread-FT8, Wait and Reply/Call, automatischer Bandwechsel, Vollduplex, Fox-Prüfung (OTP), Sendesperre per UDP, Stopp bei hohem SWR, nicht kodierbare Nachrichten gesperrt, Filter wie WSJT-X 3, Hamlib 4.7.2.
 - **OmniRig und Cat4OM**: OmniRig wird wie bei WSJT-X direkt über COM gesteuert (kein PowerShell, kein «Zugriff verweigert», schnelleres PTT); natives Cat4OM, Aurora und Log4OM steuern dasselbe Funkgerät gleichzeitig (Einstellungen › CAT); Split Rig/Fake It auch mit OmniRig und TCI; einstellbare Tx-Verzögerung (0-0,5 s).
-- **Decoder an WSJT-X 3.3 angeglichen**: FT8 (Vorrang der Rx-Frequenz, OSD 4 für QSO-Antworten, A-priori für /P und zusammengesetzte Rufzeichen), FT4 (Kandidatensuche von WSJT-X), Q65 (Mittelung mit der QSO-Liste, Driftkorrektur) und JT65/JT9 (WSJT-X-Schwellen, Rx-Fenster).
+- **Decoder an WSJT-X 3.3 angeglichen**: FT8 (Vorrang der Rx-Frequenz, OSD 4 für QSO-Antworten, A-priori für /P und zusammengesetzte Rufzeichen), FT4 (Kandidatensuche von WSJT-X), Q65 (Mittelung mit der QSO-Liste, Driftkorrektur) JT65/JT9 (WSJT-X-Schwellen, Rx-Fenster), MSK144, FST4/FST4W und WSPR.
+- **Installer in sieben Sprachen** (Italienisch, Englisch, Deutsch, Französisch, Spanisch, Portugiesisch, Niederländisch); die Oberfläche gibt es in sechs Sprachen, Niederländisch als siebte ist in Arbeit.
 - **Anzeige und Cluster**: Funkanzeige im Stil Yaesu FT-2000 und Icom IC-7610; NG3K-DXpeditionen im DX-Cluster in einer Farbe deiner Wahl hervorgehoben; Live-Vorschau des Wasserfalls in den Einstellungen; Absturzdiagnose immer aktiv.
 - **Contest (Beta)**: eigene Seite mit 24 FT8/FT4- und VHF-Contests (Regeln und jährliche Daten), Contest-Ablauf wie WSJT-X, Dupes, Punkte, Multiplikatoren und Prognose live, Kategorie und Operatoren, Log mit Cabrillo, EDI und ADIF.
 - **UltraFOX**: eigene Rust-Implementierung mit dem Polarcode AQP-127 (Implementierung von Tiziano Cassone IU3WJQ), kompatibel mit SuperFox von WSJT-X (Senden und Empfang). Experimentell.
@@ -104,7 +106,7 @@ Während der Tests kann der **Zugang ohne Code** eingeschaltet werden (Einstellu
 
 ### CAT: das Funkgerät für alle Modelle
 
-Unter Einstellungen → Radio CAT wählst du, wie das Funkgerät gesteuert wird (Frequenz, Modus, PTT, Split): **Hamlib** über `rigctld` (über 300 Modelle, die Standardwahl) oder OmniRig. Benannte Profile, Erkennung des Funkgeräts und Echtzeitstatus. Anleitung für Anwender und Tests mit echtem Funkgerät in `docs/cat-radio.md` (Dokumentation auf Italienisch).
+Unter Einstellungen → Radio CAT wählst du, wie das Funkgerät gesteuert wird (Frequenz, Modus, PTT, Split): **Hamlib** über `rigctld` (über 300 Modelle, die Standardwahl) OmniRig (direkt über COM) oder das native Cat4OM; auch TCI und FT-991 Link. Benannte Profile, Erkennung des Funkgeräts und Echtzeitstatus. Anleitung für Anwender und Tests mit echtem Funkgerät in `docs/cat-radio.md` (Dokumentation auf Italienisch).
 
 ## Konfiguration
 

@@ -9,7 +9,7 @@ con le regole di quei servizi.
 Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono in qualunque momento:
 
 - **PSK Reporter**, lettura (Impostazioni → Servizi online, pagina Propagazione): Aurora resta collegata al flusso in tempo reale `mqtt.pskreporter.info` (solo i rapporti sul tuo nominativo) e ogni 5 minuti chiede a pskreporter.info chi ti ha ricevuto nelle ultime 3 ore. I due servizi vedono il tuo nominativo e il tuo indirizzo IP.
-- **PSK Reporter**, spotting (Impostazioni → Programmi collegati): manda i nominativi che ricevi, con frequenza, rapporto, il tuo nominativo e il locatore, come fanno gli altri programmi FT8.
+- **PSK Reporter**, spotting (Impostazioni → Programmi collegati): manda i nominativi che ricevi, con frequenza, rapporto, il tuo nominativo e il locatore, come fanno gli altri programmi per i modi digitali.
 - **Propagazione** (hamqsl.com) e **calendario delle DXpedition** (NG3K): sola lettura di pagine pubbliche, senza dati tuoi.
 - **Messaggi dell'autore e versioni nuove** (dalla 0.11.168): Aurora e l'agente nel tray leggono ogni ora i messaggi pubblicati dall'autore
   (servizio `aurora-rapporti` su Cloudflare) e l'ultima versione su GitHub. Nella richiesta dei messaggi c'è solo il numero di versione di
@@ -21,6 +21,8 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
   propagazione, DXpedition) anche con Aurora chiusa; legge il riepilogo del giorno dal log di Aurora sul PC, senza mandarlo da nessuna parte.
   Si spegne in Impostazioni → Agente nel tray.
 - **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
+- **Comando della radio** (Hamlib `rigctld`, OmniRig via COM, Cat4OM, TCI): tutto in locale sul PC (di norma `127.0.0.1`, per Cat4OM `127.0.0.1:17301`); niente esce dal computer.
+- **WSPR**: Aurora decodifica e trasmette sul tuo PC e **non manda niente a WSPRnet** (nessun caricamento degli spot, come WSJT-X di fabbrica). Lo stesso vale per FST4 e FST4W.
 - **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura. Quando c'e' una versione nuova, Aurora scarica in anticipo da GitHub il pacchetto e la sua firma nella cartella temporanea di Windows (`%TEMP%\Aurora-update`), senza mandare dati; si installa solo quando lo chiedi.
 
 Restano spenti finche' non li accendi tu, perche' chiedono un tuo account: eQSL, LoTW, ClubLog, QRZ.com, HRDLog, Wavelog,

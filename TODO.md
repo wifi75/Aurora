@@ -2,20 +2,35 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
+## Dal lavoro del 2026-11-11 sera e notte (0.11.237 pubblicata; il resto e' su `main`)
+- [x] FST4 e FST4W (periodi 15 s-30 min), verificati con `jt9.exe` di WSJT-X 3.3.0-beta6.
+- [x] WSPR-2 (beacon, percentuale di Tx), verificato con `wsprd.exe`; nessun caricamento su WSPRnet, per scelta.
+- [x] JT65 sottomodi B e C con media dei periodi (EME).
+- [x] MSK144 a 30 s e «Sh» in trasmissione.
+- [x] Caselle di decodifica di WSJT-X (Impostazioni › Filtri › Decodifica).
+- [x] Rotore unificato; colonne del Contest; icone nuove; schermata di avvio; installatore in sette lingue (con l'olandese).
+- [x] Correzioni minori: accensione dell'FT-2000 (tempi), campo rapporto, clic destro su QRZ, testo dell'SSTV centrato, LoTW nel riquadro del nominativo.
+- [x] Ramo unico `main`: il repository privato `Aurora-sviluppo` si cancella con il via del proprietario; il sito si compila sul PC e si carica a mano (i minuti di GitHub Actions dei repository privati sono finiti).
+- [ ] Split DX dal DX Cluster (UP/DN/QSX nel commento dello spot): in lavorazione.
+- [ ] Traduzione olandese dell'interfaccia (#43), settima lingua in un dizionario a parte: in lavorazione.
+- [ ] Cat4OM: scoperta delle radio dalla pagina, in lavorazione.
+- [ ] Beacon FST4W in trasmissione (oggi solo ricezione).
+- [ ] Prove dal vivo con la radio: FST4/FST4W, WSPR, JT65 B/C, MSK144 30 s.
+
 ## Dal lavoro del 2026-11-11 (0.11.235 e 0.11.236 pubblicate)
 - [x] Decodificatori allineati a WSJT-X 3.3.0-beta6: FT8, FT4, Q65, JT65, JT9, MSK144 (0.11.235).
 - [x] OmniRig via COM senza PowerShell; Cat4OM nativo; split Rig/Fake It con XIT anche con OmniRig e TCI (0.11.235).
 - [x] Linux: `rigctld` del sistema prima di quello incluso (#41); ALSA «snd_pcm_avail_delay» non chiude la trasmissione (0.11.235).
 - [x] DX Cluster con griglia e colonne spostabili; orologio; avvisi chiudibili con le Impostazioni aperte; riquadro QRZ leggibile; doppioni «Cancella» e «Spot DX» tolti (0.11.236).
 - [x] Split dal DX Cluster provato dal vivo dal proprietario: funziona.
-- [ ] Finire il ramo `wip-fox` (repository privato): righe Fox leggibili in Attivita' di banda e finestra Rx, filtro `chkspecial8var` di WSJT-X sui messaggi Fox dubbi.
+- [ ] Finire il ramo `wip-fox` (nel repository privato, da riportare su `main`): righe Fox leggibili in Attivita' di banda e finestra Rx, filtro `chkspecial8var` di WSJT-X sui messaggi Fox dubbi.
 - [ ] Prove dal vivo: OmniRig via COM (FT-710, FTdx3000), Cat4OM con Log4OM, split Fake It, TCI, MSK144, pagina SSTV nuova (ramo sviluppo).
-- [ ] JT65: sottomodi B e C (EME) e media dei periodi `avg65`.
-- [ ] MSK144: periodo di 30 s (#27) e «Sh» in trasmissione.
-- [ ] Caselle del menu Decode di WSJT-X che mancano: Auto Clear Avg e Include averaging (Q65), livello Aggressive e Single decode (JT65), F Tol per JT65/JT9/MSK144, Fast/Normal/Deep.
+- [x] JT65: sottomodi B e C (EME) e media dei periodi `avg65` (fatto, su `main`).
+- [x] MSK144: periodo di 30 s (#27) e «Sh» in trasmissione (fatto, su `main`).
+- [x] Caselle del menu Decode di WSJT-X (fatte, su `main`; elenco originale): Auto Clear Avg e Include averaging (Q65), livello Aggressive e Single decode (JT65), F Tol per JT65/JT9/MSK144, Fast/Normal/Deep.
 - [ ] FT4: finestre del ritardo, OSD e AP sulla terza serie di LLR come WSJT-X.
 - [ ] Guida «Collegare la radio» per modello (FTdx101 con la porta Enhanced, FT-991A, FT-710, IC-7300, IC-705, Kenwood) in sei lingue.
-- [ ] Traduzione olandese (#43, ON7KEC): preparare il foglio con chiave, inglese e colonna vuota.
+- [ ] Traduzione olandese (#43, ON7KEC): foglio preparato; interfaccia in lavorazione (vedi sopra).
 
 ## Dal lavoro del 2026-11-08 (locale, non pubblicato)
 - [x] Avviso in evidenza del DXCC nuovo e ora/paese in «CQ e novita'» (0.11.196).
@@ -24,7 +39,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] Prove dal vivo del proprietario: JT4 A-G, Q65-30A, MSK144/MSK40 con tempo reale, bande nuove, frequenza principale all'avvio, «R + locatore» (YB1AM), accesso senza codice in casa.
 - [x] 0.11.195 pubblicata il 2026-11-08 (Windows; Linux e Mac fermati da un guasto di GitHub sugli scaricamenti delle release, da rilanciare).
 - [ ] Q65: scelta di periodo (15-300 s) e sottomodo (A-E), media fra periodi, decodifica AP, modello di evanescenza (EME).
-- [ ] FST4/FST4W e WSPR.
+- [x] FST4/FST4W e WSPR (fatti il 2026-11-11, su `main`).
 - [x] Prove Rust e dell'interfaccia allineate all'app di oggi (2026-11-08): tutte passano tranne `ft8`, non rifatta perche' non cambiata.
 - [x] Band Hopping col tasto destro sul selettore delle frequenze (0.11.195).
 
@@ -49,7 +64,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [x] **Filtro dei falsi: `chkgrid` vero di JTDX** (fatto il 2026-11-11 dalla tabella di WSJT-X 3.3.0-beta6, verificata su `jt9.exe`; solo FT8, come WSJT-X) al posto dell'approssimazione a distanza (`dxcc::grid_plausible`, `ft8::filters::grid_is_false`); da leggere con REA.
 - [ ] **JT65 e JT9 sul segnale debole** (`NFILT2`, `ldeepsync`): con JTDX e REA.
 - [ ] Decodifica FT8 a fette di banda su piu' processori come JTDX (oggi il multithread e' per candidato, `rayon`): solo se i rapporti «decodifica lenta» lo chiedono.
-- [ ] **Modi che mancano** (richiesto dal proprietario, 2026-11-06): JT4, Q65, MSK144, FST4, FST4W e WSPR. Oggi Aurora ha FT8, FT4, JT65 e JT9. Per ognuno: codifica, modulazione, decodifica, periodi e sottomodi, pulsanti dei modi e prove con i WAV di WSJT-X. Dettaglio di Q65 e MSK144 in `docs/tasks.md` (§21 e §22).
+- [x] **Modi che mancano** (richiesto dal proprietario, 2026-11-06): JT4, Q65, MSK144, FST4, FST4W e WSPR sono tutti fatti (2026-11-11). Restano le prove dal vivo e il beacon FST4W in trasmissione.
 - [ ] Lavori grandi da WSJT-X 3: TCI, Q65, MSK144, pulsanti dei modi, QMAP, pagina Fox (bozza approvata `docs/mockup-fox.html`)
 - [ ] Prove dal vivo del proprietario: a7/a8, stop per ROS, invii a Wavelog/ClubLog/QRZ/LoTW, integrazioni UDP, display Yaesu/Icom, barre Rx/Tx
 

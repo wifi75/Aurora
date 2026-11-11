@@ -1,9 +1,10 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-11-11, versione 0.11.237. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-11-11 notte, versione 0.11.237 pubblicata (su `main` dopo la 0.11.237 c'e' altro, vedi `docs/ripresa.md`). Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto
+- 2026-11-11 (0.11.235-0.11.237 e dopo, su `main`): **decodificatori allineati a WSJT-X 3.3.0-beta6** (FT8, FT4, Q65, JT65, JT9, MSK144, con sorgenti e binari); **FST4 e FST4W** (periodi 15 s-30 min, verificati con `jt9.exe`); **WSPR-2** (beacon, percentuale di Tx, verificato con `wsprd.exe`); **JT65 sottomodi B e C** con media dei periodi (EME); **MSK144 a 30 s** e «Sh» in trasmissione; caselle di decodifica di WSJT-X (Impostazioni › Filtri › Decodifica); **Cat4OM nativo** (Aurora e Log4OM sulla stessa radio); **OmniRig via COM** diretto, senza PowerShell; rotore unificato, colonne del Contest, icone, schermata di avvio, installatore in sette lingue (con l'olandese).
 - 2026-11-08 (ramo `lavoro/otp`): verifica OTP del SuperFox in Hound (`$VERIFY$ CALL 123456`, esclusa dall'UDP), etichetta Hound/Super Hound rossa o verde, seme OTP della Fox salvato dal motore, Fox log su Club Log e QSO per continente nella pagina Fox.
 - 2026-11-08 (dopo la 0.11.196): «Installa e riavvia» con barra di download (percentuale, MB, velocita', tempo); pannello Log stretto che toglie le colonne meno importanti; elementi nascosti con le finestre vicine che riempiono il posto.
 
@@ -36,7 +37,7 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 | 14 ✔ | **Wanted list** e avvisi sul telefono (ntfy) | M | Lista dei desiderati con avvisi in pagina e sul telefono; l'automazione puo' rispondere ai loro CQ |
 | 15 ✔ | **Mappa** dei QSO e delle stazioni ricevute | M | Pagina Mappa; manca il terminatore (greyline) |
 | 16 ✔ | **Lingue** (italiano, inglese, tedesco, francese, spagnolo, portoghese) | M | Tabelle in `app/src/i18n/strings` |
-| 17 ◐ | **Modo SWL, Hound, JT65/JT9**: visualizzazione e comandi per modo | M | Fatti nel motore proprio con la 0.11.24 (selettore, ricezione, trasmissione, RRR, frequenze di JTDX); resta la parita' con JTDX sul segnale debole, JT65+JT9 insieme e i sottomodi (`docs/2026-10-26-jt65-jt9.md`) |
+| 17 ◐ | **Modo SWL, Hound, JT65/JT9**: visualizzazione e comandi per modo | M | Fatti nel motore proprio con la 0.11.24 (selettore, ricezione, trasmissione, RRR, frequenze di JTDX); sottomodi JT65 B/C con media dei periodi fatti (2026-11-11). Resta la parita' con JTDX sul segnale debole (`docs/2026-10-26-jt65-jt9.md`) |
 | 18 | Riproduzione dei cicli decodificati, statistiche di propagazione | B | |
 | 19 | Tipo `HighlightCallsign` (evidenziare i lavorati dentro JTDX) | B | |
 | 20 | Il bool finale dello `Status` di JTDX: capire che cosa e' | B | |
@@ -50,11 +51,14 @@ Da verificare dal vivo: display esteso e secondo VFO su radio reali (ogni modell
 | 27 ◐ | **Info QSL** (LoTW, eQSL, diretta, bureau, manager) accanto al nome della stazione | M | Fatto (0.11.125-127): lettere L E D B; QRZ.com senza abbonamento XML non le manda, si completano con HamQTH. Resta da valutare: liste pubbliche gratuite LoTW (ARRL `lotw-user-activity.csv`) ed eQSL per chi non ha HamQTH |
 | 28 | **Capacita' Hamlib per modello** per le opzioni dei display | M | Mostrare nei display solo i comandi che il modello supporta |
 | 29 | **Blocchi colorati del telefono** (stazione chiamata, chi mi chiama) troppo grandi | M | Il proprietario deve mandare uno screenshot dal telefono; poi prototipo |
-| 31 | **CAT4OM nativo** (WebSocket JSON): 1) tipo di CAT «CAT4OM»; 2) scelta fra piu' radio dalla pagina; 3) audio RX/TX in rete | A | Protocollo in `docs/cat4om-protocollo.md`; lacune del manuale da chiedere all'autore (rilascio dell'ownership, frequenze audio, riconnessione) |
+| 31 ◐ | **CAT4OM nativo** (WebSocket JSON): 1) tipo di CAT «CAT4OM» ✔ (0.11.235); 2) scelta fra piu' radio dalla pagina (scoperta in lavorazione); 3) audio RX/TX in rete | A | Protocollo in `docs/cat4om-protocollo.md`; lacune del manuale da chiedere all'autore (rilascio dell'ownership, frequenze audio, riconnessione). Da provare dal vivo con Log4OM |
 | 33 ✔ | **Finestre sul secondo schermo e dashboard a blocchi** | A | 0.11.134-138: pannelli, Mappa e Propagazione in finestre a parte o in una dashboard trascinabile e ridimensionabile; Impostazioni › Finestre per ritrovare tutto. Da provare dal vivo con due schermi |
 | 32 | **HTTPS per il telefono** | B | Scelta del proprietario (2026-11-04): per ora http con il consiglio per Chrome su Android sotto il QR; l'HTTPS vero richiede un dominio |
 | 30 | **Prove dal vivo** di CAT4OM, dell'associazione del telefono con gli utenti e del log dopo RRR senza 73 (0.11.124) | A | Le fa il proprietario |
-| 34 | **Altri modi digitali**: JT4, Q65, MSK144, FST4, FST4W e WSPR | M | Richiesti dal proprietario (2026-11-06). Oggi ci sono FT8, FT4, JT65 e JT9. Q65 e MSK144 sono gia' descritti in `docs/tasks.md` (§21, §22); per gli altri servono codifica, modulazione, decodifica, periodi e pulsanti dei modi |
+| 34 ◐ | **Altri modi digitali**: JT4, Q65, MSK144, FST4, FST4W e WSPR | M | Richiesti dal proprietario (2026-11-06). Fatti: JT4 A-G, Q65 (periodi 15-300 s, sottomodi A-E), MSK144 (5/10/15/30 s, «Sh»), FST4 e FST4W (15 s-30 min, verificati con `jt9.exe`), WSPR-2 (verificato con `wsprd.exe`). Manca: trasmissione del beacon FST4W; il caricamento su WSPRnet non c'e' per scelta (WSJT-X di fabbrica non lo fa); prove dal vivo con la radio |
+| 35 | **Traduzione olandese** dell'interfaccia (#43) | M | In lavorazione, come settima lingua in un dizionario a parte; l'installatore e' gia' in sette lingue (con l'olandese) |
+| 36 | **Split DX** dal DX Cluster (UP/DN/QSX nel commento dello spot) | M | In lavorazione |
+| 37 | **Prove dal vivo con la radio** di FST4/FST4W, WSPR, MSK144 vero, JT65 B/C, OmniRig via COM, Cat4OM, TCI, SSTV | A | Le fa il proprietario |
 
 ## Limiti dichiarati (non risolvibili dall'esterno)
 

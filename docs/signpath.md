@@ -27,7 +27,7 @@ Finche' i segreti non ci sono, il lavoro compila soltanto e non allega niente.
 1. **GitHub**: attivare l'autenticazione a due fattori (Settings > Password and authentication). SignPath la richiede.
 2. **Domanda**: compilare il modulo su <https://signpath.org/apply> con
    - progetto: Aurora, <https://github.com/wifi75/Aurora>;
-   - descrizione: «Free and open source FT8/FT4/JT65/JT9/Q65 station program for radio amateurs (GPL-3), Windows/Linux/macOS»;
+   - descrizione: «Free and open source multimode ham radio station (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK, RTTY, CW, SSTV, satellites) for radio amateurs (GPL-3), Windows/Linux/macOS»;
    - pagina della policy: <https://github.com/wifi75/Aurora#code-signing-policy>.
 3. Quando SignPath approva, sul loro sito: creare il progetto `Aurora` collegato al repository GitHub, la policy di firma
    `release-signing` con approvazione manuale, e un token API (utente CI).
