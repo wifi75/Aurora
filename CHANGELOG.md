@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Griglie spostabili nella Finestra RX e nel Log**: come nel DX Cluster e nel contest, linee ben visibili tra righe e colonne (tema scuro e chiaro) e colonne che si spostano trascinando il titolo e si allargano trascinandone il bordo (doppio clic: larga quanto il contenuto; Alt+frecce da tastiera; tasto destro: «Ripristina colonne»), ricordate su questo dispositivo. La Finestra RX ha ora i titoli UTC (o «Età»), dB, DT (con «Mostra la colonna DT» acceso), Messaggio e Paese; clic, doppio clic per rispondere, righe Tx con «×N», LoTW e tasto destro restano come prima. Anche il log della Stazione (Data, Nominativo, Banda, Modo, Rapporti, Paese) e il log di PSK·RTTY·CW, che si allargava gia', ora si riordinano.
 - **PSK·RTTY·CW, barra di stato**: tolte data e ora (l'ora c'e' gia' in alto); caselle tutte della stessa altezza e dello stesso carattere, testo centrato, frequenza allineata con «Hz».
 - Testi, Guida e Novita': tolti i confronti con  in tutte le lingue (resta solo «Importa le macro», che indica i file da leggere).
 - **DXpedition**: nella riga dell'elenco, nello spazio libero accanto al paese, la via QSL accorciata («LoTW», «OQRS», «via M0OXO»); intera passandoci sopra.
