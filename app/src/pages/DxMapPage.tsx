@@ -86,7 +86,7 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
   const status = useStatusPick(['de_call', 'de_grid', 'dx_call', 'dx_grid', 'tx_enabled', 'transmitting']);
   const worked = useQuery({ queryKey: ['map-worked'], queryFn: getWorkedMap, retry: false, staleTime: 60_000 });
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
-  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
+  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 10_000, enabled: online.data?.psk === true });
   const [settings, setSettings] = useState<DxMapSettings>(readSettings);
   // «in uso»: la banda della radio adesso (richiesta di Luc: lavorando sui 15 m si vedono solo quadrati e spot dei 15 m)
   const [band, setBand] = useState('auto');

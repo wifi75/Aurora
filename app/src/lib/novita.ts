@@ -20,6 +20,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.234',
+    released: '2026-11-11T10:51:01Z',
+    kind: 'fixed',
+    title: [
+      'PSK Reporter in tempo reale, OmniRig stabile, avvio e audio più tranquilli',
+      'Real-time PSK Reporter, stable OmniRig, calmer start-up and audio',
+      'PSK Reporter in Echtzeit, stabiles OmniRig, ruhigerer Start und Ton',
+      'PSK Reporter en temps réel, OmniRig stable, démarrage et audio plus calmes',
+      'PSK Reporter en tiempo real, OmniRig estable, arranque y audio más tranquilos',
+      'PSK Reporter em tempo real, OmniRig estável, arranque e áudio mais calmos',
+    ],
+    text: [
+      'Chi ti riceve su PSK Reporter compare sulla Mappa DX in pochi secondi invece che dopo minuti: Aurora ascolta il flusso in tempo reale (lo stesso di GridTracker) e le mappe si aggiornano ogni 10 secondi. Con OmniRig il collegamento non va più a intermittenza e la sua finestrella non si riapre di continuo; il cambio di frequenza usa anche la radio 2. Una scheda audio che manca all’avvio (radio spenta) non è più segnalata come errore, la cattura audio regge meglio i rallentamenti del PC e l’avvio lento della finestra non viene più scambiato per un blocco.',
+      'Stations hearing you on PSK Reporter appear on the DX Map within seconds instead of minutes: Aurora listens to the real-time feed (the same one GridTracker uses) and the maps refresh every 10 seconds. With OmniRig the connection is no longer intermittent and its little window no longer keeps popping up; frequency changes also use radio 2. A sound card missing at start-up (radio off) is no longer reported as an error, audio capture copes better with a busy PC, and a slow window start is no longer mistaken for a hang.',
+      'Wer dich bei PSK Reporter hört, erscheint in Sekunden statt Minuten auf der DX-Karte: Aurora hört den Echtzeit-Datenstrom (denselben wie GridTracker) und die Karten aktualisieren sich alle 10 Sekunden. Mit OmniRig ist die Verbindung nicht mehr unstabil und sein Fensterchen geht nicht mehr ständig auf; Frequenzwechsel nutzen auch Funkgerät 2. Eine beim Start fehlende Soundkarte (Funkgerät aus) wird nicht mehr als Fehler gemeldet, die Audioaufnahme verkraftet einen ausgelasteten PC besser, und ein langsamer Fensterstart gilt nicht mehr als Hänger.',
+      'Les stations qui vous reçoivent sur PSK Reporter apparaissent sur la carte DX en quelques secondes au lieu de quelques minutes : Aurora écoute le flux en temps réel (le même que GridTracker) et les cartes se mettent à jour toutes les 10 secondes. Avec OmniRig la connexion n’est plus intermittente et sa petite fenêtre ne se rouvre plus sans cesse ; le changement de fréquence utilise aussi la radio 2. Une carte son absente au démarrage (radio éteinte) n’est plus signalée comme une erreur, la capture audio supporte mieux un PC chargé et un démarrage lent de la fenêtre n’est plus pris pour un blocage.',
+      'Quien te recibe en PSK Reporter aparece en el mapa DX en segundos en vez de minutos: Aurora escucha el flujo en tiempo real (el mismo que GridTracker) y los mapas se actualizan cada 10 segundos. Con OmniRig la conexión ya no es intermitente y su ventanita ya no se reabre continuamente; el cambio de frecuencia usa también la radio 2. Una tarjeta de sonido ausente al arrancar (radio apagada) ya no se notifica como error, la captura de audio aguanta mejor un PC ocupado y un arranque lento de la ventana ya no se confunde con un bloqueo.',
+      'Quem te recebe no PSK Reporter aparece no mapa DX em segundos em vez de minutos: o Aurora ouve o fluxo em tempo real (o mesmo do GridTracker) e os mapas atualizam-se a cada 10 segundos. Com o OmniRig a ligação já não é intermitente e a sua janelinha já não volta a abrir constantemente; a mudança de frequência usa também o rádio 2. Uma placa de som ausente no arranque (rádio desligado) já não é comunicada como erro, a captura de áudio aguenta melhor um PC ocupado e um arranque lento da janela já não é confundido com um bloqueio.',
+    ],
+  },
+  {
     version: '0.11.233',
     released: '2026-11-11T09:35:43Z',
     kind: 'fixed',
@@ -569,20 +590,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouveaux modes Q65-30A et MSK144 (meteor scatter, avec les messages courts et le décodage en temps réel) ; JT4 avec les sous-modes A à G. Bandes de 2200 m à 24 GHz avec les fréquences de WSJT-X et un seul sélecteur de bande et de fréquence (clic droit : Band Hopping). Interrupteurs de réception dans une barre à segments, « R » plus locator vaut confirmation, au démarrage la radio va sur la fréquence principale. LogHX prêt dans Programmes reliés, avec son guide. Mise à jour automatique plus robuste (réessaie toute seule et dit pourquoi si elle échoue). Version Mac (.dmg) parmi les fichiers de la version.',
       'Nuevos modos Q65-30A y MSK144 (meteor scatter, con los mensajes cortos y la decodificación en tiempo real); JT4 con los submodos A a G. Bandas de 2200 m a 24 GHz con las frecuencias de WSJT-X y un solo selector de banda y frecuencia (clic derecho: Band Hopping). Interruptores de recepción en una barra de segmentos, «R» más locator vale como confirmación, al arrancar la radio va a la frecuencia principal. LogHX listo en Programas conectados, con su guía. Actualización automática más robusta (reintenta sola y dice el motivo si falla). Versión para Mac (.dmg) entre los archivos de la versión.',
       'Novos modos Q65-30A e MSK144 (meteor scatter, com as mensagens curtas e a descodificação em tempo real); JT4 com os submodos A a G. Bandas de 2200 m a 24 GHz com as frequências do WSJT-X e um só seletor de banda e frequência (clique direito: Band Hopping). Interruptores de receção numa barra de segmentos, «R» mais locator vale como confirmação, ao arrancar o rádio vai para a frequência principal. LogHX pronto em Programas ligados, com o seu guia. Atualização automática mais robusta (tenta de novo sozinha e diz o motivo se falhar). Versão para Mac (.dmg) entre os ficheiros da versão.',
-    ],
-  },
-  {
-    version: '0.11.194',
-    released: '2026-11-08T07:01:11Z',
-    kind: 'new',
-    title: ['JT4, tendina delle frequenze e correzione del cambio banda', 'JT4, frequency list and band change fix', 'JT4, Frequenzliste und Korrektur des Bandwechsels', 'JT4, liste des fréquences et correction du changement de bande', 'JT4, lista de frecuencias y corrección del cambio de banda', 'JT4, lista de frequências e correção da mudança de banda'],
-    text: [
-      'Nuovo modo JT4. Accanto alle bande una tendina con tutte le frequenze del modo, come in WSJT-X. Corretto il rimbalzo della radio fra due bande. I tasti del display non diventano più grigi.',
-      'New JT4 mode. Next to the bands a list with all frequencies of the mode, as in WSJT-X. Fixed the radio bouncing between two bands. Display buttons no longer turn grey.',
-      'Neuer Modus JT4. Neben den Bändern eine Liste aller Frequenzen des Modus, wie in WSJT-X. Behoben: Funkgerät sprang zwischen zwei Bändern. Display-Tasten werden nicht mehr grau.',
-      'Nouveau mode JT4. À côté des bandes une liste de toutes les fréquences du mode, comme dans WSJT-X. Corrigé : la radio sautait entre deux bandes. Les touches de l’afficheur ne deviennent plus grises.',
-      'Nuevo modo JT4. Junto a las bandas una lista con todas las frecuencias del modo, como en WSJT-X. Corregido el salto de la radio entre dos bandas. Los botones del display ya no se vuelven grises.',
-      'Novo modo JT4. Ao lado das bandas uma lista com todas as frequências do modo, como no WSJT-X. Corrigido o salto do rádio entre duas bandas. Os botões do display já não ficam cinzentos.',
     ],
   },
 ];

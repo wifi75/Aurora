@@ -49,7 +49,8 @@ impl Beat {
         }
     }
     pub fn touch(&self) {
-        self.last_ms.store(now_ms(), Ordering::Relaxed);
+        // mai 0: lo zero vuol dire «non ha ancora battuto»
+        self.last_ms.store(now_ms().max(1), Ordering::Relaxed);
     }
     fn last(&self) -> u64 {
         self.last_ms.load(Ordering::Relaxed)
@@ -208,7 +209,10 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
     // qui il log e' gia' pronto: l'esito della registrazione presso Windows Error Reporting resta scritto
     platform::register_wer();
     RUNTIME.touch();
-    WINDOW.touch();
+    // la finestra NON si fa battere qui: finche' il suo thread non ha eseguito il primo battito (WebView2 che si prepara, lento la prima volta dopo un
+    // aggiornamento o su PC con disco lento) il guardiano la considera in avvio e non segnala blocchi. Prima la finestra risultava «battente» gia' dalla
+    // partenza, la protezione dell'avvio lento non scattava mai e dopo 20 s esatti dall'avvio arrivava un «blocco» con ultima attivita' «nessuna»
+    // (rapporti 0.11.212-0.11.232, processo attivo da 20 s).
     tauri::async_runtime::spawn(async {
         loop {
             RUNTIME.touch();

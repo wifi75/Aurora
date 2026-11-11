@@ -204,7 +204,9 @@ impl SharedSession {
                     }
                 }
                 Err(Failure::Session(message)) => {
-                    tracing::warn!("{message}: riapro la sessione PowerShell");
+                    // l'inizio dello script dice quale comando era (lettura, cambio frequenza, PTT): senza, i rapporti non lo distinguono
+                    let head: String = script.chars().filter(|c| !c.is_control()).take(60).collect();
+                    tracing::warn!("{message} (comando: {head}): riapro la sessione PowerShell");
                     last = RigError(message);
                     *slot = None;
                 }

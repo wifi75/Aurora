@@ -1,6 +1,15 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.234 - 2026-11-11
+### Corretto
+- **FT8, controllo del locatore come WSJT-X**: la tabella `chkgridvar` di WSJT-X 3.3.0-beta6 (regole per prefisso e locatore, dal decoder di JTDX) e' tradotta in Rust e verificata su 1.048.000 casi contro la funzione originale di `jt9.exe`: risposte identiche. Sostituisce in FT8 il controllo largo a distanza (5500 km dal centro del paese) e vale, come in WSJT-X, solo sui messaggi dubbi (qualita' bassa, SNR sotto -20,5 dB, DT fuori da -0,5..1,9 s, analisi a priori) e sui CQ diretti. In FT4 WSJT-X non la usa e resta il controllo di prima.
+- **PSK Reporter in tempo reale** (segnalazione #39): dopo aver chiamato i rapporti arrivavano in Aurora dopo qualche minuto, in GridTracker dopo pochi secondi. Aurora chiedeva a PSK Reporter una volta ogni 5 minuti (il limite della sua richiesta pubblica); ora ascolta anche il flusso pubblico MQTT `mqtt.pskreporter.info` (lo stesso di GridTracker, senza account, solo i rapporti sul proprio nominativo) e li unisce a quelli della richiesta, senza doppioni. Mappa DX, Bande aperte e Propagazione si aggiornano ogni 10 secondi invece di 60. Si spegne con l'interruttore di PSK Reporter in Impostazioni.
+- Cascata: se l'ingresso audio scelto per nome non c'e' ancora all'avvio (radio spenta, USB staccato) non e' piu' un errore da segnalare: si riprova ogni 5 secondi e l'avviso resta sullo schermo.
+- Blocchi audio persi (causa `Xrun`): la cattura chiede alla scheda un buffer di circa 40 ms invece di quello predefinito (10 ms in modalita' condivisa); se la scheda lo rifiuta si torna al predefinito.
+- Blocco del programma «attivo da 20 s»: il guardiano considerava la finestra gia' battente alla partenza e scambiava l'avvio lento di WebView2 per un blocco; ora aspetta il primo battito vero della finestra.
+- Sessione PowerShell che non risponde (OmniRig, PTT): nel registro si legge quale comando era.
 - **OmniRig, collegamento a intermittenza e finestrella che si riapre di continuo** (segnalazione #38 di F1DSZ): ogni lettura o cambio di frequenza lanciava un PowerShell nuovo che creava l'oggetto OmniRig e usciva, e OmniRig si chiude e si riapre (con la sua finestrella) quando l'ultimo cliente se ne va. Ora una sola sessione tiene aperto l'oggetto per tutto il collegamento, come WSJT-X, e se OmniRig viene riavviato l'oggetto si ricrea da solo. Il cambio di frequenza con OmniRig usa anche la radio 2 quando e' scelta (prima scriveva sempre la radio 1).
 - Uscita audio per la trasmissione: se la scheda scelta non c'e' ancora all'avvio (radio spenta, USB staccato) e' un'attesa normale e non finisce piu' nei rapporti degli errori, come il «Not found» di WSJT-X; l'uscita si riapre da sola quando la scheda compare.
 
