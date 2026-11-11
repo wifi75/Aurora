@@ -93,6 +93,8 @@ export function Splash() {
     <div className={`splash${phase === 'fade' ? ' splash--fade' : ''}`} role="presentation" onClick={skip} onKeyDown={skip}>
       <Logo size={200} animated className="splash-logo" />
       <h1 className="splash-name">AURORA</h1>
+      {/* il nome completo, uguale in tutte le lingue (scelta del proprietario 2026-11-11) */}
+      <p className="splash-sub">Multimode Ham Radio Station</p>
       <p className="splash-motto">{t('splash.motto')}</p>
       <ul className="splash-modes" aria-label={t('splash.modes')}>
         {MODES.map((m) => (
