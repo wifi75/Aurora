@@ -2,9 +2,16 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
-## Dal lavoro del 2026-11-11 sera e notte (0.11.237 pubblicata; il resto e' su `main`)
+## 0.11.238 (2026-11-11 notte, pubblicata)
+- [x] Split DX dal cluster, Cat4OM con la scoperta automatica, olandese (settima lingua), radiofaro FST4W e invio a WSPRnet.
+- [x] Porta COM occupata con il nome del programma, OmniRig lento come avviso, PC lento con «Passa a Normale».
+- [x] Griglie e colonne spostabili in Finestra RX e Log; modo degli spot dal band plan; via QSL delle DXpedition; donazioni con PayPal.
+- [ ] Prove dal vivo con la radio (proprietario): Split DX, Cat4OM, FST4W/WSPRnet, porta occupata, griglie.
+- [ ] Chiave di firma degli aggiornamenti sul PC (`%USERPROFILE%\.aurora-signingurora.key`) se si vuole compilare l'installatore in locale.
+
+## Dal lavoro del 2026-11-11 sera e notte (0.11.237)
 - [x] FST4 e FST4W (periodi 15 s-30 min), verificati con `jt9.exe` di WSJT-X 3.3.0-beta6.
-- [x] WSPR-2 (beacon, percentuale di Tx), verificato con `wsprd.exe`; nessun caricamento su WSPRnet, per scelta.
+- [x] WSPR-2 (beacon, percentuale di Tx), verificato con `wsprd.exe`; invio a WSPRnet facoltativo, spento di fabbrica (0.11.238).
 - [x] JT65 sottomodi B e C con media dei periodi (EME).
 - [x] MSK144 a 30 s e «Sh» in trasmissione.
 - [x] Caselle di decodifica di WSJT-X (Impostazioni › Filtri › Decodifica).
