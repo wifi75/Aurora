@@ -122,16 +122,21 @@ impl Options {
             grid_check: None,
             deadline: None,
         };
-        match ndepth {
-            0 | 1 => {
-                o.passes = 1;
-                o.subtract = false;
-                o.osd_order = 0;
-            }
-            2 => o.osd_order = 0,
-            _ => {}
-        }
+        o.set_depth(ndepth);
         o
+    }
+
+    /// Porta a `ndepth` solo passate, sottrazione e OSD (le scelte di `ft4_decode.f90:204-219`), lasciando com'erano le altre: e'
+    /// «Fast/Normal/Deep» del menu Decode di WSJT-X applicato alle opzioni di un periodo.
+    pub fn set_depth(&mut self, ndepth: u8) {
+        let (passes, subtract, osd_order) = match ndepth {
+            0 | 1 => (1, false, 0),
+            2 => (3, true, 0),
+            _ => (3, true, 3),
+        };
+        self.passes = passes;
+        self.subtract = subtract;
+        self.osd_order = osd_order;
     }
 }
 
@@ -470,6 +475,18 @@ mod tests {
 
     fn decode(audio: &[f32]) -> Vec<Decoded> {
         decode_slot(audio, &Options::default(), &mut CallHashes::default())
+    }
+
+    #[test]
+    fn set_depth_segue_ft4_decode_e_lascia_il_resto() {
+        let mut o = Options { swl: true, agc: true, ..Options::depth(3) };
+        o.set_depth(1);
+        assert_eq!((o.passes, o.subtract, o.osd_order), (1, false, 0));
+        o.set_depth(2);
+        assert_eq!((o.passes, o.subtract, o.osd_order), (3, true, 0));
+        o.set_depth(3);
+        assert_eq!((o.passes, o.subtract, o.osd_order), (3, true, 3));
+        assert!(o.swl && o.agc);
     }
 
     fn texts(out: &[Decoded]) -> Vec<String> {

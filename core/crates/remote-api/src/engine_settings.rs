@@ -114,10 +114,72 @@ pub const EXTRA_KEYS: &[&str] = &[
     "OTPUrl",
     "BandHopping",
     "BandHopList",
+    // opzioni dei decodificatori di WSJT-X 3.3 (riquadro «Decodifica» della scheda Filtri, vedi [`DECODE_KEYS`])
+    "DecodeDepth",
+    "IncludeAveraging",
+    "IncludeCorrelation",
+    "AutoClearAvg",
+    "JT65AP",
+    "JT65Aggressive",
+    "SingleDecode",
+    "Ftol_JT65",
+    "Ftol_JT9",
+    "Ftol_MSK144",
+    "Ftol_Q65",
     // «gia' lavorato ma non confermato = nuovo» per paese e griglia (scheda Colori): voci di Aurora, non di JTDX (issue #17 e #37)
     "newDXCCUnconfirmed",
     "newGridUnconfirmed",
 ];
+
+/// Le opzioni dei decodificatori di WSJT-X 3.3 che il motore proprio usa (riquadro «Decodifica» della scheda Filtri). I nomi sono quelli
+/// del `WSJT-X.ini` dove non urtano voci di JTDX (`NDepth` e `Aggressive` di JTDX valgono per il suo motore: qui `DecodeDepth` e `JT65Aggressive`).
+/// - `DecodeDepth`: menu Decode «Fast/Normal/Deep» (`NDepth & 7`, 3 di fabbrica: `mainwindow_settings.cpp:529`, `FUN_1401e5f90` di `wsjtx.exe`);
+/// - `IncludeAveraging`, `IncludeCorrelation`, `AutoClearAvg`: i bit 16, 32 e 128 di `NDepth` (`mainwindow.cpp:12559-12578`), spenti di fabbrica;
+/// - `JT65AP`: «Enable AP» di JT65 (`mainwindow_settings.cpp:621`, falso di fabbrica);
+/// - `JT65Aggressive`: «Aggressive decoding level» (Settings → Advanced, `Configuration.cpp:3721`, 4 di fabbrica, da 0 a 10);
+/// - `SingleDecode`: «Single decode» (Settings → General, `Configuration.cpp:3900`, falso di fabbrica);
+/// - `Ftol_*`: F Tol per modo (`mainwindow_settings.cpp:370-395`, 50 Hz di fabbrica in tutti e quattro, letto anche nel binario).
+pub const DECODE_KEYS: &[&str] = &["DecodeDepth", "IncludeAveraging", "IncludeCorrelation", "AutoClearAvg", "JT65AP", "JT65Aggressive", "SingleDecode", "Ftol_JT65", "Ftol_JT9", "Ftol_MSK144", "Ftol_Q65"];
+
+/// I valori della tendina «F Tol» di WSJT-X: `switch_mode` per tutti i modi (`mainwindow.cpp:12296`), MSK144 la sua (`mainwindow.cpp:12114`).
+pub const FTOL_VALUES: &[u32] = &[1, 2, 5, 10, 20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000];
+pub const FTOL_MSK144_VALUES: &[u32] = &[20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
+
+/// Le opzioni dei decodificatori gia' interpretate (vedi [`DECODE_KEYS`]); i valori di fabbrica sono quelli di WSJT-X 3.3.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecodeOptions {
+    /// 1 Fast, 2 Normal, 3 Deep.
+    pub depth: u8,
+    pub include_averaging: bool,
+    pub include_correlation: bool,
+    pub auto_clear_avg: bool,
+    pub jt65_ap: bool,
+    /// Da 0 a 10.
+    pub jt65_aggressive: u8,
+    pub single_decode: bool,
+    pub ftol_jt65: u32,
+    pub ftol_jt9: u32,
+    pub ftol_msk144: u32,
+    pub ftol_q65: u32,
+}
+
+impl Default for DecodeOptions {
+    fn default() -> Self {
+        DecodeOptions {
+            depth: 3,
+            include_averaging: false,
+            include_correlation: false,
+            auto_clear_avg: false,
+            jt65_ap: false,
+            jt65_aggressive: 4,
+            single_decode: false,
+            ftol_jt65: 50,
+            ftol_jt9: 50,
+            ftol_msk144: 50,
+            ftol_q65: 50,
+        }
+    }
+}
 
 /// La voce con l'elenco dei destinatari UDP (JSON, vedi [`UdpDestination`]).
 pub const UDP_DESTINATIONS: &str = "UdpDestinations";
@@ -300,6 +362,8 @@ pub fn support(key: &str) -> Support {
         "MonitorOFF" => Support::Live(Apply::Restart),
         // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
         "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
+        // opzioni dei decodificatori di WSJT-X: valgono dal periodo che segue
+        k if DECODE_KEYS.contains(&k) => Support::Live(Apply::Now),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
         // regione IARU: filtra la tabella delle frequenze (scheda Frequenze, cambio di banda e di modo); messaggi con il nominativo composto di tipo 2: tenuto, ma vale solo per JT65/JT9
         "Region" | "Type2MsgGen" => Support::Live(Apply::Now),
@@ -547,6 +611,8 @@ pub struct Reports {
     /// Band Hopping acceso e il suo elenco (vedi `aurora::band_hop::parse_list`).
     pub band_hopping: bool,
     pub band_hop_list: String,
+    /// Le opzioni dei decodificatori (riquadro «Decodifica»).
+    pub decode: DecodeOptions,
 }
 
 /// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
@@ -680,6 +746,18 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("OTPUrl", "https://www.9dx.cc"),
         ("BandHopping", "false"),
         ("BandHopList", ""),
+        // decodificatori: i valori di fabbrica di WSJT-X 3.3 (vedi `DECODE_KEYS`)
+        ("DecodeDepth", "3"),
+        ("IncludeAveraging", "false"),
+        ("IncludeCorrelation", "false"),
+        ("AutoClearAvg", "false"),
+        ("JT65AP", "false"),
+        ("JT65Aggressive", "4"),
+        ("SingleDecode", "false"),
+        ("Ftol_JT65", "50"),
+        ("Ftol_JT9", "50"),
+        ("Ftol_MSK144", "50"),
+        ("Ftol_Q65", "50"),
         // regione IARU (`ALL`, `R1`, `R2`, `R3`) e generazione dei messaggi per i nominativi composti di tipo 2: valori di fabbrica di JTDX (`read_settings`: `ALL` e `type_2_msg_3_full`)
         ("Region", "ALL"),
         ("Type2MsgGen", "type_2_msg_3_full"),
@@ -860,7 +938,32 @@ fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> 
         }
         "BandHopList" if value.len() > 400 || value.chars().any(char::is_control) => bad("elenco troppo lungo o non valido"),
         "OTPUrl" | "BandHopList" => Some(Ok(())),
+        "IncludeAveraging" | "IncludeCorrelation" | "AutoClearAvg" | "JT65AP" | "SingleDecode" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "DecodeDepth" => if matches!(value, "1" | "2" | "3") { Some(Ok(())) } else { bad("1 (Fast), 2 (Normal) o 3 (Deep)") },
+        "JT65Aggressive" => if value.parse::<u8>().is_ok_and(|n| n <= 10) { Some(Ok(())) } else { bad("da 0 a 10") },
+        "Ftol_MSK144" => if value.parse::<u32>().is_ok_and(|n| FTOL_MSK144_VALUES.contains(&n)) { Some(Ok(())) } else { bad("uno dei valori di F Tol di MSK144 (20-500 Hz)") },
+        "Ftol_JT65" | "Ftol_JT9" | "Ftol_Q65" => if value.parse::<u32>().is_ok_and(|n| FTOL_VALUES.contains(&n)) { Some(Ok(())) } else { bad("uno dei valori di F Tol (1-1000 Hz)") },
         _ => None,
+    }
+}
+
+/// Le opzioni dei decodificatori dai valori: una voce che manca o non e' valida vale quella di fabbrica di WSJT-X.
+pub fn interpret_decode(values: &BTreeMap<String, String>) -> DecodeOptions {
+    let base = DecodeOptions::default();
+    let flag = |k: &str, default: bool| values.get(k).map_or(default, |v| v == "true");
+    let ftol = |k: &str, allowed: &[u32], default: u32| values.get(k).and_then(|v| v.parse::<u32>().ok()).filter(|n| allowed.contains(n)).unwrap_or(default);
+    DecodeOptions {
+        depth: values.get("DecodeDepth").and_then(|v| v.parse::<u8>().ok()).filter(|n| (1..=3).contains(n)).unwrap_or(base.depth),
+        include_averaging: flag("IncludeAveraging", base.include_averaging),
+        include_correlation: flag("IncludeCorrelation", base.include_correlation),
+        auto_clear_avg: flag("AutoClearAvg", base.auto_clear_avg),
+        jt65_ap: flag("JT65AP", base.jt65_ap),
+        jt65_aggressive: values.get("JT65Aggressive").and_then(|v| v.parse::<u8>().ok()).filter(|n| *n <= 10).unwrap_or(base.jt65_aggressive),
+        single_decode: flag("SingleDecode", base.single_decode),
+        ftol_jt65: ftol("Ftol_JT65", FTOL_VALUES, base.ftol_jt65),
+        ftol_jt9: ftol("Ftol_JT9", FTOL_VALUES, base.ftol_jt9),
+        ftol_msk144: ftol("Ftol_MSK144", FTOL_MSK144_VALUES, base.ftol_msk144),
+        ftol_q65: ftol("Ftol_Q65", FTOL_VALUES, base.ftol_q65),
     }
 }
 
@@ -916,6 +1019,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         otp_url: values.get("OTPUrl").filter(|u| !u.trim().is_empty()).cloned().unwrap_or_else(|| "https://www.9dx.cc".into()),
         band_hopping: truthy(values.get("BandHopping")),
         band_hop_list: get("BandHopList").to_string(),
+        decode: interpret_decode(values),
         swr_limit_centi: values.get("SWRLimit").and_then(|v| parse_swr_limit(v)).unwrap_or(DEFAULT_SWR_LIMIT_CENTI),
         tx_delay_ms: values.get("TxDelay").and_then(|v| parse_tx_delay(v)).unwrap_or(DEFAULT_TX_DELAY_MS),
         log_filter: engine_jtdx::worked::LogFilter {
@@ -1580,6 +1684,56 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert_eq!(doc["items"]["toRTTY"]["note"], "jt9_only");
         assert_eq!(doc["items"]["UDPServer"]["reason"], "emitter_pending");
         assert!(doc["values"].get("UDP2Server").is_some() && doc["values"].get("UDPServer").is_none() && doc["values"].get("PSKReporter").is_some());
+    }
+
+    #[test]
+    fn the_decoder_options_have_the_wsjtx_defaults_are_checked_and_round_trip() {
+        // valori di fabbrica di WSJT-X 3.3: Deep, niente media/correlazione/AP JT65/Auto Clear, Aggressive 4, F Tol 50 Hz
+        assert_eq!(interpret(&defaults()).decode, DecodeOptions::default());
+        assert_eq!(interpret_decode(&BTreeMap::new()), DecodeOptions::default(), "un file scritto prima delle voci vale come WSJT-X");
+        for key in DECODE_KEYS {
+            assert_eq!(support(key), Support::Live(Apply::Now), "{key}");
+            assert!(EXTRA_KEYS.contains(key) && defaults().contains_key(*key), "{key}");
+            assert!(validate(key, &defaults()[*key]).is_ok(), "{key}");
+        }
+        assert!(validate("DecodeDepth", "0").is_err() && validate("DecodeDepth", "4").is_err());
+        assert!(validate("JT65Aggressive", "10").is_ok() && validate("JT65Aggressive", "11").is_err() && validate("JT65Aggressive", "-1").is_err());
+        assert!(validate("Ftol_JT65", "1000").is_ok() && validate("Ftol_JT65", "60").is_err());
+        assert!(validate("Ftol_MSK144", "20").is_ok() && validate("Ftol_MSK144", "10").is_err() && validate("Ftol_MSK144", "1000").is_err());
+        assert!(validate("IncludeAveraging", "si").is_err());
+        let path = temp("decode");
+        let store = EngineSettingsStore::open(&path, defaults);
+        let changes = map(&[
+            ("DecodeDepth", "1"),
+            ("IncludeAveraging", "true"),
+            ("IncludeCorrelation", "true"),
+            ("AutoClearAvg", "true"),
+            ("JT65AP", "true"),
+            ("JT65Aggressive", "7"),
+            ("SingleDecode", "true"),
+            ("Ftol_JT65", "100"),
+            ("Ftol_JT9", "20"),
+            ("Ftol_MSK144", "200"),
+            ("Ftol_Q65", "10"),
+        ]);
+        store.update(&changes).expect("voci valide");
+        let want = DecodeOptions {
+            depth: 1,
+            include_averaging: true,
+            include_correlation: true,
+            auto_clear_avg: true,
+            jt65_ap: true,
+            jt65_aggressive: 7,
+            single_decode: true,
+            ftol_jt65: 100,
+            ftol_jt9: 20,
+            ftol_msk144: 200,
+            ftol_q65: 10,
+        };
+        assert_eq!(store.reports().decode, want);
+        // riaperto dal file: gli stessi valori
+        drop(store);
+        assert_eq!(EngineSettingsStore::open(&path, defaults).reports().decode, want);
     }
 
     #[test]

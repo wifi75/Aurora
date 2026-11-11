@@ -101,6 +101,9 @@ pub struct Options {
     pub deep_search: bool,
     /// I nominativi noti (nominativo, locatore a 4) per la ricerca profonda (`set_calls`, al massimo 10000).
     pub hint_calls: Vec<(String, String)>,
+    /// Mio nominativo, DX e locatore per la ricerca profonda quando l'analisi a priori e' spenta: in WSJT-X `hint65` li usa
+    /// comunque (`jt65_decode.f90`, «Enable deep search» e «Enable AP» sono due voci separate del menu Decode). Con `ap` acceso vale `ap`.
+    pub deep_calls: Option<ApCalls>,
 }
 
 impl Default for Options {
@@ -117,6 +120,7 @@ impl Default for Options {
             ap: None,
             deep_search: false,
             hint_calls: Vec::new(),
+            deep_calls: None,
         }
     }
 }
@@ -990,7 +994,7 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
         _ => (4, 1000),
     };
     let ap = ApTable::new(options.ap.as_ref());
-    let hints = match &options.ap {
+    let hints = match options.ap.as_ref().or(options.deep_calls.as_ref()) {
         Some(calls) if options.deep_search && !six(&calls.my_call).is_empty() => hint_messages(&codec, calls, &options.hint_calls),
         _ => Vec::new(),
     };
@@ -1284,6 +1288,19 @@ mod tests {
         let d = with_ap.iter().find(|d| d.text == "IU3ABC K1ABC IO91").expect("decodificato con l'analisi a priori");
         assert!(d.ap_type > 0 && !d.hinted, "{d:?}");
         assert!((d.freq_hz - 1300.0).abs() < 1.5, "{d:?}");
+    }
+
+    /// «Enable deep search» senza «Enable AP» (due voci separate in WSJT-X): `hint65` usa lo stesso i nominativi del QSO (`deep_calls`)
+    /// e trova il rapporto del DX che la decodifica normale non vede; senza nominativi non c'e' lista.
+    #[test]
+    fn deep_search_works_without_a_priori_when_the_qso_calls_are_given() {
+        let audio = minute(&[("IU3ABC K1ABC -15", 1500.0, 0.0, -27.0)], 7);
+        assert!(decode(&audio, &Options::default()).iter().all(|d| d.text != "IU3ABC K1ABC -15"));
+        let blind = decode(&audio, &Options { deep_search: true, ..Options::default() });
+        assert!(blind.iter().all(|d| !d.hinted), "{blind:?}");
+        let deep = decode(&audio, &Options { deep_search: true, deep_calls: Some(qso_calls()), ..Options::default() });
+        let d = deep.iter().find(|d| d.text == "IU3ABC K1ABC -15").expect("trovato con la ricerca profonda");
+        assert!(d.hinted && d.ap_type == 0, "{d:?}");
     }
 
     /// Con l'analisi a priori e la ricerca profonda accese il rumore resta rumore.

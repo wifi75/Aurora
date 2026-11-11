@@ -20,6 +20,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { useStation } from '../state/station';
 import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
+import { DecoderOptionFields } from './DecoderOptions';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page } from './layout';
 import { ToastGroup } from './ToastGroup';
@@ -394,7 +395,7 @@ export function NativeTxOptions() {
   );
 }
 
-/** Quando parte la decodifica FT8 (prima in Generali): sta nella scheda Filtri, con le altre scelte su cosa si riceve. */
+/** Quando parte la decodifica FT8 (prima in Generali) e le opzioni dei decodificatori di WSJT-X: stanno nella scheda Filtri, con le altre scelte su cosa si riceve. */
 export function NativeDecodeOptions() {
   const t = useT();
   const { settings, draft } = useDoc();
@@ -404,6 +405,7 @@ export function NativeDecodeOptions() {
     <Group title={t('fil.decode')}>
       <Cells min={15}>
         <SettingField row={{ key: 'FT8DecoderStart', kind: 'choice', options: DECODER_START_OPTIONS }} label={t('gen2.decStart')} doc={doc} draft={draft} />
+        <DecoderOptionFields doc={doc} draft={draft} />
       </Cells>
       <ApplyBar draft={draft} doc={doc} />
     </Group>

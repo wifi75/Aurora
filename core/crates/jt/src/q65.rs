@@ -759,6 +759,13 @@ pub struct Options {
     /// `mainwindow_settings.cpp:529`, letto con lo stesso 3 nel `wsjtx.exe` compilato): spento, la media resta finche' non si preme
     /// «Clear Avg» o cambiano periodo e sottomodo.
     pub auto_clear_avg: bool,
+    /// «Enable averaging» del menu Decode di WSJT-X (bit 16 di `ndepth`, `iand(effort,16)` di `q65_decode.f90:525,742`): spento, la media
+    /// dei periodi si accumula lo stesso (`q65_symspec` la aggiorna sempre, `q65.f90:630-635`) ma non si prova a decodificarla. In WSJT-X
+    /// e' spento di fabbrica (`NDepth` = 3); qui di base acceso, com'era prima che il motore lo leggesse dalle impostazioni.
+    pub average_decode: bool,
+    /// «Single decode» di WSJT-X (`nexp_decode & 32`): si prova solo la frequenza di ricezione (e la sua media), niente giro dei
+    /// candidati (`if(single_decode .or. lagain) go to 900`, `q65_decode.f90:628`). Spento di fabbrica.
+    pub single_decode: bool,
     /// Soglia dei candidati di un periodo, come `q65_ccf_22`: altezza del picco della correlazione sui 22 simboli di sincronismo
     /// sopra la mediana, in unita' della dispersione (84° meno 50° percentile). WSJT-X usa 6.
     pub sync_snr: f32,
@@ -798,6 +805,8 @@ impl Default for Options {
             f_high_hz: 3000.0,
             max_candidates: 20,
             auto_clear_avg: false,
+            average_decode: true,
+            single_decode: false,
             sync_snr: 6.0,
             rx_hz: None,
             rx_tol_hz: 50.0,
@@ -1671,7 +1680,7 @@ fn decode_period(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
     // 2. nulla sulla frequenza di ricezione: subito la media, se ha almeno due periodi
     let band = (ia, ib, max_drift);
     let mut avg_sync = None;
-    if !at_rx && navg(&avg) >= 2 {
+    if !at_rx && options.average_decode && navg(&avg) >= 2 {
         avg_sync = try_average(&searcher, list, band, &mut avg, &mut found, emit);
     }
 
@@ -1691,12 +1700,17 @@ fn decode_period(audio: &[f32], options: &Options, aps: &[Ap], list: &[ListWord]
         }
     }
 
+    // «Single decode»: solo la frequenza di ricezione (`q65_decode.f90:628`)
+    if options.single_decode {
+        return;
+    }
     // 4. e 5. il giro dei candidati, con la deriva del `q65_ccf_22` che li ha dati
     match avg_sync {
         Some(s) => run_candidates(&searcher, &s.candidates, s.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options)),
         None => {
             run_candidates(&searcher, &single.candidates, single.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options));
-            if navg(&avg) >= 2
+            if options.average_decode
+                && navg(&avg) >= 2
                 && let Some(s) = try_average(&searcher, list, band, &mut avg, &mut found, emit)
             {
                 run_candidates(&searcher, &s.candidates, s.drift_hz, &mut tried, &mut found, &mut |f, found| report(f, found, &mut *emit, &mut avg, options));
@@ -1954,6 +1968,43 @@ mod tests {
         }
         let k = decoded_at.expect("la media non ha decodificato");
         assert_eq!(avg.count(0), k as u32 + 1, "senza AutoClrAvg la media resta");
+    }
+
+    /// «Enable averaging» spento (WSJT-X di fabbrica): lo stesso segnale debole non esce mai, ma la media si accumula lo stesso
+    /// (`q65_symspec` la aggiorna sempre) e riaccendendo l'opzione decodifica subito.
+    #[test]
+    fn without_include_averaging_the_average_grows_but_is_not_decoded() {
+        let setup = Setup::new(15, 0).expect("modo");
+        let on = Options { setup, f_low_hz: 950.0, f_high_hz: 1050.0, rx_hz: Some(1000.0), ap: false, ..Options::default() };
+        let off = Options { average_decode: false, ..on.clone() };
+        let msg = "IU3ABC K1ABC FN42";
+        let wave = modulate(&tones(msg, &mut CallHashes::default()).expect("messaggio"), 1000.0, setup, 0.07);
+        let make = |seed: u64| {
+            let mut audio = noise(15 * 12_000, 1.0, seed);
+            let at = (setup.start_s() * FS) as usize;
+            audio[at..at + wave.len()].iter_mut().zip(&wave).for_each(|(a, w)| *a += w);
+            audio
+        };
+        let mut avg = Averager::new();
+        for k in 0..8u64 {
+            let d = decode_averaged(&make(100 + k), &off, &mut CallHashes::default(), &mut avg, 2 * k);
+            assert!(!d.iter().any(|d| d.averaged > 1), "media provata con l'opzione spenta: {d:?}");
+        }
+        assert_eq!(avg.count(0), 8, "la media si accumula anche spenta");
+        let d = decode_averaged(&make(200), &on, &mut CallHashes::default(), &mut avg, 16);
+        assert!(d.iter().any(|d| d.text == msg && d.averaged >= 2), "riaccesa, la media accumulata decodifica: {d:?}");
+    }
+
+    /// «Single decode»: un segnale forte lontano dalla frequenza di ricezione non si cerca (niente giro dei candidati).
+    #[test]
+    fn single_decode_tries_only_the_rx_frequency() {
+        let setup = Setup::new(15, 0).expect("modo");
+        let strong = "CQ K9XYZ EN50";
+        let audio = period(strong, 1600.0, 0.0, setup, 0.3, 1.0);
+        let o = Options { setup, f_low_hz: 900.0, f_high_hz: 1700.0, rx_hz: Some(1000.0), ap: false, ..Options::default() };
+        assert!(decode(&audio, &o, &mut CallHashes::default()).iter().any(|d| d.text == strong), "senza Single decode si trova");
+        let single = Options { single_decode: true, ..o };
+        assert!(decode(&audio, &single, &mut CallHashes::default()).is_empty());
     }
 
     /// Il segnale debole di `averaging_decodes_a_signal_too_weak_for_one_period` a 1000 Hz (frequenza di ricezione) e un'altra stazione

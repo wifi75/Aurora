@@ -13,6 +13,7 @@ mod known;
 mod mskrt;
 pub use ft8::filters::GridCheck;
 pub mod features;
+pub mod decode_opts;
 mod parity;
 mod persist;
 mod resample;
@@ -701,6 +702,8 @@ pub fn start_with_save(
                     dt_center.update(&decoded.iter().map(|d| d.dt_s).collect::<Vec<_>>());
                 }
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
+                // nominativi e locatori sentiti: la lista della ricerca profonda di JT65 (il `CALL3.TXT` di WSJT-X)
+                decode_opts::learn_grids(&decoded);
                 if matches!(mode, Mode::Ft8 | Mode::Ft4) {
                     known.learn(&decoded);
                     known.save_if_due();
@@ -965,6 +968,8 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
         ap: if controls.switch_on("hound") { None } else { ap_options(controls, de_call) },
         ..base.clone()
     };
+    // «Fast/Normal/Deep» delle Impostazioni (`NDepth & 7` di WSJT-X): passate e OSD del calendario di JTDX che Aurora usa per FT8
+    options.set_depth(decode_opts::current().depth);
     if controls.switch_on("filter") {
         let half = if controls.switch_on("hound") { 290.0 } else { 60.0 };
         let rx = controls.rx_df.load(Ordering::Relaxed) as f32;
@@ -980,6 +985,8 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
 /// La frequenza di ricezione e' anche `nfqso` della ricerca: i candidati entro 20 Hz si provano per primi (WSJT-X 3.3 `getcandidates4.f90:70-81`).
 fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControls, de_call: &str) -> ft4::decode::Options {
     let mut options = base.clone();
+    // «Fast/Normal/Deep» delle Impostazioni (`ft4_decode.f90:204-219`)
+    options.set_depth(decode_opts::current().depth);
     options.qso_freq_hz = Some(controls.rx_df.load(Ordering::Relaxed) as f32);
     if let Some(ap) = ap_options(controls, de_call) {
         options.ap = Some(ap);
@@ -989,9 +996,10 @@ fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControl
 }
 
 /// L'analisi a priori di questo periodo (FT8 e FT4): il proprio nominativo, il DX e il suo locatore dalla pagina, il punto del QSO dal messaggio
-/// selezionato (1-5; CQ o nessuno = 0), le frequenze dalle barre. `None` con l'interruttore «a7/a8» (`ap_list`) spento.
+/// selezionato (1-5; CQ o nessuno = 0), le frequenze dalle barre. `None` con l'interruttore «a7/a8» (`ap_list`) spento, tranne in JT65:
+/// li' l'analisi a priori ha la sua voce («Enable AP», `decode_opts`) e i nominativi servono anche alla ricerca profonda.
 fn ap_options(controls: &rig::NativeControls, de_call: &str) -> Option<ft8::ap::ApOptions> {
-    if !controls.switch_on("ap_list") {
+    if !controls.switch_on("ap_list") && controls.mode() != Mode::Jt65 {
         return None;
     }
     let view = tx::view_of(controls);
@@ -1015,12 +1023,15 @@ fn as_decoded(freq_hz: f32, dt_s: f32, snr_db: i32, text: String) -> ft8::decode
 
 /// MSK144: le opzioni di `mskrtd` (`fastSink` di `mainwindow.cpp`: `RxFreq`, `ftol`, `ndepth`, nominativi, `bshmsg`, `bswl`). La frequenza di
 /// ricezione e' quella della barra se sta fra 1400 e 1600 Hz (i limiti che WSJT-X da' a «Rx» in MSK144, `mainwindow.cpp:12096-12098`),
-/// altrimenti 1500 Hz, il valore che WSJT-X imposta entrando nel modo: in Aurora la barra resta dove la lascia l'altro modo. Aurora non ha
-/// ancora «F Tol», profondita' e «Sh» per MSK144: F Tol 50 Hz e Deep sono i valori di fabbrica di WSJT-X (`Ftol_MSK144`, `NDepth` = 3) e i
+/// altrimenti 1500 Hz, il valore che WSJT-X imposta entrando nel modo: in Aurora la barra resta dove la lascia l'altro modo. F Tol e profondita'
+/// vengono dalle Impostazioni (`Ftol_MSK144` e `NDepth`, 50 Hz e Deep di fabbrica come WSJT-X, vedi `decode_opts`). Aurora non ha ancora «Sh»: i
 /// messaggi brevi del QSO si cercano sempre, come gia' faceva Aurora (in WSJT-X solo con «Sh» acceso). «SWL» e' l'interruttore `swl`.
 fn msk144_options(rx_hz: Option<f32>, my_call: &str, his_call: &str, swl: bool) -> jt::msk144::Options {
     let rx = rx_hz.filter(|f| (1400.0..=1600.0).contains(f)).unwrap_or(1500.0);
-    jt::msk144::Options { f_center_hz: rx, tolerance_hz: 50, depth: 3, my_call: my_call.to_string(), his_call: his_call.to_string(), short_messages: true, swl }
+    let mut o = jt::msk144::Options { f_center_hz: rx, tolerance_hz: 50, depth: 3, my_call: my_call.to_string(), his_call: his_call.to_string(), short_messages: true, swl };
+    // F Tol e profondita' dalle Impostazioni (`Ftol_MSK144`, `NDepth`)
+    decode_opts::tune_msk144(&decode_opts::current(), &mut o);
+    o
 }
 
 /// Decodifica un periodo nel modo dato (audio a 12 kHz: 15 s in FT8, 7,5 s in FT4, un minuto in JT65 e JT9).
@@ -1044,27 +1055,20 @@ fn decode_period(
             o.agc = ft8_options.agc;
             ft4::decode::decode_slot(samples, &o, hashes)
         }
-        // JT65: la frequenza di ricezione (`nfqso`) con F Tol 50 Hz di fabbrica (`Ftol_JT65`), livello «Aggressive» 4 e profondita' 3 come WSJT-X;
-        // l'analisi a priori (`extract.f90`) con il mio nominativo, il DX e il punto del QSO quando l'interruttore «a7/a8» e' acceso e i tipi con il
-        // proprio nominativo sono attivi (WSJT-X la tiene spenta di fabbrica, «Enable AP» = `JT65AP` false). I messaggi a priori hanno il segno di FT8
+        // JT65: frequenza di ricezione (`nfqso`), F Tol, profondita', «Aggressive», «Single decode», «Enable AP» e ricerca profonda dalle
+        // Impostazioni (`decode_opts::jt65_options`, di fabbrica come WSJT-X: 50 Hz, Deep, 4, AP e ricerca profonda spente). L'analisi a priori
+        // (`extract.f90`) usa il mio nominativo, il DX e il punto del QSO. I messaggi a priori hanno il segno di FT8
         Mode::Jt65 => {
-            let o = jt::rx::Options {
-                rx_hz: ft8_options.rx_freq_hz,
-                ap: ft8_options.ap.as_ref().filter(|a| a.my_call_active).map(|a| jt::rx::ApCalls {
-                    my_call: a.mycall.clone(),
-                    dx_call: a.hiscall.clone(),
-                    dx_grid: a.hisgrid.clone(),
-                    qso_progress: a.qso_progress,
-                }),
-                ..jt::rx::Options::default()
-            };
+            let ap = ft8_options.ap.as_ref();
+            let calls = ap.map(|a| jt::rx::ApCalls { my_call: a.mycall.clone(), dx_call: a.hiscall.clone(), dx_grid: a.hisgrid.clone(), qso_progress: a.qso_progress });
+            let o = decode_opts::jt65_options(&decode_opts::current(), ft8_options.rx_freq_hz, calls, ap.is_some_and(|a| a.my_call_active));
             jt::rx::decode(samples, &o)
                 .into_iter()
                 .map(|d| ft8::decode::Decoded { hint: d.ap_type > 0 || d.hinted, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
                 .collect()
         }
-        // JT9: la finestra di ricezione (`nqd = 1` di `jt9_decode.f90`) attorno a `nfqso` con F Tol 50 Hz di fabbrica (`Ftol_JT9`)
-        Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options { rx_hz: ft8_options.rx_freq_hz, ..jt::jt9rx::Options::default() })
+        // JT9: la finestra di ricezione (`nqd = 1` di `jt9_decode.f90`) attorno a `nfqso` con F Tol e profondita' delle Impostazioni (`Ftol_JT9`, `NDepth`)
+        Mode::Jt9 => jt::jt9rx::decode(samples, &decode_opts::jt9_options(&decode_opts::current(), ft8_options.rx_freq_hz))
             .into_iter()
             .map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text))
             .collect(),
@@ -1085,14 +1089,14 @@ fn decode_period(
         Mode::Q65 => {
             let setup = rig::q65_setup();
             let ap = ft8_options.ap.as_ref();
-            // la frequenza di ricezione (`nfqso` di WSJT-X): il picco migliore entro 50 Hz si prova sempre, e con il DX noto vi si
+            // la frequenza di ricezione (`nfqso` di WSJT-X): il picco migliore entro F Tol si prova sempre, e con il DX noto vi si
             // prova la lista dei messaggi del QSO
             let rx_hz = ap.and_then(|a| a.rx_freq_hz).or_else(|| ft8_options.a8.as_ref().map(|q| q.rx_freq_hz));
             // contest (`ncontest = 1`): i chiamanti di oggi fanno la lista dei messaggi; l'ora e' quella del periodo
             let contest = rig::q65_contest();
             let now = ft8_options.period_key.map_or(0, |k| (k * 15) as i64);
             let callers = if contest { rig::with_q65_callers(|c| { c.expire(now); c.list().to_vec() }) } else { Vec::new() };
-            let o = jt::q65::Options {
+            let mut o = jt::q65::Options {
                 setup,
                 my_call: ap.map(|a| a.mycall.clone()).unwrap_or_default(),
                 dx_call: ap.map(|a| a.hiscall.clone()).unwrap_or_default(),
@@ -1106,6 +1110,8 @@ fn decode_period(
                 callers,
                 ..jt::q65::Options::default()
             };
+            // F Tol, «Enable averaging», «Auto Clear Avg» e «Single decode» delle Impostazioni (di fabbrica come WSJT-X: la media non si prova)
+            decode_opts::tune_q65(&decode_opts::current(), &mut o);
             // il numero del periodo dall'inizio del periodo (`period_key` conta i quarti di minuto)
             let index = ft8_options.period_key.map_or(0, |k| k * 15 / u64::from(setup.period_s));
             let decoded = jt::q65::decode_averaged(samples, &o, hashes, q65_avg, index);
@@ -1225,6 +1231,18 @@ mod tests {
         controls.set_switch("mtd", false);
         let o = period_options(&base, &controls, "IU3ABC", 0);
         assert!(!o.a7 && o.a8.is_none() && o.threads == 1);
+    }
+
+    /// In JT65 i nominativi del QSO arrivano al decodificatore anche con «a7/a8» spento: li' l'analisi a priori ha la sua voce («Enable AP»)
+    /// e la ricerca profonda li usa comunque, come in WSJT-X.
+    #[test]
+    fn jt65_gets_the_qso_calls_without_the_a7_a8_switch() {
+        let controls = NativeControls::default();
+        controls.set_switch("ap_list", false);
+        assert!(ap_options(&controls, "IU3ABC").is_none(), "FT8 senza a7/a8: niente");
+        controls.set_mode(Mode::Jt65);
+        let ap = ap_options(&controls, "IU3ABC").expect("JT65: i nominativi ci sono");
+        assert_eq!(ap.mycall, "IU3ABC");
     }
 
     /// Il motore proprio come unico motore: i messaggi e lo stato arrivano sul bus, con paese ed etichetta.

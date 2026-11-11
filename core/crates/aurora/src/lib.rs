@@ -1101,7 +1101,8 @@ fn save_settings(dir: &Path, auth: &DeviceStore, frequencies: &Mutex<FrequencyTa
 }
 
 /// Ogni 15 secondi guarda l'ora UTC: al minuto di una riga porta la radio sulla banda, se non si trasmette.
-/// Le voci delle funzioni di WSJT-X 3.x che il motore legge dai pulsanti: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox.
+/// Le voci delle funzioni di WSJT-X 3.x che il motore legge dai pulsanti: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox
+/// e le opzioni dei decodificatori.
 fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_api::engine_settings::Reports) {
     use std::sync::atomic::Ordering;
     controls.set_decoder_start(engine_native::features::DecoderStart::parse(&r.ft8_decoder_start));
@@ -1110,6 +1111,24 @@ fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_ap
     controls.hound_auto.store(r.hound_auto, Ordering::Relaxed);
     controls.pounce_policy.store(engine_native::features::PouncePolicy::parse(&r.pounce_policy).code(), Ordering::Relaxed);
     controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
+    apply_decode_settings(&r.decode);
+}
+
+/// Le opzioni dei decodificatori (riquadro «Decodifica» della scheda Filtri) al motore proprio: valgono dal periodo che segue.
+fn apply_decode_settings(d: &remote_api::engine_settings::DecodeOptions) {
+    engine_native::decode_opts::set(engine_native::decode_opts::DecodeSettings {
+        depth: d.depth,
+        include_averaging: d.include_averaging,
+        include_correlation: d.include_correlation,
+        auto_clear_avg: d.auto_clear_avg,
+        jt65_ap: d.jt65_ap,
+        jt65_aggressive: d.jt65_aggressive,
+        single_decode: d.single_decode,
+        ftol_jt65: d.ftol_jt65,
+        ftol_jt9: d.ftol_jt9,
+        ftol_msk144: d.ftol_msk144,
+        ftol_q65: d.ftol_q65,
+    });
 }
 
 /// «Cancella» premuta qui e frequenza Tx spostata a trasmissione in corso: come in WSJT-X il Clear va anche ai programmi collegati via UDP

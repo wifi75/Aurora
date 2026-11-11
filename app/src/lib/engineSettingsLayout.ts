@@ -11,8 +11,8 @@ export interface SettingRow {
   max?: number;
   /** Passo dei numeri (di base 1; per esempio 0.1 per la soglia del ROS). */
   step?: number;
-  /** Le scelte di una voce `choice`: il valore che si salva e l'etichetta. */
-  options?: readonly { value: string; label: Key }[];
+  /** Le scelte di una voce `choice`: il valore che si salva e l'etichetta (da tradurre, o `text` gia' pronto come «50 Hz»). */
+  options?: readonly ({ value: string; label: Key } | { value: string; text: string })[];
 }
 
 /** I servizi con il pulsante «Prova»: invio diretto dei QSO, ricerche, spot, dati online, orologio e programmi collegati. */

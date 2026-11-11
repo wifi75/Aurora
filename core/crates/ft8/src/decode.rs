@@ -195,6 +195,19 @@ impl Options {
             deadline: None,
         }
     }
+
+    /// Porta a `depth` (1-3) solo le scelte che dipendono dalla profondita' (passate, OSD, soglia bassa, sottopassate, CQ a priori, "a7"),
+    /// lasciando com'erano le altre: e' «Fast/Normal/Deep» del menu Decode di WSJT-X (`NDepth & 7`) applicato alle opzioni di un periodo.
+    /// "a7" si spegne alla 1 ma non si accende se era spento (interruttore «a7/a8»).
+    pub fn set_depth(&mut self, depth: u8) {
+        let d = Options::depth(depth);
+        self.passes = d.passes;
+        self.osd_order = d.osd_order;
+        self.low_threshold = d.low_threshold;
+        self.subpass = d.subpass;
+        self.ap_cq = d.ap_cq;
+        self.a7 = self.a7 && d.a7;
+    }
 }
 
 /// Mette nella tabella degli hash i nominativi dati (per esempio quelli dei `*_ALL.TXT` di JTDX o dei decodificati degli ultimi giorni),
@@ -1509,6 +1522,19 @@ mod tests {
         assert_eq!(Options::depth(0).passes, 3);
         assert_eq!(Options::depth(9).passes, 9);
         assert!(Options::depth(3).low_threshold && !Options::depth(2).low_threshold);
+    }
+
+    #[test]
+    fn set_depth_cambia_solo_le_scelte_della_profondita() {
+        let mut o = Options { swl: true, threads: 4, a7: true, ..Options::depth(3) };
+        o.set_depth(1);
+        let one = Options::depth(1);
+        assert_eq!((o.passes, o.osd_order, o.low_threshold, o.subpass, o.ap_cq, o.a7), (one.passes, one.osd_order, false, false, false, false));
+        assert!(o.swl && o.threads == 4, "le altre scelte restano");
+        // "a7" spento dall'interruttore resta spento anche alla 3
+        let mut off = Options { a7: false, ..Options::depth(1) };
+        off.set_depth(3);
+        assert_eq!((off.passes, off.a7, off.low_threshold), (9, false, true));
     }
 
     #[test]

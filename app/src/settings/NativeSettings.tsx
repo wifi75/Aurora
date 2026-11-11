@@ -178,7 +178,7 @@ export function SettingField({ row, label, doc, draft, locked = false, className
         {!live ? <option value="" /> : null}
         {(row.options ?? []).map((o) => (
           <option key={o.value} value={o.value}>
-            {t(o.label)}
+            {'text' in o ? o.text : t(o.label)}
           </option>
         ))}
       </select>

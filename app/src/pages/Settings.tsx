@@ -24,6 +24,7 @@ import { AboutTab } from '../settings/AboutTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { SupportTab } from '../settings/SupportBox';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
+import { DECODER_ROWS } from '../settings/DecoderOptions';
 
 interface TabDef {
   id: string;
@@ -84,7 +85,7 @@ const keysOf = (groups: readonly SettingGroup[]): Key[] => groups.flatMap((g) =>
 const SEARCH: Partial<Record<string, readonly Key[]>> = {
   general: ['gen2.call', 'gen2.grid', 'gen2.monitorOff', 'gen2.logFilter', 'gen2.iaru', 'gen2.region', 'gen2.screen', 'gen.language', 'gen.theme'],
   sequence: [...keysOf(QSO_LOG_GROUPS), 'gen2.operation', 'gen2.watchdog', 'gen2.qsy', 'gen2.swr', 'gen2.txDelay', 'gen2.wsjtx3', 'gen2.fullDuplex', 'gen2.waitFeatures', 'gen2.fox', 'gen2.otpVerify', 'gen2.bandHop', 'gen2.bandHopOn'],
-  filters: ['fil.decode', 'gen2.decStart'],
+  filters: ['fil.decode', 'gen2.decStart', ...DECODER_ROWS.map((r) => r.label)],
   online: keysOf(SPOT_GROUPS),
   logservices: keysOf(LOG_SERVICE_GROUPS),
   reports: [...keysOf(LINK_GROUPS), 'int.title'],
