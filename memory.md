@@ -1,6 +1,17 @@
 # Memoria di progetto
 
-Stato al 2026-11-11, versione 0.11.236 (2026-11-11; da controllare i lavori Windows, Linux e macOS della release). Per riprendere il lavoro leggi anche `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-11 sera, versione 0.11.236 pubblicata (Windows e macOS verdi per la 0.11.235; per la 0.11.236 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+
+
+## Decisioni del 2026-11-11 (allineamento a WSJT-X 3.3.0-beta6)
+
+- **Riferimento unico**: WSJT-X 3.3.0-beta6 (sorgenti in `D:\MCP-Server\wsjtx-3.3.0-beta6\sorgenti`, binario `wsjtx.exe` analizzato con Ghidra da riga di comando). Ogni difetto si confronta con il binario e con il sorgente prima di correggerlo; JTDX non e' piu' il riferimento.
+- **Decodificatori**: FT8 (precedenza alla frequenza Rx con soglia 1,1, OSD 4 per il QSO, ritardo medio `avexdt`, analisi a priori per i nominativi non standard), FT4 (niente filtri in piu' di WSJT-X sui messaggi senza AP, candidati di `getcandidates4`), Q65 (media corrente con la lista del QSO, deriva, /P /R), JT65/JT9 (livello «Aggressive» 4, passate, finestra Rx, AP di JT65), MSK144 (ricevitore `msk144spd`/`msk144sync`, blocchi 0,6 s ogni 0,3 s). La ridecodifica filtrata `nagainfil` (±25 Hz, OSD 5) esiste in `ft8::decode::Options::again` ma il pulsante «Decodifica» non la usa, come WSJT-X.
+- **CAT**: OmniRig via COM diretto (`omnirig_com.rs`, niente PowerShell: era bloccato da antivirus e regole); Cat4OM nativo (`cat4om.rs`, Aurora e Log4OM sulla stessa radio); split Rig/Fake It con XIT come `setXIT` di WSJT-X, anche con OmniRig e TCI. Linux: prima `rigctld` del sistema, poi quello incluso (#41).
+- **Orologio**: ora cambiata con `SetSystemTime` (serve l'amministratore), correzione all'avvio in attesa della rete, ricontrollo ogni minuto se fuori tolleranza.
+- **Interfaccia**: avvisi, riquadro del nominativo e messaggi brevi stanno nel corpo della pagina (fuori da `.app-shell`, che con le Impostazioni aperte e' `inert`). Tolti i doppioni «Cancella» e «Spot DX» dai comandi. In trasmissione modo e frequenza bloccati con `aria-disabled`, senza cambiare colore.
+- **Rami**: `sviluppo` vive solo nel repository privato `wifi75/Aurora-sviluppo` (remote `sviluppo`); il 2026-11-11 era finito anche sul pubblico ed e' stato tolto. Dopo ogni push su `main` si fa il merge di `main` in `sviluppo`. L'installatore di sviluppo si compila a mano sul PC (`scripts/installatore-sviluppo.ps1`, dal ramo `sviluppo`).
+- **CPU del PC del proprietario**: compilazioni al massimo 12 thread, test `--test-threads=2`, una compilazione alla volta, priorita' bassa.
 
 ## Decisioni del 2026-11-10 notte (CW, log, PTT)
 

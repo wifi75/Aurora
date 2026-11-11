@@ -1,6 +1,15 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-10 notte)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-11 sera)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-11 sera (0.11.236 pubblicata)
+
+- **Release del 2026-11-11**: 0.11.233, 0.11.234, **0.11.235** (decodificatori allineati a WSJT-X 3.3.0-beta6, OmniRig via COM, Cat4OM nativo, split con XIT, Linux #41, ALSA, TCI) e **0.11.236** (DX Cluster con griglia e colonne spostabili, orologio, avvisi chiudibili con le Impostazioni aperte, riquadro QRZ leggibile, doppioni tolti). Per la 0.11.236 controllare che i lavori Windows, Linux e macOS siano verdi e che la release abbia gli installatori.
+- **Lavoro interrotto**: ramo `wip-fox` nel repository privato (`sviluppo/wip-fox`, commit `0edd6517`): righe Fox (DXpedition) leggibili in Attivita' di banda e finestra Rx, e filtro `chkspecial8var` di WSJT-X sui messaggi Fox dubbi. Da finire, provare (`cargo test -p ft8`, vitest su DecodeList) e portare su `main`.
+- **Ramo `sviluppo`** (privato): contiene tutto `main` (merge `8093bcaa`) piu' SSTV con la pagina nuova (spettro sottile, log compatto, impostazioni nella categoria SSTV con l'ingranaggio). L'installatore di sviluppo il proprietario lo compila a casa.
+- **Da provare dal vivo** (proprietario): OmniRig via COM (FT-710, FTdx3000), Cat4OM con Log4OM (CT1BXX), split Fake It, TCI, MSK144 vero, pagina SSTV. Lo split dal cluster e' gia' provato e funziona.
+- **Prossimi lavori**: finire `wip-fox`; poi JT65 sottomodi B/C e media `avg65`; FST4/FST4W (circa 3000 righe); WSPR (circa 2200 righe); MSK144 periodo 30 s e «Sh» in trasmissione; caselle del menu Decode di WSJT-X che mancano (Auto Clear Avg, Include averaging, Aggressive, Single decode, F Tol per JT65/JT9/MSK144); guida «Collegare la radio» per modello (FTdx101, FT-991A, IC-7300...); traduzione olandese (#43, file da preparare per ON7KEC).
+- **Segnalazioni aperte con risposta da dare**: #38 (OmniRig, F1DSZ), #41 (Linux), #43 (olandese). Ogni risposta agli utenti chiude con il P.S. della stella su GitHub.
 
 ## Stato al 2026-11-10 notte (0.11.232 in pubblicazione, ramo sviluppo con la CW)
 
