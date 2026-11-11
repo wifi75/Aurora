@@ -28,6 +28,17 @@ Parti di Aurora sono traduzioni in Rust, con modifiche, di algoritmi di programm
 
 `hashlittle` (`engine-native/src/ultrafox.rs`) viene da `lookup3.c` di Bob Jenkins, dominio pubblico.
 
+## PSK, RTTY, CW e SSTV (GPL-3) e satelliti
+
+I modi testuali e l'SSTV sono scritti da capo in Rust (`core/crates/mode-digi`, `core/crates/mode-sstv`); da questi programmi GPL-3 riprendono tabelle, parametri e schemi, e lo dicono nei commenti dei file. Le copie dei sorgenti, usate solo per leggere, stanno in `terze-parti/` e non entrano nell'installatore.
+
+| Da | Copyright | Parti di Aurora |
+|---|---|---|
+| [fldigi](https://sourceforge.net/projects/fldigi/) 4.2.13 | © Dave Freese W1HKJ e altri | tabelle Baudot di RTTY (`rtty.rs`), tabella varicode di PSK31 (`varicode.rs`, a sua volta adattata da gmfsk), parametri dei modi PSK, RTTY e CW |
+| [QSSTV](https://github.com/ON4QZ/QSSTV) | © Johan Maes ON4QZ | schema del decodificatore SSTV, conversioni di colore e demodulatore (`core/crates/mode-sstv`: `decoder.rs`, `color.rs`, `demod.rs`) | si prendono solo funzioni, parametri e comportamento (macro, pulsanti, pagine), mai codice.
+
+I satelliti usano la libreria Rust [`sgp4`](https://crates.io/crates/sgp4) (MIT) per le orbite. I dati delle orbite (TLE) si scaricano a richiesta da [CelesTrak](https://celestrak.org), [AMSAT](https://www.amsat.org) e [SatNOGS DB](https://db.satnogs.org) (o da altri server scelti dall'utente): non sono inclusi nel programma e restano dei loro autori, secondo le condizioni dei rispettivi siti.
+
 ## Hamlib e DLL incluse nell'installatore di Windows
 
 Nella cartella `hamlib` accanto al programma l'installatore porta, **non modificati**, i file del pacchetto Windows ufficiale di Hamlib 4.7.2 (`hamlib-w64-4.7.2.zip` dalle release di https://github.com/Hamlib/Hamlib, SHA-256 verificato dallo script `scripts/prepara-hamlib.ps1`; in alternativa copiati da JTDX o WSJT-X): `rigctld.exe`, `rigctl.exe`, `libhamlib-4.dll`, `libusb-1.0.dll`, `libwinpthread-1.dll`. Versione e SHA-256 sono in `hamlib\VERSIONE.txt`.
