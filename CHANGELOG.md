@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **DXpedition**: nella riga dell'elenco, nello spazio libero accanto al paese, la via QSL accorciata («LoTW», «OQRS», «via M0OXO»); intera passandoci sopra.
 - **DX Cluster, colonna Modo anche per CW, SSB e gli altri modi**: se il commento non dice il modo, Aurora lo prende dalle frequenze di lavoro di FT8, FT4, JS8, WSPR e PSK31 e poi dal band plan IARU Regione 1 (CW nei tratti solo CW, SSB in quelli della fonia, FM sopra 29,52 MHz); nei tratti misti resta vuoto. Il commento riconosce anche VARA, JS8, Q65, FST4, Olivia, MFSK, FreeDV. Filtro Modo con FM, JS8, VARA, SSTV, JT65, Q65, MSK144, WSPR. Guida in sei lingue.
 - **Cat4OM con la scoperta automatica**: come Decodium, Aurora chiede alla porta di gestione di Cat4OM (127.0.0.1:17300) il gruppo e la sua porta Control (per esempio 5001) e avvia il gruppo se e' fermo; i campi Gruppo e Control vuoti mostrano in grigio quelli trovati. Messaggi chiari se la porta di gestione non risponde o chiede la password.
 - **Split DX** dal DX Cluster: doppio clic su uno spot con «UP 5», «5UP», «10up», «DN 2» o «QSX 14.030» nei commenti mette la radio in ricezione sullo spot (VFO A) e in trasmissione sul VFO B spostato, con lo split acceso (Hamlib, OmniRig, TCI, Cat4OM); etichetta «UP 5» nella riga, indicatore con «Split DX: spegni», interruttore in Impostazioni › DX Cluster (acceso di fabbrica), Guida in sei lingue.

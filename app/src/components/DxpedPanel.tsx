@@ -9,6 +9,7 @@ import { senderOf } from '../lib/wishlist';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
 import { coreText } from '../lib/coreText';
+import { qslShort } from '../lib/qslShort';
 
 /** Oggi come `AAAA-MM-GG` (UTC, come il calendario NG3K). */
 export function today(now = new Date()): string {
@@ -164,7 +165,13 @@ export function DxpedPanel({ heardCalls, foxCalls = [], keepDays = 15, soonDays 
               <strong className="data dxped-call">{d.call}</strong>
               <span className="dxped-country">
                 {flagCode(d.country) ? <span className={`fi fi-${flagCode(d.country)} dxped-flag`} aria-hidden="true" /> : null}
-                {d.country}
+                <span className="dxped-country-name">{d.country}</span>
+                {/* la via QSL accorciata nello spazio libero della riga (scelta del proprietario 2026-11-11); intera nel suggerimento */}
+                {qslShort(d.qsl) ? (
+                  <span className="data dxped-qsl" title={`QSL ${d.qsl}`}>
+                    {qslShort(d.qsl)}
+                  </span>
+                ) : null}
               </span>
               {foxCalls.includes(d.call.toUpperCase()) ? (
                 <span className="badge badge--fox" title={t('tip.dxp.fox')}>
