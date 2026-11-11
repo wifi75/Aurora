@@ -54,13 +54,7 @@
 .digi-wf-grip:hover, .digi-wf-grip:active { background: rgb(142 123 255 / 0.55); }
 
 /* il log: righe giallo chiaro con il testo viola, in fondo la riga azzurra del QSO in corso con i campi sul posto */
-.digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #f7f4b4; }
 .digi-log-table--completa table { min-width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--log-size, 12px); font-family: var(--log-font, inherit); font-variant-numeric: tabular-nums; }
-.digi-log-table--completa th { position: sticky; top: 0; background: #d4d0c8; color: #000; text-transform: none; letter-spacing: 0; font-size: 1em; font-weight: 400; border: 1px solid #808080; padding: 0.17em 0.5em; text-align: left; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.digi-log-table--completa td { background: #f7f4b4; color: #4b0a96; padding: 0.17em 0.5em; border: 1px solid #d8d494; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.digi-log-table--completa td b { color: #4b0a96; font-weight: 700; }
-.digi-log-table--completa tr.digi-log-cur td { background: #8ff; color: #000; border-color: #5cc; }
-.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #0a8; background: #fff; color: #000; font: inherit; padding: 0 0.25em; height: 1.6em; }
 .digi-log-bar { flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--border); }
 
 /* l'area centrale si restringe quanto serve: la cascata e le barre in fondo salgono e restano tutte in vista */
@@ -77,9 +71,34 @@
 .digi-rxctl .digi-hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* colonne regolabili come in Excel: si trascina il bordo destro dell'intestazione, doppio clic per adattarla al contenuto */
-.digi-log-table--completa th { position: sticky; }
 .digi-colgrip { position: absolute; top: 0; right: -3px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
 .digi-colgrip::after { content: ""; position: absolute; top: 15%; bottom: 15%; left: 4px; width: 1px; background: transparent; }
-.digi-log-table--completa th:hover .digi-colgrip::after, .digi-colgrip:hover::after { background: #0a8; width: 2px; left: 3px; }
 .digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #808080; background: #e4e0d8; color: #000; font: inherit; cursor: pointer; text-align: left; }
 .digi-colpop-btn:hover { background: #fff; }
+
+/* aspetto «colore per banda»: tabella scura, barra colorata della banda a sinistra, modo come etichetta, rapporti verdi/ambra/rossi */
+.digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #0f1629; }
+.digi-log-table--completa th { position: sticky; top: 0; z-index: 1; background: #172040; color: #9db0da; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.82em; font-weight: 600; border: 0; border-bottom: 1px solid #26345f; padding: 0.4em 0.6em; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa td { background: transparent; color: #d7e3ff; padding: 0.3em 0.6em; border: 0; border-bottom: 1px solid #1b2748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa td:first-child { border-left: 0.4em solid var(--b, #1b2748); color: #8ea2cf; }
+.digi-log-table--completa td b { color: #fff; font-weight: 700; }
+.digi-log-table--completa tbody tr:hover td { background: #16204a; }
+.digi-log-table--completa tr.digi-log-cur td { background: #12385a; color: #fff; border-bottom-color: #1f6fa8; }
+.digi-log-table--completa tr.digi-log-cur td:first-child { border-left-color: #38bdf8; color: #fff; }
+.digi-mode-badge { display: inline-block; padding: 0.05em 0.55em; border-radius: 0.4em; color: #0b1020; font-weight: 700; font-size: 0.88em; line-height: 1.4; }
+.rst-good { color: #34d399; }
+.rst-mid { color: #fbbf24; }
+.rst-low { color: #fb7185; }
+.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #38bdf8; border-radius: 0.3em; background: #0a1324; color: #fff; font: inherit; padding: 0 0.3em; height: 1.6em; }
+html[data-theme='light'] .digi-log-table--completa { background: #ffffff; }
+html[data-theme='light'] .digi-log-table--completa th { background: #e8edf7; color: #46556f; border-bottom-color: #c5cfe3; }
+html[data-theme='light'] .digi-log-table--completa td { color: #0b1322; border-bottom-color: #e3e9f6; }
+html[data-theme='light'] .digi-log-table--completa td:first-child { color: #52617d; }
+html[data-theme='light'] .digi-log-table--completa td b { color: #000; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:hover td { background: #eef3fd; }
+html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td { background: #d8efff; color: #000; border-bottom-color: #8ac4ee; }
+html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td:first-child { border-left-color: #0284c7; color: #000; }
+html[data-theme='light'] .rst-good { color: #047857; } html[data-theme='light'] .rst-mid { color: #b45309; } html[data-theme='light'] .rst-low { color: #be123c; }
+html[data-theme='light'] .digi-cur-in { background: #fff; color: #000; }
+.digi-log-table--completa th:hover .digi-colgrip::after, .digi-colgrip:hover::after { background: #38bdf8; width: 2px; left: 3px; }
+.digi-colpop-btn { border-radius: 6px; }

@@ -4,6 +4,7 @@ import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
 import { getLog4om, type ClusterSpot, type Log4omQso } from '../../api/client';
+import { bandColor } from '../../lib/mapColors';
 import { useT } from '../../i18n';
 
 export interface Qso {
@@ -88,10 +89,23 @@ const COL_LABEL = {
   call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr',
 } as const;
 
+/** Il colore del modo nell'etichetta. */
+const MODE_COLORS: Record<string, string> = { RTTY: '#60a5fa', PSK31: '#c084fc', PSK63: '#c084fc', PSK: '#c084fc', CW: '#fbbf24', FT8: '#34d399', FT4: '#2dd4bf', SSTV: '#fb923c' };
+const modeColor = (m: string) => MODE_COLORS[m.toUpperCase()] ?? '#94a3b8';
+
+/** Rapporto buono (verde), medio (ambra) o debole (rosso): 59 o piu' e dB a -10 o meglio sono buoni. */
+function rstClass(v: string): string {
+  const n = Number(v);
+  if (!Number.isFinite(n) || v.trim() === '') return '';
+  if (/^[+-]d{1,2}$/.test(v.trim())) return n >= -10 ? 'rst-good' : n >= -18 ? 'rst-mid' : 'rst-low';
+  const r = Math.floor(n / 10);
+  return r >= 59 ? 'rst-good' : r >= 45 ? 'rst-mid' : 'rst-low';
+}
+
 function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
   switch (c) {
     case 'num': return nr;
-    case 'mode': return q.mode;
+    case 'mode': return q.mode === '' ? '' : <span className="digi-mode-badge" style={{ background: modeColor(q.mode) }}>{q.mode}</span>;
     case 'band': return q.band;
     case 'freq': return khz(q.freq_hz ?? 0);
     case 'date': return dmy(q.date.slice(0, 10));
@@ -101,8 +115,8 @@ function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
     case 'qth': return q.qth ?? '';
     case 'country': return q.country;
     case 'grid': return q.grid;
-    case 'rstS': return q.rst_sent;
-    case 'rstR': return q.rst_rcvd;
+    case 'rstS': return <span className={rstClass(q.rst_sent)}>{q.rst_sent}</span>;
+    case 'rstR': return <span className={rstClass(q.rst_rcvd)}>{q.rst_rcvd}</span>;
   }
 }
 
@@ -354,7 +368,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                   ))}
                 </tr>
                 {rows.map(({ q, nr }) => (
-                  <tr key={nr}>
+                  <tr key={nr} style={{ '--b': bandColor(q.band) } as React.CSSProperties}>
                     {cols.map((c) => (
                       <td key={c}>{cell(q, nr, c)}</td>
                     ))}
