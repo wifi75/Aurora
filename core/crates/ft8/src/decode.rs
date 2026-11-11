@@ -88,13 +88,17 @@ pub struct Options {
     pub f_high_hz: f32,
     /// Soglia di sincronismo dei candidati (1,5 normale; con `low_threshold` si usa invece la rotazione di JTDX).
     pub min_sync: f32,
-    /// Numero massimo di candidati per passata.
+    /// Numero massimo di candidati per passata. WSJT-X ne tiene fino a 450 (460 con quelli sulla frequenza di ricezione) per ognuna
+    /// delle fette di banda dei suoi thread (`sync8var.f90:296` e `:375`); qui la banda e' una sola e il tetto resta 300, perche' il
+    /// limite di tempo ([`Options::deadline`]) si controlla solo tra una passata e l'altra e una passata con 450 candidati su una banda
+    /// affollata dura una volta e mezza di piu'.
     pub max_candidates: usize,
     /// Passate (JTDX: 3, 6 o 9, secondo "i cicli": vedi [`Options::depth`]).
     pub passes: usize,
     /// Iterazioni della propagazione di credenze.
     pub bp_iterations: usize,
-    /// Ordine dell'OSD (0 = nessuno; JTDX usa `ndeep = 3`).
+    /// Ordine dell'OSD (0 = nessuno; JTDX usa `ndeep = 3`). E' la profondita' di base: i segnali del QSO vicino alla frequenza di
+    /// ricezione o di trasmissione salgono a 4 e la ridecodifica ([`Options::again`]) a 5 (vedi `osd_depth`).
     pub osd_order: usize,
     /// `lft8lowth`: `syncmin` a rotazione 1,225 / 1,5 / 1,1 sulle passate (1, 4, 7), (2, 5, 8) e (3, 6, 9).
     pub low_threshold: bool,
@@ -112,7 +116,15 @@ pub struct Options {
     /// testo e `nsync >= 7`.
     pub filters: bool,
     /// Ritardo medio delle stazioni sentite (`avexdt`, secondi): la finestra di ricerca del ritardo si sposta di `avexdt * 25` passi.
+    /// Si aggiorna da un periodo all'altro con [`DtCenter`].
     pub dt_center_s: f32,
+    /// Frequenza di ricezione (`nfqso`, Hz): entro +-3 Hz la soglia dei candidati e' 1,1 e quei candidati si provano per primi
+    /// (`sync8var.f90:290-293` e `:344-377` di WSJT-X 3.3.0-beta6). `None`: nessuna.
+    pub rx_freq_hz: Option<f32>,
+    /// Ridecodifica filtrata (`nagainfil` di WSJT-X; la sua interfaccia non la attiva mai, e il pulsante «Decodifica» di Aurora neppure): solo +-25 Hz attorno a [`Options::rx_freq_hz`] e OSD di
+    /// profondita' 5 (`ft8_engine_kernel.f90:350-362`, `ft8bvar.f90:2165`). Senza frequenza di ricezione, o con la frequenza fuori
+    /// banda, non si decodifica niente (`nfqso is out of bandwidth`).
+    pub again: bool,
     /// Analisi a priori per il proprio nominativo e il QSO (`None`: solo il tipo CQ, se acceso).
     pub ap: Option<ApOptions>,
     /// Tipo a priori 1, `CQ ??? ???`: non richiede di sapere niente.
@@ -168,6 +180,8 @@ impl Options {
             immediate_subtraction: true,
             filters: true,
             dt_center_s: 0.0,
+            rx_freq_hz: None,
+            again: false,
             ap: None,
             ap_cq: depth > 1,
             call_book: None,
@@ -192,6 +206,88 @@ pub fn seed_call_hashes<'a, I: IntoIterator<Item = &'a str>>(hashes: &mut CallHa
         hashes.save_call(call);
     }
     hashes.len().saturating_sub(before)
+}
+
+/// Il ritardo medio delle stazioni sentite (`avexdt` di WSJT-X 3.3.0-beta6), da un periodo FT8 all'altro: centra la finestra in cui si
+/// cerca il ritardo dei candidati ([`Options::dt_center_s`], `ft8_decodevar.f90:172-173`), cosi' con l'orologio del PC spostato
+/// i segnali non finiscono al bordo della finestra.
+///
+/// Dopo ogni decodifica si chiama [`DtCenter::update`] con i ritardi dei messaggi nell'ordine in cui sono usciti
+/// (`ft8_engine_kernel.f90:444-478`): con 0 messaggi torna a 0; con 1-5 si sposta verso la media del periodo con un peso che cresce
+/// col numero dei messaggi; con piu' di 5 va a meta' strada tra il valore di prima e la media. La media e' quella delle mediane di
+/// tre messaggi consecutivi (`ft8_timing_summary`, `decoder_callbacks.f90:381-419`), cosi' un ritardo strano non la tira.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct DtCenter {
+    avexdt: f32,
+    /// `nintcount`: dopo un cambio di modo, alla seconda decodifica con piu' di 10 messaggi si prende subito la media del periodo.
+    nintcount: u8,
+}
+
+/// I ritardi che contano per `avexdt` (`xdtt(200)` di `decoder_callbacks.f90:63`).
+const AVEXDT_MAX_DECODES: usize = 200;
+
+impl DtCenter {
+    /// Il ritardo medio in secondi, da mettere in [`Options::dt_center_s`].
+    pub fn value(&self) -> f32 {
+        self.avexdt
+    }
+
+    /// Cambio di modo: si riparte da 0 e la media veloce torna possibile (`lmodechanged`, `ft8_engine_kernel.f90:254-257`).
+    pub fn mode_changed(&mut self) {
+        self.avexdt = 0.0;
+        self.nintcount = 3;
+    }
+
+    /// Aggiorna il ritardo medio con i ritardi (`dt_s`) dei messaggi di un periodo, nell'ordine in cui sono usciti.
+    pub fn update(&mut self, dts: &[f32]) {
+        let (n, sumxdt) = timing_summary(dts);
+        // `ft8_engine_kernel.f90:447-472` (`forcedt` vale sempre 0)
+        self.nintcount = self.nintcount.saturating_sub(1);
+        let a = self.avexdt;
+        let mean = if n > 0 { sumxdt / n as f32 } else { 0.0 };
+        self.avexdt = match n {
+            0 => 0.0,
+            1 => (1.75 * a + 0.25 * sumxdt) / 2.0,
+            2 => (1.5 * a + 0.5 * mean) / 2.0,
+            3 => (1.35 * a + 0.65 * mean) / 2.0,
+            4 => (1.25 * a + 0.75 * mean) / 2.0,
+            5 => (1.1 * a + 0.9 * mean) / 2.0,
+            _ => (a + mean) / 2.0,
+        };
+        // `ft8_engine_kernel.f90:474`: media veloce dopo un cambio di modo su una banda affollata
+        if n > 10 && self.nintcount == 1 {
+            self.avexdt = mean;
+        }
+    }
+}
+
+/// `ft8_timing_summary` (`decoder_callbacks.f90:381-419`): quanti ritardi contano (al piu' 200) e la somma delle mediane di tre
+/// ritardi consecutivi; gli ultimi due ripetono l'ultima mediana. Con 1 o 2 ritardi la somma e' quella semplice.
+fn timing_summary(dts: &[f32]) -> (usize, f32) {
+    let x = &dts[..dts.len().min(AVEXDT_MAX_DECODES)];
+    let count = x.len();
+    if count <= 2 {
+        return (count, x.iter().sum());
+    }
+    let mut sumdt = 0.0f32;
+    let mut dtmed = 0.0f32;
+    for i in 0..count {
+        // `if(i.lt.count-1)` con gli indici da 1: c'e' ancora una terna completa
+        if i + 2 < count {
+            let (a, b, c) = (x[i], x[i + 1], x[i + 2]);
+            dtmed = if (a > b && a < c) || (a < b && a > c) {
+                a
+            } else if (b > a && b < c) || (b < a && b > c) {
+                b
+            } else if (c > a && c < b) || (c < a && c > b) {
+                c
+            } else {
+                a
+            };
+        }
+        sumdt += dtmed;
+    }
+    (count, sumdt)
 }
 
 /// L'audio di JTDX e' a 16 bit (±32768): i campioni normalizzati a ±1 si riportano a quella scala, su cui sono tarate le soglie.
@@ -240,6 +336,18 @@ pub fn decode_slot_streaming(
     history: Option<&mut PeriodHistory>,
     on_pass: &mut dyn FnMut(&[DecodedInfo]),
 ) -> Vec<DecodedInfo> {
+    // ridecodifica a mano: banda di 50 Hz attorno alla frequenza di ricezione, niente se questa e' fuori dalla banda
+    // (`nfa=max(nfa,nfqso-25)`, `nfb=min(nfb,nfqso+25)`, `ft8_engine_kernel.f90:350-362` di WSJT-X 3.3.0-beta6)
+    let narrowed;
+    let options = if options.again {
+        let Some(rx) = options.rx_freq_hz.filter(|rx| *rx >= options.f_low_hz && *rx <= options.f_high_hz) else {
+            return Vec::new();
+        };
+        narrowed = Options { f_low_hz: options.f_low_hz.max(rx - 25.0), f_high_hz: options.f_high_hz.min(rx + 25.0), ..options.clone() };
+        &narrowed
+    } else {
+        options
+    };
     let mut reported = 0usize;
     let mut audio: Vec<f32> = samples.iter().take(SLOT_SAMPLES).map(|&x| x * SCALE).collect();
     audio.resize(SLOT_SAMPLES, 0.0);
@@ -258,7 +366,9 @@ pub fn decode_slot_streaming(
     let ap_ctx = ApContext::new(&ap_options);
     let mut qso_decoded = false;
     let mut audio_before_shift: Option<Vec<f32>> = None;
-    let jz = |center: f32, base: i32| base + (center * 25.0) as i32;
+    // `jzb=-62 + avexdt*25.` (`ft8_decodevar.f90:172-173`): la somma si tronca verso lo zero quando va nell'intero. Il ritardo medio
+    // resta nei limiti dei candidati (-2..3 s): un valore fuori non sposta la finestra oltre lo spettrogramma.
+    let jz = |center: f32, base: i32| (base as f32 + center.clamp(-2.0, 3.0) * 25.0) as i32;
     let mut history = history;
     // l'audio dopo l'ultima passata che ha tolto qualcosa: su questo lavorano "a7" e "a8"
     let mut residual = audio.clone();
@@ -299,7 +409,7 @@ pub fn decode_slot_streaming(
 
         let half_window = if options.swl { 86 } else { 62 };
         let window = (jz(options.dt_center_s, -half_window), jz(options.dt_center_s, half_window));
-        let candidates = sync::find_candidates_agc(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window, options.swl, agcc.then_some(ipass));
+        let candidates = sync::find_candidates_agc(&audio, options.f_low_hz, options.f_high_hz, syncmin, options.max_candidates, Spectrum::for_pass(ipass), window, options.swl, agcc.then_some(ipass), options.rx_freq_hz);
         if candidates.is_empty() {
             continue;
         }
@@ -555,6 +665,10 @@ struct Flags {
     my_ratio: f32,
     my_matches: usize,
     qso_type3: bool,
+    /// `lqsosig` di `ft8bvar.f90:808`: piu' di 6 dei primi 19 simboli di dati hanno i toni di "MYCALL DXCALL" (serve solo alla profondita' dell'OSD).
+    qso_signal: bool,
+    /// `ldxcsig` di `ft8bvar.f90:864` (DX con nominativo standard): piu' di 3 dei simboli 10-19 hanno i toni del nominativo del DX.
+    dx_signal: bool,
     qso_73: bool,
     qso_rr73: bool,
     qso_rrr: bool,
@@ -628,6 +742,7 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
     if ctx.ap.my_ok && ctx.ap.his_ok {
         if !ctx.qso_decoded && (dfqso < o.width_hz || near_tx) && o.my_call_active {
             let n19 = ap::tone_matches(s8, &ctx.ap.qso_tones[..19], 0);
+            fl.qso_signal = n19 > 6;
             let n22 = n19 + ap::tone_matches(s8, &ctx.ap.qso_tones[19..22], 19);
             fl.qso_type3 = n22 > 3;
         }
@@ -651,6 +766,7 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
         // simboli 10-19 di dati: il nominativo del DX (`idtone56(1,k)`, k = 10..19)
         let ndxt = ap::tone_matches(s8, &ctx.ap.qso_tones[9..19], 9);
         fl.ndxt = ndxt;
+        fl.dx_signal = ndxt > 3;
         fl.cq_dx = fl.cq_signal && ndxt > 3;
     }
     if ctx.ap.my_ok && ctx.ap.his_ok {
@@ -659,6 +775,43 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
             o.my_call_active && fl.ndxt > 2 && fl.my_matches > 2 && !ctx.qso_decoded && dfqso < o.width_hz / 2.0;
     }
     fl
+}
+
+/// La profondita' dell'OSD per questo candidato e tipo a priori (`ndeep` di `ft8bvar.f90:2153-2165`, WSJT-X 3.3.0-beta6): quella di base
+/// ([`Options::osd_order`], 3 come in WSJT-X), 4 per un segnale del QSO o per noi (`lqsosig`, `lmycsignal`) entro `napwid` dalla
+/// frequenza di ricezione o, con il proprio nominativo attivo, da quella di trasmissione, tranne che senza tipo a priori, a QSO gia'
+/// decodificato o mentre si trasmette a un DX (li' lo prende il decoder del QSO); 4 anche per il nominativo del DX cercato in ricezione
+/// libera entro `napwid` dalla ricezione (`ldxcsig .and. stophint`); 5 nella ridecodifica a mano (`nagainfil`). Il costo resta
+/// limitato: il 4 tocca solo i candidati vicini alle frequenze del QSO con i toni attesi, il 5 solo la banda di 50 Hz della ridecodifica.
+/// Mancano `lhound` (in Hound qui non c'e' analisi a priori, quindi resta la base) e `ldxcsig` per un DX con nominativo non standard.
+fn osd_depth(ctx: &PassContext, fl: &Flags, aptype: u8, f1: f32) -> usize {
+    let base = ctx.options.osd_order;
+    if base == 0 {
+        return 0;
+    }
+    if ctx.options.again {
+        return 5;
+    }
+    let o = &ctx.ap.opts;
+    let dfqso = o.rx_freq_hz.map_or(f32::MAX, |r| (r - f1).abs());
+    let near_tx = o.tx_freq_hz.is_some_and(|t| (t - f1).abs() < o.width_hz);
+    let mut deep = false;
+    if fl.qso_signal || fl.my_signal {
+        if dfqso < o.width_hz || (near_tx && o.my_call_active) {
+            deep = true;
+        }
+        // `if(lapmyc .and. ft8_qso_hints_suppressed() .or. iaptype.eq.0) ndeep=3`: in Fortran `.and.` lega piu' di `.or.`
+        if (o.my_call_active && ctx.qso_decoded) || aptype == 0 {
+            deep = false;
+        }
+        if !o.idle && o.hiscall.trim().len() > 2 {
+            deep = false;
+        }
+    }
+    if fl.dx_signal && o.idle && dfqso < o.width_hz {
+        deep = true;
+    }
+    if deep { base.max(4) } else { base }
 }
 
 /// Quali tipi a priori valgono la pena su questo candidato (le condizioni `cycle` di `ft8b` per nominativi standard).
@@ -904,10 +1057,11 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
                 aptype = t;
             }
 
-            // BP, e se non basta OSD
+            // BP, e se non basta OSD con la profondita' di questo candidato (`ft8bvar.f90:2153-2168`)
+            let ndeep = osd_depth(ctx, &flags, aptype, refined.freq_hz);
             let quality = match ldpc::bp_decode_masked(&llrz, &mask, options.bp_iterations) {
                 Some(q) => q,
-                None if options.osd_order > 0 => match ldpc::osd_decode_masked(&llrz, &mask, options.osd_order) {
+                None if ndeep > 0 => match ldpc::osd_decode_masked(&llrz, &mask, ndeep) {
                     Some(q) => q,
                     None => continue,
                 },
@@ -1492,5 +1646,45 @@ mod tests {
             noise_false += decode_slot_with_history(&slot(&[], 8100 + seed), &Options::depth(2), &mut hashes, &mut history).len();
         }
         println!("a7 solo rumore dopo una banda affollata: {noise_false} falsi su 50 periodi");
+    }
+
+    #[test]
+    fn ritardo_medio_come_wsjtx() {
+        // mediane di tre consecutivi, le ultime due ripetute (`decoder_callbacks.f90:381-419`)
+        assert_eq!(timing_summary(&[]), (0, 0.0));
+        let (n2, s2) = timing_summary(&[0.4, 0.2]);
+        assert!(n2 == 2 && (s2 - 0.6).abs() < 1e-6);
+        let (n, s) = timing_summary(&[0.1, 0.3, 0.2, 2.0]);
+        // terne (0.1,0.3,0.2) -> 0.2, (0.3,0.2,2.0) -> 0.3, poi 0.3 ripetuto due volte
+        assert_eq!(n, 4);
+        assert!((s - 1.1).abs() < 1e-6, "{s}");
+        assert_eq!(timing_summary(&vec![0.5; 250]).0, 200);
+
+        let mut c = DtCenter::default();
+        c.update(&[0.4]);
+        assert!((c.value() - 0.05).abs() < 1e-6, "{}", c.value());
+        // piu' di 5 messaggi: meta' strada tra il valore di prima e la media
+        c.update(&[0.6; 8]);
+        assert!((c.value() - 0.325).abs() < 1e-6, "{}", c.value());
+        // nessun messaggio: si torna a 0 (`ft8_engine_kernel.f90:451-452` e `:478`)
+        c.update(&[]);
+        assert_eq!(c.value(), 0.0);
+        // dopo un cambio di modo, alla seconda decodifica con piu' di 10 messaggi si prende la media del periodo (`:474`)
+        c.mode_changed();
+        c.update(&[0.3; 12]);
+        assert!((c.value() - 0.15).abs() < 1e-6, "{}", c.value());
+        c.update(&[0.3; 12]);
+        assert!((c.value() - 0.3).abs() < 1e-6, "{}", c.value());
+    }
+
+    #[test]
+    fn la_ridecodifica_senza_ricezione_in_banda_non_decodifica() {
+        let audio = vec![0.0f32; SLOT_SAMPLES];
+        let mut hashes = CallHashes::default();
+        let mut o = Options::depth(1);
+        o.again = true;
+        assert!(decode_slot_detailed(&audio, &o, &mut hashes, None).is_empty());
+        o.rx_freq_hz = Some(5000.0);
+        assert!(decode_slot_detailed(&audio, &o, &mut hashes, None).is_empty());
     }
 }
