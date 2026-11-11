@@ -19,9 +19,9 @@ pub const SOURCES: [&str; 2] = [
 
 /// I server proposti nella pagina delle impostazioni: nome e indirizzo.
 pub const PRESETS: [(&str, &str); 4] = [
-    ("CelesTrak Â· radioamatori", "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle"),
-    ("CelesTrak Â· stazioni (ISS)", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"),
-    ("AMSAT Â· nasabare", "https://www.amsat.org/tle/current/nasabare.txt"),
+    ("CelesTrak · radioamatori", "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle"),
+    ("CelesTrak · stazioni (ISS)", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"),
+    ("AMSAT · nasabare", "https://www.amsat.org/tle/current/nasabare.txt"),
     ("SatNOGS", "https://db.satnogs.org/api/tle/?format=3le"),
 ];
 

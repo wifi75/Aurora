@@ -17,6 +17,14 @@ const FIGURES: [u8; 32] = [
 ];
 /// Distanza dei filtri di controllo dell'AFC dai due toni (Hz).
 const PROBE_HZ: f32 = 8.0;
+/// Distanza dei due filtri del rumore (uno sotto il mark, uno sopra lo space): servono a capire se c'e' un segnale RTTY stretto o solo rumore.
+const NOISE_GAP_HZ: f32 = 110.0;
+/// L'AFC si accende quando i due toni superano il rumore di questo rapporto (in ampiezza, circa 11 dB) e si spegne sotto l'altro (circa 6 dB).
+const LOCK_ON: f32 = 3.5;
+const LOCK_OFF: f32 = 2.0;
+/// Quanto sposta l'AFC a ogni bit (Hz per unita' di errore), e dopo quanti bit senza segnale (circa 8 s) la correzione rientra piano verso la frequenza scelta.
+const AFC_GAIN: f32 = 0.4;
+const AFC_HOLD_BITS: u32 = 360;
 const FIGS: u8 = 27;
 const LTRS: u8 = 31;
 
@@ -138,6 +146,15 @@ pub struct RttyDemodulator {
     /// Quattro filtri appena sopra e sotto i due toni: dicono da che parte la portante e' scivolata.
     probes: [Tone; 4],
     probe_count: usize,
+    /// Due filtri lontani dai toni per misurare il rumore, e le medie lente che servono all'AFC: ampiezza dei due toni, del rumore, errore.
+    noise: [Tone; 2],
+    mark_avg: f32,
+    space_avg: f32,
+    noise_avg: f32,
+    err_avg: f32,
+    /// C'e' un segnale RTTY (l'AFC lavora solo allora) e da quanti bit non c'e' piu'.
+    locked: bool,
+    lost_bits: u32,
     len: usize,
     pos: usize,
     mark: Tone,
@@ -166,6 +183,13 @@ impl RttyDemodulator {
                 Tone::new(s - PROBE_HZ, len),
             ],
             probe_count: 0,
+            noise: [Tone::new(params.mark_hz - NOISE_GAP_HZ, len), Tone::new(s + NOISE_GAP_HZ, len)],
+            mark_avg: 0.0,
+            space_avg: 0.0,
+            noise_avg: 0.0,
+            err_avg: 0.0,
+            locked: false,
+            lost_bits: 0,
             len,
             pos: 0,
             mark: Tone::new(params.mark_hz, len),
@@ -209,6 +233,46 @@ impl RttyDemodulator {
             let f = if i < 2 { mark } else { space };
             t.retune(f + if i % 2 == 0 { PROBE_HZ } else { -PROBE_HZ });
         }
+        self.noise[0].retune(mark - NOISE_GAP_HZ);
+        self.noise[1].retune(space + NOISE_GAP_HZ);
+    }
+
+    /// L'AFC, una volta per bit. Si muove solo se c'e' un segnale RTTY: i due toni devono superare di molto il rumore misurato fuori dalla coppia
+    /// (un segnale largo, la voce o il solo rumore alzano anche quello e non passano). Senza segnale resta fermo e, dopo circa 8 secondi,
+    /// rientra piano verso la frequenza scelta, cosi' la stazione dopo si cerca da li'.
+    fn afc_step(&mut self, m: f32, sp: f32, p: &[f32; 4], nz: &[f32; 2]) {
+        const SMOOTH: f32 = 0.15;
+        self.mark_avg += SMOOTH * (m - self.mark_avg);
+        self.space_avg += SMOOTH * (sp - self.space_avg);
+        self.noise_avg += SMOOTH * (nz[0] + nz[1] - self.noise_avg);
+        let signal = self.mark_avg + self.space_avg;
+        let snr = signal / (self.noise_avg + 1e-4);
+        if self.locked {
+            if snr < LOCK_OFF || signal < 1e-3 {
+                self.locked = false;
+            }
+        } else if snr > LOCK_ON && signal > 2e-3 {
+            self.locked = true;
+        }
+        if self.locked && self.open {
+            self.lost_bits = 0;
+            // da che parte e' scivolata la portante, pesando ogni tono per quanto e' presente (in pausa trasmette solo il mark)
+            let em = (p[0] - p[1]) / (p[0] + p[1]).max(1e-6);
+            let es = (p[2] - p[3]) / (p[2] + p[3]).max(1e-6);
+            let (wm, ws) = (self.mark_avg / signal.max(1e-6), self.space_avg / signal.max(1e-6));
+            self.err_avg += 0.3 * (wm * em + ws * es - self.err_avg);
+            if self.err_avg.abs() > 0.03 {
+                self.offset_hz = (self.offset_hz + AFC_GAIN * self.err_avg).clamp(-AFC_LIMIT_HZ, AFC_LIMIT_HZ);
+                self.retune_all();
+            }
+            return;
+        }
+        self.err_avg = 0.0;
+        self.lost_bits = self.lost_bits.saturating_add(1);
+        if self.lost_bits > AFC_HOLD_BITS && self.offset_hz != 0.0 {
+            self.offset_hz -= self.offset_hz.signum() * self.offset_hz.abs().min(0.05);
+            self.retune_all();
+        }
     }
 
     /// Elabora altro audio; restituisce i caratteri nuovi.
@@ -218,18 +282,16 @@ impl RttyDemodulator {
             let m = self.mark.push(s, self.pos);
             let sp = self.space.push(s, self.pos);
             let p: [f32; 4] = std::array::from_fn(|i| self.probes[i].push(s, self.pos));
+            let nz: [f32; 2] = std::array::from_fn(|i| self.noise[i].push(s, self.pos));
             self.pos = (self.pos + 1) % self.len;
             let d = m - sp;
             let level = m + sp;
             self.level_db = (20.0 * level.max(1e-6).log10()).max(-90.0);
             self.open = self.squelch_db.is_none_or(|t| self.level_db >= t);
             self.probe_count += 1;
-            if self.afc && self.open && level > 1e-3 && self.probe_count >= self.len {
+            if self.afc && self.probe_count >= self.len {
                 self.probe_count = 0;
-                // sopra > sotto: la portante e' piu' in alto di dove ascoltiamo
-                let err = ((p[0] - p[1]) + (p[2] - p[3])) / (m + sp).max(1e-6);
-                self.offset_hz = (self.offset_hz + 6.0 * err).clamp(-AFC_LIMIT_HZ, AFC_LIMIT_HZ);
-                self.retune_all();
+                self.afc_step(m, sp, &p, &nz);
             }
             match self.state {
                 State::Idle => {
@@ -323,6 +385,55 @@ mod tests {
         let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
         assert!((rx.frequency() - 2137.0).abs() < 6.0, "frequenza raggiunta: {}", rx.frequency());
         assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
+    }
+
+    fn rumore(n: usize, ampiezza: f32, mut seed: u32) -> Vec<f32> {
+        (0..n)
+            .map(|_| {
+                seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+                (seed as f32 / u32::MAX as f32 - 0.5) * ampiezza
+            })
+            .collect()
+    }
+
+    #[test]
+    fn l_afc_non_si_muove_sul_solo_rumore() {
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_afc(true);
+        // dieci secondi di rumore, anche forte: la frequenza resta quella scelta
+        for (i, amp) in [0.02_f32, 0.2, 0.8].into_iter().enumerate() {
+            rx.process(&rumore(120_000, amp, 11 + i as u32));
+            assert!((rx.frequency() - 2125.0).abs() < 0.5, "con rumore {amp} la frequenza e' andata a {}", rx.frequency());
+        }
+    }
+
+    #[test]
+    fn l_afc_non_segue_un_tono_fisso_dentro_il_rumore_forte() {
+        // un solo tono a 2140 Hz sepolto in un rumore molto piu' forte non e' un segnale RTTY
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_afc(true);
+        let tono: Vec<f32> = rumore(120_000, 0.8, 5).iter().enumerate().map(|(i, r)| r + 0.05 * (2.0 * std::f32::consts::PI * 2140.0 * i as f32 / 12_000.0).sin()).collect();
+        rx.process(&tono);
+        assert!((rx.frequency() - 2125.0).abs() < 1.0, "frequenza: {}", rx.frequency());
+    }
+
+    #[test]
+    fn l_afc_con_rumore_insegue_il_segnale_e_poi_rientra() {
+        let tx = RttyParams { mark_hz: 2140.0, shift_hz: 170.0, baud: 45.45 };
+        let mut audio = modulate(b"RYRYRYRYRYRY CQ CQ DE IU3ABC IU3ABC PSE K RYRYRYRYRY", tx, 0.4);
+        for (a, r) in audio.iter_mut().zip(rumore(200_000, 0.1, 3)) {
+            *a += r;
+        }
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_afc(true);
+        rx.process(&audio);
+        assert!((rx.frequency() - 2140.0).abs() < 6.0, "frequenza raggiunta: {}", rx.frequency());
+        // finito il segnale: ferma per circa 8 s, poi rientra piano verso la frequenza scelta
+        rx.process(&rumore(60_000, 0.1, 9));
+        let ferma = rx.frequency();
+        assert!((ferma - 2140.0).abs() < 8.0, "dopo 5 s senza segnale la frequenza si e' mossa: {ferma}");
+        rx.process(&rumore(1_200_000, 0.1, 10));
+        assert!((rx.frequency() - 2125.0).abs() < 1.0, "dopo molto tempo senza segnale non e' rientrata: {}", rx.frequency());
     }
 
     #[test]

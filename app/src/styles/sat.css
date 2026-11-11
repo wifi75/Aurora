@@ -80,7 +80,7 @@
 
 /* finestra delle impostazioni dei Satelliti */
 .sat-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
-.sat-dialog { display: flex; flex-direction: column; gap: 0.9rem; width: min(36rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.sat-dialog { display: flex; flex-direction: column; gap: 0.9rem; width: min(54rem, 96vw); min-height: min(30rem, 92vh); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
 .sat-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .sat-dialog header strong { font-size: 1.1rem; }
 .sat-dialog fieldset { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 0.9rem; }
@@ -91,3 +91,11 @@
 .sat-add { display: flex; gap: 0.5rem; }
 .sat-add input { flex: 1; min-width: 0; }
 .sat-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
+
+.sat-set-body { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1rem; align-items: start; flex: 1; }
+.sat-set-cats { display: flex; flex-direction: column; gap: 0.3rem; }
+.sat-set-cats button { text-align: left; padding: 0.55rem 0.8rem; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); font: inherit; cursor: pointer; }
+.sat-set-cats button:hover { background: rgba(255, 255, 255, 0.06); }
+.sat-set-cats button.on { border-color: var(--border); background: rgba(44, 245, 164, 0.12); font-weight: 600; }
+.sat-set-pane { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
+@media (max-width: 40rem) { .sat-set-body { grid-template-columns: minmax(0, 1fr); } .sat-set-cats { flex-direction: row; flex-wrap: wrap; } }
