@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Barra dei comandi: tolto «Cancella», doppione dei pulsanti «Pulisci» delle finestre dei messaggi; «Auto» sta in fondo alla barra di Ferma e Decodifica.
 - Con le Impostazioni aperte gli avvisi (DXCC nuovo, orologio, messaggi brevi) si possono di nuovo chiudere: stavano nella pagina sotto, che con le Impostazioni aperte e' disattivata.
 - **Orologio**: all'avvio la sincronizzazione aspetta che la rete risponda (riprova ogni 20 s per circa 10 minuti) invece di arrendersi al primo tentativo; mentre l'ora e' fuori tolleranza si ricontrolla ogni minuto, cosi' l'avviso sparisce appena l'ora e' giusta; l'ora si cambia con le API di Windows invece che con PowerShell.
 
