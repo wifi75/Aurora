@@ -201,3 +201,12 @@ html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; bord
 .digi-status .digi-st-unit { font: 600 12px/1 var(--font-ui); opacity: 0.8; }
 .digi-status .digi-st--info { font: 600 13px/1 var(--font-data); }
 .digi-status .digi-st--freq:focus-within { border-color: #8e7bff; box-shadow: 0 0 0 2px rgba(142, 123, 255, 0.35); }
+
+/* Macro in tema chiaro: bordo uguale per tutte, testo piu' stretto per le etichette lunghe (meno «…»), caselle vuote tratteggiate
+   (si capisce che sono libere, non spente), etichette Ctrl/Shift e ingranaggio leggibili */
+.digi-classica .digi-key { padding: 0 4px; letter-spacing: -0.01em; }
+html[data-theme='light'] .digi-classica .digi-key:not(.digi-key--blank) { border: 1px solid rgba(25, 35, 70, 0.38); box-shadow: 0 1px 2px rgba(25, 35, 70, 0.18); }
+html[data-theme='light'] .digi-classica .digi-key--blank { background: transparent; border: 1px dashed #aab5cf; }
+html[data-theme='light'] .digi-classica .digi-keyrow-label { color: #3d4a66; font-weight: 600; }
+html[data-theme='light'] .digi-classica .digi-gear { color: #b4530a; }
+html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; background: #fff1e0; }
