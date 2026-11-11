@@ -20,6 +20,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.233',
+    released: '2026-11-11T09:35:43Z',
+    kind: 'fixed',
+    title: [
+      'Clic sulla cascata, CAT dopo il riavvio della radio, elenchi e avvisi',
+      'Waterfall click, CAT after a radio restart, lists and notices',
+      'Klick im Wasserfall, CAT nach dem Funkgerät-Neustart, Listen und Hinweise',
+      'Clic sur la cascade, CAT après le redémarrage de la radio, listes et avis',
+      'Clic en la cascada, CAT tras reiniciar la radio, listas y avisos',
+      'Clique na cascata, CAT após reiniciar o rádio, listas e avisos',
+    ],
+    text: [
+      'Un clic sulla cascata in sola ricezione non sposta più la frequenza di trasmissione se «Hold Tx Freq» è acceso. Dopo che la radio viene ricollegata, Aurora rimette lo split scelto. Gli elenchi dei collegamenti già fatti e delle schede delle stazioni non crescono più senza fine, i registri del motore passano a un file vecchio oltre 20 MB, e un elenco di nominativi illeggibile non viene più riscritto vuoto. Nel registro compaiono avvisi su cty.dat con intestazioni non valide e su Wavelog o Cloudlog con indirizzo http:// verso Internet.',
+      'A click on the waterfall in receive only no longer moves the transmit frequency when “Hold Tx Freq” is on. After the radio is reconnected, Aurora restores the chosen split. The lists of worked stations and station cards no longer grow without end, the engine logs roll over to an old file above 20 MB, and an unreadable list of known callsigns is no longer rewritten empty. The log now warns about cty.dat entries with an invalid header and about Wavelog or Cloudlog addresses using http:// over the Internet.',
+      'Ein Klick im Wasserfall nur für den Empfang verschiebt die Sendefrequenz nicht mehr, wenn «Hold Tx Freq» an ist. Nach dem Wiederverbinden des Funkgeräts stellt Aurora den gewählten Split wieder her. Die Listen der gearbeiteten Stationen und der Stationskarten wachsen nicht mehr endlos, die Protokolle der Engine wechseln über 20 MB in eine alte Datei, und eine unlesbare Liste bekannter Rufzeichen wird nicht mehr leer überschrieben. Im Protokoll erscheinen Hinweise zu cty.dat mit ungültigem Kopf und zu Wavelog oder Cloudlog mit http:// über das Internet.',
+      'Un clic sur la cascade en réception seule ne déplace plus la fréquence d’émission quand «Hold Tx Freq» est activé. Après la reconnexion de la radio, Aurora rétablit le split choisi. Les listes des stations déjà contactées et des fiches de stations ne grandissent plus sans fin, les journaux du moteur passent à un ancien fichier au-delà de 20 Mo, et une liste d’indicatifs illisible n’est plus réécrite vide. Le journal signale maintenant cty.dat avec un en-tête invalide et les adresses Wavelog ou Cloudlog en http:// vers Internet.',
+      'Un clic en la cascada solo de recepción ya no mueve la frecuencia de transmisión si «Hold Tx Freq» está activo. Tras reconectar la radio, Aurora restablece el split elegido. Las listas de contactos ya hechos y de fichas de estaciones ya no crecen sin fin, los registros del motor pasan a un archivo antiguo por encima de 20 MB, y una lista de indicativos ilegible ya no se reescribe vacía. El registro avisa ahora de cty.dat con cabecera no válida y de direcciones Wavelog o Cloudlog con http:// hacia Internet.',
+      'Um clique na cascata só de receção já não move a frequência de transmissão se «Hold Tx Freq» estiver ligado. Depois de o rádio ser religado, o Aurora repõe o split escolhido. As listas de contactos já feitos e de fichas de estações já não crescem sem fim, os registos do motor passam para um ficheiro antigo acima de 20 MB, e uma lista de indicativos ilegível já não é reescrita vazia. O registo avisa agora de cty.dat com cabeçalho inválido e de endereços Wavelog ou Cloudlog com http:// para a Internet.',
+    ],
+  },
+  {
     version: '0.11.232',
     released: '2026-11-10T22:29:19Z',
     kind: 'fixed',
@@ -562,20 +583,6 @@ export const NOVITA: readonly Novita[] = [
       'Nouveau mode JT4. À côté des bandes une liste de toutes les fréquences du mode, comme dans WSJT-X. Corrigé : la radio sautait entre deux bandes. Les touches de l’afficheur ne deviennent plus grises.',
       'Nuevo modo JT4. Junto a las bandas una lista con todas las frecuencias del modo, como en WSJT-X. Corregido el salto de la radio entre dos bandas. Los botones del display ya no se vuelven grises.',
       'Novo modo JT4. Ao lado das bandas uma lista com todas as frequências do modo, como no WSJT-X. Corrigido o salto do rádio entre duas bandas. Os botões do display já não ficam cinzentos.',
-    ],
-  },
-  {
-    version: '0.11.193',
-    released: '2026-11-07T22:34:44Z',
-    kind: 'fixed',
-    title: ['Radio: scelta «Nessuno» (senza CAT)', 'Radio: «None» choice (no CAT)', 'Funkgerät: Auswahl «Keins» (ohne CAT)', 'Radio : choix « Aucun » (sans CAT)', 'Radio: opción «Ninguno» (sin CAT)', 'Rádio: opção «Nenhum» (sem CAT)'],
-    text: [
-      'In Impostazioni > Radio il sistema di controllo può essere «Nessuno»: i pulsanti delle bande cambiano la frequenza di Aurora e la radio la sposti a mano. Corretto il caso in cui le bande non cambiavano. Nel Log, tendina completa dei modi in «Aggiungi QSO».',
-      'In Settings > Radio the control system can be «None»: the band buttons change Aurora’s frequency and you tune the radio by hand. Fixed bands not changing. In the Log, full mode list in «Add QSO».',
-      'In Einstellungen > Funkgerät kann die Steuerung «Keins» sein: die Bandtasten ändern Auroras Frequenz, das Funkgerät stellst du von Hand ein. Behoben: Bänder wechselten nicht. Im Log vollständige Modusliste bei «QSO hinzufügen».',
-      'Dans Réglages > Radio le système de contrôle peut être « Aucun » : les boutons de bande changent la fréquence d’Aurora et la radio se règle à la main. Corrigé : les bandes ne changeaient pas. Dans le Log, liste complète des modes dans « Ajouter un QSO ».',
-      'En Ajustes > Radio el sistema de control puede ser «Ninguno»: los botones de banda cambian la frecuencia de Aurora y la radio la mueves a mano. Corregido: las bandas no cambiaban. En el Log, lista completa de modos en «Añadir QSO».',
-      'Em Definições > Rádio o sistema de controlo pode ser «Nenhum»: os botões de banda mudam a frequência do Aurora e o rádio mudas à mão. Corrigido: as bandas não mudavam. No Log, lista completa de modos em «Adicionar QSO».',
     ],
   },
 ];

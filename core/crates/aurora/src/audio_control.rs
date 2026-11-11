@@ -397,6 +397,8 @@ impl AudioManager {
     /// Apre l'uscita all'avvio (store, poi ambiente) e la da' alla trasmissione dentro un `SwitchableSink`: cosi' si potra' cambiare a caldo.
     /// `None` se non si apre (la trasmissione resta spenta, come prima).
     pub fn build_output(&self) -> Option<Box<dyn AudioSink>> {
+        let stored_output = self.initial.output.trim();
+        let pending_possible = !stored_output.is_empty() && !is_system_default(stored_output);
         for (hint, from_store) in output_candidates(&self.initial.output, self.env_output.as_deref()) {
             match self.backend.open_output(hint.as_deref(), Arc::clone(&self.gain), Arc::clone(&self.out_channel)) {
                 Ok((sink, name)) => {
@@ -406,6 +408,9 @@ impl AudioManager {
                     st.out_cur = Current { value: if from_store { self.initial.output.trim().to_string() } else { String::new() }, from_env: !from_store, name: Some(name) };
                     return Some(Box::new(switchable));
                 }
+                // con una scheda scelta che non c'e' ancora (radio spenta, USB staccato) sotto si prepara l'uscita «in attesa»: come WSJT-X («Not found»
+                // e il nome resta salvato) non e' un guasto e non va nei rapporti degli errori; senza quella rete di sicurezza si': e' un avviso vero
+                Err(e) if pending_possible => tracing::info!("uscita audio per la trasmissione non ancora disponibile, resta in attesa della scheda: {e}"),
                 Err(e) => tracing::warn!("uscita audio per la trasmissione non disponibile: {e}"),
             }
         }

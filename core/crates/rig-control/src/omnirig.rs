@@ -1,6 +1,16 @@
 use std::process::Command;
 
+use crate::session::SharedSession;
 use crate::{Rig, RigError};
+
+/// La sessione PowerShell che tiene aperto l'oggetto OmniRig per tutto il collegamento, come fa WSJT-X (un solo `OmniRigX` creato all'avvio e tenuto in
+/// vita). Prima ogni lettura o cambio di frequenza lanciava un `powershell.exe` nuovo che creava l'oggetto e usciva: OmniRig, che e' un programma a parte,
+/// si chiude quando l'ultimo cliente se ne va e si riapre al successivo mostrando la sua finestrella (segnalazione #38: «si apre in permanenza») e a ogni
+/// riapertura la radio risultava un istante fuori linea (collegamento «a intermittenza»).
+static SESSION: SharedSession = SharedSession::new();
+
+/// L'inizio di ogni script: l'oggetto OmniRig si crea una volta sola nella sessione e poi si riusa.
+const OBJECT: &str = "if ($global:AuroraOmni) { try { $null = $global:AuroraOmni.InterfaceVersion } catch { $global:AuroraOmni = $null } }; if (-not $global:AuroraOmni) { $global:AuroraOmni = New-Object -ComObject OmniRig.OmniRigX }; $o = $global:AuroraOmni; ";
 
 /// Quale delle due radio di OmniRig si comanda: 1 (`Rig1`) o 2 (`Rig2`), scelta in Impostazioni › Radio (richiesta di IK1SOW, 2026-11-09).
 static RIG: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(1);
@@ -34,11 +44,12 @@ pub struct WindowsRig;
 /// Si scrive `FreqA`, non `Freq`: sulla FT-2000 OmniRig non rende scrivibile `Freq` (`WriteableParams` senza PM_FREQ) e la
 /// scrittura viene ignorata senza errore: il comando risulta riuscito ma la radio resta dov'era. Scrivere il VFO subito dopo lo split lo fa riaccendere: non si fa.
 pub fn script(hz: u64) -> String {
+    let n = rig();
     format!(
-        "$o = New-Object -ComObject OmniRig.OmniRigX; \
-         for ($i = 0; $i -lt 8 -and $o.Rig1.Status -ne 4; $i++) {{ Start-Sleep -Milliseconds 400 }}; \
-         if ($o.Rig1.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
-         $r = $o.Rig1; \
+        "{OBJECT}\
+         for ($i = 0; $i -lt 8 -and $o.Rig{n}.Status -ne 4; $i++) {{ Start-Sleep -Milliseconds 400 }}; \
+         if ($o.Rig{n}.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; \
+         $r = $o.Rig{n}; \
          $m0 = $r.Mode; \
          if ($r.Split -ne 65536) {{ $r.Split = 65536; for ($i = 0; $i -lt 16; $i++) {{ Start-Sleep -Milliseconds 200; if ($r.Split -eq 65536) {{ break }} }} }}; \
          $r.FreqA = {hz}; \
@@ -96,20 +107,14 @@ pub fn explain_omnirig(why: &str) -> String {
 }
 
 pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
-    let mut command = Command::new("powershell.exe");
-    command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script]);
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        // niente finestra nera quando Aurora gira come programma a finestre (cambio banda, letture)
-        command.creation_flags(0x0800_0000);
-    }
-    let out = command.output().map_err(|e| RigError(format!("PowerShell non avviabile: {e}")))?;
-    if out.status.success() {
-        Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-    } else {
-        let why = String::from_utf8_lossy(&out.stderr).trim().to_string();
-        Err(RigError(if why.is_empty() { "nessuna risposta".into() } else { explain_omnirig(&why) }))
+    match SESSION.run(script) {
+        Ok(out) => Ok(out.trim().to_string()),
+        Err(e) => {
+            // se qualcosa e' andato storto l'oggetto si butta e si ricrea al comando dopo (OmniRig riavviato, radio cambiata)
+            let _ = SESSION.run("$global:AuroraOmni = $null");
+            let why = e.0.trim();
+            Err(RigError(if why.is_empty() { "nessuna risposta".into() } else { explain_omnirig(why) }))
+        }
     }
 }
 
@@ -123,7 +128,7 @@ const NOT_HERE: &str = "con OmniRig Aurora comanda solo la frequenza della radio
 impl Rig for WindowsRig {
     fn frequency(&self) -> Result<u64, RigError> {
         let out = powershell_output(&format!(
-            "$o = New-Object -ComObject OmniRig.OmniRigX; $r = $o.Rig{}; if ($r.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; [int64]$r.GetRxFrequency()",
+            "{OBJECT}$r = $o.Rig{}; if ($r.Status -ne 4) {{ Write-Error 'radio non in linea'; exit 3 }}; [int64]$r.GetRxFrequency()",
             rig()
         ))?;
         out.trim().parse::<u64>().map_err(|_| RigError(format!("frequenza illeggibile: {out}")))
