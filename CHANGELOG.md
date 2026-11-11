@@ -4,6 +4,10 @@
 
 ## 0.11.234 - 2026-11-11
 ### Corretto
+- Cascata: se l'ingresso audio scelto per nome non c'e' ancora all'avvio (radio spenta, USB staccato) non e' piu' un errore da segnalare: si riprova ogni 5 secondi e l'avviso resta sullo schermo.
+- Blocchi audio persi (causa `Xrun`): la cattura chiede alla scheda un buffer di circa 40 ms invece di quello predefinito (10 ms in modalita' condivisa); se la scheda lo rifiuta si torna al predefinito.
+- Blocco del programma «attivo da 20 s»: il guardiano considerava la finestra gia' battente alla partenza e scambiava l'avvio lento di WebView2 per un blocco; ora aspetta il primo battito vero della finestra.
+- Sessione PowerShell che non risponde (OmniRig, PTT): nel registro si legge quale comando era.
 - **OmniRig, collegamento a intermittenza e finestrella che si riapre di continuo** (segnalazione #38 di F1DSZ): ogni lettura o cambio di frequenza lanciava un PowerShell nuovo che creava l'oggetto OmniRig e usciva, e OmniRig si chiude e si riapre (con la sua finestrella) quando l'ultimo cliente se ne va. Ora una sola sessione tiene aperto l'oggetto per tutto il collegamento, come WSJT-X, e se OmniRig viene riavviato l'oggetto si ricrea da solo. Il cambio di frequenza con OmniRig usa anche la radio 2 quando e' scelta (prima scriveva sempre la radio 1).
 - Uscita audio per la trasmissione: se la scheda scelta non c'e' ancora all'avvio (radio spenta, USB staccato) e' un'attesa normale e non finisce piu' nei rapporti degli errori, come il «Not found» di WSJT-X; l'uscita si riapre da sola quando la scheda compare.
 
