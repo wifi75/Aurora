@@ -1,4 +1,4 @@
-# Aurora
+# Aurora — Multimode Ham Radio Station
 
 [![Download](https://img.shields.io/github/downloads/wifi75/Aurora/total?label=Download&color=2ea44f&logo=github)](https://github.com/wifi75/Aurora/releases)
 [![Virenfrei](https://img.shields.io/badge/Virenfrei-0%20Treffer-2ea44f?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/6263104fb767835928f9e6db027e146f31644c9b89c6f68cd248f30e9f7f4f49)
