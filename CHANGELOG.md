@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cat4OM con la scoperta automatica**: come Decodium, Aurora chiede alla porta di gestione di Cat4OM (127.0.0.1:17300) il gruppo e la sua porta Control (per esempio 5001) e avvia il gruppo se e' fermo; i campi Gruppo e Control vuoti mostrano in grigio quelli trovati. Messaggi chiari se la porta di gestione non risponde o chiede la password.
 - **Split DX** dal DX Cluster: doppio clic su uno spot con «UP 5», «5UP», «10up», «DN 2» o «QSX 14.030» nei commenti mette la radio in ricezione sullo spot (VFO A) e in trasmissione sul VFO B spostato, con lo split acceso (Hamlib, OmniRig, TCI, Cat4OM); etichetta «UP 5» nella riga, indicatore con «Split DX: spegni», interruttore in Impostazioni › DX Cluster (acceso di fabbrica), Guida in sei lingue.
 - **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.

@@ -21,7 +21,7 @@ Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono
   propagazione, DXpedition) anche con Aurora chiusa; legge il riepilogo del giorno dal log di Aurora sul PC, senza mandarlo da nessuna parte.
   Si spegne in Impostazioni → Agente nel tray.
 - **DX Cluster**: Aurora entra nei server telnet scelti con il nominativo dei dati di stazione (nessuna password) e riceve gli spot.
-- **Comando della radio** (Hamlib `rigctld`, OmniRig via COM, Cat4OM, TCI): tutto in locale sul PC (di norma `127.0.0.1`, per Cat4OM `127.0.0.1:17301`); niente esce dal computer.
+- **Comando della radio** (Hamlib `rigctld`, OmniRig via COM, Cat4OM, TCI): tutto in locale sul PC (di norma `127.0.0.1`, per Cat4OM la porta di gestione `127.0.0.1:17300` e la porta Control del gruppo che indica); niente esce dal computer.
 - **WSPR**: Aurora decodifica e trasmette sul tuo PC e **non manda niente a WSPRnet** (nessun caricamento degli spot, come WSJT-X di fabbrica). Lo stesso vale per FST4 e FST4W.
 - **Controllo dell'ora** (NTP) e **controllo degli aggiornamenti** su GitHub: sola lettura. Quando c'e' una versione nuova, Aurora scarica in anticipo da GitHub il pacchetto e la sua firma nella cartella temporanea di Windows (`%TEMP%\Aurora-update`), senza mandare dati; si installa solo quando lo chiedi.
 
