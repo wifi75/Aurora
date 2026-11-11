@@ -1565,6 +1565,8 @@ export interface SstvImageEntry {
   time_ms: number;
   sync_quality?: number;
   offset_hz?: number;
+  /** Scarto dell'orologio misurato su questa immagine (ppm). */
+  clock_ppm?: number;
   complete: boolean;
   call?: string;
 }

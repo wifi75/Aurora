@@ -604,7 +604,7 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
             *lock(&inner.current) = Some(done.image.clone());
             let auto_save = lock(&inner.settings).auto_save;
             let saved = if auto_save {
-                match lock(&inner.store).add("rx", done.mode, &done.image, EntryExtra { sync_quality: Some(done.sync_quality), offset_hz: Some(done.offset_hz), complete: done.complete, call: None }) {
+                match lock(&inner.store).add("rx", done.mode, &done.image, EntryExtra { sync_quality: Some(done.sync_quality), offset_hz: Some(done.offset_hz), clock_ppm: Some(done.clock_ppm), complete: done.complete, call: None }) {
                     Ok(e) => Some(e.id),
                     Err(e) => {
                         tracing::warn!("SSTV: immagine non salvata: {e}");

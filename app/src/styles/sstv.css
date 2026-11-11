@@ -277,3 +277,5 @@ html[data-theme='light'] .sstv-log-f input { background: #ffffff; color: #0b1322
 .sstv-clean .sstv-slider { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
 .sstv-clean .sstv-slider input { width: 7rem; }
 .sstv-busy { opacity: 0.55; transition: opacity 0.15s; }
+
+.sstv-calib { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }

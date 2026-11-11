@@ -24,6 +24,9 @@ pub struct ImageEntry {
     pub sync_quality: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset_hz: Option<f32>,
+    /// Scarto dell'orologio misurato su quell'immagine (ppm): serve a calibrare la scheda audio.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clock_ppm: Option<f32>,
     #[serde(default = "yes")]
     pub complete: bool,
     /// Nominativo del corrispondente, se noto.
@@ -40,6 +43,7 @@ fn yes() -> bool {
 pub struct EntryExtra {
     pub sync_quality: Option<f32>,
     pub offset_hz: Option<f32>,
+    pub clock_ppm: Option<f32>,
     pub complete: bool,
     pub call: Option<String>,
 }
@@ -127,6 +131,7 @@ impl ImageStore {
             time_ms,
             sync_quality: extra.sync_quality,
             offset_hz: extra.offset_hz,
+            clock_ppm: extra.clock_ppm,
             complete: extra.complete,
             call: extra.call.filter(|c| !c.trim().is_empty()).map(|c| c.trim().to_uppercase()),
         };

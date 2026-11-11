@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { getSstv, putSstv, type SstvSettings, type SstvSnapshot } from '../api/client';
+import { getSstv, getSstvImages, putSstv, type SstvSettings, type SstvSnapshot } from '../api/client';
 import { useT } from '../i18n';
 import '../styles/sstv.css';
 
@@ -24,6 +24,9 @@ export function SstvSettingsForm({ snap }: { snap: SstvSnapshot }) {
     setDraft((d) => ({ ...d, [k]: v }));
   };
   const num = (v: string, lim: number) => Math.max(-lim, Math.min(lim, Number(v) || 0));
+  // calibrazione della scheda audio: l'ultima immagine ricevuta bene (da una stazione fidata, per esempio un'immagine di prova o un'emissione di riferimento) dice di quanto va l'orologio
+  const images = useQuery({ queryKey: ['sstv-images'], queryFn: getSstvImages, staleTime: 10_000 });
+  const reference = (images.data ?? []).find((i) => i.direction !== 'tx' && i.complete && (i.sync_quality ?? 0) >= 0.9 && i.clock_ppm !== undefined);
 
   return (
     <form
@@ -88,6 +91,20 @@ export function SstvSettingsForm({ snap }: { snap: SstvSnapshot }) {
         <span>{t('sstv.set.slant')}</span>
         <input type="number" min={-5000} max={5000} step={10} value={draft.slant_ppm} onChange={(e) => set('slant_ppm', num(e.target.value, 5000))} />
         <small className="sstv-hint">{t('sstv.set.slantHint')}</small>
+        <span className="sstv-calib">
+          <button
+            type="button"
+            className="glass sstv-btn"
+            disabled={!reference}
+            title={t('sstv.cal.hint')}
+            onClick={() => reference?.clock_ppm !== undefined && set('slant_ppm', Math.max(-5000, Math.min(5000, Math.round(reference.clock_ppm))))}
+          >
+            {t('sstv.cal.button')}
+          </button>
+          <small className="sstv-hint">
+            {reference?.clock_ppm !== undefined ? t('sstv.cal.found', { ppm: Math.round(reference.clock_ppm) }) : t('sstv.cal.none')}
+          </small>
+        </span>
       </label>
       <div className="sstv-actions">
         <button type="submit" className="glass sstv-btn sstv-btn--primary" disabled={save.isPending}>
