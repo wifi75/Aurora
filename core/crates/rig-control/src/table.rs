@@ -133,8 +133,8 @@ const JTDX_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("6m", "FT8", 50_323_000, Region::All, true),
     ("2m", "FT4", 144_170_000, Region::All, true),
     ("2m", "FT8", 144_174_000, Region::All, true),
-    // 70 cm (FT-991A, IC-9700 e simili): frequenze FT8/FT4 d'uso (richiesta SP4UBW, 2026-11-08)
-    ("70cm", "FT8", 432_174_000, Region::All, true),
+    // 70 cm (FT-991A, IC-9700 e simili): FT4 d'uso (richiesta SP4UBW, 2026-11-08); la riga FT8 a 432,174 MHz sta gia' in `EXTRA_BAND_ROWS`
+    // (doppia, la tabella di fabbrica non si poteva salvare)
     ("70cm", "FT4", 432_170_000, Region::All, true),
 ];
 
