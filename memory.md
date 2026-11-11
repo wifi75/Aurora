@@ -3,6 +3,14 @@
 Stato al 2026-11-11 notte tardi, versione 0.11.238 pubblicata (Split DX, Cat4OM con la scoperta, olandese, radiofaro FST4W e WSPRnet, griglie spostabili; controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
+## Decisioni del 2026-11-11 mezzanotte
+
+- **LoTW nel riquadro del nominativo**: solo se la stazione lo usa, verde e senza data (la data non serve); se non lo usa non compare (mai «✖ LoTW»).
+- ****: niente voci di importazione delle macro nel menu; il codice dell'importazione resta solo per «Ripristina le macro di Aurora».
+- **Rotore**: piccolo (16rem nella pagina, 30vh nella finestra a parte).
+- **Donazioni**: PayPal (`hosted_button_id=MY55Q6GDQEH8L`), nominativi dei sostenitori solo con consenso e solo in `SOSTENITORI.md`, mai importi.
+- **Compilazione**: il proprietario non vuole compilare su GitHub; finche' la chiave di firma non e' sul PC l'installatore firmato lo fa comunque il lavoro Windows.
+
 ## Decisioni del 2026-11-11 notte tardi
 
 - **Lingua al primo avvio**: Aurora parte nella lingua di Windows (olandese compreso), non in italiano (scelta del proprietario).
