@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- **Rotore unico** in tutte le pagine (quello di PSK·RTTY·CW, con direzione corta e lunga del DX, ±2/±10, gradi): scheda mobile sopra la Stazione o finestra a parte per il secondo schermo.
+- **Contest**: linee della griglia piu' visibili e colonne spostabili e ridimensionabili in Decodifiche e Log del contest (come il DX Cluster, stesso meccanismo condiviso).
+- Icone grafiche (ingranaggio, aggiorna) al posto dei caratteri, centrate e piu' visibili (Satelliti, SSTV, Mappa DX, PSK/RTTY, rotore, menu dei modi).
+- «Accendi» per le Yaesu come l'FT-2000: tre `PS1;` a 0, 0,3 e 1,5 s (prima due a 1 s esatto, al limite della finestra di accensione).
+- Schermata di avvio con tutti i modi (anche JT4, FST4, FST4W, PSK, RTTY, CW, SSTV).
 - **WSPR-2** (WSJT-X 3.3): radiofaro con potenza, «Tx Pct» e messaggi di tipo 1/2/3, decodificatore di wsprd verificato su 48 file audio con wsprd.exe di WSJT-X (risultati identici); nessun invio a WSPRnet.
 - **Rapporto**: il campo dei Comandi segue il rapporto che Aurora invia, preso dal segnale della stazione scelta come WSJT-X (prima restava fermo a -10); si puo' cambiare a mano (#38, F1DSZ).
 - **Tasto destro sul nominativo** (Attivita' di banda, finestra Rx, DX Cluster): «Apri su QRZ.com»; in Attivita' di banda e finestra Rx anche «Metti in coda».
