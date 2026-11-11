@@ -3,9 +3,9 @@
 # aggiornamenti su GitHub, cosi' non torna mai da sola alle release pubbliche. Niente firme (ne' SignPath ne' aggiornamenti).
 name: Sviluppo
 
+# Dal 2026-11-11 solo a mano: l'installatore si compila sul PC (scripts/installatore-sviluppo.ps1), i minuti di Actions del
+# repository privato sono pochi (2000 al mese, Windows conta doppio).
 on:
-  push:
-    branches: [sviluppo]
   workflow_dispatch:
 
 permissions:

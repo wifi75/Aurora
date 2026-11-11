@@ -17,3 +17,4 @@ desktop/src-tauri/hamlib-bundle/*
 desktop/src-tauri/cty/*
 !desktop/src-tauri/cty/.gitkeep
 app/tsconfig.tsbuildinfo
+dist-sviluppo/
