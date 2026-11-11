@@ -71,7 +71,7 @@ const NM40: [[u8; 7]; 16] = [
 const NRW40: [u8; 16] = [7, 6, 6, 6, 6, 6, 6, 6, 6, 5, 6, 6, 6, 6, 6, 6];
 
 /// `hashlittle` di lookup3.c (Bob Jenkins, pubblico dominio), versione a byte.
-fn hashlittle(key: &[u8], initval: u32) -> u32 {
+pub(crate) fn hashlittle(key: &[u8], initval: u32) -> u32 {
     fn mix(a: &mut u32, b: &mut u32, c: &mut u32) {
         *a = a.wrapping_sub(*c);
         *a ^= c.rotate_left(4);

@@ -9,7 +9,8 @@
 //! - [`fano`]: decodificatore sequenziale di Fano di JT9;
 //! - [`jt9`]: simboli e toni di JT9 in trasmissione;
 //! - [`jt9rx`]: ricezione di JT9 (sincronismo, simboli soft, Fano);
-//! - [`rx`]: ricezione di JT65 (sincronismo, toni, decodifica a decisione soft).
+//! - [`rx`]: ricezione di JT65 (sincronismo, toni, decodifica a decisione soft);
+//! - [`wspr`]: WSPR-2 (messaggi a 50 bit, Fano, OSD, onda e ricezione di wsprd).
 
 pub mod fano;
 pub mod jt4;
@@ -26,6 +27,7 @@ mod q65fading;
 mod q65tables;
 pub mod rs;
 pub mod rx;
+pub mod wspr;
 
 /// Campioni al secondo dell'audio: quello del resto di Aurora.
 pub const SAMPLE_RATE: usize = 12_000;
