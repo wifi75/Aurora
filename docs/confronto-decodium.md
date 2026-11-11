@@ -18,7 +18,7 @@ Scelte da Tiziano: livello RX, storico e spot sulla cascata, PSK Reporter e prop
 | 19 Nascondi gia' lavorate | **fatto** (filtro sui CQ delle stazioni gia' collegate sulla banda) |
 | 22 Storico dei decode | **fatto** (`decode-history`, pagina Storico) |
 | 23 Spot del cluster sulla cascata | **fatto** (clic = frequenza Rx sullo spot) |
-| 31 PSK Reporter «chi mi ha sentito» | **fatto** (solo HTTP, a richiesta, spento di default) |
+| 31 PSK Reporter «chi mi ha sentito» | **fatto** (flusso MQTT in tempo reale `mqtt.pskreporter.info:1883` unito alla richiesta HTTP ogni 5 minuti) |
 | 33 Propagazione | **fatto** (hamqsl.com, a richiesta, spento di default) |
 | 34 Autodiagnosi | **fatto** (orologio, audio, nominativo, silenzio di ricezione) |
 | 4 QSY con riapplicazione del modo | **fatto** (modo della radio rimesso dopo il cambio banda) |
