@@ -1,3 +1,4 @@
+import { Icon } from '../components/Icon';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { getDxcc, getOnline, getPsk, getWorkedMap } from '../api/client';
@@ -351,8 +352,8 @@ function DxMapBody({ solo, bare, inPanel = false }: { solo: boolean; bare: boole
           </span>
         ) : null}
         <span className="dxmap-count muted">{t('dxmap.onAir', { n: stations.filter((s) => s.age <= settings.decayMin * 60).length })}</span>
-        <button type="button" className="solo-btn dxmap-more" aria-expanded={open} title={t('dxmap.more')} aria-label={t('dxmap.more')} onClick={() => setOpen(!open)}>
-          ⚙
+        <button type="button" className="solo-btn icon-btn icon-btn--sm dxmap-more" aria-expanded={open} title={t('dxmap.more')} aria-label={t('dxmap.more')} onClick={() => setOpen(!open)}>
+          <Icon name="gear" />
         </button>
         {solo || inPanel ? null : <DetachButton item="dxmap" />}
       </div>

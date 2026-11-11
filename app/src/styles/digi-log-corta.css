@@ -232,3 +232,6 @@ html[data-theme='light'] .digi-status .digi-st--rx { background: #d6f6e8; border
 html[data-theme='light'] .digi-status .digi-st--tx { background: linear-gradient(180deg, #ef5566, #c71f33); border-color: #8f1222; color: #fff; }
 html[data-theme='light'] .digi-status .digi-st--freq input { color: #000; }
 html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; border-color: #8f9cbf; color: #0b1322; }
+.rotor-gear { display: inline-flex; align-items: center; gap: 0.1em; line-height: 0; }
+.rotor-gear .rotor-caret { transition: transform 0.15s; }
+.rotor-gear .rotor-caret--up { transform: rotate(180deg); }

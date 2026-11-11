@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Icon } from '../components/Icon';
 import { useMemo, useRef, useState } from 'react';
 import { getSat, getSatPasses, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, satUploadMap, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
 import { SatMap } from '../components/sat/SatMap';
@@ -127,11 +128,11 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
         </div>
         <div className="sat-tle">
           <span className="sat-muted">{ageText ? t('sat.tle.age', { t: ageText }) : t('sat.tle.none')}</span>
-          <button type="button" className="glass sat-icon-btn" disabled={busy} onClick={refreshTle} title={t('sat.tle.refresh')} aria-label={t('sat.tle.refresh')}>
-            ↻
+          <button type="button" className="glass icon-btn sat-icon-btn" disabled={busy} onClick={refreshTle} title={t('sat.tle.refresh')} aria-label={t('sat.tle.refresh')}>
+            <Icon name="refresh" />
           </button>
-          <button type="button" className="glass sat-icon-btn" onClick={() => setSettingsOpen(true)} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
-            ⚙
+          <button type="button" className="glass icon-btn sat-icon-btn" onClick={() => setSettingsOpen(true)} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
+            <Icon name="gear" />
           </button>
         </div>
       </header>

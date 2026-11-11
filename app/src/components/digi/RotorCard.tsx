@@ -1,3 +1,4 @@
+import { Icon } from '../Icon';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { ApiError, getDxcc, getRotator, rotatorGoto, rotatorStop, type RotatorStatus } from '../../api/client';
@@ -367,7 +368,8 @@ export function RotorCard({ call, grid }: Props) {
               </button>
             </div>
             <button type="button" className={`rotor-gear${more ? ' rotor-gear--on' : ''}`} aria-expanded={more} onClick={() => setMore(!more)} title={t('rot.more')} aria-label={t('rot.more')}>
-              ⚙<span aria-hidden="true">{more ? '▲' : '▼'}</span>
+              <Icon name="gear" size="1.2em" />
+              <Icon name="chevron-down" size="0.8em" className={`rotor-caret${more ? ' rotor-caret--up' : ''}`} />
             </button>
           </div>
           {more ? (
