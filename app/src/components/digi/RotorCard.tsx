@@ -107,13 +107,15 @@ interface DialProps {
   lp: number | null;
   zone: readonly [number, number] | null;
   label: string;
+  /** La scritta al centro: l'azienda del rotore scelto (Yaesu, ...). */
+  brand: string;
   title: string;
   disabled: boolean;
   onPick(az: number): void;
 }
 
 /** La bussola: faccia nera, tacche fini, anello chiaro, lancetta arancio-gialla, mozzo metallico e la targhetta gialla con il bersaglio. */
-function Dial({ status, sp, lp, zone, label, title, disabled, onPick }: DialProps) {
+function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: DialProps) {
   const now = useUnwrapped(status?.az);
   const target = status?.target ?? null;
   const pick = (e: ReactPointerEvent<SVGSVGElement>) => {
@@ -165,7 +167,7 @@ function Dial({ status, sp, lp, zone, label, title, disabled, onPick }: DialProp
         );
       })}
       <text x={0} y={-26} textAnchor="middle" fill="#c4c4c4" fontSize={17} fontFamily="var(--font-ui)">
-        {label}
+        {brand}
       </text>
       {lp !== null ? <circle cx={polar(lp, R + 1).x} cy={polar(lp, R + 1).y} r={5} fill="#b8a1ff" stroke="#161616" strokeWidth={1.5} /> : null}
       {sp !== null ? <circle cx={polar(sp, R + 1).x} cy={polar(sp, R + 1).y} r={5.5} fill="#34d399" stroke="#161616" strokeWidth={1.5} /> : null}
@@ -177,9 +179,9 @@ function Dial({ status, sp, lp, zone, label, title, disabled, onPick }: DialProp
       ) : null}
       <circle r={14} fill="url(#rotor-hub-grad)" stroke="#262626" strokeWidth={1.5} />
       {shownTarget !== null ? (
-        <g transform="translate(0 83)">
-          <rect x={-23} y={-12} width={46} height={24} rx={6} fill="#d4a900" stroke="#8c8c8c" strokeWidth={3.2} />
-          <text x={0} y={1} textAnchor="middle" dominantBaseline="central" fill="#2a1d00" fontSize={17} fontWeight={600} fontFamily="var(--font-ui)">
+        <g transform="translate(0 67)">
+          <rect x={-21} y={-11} width={42} height={22} rx={5.5} fill="#d4a900" stroke="#8c8c8c" strokeWidth={2.6} />
+          <text x={0} y={0.5} textAnchor="middle" dominantBaseline="central" fill="#2a1d00" fontSize={15} fontWeight={600} fontFamily="var(--font-ui)">
             {Math.round(shownTarget)}
           </text>
         </g>
@@ -248,6 +250,8 @@ export function RotorCard({ call, grid }: Props) {
   const nudge = (step: number) => go.mutate(Math.min(max, Math.max(min, Math.round(base) + step)));
   const typedNumber = Number(typed.replace(',', '.'));
   const typedOk = typed.trim() !== '' && Number.isFinite(typedNumber);
+  // il nome salvato e' «Azienda Modello» (per esempio «Yaesu GS-232B»): al centro della bussola va l'azienda
+  const brand = (config?.model_name ?? '').trim().split(' ')[0] || t('digi.tab.rotor');
   const help = `${t('rot.clickHint')}${wide ? ` ${t('rot.wide', { min, max })}` : ''}`;
 
   // se la finestra si rimpicciolisce e la scheda resta fuori, torna al suo posto
@@ -345,7 +349,7 @@ export function RotorCard({ call, grid }: Props) {
       {closed ? null : (
         <>
           <div className="rotor-dial-box">
-            <Dial status={status} sp={sp} lp={lp} zone={wide ? [min, max - 360] : null} label={t('digi.tab.rotor')} title={help} disabled={!connected} onPick={(a) => go.mutate(a)} />
+            <Dial status={status} sp={sp} lp={lp} zone={wide ? [min, max - 360] : null} label={t('digi.tab.rotor')} brand={brand} title={help} disabled={!connected} onPick={(a) => go.mutate(a)} />
           </div>
           <div className="rotor-lcd">
             <button type="button" className="rotor-help" title={help} aria-label="?">

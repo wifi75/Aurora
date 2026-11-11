@@ -151,12 +151,12 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(100vw - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
 /* il carattere segue la larghezza della scheda (cqw si misura sul contenitore, quindi sugli elementi dentro di lui): con la scheda piu' grande o piu' piccola testo e pulsanti si adattano e non escono dai riquadri */
 .rotor-card > * { font-size: max(9px, 4.4cqw); }
-.rotor-bar { display: flex; align-items: center; gap: 0.5em; padding: 0.25em 0.5em 0.25em 0.7em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 0.8em; }
+.rotor-bar { display: flex; align-items: center; gap: 0.6em; padding: 0.4em 0.6em 0.4em 0.8em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 1.05em; }
 .rotor-bar:active { cursor: grabbing; }
 .rotor-bar-sp { flex: 1; }
-.rotor-bar-btn { border: 0; background: transparent; color: #aaa; font: inherit; cursor: pointer; padding: 0 0.35em; border-radius: 4px; }
+.rotor-bar-btn { border: 0; background: transparent; color: #bbb; font: inherit; font-size: 1.1em; cursor: pointer; padding: 0 0.4em; border-radius: 4px; line-height: 1.2; }
 .rotor-bar-btn:hover { background: #3a3a3a; color: #fff; }
-.rotor-dot { width: 0.7em; height: 0.7em; border-radius: 50%; background: #666; }
+.rotor-dot { width: 0.8em; height: 0.8em; border-radius: 50%; background: #666; }
 .rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
 .rotor-dot--moving { background: #ffb41f; box-shadow: 0 0 8px #ffb41f; animation: rotor-pulse 0.8s ease-in-out infinite; }
 @keyframes rotor-pulse { 50% { opacity: 0.35; } }
