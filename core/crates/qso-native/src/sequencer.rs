@@ -1502,13 +1502,10 @@ impl Sequencer {
     }
 
     /// «Log QSO» a mano (`on_logQSOButton_clicked` di WSJT-X): registra il QSO con la stazione in corso, con i rapporti che si conoscono.
-    /// Senza DX non fa niente; restituisce se ha registrato.
+    /// Senza DX non fa niente; restituisce se ha registrato. A mano si registra anche senza il rapporto dell'altro, come WSJT-X
+    /// (scelta del proprietario, 2026-11-11): la regola «senza rapporto niente log» di 6a139da5 vale solo per la registrazione automatica.
     pub fn log_now(&mut self, slot: Slot, now: f64) -> bool {
-        if self.his_call.is_empty() {
-            return false;
-        }
-        self.log_qso(slot, now);
-        true
+        self.log_qso_with(slot, now, true)
     }
 
     /// Il rapporto da inviare scelto a mano (`rptSpinBox` di WSJT-X): vale da subito per i messaggi Tx2/Tx3, senza cambiare il messaggio in corso.
@@ -1523,8 +1520,13 @@ impl Sequencer {
     }
     /// Il QSO si registra (`logQSOTimer`): rapporto inviato e ricevuto dalla memoria della sequenza (`log_data`), come in `on_logQSOButton_clicked`.
     fn log_qso(&mut self, slot: Slot, now: f64) {
+        self.log_qso_with(slot, now, false);
+    }
+
+    /// Registra il QSO; `manual` (pulsante «Log QSO») registra anche senza il rapporto ricevuto. Restituisce se ha registrato.
+    fn log_qso_with(&mut self, slot: Slot, now: f64, manual: bool) -> bool {
         if self.his_call.is_empty() {
-            return;
+            return false;
         }
         let (status, b_time, r_rep, s_rep) = self.hist.log_data(&self.his_call);
         let (mut rst_sent, mut rst_rcvd, on_sec) = if status > Status::Sreport {
@@ -1543,9 +1545,10 @@ impl Sequencer {
         }
         // senza il rapporto dell'altro il QSO non e' valido e non va a log (scelta del proprietario, 2026-11-08: stazioni che rispondono
         // «R + locatore» o chiudono senza mai mandare il rapporto)
-        if rst_rcvd.trim().is_empty() {
+        // a mano (pulsante «Log QSO») si registra comunque, come WSJT-X (2026-11-11)
+        if rst_rcvd.trim().is_empty() && !manual {
             self.events.push(Event::Abandoned { call: self.his_call.clone(), reason: AbandonReason::NoReport });
-            return;
+            return false;
         }
         let off_ms = slot.start_ms(self.mode);
         let day_ms = (off_ms / 86_400_000) * 86_400_000;
@@ -1588,6 +1591,7 @@ impl Sequencer {
         self.worked.insert(k);
         self.last_logged = Some((self.his_call.clone(), now));
         self.events.push(Event::QsoComplete(record));
+        true
     }
 
     // ---- stato e messaggi ------------------------------------------------------------------

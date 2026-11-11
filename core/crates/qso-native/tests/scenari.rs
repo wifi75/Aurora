@@ -1521,3 +1521,19 @@ fn sending_73_without_a_received_report_does_not_log_the_qso() {
     assert!(b.records().is_empty());
 }
 
+/// Il pulsante «Log QSO» registra anche senza rapporto ricevuto, come `on_logQSOButton_clicked` di WSJT-X (scelta del proprietario,
+/// 2026-11-11): la regola di 6a139da5 vale solo per la registrazione automatica.
+#[test]
+fn the_manual_log_button_logs_even_without_a_received_report() {
+    let mut b = Bench::ft8(opts());
+    b.reply(1, "CQ LZ2KSQ KN23", -12);
+    let s = b.slot(2);
+    let now = s.start_s(Mode::Ft8) + 1.0;
+    assert!(b.seq.log_now(s, now), "registrato");
+    b.collect();
+    let records = b.records();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].call, "LZ2KSQ");
+    assert_eq!(records[0].rst_rcvd, "");
+}
+
