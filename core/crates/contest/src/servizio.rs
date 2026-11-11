@@ -2,7 +2,8 @@
 //! delle decodifiche (per i QSO incerti), punteggio in diretta.
 //!
 //! File nella cartella dei dati: `contest/stato.json` (contest attivo, impostazioni, cosa ripristinare a fine gara) e
-//! `contest/log-<id>-<anno>.json` (il log del contest di quell'edizione). Ogni QSO va anche nel log normale di Aurora: il log del contest e'
+//! `contest/log-<id>-<aaaa-mm-gg>.json` (il log del contest dell'edizione che comincia quel giorno; `log-<id>-<anno>.json` per i contest
+//! senza date e per i log delle versioni precedenti, che si leggono ancora). Ogni QSO va anche nel log normale di Aurora: il log del contest e'
 //! una copia in piu' con gli scambi, i punti e lo stato.
 
 use crate::calendario::{self, Finestra};
@@ -64,6 +65,9 @@ pub struct Impostazioni {
     pub indirizzo: String,
     /// `EMAIL` del Cabrillo.
     pub email: String,
+    /// `CATEGORY-TIME` e `CATEGORY-OVERLAY` del Cabrillo (vuoti = non si scrivono).
+    pub categoria_tempo: String,
+    pub categoria_overlay: String,
     /// Inizio e fine scelti a mano (contest «sempre» o date diverse), ms UTC.
     pub inizio_ms: Option<i64>,
     pub fine_ms: Option<i64>,
@@ -134,7 +138,7 @@ struct Dentro {
     stato: StatoFile,
     /// Il log del contest attivo (e l'edizione a cui appartiene).
     log: Vec<ContestQso>,
-    log_di: Option<(String, i64)>,
+    log_di: Option<(String, String)>,
     /// QSO appena registrati: nominativo e numero, per riconoscere chi ripete lo scambio (QSO incerto).
     recenti: Vec<(String, u32, i64)>,
     /// Stazioni che hanno risposto con un rapporto in dB invece dello scambio del contest.
@@ -292,24 +296,24 @@ impl ContestService {
         }
     }
 
-    /// L'edizione del contest attivo: l'anno della finestra in corso o prossima (o di quella scelta a mano), altrimenti quest'anno.
-    fn edizione(&self, d: &Dentro, r: &Regole) -> i64 {
-        let imp = d.stato.impostazioni.get(r.id());
-        if let Some(i) = imp.and_then(|i| i.inizio_ms) {
-            return anno_di(i);
-        }
-        let ora = ora_ms();
-        match calendario::prossima(&r.calendario, ora) {
-            Some(f) if f.inizio_ms <= ora + 30 * 86_400_000 => anno_di(f.inizio_ms),
-            _ => anno_di(ora),
+    /// L'edizione del contest attivo: il giorno d'inizio (`aaaa-mm-gg`) della finestra attuale (in corso, appena finita o prossima) o di
+    /// quella scelta a mano; per i contest senza date l'anno di adesso. Cosi' i contest settimanali e mensili hanno un log per edizione.
+    fn edizione(d: &Dentro, r: &Regole) -> String {
+        match Self::finestra(d, r, ora_ms()) {
+            Some(f) => calendario::data(f.inizio_ms),
+            None => anno_di(ora_ms()).to_string(),
         }
     }
 
-    fn file_log(&self, id: &str, anno: i64) -> PathBuf {
-        self.dir.join(format!("log-{id}-{anno}.json"))
+    fn file_log(&self, id: &str, edizione: &str) -> PathBuf {
+        self.dir.join(format!("log-{id}-{edizione}.json"))
     }
 
-    /// Rilegge il log del contest attivo se l'edizione e' cambiata.
+    fn leggi_log(&self, id: &str, edizione: &str) -> Option<Vec<ContestQso>> {
+        std::fs::read_to_string(self.file_log(id, edizione)).ok().and_then(|t| serde_json::from_str(&t).ok())
+    }
+
+    /// Rilegge il log del contest attivo se l'edizione e' cambiata. Non toglie mai QSO: il log di un'edizione finita resta com'e'.
     fn carica_log(&self, d: &mut Dentro) {
         let Some(id) = d.stato.attivo.clone() else {
             d.log.clear();
@@ -317,29 +321,32 @@ impl ContestService {
             return;
         };
         let Some(r) = d.regole.iter().find(|r| r.id() == id).cloned() else { return };
-        let anno = self.edizione(d, &r);
-        if d.log_di.as_ref() == Some(&(id.clone(), anno)) {
+        let ed = Self::edizione(d, &r);
+        if d.log_di.as_ref() == Some(&(id.clone(), ed.clone())) {
             return;
         }
-        d.log = std::fs::read_to_string(self.file_log(&id, anno)).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
-        d.log_di = Some((id, anno));
-        // i QSO finiti nel log del contest prima della 0.11.215 anche fuori dall'orario della gara: si tolgono (restano nel log normale)
-        if let Some(f) = Self::finestra(d, &r, ora_ms()) {
-            let prima = d.log.len();
-            d.log.retain(|q| q.time_ms >= f.inizio_ms && q.time_ms < f.fine_ms);
-            if d.log.len() != prima {
-                tracing::info!("contest: tolti {} QSO fuori dall'orario della gara dal log del contest", prima - d.log.len());
-                self.salva_log(d);
+        d.log = match self.leggi_log(&id, &ed) {
+            Some(l) => l,
+            None => {
+                // il log per anno delle versioni precedenti: se ne copiano i QSO di questa edizione (il vecchio file resta com'e')
+                let f = Self::finestra(d, &r, ora_ms());
+                match (f, ed.get(..4)) {
+                    (Some(f), Some(anno)) if ed.len() == 10 => {
+                        self.leggi_log(&id, anno).unwrap_or_default().into_iter().filter(|q| q.time_ms >= f.inizio_ms && q.time_ms < f.fine_ms).collect()
+                    }
+                    _ => Vec::new(),
+                }
             }
-        }
+        };
+        d.log_di = Some((id, ed));
     }
 
     fn salva_log(&self, d: &Dentro) {
-        let Some((id, anno)) = &d.log_di else { return };
+        let Some((id, ed)) = &d.log_di else { return };
         match serde_json::to_string(&d.log) {
             Ok(t) => {
-                let tmp = self.file_log(id, *anno).with_extension("json.tmp");
-                if std::fs::write(&tmp, t).and_then(|()| std::fs::rename(&tmp, self.file_log(id, *anno))).is_err() {
+                let tmp = self.file_log(id, ed).with_extension("json.tmp");
+                if std::fs::write(&tmp, t).and_then(|()| std::fs::rename(&tmp, self.file_log(id, ed))).is_err() {
                     tracing::warn!("contest: log del contest non salvato");
                 }
             }
@@ -385,8 +392,15 @@ impl ContestService {
         d.stato.impostazioni.insert(id.to_string(), imp);
         self.salva_stato(&d);
         if d.stato.attivo.as_deref() == Some(id) {
-            d.log_di = None;
+            // date cambiate a mano: il log in corso segue la nuova edizione se quella non ha ancora un log (nessun QSO si perde)
+            let (prima_di, prima) = (d.log_di.take(), std::mem::take(&mut d.log));
             self.carica_log(&mut d);
+            if d.log_di != prima_di && d.log.is_empty() && !prima.is_empty() {
+                d.log = prima;
+                self.salva_log(&d);
+            } else if d.log_di == prima_di {
+                d.log = prima;
+            }
             return Ok(self.setup_di(&d));
         }
         Ok(None)
@@ -436,13 +450,15 @@ impl ContestService {
         let id = d.stato.attivo.as_ref()?;
         let r = d.regole.iter().find(|r| r.id() == *id)?;
         let imp = imp_di(&d.stato, r);
+        // il prossimo seriale: QSO nel log del contest + 1 (dal primo scelto), mai uno gia' mandato a un QSO del log
         let usati = d.log.iter().map(|q| seriale_di(&q.exch_sent)).max().unwrap_or(0);
+        let contati = imp.seriale_partenza.max(1).saturating_add(d.log.len() as u32);
         let attivita = if imp.attivita.is_empty() { r.messaggi.attivita.clone() } else { imp.attivita.clone() };
         Some(ContestSetup {
             activity: attivita,
             cq_word: if imp.parola_cq.is_empty() { r.messaggi.parola_cq.clone() } else { imp.parola_cq.clone() },
             exchange: scambio_fisso(r, &imp),
-            next_serial: (usati + 1).max(imp.seriale_partenza.max(1)),
+            next_serial: contati.max(usati + 1),
             grid6: imp.grid6.clone(),
             rrr: imp.rrr || r.messaggi.chiusura == "RRR",
             bands: r.bande.ammesse.iter().map(|b| b.to_ascii_lowercase()).collect(),
@@ -522,7 +538,7 @@ impl ContestService {
         let attivita = d.regole.iter().find(|r| r.id() == id).map(|r| r.messaggi.attivita.clone()).unwrap_or_default();
         let fine = w[2..].join(" ");
         let chiude = fine == "RR73" || fine == "73" || fine == "RRR";
-        let ripete = w[2] == "R" || w[2].starts_with('R') && w[2].len() > 1 && !chiude;
+        let ripete = !chiude && ripete_scambio(&w[2]);
         let mut cambiato = false;
         let recenti = d.recenti.clone();
         if let Some((_, n, _)) = recenti.iter().rev().find(|(c, _, _)| *c == da)
@@ -691,19 +707,13 @@ impl ContestService {
         Some(serde_json::json!({ "banda": banda, "tipo": tipo, "griglia": tipo == "grid4" || tipo == "campo2", "mio_grid": ctx.mio_grid, "lavorati": lavorati, "sentiti": sentiti }))
     }
 
-    /// Le edizioni di cui c'e' un log del contest su disco: `(id, anno)`, la piu' recente prima.
-    pub fn edizioni(&self) -> Vec<(String, i64)> {
-        let mut out: Vec<(String, i64)> = std::fs::read_dir(&self.dir)
+    /// Le edizioni di cui c'e' un log del contest su disco: `(id, edizione)` (`aaaa-mm-gg` o, per i vecchi log, `aaaa`), la piu' recente prima.
+    pub fn edizioni(&self) -> Vec<(String, String)> {
+        let mut out: Vec<(String, String)> = std::fs::read_dir(&self.dir)
             .into_iter()
             .flatten()
             .flatten()
-            .filter_map(|e| {
-                let nome = e.file_name().to_string_lossy().to_string();
-                // solo «log-<id>-<anno>.json» (le copie azzerate finiscono in «.<ora>.bak» e restano fuori)
-                let base = nome.strip_prefix("log-")?.strip_suffix(".json")?;
-                let (id, anno) = base.rsplit_once('-')?;
-                Some((id.to_string(), anno.parse::<i64>().ok()?))
-            })
+            .filter_map(|e| nome_edizione(&e.file_name().to_string_lossy()))
             .collect();
         out.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
         out
@@ -711,7 +721,7 @@ impl ContestService {
 
     /// L'analisi dopo la gara di un'edizione (o del contest attivo): totali, QSO ora per ora, per banda il rate migliore e il tempo perso,
     /// e i dati per un consiglio. Si calcola solo quando la pagina la chiede (linguetta «Analisi» aperta).
-    pub fn analisi(&self, scelta: Option<(String, i64)>) -> Option<serde_json::Value> {
+    pub fn analisi(&self, scelta: Option<(String, String)>) -> Option<serde_json::Value> {
         let (_, grid) = (self.stazione)();
         let mut d = self.lock();
         self.carica_log(&mut d);
@@ -719,12 +729,16 @@ impl ContestService {
             Some(x) => x,
             None => d.log_di.clone()?,
         };
+        // l'edizione arriva dalla rete e finisce nel nome di un file: solo cifre e trattini
+        if anno.is_empty() || anno.len() > 10 || !anno.chars().all(|c| c.is_ascii_digit() || c == '-') {
+            return None;
+        }
         let r = d.regole.iter().find(|r| r.id() == id)?.clone();
         // il log in memoria se e' quello attivo (puo' non essere ancora sul disco), altrimenti il file dell'edizione
-        let log: Vec<ContestQso> = if d.log_di.as_ref() == Some(&(id.clone(), anno)) {
+        let log: Vec<ContestQso> = if d.log_di.as_ref() == Some(&(id.clone(), anno.clone())) {
             d.log.clone()
         } else {
-            std::fs::read_to_string(self.file_log(&id, anno)).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+            self.leggi_log(&id, &anno).unwrap_or_default()
         };
         let ctx = self.contesto(&d, &r, &grid);
         drop(d);
@@ -840,7 +854,7 @@ impl ContestService {
         {
             return Some(Finestra { inizio_ms: a, fine_ms: b });
         }
-        calendario::prossima(&r.calendario, ora)
+        calendario::attuale(&r.calendario, ora)
     }
 
     /// Tutto quello che la barra del punteggio e la pagina mostrano.
@@ -956,16 +970,17 @@ impl ContestService {
         Ok(())
     }
 
-    /// Ricomincia il log del contest attivo: il vecchio resta come copia (`.bak`).
-    pub fn azzera_log(&self) {
+    /// Ricomincia il log del contest attivo: il vecchio resta come copia (`.bak`). Restituisce la sequenza con il seriale ripartito.
+    pub fn azzera_log(&self) -> Option<ContestSetup> {
         let mut d = self.lock();
         self.carica_log(&mut d);
-        if let Some((id, anno)) = d.log_di.clone() {
-            let f = self.file_log(&id, anno);
+        if let Some((id, ed)) = d.log_di.clone() {
+            let f = self.file_log(&id, &ed);
             let _ = std::fs::rename(&f, f.with_extension(format!("{}.bak", ora_ms())));
         }
         d.log.clear();
         self.salva_log(&d);
+        self.setup_di(&d)
     }
 
     fn intestazione(&self, r: &Regole, imp: &Impostazioni, call: &str, grid: &str) -> Intestazione {
@@ -1011,6 +1026,8 @@ impl ContestService {
             soapbox: imp.soapbox.clone(),
             antenna: imp.antenna.clone(),
             cabrillo_contest: imp.cabrillo_contest.clone(),
+            tempo: imp.categoria_tempo.trim().to_string(),
+            overlay: imp.categoria_overlay.trim().to_string(),
             versione: self.versione.clone(),
         }
     }
@@ -1071,10 +1088,11 @@ impl ContestService {
                     Ok(Event::QsoLogged(q)) => {
                         if let Some(n) = me.registra(&q) {
                             tracing::info!("contest: QSO {n} con {} nel log del contest", q.call);
-                            // il seriale del motore va avanti da solo; si riallinea per sicurezza (un motore ripartito riparte da qui)
-                            if let Some(s) = me.setup() {
-                                let _ = commands.try_send(aurora_core::Command::Contest(Some(s)));
-                            }
+                        }
+                        // il seriale del motore va avanti da solo a ogni QSO, anche a uno che il log del contest scarta (fuori orario, dalla
+                        // pagina Stazione): si riallinea sempre al log del contest
+                        if let Some(s) = me.setup() {
+                            let _ = commands.try_send(aurora_core::Command::Contest(Some(s)));
                         }
                     }
                     Ok(Event::Decode(m)) => me.nota_decodifica(&m),
@@ -1140,6 +1158,27 @@ fn seriale_di(x: &str) -> u32 {
         [_, b] if b.len() == 4 && b.chars().all(|c| c.is_ascii_digit()) => b.parse().unwrap_or(0),
         _ => 0,
     }
+}
+
+/// `log-<id>-<edizione>.json` -> `(id, edizione)`: edizione `aaaa-mm-gg` o, per i vecchi log, `aaaa`. Le copie azzerate (`.<ora>.bak`) no.
+fn nome_edizione(nome: &str) -> Option<(String, String)> {
+    let base = nome.strip_prefix("log-")?.strip_suffix(".json")?;
+    let cifre = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    if base.len() > 11 && base.is_char_boundary(base.len() - 11) {
+        let (id, ed) = base.split_at(base.len() - 11);
+        let p: Vec<&str> = ed[1..].split('-').collect();
+        if ed.starts_with('-') && p.len() == 3 && p[0].len() == 4 && p[1].len() == 2 && p[2].len() == 2 && p.iter().all(|x| cifre(x)) {
+            return Some((id.to_string(), ed[1..].to_string()));
+        }
+    }
+    let (id, anno) = base.rsplit_once('-')?;
+    (anno.len() == 4 && cifre(anno)).then(|| (id.to_string(), anno.to_string()))
+}
+
+/// La parola dopo i nominativi ripete lo scambio: «R» da sola o «R» + rapporto (`R+05`, `R-10`, `R579`), non un locatore che comincia
+/// per R (`RO51`) ne' una chiusura (`RR73`, `RRR`).
+fn ripete_scambio(p: &str) -> bool {
+    p == "R" || p.strip_prefix('R').and_then(|x| x.chars().next()).is_some_and(|c| c == '+' || c == '-' || c.is_ascii_digit())
 }
 
 fn is_rapporto(t: &str) -> bool {
@@ -1230,6 +1269,53 @@ mod tests {
     #[test]
     fn elenco_operatori() {
         assert_eq!(normalizza_operatori("iu3abc, iu3xyz;k1abc"), "IU3ABC IU3XYZ K1ABC");
+    }
+
+    /// «R + rapporto» ripete lo scambio, un locatore che comincia per R no.
+    #[test]
+    fn ripete_solo_r_e_rapporto() {
+        assert!(ripete_scambio("R"));
+        assert!(ripete_scambio("R+05"));
+        assert!(ripete_scambio("R-10"));
+        assert!(ripete_scambio("R579"));
+        assert!(!ripete_scambio("RO51"));
+        assert!(!ripete_scambio("RR73"));
+        assert!(!ripete_scambio("RRR"));
+    }
+
+    /// I nomi dei file del log: per edizione (giorno d'inizio) e, per i vecchi, per anno; le copie azzerate no.
+    #[test]
+    fn nomi_dei_log() {
+        assert_eq!(nome_edizione("log-darc-ft4-2026-11-10.json"), Some(("darc-ft4".into(), "2026-11-10".into())));
+        assert_eq!(nome_edizione("log-ww-digi-2026.json"), Some(("ww-digi".into(), "2026".into())));
+        assert_eq!(nome_edizione("log-ww-digi-2026-08-29.1788.bak"), None);
+        assert_eq!(nome_edizione("stato.json"), None);
+    }
+
+    /// Finita la gara il log resta (anche riaprendo il programma), la fase e' «finito», il seriale e' QSO a log + 1; cambiare le date a
+    /// mano non toglie QSO.
+    #[test]
+    fn il_log_resta_dopo_la_fine() {
+        let s = servizio("dopo-fine");
+        s.attiva("ww-digi", None).expect("attiva");
+        let ora = ora_ms();
+        let mut imp = s.impostazioni("ww-digi").expect("imp");
+        imp.inizio_ms = Some(ora - 5 * 3_600_000);
+        imp.fine_ms = Some(ora - 3_600_000);
+        s.salva_impostazioni("ww-digi", imp.clone()).expect("salva");
+        s.imposta_origine(true);
+        let q = QsoRecord { call: "K1ABC".into(), grid: "FN42".into(), band: "20m".into(), mode: "FT8".into(), exch_sent: "IO91".into(), exch_rcvd: "FN42".into(), rst_rcvd: "-10".into(), time_on_unix_ms: (ora - 2 * 3_600_000) as u64, ..Default::default() };
+        assert_eq!(s.registra(&q), Some(1));
+        assert_eq!(s.stato()["fase"], "finito");
+        assert_eq!(s.setup().map(|x| x.next_serial), Some(2));
+        let dir = s.dir.parent().map(Path::to_path_buf).expect("cartella");
+        drop(s);
+        let s = ContestService::open(&dir, Arc::new(|| ("IU3ABC".to_string(), "IO91wm".to_string())), "prova");
+        assert_eq!(s.log().map(|(v, _)| v.len()), Some(1), "il log dell'edizione finita resta");
+        imp.inizio_ms = Some(ora - 30 * 86_400_000);
+        s.salva_impostazioni("ww-digi", imp).expect("salva");
+        assert_eq!(s.log().map(|(v, _)| v.len()), Some(1), "cambiare le date non toglie QSO");
+        assert_eq!(s.azzera_log().map(|x| x.next_serial), Some(1));
     }
 
     /// Nome, indirizzo, email e club salvati in un contest tornano negli altri.

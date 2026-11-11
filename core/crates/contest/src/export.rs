@@ -30,43 +30,64 @@ pub struct Intestazione {
     pub email: String,
     /// Nome del contest nel file (vuoto = quello delle regole).
     pub cabrillo_contest: String,
+    /// `CATEGORY-TIME` (`6-HOURS`...) e `CATEGORY-OVERLAY` (`ROOKIE`...): solo se scelti.
+    pub tempo: String,
+    pub overlay: String,
     pub versione: String,
 }
 
-/// Il valore di una colonna dello scambio inviato.
-fn colonna_inviata(c: &str, v: &Valutato, h: &Intestazione) -> String {
+/// Al posto di un pezzo di scambio che manca: il Cabrillo va a colonne e non puo' lasciarla vuota. Non si inventano valori (un seriale o
+/// un rapporto finto sembrerebbero veri): il segno resta ben visibile e il controllo prima dell'invio lo segnala.
+pub const MANCA: &str = "-";
+
+/// Il valore di una colonna dello scambio inviato (`None` se nel QSO manca).
+fn colonna_inviata(c: &str, v: &Valutato, h: &Intestazione) -> Option<String> {
     let x: Vec<&str> = v.qso.exch_sent.split_whitespace().collect();
     match c {
-        "grid4" => h.grid.chars().take(4).collect::<String>().to_ascii_uppercase(),
-        "grid6" => h.grid.to_ascii_uppercase(),
-        "snr" => non_vuoto(&v.qso.rst_sent, "-10"),
-        "rst" => x.first().map_or("59".into(), |s| s.chars().take(if s.len() == 6 { 2 } else { 3 }).collect()),
-        "seriale" => x.first().map_or("001".into(), |s| if s.len() == 6 { s[2..].to_string() } else { x.get(1).copied().unwrap_or("001").to_string() }),
-        "classe" => x.first().copied().unwrap_or("1D").to_string(),
-        "sezione" | "stato" | "provincia" => x.last().copied().unwrap_or("DX").to_string(),
-        _ => non_vuoto(&v.qso.exch_sent, "-"),
+        "grid4" => pieno(&h.grid.chars().take(4).collect::<String>()),
+        "grid6" => pieno(&h.grid),
+        "snr" => pieno(&v.qso.rst_sent),
+        _ => colonna(c, &x, &v.qso.exch_sent),
     }
 }
 
-/// Il valore di una colonna dello scambio ricevuto.
-fn colonna_ricevuta(c: &str, v: &Valutato) -> String {
+/// Il valore di una colonna dello scambio ricevuto (`None` se nel QSO manca).
+fn colonna_ricevuta(c: &str, v: &Valutato) -> Option<String> {
     let x: Vec<&str> = v.qso.exch_rcvd.split_whitespace().collect();
     let grid = crate::punteggio::grid_ricevuto(&v.qso);
     match c {
-        "grid4" => non_vuoto(&grid.chars().take(4).collect::<String>(), "ZZ00"),
-        "grid6" => non_vuoto(&grid, "ZZ00"),
-        "snr" => non_vuoto(&v.qso.rst_rcvd, "-10"),
-        "rst" => x.first().map_or("59".into(), |s| s.chars().take(if s.len() == 6 { 2 } else { 3 }).collect()),
-        "seriale" => x.first().map_or("000".into(), |s| if s.len() == 6 { s[2..].to_string() } else { x.get(1).copied().unwrap_or("000").to_string() }),
-        "classe" => x.first().copied().unwrap_or("-").to_string(),
-        "sezione" | "stato" | "provincia" => x.last().copied().unwrap_or("-").to_string(),
-        _ => non_vuoto(&v.qso.exch_rcvd, "-"),
+        "grid4" => pieno(&grid.chars().take(4).collect::<String>()),
+        "grid6" => pieno(&grid),
+        "snr" => pieno(&v.qso.rst_rcvd),
+        _ => colonna(c, &x, &v.qso.exch_rcvd),
     }
 }
 
-fn non_vuoto(s: &str, altrimenti: &str) -> String {
+/// Le colonne prese dalle parole dello scambio (`579 0013`, `570013 IO91WM`, `1D EMA`).
+fn colonna(c: &str, x: &[&str], tutto: &str) -> Option<String> {
+    match c {
+        "rst" => x.first().map(|s| s.chars().take(if s.len() == 6 { 2 } else { 3 }).collect()),
+        "seriale" => x.first().and_then(|s| if s.len() == 6 { s.get(2..).map(str::to_string) } else { x.get(1).map(|y| (*y).to_string()) }),
+        "classe" => x.first().map(|s| (*s).to_string()),
+        "sezione" | "stato" | "provincia" => x.last().map(|s| (*s).to_string()),
+        _ => pieno(tutto),
+    }
+}
+
+fn pieno(s: &str) -> Option<String> {
     let t = s.trim();
-    if t.is_empty() { altrimenti.to_string() } else { t.to_ascii_uppercase() }
+    (!t.is_empty()).then(|| t.to_ascii_uppercase())
+}
+
+/// I QSO che vanno nel file: non in errore e su una banda ammessa dal regolamento.
+fn da_esportare<'a>(r: &'a Regole, log: &'a [Valutato]) -> impl Iterator<Item = &'a Valutato> {
+    log.iter().filter(|v| v.qso.stato != Stato::Errore && r.banda_ammessa(&v.qso.band))
+}
+
+/// `CATEGORY-MODE` dai modi del log: FT8, FT4 e gli altri modi digitali sono `DIGI` (Cabrillo 3.0); `MIXED` con QSO in CW o in fonia.
+fn categoria_modo(log: &[Valutato]) -> &'static str {
+    let altri = log.iter().any(|v| matches!(v.qso.mode.to_ascii_uppercase().as_str(), "CW" | "SSB" | "USB" | "LSB" | "FM" | "AM"));
+    if altri { "MIXED" } else { "DIGI" }
 }
 
 /// Il file Cabrillo 3.0.
@@ -84,10 +105,12 @@ pub fn cabrillo(r: &Regole, h: &Intestazione, log: &[Valutato], tot: &Totali) ->
     riga("CATEGORY-OPERATOR", &h.operatore);
     riga("CATEGORY-ASSISTED", &h.assistenza);
     riga("CATEGORY-BAND", if h.bande.is_empty() { "ALL" } else { &h.bande });
-    riga("CATEGORY-MODE", "DIGI");
+    riga("CATEGORY-MODE", categoria_modo(log));
     riga("CATEGORY-POWER", &h.potenza);
     riga("CATEGORY-STATION", if h.stazione.is_empty() { "FIXED" } else { &h.stazione });
     riga("CATEGORY-TRANSMITTER", &h.trasmettitori);
+    riga("CATEGORY-TIME", &h.tempo.to_ascii_uppercase());
+    riga("CATEGORY-OVERLAY", &h.overlay.to_ascii_uppercase());
     riga("GRID-LOCATOR", &h.grid.to_ascii_uppercase());
     riga("LOCATION", &h.location);
     riga("CLAIMED-SCORE", &tot.punteggio.to_string());
@@ -103,15 +126,15 @@ pub fn cabrillo(r: &Regole, h: &Intestazione, log: &[Valutato], tot: &Totali) ->
         riga("SOAPBOX", s);
     }
     let modo = if r.export.cabrillo_modo.is_empty() { "DG" } else { r.export.cabrillo_modo.as_str() };
-    for v in log.iter().filter(|v| v.qso.stato != Stato::Errore) {
+    for v in da_esportare(r, log) {
         let freq = if r.export.frequenza == "banda" {
             geo::banda_cabrillo(&v.qso.band)
         } else {
             let khz = v.qso.freq_hz / 1000;
             if khz > 0 { khz.to_string() } else { geo::banda_cabrillo(&v.qso.band) }
         };
-        let inviato: Vec<String> = r.export.colonne_inviate.iter().map(|c| colonna_inviata(c, v, h)).collect();
-        let ricevuto: Vec<String> = r.export.colonne_ricevute.iter().map(|c| colonna_ricevuta(c, v)).collect();
+        let inviato: Vec<String> = r.export.colonne_inviate.iter().map(|c| colonna_inviata(c, v, h).unwrap_or_else(|| MANCA.into())).collect();
+        let ricevuto: Vec<String> = r.export.colonne_ricevute.iter().map(|c| colonna_ricevuta(c, v).unwrap_or_else(|| MANCA.into())).collect();
         let tx = if h.trasmettitori == "TWO" { " 0" } else { "" };
         out.push_str(&format!(
             "QSO: {freq:>5} {modo} {} {} {:<13} {} {:<13} {}{tx}\r\n",
@@ -207,12 +230,12 @@ pub fn edi(r: &Regole, h: &Intestazione, log: &[Valutato], banda: &str) -> Strin
         let x: Vec<&str> = v.qso.exch_sent.split_whitespace().collect();
         let (rs, nr) = match x.first() {
             Some(s) if s.len() == 6 => (s[..2].to_string(), s[2..].to_string()),
-            _ => (non_vuoto(&v.qso.rst_sent, ""), String::new()),
+            _ => (pieno(&v.qso.rst_sent).unwrap_or_default(), String::new()),
         };
         let y: Vec<&str> = v.qso.exch_rcvd.split_whitespace().collect();
         let (rr, nrr) = match y.first() {
             Some(s) if s.len() == 6 => (s[..2].to_string(), s[2..].to_string()),
-            _ => (non_vuoto(&v.qso.rst_rcvd, ""), String::new()),
+            _ => (pieno(&v.qso.rst_rcvd).unwrap_or_default(), String::new()),
         };
         let grid = crate::punteggio::grid_ricevuto(&v.qso);
         for (n, _) in persi.iter().filter(|(_, dopo)| std::ptr::eq(*dopo, v)) {
@@ -307,6 +330,19 @@ pub fn controlla(r: &Regole, h: &Intestazione, log: &[Valutato]) -> Vec<String> 
     if h.operatore == "MULTI-OP" && h.operatori.trim().is_empty() {
         e.push("categoria multi-operatore: manca l'elenco degli operatori (OPERATORS)".into());
     }
+    // il Cabrillo non puo' lasciare vuota una colonna: dove manca un pezzo di scambio va «-», da correggere nel log prima dell'invio
+    if r.export.formato == "cabrillo" {
+        let vuoti: Vec<&Valutato> = da_esportare(r, log)
+            .filter(|v| r.export.colonne_inviate.iter().any(|c| colonna_inviata(c, v, h).is_none()) || r.export.colonne_ricevute.iter().any(|c| colonna_ricevuta(c, v).is_none()))
+            .collect();
+        if let Some(v) = vuoti.first() {
+            e.push(format!("{} QSO con lo scambio vuoto (nel Cabrillo resta «{MANCA}»: correggilo nel log prima dell'invio), per esempio {}", vuoti.len(), v.qso.call));
+        }
+    }
+    let fuori_banda: Vec<&Valutato> = log.iter().filter(|v| v.qso.stato != Stato::Errore && !r.banda_ammessa(&v.qso.band)).collect();
+    if let Some(v) = fuori_banda.first() {
+        e.push(format!("{} QSO su bande non ammesse dal regolamento restano fuori dal file, per esempio {} su {}", fuori_banda.len(), v.qso.call, v.qso.band));
+    }
     let senza = log.iter().filter(|v| v.qso.stato != Stato::Errore && v.scambio_nota.starts_with("scambio incompleto")).count();
     if senza > 0 {
         e.push(format!("{senza} QSO senza lo scambio richiesto (rischio di QSO non validi)"));
@@ -338,5 +374,26 @@ mod tests {
         assert!(c.starts_with("START-OF-LOG: 3.0\r\nCONTEST: WW-DIGI\r\n"));
         assert!(c.contains("QSO: 14074 DG 2026-08-29 1215 IU3ABC        IO91 K1ABC         FN42\r\n"), "{c}");
         assert!(c.ends_with("END-OF-LOG:\r\n"));
+        assert!(c.contains("CATEGORY-MODE: DIGI\r\n"));
+        assert!(!c.contains("CATEGORY-TIME"), "solo se scelto");
+    }
+
+    /// Uno scambio vuoto non diventa un valore inventato: nel Cabrillo resta «-» e il controllo lo segnala; un QSO su una banda non
+    /// ammessa resta fuori dal file, con l'avviso.
+    #[test]
+    fn scambio_vuoto_e_banda_non_ammessa() {
+        let r = carica(None).0.into_iter().find(|r| r.contest.id == "ww-digi").expect("regole");
+        let t0 = crate::calendario::parse_iso("2026-08-29T12:15Z").expect("ora");
+        let vuoto = ContestQso { n: 1, time_ms: t0, call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 14_074_000, exch_sent: "IO91".into(), rst_rcvd: "-10".into(), ..Default::default() };
+        let fuori = ContestQso { n: 2, time_ms: t0 + 60_000, call: "W9XYZ".into(), band: "60m".into(), mode: "FT8".into(), freq_hz: 5_357_000, exch_sent: "IO91".into(), exch_rcvd: "EN52".into(), grid: "EN52".into(), rst_rcvd: "-10".into(), ..Default::default() };
+        let (v, t) = valuta_log(&r, &Contesto { mio_grid: "IO91".into(), ..Default::default() }, &[vuoto, fuori]);
+        let h = Intestazione { call: "IU3ABC".into(), grid: "IO91".into(), operatore: "SINGLE-OP".into(), tempo: "6-hours".into(), ..Default::default() };
+        let c = cabrillo(&r, &h, &v, &t);
+        assert!(c.contains("K1ABC         -\r\n"), "{c}");
+        assert!(!c.contains("W9XYZ"), "{c}");
+        assert!(c.contains("CATEGORY-TIME: 6-HOURS\r\n"));
+        let p = controlla(&r, &h, &v);
+        assert!(p.iter().any(|x| x.contains("scambio vuoto")), "{p:?}");
+        assert!(p.iter().any(|x| x.contains("bande non ammesse")), "{p:?}");
     }
 }

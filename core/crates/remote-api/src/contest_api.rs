@@ -134,6 +134,10 @@ pub(crate) async fn contest_impostazioni(State(state): State<AppState>, _: Authe
     imp.scambio = imp.scambio.trim().to_uppercase().chars().filter(|c| c.is_ascii_alphanumeric() || *c == ' ' || *c == '#').take(12).collect();
     imp.parola_cq = imp.parola_cq.trim().to_uppercase().chars().filter(char::is_ascii_alphanumeric).take(4).collect();
     imp.grid6 = imp.grid6.trim().chars().take(6).collect();
+    // CATEGORY-TIME e CATEGORY-OVERLAY del Cabrillo: una parola sola (`6-HOURS`, `ROOKIE`)
+    for v in [&mut imp.categoria_tempo, &mut imp.categoria_overlay] {
+        *v = v.trim().to_uppercase().chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').take(20).collect();
+    }
     if let Some(setup) = s.salva_impostazioni(&id, imp).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "bad_contest_settings").with_message(e))? {
         send(&state, Command::Contest(Some(setup)))?;
     }
@@ -230,7 +234,10 @@ pub(crate) async fn contest_log_modifica(State(state): State<AppState>, _: Authe
 /// Ricomincia il log del contest (il vecchio resta come copia).
 #[utoipa::path(post, path = "/api/v1/contest/log/azzera", responses((status = 200, description = "Log del contest vuoto")))]
 pub(crate) async fn contest_log_azzera(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
-    service(&state)?.azzera_log();
+    // il seriale del motore riparte dal primo
+    if let Some(setup) = service(&state)?.azzera_log() {
+        send(&state, Command::Contest(Some(setup)))?;
+    }
     Ok(Json(json!({ "ok": true })))
 }
 
@@ -263,7 +270,7 @@ pub(crate) struct AnalisiQuery {
     #[serde(default)]
     id: Option<String>,
     #[serde(default)]
-    anno: Option<i64>,
+    anno: Option<String>,
 }
 
 /// Analisi dopo la gara: dal log del contest attivo (o dell'edizione scelta con `id` e `anno`) totali, QSO ora per ora, per banda rate
