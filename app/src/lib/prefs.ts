@@ -38,6 +38,8 @@ export interface Prefs {
   cmdLogQso: boolean;
   /** Pagina QMAP nel menu (ricezione panoramica Q65 da un SDR): spenta di base, serve solo a chi ha un SDR con TCI. */
   showQmap: boolean;
+  /** Ordine delle decodifiche nella pagina Contest: per valore (ultimi due periodi) o per ora (le nuove in fondo). */
+  contestOrder: 'valore' | 'ora';
   /** Indirizzo di chi aiuta, per «Manda per email» del pacchetto per l'assistenza (vuoto di fabbrica). */
   supportEmail: string;
 }
@@ -48,7 +50,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, supportEmail: '' };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', supportEmail: '' };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -61,6 +63,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
+    if (parsed.contestOrder === 'valore' || parsed.contestOrder === 'ora') prefs.contestOrder = parsed.contestOrder;
     if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));
   if (typeof parsed.supportEmail === 'string') prefs.supportEmail = parsed.supportEmail.trim().slice(0, 200);
   if (typeof parsed.log4omCount === 'number' && Number.isFinite(parsed.log4omCount)) prefs.log4omCount = Math.min(200, Math.max(1, Math.round(parsed.log4omCount)));

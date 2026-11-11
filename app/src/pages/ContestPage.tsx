@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getControls, postControl, postCq, postFrequency, postHalt, postMode, postReply, postTxMessage, postTxText } from '../api/client';
 import {
   attivaContest,
@@ -34,6 +34,7 @@ import { WaterfallStack } from '../components/WaterfallStack';
 import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
+import { decodificheVisibili, ordinaRighe } from '../lib/contestOrder';
 import { TxQuickControls } from '../components/TxQuickControls';
 import { FreqPicker } from '../components/FreqPicker';
 import { Allenamento, AnalisiGara } from './ContestExtra';
@@ -69,9 +70,6 @@ function mittente(text: string): { call: string; grid: string; to: string } | nu
   const last = w[w.length - 1] ?? '';
   return { call: w[1] ?? '', grid: isGrid(last) ? last : '', to: w[0] ?? '' };
 }
-
-/** Il valore per l'ordinamento: i doppi in fondo, poi punti e moltiplicatori nuovi. */
-const peso = (v?: Valore) => (!v ? 0 : v.doppio || v.fuori_regola ? -1 : v.punti + 10 * v.molt_nuovi.length);
 
 type Riga = { d: DecodedMessage; call: string; grid: string; v?: Valore };
 
@@ -542,11 +540,10 @@ function SelettoreBanda({ bande, t }: { bande: readonly string[]; t: T }) {
 function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, fine }: { s: ContestStato; t: T; vai: (v: 'allena' | 'analisi') => void; decodes: DecodedMessage[]; dx: string | null; dxGrid: string | null; transmitting: boolean; switches?: Partial<Record<string, boolean>>; apri: (m: 'regole' | 'calendario' | 'export' | 'impostazioni') => void; fine: () => void }) {
   const r = s.regole as Regole;
   const [campo, setCampo] = useState('');
-  // le decodifiche degli ultimi due periodi (al piu' 45 s prima dell'ultima)
-  const recenti = useMemo(() => {
-    const top = decodes.reduce((m, d) => Math.max(m, d.time_ms), 0);
-    return decodes.filter((d) => top - d.time_ms <= 45_000 || d.time_ms > top);
-  }, [decodes]);
+  const ordine = usePrefs((p) => p.prefs.contestOrder);
+  const modo = useStation((x) => x.status?.mode ?? '');
+  // «Valore»: solo gli ultimi periodi; «Ora»: tutte, in ordine di tempo
+  const recenti = useMemo(() => decodificheVisibili(decodes, ordine, modo), [decodes, ordine, modo]);
   const righe0: Riga[] = useMemo(
     () =>
       recenti
@@ -566,10 +563,19 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   }).data;
   const perCall = useMemo(() => new Map((valori?.valori ?? []).map((v) => [v.call, v])), [valori]);
   const righe = useMemo(() => {
-    const out = righe0.map((x) => ({ ...x, v: perCall.get(x.call) }));
-    out.sort((a, b) => peso(b.v) - peso(a.v) || b.d.snr - a.d.snr);
+    const out = ordinaRighe(righe0.map((x) => ({ ...x, v: perCall.get(x.call) })), ordine);
     return campo ? out.filter((x) => x.grid.toUpperCase().startsWith(campo)) : out;
-  }, [righe0, perCall, campo]);
+  }, [righe0, perCall, campo, ordine]);
+  // «Ora»: la riga nuova e' in fondo e l'elenco segue, a meno che chi usa non sia salito a leggere (come Attivita' di banda)
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const alFondo = useRef(true);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (ordine === 'ora' && el && alFondo.current) el.scrollTop = el.scrollHeight;
+  }, [righe, ordine]);
+  useEffect(() => {
+    alFondo.current = true;
+  }, [ordine]);
   const nonContest = new Set(s.non_contest ?? []);
   const migliori = righe.filter((x) => x.v && !x.v.doppio && !x.v.fuori_regola && x.call !== dx && x.d.text.startsWith('CQ'));
   const stella = migliori[0]?.call;
@@ -637,10 +643,19 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
         <header className="dock-grip dock-grip--fixed">
           <span className="dock-grip-dots" aria-hidden="true" />
           <h2 title={t('tip.contest.decodes')}>
-          {t('contest.decodes')} <span className="r">{campo ? <button type="button" className="ctc-link" onClick={() => setCampo('')}>{campo} ✕</button> : t('contest.decodesHint')}</span>
+          {t(ordine === 'ora' ? 'contest.decodes.time' : 'contest.decodes')}{' '}
+          <span className="dock-seg" role="group" aria-label={t('contest.order')} onPointerDown={(e) => e.stopPropagation()}>
+            <span className="ctc-muted">{t('contest.order')}:</span>
+            {(['valore', 'ora'] as const).map((o) => (
+              <button key={o} type="button" className={ordine === o ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={ordine === o} title={t(o === 'valore' ? 'tip.contest.order.value' : 'tip.contest.order.time')} onClick={() => usePrefs.getState().set({ contestOrder: o })}>
+                {t(o === 'valore' ? 'contest.order.value' : 'contest.order.time')}
+              </button>
+            ))}
+          </span>{' '}
+          <span className="r">{campo ? <button type="button" className="ctc-link" onClick={() => setCampo('')}>{campo} ✕</button> : t('contest.decodesHint')}</span>
         </h2>
         </header>
-        <div className="ctc-scroll data">
+        <div className="ctc-scroll data" ref={scrollRef} onScroll={(e) => { const el = e.currentTarget; alFondo.current = el.scrollHeight - el.clientHeight - el.scrollTop < 8; }}>
           <table className="ctc-dec-table">
             <colgroup>
               <col className="w-utc" />

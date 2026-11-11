@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 - **Cascata, «Spec: Off»** (segnalato da ON7KEC, issue #34): con lo spettro su «Off» spariva la curva ma restava l'area nera con la griglia; ora l'area si nasconde in ogni disposizione e la cascata prende tutta l'altezza. Tornando a Current o Cumulative l'altezza di prima ritorna.
+- **Contest, ordine delle decodifiche** (richiesta di ON7KEC dopo il contest DARC FT4): accanto al titolo il selettore «Ordine: Valore / Ora». «Valore» tiene l'ordinamento per punti ma mostra solo gli ultimi due periodi, cosi' chi non si sente piu' non resta in cima; «Ora» mostra tutto in ordine di tempo, la piu' recente in fondo, con scorrimento automatico finche' non si sale a leggere. La scelta si ricorda; suggerimenti, sei lingue e passo nella Guida.
 - **Finestra RX, «×N» delle mie trasmissioni ripetute**: il badge non sposta piu' la bandiera, che resta nella stessa colonna di tutte le altre righe; «×N» sta a fianco, a sinistra della bandiera.
 - **«Pulisci» in Attivita' di banda e nella Finestra RX** (richiesta di UN7MBV): un pulsantino accanto a «Filtro» e «Nuovi ↑» svuota solo la propria finestra; «Cancella» della barra dei comandi continua a svuotarle tutte e due. Suggerimento, sei lingue e passo nella Guida.
 

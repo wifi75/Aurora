@@ -438,3 +438,5 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 /* Abilita Tx e Auco CQ accesi: fondo rosso pieno (si trasmette), testo bianco leggibile in tutti e due i temi */
 .ctc-btn.ctc-btn--tx.ctc-btn--on { background: #e5484d !important; border-color: #e5484d !important; color: #ffffff !important; }
 .ctc-btn.ctc-btn--tx.ctc-btn--on .ctc-kbd { border-color: rgb(255 255 255 / 0.6); color: #ffffff; }
+.dock-seg { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-weight: 400; }
+.dock-seg .dock-mini { margin-left: 0; }
