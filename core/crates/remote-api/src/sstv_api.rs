@@ -154,6 +154,21 @@ pub(crate) async fn sstv_image(State(state): State<AppState>, _: Authed, Path(id
     Ok(png(bytes))
 }
 
+#[derive(Deserialize)]
+pub(crate) struct CleanQuery {
+    order: Option<u32>,
+    smooth: Option<f32>,
+}
+
+/// L'immagine dell'archivio pulita dal rumore, in PNG (`order` 1..6, `smooth` 0,05..2; predefiniti 3 e 0,4). L'originale non cambia.
+#[utoipa::path(get, path = "/api/v1/sstv/images/{id}/clean", responses((status = 200, description = "PNG pulito"), (status = 404, description = "Non trovata (not_found)")))]
+pub(crate) async fn sstv_image_clean(State(state): State<AppState>, _: Authed, Path(id): Path<String>, Query(q): Query<CleanQuery>) -> Result<Response, ApiError> {
+    let svc = service(&state)?;
+    let (order, smooth) = (q.order.unwrap_or(mode_sstv::denoise::DEFAULT_ORDER), q.smooth.unwrap_or(mode_sstv::denoise::DEFAULT_SMOOTH));
+    let bytes = blocking(move || svc.image_clean_png(&id, order, smooth)).await?.map_err(api_error)?;
+    Ok(png(bytes))
+}
+
 /// Cancella un'immagine dell'archivio.
 #[utoipa::path(delete, path = "/api/v1/sstv/images/{id}", responses((status = 200, description = "Cancellata"), (status = 404, description = "Non trovata (not_found)")))]
 pub(crate) async fn sstv_image_delete(State(state): State<AppState>, _: Authed, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {

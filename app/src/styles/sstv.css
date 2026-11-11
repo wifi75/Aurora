@@ -271,3 +271,9 @@ html[data-theme='light'] .sstv-log-f input { background: #ffffff; color: #0b1322
 .sstv-slot { min-height: 3.6rem; }
 .sstv-wfrow .sstv-wf { align-self: start; }
 .sstv-log { padding: 0.4rem 0.8rem; }
+
+/* ===== pulizia dal rumore nel visore: Originale / Pulita e le due regolazioni ===== */
+.sstv-clean { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0.5rem 0.2rem 0; }
+.sstv-clean .sstv-slider { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.sstv-clean .sstv-slider input { width: 7rem; }
+.sstv-busy { opacity: 0.55; transition: opacity 0.15s; }

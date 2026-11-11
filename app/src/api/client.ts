@@ -1603,6 +1603,15 @@ export function sstvImageUrl(id: string): string {
   return `${BASE}/sstv/images/${encodeURIComponent(id)}`;
 }
 
+/** L'immagine pulita dal rumore (ordine 1..6, levigatezza 0,05..2); l'originale non cambia. */
+export function sstvImageCleanUrl(id: string, order: number, smooth: number): string {
+  return `${BASE}/sstv/images/${encodeURIComponent(id)}/clean?order=${order}&smooth=${smooth}`;
+}
+
+export async function getSstvImageCleanBlob(id: string, order: number, smooth: number): Promise<Blob> {
+  return (await request(`/sstv/images/${encodeURIComponent(id)}/clean?order=${order}&smooth=${smooth}`)).blob();
+}
+
 export async function getSstvImageBlob(id: string): Promise<Blob> {
   return (await request(`/sstv/images/${encodeURIComponent(id)}`)).blob();
 }

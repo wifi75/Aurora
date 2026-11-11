@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { deleteSstvImage, getSstvImageBlob, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
+import { deleteSstvImage, getSstvImageBlob, getSstvImageCleanBlob, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
 import { useT } from '../../i18n';
 
 function when(ms: number): string {
@@ -75,6 +75,20 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
 function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entry: SstvImageEntry; modeName: string; when: string; onClose: () => void; onDeleted: () => void; onReuse: () => void }) {
   const t = useT();
   const [smooth, setSmooth] = useState(false);
+  // la pulizia dal rumore la decide l'operatore: «Originale» o «Pulita»; l'originale resta sempre com'e'
+  const [clean, setClean] = useState(false);
+  const [order, setOrder] = useState(3);
+  const [level, setLevel] = useState(0.4);
+  const [applied, setApplied] = useState({ order: 3, level: 0.4 });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setApplied({ order, level }), 350);
+    return () => window.clearTimeout(id);
+  }, [order, level]);
+  const shown = clean ? sstvImageCleanUrl(entry.id, applied.order, applied.level) : sstvImageUrl(entry.id);
+  useEffect(() => {
+    if (clean) setBusy(true);
+  }, [clean, shown]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -84,11 +98,11 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entr
   }, [onClose]);
 
   const save = async () => {
-    const blob = await getSstvImageBlob(entry.id);
+    const blob = clean ? await getSstvImageCleanBlob(entry.id, applied.order, applied.level) : await getSstvImageBlob(entry.id);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = entry.file;
+    a.download = clean ? entry.file.replace(/(\.[^.]*)?$/, '-pulita$1') : entry.file;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
@@ -101,7 +115,30 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entr
   return (
     <div className="sstv-lightbox" role="dialog" aria-modal="true" aria-label={modeName} onClick={onClose}>
       <figure onClick={(e) => e.stopPropagation()}>
-        <img src={sstvImageUrl(entry.id)} alt="" className={smooth ? '' : 'sstv-crisp'} width={entry.width} height={entry.height} />
+        <img src={shown} alt="" className={`${smooth ? '' : 'sstv-crisp'}${busy && clean ? ' sstv-busy' : ''}`} width={entry.width} height={entry.height} onLoad={() => setBusy(false)} onError={() => setBusy(false)} />
+        <div className="sstv-clean">
+          <span className="sstv-views" role="group" aria-label={t('sstv.clean.title')}>
+            <button type="button" className={clean ? '' : 'on'} onClick={() => setClean(false)}>
+              {t('sstv.clean.original')}
+            </button>
+            <button type="button" className={clean ? 'on' : ''} onClick={() => setClean(true)} title={t('sstv.clean.hint')}>
+              {t('sstv.clean.cleaned')}
+            </button>
+          </span>
+          {clean ? (
+            <>
+              <label className="sstv-slider">
+                <span>{t('sstv.clean.order')} {order}</span>
+                <input type="range" min={1} max={6} step={1} value={order} onChange={(e) => setOrder(Number(e.target.value))} />
+              </label>
+              <label className="sstv-slider">
+                <span>{t('sstv.clean.smooth')} {level.toFixed(2)}</span>
+                <input type="range" min={0.1} max={1} step={0.05} value={level} onChange={(e) => setLevel(Number(e.target.value))} />
+              </label>
+              <span className="sstv-hint">{busy ? t('sstv.clean.working') : t('sstv.clean.hint')}</span>
+            </>
+          ) : null}
+        </div>
         <figcaption>
           <span>
             <b>{entry.call ?? modeName}</b> {entry.call ? `· ${modeName} ` : ''}· {entry.width}×{entry.height} · {when}

@@ -64,6 +64,29 @@ fn skew(input: &[f32], ppm: f64) -> Vec<f32> {
 }
 
 fn run(mode: SstvMode, noise_sigma: f32, ppm: f64, shift: f32) -> (RgbImage, mode_sstv::DecodedImage) {
+    run_with(mode, noise_sigma, ppm, shift, |_| {})
+}
+
+/// Evanescenza (QSB): l'ampiezza sale e scende piano, con variazioni fino a `spread_hz`, e nei minimi scende sotto il rumore.
+fn qsb(audio: &mut [f32], spread_hz: f32) {
+    let mut noise = Noise(11);
+    let parts: Vec<(f32, f32)> = (0..4).map(|i| (spread_hz * (0.25 + 0.25 * i as f32), (noise.uniform() * std::f64::consts::TAU) as f32)).collect();
+    for (n, s) in audio.iter_mut().enumerate() {
+        let t = n as f32 / RATE as f32;
+        let wave: f32 = parts.iter().map(|(hz, ph)| (std::f32::consts::TAU * hz * t + ph).sin()).sum::<f32>() / parts.len() as f32;
+        *s *= (0.55 + 0.45 * wave).clamp(0.05, 1.0);
+    }
+}
+
+/// Eco (multipath): lo stesso segnale arriva anche `delay_ms` dopo, con ampiezza `amp`.
+fn multipath(audio: &mut [f32], delay_ms: f32, amp: f32) {
+    let d = (delay_ms * RATE as f32 / 1000.0) as usize;
+    for n in (d..audio.len()).rev() {
+        audio[n] += amp * audio[n - d];
+    }
+}
+
+fn run_with(mode: SstvMode, noise_sigma: f32, ppm: f64, shift: f32, impair: impl Fn(&mut [f32])) -> (RgbImage, mode_sstv::DecodedImage) {
     let spec = mode.spec();
     let img = test_image(spec.width, spec.height);
     let mut audio = vec![0.0f32; RATE as usize / 2];
@@ -72,6 +95,7 @@ fn run(mode: SstvMode, noise_sigma: f32, ppm: f64, shift: f32) -> (RgbImage, mod
     if ppm != 0.0 {
         audio = skew(&audio, ppm);
     }
+    impair(&mut audio);
     let mut noise = Noise(7);
     for s in &mut audio {
         *s += noise_sigma * noise.gauss();
@@ -191,4 +215,26 @@ fn forced_start_without_vis_finds_the_line_phase() {
     let shifted = RgbImage { width: spec.width, height: spec.height - 11, data: img.data[11 * row..].to_vec() };
     let q = psnr(&shifted, &done.image);
     assert!(q > 24.0, "PSNR {q:.1}");
+}
+
+#[test]
+fn deep_fading_still_gives_an_image() {
+    // QSB fino a 2 Hz (come la banda alta dell'HF), con un po' di rumore: i minimi cadono sotto il rumore ma l'immagine arriva intera
+    for mode in [SstvMode::Martin1, SstvMode::Scottie1, SstvMode::Pd120] {
+        let (img, done) = run_with(mode, 0.05, 0.0, 0.0, |a| qsb(a, 2.0));
+        let q = psnr(&img, &done.image);
+        eprintln!("QSB {}: PSNR {q:.1} dB, sincronismo {:.0} %", mode.spec().name, done.sync_quality * 100.0);
+        assert!(done.complete && q > 14.0, "{}: PSNR {q:.1} dB con QSB", mode.spec().name);
+    }
+}
+
+#[test]
+fn echo_is_tolerated() {
+    // eco a 2 ms e meta' ampiezza: il sincronismo regge, i colori restano riconoscibili
+    for mode in [SstvMode::Martin1, SstvMode::Robot36] {
+        let (img, done) = run_with(mode, 0.03, 0.0, 0.0, |a| multipath(a, 2.0, 0.5));
+        let q = psnr(&img, &done.image);
+        eprintln!("eco {}: PSNR {q:.1} dB, sincronismo {:.0} %", mode.spec().name, done.sync_quality * 100.0);
+        assert!(done.complete && q > 14.0, "{}: PSNR {q:.1} dB con eco", mode.spec().name);
+    }
 }

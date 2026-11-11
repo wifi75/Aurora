@@ -398,6 +398,12 @@ impl SstvService {
         lock(&self.inner.store).png(id)
     }
 
+    /// L'immagine dell'archivio pulita dal rumore (l'originale resta com'e'): `order` 1..6, `smooth` 0,05..2. Non si salva nulla: chi chiede decide cosa farne.
+    pub fn image_clean_png(&self, id: &str, order: u32, smooth: f32) -> Result<Vec<u8>, SstvError> {
+        let original = decode_image(&self.image_png(id)?)?;
+        encode_png(&crate::denoise::denoise(&original, order, smooth))
+    }
+
     pub fn delete_image(&self, id: &str) -> Result<(), SstvError> {
         lock(&self.inner.store).delete(id)
     }

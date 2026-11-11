@@ -12,6 +12,7 @@
 pub mod color;
 pub mod decoder;
 pub mod demod;
+pub mod denoise;
 pub mod encoder;
 pub mod image_io;
 pub mod modes;
