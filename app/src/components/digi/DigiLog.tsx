@@ -9,6 +9,7 @@ import { ClusterOptionsDialog } from './ClusterOptionsDialog';
 import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
 import { useT } from '../../i18n';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../MovableColumns';
 
 export interface Qso {
   call: string;
@@ -61,25 +62,21 @@ function savedCols(): LogCol[] {
 
 /** Larghezza di partenza di ogni colonna, in em: cresce da sola con la dimensione del carattere. */
 const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5 };
-const WIDTHS_KEY = 'aurora.digi.logw3';
-const MIN_EM = 2.5;
-const MAX_EM = 48;
+/** Ordine e larghezze delle colonne (si spostano e si allargano trascinando i titoli, come nel DX Cluster). */
+export const GRID_KEY = 'aurora.digi.log.grid';
+/** Dove stavano le sole larghezze prima delle colonne spostabili: si riprendono una volta. */
+export const OLD_WIDTHS_KEY = 'aurora.digi.logw3';
 
-function savedWidths(): Partial<Record<LogCol, number>> {
+/** Le larghezze scelte prima che le colonne si potessero spostare passano, una volta sola, nella disposizione nuova. */
+export function migrateWidths(): void {
   try {
-    const raw = JSON.parse(browserStorage()?.getItem(WIDTHS_KEY) ?? 'null') as unknown;
-    if (raw && typeof raw === 'object') {
-      const out: Partial<Record<LogCol, number>> = {};
-      for (const c of ALL_COLS) {
-        const v = (raw as Record<string, unknown>)[c];
-        if (typeof v === 'number' && Number.isFinite(v)) out[c] = Math.min(MAX_EM, Math.max(MIN_EM, v));
-      }
-      return out;
-    }
+    const store = browserStorage();
+    if (!store || store.getItem(GRID_KEY) !== null) return;
+    const old = JSON.parse(store.getItem(OLD_WIDTHS_KEY) ?? 'null') as unknown;
+    if (old && typeof old === 'object') store.setItem(GRID_KEY, JSON.stringify({ order: ALL_COLS, widths: old }));
   } catch {
     // senza archivio restano le larghezze di partenza
   }
-  return {};
 }
 
 /** Frequenza in kHz interi, senza i decimali dopo la virgola (7048 invece di 7048,783). */
@@ -132,7 +129,18 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
   const [picking, setPicking] = useState(false);
-  const [widths, setWidths] = useState<Partial<Record<LogCol, number>>>(savedWidths);
+  const body = useRef<HTMLDivElement>(null);
+  // prima di leggere la disposizione: le larghezze di una volta passano nella chiave nuova
+  useState(migrateWidths);
+  // le colonne scelte con la matita si vedono, le altre restano al loro posto nell'ordine; la riga azzurra del QSO in corso (campi da
+  // scrivere) non conta quando si adatta una colonna al contenuto
+  const grid = useMovableColumns({
+    storageKey: GRID_KEY,
+    columns: ALL_COLS,
+    defaultEm: DEFAULT_EM,
+    hidden: ALL_COLS.filter((c) => !cols.includes(c)),
+    fitCells: (_c, i) => body.current?.querySelectorAll(`thead tr > :nth-child(${i + 1}), tbody tr:not(.digi-log-cur) > :nth-child(${i + 1})`) ?? [],
+  });
   const [spotOpen, setSpotOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [clusterOptions, setClusterOptions] = useClusterOptions();
@@ -147,7 +155,6 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     }
   };
   const pop = useRef<HTMLDivElement>(null);
-  const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!picking) return;
     const out = (e: PointerEvent) => {
@@ -156,77 +163,24 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     document.addEventListener('pointerdown', out);
     return () => document.removeEventListener('pointerdown', out);
   }, [picking]);
-  const widthOf = (c: LogCol) => widths[c] ?? DEFAULT_EM[c];
-  const storeWidths = (next: Partial<Record<LogCol, number>>) => {
-    try {
-      browserStorage()?.setItem(WIDTHS_KEY, JSON.stringify(next));
-    } catch {
-      // la scelta vale comunque finche' la pagina e' aperta
-    }
-  };
   /** Il corpo del carattere della tabella in px: le larghezze sono in em e seguono la dimensione scelta nelle Impostazioni. */
   const emPx = () => parseFloat(getComputedStyle(body.current?.querySelector('table') ?? document.body).fontSize) || 12;
-  /** Trascinando il bordo destro dell'intestazione la colonna si allarga o si stringe, come in Excel. */
-  const startResize = (e: React.PointerEvent, c: LogCol) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const startX = e.clientX;
-    const start = widthOf(c);
-    const em = emPx();
-    let last = start;
-    const move = (m: PointerEvent) => {
-      last = Math.min(MAX_EM, Math.max(MIN_EM, start + (m.clientX - startX) / em));
-      setWidths((w) => ({ ...w, [c]: last }));
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      setWidths((w) => {
-        const next = { ...w, [c]: last };
-        storeWidths(next);
-        return next;
-      });
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
-  /** Doppio clic sul bordo: la colonna prende la larghezza del suo contenuto piu' lungo. */
-  const autoFit = (c: LogCol) => {
-    const table = body.current?.querySelector('table');
-    if (!table) return;
-    const i = cols.indexOf(c);
-    let max = 0;
-    table.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((el) => {
-      if (el.closest('tr.digi-log-cur')) return;
-      max = Math.max(max, (el as HTMLElement).scrollWidth);
-    });
-    const em = Math.min(MAX_EM, Math.max(MIN_EM, max / emPx() + 0.3));
-    setWidths((w) => {
-      const next = { ...w, [c]: em };
-      storeWidths(next);
-      return next;
-    });
-  };
+  /** Tutte le colonne in vista larghe quanto il loro contenuto (mai meno di 6/10 della larghezza di partenza). */
   const autoFitAll = () => {
     const next: Partial<Record<LogCol, number>> = {};
     const table = body.current?.querySelector('table');
     if (table) {
-      cols.forEach((c, i) => {
+      grid.visible.forEach((c, i) => {
         let max = 0;
-        table.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((el) => {
-          if (el.closest('tr.digi-log-cur')) return;
+        table.querySelectorAll(`tr:not(.digi-log-cur) > :nth-child(${i + 1})`).forEach((el) => {
           max = Math.max(max, (el as HTMLElement).scrollWidth);
         });
-        next[c] = Math.min(MAX_EM, Math.max(MIN_EM, Math.max(max / emPx() + 0.3, DEFAULT_EM[c] * 0.6)));
+        next[c] = Math.max(max / emPx() + 0.3, DEFAULT_EM[c] * 0.6);
       });
     }
-    setWidths(next);
-    storeWidths(next);
+    grid.setWidths(next);
   };
-  const resetWidths = () => {
-    setWidths({});
-    storeWidths({});
-  };
+  const resetWidths = () => grid.setWidths({});
   const toggleCol = (c: LogCol) => {
     const next = cols.includes(c) ? cols.filter((x) => x !== c) : ALL_COLS.filter((x) => x === c || cols.includes(x));
     if (next.length === 0) return;
@@ -353,37 +307,33 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       ) : (
         <>
           <div className="digi-log-table digi-log-table--completa" ref={body}>
-            <table style={{ width: `${cols.reduce((n, c) => n + widthOf(c), 0)}em` }}>
-              <colgroup>
-                {cols.map((c) => (
-                  <col key={c} style={{ width: `${widthOf(c)}em` }} />
-                ))}
-              </colgroup>
-              <thead>
+            <table ref={grid.tableRef} className="mv-grid" style={grid.tableStyle}>
+              <MovableColGroup cols={grid} />
+              <thead onContextMenu={grid.openMenu}>
                 <tr>
-                  {cols.map((c) => (
-                    <th key={c}>
+                  {grid.visible.map((c, i) => (
+                    <MovableTh key={c} cols={grid} col={c} index={i}>
                       {t(COL_LABEL[c])}
-                      <span className="digi-colgrip" role="separator" aria-orientation="vertical" title={t('digi.log.colGrip')} onPointerDown={(e) => startResize(e, c)} onDoubleClick={() => autoFit(c)} />
-                    </th>
+                    </MovableTh>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 <tr className="digi-log-cur">
-                  {cols.map((c) => (
+                  {grid.visible.map((c) => (
                     <td key={c}>{current(c)}</td>
                   ))}
                 </tr>
                 {rows.map(({ q, nr }) => (
                   <tr key={nr} style={{ '--b': bandColor(q.band) } as React.CSSProperties}>
-                    {cols.map((c) => (
+                    {grid.visible.map((c) => (
                       <td key={c}>{cell(q, nr, c)}</td>
                     ))}
                   </tr>
                 ))}
               </tbody>
             </table>
+            <ColumnsMenu cols={grid} />
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
           </div>
           <div className="digi-log-bar">
