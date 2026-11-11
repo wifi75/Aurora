@@ -32,26 +32,76 @@ const BANDS: &[(&str, f64, f64)] = &[
     ("70cm", 430000.0, 440000.0),
 ];
 
-/// Frequenze di lavoro dell'FT8 (kHz): se lo spot e' li' vicino ed e' senza altro indizio si dice FT8.
-const FT8_KHZ: &[f64] = &[1840.0, 3573.0, 5357.0, 7074.0, 10136.0, 14074.0, 18100.0, 21074.0, 24915.0, 28074.0, 50313.0];
+/// Frequenze di lavoro (kHz, frequenza della radio) dei modi digitali, con la distanza massima: se lo spot e' li' vicino ed e' senza
+/// altro indizio si dice quel modo. FT8 e FT4 come le frequenze di fabbrica di WSJT-X; JS8, PSK31 e WSPR quelle d'uso comune.
+const DIGITAL_KHZ: &[(&str, f64, &[f64])] = &[
+    ("FT8", 3.0, &[1840.0, 3573.0, 5357.0, 7074.0, 10136.0, 14074.0, 18100.0, 21074.0, 24915.0, 28074.0, 50313.0, 144174.0]),
+    ("FT4", 2.0, &[3575.5, 7047.5, 10140.0, 14080.0, 18104.0, 21140.0, 24919.0, 28180.0, 50318.0, 144170.0]),
+    ("JS8", 1.5, &[3578.0, 7078.0, 10130.0, 14078.0, 21078.0, 24922.0, 28078.0]),
+    ("WSPR", 0.3, &[1836.6, 3568.6, 5364.7, 7038.6, 10138.7, 14095.6, 18104.6, 21094.6, 24924.6, 28124.6, 50293.0]),
+    ("PSK31", 1.5, &[3580.0, 7040.0, 14070.0, 21070.0, 28120.0]),
+];
+
+/// Il band plan IARU Regione 1 (come il band plan italiano): i tratti dove c'e' un solo uso. Fuori da questi (digitali misti, beacon,
+/// satelliti, «tutti i modi») il modo resta vuoto: meglio niente che un modo sbagliato.
+const PLAN_KHZ: &[(f64, f64, &str)] = &[
+    (1810.0, 1838.0, "CW"),
+    (1842.0, 2000.0, "SSB"),
+    (3500.0, 3570.0, "CW"),
+    (3620.0, 3800.0, "SSB"),
+    (7000.0, 7040.0, "CW"),
+    (7050.0, 7200.0, "SSB"),
+    (10100.0, 10130.0, "CW"),
+    (14000.0, 14070.0, "CW"),
+    (14112.0, 14350.0, "SSB"),
+    (18068.0, 18095.0, "CW"),
+    (18111.0, 18168.0, "SSB"),
+    (21000.0, 21070.0, "CW"),
+    (21151.0, 21450.0, "SSB"),
+    (24890.0, 24915.0, "CW"),
+    (24931.0, 24990.0, "SSB"),
+    (28000.0, 28050.0, "CW"),
+    (28225.0, 29200.0, "SSB"),
+    (29520.0, 29700.0, "FM"),
+    (50000.0, 50100.0, "CW"),
+    (50100.0, 50300.0, "SSB"),
+    (144000.0, 144110.0, "CW"),
+    (144150.0, 144165.0, "SSB"),
+    (144180.0, 144400.0, "SSB"),
+];
 
 pub fn band_of_khz(khz: f64) -> Option<&'static str> {
     BANDS.iter().find(|(_, lo, hi)| khz >= *lo && khz <= *hi).map(|(name, _, _)| *name)
 }
 
-const MODES: &[&str] = &["FT8", "FT4", "MSK144", "JT65", "JT9", "WSPR", "RTTY", "PSK31", "PSK", "CW", "SSB", "USB", "LSB", "FM", "AM", "SSTV"];
+const MODES: &[&str] = &[
+    "FT8", "FT4", "MSK144", "JT65", "JT9", "JT4", "Q65", "FST4", "FST4W", "WSPR", "JS8", "JS8CALL", "RTTY", "PSK31", "PSK63", "PSK", "BPSK31", "OLIVIA",
+    "MFSK", "CONTESTIA", "HELL", "VARA", "VARAC", "PACTOR", "ARDOP", "FREEDV", "CW", "SSB", "USB", "LSB", "FM", "AM", "SSTV",
+];
 
-/// Il modo dal commento (`FT8 -10 dB`, `CW 22 wpm`...) o, mancando, dalla frequenza dell'FT8.
+/// Il modo dal commento (`FT8 -10 dB`, `CW 22 wpm`, `VarAC VARA`...); mancando, dalla frequenza di lavoro di un modo digitale (FT8, FT4,
+/// JS8, WSPR, PSK31) e poi dal band plan (tratto solo CW o solo fonia). Un commento che parla di digitale senza dire quale non prende il
+/// modo dal band plan (`VarAC ... Digi` a 7105 non e' SSB).
 pub fn guess_mode(comment: &str, khz: f64) -> Option<String> {
     let upper = comment.to_uppercase();
     let words: Vec<&str> = upper.split(|c: char| !c.is_ascii_alphanumeric()).collect();
     if let Some(found) = MODES.iter().find(|m| words.contains(m)) {
         return Some(match *found {
-            "USB" | "LSB" => "SSB".to_string(),
-            other => other.to_string(),
-        });
+            "USB" | "LSB" => "SSB",
+            "JS8CALL" => "JS8",
+            "VARAC" => "VARA",
+            "BPSK31" => "PSK31",
+            other => other,
+        }
+        .to_string());
     }
-    FT8_KHZ.iter().any(|f| (khz - f).abs() <= 3.0).then(|| "FT8".to_string())
+    if let Some((mode, _, _)) = DIGITAL_KHZ.iter().find(|(_, near, list)| list.iter().any(|f| (khz - f).abs() <= *near)) {
+        return Some((*mode).to_string());
+    }
+    if words.iter().any(|w| matches!(*w, "DIGI" | "DIGITAL" | "DATA" | "RTTY" | "BEACON" | "BCN" | "NCDXF")) {
+        return None;
+    }
+    PLAN_KHZ.iter().find(|(lo, hi, _)| khz >= *lo && khz < *hi).map(|(_, _, mode)| (*mode).to_string())
 }
 
 fn is_call(token: &str) -> bool {
@@ -143,7 +193,26 @@ mod tests {
     #[test]
     fn the_ft8_frequency_is_enough_when_the_comment_says_nothing() {
         assert_eq!(parse_spot("DX de AA1AA: 21074.2 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("FT8"));
-        assert_eq!(parse_spot("DX de AA1AA: 21290.0 K1ABC strong 1200Z").unwrap().mode, None);
+        assert_eq!(parse_spot("DX de AA1AA: 21140.0 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("FT4"));
+        assert_eq!(parse_spot("DX de AA1AA: 14095.6 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("WSPR"));
+    }
+
+    #[test]
+    fn the_band_plan_gives_cw_or_ssb_when_the_comment_says_nothing() {
+        let mode = |line: &str| parse_spot(line).and_then(|p| p.mode);
+        assert_eq!(mode("DX de AA1AA: 7025.0 F4HHL strong 1200Z").as_deref(), Some("CW"));
+        assert_eq!(mode("DX de AA1AA: 21041.0 N5V 1200Z").as_deref(), Some("CW"));
+        assert_eq!(mode("DX de AA1AA: 14282.0 3X4U QSX 14292 SC 1200Z").as_deref(), Some("SSB"));
+        assert_eq!(mode("DX de AA1AA: 28465.0 PY2TBK 1200Z").as_deref(), Some("SSB"));
+        assert_eq!(mode("DX de AA1AA: 7056.0 C8K 1200Z").as_deref(), Some("SSB"));
+        assert_eq!(mode("DX de AA1AA: 21290.0 K1ABC strong 1200Z").as_deref(), Some("SSB"));
+        // tratti misti (digitali e CW) e beacon: nessun modo
+        assert_eq!(mode("DX de AA1AA: 14085.0 K1ABC 1200Z"), None);
+        assert_eq!(mode("DX de AA1AA: 28200.0 K1ABC 1200Z"), None);
+        // il commento vince sul band plan, e un «Digi» senza modo non diventa SSB
+        assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH (VarAC VARA Digi Freq) 1200Z").as_deref(), Some("VARA"));
+        assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH Digi mode 1200Z"), None);
+        assert_eq!(mode("DX de AA1AA: 14230.0 K1ABC SSTV 1200Z").as_deref(), Some("SSTV"));
     }
 
     #[test]

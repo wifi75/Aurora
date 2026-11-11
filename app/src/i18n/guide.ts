@@ -674,6 +674,18 @@ export const GUIDE: readonly GuideChapter[] = [
         ],
       },
       {
+        id: 'clustermode',
+        title: ['Il modo degli spot del DX Cluster', 'The mode of DX Cluster spots', 'Die Betriebsart der DX-Cluster-Spots', 'Le mode des spots du DX Cluster', 'El modo de los spots del DX Cluster', 'O modo dos spots do DX Cluster'],
+        text: [
+          'La colonna Modo viene dal commento dello spot («FT8 -10 dB», «CW 22 wpm», «VarAC VARA»). Se il commento non lo dice, Aurora guarda la frequenza: vicino alle frequenze di lavoro di FT8, FT4, JS8, WSPR e PSK31 mette quel modo; altrimenti segue il band plan IARU Regione 1, CW nei tratti solo CW e SSB in quelli della fonia (FM sopra 29,52 MHz). Nei tratti misti (digitali e CW, beacon, satelliti) e quando il commento dice solo «Digi» la colonna resta vuota, per non indovinare.',
+          'The Mode column comes from the spot comment (“FT8 -10 dB”, “CW 22 wpm”, “VarAC VARA”). If the comment does not say it, Aurora looks at the frequency: near the working frequencies of FT8, FT4, JS8, WSPR and PSK31 it shows that mode; otherwise it follows the IARU Region 1 band plan, CW in the CW-only segments and SSB in the phone ones (FM above 29.52 MHz). In mixed segments (digital and CW, beacons, satellites) and when the comment only says “Digi” the column stays empty, so as not to guess.',
+          'Die Spalte Modus kommt aus dem Kommentar des Spots („FT8 -10 dB“, „CW 22 wpm“, „VarAC VARA“). Steht sie nicht im Kommentar, schaut Aurora auf die Frequenz: nahe den Arbeitsfrequenzen von FT8, FT4, JS8, WSPR und PSK31 zeigt es diese Betriebsart; sonst folgt es dem Bandplan der IARU Region 1, CW in den reinen CW-Bereichen und SSB in den Sprechfunkbereichen (FM über 29,52 MHz). In gemischten Bereichen (digital und CW, Baken, Satelliten) und wenn der Kommentar nur „Digi“ sagt, bleibt die Spalte leer, um nicht zu raten.',
+          'La colonne Mode vient du commentaire du spot (« FT8 -10 dB », « CW 22 wpm », « VarAC VARA »). Si le commentaire ne le dit pas, Aurora regarde la fréquence : près des fréquences de travail du FT8, FT4, JS8, WSPR et PSK31 il affiche ce mode ; sinon il suit le plan de bande IARU Région 1, CW dans les segments CW seul et SSB dans ceux de la phonie (FM au-dessus de 29,52 MHz). Dans les segments mixtes (numérique et CW, balises, satellites) et quand le commentaire dit seulement « Digi », la colonne reste vide, pour ne pas deviner.',
+          'La columna Modo sale del comentario del spot («FT8 -10 dB», «CW 22 wpm», «VarAC VARA»). Si el comentario no lo dice, Aurora mira la frecuencia: cerca de las frecuencias de trabajo de FT8, FT4, JS8, WSPR y PSK31 pone ese modo; si no, sigue el plan de banda IARU Región 1, CW en los tramos solo CW y SSB en los de fonía (FM por encima de 29,52 MHz). En los tramos mixtos (digitales y CW, balizas, satélites) y cuando el comentario solo dice «Digi» la columna queda vacía, para no adivinar.',
+          'A coluna Modo vem do comentário do spot («FT8 -10 dB», «CW 22 wpm», «VarAC VARA»). Se o comentário não o diz, o Aurora olha para a frequência: perto das frequências de trabalho de FT8, FT4, JS8, WSPR e PSK31 mostra esse modo; caso contrário segue o plano de banda IARU Região 1, CW nos segmentos só CW e SSB nos de fonia (FM acima de 29,52 MHz). Nos segmentos mistos (digitais e CW, balizas, satélites) e quando o comentário só diz «Digi» a coluna fica vazia, para não adivinhar.',
+        ],
+      },
+      {
         id: 'cq',
         title: ['Chiamare CQ', 'Calling CQ', 'CQ rufen', 'Lancer appel', 'Llamar CQ', 'Chamar CQ'],
         steps: [
