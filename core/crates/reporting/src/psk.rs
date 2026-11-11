@@ -10,8 +10,8 @@ use std::collections::VecDeque;
 /// Dove arrivano gli spot.
 pub const HOST: &str = "report.pskreporter.info";
 pub const PORT: u16 = 4739;
-/// Ogni quanto si manda quello che e' in coda (JTDX: `reportTimer->start(5*60*1000)`).
-pub const SEND_EVERY_SECS: u64 = 300;
+/// Ogni quanto si manda quello che e' in coda: 120 s come `MIN_SEND_INTERVAL` di WSJT-X 3.3 (JTDX: 5 minuti, gli spot arrivavano in ritardo).
+pub const SEND_EVERY_SECS: u64 = 120;
 /// Lunghezza massima di un pacchetto, mai superata: 1000 byte di pacchetto IP meno le intestazioni IPv6 (40) e UDP (8), come
 /// `MAX_UDP_IPFIX_PAYLOAD_BYTES` di WSJT-X 3.2 (`Network/PSKReporterIPFIX.cpp`, GPL-3.0): passa anche sui collegamenti con pacchetti
 /// piccoli (prima 1400 byte, che su alcune linee si perdevano).
