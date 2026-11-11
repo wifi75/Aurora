@@ -7540,3 +7540,5 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 
 /* chi trasmette, in grassetto dentro il messaggio */
 .decode-row .decode-sender { font-weight: 800; }
+/* chi usa LoTW: barra piena di 2 px sotto il nominativo (il colore arriva dalle Impostazioni, scheda Colori) */
+.decode-row .decode-sender--lotw { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-skip-ink: none; }

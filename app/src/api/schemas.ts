@@ -93,6 +93,8 @@ export const DecodedMessageSchema = z.object({
   tag: DecodeTagSchema.nullable(),
   country: z.string().nullable().optional(),
   continent: z.string().nullable().optional(),
+  /** Data (AAAA-MM-GG) dell'ultimo invio a LoTW di chi trasmette, se e' nell'elenco pubblico dell'ARRL. */
+  lotw_last_upload: z.string().nullable().optional(),
 });
 export type DecodedMessage = z.infer<typeof DecodedMessageSchema>;
 

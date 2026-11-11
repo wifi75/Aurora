@@ -11,6 +11,7 @@ import { eventOfAlert, useSoundAssign, type SoundEvent } from '../lib/soundAssig
 import { armAudio } from '../lib/soundBank';
 import { SoundPicker, SoundsGroup, SoundsHelp } from './SoundControls';
 import { NEWDX_POSITIONS, setNewDxPos, useNewDxPos, type NewDxPos } from '../lib/newDxPos';
+import { LOTW_MONTHS, useLotwView } from '../lib/lotw';
 import { useNotifyView, workedLook, type AlertKey, type NotifyView } from '../lib/notifyView';
 import { usePrefs, type Prefs } from '../lib/prefs';
 import { browserStorage } from '../lib/theme';
@@ -669,6 +670,8 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
         </Cells>
       </Group>
 
+      <LotwGroup />
+
       </>
       ) : null}
 
@@ -747,6 +750,33 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
       ) : null}
       <ApplyBar draft={draft} doc={doc} />
     </Page>
+  );
+}
+
+/** «Segna chi usa LoTW»: interruttore, colore della barra e da quanti mesi conta l'ultimo invio. */
+function LotwGroup() {
+  const t = useT();
+  const view = useLotwView((s) => s.view);
+  const set = useLotwView.getState().set;
+  return (
+    <Group title={t('lotw.grp')}>
+      <Cells min={14}>
+        <Check label={t('lotw.enable')} hint={t('tip.lotw.enable')} checked={view.enabled} onChange={(v) => set({ enabled: v })} />
+        <Cell label={t('lotw.color')} hint={t('tip.lotw.color')}>
+          <input type="color" aria-label={t('lotw.color')} value={view.color} disabled={!view.enabled} onChange={(e) => set({ color: e.target.value })} />
+        </Cell>
+        <label className="sw-field" title={t('tip.lotw.months')}>
+          <span className="sw-label">{t('lotw.months')}</span>
+          <select value={view.months} disabled={!view.enabled} onChange={(e) => set({ months: Number(e.target.value) })}>
+            {LOTW_MONTHS.map((m) => (
+              <option key={m} value={m}>
+                {t(`lotw.m${m}` as Key)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </Cells>
+    </Group>
   );
 }
 
