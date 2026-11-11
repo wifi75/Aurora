@@ -93,6 +93,7 @@ export const clusterStrings = {
   'cluster.filter.spotterMine': ['Solo il mio continente', 'Only my continent', 'Nur mein Kontinent', 'Seulement mon continent', 'Solo mi continente', 'Só o meu continente'],
   'cluster.filter.modeAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
   'cluster.filter.newOnly': ['Solo nuovi', 'New only', 'Nur neue', 'Nouveaux seulement', 'Solo nuevos', 'Só novos'],
+  'tip.cluster.spot': ['Invia uno spot al DX Cluster (DXSummit) con il DX in corso e la frequenza della radio.', 'Send a spot to the DX Cluster (DXSummit) with the current DX and the radio frequency.', 'Spot an den DX-Cluster (DXSummit) senden, mit dem aktuellen DX und der Funkgerätefrequenz.', 'Envoyer un spot au DX Cluster (DXSummit) avec le DX en cours et la fréquence de la radio.', 'Envía un spot al DX Cluster (DXSummit) con el DX en curso y la frecuencia de la radio.', 'Envia um spot ao DX Cluster (DXSummit) com o DX em curso e a frequência do rádio.'],
   'tip.cluster.newOnly': ['Mostra solo gli spot nuovi per la tua lista dei desideri (paese, griglia, banda).', 'Show only the spots that are new for your wish list (country, grid, band).', 'Nur Spots anzeigen, die für deine Wunschliste neu sind (Land, Feld, Band).', 'Afficher seulement les spots nouveaux pour ta liste de souhaits (pays, locator, bande).', 'Muestra solo los spots nuevos para tu lista de deseos (país, locator, banda).', 'Mostra só os spots novos para a tua lista de desejos (país, locator, banda).'],
   'cluster.filter.search': [
     'Cerca nominativo',

@@ -9,6 +9,7 @@ import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT, type Key } from '../i18n';
 import { MultiPick } from './MultiPick';
+import { SpotDialog } from './digi/SpotDialog';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
@@ -70,10 +71,11 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
   const day = today();
   const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
-  const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid']);
+  const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid', 'dx_call', 'rx_df']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
+  const [spotOpen, setSpotOpen] = useState(false);
   const wishlist = useWishlist((s) => s.list);
 
   const myBand = status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null;
@@ -207,11 +209,15 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
         <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
           {t('cluster.filter.newOnly')}
         </button>
+        <button type="button" className="glass chip" title={t('tip.cluster.spot')} onClick={() => setSpotOpen(true)}>
+          {t('ctl.spot')}
+        </button>
         <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
         </span>
       </div>
+      {spotOpen ? <SpotDialog call={status?.dx_call ?? ''} dialHz={status?.dial_hz ?? 0} audioHz={status?.rx_df ?? 0} modeName={status?.mode ?? ''} onClose={() => setSpotOpen(false)} /> : null}
       {spots.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.waiting')}</p>
       ) : shown.length === 0 ? (

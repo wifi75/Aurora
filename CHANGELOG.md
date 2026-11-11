@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster, pulsante «Spot DX»** anche nella pagina Stazione (FT8 e gli altri modi), come gia' nella pagina PSK/RTTY: apre la finestra dello spot con il DX del QSO, la frequenza della radio piu' quella di ricezione e il modo. Lo spot mandato compare subito nell'elenco con il proprio nominativo (prima si vedeva solo se un cluster collegato lo ripeteva).
+- DX Cluster: la colonna UTC non e' piu' tagliata sul bordo destro.
+- Impostazioni: il menu delle lingue si apre verso la pagina e non resta piu' coperto dalla barra laterale.
 - **Split della radio (Rig e Fake It)**: non si attivava mai, perche' la frequenza audio di trasmissione non arrivava al CAT. Ora, come `setXIT` di WSJT-X, in FT8 e FT4 il VFO di trasmissione si sposta di (Tx/500)*500 - 1500 Hz e il tono audio dello stesso valore: l'audio resta tra 1500 e 2000 Hz e il segnale esce sulla frequenza scelta. Vale con il PTT dal CAT (Hamlib, TCI, FT-991 Link). **Da provare con la radio.**
 - **Paesi DXCC come WSJT-X**: le entita' solo WAE di `cty.dat` (Sicilia, Turchia europea, Italia africana, Shetland, Vienna ITC, Bear Island) non sono piu' paesi: una stazione IU9 o IT9 e' Italia, non piu' un falso «nuovo DXCC»; non contano nei totali ne' nell'elenco dei paesi delle Automazioni.
 - Suffissi operativi come WSJT-X: IU3ABC/R, /Q, /FD, /FF, /LT, /LGT restano del paese del nominativo (prima /R dava Russia, /FD Francia, /LGT Norvegia); davanti al nominativo restano prefissi veri (LT/IU3ABC e' Argentina).
