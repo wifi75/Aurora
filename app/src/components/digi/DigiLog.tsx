@@ -26,8 +26,8 @@ interface Props {
   dialHz: number;
   /** Frequenza audio del segnale ricevuto (Hz): serve alla frequenza dello spot. */
   audioHz: number;
-  /** Clic su uno spot del DX Cluster: porta la radio e, con «up N», lo split. */
-  onSpot(spot: ClusterSpot): Promise<void>;
+  /** Clic su uno spot del DX Cluster: porta la radio e, con «up N», lo split (`splitDx`: subito dopo la radio va in Split DX). */
+  onSpot(spot: ClusterSpot, splitDx: boolean): Promise<void>;
   onQso(patch: Partial<Qso>): void;
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;

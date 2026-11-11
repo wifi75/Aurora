@@ -124,6 +124,17 @@ pub struct CatSnapshot {
     pub active_profile: Option<String>,
 }
 
+/// Lo Split DX acceso con un doppio clic su uno spot del cluster («UP 5», «QSX 14.030»...): la ricezione resta sulla frequenza dello spot
+/// e la trasmissione va sull'altro VFO. Indipendente dallo split di FT8 (XIT) scelto nelle Impostazioni.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct DxSplit {
+    pub rx_hz: u64,
+    pub tx_hz: u64,
+}
+
+/// Distanza massima fra ricezione e trasmissione dello Split DX: oltre non e' uno split di pile-up ma un errore (o un'altra banda).
+pub const DX_SPLIT_MAX_HZ: u64 = 500_000;
+
 pub struct CatService {
     store: RadioStore,
     parts: CatParts,
@@ -139,6 +150,8 @@ pub struct CatService {
     /// L'audio TCI chiesto dalla scheda Audio (ricezione, trasmissione): si da' a ogni radio TCI collegata, anche dopo un cambio.
     tci_hooks: Mutex<(Option<RxAudioFn>, Option<TxAudioFn>)>,
     models: Mutex<Option<Vec<RigModel>>>,
+    /// Lo Split DX acceso adesso (vedi [`DxSplit`]).
+    dx_split: Mutex<Option<DxSplit>>,
 }
 
 /// Lo split che vale per OmniRig: quello scelto se il sistema di controllo e' OmniRig, altrimenti nessuno (cosi' il distacco di un altro CAT
@@ -169,6 +182,7 @@ impl CatService {
             cat4om: Mutex::new(None),
             tci_hooks: Mutex::new((None, None)),
             models: Mutex::new(None),
+            dx_split: Mutex::new(None),
         })
     }
 
@@ -346,7 +360,9 @@ impl CatService {
     }
 
     /// Stacca tutte le radio; `release_omnirig` falso tiene aperto l'oggetto OmniRig (togliendo solo lo split messo da Aurora).
+    /// Lo Split DX lo spegne ogni radio alla chiusura (lo split acceso da Aurora si toglie).
     fn detach(&self, release_omnirig: bool) {
+        self.forget_dx_split();
         let rig = self.current.lock().ok().and_then(|mut c| c.take());
         if let Some(rig) = rig {
             rig.shutdown();
@@ -541,6 +557,67 @@ impl Drop for CatService {
     }
 }
 
+/// Lo Split DX del cluster.
+impl CatService {
+    /// Lo Split DX acceso, se c'e'.
+    pub fn dx_split(&self) -> Option<DxSplit> {
+        self.dx_split.lock().ok().and_then(|d| *d)
+    }
+
+    fn forget_dx_split(&self) {
+        if let Ok(mut d) = self.dx_split.lock() {
+            *d = None;
+        }
+    }
+
+    /// Accende lo Split DX: ricezione (VFO A) su `rx_hz`, trasmissione (VFO B) su `tx_hz`, split della radio acceso. Le due frequenze stanno
+    /// nella stessa banda dei radioamatori e a non piu' di [`DX_SPLIT_MAX_HZ`]. Mai in trasmissione. FT-991(A) Link comanda solo il VFO A e
+    /// non lo sa fare; con Cat4OM serve una radio che dichiari lo split.
+    pub fn set_dx_split(&self, rx_hz: u64, tx_hz: u64) -> Result<DxSplit, RigError> {
+        let band = crate::bands::amateur_band(rx_hz);
+        if band.is_none() || band != crate::bands::amateur_band(tx_hz) {
+            return Err(RigError(format!("split fuori dalla banda: ricezione {rx_hz} Hz, trasmissione {tx_hz} Hz")));
+        }
+        if rx_hz == tx_hz || rx_hz.abs_diff(tx_hz) > DX_SPLIT_MAX_HZ {
+            return Err(RigError(format!("split non valido: ricezione {rx_hz} Hz, trasmissione {tx_hz} Hz")));
+        }
+        if self.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split rifiutato".into()));
+        }
+        let done = match self.backend() {
+            Backend::Hamlib => self.hamlib()?.set_dx_split(rx_hz, tx_hz),
+            Backend::Tci => self.tci()?.set_dx_split(rx_hz, tx_hz),
+            Backend::Cat4om => self.cat4om()?.set_dx_split(rx_hz, tx_hz),
+            Backend::Omnirig => crate::omnirig::set_dx_split(rx_hz, tx_hz),
+            Backend::Ft991link => Err(RigError("FT-991(A) Link comanda solo il VFO A: lo split DX non e' supportato".into())),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
+        };
+        // la ricezione puo' essere gia' cambiata anche se lo split non si e' acceso: lo stato dice solo cio' che e' vero
+        let state = done.is_ok().then_some(DxSplit { rx_hz, tx_hz });
+        if let Ok(mut d) = self.dx_split.lock() {
+            *d = state;
+        }
+        done.map(|()| DxSplit { rx_hz, tx_hz })
+    }
+
+    /// Spegne lo Split DX (pulsante «Split DX: spegni», ritorno a un modo del motore, cambio di frequenza). `Ok(false)` se non era acceso.
+    pub fn clear_dx_split(&self) -> Result<bool, RigError> {
+        if self.dx_split().is_none() {
+            return Ok(false);
+        }
+        let done = match self.backend() {
+            Backend::Hamlib => self.hamlib().and_then(|r| r.clear_dx_split()),
+            Backend::Tci => self.tci().and_then(|r| r.clear_dx_split()),
+            Backend::Cat4om => self.cat4om().and_then(|r| r.clear_dx_split()),
+            Backend::Omnirig => crate::omnirig::clear_dx_split(),
+            Backend::Ft991link | Backend::None => Ok(()),
+        };
+        done?;
+        self.forget_dx_split();
+        Ok(true)
+    }
+}
+
 /// Le chiamate del programma alla radio passano dal backend scelto. Con OmniRig tutto va a OmniRig (anche i comandi del motore JTDX);
 /// con Hamlib solo frequenza e lettura, dalla radio collegata.
 impl CatService {
@@ -556,7 +633,14 @@ impl CatService {
 }
 
 impl Rig for CatService {
+    /// Cambio di frequenza; lo Split DX acceso finisce qui (spot senza «UP», cambio di banda, frequenza scritta a mano).
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
+        if let Err(e) = self.clear_dx_split() {
+            // la radio resta in split solo se non riesce a spegnerlo: lo stato di Aurora non lo dice piu' acceso (Hamlib e OmniRig lo spengono
+            // comunque con il cambio di frequenza)
+            tracing::warn!("split DX non spento prima del cambio di frequenza: {e}");
+            self.forget_dx_split();
+        }
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_frequency(hz),
             Backend::Tci => self.tci()?.set_frequency(hz),

@@ -107,6 +107,9 @@ async fn every_route_needs_a_paired_device() {
         (Method::GET, "/api/v1/cat/ports"),
         (Method::POST, "/api/v1/cat/detect"),
         (Method::POST, "/api/v1/cat/extra"),
+        (Method::GET, "/api/v1/cat/split-dx"),
+        (Method::POST, "/api/v1/cat/split-dx"),
+        (Method::DELETE, "/api/v1/cat/split-dx"),
     ] {
         let resp = call(&router(&s.state), req(m.clone(), uri)).await;
         assert_eq!(resp.status(), StatusCode::UNAUTHORIZED, "{m} {uri}");
@@ -232,6 +235,56 @@ async fn a_click_on_an_indicator_changes_the_radio_only_from_the_pc_and_never_wh
     let resp = send(&s.state, Method::POST, "/api/v1/cat/extra", nb(), Via::Pc).await;
     status_is(&resp, StatusCode::CONFLICT);
     assert_eq!(body_json(resp).await["error"], "transmitting");
+}
+
+#[tokio::test]
+async fn split_dx_puts_rx_on_the_spot_tx_on_vfo_b_and_ends_with_the_next_frequency() {
+    let s = setup("splitdx", true);
+    let split = |rx: u64, tx: u64| Some(json!({ "rx_hz": rx, "tx_hz": tx }));
+    let split_commands = |fake: &FakeRigctld| fake.commands().into_iter().filter(|c| c.starts_with("F ") || c.starts_with("I ") || c.starts_with("S ")).collect::<Vec<_>>();
+    // senza radio collegata
+    status_is(&send(&s.state, Method::PUT, "/api/v1/cat", Some(ft2000()), Via::Pc).await, StatusCode::OK);
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/split-dx", split(14_025_000, 14_030_000), Via::Network).await;
+    status_is(&resp, StatusCode::CONFLICT);
+    assert_eq!(body_json(resp).await["error"], "not_connected");
+
+    status_is(&send(&s.state, Method::POST, "/api/v1/cat/connect", None, Via::Pc).await, StatusCode::OK);
+    wait_state(&s.state, "connected").await;
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, json!({ "active": false }));
+
+    // doppio clic su «UP 5»: ricezione sullo spot, VFO B 5 kHz sopra, split acceso per ultimo (anche dal telefono, come una frequenza)
+    s.fake.clear_commands();
+    let resp = send(&s.state, Method::POST, "/api/v1/cat/split-dx", split(14_025_000, 14_030_000), Via::Network).await;
+    status_is(&resp, StatusCode::OK);
+    let on = json!({ "active": true, "rx_hz": 14_025_000, "tx_hz": 14_030_000 });
+    assert_eq!(body_json(resp).await["split"], on);
+    assert_eq!(split_commands(&s.fake), ["F 14025000", "I 14030000", "S 1 VFOB"]);
+    assert!(s.fake.split());
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, on);
+
+    // trasmissione su un'altra banda o troppo lontana: rifiutata, lo split acceso resta
+    for (rx, tx) in [(14_025_000, 7_005_000), (14_025_000, 14_025_000), (3_000_000, 3_005_000)] {
+        let resp = send(&s.state, Method::POST, "/api/v1/cat/split-dx", split(rx, tx), Via::Network).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], "bad_split");
+    }
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, on);
+
+    // lo spot dopo senza «UP» (o un cambio di banda) porta la radio altrove e spegne lo split
+    status_is(&send(&s.state, Method::POST, "/api/v1/commands/frequency", Some(json!({ "hz": 14_074_000 })), Via::Network).await, StatusCode::OK);
+    assert!(!s.fake.split());
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, json!({ "active": false }));
+
+    // di nuovo acceso e poi «Split DX: spegni»
+    status_is(&send(&s.state, Method::POST, "/api/v1/cat/split-dx", split(7_005_000, 7_007_000), Via::Network).await, StatusCode::OK);
+    assert!(s.fake.split());
+    let resp = send(&s.state, Method::DELETE, "/api/v1/cat/split-dx", None, Via::Network).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["was_on"], true);
+    assert!(!s.fake.split());
+    assert_eq!(s.fake.frequency(), 7_005_000, "la ricezione resta sullo spot");
+    let resp = send(&s.state, Method::DELETE, "/api/v1/cat/split-dx", None, Via::Network).await;
+    assert_eq!(body_json(resp).await["was_on"], false);
 }
 
 #[tokio::test]

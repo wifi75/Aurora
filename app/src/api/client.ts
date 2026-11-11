@@ -872,6 +872,23 @@ export async function postCatExtra(item: CatExtraItem): Promise<{ ok: boolean; i
   return (await (await request('/cat/extra', jsonInit({ item }))).json()) as { ok: boolean; item: string; extras: RigExtras | null };
 }
 
+/** Lo Split DX acceso dal cluster: ricezione sullo spot (VFO A), trasmissione sull'altro VFO. */
+export type SplitDx = { active: false } | { active: true; rx_hz: number; tx_hz: number };
+
+export async function getSplitDx(): Promise<SplitDx> {
+  return (await (await request('/cat/split-dx')).json()) as SplitDx;
+}
+
+/** Doppio clic su uno spot con «UP 5», «QSX ...»: la radio riceve su `rxHz` e trasmette su `txHz` con lo split acceso. */
+export async function postSplitDx(rxHz: number, txHz: number): Promise<SplitDx> {
+  return ((await (await request('/cat/split-dx', jsonInit({ rx_hz: rxHz, tx_hz: txHz }))).json()) as { split: SplitDx }).split;
+}
+
+/** «Split DX: spegni»: la radio torna in simplex sulla ricezione. */
+export async function deleteSplitDx(): Promise<void> {
+  await request('/cat/split-dx', { method: 'DELETE' });
+}
+
 export async function getCatModels(): Promise<CatModel[]> {
   return ((await (await request('/cat/models')).json()) as { models: CatModel[] }).models;
 }

@@ -507,6 +507,9 @@ struct Inner {
     emulate_restore: AtomicU64,
     /// Lo split vero acceso da Aurora: si spegne alla chiusura.
     split_by_us: AtomicBool,
+    /// Split DX acceso (doppio clic su uno spot del cluster con «UP 5», «QSX ...»): il VFO di trasmissione l'ha scelto l'operatore e lo
+    /// split di FT8 non lo sposta finche' resta acceso.
+    dx_split: AtomicBool,
     /// PTT e split gia' rimessi a posto per questo collegamento.
     released: AtomicBool,
 }
@@ -923,6 +926,7 @@ impl Cat4omRig {
             tx_audio_hz: AtomicU32::new(0),
             emulate_restore: AtomicU64::new(0),
             split_by_us: AtomicBool::new(false),
+            dx_split: AtomicBool::new(false),
             released: AtomicBool::new(false),
         });
         let worker_inner = Arc::clone(&inner);
@@ -971,7 +975,7 @@ impl Cat4omRig {
             return Ok(());
         }
         inner.connected()?;
-        if on && inner.split_mode() == SplitMode::Emulate {
+        if on && inner.split_mode() == SplitMode::Emulate && !inner.dx_split.load(Ordering::SeqCst) {
             let audio = inner.tx_audio_hz.load(Ordering::SeqCst);
             if let Some(dial) = inner.dial()
                 && audio != 0
@@ -1018,7 +1022,7 @@ impl Cat4omRig {
         }
         let inner = &self.inner;
         inner.tx_audio_hz.store(hz, Ordering::SeqCst);
-        if hz == 0 || inner.split_mode() != SplitMode::Rig {
+        if hz == 0 || inner.split_mode() != SplitMode::Rig || inner.dx_split.load(Ordering::SeqCst) {
             return Ok(());
         }
         inner.connected()?;
@@ -1035,6 +1039,48 @@ impl Cat4omRig {
             inner.command("setSplit", json!({ "enabled": true, "txVfo": tx_vfo }))?;
         }
         inner.split_by_us.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+
+    /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): il VFO attivo su `rx_hz` (con il modo scelto, come un
+    /// cambio di frequenza), l'altro VFO su `tx_hz` e `setSplit` per ultimo. Solo se la radio dichiara a Cat4OM lo split vero (`SetSplit` e
+    /// un secondo VFO scrivibile).
+    pub fn set_dx_split(&self, rx_hz: u64, tx_hz: u64) -> Result<(), RigError> {
+        if !valid_dial_hz(tx_hz) {
+            return Err(RigError(format!("frequenza di trasmissione non valida: {tx_hz} Hz")));
+        }
+        let inner = &self.inner;
+        inner.connected()?;
+        if !inner.view().is_some_and(|v| v.real_split()) {
+            return Err(RigError("Cat4OM: la radio non dichiara lo split (SetSplit e un secondo VFO): split non supportato".into()));
+        }
+        self.set_frequency(rx_hz)?;
+        let Some(tx_vfo) = inner.view().and_then(|v| v.other_vfo()) else {
+            return Err(RigError("Cat4OM: nessun secondo VFO per la trasmissione: split non supportato".into()));
+        };
+        inner.dx_split.store(true, Ordering::SeqCst);
+        let done = inner.set_vfo_frequency(Some(&tx_vfo), tx_hz).and_then(|()| inner.command("setSplit", json!({ "enabled": true, "txVfo": tx_vfo })));
+        match done {
+            Ok(_) => {
+                inner.split_by_us.store(true, Ordering::SeqCst);
+                Ok(())
+            }
+            Err(e) => {
+                inner.dx_split.store(false, Ordering::SeqCst);
+                Err(e)
+            }
+        }
+    }
+
+    /// Spegne lo Split DX, se acceso (`setSplit` con `enabled: false`).
+    pub fn clear_dx_split(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        if !inner.dx_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        inner.connected()?;
+        inner.command("setSplit", json!({ "enabled": false }))?;
+        inner.dx_split.store(false, Ordering::SeqCst);
         Ok(())
     }
 

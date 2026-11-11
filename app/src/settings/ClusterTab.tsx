@@ -6,6 +6,7 @@ import { Check, Help } from './common';
 import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 import { DXPED_DEFAULT, DXPED_PALETTE, setDxpedColor, useDxpedColor } from '../lib/dxpedColor';
+import { setSplitDxEnabled, useSplitDxEnabled } from '../lib/spotSplit';
 
 const MAX_SERVERS = 8;
 
@@ -73,6 +74,8 @@ export function ClusterTab() {
   const [command, setCommand] = useState({ server: '', text: '' });
   const [leds, setLeds] = useState<Record<string, Led>>({});
   const testing = useRef(new Set<string>());
+  // Split DX: vale per il cluster della pagina Stazione e di quella PSK · RTTY · CW (resta su questo dispositivo, come il colore delle DXpedition)
+  const splitDx = useSplitDxEnabled();
 
   const shown: Draft | null = draft ?? (state.data ? toDraft(state.data.config) : null);
   const parsed = shown ? draftToConfig(shown) : null;
@@ -180,6 +183,7 @@ export function ClusterTab() {
       <Group title={t('lay.settings')}>
         <Cells min={13}>
           <Check label={t('cluster.enabled')} hint={t('tip.cluster.enabled')} checked={shown.enabled} onChange={(v) => set({ enabled: v })} />
+          <Check label={t('cluster.splitDx.set')} hint={t('tip.cluster.splitDx')} checked={splitDx} onChange={setSplitDxEnabled} />
           <Field label={t('cluster.callsign')} hint={t('tip.cluster.callsign')}>
             {/* il nominativo viene dai dati di stazione: qui si mostra soltanto */}
             <input type="text" value={state.data?.callsign || t('cluster.callMissing')} readOnly aria-readonly="true" />

@@ -1,8 +1,8 @@
 import { toast } from '../lib/toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { getClusterSpots, getDxcc, getDxped, getStationInfo, postFrequency, postMode, rotatorGoto, type ClusterSpot } from '../api/client';
+import { ApiError, deleteSplitDx, getClusterSpots, getDxcc, getDxped, getSplitDx, getStationInfo, postFrequency, postMode, postSplitDx, rotatorGoto, type ClusterSpot, type SplitDx } from '../api/client';
 import { bearingDeg, gridCenter, type Point } from '../lib/geo';
 import { normalizeAz } from '../lib/rotator';
 import type { ClusterColumn, ClusterOptions } from '../lib/clusterOptions';
@@ -22,6 +22,7 @@ import { BAND_NAMES, bandOf } from '../lib/format';
 import { replyErrorMessage } from '../lib/replyError';
 import { browserStorage } from '../lib/theme';
 import { wishReason } from '../lib/wishlist';
+import { parseSpotSplit, useSplitDxEnabled, type SpotSplit } from '../lib/spotSplit';
 import { useStation, useStatusPick } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 import '../styles/cluster-grid.css';
@@ -73,10 +74,23 @@ export async function tuneSpot(spot: ClusterSpot): Promise<void> {
   }
 }
 
+/** Una frequenza in MHz come la scrivono i DX: «14.030», «14.0325». */
+export function formatMhz(hz: number): string {
+  return (hz / 1e6).toFixed(hz % 1000 === 0 ? 3 : 4);
+}
+
+/**
+ * Cosa fare al clic su uno spot al posto di portare la radio sulla sua frequenza (la pagina dei modi testuali la porta con il segnale sul
+ * suo tono). `splitDx` vero: subito dopo la radio va in Split DX, quindi la pagina non sposta la trasmissione dentro l'audio.
+ */
+export type SpotHandler = (spot: ClusterSpot, splitDx: boolean) => Promise<void>;
+
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
-/** `onSpot`: cosa fare al clic su uno spot al posto di portare la radio sulla sua frequenza (la pagina dei modi testuali la porta con il segnale sul suo tono). */
-function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) => Promise<void>; options?: ClusterOptions } = {}) {
+function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?: ClusterOptions } = {}) {
   const t = useT();
+  const queryClient = useQueryClient();
+  // Split DX (Impostazioni > DX Cluster): il doppio clic su uno spot con «UP 5», «QSX ...» mette la radio in split
+  const splitDxOn = useSplitDxEnabled();
   // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
   const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
   const day = today();
@@ -85,6 +99,8 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
   const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid', 'dx_call', 'rx_df']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
+  // lo Split DX acceso sulla radio (anche da un'altra finestra o dal telefono); il core lo spegne al cambio di frequenza, di banda o di modo
+  const splitDx = useQuery({ queryKey: ['split-dx'], queryFn: getSplitDx, retry: false, refetchInterval: 4000, enabled: info.data?.rig_control === true });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
   const [spotOpen, setSpotOpen] = useState(false);
   const wishlist = useWishlist((s) => s.list);
@@ -221,16 +237,59 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
     }
   };
 
-  const tune = async (spot: ClusterSpot) => {
+  /** Il doppio clic con lo Split DX: ricezione sullo spot (o dove la porta la pagina), trasmissione spostata sull'altro VFO, split acceso. */
+  const tuneSplit = async (spot: ClusterSpot, split: SpotSplit) => {
+    let rx = Math.round(spot.freq_khz * 1000);
+    if (onSpot) {
+      await onSpot(spot, true);
+      rx = useStation.getState().status?.dial_hz ?? rx;
+    }
+    const tx = rx + Math.round(split.offsetKhz * 1000);
+    const before = useStation.getState().status?.dial_hz;
+    useStation.getState().patchStatus({ dial_hz: rx });
+    try {
+      const state = await postSplitDx(rx, tx);
+      queryClient.setQueryData<SplitDx>(['split-dx'], state);
+      toast(t('cluster.splitDx.on', { label: split.label, rx: formatMhz(rx), tx: formatMhz(tx) }), 'info');
+    } catch (error) {
+      if (before !== undefined && !onSpot) useStation.getState().revertStatus(['dial_hz'], { dial_hz: before });
+      throw error;
+    }
+  };
+
+  /** `double`: il doppio clic, che con lo Split DX acceso e un «UP» nel commento mette la radio in split. */
+  const tune = async (spot: ClusterSpot, double: boolean) => {
+    // lo split serve il CAT: con la frequenza scritta a mano il doppio clic sintonizza soltanto
+    const split = double && splitDxOn && info.data?.rig_control === true ? parseSpotSplit(spot.comment, spot.freq_khz, spot.mode) : null;
+    // con il clic singolo (rotella delle pagine PSK, RTTY e CW) i due clic hanno gia' sintonizzato: il doppio clic serve solo allo split
+    if (double && !split && options?.click === 'single') return;
     // il rotore gira anche se la radio non c'e' o non risponde
-    if (options?.rotor) void pointRotor(spot);
+    if (options?.rotor && !(double && options.click === 'single')) void pointRotor(spot);
     if (!info.data?.rig_control && !info.data?.manual_dial) {
       toast(t('cluster.noRig'), 'error');
       return;
     }
+    // un cambio di frequenza spegne lo Split DX nel core: l'indicatore lo rilegge subito (con lo split acceso lo dice gia' la risposta)
+    const reread = () => void queryClient.invalidateQueries({ queryKey: ['split-dx'] });
     try {
       // niente riga «Radio portata su…» sopra la tabella: si vede gia' sul display; gli errori in un avviso che sparisce
-      await (onSpot ?? tuneSpot)(spot);
+      if (split) await tuneSplit(spot, split);
+      else {
+        await (onSpot ?? tuneSpot)(spot, false);
+        reread();
+      }
+    } catch (error) {
+      reread();
+      toast(error instanceof ApiError && error.code === 'unsupported' ? t('cluster.splitDx.unsupported', { why: error.detail ?? '' }) : replyErrorMessage(error, t), 'error');
+    }
+  };
+
+  /** «Split DX: spegni». */
+  const stopSplit = async () => {
+    try {
+      await deleteSplitDx();
+      queryClient.setQueryData<SplitDx>(['split-dx'], { active: false });
+      toast(t('cluster.splitDx.done'), 'info');
     } catch (error) {
       toast(replyErrorMessage(error, t), 'error');
     }
@@ -376,6 +435,22 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
     setLayout(() => defaultClusterLayout());
   };
 
+  // l'etichetta «UP 5» va nei Commenti; se la colonna e' nascosta, accanto al nominativo
+  const tagColumn: ClusterColumn = visible.includes('comment') ? 'comment' : 'dx';
+  /** L'etichetta dello Split DX letto nel commento («UP 5», «DN 2», «QSX 14.030»), con cosa fa il doppio clic. */
+  const splitTag = (s: ClusterSpot, c: ClusterColumn) => {
+    if (c !== tagColumn) return null;
+    const split = parseSpotSplit(s.comment, s.freq_khz, s.mode);
+    if (!split) return null;
+    const shift = `${split.offsetKhz > 0 ? '+' : '−'}${String(Math.abs(split.offsetKhz))}`;
+    const tip = splitDxOn ? t('cluster.splitDx.tag', { shift, tx: formatMhz(Math.round(split.txKhz * 1000)) }) : t('cluster.splitDx.tagOff', { label: split.label });
+    return (
+      <span className={`cluster-split${splitDxOn ? '' : ' cluster-split--off'}`} title={tip}>
+        {split.label}
+      </span>
+    );
+  };
+
   const cell = (c: ClusterColumn, s: ClusterSpot) => {
     switch (c) {
       case 'de':
@@ -394,6 +469,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
         return (
           <td key={c} className="cl-c cl-c--dx" onContextMenu={(e) => openCallMenu(e, s.dx_call)}>
             <CallsignTip call={s.dx_call}><strong className="data cluster-dx">{s.dx_call}</strong></CallsignTip>
+            {splitTag(s, c)}
           </td>
         );
       case 'country': {
@@ -409,7 +485,12 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
       case 'mode':
         return <td key={c} className="data cluster-mode cl-c cl-c--mode">{s.mode ?? ''}</td>;
       case 'comment':
-        return <td key={c} className="cluster-comment cl-c cl-c--comment">{s.comment}</td>;
+        return (
+          <td key={c} className="cluster-comment cl-c cl-c--comment">
+            {splitTag(s, c)}
+            {s.comment}
+          </td>
+        );
       case 'time':
         return <td key={c} className="data cluster-utc cl-c cl-c--time">{s.time_utc.slice(0, 2)}:{s.time_utc.slice(2)}</td>;
     }
@@ -451,6 +532,14 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
         </span>
       </div>
+      {splitDx.data?.active ? (
+        <div className="cluster-splitdx" role="status" title={t('tip.cluster.splitDxActive', { rx: formatMhz(splitDx.data.rx_hz), tx: formatMhz(splitDx.data.tx_hz) })}>
+          <strong className="data">{t('cluster.splitDx.active', { tx: formatMhz(splitDx.data.tx_hz) })}</strong>
+          <button type="button" className="glass chip" onClick={() => void stopSplit()}>
+            {t('cluster.splitDx.off')}
+          </button>
+        </div>
+      ) : null}
       {spotOpen ? <SpotDialog call={status?.dx_call ?? ''} dialHz={status?.dial_hz ?? 0} audioHz={status?.rx_df ?? 0} modeName={status?.mode ?? ''} onClose={() => setSpotOpen(false)} /> : null}
       {spots.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.waiting')}</p>
@@ -498,8 +587,8 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) =
                   className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}${dxped ? ' cluster-row--dxped' : ''}`}
                   data-dxped={dxped || undefined}
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
-                  onClick={options?.click === 'single' ? () => void tune(s) : undefined}
-                  onDoubleClick={options?.click === 'single' ? undefined : () => void tune(s)}
+                  onClick={options?.click === 'single' ? () => void tune(s, false) : undefined}
+                  onDoubleClick={() => void tune(s, true)}
                 >
                   {visible.map((c) => cell(c, s))}
                 </tr>
