@@ -23,8 +23,11 @@ describe('RxControls', () => {
     expect(items).toContain('SWL');
   });
 
-  it('keeps Ferma, Decodifica and Cancella together in their own bar', () => {
-    const items = [...show(true).container.querySelectorAll('.rx-seg--btns .rx-seg-item')].map((b) => b.textContent);
-    expect(items).toHaveLength(3);
+  it('keeps Ferma and Decodifica in their own bar, without the duplicate Cancella, and Auto (when shown) last', () => {
+    const buttons = [...show(true).container.querySelectorAll('.rx-seg--btns .rx-seg-item')];
+    const items = buttons.map((b) => b.textContent);
+    expect(items.slice(0, 2)).toEqual(['Ferma', 'Decodifica']);
+    expect(items).not.toContain('Cancella');
+    if (buttons.length > 2) expect(buttons.at(-1)?.classList.contains('auto-switch')).toBe(true);
   });
 });

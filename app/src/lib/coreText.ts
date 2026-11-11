@@ -33,6 +33,12 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['nessuna risposta', 'core.noReply'],
   ["La radio e' spenta (PS0): accendila oppure spunta «Accendi» nella scheda Radio", 'core.ft991.off'],
   ['Collegamento con FT-991(A) Link perso: nuovo tentativo', 'core.ft991.lost'],
+  ['radio Cat4OM non collegata', 'core.cat4om.notLinked'],
+  ['Nessuna radio nel gruppo Cat4OM: aggiungila in Cat4OM', 'core.cat4om.noRadios'],
+  ['Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio', 'core.cat4om.authRequired'],
+  ["Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC", 'core.cat4om.authFailed'],
+  ['Versione del protocollo Cat4OM non compatibile con Aurora (1.0.0)', 'core.cat4om.version'],
+  ['Hai indicato la porta di gestione di Cat4OM: scrivi la porta Control del gruppo (di base 17301)', 'core.cat4om.management'],
   ['Accensione del ricevitore RX2', 'core.tci.rx2Wait'],
   ["La SDR non ha acceso il ricevitore RX2 (rx_enable): controlla che la SDR sia accesa e che abbia RX2, poi ricollega", 'core.tci.rx2Failed'],
   ['La SDR non ha ancora detto la potenza (drive): cambiala una volta dalla SDR', 'core.tci.noDrive'],
@@ -62,6 +68,24 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
 const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
   // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
   { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
+  // Cat4OM: servizio non raggiungibile, porta sbagliata, radio mancante, scollegata o presa dall'emulazione, collegamento perso, rifiuti
+  {
+    re: /^Cat4OM non raggiungibile su (\S+): avvia Cat4OM e controlla la porta Control del gruppo; da un altro PC abilita la rete in Settings → SERVER \((.*)\)$/s,
+    key: 'core.cat4om.noAnswer',
+    vars: ['address', 'raw'],
+  },
+  { re: /^Su (\S+) non risponde il Control di Cat4OM: controlla la porta del gruppo \(di base 17301\)$/s, key: 'core.cat4om.notControl', vars: ['address'] },
+  { re: /^Radio «(.*)» non trovata nel gruppo Cat4OM \(presenti: (.*)\)$/s, key: 'core.cat4om.radioMissing', vars: ['radio', 'list'] },
+  { re: /^Radio Cat4OM «(.*)» non collegata \((\S+)\)$/s, key: 'core.cat4om.radioOff', vars: ['radio', 'state'] },
+  {
+    re: /^La radio «(.*)» e' presa dall'emulazione (\S+) di Cat4OM: spegni quel profilo in Cat4OM per comandarla da Aurora$/s,
+    key: 'core.cat4om.claimed',
+    vars: ['radio', 'by'],
+  },
+  { re: /^Collegamento con Cat4OM perso \((.*)\): nuovo tentativo$/s, key: 'core.cat4om.lost', vars: ['raw'] },
+  { re: /^Cat4OM: un'altra radio o un altro programma sta trasmettendo \((\S+) rifiutato\)$/s, key: 'core.cat4om.txBusy', vars: ['cmd'] },
+  { re: /^Cat4OM non risponde a (\S+) \(nessuna risposta in (\d+) s\)$/s, key: 'core.cat4om.timeout', vars: ['cmd', 's'] },
+  { re: /^Cat4OM ha rifiutato (\S+): (.*) \((\S+)\)$/s, key: 'core.cat4om.refused', vars: ['cmd', 'raw', 'code'] },
   // TCI: comando senza eco (nome del comando del protocollo) e frequenza rifiutata
   { re: /^La radio TCI non ha confermato il comando (\S+) \(nessuna eco dal server, ripetuto una volta\)$/s, key: 'core.tci.noEcho', vars: ['cmd'] },
   { re: /^La radio TCI ha rifiutato la frequenza (\d+) Hz: e' rimasta su (\d+) Hz$/s, key: 'core.tci.freqRefused', vars: ['asked', 'got'] },

@@ -1,8 +1,9 @@
 //! JT65: ricezione. Sincronismo sul periodo intero, affinamento di frequenza e ritardo, energie dei 64 toni di ogni simbolo e decodifica
-//! Reed-Solomon a decisione soft (`symspec65`, `sync65`, `demod64a` e `ftrsdap.c` di WSJT-X, GPL 3).
+//! Reed-Solomon a decisione soft con l'analisi a priori (`symspec65`, `sync65`, `demod64a`, `extract.f90`, `ftrsdap.c`, `hint65.f90` e
+//! `jt65_decode.f90` di WSJT-X 3.3, GPL 3).
 
-use crate::jt65::{NSYM, SYNC_PATTERN, gray, interleave};
-use crate::pack::unpack_message;
+use crate::jt65::{NSYM, SYNC_PATTERN, data_symbols, gray, interleave};
+use crate::pack::{Kind, pack_message, unpack_message};
 use crate::rs::{Codec, DATA, NN};
 use rustfft::FftPlanner;
 use rustfft::num_complex::Complex;
@@ -42,6 +43,37 @@ pub struct Decoded {
     /// Distanza totale (dura piu' soffice) dal messaggio ricevuto e `pp2 / pp1`: gli stessi due numeri con cui `extract` accetta o scarta.
     pub total_distance: i32,
     pub rtt: f32,
+    /// Tipo a priori con cui e' uscito (`ntype` di `extract.f90:162-174`: 1 CQ, 2 MyCall, 3 MyCall DxCall, 4 ... RRR, 5 ... 73,
+    /// 6 ... DxGrid, 7 CQ DxCall DxGrid); 0 senza analisi a priori.
+    pub ap_type: u8,
+    /// Uscito dalla ricerca profonda sulla lista dei messaggi (`hint65`, `nft = 2`).
+    pub hinted: bool,
+}
+
+/// Livello «Aggressive decoding level» di fabbrica di WSJT-X (`Configuration.cpp:3721`, `settings_->value ("Aggressive", 4)`).
+pub const DEFAULT_AGGRESSIVE: u8 = 4;
+/// F Tol di fabbrica di WSJT-X in JT65 (`mainwindow.cpp:11867`, `Ftol_JT65` = 50 Hz).
+pub const DEFAULT_TOL_HZ: f32 = 50.0;
+
+/// Le soglie della seconda accettazione per livello «Aggressive» (`h0`, `d0`, `r0` di `jt65_decode.f90:215-220`): distanza dura, distanza
+/// totale e `pp2/pp1` massime di un messaggio uscito senza analisi a priori.
+const H0: [i32; 12] = [41, 42, 43, 43, 44, 45, 46, 47, 48, 48, 49, 49];
+const D0: [i32; 12] = [71, 72, 73, 74, 76, 77, 78, 80, 81, 82, 83, 83];
+const R0: [f32; 12] = [0.70, 0.72, 0.74, 0.76, 0.78, 0.80, 0.82, 0.84, 0.86, 0.88, 0.90, 0.90];
+
+/// Quante passate a priori per punto del QSO (`nappasses`, `extract.f90:65`) e di che tipo (`naptypes`, `:66-71`).
+const NAPPASSES: [usize; 6] = [3, 4, 2, 3, 3, 4];
+const NAPTYPES: [[usize; 4]; 6] = [[1, 2, 6, 0], [2, 3, 6, 7], [2, 3, 0, 0], [3, 4, 5, 0], [3, 4, 5, 0], [2, 3, 4, 5]];
+
+/// I nominativi per l'analisi a priori (`mycall`, `hiscall`, `hisgrid`, `nQSOProgress` di `extract.f90`).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ApCalls {
+    pub my_call: String,
+    pub dx_call: String,
+    /// Locatore del DX: contano i primi 4 caratteri.
+    pub dx_grid: String,
+    /// Punto del QSO (0 CQ, 1 locatore, 2 rapporto, 3 R+rapporto, 4 RRR, 5 73).
+    pub qso_progress: u8,
 }
 
 /// Come si cerca.
@@ -49,17 +81,43 @@ pub struct Decoded {
 pub struct Options {
     pub f_low_hz: f32,
     pub f_high_hz: f32,
-    /// Soglia di sincronismo dei candidati (`thresh0`: 2,5 alla prima passata).
-    pub min_sync: f32,
-    /// Prove di cancellazioni casuali per candidato (`ntrials`: 1000 di fabbrica a profondita' normale, 100 a profondita' minima).
-    pub trials: u32,
-    /// Al massimo quanti candidati si provano.
+    /// Profondita' (`ndepth & 3`, «Deep» di fabbrica: `NDepth` = 3): 1 due passate e 100 prove di cancellazioni, 2 due passate e 1000,
+    /// 3 quattro passate e 1000 (`jt65_decode.f90:256-268`).
+    pub depth: u8,
+    /// «Aggressive decoding level» 0..10 (`naggressive`): sceglie le soglie `h0`/`d0`/`r0`; 10 allarga anche quelle di `extract`.
+    pub aggressive: u8,
+    /// Al massimo quanti candidati alla prima passata (`ncand = min(ncand, 50 / ipass)`, `jt65_decode.f90:324`).
     pub max_candidates: usize,
+    /// Frequenza di ricezione (`nfqso`).
+    pub rx_hz: Option<f32>,
+    /// Tolleranza attorno a `rx_hz` (`ntol`, F Tol).
+    pub tol_hz: f32,
+    /// «Single decode» (`nexp_decode & 32`): si cerca solo entro `rx_hz +- tol_hz` con soglia 1,0 e ci si ferma al primo messaggio
+    /// (`jt65_decode.f90:302-306`, `:486`). Spento di fabbrica (`SingleDecode` = false).
+    pub single_decode: bool,
+    /// Analisi a priori (`ljt65apon`, «Enable AP»): `None` spenta.
+    pub ap: Option<ApCalls>,
+    /// Ricerca profonda sulla lista dei messaggi (`ndepth & 32`, «Include correlation», `hint65`): spenta di fabbrica.
+    pub deep_search: bool,
+    /// I nominativi noti (nominativo, locatore a 4) per la ricerca profonda (`set_calls`, al massimo 10000).
+    pub hint_calls: Vec<(String, String)>,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { f_low_hz: 200.0, f_high_hz: 4000.0, min_sync: 2.5, trials: 1000, max_candidates: 40 }
+        Options {
+            f_low_hz: 200.0,
+            f_high_hz: 4000.0,
+            depth: 3,
+            aggressive: DEFAULT_AGGRESSIVE,
+            max_candidates: 50,
+            rx_hz: None,
+            tol_hz: DEFAULT_TOL_HZ,
+            single_decode: false,
+            ap: None,
+            deep_search: false,
+            hint_calls: Vec::new(),
+        }
     }
 }
 
@@ -139,13 +197,15 @@ struct Candidate {
     sync: f32,
 }
 
-/// Cerca i segnali: per ogni frequenza correla l'energia del tono di sincronismo con la sequenza pseudocasuale (`sync65`).
-fn find_candidates(ss: &[f32], nq: usize, options: &Options) -> Vec<Candidate> {
+/// Cerca i segnali: per ogni frequenza correla l'energia del tono di sincronismo con la sequenza pseudocasuale (`sync65`). I candidati
+/// escono in ordine di frequenza, come in `sync65.f90:62-97` (chi li tronca a 50 tiene i piu' bassi, `jt65_decode.f90:324`). `robust`
+/// e' `nrobust` di `xcor.f90:29-40`: ogni valore diventa +1 o -1 rispetto alla mediana (contro i picchi dell'AGC a inizio periodo).
+fn find_candidates(ss: &[f32], nq: usize, f_low_hz: f32, f_high_hz: f32, thresh: f32, robust: bool) -> Vec<Candidate> {
     if nq == 0 {
         return Vec::new();
     }
-    let ia = ((f64::from(options.f_low_hz) / DF_BIN).round() as usize).max(2);
-    let ib = ((f64::from(options.f_high_hz) / DF_BIN).round() as usize).min(NSZ - 1);
+    let ia = ((f64::from(f_low_hz) / DF_BIN).round() as usize).max(2);
+    let ib = ((f64::from(f_high_hz) / DF_BIN).round() as usize).min(NSZ - 1);
     if ia >= ib {
         return Vec::new();
     }
@@ -163,6 +223,12 @@ fn find_candidates(ss: &[f32], nq: usize, options: &Options) -> Vec<Candidate> {
     for i in ia..=ib {
         for (j, v) in a.iter_mut().enumerate() {
             *v = ss[j * NSZ + i - 1] / reference[i];
+        }
+        if robust {
+            let xmed = percentile(&a, 50);
+            for v in a.iter_mut() {
+                *v = if *v >= xmed { 1.0 } else { -1.0 };
+            }
         }
         let mut ccf = vec![0.0f32; nlag];
         let (mut best, mut lag_best) = (f32::MIN, LAG1);
@@ -193,12 +259,10 @@ fn find_candidates(ss: &[f32], nq: usize, options: &Options) -> Vec<Candidate> {
     ccfred[ib + 1] = ccfred[ib];
     let mut out: Vec<Candidate> = Vec::new();
     for i in ia..=ib {
-        if ccfred[i] >= options.min_sync && ccfred[i] > ccfred[i - 1] && ccfred[i] > ccfred[i + 1] {
+        if ccfred[i] >= thresh && ccfred[i] > ccfred[i - 1] && ccfred[i] > ccfred[i + 1] {
             out.push(Candidate { bin: i, lag: peaks[i], sync: ccfred[i] });
         }
     }
-    out.sort_by(|x, y| y.sync.total_cmp(&x.sync));
-    out.truncate(options.max_candidates);
     out
 }
 
@@ -259,7 +323,20 @@ fn refine(samples: &[f32], c: &Candidate) -> (f64, f64, f64) {
             }
         }
         if step > QSTEP / 8.0 {
-            // la frequenza si cerca dopo il primo passo del ritardo, poi la deriva
+            // la frequenza si cerca dopo il primo passo del ritardo, poi la deriva. Prima a passi di 2 Hz fino a +-8 Hz, poi di 1 Hz attorno
+            // al migliore, come `afc65b.f90:16-39` (`a(1)` da -8 a +8): un candidato su un lobo laterale di un segnale forte finisce cosi'
+            // sul segnale vero invece di far uscire un messaggio inventato
+            for (span, df) in [(4i32, 2.0f64), (2, 1.0)] {
+                let center_f = f;
+                for d in -span..=span {
+                    let ff = center_f + f64::from(d) * df;
+                    let m = sync_metric(samples, dt, ff, drift);
+                    if m > best {
+                        best = m;
+                        f = ff;
+                    }
+                }
+            }
             let center_f = f;
             for d in -4i32..=4 {
                 let ff = center_f + f64::from(d) * 0.35;
@@ -403,9 +480,10 @@ const PERR: [[i32; 8]; 8] = [
     [51, 58, 57, 66, 72, 77, 82, 86],
 ];
 
-/// `ftrsdap` senza analisi a priori: prima la decodifica a decisione dura, poi `trials` prove con cancellazioni scelte a caso fra i simboli
-/// meno sicuri; fra le parole candidate vince quella la cui energia, nei toni che la parola prevede, e' maggiore (`pp`).
-fn soft_decode(codec: &Codec, d: &Demod, s3_norm: &[[f32; 64]], trials: u32) -> Option<SoftResult> {
+/// `ftrsdap`: prima la decodifica a decisione dura, poi `trials` prove con cancellazioni scelte a caso fra i simboli meno sicuri; fra le
+/// parole candidate vince quella la cui energia, nei toni che la parola prevede, e' maggiore (`pp`). `ap` sono i 12 simboli di dati noti a
+/// priori (-1 ignoto): si impongono nella parola ricevuta e non si cancellano mai (`ftrsdap.c:62-68`, `:131-133`).
+fn soft_decode(codec: &Codec, d: &Demod, s3_norm: &[[f32; 64]], trials: u32, ap: &[i16; DATA]) -> Option<SoftResult> {
     let mut rxdat = [0u8; NN];
     let mut rxprob = [0i32; NN];
     let mut rxdat2 = [0u8; NN];
@@ -439,6 +517,13 @@ fn soft_decode(codec: &Codec, d: &Demod, s3_norm: &[[f32; 64]], trials: u32) -> 
         rxdat2[i] = de_dat2[NN - 1 - i];
         rxprob2[i] = de_prob2[NN - 1 - i];
     }
+    // i simboli noti a priori: i 12 di dati stanno in testa alla parola di Karn, in ordine inverso
+    for (i, &a) in ap.iter().enumerate() {
+        if (0..64).contains(&a) {
+            rxdat[DATA - 1 - i] = a as u8;
+            rxprob2[DATA - 1 - i] = -1;
+        }
+    }
 
     // simboli dal meno sicuro: ordine per probabilita' decrescente, poi si legge dal fondo (ordinamento a bolle stabile come in C)
     let mut indexes: Vec<usize> = (0..NN).collect();
@@ -455,8 +540,9 @@ fn soft_decode(codec: &Codec, d: &Demod, s3_norm: &[[f32; 64]], trials: u32) -> 
     // decisione dura
     let mut work = rxdat;
     if codec.decode_karn(&mut work, &[]).is_some() {
+        // `param(5)` e `param(4)` restano a zero (`ftrsdap.c:94-104`): la decisione dura passa sempre le soglie
         let nhard = work.iter().zip(rxdat.iter()).filter(|(a, b)| a != b).count() as i32;
-        return Some(SoftResult { word: work, nhard, ntotal: nhard, rtt: 0.0 });
+        return Some(SoftResult { word: work, nhard, ntotal: 0, rtt: 0.0 });
     }
 
     let mut nsum = 0i32;
@@ -529,7 +615,254 @@ fn soft_decode(codec: &Codec, d: &Demod, s3_norm: &[[f32; 64]], trials: u32) -> 
         }
     }
     let (word, nhard, ntotal) = best?;
-    Some(SoftResult { word, nhard, ntotal, rtt: if pp1 > 0.0 { pp2 / pp1 } else { 1.0 } })
+    // `param(4) = 1000 * pp2 / pp1` e' un intero: `rtt = 0.001 * param(4)` (`ftrsdap.c:180`, `extract.f90:157`)
+    let rtt = if pp1 > 0.0 { (1000.0 * pp2 / pp1).trunc() / 1000.0 } else { 1.0 };
+    Some(SoftResult { word, nhard, ntotal, rtt })
+}
+
+/// `chkhist`: il valore di simbolo piu' frequente e quante volte compare (`extract.f90:117`).
+fn most_frequent_symbol(mrsym: &[u8; NN]) -> (usize, usize) {
+    let mut hist = [0usize; 64];
+    for &s in mrsym {
+        hist[usize::from(s) & 63] += 1;
+    }
+    let (mut nmax, mut ipk) = (0usize, 0usize);
+    for (i, &h) in hist.iter().enumerate() {
+        if h > nmax {
+            nmax = h;
+            ipk = i;
+        }
+    }
+    (nmax, ipk)
+}
+
+/// I simboli di dati noti per ognuno dei sette tipi a priori (`apsymbols`, `extract.f90:79-118`); -1 dove ignoto.
+#[derive(Debug, Clone)]
+struct ApTable {
+    symbols: [[i16; DATA]; 8],
+    progress: usize,
+    enabled: bool,
+}
+
+/// Nominativo come lo vede `extract`: `mycall_12(1:6)`, i primi sei caratteri.
+fn six(call: &str) -> String {
+    call.trim().to_uppercase().chars().take(6).collect()
+}
+
+fn ap_symbols_of(msg: &str) -> [i16; DATA] {
+    let (dat, kind) = pack_message(msg);
+    // solo i messaggi standard (`itype = 1`), altrimenti nessun simbolo noto
+    if kind != Kind::Standard {
+        return [-1; DATA];
+    }
+    dat.map(i16::from)
+}
+
+impl ApTable {
+    fn new(ap: Option<&ApCalls>) -> ApTable {
+        let mut symbols = [[-1i16; DATA]; 8];
+        let Some(ap) = ap else { return ApTable { symbols, progress: 0, enabled: false } };
+        let mycall = six(&ap.my_call);
+        let hiscall = six(&ap.dx_call);
+        let grid: String = ap.dx_grid.trim().to_uppercase().chars().take(4).collect();
+        symbols[1][..4].copy_from_slice(&[62, 32, 32, 49]);
+        if !mycall.is_empty() {
+            symbols[2][..4].copy_from_slice(&ap_symbols_of(&format!("{mycall} {mycall} RRR"))[..4]);
+            if !hiscall.is_empty() {
+                let rrr = ap_symbols_of(&format!("{mycall} {hiscall} RRR"));
+                symbols[3][..9].copy_from_slice(&rrr[..9]);
+                symbols[4] = rrr;
+                symbols[5] = ap_symbols_of(&format!("{mycall} {hiscall} 73"));
+                if !grid.is_empty() {
+                    symbols[6] = ap_symbols_of(&format!("{mycall} {hiscall} {grid}"));
+                    symbols[7] = ap_symbols_of(&format!("CQ {hiscall} {grid}"));
+                }
+            }
+        }
+        // `npass = 1 + nappasses(nQSOProgress)` solo con il proprio nominativo (`extract.f90:142-145`)
+        ApTable { symbols, progress: usize::from(ap.qso_progress).min(5), enabled: !mycall.is_empty() }
+    }
+}
+
+/// Un messaggio della lista della ricerca profonda e i suoi 63 simboli di canale (`sym2` di `hint65.f90`).
+struct Hint {
+    text: String,
+    symbols: [u8; NN],
+}
+
+/// La lista dei messaggi di `hint65.f90:37-66`: il testo di prova, poi con il DX il suo locatore, il suo CQ e i 63 rapporti, poi per ogni
+/// nominativo noto la chiamata e il CQ.
+fn hint_messages(codec: &Codec, ap: &ApCalls, calls: &[(String, String)]) -> Vec<Hint> {
+    const RPT: [&str; 63] = [
+        "-01", "-02", "-03", "-04", "-05", "-06", "-07", "-08", "-09", "-10", "-11", "-12", "-13", "-14", "-15", "-16", "-17", "-18", "-19",
+        "-20", "-21", "-22", "-23", "-24", "-25", "-26", "-27", "-28", "-29", "-30", "R-01", "R-02", "R-03", "R-04", "R-05", "R-06", "R-07",
+        "R-08", "R-09", "R-10", "R-11", "R-12", "R-13", "R-14", "R-15", "R-16", "R-17", "R-18", "R-19", "R-20", "R-21", "R-22", "R-23",
+        "R-24", "R-25", "R-26", "R-27", "R-28", "R-29", "R-30", "RO", "RRR", "73",
+    ];
+    let mycall = six(&ap.my_call);
+    let hiscall = six(&ap.dx_call);
+    let hisgrid: String = ap.dx_grid.trim().to_uppercase().chars().take(4).collect();
+    let mut texts: Vec<String> = vec!["0123456789ABC".to_string()];
+    if !hiscall.is_empty() || !hisgrid.is_empty() {
+        texts.push(format!("{mycall} {hiscall} {hisgrid}"));
+        texts.push(format!("CQ {hiscall} {hisgrid}"));
+        texts.extend(RPT.iter().map(|r| format!("{mycall} {hiscall} {r}")));
+    }
+    for (call, grid) in calls.iter().take(10_000) {
+        let call = six(call);
+        let grid: String = grid.trim().to_uppercase().chars().take(4).collect();
+        texts.push(format!("{mycall} {call} {grid}"));
+        texts.push(format!("CQ {call} {grid}"));
+    }
+    texts
+        .into_iter()
+        .map(|t| {
+            let (symbols, _) = data_symbols(codec, &t);
+            let (dat, _) = pack_message(&t);
+            Hint { text: unpack_message(&dat), symbols }
+        })
+        .collect()
+}
+
+/// `hint65`: un banco di filtri adattati sulle energie dei simboli, uno per messaggio della lista. Ritorna il migliore e `qual`, quanto
+/// supera il secondo (`hint65.f90:70-113`, con `nadd = 0` e `nflip = 1` di JT65A in HF).
+fn hint_search<'a>(s3: &[[f32; 64]], mrs: &[u8; NN], mrs2: &[u8; NN], hints: &'a [Hint]) -> Option<(&'a Hint, f32)> {
+    let ref0: f32 = (0..NN).map(|j| s3[j][usize::from(mrs[j])]).sum();
+    let (mut u1, mut u2) = (-99.0f32, -99.0f32);
+    let mut ipk: Option<usize> = None;
+    let mut msg00 = "";
+    for (k, h) in hints.iter().enumerate() {
+        let mut psum = 0.0f32;
+        let mut reference = ref0;
+        for j in 0..NN {
+            let i = usize::from(h.symbols[j]);
+            psum += s3[j][i];
+            if h.symbols[j] == mrs[j] {
+                reference = reference - s3[j][i] + s3[j][usize::from(mrs2[j])];
+            }
+        }
+        if reference <= 0.0 {
+            continue;
+        }
+        let p = psum / reference;
+        if p > u1 {
+            if h.text != msg00 {
+                u2 = u1;
+            }
+            u1 = p;
+            ipk = Some(k);
+            msg00 = &h.text;
+        }
+        if h.text != msg00 && p > u2 {
+            u2 = p;
+        }
+    }
+    let bias = (1.12 * u2).max(0.35);
+    let qual = 100.0 * (u1 - bias);
+    ipk.map(|k| (&hints[k], qual))
+}
+
+/// Il risultato di `extract` per un candidato.
+struct Extracted {
+    text: String,
+    /// I 63 simboli di dati trasmessi (ordine di canale, 0..63).
+    channel: [u8; NN],
+    nhard: i32,
+    ntotal: i32,
+    rtt: f32,
+    ap_type: u8,
+    hinted: bool,
+    /// Energia media dei toni previsti dalla parola, in unita' di rumore mediano (`pp1`).
+    pp: f32,
+}
+
+/// `extract.f90`: normalizza le energie, toglie i toni fissi (birdie), prova la decisione soft senza e poi con i tipi a priori del punto del
+/// QSO; senza esito, e con la ricerca profonda accesa, prova la lista dei messaggi.
+fn extract(codec: &Codec, s3: &[[f32; 64]], options: &Options, ap: &ApTable, hints: &[Hint], trials: u32) -> Option<Extracted> {
+    let mut all: Vec<f32> = Vec::with_capacity(64 * NN);
+    for row in s3 {
+        all.extend_from_slice(row);
+    }
+    let base = percentile(&all, 50);
+    if base <= 0.0 {
+        return None;
+    }
+    // `s3a`: le energie normalizzate per `getpp`; `s3w` quelle da cui si tolgono i toni fissi
+    let s3a: Vec<[f32; 64]> = s3.iter().map(|row| row.map(|v| v / base)).collect();
+    let mut s3w = s3a.clone();
+    let mut nfail = 0;
+    let d = loop {
+        let d = demod(&s3w);
+        // `chkhist`: un tono che vince in 20 simboli o piu' e' un disturbo fisso; si porta al valore mediano e si ricomincia (`extract.f90:117-128`)
+        let (nhist, ipk) = most_frequent_symbol(&d.mrsym);
+        if nhist < 20 {
+            break d;
+        }
+        nfail += 1;
+        if nfail > 30 {
+            return None;
+        }
+        let mut flat: Vec<f32> = Vec::with_capacity(64 * NN);
+        for row in &s3w {
+            flat.extend_from_slice(row);
+        }
+        let b = percentile(&flat, 50);
+        for row in s3w.iter_mut() {
+            row[ipk] = b;
+        }
+    };
+    let (nd0, r0) = if options.aggressive == 10 { (83, 0.90) } else { (81, 0.87) };
+    let npass = if ap.enabled { 1 + NAPPASSES[ap.progress] } else { 1 };
+    for ipass in 1..=npass {
+        let (ntype, known) = if ipass == 1 {
+            (0usize, [-1i16; DATA])
+        } else {
+            let t = NAPTYPES[ap.progress][ipass - 2];
+            if t == 0 || ap.symbols[t].iter().all(|&s| s < 0) {
+                continue;
+            }
+            (t, ap.symbols[t])
+        };
+        let Some(res) = soft_decode(codec, &d, &s3a, trials, &known) else { continue };
+        // la prima accettazione (`extract.f90:158-167`)
+        if res.ntotal > nd0 || res.rtt > r0 {
+            continue;
+        }
+        let mut dat = [0u8; DATA];
+        for (i, v) in dat.iter_mut().enumerate() {
+            *v = res.word[DATA - 1 - i];
+        }
+        let text = unpack_message(&dat);
+        // `decode65b.f90:25-27`: messaggi «birdie» e altra spazzatura
+        if text.is_empty() || text.starts_with("000AAA ") || text.starts_with("0L6MWK ") {
+            return None;
+        }
+        // un messaggio di testo libero e' il tipo che il decodificatore a cancellazioni casuali inventa piu' spesso (nessun nominativo da
+        // controllare): si accetta solo se e' uscito dalla decisione dura (al massimo 25 simboli sbagliati). JTDX lo mostra con un
+        // marcatore (`.` o `,`) e un punto interrogativo se non supera il controllo dei nominativi; qui non si mostra.
+        if dat[9] & 8 != 0 && res.nhard > 25 {
+            return None;
+        }
+        let channel = channel_tones(&res.word);
+        let pp = channel.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32;
+        return Some(Extracted { text, channel, nhard: res.nhard, ntotal: res.ntotal, rtt: res.rtt, ap_type: ntype as u8, hinted: false, pp });
+    }
+    if options.deep_search && !hints.is_empty() {
+        let qmin = 2.0 - 0.1 * f32::from(options.aggressive.min(10));
+        let (hint, qual) = hint_search(&s3w, &d.mrsym, &d.mr2sym, hints)?;
+        if qual >= qmin {
+            let pp = hint.symbols.iter().enumerate().map(|(j, &t)| s3a[j][usize::from(t)]).sum::<f32>() / NN as f32;
+            return Some(Extracted { text: hint.text.clone(), channel: hint.symbols, nhard: 0, ntotal: 0, rtt: 0.0, ap_type: 0, hinted: true, pp });
+        }
+    }
+    None
+}
+
+/// La seconda accettazione di `jt65_decode.f90:441-448`, solo per i messaggi usciti senza analisi a priori e senza lista (`nft = 1`):
+/// distanza dura, distanza totale e `pp2/pp1` entro le soglie del livello «Aggressive».
+fn passes_aggressive_level(nhard: i32, ntotal: i32, rtt: f32, aggressive: u8) -> bool {
+    let n = usize::from(aggressive).min(11);
+    nhard <= 50 && nhard <= H0[n] && ntotal <= D0[n] && rtt <= R0[n]
 }
 
 /// Stima del rapporto segnale/rumore in 2500 Hz dalle energie dei toni trasmessi e dal rumore degli altri.
@@ -643,88 +976,138 @@ fn subtract(audio: &mut [f32], channel: &[u8; NN], f0: f64, dt0: f64, drift: f64
     }
 }
 
-/// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto). Ogni messaggio trovato si toglie dall'audio prima di provare
-/// il candidato successivo (`subtract65`).
+/// Decodifica un periodo di un minuto (audio a 12 kHz dall'inizio del minuto), con le passate di `jt65_decode.f90:256-291`: due (quattro a
+/// profondita' 3), soglia di sincronismo 2,5 alla prima e 2,0 dopo, l'ultima delle quattro senza sottrazione e con il sincronismo robusto;
+/// dalla seconda in poi ci si ferma alla prima passata che non trova niente di nuovo (`:489`). Ogni messaggio trovato si toglie dall'audio
+/// prima di provare il candidato successivo (`subtract65`).
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     let codec = Codec::new();
     let mut audio = samples.to_vec();
     let mut out: Vec<Decoded> = Vec::new();
-    // fino a tre passate: dopo aver tolto i segnali decodificati si cerca di nuovo, perche' quelli deboli nascosti dai forti compaiono solo allora
-    for _pass in 0..3 {
+    let (npass, trials) = match options.depth {
+        0 | 1 => (2usize, 100u32),
+        2 => (2, 1000),
+        _ => (4, 1000),
+    };
+    let ap = ApTable::new(options.ap.as_ref());
+    let hints = match &options.ap {
+        Some(calls) if options.deep_search && !six(&calls.my_call).is_empty() => hint_messages(&codec, calls, &options.hint_calls),
+        _ => Vec::new(),
+    };
+    let mut found_before = 0usize;
+    for ipass in 1..=npass {
+        let (mut thresh, subtract, robust) = match ipass {
+            1 => (2.5f32, true, false),
+            2 | 3 => (2.0, true, false),
+            _ => (2.0, false, true),
+        };
+        let (mut fa, mut fb) = (options.f_low_hz, options.f_high_hz);
+        // «Single decode»: solo attorno alla frequenza di ricezione, con soglia 1,0 (`jt65_decode.f90:302-306`)
+        if options.single_decode
+            && let Some(rx) = options.rx_hz
+        {
+            fa = (rx - options.tol_hz).max(200.0);
+            fb = (rx + options.tol_hz).min(4000.0);
+            thresh = 1.0;
+        }
         let (ss, nq) = symbol_spectra(&audio);
-        let candidates = find_candidates(&ss, nq, options);
-        drop(ss);
-        let found_before = out.len();
-        decode_candidates(&codec, &mut audio, &candidates, options, &mut out);
-        if out.len() == found_before {
+        if nq == 0 {
             break;
         }
+        let mut candidates = find_candidates(&ss, nq, fa, fb, thresh, robust);
+        drop(ss);
+        candidates.truncate(options.max_candidates / ipass);
+        let pass = Pass { ipass, subtract, trials };
+        if decode_candidates(&codec, &mut audio, &candidates, options, &ap, &hints, &pass, &mut out) {
+            break;
+        }
+        if ipass > 1 && out.len() == found_before {
+            break;
+        }
+        found_before = out.len();
     }
     out
 }
 
-/// Prova i candidati di una passata e toglie dall'audio ogni messaggio trovato.
-fn decode_candidates(codec: &Codec, audio: &mut [f32], candidates: &[Candidate], options: &Options, out: &mut Vec<Decoded>) {
+/// I parametri di una passata.
+struct Pass {
+    ipass: usize,
+    subtract: bool,
+    trials: u32,
+}
+
+/// Prova i candidati di una passata e toglie dall'audio ogni messaggio trovato. Ritorna `true` quando «Single decode» ha il suo messaggio.
+#[allow(clippy::too_many_arguments)]
+fn decode_candidates(
+    codec: &Codec,
+    audio: &mut [f32],
+    candidates: &[Candidate],
+    options: &Options,
+    ap: &ApTable,
+    hints: &[Hint],
+    pass: &Pass,
+    out: &mut Vec<Decoded>,
+) -> bool {
+    // `decoded0`, `freq0`: l'ultimo messaggio della passata, per non ripeterlo da un candidato vicino (`jt65_decode.f90:451-452`)
+    let mut last: Option<(String, f64)> = None;
     for c in candidates {
-        // un candidato sul segnale gia' trovato (stessa frequenza del tono di sincronismo, entro 3 Hz) non serve
         let bin_hz = c.bin as f64 * DF_BIN;
-        if out.iter().any(|o| (f64::from(o.freq_hz) - bin_hz).abs() < 3.0) {
+        let (f, dt, drift) = refine(audio, c);
+        // il filtro sulle correzioni dell'AFC (`jt65_decode.f90:367-374`): `a(1)` scarto di frequenza, `a(2)` meta' della deriva, `dtx` ritardo
+        // dall'inizio dell'audio
+        let (a1, a2, dtx) = (f - bin_hz, drift / 2.0, dt / FS);
+        if a1.abs() > 10.0 / pass.ipass as f64 {
             continue;
         }
-        let (f, dt, drift) = refine(audio, c);
+        let ibad = usize::from(a1.abs() > 5.0) + usize::from(a2.abs() > 2.0) + usize::from((dtx - 1.0).abs() > 2.5);
+        if ibad >= 2 {
+            continue;
+        }
         let s3 = tone_matrix(audio, f, dt, drift);
         if s3.len() != NN {
             continue;
         }
-        // s3 normalizzato sul 50 per cento (`pctile`) per confrontare i candidati
-        let mut all: Vec<f32> = Vec::with_capacity(64 * NN);
-        for row in &s3 {
-            all.extend_from_slice(row);
-        }
-        let base = percentile(&all, 50).max(1e-30);
-        let s3_norm: Vec<[f32; 64]> = s3.iter().map(|row| row.map(|v| v / base)).collect();
-        let d = demod(&s3);
-        let Some(res) = soft_decode(codec, &d, &s3_norm, options.trials) else { continue };
-        // soglie di `extract`: distanza totale e vicinanza del secondo candidato
-        let accepted = res.nhard < 0 || (res.ntotal <= 81 && res.rtt <= 0.87);
-        if !accepted {
+        let Some(x) = extract(codec, &s3, options, ap, hints, pass.trials) else { continue };
+        // la seconda accettazione, per livello «Aggressive», solo senza analisi a priori e senza lista (`nft < 2`)
+        if x.ap_type == 0 && !x.hinted && !passes_aggressive_level(x.nhard, x.ntotal, x.rtt, options.aggressive) {
             continue;
         }
         // l'energia media dei toni che la parola prevede, rispetto al rumore: un messaggio vero ne ha molta, uno inventato dal decodificatore
-        // a cancellazioni casuali ne ha poca (di sicuro vale solo la meta' dei simboli) e si scarta
-        let predicted = channel_tones(&res.word);
-        let pp = predicted.iter().enumerate().map(|(j, &t)| s3_norm[j][t as usize]).sum::<f32>() / NN as f32;
-        if pp < MIN_TONE_ENERGY {
+        // a cancellazioni casuali ne ha poca (di sicuro vale solo la meta' dei simboli) e si scarta (controllo di Aurora, non di WSJT-X)
+        if !x.hinted && x.pp < MIN_TONE_ENERGY {
             continue;
         }
-        // i 12 simboli di dati dalla parola di Karn: l'ordine e' inverso
-        let mut dat = [0u8; DATA];
-        for (i, d) in dat.iter_mut().enumerate() {
-            *d = res.word[DATA - 1 - i];
-        }
-        let text = unpack_message(&dat);
-        if text.is_empty() || out.iter().any(|o| o.text == text) {
+        if let Some((t, f0)) = &last
+            && *t == x.text
+            && (bin_hz - f0).abs() < 3.0
+        {
             continue;
         }
-        // un messaggio di testo libero e' il tipo che il decodificatore a cancellazioni casuali inventa piu' spesso (nessun nominativo da controllare):
-        // si accetta solo se e' uscito dalla decisione dura (al massimo 25 simboli sbagliati). JTDX lo mostra con un marcatore (`.` o `,`) e un punto
-        // interrogativo se non supera il controllo dei nominativi; qui non si mostra.
-        if dat[9] & 8 != 0 && res.nhard > 25 {
+        // la sottrazione viene prima del controllo dei doppioni: un residuo gia' decodificato si toglie di nuovo (`jt65_decode.f90:455-467`)
+        if pass.subtract {
+            subtract(audio, &x.channel, f, dt, drift);
+        }
+        last = Some((x.text.clone(), bin_hz));
+        if out.iter().any(|o| o.text == x.text) {
             continue;
         }
-        let tones = channel_tones(&res.word);
-        subtract(audio, &tones, f, dt, drift);
         out.push(Decoded {
-            text,
+            snr_db: estimate_snr(&s3, &x.channel),
+            text: x.text,
             freq_hz: f as f32,
             dt_s: (dt / FS - 1.0) as f32,
-            snr_db: estimate_snr(&s3, &tones),
             sync: c.sync,
-            hard_errors: res.nhard.max(0) as u32,
-            total_distance: res.ntotal,
-            rtt: res.rtt,
+            hard_errors: x.nhard.max(0) as u32,
+            total_distance: x.ntotal,
+            rtt: x.rtt,
+            ap_type: x.ap_type,
+            hinted: x.hinted,
         });
+        if options.single_decode {
+            return true;
+        }
     }
+    false
 }
 
 /// Ritorna le costanti di tempo per chi deve sapere quanto dura un messaggio.
@@ -830,5 +1213,86 @@ mod tests {
         let d = out.iter().find(|d| d.text == "K1ABC IU3ABC -15").expect("trovato");
         // a meta' messaggio il tono di sincronismo sta a 1400 Hz (deriva simmetrica attorno a f0)
         assert!((d.freq_hz - 1400.0).abs() < 1.0, "{d:?}");
+    }
+
+    /// Le soglie `h0`/`d0`/`r0` di `jt65_decode.f90:215-220` al livello 4 di fabbrica: 44, 76, 0,78.
+    #[test]
+    fn the_aggressive_level_four_thresholds_are_those_of_jt65_decode() {
+        assert_eq!(DEFAULT_AGGRESSIVE, 4);
+        assert!(passes_aggressive_level(44, 76, 0.78, 4));
+        assert!(!passes_aggressive_level(45, 76, 0.78, 4));
+        assert!(!passes_aggressive_level(44, 77, 0.78, 4));
+        assert!(!passes_aggressive_level(44, 76, 0.79, 4));
+        // la soglia grezza di `extract` (81 e 0,87) non basta piu' da sola
+        assert!(!passes_aggressive_level(30, 81, 0.87, 4));
+        assert!(passes_aggressive_level(41, 71, 0.70, 0));
+        assert!(!passes_aggressive_level(42, 71, 0.70, 0));
+        assert!(passes_aggressive_level(49, 83, 0.90, 10));
+        // oltre 50 simboli duri sbagliati si scarta a ogni livello
+        assert!(!passes_aggressive_level(51, 70, 0.5, 11));
+        // la decisione dura (`ntotal` e `rtt` a zero, al massimo 25 simboli) passa sempre
+        assert!(passes_aggressive_level(25, 0, 0.0, 0));
+    }
+
+    /// I simboli noti dei sette tipi a priori (`extract.f90:79-118`).
+    #[test]
+    fn the_ap_symbols_are_those_of_extract() {
+        let ap = ApCalls { my_call: "IU3ABC".into(), dx_call: "K1ABC".into(), dx_grid: "IO91".into(), qso_progress: 1 };
+        let t = ApTable::new(Some(&ap));
+        assert!(t.enabled);
+        assert_eq!(t.progress, 1);
+        let pack = |m: &str| pack_message(m).0.map(i16::from);
+        assert_eq!(t.symbols[1][..4], [62, 32, 32, 49]);
+        assert_eq!(t.symbols[1][..4], pack("CQ K1ABC IO91")[..4]);
+        assert_eq!(t.symbols[2][..4], pack("IU3ABC IU3ABC RRR")[..4]);
+        assert!(t.symbols[2][4..].iter().all(|&s| s < 0));
+        assert_eq!(t.symbols[3][..9], pack("IU3ABC K1ABC RRR")[..9]);
+        assert!(t.symbols[3][9..].iter().all(|&s| s < 0));
+        assert_eq!(t.symbols[4], pack("IU3ABC K1ABC RRR"));
+        assert_eq!(t.symbols[5], pack("IU3ABC K1ABC 73"));
+        assert_eq!(t.symbols[6], pack("IU3ABC K1ABC IO91"));
+        assert_eq!(t.symbols[7], pack("CQ K1ABC IO91"));
+        // senza il proprio nominativo nessuna passata a priori (`extract.f90:142`)
+        assert!(!ApTable::new(Some(&ApCalls { my_call: String::new(), ..ap })).enabled);
+        assert!(!ApTable::new(None).enabled);
+    }
+
+    /// «Single decode»: solo la finestra di ricezione, e ci si ferma al primo messaggio (`jt65_decode.f90:302-306`, `:486`).
+    #[test]
+    fn single_decode_searches_only_around_the_rx_frequency() {
+        let audio = minute(&[("CQ IU3ABC JN55", 900.0, 0.2, -12.0), ("IU3ABC K1ABC FN42", 2100.0, -0.1, -14.0)], 9);
+        let options = Options { rx_hz: Some(2100.0), single_decode: true, ..Options::default() };
+        let out = decode(&audio, &options);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(out[0].text, "IU3ABC K1ABC FN42");
+        // senza «Single decode» la frequenza di ricezione non restringe la ricerca (in HF `nfqso` e `ntol` contano solo per la media)
+        let out = decode(&audio, &Options { rx_hz: Some(2100.0), ..Options::default() });
+        assert_eq!(out.len(), 2, "{out:?}");
+    }
+
+    fn qso_calls() -> ApCalls {
+        ApCalls { my_call: "IU3ABC".into(), dx_call: "K1ABC".into(), dx_grid: "IO91".into(), qso_progress: 1 }
+    }
+
+    /// Un messaggio a -27 dB che la decodifica normale non trova esce con l'analisi a priori (IU3ABC chiama K1ABC che risponde col locatore).
+    #[test]
+    fn a_weak_message_of_the_qso_decodes_with_a_priori_symbols() {
+        let audio = minute(&[("IU3ABC K1ABC IO91", 1300.0, 0.1, -27.0), ("IU3ABC K1ABC -15", 2200.0, 0.0, -27.0)], 5);
+        let plain = decode(&audio, &Options::default());
+        assert!(plain.iter().all(|d| d.text != "IU3ABC K1ABC IO91"), "{plain:?}");
+        let with_ap = decode(&audio, &Options { ap: Some(qso_calls()), ..Options::default() });
+        let d = with_ap.iter().find(|d| d.text == "IU3ABC K1ABC IO91").expect("decodificato con l'analisi a priori");
+        assert!(d.ap_type > 0 && !d.hinted, "{d:?}");
+        assert!((d.freq_hz - 1300.0).abs() < 1.5, "{d:?}");
+    }
+
+    /// Con l'analisi a priori e la ricerca profonda accese il rumore resta rumore.
+    #[test]
+    fn noise_gives_nothing_with_a_priori_and_deep_search() {
+        let options = Options { ap: Some(qso_calls()), deep_search: true, ..Options::default() };
+        for seed in [1, 2] {
+            let out = decode(&minute(&[], seed), &options);
+            assert!(out.is_empty(), "il rumore non deve dare messaggi: {out:?}");
+        }
     }
 }

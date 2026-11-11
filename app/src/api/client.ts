@@ -683,7 +683,7 @@ export async function correctClock(): Promise<ClockMeasurement> {
   return (await (await request('/clock/correct', { method: 'POST' })).json()) as ClockMeasurement;
 }
 
-export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'ft991link' | 'none';
+export type CatBackend = 'hamlib' | 'omnirig' | 'tci' | 'ft991link' | 'cat4om' | 'none';
 export type CatState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 export type CatHandshake = 'default' | 'none' | 'xonxoff' | 'hardware';
 export type CatPtt = 'cat' | 'dtr' | 'rts' | 'vox';
@@ -725,6 +725,12 @@ export interface CatConfig {
   omnirig_rig?: number;
   /** Indirizzo host:porta del server UDP di FT-991(A) Link (di base 127.0.0.1:50001). */
   ft991_address?: string;
+  /** Indirizzo host:porta del Control Port del gruppo di Cat4OM (di base 127.0.0.1:17301). */
+  cat4om_address?: string;
+  /** Chiave del gruppo di Cat4OM (vuota se il gruppo non la chiede): resta sul PC, va solo nella prova di autenticazione. */
+  cat4om_key?: string;
+  /** La radio del gruppo di Cat4OM (radioId o nome); vuoto = la prima collegata. */
+  cat4om_radio?: string;
 }
 
 export interface RigExtras {

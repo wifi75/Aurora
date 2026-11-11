@@ -109,31 +109,77 @@ pub trait ClockSetter: Send + Sync {
     fn adjust(&self, offset_ms: f64) -> Result<(), String>;
 }
 
-/// Cambia l'ora con PowerShell (`Set-Date`): serve avviare Aurora come amministratore.
-pub struct PowerShellSetter;
+/// Cambia l'ora del PC con le API di Windows (`SetSystemTime`, dopo aver acceso il privilegio `SeSystemtimePrivilege`), senza PowerShell:
+/// `Set-Date` passava da `powershell.exe`, che antivirus e regole aziendali possono bloccare. Serve comunque un utente che possa cambiare
+/// l'ora (amministratore): altrimenti Windows non concede il privilegio e lo si dice in chiaro.
+pub struct SystemSetter;
 
-impl ClockSetter for PowerShellSetter {
+impl ClockSetter for SystemSetter {
     fn adjust(&self, offset_ms: f64) -> Result<(), String> {
         if !offset_ms.is_finite() || offset_ms.abs() > 3_600_000.0 {
             return Err("scarto fuori misura: non si corregge da solo".into());
         }
-        // il numero e' un f64 formattato qui: nessun testo dell'utente nello script
-        let script = format!("Set-Date -Date ([DateTime]::Now.AddMilliseconds({offset_ms:.0})) | Out-Null");
-        let mut command = std::process::Command::new("powershell");
-        command.args(["-NoProfile", "-NonInteractive", "-Command", &script]);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            // niente finestra nera quando Aurora gira come programma a finestre
-            command.creation_flags(0x0800_0000);
-        }
-        let out = command.output().map_err(|e| format!("PowerShell non partito: {e}"))?;
-        if out.status.success() {
-            Ok(())
-        } else {
-            Err("serve avviare Aurora come amministratore per cambiare l'ora del PC".into())
-        }
+        set_clock(offset_ms)
     }
+}
+
+#[cfg(windows)]
+fn set_clock(offset_ms: f64) -> Result<(), String> {
+    use windows::Win32::Foundation::{CloseHandle, ERROR_NOT_ALL_ASSIGNED, GetLastError, HANDLE, LUID};
+    use windows::Win32::Security::{AdjustTokenPrivileges, LUID_AND_ATTRIBUTES, LookupPrivilegeValueW, SE_PRIVILEGE_ENABLED, SE_SYSTEMTIME_NAME, TOKEN_ADJUST_PRIVILEGES, TOKEN_PRIVILEGES, TOKEN_QUERY};
+    use windows::Win32::System::SystemInformation::{GetSystemTimeAsFileTime, SetSystemTime};
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+    use windows::Win32::System::Time::FileTimeToSystemTime;
+    use windows::Win32::Foundation::{FILETIME, SYSTEMTIME};
+    const ADMIN: &str = "serve avviare Aurora come amministratore per cambiare l'ora del PC";
+    // SAFETY: chiamate Win32 con puntatori a variabili locali valide per tutta la durata della chiamata; il token si chiude sempre.
+    unsafe {
+        let mut token = HANDLE::default();
+        OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &mut token).map_err(|e| format!("token del processo: {e}"))?;
+        let mut luid = LUID::default();
+        let looked = LookupPrivilegeValueW(None, SE_SYSTEMTIME_NAME, &mut luid);
+        let granted = looked.is_ok() && {
+            let privileges = TOKEN_PRIVILEGES { PrivilegeCount: 1, Privileges: [LUID_AND_ATTRIBUTES { Luid: luid, Attributes: SE_PRIVILEGE_ENABLED }] };
+            AdjustTokenPrivileges(token, false, Some(&privileges), 0, None, None).is_ok() && GetLastError() != ERROR_NOT_ALL_ASSIGNED
+        };
+        let _ = CloseHandle(token);
+        if !granted {
+            return Err(ADMIN.into());
+        }
+        let now: FILETIME = GetSystemTimeAsFileTime();
+        let ticks = (u64::from(now.dwHighDateTime) << 32) | u64::from(now.dwLowDateTime);
+        // FILETIME conta centinaia di nanosecondi: 1 ms = 10 000
+        let shifted = i128::from(ticks) + (offset_ms * 10_000.0).round() as i128;
+        let shifted = u64::try_from(shifted).map_err(|_| "ora fuori misura".to_string())?;
+        let target = FILETIME { dwLowDateTime: shifted as u32, dwHighDateTime: (shifted >> 32) as u32 };
+        let mut st = SYSTEMTIME::default();
+        FileTimeToSystemTime(&target, &mut st).map_err(|e| format!("conversione dell'ora: {e}"))?;
+        SetSystemTime(&st).map_err(|_| ADMIN.to_string())
+    }
+}
+
+#[cfg(not(windows))]
+fn set_clock(_offset_ms: f64) -> Result<(), String> {
+    Err("su questo sistema Aurora non cambia l'ora del PC: usa la sincronizzazione del sistema (NTP)".into())
+}
+
+/// Tentativi della correzione all'avvio (uno ogni [`START_RETRY`]) finche' i server NTP non rispondono: circa dieci minuti.
+const START_TRIES: u32 = 30;
+const START_RETRY: Duration = Duration::from_secs(20);
+/// Mentre l'ora e' fuori tolleranza (o non si e' potuta misurare) si ricontrolla ogni minuto: appena l'utente la sincronizza (anche da
+/// Windows) l'avviso sparisce, invece di restare fino al controllo seguente.
+const RECHECK_WHILE_OFF: Duration = Duration::from_secs(60);
+
+fn next_wait(config: &Config, start_pending: bool, last: Option<&Measurement>) -> Duration {
+    let normal = Duration::from_secs(config.interval_secs);
+    if start_pending {
+        return START_RETRY;
+    }
+    if !config.enabled {
+        return normal;
+    }
+    let off = last.is_none_or(|m| m.offset_ms.is_none_or(|o| o.abs() > f64::from(config.warn_ms)));
+    if off { normal.min(RECHECK_WHILE_OFF) } else { normal }
 }
 
 pub fn default_query() -> QueryFn {
@@ -258,28 +304,40 @@ impl ClockService {
     pub fn spawn(self: &Arc<Self>) -> tokio::task::JoinHandle<()> {
         let service = Arc::clone(self);
         tokio::spawn(async move {
-            // il primo giro e' quello dell'avvio: con «aggiorna l'ora all'avvio» si corregge anche se il controllo periodico non lo fa
-            let mut first = true;
+            // la correzione dell'avvio resta in attesa finche' non arriva una misura: all'avvio di Windows la rete spesso non c'e' ancora, e
+            // prima il primo giro falliva e si riprovava solo dopo `interval_secs` (15 minuti), con l'avviso dell'orologio sullo schermo
+            let mut start_pending = service.config().correct_at_start;
+            let mut start_tries = 0u32;
             loop {
                 let config = service.config();
-                let at_start = std::mem::take(&mut first) && config.correct_at_start;
+                let at_start = start_pending;
                 if config.enabled || at_start {
                     let worker = Arc::clone(&service);
                     let outcome = tokio::task::spawn_blocking(move || {
                         let m = worker.check_now();
                         let cfg = worker.config();
-                        match m.offset_ms {
+                        let measured = m.offset_ms.is_some();
+                        let result = match m.offset_ms {
                             Some(off) if (cfg.auto_correct || at_start) && off.abs() > f64::from(cfg.warn_ms) => worker.correct_now().map(|_| ()).map_err(|e| format!("correzione: {e}")),
                             _ => Ok(()),
-                        }
+                        };
+                        (measured, result)
                     })
                     .await;
-                    if let Ok(Err(e)) = outcome {
+                    let measured = matches!(outcome, Ok((true, _)));
+                    if let Ok((_, Err(e))) = outcome {
                         tracing::warn!("orologio: {e}");
                     }
+                    if at_start {
+                        start_tries += 1;
+                        if measured || start_tries >= START_TRIES {
+                            start_pending = false;
+                        }
+                    }
                 }
+                let wait = next_wait(&config, start_pending, service.last().as_ref());
                 tokio::select! {
-                    () = tokio::time::sleep(Duration::from_secs(config.interval_secs)) => {}
+                    () = tokio::time::sleep(wait) => {}
                     () = service.wake.notified() => {}
                 }
             }
@@ -411,5 +469,15 @@ mod tests {
         let query: QueryFn = Arc::new(|_: &str| Err("x".into()));
         let service = ClockService::open(&path, query, Arc::new(FakeSetter { calls: Mutex::default(), fail: false }));
         assert_eq!(service.config(), Config::default());
+    }
+
+    #[test]
+    fn the_check_comes_back_soon_while_the_clock_is_off_or_the_start_correction_waits() {
+        let config = Config::default();
+        let m = |off: Option<f64>| Measurement { at_ms: 0, server: None, offset_ms: off, delay_ms: None, servers_ok: 0, servers_tried: 1, error: None, corrected: false };
+        assert_eq!(next_wait(&config, true, None), START_RETRY, "correzione dell'avvio in attesa della rete");
+        assert_eq!(next_wait(&config, false, Some(&m(Some(729.0)))), RECHECK_WHILE_OFF, "ora fuori tolleranza: si ricontrolla ogni minuto");
+        assert_eq!(next_wait(&config, false, Some(&m(None))), RECHECK_WHILE_OFF, "misura non riuscita");
+        assert_eq!(next_wait(&config, false, Some(&m(Some(20.0)))), Duration::from_secs(config.interval_secs), "ora buona: intervallo normale");
     }
 }

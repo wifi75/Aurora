@@ -2015,11 +2015,15 @@ mod tests {
             tx_native::Mode::Jt9 => jt::jt9rx::decode(&minute_with(&req.wave), &jt::jt9rx::Options::default()).into_iter().map(|d| d.text).collect(),
             tx_native::Mode::Jt4 => jt::jt4::decode(&minute_with(&req.wave), &jt::jt4::Options::default()).into_iter().map(|d| d.text).collect(),
             tx_native::Mode::Msk144 => {
-                let mut audio = noise(180_000, 17);
-                for (i, w) in req.wave.iter().take(170_000).enumerate() {
+                // bastano i primi 3 s del periodo: il quadro si ripete per tutta la trasmissione
+                let mut audio = noise(36_000, 17);
+                for (i, w) in req.wave.iter().take(30_000).enumerate() {
                     audio[6_000 + i] += 0.5 * w;
                 }
-                jt::msk144::decode(&audio, &jt::msk144::Options::default(), &mut CallHashes::default()).into_iter().map(|d| d.text).collect()
+                // `mskrtd` ripete un messaggio del periodo quando torna piu' forte: qui conta solo quali messaggi si leggono
+                let mut texts: Vec<String> = jt::msk144::decode(&audio, &jt::msk144::Options::default(), &mut CallHashes::default()).into_iter().map(|d| d.text).collect();
+                texts.dedup();
+                texts
             }
             tx_native::Mode::Q65 => {
                 let setup = crate::rig::q65_setup();

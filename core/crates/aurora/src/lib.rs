@@ -1462,6 +1462,7 @@ fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::Na
         rig_control::cat_config::Backend::Hamlib => cat.hamlib().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Tci => cat.tci().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Ft991link => cat.ft991().and_then(|r| r.set_tx_audio_frequency(hz)),
+        rig_control::cat_config::Backend::Cat4om => cat.cat4om().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Omnirig => rig_control::omnirig::set_tx_audio_frequency(hz),
         _ => Ok(()),
     };
@@ -1470,14 +1471,18 @@ fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::Na
     }
 }
 
-/// Lo split della radio e' attivo: scelto nelle Impostazioni (Rig o Fake It) con un CAT che lo sa fare (Hamlib, TCI, FT-991 Link, OmniRig come
-/// `OmniRigTransceiver` di WSJT-X).
+/// Lo split della radio e' attivo: scelto nelle Impostazioni (Rig o Fake It) con un CAT che lo sa fare (Hamlib, TCI, FT-991 Link, Cat4OM, OmniRig
+/// come `OmniRigTransceiver` di WSJT-X).
 fn cat_split_active(cat: &rig_control::cat::CatService) -> bool {
     let config = cat.config();
     config.split != rig_control::cat_config::SplitMode::None
         && matches!(
             config.backend,
-            rig_control::cat_config::Backend::Hamlib | rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Omnirig
+            rig_control::cat_config::Backend::Hamlib
+                | rig_control::cat_config::Backend::Tci
+                | rig_control::cat_config::Backend::Ft991link
+                | rig_control::cat_config::Backend::Cat4om
+                | rig_control::cat_config::Backend::Omnirig
         )
 }
 
@@ -1511,7 +1516,7 @@ impl tx_native::Ptt for OmniRigSplitPtt {
     }
 }
 
-/// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `T 1` / `T 0` di rigctld con Hamlib.
+/// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `setPtt` con Cat4OM, `T 1` / `T 0` di rigctld con Hamlib.
 fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native::TxError> {
     let failed = |e: rig_control::RigError| tx_native::TxError::Ptt(e.to_string());
     if cat.backend() == rig_control::cat_config::Backend::Tci {
@@ -1519,6 +1524,9 @@ fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native
     }
     if cat.backend() == rig_control::cat_config::Backend::Ft991link {
         return cat.ft991().map_err(failed)?.set_ptt(on).map_err(failed);
+    }
+    if cat.backend() == rig_control::cat_config::Backend::Cat4om {
+        return cat.cat4om().map_err(failed)?.set_ptt(on).map_err(failed);
     }
     cat.hamlib().map_err(failed)?.set_ptt(on).map_err(failed)
 }
@@ -1536,7 +1544,7 @@ impl tx_native::Ptt for AutoPtt {
         let by_rig = radio.ptt != rig_control::cat_config::PttMethod::Vox
             && match radio.backend {
                 rig_control::cat_config::Backend::Hamlib => radio.model != 0,
-                rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link => true,
+                rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om => true,
                 _ => false,
             };
         if by_rig {
@@ -1652,7 +1660,10 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     // OmniRig preso da JTDX ma la radio e' collegata con Hamlib: OmniRig non comanda la radio, il PTT passa da rigctld
     // (caso reale: un vecchio JTDX.ini con PTT OmniRig e Aurora su Hamlib, la radio non andava mai in trasmissione)
     if config.ptt_method == "omnirig"
-        && (radio.backend == rig_control::cat_config::Backend::Tci || radio.backend == rig_control::cat_config::Backend::Ft991link || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
+        && (radio.backend == rig_control::cat_config::Backend::Tci
+            || radio.backend == rig_control::cat_config::Backend::Ft991link
+            || radio.backend == rig_control::cat_config::Backend::Cat4om
+            || radio.backend == rig_control::cat_config::Backend::Hamlib && radio.model != 0)
         && radio.ptt != rig_control::cat_config::PttMethod::Vox
     {
         return "cat".to_string();
@@ -1664,7 +1675,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
         (_, rig_control::cat_config::PttMethod::Vox) => "vox".to_string(),
         (rig_control::cat_config::Backend::Omnirig, _) => "omnirig".to_string(),
         (rig_control::cat_config::Backend::Hamlib, _) if radio.model != 0 => "cat".to_string(),
-        (rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link, _) => "cat".to_string(),
+        (rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om, _) => "cat".to_string(),
         _ => "vox".to_string(),
     }
 }
@@ -1759,7 +1770,7 @@ pub async fn run(
         match stored.backend {
             rig_control::cat_config::Backend::Omnirig => config.rig_omnirig = true,
             rig_control::cat_config::Backend::Hamlib => config.rig_hamlib = true,
-            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::None => {}
+            rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Cat4om | rig_control::cat_config::Backend::None => {}
         }
     }
     if config.rig_hamlib {
@@ -2033,7 +2044,7 @@ pub async fn run(
             "run_unattended": config.auto_limits.run_unattended,
         },
     });
-    let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::PowerShellSetter));
+    let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::SystemSetter));
     let _clock_task = clock.spawn();
     // DX Cluster: paese degli spot dal file cty.dat; nominativo di JTDX se non ne e' stato scelto uno; parte solo se acceso
     let wishlist = wishlist::WishlistService::open(&config.data_dir.join("wishlist.json"));

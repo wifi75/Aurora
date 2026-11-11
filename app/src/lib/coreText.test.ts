@@ -24,6 +24,18 @@ describe('coreText', () => {
     expect(coreText('K1ABC: qualcosa di nuovo', t as never)).toBe('K1ABC: qualcosa di nuovo');
   });
 
+  it('translates the Cat4OM messages written by the core', () => {
+    expect(coreText("Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC", t as never)).toBe('core.cat4om.authFailed');
+    expect(coreText('Cat4OM non raggiungibile su 127.0.0.1:17301: avvia Cat4OM e controlla la porta Control del gruppo; da un altro PC abilita la rete in Settings → SERVER (connessione rifiutata)', t as never)).toBe(
+      'core.cat4om.noAnswer{"address":"127.0.0.1:17301","raw":"connessione rifiutata"}',
+    );
+    expect(coreText('Radio Cat4OM «FT-991A» non collegata (disconnected)', t as never)).toBe('core.cat4om.radioOff{"radio":"FT-991A","state":"disconnected"}');
+    expect(coreText("La radio «FT-991A» e' presa dall'emulazione hamlib di Cat4OM: spegni quel profilo in Cat4OM per comandarla da Aurora", t as never)).toBe(
+      'core.cat4om.claimed{"radio":"FT-991A","by":"hamlib"}',
+    );
+    expect(coreText('Cat4OM ha rifiutato setMode: mode not supported (INVALID_MODE)', t as never)).toBe('core.cat4om.refused{"cmd":"setMode","raw":"mode not supported","code":"INVALID_MODE"}');
+  });
+
   it('leaves an unknown message as it is', () => {
     expect(coreText('qualcosa di nuovo', t as never)).toBe('qualcosa di nuovo');
     expect(coreText(null, t as never)).toBe('');

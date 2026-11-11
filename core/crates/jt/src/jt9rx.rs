@@ -28,9 +28,16 @@ pub struct Decoded {
     pub dt_s: f32,
     /// Rapporto segnale/rumore in 2500 Hz, in dB.
     pub snr_db: i32,
-    /// Forza del sincronismo.
+    /// Forza del sincronismo (`sync = (syncpk + 1) / 4` di `jt9_decode.f90:259`).
     pub sync: f32,
 }
+
+/// F Tol di fabbrica di WSJT-X in JT9 (`mainwindow.cpp:11749`, `Ftol_JT9` = 50 Hz).
+pub const DEFAULT_TOL_HZ: f32 = 50.0;
+/// `syncpk` di `afc9`/`fchisq` (somma delle 16 potenze di sincronismo divisa per 10000) in unita' di rumore: `downsam9` normalizza i campioni
+/// sul 40 per cento della potenza in bande da 1 Hz (54 righe da 0,0184 Hz: 51,8 volte la media di una riga), poi ne tiene 1512 e
+/// `fchisq` somma 16 campioni per simbolo. Il rumore di un simbolo vale percio' 16 x 1512 / 51,8 = 467 e `syncpk` del rumore circa 0,75.
+const SYNCPK_PER_NOISE: f32 = 16.0 * 1512.0 / 51.8 / 10_000.0;
 
 /// Come si cerca (`ndepth` di JTDX: 1 rapida, 2 media, 3 profonda; per JT9 conta davvero, a differenza di FT8).
 #[derive(Debug, Clone)]
@@ -41,11 +48,15 @@ pub struct Options {
     pub depth: u8,
     /// Al massimo quanti candidati si provano.
     pub max_candidates: usize,
+    /// Frequenza di ricezione (`nfqso`): la finestra `rx_hz +- tol_hz` si prova per prima con soglie ridotte (`nqd = 1`, `jt9_decode.f90:205-234`).
+    pub rx_hz: Option<f32>,
+    /// Tolleranza attorno a `rx_hz` (`ntol`, F Tol).
+    pub tol_hz: f32,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { f_low_hz: 200.0, f_high_hz: 4000.0, depth: 3, max_candidates: 40 }
+        Options { f_low_hz: 200.0, f_high_hz: 4000.0, depth: 3, max_candidates: 40, rx_hz: None, tol_hz: DEFAULT_TOL_HZ }
     }
 }
 
@@ -275,14 +286,34 @@ fn refine(samples: &[f32], f0: f64, dt0: f64) -> (f64, f64) {
     (f, dt)
 }
 
-/// `symspec2`: le energie dei nove toni in ogni simbolo e, da quelle, i 207 simboli soft (nell'ordine rimescolato) con `schk` e il rapporto S/N.
-fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> ([i8; 207], f32, i32) {
+/// I simboli soft di un candidato e le misure con cui `jt9_decode` lo accetta.
+struct Soft {
+    /// I 207 simboli soft nell'ordine rimescolato.
+    scrambled: [i8; 207],
+    /// `chkss2`: quanto il tono 0 spicca nei simboli di sincronismo.
+    schk: f32,
+    snr: i32,
+    /// `sync = (syncpk + 1) / 4` di `jt9_decode.f90:259`.
+    sync: f32,
+}
+
+/// Rumore medio di una riga dello spettro di un simbolo, dalle righe fuori dal segnale (da -99 a -5 Hz e da +19 a +99 Hz attorno al tono 0):
+/// il 40 per cento diviso per `-ln 0,6` (una riga di solo rumore ha distribuzione esponenziale), come `avenoise` di `downsam9.f90:121`
+/// prende il 40 per cento attorno al segnale.
+fn noise_per_bin(spectra: &[f32]) -> f32 {
+    (percentile(spectra, 40) / 0.6f32.ln().abs()).max(1e-30)
+}
+
+/// `symspec2`: le energie dei nove toni in ogni simbolo e, da quelle, i 207 simboli soft (nell'ordine rimescolato) con `schk`, il rapporto
+/// S/N e il sincronismo `sync` di `softsym`/`afc9`.
+fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> Soft {
     let mut planner = FftPlanner::<f32>::new();
     let fft = planner.plan_fft_forward(NSPS);
     let mut scratch = vec![Complex::new(0.0f32, 0.0); fft.get_inplace_scratch_len()];
     let table = rotation_table(f);
     let mut buf = vec![Complex::new(0.0f32, 0.0); NSPS];
     let mut ss2 = vec![[0.0f32; 9]; NSYM];
+    let mut outside: Vec<f32> = Vec::with_capacity(NSYM * 102);
     for (k, row) in ss2.iter_mut().enumerate() {
         let start = symbol_start(dt_samples, k);
         for (n, b) in buf.iter_mut().enumerate() {
@@ -294,10 +325,15 @@ fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> ([i8; 207], f32, i3
         for (i, r) in row.iter_mut().enumerate() {
             *r = buf[i].norm_sqr();
         }
+        outside.extend(buf[11..=57].iter().chain(buf[NSPS - 57..=NSPS - 3].iter()).map(|c| c.norm_sqr()));
     }
     // `chkss2`: quanto il tono 0 spicca nei simboli di sincronismo
     let ave2 = ss2.iter().flat_map(|r| r.iter()).sum::<f32>() / (9.0 * NSYM as f32);
     let schk = SYNC.iter().enumerate().filter(|(_, p)| **p == 1).map(|(j, _)| ss2[j][0] / ave2 - 1.0).sum::<f32>() / 16.0;
+    // `syncpk` di `afc9`: la potenza coerente del tono 0 nei 16 simboli di sincronismo, in unita' del rumore di `downsam9`
+    let noise = noise_per_bin(&outside);
+    let syncpk = SYNCPK_PER_NOISE * SYNC.iter().enumerate().filter(|(_, p)| **p == 1).map(|(j, _)| ss2[j][0] / noise).sum::<f32>();
+    let sync = (syncpk + 1.0) / 4.0;
     // solo i simboli di dati, toni 1..8
     let mut ss3: Vec<[f32; 8]> = Vec::with_capacity(69);
     for (j, &p) in SYNC.iter().enumerate() {
@@ -333,7 +369,7 @@ fn soft_symbols(samples: &[f32], f: f64, dt_samples: f64) -> ([i8; 207], f32, i3
             k += 1;
         }
     }
-    (soft, schk, snr)
+    Soft { scrambled: soft, schk, snr, sync }
 }
 
 /// L'ampiezza e la fase (coseno e seno) del tono `freq` nella finestra di un simbolo; `count` sono i campioni dentro l'audio.
@@ -420,7 +456,9 @@ fn subtract(audio: &mut [f32], tones: &[u8; NSYM], f0: f64, dt0: f64) {
 pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     let mut audio = samples.to_vec();
     let mut out: Vec<Decoded> = Vec::new();
-    // fino a tre passate: tolti i segnali decodificati si cerca di nuovo, perche' i deboli nascosti dai forti compaiono solo allora
+    // fino a tre passate: tolti i segnali decodificati si cerca di nuovo, perche' i deboli nascosti dai forti compaiono solo allora. WSJT-X non
+    // sottrae (`jt9_decode.f90` fa una sola ricerca); qui le passate restano perche' con le soglie `sync`/`schk` di WSJT-X non inventano
+    // messaggi (prove `two_signals_are_both_decoded_and_noise_gives_nothing` e `a_strong_signal_is_subtracted_...`)
     for _pass in 0..3 {
         let before = out.len();
         decode_pass(&mut audio, options, &mut out);
@@ -431,7 +469,50 @@ pub fn decode(samples: &[f32], options: &Options) -> Vec<Decoded> {
     out
 }
 
-/// Una passata: spettri, candidati e decodifica; ogni messaggio trovato si toglie dall'audio.
+/// La finestra di ricezione in bin (`ia1..ib1` di `jt9_decode.f90:227-234`), dentro la ricerca `ia..ib`.
+fn rx_window(options: &Options, ia: usize, ib: usize) -> Option<(usize, usize)> {
+    let rx = options.rx_hz?;
+    let wa = ((f64::from(rx - options.tol_hz) / DF3).round().max(0.0) as usize).max(ia);
+    let wb = ((f64::from(rx + options.tol_hz) / DF3).round().max(0.0) as usize).min(ib);
+    (wa <= wb).then_some((wa, wb))
+}
+
+/// I candidati della finestra di ricezione (`nqd = 1`, `jt9_decode.f90:226-234`): soglie ridotte `ccflim - 2` e `red2lim - 1`, in ordine di
+/// frequenza. WSJT-X prova ogni bin della finestra che le supera; qui solo il massimo di sincronismo entro +-2 bin (1,5 Hz, quanto
+/// l'affinamento di frequenza raggiunge comunque), per non rifare decine di volte lo stesso segnale.
+fn window_candidates(map: &SyncMap, wa: usize, wb: usize) -> Vec<usize> {
+    let ok = |i: usize| map.ccfred[i] > RX_CCFLIM - 2.0 && map.red2[i] > RED2_LIMIT - 1.0;
+    (wa..=wb)
+        .filter(|&i| ok(i) && (i.saturating_sub(2).max(wa)..=(i + 2).min(wb)).all(|k| !ok(k) || map.ccfred[k] <= map.ccfred[i]))
+        .collect()
+}
+
+/// I candidati del resto della banda (`nqd = 0`, `jt9_decode.f90:235-244`): soglie piene, un solo candidato per picco (il migliore entro +-12 bin),
+/// in ordine di sincronismo; la finestra di ricezione, gia' provata, resta fuori (`ccfok(ia1:ib1) = .false.`).
+fn band_candidates(map: &SyncMap, ia: usize, ib: usize, ccflim: f32, window: Option<(usize, usize)>, max: usize) -> Vec<usize> {
+    let mut candidates: Vec<usize> = Vec::new();
+    for i in ia..=ib {
+        if window.is_some_and(|(wa, wb)| (wa..=wb).contains(&i)) {
+            continue;
+        }
+        if map.ccfred[i] > ccflim && map.red2[i] > RED2_LIMIT {
+            let lo = i.saturating_sub(12).max(ia);
+            let hi = (i + 12).min(ib);
+            if (lo..=hi).all(|k| map.ccfred[k] <= map.ccfred[i]) {
+                candidates.push(i);
+            }
+        }
+    }
+    candidates.sort_by(|&a, &b| map.ccfred[b].total_cmp(&map.ccfred[a]));
+    candidates.truncate(max);
+    candidates
+}
+
+/// `ccflim` della finestra di ricezione: con `nqd = 1` vale sempre quello della profondita' 3 (`jt9_decode.f90:214-218`).
+const RX_CCFLIM: f32 = 2.5;
+
+/// Una passata: spettri, candidati e decodifica; prima la finestra di ricezione, poi il resto (`do nqd=1,0,-1`, `jt9_decode.f90:205`).
+/// Ogni messaggio trovato si toglie dall'audio.
 fn decode_pass(audio: &mut [f32], options: &Options, out: &mut Vec<Decoded>) {
     let (ss, nz) = half_symbol_spectra(audio);
     if nz == 0 {
@@ -446,51 +527,74 @@ fn decode_pass(audio: &mut [f32], options: &Options, out: &mut Vec<Decoded>) {
     drop(ss);
     let (limit, ccflim) = options.limits();
     let df8 = 1500.0 / (NSPS as f64 / 8.0);
-    let mut candidates: Vec<usize> = Vec::new();
-    for i in ia..=ib {
-        if map.ccfred[i] > ccflim && map.red2[i] > RED2_LIMIT {
-            // un solo candidato per picco: il migliore entro +-12 bin
-            let lo = i.saturating_sub(12).max(ia);
-            let hi = (i + 12).min(ib);
-            if (lo..=hi).all(|k| map.ccfred[k] <= map.ccfred[i]) {
-                candidates.push(i);
+    let window = rx_window(options, ia, ib);
+    // `done`: i bin occupati da un messaggio gia' trovato (dal tono 0 a 22 bin sopra, `jt9_decode.f90:279-285`)
+    let mut done = vec![false; NSMAX + 2];
+    if let Some((wa, wb)) = window {
+        for i in window_candidates(&map, wa, wb) {
+            if done[i] {
+                continue;
+            }
+            // finestra di ricezione: `sync >= 0,5`, `schk >= 1,0` e Fano fino a 30000 cicli per bit (`jt9_decode.f90:214-218`, `:260`)
+            if let Some(f) = try_candidate(audio, &map, i, 0.5, 1.0, 30_000, out) {
+                mark_done(&mut done, f);
             }
         }
     }
-    candidates.sort_by(|&a, &b| map.ccfred[b].total_cmp(&map.ccfred[a]));
-    candidates.truncate(options.max_candidates);
     let mut tried: Vec<f64> = Vec::new();
-    for i in candidates {
+    for i in band_candidates(&map, ia, ib, ccflim, window, options.max_candidates) {
+        if done[i] {
+            continue;
+        }
         let f_bin = (i - 1) as f64 * DF3;
         if tried.iter().any(|&t| (t - f_bin).abs() < 10.0 * df8) && out.iter().any(|o| (f64::from(o.freq_hz) - f_bin).abs() < 10.0 * df8) {
             continue;
         }
         tried.push(f_bin);
-        // il simbolo 1 comincia a `lag * mezzo simbolo - 8192` campioni (la finestra dello spettro e' centrata sul simbolo)
-        let dt0 = f64::from(map.lag[i]) * HSTEP as f64 - 8192.0;
-        let (f, dt) = refine(audio, f_bin, dt0);
-        let (soft_scrambled, schk, snr) = soft_symbols(audio, f, dt);
-        if schk < 1.0 {
-            continue;
+        // resto della banda: `sync >= 1,0` e `schk >= 1,5` (`jt9_decode.f90:261`)
+        if let Some(f) = try_candidate(audio, &map, i, 1.0, 1.5, limit, out) {
+            mark_done(&mut done, f);
         }
-        // interleaving da togliere: i primi 206 simboli soft, in ordine di trasmissione
-        let mut scrambled = [0u8; 206];
-        for (k, s) in soft_scrambled.iter().take(206).enumerate() {
-            scrambled[k] = *s as u8;
-        }
-        let ordered = interleave(&scrambled, -1);
-        let mut soft = [0i8; 207];
-        for (k, v) in ordered.iter().enumerate() {
-            soft[k] = *v as i8;
-        }
-        let Some(text) = fano::decode_message(&soft, limit) else { continue };
-        if out.iter().any(|o| o.text == text) {
-            continue;
-        }
-        // il messaggio trasmesso si ricostruisce dal testo (stesso pacchetto di 72 bit) e si toglie dall'audio
-        subtract(audio, &crate::jt9::tones(&text), f, dt);
-        out.push(Decoded { text, freq_hz: f as f32, dt_s: (dt / FS - 1.0) as f32, snr_db: snr, sync: map.ccfred[i] });
     }
+}
+
+/// Segna occupati i bin da uno sotto il tono 0 a 22 sopra (`iaa = i - 1`, `ibb = i + 22`).
+fn mark_done(done: &mut [bool], freq_hz: f64) {
+    let i = (freq_hz / DF3).round() as usize + 1;
+    let (lo, hi) = (i.saturating_sub(1), (i + 22).min(done.len() - 1));
+    for d in done[lo..=hi].iter_mut() {
+        *d = true;
+    }
+}
+
+/// Affina, misura e decodifica il candidato del bin `i`; con un messaggio nuovo lo toglie dall'audio e ne ritorna la frequenza.
+fn try_candidate(audio: &mut [f32], map: &SyncMap, i: usize, min_sync: f32, min_schk: f32, limit: usize, out: &mut Vec<Decoded>) -> Option<f64> {
+    let f_bin = (i - 1) as f64 * DF3;
+    // il simbolo 1 comincia a `lag * mezzo simbolo - 8192` campioni (la finestra dello spettro e' centrata sul simbolo)
+    let dt0 = f64::from(map.lag[i]) * HSTEP as f64 - 8192.0;
+    let (f, dt) = refine(audio, f_bin, dt0);
+    let s = soft_symbols(audio, f, dt);
+    if s.sync < min_sync || s.schk < min_schk {
+        return None;
+    }
+    // interleaving da togliere: i primi 206 simboli soft, in ordine di trasmissione
+    let mut scrambled = [0u8; 206];
+    for (k, v) in s.scrambled.iter().take(206).enumerate() {
+        scrambled[k] = *v as u8;
+    }
+    let ordered = interleave(&scrambled, -1);
+    let mut soft = [0i8; 207];
+    for (k, v) in ordered.iter().enumerate() {
+        soft[k] = *v as i8;
+    }
+    let text = fano::decode_message(&soft, limit)?;
+    if out.iter().any(|o| o.text == text) {
+        return None;
+    }
+    // il messaggio trasmesso si ricostruisce dal testo (stesso pacchetto di 72 bit) e si toglie dall'audio
+    subtract(audio, &crate::jt9::tones(&text), f, dt);
+    out.push(Decoded { text, freq_hz: f as f32, dt_s: (dt / FS - 1.0) as f32, snr_db: s.snr, sync: s.sync });
+    Some(f)
 }
 
 /// La distanza tra i toni di JT9, per chi deve disegnare la banda occupata.
@@ -570,5 +674,57 @@ mod tests {
         assert!(texts.contains(&"CQ IU3ABC JN55"), "{out:?}");
         assert!(texts.contains(&"K1ABC IU3ABC -15"), "{out:?}");
         assert_eq!(out.len(), 2, "nessun messaggio inventato vicino al segnale forte: {out:?}");
+    }
+
+    /// La finestra di ricezione prende i picchi con le soglie ridotte (`ccflim - 2`, `red2lim - 1`); il resto della banda solo quelli con le
+    /// soglie piene e mai dentro la finestra (`jt9_decode.f90:226-244`).
+    #[test]
+    fn the_rx_window_uses_reduced_thresholds_and_the_band_pass_skips_it() {
+        let mut map = SyncMap { ccfred: vec![0.0; NSMAX + 2], red2: vec![0.0; NSMAX + 2], lag: vec![0; NSMAX + 2] };
+        // un segnale debole nella finestra (1500 Hz +- 50): sincronismo 1,0 e red2 1,0, sotto le soglie piene 2,5 e 1,6
+        let weak = (1500.0 / DF3).round() as usize;
+        map.ccfred[weak] = 1.0;
+        map.red2[weak] = 1.0;
+        // un segnale forte nella finestra e uno fuori
+        let strong_in = (1530.0 / DF3).round() as usize;
+        let strong_out = (2000.0 / DF3).round() as usize;
+        for i in [strong_in, strong_out] {
+            map.ccfred[i] = 6.0;
+            map.red2[i] = 3.0;
+        }
+        let options = Options { rx_hz: Some(1500.0), ..Options::default() };
+        let (ia, ib) = ((200.0 / DF3).round() as usize, (4000.0 / DF3).round() as usize);
+        let window = rx_window(&options, ia, ib).expect("finestra");
+        assert!(window.0 <= weak && strong_in <= window.1, "{window:?}");
+        assert_eq!(window_candidates(&map, window.0, window.1), vec![weak, strong_in]);
+        assert_eq!(band_candidates(&map, ia, ib, 2.5, Some(window), 40), vec![strong_out]);
+        // senza frequenza di ricezione non c'e' finestra e il debole non passa le soglie piene
+        assert!(rx_window(&Options::default(), ia, ib).is_none());
+        assert_eq!(band_candidates(&map, ia, ib, 2.5, None, 40), vec![strong_in, strong_out]);
+    }
+
+    /// `sync` come lo calcola WSJT-X (`(syncpk + 1) / 4`): attorno a 0,4-0,5 sul rumore, ben sopra 1 per un segnale a -21 dB.
+    #[test]
+    fn the_sync_measure_matches_the_wsjtx_scale() {
+        let noise = minute(&[], 4);
+        let s = soft_symbols(&noise, 1500.0, 12_000.0);
+        assert!(s.sync < 0.7, "rumore: sync {}", s.sync);
+        let audio = minute(&[("K1ABC IU3ABC -15", 1500.0, 0.0, -21.0)], 4);
+        let s = soft_symbols(&audio, 1500.0, 12_000.0);
+        assert!(s.sync > 2.0 && s.schk > 1.5, "segnale: sync {} schk {}", s.sync, s.schk);
+    }
+
+    /// Un segnale a -26 dB che il resto della banda non prende (soglie piene) esce dalla finestra di ricezione.
+    #[test]
+    fn a_weak_signal_on_the_rx_frequency_decodes_first() {
+        let audio = minute(&[("K1ABC IU3ABC -15", 1500.0, 0.0, -26.0)], 3);
+        assert!(decode(&audio, &Options::default()).is_empty());
+        let out = decode(&audio, &Options { rx_hz: Some(1500.0), ..Options::default() });
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(out[0].text, "K1ABC IU3ABC -15");
+        // e il rumore, anche con la finestra di ricezione, non da' messaggi
+        for seed in [1, 2] {
+            assert!(decode(&minute(&[], seed), &Options { rx_hz: Some(1500.0), ..Options::default() }).is_empty());
+        }
     }
 }

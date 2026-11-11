@@ -323,6 +323,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             {windows || config.backend === 'omnirig' ? <option value="omnirig">{t('cat.backend.omnirig')}{snap.data.status.omnirig_found === false ? `  ·  ${t('cat.omnirig.absent')}` : ''}</option> : null}
             <option value="tci">{t('cat.backend.tci')}</option>
             <option value="ft991link">{t('cat.backend.ft991link')}</option>
+            <option value="cat4om">{t('cat.backend.cat4om')}</option>
             <option value="none">{t('cat.backend.none')}</option>
           </select>
         </Field>
@@ -365,6 +366,38 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               onChange={(e) => set({ ft991_address: e.target.value.trim() })}
             />
           </Field>
+        ) : null}
+        {fields.cat4om ? (
+          <>
+            <Field label={t('cat.cat4om.address')} className="cat-w-l" hint={t('tip.cat.cat4om.address')}>
+              <input
+                type="text"
+                value={config.cat4om_address ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder="127.0.0.1:17301"
+                onChange={(e) => set({ cat4om_address: e.target.value.trim() })}
+              />
+            </Field>
+            <Field label={t('cat.cat4om.key')} className="cat-w-m" hint={t('tip.cat.cat4om.key')}>
+              <input
+                type="password"
+                value={config.cat4om_key ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                onChange={(e) => set({ cat4om_key: e.target.value })}
+              />
+            </Field>
+            <Field label={t('cat.cat4om.radio')} className="cat-w-m" hint={t('tip.cat.cat4om.radio')}>
+              <input
+                type="text"
+                value={config.cat4om_radio ?? ''}
+                spellCheck={false}
+                autoComplete="off"
+                onChange={(e) => set({ cat4om_radio: e.target.value.trim() })}
+              />
+            </Field>
+          </>
         ) : null}
         {fields.rig ? (
           <>
@@ -613,6 +646,10 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               <Check label={t('cat.powerOn')} hint={t('tip.cat.powerOn')} checked={config.power_on === true} onChange={(v) => { set({ power_on: v }); saveNow.mutate({ power_on: v }); }} />
               <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
             </>
+          ) : null}
+          {/* Cat4OM sa solo spegnere la radio (`powerOff`, se dichiarato dalla radio): l'accensione passa dalla gestione di Cat4OM */}
+          {config.backend === 'cat4om' ? (
+            <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
           ) : null}
         </Cells>
       </Group>

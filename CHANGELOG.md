@@ -1,6 +1,18 @@
 # Changelog
 
 ## Non rilasciato
+- Riquadro del nominativo (QRZ.com/HamQTH) nel DX Cluster, in Attivita' di banda e nella finestra Rx: ora sta sopra tutto e si legge; prima finiva sotto le righe dell'elenco e sembrava in filigrana.
+- Barra dei comandi: tolto «Cancella», doppione dei pulsanti «Pulisci» delle finestre dei messaggi; «Auto» sta in fondo alla barra di Ferma e Decodifica.
+- Con le Impostazioni aperte gli avvisi (DXCC nuovo, orologio, messaggi brevi) si possono di nuovo chiudere: stavano nella pagina sotto, che con le Impostazioni aperte e' disattivata.
+- **Orologio**: all'avvio la sincronizzazione aspetta che la rete risponda (riprova ogni 20 s per circa 10 minuti) invece di arrendersi al primo tentativo; mentre l'ora e' fuori tolleranza si ricontrolla ogni minuto, cosi' l'avviso sparisce appena l'ora e' giusta; l'ora si cambia con le API di Windows invece che con PowerShell.
+
+## 0.11.235 - 2026-11-11
+- **MSK144 come WSJT-X 3.3**: il ricevitore dei ping e' quello di WSJT-X (`msk144spd`/`msk144sync`, medie di 1-7 quadri), blocchi di 0,6 s ogni 0,3 s, filtro dei doppioni e SNR come `mskrtd`; frequenza Rx (1400-1600 Hz) e F Tol 50 Hz al posto di 1500 +-100 Hz fissi; messaggi brevi con la lista dei nominativi recenti anche in SWL. JT65 e JT9 ricevono ora frequenza Rx, tolleranza e analisi a priori dal motore.
+- **JT65 e JT9 come WSJT-X 3.3**: JT65 con le soglie del livello «Aggressive» 4, due passate (2,5 poi 2,0) con l'ultima senza sottrazione, il filtro sulla correzione di frequenza, analisi a priori (tipi 1-7 secondo il punto del QSO, con l'interruttore a7/a8) e ricerca con la lista dei messaggi; JT9 prova prima la finestra della frequenza Rx con soglie ridotte, poi il resto con le soglie di WSJT-X (sync 1,0 e schk 1,5). F Tol 50 Hz come valore di fabbrica di WSJT-X (verificato con Ghidra).
+- **Cat4OM nativo** (Impostazioni › CAT › «Cat4OM (insieme a Log4OM)»): Aurora e Log4OM comandano la stessa radio insieme attraverso Cat4OM, senza letture continue; un QSY fatto da Log4OM dagli spot viene seguito da Aurora. Frequenza, modo dati, PTT e split (vero se la radio lo dichiara, altrimenti simulato), chiave del gruppo con la prova `cat4om-sha256-minute-v1`.
+- **Q65 come WSJT-X 3.3**: la media dei periodi prova prima la lista dei messaggi del QSO ed e' una media corrente su al massimo 4 periodi; una decodifica di un'altra stazione non cancella piu' la media; la deriva (Max Drift) si corregge in tutti i tentativi; la lista riconosce i nominativi con /P e /R.
+- **OmniRig senza PowerShell**: Aurora parla con OmniRig direttamente via COM, come WSJT-X (verificato con Ghidra sul binario 3.3.0-beta6): niente piu' «PowerShell non avviabile / accesso negato» con antivirus o regole di Windows, niente finestra di OmniRig che ricompare, PTT su un canale suo che non aspetta i cambi di banda. Con una radio che accetta `Freq` si scrive `Freq`, come WSJT-X.
+- TCI: chiudere ExpertSDR o Thetis non manda piu' rapporti di errore (avviso solo con 3 cadute in 2 minuti); l'errore 997 di Windows («operazione di I/O sovrapposta in corso») non chiude piu' il collegamento.
 - **Linux (#41)**: si usa prima `rigctld` dell'Hamlib del sistema, lo stesso di WSJT-X e JS8Call della distribuzione, e solo dopo quello incluso (Hamlib 4.4 di Ubuntu 22.04, che serve all'AppImage). Su Debian 12 la radio che andava con WSJT-X non si collegava.
 - **Split con OmniRig e TCI**: Rig (split vero, `SetSplitMode` come WSJT-X) e Fake It ora funzionano anche con OmniRig, e con TCI si possono scegliere nelle Impostazioni; se la frequenza Tx cambia durante la trasmissione la radio la segue subito (`setXIT` di WSJT-X).
 - **Ritardo Tx regolabile** (Impostazioni › Generali, 0-0,5 s, predefinito 0,2 s come «Tx delay» di WSJT-X).
@@ -32,8 +44,6 @@
 - **FT8, piu' segnali deboli**: soglia di sincronismo 1,3 come in WSJT-X 3.3 (era 1,5 di JTDX) e messaggi del concorso EU VHF (tipo 5) decodificati.
 - **Log ADIF**: PSK31, PSK63, Q65, FST4 scritti come modo padre (`PSK`, `MFSK`) con `SUBMODE`, come richiede ADIF e come fa WSJT-X: LoTW, ClubLog e QRZ non li rifiutano piu'.
 - Pagina Fox col tema chiaro: la barra dei comandi della cascata (Bins/Pixel, Start, N Avg, Tavolozza, Spec) aveva il testo chiaro su fondo bianco e non si leggeva; ora segue l'aspetto scuro della scheda.
-
-## 0.11.235 - 2026-11-11
 - **PSK, RTTY e CW: ascolto automatico**: entrando nella pagina l'ascolto parte da solo; si ferma e riparte dal menu Opzioni › Ascolto (tolta la barra «Avvia ascolto»).
 - **Macro, sottoinsiemi**: l'editor ha i sottoinsiemi del menu «Subset» (testo, programma, frequenza, Auto CQ, macro, impostazioni del modo, rotore, RTTY, SSTV, CW, HELL); nuovi comandi eseguiti: `<FQ:kHz>`, `<SPLIT:0|1>`, `<ROTOR:gradi|SP|LP>`, `<EDITMACRO:nome>`, `<ALARM:testo>`, `<ACQ>`; gli altri comandi sono in elenco con «non ancora».
 - **CW (nuova)**: nel menu «Modo» di PSK · RTTY · SSTV c'e' la CW. Trasmissione con un tono audio dai fronti arrotondati e velocita' in WPM (impostazioni del modo, comando `<WPM:n>` delle macro con i tasti F10-F12 a 15, 20 e 25 WPM); ricezione con un decodificatore a soglia adattiva che si adatta alla velocita' del segnale (crate `mode-digi`, prove di andata e ritorno a 12, 20 e 30 WPM, con rumore, tono diverso e squelch). Le frequenze CW sono nel selettore di banda.

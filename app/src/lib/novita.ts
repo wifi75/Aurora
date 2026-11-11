@@ -21,7 +21,70 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
+    kind: 'new',
+    title: [
+      'OmniRig via COM, Cat4OM nativo, split con OmniRig e TCI, ritardo Tx regolabile',
+      'OmniRig via COM, native Cat4OM, split with OmniRig and TCI, adjustable Tx delay',
+      'OmniRig über COM, natives Cat4OM, Split mit OmniRig und TCI, einstellbare Tx-Verzögerung',
+      'OmniRig via COM, Cat4OM natif, split avec OmniRig et TCI, délai Tx réglable',
+      'OmniRig por COM, Cat4OM nativo, split con OmniRig y TCI, retardo Tx ajustable',
+      'OmniRig por COM, Cat4OM nativo, split com OmniRig e TCI, atraso Tx ajustável',
+    ],
+    text: [
+      'OmniRig ora si comanda direttamente via COM, come fa WSJT-X: niente più PowerShell, quindi niente «accesso negato», niente finestra di OmniRig che ricompare e PTT più veloce. Con Cat4OM nativo (Impostazioni › CAT › «Cat4OM (insieme a Log4OM)») Aurora e Log4OM comandano la stessa radio nello stesso momento. Lo split Rig e Fake It funziona anche con OmniRig e, con TCI, si sceglie nelle Impostazioni. Il ritardo Tx si regola in Impostazioni › Generali, da 0 a 0,5 s (predefinito 0,2 s).',
+      'OmniRig is now driven directly via COM, as WSJT-X does: no more PowerShell, so no «access denied», no OmniRig window popping up again and faster PTT. With native Cat4OM (Settings › CAT › «Cat4OM (insieme a Log4OM)») Aurora and Log4OM control the same radio at the same time. Rig and Fake It split now also work with OmniRig and can be chosen in Settings with TCI. The Tx delay is adjustable in Settings › General, from 0 to 0.5 s (default 0.2 s).',
+      'OmniRig wird jetzt wie bei WSJT-X direkt über COM gesteuert: kein PowerShell mehr, also kein «Zugriff verweigert», kein erneut auftauchendes OmniRig-Fenster und schnelleres PTT. Mit dem nativen Cat4OM (Einstellungen › CAT › «Cat4OM (insieme a Log4OM)») steuern Aurora und Log4OM dasselbe Funkgerät gleichzeitig. Der Split Rig und Fake It funktioniert auch mit OmniRig und lässt sich bei TCI in den Einstellungen wählen. Die Tx-Verzögerung stellst du unter Einstellungen › Allgemein von 0 bis 0,5 s ein (Standard 0,2 s).',
+      'OmniRig se commande maintenant directement via COM, comme WSJT-X : plus de PowerShell, donc plus de «accès refusé», plus de fenêtre OmniRig qui réapparaît et un PTT plus rapide. Avec Cat4OM natif (Paramètres › CAT › «Cat4OM (insieme a Log4OM)») Aurora et Log4OM pilotent la même radio en même temps. Le split Rig et Fake It fonctionne aussi avec OmniRig et, avec TCI, se choisit dans les Paramètres. Le délai Tx se règle dans Paramètres › Général, de 0 à 0,5 s (0,2 s par défaut).',
+      'OmniRig ahora se controla directamente por COM, como hace WSJT-X: se acabó PowerShell, así que no hay «acceso denegado», ni la ventana de OmniRig que reaparece, y el PTT es más rápido. Con Cat4OM nativo (Ajustes › CAT › «Cat4OM (insieme a Log4OM)») Aurora y Log4OM controlan la misma radio a la vez. El split Rig y Fake It funciona también con OmniRig y, con TCI, se elige en los Ajustes. El retardo Tx se regula en Ajustes › General, de 0 a 0,5 s (por defecto 0,2 s).',
+      'O OmniRig é agora comandado diretamente por COM, como faz o WSJT-X: acabou o PowerShell, por isso sem «acesso negado», sem a janela do OmniRig a reaparecer e com PTT mais rápido. Com o Cat4OM nativo (Definições › CAT › «Cat4OM (insieme a Log4OM)») o Aurora e o Log4OM comandam o mesmo rádio ao mesmo tempo. O split Rig e Fake It funciona também com o OmniRig e, com o TCI, escolhe-se nas Definições. O atraso Tx regula-se em Definições › Geral, de 0 a 0,5 s (predefinição 0,2 s).',
+    ],
+  },
+  {
+    version: '0.11.235',
+    released: '2026-11-11T16:24:32Z',
+    kind: 'changed',
+    title: [
+      'Decodificatori allineati a WSJT-X 3.3: FT8, FT4, Q65, JT65, JT9 e MSK144',
+      'Decoders aligned with WSJT-X 3.3: FT8, FT4, Q65, JT65, JT9 and MSK144',
+      'Decoder an WSJT-X 3.3 angeglichen: FT8, FT4, Q65, JT65, JT9 und MSK144',
+      'Décodeurs alignés sur WSJT-X 3.3 : FT8, FT4, Q65, JT65, JT9 et MSK144',
+      'Decodificadores alineados con WSJT-X 3.3: FT8, FT4, Q65, JT65, JT9 y MSK144',
+      'Descodificadores alinhados com o WSJT-X 3.3: FT8, FT4, Q65, JT65, JT9 e MSK144',
+    ],
+    text: [
+      'FT8: il segnale sulla frequenza Rx si prova per primo, OSD di profondità 4 per le risposte del QSO e ritardo medio seguito (DT alto non si perde); analisi a priori anche per /P e nominativi composti. FT4: niente filtri in più rispetto a WSJT-X, stessa ricerca dei candidati e limite di 5 s. Q65: la media usa la lista del QSO, la deriva si corregge e la lista riconosce /P e /R. JT65 e JT9: soglie di WSJT-X, finestra Rx provata per prima e analisi a priori per JT65. MSK144: il ricevitore dei ping di WSJT-X, frequenza Rx e tolleranza al posto di 1500 Hz fissi, messaggi brevi anche in SWL.',
+      'FT8: the signal on the Rx frequency is tried first, OSD depth 4 for QSO replies and the mean DT is tracked (high DT is no longer lost); a priori decoding also for /P and compound callsigns. FT4: no extra filters compared to WSJT-X, the same candidate search and a 5 s time limit. Q65: averaging uses the QSO list, drift is corrected and the list recognises /P and /R. JT65 and JT9: WSJT-X thresholds, Rx window tried first and a priori decoding for JT65. MSK144: WSJT-X’s ping receiver, Rx frequency and tolerance instead of a fixed 1500 Hz, short messages also in SWL.',
+      'FT8: Das Signal auf der Rx-Frequenz wird zuerst versucht, OSD-Tiefe 4 für QSO-Antworten und die mittlere DT wird verfolgt (hohe DT gehen nicht mehr verloren); A-priori-Analyse auch für /P und zusammengesetzte Rufzeichen. FT4: keine zusätzlichen Filter gegenüber WSJT-X, dieselbe Kandidatensuche und 5 s Zeitlimit. Q65: Die Mittelung nutzt die QSO-Liste, die Drift wird korrigiert und die Liste erkennt /P und /R. JT65 und JT9: WSJT-X-Schwellen, Rx-Fenster zuerst und A-priori-Analyse für JT65. MSK144: der Ping-Empfänger von WSJT-X, Rx-Frequenz und Toleranz statt fester 1500 Hz, Kurzmeldungen auch im SWL-Betrieb.',
+      'FT8 : le signal sur la fréquence Rx est essayé en premier, OSD de profondeur 4 pour les réponses du QSO et DT moyen suivi (un DT élevé ne se perd plus) ; analyse a priori aussi pour /P et les indicatifs composés. FT4 : pas de filtres en plus par rapport à WSJT-X, même recherche des candidats et limite de 5 s. Q65 : la moyenne utilise la liste du QSO, la dérive est corrigée et la liste reconnaît /P et /R. JT65 et JT9 : seuils de WSJT-X, fenêtre Rx essayée en premier et analyse a priori pour JT65. MSK144 : le récepteur de pings de WSJT-X, fréquence Rx et tolérance au lieu de 1500 Hz fixes, messages courts aussi en SWL.',
+      'FT8: se prueba primero la señal en la frecuencia Rx, OSD de profundidad 4 para las respuestas del QSO y se sigue el retardo medio (un DT alto ya no se pierde); análisis a priori también para /P e indicativos compuestos. FT4: sin filtros adicionales respecto a WSJT-X, misma búsqueda de candidatos y límite de 5 s. Q65: el promedio usa la lista del QSO, la deriva se corrige y la lista reconoce /P y /R. JT65 y JT9: umbrales de WSJT-X, ventana Rx probada primero y análisis a priori para JT65. MSK144: el receptor de pings de WSJT-X, frecuencia Rx y tolerancia en lugar de 1500 Hz fijos, mensajes cortos también en SWL.',
+      'FT8: o sinal na frequência Rx é tentado primeiro, OSD de profundidade 4 para as respostas do QSO e o atraso médio é seguido (um DT alto já não se perde); análise a priori também para /P e indicativos compostos. FT4: sem filtros a mais em relação ao WSJT-X, a mesma pesquisa de candidatos e limite de 5 s. Q65: a média usa a lista do QSO, a deriva é corrigida e a lista reconhece /P e /R. JT65 e JT9: limiares do WSJT-X, janela Rx tentada primeiro e análise a priori para JT65. MSK144: o recetor de pings do WSJT-X, frequência Rx e tolerância em vez de 1500 Hz fixos, mensagens curtas também em SWL.',
+    ],
+  },
+  {
+    version: '0.11.235',
+    released: '2026-11-11T16:24:32Z',
+    kind: 'fixed',
+    title: [
+      'Correzioni: Linux, ALSA, TCI, «Cancella» per GridTracker e JTAlert, Wavelog, PSK Reporter',
+      'Fixes: Linux, ALSA, TCI, «Clear» for GridTracker and JTAlert, Wavelog, PSK Reporter',
+      'Korrekturen: Linux, ALSA, TCI, «Löschen» für GridTracker und JTAlert, Wavelog, PSK Reporter',
+      'Corrections : Linux, ALSA, TCI, «Effacer» pour GridTracker et JTAlert, Wavelog, PSK Reporter',
+      'Correcciones: Linux, ALSA, TCI, «Borrar» para GridTracker y JTAlert, Wavelog, PSK Reporter',
+      'Correções: Linux, ALSA, TCI, «Limpar» para GridTracker e JTAlert, Wavelog, PSK Reporter',
+    ],
+    text: [
+      'Su Linux si usa prima Hamlib del sistema, lo stesso di WSJT-X (#41), e l’avviso «snd_pcm_avail_delay» di ALSA non ferma più la trasmissione. TCI: chiudere ExpertSDR o Thetis non manda più rapporti di errore e l’errore 997 di Windows non chiude il collegamento. «Cancella» manda il Clear anche a GridTracker e JTAlert. Wavelog v2: ora si legge l’elenco delle stazioni. PSK Reporter: alla chiusura gli spot in coda vengono inviati.',
+      'On Linux the system Hamlib, the same one WSJT-X uses, is tried first (#41), and the ALSA «snd_pcm_avail_delay» warning no longer stops transmission. TCI: closing ExpertSDR or Thetis no longer sends error reports and Windows error 997 no longer drops the connection. «Clear» also sends Clear to GridTracker and JTAlert. Wavelog v2: the station list can now be read. PSK Reporter: queued spots are sent when Aurora closes.',
+      'Unter Linux wird zuerst das System-Hamlib verwendet, dasselbe wie bei WSJT-X (#41), und die ALSA-Meldung «snd_pcm_avail_delay» stoppt die Aussendung nicht mehr. TCI: Beim Schließen von ExpertSDR oder Thetis werden keine Fehlerberichte mehr gesendet und der Windows-Fehler 997 trennt die Verbindung nicht mehr. «Löschen» sendet Clear auch an GridTracker und JTAlert. Wavelog v2: Die Stationsliste wird jetzt gelesen. PSK Reporter: Beim Beenden werden die wartenden Spots gesendet.',
+      'Sous Linux on utilise d’abord le Hamlib du système, le même que WSJT-X (#41), et l’alerte «snd_pcm_avail_delay» d’ALSA n’arrête plus l’émission. TCI : fermer ExpertSDR ou Thetis n’envoie plus de rapports d’erreur et l’erreur 997 de Windows ne coupe plus la connexion. «Effacer» envoie aussi le Clear à GridTracker et JTAlert. Wavelog v2 : la liste des stations se lit maintenant. PSK Reporter : à la fermeture les spots en attente sont envoyés.',
+      'En Linux se usa primero el Hamlib del sistema, el mismo que WSJT-X (#41), y el aviso «snd_pcm_avail_delay» de ALSA ya no detiene la transmisión. TCI: cerrar ExpertSDR o Thetis ya no envía informes de error y el error 997 de Windows ya no cierra la conexión. «Borrar» envía el Clear también a GridTracker y JTAlert. Wavelog v2: ahora se lee la lista de estaciones. PSK Reporter: al cerrar se envían los spots en cola.',
+      'No Linux usa-se primeiro o Hamlib do sistema, o mesmo do WSJT-X (#41), e o aviso «snd_pcm_avail_delay» do ALSA já não pára a transmissão. TCI: fechar o ExpertSDR ou o Thetis já não envia relatórios de erro e o erro 997 do Windows já não fecha a ligação. «Limpar» envia o Clear também ao GridTracker e ao JTAlert. Wavelog v2: agora lê-se a lista das estações. PSK Reporter: ao fechar enviam-se os spots em fila.',
+    ],
+  },
+  {
+    version: '0.11.235',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Finestra Rx accesa, «Spot DX» nella Stazione e split Rig/Fake It',
@@ -42,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'fixed',
     title: [
       'Correzioni: PTT, trasmissioni lunghe, paesi DXCC, Wait and Call, GridTracker e log ADIF',
@@ -63,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Satelliti: mappa, passaggi, Doppler sulla radio e rotore',
@@ -84,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'PSK31, PSK63 e RTTY nella pagina «PSK · RTTY · SSTV»',
@@ -105,7 +168,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'CW: trasmissione e decodifica nella stessa pagina',
@@ -126,7 +189,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'SSTV: pagina nuova per ricevere e trasmettere immagini',
@@ -147,7 +210,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'changed',
     title: [
       'Gruppi di modi in alto e radio sulla frequenza del modo',
@@ -168,7 +231,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Colori dei quadrati lavorati e confermati della Mappa DX',
@@ -189,7 +252,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'fixed',
     title: [
       'Correzioni: locatore FT8, OmniRig, split Hamlib, PSK Reporter, audio, guardiano e Wavelog',
@@ -611,48 +674,6 @@ export const NOVITA: readonly Novita[] = [
       "Quand la nouvelle version est prête, une pastille vert fluo « Nouvelle » avec le numéro, un point qui pulse et « Installer » apparaît dans l’en-tête. Les distances sont toujours en km entiers, sans décimales (la page Contest affichait beaucoup de chiffres après la virgule).",
       "Cuando la versión nueva está lista, en la cabecera aparece una píldora verde flúor «Nueva» con el número, un punto que late e «Instalar». Las distancias van siempre en km enteros, sin decimales (la página Contest mostraba muchas cifras tras la coma).",
       "Quando a versão nova está pronta, no cabeçalho aparece uma pílula verde flúor «Nova» com o número, um ponto a pulsar e «Instalar». As distâncias ficam sempre em km inteiros, sem decimais (a página Contest mostrava muitos algarismos depois da vírgula).",
-    ],
-  },
-  {
-    version: '0.11.206',
-    released: '2026-11-09T08:04:56Z',
-    kind: 'fixed',
-    title: ['Nessun Aurora vecchio rimasto acceso', 'No old Aurora left running', 'Kein altes Aurora läuft mehr weiter', 'Plus d’ancien Aurora resté ouvert', 'Ningún Aurora antiguo sigue abierto', 'Nenhum Aurora antigo fica aberto'],
-    text: [
-      "All’avvio, durante l’installazione e nell’aggiornamento dall’app si chiude anche il motore di Aurora avviato da solo e rimasto acceso da una versione vecchia, che dopo l’aggiornamento faceva vedere ancora la versione di prima. I pulsanti dell’aggiornamento in testata restano leggibili al passaggio del mouse.",
-      "At startup, during installation and when updating from the app, the Aurora engine started on its own and left running from an old version is also closed: after the update it still showed the previous version. The update buttons in the header stay readable on mouse-over.",
-      "Beim Start, bei der Installation und beim Update aus der App wird auch die allein gestartete, von einer alten Version noch laufende Aurora-Engine beendet, die nach dem Update weiter die alte Version zeigte. Die Update-Schaltflächen in der Kopfzeile bleiben beim Überfahren lesbar.",
-      "Au démarrage, pendant l’installation et lors de la mise à jour depuis l’app, le moteur d’Aurora lancé seul et resté ouvert d’une ancienne version est aussi fermé : après la mise à jour il affichait encore l’ancienne version. Les boutons de mise à jour de l’en-tête restent lisibles au survol.",
-      "Al arrancar, durante la instalación y al actualizar desde la app se cierra también el motor de Aurora iniciado por separado y que seguía abierto de una versión antigua, que tras la actualización seguía mostrando la versión anterior. Los botones de actualización de la cabecera siguen legibles al pasar el ratón.",
-      "Ao arrancar, durante a instalação e ao atualizar a partir da app fecha-se também o motor do Aurora iniciado à parte e que ficara aberto de uma versão antiga, que depois da atualização ainda mostrava a versão anterior. Os botões de atualização do cabeçalho ficam legíveis ao passar o rato.",
-    ],
-  },
-  {
-    version: '0.11.205',
-    released: '2026-11-09T07:50:32Z',
-    kind: 'fixed',
-    title: ['Aggiornamento sicuro e silenzioso', 'Safe, silent updates', 'Sichere, stille Updates', 'Mises à jour sûres et silencieuses', 'Actualizaciones seguras y silenciosas', 'Atualizações seguras e silenciosas'],
-    text: [
-      "All’avvio Aurora controlla subito se c’è una versione nuova e la mostra con il nastrino «Nuova versione»; l’aggiornamento si installa in silenzio, senza la finestra dell’installatore, e Aurora si riapre da sola. Se un Aurora vecchio era rimasto acceso e si prendeva la finestra, ora viene chiuso all’avvio. Nell’installatore la scelta «Aggiorna» è in alto e già selezionata.",
-      "At startup Aurora checks right away for a new version and shows it with the “New version” ribbon; the update installs silently, without the installer window, and Aurora reopens by itself. An old Aurora left running that took over the window is now closed at startup. In the installer “Update” is on top and already selected.",
-      "Beim Start prüft Aurora sofort auf eine neue Version und zeigt sie mit dem Band „Neue Version“; das Update wird still installiert, ohne Installationsfenster, und Aurora startet von selbst neu. Ein altes, noch laufendes Aurora, das das Fenster übernahm, wird jetzt beim Start beendet. Im Installer steht „Aktualisieren“ oben und ist bereits ausgewählt.",
-      "Au démarrage Aurora vérifie tout de suite s’il existe une nouvelle version et l’affiche avec le ruban « Nouvelle version » ; la mise à jour s’installe en silence, sans la fenêtre de l’installateur, et Aurora se relance seule. Un ancien Aurora resté ouvert qui prenait la fenêtre est maintenant fermé au démarrage. Dans l’installateur « Mettre à jour » est en haut et déjà sélectionné.",
-      "Al arrancar Aurora comprueba enseguida si hay una versión nueva y la muestra con la cinta «Nueva versión»; la actualización se instala en silencio, sin la ventana del instalador, y Aurora se vuelve a abrir sola. Un Aurora antiguo que seguía abierto y se quedaba con la ventana ahora se cierra al arrancar. En el instalador «Actualizar» está arriba y ya seleccionado.",
-      "Ao arrancar o Aurora verifica logo se há uma versão nova e mostra-a com a fita «Nova versão»; a atualização instala-se em silêncio, sem a janela do instalador, e o Aurora volta a abrir sozinho. Um Aurora antigo que ficara aberto e tomava a janela é agora fechado ao arrancar. No instalador «Atualizar» está em cima e já selecionado.",
-    ],
-  },
-  {
-    version: '0.11.204',
-    released: '2026-11-08T22:21:34Z',
-    kind: 'new',
-    title: ['Tre contest nuovi e frequenze aggiornate', 'Three new contests and updated frequencies', 'Drei neue Contests und aktualisierte Frequenzen', 'Trois nouveaux contests et fréquences mises à jour', 'Tres concursos nuevos y frecuencias actualizadas', 'Três concursos novos e frequências atualizadas'],
-    text: [
-      "Nella pagina Contest ci sono il C.S.M.I. Marconi Speed Contest e i contest FT8 DX e FT4 DX dello European FT8 Club; il PACCdigi ha orari, scambio e frequenze corretti secondo il regolamento. Le frequenze dei 70 cm e la frequenza FT8 alternativa 70,100 MHz dei 4 m arrivano anche a chi aveva già una tabella delle frequenze salvata.",
-      "The Contest page now has the C.S.M.I. Marconi Speed Contest and the European FT8 Club FT8 DX and FT4 DX contests; PACCdigi has corrected times, exchange and frequencies according to the rules. The 70 cm frequencies and the alternative 4 m FT8 frequency 70.100 MHz now also reach users who had already saved a frequency table.",
-      "Die Contest-Seite enthält jetzt den C.S.M.I. Marconi Speed Contest sowie die FT8-DX- und FT4-DX-Contests des European FT8 Club; PACCdigi hat laut Regeln korrigierte Zeiten, Austausch und Frequenzen. Die 70-cm-Frequenzen und die alternative 4-m-FT8-Frequenz 70,100 MHz erreichen jetzt auch Nutzer mit bereits gespeicherter Frequenztabelle.",
-      "La page Contest contient maintenant le C.S.M.I. Marconi Speed Contest et les contests FT8 DX et FT4 DX de l’European FT8 Club ; le PACCdigi a des horaires, un échange et des fréquences corrigés selon le règlement. Les fréquences du 70 cm et la fréquence FT8 alternative 70,100 MHz du 4 m arrivent aussi à ceux qui avaient déjà une table de fréquences enregistrée.",
-      "La página Contest incluye ahora el C.S.M.I. Marconi Speed Contest y los concursos FT8 DX y FT4 DX del European FT8 Club; el PACCdigi tiene horarios, intercambio y frecuencias corregidos según el reglamento. Las frecuencias de 70 cm y la frecuencia FT8 alternativa 70,100 MHz de 4 m llegan también a quien ya tenía una tabla de frecuencias guardada.",
-      "A página Contest inclui agora o C.S.M.I. Marconi Speed Contest e os concursos FT8 DX e FT4 DX do European FT8 Club; o PACCdigi tem horários, troca e frequências corrigidos segundo o regulamento. As frequências dos 70 cm e a frequência FT8 alternativa 70,100 MHz dos 4 m chegam também a quem já tinha uma tabela de frequências guardada.",
     ],
   },
 ];
