@@ -23,6 +23,8 @@ pub enum Backend {
     Tci,
     /// FT-991(A) Link: il programma che tiene la porta COM delle Yaesu FT-991/FT-991A e riceve i comandi CAT su UDP.
     Ft991link,
+    /// Cat4OM (Log4OM): client nativo del Control Port, la radio si divide con Log4OM e gli altri programmi collegati.
+    Cat4om,
     /// Nessuna radio comandata: la frequenza si cambia a mano (le bande muovono solo quella di Aurora).
     None,
 }
@@ -135,6 +137,12 @@ pub struct RigConfig {
     pub ft991_address: String,
     /// La radio di OmniRig comandata: 1 (Rig1) o 2 (Rig2), per chi ha due radio in OmniRig.
     pub omnirig_rig: u8,
+    /// Indirizzo `host:porta` del Control Port del gruppo di Cat4OM; vuoto = quello di base, `127.0.0.1:17301`.
+    pub cat4om_address: String,
+    /// La chiave del gruppo di Cat4OM (vuota se il gruppo non la chiede): va solo nella prova SHA-256 dell'`hello`, mai nei registri.
+    pub cat4om_key: String,
+    /// La radio del gruppo (`radioId` o nome); vuoto = la prima collegata.
+    pub cat4om_radio: String,
 }
 
 /// Porta TCP di `rigctld` di base (quella che i programmi propongono per «Hamlib NET rigctl»).
@@ -169,6 +177,9 @@ impl Default for RigConfig {
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),
             omnirig_rig: 1,
+            cat4om_address: crate::cat4om::DEFAULT_CAT4OM_ADDRESS.to_string(),
+            cat4om_key: String::new(),
+            cat4om_radio: String::new(),
         }
     }
 }
@@ -221,6 +232,15 @@ impl RigConfig {
         }
         if !self.ft991_address.is_empty() && !token_ok(&self.ft991_address) {
             return Err("bad_ft991_address");
+        }
+        if !self.cat4om_address.is_empty() && !token_ok(&self.cat4om_address) {
+            return Err("bad_cat4om_address");
+        }
+        if self.cat4om_key.chars().count() > 128 || self.cat4om_key.chars().any(char::is_control) {
+            return Err("bad_cat4om_key");
+        }
+        if self.cat4om_radio.chars().count() > 64 || self.cat4om_radio.chars().any(char::is_control) {
+            return Err("bad_cat4om_radio");
         }
         if !self.ptt_port.is_empty() && !token_ok(&self.ptt_port) {
             return Err("bad_port");
@@ -535,6 +555,7 @@ fn suggest_name(config: &RigConfig, profiles: &[RigProfile]) -> String {
         Backend::Omnirig => "OmniRig",
         Backend::Tci => "TCI",
         Backend::Ft991link => "FT-991(A) Link",
+        Backend::Cat4om => "Cat4OM",
         Backend::None => "senza CAT",
     };
     let base: String = format!("{rig} {backend}").chars().take(76).collect();
@@ -641,6 +662,11 @@ mod tests {
         assert_eq!(bad(|c| c.rig_name = "x".repeat(81)), "bad_rig_name");
         assert_eq!(bad(|c| c.share_port = 80), "bad_share_port");
         assert_eq!(bad(|c| c.share_port = 0), "bad_share_port");
+        assert_eq!(bad(|c| c.cat4om_address = "127.0.0.1:17301 x".into()), "bad_cat4om_address");
+        assert_eq!(bad(|c| c.cat4om_key = "a\nb".into()), "bad_cat4om_key");
+        assert_eq!(bad(|c| c.cat4om_radio = "x".repeat(65)), "bad_cat4om_radio");
+        let old: RigConfig = serde_json::from_str(r#"{"model":1029}"#).expect("file vecchio");
+        assert_eq!((old.cat4om_address.as_str(), old.cat4om_key.as_str(), old.cat4om_radio.as_str()), ("127.0.0.1:17301", "", ""), "i file senza Cat4OM si leggono");
         assert!(RigConfig::default().to_rigctld(Path::new("x")).is_err(), "senza modello non si collega");
         assert_eq!(ft2000().effective_poll_secs(), 2);
         let mut fast = ft2000();

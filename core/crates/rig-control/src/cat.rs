@@ -1,5 +1,5 @@
 //! Il servizio CAT di Aurora: tiene la configurazione e i profili (`radio.json`), collega e scollega la radio e fa da `Rig` verso il resto del
-//! programma. Il backend e' Hamlib (tramite `rigctld`), OmniRig, TCI (le SDR, su WebSocket) oppure FT-991(A) Link (UDP). La connessione non parte mai da sola, salvo `auto_connect` o la scelta
+//! programma. Il backend e' Hamlib (tramite `rigctld`), OmniRig, TCI (le SDR, su WebSocket), FT-991(A) Link (UDP) oppure Cat4OM (WebSocket, radio divisa con Log4OM). La connessione non parte mai da sola, salvo `auto_connect` o la scelta
 //! di avvio (`AURORA_RIG`): caricare un profilo non collega nulla (il profilo cancellava in silenzio le scelte fatte dopo, in Decodium).
 
 use std::{
@@ -10,6 +10,7 @@ use std::{
 use serde::Serialize;
 
 use crate::{
+    cat4om::Cat4omRig,
     cat_config::{friendly_error, Backend, RadioFile, RadioStore, RigConfig, RigProfile, StoreError},
     hamlib::{list_models, locate_rigctld, rigctl_beside, Rigctld, RigModel},
     hamlib_rig::{HamlibRig, Link, LinkState, RigStatus, Timing},
@@ -133,6 +134,8 @@ pub struct CatService {
     tci: Mutex<Option<Arc<TciRig>>>,
     /// La FT-991/FT-991A collegata attraverso FT-991(A) Link (UDP).
     ft991: Mutex<Option<Arc<Ft991Rig>>>,
+    /// La radio comandata attraverso Cat4OM (Control Port del gruppo, insieme a Log4OM).
+    cat4om: Mutex<Option<Arc<Cat4omRig>>>,
     /// L'audio TCI chiesto dalla scheda Audio (ricezione, trasmissione): si da' a ogni radio TCI collegata, anche dopo un cambio.
     tci_hooks: Mutex<(Option<RxAudioFn>, Option<TxAudioFn>)>,
     models: Mutex<Option<Vec<RigModel>>>,
@@ -163,6 +166,7 @@ impl CatService {
             omni_check: Arc::new(Mutex::new((None, false))),
             tci: Mutex::new(None),
             ft991: Mutex::new(None),
+            cat4om: Mutex::new(None),
             tci_hooks: Mutex::new((None, None)),
             models: Mutex::new(None),
         })
@@ -217,6 +221,13 @@ impl CatService {
                 }
                 None => CatStatus { backend: Backend::Ft991link, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None },
             },
+            Backend::Cat4om => match self.cat4om_rig() {
+                Some(rig) => {
+                    let rig_status = rig.status();
+                    CatStatus { backend: Backend::Cat4om, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, omnirig_found, rig: Some(rig_status), share: None }
+                }
+                None => CatStatus { backend: Backend::Cat4om, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None },
+            },
             Backend::None => CatStatus { backend: Backend::None, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None },
         }
     }
@@ -228,7 +239,7 @@ impl CatService {
 
     /// `true` se c'e' qualcosa da riavviare quando cambia la configurazione (collegata, in collegamento o in errore).
     fn is_active(&self) -> bool {
-        self.current().is_some() || self.tci_rig().is_some() || self.ft991_rig().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
+        self.current().is_some() || self.tci_rig().is_some() || self.ft991_rig().is_some() || self.cat4om_rig().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
     }
 
     /// Collega la radio con la configurazione salvata. Per Hamlib ritorna subito (il collegamento prosegue in un thread e lo stato lo racconta);
@@ -276,6 +287,13 @@ impl CatService {
                 // il collegamento prosegue nel suo thread: lo stato dice se FT-991(A) Link risponde
                 let rig = Arc::new(Ft991Rig::from_config(&config));
                 if let Ok(mut slot) = self.ft991.lock() {
+                    *slot = Some(rig);
+                }
+            }
+            Backend::Cat4om => {
+                // il collegamento prosegue nel suo thread (con ricollegamento): lo stato dice se Cat4OM risponde e se la radio e' collegata
+                let rig = Arc::new(Cat4omRig::from_config(&config));
+                if let Ok(mut slot) = self.cat4om.lock() {
                     *slot = Some(rig);
                 }
             }
@@ -340,6 +358,10 @@ impl CatService {
         let ft991 = self.ft991.lock().ok().and_then(|mut c| c.take());
         if let Some(ft991) = ft991 {
             ft991.shutdown();
+        }
+        let cat4om = self.cat4om.lock().ok().and_then(|mut c| c.take());
+        if let Some(cat4om) = cat4om {
+            cat4om.shutdown();
         }
         // l'oggetto OmniRig tenuto aperto si lascia: OmniRig puo' chiudersi e liberare la porta (passaggio a Hamlib, distacco)
         if release_omnirig {
@@ -425,6 +447,15 @@ impl CatService {
         self.ft991_rig().ok_or_else(|| RigError("nessuna radio FT-991(A) Link collegata: scegli FT-991(A) Link in Impostazioni → Radio e premi Collega".into()))
     }
 
+    fn cat4om_rig(&self) -> Option<Arc<Cat4omRig>> {
+        self.cat4om.lock().ok().and_then(|c| c.clone())
+    }
+
+    /// La radio collegata attraverso Cat4OM (PTT, split).
+    pub fn cat4om(&self) -> Result<Arc<Cat4omRig>, RigError> {
+        self.cat4om_rig().ok_or_else(|| RigError("nessuna radio Cat4OM collegata: scegli Cat4OM in Impostazioni → Radio e premi Collega".into()))
+    }
+
     /// L'audio ricevuto via TCI va a `hook` (`None` = flusso fermato), anche per le radio TCI collegate dopo.
     pub fn set_tci_rx_audio(&self, hook: Option<RxAudioFn>) {
         if let Ok(mut h) = self.tci_hooks.lock() {
@@ -466,9 +497,12 @@ impl CatService {
         self.backend() == Backend::Tci && self.tci_rig().is_some_and(|r| r.tuning())
     }
 
-    /// La radio sta trasmettendo (Hamlib, TCI o FT-991(A) Link).
+    /// La radio sta trasmettendo (Hamlib, TCI, FT-991(A) Link o Cat4OM).
     pub fn transmitting(&self) -> bool {
-        self.current().is_some_and(|r| r.transmitting()) || self.tci_rig().is_some_and(|r| r.transmitting()) || self.ft991_rig().is_some_and(|r| r.transmitting())
+        self.current().is_some_and(|r| r.transmitting())
+            || self.tci_rig().is_some_and(|r| r.transmitting())
+            || self.ft991_rig().is_some_and(|r| r.transmitting())
+            || self.cat4om_rig().is_some_and(|r| r.transmitting())
     }
 
     /// `true` se c'e' una radio che risponde ai comandi (Hamlib collegata, oppure OmniRig scelto).
@@ -478,6 +512,7 @@ impl CatService {
             Backend::Omnirig => self.omni.lock().is_ok_and(|o| o.0 == LinkState::Connected),
             Backend::Tci => self.tci_rig().is_some_and(|r| r.status().state == LinkState::Connected),
             Backend::Ft991link => self.ft991_rig().is_some_and(|r| r.status().state == LinkState::Connected),
+            Backend::Cat4om => self.cat4om_rig().is_some_and(|r| r.status().state == LinkState::Connected),
             Backend::None => false,
         }
     }
@@ -491,6 +526,9 @@ impl CatService {
             rig.power_off_if_chosen();
         }
         if let Some(rig) = self.ft991_rig() {
+            rig.power_off_if_chosen();
+        }
+        if let Some(rig) = self.cat4om_rig() {
             rig.power_off_if_chosen();
         }
         self.disconnect();
@@ -523,6 +561,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.set_frequency(hz),
             Backend::Tci => self.tci()?.set_frequency(hz),
             Backend::Ft991link => self.ft991()?.set_frequency(hz),
+            Backend::Cat4om => self.cat4om()?.set_frequency(hz),
             Backend::Omnirig => WindowsRig.set_frequency(hz),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -533,6 +572,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.frequency(),
             Backend::Tci => self.tci()?.frequency(),
             Backend::Ft991link => self.ft991()?.frequency(),
+            Backend::Cat4om => self.cat4om()?.frequency(),
             Backend::Omnirig => WindowsRig.frequency(),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -543,6 +583,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.meters(),
             Backend::Tci => self.tci()?.meters(),
             Backend::Ft991link => self.ft991()?.meters(),
+            Backend::Cat4om => self.cat4om()?.meters(),
             Backend::Omnirig => Err(RigError("misuratori non disponibili con OmniRig".into())),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -553,6 +594,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.set_rx_frequency(hz),
             Backend::Tci => self.tci()?.set_rx_frequency(hz),
             Backend::Ft991link => self.ft991()?.set_rx_frequency(hz),
+            Backend::Cat4om => self.cat4om()?.set_rx_frequency(hz),
             Backend::Omnirig => WindowsRig.set_rx_frequency(hz),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -563,6 +605,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.output_attenuation(),
             Backend::Tci => self.tci()?.output_attenuation(),
             Backend::Ft991link => self.ft991()?.output_attenuation(),
+            Backend::Cat4om => self.cat4om()?.output_attenuation(),
             Backend::Omnirig => WindowsRig.output_attenuation(),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -573,6 +616,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.set_output_attenuation(tenths),
             Backend::Tci => self.tci()?.set_output_attenuation(tenths),
             Backend::Ft991link => self.ft991()?.set_output_attenuation(tenths),
+            Backend::Cat4om => self.cat4om()?.set_output_attenuation(tenths),
             Backend::Omnirig => WindowsRig.set_output_attenuation(tenths),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -583,6 +627,7 @@ impl Rig for CatService {
             Backend::Hamlib => self.hamlib()?.set_mode(mode),
             Backend::Tci => self.tci()?.set_mode(mode),
             Backend::Ft991link => self.ft991()?.set_mode(mode),
+            Backend::Cat4om => self.cat4om()?.set_mode(mode),
             Backend::Omnirig => WindowsRig.set_mode(mode),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }
@@ -594,6 +639,7 @@ impl Rig for CatService {
             // PWR − / + e TUNE dei display: `drive` e `tune` della SDR
             Backend::Tci => self.tci()?.set_extra(item),
             Backend::Ft991link => Err(RigError("comando non supportato da FT-991(A) Link".into())),
+            Backend::Cat4om => Err(RigError("comando non supportato da Cat4OM".into())),
             Backend::Omnirig => WindowsRig.set_extra(item),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         }

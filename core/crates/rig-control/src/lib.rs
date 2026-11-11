@@ -3,6 +3,7 @@
 pub mod wake;
 pub mod bands;
 pub mod cat;
+pub mod cat4om;
 pub mod cat_config;
 pub mod controls;
 pub mod detect;

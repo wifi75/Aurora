@@ -27,7 +27,13 @@ export const DEFAULT_CAT: CatConfig = {
   tci_address: '127.0.0.1:40001',
   tci_receiver: 0,
   ft991_address: '127.0.0.1:50001',
+  cat4om_address: '127.0.0.1:17301',
+  cat4om_key: '',
+  cat4om_radio: '',
 };
+
+// eslint-disable-next-line no-control-regex
+const CONTROL = /[\u0000-\u001f\u007f]/;
 
 /** Una porta seriale (COM3, /dev/ttyUSB0) e non un indirizzo di rete (host:porta). */
 export function isSerialPort(port: string): boolean {
@@ -47,6 +53,9 @@ export function catIssue(c: CatConfig): string | null {
   if (c.tci_address !== undefined && c.tci_address !== '' && !PORT.test(c.tci_address)) return 'bad_tci_address';
   if (c.tci_receiver !== undefined && c.tci_receiver !== 0 && c.tci_receiver !== 1) return 'bad_tci_receiver';
   if (c.ft991_address !== undefined && c.ft991_address !== '' && !PORT.test(c.ft991_address)) return 'bad_ft991_address';
+  if (c.cat4om_address !== undefined && c.cat4om_address !== '' && !PORT.test(c.cat4om_address)) return 'bad_cat4om_address';
+  if (c.cat4om_key !== undefined && ([...c.cat4om_key].length > 128 || CONTROL.test(c.cat4om_key))) return 'bad_cat4om_key';
+  if (c.cat4om_radio !== undefined && ([...c.cat4om_radio].length > 64 || CONTROL.test(c.cat4om_radio))) return 'bad_cat4om_radio';
   if (c.baud !== 0 && !(BAUDS as readonly number[]).includes(c.baud)) return 'bad_baud';
   if (![0, 7, 8].includes(c.data_bits) || ![0, 1, 2].includes(c.stop_bits)) return 'bad_serial';
   if (!Number.isInteger(c.poll_secs) || c.poll_secs < 1 || c.poll_secs > 99) return 'bad_poll';
@@ -65,6 +74,7 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
   return {
     tci: c.backend === 'tci',
     ft991: c.backend === 'ft991link',
+    cat4om: c.backend === 'cat4om',
     rig: hamlib,
     port: hamlib,
     baud: hamlib && !network,
@@ -73,7 +83,7 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
     pttPort: hamlib && (c.ptt === 'dtr' || c.ptt === 'rts'),
     ptt: hamlib,
     // split con tutti i sistemi di controllo, come WSJT-X (Hamlib, TCI con il VFO B, OmniRig con `SetSplitMode`); con FT-991(A) Link c'e' solo
-    // lo split simulato (solo VFO A)
+    // lo split simulato (solo VFO A). Con Cat4OM lo split vero vale se la radio dichiara SetSplit e un secondo VFO, altrimenti il core lo simula
     split: true,
     splitRig: c.backend !== 'ft991link',
     catMode: true,

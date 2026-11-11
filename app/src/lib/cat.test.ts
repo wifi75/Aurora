@@ -62,6 +62,26 @@ describe('the fields shown', () => {
     const ft991 = visibleFields({ ...DEFAULT_CAT, backend: 'ft991link' }, undefined);
     expect([ft991.split, ft991.splitRig]).toEqual([true, false]);
   });
+
+  it('show the Cat4OM fields only with Cat4OM, with real split and mode', () => {
+    const c = visibleFields({ ...DEFAULT_CAT, backend: 'cat4om' }, undefined);
+    expect([c.cat4om, c.rig, c.port, c.ptt, c.poll, c.tci, c.ft991]).toEqual([true, false, false, false, false, false, false]);
+    expect([c.split, c.splitRig, c.catMode]).toEqual([true, true, true]);
+    expect(visibleFields(DEFAULT_CAT, undefined).cat4om).toBe(false);
+  });
+});
+
+describe('Cat4OM settings', () => {
+  it('have the documented defaults and the same checks as the core', () => {
+    expect([DEFAULT_CAT.cat4om_address, DEFAULT_CAT.cat4om_key, DEFAULT_CAT.cat4om_radio]).toEqual(['127.0.0.1:17301', '', '']);
+    const base = { ...DEFAULT_CAT, backend: 'cat4om' as const };
+    expect(catIssue(base)).toBeNull();
+    expect(catIssue({ ...base, cat4om_address: '192.168.1.20:17302', cat4om_key: 'chiave di prova', cat4om_radio: 'run' })).toBeNull();
+    expect(catIssue({ ...base, cat4om_address: '127.0.0.1:17301 x' })).toBe('bad_cat4om_address');
+    expect(catIssue({ ...base, cat4om_key: 'a\nb' })).toBe('bad_cat4om_key');
+    expect(catIssue({ ...base, cat4om_key: 'x'.repeat(129) })).toBe('bad_cat4om_key');
+    expect(catIssue({ ...base, cat4om_radio: 'x'.repeat(65) })).toBe('bad_cat4om_radio');
+  });
 });
 
 describe('model search', () => {

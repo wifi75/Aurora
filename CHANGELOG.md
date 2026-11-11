@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Cat4OM nativo** (Impostazioni › CAT › «Cat4OM (insieme a Log4OM)»): Aurora e Log4OM comandano la stessa radio insieme attraverso Cat4OM, senza letture continue; un QSY fatto da Log4OM dagli spot viene seguito da Aurora. Frequenza, modo dati, PTT e split (vero se la radio lo dichiara, altrimenti simulato), chiave del gruppo con la prova `cat4om-sha256-minute-v1`.
+- **Q65 come WSJT-X 3.3**: la media dei periodi prova prima la lista dei messaggi del QSO ed e' una media corrente su al massimo 4 periodi; una decodifica di un'altra stazione non cancella piu' la media; la deriva (Max Drift) si corregge in tutti i tentativi; la lista riconosce i nominativi con /P e /R.
 - **OmniRig senza PowerShell**: Aurora parla con OmniRig direttamente via COM, come WSJT-X (verificato con Ghidra sul binario 3.3.0-beta6): niente piu' «PowerShell non avviabile / accesso negato» con antivirus o regole di Windows, niente finestra di OmniRig che ricompare, PTT su un canale suo che non aspetta i cambi di banda. Con una radio che accetta `Freq` si scrive `Freq`, come WSJT-X.
 - TCI: chiudere ExpertSDR o Thetis non manda piu' rapporti di errore (avviso solo con 3 cadute in 2 minuti); l'errore 997 di Windows («operazione di I/O sovrapposta in corso») non chiude piu' il collegamento.
 - **Linux (#41)**: si usa prima `rigctld` dell'Hamlib del sistema, lo stesso di WSJT-X e JS8Call della distribuzione, e solo dopo quello incluso (Hamlib 4.4 di Ubuntu 22.04, che serve all'AppImage). Su Debian 12 la radio che andava con WSJT-X non si collegava.
