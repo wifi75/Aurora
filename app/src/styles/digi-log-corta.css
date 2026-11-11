@@ -203,3 +203,8 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .digi-macrowrap:hover .digi-macrogrip::after, .digi-macrogrip:hover::after { background: rgba(142, 123, 255, 0.8); }
 /* l'ingranaggio delle macro: giallo chiaro nello scuro, ambra scuro nel chiaro (prima restava giallo chiaro su fondo bianco) */
 html[data-theme='light'] .digi-classica .digi-gear { color: #9a5b00; }
+
+/* il blocchetto «TX»: in alto, rosso, compare solo mentre si trasmette (al posto della vecchia barra di avanzamento) */
+.digi-txflag { align-self: flex-start; margin-left: 4px; padding: 0.25rem 1.1rem; border-radius: 10px; background: linear-gradient(135deg, #b3202f, #ff4d57); color: #fff; font: 800 1.5rem/1.2 var(--font-ui); letter-spacing: 0.12em; box-shadow: 0 0 14px rgba(255, 77, 87, 0.55); }
+.digi-txflag--flash { animation: digi-txflag-flash 0.8s steps(2, start) infinite; }
+@keyframes digi-txflag-flash { 50% { background: #7a1d27; box-shadow: none; } }

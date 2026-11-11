@@ -18,7 +18,6 @@ import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDig
 import { RowAverager, seekSignal, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
-import { formatDuration } from '../lib/sstv';
 import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
@@ -199,6 +198,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [scanDialog, setScanDialog] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
+  const lastEsc = useRef(0);
   const [scanning, setScanning] = useState(false);
   const s = snap.settings;
   const sending = snap.tx.state === 'sending';
@@ -646,8 +646,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (editing !== null || settingsOpen || scanDialog) return;
-      if (e.key === 'Escape' && live.current.snap.tx.state === 'sending') {
-        void digiAbort().then(onChanged, onChanged);
+      if (e.key === 'Escape') {
+        // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) ferma anche il CQ automatico
+        const now = Date.now();
+        const twice = now - lastEsc.current < 600;
+        lastEsc.current = twice ? 0 : now;
+        if (twice) setAutoCq(false);
+        if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
         return;
       }
       if (e.key === 'Pause') {
@@ -912,13 +917,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
         />
       </div>
+      {sending ? (
+        <div className={`digi-txflag${views.flashTx ? ' digi-txflag--flash' : ''}`} role="status" aria-label="TX">
+          TX
+        </div>
+      ) : null}
       </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef}>
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
-            {text === '' ? <span className="digi-empty">{t('digi.rx.empty')}</span> : views.underlineSent ? withSentUnderlined(text) : text}
+            {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
@@ -927,18 +937,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
               value={tx}
               aria-label={t('digi.tx.title')}
-              placeholder={t('digi.tx.placeholder')}
               onChange={(e) => setTx(views.capsOnly ? e.target.value.toUpperCase() : e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}
             />
-            {sending ? (
-              <div className="sstv-progress digi-txprogress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
-                <span style={{ width: `${snap.tx.progress * 100}%` }} />
-                <em>{t('digi.tx.progress', { done: formatDuration(snap.tx.elapsed_s), total: formatDuration(snap.tx.total_s) })}</em>
-              </div>
-            ) : null}
             {!snap.can_transmit ? <p className="notice">{t('digi.tx.notReady')}</p> : null}
             {problem ? (
               <p className="notice sstv-bad" role="alert">
