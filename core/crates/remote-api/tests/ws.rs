@@ -62,6 +62,7 @@ async fn ws_receives_json_event_and_binary_spectrum_frame_with_expected_layout()
             tag: None,
             country: None,
             continent: None,
+            lotw_last_upload: None,
             hint: false,
         }))
         .unwrap();

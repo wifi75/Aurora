@@ -1841,6 +1841,9 @@ pub async fn run(
     // PSK Reporter e propagazione: spenti finche' non si accendono
     let online = online_info::OnlineService::open(&config.data_dir.join("online.json"), Arc::new(online_info::HttpFetch::new(env!("CARGO_PKG_VERSION"))));
     online::spawn_refresher(Arc::clone(&online), bus.subscribe_events());
+    // chi usa LoTW (elenco pubblico dell'ARRL): scaricato in un thread, mai bloccante; la copia vecchia resta se la rete manca
+    let lotw: online_info::lotw::SharedLotw = Arc::default();
+    online_info::lotw::spawn(Arc::clone(&lotw), config.data_dir.clone(), aurora_core::version::APP_VERSION.to_string());
     // lo storico dei messaggi ricevuti: se il file non si apre Aurora parte lo stesso e lo dice
     let history = match decode_history::HistoryStore::open(&config.data_dir.join("history.sqlite")) {
         Ok(store) => {
@@ -2229,9 +2232,14 @@ pub async fn run(
             });
             // il locatore deve essere credibile per il paese del nominativo (cty.dat)
             let grid_check = grid_db.map(|db| engine_native::GridCheck::new(move |call, grid| db.grid_plausible(call, grid)));
+            let lotw_of: Arc<dyn Fn(&str) -> Option<String> + Send + Sync> = Arc::new(move |text| {
+                let sender = engine_jtdx::text::parse_message(text).sender?;
+                lotw.read().ok()?.last_upload(&sender)
+            });
             native_live = Some(engine_native::LiveConfig {
                 log_calls,
                 grid_check,
+                lotw_of: Some(lotw_of),
                 de_call: call,
                 de_grid: grid,
                 own_continent,
