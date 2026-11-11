@@ -2044,7 +2044,7 @@ pub async fn run(
             "run_unattended": config.auto_limits.run_unattended,
         },
     });
-    let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::PowerShellSetter));
+    let clock = clock_sync::ClockService::open(&config.data_dir.join("clock.json"), clock_sync::default_query(), Arc::new(clock_sync::SystemSetter));
     let _clock_task = clock.spawn();
     // DX Cluster: paese degli spot dal file cty.dat; nominativo di JTDX se non ne e' stato scelto uno; parte solo se acceso
     let wishlist = wishlist::WishlistService::open(&config.data_dir.join("wishlist.json"));

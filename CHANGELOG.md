@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Orologio**: all'avvio la sincronizzazione aspetta che la rete risponda (riprova ogni 20 s per circa 10 minuti) invece di arrendersi al primo tentativo; mentre l'ora e' fuori tolleranza si ricontrolla ogni minuto, cosi' l'avviso sparisce appena l'ora e' giusta; l'ora si cambia con le API di Windows invece che con PowerShell.
+
 ## 0.11.235 - 2026-11-11
 - **MSK144 come WSJT-X 3.3**: il ricevitore dei ping e' quello di WSJT-X (`msk144spd`/`msk144sync`, medie di 1-7 quadri), blocchi di 0,6 s ogni 0,3 s, filtro dei doppioni e SNR come `mskrtd`; frequenza Rx (1400-1600 Hz) e F Tol 50 Hz al posto di 1500 +-100 Hz fissi; messaggi brevi con la lista dei nominativi recenti anche in SWL. JT65 e JT9 ricevono ora frequenza Rx, tolleranza e analisi a priori dal motore.
 - **JT65 e JT9 come WSJT-X 3.3**: JT65 con le soglie del livello «Aggressive» 4, due passate (2,5 poi 2,0) con l'ultima senza sottrazione, il filtro sulla correzione di frequenza, analisi a priori (tipi 1-7 secondo il punto del QSO, con l'interruttore a7/a8) e ricerca con la lista dei messaggi; JT9 prova prima la finestra della frequenza Rx con soglie ridotte, poi il resto con le soglie di WSJT-X (sync 1,0 e schk 1,5). F Tol 50 Hz come valore di fabbrica di WSJT-X (verificato con Ghidra).
