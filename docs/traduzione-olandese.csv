@@ -266,6 +266,11 @@ log.col.country,Country,Land
 rxw.tip,"Only messages near your RX frequency (±50 Hz) and those addressed to you. Auto looks at the whole band instead, filtered like Band activity.","Alleen berichten dicht bij je RX-frequentie (±50 Hz) en die aan jou gericht zijn. Auto kijkt in plaats daarvan naar de hele band, gefilterd zoals Bandactiviteit."
 rxw.title,RX window,RX-venster
 rxw.empty,Nothing on your receive frequency,Niets op je ontvangstfrequentie
+rxw.col.utc,UTC,UTC
+rxw.col.age,Age,Leeftijd
+rxw.col.msg,Message,Bericht
+rxw.col.country,Country,Land
+rxw.col.dtTip,"Time offset of the signal, in seconds, against your clock.","Tijdsverschil van het signaal, in seconden, ten opzichte van je klok."
 tip.rxw.toggle,"RX window: who transmits where the waterfall Rx marker is (±50 Hz), messages addressed to you and your transmissions. Put the Rx marker on the DX to follow only its QSO.","RX-venster: wie zendt waar de Rx-markering van de waterval staat (±50 Hz), berichten aan jou gericht en je eigen uitzendingen. Zet de Rx-markering op de DX om alleen zijn QSO te volgen."
 panel.all,Band activity,Bandactiviteit
 tip.row.txRepeat,You sent this message {n} times: only the last one is shown,Je hebt dit bericht {n} keer verstuurd: alleen het laatste wordt getoond
@@ -734,7 +739,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met

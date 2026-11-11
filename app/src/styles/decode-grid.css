@@ -1,0 +1,104 @@
+/* Elenco dei messaggi a griglia (Finestra RX): titoli delle colonne in alto, fissi mentre l'elenco scorre, che si spostano e si allargano
+   trascinandoli (meccanismo comune: movable-grid.css), e linee piene tra righe e colonne (--grid-row-line, --grid-col-line, come nel DX
+   Cluster e nel contest). I titoli sono una tabella, ogni riga e' una griglia CSS con le stesse colonne (--dl-cols, scritto dal componente):
+   titoli e righe hanno lo stesso corpo del carattere (--dl-fs), cosi' le larghezze in em coincidono e le linee verticali sono allineate.
+   Le regole vecchie della Finestra RX (onair.css, bozze.css) fissavano colonne, spazi e spostamenti per posizione: qui si rimettono a zero. */
+.decode-list.decode-list--cols {
+  --dl-fs: var(--text-sm);
+}
+
+.log-rx .decode-list.decode-list--cols {
+  --dl-fs: 0.7rem;
+}
+
+/* i titoli: sempre in vista in cima all'elenco, su un fondo pieno (le righe scorrono sotto) */
+.decode-list--cols > .dl-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0;
+  font-size: var(--dl-fs);
+  background: var(--panel);
+}
+
+.decode-list--cols > .dl-head th {
+  position: relative;
+  padding: 0.15em 0.4em;
+  font-size: 0.92em;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text) 7%, var(--panel));
+}
+
+/* ogni riga: le colonne dei titoli, senza spazi tra una cella e l'altra (le linee le separano) */
+.decode-list.decode-list--cols > .decode-row {
+  grid-template-columns: var(--dl-cols) !important;
+  column-gap: 0 !important;
+  align-items: stretch !important;
+  width: var(--dl-w) !important;
+  min-width: var(--dl-min) !important;
+  padding: 0 !important;
+  font-size: var(--dl-fs) !important;
+  border: 0 !important;
+  border-bottom: var(--border-width) solid var(--grid-row-line) !important;
+}
+
+.decode-list--cols > .decode-row > .dl-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.1em 0.4em;
+  white-space: nowrap;
+  border-right: var(--border-width) solid var(--grid-col-line);
+}
+
+.decode-list--cols > .decode-row > .dl-cell--last {
+  border-right: 0;
+}
+
+/* il contenuto della cella si accorcia con i «…» invece di uscire */
+.decode-list--cols .dl-cell > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ora, dB e DT si vedono sempre nelle loro colonne (fuori dalla griglia la Finestra RX e i pannelli stretti li nascondevano) */
+.decode-list.decode-list--cols .dl-cell > .c-time,
+.decode-list.decode-list--cols .dl-cell > .c-snr,
+.decode-list.decode-list--cols .dl-cell > .c-dt {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.decode-list.decode-list--cols .dl-cell > .c-age {
+  display: inline-grid !important;
+}
+
+/* bandierina e paese: dal bordo sinistro della loro colonna (niente spostamenti a mano di prima) */
+.decode-list.decode-list--cols .decode-row .dl-cell > .decode-where {
+  position: static !important;
+  left: auto !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 0.35em;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* «×N» delle mie trasmissioni ripetute: in linea prima della bandierina, dentro la colonna del paese */
+.decode-list.decode-list--cols .dl-cell .decode-where--rep .tx-rep {
+  position: static !important;
+  transform: none !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
+}

@@ -75,6 +75,8 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 }
 
 const LOG_TAB_KEY = 'aurora-log-linguetta';
+/** Ordine e larghezze delle colonne della Finestra RX (titoli che si trascinano, come nel DX Cluster). */
+const RXW_COLS_KEY = 'aurora.rxw.cols';
 
 /** Il messaggio contiene il nominativo della stazione con cui si sta facendo il QSO: con la finestra RX aperta lo si vede lì e si toglie da Attività di banda. */
 function fromDx(text: string, dx: string | null | undefined): boolean {
@@ -459,6 +461,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           onQueue={onQueue}
           emptyText={t('rxw.empty')}
           newestAtBottom={prefs.rxBottom}
+          columnsKey={RXW_COLS_KEY}
         />
       </div>
     );

@@ -483,3 +483,55 @@ describe('DecodeList and the colours asked over UDP', () => {
     expect(useStation.getState().decodes).toEqual([]);
   });
 });
+
+describe('DecodeList a griglia (Finestra RX)', () => {
+  const KEY = 'test.rxw.cols';
+  afterEach(() => {
+    localStorage.removeItem(KEY);
+    usePrefs.getState().reset();
+  });
+  const cellsOf = (row: HTMLElement) => Array.from(row.querySelectorAll<HTMLElement>('[data-dl-col]')).map((c) => c.dataset.dlCol);
+
+  it('ha i titoli delle colonne e ogni riga ha le stesse colonne, nello stesso ordine', () => {
+    render(<DecodeList decodes={[decode({ id: 42 })]} onReply={() => {}} columnsKey={KEY} />);
+    const heads = screen.getAllByRole('columnheader').map((th) => th.dataset.col);
+    expect(heads).toEqual(['time', 'snr', 'dt', 'msg', 'country']);
+    const row = screen.getByRole('button', { name: /JA1XYZ/ });
+    expect(cellsOf(row)).toEqual(heads);
+    expect(row.querySelector('[data-dl-col="snr"]')).toHaveTextContent('-12');
+    expect(row.querySelector('[data-dl-col="dt"]')).toHaveTextContent('0.3');
+    // le linee di griglia: l'ultima colonna non ha la linea a destra
+    expect(row.querySelector('[data-dl-col="country"]')).toHaveClass('dl-cell--last');
+  });
+
+  it("le celle seguono l'ordine salvato e senza DT la colonna sparisce", () => {
+    localStorage.setItem(KEY, JSON.stringify({ order: ['msg', 'time', 'snr', 'dt', 'country'], widths: {} }));
+    usePrefs.getState().set({ showDt: false });
+    render(<DecodeList decodes={[decode({ id: 42 })]} onReply={() => {}} columnsKey={KEY} />);
+    expect(screen.getAllByRole('columnheader').map((th) => th.dataset.col)).toEqual(['msg', 'time', 'snr', 'country']);
+    expect(cellsOf(screen.getByRole('button', { name: /JA1XYZ/ }))).toEqual(['msg', 'time', 'snr', 'country']);
+  });
+
+  it('il doppio clic risponde ancora e le mie trasmissioni ripetute mostrano ×N nella colonna del paese', () => {
+    const onReply = vi.fn();
+    render(
+      <DecodeList
+        decodes={[decode({ id: 42 }), decode({ id: -1, time_ms: 45_030_000, snr: 0, text: 'CQ AA1AA FN42' }), decode({ id: -2, time_ms: 45_060_000, snr: 0, text: 'CQ AA1AA FN42' })]}
+        onReply={onReply}
+        myCall="AA1AA"
+        columnsKey={KEY}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByRole('button', { name: /JA1XYZ/ }));
+    expect(onReply).toHaveBeenCalledWith(42);
+    const tx = screen.getByRole('button', { name: /CQ AA1AA FN42/ });
+    expect(tx.querySelector('[data-dl-col="country"] .tx-rep')).toHaveTextContent('×2');
+    expect(tx.querySelector('[data-dl-col="snr"]')).toHaveTextContent('Tx');
+  });
+
+  it("senza chiave l'elenco resta quello di sempre, senza titoli", () => {
+    render(<DecodeList decodes={[decode()]} onReply={() => {}} />);
+    expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
+    expect(screen.getByText('1500')).toBeInTheDocument();
+  });
+});

@@ -191,6 +191,11 @@ export const stationStrings = {
   'rxw.tip': ['Solo i messaggi vicino alla tua frequenza RX (±50 Hz) e quelli diretti a te. Auto invece guarda tutta la banda, filtrata come Attività di banda.', 'Only messages near your RX frequency (±50 Hz) and those addressed to you. Auto looks at the whole band instead, filtered like Band activity.', 'Nur Meldungen nahe deiner RX-Frequenz (±50 Hz) und an dich. Auto betrachtet das ganze Band, gefiltert wie Bandaktivität.', 'Seulement les messages proches de ta fréquence RX (±50 Hz) et ceux qui te sont adressés. Auto regarde toute la bande, filtrée comme Activité de bande.', 'Solo los mensajes cerca de tu frecuencia RX (±50 Hz) y los dirigidos a ti. Auto mira toda la banda, filtrada como Actividad de banda.', 'Só as mensagens perto da tua frequência RX (±50 Hz) e as dirigidas a ti. O Auto olha a banda toda, filtrada como Atividade de banda.'],
   'rxw.title': ['Finestra RX', 'RX window', 'RX-Fenster', 'Fenêtre RX', 'Ventana RX', 'Janela RX'],
   'rxw.empty': ['Niente sulla tua frequenza di ricezione', 'Nothing on your receive frequency', 'Nichts auf deiner Empfangsfrequenz', 'Rien sur ta fréquence de réception', 'Nada en tu frecuencia de recepción', 'Nada na tua frequência de receção'],
+  'rxw.col.utc': ['UTC', 'UTC', 'UTC', 'UTC', 'UTC', 'UTC'],
+  'rxw.col.age': ['Età', 'Age', 'Alter', 'Âge', 'Edad', 'Idade'],
+  'rxw.col.msg': ['Messaggio', 'Message', 'Nachricht', 'Message', 'Mensaje', 'Mensagem'],
+  'rxw.col.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
+  'rxw.col.dtTip': ['Scarto di tempo del segnale, in secondi, rispetto al tuo orologio.', 'Time offset of the signal, in seconds, against your clock.', 'Zeitversatz des Signals in Sekunden gegenüber deiner Uhr.', 'Décalage temporel du signal, en secondes, par rapport à ton horloge.', 'Desfase de tiempo de la señal, en segundos, respecto a tu reloj.', 'Desvio de tempo do sinal, em segundos, em relação ao teu relógio.'],
   'tip.rxw.toggle': [
     'Finestra RX: chi trasmette dove sta la barretta Rx della cascata (±50 Hz), i messaggi diretti a te e le tue trasmissioni. Metti la barretta Rx sul DX per seguire solo il suo QSO.',
     'RX window: who transmits where the waterfall Rx marker is (±50 Hz), messages addressed to you and your transmissions. Put the Rx marker on the DX to follow only its QSO.',
