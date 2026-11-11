@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getClock } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { AudioLossHelp } from './AudioLossHelp';
@@ -47,8 +48,9 @@ export function DiagnosisBar() {
   const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));
   if (visible.length === 0) return help !== null ? <AudioLossHelp perMin={help} onClose={() => setHelp(null)} /> : null;
 
-  // schede che galleggiano in basso a destra: compaiono e spariscono senza spostare i pannelli della stazione
-  return (
+  // schede che galleggiano in basso a destra: compaiono e spariscono senza spostare i pannelli della stazione. Nel corpo della pagina,
+  // fuori da `.app-shell`: con le Impostazioni aperte quella e' disattivata (inert) e l'avviso non si poteva chiudere
+  return createPortal(
     <ul className="diag" aria-label={t('diag.aria')} aria-live="polite">
       {visible.map((issue) => (
         <li key={keyOf(issue)} className={`diag-item diag-item--${issue.severity}`}>
@@ -74,6 +76,7 @@ export function DiagnosisBar() {
         </li>
       ))}
       {help !== null ? <AudioLossHelp perMin={help} onClose={() => setHelp(null)} /> : null}
-    </ul>
+    </ul>,
+    document.body,
   );
 }

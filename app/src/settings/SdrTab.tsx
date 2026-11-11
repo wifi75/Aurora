@@ -17,6 +17,7 @@ const BACKEND_KEY: Record<CatBackend, Key> = {
   omnirig: 'cat.backend.omnirig',
   tci: 'cat.backend.tci',
   ft991link: 'cat.backend.ft991link',
+  cat4om: 'cat.backend.cat4om',
   none: 'cat.backend.none',
 };
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { getCallsign, type CallsignInfo } from '../api/client';
 import { flagCode } from '../lib/flags';
 import { useT } from '../i18n';
@@ -126,7 +127,8 @@ function CallsignTipInner({ call, children }: { call: string; children: ReactNod
   return (
     <span className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
       {children}
-      {open ? (
+      {/* nel corpo della pagina: dentro gli elenchi (cluster, Attivita' di banda) il riquadro finiva sotto le righe e si leggeva in filigrana */}
+      {open ? createPortal(
         <span className="calltip" role="tooltip" style={{ left: pos.x, top: pos.y }} data-testid="calltip">
           <strong className="calltip-call data">{call.toUpperCase()}</strong>
           {info === undefined ? (
@@ -146,7 +148,8 @@ function CallsignTipInner({ call, children }: { call: string; children: ReactNod
               {person ? <QslBadges person={person} long /> : null}
             </>
           )}
-        </span>
+        </span>,
+        document.body,
       ) : null}
     </span>
   );

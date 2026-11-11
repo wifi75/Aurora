@@ -307,6 +307,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
+ "windows",
 ]
 
 [[package]]
@@ -1713,6 +1714,7 @@ dependencies = [
  "tracing",
  "tungstenite 0.30.0",
  "ureq",
+ "windows",
  "zip",
 ]
 

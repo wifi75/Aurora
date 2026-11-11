@@ -32,8 +32,8 @@ export function AutoSwitch() {
         openSettingsWindow('automation');
       });
   };
+  // solo il pulsante: sta in fondo alla barra di Ferma e Decodifica (RxControls)
   return (
-    <div className="rx-seg rx-seg--btns" role="group">
       <button
         type="button"
         role="switch"
@@ -44,6 +44,5 @@ export function AutoSwitch() {
       >
         {live ? t('autoSwitch.live') : dry ? t('autoSwitch.dry') : t('autoSwitch.off')}
       </button>
-    </div>
   );
 }

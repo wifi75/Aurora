@@ -78,9 +78,13 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={t('mode.group')}
-        disabled={disabled}
+        // in trasmissione il modo non si cambia, ma il pulsante non si spegne di colore (scelta del proprietario): si ignora solo il clic
+        disabled={!onPick}
+        aria-disabled={locked || undefined}
         title={onPick ? (locked ? t('mode.locked') : t('tip.mode.bar')) : t('band.noRig')}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!locked) setOpen((o) => !o);
+        }}
       >
         {label}
         <span className="mode-switch-caret" aria-hidden="true">

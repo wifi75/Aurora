@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { DecodedMessage } from '../api/schemas';
 import { useT } from '../i18n';
 import { flagCode } from '../lib/flags';
@@ -99,7 +100,9 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
   const newest = decodes.find((d) => d.id >= 0)?.time_ms ?? 0;
   const shown = hits.filter((h) => newest - h.last.time_ms < KEEP_MS && !hidden.has(h.call)).slice(0, MAX);
   if (shown.length === 0) return null;
-  return (
+  // nel corpo della pagina, fuori da `.app-shell`: con le Impostazioni aperte quella e' disattivata (inert) e la scheda restava visibile
+  // sopra la finestra ma senza poterla chiudere
+  return createPortal(
     <div className={`newdx newdx--${pos}`} role="alert" aria-live="assertive">
       {shown.map((h) => {
         const code = flagCode(h.country ?? undefined);
@@ -120,6 +123,7 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
           </div>
         );
       })}
-    </div>
+    </div>,
+    document.body,
   );
 }

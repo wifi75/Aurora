@@ -13,7 +13,8 @@ const RX_TOGGLES: ControlId[] = ['monitor', 'hound', 'swl', 'jt_both', 'agc', 'f
 /** Interruttori del solo decodificatore FT8. */
 const FT8_ONLY: ControlId[] = ['ap_list', 'mtd'];
 /** Pulsanti semplici: non hanno uno stato da leggere. */
-const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode', 'erase'];
+// «Cancella» non c'e' piu' qui: era un doppione dei pulsanti «Pulisci» delle finestre dei messaggi (scelta del proprietario 2026-11-11)
+const RX_BUTTONS: ControlId[] = ['stop_rx', 'decode'];
 
 /** Comandi di ricezione del motore (Monitora, Decodifica, Ferma, Cancella, Modo SWL, Sinc, AGCc, Filtro) e avanzamento del periodo; `trailing` sta a destra, sulla stessa riga. */
 export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu' qui (il colore della barra del periodo se n'e' andato con la barra); resta per chi lo passa. */ transmitting?: boolean; trailing?: ReactNode }) {
@@ -61,15 +62,15 @@ export function RxControls({ mode, trailing }: { mode: string; /** Non serve piu
           return button;
         })}
         </div>
-        {/* Ferma, Decodifica, Cancella: una barra a parte, sempre insieme (se non c'e' spazio vanno a capo tutti e tre) */}
+        {/* Ferma, Decodifica e, per ultimo, Auto: una barra a parte, sempre insieme (se non c'e' spazio vanno a capo insieme) */}
         <div className="rx-seg rx-seg--btns" role="group">
           {RX_BUTTONS.map((id) => (
             <button key={id} type="button" className="rx-seg-item" disabled={!reachable} title={t(`tip.ctl.${id}` as Key)} onClick={() => void run(id)}>
               {t(`ctl.${id}` as Key)}
             </button>
           ))}
+          <AutoSwitch />
         </div>
-        <AutoSwitch />
       </div>
       {note ? <span className="live-note" role="status">{note}</span> : null}
       {trailing ? <div className="rx-trailing">{trailing}</div> : null}

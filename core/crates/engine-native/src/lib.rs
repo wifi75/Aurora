@@ -207,7 +207,8 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                         Mode::Ft4 => 7,
                         Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60,
                         Mode::Q65 => rig::q65_setup().period_s,
-                        Mode::Msk144 => 15,
+                        // MSK144: il periodo del modo (15 s; WSJT-X ammette 5, 10, 15 e 30 s, `mainwindow.cpp:12081`)
+                        Mode::Msk144 => u32::try_from(Mode::Msk144.period_ms() / 1000).unwrap_or(15),
                     }),
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
@@ -524,14 +525,15 @@ pub fn start_with_save(
                 }
             };
             let samples = rs.push(&chunk.samples);
-            // MSK144: i ping si decodificano mentre il periodo scorre (come `mskrtd` di WSJT-X)
+            // MSK144: i ping si decodificano mentre il periodo scorre, blocchi di 0,6 s ogni 0,3 s (`hspec.f90:91-100`, `mskrtd.f90`)
             if mode == Mode::Msk144 {
                 if let Some(l) = live.as_ref()
                     && l.controls.is_monitoring()
                     && !l.controls.transmitting.load(Ordering::Relaxed)
                 {
                     let his = driver.as_ref().and_then(|d| d.dx_call()).unwrap_or_default();
-                    if let Some((slot_ms, fresh)) = msk_rt.push(&samples, chunk.received_unix_ms, &l.de_call, &his, &mut hashes) {
+                    let o = msk144_options(Some(l.controls.rx_df.load(Ordering::Relaxed) as f32), &l.de_call, &his, l.controls.switch_on("swl"));
+                    for (slot_ms, fresh) in msk_rt.push(&samples, chunk.received_unix_ms, mode.period_ms(), &o, &mut hashes) {
                         tracing::info!("motore proprio (MSK144): {} messaggi in tempo reale nel periodo {slot_ms}", fresh.len());
                         publish(l, driver.as_mut(), &message_events, &next_id, slot_ms, &fresh);
                     }
@@ -681,6 +683,9 @@ pub fn start_with_save(
                 let mut early: Vec<String> = if mode == Mode::Msk144 { msk_rt.shown(slot.start_unix_ms) } else { preview_shown.remove(&slot.start_unix_ms).unwrap_or_default() };
                 let mut decoded = if silent {
                     Vec::new()
+                } else if mode == Mode::Msk144 && live.is_some() {
+                    // MSK144: WSJT-X non decodifica a fine periodo (`decodeNow=false`, `mainwindow.cpp:3288`); valgono i messaggi del tempo reale
+                    msk_rt.period_decodes(slot.start_unix_ms)
                 } else if mode == Mode::Ft8 && let Some(l) = live.as_ref() {
                     let mut on_pass = |batch: &[ft8::decode::DecodedInfo]| {
                         let fresh: Vec<ft8::decode::Decoded> = batch.iter().map(|i| i.decoded.clone()).filter(|d| !early.contains(&d.text)).collect();
@@ -1008,6 +1013,16 @@ fn as_decoded(freq_hz: f32, dt_s: f32, snr_db: i32, text: String) -> ft8::decode
     ft8::decode::Decoded { freq_hz, dt_s, snr_db, text, hint: false }
 }
 
+/// MSK144: le opzioni di `mskrtd` (`fastSink` di `mainwindow.cpp`: `RxFreq`, `ftol`, `ndepth`, nominativi, `bshmsg`, `bswl`). La frequenza di
+/// ricezione e' quella della barra se sta fra 1400 e 1600 Hz (i limiti che WSJT-X da' a «Rx» in MSK144, `mainwindow.cpp:12096-12098`),
+/// altrimenti 1500 Hz, il valore che WSJT-X imposta entrando nel modo: in Aurora la barra resta dove la lascia l'altro modo. Aurora non ha
+/// ancora «F Tol», profondita' e «Sh» per MSK144: F Tol 50 Hz e Deep sono i valori di fabbrica di WSJT-X (`Ftol_MSK144`, `NDepth` = 3) e i
+/// messaggi brevi del QSO si cercano sempre, come gia' faceva Aurora (in WSJT-X solo con «Sh» acceso). «SWL» e' l'interruttore `swl`.
+fn msk144_options(rx_hz: Option<f32>, my_call: &str, his_call: &str, swl: bool) -> jt::msk144::Options {
+    let rx = rx_hz.filter(|f| (1400.0..=1600.0).contains(f)).unwrap_or(1500.0);
+    jt::msk144::Options { f_center_hz: rx, tolerance_hz: 50, depth: 3, my_call: my_call.to_string(), his_call: his_call.to_string(), short_messages: true, swl }
+}
+
 /// Decodifica un periodo nel modo dato (audio a 12 kHz: 15 s in FT8, 7,5 s in FT4, un minuto in JT65 e JT9).
 /// `ft8_history` tiene i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro
 /// (sottopassate 3-11 di `ft8b`); gli altri modi non la usano.
@@ -1029,16 +1044,40 @@ fn decode_period(
             o.agc = ft8_options.agc;
             ft4::decode::decode_slot(samples, &o, hashes)
         }
-        Mode::Jt65 => jt::rx::decode(samples, &jt::rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
-        Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options::default()).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
+        // JT65: la frequenza di ricezione (`nfqso`) con F Tol 50 Hz di fabbrica (`Ftol_JT65`), livello «Aggressive» 4 e profondita' 3 come WSJT-X;
+        // l'analisi a priori (`extract.f90`) con il mio nominativo, il DX e il punto del QSO quando l'interruttore «a7/a8» e' acceso e i tipi con il
+        // proprio nominativo sono attivi (WSJT-X la tiene spenta di fabbrica, «Enable AP» = `JT65AP` false). I messaggi a priori hanno il segno di FT8
+        Mode::Jt65 => {
+            let o = jt::rx::Options {
+                rx_hz: ft8_options.rx_freq_hz,
+                ap: ft8_options.ap.as_ref().filter(|a| a.my_call_active).map(|a| jt::rx::ApCalls {
+                    my_call: a.mycall.clone(),
+                    dx_call: a.hiscall.clone(),
+                    dx_grid: a.hisgrid.clone(),
+                    qso_progress: a.qso_progress,
+                }),
+                ..jt::rx::Options::default()
+            };
+            jt::rx::decode(samples, &o)
+                .into_iter()
+                .map(|d| ft8::decode::Decoded { hint: d.ap_type > 0 || d.hinted, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
+                .collect()
+        }
+        // JT9: la finestra di ricezione (`nqd = 1` di `jt9_decode.f90`) attorno a `nfqso` con F Tol 50 Hz di fabbrica (`Ftol_JT9`)
+        Mode::Jt9 => jt::jt9rx::decode(samples, &jt::jt9rx::Options { rx_hz: ft8_options.rx_freq_hz, ..jt::jt9rx::Options::default() })
+            .into_iter()
+            .map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text))
+            .collect(),
         Mode::Jt4 => jt::jt4::decode(samples, &jt::jt4::Options { submode: rig::jt4_submode(), ..jt::jt4::Options::default() }).into_iter().map(|d| as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text)).collect(),
+        // MSK144 senza il tempo reale (ridecodifica): `mskrtd` sui blocchi del periodo, come `decode_msk144_file`
         Mode::Msk144 => jt::msk144::decode(
             samples,
-            &jt::msk144::Options {
-                my_call: ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
-                his_call: ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
-                ..jt::msk144::Options::default()
-            },
+            &msk144_options(
+                ft8_options.rx_freq_hz,
+                &ft8_options.ap.as_ref().map(|a| a.mycall.clone()).unwrap_or_default(),
+                &ft8_options.ap.as_ref().map(|a| a.hiscall.clone()).unwrap_or_default(),
+                ft8_options.swl,
+            ),
             hashes,
         ).into_iter().map(|d| as_decoded(d.freq_hz, d.t_s, d.snr_db, d.text)).collect(),
         // Q65: periodo e sottomodo scelti, ipotesi AP con il mio nominativo e il DX, metrica dell'evanescenza (lorentziana come WSJT-X, o gaussiana)
