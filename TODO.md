@@ -2,6 +2,21 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
+## Dal lavoro del 2026-11-11 (0.11.235 e 0.11.236 pubblicate)
+- [x] Decodificatori allineati a WSJT-X 3.3.0-beta6: FT8, FT4, Q65, JT65, JT9, MSK144 (0.11.235).
+- [x] OmniRig via COM senza PowerShell; Cat4OM nativo; split Rig/Fake It con XIT anche con OmniRig e TCI (0.11.235).
+- [x] Linux: `rigctld` del sistema prima di quello incluso (#41); ALSA «snd_pcm_avail_delay» non chiude la trasmissione (0.11.235).
+- [x] DX Cluster con griglia e colonne spostabili; orologio; avvisi chiudibili con le Impostazioni aperte; riquadro QRZ leggibile; doppioni «Cancella» e «Spot DX» tolti (0.11.236).
+- [x] Split dal DX Cluster provato dal vivo dal proprietario: funziona.
+- [ ] Finire il ramo `wip-fox` (repository privato): righe Fox leggibili in Attivita' di banda e finestra Rx, filtro `chkspecial8var` di WSJT-X sui messaggi Fox dubbi.
+- [ ] Prove dal vivo: OmniRig via COM (FT-710, FTdx3000), Cat4OM con Log4OM, split Fake It, TCI, MSK144, pagina SSTV nuova (ramo sviluppo).
+- [ ] JT65: sottomodi B e C (EME) e media dei periodi `avg65`.
+- [ ] MSK144: periodo di 30 s (#27) e «Sh» in trasmissione.
+- [ ] Caselle del menu Decode di WSJT-X che mancano: Auto Clear Avg e Include averaging (Q65), livello Aggressive e Single decode (JT65), F Tol per JT65/JT9/MSK144, Fast/Normal/Deep.
+- [ ] FT4: finestre del ritardo, OSD e AP sulla terza serie di LLR come WSJT-X.
+- [ ] Guida «Collegare la radio» per modello (FTdx101 con la porta Enhanced, FT-991A, FT-710, IC-7300, IC-705, Kenwood) in sei lingue.
+- [ ] Traduzione olandese (#43, ON7KEC): preparare il foglio con chiave, inglese e colonna vuota.
+
 ## Dal lavoro del 2026-11-08 (locale, non pubblicato)
 - [x] Avviso in evidenza del DXCC nuovo e ora/paese in «CQ e novita'» (0.11.196).
 - [x] Riga gialla del QSO in corso leggibile al passaggio del mouse (0.11.196).
@@ -21,7 +36,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [ ] **Linux, aggiornamento AppImage con un clic**: oggi l'avviso porta solo alla pagina della release. Da fare: con «Installa» Aurora scarica la nuova AppImage (`$APPIMAGE` dice dove sta la sua), controlla che sia completa, sostituisce la vecchia e si riapre; niente password (file dell'utente).
 - [ ] **Linux, aiuto per il `.deb`**: scaricarlo e aprirlo con l'installatore del sistema (Software di Ubuntu / GDebi, `xdg-open`), dove l'utente conferma con la password. Da provare su un desktop Linux vero.
 - [ ] Uscita audio persa e ripresa (0.11.152): provare in onda spegnendo e riaccendendo la radio con Aurora aperta.
-- [ ] **CAT4OM** (cat4om.com, dello stesso autore di Log4OM, IW3HMH): richiesto da un utente. Oggi dovrebbe funzionare con il ponte Hamlib/rigctld di CAT4OM (Aurora: Hamlib, radio «Hamlib NET rigctl», porta 127.0.0.1:4532, PTT CAT), ma non e' provato. Dalla 0.11.119 la porta 127.0.0.1:4532 si puo' scrivere nel campo Porta, prima il collegamento era impossibile. Da fare: provarlo (anche senza radio), poi aggiungerlo come scelta pronta in Impostazioni > Radio e nella Guida; valutare il protocollo nativo di CAT4OM con l'autore se da' piu' funzioni del ponte.
+- [x] **CAT4OM** (fatto nativo nella 0.11.235; cat4om.com, dello stesso autore di Log4OM, IW3HMH): richiesto da un utente. Oggi dovrebbe funzionare con il ponte Hamlib/rigctld di CAT4OM (Aurora: Hamlib, radio «Hamlib NET rigctl», porta 127.0.0.1:4532, PTT CAT), ma non e' provato. Dalla 0.11.119 la porta 127.0.0.1:4532 si puo' scrivere nel campo Porta, prima il collegamento era impossibile. Da fare: provarlo (anche senza radio), poi aggiungerlo come scelta pronta in Impostazioni > Radio e nella Guida; valutare il protocollo nativo di CAT4OM con l'autore se da' piu' funzioni del ponte.
 - [ ] Pagina dei rapporti degli errori nell'installatore (informativa e due caselle gia' spuntate); oggi c'e' solo l'avviso al primo avvio.
 - [ ] Server UDP primario e secondario di fabbrica sulla stessa porta 127.0.0.1:2237 (QSO doppi nei log): decidere se spegnere il secondario.
 - [ ] Tema del telefono condiviso con il PC (`aurora-theme` non e' tra le preferenze proprie del telefono): decidere se separarlo.
