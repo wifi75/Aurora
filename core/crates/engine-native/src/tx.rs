@@ -602,6 +602,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         // ogni intervento dell'operatore azzera il watchdog (`eventFilter`/`txwatchdog(false)` di JTDX)
         self.seq.user_activity();
         self.sync_rx_from_user();
+        // una scelta del DX fatta dall'operatore disarma Wait and Pounce (`cancelAutomaticCQSelection` di WSJT-X 3.3, «preserve manual targets»):
+        // senza, il primo CQ sentito sostituiva il DX scelto a mano
+        if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. } | TxCommand::SetDx { .. }) && self.controls.switch_on("pounce") {
+            self.controls.set_switch("pounce", false);
+            log.push("Wait and Pounce disarmato: DX scelto dall'operatore".to_string());
+        }
         match command {
             TxCommand::Reply { decode_id } => match self.recent.iter().find(|r| r.id == decode_id) {
                 Some(r) => {
@@ -1315,7 +1321,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             && now_s >= until
         {
             self.wait_call_until = None;
-            if self.seq.is_enabled() && self.seq.ntx() <= 1 {
+            // con «Salta Tx1» la chiamata e' Tx2: si confronta con il primo messaggio vero, non con Tx1 (prima con Salta Tx1 non si spegneva mai)
+            if self.seq.is_enabled() && self.seq.is_calling() {
                 self.seq.set_enabled(false);
                 self.halt_tx();
                 log.push("Wait and Call: il DX non ha risposto, trasmissione spenta".to_string());
