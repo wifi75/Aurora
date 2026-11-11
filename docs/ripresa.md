@@ -7,7 +7,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 - **Su `main`, per la 0.11.238**: Split DX dal cluster («UP 5», «5UP», «10up», «DN», «QSX»); Cat4OM con la scoperta automatica (porta di gestione 17300, come Decodium); olandese come settima lingua (interfaccia, Guida, Novita', installatore; al primo avvio Aurora parte nella lingua di Windows); radiofaro FST4W e invio facoltativo a WSPRnet (spento di fabbrica); porta COM occupata con il nome del programma; OmniRig lento come avviso; PC lento con «Passa a Normale»; modo degli spot dal band plan IARU Regione 1; via QSL nell'elenco DXpedition; barra di stato PSK/RTTY/CW senza data e ora; testi senza confronti con ; macro in tema chiaro.
 - **In corso**: griglie evidenti e colonne spostabili nella Finestra RX e nella scheda Log (ramo `lav-griglie`, worktree nello scratchpad).
 - **Fatto fuori dal codice**: i 22 tag v0.11.134-155 spostati sui commit della storia pulita (nessun ramo o tag su GitHub cita piu' l'assistente); su Cloudflare cancellate le righe d'errore fino alla 0.11.235.
-- **Da fare**: cancellare il repository privato `wifi75/Aurora-sviluppo` (serve `gh auth refresh -h github.com -s delete_repo` dal proprietario; una copia del ramo `wip-fox` e' nello scratchpad); pubblicare la 0.11.238 e il sito (compilato sul PC); prove dal vivo con la radio (WSPRnet, radiofaro FST4W, Cat4OM con la scoperta, porta occupata).
+- **Repository privato `wifi75/Aurora-sviluppo` cancellato** (2026-11-11). **Da fare**: pubblicare la 0.11.238 e il sito (compilato sul PC); prove dal vivo con la radio (WSPRnet, radiofaro FST4W, Cat4OM con la scoperta, porta occupata).
 
 ## Stato al 2026-11-11 notte (0.11.237 pubblicata, altro gia' su `main`)
 
