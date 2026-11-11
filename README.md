@@ -16,7 +16,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-7.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
-[![Lingue](https://img.shields.io/badge/Lingue-6-FF5C7A)](app/src/i18n)
+[![Lingue](https://img.shields.io/badge/Lingue-7-FF5C7A)](app/src/i18n)
 [![Test](https://img.shields.io/badge/Test-1842%20Rust%20%C2%B7%20928%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
@@ -58,18 +58,18 @@ Version 0.11.237: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q6
 - **Transmission**: CQ, free message, Tx frequency, vertical Pwr level, STOP TX always active (discreet at rest, full while transmitting); the Esc key does the same and turns off AutoTX and Abilita Tx. It has no option: it is always enabled (STOP TX, the caps and the automations switched off by default remain).
 - **Automations**: replies to CQs with something new; they start switched off and in dry-run mode, with caps, dead-man and STOP.
 - **Settings by topic**: six groups (Station, Receive, Transmit and QSO, Alerts, Network and logs, System) with pages such as Radio, Cascade, Sequence, Log services and Connected programs; search across every item, errors shown next to the field.
-- **Six languages** (Italian, English, German, French, Spanish, Portuguese) and a tooltip on every control.
-- **Help and statistics**: short in-app help in six languages; Statistics page with awards, QSOs per band and missing countries; your own transmitted messages appear as `Tx` rows.
-- **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency), NTP client with clock indicator, read-only Log4OM2 Log window.
+- **Seven languages** (Italian, English, German, French, Spanish, Portuguese, Dutch) and a tooltip on every control.
+- **Help and statistics**: short in-app help in seven languages; Statistics page with awards, QSOs per band and missing countries; your own transmitted messages appear as `Tx` rows.
+- **DX Cluster, clock, log**: DX Cluster window (public or your own telnet servers, double-click = the radio goes to the spot frequency; Split DX: with «UP 5», «5UP» or «QSX» in the comment a double-click puts the radio in split on VFO B; Mode column also for CW and SSB, from the IARU Region 1 band plan when the comment does not say), NTP client with clock indicator, read-only Log4OM2 Log window.
 - **Station tools**: input audio level with slider and AUTO on the Windows recording volume, history of received messages (30 days, searchable), cluster spots on the waterfall, automatic diagnostics (clock, audio, callsign), Propagation page with PSK Reporter and hamqsl.com (**on from the factory, can be switched off**) and the DX Map (below).
 - **DX Map** (GridTracker-style): 15 backgrounds, automatic night map, greyline with twilight, Sun and Moon, fading on-air stations colored by status, animated arc lines, worked and confirmed squares by band and mode, click for square, distance, country and CQ/ITU zones, propagation heat map from PSK Reporter with lines to who receives you, customizable «Who calls whom» lines, on-air squares QSX/CQ/CQDX/QRZ with legend; detachable to another screen.
 - **Radio**: radio display at the top with the extended display (second VFO, meters, PRE/ATT, AGC, NB/NR/notch, gains, RIT/XIT), every item can be switched on in Settings > General; the waterfall follows the radio's filter width read over CAT; an orphaned rigctld shuts itself down; on Windows “Restore Hamlib” downloads rigctld again if the antivirus removes it.
-- **DXpeditions**: NG3K calendar (Online services, off by default) next to the CQs: on the air, heard now, upcoming and history.
+- **DXpeditions**: NG3K calendar (Online services, off by default) next to the CQs: on the air, heard now, upcoming and history; next to the country the QSL route (LoTW, OQRS, manager).
 - **Settings**: sidebar with search, «?» with an explanation on every item, About page (version, author, licence, links).
 - **Phone**: PWA on the same network, with the Station page in tabs and finger-sized buttons (screens up to 640 px); pairing with a code (duration decided by you) or code-free access for testing.
 - **Logs and integrations**: direct upload to Wavelog/Cloudlog, ClubLog, QRZ.com and LoTW (TQSL); UDP integrations with multicast and per-program options, N1MM XML; ADIF export page with «Save as».
 - **From WSJT-X 3**: a7/a8 decoding and multithread FT8, Wait and Reply/Call, band hopping, full duplex, Fox verification (OTP), Tx block over UDP, stop on high SWR, unencodable messages blocked, WSJT-X 3 filters, Hamlib 4.7.2.
-- **OmniRig and Cat4OM**: OmniRig is driven directly via COM like WSJT-X (no PowerShell, no «access denied», faster PTT); native Cat4OM lets Aurora and Log4OM control the same radio at the same time (Settings › CAT); Rig/Fake It split also with OmniRig and TCI; adjustable Tx delay (0-0.5 s).
+- **OmniRig and Cat4OM**: OmniRig is driven directly via COM like WSJT-X (no PowerShell, no «access denied», faster PTT); native Cat4OM lets Aurora and Log4OM control the same radio at the same time (group and port found automatically from the 17300 management port, like Decodium) (Settings › CAT); Rig/Fake It split also with OmniRig and TCI; adjustable Tx delay (0-0.5 s); if the COM port is busy, Aurora says which program holds it.
 - **Decoders aligned with WSJT-X 3.3**: FT8 (Rx-frequency priority, OSD 4 for QSO replies, a priori for /P and compound callsigns), FT4 (WSJT-X candidate search), Q65 (averaging with the QSO list, drift correction) JT65/JT9 (WSJT-X thresholds, Rx window), MSK144, FST4/FST4W and WSPR.
 - **Installer in seven languages** (Italian, English, German, French, Spanish, Portuguese, Dutch); the interface is in seven languages too: Dutch is a first version, under review.
 - **Display and cluster**: Yaesu FT-2000 and Icom IC-7610 style radio displays; NG3K DXpeditions highlighted in the DX Cluster in a colour of your choice; live waterfall preview in the settings; always-on crash diagnostics.

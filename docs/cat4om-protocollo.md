@@ -13,7 +13,7 @@ Tutti i nomi di campi, azioni, eventi e codici sono copiati dal manuale. Dove il
 | Trasporto | WebSocket, messaggi **text** UTF-8 JSON |
 | Path | `/` |
 | URL Management | `ws://<host>:<managementPort>/` (default `17300`) |
-| URL Control | `ws://<host>:<controlPort>/` (default `17301+`, una porta per gruppo) |
+| URL Control | `ws://<host>:<controlPort>/` (una porta per gruppo, scelta da Cat4OM: per esempio `5001`; si legge da `listGroups` sulla porta di gestione) |
 | Nomi JSON | lower camel case, **case-sensitive** |
 | Dispatch | leggere `type`, poi interpretare la forma concreta |
 | Frame binari | sul Control Port arrivano **solo** dopo `startAudioStream`; altrimenti vanno ignorati in silenzio |

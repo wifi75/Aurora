@@ -209,7 +209,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 58u 100% 20u "- PSK Reporter (spot ricevuti, con nominativo e locatore), DX Cluster, controllo degli aggiornamenti su GitHub, propagazione e messaggi dell'autore;"
     Pop $1
-    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e gli altri servizi solo se li accendi tu."
+    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet e gli altri servizi solo se li accendi tu."
     Pop $1
     ${NSD_CreateLabel} 0 94u 100% 28u "Si spengono in qualunque momento in Impostazioni (Assistenza > Rapporti degli errori, Servizi online, Programmi collegati). Dettagli: docs/privacy.md su github.com/wifi75/Aurora."
     Pop $1
@@ -222,7 +222,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (empfangene Spots, mit Rufzeichen und Locator), DX-Cluster, Update-Prüfung auf GitHub, Ausbreitung und Nachrichten des Autors;"
     Pop $1
-    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog und die anderen Dienste nur, wenn Sie sie einschalten."
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet und die anderen Dienste nur, wenn Sie sie einschalten."
     Pop $1
     ${NSD_CreateLabel} 0 112u 100% 28u "Sie lassen sich jederzeit in den Einstellungen ausschalten (Support > Fehlerberichte, Online-Dienste, Verbundene Programme). Details: docs/privacy.md auf github.com/wifi75/Aurora."
     Pop $1
@@ -235,7 +235,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots reçus, avec indicatif et locator), DX Cluster, vérification des mises à jour sur GitHub, propagation et messages de l'auteur ;"
     Pop $1
-    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog et les autres services seulement si vous les activez."
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet et les autres services seulement si vous les activez."
     Pop $1
     ${NSD_CreateLabel} 0 112u 100% 28u "Vous pouvez les désactiver à tout moment dans les Réglages (Assistance > Rapports d'erreurs, Services en ligne, Programmes connectés). Détails : docs/privacy.md sur github.com/wifi75/Aurora."
     Pop $1
@@ -248,7 +248,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots recibidos, con indicativo y locator), DX Cluster, comprobación de actualizaciones en GitHub, propagación y mensajes del autor;"
     Pop $1
-    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog y los demás servicios solo si los activas tú."
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet y los demás servicios solo si los activas tú."
     Pop $1
     ${NSD_CreateLabel} 0 112u 100% 28u "Se desactivan en cualquier momento en Ajustes (Asistencia > Informes de errores, Servicios en línea, Programas conectados). Detalles: docs/privacy.md en github.com/wifi75/Aurora."
     Pop $1
@@ -261,7 +261,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (spots recebidos, com indicativo e locator), DX Cluster, verificação de atualizações no GitHub, propagação e mensagens do autor;"
     Pop $1
-    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog e os outros serviços só se os ativar."
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet e os outros serviços só se os ativar."
     Pop $1
     ${NSD_CreateLabel} 0 112u 100% 28u "Pode desativá-los a qualquer momento em Definições (Assistência > Relatórios de erros, Serviços online, Programas ligados). Detalhes: docs/privacy.md em github.com/wifi75/Aurora."
     Pop $1
@@ -274,7 +274,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 72u 100% 24u "- PSK Reporter (ontvangen spots, met roepnaam en locator), DX Cluster, controle op updates op GitHub, propagatie en berichten van de auteur;"
     Pop $1
-    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog en de andere diensten alleen als jij ze inschakelt."
+    ${NSD_CreateLabel} 0 98u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet en de andere diensten alleen als jij ze inschakelt."
     Pop $1
     ${NSD_CreateLabel} 0 112u 100% 28u "Je schakelt ze op elk moment uit in Instellingen (Ondersteuning > Foutrapporten, Onlinediensten, Gekoppelde programma's). Details: docs/privacy.md op github.com/wifi75/Aurora."
     Pop $1
@@ -287,7 +287,7 @@ Function PageDatiAurora
     Pop $1
     ${NSD_CreateLabel} 0 58u 100% 20u "- PSK Reporter (received spots, with callsign and locator), DX Cluster, update check on GitHub, propagation and messages from the author;"
     Pop $1
-    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog and the other services only if you turn them on."
+    ${NSD_CreateLabel} 0 80u 100% 12u "- QRZ.com, HamQTH, eQSL, LoTW, ClubLog, WSPRnet and the other services only if you turn them on."
     Pop $1
     ${NSD_CreateLabel} 0 94u 100% 28u "You can turn them off at any time in Settings (Support > Error reports, Online services, Connected programs). Details: docs/privacy.md at github.com/wifi75/Aurora."
     Pop $1

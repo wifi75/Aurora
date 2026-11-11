@@ -3,6 +3,15 @@
 Stato al 2026-11-11 notte, versione 0.11.237 pubblicata; su `main` dopo di lei FST4/FST4W, WSPR, rotore, colonne Contest, icone e schermata di avvio; in lavorazione Split DX, interfaccia in olandese e scoperta Cat4OM (per la 0.11.237 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
+## Decisioni del 2026-11-11 notte tardi
+
+- **Lingua al primo avvio**: Aurora parte nella lingua di Windows (olandese compreso), non in italiano (scelta del proprietario).
+- **Modo degli spot**: dal commento, poi dalle frequenze di lavoro di FT8/FT4/JS8/WSPR/PSK31, poi dal band plan IARU Regione 1 (solo tratti con un uso solo: CW o fonia); nei tratti misti resta vuoto (`dx-cluster/src/spot.rs`).
+- **Elenco DXpedition**: nello spazio libero della riga la via QSL accorciata (LoTW, OQRS, via MANAGER); le altre idee (bande e modi, distanza, gia' lavorato) scartate dal proprietario.
+- **Barra di stato PSK/RTTY/CW**: niente data e ora (l'ora c'e' gia' in alto).
+- ****: nei testi per l'utente non si confronta piu' Aurora con ; resta solo «Importa le macro», che nomina i file da leggere.
+- **WSPRnet**: solo `wsprnet.org` (non anche `wsprnet.eu`, che WSJT-X 3.3 usa per gli spot con locatore), spento di fabbrica, senza pulsante «Prova» (uno spot di prova finirebbe nel database pubblico).
+
 ## Decisioni del 2026-11-11 sera (ramo unico, nome multimodo, FST4/WSPR)
 
 - **Ramo unico**: esiste solo `main`; `sviluppo` e' stato fuso e non serve piu' (sostituisce la regola dei due rami qui sotto). Il repository privato `Aurora-sviluppo` si cancella solo con il via del proprietario. Il sito si compila sul PC e si carica a mano, perche' i minuti di GitHub Actions dei repository privati sono finiti.
