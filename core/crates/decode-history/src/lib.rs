@@ -37,6 +37,19 @@ pub struct Row {
     pub id: i64,
     #[serde(flatten)]
     pub entry: Entry,
+    /// Data dell'ultimo invio a LoTW di chi trasmette (`AAAA-MM-GG`). Non e' nel database: si calcola a ogni lettura con l'elenco di quel momento
+    /// ([`Page::fill_lotw`]), cosi' e' sempre aggiornata.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lotw_last_upload: Option<String>,
+}
+
+impl Page {
+    /// Aggiunge a ogni riga la data dell'ultimo invio a LoTW di chi trasmette, con `lookup(nominativo)`.
+    pub fn fill_lotw(&mut self, lookup: &dyn Fn(&str) -> Option<String>) {
+        for row in &mut self.rows {
+            row.lotw_last_upload = row.entry.call.as_deref().and_then(lookup);
+        }
+    }
 }
 
 /// Cosa cercare. Nominativo: cerca nel mittente e nel testo, anche solo una parte, senza distinguere le maiuscole.
@@ -215,6 +228,7 @@ impl HistoryStore {
                         continent: r.get(11)?,
                         tag: r.get(12)?,
                     },
+                    lotw_last_upload: None,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -317,6 +331,19 @@ mod tests {
         let many: Vec<Entry> = (0..600).map(|i| entry(10_000 + i, "CQ X1X", None, "20m", "FT8")).collect();
         s.insert_many(&many).unwrap();
         assert_eq!(s.query(&Query { limit: 100_000, ..Query::default() }).unwrap().rows.len(), MAX_PAGE as usize);
+    }
+
+    #[test]
+    fn fills_the_lotw_date_on_read_from_the_current_list() {
+        let s = store();
+        let mut page = s.query(&Query::default()).unwrap();
+        assert!(page.rows.iter().all(|r| r.lotw_last_upload.is_none()));
+        page.fill_lotw(&|call| (call == "K1ABC").then(|| "2026-10-28".to_string()));
+        let with: Vec<_> = page.rows.iter().filter(|r| r.lotw_last_upload.is_some()).map(|r| r.entry.call.clone().unwrap()).collect();
+        assert_eq!(with, vec!["K1ABC"]);
+        // una lettura successiva con un elenco diverso non conserva il valore vecchio
+        page.fill_lotw(&|_| None);
+        assert!(page.rows.iter().all(|r| r.lotw_last_upload.is_none()));
     }
 
     #[test]

@@ -418,6 +418,15 @@ export const settingsStrings = {
   'kind.auto': ['Risposta automatica', 'Automatic reply', 'Automatische Antwort', 'Réponse automatique', 'Respuesta automática', 'Resposta automática'],
   // Filtri
   'list.bottom': ['Messaggi nuovi in fondo', 'New messages at the bottom', 'Neue Meldungen unten', 'Nouveaux messages en bas', 'Mensajes nuevos abajo', 'Mensagens novas em baixo'],
+  'list.clear': ['Pulisci', 'Clear', 'Leeren', 'Vider', 'Limpiar', 'Limpar'],
+  'tip.list.clear': [
+    'Svuota solo questa finestra: i messaggi già arrivati spariscono da qui, quelli nuovi compaiono di nuovo. L’altra finestra non cambia; «Cancella» nella barra dei comandi le svuota tutte e due.',
+    'Clears only this window: messages already received disappear from here, new ones appear again. The other window is unchanged; “Erase” in the command bar clears both.',
+    'Leert nur dieses Fenster: bereits eingegangene Meldungen verschwinden hier, neue erscheinen wieder. Das andere Fenster bleibt unverändert; „Löschen“ in der Befehlsleiste leert beide.',
+    'Vide seulement cette fenêtre : les messages déjà reçus disparaissent d’ici, les nouveaux réapparaissent. L’autre fenêtre ne change pas ; « Effacer » dans la barre de commandes vide les deux.',
+    'Vacía solo esta ventana: los mensajes ya recibidos desaparecen de aquí, los nuevos vuelven a aparecer. La otra ventana no cambia; «Borrar» en la barra de comandos vacía las dos.',
+    'Limpa só esta janela: as mensagens já recebidas desaparecem daqui, as novas voltam a aparecer. A outra janela não muda; «Apagar» na barra de comandos limpa as duas.',
+  ],
   'list.bottom.on': ['Nuovi ↓', 'New ↓', 'Neu ↓', 'Nouv. ↓', 'Nuevos ↓', 'Novas ↓'],
   'list.bottom.off': ['Nuovi ↑', 'New ↑', 'Neu ↑', 'Nouv. ↑', 'Nuevos ↑', 'Novas ↑'],
   'tip.list.bottom': [

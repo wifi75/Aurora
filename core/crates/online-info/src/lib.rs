@@ -11,6 +11,7 @@ mod xml;
 
 pub mod dxped;
 pub mod foxcheck;
+pub mod lotw;
 pub mod psk;
 pub mod solar;
 

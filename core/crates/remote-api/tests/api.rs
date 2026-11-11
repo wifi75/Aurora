@@ -15,7 +15,7 @@ fn decode(id: u64) -> Event {
         tag: None,
         country: None,
         continent: None,
-        hint: false,
+        lotw_last_upload: None, hint: false,
     })
 }
 

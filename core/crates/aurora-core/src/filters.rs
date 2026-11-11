@@ -223,7 +223,7 @@ mod tests {
             tag,
             country: country.map(Into::into),
             continent: continent.map(Into::into),
-            hint: false,
+            lotw_last_upload: None, hint: false,
         }
     }
 

@@ -1453,3 +1453,11 @@ html[data-theme='light'] .nav-more-menu { background: #ffffff; border-color: #aa
 /* testata del menu nuovo: i modi a sinistra, le pagine a destra (il menu occupa tutto lo spazio fra il marchio e gli strumenti) */
 header.app-header .app-nav { flex: 1 1 auto; min-width: 0; display: flex; }
 .nav-sep { width: 1px; height: 22px; margin: 0 6px; background: var(--border, #3a3f7a); opacity: 0.8; align-self: center; }
+/* «×N» nella Finestra RX: resta fuori dalla griglia (a fianco della bandiera, nello spazio a fine messaggio) e non sposta la bandiera */
+.log-rx .decode-row .decode-where--rep { position: relative; overflow: visible !important; }
+.log-rx .decode-row .decode-where--rep .tx-rep { position: absolute !important; right: 100%; top: 50%; transform: translateY(-50%); margin: 0 7px 0 0 !important; white-space: nowrap; }
+
+/* «Spec: Off»: lo spettro sparisce del tutto e la cascata prende tutta l'altezza (le regole sopra con !important lo tenevano visibile) */
+.waterfall.waterfall--nospec .wf-spectrum { display: none !important; flex: 0 0 0 !important; min-height: 0 !important; border: 0 !important; }
+.waterfall.waterfall--nospec .wf-splitter { display: none !important; }
+.waterfall.waterfall--nospec .wf-main { flex: 1 1 0 !important; min-height: 0 !important; }

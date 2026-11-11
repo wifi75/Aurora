@@ -64,6 +64,7 @@ import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation, useStatusPick } from '../state/station';
 import { toast, useToasts } from '../lib/toast';
+import { afterMark, markNow, NO_MARK, type ClearMark } from '../lib/windowClear';
 
 
 /** Le decodifiche con i nostri Tx in mezzo, in ordine d'orario (le piu' recenti per prime), come nel vecchio programma. */
@@ -131,6 +132,15 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
   const connection = useStation((s) => s.connection);
+  // «Pulisci» di Attivita' di banda e della Finestra RX: ognuna ricorda da sola fin dove e' stata pulita (Cancella svuota tutto e azzera i segni)
+  const [bandMark, setBandMark] = useState<ClearMark>(NO_MARK);
+  const [rxMark, setRxMark] = useState<ClearMark>(NO_MARK);
+  useEffect(() => {
+    if (decodes.length === 0 && txLog.length === 0) {
+      setBandMark(NO_MARK);
+      setRxMark(NO_MARK);
+    }
+  }, [decodes.length, txLog.length]);
   const displayHidden = useRadioDisplay((s) => s.pref.hidden);
   const chosenBands = useBandFilter((s) => s.bands);
   // contest acceso: il menu delle frequenze mostra solo le bande del regolamento
@@ -302,7 +312,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
         const rxShown = rxOn && !soloPanel && prefs.rxExclusive;
-        const list = <DecodeList decodes={rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} />;
+        const list = <DecodeList decodes={afterMark(rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog), bandMark)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
@@ -437,7 +447,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     return (
       <div className="log-rx">
         <DecodeList
-          decodes={withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= rxWindowHz(status?.mode)) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog)}
+          decodes={afterMark(withOwnTx(decodes.filter((d) => (rxHz !== null && Math.abs(d.freq_hz - rxHz) <= rxWindowHz(status?.mode)) || (me !== '' && d.text.toUpperCase().split(/\s+/)[0]?.replace(/[<>]/g, '') === me)), txLog), rxMark)}
           myGrid={status?.de_grid}
           myCall={status?.de_call}
           dxCall={status?.dx_call}
@@ -487,11 +497,18 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       {t(prefs[key] ? 'list.bottom.on' : 'list.bottom.off')}
     </button>
   );
+  // «Pulisci»: svuota solo la propria finestra; «Cancella» della barra continua a svuotarle tutte e due
+  const clearButton = (set: (mark: ClearMark) => void) => (
+    <button type="button" className="dock-mini" title={t('tip.list.clear')} onPointerDown={(e) => e.stopPropagation()} onClick={() => set(markNow(decodes, txLog))}>
+      {t('list.clear')}
+    </button>
+  );
   const blockExtra = (id: BoardId): ReactNode => (id === 'all' ? (
     <>
     <button type="button" className={tagPills || tagFilterOn ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={tagPills} aria-expanded={tagPills} title={t('tip.bfl.toggle')} onPointerDown={(e) => e.stopPropagation()} onClick={() => setTagPills(!tagPills)}>
       {t('bfl.button')}{tagFilterOn ? ` ${filters.tags.length}` : ''}
     </button>
+    {clearButton(setBandMark)}
     {orderButton('bandBottom')}
     </>
   ) : id === 'log' ? (
@@ -610,6 +627,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
                   <span className="dock-grip-dots" aria-hidden="true" />
                   <h2>{t('rxw.title')}</h2>
                   <span className="log-rx-freq" title={t('rxw.tip')}>{rxHz !== null ? `${rxHz} Hz ±${rxWindowHz(status?.mode)}` : ''}</span>
+                  {clearButton(setRxMark)}
                   {orderButton('rxBottom')}
                 </header>
                 <div className="dock-body">{rxBody()}</div>

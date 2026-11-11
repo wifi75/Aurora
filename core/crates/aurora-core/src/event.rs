@@ -161,6 +161,9 @@ pub struct DecodedMessage {
     /// Continente di chi trasmette (AF, AN, AS, EU, NA, OC, SA), se il paese e' noto.
     #[serde(default)]
     pub continent: Option<String>,
+    /// Data dell'ultimo invio a LoTW (`AAAA-MM-GG`) di chi trasmette, se compare nell'elenco pubblico dell'ARRL; l'interfaccia decide da quanti mesi conta.
+    #[serde(default)]
+    pub lotw_last_upload: Option<String>,
     /// Decodifica «ipotizzata» (con informazioni a priori, il marcatore `*` di JTDX): meno sicura delle altre. Non va ai servizi pubblici di spotting e
     /// nel flusso UDP porta il bit di bassa fiducia (`low_confidence`).
     #[serde(default)]

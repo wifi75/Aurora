@@ -221,6 +221,8 @@ pub struct AppState {
     pub online: Option<Arc<online_info::OnlineService>>,
     /// Lo storico dei messaggi ricevuti.
     pub history: Option<Arc<decode_history::HistoryStore>>,
+    /// Ricerca di chi usa LoTW per nominativo (data dell'ultimo invio), per le righe dello storico.
+    pub lotw: Option<Arc<dyn Fn(&str) -> Option<String> + Send + Sync>>,
     /// Il controllo delle nuove versioni di Aurora.
     pub updates: Option<Arc<updater::UpdateService>>,
     /// Chi sa installare un aggiornamento (il programma Windows); senza, l'aggiornamento si scarica a mano.
@@ -312,7 +314,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, lotw: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -389,6 +391,12 @@ impl AppState {
 
     pub fn with_history_if(mut self, store: Option<Arc<decode_history::HistoryStore>>) -> AppState {
         self.history = store;
+        self
+    }
+
+    /// Chi usa LoTW: dato un nominativo, la data dell'ultimo invio. Serve a completare le righe dello storico a ogni lettura.
+    pub fn with_lotw(mut self, lookup: Arc<dyn Fn(&str) -> Option<String> + Send + Sync>) -> AppState {
+        self.lotw = Some(lookup);
         self
     }
 

@@ -78,6 +78,8 @@ pub struct LiveConfig {
     pub log_calls: Option<Arc<dyn Fn() -> Vec<String> + Send + Sync>>,
     /// Controllo del locatore sul paese del nominativo (`dxcc::DxccDb::grid_plausible`): scarta i decode deboli con un locatore impossibile.
     pub grid_check: Option<ft8::filters::GridCheck>,
+    /// Data dell'ultimo invio a LoTW (`AAAA-MM-GG`) di chi trasmette un messaggio, se compare nell'elenco pubblico dell'ARRL: la mostra l'interfaccia.
+    pub lotw_of: Option<Arc<dyn Fn(&str) -> Option<String> + Send + Sync>>,
 }
 
 /// Il motore proprio in funzione: il confronto con JTDX e le ultime misure.
@@ -1069,6 +1071,7 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
             }
         }
         let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
+        let lotw_last_upload = live.lotw_of.as_ref().and_then(|f| f(&d.text));
         let id = next_id.fetch_add(1, Ordering::Relaxed);
         if let Some(driver) = driver.as_deref_mut() {
             driver.remember(id, &d.text, d.snr_db, d.freq_hz.round().max(0.0) as u32, slot_start_ms);
@@ -1083,6 +1086,7 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
             tag,
             country,
             continent,
+            lotw_last_upload,
             hint: d.hint,
         }));
     }
@@ -1165,6 +1169,7 @@ mod tests {
             transmitter: None,
             log_calls: None,
             grid_check: None,
+            lotw_of: None,
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
@@ -1245,6 +1250,7 @@ mod tests {
                 transmitter: None,
             log_calls: None,
             grid_check: None,
+            lotw_of: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1321,6 +1327,7 @@ mod tests {
                 transmitter: None,
             log_calls: None,
             grid_check: None,
+            lotw_of: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
                 annotate: Arc::new(|_, _| (None, None, None)),
             };
@@ -1515,6 +1522,7 @@ mod tests {
             transmitter: None,
             log_calls: None,
             grid_check: None,
+            lotw_of: None,
             band_of: Arc::new(|_| Some("20m".to_string())),
             annotate: Arc::new(|_, _| (None, None, None)),
         }

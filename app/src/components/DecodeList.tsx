@@ -9,6 +9,7 @@ import { formatAge, formatClock } from '../lib/format';
 import { bearingDeg, distanceKm, gridCenter, gridOfMessage } from '../lib/geo';
 import { isCq, isFilterHighlight, useFilters } from '../lib/filters';
 import { useNotifyView, workedLook } from '../lib/notifyView';
+import { lotwDateToShow, useLotwView } from '../lib/lotw';
 import { useNotify } from '../lib/notify';
 import { isAnswerToMyCall, isOngoingDxReply, transmittedTo } from '../lib/answered';
 import { isCallToMe, isClosingMessage } from '../lib/mycall';
@@ -70,7 +71,13 @@ function rowTitle(state: string | undefined, hint: string | undefined): string |
   return state ?? hint;
 }
 
-function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }, sender = ''): ReactNode {
+/** Chi trasmette usa LoTW: la barra colorata sotto il suo nominativo e il suggerimento con la data dell'ultimo invio. */
+export interface LotwMark {
+  color: string;
+  title: string;
+}
+
+function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }, sender = '', lotw?: LotwMark): ReactNode {
   const wanted = call.trim().toUpperCase();
   const answeredCall = answered?.call.trim().toUpperCase() ?? '';
   const wantedGrid = grid.trim().toUpperCase().slice(0, 4);
@@ -103,7 +110,7 @@ function highlightCall(text: string, call: string, grid: string, answered?: { ca
     }
     if (from !== '' && up.replace(/[<>]/g, '') === from) {
       return (
-        <b key={i} className="decode-sender">
+        <b key={i} className={lotw ? 'decode-sender decode-sender--lotw' : 'decode-sender'} title={lotw?.title} style={lotw ? { textDecorationColor: lotw.color } : undefined}>
           {part}
         </b>
       );
@@ -314,6 +321,11 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const notify = useNotify((s) => s.notify);
   const wishlist = useWishlist((s) => s.list);
   const view = useNotifyView((s) => s.view);
+  const lotwView = useLotwView((s) => s.view);
+  const lotwMark = (d: DecodedMessage): LotwMark | undefined => {
+    const date = d.id < 0 ? null : lotwDateToShow(d.lotw_last_upload, lotwView, new Date());
+    return date ? { color: lotwView.color, title: t('lotw.tip', { date }) } : undefined;
+  };
   // nominativi, prefissi e paesi da evidenziare (Impostazioni → Filtri)
   const filters = useFilters((s) => s.filters);
   const look = workedLook(view);
@@ -519,7 +531,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? '')}>
             <span className="decode-text">
               {queueMark}
-              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''))}</span>
+              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>
             </span>
             </CallsignTip>
             <span className={`decode-where${own && txRepeat(d) > 1 ? ' decode-where--rep' : ''}`}>

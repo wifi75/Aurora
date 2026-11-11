@@ -1,16 +1,34 @@
 import { askConfirm } from '../components/ConfirmHost';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { clearHistory, getHistory, getHistoryStats } from '../api/client';
+import { useEffect, useState, type ReactNode } from 'react';
+import { clearHistory, getHistory, getHistoryStats, type HistoryRow } from '../api/client';
+import { lotwDateToShow, useLotwView, type LotwView } from '../lib/lotw';
 import { useT, type Key } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { MODES, PERIODS, formatWhen, type HistoryFilter, type Period } from '../lib/history';
 
 const PAGE = 100;
 
+/** Il testo del messaggio; se chi trasmette usa LoTW (con le scelte dell'utente) il suo nominativo ha la stessa barra della lista dei decode. */
+function historyText(r: HistoryRow, view: LotwView, t: ReturnType<typeof useT>): ReactNode {
+  const date = lotwDateToShow(r.lotw_last_upload, view, new Date());
+  const at = date && r.call ? r.text.indexOf(r.call) : -1;
+  if (!date || !r.call || at < 0) return r.text;
+  return (
+    <>
+      {r.text.slice(0, at)}
+      <b className="decode-sender" style={{ textDecoration: 'underline', textDecorationThickness: 2, textUnderlineOffset: 3, textDecorationSkipInk: 'none', textDecorationColor: view.color }} title={t('lotw.tip', { date })}>
+        {r.call}
+      </b>
+      {r.text.slice(at + r.call.length)}
+    </>
+  );
+}
+
 /** Storico dei messaggi ricevuti: ricerca per nominativo o testo, banda, modo e periodo; si carica a pagine. */
 export function HistoryPage() {
   const t = useT();
+  const lotwView = useLotwView((s) => s.view);
   const client = useQueryClient();
   const [q, setQ] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
@@ -117,7 +135,7 @@ export function HistoryPage() {
                   <td>{r.mode}</td>
                   <td className="num data">{r.snr}</td>
                   <td className="num data">{r.freq_hz}</td>
-                  <td className="data">{r.text}</td>
+                  <td className="data">{historyText(r, lotwView, t)}</td>
                   <td>{r.country ?? ''}</td>
                 </tr>
               ))}

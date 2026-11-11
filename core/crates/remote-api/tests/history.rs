@@ -62,6 +62,17 @@ async fn lists_the_messages_most_recent_first_and_filters_them() {
 }
 
 #[tokio::test]
+async fn history_rows_carry_the_current_lotw_date() {
+    let s = with_store().with_lotw(Arc::new(|call: &str| (call == "K1ABC").then(|| "2026-10-28".to_string())));
+    let cookie = cookie_for(&s);
+    let all = body_json(call(&router(&s), req(Method::GET, "/api/v1/history").cookie(&cookie)).await).await;
+    let rows = all["rows"].as_array().unwrap();
+    let k1 = rows.iter().find(|r| r["call"] == "K1ABC").unwrap();
+    assert_eq!(k1["lotw_last_upload"], "2026-10-28");
+    assert!(rows.iter().filter(|r| r["call"] != "K1ABC").all(|r| r.get("lotw_last_upload").is_none()));
+}
+
+#[tokio::test]
 async fn reports_the_stats_and_clears_only_when_asked() {
     let s = with_store();
     let cookie = cookie_for(&s);

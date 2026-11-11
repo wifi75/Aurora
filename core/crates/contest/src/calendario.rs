@@ -216,6 +216,21 @@ pub fn prossima(c: &Calendario, ora_ms: i64) -> Option<Finestra> {
     tutte.into_iter().find(|f| f.fine_ms > ora_ms)
 }
 
+/// Per quanto tempo dopo la fine un'edizione resta «quella attuale» (fase «finito», log e invio del file), se la prossima non e' gia' iniziata.
+pub const DOPO_FINE_MS: i64 = 48 * 3_600_000;
+
+/// L'edizione attuale: quella in corso, o quella finita da meno di [`DOPO_FINE_MS`] (se la prossima non e' cominciata), altrimenti la prossima.
+pub fn attuale(c: &Calendario, ora_ms: i64) -> Option<Finestra> {
+    let (anno, _, _) = civil_from_days(ora_ms.div_euclid(DAY_MS));
+    let mut tutte: Vec<Finestra> = (anno - 1..=anno + 1).flat_map(|a| finestre(c, a)).collect();
+    tutte.sort_by_key(|f| f.inizio_ms);
+    let ultima = tutte.iter().rev().find(|f| f.inizio_ms <= ora_ms).copied();
+    match ultima {
+        Some(f) if ora_ms < f.fine_ms + DOPO_FINE_MS => Some(f),
+        _ => tutte.into_iter().find(|f| f.fine_ms > ora_ms),
+    }
+}
+
 /// La regola e' «sempre» (date scelte dall'operatore).
 pub fn e_sempre(c: &Calendario) -> bool {
     matches!(leggi(&c.regola), Ok(Regola::Sempre))
@@ -283,6 +298,19 @@ mod tests {
         assert_eq!(f.len(), 12);
         assert_eq!(hhmm(f[0].inizio_ms), "1800", "gennaio");
         assert_eq!(hhmm(f[5].inizio_ms), "1700", "giugno");
+    }
+
+    /// Finita la gara, per due giorni l'edizione attuale resta quella appena finita (non la prossima); poi si passa alla prossima.
+    #[test]
+    fn attuale_tiene_l_edizione_appena_finita() {
+        let c = cal("secondo-martedi:febbraio,maggio,agosto,novembre", "+0 19:00", "+0 20:29");
+        let nov = finestre(&c, 2026)[3];
+        assert_eq!(attuale(&c, nov.inizio_ms + 60_000), Some(nov), "in corso");
+        assert_eq!(attuale(&c, nov.fine_ms + 3_600_000), Some(nov), "appena finita");
+        assert_ne!(prossima(&c, nov.fine_ms + 3_600_000), Some(nov));
+        let dopo = attuale(&c, nov.fine_ms + DOPO_FINE_MS + 1).map(|f| f.inizio_ms);
+        assert!(dopo.is_some_and(|i| i > nov.fine_ms), "poi la prossima");
+        assert_eq!(attuale(&c, nov.inizio_ms - 1), Some(nov), "prima: la prossima");
     }
 
     #[test]

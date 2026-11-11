@@ -13,7 +13,7 @@ fn decode_event() -> Event {
         tag: Some(DecodeTag::NewDxcc),
         country: None,
         continent: None,
-        hint: false,
+        lotw_last_upload: None, hint: false,
     })
 }
 
@@ -110,7 +110,7 @@ fn decode_event_carries_country_and_the_new_tags() {
         tag: Some(DecodeTag::NewDxccBand),
         country: Some("Atlantis".into()),
         continent: Some("EU".into()),
-        hint: false,
+        lotw_last_upload: None, hint: false,
     });
     let v: serde_json::Value = serde_json::to_value(&event).unwrap();
     assert_eq!(v["country"], "Atlantis");

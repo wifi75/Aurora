@@ -372,6 +372,8 @@ export interface HistoryRow {
   country: string | null;
   continent: string | null;
   tag: string | null;
+  /** Ultimo invio a LoTW di chi trasmette (`AAAA-MM-GG`), calcolato a ogni lettura con l'elenco di adesso. */
+  lotw_last_upload?: string | null;
 }
 
 export interface HistoryPage {

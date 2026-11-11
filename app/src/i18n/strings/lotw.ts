@@ -1,0 +1,30 @@
+/** «Segna chi usa LoTW» (issue #36). [it, en, de, fr, es, pt] */
+export const lotwStrings = {
+  'lotw.tip': ['Usa LoTW: ultimo invio {date}', 'Uses LoTW: last upload {date}', 'Nutzt LoTW: letzter Upload {date}', 'Utilise LoTW : dernier envoi {date}', 'Usa LoTW: último envío {date}', 'Usa o LoTW: último envio {date}'],
+  'lotw.grp': ['Chi usa LoTW', 'Who uses LoTW', 'Wer LoTW nutzt', 'Qui utilise LoTW', 'Quién usa LoTW', 'Quem usa o LoTW'],
+  'lotw.enable': ['Segna chi usa LoTW', 'Mark who uses LoTW', 'LoTW-Nutzer markieren', 'Marquer ceux qui utilisent LoTW', 'Marcar quién usa LoTW', 'Marcar quem usa o LoTW'],
+  'tip.lotw.enable': [
+    'Una barra colorata sotto il nominativo di chi trasmette, in Attività di banda e nella Finestra RX, per chi ha mandato log a LoTW da poco. Aurora scarica ogni giorno l’elenco pubblico dell’ARRL; passando sul nominativo si legge la data dell’ultimo invio.',
+    'A colored bar under the callsign of the sender, in Band activity and the RX window, for stations that uploaded to LoTW recently. Aurora downloads the ARRL’s public list every day; hover the callsign to read the date of the last upload.',
+    'Ein farbiger Balken unter dem Rufzeichen des Senders, in Bandaktivität und RX-Fenster, für Stationen, die kürzlich zu LoTW hochgeladen haben. Aurora lädt täglich die öffentliche Liste der ARRL; über dem Rufzeichen steht das Datum des letzten Uploads.',
+    'Une barre colorée sous l’indicatif de l’émetteur, dans l’activité de bande et la fenêtre RX, pour les stations qui ont envoyé leur log à LoTW récemment. Aurora télécharge chaque jour la liste publique de l’ARRL ; au survol de l’indicatif on lit la date du dernier envoi.',
+    'Una barra de color bajo el indicativo de quien transmite, en Actividad de banda y en la Ventana RX, para quien ha enviado log a LoTW hace poco. Aurora descarga cada día la lista pública de la ARRL; al pasar sobre el indicativo se lee la fecha del último envío.',
+    'Uma barra colorida por baixo do indicativo de quem transmite, na Atividade de banda e na Janela RX, para quem enviou log ao LoTW há pouco. O Aurora descarrega todos os dias a lista pública da ARRL; ao passar sobre o indicativo lê-se a data do último envio.',
+  ],
+  'lotw.color': ['Colore della barra LoTW', 'LoTW bar color', 'Farbe des LoTW-Balkens', 'Couleur de la barre LoTW', 'Color de la barra LoTW', 'Cor da barra LoTW'],
+  'tip.lotw.color': ['Il colore della barra sotto il nominativo (verde chiaro di fabbrica).', 'The color of the bar under the callsign (light green by default).', 'Die Farbe des Balkens unter dem Rufzeichen (standardmäßig hellgrün).', 'La couleur de la barre sous l’indicatif (vert clair par défaut).', 'El color de la barra bajo el indicativo (verde claro de fábrica).', 'A cor da barra por baixo do indicativo (verde-claro de origem).'],
+  'lotw.months': ['Ultimo invio entro', 'Last upload within', 'Letzter Upload innerhalb', 'Dernier envoi dans les', 'Último envío en los últimos', 'Último envio nos últimos'],
+  'tip.lotw.months': [
+    'Conta come utente di LoTW chi ha mandato log negli ultimi mesi scelti; «Qualunque» segna anche chi non lo fa da anni.',
+    'Counts as a LoTW user whoever uploaded within the chosen number of months; “Any” also marks those who have not uploaded for years.',
+    'Als LoTW-Nutzer zählt, wer in den gewählten letzten Monaten hochgeladen hat; „Beliebig“ markiert auch Stationen, die seit Jahren nichts mehr hochgeladen haben.',
+    'Compte comme utilisateur de LoTW qui a envoyé son log durant les derniers mois choisis ; « Peu importe » marque aussi ceux qui n’ont rien envoyé depuis des années.',
+    'Cuenta como usuario de LoTW quien ha enviado log en los últimos meses elegidos; «Cualquiera» marca también a quien no envía desde hace años.',
+    'Conta como utilizador do LoTW quem enviou log nos últimos meses escolhidos; «Qualquer» marca também quem não envia há anos.',
+  ],
+  'lotw.m3': ['3 mesi', '3 months', '3 Monate', '3 mois', '3 meses', '3 meses'],
+  'lotw.m6': ['6 mesi', '6 months', '6 Monate', '6 mois', '6 meses', '6 meses'],
+  'lotw.m12': ['12 mesi', '12 months', '12 Monate', '12 mois', '12 meses', '12 meses'],
+  'lotw.m24': ['24 mesi', '24 months', '24 Monate', '24 mois', '24 meses', '24 meses'],
+  'lotw.m0': ['Qualunque', 'Any', 'Beliebig', 'Peu importe', 'Cualquiera', 'Qualquer'],
+} as const;
