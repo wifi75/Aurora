@@ -540,7 +540,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               if (clicked) {
                 e.preventDefault();
                 setSelected(d.id);
-                const canQueue = !own && !!onQueue && talker?.call.toUpperCase() === clicked;
+                // «Metti in coda» dove il tasto destro sulla riga metteva gia' in coda (stessa regola di sotto): la coda resta la stazione della riga
+                const canQueue = !own && !!talker && !!onQueue;
                 setCallMenu(callMenuAt(e, clicked, canQueue ? () => onQueue?.(d.id) : undefined, inQueue));
                 return;
               }
