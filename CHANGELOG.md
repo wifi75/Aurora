@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **OmniRig senza PowerShell**: Aurora parla con OmniRig direttamente via COM, come WSJT-X (verificato con Ghidra sul binario 3.3.0-beta6): niente piu' «PowerShell non avviabile / accesso negato» con antivirus o regole di Windows, niente finestra di OmniRig che ricompare, PTT su un canale suo che non aspetta i cambi di banda. Con una radio che accetta `Freq` si scrive `Freq`, come WSJT-X.
+- TCI: chiudere ExpertSDR o Thetis non manda piu' rapporti di errore (avviso solo con 3 cadute in 2 minuti); l'errore 997 di Windows («operazione di I/O sovrapposta in corso») non chiude piu' il collegamento.
 - **Linux (#41)**: si usa prima `rigctld` dell'Hamlib del sistema, lo stesso di WSJT-X e JS8Call della distribuzione, e solo dopo quello incluso (Hamlib 4.4 di Ubuntu 22.04, che serve all'AppImage). Su Debian 12 la radio che andava con WSJT-X non si collegava.
 - **Split con OmniRig e TCI**: Rig (split vero, `SetSplitMode` come WSJT-X) e Fake It ora funzionano anche con OmniRig, e con TCI si possono scegliere nelle Impostazioni; se la frequenza Tx cambia durante la trasmissione la radio la segue subito (`setXIT` di WSJT-X).
 - **Ritardo Tx regolabile** (Impostazioni › Generali, 0-0,5 s, predefinito 0,2 s come «Tx delay» di WSJT-X).

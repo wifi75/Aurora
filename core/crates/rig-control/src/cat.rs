@@ -235,7 +235,9 @@ impl CatService {
     /// per OmniRig controlla che risponda (puo' volerci qualche secondo).
     pub fn connect(&self) -> Result<CatStatus, CatError> {
         let config = self.store.config();
-        self.disconnect();
+        // ricollegando OmniRig l'oggetto aperto si tiene (si toglie solo lo split messo da Aurora): lasciarlo e ricrearlo subito chiuderebbe e
+        // riaprirebbe OmniRig con la sua finestra
+        self.detach(config.backend != Backend::Omnirig);
         crate::omnirig::set_split_mode(omnirig_split(&config));
         match config.backend {
             Backend::Hamlib => {
@@ -321,6 +323,12 @@ impl CatService {
 
     /// Scollega: il PTT si spegne, lo split vero si toglie e `rigctld` si ferma (la porta seriale si libera).
     pub fn disconnect(&self) -> CatStatus {
+        self.detach(true);
+        self.status()
+    }
+
+    /// Stacca tutte le radio; `release_omnirig` falso tiene aperto l'oggetto OmniRig (togliendo solo lo split messo da Aurora).
+    fn detach(&self, release_omnirig: bool) {
         let rig = self.current.lock().ok().and_then(|mut c| c.take());
         if let Some(rig) = rig {
             rig.shutdown();
@@ -334,9 +342,12 @@ impl CatService {
             ft991.shutdown();
         }
         // l'oggetto OmniRig tenuto aperto si lascia: OmniRig puo' chiudersi e liberare la porta (passaggio a Hamlib, distacco)
-        crate::omnirig::release();
+        if release_omnirig {
+            crate::omnirig::release();
+        } else {
+            crate::omnirig::reset_split();
+        }
         self.set_omni(LinkState::Disconnected, "");
-        self.status()
     }
 
     /// Salva la configurazione e la applica: se la radio era collegata (o in errore) la ricollega con i valori nuovi.

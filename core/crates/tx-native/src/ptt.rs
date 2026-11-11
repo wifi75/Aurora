@@ -11,11 +11,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use rig_control::{hamlib::RigctldClient, session::SharedSession};
+use rig_control::hamlib::RigctldClient;
 
 use crate::error::TxError;
 
-/// Un comando di trasmissione. `set` puo' bloccare per qualche istante (porta seriale, PowerShell): chi lo usa lo chiama da un thread dedicato.
+/// Un comando di trasmissione. `set` puo' bloccare per qualche istante (porta seriale, OmniRig): chi lo usa lo chiama da un thread dedicato.
 pub trait Ptt: Send + Sync {
     fn set(&self, on: bool) -> Result<(), TxError>;
     /// Lo stato che Aurora crede di aver impostato (acceso se l'ultimo `set(true)` e' riuscito e non c'e' stato un `set(false)` riuscito).
@@ -69,53 +69,30 @@ impl Ptt for HamlibPtt {
     }
 }
 
-/// `PM_RX` e `PM_TX` di OmniRig (valori della sua libreria dei tipi).
-const PM_RX: u32 = 0x0020_0000;
-const PM_TX: u32 = 0x0040_0000;
-
-/// Lo script che imposta `Rig<n>.Tx`. Contiene solo il numero della radio (1 o 2) e una costante: niente testo dell'utente.
-/// L'oggetto COM si crea una volta sola nella sessione PowerShell; se qualcosa va storto si butta e si ricrea al comando dopo.
-pub fn omnirig_ptt_script(rig: u8, on: bool) -> Result<String, TxError> {
-    if !(1..=2).contains(&rig) {
-        return Err(TxError::Ptt(format!("radio OmniRig non valida: {rig}")));
-    }
-    let value = if on { PM_TX } else { PM_RX };
-    let check = if on { "if ($r.Status -ne 4) { throw 'radio non in linea' }; ".to_string() } else { String::new() };
-    Ok(format!(
-        "try {{ if (-not $global:AuroraOmni) {{ $global:AuroraOmni = New-Object -ComObject OmniRig.OmniRigX }}; \
-         $r = $global:AuroraOmni.Rig{rig}; {check}$r.Tx = {value}; 'ok' }} catch {{ $global:AuroraOmni = $null; throw }}"
-    ))
-}
-
-/// Sessione PowerShell dedicata al PTT (separata da quelle dei comandi a JTDX): aperta una volta, poi ogni comando costa pochi decimi.
-static PTT_SESSION: SharedSession = SharedSession::new();
-
-/// Tempo massimo di un comando PTT via OmniRig.
-const OMNIRIG_TIMEOUT: Duration = Duration::from_secs(5);
-
-/// PTT via OmniRig (`Rig1.Tx` / `Rig2.Tx`), con PowerShell nascosto. Solo Windows.
+/// PTT via OmniRig (`Rig1.Tx` / `Rig2.Tx` = PM_TX / PM_RX, come `do_ptt` di `OmniRigTransceiver.cpp:685`), via COM su un thread dedicato
+/// (`rig_control::omnirig::set_ptt`). Solo Windows. La radio comandata e' quella scelta in Impostazioni › Radio.
 pub struct OmniRigPtt {
-    rig: u8,
     on: AtomicBool,
 }
 
 impl OmniRigPtt {
     /// `rig` e' 1 o 2 (le due radio di OmniRig).
     pub fn new(rig: u8) -> Result<OmniRigPtt, TxError> {
-        omnirig_ptt_script(rig, false)?;
-        Ok(OmniRigPtt { rig, on: AtomicBool::new(false) })
+        if !(1..=2).contains(&rig) {
+            return Err(TxError::Ptt(format!("radio OmniRig non valida: {rig}")));
+        }
+        Ok(OmniRigPtt { on: AtomicBool::new(false) })
     }
 
-    /// Apre la sessione PowerShell e l'oggetto OmniRig in anticipo, cosi' il primo PTT non paga l'avvio.
+    /// Apre l'oggetto OmniRig in anticipo, cosi' il primo PTT non paga la creazione.
     pub fn warm_up(&self) -> Result<(), TxError> {
-        PTT_SESSION.run_with_timeout("'ok'", OMNIRIG_TIMEOUT).map(|_| ()).map_err(|e| TxError::Ptt(explain_omnirig(&e.0)))
+        rig_control::omnirig::warm_up_ptt().map_err(|e| TxError::Ptt(e.0))
     }
 }
 
 impl Ptt for OmniRigPtt {
     fn set(&self, on: bool) -> Result<(), TxError> {
-        let script = omnirig_ptt_script(self.rig, on)?;
-        PTT_SESSION.run_with_timeout(&script, OMNIRIG_TIMEOUT).map_err(|e| TxError::Ptt(explain_omnirig(&e.0)))?;
+        rig_control::omnirig::set_ptt(on).map_err(|e| TxError::Ptt(e.0))?;
         self.on.store(on, Ordering::SeqCst);
         Ok(())
     }
@@ -124,7 +101,6 @@ impl Ptt for OmniRigPtt {
         self.on.load(Ordering::SeqCst)
     }
 }
-
 /// Spegne il PTT con qualche tentativo (la porta seriale o OmniRig possono essere occupate per un istante).
 pub fn release_ptt(ptt: &dyn Ptt) -> Result<(), TxError> {
     let mut last = TxError::Ptt("nessun tentativo".into());
@@ -626,27 +602,10 @@ mod tests {
     }
 
     #[test]
-    fn the_omnirig_script_sets_tx_and_rx_on_the_chosen_rig() {
-        let on = omnirig_ptt_script(1, true).expect("script");
-        assert!(on.contains("Rig1") && on.contains("$r.Tx = 4194304") && on.contains("Status -ne 4"), "{on}");
-        let off = omnirig_ptt_script(2, false).expect("script");
-        assert!(off.contains("Rig2") && off.contains("$r.Tx = 2097152") && !off.contains("Status"), "{off}");
-        assert!(omnirig_ptt_script(0, true).is_err());
-        assert!(omnirig_ptt_script(3, false).is_err());
+    fn the_omnirig_ptt_accepts_only_rig_1_or_2() {
+        assert!(OmniRigPtt::new(0).is_err());
         assert!(OmniRigPtt::new(3).is_err());
+        assert!(OmniRigPtt::new(2).is_ok());
         assert!(OmniRigPtt::new(1).is_ok());
-    }
-}
-
-
-/// Un errore di PowerShell con OmniRig detto in chiaro: «classe non registrata» (in qualunque lingua di Windows) vuol dire che OmniRig non c'e'.
-fn explain_omnirig(why: &str) -> String {
-    if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || why.contains("CLSID") {
-        "OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig da https://www./omnirig/".to_string()
-    } else if why.contains("non risponde") {
-        // OmniRig c'e' ma non risponde in tempo: di solito la radio non e' in linea in OmniRig (porta o modello sbagliati, radio spenta)
-        "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora)".to_string()
-    } else {
-        why.to_string()
     }
 }

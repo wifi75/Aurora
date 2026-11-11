@@ -1067,8 +1067,37 @@ fn reset_link(inner: &Inner) {
     inner.notify();
 }
 
+/// Le cadute del collegamento TCI: chiudere ExpertSDR/Thetis e' normale (si ricollega da solo) e va nel registro come informazione; un
+/// collegamento che cade di continuo (almeno [`FLAPS`] volte in [`FLAP_WINDOW`] dopo essere stato aperto) diventa un avviso, al massimo uno
+/// ogni [`FLAP_REPEAT`], perche' gli avvisi finiscono nei rapporti.
+const FLAPS: usize = 3;
+const FLAP_WINDOW: Duration = Duration::from_secs(120);
+const FLAP_REPEAT: Duration = Duration::from_secs(30 * 60);
+
+#[derive(Default)]
+struct Drops {
+    recent: std::collections::VecDeque<Instant>,
+    warned: Option<Instant>,
+}
+
+impl Drops {
+    /// Annota una caduta; `true` se va segnalata come avviso.
+    fn record(&mut self, now: Instant) -> bool {
+        self.recent.retain(|t| now.saturating_duration_since(*t) < FLAP_WINDOW);
+        self.recent.push_back(now);
+        let flapping = self.recent.len() >= FLAPS;
+        let quiet = self.warned.is_none_or(|w| now.saturating_duration_since(w) >= FLAP_REPEAT);
+        if flapping && quiet {
+            self.warned = Some(now);
+            return true;
+        }
+        false
+    }
+}
+
 fn run(inner: &Inner) {
     let mut attempt = 0u32;
+    let mut drops = Drops::default();
     while !inner.stop.load(Ordering::SeqCst) {
         match open(&inner.address) {
             Ok(mut ws) => {
@@ -1086,7 +1115,7 @@ fn run(inner: &Inner) {
                 while Instant::now() < until {
                     match ws.read() {
                         Ok(Message::Close(_)) | Err(tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed) => break,
-                        Err(tungstenite::Error::Io(e)) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {}
+                        Err(e) if is_timeout(&e) => {}
                         Err(_) => break,
                         Ok(_) => {}
                     }
@@ -1095,7 +1124,11 @@ fn run(inner: &Inner) {
                 if inner.stop.load(Ordering::SeqCst) {
                     break;
                 }
-                tracing::warn!("TCI: collegamento perso: {reason}");
+                if drops.record(Instant::now()) {
+                    tracing::warn!("TCI: il collegamento cade di continuo ({FLAPS} volte in {} s), l'ultima: {reason}", FLAP_WINDOW.as_secs());
+                } else {
+                    tracing::info!("TCI: collegamento perso: {reason}");
+                }
                 inner.update(|s| {
                     s.state = LinkState::Reconnecting;
                     s.message = format!("Collegamento TCI perso ({reason}): nuovo tentativo");
@@ -1121,13 +1154,23 @@ fn run(inner: &Inner) {
     }
 }
 
+/// Una lettura o scrittura scaduta senza dati, da ripetere: non e' una caduta del collegamento. Oltre a `WouldBlock` e `TimedOut`, su Windows
+/// lo scadere dell'attesa breve (20 ms) puo' arrivare come `ERROR_IO_PENDING` (997, «operazione di I/O sovrapposta in corso»): nei rapporti
+/// delle versioni 0.11.226-0.11.234 il collegamento si chiudeva per questo («collegamento perso: IO error: ... 997»), senza alcun guasto.
+fn is_timeout(e: &tungstenite::Error) -> bool {
+    /// `ERROR_IO_PENDING` di Windows.
+    const IO_PENDING: i32 = 997;
+    matches!(e, tungstenite::Error::Io(io) if matches!(io.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) || (cfg!(windows) && io.raw_os_error() == Some(IO_PENDING)))
+}
 /// Il giro di un collegamento aperto: manda i comandi in coda, legge i messaggi. Torna con il motivo quando il collegamento cade
 /// o quando si chiude.
 fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
     loop {
         let pending: Vec<String> = inner.outbox.lock().map(|mut o| o.drain(..).collect()).unwrap_or_default();
         for text in pending {
-            if let Err(e) = ws.send(Message::text(text)) {
+            if let Err(e) = ws.send(Message::text(text))
+                && !is_timeout(&e)
+            {
                 return e.to_string();
             }
         }
@@ -1146,16 +1189,17 @@ fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
             Ok(Message::Binary(data)) => {
                 if let Some(reply) = inner.handle_binary(&data)
                     && let Err(e) = ws.send(Message::binary(reply))
+                    && !is_timeout(&e)
                 {
                     return e.to_string();
                 }
             }
             Ok(Message::Close(_)) => return "chiuso dal server".into(),
             Ok(_) => {}
-            Err(tungstenite::Error::Io(e)) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {
+            Err(e) if is_timeout(&e) => {
                 // nessun dato: si svuota quanto resta da scrivere e si continua
-                if let Err(tungstenite::Error::Io(e)) = ws.flush()
-                    && !matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut)
+                if let Err(e) = ws.flush()
+                    && !is_timeout(&e)
                 {
                     return e.to_string();
                 }
@@ -1228,6 +1272,42 @@ mod tests {
     use std::net::TcpListener;
 
     use super::*;
+
+    #[test]
+    fn a_single_drop_is_not_a_warning_but_repeated_drops_are_once() {
+        let t0 = Instant::now();
+        let s = Duration::from_secs;
+        let mut d = Drops::default();
+        assert!(!d.record(t0), "chiudere la SDR una volta e' normale");
+        assert!(!d.record(t0 + s(30)));
+        assert!(d.record(t0 + s(60)), "tre cadute in due minuti: un avviso");
+        assert!(!d.record(t0 + s(70)), "un avviso solo, non uno per caduta");
+        assert!(!d.record(t0 + s(90)));
+        // mezz'ora dopo, se cade ancora di continuo, un altro avviso
+        let later = t0 + s(60) + FLAP_REPEAT;
+        assert!(!d.record(later));
+        assert!(!d.record(later + s(10)));
+        assert!(d.record(later + s(20)));
+    }
+
+    #[test]
+    fn a_short_wait_without_data_is_not_a_lost_link() {
+        let io = |e: std::io::Error| tungstenite::Error::Io(e);
+        assert!(is_timeout(&io(std::io::Error::from(ErrorKind::WouldBlock))));
+        assert!(is_timeout(&io(std::io::Error::from(ErrorKind::TimedOut))));
+        assert_eq!(is_timeout(&io(std::io::Error::from_raw_os_error(997))), cfg!(windows), "ERROR_IO_PENDING di Windows");
+        assert!(!is_timeout(&io(std::io::Error::from(ErrorKind::ConnectionReset))));
+        assert!(!is_timeout(&tungstenite::Error::ConnectionClosed));
+    }
+
+    #[test]
+    fn drops_far_apart_never_warn() {
+        let t0 = Instant::now();
+        let mut d = Drops::default();
+        for i in 0..10 {
+            assert!(!d.record(t0 + Duration::from_secs(70 * i)), "una caduta ogni 70 s non e' un collegamento instabile");
+        }
+    }
 
     #[test]
     fn it_reads_the_initial_burst_like_wsjtx() {

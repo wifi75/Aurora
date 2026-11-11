@@ -16,9 +16,10 @@ pub mod hamlib_rig;
 pub mod meters;
 pub mod modes;
 pub mod omnirig;
+#[cfg(windows)]
+mod omnirig_com;
 pub mod rotator;
 pub mod schedule;
-pub mod session;
 pub mod table;
 pub mod tci;
 
