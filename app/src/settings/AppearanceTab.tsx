@@ -5,6 +5,8 @@ import {
   contrastRatio,
   DATA_FONTS,
   DEFAULT_APPEARANCE,
+  LOG_FONTS,
+  LOG_SIZES,
   readAppearance,
   saveAppearance,
   TEXT_PALETTE,
@@ -117,6 +119,20 @@ export function AppearanceTab() {
                   {f.label}
                 </option>
               ))}
+            </select>
+          </Field>
+          <Field label={t('ap.fontLog')} hint={t('tip.ap.fontLog')}>
+            <select value={a.fontLog} onChange={(e) => update({ fontLog: e.target.value })}>
+              {LOG_FONTS.map((f) => (
+                <option key={f.id} value={f.id} style={f.stack ? { fontFamily: f.stack } : undefined}>
+                  {f.id === 'data' ? t('ap.fontLogData') : f.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t('ap.logSize')} hint={t('tip.ap.logSize')}>
+            <select value={String(a.logSize)} onChange={(e) => update({ logSize: Number(e.target.value) })}>
+              {(LOG_SIZES as readonly number[]).includes(a.logSize) ? LOG_SIZES.map((s) => <option key={s} value={String(s)}>{s} px</option>) : [...LOG_SIZES, a.logSize].sort((x, y) => x - y).map((s) => <option key={s} value={String(s)}>{s} px</option>)}
             </select>
           </Field>
           <Field label={t('ap.size')} hint={t('tip.ap.size')}>

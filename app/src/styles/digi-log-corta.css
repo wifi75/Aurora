@@ -55,12 +55,12 @@
 
 /* il log: righe giallo chiaro con il testo viola, in fondo la riga azzurra del QSO in corso con i campi sul posto */
 .digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #f7f4b4; }
-.digi-log-table--completa table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.digi-log-table--completa th { position: sticky; top: 0; background: #d4d0c8; color: #000; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; border: 1px solid #808080; padding: 2px 6px; text-align: left; z-index: 1; }
-.digi-log-table--completa td { background: #f7f4b4; color: #4b0a96; padding: 2px 6px; border: 1px solid #d8d494; white-space: nowrap; }
+.digi-log-table--completa table { min-width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--log-size, 12px); font-family: var(--log-font, inherit); font-variant-numeric: tabular-nums; }
+.digi-log-table--completa th { position: sticky; top: 0; background: #d4d0c8; color: #000; text-transform: none; letter-spacing: 0; font-size: 1em; font-weight: 400; border: 1px solid #808080; padding: 0.17em 0.5em; text-align: left; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa td { background: #f7f4b4; color: #4b0a96; padding: 0.17em 0.5em; border: 1px solid #d8d494; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .digi-log-table--completa td b { color: #4b0a96; font-weight: 700; }
 .digi-log-table--completa tr.digi-log-cur td { background: #8ff; color: #000; border-color: #5cc; }
-.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #0a8; background: #fff; color: #000; font: inherit; padding: 0 3px; height: 20px; }
+.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #0a8; background: #fff; color: #000; font: inherit; padding: 0 0.25em; height: 1.6em; }
 .digi-log-bar { flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--border); }
 
 /* l'area centrale si restringe quanto serve: la cascata e le barre in fondo salgono e restano tutte in vista */
@@ -75,3 +75,11 @@
 /* la riga «Avvia ascolto» sta su una riga sola: il suggerimento si accorcia con i puntini */
 .digi-rxctl { align-items: center; }
 .digi-rxctl .digi-hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* colonne regolabili come in Excel: si trascina il bordo destro dell'intestazione, doppio clic per adattarla al contenuto */
+.digi-log-table--completa th { position: sticky; }
+.digi-colgrip { position: absolute; top: 0; right: -3px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
+.digi-colgrip::after { content: ""; position: absolute; top: 15%; bottom: 15%; left: 4px; width: 1px; background: transparent; }
+.digi-log-table--completa th:hover .digi-colgrip::after, .digi-colgrip:hover::after { background: #0a8; width: 2px; left: 3px; }
+.digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #808080; background: #e4e0d8; color: #000; font: inherit; cursor: pointer; text-align: left; }
+.digi-colpop-btn:hover { background: #fff; }

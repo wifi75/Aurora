@@ -55,6 +55,29 @@ function savedCols(): LogCol[] {
   return [...DEFAULT_COLS];
 }
 
+/** Larghezza di partenza di ogni colonna, in em: cresce da sola con la dimensione del carattere. */
+const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5 };
+const WIDTHS_KEY = 'aurora.digi.logw3';
+const MIN_EM = 2.5;
+const MAX_EM = 48;
+
+function savedWidths(): Partial<Record<LogCol, number>> {
+  try {
+    const raw = JSON.parse(browserStorage()?.getItem(WIDTHS_KEY) ?? 'null') as unknown;
+    if (raw && typeof raw === 'object') {
+      const out: Partial<Record<LogCol, number>> = {};
+      for (const c of ALL_COLS) {
+        const v = (raw as Record<string, unknown>)[c];
+        if (typeof v === 'number' && Number.isFinite(v)) out[c] = Math.min(MAX_EM, Math.max(MIN_EM, v));
+      }
+      return out;
+    }
+  } catch {
+    // senza archivio restano le larghezze di partenza
+  }
+  return {};
+}
+
 /** Frequenza in kHz con la virgola, come nel log (7042,988). */
 const khz = (hz: number) => (hz > 0 ? (hz / 1000).toFixed(3).replace(/(\.\d)0+$/, '$1').replace('.', ',') : '');
 /** `2023-03-19` -> `19/03/2023`. */
@@ -92,6 +115,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
   const [picking, setPicking] = useState(false);
+  const [widths, setWidths] = useState<Partial<Record<LogCol, number>>>(savedWidths);
   const [spotOpen, setSpotOpen] = useState(false);
   // linguette: DX Cluster o Log (la scelta resta ricordata)
   const [tab, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
@@ -113,6 +137,77 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     document.addEventListener('pointerdown', out);
     return () => document.removeEventListener('pointerdown', out);
   }, [picking]);
+  const widthOf = (c: LogCol) => widths[c] ?? DEFAULT_EM[c];
+  const storeWidths = (next: Partial<Record<LogCol, number>>) => {
+    try {
+      browserStorage()?.setItem(WIDTHS_KEY, JSON.stringify(next));
+    } catch {
+      // la scelta vale comunque finche' la pagina e' aperta
+    }
+  };
+  /** Il corpo del carattere della tabella in px: le larghezze sono in em e seguono la dimensione scelta nelle Impostazioni. */
+  const emPx = () => parseFloat(getComputedStyle(body.current?.querySelector('table') ?? document.body).fontSize) || 12;
+  /** Trascinando il bordo destro dell'intestazione la colonna si allarga o si stringe, come in Excel. */
+  const startResize = (e: React.PointerEvent, c: LogCol) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const start = widthOf(c);
+    const em = emPx();
+    let last = start;
+    const move = (m: PointerEvent) => {
+      last = Math.min(MAX_EM, Math.max(MIN_EM, start + (m.clientX - startX) / em));
+      setWidths((w) => ({ ...w, [c]: last }));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      setWidths((w) => {
+        const next = { ...w, [c]: last };
+        storeWidths(next);
+        return next;
+      });
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  /** Doppio clic sul bordo: la colonna prende la larghezza del suo contenuto piu' lungo. */
+  const autoFit = (c: LogCol) => {
+    const table = body.current?.querySelector('table');
+    if (!table) return;
+    const i = cols.indexOf(c);
+    let max = 0;
+    table.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((el) => {
+      if (el.closest('tr.digi-log-cur')) return;
+      max = Math.max(max, (el as HTMLElement).scrollWidth);
+    });
+    const em = Math.min(MAX_EM, Math.max(MIN_EM, max / emPx() + 0.3));
+    setWidths((w) => {
+      const next = { ...w, [c]: em };
+      storeWidths(next);
+      return next;
+    });
+  };
+  const autoFitAll = () => {
+    const next: Partial<Record<LogCol, number>> = {};
+    const table = body.current?.querySelector('table');
+    if (table) {
+      cols.forEach((c, i) => {
+        let max = 0;
+        table.querySelectorAll(`tr > :nth-child(${i + 1})`).forEach((el) => {
+          if (el.closest('tr.digi-log-cur')) return;
+          max = Math.max(max, (el as HTMLElement).scrollWidth);
+        });
+        next[c] = Math.min(MAX_EM, Math.max(MIN_EM, Math.max(max / emPx() + 0.3, DEFAULT_EM[c] * 0.6)));
+      });
+    }
+    setWidths(next);
+    storeWidths(next);
+  };
+  const resetWidths = () => {
+    setWidths({});
+    storeWidths({});
+  };
   const toggleCol = (c: LogCol) => {
     const next = cols.includes(c) ? cols.filter((x) => x !== c) : ALL_COLS.filter((x) => x === c || cols.includes(x));
     if (next.length === 0) return;
@@ -213,6 +308,12 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                       <input type="checkbox" checked={cols.includes(c)} onChange={() => toggleCol(c)} /> {t(COL_LABEL[c])}
                     </label>
                   ))}
+                  <button type="button" className="digi-colpop-btn" onClick={autoFitAll}>
+                    {t('digi.log.fitAll')}
+                  </button>
+                  <button type="button" className="digi-colpop-btn" onClick={resetWidths}>
+                    {t('digi.log.resetWidths')}
+                  </button>
                   <p>{t('digi.log.colsHint')}</p>
                 </div>
               ) : null}
@@ -230,11 +331,19 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       ) : (
         <>
           <div className="digi-log-table digi-log-table--completa" ref={body}>
-            <table>
+            <table style={{ width: `${cols.reduce((n, c) => n + widthOf(c), 0)}em` }}>
+              <colgroup>
+                {cols.map((c) => (
+                  <col key={c} style={{ width: `${widthOf(c)}em` }} />
+                ))}
+              </colgroup>
               <thead>
                 <tr>
                   {cols.map((c) => (
-                    <th key={c}>{t(COL_LABEL[c])}</th>
+                    <th key={c}>
+                      {t(COL_LABEL[c])}
+                      <span className="digi-colgrip" role="separator" aria-orientation="vertical" title={t('digi.log.colGrip')} onPointerDown={(e) => startResize(e, c)} onDoubleClick={() => autoFit(c)} />
+                    </th>
                   ))}
                 </tr>
               </thead>
