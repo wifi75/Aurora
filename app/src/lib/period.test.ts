@@ -53,3 +53,11 @@ describe('MSK144 period', () => {
     noteTrPeriod('MSK144', 15);
   });
 });
+
+describe('WSPR period', () => {
+  it('lasts two minutes starting on even minutes', () => {
+    expect(periodSecs('WSPR')).toBe(120);
+    expect(periodPosition(at(13, 1, 30), 'WSPR').seconds).toBe(90);
+    expect(periodPosition(at(13, 2, 0), 'WSPR').seconds).toBe(0);
+  });
+});

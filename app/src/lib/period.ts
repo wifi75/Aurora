@@ -11,6 +11,8 @@ export function periodSecs(mode: string): number {
   const m = mode.toUpperCase();
   if (m === 'FT4') return 7.5;
   if (m === 'MSK144') return mskPeriodSecs;
+  // WSPR-2: due minuti, dai minuti pari
+  if (m === 'WSPR') return 120;
   if (m.startsWith('JT')) return 60;
   return 15;
 }
