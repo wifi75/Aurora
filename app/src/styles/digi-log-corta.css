@@ -73,8 +73,10 @@
 /* colonne regolabili come in Excel: si trascina il bordo destro dell'intestazione, doppio clic per adattarla al contenuto */
 .digi-colgrip { position: absolute; top: 0; right: -3px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
 .digi-colgrip::after { content: ""; position: absolute; top: 15%; bottom: 15%; left: 4px; width: 1px; background: transparent; }
-.digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #808080; background: #e4e0d8; color: #000; font: inherit; cursor: pointer; text-align: left; }
-.digi-colpop-btn:hover { background: #fff; }
+.digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #3a4c85; background: #1c2a4f; color: #e6efff; font: inherit; cursor: pointer; text-align: left; }
+.digi-colpop-btn:hover, .digi-colpop-btn:focus-visible { background: #2d4380; color: #ffffff; border-color: #6c86d6; }
+html[data-theme='light'] .digi-colpop-btn { background: #e8edf7; color: #0b1322; border-color: #a9b8d6; }
+html[data-theme='light'] .digi-colpop-btn:hover, html[data-theme='light'] .digi-colpop-btn:focus-visible { background: #d3e0fa; color: #000; border-color: #5b7fd1; }
 
 /* aspetto «colore per banda»: tabella scura, barra colorata della banda a sinistra, modo come etichetta, rapporti verdi/ambra/rossi */
 .digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #0f1629; }
@@ -199,3 +201,5 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .digi-macrogrip { position: absolute; top: 0; right: -4px; width: 9px; height: 100%; cursor: ew-resize; touch-action: none; z-index: 3; }
 .digi-macrogrip::after { content: ""; position: absolute; top: 20%; bottom: 20%; left: 4px; width: 2px; border-radius: 2px; background: rgba(142, 123, 255, 0.0); transition: background 0.15s; }
 .digi-macrowrap:hover .digi-macrogrip::after, .digi-macrogrip:hover::after { background: rgba(142, 123, 255, 0.8); }
+/* l'ingranaggio delle macro: giallo chiaro nello scuro, ambra scuro nel chiaro (prima restava giallo chiaro su fondo bianco) */
+html[data-theme='light'] .digi-classica .digi-gear { color: #9a5b00; }
