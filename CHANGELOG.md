@@ -1,6 +1,12 @@
 # Changelog
 
 ## Non rilasciato
+- **Trasmissione oltre i 15 secondi**: un tetto fisso di 15 s rifiutava ogni onda piu' lunga, quindi in JT65, JT9, JT4 e Q65 da 30 s in su la trasmissione non partiva; ora il limite e' il periodo meno il ritardo d'inizio.
+- **Wait and Call con «Salta Tx1»**: la chiamata partiva da Tx2 e il controllo guardava solo Tx1, quindi non smetteva mai di chiamare; ora si ferma dopo 6,2 periodi come in WSJT-X.
+- **Wait and Pounce**: una scelta del DX fatta dall'operatore (doppio clic, risposta in coda, DX scritto a mano) lo disarma, come in WSJT-X 3.3; prima il primo CQ sentito sostituiva il DX scelto.
+- Trasmissione: se l'uscita audio si perde a meta' (scheda USB staccata, TCI fermo) l'esito e' un errore con la causa, non piu' «trasmesso».
+- **FT8, piu' segnali deboli**: soglia di sincronismo 1,3 come in WSJT-X 3.3 (era 1,5 di JTDX) e messaggi del concorso EU VHF (tipo 5) decodificati.
+- **Log ADIF**: PSK31, PSK63, Q65, FST4 scritti come modo padre (`PSK`, `MFSK`) con `SUBMODE`, come richiede ADIF e come fa WSJT-X: LoTW, ClubLog e QRZ non li rifiutano piu'.
 - Pagina Fox col tema chiaro: la barra dei comandi della cascata (Bins/Pixel, Start, N Avg, Tavolozza, Spec) aveva il testo chiaro su fondo bianco e non si leggeva; ora segue l'aspetto scuro della scheda.
 
 ## 0.11.235 - 2026-11-11
