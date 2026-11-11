@@ -6035,7 +6035,8 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 .calltip-anchor { position: relative; }
 .calltip {
   position: fixed;
-  z-index: 50;
+  /* sopra elenchi, schede e finestre (sta nel corpo della pagina); fondo pieno anche nei temi con i pannelli trasparenti */
+  z-index: 100300;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
