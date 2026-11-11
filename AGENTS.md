@@ -11,7 +11,7 @@ Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://
 - Commit in italiano, atomici. Push e release autorizzati.
 - Si controlla solo che compili (`cargo check --workspace`, `npx tsc --noEmit`): le prove con radio e telefono le fa il proprietario.
 - Logiche di QSO e trasmissione: leggere `docs/logiche-jtdx.md` prima di toccarle; il comportamento di JTDX/Decodium si verifica con REA, non si indovina.
-- Ogni testo dell'interfaccia, della Guida e delle Novita' e' in sei lingue (it, en, de, fr, es, pt).
+- Ogni testo dell'interfaccia, della Guida e delle Novita' e' in sei lingue nelle tabelle (it, en, de, fr, es, pt) piu' l'olandese (nl) nel dizionario a parte `app/src/i18n/nl/` (chiavi come le tabelle; Guida e Novita' per impronta del testo inglese). Se manca una voce olandese si usa l'inglese. Il dizionario si rivede dal foglio `docs/traduzione-olandese.csv`: `node scripts/export-nl.mjs` lo rigenera, `node scripts/importa-nl.mjs` rilegge le correzioni.
 - A ogni versione si seguono i passi di `TASK.md`.
 - Linux (non provata dall'autore, senza assistenza) usa lo stesso codice: ogni API di Windows va in `#[cfg(windows)]`; il controllo `Linux` di GitHub Actions deve restare verde (vedi `docs/sviluppo.md`).
 

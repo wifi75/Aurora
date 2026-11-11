@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { fill, pick, type Lang } from './core';
 import { useLang } from './lang';
+import { NL_UI } from './nl/ui';
 import { appStrings } from './strings/app';
 import { audioStrings } from './strings/audio';
 import { accessStrings } from './strings/access';
@@ -68,7 +69,7 @@ import { sstvStrings } from './strings/sstv';
 import { lotwStrings } from './strings/lotw';
 import { decodeOptStrings } from './strings/decodeopts';
 
-export { DEFAULT_LANG, LANGS, LANG_NAMES, type Lang } from './core';
+export { DEFAULT_LANG, LANGS, LANG_NAMES, TABLE_LANGS, detectLang, langFromLocale, localeOf, type Lang } from './core';
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
@@ -76,9 +77,16 @@ export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ..
 
 export type Key = keyof typeof STRINGS;
 
-export function translate(lang: Lang, key: Key, vars?: Record<string, string | number>): string {
+/** Il testo di una chiave nella lingua scelta; in olandese quello del dizionario `nl/ui.ts`, o l'inglese se manca. */
+export function textOf(lang: Lang, key: Key): string | undefined {
   const entry = STRINGS[key];
-  return entry ? fill(pick(entry, lang), vars) : key;
+  if (!entry) return undefined;
+  return lang === 'nl' ? (NL_UI[key] ?? entry[1]) : pick(entry, lang);
+}
+
+export function translate(lang: Lang, key: Key, vars?: Record<string, string | number>): string {
+  const text = textOf(lang, key);
+  return text === undefined ? key : fill(text, vars);
 }
 
 export type T = (key: Key, vars?: Record<string, string | number>) => string;

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { LANGS, useLang, useT } from '../../i18n';
+import { TABLE_LANGS, useLang, useT } from '../../i18n';
 import { commandsOf, type CommandGroup } from '../../lib/macroCommands';
 import { EVENT_MACROS, keyNames, cssColor, type Macro } from '../../lib/macroLang';
 
@@ -30,7 +30,8 @@ export function MacroEditor({ macro, modeName, scope, onSave, onCancel }: Props)
   const [group, setGroup] = useState<CommandGroup | ''>('');
   const [picked, setPicked] = useState('');
   const [where, setWhere] = useState<MacroScope>(scope);
-  const idx = Math.max(0, LANGS.indexOf(lang as (typeof LANGS)[number]));
+  // l'olandese non ha una colonna nelle tabelle dei comandi: si usa l'inglese
+  const idx = lang === 'nl' ? 1 : Math.max(0, TABLE_LANGS.indexOf(lang));
   const commands = commandsOf(group);
 
   const insert = () => {

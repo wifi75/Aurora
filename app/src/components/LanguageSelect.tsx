@@ -2,10 +2,10 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LANGS, LANG_NAMES, useLang, useT, type Lang } from '../i18n';
 
 /** Codice bandiera (libreria flag-icons) di ogni lingua: l'inglese e' la bandiera del Regno Unito. */
-export const LANG_FLAGS: Record<Lang, string> = { it: 'it', en: 'gb', de: 'de', fr: 'fr', es: 'es', pt: 'pt' };
+export const LANG_FLAGS: Record<Lang, string> = { it: 'it', en: 'gb', de: 'de', fr: 'fr', es: 'es', pt: 'pt', nl: 'nl' };
 
 /**
- * Scelta della lingua nella testata: menu con le bandiere, sei lingue, il cambio vale subito per tutta l'interfaccia.
+ * Scelta della lingua nella testata: menu con le bandiere, sette lingue, il cambio vale subito per tutta l'interfaccia.
  * Tastiera: frecce (apre e sposta), Invio o spazio (apre e sceglie), Esc (chiude), Home e Fine.
  */
 export function LanguageSelect() {

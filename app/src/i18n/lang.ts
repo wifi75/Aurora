@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DEFAULT_LANG, isLang, type Lang } from './core';
+import { DEFAULT_LANG, detectLang, isLang, type Lang } from './core';
 
 const KEY = 'aurora-lang';
 
@@ -22,6 +22,16 @@ export function saveLang(storage: WritableStorage, lang: Lang): void {
   } catch {
     // senza archivio la lingua non viene ricordata, ma l'interfaccia funziona lo stesso
   }
+}
+
+/** Primo avvio (nessuna lingua scelta ne' salvata): quella del sistema o del browser, se Aurora la conosce (`nl-BE` e `nl-NL` -> olandese). */
+export function firstLaunchLang(storage: ReadableStorage, tags: readonly string[] | null | undefined): Lang | null {
+  try {
+    if (isLang(storage?.getItem(KEY))) return null;
+  } catch {
+    return null;
+  }
+  return detectLang(tags);
 }
 
 function browserStorage(): Storage | null {

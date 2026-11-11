@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useStation } from '../state/station';
 import { ApiError, getUpdate, installUpdate } from '../api/client';
 import { useLang, useT } from '../i18n';
-import { pick } from '../i18n/core';
+import { localeOf, pick } from '../i18n/core';
 import { NOVITA } from '../lib/novita';
 import { browserStorage } from '../lib/theme';
 import { InstallProgress } from './InstallProgress';
@@ -116,7 +116,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   // mai mentre la radio trasmette; «Annulla» la ferma (resta il pulsante «Installa»)
   const ready = update.data?.can_install === true && update.data?.stage?.phase === 'ready' && update.data.stage.version === release.version;
   const autoGo = ready && !installing && !cancelled && !transmitting && !failure;
-  const when = release.published_at ? new Date(release.published_at).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' }) : '';
+  const when = release.published_at ? new Date(release.published_at).toLocaleString(localeOf(lang), { dateStyle: 'short', timeStyle: 'short' }) : '';
   const lines = noteLines(release.notes || release.name || '');
 
   return (
@@ -211,7 +211,7 @@ function UpToDate({ current, onClose }: { current: string; onClose(): void }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const mine = NOVITA.find((n) => n.version === current) ?? NOVITA[0];
-  const when = mine ? new Date(mine.released).toLocaleString(lang, { dateStyle: 'short', timeStyle: 'short' }) : '';
+  const when = mine ? new Date(mine.released).toLocaleString(localeOf(lang), { dateStyle: 'short', timeStyle: 'short' }) : '';
   return (
     <div className="first-run upd-poster" role="dialog" aria-modal="true" aria-labelledby="upd-poster-title" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="first-run__card upd-poster__card">

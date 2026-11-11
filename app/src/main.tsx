@@ -25,6 +25,8 @@ import { applyTheme, browserStorage, readThemeChoice, resolveTheme } from './lib
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 import { readFilters, useFilters } from './lib/filters';
 import { putBandFilters } from './api/client';
+import { useLang } from './i18n';
+import { firstLaunchLang } from './i18n/lang';
 
 // stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
 document.documentElement.dataset.bozza = 'a';
@@ -45,6 +47,13 @@ async function start() {
     if (import.meta.env.VITE_AURORA_PROVA !== '1') keepSynced(kind);
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
+  }
+  // primo avvio senza lingua scelta: quella del sistema o del browser (olandese compreso), se Aurora la conosce
+  try {
+    const detected = firstLaunchLang(window.localStorage, navigator.languages);
+    if (detected) useLang.getState().setLang(detected);
+  } catch {
+    // senza archivio del browser resta la lingua predefinita
   }
   // i filtri di Attivita' di banda portati dal server: l'elenco li usa subito e le Automazioni li ricevono (non rispondono a chi nascondono)
   try {

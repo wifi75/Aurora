@@ -25,7 +25,7 @@ import {
   type ContestRef,
 } from '../api/contest';
 import type { DecodedMessage } from '../api/schemas';
-import { useLang, useT, type Key, type T } from '../i18n';
+import { localeOf, useLang, useT, type Key, type T } from '../i18n';
 import { saveText } from '../lib/foxLog';
 import { toast } from '../lib/toast';
 import { useEngineTx } from '../state/engineTx';
@@ -360,7 +360,7 @@ function SceltaContest({ elenco, valore, t, onScegli }: { elenco: ContestRef[]; 
       .filter((c) => gruppoDi(c) === g)
       .sort((x, y) => (x.finestra?.inizio_ms ?? Number.MAX_SAFE_INTEGER) - (y.finestra?.inizio_ms ?? Number.MAX_SAFE_INTEGER));
   const ordinati = GRUPPI.flatMap((g) => perInizio(g));
-  const giorno = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const giorno = new Intl.DateTimeFormat(localeOf(lang), { day: 'numeric', month: 'short', timeZone: 'UTC' });
   const data = (c: ContestRef) => (c.finestra ? giorno.formatRange(c.finestra.inizio_ms, c.finestra.fine_ms - 60_000) : '');
   const scelto = elenco.find((c) => c.id === valore);
   useEffect(() => {
@@ -451,8 +451,8 @@ function DateContest({ c, finestra, t, regole, scambio = '' }: { c: ContestRef |
   if (!c || !f) return null;
   // la fine e' esclusa: l'ultimo minuto di gara e' un minuto prima
   const fine = f.fine_ms - 60_000;
-  const giorno = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
-  const quando = (tz?: string) => new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: tz });
+  const giorno = new Intl.DateTimeFormat(localeOf(lang), { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const quando = (tz?: string) => new Intl.DateTimeFormat(localeOf(lang), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: tz });
   const ore = (f.fine_ms - f.inizio_ms) / 3_600_000;
   return (
     <span className="ctc-dates">

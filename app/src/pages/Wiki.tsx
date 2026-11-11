@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { STRINGS, useLang, useT, type Key } from '../i18n';
+import { STRINGS, textOf, useLang, useT, type Key } from '../i18n';
 import { pick, type Entry, type Lang } from '../i18n/core';
 import { GUIDE, type GuideSection } from '../i18n/guide';
 
 /** `[[chiave]]` diventa il testo vero dell'interfaccia (nome di una scheda, di un pulsante): la guida dice sempre cio' che si vede. */
 export function guideText(entry: Entry, lang: Lang): string {
-  return pick(entry, lang).replace(/\[\[([\w.]+)\]\]/g, (whole, key: string) => (key in STRINGS ? pick(STRINGS[key as Key], lang) : whole));
+  return pick(entry, lang).replace(/\[\[([\w.]+)\]\]/g, (whole, key: string) => (key in STRINGS ? (textOf(lang, key as Key) ?? whole) : whole));
 }
 
 function sectionText(s: GuideSection, lang: Lang): string {

@@ -12,17 +12,32 @@ function pick(name: string) {
 }
 
 describe('LanguageSelect', () => {
-  it('offers the six languages, each with its flag', () => {
+  it('offers the seven languages, each with its flag', () => {
     const { container } = render(<LanguageSelect />);
     fireEvent.click(screen.getByRole('combobox'));
     const options = screen.getAllByRole('option');
     expect(options).toHaveLength(LANGS.length);
-    expect(options.map((o) => o.textContent)).toEqual(['Italiano', 'English', 'Deutsch', 'Français', 'Español', 'Português']);
+    expect(options.map((o) => o.textContent)).toEqual(['Italiano', 'English', 'Deutsch', 'Français', 'Español', 'Português', 'Nederlands']);
     const flags = [...container.querySelectorAll('.lang-list .fi')].map((f) => [...f.classList].find((c) => c.startsWith('fi-')));
-    expect(flags).toEqual(['fi-it', 'fi-gb', 'fi-de', 'fi-fr', 'fi-es', 'fi-pt']);
+    expect(flags).toEqual(['fi-it', 'fi-gb', 'fi-de', 'fi-fr', 'fi-es', 'fi-pt', 'fi-nl']);
     expect(LANG_FLAGS.en).toBe('gb');
     // la bandiera della lingua scelta sta anche sul pulsante
     expect(container.querySelector('.lang-trigger .fi-it')).not.toBeNull();
+  });
+
+  it('lists Nederlands and switches the interface to Dutch', () => {
+    render(
+      <>
+        <LanguageSelect />
+        <StopButton />
+      </>,
+    );
+    pick('Nederlands');
+    expect(useLang.getState().lang).toBe('nl');
+    expect(localStorage.getItem('aurora-lang')).toBe('nl');
+    expect(document.documentElement.lang).toBe('nl');
+    expect(screen.getByRole('button', { name: /STOP/ })).toBeInTheDocument();
+    pick('Italiano');
   });
 
   it('has the right aria roles and states', () => {
@@ -85,7 +100,7 @@ describe('LanguageSelect', () => {
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
     fireEvent.keyDown(trigger, { key: 'End' });
     fireEvent.keyDown(trigger, { key: ' ' });
-    expect(useLang.getState().lang).toBe('pt');
+    expect(useLang.getState().lang).toBe('nl');
   });
 
   it('stops at the ends of the list and closes with a click outside', () => {
@@ -93,7 +108,7 @@ describe('LanguageSelect', () => {
     const trigger = screen.getByRole('combobox');
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
     for (let i = 0; i < 10; i++) fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    expect(trigger).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'Português' }).id);
+    expect(trigger).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'Nederlands' }).id);
     for (let i = 0; i < 10; i++) fireEvent.keyDown(trigger, { key: 'ArrowUp' });
     expect(trigger).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: 'Italiano' }).id);
     fireEvent.pointerDown(document.body);

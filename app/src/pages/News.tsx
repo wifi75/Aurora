@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { getHealth } from '../api/client';
 import { useLang, useT, type Key } from '../i18n';
-import { pick } from '../i18n/core';
+import { localeOf, pick } from '../i18n/core';
 import { NOVITA, type Novita, type NovitaKind } from '../lib/novita';
 
 const ICON: Record<NovitaKind, string> = { new: '✦', changed: '↻', fixed: '✓' };
@@ -22,14 +22,14 @@ export function groupByVersion(items: readonly Novita[]): Array<{ version: strin
 export function releaseLabel(iso: string, lang: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString(localeOf(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 /** «4 nov 2026, 18:08»: corta, per la riga. */
 function shortLabel(iso: string, lang: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(lang, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleString(localeOf(lang), { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 /** Novita': le ultime voci, una riga per versione (tipo, versione, titolo, data); il testo si apre con un clic. Filtri per tipo. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LANGS } from '../i18n/core';
+import { TABLE_LANGS } from '../i18n/core';
 import { SOUNDS, SOUND_CATEGORIES, envelope, getSound, playSound, polyphony, previewSound, scheduleSound, soundDuration, stopAll, toneGain } from './soundBank';
 
 /** Un AudioContext finto: registra i nodi creati e le note programmate, senza audio vero. */
@@ -39,7 +39,7 @@ describe('the sound bank', () => {
   it('gives every sound a name in the six languages and a known category', () => {
     const categories = SOUND_CATEGORIES.map((c) => c.id);
     for (const s of SOUNDS) {
-      expect(s.name).toHaveLength(LANGS.length);
+      expect(s.name).toHaveLength(TABLE_LANGS.length);
       for (const n of s.name) expect(n.trim(), s.id).not.toBe('');
       expect(categories, s.id).toContain(s.category);
     }
