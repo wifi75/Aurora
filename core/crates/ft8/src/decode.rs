@@ -156,7 +156,7 @@ impl Options {
         Options {
             f_low_hz: 200.0,
             f_high_hz: 4000.0,
-            min_sync: 1.5,
+            min_sync: 1.3,
             max_candidates: 300,
             passes: 3 * usize::from(depth),
             bp_iterations: 30,
@@ -272,11 +272,11 @@ pub fn decode_slot_streaming(
             break;
         }
         let subtract_on = !(ipass > 5 || (ipass == 3 && npass == 3 && !options.swl));
-        // syncmin: 1,5 oppure, con la soglia bassa, 1,225 / 1,5 / 1,1 a rotazione
+        // syncmin: 1,3 oppure, con la soglia bassa, 1,225 / 1,3 / 1,1 a rotazione (`ft8_decodevar.f90` di WSJT-X 3.3.0-beta6; JTDX usava 1,5)
         let syncmin = if options.low_threshold || options.swl {
             match (ipass - 1) % 3 {
                 0 => 1.225,
-                1 => 1.5,
+                1 => 1.3,
                 _ => 1.1,
             }
         } else {
@@ -924,7 +924,8 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
             let mut bits77 = [0u8; 77];
             bits77.copy_from_slice(&quality.decoded.message[..77]);
             let (i3, n3) = message::message_type(&bits77);
-            if i3 > 4 || (i3 == 0 && n3 > 5) {
+            // i3=5 (concorso EU VHF) si accetta come in WSJT-X (`ft8bvar.f90`, `i3.gt.5`): prima si scartava
+            if i3 > 5 || (i3 == 0 && n3 > 5) {
                 continue;
             }
             // il testo si legge su una copia degli hash: se il messaggio poi e' scartato la tabella non si sporca
@@ -1108,7 +1109,9 @@ mod tests {
         let text = "CQ IU3ABC JN45";
         let freq = 1700.0;
         let dt = 0.1;
-        let snr = -23.0; // non decodifica da solo, ma due periodi sommati (sottopassate 4/5) si'
+        // non decodifica da solo, ma due periodi sommati (sottopassate 4/5) si'. Era -23 dB: con la soglia di sincronismo di WSJT-X 3.3 (1,3) un periodo
+        // solo lo decodificava gia'; da -23,5 a -25 dB il primo periodo non basta e la somma si' (-24 sta in mezzo)
+        let snr = -24.0;
         let mut hashes = CallHashes::default();
         let mut history = PeriodHistory::default();
         let options = Options::default();
