@@ -1,16 +1,17 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getClock } from '../api/client';
+import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { AudioLossHelp } from './AudioLossHelp';
 import { coreText } from '../lib/coreText';
 import { LEVEL_STALE_MS } from '../lib/audioLevel';
-import { diagnose, type Issue } from '../lib/diagnosis';
+import { closeSlowPc, diagnose, slowPcClosedDepths, type Issue } from '../lib/diagnosis';
 import { periodSecs } from '../lib/period';
 import { useStation } from '../state/station';
 
 function messageKey(issue: Issue): Key {
+  if (issue.id === 'slow_pc' && issue.vars.next) return issue.vars.depth === '3' ? 'diag.slow_pc.deep' : 'diag.slow_pc.normal';
   return (issue.id === 'audio' ? `diag.audio.${issue.vars.state}` : `diag.${issue.id}`) as Key;
 }
 
@@ -24,6 +25,11 @@ export function DiagnosisBar() {
   const sessionStartAt = useStation((s) => s.sessionStartAt);
   const notices = useStation((s) => s.notices);
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });
+  // la profondita' di decodifica serve solo quando il motore dice che il PC e' lento
+  const client = useQueryClient();
+  const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, enabled: !!notices.slow_pc });
+  const [depthBusy, setDepthBusy] = useState(false);
+  const [depthError, setDepthError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // gli avvisi chiusi restano chiusi finche' non cambiano (un altro problema, o lo stesso con un altro stato)
   const [closed, setClosed] = useState<string[]>([]);
@@ -43,9 +49,28 @@ export function DiagnosisBar() {
     lastDecodeAt,
     sessionStartAt,
     notices,
+    decodeDepth: engine.data?.values.DecodeDepth ?? null,
+    slowPcDismissed: slowPcClosedDepths(),
   });
   const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
   const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));
+  const close = (issue: Issue) => {
+    if (issue.id === 'slow_pc' && issue.vars.depth) closeSlowPc(String(issue.vars.depth));
+    setClosed((c) => [...c, keyOf(issue)]);
+  };
+  // la profondita' si cambia solo da qui, a richiesta: le impostazioni del motore la applicano dal periodo che segue
+  const setDepth = async (depth: string) => {
+    setDepthBusy(true);
+    setDepthError(null);
+    try {
+      client.setQueryData(['engine-settings'], await putEngineSettings({ DecodeDepth: depth }));
+    } catch (e) {
+      setDepthError(e instanceof Error ? e.message : String(e));
+      void client.invalidateQueries({ queryKey: ['engine-settings'] });
+    } finally {
+      setDepthBusy(false);
+    }
+  };
   if (visible.length === 0) return help !== null ? <AudioLossHelp perMin={help} onClose={() => setHelp(null)} /> : null;
 
   // schede che galleggiano in basso a destra: compaiono e spariscono senza spostare i pannelli della stazione. Nel corpo della pagina,
@@ -59,9 +84,21 @@ export function DiagnosisBar() {
               {t('diag.audio_loss', { ...issue.vars, detail: String(issue.vars.detail ?? '') })}
             </button>
           ) : (
-            <span className="diag-text">{t(messageKey(issue), typeof issue.vars.detail === 'string' ? { ...issue.vars, detail: coreText(issue.vars.detail, t) } : issue.vars)}</span>
+            <span className="diag-text">
+              {t(messageKey(issue), typeof issue.vars.detail === 'string' ? { ...issue.vars, detail: coreText(issue.vars.detail, t) } : issue.vars)}
+              {issue.id === 'slow_pc' && depthError !== null ? <span className="diag-error">{t('diag.slow_pc.failed', { message: depthError })}</span> : null}
+            </span>
           )}
-          {issue.id === 'audio_loss' ? (
+          {issue.id === 'slow_pc' && issue.vars.next ? (
+            <span className="diag-actions">
+              <button type="button" className="diag-fix diag-fix--btn" disabled={depthBusy} onClick={() => void setDepth(String(issue.vars.next))}>
+                {t(issue.vars.next === '2' ? 'diag.slow_pc.to2' : 'diag.slow_pc.to1')}
+              </button>
+              <a className="diag-fix diag-fix--minor" href={issue.href}>
+                {t('diag.slow_pc.setting')}
+              </a>
+            </span>
+          ) : issue.id === 'audio_loss' ? (
             <button type="button" className="diag-fix diag-fix--btn" onClick={() => setHelp(String(issue.vars.detail ?? ''))}>
               {t('diag.howto')}
             </button>
@@ -70,7 +107,7 @@ export function DiagnosisBar() {
               {t('diag.fix')}
             </a>
           ) : null}
-          <button type="button" className="diag-close" aria-label={t('diag.close')} title={t('diag.close')} onClick={() => setClosed((c) => [...c, keyOf(issue)])}>
+          <button type="button" className="diag-close" aria-label={t('diag.close')} title={t('diag.close')} onClick={() => close(issue)}>
             ×
           </button>
         </li>

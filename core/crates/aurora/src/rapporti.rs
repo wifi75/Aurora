@@ -433,6 +433,16 @@ fn area(origine: &str, messaggio: &str) -> &'static str {
     }
 }
 
+/// Situazioni della stazione, non errori del programma, che servono a sapere su che macchine Aurora fatica: partono al massimo una volta
+/// per installazione e versione, qualunque numero portino. «Decodifica lenta» arrivava da ogni PC vecchio a ogni avvio (17 rapporti il
+/// 2026-11-11, tutti da portatili a 4 processori); sullo schermo l'operatore ha gia' l'avviso con la profondita' da abbassare.
+const UNA_PER_VERSIONE: [&str; 1] = ["engine_native::lento"];
+
+/// L'avviso di `origine` e' gia' partito con questa `versione` da questa installazione: non si manda di nuovo.
+fn gia_segnalato(limiti: &Limiti, origine: &str, versione: &str) -> bool {
+    UNA_PER_VERSIONE.iter().any(|p| origine.starts_with(p)) && limiti.per_versione.get(origine).is_some_and(|v| v == versione)
+}
+
 /// Lo stesso errore con numeri diversi (frequenze, durate, porte) e' lo stesso errore.
 fn chiave(area: &str, origine: &str, messaggio: &str) -> String {
     let forma: String = messaggio.chars().map(|c| if c.is_ascii_digit() { '#' } else { c }).take(200).collect();
@@ -498,6 +508,9 @@ struct Limiti {
     /// Chiave dell'errore → secondi Unix dell'ultimo rapporto messo in coda.
     #[serde(default)]
     ultimi: HashMap<String, u64>,
+    /// Origine → versione dell'ultimo rapporto, per le situazioni che partono una volta per versione ([`UNA_PER_VERSIONE`]).
+    #[serde(default)]
+    per_versione: HashMap<String, String>,
 }
 
 /// Fin dove si e' gia' guardato nella cartella dei crash.
@@ -678,7 +691,7 @@ impl Rapporti {
         let Ok(mut stato) = self.stato.lock() else { return };
         let stato = &mut *stato;
         if stato.limiti.giorno != oggi {
-            stato.limiti = Limiti { giorno: oggi.clone(), inviati: 0, ultimi: std::mem::take(&mut stato.limiti.ultimi) };
+            stato.limiti = Limiti { giorno: oggi.clone(), inviati: 0, ultimi: std::mem::take(&mut stato.limiti.ultimi), per_versione: std::mem::take(&mut stato.limiti.per_versione) };
             stato.limiti.ultimi.retain(|_, t| ora.saturating_sub(*t) < OGNI_ERRORE);
         }
         let chiavi: Vec<String> = stato.gruppi.keys().cloned().collect();
@@ -686,6 +699,11 @@ impl Rapporti {
         for k in chiavi {
             if stato.limiti.inviati >= MAX_GIORNO {
                 break;
+            }
+            // gia' mandato con questa versione: il gruppo si butta (resta solo la riga nel log locale)
+            if stato.gruppi.get(&k).is_some_and(|g| gia_segnalato(&stato.limiti, &g.origine, &contesto.versione)) {
+                stato.gruppi.remove(&k);
+                continue;
             }
             if stato.limiti.ultimi.get(&k).is_some_and(|t| ora.saturating_sub(*t) < OGNI_ERRORE) {
                 continue;
@@ -695,6 +713,9 @@ impl Rapporti {
             stato.coda.push(rapporto);
             if stato.coda.len() > MAX_CODA {
                 stato.coda.remove(0);
+            }
+            if UNA_PER_VERSIONE.iter().any(|p| g.origine.starts_with(p)) {
+                stato.limiti.per_versione.insert(g.origine.clone(), contesto.versione.clone());
             }
             stato.limiti.ultimi.insert(k, ora);
             stato.limiti.inviati += 1;
@@ -1215,6 +1236,59 @@ mod tests {
         assert!(da_segnalare(tracing::Level::WARN, "engine_native::lento"));
         assert!(!da_segnalare(tracing::Level::WARN, "engine_native"));
         assert_eq!(area("engine_native::lento", "decodifica lenta: 4 periodi su 10"), "decoder");
+    }
+
+    fn rapporti_di_prova(dir: &Path, limiti: Limiti) -> Rapporti {
+        let _ = std::fs::create_dir_all(dir);
+        Rapporti {
+            dir: dir.to_path_buf(),
+            stato: Mutex::new(Stato { impostazioni: Impostazioni::default(), id: uuid(), limiti, coda: Vec::new(), gruppi: HashMap::new(), crash_pendente: None }),
+            contesto: Mutex::new(None),
+            invio: Mutex::new(()),
+        }
+    }
+
+    fn lento(ms: u32) -> Evento {
+        Evento { livello: "warn", origine: "engine_native::lento".into(), messaggio: format!("decodifica lenta: 4 periodi su 10 oltre il 70% del tempo (FT8 in {ms} ms su 15000 ms; 4 processori, 3 thread di decodifica, profondita' 3, SWL spento, a8 spento)") }
+    }
+
+    #[test]
+    fn la_decodifica_lenta_parte_una_volta_per_installazione_e_versione() {
+        let dir = std::env::temp_dir().join(format!("aurora-rapporti-lento-{}", std::process::id()));
+        let r = rapporti_di_prova(&dir, Limiti::default());
+        r.raggruppa(vec![lento(11_709), lento(9_870)]);
+        r.matura();
+        let coda = r.stato.lock().map(|s| s.coda.len()).unwrap_or(0);
+        assert_eq!(coda, 1, "la prima volta con questa versione parte un rapporto solo, anche con numeri di cifre diverse");
+        // al riavvio (limiti riletti dal file, ore dopo): la stessa situazione non riparte, con qualunque numero
+        let mut limiti: Limiti = leggi_json(&dir.join(FILE_LIMITI)).unwrap_or_default();
+        limiti.ultimi.clear();
+        let r = rapporti_di_prova(&dir, limiti.clone());
+        r.raggruppa(vec![lento(12_001)]);
+        r.matura();
+        let (coda, gruppi) = r.stato.lock().map(|s| (s.coda.len(), s.gruppi.len())).unwrap_or((9, 9));
+        assert_eq!((coda, gruppi), (0, 0), "gia' segnalata con questa versione: buttata, non tenuta in attesa");
+        // gli errori veri partono come prima
+        r.raggruppa(vec![Evento { livello: "warn", origine: "rig_control::hamlib".into(), messaggio: "rigctld fermo".into() }]);
+        r.matura();
+        assert_eq!(r.stato.lock().map(|s| s.coda.len()).unwrap_or(0), 1);
+        // con una versione nuova si sa di nuovo una volta
+        limiti.per_versione.insert("engine_native::lento".into(), "0.0.1".into());
+        let r = rapporti_di_prova(&dir, limiti);
+        r.raggruppa(vec![lento(11_709)]);
+        r.matura();
+        assert_eq!(r.stato.lock().map(|s| s.coda.len()).unwrap_or(0), 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn solo_le_situazioni_della_stazione_partono_una_volta_per_versione() {
+        let mut l = Limiti::default();
+        l.per_versione.insert("engine_native::lento".into(), "1.0".into());
+        l.per_versione.insert("rig_control".into(), "1.0".into());
+        assert!(gia_segnalato(&l, "engine_native::lento", "1.0"));
+        assert!(!gia_segnalato(&l, "engine_native::lento", "1.1"));
+        assert!(!gia_segnalato(&l, "rig_control", "1.0"), "gli errori non sono limitati per versione");
     }
 
     #[test]

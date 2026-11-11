@@ -41,6 +41,34 @@ export interface DiagnosisInput {
   sessionStartAt: number | null;
   /** Avvisi arrivati dal motore. */
   notices?: Record<string, { detail: string; at: number }>;
+  /** La profondita' di decodifica attuale (`DecodeDepth` delle impostazioni del motore), se letta. */
+  decodeDepth?: string | null;
+  /** Le profondita' per cui l'operatore ha chiuso il consiglio del PC lento in questa sessione. */
+  slowPcDismissed?: readonly string[];
+}
+
+/** Il dettaglio dell'avviso `slow_pc` del motore, `"11.7|3"`: secondi della decodifica e profondita' in uso (le versioni di prima mandano solo i secondi). */
+export function parseSlowPc(detail: string): { secs: string; depth: string | null } {
+  const [secs = '', depth = ''] = detail.split('|');
+  return { secs, depth: /^[123]$/.test(depth) ? depth : null };
+}
+
+/** La profondita' da proporre a un PC lento: un gradino sotto quella in uso (Profonda → Normale → Veloce); a Veloce non c'e' altro da togliere. */
+export function slowerDepth(depth: string | null): '2' | '1' | null {
+  return depth === '3' ? '2' : depth === '2' ? '1' : null;
+}
+
+// Il consiglio chiuso non torna per la stessa profondita' fino al riavvio di Aurora (non si insiste: il PC resta quello)
+const slowPcClosed = new Set<string>();
+export function closeSlowPc(depth: string): void {
+  slowPcClosed.add(depth);
+}
+export function slowPcClosedDepths(): string[] {
+  return [...slowPcClosed];
+}
+/** Solo per le prove. */
+export function resetSlowPcClosed(): void {
+  slowPcClosed.clear();
 }
 
 /** Soglie dell'orologio in parti del periodo: oltre il 4 % i messaggi deboli si perdono, oltre l'8 % la decodifica peggiora molto. */
@@ -83,6 +111,20 @@ export function diagnose(i: DiagnosisInput): Issue[] {
     const def = NOTICES[key];
     // l'ingresso mancante non vale piu' appena l'audio arriva
     if (key === 'audio_missing' && i.audio) continue;
+    // PC lento: con la profondita' nota si propone il gradino sotto, con un pulsante; mai cambiata da sola
+    if (key === 'slow_pc') {
+      if (i.now - n.at > NOTICE_MS) continue;
+      const { secs, depth } = parseSlowPc(n.detail);
+      // chiuso per questa profondita', o profondita' gia' cambiata dopo l'avviso: si aspetta il prossimo avviso del motore
+      if (depth && (i.slowPcDismissed?.includes(depth) || (i.decodeDepth && i.decodeDepth !== depth))) continue;
+      const next = slowerDepth(depth);
+      issues.push(
+        next && depth
+          ? { id: 'slow_pc', severity: 'warning', href: '#/impostazioni/filters', vars: { detail: secs, at: n.at, depth, next } }
+          : { id: 'slow_pc', severity: 'warning', vars: { detail: secs, at: n.at, ...(depth ? { depth } : {}) } },
+      );
+      continue;
+    }
     if (def && i.now - n.at <= NOTICE_MS) issues.push({ id: def.id, severity: def.severity, ...(def.href ? { href: def.href } : {}), vars: { detail: n.detail, at: n.at } });
   }
 
