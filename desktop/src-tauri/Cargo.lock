@@ -2806,7 +2806,7 @@ dependencies = [
 
 [[package]]
 name = "mode-digi"
-version = "0.11.230"
+version = "0.11.232"
 dependencies = [
  "aurora-core",
  "mode-sstv",
@@ -2817,7 +2817,7 @@ dependencies = [
 
 [[package]]
 name = "mode-sat"
-version = "0.11.230"
+version = "0.11.232"
 dependencies = [
  "aurora-core",
  "serde",
@@ -2829,7 +2829,7 @@ dependencies = [
 
 [[package]]
 name = "mode-sstv"
-version = "0.11.230"
+version = "0.11.232"
 dependencies = [
  "aurora-core",
  "base64 0.22.1",
