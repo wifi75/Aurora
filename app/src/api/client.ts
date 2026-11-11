@@ -726,7 +726,11 @@ export interface CatConfig {
   omnirig_rig?: number;
   /** Indirizzo host:porta del server UDP di FT-991(A) Link (di base 127.0.0.1:50001). */
   ft991_address?: string;
-  /** Indirizzo host:porta del Control Port del gruppo di Cat4OM (di base 127.0.0.1:17301). */
+  /** Indirizzo host:porta della porta di gestione di Cat4OM (di base 127.0.0.1:17300): da li' Aurora scopre gruppo e porta Control. */
+  cat4om_management?: string;
+  /** Il gruppo di Cat4OM (id o nome); vuoto = scoperta automatica (il primo in funzione). */
+  cat4om_group?: string;
+  /** Porta Control del gruppo scritta a mano (host:porta); vuoto = quella scoperta. Il vecchio 127.0.0.1:17301 vale come vuoto. */
   cat4om_address?: string;
   /** Chiave del gruppo di Cat4OM (vuota se il gruppo non la chiede): resta sul PC, va solo nella prova di autenticazione. */
   cat4om_key?: string;
@@ -782,6 +786,20 @@ export interface CatStatus {
   rig: CatRigStatus | null;
   /** Dove collegare gli altri programmi, se la condivisione e' accesa e la radio e' collegata con Hamlib. */
   share?: { host: string; port: number } | null;
+  /** Con Cat4OM: gestione, porta Control (scoperta o scritta), gruppo, radio e ruolo; assente nelle versioni vecchie del core. */
+  cat4om?: Cat4omEndpoint | null;
+}
+
+export interface Cat4omEndpoint {
+  management: string;
+  /** La porta Control in uso o in prova; vuota finche' la scoperta non la trova. */
+  control: string;
+  /** `true` = porta Control trovata dalla scoperta, `false` = scritta a mano. */
+  discovered: boolean;
+  group: string;
+  radio: string;
+  /** `master`, `slave` o vuoto se non collegata. */
+  role: string;
 }
 
 export interface CatProfile {

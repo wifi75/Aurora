@@ -38,7 +38,9 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio', 'core.cat4om.authRequired'],
   ["Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC", 'core.cat4om.authFailed'],
   ['Versione del protocollo Cat4OM non compatibile con Aurora (1.0.0)', 'core.cat4om.version'],
-  ['Hai indicato la porta di gestione di Cat4OM: scrivi la porta Control del gruppo (di base 17301)', 'core.cat4om.management'],
+  ["Nel campo «Controllo» c'e' la porta di gestione di Cat4OM: lascialo vuoto, Aurora trova da sola la porta del gruppo", 'core.cat4om.management'],
+  ['La gestione di Cat4OM chiede una password: scrivi la porta Control del gruppo nel campo «Controllo»', 'core.cat4om.managementAuth'],
+  ['Nessun gruppo in Cat4OM: crea in Cat4OM un gruppo con la radio', 'core.cat4om.noGroups'],
   ['Accensione del ricevitore RX2', 'core.tci.rx2Wait'],
   ["La SDR non ha acceso il ricevitore RX2 (rx_enable): controlla che la SDR sia accesa e che abbia RX2, poi ricollega", 'core.tci.rx2Failed'],
   ['La SDR non ha ancora detto la potenza (drive): cambiala una volta dalla SDR', 'core.tci.noDrive'],
@@ -74,7 +76,16 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
     key: 'core.cat4om.noAnswer',
     vars: ['address', 'raw'],
   },
-  { re: /^Su (\S+) non risponde il Control di Cat4OM: controlla la porta del gruppo \(di base 17301\)$/s, key: 'core.cat4om.notControl', vars: ['address'] },
+  { re: /^Su (\S+) non risponde il Control di Cat4OM: controlla la porta del gruppo o lascia vuoto il campo «Controllo»$/s, key: 'core.cat4om.notControl', vars: ['address'] },
+  // la scoperta dalla porta di gestione (17300): servizio spento, porta sbagliata, gruppo mancante o fermo
+  {
+    re: /^Gestione di Cat4OM non raggiungibile su (\S+): avvia Log4OM e Cat4OM; da un altro PC abilita la rete in Settings → SERVER \((.*)\)$/s,
+    key: 'core.cat4om.managementNoAnswer',
+    vars: ['address', 'raw'],
+  },
+  { re: /^Su (\S+) non risponde la gestione di Cat4OM: controlla la porta di gestione \(di base 17300\)$/s, key: 'core.cat4om.notManagement', vars: ['address'] },
+  { re: /^Gruppo «(.*)» non trovato in Cat4OM \(presenti: (.*)\)$/s, key: 'core.cat4om.groupMissing', vars: ['group', 'list'] },
+  { re: /^Il gruppo «(.*)» di Cat4OM e' fermo: avvialo in Cat4OM$/s, key: 'core.cat4om.groupStopped', vars: ['group'] },
   { re: /^Radio «(.*)» non trovata nel gruppo Cat4OM \(presenti: (.*)\)$/s, key: 'core.cat4om.radioMissing', vars: ['radio', 'list'] },
   { re: /^Radio Cat4OM «(.*)» non collegata \((\S+)\)$/s, key: 'core.cat4om.radioOff', vars: ['radio', 'state'] },
   {
