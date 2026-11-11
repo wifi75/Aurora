@@ -6,13 +6,14 @@
 //! - [`msk144`]: MSK144 (meteor scatter: codice LDPC 128,90, onda MSK, ricezione dei ping);
 //! - [`q65`]: Q65 (toni, onda e ricezione con il codice QRA);
 //! - [`jt4`]: JT4 (toni, onda e ricezione);
-//! - [`fst4ldpc`]: codici LDPC (240,101) e (240,74) di FST4 e FST4W; [`fst4msg`]: messaggi di tipo 0.6 (WSPR a 77 bit);
+//! - [`fst4`]: FST4 e FST4W (toni, onda GFSK e ricezione con i codici LDPC 240,101 e 240,74 di [`fst4ldpc`]);
 //! - [`fano`]: decodificatore sequenziale di Fano di JT9;
 //! - [`jt9`]: simboli e toni di JT9 in trasmissione;
 //! - [`jt9rx`]: ricezione di JT9 (sincronismo, simboli soft, Fano);
 //! - [`rx`]: ricezione di JT65 (sincronismo, toni, decodifica a decisione soft).
 
 pub mod fano;
+pub mod fst4;
 pub mod fst4ldpc;
 pub mod fst4msg;
 mod fst4tables;
