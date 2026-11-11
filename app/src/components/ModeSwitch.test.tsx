@@ -35,8 +35,13 @@ describe('ModeSwitch', () => {
   it('is only a display without the radio command, and locked while transmitting', () => {
     const { rerender } = render(<ModeSwitch mode="FT8" />);
     expect(screen.getByRole('button')).toBeDisabled();
+    // in trasmissione non si spegne di colore: resta attivo all'aspetto, ma il clic non apre il menu
     rerender(<ModeSwitch mode="FT8" onPick={() => {}} locked />);
-    expect(screen.getByRole('button')).toBeDisabled();
+    const button = screen.getByRole('button');
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('shows period and submode next to Q65 and asks for the full name', () => {

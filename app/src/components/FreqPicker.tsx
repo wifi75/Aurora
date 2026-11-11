@@ -47,6 +47,11 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
     };
   }, [open]);
 
+  // la trasmissione comincia con il menu aperto: si chiude
+  useEffect(() => {
+    if (locked) setOpen(false);
+  }, [locked]);
+
   const m = mode.toUpperCase().split('+')[0];
   const rows = (own ?? table.data ?? []).filter((r) => r.mode.toUpperCase() === m && (!shown || shown.includes(r.band))).sort((a, b) => a.hz - b.hz);
   if (!onPick || rows.length === 0) return null;
@@ -62,8 +67,11 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
         aria-expanded={open}
         aria-label={t('band.freqs')}
         title={onHop ? `${t('tip.band.freqs')} ${t('tip.band.hop')}` : t('tip.band.freqs')}
-        disabled={locked}
-        onClick={() => setOpen((o) => !o)}
+        // in trasmissione la frequenza non si cambia, ma il pulsante non si spegne di colore (scelta del proprietario): si ignora solo il clic
+        aria-disabled={locked || undefined}
+        onClick={() => {
+          if (!locked) setOpen((o) => !o);
+        }}
         onContextMenu={(e) => {
           if (!onHop || locked) return;
           e.preventDefault();
@@ -100,7 +108,7 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
                     title={t('band.tipMain')}
                     onClick={() => {
                       setOpen(false);
-                      if (main && main.hz !== dialHz) onPick(main.hz);
+                      if (!locked && main && main.hz !== dialHz) onPick(main.hz);
                     }}
                   >
                     {b}
@@ -120,7 +128,7 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
                       title={`${r.preferred ? t('band.tipMain') : t('band.tipAlt')}${r.region !== 'ALL' ? ` · ${t('band.tipRegion', { r: r.region.slice(1) })}` : ''}`}
                       onClick={() => {
                         setOpen(false);
-                        if (r.hz !== dialHz) onPick(r.hz);
+                        if (!locked && r.hz !== dialHz) onPick(r.hz);
                       }}
                     >
                       {mhz(r.hz)}
