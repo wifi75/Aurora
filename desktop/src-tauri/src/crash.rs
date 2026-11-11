@@ -24,6 +24,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const BEAT_EVERY: Duration = Duration::from_secs(2);
 /// Oltre questo silenzio il programma si considera bloccato.
 const HANG_AFTER: Duration = Duration::from_secs(20);
+/// All'avvio la finestra puo' metterci molto a battere la prima volta (WebView2 che si prepara dopo un aggiornamento, disco lento): oltre questo tempo
+/// senza nessun battito non e' piu' un avvio lento ma una finestra bloccata fin dalla partenza, e si segnala una volta.
+const STARTUP_HANG_AFTER: Duration = Duration::from_secs(120);
 const KEEP_DUMPS: usize = 10;
 const KEEP_TEXTS: usize = 50;
 #[cfg_attr(not(windows), allow(dead_code))]
@@ -230,6 +233,8 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
             let mut blocked_since: Option<u64> = None;
             // il primo battito della finestra (prima, l'avvio: non si controlla)
             let mut first_beat_seen = false;
+            // la finestra non ha mai battuto entro STARTUP_HANG_AFTER: segnalato una volta
+            let mut startup_hang_reported = false;
             loop {
                 // il battito della finestra: un compito eseguito dal suo thread; se e' fermo resta in coda e il tempo non si aggiorna
                 let _ = app.run_on_main_thread(|| WINDOW.touch());
@@ -251,6 +256,10 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
                 // all'avvio la finestra non ha ancora battuto: mentre Windows prepara WebView2 (lento la prima volta dopo un aggiornamento,
                 // fino a 30 s su alcuni PC) non e' un blocco del programma ma un avvio lento; si dice una volta sola e non si fa il minidump
                 if WINDOW.last() == 0 || RUNTIME.last() == 0 {
+                    if WINDOW.last() == 0 && !startup_hang_reported && now > STARTUP_HANG_AFTER.as_millis() as u64 {
+                        startup_hang_reported = true;
+                        report_hang(&[(WINDOW.name, 0)], &beats);
+                    }
                     continue;
                 }
                 if !first_beat_seen {
