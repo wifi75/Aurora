@@ -670,6 +670,8 @@ pub fn start_with_save(
                 let mut ft4_slot = live.as_ref().map_or_else(|| ft4_options.clone(), |l| ft4_period_options(&ft4_options, &l.controls, &l.de_call));
                 ft4_slot.call_book = call_book;
                 ft4_slot.grid_check = live.as_ref().and_then(|l| l.grid_check.clone());
+                // come per FT8: un PC lento non deve restare indietro; dopo 5 s non si prova un altro candidato (il periodo FT4 dura 7,5 s)
+                ft4_slot.deadline = Some(started + std::time::Duration::from_secs(5));
                 if peak < 0.02 {
                     ft4_slot.ap = None;
                     ft4_slot.ap_cq = false;
@@ -970,8 +972,10 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
 /// Le opzioni di decodifica FT4 di questo periodo: l'analisi a priori (interruttore «a7/a8», `ap_list`, acceso di base) sul proprio nominativo e sul
 /// QSO in corso. Il punto del QSO viene dal messaggio selezionato (1-5; CQ o nessuno = 0); il DX e il suo locatore dalla pagina; la frequenza
 /// di ricezione e di trasmissione dalle barre. I tipi di QSO valgono solo mentre si trasmette con un DX scelto (`idle` spento).
+/// La frequenza di ricezione e' anche `nfqso` della ricerca: i candidati entro 20 Hz si provano per primi (WSJT-X 3.3 `getcandidates4.f90:70-81`).
 fn ft4_period_options(base: &ft4::decode::Options, controls: &rig::NativeControls, de_call: &str) -> ft4::decode::Options {
     let mut options = base.clone();
+    options.qso_freq_hz = Some(controls.rx_df.load(Ordering::Relaxed) as f32);
     if let Some(ap) = ap_options(controls, de_call) {
         options.ap = Some(ap);
         options.ap_cq = true;

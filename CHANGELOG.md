@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **FT4 come WSJT-X 3.3**: i messaggi senza analisi a priori non vengono piu' scartati da filtri che WSJT-X non ha (bit dubbi, locatore, elenco nominativi); ricerca dei candidati di `getcandidates4` (soglia 1,18, fino a 200, finestra di Nuttall) con quelli vicini alla frequenza Rx provati per primi; limite di 5 s alla decodifica sui PC lenti.
 - **FT8 come WSJT-X 3.3**: il segnale sulla frequenza Rx viene provato per primo e con soglia di sincronismo 1,1 (entro 3 Hz); OSD di profondita' 4 per le risposte del QSO vicine a Rx/Tx; la ricerca del ritardo segue il ritardo medio delle stazioni sentite (`avexdt`), cosi' i segnali con DT alto non si perdono.
 - **Finestra Rx accesa di fabbrica**, come «Rx Frequency» di WSJT-X: mostra i messaggi intorno alla frequenza di ricezione, quelli diretti a noi e le proprie trasmissioni. Si spegne dal pulsante RX e la scelta resta (segnalazione #42).
 - **PTT come WSJT-X**: si accende 200 ms prima dell'audio (era 100) e si spegne 200 ms dopo la fine (era 50): con un PTT lento l'inizio del messaggio non si perde e la radio non torna in ricezione prima dell'ultima rampa.
