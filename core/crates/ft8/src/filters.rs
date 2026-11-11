@@ -18,7 +18,7 @@
 //!   vere mai sentite. In FT8 `chkgrid` e' la tabella vera di WSJT-X 3.3.0-beta6 ([`crate::chkgrid`], usata da [`grid_rejected_ft8`]); in FT4,
 //!   dove WSJT-X non la usa, resta l'approssimazione con la distanza dal centro del paese ([`grid_is_false`], vedi [`GridCheck`]).
 //! - `filtersfree` non usa `datacor` (la correlazione dei dati): scarta di meno i testi liberi falsi.
-//! - Non c'e' il ramo Hound/Fox ne' i controlli sui nominativi non standard del proprio QSO (`iaptype` 11, 21, 40, 41).
+//! - Non c'e' il ramo Hound/Fox (`iaptype` 21-24, 111).
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -831,7 +831,8 @@ fn chkfalse8(c: &MessageCheck, text: &str, my_call: &str, book: Option<&CallBook
 pub fn reject_message(c: &MessageCheck, my_call: &str, book: Option<&CallBook>) -> bool {
     let text = without_braces(c.text);
     let words: Vec<&str> = text.split(' ').collect();
-    let dubious = c.qual < 0.39 || c.snr < -20.5 || c.dt_s < -0.5 || c.dt_s > 1.9 || (1..=3).contains(&c.ap_type);
+    // `ft8bvar.f90:2469-2471`: anche i tipi a priori del proprio QSO con un nominativo non standard (11, 21, 40, 41)
+    let dubious = c.qual < 0.39 || c.snr < -20.5 || c.dt_s < -0.5 || c.dt_s > 1.9 || matches!(c.ap_type, 1..=3 | 11 | 21 | 40 | 41);
     let flscall = |first: &str, second: &str| -> bool { book.is_some_and(|b| b.is_false(first, second)) };
 
     // `go to 4` di ft8b salta i controlli intermedi (il blocco 256)
@@ -848,7 +849,8 @@ pub fn reject_message(c: &MessageCheck, my_call: &str, book: Option<&CallBook>) 
             return true;
         }
     }
-    if matches!(c.ap_type, 2 | 3) {
+    // `ft8bvar.f90:2493-2494`: `go to 4` (gia' controllati)
+    if matches!(c.ap_type, 2 | 3 | 11 | 21 | 40 | 41) {
         middle = false;
     }
 
@@ -873,12 +875,11 @@ pub fn reject_message(c: &MessageCheck, my_call: &str, book: Option<&CallBook>) 
                 }
             }
         }
-        // `<...> CALL RRR|RR73|73`: non e' una forma trasmettibile
-        if text.starts_with("<...>") {
-            let last = words.last().copied().unwrap_or("");
-            if words.len() == 3 && matches!(last, "RRR" | "RR73" | "73") {
-                return true;
-            }
+        // `<...> W LKNQZG2K4 RR73`: un tipo 4 con uno spazio nel nominativo in chiaro non e' una forma trasmettibile. Conta la quarta
+        // parola (`ft8bvar.f90:2721-2733`, `ispc3`..`ispc4`): `<...> PJ4/K1ABC RR73`, di tre parole, e' un messaggio vero (e' quello che
+        // cercano i tipi a priori 12-14, 35 e 36 con il DX non standard) e resta
+        if text.starts_with("<.") && words.len() >= 4 && matches!(words[3], "RRR" | "RR73" | "73") {
+            return true;
         }
     }
 
@@ -942,7 +943,10 @@ mod tests {
 
     #[test]
     fn hash_nascosto_con_73_o_rr73_e_un_falso_e_i3_2_senza_p_anche() {
-        assert!(reject_message(&check("<...> K1ABC RR73", 4, 0, 0), "", None));
+        assert!(reject_message(&check("<...> W LKNQZG2K4 RR73", 4, 0, 0), "", None));
+        assert!(reject_message(&check("<...> Z7VENB8R G9 RRR", 4, 0, 0), "", None));
+        // di tre parole e' un messaggio vero (`<IU3ABC> PJ4/K1ABC RR73` con l'hash ignoto)
+        assert!(!reject_message(&check("<...> PJ4/K1ABC RR73", 4, 0, 0), "", None));
         assert!(reject_message(&check("K1ABC W9XYZ FN42", 2, 0, 0), "", None));
         assert!(!reject_message(&check("K1ABC/P W9XYZ/P FN42", 2, 0, 0), "", None));
     }

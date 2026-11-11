@@ -35,7 +35,7 @@ use rustfft::{Fft, FftPlanner};
 use rayon::prelude::*;
 
 use crate::a8::A8Query;
-use crate::ap::{self, ApContext, ApOptions, NAPTYPES};
+use crate::ap::{self, ApContext, ApOptions, ApTable};
 use crate::filters::{self, CallBook, GridCheck, MessageCheck};
 pub use crate::history::PeriodHistory;
 use crate::history::StoredSignal;
@@ -364,6 +364,14 @@ pub fn decode_slot_streaming(
     let cycles = if npass >= 7 { 3 } else if npass >= 4 { 2 } else { 1 };
     let ap_options = options.ap.clone().unwrap_or_else(|| ApOptions::new(""));
     let ap_ctx = ApContext::new(&ap_options);
+    // il proprio nominativo e quello del DX, completi (con /P o prefisso), nella tabella degli hash: un messaggio che li porta solo in hash
+    // (i tipi a priori 11-14, 40-44, ma anche senza AP) si legge con il nominativo invece di `<...>`, come con i nominativi configurati di
+    // WSJT-X 3.3.0-beta6 (`sync_configured_calls_core`, `77bit/packjt77.f90:1717-1742`; `ft8apsetvar.f90:50-51`)
+    if let Some(a) = &options.ap {
+        for call in [&a.mycall, &a.hiscall] {
+            hashes.save_call(call.trim());
+        }
+    }
     let mut qso_decoded = false;
     let mut audio_before_shift: Option<Vec<f32>> = None;
     // `jzb=-62 + avexdt*25.` (`ft8_decodevar.f90:172-173`): la somma si tronca verso lo zero quando va nell'intero. Il ritardo medio
@@ -667,8 +675,11 @@ struct Flags {
     qso_type3: bool,
     /// `lqsosig` di `ft8bvar.f90:808`: piu' di 6 dei primi 19 simboli di dati hanno i toni di "MYCALL DXCALL" (serve solo alla profondita' dell'OSD).
     qso_signal: bool,
-    /// `ldxcsig` di `ft8bvar.f90:864` (DX con nominativo standard): piu' di 3 dei simboli 10-19 hanno i toni del nominativo del DX.
+    /// `ldxcsig` di `ft8bvar.f90:864` (DX con nominativo standard): piu' di 3 dei simboli 10-19 hanno i toni del nominativo del DX;
+    /// con il DX non standard (`ft8bvar.f90:868-887`) piu' di 4 (5 lontano dalla ricezione) dei simboli 5-23 di `<...> DXCALL 73`.
     dx_signal: bool,
+    /// `lcqdxcnssig` di `ft8bvar.f90:868-887`: i simboli 1-23 sono quelli di `CQ DXCALL` (DX non standard, tipo 4).
+    cq_dxns: bool,
     qso_73: bool,
     qso_rr73: bool,
     qso_rrr: bool,
@@ -739,7 +750,8 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
     }
     let dfqso = o.rx_freq_hz.map_or(f32::MAX, |r| (r - f1).abs());
     let near_tx = o.tx_freq_hz.is_some_and(|t| (t - f1).abs() < o.width_hz);
-    if ctx.ap.my_ok && ctx.ap.his_ok {
+    // `idtone56_valid(1)`: entrambi standard, o uno solo non standard con i messaggi in hash di `tone8.f90:81-129` (`ft8bvar.f90:799-839`)
+    if ctx.ap.qso_tones_ok {
         if !ctx.qso_decoded && (dfqso < o.width_hz || near_tx) && o.my_call_active {
             let n19 = ap::tone_matches(s8, &ctx.ap.qso_tones[..19], 0);
             fl.qso_signal = n19 > 6;
@@ -763,11 +775,24 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
         }
     }
     if ctx.ap.his_ok {
-        // simboli 10-19 di dati: il nominativo del DX (`idtone56(1,k)`, k = 10..19)
-        let ndxt = ap::tone_matches(s8, &ctx.ap.qso_tones[9..19], 9);
+        // simboli 10-19 di dati: il nominativo del DX (`idtone56(1,k)`, k = 10..19), solo se `idtone56_valid(1)` (`ft8bvar.f90:857-866`)
+        let ndxt = if ctx.ap.qso_tones_ok { ap::tone_matches(s8, &ctx.ap.qso_tones[9..19], 9) } else { 0 };
         fl.ndxt = ndxt;
         fl.dx_signal = ndxt > 3;
         fl.cq_dx = fl.cq_signal && ndxt > 3;
+    }
+    // DX non standard (`ft8bvar.f90:868-887`): simboli 1-4 e 5-23 di `CQ DXCALL`, 5-23 di `<AA1AAA> DXCALL 73`
+    if !ctx.ap.his_std && o.hiscall.trim().len() > 2 {
+        let ncq = ctx.ap.dxns_cq_tones.map_or(0, |t| ap::tone_matches(s8, &t[..23], 0));
+        let ndxt = ctx.ap.dxns_73_tones.map_or(0, |t| ap::tone_matches(s8, &t[4..23], 4));
+        fl.ndxt = ndxt;
+        if dfqso < o.width_hz {
+            fl.dx_signal = ndxt > 4;
+            fl.cq_dxns = ncq > 5;
+        } else {
+            fl.dx_signal = ndxt > 5;
+            fl.cq_dxns = ncq > 6;
+        }
     }
     if ctx.ap.my_ok && ctx.ap.his_ok {
         // `lqsocandave`: il segnale del canale QSO in corso (sottopassate 9-11, `docs/analisi-jtdx-reverse-rea.md` 7.2.4)
@@ -783,7 +808,8 @@ fn signal_flags(ctx: &PassContext, cd: &[Complex], ibest: i64, s8: &[[f32; 8]; N
 /// decodificato o mentre si trasmette a un DX (li' lo prende il decoder del QSO); 4 anche per il nominativo del DX cercato in ricezione
 /// libera entro `napwid` dalla ricezione (`ldxcsig .and. stophint`); 5 nella ridecodifica a mano (`nagainfil`). Il costo resta
 /// limitato: il 4 tocca solo i candidati vicini alle frequenze del QSO con i toni attesi, il 5 solo la banda di 50 Hz della ridecodifica.
-/// Mancano `lhound` (in Hound qui non c'e' analisi a priori, quindi resta la base) e `ldxcsig` per un DX con nominativo non standard.
+/// `ldxcsig` vale anche per un DX con nominativo non standard (i toni di `<...> DXCALL 73`, `ft8bvar.f90:868-887`) e `lqsosig` anche per i
+/// messaggi del QSO con un nominativo in hash (`tone8.f90:81-129`). Manca `lhound` (in Hound qui non c'e' analisi a priori, quindi resta la base).
 fn osd_depth(ctx: &PassContext, fl: &Flags, aptype: u8, f1: f32) -> usize {
     let base = ctx.options.osd_order;
     if base == 0 {
@@ -814,8 +840,97 @@ fn osd_depth(ctx: &PassContext, fl: &Flags, aptype: u8, f1: f32) -> usize {
     if deep { base.max(4) } else { base }
 }
 
-/// Quali tipi a priori valgono la pena su questo candidato (le condizioni `cycle` di `ft8b` per nominativi standard).
-fn ap_allowed(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only: bool, f1: f32) -> bool {
+/// Quali tipi a priori valgono la pena su questo candidato: le condizioni `cycle` del ramo di `ft8bvar.f90` che vale per i due
+/// nominativi ([`ApTable`]).
+fn ap_allowed(aptype: u8, isubp1: usize, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only: bool, f1: f32) -> bool {
+    if aptype == 1 && !ctx.options.ap_cq {
+        return false;
+    }
+    match ctx.ap.table {
+        ApTable::Standard => ap_allowed_standard(aptype, isubp2, ctx, fl, cq_only, f1),
+        ApTable::DxNonStandard => ap_allowed_dx_non_standard(aptype, isubp2, ctx, fl, cq_only, f1),
+        ApTable::BothNonStandard => ap_allowed_both_non_standard(aptype, isubp2, ctx, fl, cq_only),
+        ApTable::MyNonStandard => ap_allowed_my_non_standard(aptype, isubp1, ctx, fl, cq_only, f1),
+    }
+}
+
+/// Il candidato e' lontano sia dalla frequenza di ricezione sia da quella di trasmissione (`loutapwid`, `ft8bvar.f90:1363`).
+fn out_of_ap_width(o: &ApOptions, f1: f32) -> bool {
+    o.rx_freq_hz.is_none_or(|r| (r - f1).abs() > o.width_hz) && o.tx_freq_hz.is_none_or(|t| (t - f1).abs() > o.width_hz)
+}
+
+/// I rapporti segnale/rumore dei simboli attesi di CQ (tipo 1, letture 20 e 21) e del proprio nominativo (tipo 2, letture 17 e 18), come
+/// nei rami dei nominativi non standard di WSJT-X 3.3.0-beta6 (`ft8bvar.f90:1626-1663`, `:1777-1797`): senza le eccezioni per SWL.
+fn expected_ratio_ok(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags) -> bool {
+    let lowth = ctx.options.low_threshold || ctx.options.subpass;
+    match (aptype, isubp2) {
+        (1, 20) => !(fl.cq_ratio < 1.0 && !fl.cq_signal),
+        (1, 21) => !(fl.cq_ratio < if lowth { 1.2 } else { 1.3 } && !fl.cq_signal),
+        (2, 17) => !(fl.my_ratio < 1.0 && !fl.my_signal),
+        (2, 18) => !(lowth && fl.my_ratio < 1.2 && !fl.my_signal),
+        _ => true,
+    }
+}
+
+/// Proprio nominativo standard, DX non standard: `ft8bvar.f90:1606-1663` (tabella [`ap::NDXNSAPTYPES`]).
+fn ap_allowed_dx_non_standard(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only: bool, f1: f32) -> bool {
+    let o = &ctx.ap.opts;
+    let far = out_of_ap_width(o, f1);
+    let blocked = (aptype == 2 && cq_only)
+        || (!o.idle && aptype > 30)
+        // per i tipi con il proprio nominativo: QSO gia' decodificato o proprio nominativo spento (2-3 minuti dopo l'ultima trasmissione)
+        || ((ctx.qso_decoded || !o.my_call_active) && aptype > 1 && aptype < 15)
+        || (aptype == 12 && !fl.qso_rrr)
+        || (aptype == 13 && !fl.qso_73)
+        || (aptype == 14 && !fl.qso_rr73)
+        || (aptype > 30 && !o.dx_search)
+        || (aptype > 30 && !o.wide_dx_search && far)
+        || (aptype > 30 && cq_only)
+        || (aptype == 31 && !fl.cq_dxns)
+        || (aptype == 35 && !fl.qso_73)
+        || (aptype == 36 && !fl.qso_rr73)
+        // `lqsocandave` (riga 1623) vale solo con entrambi i nominativi standard: qui e' sempre spento
+        || (aptype > 2 && aptype < 15 && far);
+    !blocked && expected_ratio_ok(aptype, isubp2, ctx, fl)
+}
+
+/// Entrambi i nominativi non standard (o il proprio vuoto) con il DX non standard: `ft8bvar.f90:1766-1797`. Un QSO non e' possibile
+/// (non c'e' un messaggio che porti due nominativi non standard): restano CQ e, in ricezione libera, la ricerca del DX su tutta la banda.
+fn ap_allowed_both_non_standard(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only: bool) -> bool {
+    let o = &ctx.ap.opts;
+    let blocked = (aptype > 1 && aptype < 31)
+        || (!o.idle && aptype > 1)
+        || (aptype > 30 && cq_only)
+        || (aptype == 31 && !fl.cq_dxns)
+        || (aptype > 34 && !fl.dx_signal);
+    !blocked && expected_ratio_ok(aptype, isubp2, ctx, fl)
+}
+
+/// Proprio nominativo non standard, DX standard o vuoto: `ft8bvar.f90:1849-1867` (tabella [`ap::NMYCNSAPTYPES`]). Qui i rapporti dei
+/// simboli attesi non si guardano; `CQ ??? ???` si prova solo su un segnale che ha la riga del CQ (`lcqsignal`, riga 1869: altrimenti
+/// il Fortran non costruisce la maschera e decodifica di nuovo gli LLR della lettura precedente, cosa che qui non ha senso ripetere).
+fn ap_allowed_my_non_standard(aptype: u8, isubp1: usize, ctx: &PassContext, fl: &Flags, cq_only: bool, f1: f32) -> bool {
+    let o = &ctx.ap.opts;
+    let no_his = o.hiscall.trim().len() < 3;
+    let far = out_of_ap_width(o, f1);
+    let blocked = isubp1 > 5 // per ora solo le medie del CQ
+        || (aptype == 40 && cq_only)
+        || (aptype > 40 && aptype < 45 && ctx.qso_decoded)
+        || (aptype == 42 && !fl.qso_rrr)
+        || (aptype == 43 && !fl.qso_73)
+        || (aptype == 44 && !fl.qso_rr73)
+        || (aptype > 39 && !o.my_call_active)
+        || (no_his && aptype != 1 && aptype != 40)
+        || (aptype > 30 && aptype < 40 && !o.idle)
+        || (aptype == 31 && !fl.cq_dx)
+        || ((aptype == 35 || aptype == 36) && (!fl.dx_signal || cq_only))
+        || (aptype > 30 && aptype < 40 && !o.wide_dx_search && far)
+        || (aptype == 1 && !fl.cq_signal);
+    !blocked
+}
+
+/// Proprio nominativo standard, DX standard o vuoto (le condizioni `cycle` di `ft8b` di JTDX per nominativi standard).
+fn ap_allowed_standard(aptype: u8, isubp2: usize, ctx: &PassContext, fl: &Flags, cq_only: bool, f1: f32) -> bool {
     let o = &ctx.ap.opts;
     let his_given = o.hiscall.trim().len() >= 3;
     // con un nominativo del DX non standard restano solo CQ e "MYCALL ??? ???"
@@ -1046,8 +1161,8 @@ fn try_candidate(ds: &Downsampler, cand: PassCandidate, ctx: &PassContext) -> (O
                 mask = [false; 174];
                 aptype = 0u8;
             } else {
-                let t = NAPTYPES[progress][isubp2 - 5];
-                if t == 0 || !ap_allowed(t, isubp2, ctx, &flags, screen.cq_only, refined.freq_hz) {
+                let t = ctx.ap.aptypes()[progress][isubp2 - 5];
+                if t == 0 || !ap_allowed(t, isubp1, isubp2, ctx, &flags, screen.cq_only, refined.freq_hz) {
                     continue;
                 }
                 let base = [llra, llrb, llrc][ap::llr_index(isubp2, t)];
@@ -1411,6 +1526,35 @@ mod tests {
         }
         assert!(con >= senza, "con {con} senza {senza}");
         assert_eq!(sbagliato, 0, "un nominativo sbagliato non deve produrre messaggi per lui");
+    }
+
+    #[test]
+    fn con_il_dx_non_standard_l_analisi_a_priori_trova_il_seguito_del_qso_in_hash() {
+        // `<IU3ABC> PJ4/K1ABC RR73` (tipo 4, hash a 12 bit del proprio nominativo) a -22 dB: la decodifica normale non lo vede, il tipo 14
+        // (`<MYCALL> DXCALL RR73`, `ndxnsaptypes(3,4:6)`) si', e la tabella degli hash lo fa leggere con il nominativo
+        let text = "<IU3ABC> PJ4/K1ABC RR73";
+        let mut con = 0;
+        let mut senza = 0;
+        for seed in 0..4u64 {
+            let f = 1100.0 + 150.0 * seed as f32;
+            let audio = slot(&[(text, f, 0.2, -22.0)], 70 + seed);
+            let ap = ApOptions {
+                hiscall: "PJ4/K1ABC".into(),
+                qso_progress: 3,
+                idle: false,
+                rx_freq_hz: Some(f),
+                tx_freq_hz: Some(f),
+                ..ApOptions::new("IU3ABC")
+            };
+            let options = Options { ap: Some(ap), ..Options::default() };
+            let out = decode_slot_detailed(&audio, &options, &mut CallHashes::default(), None);
+            if let Some(d) = out.iter().find(|d| d.decoded.text == text) {
+                assert_eq!(d.ap_type, 14, "{d:?}");
+                con += 1;
+            }
+            senza += decode(&audio).iter().filter(|d| d.text.ends_with("PJ4/K1ABC RR73")).count();
+        }
+        assert!(con >= 3 && con > senza, "con {con} senza {senza}");
     }
 
     #[test]
