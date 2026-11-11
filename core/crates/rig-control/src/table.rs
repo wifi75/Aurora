@@ -230,6 +230,8 @@ const Q65_ROWS: &[(&str, &str, u64, Region, bool)] = &[
 ];
 
 /// Le 24 righe della tabella che Aurora usava prima di avere le regioni (una per banda e modo): chi le ha salvate senza cambiarle passa alla tabella di JTDX.
+/// La tabella storica (23 righe, una per banda e modo) di prima delle regioni: i 70 cm non c'erano e non vanno aggiunti qui, altrimenti una tabella
+/// vecchia vera non si riconosce piu' e non passa a quella di JTDX (le righe dei 70 cm arrivano a tutti dal ciclo piu' sotto in `upgraded`).
 const LEGACY_ROWS: &[(&str, &str, u64)] = &[
     ("160m", "FT8", 1_840_000),
     ("160m", "FT4", 1_840_000),
@@ -254,8 +256,6 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
     ("6m", "FT4", 50_318_000),
     ("2m", "FT8", 144_174_000),
     ("2m", "FT4", 144_170_000),
-    ("70cm", "FT8", 432_174_000),
-    ("70cm", "FT4", 432_170_000),
 ];
 
 impl Default for FrequencyTable {
