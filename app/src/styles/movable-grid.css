@@ -1,0 +1,99 @@
+/* Tabelle a griglia con colonne che si spostano e si allargano trascinando i titoli (DX Cluster, Decodifiche e Log del contest).
+   Linee piene tra righe e colonne (--grid-row-line, --grid-col-line: colori pieni, non trasparenti, cosi' restano uguali sulle righe
+   colorate come la verde della stazione consigliata o la gialla del QSO in corso). Le larghezze vengono dal <colgroup>. */
+.mv-grid {
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.mv-grid th,
+.mv-grid td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  border-right: var(--border-width) solid var(--grid-col-line);
+  border-bottom: var(--border-width) solid var(--grid-row-line);
+}
+
+/* niente linea sul bordo destro della tabella: solo tra una colonna e l'altra */
+.mv-grid tr > :last-child {
+  border-right: 0;
+}
+
+/* sotto i titoli la linea forte delle colonne: separa i titoli dai dati */
+.mv-grid thead th {
+  border-bottom-color: var(--grid-col-line);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.mv-grid th:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.mv-grid th.cl-h--dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+}
+
+/* dove cade la colonna trascinata: una barra del colore d'accento sul bordo */
+.mv-grid th.cl-h--drop-before {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.mv-grid th.cl-h--drop-after {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
+/* la maniglia sul bordo destro del titolo: si trascina per la larghezza, doppio clic la adatta al contenuto */
+.cl-grip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+
+.cl-grip:hover,
+.mv-grid th:hover .cl-grip {
+  background: linear-gradient(var(--accent), var(--accent)) right / 2px 100% no-repeat;
+}
+
+/* il menu del tasto destro sui titoli */
+.cl-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 10rem;
+  padding: 0.25rem;
+  color: var(--text);
+  background: var(--panel-raised);
+  border: var(--border-width) solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--glass-shadow);
+}
+
+.cl-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cl-menu button:hover,
+.cl-menu button:focus-visible {
+  background: var(--glass-lo);
+  outline: none;
+}

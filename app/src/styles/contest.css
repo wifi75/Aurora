@@ -158,7 +158,7 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 /* Decodifiche come la tabella di Attivita' di banda: fasce alterne, bandiere, etichette colorate, valore a pastiglia verde */
 .ctc-dec tbody tr.ctc-r:nth-child(odd) { background: var(--row-a); }
 .ctc-dec tbody tr.ctc-r:nth-child(even) { background: var(--row-b); }
-.ctc-dec td { border-bottom: 1px solid var(--row-line, var(--ct-line)); }
+.ctc-dec td { border-bottom: var(--border-width) solid var(--grid-row-line); }
 .ctc-dec .decode-flag { margin-right: 4px; }
 .ctc-new { display: flex; gap: 3px; flex-wrap: nowrap; }
 .ctc-pill { background: var(--ok); color: #04210f; font-weight: 600; }
@@ -271,15 +271,8 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-r .badge--tag.ctc-bad { box-shadow: none !important; text-shadow: none !important; animation: none !important; background: transparent !important; border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent) !important; color: var(--danger) !important; font-weight: 600; opacity: 0.85; }
 .ctc-r td:has(> .badge--tag) { padding-left: 12px; }
 /* decodifiche del contest: colonne a larghezza fissa, tutte le righe allineate */
-.ctc-dec-table { table-layout: fixed; width: 100%; }
-.ctc-dec-table col.w-utc { width: 76px; }
-.ctc-dec-table col.w-db { width: 44px; }
-.ctc-dec-table col.w-hz { width: 52px; }
-.ctc-dec-table col.w-msg { width: 220px; }
-.ctc-dec-table col.w-country { width: auto; }
-.ctc-dec-table col.w-km { width: 76px; }
-.ctc-dec-table col.w-new { width: 130px; }
-.ctc-dec-table col.w-val { width: 76px; }
+/* Decodifiche e Log del contest: colonne mobili (movable-grid.css), larghe almeno quanto il riquadro; le larghezze vengono dal <colgroup> */
+.ctc-dec-table, .ctc-log-table { table-layout: fixed; width: 100%; }
 .ctc-dec-table td, .ctc-dec-table th { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ctc-dec-table td.ctc-new-cell { padding-left: 12px; }
 .ctc-new { display: inline-flex; gap: 3px; flex-wrap: nowrap; vertical-align: middle; }
@@ -306,25 +299,14 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-views .ctc-freq { order: -1; margin-left: 0; margin-right: 10px; }
 /* selettore delle frequenze sopra le decodifiche */
 .ctc-left > .ctc-freq { flex: none; order: 0; margin: 0; display: flex; }
-/* colonna Novita' 40 punti piu' a destra (intestazione e celle) */
-.ctc-dec-table col.w-new { width: 170px; }
-.ctc-dec-table td.ctc-new-cell, .ctc-dec-table thead th:nth-child(7) { padding-left: 52px; }
-/* decodifiche: griglia visibile e colonne a misura dei dati veri (orario intero, paese leggibile) */
-.ctc-dec-table col.w-utc { width: 84px; }
-.ctc-dec-table col.w-db { width: 42px; }
-.ctc-dec-table col.w-hz { width: 50px; }
-.ctc-dec-table col.w-msg { width: 205px; }
-.ctc-dec-table col.w-country { width: auto; }
-.ctc-dec-table col.w-km { width: 72px; }
-.ctc-dec-table col.w-new { width: 92px; }
-.ctc-dec-table col.w-val { width: 74px; }
-.ctc-dec-table td.ctc-new-cell, .ctc-dec-table thead th:nth-child(7) { padding-left: 8px; text-align: center; }
-.ctc-dec-table th, .ctc-dec-table td { padding-left: 6px; padding-right: 6px; border-right: 1px solid color-mix(in srgb, var(--ct-line, #2a3a55) 85%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--ct-line, #2a3a55) 70%, transparent); }
-.ctc-dec-table th:last-child, .ctc-dec-table td:last-child { border-right: 0; }
-.ctc-dec-table thead th { border-bottom: 1px solid var(--ct-line, #2a3a55); }
-.ctc-dec-table td:last-child, .ctc-dec-table th:last-child { text-align: center; }
+/* decodifiche e log: griglia ben visibile (linee piene --grid-*, piu' marcate tra le colonne e sotto i titoli), per classe di colonna:
+   le colonne si spostano e le regole per posizione (nth-child) non le seguirebbero */
+.ctc-dec-table td.ctc-new-cell, .ctc-dec-table thead th.ctc-c--new { padding-left: 8px; }
+.ctc-dec-table th, .ctc-dec-table td, .ctc-log-table th, .ctc-log-table td { padding-left: 6px; padding-right: 6px; border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
+.ctc-dec-table tr > :last-child, .ctc-log-table tr > :last-child { border-right: 0; }
+.ctc-dec-table thead th, .ctc-log-table thead th { border-bottom: var(--border-width) solid var(--grid-col-line); }
 /* titoli delle colonne sempre allineati a sinistra */
-.ctc-dec-table thead th, .ctc-dec-table thead th.num, .ctc-dec-table thead th:nth-child(7), .ctc-dec-table thead th:last-child { text-align: left !important; }
+.ctc-dec-table thead th, .ctc-dec-table thead th.num, .ctc-log-table thead th { text-align: left !important; }
 /* selettore delle frequenze sulla riga delle schede, subito dopo «Analisi» */
 .ctc-views > .ctc-freq { order: 0; margin: 0 0 0 14px; display: inline-flex; }
 /* QSO con chi non fa il contest: riga con i tre messaggi normali */
@@ -366,13 +348,13 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-mlegend i.ctc-mtile--cqk { border: 0; box-shadow: inset 3px 0 0 var(--ok, #2cf5a4); background: var(--ct-line, #2a3a55); }
 /* stazione gia' lavorata su questa banda: nelle decodifiche il messaggio resta, ma depennato e attenuato */
 .ctc-dec-table tr.ctc-r.dup td { opacity: 0.55; }
-.ctc-dec-table tr.ctc-r.dup td:nth-child(4) { text-decoration: line-through; }
-/* decodifiche del contest: dB e Hz allineati a sinistra come i loro titoli */
-.ctc-dec-table td:nth-child(2), .ctc-dec-table td:nth-child(3), .ctc-dec-table td:nth-child(6) { text-align: left !important; }
+.ctc-dec-table tr.ctc-r.dup td.ctc-c--msg { text-decoration: line-through; }
+/* decodifiche del contest: dB, Hz e distanza allineati a sinistra come i loro titoli */
+.ctc-dec-table td.ctc-c--db, .ctc-dec-table td.ctc-c--hz, .ctc-dec-table td.ctc-c--km { text-align: left !important; }
 /* «fuori regola» piu' piccolo: entra intero nella colonna Novita' */
 .ctc-dec-table .badge.ctc-bad { font-size: 9.5px !important; padding: 0 5px !important; line-height: 14px !important; letter-spacing: 0; }
 /* Valore (e Novita') allineati a sinistra come i titoli */
-.ctc-dec-table td:last-child, .ctc-dec-table td.ctc-new-cell { text-align: left !important; }
+.ctc-dec-table td.ctc-c--value, .ctc-dec-table td.ctc-new-cell { text-align: left !important; }
 .ctc-kbd { margin-left: 4px; padding: 0 4px; border: 1px solid var(--ct-line, #2a3a55); border-radius: 3px; font-size: 9.5px; opacity: 0.8; }
 .ctc-steps .ctc-kbd--row { margin-left: auto; margin-right: 8px; }
 /* legenda dei moltiplicatori compatta: una riga, pallini pieni nei colori veri delle tessere */
