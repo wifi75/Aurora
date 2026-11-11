@@ -1410,3 +1410,7 @@ html .cq-strip .cq-chip.cq-chip--b:hover { background: #dcf8ee; border-color: #8
 /* righe Tx ripetute: «×N» fuori dalla griglia, nello spazio a sinistra della bandiera: la bandiera resta dov'e' nelle altre righe */
 .decode-where--rep { position: relative; }
 .decode-where--rep .tx-rep { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); margin-right: 7px; white-space: nowrap; }
+
+/* «×N» nella Finestra RX: resta fuori dalla griglia (a fianco della bandiera, nello spazio a fine messaggio) e non sposta la bandiera */
+.log-rx .decode-row .decode-where--rep { position: relative; overflow: visible !important; }
+.log-rx .decode-row .decode-where--rep .tx-rep { position: absolute !important; right: 100%; top: 50%; transform: translateY(-50%); margin: 0 7px 0 0 !important; white-space: nowrap; }

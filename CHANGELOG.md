@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Finestra RX, «×N» delle mie trasmissioni ripetute**: il badge non sposta piu' la bandiera, che resta nella stessa colonna di tutte le altre righe; «×N» sta a fianco, a sinistra della bandiera.
 - **«Pulisci» in Attivita' di banda e nella Finestra RX** (richiesta di UN7MBV): un pulsantino accanto a «Filtro» e «Nuovi ↑» svuota solo la propria finestra; «Cancella» della barra dei comandi continua a svuotarle tutte e due. Suggerimento, sei lingue e passo nella Guida.
 
 ## 0.11.232 - 2026-11-10
