@@ -44,7 +44,8 @@ pub struct TxConfig {
     /// Ritardo massimo accettato sull'inizio nominale dell'audio, quando si chiede il periodo in corso. `None`: la finestra di JTDX
     /// (`Mode::tx_window`: si puo' partire in qualunque istante dei primi 13,64 s dell'FT8 o 6,04 s dell'FT4 del periodo e si emette la coda dell'onda).
     pub max_late: Option<Duration>,
-    /// Durata massima di un'onda.
+    /// Durata massima di un'onda (tetto di sicurezza: il limite vero e' il periodo meno il ritardo d'inizio, vedi `schedule`). Era 15 s e bloccava
+    /// ogni trasmissione piu' lunga: JT65, JT9 e JT4 (circa 47 s nei periodi da 60 s), Q65-30 e oltre.
     pub max_duration: Duration,
     /// Margine oltre la durata prevista, dopo il quale il `watchdog` spegne il PTT.
     pub watchdog_grace: Duration,
@@ -61,7 +62,7 @@ impl Default for TxConfig {
             ptt_tail: Duration::from_millis(50),
             latency_advance: Duration::from_millis(30),
             max_late: None,
-            max_duration: Duration::from_secs(15),
+            max_duration: Duration::from_secs(300),
             watchdog_grace: Duration::from_secs(2),
             fade: Duration::from_millis(5),
         }
@@ -86,8 +87,8 @@ impl TxConfig {
         if self.max_late.is_some_and(|d| d > Duration::from_secs(15)) {
             return bad("ritardo massimo oltre 15 s");
         }
-        if self.max_duration.is_zero() || self.max_duration > Duration::from_secs(30) {
-            return bad("durata massima fuori da 0-30 s");
+        if self.max_duration.is_zero() || self.max_duration > Duration::from_secs(300) {
+            return bad("durata massima fuori da 0-300 s");
         }
         if self.fade > Duration::from_millis(50) {
             return bad("rampa oltre 50 ms");
@@ -599,10 +600,16 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
             }
         }
         if !lock(&inner.sink).is_playing() {
+            // un'uscita che si e' persa (scheda USB staccata, TCI che non chiede piu' audio) non e' una trasmissione finita: come `checkStream` di WSJT-X
+            // la trasmissione si chiude con errore, invece di dare il messaggio per trasmesso intero
+            if lock(&inner.sink).has_failed() {
+                return Err(TxError::Audio("uscita audio persa durante la trasmissione".into()));
+            }
             break false;
         }
         if inner.clock.now().saturating_sub(started) > limit {
-            return Err(TxError::Audio("riproduzione oltre la durata prevista".into()));
+            let failed = lock(&inner.sink).has_failed();
+            return Err(TxError::Audio(if failed { "uscita audio persa durante la trasmissione" } else { "riproduzione oltre la durata prevista" }.into()));
         }
         inner.clock.sleep(CHUNK);
     };
