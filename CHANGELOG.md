@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- **PTT come WSJT-X**: si accende 200 ms prima dell'audio (era 100) e si spegne 200 ms dopo la fine (era 50): con un PTT lento l'inizio del messaggio non si perde e la radio non torna in ricezione prima dell'ultima rampa.
+- CAT Hamlib: il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, non solo al cambio di frequenza; un errore nella lettura del modo (alcune Yaesu) non fa piu' ricollegare la radio.
+- OmniRig: lo stato si rilegge ogni 10 secondi in sottofondo; una radio spenta non resta «collegata» e quando torna si ricollega da sola.
+- TCI: un cambio di modo fatto sul pannello della SDR non viene piu' annullato subito da Aurora (come WSJT-X 3.3).
+- Audio: schede che espongono solo campioni a 24 o 32 bit ora si aprono (prima «formato campioni non gestito»); un ingresso che smette di dare audio senza errori si riapre da solo dopo 3 secondi.
 - **DX Cluster, pulsante «Spot DX»** anche nella pagina Stazione (FT8 e gli altri modi), come gia' nella pagina PSK/RTTY: apre la finestra dello spot con il DX del QSO, la frequenza della radio piu' quella di ricezione e il modo. Lo spot mandato compare subito nell'elenco con il proprio nominativo (prima si vedeva solo se un cluster collegato lo ripeteva).
 - DX Cluster: la colonna UTC non e' piu' tagliata sul bordo destro.
 - Impostazioni: il menu delle lingue si apre verso la pagina e non resta piu' coperto dalla barra laterale.
