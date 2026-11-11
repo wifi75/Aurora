@@ -147,61 +147,43 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { ba
 .cop-dialog label.cop-row { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; }
 .cop-dialog .cop-cols { display: grid; grid-template-columns: 1fr 1fr; }
 
-/* la scheda del rotore: sempre in vista in fondo alla colonna di destra, scura e ben leggibile come la bussola ma piu' grande e con la lancetta che si muove */
-.digi-rotor { position: fixed; right: 1rem; bottom: 3.2rem; width: 26rem; max-width: calc(100vw - 1rem); z-index: 1500; border: 1px solid #34457a; border-radius: 12px; overflow: hidden; background: #0f1629; color: #d7e3ff; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6); }
-.digi-rotor-head { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.2rem 0.5rem 0.2rem 0.6rem; font-size: 0.9em; border: 0; background: #172040; color: #d7e3ff; font: inherit; cursor: grab; text-align: left; user-select: none; touch-action: none; }
-.digi-rotor-head:active { cursor: grabbing; }
-.digi-rotor-fold { border: 0; background: transparent; color: #9db0da; font: inherit; cursor: pointer; padding: 0 0.3rem; border-radius: 4px; }
-.digi-rotor-fold:hover { background: #26345f; color: #fff; }
-.digi-rotor-head strong { font-weight: 700; }
-.digi-rotor-headval { margin-left: auto; font-family: var(--font-data); color: #ffb41f; }
-.digi-rotor-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #5b6785; }
-.digi-rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
-.digi-rotor-dot--moving { background: #ffb41f; box-shadow: 0 0 8px #ffb41f; animation: digi-rotor-pulse 0.8s ease-in-out infinite; }
-@keyframes digi-rotor-pulse { 50% { opacity: 0.35; } }
-.digi-rotor-body { display: grid; grid-template-columns: 54% minmax(0, 1fr); gap: 0.5rem; padding: 0.4rem 0.5rem 0.9rem; align-items: start; }
-.digi-rotor-dial { position: relative; aspect-ratio: 1; width: 100%; }
-.digi-rotor-dial .rot-rose-box { max-width: none; width: 100%; }
-.digi-rotor-badge { position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); padding: 0 0.5rem; border-radius: 6px; border: 2px solid #8a8a8a; background: #d8a400; color: #2a1d00; font: 700 0.9em var(--font-data); }
-.digi-rotor-panel { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); gap: 0.2rem 0.3rem; align-content: start; min-width: 0; }
-.digi-rotor-panel > .digi-rotor-presets, .digi-rotor-panel > .digi-rotor-dx { grid-column: 1 / -1; }
-.digi-rotor-lcd { width: 100%; align-self: center; height: auto; display: block; border-radius: 6px; }
-.digi-rotor-go { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.3rem; align-items: center; }
-.digi-rotor-go input { min-width: 0; width: 100%; text-align: center; font: 600 0.85em var(--font-data); height: 1.5rem; background: #0a1324; color: #fff; border: 1px solid #2c3d6e; border-radius: 6px; padding: 0.2rem; }
-.digi-rotor-go .digi-rotor-btn--go, .digi-rotor-go .digi-rotor-btn--stop { grid-row: 2; }
-.digi-rotor-go .digi-rotor-btn--go { grid-column: 1 / 3; }
-.digi-rotor-go .digi-rotor-btn--stop { grid-column: 3; }
-.digi-rotor-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.15rem; }
-.digi-rotor-dx { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; }
-.digi-rotor-btn { padding: 0.12rem 0.2rem; border: 1px solid #34457a; border-radius: 6px; background: linear-gradient(#26345f, #1a2548); color: #e6efff; font: 600 0.78em var(--font-data); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.digi-rotor-btn:hover:not(:disabled) { background: linear-gradient(#34508f, #243a6e); }
-.digi-rotor-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.digi-rotor-btn--go { border-color: #1f9d6e; color: #86efac; }
-.digi-rotor-btn--stop { background: linear-gradient(#b42a2a, #7d1b1b); border-color: #e05555; color: #fff; }
-.digi-rotor-btn--dx { border-color: #1f9d6e; }
-.digi-rotor-btn--lp { border-color: #8e7bff; }
-.digi-rotor-note { grid-column: 1 / -1; margin: 0; font-size: 0.85em; }
-.digi-rotor--off .digi-rotor-dial { opacity: 0.8; }
-/* la bussola scura (variante «card» di Rose) */
-.rot-rose--card .rot-face { fill: #141414; }
-.rot-rose--card .rot-ring { stroke: #7b7b7b; stroke-width: 5; }
-.rot-rose--card .rot-inner { stroke: #3a3a3a; }
-.rot-rose--card .rot-tick { stroke: #9a9a9a; stroke-width: 0.8; }
-.rot-rose--card .rot-tick--major { stroke: #e8e8e8; stroke-width: 2; }
-.rot-rose--card .rot-label { fill: #cfcfcf; }
-.rot-rose--card .rot-label--card { fill: #ffffff; font-size: 17px; }
-.rot-rose--card .rot-label--eight { fill: #bdbdbd; font-family: var(--font-ui); font-size: 11px; font-weight: 700; }
-.rot-rose--card .rot-needle--now path { fill: #ffb41f; stroke: #7a4a00; filter: drop-shadow(0 0 3px #ff9a00); }
-.rot-rose--card .rot-needle--target line, .rot-rose--card .rot-needle--target circle { stroke: #34d399; }
-.rot-rose--card .rot-hub { fill: url(#rot-hub-grad); stroke: #1a1a1a; }
-.rot-rose--card .rot-dxmark text { stroke: #141414; }
-.rot-overlap { fill: none; stroke: #ffb41f; stroke-width: 5; opacity: 0.85; stroke-linecap: butt; }
-.digi-rotor--moving .rot-needle { transition: transform 0.45s linear; }
-.digi-rotor--moving .rot-rose--card .rot-needle--now path { filter: drop-shadow(0 0 6px #ffcf5a); }
-html[data-theme='light'] .digi-rotor { background: #eaf0fb; color: #0b1322; border-top-color: #b7c4de; }
-html[data-theme='light'] .digi-rotor-head { background: #dbe5f7; color: #0b1322; }
-html[data-theme='light'] .digi-rotor-headval { color: #9a5b00; }
-html[data-theme='light'] .digi-rotor-go input { background: #fff; color: #000; border-color: #a9b8d6; }
-html[data-theme='light'] .digi-rotor-btn { background: linear-gradient(#ffffff, #e1e9f8); color: #0b1322; border-color: #a9b8d6; }
-html[data-theme='light'] .digi-rotor-btn--stop { background: linear-gradient(#e24a4a, #b42a2a); color: #fff; }
-.digi-rotor-grip { position: absolute; right: 0; bottom: 0; width: 1.1rem; height: 1.1rem; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, #8ea2cf 50%, #8ea2cf 58%, transparent 58%, transparent 72%, #8ea2cf 72%, #8ea2cf 80%, transparent 80%); }
+/* la scheda del rotore, come il blocco: bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
+.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(100vw - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); font-size: clamp(12px, 4.2cqw, 24px); }
+.rotor-bar { display: flex; align-items: center; gap: 0.5em; padding: 0.25em 0.5em 0.25em 0.7em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 0.8em; }
+.rotor-bar:active { cursor: grabbing; }
+.rotor-bar-sp { flex: 1; }
+.rotor-bar-btn { border: 0; background: transparent; color: #aaa; font: inherit; cursor: pointer; padding: 0 0.35em; border-radius: 4px; }
+.rotor-bar-btn:hover { background: #3a3a3a; color: #fff; }
+.rotor-dot { width: 0.7em; height: 0.7em; border-radius: 50%; background: #666; }
+.rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
+.rotor-dot--moving { background: #ffb41f; box-shadow: 0 0 8px #ffb41f; animation: rotor-pulse 0.8s ease-in-out infinite; }
+@keyframes rotor-pulse { 50% { opacity: 0.35; } }
+.rotor-dial-box { padding: 0.5em 0.6em 0.2em; }
+.rotor-dial { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: manipulation; user-select: none; }
+.rotor-dial--off { cursor: default; opacity: 0.8; }
+.rotor-needle { transform-box: view-box; transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1); filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.7)); }
+.rotor-card--moving .rotor-needle { transition: transform 0.45s linear; filter: drop-shadow(0 0 4px rgba(255, 190, 60, 0.9)); }
+.rotor-lcd { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.3em; margin: 0.2em 0.5em 0; padding: 0.3em 0.5em; background: #d4a900; color: #2a1d00; border-radius: 3px; }
+.rotor-digits { grid-column: 1; grid-row: 1 / 3; width: 100%; height: auto; display: block; }
+.rotor-lcd-btns { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 0.3em; margin-right: 1.8em; }
+.rotor-go, .rotor-stop { min-width: 3.6em; padding: 0.15em 0.5em; border: 1px solid #5a4500; border-radius: 4px; font: inherit; font-size: 0.9em; cursor: pointer; }
+.rotor-go { background: transparent; color: #2a1d00; }
+.rotor-stop { background: #4a3a00; color: #f0cc3a; }
+.rotor-go:disabled, .rotor-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+.rotor-help { position: absolute; left: 0.3em; top: 0.2em; width: 1.3em; height: 1.3em; padding: 0; border: 1.5px solid #5a4500; border-radius: 50%; background: transparent; color: #5a4500; font: 0.75em var(--font-ui); line-height: 1; cursor: help; }
+.rotor-gear { position: absolute; right: 0.3em; top: 0.1em; border: 0; background: transparent; color: #5a4500; font: inherit; font-size: 1.1em; cursor: pointer; padding: 0 0.1em; }
+.rotor-gear span { font-size: 0.7em; margin-left: 0.1em; }
+.rotor-more { display: flex; flex-direction: column; gap: 0.3em; margin: 0.4em 0.5em 0; padding: 0.4em; background: #2e2e2e; border: 1px solid #4a4a4a; border-radius: 4px; }
+.rotor-more-row { display: flex; gap: 0.3em; }
+.rotor-more-row input { flex: 1; min-width: 0; text-align: center; font: inherit; font-size: 0.85em; background: #161616; color: #fff; border: 1px solid #555; border-radius: 4px; }
+.rotor-more button { flex: 1; padding: 0.2em 0.3em; border: 1px solid #555; border-radius: 4px; background: linear-gradient(#3d3d3d, #232323); color: #ddd; font: inherit; font-size: 0.8em; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rotor-more button:disabled { opacity: 0.4; cursor: not-allowed; }
+.rotor-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35em; margin: 0.4em 0.35em 0.4em; padding: 0.4em; background: #333; border: 1px solid #444; border-radius: 4px; }
+.rotor-presets button { padding: 0.45em 0.1em; border: 1px solid #555; border-radius: 5px; background: linear-gradient(#444, #1f1f1f); color: #e2e2e2; font: inherit; font-size: 0.95em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.rotor-presets button:hover:not(:disabled) { background: linear-gradient(#555, #2a2a2a); }
+.rotor-presets button:disabled { opacity: 0.45; cursor: not-allowed; }
+.rotor-note { margin: 0 0.6em 0.5em; font-size: 0.75em; color: #aaa; }
+.rotor-note a { color: #9cc4ff; }
+.rotor-note--err { color: #ff9c9c; }
+.rotor-card--off .rotor-dial-box { opacity: 0.9; }
+.rotor-grip { position: absolute; right: 0; bottom: 0; width: 1.1em; height: 1.1em; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, #8a8a8a 50%, #8a8a8a 58%, transparent 58%, transparent 72%, #8a8a8a 72%, #8a8a8a 80%, transparent 80%); }

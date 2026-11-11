@@ -172,11 +172,7 @@ function useUnwrapped(az: number | null | undefined): number | null {
   return last.current;
 }
 
-/** Le otto direzioni della bussola a scheda (N, NE, E...). */
-const EIGHT = [['N', 0], ['NE', 45], ['E', 90], ['SE', 135], ['S', 180], ['SW', 225], ['W', 270], ['NW', 315]] as const;
-
-/** `card`: la bussola scura della scheda nelle pagine PSK, RTTY e CW (lettere a otto direzioni, una tacca ogni 5 gradi, mozzo metallico). */
-export function Rose({ status, sp, lp, dxCall, disabled, onPick, label, card = false, zone = null }: { status: RotatorStatus | undefined; sp: number | null; lp: number | null; dxCall: string; disabled: boolean; onPick(az: number): void; label: string; card?: boolean; zone?: readonly [number, number] | null }) {
+function Rose({ status, sp, lp, dxCall, disabled, onPick, label }: { status: RotatorStatus | undefined; sp: number | null; lp: number | null; dxCall: string; disabled: boolean; onPick(az: number): void; label: string }) {
   const now = useUnwrapped(status?.az);
   const target = useUnwrapped(status?.target);
   const pick = (e: ReactPointerEvent<SVGSVGElement>) => {
@@ -187,38 +183,22 @@ export function Rose({ status, sp, lp, dxCall, disabled, onPick, label, card = f
     if (Math.hypot(x, y) < box.width * 0.06) return;
     onPick(azimuthOfPoint(x, y));
   };
-  const ticks = Array.from({ length: card ? 72 : 36 }, (_, i) => i * (card ? 5 : 10));
+  const ticks = Array.from({ length: 36 }, (_, i) => i * 10);
   return (
     <div className="rot-rose-box">
-      <svg className={`rot-rose${disabled ? ' rot-rose--off' : ''}${card ? ' rot-rose--card' : ''}`} viewBox="-118 -118 236 236" role="img" aria-label={label} onPointerDown={pick}>
-        <defs>
-          <radialGradient id="rot-hub-grad" cx="35%" cy="30%" r="75%">
-            <stop offset="0" stopColor="#f4f4f4" />
-            <stop offset="0.55" stopColor="#8d8d8d" />
-            <stop offset="1" stopColor="#3a3a3a" />
-          </radialGradient>
-        </defs>
+      <svg className={`rot-rose${disabled ? ' rot-rose--off' : ''}`} viewBox="-118 -118 236 236" role="img" aria-label={label} onPointerDown={pick}>
         <circle className="rot-face" r={R} />
         <circle className="rot-ring" r={R} />
         <circle className="rot-inner" r={R * 0.62} />
-        {zone ? <OverlapArc from={zone[0]} to={zone[1]} /> : null}
         {ticks.map((az) => {
-          const major = card ? az % 45 === 0 : az % 30 === 0;
+          const major = az % 30 === 0;
           const a = polar(az, R);
           const b = polar(az, major ? R - 10 : R - 5);
           return <line key={az} className={major ? 'rot-tick rot-tick--major' : 'rot-tick'} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
         })}
-        {card
-          ? EIGHT.map(([name, az]) => {
-              const q = polar(az, R - 22);
-              return (
-                <text key={az} className={az % 90 === 0 ? 'rot-label rot-label--card' : 'rot-label rot-label--eight'} x={q.x} y={q.y} textAnchor="middle" dominantBaseline="central">
-                  {name}
-                </text>
-              );
-            })
-          : null}
-        {(card ? [] : ticks.filter((az) => az % 30 === 0)).map((az) => {
+        {ticks
+          .filter((az) => az % 30 === 0)
+          .map((az) => {
             const p = polar(az, R - 20);
             const cardinal = az % 90 === 0;
             const text = cardinal ? ({ 0: 'N', 90: 'E', 180: 'S', 270: 'W' } as Record<number, string>)[az] : String(az);
@@ -245,15 +225,6 @@ export function Rose({ status, sp, lp, dxCall, disabled, onPick, label, card = f
       </svg>
     </div>
   );
-}
-
-/** La zona di sovrapposizione di un rotore che va oltre i 360 gradi: da li' si arriva da due angoli diversi. */
-function OverlapArc({ from, to }: { from: number; to: number }) {
-  const r = R - 4;
-  const a = polar(from, r);
-  const b = polar(to, r);
-  const large = to - from > 180 ? 1 : 0;
-  return <path className="rot-overlap" d={`M ${a.x} ${a.y} A ${r} ${r} 0 ${large} 1 ${b.x} ${b.y}`} />;
 }
 
 function DxMark({ az, text, kind }: { az: number; text: string; kind: 'sp' | 'lp' }) {
