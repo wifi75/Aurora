@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'OmniRig via COM, Cat4OM nativo, split con OmniRig e TCI, ritardo Tx regolabile',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'changed',
     title: [
       'Decodificatori allineati a WSJT-X 3.3: FT8, FT4, Q65, JT65, JT9 e MSK144',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'fixed',
     title: [
       'Correzioni: Linux, ALSA, TCI, «Cancella» per GridTracker e JTAlert, Wavelog, PSK Reporter',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Finestra Rx accesa, «Spot DX» nella Stazione e split Rig/Fake It',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'fixed',
     title: [
       'Correzioni: PTT, trasmissioni lunghe, paesi DXCC, Wait and Call, GridTracker e log ADIF',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Satelliti: mappa, passaggi, Doppler sulla radio e rotore',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'PSK31, PSK63 e RTTY nella pagina «PSK · RTTY · SSTV»',
@@ -168,7 +168,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'CW: trasmissione e decodifica nella stessa pagina',
@@ -189,7 +189,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'SSTV: pagina nuova per ricevere e trasmettere immagini',
@@ -210,7 +210,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'changed',
     title: [
       'Gruppi di modi in alto e radio sulla frequenza del modo',
@@ -231,7 +231,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'new',
     title: [
       'Colori dei quadrati lavorati e confermati della Mappa DX',
@@ -252,7 +252,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.235',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T16:24:32Z',
     kind: 'fixed',
     title: [
       'Correzioni: locatore FT8, OmniRig, split Hamlib, PSK Reporter, audio, guardiano e Wavelog',
