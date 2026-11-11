@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { placeColumn, readColumnLayout } from '../lib/movableColumns';
-import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
+import { ColumnsMenu, MovableColGroup, MovableTh, contentWidth, useMovableColumns } from './MovableColumns';
 
 const COLS = ['a', 'b', 'c', 'd'] as const;
 type Col = (typeof COLS)[number];
@@ -163,5 +163,63 @@ describe('movableColumns storage', () => {
     expect(placeColumn(['a', 'b', 'c'], 'c', 'a')).toEqual(['c', 'a', 'b']);
     expect(placeColumn(['a', 'b', 'c'], 'a', null)).toEqual(['b', 'c', 'a']);
     expect(placeColumn(['a', 'b', 'c'], 'b', 'b')).toEqual(['a', 'b', 'c']);
+  });
+});
+
+/** Una griglia che non e' una tabella (la Finestra RX): le celle da misurare le dice chi la usa. */
+function Outside({ cells }: { cells: () => HTMLElement[] }) {
+  const cols = useMovableColumns({ storageKey: KEY, columns: COLS, defaultEm: EM, elastic: 'd', fitCells: cells });
+  return (
+    <>
+      <table ref={cols.tableRef} className="mv-grid" style={cols.tableStyle}>
+        <MovableColGroup cols={cols} />
+        <thead>
+          <tr>
+            {cols.visible.map((c, i) => (
+              <MovableTh key={c} cols={cols} col={c} index={i}>
+                {c.toUpperCase()}
+              </MovableTh>
+            ))}
+          </tr>
+        </thead>
+      </table>
+      <button type="button" onClick={() => cols.setWidths({ a: 10, b: 100 })}>
+        widths
+      </button>
+      <button type="button" onClick={() => cols.setWidths({})}>
+        reset
+      </button>
+    </>
+  );
+}
+
+describe('useMovableColumns, larghezze e misure', () => {
+  it('setWidths sostituisce tutte le larghezze (entro i limiti) e le ricorda; {} torna a quelle di partenza', () => {
+    const { container } = render(<Outside cells={() => []} />);
+    fireEvent.click(screen.getByRole('button', { name: 'widths' }));
+    expect(saved()?.widths).toEqual({ a: 10, b: 48 });
+    expect(Array.from(container.querySelectorAll('col')).map((c) => c.style.width)).toEqual(['10em', '48em', '6em', '']);
+    fireEvent.click(screen.getByRole('button', { name: 'reset' }));
+    expect(saved()?.widths).toEqual({});
+  });
+
+  it('il doppio clic sul bordo misura le celle indicate da fitCells', () => {
+    const cell = document.createElement('span');
+    Object.defineProperty(cell, 'scrollWidth', { value: 120 });
+    render(<Outside cells={() => [cell]} />);
+    fireEvent.doubleClick(screen.getByRole('columnheader', { name: 'B' }).querySelector('.cl-grip') as Element);
+    // 120 px a 16 px per em (il corpo del carattere di jsdom), piu' 0,3 em di respiro
+    expect(saved()?.widths.b).toBeCloseTo(120 / 16 + 0.3, 1);
+  });
+
+  it('contentWidth conta anche il testo nascosto dai «…» di un elemento interno', () => {
+    const cell = document.createElement('span');
+    const inner = document.createElement('span');
+    cell.appendChild(inner);
+    Object.defineProperty(cell, 'scrollWidth', { value: 80 });
+    Object.defineProperty(inner, 'scrollWidth', { value: 150 });
+    Object.defineProperty(inner, 'clientWidth', { value: 70 });
+    inner.getBoundingClientRect = () => ({ left: 10, right: 80, width: 70, top: 0, bottom: 10, height: 10, x: 10, y: 0, toJSON: () => ({}) });
+    expect(contentWidth(cell)).toBe(160);
   });
 });
