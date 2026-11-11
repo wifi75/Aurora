@@ -88,11 +88,82 @@ pub fn read_reply(status: u16, body: &str) -> Outcome {
     }
 }
 
+/// I token dell'API v2 di Wavelog cominciano con `wl2_` (`usesApiV2` di `Cloudlog.cpp`, WSJT-X 3.3): vanno nell'intestazione `Authorization: Bearer`
+/// e il QSO si manda a `/index.php/api/v2/qso`. Prima Aurora li usava come chiavi vecchie e l'invio veniva rifiutato.
+pub fn uses_api_v2(key: &str) -> bool {
+    key.trim().starts_with("wl2_")
+}
+
+pub fn v2_qso_url(base: &str) -> String {
+    format!("{base}/index.php/api/v2/qso")
+}
+
+/// Il corpo JSON del QSO per l'API v2 (`v2QsoPayload`): `import_type`, `station_profile_id` numerico, `adif` chiuso da `<eor>`, `dryrun` per la prova.
+pub fn v2_body(station_id: &str, record: &str, dry_run: bool) -> Result<String, String> {
+    let id: i64 = station_id.trim().parse().map_err(|_| format!("numero di stazione non valido: «{station_id}»"))?;
+    let mut adif = record.trim().to_string();
+    if !adif.to_ascii_lowercase().ends_with("<eor>") {
+        adif.push_str("<eor>");
+    }
+    let mut body = json!({ "import_type": "adif", "station_profile_id": id, "adif": adif });
+    if dry_run {
+        body["dryrun"] = json!(true);
+    }
+    Ok(body.to_string())
+}
+
+fn v2_detail(v: &Value, fallback: String) -> String {
+    let error = v.get("error");
+    let message = error.and_then(|e| e.get("message")).and_then(Value::as_str).map(str::trim).unwrap_or("");
+    let details = error.and_then(|e| e.get("details")).map(|d| d.as_str().map_or_else(|| d.to_string(), str::to_string)).unwrap_or_default();
+    match (message.is_empty(), details.trim().is_empty()) {
+        (false, false) => short(&format!("{message} {details}"), 160),
+        (false, true) => short(message, 160),
+        (true, false) => short(&details, 160),
+        (true, true) => fallback,
+    }
+}
+
+/// Come e' andata con l'API v2 (`classifyV2QsoUploadReply`): 201 con `data.parsed` e almeno un QSO importato o saltato.
+pub fn read_v2_reply(status: u16, body: &str) -> Outcome {
+    let v: Value = serde_json::from_str(body).unwrap_or(Value::Null);
+    let count = |k: &str| v.get("data").and_then(|d| d.get(k)).and_then(Value::as_u64).unwrap_or(0);
+    match status {
+        201 if count("parsed") > 0 && count("imported") > 0 => Outcome::Sent(String::new()),
+        201 if count("parsed") > 0 && count("skipped") > 0 => Outcome::Duplicate("gia' nel log".into()),
+        401 | 403 => Outcome::Rejected(v2_detail(&v, "token API v2 non valido o senza permesso di scrittura".into())),
+        408 | 429 | 500..=599 => Outcome::Retry(format!("Wavelog ha risposto {status}")),
+        _ => Outcome::Rejected(v2_detail(&v, format!("risposta {status} inattesa dall'API v2"))),
+    }
+}
+
+fn v2_request(base: &str, key: &str, timeout: Duration, user_agent: &str) -> ureq::RequestBuilder<ureq::typestate::WithBody> {
+    agent(timeout, user_agent)
+        .post(v2_qso_url(base))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {}", key.trim()))
+}
+
 /// Manda un QSO (bloccante).
 pub fn upload(url: &str, key: &str, station_id: &str, record: &str, timeout: Duration, user_agent: &str) -> Outcome {
     let Some(base) = api_base(url) else { return Outcome::Blocked("indirizzo di Wavelog/Cloudlog non valido".into()) };
     if insecure_remote(&base) && !INSECURE_WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
         tracing::warn!("Wavelog/Cloudlog: l'indirizzo e' http:// verso Internet, la chiave API viaggia in chiaro: meglio https://");
+    }
+    if uses_api_v2(key) {
+        let data = match v2_body(station_id, record, false) {
+            Ok(d) => d,
+            Err(e) => return Outcome::Blocked(e),
+        };
+        return match v2_request(&base, key, timeout, user_agent).send(data) {
+            Ok(mut response) => {
+                let status = response.status().as_u16();
+                let text = response.body_mut().read_to_string().unwrap_or_default();
+                read_v2_reply(status, &text)
+            }
+            Err(e) => network(&e),
+        };
     }
     let request = agent(timeout, user_agent).post(qso_url(&base)).header("Content-Type", "application/json").header("Accept", "application/json");
     match request.send(body(key, station_id, record)) {
@@ -195,6 +266,9 @@ pub fn stations(url: &str, key: &str, timeout: Duration, user_agent: &str) -> Re
 
 /// La prova (bloccante): chiave, permesso di scrittura e stazione, senza scrivere nel log.
 pub fn test(url: &str, key: &str, station_id: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+    if uses_api_v2(key) {
+        return test_v2(url, key, station_id, timeout, user_agent);
+    }
     match get_page(url, key, "auth", timeout, user_agent)? {
         (200, text) => check_rights(&text)?,
         (401 | 403, _) => return Err("chiave API non valida".into()),
@@ -204,9 +278,59 @@ pub fn test(url: &str, key: &str, station_id: &str, timeout: Duration, user_agen
     find_station(&station_info(url, key, timeout, user_agent)?, station_id)
 }
 
+/// La prova con un token v2: un QSO di prova in «dry run» (non scrive nel log), come `checkConnection` di WSJT-X 3.3.
+fn test_v2(url: &str, key: &str, station_id: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+    let base = api_base(url).ok_or("indirizzo non valido: serve http:// o https://")?;
+    let days = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs()) / 86_400;
+    let (y, m, d) = civil_from_days(days as i64);
+    let record = format!("<call:5>WSJTX<qso_date:8>{y:04}{m:02}{d:02}<time_on:6>000000<band:3>20m<mode:3>FT8");
+    let data = v2_body(station_id, &record, true)?;
+    let mut response = v2_request(&base, key, timeout, user_agent).send(data).map_err(|e| crate::eqsl::describe(&e))?;
+    let status = response.status().as_u16();
+    let text = response.body_mut().read_to_string().unwrap_or_default();
+    let v: Value = serde_json::from_str(&text).unwrap_or(Value::Null);
+    let data = v.get("data");
+    let dry = data.and_then(|d| d.get("dryrun")).and_then(Value::as_bool).unwrap_or(false);
+    let parsed = data.and_then(|d| d.get("parsed")).and_then(Value::as_u64).unwrap_or(0);
+    match status {
+        200 if dry && parsed > 0 => Ok(format!("token API v2 valido, stazione {} accettata (prova senza scrivere nel log)", station_id.trim())),
+        401 | 403 => Err(v2_detail(&v, "token API v2 non valido o senza permesso".into())),
+        _ => Err(v2_detail(&v, format!("la prova con l'API v2 non e' riuscita (risposta {status})"))),
+    }
+}
+
+/// Anno, mese e giorno da giorni dal 1970 (algoritmo di Howard Hinnant, calendario gregoriano).
+fn civil_from_days(z: i64) -> (i64, u32, u32) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    (yoe + era * 400 + i64::from(m <= 2), m, d)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn v2_tokens_use_the_v2_body_and_reply() {
+        assert!(uses_api_v2("wl2_abc") && !uses_api_v2("abc123"));
+        let b: Value = serde_json::from_str(&v2_body("3", "<call:5>K1ABC<eor>", false).expect("corpo")).expect("json");
+        assert_eq!((b["import_type"].as_str(), b["station_profile_id"].as_i64(), b["adif"].as_str()), (Some("adif"), Some(3), Some("<call:5>K1ABC<eor>")));
+        assert!(b.get("dryrun").is_none());
+        let dry: Value = serde_json::from_str(&v2_body("3", "<call:5>K1ABC", true).expect("corpo")).expect("json");
+        assert_eq!((dry["adif"].as_str(), dry["dryrun"].as_bool()), (Some("<call:5>K1ABC<eor>"), Some(true)));
+        assert!(v2_body("abc", "x", false).is_err());
+        assert!(matches!(read_v2_reply(201, r#"{"data":{"parsed":1,"imported":1,"skipped":0}}"#), Outcome::Sent(_)));
+        assert!(matches!(read_v2_reply(201, r#"{"data":{"parsed":1,"imported":0,"skipped":1}}"#), Outcome::Duplicate(_)));
+        assert!(matches!(read_v2_reply(401, r#"{"error":{"message":"bad token"}}"#), Outcome::Rejected(m) if m == "bad token"));
+        assert!(matches!(read_v2_reply(503, ""), Outcome::Retry(_)));
+        assert_eq!(civil_from_days(20_403), (2025, 11, 11));
+    }
 
     #[test]
     fn the_address_is_accepted_with_or_without_index_php() {
