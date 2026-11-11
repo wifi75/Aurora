@@ -1,7 +1,10 @@
 import { toast } from '../lib/toast';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type CSSProperties, memo } from 'react';
-import { getClusterSpots, getDxped, getStationInfo, postFrequency, postMode, type ClusterSpot } from '../api/client';
+import { getClusterSpots, getDxcc, getDxped, getStationInfo, postFrequency, postMode, rotatorGoto, type ClusterSpot } from '../api/client';
+import { bearingDeg, gridCenter, type Point } from '../lib/geo';
+import { normalizeAz } from '../lib/rotator';
+import type { ClusterOptions } from '../lib/clusterOptions';
 import { dxpedState, today } from './DxpedPanel';
 import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT, type Key } from '../i18n';
@@ -18,17 +21,17 @@ import { useStation, useStatusPick } from '../state/station';
 import { useWishlist } from '../state/wishlist';
 
 const KEY = 'aurora-cluster-filters';
-const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY'] as const;
+const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'RTTY', 'PSK'] as const;
 
 /** I filtri banda/modo salvati nel riquadro cluster del PC (li usa anche il telefono). */
 export function readFilters(): SpotFilters {
-  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [] };
+  const defaults: SpotFilters = { bands: [], modes: [], search: '', spotters: [], newOnly: false };
   try {
     const raw = browserStorage()?.getItem(KEY);
     if (!raw) return defaults;
-    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown };
+    const p = JSON.parse(raw) as { bands?: unknown; band?: unknown; modes?: unknown; mode?: unknown; spotters?: unknown; newOnly?: unknown };
     // le versioni precedenti salvavano una sola banda e un solo modo
-    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters) };
+    return { bands: toList(p.bands ?? p.band), modes: toList(p.modes ?? p.mode), search: '', spotters: toList(p.spotters), newOnly: p.newOnly === true };
   } catch {
     return defaults;
   }
@@ -59,14 +62,15 @@ export async function tuneSpot(spot: ClusterSpot): Promise<void> {
 }
 
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
-function ClusterPanelInner() {
+/** `onSpot`: cosa fare al clic su uno spot al posto di portare la radio sulla sua frequenza (la pagina dei modi testuali la porta con il segnale sul suo tono). */
+function ClusterPanelInner({ onSpot, options }: { onSpot?: (spot: ClusterSpot) => Promise<void>; options?: ClusterOptions } = {}) {
   const t = useT();
   // le DXpedition del calendario NG3K in onda oggi: i loro spot si evidenziano (stessa richiesta del pannello DXpedition, gia' in memoria)
   const dxpedQuery = useQuery({ queryKey: ['online-dxped'], queryFn: getDxped, staleTime: 10 * 60_000, retry: false });
   const day = today();
   const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
-  const status = useStatusPick(['dial_hz', 'mode', 'own_continent']);
+  const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
@@ -81,7 +85,7 @@ function ClusterPanelInner() {
   const change = (next: SpotFilters) => {
     setFilters(next);
     try {
-      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [] }));
+      browserStorage()?.setItem(KEY, JSON.stringify({ bands: next.bands, modes: next.modes, spotters: next.spotters ?? [], newOnly: next.newOnly === true }));
     } catch {
       // senza archivio i filtri non si ricordano, ma la finestra funziona lo stesso
     }
@@ -126,16 +130,50 @@ function ClusterPanelInner() {
   }
 
   const linked = servers.filter((s) => s.state === 'connected').length;
-  const shown = filterSpots(spots, filters, myBand, status?.own_continent);
+  // «solo nuovi»: gli spot che la lista dei desideri considera nuovi (paese, griglia, banda...)
+  const shown = filterSpots(spots, filters, myBand, status?.own_continent).filter((s) => !filters.newOnly || wishReason(wishlist, s.dx_call, s.grid, s.country, s.band) !== null)
+    // la rotella: gli spot piu' vecchi dei minuti scelti non si mostrano
+    .filter((s) => !options || options.expireMin === 0 || spotAge(s) <= options.expireMin * 60);
+
+  /** Il rotore gira verso lo spot: dal locatore dello spot, altrimenti dal centro del suo paese. */
+  const pointRotor = async (spot: ClusterSpot) => {
+    const from = status?.de_grid ? gridCenter(status.de_grid) : null;
+    if (!from) {
+      toast(t('cluster.rotor.noGrid'), 'error');
+      return;
+    }
+    let to: Point | null = spot.grid ? gridCenter(spot.grid) : null;
+    if (!to) {
+      try {
+        const d = await getDxcc(spot.dx_call);
+        if (typeof d.lat === 'number' && typeof d.lon === 'number') to = { lat: d.lat, lon: d.lon };
+      } catch {
+        // senza paese conosciuto si avvisa qui sotto
+      }
+    }
+    if (!to) {
+      toast(t('cluster.rotor.noPos', { call: spot.dx_call }), 'error');
+      return;
+    }
+    const az = normalizeAz(bearingDeg(from, to));
+    try {
+      await rotatorGoto(az);
+      toast(t('cluster.rotor.going', { call: spot.dx_call, az: Math.round(az) }), 'info');
+    } catch {
+      toast(t('digi.run.rotorFail'), 'error');
+    }
+  };
 
   const tune = async (spot: ClusterSpot) => {
+    // il rotore gira anche se la radio non c'e' o non risponde
+    if (options?.rotor) void pointRotor(spot);
     if (!info.data?.rig_control && !info.data?.manual_dial) {
       toast(t('cluster.noRig'), 'error');
       return;
     }
     try {
       // niente riga «Radio portata su…» sopra la tabella: si vede gia' sul display; gli errori in un avviso che sparisce
-      await tuneSpot(spot);
+      await (onSpot ?? tuneSpot)(spot);
     } catch (error) {
       toast(replyErrorMessage(error, t), 'error');
     }
@@ -166,6 +204,9 @@ function ClusterPanelInner() {
           selected={filters.spotters ?? []}
           onChange={(spotters) => change({ ...filters, spotters })}
         />
+        <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
+          {t('cluster.filter.newOnly')}
+        </button>
         <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
@@ -176,7 +217,7 @@ function ClusterPanelInner() {
       ) : shown.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.none')}</p>
       ) : (
-        <table className="cluster-table">
+        <table className="cluster-table" data-hide={options && options.hidden.length > 0 ? options.hidden.join(' ') : undefined}>
           <thead>
             <tr>
               <th title={t('tip.ui.clusterBy')}>{t('cluster.col.by')}</th>
@@ -202,7 +243,8 @@ function ClusterPanelInner() {
                   className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}${dxped ? ' cluster-row--dxped' : ''}`}
                   data-dxped={dxped || undefined}
                   title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
-                  onDoubleClick={() => void tune(s)}
+                  onClick={options?.click === 'single' ? () => void tune(s) : undefined}
+                  onDoubleClick={options?.click === 'single' ? undefined : () => void tune(s)}
                 >
                   <td className="data cluster-de" title={`${spotAge(s)} s`}>
                     <CallsignTip call={s.spotter}>{s.spotter}</CallsignTip>

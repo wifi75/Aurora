@@ -17,6 +17,9 @@ logbook = { path = "../logbook" }
 qso-engine = { path = "../qso-engine" }
 rig-control = { path = "../rig-control" }
 qmap = { path = "../qmap" }
+mode-sstv = { path = "../mode-sstv" }
+mode-digi = { path = "../mode-digi" }
+mode-sat = { path = "../mode-sat" }
 contest = { path = "../contest" }
 jt = { path = "../jt" }
 wishlist = { path = "../wishlist" }

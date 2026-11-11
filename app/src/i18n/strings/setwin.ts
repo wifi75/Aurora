@@ -22,6 +22,7 @@ export const setWinStrings = {
   'sw.sec.operate': ['Operare', 'Operating', 'Betrieb', 'Trafic', 'Operar', 'Operar'],
   'sw.sec.look': ['Aspetto e avvisi', 'Look and alerts', 'Aussehen und Hinweise', 'Aspect et alertes', 'Aspecto y avisos', 'Aspeto e avisos'],
   'sw.sec.log': ['Log e servizi', 'Log and services', 'Log und Dienste', 'Journal et services', 'Log y servicios', 'Log e serviços'],
+  'sw.sec.modes': ['Altri modi', 'Other modes', 'Weitere Modi', 'Autres modes', 'Otros modos', 'Outros modos'],
   'sw.sec.access': ['Accesso e assistenza', 'Access and support', 'Zugang und Hilfe', 'Accès et assistance', 'Acceso y asistencia', 'Acesso e assistência'],
   'sw.extra': ['Funzioni di Aurora', 'Aurora features', 'Aurora-Funktionen', 'Fonctions d’Aurora', 'Funciones de Aurora', 'Funções do Aurora'],
   'sw.tab.info': ['Informazioni', 'About', 'Info', 'À propos', 'Acerca de', 'Sobre'],

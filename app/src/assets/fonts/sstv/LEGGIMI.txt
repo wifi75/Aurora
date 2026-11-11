@@ -1,0 +1,15 @@
+Caratteri del compositore SSTV di Aurora, tutti con la SIL Open Font License 1.1 (testo completo in OFL.txt),
+presi da https://github.com/google/fonts (cartella ofl/) e serviti dal programma stesso, senza collegamenti esterni.
+
+Anton             - The Anton Project Authors (Vernon Adams)
+Bangers           - Vernon Adams
+Bebas Neue        - Dharma Type (Ryoichi Tsunekawa)
+Black Ops One     - James Grieshaber, Eben Sorkin
+Great Vibes       - TypeSETit (Robert Leuschke)
+Lobster           - Pablo Impallari
+Orbitron          - The Orbitron Project Authors (Matt McInerney)
+Pacifico          - Vernon Adams, Jacques Le Bailly, Botjo Nikoltchev, Ani Petrova
+Press Start 2P    - CodeMan38
+Righteous         - Astigmatic (Brian J. Bonislawsky)
+
+Ogni carattere resta dei suoi autori; la licenza ne permette l'uso, la copia e la distribuzione insieme ad Aurora.

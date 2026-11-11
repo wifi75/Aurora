@@ -8,9 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { checkSession } from './api/client';
 import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
-import { HeaderAlertSwitch } from './components/AlertSwitch';
+import { ModeNav } from './components/ModeNav';
 import { useT } from './i18n';
-import { ThemeToggle } from './components/ThemeToggle';
 import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
 import { applyColors, readColors } from './lib/colors';
@@ -34,6 +33,9 @@ import { HistoryPage } from './pages/HistoryPage';
 import { MapPage } from './pages/MapPage';
 import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
+import { SstvPage } from './pages/SstvPage';
+import { DigiPage } from './pages/DigiPage';
+import { SatPage } from './pages/SatPage';
 import { Pair } from './pages/Pair';
 import { Stats } from './pages/Stats';
 import { ExportPage } from './pages/ExportPage';
@@ -165,6 +167,12 @@ export function App() {
     content = <PropagationPage />;
   } else if (route.name === 'rotator') {
     content = <RotatorPage />;
+  } else if (route.name === 'sstv') {
+    content = <SstvPage />;
+  } else if (route.name === 'digi') {
+    content = <DigiPage />;
+  } else if (route.name === 'sat') {
+    content = <SatPage />;
   } else if (route.name === 'guide') {
     content = <Wiki />;
   } else if (route.name === 'fox') {
@@ -198,25 +206,7 @@ export function App() {
           <span className="app-brand-by">by IU3CYV</span>
         </a>
         <nav className="app-nav" aria-label={t('nav.pages')}>
-          <a className={`glass${route.name === 'live' ? ' glass--on' : ''}`} aria-current={route.name === 'live' ? 'page' : undefined} href="#/">{t('nav.station')}</a>
-          <a className={`glass${route.name === 'fox' ? ' glass--on' : ''}`} aria-current={route.name === 'fox' ? 'page' : undefined} href="#/fox" title={t('tip.nav.fox')}>{t('nav.fox')}</a>
-          <a className={`glass${route.name === 'contest' ? ' glass--on' : ''}`} aria-current={route.name === 'contest' ? 'page' : undefined} href="#/contest" title={t('tip.nav.contest')}>{t('nav.contest')}</a>
-          {/* QMAP solo se acceso in Impostazioni (serve un SDR con TCI); la pagina resta raggiungibile da #/qmap */}
-          {showQmap || route.name === 'qmap' ? (
-            <a className={`glass${route.name === 'qmap' ? ' glass--on' : ''}`} aria-current={route.name === 'qmap' ? 'page' : undefined} href="#/qmap" title={t('tip.nav.qmap')}>{t('nav.qmap')}</a>
-          ) : null}
-          <a className={`glass${route.name === 'stats' ? ' glass--on' : ''}`} aria-current={route.name === 'stats' ? 'page' : undefined} href="#/statistiche">{t('nav.stats')}</a>
-          <a className={`glass${route.name === 'dxmap' ? ' glass--on' : ''}`} aria-current={route.name === 'dxmap' ? 'page' : undefined} href="#/mappa-dx">{t('nav.dxmap')}</a>
-          {/* «Log»: tutti i QSO con filtri ed esportazione ADIF; lo storico dei messaggi ricevuti non e' piu' nel menu (scelta del proprietario) */}
-          <a className={`glass${route.name === 'export' ? ' glass--on' : ''}`} aria-current={route.name === 'export' ? 'page' : undefined} href="#/esporta">{t('nav.log')}</a>
-          <a className={`glass${route.name === 'propagation' ? ' glass--on' : ''}`} aria-current={route.name === 'propagation' ? 'page' : undefined} href="#/propagazione">{t('nav.propagation')}</a>
-          <a className={`glass${route.name === 'rotator' ? ' glass--on' : ''}`} aria-current={route.name === 'rotator' ? 'page' : undefined} href="#/rotore" title={t('tip.nav.rotator')}>{t('nav.rotator')}</a>
-          {REMOTE ? null : (
-            <a className={`glass${route.name === 'settings' ? ' glass--on' : ''}`} aria-current={route.name === 'settings' ? 'page' : undefined} href="#/impostazioni">{t('nav.settings')}</a>
-          )}
-          <a className={`glass${route.name === 'guide' ? ' glass--on' : ''}`} aria-current={route.name === 'guide' ? 'page' : undefined} href="#/guida">{t('nav.wiki')}</a>
-          <a className={`glass${route.name === 'news' ? ' glass--on' : ''}`} aria-current={route.name === 'news' ? 'page' : undefined} href="#/novita">{t('nav.news')}</a>
-          {/* solo nella grafica di prova compilata sul PC (VITE_AURORA_PROVA=1): mai nelle versioni pubblicate */}
+          <ModeNav route={route} showQmap={showQmap} remote={REMOTE} />
           {/* solo nella prova aperta nel browser: mai nel programma installato (finestra di Aurora), nemmeno con la grafica di prova */}
           {import.meta.env.VITE_AURORA_PROVA === '1' && !('__TAURI_INTERNALS__' in window) ? (
             <span className="app-test-badge" title="Grafica di prova compilata sul PC: non e' la versione pubblicata">
@@ -233,9 +223,7 @@ export function App() {
             </button>
           ) : null}
           {session.data ? <UpdateBar /> : null}
-          {/* la lingua si sceglie in Impostazioni (Generali): nella barra in alto non serve (richiesta del proprietario) */}
-          <HeaderAlertSwitch />
-          <ThemeToggle />
+          {/* avvisi e tema stanno nella barra in fondo (menu nuovo); la lingua si sceglie in Impostazioni (Generali) */}
         </span>
       </header>
       )}
@@ -243,7 +231,7 @@ export function App() {
       <main className="app-main">
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
-      {REMOTE_TOUCH ? null : <Footer />}
+      {REMOTE_TOUCH ? null : <Footer page={route.name} />}
       <Toaster />
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}

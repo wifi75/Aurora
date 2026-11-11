@@ -7,6 +7,9 @@ import { Check } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
 
 /** Scheda Rotore: come si raggiunge rotctld (lanciato da Aurora o gia' acceso), modello, porta e velocita'. */
+/** I campi di rotazione piu' comuni: un giro, 450 gradi (i rotori con la sovrapposizione), da -180 a 180 (centro a sud) e altri. */
+const RANGES: readonly (readonly [number, number])[] = [[0, 360], [0, 450], [-180, 180], [-90, 450], [0, 540]];
+
 export function RotatorTab() {
   const t = useT();
   const client = useQueryClient();
@@ -130,6 +133,33 @@ export function RotatorTab() {
               </Field>
               <Field label={t('rot.set.tcpPort')} hint={t('tip.rot.tcpPort')}>
                 <input type="number" min={1} max={65535} value={config.tcp_port} onChange={(e) => set({ tcp_port: Number(e.target.value) || 0 })} />
+              </Field>
+            </>
+          )}
+          <Field label={t('rot.set.range')} hint={t('tip.rot.range')}>
+            <select
+              value={RANGES.some(([lo, hi]) => lo === config.min_az && hi === config.max_az) ? `${config.min_az}:${config.max_az}` : 'custom'}
+              onChange={(e) => {
+                if (e.target.value === 'custom') return;
+                const [lo, hi] = e.target.value.split(':').map(Number);
+                set({ min_az: lo ?? 0, max_az: hi ?? 360 });
+              }}
+            >
+              {RANGES.map(([lo, hi]) => (
+                <option key={`${lo}:${hi}`} value={`${lo}:${hi}`}>
+                  {lo}° … {hi}°
+                </option>
+              ))}
+              <option value="custom">{t('rot.set.rangeCustom')}</option>
+            </select>
+          </Field>
+          {RANGES.some(([lo, hi]) => lo === config.min_az && hi === config.max_az) ? null : (
+            <>
+              <Field label={t('rot.set.rangeFrom')} hint={t('tip.rot.range')}>
+                <input type="number" min={-360} max={360} value={config.min_az} onChange={(e) => set({ min_az: Number(e.target.value) || 0 })} />
+              </Field>
+              <Field label={t('rot.set.rangeTo')} hint={t('tip.rot.range')}>
+                <input type="number" min={90} max={720} value={config.max_az} onChange={(e) => set({ max_az: Number(e.target.value) || 360 })} />
               </Field>
             </>
           )}

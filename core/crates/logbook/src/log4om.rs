@@ -18,6 +18,20 @@ pub struct Log4omQso {
     pub rst_rcvd: String,
     pub country: String,
     pub grid: String,
+    /// Frequenza in Hz (0 se il log non la dice), nome e QTH del corrispondente (vuoti se il log non li ha).
+    pub freq_hz: u64,
+    pub name: String,
+    pub qth: String,
+}
+
+/// La frequenza di Log4OM2 in Hz: il campo puo' essere in MHz (14.074), in kHz (14074) o in Hz (14074000).
+fn freq_to_hz(text: &str) -> u64 {
+    let Ok(v) = text.trim().replace(',', ".").parse::<f64>() else { return 0 };
+    if !v.is_finite() || v <= 0.0 {
+        return 0;
+    }
+    let hz = if v < 1000.0 { v * 1e6 } else if v < 1e6 { v * 1e3 } else { v };
+    hz.round() as u64
 }
 
 /// Totale dei QSO e gli ultimi `limit`, dal piu' recente.
@@ -32,11 +46,22 @@ pub fn read_recent(path: &Path, limit: usize) -> Result<Log4omView, LogError> {
     let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX)?;
     conn.busy_timeout(std::time::Duration::from_secs(2))?;
     let total: i64 = conn.query_row("SELECT COUNT(*) FROM Log", [], |r| r.get(0))?;
-    let mut stmt = conn.prepare(
+    // le colonne in piu' (frequenza, nome, QTH) si leggono solo se il file le ha
+    let columns: Vec<String> = {
+        let mut stmt = conn.prepare("PRAGMA table_info(Log)")?;
+        let names = stmt.query_map([], |r| r.get::<_, String>(1))?.collect::<Result<Vec<_>, _>>()?;
+        names.into_iter().map(|n| n.to_lowercase()).collect()
+    };
+    let col = |c: &str| if columns.iter().any(|x| x == c) { format!("COALESCE(CAST({c} AS TEXT), '')") } else { "''".to_string() };
+    let sql = format!(
         "SELECT COALESCE(qsodate, ''), COALESCE(callsign, ''), COALESCE(band, ''), COALESCE(mode, ''),
-                COALESCE(rstsent, ''), COALESCE(rstrcvd, ''), COALESCE(country, ''), COALESCE(gridsquare, '')
+                COALESCE(rstsent, ''), COALESCE(rstrcvd, ''), COALESCE(country, ''), COALESCE(gridsquare, ''), {}, {}, {}
          FROM Log ORDER BY qsodate DESC LIMIT ?1",
-    )?;
+        col("freq"),
+        col("name"),
+        col("qth")
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let qsos = stmt
         .query_map([limit as i64], |r| {
             Ok(Log4omQso {
@@ -48,6 +73,9 @@ pub fn read_recent(path: &Path, limit: usize) -> Result<Log4omView, LogError> {
                 rst_rcvd: r.get(5)?,
                 country: r.get(6)?,
                 grid: r.get(7)?,
+                freq_hz: freq_to_hz(&r.get::<_, String>(8)?),
+                name: r.get(9)?,
+                qth: r.get(10)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;

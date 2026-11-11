@@ -92,6 +92,8 @@ export const clusterStrings = {
   'cluster.filter.spotterAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
   'cluster.filter.spotterMine': ['Solo il mio continente', 'Only my continent', 'Nur mein Kontinent', 'Seulement mon continent', 'Solo mi continente', 'Só o meu continente'],
   'cluster.filter.modeAll': ['Tutti', 'All', 'Alle', 'Tous', 'Todos', 'Todos'],
+  'cluster.filter.newOnly': ['Solo nuovi', 'New only', 'Nur neue', 'Nouveaux seulement', 'Solo nuevos', 'Só novos'],
+  'tip.cluster.newOnly': ['Mostra solo gli spot nuovi per la tua lista dei desideri (paese, griglia, banda).', 'Show only the spots that are new for your wish list (country, grid, band).', 'Nur Spots anzeigen, die für deine Wunschliste neu sind (Land, Feld, Band).', 'Afficher seulement les spots nouveaux pour ta liste de souhaits (pays, locator, bande).', 'Muestra solo los spots nuevos para tu lista de deseos (país, locator, banda).', 'Mostra só os spots novos para a tua lista de desejos (país, locator, banda).'],
   'cluster.filter.search': [
     'Cerca nominativo',
     'Search callsign',

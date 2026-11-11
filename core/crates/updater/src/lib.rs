@@ -459,6 +459,17 @@ impl UpdateService {
 
     /// Chiede a GitHub l'ultima release e ricorda l'esito. Bloccante: da un thread dedicato.
     pub fn check(&self) -> Status {
+        // la versione di sviluppo del proprietario (compilata con AURORA_SVILUPPO) non deve mai aggiornarsi da sola a una release
+        // pubblica: niente richiesta a GitHub, nessuna release disponibile
+        if option_env!("AURORA_SVILUPPO").is_some() {
+            {
+                let mut state = lock(&self.state);
+                state.latest = None;
+                state.error = None;
+                state.checked_at_ms = unix_ms();
+            }
+            return self.status();
+        }
         let config = self.config();
         let result = self.fetch(&config);
         {

@@ -1,5 +1,7 @@
 import { useFox } from './fox';
 import { periodSecs } from '../lib/period';
+import { emitDigi } from '../lib/digiBus';
+import { emitSstv } from '../lib/sstvBus';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
@@ -279,6 +281,14 @@ export const useStation = create<StationState>((set) => ({
       }
       case 'notice':
         set((s) => ({ notices: { ...s.notices, [event.id]: { detail: event.detail, at: Date.now() } } }));
+        break;
+      case 'sstv':
+        // fuori dallo stato della Stazione: le righe dell'immagine vanno solo a chi le disegna
+        emitSstv(event);
+        break;
+      case 'digi':
+        // come l'SSTV: il testo va solo a chi lo mostra
+        emitDigi(event);
         break;
       case 'tx_halted':
         set((s) => (s.status ? { status: { ...s.status, transmitting: false } } : s));

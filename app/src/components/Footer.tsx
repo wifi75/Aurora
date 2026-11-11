@@ -1,3 +1,5 @@
+import { HeaderAlertSwitch } from './AlertSwitch';
+import { ThemeToggle } from './ThemeToggle';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { getCat, getEngineSettings, getHealth } from '../api/client';
@@ -24,7 +26,9 @@ function usePeriodClock(mode: string | undefined): { elapsed: number; total: num
  * dell'ultimo periodo, l'avanzamento del periodo con i secondi, il profilo della radio e il watchdog; a destra nome, versione e autore
  * dal core (mai scritti a mano qui).
  */
-export function Footer() {
+export function Footer({ page }: { page?: string } = {}) {
+  // decodifiche, avanzamento del periodo e watchdog sono cose dell'FT8: nelle pagine degli altri modi non servono
+  const otherMode = page === 'sstv' || page === 'digi' || page === 'sat';
   const t = useT();
   const { data, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
   const status = useStatusPick(['mode', 'transmitting']);
@@ -41,7 +45,7 @@ export function Footer() {
 
   return (
     <footer className="app-footer app-bar">
-      {status ? (
+      {status && !otherMode ? (
         <div className="app-bar-left">
           <span className="bar-item">
             {t('bar.decodes')}: <b>{periodDecodes}</b>
@@ -64,6 +68,11 @@ export function Footer() {
       ) : (
         <div className="app-bar-left" />
       )}
+      {/* avvisi e tema: nel menu nuovo stanno qui, a destra, vicino all'ora */}
+      <span className="bar-tools">
+        <HeaderAlertSwitch />
+        <ThemeToggle />
+      </span>
       <span className="bar-utc num" title="UTC">
         {new Date(now).toISOString().slice(11, 19)} <i>UTC</i>
       </span>

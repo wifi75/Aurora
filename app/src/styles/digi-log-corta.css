@@ -1,0 +1,205 @@
+/* PSK e RTTY: tutto in una schermata, senza scroll di pagina. La finestra e' alta quanto lo schermo; RX/TX e la colonna di destra si
+   dividono l'altezza che resta, e le liste (DX Cluster, Log) scorrono dentro il loro riquadro. */
+/* la finestra e' fissa e riempie esattamente lo schermo visibile (con qualunque zoom o barra del sistema): niente puo' uscire dal fondo */
+.app-shell:has(.digi-page) { position: fixed; inset: 0; height: auto; min-height: 0; overflow: hidden; }
+.app-shell:has(.digi-page) .app-main { min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-bottom: 2px; }
+.app-shell:has(.digi-page) .app-main > * { min-height: 0; }
+.digi-page { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 6px 8px 4px; gap: 8px; }
+.digi-page > * { flex: none; }
+
+/* macro piu' corte (colonne fisse) con il selettore di banda a fianco */
+.digi-topline { display: flex; align-items: stretch; gap: 10px; flex-wrap: nowrap; }
+.digi-classica .digi-bar-keys { flex: 0 0 auto; width: auto; padding: 6px 10px; }
+.digi-classica .digi-keys { gap: 3px; }
+.digi-classica .digi-keyrow { grid-template-columns: repeat(12, 4.2rem) 4.6rem; }
+.digi-classica .digi-key { height: 24px; }
+.digi-topline .digi-bandbar { flex: 1 1 12rem; min-width: 10rem; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; padding: 8px 12px; }
+
+/* area centrale: prende tutta l'altezza che resta */
+.digi-main { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+.digi-windows { min-height: 0; }
+.digi-rxwin { flex: 1 1 0; min-height: 3rem; max-height: none; overflow: auto; }
+.digi-txwrap { flex: 1 1 0; min-height: 4rem; }
+.digi-txwin { min-height: 0; }
+.digi-log { align-self: stretch; min-height: 0; }
+.digi-log-cluster, .digi-log-table { flex: 1 1 0; min-height: 0; height: auto; max-height: none; overflow: auto; }
+.digi-log-table[hidden] { display: none; }
+.digi-log-qsohead, .digi-log-current { flex: none; }
+.digi-wf { flex: none; }
+
+/* niente riquadro intorno al selettore di banda: resta solo il selettore */
+.digi-topline .digi-bandbar { background: none; border: 0; box-shadow: none; padding: 0; flex: 0 0 auto; align-self: flex-start; margin-top: 2px; }
+.sstv-modesel { background: #16233f; color: var(--text, #e8eefc); border: 1px solid var(--border, #25365d); border-radius: 10px; padding: 4px 10px; font: inherit; font-weight: 600; }
+
+/* opzioni della Vista */
+.digi-zero { font-variant-numeric: slashed-zero; font-feature-settings: "zero" 1; }
+.digi-caps { text-transform: uppercase; }
+.digi-sent { text-decoration: underline; text-decoration-color: #6f81a8; text-underline-offset: 3px; }
+.digi-st--flash { animation: digi-flash 0.8s steps(2, start) infinite; }
+@keyframes digi-flash { 50% { background: #7a1d27; } }
+.digi-wf-hair { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgba(255, 255, 255, 0.55); pointer-events: none; z-index: 2; }
+.digi-wf-hair--rx { border-left-color: rgba(80, 140, 255, 0.9); }
+.digi-wf-hair--tx { border-left-color: rgba(255, 90, 90, 0.9); }
+
+/* divisore regolabile fra ricezione e trasmissione */
+.digi-split { flex: none; height: 9px; margin: -4px 0; position: relative; z-index: 3; cursor: row-resize; touch-action: none; }
+.digi-split::after { content: ''; position: absolute; left: 0; right: 0; top: 4px; border-top: 1px dashed var(--border, #25365d); }
+.digi-split:hover::after, .digi-split:active::after { border-top: 2px solid #8e7bff; top: 3px; }
+
+.digi-rxwin { border-bottom: 0; }
+
+/* cascata ridimensionabile: barra sul bordo alto */
+.digi-wf { position: relative; }
+.digi-wf-grip { position: absolute; left: 0; right: 0; top: -3px; height: 7px; cursor: row-resize; z-index: 5; touch-action: none; }
+.digi-wf-grip:hover, .digi-wf-grip:active { background: rgb(142 123 255 / 0.55); }
+
+/* il log: righe giallo chiaro con il testo viola, in fondo la riga azzurra del QSO in corso con i campi sul posto */
+.digi-log-table--completa table { min-width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--log-size, 12px); font-family: var(--log-font, inherit); font-variant-numeric: tabular-nums; }
+.digi-log-bar { flex: none; display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--border); }
+
+/* l'area centrale si restringe quanto serve: la cascata e le barre in fondo salgono e restano tutte in vista */
+.digi-classica .digi-main, .digi-main { min-height: 0; }
+.digi-page { gap: 6px; }
+
+/* colonna di sinistra: ricezione, trasmissione e cascata; la colonna di destra (DX Cluster, Log) prende tutta l'altezza */
+.digi-leftcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+.digi-leftcol .digi-windows { flex: 1 1 0; min-height: 0; }
+.digi-leftcol .digi-wf { flex: none; }
+
+/* la riga «Avvia ascolto» sta su una riga sola: il suggerimento si accorcia con i puntini */
+.digi-rxctl { align-items: center; }
+.digi-rxctl .digi-hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* colonne regolabili come in Excel: si trascina il bordo destro dell'intestazione, doppio clic per adattarla al contenuto */
+.digi-colgrip { position: absolute; top: 0; right: -3px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
+.digi-colgrip::after { content: ""; position: absolute; top: 15%; bottom: 15%; left: 4px; width: 1px; background: transparent; }
+.digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #3a4c85; background: #1c2a4f; color: #e6efff; font: inherit; cursor: pointer; text-align: left; }
+.digi-colpop-btn:hover, .digi-colpop-btn:focus-visible { background: #2d4380; color: #ffffff; border-color: #6c86d6; }
+html[data-theme='light'] .digi-colpop-btn { background: #e8edf7; color: #0b1322; border-color: #a9b8d6; }
+html[data-theme='light'] .digi-colpop-btn:hover, html[data-theme='light'] .digi-colpop-btn:focus-visible { background: #d3e0fa; color: #000; border-color: #5b7fd1; }
+
+/* aspetto «colore per banda»: tabella scura, barra colorata della banda a sinistra, modo come etichetta, rapporti verdi/ambra/rossi */
+.digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #0f1629; }
+.digi-log-table--completa th { position: sticky; top: 0; z-index: 1; background: #172040; color: #9db0da; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.82em; font-weight: 600; border: 0; border-bottom: 1px solid #26345f; padding: 0.4em 0.6em; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa td { background: transparent; color: #d7e3ff; padding: 0.3em 0.6em; border: 0; border-bottom: 1px solid #1b2748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa td:first-child { border-left: 0.4em solid var(--b, #1b2748); color: #8ea2cf; }
+.digi-log-table--completa td b { color: #fff; font-weight: 700; }
+.digi-log-table--completa tbody tr:hover td { background: #16204a; }
+.digi-log-table--completa tr.digi-log-cur td { background: #12385a; color: #fff; border-bottom-color: #1f6fa8; }
+.digi-log-table--completa tr.digi-log-cur td:first-child { border-left-color: #38bdf8; color: #fff; }
+.digi-mode-badge { display: inline-block; padding: 0.05em 0.55em; border-radius: 0.4em; color: #0b1020; font-weight: 700; font-size: 0.88em; line-height: 1.4; }
+.rst-good { color: #34d399; }
+.rst-mid { color: #fbbf24; }
+.rst-low { color: #fb7185; }
+.digi-cur-in { width: 100%; min-width: 3.2rem; box-sizing: border-box; border: 1px solid #38bdf8; border-radius: 0.3em; background: #0a1324; color: #fff; font: inherit; padding: 0 0.3em; height: 1.6em; }
+html[data-theme='light'] .digi-log-table--completa { background: #ffffff; }
+html[data-theme='light'] .digi-log-table--completa th { background: #e8edf7; color: #46556f; border-bottom-color: #c5cfe3; }
+html[data-theme='light'] .digi-log-table--completa td { color: #0b1322; border-bottom-color: #e3e9f6; }
+html[data-theme='light'] .digi-log-table--completa td:first-child { color: #52617d; }
+html[data-theme='light'] .digi-log-table--completa td b { color: #000; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:hover td { background: #eef3fd; }
+html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td { background: #d8efff; color: #000; border-bottom-color: #8ac4ee; }
+html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td:first-child { border-left-color: #0284c7; color: #000; }
+html[data-theme='light'] .rst-good { color: #047857; } html[data-theme='light'] .rst-mid { color: #b45309; } html[data-theme='light'] .rst-low { color: #be123c; }
+html[data-theme='light'] .digi-cur-in { background: #fff; color: #000; }
+.digi-log-table--completa th:hover .digi-colgrip::after, .digi-colgrip:hover::after { background: #38bdf8; width: 2px; left: 3px; }
+.digi-colpop-btn { border-radius: 6px; }
+
+/* griglia ben visibile (righe e colonne), righe alternate e riga sotto il mouse illuminata: scuro e chiaro */
+.digi-log-table--completa th { border-right: 1px solid #3a4c85; border-bottom: 1px solid #3a4c85; }
+.digi-log-table--completa td { border-right: 1px solid #2c3d6e; border-bottom: 1px solid #2c3d6e; }
+.digi-log-table--completa td:first-child { border-right-color: #2c3d6e; }
+.digi-log-table--completa tbody tr:nth-child(odd) td { background: #0f1629; }
+.digi-log-table--completa tbody tr:nth-child(even) td { background: #182655; }
+.digi-log-table--completa tbody tr:not(.digi-log-cur):hover td { background: #2d54a8; color: #fff; }
+.digi-log-table--completa tbody tr:not(.digi-log-cur):hover td b { color: #fff; }
+.digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-good { color: #6ee7b7; }
+.digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-mid { color: #fde68a; }
+.digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-low { color: #fda4af; }
+.digi-log-table--completa tbody tr.digi-log-cur td { background: #12385a; }
+html[data-theme='light'] .digi-log-table--completa th { border-right-color: #a9b8d6; border-bottom-color: #a9b8d6; }
+html[data-theme='light'] .digi-log-table--completa td { border-right-color: #b7c4de; border-bottom-color: #b7c4de; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:nth-child(odd) td { background: #ffffff; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:nth-child(even) td { background: #e6eefb; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover td { background: #b5d2ff; color: #000; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover td b { color: #000; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-good { color: #065f46; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-mid { color: #92400e; }
+html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):hover .rst-low { color: #9f1239; }
+html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { background: #cfeaff; }
+
+/* rotella del DX Cluster: finestra e colonne nascoste */
+.cop-dialog { width: min(34rem, 96vw); }
+.cop-dialog fieldset { display: flex; flex-direction: column; gap: 0.3rem; margin: 0; border: 1px solid var(--border, #3a3f7a); border-radius: 10px; padding: 0.6rem 0.9rem; }
+.cop-dialog legend { padding: 0 0.4rem; font-weight: 600; }
+.cop-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.cop-radio { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.1rem 0; }
+.cop-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.cop-hint { margin: 0.2rem 0 0; font-size: 0.85em; color: var(--text-muted, #9aa7c4); }
+.cop-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 1rem; }
+.cluster-table[data-hide~="de"] th:nth-child(1), .cluster-table[data-hide~="de"] td:nth-child(1) { display: none; }
+.cluster-table[data-hide~="freq"] th:nth-child(2), .cluster-table[data-hide~="freq"] td:nth-child(2) { display: none; }
+.cluster-table[data-hide~="dx"] th:nth-child(3), .cluster-table[data-hide~="dx"] td:nth-child(3) { display: none; }
+.cluster-table[data-hide~="country"] th:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(4), .cluster-table[data-hide~="country"] td:nth-child(5) { display: none; }
+.cluster-table[data-hide~="mode"] th:nth-child(5), .cluster-table[data-hide~="mode"] td:nth-child(6) { display: none; }
+.cluster-table[data-hide~="comment"] th:nth-child(6), .cluster-table[data-hide~="comment"] td:nth-child(7) { display: none; }
+.cluster-table[data-hide~="time"] th:nth-child(7), .cluster-table[data-hide~="time"] td:nth-child(8) { display: none; }
+.cop-dialog label.cop-radio { flex-direction: row; align-items: center; justify-content: flex-start; text-align: left; gap: 0.6rem; }
+.cop-dialog label.cop-radio input { flex: none; width: auto; margin: 0; }
+.cop-dialog label.cop-row { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; }
+.cop-dialog .cop-cols { display: grid; grid-template-columns: 1fr 1fr; }
+
+/* la scheda del rotore, come il blocco: bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
+.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(100vw - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
+/* il carattere segue la larghezza della scheda (cqw si misura sul contenitore, quindi sugli elementi dentro di lui): con la scheda piu' grande o piu' piccola testo e pulsanti si adattano e non escono dai riquadri */
+.rotor-card > * { font-size: max(9px, 4.4cqw); }
+.rotor-bar { display: flex; align-items: center; gap: 0.6em; padding: 0.4em 0.6em 0.4em 0.8em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 1.05em; }
+.rotor-bar:active { cursor: grabbing; }
+.rotor-bar-sp { flex: 1; }
+.rotor-bar-btn { border: 0; background: transparent; color: #bbb; font: inherit; font-size: 1.1em; cursor: pointer; padding: 0 0.4em; border-radius: 4px; line-height: 1.2; }
+.rotor-bar-btn:hover { background: #3a3a3a; color: #fff; }
+.rotor-dot { width: 0.8em; height: 0.8em; border-radius: 50%; background: #666; }
+.rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
+.rotor-dot--moving { background: #ffb41f; box-shadow: 0 0 8px #ffb41f; animation: rotor-pulse 0.8s ease-in-out infinite; }
+@keyframes rotor-pulse { 50% { opacity: 0.35; } }
+.rotor-dial-box { padding: 0.5em 0.6em 0.2em; }
+.rotor-dial { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: manipulation; user-select: none; }
+.rotor-dial--off { cursor: default; opacity: 0.8; }
+.rotor-needle { transform-box: view-box; transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1); filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.7)); }
+.rotor-card--moving .rotor-needle { transition: transform 0.45s linear; filter: drop-shadow(0 0 4px rgba(255, 190, 60, 0.9)); }
+.rotor-lcd { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.3em; margin: 0.2em 0.5em 0; padding: 0.3em 0.5em; background: #d4a900; color: #2a1d00; border-radius: 3px; }
+.rotor-digits { grid-column: 1; grid-row: 1 / 3; width: 100%; height: auto; display: block; }
+.rotor-lcd-btns { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 0.3em; margin-right: 1.8em; width: 22cqw; min-width: 0; }
+.rotor-go, .rotor-stop { min-width: 0; width: 100%; white-space: nowrap; overflow: hidden; padding: 0.15em 0.4em; border: 1px solid #5a4500; border-radius: 4px; font: inherit; font-size: 0.9em; cursor: pointer; }
+.rotor-go { background: transparent; color: #2a1d00; }
+.rotor-stop { background: #4a3a00; color: #f0cc3a; }
+.rotor-go:disabled, .rotor-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+.rotor-help { position: absolute; left: 0.3em; top: 0.2em; width: 1.3em; height: 1.3em; padding: 0; border: 1.5px solid #5a4500; border-radius: 50%; background: transparent; color: #5a4500; font: 0.75em var(--font-ui); line-height: 1; cursor: help; }
+.rotor-gear { position: absolute; right: 0.3em; top: 0.1em; border: 0; background: transparent; color: #5a4500; font: inherit; font-size: 1.1em; cursor: pointer; padding: 0 0.1em; }
+.rotor-gear span { font-size: 0.7em; margin-left: 0.1em; }
+.rotor-more { display: flex; flex-direction: column; gap: 0.3em; margin: 0.4em 0.5em 0; padding: 0.4em; background: #2e2e2e; border: 1px solid #4a4a4a; border-radius: 4px; }
+.rotor-more-row { display: flex; gap: 0.3em; }
+.rotor-more-row input { flex: 1; min-width: 0; text-align: center; font: inherit; font-size: 0.85em; background: #161616; color: #fff; border: 1px solid #555; border-radius: 4px; }
+.rotor-more button { flex: 1; padding: 0.2em 0.3em; border: 1px solid #555; border-radius: 4px; background: linear-gradient(#3d3d3d, #232323); color: #ddd; font: inherit; font-size: 0.8em; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rotor-more button:disabled { opacity: 0.4; cursor: not-allowed; }
+.rotor-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35em; margin: 0.4em 0.35em 0.4em; padding: 0.4em; background: #333; border: 1px solid #444; border-radius: 4px; }
+.rotor-presets button { min-width: 0; overflow: hidden; text-overflow: clip; white-space: nowrap; font-size: max(8px, 4.6cqw); padding: 0.45em 0; border: 1px solid #555; border-radius: 5px; background: linear-gradient(#444, #1f1f1f); color: #e2e2e2; font: inherit; font-size: 0.95em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.rotor-presets button:hover:not(:disabled) { background: linear-gradient(#555, #2a2a2a); }
+.rotor-presets button:disabled { opacity: 0.45; cursor: not-allowed; }
+.rotor-note { margin: 0 0.6em 0.5em; font-size: 0.75em; color: #aaa; }
+.rotor-note a { color: #9cc4ff; }
+.rotor-note--err { color: #ff9c9c; }
+.rotor-card--off .rotor-dial-box { opacity: 0.9; }
+.rotor-grip { position: absolute; right: 0; bottom: 0; width: 1.1em; height: 1.1em; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, #8a8a8a 50%, #8a8a8a 58%, transparent 58%, transparent 72%, #8a8a8a 72%, #8a8a8a 80%, transparent 80%); }
+
+/* scheda delle macro regolabile in lunghezza dal bordo destro */
+.digi-macrowrap { position: relative; flex: 0 0 auto; display: flex; min-width: 0; }
+.digi-macrowrap .digi-bar-keys { flex: 1 1 auto; min-width: 0; }
+.digi-macrowrap--sized .digi-bar-keys { width: 100%; }
+.digi-macrowrap--sized .digi-keyrow { grid-template-columns: repeat(12, minmax(0, 1fr)) minmax(3rem, 4.6rem); }
+.digi-macrowrap--sized .digi-key { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.digi-macrogrip { position: absolute; top: 0; right: -4px; width: 9px; height: 100%; cursor: ew-resize; touch-action: none; z-index: 3; }
+.digi-macrogrip::after { content: ""; position: absolute; top: 20%; bottom: 20%; left: 4px; width: 2px; border-radius: 2px; background: rgba(142, 123, 255, 0.0); transition: background 0.15s; }
+.digi-macrowrap:hover .digi-macrogrip::after, .digi-macrogrip:hover::after { background: rgba(142, 123, 255, 0.8); }
+/* l'ingranaggio delle macro: giallo chiaro nello scuro, ambra scuro nel chiaro (prima restava giallo chiaro su fondo bianco) */
+html[data-theme='light'] .digi-classica .digi-gear { color: #9a5b00; }

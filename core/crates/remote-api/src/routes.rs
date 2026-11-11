@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi))]
+#[openapi(paths(crate::digi_api::digi_get, crate::digi_api::digi_put, crate::digi_api::digi_rx_start, crate::digi_api::digi_rx_stop, crate::digi_api::digi_tx, crate::digi_api::digi_tx_abort, crate::digi_api::digi_import_macros, crate::digi_api::digi_cat, crate::digi_api::digi_textfile, crate::sstv_api::sstv_get, crate::sstv_api::sstv_put, crate::sstv_api::sstv_rx_start, crate::sstv_api::sstv_rx_stop, crate::sstv_api::sstv_rx_force, crate::sstv_api::sstv_rx_cancel, crate::sstv_api::sstv_rx_current, crate::sstv_api::sstv_images, crate::sstv_api::sstv_image, crate::sstv_api::sstv_image_delete, crate::sstv_api::sstv_tx, crate::sstv_api::sstv_tx_abort, crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -130,6 +130,31 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
         .route("/api/v1/cat/detect", post(crate::cat::cat_detect))
         .route("/api/v1/cat/extra", post(crate::cat::cat_extra))
+        .route("/api/v1/sstv", get(crate::sstv_api::sstv_get).put(crate::sstv_api::sstv_put))
+        .route("/api/v1/sstv/rx/start", post(crate::sstv_api::sstv_rx_start))
+        .route("/api/v1/sstv/rx/stop", post(crate::sstv_api::sstv_rx_stop))
+        .route("/api/v1/sstv/rx/force", post(crate::sstv_api::sstv_rx_force))
+        .route("/api/v1/sstv/rx/cancel", post(crate::sstv_api::sstv_rx_cancel))
+        .route("/api/v1/sstv/rx/current", get(crate::sstv_api::sstv_rx_current))
+        .route("/api/v1/sstv/images", get(crate::sstv_api::sstv_images))
+        .route("/api/v1/sstv/images/{id}", get(crate::sstv_api::sstv_image).delete(crate::sstv_api::sstv_image_delete))
+        .route("/api/v1/sstv/tx", post(crate::sstv_api::sstv_tx).layer(axum::extract::DefaultBodyLimit::max(crate::sstv_api::SSTV_UPLOAD_MAX_BYTES)))
+        .route("/api/v1/sstv/tx/abort", post(crate::sstv_api::sstv_tx_abort))
+        .route("/api/v1/digi", get(crate::digi_api::digi_get).put(crate::digi_api::digi_put))
+        .route("/api/v1/digi/rx/start", post(crate::digi_api::digi_rx_start))
+        .route("/api/v1/digi/rx/stop", post(crate::digi_api::digi_rx_stop))
+        .route("/api/v1/digi/tx", post(crate::digi_api::digi_tx))
+        .route("/api/v1/digi/tx/abort", post(crate::digi_api::digi_tx_abort))
+        .route("/api/v1/digi/import-macros", post(crate::digi_api::digi_import_macros))
+        .route("/api/v1/digi/cat", post(crate::digi_api::digi_cat))
+        .route("/api/v1/digi/textfile", get(crate::digi_api::digi_textfile))
+        .route("/api/v1/sat", get(crate::sat_api::sat_get).put(crate::sat_api::sat_put))
+        .route("/api/v1/sat/tle/refresh", post(crate::sat_api::sat_refresh))
+        .route("/api/v1/sat/passes", get(crate::sat_api::sat_passes))
+        .route("/api/v1/sat/track", get(crate::sat_api::sat_track))
+        .route("/api/v1/sat/positions", get(crate::sat_api::sat_positions))
+        .route("/api/v1/sat/maps", get(crate::sat_api::sat_maps).post(crate::sat_api::sat_map_upload).layer(axum::extract::DefaultBodyLimit::max(21 * 1024 * 1024)))
+        .route("/api/v1/sat/maps/{name}", get(crate::sat_api::sat_map))
         .route("/api/v1/rotator", get(crate::rotator_api::rotator_get).put(crate::rotator_api::rotator_put))
         .route("/api/v1/rotator/goto", post(crate::rotator_api::rotator_goto))
         .route("/api/v1/rotator/stop", post(crate::rotator_api::rotator_stop))
@@ -573,7 +598,7 @@ async fn queue_reply(
 }
 
 /// Chi fa trasmettere deve avere la trasmissione aperta e arrivare da una via consentita.
-fn check_tx_allowed(state: &AppState, headers: &HeaderMap) -> Result<(), ApiError> {
+pub(crate) fn check_tx_allowed(state: &AppState, headers: &HeaderMap) -> Result<(), ApiError> {
     if !state.policy.live_tx() {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "tx_disabled"));
     }
@@ -1693,6 +1718,12 @@ struct SpotDxsummitBody {
     /// La propagazione (`Es`, `F2`...), come il campo di JTDX.
     #[serde(default)]
     prop: String,
+    /// Frequenza dello spot in kHz, scelta a mano (finestra «Invia spot» dei modi testuali): senza, si usa radio piu' frequenza di ricezione del motore.
+    #[serde(default)]
+    freq_khz: Option<f64>,
+    /// Il campo `info` completo (modo e testo), insieme a `freq_khz`.
+    #[serde(default)]
+    info: Option<String>,
 }
 
 /// Segnala la stazione scelta su DXSummit, come il pulsante «DX Call» di JTDX: frequenza = radio piu' frequenza di ricezione, `info` = modo e testo.
@@ -1706,8 +1737,26 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
     if body.text.chars().count() > 120 || body.prop.chars().count() > 10 || body.dx_grid.chars().count() > 8 {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot"));
     }
-    let params = reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop };
-    match service.spot_current(params).await {
+    // frequenza e testo scelti a mano (PSK, RTTY...): lo spot parte com'e', senza i dati dell'FT8 del motore
+    let manual = match body.freq_khz {
+        Some(khz) if khz.is_finite() && (100.0..=1_000_000.0).contains(&khz) => {
+            let info = body.info.clone().unwrap_or_default();
+            if info.chars().count() > 120 {
+                return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot"));
+            }
+            Some(((khz * 1000.0).round() as u64, info))
+        }
+        Some(_) => return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot")),
+        None => None,
+    };
+    let sent = if let Some((freq_hz, info)) = manual {
+        let call = body.dx_call.trim().to_uppercase();
+        service.spot_dxsummit(&call, freq_hz, &info).await.map(|()| reporting::SpotDone { dx_call: call, freq_hz, info })
+    } else {
+        let params = reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop };
+        service.spot_current(params).await
+    };
+    match sent {
         Ok(done) => Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info }))),
         Err(e) => {
             use reporting::SpotError;
@@ -2656,7 +2705,8 @@ async fn log_qsos(State(state): State<AppState>, _: Authed, Peer(peer): Peer, he
             .map(|e| {
                 let country = country_of(&e.call);
                 json!({ "id": e.id, "date": shown_date(&e.date), "time": shown_time(&e.time), "call": e.call, "band": e.band, "mode": e.mode,
-                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country })
+                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country,
+                        "name": e.name, "qth": e.qth })
             })
             .collect())
     })
@@ -2948,6 +2998,8 @@ struct LogAddBody {
     #[serde(default)]
     name: String,
     #[serde(default)]
+    qth: String,
+    #[serde(default)]
     comment: String,
 }
 
@@ -2988,6 +3040,7 @@ async fn log_add(State(state): State<AppState>, _: Authed, Peer(peer): Peer, hea
         time_on_unix_ms: start,
         time_off_unix_ms: start,
         name: clip(&b.name, 60),
+        qth: clip(&b.qth, 60),
         comment: clip(&b.comment, 200),
         ..Default::default()
     };

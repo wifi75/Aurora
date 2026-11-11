@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Aurora",
-  "version": "0.11.234",
+  "version": "0.11.235",
   "identifier": "it.aurora.station",
   "build": {
     "frontendDist": "../stub"

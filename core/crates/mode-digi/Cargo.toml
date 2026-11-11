@@ -1,0 +1,15 @@
+[package]
+name = "mode-digi"
+description = "Modi digitali testuali di Aurora (PSK31/PSK63, RTTY): modulazione e demodulazione; tabelle riprese da fldigi di Dave Freese W1HKJ (GPL 3)"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+mode-sstv = { path = "../mode-sstv" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

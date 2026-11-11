@@ -64,11 +64,15 @@ pub struct RotatorConfig {
     pub host: String,
     /// Porta TCP del `rotctld` gia' acceso.
     pub tcp_port: u16,
+    /// Il campo di rotazione del rotore in gradi: di base 0..360; alcuni rotori vanno oltre (0..450, -180..180, ...). Con piu' di 360 gradi
+    /// la stessa direzione si raggiunge da due angoli e Aurora sceglie il piu' vicino, senza passare dal fine corsa.
+    pub min_az: i32,
+    pub max_az: i32,
 }
 
 impl Default for RotatorConfig {
     fn default() -> RotatorConfig {
-        RotatorConfig { enabled: false, connection: RotConnection::Launch, model: 0, model_name: String::new(), port: String::new(), baud: 0, host: "127.0.0.1".into(), tcp_port: DEFAULT_ROTCTLD_PORT }
+        RotatorConfig { enabled: false, connection: RotConnection::Launch, model: 0, model_name: String::new(), port: String::new(), baud: 0, host: "127.0.0.1".into(), tcp_port: DEFAULT_ROTCTLD_PORT, min_az: 0, max_az: 360 }
     }
 }
 
@@ -96,6 +100,9 @@ impl RotatorConfig {
     pub fn validate(&self) -> Result<(), RotError> {
         if self.model_name.chars().count() > 120 {
             return Err(RotError::new("bad_model", "nome del modello troppo lungo"));
+        }
+        if !(-360..=360).contains(&self.min_az) || !(90..=720).contains(&self.max_az) || self.max_az - self.min_az < 90 || self.max_az - self.min_az > 720 {
+            return Err(RotError::new("bad_range", "campo di rotazione non valido (almeno 90 gradi, al massimo 720)"));
         }
         match self.connection {
             RotConnection::Launch => {
@@ -142,6 +149,47 @@ pub fn rotctld_args(config: &RotatorConfig, tcp_port: u16) -> Result<Vec<String>
 pub fn normalize_azimuth(az: f64) -> f64 {
     let a = az.rem_euclid(360.0);
     if a >= 360.0 { 0.0 } else { a }
+}
+
+/// Il campo di rotazione si estende oltre un giro intero.
+pub fn overlaps(min_az: i32, max_az: i32) -> bool {
+    max_az - min_az > 360
+}
+
+/// L'azimut riportato dentro un campo di al piu' 360 gradi che parte da `min_az` (per -180..180 il 270 diventa -90).
+pub fn wrap_into(az: f64, min_az: i32) -> f64 {
+    f64::from(min_az) + (az - f64::from(min_az)).rem_euclid(360.0)
+}
+
+/// L'angolo da mandare al rotore per puntare l'azimut `az`, dato dove si trova adesso (`current`) e il suo campo.
+/// Fino a 360 gradi di campo e' il solo angolo equivalente nel campo; oltre, un angolo scritto fuori da 0..360 e dentro il campo (per esempio 395)
+/// vale cosi' com'e', mentre uno tra 0 e 360 va all'equivalente piu' vicino a dove si e', cosi' non si gira di un giro per niente.
+pub fn fit_azimuth(az: f64, current: Option<f64>, min_az: i32, max_az: i32) -> f64 {
+    let (lo, hi) = (f64::from(min_az), f64::from(max_az));
+    if !overlaps(min_az, max_az) {
+        return if min_az == 0 { normalize_azimuth(az) } else { wrap_into(az, min_az) };
+    }
+    if !(0.0..360.0).contains(&az) && az >= lo && az <= hi {
+        return az;
+    }
+    let base = normalize_azimuth(az);
+    let mut best: Option<f64> = None;
+    let mut k = -2.0;
+    while k <= 2.0 {
+        let c = base + 360.0 * k;
+        if c >= lo && c <= hi {
+            let better = match (best, current) {
+                (None, _) => true,
+                (Some(b), Some(cur)) => (c - cur).abs() < (b - cur).abs(),
+                (Some(_), None) => false,
+            };
+            if better {
+                best = Some(c);
+            }
+        }
+        k += 1.0;
+    }
+    best.unwrap_or(base)
 }
 
 /// La distanza angolare piu' corta tra due azimut (0..=180).
@@ -464,7 +512,9 @@ impl RotatorService {
             None => self.shared.status.lock().ok().and_then(|s| s.el).unwrap_or(0.0),
         };
         self.require_connected()?;
-        let az = normalize_azimuth(az);
+        let (min_az, max_az) = self.shared.config.lock().map(|c| (c.min_az, c.max_az)).unwrap_or((0, 360));
+        let current = self.shared.status.lock().ok().and_then(|s| s.az);
+        let az = fit_azimuth(az, current, min_az, max_az);
         self.shared.update(|s| {
             s.target = Some(az);
             s.moving = true;
@@ -601,10 +651,14 @@ fn run(shared: &Shared, rx: &mpsc::Receiver<Cmd>) {
             last_poll = Instant::now();
             match l.client.position() {
                 Ok((az, el)) => {
-                    let az = normalize_azimuth(az);
+                    // oltre i 360 gradi di campo si tiene l'angolo vero (395 e' diverso da 35); altrimenti lo si riporta nel campo
+                    let (min_az, max_az) = shared.config.lock().map(|c| (c.min_az, c.max_az)).unwrap_or((0, 360));
+                    let wide = overlaps(min_az, max_az);
+                    let az = if wide { az } else if min_az == 0 { normalize_azimuth(az) } else { wrap_into(az, min_az) };
+                    let dist = |a: f64, b: f64| if wide { (a - b).abs() } else { angular_distance(a, b) };
                     shared.update(|s| {
-                        let turned = s.az.is_some_and(|prev| angular_distance(prev, az) > 0.5);
-                        let far = s.target.is_some_and(|t| angular_distance(az, t) > ARRIVED_DEG);
+                        let turned = s.az.is_some_and(|prev| dist(prev, az) > 0.5);
+                        let far = s.target.is_some_and(|t| dist(az, t) > ARRIVED_DEG);
                         s.moving = turned || far;
                         s.az = Some(az);
                         s.el = Some(el);
@@ -821,5 +875,38 @@ mod tests {
         assert_eq!(models.len(), 2);
         assert_eq!(models[1].id, 603);
         assert_eq!(models[1].model, "GS-232B");
+    }
+
+    #[test]
+    fn un_rotore_normale_resta_in_0_360() {
+        assert_eq!(fit_azimuth(370.0, Some(10.0), 0, 360), 10.0);
+        assert_eq!(fit_azimuth(-10.0, None, 0, 360), 350.0);
+        assert_eq!(fit_azimuth(360.0, None, 0, 360), 0.0);
+        // -180..180: il 270 diventa -90
+        assert_eq!(fit_azimuth(270.0, Some(0.0), -180, 180), -90.0);
+        assert_eq!(fit_azimuth(90.0, Some(0.0), -180, 180), 90.0);
+    }
+
+    #[test]
+    fn un_rotore_da_450_gradi_sceglie_l_angolo_piu_vicino() {
+        // da 340 verso il nord si prosegue a 360+20 = 380 invece di tornare indietro di quasi un giro
+        assert_eq!(fit_azimuth(20.0, Some(340.0), 0, 450), 380.0);
+        // da 20 verso 340 si torna indietro a 340
+        assert_eq!(fit_azimuth(340.0, Some(20.0), 0, 450), 340.0);
+        // fuori campo l'angolo oltre 450 non esiste: 100 resta 100
+        assert_eq!(fit_azimuth(100.0, Some(300.0), 0, 450), 100.0);
+        // un angolo scritto a mano dentro il campo vale cosi' com'e'
+        assert_eq!(fit_azimuth(395.0, Some(10.0), 0, 450), 395.0);
+        // senza posizione nota si prende il primo giro
+        assert_eq!(fit_azimuth(20.0, None, 0, 450), 20.0);
+    }
+
+    #[test]
+    fn il_campo_di_rotazione_si_controlla() {
+        assert!(RotatorConfig { min_az: 0, max_az: 450, ..RotatorConfig::default() }.validate().is_ok());
+        assert!(RotatorConfig { min_az: -180, max_az: 180, ..RotatorConfig::default() }.validate().is_ok());
+        assert!(RotatorConfig { min_az: 0, max_az: 50, ..RotatorConfig::default() }.validate().is_err());
+        assert!(RotatorConfig { min_az: 100, max_az: 90, ..RotatorConfig::default() }.validate().is_err());
+        assert!(RotatorConfig { min_az: -360, max_az: 721, ..RotatorConfig::default() }.validate().is_err());
     }
 }

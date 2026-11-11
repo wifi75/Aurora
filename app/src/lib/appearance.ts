@@ -35,6 +35,20 @@ export const DATA_FONTS: readonly FontDef[] = [
   { id: 'courier', label: 'Courier New', stack: "'Courier New', Courier, 'Liberation Mono', monospace" },
 ];
 
+/** Caratteri del log: tutti tecnici, con cifre della stessa larghezza (le colonne restano allineate). 'data' = il predefinito, quello di sempre. */
+export const LOG_FONTS: readonly FontDef[] = [
+  { id: 'data', label: '', stack: '' },
+  { id: 'jetbrains', label: 'JetBrains Mono', stack: "'JetBrains Mono', ui-monospace, Consolas, monospace" },
+  { id: 'cascadia', label: 'Cascadia Mono', stack: "'Cascadia Mono', 'Cascadia Code', Consolas, ui-monospace, monospace" },
+  { id: 'consolas', label: 'Consolas', stack: "Consolas, Menlo, 'DejaVu Sans Mono', ui-monospace, monospace" },
+  { id: 'lucida', label: 'Lucida Console', stack: "'Lucida Console', 'Lucida Sans Typewriter', 'DejaVu Sans Mono', monospace" },
+  { id: 'courier', label: 'Courier New', stack: "'Courier New', Courier, 'Liberation Mono', monospace" },
+  { id: 'plex', label: 'IBM Plex Sans', stack: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif" },
+];
+
+/** Dimensioni del carattere del log in px (12 e' quella di partenza). */
+export const LOG_SIZES = [10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24] as const;
+
 /** Tavolozze di testo leggibile per tema (sul fondo del tema il contrasto resta alto). */
 export const TEXT_PALETTE = {
   dark: ['#ffffff', '#e6edf8', '#f4efe2', '#dff6ff', '#fff4b8', '#d9ffe0'],
@@ -46,12 +60,15 @@ export interface Appearance {
   contrast: 'normal' | 'high';
   fontUi: string;
   fontData: string;
+  /** Carattere e dimensione (px) della tabella del log. */
+  fontLog: string;
+  logSize: number;
   /** Colore del testo per il tema scuro e per quello chiaro; vuoto = quello del tema. */
   textDark: string;
   textLight: string;
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { contrast: 'normal', fontUi: 'plex', fontData: 'jetbrains', textDark: '', textLight: '' };
+export const DEFAULT_APPEARANCE: Appearance = { contrast: 'normal', fontUi: 'plex', fontData: 'jetbrains', fontLog: 'data', logSize: 12, textDark: '', textLight: '' };
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -63,6 +80,8 @@ function clean(raw: unknown): Appearance {
     contrast: o.contrast === 'high' ? 'high' : 'normal',
     fontUi: pickId(o.fontUi, UI_FONTS, DEFAULT_APPEARANCE.fontUi),
     fontData: pickId(o.fontData, DATA_FONTS, DEFAULT_APPEARANCE.fontData),
+    fontLog: pickId(o.fontLog, LOG_FONTS, DEFAULT_APPEARANCE.fontLog),
+    logSize: typeof o.logSize === 'number' && o.logSize >= 9 && o.logSize <= 28 ? Math.round(o.logSize) : DEFAULT_APPEARANCE.logSize,
     textDark: color(o.textDark),
     textLight: color(o.textLight),
   };
@@ -98,6 +117,8 @@ export function applyAppearance(root: HTMLElement, a: Appearance): void {
   };
   set('--font-ui', ui?.stack, a.fontUi === DEFAULT_APPEARANCE.fontUi);
   set('--font-data', data?.stack, a.fontData === DEFAULT_APPEARANCE.fontData);
+  set('--log-font', LOG_FONTS.find((f) => f.id === a.fontLog)?.stack, a.fontLog === 'data');
+  set('--log-size', `${a.logSize}px`, a.logSize === DEFAULT_APPEARANCE.logSize);
   if (a.contrast === 'high') root.dataset.contrast = 'high';
   else delete root.dataset.contrast;
   // il colore scelto passa per variabili proprie: il CSS lo usa solo nel tema giusto (e cambia da solo col tema)

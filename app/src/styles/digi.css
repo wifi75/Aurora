@@ -1,0 +1,208 @@
+/* Pagina dei modi testuali (PSK31, PSK63, RTTY): usa gli stessi pulsanti, indicatori e barre dell'SSTV. */
+.digi-page { display: flex; flex-direction: column; gap: 1rem; padding: 0.4rem 0.6rem 2rem; }
+.digi-head { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+.digi-head h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.02em; }
+.digi-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: 1.4rem; align-items: start; }
+.digi-rx, .digi-tx { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.digi-bar { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+.digi-bar strong { margin-right: auto; font-size: 1.05rem; }
+.digi-level { width: 9rem; flex: none; }
+.digi-text {
+  margin: 0; min-height: 16rem; max-height: 52vh; overflow: auto; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--panel-raised); color: var(--text); font: 1rem/1.55 var(--font-data); white-space: pre-wrap; word-break: break-word;
+}
+.digi-empty { color: var(--text-muted); font-family: inherit; }
+.digi-side { display: flex; flex-direction: column; gap: 0.8rem; }
+.digi-freq { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-raised); }
+.digi-freq label, .digi-fields label, .digi-two label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-freq input[type='range'] { width: 100%; accent-color: var(--accent); }
+.digi-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.digi-freq input[type='number'], .digi-freq select, .digi-fields input, .digi-edit-row input {
+  font: inherit; font-weight: 600; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0;
+}
+.digi-fields { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.digi-fields .digi-call { width: 9rem; text-transform: uppercase; font-family: var(--font-data); }
+.digi-fields .digi-rst { width: 4.5rem; }
+.digi-macros { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.digi-sendnow { margin-left: auto; }
+.digi-box {
+  width: 100%; resize: vertical; font: 1rem/1.5 var(--font-data); color: var(--text); background: var(--panel-raised); border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.7rem 0.9rem; box-sizing: border-box;
+}
+.digi-edit { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+.digi-edit-row { display: grid; grid-template-columns: 11rem minmax(0, 1fr) auto; gap: 0.5rem; }
+.digi-edit-actions { display: flex; gap: 0.6rem; }
+@media (max-width: 62rem) {
+  .digi-grid { grid-template-columns: minmax(0, 1fr); }
+  .digi-edit-row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* barra dei comandi come quella: 12 tasti per riga a gruppi di 4, 4 righe, etichette colorate */
+.digi-bar-keys { padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-raised); overflow-x: auto; }
+.digi-keys { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
+.digi-keyrow { display: flex; align-items: center; gap: 4px; }
+.digi-key {
+  min-width: 5.6rem; height: 2rem; padding: 0 0.4rem; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 6px;
+  background: #d4d0c8; color: #101418; font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.digi-key--gap { margin-left: 0.7rem; }
+.digi-key--blank { background: color-mix(in srgb, var(--panel) 60%, #888 40%); border-style: dashed; opacity: 0.55; cursor: default; }
+.digi-key:hover:not(:disabled) { filter: brightness(1.08); outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); }
+.digi-key:disabled { opacity: 0.5; cursor: not-allowed; }
+.digi-keyrow-label { width: 5rem; margin-left: 0.5rem; color: var(--text-muted); font-size: 0.8rem; }
+.digi-gear { margin-left: 0.2rem; border: 0; background: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; line-height: 1; }
+.digi-gear[aria-pressed='true'] { color: #ff9f1c; }
+
+/* finestra «Modifica macro» */
+.digi-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
+.digi-dialog { display: flex; flex-direction: column; gap: 0.8rem; width: min(52rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.digi-dialog header strong { font-size: 1.1rem; }
+.digi-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-dialog input, .digi-dialog select, .digi-dialog textarea { font: inherit; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.55rem; min-width: 0; }
+.digi-dialog input[type='color'] { padding: 0; width: 3rem; height: 2.1rem; }
+.digi-edit-top { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
+.digi-edit-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; }
+.digi-edit-text textarea { font-family: var(--font-data); min-height: 14rem; resize: vertical; }
+.digi-edit-cmds { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.digi-cmd-list { list-style: none; margin: 0; padding: 0.2rem; height: 12rem; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-raised); }
+.digi-cmd-list button { display: block; width: 100%; text-align: left; padding: 0.25rem 0.45rem; border: 0; border-radius: 5px; background: none; color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; }
+.digi-cmd-list button:hover, .digi-cmd-list button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.digi-dialog footer { display: flex; gap: 0.6rem; align-items: center; }
+.digi-qso { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+.digi-qso label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-qso input { font: inherit; font-weight: 600; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0; }
+@media (max-width: 62rem) { .digi-edit-body { grid-template-columns: minmax(0, 1fr); } }
+
+
+/* ======== disposizione e aspetto (grigio classico di Windows) ======== */
+.digi-classica {
+  --text: #000; --text-muted: #3a3a3a; --panel: #d4d0c8; --panel-raised: #ffffff; --border: #808080; --accent: #0a246a;
+  --font-data: "Courier New", Consolas, monospace;
+  gap: 0; padding: 0; background: #d4d0c8; color: #000; font: 12px/1.3 Tahoma, "Segoe UI", Arial, sans-serif; border: 1px solid #808080; border-radius: 0;
+}
+.digi-classica .notice { margin: 4px; color: #000; }
+.digi-classica .sstv-hint { color: #3a3a3a; }
+.digi-classica .sstv-bad { color: #a00000; }
+.digi-classica .sstv-btn { background: #d4d0c8; color: #000; border: 2px outset #f4f4f4; border-radius: 0; font-size: 12px; padding: 2px 10px; }
+.digi-classica .sstv-btn:active { border-style: inset; }
+.digi-classica .sstv-btn--primary { font-weight: 700; }
+.digi-classica .sstv-btn--danger { background: #c0392b; color: #fff; }
+
+/* barra dei menu */
+.digi-menubar { display: flex; gap: 0; background: #d4d0c8; border-bottom: 1px solid #808080; padding: 1px 2px; position: relative; z-index: 30; }
+.digi-menu { position: relative; }
+.digi-menu > button { padding: 2px 9px; border: 1px solid transparent; background: none; color: #000; font: inherit; cursor: default; }
+.digi-menu > button:hover, .digi-menu > button.on { border-color: #808080 #fff #fff #808080; background: #e6e3dc; }
+.digi-menu-list { position: absolute; top: 100%; left: 0; min-width: 15rem; margin: 0; padding: 2px; list-style: none; background: #d4d0c8; border: 2px outset #fff; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3); z-index: 40; }
+.digi-menu-list li { position: relative; }
+.digi-menu-list li button { display: flex; align-items: center; width: 100%; gap: 6px; padding: 3px 10px 3px 4px; border: 0; background: none; color: #000; font: inherit; text-align: left; cursor: default; }
+.digi-menu-list li button:hover:not(:disabled) { background: #0a246a; color: #fff; }
+.digi-menu-list li button:disabled { color: #808080; }
+.digi-menu-check { width: 14px; text-align: center; }
+.digi-menu-label { flex: 1; white-space: nowrap; }
+.digi-menu-key { color: inherit; opacity: 0.7; margin-left: 12px; }
+.digi-menu-arrow { margin-left: 8px; }
+.digi-menu-sep { height: 1px; margin: 3px 2px; background: #808080; border-bottom: 1px solid #fff; }
+.digi-menu-sub { position: absolute; top: -2px; left: 100%; }
+
+/* barra dei comandi: pulsanti rettangolari, 4 righe, etichette a destra */
+.digi-classica .digi-bar-keys { border: 0; border-bottom: 1px solid #808080; border-radius: 0; background: #d4d0c8; padding: 4px 6px; }
+.digi-classica .digi-keys { gap: 3px; }
+.digi-classica .digi-keyrow { gap: 3px; }
+.digi-classica .digi-key { min-width: 5.9rem; height: 1.7rem; border: 2px outset #f4f4f4; border-radius: 0; font-weight: 400; font-size: 12px; background: #d4d0c8; }
+.digi-classica .digi-key:active:not(:disabled) { border-style: inset; }
+.digi-classica .digi-key--gap { margin-left: 0.55rem; }
+.digi-classica .digi-key--blank { background: #d4d0c8; border: 2px outset #f4f4f4; opacity: 1; }
+.digi-classica .digi-key:hover:not(:disabled) { filter: none; outline: 1px solid #0a246a; }
+.digi-classica .digi-keyrow-label { color: #000; width: 5rem; }
+.digi-classica .digi-gear { color: #1e66c8; }
+
+/* area principale: finestre RX e TX a sinistra, il log di lato */
+.digi-main { display: grid; grid-template-columns: minmax(0, 1fr) 27rem; /* la larghezza vera la mette la pagina (log trascinabile) */ min-height: 24rem; }
+.digi-main--nolog { grid-template-columns: minmax(0, 1fr); }
+.digi-windows { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #808080; }
+.digi-rxwin, .digi-txwin { margin: 0; padding: 4px 6px; background: #fff; color: #000; font: 15px/1.35 "Courier New", Consolas, monospace; white-space: pre-wrap; word-break: break-word; border: 0; border-radius: 0; resize: none; overflow: auto; }
+.digi-rxwin { flex: 1 1 55%; min-height: 12rem; max-height: 38vh; border-bottom: 2px solid #404040; }
+.digi-empty { color: #7a7a7a; font-family: Tahoma, Arial, sans-serif; font-size: 12px; }
+.digi-txwrap { display: flex; flex-direction: column; flex: 1 1 45%; min-height: 9rem; background: #fff; }
+.digi-txwin { flex: 1; width: 100%; box-sizing: border-box; outline: none; min-height: 9rem; }
+.digi-txbtns { display: flex; align-items: center; gap: 8px; padding: 4px 6px; background: var(--panel, #0f192b); border-top: 1px solid var(--border, #2d3d66); }
+.digi-txbtns small { margin-left: auto; font-size: 11px; }
+.digi-txprogress { margin: 3px; height: 1.6rem; border-radius: 0; }
+
+/* il log di lato: righe gialline, QSO in corso in azzurro */
+.digi-log { position: relative; display: flex; flex-direction: column; min-width: 0; background: #d4d0c8; }
+/* barra sottile sul bordo sinistro: trascinandola si allarga o si stringe il log */
+.digi-log-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; touch-action: none; }
+.digi-log-grip:hover, .digi-log-grip:active { background: rgb(30 102 200 / .35); }
+.digi-colwrap { position: relative; display: inline-flex; }
+.digi-colpop { position: absolute; top: 100%; right: 0; z-index: 20; display: flex; flex-direction: column; gap: 2px; min-width: 11rem; padding: 6px 8px; background: #d4d0c8; color: #000; border: 2px outset #fff; box-shadow: 2px 2px 4px rgb(0 0 0 / .4); font-size: 12px; }
+.digi-colpop label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.digi-colpop p { margin: 4px 0 0; font-size: 11px; color: #444; max-width: 14rem; }
+.digi-log-tools { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-bottom: 1px solid #808080; }
+.digi-log-tools strong { margin-right: auto; }
+.digi-tool { width: 26px; height: 22px; padding: 0; border: 2px outset #f4f4f4; background: #d4d0c8; cursor: default; font-size: 13px; line-height: 1; }
+.digi-tool--red { color: #c00000; font-weight: 700; }
+.digi-log-search { width: 9rem; font: inherit; padding: 1px 3px; border: 2px inset #fff; background: #fff; }
+.digi-log-current { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 4px; padding: 5px; background: #8ff; border-bottom: 1px solid #808080; }
+.digi-log-current label { display: flex; flex-direction: column; gap: 1px; font-size: 11px; color: #000; }
+.digi-log-current input { font: 12px "Courier New", monospace; padding: 1px 3px; border: 2px inset #fff; background: #fff; color: #000; min-width: 0; }
+.digi-log-current .digi-rst input { width: 100%; }
+.digi-log-current .digi-wide { grid-column: 1 / -1; }
+.digi-log-now { grid-column: 1 / -1; margin: 0; font-size: 11px; color: #003a3a; }
+.digi-log-table { flex: 1; min-height: 0; overflow: auto; background: #f8f8c8; }
+.digi-log-table table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.digi-log-table th { position: sticky; top: 0; background: #d4d0c8; border: 1px solid #808080; text-align: left; padding: 1px 4px; font-weight: 400; color: #000; }
+.digi-log-table td { padding: 1px 4px; border-bottom: 1px solid #c8c890; color: #4b0a96; white-space: nowrap; }
+.digi-log-empty { margin: 8px; color: #555; }
+
+/* cascata: scala nera in alto, righe che scorrono, bandierina */
+.digi-wf { position: relative; border-top: 2px solid #404040; background: #000; overflow: hidden; }
+.digi-wf-scale { display: block; width: 100%; height: 22px; }
+.digi-wf-flow { display: block; width: 100%; cursor: crosshair; }
+.digi-wf-flag { position: absolute; top: 2px; width: 0; height: 18px; pointer-events: none; border-left: 1px solid #e8e8e8; z-index: 3; }
+.digi-wf-flag i { position: absolute; left: 0; top: 0; width: 11px; height: 8px; background: #ff3b3b; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.digi-wf-pair { position: absolute; top: 31px; height: 0; border-top: 1px solid #ffffff; pointer-events: none; z-index: 3; }
+.digi-wf-pair::before, .digi-wf-pair::after { content: ''; position: absolute; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.digi-wf-pair::before { left: -4px; }
+.digi-wf-pair::after { right: -4px; }
+/* ricezione: triangolo blu sotto la linea; trasmissione: triangolo rosso sopra; insieme fanno un rombo */
+.digi-wf-pair--rx::before, .digi-wf-pair--rx::after { top: 0; border-top: 7px solid #3b7bff; }
+.digi-wf-pair--tx::before, .digi-wf-pair--tx::after { bottom: 1px; border-bottom: 7px solid #ff4d4d; }
+
+/* barra di stato a caselle */
+.digi-status { display: flex; align-items: stretch; gap: 2px; padding: 2px; background: #d4d0c8; border-top: 1px solid #fff; font: 12px Tahoma, Arial, sans-serif; color: #000; flex-wrap: wrap; justify-content: flex-end; }
+.digi-st { min-width: 2.2rem; padding: 1px 6px; border: 1px solid; border-color: #808080 #fff #fff #808080; background: #d4d0c8; color: #000; font: inherit; text-align: center; cursor: default; }
+button.digi-st { border: 2px outset #f4f4f4; }
+button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0bcb4; font-weight: 700; }
+.digi-st--rx { color: #000; }
+.digi-st--tx { background: #ff4040; color: #fff; font-weight: 700; }
+.digi-st--freq { display: inline-flex; align-items: center; min-width: 6rem; }
+.digi-st--freq input { width: 4.6rem; border: 0; background: transparent; font: inherit; text-align: right; color: #000; padding: 0; outline: none; }
+.digi-st--info { border-style: inset; }
+.digi-rxctl { display: flex; align-items: center; gap: 10px; padding: 3px 6px; background: #d4d0c8; border-top: 1px solid #808080; }
+
+/* finestre di dialogo nello stesso grigio */
+.digi-classica .digi-dialog { background: #d4d0c8; color: #000; border: 2px outset #fff; border-radius: 0; }
+.digi-classica .digi-dialog input, .digi-classica .digi-dialog select, .digi-classica .digi-dialog textarea { background: #fff; color: #000; border: 2px inset #fff; border-radius: 0; }
+.digi-classica .digi-cmd-list { background: #fff; border: 2px inset #fff; border-radius: 0; }
+.digi-classica .digi-cmd-list button { color: #000; }
+.digi-classica .digi-cmd-list button:hover, .digi-classica .digi-cmd-list button.on { background: #0a246a; color: #fff; }
+.digi-ms-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
+.digi-ms-grid fieldset { display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid #808080; padding: 0.6rem; }
+.digi-dialog--small { width: min(26rem, 94vw); }
+@media (max-width: 62rem) { .digi-main { grid-template-columns: minmax(0, 1fr); } .digi-ms-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.digi-log-current input { width: 100%; box-sizing: border-box; }
+.digi-log-current label { min-width: 0; }
+.digi-hint { white-space: normal; flex: 1; min-width: 0; font-size: 11px; }
+.digi-main { overflow: hidden; }
+.digi-log { overflow: visible; }
+
+.digi-bandbar { display: flex; align-items: center; gap: 10px; padding: 3px 6px; background: #d4d0c8; border-bottom: 1px solid #808080; }
+.digi-bandbar small { font-size: 11px; color: #444; }
+
+/* senza coppia (PSK, CW): un solo rombo, niente linea */
+.digi-wf-pair--single { border-top: 0; }
+.digi-wf-pair--single::after { display: none; }
+.digi-wf-pair--single::before { left: -4px; }

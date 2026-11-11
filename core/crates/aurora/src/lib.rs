@@ -1454,6 +1454,97 @@ impl tx_native::Ptt for AutoPtt {
     }
 }
 
+/// Il rotore visto dai satelliti: azimut ed elevazione verso il satellite che passa.
+struct SatRotorAdapter {
+    rotator: Arc<rig_control::rotator::RotatorService>,
+}
+
+impl mode_sat::SatRotator for SatRotorAdapter {
+    fn ready(&self) -> bool {
+        self.rotator.status().connected
+    }
+
+    fn point(&self, az_deg: f64, el_deg: f64) -> Result<(), String> {
+        self.rotator.goto(az_deg, Some(el_deg)).map_err(|e| e.to_string())
+    }
+
+    fn stop(&self) {
+        let _ = self.rotator.stop();
+    }
+}
+
+/// La radio vista dai satelliti: Hamlib, con il VFO principale in ricezione e quello di split in trasmissione (correzione Doppler).
+struct SatRadioAdapter {
+    cat: Arc<rig_control::cat::CatService>,
+}
+
+impl mode_sat::SatRadio for SatRadioAdapter {
+    fn ready(&self) -> bool {
+        self.cat.hamlib().is_ok()
+    }
+
+    fn set_rx_hz(&self, hz: u64) -> Result<(), String> {
+        use rig_control::Rig;
+        self.cat.hamlib().map_err(|e| e.0)?.set_frequency(hz).map_err(|e| e.0)
+    }
+
+    fn set_tx_hz(&self, hz: u64) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_split_frequency(hz).map_err(|e| e.0)
+    }
+
+    fn set_split(&self, on: bool) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_split(on, "VFOB").map_err(|e| e.0)
+    }
+}
+
+/// La catena di trasmissione vista dai modi testuali (PSK31/PSK63, RTTY): come l'SSTV, trasmissione libera con lo stesso PTT e la stessa uscita.
+struct DigiTx {
+    transmitter: Arc<tx_native::Transmitter>,
+    volume: Option<Arc<WindowsVolumePort>>,
+}
+
+impl mode_digi::DigiTxPort for DigiTx {
+    fn start(&self, wave: Vec<f32>) -> Result<(), String> {
+        if let Some(v) = &self.volume {
+            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        }
+        // un testo lungo in PSK31 dura qualche minuto: lo stesso tetto dell'SSTV
+        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn halt(&self) {
+        self.transmitter.halt();
+    }
+
+    fn is_busy(&self) -> bool {
+        matches!(self.transmitter.state(), tx_native::TxState::Waiting | tx_native::TxState::Transmitting)
+    }
+}
+
+/// La catena di trasmissione vista dall'SSTV: trasmissione libera (fuori dai periodi FT8) con lo stesso PTT, la stessa uscita e lo stesso Pwr.
+struct SstvTx {
+    transmitter: Arc<tx_native::Transmitter>,
+    volume: Option<Arc<WindowsVolumePort>>,
+}
+
+impl mode_sstv::SstvTxPort for SstvTx {
+    fn start(&self, wave: Vec<f32>) -> Result<(), String> {
+        if let Some(v) = &self.volume {
+            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        }
+        // le immagini piu' lunghe (PD 290, Scottie DX) durano meno di 5 minuti
+        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn halt(&self) {
+        self.transmitter.halt();
+    }
+
+    fn is_busy(&self) -> bool {
+        matches!(self.transmitter.state(), tx_native::TxState::Waiting | tx_native::TxState::Transmitting)
+    }
+}
+
 /// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
 /// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
 fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
@@ -1478,7 +1569,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     }
 }
 
-fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<dyn engine_native::TxPort>> {
+fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
@@ -1557,6 +1648,22 @@ pub async fn run(
     }
     let bus = Bus::new(4096);
     aurora_core::notice::install(bus.events());
+    // SSTV: modo a parte (crate mode-sstv); riceve una copia dell'audio solo con l'ascolto acceso e trasmette con la stessa catena dell'FT8
+    let sstv = Arc::new(mode_sstv::SstvService::open(&config.data_dir));
+    {
+        let events = bus.events();
+        sstv.set_emitter(Arc::new(move |ev| {
+            let _ = events.send(Event::Sstv(ev));
+        }));
+    }
+    // modi testuali (crate mode-digi): stesso schema dell'SSTV, ascolto acceso solo a richiesta
+    let digi = Arc::new(mode_digi::DigiService::open(&config.data_dir));
+    {
+        let events = bus.events();
+        digi.set_emitter(Arc::new(move |ev| {
+            let _ = events.send(Event::Digi(ev));
+        }));
+    }
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
     // il blocco della trasmissione chiesto dai controller UDP (TxInhibit): sta tra la catena di trasmissione e il PTT vero per tutta la vita del programma
@@ -1620,6 +1727,18 @@ pub async fn run(
     };
     // finiscono in ogni record ADIF (`STATION_CALLSIGN`, `MY_GRIDSQUARE`)
     let station = Station { call: my_call.clone(), grid: my_grid.clone(), tx_power: config.tx_power.clone().unwrap_or_default() };
+    // satelliti (crate mode-sat): tracking ogni secondo con la correzione Doppler della radio e il rotore che segue
+    let sat = {
+        let store = engine_settings.clone();
+        let observer: Arc<dyn Fn() -> Option<mode_sat::Observer> + Send + Sync> = Arc::new(move || {
+            let grid = store.as_ref().map(|s| s.reports().grid).unwrap_or_default();
+            mode_sat::maidenhead_to_latlon(&grid).map(|(lat_deg, lon_deg)| mode_sat::Observer { lat_deg, lon_deg, alt_m: 0.0 })
+        });
+        let svc = Arc::new(mode_sat::SatService::open(&config.data_dir, observer));
+        svc.set_rotor(Arc::new(SatRotorAdapter { rotator: Arc::clone(&rotator) }));
+        svc.set_radio(Arc::new(SatRadioAdapter { cat: Arc::clone(&cat) }));
+        svc
+    };
     // il log di Aurora si riempie sempre; i log esterni solo se configurati. Con il motore proprio il server UDP secondario delle impostazioni
     // si cambia a programma acceso: l'esportatore rilegge la lista a ogni QSO.
     let shared_targets = Arc::new(std::sync::RwLock::new(match &engine_settings {
@@ -2154,11 +2273,32 @@ pub async fn run(
         })
         .with_cat(Arc::clone(&cat))
         .with_rotator(Arc::clone(&rotator))
+        .with_sstv(Arc::clone(&sstv))
+        .with_digi(Arc::clone(&digi))
+        .with_sat(Arc::clone(&sat))
         .with_automation(automation);
     // il QMAP non cerca nelle meta' del minuto in cui la stazione trasmette
     qmap_service.set_tx_probe(state.transmitting_probe());
     // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
-    let (native_tx, native_rx) = std::sync::mpsc::channel();
+    let (native_tx, captured) = std::sync::mpsc::channel::<audio_spectrum::AudioChunk>();
+    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV
+    let (to_engine, native_rx) = std::sync::mpsc::channel();
+    {
+        let sstv = Arc::clone(&sstv);
+        let digi = Arc::clone(&digi);
+        let spawned = std::thread::Builder::new().name("aurora-audio-tap".into()).spawn(move || {
+            while let Ok(chunk) = captured.recv() {
+                sstv.feed(chunk.rate, &chunk.samples);
+                digi.feed(chunk.rate, &chunk.samples);
+                if to_engine.send(chunk).is_err() {
+                    break;
+                }
+            }
+        });
+        if let Err(e) = spawned {
+            tracing::error!("passaggio dell'audio verso l'SSTV non avviato: {e}");
+        }
+    }
     let audio_manager: Option<Arc<audio_control::AudioManager>> = engine_settings.as_ref().map(|store| {
         let level = input_level.clone();
         let hook: audio_control::InputHook = Arc::new(move |name| {
@@ -2260,12 +2400,20 @@ pub async fn run(
                     let manager = Arc::clone(m);
                     // su Windows Pwr e' il volume della scheda; altrove quel comando non c'e' e il cursore attenua il segnale, come JTDX
                     // (senza, su Linux si trasmetteva sempre al massimo)
-                    transmitter.map(|inner| {
+                    transmitter.map(|transmitter| {
+                        let inner = Arc::clone(&transmitter) as Arc<dyn engine_native::TxPort>;
                         if cfg!(windows) {
-                            let port = WindowsVolumePort { inner, output: Arc::new(move || manager.output_name()), controls: Arc::clone(&native_controls) };
+                            let output: Arc<dyn Fn() -> Option<String> + Send + Sync> = Arc::new(move || manager.output_name());
+                            // l'SSTV trasmette con la stessa catena: prima di partire riallinea il volume di Windows al cursore Pwr
+                            let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls) });
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume) }));
+                            let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls) };
                             Arc::new(port) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: None }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None }));
                             inner
                         }
                     })

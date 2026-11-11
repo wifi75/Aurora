@@ -887,6 +887,9 @@ export interface RotatorConfig {
   baud: number;
   host: string;
   tcp_port: number;
+  /** Il campo di rotazione in gradi (di base 0..360; i rotori da 450 gradi arrivano a 450). */
+  min_az: number;
+  max_az: number;
 }
 
 export interface RotatorStatus {
@@ -933,7 +936,7 @@ export async function getEngineSettings(): Promise<EngineSettings> {
 }
 
 /** Segnala la stazione su DXSummit (solo dalla rete di casa): frequenza e modo li sa il core, qui servono la stazione, il suo locatore e il testo. */
-export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string }): Promise<SpotResult> {
+export async function postSpotDxsummit(body: { dx_call: string; dx_grid?: string; text?: string; prop?: string; freq_khz?: number; info?: string }): Promise<SpotResult> {
   return SpotResultSchema.parse(await (await request('/spot/dxsummit', jsonInit(body))).json());
 }
 
@@ -1015,6 +1018,10 @@ export interface Log4omQso {
   rst_rcvd: string;
   country: string;
   grid: string;
+  /** Frequenza in Hz, nome e QTH (assenti con un core vecchio o se il log non li ha). */
+  freq_hz?: number;
+  name?: string;
+  qth?: string;
 }
 
 export interface Log4omView {
@@ -1242,6 +1249,9 @@ export interface LogQso {
   rst_rcvd: string;
   grid: string;
   country: string;
+  /** Nome e QTH del corrispondente (assenti con un core vecchio). */
+  name?: string;
+  qth?: string;
 }
 
 export interface LogQsos {
@@ -1272,6 +1282,7 @@ export interface ManualQso {
   rst_rcvd: string;
   grid: string;
   name: string;
+  qth?: string;
   comment: string;
 }
 
@@ -1485,4 +1496,344 @@ export async function postQmapClearAverage(): Promise<void> {
 /** Clic su un messaggio: Q65 con il suo periodo e sottomodo, radio con il tono 0 a 1000 Hz. */
 export async function postQmapTune(rf_hz: number, period_s: number, submode: number): Promise<{ ok: boolean; dial_hz: number; mode: string }> {
   return (await (await request('/qmap/tune', jsonInit({ rf_hz, period_s, submode }))).json()) as { ok: boolean; dial_hz: number; mode: string };
+}
+
+// --- SSTV (crate mode-sstv) ---
+
+export interface SstvModeInfo {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  vis: number;
+  seconds: number;
+  color: 'rgb' | 'yuv';
+}
+
+export interface SstvSettings {
+  default_mode: string;
+  auto_save: boolean;
+  save_tx: boolean;
+  auto_receive: boolean;
+  lock_mode: string | null;
+  folder: string;
+  rx_offset_hz: number;
+  tx_offset_hz: number;
+  slant_ppm: number;
+}
+
+export interface SstvRxStatus {
+  listening: boolean;
+  receiving: boolean;
+  mode: string | null;
+  width: number;
+  height: number;
+  rows: number;
+  sync: number;
+  offset_hz: number;
+  level_db: number;
+  last_image: string | null;
+}
+
+export interface SstvTxStatus {
+  state: string;
+  mode: string | null;
+  progress: number;
+  elapsed_s: number;
+  total_s: number;
+  message: string | null;
+}
+
+export interface SstvSnapshot {
+  rx: SstvRxStatus;
+  tx: SstvTxStatus;
+  settings: SstvSettings;
+  folder: string;
+  can_transmit: boolean;
+  modes: SstvModeInfo[];
+}
+
+export interface SstvImageEntry {
+  id: string;
+  file: string;
+  direction: string;
+  mode: string;
+  width: number;
+  height: number;
+  time_ms: number;
+  sync_quality?: number;
+  offset_hz?: number;
+  complete: boolean;
+  call?: string;
+}
+
+export async function getSstv(): Promise<SstvSnapshot> {
+  return (await (await request('/sstv')).json()) as SstvSnapshot;
+}
+
+export async function putSstv(settings: SstvSettings): Promise<SstvSnapshot> {
+  return (await (await request('/sstv', { ...jsonInit(settings), method: 'PUT' })).json()) as SstvSnapshot;
+}
+
+export async function sstvRx(action: 'start' | 'stop' | 'cancel'): Promise<void> {
+  await request(`/sstv/rx/${action}`, { method: 'POST' });
+}
+
+export async function sstvForce(mode: string): Promise<void> {
+  await request('/sstv/rx/force', jsonInit({ mode }));
+}
+
+export async function getSstvImages(): Promise<SstvImageEntry[]> {
+  return ((await (await request('/sstv/images')).json()) as { images: SstvImageEntry[] }).images;
+}
+
+/** Indirizzo del PNG di un'immagine dell'archivio (per <img>). */
+export function sstvImageUrl(id: string): string {
+  return `${BASE}/sstv/images/${encodeURIComponent(id)}`;
+}
+
+export async function getSstvImageBlob(id: string): Promise<Blob> {
+  return (await request(`/sstv/images/${encodeURIComponent(id)}`)).blob();
+}
+
+export async function getSstvCurrentBlob(): Promise<Blob> {
+  return (await request('/sstv/rx/current')).blob();
+}
+
+export async function deleteSstvImage(id: string): Promise<void> {
+  await request(`/sstv/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Trasmette l'immagine composta (PNG alla risoluzione del modo). */
+export async function sstvTransmit(mode: string, png: Blob, call?: string | null): Promise<SstvTxStatus> {
+  const q = new URLSearchParams({ mode });
+  if (call) q.set('call', call);
+  const res = await request(`/sstv/tx?${q.toString()}`, { method: 'POST', headers: { 'content-type': 'image/png' }, body: png });
+  return ((await res.json()) as { tx: SstvTxStatus }).tx;
+}
+
+export async function sstvAbort(): Promise<void> {
+  await request('/sstv/tx/abort', { method: 'POST' });
+}
+
+// ---- Modi testuali (PSK31/PSK63, RTTY): vedi docs/api.md ----
+
+/** Una macro: `name` e' il tasto («F5», «Ctrl-F5»...) o un evento, `color` lo sfondo (0xRRGGBB). */
+export interface DigiMacro {
+  name: string;
+  label: string;
+  text: string;
+  color: number | null;
+}
+
+export interface DigiSettings {
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
+  /** Velocita' della CW in parole al minuto. */
+  cw_wpm: number;
+  rx_freq_hz: number;
+  tx_follow_rx: boolean;
+  tx_freq_hz: number;
+  rtty_shift_hz: number;
+  rtty_baud: number;
+  afc_on: boolean;
+  squelch_on: boolean;
+  squelch_db: number;
+  snap_on: boolean;
+  auto_receive: boolean;
+  macros: DigiMacro[];
+  /** Le macro di un modo (`psk31`, `psk63`, `rtty`): sostituiscono quelle di base con lo stesso nome. */
+  mode_macros: Record<string, DigiMacro[]>;
+  /** Per modo: `false` = le macro del modo sostituiscono quelle di base (opzione «Merge»); senza voce si uniscono. */
+  merge_macros: Record<string, boolean>;
+}
+
+export interface DigiSnapshot {
+  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean };
+  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
+  settings: DigiSettings;
+  can_transmit: boolean;
+  modes: { id: string; name: string }[];
+}
+
+export async function getDigi(): Promise<DigiSnapshot> {
+  return (await (await request('/digi')).json()) as DigiSnapshot;
+}
+
+export async function putDigi(settings: DigiSettings): Promise<DigiSnapshot> {
+  return (await (await request('/digi', { ...jsonInit(settings), method: 'PUT' })).json()) as DigiSnapshot;
+}
+
+export async function digiRx(action: 'start' | 'stop'): Promise<void> {
+  await request(`/digi/rx/${action}`, { method: 'POST' });
+}
+
+export async function digiTransmit(text: string): Promise<void> {
+  await request('/digi/tx', jsonInit({ text }));
+}
+
+export interface DigiImported {
+  folder: string;
+  default_count: number;
+  default_file: string | null;
+  modes: Record<string, number>;
+  skipped: number;
+}
+
+/** Importa le macro dai file dell'utente (di base `%APPDATA%\`); solo dal PC di Aurora. */
+export async function importMacros(how: 'replace' | 'add' | 'defaults' = 'replace', folder?: string): Promise<{ imported: DigiImported; snapshot: DigiSnapshot }> {
+  return (await (await request('/digi/import-macros', jsonInit({ how, ...(folder ? { folder } : {}) }))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
+}
+
+/** Una stringa CAT mandata alla radio cosi' com'e' (macro `<CATCMD:...>`); solo dal PC di Aurora e con Hamlib. */
+export async function digiCat(cmd: string): Promise<void> {
+  await request('/digi/cat', jsonInit({ cmd }));
+}
+
+/** Il testo di un file della cartella (macro `<TEXTFILE:nome>`); solo dal PC di Aurora. */
+export async function digiTextFile(name: string): Promise<string> {
+  return ((await (await request('/digi/textfile?name=' + encodeURIComponent(name))).json()) as { text: string }).text;
+}
+
+export async function digiAbort(): Promise<void> {
+  await request('/digi/tx/abort', { method: 'POST' });
+}
+
+// ---- Satelliti (orbite, passaggi, Doppler sulla radio e rotore): vedi docs/api.md ----
+
+export interface SatTransponder {
+  name: string;
+  mode: string;
+  up_low_hz: number;
+  up_high_hz: number;
+  down_low_hz: number;
+  down_high_hz: number;
+  inverting: boolean;
+  tone_hz: number | null;
+}
+
+export interface SatInfo {
+  norad: number;
+  name: string;
+  transponders: SatTransponder[];
+  notes: string;
+}
+
+export interface SatSettings {
+  selected: number | null;
+  tracked: number[];
+  transponder: number;
+  down_hz: number | null;
+  tx_offset_hz: number;
+  doppler_on: boolean;
+  rotor_on: boolean;
+  rotor_preposition: boolean;
+  min_el_deg: number;
+  map: string;
+  /** I server da cui si scaricano i dati delle orbite. */
+  tle_sources: string[];
+  /** Ogni quante ore si aggiornano da soli; 0 = solo a mano. */
+  tle_update_hours: number;
+}
+
+export interface SatLook {
+  az_deg: number;
+  el_deg: number;
+  range_km: number;
+  range_rate_kms: number;
+  lat_deg: number;
+  lon_deg: number;
+  alt_km: number;
+  speed_kms: number;
+  rising: boolean;
+}
+
+export interface SatPass {
+  aos_unix: number;
+  los_unix: number;
+  max_el_deg: number;
+  max_el_unix: number;
+  aos_az_deg: number;
+  los_az_deg: number;
+  max_az_deg: number;
+  duration_s: number;
+}
+
+export interface SatPlan {
+  down_nominal_hz: number;
+  up_nominal_hz: number;
+  rx_hz: number;
+  tx_hz: number;
+  rx_shift_hz: number;
+  tx_shift_hz: number;
+}
+
+export interface SatNow {
+  time_unix: number;
+  norad: number | null;
+  name: string;
+  look: SatLook | null;
+  visible: boolean;
+  plan: SatPlan | null;
+  radio: { ready: boolean; error: string | null };
+  radio_active: boolean;
+  rotor: { ready: boolean; active: boolean; az_deg: number; el_deg: number; error: string | null };
+  next_pass: SatPass | null;
+  next_path: [number, number][];
+}
+
+export interface SatSnapshot {
+  observer: { lat_deg: number; lon_deg: number } | null;
+  tle: { count: number; age_s: number | null; presets?: { name: string; url: string }[] };
+  listing: { norad: number; name: string; has_tle: boolean }[];
+  catalog: SatInfo[];
+  settings: SatSettings;
+  now: SatNow;
+  sky: { sun_lat_deg: number; sun_lon_deg: number; moon_lat_deg: number; moon_lon_deg: number; time_unix: number };
+  details: { norad: number; name: string; inclination_deg: number; eccentricity: number; revs_per_day: number; period_min: number; epoch_unix: number } | null;
+  maps: string[];
+}
+
+export interface SatPosition {
+  norad: number;
+  name: string;
+  lat_deg: number;
+  lon_deg: number;
+  alt_km: number;
+  az_deg: number;
+  el_deg: number;
+  footprint_km: number;
+  visible: boolean;
+}
+
+export async function getSat(): Promise<SatSnapshot> {
+  return (await (await request('/sat')).json()) as SatSnapshot;
+}
+
+export async function putSat(settings: SatSettings): Promise<SatSnapshot> {
+  return (await (await request('/sat', { ...jsonInit(settings), method: 'PUT' })).json()) as SatSnapshot;
+}
+
+export async function satRefreshTle(): Promise<number> {
+  return ((await (await request('/sat/tle/refresh', { method: 'POST' })).json()) as { count: number }).count;
+}
+
+export async function getSatPasses(norad: number, hours: number, minEl: number): Promise<SatPass[]> {
+  return ((await (await request(`/sat/passes?norad=${norad}&hours=${hours}&min_el=${minEl}`)).json()) as { passes: SatPass[] }).passes;
+}
+
+export async function getSatTrack(norad: number, minutes: number): Promise<[number, number][]> {
+  return ((await (await request(`/sat/track?norad=${norad}&minutes=${minutes}`)).json()) as { points: [number, number][] }).points;
+}
+
+export async function getSatPositions(): Promise<SatPosition[]> {
+  return ((await (await request('/sat/positions')).json()) as { positions: SatPosition[] }).positions;
+}
+
+/** L'indirizzo di una mappa del mondo (per <img>). */
+export function satMapUrl(name: string): string {
+  return `${BASE}/sat/maps/${encodeURIComponent(name)}`;
+}
+
+export async function satUploadMap(name: string, file: Blob): Promise<string[]> {
+  return ((await (await request(`/sat/maps?name=${encodeURIComponent(name)}`, { method: 'POST', body: file })).json()) as { maps: string[] }).maps;
 }

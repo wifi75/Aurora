@@ -28,6 +28,7 @@ import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
 import { RadioTab } from '../settings/RadioTab';
 import { RotatorTab } from '../settings/RotatorTab';
+import { SstvTab } from '../settings/SstvTab';
 import { SdrTab } from '../settings/SdrTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
@@ -80,6 +81,7 @@ const TABS: readonly TabDef[] = [
   { id: 'reporting', section: 'sw.sec.log', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
   { id: 'online', section: 'sw.sec.log', label: 'tab.online', icon: '☁', render: () => <OnlineTab /> },
   { id: 'cluster', section: 'sw.sec.log', label: 'tab.cluster', icon: '✦', render: () => <ClusterTab /> },
+  { id: 'sstv', section: 'sw.sec.modes', label: 'sw.tab.sstv', icon: '▣', render: () => <SstvTab /> },
   { id: 'phone', section: 'sw.sec.access', label: 'sw.tab.phone', icon: '☎', render: () => <AccessTab /> },
   { id: 'agent', section: 'sw.sec.access', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
   { id: 'support', section: 'sw.sec.access', label: 'tab.support', icon: '✚', render: () => <SupportTab /> },

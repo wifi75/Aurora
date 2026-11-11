@@ -309,6 +309,72 @@ pub enum Event {
     Fox(FoxSnapshot),
     /// Un problema da mostrare sullo schermo con una scheda di avviso: `id` dice quale (`audio_loss`, `no_radio`, `omnirig`), `detail` i dettagli.
     Notice { id: String, detail: String },
+    /// SSTV (crate `mode-sstv`): righe dell'immagine in arrivo, immagine finita, stato della ricezione e della trasmissione.
+    Sstv(SstvEvent),
+    /// Un avvenimento dei modi testuali (PSK31/PSK63, RTTY).
+    Digi(DigiEvent),
+}
+
+/// Un avvenimento dell'SSTV. `kind`: `rx_start` (modo, larghezza, altezza), `rx_rows` (righe nuove da `first_row`, `rows` righe, `rgb`
+/// in base64, 3 byte per pixel), `rx_done` (immagine salvata `image_id`), `rx_lost`, `rx_status` (livello, sincronismo, ascolto),
+/// `tx` (stato e avanzamento della trasmissione).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct SstvEvent {
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_row: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rows: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rgb: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sync: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset_hz: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level_db: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listening: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+/// Un avvenimento dei modi testuali. `kind`: `rx_text` (caratteri nuovi in `text`), `rx_status` (ascolto, livello, modo, frequenza),
+/// `tx` (stato e avanzamento della trasmissione).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct DigiEvent {
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level_db: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub freq_hz: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listening: Option<bool>,
+    /// Lo squelch lascia passare il segnale (`Sq *` nella barra di stato).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub squelch_open: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

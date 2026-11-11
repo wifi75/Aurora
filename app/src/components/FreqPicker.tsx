@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { getFrequencies } from '../api/client';
+import { getFrequencies, type FrequencyEntry } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
 
@@ -14,6 +14,8 @@ interface Props {
   bands?: readonly string[];
   /** Band Hopping: col tasto destro sul pulsante si passa alla frequenza successiva del giro (come facevano i pulsanti delle bande). */
   onHop?(): void;
+  /** Righe proprie al posto della tabella del motore (piano di banda dei modi testuali e dell'SSTV). */
+  rows?: readonly FrequencyEntry[];
 }
 
 /** Frequenza in MHz con tre decimali (quattro se serve: 7,0475). */
@@ -23,7 +25,7 @@ const mhz = (hz: number) => (hz / 1e6).toFixed(hz % 1000 === 0 ? 3 : 4);
  * Come in WSJT-X, tutte le frequenze del modo in uso dalla tabella delle Frequenze: un pulsante con la frequenza attuale apre un pannello
  * con una riga per banda; la frequenza standard e' piena, le alternative (anche DXpedition) piu' tenui.
  */
-export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown, onHop }: Props) {
+export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown, onHop, rows: own }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
   }, [open]);
 
   const m = mode.toUpperCase().split('+')[0];
-  const rows = (table.data ?? []).filter((r) => r.mode.toUpperCase() === m && (!shown || shown.includes(r.band))).sort((a, b) => a.hz - b.hz);
+  const rows = (own ?? table.data ?? []).filter((r) => r.mode.toUpperCase() === m && (!shown || shown.includes(r.band))).sort((a, b) => a.hz - b.hz);
   if (!onPick || rows.length === 0) return null;
   const bands = [...new Set(rows.map((r) => r.band))];
   const current = bandOf(dialHz);

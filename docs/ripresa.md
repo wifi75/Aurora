@@ -12,6 +12,15 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 - **Da fare**: linguetta «Mappa» nella colonna di destra; opzioni della Vista rimaste fuori (Word mode, stick cursor, IMD); comandi di macro dell'SSTV; split vero della radio per «up» oltre 3,5 kHz; fondere `sviluppo` in `main` solo quando il proprietario lo decide.
 - **Attenzione alla pagina PSK/RTTY**: la finestra e' `position: fixed; inset: 0` (`styles/digi-log-corta.css`) perche' `100dvh` non segue lo zoom di `lib/uiScale.ts`; non tornare a `100dvh`.
 
+## Ramo sviluppo - stato al 2026-11-10 notte (PSK, RTTY, CW, SSTV, Satelliti)
+
+- **Pagina «PSK · RTTY · SSTV»** (un solo pulsante in alto; il modo si cambia dal menu «Modo»): macro a blocchetti (4 righe x 12), selettore di banda con le frequenze IARU (`app/src/lib/bandplan.ts`), RX/TX con divisore regolabile, colonna di destra con linguette DX Cluster e Log (bordo trascinabile, colonne a scelta), cascata sotto RX/TX (rombi RX blu e TX rosso, scala in kHz veri, 0-5 kHz o 0-3,5 kHz dal menu Vista, altezza regolabile), opzioni della Vista, tema scuro e chiaro, tutta in una schermata (`styles/digi-log-corta.css`, finestra fissa).
+- **Log della pagina** = lo stesso del pannello Log (`getLog4om`, fino a 500 QSO, numero = totale - posizione); freq/nome/QTH letti dalle colonne di Log4OM se ci sono; il log interno ha le colonne `name` e `qth` (schema v4).
+- **CW**: `core/crates/mode-digi/src/cw.rs` (modulatore Morse a tono, decodificatore a soglia adattiva, 7 prove), `DigiMode::Cw`, `cw_wpm`, comando `<WPM:n>`. Da provare con la radio.
+- **Macro **: editor con i sottoinsiemi (testo, programma, frequenza, Auto CQ, macro, modo, rotore, RTTY, SSTV, CW, HELL); eseguiti: `<FQ>`, `<SPLIT>`, `<ROTOR>`, `<EDITMACRO>`, `<ALARM>`, `<ACQ>`, `<WPM>`; gli altri sono in elenco come «non ancora».
+- **Cluster**: PSK nei modi, «Solo nuovi», clic = sintonia sul tono e «up N» in split, pulsante «Spot DX» con la finestra «Invia spot» (rotta `/api/v1/spot/dxsummit` con `freq_khz` e `info`).
+- **Da fare**: provare tutto dal vivo (CW, spot, log di Log4OM, split); linguetta «Mappa»; opzioni della Vista che mancano (Word mode, stick cursor, IMD); SSTV: comandi di macro; auto split con la radio per «up» oltre 3,5 kHz; fondere `sviluppo` in `main` solo quando il proprietario lo decide (main resta alla 0.11.231, con il fix PTT e il menu dei contest ordinato non ancora in una release).
+
 ## Stato al 2026-11-10 sera (0.11.228 pubblicata, rotori su main)
 
 - **0.11.228** (15:23 UTC): cascata ferma in trasmissione e spettro spegnibile (UN7MBV), filtro «Spotter» del DX Cluster (Luc ON7KEC), MSK144 centrato, chiusura di tutte le finestre con la principale, consigli ARS/split per FT-991 e IC-9700.
