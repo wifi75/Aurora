@@ -478,7 +478,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
     for (const s of squares) {
       const c = squareCorner(s.grid);
       if (!c) continue;
-      const color = s.confirmed ? LIVE_COLORS.qsl : LIVE_COLORS.qso;
+      const color = s.confirmed ? cssColor('--tag-grid-confirmed', LIVE_COLORS.qsl) : cssColor('--tag-grid-worked', LIVE_COLORS.qso);
       L.polygon(shape(c, liveNow.has(s.grid) ? 'top' : 'all'), { interactive: false, color, weight: 0.5, opacity: 0.6, fillColor: color, fillOpacity: 0.32 }).addTo(group);
     }
     for (const g of liveNow.values()) {

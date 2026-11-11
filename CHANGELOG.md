@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Colori dei quadrati della Mappa DX** (richiesta #40): «Quadrato lavorato» e «Quadrato confermato» si scelgono in Impostazioni › Colori (gruppo Mappa DX), anche nella legenda e nella mappa del mondo; «Ripristina colori» li rimette giallo e verde.
 - FT8, controllo del locatore: come in WSJT-X non scarta piu' le risposte deboli che contengono il proprio nominativo o quello del DX (salvo i tipi a priori del proprio QSO).
 - OmniRig: l'oggetto non si butta piu' dopo un errore (a radio spenta OmniRig si chiudeva e riapriva la finestrella a ogni lettura) e si lascia quando il CAT si stacca o si passa a Hamlib, cosi' OmniRig libera la porta della radio.
 - CAT Hamlib: lo split vero si riapplica davvero dopo la riconnessione della radio (il controllo avveniva prima che la radio risultasse collegata).

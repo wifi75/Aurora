@@ -246,7 +246,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
           [c.lat, c.lon],
           [c.lat + 1, c.lon + 2],
         ],
-        { className: 'worldmap-worked-rect', stroke: false, fillColor: '#ffe14a', fillOpacity: squareOpacity(s.count), interactive: true },
+        { className: 'worldmap-worked-rect', stroke: false, fillColor: cssColor('--tag-grid-worked', '#ffe14a'), fillOpacity: squareOpacity(s.count), interactive: true },
       )
         .bindTooltip(`${s.grid} · ${s.count} QSO${s.bands.length > 0 ? ` · ${s.bands.join(', ')}` : ''}`, { sticky: true })
         .addTo(group);

@@ -20,7 +20,11 @@ export const COLOR_KEYS = [
   'auto',
 ] as const;
 export type ColorKey = (typeof COLOR_KEYS)[number];
-export type TagColors = Record<ColorKey, string>;
+
+/** Colori dei quadrati del locatore sulla Mappa DX (fuori da COLOR_KEYS: non sono categorie di messaggio). */
+export const MAP_COLOR_KEYS = ['grid_worked', 'grid_confirmed'] as const;
+export type MapColorKey = (typeof MAP_COLOR_KEYS)[number];
+export type TagColors = Record<ColorKey | MapColorKey, string>;
 
 /** Chiave di traduzione del nome di ogni tipo di messaggio. */
 export function kindKey(key: ColorKey): `kind.${ColorKey}` {
@@ -54,6 +58,8 @@ export function defaultColors(): TagColors {
     standard_call: '#96aca2',
     worked_call: '#00bf00',
     auto: '#3fd6c8',
+    grid_worked: '#ffe14a',
+    grid_confirmed: '#2ecc71',
   };
 }
 
@@ -64,7 +70,7 @@ export function readColors(storage: ReadableStorage): TagColors {
     if (!raw) return colors;
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== 'object' || parsed === null) return colors;
-    for (const key of COLOR_KEYS) {
+    for (const key of [...COLOR_KEYS, ...MAP_COLOR_KEYS]) {
       const value = (parsed as Record<string, unknown>)[key];
       if (typeof value === 'string' && HEX.test(value)) colors[key] = value.toLowerCase();
     }
@@ -94,7 +100,7 @@ export function inkFor(hex: string): string {
 }
 
 export function applyColors(root: HTMLElement, colors: TagColors): void {
-  for (const key of COLOR_KEYS) {
+  for (const key of [...COLOR_KEYS, ...MAP_COLOR_KEYS]) {
     const name = `--tag-${key.replaceAll('_', '-')}`;
     root.style.setProperty(name, colors[key]);
     root.style.setProperty(`${name}-ink`, inkFor(colors[key]));

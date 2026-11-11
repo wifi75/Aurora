@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { AlertSwitch } from '../components/AlertSwitch';
-import { useT } from '../i18n';
+import { useT, type Key } from '../i18n';
 import { useAlertPrefs } from '../lib/alerts';
 import { armAudio } from '../lib/soundBank';
 import { useSoundAssign } from '../lib/soundAssign';
-import { COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors, type TagColors } from '../lib/colors';
+import { COLOR_KEYS, MAP_COLOR_KEYS, applyColors, defaultColors, kindKey, readColors, saveColors, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
 import { browserStorage } from '../lib/theme';
 import { EngineValues } from './EngineValues';
@@ -58,6 +58,16 @@ function JtdxNotificationsTab() {
             {t('not.restoreColors')}
           </button>
         </Actions>
+      </Group>
+      <Group title={t('not2.grpMapColors')}>
+        {MAP_COLOR_KEYS.map((key) => {
+          const name = t(`kind.${key}` as Key);
+          return (
+            <Cell key={key} label={name} hint={t(`tip.kind.${key}` as Key)}>
+              <input type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
+            </Cell>
+          );
+        })}
       </Group>
       <Group title={t('not2.grpTable')} span={2}>
         <div className="sx-tablewrap">

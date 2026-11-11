@@ -254,8 +254,8 @@ html:has(.solo-display) *, html:has(.solo-display) { scrollbar-width: none; }
 .dxmap-popup .leaflet-popup-content { margin: 0.5rem 0.7rem; font-size: 0.78rem; line-height: 1.4; }
 .dxmap-legend { display: inline-flex; align-items: center; gap: 0.25rem; }
 .dxmap-key { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-left: 0.2rem; }
-.dxmap-key--worked { background: #ffe14a; }
-.dxmap-key--confirmed { background: #2ecc71; }
+.dxmap-key--worked { background: var(--tag-grid-worked, #ffe14a); }
+.dxmap-key--confirmed { background: var(--tag-grid-confirmed, #2ecc71); }
 
 .dxmap-page { position: relative; }
 .dxmap-spotbox {

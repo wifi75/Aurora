@@ -4,7 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { getControls, postControl, type ControlId } from '../api/client';
 import type { EngineSettings } from '../api/schemas';
 import { useT, type Key } from '../i18n';
-import { applyColors, defaultColors, inkFor, kindKey, readColors, saveColors, type ColorKey, type TagColors } from '../lib/colors';
+import { applyColors, defaultColors, inkFor, kindKey, readColors, saveColors, MAP_COLOR_KEYS, type ColorKey, type TagColors } from '../lib/colors';
 import { useNotify } from '../lib/notify';
 import { useAlertPrefs } from '../lib/alerts';
 import { eventOfAlert, useSoundAssign, type SoundEvent } from '../lib/soundAssign';
@@ -667,6 +667,19 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
               {t('not.restoreColors')}
             </button>
           </Cell>
+        </Cells>
+      </Group>
+
+      <Group title={t('not2.grpMapColors')}>
+        <Cells min={22}>
+          {MAP_COLOR_KEYS.map((key) => {
+            const name = t(`kind.${key}` as Key);
+            return (
+              <Cell key={key} label={name} hint={t(`tip.kind.${key}` as Key)}>
+                <input type="color" aria-label={name} value={colors[key]} onChange={(e) => commit({ ...colors, [key]: e.target.value })} />
+              </Cell>
+            );
+          })}
         </Cells>
       </Group>
 

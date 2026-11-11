@@ -416,6 +416,11 @@ export const settingsStrings = {
   'kind.standard_call': ['Stazione comune', 'Ordinary station', 'Gewöhnliche Station', 'Station ordinaire', 'Estación común', 'Estação comum'],
   'kind.worked_call': ['Già lavorata', 'Already worked', 'Schon gearbeitet', 'Déjà contactée', 'Ya contactada', 'Já contactada'],
   'kind.auto': ['Risposta automatica', 'Automatic reply', 'Automatische Antwort', 'Réponse automatique', 'Respuesta automática', 'Resposta automática'],
+  'not2.grpMapColors': ['Mappa DX', 'DX map', 'DX-Karte', 'Carte DX', 'Mapa DX', 'Mapa DX'],
+  'kind.grid_worked': ['Quadrato lavorato', 'Worked square', 'Gearbeitetes Feld', 'Carré contacté', 'Cuadrícula trabajada', 'Quadrícula trabalhada'],
+  'kind.grid_confirmed': ['Quadrato confermato', 'Confirmed square', 'Bestätigtes Feld', 'Carré confirmé', 'Cuadrícula confirmada', 'Quadrícula confirmada'],
+  'tip.kind.grid_worked': ['Colore dei quadrati del locatore sulla Mappa DX già lavorati.', 'Colour of the locator squares already worked on the DX map.', 'Farbe der bereits gearbeiteten Locatorfelder auf der DX-Karte.', 'Couleur des carrés locator déjà contactés sur la carte DX.', 'Color de las cuadrículas del locator ya trabajadas en el mapa DX.', 'Cor das quadrículas do locator já trabalhadas no mapa DX.'],
+  'tip.kind.grid_confirmed': ['Colore dei quadrati del locatore sulla Mappa DX confermati.', 'Colour of the confirmed locator squares on the DX map.', 'Farbe der bestätigten Locatorfelder auf der DX-Karte.', 'Couleur des carrés locator confirmés sur la carte DX.', 'Color de las cuadrículas del locator confirmadas en el mapa DX.', 'Cor das quadrículas do locator confirmadas no mapa DX.'],
   // Filtri
   'list.bottom': ['Messaggi nuovi in fondo', 'New messages at the bottom', 'Neue Meldungen unten', 'Nouveaux messages en bas', 'Mensajes nuevos abajo', 'Mensagens novas em baixo'],
   'list.clear': ['Pulisci', 'Clear', 'Leeren', 'Vider', 'Limpiar', 'Limpar'],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COLOR_KEYS, applyColors, defaultColors, inkFor, readColors, saveColors } from './colors';
+import { COLOR_KEYS, MAP_COLOR_KEYS, applyColors, defaultColors, inkFor, readColors, saveColors } from './colors';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -10,8 +10,19 @@ const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { thr
 describe('colors', () => {
   it('has a distinct default color for every kind of message', () => {
     const c = defaultColors();
-    expect(Object.keys(c).sort()).toEqual([...COLOR_KEYS].sort());
-    expect(new Set(Object.values(c)).size).toBe(COLOR_KEYS.length);
+    expect(Object.keys(c).sort()).toEqual([...COLOR_KEYS, ...MAP_COLOR_KEYS].sort());
+    expect(new Set(Object.values(c)).size).toBe(COLOR_KEYS.length + MAP_COLOR_KEYS.length);
+  });
+
+  it('remembers the map square colors and publishes them as CSS variables', () => {
+    const store = memory();
+    saveColors(store, { ...defaultColors(), grid_worked: '#123456' });
+    expect(readColors(store).grid_worked).toBe('#123456');
+    expect(readColors(store).grid_confirmed).toBe('#2ecc71');
+    const root = document.createElement('div');
+    applyColors(root, readColors(store));
+    expect(root.style.getPropertyValue('--tag-grid-worked')).toBe('#123456');
+    expect(root.style.getPropertyValue('--tag-grid-confirmed')).toBe('#2ecc71');
   });
 
   it('remembers custom colors and keeps defaults for the rest', () => {
