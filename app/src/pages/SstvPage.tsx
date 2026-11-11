@@ -90,13 +90,6 @@ function SstvBody({ solo }: { solo: boolean }) {
   return (
     <div className={`sstv-page${solo ? ' sstv-page--solo' : ''}`}>
       <header className="sstv-head">
-        <h1>
-          {t('sstv.title')}
-        </h1>
-        <span className={`sstv-badge sstv-badge--${badge}`} role="status">
-          <span className="sstv-dot" aria-hidden="true" />
-          {t(`sstv.state.${badge}`)}
-        </span>
         {/* il modo si cambia da qui: un modo testuale apre la loro pagina */}
         <select className="sstv-modesel" value="sstv" aria-label={t('digi.menu.mode')} onChange={(e) => void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw')}>
           <option value="psk31">PSK31</option>
@@ -105,6 +98,13 @@ function SstvBody({ solo }: { solo: boolean }) {
           <option value="cw">CW</option>
           <option value="sstv">SSTV</option>
         </select>
+        <h1>
+          {t('sstv.title')}
+        </h1>
+        <span className={`sstv-badge sstv-badge--${badge}`} role="status">
+          <span className="sstv-dot" aria-hidden="true" />
+          {t(`sstv.state.${badge}`)}
+        </span>
         {/* banda e frequenze SSTV dal piano di banda IARU */}
         <FreqPicker dialHz={dialHz} mode="SSTV" rows={bandPlanRows('SSTV')} locked={sending} onPick={(hz) => void postFrequency(hz).catch(() => undefined)} />
         <div className="sstv-views" role="tablist">

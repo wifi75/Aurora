@@ -171,25 +171,76 @@
 .sstv-txsent { position: absolute; left: 0; right: 0; top: 0; background: rgb(0 0 0 / .28); pointer-events: none; transition: height .3s linear; }
 .sstv-txline { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid #ff4d4d; box-shadow: 0 0 8px 1px rgb(255 77 77 / .9); pointer-events: none; transition: top .3s linear; z-index: 3; }
 
-/* ===== tutto in una pagina: ricezione o compositore a sinistra, immagini e impostazioni a destra; senza scorrere (sotto i 1180 px si torna in colonna) ===== */
-.sstv-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 23rem); gap: 0.8rem; align-items: stretch; flex: 1 1 auto; min-height: 0; }
-.sstv-main { min-width: 0; min-height: 0; overflow: auto; }
-.sstv-side-col { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; min-height: 0; }
-.sstv-side-col .sstv-history { flex: 1 1 0; min-height: 0; overflow: auto; margin: 0; }
-.sstv-side-col .sstv-keep { display: none; }
-.sstv-side-col .sstv-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: 0.45rem; overflow: visible; padding: 0; }
-.sstv-side-col .sstv-more { flex: none; max-height: 55%; overflow: auto; margin: 0; }
+/* ===== tutto in una pagina: le due schede (ricezione o compositore) in alto, sotto le miniature ricevute e trasmesse in orizzontale, poi le impostazioni ===== */
+.sstv-body { display: flex; flex-direction: column; gap: 0.6rem; flex: 1 1 auto; min-height: 0; }
+.sstv-main { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: auto; }
+.sstv-side-col { flex: none; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.sstv-side-col .sstv-history { margin: 0; padding: 0.5rem 0.8rem 0.6rem; }
+.sstv-history--both { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; }
+.sstv-hist-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.sstv-hist-head { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+.sstv-side-col .sstv-strip { display: grid; grid-auto-flow: column; grid-auto-columns: 7.6rem; gap: 0.5rem; overflow-x: auto; overflow-y: hidden; padding: 0.1rem 0.1rem 0.4rem; }
+.sstv-side-col .sstv-thumb-meta { padding: 0.25rem 0.4rem; font-size: 0.72rem; }
+.sstv-side-col .sstv-thumb-meta b { font-size: 0.8rem; }
+.sstv-side-col .sstv-empty { margin: 0.2rem 0; }
+.sstv-side-col .sstv-more { padding: 0.35rem 0.8rem; margin: 0; max-height: 38vh; overflow: auto; }
+.sstv-side-col .sstv-more summary { font-size: 0.95rem; }
+.sstv-side .sstv-hint { display: none; }
+.sstv-side { gap: 0.7rem; padding: 0.8rem 1rem; }
 .sstv-head { gap: 0.6rem; }
-.sstv-head h1 { font-size: 1.25rem; }
 @media (min-width: 1180px) {
   .app-shell:has(.sstv-page:not(.sstv-page--solo)) { position: fixed; inset: 0; height: auto; min-height: 0; overflow: hidden; }
   .app-shell:has(.sstv-page:not(.sstv-page--solo)) .app-main { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
   .sstv-page:not(.sstv-page--solo) { flex: 1 1 auto; min-height: 0; overflow: hidden; padding-bottom: 0.4rem; gap: 0.6rem; }
 }
 @media (max-width: 1179px) {
-  .sstv-body { grid-template-columns: minmax(0, 1fr); }
   .sstv-main { overflow: visible; }
-  .sstv-side-col .sstv-history { overflow: visible; }
+  .sstv-history--both { grid-template-columns: minmax(0, 1fr); }
 }
 /* il selettore del modo in testa alla pagina: nel tema chiaro era blu scuro con testo scuro (illeggibile) */
 html[data-theme='light'] .sstv-modesel { background: #ffffff; color: #0b1322; border: 1.5px solid #8f9cbf; box-shadow: 0 1px 2px rgba(25, 35, 70, 0.2); }
+
+/* ===== la scheda del modo alta come la finestra di ricezione; l'immagine resta intera dentro lo schermo nero ===== */
+.sstv-rx { align-items: stretch; }
+.sstv-rx .sstv-stage { height: 100%; min-height: 0; }
+.sstv-rx .sstv-screen { flex: 1 1 auto; height: auto; min-height: 14rem; max-height: none; max-width: none; margin: 0; aspect-ratio: auto !important; }
+.sstv-rx .sstv-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.sstv-head h1 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ===== lo stesso stile Aurora delle altre pagine dei modi: schede blu notte con bordo netto, pulsanti come quelli della barra di stato, attivo viola ===== */
+.sstv-side, .sstv-history, .sstv-more, .sstv-screen, .sstv-composer .sstv-panel, .sstv-composer .sstv-toolbar { background: linear-gradient(180deg, #121e36, #0f192d); border: 1px solid #2f4279; border-radius: 14px; box-shadow: 0 0 0 1px rgba(142, 123, 255, 0.10); }
+.sstv-screen { background: #000; }
+.sstv-page .sstv-btn, .sstv-page .sstv-actions button, .sstv-page .sstv-force button, .sstv-page .sstv-seg button, .sstv-page .sstv-add button { min-height: 30px; padding: 3px 13px; border-radius: 9px; border: 1.5px solid #3f5290; background: #1a2848; color: #dbe5ff; font: 600 13px var(--font-ui); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); cursor: pointer; }
+.sstv-page .sstv-btn:hover:not(:disabled), .sstv-page .sstv-actions button:hover:not(:disabled), .sstv-page .sstv-force button:hover:not(:disabled), .sstv-page .sstv-seg button:hover, .sstv-page .sstv-add button:hover { border-color: #8e7bff; background: #24366a; color: #fff; }
+.sstv-page .sstv-btn:disabled, .sstv-page .sstv-actions button:disabled, .sstv-page .sstv-force button:disabled { opacity: 0.45; cursor: not-allowed; }
+.sstv-page .sstv-btn--primary, .sstv-page .sstv-seg button.on { background: linear-gradient(180deg, #7b66f2, #5a47d6); border-color: #b3a6ff; color: #fff; box-shadow: 0 0 10px rgba(142, 123, 255, 0.55); }
+.sstv-page .sstv-btn--danger { color: #ff9aa4; border-color: #b04a58; }
+.sstv-views { background: #121e36; border: 1.5px solid #3f5290; border-radius: 12px; }
+.sstv-views button { color: #dbe5ff; }
+.sstv-views button.on { background: linear-gradient(180deg, #7b66f2, #5a47d6); color: #fff; box-shadow: 0 0 10px rgba(142, 123, 255, 0.55); }
+.sstv-tab { border: 1.5px solid #3f5290; background: #1a2848; color: #dbe5ff; }
+.sstv-tab--on { background: linear-gradient(180deg, #7b66f2, #5a47d6); border-color: #b3a6ff; color: #fff; box-shadow: 0 0 10px rgba(142, 123, 255, 0.45); }
+.sstv-badge { border: 1.5px solid #3f5290; background: #1a2848; color: #dbe5ff; }
+.sstv-modesel { min-height: 34px; background: #1a2848; color: #fff; border: 1.5px solid #3f5290; border-radius: 10px; font-weight: 600; }
+.sstv-page .sstv-field input:not([type='range']):not([type='color']), .sstv-page .sstv-field select, .sstv-page .sstv-field textarea, .sstv-page .sstv-force select { background: #0a1324; color: #fff; border: 1.5px solid #3f5290; border-radius: 9px; }
+.sstv-thumb { border: 1.5px solid #3f5290; background: #1a2848; }
+.sstv-thumb:hover, .sstv-thumb:focus-visible { border-color: #8e7bff; box-shadow: 0 6px 18px rgba(142, 123, 255, 0.35); }
+.sstv-slider input, .sstv-page input[type='range'], .sstv-page input[type='checkbox'] { accent-color: #8e7bff; }
+.sstv-readouts dt { color: #9db0da; }
+
+html[data-theme='light'] .sstv-side, html[data-theme='light'] .sstv-history, html[data-theme='light'] .sstv-more, html[data-theme='light'] .sstv-composer .sstv-panel, html[data-theme='light'] .sstv-composer .sstv-toolbar { background: #ffffff; border: 1px solid #9fb0d4; box-shadow: 0 1px 3px rgba(25, 35, 70, 0.12); }
+html[data-theme='light'] .sstv-screen { background: #000; border: 1px solid #9fb0d4; }
+html[data-theme='light'] .sstv-page .sstv-btn, html[data-theme='light'] .sstv-page .sstv-actions button, html[data-theme='light'] .sstv-page .sstv-force button, html[data-theme='light'] .sstv-page .sstv-seg button, html[data-theme='light'] .sstv-page .sstv-add button { background: #ffffff; border-color: #7d8bb0; color: #0b1322; box-shadow: 0 1px 2px rgba(25, 35, 70, 0.25); }
+html[data-theme='light'] .sstv-page .sstv-btn:hover:not(:disabled), html[data-theme='light'] .sstv-page .sstv-actions button:hover:not(:disabled), html[data-theme='light'] .sstv-page .sstv-force button:hover:not(:disabled), html[data-theme='light'] .sstv-page .sstv-seg button:hover, html[data-theme='light'] .sstv-page .sstv-add button:hover { background: #ece9ff; border-color: #5b4fe0; color: #000; }
+html[data-theme='light'] .sstv-page .sstv-btn--primary, html[data-theme='light'] .sstv-page .sstv-seg button.on { background: linear-gradient(180deg, #6a57e8, #4d3ccb); border-color: #3a2db0; color: #fff; box-shadow: 0 1px 4px rgba(60, 45, 190, 0.5); }
+html[data-theme='light'] .sstv-page .sstv-btn--danger { color: #b3202f; border-color: #c4707a; }
+html[data-theme='light'] .sstv-views { background: #eef1fa; border-color: #7d8bb0; }
+html[data-theme='light'] .sstv-views button { color: #0b1322; }
+html[data-theme='light'] .sstv-views button.on { background: linear-gradient(180deg, #6a57e8, #4d3ccb); color: #fff; }
+html[data-theme='light'] .sstv-tab { background: #ffffff; border-color: #7d8bb0; color: #0b1322; }
+html[data-theme='light'] .sstv-tab--on { background: linear-gradient(180deg, #6a57e8, #4d3ccb); border-color: #3a2db0; color: #fff; }
+html[data-theme='light'] .sstv-badge { background: #ffffff; border-color: #7d8bb0; color: #0b1322; }
+html[data-theme='light'] .sstv-modesel { background: #ffffff; color: #0b1322; border-color: #7d8bb0; }
+html[data-theme='light'] .sstv-page .sstv-field input:not([type='range']):not([type='color']), html[data-theme='light'] .sstv-page .sstv-field select, html[data-theme='light'] .sstv-page .sstv-field textarea, html[data-theme='light'] .sstv-page .sstv-force select { background: #ffffff; color: #0b1322; border-color: #7d8bb0; }
+html[data-theme='light'] .sstv-thumb { background: #ffffff; border-color: #7d8bb0; }
+html[data-theme='light'] .sstv-readouts dt { color: #46556f; }

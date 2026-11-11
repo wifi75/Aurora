@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { deleteSstvImage, getSstvImageBlob, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
 import { useT } from '../../i18n';
 
-const KEEP = { rx: 200, tx: 20 } as const;
-
 function when(ms: number): string {
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -13,44 +11,46 @@ function when(ms: number): string {
 /** Le due cronologie sotto l'area principale: ricevute (ultime 200) e trasmesse (ultime 20), in schede. */
 export function History({ images, modes, onChanged, onReuse }: { images: SstvImageEntry[]; modes: SstvModeInfo[]; onChanged: () => void; onReuse: (entry: SstvImageEntry) => void }) {
   const t = useT();
-  const [tab, setTab] = useState<'rx' | 'tx'>('rx');
   const [open, setOpen] = useState<SstvImageEntry | null>(null);
-  const list = images.filter((i) => (tab === 'tx' ? i.direction === 'tx' : i.direction !== 'tx'));
   const count = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).length;
   const modeName = (id: string) => modes.find((m) => m.id === id)?.name ?? id;
 
+  const strip = (d: 'rx' | 'tx') => {
+    const items = images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx'));
+    return items.length === 0 ? (
+      <p className="sstv-hint sstv-empty">{t('sstv.hist.empty')}</p>
+    ) : (
+      <ul className="sstv-strip">
+        {items.map((img) => (
+          <li key={img.id}>
+            <button type="button" className="sstv-thumb" onClick={() => setOpen(img)} title={`${modeName(img.mode)} · ${when(img.time_ms)}`}>
+              <img src={sstvImageUrl(img.id)} alt="" loading="lazy" width={img.width} height={img.height} />
+              <span className="sstv-thumb-meta">
+                <b>{img.call ?? modeName(img.mode)}</b>
+                <span>
+                  {img.call ? `${modeName(img.mode)} · ` : ''}
+                  {when(img.time_ms)}
+                </span>
+              </span>
+              {!img.complete ? <span className="sstv-thumb-tag">{t('sstv.img.partial')}</span> : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <section className="sstv-history">
-      <div className="sstv-tabs" role="tablist">
-        {(['rx', 'tx'] as const).map((d) => (
-          <button key={d} type="button" role="tab" aria-selected={tab === d} className={`sstv-tab${tab === d ? ' sstv-tab--on' : ''}`} onClick={() => setTab(d)}>
+    <section className="sstv-history sstv-history--both">
+      {(['rx', 'tx'] as const).map((d) => (
+        <div key={d} className="sstv-hist-col">
+          <div className="sstv-hist-head">
             {d === 'rx' ? t('sstv.hist.received') : t('sstv.hist.sent')}
             <span className="sstv-count">{count(d)}</span>
-          </button>
-        ))}
-        <span className="sstv-hint sstv-keep">{t('sstv.hist.keep', { n: KEEP[tab] })}</span>
-      </div>
-      {list.length === 0 ? (
-        <p className="sstv-hint sstv-empty">{t('sstv.hist.empty')}</p>
-      ) : (
-        <ul className="sstv-strip">
-          {list.map((img) => (
-            <li key={img.id}>
-              <button type="button" className="sstv-thumb" onClick={() => setOpen(img)} title={`${modeName(img.mode)} · ${when(img.time_ms)}`}>
-                <img src={sstvImageUrl(img.id)} alt="" loading="lazy" width={img.width} height={img.height} />
-                <span className="sstv-thumb-meta">
-                  <b>{img.call ?? modeName(img.mode)}</b>
-                  <span>
-                    {img.call ? `${modeName(img.mode)} · ` : ''}
-                    {when(img.time_ms)}
-                  </span>
-                </span>
-                {!img.complete ? <span className="sstv-thumb-tag">{t('sstv.img.partial')}</span> : null}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+          </div>
+          {strip(d)}
+        </div>
+      ))}
       {open ? (
         <Lightbox
           entry={open}
