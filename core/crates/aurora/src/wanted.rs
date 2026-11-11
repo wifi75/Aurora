@@ -207,7 +207,7 @@ mod tests {
         let mut w = list();
         w.from_decodes = false;
         assert!(alert_for_decode(&w, &decode("CQ K1ABC FN42", None), None, 0).is_none());
-        let spot = Spot { id: 1, received_ms: 0, server: "x".into(), spotter: "W3LPL".into(), freq_khz: 14_195.0, dx_call: "K1ABC".into(), comment: "up 5".into(), time_utc: "1200".into(), grid: None, band: Some("20m"), mode: None, country: None, continent: None };
+        let spot = Spot { id: 1, received_ms: 0, server: "x".into(), spotter: "W3LPL".into(), freq_khz: 14_195.0, dx_call: "K1ABC".into(), comment: "up 5".into(), time_utc: "1200".into(), grid: None, band: Some("20m"), mode: None, country: None, continent: None, spotter_continent: None };
         assert_eq!(alert_for_spot(&w, &spot, 7).unwrap().freq_hz, Some(14_195_000));
         w.from_cluster = false;
         assert!(alert_for_spot(&w, &spot, 7).is_none());
