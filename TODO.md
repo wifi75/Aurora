@@ -7,7 +7,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [x] Porta COM occupata con il nome del programma, OmniRig lento come avviso, PC lento con «Passa a Normale».
 - [x] Griglie e colonne spostabili in Finestra RX e Log; modo degli spot dal band plan; via QSL delle DXpedition; donazioni con PayPal.
 - [ ] Prove dal vivo con la radio (proprietario): Split DX, Cat4OM, FST4W/WSPRnet, porta occupata, griglie.
-- [ ] Chiave di firma degli aggiornamenti sul PC (`%USERPROFILE%\.aurora-signingurora.key`) se si vuole compilare l'installatore in locale.
+- [ ] Chiave di firma degli aggiornamenti sul PC (`%USERPROFILE%\.aurora-signing\aurora.key`) se si vuole compilare l'installatore in locale.
 
 ## Dal lavoro del 2026-11-11 sera e notte (0.11.237)
 - [x] FST4 e FST4W (periodi 15 s-30 min), verificati con `jt9.exe` di WSJT-X 3.3.0-beta6.
