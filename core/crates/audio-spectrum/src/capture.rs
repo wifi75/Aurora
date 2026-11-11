@@ -324,6 +324,9 @@ fn run_capture_inner(
         // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
         let glitches = Arc::new(AtomicU64::new(0));
         let started = std::time::Instant::now();
+        // un flusso che smette di dare audio senza segnalare errori (scheda in pausa, driver bloccato) si da' per perso: il controllo ogni 5 s lo
+        // riapre e avvisa, come `soundin.cpp` di WSJT-X tratta Idle/Suspended/Interrupted. Prima la cascata restava ferma in silenzio
+        let stalled = Arc::clone(&lost_thread);
         // dettagli per capire il problema dal rapporto: tipo di scheda (non il nome, che puo' dire chi e'), formato e ritmo delle perdite
         let kind = device_kind(&name);
         let detail = format!("ingresso {kind}, {rate} Hz, {channels} canali, {format:?}");
@@ -386,6 +389,46 @@ fn run_capture_inner(
                     None,
                 )
             }
+            // 24 e 32 bit: alcune schede in modalita' condivisa di Windows espongono solo questi (WSJT-X chiede 16 bit e converte Qt); prima la
+            // scheda non si apriva («formato campioni non gestito»)
+            cpal::SampleFormat::I24 => {
+                let tx = chunks_tx.clone();
+                let channel = Arc::clone(&channel);
+                let free = std::mem::replace(&mut free_rx_slot, None);
+                let mut floats: Vec<f32> = Vec::new();
+                device.build_input_stream(
+                    config.clone(),
+                    move |data: &[cpal::I24], _| {
+                        floats.clear();
+                        floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
+                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
+                        mono.clear();
+                        pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
+                        let _ = tx.send(mono);
+                    },
+                    on_error,
+                    None,
+                )
+            }
+            cpal::SampleFormat::I32 => {
+                let tx = chunks_tx.clone();
+                let channel = Arc::clone(&channel);
+                let free = std::mem::replace(&mut free_rx_slot, None);
+                let mut floats: Vec<f32> = Vec::new();
+                device.build_input_stream(
+                    config.clone(),
+                    move |data: &[i32], _| {
+                        floats.clear();
+                        floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
+                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
+                        mono.clear();
+                        pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
+                        let _ = tx.send(mono);
+                    },
+                    on_error,
+                    None,
+                )
+            }
             other => {
                 let _ = ready_tx.send(Err(CaptureError::Config(format!("{name}: formato campioni non gestito: {other:?}"))));
                 return;
@@ -406,9 +449,11 @@ fn run_capture_inner(
         tracing::info!("cascata dall'ingresso audio \"{name}\" a {rate} Hz");
 
         let mut seq = 0u64;
+        let mut last_chunk = std::time::Instant::now();
         while !stop_thread.load(Ordering::SeqCst) {
             match chunks_rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(chunk) => {
+                    last_chunk = std::time::Instant::now();
                     if let Some(tap) = &tap {
                         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
                         let _ = tap.send(AudioChunk { rate, samples: chunk.clone(), received_unix_ms: now });
@@ -422,7 +467,11 @@ fn run_capture_inner(
                     }
                     let _ = free_tx.send(chunk);
                 }
-                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    if last_chunk.elapsed() > Duration::from_secs(3) && !stalled.swap(true, Ordering::SeqCst) {
+                        tracing::info!("ingresso audio \"{name}\" fermo da 3 s senza errori: lo si riapre");
+                    }
+                }
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,
             }
         }
