@@ -13,6 +13,7 @@ pub mod dxped;
 pub mod foxcheck;
 pub mod lotw;
 pub mod psk;
+pub mod psk_live;
 pub mod solar;
 
 use std::{
@@ -135,6 +136,8 @@ pub struct OnlineService {
     path: PathBuf,
     fetch: Arc<dyn Fetch>,
     state: Mutex<State>,
+    /// Il flusso in tempo reale dei rapporti PSK Reporter (si avvia da `ensure_live`, mai nelle prove).
+    live: Mutex<Option<psk_live::Feed>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -144,7 +147,7 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 impl OnlineService {
     pub fn open(path: &Path, fetch: Arc<dyn Fetch>) -> Arc<OnlineService> {
         let settings: Settings = std::fs::read_to_string(path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
-        Arc::new(OnlineService { path: path.to_path_buf(), fetch, state: Mutex::new(State { settings, ..State::default() }) })
+        Arc::new(OnlineService { path: path.to_path_buf(), fetch, state: Mutex::new(State { settings, ..State::default() }), live: Mutex::new(None) })
     }
 
     pub fn settings(&self) -> Settings {
@@ -159,6 +162,7 @@ impl OnlineService {
         if !settings.psk {
             state.psk = PskSnapshot::default();
             state.psk_attempt_ms = 0;
+            *lock(&self.live) = None;
         }
         if !settings.solar {
             state.solar = SolarSnapshot::default();
@@ -172,8 +176,40 @@ impl OnlineService {
         Ok(settings)
     }
 
+    /// Tiene acceso (o spegne) il flusso in tempo reale di PSK Reporter in base all'interruttore e al nominativo. Non blocca; da chiamare ogni tanto.
+    pub fn ensure_live(&self, callsign: &str) {
+        let wanted = if self.settings().psk { psk::clean_callsign(callsign) } else { None };
+        let mut live = lock(&self.live);
+        match (&*live, wanted) {
+            (Some(feed), Some(call)) if feed.callsign == call => {}
+            (_, Some(call)) => *live = Some(psk_live::Feed::start(&call)),
+            (_, None) => *live = None,
+        }
+    }
+
+    /// I rapporti: quelli della richiesta (ogni 5 minuti, fino a tre ore indietro) uniti a quelli arrivati in tempo reale, i piu' recenti per primi.
     pub fn psk(&self) -> PskSnapshot {
-        lock(&self.state).psk.clone()
+        let mut snapshot = lock(&self.state).psk.clone();
+        let live: Vec<Report> = {
+            let feed = lock(&self.live);
+            match &*feed {
+                Some(f) if snapshot.callsign.is_empty() || f.callsign == snapshot.callsign => f.reports.lock().unwrap_or_else(|p| p.into_inner()).iter().cloned().collect(),
+                _ => Vec::new(),
+            }
+        };
+        if !live.is_empty() {
+            let mut all = live.clone();
+            all.extend(snapshot.reports.iter().filter(|r| !live.iter().any(|l| psk_live::same(l, r))).cloned());
+            all.sort_by_key(|r| std::cmp::Reverse(r.time_s));
+            all.truncate(psk::MAX_REPORTS);
+            snapshot.reports = all;
+            if snapshot.callsign.is_empty() {
+                snapshot.callsign = lock(&self.live).as_ref().map(|f| f.callsign.clone()).unwrap_or_default();
+            }
+            snapshot.hours = PSK_HOURS;
+            snapshot.fetched_ms = snapshot.fetched_ms.max(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64));
+        }
+        snapshot
     }
 
     pub fn solar(&self) -> SolarSnapshot {

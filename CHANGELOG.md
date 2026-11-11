@@ -4,6 +4,7 @@
 
 ## 0.11.234 - 2026-11-11
 ### Corretto
+- **PSK Reporter in tempo reale** (segnalazione #39): dopo aver chiamato i rapporti arrivavano in Aurora dopo qualche minuto, in GridTracker dopo pochi secondi. Aurora chiedeva a PSK Reporter una volta ogni 5 minuti (il limite della sua richiesta pubblica); ora ascolta anche il flusso pubblico MQTT `mqtt.pskreporter.info` (lo stesso di GridTracker, senza account, solo i rapporti sul proprio nominativo) e li unisce a quelli della richiesta, senza doppioni. Mappa DX, Bande aperte e Propagazione si aggiornano ogni 10 secondi invece di 60. Si spegne con l'interruttore di PSK Reporter in Impostazioni.
 - Cascata: se l'ingresso audio scelto per nome non c'e' ancora all'avvio (radio spenta, USB staccato) non e' piu' un errore da segnalare: si riprova ogni 5 secondi e l'avviso resta sullo schermo.
 - Blocchi audio persi (causa `Xrun`): la cattura chiede alla scheda un buffer di circa 40 ms invece di quello predefinito (10 ms in modalita' condivisa); se la scheda lo rifiuta si torna al predefinito.
 - Blocco del programma «attivo da 20 s»: il guardiano considerava la finestra gia' battente alla partenza e scambiava l'avvio lento di WebView2 per un blocco; ora aspetta il primo battito vero della finestra.

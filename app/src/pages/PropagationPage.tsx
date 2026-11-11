@@ -129,7 +129,7 @@ function PropagationPageBody({ solo }: { solo: boolean }) {
   const status = useStatusPick(['de_grid', 'dial_hz']);
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const solar = useQuery({ queryKey: ['online-solar'], queryFn: getSolar, retry: false, refetchInterval: 60_000, enabled: online.data?.solar === true });
-  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
+  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 10_000, enabled: online.data?.psk === true });
   const refresh = useMutation({
     mutationFn: refreshOnline,
     onSuccess: () => {

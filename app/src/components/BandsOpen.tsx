@@ -21,7 +21,7 @@ function BandsOpenInner() {
   const status = useStatusPick(['de_grid', 'dial_hz']);
   const online = useQuery({ queryKey: ['online'], queryFn: getOnline, retry: false });
   const solar = useQuery({ queryKey: ['online-solar'], queryFn: getSolar, retry: false, refetchInterval: 60_000, enabled: online.data?.solar === true });
-  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 60_000, enabled: online.data?.psk === true });
+  const psk = useQuery({ queryKey: ['online-psk'], queryFn: getPsk, retry: false, refetchInterval: 10_000, enabled: online.data?.psk === true });
   const pskState = psk.data?.psk ?? null;
   const rows = useMemo(() => (pskState ? pskRows(pskState.reports, status?.de_grid) : []), [pskState, status?.de_grid]);
   // le piu' lontane, una per stazione ricevente: fino a 5, ma la quarta e la quinta solo se entrano nella finestra (vedi sotto)
