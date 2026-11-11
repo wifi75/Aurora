@@ -406,7 +406,7 @@ describe('DecodeList', () => {
     render(<DecodeList decodes={[decode({ id: 1, text: 'CQ BB2BB IL18' })]} onReply={() => {}} />);
     fireEvent.contextMenu(document.querySelector('.decode-sender') as HTMLElement);
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    // senza onQueue il menu ha solo QRZ.com
+    // senza onQueue (dove il tasto destro non metteva in coda) il menu ha solo QRZ.com
     expect(screen.getAllByRole('menuitem')).toHaveLength(1);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('menu')).toBeNull();
