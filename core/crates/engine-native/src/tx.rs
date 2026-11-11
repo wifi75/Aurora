@@ -137,6 +137,8 @@ pub enum TxCommand {
     SetTxFreq(u32),
     /// STOP TX: ferma subito audio e PTT e spegne la sequenza.
     Halt,
+    /// «Abilita Tx» spento senza fermare il messaggio in onda (HaltTx «solo automatico» dal protocollo UDP).
+    StopAuto,
     /// Messaggio libero: con testo lo prepara (come scriverlo nel campo Tx5), con `send` lo trasmette una volta; `send` senza testo
     /// trasmette quello preparato; senza testo e senza `send` lo svuota.
     FreeText { text: String, send: bool },
@@ -711,6 +713,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 } else {
                     log.push(format!("frequenza Tx fuori campo: {hz} Hz"));
                 }
+            }
+            TxCommand::StopAuto => {
+                self.seq.set_enabled(false);
+                self.publish_view();
+                log.push("Abilita Tx spento da un programma collegato (il messaggio in onda finisce)".to_string());
             }
             TxCommand::Halt => {
                 self.halt_tx();

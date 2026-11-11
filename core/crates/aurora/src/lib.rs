@@ -2437,6 +2437,7 @@ pub async fn run(
                 while let Some(command) = commands.recv().await {
                     let mapped = match command {
                         aurora_core::Command::HaltTx => engine_native::TxCommand::Halt,
+                        aurora_core::Command::StopAutoTx => engine_native::TxCommand::StopAuto,
                         aurora_core::Command::Reply { decode_id } => engine_native::TxCommand::Reply { decode_id },
                         aurora_core::Command::QueueReply { decode_id } => engine_native::TxCommand::QueueReply { decode_id },
                         aurora_core::Command::SendFreeText { text, send } => engine_native::TxCommand::FreeText { text, send },
