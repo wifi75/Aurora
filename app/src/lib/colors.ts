@@ -32,6 +32,10 @@ export function kindKey(key: ColorKey): `kind.${ColorKey}` {
 }
 
 const KEY = 'aurora-colors';
+/** La voce dell'archivio con i colori: le finestre staccate guardano l'evento `storage` di questa voce. */
+export const COLORS_STORAGE_KEY = KEY;
+/** Evento della stessa finestra quando i colori sono stati applicati: chi disegna con i colori (mappa DX) ridisegna. */
+export const COLORS_EVENT = 'aurora-colors-change';
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 type ReadableStorage = Pick<Storage, 'getItem'> | null;
@@ -104,5 +108,10 @@ export function applyColors(root: HTMLElement, colors: TagColors): void {
     const name = `--tag-${key.replaceAll('_', '-')}`;
     root.style.setProperty(name, colors[key]);
     root.style.setProperty(`${name}-ink`, inkFor(colors[key]));
+  }
+  try {
+    root.ownerDocument.defaultView?.dispatchEvent(new Event(COLORS_EVENT));
+  } catch {
+    // senza finestra (prove) non c'e' nessuno da avvisare
   }
 }

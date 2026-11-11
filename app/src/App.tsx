@@ -12,7 +12,7 @@ import { ModeNav } from './components/ModeNav';
 import { useT } from './i18n';
 import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
-import { applyColors, readColors } from './lib/colors';
+import { COLORS_STORAGE_KEY, applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
 import { rememberRoute, rememberedTab } from './lib/lastPage';
 import { addressFromName, findOtherAddress, rememberAddresses } from './lib/knownAddresses';
@@ -69,6 +69,13 @@ export function App() {
   }, [route]);
   useEffect(() => {
     applyColors(document.documentElement, readColors(browserStorage()));
+    // i colori cambiati in un'altra finestra (Impostazioni nella finestra principale, mappa staccata): si rileggono e si applicano anche qui
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== COLORS_STORAGE_KEY) return;
+      applyColors(document.documentElement, readColors(browserStorage()));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
   // finche' il dispositivo non e' associato si riprova: se dal PC si accende l'accesso senza codice, il telefono entra da solo
   const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false, refetchInterval: (q) => (q.state.data === false ? 3000 : false) });

@@ -13,6 +13,7 @@ export interface DxSquare {
   text: string;
 }
 import { bearingDeg, distanceKm, greatCircle, latLonToGrid } from '../lib/geo';
+import { COLORS_EVENT } from '../lib/colors';
 import { tagColorName } from '../lib/mapColors';
 import { mapStyle } from '../lib/mapStyles';
 import { gridToLatLon, squareCorner } from '../lib/maidenhead';
@@ -176,6 +177,13 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
   labelsRef.current = labels;
   const [now, setNow] = useState(() => Date.now());
   const [readout, setReadout] = useState('');
+  // i colori si leggono dalle variabili CSS: quando cambiano (Impostazioni, anche da un'altra finestra) quadrati e stazioni si ridisegnano subito
+  const [colorsVersion, setColorsVersion] = useState(0);
+  useEffect(() => {
+    const changed = () => setColorsVersion((v) => v + 1);
+    window.addEventListener(COLORS_EVENT, changed);
+    return () => window.removeEventListener(COLORS_EVENT, changed);
+  }, []);
 
   // ogni minuto: notte, Luna e sfondo notturno si aggiornano
   useEffect(() => {
@@ -368,7 +376,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         .addTo(group);
     }
     replace('stations', group);
-  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, settings.dots, settings.callLabels, home?.lat, home?.lon]);
+  }, [stations, settings.arcs, settings.arcsAnimated, settings.decayMin, settings.dots, settings.callLabels, home?.lat, home?.lon, colorsVersion]);
 
   // in trasmissione: linea rossa da noi alla stazione chiamata (richiesta di Luc: si vede dove sta il corrispondente)
   useEffect(() => {
@@ -491,7 +499,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
         .addTo(group);
     }
     replace('squares', group);
-  }, [squares, live, settings.decayMin]);
+  }, [squares, live, settings.decayMin, colorsVersion]);
 
   return (
     <div className="worldmap dxmap">
