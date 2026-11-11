@@ -878,6 +878,12 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// Una stringa CAT mandata alla radio cosi' com'e' (macro `<CATCMD:...>`). Non si manda durante la trasmissione.
+    pub fn send_raw_cat(&self, text: &str) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        link.client().send_raw(text).map_err(|e| RigError(friendly_error(&e.0)))
+    }
+
     /// La frequenza del VFO di trasmissione (split), in Hz: i satelliti la correggono col Doppler.
     pub fn set_split_frequency(&self, hz: u64) -> Result<(), RigError> {
         let link = self.inner.connected_link()?;

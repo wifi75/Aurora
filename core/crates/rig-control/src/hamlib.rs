@@ -396,6 +396,11 @@ impl RigctldClient {
         self.ask(&format!("I {hz}"), 0).map(|_| ())
     }
 
+    /// Manda alla radio una stringa CAT cosi' com'e' (comando `w` di rigctld; per esempio `AN1;` sulle Yaesu e Kenwood). Le macro la usano con `<CATCMD:...>`.
+    pub fn send_raw(&self, text: &str) -> Result<(), RigError> {
+        self.ask(&format!("w {text}"), 0).map(|_| ())
+    }
+
     /// Chiede al demone di chiudere la sessione (lo lascia in vita, per altri client).
     pub fn quit(&self) {
         if let Ok(mut io) = self.io.lock() {

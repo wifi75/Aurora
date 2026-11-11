@@ -1679,6 +1679,16 @@ export async function importMacros(how: 'replace' | 'add' | 'defaults' = 'replac
   return (await (await request('/digi/import-macros', jsonInit({ how, ...(folder ? { folder } : {}) }))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
 }
 
+/** Una stringa CAT mandata alla radio cosi' com'e' (macro `<CATCMD:...>`); solo dal PC di Aurora e con Hamlib. */
+export async function digiCat(cmd: string): Promise<void> {
+  await request('/digi/cat', jsonInit({ cmd }));
+}
+
+/** Il testo di un file della cartella (macro `<TEXTFILE:nome>`); solo dal PC di Aurora. */
+export async function digiTextFile(name: string): Promise<string> {
+  return ((await (await request('/digi/textfile?name=' + encodeURIComponent(name))).json()) as { text: string }).text;
+}
+
 export async function digiAbort(): Promise<void> {
   await request('/digi/tx/abort', { method: 'POST' });
 }

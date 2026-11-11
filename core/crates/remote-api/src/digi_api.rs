@@ -115,3 +115,57 @@ pub(crate) async fn digi_import_macros(State(state): State<AppState>, _: Authed,
     let report = blocking(move || s.import_macros(folder.as_deref(), how)).await?.map_err(api_error)?;
     Ok(Json(json!({ "imported": report, "snapshot": svc.snapshot() })))
 }
+
+#[derive(Deserialize)]
+pub(crate) struct CatBody {
+    cmd: String,
+}
+
+/// Manda alla radio una stringa CAT cosi' com'e' (macro `<CATCMD:...>`, per esempio `AN1;`). Solo dal PC stesso, solo con Hamlib.
+#[utoipa::path(post, path = "/api/v1/digi/cat", responses((status = 200, description = "Mandata"), (status = 400, description = "Comando vuoto, troppo lungo o con caratteri non ammessi (bad_value)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 409, description = "Radio non pronta o sistema di controllo senza comandi diretti (cat_failed)")))]
+pub(crate) async fn digi_cat(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<CatBody>) -> Result<Json<Value>, ApiError> {
+    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if !local {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let cmd = body.cmd.trim().to_string();
+    if cmd.is_empty() || cmd.len() > 64 || !cmd.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("comando CAT vuoto, oltre 64 caratteri o con caratteri non ammessi".to_string()));
+    }
+    let cat = state.cat.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cat_unavailable"))?;
+    blocking(move || cat.send_raw_cat(&cmd)).await?.map_err(|e| ApiError::new(StatusCode::CONFLICT, "cat_failed").with_message(e.to_string()))?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct TextFileQuery {
+    name: String,
+}
+
+/// Il testo di un file della cartella (macro `<TEXTFILE:nome>`): solo il nome del file, niente percorsi, al massimo 64 KB. Solo dal PC stesso.
+#[utoipa::path(get, path = "/api/v1/digi/textfile", responses((status = 200, description = "`{text}`"), (status = 400, description = "Nome non valido (bad_value)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "File non trovato (not_found)")))]
+pub(crate) async fn digi_textfile(_: Authed, Peer(peer): Peer, headers: HeaderMap, axum::extract::Query(q): axum::extract::Query<TextFileQuery>) -> Result<Json<Value>, ApiError> {
+    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if !local {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let name = q.name.trim();
+    let safe = !name.is_empty() && name.len() <= 64 && !name.starts_with('.') && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ' '));
+    if !safe {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("nome di file non valido".to_string()));
+    }
+    let folder = mode_digi::macro_files::default_folder().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))?;
+    let text = blocking(move || {
+        let path = folder.join(name_owned(&q.name));
+        match std::fs::metadata(&path) {
+            Ok(m) if m.is_file() && m.len() <= 65_536 => std::fs::read(&path).ok().map(|b| b.iter().map(|&c| char::from(c)).collect::<String>()),
+            _ => None,
+        }
+    })
+    .await?;
+    text.map(|t| Json(json!({ "text": t }))).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))
+}
+
+fn name_owned(name: &str) -> String {
+    name.trim().to_string()
+}

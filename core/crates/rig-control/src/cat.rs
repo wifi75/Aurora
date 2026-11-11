@@ -448,6 +448,18 @@ impl Drop for CatService {
 
 /// Le chiamate del programma alla radio passano dal backend scelto. Con OmniRig tutto va a OmniRig (anche i comandi del motore JTDX);
 /// con Hamlib solo frequenza e lettura, dalla radio collegata.
+impl CatService {
+    /// Manda alla radio una stringa CAT cosi' com'e', se il sistema di controllo e' Hamlib. Con gli altri (Â«TCIÂ», FT-991 diretto, OmniRig) non c'e' un modo
+    /// uguale per tutti e si risponde che non e' supportato.
+    pub fn send_raw_cat(&self, text: &str) -> Result<(), RigError> {
+        match self.backend() {
+            Backend::Hamlib => self.hamlib()?.send_raw_cat(text),
+            Backend::None => Err(RigError("nessuna radio: sistema di controllo Â«NessunoÂ»".into())),
+            _ => Err(RigError("i comandi CAT diretti funzionano solo con Hamlib".into())),
+        }
+    }
+}
+
 impl Rig for CatService {
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
         match self.backend() {

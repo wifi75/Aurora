@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -515,10 +515,28 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     else save({ tx_follow_rx: !on, tx_freq_hz: on ? live.current.rxHz : c.tx_freq_hz });
   };
 
-  /** Una macro: i comandi di programma nell'ordine, il testo in trasmissione o nella casella, poi il salvataggio e la pulizia. */
+  /** Una macro. Se chiede file (`<TEXTFILE>`) o l'ultimo QSO (`<ANYQSOBEFORE...>`) prima si leggono, poi si esegue. */
   const execute = (script: string) => {
+    const files = [...script.matchAll(/<TEXTFILE:([^<>]*)>/g)].map((m) => (m[1] ?? '').trim()).filter((n) => n !== '');
+    const wantsLast = /<ANYQSOBEFORE(?:DATE|BAND|MODE)>/.test(script);
+    if (files.length === 0 && !wantsLast) {
+      run(script, {});
+      return;
+    }
+    const call = live.current.qso.call.trim().toUpperCase();
+    void Promise.all([
+      Promise.all(files.map((n) => digiTextFile(n).then((text) => [n, text] as const, () => [n, ''] as const))),
+      wantsLast && call !== '' ? getLogQsos().then((r) => r.qsos, () => []) : Promise.resolve([]),
+    ]).then(([read, qsos]) => {
+      const mine = qsos.filter((q) => q.call.toUpperCase() === call).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
+      run(script, { files: Object.fromEntries(read), lastQso: mine ? { date: mine.date, band: mine.band, mode: mine.mode } : null });
+    });
+  };
+
+  /** I comandi di programma nell'ordine, il testo in trasmissione o nella casella, poi il salvataggio e la pulizia. */
+  const run = (script: string, extra: Pick<MacroContext, 'files' | 'lastQso'>) => {
     const l = live.current;
-    const result = runMacro(script, context());
+    const result = runMacro(script, { ...context(), ...extra });
     let toTx = false;
     let rxClear = false;
     let clearTx = false;
@@ -587,6 +605,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'threshold': setSettingsOpen(true); break;
         case 'txe':
         case 'rxe': break;
+        case 'cat':
+          void digiCat(a.cmd).catch((e: unknown) => toast(t('digi.run.catFail', { why: e instanceof ApiError ? (e.message ?? e.code) : String(e) }), 'error'));
+          break;
         case 'unknown': toast(t('digi.run.unknown', { tag: a.tag }), 'info'); break;
         default: toast(t('digi.run.unknown', { tag: a.type.toUpperCase() }), 'info');
       }

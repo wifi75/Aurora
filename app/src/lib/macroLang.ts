@@ -30,6 +30,10 @@ export interface MacroContext {
   /** Il modo in uso, come si legge a schermo (PSK31, RTTY...). */
   modeName: string;
   qsoNumber: number;
+  /** L'ultimo QSO con lo stesso nominativo nel log (per `<ANYQSOBEFOREDATE>`, `<ANYQSOBEFOREBAND>`, `<ANYQSOBEFOREMODE>`): senza, i tre comandi restano vuoti. */
+  lastQso?: { date: string; band: string; mode: string } | null;
+  /** Il contenuto dei file chiesti con `<TEXTFILE:nome>`, gia' letti. */
+  files?: Record<string, string>;
 }
 
 export type MacroAction =
@@ -70,6 +74,8 @@ export type MacroAction =
   | { type: 'threshold' }
   | { type: 'cursor'; target: string }
   | { type: 'macros'; file: string }
+  /** `<CATCMD:...>`: una stringa CAT mandata alla radio cosi' com'e'. */
+  | { type: 'cat'; cmd: string }
   /** Un comando che Aurora non conosce ancora: resta nell'elenco per dirlo all'utente. */
   | { type: 'unknown'; tag: string };
 
@@ -139,6 +145,15 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'MODE': return arg === undefined ? c.modeName : null;
     case 'QSONR': return String(c.qsoNumber);
     case 'VER': return 'Aurora';
+    // l'ultimo QSO con questo nominativo, dal log
+    case 'ANYQSOBEFOREDATE': return c.lastQso?.date ?? '';
+    case 'ANYQSOBEFOREBAND': return c.lastQso?.band ?? '';
+    case 'ANYQSOBEFOREMODE': return c.lastQso?.mode ?? '';
+    // il testo di un file della cartella
+    case 'TEXTFILE': return arg === undefined ? null : (c.files?.[arg.trim()] ?? '');
+    //  misura l'IMD del segnale PSK ricevuto; Aurora non la misura: il comando non scrive niente. `<SP>` segue i comandi per la radio e non scrive niente
+    case 'IMD':
+    case 'SP': return '';
     default: return null;
   }
 }
@@ -197,6 +212,7 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'MODE': return arg === undefined ? null : { type: 'mode', mode: arg.trim().toUpperCase() };
     case 'CURSOR': return arg === undefined ? null : { type: 'cursor', target: arg.trim().toUpperCase() };
     case 'MACROS': return arg === undefined ? null : { type: 'macros', file: arg.trim() };
+    case 'CATCMD': return arg === undefined || arg.trim() === '' ? null : { type: 'cat', cmd: arg.trim() };
     case 'BAUDRATE': {
       const baud = number(arg);
       return baud === null || baud <= 0 ? null : { type: 'baud', baud };

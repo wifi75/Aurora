@@ -78,9 +78,21 @@ describe('runMacro: comandi di programma', () => {
   });
 
   it('i comandi non ancora fatti restano nell\'elenco', () => {
-    const r = runMacro('<TX>CQ<LETTERS><CATCMD:AN1;>', ctx);
+    const r = runMacro('<TX>CQ<LETTERS><EXEC:Backup.bat>', ctx);
     expect(r.text).toBe('CQ');
-    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'LETTERS' }, { type: 'unknown', tag: 'CATCMD:AN1;' }]);
+    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'LETTERS' }, { type: 'unknown', tag: 'EXEC:Backup.bat' }]);
+  });
+
+  it('CATCMD manda la stringa alla radio; IMD e SP non scrivono niente', () => {
+    const r = runMacro('<CATCMD:AN1;><SP>ok<IMD>', ctx);
+    expect(r.text).toBe('ok');
+    expect(r.actions).toEqual([{ type: 'cat', cmd: 'AN1;' }]);
+  });
+
+  it('ultimo QSO e file di testo vengono dal contesto', () => {
+    const withData = { ...ctx, lastQso: { date: '20260101', band: '20m', mode: 'RTTY' }, files: { 'wx.txt': 'sole' } };
+    expect(runMacro('<ANYQSOBEFOREDATE> <ANYQSOBEFOREBAND> <ANYQSOBEFOREMODE> <TEXTFILE:wx.txt>', withData).text).toBe('20260101 20m RTTY sole');
+    expect(runMacro('[<ANYQSOBEFOREDATE>][<TEXTFILE:wx.txt>]', ctx).text).toBe('[][]');
   });
 
   it('la velocita della CW, assoluta o relativa', () => {
