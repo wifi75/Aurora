@@ -45,6 +45,12 @@ pub trait Backend: Send + Sync {
     fn open_output(&self, hint: Option<&str>, gain: Arc<AtomicU32>, channel: Arc<AtomicU8>) -> Result<(Box<dyn AudioSink>, String), String>;
 }
 
+/// L'errore dice che la scheda non c'e' (radio spenta, cavo USB staccato: «ingresso audio non trovato», «uscita audio non trovata»), non che c'e' e
+/// non si apre: solo il primo caso e' un'attesa normale e non un guasto da segnalare.
+fn device_missing(error: &str) -> bool {
+    error.contains("non trovat")
+}
+
 /// I dispositivi veri del sistema.
 pub struct CpalBackend {
     pub rows: broadcast::Sender<SpectrumRow>,
@@ -389,8 +395,8 @@ impl AudioManager {
                     return;
                 }
                 // una scheda scelta per nome che non c'e' (radio spenta, USB staccato) viene riprovata ogni 5 secondi e l'utente ne vede l'avviso sullo schermo:
-                // non e' un guasto da segnalare. Solo l'ingresso predefinito che non si apre e' un problema vero.
-                Err(e) if log && hint.is_some() => tracing::info!("cascata audio non ancora attiva da {}: {e} (si riprova da sola)", hint.as_deref().unwrap_or_default()),
+                // non e' un guasto da segnalare. Una scheda che c'e' ma non si apre (occupata, formato rifiutato) resta un avviso vero.
+                Err(e) if log && hint.is_some() && device_missing(&e) => tracing::info!("cascata audio non ancora attiva da {}: {e} (si riprova da sola)", hint.as_deref().unwrap_or_default()),
                 Err(e) if log => tracing::warn!("cascata audio non attiva da {}: {e}", hint.as_deref().unwrap_or("predefinito")),
                 Err(_) => {}
             }
@@ -400,8 +406,8 @@ impl AudioManager {
     /// Apre l'uscita all'avvio (store, poi ambiente) e la da' alla trasmissione dentro un `SwitchableSink`: cosi' si potra' cambiare a caldo.
     /// `None` se non si apre (la trasmissione resta spenta, come prima).
     pub fn build_output(&self) -> Option<Box<dyn AudioSink>> {
-        let stored_output = self.initial.output.trim();
-        let pending_possible = !stored_output.is_empty() && !is_system_default(stored_output);
+        let stored = self.initial.output.trim().to_string();
+        let pending_possible = !stored.is_empty() && !is_system_default(&stored);
         for (hint, from_store) in output_candidates(&self.initial.output, self.env_output.as_deref()) {
             match self.backend.open_output(hint.as_deref(), Arc::clone(&self.gain), Arc::clone(&self.out_channel)) {
                 Ok((sink, name)) => {
@@ -413,14 +419,13 @@ impl AudioManager {
                 }
                 // con una scheda scelta che non c'e' ancora (radio spenta, USB staccato) sotto si prepara l'uscita «in attesa»: come WSJT-X («Not found»
                 // e il nome resta salvato) non e' un guasto e non va nei rapporti degli errori; senza quella rete di sicurezza si': e' un avviso vero
-                Err(e) if pending_possible => tracing::info!("uscita audio per la trasmissione non ancora disponibile, resta in attesa della scheda: {e}"),
+                Err(e) if pending_possible && device_missing(&e) => tracing::info!("uscita audio per la trasmissione non ancora disponibile, resta in attesa della scheda: {e}"),
                 Err(e) => tracing::warn!("uscita audio per la trasmissione non disponibile: {e}"),
             }
         }
         // l'uscita scelta non c'e' ancora (radio spenta, cavo USB staccato): la trasmissione si prepara lo stesso con un'uscita «in attesa»
         // che si riapre da sola appena la scheda compare. Prima la trasmissione restava spenta fino al riavvio di Aurora.
-        let stored = self.initial.output.trim().to_string();
-        if !stored.is_empty() && !is_system_default(&stored) {
+        if pending_possible {
             let backend = Arc::clone(&self.backend);
             let (gain, channel, hint) = (Arc::clone(&self.gain), Arc::clone(&self.out_channel), stored.clone());
             let reopen: tx_native::ReopenFn = Arc::new(move || backend.open_output(Some(&hint), Arc::clone(&gain), Arc::clone(&channel)).map(|(sink, _)| sink).map_err(tx_native::TxError::Audio));

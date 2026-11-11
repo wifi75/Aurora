@@ -107,15 +107,19 @@ pub fn explain_omnirig(why: &str) -> String {
 }
 
 pub(crate) fn powershell_output(script: &str) -> Result<String, RigError> {
-    match SESSION.run(script) {
-        Ok(out) => Ok(out.trim().to_string()),
-        Err(e) => {
-            // se qualcosa e' andato storto l'oggetto si butta e si ricrea al comando dopo (OmniRig riavviato, radio cambiata)
-            let _ = SESSION.run("$global:AuroraOmni = $null");
-            let why = e.0.trim();
-            Err(RigError(if why.is_empty() { "nessuna risposta".into() } else { explain_omnirig(why) }))
-        }
-    }
+    // l'oggetto NON si butta dopo un errore («radio non in linea» e' normale a radio spenta): sarebbe l'unico cliente e OmniRig si chiuderebbe e
+    // riaprirebbe con la sua finestrella a ogni lettura. Se OmniRig e' stato chiuso, il preambolo (`OBJECT`) se ne accorge e lo ricrea.
+    // Gli script aspettano gia' da soli la radio e chi chiama ha i suoi tentativi: un errore di script non si ripete qui.
+    SESSION.run_once(script).map(|out| out.trim().to_string()).map_err(|e| {
+        let why = e.0.trim();
+        RigError(if why.is_empty() { "nessuna risposta".into() } else { explain_omnirig(why) })
+    })
+}
+
+/// Lascia OmniRig: chiude la sessione che teneva l'oggetto aperto (al distacco del CAT o al cambio di sistema di controllo), cosi' OmniRig puo' chiudersi
+/// e liberare la porta della radio per un altro programma o per Hamlib.
+pub fn release() {
+    SESSION.close();
 }
 
 fn powershell(script: &str) -> Result<(), RigError> {

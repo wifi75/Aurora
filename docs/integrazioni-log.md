@@ -91,7 +91,7 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 | QRZ.com Logbook | `https://logbook.qrz.com/api`, azione INSERT, `KEY` del logbook, abbonamento richiesto, User-Agent obbligatorio | - | **OK** (invio diretto, sezione 6) | - |
 | LoTW | Firma con TQSL (certificato) e invio: da riga di comando con `tqsl` | - | **OK** (TQSL lanciato da Aurora, sezione 6) | - |
 | eQSL | HTTPS, `ADIFdata` | - | **OK** (gia' in Aurora) | - |
-| PSK Reporter | IPFIX su UDP `report.pskreporter.info:4739`; lettura su `retrieve.pskreporter.info` | - | **OK** (gia' in Aurora, invio e lettura) | - |
+| PSK Reporter | IPFIX su UDP `report.pskreporter.info:4739`; lettura in tempo reale via MQTT su `mqtt.pskreporter.info:1883` (topic `pskr/filter/v2/+/+/NOMINATIVO/#`), unita alla richiesta HTTP a `retrieve.pskreporter.info` ogni 5 minuti | - | **OK** (gia' in Aurora, invio e lettura) | - |
 | HamQTH | API per sviluppatori: caricamento del log ADIF e QSO singolo in tempo reale | - | **lavoro** | Invio in rete |
 | DXHeat | Nessuna documentazione di sviluppo trovata | - | **?** | Verificare |
 | HamAlert | Avvisi via app, Telnet (`set/json` per JSON), URL GET/POST | - | **poco lavoro** come sorgente (Aurora ha gia' un client telnet cluster) | Voce nei server telnet, filtri |

@@ -22,12 +22,12 @@ export const onlineStrings = {
   ],
   'onl.psk': ['Chi mi ha ricevuto (PSK Reporter)', 'Who received me (PSK Reporter)', 'Wer mich empfangen hat (PSK Reporter)', 'Qui m’a reçu (PSK Reporter)', 'Quién me ha recibido (PSK Reporter)', 'Quem me recebeu (PSK Reporter)'],
   'onl.psk.note': [
-    'Ogni 5 minuti Aurora chiede a pskreporter.info quali stazioni hanno ricevuto il tuo nominativo nelle ultime 3 ore. Il sito vede il tuo nominativo e il tuo indirizzo IP.',
-    'Every 5 minutes Aurora asks pskreporter.info which stations received your callsign in the last 3 hours. The site sees your callsign and your IP address.',
-    'Alle 5 Minuten fragt Aurora pskreporter.info, welche Stationen dein Rufzeichen in den letzten 3 Stunden empfangen haben. Die Seite sieht dein Rufzeichen und deine IP-Adresse.',
-    'Toutes les 5 minutes Aurora demande à pskreporter.info quelles stations ont reçu ton indicatif ces 3 dernières heures. Le site voit ton indicatif et ton adresse IP.',
-    'Cada 5 minutos Aurora pregunta a pskreporter.info qué estaciones recibieron tu indicativo en las últimas 3 horas. El sitio ve tu indicativo y tu dirección IP.',
-    'A cada 5 minutos a Aurora pergunta ao pskreporter.info que estações receberam o teu indicativo nas últimas 3 horas. O site vê o teu indicativo e o teu endereço IP.',
+    'Aurora ascolta in tempo reale mqtt.pskreporter.info per le nuove ricezioni del tuo nominativo e ogni 5 minuti chiede a pskreporter.info quelle delle ultime 3 ore. I due siti vedono il tuo nominativo e il tuo indirizzo IP.',
+    'Aurora listens in real time to mqtt.pskreporter.info for new receptions of your callsign and every 5 minutes asks pskreporter.info for those of the last 3 hours. Both sites see your callsign and your IP address.',
+    'Aurora hört in Echtzeit mqtt.pskreporter.info nach neuen Empfangsberichten zu deinem Rufzeichen ab und fragt alle 5 Minuten bei pskreporter.info die der letzten 3 Stunden ab. Beide Seiten sehen dein Rufzeichen und deine IP-Adresse.',
+    'Aurora écoute en temps réel mqtt.pskreporter.info pour les nouvelles réceptions de ton indicatif et toutes les 5 minutes demande à pskreporter.info celles des 3 dernières heures. Les deux sites voient ton indicatif et ton adresse IP.',
+    'Aurora escucha en tiempo real mqtt.pskreporter.info para las nuevas recepciones de tu indicativo y cada 5 minutos pregunta a pskreporter.info por las de las últimas 3 horas. Los dos sitios ven tu indicativo y tu dirección IP.',
+    'A Aurora escuta em tempo real o mqtt.pskreporter.info para as novas receções do teu indicativo e, a cada 5 minutos, pergunta ao pskreporter.info as das últimas 3 horas. Os dois sites veem o teu indicativo e o teu endereço IP.',
   ],
   'onl.solar': ['Propagazione (hamqsl.com)', 'Propagation (hamqsl.com)', 'Ausbreitung (hamqsl.com)', 'Propagation (hamqsl.com)', 'Propagación (hamqsl.com)', 'Propagação (hamqsl.com)'],
   'onl.solar.note': [

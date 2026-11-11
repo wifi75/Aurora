@@ -29,20 +29,25 @@ pub fn api_base(url: &str) -> Option<String> {
 }
 
 /// `true` se l'indirizzo e' `http://` verso un server fuori dalla rete di casa: la chiave API viaggerebbe in chiaro su Internet. Per `localhost`, indirizzi
-/// privati (10.x, 192.168.x, 172.16-31.x, 127.x), nomi senza punto e `.local` non c'e' nulla da dire.
+/// privati (10.x, 192.168.x, 172.16-31.x, 127.x, 169.254.x, 100.64-127.x di Tailscale e degli operatori), IPv6, nomi senza punto e nomi di rete
+/// locale (`.local`, `.lan`, `.home`, `.home.arpa`, `.internal`) non c'e' nulla da dire.
 pub fn insecure_remote(base: &str) -> bool {
     let lower = base.to_ascii_lowercase();
     let Some(rest) = lower.strip_prefix("http://") else { return false };
     let host = rest.split(['/', ':']).next().unwrap_or("");
+    let second = |prefix: &str| host.strip_prefix(prefix).and_then(|r| r.split('.').next()).and_then(|n| n.parse::<u8>().ok());
     let private = host == "localhost"
+        || host.starts_with('[')
         || !host.contains('.')
-        || host.ends_with(".local")
-        || host.starts_with("127.")
-        || host.starts_with("10.")
-        || host.starts_with("192.168.")
-        || host.strip_prefix("172.").and_then(|r| r.split('.').next()).and_then(|n| n.parse::<u8>().ok()).is_some_and(|n| (16..=31).contains(&n));
+        || [".local", ".lan", ".home", ".home.arpa", ".internal"].iter().any(|s| host.ends_with(s))
+        || ["127.", "10.", "192.168.", "169.254."].iter().any(|p| host.starts_with(p))
+        || second("172.").is_some_and(|n| (16..=31).contains(&n))
+        || second("100.").is_some_and(|n| (64..=127).contains(&n));
     !private
 }
+
+/// L'avviso sull'indirizzo `http://` si scrive una volta per avvio, non a ogni QSO.
+static INSECURE_WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 pub fn qso_url(base: &str) -> String {
     format!("{base}/index.php/api/qso")
@@ -86,7 +91,7 @@ pub fn read_reply(status: u16, body: &str) -> Outcome {
 /// Manda un QSO (bloccante).
 pub fn upload(url: &str, key: &str, station_id: &str, record: &str, timeout: Duration, user_agent: &str) -> Outcome {
     let Some(base) = api_base(url) else { return Outcome::Blocked("indirizzo di Wavelog/Cloudlog non valido".into()) };
-    if insecure_remote(&base) {
+    if insecure_remote(&base) && !INSECURE_WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
         tracing::warn!("Wavelog/Cloudlog: l'indirizzo e' http:// verso Internet, la chiave API viaggia in chiaro: meglio https://");
     }
     let request = agent(timeout, user_agent).post(qso_url(&base)).header("Content-Type", "application/json").header("Accept", "application/json");
@@ -215,6 +220,11 @@ mod tests {
         assert!(!insecure_remote("http://172.20.0.3:8080/wavelog"));
         assert!(insecure_remote("http://172.40.0.3"));
         assert!(!insecure_remote("http://wavelog"));
+        assert!(!insecure_remote("http://wavelog.lan/index.php"));
+        assert!(!insecure_remote("http://nas.home.arpa"));
+        assert!(!insecure_remote("http://100.101.1.2"));
+        assert!(!insecure_remote("http://[fd00::5]:8080"));
+        assert!(insecure_remote("http://100.200.1.2"));
         assert_eq!(api_base("https://"), None);
         assert_eq!(qso_url("https://log.example.com"), "https://log.example.com/index.php/api/qso");
     }

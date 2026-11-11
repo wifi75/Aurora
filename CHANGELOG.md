@@ -1,6 +1,14 @@
 # Changelog
 
 ## Non rilasciato
+- FT8, controllo del locatore: come in WSJT-X non scarta piu' le risposte deboli che contengono il proprio nominativo o quello del DX (salvo i tipi a priori del proprio QSO).
+- OmniRig: l'oggetto non si butta piu' dopo un errore (a radio spenta OmniRig si chiudeva e riapriva la finestrella a ogni lettura) e si lascia quando il CAT si stacca o si passa a Hamlib, cosi' OmniRig libera la porta della radio.
+- CAT Hamlib: lo split vero si riapplica davvero dopo la riconnessione della radio (il controllo avveniva prima che la radio risultasse collegata).
+- PSK Reporter in tempo reale: i rapporti arrivati dal flusso piu' vecchi di 3 ore non restano piu' nella mappa; con un nominativo con «/» (IU3ABC/P) resta solo la richiesta ogni 5 minuti.
+- Audio: solo la scheda assente (radio spenta, USB staccato) e' un'attesa normale; una scheda che c'e' ma non si apre (occupata, formato rifiutato) torna a essere un avviso nei rapporti.
+- Guardiano: una finestra che non risponde mai fin dall'avvio viene segnalata dopo 120 secondi (prima, con la correzione dell'avvio lento, non lo era piu').
+- Wavelog/Cloudlog: le reti di casa (`.lan`, `.home.arpa`, Tailscale 100.64-127, IPv6) non danno piu' l'avviso su http://, che compare una volta per avvio e non a ogni QSO.
+- Impostazioni › Servizi online: la nota di PSK Reporter dice anche del flusso in tempo reale `mqtt.pskreporter.info`, che come pskreporter.info vede nominativo e indirizzo IP (sei lingue); aggiornate anche la pagina della privacy e `docs/api.md`.
 
 ## 0.11.234 - 2026-11-11
 ### Corretto

@@ -178,7 +178,8 @@ impl OnlineService {
 
     /// Tiene acceso (o spegne) il flusso in tempo reale di PSK Reporter in base all'interruttore e al nominativo. Non blocca; da chiamare ogni tanto.
     pub fn ensure_live(&self, callsign: &str) {
-        let wanted = if self.settings().psk { psk::clean_callsign(callsign) } else { None };
+        // un nominativo con «/» (IU3ABC/P) non si puo' mettere nel topic MQTT, dove «/» separa i livelli: resta solo la richiesta ogni 5 minuti
+        let wanted = if self.settings().psk { psk::clean_callsign(callsign).filter(|c| !c.contains('/')) } else { None };
         let mut live = lock(&self.live);
         match (&*live, wanted) {
             (Some(feed), Some(call)) if feed.callsign == call => {}
@@ -187,27 +188,33 @@ impl OnlineService {
         }
     }
 
-    /// I rapporti: quelli della richiesta (ogni 5 minuti, fino a tre ore indietro) uniti a quelli arrivati in tempo reale, i piu' recenti per primi.
+    /// I rapporti: quelli della richiesta (ogni 5 minuti, fino a tre ore indietro) uniti a quelli arrivati in tempo reale nelle stesse tre ore, i piu'
+    /// recenti per primi.
     pub fn psk(&self) -> PskSnapshot {
         let mut snapshot = lock(&self.state).psk.clone();
-        let live: Vec<Report> = {
+        let now_s = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+        let oldest = now_s.saturating_sub(u64::from(PSK_HOURS) * 3600);
+        let (live_call, live): (String, Vec<Report>) = {
             let feed = lock(&self.live);
             match &*feed {
-                Some(f) if snapshot.callsign.is_empty() || f.callsign == snapshot.callsign => f.reports.lock().unwrap_or_else(|p| p.into_inner()).iter().cloned().collect(),
-                _ => Vec::new(),
+                Some(f) if snapshot.callsign.is_empty() || f.callsign == snapshot.callsign => {
+                    (f.callsign.clone(), f.reports.lock().unwrap_or_else(|p| p.into_inner()).iter().filter(|r| r.time_s >= oldest).cloned().collect())
+                }
+                _ => (String::new(), Vec::new()),
             }
         };
-        if !live.is_empty() {
+        if let Some(newest) = live.iter().map(|r| r.time_s).max() {
             let mut all = live.clone();
             all.extend(snapshot.reports.iter().filter(|r| !live.iter().any(|l| psk_live::same(l, r))).cloned());
             all.sort_by_key(|r| std::cmp::Reverse(r.time_s));
             all.truncate(psk::MAX_REPORTS);
             snapshot.reports = all;
             if snapshot.callsign.is_empty() {
-                snapshot.callsign = lock(&self.live).as_ref().map(|f| f.callsign.clone()).unwrap_or_default();
+                snapshot.callsign = live_call;
             }
             snapshot.hours = PSK_HOURS;
-            snapshot.fetched_ms = snapshot.fetched_ms.max(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64));
+            // «aggiornato» al rapporto piu' recente arrivato dal flusso, non all'ora di adesso (il flusso puo' essere caduto da tempo)
+            snapshot.fetched_ms = snapshot.fetched_ms.max(newest.saturating_mul(1000));
         }
         snapshot
     }

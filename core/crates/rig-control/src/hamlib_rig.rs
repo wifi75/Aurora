@@ -372,14 +372,6 @@ impl Inner {
         if let Ok(mut slot) = self.emulate_restore.lock() {
             *slot = None;
         }
-        // la radio riavviata ha perso lo split vero: si rimette quello scelto
-        if self.config.split == SplitMode::Rig
-            && self.tx_audio_hz.load(Ordering::SeqCst) != 0
-            && let Ok(link) = self.connected_link()
-            && let Err(e) = self.apply_split(&link)
-        {
-            tracing::warn!("split non riapplicato dopo la riconnessione: {}", friendly_error(&e.0));
-        }
         self.update(|s| {
             s.state = LinkState::Connected;
             s.message.clear();
@@ -390,6 +382,14 @@ impl Inner {
             s.failures = 0;
             s.reconnect_attempt = 0;
         });
+        // la radio riavviata ha perso lo split vero: si rimette quello scelto (dopo lo stato «collegata», che `connected_link` richiede)
+        if self.config.split == SplitMode::Rig
+            && self.tx_audio_hz.load(Ordering::SeqCst) != 0
+            && let Ok(link) = self.connected_link()
+            && let Err(e) = self.apply_split(&link)
+        {
+            tracing::warn!("split non riapplicato dopo la riconnessione: {}", friendly_error(&e.0));
+        }
         Ok(())
     }
 

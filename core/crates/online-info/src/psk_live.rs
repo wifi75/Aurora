@@ -94,10 +94,10 @@ fn session(call: &str, reports: &Live, stop: &AtomicBool) -> Result<(), String> 
             Ok(_) => {
                 stream.set_read_timeout(Some(Duration::from_secs(15))).map_err(|e| e.to_string())?;
                 let body = read_body(&mut stream).map_err(|e| format!("pacchetto interrotto: {e}"))?;
-                if first[0] >> 4 == 3 {
-                    if let Some(report) = parse_publish(first[0], &body) {
-                        push(reports, report);
-                    }
+                if first[0] >> 4 == 3
+                    && let Some(report) = parse_publish(first[0], &body)
+                {
+                    push(reports, report);
                 }
             }
             Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut) => {}

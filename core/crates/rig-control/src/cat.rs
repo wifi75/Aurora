@@ -290,6 +290,8 @@ impl CatService {
         if let Some(ft991) = ft991 {
             ft991.shutdown();
         }
+        // l'oggetto OmniRig tenuto aperto si lascia: OmniRig puo' chiudersi e liberare la porta (passaggio a Hamlib, distacco)
+        crate::omnirig::release();
         self.set_omni(LinkState::Disconnected, "");
         self.status()
     }

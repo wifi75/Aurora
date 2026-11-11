@@ -241,12 +241,12 @@ export const settingHintStrings = {
     'Lingueta azul nas linhas do QSO que estás a fazer (a tua estação DX com outros).',
   ],
   'tip.onl.psk': [
-    'Scarica da PSK Reporter chi ti ha ricevuto nelle ultime ore e lo mostra in Propagazione (mappa e elenco). Serve internet.',
-    'Downloads from PSK Reporter who received you in the last hours and shows it in Propagation (map and list). Needs internet.',
-    'Lädt von PSK Reporter, wer dich in den letzten Stunden empfangen hat, und zeigt es unter Ausbreitung (Karte und Liste). Internet nötig.',
-    'Télécharge depuis PSK Reporter qui t’a reçu ces dernières heures et l’affiche dans Propagation (carte et liste). Internet nécessaire.',
-    'Descarga de PSK Reporter quién te ha recibido en las últimas horas y lo muestra en Propagación (mapa y lista). Hace falta internet.',
-    'Descarrega do PSK Reporter quem te recebeu nas últimas horas e mostra em Propagação (mapa e lista). Precisa de internet.',
+    'Mostra in tempo reale, da PSK Reporter, chi ti riceve, oltre a chi ti ha ricevuto nelle ultime ore, in Propagazione (mappa e elenco). Serve internet.',
+    'Shows in real time, from PSK Reporter, who is receiving you, besides who received you in the last hours, in Propagation (map and list). Needs internet.',
+    'Zeigt von PSK Reporter in Echtzeit, wer dich empfängt, zusätzlich zu denen der letzten Stunden, unter Ausbreitung (Karte und Liste). Internet nötig.',
+    'Affiche en temps réel, depuis PSK Reporter, qui te reçoit, en plus de qui t’a reçu ces dernières heures, dans Propagation (carte et liste). Internet nécessaire.',
+    'Muestra en tiempo real, desde PSK Reporter, quién te recibe, además de quién te ha recibido en las últimas horas, en Propagación (mapa y lista). Hace falta internet.',
+    'Mostra em tempo real, do PSK Reporter, quem te recebe, além de quem te recebeu nas últimas horas, em Propagação (mapa e lista). Precisa de internet.',
   ],
   'tip.onl.solar': [
     'Scarica da hamqsl.com i dati del sole (flusso, indici A e K) e le condizioni previste per banda. Serve internet.',
