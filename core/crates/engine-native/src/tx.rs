@@ -932,7 +932,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
 
     /// «Tune»: un'onda sinusoidale sulla frequenza Tx, lunga quanto una trasmissione del modo, nel prossimo periodo utile.
     fn tune(&mut self, now_s: f64) -> String {
-        let hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
+        let tx_hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
+        self.controls.tx_audio_planned.store(tx_hz, Ordering::Relaxed);
+        let hz = self.controls.tx_audio_hz(tx_hz, matches!(self.mode, Mode::Ft8 | Mode::Ft4));
         let mode = match self.mode {
             Mode::Ft8 => tx_native::Mode::Ft8,
             Mode::Ft4 => tx_native::Mode::Ft4,
@@ -1746,6 +1748,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// (`pack77`) se ne trasmettono i primi 13. Restituisce l'onda e il testo davvero inviato.
     fn encode(&mut self, text: &str, freq: u32, free: bool) -> Result<(Vec<f32>, String), String> {
         let mode = self.mode;
+        // con lo split della radio il tono si sposta (XIT) e il CAT sposta il VFO di trasmissione dello stesso valore al PTT
+        self.controls.tx_audio_planned.store(freq, Ordering::Relaxed);
+        let freq = self.controls.tx_audio_hz(freq, matches!(mode, Mode::Ft8 | Mode::Ft4));
         let mut run = |t: &str| -> Result<Vec<f32>, String> {
             match mode {
                 Mode::Ft8 => {
