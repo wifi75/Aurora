@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Olandese (Nederlands)** come settima lingua: interfaccia, Guida e Novita' tradotte (prima versione, da far rivedere a ON7KEC con `docs/traduzione-olandese.csv`); dove manca una frase compare l'inglese. Al primo avvio senza una lingua scelta, Aurora parte nella lingua del sistema.
 - Schermata di avvio: nuova icona «MULTIMODE», sotto il nome la scritta «Multimode Ham Radio Station» e tutti i modi.
 - **Rotore unico** in tutte le pagine (quello di PSK·RTTY·CW, con direzione corta e lunga del DX, ±2/±10, gradi): scheda mobile sopra la Stazione o finestra a parte per il secondo schermo.
 - **Contest**: linee della griglia piu' visibili e colonne spostabili e ridimensionabili in Decodifiche e Log del contest (come il DX Cluster, stesso meccanismo condiviso).
