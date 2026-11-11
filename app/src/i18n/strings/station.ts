@@ -440,6 +440,15 @@ export const stationStrings = {
     'Submodo JT4: de A (tonos a 4,375 Hz) a G (315 Hz). A y B para HF, los demás para microondas y EME. Debe ser el mismo que el del corresponsal.',
     'Submodo JT4: de A (tons a 4,375 Hz) a G (315 Hz). A e B para HF, os outros para micro-ondas e EME. Tem de ser igual ao do correspondente.',
   ],
+  'mode.jt65sub': ['Sottomodo JT65', 'JT65 submode', 'JT65-Untermodus', 'Sous-mode JT65', 'Submodo JT65', 'Submodo JT65'],
+  'tip.mode.jt65sub': [
+    'Sottomodo di JT65: A (toni a 2,69 Hz) per HF e 6 m, B (doppio) per l’EME in 2 m e 70 cm, C (quadruplo) per l’EME a 23 cm e oltre. Deve essere uguale a quello del corrispondente.',
+    'JT65 submode: A (tones 2.69 Hz apart) for HF and 6 m, B (double) for EME on 2 m and 70 cm, C (four times) for EME on 23 cm and up. It must match your partner’s.',
+    'JT65-Untermodus: A (Töne im Abstand von 2,69 Hz) für KW und 6 m, B (doppelt) für EME auf 2 m und 70 cm, C (vierfach) für EME ab 23 cm. Muss mit dem der Gegenstation übereinstimmen.',
+    'Sous-mode JT65 : A (tons espacés de 2,69 Hz) pour les HF et le 6 m, B (double) pour l’EME sur 2 m et 70 cm, C (quadruple) pour l’EME à partir de 23 cm. Il doit être le même que celui du correspondant.',
+    'Submodo JT65: A (tonos a 2,69 Hz) para HF y 6 m, B (doble) para EME en 2 m y 70 cm, C (cuádruple) para EME desde 23 cm. Debe ser el mismo que el del corresponsal.',
+    'Submodo JT65: A (tons a 2,69 Hz) para HF e 6 m, B (duplo) para EME em 2 m e 70 cm, C (quádruplo) para EME a partir de 23 cm. Tem de ser igual ao do correspondente.',
+  ],
   'mode.q65period': ['Periodo Q65 (secondi)', 'Q65 period (seconds)', 'Q65-Periode (Sekunden)', 'Période Q65 (secondes)', 'Periodo Q65 (segundos)', 'Período Q65 (segundos)'],
   'tip.mode.q65period': [
     'Durata del periodo di Q65: 15 e 30 s per scatter e 6 m, 60 s per l’EME, 120 e 300 s per i segnali più deboli. Deve essere uguale a quello del corrispondente.',

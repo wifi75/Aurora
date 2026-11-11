@@ -5,6 +5,9 @@ import { useT } from '../i18n';
 /** I sottomodi di JT4: la distanza fra i toni e' 4,375 Hz per 1, 2, 4, 9, 18, 36, 72. */
 const JT4_SUBMODES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
+/** I sottomodi di JT65: la distanza fra i toni e' 2,69 Hz per 1, 2, 4 (B e C per l'EME e le VHF, come WSJT-X). */
+const JT65_SUBMODES = ['A', 'B', 'C'] as const;
+
 /** I periodi di Q65 in secondi e i sottomodi (distanza fra i toni = velocita' x 1, 2, 4, 8, 16), come WSJT-X. */
 const Q65_PERIODS = ['15', '30', '60', '120', '300'] as const;
 const Q65_SUBMODES = ['A', 'B', 'C', 'D', 'E'] as const;
@@ -25,6 +28,8 @@ const isActive = (m: string, mode: string) => {
   if (m === 'JT65' && up === 'JT') return true;
   // JT4A ... JT4G accendono JT4
   if (m === 'JT4' && /^JT4[A-G]$/.test(up)) return true;
+  // JT65A, JT65B, JT65C accendono JT65
+  if (m === 'JT65' && /^JT65[A-C]$/.test(up)) return true;
   // Q65-15A ... Q65-300E accendono Q65
   if (m === 'Q65' && q65Parts(up)) return true;
   return up === m || (m.startsWith('JT') && up.split('+').includes(m));
@@ -73,7 +78,8 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
       <button
         type="button"
         className="glass mode-switch-btn"
-        data-mode={label}
+        // JT65B e JT65C hanno il colore di JT65
+        data-mode={/^JT65[A-C]$/i.test(label) ? 'JT65' : label}
         aria-current="true"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -101,6 +107,22 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
           onChange={(e) => onPick?.(`JT4${e.target.value}`)}
         >
           {JT4_SUBMODES.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {/^JT65[A-C]?$/.test(mode.toUpperCase()) ? (
+        <select
+          className="mode-switch-sub"
+          aria-label={t('mode.jt65sub')}
+          title={t('tip.mode.jt65sub')}
+          disabled={disabled}
+          value={mode.toUpperCase().slice(4) || 'A'}
+          onChange={(e) => onPick?.(`JT65${e.target.value}`)}
+        >
+          {JT65_SUBMODES.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>

@@ -58,6 +58,21 @@ describe('ModeSwitch', () => {
     expect(screen.getByRole('menuitemradio', { name: 'Q65' })).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('shows the JT65 submode next to JT65 and asks for JT65A, JT65B or JT65C', () => {
+    const onPick = vi.fn();
+    const { unmount } = render(<ModeSwitch mode="JT65" onPick={onPick} />);
+    const sub = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(sub.value).toBe('A');
+    fireEvent.change(sub, { target: { value: 'B' } });
+    expect(onPick).toHaveBeenLastCalledWith('JT65B');
+    unmount();
+    render(<ModeSwitch mode="JT65C" onPick={onPick} />);
+    expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('C');
+    expect(screen.getByRole('button', { expanded: false })).toHaveAttribute('data-mode', 'JT65');
+    openMenu();
+    expect(screen.getByRole('menuitemradio', { name: 'JT65' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('lights the JT mode in use, both for JT65+JT9 and JT65 for the old name JT', () => {
     const cases: [string, string[]][] = [['JT65', ['JT65']], ['JT9', ['JT9']], ['JT9+JT65', ['JT65', 'JT9']], ['JT', ['JT65']]];
     for (const [mode, on] of cases) {

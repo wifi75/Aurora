@@ -29,7 +29,13 @@ export function signalBandwidthHz(mode: string | undefined): number {
     case 'FT4':
       return (3 * 12000) / 576;
     case 'JT65':
+    case 'JT65A':
       return (66 * 11025) / 4096;
+    // JT65B e JT65C: toni a distanza doppia e quadrupla
+    case 'JT65B':
+      return (2 * 66 * 11025) / 4096;
+    case 'JT65C':
+      return (4 * 66 * 11025) / 4096;
     case 'JT9':
       return (9 * 12000) / 6912;
     case 'JT4':
@@ -71,6 +77,9 @@ export function filterWindowHz(mode: string | undefined, hound = false): { below
     case 'FT4':
       return { below: 95, above: 179 };
     case 'JT65':
+    case 'JT65A':
+    case 'JT65B':
+    case 'JT65C':
       return { below: 200, above: 375 };
     case 'JT9':
       return { below: 50, above: 65.6 };
