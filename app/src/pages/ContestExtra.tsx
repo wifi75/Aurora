@@ -14,7 +14,8 @@ const numero = (n: number | undefined) => (n ?? 0).toLocaleString();
 
 export function AnalisiGara({ s, t }: { s?: ContestStato; t: T }) {
   const [scelta, setScelta] = useState('');
-  const [id, anno] = scelta ? [scelta.slice(0, scelta.lastIndexOf('|')), Number(scelta.slice(scelta.lastIndexOf('|') + 1))] : [undefined, undefined];
+  // l'edizione: il giorno d'inizio (`2026-11-10`) o, per i vecchi log, l'anno
+  const [id, anno] = scelta ? [scelta.slice(0, scelta.lastIndexOf('|')), scelta.slice(scelta.lastIndexOf('|') + 1)] : [undefined, undefined];
   // si chiede solo con la linguetta aperta (il componente esiste solo allora) e senza ripetere: il log di un'edizione chiusa non cambia
   const q = useQuery({ queryKey: ['contest-analisi', scelta, s?.totali?.qso ?? 0], queryFn: () => getAnalisi(id, anno), retry: false, staleTime: 30_000 }).data;
   const a = q?.analisi ?? null;

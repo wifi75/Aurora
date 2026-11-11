@@ -40,6 +40,8 @@ export interface Prefs {
   showQmap: boolean;
   /** Ordine delle decodifiche nella pagina Contest: per valore (ultimi due periodi) o per ora (le nuove in fondo). */
   contestOrder: 'valore' | 'ora';
+  /** Pagina Contest: nelle decodifiche solo chi chiama CQ (o QRZ) e chi chiama me (spento di base). */
+  contestOnlyCq: boolean;
   /** Indirizzo di chi aiuta, per «Manda per email» del pacchetto per l'assistenza (vuoto di fabbrica). */
   supportEmail: string;
 }
@@ -50,7 +52,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', supportEmail: '' };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '' };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -60,7 +62,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     if (parsed.contestOrder === 'valore' || parsed.contestOrder === 'ora') prefs.contestOrder = parsed.contestOrder;

@@ -106,6 +106,9 @@ export interface Impostazioni {
   soapbox: string;
   assistenza: string;
   cabrillo_contest: string;
+  /** `CATEGORY-TIME` e `CATEGORY-OVERLAY` del Cabrillo (vuoti = non si scrivono). */
+  categoria_tempo?: string;
+  categoria_overlay?: string;
   inizio_ms: number | null;
   fine_ms: number | null;
   potenza?: string;
@@ -302,7 +305,8 @@ export type ConsiglioAnalisi =
 
 export interface Analisi {
   id: string;
-  anno: number;
+  /** L'edizione: giorno d'inizio (`2026-11-10`) o, per i vecchi log, l'anno. */
+  anno: string;
   nome: string;
   totali: Totali;
   ore_attive: number;
@@ -311,5 +315,5 @@ export interface Analisi {
   consiglio: ConsiglioAnalisi | null;
 }
 
-export const getAnalisi = (id?: string, anno?: number) =>
-  call<{ edizioni: { id: string; anno: number }[]; analisi: Analisi | null }>(id && anno ? `/analisi?id=${encodeURIComponent(id)}&anno=${anno}` : '/analisi');
+export const getAnalisi = (id?: string, anno?: string) =>
+  call<{ edizioni: { id: string; anno: string }[]; analisi: Analisi | null }>(id && anno ? `/analisi?id=${encodeURIComponent(id)}&anno=${encodeURIComponent(anno)}` : '/analisi');

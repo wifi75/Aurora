@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DecodedMessage } from '../api/schemas';
 import type { Valore } from '../api/contest';
-import { decodificheVisibili, ordinaRighe, peso } from './contestOrder';
+import { chiamabile, decodificheVisibili, ordinaRighe, peso } from './contestOrder';
 
 const dec = (time_ms: number, snr = 0) => ({ time_ms, snr }) as DecodedMessage;
 const val = (punti: number, extra: Partial<Valore> = {}) => ({ punti, molt_nuovi: [], doppio: false, fuori_regola: false, ...extra }) as Valore;
@@ -43,6 +43,17 @@ describe('ordinaRighe', () => {
     const copia = [...righe];
     ordinaRighe(righe, 'ora');
     expect(righe).toEqual(copia);
+  });
+  it('Valore: i CQ e le chiamate a me prima dei QSO fra altre stazioni', () => {
+    const msg = (id: string, text: string, punti: number) => ({ id, d: { ...dec(100), text }, v: val(punti) });
+    const r = [msg('altri', 'K1ABC W9XYZ R-05', 50), msg('cq', 'CQ TEST DL1AAA JO62', 2), msg('me', 'IU3ABC F5HHH JN18', 1)];
+    expect(ordinaRighe(r, 'valore', 'IU3ABC').map((x) => x.id)).toEqual(['cq', 'me', 'altri']);
+  });
+  it('chiamabile: CQ, QRZ e chi chiama me', () => {
+    expect(chiamabile('CQ WW K1ABC FN42', 'IU3ABC')).toBe(true);
+    expect(chiamabile('QRZ K1ABC', '')).toBe(true);
+    expect(chiamabile('<IU3ABC> K1ABC R-10', 'iu3abc')).toBe(true);
+    expect(chiamabile('W9XYZ K1ABC RR73', 'IU3ABC')).toBe(false);
   });
   it('peso: senza valutazione 0', () => {
     expect(peso(undefined)).toBe(0);

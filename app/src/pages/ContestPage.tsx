@@ -34,7 +34,8 @@ import { WaterfallStack } from '../components/WaterfallStack';
 import { DragHandle, useDragHeight } from '../lib/dragHeight';
 import { flagCode } from '../lib/flags';
 import { formatDistance, usePrefs } from '../lib/prefs';
-import { decodificheVisibili, ordinaRighe } from '../lib/contestOrder';
+import { chiamabile, decodificheVisibili, ordinaRighe } from '../lib/contestOrder';
+import { askConfirm } from '../components/ConfirmHost';
 import { TxQuickControls } from '../components/TxQuickControls';
 import { FreqPicker } from '../components/FreqPicker';
 import { Allenamento, AnalisiGara } from './ContestExtra';
@@ -541,6 +542,8 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   const r = s.regole as Regole;
   const [campo, setCampo] = useState('');
   const ordine = usePrefs((p) => p.prefs.contestOrder);
+  const soloCq = usePrefs((p) => p.prefs.contestOnlyCq);
+  const mioCall = useStation((x) => x.status?.de_call ?? '');
   const modo = useStation((x) => x.status?.mode ?? '');
   // «Valore»: solo gli ultimi periodi; «Ora»: tutte, in ordine di tempo
   const recenti = useMemo(() => decodificheVisibili(decodes, ordine, modo), [decodes, ordine, modo]);
@@ -563,9 +566,16 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   }).data;
   const perCall = useMemo(() => new Map((valori?.valori ?? []).map((v) => [v.call, v])), [valori]);
   const righe = useMemo(() => {
-    const out = ordinaRighe(righe0.map((x) => ({ ...x, v: perCall.get(x.call) })), ordine);
+    const tutte = ordinaRighe(righe0.map((x) => ({ ...x, v: perCall.get(x.call) })), ordine, mioCall);
+    // «Solo CQ»: solo chi chiama CQ (o QRZ) e chi chiama me, i QSO fra altre stazioni spariscono
+    const out = soloCq ? tutte.filter((x) => chiamabile(x.d.text, mioCall)) : tutte;
     return campo ? out.filter((x) => x.grid.toUpperCase().startsWith(campo)) : out;
-  }, [righe0, perCall, campo, ordine]);
+  }, [righe0, perCall, campo, ordine, soloCq, mioCall]);
+  // doppio clic su un doppio: si chiede prima (in gara un doppio non vale punti)
+  const rispondi = async (x: Riga) => {
+    if (x.v?.doppio && !(await askConfirm(t('contest.dupeAsk', { c: x.call })))) return;
+    void postReply(x.d.id, true);
+  };
   // «Ora»: la riga nuova e' in fondo e l'elenco segue, a meno che chi usa non sia salito a leggere (come Attivita' di banda)
   const scrollRef = useRef<HTMLDivElement>(null);
   const alFondo = useRef(true);
@@ -602,6 +612,10 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
   avviaRef.current = avviaCq;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // mentre si scrive in un campo o con una finestra aperta i tasti F restano a loro
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      if (el && (el.isContentEditable || el.closest('input, select, textarea, [role="dialog"], dialog, .modal'))) return;
+      if (document.querySelector('dialog[open], [role="dialog"][aria-modal="true"], [role="alertdialog"]')) return;
       // F2, F3, F4: scelgono i messaggi 2 (scambio), 3 (R + scambio) e 4 (chiusura), come il clic sulla riga
       const n = { F2: 2, F3: 3, F4: 4 }[e.key];
       if (n) {
@@ -654,6 +668,9 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
               </button>
             ))}
           </span>{' '}
+          <button type="button" className={soloCq ? 'dock-mini dock-mini--on' : 'dock-mini'} aria-pressed={soloCq} title={t('tip.contest.onlyCq')} onPointerDown={(e) => e.stopPropagation()} onClick={() => usePrefs.getState().set({ contestOnlyCq: !soloCq })}>
+            {t('contest.onlyCq')}
+          </button>{' '}
           <span className="r">{campo ? <button type="button" className="ctc-link" onClick={() => setCampo('')}>{campo} ✕</button> : t('contest.decodesHint')}</span>
         </h2>
         </header>
@@ -694,7 +711,10 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
                 const novita = inQso ? (
                   <span className="badge badge--tag" style={tag('worked')}>{t('contest.inQso')}</span>
                 ) : v?.doppio ? (
-                  <span className="badge badge--tag badge--quiet">{t('contest.dupe')}</span>
+                  // doppio su questa banda; se altrove vale ancora, le bande dove serve
+                  <span className="badge badge--tag badge--quiet" title={v.bande_utili.length ? t('contest.dupeUseful', { b: v.bande_utili.join(' ') }) : t('contest.dupeAll')}>
+                    {t('contest.dupe')}{v.bande_utili.length ? ` → ${v.bande_utili.join(' ')}` : ''}
+                  </span>
                 ) : nonContest.has(call) ? (
                   <span className="badge badge--tag badge--quiet">{t('contest.nonContest')}</span>
                 ) : v?.fuori_regola ? (
@@ -708,7 +728,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
                 ) : null;
                 const code = prefs.showFlag ? flagCode(d.country ?? null) : null;
                 return (
-                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void postReply(d.id, true)} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
+                  <tr key={d.id} className={`ctc-r ${cls}`} onDoubleClick={() => void rispondi({ d, call, grid: '', v })} title={v?.bande_utili.length ? v.bande_utili.join(' ') : undefined}>
                     <td className="ctc-muted">{utc(d.time_ms)}</td>
                     <td className="num">{d.snr > 0 ? `+${d.snr}` : d.snr}</td>
                     <td className="num ctc-muted">{d.freq_hz}</td>
@@ -824,6 +844,7 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
             <h2>{t('contest.tips')}</h2>
           </header>
           <Avvisi s={s} t={t} />
+          <PerBanda s={s} t={t} />
           <div className="ctc-rate">
             {(s.fase === 'prima' ? (s.per_ora ?? []).map(() => 0) : (s.per_ora ?? [])).map((n, i, all) => {
               const max = Math.max(1, ...all);
@@ -860,6 +881,34 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
       <LogContest t={t} qso={s.totali?.qso ?? 0} />
 
     </main>
+  );
+}
+
+/** QSO, punti e moltiplicatori di ogni banda, sotto il punteggio (dai totali gia' calcolati). Solo con piu' di una banda lavorata. */
+function PerBanda({ s, t }: { s: ContestStato; t: T }) {
+  const bande = s.totali?.per_banda ?? [];
+  if (bande.length < 2) return null;
+  return (
+    <table className="ctc-band-tbl data" aria-label={t('contest.perBand')}>
+      <thead>
+        <tr>
+          <th>{t('contest.perBand')}</th>
+          <th className="num">{t('contest.qso')}</th>
+          <th className="num">{t('contest.points')}</th>
+          <th className="num">{t('contest.mult')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {bande.map((b) => (
+          <tr key={b.banda} className={b.banda === s.banda ? 'now' : undefined}>
+            <td>{b.banda}</td>
+            <td className="num">{numero(b.qso)}</td>
+            <td className="num">{numero(b.punti)}</td>
+            <td className="num">{numero(b.molt)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -1501,6 +1550,8 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
         {testo('location', t('contest.set.location'))}
         {testo('assistenza', t('contest.set.assisted'))}
         {testo('cabrillo_contest', t('contest.set.cabrillo'))}
+        {testo('categoria_tempo', t('contest.set.catTime'), t('tip.contest.set.catTime'))}
+        {testo('categoria_overlay', t('contest.set.catOverlay'), t('tip.contest.set.catOverlay'))}
         <label title={t('tip.contest.set.dates')}>
           {t('contest.set.start')}
           <input className="ctc-input" type="datetime-local" value={dataOra(imp.inizio_ms)} onChange={(e) => set('inizio_ms', daDataOra(e.target.value))} />

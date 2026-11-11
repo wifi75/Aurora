@@ -87,6 +87,12 @@
 
 /* consigli e ritmo */
 .ctc-alerts { overflow: auto; max-height: 40%; }
+/* QSO, punti e moltiplicatori per banda, sotto gli avvisi: una tabellina compatta */
+.ctc-band-tbl { width: 100%; border-collapse: collapse; font-size: 11px; margin: 4px 0; }
+.ctc-band-tbl th { text-align: left; font-weight: 500; color: var(--text-muted); padding: 1px 4px; border-bottom: 1px solid var(--ct-line); }
+.ctc-band-tbl td { padding: 1px 4px; }
+.ctc-band-tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ctc-band-tbl tr.now td { color: var(--accent, inherit); font-weight: 600; }
 .ctc-alert { margin: 6px 8px; padding: 5px 8px; border-radius: 7px; font-size: 12px; }
 .ctc-alert ul { margin: 4px 0 0; padding-left: 1.2rem; }
 .ctc-alert--o { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }

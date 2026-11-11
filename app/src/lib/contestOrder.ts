@@ -26,9 +26,24 @@ export function decodificheVisibili(decodes: DecodedMessage[], ordine: OrdineDec
   return decodes.filter((d) => d.time_ms >= inizio);
 }
 
-/** Ordina le righe: «Valore» dal piu' utile (a parita' il segnale piu' forte), «Ora» dalla piu' vecchia alla piu' nuova (la nuova in fondo). */
-export function ordinaRighe<T extends { d: Pick<DecodedMessage, 'time_ms' | 'snr'>; v?: Valore }>(righe: T[], ordine: OrdineDecodifiche): T[] {
+/**
+ * Un messaggio a cui si puo' rispondere: un CQ (o QRZ) oppure uno indirizzato a me. Un QSO fra altre due stazioni no: chi trasmette e'
+ * occupato e chiamarlo adesso fa solo perdere un periodo.
+ */
+export function chiamabile(text: string, mio: string): boolean {
+  const w = (text ?? '').trim().toUpperCase().split(/\s+/);
+  if (w[0] === 'CQ' || w[0] === 'QRZ') return true;
+  const me = mio.trim().toUpperCase();
+  return !!me && w[0]?.replace(/[<>]/g, '') === me;
+}
+
+/**
+ * Ordina le righe: «Valore» prima i messaggi a cui si puo' rispondere (CQ e chiamate a me), poi dal piu' utile (a parita' il segnale piu'
+ * forte); «Ora» dalla piu' vecchia alla piu' nuova (la nuova in fondo).
+ */
+export function ordinaRighe<T extends { d: Pick<DecodedMessage, 'time_ms' | 'snr' | 'text'>; v?: Valore }>(righe: T[], ordine: OrdineDecodifiche, mio = ''): T[] {
   const out = [...righe];
   if (ordine === 'ora') return out.sort((a, b) => a.d.time_ms - b.d.time_ms);
-  return out.sort((a, b) => peso(b.v) - peso(a.v) || b.d.snr - a.d.snr);
+  const c = (x: T) => (chiamabile(x.d.text, mio) ? 1 : 0);
+  return out.sort((a, b) => c(b) - c(a) || peso(b.v) - peso(a.v) || b.d.snr - a.d.snr);
 }
