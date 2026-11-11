@@ -8,7 +8,7 @@ con le regole di quei servizi.
 
 Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono in qualunque momento:
 
-- **PSK Reporter**, lettura (Impostazioni → Servizi online, pagina Propagazione): ogni tanto Aurora chiede chi ti ha ricevuto; nella richiesta c'è il tuo nominativo.
+- **PSK Reporter**, lettura (Impostazioni → Servizi online, pagina Propagazione): Aurora resta collegata al flusso in tempo reale `mqtt.pskreporter.info` (solo i rapporti sul tuo nominativo) e ogni 5 minuti chiede a pskreporter.info chi ti ha ricevuto nelle ultime 3 ore. I due servizi vedono il tuo nominativo e il tuo indirizzo IP.
 - **PSK Reporter**, spotting (Impostazioni → Programmi collegati): manda i nominativi che ricevi, con frequenza, rapporto, il tuo nominativo e il locatore, come fanno gli altri programmi FT8.
 - **Propagazione** (hamqsl.com) e **calendario delle DXpedition** (NG3K): sola lettura di pagine pubbliche, senza dati tuoi.
 - **Messaggi dell'autore e versioni nuove** (dalla 0.11.168): Aurora e l'agente nel tray leggono ogni ora i messaggi pubblicati dall'autore
