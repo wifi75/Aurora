@@ -577,7 +577,9 @@ function Corpo({ s, t, vai, decodes, dx, dxGrid, transmitting, switches, apri, f
     alFondo.current = true;
   }, [ordine]);
   const nonContest = new Set(s.non_contest ?? []);
-  const migliori = righe.filter((x) => x.v && !x.v.doppio && !x.v.fuori_regola && x.call !== dx && x.d.text.startsWith('CQ'));
+  // la stella (stazione consigliata) vale solo per chi si sente adesso: in «Ora» l'elenco ha anche le decodifiche vecchie
+  const idAdesso = new Set(decodificheVisibili(righe.map((x) => x.d), 'valore', modo).map((d) => d.id));
+  const migliori = righe.filter((x) => idAdesso.has(x.d.id) && x.v && !x.v.doppio && !x.v.fuori_regola && x.call !== dx && x.d.text.startsWith('CQ'));
   const stella = migliori[0]?.call;
   const prefs = usePrefs((p) => p.prefs);
   const tx = useEngineTx((e) => e.tx);
