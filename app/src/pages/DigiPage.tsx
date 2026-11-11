@@ -290,6 +290,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // lasciando la pagina (per esempio tornando all'FT8) l'ascolto si spegne, cosi' il motore non consuma in secondo piano;
+  // resta acceso solo se l'utente ha scelto «Ascolto acceso all'avvio di Aurora»
+  useEffect(
+    () => () => {
+      if (!live.current.snap.settings.auto_receive) void digiRx('stop').catch(() => undefined);
+    },
+    [],
+  );
+
   const caps = useRef(false);
   caps.current = views.capsOnly;
 

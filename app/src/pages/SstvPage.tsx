@@ -38,12 +38,23 @@ function SstvBody({ solo }: { solo: boolean }) {
   const refresh = useCallback(() => void client.invalidateQueries({ queryKey: ['sstv'] }), [client]);
   const refreshImages = useCallback(() => void client.invalidateQueries({ queryKey: ['sstv-images'] }), [client]);
 
-  // aprire la pagina accende l'ascolto (non disturba l'FT8); lasciarla non lo spegne
+  // aprire la pagina accende l'ascolto
   useEffect(() => {
     if (started.current || !snap.data) return;
     started.current = true;
     if (!snap.data.rx.listening) void sstvRx('start').then(refresh, refresh);
   }, [snap.data, refresh]);
+
+  // lasciando la pagina (per esempio tornando all'FT8) l'ascolto si spegne, cosi' il motore non consuma in secondo piano;
+  // resta acceso solo se l'utente ha scelto «Ascolto acceso all'avvio di Aurora»
+  const keepListening = useRef(false);
+  keepListening.current = snap.data?.settings.auto_receive === true;
+  useEffect(
+    () => () => {
+      if (!keepListening.current) void sstvRx('stop').catch(() => undefined);
+    },
+    [],
+  );
 
   // a fine trasmissione la cronologia delle trasmesse si aggiorna
   useEffect(
