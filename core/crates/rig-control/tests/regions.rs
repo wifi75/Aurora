@@ -97,10 +97,10 @@ fn an_old_saved_table_moves_to_the_jtdx_one_and_a_custom_one_stays() {
     assert_eq!(FrequencyTable::upgraded(legacy.clone()), FrequencyTable::default().entries().to_vec());
     let mut custom = legacy;
     custom[9] = Entry::new("20m", "FT8", 14_075_000);
-    // le righe dell'utente restano com'erano; si aggiungono solo quelle dei modi e delle bande arrivati dopo (JT65, JT9, Q65, bande nuove)
+    // le righe dell'utente restano com'erano; si aggiungono solo quelle dei modi e delle bande arrivati dopo (JT65, JT9, Q65, FST4, bande nuove)
     let upgraded = FrequencyTable::upgraded(custom.clone());
     assert_eq!(&upgraded[..custom.len()], &custom[..], "una tabella modificata dall'utente non si tocca");
-    assert!(upgraded[custom.len()..].iter().all(|e| matches!(e.mode.as_str(), "JT65" | "JT9" | "Q65" | "MSK144") || !matches!(e.band.as_str(), "160m" | "80m" | "60m" | "40m" | "30m" | "20m" | "17m" | "15m" | "12m" | "10m" | "6m" | "2m")) && upgraded.len() > custom.len());
+    assert!(upgraded[custom.len()..].iter().all(|e| matches!(e.mode.as_str(), "JT65" | "JT9" | "Q65" | "MSK144" | "FST4" | "FST4W") || !matches!(e.band.as_str(), "160m" | "80m" | "60m" | "40m" | "30m" | "20m" | "17m" | "15m" | "12m" | "10m" | "6m" | "2m")) && upgraded.len() > custom.len());
     // una tabella che ha gia' le righe JT resta esattamente com'e'
     assert_eq!(FrequencyTable::upgraded(upgraded.clone()), upgraded);
 }

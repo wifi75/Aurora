@@ -8,12 +8,23 @@ fn is_q65_submode(m: &str) -> bool {
     })
 }
 
+/// «FST4-» seguito da un periodo di WSJT-X (15 ... 1800 s), «FST4W-» da uno di FST4W (120 ... 1800 s).
+fn is_fst4_period(m: &str) -> bool {
+    if let Some(p) = m.strip_prefix("FST4W-") {
+        return matches!(p, "120" | "300" | "900" | "1800");
+    }
+    m.strip_prefix("FST4-").is_some_and(|p| matches!(p, "15" | "30" | "60" | "120" | "300" | "900" | "1800"))
+}
+
 /// Il modo come lo scrive la tabella delle frequenze: «Q65-60B» -> «Q65», «JT65B» -> «JT65» (periodo e sottomodo non cambiano la frequenza;
 /// la tabella di WSJT-X ha righe JT65 senza sottomodo).
 pub fn table_mode(mode: &str) -> String {
     let up = mode.trim().to_uppercase();
     if is_q65_submode(&up) {
         "Q65".to_string()
+    } else if is_fst4_period(&up) {
+        // «FST4-60» -> «FST4», «FST4W-120» -> «FST4W»: il periodo non cambia la frequenza
+        up.split('-').next().unwrap_or("FST4").to_string()
     } else if matches!(up.as_str(), "JT65A" | "JT65B" | "JT65C") {
         "JT65".to_string()
     } else {
@@ -36,6 +47,10 @@ pub fn button_id(mode: &str) -> Option<&'static str> {
         "Q65" => Some("q65Button"),
         m if is_q65_submode(m) => Some("q65Button"),
         "MSK144" => Some("msk144Button"),
+        // FST4 e FST4W, con o senza periodo («FST4-60», «FST4W-120»), solo con il motore proprio
+        "FST4" => Some("fst4Button"),
+        "FST4W" => Some("fst4wButton"),
+        m if is_fst4_period(m) => Some(if m.starts_with("FST4W") { "fst4wButton" } else { "fst4Button" }),
         _ => None,
     }
 }

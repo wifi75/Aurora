@@ -221,6 +221,29 @@ const EXTRA_BAND_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("1.25cm", "Q65", 24_048_200_000, Region::All, false),
 ];
 
+/// Le righe FST4 e FST4W dell'elenco di WSJT-X 3.3.0-beta6 (`models/FrequencyList.cpp:56-337`); la' sono tutte non predefinite, qui sono le
+/// sole del loro modo sulla banda e quindi predefinite.
+const FST4_ROWS: &[(&str, &str, u64, Region, bool)] = &[
+    ("2200m", "FST4", 136_000, Region::All, true),
+    ("630m", "FST4", 474_200, Region::All, true),
+    ("160m", "FST4", 1_839_000, Region::All, true),
+    ("2200m", "FST4W", 136_000, Region::All, true),
+    ("630m", "FST4W", 474_200, Region::All, true),
+    ("160m", "FST4W", 1_836_800, Region::All, true),
+    ("80m", "FST4W", 3_568_600, Region::All, true),
+    ("40m", "FST4W", 7_038_600, Region::All, true),
+    ("30m", "FST4W", 10_138_700, Region::All, true),
+    ("20m", "FST4W", 14_095_600, Region::All, true),
+    ("17m", "FST4W", 18_104_600, Region::All, true),
+    ("15m", "FST4W", 21_094_600, Region::All, true),
+    ("12m", "FST4W", 24_924_600, Region::All, true),
+    ("10m", "FST4W", 28_124_600, Region::All, true),
+    ("6m", "FST4W", 50_293_000, Region::R2, true),
+    ("6m", "FST4W", 50_293_000, Region::R3, true),
+    ("4m", "FST4W", 70_091_000, Region::R1, true),
+    ("2m", "FST4W", 144_489_000, Region::All, true),
+];
+
 /// Le righe Q65 dell'elenco di WSJT-X (`FrequencyList.cpp`) sulle bande che Aurora conosce: 50,275 e 144,180 MHz, con quelle EME come alternative.
 const Q65_ROWS: &[(&str, &str, u64, Region, bool)] = &[
     ("6m", "Q65", 50_211_000, Region::All, false),
@@ -260,7 +283,7 @@ const LEGACY_ROWS: &[(&str, &str, u64)] = &[
 
 impl Default for FrequencyTable {
     fn default() -> Self {
-        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).chain(MSK144_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
+        FrequencyTable(JTDX_ROWS.iter().chain(JT_ROWS.iter()).chain(Q65_ROWS.iter()).chain(EXTRA_BAND_ROWS.iter()).chain(MSK144_ROWS.iter()).chain(FST4_ROWS.iter()).map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }).collect())
     }
 }
 
@@ -275,7 +298,7 @@ fn valid_entries(entries: &[Entry]) -> bool {
         let Some(band) = canonical_band(&entry.band) else { return false };
         let mode = entry.mode.trim().to_uppercase();
         let in_band = band_limits(&band).is_some_and(|(lo, hi)| (lo..=hi).contains(&entry.hz));
-        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4" | "MSK144") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
+        in_band && matches!(mode.as_str(), "FT8" | "FT4" | "JT65" | "JT9" | "Q65" | "JT4" | "MSK144" | "FST4" | "FST4W") && seen.insert((band, mode, entry.hz, entry.region.as_str()))
     })
 }
 
@@ -323,6 +346,10 @@ impl FrequencyTable {
         // lo stesso per Q65
         if !entries.iter().any(|e| e.mode.eq_ignore_ascii_case("Q65")) {
             entries.extend(Q65_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
+        }
+        // e per FST4 e FST4W
+        if !entries.iter().any(|e| e.mode.to_uppercase().starts_with("FST4")) {
+            entries.extend(FST4_ROWS.iter().map(|(band, mode, hz, region, preferred)| Entry { band: (*band).into(), mode: (*mode).into(), hz: *hz, region: *region, preferred: *preferred }));
         }
         entries
     }

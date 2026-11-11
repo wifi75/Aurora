@@ -29,3 +29,19 @@ fn only_the_known_modes_have_a_button() {
         assert_eq!(button_id(bad), None, "{bad}");
     }
 }
+
+#[test]
+fn fst4_and_fst4w_with_or_without_period() {
+    assert_eq!(table_mode("FST4-60"), "FST4");
+    assert_eq!(table_mode("fst4w-120"), "FST4W");
+    assert_eq!(table_mode("FST4W"), "FST4W");
+    for m in ["FST4", "fst4-15", "FST4-1800"] {
+        assert_eq!(button_id(m), Some("fst4Button"), "{m}");
+    }
+    for m in ["FST4W", "FST4W-120", "fst4w-1800"] {
+        assert_eq!(button_id(m), Some("fst4wButton"), "{m}");
+    }
+    for bad in ["FST4-45", "FST4W-60", "FST4W-15", "FST4-", "FST4X"] {
+        assert_eq!(button_id(bad), None, "{bad}");
+    }
+}
