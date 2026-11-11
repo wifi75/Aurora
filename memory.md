@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-11 notte, versione 0.11.237 pubblicata; su `main` dopo di lei FST4/FST4W, WSPR, rotore, colonne Contest, icone e schermata di avvio; in lavorazione Split DX, interfaccia in olandese e scoperta Cat4OM (per la 0.11.237 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-11 notte tardi, versione 0.11.238 pubblicata (Split DX, Cat4OM con la scoperta, olandese, radiofaro FST4W e WSPRnet, griglie spostabili; controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-11 notte tardi

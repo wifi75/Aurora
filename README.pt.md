@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-7-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1842%20Rust%20%C2%B7%20928%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-2033%20Rust%20%C2%B7%201062%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -48,7 +48,7 @@ Projeto e desenvolvimento: Tiziano Cassone (IU3WJQ)
 
 ## Estado
 
-Versão 0.11.237: motor próprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) com recepção e transmissão, CAT para todos os rádios e display do rádio, mais as páginas PSK31/PSK63, RTTY, CW, SSTV e Satélites. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
+Versão 0.11.238: motor próprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) com recepção e transmissão, CAT para todos os rádios e display do rádio, mais as páginas PSK31/PSK63, RTTY, CW, SSTV e Satélites. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
 
 - **Estação**: lista de mensagens como no JTDX (país com bandeira, distância, linhas coloridas por tipo, indicativo chamado e chamadas dirigidas a você em destaque), cascata WebGPU/WebGL2 com barras Rx/Tx arrastáveis, Tx1–Tx6 com a fase do QSO, barra de bandas e modo (FT8/FT4) com troca pela própria página.
 - **Fila de chamadores**: clique direito em uma estação que chama para colocá-la na fila (etiqueta «IN CODA» com a posição); com o QSO registrado, o Aurora responde à primeira; o interruptor «Risp. a tutti» coloca na fila automaticamente quem chama você; «Canc DX» interrompe a transmissão na hora. Somente com o motor próprio.

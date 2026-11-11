@@ -17,7 +17,7 @@
 [![Vite](https://img.shields.io/badge/Build-Vite%208-646CFF?logo=vite&logoColor=white)](https://vite.dev)
 [![WebGPU](https://img.shields.io/badge/Waterfall-WebGPU%20%2B%20WebGL2-005A9C)](https://developer.mozilla.org/docs/Web/API/WebGPU_API)
 [![Lingue](https://img.shields.io/badge/Lingue-7-FF5C7A)](app/src/i18n)
-[![Test](https://img.shields.io/badge/Test-1842%20Rust%20%C2%B7%20928%20UI-3FD6C8)](#sviluppo)
+[![Test](https://img.shields.io/badge/Test-2033%20Rust%20%C2%B7%201062%20UI-3FD6C8)](#sviluppo)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-3F4551)](https://semver.org/lang/it/)
 [![Keep a Changelog](https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-E05735)](CHANGELOG.md)
 [![Manutenzione](https://img.shields.io/badge/Mantenuto-s%C3%AC%20(2026)-brightgreen)](CHANGELOG.md)
@@ -48,7 +48,7 @@ Conception et développement : Tiziano Cassone (IU3WJQ)
 
 ## État
 
-Version 0.11.237 : moteur propre multimode (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W et WSPR) avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
+Version 0.11.238 : moteur propre multimode (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W et WSPR) avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
 
 - **Station** : liste des messages comme dans JTDX (pays avec drapeau, distance, lignes colorées par type, indicatif appelé et appels qui te sont adressés mis en évidence), cascade WebGPU/WebGL2 avec barres Rx/Tx déplaçables, Tx1–Tx6 avec la phase du QSO, barre de bandes et de mode (FT8/FT4) avec changement depuis la page.
 - **File des appelants** : clic droit sur une station qui appelle pour la mettre en file (étiquette «IN CODA» avec sa place) ; une fois le QSO enregistré, Aurora répond au premier ; l'interrupteur «Risp. a tutti» met automatiquement en file qui t'appelle ; «Canc DX» arrête aussitôt l'émission. Moteur propre uniquement.
