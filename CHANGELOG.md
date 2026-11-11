@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Cascata, «Spec: Off»** (segnalato da ON7KEC, issue #34): con lo spettro su «Off» spariva la curva ma restava l'area nera con la griglia; ora l'area si nasconde in ogni disposizione e la cascata prende tutta l'altezza. Tornando a Current o Cumulative l'altezza di prima ritorna.
 - **Finestra RX, «×N» delle mie trasmissioni ripetute**: il badge non sposta piu' la bandiera, che resta nella stessa colonna di tutte le altre righe; «×N» sta a fianco, a sinistra della bandiera.
 - **«Pulisci» in Attivita' di banda e nella Finestra RX** (richiesta di UN7MBV): un pulsantino accanto a «Filtro» e «Nuovi ↑» svuota solo la propria finestra; «Cancella» della barra dei comandi continua a svuotarle tutte e due. Suggerimento, sei lingue e passo nella Guida.
 
