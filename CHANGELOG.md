@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- In trasmissione il modo e la frequenza non si cambiano ma i due pulsanti non si spengono piu' di colore: il clic viene solo ignorato.
+- Pannello Comandi: tolto «Spot DX», doppione del pulsante del DX Cluster (che apre la finestra dello spot con DX, frequenza e modo).
 - Riquadro del nominativo (QRZ.com/HamQTH) nel DX Cluster, in Attivita' di banda e nella finestra Rx: ora sta sopra tutto e si legge; prima finiva sotto le righe dell'elenco e sembrava in filigrana.
 - Barra dei comandi: tolto «Cancella», doppione dei pulsanti «Pulisci» delle finestre dei messaggi; «Auto» sta in fondo alla barra di Ferma e Decodifica.
 - Con le Impostazioni aperte gli avvisi (DXCC nuovo, orologio, messaggi brevi) si possono di nuovo chiudere: stavano nella pagina sotto, che con le Impostazioni aperte e' disattivata.
