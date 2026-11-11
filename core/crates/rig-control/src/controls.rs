@@ -79,6 +79,9 @@ pub const CONTROLS: &[Control] = &[
     own_toggle("q65_drift"),
     // Q65: contest NA VHF / WW Digi / ARRL Digi (`ncontest = 1`): lista dei messaggi dei chiamanti (`q65_set_list2`)
     own_toggle("q65_contest"),
+    // JT65: «Include averaging» (`ndepth & 16`) e «Auto Clear Avg» (`ndepth & 128`) di WSJT-X, la media dei periodi (`avg65`)
+    own_toggle("jt65_avg"),
+    own_toggle("jt65_auto_clr"),
     toggle("answer_b4", "AnsB4Button"),
     toggle("bypass", "bypassButton"),
     toggle("skip_tx1", "skipTx1"),
@@ -103,6 +106,8 @@ pub const CONTROLS: &[Control] = &[
     press("tx_to_rx", "pbT2R"),
     // Q65: «Clear Avg» di WSJT-X, svuota la media dei periodi
     own_press("q65_clear_avg"),
+    // JT65: «Clear Avg» di WSJT-X, svuota la media dei periodi
+    own_press("jt65_clear_avg"),
 ];
 
 pub fn find(id: &str) -> Option<&'static Control> {
