@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.238',
-    released: '2026-11-11T23:00:00Z',
+    released: '2026-11-11T22:17:17Z',
     kind: 'new',
     title: [
       'Split DX dal cluster, Cat4OM automatico, olandese e radiofaro FST4W con WSPRnet',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.238',
-    released: '2026-11-11T23:00:00Z',
+    released: '2026-11-11T22:17:17Z',
     kind: 'new',
     title: [
       'Griglie spostabili, modo degli spot dal band plan, via QSL delle DXpedition',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.238',
-    released: '2026-11-11T23:00:00Z',
+    released: '2026-11-11T22:17:17Z',
     kind: 'fixed',
     title: [
       'Porta COM occupata detta per nome, OmniRig più paziente, PC lento',
