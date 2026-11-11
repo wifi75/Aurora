@@ -2,7 +2,10 @@
 //! il comando di accensione nella lingua della radio. Con l'FT-2000 spento Hamlib 4.7.2 non apre nemmeno il collegamento («rig power is
 //! off?», «Some rigs cannot get_powerstat while off») e `auto_power_on` non parte mai (prova del 8/11/2026).
 //!
-//! - Yaesu (modelli Hamlib 1xxx), Kenwood ed Elecraft (2xxx): `PS1;` due volte, con una pausa (la prima sveglia il processore della radio).
+//! - Yaesu (modelli Hamlib 1xxx), Kenwood ed Elecraft (2xxx): `PS1;` tre volte, a 0, 0,3 e 1,5 s. La prima sveglia il processore della
+//!   radio e la successiva deve arrivare entro circa un secondo: con una sola pausa di 1,0 s esatti l'FT-2000 a volte restava spento
+//!   (registro del 2026-11-11: comando mandato, radio non accesa). Con tre invii almeno una coppia cade nella finestra; a radio accesa
+//!   `PS1;` non fa nulla.
 //! - Icom (3xxx): una serie di byte `FE` di risveglio, poi il comando CI-V 0x18 0x01 all'indirizzo della radio (serve l'indirizzo CI-V).
 //!
 //! Gli altri modelli non si toccano: resta `auto_power_on` di Hamlib.
@@ -11,10 +14,13 @@ use std::{io::Write, time::Duration};
 
 use crate::cat_config::RigConfig;
 
-/// Il comando da mandare per accendere questa radio, se Aurora lo conosce.
+/// Le pause prima del secondo e del terzo messaggio (0,3 s e poi 1,2 s: invii a 0, 0,3 e 1,5 s).
+const PAUSES: [Duration; 2] = [Duration::from_millis(300), Duration::from_millis(1200)];
+
+/// I messaggi da mandare per accendere questa radio, se Aurora li conosce.
 pub fn power_on_bytes(config: &RigConfig) -> Option<Vec<Vec<u8>>> {
     match config.model / 1000 {
-        1 | 2 => Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec()]),
+        1 | 2 => Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec(), b"PS1;".to_vec()]),
         3 if config.civ_address != 0 => {
             // risveglio: piu' byte FE quanto piu' alta e' la velocita' (come il manuale Icom: 150 a 115200, 25 a 19200)
             let wake = match config.baud {
@@ -56,7 +62,7 @@ pub fn wake(config: &RigConfig) {
             Ok(mut f) => {
                 for (i, m) in messages.iter().enumerate() {
                     if i > 0 {
-                        std::thread::sleep(Duration::from_millis(1000));
+                        std::thread::sleep(PAUSES.get(i - 1).copied().unwrap_or(Duration::from_millis(1000)));
                     }
                     let _ = f.write_all(m);
                     let _ = f.flush();
@@ -81,7 +87,8 @@ mod tests {
     #[test]
     fn yaesu_and_kenwood_get_ps1_and_icom_needs_its_address() {
         let ft2000 = RigConfig { model: 1029, ..RigConfig::default() };
-        assert_eq!(power_on_bytes(&ft2000), Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec()]));
+        assert_eq!(power_on_bytes(&ft2000), Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec(), b"PS1;".to_vec()]));
+        assert_eq!(PAUSES[0] + PAUSES[1], Duration::from_millis(1500));
         let ts590 = RigConfig { model: 2031, ..RigConfig::default() };
         assert!(power_on_bytes(&ts590).is_some());
         let icom_no_addr = RigConfig { model: 3073, ..RigConfig::default() };
