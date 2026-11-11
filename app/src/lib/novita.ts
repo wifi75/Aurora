@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.237',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T19:46:05Z',
     kind: 'new',
     title: [
       'Aurora multimodo: JT65 B/C per l’EME, MSK144 a 30 s e «Sh», opzioni di decodifica di WSJT-X',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.237',
-    released: '2026-11-11T00:00:00Z',
+    released: '2026-11-11T19:46:05Z',
     kind: 'fixed',
     title: [
       'CW/PSK/RTTY che non decodificavano al primo ingresso, righe Fox, installatore in olandese',
