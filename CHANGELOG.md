@@ -1,4 +1,6 @@
 # Changelog
+
+## 0.11.235 - 2026-11-11
 - **MSK144 come WSJT-X 3.3**: il ricevitore dei ping e' quello di WSJT-X (`msk144spd`/`msk144sync`, medie di 1-7 quadri), blocchi di 0,6 s ogni 0,3 s, filtro dei doppioni e SNR come `mskrtd`; frequenza Rx (1400-1600 Hz) e F Tol 50 Hz al posto di 1500 +-100 Hz fissi; messaggi brevi con la lista dei nominativi recenti anche in SWL. JT65 e JT9 ricevono ora frequenza Rx, tolleranza e analisi a priori dal motore.
 - **JT65 e JT9 come WSJT-X 3.3**: JT65 con le soglie del livello «Aggressive» 4, due passate (2,5 poi 2,0) con l'ultima senza sottrazione, il filtro sulla correzione di frequenza, analisi a priori (tipi 1-7 secondo il punto del QSO, con l'interruttore a7/a8) e ricerca con la lista dei messaggi; JT9 prova prima la finestra della frequenza Rx con soglie ridotte, poi il resto con le soglie di WSJT-X (sync 1,0 e schk 1,5). F Tol 50 Hz come valore di fabbrica di WSJT-X (verificato con Ghidra).
 - **Cat4OM nativo** (Impostazioni › CAT › «Cat4OM (insieme a Log4OM)»): Aurora e Log4OM comandano la stessa radio insieme attraverso Cat4OM, senza letture continue; un QSY fatto da Log4OM dagli spot viene seguito da Aurora. Frequenza, modo dati, PTT e split (vero se la radio lo dichiara, altrimenti simulato), chiave del gruppo con la prova `cat4om-sha256-minute-v1`.
@@ -36,8 +38,6 @@
 - **FT8, piu' segnali deboli**: soglia di sincronismo 1,3 come in WSJT-X 3.3 (era 1,5 di JTDX) e messaggi del concorso EU VHF (tipo 5) decodificati.
 - **Log ADIF**: PSK31, PSK63, Q65, FST4 scritti come modo padre (`PSK`, `MFSK`) con `SUBMODE`, come richiede ADIF e come fa WSJT-X: LoTW, ClubLog e QRZ non li rifiutano piu'.
 - Pagina Fox col tema chiaro: la barra dei comandi della cascata (Bins/Pixel, Start, N Avg, Tavolozza, Spec) aveva il testo chiaro su fondo bianco e non si leggeva; ora segue l'aspetto scuro della scheda.
-
-## 0.11.235 - 2026-11-11
 - **PSK, RTTY e CW: ascolto automatico**: entrando nella pagina l'ascolto parte da solo; si ferma e riparte dal menu Opzioni › Ascolto (tolta la barra «Avvia ascolto»).
 - **Macro, sottoinsiemi**: l'editor ha i sottoinsiemi del menu «Subset» (testo, programma, frequenza, Auto CQ, macro, impostazioni del modo, rotore, RTTY, SSTV, CW, HELL); nuovi comandi eseguiti: `<FQ:kHz>`, `<SPLIT:0|1>`, `<ROTOR:gradi|SP|LP>`, `<EDITMACRO:nome>`, `<ALARM:testo>`, `<ACQ>`; gli altri comandi sono in elenco con «non ancora».
 - **CW (nuova)**: nel menu «Modo» di PSK · RTTY · SSTV c'e' la CW. Trasmissione con un tono audio dai fronti arrotondati e velocita' in WPM (impostazioni del modo, comando `<WPM:n>` delle macro con i tasti F10-F12 a 15, 20 e 25 WPM); ricezione con un decodificatore a soglia adattiva che si adatta alla velocita' del segnale (crate `mode-digi`, prove di andata e ritorno a 12, 20 e 30 WPM, con rumore, tono diverso e squelch). Le frequenze CW sono nel selettore di banda.
