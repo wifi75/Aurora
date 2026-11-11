@@ -42,17 +42,18 @@
 >
 > 🍎 **[macOS (not tested by the author, no support): Aurora-macOS.dmg for Apple Silicon and Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — not signed by Apple: on first launch right-click › Open (or `xattr -cr /Applications/Aurora.app`). For CAT install Hamlib with `brew install hamlib`. Updates install from inside the app (“Install and restart”), as on Windows: keep Aurora in Applications, not opened from the .dmg; on the first start after an update macOS may ask for confirmation again, because Aurora is not signed by Apple.
 
-A new kind of multimode ham radio station (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, PSK31/PSK63, RTTY, CW, SSTV and satellites): a striking interface, QSO automation and remote control from your phone. It has its own decode and transmit engine; Aurora is brain, engine and screen.
+A new kind of multimode ham radio station (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK31/PSK63, RTTY, CW, SSTV and satellites): a striking interface, QSO automation and remote control from your phone. It has its own decode and transmit engine; Aurora is brain, engine and screen.
 
 Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.237: own multimode engine (FT8, FT4, JT65, JT9, JT4, Q65 and MSK144) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW, SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.237: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W and WSPR) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW, SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.
-- **Modes**: FT8, FT4, JT65 and JT9 from the selector (JT65 and JT9 decode at the end of the minute: after changing mode allow one to two minutes); «JT65+JT9» switch to decode them together; Hound with frequency hops and «Filtro»; SWL mode as in JTDX. Status and parity with JTDX in `docs/2026-10-26-jt65-jt9.md` (documentation in Italian).
+- **Modes**: FT8, FT4, JT65 (sub-modes A/B/C with period averaging, for EME), JT9, JT4 (A–G), Q65, MSK144 (5/10/15/30 s and «Sh» messages), FST4 and FST4W (periods from 15 s to 30 min), WSPR-2 (beacon with Tx percentage) from the selector, plus the PSK31/PSK63, RTTY, CW, SSTV and Satellites pages (tracking, Doppler, rotator); «JT65+JT9» switch to decode them together (after changing mode allow one to two minutes); Fox/Hound (also UltraFOX) with frequency hops and «Filtro»; SWL mode as in JTDX. Status and parity with JTDX in `docs/2026-10-26-jt65-jt9.md` (documentation in Italian).
+- **Verified against WSJT-X 3.3.0-beta6**: decoders aligned with and checked against WSJT-X 3.3.0-beta6 (source and binaries); FST4/FST4W checked against `jt9.exe` and WSPR against `wsprd.exe`. WSPR sends nothing to WSPRnet (no spot upload, by choice); FST4W beacon transmission is not there yet. Decode options of WSJT-X in Settings › Filters › Decoding.
 - **JTDX-style controls**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, Tx/Rx frequencies with copy, Canc DX, Gen.Msgs; double-clicking a message sets the DX and JTDX calls it at the right moment (option in Settings → General).
 - **Transmission**: CQ, free message, Tx frequency, vertical Pwr level, STOP TX always active (discreet at rest, full while transmitting); the Esc key does the same and turns off AutoTX and Abilita Tx. It has no option: it is always enabled (STOP TX, the caps and the automations switched off by default remain).
 - **Automations**: replies to CQs with something new; they start switched off and in dry-run mode, with caps, dead-man and STOP.
@@ -69,7 +70,8 @@ Version 0.11.237: own multimode engine (FT8, FT4, JT65, JT9, JT4, Q65 and MSK144
 - **Logs and integrations**: direct upload to Wavelog/Cloudlog, ClubLog, QRZ.com and LoTW (TQSL); UDP integrations with multicast and per-program options, N1MM XML; ADIF export page with «Save as».
 - **From WSJT-X 3**: a7/a8 decoding and multithread FT8, Wait and Reply/Call, band hopping, full duplex, Fox verification (OTP), Tx block over UDP, stop on high SWR, unencodable messages blocked, WSJT-X 3 filters, Hamlib 4.7.2.
 - **OmniRig and Cat4OM**: OmniRig is driven directly via COM like WSJT-X (no PowerShell, no «access denied», faster PTT); native Cat4OM lets Aurora and Log4OM control the same radio at the same time (Settings › CAT); Rig/Fake It split also with OmniRig and TCI; adjustable Tx delay (0-0.5 s).
-- **Decoders aligned with WSJT-X 3.3**: FT8 (Rx-frequency priority, OSD 4 for QSO replies, a priori for /P and compound callsigns), FT4 (WSJT-X candidate search), Q65 (averaging with the QSO list, drift correction) and JT65/JT9 (WSJT-X thresholds, Rx window).
+- **Decoders aligned with WSJT-X 3.3**: FT8 (Rx-frequency priority, OSD 4 for QSO replies, a priori for /P and compound callsigns), FT4 (WSJT-X candidate search), Q65 (averaging with the QSO list, drift correction) JT65/JT9 (WSJT-X thresholds, Rx window), MSK144, FST4/FST4W and WSPR.
+- **Installer in seven languages** (Italian, English, German, French, Spanish, Portuguese, Dutch); the interface is in six languages, with Dutch in progress as a seventh.
 - **Display and cluster**: Yaesu FT-2000 and Icom IC-7610 style radio displays; NG3K DXpeditions highlighted in the DX Cluster in a colour of your choice; live waterfall preview in the settings; always-on crash diagnostics.
 - **Contest (beta)**: dedicated page with 24 FT8/FT4 and VHF contests (rules and yearly dates), contest sequencing as in WSJT-X, live dupes, points, multipliers and projected score, category and operators, log with Cabrillo, EDI and ADIF.
 - **UltraFOX**: Aurora's own Rust implementation with the AQP-127 polar code (implementation by Tiziano Cassone IU3WJQ), compatible with WSJT-X SuperFox (transmit and receive). Experimental.
@@ -104,7 +106,7 @@ During tests you can switch on **code-free access** (Settings → Access, or `AU
 
 ### CAT: the radio for every model
 
-In Settings → Radio CAT you choose how to control the radio (frequency, mode, PTT, split): **Hamlib** through `rigctld` (over 300 models, the default) or OmniRig. Named profiles, radio detection and real-time status. User guide and tests with a real radio in `docs/cat-radio.md` (documentation in Italian).
+In Settings → Radio CAT you choose how to control the radio (frequency, mode, PTT, split): **Hamlib** through `rigctld` (over 300 models, the default) OmniRig (directly via COM) or the native Cat4OM; also TCI and FT-991 Link. Named profiles, radio detection and real-time status. User guide and tests with a real radio in `docs/cat-radio.md` (documentation in Italian).
 
 ## Configuration
 

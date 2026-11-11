@@ -1,7 +1,15 @@
 # Memoria di progetto
 
-Stato al 2026-11-11 sera, versione 0.11.237 pubblicata (Windows e macOS verdi per la 0.11.235; per la 0.11.237 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-11 notte, versione 0.11.237 pubblicata; su `main` dopo di lei FST4/FST4W, WSPR, rotore, colonne Contest, icone e schermata di avvio; in lavorazione Split DX, interfaccia in olandese e scoperta Cat4OM (per la 0.11.237 controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
+
+## Decisioni del 2026-11-11 sera (ramo unico, nome multimodo, FST4/WSPR)
+
+- **Ramo unico**: esiste solo `main`; `sviluppo` e' stato fuso e non serve piu' (sostituisce la regola dei due rami qui sotto). Il repository privato `Aurora-sviluppo` si cancella solo con il via del proprietario. Il sito si compila sul PC e si carica a mano, perche' i minuti di GitHub Actions dei repository privati sono finiti.
+- **Nome**: «Aurora — Multimode Ham Radio Station» (it: «stazione radioamatoriale multimodo»); non piu' «stazione digitale FT8/FT4». Elenco dei modi: FT8, FT4, JT65 A/B/C, JT9, JT4 A-G, Q65, MSK144, FST4, FST4W, WSPR, PSK31/63, RTTY, CW, SSTV, Satelliti.
+- **FST4/FST4W e WSPR**: verificati con i binari di WSJT-X 3.3.0-beta6 (`jt9.exe` e `wsprd.exe`), non a intuito. WSPR non manda niente a WSPRnet (di fabbrica spento anche in WSJT-X): niente caricamento degli spot, per scelta. Il beacon FST4W in trasmissione manca ancora.
+- **Split DX**: cosi' si chiama la funzione del DX Cluster che legge UP/DN/QSX nel commento dello spot e imposta lo split (in lavorazione; lo split dal cluster era gia' provato dal vivo).
+- **Olandese**: settima lingua dell'interfaccia in un dizionario a parte (le sei di prima restano com'erano); l'installatore e' gia' in sette lingue.
 
 ## Decisioni del 2026-11-11 (allineamento a WSJT-X 3.3.0-beta6)
 

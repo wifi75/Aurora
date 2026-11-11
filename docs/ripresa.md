@@ -1,6 +1,17 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-11 sera)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-11 notte)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-11 notte (0.11.237 pubblicata, altro gia' su `main`)
+
+Aurora si chiama ora «Aurora — Multimode Ham Radio Station» (it: «stazione radioamatoriale multimodo»): il README e la descrizione dell'installatore lo dicono.
+
+- **Pubblicata**: 0.11.237.
+- **Su `main` dopo la 0.11.237** (non ancora in una release): FST4 e FST4W (periodi 15 s-30 min, verificati con `jt9.exe`), WSPR-2 (beacon, percentuale di Tx, verificato con `wsprd.exe`; nessun caricamento su WSPRnet, per scelta), JT65 sottomodi B/C con media dei periodi, MSK144 a 30 s e «Sh», caselle di decodifica di WSJT-X, rotore unificato, colonne del Contest, icone nuove, schermata di avvio, tempi di accensione dell'FT-2000, campo del rapporto, clic destro su QRZ, testo dell'SSTV centrato, LoTW nel riquadro del nominativo, installatore in sette lingue (con l'olandese).
+- **In lavorazione**: Split DX dal DX Cluster (UP/DN/QSX nel commento dello spot), interfaccia in olandese (settima lingua, dizionario a parte; resta da fare) e scoperta delle radio di Cat4OM dalla pagina.
+- **Un solo ramo, `main`**: `sviluppo` e' stato fuso e non serve piu'; il repository privato `Aurora-sviluppo` si cancella quando il proprietario da' il via. Il merge di `main` in `sviluppo` non e' piu' un passo da fare.
+- **Il sito** (aurora-portal) si compila sul PC e si carica a mano: i minuti di GitHub Actions dei repository privati sono finiti.
+- **Prossimi passi**: chiudere Split DX, olandese e scoperta Cat4OM; beacon FST4W in trasmissione; prove dal vivo con la radio (FST4/FST4W, WSPR, JT65 B/C, MSK144, OmniRig via COM, Cat4OM, TCI, SSTV); `wip-fox` (Fox in Attivita' di banda) se ancora aperto.
 
 ## Stato al 2026-11-11 sera (0.11.236 pubblicata)
 
