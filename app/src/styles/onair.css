@@ -5708,12 +5708,9 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   color: var(--accent, currentColor);
 }
 
-/* stazioni in Fox/Hound di WSJT-X: etichetta FOX arancione e sfondo proprio della riga */
-.decode-row--fox {
-  background: color-mix(in srgb, #ff7a05 14%, transparent);
-}
+/* stazioni in Fox/Hound di WSJT-X: etichetta FOX arancione (le regole delle righe di Attivita' di banda sono in fondo al file) */
 .badge--fox {
-  background: #ff7a05;
+  background: #ff8a1f;
   color: #1b0d00;
   font-weight: 700;
 }
@@ -7543,3 +7540,48 @@ html[data-theme='light'] .dock-panel--log .log-rx-label { color: #1d2a44; backgr
 .decode-row .decode-sender { font-weight: 800; }
 /* chi usa LoTW: barra piena di 2 px sotto il nominativo (il colore arriva dalle Impostazioni, scheda Colori) */
 .decode-row .decode-sender--lotw { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-skip-ink: none; }
+
+/* Righe delle Fox (Fox/Hound di WSJT-X, «IK4BHO RR73; LA9GX <3X4U> -15»), leggibili nei due temi (richiesta del proprietario, 2026-11-11).
+   Prima lo sfondo arancione al 14% diventava marrone scuro nel tema scuro, il messaggio finiva nei «…» e l'etichetta FOX restava senza
+   fondo (la cella delle etichette di Attivita' di banda ha «background: transparent») e quasi invisibile.
+   - segno discreto: una velatura leggera come immagine di sfondo (non toglie i colori delle righe a me, scelte...) e un filo a sinistra;
+   - il messaggio intero: va a capo tra le parole invece di finire nei puntini, con interlinea stretta;
+   - etichetta FOX discreta ma leggibile: fondo arancione tenue, filo e testo arancioni a contrasto (oltre 7:1 nei due temi). */
+.decode-list .decode-row.decode-row--fox {
+  background-image: linear-gradient(color-mix(in srgb, #ff8a1f 9%, transparent), color-mix(in srgb, #ff8a1f 9%, transparent));
+}
+.decode-list .decode-row.decode-row--fox:not(.decode-row--queue-pin) {
+  box-shadow: inset 3px 0 0 #ff8a1f;
+}
+.decode-list .decode-row.decode-row--fox .decode-text,
+.decode-list .decode-row.decode-row--fox .decode-text .data {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.2;
+}
+.decode-list .badge.badge--fox,
+.dock-panel--all .decode-list .badge.badge--fox,
+.dock-panel--cq .decode-list .badge.badge--fox {
+  background: color-mix(in srgb, #ff8a1f 18%, transparent) !important;
+  color: #ffb36b !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ff8a1f 60%, transparent);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 1;
+}
+html[data-theme='light'] .decode-list .decode-row.decode-row--fox {
+  background-image: linear-gradient(color-mix(in srgb, #e06a00 8%, transparent), color-mix(in srgb, #e06a00 8%, transparent));
+}
+html[data-theme='light'] .decode-list .decode-row.decode-row--fox:not(.decode-row--queue-pin) {
+  box-shadow: inset 3px 0 0 #c25400;
+}
+html[data-theme='light'] .decode-list .badge.badge--fox,
+html[data-theme='light'] .dock-panel--all .decode-list .badge.badge--fox,
+html[data-theme='light'] .dock-panel--cq .decode-list .badge.badge--fox {
+  background: color-mix(in srgb, #e06a00 13%, transparent) !important;
+  color: #8a3a00 !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #c25400 55%, transparent);
+}

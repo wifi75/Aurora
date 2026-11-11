@@ -8,7 +8,8 @@
 //!    ribaltati.
 //! 3. [`reject_message`]: controlli sul testo (forma dei nominativi, tipi di messaggio impossibili, testo libero, 73/RR73 su
 //!    nominativi nascosti), scattano solo sui messaggi "dubbi" (qualita' bassa, SNR basso, ritardo fuori scala, tipi a priori 1-3) come
-//!    in `ft8b`.
+//!    in `ft8b`. Per i messaggi DXpedition (`i3 = 0`, `n3 = 1`) dell'FT8 il controllo e' [`dxpedition_rejected`] (`chkspecial8var` di
+//!    WSJT-X 3.3.0-beta6).
 //!
 //! # Differenze dal Fortran
 //!
@@ -845,6 +846,9 @@ pub fn reject_message(c: &MessageCheck, my_call: &str, book: Option<&CallBook>) 
     } else if dubious {
         if (4..=6).contains(&c.ap_type) {
             middle = false;
+        } else if c.i3 == 0 && c.n3 == 1 {
+            // DXpedition (`i3bit = 1`): al posto di `chkfalse8var` WSJT-X chiama `chkspecial8var` (`ft8bvar.f90:2479-2482`), che qui e'
+            // [`dxpedition_rejected`] (solo FT8: serve anche il nominativo del DX)
         } else if chkfalse8(c, &text, my_call, book) {
             return true;
         }
@@ -895,6 +899,111 @@ pub fn reject_message(c: &MessageCheck, my_call: &str, book: Option<&CallBook>) 
         }
     }
     c.ap_type == 1 && c.text.starts_with("CQ DE AA00")
+}
+
+/// `Radio::base_callsign` di WSJT-X 3.3.0-beta6 (`Radio.cpp:185-201`, con `callsign_without_operating_suffixes` di `Radio.cpp:29-41`):
+/// si tolgono i suffissi operativi (`/P`, `/QRP`, `/MM`, una cifra...) e dei due pezzi attorno alla barra resta il piu' lungo (a pari
+/// lunghezza quello a destra). E' il `mybcall`/`hisbcall` che `mainwindow.cpp:5595-5601` passa al decodificatore.
+fn base_callsign(call: &str) -> String {
+    fn operating_suffix(s: &str) -> bool {
+        // `non_prefix_suffix`: \A([0-9AMPQR]|QRP|F[DF]|[AM]M|L[HT]|LGT)\z
+        matches!(s, "QRP" | "FD" | "FF" | "AM" | "MM" | "LH" | "LT" | "LGT")
+            || (s.len() == 1 && s.bytes().all(|b| b.is_ascii_digit() || matches!(b, b'A' | b'M' | b'P' | b'Q' | b'R')))
+    }
+    let mut call = call.trim().to_ascii_uppercase();
+    while let Some(slash) = call.rfind('/') {
+        if !operating_suffix(&call[slash + 1..]) {
+            break;
+        }
+        call.truncate(slash);
+    }
+    if let Some(slash) = call.find('/') {
+        let right = call.len() - slash - 1;
+        call = if right >= slash { call[slash + 1..].to_string() } else { call[..slash].to_string() };
+    }
+    call
+}
+
+/// `index(msg37, call12) > 0` del Fortran con `call12` di 12 caratteri riempito di spazi (`character(len=12)` in `ft8_mod1.f90:20`) e `msg37`
+/// di 37: si cercano anche gli spazi finali, quindi un nominativo corto si trova solo se e' seguito da abbastanza spazi (in fondo al
+/// messaggio). Un nominativo vuoto non si cerca (`mybcall.ne."            "`).
+fn fortran_index_padded(msg: &str, call: &str) -> bool {
+    let call = call.trim_end();
+    if call.is_empty() {
+        return false;
+    }
+    let msg37 = format!("{:<37}", msg.get(..37.min(msg.len())).unwrap_or(msg));
+    let call12 = format!("{call:<12}");
+    msg37.contains(&call12)
+}
+
+/// Il filtro dei falsi sui messaggi DXpedition (Fox/Hound, `i3 = 0`, `n3 = 1`: `K1ABC RR73; W9XYZ <KH1/KH7Z> -08`) di WSJT-X 3.3.0-beta6,
+/// solo FT8: `chkspecial8var.f90` (41 righe), chiamato da `ft8bvar.f90:2479-2482` al posto di `chkfalse8var` quando `i3bit = 1`. `true` = e' un
+/// falso, da scartare.
+///
+/// Come in `ft8bvar.f90:2453-2490`: non per i tipi a priori 35-39 (`ft8bvar.f90:2453`, hanno il loro controllo), solo sui messaggi dubbi
+/// (`ft8bvar.f90:2468-2470`: qualita' sotto 0,39, SNR sotto -20,5 dB, DT fuori da -0,5..1,9 s, tipi a priori 1-3, 11, 21, 40, 41), non per i tipi
+/// a priori 4-6 (`ft8bvar.f90:2471`, `go to 4`), e non quando il messaggio contiene il proprio nominativo di base o quello del DX
+/// (`ft8bvar.f90:2472-2476`, `go to 256`, con l'`index` del Fortran sui nominativi di 12 caratteri: vedi [`fortran_index_padded`]).
+///
+/// `chkspecial8var` lavora su `msg37` come lo riscrive `msgparservar.f90:21-22` (`call1 RR73; call2 call3 rapporto`, uguale al testo di
+/// `unpack`) e su `msg37_2` (`call2 call3 rapporto`, solo se il quinto spazio e' oltre la ventesima colonna, `msgparservar.f90:12`):
+/// - `call_a` e' il primo nominativo, `call_b` il primo di `msg37_2`, `call_c` la seconda parola di `msg37` (`chkspecial8var.f90:20-22`, con
+///   `ispc1 > 3` e `ispc2 > 7`). Con il testo di `msgparservar` `call_c` e' `RR73;`: il confronto con `hiscall` resta come nel Fortran;
+/// - se nessuno dei due e' il proprio nominativo (e `call_c` non e' quello del DX, `chkspecial8var.f90:23`), e' un falso quando `call_a` o
+///   `call_b` comincia per `Q` o per `0` o per due cifre (`chkspecial8var.f90:24-32`), oppure se nessuno dei due e' fra i nominativi
+///   conosciuti (`chkflscallvar`, `chkspecial8var.f90:34-36`: [`CallBook`], solo se c'e').
+pub fn dxpedition_rejected(c: &MessageCheck, mycall: &str, hiscall: &str, book: Option<&CallBook>) -> bool {
+    if c.i3 != 0 || c.n3 != 1 || (35..40).contains(&c.ap_type) {
+        return false;
+    }
+    let dubious = c.qual < 0.39 || c.snr < -20.5 || c.dt_s < -0.5 || c.dt_s > 1.9 || matches!(c.ap_type, 1..=3 | 11 | 21 | 40 | 41);
+    if !dubious || (4..7).contains(&c.ap_type) {
+        return false;
+    }
+    let mycall = mycall.trim().to_ascii_uppercase();
+    let hiscall = hiscall.trim().to_ascii_uppercase();
+    if !matches!(c.ap_type, 2 | 3 | 11 | 21 | 40 | 41) {
+        // `hisbcall` vuoto se il DX ha meno di 3 caratteri (`mainwindow.cpp:5597-5601`)
+        let mybcall = base_callsign(&mycall);
+        let hisbcall = if hiscall.len() < 3 { String::new() } else { base_callsign(&hiscall) };
+        if fortran_index_padded(c.text, &mybcall) || fortran_index_padded(c.text, &hisbcall) {
+            return false;
+        }
+    }
+    chkspecial8(c.text, &mycall, &hiscall, book)
+}
+
+/// `chkspecial8var.f90`: `true` se il messaggio DXpedition e' un falso.
+fn chkspecial8(text: &str, mycall: &str, hiscall: &str, book: Option<&CallBook>) -> bool {
+    let msg37 = text.trim_end();
+    let words: Vec<&str> = msg37.split(' ').collect();
+    // `msgparservar.f90:9-12`: `msg37_2` c'e' solo se il quinto spazio (dopo il rapporto) e' oltre la colonna 20
+    let ispc5 = msg37.len() + 1;
+    let call_b = if words.len() >= 5 && ispc5 > 20 { words[2] } else { "" };
+    // `chkspecial8var.f90:20-21`: posizioni (da 1) del primo e del secondo spazio
+    let call_a = words[0];
+    let call_c = words.get(1).copied().unwrap_or("");
+    let ispc1 = call_a.len() + 1;
+    let ispc2 = ispc1 + call_c.len() + 1;
+    if ispc1 <= 3 || ispc2 <= 7 {
+        return false;
+    }
+    if call_a == mycall || call_b == mycall || call_c == hiscall {
+        return false;
+    }
+    // il carattere `n` (da 0) di un campo di 12 caratteri riempito di spazi
+    let ch = |call: &str, n: usize| call.as_bytes().get(n).copied().unwrap_or(b' ');
+    // `chkspecial8var.f90:24-28`: un nominativo non comincia per Q o per zero
+    if ch(call_a, 0) == b'Q' || ch(call_b, 0) == b'Q' || ch(call_a, 0) == b'0' || ch(call_b, 0) == b'0' {
+        return true;
+    }
+    // `chkspecial8var.f90:29-32`: ne' con due cifre
+    if [call_a, call_b].iter().any(|call| is_digit(ch(call, 0)) && is_digit(ch(call, 1))) {
+        return true;
+    }
+    // `chkspecial8var.f90:34-36`: `chkflscallvar(call_a, call_b)`
+    book.is_some_and(|b| b.is_false(call_a, call_b))
 }
 
 #[cfg(test)]
@@ -959,6 +1068,80 @@ mod tests {
         let known = MessageCheck { text: "K1ABC YB2YYY -12", ..check("", 1, 0, 0) };
         assert!(!reject_message(&known, "", Some(&book)));
         assert!(!reject_message(&c, "", None));
+    }
+
+    #[test]
+    fn il_nominativo_di_base_come_in_wsjtx() {
+        assert_eq!(base_callsign("IU3ABC"), "IU3ABC");
+        assert_eq!(base_callsign("iu3abc/p"), "IU3ABC");
+        assert_eq!(base_callsign("PJ4/K1ABC"), "K1ABC");
+        assert_eq!(base_callsign("K1ABC/QRP"), "K1ABC");
+        assert_eq!(base_callsign("KH1/KH7Z"), "KH7Z");
+        assert_eq!(base_callsign("K1ABC/VE3"), "K1ABC");
+    }
+
+    #[test]
+    fn dxpedition_dubbio_con_nominativi_impossibili_si_scarta() {
+        // `chkspecial8var.f90:24-32`: Q, zero o due cifre all'inizio di call_a o di call_b
+        for t in [
+            "QU3ABC RR73; K1ABC <3X4U> -15",
+            "IU3ABC RR73; QK1ABC <3X4U> -15",
+            "0U3ABC RR73; K1ABC <3X4U> -15",
+            "IU3ABC RR73; 0K1ABC <3X4U> -15",
+            "12ABC RR73; K1ABC <3X4U> -15",
+            "IU3ABC RR73; 23ABC <...> -15",
+        ] {
+            assert!(dxpedition_rejected(&check(t, 0, 1, 0), "W9XYZ", "", None), "{t}");
+        }
+    }
+
+    #[test]
+    fn dxpedition_normale_resta() {
+        let c = check("IU3ABC RR73; K1ABC <3X4U> -15", 0, 1, 0);
+        assert!(!dxpedition_rejected(&c, "W9XYZ", "", None));
+        // `chkflscallvar`: con l'elenco dei nominativi basta che uno dei due sia conosciuto
+        let book = CallBook::new(["K1ABC".to_string()]);
+        assert!(!dxpedition_rejected(&c, "W9XYZ", "", Some(&book)));
+        let unknown = CallBook::new(["W9XYZ".to_string()]);
+        assert!(dxpedition_rejected(&c, "W4ZZZ", "", Some(&unknown)));
+        // anche reject_message lo lascia passare: per i messaggi DXpedition non c'e' `chkfalse8var` (`ft8bvar.f90:2479-2485`)
+        assert!(!reject_message(&c, "W9XYZ", Some(&unknown)));
+    }
+
+    #[test]
+    fn dxpedition_con_il_mio_nominativo_resta() {
+        // `chkspecial8var.f90:23`: call_a o call_b uguale al mio nominativo
+        assert!(!dxpedition_rejected(&check("IU3ABC RR73; 0K1ABC <3X4U> -15", 0, 1, 0), "IU3ABC", "", None));
+        assert!(!dxpedition_rejected(&check("QK1ABC RR73; IU3ABC <3X4U> -15", 0, 1, 0), "IU3ABC", "", None));
+        let none = CallBook::new(["W9XYZ".to_string()]);
+        assert!(!dxpedition_rejected(&check("K1ABC RR73; IU3ABC <3X4U> -15", 0, 1, 0), "IU3ABC", "", Some(&none)));
+    }
+
+    #[test]
+    fn dxpedition_solo_sui_messaggi_dubbi_e_non_con_i_tipi_a_priori_esclusi() {
+        let t = "QU3ABC RR73; K1ABC <3X4U> -15";
+        // buona qualita', SNR e DT normali, senza a priori: non e' dubbio
+        let good = MessageCheck { text: t, i3: 0, n3: 1, ap_type: 0, qual: 0.8, snr: -10.0, dt_s: 0.2 };
+        assert!(!dxpedition_rejected(&good, "W9XYZ", "", None));
+        // dubbio per il DT, per l'SNR, per il tipo a priori 2
+        assert!(dxpedition_rejected(&MessageCheck { dt_s: 2.0, ..good }, "W9XYZ", "", None));
+        assert!(dxpedition_rejected(&MessageCheck { snr: -21.0, ..good }, "W9XYZ", "", None));
+        assert!(dxpedition_rejected(&MessageCheck { ap_type: 2, ..good }, "W9XYZ", "", None));
+        // tipi a priori 4-6 (`go to 4`) e 35-39 (altro ramo): niente controllo
+        assert!(!dxpedition_rejected(&check(t, 0, 1, 5), "W9XYZ", "", None));
+        assert!(!dxpedition_rejected(&check(t, 0, 1, 36), "W9XYZ", "", None));
+        // solo i3 = 0, n3 = 1
+        assert!(!dxpedition_rejected(&check("QU3ABC K1ABC -15", 1, 0, 0), "W9XYZ", "", None));
+    }
+
+    #[test]
+    fn dxpedition_go_to_256_con_l_index_del_fortran() {
+        // `index(msg37, mybcall)` con il nominativo di 12 caratteri: lo trova solo se seguito da abbastanza spazi, cioe' in fondo
+        assert!(fortran_index_padded("K1ABC RR73; W9XYZ <...> -08", "-08"));
+        assert!(!fortran_index_padded("K1ABC RR73; W9XYZ <...> -08", "K1ABC"));
+        assert!(!fortran_index_padded("K1ABC RR73; W9XYZ <...> -08", ""));
+        // il DX dentro il messaggio non lo salva (il suo nominativo non e' in fondo), come in WSJT-X
+        assert!(dxpedition_rejected(&check("QU3ABC RR73; K1ABC <3X4U> -15", 0, 1, 0), "W9XYZ", "3X4U", None));
     }
 
     #[test]

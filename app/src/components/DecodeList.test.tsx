@@ -6,6 +6,12 @@ import { useNotifyView } from '../lib/notifyView';
 import { useStation } from '../state/station';
 import { DecodeList } from './DecodeList';
 
+// il paese chiesto al core per i nominativi senza paese (le Fox nelle righe DXpedition): qui risponde solo per 3X4U
+vi.mock('../api/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/client')>()),
+  getDxcc: vi.fn((call: string) => (call === '3X4U' ? Promise.resolve({ country: 'Guinea' }) : Promise.reject(new Error('offline')))),
+}));
+
 const decode = (over: Partial<DecodedMessage> = {}): DecodedMessage => ({
   id: 7, time_ms: 45_015_000, snr: -12, delta_time: 0.3, freq_hz: 1500,
   text: 'CQ DX JA1XYZ PM95', tag: null, ...over,
@@ -374,6 +380,37 @@ describe('DecodeList', () => {
     expect(mark.closest('.data')).toBeNull();
     expect(bb).not.toHaveClass('decode-row--queued');
     useStation.setState({ status: null });
+  });
+
+  it('shows a Fox row whole, with the FOX tag and the flag and country of the Fox (the call between < >)', async () => {
+    // riga DXpedition (i3=0 n3=1) sotto i 1000 Hz: il motore non da' il paese (il mittente e' tra < >), lo si chiede al file dei prefissi
+    const text = 'IU3ABC RR73; K1ABC <3X4U> -15';
+    const { container } = render(<DecodeList decodes={[decode({ id: 1, text, freq_hz: 450, country: null })]} onReply={() => {}} />);
+    const row = screen.getByRole('button');
+    expect(row).toHaveClass('decode-row--fox');
+    expect(row.querySelector('.data')?.textContent).toBe(text);
+    expect(screen.getByText('FOX')).toHaveClass('badge--fox');
+    expect(await screen.findByText('Guinea')).toBeInTheDocument();
+    expect(container.querySelector('.fi.fi-gn')).not.toBeNull();
+  });
+
+  it('takes the country of a Fox from its other rows when the engine knows it there', () => {
+    render(
+      <DecodeList
+        decodes={[decode({ id: 2, text: 'IU3ABC RR73; K1ABC <KH1/KH7Z> -08', freq_hz: 300, country: null }), decode({ id: 1, text: 'CQ KH1/KH7Z AJ10', freq_hz: 300, country: 'Baker & Howland Islands' })]}
+        onReply={() => {}}
+      />,
+    );
+    const fox = screen.getAllByRole('button').find((r) => r.textContent?.includes('RR73;')) as HTMLElement;
+    expect(fox).toHaveClass('decode-row--fox');
+    expect(fox.querySelector('.decode-country')).toHaveTextContent('Baker & Howland Islands');
+  });
+
+  it('treats a double message above 1000 Hz as a normal multi-answer, not as a Fox', () => {
+    render(<DecodeList decodes={[decode({ id: 1, text: 'IU3ABC RR73; K1ABC <3X4U> -15', freq_hz: 1500, country: null })]} onReply={() => {}} />);
+    const row = screen.getByRole('button');
+    expect(row).not.toHaveClass('decode-row--fox');
+    expect(screen.queryByText('FOX')).toBeNull();
   });
 
 });
