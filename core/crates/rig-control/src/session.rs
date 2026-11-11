@@ -187,6 +187,21 @@ impl SharedSession {
     }
 
     pub fn run_with_timeout(&self, script: &str, timeout: Duration) -> Result<String, RigError> {
+        self.run_inner(script, timeout, true)
+    }
+
+    /// Come [`run`](Self::run), ma un errore dello script non si ritenta (solo una sessione morta o bloccata): per i comandi che aspettano gia' da
+    /// soli e hanno i loro tentativi, come quelli di OmniRig.
+    pub fn run_once(&self, script: &str) -> Result<String, RigError> {
+        self.run_inner(script, TIMEOUT, false)
+    }
+
+    /// Chiude la sessione (e con lei gli oggetti che teneva aperti); la prossima richiesta ne apre una nuova.
+    pub fn close(&self) {
+        *self.slot.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    }
+
+    fn run_inner(&self, script: &str, timeout: Duration, retry_script: bool) -> Result<String, RigError> {
         let mut slot = self.slot.lock().unwrap_or_else(|p| p.into_inner());
         // un tentativo in piu' dopo una sessione morta o bloccata, e dopo un errore di script (la memoria dei controlli puo' essere vecchia)
         let mut last = RigError("nessuna risposta".into());
@@ -199,13 +214,15 @@ impl SharedSession {
                 Ok(text) => return Ok(text),
                 Err(Failure::Script(message)) => {
                     last = RigError(message);
-                    if attempt == 1 {
+                    if attempt == 1 || !retry_script {
                         break;
                     }
                 }
                 Err(Failure::Session(message)) => {
-                    // l'inizio dello script dice quale comando era (lettura, cambio frequenza, PTT): senza, i rapporti non lo distinguono
-                    let head: String = script.chars().filter(|c| !c.is_control()).take(60).collect();
+                    // il pezzo di script che dice quale comando era (lettura, cambio frequenza, PTT): si salta il preambolo comune (l'oggetto OmniRig),
+                    // uguale per tutti i comandi, e si parte dalla radio (`$r = ...`)
+                    let from = script.find("$r = ").unwrap_or(0);
+                    let head: String = script[from..].chars().filter(|c| !c.is_control()).take(80).collect();
                     tracing::warn!("{message} (comando: {head}): riapro la sessione PowerShell");
                     last = RigError(message);
                     *slot = None;
