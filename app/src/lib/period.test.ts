@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { periodPosition, periodSecs } from './period';
+import { noteTrPeriod, periodPosition, periodSecs } from './period';
 
 const at = (h: number, m: number, s: number, ms = 0) => Date.UTC(2026, 9, 24, h, m, s, ms);
 
@@ -37,5 +37,19 @@ describe('JT65 and JT9 periods', () => {
     expect(periodSecs('FT4')).toBe(7.5);
     const at = Date.UTC(2026, 9, 26, 20, 36, 42);
     expect(periodPosition(at, 'JT65')).toMatchObject({ seconds: 42, length: 60 });
+  });
+});
+
+describe('MSK144 period', () => {
+  it('follows the T/R period reported by the engine and ignores other values and modes', () => {
+    expect(periodSecs('MSK144')).toBe(15);
+    noteTrPeriod('MSK144', 30);
+    expect(periodSecs('MSK144')).toBe(30);
+    expect(periodPosition(at(13, 0, 45), 'MSK144').seconds).toBe(15);
+    noteTrPeriod('MSK144', 20);
+    noteTrPeriod('FT8', 5);
+    expect(periodSecs('MSK144')).toBe(30);
+    expect(periodSecs('FT8')).toBe(15);
+    noteTrPeriod('MSK144', 15);
   });
 });

@@ -1,5 +1,5 @@
 import { useFox } from './fox';
-import { periodSecs } from '../lib/period';
+import { noteTrPeriod, periodSecs } from '../lib/period';
 import { emitDigi } from '../lib/digiBus';
 import { emitSstv } from '../lib/sstvBus';
 import { create } from 'zustand';
@@ -209,6 +209,8 @@ export const useStation = create<StationState>((set) => ({
     switch (event.type) {
       case 'status': {
         const { type: _type, ...reported } = event;
+        // MSK144: la durata del periodo viene dallo stato (5, 10, 15 o 30 s)
+        noteTrPeriod(reported.mode, reported.tr_period);
         set((s) => {
           const { status: shown, pending } = withPending(s, reported);
           const cleared = clearedOnChange(s, s.status, shown);
