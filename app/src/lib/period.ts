@@ -1,7 +1,16 @@
-/** Durata di un periodo in secondi: FT8 15, FT4 7,5, JT65 e JT9 60 (un minuto intero: si decodifica a fine minuto). */
+/** MSK144: il periodo T/R in uso (5, 10, 15 o 30 s), come lo riporta lo stato del motore (`tr_period`). */
+let mskPeriodSecs = 15;
+
+/** Ricorda il periodo T/R dallo stato del motore: in MSK144 la durata non si legge dal nome del modo. */
+export function noteTrPeriod(mode: string | undefined, trPeriod: number | null | undefined): void {
+  if ((mode ?? '').toUpperCase() === 'MSK144' && (trPeriod === 5 || trPeriod === 10 || trPeriod === 15 || trPeriod === 30)) mskPeriodSecs = trPeriod;
+}
+
+/** Durata di un periodo in secondi: FT8 15, FT4 7,5, JT65 e JT9 60 (un minuto intero: si decodifica a fine minuto), MSK144 quello scelto. */
 export function periodSecs(mode: string): number {
   const m = mode.toUpperCase();
   if (m === 'FT4') return 7.5;
+  if (m === 'MSK144') return mskPeriodSecs;
   if (m.startsWith('JT')) return 60;
   return 15;
 }

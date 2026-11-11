@@ -21,6 +21,21 @@ pub fn q65_period_s() -> u32 {
     Q65_PERIOD_S.load(Ordering::Relaxed)
 }
 
+/// Periodo di MSK144 in secondi (5, 10, 15, 30, `mainwindow.cpp:12081` di WSJT-X), scelto dal motore.
+static MSK144_PERIOD_S: AtomicU32 = AtomicU32::new(15);
+
+/// Sceglie il periodo di MSK144; valori fuori campo si ignorano.
+pub fn set_msk144_period_s(period_s: u32) {
+    if matches!(period_s, 5 | 10 | 15 | 30) {
+        MSK144_PERIOD_S.store(period_s, Ordering::Relaxed);
+    }
+}
+
+/// Periodo di MSK144 in uso, in secondi.
+pub fn msk144_period_s() -> u32 {
+    MSK144_PERIOD_S.load(Ordering::Relaxed)
+}
+
 /// Durata del messaggio Q65 in millisecondi (85 simboli, `q65params`).
 fn q65_message_ms(period_s: u32) -> u64 {
     let nsps = match period_s {
@@ -47,7 +62,8 @@ pub enum Mode {
 impl Mode {
     pub fn slot_len(self) -> Duration {
         match self {
-            Mode::Ft8 | Mode::Msk144 => Duration::from_millis(15_000),
+            Mode::Ft8 => Duration::from_millis(15_000),
+            Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 1000),
             Mode::Ft4 => Duration::from_millis(7_500),
             Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => Duration::from_millis(60_000),
             Mode::Q65 => Duration::from_millis(u64::from(q65_period_s()) * 1000),
@@ -77,8 +93,8 @@ impl Mode {
             Mode::Jt4 => Duration::from_millis(47_090),
             // 85 simboli dopo il ritardo d'inizio (26 s in Q65-30)
             Mode::Q65 => Mode::Q65.tx_delay() + Duration::from_millis(q65_message_ms(q65_period_s())),
-            // il quadro si ripete fino a fine periodo: si puo' partire fino a 12 s
-            Mode::Msk144 => Duration::from_millis(12_000),
+            // il quadro si ripete fino a fine periodo: si puo' partire fino ai 4/5 del periodo (12 s su 15)
+            Mode::Msk144 => Duration::from_millis(u64::from(msk144_period_s()) * 800),
         }
     }
 }

@@ -124,6 +124,32 @@ pub fn gen_std_msgs(my: &str, my_grid: &str, his: &str, report: i32, use_rrr: bo
     }
 }
 
+/// MSK144 con «Sh»: il rapporto portato al valore piu' vicino che un messaggio breve (MSK40) sa dire, come la tabella di `genStdMsgs` di
+/// WSJT-X (`mainwindow.cpp:10021-10027`): -03, +00, +03, +06, +10, +13, +16.
+pub fn msk40_report(n: i32) -> i32 {
+    match n {
+        i32::MIN..=-2 => -3,
+        -1..=1 => 0,
+        2..=4 => 3,
+        5..=7 => 6,
+        8..=11 => 10,
+        12..=14 => 13,
+        _ => 16,
+    }
+}
+
+/// MSK144 con «Sh» (`m_bShMsgs`), fuori dai contest: come `genStdMsgs` di WSJT-X (`mainwindow.cpp:10017-10065`) Tx3, Tx4 e Tx5 diventano i
+/// messaggi brevi con la coppia di nominativi interi tra parentesi, `t0 = "<" + hisCall + " " + my_callsign + "> "`: «<DX MIO> R+03» (rapporto
+/// arrotondato con [`msk40_report`]), «<DX MIO> RRR» (con Sh il Tx4 non e' mai RR73, `Rr73Policy.cpp:10-11`) e «<DX MIO> 73». Il Tx2 resta il
+/// messaggio a 77 bit con il rapporto vero: WSJT-X lo scrive nel ramo `is77BitMode()` prima dell'arrotondamento e il ramo `!is77BitMode()`
+/// che lo riscriverebbe non vale per MSK144 (`mainwindow.cpp:10006`, `10033-10037`). Tx1 non cambia.
+pub fn apply_msk144_short(msgs: &mut StdMessages, my: &str, his: &str, report: i32) {
+    let t0 = format!("<{} {}> ", his.to_ascii_uppercase(), my.to_ascii_uppercase());
+    msgs.tx3 = tidy(format!("{t0}{}", format_r_report(msk40_report(report))));
+    msgs.tx4 = tidy(format!("{t0}RRR"));
+    msgs.tx5 = tidy(format!("{t0}73"));
+}
+
 /// `genCQMsg` (Tx6): `CQ [mod] MIA GRIGLIA`; con un nominativo non standard resta `CQ MIA`.
 pub fn gen_cq(my: &str, my_grid: &str, modifier: Option<&str>) -> String {
     let my = my.to_ascii_uppercase();
@@ -230,5 +256,29 @@ mod tests {
         assert_eq!(m.get(2), Some("LZ2KSQ IU3ABC -07"));
         assert_eq!(m.get(6), None);
         assert_eq!(m.get(0), None);
+    }
+
+    /// La tabella di `genStdMsgs` di WSJT-X per «Sh» in MSK144 (`mainwindow.cpp:10021-10027`).
+    #[test]
+    fn msk40_report_follows_the_wsjtx_table() {
+        let cases = [(-20, -3), (-2, -3), (-1, 0), (0, 0), (1, 0), (2, 3), (4, 3), (5, 6), (7, 6), (8, 10), (11, 10), (12, 13), (14, 13), (15, 16), (30, 16)];
+        for (n, want) in cases {
+            assert_eq!(msk40_report(n), want, "rapporto {n}");
+        }
+    }
+
+    /// «Sh» in MSK144: Tx3-Tx5 brevi tra parentesi, Tx4 sempre RRR, Tx2 a 77 bit con il rapporto vero.
+    #[test]
+    fn msk144_short_messages() {
+        let mut m = gen_std_msgs("IU3ABC", "IO91wm", "K1ABC", 5, false);
+        apply_msk144_short(&mut m, "IU3ABC", "K1ABC", 5);
+        assert_eq!(m.tx1, "K1ABC IU3ABC IO91");
+        assert_eq!(m.tx2, "K1ABC IU3ABC +05");
+        assert_eq!(m.tx3, "<K1ABC IU3ABC> R+06");
+        assert_eq!(m.tx4, "<K1ABC IU3ABC> RRR");
+        assert_eq!(m.tx5, "<K1ABC IU3ABC> 73");
+        let mut weak = gen_std_msgs("IU3ABC", "IO91wm", "K1ABC", -1, false);
+        apply_msk144_short(&mut weak, "IU3ABC", "K1ABC", -1);
+        assert_eq!(weak.tx3, "<K1ABC IU3ABC> R+00");
     }
 }

@@ -208,8 +208,8 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                         Mode::Ft4 => 7,
                         Mode::Jt65 | Mode::Jt9 | Mode::Jt4 => 60,
                         Mode::Q65 => rig::q65_setup().period_s,
-                        // MSK144: il periodo del modo (15 s; WSJT-X ammette 5, 10, 15 e 30 s, `mainwindow.cpp:12081`)
-                        Mode::Msk144 => u32::try_from(Mode::Msk144.period_ms() / 1000).unwrap_or(15),
+                        // MSK144: il periodo scelto (5, 10, 15 o 30 s, `mainwindow.cpp:12081`)
+                        Mode::Msk144 => qso_native::slot::msk144_period_s(),
                     }),
                     own_continent: live.own_continent.clone(),
                     meters: live.controls.published_meters(),
@@ -287,6 +287,8 @@ pub fn start_with_save(
         let mut assembler = slots::SlotAssembler::new(mode);
         // Q65: periodo e sottomodo in uso (cambiano la durata dei periodi) e la media dei periodi deboli
         let mut q65_now = rig::q65_setup();
+        // MSK144: il periodo in uso (5, 10, 15 o 30 s): cambiarlo rifa' i periodi come un cambio di modo
+        let mut msk_period_now = qso_native::slot::msk144_period_s();
         let mut q65_avg = jt::q65::Averager::new();
         let mut msk_rt = mskrt::Realtime::default();
         let mut hashes = CallHashes::default();
@@ -471,6 +473,26 @@ pub fn start_with_save(
                 if rig::take_q65_clear_avg() {
                     q65_avg.clear();
                     tracing::info!("motore proprio: media Q65 svuotata");
+                }
+                // MSK144: un altro periodo T/R (scelto o ricordato per la banda) rifa' i periodi come un cambio di modo
+                if mode == Mode::Msk144 {
+                    l.controls.sync_msk144_period();
+                }
+                let msk_period_wanted = qso_native::slot::msk144_period_s();
+                if msk_period_wanted != msk_period_now {
+                    msk_period_now = msk_period_wanted;
+                    if mode == Mode::Msk144 {
+                        tracing::info!("motore proprio: MSK144 con periodi di {msk_period_now} s");
+                        assembler = slots::SlotAssembler::new(mode);
+                        last_slot = None;
+                        last_texts.clear();
+                        msk_rt.reset();
+                        if let Some(d) = driver.as_mut() {
+                            for line in d.period_changed() {
+                                tracing::info!("trasmissione: {line}");
+                            }
+                        }
+                    }
                 }
                 // Q65: un altro periodo o sottomodo rifa' i periodi come un cambio di modo
                 let q65_wanted = rig::q65_setup();
@@ -1024,11 +1046,11 @@ fn as_decoded(freq_hz: f32, dt_s: f32, snr_db: i32, text: String) -> ft8::decode
 /// MSK144: le opzioni di `mskrtd` (`fastSink` di `mainwindow.cpp`: `RxFreq`, `ftol`, `ndepth`, nominativi, `bshmsg`, `bswl`). La frequenza di
 /// ricezione e' quella della barra se sta fra 1400 e 1600 Hz (i limiti che WSJT-X da' a «Rx» in MSK144, `mainwindow.cpp:12096-12098`),
 /// altrimenti 1500 Hz, il valore che WSJT-X imposta entrando nel modo: in Aurora la barra resta dove la lascia l'altro modo. F Tol e profondita'
-/// vengono dalle Impostazioni (`Ftol_MSK144` e `NDepth`, 50 Hz e Deep di fabbrica come WSJT-X, vedi `decode_opts`). Aurora non ha ancora «Sh»: i
-/// messaggi brevi del QSO si cercano sempre, come gia' faceva Aurora (in WSJT-X solo con «Sh» acceso). «SWL» e' l'interruttore `swl`.
+/// vengono dalle Impostazioni (`Ftol_MSK144` e `NDepth`, 50 Hz e Deep di fabbrica come WSJT-X, vedi `decode_opts`). I messaggi brevi del QSO si
+/// cercano con «Sh» acceso (`bshmsg`, `mainwindow.cpp:2953`; `mskrtd.f90:130`), «SWL» e' l'interruttore `swl`.
 fn msk144_options(rx_hz: Option<f32>, my_call: &str, his_call: &str, swl: bool) -> jt::msk144::Options {
     let rx = rx_hz.filter(|f| (1400.0..=1600.0).contains(f)).unwrap_or(1500.0);
-    let mut o = jt::msk144::Options { f_center_hz: rx, tolerance_hz: 50, depth: 3, my_call: my_call.to_string(), his_call: his_call.to_string(), short_messages: true, swl };
+    let mut o = jt::msk144::Options { f_center_hz: rx, tolerance_hz: 50, depth: 3, my_call: my_call.to_string(), his_call: his_call.to_string(), short_messages: rig::msk144_short(), swl };
     // F Tol e profondita' dalle Impostazioni (`Ftol_MSK144`, `NDepth`)
     decode_opts::tune_msk144(&decode_opts::current(), &mut o);
     o
