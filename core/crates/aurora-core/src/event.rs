@@ -313,6 +313,41 @@ pub enum Event {
     Sstv(SstvEvent),
     /// Un avvenimento dei modi testuali (PSK31/PSK63, RTTY).
     Digi(DigiEvent),
+    /// Un periodo WSPR o FST4W ricevuto dal vivo e decodificato (anche senza messaggi): serve solo all'invio facoltativo a WSPRnet, la pagina
+    /// non lo riceve.
+    WsprCycle(WsprCycle),
+}
+
+/// Un periodo WSPR o FST4W decodificato, con quello che WSJT-X manda a WSPRnet (`uploadWSPRSpots`, `widgets/mainwindow.cpp:14353-14377`).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct WsprCycle {
+    /// `WSPR` o `FST4W`.
+    pub mode: String,
+    /// Durata del periodo T/R in secondi (120 in WSPR; 120, 300, 900 o 1800 in FST4W).
+    pub period_s: u32,
+    /// Inizio del periodo, millisecondi Unix.
+    pub slot_start_unix_ms: u64,
+    /// Frequenza della radio durante il periodo, Hz (0 = non nota: niente invio).
+    pub dial_hz: u64,
+    /// Frequenza audio di trasmissione (la `tqrg` del radiofaro), Hz.
+    pub tx_df: u32,
+    /// «Tx Pct» se Abilita Tx e' acceso, altrimenti 0 (`autoButton->isChecked () ? sbTxPercent->value () : 0`).
+    pub tx_pct: u8,
+    /// Potenza dichiarata dal radiofaro, dBm.
+    pub dbm: u8,
+    pub spots: Vec<WsprSpot>,
+}
+
+/// Un messaggio WSPR o FST4W ricevuto.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct WsprSpot {
+    pub snr: i32,
+    pub dt_s: f32,
+    /// Frequenza audio del segnale, Hz (in WSPR il centro, in FST4W quella del messaggio come la scrive `jt9`).
+    pub audio_hz: f64,
+    /// Deriva in Hz (sempre 0 in FST4W, come WSJT-X).
+    pub drift_hz: i32,
+    pub message: String,
 }
 
 /// Un avvenimento dell'SSTV. `kind`: `rx_start` (modo, larghezza, altezza), `rx_rows` (righe nuove da `first_row`, `rows` righe, `rgb`

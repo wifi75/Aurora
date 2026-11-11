@@ -841,6 +841,15 @@ pub fn start_with_save(
                 if let Some(live) = &live {
                     let rest: Vec<ft8::decode::Decoded> = decoded.iter().filter(|d| !early.contains(&d.text)).cloned().collect();
                     publish(live, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &rest);
+                    // WSPR e FST4W: il periodo decodificato (anche vuoto) per l'invio facoltativo a WSPRnet, che decide il crate `reporting`
+                    if matches!(mode, Mode::Wspr | Mode::Fst4w) {
+                        let mid = slot.start_unix_ms + mode.period_ms() / 2;
+                        let dial = all_txt.as_ref().map_or(0, |a| a.dial_at(mid));
+                        let dial = if dial == 0 { live.dial_hz.load(Ordering::Relaxed) } else { dial };
+                        let tx_enabled = tx::view_of(&live.controls).enabled;
+                        let tx_df = live.controls.tx_df.load(Ordering::Relaxed);
+                        let _ = message_events.send(Event::WsprCycle(wspr_cycle(mode, slot.start_unix_ms, dial, tx_df, tx_enabled, &decoded)));
+                    }
                 }
                 // i comandi arrivati mentre si decodificava (STOP TX, Esc, Abilita Tx) valgono PRIMA di decidere cosa trasmettere dopo questo periodo
                 while let Ok(command) = command_rx.try_recv() {
@@ -1206,6 +1215,31 @@ fn decode_period(
                 .map(|d| ft8::decode::Decoded { hint: d.ap > 0, ..as_decoded(d.freq_hz, d.dt_s, d.snr_db, d.text) })
                 .collect()
         }
+    }
+}
+
+/// Il periodo WSPR/FST4W decodificato come serve a WSPRnet (`uploadWSPRSpots`, `mainwindow.cpp:14353-14377`): la frequenza Tx del radiofaro
+/// (1400-1600 Hz, altrimenti 1500 come la trasmissione), «Tx Pct» solo con Abilita Tx acceso, la potenza e i messaggi con la deriva (WSPR).
+fn wspr_cycle(mode: Mode, slot_start_unix_ms: u64, dial_hz: u64, tx_df: u32, tx_enabled: bool, decoded: &[ft8::decode::Decoded]) -> aurora_core::WsprCycle {
+    let fst4w = mode == Mode::Fst4w;
+    aurora_core::WsprCycle {
+        mode: if fst4w { "FST4W" } else { "WSPR" }.to_string(),
+        period_s: (mode.period_ms() / 1000) as u32,
+        slot_start_unix_ms,
+        dial_hz,
+        tx_df: if (1400..=1600).contains(&tx_df) { tx_df } else { 1500 },
+        tx_pct: if tx_enabled { wspr::tx_pct() } else { 0 },
+        dbm: wspr::power_dbm(),
+        spots: decoded
+            .iter()
+            .map(|d| aurora_core::WsprSpot {
+                snr: d.snr_db,
+                dt_s: d.dt_s,
+                audio_hz: f64::from(d.freq_hz),
+                drift_hz: if fst4w { 0 } else { wspr::last_drift(&d.text).round() as i32 },
+                message: d.text.clone(),
+            })
+            .collect(),
     }
 }
 

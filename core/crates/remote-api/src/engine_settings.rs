@@ -87,6 +87,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     "HrdlogSend",
     "HrdlogCall",
     "HrdlogCode",
+    // spot WSPR/FST4W a WSPRnet («Upload spots» di WSJT-X, spento di fabbrica)
+    "WSPRnetUpload",
     // ricerca dei nominativi (tooltip del DX Cluster): QRZ.com XML e HamQTH
     "QRZLookup",
     "QRZUser",
@@ -394,7 +396,7 @@ pub fn support(key: &str) -> Support {
         "ApplyFiltersToUDPmessages" => Support::Hidden("udp_filters"),
         "preventFalseUDPspots" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         // spotting verso internet: PSK Reporter in automatico, DXSummit a richiesta (pulsante), eQSL solo con la protezione dei segreti del sistema
-        "PSKReporter" | "AllowSpotsDXSummit" => Support::Live(Apply::Now),
+        "PSKReporter" | "AllowSpotsDXSummit" | "WSPRnetUpload" => Support::Live(Apply::Now),
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         // invio diretto dei QSO: chiavi e password solo nella protezione dei segreti; LoTW usa il certificato di TQSL e non ne ha bisogno
         "WavelogSend" | "WavelogUrl" | "WavelogKey" | "WavelogStation" | "ClublogSend" | "ClublogEmail" | "ClublogPasswd" | "ClublogCall" | "ClublogApiKey" | "QRZLogSend"
@@ -554,6 +556,8 @@ pub struct Reports {
     /// Spotting su PSK Reporter (`PSKReporter`) e pulsante di spot su DXSummit (`AllowSpotsDXSummit`).
     pub psk: bool,
     pub dxsummit: bool,
+    /// Spot WSPR e FST4W a WSPRnet (`WSPRnetUpload`, spento di fabbrica).
+    pub wsprnet: bool,
     /// Invio a eQSL: acceso (`EQSLSend`), utente e nickname; la password sta nella protezione dei segreti.
     pub eqsl: bool,
     pub eqsl_user: String,
@@ -676,6 +680,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("PSKReporter", "true"),
         // anche lo spot su DXSummit e' acceso di base (scelta del proprietario): parte solo dal pulsante «Spot DX», mai da solo
         ("AllowSpotsDXSummit", "true"),
+        // WSPRnet: spento come in WSJT-X («UploadSpots», `mainwindow_settings.cpp:594`)
+        ("WSPRnetUpload", "false"),
         ("EQSLSend", "false"),
         ("EQSLUser", ""),
         ("EQSLNick", ""),
@@ -930,7 +936,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
@@ -1043,6 +1049,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         tcp: truthy(values.get("EnableTCPConnection")).then(|| parse_server(get("TCPServer"), get("TCPServerPort"))).flatten(),
         psk: truthy(values.get("PSKReporter")),
         dxsummit: truthy(values.get("AllowSpotsDXSummit")),
+        wsprnet: truthy(values.get("WSPRnetUpload")),
         eqsl: truthy(values.get("EQSLSend")) && !get("EQSLUser").is_empty(),
         eqsl_user: get("EQSLUser").to_string(),
         eqsl_nick: get("EQSLNick").to_string(),

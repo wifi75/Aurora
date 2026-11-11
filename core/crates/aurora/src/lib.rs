@@ -734,6 +734,7 @@ fn reporting_config(r: &remote_api::engine_settings::Reports, tx_power: &str) ->
         antenna: String::new(),
         psk: r.psk,
         dxsummit: r.dxsummit,
+        wsprnet: r.wsprnet,
         tcp: r.tcp,
         eqsl: r.eqsl.then(|| reporting::EqslAccount { user: r.eqsl_user.clone(), nick: r.eqsl_nick.clone() }),
         wavelog: r.wavelog.then(|| reporting::WavelogAccount { url: r.wavelog_url.clone(), station_id: r.wavelog_station.clone() }),

@@ -265,6 +265,7 @@ const STATUS_OF: Record<string, string> = {
   EQSLSend: 'eqsl',
   EnableTCPConnection: 'tcp',
   AllowSpotsDXSummit: 'dxsummit',
+  WSPRnetUpload: 'wsprnet',
   WavelogSend: 'wavelog',
   ClublogSend: 'clublog',
   QRZLogSend: 'qrz',

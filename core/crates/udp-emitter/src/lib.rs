@@ -439,7 +439,8 @@ impl Session {
             | Event::Fox(_)
             | Event::Notice { .. }
             | Event::Sstv(_)
-            | Event::Digi(_) => Vec::new(),
+            | Event::Digi(_)
+            | Event::WsprCycle(_) => Vec::new(),
             // «Cancella» della finestra di banda (0) o di tutte e due (2): come `decodes_cleared` di WSJT-X si manda il Clear e si dimenticano i
             // decode, cosi' il Replay non rimanda righe cancellate e GridTracker/JTAlert svuotano la loro lista
             Event::ClearDecodes { window } if *window == 0 || *window == 2 => {
