@@ -68,12 +68,11 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 ## Prompt da incollare nella sessione nuova
 
 ```text
-Riprendi il lavoro su Aurora nella cartella D:\progetti\pc\Aurora.
-1. Leggi AGENTS.md, docs/ripresa.md, memory.md (sezione «Come riprendere»), TODO.md e docs/tasks.md.
-2. Allineati: git fetch, controlla main e i rami in corso elencati sotto.
-3. Dimmi in breve a che punto siamo, poi riprendi dal punto «Prossimo passo» di docs/ripresa.md.
-Regole: niente riferimenti all'assistente nei file e nei commit; mai il locatore vero; il push e le release sono autorizzati solo quando il proprietario dice «pubblica» (dal 2026-11-08 si lavora in locale);
-le prove dal vivo con la radio le faccio io.
+Riprendi il lavoro su Aurora nella cartella D:\progetti\Aurora.
+1. Leggi AGENTS.md, docs/ripresa.md (la sezione «Stato al 2026-11-10 notte» in cima), memory.md e docs/tasks.md.
+2. Allineati: git fetch su origin e sul remote sviluppo; main e sviluppo erano allineati ai remoti (main 57890cee alla 0.11.232, sviluppo 6e1c1499).
+3. Dimmi in breve a che punto siamo; poi, per prima cosa: controlla che l'installatore di sviluppo abbia la CW nel menu Modo e rispondi a chi segnalava il PTT (la 0.11.232 e' pubblicata); poi riprendi dai punti «Da fare» di docs/ripresa.md.
+Regole: niente riferimenti all'assistente nei file e nei commit (niente trailer); mai il locatore vero ne' email personali; push e release autorizzati (AGENTS.md); un push su sviluppo annulla la compilazione in corso, quindi raggruppali; dopo ogni versione di main, git merge main in sviluppo; le prove dal vivo con la radio le faccio io; i testi sono in sei lingue.
 ```
 
 ## Stato
