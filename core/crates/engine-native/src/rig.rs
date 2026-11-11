@@ -183,6 +183,12 @@ pub struct NativeControls {
     caller_filter: Mutex<Option<CallerFilter>>,
     /// Lo stato della stazione si sta gia' pubblicando (lo avvia `publish_status`, anche senza ingresso audio): il motore non ne avvia un secondo.
     pub status_published: AtomicBool,
+    /// Lo split della radio e' attivo (CAT Hamlib, TCI o FT-991 con «Split: Rig» o «Fake It»): in FT8 e FT4 il tono audio si sposta come `setXIT`
+    /// di WSJT-X. Lo dice chi ha il CAT (Aurora), a ogni onda: vale subito anche una scelta cambiata nelle Impostazioni.
+    split_probe: Mutex<Option<std::sync::Arc<dyn Fn() -> bool + Send + Sync>>>,
+    /// La frequenza audio di trasmissione con cui e' stata fatta l'ultima onda (Hz, prima dello spostamento dello split): al PTT il CAT sposta il VFO
+    /// di trasmissione con lo stesso valore, cosi' VFO e tono coincidono anche quando la frequenza cambia (Hound).
+    pub tx_audio_planned: AtomicU32,
     /// Monitora: con ascolto spento non si decodifica (e lo stato dice che non si sta decodificando). Di base acceso.
     pub monitor: AtomicBool,
     /// Frequenza audio di ricezione, in Hz.
@@ -272,11 +278,32 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0) }
     }
 }
 
 impl NativeControls {
+    /// Chi ha il CAT dice se lo split della radio e' attivo (vedi `split_probe`).
+    pub fn set_split_probe(&self, probe: std::sync::Arc<dyn Fn() -> bool + Send + Sync>) {
+        *self.split_probe.lock().unwrap_or_else(|p| p.into_inner()) = Some(probe);
+    }
+
+    /// Lo split della radio e' attivo adesso.
+    pub fn radio_split_active(&self) -> bool {
+        self.split_probe.lock().unwrap_or_else(|p| p.into_inner()).as_ref().is_some_and(|probe| probe())
+    }
+
+    /// Il tono audio da trasmettere per la frequenza Tx `tx_hz`: con lo split della radio, in FT8 e FT4, `tx_hz - XIT` con XIT = `(tx/500)*500 - 1500`
+    /// (`setXIT` di `mainwindow.cpp`, WSJT-X 3.3: «Don't use XIT for VHF & up» salvo FT4/FT8), cosi' l'audio resta tra 1500 e 2000 Hz e il VFO di
+    /// trasmissione, spostato dello stesso XIT, porta il segnale dove deve stare. Negli altri modi e senza split il tono e' `tx_hz`.
+    pub fn tx_audio_hz(&self, tx_hz: u32, ft8_or_ft4: bool) -> u32 {
+        if !ft8_or_ft4 || !self.radio_split_active() {
+            return tx_hz;
+        }
+        let shifted = i64::from(tx_hz) - rig_control::cat_config::split_xit_hz(tx_hz);
+        u32::try_from(shifted.max(0)).unwrap_or(tx_hz)
+    }
+
     /// Il momento di avvio della decodifica FT8.
     pub fn decoder_start(&self) -> crate::features::DecoderStart {
         crate::features::DecoderStart::from_code(self.decoder_start.load(Ordering::Relaxed))
@@ -994,6 +1021,22 @@ impl Rig for NativeRig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Con lo split della radio il tono si sposta di XIT = (tx/500)*500 - 1500 come `setXIT` di WSJT-X, solo in FT8/FT4: il VFO si sposta dello stesso
+    /// XIT e il segnale esce su dial + tx.
+    #[test]
+    fn with_radio_split_the_tone_moves_by_the_wsjtx_xit() {
+        let c = NativeControls::default();
+        assert_eq!(c.tx_audio_hz(2300, true), 2300, "senza split il tono e' la frequenza Tx");
+        c.set_split_probe(std::sync::Arc::new(|| true));
+        for tx in [300u32, 700, 1200, 1500, 1999, 2300, 2999] {
+            let audio = c.tx_audio_hz(tx, true);
+            let xit = rig_control::cat_config::split_xit_hz(tx);
+            assert_eq!(i64::from(audio) + xit, i64::from(tx), "tx {tx}");
+            assert!((1500..2000).contains(&audio), "tx {tx}: tono {audio} fuori da 1500-2000");
+        }
+        assert_eq!(c.tx_audio_hz(2300, false), 2300, "JT65, JT9, Q65: niente XIT");
+    }
 
     /// I nomi di WSJT-X «Q65-60B»: periodo e sottomodo; quelli che non esistono si scartano.
     #[test]

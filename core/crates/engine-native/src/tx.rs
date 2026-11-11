@@ -137,6 +137,8 @@ pub enum TxCommand {
     SetTxFreq(u32),
     /// STOP TX: ferma subito audio e PTT e spegne la sequenza.
     Halt,
+    /// «Abilita Tx» spento senza fermare il messaggio in onda (HaltTx «solo automatico» dal protocollo UDP).
+    StopAuto,
     /// Messaggio libero: con testo lo prepara (come scriverlo nel campo Tx5), con `send` lo trasmette una volta; `send` senza testo
     /// trasmette quello preparato; senza testo e senza `send` lo svuota.
     FreeText { text: String, send: bool },
@@ -602,6 +604,12 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         // ogni intervento dell'operatore azzera il watchdog (`eventFilter`/`txwatchdog(false)` di JTDX)
         self.seq.user_activity();
         self.sync_rx_from_user();
+        // una scelta del DX fatta dall'operatore disarma Wait and Pounce (`cancelAutomaticCQSelection` di WSJT-X 3.3, «preserve manual targets»):
+        // senza, il primo CQ sentito sostituiva il DX scelto a mano
+        if matches!(command, TxCommand::Reply { .. } | TxCommand::QueueReply { .. } | TxCommand::SetDx { .. }) && self.controls.switch_on("pounce") {
+            self.controls.set_switch("pounce", false);
+            log.push("Wait and Pounce disarmato: DX scelto dall'operatore".to_string());
+        }
         match command {
             TxCommand::Reply { decode_id } => match self.recent.iter().find(|r| r.id == decode_id) {
                 Some(r) => {
@@ -705,6 +713,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 } else {
                     log.push(format!("frequenza Tx fuori campo: {hz} Hz"));
                 }
+            }
+            TxCommand::StopAuto => {
+                self.seq.set_enabled(false);
+                self.publish_view();
+                log.push("Abilita Tx spento da un programma collegato (il messaggio in onda finisce)".to_string());
             }
             TxCommand::Halt => {
                 self.halt_tx();
@@ -919,7 +932,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
 
     /// «Tune»: un'onda sinusoidale sulla frequenza Tx, lunga quanto una trasmissione del modo, nel prossimo periodo utile.
     fn tune(&mut self, now_s: f64) -> String {
-        let hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
+        let tx_hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
+        self.controls.tx_audio_planned.store(tx_hz, Ordering::Relaxed);
+        let hz = self.controls.tx_audio_hz(tx_hz, matches!(self.mode, Mode::Ft8 | Mode::Ft4));
         let mode = match self.mode {
             Mode::Ft8 => tx_native::Mode::Ft8,
             Mode::Ft4 => tx_native::Mode::Ft4,
@@ -1315,7 +1330,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             && now_s >= until
         {
             self.wait_call_until = None;
-            if self.seq.is_enabled() && self.seq.ntx() <= 1 {
+            // con «Salta Tx1» la chiamata e' Tx2: si confronta con il primo messaggio vero, non con Tx1 (prima con Salta Tx1 non si spegneva mai)
+            if self.seq.is_enabled() && self.seq.is_calling() {
                 self.seq.set_enabled(false);
                 self.halt_tx();
                 log.push("Wait and Call: il DX non ha risposto, trasmissione spenta".to_string());
@@ -1732,6 +1748,9 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// (`pack77`) se ne trasmettono i primi 13. Restituisce l'onda e il testo davvero inviato.
     fn encode(&mut self, text: &str, freq: u32, free: bool) -> Result<(Vec<f32>, String), String> {
         let mode = self.mode;
+        // con lo split della radio il tono si sposta (XIT) e il CAT sposta il VFO di trasmissione dello stesso valore al PTT
+        self.controls.tx_audio_planned.store(freq, Ordering::Relaxed);
+        let freq = self.controls.tx_audio_hz(freq, matches!(mode, Mode::Ft8 | Mode::Ft4));
         let mut run = |t: &str| -> Result<Vec<f32>, String> {
             match mode {
                 Mode::Ft8 => {

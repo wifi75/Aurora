@@ -487,6 +487,11 @@ impl Sequencer {
         self.shown_ntx()
     }
 
+    /// Si sta ancora chiamando il DX (primo messaggio della sequenza: Tx1, o Tx2 con «Salta Tx1»): il DX non ha ancora risposto.
+    pub fn is_calling(&self) -> bool {
+        self.ntx() <= self.start_ntx()
+    }
+
     pub fn phase(&self) -> Phase {
         if !self.his_call.is_empty() {
             Phase::from_ntx(self.ntx)

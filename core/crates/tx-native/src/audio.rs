@@ -450,6 +450,13 @@ impl CpalSink {
                         on_error,
                         None,
                     ),
+                    // 24 bit: alcune schede in modalita' condivisa di Windows espongono solo questo; prima l'uscita non si apriva
+                    cpal::SampleFormat::I24 => device.build_output_stream(
+                        config,
+                        move |data: &mut [cpal::I24], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| <cpal::I24 as cpal::Sample>::from_sample(s.clamp(-1.0, 1.0))),
+                        on_error,
+                        None,
+                    ),
                     cpal::SampleFormat::U16 => device.build_output_stream(
                         config,
                         move |data: &mut [u16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0 + 32768.0) as u16),

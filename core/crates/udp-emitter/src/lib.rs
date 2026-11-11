@@ -436,11 +436,17 @@ impl Session {
             | Event::AudioLevel(_)
             | Event::BandChanged { .. }
             | Event::HighlightCallsign { .. }
-            | Event::ClearDecodes { .. }
             | Event::Fox(_)
             | Event::Notice { .. }
             | Event::Sstv(_)
             | Event::Digi(_) => Vec::new(),
+            // «Cancella» della finestra di banda (0) o di tutte e due (2): come `decodes_cleared` di WSJT-X si manda il Clear e si dimenticano i
+            // decode, cosi' il Replay non rimanda righe cancellate e GridTracker/JTAlert svuotano la loro lista
+            Event::ClearDecodes { window } if *window == 0 || *window == 2 => {
+                self.recent.clear();
+                self.send(encode_clear(&self.config.id, self.schema)).into_iter().collect()
+            }
+            Event::ClearDecodes { .. } => Vec::new(),
         }
     }
 
@@ -565,7 +571,9 @@ impl Session {
                 }
             }
             // «solo Abilita Tx» o tutto: in Aurora l'unico comando e' lo STOP della trasmissione
-            Request::HaltTx { .. } => handled.commands.push(Command::HaltTx),
+            // «solo automatico» (`auto_tx_only`): come WSJT-X spegne Abilita Tx e lascia finire il messaggio in onda; altrimenti STOP subito
+            Request::HaltTx { auto_tx_only: true } => handled.commands.push(Command::StopAutoTx),
+            Request::HaltTx { auto_tx_only: false } => handled.commands.push(Command::HaltTx),
             Request::FreeText { text, send } => handled.commands.push(Command::SendFreeText { text, send }),
             Request::SetTxFreq { hz } => {
                 if (1..=5000).contains(&hz) {
@@ -894,6 +902,21 @@ async fn send_all(sockets: &[Arc<UdpSocket>], routes: &[Route], datagrams: &[Vec
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn halt_tx_auto_only_stops_auto_tx_and_clear_forgets_the_decodes() {
+        let mut s = Session::new(EmitterConfig { accept_requests: true, ..EmitterConfig::jtdx(Vec::new()) });
+        let auto_only = s.on_datagram(&udp_bridge::encode_halt_tx("JTDX", 3, true), false);
+        assert_eq!(auto_only.commands, vec![Command::StopAutoTx]);
+        let now = s.on_datagram(&udp_bridge::encode_halt_tx("JTDX", 3, false), false);
+        assert_eq!(now.commands, vec![Command::HaltTx]);
+        // «Cancella» della finestra di banda: si manda il Clear e il Replay non ha piu' niente da rimandare
+        s.recent.push_back(Recent { id: 1, time_ms: 0, freq_hz: 1000, snr: -10, delta_time: 0.1, text: "CQ K1ABC FN42".into(), hint: false });
+        let out = s.on_event(&Event::ClearDecodes { window: 0 }, false, 0);
+        assert_eq!(out.len(), 1);
+        assert!(s.recent.is_empty());
+        assert!(s.on_event(&Event::ClearDecodes { window: 1 }, false, 0).is_empty(), "la finestra Rx non tocca GridTracker");
+    }
 
     #[test]
     fn the_location_is_read_like_wsjtx() {

@@ -584,16 +584,10 @@ impl Inner {
                     self.vfo_seq[1].fetch_add(1, Ordering::SeqCst);
                 }
                 TciEvent::Modulation { rx, mode } if rx == self.rx => {
+                    // come `Cmd_Mode` di WSJT-X 3.3 (`observe_mode`): il modo della SDR si legge e basta. Un cambio fatto dall'operatore sulla SDR non si
+                    // annulla piu' (prima si rimandava subito quello voluto e il modo non si poteva cambiare dal pannello della SDR); il modo voluto si
+                    // riscrive solo dopo un cambio di frequenza fatto da Aurora
                     self.update(|s| s.mode = Some(mode.to_ascii_uppercase()));
-                    // come `Cmd_Mode` di WSJT-X: se la SDR cambia modo (cambio di banda, manopola) si rimanda quello voluto
-                    let wanted = self.wanted_mode.lock().ok().and_then(|w| *w);
-                    if let Some(wanted) = wanted
-                        && self.ready.load(Ordering::SeqCst)
-                        && !self.mode_busy.load(Ordering::SeqCst)
-                        && !mode.eq_ignore_ascii_case(wanted)
-                    {
-                        self.send(cmd_modulation(self.rx, wanted));
-                    }
                 }
                 TciEvent::Trx { rx, on } if rx == self.rx => {
                     self.update(|s| s.ptt = on);

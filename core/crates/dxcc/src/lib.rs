@@ -10,6 +10,9 @@ pub struct Entity {
     /// Latitudine e longitudine del paese in centesimi di grado (nord ed est positivi; cty.dat scrive la longitudine ovest positiva).
     pub lat_e2: i32,
     pub lon_e2: i32,
+    /// Entita' solo WAE (prefisso con `*` in `cty.dat`: Sicilia, Turchia europea, Shetland...): non e' un paese DXCC. I suoi nominativi vanno al
+    /// paese DXCC genitore, come la vista DXCC di WSJT-X (`AD1CCty.cpp`, `include_WAE_entities` spento).
+    pub wae: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,6 +62,11 @@ impl DxccDb {
         self.entities.len()
     }
 
+    /// Quanti paesi DXCC (senza le entita' solo WAE).
+    pub fn dxcc_count(&self) -> usize {
+        self.entities.iter().filter(|e| !e.wae).count()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.entities.is_empty()
     }
@@ -77,10 +85,15 @@ impl DxccDb {
         };
         let mut aliases = String::new();
         let mut current: Option<usize> = None;
+        // le entita' WAE si risolvono dopo, quando i paesi DXCC sono tutti caricati
+        let mut wae: Vec<(usize, String)> = Vec::new();
         for line in text.lines() {
             let indented = line.starts_with(' ') || line.starts_with('\t');
             if !indented && line.contains(':') {
-                db.flush(current, &aliases);
+                match current {
+                    Some(i) if db.entities[i].wae => wae.push((i, std::mem::take(&mut aliases))),
+                    _ => db.flush(current, &aliases, None),
+                }
                 aliases.clear();
                 current = db.read_header(line);
                 if current.is_none() {
@@ -90,7 +103,25 @@ impl DxccDb {
                 aliases.push_str(line.trim());
             }
         }
-        db.flush(current, &aliases);
+        match current {
+            Some(i) if db.entities[i].wae => wae.push((i, std::mem::take(&mut aliases))),
+            _ => db.flush(current, &aliases, None),
+        }
+        // ogni entita' WAE va al paese DXCC a cui porta la maggioranza dei suoi prefissi (`derive_wae_parents` di WSJT-X 3.3); i suoi prefissi e
+        // nominativi esatti puntano a quel paese, con le zone proprie, senza togliere quelli che un paese DXCC ha gia'
+        for (index, list) in wae {
+            let main = db.entities[index].prefix.to_uppercase();
+            let mut votes: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
+            for token in list.trim_end_matches(';').split(',').map(str::trim).filter(|t| !t.is_empty() && !t.starts_with('=')).chain(std::iter::once(main.as_str())) {
+                let (key, _, _) = split_overrides(token, 0, 0);
+                if let Some(hit) = db.by_prefix(&key) {
+                    *votes.entry(hit.entity).or_default() += 1;
+                }
+            }
+            if let Some((&parent, _)) = votes.iter().max_by_key(|(e, n)| (**n, std::cmp::Reverse(**e))) {
+                db.flush(Some(index), &list, Some(parent));
+            }
+        }
         if db.entities.is_empty() {
             return Err(DxccError::NoEntities);
         }
@@ -108,6 +139,7 @@ impl DxccDb {
             itu_zone: fields[2].parse().ok()?,
             continent: fields[3].to_string(),
             prefix: fields[7].trim_start_matches('*').to_string(),
+            wae: fields[7].starts_with('*'),
             lat_e2: fields[4].parse::<f64>().map_or(0, |v| (v * 100.0).round() as i32),
             lon_e2: fields[5].parse::<f64>().map_or(0, |v| (-v * 100.0).round() as i32),
         };
@@ -115,9 +147,12 @@ impl DxccDb {
         Some(self.entities.len() - 1)
     }
 
-    fn flush(&mut self, entity: Option<usize>, aliases: &str) {
+    /// Registra i prefissi e i nominativi esatti di un paese. Con `parent` (entita' WAE) puntano al paese DXCC genitore e non sostituiscono quelli gia'
+    /// presenti.
+    fn flush(&mut self, entity: Option<usize>, aliases: &str, parent: Option<usize>) {
         let Some(index) = entity else { return };
         let (cq, itu) = (self.entities[index].cq_zone, self.entities[index].itu_zone);
+        let target = parent.unwrap_or(index);
         for token in aliases.trim_end_matches(';').split(',') {
             let token = token.trim();
             if token.is_empty() {
@@ -131,19 +166,27 @@ impl DxccDb {
             if key.is_empty() {
                 continue;
             }
-            let lookup = Lookup { entity: index, cq_zone, itu_zone };
+            let lookup = Lookup { entity: target, cq_zone, itu_zone };
             if exact {
-                self.exact.insert(key, lookup);
+                if parent.is_some() {
+                    self.exact.entry(key).or_insert(lookup);
+                } else {
+                    self.exact.insert(key, lookup);
+                }
             } else {
                 self.longest_prefix = self.longest_prefix.max(key.len());
-                self.prefixes.insert(key, lookup);
+                if parent.is_some() {
+                    self.prefixes.entry(key).or_insert(lookup);
+                } else {
+                    self.prefixes.insert(key, lookup);
+                }
             }
         }
         // il prefisso principale e' sempre valido
         let main = self.entities[index].prefix.to_uppercase();
         if !main.is_empty() {
             self.longest_prefix = self.longest_prefix.max(main.len());
-            self.prefixes.entry(main).or_insert(Lookup { entity: index, cq_zone: cq, itu_zone: itu });
+            self.prefixes.entry(main).or_insert(Lookup { entity: target, cq_zone: cq, itu_zone: itu });
         }
     }
 
@@ -158,11 +201,11 @@ impl DxccDb {
         }
         let parts: Vec<&str> = call.split('/').filter(|p| !p.is_empty()).collect();
         let mut kept = Vec::new();
-        for part in &parts {
+        for (i, part) in parts.iter().enumerate() {
             match *part {
                 "MM" | "AM" => return None,
-                "P" | "M" | "QRP" | "A" | "B" | "LH" => {}
-                p if p.len() == 1 && p.chars().all(|c| c.is_ascii_digit()) => {}
+                // i suffissi nuovi (R, Q, FD, FF, LT, LGT) solo dopo il nominativo: davanti sono prefissi veri (LT/IU3ABC e' Argentina)
+                p if is_operating_suffix(p) && (i > 0 || is_classic_suffix(p)) => {}
                 p => kept.push(p),
             }
         }
@@ -239,6 +282,16 @@ pub fn distance_km(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
 }
 
 /// `AT5(15)[30]` -> ("AT5", Some zona CQ 15, zona ITU 30); gli altri modificatori si ignorano.
+/// Un suffisso operativo, che non dice il paese (`Radio.cpp` di WSJT-X 3.3: una cifra o A, M, P, Q, R, poi QRP, FD, FF, LH, LT, LGT; in piu' B dei
+/// beacon, che come prefisso darebbe la Cina). Prima mancavano R, Q, FD, FF, LT e LGT: IU3ABC/R risultava Russia, /FD Francia, /LGT Norvegia.
+pub fn is_operating_suffix(part: &str) -> bool {
+    matches!(part, "A" | "M" | "P" | "Q" | "R" | "B" | "QRP" | "FD" | "FF" | "LH" | "LT" | "LGT") || (part.len() == 1 && part.chars().all(|c| c.is_ascii_digit()))
+}
+
+fn is_classic_suffix(part: &str) -> bool {
+    matches!(part, "P" | "M" | "QRP" | "A" | "B" | "LH") || (part.len() == 1 && part.chars().all(|c| c.is_ascii_digit()))
+}
+
 fn split_overrides(token: &str, cq: u8, itu: u8) -> (String, u8, u8) {
     let (mut cq_zone, mut itu_zone) = (cq, itu);
     let key_end = token.find(['(', '[', '<', '{', '~']).unwrap_or(token.len());

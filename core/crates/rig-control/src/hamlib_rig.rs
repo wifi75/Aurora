@@ -350,7 +350,17 @@ impl Inner {
             return Err(RigError(format!("rigctld terminato: {}", link.note())));
         }
         let freq = link.client().frequency()?;
-        let mode = link.client().mode().ok();
+        let mut mode = link.client().mode().ok();
+        // il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, come WSJT-X (`RadioModePolicy`): prima solo al cambio di frequenza, e
+        // dopo l'avvio sulla stessa frequenza si poteva trasmettere nel modo che la radio aveva (USB analogico, FM...)
+        if let Some(wanted) = self.config.cat_mode.hamlib_name()
+            && !mode.as_ref().is_some_and(|m| mode_satisfies(wanted, &m.0))
+        {
+            match link.client().set_mode(wanted, 0) {
+                Ok(()) => mode = link.client().mode().ok().or(Some((wanted.to_string(), 0))),
+                Err(e) => tracing::warn!("modo {wanted} non scritto al collegamento: {e}"),
+            }
+        }
         self.ptt_readable.store(true, Ordering::SeqCst);
         if let Ok(mut until) = self.ptt_blocked_until.lock() {
             *until = Some(Instant::now() + self.timing.startup_block);
@@ -404,9 +414,12 @@ impl Inner {
         let (mut freq, mut mode, mut passband) = (None, None, None);
         if !self.transmitting() {
             freq = Some(client.frequency()?);
-            let (m, width) = client.mode()?;
-            mode = Some(m);
-            passband = Some(width).filter(|&w| w > 0);
+            // un errore sul modo non conta come guasto (`HamlibTransceiver.cpp` di WSJT-X: alcune Yaesu FTdx rispondono male): si tiene l'ultimo
+            // modo noto. Prima tre errori di fila facevano ricollegare la radio
+            if let Ok((m, width)) = client.mode() {
+                mode = Some(m);
+                passband = Some(width).filter(|&w| w > 0);
+            }
         }
         let ptt = if self.ptt_readable.load(Ordering::SeqCst) {
             match client.ptt() {
@@ -439,8 +452,10 @@ impl Inner {
             if fresh {
                 if freq.is_some() {
                     s.frequency_hz = freq;
-                    s.mode = mode;
-                    s.passband_hz = passband;
+                    if mode.is_some() {
+                        s.mode = mode;
+                        s.passband_hz = passband;
+                    }
                     if let Some(x) = extras {
                         s.extras = x;
                     }

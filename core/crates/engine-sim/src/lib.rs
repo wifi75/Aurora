@@ -228,7 +228,8 @@ impl State {
 
     fn handle(&mut self, command: Command, io: &EngineIo) {
         match command {
-            Command::HaltTx => {
+            // il simulatore non ha un messaggio in onda da lasciar finire: come uno STOP
+            Command::HaltTx | Command::StopAutoTx => {
                 self.status.transmitting = false;
                 let _ = io.events.send(Event::TxHalted);
                 self.emit_status(io);

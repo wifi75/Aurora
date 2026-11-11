@@ -1396,11 +1396,15 @@ impl engine_native::TxPort for WindowsVolumePort {
 /// (CAT, oppure DTR/RTS sulla porta indicata). Se la radio non e' collegata la trasmissione non parte.
 struct CatPtt {
     cat: Arc<rig_control::cat::CatService>,
+    controls: Arc<engine_native::NativeControls>,
     on: std::sync::atomic::AtomicBool,
 }
 
 impl tx_native::Ptt for CatPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        if on {
+            cat_tx_audio(&self.cat, &self.controls);
+        }
         cat_ptt(&self.cat, on)?;
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
         Ok(())
@@ -1409,6 +1413,31 @@ impl tx_native::Ptt for CatPtt {
     fn is_on(&self) -> bool {
         self.on.load(std::sync::atomic::Ordering::SeqCst)
     }
+}
+
+/// Prima del PTT: la frequenza audio dell'onda al CAT. Con «Split: Rig» sposta il VFO di trasmissione, con «Fake It» la radio durante la trasmissione
+/// (`setXIT` di WSJT-X). Prima non arrivava mai al CAT e lo split, vero o simulato, non si attivava.
+fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::NativeControls) {
+    let hz = controls.tx_audio_planned.load(std::sync::atomic::Ordering::Relaxed);
+    if hz == 0 {
+        return;
+    }
+    let result = match cat.backend() {
+        rig_control::cat_config::Backend::Hamlib => cat.hamlib().and_then(|r| r.set_tx_audio_frequency(hz)),
+        rig_control::cat_config::Backend::Tci => cat.tci().and_then(|r| r.set_tx_audio_frequency(hz)),
+        rig_control::cat_config::Backend::Ft991link => cat.ft991().and_then(|r| r.set_tx_audio_frequency(hz)),
+        _ => Ok(()),
+    };
+    if let Err(e) = result {
+        tracing::warn!("split: frequenza di trasmissione non passata alla radio: {e}");
+    }
+}
+
+/// Lo split della radio e' attivo: scelto nelle Impostazioni (Rig o Fake It) con un CAT che lo sa fare (Hamlib, TCI, FT-991 Link; non OmniRig).
+fn cat_split_active(cat: &rig_control::cat::CatService) -> bool {
+    let config = cat.config();
+    config.split != rig_control::cat_config::SplitMode::None
+        && matches!(config.backend, rig_control::cat_config::Backend::Hamlib | rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link)
 }
 
 /// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `T 1` / `T 0` di rigctld con Hamlib.
@@ -1572,8 +1601,13 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
 fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
+    // lo split della radio vale solo con il PTT dal CAT (con un PTT su seriale o VOX la radio non riceve la frequenza di trasmissione)
+    if method == "cat" {
+        let probe_cat = Arc::clone(cat);
+        controls.set_split_probe(Arc::new(move || cat_split_active(&probe_cat)));
+    }
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
-        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
+        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), controls: Arc::clone(controls), on: std::sync::atomic::AtomicBool::new(false) }),
         // nessun PTT da JTDX e nessuna radio ancora scelta all'avvio: si decide a ogni trasmissione
         "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
@@ -1810,7 +1844,7 @@ pub async fn run(
     // le regole nuove dell'automazione: ora locale per la fascia oraria, paesi per le esclusioni, «nuovo modo» dal log come la scheda DXCC
     automation.set_local_offset(Arc::new(local_offset_secs));
     if let Some((db, worked)) = &enrichment {
-        automation.set_countries((0..db.len()).map(|i| db.entity(i).name.clone()).collect());
+        automation.set_countries((0..db.len()).filter(|&i| !db.entity(i).wae).map(|i| db.entity(i).name.clone()).collect());
         let (db, worked) = (Arc::clone(db), Arc::clone(worked));
         automation.set_new_mode_matcher(Arc::new(move |call, mode| {
             // log vuoto: tutto sarebbe «nuovo», come per le etichette delle decodifiche non si segnala nulla
@@ -2437,6 +2471,7 @@ pub async fn run(
                 while let Some(command) = commands.recv().await {
                     let mapped = match command {
                         aurora_core::Command::HaltTx => engine_native::TxCommand::Halt,
+                        aurora_core::Command::StopAutoTx => engine_native::TxCommand::StopAuto,
                         aurora_core::Command::Reply { decode_id } => engine_native::TxCommand::Reply { decode_id },
                         aurora_core::Command::QueueReply { decode_id } => engine_native::TxCommand::QueueReply { decode_id },
                         aurora_core::Command::SendFreeText { text, send } => engine_native::TxCommand::FreeText { text, send },

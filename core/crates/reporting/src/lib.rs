@@ -432,6 +432,7 @@ impl Service {
 
 async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver<Event>, mut config_rx: watch::Receiver<Config>) {
     let mut queue: VecDeque<psk::Spot> = VecDeque::new();
+    let mut spot_cache: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
     let mut packetizer = psk::Packetizer::new(random_id());
     let mut dial_hz: u64 = 0;
     let mut mode = "FT8".to_string();
@@ -477,7 +478,7 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                     let config = service.config.borrow().clone();
                     if config.psk && !config.call.is_empty() {
                         let period = Period { dial_hz, mode: &mode, blocked_until_ms, previous: previous.as_ref().map(|(h, m)| (*h, m.as_str())) };
-                        queue_spot(&mut queue, &d, &period, (service.now)());
+                        queue_spot(&mut queue, &d, &period, (service.now)(), Some(&mut spot_cache));
                     }
                 }
                 Ok(Event::QsoLogged(q)) => {
@@ -488,7 +489,11 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                     }
                 }
                 Ok(_) | Err(RecvError::Lagged(_)) => {}
-                Err(RecvError::Closed) => break,
+                Err(RecvError::Closed) => {
+                    // alla chiusura si manda quello che e' in coda (WSJT-X invia alla chiusura e al cambio di banda)
+                    flush_psk(&service, &mut packetizer, &mut queue).await;
+                    break;
+                }
             },
             _ = tick.tick() => flush_psk(&service, &mut packetizer, &mut queue).await,
             changed = config_rx.changed() => {
@@ -517,7 +522,11 @@ struct Period<'a> {
 /// non «ipotizzato», non del periodo del cambio di banda). Un messaggio di un periodo precedente al cambio si segnala con la banda di allora.
 /// L'ora dello spot e' quella del periodo del messaggio, con la data giusta anche a cavallo della mezzanotte (`DecodedTime::spotTime` di
 /// WSJT-X 3.2, `Network/DecodedTime.cpp`, GPL-3.0: un periodo che non puo' essere ancora iniziato e' di ieri).
-fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, period: &Period, now_secs: u64) {
+/// Ogni quanto si puo' ridare lo stesso nominativo a PSK Reporter (`CACHE_TIMEOUT` di `PSKReporter.cpp`, WSJT-X 3.3): 5 minuti, salvo sopra 49 MHz.
+const SPOT_REPEAT_SECS: u64 = 300;
+
+/// `cache`: l'ultimo spot di ogni nominativo (`spot_cache` di WSJT-X), per non mandare lo stesso CQ a ogni periodo; `None` nelle prove che non la usano.
+fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, period: &Period, now_secs: u64, cache: Option<&mut std::collections::HashMap<String, u64>>) {
     if d.hint {
         return;
     }
@@ -542,13 +551,23 @@ fn queue_spot(queue: &mut VecDeque<psk::Spot>, d: &DecodedMessage, period: &Peri
         return;
     }
     let Some((call, grid)) = psk::spot_call_and_grid(&d.text) else { return };
+    let freq_hz = dial_hz + u64::from(d.freq_hz);
+    if let Some(cache) = cache {
+        if freq_hz <= 49_000_000 && cache.get(&call).is_some_and(|&t| now_secs.saturating_sub(t) <= SPOT_REPEAT_SECS) {
+            return;
+        }
+        if cache.len() > 20_000 {
+            cache.retain(|_, t| now_secs.saturating_sub(*t) <= SPOT_REPEAT_SECS);
+        }
+        cache.insert(call.clone(), now_secs);
+    }
     if queue.len() >= psk::MAX_QUEUE {
         queue.pop_front();
     }
     queue.push_back(psk::Spot {
         call,
         grid,
-        freq_hz: dial_hz + u64::from(d.freq_hz),
+        freq_hz,
         mode: if mode.eq_ignore_ascii_case("FT4") { "FT4" } else { "FT8" }.to_string(),
         snr: d.snr,
         time: u32::try_from(slot_start / 1000).unwrap_or(u32::MAX),
@@ -653,14 +672,30 @@ mod tests {
     const MIDNIGHT: u64 = 1_793_491_200;
 
     #[test]
+    fn the_same_call_is_spotted_once_every_five_minutes_below_49_mhz() {
+        let mut q = VecDeque::new();
+        let mut cache = std::collections::HashMap::new();
+        let hf = Period { dial_hz: 14_074_000, mode: "FT8", blocked_until_ms: 0, previous: None };
+        queue_spot(&mut q, &decode(0), &hf, MIDNIGHT + 13, Some(&mut cache));
+        queue_spot(&mut q, &decode(15_000), &hf, MIDNIGHT + 28, Some(&mut cache));
+        assert_eq!(q.len(), 1, "stesso CQ dopo 15 s: non si ridà");
+        queue_spot(&mut q, &decode(315_000), &hf, MIDNIGHT + 328, Some(&mut cache));
+        assert_eq!(q.len(), 2, "dopo 5 minuti si ridà");
+        let vhf = Period { dial_hz: 50_313_000, ..hf };
+        queue_spot(&mut q, &decode(330_000), &vhf, MIDNIGHT + 343, Some(&mut cache));
+        queue_spot(&mut q, &decode(345_000), &vhf, MIDNIGHT + 358, Some(&mut cache));
+        assert_eq!(q.len(), 4, "sopra 49 MHz ogni spot passa");
+    }
+
+    #[test]
     fn a_spot_received_just_before_midnight_keeps_yesterdays_date() {
         let mut q = VecDeque::new();
         let period = Period { dial_hz: 14_074_000, mode: "FT8", blocked_until_ms: 0, previous: None };
         // periodo delle 23:59:45, elaborato alle 00:00:02
-        queue_spot(&mut q, &decode(86_385_000), &period, MIDNIGHT + 2);
+        queue_spot(&mut q, &decode(86_385_000), &period, MIDNIGHT + 2, None);
         assert_eq!(q.front().map(|s| u64::from(s.time)), Some(MIDNIGHT - 15));
         // un periodo di oggi resta di oggi, con l'ora del periodo
-        queue_spot(&mut q, &decode(0), &period, MIDNIGHT + 13);
+        queue_spot(&mut q, &decode(0), &period, MIDNIGHT + 13, None);
         assert_eq!(q.back().map(|s| u64::from(s.time)), Some(MIDNIGHT));
     }
 
@@ -671,17 +706,17 @@ mod tests {
         let period = Period { dial_hz: 7_074_000, mode: "FT8", blocked_until_ms: changed_at, previous: Some((14_080_000, "FT4")) };
         let now = MIDNIGHT + 3600 + 3;
         // periodo prima del cambio: banda e modo di allora
-        queue_spot(&mut q, &decode(3_600_000 - 15_000), &period, now);
+        queue_spot(&mut q, &decode(3_600_000 - 15_000), &period, now, None);
         assert_eq!(q.back().map(|s| (s.freq_hz, s.mode.as_str())), Some((14_081_000, "FT4")));
         // periodo del cambio: niente spot
-        queue_spot(&mut q, &decode(3_600_000), &period, now);
+        queue_spot(&mut q, &decode(3_600_000), &period, now, None);
         assert_eq!(q.len(), 1);
         // periodo dopo il cambio: banda nuova
-        queue_spot(&mut q, &decode(3_615_000), &period, now + 15);
+        queue_spot(&mut q, &decode(3_615_000), &period, now + 15, None);
         assert_eq!(q.back().map(|s| (s.freq_hz, s.mode.as_str())), Some((7_075_000, "FT8")));
         // senza la banda di prima i periodi vecchi non si segnalano
         let none = Period { previous: None, ..period };
-        queue_spot(&mut q, &decode(3_600_000 - 15_000), &none, now);
+        queue_spot(&mut q, &decode(3_600_000 - 15_000), &none, now, None);
         assert_eq!(q.len(), 2);
     }
 }

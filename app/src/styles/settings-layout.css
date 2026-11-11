@@ -1348,6 +1348,15 @@
   width: auto;
 }
 
+/* Il menu delle lingue si apre verso destra (dentro la pagina): allineato a destra del pulsante finiva sotto la barra laterale e restava coperto */
+.sx-field .lang-list,
+.sx-control .lang-list,
+.sw-field .lang-list {
+  left: 0;
+  right: auto;
+  z-index: calc(var(--layer-overlay) + 10);
+}
+
 /* Tabelle con poche colonne corte (frequenze): larghezza contenuta, non a tutto schermo */
 .sx-table--compact {
   width: 100%;

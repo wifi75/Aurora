@@ -1461,3 +1461,15 @@ header.app-header .app-nav { flex: 1 1 auto; min-width: 0; display: flex; }
 .waterfall.waterfall--nospec .wf-spectrum { display: none !important; flex: 0 0 0 !important; min-height: 0 !important; border: 0 !important; }
 .waterfall.waterfall--nospec .wf-splitter { display: none !important; }
 .waterfall.waterfall--nospec .wf-main { flex: 1 1 0 !important; min-height: 0 !important; }
+
+/* finestre a comparsa condivise (Spot, Opzioni cluster, macro): prima in digi.css, qui perche' servono anche nella Stazione */
+.digi-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
+.digi-dialog { display: flex; flex-direction: column; gap: 0.8rem; width: min(52rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.digi-dialog header strong { font-size: 1.1rem; }
+.digi-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+.digi-dialog input, .digi-dialog select, .digi-dialog textarea { font: inherit; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.55rem; min-width: 0; }
+.digi-dialog input[type='color'] { padding: 0; width: 3rem; height: 2.1rem; }
+.digi-dialog footer { display: flex; gap: 0.6rem; align-items: center; }
+.digi-dialog--small { width: min(26rem, 94vw); }
+/* UTC tagliata sul bordo destro: altri 5 px di margine (23 px) */
+.cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 23px !important; }

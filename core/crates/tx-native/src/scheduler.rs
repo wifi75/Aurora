@@ -44,7 +44,8 @@ pub struct TxConfig {
     /// Ritardo massimo accettato sull'inizio nominale dell'audio, quando si chiede il periodo in corso. `None`: la finestra di JTDX
     /// (`Mode::tx_window`: si puo' partire in qualunque istante dei primi 13,64 s dell'FT8 o 6,04 s dell'FT4 del periodo e si emette la coda dell'onda).
     pub max_late: Option<Duration>,
-    /// Durata massima di un'onda.
+    /// Durata massima di un'onda (tetto di sicurezza: il limite vero e' il periodo meno il ritardo d'inizio, vedi `schedule`). Era 15 s e bloccava
+    /// ogni trasmissione piu' lunga: JT65, JT9 e JT4 (circa 47 s nei periodi da 60 s), Q65-30 e oltre.
     pub max_duration: Duration,
     /// Margine oltre la durata prevista, dopo il quale il `watchdog` spegne il PTT.
     pub watchdog_grace: Duration,
@@ -57,11 +58,13 @@ impl Default for TxConfig {
         TxConfig {
             allow_tx: false,
             attenuation_tenths: None,
-            ptt_lead: Duration::from_millis(100),
-            ptt_tail: Duration::from_millis(50),
+            // come WSJT-X 3.3: l'audio parte `TxDelay` (0,2 s di fabbrica) dopo il PTT e il PTT si spegne 200 ms dopo la fine dell'audio. Con 100 e 50 ms
+            // un PTT lento (OmniRig, CAT via rete) mangiava l'inizio del messaggio e la radio tornava in ricezione prima dell'ultima rampa
+            ptt_lead: Duration::from_millis(200),
+            ptt_tail: Duration::from_millis(200),
             latency_advance: Duration::from_millis(30),
             max_late: None,
-            max_duration: Duration::from_secs(15),
+            max_duration: Duration::from_secs(300),
             watchdog_grace: Duration::from_secs(2),
             fade: Duration::from_millis(5),
         }
@@ -86,8 +89,8 @@ impl TxConfig {
         if self.max_late.is_some_and(|d| d > Duration::from_secs(15)) {
             return bad("ritardo massimo oltre 15 s");
         }
-        if self.max_duration.is_zero() || self.max_duration > Duration::from_secs(30) {
-            return bad("durata massima fuori da 0-30 s");
+        if self.max_duration.is_zero() || self.max_duration > Duration::from_secs(300) {
+            return bad("durata massima fuori da 0-300 s");
         }
         if self.fade > Duration::from_millis(50) {
             return bad("rampa oltre 50 ms");
@@ -599,10 +602,16 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
             }
         }
         if !lock(&inner.sink).is_playing() {
+            // un'uscita che si e' persa (scheda USB staccata, TCI che non chiede piu' audio) non e' una trasmissione finita: come `checkStream` di WSJT-X
+            // la trasmissione si chiude con errore, invece di dare il messaggio per trasmesso intero
+            if lock(&inner.sink).has_failed() {
+                return Err(TxError::Audio("uscita audio persa durante la trasmissione".into()));
+            }
             break false;
         }
         if inner.clock.now().saturating_sub(started) > limit {
-            return Err(TxError::Audio("riproduzione oltre la durata prevista".into()));
+            let failed = lock(&inner.sink).has_failed();
+            return Err(TxError::Audio(if failed { "uscita audio persa durante la trasmissione" } else { "riproduzione oltre la durata prevista" }.into()));
         }
         inner.clock.sleep(CHUNK);
     };
@@ -778,14 +787,14 @@ mod tests {
     fn it_starts_at_the_right_time_with_ptt_before_and_after() {
         let b = bench(config());
         let plan = b.tx.schedule(request(1.0)).expect("pianificata");
-        // periodo pari: inizia fra mezzo secondo, audio a +0,5 s meno 30 ms di anticipo, PTT 100 ms prima
+        // periodo pari: inizia fra mezzo secondo, audio a +0,5 s meno 30 ms di anticipo, PTT 200 ms prima
         assert_eq!(plan.slot_start, base());
         assert_eq!(plan.audio_start, base() + ms(470));
-        assert_eq!(plan.ptt_on, base() + ms(370));
+        assert_eq!(plan.ptt_on, base() + ms(270));
         assert_eq!(plan.wave_len, Duration::from_secs(1));
         assert_eq!(b.tx.state(), TxState::Waiting);
 
-        b.run_to(base() + ms(300));
+        b.run_to(base() + ms(200));
         assert!(!b.ptt.is_on(), "PTT acceso troppo presto");
         assert!(b.rec.events().is_empty());
 
@@ -807,9 +816,9 @@ mod tests {
         let near = |t: Duration, want: Duration| t >= want && t <= want + ms(30);
         assert!(near(ptt_on, plan.ptt_on), "PTT acceso a {ptt_on:?}");
         assert!(near(audio, plan.audio_start), "audio a {audio:?}");
-        // l'audio dura 1 s: il PTT si spegne 50 ms dopo
-        assert!(near(ptt_off, audio + ms(1050)), "PTT spento a {ptt_off:?}");
-        assert!(audio - ptt_on >= ms(95), "il PTT deve precedere l'audio di circa 100 ms");
+        // l'audio dura 1 s: il PTT si spegne 200 ms dopo
+        assert!(near(ptt_off, audio + ms(1200)), "PTT spento a {ptt_off:?}");
+        assert!(audio - ptt_on >= ms(195), "il PTT deve precedere l'audio di circa 200 ms");
         assert!(!b.ptt.is_on());
         let kinds: Vec<TxEventKind> = b.rec.events().into_iter().map(|(_, k)| k).collect();
         assert_eq!(kinds, [TxEventKind::PttOn, TxEventKind::AudioStart(RATE as usize), TxEventKind::PttOff]);
@@ -973,7 +982,8 @@ mod tests {
     fn revoking_the_permission_while_waiting_cancels_the_transmission() {
         let b = bench(config());
         b.tx.schedule(request(1.0)).expect("pianificata");
-        b.run_to(base() + ms(300));
+        // prima del PTT (che con l'anticipo di 200 ms si accende a +270 ms)
+        b.run_to(base() + ms(200));
         let mut c = b.tx.config();
         c.allow_tx = false;
         b.tx.set_config(c).expect("config");

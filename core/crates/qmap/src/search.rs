@@ -513,24 +513,25 @@ pub(crate) mod tests {
     fn the_average_decodes_what_one_period_cannot() {
         let fs = 48_000;
         let setup = Setup::new(60, 0).expect("60A");
-        // abbastanza forte per il sincronismo di un periodo, troppo debole per decodificarlo da solo
-        let amp = (0.0025f32 * 2.0 * 2500.0 / fs as f32).sqrt();
+        // vicino alla soglia di un solo periodo di Q65-60A (-27,6 dB in `protocols.adoc` di WSJT-X 3.3.0-beta6), dove un periodo da solo decodifica
+        // di rado: la media dei periodi della stessa parita' deve arrivarci sommandone almeno due. Non un CQ: sul CQ l'analisi a priori decodifica gia'
+        // un periodo solo. Non ci si ferma alla prima decodifica: un periodo fortunato puo' decodificare da solo prima che la media serva.
+        let amp = (0.0016f32 * 2.0 * 2500.0 / fs as f32).sqrt();
+        let msg = "IU3ABC K1ABC FN42";
         let options = SearchOptions { period_s: 60, average: true, span_hz: 20_000.0, ..SearchOptions::default() };
         let mut state = SearchState::default();
         let mut hashes = CallHashes::default();
-        let mut got = None;
-        for k in 0..6u64 {
+        let mut best = 0;
+        for k in 0..8u64 {
             let mut iq = noise(60 * fs as usize, 1.0, 100 + k);
-            add_q65(&mut iq, fs, "CQ IU3ABC IO91", 3_000.0, setup, amp);
+            add_q65(&mut iq, fs, msg, 3_000.0, setup, amp);
             state.new_period();
             let r = search_pass(&iq, fs, None, &options, &Pass::full(2 * k), &mut state, &mut hashes);
-            if let Some(d) = r.decodes.into_iter().find(|d| d.text == "CQ IU3ABC IO91") {
-                got = Some(d);
-                break;
+            if let Some(d) = r.decodes.into_iter().find(|d| d.text == msg) {
+                best = best.max(d.averaged);
             }
         }
-        let d = got.expect("la media non ha decodificato");
-        assert!(d.averaged >= 2, "{d:?}");
+        assert!(best >= 2, "la media non ha mai decodificato sommando piu' periodi (migliore: {best})");
     }
 
     #[test]

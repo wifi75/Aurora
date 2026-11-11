@@ -2,6 +2,9 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     HaltTx,
+    /// Spegne la trasmissione automatica («Abilita Tx») e lascia finire il messaggio in onda: l'HaltTx «solo automatico» del protocollo UDP
+    /// (`auto_tx_mode(false)` di WSJT-X), mandato da GridTracker o JTAlert.
+    StopAutoTx,
     Reply { decode_id: u64 },
     /// Tasto destro su una stazione che chiama: in coda se c'e' un QSO in corso, altrimenti come `Reply`; di nuovo sulla stessa la toglie.
     QueueReply { decode_id: u64 },

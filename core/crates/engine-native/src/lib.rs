@@ -296,6 +296,8 @@ pub fn start_with_save(
         let mut slow_watch = slow::SlowWatch::default();
         // i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro (sottopassate 3-11)
         let mut ft8_history = ft8::decode::PeriodHistory::default();
+        // il ritardo medio delle stazioni sentite (`avexdt` di WSJT-X): centra la ricerca del ritardo nei periodi FT8 seguenti
+        let mut dt_center = ft8::decode::DtCenter::default();
         let mut band_watch = BandWatch::default();
         // S-meter stimato dall'audio in ingresso (per le radio senza misuratori); taratura con AURORA_SMETER_S9_DB
         let mut s_meter = smeter::SMeter::new(smeter::s9_db_from_env());
@@ -455,6 +457,8 @@ pub fn start_with_save(
                     last_slot = None;
                     last_texts.clear();
                     q65_avg.clear();
+                    // `lmodechanged` di WSJT-X: il ritardo medio riparte da 0 (`ft8_engine_kernel.f90:254-257`)
+                    dt_center.mode_changed();
                     if let Some(d) = driver.as_mut() {
                         for line in d.set_mode(mode) {
                             tracing::info!("trasmissione: {line}");
@@ -483,12 +487,19 @@ pub fn start_with_save(
                         }
                     }
                 }
-                // «Decodifica»: si rielabora l'ultimo periodo e si pubblica quello che non era ancora uscito
+                // «Decodifica»: si rielabora l'ultimo periodo e si pubblica quello che non era ancora uscito. Come «Decode» di WSJT-X 3.3 con il
+                // decoder multithread (`nagain`, `mainwindow_slots.cpp:249`): tutta la banda; la ridecodifica stretta `nagainfil` (+-25 Hz, OSD 5) l'interfaccia
+                // di WSJT-X non la chiede mai. Dopo, come in WSJT-X, il ritardo medio si aggiorna con i suoi messaggi
                 if l.controls.redecode.swap(false, Ordering::Relaxed)
                     && let Some((start, slot_mode, samples)) = &last_slot
                     && *slot_mode == mode
                 {
-                    let decoded = decode_period(mode, samples, &period_options(&ft8_options, &l.controls, &l.de_call, *start), &ft4_period_options(&ft4_options, &l.controls, &l.de_call), &mut hashes, &mut ft8_history, &mut jt::q65::Averager::new());
+                    let mut again = period_options(&ft8_options, &l.controls, &l.de_call, *start);
+                    again.dt_center_s = dt_center.value();
+                    let decoded = decode_period(mode, samples, &again, &ft4_period_options(&ft4_options, &l.controls, &l.de_call), &mut hashes, &mut ft8_history, &mut jt::q65::Averager::new());
+                    if mode == Mode::Ft8 {
+                        dt_center.update(&decoded.iter().map(|d| d.dt_s).collect::<Vec<_>>());
+                    }
                     let fresh: Vec<ft8::decode::Decoded> = decoded.into_iter().filter(|d| !last_texts.contains(&d.text)).collect();
                     tracing::info!("motore proprio: ridecodifica, {} messaggi nuovi nel periodo {}", fresh.len(), start);
                     last_texts.extend(fresh.iter().map(|d| d.text.clone()));
@@ -567,6 +578,7 @@ pub fn start_with_save(
                         quick.a7 = false;
                         quick.a8 = None;
                         quick.deadline = Some(std::time::Instant::now() + std::time::Duration::from_millis(1500));
+                        quick.dt_center_s = dt_center.value();
                         let found = ft8::decode::decode_slot(&slot.samples, &quick, &mut hashes);
                         let shown = preview_shown.entry(slot.start_unix_ms).or_default();
                         let fresh: Vec<ft8::decode::Decoded> = found.into_iter().filter(|d| !shown.contains(&d.text)).collect();
@@ -633,6 +645,7 @@ pub fn start_with_save(
                 let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)
                 options.deadline = Some(started + std::time::Duration::from_secs(11));
+                options.dt_center_s = dt_center.value();
                 // il log si rilegge ogni dieci minuti (i QSO nuovi); poi l'elenco per il filtro (None finche' i nominativi sono pochi)
                 if let Some(log_calls) = live.as_ref().and_then(|l| l.log_calls.as_ref())
                     && known_seeded.is_none_or(|t| t.elapsed() >= std::time::Duration::from_secs(600))
@@ -676,6 +689,10 @@ pub fn start_with_save(
                 } else {
                     decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history, &mut q65_avg)
                 };
+                // `avexdt` di WSJT-X dai ritardi dei messaggi FT8 del periodo, nell'ordine in cui sono usciti (`ft8_engine_kernel.f90:444-478`)
+                if mode == Mode::Ft8 {
+                    dt_center.update(&decoded.iter().map(|d| d.dt_s).collect::<Vec<_>>());
+                }
                 // «JT65+JT9»: nello stesso minuto si decodifica anche l'altro modo JT; i suoi messaggi si distinguono in `ALL.TXT` (`@` e `#`)
                 if matches!(mode, Mode::Ft8 | Mode::Ft4) {
                     known.learn(&decoded);
@@ -928,6 +945,8 @@ fn period_options(base: &Options, controls: &rig::NativeControls, de_call: &str,
         threads,
     });
     let mut options = Options {
+        // la frequenza di ricezione (`nfqso`): soglia 1,1 e candidati in testa entro +-3 Hz (`sync8var.f90:290-293`, `:344-377`)
+        rx_freq_hz: Some(controls.rx_df.load(Ordering::Relaxed) as f32),
         swl: controls.switch_on("swl"),
         agc: controls.switch_on("agc"),
         even_period: (slot_start_ms / 15_000).is_multiple_of(2),

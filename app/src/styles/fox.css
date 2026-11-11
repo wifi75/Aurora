@@ -176,6 +176,10 @@
   --fx-surface-2: rgba(80, 50, 180, 0.22);
   --fx-line: #3b2a86;
   --panel-raised: #1d1245;
+  /* anche i fondi usati dalla barra della cascata (.wf-toolbar) e dai suoi campi: col tema chiaro restavano bianchi sotto il testo lavanda */
+  --panel: #1d1245;
+  --bg: #120a33;
+  --border: #3b2a86;
   color: var(--text);
   color-scheme: dark;
   background: radial-gradient(120% 70% at 50% 0%, #24124a, #0b0716 60%);

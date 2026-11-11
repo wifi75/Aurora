@@ -54,12 +54,7 @@
 .digi-gear[aria-pressed='true'] { color: #ff9f1c; }
 
 /* finestra «Modifica macro» */
-.digi-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; background: rgba(0, 0, 0, 0.55); padding: 1rem; }
-.digi-dialog { display: flex; flex-direction: column; gap: 0.8rem; width: min(52rem, 96vw); max-height: 92vh; overflow: auto; padding: 1rem 1.2rem; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
-.digi-dialog header strong { font-size: 1.1rem; }
-.digi-dialog label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
-.digi-dialog input, .digi-dialog select, .digi-dialog textarea { font: inherit; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.55rem; min-width: 0; }
-.digi-dialog input[type='color'] { padding: 0; width: 3rem; height: 2.1rem; }
+/* le finestre a comparsa (.digi-modal/.digi-dialog) sono in styles/bozze.css: servono anche fuori dalla pagina dei modi testuali */
 .digi-edit-top { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: flex-end; }
 .digi-edit-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; }
 .digi-edit-text textarea { font-family: var(--font-data); min-height: 14rem; resize: vertical; }
@@ -67,7 +62,6 @@
 .digi-cmd-list { list-style: none; margin: 0; padding: 0.2rem; height: 12rem; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-raised); }
 .digi-cmd-list button { display: block; width: 100%; text-align: left; padding: 0.25rem 0.45rem; border: 0; border-radius: 5px; background: none; color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; }
 .digi-cmd-list button:hover, .digi-cmd-list button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-.digi-dialog footer { display: flex; gap: 0.6rem; align-items: center; }
 .digi-qso { display: flex; gap: 0.7rem; flex-wrap: wrap; }
 .digi-qso label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
 .digi-qso input { font: inherit; font-weight: 600; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 9px; padding: 0.4rem 0.55rem; min-width: 0; }
@@ -190,7 +184,6 @@ button.digi-st.on, button.digi-st:active { border-style: inset; background: #c0b
 .digi-classica .digi-cmd-list button:hover, .digi-classica .digi-cmd-list button.on { background: #0a246a; color: #fff; }
 .digi-ms-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; }
 .digi-ms-grid fieldset { display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid #808080; padding: 0.6rem; }
-.digi-dialog--small { width: min(26rem, 94vw); }
 @media (max-width: 62rem) { .digi-main { grid-template-columns: minmax(0, 1fr); } .digi-ms-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .digi-log-current input { width: 100%; box-sizing: border-box; }

@@ -83,12 +83,13 @@ const RX_ON_KEY = 'aurora-finestra-rx';
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
   // pannello Log a linguette «Log | Mappa»: la scelta si ricorda; con «Log» la mappa non esiste proprio (niente timer, niente disegno)
-  // la finestra RX si accende a parte e sta sempre in alto; sotto il log o la mappa
+  // la finestra RX sta sempre in alto, sotto il log o la mappa; accesa di fabbrica come «Rx Frequency» di WSJT-X (segnalazione #42): si spegne
+  // dal pulsante RX e la scelta si ricorda
   const [rxOn, setRxOnState] = useState<boolean>(() => {
     try {
-      return browserStorage()?.getItem(RX_ON_KEY) === '1';
+      return browserStorage()?.getItem(RX_ON_KEY) !== '0';
     } catch {
-      return false;
+      return true;
     }
   });
   const setRxOn = (on: boolean) => {

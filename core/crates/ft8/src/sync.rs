@@ -48,8 +48,9 @@
 //!
 //! - `sync8` e' il ramo senza compensazione AGC (`lagcc` spento). Le tre forme dello spettro (ampiezza, potenza, somma degli assoluti)
 //!   si scelgono con [`Spectrum`] e `find_candidates_ex`, che restituisce anche l'indicatore di candidato "CQ" (`candidate(4,:)`) e
-//!   accetta la finestra del ritardo (`jzb`, `jzt`, che JTDX sposta di `avexdt * 25`). Mancano `nfqso` (nessun trattamento di favore
-//!   per la frequenza di QSO), i candidati virtuali sul QSO e il diradamento (`ncandthin`). I candidati fuori da -2,0..3,0 s sono scartati.
+//!   accetta la finestra del ritardo (`jzb`, `jzt`, che JTDX sposta di `avexdt * 25`). La frequenza di ricezione (`nfqso`) ha la soglia
+//!   1,1 entro +-3 Hz e i suoi candidati in testa all'elenco ([`find_candidates_agc`], `sync8var.f90` di WSJT-X 3.3.0-beta6). Mancano i
+//!   candidati virtuali sul QSO (per `ft8s`) e il diradamento (`ncandthin`). I candidati fuori da -2,0..3,0 s sono scartati.
 //! - `ft8_downsample`: tutte e due le varianti dei ritocchi ai bordi del filtro (`lhighsens` falso e vero); la FFT dell'intero periodo
 //!   e' calcolata una volta in [`Downsampler::new`] invece di essere tenuta in una variabile con `save`: dopo una sottrazione il chiamante
 //!   ne costruisce una nuova (JTDX lo fa quando un candidato e' entro 50 Hz da un segnale tolto). Mancano `c2`/`c3` (le versioni mediate
@@ -338,12 +339,21 @@ pub fn find_candidates_swl(
     window: (i32, i32),
     swl: bool,
 ) -> Vec<PassCandidate> {
-    find_candidates_agc(samples, f_low_hz, f_high_hz, min_sync, max, shape, window, swl, None)
+    find_candidates_agc(samples, f_low_hz, f_high_hz, min_sync, max, shape, window, swl, None, None)
 }
+
+/// Distanza entro cui un candidato e' sulla frequenza di ricezione (`abs(freq-nfqso).gt.3.0` di `sync8var.f90`, righe 290 e 348).
+const NFQSO_HZ: f32 = 3.0;
+/// Soglia di sincronismo dei candidati sulla frequenza di ricezione (`sync8var.f90:293`, `:348` e `:370`).
+const NFQSO_SYNC: f32 = 1.1;
 
 /// Come [`find_candidates_swl`]; con `agcc = Some(ipass)` (audio gia' passato da [`agc_compensate`]) il sincronismo si misura tono per tono
 /// come nel ramo `lagcc` di `sync8`: ogni tono di Costas rispetto alla media degli altri sei della stessa colonna, cosi' un tratto con il
 /// guadagno diverso non pesa piu' degli altri. Dalla seconda passata (`ipass > 1`) contano anche i nove simboli del CQ.
+///
+/// `rx_freq_hz` e' la frequenza di ricezione (`nfqso` di `sync8var.f90`, WSJT-X 3.3.0-beta6): entro +-3 Hz la soglia scende a 1,1 (righe
+/// 290-293), quei candidati non si scartano come quasi-doppioni (riga 320) e vanno in testa all'elenco, uno ogni 3 Hz, dal piu' forte
+/// (righe 344-353); poi segue l'elenco intero per sincronismo, dove ricompaiono anche loro con la stessa soglia 1,1 (righe 368-377).
 #[allow(clippy::too_many_arguments)]
 pub fn find_candidates_agc(
     samples: &[f32],
@@ -355,6 +365,7 @@ pub fn find_candidates_agc(
     window: (i32, i32),
     swl: bool,
     agcc: Option<usize>,
+    rx_freq_hz: Option<f32>,
 ) -> Vec<PassCandidate> {
     if samples.is_empty() || max == 0 || f_low_hz.is_nan() || f_high_hz.is_nan() || f_high_hz <= f_low_hz || window.1 < window.0 {
         return Vec::new();
@@ -531,8 +542,11 @@ pub fn find_candidates_agc(
     let (jpeak_low, jpeak_high, dup_hz) = if swl { (-74, 101, 3.0) } else { (-49, 76, 4.0) };
     let mut c0: Vec<Candidate> = Vec::new();
     let mut c0_cq: Vec<bool> = Vec::new();
+    // sulla frequenza di ricezione (`abs(freq-nfqso).le.3.0`) la soglia e' 1,1 invece di `syncmin` (`sync8var.f90:290-293`)
+    let near_rx = |f: f32| rx_freq_hz.is_some_and(|q| (f - q).abs() <= NFQSO_HZ);
+    let threshold = |f: f32| if near_rx(f) { NFQSO_SYNC } else { min_sync };
     for &i in &order {
-        if red[i] < min_sync {
+        if red[i] < threshold(i as f32 * DF_SPEC) {
             continue;
         }
         if jpeak[i] < jpeak_low || jpeak[i] > jpeak_high {
@@ -545,9 +559,13 @@ pub fn find_candidates_agc(
         c0_cq.push(best_cq[i]);
     }
 
-    // Quasi-doppioni: resta il migliore (come nel Fortran, i gia' azzerati partecipano ancora ai confronti).
+    // Quasi-doppioni: resta il migliore (come nel Fortran, i gia' azzerati partecipano ancora ai confronti). Un candidato `i` sulla
+    // frequenza di ricezione non entra nel confronto (`abs(candidate0(1,i)-nfqso).gt.3.0`, `sync8var.f90:320`).
     let mut sync_v: Vec<f32> = c0.iter().map(|c| c.sync).collect();
     for i in 1..c0.len() {
+        if near_rx(c0[i].freq_hz) {
+            continue;
+        }
         for j in 0..i {
             let fdiff = (c0[i].freq_hz - c0[j].freq_hz).abs();
             let xdt = (c0[i].dt_s - c0[j].dt_s).abs();
@@ -563,13 +581,25 @@ pub fn find_candidates_agc(
     }
     let mut idx: Vec<usize> = (0..c0.len()).collect();
     idx.sort_by(|&a, &b| sync_v[b].total_cmp(&sync_v[a]));
+    let cap = max.min(460);
     let mut out = Vec::new();
-    for j in idx {
-        if sync_v[j] > 0.0 && sync_v[j] >= min_sync {
+    // in testa i candidati sulla frequenza di ricezione, dal piu' forte, uno ogni 3 Hz (`fprev`, `sync8var.f90:344-353`)
+    let mut fprev = 5004.0f32;
+    for &j in &idx {
+        let f = c0[j].freq_hz;
+        if near_rx(f) && sync_v[j] >= NFQSO_SYNC && (f - fprev).abs() > NFQSO_HZ && out.len() < cap {
             out.push(PassCandidate { candidate: Candidate { sync: sync_v[j], ..c0[j] }, cq: c0_cq[j] });
-            if out.len() >= max.min(460) {
-                break;
-            }
+            fprev = f;
+        }
+    }
+    // poi tutti per sincronismo, quelli sulla frequenza di ricezione di nuovo con la soglia 1,1 (`syncmin1`, `sync8var.f90:368-377`):
+    // un candidato non decodificato in testa si riprova qui, dopo le sottrazioni dei segnali piu' forti
+    for &j in &idx {
+        if out.len() >= cap {
+            break;
+        }
+        if sync_v[j] > 0.0 && sync_v[j] >= threshold(c0[j].freq_hz) {
+            out.push(PassCandidate { candidate: Candidate { sync: sync_v[j], ..c0[j] }, cq: c0_cq[j] });
         }
     }
     out
@@ -1522,6 +1552,50 @@ mod tests {
         let left = find_candidates_ex(&audio, 200.0, 4000.0, 1.5, 100, Spectrum::Amplitude, (-62, -20));
         assert!(left.iter().all(|c| (c.candidate.dt_s - 0.3).abs() > 0.1 || c.candidate.sync < 3.0), "{left:?}");
         assert!(find_candidates_ex(&audio, 200.0, 4000.0, 1.5, 100, Spectrum::Amplitude, (10, -10)).is_empty());
+    }
+
+    /// Due segnali: a 1500 Hz forte, a 1800 Hz piu' debole.
+    fn strong_and_weak_slot() -> Vec<f32> {
+        let mut audio = noise(SIGMA, 7);
+        add_signal(&mut audio, &random_bits(11), 1500.0, 0.3, 0.0);
+        add_signal(&mut audio, &random_bits(23), 1800.0, -0.2, -12.0);
+        audio
+    }
+
+    fn search(audio: &[f32], min_sync: f32, rx: Option<f32>) -> Vec<PassCandidate> {
+        find_candidates_agc(audio, 200.0, 4000.0, min_sync, 300, Spectrum::Amplitude, (JZB, JZT), false, None, rx)
+    }
+
+    #[test]
+    fn i_candidati_sulla_frequenza_di_ricezione_vengono_per_primi() {
+        let audio = strong_and_weak_slot();
+        let plain = search(&audio, 1.5, None);
+        assert!((plain[0].candidate.freq_hz - 1500.0).abs() <= 3.0, "{:?}", &plain[..3]);
+        // con la ricezione a 1800 Hz il segnale debole va in testa (`sync8var.f90:344-353`) ...
+        let rx = search(&audio, 1.5, Some(1800.0));
+        assert!((rx[0].candidate.freq_hz - 1800.0).abs() <= 3.0, "{:?}", &rx[..3]);
+        assert!((rx[0].candidate.dt_s + 0.2).abs() < 0.1, "{:?}", rx[0]);
+        // ... e ricompare nell'elenco per sincronismo dopo il segnale forte (`sync8var.f90:368-377`)
+        let strong = rx.iter().position(|c| (c.candidate.freq_hz - 1500.0).abs() <= 3.0);
+        let again = rx.iter().skip(1).position(|c| (c.candidate.freq_hz - rx[0].candidate.freq_hz).abs() < 0.01).map(|p| p + 1);
+        assert!(matches!((strong, again), (Some(s), Some(a)) if s < a), "{strong:?} {again:?}");
+        // gli altri candidati restano nello stesso ordine (fino al tetto, che i candidati in testa possono spostare)
+        let rest: Vec<f32> = rx.iter().filter(|c| (c.candidate.freq_hz - 1800.0).abs() > 3.0).map(|c| c.candidate.freq_hz).collect();
+        let rest_plain: Vec<f32> = plain.iter().filter(|c| (c.candidate.freq_hz - 1800.0).abs() > 3.0).map(|c| c.candidate.freq_hz).collect();
+        let n = rest.len().min(rest_plain.len());
+        assert_eq!(rest[..n], rest_plain[..n]);
+    }
+
+    #[test]
+    fn sulla_frequenza_di_ricezione_basta_il_sincronismo_1_1() {
+        let audio = strong_and_weak_slot();
+        // con una soglia altissima non passa niente, tranne entro +-3 Hz dalla ricezione dove la soglia e' 1,1 (`sync8var.f90:290-293`)
+        assert!(search(&audio, 1000.0, None).is_empty());
+        let rx = search(&audio, 1000.0, Some(1800.0));
+        assert!(!rx.is_empty());
+        assert!(rx.iter().all(|c| (c.candidate.freq_hz - 1800.0).abs() <= 3.0 && c.candidate.sync >= 1.1), "{rx:?}");
+        // lontano da ogni segnale la frequenza di ricezione non inventa candidati sotto 1,1
+        assert!(search(&audio, 1000.0, Some(3000.0)).iter().all(|c| c.candidate.sync >= 1.1));
     }
 
     /// Un periodo con un solo messaggio vero (testo dato) alla frequenza e al ritardo dati.

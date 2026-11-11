@@ -1,6 +1,29 @@
 # Changelog
 
 ## Non rilasciato
+- **FT8 come WSJT-X 3.3**: il segnale sulla frequenza Rx viene provato per primo e con soglia di sincronismo 1,1 (entro 3 Hz); OSD di profondita' 4 per le risposte del QSO vicine a Rx/Tx; la ricerca del ritardo segue il ritardo medio delle stazioni sentite (`avexdt`), cosi' i segnali con DT alto non si perdono.
+- **Finestra Rx accesa di fabbrica**, come «Rx Frequency» di WSJT-X: mostra i messaggi intorno alla frequenza di ricezione, quelli diretti a noi e le proprie trasmissioni. Si spegne dal pulsante RX e la scelta resta (segnalazione #42).
+- **PTT come WSJT-X**: si accende 200 ms prima dell'audio (era 100) e si spegne 200 ms dopo la fine (era 50): con un PTT lento l'inizio del messaggio non si perde e la radio non torna in ricezione prima dell'ultima rampa.
+- CAT Hamlib: il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, non solo al cambio di frequenza; un errore nella lettura del modo (alcune Yaesu) non fa piu' ricollegare la radio.
+- OmniRig: lo stato si rilegge ogni 10 secondi in sottofondo; una radio spenta non resta «collegata» e quando torna si ricollega da sola.
+- TCI: un cambio di modo fatto sul pannello della SDR non viene piu' annullato subito da Aurora (come WSJT-X 3.3).
+- Audio: schede che espongono solo campioni a 24 o 32 bit ora si aprono (prima «formato campioni non gestito»); un ingresso che smette di dare audio senza errori si riapre da solo dopo 3 secondi.
+- **DX Cluster, pulsante «Spot DX»** anche nella pagina Stazione (FT8 e gli altri modi), come gia' nella pagina PSK/RTTY: apre la finestra dello spot con il DX del QSO, la frequenza della radio piu' quella di ricezione e il modo. Lo spot mandato compare subito nell'elenco con il proprio nominativo (prima si vedeva solo se un cluster collegato lo ripeteva).
+- DX Cluster: la colonna UTC non e' piu' tagliata sul bordo destro.
+- Impostazioni: il menu delle lingue si apre verso la pagina e non resta piu' coperto dalla barra laterale.
+- **Split della radio (Rig e Fake It)**: non si attivava mai, perche' la frequenza audio di trasmissione non arrivava al CAT. Ora, come `setXIT` di WSJT-X, in FT8 e FT4 il VFO di trasmissione si sposta di (Tx/500)*500 - 1500 Hz e il tono audio dello stesso valore: l'audio resta tra 1500 e 2000 Hz e il segnale esce sulla frequenza scelta. Vale con il PTT dal CAT (Hamlib, TCI, FT-991 Link). **Da provare con la radio.**
+- **Paesi DXCC come WSJT-X**: le entita' solo WAE di `cty.dat` (Sicilia, Turchia europea, Italia africana, Shetland, Vienna ITC, Bear Island) non sono piu' paesi: una stazione IU9 o IT9 e' Italia, non piu' un falso «nuovo DXCC»; non contano nei totali ne' nell'elenco dei paesi delle Automazioni.
+- Suffissi operativi come WSJT-X: IU3ABC/R, /Q, /FD, /FF, /LT, /LGT restano del paese del nominativo (prima /R dava Russia, /FD Francia, /LGT Norvegia); davanti al nominativo restano prefissi veri (LT/IU3ABC e' Argentina).
+- **PSK Reporter come WSJT-X**: lo stesso nominativo si segnala al massimo una volta ogni 5 minuti (sopra 49 MHz ogni volta), la coda parte ogni 2 minuti invece di 5 e si svuota anche alla chiusura.
+- **GridTracker e JTAlert**: l'HaltTx «solo automatico» spegne Abilita Tx lasciando finire il messaggio in onda (prima fermava subito la trasmissione); «Cancella» manda il Clear e il Replay non rimanda piu' le righe cancellate.
+- **Wavelog, token API v2** (`wl2_...`): invio con l'API v2 e la prova in «dry run» senza scrivere nel log, come WSJT-X 3.3; prima l'invio e la prova fallivano.
+- **Trasmissione oltre i 15 secondi**: un tetto fisso di 15 s rifiutava ogni onda piu' lunga, quindi in JT65, JT9, JT4 e Q65 da 30 s in su la trasmissione non partiva; ora il limite e' il periodo meno il ritardo d'inizio.
+- **Wait and Call con «Salta Tx1»**: la chiamata partiva da Tx2 e il controllo guardava solo Tx1, quindi non smetteva mai di chiamare; ora si ferma dopo 6,2 periodi come in WSJT-X.
+- **Wait and Pounce**: una scelta del DX fatta dall'operatore (doppio clic, risposta in coda, DX scritto a mano) lo disarma, come in WSJT-X 3.3; prima il primo CQ sentito sostituiva il DX scelto.
+- Trasmissione: se l'uscita audio si perde a meta' (scheda USB staccata, TCI fermo) l'esito e' un errore con la causa, non piu' «trasmesso».
+- **FT8, piu' segnali deboli**: soglia di sincronismo 1,3 come in WSJT-X 3.3 (era 1,5 di JTDX) e messaggi del concorso EU VHF (tipo 5) decodificati.
+- **Log ADIF**: PSK31, PSK63, Q65, FST4 scritti come modo padre (`PSK`, `MFSK`) con `SUBMODE`, come richiede ADIF e come fa WSJT-X: LoTW, ClubLog e QRZ non li rifiutano piu'.
+- Pagina Fox col tema chiaro: la barra dei comandi della cascata (Bins/Pixel, Start, N Avg, Tavolozza, Spec) aveva il testo chiaro su fondo bianco e non si leggeva; ora segue l'aspetto scuro della scheda.
 
 ## 0.11.235 - 2026-11-11
 - **PSK, RTTY e CW: ascolto automatico**: entrando nella pagina l'ascolto parte da solo; si ferma e riparte dal menu Opzioni › Ascolto (tolta la barra «Avvia ascolto»).

@@ -273,7 +273,7 @@ pub fn wpx_prefix(call: &str) -> Option<String> {
     }
     let main = call
         .split('/')
-        .filter(|p| !matches!(*p, "P" | "M" | "QRP" | "MM" | "AM" | "A" | "B" | "LH") && !(p.len() == 1 && p.chars().all(|c| c.is_ascii_digit())))
+        .filter(|p| !matches!(*p, "MM" | "AM") && !dxcc::is_operating_suffix(p))
         .max_by_key(|p| p.len())?;
     let last_digit = main.rfind(|c: char| c.is_ascii_digit())?;
     Some(main[..=last_digit].to_string())
@@ -548,7 +548,7 @@ impl WorkedLog {
         Stats {
             qsos: self.qsos,
             dxcc_worked: self.entities.len(),
-            dxcc_total: db.len(),
+            dxcc_total: db.dxcc_count(),
             cq_zones_worked: self.zones.len(),
             cq_zones_total: 40,
             itu_zones_worked: self.itu.len(),
@@ -562,7 +562,7 @@ impl WorkedLog {
 
     /// Paesi di `cty.dat` mai collegati, in ordine alfabetico.
     pub fn missing_dxcc(&self, db: &DxccDb) -> Vec<String> {
-        let mut names: Vec<String> = (0..db.len()).filter(|i| !self.entities.contains(i)).map(|i| db.entity(i).name.clone()).collect();
+        let mut names: Vec<String> = (0..db.len()).filter(|i| !db.entity(*i).wae && !self.entities.contains(i)).map(|i| db.entity(i).name.clone()).collect();
         names.sort();
         names
     }
