@@ -1,6 +1,9 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.233 - 2026-11-11
+### Corretto
 - Un clic sulla cascata in sola ricezione non sposta piu' la frequenza di trasmissione se «Hold Tx Freq» e' acceso.
 - CAT: dopo che la radio e' stata ricollegata lo split vero scelto viene rimesso e un ritorno di frequenza dello split simulato rimasto in sospeso non vale piu'.
 - Elenchi che crescevano senza fine in sessioni lunghe: collegamenti gia' fatti, schede delle stazioni; i due registri del motore (`native-decodes.log`, `native-parity.log`) passano a `.old` oltre 20 MB.
