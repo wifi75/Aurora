@@ -5,12 +5,12 @@ import { ModeSwitch } from './ModeSwitch';
 const openMenu = () => fireEvent.click(screen.getByRole('button', { expanded: false }));
 
 describe('ModeSwitch', () => {
-  it('shows the current mode and opens a menu with FT8, FT4, JT65, JT9, JT4, Q65 and MSK144', () => {
+  it('shows the current mode and opens a menu with FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4 and FST4W', () => {
     render(<ModeSwitch mode="FT8" onPick={() => {}} />);
     expect(screen.getByRole('button').textContent).toContain('FT8');
     expect(screen.queryByRole('menu')).toBeNull();
     openMenu();
-    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144']);
+    expect(screen.getAllByRole('menuitemradio').map((b) => b.textContent)).toEqual(['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W']);
     expect(screen.getByRole('menuitemradio', { name: 'FT8' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('menuitemradio', { name: 'FT4' })).toHaveAttribute('aria-checked', 'false');
   });
@@ -56,6 +56,26 @@ describe('ModeSwitch', () => {
     expect(onPick).toHaveBeenLastCalledWith('Q65-30D');
     openMenu();
     expect(screen.getByRole('menuitemradio', { name: 'Q65' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('shows the period next to FST4 and FST4W, each with its own list', () => {
+    const onPick = vi.fn();
+    const { unmount } = render(<ModeSwitch mode="FST4-60" onPick={onPick} />);
+    const period = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(period.value).toBe('60');
+    expect(Array.from(period.options).map((o) => o.value)).toEqual(['15', '30', '60', '120', '300', '900', '1800']);
+    fireEvent.change(period, { target: { value: '900' } });
+    expect(onPick).toHaveBeenLastCalledWith('FST4-900');
+    expect(screen.getByRole('button', { expanded: false })).toHaveAttribute('data-mode', 'FST4');
+    openMenu();
+    expect(screen.getByRole('menuitemradio', { name: 'FST4' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'FST4W' })).toHaveAttribute('aria-checked', 'false');
+    unmount();
+    render(<ModeSwitch mode="FST4W-120" onPick={onPick} />);
+    const w = screen.getByRole('combobox') as HTMLSelectElement;
+    expect(Array.from(w.options).map((o) => o.value)).toEqual(['120', '300', '900', '1800']);
+    fireEvent.change(w, { target: { value: '1800' } });
+    expect(onPick).toHaveBeenLastCalledWith('FST4W-1800');
   });
 
   it('shows the JT65 submode next to JT65 and asks for JT65A, JT65B or JT65C', () => {

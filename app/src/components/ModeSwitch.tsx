@@ -20,7 +20,19 @@ export function q65Parts(mode: string): [string, string] | null {
   return m?.[1] && m[2] ? [m[1], m[2]] : null;
 }
 
-export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144'] as const;
+/** I periodi di FST4 e FST4W in secondi, come WSJT-X (FST4W non ha quelli sotto i 2 minuti). */
+const FST4_PERIODS = ['15', '30', '60', '120', '300', '900', '1800'] as const;
+const FST4W_PERIODS = ['120', '300', '900', '1800'] as const;
+
+/** «FST4-60» -> ['FST4', '60'], «FST4W-120» -> ['FST4W', '120']; senza periodo (il motore lo ricorda) null. */
+export function fst4Parts(mode: string): ['FST4' | 'FST4W', string] | null {
+  const m = /^(FST4W?)-(\d+)$/.exec(mode.toUpperCase());
+  if (!m?.[1] || !m[2]) return null;
+  const list: readonly string[] = m[1] === 'FST4W' ? FST4W_PERIODS : FST4_PERIODS;
+  return list.includes(m[2]) ? [m[1] as 'FST4' | 'FST4W', m[2]] : null;
+}
+
+export const MODES = ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W'] as const;
 
 /** Il modo in uso: JTDX con il pulsante JT puo' riportare «JT65+JT9» (si accendono tutti e due) o «JT» (il vecchio nome, acceso JT65). */
 const isActive = (m: string, mode: string) => {
@@ -32,6 +44,8 @@ const isActive = (m: string, mode: string) => {
   if (m === 'JT65' && /^JT65[A-C]$/.test(up)) return true;
   // Q65-15A ... Q65-300E accendono Q65
   if (m === 'Q65' && q65Parts(up)) return true;
+  // FST4-15 ... FST4-1800 accendono FST4, FST4W-120 ... FST4W-1800 accendono FST4W
+  if ((m === 'FST4' || m === 'FST4W') && fst4Parts(up)?.[0] === m) return true;
   return up === m || (m.startsWith('JT') && up.split('+').includes(m));
 };
 
@@ -44,7 +58,7 @@ interface Props {
   locked?: boolean;
 }
 
-/** Selettore compatto del modo: un pulsante col modo in uso che apre una tendina con FT8 / FT4 / JT65 / JT9 / JT4 / Q65 / MSK144. */
+/** Selettore compatto del modo: un pulsante col modo in uso che apre una tendina con FT8 / FT4 / JT65 / JT9 / JT4 / Q65 / MSK144 / FST4 / FST4W. */
 export function ModeSwitch({ mode, onPick, locked = false }: Props) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -73,13 +87,14 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
 
   const label = mode.toUpperCase() === 'JT' ? 'JT65' : mode || '—';
   const q65 = q65Parts(mode);
+  const fst4 = fst4Parts(mode);
   return (
     <div className="mode-switch" ref={box}>
       <button
         type="button"
         className="glass mode-switch-btn"
         // JT65B e JT65C hanno il colore di JT65
-        data-mode={/^JT65[A-C]$/i.test(label) ? 'JT65' : label}
+        data-mode={/^JT65[A-C]$/i.test(label) ? 'JT65' : fst4 ? fst4[0] : label}
         aria-current="true"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -160,6 +175,22 @@ export function ModeSwitch({ mode, onPick, locked = false }: Props) {
             ))}
           </select>
         </>
+      ) : null}
+      {fst4 ? (
+        <select
+          className="mode-switch-sub"
+          aria-label={t('mode.fst4period')}
+          title={t('tip.mode.fst4period')}
+          disabled={disabled}
+          value={fst4[1]}
+          onChange={(e) => onPick?.(`${fst4[0]}-${e.target.value}`)}
+        >
+          {(fst4[0] === 'FST4W' ? FST4W_PERIODS : FST4_PERIODS).map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
       ) : null}
       {open && (
         <div className="mode-switch-menu glass" role="menu" aria-label={t('mode.group')}>
