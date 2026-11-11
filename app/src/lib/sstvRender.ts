@@ -35,65 +35,217 @@ export function fontString(l: TextLayer, px: number): string {
   return `${l.italic ? 'italic ' : ''}${l.bold ? '700 ' : '400 '}${Math.max(1, Math.round(px))}px ${family}`;
 }
 
-/** Ingombro di un testo (in pixel dell'immagine): larghezza e altezza del blocco, senza rotazione. */
-export function measureText(ctx: CanvasRenderingContext2D, l: TextLayer, text: string, H: number): { w: number; h: number; lines: string[]; px: number } {
-  const px = l.size * H;
-  ctx.font = fontString(l, px);
-  const lines = text.split('\n');
-  const w = Math.max(1, ...lines.map((s) => ctx.measureText(s).width));
-  return { w, h: px * 1.18 * lines.length, lines, px };
+/** Interlinea delle righe di un testo, in frazioni della dimensione dei caratteri. */
+const LINE_HEIGHT = 1.18;
+
+/** Rettangolo in coordinate locali del livello (origine nel suo punto x,y, prima della rotazione). */
+export interface Rect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
-/** Ingombro di un livello (centro, lati) in pixel, per selezione e maniglie. */
-export function layerBox(ctx: CanvasRenderingContext2D, l: Layer, W: number, H: number, tokens: TokenContext): { cx: number; cy: number; w: number; h: number } {
-  if (l.kind === 'shape') return { cx: l.x * W, cy: l.y * H, w: l.w * W, h: l.h * H };
-  const m = measureText(ctx, l, expandTokens(l.text, tokens), H);
-  const pad = l.box ? m.px * 0.3 : m.px * 0.1;
-  return { cx: l.x * W, cy: l.y * H, w: m.w + pad * 2, h: m.h + pad * 2 };
+/**
+ * Misure di una riga come le da' il canvas con lo stesso carattere, il `textAlign` del livello e `textBaseline = 'alphabetic'`:
+ * avanzamento e inchiostro vero dei glifi (a sinistra e a destra del punto di ancoraggio, sopra e sotto la linea di base).
+ */
+export interface LineMetrics {
+  width: number;
+  left: number;
+  right: number;
+  ascent: number;
+  descent: number;
+  /** Riga vuota o di soli spazi: non ha inchiostro. */
+  blank: boolean;
+}
+
+/** Geometria di un testo: dove disegnare ogni riga perche' l'inchiostro risulti centrato sul punto del livello. */
+export interface TextGeometry {
+  lines: string[];
+  px: number;
+  /** Punto di ancoraggio (x) e linea di base (y) di ogni riga, gia' spostati. */
+  anchors: { x: number; y: number }[];
+  /** Ingombro dei glifi (senza contorno ne' ombra), centrato sull'origine. */
+  ink: Rect;
+}
+
+function finite(v: number | undefined, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+/** Carattere, allineamento e linea di base con cui il testo si misura e si disegna: sempre gli stessi nei due casi. */
+function setTextStyle(ctx: CanvasRenderingContext2D, l: TextLayer, px: number): void {
+  ctx.font = fontString(l, px);
+  ctx.textAlign = l.align;
+  ctx.textBaseline = 'alphabetic';
+}
+
+/** Misura le righe con il canvas; se il browser non da' l'inchiostro (molto vecchio) lo si stima dall'avanzamento. */
+export function measureLines(ctx: CanvasRenderingContext2D, l: TextLayer, lines: readonly string[], px: number): LineMetrics[] {
+  setTextStyle(ctx, l, px);
+  return lines.map((s) => {
+    const m = ctx.measureText(s);
+    const width = finite(m.width, 0);
+    const leftGuess = l.align === 'left' ? 0 : l.align === 'right' ? width : width / 2;
+    return {
+      width,
+      left: finite(m.actualBoundingBoxLeft, leftGuess),
+      right: finite(m.actualBoundingBoxRight, width - leftGuess),
+      ascent: finite(m.actualBoundingBoxAscent, px * 0.72),
+      descent: finite(m.actualBoundingBoxDescent, 0),
+      blank: s.trim() === '',
+    };
+  });
+}
+
+/**
+ * Dispone le righe e sposta il blocco perche' il centro dell'inchiostro cada sul punto del livello: un testo con x = 0,5 e'
+ * centrato davvero sull'immagine, qualunque siano il carattere, le sue spalle e la linea di base.
+ */
+export function textGeometry(lines: readonly string[], metrics: readonly LineMetrics[], align: TextLayer['align'], px: number): TextGeometry {
+  const lineH = px * LINE_HEIGHT;
+  const advance = Math.max(1, ...metrics.map((m) => m.width));
+  const anchorX = align === 'left' ? -advance / 2 : align === 'right' ? advance / 2 : 0;
+  let r: Rect | null = null;
+  for (const [i, m] of metrics.entries()) {
+    if (m.blank) continue;
+    const base = i * lineH;
+    const x0 = anchorX - m.left;
+    const x1 = anchorX + m.right;
+    const y0 = base - m.ascent;
+    const y1 = base + m.descent;
+    r = r ? { x0: Math.min(r.x0, x0), y0: Math.min(r.y0, y0), x1: Math.max(r.x1, x1), y1: Math.max(r.y1, y1) } : { x0, y0, x1, y1 };
+  }
+  // senza inchiostro (testo vuoto) si tiene l'ingombro delle righe, perche' resti qualcosa da afferrare
+  const half = Math.max(advance, px * 0.5) / 2;
+  const box: Rect = r ?? { x0: -half, y0: -px * 0.8, x1: half, y1: (Math.max(1, metrics.length) - 1) * lineH + px * 0.2 };
+  const w = Math.max(1, box.x1 - box.x0);
+  const h = Math.max(1, box.y1 - box.y0);
+  const dx = -(box.x0 + box.x1) / 2;
+  const dy = -(box.y0 + box.y1) / 2;
+  return {
+    lines: [...lines],
+    px,
+    anchors: lines.map((_, i) => ({ x: anchorX + dx, y: i * lineH + dy })),
+    ink: { x0: -w / 2, y0: -h / 2, x1: w / 2, y1: h / 2 },
+  };
+}
+
+/** Spessore del contorno in pixel (0 = niente). */
+function outlineWidth(l: TextLayer, px: number): number {
+  return l.outline > 0 ? Math.max(1, l.outline * px) : 0;
+}
+
+/** Ombra: spostamento e sfocatura in pixel. */
+function shadowOf(px: number): { off: number; blur: number } {
+  return { off: px * 0.06, blur: px * 0.18 };
+}
+
+/** Targhetta di sfondo del testo: l'inchiostro (con il contorno) piu' un margine. */
+export function plateRect(g: TextGeometry, l: TextLayer): Rect {
+  const o = outlineWidth(l, g.px) / 2;
+  const padX = g.px * 0.3;
+  const padY = g.px * 0.22;
+  return { x0: g.ink.x0 - o - padX, y0: g.ink.y0 - o - padY, x1: g.ink.x1 + o + padX, y1: g.ink.y1 + o + padY };
+}
+
+/** Riquadro di selezione: quello che si vede del testo, cioe' glifi, contorno, ombra e targhetta. */
+export function textSelectionRect(g: TextGeometry, l: TextLayer): Rect {
+  const o = outlineWidth(l, g.px) / 2;
+  const r: Rect = { x0: g.ink.x0 - o, y0: g.ink.y0 - o, x1: g.ink.x1 + o, y1: g.ink.y1 + o };
+  if (l.shadow) {
+    // la sfocatura si vede per circa meta' del suo valore, spostata in basso a destra
+    const s = shadowOf(g.px);
+    const reach = s.blur / 2;
+    r.x0 = Math.min(r.x0, g.ink.x0 + s.off - reach);
+    r.y0 = Math.min(r.y0, g.ink.y0 + s.off - reach);
+    r.x1 = Math.max(r.x1, g.ink.x1 + s.off + reach);
+    r.y1 = Math.max(r.y1, g.ink.y1 + s.off + reach);
+  }
+  if (l.box) {
+    const p = plateRect(g, l);
+    r.x0 = Math.min(r.x0, p.x0);
+    r.y0 = Math.min(r.y0, p.y0);
+    r.x1 = Math.max(r.x1, p.x1);
+    r.y1 = Math.max(r.y1, p.y1);
+  }
+  const pad = Math.max(1, g.px * 0.03);
+  return { x0: r.x0 - pad, y0: r.y0 - pad, x1: r.x1 + pad, y1: r.y1 + pad };
+}
+
+/** Geometria di un livello di testo (testo gia' espanso), misurata sul contesto dato. */
+export function layoutText(ctx: CanvasRenderingContext2D, l: TextLayer, text: string, H: number): TextGeometry {
+  const px = Math.max(1, Math.round(l.size * H));
+  const lines = text.split('\n');
+  return textGeometry(lines, measureLines(ctx, l, lines, px), l.align, px);
+}
+
+/**
+ * Ingombro di un livello in pixel dell'immagine, per selezione e maniglie: perno (cx, cy, dove il livello ruota), lati del
+ * riquadro e spostamento (ox, oy) del suo centro dal perno, nel riferimento ruotato del livello.
+ */
+export interface LayerBox {
+  cx: number;
+  cy: number;
+  w: number;
+  h: number;
+  ox: number;
+  oy: number;
+}
+
+export function layerBox(ctx: CanvasRenderingContext2D, l: Layer, W: number, H: number, tokens: TokenContext): LayerBox {
+  if (l.kind === 'shape') return { cx: l.x * W, cy: l.y * H, w: l.w * W, h: l.h * H, ox: 0, oy: 0 };
+  const r = textSelectionRect(layoutText(ctx, l, expandTokens(l.text, tokens), H), l);
+  return { cx: l.x * W, cy: l.y * H, w: r.x1 - r.x0, h: r.y1 - r.y0, ox: (r.x0 + r.x1) / 2, oy: (r.y0 + r.y1) / 2 };
+}
+
+/** Punto (lx, ly) del riquadro, preso dal suo centro nel riferimento ruotato, in pixel dell'immagine. */
+export function boxPoint(b: LayerBox, deg: number, lx: number, ly: number): { x: number; y: number } {
+  const a = (deg * Math.PI) / 180;
+  const x = b.ox + lx;
+  const y = b.oy + ly;
+  return { x: b.cx + x * Math.cos(a) - y * Math.sin(a), y: b.cy + x * Math.sin(a) + y * Math.cos(a) };
 }
 
 function drawText(ctx: CanvasRenderingContext2D, l: TextLayer, W: number, H: number, tokens: TokenContext): void {
-  const text = expandTokens(l.text, tokens);
-  const m = measureText(ctx, l, text, H);
   ctx.save();
+  const g = layoutText(ctx, l, expandTokens(l.text, tokens), H);
   ctx.translate(l.x * W, l.y * H);
   ctx.rotate((l.rotation * Math.PI) / 180);
-  ctx.font = fontString(l, m.px);
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = l.align;
-  const lineH = m.px * 1.18;
-  const top = -m.h / 2 + lineH / 2;
-  const anchorX = l.align === 'left' ? -m.w / 2 : l.align === 'right' ? m.w / 2 : 0;
+  setTextStyle(ctx, l, g.px);
   if (l.box) {
-    const pad = m.px * 0.3;
+    const p = plateRect(g, l);
     ctx.fillStyle = hexAlpha(l.boxColor, l.boxOpacity);
-    const r = Math.min(pad, m.px * 0.25);
     ctx.beginPath();
-    ctx.roundRect(-m.w / 2 - pad, -m.h / 2 - pad * 0.6, m.w + pad * 2, m.h + pad * 1.2, r);
+    ctx.roundRect(p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0, g.px * 0.25);
     ctx.fill();
   }
-  const fill = paint(ctx, l.fill, -m.w / 2, -m.h / 2, m.w, m.h);
-  m.lines.forEach((line, i) => {
-    const y = top + i * lineH;
+  const fill = paint(ctx, l.fill, g.ink.x0, g.ink.y0, g.ink.x1 - g.ink.x0, g.ink.y1 - g.ink.y0);
+  const ow = outlineWidth(l, g.px);
+  const sh = shadowOf(g.px);
+  g.lines.forEach((line, i) => {
+    const at = g.anchors[i];
+    if (!at) return;
     if (l.shadow) {
       ctx.save();
       ctx.shadowColor = hexAlpha(l.shadowColor, 0.85);
-      ctx.shadowBlur = m.px * 0.18;
-      ctx.shadowOffsetX = m.px * 0.06;
-      ctx.shadowOffsetY = m.px * 0.06;
+      ctx.shadowBlur = sh.blur;
+      ctx.shadowOffsetX = sh.off;
+      ctx.shadowOffsetY = sh.off;
       ctx.fillStyle = l.shadowColor;
-      ctx.fillText(line, anchorX, y);
+      ctx.fillText(line, at.x, at.y);
       ctx.restore();
     }
-    if (l.outline > 0) {
+    if (ow > 0) {
       ctx.lineJoin = 'round';
       ctx.miterLimit = 2;
       ctx.strokeStyle = l.outlineColor;
-      ctx.lineWidth = Math.max(1, l.outline * m.px);
-      ctx.strokeText(line, anchorX, y);
+      ctx.lineWidth = ow;
+      ctx.strokeText(line, at.x, at.y);
     }
     ctx.fillStyle = fill;
-    ctx.fillText(line, anchorX, y);
+    ctx.fillText(line, at.x, at.y);
   });
   ctx.restore();
 }
