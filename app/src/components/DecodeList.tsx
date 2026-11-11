@@ -357,9 +357,21 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     const c = d.id >= 0 && d.country ? senderOf(d.text)?.call.toUpperCase() : undefined;
     if (c && d.country && !countryOfCall.has(c)) countryOfCall.set(c, d.country);
   }
-  // le stazioni chiamate che non sono nell'elenco: il paese si chiede al file dei prefissi del core (una volta per nominativo)
+  // le stazioni in Fox/Hound di WSJT-X: nelle righe «A RR73; B <FOX> -08» chi trasmette e' il nominativo tra < >, che il motore non
+  // riconosce come mittente (il paese della riga arriva vuoto): il paese si prende dalle sue altre righe o dal file dei prefissi
+  const foxSet = foxCalls(decodes);
+  const foxOf = (d: DecodedMessage): string | null => {
+    if (d.id < 0) return null;
+    const s = lineSender(d.text);
+    return s !== null && foxSet.has(s) ? s.toUpperCase() : null;
+  };
+  // le stazioni chiamate (e le Fox) che non sono nell'elenco: il paese si chiede al file dei prefissi del core (una volta per nominativo)
   const [lookedUp, setLookedUp] = useState<Record<string, string>>({});
-  const missing = [...new Set(decodes.filter((d) => d.id < 0).map((d) => (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()))].filter(
+  const asked = [
+    ...decodes.filter((d) => d.id < 0).map((d) => (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase()),
+    ...decodes.filter((d) => !d.country).map(foxOf).filter((c): c is string => c !== null),
+  ];
+  const missing = [...new Set(asked)].filter(
     (c) => c.length >= 3 && !countryOfCall.has(c) && !(c in lookedUp) && !DXCC_ASKED.has(c),
   );
   useEffect(() => {
@@ -388,7 +400,6 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
       </section>
     );
   }
-  const foxSet = foxCalls(decodes);
   // QSO in corso: la stazione chiamata compare una volta sola, in cima (in fondo con l'elenco rovesciato) e ferma, con il messaggio piu'
   // recente fra i nostri e i suoi; finche' non risponde e' gialla, quando risponde cambia colore; a QSO concluso (DX libero) torna a scorrere
   const dxUp = dxCall?.trim().toUpperCase() ?? '';
@@ -445,7 +456,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     <section className={`decode-list${prefs.showDt ? '' : ' decode-list--no-dt'}${view.invert ? ' decode-list--invert' : ''}${newestAtBottom ? ' decode-list--bottom' : ''}`} aria-label={t('decode.aria')} title={t('tip.panel.all')} ref={setListEl}>
       {rows.map((d) => {
         // le stazioni che trasmettono in Fox/Hound di WSJT-X (righe «A RR73; B <FOX> -08»): etichetta FOX e sfondo proprio su tutte le loro righe
-        const fox = d.id >= 0 && foxSet.has(lineSender(d.text) ?? '');
+        const foxCall = foxOf(d);
+        const fox = foxCall !== null;
         const own = d.id < 0;
         // «Visualizza i tuoi messaggi Tx nella finestra Rx» spento: le righe Tx non si vedono
         if (own && !prefs.showTx) return null;
@@ -486,7 +498,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // riga nostra: la stazione e' quella a cui trasmettiamo (il primo nominativo, anche tra < >); il locatore nel messaggio e' il nostro e non conta
         const target = own ? (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase() : '';
         const targetGrid = own ? (KNOWN_GRIDS.get(target) ?? KNOWN_GRIDS.get(target.split('/').sort((a, b) => b.length - a.length)[0] ?? '') ?? null) : null;
-        const country = own ? (countryOfCall.get(target) ?? null) : d.country;
+        // riga di una Fox: paese e bandiera sono quelli della Fox (il nominativo tra < >), come per il mittente delle altre righe
+        const country = own ? (countryOfCall.get(target) ?? null) : (d.country ?? (foxCall ? (countryOfCall.get(foxCall) ?? null) : null));
         const theirs = own ? (targetGrid ? gridCenter(targetGrid) : null) : null;
         const km = prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
         const azimuth = prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
@@ -528,7 +541,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
             {prefs.showDt ? <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span> : null}
             <span className="c-freq num muted">{d.freq_hz}</span>
             {/* passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta) */}
-            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? '')}>
+            <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')}>
             <span className="decode-text">
               {queueMark}
               <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>
