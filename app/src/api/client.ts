@@ -5,6 +5,7 @@ import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema,
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { parseControlValues, useControlValues } from '../state/controlValues';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
+import { inOrder } from '../lib/listenWhileOpen';
 
 const BASE = '/api/v1';
 
@@ -1585,8 +1586,11 @@ export async function putSstv(settings: SstvSettings): Promise<SstvSnapshot> {
   return (await (await request('/sstv', { ...jsonInit(settings), method: 'PUT' })).json()) as SstvSnapshot;
 }
 
+// i comandi dell'ascolto SSTV arrivano al core nell'ordine in cui sono partiti (uscire e rientrare subito nella pagina)
+const sstvRxQueue = inOrder();
+
 export async function sstvRx(action: 'start' | 'stop' | 'cancel'): Promise<void> {
-  await request(`/sstv/rx/${action}`, { method: 'POST' });
+  await sstvRxQueue(() => request(`/sstv/rx/${action}`, { method: 'POST' }));
 }
 
 export async function sstvForce(mode: string): Promise<void> {
@@ -1707,8 +1711,11 @@ export async function putDigi(settings: DigiSettings): Promise<DigiSnapshot> {
   return (await (await request('/digi', { ...jsonInit(settings), method: 'PUT' })).json()) as DigiSnapshot;
 }
 
+// i comandi dell'ascolto dei modi testuali arrivano al core nell'ordine in cui sono partiti (uscire e rientrare subito nella pagina)
+const digiRxQueue = inOrder();
+
 export async function digiRx(action: 'start' | 'stop'): Promise<void> {
-  await request(`/digi/rx/${action}`, { method: 'POST' });
+  await digiRxQueue(() => request(`/digi/rx/${action}`, { method: 'POST' }));
 }
 
 export async function digiTransmit(text: string): Promise<void> {

@@ -18,6 +18,7 @@ import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDig
 import { RowAverager, seekSignal, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
+import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
@@ -290,23 +291,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     window.addEventListener('pointerup', up);
   };
 
-  // entrando nella pagina l'ascolto parte da solo (una volta): si ferma e riparte dal menu Opzioni
-  const autoListen = useRef(false);
-  useEffect(() => {
-    if (autoListen.current) return;
-    autoListen.current = true;
-    if (!live.current.snap.rx.listening) void digiRx('start').then(onChanged, onChanged);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // lasciando la pagina (per esempio tornando all'FT8) l'ascolto si spegne, cosi' il motore non consuma in secondo piano;
-  // resta acceso solo se l'utente ha scelto «Ascolto acceso all'avvio di Aurora»
-  useEffect(
-    () => () => {
-      if (!live.current.snap.settings.auto_receive) void digiRx('stop').catch(() => undefined);
-    },
-    [],
-  );
+  // entrando nella pagina l'ascolto parte da solo (si ferma e riparte dal menu Opzioni); lasciandola (per esempio tornando all'FT8)
+  // si spegne, cosi' il motore non consuma in secondo piano, salvo «Ascolto acceso all'avvio di Aurora»
+  useListenWhileOpen(digiRx, () => live.current.snap.settings.auto_receive, onChanged);
 
   const caps = useRef(false);
   caps.current = views.capsOnly;
