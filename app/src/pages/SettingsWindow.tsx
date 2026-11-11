@@ -2,7 +2,7 @@ import { useStation } from '../state/station';
 import { askConfirm } from '../components/ConfirmHost';
 import { useQueryClient } from '@tanstack/react-query';
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { connectCat, getCat, postTune, putAutomation, putEngineSettings } from '../api/client';
+import { connectCat, getCat, postTune, putAutomation, putEngineSettings, putSstv } from '../api/client';
 import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { SettingsSearch } from '../settings/SettingsSearch';
@@ -28,7 +28,7 @@ import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
 import { RadioTab } from '../settings/RadioTab';
 import { RotatorTab } from '../settings/RotatorTab';
-import { SstvTab } from '../settings/SstvTab';
+import { SSTV_DRAFT, SstvTab, sstvDraftToSettings, type SstvDraft } from '../settings/SstvTab';
 import { SdrTab } from '../settings/SdrTab';
 import { ScheduleTab } from '../settings/ScheduleTab';
 import { SequenceTab } from '../settings/SequenceTab';
@@ -81,7 +81,10 @@ const TABS: readonly TabDef[] = [
   { id: 'reporting', section: 'sw.sec.log', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
   { id: 'online', section: 'sw.sec.log', label: 'tab.online', icon: '☁', render: () => <OnlineTab /> },
   { id: 'cluster', section: 'sw.sec.log', label: 'tab.cluster', icon: '✦', render: () => <ClusterTab /> },
-  { id: 'sstv', section: 'sw.sec.modes', label: 'sw.tab.sstv', icon: '▣', render: () => <SstvTab /> },
+  // l'SSTV ha la sua categoria, divisa per argomento; la rotella della pagina SSTV apre la prima scheda
+  { id: 'sstv', section: 'sw.sec.sstv', label: 'sw.tab.sstv', icon: '▣', render: () => <SstvTab part="rx" /> },
+  { id: 'sstvtx', section: 'sw.sec.sstv', label: 'sw.tab.sstvTx', icon: '▲', render: () => <SstvTab part="tx" /> },
+  { id: 'sstvimages', section: 'sw.sec.sstv', label: 'sw.tab.sstvImages', icon: '▤', render: () => <SstvTab part="images" /> },
   { id: 'phone', section: 'sw.sec.access', label: 'sw.tab.phone', icon: '☎', render: () => <AccessTab /> },
   { id: 'agent', section: 'sw.sec.access', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
   { id: 'support', section: 'sw.sec.access', label: 'tab.support', icon: '✚', render: () => <SupportTab /> },
@@ -187,12 +190,20 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   /** Manda la bozza al motore; vero se e' andata. */
   const apply = async (): Promise<boolean> => {
     if (count === 0) return true;
+    // la bozza SSTV si controlla prima di mandare qualcosa: un numero fuori misura ferma tutto
+    const sstvDraft = drafts[SSTV_DRAFT] as SstvDraft | undefined;
+    const sstvSettings = sstvDraft ? sstvDraftToSettings(sstvDraft) : null;
+    if (sstvDraft && !sstvSettings) {
+      setNote(t('sstv.set.invalid'));
+      return false;
+    }
     setBusy(true);
     try {
       const slow = Object.keys(changes).some((k) => settings.data?.items[k]?.apply === 'restart');
       if (Object.keys(changes).length > 0) client.setQueryData(['engine-settings'], await putEngineSettings(changes));
       const rules = drafts[AUTOMATION_DRAFT] as AutomationRules | undefined;
       if (rules) client.setQueryData(['automation'], await putAutomation({ rules }));
+      if (sstvSettings) client.setQueryData(['sstv'], await putSstv(sstvSettings));
       setChanges({});
       setDrafts({});
       setError(null);

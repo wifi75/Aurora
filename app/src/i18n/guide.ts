@@ -345,12 +345,12 @@ export const GUIDE: readonly GuideChapter[] = [
           ],
         ],
         tip: [
-          'Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Pwr e ferma l’automazione FT8 prima di trasmettere. Le impostazioni sono in [[nav.settings]] → [[sw.tab.sstv]].',
-          'An SSTV transmission lasts from half a minute to almost five: keep Pwr low and stop the FT8 automation before transmitting. Settings are in [[nav.settings]] → [[sw.tab.sstv]].',
-          'Eine SSTV-Sendung dauert von einer halben bis fast fünf Minuten: Pwr niedrig halten und die FT8-Automatik vor dem Senden stoppen. Einstellungen unter [[nav.settings]] → [[sw.tab.sstv]].',
-          'Une émission SSTV dure d’une demi-minute à presque cinq : garde le Pwr bas et arrête l’automatisme FT8 avant d’émettre. Réglages dans [[nav.settings]] → [[sw.tab.sstv]].',
-          'Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Pwr y detén la automatización FT8 antes de transmitir. Ajustes en [[nav.settings]] → [[sw.tab.sstv]].',
-          'Uma transmissão SSTV dura de meio minuto a quase cinco: mantém o Pwr baixo e para a automação FT8 antes de transmitir. Definições em [[nav.settings]] → [[sw.tab.sstv]].',
+          'Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Pwr e ferma l’automazione FT8 prima di trasmettere. Le impostazioni sono in [[nav.settings]] → [[sw.sec.sstv]], anche dalla rotella ⚙ della pagina.',
+          'An SSTV transmission lasts from half a minute to almost five: keep Pwr low and stop the FT8 automation before transmitting. Settings are in [[nav.settings]] → [[sw.sec.sstv]], also from the ⚙ wheel on the page.',
+          'Eine SSTV-Sendung dauert von einer halben bis fast fünf Minuten: Pwr niedrig halten und die FT8-Automatik vor dem Senden stoppen. Einstellungen unter [[nav.settings]] → [[sw.sec.sstv]], auch über das ⚙-Rad der Seite.',
+          'Une émission SSTV dure d’une demi-minute à presque cinq : garde le Pwr bas et arrête l’automatisme FT8 avant d’émettre. Réglages dans [[nav.settings]] → [[sw.sec.sstv]], aussi depuis la roue ⚙ de la page.',
+          'Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Pwr y detén la automatización FT8 antes de transmitir. Ajustes en [[nav.settings]] → [[sw.sec.sstv]], también desde la rueda ⚙ de la página.',
+          'Uma transmissão SSTV dura de meio minuto a quase cinco: mantém o Pwr baixo e para a automação FT8 antes de transmitir. Definições em [[nav.settings]] → [[sw.sec.sstv]], também pela roda ⚙ da página.',
         ],
       },
       {
