@@ -109,7 +109,8 @@
 .sstv-templates li { display: flex; gap: 0.4rem; align-items: center; }
 
 .sstv-center { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
-.sstv-artboard { position: relative; width: 100%; max-width: 620px; max-height: 46vh; margin: 0 auto; border-radius: 12px; overflow: hidden; background: repeating-conic-gradient(#2a3442 0% 25%, #1d2530 0% 50%) 50% / 22px 22px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border); }
+/* la larghezza la limita anche il componente (46vh di altezza al massimo, sempre in proporzione W:H): niente max-height, che deformerebbe l'immagine */
+.sstv-artboard { position: relative; width: 100%; max-width: 620px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: repeating-conic-gradient(#2a3442 0% 25%, #1d2530 0% 50%) 50% / 22px 22px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border); }
 .sstv-artboard--drop { box-shadow: 0 0 0 3px var(--accent), 0 14px 40px rgba(0, 0, 0, 0.4); }
 .sstv-canvas--edit { position: absolute; inset: 0; image-rendering: pixelated; }
 .sstv-overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: move; touch-action: none; }

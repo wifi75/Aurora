@@ -30,7 +30,7 @@ import {
   type TextLayer,
   type TokenContext,
 } from '../../lib/sstv';
-import { layerBox, loadImageFile, renderComposition } from '../../lib/sstvRender';
+import { boxPoint, fontString, layerBox, loadImageFile, renderComposition } from '../../lib/sstvRender';
 import { browserStorage } from '../../lib/theme';
 import { useStatusPick } from '../../state/station';
 
@@ -98,9 +98,10 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
 
   // i caratteri inclusi si caricano quando servono: poi si ridisegna
   useEffect(() => {
-    const fonts = new Set(comp.layers.filter((l): l is TextLayer => l.kind === 'text').map((l) => l.font));
+    // la stessa descrizione del disegno (peso e corsivo compresi), cosi' si misura con il carattere vero e non con il ripiego
+    const fonts = new Set(comp.layers.filter((l): l is TextLayer => l.kind === 'text').map((l) => fontString(l, 32)));
     let gone = false;
-    Promise.all([...fonts].map((f) => document.fonts?.load(`32px "${f}"`).catch(() => [])))
+    Promise.all([...fonts].map((f) => document.fonts?.load(f).catch(() => [])))
       .then(() => {
         if (!gone) setFontsTick((n) => n + 1);
       })
@@ -135,21 +136,30 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
     ctx.clearRect(0, 0, o.width, o.height);
     const layer = comp.layers.find((l) => l.id === selected);
     if (!layer || layer.hidden) return;
-    const s = o.width / W;
+    // ogni punto si porta dai pixel dell'immagine a quelli dello schermo su ciascun asse: il riquadro cade sul testo disegnato
+    const sx = o.width / W;
+    const sy = o.height / H;
     const box = layerBox(mctx, layer, W, H, tokens);
+    const at = (lx: number, ly: number) => {
+      const q = boxPoint(box, layer.rotation, lx, ly);
+      return { x: q.x * sx, y: q.y * sy };
+    };
+    const corners = [at(-box.w / 2, -box.h / 2), at(box.w / 2, -box.h / 2), at(box.w / 2, box.h / 2), at(-box.w / 2, box.h / 2)];
+    const outline = () => {
+      ctx.beginPath();
+      corners.forEach((q, i) => (i === 0 ? ctx.moveTo(q.x, q.y) : ctx.lineTo(q.x, q.y)));
+      ctx.closePath();
+      ctx.stroke();
+    };
     ctx.save();
-    ctx.translate(box.cx * s, box.cy * s);
-    ctx.rotate((layer.rotation * Math.PI) / 180);
-    const w = box.w * s;
-    const h = box.h * s;
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 3 * dpr;
     ctx.setLineDash([]);
-    ctx.strokeRect(-w / 2, -h / 2, w, h);
+    outline();
     ctx.strokeStyle = '#0a84ff';
     ctx.lineWidth = 1.5 * dpr;
     ctx.setLineDash([6 * dpr, 4 * dpr]);
-    ctx.strokeRect(-w / 2, -h / 2, w, h);
+    outline();
     ctx.setLineDash([]);
     const knob = (x: number, y: number) => {
       ctx.beginPath();
@@ -160,13 +170,18 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
     };
+    // maniglia di rotazione: 22 px sopra il lato alto, nella direzione del livello ruotato
+    const a = (layer.rotation * Math.PI) / 180;
+    const top = at(0, -box.h / 2);
+    const rot = { x: top.x + Math.sin(a) * 22 * dpr, y: top.y - Math.cos(a) * 22 * dpr };
     ctx.beginPath();
-    ctx.moveTo(0, -h / 2);
-    ctx.lineTo(0, -h / 2 - 22 * dpr);
+    ctx.moveTo(top.x, top.y);
+    ctx.lineTo(rot.x, rot.y);
     ctx.strokeStyle = '#0a84ff';
     ctx.stroke();
-    knob(0, -h / 2 - 22 * dpr);
-    knob(w / 2, h / 2);
+    knob(rot.x, rot.y);
+    const res = at(box.w / 2, box.h / 2);
+    knob(res.x, res.y);
     ctx.restore();
   }, [comp.layers, selected, tokens, W, H]);
 
@@ -256,10 +271,8 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
     const sel = comp.layers.find((l) => l.id === selected && !l.hidden);
     if (e.button === 0 && sel) {
       const box = layerBox(mctx, sel, W, H, tokens);
-      const a = (sel.rotation * Math.PI) / 180;
-      const local = (lx: number, ly: number) => ({ x: box.cx + lx * Math.cos(a) - ly * Math.sin(a), y: box.cy + lx * Math.sin(a) + ly * Math.cos(a) });
-      const rot = local(0, -box.h / 2 - 22 / p.s);
-      const res = local(box.w / 2, box.h / 2);
+      const rot = boxPoint(box, sel.rotation, 0, -box.h / 2 - 22 / p.s);
+      const res = boxPoint(box, sel.rotation, box.w / 2, box.h / 2);
       const near = (q: { x: number; y: number }) => Math.hypot(q.x - p.x, q.y - p.y) < 14 / p.s;
       if (near(rot)) {
         drag.current = { kind: 'rotate', id: sel.id, before, cx: box.cx, cy: box.cy };
@@ -276,7 +289,8 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
         const l = comp.layers[i];
         if (!l || l.hidden) continue;
         const box = layerBox(mctx, l, W, H, tokens);
-        if (pointInRotatedRect(p.x, p.y, box.cx, box.cy, box.w, box.h, l.rotation)) {
+        const mid = boxPoint(box, l.rotation, 0, 0);
+        if (pointInRotatedRect(p.x, p.y, mid.x, mid.y, box.w, box.h, l.rotation)) {
           setSelected(l.id);
           drag.current = { kind: 'move', id: l.id, dx: p.x - l.x * W, dy: p.y - l.y * H, before };
           return;
@@ -541,7 +555,7 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
           <div
             ref={stage}
             className={`sstv-artboard${dropping ? ' sstv-artboard--drop' : ''}`}
-            style={{ aspectRatio: `${W} / ${H}` }}
+            style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc(46vh * ${W} / ${H}))` }}
             onDragOver={(e) => {
               if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) {
                 e.preventDefault();
