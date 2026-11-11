@@ -783,4 +783,47 @@ mod tests {
         let out = String::from_utf8_lossy(&d.process(&all)).into_owned();
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
     }
+
+    /// Issue #45: dall'FT8 alla pagina dei modi testuali con il CW scelto. La pagina spegne l'ascolto uscendo e lo riaccende rientrando:
+    /// dopo lo spegnimento (che azzera il demodulatore) e la riaccensione l'audio arriva al decodificatore CW e il testo si legge.
+    #[test]
+    fn il_cw_decodifica_dopo_spegnimento_e_riaccensione_dell_ascolto() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-cw45-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        let s = DigiSettings { mode: DigiMode::Cw, cw_wpm: 20.0, ..DigiSettings::default() };
+        std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
+        let svc = DigiService::open(&dir);
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
+        let tx = Mutex::new(tx);
+        svc.set_emitter(Arc::new(move |ev: DigiEvent| {
+            if ev.kind == "rx_text"
+                && let Some(t) = ev.text
+            {
+                let _ = lock(&tx).send(t);
+            }
+        }));
+        // ascolto acceso (prima visita), spento (si torna all'FT8), riacceso (si rientra)
+        svc.start_rx();
+        svc.stop_rx();
+        assert!(!svc.is_listening());
+        svc.start_rx();
+        assert!(svc.is_listening());
+        let mut wave = vec![0.0; 6000];
+        wave.extend(DigiService::wave_of("CQ IU3ABC", &s));
+        wave.extend(vec![0.0; 12000]);
+        for chunk in wave.chunks(1200) {
+            svc.feed(RATE as u32, chunk);
+            // la coda e' corta: si lascia al thread il tempo di consumare
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let mut out = String::new();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !out.contains("CQ IU3ABC") && Instant::now() < deadline {
+            if let Ok(t) = rx.recv_timeout(Duration::from_millis(200)) {
+                out.push_str(&t);
+            }
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(out.contains("CQ IU3ABC"), "ricevuto: {out:?}");
+    }
 }
