@@ -72,8 +72,9 @@ export function visibleFields(c: CatConfig, model: CatModel | undefined) {
     civ: hamlib && ((model?.manufacturer ?? c.rig_name).toLowerCase().includes('icom') || c.civ_address !== 0),
     pttPort: hamlib && (c.ptt === 'dtr' || c.ptt === 'rts'),
     ptt: hamlib,
-    // con TCI lo split della radio non e' ancora comandato; con FT-991(A) Link c'e' solo lo split simulato (solo VFO A)
-    split: c.backend !== 'tci',
+    // split con tutti i sistemi di controllo, come WSJT-X (Hamlib, TCI con il VFO B, OmniRig con `SetSplitMode`); con FT-991(A) Link c'e' solo
+    // lo split simulato (solo VFO A)
+    split: true,
     splitRig: c.backend !== 'ft991link',
     catMode: true,
     poll: hamlib,

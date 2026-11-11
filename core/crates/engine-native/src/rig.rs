@@ -255,6 +255,14 @@ pub struct NativeControls {
     fox_verification: Mutex<Option<aurora_core::FoxVerification>>,
     /// Quando si e' decodificata l'ultima trasmissione UltraFOX/SuperFox (ms dal 1970, 0 = mai): l'etichetta diventa «Super Hound».
     ultrafox_seen_ms: AtomicU64,
+    /// Chi avvisa gli altri di una «Cancella» premuta qui (il Clear UDP a GridTracker/JTAlert, come `band_activity_cleared` di WSJT-X).
+    erase_hook: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    /// Chi porta al CAT la frequenza audio di trasmissione cambiata a trasmissione in corso (lo split segue, come `setXIT` di WSJT-X).
+    tx_audio_hook: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    /// Ritardo tra PTT e inizio dell'audio in ms («Tx delay» di WSJT-X, `TxDelay`, di fabbrica 200): lo legge la catena di trasmissione.
+    ptt_lead_ms: AtomicU32,
+    /// Chi porta il ritardo cambiato alla catena di trasmissione gia' costruita.
+    ptt_lead_hook: Mutex<Option<Arc<dyn Fn(u32) + Send + Sync>>>,
 }
 
 /// Chi riceve i codici OTP del Fox da verificare.
@@ -262,6 +270,9 @@ pub type OtpHook = Arc<dyn Fn(crate::features::FoxOtp) + Send + Sync>;
 
 /// Per quanto l'etichetta resta «Super Hound» dopo l'ultima trasmissione SuperFox ricevuta.
 const ULTRAFOX_LABEL_KEEP_MS: u64 = 120_000;
+
+/// Ritardo di fabbrica tra PTT e audio, in ms (WSJT-X: `TxDelay` 0,2 s).
+pub const DEFAULT_PTT_LEAD_MS: u32 = 200;
 
 /// Soglia di fabbrica del ROS (WSJT-X: «SWR > 2.5», `stopForHighSWR`), in centesimi.
 pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 250;
@@ -278,7 +289,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
     }
 }
 
@@ -770,6 +781,58 @@ impl NativeControls {
         self.caller_filter.lock().ok().and_then(|slot| slot.clone())
     }
 
+    /// Il ritardo tra PTT e audio, in ms (vedi `ptt_lead_ms`).
+    pub fn ptt_lead_ms(&self) -> u32 {
+        self.ptt_lead_ms.load(Ordering::Relaxed)
+    }
+
+    /// Cambia il ritardo tra PTT e audio (0-500 ms, come WSJT-X) e lo porta alla catena di trasmissione, se c'e'.
+    pub fn set_ptt_lead_ms(&self, ms: u32) {
+        let ms = ms.min(500);
+        if self.ptt_lead_ms.swap(ms, Ordering::Relaxed) == ms {
+            return;
+        }
+        let hook = self.ptt_lead_hook.lock().ok().and_then(|slot| slot.clone());
+        if let Some(hook) = hook {
+            hook(ms);
+        }
+    }
+
+    /// Chi applica il ritardo tra PTT e audio alla catena di trasmissione (lo imposta chi la costruisce).
+    pub fn set_ptt_lead_hook(&self, hook: Arc<dyn Fn(u32) + Send + Sync>) {
+        if let Ok(mut slot) = self.ptt_lead_hook.lock() {
+            *slot = Some(hook);
+        }
+    }
+
+    /// Chi avvisa gli altri della «Cancella» premuta qui (vedi `erase_hook`).
+    pub fn set_erase_hook(&self, hook: Arc<dyn Fn() + Send + Sync>) {
+        if let Ok(mut slot) = self.erase_hook.lock() {
+            *slot = Some(hook);
+        }
+    }
+
+    fn notify_erase(&self) {
+        let hook = self.erase_hook.lock().ok().and_then(|slot| slot.clone());
+        if let Some(hook) = hook {
+            hook();
+        }
+    }
+
+    /// Chi riporta al CAT la frequenza audio di trasmissione cambiata durante la trasmissione (vedi `tx_audio_hook`).
+    pub fn set_tx_audio_hook(&self, hook: Arc<dyn Fn() + Send + Sync>) {
+        if let Ok(mut slot) = self.tx_audio_hook.lock() {
+            *slot = Some(hook);
+        }
+    }
+
+    pub(crate) fn notify_tx_audio(&self) {
+        let hook = self.tx_audio_hook.lock().ok().and_then(|slot| slot.clone());
+        if let Some(hook) = hook {
+            hook();
+        }
+    }
+
     /// Cosa fare SUBITO per fermare la trasmissione (audio e PTT), senza aspettare il ciclo del motore: lo imposta chi ha la catena di trasmissione.
     pub fn set_halt_now(&self, halt: Arc<dyn Fn() + Send + Sync>) {
         if let Ok(mut slot) = self.halt_now.lock() {
@@ -1005,6 +1068,8 @@ impl Rig for NativeRig {
                     // «Cancella»: svuota i messaggi ricordati per il doppio clic
                     "erase" => {
                         let _ = self.controls.send(TxCommand::Erase);
+                        // come `band_activity_cleared` di WSJT-X: anche GridTracker e JTAlert svuotano la loro lista (Clear UDP)
+                        self.controls.notify_erase();
                     }
                     // «Decodifica»: rielabora l'ultimo periodo (se non ce n'e' ancora uno, il motore non fa nulla)
                     "decode" => self.controls.redecode.store(true, Ordering::Relaxed),

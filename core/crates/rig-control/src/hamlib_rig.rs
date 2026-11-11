@@ -860,6 +860,27 @@ impl HamlibRig {
             let link = self.inner.connected_link()?;
             self.inner.epoch.fetch_add(1, Ordering::SeqCst);
             self.inner.apply_split(&link).map_err(|e| RigError(friendly_error(&e.0)))?;
+        } else if self.inner.config.split == SplitMode::Emulate && self.inner.status.lock().is_ok_and(|s| s.ptt) {
+            let link = self.inner.connected_link()?;
+            self.inner.epoch.fetch_add(1, Ordering::SeqCst);
+            self.emulate_follow(&link)?;
+        }
+        Ok(())
+    }
+
+    /// Split simulato a trasmissione in corso con la frequenza audio cambiata: la radio va subito sulla nuova frequenza di trasmissione
+    /// (in WSJT-X `EmulateSplitTransceiver::set` col PTT acceso porta la radio sulla frequenza Tx a ogni cambio).
+    fn emulate_follow(&self, link: &Link) -> Result<(), RigError> {
+        let audio = self.inner.tx_audio_hz.load(Ordering::SeqCst);
+        let restore = self.inner.emulate_restore.lock().ok().and_then(|s| *s);
+        let dial = restore.unwrap_or_else(|| self.inner.rx_dial.load(Ordering::SeqCst));
+        if audio == 0 || dial == 0 {
+            return Ok(());
+        }
+        let tx = split_tx_dial_hz(dial, audio);
+        link.client().set_frequency(tx).map_err(|e| RigError(friendly_error(&e.0)))?;
+        if let Ok(mut slot) = self.inner.emulate_restore.lock() {
+            *slot = (tx != dial).then_some(dial);
         }
         Ok(())
     }

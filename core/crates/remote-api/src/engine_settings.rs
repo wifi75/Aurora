@@ -101,6 +101,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     UDP_DESTINATIONS,
     // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
     "SWRLimit",
+    // ritardo tra PTT e audio (voce di Aurora, «Tx delay» di WSJT-X: `TxDelay`, 0-0,5 s, di fabbrica 0,2)
+    "TxDelay",
     // funzioni di WSJT-X 3.x nel motore proprio (vedi `engine_native::features` e `aurora::band_hop`)
     "FT8DecoderStart",
     "FullDuplex",
@@ -294,7 +296,7 @@ pub fn support(key: &str) -> Support {
         "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqAnswerInCallCount" | "SeqAnswerInCallCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
         | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" | "CallPriorityCQ" | "MaxDistance" => Support::Live(Apply::Now),
         // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
-        "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
+        "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "TxDelay" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
         "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
@@ -456,6 +458,8 @@ pub struct Reports {
     pub tx_qsy_allowed: bool,
     /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (`SWRLimit`, voce di Aurora; 250 = 2,5 come WSJT-X; 0 = controllo spento).
     pub swr_limit_centi: u32,
+    /// Ritardo tra PTT e inizio dell'audio, in ms (`TxDelay`, voce di Aurora; «Tx delay» di WSJT-X, 0-500, di fabbrica 200).
+    pub tx_delay_ms: u32,
     /// Il filtro del log della scheda Generali.
     pub log_filter: engine_jtdx::worked::LogFilter,
     /// «Non monitorare all'avvio» (`MonitorOFF`).
@@ -660,6 +664,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TxQSYAllowed", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.5"),
+        // ritardo tra PTT e audio: come WSJT-X (`TxDelay`, 0,2 s)
+        ("TxDelay", "0.2"),
         // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese (in Aurora spente),
         // righe OTP nascoste, verifica in linea del Fox accesa (WSJT-X la fa sempre in Hound) sul servizio di fabbrica, Band Hopping spento
         ("FT8DecoderStart", "normal"),
@@ -768,6 +774,19 @@ pub fn parse_swr_limit(value: &str) -> Option<u32> {
     (centi == 0.0 || (110.0..=1000.0).contains(&centi)).then_some(centi as u32)
 }
 
+/// Ritardo tra PTT e audio di fabbrica, in ms (WSJT-X: `TxDelay` 0,2 s).
+pub const DEFAULT_TX_DELAY_MS: u32 = 200;
+
+/// «Tx delay» in secondi (punto o virgola) come lo spin box di WSJT-X (`sbTxDelay`: 0-0,5 s, passo 0,1, un decimale): in millisecondi.
+pub fn parse_tx_delay(value: &str) -> Option<u32> {
+    let v: f64 = value.trim().replace(',', ".").parse().ok()?;
+    if !v.is_finite() {
+        return None;
+    }
+    let ms = (v * 1000.0).round();
+    (0.0..=500.0).contains(&ms).then_some(ms as u32)
+}
+
 pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if !is_stored(key) {
         return Err(SettingsError::NotAvailable(key.to_string()));
@@ -788,6 +807,9 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     // la soglia del ROS non e' di JTDX: numero con il punto o la virgola
     if key == "SWRLimit" {
         return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,1 a 10".into()));
+    }
+    if key == "TxDelay" {
+        return parse_tx_delay(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("TxDelay: da 0 a 0,5 secondi".into()));
     }
     if let Some(result) = validate_wsjtx3(key, value) {
         return result;
@@ -895,6 +917,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         band_hopping: truthy(values.get("BandHopping")),
         band_hop_list: get("BandHopList").to_string(),
         swr_limit_centi: values.get("SWRLimit").and_then(|v| parse_swr_limit(v)).unwrap_or(DEFAULT_SWR_LIMIT_CENTI),
+        tx_delay_ms: values.get("TxDelay").and_then(|v| parse_tx_delay(v)).unwrap_or(DEFAULT_TX_DELAY_MS),
         log_filter: engine_jtdx::worked::LogFilter {
             call: truthy(values.get("callsignLogFiltering")).then(|| get("MyCall").to_uppercase()).filter(|c| !c.is_empty()),
             grid: truthy(values.get("gridLogFiltering")).then(|| get("MyGrid").to_string()).filter(|g| !g.is_empty()),
@@ -1584,6 +1607,11 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert_eq!(interpret(&defaults()).swr_limit_centi, 250);
         assert_eq!(interpret(&map(&[("SWRLimit", "3,0")])).swr_limit_centi, 300);
         assert_eq!(interpret(&map(&[("SWRLimit", "0")])).swr_limit_centi, 0);
+        assert_eq!(interpret(&defaults()).tx_delay_ms, 200);
+        assert_eq!(interpret(&map(&[("TxDelay", "0,4")])).tx_delay_ms, 400);
+        assert_eq!(interpret(&map(&[("TxDelay", "0.9")])).tx_delay_ms, 200, "fuori dall'intervallo di WSJT-X: vale quello di fabbrica");
+        assert!(validate("TxDelay", "0.5").is_ok() && validate("TxDelay", "0").is_ok());
+        assert!(validate("TxDelay", "0.6").is_err() && validate("TxDelay", "-0.1").is_err());
         for ok in ["0", "1.1", "2.5", "10"] {
             assert!(validate("SWRLimit", ok).is_ok(), "{ok}");
         }

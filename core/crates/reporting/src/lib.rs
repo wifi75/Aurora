@@ -176,6 +176,8 @@ pub struct Service {
     live: Mutex<Live>,
     /// La coda dell'invio diretto dei QSO.
     queue: Arc<upload::Queue>,
+    /// Le richieste di mandare subito gli spot PSK Reporter in coda (alla chiusura): il ciclo li manda e risponde.
+    flush: tokio::sync::mpsc::Sender<tokio::sync::oneshot::Sender<()>>,
 }
 
 /// Lo stato del motore che serve allo spot.
@@ -291,9 +293,10 @@ impl Service {
     ) -> Arc<Service> {
         let (config, rx) = watch::channel(initial);
         let queue = Arc::new(upload::Queue::open(endpoints.queue_file.clone()));
-        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()), queue });
+        let (flush, flush_rx) = tokio::sync::mpsc::channel(4);
+        let service = Arc::new(Service { config, status, secrets, endpoints, now, last_spot: Mutex::new(None), live: Mutex::new(Live::default()), queue, flush });
         let events = bus.subscribe_events();
-        tokio::spawn(run(Arc::clone(&service), events, rx));
+        tokio::spawn(run(Arc::clone(&service), events, rx, flush_rx));
         for target in upload::Target::ALL {
             tokio::spawn(upload::worker(Arc::clone(&service), target));
         }
@@ -309,6 +312,20 @@ impl Service {
             self.queue.retry_now(Some(target), (self.now)());
         }
         result
+    }
+
+    /// Alla chiusura del programma: gli spot PSK Reporter ancora in coda partono subito (WSJT-X li manda alla chiusura), aspettando al massimo
+    /// `within` perche' la chiusura non si allunghi. Il bus degli eventi non si chiude mai: senza questa chiamata la coda andava persa.
+    pub async fn flush_psk_now(&self, within: Duration) {
+        let (reply, done) = tokio::sync::oneshot::channel();
+        let asked = async {
+            if self.flush.send(reply).await.is_ok() {
+                let _ = done.await;
+            }
+        };
+        if tokio::time::timeout(within, asked).await.is_err() {
+            tracing::warn!("PSK Reporter: spot in coda non inviati entro {} ms dalla chiusura", within.as_millis());
+        }
     }
 
     /// Le stazioni Wavelog/Cloudlog lette dal server con la chiave salvata (per la tendina delle Impostazioni).
@@ -430,7 +447,12 @@ impl Service {
 
 }
 
-async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver<Event>, mut config_rx: watch::Receiver<Config>) {
+async fn run(
+    service: Arc<Service>,
+    mut events: tokio::sync::broadcast::Receiver<Event>,
+    mut config_rx: watch::Receiver<Config>,
+    mut flush_rx: tokio::sync::mpsc::Receiver<tokio::sync::oneshot::Sender<()>>,
+) {
     let mut queue: VecDeque<psk::Spot> = VecDeque::new();
     let mut spot_cache: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
     let mut packetizer = psk::Packetizer::new(random_id());
@@ -496,6 +518,10 @@ async fn run(service: Arc<Service>, mut events: tokio::sync::broadcast::Receiver
                 }
             },
             _ = tick.tick() => flush_psk(&service, &mut packetizer, &mut queue).await,
+            Some(reply) = flush_rx.recv() => {
+                flush_psk(&service, &mut packetizer, &mut queue).await;
+                let _ = reply.send(());
+            }
             changed = config_rx.changed() => {
                 if changed.is_err() {
                     break;

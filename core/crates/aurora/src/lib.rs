@@ -1112,6 +1112,42 @@ fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_ap
     controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
 }
 
+/// «Cancella» premuta qui e frequenza Tx spostata a trasmissione in corso: come in WSJT-X il Clear va anche ai programmi collegati via UDP
+/// (`band_activity_cleared` → `decodes_cleared`; finestra 2 = tutte e due, Aurora le svuota insieme) e il VFO di trasmissione segue il nuovo XIT
+/// (`setXIT` a ogni cambio della frequenza Tx). Il CAT si comanda fuori dal ciclo del motore; piu' cambi ravvicinati si riassumono nell'ultimo.
+fn wire_erase_and_split(controls: &Arc<engine_native::NativeControls>, bus: &Bus, cat: &Arc<rig_control::cat::CatService>) {
+    let events = bus.events();
+    controls.set_erase_hook(Arc::new(move || {
+        let _ = events.send(Event::ClearDecodes { window: 2 });
+    }));
+    let (weak, cat) = (Arc::downgrade(controls), Arc::clone(cat));
+    let busy = Arc::new((std::sync::atomic::AtomicBool::new(false), std::sync::atomic::AtomicBool::new(false)));
+    controls.set_tx_audio_hook(Arc::new(move || {
+        use std::sync::atomic::Ordering;
+        busy.1.store(true, Ordering::SeqCst);
+        if busy.0.swap(true, Ordering::SeqCst) {
+            return;
+        }
+        let (weak, cat, worker) = (weak.clone(), Arc::clone(&cat), Arc::clone(&busy));
+        let started = std::thread::Builder::new().name("aurora-split-xit".into()).spawn(move || {
+            loop {
+                while worker.1.swap(false, Ordering::SeqCst) {
+                    let Some(controls) = weak.upgrade() else { break };
+                    cat_tx_audio(&cat, &controls);
+                }
+                worker.0.store(false, Ordering::SeqCst);
+                // un cambio arrivato mentre si chiudeva: si riprende, se nessun altro l'ha gia' fatto
+                if !worker.1.load(Ordering::SeqCst) || worker.0.swap(true, Ordering::SeqCst) {
+                    break;
+                }
+            }
+        });
+        if started.is_err() {
+            busy.0.store(false, Ordering::SeqCst);
+        }
+    }));
+}
+
 /// La verifica in linea del codice OTP del Fox (Hound classico, `processSFoxVerification`/`handleVerifyMsg` di WSJT-X): la richiesta parte in un thread
 /// a parte; l'esito va nello stato della stazione (pagina Stazione) e, come in WSJT-X, diventa una riga tra i decode («CALL verified» o «CALL invalid»).
 fn wire_fox_verifier(controls: &Arc<engine_native::NativeControls>, bus: &Bus) {
@@ -1426,6 +1462,7 @@ fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::Na
         rig_control::cat_config::Backend::Hamlib => cat.hamlib().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Tci => cat.tci().and_then(|r| r.set_tx_audio_frequency(hz)),
         rig_control::cat_config::Backend::Ft991link => cat.ft991().and_then(|r| r.set_tx_audio_frequency(hz)),
+        rig_control::cat_config::Backend::Omnirig => rig_control::omnirig::set_tx_audio_frequency(hz),
         _ => Ok(()),
     };
     if let Err(e) = result {
@@ -1433,11 +1470,45 @@ fn cat_tx_audio(cat: &rig_control::cat::CatService, controls: &engine_native::Na
     }
 }
 
-/// Lo split della radio e' attivo: scelto nelle Impostazioni (Rig o Fake It) con un CAT che lo sa fare (Hamlib, TCI, FT-991 Link; non OmniRig).
+/// Lo split della radio e' attivo: scelto nelle Impostazioni (Rig o Fake It) con un CAT che lo sa fare (Hamlib, TCI, FT-991 Link, OmniRig come
+/// `OmniRigTransceiver` di WSJT-X).
 fn cat_split_active(cat: &rig_control::cat::CatService) -> bool {
     let config = cat.config();
     config.split != rig_control::cat_config::SplitMode::None
-        && matches!(config.backend, rig_control::cat_config::Backend::Hamlib | rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link)
+        && matches!(
+            config.backend,
+            rig_control::cat_config::Backend::Hamlib | rig_control::cat_config::Backend::Tci | rig_control::cat_config::Backend::Ft991link | rig_control::cat_config::Backend::Omnirig
+        )
+}
+
+/// PTT con OmniRig e lo split: prima del PTT la frequenza audio al CAT (split vero: `SetSplitMode`) e, con «Fake It», la radio sulla frequenza di
+/// trasmissione; dopo il PTT la radio torna sulla ricezione (`EmulateSplitTransceiver` di WSJT-X, che avvolge anche OmniRig).
+struct OmniRigSplitPtt {
+    inner: tx_native::OmniRigPtt,
+    cat: Arc<rig_control::cat::CatService>,
+    controls: Arc<engine_native::NativeControls>,
+}
+
+impl tx_native::Ptt for OmniRigSplitPtt {
+    fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        let split = cat_split_active(&self.cat) && self.cat.backend() == rig_control::cat_config::Backend::Omnirig;
+        if on && split {
+            cat_tx_audio(&self.cat, &self.controls);
+            if let Err(e) = rig_control::omnirig::emulate_begin() {
+                tracing::warn!("split simulato con OmniRig: radio non spostata sulla frequenza di trasmissione: {e}");
+            }
+        }
+        let result = self.inner.set(on);
+        // anche se lo spegnimento non e' confermato si prova a rimettere la ricezione; senza split non c'e' nulla da rimettere
+        if !on && let Err(e) = rig_control::omnirig::emulate_end() {
+            tracing::warn!("split simulato con OmniRig: ritorno alla frequenza di ricezione non riuscito: {e}");
+        }
+        result
+    }
+
+    fn is_on(&self) -> bool {
+        self.inner.is_on()
+    }
 }
 
 /// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `T 1` / `T 0` di rigctld con Hamlib.
@@ -1602,7 +1673,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
     // lo split della radio vale solo con il PTT dal CAT (con un PTT su seriale o VOX la radio non riceve la frequenza di trasmissione)
-    if method == "cat" {
+    if method == "cat" || method == "omnirig" {
         let probe_cat = Arc::clone(cat);
         controls.set_split_probe(Arc::new(move || cat_split_active(&probe_cat)));
     }
@@ -1621,7 +1692,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
             }
         }
         "omnirig" => match tx_native::OmniRigPtt::new(rig_control::omnirig::rig()) {
-            Ok(ptt) => Arc::new(ptt),
+            Ok(ptt) => Arc::new(OmniRigSplitPtt { inner: ptt, cat: Arc::clone(cat), controls: Arc::clone(controls) }),
             Err(e) => {
                 tracing::error!("PTT con OmniRig non attivo ({e}): niente trasmissione");
                 return None;
@@ -1632,15 +1703,31 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
     // il PTT passa dal blocco esterno (TxInhibit via UDP): con una prenotazione attiva resta spento
     interlock.attach(ptt);
     let ptt: Arc<dyn tx_native::Ptt> = Arc::clone(interlock) as Arc<dyn tx_native::Ptt>;
-    let tx_config = tx_native::TxConfig { allow_tx: true, attenuation_tenths: Some(controls.attenuation.load(std::sync::atomic::Ordering::Relaxed)), ..tx_native::TxConfig::default() };
+    // «Tx delay» di WSJT-X (`TxDelay`): l'audio parte questo tempo dopo il PTT; lo spegnimento resta 200 ms dopo la fine dell'audio
+    let tx_config = tx_native::TxConfig {
+        allow_tx: true,
+        attenuation_tenths: Some(controls.attenuation.load(std::sync::atomic::Ordering::Relaxed)),
+        ptt_lead: std::time::Duration::from_millis(u64::from(controls.ptt_lead_ms())),
+        ..tx_native::TxConfig::default()
+    };
     match tx_native::Transmitter::new(Arc::new(tx_native::SystemClock), ptt, sink, tx_config) {
         Ok(transmitter) => {
+            let transmitter = Arc::new(transmitter);
+            let weak = Arc::downgrade(&transmitter);
+            controls.set_ptt_lead_hook(Arc::new(move |ms| {
+                let Some(transmitter) = weak.upgrade() else { return };
+                let config = tx_native::TxConfig { ptt_lead: std::time::Duration::from_millis(u64::from(ms)), ..transmitter.config() };
+                match transmitter.set_config(config) {
+                    Ok(()) => tracing::info!("Tx delay: l'audio parte {ms} ms dopo il PTT"),
+                    Err(e) => tracing::warn!("Tx delay non applicato: {e}"),
+                }
+            }));
             let flag = Arc::clone(controls);
             transmitter.set_listener(Some(Arc::new(move |state| {
                 flag.transmitting.store(state == tx_native::TxState::Transmitting, std::sync::atomic::Ordering::Relaxed);
             })));
             tracing::info!("trasmissione pronta: PTT {}{}", method, config.ptt_port.as_deref().filter(|_| method == "rts" || method == "dtr").map(|p| format!(" su {p}")).unwrap_or_default());
-            Some(Arc::new(transmitter))
+            Some(transmitter)
         }
         Err(e) => {
             tracing::error!("trasmissione non attiva: {e}");
@@ -1700,6 +1787,7 @@ pub async fn run(
     }
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());
+    wire_erase_and_split(&native_controls, &bus, &cat);
     // il blocco della trasmissione chiesto dai controller UDP (TxInhibit): sta tra la catena di trasmissione e il PTT vero per tutta la vita del programma
     let tx_interlock = Arc::new(tx_native::TxInterlock::new());
     let live_tx = match config.engine {
@@ -1891,6 +1979,7 @@ pub async fn run(
         native_controls.monitor.store(!r.monitor_off_at_start, std::sync::atomic::Ordering::Relaxed);
         native_controls.set_sequence(sequence_settings(&r));
         native_controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
+        native_controls.set_ptt_lead_ms(r.tx_delay_ms);
         apply_wsjtx3_settings(&native_controls, &r);
         wire_fox_verifier(&native_controls, &bus);
         let (store, flags, filter, controls, live) = (Arc::clone(store), Arc::clone(&highlight_flags), Arc::clone(&log_filter), Arc::clone(&native_controls), live_log.clone());
@@ -1900,6 +1989,7 @@ pub async fn run(
             while changes.changed().await.is_ok() {
                 let r = store.reports();
                 controls.set_swr_limit(r.swr_limit_centi as f32 / 100.0);
+                controls.set_ptt_lead_ms(r.tx_delay_ms);
                 apply_wsjtx3_settings(&controls, &r);
                 if let Ok(mut f) = flags.write() {
                     *f = r.highlights;
@@ -2691,6 +2781,7 @@ pub async fn run(
     let closing = state.clone();
     let cat_for_task = Arc::clone(&cat);
     let audio_for_task = audio_manager.clone();
+    let reporting_for_task = engine_settings.as_ref().and_then(|store| store.reporting());
     let task = tokio::spawn(async move {
         let served = axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
             .with_graceful_shutdown(async move {
@@ -2705,6 +2796,10 @@ pub async fn run(
         // l'annuncio mDNS si spegne con Aurora
         if let Ok(mut s) = announcer.lock() {
             s.take();
+        }
+        // gli spot PSK Reporter ancora in coda partono prima di chiudere (al massimo 2 s, per non ritardare la chiusura)
+        if let Some(service) = &reporting_for_task {
+            service.flush_psk_now(std::time::Duration::from_secs(2)).await;
         }
         if let Some(emitter) = udp_emitter.lock().await.take() {
             emitter.shutdown().await;

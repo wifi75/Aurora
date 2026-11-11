@@ -141,6 +141,14 @@ export const engineHintStrings = {
     'Entradas separadas por comas: «FT8 20m», «FT4 40m» o «MSK144 6m» (frecuencia de la tabla de frecuencias) o hasta 8 frecuencias propias en kHz (p. ej. 14090), siempre en FT8.',
     'Entradas separadas por vírgulas: «FT8 20m», «FT4 40m» ou «MSK144 6m» (frequência da tabela de frequências) ou até 8 frequências próprias em kHz (ex. 14090), sempre em FT8.',
   ],
+  'jxh.TxDelay': [
+    "Tempo minimo tra l'accensione del PTT e l'inizio dell'audio, come «Tx delay» di WSJT-X: da 0 a 0,5 s (di fabbrica 0,2). Alzalo se la radio o il CAT sono lenti e l'inizio dei messaggi si perde.",
+    'Minimum delay between PTT on and the start of the Tx audio, like WSJT-X “Tx delay”: 0 to 0.5 s (default 0.2). Raise it if the radio or CAT is slow and the start of messages gets lost.',
+    'Mindestzeit zwischen PTT ein und Beginn des Sendetons, wie „Tx delay“ in WSJT-X: 0 bis 0,5 s (Standard 0,2). Erhöhe sie, wenn Funkgerät oder CAT langsam sind und der Anfang der Nachrichten verloren geht.',
+    "Délai minimal entre l'activation du PTT et le début de l'audio, comme « Tx delay » de WSJT-X : de 0 à 0,5 s (par défaut 0,2). Augmente-le si la radio ou le CAT sont lents et que le début des messages se perd.",
+    'Tiempo mínimo entre la activación del PTT y el inicio del audio, como «Tx delay» de WSJT-X: de 0 a 0,5 s (de serie 0,2). Súbelo si la radio o el CAT son lentos y se pierde el inicio de los mensajes.',
+    'Tempo mínimo entre ligar o PTT e o início do áudio, como «Tx delay» do WSJT-X: de 0 a 0,5 s (de origem 0,2). Aumenta-o se o rádio ou o CAT forem lentos e o início das mensagens se perder.',
+  ],
   'jxh.SWRLimit': [
     'Sicurezza: se in trasmissione la radio legge un ROS piu\' alto di questo valore, Aurora ferma subito la trasmissione e ti avvisa (di fabbrica 2,5). Serve il CAT Hamlib con la lettura del ROS. 0 = controllo spento.',
     'Safety: if the radio reads an SWR higher than this while transmitting, Aurora stops transmitting at once and warns you (default 2.5). Needs Hamlib CAT with SWR reading. 0 = check off.',
