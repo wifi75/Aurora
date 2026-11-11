@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+- **Paesi DXCC come WSJT-X**: le entita' solo WAE di `cty.dat` (Sicilia, Turchia europea, Italia africana, Shetland, Vienna ITC, Bear Island) non sono piu' paesi: una stazione IU9 o IT9 e' Italia, non piu' un falso «nuovo DXCC»; non contano nei totali ne' nell'elenco dei paesi delle Automazioni.
+- Suffissi operativi come WSJT-X: IU3ABC/R, /Q, /FD, /FF, /LT, /LGT restano del paese del nominativo (prima /R dava Russia, /FD Francia, /LGT Norvegia); davanti al nominativo restano prefissi veri (LT/IU3ABC e' Argentina).
+- **PSK Reporter come WSJT-X**: lo stesso nominativo si segnala al massimo una volta ogni 5 minuti (sopra 49 MHz ogni volta), la coda parte ogni 2 minuti invece di 5 e si svuota anche alla chiusura.
+- **GridTracker e JTAlert**: l'HaltTx «solo automatico» spegne Abilita Tx lasciando finire il messaggio in onda (prima fermava subito la trasmissione); «Cancella» manda il Clear e il Replay non rimanda piu' le righe cancellate.
+- **Wavelog, token API v2** (`wl2_...`): invio con l'API v2 e la prova in «dry run» senza scrivere nel log, come WSJT-X 3.3; prima l'invio e la prova fallivano.
 - **Trasmissione oltre i 15 secondi**: un tetto fisso di 15 s rifiutava ogni onda piu' lunga, quindi in JT65, JT9, JT4 e Q65 da 30 s in su la trasmissione non partiva; ora il limite e' il periodo meno il ritardo d'inizio.
 - **Wait and Call con «Salta Tx1»**: la chiamata partiva da Tx2 e il controllo guardava solo Tx1, quindi non smetteva mai di chiamare; ora si ferma dopo 6,2 periodi come in WSJT-X.
 - **Wait and Pounce**: una scelta del DX fatta dall'operatore (doppio clic, risposta in coda, DX scritto a mano) lo disarma, come in WSJT-X 3.3; prima il primo CQ sentito sostituiva il DX scelto.
