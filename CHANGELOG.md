@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Impostazioni › Servizi online: la nota di PSK Reporter dice anche del flusso in tempo reale `mqtt.pskreporter.info`, che come pskreporter.info vede nominativo e indirizzo IP (sei lingue); aggiornate anche la pagina della privacy e `docs/api.md`.
 
 ## 0.11.234 - 2026-11-11
 ### Corretto
