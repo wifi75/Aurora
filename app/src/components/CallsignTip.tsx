@@ -160,12 +160,12 @@ type Person = NonNullable<CallsignInfo['person']>;
 
 /**
  * Come la stazione conferma i QSO (da QRZ.com o HamQTH): LoTW, eQSL, QSL diretta e il QSL manager. Acceso = si', grigio = no, assente = il
- * servizio non lo dice. Corto (L E D) nei Comandi, per esteso nel riquadro del nominativo.
+ * servizio non lo dice. LoTW compare solo se la stazione lo usa (mai grigio). Corto (L E D) nei Comandi, per esteso nel riquadro del nominativo.
  */
-export function QslBadges({ person, long = false, lotwDate = null }: { person: Partial<Person>; long?: boolean; lotwDate?: string | null }) {
+export function QslBadges({ person, long = false }: { person: Partial<Person>; long?: boolean; /** non piu' mostrata: basta sapere che la stazione usa LoTW */ lotwDate?: string | null }) {
   const t = useT();
   const items = [
-    { key: 'L', label: long && lotwDate ? `${t('qsl.lotw')} (${lotwDate})` : t('qsl.lotw'), on: person.lotw },
+    { key: 'L', label: t('qsl.lotw'), on: person.lotw === true ? true : undefined },
     { key: 'E', label: t('qsl.eqsl'), on: person.eqsl },
     { key: 'D', label: t('qsl.direct'), on: person.direct },
     { key: 'B', label: t('qsl.bureau'), on: person.bureau },
