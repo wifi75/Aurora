@@ -136,3 +136,11 @@ Aurora: nessun modo Fox. **Manca**, priorita' bassa (servono chiave NCDXF per l'
 ## 7. Impostazioni nuove rilevanti
 
 `OTPEnabled`, `OTPSeed`, `OTPinterval`, `OTPUrl`, `ShowOTP`, `superFox` (Avanzate), `Ftol_SF`, `Wait_features_enabled`, decoder FT8 multithread e momento di avvio. In Aurora andranno almeno: SuperFox si/no, Mostra OTP, URL del server OTP, verifica in linea si/no.
+
+## 8. Beta 6 (2026-11-11)
+
+- Materiale: tag `v3.3.0-beta6` (commit `7255454d`) e `jt9.exe` per Windows (`wsjtx-3.3.0-beta6-windows-x86_64-jt9.tar.gz`, sha256 `fb7a3501...`, verificato con `SHA256SUMS`) in `D:\MCP-Server\wsjtx-3.3.0-beta6` (`sorgenti`, `bin`). Ghidra 12.2 e REA stanno in `D:\MCP-Server`.
+- Differenze beta5 -> beta6 (202 commit, confronto su GitHub): nessun cambio all'algoritmo di decodifica FT8/FT4. Sono correzioni di sicurezza tra thread (`sync8var`: spettri allocati invece che statici; `packjt77`: byte order calcolato a ogni chiamata), limiti sugli elenchi (`ft8_decodevar`: copia dei messaggi limitata alla capienza; `ft4_decode`: risultati limitati a `MAXCAND`), variabili non inizializzate (`ft8bvar`: `ibmax=0`; `ft8_a8d`: `local_fbest`, `local_tbest`), database dei nominativi senza capienza fissa (`searchcallsvar`, `cwfilter`).
+- Novita' di logica fuori dal decoder: FT4 «Best S+P» scelto una sola volta con criterio indipendente, riuso dei locatori decodificati di recente alla scelta di una stazione, «Wait» solo con corrispondenza esatta della stazione, decodificatore del codec su un thread a parte.
+- `jt9.exe` decodifica WAV da riga di comando: serve come riferimento per confrontare Aurora sugli stessi file.
+- Verifica in binario con Ghidra 12.2 su `wsjtx.exe` 3.3.0-beta6 (da `wsjtx-3.3.0-beta6-win64.exe` aperto con 7-Zip, sha256 dell'installatore `6097bf07...`; senza simboli: i nomi sono `FUN_...`): la scelta della scheda audio (`FUN_140386820`, `find_audio_device`) confronta il nome identico e, se la scheda manca, inserisce il segnaposto «Not found» senza errori e senza cercare nomi simili; `OmniRigTransceiver::do_start` (`FUN_1404b2490`) crea un solo `OmniRig::OmniRigX` per tutta la sessione e usa i gestori a eventi (`VisibleChange`, `StatusChange`, `ParamsChange`). Da qui le correzioni di Aurora 0.11.234 (uscita audio in attesa, un solo oggetto OmniRig).
