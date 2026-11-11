@@ -184,6 +184,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
   const [rotorShown, setRotorShown] = useRotorCardVisible();
+  // la larghezza della scheda delle macro: si regola dal bordo destro (doppio clic: quella di partenza)
+  const macroBox = useRef<HTMLDivElement>(null);
+  const [macroW, setMacroW] = useState<number | null>(() => {
+    const v = Number(browserStorage()?.getItem('aurora.digi.macrow'));
+    return Number.isFinite(v) && v >= 360 ? v : null;
+  });
   const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
@@ -848,13 +854,53 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {/* macro a sinistra (colonne fisse e piu' corte), a fianco il selettore di banda con le frequenze del piano IARU */}
       <div className="digi-topline">
       {views.controlBar ? (
-        <ControlBar
-          macros={macros}
-          extended={views.extended}
-          onToggleExtended={() => setView({ extended: !views.extended })}
-          onRun={(m) => execute(m.text)}
-          onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
-        />
+        <div className={`digi-macrowrap${macroW ? ' digi-macrowrap--sized' : ''}`} style={macroW ? { width: macroW } : undefined} ref={macroBox}>
+          <ControlBar
+            macros={macros}
+            extended={views.extended}
+            onToggleExtended={() => setView({ extended: !views.extended })}
+            onRun={(m) => execute(m.text)}
+            onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
+          />
+          <div
+            className="digi-macrogrip"
+            role="separator"
+            aria-orientation="vertical"
+            title={t('digi.bar.resize')}
+            onDoubleClick={() => {
+              setMacroW(null);
+              try {
+                browserStorage()?.removeItem('aurora.digi.macrow');
+              } catch {
+                // niente da fare
+              }
+            }}
+            onPointerDown={(e) => {
+              const el = macroBox.current;
+              if (!el) return;
+              e.preventDefault();
+              const startX = e.clientX;
+              const startW = el.offsetWidth;
+              const scale = el.offsetWidth > 0 ? el.getBoundingClientRect().width / el.offsetWidth : 1;
+              let last = startW;
+              const move = (m: PointerEvent) => {
+                last = Math.round(Math.min(Math.max(360, startW + (m.clientX - startX) / scale), Math.max(360, window.innerWidth / scale - 40)));
+                setMacroW(last);
+              };
+              const up = () => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                try {
+                  browserStorage()?.setItem('aurora.digi.macrow', String(last));
+                } catch {
+                  // la misura vale comunque finche' la pagina e' aperta
+                }
+              };
+              window.addEventListener('pointermove', move);
+              window.addEventListener('pointerup', up);
+            }}
+          />
+        </div>
       ) : null}
       {/* la radio si porta sulla frequenza scelta */}
       <div className="digi-bandbar">
