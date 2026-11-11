@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- Pagina Fox col tema chiaro: la barra dei comandi della cascata (Bins/Pixel, Start, N Avg, Tavolozza, Spec) aveva il testo chiaro su fondo bianco e non si leggeva; ora segue l'aspetto scuro della scheda.
 
 ## 0.11.235 - 2026-11-11
 - **PSK, RTTY e CW: ascolto automatico**: entrando nella pagina l'ascolto parte da solo; si ferma e riparte dal menu Opzioni › Ascolto (tolta la barra «Avvia ascolto»).
