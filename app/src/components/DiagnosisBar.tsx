@@ -17,6 +17,11 @@ function messageKey(issue: Issue): Key {
   return (issue.id === 'audio' ? `diag.audio.${issue.vars.state}` : `diag.${issue.id}`) as Key;
 }
 
+/** Quando si e' aperta l'interfaccia: nei primi secondi nessun avviso (la radio e l'audio si stanno ancora accendendo). */
+const APP_START = Date.now();
+/** Il tempo lasciato alla stazione per accendersi prima di mostrare avvisi (le prove lo azzerano). */
+export const startup = { graceMs: 20_000 };
+
 /** Cio' che non va nella stazione, in chiaro e con dove sistemarlo; non compare quando e' tutto a posto. */
 export function DiagnosisBar() {
   const t = useT();
@@ -41,8 +46,16 @@ export function DiagnosisBar() {
   const [help, setHelp] = useState<string | null>(null);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 10_000);
-    return () => clearInterval(id);
+    // alla fine dell'attesa dell'avvio gli avvisi veri compaiono subito, senza aspettare il prossimo giro
+    const grace = setTimeout(() => setNow(Date.now()), Math.max(0, APP_START + startup.graceMs - Date.now()) + 50);
+    return () => {
+      clearInterval(id);
+      clearTimeout(grace);
+    };
   }, []);
+  // «nessun messaggio da N minuti» si conta da quando questa pagina e' tornata in vista: dopo un periodo passato in CW, PSK o SSTV (dove
+  // non arrivano messaggi FT8) non deve comparire appena si torna
+  const [shownAt] = useState(() => Date.now());
 
   const issues = diagnose({
     now,
@@ -51,14 +64,15 @@ export function DiagnosisBar() {
     periodSecs: periodSecs(status?.mode ?? 'FT8'),
     audio: audio && now - audioAt <= LEVEL_STALE_MS ? audio : null,
     lastDecodeAt,
-    sessionStartAt,
+    sessionStartAt: sessionStartAt === null ? null : Math.max(sessionStartAt, shownAt),
     notices,
     decodeDepth: engine.data?.values.DecodeDepth ?? null,
     slowPcDismissed: slowPcClosedDepths(),
     cat: cat.data ? { connected: cat.data.status.state === 'connected', at: cat.dataUpdatedAt } : null,
   });
   const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
-  const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));
+  const starting = now - APP_START < startup.graceMs;
+  const visible = starting ? [] : issues.filter((issue) => !closed.includes(keyOf(issue)));
   const close = (issue: Issue) => {
     if (issue.id === 'slow_pc' && issue.vars.depth) closeSlowPc(String(issue.vars.depth));
     setClosed((c) => [...c, keyOf(issue)]);

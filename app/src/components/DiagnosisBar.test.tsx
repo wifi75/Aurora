@@ -7,7 +7,10 @@ vi.mock('../api/client', () => ({ getClock: vi.fn(), getEngineSettings: vi.fn(),
 import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { resetSlowPcClosed } from '../lib/diagnosis';
 import { useStation } from '../state/station';
-import { DiagnosisBar } from './DiagnosisBar';
+import { DiagnosisBar, startup } from './DiagnosisBar';
+
+// nelle prove gli avvisi compaiono subito: l'attesa dell'avvio ha la sua prova
+startup.graceMs = 0;
 
 function render(ui: ReactElement) {
   return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
