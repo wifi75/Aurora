@@ -43,6 +43,8 @@ enum Prova {
     Vicina,
     /// La scheda audio sbaglia l'orologio di tante parti per milione.
     Orologio(f64),
+    /// Scariche (QRN) di 1-3 ms, 15 volte la deviazione del rumore, quattro al secondo in media.
+    Qrn,
     /// Segnale e rumore 40 dB piu' bassi (ingresso a basso volume).
     Livello,
 }
@@ -97,7 +99,19 @@ fn audio_di_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (Strin
     let mut audio = vec![0.0_f32; pad_before];
     audio.extend_from_slice(&sig);
     audio.extend(std::iter::repeat_n(0.0, RATE as usize));
-    aggiungi_rumore(&mut audio, sigma_per_snr(AMP, snr_db), &mut rng);
+    let sigma = sigma_per_snr(AMP, snr_db);
+    aggiungi_rumore(&mut audio, sigma, &mut rng);
+    if let Prova::Qrn = prova {
+        // come nella prova CW: scariche di 1-3 ms, 15 volte la deviazione del rumore
+        let mut n = 0usize;
+        while n < audio.len() {
+            n += (-(rng.uniform().ln()) * RATE / 4.0) as usize + 1;
+            let len = 12 + (rng.next_u64() % 24) as usize;
+            for k in n..(n + len).min(audio.len()) {
+                audio[k] += (15.0 * sigma.max(0.02) * rng.gauss()) as f32;
+            }
+        }
+    }
     if matches!(prova, Prova::Livello) {
         for s in audio.iter_mut() {
             *s *= 0.01;
@@ -153,7 +167,7 @@ fn prova_contro_fldigi(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (
 
 const SNRS: [f64; 7] = [5.0, 0.0, -5.0, -8.0, -10.0, -12.0, -15.0];
 
-const CASI: [(Prova, &str); 9] = [
+const CASI: [(Prova, &str); 10] = [
     (Prova::Awgn, "rumore"),
     (Prova::Fuori(4.0), "fuori +4 Hz"),
     (Prova::Fuori(-6.0), "fuori -6 Hz"),
@@ -163,6 +177,7 @@ const CASI: [(Prova, &str); 9] = [
     (Prova::Vicina, "vicina +6 dB"),
     (Prova::Orologio(200.0), "orologio 200ppm"),
     (Prova::Livello, "livello -40 dB"),
+    (Prova::Qrn, "QRN"),
 ];
 
 #[test]

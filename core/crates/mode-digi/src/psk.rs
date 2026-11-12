@@ -13,7 +13,10 @@
 //! - AFC solo con il DCD acceso e la metrica sopra 0,05, guadagno 1/32 (PSK31) o 1/64 (PSK63) come fldigi, ma sull'errore di fase avvolto
 //!   in ±90° (fldigi tiene la fase in [0, 2π) e sui bit 1 corregge solo da una parte);
 //! - S/N e IMD con filtri di Goertzel (fldigi `psk::calcSN_IMD` e `psk::signalquality`); l'IMD vale solo durante almeno 21 inversioni
-//!   di fila.
+//!   di fila;
+//! - noise blanker senza ritardo davanti al mixer (P4 di `docs/progetto-psk-cw-oltre.md`): le scariche diventano buchi di pochi ms invece
+//!   di simboli sbagliati; senza scariche l'ingresso passa com'e'. Con il QRN della prova `psk_confronto` gli errori in PSK31 scendono dal
+//!   27,7% al 12,6% (fldigi 30,5%).
 //!
 //! Per le decisioni «soft» future (varicode con più ipotesi, più ricevitori in parallelo) ogni simbolo lascia anche la sua affidabilità
 //! ([`PskDemodulator::soft_bits`]), non solo il bit deciso.
@@ -268,6 +271,8 @@ pub struct PskDemodulator {
     /// Potenza media degli ultimi simboli.
     p_local: f32,
     confidences: Vec<u8>,
+    /// P4: noise blanker davanti al mixer (le scariche diventano buchi invece di simboli sbagliati).
+    blanker: Option<crate::blanker::NoiseBlanker>,
 }
 
 impl PskDemodulator {
@@ -324,6 +329,7 @@ impl PskDemodulator {
             moments_n: 0,
             p_local: 0.0,
             confidences: Vec::new(),
+            blanker: Some(crate::blanker::NoiseBlanker::without_delay()),
         }
     }
 
@@ -417,6 +423,10 @@ impl PskDemodulator {
         self.confidences.clear();
         let len1 = self.ring1.len();
         for &s in samples {
+            let s = match self.blanker.as_mut() {
+                Some(nb) => nb.process(s),
+                None => s,
+            };
             let (sin, cos) = self.phase.sin_cos();
             self.ring1[self.pos1] = (s * cos as f32, -s * sin as f32);
             self.pos1 = (self.pos1 + 1) % len1;
