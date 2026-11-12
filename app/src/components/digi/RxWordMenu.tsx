@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react';
 import { useT } from '../../i18n';
 import { MenuList } from './MenuBar';
 
-/** Dove mettere la parola scelta nella finestra di ricezione: un campo del log del QSO in corso, oppure negli appunti. */
-export type WordTarget = 'call' | 'name' | 'qth' | 'grid' | 'rst' | 'copy';
+/** Dove mettere la parola scelta nella finestra di ricezione: un campo del log del QSO in corso, negli appunti (il testo selezionato o la
+ * parola), oppure si svuota la finestra. */
+export type WordTarget = 'call' | 'name' | 'qth' | 'grid' | 'rst' | 'copy' | 'clear';
 
 export interface WordAt {
-  word: string;
+  /** La parola cliccata; `null` fuori dalle parole (allora solo Copia e Cancella tutto). */
+  word: string | null;
   x: number;
   y: number;
 }
@@ -51,8 +53,8 @@ export function wordAtPoint(x: number, y: number, box: HTMLElement): string | nu
   return word === '' ? null : word;
 }
 
-/** Il menu del tasto destro su una parola della finestra di ricezione: la mette nel campo scelto del log (nominativo, nome, QTH, locatore,
- * rapporto ricevuto) o la copia. Si chiude con un clic fuori, Esc o lo scorrimento. */
+/** Il menu del tasto destro della finestra di ricezione: sulla parola la mette nel campo scelto del log (nominativo, nome, QTH, locatore,
+ * rapporto ricevuto); sempre Copia (il testo selezionato o la parola) e Cancella tutto. Si chiude con un clic fuori, Esc o lo scorrimento. */
 export function RxWordMenu({ at, onPick, onClose }: { at: WordAt; onPick(target: WordTarget, word: string): void; onClose(): void }) {
   const t = useT();
   const box = useRef<HTMLDivElement>(null);
@@ -80,19 +82,23 @@ export function RxWordMenu({ at, onPick, onClose }: { at: WordAt; onPick(target:
   // il menu resta dentro la finestra anche vicino ai bordi
   const left = Math.min(at.x, window.innerWidth - 260);
   const top = Math.min(at.y, window.innerHeight - 230);
-  const item = (target: WordTarget, label: string) => ({ label, onSelect: () => onPick(target, at.word) });
+  const word = at.word ?? '';
+  const item = (target: WordTarget, label: string) => ({ label, onSelect: () => onPick(target, word) });
+  const always = [item('copy', t('digi.word.copy')), item('clear', t('digi.mi.clearRx'))];
   return (
-    <div className="digi-menu" style={{ position: 'fixed', left: Math.max(0, left), top: Math.max(0, top), zIndex: 60 }} ref={box} onContextMenu={(e) => e.preventDefault()} aria-label={t('digi.word.menu', { word: at.word })}>
+    <div
+      className="digi-menu"
+      style={{ position: 'fixed', left: Math.max(0, left), top: Math.max(0, top), zIndex: 60 }}
+      ref={box}
+      onContextMenu={(e) => e.preventDefault()}
+      aria-label={at.word ? t('digi.word.menu', { word: at.word }) : t('digi.rx.title')}
+    >
       <MenuList
-        items={[
-          item('call', t('digi.word.call')),
-          item('name', t('digi.word.name')),
-          item('qth', t('digi.word.qth')),
-          item('grid', t('digi.word.grid')),
-          item('rst', t('digi.word.rst')),
-          'sep',
-          item('copy', t('digi.word.copy')),
-        ]}
+        items={
+          at.word
+            ? [item('call', t('digi.word.call')), item('name', t('digi.word.name')), item('qth', t('digi.word.qth')), item('grid', t('digi.word.grid')), item('rst', t('digi.word.rst')), 'sep', ...always]
+            : always
+        }
         onDone={onClose}
       />
     </div>

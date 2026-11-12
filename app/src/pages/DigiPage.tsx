@@ -714,7 +714,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // la parola scelta col tasto destro va nel campo del log del QSO in corso (il rapporto e' quello ricevuto) o negli appunti
   const pickWord = (target: WordTarget, word: string) => {
-    if (target === 'copy') void navigator.clipboard?.writeText(word).catch(() => undefined);
+    if (target === 'copy') {
+      // il testo selezionato nella finestra di ricezione, altrimenti la parola cliccata
+      const sel = window.getSelection();
+      const picked = sel && rxBox.current && sel.anchorNode && rxBox.current.contains(sel.anchorNode) ? sel.toString() : '';
+      const text = picked !== '' ? picked : word;
+      if (text !== '') void navigator.clipboard?.writeText(text).catch(() => undefined);
+    } else if (target === 'clear') clearDigiText();
     else if (target === 'rst') setSavedField({ rstr: word.toUpperCase() });
     else if (target === 'call') takeCall(word);
     else if (target === 'grid') setQso((q) => ({ ...q, wwloc: word.toUpperCase() }));
@@ -930,10 +936,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <div className="digi-windows" ref={windowsRef}>
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
             onContextMenu={(e) => {
-              // sulle parole il nostro menu, fuori dalle parole nessun menu (nemmeno quello del sistema)
+              // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
               e.preventDefault();
               const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
-              setWordMenu(word ? { word, x: e.clientX, y: e.clientY } : null);
+              setWordMenu({ word, x: e.clientX, y: e.clientY });
             }}
             onDoubleClick={(e) => {
               // doppio clic su un nominativo: nel QSO in corso (non salvato) con la ricerca
