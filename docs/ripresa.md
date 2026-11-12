@@ -2,6 +2,16 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-12 pomeriggio (lavoro dopo la 0.11.239, solo commit locali)
+
+- **Commit locali, non pubblicati** (il proprietario li prova prima con l'installatore di prova `Aurora-PROVA-impostazioni.exe` sul Desktop):
+  Impostazioni ad albero; pagine Scansione e memorie (PSK·RTTY·CW) e Contest; voci doppie tolte; issue #40 (righe non confermate piu'
+  chiare e a righe); avviso sulla frequenza Tx fuori da 200-2700 Hz; Guida aggiornata ai percorsi nuovi. **Niente push finche' il proprietario
+  non dice che la prova e' andata bene.**
+- `dist-release\` contiene l'installatore di prova, non quello della 0.11.239: alla prossima release si ricompila.
+- Le Novita' delle voci nuove si scrivono al rilascio (la prova vuole la voce piu' recente della versione in uso).
+- Risposta per la #40 (avllucken) da scrivere quando la versione esce: la dara' il proprietario.
+
 ## Stato al 2026-11-12 (0.11.239)
 
 - **0.11.239**: revisione completa con le sue correzioni (sicurezza dell'accesso locale, Split DX, XIT, SQLite) e i punti lasciati

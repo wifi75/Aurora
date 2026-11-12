@@ -3,6 +3,13 @@
 Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeWire e CAT con l'Hamlib di Debian 12; mappa dei satelliti inclusa; Tune subito, Clear Avg di JT65; revisione completa e sicurezza; installatore compilato e firmato sul PC). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
+## Decisioni del 2026-11-12
+
+- **Impostazioni ad albero** (scelta «4 Albero a tre livelli»): all'apertura tutto chiuso e la pagina Informazioni con «Sostieni Aurora»; l'ingranaggio di ogni modo apre il suo ramo; una voce sta in un posto solo (registrazione dei QSO in Modi › Comune, sorveglianza Tx nella Sequenza).
+- **Issue #40**: una novita' dovuta solo alla mancata conferma resta con la sua etichetta (DecodeTag NewGrid/NewDxcc, cosi' Automazioni e filtri non cambiano) e in piu' `unconfirmed: true`; l'interfaccia la disegna piu' chiara e a righe.
+- **Frequenza Tx**: si avvisa (campo rosso, avviso all'inizio della Tx) ma non si blocca fuori da 200-2700 Hz, come WSJT-X che non avvisa affatto. Nata da una potenza bassa scambiata per un difetto di Aurora.
+- **All'avvio Aurora riparte dalla Stazione**: un indirizzo `#/impostazioni` aperto da zero nel browser torna a `#/` di proposito (`main.tsx`).
+
 ## Decisioni del 2026-11-11 mezzanotte
 
 - **LoTW nel riquadro del nominativo**: solo se la stazione lo usa, verde e senza data (la data non serve); se non lo usa non compare (mai «✖ LoTW»).
