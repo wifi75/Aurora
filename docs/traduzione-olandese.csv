@@ -3831,6 +3831,8 @@ sstv.img.partial,partial,gedeeltelijk
 sstv.tx.mode,Transmit mode,Zendmodus
 sstv.tx.to,Their call,Roepnaam van de ander
 sstv.tx.send,Transmit,Zenden
+sstv.tx.sendTip,Transmits the composed image (F1 key),Zendt de samengestelde afbeelding uit (toets F1)
+sstv.tx.stopTip,Stops the transmission at once (Esc key),Stopt de uitzending meteen (toets Esc)
 sstv.tx.stop,Stop,Stop
 sstv.tx.progress,Sending {mode}: {done} of {total},{mode} wordt verzonden: {done} van {total}
 sstv.tx.done,Picture sent,Beeld verzonden

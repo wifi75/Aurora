@@ -241,9 +241,22 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
   }, [takeFile]);
 
   // annulla/ripeti da tastiera
+  // i valori di adesso per i tasti rapidi (l'ascolto dei tasti si monta una volta sola)
+  const keys = useRef({ sending: false, canTransmit: false, transmit: () => {}, onChanged: () => {} });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!stage.current || stage.current.offsetParent === null) return;
+      // F1 trasmette l'immagine, Esc ferma la trasmissione: valgono anche mentre si scrive in una casella
+      if (e.key === 'F1') {
+        e.preventDefault();
+        if (!keys.current.sending && keys.current.canTransmit) keys.current.transmit();
+        return;
+      }
+      if (e.key === 'Escape' && keys.current.sending) {
+        e.preventDefault();
+        void sstvAbort().then(keys.current.onChanged);
+        return;
+      }
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) return;
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -425,9 +438,22 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
 
   const layerName = (l: Layer): string => (l.kind === 'text' ? l.text.split('\n')[0] || t('sstv.layer.text') : t(`sstv.layer.${l.shape === 'rect' ? 'rect' : l.shape}` as Key));
 
+  keys.current = { sending, canTransmit: snap.can_transmit, transmit, onChanged };
   return (
     <section className="sstv-composer">
       <div className="sstv-toolbar">
+        {sending ? (
+          <button type="button" className="glass sstv-btn sstv-btn--danger sstv-btn--big sstv-toolbar-tx" title={t('sstv.tx.stopTip')} onClick={() => void sstvAbort().then(onChanged)}>
+            {t('sstv.tx.stop')} <kbd>Esc</kbd>
+          </button>
+        ) : (
+          <button type="button" className="glass sstv-btn sstv-btn--primary sstv-btn--big sstv-toolbar-tx" title={t('sstv.tx.sendTip')} disabled={!snap.can_transmit} onClick={transmit}>
+            {t('sstv.tx.send')} <kbd>F1</kbd>
+          </button>
+        )}
+        {!sending && snap.tx.state === 'done' ? <span className="sstv-ok sstv-toolbar-state">{t('sstv.tx.done')}</span> : null}
+        {!sending && snap.tx.state === 'aborted' ? <span className="sstv-warn sstv-toolbar-state">{t('sstv.tx.aborted')}</span> : null}
+        {!sending && snap.tx.state === 'error' ? <span className="sstv-bad sstv-toolbar-state">{snap.tx.message ?? t('sstv.tx.error')}</span> : null}
         <label className="sstv-field sstv-field--mode">
           <span>{t('sstv.tx.mode')}</span>
           <select value={modeId} onChange={(e) => setModeId(e.target.value)} disabled={sending}>
@@ -609,31 +635,14 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
           </div>
           <p className="sstv-hint sstv-preview-cap">{t('sstv.preview', { w: W, h: H })}</p>
 
-          <div className="sstv-sendbar">
-            {sending ? (
-              <>
-                <div className="sstv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
-                  <span style={{ width: `${snap.tx.progress * 100}%` }} />
-                  <em>{t('sstv.tx.progress', { mode: snap.modes.find((m) => m.id === snap.tx.mode)?.name ?? '', done: formatDuration(snap.tx.elapsed_s), total: formatDuration(snap.tx.total_s) })}</em>
-                </div>
-                <button type="button" className="glass sstv-btn sstv-btn--danger sstv-btn--big" onClick={() => void sstvAbort().then(onChanged)}>
-                  {t('sstv.tx.stop')}
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="sstv-sendinfo">
-                  <b>{mode?.name}</b> · {W}×{H} · {formatDuration(mode?.seconds ?? 0)}
-                  {snap.tx.state === 'done' ? <span className="sstv-ok"> · {t('sstv.tx.done')}</span> : null}
-                  {snap.tx.state === 'aborted' ? <span className="sstv-warn"> · {t('sstv.tx.aborted')}</span> : null}
-                  {snap.tx.state === 'error' ? <span className="sstv-bad"> · {snap.tx.message ?? t('sstv.tx.error')}</span> : null}
-                </span>
-                <button type="button" className="glass sstv-btn sstv-btn--primary sstv-btn--big" disabled={!snap.can_transmit} onClick={transmit}>
-                  {t('sstv.tx.send')}
-                </button>
-              </>
-            )}
-          </div>
+          {sending ? (
+            <div className="sstv-sendbar">
+              <div className="sstv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(snap.tx.progress * 100)}>
+                <span style={{ width: `${snap.tx.progress * 100}%` }} />
+                <em>{t('sstv.tx.progress', { mode: snap.modes.find((m) => m.id === snap.tx.mode)?.name ?? '', done: formatDuration(snap.tx.elapsed_s), total: formatDuration(snap.tx.total_s) })}</em>
+              </div>
+            </div>
+          ) : null}
           {!snap.can_transmit ? <p className="notice">{t('sstv.tx.notReady')}</p> : null}
           {problem ? (
             <p className="notice sstv-bad" role="alert">

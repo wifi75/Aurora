@@ -414,3 +414,8 @@ html[data-theme='light'] .sstv-log-info { color: #46556f; }
   .sstv-side-col .sstv-strip { grid-auto-columns: 4.2rem; }
   .sstv-hist-tools .sstv-btn { padding: 1px 6px; }
 }
+
+/* «Trasmetti» (F1) e «Ferma» (Esc) in cima alla barra del compositore, prima della scelta del modo */
+.sstv-toolbar-tx { align-self: flex-end; display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; }
+.sstv-toolbar-tx kbd { font: 600 0.72rem/1 var(--font-data, monospace); padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.45); background: rgba(0, 0, 0, 0.22); }
+.sstv-toolbar-state { align-self: flex-end; padding-bottom: 0.45rem; font-size: 0.85rem; }

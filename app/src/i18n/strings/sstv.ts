@@ -125,6 +125,8 @@ export const sstvStrings = {
   'sstv.tx.mode': ['Modo di trasmissione', 'Transmit mode', 'Sendemodus', 'Mode d’émission', 'Modo de transmisión', 'Modo de transmissão'],
   'sstv.tx.to': ['Corrispondente', 'Their call', 'Gegenstation', 'Correspondant', 'Corresponsal', 'Correspondente'],
   'sstv.tx.send': ['Trasmetti', 'Transmit', 'Senden', 'Émettre', 'Transmitir', 'Transmitir'],
+  'sstv.tx.sendTip': ['Trasmette l’immagine composta (tasto F1)', 'Transmits the composed image (F1 key)', 'Sendet das zusammengestellte Bild (Taste F1)', 'Émet l’image composée (touche F1)', 'Transmite la imagen compuesta (tecla F1)', 'Transmite a imagem composta (tecla F1)'],
+  'sstv.tx.stopTip': ['Ferma subito la trasmissione (tasto Esc)', 'Stops the transmission at once (Esc key)', 'Stoppt die Sendung sofort (Taste Esc)', 'Arrête tout de suite l’émission (touche Échap)', 'Detiene la transmisión enseguida (tecla Esc)', 'Para a transmissão de imediato (tecla Esc)'],
   'sstv.tx.stop': ['Ferma', 'Stop', 'Stopp', 'Arrêter', 'Detener', 'Parar'],
   'sstv.tx.progress': ['Trasmissione {mode}: {done} di {total}', 'Sending {mode}: {done} of {total}', 'Sende {mode}: {done} von {total}', 'Émission {mode} : {done} sur {total}', 'Transmitiendo {mode}: {done} de {total}', 'A transmitir {mode}: {done} de {total}'],
   'sstv.tx.done': ['Immagine trasmessa', 'Picture sent', 'Bild gesendet', 'Image émise', 'Imagen transmitida', 'Imagem transmitida'],
