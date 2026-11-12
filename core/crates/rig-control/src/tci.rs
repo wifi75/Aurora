@@ -675,8 +675,8 @@ impl Inner {
             s.reconnect_attempt = 0;
         });
         self.send(cmd_sensors(500));
-        // split vero gia' chiesto prima del collegamento (o prima di un ricollegamento)
-        self.apply_split_now();
+        // lo split di FT8 non si rimette al collegamento ne' dopo un ricollegamento: si accende solo prima del PTT di una trasmissione del
+        // motore (`set_tx_audio_frequency`); riacceso qui, dopo una caduta breve la radio si trovava in split senza che nessuno l'avesse chiesto
         // con un ricevitore dell'audio gia' scelto si chiede il flusso, come `stream_audio(true)` di WSJT-X
         if self.rx_audio.lock().is_ok_and(|a| a.is_some()) {
             self.send(cmd_audio_start(self.rx));
@@ -716,13 +716,17 @@ impl Inner {
         (audio != 0).then(|| split_tx_dial_hz(dial, audio))
     }
 
-    /// Split vero senza attese (dal thread del collegamento, dopo `ready;`): il VFO B sulla frequenza di trasmissione e lo split acceso
-    /// per ultimo.
-    fn apply_split_now(&self) {
-        let Some(tx) = self.split_target() else { return };
-        self.send(cmd_vfo(self.rx, 1, tx));
-        self.send(cmd_split(self.rx, true));
-        self.split_by_us.store(true, Ordering::SeqCst);
+    /// Spegne lo split vero acceso per FT8 (XIT), se c'e': al cambio di frequenza e prima di una trasmissione libera (modi testuali, SSTV).
+    /// Lo Split DX di uno spot non si tocca.
+    fn xit_split_off(&self) -> Result<(), RigError> {
+        if self.dx_split.load(Ordering::SeqCst) || !self.split_by_us.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        if self.split_on.load(Ordering::SeqCst) {
+            self.confirm(&cmd_split(self.rx, false), SPLIT_ECHO, |s| !s.split_on.load(Ordering::SeqCst))?;
+        }
+        self.split_by_us.store(false, Ordering::SeqCst);
+        Ok(())
     }
 
     /// Split DX: il VFO B sulla trasmissione scelta dallo spot e `split_enable` per ultimo, ognuno confermato e solo se serve.
@@ -953,6 +957,17 @@ impl TciRig {
             }
         }
         Ok(())
+    }
+
+    /// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV: l'onda non e' spostata dell'XIT di FT8): la frequenza audio di FT8 si
+    /// dimentica (lo split simulato non sposta la radio) e lo split vero acceso per FT8 si spegne. Lo Split DX resta.
+    pub fn release_tx_split(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        inner.tx_audio_hz.store(0, Ordering::SeqCst);
+        if inner.ptt() {
+            return Ok(());
+        }
+        inner.xit_split_off()
     }
 
     /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): il VFO A del ricevitore su `rx_hz` (con il modo scelto,
@@ -1283,6 +1298,11 @@ impl Rig for TciRig {
         }
         if inner.dial() != Some(hz) {
             inner.confirm_vfo(0, hz)?;
+        }
+        // come con Hamlib: al cambio di frequenza la radio esce dallo split di FT8 (il VFO B resterebbe sulla frequenza vecchia); si
+        // riaccende prima del PTT della prossima trasmissione del motore
+        if let Err(e) = inner.xit_split_off() {
+            tracing::warn!("TCI: split non spento dopo il cambio di frequenza: {e}");
         }
         if let Some(mode) = tci_mode(inner.cat_mode)
             && !inner.mode_is(mode) {
@@ -1680,6 +1700,27 @@ mod tests {
         // come `do_stop` di WSJT-X: lo split acceso da Aurora si toglie prima di spegnere
         assert!(pos("split_enable:0,false;") < pos("stop;"));
         assert_eq!(seen.last().map(String::as_str), Some("stop;"));
+    }
+
+    #[test]
+    fn the_ft8_split_ends_at_a_frequency_change_and_before_a_text_mode_transmission() {
+        let (address, text, _) = fake_audio_server("protocol:ExpertSDR3,1.9;vfo:0,0,14074000;ready;");
+        let rig = TciRig::from_config(&RigConfig { tci_address: address, split: SplitMode::Rig, ..RigConfig::default() });
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        let count = |c: &str| text.lock().unwrap().iter().filter(|t| *t == c).count();
+        // FT8: lo split si accende prima della trasmissione; la trasmissione RTTY (libera) lo spegne
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        assert_eq!(rig.status().split, Some(true));
+        rig.release_tx_split().expect("simplex");
+        assert_eq!((rig.status().split, count("split_enable:0,false;")), (Some(false), 1));
+        // di nuovo FT8, poi un cambio di frequenza (ritorno da RTTY): la radio non resta in split con il VFO B sulla frequenza vecchia
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        rig.set_frequency(14_085_000).expect("QSY");
+        assert_eq!((rig.status().split, count("split_enable:0,false;")), (Some(false), 2));
+        // gia' in simplex: nessun comando in piu'
+        rig.release_tx_split().expect("niente da fare");
+        rig.set_frequency(14_074_000).expect("QSY");
+        assert_eq!((count("split_enable:0,false;"), count("split_enable:0,true;")), (2, 2));
     }
 
     #[test]

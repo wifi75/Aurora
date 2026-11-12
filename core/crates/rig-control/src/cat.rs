@@ -666,6 +666,23 @@ impl CatService {
         Ok(true)
     }
 
+    /// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV): lo split scelto per FT8 non vale in quei modi. L'onda non e' spostata
+    /// dell'XIT, quindi con lo split vero o simulato di FT8 uscirebbe fuori frequenza, e la radio resterebbe in split sul VFO B senza che
+    /// l'operatore l'abbia chiesto. Lo Split DX di uno spot («UP 5»), che in quei modi l'operatore ha chiesto, resta acceso.
+    pub fn release_tx_split(&self) -> Result<(), RigError> {
+        match self.backend() {
+            Backend::Hamlib => self.hamlib()?.release_tx_split(),
+            Backend::Tci => self.tci()?.release_tx_split(),
+            Backend::Cat4om => self.cat4om()?.release_tx_split(),
+            Backend::Ft991link => {
+                self.ft991()?.release_tx_split();
+                Ok(())
+            }
+            Backend::Omnirig => crate::omnirig::release_tx_split(),
+            Backend::None => Ok(()),
+        }
+    }
+
     /// Il sistema CAT ha ancora lo Split DX acceso (o non e' riuscito a spegnerlo).
     fn backend_dx_split_active(&self) -> bool {
         match self.backend() {

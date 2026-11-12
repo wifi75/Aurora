@@ -232,36 +232,27 @@ fn write_frequency(r: &dyn RigApi, hz: i32) -> Result<(), RigError> {
 /// scrive `Split` spento (PM_SPLITOFF) solo se non e' gia' spento (di norma lo e': il percorso veloce non aspetta nulla), si scrive la frequenza
 /// e si ricontrolla lo split una volta dopo un attimo. Scrivere il VFO subito dopo lo split lo fa riaccendere: non si fa.
 ///
-/// Con lo split vero («Rig») e la frequenza audio nota, come `do_frequency` + `do_tx_frequency`: la frequenza e poi `SetSplitMode (rx, rx + XIT)`
-/// (`OmniRigTransceiver.cpp:776`), senza spegnere lo split.
-fn tune(r: &dyn RigApi, hz: i32, xit: Option<i64>) -> Result<(), RigError> {
+/// Vale anche con lo split vero («Rig») scelto per FT8: come con Hamlib, il cambio di frequenza lascia la radio in simplex e lo split si
+/// accende solo prima del PTT di una trasmissione del motore ([`set_tx_audio_frequency`], `SetSplitMode (rx, rx + XIT)`). Prima ogni cambio
+/// di frequenza riaccendeva lo split con l'ultimo XIT di FT8, anche entrando nei modi testuali e tornando a FT8 senza avere trasmesso.
+fn tune(r: &dyn RigApi, hz: i32) -> Result<(), RigError> {
     wait_online(r, 8, 400)?;
     let m0 = r.get("Mode").unwrap_or(0);
-    match xit {
-        Some(xit) => {
-            let tx = i32::try_from((i64::from(hz) + xit).max(0)).map_err(|_| RigError("frequenza di trasmissione fuori dai limiti".into()))?;
-            write_frequency(r, hz)?;
-            r.call("SetSplitMode", &[hz, tx])?;
+    if r.get("Split")? != PM_SPLITOFF {
+        r.put("Split", PM_SPLITOFF)?;
+        for _ in 0..16 {
             r.pause(200);
-        }
-        None => {
-            if r.get("Split")? != PM_SPLITOFF {
-                r.put("Split", PM_SPLITOFF)?;
-                for _ in 0..16 {
-                    r.pause(200);
-                    if r.get("Split").is_ok_and(|s| s == PM_SPLITOFF) {
-                        break;
-                    }
-                }
+            if r.get("Split").is_ok_and(|s| s == PM_SPLITOFF) {
+                break;
             }
-            write_frequency(r, hz)?;
-            r.pause(300);
-            if r.get("Split")? != PM_SPLITOFF {
-                r.put("Split", PM_SPLITOFF)?;
-            }
-            r.pause(200);
         }
     }
+    write_frequency(r, hz)?;
+    r.pause(300);
+    if r.get("Split")? != PM_SPLITOFF {
+        r.put("Split", PM_SPLITOFF)?;
+    }
+    r.pause(200);
     if m0 != 0 && r.get("Mode").is_ok_and(|m| m != m0) && r.get("WriteableParams").is_ok_and(|w| w & m0 != 0) {
         r.put("Mode", m0)?;
         for _ in 0..10 {
@@ -286,7 +277,7 @@ fn split_on(r: &dyn RigApi, xit: i64) -> Result<(), RigError> {
 /// Lo Split DX: la ricezione come un cambio di frequenza senza split (split spento, frequenza, modo rimesso: vedi [`tune`]), poi
 /// `SetSplitMode (rx, tx)` come `do_tx_frequency` di WSJT-X (`OmniRigTransceiver.cpp:776`), con la trasmissione scelta dallo spot.
 fn dx_split_sequence(r: &dyn RigApi, rx: i32, tx: i32) -> Result<(), RigError> {
-    tune(r, rx, None)?;
+    tune(r, rx)?;
     r.call("SetSplitMode", &[rx, tx]).map(|_| ())
 }
 
@@ -433,13 +424,17 @@ fn split_code() -> u8 {
     SPLIT.load(std::sync::atomic::Ordering::SeqCst)
 }
 
-/// Lo spostamento (XIT) dello split per la frequenza audio scelta, se lo split vero e' attivo e la frequenza audio e' nota.
-fn rig_split_xit() -> Option<i64> {
-    if DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) {
-        return None;
+/// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV: l'onda non e' spostata dell'XIT di FT8): la frequenza audio di FT8 si dimentica
+/// (lo split simulato non sposta la radio) e lo split vero acceso per FT8 si spegne (`PM_SPLITOFF`). Lo Split DX di uno spot resta.
+pub fn release_tx_split() -> Result<(), RigError> {
+    use std::sync::atomic::Ordering::SeqCst;
+    TX_AUDIO.store(0, SeqCst);
+    if DX_SPLIT.load(SeqCst) || split_code() != 1 || !SPLIT_BY_US.load(SeqCst) {
+        return Ok(());
     }
-    let audio = TX_AUDIO.load(std::sync::atomic::Ordering::SeqCst);
-    (split_code() == 1 && audio != 0).then(|| crate::cat_config::split_xit_hz(audio))
+    on_rig(&workers::MAIN, split_off)?;
+    SPLIT_BY_US.store(false, SeqCst);
+    Ok(())
 }
 
 /// La frequenza audio di trasmissione (`setXIT` di WSJT-X). Con «Rig» lo split vero si rimette subito come `do_tx_frequency` di
@@ -676,10 +671,7 @@ impl Rig for WindowsRig {
 
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
         let hz = hz_i32(hz)?;
-        let attempt = || {
-            let xit = rig_split_xit();
-            on_rig(&workers::MAIN, move |r| tune(r, hz, xit))
-        };
+        let attempt = || on_rig(&workers::MAIN, move |r| tune(r, hz));
         // OmniRig a volte e' occupato un istante (un altro programma che legge la radio): un secondo tentativo basta. Dopo un tempo scaduto
         // (OmniRig che si avvia o bloccato) non si riprova: si aspetterebbe di nuovo tutto il tempo, due volte
         let give_up = |e: &RigError| {
@@ -706,9 +698,9 @@ impl Rig for WindowsRig {
                 attempt().inspect_err(|e| aurora_core::notice::notice("omnirig", e.0.clone()))
             })
         })?;
-        // con lo split vero la sequenza l'ha acceso (`SetSplitMode`): al distacco va spento
-        if rig_split_xit().is_some() {
-            SPLIT_BY_US.store(true, std::sync::atomic::Ordering::SeqCst);
+        // la sequenza ha lasciato la radio in simplex: lo split di FT8 acceso da Aurora non c'e' piu' (lo Split DX lo spegne prima chi chiama)
+        if !DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst) {
+            SPLIT_BY_US.store(false, std::sync::atomic::Ordering::SeqCst);
         }
         Ok(())
     }
@@ -854,7 +846,7 @@ mod tests {
     fn a_band_change_turns_split_off_first_writes_freqa_and_never_uses_simplex_mode() {
         let r = ft2000();
         r.values.borrow_mut().insert("Split".into(), PM_SPLITON);
-        tune(&r, 7_074_000, None).expect("cambio");
+        tune(&r, 7_074_000).expect("cambio");
         let log = r.log();
         assert!(r.index("Split=65536") < r.index("FreqA=7074000"), "prima lo split spento, poi la frequenza: {log:?}");
         assert!(!log.iter().any(|l| l.starts_with("SetSimplexMode")), "SetSimplexMode rimette la radio in split: {log:?}");
@@ -866,7 +858,7 @@ mod tests {
     #[test]
     fn with_split_already_off_the_band_change_only_writes_the_frequency() {
         let r = ft2000();
-        tune(&r, 7_074_000, None).expect("cambio");
+        tune(&r, 7_074_000).expect("cambio");
         assert_eq!(r.log(), ["FreqA=7074000"]);
     }
 
@@ -874,7 +866,7 @@ mod tests {
     fn a_rig_with_writable_freq_gets_freq_like_wsjtx() {
         let r = ft2000();
         r.values.borrow_mut().insert("WriteableParams".into(), PM_FREQ | PM_FREQA | PM_FREQB);
-        tune(&r, 21_074_000, None).expect("cambio");
+        tune(&r, 21_074_000).expect("cambio");
         assert_eq!(r.log(), ["Freq=21074000"]);
     }
 
@@ -882,7 +874,7 @@ mod tests {
     fn a_radio_on_vfo_b_gets_freqb() {
         let r = ft2000();
         r.values.borrow_mut().insert("Vfo".into(), PM_VFOBB);
-        tune(&r, 21_074_000, None).expect("cambio");
+        tune(&r, 21_074_000).expect("cambio");
         assert_eq!(r.log(), ["FreqB=21074000"]);
     }
 
@@ -890,26 +882,32 @@ mod tests {
     fn the_radio_mode_is_restored_only_when_it_changed_and_is_writable() {
         let mut r = ft2000();
         r.mode_after_band = Some(PM_SSB_U);
-        tune(&r, 7_074_000, None).expect("cambio");
+        tune(&r, 7_074_000).expect("cambio");
         assert!(r.index("FreqA=7074000") < r.index(&format!("Mode={PM_DIG_U}")), "{:?}", r.log());
 
         let mut r = ft2000();
         r.values.borrow_mut().insert("WriteableParams".into(), PM_FREQA | PM_SSB_U);
         r.mode_after_band = Some(PM_SSB_U);
-        tune(&r, 7_074_000, None).expect("cambio");
+        tune(&r, 7_074_000).expect("cambio");
         assert!(!r.log().iter().any(|l| l.starts_with("Mode=")), "modo non scrivibile: {:?}", r.log());
 
         let r = ft2000();
         r.values.borrow_mut().insert("Mode".into(), 0);
-        tune(&r, 7_074_000, None).expect("cambio");
+        tune(&r, 7_074_000).expect("cambio");
         assert!(!r.log().iter().any(|l| l.starts_with("Mode=")), "un modo sconosciuto non si riscrive: {:?}", r.log());
     }
 
     #[test]
-    fn the_rig_split_sets_split_mode_on_rx_plus_xit_without_turning_split_off() {
+    fn the_rig_split_is_set_before_the_ptt_and_a_frequency_change_leaves_the_radio_in_simplex() {
+        // il cambio di frequenza non accende lo split, e se la radio e' in split (quello di FT8 di prima) lo spegne
         let r = ft2000();
-        tune(&r, 14_074_000, Some(1500)).expect("cambio");
-        assert_eq!(r.log(), ["FreqA=14074000", "SetSplitMode[14074000, 14075500]"]);
+        tune(&r, 14_074_000).expect("cambio");
+        assert_eq!(r.log(), ["FreqA=14074000"]);
+        let r = ft2000();
+        r.values.borrow_mut().insert("Split".into(), PM_SPLITON);
+        tune(&r, 14_074_000).expect("cambio");
+        assert!(r.index("Split=65536") < r.index("FreqA=14074000"), "{:?}", r.log());
+        assert!(!r.log().iter().any(|l| l.starts_with("SetSplitMode")), "{:?}", r.log());
         let r = ft2000();
         split_on(&r, -500).expect("split");
         assert_eq!(r.log(), ["GetRxFrequency[]", "SetSplitMode[14074000, 14073500]"]);
@@ -920,7 +918,7 @@ mod tests {
         let r = ft2000();
         r.values.borrow_mut().insert("Status".into(), 2);
         assert_eq!(read_frequency(&r).unwrap_err().0, "radio non in linea");
-        assert_eq!(tune(&r, 7_074_000, None).unwrap_err().0, "radio non in linea");
+        assert_eq!(tune(&r, 7_074_000).unwrap_err().0, "radio non in linea");
         assert!(r.log().is_empty(), "a radio non in linea non si scrive nulla: {:?}", r.log());
     }
 
