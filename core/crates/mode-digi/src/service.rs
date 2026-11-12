@@ -998,7 +998,7 @@ mod tests {
         let mut d = Demod::new(&s, false);
         let mut all = vec![0.0; 4000];
         all.extend(wave);
-        all.extend(vec![0.0; 4000]);
+        all.extend(vec![0.0; 12000]);
         let out = d.process(&all).0;
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
     }

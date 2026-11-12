@@ -219,3 +219,13 @@ Tabella dopo il passo 11 (Aurora, soglia al 10 % / CER medio):
 | filtro 250 Hz | −8,2 / 19,1 | −8,3 / 20,7 |
 | audio tagliato | −6,9 / 24,4 | −6,5 / 26,1 |
 | AGC che pompa | −2,8 / 29,6 | -- / 50,6 |
+
+**Passo 12** (registro FIGS/LTRS come stato nascosto e modello del testo): ogni parola si trattiene fino allo spazio (o 20 bit dopo
+l'ultimo carattere) e si prova, per un carattere alla volta, l'ipotesi che fosse un FIGS o un LTRS letto male (o il contrario): vince se
+la probabilita' dei cinque bit con quel codice piu' il modello del testo supera la parola letta di almeno 1 nat. Il modello di base
+(`HamPrior`, interfaccia `TextPrior` per quelli di un contest) premia numeri, nominativi (prefisso, cifra, suffisso, /P) e parole di sole
+lettere, e penalizza i miscugli di lettere e cifre che non sono nominativi, l'interpunzione dentro le parole e le parole fatte solo
+delle lettere della fila delle cifre (Q W E R T Y U I O P: «TOO» invece di «599» quando si perde il FIGS). Rispetto al passo 11: soglie
+da −0,11 a +0,09 dB, CER medio giu' in tutti gli scenari (−0,12 … −0,78 punti). Tenuto, di base (`set_prior`). Il prezzo: il testo esce
+a parole intere invece che carattere per carattere. Il testo delle prove e' di tipo QSO (numeri e nominativi frequenti): su un testo
+senza numeri il guadagno sara' minore. Il modello dello scambio di un contest (da `contest::Regole`) resta da collegare.

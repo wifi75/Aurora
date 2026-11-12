@@ -578,7 +578,71 @@ struct Frame {
     main: bool,
 }
 
+/// Quanto un'interpretazione deve superare quella letta (in nat: probabilita' dei codici piu' modello del testo) per cambiarla.
+const SHIFT_MARGIN: f32 = 1.0;
+/// Parola trattenuta al massimo (caratteri), e dopo quanti bit dall'ultimo carattere esce comunque (il seguente arriverebbe dopo 18,5).
+const WORD_MAX: usize = 12;
+const WORD_WAIT_BITS: f64 = 20.0;
+
+/// Il modello del testo per le correzioni (passo 12): quanto una parola e' verosimile (in nat, 0 = neutra). Un contest puo' darne uno suo
+/// (scambio atteso, nominativi gia' sentiti).
+pub trait TextPrior {
+    fn word(&self, w: &str) -> f32;
+}
+
+/// Il modello di base del testo radioamatoriale: numeri, nominativi e parole di sole lettere sono verosimili, i miscugli di lettere e
+/// cifre che non sono nominativi e i segni d'interpunzione dentro le parole no.
+pub struct HamPrior;
+
+impl TextPrior for HamPrior {
+    fn word(&self, w: &str) -> f32 {
+        let letters = w.chars().filter(|c| c.is_alphabetic()).count();
+        let digits = w.chars().filter(char::is_ascii_digit).count();
+        let other = w.chars().count() - letters - digits;
+        if other > 0 {
+            // l'interpunzione sta di solito in fondo («K?», «73.»), non dentro
+            let inside = w.chars().skip(1).take(w.chars().count().saturating_sub(2)).any(|c| !c.is_alphanumeric());
+            return if inside { -2.0 } else { -0.5 };
+        }
+        if letters == 0 {
+            return 1.5;
+        }
+        if digits == 0 {
+            // le lettere della fila delle cifre (Q W E R T Y U I O P) da sole sono spesso un numero letto senza il FIGS
+            return if w.chars().all(|c| "QWERTYUIOP".contains(c.to_ascii_uppercase())) { 0.0 } else { 1.0 };
+        }
+        if is_callsign(w) { 1.5 } else { -2.0 }
+    }
+}
+
+/// Un nominativo: uno o due caratteri di prefisso (lettere, o una cifra e una lettera), una cifra, da una a quattro lettere; con
+/// l'eventuale /P, /M o /cifra.
+fn is_callsign(w: &str) -> bool {
+    let core = w.split('/').max_by_key(|p| p.len()).unwrap_or(w);
+    let b = core.as_bytes();
+    let Some(d) = b.iter().rposition(u8::is_ascii_digit) else { return false };
+    let (pre, suf) = (&b[..d], &b[d + 1..]);
+    (1..=3).contains(&pre.len()) && pre.iter().any(u8::is_ascii_alphabetic) && pre.iter().all(u8::is_ascii_alphanumeric) && (1..=4).contains(&suf.len()) && suf.iter().all(u8::is_ascii_alphabetic)
+}
+
 impl Frame {
+    /// Il logaritmo della probabilita' che i cinque bit di dati fossero quelli di `code`.
+    fn code_log_prob(&self, code: u8) -> f32 {
+        (0..5)
+            .map(|k| {
+                let x = LLR_SCALE * self.sums[k + 1] * if (code >> k) & 1 == 1 { 1.0 } else { -1.0 };
+                // log(sigmoide(x)) senza traboccare
+                -(1.0 + (-x).exp()).ln().min(80.0)
+            })
+            .sum()
+    }
+
+    /// La probabilita' del carattere se il codice vero era `code` (start e stop come letti).
+    fn prob_of(&self, code: u8) -> f32 {
+        let sig = |x: f32| 1.0 / (1.0 + (-LLR_SCALE * x).exp());
+        sig(-self.sums[0]) * sig(self.sums[6]) * self.code_log_prob(code).exp()
+    }
+
     /// La probabilita' che il carattere sia giusto: il prodotto delle probabilita' dei sette bit, start a space e stop a mark compresi
     /// (le somme delle LLR scalate con `LLR_SCALE`).
     fn prob(&self) -> f32 {
@@ -904,6 +968,10 @@ pub struct RttyDemodulator {
     figures: bool,
     /// Il registro delle lettere russe (set cirillico).
     cyrillic: bool,
+    /// Passo 12: la parola trattenuta per le correzioni di registro, quando e' arrivato il suo ultimo carattere e il modello del testo.
+    word: Vec<Frame>,
+    word_t: f64,
+    prior: Option<Box<dyn TextPrior + Send>>,
     charset: RttyCharset,
     last_char: char,
     /// Livelli medi (decisione guidata) di mark acceso, mark spento, space acceso, space spento.
@@ -951,6 +1019,7 @@ impl RttyDemodulator {
     pub fn new(params: RttyParams) -> Self {
         let mut d = Self::new_plain(params);
         d.set_variants(true);
+        d.set_prior(Some(Box::new(HamPrior)));
         d
     }
 
@@ -1002,6 +1071,9 @@ impl RttyDemodulator {
             shift_prob: 1.0,
             figures: false,
             cyrillic: false,
+            word: Vec::new(),
+            word_t: 0.0,
+            prior: None,
             charset: RttyCharset::Ita2,
             last_char: '\0',
             levels: [0.0; 4],
@@ -1400,13 +1472,95 @@ impl RttyDemodulator {
                     None => vec![fr],
                 };
                 for fr in ready {
-                    self.data = fr.code;
-                    self.data_prob = fr.prob();
-                    self.emit(&mut out);
+                    self.word_push(fr, &mut out);
                 }
             }
         }
+        // una parola ferma (squelch chiuso, fine del segnale) esce com'e' quando il carattere seguente sarebbe gia' arrivato
+        if !self.word.is_empty() && (self.dec_n as f64 - self.delay) - self.word_t > WORD_WAIT_BITS * f64::from(self.spb) {
+            self.word_flush(&mut out);
+        }
         out
+    }
+
+    /// Un carattere nella parola in corso (passo 12): a fine parola si guarda se un cambio di registro (FIGS o LTRS) e' stato letto come
+    /// un altro carattere, oppure un carattere come un cambio di registro.
+    fn word_push(&mut self, fr: Frame, out: &mut Vec<RttyChar>) {
+        if self.prior.is_none() {
+            self.data = fr.code;
+            self.data_prob = fr.prob();
+            self.emit(out);
+            return;
+        }
+        self.word_t = fr.t - self.delay;
+        let end = matches!(fr.code, SPACE | CR | LF);
+        self.word.push(fr);
+        if end || self.word.len() >= WORD_MAX {
+            self.word_flush(out);
+        }
+    }
+
+    /// Decide la parola trattenuta e la stampa.
+    fn word_flush(&mut self, out: &mut Vec<RttyChar>) {
+        let word = std::mem::take(&mut self.word);
+        let codes: Vec<u8> = word.iter().map(|f| f.code).collect();
+        let mut best = codes.clone();
+        if let Some(prior) = &self.prior {
+            // il testo che darebbe una sequenza di codici, partendo dal registro di adesso
+            let text = |seq: &[u8]| -> String {
+                let (mut fig, mut cyr) = (self.figures, self.cyrillic);
+                let mut s = String::new();
+                for &c in seq {
+                    match c {
+                        FIGS => fig = true,
+                        LTRS => {
+                            fig = false;
+                            cyr = false;
+                        }
+                        0 => {
+                            if self.charset == RttyCharset::Cyrillic {
+                                fig = false;
+                                cyr = true;
+                            }
+                        }
+                        SPACE | CR | LF => s.push(' '),
+                        c => s.push(decode(self.charset, c, fig, cyr)),
+                    }
+                }
+                s
+            };
+            let score = |seq: &[u8]| -> f32 { text(seq).split(' ').filter(|w| !w.is_empty()).map(|w| prior.word(w)).sum() };
+            let base = score(&codes);
+            let mut best_gain = SHIFT_MARGIN;
+            // un solo carattere cambiato per parola: quello che piu' probabilmente era un cambio di registro (o il contrario)
+            for (i, f) in word.iter().enumerate() {
+                if matches!(f.code, SPACE | CR | LF) {
+                    continue;
+                }
+                for alt in [FIGS, LTRS] {
+                    if alt == f.code {
+                        continue;
+                    }
+                    let mut seq = codes.clone();
+                    seq[i] = alt;
+                    let gain = f.code_log_prob(alt) - f.code_log_prob(f.code) + score(&seq) - base;
+                    if gain > best_gain {
+                        best_gain = gain;
+                        best = seq;
+                    }
+                }
+            }
+        }
+        for (f, code) in word.iter().zip(best) {
+            self.data = code;
+            self.data_prob = if code == f.code { f.prob() } else { f.prob_of(code) };
+            self.emit(out);
+        }
+    }
+
+    /// Il modello del testo per le correzioni di registro (passo 12); `None` le spegne. Di base [`HamPrior`].
+    pub fn set_prior(&mut self, prior: Option<Box<dyn TextPrior + Send>>) {
+        self.prior = prior;
     }
 
     /// Il ricevitore su altro audio: i caratteri della decodifica intera con il loro tempo (centro dello start in campioni decimati,
@@ -1539,7 +1693,7 @@ mod tests {
         let mut rx = RttyDemodulator::new(params);
         let mut all = vec![0.0; 4000];
         all.extend(audio);
-        all.extend(vec![0.0; 4000]);
+        all.extend(vec![0.0; 12000]);
         String::from_utf8_lossy(&rx.process(&all)).into_owned()
     }
 
@@ -1625,7 +1779,7 @@ mod tests {
         rx.set_afc(true);
         let mut all = vec![0.0; 4000];
         all.extend(audio);
-        all.extend(vec![0.0; 4000]);
+        all.extend(vec![0.0; 12000]);
         let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
         assert!((rx.frequency() - 2222.0).abs() < 6.0, "frequenza raggiunta: {}", rx.frequency());
         assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
@@ -1755,7 +1909,7 @@ mod tests {
             rx.set_charset(cs);
             let mut all = vec![0.0; 4000];
             all.extend(audio);
-            all.extend(vec![0.0; 4000]);
+            all.extend(vec![0.0; 12000]);
             let r: String = rx.process_chars(&all).iter().map(|c| c.ch).collect();
             assert!(r.contains(atteso), "{cs:?}: ricevuto {r:?}");
         }
@@ -1780,6 +1934,20 @@ mod tests {
         let mut rx = RttyDemodulator::new(params);
         let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
         assert!(r.contains("CQ DE IU3ABC IU3ABC K"), "con il soppressore: {r:?}");
+    }
+
+    #[test]
+    fn il_modello_del_testo_riconosce_numeri_e_nominativi() {
+        let p = HamPrior;
+        assert!(p.word("599") > p.word("TOO"));
+        assert!(p.word("IU3ABC") > p.word("IU3A8C"));
+        assert!(p.word("CQ") > p.word("C-Q"));
+        for c in ["IU3ABC", "K1JT", "DL2ABC/P", "9A1A", "3B8CF"] {
+            assert!(is_callsign(c), "{c}");
+        }
+        for c in ["599", "TEST", "14080", "100W1"] {
+            assert!(!is_callsign(c), "{c}");
+        }
     }
 
     #[test]
