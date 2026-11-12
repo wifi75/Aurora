@@ -7,3 +7,6 @@
 [submodule "terze-parti/mmtty"]
 	path = terze-parti/mmtty
 	url = https://github.com/n5ac/mmtty.git
+[submodule "terze-parti/mmsstv"]
+	path = terze-parti/mmsstv
+	url = https://github.com/n5ac/mmsstv.git
