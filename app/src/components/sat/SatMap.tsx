@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
+import { geoEquirectangular, geoPath } from 'd3-geo';
+import { feature } from 'topojson-client';
+import type { FeatureCollection } from 'geojson';
+import type { GeometryCollection, Topology } from 'topojson-specification';
 import type { SatPosition } from '../../api/client';
 import { footprintPolygon, nightAlpha, project, splitAtAntimeridian, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
 
 interface Props {
-  /** L'immagine della mappa del mondo (equirettangolare); senza, si disegna un fondo scuro con la griglia. */
+  /** L'immagine della mappa del mondo (equirettangolare); senza, la mappa inclusa in Aurora (terre e confini di Natural Earth). */
   mapUrl: string | null;
   sun: { lat: number; lon: number };
   moon: { lat: number; lon: number };
@@ -17,6 +21,44 @@ interface Props {
   onSelect(norad: number): void;
 }
 
+let world: Promise<FeatureCollection> | null = null;
+
+/** Terre e confini di Natural Earth a 1:50 milioni (`world-atlas`), caricati una volta sola e solo quando serve la mappa inclusa. */
+function loadWorld(): Promise<FeatureCollection> {
+  world ??= import('world-atlas/countries-50m.json').then((m) => {
+    const topo = m.default as unknown as Topology;
+    return feature(topo, topo.objects.countries as GeometryCollection) as FeatureCollection;
+  });
+  return world;
+}
+
+/** La mappa inclusa disegnata una volta per ogni larghezza: mare scuro, terre e confini (proiezione equirettangolare come le mappe in immagine). */
+function drawBuiltin(countries: FeatureCollection, w: number, h: number, dpr: number): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * dpr);
+  c.height = Math.round(h * dpr);
+  const ctx = c.getContext('2d');
+  if (!ctx) return c;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sea = ctx.createLinearGradient(0, 0, 0, h);
+  sea.addColorStop(0, '#0b1a33');
+  sea.addColorStop(1, '#0a2440');
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 0, w, h);
+  const proj = geoEquirectangular()
+    .scale(w / (2 * Math.PI))
+    .translate([w / 2, h / 2]);
+  const path = geoPath(proj, ctx);
+  ctx.beginPath();
+  path(countries);
+  ctx.fillStyle = '#25483a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(160,210,180,0.35)';
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+  return c;
+}
+
 const PALETTE = { grid: 'rgba(255,255,255,0.16)', label: 'rgba(255,255,255,0.75)', past: 'rgba(255,255,255,0.55)', future: '#ffd84d', foot: '#3ddc84', sat: '#ffffff', sel: '#ffd84d' };
 
 /** La mappa dei satelliti: mondo con giorno e notte, Sole e Luna, la stazione, i satelliti con la loro impronta radio e la traccia del satellite scelto. */
@@ -25,6 +67,8 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   const canvas = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(900);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [countries, setCountries] = useState<FeatureCollection | null>(null);
+  const base = useRef<{ w: number; dpr: number; canvas: HTMLCanvasElement } | null>(null);
   const hits = useRef<{ x: number; y: number; norad: number }[]>([]);
 
   useEffect(() => {
@@ -39,7 +83,16 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   useEffect(() => {
     if (!mapUrl) {
       setImage(null);
-      return;
+      let alive = true;
+      void loadWorld().then(
+        (fc) => {
+          if (alive) setCountries(fc);
+        },
+        () => undefined,
+      );
+      return () => {
+        alive = false;
+      };
     }
     const img = new Image();
     img.onload = () => setImage(img);
@@ -59,9 +112,12 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     c.style.height = `${h}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // fondo: la mappa o un gradiente scuro
+    // fondo: la mappa scelta, la mappa inclusa o (mentre si carica) un gradiente scuro
     if (image) ctx.drawImage(image, 0, 0, w, h);
-    else {
+    else if (countries) {
+      if (!base.current || base.current.w !== w || base.current.dpr !== dpr) base.current = { w, dpr, canvas: drawBuiltin(countries, w, h, dpr) };
+      ctx.drawImage(base.current.canvas, 0, 0, w, h);
+    } else {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#0b1a33');
       g.addColorStop(1, '#0a2440');
@@ -233,7 +289,7 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     ctx.arc(mx, my, 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-  }, [width, image, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, track, trackNowIndex]);
+  }, [width, image, countries, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, track, trackNowIndex]);
 
   return (
     <div className="sat-map" ref={wrap}>

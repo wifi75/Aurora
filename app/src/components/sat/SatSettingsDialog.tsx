@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { SatSettings, SatSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
-import { countdown } from '../../lib/satGeo';
+import { countdown, SAT_BUILTIN_MAP } from '../../lib/satGeo';
 
 /** Gli aggiornamenti automatici proposti, in ore (0 = solo a mano). */
 const HOURS = [0, 6, 12, 24, 48, 168];
@@ -46,18 +46,15 @@ export function SatSettingsDialog({ snap, busy, onSave, onRefresh, onClose }: Pr
             {cat === 'map' ? (
               <fieldset>
                 <legend>{t('sat.map.pick')}</legend>
-                {snap.maps.length === 0 ? (
-                  <p className="notice">{t('sat.map.none')}</p>
-                ) : (
-                  <select value={s.map && snap.maps.includes(s.map) ? s.map : ''} onChange={(e) => onSave({ map: e.target.value })}>
-                    <option value="">{t('sat.set.mapAuto')}</option>
-                    {snap.maps.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select value={s.map === SAT_BUILTIN_MAP || snap.maps.includes(s.map) ? s.map : ''} onChange={(e) => onSave({ map: e.target.value })}>
+                  <option value="">{t('sat.set.mapAuto')}</option>
+                  <option value={SAT_BUILTIN_MAP}>{t('sat.map.builtin')}</option>
+                  {snap.maps.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
                 <p className="sat-muted sat-small">{t('sat.map.addHint')}</p>
               </fieldset>
             ) : null}

@@ -6,7 +6,7 @@ import { SatMap } from '../components/sat/SatMap';
 import { SatRadar } from '../components/sat/SatRadar';
 import { SatSettingsDialog } from '../components/sat/SatSettingsDialog';
 import { useT } from '../i18n';
-import { compass, countdown, formatLat, formatLon, mhz, mmss } from '../lib/satGeo';
+import { compass, countdown, formatLat, formatLon, mhz, mmss, SAT_BUILTIN_MAP } from '../lib/satGeo';
 import { toast } from '../lib/toast';
 import '../styles/sat.css';
 
@@ -77,10 +77,11 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
     });
   };
 
-  // la mappa: quella scelta, altrimenti «Contour HiRes», altrimenti la prima che c'e'
+  // la mappa: quella scelta, altrimenti «Contour HiRes» se c'e', altrimenti la mappa inclusa in Aurora (null)
   const mapName = useMemo(() => {
+    if (s.map === SAT_BUILTIN_MAP) return null;
     if (s.map && snap.maps.includes(s.map)) return s.map;
-    return snap.maps.find((m) => m.startsWith(PREFERRED_MAP)) ?? snap.maps[0] ?? null;
+    return snap.maps.find((m) => m.startsWith(PREFERRED_MAP)) ?? null;
   }, [s.map, snap.maps]);
 
   const downValue = downDraft ?? s.down_hz ?? (tp ? (tp.down_low_hz + tp.down_high_hz) / 2 : 0);
@@ -143,7 +144,6 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
       <div className="sat-grid">
         <section className="sat-main">
           <div className="sat-panel sat-mapwrap">
-            {mapName ? null : <p className="sat-muted sat-nomap">{t('sat.map.none')}</p>}
             <SatMap
               mapUrl={mapName ? satMapUrl(mapName) : null}
               sun={{ lat: snap.sky.sun_lat_deg, lon: snap.sky.sun_lon_deg }}
@@ -159,7 +159,8 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
             <div className="sat-maptools">
               <label>
                 <span>{t('sat.map.pick')}</span>
-                <select value={mapName ?? ''} onChange={(e) => save({ map: e.target.value })} disabled={snap.maps.length === 0}>
+                <select value={mapName ?? SAT_BUILTIN_MAP} onChange={(e) => save({ map: e.target.value })}>
+                  <option value={SAT_BUILTIN_MAP}>{t('sat.map.builtin')}</option>
                   {snap.maps.map((m) => (
                     <option key={m} value={m}>
                       {m.replace(/\.[a-z]+$/i, '')}

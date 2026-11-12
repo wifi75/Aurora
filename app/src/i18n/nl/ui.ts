@@ -3118,7 +3118,7 @@ export const NL_UI: Record<string, string> = {
   "sat.list.title": "Satellieten",
   "sat.map.add": "Een kaart toevoegen…",
   "sat.map.addHint": "Een equirectangulair beeld (360° × 180°), jpg, png, bmp of webp.",
-  "sat.map.none": "Geen kaart: voeg er een toe (map maps in de gegevens van Aurora).",
+  "sat.map.builtin": "Aurora-kaart",
   "sat.map.pick": "Wereldkaart",
   "sat.map.title": "Kaart",
   "sat.moon": "Maan",

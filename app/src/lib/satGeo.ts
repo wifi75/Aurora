@@ -2,6 +2,9 @@
 
 export type LatLon = readonly [number, number];
 
+/** Il nome salvato nelle impostazioni per la mappa inclusa in Aurora (non e' un file della cartella `maps`). */
+export const SAT_BUILTIN_MAP = ':aurora';
+
 const RAD = Math.PI / 180;
 const EARTH_KM = 6371;
 
