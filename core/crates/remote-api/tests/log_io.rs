@@ -221,3 +221,118 @@ async fn without_the_windows_program_there_is_no_save_as() {
     status_is(&resp, StatusCode::NOT_FOUND);
     assert_eq!(body_json(resp).await["error"], "save_unavailable");
 }
+
+async fn send(s: &remote_api::AppState, method: Method, uri: &str, body: Option<&str>) -> axum::response::Response {
+    let cookie = cookie_for(s);
+    let r = req(method, uri).cookie(&cookie).via_loopback();
+    call(&router(s), match body {
+        Some(b) => r.json(b),
+        None => r,
+    })
+    .await
+}
+
+#[tokio::test]
+async fn a_logged_qso_is_corrected_and_the_program_is_told_what_changed() {
+    let seen: Arc<std::sync::Mutex<Vec<logbook::LogChange>>> = Arc::default();
+    let s = state().with_log_edited({
+        let seen = Arc::clone(&seen);
+        Arc::new(move |c| seen.lock().unwrap().push(c))
+    });
+    let id = s.logbook.add(&qso("K1ABX", "FT8", DAY1)).unwrap();
+    s.logbook.add(&qso("DL1ABC", "FT8", DAY2)).unwrap();
+    let one = body_json(get(&s, &format!("/api/v1/log/qsos/{id}")).await).await;
+    assert_eq!((one["call"].as_str(), one["date"].as_str(), one["time"].as_str()), (Some("K1ABX"), Some("2026-10-24"), Some("16:46:45")));
+
+    let resp = send(&s, Method::PATCH, &format!("/api/v1/log/qsos/{id}"), Some(r#"{"call":" k1abc ","time":"16:50","grid":"fn42ab","name":"Joe","comment":"corretto"}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!(v["ok"], true);
+    let q = &v["qso"];
+    assert_eq!((q["id"].as_i64(), q["call"].as_str(), q["date"].as_str(), q["time"].as_str()), (Some(id), Some("K1ABC"), Some("2026-10-24"), Some("16:50:00")));
+    assert_eq!((q["grid"].as_str(), q["name"].as_str(), q["comment"].as_str(), q["band"].as_str(), q["rst_sent"].as_str()), (Some("FN42AB"), Some("Joe"), Some("corretto"), Some("20m"), Some("-08")));
+    // l'elenco mostra la riga corretta e l'altro QSO com'era
+    let list = body_json(get(&s, "/api/v1/log/qsos").await).await;
+    let calls: Vec<&str> = list["qsos"].as_array().unwrap().iter().filter_map(|q| q["call"].as_str()).collect();
+    assert_eq!(calls, vec!["DL1ABC", "K1ABC"]);
+    // il programma riceve com'era e com'e' (per il file ADIF e i lavorati), con la fine spostata come l'inizio
+    let seen = seen.lock().unwrap();
+    assert_eq!(seen.len(), 1);
+    assert_eq!((seen[0].old.call.as_str(), seen[0].new.call.as_str(), seen[0].new.time.as_str(), seen[0].time_off.as_str()), ("K1ABX", "K1ABC", "165000", "165044"));
+}
+
+#[tokio::test]
+async fn a_correction_with_nothing_new_does_not_rewrite_anything() {
+    let told = Arc::new(AtomicU32::new(0));
+    let t = Arc::clone(&told);
+    let s = state().with_log_edited(Arc::new(move |_| {
+        t.fetch_add(1, Ordering::SeqCst);
+    }));
+    let id = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    status_is(&send(&s, Method::PATCH, &format!("/api/v1/log/qsos/{id}"), Some(r#"{"call":"K1ABC","date":"2026-10-24","time":"16:46:45"}"#)).await, StatusCode::OK);
+    assert_eq!(told.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn a_bad_value_or_a_missing_qso_is_refused_and_the_log_stays() {
+    let s = state();
+    let id = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let uri = format!("/api/v1/log/qsos/{id}");
+    for (body, field) in [
+        (r#"{"call":"  "}"#, "call"),
+        (r#"{"call":"K1 ABC"}"#, "call"),
+        (r#"{"date":"2026-13-01"}"#, "time"),
+        (r#"{"time":"25:00"}"#, "time"),
+        (r#"{"grid":"ZZ99"}"#, "grid"),
+        (r#"{"grid":"FN4"}"#, "grid"),
+        (r#"{"mode":""}"#, "mode"),
+        (r#"{"band":"","freq_hz":0}"#, "band"),
+    ] {
+        let resp = send(&s, Method::PATCH, &uri, Some(body)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        let v = body_json(resp).await;
+        assert_eq!((v["error"].as_str(), v["message"].as_str()), (Some("bad_field"), Some(field)), "{body}");
+    }
+    // un locatore vuoto va bene (si toglie), la banda vuota si ricava dalla frequenza
+    let resp = send(&s, Method::PATCH, &uri, Some(r#"{"grid":"","band":"","freq_hz":7074000}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!((v["qso"]["grid"].as_str(), v["qso"]["band"].as_str(), v["qso"]["call"].as_str()), (Some(""), Some("40m"), Some("K1ABC")));
+
+    for (method, body) in [(Method::GET, None), (Method::PATCH, Some(r#"{"call":"K1ABD"}"#)), (Method::DELETE, None)] {
+        let resp = send(&s, method, "/api/v1/log/qsos/999", body).await;
+        status_is(&resp, StatusCode::NOT_FOUND);
+        assert_eq!(body_json(resp).await["error"], "qso_not_found");
+    }
+    assert_eq!(s.logbook.count().unwrap(), 1);
+}
+
+#[tokio::test]
+async fn one_qso_is_deleted_by_its_number_and_the_program_is_told() {
+    let seen: Arc<std::sync::Mutex<Vec<String>>> = Arc::default();
+    let s = state().with_log_deleted({
+        let seen = Arc::clone(&seen);
+        Arc::new(move |gone| seen.lock().unwrap().extend(gone.unwrap_or_default().into_iter().map(|e| e.call)))
+    });
+    let id = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    s.logbook.add(&qso("DL1ABC", "FT8", DAY2)).unwrap();
+    let resp = send(&s, Method::DELETE, &format!("/api/v1/log/qsos/{id}"), None).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["deleted"], 1);
+    assert_eq!(*seen.lock().unwrap(), vec!["K1ABC".to_string()]);
+    assert_eq!(s.logbook.count().unwrap(), 1);
+    status_is(&send(&s, Method::DELETE, &format!("/api/v1/log/qsos/{id}"), None).await, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn correcting_and_deleting_are_only_for_the_home_network() {
+    let s = state();
+    let id = s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let cookie = cookie_for(&s);
+    let uri = format!("/api/v1/log/qsos/{id}");
+    status_is(&call(&router(&s), req(Method::PATCH, &uri).json(r#"{"call":"K1ABD"}"#)).await, StatusCode::UNAUTHORIZED);
+    let proxied = call(&router(&s), req(Method::PATCH, &uri).cookie(&cookie).via_loopback().header("x-forwarded-for", "203.0.113.9").json(r#"{"call":"K1ABD"}"#)).await;
+    status_is(&proxied, StatusCode::FORBIDDEN);
+    status_is(&call(&router(&s), req(Method::DELETE, &uri).cookie(&cookie).via_loopback().header("x-forwarded-for", "203.0.113.9")).await, StatusCode::FORBIDDEN);
+    assert_eq!(s.logbook.entry(id).unwrap().map(|e| e.call), Some("K1ABC".to_string()));
+}

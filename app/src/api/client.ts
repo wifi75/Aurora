@@ -1112,11 +1112,15 @@ export interface Log4omQso {
   freq_hz?: number;
   name?: string;
   qth?: string;
+  /** Il numero del QSO nel log interno di Aurora, per correggerlo; assente nel log di Log4OM2 (sola lettura). */
+  id?: number;
 }
 
 export interface Log4omView {
   total: number;
   qsos: Log4omQso[];
+  /** Da dove vengono i QSO: il log di Log4OM2 (sola lettura) o il log interno di Aurora (assente con un core vecchio). */
+  source?: 'log4om' | 'aurora';
 }
 
 export async function getLog4om(limit: number): Promise<Log4omView> {
@@ -1342,6 +1346,8 @@ export interface LogQso {
   /** Nome e QTH del corrispondente (assenti con un core vecchio). */
   name?: string;
   qth?: string;
+  /** Il commento (assente con un core vecchio; vuoto per i QSO registrati prima che il log lo conservasse). */
+  comment?: string;
 }
 
 export interface LogQsos {
@@ -1358,6 +1364,25 @@ export async function getLogQsos(): Promise<LogQsos> {
 /** Cancella i QSO scelti, o tutto il log con `all: true`. */
 export async function deleteLogQsos(choice: { ids: number[] } | { all: true }): Promise<{ deleted: number }> {
   return (await (await request('/log/qsos', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify(choice) })).json()) as { deleted: number };
+}
+
+/** Un QSO del log interno, dal suo numero. */
+export async function getLogQso(id: number): Promise<LogQso> {
+  return (await (await request(`/log/qsos/${id}`)).json()) as LogQso;
+}
+
+/** I campi di un QSO che si possono correggere (data `AAAA-MM-GG`, ora `HH:MM[:SS]` UTC). */
+export type LogQsoPatch = Partial<Pick<LogQso, 'call' | 'date' | 'time' | 'band' | 'mode' | 'freq_hz' | 'rst_sent' | 'rst_rcvd' | 'grid' | 'name' | 'qth' | 'comment'>>;
+
+/** Corregge un QSO gia' a log: si mandano i soli campi cambiati. Torna il QSO com'e' dopo la correzione. */
+export async function editLogQso(id: number, patch: LogQsoPatch): Promise<LogQso> {
+  const r = (await (await request(`/log/qsos/${id}`, { ...jsonInit(patch), method: 'PATCH' })).json()) as { qso: LogQso };
+  return r.qso;
+}
+
+/** Cancella un QSO dal log interno (e dal file ADIF di Aurora). */
+export async function deleteLogQso(id: number): Promise<void> {
+  await request(`/log/qsos/${id}`, { method: 'DELETE' });
 }
 
 /** Un QSO scritto a mano (data `AAAA-MM-GG` e ora `HH:MM` UTC). */

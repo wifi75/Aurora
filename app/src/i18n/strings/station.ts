@@ -174,6 +174,22 @@ export const stationStrings = {
   'log.total': ['{n} QSO', '{n} QSOs', '{n} QSOs', '{n} QSO', '{n} QSO', '{n} QSO'],
   'log.empty': ['Nessun QSO nel log', 'No QSOs in the log', 'Keine QSOs im Log', 'Aucun QSO dans le journal', 'Ningún QSO en el log', 'Nenhum QSO no log'],
   'log.loggedBadge': ["A LOG", "LOGGED", "GELOGGT", "AU LOG", "EN LOG", "NO LOG"],
+  'log.readonly4om': [
+    'Log di Log4OM2, in sola lettura: i QSO si correggono e si cancellano in Log4OM2.',
+    'Log4OM2 log, read only: QSOs are corrected and deleted in Log4OM2.',
+    'Log4OM2-Log, nur lesbar: QSOs werden in Log4OM2 korrigiert und gelöscht.',
+    'Journal Log4OM2, en lecture seule : les QSO se corrigent et se suppriment dans Log4OM2.',
+    'Log de Log4OM2, solo lectura: los QSO se corrigen y se borran en Log4OM2.',
+    'Log do Log4OM2, só de leitura: os QSO corrigem-se e apagam-se no Log4OM2.',
+  ],
+  'log.editTip': [
+    'Doppio clic per correggere o cancellare questo QSO. Cambia solo il log di Aurora e il suo file ADIF: ai log esterni non si rimanda nulla.',
+    'Double click to correct or delete this QSO. It changes only Aurora’s log and its ADIF file: nothing is sent again to the external logs.',
+    'Doppelklick, um dieses QSO zu korrigieren oder zu löschen. Geändert werden nur Auroras Log und seine ADIF-Datei: an die externen Logs wird nichts erneut gesendet.',
+    'Double clic pour corriger ou supprimer ce QSO. Seuls le log d’Aurora et son fichier ADIF changent : rien n’est renvoyé aux logs externes.',
+    'Doble clic para corregir o borrar este QSO. Solo cambian el log de Aurora y su archivo ADIF: a los logs externos no se reenvía nada.',
+    'Duplo clique para corrigir ou apagar este QSO. Só mudam o log da Aurora e o seu ficheiro ADIF: aos logs externos não se reenvia nada.',
+  ],
   'log.unavailable': [
     'Log di Log4OM2 non collegato: avvia Aurora con AURORA_LOG4OM_DB',
     'Log4OM2 log not connected: start Aurora with AURORA_LOG4OM_DB',

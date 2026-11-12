@@ -887,7 +887,7 @@ fn forget_in_own_file(path: &Path, gone: Option<&[logbook::LogEntry]>) {
             Ok(text) => {
                 let (kept, removed) = logbook::adif_without(&text, gone);
                 if removed > 0 {
-                    if let Err(e) = std::fs::write(path, kept) {
+                    if let Err(e) = write_whole(path, &kept) {
                         tracing::warn!("{} non riscritto: {e}", path.display());
                     } else {
                         tracing::info!("{removed} QSO tolti anche da {}", path.display());
@@ -897,6 +897,45 @@ fn forget_in_own_file(path: &Path, gone: Option<&[logbook::LogEntry]>) {
             Err(e) => tracing::warn!("{} non letto: {e}", path.display()),
         },
         Some(_) => {}
+    }
+}
+
+/// Riscrive un file tutto insieme: il testo va in un file provvisorio accanto, che poi prende il posto di quello vero. Se la scrittura
+/// si interrompe a meta' (disco pieno, programma chiuso) il file di prima resta intero.
+fn write_whole(path: &Path, text: &str) -> std::io::Result<()> {
+    let mut name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
+    name.push(".tmp");
+    let tmp = path.with_file_name(name);
+    let written = (|| {
+        use std::io::Write;
+        let mut file = std::fs::File::create(&tmp)?;
+        file.write_all(text.as_bytes())?;
+        file.sync_all()
+    })();
+    let done = written.and_then(|()| std::fs::rename(&tmp, path));
+    if done.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    done
+}
+
+/// Corregge in un file ADIF scritto da Aurora il QSO corretto nel log (stesso record, soli campi cambiati). Un file che non c'e' o che
+/// non ha quel QSO resta com'e'.
+fn correct_in_own_file(path: &Path, change: &logbook::LogChange) {
+    if !path.exists() {
+        return;
+    }
+    match std::fs::read_to_string(path) {
+        Ok(text) => {
+            let (fixed, changed) = logbook::adif_with_edit(&text, change);
+            if changed > 0 && fixed != text {
+                match write_whole(path, &fixed) {
+                    Ok(()) => tracing::info!("QSO corretto anche in {}", path.display()),
+                    Err(e) => tracing::warn!("{} non riscritto: {e}", path.display()),
+                }
+            }
+        }
+        Err(e) => tracing::warn!("{} non letto: {e}", path.display()),
     }
 }
 
@@ -2417,9 +2456,27 @@ pub async fn run(
         })
         .with_log_deleted({
             let own_file = config.data_dir.join(OWN_LOG_FILE);
+            // la copia di `AURORA_EXPORT_FILE` la scrive Aurora: i QSO cancellati uno per uno si tolgono anche da li'
+            let copy = config.export_file.clone().filter(|f| *f != own_file);
             let live = live_log.clone();
             Arc::new(move |gone: Option<Vec<logbook::LogEntry>>| {
                 forget_in_own_file(&own_file, gone.as_deref());
+                if let (Some(copy), Some(gone)) = (&copy, &gone) {
+                    forget_in_own_file(copy, Some(gone));
+                }
+                if let Some((db, worked, sources)) = &live {
+                    refresh_worked(sources, db, worked);
+                }
+            })
+        })
+        .with_log_edited({
+            let own_file = config.data_dir.join(OWN_LOG_FILE);
+            let copy = config.export_file.clone().filter(|f| *f != own_file);
+            let live = live_log.clone();
+            Arc::new(move |change: logbook::LogChange| {
+                for file in std::iter::once(&own_file).chain(copy.iter()) {
+                    correct_in_own_file(file, &change);
+                }
                 if let Some((db, worked, sources)) = &live {
                     refresh_worked(sources, db, worked);
                 }
@@ -3016,6 +3073,34 @@ fn port_owner(port: u16) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_corrected_qso_is_rewritten_in_the_adif_file_and_nothing_is_left_behind() {
+        let dir = std::env::temp_dir().join(format!("aurora-logmod-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella");
+        let file = dir.join(OWN_LOG_FILE);
+        let text = "WSJT-X ADIF Export<eoh>
+<call:5>K1ABX <gridsquare:4>FN42 <mode:3>FT8 <qso_date:8>20261107 <time_on:6>120015 <band:3>20m <eor>
+<call:6>DL1ABC <gridsquare:4>JO31 <mode:3>FT8 <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <eor>
+";
+        std::fs::write(&file, text).expect("file");
+        let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: "FN42".into(), name: String::new(), qth: String::new(), comment: String::new() };
+        let change = logbook::LogChange { new: logbook::LogEntry { call: "K1ABC".into(), ..old.clone() }, old, date_off: "20261107".into(), time_off: "120015".into() };
+        correct_in_own_file(&file, &change);
+        assert_eq!(std::fs::read_to_string(&file).expect("riletto"), text.replace("K1ABX", "K1ABC"));
+        // i lavorati rileggono il file: il nominativo sbagliato non c'e' piu'
+        let calls: Vec<String> = aurora_core::adif::parse_qsos(&std::fs::read_to_string(&file).expect("riletto")).into_iter().map(|q| q.call).collect();
+        assert_eq!(calls, vec!["K1ABC".to_string(), "DL1ABC".to_string()]);
+        // un QSO che nel file non c'e' e un file che non c'e' non creano nulla
+        correct_in_own_file(&file, &change);
+        correct_in_own_file(&dir.join("manca.adi"), &change);
+        let left: Vec<String> = std::fs::read_dir(&dir).expect("elenco").filter_map(|e| e.ok()).map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+        assert_eq!(left, vec![OWN_LOG_FILE.to_string()], "nessun file provvisorio rimasto");
+        // anche la cancellazione riscrive il file tutto insieme
+        forget_in_own_file(&file, Some(std::slice::from_ref(&change.new)));
+        assert!(!std::fs::read_to_string(&file).expect("riletto").contains("K1ABC"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     fn config_for(engine: EngineKind) -> Config {
         let mut c = Config::defaults();

@@ -150,7 +150,7 @@ pub(crate) fn qso_times(q: &QsoRecord, fallback_date: &str) -> (String, String, 
     (date_on, time_on, date_off, time_off)
 }
 
-fn freq_mhz(freq_hz: u64) -> String {
+pub(crate) fn freq_mhz(freq_hz: u64) -> String {
     format!("{}.{:06}", freq_hz / 1_000_000, freq_hz % 1_000_000)
 }
 

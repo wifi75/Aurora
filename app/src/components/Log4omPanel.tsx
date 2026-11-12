@@ -1,7 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SetupCta } from './SetupCta';
 import { useEffect, useLayoutEffect, useRef, useState, memo } from 'react';
-import { getLog4om } from '../api/client';
+import { getLog4om, getLogQso, type LogQso } from '../api/client';
+import { LogEditDialog } from './LogEditDialog';
+import { toast } from '../lib/toast';
 import { useT } from '../i18n';
 import { usePrefs } from '../lib/prefs';
 import { useStation } from '../state/station';
@@ -120,6 +122,20 @@ function Log4omPanelInner() {
     return () => window.clearInterval(id);
   }, [flash, log.data]);
 
+  // doppio clic su un QSO del log interno di Aurora: si apre la finestra per correggerlo o cancellarlo (il log di Log4OM2 e' in sola lettura)
+  const [editing, setEditing] = useState<LogQso | null>(null);
+  const readOnly = log.data?.source === 'log4om';
+  const edit = (q: Log4omQso) => {
+    if (readOnly) {
+      toast(t('log.readonly4om'), 'info');
+      return;
+    }
+    if (q.id === undefined) return;
+    getLogQso(q.id)
+      .then(setEditing)
+      .catch(() => toast(t('exp.edit.gone'), 'error'));
+  };
+
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
   if (log.data.qsos.length === 0) return <SetupCta className="setup-cta--log" href="#/impostazioni/files" title="cta.log.none" action="cta.log.go" />;
@@ -146,13 +162,20 @@ function Log4omPanelInner() {
         </thead>
         <tbody>
           {shownQsos.map((q, i) => (
-            <tr key={`${q.date}-${q.call}-${i}`} className={flash !== null && i === shownQsos.findIndex((x) => x.call.toUpperCase() === flash) ? 'log4om-row--flash' : undefined}>
+            <tr
+              key={`${q.date}-${q.call}-${i}`}
+              className={flash !== null && i === shownQsos.findIndex((x) => x.call.toUpperCase() === flash) ? 'log4om-row--flash' : undefined}
+              title={readOnly ? undefined : 'id' in q && q.id !== undefined ? t('log.editTip') : undefined}
+              onDoubleClick={() => edit(q)}
+            >
               {cols.visible.map((c) => logCell(q, c))}
             </tr>
           ))}
         </tbody>
       </table>
       <ColumnsMenu cols={cols} />
+      {readOnly ? <p className="muted log4om-note log4om-readonly">{t('log.readonly4om')}</p> : null}
+      {editing ? <LogEditDialog qso={editing} onClose={() => setEditing(null)} /> : null}
     </div>
   );
 }

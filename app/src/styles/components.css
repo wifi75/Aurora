@@ -1187,6 +1187,23 @@ button.primary {
 .export-add-wide { grid-column: span 2; }
 .export-add-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
 .export-add-actions .muted { margin-right: auto; }
+/* finestra per correggere o cancellare un QSO del log (pagina Log e pannello Log) */
+.log-edit-overlay { padding-top: calc(8vh / var(--ui-zoom, 1)); overflow-y: auto; }
+.log-edit-card { width: min(44rem, calc(94vw / var(--ui-zoom, 1))); }
+.log-edit-title { margin: 0 0 0.8rem; font-size: 1rem; }
+.log-edit-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.6rem 0.8rem; }
+.log-edit-fields label { display: flex; flex-direction: column; gap: 0.25rem; font-size: var(--text-xs); color: var(--text-muted); min-width: 0; }
+.log-edit-fields input, .log-edit-fields select { font-size: var(--text-sm); min-width: 0; }
+.log-edit-fields input[aria-invalid='true'] { border-color: var(--danger); }
+.log-edit-wide { grid-column: 1 / -1; }
+.log-edit-error { color: var(--danger); font-size: var(--text-xs); line-height: 1.25; }
+.log-edit-note { margin: 0.8rem 0; font-size: var(--text-xs); line-height: 1.4; }
+.log-edit-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+.log-edit-actions .export-danger { margin-right: auto; }
+.export-edit { width: 1%; white-space: nowrap; text-align: right; }
+.export-edit-btn { padding: 0.1rem 0.55rem; font-size: var(--text-xs); }
+.log4om-readonly { margin: 0.3rem 0.5rem; }
+.log4om-table tbody tr[title] { cursor: default; }
 .export-danger:not(:disabled) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 
 .export-head .export-add-btn { margin-left: 1rem; margin-right: auto; display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }

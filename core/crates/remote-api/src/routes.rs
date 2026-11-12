@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::digi_api::digi_get, crate::digi_api::digi_put, crate::digi_api::digi_rx_start, crate::digi_api::digi_rx_stop, crate::digi_api::digi_tx, crate::digi_api::digi_tx_abort, crate::digi_api::digi_import_macros, crate::digi_api::digi_cat, crate::digi_api::digi_textfile, crate::sstv_api::sstv_get, crate::sstv_api::sstv_put, crate::sstv_api::sstv_rx_start, crate::sstv_api::sstv_rx_stop, crate::sstv_api::sstv_rx_force, crate::sstv_api::sstv_rx_cancel, crate::sstv_api::sstv_rx_current, crate::sstv_api::sstv_rx_current_clean, crate::sstv_api::sstv_images, crate::sstv_api::sstv_tx_folder, crate::sstv_api::sstv_tx_photo, crate::sstv_api::sstv_tx_folder_delete, crate::sstv_api::sstv_images_delete, crate::sstv_api::sstv_image, crate::sstv_api::sstv_image_clean, crate::sstv_api::sstv_image_delete, crate::sstv_api::sstv_tx, crate::sstv_api::sstv_tx_abort, crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi, crate::digi_api::digi_tx_open, crate::digi_api::digi_tx_type, crate::digi_api::digi_tx_unsend, crate::digi_api::digi_tx_close, crate::digi_api::digi_tx_replace, crate::digi_api::digi_band))]
+#[openapi(paths(crate::digi_api::digi_get, crate::digi_api::digi_put, crate::digi_api::digi_rx_start, crate::digi_api::digi_rx_stop, crate::digi_api::digi_tx, crate::digi_api::digi_tx_abort, crate::digi_api::digi_import_macros, crate::digi_api::digi_cat, crate::digi_api::digi_textfile, crate::sstv_api::sstv_get, crate::sstv_api::sstv_put, crate::sstv_api::sstv_rx_start, crate::sstv_api::sstv_rx_stop, crate::sstv_api::sstv_rx_force, crate::sstv_api::sstv_rx_cancel, crate::sstv_api::sstv_rx_current, crate::sstv_api::sstv_rx_current_clean, crate::sstv_api::sstv_images, crate::sstv_api::sstv_tx_folder, crate::sstv_api::sstv_tx_photo, crate::sstv_api::sstv_tx_folder_delete, crate::sstv_api::sstv_images_delete, crate::sstv_api::sstv_image, crate::sstv_api::sstv_image_clean, crate::sstv_api::sstv_image_delete, crate::sstv_api::sstv_tx, crate::sstv_api::sstv_tx_abort, crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_qso_get, log_qso_edit, log_qso_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi, crate::digi_api::digi_tx_open, crate::digi_api::digi_tx_type, crate::digi_api::digi_tx_unsend, crate::digi_api::digi_tx_close, crate::digi_api::digi_tx_replace, crate::digi_api::digi_band))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -78,6 +78,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/stats", get(stats))
         .route("/api/v1/dxcc-matrix", get(dxcc_matrix))
         .route("/api/v1/log/qsos", get(log_qsos).post(log_add).delete(log_delete))
+        .route("/api/v1/log/qsos/{id}", get(log_qso_get).patch(log_qso_edit).delete(log_qso_delete))
         .route("/api/v1/log/export.adi", get(log_export))
         .route("/api/v1/log/export-save", post(log_export_save))
         .route("/api/v1/log4om-db", get(log4om_db_get).put(log4om_db_put))
@@ -2766,8 +2767,20 @@ fn from_this_pc(peer: Option<SocketAddr>, headers: &HeaderMap) -> bool {
     peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(headers)
 }
 
+/// Un QSO del log interno come lo vede la pagina Log (`date` `AAAA-MM-GG`, `time` `HH:MM:SS`, UTC).
+fn log_entry_json(e: &logbook::LogEntry, country: &str) -> Value {
+    json!({ "id": e.id, "date": shown_date(&e.date), "time": shown_time(&e.time), "call": e.call, "band": e.band, "mode": e.mode,
+            "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country,
+            "name": e.name, "qth": e.qth, "comment": e.comment })
+}
+
+/// Il paese di un nominativo dal database DXCC (vuoto se manca).
+fn country_of_call(state: &AppState, call: &str) -> String {
+    state.dxcc.as_ref().and_then(|lookup| lookup(call)).and_then(|v| v.get("country").and_then(Value::as_str).map(str::to_string)).unwrap_or_default()
+}
+
 /// Tutti i QSO del log interno, dal piu' recente: `{total, qsos: [{id, date, time, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid,
-/// country}], save_dialog}`. `country` viene dal database DXCC (vuoto se manca); `save_dialog` dice se da qui si puo' usare
+/// country, name, qth, comment}], save_dialog}`. `country` viene dal database DXCC (vuoto se manca); `save_dialog` dice se da qui si puo' usare
 /// `POST /api/v1/log/export-save` (programma Windows, richiesta dal PC stesso).
 #[utoipa::path(get, path = "/api/v1/log/qsos", responses((status = 200, description = "{total, qsos, save_dialog}"), (status = 502, description = "Log non leggibile (log_read)")))]
 async fn log_qsos(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
@@ -2788,9 +2801,7 @@ async fn log_qsos(State(state): State<AppState>, _: Authed, Peer(peer): Peer, he
             .into_iter()
             .map(|e| {
                 let country = country_of(&e.call);
-                json!({ "id": e.id, "date": shown_date(&e.date), "time": shown_time(&e.time), "call": e.call, "band": e.band, "mode": e.mode,
-                        "freq_hz": e.freq_hz, "rst_sent": e.rst_sent, "rst_rcvd": e.rst_rcvd, "grid": e.grid, "country": country,
-                        "name": e.name, "qth": e.qth })
+                log_entry_json(&e, &country)
             })
             .collect())
     })
@@ -3058,6 +3069,172 @@ async fn log_delete(State(state): State<AppState>, _: Authed, Peer(peer): Peer, 
         let _ = tokio::task::spawn_blocking(move || hook(gone)).await;
     }
     Ok(Json(json!({ "deleted": deleted })))
+}
+
+/// I campi da correggere di un QSO: quelli che mancano restano come sono.
+#[derive(Deserialize)]
+struct LogEditBody {
+    call: Option<String>,
+    /// `AAAA-MM-GG` UTC.
+    date: Option<String>,
+    /// `HH:MM` o `HH:MM:SS` UTC.
+    time: Option<String>,
+    band: Option<String>,
+    mode: Option<String>,
+    freq_hz: Option<u64>,
+    rst_sent: Option<String>,
+    rst_rcvd: Option<String>,
+    grid: Option<String>,
+    name: Option<String>,
+    qth: Option<String>,
+    comment: Option<String>,
+}
+
+/// Un locatore Maidenhead di 4, 6 o 8 caratteri (`IO91`, `IO91WM`, `IO91WM37`).
+fn valid_grid(g: &str) -> bool {
+    let b = g.as_bytes();
+    let pair = |i: usize, lo: u8, hi: u8| b[i..i + 2].iter().all(|c| (lo..=hi).contains(&c.to_ascii_uppercase()));
+    matches!(b.len(), 4 | 6 | 8) && pair(0, b'A', b'R') && pair(2, b'0', b'9') && (b.len() < 6 || pair(4, b'A', b'X')) && (b.len() < 8 || pair(6, b'0', b'9'))
+}
+
+/// I valori nuovi di un QSO: quelli di adesso con le correzioni chieste, controllati come per un QSO scritto a mano. In errore il nome
+/// del campo che non va (`call`, `mode`, `time`, `band`, `grid`).
+fn checked_edit(now: &logbook::LogEntry, b: LogEditBody) -> Result<logbook::LogEdit, &'static str> {
+    let clip = |s: &str, n: usize| s.trim().chars().take(n).collect::<String>();
+    let mut e = logbook::LogEdit::from_entry(now);
+    if let Some(call) = &b.call {
+        e.call = call.trim().to_uppercase();
+        if e.call.len() < 3 || e.call.len() > 13 || !e.call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
+            return Err("call");
+        }
+    }
+    if let Some(mode) = &b.mode {
+        e.mode = mode.trim().to_uppercase();
+        if e.mode.is_empty() || e.mode.len() > 12 || !e.mode.chars().all(|c| c.is_ascii_alphanumeric()) {
+            return Err("mode");
+        }
+    }
+    if b.date.is_some() || b.time.is_some() {
+        let date = b.date.clone().unwrap_or_else(|| shown_date(&now.date));
+        let time = b.time.clone().unwrap_or_else(|| shown_time(&now.time));
+        let start = manual_time(&date, &time).ok_or("time")?;
+        (e.date, e.time) = logbook::adif::utc_datetime(start);
+    }
+    if let Some(hz) = b.freq_hz {
+        e.freq_hz = hz;
+    }
+    if let Some(band) = &b.band {
+        e.band = if band.trim().is_empty() { band_of_hz(e.freq_hz).unwrap_or_default() } else { band.trim().to_lowercase() };
+        if e.band.is_empty() || e.band.len() > 8 || !e.band.chars().all(|c| c.is_ascii_alphanumeric() || c == '.') {
+            return Err("band");
+        }
+    }
+    if let Some(grid) = &b.grid {
+        e.grid = grid.trim().to_uppercase();
+        if !e.grid.is_empty() && !valid_grid(&e.grid) {
+            return Err("grid");
+        }
+    }
+    if let Some(v) = &b.rst_sent {
+        e.rst_sent = clip(v, 8);
+    }
+    if let Some(v) = &b.rst_rcvd {
+        e.rst_rcvd = clip(v, 8);
+    }
+    if let Some(v) = &b.name {
+        e.name = clip(v, 60);
+    }
+    if let Some(v) = &b.qth {
+        e.qth = clip(v, 60);
+    }
+    if let Some(v) = &b.comment {
+        e.comment = clip(v, 200);
+    }
+    Ok(e)
+}
+
+/// Perche' una correzione non e' stata fatta.
+enum EditRefused {
+    NotFound,
+    BadField(&'static str),
+}
+
+/// Un QSO del log interno, con il suo numero (quello di `GET /api/v1/log/qsos`): `{id, date, time, call, band, mode, freq_hz, rst_sent,
+/// rst_rcvd, grid, country, name, qth, comment}`.
+#[utoipa::path(get, path = "/api/v1/log/qsos/{id}", responses((status = 200, description = "Il QSO"), (status = 404, description = "QSO non trovato (qso_not_found)"), (status = 502, description = "Log non leggibile (log_read)")))]
+async fn log_qso_get(State(state): State<AppState>, _: Authed, Path(id): Path<i64>) -> Result<Json<Value>, ApiError> {
+    let book = state.logbook.clone();
+    let entry = tokio::task::spawn_blocking(move || book.entry(id))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("QSO non letto: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_read")
+        })?
+        .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "qso_not_found"))?;
+    let country = country_of_call(&state, &entry.call);
+    Ok(Json(log_entry_json(&entry, &country)))
+}
+
+/// Corregge un QSO gia' a log: nel corpo i soli campi da cambiare (`call`, `date` `AAAA-MM-GG`, `time` `HH:MM[:SS]`, `band`, `mode`,
+/// `freq_hz`, `rst_sent`, `rst_rcvd`, `grid`, `name`, `qth`, `comment`). Cambia il log interno e lo stesso QSO nei file ADIF che Aurora
+/// scrive, poi i «gia' lavorati» si rileggono. Ai log esterni (UDP, Wavelog, ClubLog, QRZ, LoTW) non si rimanda nulla. Solo dalla rete di casa.
+#[utoipa::path(patch, path = "/api/v1/log/qsos/{id}", responses((status = 200, description = "{ok, qso}: il QSO corretto"), (status = 400, description = "Campo non valido (bad_field con il campo in message: call, mode, time, band, grid)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "QSO non trovato (qso_not_found)"), (status = 502, description = "Scrittura non riuscita (log_write)")))]
+async fn log_qso_edit(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Path(id): Path<i64>, Json(body): Json<LogEditBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let book = state.logbook.clone();
+    let change = tokio::task::spawn_blocking(move || -> Result<Result<logbook::LogChange, EditRefused>, logbook::LogError> {
+        let Some(now) = book.entry(id)? else { return Ok(Err(EditRefused::NotFound)) };
+        let edit = match checked_edit(&now, body) {
+            Ok(edit) => edit,
+            Err(field) => return Ok(Err(EditRefused::BadField(field))),
+        };
+        Ok(book.update(id, &edit)?.ok_or(EditRefused::NotFound))
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+    .map_err(|e| {
+        tracing::warn!("QSO non corretto: {e}");
+        ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+    })?
+    .map_err(|refused| match refused {
+        EditRefused::NotFound => ApiError::new(StatusCode::NOT_FOUND, "qso_not_found"),
+        EditRefused::BadField(field) => ApiError::new(StatusCode::BAD_REQUEST, "bad_field").with_message(field),
+    })?;
+    let row = log_entry_json(&change.new, &country_of_call(&state, &change.new.call));
+    if change.new != change.old {
+        tracing::info!("log: QSO {id} corretto ({} {} {})", change.new.call, change.new.band, change.new.mode);
+        if let Some(hook) = state.log_edited.clone() {
+            let _ = tokio::task::spawn_blocking(move || hook(change)).await;
+        }
+    }
+    Ok(Json(json!({ "ok": true, "qso": row })))
+}
+
+/// Cancella un QSO dal log interno e dai file ADIF che Aurora scrive; i «gia' lavorati» si rileggono. Nei log esterni resta. Solo dalla rete di casa.
+#[utoipa::path(delete, path = "/api/v1/log/qsos/{id}", responses((status = 200, description = "{deleted: 1}"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "QSO non trovato (qso_not_found)"), (status = 502, description = "Scrittura non riuscita (log_write)")))]
+async fn log_qso_delete(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Path(id): Path<i64>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let book = state.logbook.clone();
+    let gone = tokio::task::spawn_blocking(move || book.delete(&[id]))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("QSO non cancellato: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+        })?;
+    if gone.is_empty() {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "qso_not_found"));
+    }
+    tracing::info!("log: QSO {id} cancellato");
+    if let Some(hook) = state.log_deleted.clone() {
+        let _ = tokio::task::spawn_blocking(move || hook(Some(gone))).await;
+    }
+    Ok(Json(json!({ "deleted": 1 })))
 }
 
 #[derive(Deserialize)]

@@ -78,6 +78,78 @@ pub struct LogEntry {
     /// Nome e QTH del corrispondente (vuoti se il log non li ha).
     pub name: String,
     pub qth: String,
+    /// Il commento del QSO (vuoto per i QSO registrati prima che il log lo conservasse).
+    pub comment: String,
+}
+
+/// Le colonne di un `LogEntry`, nell'ordine di `entry_from_row`.
+const ENTRY_COLUMNS: &str = "id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth, comment";
+
+fn entry_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<LogEntry> {
+    Ok(LogEntry {
+        id: r.get(0)?,
+        date: r.get(1)?,
+        time: r.get(2)?,
+        call: r.get(3)?,
+        band: r.get::<_, String>(4)?.to_lowercase(),
+        mode: r.get::<_, String>(5)?.to_uppercase(),
+        freq_hz: r.get::<_, i64>(6)?.max(0) as u64,
+        rst_sent: r.get(7)?,
+        rst_rcvd: r.get(8)?,
+        grid: r.get(9)?,
+        name: r.get(10)?,
+        qth: r.get(11)?,
+        comment: r.get(12)?,
+    })
+}
+
+/// I valori nuovi di un QSO corretto a mano: tutti i campi che si possono cambiare, gia' controllati da chi chiama.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogEdit {
+    pub call: String,
+    /// `AAAAMMGG` (UTC, inizio del QSO).
+    pub date: String,
+    /// `HHMMSS` (UTC, inizio del QSO).
+    pub time: String,
+    pub band: String,
+    pub mode: String,
+    pub freq_hz: u64,
+    pub rst_sent: String,
+    pub rst_rcvd: String,
+    pub grid: String,
+    pub name: String,
+    pub qth: String,
+    pub comment: String,
+}
+
+impl LogEdit {
+    /// I valori di un QSO com'e' ora: si parte da qui e si cambia solo cio' che serve.
+    pub fn from_entry(e: &LogEntry) -> LogEdit {
+        LogEdit {
+            call: e.call.clone(),
+            date: e.date.clone(),
+            time: e.time.clone(),
+            band: e.band.clone(),
+            mode: e.mode.clone(),
+            freq_hz: e.freq_hz,
+            rst_sent: e.rst_sent.clone(),
+            rst_rcvd: e.rst_rcvd.clone(),
+            grid: e.grid.clone(),
+            name: e.name.clone(),
+            qth: e.qth.clone(),
+            comment: e.comment.clone(),
+        }
+    }
+}
+
+/// Un QSO corretto: com'era e com'e', con la fine del QSO spostata insieme all'inizio (per correggere anche il file ADIF di Aurora).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogChange {
+    pub old: LogEntry,
+    pub new: LogEntry,
+    /// `AAAAMMGG` e `HHMMSS` della fine del QSO dopo la correzione.
+    pub date_off: String,
+    pub time_off: String,
 }
 
 pub struct Logbook {
@@ -150,6 +222,13 @@ impl Logbook {
                  PRAGMA user_version = 4;",
             )?;
         }
+        if version < 5 {
+            // quinta versione: il commento del QSO, per mostrarlo e correggerlo nella pagina Log
+            conn.execute_batch(
+                "ALTER TABLE qso ADD COLUMN comment TEXT NOT NULL DEFAULT '';
+                 PRAGMA user_version = 5;",
+            )?;
+        }
         Ok(Logbook { conn: Mutex::new(conn) })
     }
 
@@ -168,8 +247,8 @@ impl Logbook {
         let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
         let conn = self.conn()?;
         conn.execute(
-            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth, comment)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
             params![
                 q.call.to_uppercase(),
                 q.grid,
@@ -185,7 +264,8 @@ impl Logbook {
                 time_off,
                 q.state.trim().to_uppercase(),
                 q.name.trim(),
-                q.qth.trim()
+                q.qth.trim(),
+                q.comment.trim()
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -206,22 +286,22 @@ impl Logbook {
         let total = self.count()?;
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
-            "SELECT call, grid, band, mode, rst_sent, rst_rcvd, date, time_on, freq_hz, name, qth FROM qso ORDER BY date DESC, time_on DESC, id DESC LIMIT ?1",
+            "SELECT call, grid, band, mode, rst_sent, rst_rcvd, date, time_on, freq_hz, name, qth, id FROM qso ORDER BY date DESC, time_on DESC, id DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |r| {
             let (call, grid, band, mode, sent, rcvd, date, time): (String, String, String, String, String, String, String, String) =
                 (r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?);
-            let (freq, name, qth): (i64, String, String) = (r.get(8)?, r.get(9)?, r.get(10)?);
-            Ok((call, grid, band, mode, sent, rcvd, date, time, freq.max(0) as u64, name, qth))
+            let (freq, name, qth, id): (i64, String, String, i64) = (r.get(8)?, r.get(9)?, r.get(10)?, r.get(11)?);
+            Ok((call, grid, band, mode, sent, rcvd, date, time, freq.max(0) as u64, name, qth, id))
         })?;
         let mut qsos = Vec::new();
         for row in rows {
-            let (call, grid, band, mode, rst_sent, rst_rcvd, date, time, freq_hz, name, qth) = row?;
+            let (call, grid, band, mode, rst_sent, rst_rcvd, date, time, freq_hz, name, qth, id) = row?;
             // «2026-11-01 08:15:00Z» come nel log di Log4OM2
             let d = if date.len() >= 8 { format!("{}-{}-{}", &date[0..4], &date[4..6], &date[6..8]) } else { date.clone() };
             let t = if time.len() >= 4 { format!("{}:{}:{}", &time[0..2], &time[2..4], if time.len() >= 6 { &time[4..6] } else { "00" }) } else { "00:00:00".to_string() };
             let country = country_of(&call);
-            qsos.push(log4om::Log4omQso { date: format!("{d} {t}Z"), call, band: band.to_lowercase(), mode: mode.to_uppercase(), rst_sent, rst_rcvd, country, grid, freq_hz, name, qth });
+            qsos.push(log4om::Log4omQso { date: format!("{d} {t}Z"), call, band: band.to_lowercase(), mode: mode.to_uppercase(), rst_sent, rst_rcvd, country, grid, freq_hz, name, qth, id: Some(id) });
         }
         Ok(log4om::Log4omView { total, qsos })
     }
@@ -262,26 +342,60 @@ impl Logbook {
     /// Tutti i QSO del log interno, dal piu' recente, con il loro numero (`id`): la pagina di esportazione li elenca e sceglie quali salvare.
     pub fn entries(&self) -> Result<Vec<LogEntry>, LogError> {
         let conn = self.conn()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth FROM qso ORDER BY date DESC, time_on DESC, id DESC",
-        )?;
-        let rows = stmt.query_map([], |r| {
-            Ok(LogEntry {
-                id: r.get(0)?,
-                date: r.get(1)?,
-                time: r.get(2)?,
-                call: r.get(3)?,
-                band: r.get::<_, String>(4)?.to_lowercase(),
-                mode: r.get::<_, String>(5)?.to_uppercase(),
-                freq_hz: r.get::<_, i64>(6)?.max(0) as u64,
-                rst_sent: r.get(7)?,
-                rst_rcvd: r.get(8)?,
-                grid: r.get(9)?,
-                name: r.get(10)?,
-                qth: r.get(11)?,
-            })
-        })?;
+        let mut stmt = conn.prepare(&format!("SELECT {ENTRY_COLUMNS} FROM qso ORDER BY date DESC, time_on DESC, id DESC"))?;
+        let rows = stmt.query_map([], entry_from_row)?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    /// Il QSO con questo numero (`None` se non c'e').
+    pub fn entry(&self, id: i64) -> Result<Option<LogEntry>, LogError> {
+        Ok(self.conn()?.query_row(&format!("SELECT {ENTRY_COLUMNS} FROM qso WHERE id = ?1"), params![id], entry_from_row).optional()?)
+    }
+
+    /// Corregge il QSO con questo numero e ritorna com'era e com'e' (`None` se non c'e': niente cambia). La fine del QSO si sposta con
+    /// l'inizio (stessa durata); conferma e stato restano. I valori devono essere gia' controllati: una data o un'ora non valide sono un errore.
+    pub fn update(&self, id: i64, edit: &LogEdit) -> Result<Option<LogChange>, LogError> {
+        let Some(on) = unix_ms(&edit.date, &edit.time) else {
+            return Err(LogError::Storage(format!("data o ora non valide: {} {}", edit.date, edit.time)));
+        };
+        let mut conn = self.conn()?;
+        let tx = conn.transaction()?;
+        let Some(old) = tx.query_row(&format!("SELECT {ENTRY_COLUMNS} FROM qso WHERE id = ?1"), params![id], entry_from_row).optional()? else {
+            return Ok(None);
+        };
+        let (old_date_off, old_time_off): (String, String) = tx.query_row("SELECT date_off, time_off FROM qso WHERE id = ?1", params![id], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        // la durata del QSO resta quella di prima (mai piu' di un giorno: oltre e' un dato rovinato)
+        let lasted = match (unix_ms(&old.date, &old.time), unix_ms(if old_date_off.is_empty() { &old.date } else { &old_date_off }, &old_time_off)) {
+            (Some(a), Some(b)) if b > a && b - a <= 86_400_000 => b - a,
+            _ => 0,
+        };
+        let (date, time) = adif::utc_datetime(on);
+        let (date_off, time_off) = adif::utc_datetime(on + lasted);
+        tx.execute(
+            "UPDATE qso SET call = ?1, grid = ?2, band = ?3, mode = ?4, freq_hz = ?5, rst_sent = ?6, rst_rcvd = ?7, time_ms = ?8, date = ?9, time_on = ?10,
+                            date_off = ?11, time_off = ?12, name = ?13, qth = ?14, comment = ?15 WHERE id = ?16",
+            params![
+                edit.call.trim().to_uppercase(),
+                edit.grid.trim(),
+                edit.band.trim(),
+                edit.mode.trim(),
+                edit.freq_hz as i64,
+                edit.rst_sent.trim(),
+                edit.rst_rcvd.trim(),
+                (on % 86_400_000) as i64,
+                date,
+                time,
+                date_off,
+                time_off,
+                edit.name.trim(),
+                edit.qth.trim(),
+                edit.comment.trim(),
+                id
+            ],
+        )?;
+        let new = tx.query_row(&format!("SELECT {ENTRY_COLUMNS} FROM qso WHERE id = ?1"), params![id], entry_from_row)?;
+        tx.commit()?;
+        Ok(Some(LogChange { old, new, date_off, time_off }))
     }
 
     /// Cancella i QSO con questi id e ritorna quelli cancellati (per toglierli anche dal file ADIF di Aurora). Gli id che non ci sono si saltano.
@@ -290,28 +404,7 @@ impl Logbook {
         let tx = conn.transaction()?;
         let mut gone = Vec::new();
         for &id in ids {
-            let row = tx
-                .query_row(
-                    "SELECT id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth FROM qso WHERE id = ?1",
-                    params![id],
-                    |r| {
-                        Ok(LogEntry {
-                            id: r.get(0)?,
-                            date: r.get(1)?,
-                            time: r.get(2)?,
-                            call: r.get(3)?,
-                            band: r.get::<_, String>(4)?.to_lowercase(),
-                            mode: r.get::<_, String>(5)?.to_uppercase(),
-                            freq_hz: r.get::<_, i64>(6)?.max(0) as u64,
-                            rst_sent: r.get(7)?,
-                            rst_rcvd: r.get(8)?,
-                            grid: r.get(9)?,
-                            name: r.get(10)?,
-                            qth: r.get(11)?,
-                        })
-                    },
-                )
-                .optional()?;
+            let row = tx.query_row(&format!("SELECT {ENTRY_COLUMNS} FROM qso WHERE id = ?1"), params![id], entry_from_row).optional()?;
             if let Some(e) = row {
                 tx.execute("DELETE FROM qso WHERE id = ?1", params![id])?;
                 gone.push(e);
@@ -567,3 +660,133 @@ fn adif_field(record: &str, name: &str) -> Option<String> {
     record.get(close + 1..close + 1 + len).map(|v| v.trim().to_string())
 }
 
+
+/// Un campo di un record ADIF: nome in minuscolo, dove comincia il suo `<` e dove comincia e finisce il valore (in byte).
+struct RecordField {
+    name: String,
+    tag_start: usize,
+    value_start: usize,
+    value_end: usize,
+}
+
+/// I campi di un record ADIF, uno dopo l'altro: la lunghezza dichiarata dice dove finisce il valore, cosi' un `<` dentro un commento
+/// non si scambia per un campo.
+fn record_fields(record: &str) -> Vec<RecordField> {
+    let mut out = Vec::new();
+    let mut i = 0;
+    while let Some(rel) = record.get(i..).and_then(|rest| rest.find('<')) {
+        let tag_start = i + rel;
+        let Some(close) = record[tag_start..].find('>').map(|c| tag_start + c) else { break };
+        i = close + 1;
+        let mut parts = record[tag_start + 1..close].split(':');
+        let (Some(name), Some(len)) = (parts.next(), parts.next().and_then(|l| l.trim().parse::<usize>().ok())) else { continue };
+        if record.get(close + 1..close + 1 + len).is_none() {
+            continue;
+        }
+        out.push(RecordField { name: name.trim().to_ascii_lowercase(), tag_start, value_start: close + 1, value_end: close + 1 + len });
+        i = close + 1 + len;
+    }
+    out
+}
+
+/// Il record con il campo `name` (in minuscolo) messo a `value`. Il campo che c'e' gia' cambia sul posto, con il nome scritto com'era;
+/// quello che manca si aggiunge prima di `<eor>`; un valore vuoto toglie il campo (con `keep_empty` resta, lungo zero, come fa JTDX
+/// con il locatore).
+fn record_with(record: &str, name: &str, value: &str, keep_empty: bool) -> String {
+    if let Some(f) = record_fields(record).iter().find(|f| f.name == name) {
+        if value.is_empty() && !keep_empty {
+            let start = if record[..f.tag_start].ends_with(' ') { f.tag_start - 1 } else { f.tag_start };
+            return format!("{}{}", &record[..start], &record[f.value_end..]);
+        }
+        let written = record[f.tag_start + 1..f.value_start].split(':').next().unwrap_or(name);
+        return format!("{}<{written}:{}>{value}{}", &record[..f.tag_start], value.len(), &record[f.value_end..]);
+    }
+    if value.is_empty() {
+        return record.to_string();
+    }
+    let Some(at) = record.to_ascii_lowercase().rfind("<eor>") else { return record.to_string() };
+    let name = if record[at..].starts_with("<EOR>") { name.to_ascii_uppercase() } else { name.to_string() };
+    format!("{} <{name}:{}>{value} {}", record[..at].trim_end_matches(' '), value.len(), &record[at..])
+}
+
+/// Il testo di un file ADIF con il QSO corretto: nel record che corrisponde a com'era il QSO (stesso nominativo, data, banda e ora di
+/// inizio al minuto) cambiano i soli campi corretti; ritorna anche quanti record ha cambiato. Tutto il resto (intestazione, campi in
+/// piu', altri QSO, ritorni a capo) resta byte per byte com'era.
+pub fn adif_with_edit(text: &str, change: &LogChange) -> (String, usize) {
+    let (old, new) = (&change.old, &change.new);
+    let lower = text.to_ascii_lowercase();
+    let mut out = String::with_capacity(text.len() + 64);
+    let mut start = 0;
+    let mut changed = 0;
+    if let Some(h) = lower.find("<eoh>") {
+        start = h + 5;
+        out.push_str(&text[..start]);
+    }
+    while let Some(rel) = lower[start..].find("<eor>") {
+        let end = start + rel + 5;
+        let record = &text[start..end];
+        start = end;
+        let fields = record_fields(record);
+        let field = |name: &str| fields.iter().find(|f| f.name == name).map(|f| record[f.value_start..f.value_end].trim()).unwrap_or("");
+        let matches = field("call").eq_ignore_ascii_case(&old.call)
+            && field("qso_date") == old.date
+            && field("band").eq_ignore_ascii_case(&old.band)
+            && field("time_on").get(0..4) == old.time.get(0..4);
+        if !matches {
+            out.push_str(record);
+            continue;
+        }
+        let mut r = record.to_string();
+        if new.call != old.call {
+            r = record_with(&r, "call", &new.call, true);
+        }
+        if new.grid != old.grid {
+            r = record_with(&r, "gridsquare", &new.grid, true);
+        }
+        if new.mode != old.mode {
+            // i sottomodi ADIF (FT4, PSK31...) si scrivono come modo padre piu' SUBMODE, come nei record nuovi
+            match adif::adif_parent_mode(&new.mode) {
+                Some(parent) => {
+                    r = record_with(&r, "mode", parent, true);
+                    r = record_with(&r, "submode", &new.mode, true);
+                }
+                None => {
+                    r = record_with(&r, "mode", &new.mode, true);
+                    r = record_with(&r, "submode", "", false);
+                }
+            }
+        }
+        if new.date != old.date || new.time != old.time {
+            r = record_with(&r, "qso_date", &new.date, true);
+            r = record_with(&r, "time_on", &new.time, true);
+            r = record_with(&r, "qso_date_off", &change.date_off, true);
+            r = record_with(&r, "time_off", &change.time_off, true);
+        }
+        if new.band != old.band {
+            r = record_with(&r, "band", &new.band, true);
+        }
+        if new.freq_hz != old.freq_hz {
+            let mhz = if new.freq_hz > 0 { adif::freq_mhz(new.freq_hz) } else { String::new() };
+            r = record_with(&r, "freq", &mhz, false);
+        }
+        if new.rst_sent != old.rst_sent {
+            r = record_with(&r, "rst_sent", &new.rst_sent, true);
+        }
+        if new.rst_rcvd != old.rst_rcvd {
+            r = record_with(&r, "rst_rcvd", &new.rst_rcvd, true);
+        }
+        if new.name != old.name {
+            r = record_with(&r, "name", &new.name, false);
+        }
+        if new.qth != old.qth {
+            r = record_with(&r, "qth", &new.qth, false);
+        }
+        if new.comment != old.comment {
+            r = record_with(&r, "comment", &new.comment, false);
+        }
+        out.push_str(&r);
+        changed += 1;
+    }
+    out.push_str(&text[start..]);
+    (out, changed)
+}
