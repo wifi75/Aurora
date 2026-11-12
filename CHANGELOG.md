@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.241 - 2026-11-12
 - **Aggiornamento che si fermava** (rapporti del 2026-11-12, due PC fermi sulla 0.11.238 e 0.11.239): il controllo dei programmi che tengono aurora-desktop.exe fermava l'aggiornamento silenzioso anche con Aurora chiusa, se il file lo teneva un altro programma (antivirus, servizio di Windows). Ora l'installatore scrive nel suo registro chi lo tiene, richiude Aurora e riprova per qualche secondo, poi va avanti lo stesso mettendo da parte il programma vecchio (aurora-desktop.exe.old, che Aurora toglie al primo avvio).
 - **Senza WebView2** Aurora lo installa: con «Sì» scarica l'installazione gratuita di Microsoft, la apre e alla fine si riapre da sola; se lo scaricamento non riesce apre la pagina di Microsoft.
 - **CAT, rigctld che chiude subito il collegamento** (cinque PC): il messaggio dice che la radio non risponde a Hamlib (accensione, porta COM, velocita', modello) con le ultime righe di rigctld, invece di «connessione interrotta forzatamente dall'host remoto».
