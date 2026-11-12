@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.239',
-    released: '2026-11-12T08:00:00Z',
+    released: '2026-11-12T07:20:45Z',
     kind: 'new',
     title: [
       'Mappa dei satelliti inclusa e Aurora meglio su Linux',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.239',
-    released: '2026-11-12T08:00:00Z',
+    released: '2026-11-12T07:20:45Z',
     kind: 'fixed',
     title: [
       'Revisione completa e sicurezza: siti esterni, Split DX, WSPR e FST4W',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.239',
-    released: '2026-11-12T08:00:00Z',
+    released: '2026-11-12T07:20:45Z',
     kind: 'fixed',
     title: [
       'Tune subito, Clear Avg per JT65 e testi più chiari',
