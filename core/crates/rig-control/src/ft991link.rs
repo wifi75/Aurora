@@ -633,6 +633,12 @@ impl Ft991Rig {
         Ok(())
     }
 
+    /// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV: l'onda non e' spostata dell'XIT di FT8): la frequenza audio di FT8 si
+    /// dimentica, cosi' lo split simulato non sposta il VFO A.
+    pub fn release_tx_split(&self) {
+        self.inner.tx_audio_hz.store(0, Ordering::SeqCst);
+    }
+
     /// «Spegni»: alla chiusura del programma la radio si spegne con `PS0;`.
     pub fn power_off_if_chosen(&self) {
         if self.inner.power_off && self.inner.ready.load(Ordering::SeqCst) {

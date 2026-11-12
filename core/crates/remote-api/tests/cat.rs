@@ -287,6 +287,39 @@ async fn split_dx_puts_rx_on_the_spot_tx_on_vfo_b_and_ends_with_the_next_frequen
     assert_eq!(body_json(resp).await["was_on"], false);
 }
 
+/// Dalla pagina PSK·RTTY·CW con uno spot «UP 2» acceso si torna a FT8 mentre il CAT e' caduto: lo Split DX si spegne lo stesso e quando la
+/// radio torna non si riaccende (prima restava segnato e la riconnessione rimetteva la radio in split sul VFO B).
+#[tokio::test]
+async fn leaving_the_text_modes_while_the_cat_is_down_clears_the_dx_split_for_good() {
+    let s = setup("splitdx-caduta", true);
+    status_is(&send(&s.state, Method::PUT, "/api/v1/cat", Some(ft2000()), Via::Pc).await, StatusCode::OK);
+    status_is(&send(&s.state, Method::POST, "/api/v1/cat/connect", None, Via::Pc).await, StatusCode::OK);
+    wait_state(&s.state, "connected").await;
+    status_is(&send(&s.state, Method::POST, "/api/v1/cat/split-dx", Some(json!({ "rx_hz": 14_085_000, "tx_hz": 14_087_000 })), Via::Pc).await, StatusCode::OK);
+    assert!(s.fake.split());
+
+    s.fake.hang_up(true);
+    wait_state(&s.state, "reconnecting").await;
+    let resp = send(&s.state, Method::DELETE, "/api/v1/cat/split-dx", None, Via::Pc).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["was_on"], true);
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, json!({ "active": false }));
+
+    s.fake.clear_commands();
+    s.fake.hang_up(false);
+    wait_state(&s.state, "connected").await;
+    for _ in 0..100 {
+        if !s.fake.split() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    assert!(!s.fake.split(), "{:?}", s.fake.commands());
+    assert!(!s.fake.commands().iter().any(|c| c.starts_with("I ") || c.starts_with("S 1")), "{:?}", s.fake.commands());
+    assert_eq!(get(&s.state, "/api/v1/cat/split-dx").await, json!({ "active": false }));
+}
+
 #[tokio::test]
 async fn a_missing_rigctld_is_reported_by_connect() {
     let s = setup("nodaemon", false);

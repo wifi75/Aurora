@@ -786,6 +786,17 @@ impl Inner {
     }
 
     /// Lo split in uso: «Rig» diventa simulato se la radio non sa fare lo split vero.
+    /// Spegne lo split vero acceso per FT8 (XIT), se c'e': al cambio di frequenza e prima di una trasmissione libera (modi testuali, SSTV).
+    /// Lo Split DX di uno spot non si tocca; durante la trasmissione Cat4OM accetta solo lo spegnimento del PTT.
+    fn xit_split_off(&self) -> Result<(), RigError> {
+        if self.dx_split.load(Ordering::SeqCst) || !self.split_by_us.load(Ordering::SeqCst) || self.ptt() {
+            return Ok(());
+        }
+        self.command("setSplit", json!({ "enabled": false }))?;
+        self.split_by_us.store(false, Ordering::SeqCst);
+        Ok(())
+    }
+
     fn split_mode(&self) -> SplitMode {
         match self.split {
             SplitMode::Rig if !self.view().is_some_and(|v| v.real_split()) => SplitMode::Emulate,
@@ -1691,6 +1702,13 @@ impl Cat4omRig {
         Ok(())
     }
 
+    /// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV: l'onda non e' spostata dell'XIT di FT8): la frequenza audio di FT8 si
+    /// dimentica (lo split simulato non sposta la radio) e lo split vero acceso per FT8 si spegne. Lo Split DX resta.
+    pub fn release_tx_split(&self) -> Result<(), RigError> {
+        self.inner.tx_audio_hz.store(0, Ordering::SeqCst);
+        self.inner.xit_split_off()
+    }
+
     /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): il VFO attivo su `rx_hz` (con il modo scelto, come un
     /// cambio di frequenza), l'altro VFO su `tx_hz` e `setSplit` per ultimo. Solo se la radio dichiara a Cat4OM lo split vero (`SetSplit` e
     /// un secondo VFO scrivibile).
@@ -2359,6 +2377,11 @@ impl Rig for Cat4omRig {
         if inner.dial() != Some(hz) {
             inner.set_vfo_frequency(None, hz)?;
         }
+        // come con Hamlib: al cambio di frequenza la radio esce dallo split di FT8 (il VFO di trasmissione resterebbe sulla frequenza
+        // vecchia); si riaccende prima del PTT della prossima trasmissione del motore
+        if let Err(e) = inner.xit_split_off() {
+            tracing::warn!("Cat4OM: split non spento dopo il cambio di frequenza: {e}");
+        }
         let supported = inner.view().map(|v| v.supported_modes).unwrap_or_default();
         if let Some(mode) = cat4om_mode(inner.cat_mode, &supported) {
             let current = inner.status.lock().ok().and_then(|s| s.mode.clone()).unwrap_or_default();
@@ -2837,6 +2860,27 @@ mod tests {
         rig.shutdown();
         let last = fake.requests().last().cloned().expect("richiesta");
         assert_eq!((last["action"].as_str(), &last["params"]), (Some("setSplit"), &json!({ "enabled": false })));
+    }
+
+    #[test]
+    fn the_ft8_split_ends_at_a_frequency_change_and_before_a_text_mode_transmission() {
+        let fake = fake(vec![radio("run", &ALL)], None);
+        let rig = rig(&fake, |c| c.split = SplitMode::Rig);
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        let offs = |fake: &Fake| fake.requests().iter().filter(|r| r["action"] == "setSplit" && r["params"]["enabled"] == false).count();
+        // FT8: lo split si accende prima della trasmissione; la trasmissione RTTY (libera) lo spegne
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        assert!(wait(|| rig.status().split == Some(true)));
+        rig.release_tx_split().expect("simplex");
+        assert_eq!(offs(&fake), 1);
+        // gia' in simplex: nessun comando in piu'
+        rig.release_tx_split().expect("niente da fare");
+        assert_eq!(offs(&fake), 1);
+        // di nuovo FT8, poi un cambio di frequenza (ritorno da RTTY): la radio esce dallo split
+        assert!(wait(|| rig.status().split == Some(false)));
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        rig.set_frequency(7_080_000).expect("QSY");
+        assert_eq!(offs(&fake), 2);
     }
 
     #[test]

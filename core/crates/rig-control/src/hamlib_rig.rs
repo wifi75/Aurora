@@ -183,6 +183,11 @@ struct Inner {
     dx_split: AtomicBool,
     /// La frequenza di trasmissione dello Split DX acceso (Hz, 0 = nessuno): serve a rimetterlo dopo una riconnessione.
     dx_split_tx: AtomicU64,
+    /// Lo split di FT8 (XIT, «Split: Radio») e' acceso sulla radio perche' l'ha acceso Aurora prima di una trasmissione del motore. Si
+    /// spegne al cambio di frequenza, prima di una trasmissione libera (modi testuali, SSTV) e alla chiusura.
+    xit_split: AtomicBool,
+    /// Lo Split DX e' stato spento a radio scollegata: la radio puo' averlo ancora acceso, lo si spegne appena torna.
+    split_off_pending: AtomicBool,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
@@ -414,6 +419,17 @@ impl Inner {
             s.failures = 0;
             s.reconnect_attempt = 0;
         });
+        // lo Split DX spento mentre la radio era scollegata (ritorno a FT8, cambio di frequenza): la radio puo' averlo ancora acceso
+        if self.split_off_pending.swap(false, Ordering::SeqCst)
+            && !self.dx_split.load(Ordering::SeqCst)
+            && let Ok(link) = self.connected_link()
+        {
+            let rx_vfo = if self.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
+            match link.client().set_split(false, rx_vfo) {
+                Ok(()) => self.update(|s| s.split = Some(false)),
+                Err(e) => tracing::warn!("split non spento dopo la riconnessione: {}", friendly_error(&e.0)),
+            }
+        }
         // la radio riavviata ha perso anche lo Split DX: si rimette (l'indicatore del cluster lo dice ancora acceso e l'operatore crede di
         // trasmettere sul VFO B); se non si riesce si spegne il flag, cosi' torna lo split di FT8
         let dx_tx = self.dx_split_tx.load(Ordering::SeqCst);
@@ -427,14 +443,11 @@ impl Inner {
                 }
             }
         }
-        // la radio riavviata ha perso lo split vero: si rimette quello scelto (dopo lo stato «collegata», che `connected_link` richiede)
-        if self.config.split == SplitMode::Rig
-            && self.tx_audio_hz.load(Ordering::SeqCst) != 0
-            && let Ok(link) = self.connected_link()
-            && let Err(e) = self.apply_split(&link)
-        {
-            tracing::warn!("split non riapplicato dopo la riconnessione: {}", friendly_error(&e.0));
-        }
+        // lo split di FT8 («Split: Radio») NON si rimette alla riconnessione: si accende solo un attimo prima del PTT di una trasmissione
+        // del motore (`set_tx_audio_frequency`). Prima qui lo si riaccendeva con l'ultima frequenza audio nota, e a ogni caduta breve del
+        // CAT la radio si trovava in split sul VFO B anche dopo un cambio di frequenza che l'aveva spento o nei modi testuali, dove nessuno
+        // l'aveva chiesto (segnalazione del 2026-11-12: «la radio va in split da sola» tornando da RTTY a FT8). `xit_split` resta com'era:
+        // una radio che non si e' riavviata ha ancora lo split di prima, e il prossimo cambio di frequenza o trasmissione libera lo spegne
         Ok(())
     }
 
@@ -740,6 +753,7 @@ impl Inner {
         let tx_vfo = if self.vfo_reversed.load(Ordering::SeqCst) { "VFOA" } else { "VFOB" };
         link.client().set_split_frequency(split_tx_dial_hz(dial, audio))?;
         link.client().set_split(true, tx_vfo)?;
+        self.xit_split.store(true, Ordering::SeqCst);
         self.update(|s| s.split = Some(true));
         Ok(())
     }
@@ -800,6 +814,8 @@ impl HamlibRig {
             vfo_reversed: AtomicBool::new(false),
             dx_split: AtomicBool::new(false),
             dx_split_tx: AtomicU64::new(0),
+            xit_split: AtomicBool::new(false),
+            split_off_pending: AtomicBool::new(false),
             epoch: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
             extras: Mutex::new(crate::extras::ExtrasPoll::default()),
@@ -914,6 +930,27 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// Prima di una trasmissione libera (PSK, RTTY, CW, SSTV: l'onda non e' spostata dell'XIT di FT8): la frequenza audio di FT8 si
+    /// dimentica, cosi' lo split simulato non sposta la radio, e lo split vero acceso per FT8 si spegne. Lo Split DX di uno spot, chiesto
+    /// dall'operatore in quei modi, resta. La trasmissione successiva del motore rimette tutto con `set_tx_audio_frequency`.
+    pub fn release_tx_split(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        inner.tx_audio_hz.store(0, Ordering::SeqCst);
+        if inner.dx_split.load(Ordering::SeqCst) || !inner.xit_split.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Ok(());
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
+        link.client().set_split(false, rx_vfo).map_err(|e| RigError(friendly_error(&e.0)))?;
+        inner.xit_split.store(false, Ordering::SeqCst);
+        inner.update(|s| s.split = Some(false));
+        Ok(())
+    }
+
     /// Split simulato a trasmissione in corso con la frequenza audio cambiata: la radio va subito sulla nuova frequenza di trasmissione
     /// (in WSJT-X `EmulateSplitTransceiver::set` col PTT acceso porta la radio sulla frequenza Tx a ogni cambio).
     fn emulate_follow(&self, link: &Link) -> Result<(), RigError> {
@@ -1019,6 +1056,8 @@ impl HamlibRig {
         link.client().set_split(true, tx_vfo).map_err(fr)?;
         inner.dx_split_tx.store(tx_hz, Ordering::SeqCst);
         inner.dx_split.store(true, Ordering::SeqCst);
+        inner.xit_split.store(false, Ordering::SeqCst);
+        inner.split_off_pending.store(false, Ordering::SeqCst);
         inner.update(|s| s.split = Some(true));
         inner.queue_quick_reads();
         Ok(())
@@ -1035,7 +1074,14 @@ impl HamlibRig {
         if !inner.dx_split.load(Ordering::SeqCst) {
             return Ok(());
         }
-        let link = inner.connected_link()?;
+        let Ok(link) = inner.connected_link() else {
+            // radio scollegata (CAT caduto, riconnessione in corso): lo Split DX non e' piu' voluto e non si rimette quando la radio
+            // torna; se lei lo ha ancora acceso lo si spegne li'. Prima restava segnato e la riconnessione lo riaccendeva sul VFO B
+            inner.dx_split.store(false, Ordering::SeqCst);
+            inner.dx_split_tx.store(0, Ordering::SeqCst);
+            inner.split_off_pending.store(true, Ordering::SeqCst);
+            return Ok(());
+        };
         if inner.transmitting() {
             return Err(RigError("la radio sta trasmettendo: split non spento".into()));
         }
@@ -1145,7 +1191,10 @@ impl Rig for HamlibRig {
         if inner.config.split == SplitMode::Rig || dx_split {
             let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
             match link.client().set_split(false, rx_vfo) {
-                Ok(()) => inner.update(|s| s.split = Some(false)),
+                Ok(()) => {
+                    inner.xit_split.store(false, Ordering::SeqCst);
+                    inner.update(|s| s.split = Some(false));
+                }
                 Err(e) => tracing::warn!("split non spento dopo il cambio di frequenza: {e}"),
             }
         }
@@ -1578,6 +1627,117 @@ mod tests {
         rig.set_ptt(false).expect("PTT spento");
         assert_eq!(fake.frequency(), 14_074_000, "a fine trasmissione si torna alla ricezione");
         assert!(!fake.commands().iter().any(|c| c.starts_with("S ") || c.starts_with("I ")), "nessuno split vero");
+    }
+
+    /// Il CAT cade e si riprende da solo (la frequenza sparisce dal selettore e poi torna).
+    fn drop_and_reconnect(fake: &FakeRigctld, rig: &HamlibRig) {
+        fake.hang_up(true);
+        wait_until("riconnessione", || rig.status().state == LinkState::Reconnecting);
+        fake.hang_up(false);
+        wait_until("di nuovo collegata", || rig.status().state == LinkState::Connected);
+        // un giro di letture dopo il collegamento: i comandi dell'apertura sono partiti tutti
+        std::thread::sleep(Duration::from_millis(150));
+    }
+
+    #[test]
+    fn from_rtty_back_to_ft8_the_ft8_split_is_not_switched_on_again_by_a_reconnection() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        // FT8 con «Split: Radio»: prima della trasmissione lo split si accende
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        assert!(fake.split());
+        // pagina PSK·RTTY·CW senza Lock ne' «UP N», poi di nuovo FT8: due cambi di frequenza, la radio resta in simplex
+        rig.set_frequency(14_085_000).expect("RTTY");
+        rig.set_frequency(14_074_000).expect("FT8");
+        assert!(!fake.split());
+        // il CAT cade e torna: lo split non si riaccende da solo (prima: `I 14074500` e `S 1 VFOB` con l'ultima frequenza audio nota)
+        fake.clear_commands();
+        drop_and_reconnect(&fake, &rig);
+        assert!(!fake.split(), "{:?}", fake.commands());
+        assert!(!fake.commands().iter().any(|c| c.starts_with("I ") || c.starts_with("S 1")), "{:?}", fake.commands());
+        assert_eq!(rig.status().split, Some(false));
+        // la trasmissione FT8 successiva lo accende, come sempre
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split prima del PTT");
+        assert_eq!(split_commands(&fake), ["I 14074500", "S 1 VFOB"]);
+    }
+
+    #[test]
+    fn a_text_mode_transmission_goes_out_in_simplex_whatever_the_ft8_split() {
+        // split vero di FT8 ancora acceso (la pagina dei modi testuali aperta senza cambiare frequenza): la trasmissione RTTY lo spegne
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        fake.clear_commands();
+        rig.release_tx_split().expect("simplex");
+        assert_eq!(split_commands(&fake), ["S 0 VFOA"]);
+        assert!(!fake.split() && rig.status().split == Some(false));
+        // gia' in simplex (Lock dei modi testuali: la trasmissione e' spostata solo nell'audio): nessun comando di split, nemmeno dopo una caduta
+        fake.clear_commands();
+        rig.release_tx_split().expect("niente da fare");
+        drop_and_reconnect(&fake, &rig);
+        assert!(!fake.commands().iter().any(|c| c.starts_with("I ") || c.starts_with("S ")), "{:?}", fake.commands());
+        assert!(!fake.split());
+
+        // split simulato di FT8: la trasmissione RTTY non sposta la radio dell'XIT di FT8
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Emulate, ..RigConfig::default() });
+        rig.set_tx_audio_frequency(2200).expect("frequenza audio di FT8");
+        rig.set_frequency(14_085_000).expect("RTTY");
+        rig.release_tx_split().expect("simplex");
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("PTT");
+        assert_eq!(fake.frequency(), 14_085_000, "la radio trasmette dove riceve");
+        rig.set_ptt(false).expect("PTT spento");
+        assert_eq!(fake.frequency(), 14_085_000);
+    }
+
+    #[test]
+    fn the_dx_split_of_a_spot_stays_for_text_transmissions_and_ends_when_the_page_is_left() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        rig.set_tx_audio_frequency(2200).expect("split di FT8");
+        // RTTY, spot con «UP 2»: lo ha chiesto l'operatore, la trasmissione RTTY lo lascia acceso
+        rig.set_dx_split(14_085_000, 14_087_000).expect("split DX");
+        fake.clear_commands();
+        rig.release_tx_split().expect("lo Split DX resta");
+        assert!(split_commands(&fake).is_empty(), "{:?}", fake.commands());
+        assert!(fake.split() && rig.dx_split_on());
+        // ritorno a FT8 a radio collegata: lo Split DX si spegne e non torna dopo una caduta del CAT
+        rig.clear_dx_split().expect("spento");
+        rig.set_frequency(14_074_000).expect("FT8");
+        fake.clear_commands();
+        drop_and_reconnect(&fake, &rig);
+        assert!(!fake.split(), "{:?}", fake.commands());
+        assert!(!fake.commands().iter().any(|c| c.starts_with("I ") || c.starts_with("S 1")), "{:?}", fake.commands());
+    }
+
+    #[test]
+    fn a_dx_split_cleared_while_the_cat_is_down_is_not_restored_and_is_switched_off_at_the_reconnection() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        rig.set_dx_split(14_085_000, 14_087_000).expect("split DX");
+        assert!(fake.split());
+        // il CAT cade mentre si torna a FT8: lo spegnimento non arriva alla radio, ma lo Split DX non e' piu' voluto
+        fake.hang_up(true);
+        wait_until("riconnessione", || rig.status().state == LinkState::Reconnecting);
+        rig.clear_dx_split().expect("dimenticato anche a radio scollegata");
+        assert!(!rig.dx_split_on());
+        fake.clear_commands();
+        fake.hang_up(false);
+        wait_until("di nuovo collegata", || rig.status().state == LinkState::Connected);
+        // la radio l'aveva ancora acceso: si spegne appena torna, e non si riaccende
+        wait_until("split spento", || !fake.split());
+        std::thread::sleep(Duration::from_millis(150));
+        assert!(!fake.split());
+        assert!(!fake.commands().iter().any(|c| c.starts_with("I ") || c.starts_with("S 1")), "{:?}", fake.commands());
+        assert_eq!(rig.status().split, Some(false));
+        // uno Split DX ancora voluto, invece, dopo la caduta si rimette
+        rig.set_dx_split(14_085_000, 14_087_000).expect("split DX");
+        fake.clear_commands();
+        drop_and_reconnect(&fake, &rig);
+        assert!(fake.split() && rig.dx_split_on());
+        assert!(fake.commands().iter().any(|c| c == "I 14087000"), "{:?}", fake.commands());
     }
 
     #[test]
