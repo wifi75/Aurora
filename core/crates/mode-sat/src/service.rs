@@ -599,6 +599,14 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
         now.radio_active = ok;
         let _ = tp;
     } else if !settings.doppler_on {
+        // lo split acceso per il Doppler si toglie quando il Doppler si spegne: prima restava acceso sulla radio anche tornando agli altri modi
+        if st.split_on
+            && let Some(radio) = &radio
+            && radio.ready()
+            && let Err(e) = radio.set_split(false)
+        {
+            tracing::warn!("satelliti: split non spento alla fine del Doppler: {e}");
+        }
         st.last_rx = None;
         st.last_tx = None;
         st.split_on = false;
