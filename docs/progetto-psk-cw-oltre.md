@@ -219,6 +219,70 @@ traliccio perde la velocità); il ricevitore a soglia perde 2,3 punti nella tabe
 rapido; filtro del tono legato alla velocità dentro il decodificatore (oggi solo per le bande laterali: il traliccio fa già la somma
 coerente sull'elemento); collegare `ClickDetector` ai canali di tutta la banda.
 
+## CW: AGC del rumore, velocità offerta all'avvio, QRN largo (2026-11-12, ramo `lavoro/cw-riprova`)
+Riprova, con approcci diversi, delle tre cose scartate o rimaste deboli nella sezione prima. Misure con `tests/cw_confronto.rs` (le stesse
+11 righe, 2 prove per casella) e `avvio_a_freddo` (4 prove per riga), partendo dalla 0.11.241. fldigi non c'era come arbitro (il
+sottomodulo non si estrae su Windows: un suo percorso contiene il nome riservato `aux`): i confronti sono fra versioni di Aurora.
+Regola: entra solo ciò che abbassa la media senza peggiorare nessuna riga di più di 0,5 punti.
+
+### Prima e dopo, riga per riga (decodificatore probabilistico, media delle sette colonne)
+| Riga | 0.11.241 | ora | |
+|---|---|---|---|
+| rumore | 16,9 | 17,0 | +0,1 |
+| tasto a mano | 25,3 | **23,7** | -1,6 |
+| 14 -> 28 WPM | 22,0 | **21,3** | -0,7 |
+| QSB 15 dB | 52,1 | **51,4** | -0,7 |
+| QRN | 21,1 | **18,8** | -2,3 |
+| QRM +150 Hz | 18,9 | **18,2** | -0,7 |
+| tono +25 Hz | 20,5 | 20,5 | 0 |
+| livello -40 dB | 16,9 | 17,0 | +0,1 |
+| forte a 1500 Hz | 19,2 | **17,2** | -2,0 |
+| AGC che pompa | 26,7 | **22,5** | -4,2 |
+| QRN largo | 51,9 | **29,8** | -22,1 |
+| **media** | 26,5 | **23,4** | -3,1 |
+
+Per colonna (+5 / 0 / -4 / -8 / -10 / -12 / -15 dB): prima 2,5 / 2,6 / 7,4 / 16,1 / 23,8 / 48,1 / 85,1, ora 1,2 / 2,6 / 5,2 / 10,8 / 19,9 /
+41,7 / 82,3. «AGC che pompa» a +5, 0 e -4 dB: da 11,9 / 6,6 / 9,7 a 0,8 / 1,7 / 0,0. «QRN largo» a -8 dB: da 82,9 a 32,5, e la velocità
+capita resta 19-21 WPM in tutte le colonne fino a -12 dB (prima 5-6 WPM da -8 dB in giù). Avvio a freddo: primi 15 s 5,6 -> 5,1, i 30 s
+dopo 6,2 -> 5,8. Solo rumore, un minuto: nessun carattere falso con lo squelch spento e acceso. Ricevitore a soglia (`CW_CLASSICO=1`):
+media 47,6 -> 46,9 (AGC che pompa 54,6 -> 46,1, QRN largo 60,1 -> 60,0, le altre righe entro 0,9 in meglio e 0,6 in peggio: QSB 65,0 -> 65,6, nelle colonne da -8 dB in giù, dove quel ricevitore sbaglia oltre il 70%).
+Le righe che non c'entrano con l'AGC (tasto a mano, QRN, forte a 1500 Hz...) cambiano solo nelle colonne da -10 dB in giù, dove due
+prove per casella ballano di qualche carattere: a quei livelli la differenza è rumore della misura, non un guadagno da vantare.
+CPU di tutta la banda (`cpu_tutta_la_banda`): 10 stazioni 7,9% -> 8,3% di un core, 30 stazioni 22,9% -> 24,7%; nominativi verificati
+10/10 e 23/30 prima e dopo (il 30/30 scritto più sopra è di un ramo più vecchio: sulla 0.11.241 la prova dà 23/30).
+
+### Tenuto
+| Cosa | Dove | Passi misurati (media di tutte le righe) |
+|---|---|---|
+| **AGC del rumore a due inseguitori, acceso solo quando il rumore oscilla.** Misura: spettri di 128 campioni ogni 5,3 ms; della banda passante valgono i tre quarti di righe più quieti in media, il fondo è la media dei loro due terzi più bassi (i segnali non lo comandano), di tre spettri vale quello di mezzo. Inseguitori sul fondo in dB: bordo alto 1 ms / 2 s, bordo basso 50 ms / 2 s; distanza sotto 5 dB = spento (guadagno 1 esatto), da 8 dB tutto acceso, oltre 35 dB è silenzio digitale e resta spento. Il guadagno riporta il fondo sul bordo basso, prima del filtro stretto, 16 ms di ritardo | `cw_agc.rs`, `cw.rs` | 26,5 -> 24,4; AGC che pompa 26,7 -> 21,8, QRN largo 51,9 -> 41,8 ma a +5 e 0 dB peggio (2,4 -> 28,6 e 1,7 -> 33,1: il segnale forte tagliato dentro lo scroscio) |
+| **Due ipotesi nel traliccio** al posto delle due catene in parallelo: per ogni tono toccato dall'AGC il segnale può essere sceso con il rumore (radio che pompa) o no (scroscio: dopo il guadagno è più basso, e con lui il pavimento del rumore che si crede); le due verosimiglianze si sommano con lo stesso peso. È la fusione «per carattere» fatta elemento per elemento, senza un secondo decodificatore | `cw_bayes.rs` | QRN largo 41,8 -> 31,1 (a +5 dB 0,0), ma AGC che pompa a +5 dB torna a 11,9 |
+| **Scroscio o radio che pompa**: il fondo che sale di 4 dB in 16 ms è uno scroscio (l'altra ipotesi vale solo lì); il guadagno di una radio risale più piano | `cw_agc.rs` | 23,6; AGC che pompa 22,0, QRN largo 31,8 |
+| **Velocità robusta come ipotesi in più, solo all'avvio e dopo un silenzio lungo**: media delle ultime 4 soglie punto/linea del ricevitore a soglia (minore fra metà di punto + linea e punto + pausa), offerta al traliccio fra un carattere e l'altro con probabilità 0,004 finché le coppie contate dall'avvio o dal silenzio sono al più 12 | `cw.rs`, `cw_bayes.rs` | 23,6 -> 23,4; avvio a freddo, 30 s dopo: 6,3 -> 5,8 (una casella sola: 22 -> 35 WPM a -10 dB, 55,0 -> 43,0) |
+| **Elementi disturbati che non insegnano** (meno del 90% del segnale rimasto dopo noise blanker e AGC: né ampiezza, né rumore, né pugno, né velocità) e **fascio doppio nei tratti disturbati** (ultimo mezzo secondo) | `cw_bayes.rs` | QRN largo 31,8 -> 30,1 (solo il primo), 29,5 (solo il secondo), 28,6 (tutti e due); media 23,1 |
+| **Banda piena**: righe scelte fra le più quiete in media, controllo con il quarto più basso (sul rumore sta 5,2 dB sotto i due terzi) e AGC spento se più di un quarto degli spettri dell'ultimo secondo non rispetta il rapporto. Con dodici stazioni in 2,4 kHz di banda passante la misura di prima abbassava di oltre 1 dB il 28% dei campioni seguendo la loro manipolazione; ora nessuno (prova `a_crowded_band_is_not_pumping`) | `cw_agc.rs` | 23,1 -> 23,4 (AGC che pompa 21,1 -> 22,5, QRN largo 28,6 -> 29,8): il prezzo della sicurezza |
+| Ricevitore a soglia: l'AGC lavora solo con la radio che pompa; con gli scrosci, e per 2 s dopo l'ultimo, il guadagno non si tocca (non ha le due ipotesi) | `cw.rs` | a soglia, QRN largo: 76,4 senza questa regola, 60,0 con (60,1 prima dell'AGC) |
+
+### Scartato (misurato)
+| Cosa | Risultato |
+|---|---|
+| AGC applicato dopo il filtro stretto (guadagno del campione al centro del filtro) | AGC che pompa 28,4 contro 21,1 prima del filtro (peggio della 0.11.241, 26,7): i gradini di 20 dB in 2 ms vanno tolti prima che il filtro li spalmi; QRN largo uguale (31,1 contro 31,8) |
+| Due catene intere in parallelo fuse per carattere | non costruite: le due ipotesi dentro il traliccio fanno la stessa scelta per elemento senza raddoppiare la CPU |
+| Rumore istantaneo delle bande laterali creduto del tutto quando supera il doppio della media lenta (senza AGC) | media 26,8 contro 26,5; QRN largo 54,1 contro 51,9 |
+| Velocità robusta offerta sempre, probabilità 0,02 | tasto a mano 23,7 -> 24,5 (a -4 dB 5,6 -> 11,3); anche solo all'avvio con 0,02 |
+| Decisione con 5 caratteri di ritardo (invece di 2) per i primi 10 caratteri | nessuna differenza, nemmeno in una casella: il percorso migliore non cambia la sua storia. I primi 15 s a -10 dB con stazioni a 28 WPM (20-21%) sbagliano come i 30 s dopo (19%): è il rapporto segnale/rumore a quella velocità, non l'avvio |
+| Pausa vicina alla soglia fra carattere e parola con due letture aperte (con e senza spazio, decidono durate e modello del testo) | tasto a mano 26,8 senza correzione (spariscono gli spazi inventati, ne mancano di più); con un peso a favore dello spazio di 1,3 / 2,2 / 3,0: 24,8 / 22,4 / 24,6 contro 23,7. Un ottimo così stretto è una taratura sulla prova. Con il 15% di irregolarità e pause di 3,6 e 6 unità circa il 3% delle pause è ambiguo per forza |
+| Antidisturbo del ricevitore a soglia più corto con il segnale forte (da 0,4 a 0,2 unità fra -8 e +2 dB di S/N) | a soglia 48,1 -> 48,2, colonna a +5 dB uguale |
+| Soglia del noise blanker più bassa (9 dB invece di 12, come farebbe una soglia che scende con la densità delle scariche) | QRN 18,5 -> 17,9 (solo nelle colonne a -12 e -15 dB), QRN largo 31,8 -> 33,8: morde le creste degli scrosci |
+| Righe più quiete: la metà invece dei tre quarti, tre quarti più bassi di ogni spettro | media 23,6 (AGC che pompa 22,5, QRN largo 32,2): con meno righe il fondo balla di più |
+
+### Resta
+Il tasto a mano resta attorno al 5% anche con il segnale forte (spazi fra le parole: serve un modello del testo a parole, non una
+soglia); il QSB a 15 dB è fermo sopra il 50%; l'AGC del rumore ha bisogno di almeno otto righe quiete (circa 1,5 kHz di banda passante
+dell'audio): con il filtro CW stretto della radio resta spento, e in una banda piena di stazioni anche; nei canali di tutta la banda
+ogni ricevitore ha il suo AGC (un solo AGC per tutti costerebbe meno, ma `skim/` non si è toccato); la prova con 30 stazioni verifica
+23 nominativi su 30; seconda passata all'indietro (C4) per l'avvio a -10 dB; non c'è un interruttore dell'AGC nell'interfaccia
+(`CwDemodulator::set_noise_agc`, acceso di base).
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·
