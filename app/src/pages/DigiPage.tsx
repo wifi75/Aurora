@@ -861,6 +861,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             extended={views.extended}
             onToggleExtended={() => setView({ extended: !views.extended })}
             onRun={(m) => execute(m.text)}
+            autoCq={autoCq ? (autoCqPaused ? 'paused' : 'on') : 'off'}
             onEdit={(name) => setEditing({ name, scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === name) ? 'mode' : 'all' })}
           />
           <div

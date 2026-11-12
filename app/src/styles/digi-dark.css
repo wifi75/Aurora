@@ -127,3 +127,9 @@ html[data-theme='light'] .digi-colpop { background: #ffffff; color: #000; }
 html[data-theme='light'] .digi-classica .digi-dialog { background: #ffffff; color: #0b1322; }
 html[data-theme='light'] .digi-classica .digi-dialog input, html[data-theme='light'] .digi-classica .digi-dialog select, html[data-theme='light'] .digi-classica .digi-dialog textarea { background: #ffffff; color: #000; }
 html[data-theme='light'] .digi-classica .sstv-btn { background: #eef2fa; color: #000; }
+
+/* Il tasto del CQ automatico acceso: rosso pieno che pulsa, cosi' si vede subito che sta chiamando; in pausa giallo fermo */
+.digi-key.digi-key--acq-on { background: #c62828 !important; border-color: #ff8a80 !important; color: #fff !important; box-shadow: 0 0 0 2px rgba(255, 138, 128, 0.55), 0 0 12px rgba(255, 82, 82, 0.6); animation: digi-acq-pulse 1.2s ease-in-out infinite; }
+.digi-key.digi-key--acq-paused { background: #b58900 !important; border-color: #ffd54f !important; color: #111 !important; box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.5); }
+@keyframes digi-acq-pulse { 50% { box-shadow: 0 0 0 2px rgba(255, 138, 128, 0.9), 0 0 18px rgba(255, 82, 82, 0.9); } }
+@media (prefers-reduced-motion: reduce) { .digi-key.digi-key--acq-on { animation: none; } }
