@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Pannello «Segnali» di tutta la banda** (segnalazione di un utente): la tendina «Convalida» ora si cambia davvero (la pagina perdeva le impostazioni di tutta la banda rileggendole dal core: la scelta tornava subito «Normale» e il salvataggio successivo la riportava al valore di base, insieme a spot locali e «solo CQ»); la scelta e' un menu a comparsa che non si chiude mentre l'elenco si aggiorna. Pulsante «Pulisci» (elenco, storico e nominativi sulla cascata; nel core i canali ripartono da zero, rotta `POST /digi/band/clear`). I nominativi sulla cascata spariscono dopo 75 s senza sentirli e si spengono tutti da Vista > «Nominativi sulla cascata». Il pannello si ridimensiona trascinando la lineetta sul bordo alto (da tre righe a meta' colonna, altezza ricordata).
 - **SSTV, cronologie in strisce orizzontali**: «Ricevute» e «Trasmesse» passano dalla colonna a destra a due strisce larghe quanto la pagina sotto la finestra, miniature basse su una riga (la ricezione resta tutta in vista su 1366x768); freccette ◀ ▶ a lato di ogni striscia (si spengono agli estremi), rotella e frecce della tastiera; nell'immagine aperta in grande le frecce precedente/successiva (anche ← →) scorrono la stessa cronologia. Su finestre strette e telefono resta in fondo alla pagina.
 
 ## 0.11.241 - 2026-11-12

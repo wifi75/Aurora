@@ -516,6 +516,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.bgxfn1t9w1": "Welke computer je nodig hebt",
   "t.bh2uzibmbp": "Satellietkaart inbegrepen en Aurora beter op Linux",
   "t.bicbv2se9o": "[[nav.settings]] › [[sw.sec.station]] › [[tab.radio]]: kies het model, daarna “[[cat.preset.apply]]” en [[cat.connect]].",
+  "t.bjkckxfzzp": "Maak het paneel hoger door het kleine streepje aan de bovenrand te slepen (van drie regels tot de helft van de kolom; de hoogte wordt onthouden). “[[digi.band.clear]]” leegt de lijst, de geschiedenis en de roepnamen op de waterval: signalen die er nog zijn komen vanzelf terug. Op de waterval verdwijnt een roepnaam zodra hij 75 seconden niet meer is gehoord; “[[digi.band.wfCalls]]” in het menu [[digi.menu.view]] zet ze allemaal uit.",
   "t.bn8ldujd3y": "Zet op dezelfde pagina, bij “[[rx.grp]]”, aan wat je in het uitgebreide display wilt zien: tweede VFO, meters, PRE en ATT, AGC, NB/NR/notch, versterkingen, RIT/XIT, ATU, gebruikte VFO.",
   "t.bqdobcl2dx": "De berichtenlijst",
   "t.bt13cugmym": "Het tandwiel ⚙ op elke modipagina (FT8, PSK · RTTY · CW, SSTV, Satellieten, Contest…) opent Instellingen meteen op de tak van die modus.",
