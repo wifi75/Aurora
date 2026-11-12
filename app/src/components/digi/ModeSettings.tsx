@@ -5,8 +5,10 @@ import { useT } from '../../i18n';
 /** Gli spostamenti e le velocita' RTTY piu' usati (gli stessi elenchi di fldigi, piu' 450 Hz). */
 export const RTTY_SHIFTS = [23, 85, 160, 170, 182, 200, 240, 350, 425, 450, 850];
 export const RTTY_BAUDS = [45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300];
-/** Le bande del filtro CW (le stesse del motore, 150 di base come fldigi). */
-export const CW_BANDWIDTHS = [50, 100, 150, 250, 500];
+/** Le bande del filtro CW (le stesse del motore, 150 di base come fldigi; 1000 Hz e' la banda larga per la panoramica). */
+export const CW_BANDWIDTHS = [50, 100, 150, 250, 500, 1000];
+/** Oltre questa banda il filtro CW e' «largo», per la panoramica. */
+export const CW_WIDE_HZ = 1000;
 
 export interface Personal {
   myname: string;
@@ -93,7 +95,7 @@ export function ModeSettingsFields({
         <select value={s.cw_bandwidth_hz} onChange={(e) => onSave({ cw_bandwidth_hz: Number(e.target.value) })}>
           {CW_BANDWIDTHS.map((v) => (
             <option key={v} value={v}>
-              {v} Hz
+              {v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`}
             </option>
           ))}
         </select>

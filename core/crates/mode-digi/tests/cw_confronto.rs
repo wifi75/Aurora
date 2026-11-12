@@ -370,15 +370,16 @@ fn rumore_e_squelch() {
 #[test]
 #[ignore]
 fn studio() {
-    let casi: [(Prova, f64); 8] = [
+    let casi: [(Prova, f64); 9] = [
         (Prova::Awgn, -8.0),
+        (Prova::Awgn, -10.0),
         (Prova::Awgn, -12.0),
-        (Prova::Mano, -4.0),
-        (Prova::Salto, -4.0),
-        (Prova::Qsb, -4.0),
-        (Prova::Qrn, 0.0),
-        (Prova::Qrm, -4.0),
-        (Prova::ForteAltrove, 0.0),
+        (Prova::Mano, -8.0),
+        (Prova::Salto, -8.0),
+        (Prova::Qsb, 0.0),
+        (Prova::Qrn, -8.0),
+        (Prova::Qrm, -8.0),
+        (Prova::Spostato, -8.0),
     ];
     let mut riga = String::new();
     let mut tot = 0.0;
@@ -394,4 +395,42 @@ fn studio() {
         riga.push_str(&format!(" {cer:5.1}"));
     }
     println!("STUDIO media {:5.1} |{riga}", tot / casi.len() as f64);
+}
+
+/// Tutta la banda: dieci stazioni CW fra 400 e 2300 Hz a -5 dB ognuna, un minuto. Stampa canali, nominativi verificati e quanto piu'
+/// in fretta del tempo vero lavora la decodifica di tutta la banda.
+#[test]
+#[ignore]
+fn tutta_la_banda() {
+    use mode_digi::skim::CwBandDecoder;
+    let mut rng = Rng(77);
+    let n = 60 * RATE as usize;
+    let mut band = vec![0.0_f32; n];
+    let calls = ["IU3ABC", "K1ABC", "DL1ABC", "G4ABC", "JA1ABC", "VK2ABC", "F5ABC", "EA3ABC", "OH2ABC", "W1AW"];
+    for (i, call) in calls.iter().enumerate() {
+        let hz = 400.0 + 200.0 * i as f64 + 13.0 * (i % 3) as f64;
+        let wpm = 16.0 + 2.0 * i as f64;
+        let text = format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K   CQ DE {call} {call} K");
+        let seq = chiavi(&text, |_| wpm, &KEYER, &mut rng);
+        let wave = suona(&seq, hz, |_| AMP);
+        for (s, w) in band.iter_mut().skip(6_000 + 3_000 * i).zip(wave) {
+            *s += w;
+        }
+    }
+    aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+    let mut sk = CwBandDecoder::new(300.0, 2_600.0, 40);
+    let t0 = std::time::Instant::now();
+    for block in band.chunks(4_800) {
+        sk.process(block);
+    }
+    let secs = t0.elapsed().as_secs_f64();
+    let chans = sk.channels();
+    let mut found = 0;
+    for ch in &chans {
+        let verified: Vec<String> = ch.calls.iter().filter(|c| c.verified()).map(|c| c.call.clone()).collect();
+        found += calls.iter().filter(|c| verified.iter().any(|v| v == *c)).count();
+        let tail: String = ch.text.chars().rev().take(60).collect::<Vec<char>>().into_iter().rev().collect();
+        println!("{:7.1} Hz {:4.0} WPM S/N {:5.1} | {} | {tail}", ch.freq_hz, ch.wpm, ch.snr_db, verified.join(" "));
+    }
+    println!("canali {} · nominativi verificati {found}/10 · tempo vero / tempo di calcolo = {:.1}", chans.len(), 60.0 / secs);
 }

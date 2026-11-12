@@ -61,7 +61,7 @@ export function MenuBar({ menus }: { menus: MenuDef[] }) {
   );
 }
 
-function MenuList({ items, onDone }: { items: MenuItem[]; onDone(): void }) {
+export function MenuList({ items, onDone }: { items: MenuItem[]; onDone(): void }) {
   const [sub, setSub] = useState<number | null>(null);
   return (
     <ul className="digi-menu-list" role="menu">

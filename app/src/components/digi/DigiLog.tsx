@@ -17,6 +17,8 @@ export interface Qso {
   qth: string;
   wwloc: string;
   notes: string;
+  /** Il paese del nominativo (da cty.dat, con la ricerca): solo da vedere, il log lo ricava da se'. */
+  country?: string;
 }
 
 interface Props {
@@ -228,7 +230,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       case 'call': return input(qso.call, 16, (v) => onQso({ call: v }), true);
       case 'name': return input(qso.name, 30, (v) => onQso({ name: v }));
       case 'qth': return input(qso.qth, 40, (v) => onQso({ qth: v }));
-      case 'country': return '';
+      case 'country': return qso.country ?? '';
       case 'grid': return input(qso.wwloc, 8, (v) => onQso({ wwloc: v }), true);
       case 'rstS': return input(rsts, 4, (v) => onRst({ rsts: v }));
       case 'rstR': return input(rstr, 4, (v) => onRst({ rstr: v }));

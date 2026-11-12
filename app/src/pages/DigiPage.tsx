@@ -9,11 +9,13 @@ import { bandPlanRows } from '../lib/bandplan';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
+import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
+import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
-import { ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from '../components/digi/ModeSettings';
+import { CW_BANDWIDTHS, CW_WIDE_HZ, ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from '../components/digi/ModeSettings';
 import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
@@ -150,6 +152,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return Number.isFinite(n) && n >= 300 ? n : 432;
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
+  // il menu del tasto destro su una parola della finestra di ricezione
+  const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
+  // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
+  const takeCall = useCallLookup(setQso);
   const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
   // il DX del QSO anche per il rotore staccato in una finestra a parte
   usePublishRotorDx(qso.call, qso.wwloc);
@@ -720,6 +726,21 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     );
   };
 
+  // la parola scelta col tasto destro va nel campo del log del QSO in corso (il rapporto e' quello ricevuto) o negli appunti
+  const pickWord = (target: WordTarget, word: string) => {
+    if (target === 'copy') {
+      // il testo selezionato nella finestra di ricezione, altrimenti la parola cliccata
+      const sel = window.getSelection();
+      const picked = sel && rxBox.current && sel.anchorNode && rxBox.current.contains(sel.anchorNode) ? sel.toString() : '';
+      const text = picked !== '' ? picked : word;
+      if (text !== '') void navigator.clipboard?.writeText(text).catch(() => undefined);
+    } else if (target === 'clear') clearDigiText();
+    else if (target === 'rst') setSavedField({ rstr: word.toUpperCase() });
+    else if (target === 'call') takeCall(word);
+    else if (target === 'grid') setQso((q) => ({ ...q, wwloc: word.toUpperCase() }));
+    else setQso((q) => ({ ...q, [target]: word }));
+  };
+
   const copyRx = () => {
     void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined);
   };
@@ -759,6 +780,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               { label: t('digi.rtty.reverse'), checked: s.rtty_reverse, onSelect: () => save({ rtty_reverse: !s.rtty_reverse }) },
               { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
             ]
+          : []),
+        // CW: banda del filtro scelta al volo (anche larga, per la panoramica)
+        ...(s.mode === 'cw'
+          ? ['sep' as const, { label: `${t('digi.cw.bandwidth')}: ${s.cw_bandwidth_hz} Hz`, items: withCurrent(CW_BANDWIDTHS, s.cw_bandwidth_hz).map((v) => ({ label: v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`, checked: v === s.cw_bandwidth_hz, onSelect: () => save({ cw_bandwidth_hz: v }) })) }]
           : []),
         'sep' as const,
         ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
@@ -924,7 +949,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef}>
-          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
+          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
+            onContextMenu={(e) => {
+              // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
+              e.preventDefault();
+              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+              setWordMenu({ word, x: e.clientX, y: e.clientY });
+            }}
+            onDoubleClick={(e) => {
+              // doppio clic su un nominativo: nel QSO in corso (non salvato) con la ricerca
+              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+              if (word && isCallsign(word)) takeCall(word);
+            }}>
             {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
@@ -1009,6 +1045,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 }
               : undefined
           }
+          cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }) } : undefined}
           modeName={MODE_NAMES[s.mode]}
           onToggleTx={toggleTx}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
@@ -1024,6 +1061,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {editing !== null && editedMacro ? (
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
+
+      {wordMenu ? <RxWordMenu at={wordMenu} onPick={pickWord} onClose={() => setWordMenu(null)} /> : null}
 
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 

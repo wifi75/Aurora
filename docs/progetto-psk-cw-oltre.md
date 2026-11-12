@@ -81,6 +81,53 @@ spot automatici, secondo ingresso. Testi in sette lingue.
 5. interfaccia (sette lingue);
 6. risultati contro fldigi e contro gli altri programmi, Guida; facoltativo C8.
 
+## Risultati (2026-11-12, ramo `lavoro/cw-psk-oltre`)
+Misure con `tests/cw_confronto.rs` e `tests/psk_confronto.rs` (feature `fldigi-oracle`, fldigi 4.2.13 come arbitro, 2 prove per casella;
+caratteri sbagliati in %, Levenshtein sul testo mandato, rumore e testo inventato prima e dopo compresi).
+
+### Fatto
+| Passo | Dove | Note |
+|---|---|---|
+| C1 traliccio con velocità nell'ipotesi | `cw_bayes.rs` | 30 velocità 5-60 WPM, fascio 320 (96 nei canali di banda), somme coerenti a pezzi di un'unità, Rice contro Rayleigh, rumore correlato dal filtro, miscela di ampiezze più quella adattata al tono, decisione con due caratteri di ritardo, probabilità per carattere (I1 nel ricevitore, non ancora negli eventi) |
+| C2 pugno | `cw_bayes.rs` | cinque classi log-normali, medie e larghezze che si adattano piano sul percorso migliore (dopo 20 elementi, entro limiti) |
+| C3 modello del testo | `cw_bayes.rs` | coppie di caratteri da un testo di QSO scritto per Aurora, peso 0,5; ogni carattere costa la sua probabilità (spezzare non conviene) |
+| C5 filtro | `cw.rs` | invece del banco di filtri: somma coerente sull'elemento intero (filtro adattato a ogni durata) e filtro di almeno 150 Hz per il decodificatore |
+| C6 noise blanker | `blanker.rs` | quantile 95% di |x|, buco di ±2 ms, segnale nuovo riconosciuto dopo 6 ms |
+| C7 in parte | `cw.rs` | scarto fine del tono dallo spettro e AFC solo con il picco fermo per due spettri; scarto compensato campione per campione con l'AFC |
+| Tutta la banda | `skim/` | spettro 2048 punti, canali aperti e chiusi da soli, storico 60 s, nominativi (ruoli, verifica, convalida, locatori esclusi), spot locali; libreria, non collegata al servizio |
+| P1 bit morbidi | `psk.rs` | prodotto col simbolo prima diviso per la potenza di 4 simboli, scala dai momenti secondo e quarto |
+| P3 varicode con fascio | `psk_viterbi.rs` | 96 ipotesi sull'albero dei codici, modello del testo leggero, due caratteri di ritardo |
+| P5 squelch a probabilità | `psk_viterbi.rs` | carattere stampato solo sopra 140/255 |
+
+### Non fatto
+C4 (seconda passata all'indietro), C8, P2, P4, P6, P7, P8, P9; I2 come modulo `lm.rs` comune e grammatica dei nominativi dentro il traliccio; I3 eventi con
+`channel`/`conf`/`revise_from`; I4 thread di tutta la banda nel servizio e pannello nell'interfaccia; pacchetto WAV ed esempio `punteggio`.
+
+### CW contro fldigi (media di 9 righe)
+| | L1 | ora | fldigi |
+|---|---|---|---|
+| media di tutte le righe | 45,7 | **24,2** | 73,6 |
+| rumore -8 / -10 / -12 / -15 dB | 30,9 / 68,3 / 92,6 / 77,9 | **1,6 / 8,3 / 26,2** / 82,0 | 98,4 / 100 / 99,2 / 100 |
+| tasto a mano (media) | 38,7 | **23,6** | 70,9 |
+| 14 -> 28 WPM | 45,7 | **20,6** | 75,6 |
+| QSB 15 dB | 65,2 | **54,1** | 89,5 |
+| QRN | 63,8 | **21,2** | 77,4 |
+| QRM +150 Hz | 37,9 | **19,9** | 68,9 |
+
+Soglia del 5% di errori nel rumore bianco (interpolata fra le colonne): L1 circa -5 dB, ora circa -9 dB, fldigi circa -1 dB. Sul solo rumore (un minuto, squelch spento) nessun
+carattere. Tutta la banda: 10 stazioni a -5 dB, 10 canali, 10/10 nominativi verificati, 10,5 volte più veloce del tempo vero (circa 1% di un core per canale).
+
+### PSK contro fldigi (media di 9 righe)
+| | L1 | ora | fldigi |
+|---|---|---|---|
+| PSK31 | 17,2 | **14,0** | 20,5 |
+| PSK63 | 35,2 | **29,6** | 37,8 |
+| PSK31 rumore -10 / -12 / -15 dB | 10,3 / 14,9 / 47,3 | **1,5 / 12,9** / 59,0 | 9,3 / 16,3 / 73,7 |
+| PSK31 fading CCIR (media) | 29,0 | **29,8** | 33,1 |
+| caratteri falsi in un minuto di rumore, squelch spento | 262 | **35** | — |
+
+A +5 dB gli errori scendono dal 7-15% (caratteri inventati sul rumore prima e dopo il testo) a 0,5-4%. Nessuna riga peggiore di fldigi.
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·
