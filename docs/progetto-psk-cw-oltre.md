@@ -128,6 +128,44 @@ carattere. Tutta la banda: 10 stazioni a -5 dB, 10 canali, 10/10 nominativi veri
 
 A +5 dB gli errori scendono dal 7-15% (caratteri inventati sul rumore prima e dopo il testo) a 0,5-4%. Nessuna riga peggiore di fldigi.
 
+## Tutta la banda nella pagina e migliorie PSK (2026-11-12, ramo `lavoro/banda-cw-psk`)
+
+### Fatto
+| Cosa | Dove | Note |
+|---|---|---|
+| I4 thread di tutta la banda | `band.rs` | copia dell'audio a 12 kHz dal ricevitore principale con coda sua (se resta indietro perde blocchi suoi); limite di CPU: oltre un quarto di un core chiude i canali più deboli, sotto la metà ne riapre (fino a 40); evento `band` al massimo due volte al secondo e solo se cambia; rotta `GET /api/v1/digi/band` con lo storico di 60 s; impostazioni `band_cw`, `band_psk`, `band_spots` (accese) |
+| I3 in parte | `aurora-core/src/event.rs` | `DigiSignal` con frequenza, WPM, S/N, coda del testo, posizioni dei caratteri incerti (probabilità sotto 150/255), nominativi con ruolo, verifica e paese |
+| Pannello «Segnali» | `app/src/components/digi/BandSignals.tsx` | una riga per segnale, clic per sintonizzare, doppio clic per lo storico, incerti in grigio, CQ evidenziati e contati; nominativi sopra la traccia nella cascata; tema scuro e chiaro |
+| Spot locali | `aurora/src/lib.rs` (`wire_band_decoder`) | nominativi verificati nel pannello del DX Cluster (`add_own_spot`, fonte «Aurora»), frequenza = radio + tono; mai in rete |
+| Canali CW | `skim/mod.rs`, `cw.rs` | AFC dei canali limitato a ±20 Hz (con ±100 Hz nelle pause saltava sulla stazione vicina: con 30 stazioni a 113 Hz si trovavano 22 nominativi, ora 30); finestra e rotazioni dello spettro dell'AFC calcolate una volta (stessi numeri, CPU da 31% a 23% con 30 canali) |
+| Browser PSK | `skim/psk.rs` | energia larga quanto un PSK sopra il fondo, portanti pure scartate, canale in prova finché lo squelch sulla qualità della fase non si apre (se no la frequenza si scarta per un minuto); frequenza dal baricentro, poi l'AFC |
+| P4 | `psk.rs`, `blanker.rs` | noise blanker senza ritardo davanti al mixer: senza scariche l'uscita è identica bit per bit, con il QRN PSK31 dal 27,7% al 12,6% e PSK63 dal 41,6% al 30,3% |
+
+### CPU di tutta la banda (un minuto di audio, `cpu_tutta_la_banda` e `tutti_i_segnali`)
+| | 10 segnali | 30 segnali |
+|---|---|---|
+| CW a -5 dB | 10/10 nominativi, 8% di un core | 30/30 nominativi, 23% di un core |
+| PSK31 a -8 dB | 10/10 nominativi, 0,3% di un core | 30/30 nominativi, 0,9% di un core |
+
+### PSK contro fldigi dopo P4 (10 righe: aggiunta la riga QRN, scariche di 1-3 ms come nella prova CW)
+| | prima | dopo | fldigi |
+|---|---|---|---|
+| PSK31 media | 15,4 | **13,9** | 21,5 |
+| PSK63 media | 30,8 | **29,7** | 38,9 |
+| PSK31 QRN | 27,7 | **12,6** | 30,5 |
+| PSK63 QRN | 41,6 | **30,3** | 48,2 |
+
+Le altre 18 righe sono identiche; caratteri falsi sul solo rumore invariati (35 PSK31, 76 PSK63 con lo squelch spento; 0 acceso).
+
+### Provati e scartati (peggiorano almeno una riga)
+- **P2** riferimento di fase su più simboli con decisioni (dure, poi morbide con tanh(LLR/2)), rotazione per simbolo stimata e ripartenza sul preambolo: a -12 dB in PSK31 dal 10,3% al 6,4% e fading dal 13,0% all'11,7%, ma a -8 dB dall'1,5% al 2,2%, 30 s di rumore dall'1,5% al 2,7%, PSK63 dal 6,4% all'8,1% (prova `studio`, peso 0,3; con 0,5 e 0,7 peggio). Anche usato solo con il segnale debole non migliora tutte le righe.
+- **P6** aggancio rapido con il quadrato dei simboli del preambolo (rotazione media di 16 simboli, solo con rotazioni concordi e scarti oltre baud/16): PSK63 fuori -6 Hz da 29,7 a 28,8, ma PSK31 vicina +6 dB da 10,2 a 10,3 (a -15 dB); con soglie diverse altre righe peggiori di 0,2-1,0.
+- **P9** orologio della scheda come seconda costante del sincronismo (solo con il DCD): con guadagno 0,001 otto righe peggiori, con 0,0001 cinque (PSK63 rumore +0,8, vicina +0,6).
+- **P4 con cancellazioni** (LLR = 0 sui simboli con un buco del blanker): QRN PSK31 dal 12,6% al 39,0%; resta il solo blanker.
+
+### Non fatto
+P7, P8, C4, C8; I2 come modulo comune; I3 nel testo del ricevitore principale (`channel`, `revise_from`); spot in rete dal browser (per scelta: solo locali); pacchetto WAV ed esempio `punteggio`.
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·
