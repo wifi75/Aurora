@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { destinationError, parseDestinations, type UdpDestination } from './IntegrationsPanel';
 
-const base: UdpDestination = { name: 'GridTracker', host: '127.0.0.1', port: 2237, enabled: true, wsjtx: true, loggedAdif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: '' };
+const base: UdpDestination = { name: 'GridTracker', host: '127.0.0.1', port: 2237, enabled: true, wsjtx: true, loggedAdif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: '', resend: false };
 
 describe('the UDP destinations of the Integrations box', () => {
   it('reads the saved list and fills the missing fields', () => {

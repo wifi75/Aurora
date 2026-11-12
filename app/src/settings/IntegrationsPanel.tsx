@@ -22,9 +22,11 @@ export interface UdpDestination {
   multicast: boolean;
   ttl: number;
   iface: string;
+  /** «Rimanda i QSO persi»: coda per il log chiuso (solo ADIF su UDP e XML N1MM, indirizzi di questo PC). */
+  resend: boolean;
 }
 
-const BLANK: UdpDestination = { name: '', host: '127.0.0.1', port: 2237, enabled: true, wsjtx: false, loggedAdif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: '' };
+const BLANK: UdpDestination = { name: '', host: '127.0.0.1', port: 2237, enabled: true, wsjtx: false, loggedAdif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: '', resend: false };
 
 /** I tipi proposti quando si aggiunge un destinatario: valori di partenza comuni. */
 const PRESETS: Record<string, { label: Key; value: Partial<UdpDestination> }> = {
@@ -32,7 +34,7 @@ const PRESETS: Record<string, { label: Key; value: Partial<UdpDestination> }> = 
   bblogger: { label: 'int.p.bblogger', value: { name: 'BBLogger', host: '127.0.0.1', port: 2237, wsjtx: true, loggedAdif: true } },
   loghx: { label: 'int.p.loghx', value: { name: 'LogHX', host: '127.0.0.1', port: 2237, wsjtx: true, loggedAdif: true } },
   multicast: { label: 'int.p.multicast', value: { name: 'Multicast', host: '239.255.0.1', port: 2237, wsjtx: true, multicast: true, ttl: 1, iface: '127.0.0.1' } },
-  adif: { label: 'int.p.adif', value: { name: 'Log4OM', host: '127.0.0.1', port: 2333, adif: true } },
+  adif: { label: 'int.p.adif', value: { name: 'Log4OM', host: '127.0.0.1', port: 2333, adif: true, resend: true } },
   n1mm: { label: 'int.p.n1mm', value: { name: 'N1MM XML', host: '127.0.0.1', port: 12060, n1mm: true } },
 };
 
@@ -154,6 +156,9 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
                   </Field>
                   <Field label={t('int.n1mm')} hint={t('int.n1mm.help')}>
                     <input type="checkbox" checked={d.n1mm} onChange={(e) => change(i, { n1mm: e.target.checked })} />
+                  </Field>
+                  <Field label={t('int.resend')} hint={t('int.resend.help')}>
+                    <input type="checkbox" title={t('int.resend.help')} checked={d.resend} disabled={!d.adif && !d.n1mm} onChange={(e) => change(i, { resend: e.target.checked })} />
                   </Field>
                   <Field label={t('int.multicast')} hint={t('int.multicast.help')}>
                     <input type="checkbox" checked={d.multicast} onChange={(e) => change(i, { multicast: e.target.checked })} />
