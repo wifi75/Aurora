@@ -2,6 +2,7 @@
 //! Il vassoio tiene Aurora a portata di mano, parte con Windows e si aggiorna da sola quando esce una versione nuova.
 
 pub mod agent;
+mod context_menu;
 mod crash;
 mod health;
 mod installer;
@@ -296,6 +297,7 @@ fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn 
             }
         })
         .build()?;
+    context_menu::install(&window);
     restore_window(app, &window);
     if visible {
         window.show()?;
@@ -376,6 +378,7 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
             return;
         }
     };
+    context_menu::install(&window);
     // dove stava l'ultima volta (posizione, misura, massimizzata), se quello schermo c'e' ancora
     if let Some(core) = app.try_state::<Core>()
         && let Some(state) = window_state::load_for(&core.data_dir, &label)
@@ -483,7 +486,8 @@ fn remember_window(window: &tauri::Window) {
 }
 
 fn open_window_app(app: &AppHandle, path: &str) -> Result<(), Box<dyn Error>> {
-    WebviewWindowBuilder::new(app, "main", WebviewUrl::App(path.into())).title("Aurora").inner_size(720.0, 420.0).build()?;
+    let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::App(path.into())).title("Aurora").inner_size(720.0, 420.0).build()?;
+    context_menu::install(&window);
     Ok(())
 }
 
