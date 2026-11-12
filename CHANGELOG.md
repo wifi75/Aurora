@@ -1,9 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.239 - 2026-11-12
 - **Tune** parte subito anche a meta' di un periodo lungo (FST4, FST4W, WSPR), come WSJT-X; prima aspettava l'inizio del periodo dopo. Resta al massimo 2 minuti e il cambio di periodo non lo taglia.
 - **JT65, Clear Avg**: pulsante ⟲ accanto ad AP e Prof. per azzerare la media su piu' periodi (prima l'azzeramento c'era solo nel motore).
-- **DX Cluster, testi**: dove basta un clic (PSK, RTTY, CW) il suggerimento della riga e dello Split DX dice «Clic» e non piu' «Doppio clic»; l'avviso sugli split lontani rimanda allo Split DX in Impostazioni › DX Cluster invece di dire «non ancora fatto».
+- **DX Cluster, testi**: con il clic singolo scelto nelle pagine PSK, RTTY e CW il suggerimento della riga e dello Split DX dice «Clic» e non piu' «Doppio clic»; l'avviso sugli split lontani rimanda allo Split DX in Impostazioni › DX Cluster invece di dire «non ancora fatto».
 - **PTT su RTS/DTR, porta occupata**: il messaggio dice quale programma tiene la porta e di riavviare Aurora dopo averlo chiuso (la porta del PTT si apre all'avvio); prima consigliava «Collega», che non serviva.
 - **WSPRnet**: la scheda mostra quanti invii aspettano ancora, compreso quello in corso, invece di un esito sovrascritto a ogni richiesta.
 - Pulizia del codice: tolta la vecchia pagina Impostazioni non piu' raggiungibile (con i suoi 36 testi); stato del CAT costruito in un punto solo; modo del trasmettitore, data di WSPRnet e menu a comparsa (nominativo e colonne) in un'unica funzione o componente; su Windows la chiusura di un rigctld rimasto aperto aspetta il processo vero (al massimo 2 s) invece di una pausa fissa.

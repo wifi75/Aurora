@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-11 notte tardi, versione 0.11.238 pubblicata (Split DX, Cat4OM con la scoperta, olandese, radiofaro FST4W e WSPRnet, griglie spostabili; controllare i tre lavori). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeWire e CAT con l'Hamlib di Debian 12; mappa dei satelliti inclusa; Tune subito, Clear Avg di JT65; revisione completa e sicurezza; installatore compilato e firmato sul PC). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-11 mezzanotte
