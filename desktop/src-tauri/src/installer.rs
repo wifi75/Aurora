@@ -98,10 +98,12 @@ impl UpdateInstaller for DesktopInstaller {
         // 2026-11-08, con la cartella di Hamlib gia' tolta). Si aspetta al massimo 30 s, poi parte comunque
         let quoted = installer.replace('\'', "''");
         // se l'installatore silenzioso finisce senza riaprire Aurora (sul portatile, 2026-11-09, dopo l'aggiornamento dal tray non si
-        // riapriva nulla e sembrava sparito tutto), lo script la riapre lui
+        // riapriva nulla e sembrava sparito tutto), lo script la riapre lui. Se a quel punto il programma non c'e' (installazione fallita o
+        // interrotta, rapporto del 2026-11-12: «Start-Process: file non trovato») si riapre l'installatore normale, con le sue finestre,
+        // cosi' chi aggiorna vede cosa non va invece di restare senza Aurora
         let exe = std::env::current_exe().ok().and_then(|p| p.to_str().map(|s| s.replace('\'', "''"))).unwrap_or_default();
         let script = format!(
-            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              $p = Start-Process -FilePath '{quoted}' -ArgumentList {} -PassThru;              $p | Wait-Process -Timeout 240 -ErrorAction SilentlyContinue; Start-Sleep -Seconds 6;              if ('{exe}' -ne '' -and -not (Get-Process aurora-desktop -ErrorAction SilentlyContinue)) {{ Start-Process -FilePath '{exe}' }}",
+            "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) {{ Start-Sleep -Milliseconds 500; $t++ }};              Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500;              $p = Start-Process -FilePath '{quoted}' -ArgumentList {} -PassThru;              $p | Wait-Process -Timeout 240 -ErrorAction SilentlyContinue; Start-Sleep -Seconds 6;              if ('{exe}' -ne '' -and -not (Get-Process aurora-desktop -ErrorAction SilentlyContinue)) {{ if (Test-Path -LiteralPath '{exe}') {{ Start-Process -FilePath '{exe}' }} else {{ Start-Process -FilePath '{quoted}' }} }}",
             installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",")
         );
         // percorso intero: su alcuni PC «powershell» non e' nel PATH del programma (2026-11-09: «installatore non avviato: program not found»)
