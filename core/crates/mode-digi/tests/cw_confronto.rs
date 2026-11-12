@@ -345,7 +345,7 @@ fn rumore_e_squelch() {
             aggiungi_rumore(&mut audio, sigma, &mut rng);
             let mut rx = ricevitore();
             if squelch {
-                rx.set_squelch_db(Some(-45.0));
+                rx.set_squelch_snr_db(Some(mode_digi::cw::SQUELCH_DEFAULT_DB));
             }
             let mut n = 0;
             for block in audio.chunks(480) {

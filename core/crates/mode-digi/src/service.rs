@@ -695,7 +695,7 @@ impl Demod {
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
             d.set_afc(s.afc_on);
-            d.set_squelch_db(squelch);
+            d.set_squelch_snr_db(s.squelch_on.then_some(cw::SQUELCH_DEFAULT_DB));
             return Demod::Cw(Box::new(d));
         }
         match s.mode.psk() {
