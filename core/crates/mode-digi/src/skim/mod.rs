@@ -11,6 +11,7 @@
 //! convalida scelta: uno per nominativo ogni 10 minuti, di nuovo se cambia frequenza di oltre 1 kHz o se lo si sente chiamare CQ.
 
 pub mod calls;
+pub mod psk;
 
 use crate::cw::CwDemodulator;
 use calls::{CallTracker, HeardCall, Role, Validation};

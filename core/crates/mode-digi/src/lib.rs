@@ -12,7 +12,7 @@
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
 //! - [`band`]: il thread di tutta la banda del servizio (limite di CPU, eventi `band`, spot locali);
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
-//! - [`skim`]: decodifica di tutti i segnali CW della banda audio, con storico, nominativi e spot locali;
+//! - [`skim`]: decodifica di tutti i segnali CW e PSK della banda audio, con storico, nominativi e spot locali;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod band;

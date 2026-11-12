@@ -81,6 +81,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.1akvfqmvh5y": "Aurora decodeert met alle processoren op één na. Aanbevolen: 4 kernen en 8 GB geheugen. Met 2 kernen of 4 GB werkt het, maar bij veel signalen kan het decoderen te laat klaar zijn.",
   "t.1aohw3tch91": "Als het koppelen is ingetrokken, doe “[[acc.pair]]” opnieuw vanaf de pc.",
   "t.1aon0lpu0tq": "Elk spoor is een station. De groene balk is jouw ontvangstfrequentie (Rx), de rode jouw zendfrequentie (Tx): ze zijn zo breed als een signaal van de modus (43,75 Hz in FT8).",
+  "t.1aq98netqx4": "In PSK31 en PSK63 leest het paneel “[[digi.band.title]]” boven de waterval alle signalen van de gekozen modus tegelijk, elk met een eigen ontvanger (zoals een browser): een signaal komt in de lijst zodra de ontvanger het als PSK herkent, met frequentie, S/R, roepnaam met vlag en laatste tekst (onzekere tekens in grijs). Stations die CQ roepen hebben een gemarkeerde regel en worden bovenaan geteld. Klik om er een te beluisteren, dubbelklik voor de laatste 60 seconden; “[[digi.band.miPsk]]” in het menu Opties zet het uit.",
   "t.1au648yljtx": "Niets gelogd: de verbinding in Log4OM moet actief zijn en op dezelfde poort als Aurora; druk na een wijziging op “Save and apply”.",
   "t.1axtagd9aw6": "aurora.local antwoordt niet: gebruik het IP dat getoond wordt in [[nav.settings]] › [[sw.sec.access]] › [[sw.tab.phone]] → “[[acc.addresses]]”.",
   "t.1b69lfb8q23": "S-meter, vermogen, SWR en ALC aflezen.",

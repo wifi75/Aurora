@@ -1,4 +1,4 @@
-//! Il thread di «tutta la banda»: riceve una copia dell'audio a 12 kHz dal ricevitore principale (se il thread resta indietro perde
+//! Il thread di «tutta la banda» (CW; PSK31 e PSK63, il «browser»): riceve una copia dell'audio a 12 kHz dal ricevitore principale (se il thread resta indietro perde
 //! blocchi suoi, mai quelli del ricevitore principale), lo passa al decodificatore di tutta la banda del modo ([`crate::skim`]) e manda
 //! l'elenco dei segnali all'interfaccia come evento `band`, al massimo due volte al secondo e solo se e' cambiato.
 //!
@@ -20,6 +20,8 @@ use aurora_core::{DigiEvent, DigiSignal, DigiSignalCall};
 
 use crate::service::{DigiMode, DigiSettings, Emitter};
 use crate::skim::calls::Role;
+use crate::psk::PskMode;
+use crate::skim::psk::PskBandDecoder;
 use crate::skim::{BandDecoder, ChannelInfo, CwBandDecoder};
 
 /// Quanta CPU puo' usare il thread (frazione di un core).
@@ -59,12 +61,15 @@ pub type CallLookup = Arc<dyn Fn(&str) -> Option<String> + Send + Sync>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Kind {
     Cw,
+    Psk(PskMode),
 }
 
 impl Kind {
     fn of(s: &DigiSettings) -> Option<Kind> {
         match s.mode {
             DigiMode::Cw if s.band_cw => Some(Kind::Cw),
+            DigiMode::Psk31 if s.band_psk => Some(Kind::Psk(PskMode::Psk31)),
+            DigiMode::Psk63 if s.band_psk => Some(Kind::Psk(PskMode::Psk63)),
             _ => None,
         }
     }
@@ -72,12 +77,14 @@ impl Kind {
     fn mode_name(self) -> &'static str {
         match self {
             Kind::Cw => "CW",
+            Kind::Psk(m) => m.name(),
         }
     }
 
     fn decoder(self) -> Box<dyn BandDecoder> {
         match self {
             Kind::Cw => Box::new(CwBandDecoder::new(LO_HZ, HI_HZ, MAX_CHANNELS)),
+            Kind::Psk(m) => Box::new(PskBandDecoder::new(m, LO_HZ, HI_HZ, MAX_CHANNELS)),
         }
     }
 }
@@ -329,13 +336,12 @@ mod tests {
         assert_eq!(full.wpm, None);
     }
 
-    /// Dal servizio: in CW l'audio arriva anche al thread di tutta la banda, che manda l'elenco dei segnali e lo spot locale.
-    #[test]
-    fn the_service_sends_the_band_list_and_a_local_spot() {
+    /// Dal servizio: l'audio arriva anche al thread di tutta la banda, che manda l'elenco dei segnali e lo spot locale. Restituisce il
+    /// primo segnale che chiama CQ con il nominativo verificato, lo storico completo e gli spot.
+    fn through_the_service(s: DigiSettings, wave: Vec<f32>, tag: &str) -> (Option<DigiSignal>, Vec<DigiSignal>, Vec<BandSpot>) {
         use crate::service::DigiService;
-        let dir = std::env::temp_dir().join(format!("aurora-digi-banda-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("aurora-digi-banda-{tag}-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("cartella di prova");
-        let s = DigiSettings { mode: DigiMode::Cw, ..DigiSettings::default() };
         std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
         let svc = DigiService::open(&dir);
         let (tx, rx) = std::sync::mpsc::channel::<DigiEvent>();
@@ -350,9 +356,6 @@ mod tests {
         svc.set_spot_sink(Arc::new(move |s| lock(&got).push(s)));
         svc.set_call_lookup(Arc::new(|c: &str| c.starts_with("IU").then(|| "Italy".to_string())));
         svc.start_rx();
-        let mut wave = vec![0.0; 6000];
-        wave.extend(crate::cw::modulate(b"CQ CQ DE IU3ABC IU3ABC K   CQ CQ DE IU3ABC IU3ABC K", 800.0, 22.0, 0.3));
-        wave.extend(vec![0.0; 12000]);
         for chunk in wave.chunks(1200) {
             svc.feed(crate::RATE as u32, chunk);
             // il thread di tutta la banda non deve restare indietro (senza ottimizzazioni e' lento)
@@ -369,12 +372,36 @@ mod tests {
         let full = svc.band_signals();
         svc.stop_rx();
         let _ = std::fs::remove_dir_all(&dir);
+        let spots = lock(&spots).clone();
+        (seen, full, spots)
+    }
+
+    #[test]
+    fn the_service_sends_the_cw_band_list_and_a_local_spot() {
+        let s = DigiSettings { mode: DigiMode::Cw, ..DigiSettings::default() };
+        let mut wave = vec![0.0; 6000];
+        wave.extend(crate::cw::modulate(b"CQ CQ DE IU3ABC IU3ABC K   CQ CQ DE IU3ABC IU3ABC K", 800.0, 22.0, 0.3));
+        wave.extend(vec![0.0; 12000]);
+        let (seen, full, spots) = through_the_service(s, wave, "cw");
         let sig = seen.expect("nessun segnale con IU3ABC");
         assert!((sig.freq_hz - 800.0).abs() < 5.0, "{sig:?}");
         assert!(sig.cq && sig.wpm.is_some(), "{sig:?}");
         assert_eq!(sig.calls[0].country.as_deref(), Some("Italy"));
         assert!(full.iter().any(|s| s.text.contains("DE IU3ABC")), "{full:?}");
-        let spots = lock(&spots).clone();
         assert!(spots.iter().any(|s| s.call == "IU3ABC" && s.mode == "CW" && (s.audio_hz - 800.0).abs() < 5.0), "{spots:?}");
+    }
+
+    #[test]
+    fn the_service_sends_the_psk_band_list_and_a_local_spot() {
+        let s = DigiSettings { mode: DigiMode::Psk31, ..DigiSettings::default() };
+        let mut wave = vec![0.0; 6000];
+        wave.extend(crate::psk::modulate(b"cq cq cq de IU3ABC IU3ABC IU3ABC pse k  cq cq de IU3ABC IU3ABC k", 1530.0, PskMode::Psk31, 0.2));
+        wave.extend(vec![0.0; 12000]);
+        let (seen, full, spots) = through_the_service(s, wave, "psk");
+        let sig = seen.expect("nessun segnale con IU3ABC");
+        assert!((sig.freq_hz - 1530.0).abs() < 3.0, "{sig:?}");
+        assert!(sig.cq && sig.wpm.is_none(), "{sig:?}");
+        assert!(full.iter().any(|s| s.text.contains("de IU3ABC")), "{full:?}");
+        assert!(spots.iter().any(|s| s.call == "IU3ABC" && s.mode == "PSK31"), "{spots:?}");
     }
 }

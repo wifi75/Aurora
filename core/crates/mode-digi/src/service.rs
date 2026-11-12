@@ -223,6 +223,8 @@ pub struct DigiSettings {
     pub merge_macros: std::collections::BTreeMap<String, bool>,
     /// CW: si decodificano tutti i segnali della banda audio (pannello «Segnali», thread a parte con limite di CPU).
     pub band_cw: bool,
+    /// PSK31 e PSK63: si decodificano tutti i segnali della banda audio («browser», pannello «Segnali»).
+    pub band_psk: bool,
     /// Tutta la banda: i nominativi verificati vanno come spot locali nel pannello del DX Cluster di Aurora (mai in rete).
     pub band_spots: bool,
 }
@@ -302,6 +304,7 @@ impl Default for DigiSettings {
             mode_macros: default_mode_macros(),
             merge_macros: std::collections::BTreeMap::new(),
             band_cw: true,
+            band_psk: true,
             band_spots: true,
         }
     }
@@ -429,7 +432,7 @@ struct Inner {
     radio_mode: Mutex<Option<RadioModeSource>>,
     /// L'ultima lettura: la radio e' in LSB.
     radio_lsb: AtomicBool,
-    /// Il thread di tutta la banda (CW).
+    /// Il thread di tutta la banda (CW, PSK).
     band: crate::band::BandLink,
 }
 

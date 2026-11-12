@@ -1811,6 +1811,8 @@ export interface DigiSettings {
   merge_macros: Record<string, boolean>;
   /** CW: si decodificano tutti i segnali della banda audio (pannello «Segnali»). */
   band_cw?: boolean;
+  /** PSK31 e PSK63: tutti i segnali della banda audio («browser», pannello «Segnali»). */
+  band_psk?: boolean;
   /** Tutta la banda: i nominativi verificati come spot locali nel pannello del DX Cluster di Aurora (mai in rete). */
   band_spots?: boolean;
 }

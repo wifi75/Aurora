@@ -6,6 +6,7 @@
 .digi-band-head { display: flex; align-items: baseline; gap: 10px; padding: 5px 12px; border-bottom: 1px solid var(--border); }
 .digi-band-head small { color: var(--text-muted); font-size: 11px; }
 .digi-band-legend { margin-left: auto; }
+.digi-band-head .digi-band-cqcount { padding: 0 6px; border: 1px solid #2cf5a4; border-radius: 6px; color: #2cf5a4; font-weight: 700; }
 .digi-band-empty { margin: 8px 12px; color: var(--text-muted); font-size: 12px; }
 .digi-band-scroll { max-height: 9.5rem; overflow: auto; }
 .digi-band table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: auto; }
@@ -57,4 +58,5 @@ html[data-theme='light'] .digi-band-call b { color: #000; }
 html[data-theme='light'] .digi-band-call--maybe b { color: #46556f; }
 html[data-theme='light'] .digi-band-role { border-color: #46556f; color: #26324a; }
 html[data-theme='light'] .digi-band-role--cq { border-color: #0f9d63; color: #0b7a4c; }
+html[data-theme='light'] .digi-band-head .digi-band-cqcount { border-color: #0f9d63; color: #0b7a4c; }
 html[data-theme='light'] .digi-band-full { background: #ffffff; color: #0b1322; }

@@ -196,9 +196,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const lock = !s.tx_follow_rx;
   const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
 
-  // tutta la banda: i segnali del modo in uso (CW), con il nominativo sopra la traccia nella cascata
+  // tutta la banda: i segnali del modo in uso (CW; PSK31 e PSK63, il browser), con il nominativo sopra la traccia nella cascata
   const bandAll = useSyncExternalStore(onBandSignals, getBandSignals);
-  const bandOn = s.mode === 'cw' && s.band_cw !== false;
+  const isPsk = s.mode === 'psk31' || s.mode === 'psk63';
+  const bandOn = (s.mode === 'cw' && s.band_cw !== false) || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
   const bandLabels = useMemo(
     () =>
@@ -820,11 +821,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.snap'), checked: s.snap_on, onSelect: () => toggleSetting('snap', 'toggle') },
         { label: t('digi.mi.squelch'), checked: s.squelch_on, onSelect: () => toggleSetting('squelch', 'toggle') },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
-        // tutta la banda (CW): acceso di base, e gli spot locali verso il pannello del DX Cluster di Aurora
-        ...(s.mode === 'cw'
+        // tutta la banda (CW e PSK): acceso di base, e gli spot locali verso il pannello del DX Cluster di Aurora
+        ...(s.mode === 'cw' || isPsk
           ? [
               'sep' as const,
-              { label: t('digi.band.mi'), checked: s.band_cw !== false, onSelect: () => save({ band_cw: s.band_cw === false }) },
+              s.mode === 'cw'
+                ? { label: t('digi.band.mi'), checked: s.band_cw !== false, onSelect: () => save({ band_cw: s.band_cw === false }) }
+                : { label: t('digi.band.miPsk'), checked: s.band_psk !== false, onSelect: () => save({ band_psk: s.band_psk === false }) },
               { label: t('digi.band.spots'), checked: s.band_spots !== false, onSelect: () => save({ band_spots: s.band_spots === false }) },
             ]
           : []),
@@ -1011,7 +1014,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           </div>
         </div>
         {bandOn && views.signals ? (
-          <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={t('digi.band.empty')} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+          <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
           <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={bandLabels} />

@@ -81,6 +81,10 @@ export function ModeSettingsFields({
         <span>{t('digi.psk.squelch', { q: Math.round(pskSq) })}</span>
         <input type="range" min={0} max={100} step={1} value={pskSq} onChange={(e) => setPskSq(Number(e.target.value))} onPointerUp={() => onSave({ psk_squelch: pskSq })} onKeyUp={() => onSave({ psk_squelch: pskSq })} />
       </label>
+      <label className="sstv-check" title={t('digi.band.miPskTip')}>
+        <input type="checkbox" checked={s.band_psk !== false} onChange={(e) => onSave({ band_psk: e.target.checked })} />
+        {t('digi.band.miPsk')}
+      </label>
       <p className="sstv-hint">
         {quality === null ? null : <>{t('digi.psk.qualityNow', { q: Math.round(quality) })} — </>}
         {t('digi.psk.squelchHint')}

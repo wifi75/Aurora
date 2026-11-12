@@ -67,11 +67,14 @@ function CallCell({ s }: { s: DigiSignal }) {
 export function BandSignals({ signals, showWpm, dialHz, rxHz, emptyText, onTune, onCall }: Props) {
   const t = useT();
   const [historyId, setHistoryId] = useState<number | null>(null);
+  // l'avviso dei CQ: quante stazioni chiamano adesso (le loro righe sono evidenziate)
+  const cqs = signals.filter((s) => s.cq).length;
   return (
     <section className="digi-band" aria-label={t('digi.band.title')}>
       <header className="digi-band-head">
         <strong>{t('digi.band.title')}</strong>
         <small>{signals.length > 0 ? t('digi.band.count', { n: signals.length }) : null}</small>
+        {cqs > 0 ? <small className="digi-band-cqcount">{t('digi.band.cqCount', { n: cqs })}</small> : null}
         <small className="digi-band-legend">{t('digi.band.unsureTip')}</small>
       </header>
       {signals.length === 0 ? (
