@@ -2,6 +2,25 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-12 sera (0.11.241 pubblicata, sito aggiornato)
+
+- **0.11.241** (19:34 UTC): CW con decodificatore probabilistico, noise blanker, rumore dalle bande laterali, aggancio rapido, «TX alla
+  velocita' ricevuta» e anti-click della cascata; tutta la banda CW e PSK nella pagina (pannello Segnali, nominativi sulla cascata, convalida
+  dei nominativi a livelli, spot solo locali); PSK con probabilita' e blanker; RTTY oltre (tre catene, squelch statistico, finestra
+  Impostazioni RTTY); trasmissione aperta; SSTV (FSK ID, modo senza VIS, log con ricerca); «Rimanda i QSO persi» per i log chiusi
+  (`qso-export`, modulo `waiting`); correzioni dai rapporti (aggiornamento fermato dal Restart Manager, WebView2 installato da Aurora, rigctld
+  che chiude il collegamento, PulseAudio); schermata chiara dell'installatore quando non riesce; dimensione del testo (#49).
+- **Rami di lavoro**: tutto e' su `main`. In corso sul ramo `lavoro/cw-riprova` (da `a549a2fd`): nuovo tentativo su AGC a due inseguitori,
+  velocita' robusta con antidisturbo e QRN largo, scartati nella 0.11.241 perche' peggioravano il banco. Entra solo se migliora.
+- **Decisioni del proprietario**: gli spot dei decodificatori restano locali (niente invio in rete); verso Log4OM solo UDP con la coda,
+  niente scrittura nel suo archivio.
+- **Portale**: il ramo `dist` di `aurora-portal` vuole il messaggio di commit `sito: <sha di main>`, altrimenti `aurora-sito aggiorna` lo
+  rifiuta; da Git Bash l'alias ssh `aurora-portale` si usa con `/c/Windows/System32/OpenSSH/ssh.exe`.
+- **Da provare con la radio** (proprietario): CW a tutta banda, PSK, RTTY, SSTV, coda dei QSO con Log4OM; la schermata d'errore
+  dell'installatore non e' stata vista girare.
+- **Risposte da dare** (le scrive il proprietario dalle bozze): #46, #27, #40, #48, #49 e F1DSZ.
+- **Prossimo passo**: unire `lavoro/cw-riprova` se i numeri migliorano; collegare il rilevatore dei click ai canali di tutta la banda; QPSK.
+
 ## Stato al 2026-11-12 pomeriggio (lavoro dopo la 0.11.239, solo commit locali)
 
 - **Commit locali, non pubblicati** (il proprietario li prova prima con l'installatore di prova `Aurora-PROVA-impostazioni.exe` sul Desktop):

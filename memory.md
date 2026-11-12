@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeWire e CAT con l'Hamlib di Debian 12; mappa dei satelliti inclusa; Tune subito, Clear Avg di JT65; revisione completa e sicurezza; installatore compilato e firmato sul PC). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-12, versione 0.11.241 pubblicata (CW probabilistico e tutta la banda, PSK e RTTY oltre fldigi nei banchi, SSTV con FSK ID, trasmissione aperta, «Rimanda i QSO persi» per i log chiusi, schermata d'errore dell'installatore, correzioni dai rapporti; installatore compilato e firmato sul PC). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-12
