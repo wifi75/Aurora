@@ -192,6 +192,13 @@ fn device_name(d: &cpal::Device) -> String {
     d.description().map(|x| x.name().to_string()).unwrap_or_else(|_| "(senza nome)".into())
 }
 
+/// Il dispositivo con questo identificativo del sistema. Su Linux con PulseAudio o PipeWire e' il nome della sorgente o del sink che
+/// mostrano WSJT-X e JS8Call (`alsa_input.usb-…analog-stereo`): chi lo copia da li' (o lo mette in `AURORA_AUDIO_DEVICE`) apre quello giusto.
+fn position_by_id(devices: &[cpal::Device], hint: &str) -> Option<usize> {
+    let wanted = hint.trim();
+    devices.iter().position(|d| d.id().is_ok_and(|id| id.id().eq_ignore_ascii_case(wanted)))
+}
+
 /// I nomi dei dispositivi di uscita.
 pub fn list_output_devices() -> Vec<String> {
     cpal::default_host().output_devices().map(|it| it.map(|d| device_name(&d)).collect()).unwrap_or_default()
@@ -382,7 +389,7 @@ impl CpalSink {
             Some(hint) => host.output_devices().ok().and_then(|it| {
                 let mut devices: Vec<cpal::Device> = it.collect();
                 let names: Vec<String> = devices.iter().map(device_name).collect();
-                match_device_name(&names, hint).map(|i| devices.swap_remove(i))
+                position_by_id(&devices, hint).or_else(|| match_device_name(&names, hint)).map(|i| devices.swap_remove(i))
             }),
         };
         let Some(device) = device else {

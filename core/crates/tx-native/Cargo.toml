@@ -12,7 +12,9 @@ aurora-core = { path = "../aurora-core" }
 rig-control = { path = "../rig-control" }
 tracing = { workspace = true }
 # «realtime»: il thread audio a priorita' alta (MMCSS su Windows), meno blocchi persi quando il PC e' carico
-cpal = { version = "0.18.2", features = ["realtime"] }
+# Linux: con "pulseaudio" cpal parla con PulseAudio/PipeWire (pipewire-pulse) quando c'e', come WSJT-X e JS8Call, e vede gli stessi
+# dispositivi; senza server audio torna ad ALSA. Su Windows e macOS non cambia nulla (dipendenza solo per Linux e BSD).
+cpal = { version = "0.18.2", features = ["realtime", "pulseaudio"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Devices_Communication", "Win32_Storage_FileSystem", "Win32_Security"] }
