@@ -303,3 +303,10 @@ html[data-theme='light'] .digi-txhist { color: #4a5878; text-decoration-color: r
 /* le misure del segnale (S/N, IMD, WPM) nella barra in basso: larghezza fissa, cosi' con «-1» o due cifre i blocchi accanto non si
    spostano */
 .digi-status .digi-st--measures { flex: none; min-width: 9.5rem; justify-content: center; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* La maniglia fra le finestre RX/TX e la colonna di destra (log, DX Cluster): ben visibile sul bordo sinistro della colonna, sopra il
+   contenuto, perche' e' l'unica che ne cambia la larghezza e prima non si trovava */
+.digi-log-grip { width: 12px; z-index: 30; }
+.digi-log-grip::before { left: 3px; width: 5px; height: 52px; margin-top: -26px; border-radius: 3px; background: #8e9bff; opacity: 0.9; box-shadow: 0 0 0 1px rgba(10, 16, 32, 0.9); }
+.digi-log-grip:hover::before, .digi-log-grip:active::before { background: #b9a8ff; opacity: 1; height: 72px; margin-top: -36px; }
+html[data-theme='light'] .digi-log-grip::before { background-color: #5a4bd6; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9); }
