@@ -1562,7 +1562,7 @@ cat.state.reconnecting,Connection lost: retrying,Verbinding verloren: opnieuw pr
 cat.state.error,Error,Fout
 cat.missing,rigctld (the Hamlib program) is missing: without it Aurora cannot connect the radio through Hamlib. Usually the antivirus removed it. On Windows press “Restore Hamlib”; otherwise put it next to Aurora or set its path in the AURORA_RIGCTLD variable.,rigctld (het Hamlib-programma) ontbreekt: zonder dat kan Aurora de zender niet via Hamlib verbinden. Meestal heeft de virusscanner het verwijderd. Druk onder Windows op “Hamlib herstellen”; zet het anders naast Aurora of geef het pad op in de variabele AURORA_RIGCTLD.
 cat.omnirig.absent,not installed,niet geïnstalleerd
-cat.omnirig.missing,"OmniRig is not installed on this PC, so with this choice Aurora cannot control the radio. Choose Hamlib (already included in Aurora, over 300 radios) or install OmniRig from its author’s website:","OmniRig is niet geïnstalleerd op deze pc, dus met deze keuze kan Aurora de zender niet besturen. Kies Hamlib (al in Aurora inbegrepen, meer dan 300 zenders) of installeer OmniRig vanaf de website van de auteur:"
+cat.omnirig.missing,"OmniRig is not installed on this PC, so with this choice Aurora cannot control the radio. Choose Hamlib (already included in Aurora, over 300 radios) or install OmniRig.","OmniRig is niet geïnstalleerd op deze pc, dus met deze keuze kan Aurora de zender niet besturen. Kies Hamlib (al in Aurora inbegrepen, meer dan 300 zenders) of installeer OmniRig."
 cat.restore,Restore Hamlib,Hamlib herstellen
 cat.restore.busy,Downloading Hamlib…,Hamlib downloaden…
 cat.restore.done,"Hamlib restored (official version, checksum verified). You can now connect the radio.","Hamlib hersteld (officiële versie, checksum gecontroleerd). Je kunt nu de zender verbinden."
@@ -1747,7 +1747,7 @@ cluster.add.host,Address (name or IP),Adres (naam of IP)
 cluster.add.port,Port,Poort
 cluster.add.exists,This server is already there.,Deze server staat er al.
 cluster.add.full,At most 8 servers.,Maximaal 8 servers.
-tip.cluster.catalog,"Public servers checked reachable on 24 Oct 2026, with software and place. Port 7300 is the most common; “RBN” are the automatic decodificatori (FT8 and FT4 on 7001). Aurora sends no spots: that needs registration with the sysop and a logging program.","Openbare servers waarvan op 24 okt 2026 is gecontroleerd dat ze bereikbaar zijn, met software en plaats. Poort 7300 is de meest gebruikelijke; “RBN” zijn de automatische decodificatori (FT8 en FT4 op 7001). Aurora verstuurt geen spots: daarvoor is registratie bij de sysop en een logprogramma nodig."
+tip.cluster.catalog,"Public servers checked reachable on 24 Oct 2026, with software and place. Port 7300 is the most common; “RBN” are the automatic spots of the RBN network (FT8 and FT4 on 7001). Aurora sends no spots: that needs registration with the sysop and a logging program.","Openbare servers waarvan op 24 okt 2026 is gecontroleerd dat ze bereikbaar zijn, met software en plaats. Poort 7300 is de meest gebruikelijke; “RBN” zijn de automatische spots van het RBN-netwerk (FT8 en FT4 op 7001). Aurora verstuurt geen spots: daarvoor is registratie bij de sysop en een logprogramma nodig."
 cluster.login,Commands after login (one per line),Commando’s na het inloggen (één per regel)
 tip.cluster.login,"Sent to the cluster right after login, e.g. set/ft8 to get FT8 only, or accept/spots on hf/ft8. Only query and setting commands are allowed (sh/, set/, unset/, accept/, reject/, clear/): never spots or public messages. Up to 10, 80 characters.","Naar de cluster gestuurd direct na het inloggen, bv. set/ft8 om alleen FT8 te krijgen, of accept/spots on hf/ft8. Alleen opvraag- en instelcommando’s zijn toegestaan (sh/, set/, unset/, accept/, reject/, clear/): nooit spots of openbare berichten. Maximaal 10, 80 tekens."
 cluster.max,Spots kept in memory,Spots in het geheugen bewaard
@@ -3972,7 +3972,7 @@ digi.level,Level,Niveau
 digi.freq.rx,Receive frequency (Hz),Ontvangstfrequentie (Hz)
 digi.freq.tx,Transmit frequency (Hz),Zendfrequentie (Hz)
 digi.freq.follow,Transmit on the same frequency,Zenden op dezelfde frequentie
-digi.freq.hint,"PSK: the carrier frequency. RTTY: the centre between the two tones; mark is the upper tone in USB, as in fldigi and  (for example 2210 Hz with mark 2295 and space 2125).","PSK: de draaggolffrequentie. RTTY: het midden tussen de twee tonen; mark is de hoogste toon in USB, zoals in fldigi en  (bijvoorbeeld 2210 Hz met mark 2295 en space 2125)."
+digi.freq.hint,"PSK: the carrier frequency. RTTY: the centre between the two tones; mark is the upper tone in USB, as in fldigi (for example 2210 Hz with mark 2295 and space 2125).","PSK: de draaggolffrequentie. RTTY: het midden tussen de twee tonen; mark is de hoogste toon in USB, zoals in fldigi (bijvoorbeeld 2210 Hz met mark 2295 en space 2125)."
 digi.rtty.shift,Shift (Hz),Shift (Hz)
 digi.rtty.baud,Speed (baud),Snelheid (baud)
 digi.rtty.reverse,Reverse mark/space (Rev),Mark/space omkeren (Rev)
@@ -3981,7 +3981,7 @@ digi.rtty.lsbTip,The radio is in LSB: mark and space are already inverted.,De ra
 digi.rtty.uos,UOS (letters after a space),UOS (letters na een spatie)
 digi.rtty.uosTip,"Unshift on space: after a space the decoder goes back to letters, so a lost LTRS does not turn the text into figures. On by default, as in fldigi.","Unshift on space: na een spatie gaat de decoder terug naar letters, zodat een gemiste LTRS de tekst niet in cijfers verandert. Standaard aan, zoals in fldigi."
 digi.rtty.receiver,Receiver,Ontvanger
-digi.rtty.receiverTip,"Two filters on the tones (as in fldigi) or frequency discriminator: the discriminator works better with narrow shifts, below 40 Hz.","Twee filters op de tonen (zoals in fldigi) of frequentiediscriminator (zoals in ): de discriminator werkt beter bij smalle shifts, onder 40 Hz."
+digi.rtty.receiverTip,"Two filters on the tones (as in fldigi) or frequency discriminator: the discriminator works better with narrow shifts, below 40 Hz.","Twee filters op de tonen (zoals in fldigi) of frequentiediscriminator: de discriminator werkt beter bij smalle shifts, onder 40 Hz."
 digi.rtty.receiverAuto,Automatic (discriminator below 40 Hz),Automatisch (discriminator onder 40 Hz)
 digi.rtty.receiverFilters,Two filters,Twee filters
 digi.rtty.receiverDisc,Discriminator,Discriminator

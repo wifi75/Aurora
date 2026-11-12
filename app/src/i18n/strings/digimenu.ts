@@ -1,4 +1,4 @@
-/** Menu, barra di stato, log e impostazioni del modo della pagina PSK e RTTY (finestra). [it, en, de, fr, es, pt] */
+/** Menu, barra di stato, log e impostazioni del modo della pagina PSK e RTTY. [it, en, de, fr, es, pt] */
 export const digiMenuStrings = {
   'digi.menu.file': ['File', 'File', 'Datei', 'Fichier', 'Archivo', 'Ficheiro'],
   'digi.menu.edit': ['Modifica', 'Edit', 'Bearbeiten', 'Édition', 'Editar', 'Editar'],

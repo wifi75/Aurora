@@ -289,12 +289,12 @@ export const clusterStrings = {
     'No máximo 8 servidores.',
   ],
   'tip.cluster.catalog': [
-    'Server pubblici verificati raggiungibili il 24/10/2026, con programma e luogo. La porta 7300 è la più comune; le «RBN» sono gli decodificatori automatici (FT8 e FT4 sulla 7001). Aurora non invia spot: per farlo serve la registrazione presso il gestore e un programma di log.',
-    'Public servers checked reachable on 24 Oct 2026, with software and place. Port 7300 is the most common; “RBN” are the automatic decodificatori (FT8 and FT4 on 7001). Aurora sends no spots: that needs registration with the sysop and a logging program.',
-    'Am 24.10.2026 als erreichbar geprüfte öffentliche Server, mit Software und Ort. Port 7300 ist am häufigsten; „RBN“ sind die automatischen decodificatori (FT8 und FT4 auf 7001). Aurora sendet keine Spots: dafür braucht es die Registrierung beim Betreiber und ein Log-Programm.',
-    'Serveurs publics vérifiés joignables le 24/10/2026, avec logiciel et lieu. Le port 7300 est le plus courant ; « RBN » sont les decodificatori automatiques (FT8 et FT4 sur 7001). Aurora n’envoie pas de spots : il faut l’inscription auprès du gestionnaire et un logiciel de log.',
-    'Servidores públicos comprobados como accesibles el 24/10/2026, con programa y lugar. El puerto 7300 es el más común; «RBN» son los decodificatori automáticos (FT8 y FT4 en el 7001). Aurora no envía spots: hace falta registrarse con el gestor y un programa de log.',
-    'Servidores públicos verificados como acessíveis em 24/10/2026, com programa e local. A porta 7300 é a mais comum; «RBN» são os decodificatori automáticos (FT8 e FT4 na 7001). A Aurora não envia spots: é preciso registo junto do gestor e um programa de log.',
+    'Server pubblici verificati raggiungibili il 24/10/2026, con programma e luogo. La porta 7300 è la più comune; le «RBN» sono gli spot automatici della rete RBN (FT8 e FT4 sulla 7001). Aurora non invia spot: per farlo serve la registrazione presso il gestore e un programma di log.',
+    'Public servers checked reachable on 24 Oct 2026, with software and place. Port 7300 is the most common; “RBN” are the automatic spots of the RBN network (FT8 and FT4 on 7001). Aurora sends no spots: that needs registration with the sysop and a logging program.',
+    'Am 24.10.2026 als erreichbar geprüfte öffentliche Server, mit Software und Ort. Port 7300 ist am häufigsten; „RBN“ sind die automatischen Spots des RBN-Netzes (FT8 und FT4 auf 7001). Aurora sendet keine Spots: dafür braucht es die Registrierung beim Betreiber und ein Log-Programm.',
+    'Serveurs publics vérifiés joignables le 24/10/2026, avec logiciel et lieu. Le port 7300 est le plus courant ; « RBN » sont les spots automatiques du réseau RBN (FT8 et FT4 sur 7001). Aurora n’envoie pas de spots : il faut l’inscription auprès du gestionnaire et un logiciel de log.',
+    'Servidores públicos comprobados como accesibles el 24/10/2026, con programa y lugar. El puerto 7300 es el más común; «RBN» son los spots automáticos de la red RBN (FT8 y FT4 en el 7001). Aurora no envía spots: hace falta registrarse con el gestor y un programa de log.',
+    'Servidores públicos verificados como acessíveis em 24/10/2026, com programa e local. A porta 7300 é a mais comum; «RBN» são os spots automáticos da rede RBN (FT8 e FT4 na 7001). A Aurora não envia spots: é preciso registo junto do gestor e um programa de log.',
   ],
   'cluster.login': [
     'Comandi dopo l’accesso (uno per riga)',
