@@ -2,6 +2,8 @@
 //! fading CCIR, spostamento di frequenza, errore d'orologio della scheda e file WAV per riascoltare i casi con fldigi o .
 #![allow(dead_code)]
 
+pub mod rtty_scenari;
+
 /// Generatore pseudocasuale (xorshift64*) e rumore gaussiano (Box-Muller): niente dipendenze in piu'.
 pub struct Rng(pub u64);
 

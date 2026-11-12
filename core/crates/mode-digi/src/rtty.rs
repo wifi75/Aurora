@@ -116,6 +116,13 @@ pub fn modulate(text: &[u8], params: RttyParams, amp: f32) -> Vec<f32> {
     synth(&sequence(text), params, amp, amp)
 }
 
+/// Come [`modulate`], con uno stop lungo `stop_bits` bit (1; 1,42; 1,5; 2): per le prove del ricevitore con le stazioni che non
+/// trasmettono 1,5 bit.
+pub fn modulate_stop(text: &[u8], params: RttyParams, amp: f32, stop_bits: f64) -> Vec<f32> {
+    let seq: Vec<(bool, f64)> = sequence(text).into_iter().map(|(m, len)| if m && (len - 1.5).abs() < 1e-9 { (m, stop_bits) } else { (m, len) }).collect();
+    synth(&seq, params, amp, amp)
+}
+
 /// Come [`modulate`], con ampiezze diverse per mark e space: un tono che arriva piu' debole dell'altro (fading selettivo, filtro della
 /// radio inclinato), per le prove del ricevitore.
 pub fn modulate_levels(text: &[u8], params: RttyParams, amp_mark: f32, amp_space: f32) -> Vec<f32> {
