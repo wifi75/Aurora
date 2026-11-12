@@ -1530,6 +1530,28 @@ tip.cat.cat4om.key,"The group password in Cat4OM, only if the group asks for one
 cat.cat4om.radio,Radio,Groepszender
 cat.cat4om.firstRadio,First available radio,Eerste beschikbare radio
 tip.cat.cat4om.radio,"The name of the radio in Cat4OM (for example kenwood/ts-990), not the group name: the group goes in “Group”. Empty = the first available radio of the group; only needed for groups with several radios.","De identifier (radioId) of naam van de zender in Cat4OM, voor groepen met meerdere zenders. Leeg = de eerste verbonden zender van de groep."
+cat.cat4om.search,Search,Zoeken
+cat.cat4om.searching,Searching…,Zoeken…
+tip.cat.cat4om.search,"Asks Cat4OM for the groups and the radios of each one, with their state, using the values entered above. It changes nothing: it does not touch the link in use, does not start groups and does not take control of the radio. “Use” writes group and radio into the fields.","Vraagt Cat4OM om de groepen en de radio’s van elke groep, met hun status, met de waarden die hierboven zijn ingevuld. Er verandert niets: de gebruikte verbinding blijft ongemoeid, er worden geen groepen gestart en de radio wordt niet overgenomen. “Gebruiken” vult groep en radio in de velden in."
+cat.cat4om.found,Cat4OM groups and radios,Cat4OM-groepen en -radio’s
+cat.cat4om.found.none,No group in Cat4OM: create a group with the radio in Cat4OM.,Geen groep in Cat4OM: maak in Cat4OM een groep met de radio.
+cat.cat4om.found.noRadios,No radio in this group,Geen radio in deze groep
+cat.cat4om.group.running,"running, Control port {port}","actief, Control-poort {port}"
+cat.cat4om.group.stopped,stopped: Aurora starts it when connecting,gestopt: Aurora start hem bij het verbinden
+cat.cat4om.group.manual,port entered by hand,poort met de hand ingevuld
+cat.cat4om.audio,network audio,netwerkaudio
+cat.cat4om.claimed,held by {by},in gebruik door {by}
+cat.cat4om.use,Use,Gebruiken
+cat.cat4om.inUse,Chosen,Gekozen
+cat.cat4om.picked,Group “{group}” and radio “{radio}” chosen: they are applied automatically.,Groep “{group}” en radio “{radio}” gekozen: ze worden automatisch toegepast.
+cat.cat4om.st.connected,connected,verbonden
+cat.cat4om.st.disconnected,disconnected,niet verbonden
+cat.cat4om.st.connecting,connecting,verbinden
+cat.cat4om.st.noResponse,not responding,reageert niet
+cat.cat4om.st.stopped,stopped,gestopt
+cat.cat4om.audioHint,"Audio without cables: in Settings › Station › Audio choose “Cat4OM (audio in rete)” as input and output. Cat4OM must have the radio’s audio set up; to transmit, Aurora takes control of the radio.",Audio zonder kabels: kies in Instellingen › Station › Audio “Cat4OM (audio in rete)” als ingang en als uitgang. In Cat4OM moet de audio van de radio ingesteld zijn; om te zenden neemt Aurora de bediening van de radio over.
+cat.cat4om.audioProblem,Network audio:,Netwerkaudio:
+cat.cat4om.st.unknown,unknown state,onbekende status
 cat.backend.omnirig,OmniRig,OmniRig
 cat.omnirig.help,"With OmniRig the radio, port and speed are set in the OmniRig program. Here you only choose split and mode.","Met OmniRig stel je zender, poort en snelheid in in het OmniRig-programma. Hier kies je alleen split en mode."
 cat.state,Status,Status
@@ -3950,9 +3972,22 @@ digi.level,Level,Niveau
 digi.freq.rx,Receive frequency (Hz),Ontvangstfrequentie (Hz)
 digi.freq.tx,Transmit frequency (Hz),Zendfrequentie (Hz)
 digi.freq.follow,Transmit on the same frequency,Zenden op dezelfde frequentie
-digi.freq.hint,"PSK: the carrier frequency. RTTY: the frequency of the mark tone, the lower one (usually 2125 Hz).","PSK: de draaggolffrequentie. RTTY: de frequentie van de marktoon, de laagste (meestal 2125 Hz)."
+digi.freq.hint,"PSK: the carrier frequency. RTTY: the centre between the two tones; mark is the upper tone in USB, as in fldigi and  (for example 2210 Hz with mark 2295 and space 2125).","PSK: de draaggolffrequentie. RTTY: de frequentie van de marktoon, de laagste (meestal 2125 Hz)."
 digi.rtty.shift,Shift (Hz),Shift (Hz)
 digi.rtty.baud,Speed (baud),Snelheid (baud)
+digi.rtty.reverse,Reverse mark/space (Rev),Mark/space omkeren (Rev)
+digi.rtty.reverseTip,Swaps mark and space: for a station transmitting the other way round. With the radio in LSB Aurora already inverts them by itself.,Verwisselt mark en space: voor een station dat andersom zendt. Met de radio in LSB keert Aurora ze al zelf om.
+digi.rtty.lsbTip,The radio is in LSB: mark and space are already inverted.,De radio staat in LSB: mark en space zijn al omgekeerd.
+digi.rtty.uos,UOS (letters after a space),UOS (letters na een spatie)
+digi.rtty.uosTip,"Unshift on space: after a space the decoder goes back to letters, so a lost LTRS does not turn the text into figures. On by default, as in fldigi.","Unshift on space: na een spatie gaat de decoder terug naar letters, zodat een gemiste LTRS de tekst niet in cijfers verandert. Standaard aan, zoals in fldigi."
+digi.rtty.receiver,Receiver,Ontvanger
+digi.rtty.receiverTip,"Two filters on the tones (as in fldigi) or frequency discriminator: the discriminator works better with narrow shifts, below 40 Hz.","Twee filters op de tonen (zoals in fldigi) of frequentiediscriminator (zoals in ): de discriminator werkt beter bij smalle shifts, onder 40 Hz."
+digi.rtty.receiverAuto,Automatic (discriminator below 40 Hz),Automatisch (discriminator onder 40 Hz)
+digi.rtty.receiverFilters,Two filters,Twee filters
+digi.rtty.receiverDisc,Discriminator,Discriminator
+digi.rtty.squelchSnr,Squelch threshold: S/N {db} dB,Squelch-drempel: S/R {db} dB
+digi.rtty.snrNow,Current S/N: {db} dB,Huidige S/R: {db} dB
+digi.rtty.squelchSnrHint,"In RTTY the squelch looks at the ratio between the two tones and the noise next to them (0 dB = noise only), not at the level: it works the same with loud or quiet audio.","In RTTY kijkt de squelch naar de verhouding tussen de twee tonen en de ruis ernaast (0 dB = alleen ruis), niet naar het niveau: hij werkt hetzelfde met luide of zachte audio."
 digi.tx.title,Transmit,Zenden
 digi.tx.placeholder,"Type the text to send, or pick a macro.","Typ de tekst om te verzenden, of kies een macro."
 digi.tx.send,Transmit,Zenden
@@ -4514,6 +4549,16 @@ core.cat4om.lost,Connection with Cat4OM lost ({raw}): trying again.,Verbinding m
 core.cat4om.txBusy,Cat4OM: another radio or program is transmitting ({cmd} refused).,Cat4OM: een andere radio of een ander programma zendt ({cmd} geweigerd).
 core.cat4om.timeout,Cat4OM does not answer {cmd} (no reply within {s} s).,Cat4OM antwoordt niet op {cmd} (geen antwoord binnen {s} s).
 core.cat4om.refused,Cat4OM refused {cmd}: {raw} ({code}).,Cat4OM heeft {cmd} geweigerd: {raw} ({code}).
+core.cat4om.audio.noFeature,This version of Cat4OM has no network audio: update Cat4OM or use a sound card.,Deze versie van Cat4OM heeft geen netwerkaudio: werk Cat4OM bij of gebruik een geluidskaart.
+core.cat4om.audio.notMaster,"Cat4OM: to send network audio Aurora must control the radio, which another program holds right now.","Cat4OM: om netwerkaudio te sturen moet Aurora de radio bedienen, maar een ander programma heeft hem nu."
+core.cat4om.audio.txInUse,Cat4OM: another program is already sending transmit audio to this radio.,Cat4OM: een ander programma stuurt al zendaudio naar deze radio.
+core.cat4om.audio.unavailable,Cat4OM: network audio is not set up for this radio (choose the radio’s audio devices in Cat4OM).,Cat4OM: netwerkaudio is voor deze radio niet ingesteld (kies in Cat4OM de audioapparaten van de radio).
+core.cat4om.audio.badGrant,Cat4OM opened the network audio in a format Aurora does not know.,Cat4OM heeft de netwerkaudio geopend in een formaat dat Aurora niet kent.
+core.cat4om.audio.rate,Cat4OM does not accept audio at {rate} Hz for this radio.,Cat4OM accepteert voor deze radio geen audio op {rate} Hz.
+core.cat4om.audio.device,Cat4OM cannot open the radio’s audio device: check that it is connected ({code}).,Cat4OM kan het audioapparaat van de radio niet openen: controleer of het aangesloten is ({code}).
+core.cat4om.audio.stopped,Cat4OM closed the network audio: {raw}.,Cat4OM heeft de netwerkaudio gesloten: {raw}.
+core.cat4om.audio.needsCatIn,Cat4OM input: first choose Cat4OM in Settings › Station › Radio.,Cat4OM-ingang: kies eerst Cat4OM in Instellingen › Station › Radio.
+core.cat4om.audio.needsCatOut,Cat4OM output: first choose Cat4OM in Settings › Station › Radio.,Cat4OM-uitgang: kies eerst Cat4OM in Instellingen › Station › Radio.
 core.ft991.lost,Connection with FT-991(A) Link lost: trying again.,Verbinding met FT-991(A) Link verbroken: opnieuw proberen.
 lotw.tip,Uses LoTW: last upload {date},Gebruikt LoTW: laatste upload {date}
 lotw.grp,Who uses LoTW,Wie gebruikt LoTW
