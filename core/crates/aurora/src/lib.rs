@@ -1132,6 +1132,26 @@ fn apply_decode_settings(d: &remote_api::engine_settings::DecodeOptions) {
     });
 }
 
+/// Tutta la banda dei modi testuali (CW): il paese DXCC dei nominativi (bandiera e convalida) da `cty.dat`, e gli spot locali nel pannello
+/// del DX Cluster di Aurora con la frequenza vera (radio + tono audio, in USB). Solo in locale: niente va in rete. Senza frequenza della radio
+/// lo spot non si fa (non si saprebbe dove sta la stazione).
+fn wire_band_decoder(digi: &Arc<mode_digi::DigiService>, cluster: &Arc<dx_cluster::ClusterService>, dial_hz: &Arc<std::sync::atomic::AtomicU64>, db: Option<Arc<DxccDb>>) {
+    if let Some(db) = db {
+        digi.set_call_lookup(Arc::new(move |call: &str| db.lookup(call).map(|l| db.entity(l.entity).name.clone())));
+    }
+    let (cluster, dial) = (Arc::clone(cluster), Arc::clone(dial_hz));
+    digi.set_spot_sink(Arc::new(move |s: mode_digi::band::BandSpot| {
+        let radio = dial.load(std::sync::atomic::Ordering::Relaxed);
+        if radio == 0 {
+            return;
+        }
+        let khz = (radio as f64 + f64::from(s.audio_hz)) / 1000.0;
+        let speed = s.wpm.map(|w| format!(" {w:.0} WPM")).unwrap_or_default();
+        let cq = if s.cq { " CQ" } else { "" };
+        cluster.add_own_spot(&s.call, (khz * 10.0).round() / 10.0, &format!("{}{speed} {:.0} dB{cq}", s.mode, s.snr_db), "Aurora");
+    }));
+}
+
 /// «Cancella» premuta qui e frequenza Tx spostata a trasmissione in corso: come in WSJT-X il Clear va anche ai programmi collegati via UDP
 /// (`band_activity_cleared` → `decodes_cleared`; finestra 2 = tutte e due, Aurora le svuota insieme) e il VFO di trasmissione segue il nuovo XIT
 /// (`setXIT` a ogni cambio della frequenza Tx). Il CAT si comanda fuori dal ciclo del motore; piu' cambi ravvicinati si riassumono nell'ultimo.
@@ -2176,6 +2196,7 @@ pub async fn run(
     // senza CAT la frequenza la sceglie l'operatore con le bande (`with_manual_dial`) e resta al riavvio
     let manual_file = config.data_dir.join(MANUAL_DIAL_FILE);
     let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(std::fs::read_to_string(&manual_file).ok().and_then(|t| t.trim().parse().ok()).unwrap_or(0)));
+    wire_band_decoder(&digi, &cluster, &dial_hz, enrichment.as_ref().map(|(db, _)| Arc::clone(db)));
     // QMAP: ricezione panoramica Q65 da un flusso I/Q (TCI o file); spento finche' non si sceglie la sorgente. Nominativo e locatore
     // (ipotesi AP e Doppler dell'eco) li legge dalle impostazioni della stazione a ogni uso.
     let qmap_service = qmap::QmapService::open(Some(&config.data_dir.join("qmap.json")));

@@ -221,6 +221,10 @@ pub struct DigiSettings {
     pub mode_macros: std::collections::BTreeMap<String, Vec<DigiMacro>>,
     /// Per modo: le macro del modo si uniscono a quelle di base (`true`, opzione «Merge») oppure le sostituiscono del tutto (`false`). Un modo senza voce unisce.
     pub merge_macros: std::collections::BTreeMap<String, bool>,
+    /// CW: si decodificano tutti i segnali della banda audio (pannello «Segnali», thread a parte con limite di CPU).
+    pub band_cw: bool,
+    /// Tutta la banda: i nominativi verificati vanno come spot locali nel pannello del DX Cluster di Aurora (mai in rete).
+    pub band_spots: bool,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -297,6 +301,8 @@ impl Default for DigiSettings {
             macros: default_macros(),
             mode_macros: default_mode_macros(),
             merge_macros: std::collections::BTreeMap::new(),
+            band_cw: true,
+            band_spots: true,
         }
     }
 }
@@ -423,6 +429,8 @@ struct Inner {
     radio_mode: Mutex<Option<RadioModeSource>>,
     /// L'ultima lettura: la radio e' in LSB.
     radio_lsb: AtomicBool,
+    /// Il thread di tutta la banda (CW).
+    band: crate::band::BandLink,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -500,6 +508,7 @@ impl DigiService {
             emit: Mutex::new(None),
             radio_mode: Mutex::new(None),
             radio_lsb: AtomicBool::new(false),
+            band: crate::band::BandLink::spawn(&settings),
         });
         let worker = Arc::clone(&inner);
         if let Err(e) = std::thread::Builder::new().name("aurora-digi".into()).spawn(move || rx_loop(&worker, rx, settings)) {
@@ -509,7 +518,23 @@ impl DigiService {
     }
 
     pub fn set_emitter(&self, emitter: Emitter) {
+        self.inner.band.set_emitter(Arc::clone(&emitter));
         *lock(&self.inner.emit) = Some(emitter);
+    }
+
+    /// Chi riceve gli spot locali di tutta la banda (il pannello del DX Cluster di Aurora).
+    pub fn set_spot_sink(&self, sink: crate::band::SpotSink) {
+        self.inner.band.set_spot_sink(sink);
+    }
+
+    /// Il paese DXCC di un nominativo (bandiera e convalida dei nominativi di tutta la banda).
+    pub fn set_call_lookup(&self, lookup: crate::band::CallLookup) {
+        self.inner.band.set_call_lookup(lookup);
+    }
+
+    /// I segnali di tutta la banda di adesso, con lo storico di 60 s.
+    pub fn band_signals(&self) -> Vec<aurora_core::DigiSignal> {
+        self.inner.band.signals()
     }
 
     pub fn set_tx_port(&self, port: Arc<dyn DigiTxPort>) {
@@ -554,6 +579,7 @@ impl DigiService {
         let json = serde_json::to_vec_pretty(&s).map_err(|e| DigiError::Io(e.to_string()))?;
         std::fs::write(&self.inner.settings_path, json).map_err(|e| DigiError::Io(e.to_string()))?;
         let _ = self.inner.queue.send(Msg::Config(s.clone()));
+        self.inner.band.configure(&s);
         *lock(&self.inner.settings) = s;
         self.inner.rx_status_event();
         Ok(())
@@ -582,6 +608,7 @@ impl DigiService {
         self.inner.listening.store(false, Ordering::Relaxed);
         lock(&self.inner.rx).listening = false;
         let _ = self.inner.queue.send(Msg::Reset);
+        self.inner.band.reset();
         self.inner.rx_status_event();
     }
 
@@ -792,6 +819,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 audio.clear();
                 r.process(&samples, &mut audio);
                 peak_db = peak_db.max(level_db(&audio));
+                inner.band.feed(&audio);
                 let text = demod.process(&audio);
                 if !text.is_empty() {
                     let s: String = text.iter().map(|&b| b as char).collect();

@@ -357,7 +357,7 @@ pub struct WsprSpot {
 /// Un avvenimento dell'SSTV. `kind`: `rx_start` (modo, larghezza, altezza), `rx_rows` (righe nuove da `first_row`, `rows` righe, `rgb`
 /// in base64, 3 byte per pixel), `rx_done` (immagine salvata `image_id`), `rx_lost`, `rx_fskid` (nominativo `call` dall'FSK ID, messo
 /// all'immagine `image_id`), `rx_status` (livello, sincronismo, ascolto),
-/// `tx` (stato e avanzamento della trasmissione).
+/// `tx` (stato e avanzamento della trasmissione), `band` (i segnali di tutta la banda in `signals`).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct SstvEvent {
     pub kind: String,
@@ -395,7 +395,7 @@ pub struct SstvEvent {
 }
 
 /// Un avvenimento dei modi testuali. `kind`: `rx_text` (caratteri nuovi in `text`), `rx_status` (ascolto, livello, modo, frequenza),
-/// `tx` (stato e avanzamento della trasmissione).
+/// `tx` (stato e avanzamento della trasmissione), `band` (i segnali di tutta la banda in `signals`).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct DigiEvent {
     pub kind: String,
@@ -418,6 +418,45 @@ pub struct DigiEvent {
     pub squelch_open: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    /// `band`: i segnali di tutta la banda audio (CW, PSK) che si stanno decodificando, al massimo due volte al secondo.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signals: Option<Vec<DigiSignal>>,
+}
+
+/// Un segnale di tutta la banda audio (evento `band` dei modi testuali): frequenza, misure, ultimo testo e nominativi sentiti.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct DigiSignal {
+    pub id: u32,
+    pub freq_hz: f32,
+    /// CW: la velocita' capita.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wpm: Option<f32>,
+    pub snr_db: f32,
+    /// La coda del testo ricevuto (nell'evento gli ultimi caratteri; tutto lo storico di 60 s dalla rotta `GET /api/v1/digi/band`).
+    pub text: String,
+    /// Le posizioni (in caratteri di `text`) dei caratteri incerti, da mostrare in grigio.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unsure: Vec<u32>,
+    /// I nominativi sentiti, dal piu' probabile.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub calls: Vec<DigiSignalCall>,
+    /// La stazione chiama CQ (o TEST, QRZ).
+    pub cq: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub report: Option<String>,
+}
+
+/// Un nominativo sentito in un segnale di tutta la banda.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct DigiSignalCall {
+    pub call: String,
+    /// `cq` (chiama), `de` (trasmette) o `other` (nominato da altri).
+    pub role: String,
+    /// Sentito piu' volte con caratteri sicuri.
+    pub verified: bool,
+    /// Il paese DXCC (da `cty.dat`), se si sa.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

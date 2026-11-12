@@ -166,6 +166,13 @@ pub(crate) async fn digi_textfile(_: Authed, Peer(peer): Peer, headers: HeaderMa
     text.map(|t| Json(json!({ "text": t }))).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))
 }
 
+/// I segnali di tutta la banda (CW) con lo storico di 60 s di ciascuno: frequenza, velocita', S/N, testo con i caratteri incerti, nominativi.
+#[utoipa::path(get, path = "/api/v1/digi/band", responses((status = 200, description = "`{signals}`"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_band(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    Ok(Json(json!({ "signals": svc.band_signals() })))
+}
+
 fn name_owned(name: &str) -> String {
     name.trim().to_string()
 }

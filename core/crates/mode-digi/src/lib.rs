@@ -10,10 +10,12 @@
 //! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore);
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
+//! - [`band`]: il thread di tutta la banda del servizio (limite di CPU, eventi `band`, spot locali);
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
 //! - [`skim`]: decodifica di tutti i segnali CW della banda audio, con storico, nominativi e spot locali;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
+pub mod band;
 pub mod blanker;
 pub mod cw;
 pub mod cw_bayes;

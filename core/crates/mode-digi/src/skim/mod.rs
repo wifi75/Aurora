@@ -1,13 +1,14 @@
-//! Decodifica di tutti i segnali CW della banda audio, ognuno con il suo ricevitore completo e il suo storico.
+//! Decodifica di tutti i segnali della banda audio (CW e PSK), ognuno con il suo ricevitore completo e il suo storico.
 //!
-//! Uno spettro (FFT di 2048 punti a 12 kHz, 5,9 Hz per riga, ogni 85 ms) cerca i toni CW: righe strette che stanno almeno 10 dB sopra il
-//! fondo (la mediana della banda) per tre spettri di fila. Ogni tono nuovo, se non c'e' gia' un canale entro 25 Hz, apre un canale: un
-//! [`CwDemodulator`] intero (filtro, AGC, AFC, decodificatore probabilistico con un fascio più piccolo) sintonizzato su di lui. Un canale
-//! che non sente niente per `IDLE_S` secondi si chiude; due canali finiti sulla stessa stazione (l'AFC li ha avvicinati) diventano uno.
+//! CW ([`CwBandDecoder`]): uno spettro (FFT di 2048 punti a 12 kHz, 5,9 Hz per riga, ogni 85 ms) cerca i toni: righe strette che stanno
+//! almeno 10 dB sopra il fondo (la mediana della banda) per tre spettri di fila. Ogni tono nuovo, se non c'e' gia' un canale entro 25 Hz,
+//! apre un canale: un [`CwDemodulator`] intero (filtro, AGC, AFC, decodificatore probabilistico con un fascio più piccolo) sintonizzato su
+//! di lui. Un canale che non sente niente per `IDLE_S` secondi si chiude; due canali finiti sulla stessa stazione (l'AFC li ha
+//! avvicinati) diventano uno. PSK: [`psk::PskBandDecoder`].
 //!
-//! Per ogni canale restano i caratteri degli ultimi 60 secondi (il clic sulla cascata può mostrare tutto il passaggio) e i nominativi
-//! sentiti, con il ruolo (CQ, DE) e la verifica per ricorrenza ([`calls`]). Gli «spot locali» sono i nominativi che passano la convalida
-//! scelta: uno per nominativo ogni 10 minuti, di nuovo se cambia frequenza di oltre 1 kHz o se lo si sente chiamare CQ.
+//! Per ogni canale restano i caratteri degli ultimi 60 secondi con la loro probabilità (il doppio clic mostra tutto il passaggio) e i
+//! nominativi sentiti, con il ruolo (CQ, DE) e la verifica per ricorrenza ([`calls`]). Gli «spot locali» sono i nominativi che passano la
+//! convalida scelta: uno per nominativo ogni 10 minuti, di nuovo se cambia frequenza di oltre 1 kHz o se lo si sente chiamare CQ.
 
 pub mod calls;
 
@@ -32,17 +33,125 @@ const IDLE_S: f64 = 45.0;
 const HISTORY_S: f64 = 60.0;
 /// Ipotesi del decodificatore probabilistico per canale (il canale scelto dall'operatore ne ha 320).
 const CHANNEL_BEAM: usize = 96;
+/// Di quanto l'AFC di un canale puo' allontanarsi dal tono su cui si e' aperto (Hz).
+const CHANNEL_AFC_HZ: f32 = 20.0;
 /// Un nominativo si ripete come spot dopo tanto (s).
 const SPOT_REPEAT_S: f64 = 600.0;
+
+/// Il testo di un canale: i caratteri degli ultimi 60 s con la loro probabilità e i nominativi sentiti.
+#[derive(Default)]
+pub(crate) struct Transcript {
+    text: VecDeque<(f64, u8, u8)>,
+    pub(crate) calls: CallTracker,
+    pub(crate) last_text_s: f64,
+}
+
+impl Transcript {
+    pub(crate) fn new(now_s: f64) -> Self {
+        Transcript { last_text_s: now_s, ..Transcript::default() }
+    }
+
+    /// Altri caratteri al momento `now_s`, con la loro probabilità (0-255; vuoto = certi).
+    pub(crate) fn push(&mut self, out: &[u8], conf: &[u8], now_s: f64) {
+        if out.is_empty() {
+            return;
+        }
+        self.calls.push(out, conf, now_s);
+        for (i, &c) in out.iter().enumerate() {
+            self.text.push_back((now_s, c, conf.get(i).copied().unwrap_or(255)));
+        }
+        if out.iter().any(|c| !c.is_ascii_whitespace()) {
+            self.last_text_s = now_s;
+        }
+    }
+
+    /// Dimentica il testo più vecchio di 60 s.
+    pub(crate) fn trim(&mut self, now_s: f64) {
+        while self.text.front().is_some_and(|(at, _, _)| now_s - at > HISTORY_S) {
+            self.text.pop_front();
+        }
+    }
+
+    /// Quello che si mostra del canale.
+    pub(crate) fn info(&self, id: u32, freq_hz: f32, wpm: f32, snr_db: f32, level: Validation, dxcc: &dyn Fn(&str) -> Option<bool>) -> ChannelInfo {
+        let calls = self.calls.calls(level, dxcc);
+        ChannelInfo {
+            id,
+            freq_hz,
+            wpm,
+            snr_db,
+            // Latin-1, un carattere per byte: le probabilità restano allineate ai caratteri
+            text: self.text.iter().map(|(_, c, _)| char::from(*c)).collect(),
+            conf: self.text.iter().map(|(_, _, p)| *p).collect(),
+            cq: calls.iter().any(|c| c.role == Role::Cq),
+            calls,
+            last_report: self.calls.last_report.clone(),
+        }
+    }
+}
+
+/// Gli spot di tutta la banda: i nominativi verificati, ripetuti dopo `SPOT_REPEAT_S`, con un cambio di frequenza oltre 1 kHz o quando la
+/// stazione si scopre a chiamare CQ.
+#[derive(Default)]
+pub(crate) struct Spotter {
+    spotted: HashMap<String, (f64, f32, bool)>,
+    spots: Vec<LocalSpot>,
+}
+
+impl Spotter {
+    pub(crate) fn clear(&mut self) {
+        self.spotted.clear();
+        self.spots.clear();
+    }
+
+    /// Guarda i nominativi di un canale (frequenza, velocità, S/N del canale) al momento `now`.
+    pub(crate) fn check(&mut self, tr: &mut Transcript, sig: (f32, f32, f32), now: f64, level: Validation, dxcc: &dyn Fn(&str) -> Option<bool>) {
+        let (freq, wpm, snr_db) = sig;
+        tr.calls.expire(now, SPOT_REPEAT_S);
+        for call in tr.calls.calls(Validation::Strict.max(level), dxcc) {
+            let cq = call.role == Role::Cq;
+            let again = match self.spotted.get(&call.call) {
+                None => true,
+                Some(&(at, f, was_cq)) => now - at > SPOT_REPEAT_S || (f - freq).abs() > 1_000.0 || (cq && !was_cq),
+            };
+            if again {
+                self.spotted.insert(call.call.clone(), (now, freq, cq));
+                self.spots.push(LocalSpot { call: call.call.clone(), freq_hz: freq, wpm, snr_db, cq, at_s: now });
+            }
+        }
+    }
+
+    pub(crate) fn take(&mut self) -> Vec<LocalSpot> {
+        std::mem::take(&mut self.spots)
+    }
+}
+
+/// Dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
+pub type DxccCheck = Box<dyn Fn(&str) -> Option<bool> + Send>;
+
+/// Un decodificatore di tutta la banda (CW o PSK), come lo usa il servizio.
+pub trait BandDecoder: Send {
+    /// Altro audio a 12 kHz.
+    fn process(&mut self, audio: &[f32]);
+    /// I canali aperti, dal tono più basso.
+    fn channels(&self) -> Vec<ChannelInfo>;
+    /// Gli spot locali nuovi dall'ultima volta.
+    fn take_spots(&mut self) -> Vec<LocalSpot>;
+    /// Quanti canali al massimo (se sono di più si chiudono i più deboli).
+    fn set_max_channels(&mut self, n: usize);
+    fn channel_count(&self) -> usize;
+    /// Chi dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
+    fn set_dxcc(&mut self, f: DxccCheck);
+    /// Cancella tutto e ricomincia.
+    fn clear(&mut self);
+}
 
 /// Un canale: un segnale CW della banda.
 pub struct Channel {
     pub id: u32,
     rx: CwDemodulator,
-    text: VecDeque<(f64, u8)>,
-    calls: CallTracker,
+    tr: Transcript,
     born_s: f64,
-    last_text_s: f64,
 }
 
 /// Quello che si mostra di un canale.
@@ -50,10 +159,13 @@ pub struct Channel {
 pub struct ChannelInfo {
     pub id: u32,
     pub freq_hz: f32,
+    /// CW: la velocità capita; PSK: 0.
     pub wpm: f32,
     pub snr_db: f32,
     /// Il testo degli ultimi 60 secondi.
     pub text: String,
+    /// La probabilità (0-255) di ogni carattere di `text`.
+    pub conf: Vec<u8>,
     /// I nominativi che passano la convalida, dal più probabile.
     pub calls: Vec<HeardCall>,
     /// Il segnale chiama CQ (o TEST).
@@ -86,9 +198,8 @@ pub struct CwBandDecoder {
     next_id: u32,
     t: f64,
     validation: Validation,
-    dxcc: Option<Box<dyn Fn(&str) -> Option<bool> + Send>>,
-    spotted: HashMap<String, (f64, f32, bool)>,
-    spots: Vec<LocalSpot>,
+    dxcc: Option<DxccCheck>,
+    spotter: Spotter,
 }
 
 impl CwBandDecoder {
@@ -110,8 +221,7 @@ impl CwBandDecoder {
             t: 0.0,
             validation: Validation::Normal,
             dxcc: None,
-            spotted: HashMap::new(),
-            spots: Vec::new(),
+            spotter: Spotter::default(),
         }
     }
 
@@ -121,7 +231,7 @@ impl CwBandDecoder {
     }
 
     /// Chi dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
-    pub fn set_dxcc(&mut self, f: Box<dyn Fn(&str) -> Option<bool> + Send>) {
+    pub fn set_dxcc(&mut self, f: DxccCheck) {
         self.dxcc = Some(f);
     }
 
@@ -129,31 +239,30 @@ impl CwBandDecoder {
     pub fn clear(&mut self) {
         self.channels.clear();
         self.stable.clear();
-        self.spotted.clear();
-        self.spots.clear();
+        self.spotter.clear();
+    }
+
+    /// Quanti canali al massimo: se sono di più si chiudono i più deboli.
+    pub fn set_max_channels(&mut self, n: usize) {
+        self.max_channels = n.max(1);
+        if self.channels.len() > self.max_channels {
+            self.channels.sort_by(|a, b| b.rx.snr_db().total_cmp(&a.rx.snr_db()));
+            self.channels.truncate(self.max_channels);
+        }
+    }
+
+    pub fn channel_count(&self) -> usize {
+        self.channels.len()
     }
 
     /// Altro audio a 12 kHz.
     pub fn process(&mut self, audio: &[f32]) {
         for ch in self.channels.iter_mut() {
-            let mut out = Vec::new();
             for block in audio.chunks(960) {
-                out.extend(ch.rx.process(block));
-                let conf = ch.rx.confidences().to_vec();
-                if !out.is_empty() {
-                    ch.calls.push(&out, &conf, self.t);
-                    for &c in &out {
-                        ch.text.push_back((self.t, c));
-                    }
-                    if out.iter().any(|c| *c != b' ') {
-                        ch.last_text_s = self.t;
-                    }
-                    out.clear();
-                }
+                let out = ch.rx.process(block);
+                ch.tr.push(&out, ch.rx.confidences(), self.t);
             }
-            while ch.text.front().is_some_and(|(at, _)| self.t - at > HISTORY_S) {
-                ch.text.pop_front();
-            }
+            ch.tr.trim(self.t);
         }
         self.input.extend_from_slice(audio);
         while self.input.len() >= FFT_N {
@@ -212,15 +321,17 @@ impl CwBandDecoder {
         }
         let mut rx = CwDemodulator::new(hz, 20.0);
         rx.set_afc(true);
+        // la stazione accanto puo' stare a 60-100 Hz: nelle pause l'AFC non deve saltarle addosso
+        rx.set_afc_limit(CHANNEL_AFC_HZ);
         rx.set_beam(CHANNEL_BEAM);
-        self.channels.push(Channel { id: self.next_id, rx, text: VecDeque::new(), calls: CallTracker::new(), born_s: self.t, last_text_s: self.t });
+        self.channels.push(Channel { id: self.next_id, rx, tr: Transcript::new(self.t), born_s: self.t });
         self.next_id += 1;
     }
 
     /// Chiude i canali muti e quelli doppi, e raccoglie gli spot.
     fn housekeeping(&mut self) {
         let now = self.t;
-        self.channels.retain(|ch| now - ch.last_text_s < IDLE_S);
+        self.channels.retain(|ch| now - ch.tr.last_text_s < IDLE_S);
         // due canali sulla stessa stazione: resta il più vecchio
         let mut i = 0;
         while i < self.channels.len() {
@@ -235,58 +346,55 @@ impl CwBandDecoder {
         let dxcc_db = self.dxcc.as_deref();
         let dxcc = |c: &str| dxcc_db.and_then(|f| f(c));
         for ch in self.channels.iter_mut() {
-            ch.calls.expire(now, SPOT_REPEAT_S);
-            for call in ch.calls.calls(Validation::Strict.max(self.validation), &dxcc) {
-                let freq = ch.rx.frequency();
-                let cq = call.role == Role::Cq;
-                let again = match self.spotted.get(&call.call) {
-                    None => true,
-                    Some(&(at, f, was_cq)) => now - at > SPOT_REPEAT_S || (f - freq).abs() > 1_000.0 || (cq && !was_cq),
-                };
-                if again {
-                    self.spotted.insert(call.call.clone(), (now, freq, cq));
-                    self.spots.push(LocalSpot { call: call.call.clone(), freq_hz: freq, wpm: ch.rx.wpm(), snr_db: ch.rx.snr_db(), cq, at_s: now });
-                }
-            }
+            let sig = (ch.rx.frequency(), ch.rx.wpm(), ch.rx.snr_db());
+            self.spotter.check(&mut ch.tr, sig, now, self.validation, &dxcc);
         }
     }
 
     /// I canali aperti, dal tono più basso.
     pub fn channels(&self) -> Vec<ChannelInfo> {
         let dxcc = |c: &str| self.dxcc.as_ref().and_then(|f| f(c));
-        let mut v: Vec<ChannelInfo> = self
-            .channels
-            .iter()
-            .map(|ch| {
-                let calls = ch.calls.calls(self.validation, &dxcc);
-                ChannelInfo {
-                    id: ch.id,
-                    freq_hz: ch.rx.frequency(),
-                    wpm: ch.rx.wpm(),
-                    snr_db: ch.rx.snr_db(),
-                    text: String::from_utf8_lossy(&ch.text.iter().map(|(_, c)| *c).collect::<Vec<u8>>()).into_owned(),
-                    cq: calls.iter().any(|c| c.role == Role::Cq),
-                    calls,
-                    last_report: ch.calls.last_report.clone(),
-                }
-            })
-            .collect();
+        let mut v: Vec<ChannelInfo> = self.channels.iter().map(|ch| ch.tr.info(ch.id, ch.rx.frequency(), ch.rx.wpm(), ch.rx.snr_db(), self.validation, &dxcc)).collect();
         v.sort_by(|a, b| a.freq_hz.total_cmp(&b.freq_hz));
         v
     }
 
     /// Gli spot locali nuovi dall'ultima volta.
     pub fn take_spots(&mut self) -> Vec<LocalSpot> {
-        std::mem::take(&mut self.spots)
+        self.spotter.take()
+    }
+}
+
+impl BandDecoder for CwBandDecoder {
+    fn process(&mut self, audio: &[f32]) {
+        CwBandDecoder::process(self, audio);
+    }
+    fn channels(&self) -> Vec<ChannelInfo> {
+        CwBandDecoder::channels(self)
+    }
+    fn take_spots(&mut self) -> Vec<LocalSpot> {
+        CwBandDecoder::take_spots(self)
+    }
+    fn set_max_channels(&mut self, n: usize) {
+        CwBandDecoder::set_max_channels(self, n);
+    }
+    fn channel_count(&self) -> usize {
+        CwBandDecoder::channel_count(self)
+    }
+    fn set_dxcc(&mut self, f: DxccCheck) {
+        CwBandDecoder::set_dxcc(self, f);
+    }
+    fn clear(&mut self) {
+        CwBandDecoder::clear(self);
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::cw::modulate;
 
-    fn noise(n: usize, sigma: f32, seed: u64) -> Vec<f32> {
+    pub(crate) fn noise(n: usize, sigma: f32, seed: u64) -> Vec<f32> {
         let mut x = seed | 1;
         let mut next = move || {
             x ^= x >> 12;
@@ -322,6 +430,7 @@ mod tests {
             assert!((ch.freq_hz - hz).abs() < 5.0, "{ch:?}");
             assert!(ch.calls.iter().any(|c| c.call == *call && c.role == Role::Cq && c.verified()), "{ch:?}");
             assert!(ch.cq);
+            assert_eq!(ch.conf.len(), ch.text.chars().count());
         }
         let spots = sk.take_spots();
         // il primo CQ si perde mentre il canale si apre: lo spot arriva con il primo nominativo verificato e torna quando la stazione
@@ -330,6 +439,9 @@ mod tests {
             let mine: Vec<&LocalSpot> = spots.iter().filter(|s| s.call == call).collect();
             assert!((1..=2).contains(&mine.len()) && mine.iter().any(|s| s.cq), "{spots:?}");
         }
+        // meno canali: restano i più forti
+        sk.set_max_channels(2);
+        assert_eq!(sk.channel_count(), 2);
     }
 
     #[test]

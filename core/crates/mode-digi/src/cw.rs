@@ -292,6 +292,8 @@ pub struct CwDemodulator {
     tone_hz: f32,
     bandwidth: f32,
     afc: bool,
+    /// Di quanto l'AFC puo' allontanarsi dal tono scelto (Hz; `AFC_LIMIT_HZ` di base, meno nei canali di tutta la banda).
+    afc_limit: f32,
     squelch_snr_db: Option<f32>,
     som: bool,
     /// Campionamento dopo la decimazione (500 Hz, 1000 con la banda di 500 Hz) e fattore di decimazione.
@@ -365,6 +367,8 @@ pub struct CwDemodulator {
     afc_hist: VecDeque<(f32, f32)>,
     afc_hop: usize,
     afc_power: Vec<f32>,
+    /// Finestra e fattori di rotazione della DFT dello spettro (si calcolano una volta: `(n, kmax)` per sapere se valgono ancora).
+    afc_table: (usize, i64, Vec<f64>, Vec<(f64, f64)>),
 }
 
 impl CwDemodulator {
@@ -375,6 +379,7 @@ impl CwDemodulator {
             tone_hz,
             bandwidth: BANDWIDTH_DEFAULT,
             afc: false,
+            afc_limit: AFC_LIMIT_HZ,
             squelch_snr_db: None,
             som: false,
             fs: 500.0,
@@ -426,6 +431,7 @@ impl CwDemodulator {
             afc_hist: VecDeque::new(),
             afc_hop: 0,
             afc_power: Vec::new(),
+            afc_table: (0, 0, Vec::new(), Vec::new()),
         };
         d.set_bandwidth(BANDWIDTH_DEFAULT);
         d.set_wpm(wpm_hint);
@@ -503,6 +509,12 @@ impl CwDemodulator {
             self.tune(self.base_hz);
         }
         self.afc_power.clear();
+    }
+
+    /// Di quanto l'AFC puo' allontanarsi dal tono scelto (Hz, da 5 a `AFC_LIMIT_HZ`): nei canali di tutta la banda poco, perche' nelle pause
+    /// della stazione il ricevitore non salti sulla vicina.
+    pub fn set_afc_limit(&mut self, hz: f32) {
+        self.afc_limit = hz.clamp(5.0, AFC_LIMIT_HZ);
     }
 
     /// Soglia dello squelch sul rapporto segnale/rumore (dB); `None` lo spegne.
@@ -854,11 +866,18 @@ impl CwDemodulator {
         if self.afc_power.len() != bins {
             self.afc_power = vec![0.0; bins];
         }
-        for (b, kk) in (-kmax..=kmax).enumerate() {
+        // finestra e rotazioni si calcolano una volta sola (con tanti canali di tutta la banda erano la meta' del tempo)
+        if self.afc_table.0 != n || self.afc_table.1 != kmax {
+            let window = (0..n).map(|i| 0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos()).collect();
+            let twiddle = (-kmax..=kmax).flat_map(|kk| (0..n).map(move |i| (-2.0 * PI * kk as f64 * i as f64 / n as f64).sin_cos())).collect();
+            self.afc_table = (n, kmax, window, twiddle);
+        }
+        let (_, _, window, twiddle) = &self.afc_table;
+        for (b, _) in (-kmax..=kmax).enumerate() {
             let (mut re, mut im) = (0.0_f64, 0.0_f64);
             for (i, &(x, y)) in self.afc_hist.iter().enumerate() {
-                let w = 0.5 - 0.5 * (2.0 * PI * i as f64 / n as f64).cos();
-                let (s, c) = (-2.0 * PI * kk as f64 * i as f64 / n as f64).sin_cos();
+                let w = window[i];
+                let (s, c) = twiddle[b * n + i];
                 re += w * (f64::from(x) * c - f64::from(y) * s);
                 im += w * (f64::from(x) * s + f64::from(y) * c);
             }
@@ -883,7 +902,7 @@ impl CwDemodulator {
         let tone = ((kmax - pass).max(0)..=(kmax + pass).min(2 * kmax)).map(window).fold(f32::MIN, f32::max);
         self.snr_db = (10.0 * (tone.max(1e-6 * median) / median).log10() - 10.0 * (3000.0 / res).log10() as f32).max(-40.0);
         // senza AFC il picco si cerca solo dentro la banda del filtro (per lo scarto fine del decodificatore probabilistico)
-        let reach = if self.afc { kmax } else { pass.min(kmax) };
+        let reach = if self.afc { kmax.min((f64::from(self.afc_limit) / res).ceil() as i64) } else { pass.min(kmax) };
         let best = ((kmax - reach).max(0) as usize..=((kmax + reach) as usize).min(bins - 1))
             .max_by(|&a, &b| {
                 let w = |i: usize| {
@@ -925,7 +944,7 @@ impl CwDemodulator {
             return;
         }
         let moved = (0.5 * off) as f32;
-        let f = (self.tone_hz + moved).clamp(self.base_hz - AFC_LIMIT_HZ, self.base_hz + AFC_LIMIT_HZ);
+        let f = (self.tone_hz + moved).clamp(self.base_hz - self.afc_limit, self.base_hz + self.afc_limit);
         // il tono si sposta: lo scarto fine resta riferito a lui
         self.fine_hz -= f - self.tone_hz;
         let shift = ((f - self.tone_hz) as f64 / res).round() as i64;

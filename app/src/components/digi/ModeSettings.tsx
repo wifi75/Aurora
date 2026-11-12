@@ -104,6 +104,14 @@ export function ModeSettingsFields({
         <input type="checkbox" checked={s.cw_som} onChange={(e) => onSave({ cw_som: e.target.checked })} />
         {t('digi.cw.som')}
       </label>
+      <label className="sstv-check" title={t('digi.band.miTip')}>
+        <input type="checkbox" checked={s.band_cw !== false} onChange={(e) => onSave({ band_cw: e.target.checked })} />
+        {t('digi.band.mi')}
+      </label>
+      <label className="sstv-check" title={t('digi.band.spotsTip')}>
+        <input type="checkbox" checked={s.band_spots !== false} onChange={(e) => onSave({ band_spots: e.target.checked })} />
+        {t('digi.band.spots')}
+      </label>
       <label>
         <span>{t('digi.cw.squelchSnr', { db: Math.round(cwSnr) })}</span>
         <input type="range" min={-30} max={20} step={1} value={cwSnr} onChange={(e) => setCwSnr(Number(e.target.value))} onPointerUp={() => onSave({ cw_squelch_snr_db: cwSnr })} onKeyUp={() => onSave({ cw_squelch_snr_db: cwSnr })} />
