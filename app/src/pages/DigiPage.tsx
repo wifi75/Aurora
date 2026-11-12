@@ -13,7 +13,7 @@ import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
-import { ModeSettings } from '../components/digi/ModeSettings';
+import { ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from '../components/digi/ModeSettings';
 import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
@@ -721,6 +721,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
         'sep' as const,
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
+        // RTTY: spostamento e velocita' Baudot scelti dal menu (e nelle Impostazioni del modo)
+        ...(s.mode === 'rtty'
+          ? [
+              'sep' as const,
+              { label: `${t('digi.rtty.shift')}: ${s.rtty_shift_hz}`, items: withCurrent(RTTY_SHIFTS, s.rtty_shift_hz).map((v) => ({ label: `${v} Hz`, checked: v === s.rtty_shift_hz, onSelect: () => save({ rtty_shift_hz: v }) })) },
+              { label: `${t('digi.rtty.baud')}: ${s.rtty_baud}`, items: withCurrent(RTTY_BAUDS, s.rtty_baud).map((v) => ({ label: `${v} baud`, checked: v === s.rtty_baud, onSelect: () => save({ rtty_baud: v }) })) },
+            ]
+          : []),
+        'sep' as const,
         ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
         { label: t('digi.mi.modeSettings'), onSelect: () => openSettingsWindow('digi') },

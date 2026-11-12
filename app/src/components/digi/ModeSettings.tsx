@@ -2,9 +2,9 @@ import { Fragment, useState, type ReactNode } from 'react';
 import type { DigiSettings } from '../../api/client';
 import { useT } from '../../i18n';
 
-/** Gli spostamenti e le velocita' RTTY piu' usati. */
-const RTTY_SHIFTS = [23, 85, 160, 170, 182, 200, 240, 350, 425, 450, 850];
-const RTTY_BAUDS = [45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300];
+/** Gli spostamenti e le velocita' RTTY piu' usati (gli stessi elenchi di fldigi, piu' 450 Hz). */
+export const RTTY_SHIFTS = [23, 85, 160, 170, 182, 200, 240, 350, 425, 450, 850];
+export const RTTY_BAUDS = [45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300];
 
 export interface Personal {
   myname: string;
@@ -21,7 +21,7 @@ interface Props {
   onClose(): void;
 }
 
-const withCurrent = (list: number[], value: number) => (list.includes(value) ? list : [...list, value].sort((a, b) => a - b));
+export const withCurrent = (list: number[], value: number) => (list.includes(value) ? list : [...list, value].sort((a, b) => a - b));
 
 type Section = (title: string, children: ReactNode) => ReactNode;
 

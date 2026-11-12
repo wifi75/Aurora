@@ -250,8 +250,9 @@ impl DigiSettings {
         if !in_band(self.rx_freq_hz) || !in_band(self.tx_freq_hz) {
             return Err(DigiError::BadValue("frequenza fuori dai 200-3500 Hz dell'audio".into()));
         }
-        if !self.rtty_shift_hz.is_finite() || !(50.0..=1000.0).contains(&self.rtty_shift_hz) {
-            return Err(DigiError::BadValue("spostamento RTTY fuori da 50-1000 Hz".into()));
+        // da 23 Hz (lo spostamento piu' stretto dell'elenco di fldigi) a 1000 Hz
+        if !self.rtty_shift_hz.is_finite() || !(20.0..=1000.0).contains(&self.rtty_shift_hz) {
+            return Err(DigiError::BadValue("spostamento RTTY fuori da 20-1000 Hz".into()));
         }
         if !self.squelch_db.is_finite() || !(-90.0..=0.0).contains(&self.squelch_db) {
             return Err(DigiError::BadValue("soglia dello squelch fuori da -90..0 dB".into()));
