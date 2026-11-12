@@ -460,6 +460,9 @@ pub struct DigiSignalCall {
     /// Il paese DXCC (da `cty.dat`), se si sa.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
+    /// Non lo si sente da oltre 75 s: resta nell'elenco, ma la sua etichetta sulla cascata si toglie.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub stale: bool,
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

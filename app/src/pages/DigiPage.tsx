@@ -13,7 +13,7 @@ import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../compon
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { BandSignals } from '../components/digi/BandSignals';
-import { getBandMode, getBandSignals, mainCall, onBandSignals } from '../lib/digiBand';
+import { getBandMode, getBandSignals, onBandSignals, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
@@ -73,9 +73,11 @@ interface Views {
   utc?: boolean;
   /** Il pannello «Segnali» di tutta la banda. */
   signals: boolean;
+  /** I nominativi di tutta la banda scritti sulla cascata. */
+  wfCalls: boolean;
 }
 
-const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true };
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true, wfCalls: true };
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -208,14 +210,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const isPsk = s.mode === 'psk31' || s.mode === 'psk63';
   const bandOn = (s.mode === 'cw' && s.band_cw !== false) || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
-  const bandLabels = useMemo(
-    () =>
-      band.flatMap((sig) => {
-        const c = mainCall(sig);
-        return c ? [{ hz: sig.freq_hz, text: c.call, cq: sig.cq, sure: c.verified }] : [];
-      }),
-    [band],
-  );
+  const bandLabels = useMemo(() => waterfallLabels(band), [band]);
 
   const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);
 
@@ -913,6 +908,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.rotor'), checked: rotorShown, onSelect: () => setRotorShown(!rotorShown) },
         { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
         { label: t('digi.band.view'), checked: views.signals, onSelect: () => setView({ signals: !views.signals }) },
+        { label: t('digi.band.wfCalls'), checked: views.wfCalls, onSelect: () => setView({ wfCalls: !views.wfCalls }) },
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
         'sep' as const,
         { label: t('digi.mi.echoRx'), checked: views.echoRx === true, onSelect: () => setView({ echoRx: !(views.echoRx === true) }) },
@@ -1081,7 +1077,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={bandLabels} />
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} />
         ) : null}
         </div>
         <RotorCard call={qso.call} grid={qso.wwloc} place="digi" />

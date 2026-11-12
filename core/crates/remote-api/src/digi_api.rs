@@ -244,6 +244,13 @@ pub(crate) async fn digi_band(State(state): State<AppState>, _: Authed) -> Resul
     Ok(Json(json!({ "signals": svc.band_signals() })))
 }
 
+/// Svuota tutta la banda: i canali, il loro storico e i nominativi sentiti ripartono da zero (il pulsante «Pulisci» del pannello Segnali).
+#[utoipa::path(post, path = "/api/v1/digi/band/clear", responses((status = 200, description = "Svuotata: `{ok}`"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_band_clear(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    service(&state)?.clear_band();
+    Ok(Json(json!({ "ok": true })))
+}
+
 fn name_owned(name: &str) -> String {
     name.trim().to_string()
 }

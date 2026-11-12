@@ -22,6 +22,12 @@ export function getBandMode(): string {
   return mode;
 }
 
+/** «Pulisci»: l'elenco si svuota subito, senza aspettare l'elenco vuoto del core. */
+export function clearBandSignals(): void {
+  signals = [];
+  for (const l of listeners) l();
+}
+
 export function onBandSignals(listener: () => void): () => void {
   listeners.add(listener);
   return () => {
@@ -45,4 +51,23 @@ export function splitUnsure(text: string, unsure: number[]): { text: string; uns
     else out.push({ text: ch, unsure: u });
   });
   return out;
+}
+
+/** Un nominativo scritto sulla cascata sopra la traccia del suo segnale. */
+export interface WaterfallLabel {
+  hz: number;
+  text: string;
+  cq: boolean;
+  sure: boolean;
+}
+
+/**
+ * Le etichette dei nominativi sulla cascata: un segnale ha la sua finche' il nominativo si sente. Quelli non piu' sentiti da oltre 75 s
+ * (`stale`, lo dice il core) restano nell'elenco dei segnali ma non sulla cascata.
+ */
+export function waterfallLabels(list: DigiSignal[]): WaterfallLabel[] {
+  return list.flatMap((sig) => {
+    const c = mainCall({ ...sig, calls: sig.calls.filter((x) => x.stale !== true) });
+    return c ? [{ hz: sig.freq_hz, text: c.call, cq: c.role === 'cq', sure: c.verified }] : [];
+  });
 }

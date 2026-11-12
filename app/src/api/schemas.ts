@@ -161,7 +161,8 @@ export const DigiSignalSchema = z.object({
   /** Le posizioni dei caratteri incerti di `text` (in grigio). */
   unsure: z.array(z.number()).optional().default([]),
   calls: z
-    .array(z.object({ call: z.string(), role: z.string(), verified: z.boolean(), country: z.string().optional() }))
+    // `stale`: non sentito da oltre 75 s (resta nell'elenco, la sua etichetta sulla cascata si toglie)
+    .array(z.object({ call: z.string(), role: z.string(), verified: z.boolean(), country: z.string().optional(), stale: z.boolean().optional() }))
     .optional()
     .default([]),
   cq: z.boolean(),

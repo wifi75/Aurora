@@ -51,11 +51,13 @@ pub(crate) struct Transcript {
     text: VecDeque<(f64, u8, u8)>,
     pub(crate) calls: CallTracker,
     pub(crate) last_text_s: f64,
+    /// L'ultimo momento visto (lo aggiorna `trim`, a ogni spettro): serve a dire da quanto non si sente un nominativo.
+    now_s: f64,
 }
 
 impl Transcript {
     pub(crate) fn new(now_s: f64) -> Self {
-        Transcript { last_text_s: now_s, ..Transcript::default() }
+        Transcript { last_text_s: now_s, now_s, ..Transcript::default() }
     }
 
     /// Altri caratteri al momento `now_s`, con la loro probabilità (0-255; vuoto = certi).
@@ -74,6 +76,7 @@ impl Transcript {
 
     /// Dimentica il testo più vecchio di 60 s.
     pub(crate) fn trim(&mut self, now_s: f64) {
+        self.now_s = now_s;
         while self.text.front().is_some_and(|(at, _, _)| now_s - at > HISTORY_S) {
             self.text.pop_front();
         }
@@ -93,6 +96,7 @@ impl Transcript {
             cq: calls.iter().any(|c| c.role == Role::Cq),
             calls,
             last_report: self.calls.last_report.clone(),
+            now_s: self.now_s,
         }
     }
 }
@@ -202,6 +206,8 @@ pub struct ChannelInfo {
     /// Il segnale chiama CQ (o TEST).
     pub cq: bool,
     pub last_report: Option<String>,
+    /// Il momento del flusso (s) a cui vale il canale: con `last_s` di un nominativo dice da quanto non lo si sente.
+    pub now_s: f64,
 }
 
 /// Uno spot locale: un nominativo verificato su un canale.

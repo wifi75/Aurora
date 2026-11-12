@@ -1,13 +1,23 @@
 /* Tutta la banda dei modi testuali: pannello «Segnali», storico di un segnale, nominativi sulla cascata. Tema scuro di base, chiaro sotto. */
 .digi-band {
   display: flex; flex-direction: column; min-height: 0; margin-top: 10px; border: 1px solid var(--border); border-radius: 14px;
-  background: linear-gradient(180deg, #121e36, #0f192d); box-shadow: 0 8px 24px #0006; color: var(--text); overflow: hidden;
+  background: linear-gradient(180deg, #121e36, #0f192d); box-shadow: 0 8px 24px #0006; color: var(--text); overflow: hidden; position: relative;
 }
+/* la maniglia sul bordo alto: lineetta tenue che si accende al passaggio, come quelle della cascata e delle finestre RX/TX */
+.digi-band-grip { position: absolute; left: 0; right: 0; top: 0; height: 7px; z-index: 2; cursor: row-resize; touch-action: none; }
+.digi-band-grip::before {
+  content: ''; position: absolute; left: 50%; top: 2px; width: 30px; height: 3px; margin-left: -15px; border-radius: 2px; background: #6b7fc0; opacity: 0.45;
+  transition: opacity 0.15s, background 0.15s;
+}
+.digi-band-grip:hover::before, .digi-band-grip:active::before { background: #8e7bff; opacity: 1; }
 .digi-band-head { display: flex; align-items: baseline; gap: 10px; padding: 5px 12px; border-bottom: 1px solid var(--border); }
 .digi-band-head small { color: var(--text-muted); font-size: 11px; }
 .digi-band-legend { margin-left: auto; }
 .digi-band-validation { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 11px; }
-.digi-band-validation select { padding: 1px 4px; border: 1px solid var(--border); border-radius: 6px; background: #0a1324; color: var(--text); font: inherit; }
+.digi-band-pick, .digi-band-clear {
+  padding: 1px 7px; border: 1px solid var(--border); border-radius: 6px; background: #0a1324; color: var(--text); font: inherit; font-size: 11px; line-height: 1.5; cursor: pointer; white-space: nowrap;
+}
+.digi-band-pick:hover, .digi-band-clear:hover, .digi-band-pick:focus-visible, .digi-band-clear:focus-visible { border-color: #8e7bff; }
 .digi-band-head .digi-band-cqcount { padding: 0 6px; border: 1px solid #2cf5a4; border-radius: 6px; color: #2cf5a4; font-weight: 700; }
 .digi-band-empty { margin: 8px 12px; color: var(--text-muted); font-size: 12px; }
 .digi-band-scroll { max-height: 9.5rem; overflow: auto; }
@@ -62,4 +72,5 @@ html[data-theme='light'] .digi-band-role { border-color: #46556f; color: #26324a
 html[data-theme='light'] .digi-band-role--cq { border-color: #0f9d63; color: #0b7a4c; }
 html[data-theme='light'] .digi-band-head .digi-band-cqcount { border-color: #0f9d63; color: #0b7a4c; }
 html[data-theme='light'] .digi-band-full { background: #ffffff; color: #0b1322; }
-html[data-theme='light'] .digi-band-validation select { background: #ffffff; color: #000; }
+html[data-theme='light'] .digi-band-pick, html[data-theme='light'] .digi-band-clear { background: #ffffff; color: #000; }
+html[data-theme='light'] .digi-band-grip::before { background: #5d6b94; }

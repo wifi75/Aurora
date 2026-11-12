@@ -135,5 +135,23 @@ export const digiBandStrings = {
     'Spots locales solo de quien llama CQ',
     'Spots locais só de quem chama CQ',
   ],
+  'digi.band.clear': ['Pulisci', 'Clear', 'Leeren', 'Effacer', 'Limpiar', 'Limpar'],
+  'digi.band.clearTip': [
+    'Svuota l’elenco e lo storico dei segnali e toglie i nominativi dalla cascata: i segnali che ci sono ancora ricompaiono da soli.',
+    'Empties the list and the history of the signals and removes the callsigns from the waterfall: signals still on the air come back by themselves.',
+    'Leert die Liste und den Verlauf der Signale und entfernt die Rufzeichen aus dem Wasserfall: Signale, die noch da sind, erscheinen von selbst wieder.',
+    'Vide la liste et l’historique des signaux et retire les indicatifs de la cascade : les signaux encore présents reviennent tout seuls.',
+    'Vacía la lista y el historial de las señales y quita los indicativos de la cascada: las señales que siguen ahí vuelven solas.',
+    'Esvazia a lista e o histórico dos sinais e tira os indicativos da cascata: os sinais que ainda lá estão voltam sozinhos.',
+  ],
+  'digi.band.wfCalls': ['Nominativi sulla cascata', 'Callsigns on the waterfall', 'Rufzeichen im Wasserfall', 'Indicatifs sur la cascade', 'Indicativos en la cascada', 'Indicativos na cascata'],
+  'digi.band.resize': [
+    'Trascina per cambiare l’altezza del pannello',
+    'Drag to change the height of the panel',
+    'Ziehen, um die Höhe des Bereichs zu ändern',
+    'Glisse pour changer la hauteur du panneau',
+    'Arrastra para cambiar la altura del panel',
+    'Arrasta para mudar a altura do painel',
+  ],
   'digi.band.view': ['Pannello Segnali', 'Signals panel', 'Signal-Bereich', 'Panneau Signaux', 'Panel Señales', 'Painel Sinais'],
 } as const;
