@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { deleteSstvImage, deleteSstvImages, getSstvImageBlob, getSstvImageCleanBlob, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
 import { useT } from '../../i18n';
 
@@ -6,6 +6,71 @@ function when(ms: number): string {
   const d = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}Z`;
+}
+
+
+/** Una striscia orizzontale di miniature con le freccette: scorre di una «pagina», rotella e tastiera; la freccia si spegne agli estremi. */
+function ScrollStrip({ children, label }: { children: ReactNode; label: string }) {
+  const t = useT();
+  const ref = useRef<HTMLUListElement>(null);
+  const [edge, setEdge] = useState({ prev: false, next: false });
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const prev = el.scrollLeft > 1;
+    const next = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    setEdge((e) => (e.prev === prev && e.next === next ? e : { prev, next }));
+  }, []);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    update();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update);
+    ro?.observe(el);
+    // la rotella scorre in orizzontale (listener non passivo per fermare lo scorrimento della pagina)
+    const wheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener('wheel', wheel, { passive: false });
+    return () => {
+      ro?.disconnect();
+      el.removeEventListener('wheel', wheel);
+    };
+  }, [update]);
+  useEffect(update, [children, update]);
+  const page = (dir: -1 | 1) => {
+    const el = ref.current;
+    if (!el) return;
+    const left = dir * Math.max(40, el.clientWidth * 0.85);
+    if (typeof el.scrollBy === 'function') el.scrollBy({ left, behavior: 'smooth' });
+    else el.scrollLeft += left;
+  };
+  return (
+    <div className="sstv-strip-wrap">
+      <button type="button" className="glass sstv-strip-arrow" disabled={!edge.prev} onClick={() => page(-1)} title={t('sstv.hist.scrollPrev')} aria-label={t('sstv.hist.scrollPrev')}>
+        ◀
+      </button>
+      <ul
+        ref={ref}
+        className="sstv-strip"
+        aria-label={label}
+        onScroll={update}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            page(e.key === 'ArrowLeft' ? -1 : 1);
+          }
+        }}
+      >
+        {children}
+      </ul>
+      <button type="button" className="glass sstv-strip-arrow" disabled={!edge.next} onClick={() => page(1)} title={t('sstv.hist.scrollNext')} aria-label={t('sstv.hist.scrollNext')}>
+        ▶
+      </button>
+    </div>
+  );
 }
 
 /** Le due cronologie sotto l'area principale: ricevute (ultime 200) e trasmesse (ultime 20), in schede. */
@@ -34,11 +99,18 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
   };
   const count = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).length;
   const modeName = (id: string) => modes.find((m) => m.id === id)?.name ?? id;
+  // la foto aperta in grande scorre dentro la sua cronologia (stessa direzione)
+  const siblings = open ? images.filter((i) => (open.direction === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')) : [];
+  const at = open ? siblings.findIndex((i) => i.id === open.id) : -1;
+  const step = (n: -1 | 1) => {
+    const next = siblings[at + n];
+    if (next) setOpen(next);
+  };
 
   const strip = (d: 'rx' | 'tx') => {
     const items = images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx'));
     return (
-      <ul className="sstv-strip">
+      <ScrollStrip label={d === 'rx' ? t('sstv.hist.received') : t('sstv.hist.sent')}>
         {items.map((img) => (
           <li key={img.id}>
             <button
@@ -64,7 +136,7 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
         {Array.from({ length: Math.max(0, 6 - items.length) }, (_, i) => (
           <li key={`vuoto${i}`} className="sstv-slot" aria-hidden="true" />
         ))}
-      </ul>
+      </ScrollStrip>
     );
   };
 
@@ -100,7 +172,10 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
       ))}
       {open ? (
         <Lightbox
+          key={open.id}
           entry={open}
+          onPrev={at > 0 ? () => step(-1) : null}
+          onNext={at >= 0 && at < siblings.length - 1 ? () => step(1) : null}
           modeName={modeName(open.mode)}
           when={when(open.time_ms)}
           onClose={() => setOpen(null)}
@@ -118,7 +193,7 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
   );
 }
 
-function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entry: SstvImageEntry; modeName: string; when: string; onClose: () => void; onDeleted: () => void; onReuse: () => void }) {
+function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse, onPrev, onNext }: { onPrev: (() => void) | null; onNext: (() => void) | null; entry: SstvImageEntry; modeName: string; when: string; onClose: () => void; onDeleted: () => void; onReuse: () => void }) {
   const t = useT();
   const [smooth, setSmooth] = useState(false);
   // la pulizia dal rumore la decide l'operatore: «Originale» o «Pulita»; l'originale resta sempre com'e'
@@ -138,10 +213,15 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entr
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      // le frecce dei cursori di pulizia restano ai cursori
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft' && onPrev) onPrev();
+      else if (e.key === 'ArrowRight' && onNext) onNext();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [onClose]);
+  }, [onClose, onPrev, onNext]);
 
   const save = async () => {
     const blob = clean ? await getSstvImageCleanBlob(entry.id, applied.order, applied.level) : await getSstvImageBlob(entry.id);
@@ -161,7 +241,15 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse }: { entr
   return (
     <div className="sstv-lightbox" role="dialog" aria-modal="true" aria-label={modeName} onClick={onClose}>
       <figure onClick={(e) => e.stopPropagation()}>
-        <img src={shown} alt="" className={`${smooth ? '' : 'sstv-crisp'}${busy && clean ? ' sstv-busy' : ''}`} width={entry.width} height={entry.height} onLoad={() => setBusy(false)} onError={() => setBusy(false)} />
+        <div className="sstv-lightbox-stage">
+          <button type="button" className="glass sstv-lightbox-nav" disabled={!onPrev} onClick={() => onPrev?.()} title={t('sstv.img.prev')} aria-label={t('sstv.img.prev')}>
+            ◀
+          </button>
+          <img src={shown} alt="" className={`${smooth ? '' : 'sstv-crisp'}${busy && clean ? ' sstv-busy' : ''}`} width={entry.width} height={entry.height} onLoad={() => setBusy(false)} onError={() => setBusy(false)} />
+          <button type="button" className="glass sstv-lightbox-nav" disabled={!onNext} onClick={() => onNext?.()} title={t('sstv.img.next')} aria-label={t('sstv.img.next')}>
+            ▶
+          </button>
+        </div>
         <div className="sstv-clean">
           <span className="sstv-views" role="group" aria-label={t('sstv.clean.title')}>
             <button type="button" className={clean ? '' : 'on'} onClick={() => setClean(false)}>
