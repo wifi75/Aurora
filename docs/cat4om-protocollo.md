@@ -511,3 +511,26 @@ Audio via Hamlib: non previsto (l'audio emulato esiste solo nel profilo TCI).
 - La tabella dell'header binario nel PDF è impaginata male; l'ordine degli offset sopra è ricostruito dagli
   esempi di codice C#/Python/JS del manuale (coerenti tra loro).
 - Le sezioni 3.2 e 3.3 non esistono nel documento (numerazione salta da 3.1 a 3.4).
+
+---
+
+## 11. Come lo usa Aurora (codice)
+
+- Collegamento, scoperta del gruppo, comandi: `core/crates/rig-control/src/cat4om.rs`.
+- «Cerca» della pagina Radio (`POST /api/v1/cat/cat4om/search`, `cat4om::search`): `getServiceStatus` sulla gestione (senza avviare
+  gruppi) e, per ogni gruppo in funzione, `hello` con `noRegister: true` sul Control (osservatore: non conta come client, non prende
+  l'ownership) per leggere `welcome.radios[]` (`connectionStatus`, `bridgeControlledBy`, `audioCaptureAvailable`,
+  `audioTransmitAvailable`) e `features` (`audioStreaming`). Se il `welcome` dell'osservatore non avesse le radio restano quelle della
+  gestione. Attese di 3 s.
+- Audio in rete (`core/crates/rig-control/src/cat4om_audio.rs` per la parte pura, `cat4om.rs` per la rete): dispositivo «Cat4OM (audio in
+  rete)» nella scheda Audio, presente con il CAT su Cat4OM (`aurora/src/audio_control.rs`).
+  - RX: aperto dal thread del collegamento quando l'ingresso e' scelto, `{direction:"rx", sampleRateHz:12000, channels:1}`; con
+    `AUDIO_RATE_UNAVAILABLE` si riprova a 48000; la frequenza concessa si ricorda per le riaperture. I blocchi vanno alla stessa strada
+    dell'audio TCI (cascata, livello, decodificatore che porta a 12 kHz). Blocchi illeggibili, d'altri stream, vecchi o ripetuti si
+    scartano; fino a 50 blocchi persi diventano silenzio. `audioStreamStopped` → nuova apertura dopo 2 s; un rifiuto → nuovo tentativo
+    dopo 10 s.
+  - TX: `getOwnership` se serve, poi `{direction:"tx", sampleRateHz:48000, channels:1}` **prima** di `setPtt true`; se non si apre il PTT
+    non parte e l'errore lo dice (`NOT_MASTER`, `RADIO_CLAIMED`, `AUDIO_TRANSMIT_IN_USE`, `AUDIO_RATE_UNAVAILABLE`, `AUDIO_NOT_AVAILABLE`,
+    `AUDIO_DEVICE_*`). Blocchi da 20 ms (`rate/50` campioni) con `sequence` da 1 per stream, `timestampUs` = µs dall'apertura, mandati
+    a ritmo con 40 ms di anticipo. Lo stream resta aperto tra una trasmissione e l'altra; dopo 50 s senza audio (o dopo
+    `audioStreamStopped`) si riapre al PTT successivo.

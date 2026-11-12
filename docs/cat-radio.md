@@ -242,6 +242,11 @@ e il CP2105 doppio la elenca tra le Yaesu possibili. In tutti gli altri casi bas
 ## Da fare ancora
 
 - **TCI** (SDR Expert Electronics e compatibili): fatto in `rig-control/src/tci.rs` (protocollo e conferme con l'eco letti da WSJT-X 3, ricevitore RX1/RX2, audio nei due sensi); manca la prova dal vivo (`docs/tasks.md`, voce 16).
+- **Cat4OM** (radio divisa con Log4OM, protocollo in `docs/cat4om-protocollo.md`): fatto in `rig-control/src/cat4om.rs` (collegamento,
+  scoperta del gruppo, frequenza, modo, PTT, split, strumenti), «Cerca» nella pagina Radio (gruppi dalla gestione e radio dal Control
+  come osservatore `noRegister`, scelta con «Usa», `POST /cat/cat4om/search`) e audio in rete in `rig-control/src/cat4om_audio.rs`
+  (dispositivo «Cat4OM (audio in rete)» in ingresso e in uscita: ricezione a 12 kHz mono o 48 kHz se rifiutata, trasmissione a 48 kHz in
+  blocchi da 20 ms su uno stream aperto prima del PTT). Manca la prova dal vivo con Log4OM/Cat4OM.
 - Rilevamento **attivo** (interrogare la radio con le sonde di Hamlib): non fatto, volutamente. Se si fara' sara' un'opzione spenta.
 - Misuratori (S-meter, potenza, ROS, ALC) e limite di ROS; keep-alive e backoff speciali per le Icom con CI-V; sorgente audio TX (Rear/Data, Front/Mic).
 - Rendere disponibili i **sorgenti** di Hamlib (e di libusb) con la stessa versione dei file inclusi, oltre al rimando a https://github.com/Hamlib/Hamlib gia' in `VERSIONE.txt` e nei testi di licenza.
