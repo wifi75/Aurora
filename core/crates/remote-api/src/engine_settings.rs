@@ -101,6 +101,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     "LoTWTqsl",
     "LoTWLocation",
     UDP_DESTINATIONS,
+    // «Rimanda i QSO persi» per il server UDP secondario (voce di Aurora): con il log chiuso il QSO resta in coda
+    "UDP2Resend",
     // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
     "SWRLimit",
     // ritardo tra PTT e audio (voce di Aurora, «Tx delay» di WSJT-X: `TxDelay`, 0-0,5 s, di fabbrica 0,2)
@@ -356,7 +358,7 @@ pub fn support(key: &str) -> Support {
         "MyCall" | "MyGrid" => Support::Live(Apply::Restart),
         // l'elenco dei destinatari UDP (riquadro «Integrazioni»): esportatore e emettitore lo rileggono a ogni modifica
         UDP_DESTINATIONS => Support::Live(Apply::Now),
-        "UDP2Server" | "UDP2ServerPort" | "EnableUDP2adifBroadcast" => Support::Live(Apply::Now),
+        "UDP2Server" | "UDP2ServerPort" | "EnableUDP2adifBroadcast" | "UDP2Resend" => Support::Live(Apply::Now),
         "UDPServer" | "UDPServerPort" | "EnableUDP1adifSending" | "AcceptUDPRequests" | "AcceptUDPReplyMessages" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         "WriteDecodedALLTXT" | "WriteDecodedDebugALLTXT" => Support::Needs(Feature::AllTxt, "all_txt_pending", Apply::Now),
         // scheda Sequenza: i contatori, «ferma se risponde a un altro» e «CQ rigoroso» arrivano alla sequenza a caldo (`engine_native::SequenceSettings`)
@@ -508,6 +510,9 @@ pub struct Reports {
     pub accept_reply: u8,
     /// Secondo server UDP (Log4OM2): destinatario del record ADIF; `Some` solo se l'invio e' acceso e l'indirizzo e' valido.
     pub secondary: Option<SocketAddr>,
+    /// «Rimanda i QSO persi» per il secondo server UDP (`UDP2Resend`, voce di Aurora): con il log chiuso il QSO resta in coda e parte
+    /// quando il log si riapre (vedi `qso_export::waiting`).
+    pub secondary_resend: bool,
     /// Scrivi le decodifiche in `ALL.TXT`.
     pub all_txt: bool,
     /// Le evidenziazioni di «nuovo» (scheda Notifiche): decidono anche chi e' «gia' lavorato» e se la sequenza risponde a chiunque.
@@ -737,6 +742,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         // Generali
         ("TxWatchdogTimer", "6"),
         ("TxQSYAllowed", "true"),
+        // «Rimanda i QSO persi» per il server secondario: acceso di base (un log chiuso non perde piu' i QSO)
+        ("UDP2Resend", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.5"),
         // ritardo tra PTT e audio: come WSJT-X (`TxDelay`, 0,2 s)
@@ -939,7 +946,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
@@ -1007,6 +1014,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         accept_requests: truthy(values.get("AcceptUDPRequests")),
         accept_reply: get("AcceptUDPReplyMessages").parse().ok().filter(|n| (1..=3).contains(n)).unwrap_or(1),
         secondary: truthy(values.get("EnableUDP2adifBroadcast")).then(|| parse_server(get("UDP2Server"), get("UDP2ServerPort"))).flatten(),
+        secondary_resend: truthy(values.get("UDP2Resend")),
         all_txt: truthy(values.get("WriteDecodedALLTXT")),
         highlights: engine_jtdx::worked::HighlightFlags::from_lookup(|k| values.get(k).map(|v| v == "true")),
         seq_answer_cq: counter(values, "SeqAnswerCQCount", "SeqAnswerCQCounterValue", 2),

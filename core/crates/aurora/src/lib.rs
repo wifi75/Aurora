@@ -476,9 +476,18 @@ fn live_targets(base: &[Target], reports: &remote_api::engine_settings::Reports)
     out
 }
 
-/// Gli indirizzi dei destinatari accesi con «Rimanda i QSO persi» e con l'ADIF su UDP o l'XML di N1MM.
+/// Gli indirizzi dei destinatari accesi con «Rimanda i QSO persi» e con l'ADIF su UDP o l'XML di N1MM, e il server UDP secondario se ha
+/// la sua casella accesa.
 fn resend_targets(reports: &remote_api::engine_settings::Reports) -> Vec<SocketAddr> {
-    reports.destinations.iter().filter(|d| d.enabled && d.resend && (d.adif || d.n1mm)).filter_map(|d| d.addr()).collect()
+    let mut out: Vec<SocketAddr> = reports.destinations.iter().filter(|d| d.enabled && d.resend && (d.adif || d.n1mm)).filter_map(|d| d.addr()).collect();
+    // il server UDP secondario (quello di Log4OM nella scheda «Programmi collegati») con la sua casella
+    if reports.secondary_resend
+        && let Some(addr) = reports.secondary
+        && !out.contains(&addr)
+    {
+        out.push(addr);
+    }
+    out
 }
 
 /// Cosa serve all'emettitore UDP: tutto cio' che, se cambia, lo fa riavviare.

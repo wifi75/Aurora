@@ -135,6 +135,7 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
       { key: 'EnableUDP2adifBroadcast', kind: 'bool' },
       { key: 'UDP2Server', kind: 'text' },
       { key: 'UDP2ServerPort', kind: 'num' },
+      { key: 'UDP2Resend', kind: 'bool' },
     ],
   },
   {

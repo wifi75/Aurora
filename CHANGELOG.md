@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **«Rimanda i QSO persi» anche per il server UDP secondario**: nella pagina Programmi collegati, gruppo «Invia file ADIF del QSO per il log», la casella «Rimanda i QSO persi quando il log si riapre» (accesa di base): con Log4OM chiuso il QSO resta in coda e parte quando si riapre, senza creare un destinatario nelle Integrazioni.
 
 ## 0.11.242 - 2026-11-12
 - **Windows 10 prima della versione 2004**: Aurora non partiva («Impossibile trovare il punto di ingresso WerRegisterAppLocalDump»); la funzione ora si cerca solo se c'e'.

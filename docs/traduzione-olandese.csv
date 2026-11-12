@@ -1360,6 +1360,7 @@ ens.k.TCPServerPort,TCP port,TCP-poort
 ens.k.EnableTCPConnection,Enable sending to the TCP server,Verzenden naar de TCP-server inschakelen
 ens.k.UDP2Server,UDP2 server,UDP2-server
 ens.k.UDP2ServerPort,UDP port,UDP-poort
+ens.k.UDP2Resend,Resend missed QSOs when the log is opened again,"Gemiste QSO’s opnieuw sturen wanneer het log weer open is"
 ens.k.EnableUDP2adifBroadcast,Enable sending to the secondary UDP server,Verzenden naar de secundaire UDP-server inschakelen
 ens.k.WriteDecodedALLTXT,Decoded messages,Gedecodeerde berichten
 ens.k.WriteDecodedDebugALLTXT,Decoded and debug messages,Gedecodeerde en debugberichten
@@ -2656,6 +2657,7 @@ jxh.AcceptUDPReplyMessages,"Which reply requests (Reply, e.g. a double click in 
 jxh.EnableUDP1adifSending,"For each logged QSO also sends the ADIF record to the primary UDP server, so the external log saves it by itself.","Stuurt voor elk gelogd QSO ook het ADIF-record naar de primaire UDP-server, zodat het externe logboek het vanzelf opslaat."
 jxh.UDP2Server,A second address that receives only the QSOs as ADIF (for another logging program).,Een tweede adres dat alleen de QSO’s als ADIF ontvangt (voor een ander logprogramma).
 jxh.UDP2ServerPort,Port of the secondary UDP server.,Poort van de secundaire UDP-server.
+jxh.UDP2Resend,"If the log (for example Log4OM) is closed when you make a QSO, Aurora keeps it aside and sends it by itself about 15 seconds after you open the log again, in the order you made them. Each QSO is sent only once; the queue survives closing Aurora and is dropped after seven days. It works for a log on this PC (127.0.0.1): with the address of another PC the QSOs are sent right away as before.","Is het log (bijvoorbeeld Log4OM) gesloten wanneer je een QSO maakt, dan houdt Aurora het apart en stuurt het zelf ongeveer 15 seconden nadat je het log weer opent, in de volgorde waarin je ze maakte. Elke QSO gaat maar één keer weg; de wachtrij blijft ook als je Aurora sluit en wordt na zeven dagen weggegooid. Geldt voor een log op deze pc (127.0.0.1): met het adres van een andere pc gaan de QSO’s zoals vroeger meteen weg."
 jxh.EnableUDP2adifBroadcast,Turns on sending the QSOs as ADIF to the secondary UDP server.,Zet het versturen van de QSO’s als ADIF naar de secundaire UDP-server aan.
 jxh.TCPServer,Address of a logging program that receives the QSOs via TCP (e.g. N1MM or another network log).,Adres van een logprogramma dat de QSO’s via TCP ontvangt (bijv. N1MM of een ander netwerklogboek).
 jxh.TCPServerPort,Port of the log’s TCP server.,Poort van de TCP-server van het logboek.
