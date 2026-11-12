@@ -7,7 +7,8 @@
 //! Prove lente, si lanciano a mano:
 //! - `confronto_tasso_di_errore`: la tabella completa;
 //! - `rumore_e_squelch`: un minuto di solo rumore, caratteri falsi con lo squelch spento e acceso;
-//! - `studio`: un punteggio solo su pochi casi difficili.
+//! - `studio`: un punteggio solo su pochi casi difficili;
+//! - `contro_fldigi` (con la feature `fldigi-oracle`): la stessa tabella con il ricevitore di fldigi 4.2.13 accanto al nostro.
 //!
 //! `cargo test --release -p mode-digi --test cw_confronto -- --ignored --nocapture --test-threads=1`
 //! (con `CW_DEBUG=1` stampa il testo mandato e quello ricevuto; con `AURORA_WAV=<cartella>` scrive i file WAV dei casi).
@@ -150,8 +151,8 @@ enum Prova {
     ForteAltrove,
 }
 
-/// Una prova: (errori, caratteri mandati, velocita' capita alla fine).
-fn una_prova(prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, f32) {
+/// Il testo mandato e l'audio (12 kHz) di una prova.
+fn audio_di_prova(prova: Prova, snr_db: f64, seed: u64) -> (String, Vec<f32>) {
     let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
     let sent = testo(&mut rng, 60).trim_end().to_string();
     let n_chars = sent.len();
@@ -202,16 +203,46 @@ fn una_prova(prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, f32) {
         }
     }
     salva_wav(&format!("cw_{prova:?}_{snr_db}dB_{seed}"), RATE as u32, &audio);
+    (sent, audio)
+}
+
+fn errori(chi: &str, sent: &str, got: &[u8]) -> usize {
+    let got = String::from_utf8_lossy(got).trim().to_string();
+    if std::env::var_os("CW_DEBUG").is_some() {
+        println!("TX        {sent:?}
+RX {chi:<6} {got:?}");
+    }
+    levenshtein(sent.as_bytes(), got.as_bytes())
+}
+
+/// Una prova con il ricevitore di Aurora: (errori, caratteri mandati, velocita' capita alla fine).
+fn una_prova(prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, f32) {
+    let (sent, audio) = audio_di_prova(prova, snr_db, seed);
     let mut rx = ricevitore();
     let mut got = Vec::new();
     for block in audio.chunks(480) {
         got.extend(rx.process(block));
     }
-    let got = String::from_utf8_lossy(&got).trim().to_string();
-    if std::env::var_os("CW_DEBUG").is_some() {
-        println!("TX {sent:?}\nRX {got:?}");
+    (errori("Aurora", &sent, &got), sent.len(), rx.wpm())
+}
+
+/// La stessa prova con il ricevitore di fldigi (150 Hz di banda, 20 WPM impostati con l'inseguimento acceso, squelch spento):
+/// (errori Aurora, errori fldigi, caratteri, WPM Aurora, WPM fldigi).
+#[cfg(feature = "fldigi-oracle")]
+fn prova_contro_fldigi(prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, usize, f32, f64) {
+    let (sent, audio) = audio_di_prova(prova, snr_db, seed);
+    let mut rx = ricevitore();
+    let mut got = Vec::new();
+    for block in audio.chunks(480) {
+        got.extend(rx.process(block));
     }
-    (levenshtein(sent.as_bytes(), got.as_bytes()), sent.len(), rx.wpm())
+    let ours = errori("Aurora", &sent, &got);
+    let mut fl = mode_digi::fldigi_oracle::FldigiCw::new(f64::from(TONO), WPM, 150.0, 8000.0, None);
+    let mut got = Vec::new();
+    for block in common::a_8k(&audio).chunks(512) {
+        got.extend(fl.process(block));
+    }
+    (ours, errori("fldigi", &sent, &got), sent.len(), rx.wpm(), fl.wpm())
 }
 
 /// Il ricevitore con le impostazioni di base del servizio (20 WPM di partenza, squelch spento).
@@ -221,23 +252,24 @@ fn ricevitore() -> CwDemodulator {
 
 const SNRS: [f64; 7] = [5.0, 0.0, -4.0, -8.0, -10.0, -12.0, -15.0];
 
+const CASI: [(Prova, &str); 9] = [
+    (Prova::Awgn, "rumore"),
+    (Prova::Mano, "tasto a mano"),
+    (Prova::Salto, "14 -> 28 WPM"),
+    (Prova::Qsb, "QSB 15 dB"),
+    (Prova::Qrn, "QRN"),
+    (Prova::Qrm, "QRM +150 Hz"),
+    (Prova::Spostato, "tono +25 Hz"),
+    (Prova::Livello, "livello -40 dB"),
+    (Prova::ForteAltrove, "forte a 1500 Hz"),
+];
+
 #[test]
 #[ignore]
 fn confronto_tasso_di_errore() {
     const RUNS: u64 = 2;
-    let casi: [(Prova, &str); 9] = [
-        (Prova::Awgn, "rumore"),
-        (Prova::Mano, "tasto a mano"),
-        (Prova::Salto, "14 -> 28 WPM"),
-        (Prova::Qsb, "QSB 15 dB"),
-        (Prova::Qrn, "QRN"),
-        (Prova::Qrm, "QRM +150 Hz"),
-        (Prova::Spostato, "tono +25 Hz"),
-        (Prova::Livello, "livello -40 dB"),
-        (Prova::ForteAltrove, "forte a 1500 Hz"),
-    ];
     let mut totali = vec![(0usize, 0usize); SNRS.len()];
-    for (prova, nome) in casi {
+    for (prova, nome) in CASI {
         let mut riga = format!("{nome:<16}|");
         let mut wpm = Vec::new();
         for (k, &snr) in SNRS.iter().enumerate() {
@@ -264,6 +296,42 @@ fn confronto_tasso_di_errore() {
     println!("{}", "-".repeat(media.len()));
     println!("{media}");
     println!("(colonne: SNR in 3 kHz {SNRS:?} dB; valori: caratteri sbagliati in %)");
+}
+
+/// La stessa tabella con fldigi 4.2.13 come arbitro: ogni casella e' «Aurora/fldigi» (caratteri sbagliati in %). Solo con la feature
+/// `fldigi-oracle`: `cargo test --release -p mode-digi --features fldigi-oracle --test cw_confronto contro_fldigi -- --ignored --nocapture`.
+#[cfg(feature = "fldigi-oracle")]
+#[test]
+#[ignore]
+fn contro_fldigi() {
+    const RUNS: u64 = 2;
+    let (mut tot_a, mut tot_f) = (0.0, 0.0);
+    for (prova, nome) in CASI {
+        let mut riga = format!("{nome:<16}|");
+        let (mut media_a, mut media_f) = (0.0, 0.0);
+        let mut wpm = String::new();
+        for (k, &snr) in SNRS.iter().enumerate() {
+            let (mut ea, mut ef, mut n) = (0, 0, 0);
+            for r in 0..RUNS {
+                let (a, f, len, wa, wf) = prova_contro_fldigi(prova, snr, 900 + r * 31 + k as u64 * 7);
+                ea += a;
+                ef += f;
+                n += len;
+                if r == 0 {
+                    wpm.push_str(&format!(" {wa:.0}/{wf:.0}"));
+                }
+            }
+            let (pa, pf) = (100.0 * ea as f64 / n as f64, 100.0 * ef as f64 / n as f64);
+            media_a += pa / SNRS.len() as f64;
+            media_f += pf / SNRS.len() as f64;
+            riga.push_str(&format!(" {pa:5.1}/{pf:5.1}"));
+        }
+        tot_a += media_a / CASI.len() as f64;
+        tot_f += media_f / CASI.len() as f64;
+        println!("{riga} | media {media_a:5.1}/{media_f:5.1} | WPM{wpm}");
+    }
+    println!("media di tutte le righe: Aurora {tot_a:.1}% · fldigi {tot_f:.1}%");
+    println!("(colonne: SNR in 3 kHz {SNRS:?} dB; caselle: Aurora/fldigi, caratteri sbagliati in %)");
 }
 
 /// Un minuto di solo rumore (forte e debole): quanti caratteri si stampano con lo squelch spento e acceso.

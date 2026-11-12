@@ -8,7 +8,7 @@ license.workspace = true
 publish = false
 
 [features]
-# Solo per le prove: compila il ricevitore RTTY di fldigi (sottomodulo terze-parti/fldigi) come arbitro del nostro. Mai nell'installatore.
+# Solo per le prove: compila i ricevitori RTTY, PSK e CW di fldigi (sottomodulo terze-parti/fldigi) come arbitri dei nostri. Mai nell'installatore.
 fldigi-oracle = ["dep:cc"]
 
 [build-dependencies]

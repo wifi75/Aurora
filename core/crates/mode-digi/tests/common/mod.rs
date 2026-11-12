@@ -193,3 +193,27 @@ pub fn salva_wav(nome: &str, rate: u32, x: &[f32]) {
         eprintln!("WAV non scritto ({}): {e}", path.display());
     }
 }
+
+/// Da 12 a 8 kHz: interpolazione con un seno cardinale a finestra (Blackman, ±32 campioni) e taglio a 3,6 kHz.
+pub fn a_8k(x: &[f32]) -> Vec<f32> {
+    const HALF: i64 = 32;
+    let fc = 3600.0 / 12_000.0;
+    let n_out = (x.len() as f64 * 8_000.0 / 12_000.0) as usize;
+    (0..n_out)
+        .map(|n| {
+            let t = n as f64 * 12_000.0 / 8_000.0;
+            let k0 = t.floor() as i64;
+            let mut acc = 0.0;
+            for k in (k0 - HALF + 1)..=(k0 + HALF) {
+                if k < 0 || k as usize >= x.len() {
+                    continue;
+                }
+                let d = t - k as f64;
+                let sinc = if d.abs() < 1e-12 { 2.0 * fc } else { (2.0 * std::f64::consts::PI * fc * d).sin() / (std::f64::consts::PI * d) };
+                let w = 0.42 + 0.5 * (std::f64::consts::PI * d / HALF as f64).cos() + 0.08 * (2.0 * std::f64::consts::PI * d / HALF as f64).cos();
+                acc += f64::from(x[k as usize]) * sinc * w;
+            }
+            acc as f32
+        })
+        .collect()
+}

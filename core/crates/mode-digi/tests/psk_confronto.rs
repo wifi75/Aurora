@@ -7,7 +7,8 @@
 //! Il ricevitore lavora con le impostazioni di base del servizio (AFC acceso, squelch spento). Prove lente, si lanciano a mano:
 //! - `confronto_tasso_di_errore`: la tabella completa;
 //! - `rumore_e_squelch`: un minuto di solo rumore, caratteri falsi con lo squelch spento e acceso e quanto si allontana l'AFC;
-//! - `studio`: un punteggio solo su pochi casi difficili, per provare in fretta una variante.
+//! - `studio`: un punteggio solo su pochi casi difficili, per provare in fretta una variante;
+//! - `contro_fldigi` (con la feature `fldigi-oracle`): la stessa tabella con il ricevitore di fldigi 4.2.13 accanto al nostro.
 //!
 //! `cargo test --release -p mode-digi --test psk_confronto -- --ignored --nocapture --test-threads=1`
 //! (con `PSK_DEBUG=1` stampa il testo mandato e quello ricevuto; con `AURORA_WAV=<cartella>` scrive i file WAV dei casi, da riascoltare
@@ -28,7 +29,8 @@ enum Prova {
     Awgn,
     /// Il trasmettitore e' fuori di questi Hz (l'AFC deve agganciarlo).
     Fuori(f32),
-    /// Trenta secondi di solo rumore prima del segnale (l'AFC non deve andarsene).
+    /// Trenta secondi di solo rumore prima del segnale (l'AFC non deve andarsene). Quello che si stampa nel rumore non si conta (lo misura
+    /// `rumore_e_squelch`): conta solo dall'ultimo secondo prima del segnale.
     Attesa,
     /// La portante scivola di questi Hz dall'inizio alla fine del testo.
     Deriva(f64),
@@ -53,8 +55,8 @@ fn baud(mode: PskMode) -> f64 {
     RATE / mode.symbol_samples() as f64
 }
 
-/// Una prova: (errori, caratteri mandati).
-fn una_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usize) {
+/// Il testo mandato, l'audio (12 kHz) di una prova e da quale campione si contano i caratteri ricevuti.
+fn audio_di_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (String, Vec<f32>, usize) {
     let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
     let sent = testo(&mut rng, 100).to_lowercase();
     let tx_freq = match prova {
@@ -94,37 +96,74 @@ fn una_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usi
         }
     }
     salva_wav(&format!("psk_{}_{prova:?}_{snr_db}dB_{seed}", mode.name()), RATE as u32, &audio);
-    let mut rx = ricevitore(mode);
+    (sent, audio, pad_before - RATE as usize)
+}
+
+fn errori(chi: &str, sent: &str, got: &[u8]) -> usize {
+    if std::env::var_os("PSK_DEBUG").is_some() {
+        println!("TX        {sent:?}\nRX {chi:<6} {:?}", String::from_utf8_lossy(got));
+    }
+    levenshtein(sent.as_bytes(), got)
+}
+
+/// I caratteri ricevuti dal campione `from` in poi (quelli prima si decodificano ma non si contano).
+fn decodifica(rx: &mut PskDemodulator, audio: &[f32], from: usize) -> Vec<u8> {
+    for block in audio[..from].chunks(1024) {
+        rx.process(block);
+    }
     let mut got = Vec::new();
-    for block in audio.chunks(1024) {
+    for block in audio[from..].chunks(1024) {
         got.extend(rx.process(block));
     }
-    if std::env::var_os("PSK_DEBUG").is_some() {
-        println!("TX {sent:?}\nRX {:?}", String::from_utf8_lossy(&got));
+    got
+}
+
+/// Una prova con il ricevitore di Aurora: (errori, caratteri mandati).
+fn una_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usize) {
+    let (sent, audio, from) = audio_di_prova(mode, prova, snr_db, seed);
+    let got = decodifica(&mut ricevitore(mode), &audio, from);
+    (errori("Aurora", &sent, &got), sent.len())
+}
+
+/// La stessa prova con il ricevitore di fldigi (AFC acceso, squelch spento come il nostro): (errori Aurora, errori fldigi, caratteri).
+#[cfg(feature = "fldigi-oracle")]
+fn prova_contro_fldigi(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, usize) {
+    let (sent, audio, from) = audio_di_prova(mode, prova, snr_db, seed);
+    let ours = errori("Aurora", &sent, &decodifica(&mut ricevitore(mode), &audio, from));
+    let mut fl = mode_digi::fldigi_oracle::FldigiPsk::new(baud(mode), f64::from(FREQ), 8000.0, true, None);
+    let low = common::a_8k(&audio);
+    let from_8k = from * 2 / 3;
+    for block in low[..from_8k].chunks(512) {
+        fl.process(block);
     }
-    (levenshtein(sent.as_bytes(), &got), sent.len())
+    let mut got = Vec::new();
+    for block in low[from_8k..].chunks(512) {
+        got.extend(fl.process(block));
+    }
+    (ours, errori("fldigi", &sent, &got), sent.len())
 }
 
 const SNRS: [f64; 7] = [5.0, 0.0, -5.0, -8.0, -10.0, -12.0, -15.0];
+
+const CASI: [(Prova, &str); 9] = [
+    (Prova::Awgn, "rumore"),
+    (Prova::Fuori(4.0), "fuori +4 Hz"),
+    (Prova::Fuori(-6.0), "fuori -6 Hz"),
+    (Prova::Attesa, "30 s di rumore"),
+    (Prova::Deriva(4.0), "deriva 4 Hz"),
+    (Prova::Fading, "fading CCIR"),
+    (Prova::Vicina, "vicina +6 dB"),
+    (Prova::Orologio(200.0), "orologio 200ppm"),
+    (Prova::Livello, "livello -40 dB"),
+];
 
 #[test]
 #[ignore]
 fn confronto_tasso_di_errore() {
     const RUNS: u64 = 2;
-    let casi: [(Prova, &str); 9] = [
-        (Prova::Awgn, "rumore"),
-        (Prova::Fuori(4.0), "fuori +4 Hz"),
-        (Prova::Fuori(-6.0), "fuori -6 Hz"),
-        (Prova::Attesa, "30 s di rumore"),
-        (Prova::Deriva(4.0), "deriva 4 Hz"),
-        (Prova::Fading, "fading CCIR"),
-        (Prova::Vicina, "vicina +6 dB"),
-        (Prova::Orologio(200.0), "orologio 200ppm"),
-        (Prova::Livello, "livello -40 dB"),
-    ];
     for mode in [PskMode::Psk31, PskMode::Psk63] {
         let mut totali = vec![(0usize, 0usize); SNRS.len()];
-        for (prova, nome) in casi {
+        for (prova, nome) in CASI {
             let mut riga = format!("{} {nome:<16}|", mode.name());
             for (k, &snr) in SNRS.iter().enumerate() {
                 let (mut e, mut n) = (0, 0);
@@ -147,6 +186,40 @@ fn confronto_tasso_di_errore() {
         println!("{media}");
     }
     println!("(colonne: SNR in 3 kHz {SNRS:?} dB; valori: caratteri sbagliati in %)");
+}
+
+/// La stessa tabella con fldigi 4.2.13 come arbitro: ogni casella e' «Aurora/fldigi» (caratteri sbagliati in %). Solo con la feature
+/// `fldigi-oracle`: `cargo test --release -p mode-digi --features fldigi-oracle --test psk_confronto contro_fldigi -- --ignored --nocapture`.
+#[cfg(feature = "fldigi-oracle")]
+#[test]
+#[ignore]
+fn contro_fldigi() {
+    const RUNS: u64 = 2;
+    for mode in [PskMode::Psk31, PskMode::Psk63] {
+        let (mut tot_a, mut tot_f) = (0.0, 0.0);
+        for (prova, nome) in CASI {
+            let mut riga = format!("{} {nome:<16}|", mode.name());
+            let (mut media_a, mut media_f) = (0.0, 0.0);
+            for (k, &snr) in SNRS.iter().enumerate() {
+                let (mut ea, mut ef, mut n) = (0, 0, 0);
+                for r in 0..RUNS {
+                    let (a, f, len) = prova_contro_fldigi(mode, prova, snr, 500 + r * 31 + k as u64 * 7);
+                    ea += a;
+                    ef += f;
+                    n += len;
+                }
+                let (pa, pf) = (100.0 * ea as f64 / n as f64, 100.0 * ef as f64 / n as f64);
+                media_a += pa / SNRS.len() as f64;
+                media_f += pf / SNRS.len() as f64;
+                riga.push_str(&format!(" {pa:5.1}/{pf:5.1}"));
+            }
+            tot_a += media_a / CASI.len() as f64;
+            tot_f += media_f / CASI.len() as f64;
+            println!("{riga} | media {media_a:5.1}/{media_f:5.1}");
+        }
+        println!("{} media di tutte le righe: Aurora {tot_a:.1}% · fldigi {tot_f:.1}%", mode.name());
+    }
+    println!("(colonne: SNR in 3 kHz {SNRS:?} dB; caselle: Aurora/fldigi, caratteri sbagliati in %)");
 }
 
 /// Un minuto di solo rumore (forte e debole): quanti caratteri si stampano con lo squelch spento e acceso, e di quanto si sposta l'AFC.
