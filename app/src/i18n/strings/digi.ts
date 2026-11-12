@@ -279,6 +279,13 @@ export const digiStrings = {
     'Más estrecho quita más ruido y estaciones cercanas pero quiere el tono centrado (el AFC lo sigue); 150 Hz como fldigi va bien casi siempre, 50-100 Hz para señales débiles entre muchas, 250-500 Hz para buscar.',
     'Mais estreita tira mais ruído e estações vizinhas mas quer o tom centrado (o AFC segue-o); 150 Hz como o fldigi serve quase sempre, 50-100 Hz para sinais fracos no meio de outros, 250-500 Hz para procurar.',
   ],
+  'digi.word.menu': ['Parola «{word}»', 'Word “{word}”', 'Wort „{word}“', 'Mot « {word} »', 'Palabra «{word}»', 'Palavra «{word}»'],
+  'digi.word.call': ['Nominativo', 'Callsign', 'Rufzeichen', 'Indicatif', 'Indicativo', 'Indicativo'],
+  'digi.word.name': ['Nome', 'Name', 'Name', 'Prénom', 'Nombre', 'Nome'],
+  'digi.word.qth': ['QTH', 'QTH', 'QTH', 'QTH', 'QTH', 'QTH'],
+  'digi.word.grid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],
+  'digi.word.rst': ['Rapporto ricevuto', 'Report received', 'Empfangener Rapport', 'Report reçu', 'Reporte recibido', 'Reporte recebido'],
+  'digi.word.copy': ['Copia', 'Copy', 'Kopieren', 'Copier', 'Copiar', 'Copiar'],
   'digi.cw.wide': ['larga, panoramica', 'wide, overview', 'breit, Übersicht', 'large, vue d’ensemble', 'ancha, panorámica', 'larga, panorâmica'],
   'digi.cw.som': ['Decodifica SOM (tasto a mano)', 'SOM decoding (straight key)', 'SOM-Dekodierung (Handtaste)', 'Décodage SOM (pioche)', 'Decodificación SOM (manipulador vertical)', 'Descodificação SOM (manipulador vertical)'],
   'digi.cw.somTip': [

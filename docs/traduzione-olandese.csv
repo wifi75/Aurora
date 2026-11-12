@@ -4074,6 +4074,13 @@ digi.cw.squelchSnr,Squelch threshold: S/N {db} dB,Squelchdrempel: S/R {db} dB
 digi.cw.squelchSnrHint,"In CW the squelch looks at the signal-to-noise ratio measured on the spectrum around the tone, in 3 kHz like WSJT-X and averaged over time (CW keyed half of the time reads about 3 dB lower). On noise alone it sits around -25 dB; below -16 dB nothing is printed even with the squelch off.","In CW kijkt de squelch naar de signaal-ruisverhouding, gemeten in het spectrum rond de toon, in 3 kHz zoals WSJT-X en gemiddeld in de tijd (CW dat de helft van de tijd geseind wordt, leest ongeveer 3 dB lager). Bij alleen ruis ligt hij rond -25 dB; onder -16 dB wordt niets afgedrukt, ook niet met de squelch uit."
 digi.cw.bandwidth,CW filter bandwidth,Bandbreedte CW-filter
 digi.cw.bandwidthTip,"Narrower removes more noise and nearby stations but needs the tone centred (the AFC follows it); 150 Hz as in fldigi suits almost every case, 50-100 Hz for weak signals in a crowd, 250-500 Hz for searching.","Smaller haalt meer ruis en nabije stations weg, maar wil de toon in het midden (de AFC volgt hem); 150 Hz zoals in fldigi past bijna altijd, 50-100 Hz voor zwakke signalen in de drukte, 250-500 Hz om te zoeken."
+digi.word.menu,Word “{word}”,Woord ‘{word}’
+digi.word.call,Callsign,Roepnaam
+digi.word.name,Name,Naam
+digi.word.qth,QTH,QTH
+digi.word.grid,Locator,Locator
+digi.word.rst,Report received,Ontvangen rapport
+digi.word.copy,Copy,Kopiëren
 digi.cw.wide,"wide, overview","breed, overzicht"
 digi.cw.som,SOM decoding (straight key),SOM-decodering (handsleutel)
 digi.cw.somTip,Instead of the table it picks the character closest to the lengths of dots and dashes (like fldigi’s SOM decoding): it helps with an irregular straight key.,In plaats van de tabel kiest hij het teken dat het dichtst bij de lengtes van punten en strepen ligt (zoals de SOM-decodering van fldigi): helpt bij een onregelmatige handsleutel.

@@ -9,6 +9,7 @@ import { bandPlanRows } from '../lib/bandplan';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
+import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
@@ -150,6 +151,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return Number.isFinite(n) && n >= 300 ? n : 432;
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
+  // il menu del tasto destro su una parola della finestra di ricezione
+  const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
   const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
   // il DX del QSO anche per il rotore staccato in una finestra a parte
   usePublishRotorDx(qso.call, qso.wwloc);
@@ -706,6 +709,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     );
   };
 
+  // la parola scelta col tasto destro va nel campo del log del QSO in corso (il rapporto e' quello ricevuto) o negli appunti
+  const pickWord = (target: WordTarget, word: string) => {
+    if (target === 'copy') void navigator.clipboard?.writeText(word).catch(() => undefined);
+    else if (target === 'rst') setSavedField({ rstr: word.toUpperCase() });
+    else if (target === 'call') setQso((q) => ({ ...q, call: word.toUpperCase() }));
+    else if (target === 'grid') setQso((q) => ({ ...q, wwloc: word.toUpperCase() }));
+    else setQso((q) => ({ ...q, [target]: word }));
+  };
+
   const copyRx = () => {
     void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined);
   };
@@ -913,7 +925,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef}>
-          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
+          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
+            onContextMenu={(e) => {
+              // sulle parole il nostro menu, fuori dalle parole nessun menu (nemmeno quello del sistema)
+              e.preventDefault();
+              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+              setWordMenu(word ? { word, x: e.clientX, y: e.clientY } : null);
+            }}>
             {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
@@ -1014,6 +1032,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {editing !== null && editedMacro ? (
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
+
+      {wordMenu ? <RxWordMenu at={wordMenu} onPick={pickWord} onClose={() => setWordMenu(null)} /> : null}
 
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
