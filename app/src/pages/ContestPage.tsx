@@ -1517,6 +1517,20 @@ function ModaleExport({ t, s, chiudi }: { t: T; s?: ContestStato; chiudi: () => 
 
 function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () => void }) {
   const dati = useQuery({ queryKey: ['contest-regole', id], queryFn: () => getRegole(id), retry: false }).data;
+  if (!dati) return null;
+  return (
+    <Modale titolo={`${t('contest.settings')} · ${dati.regole.contest.nome}`} chiudi={chiudi} t={t}>
+      <ContestSettingsForm id={id} t={t} onSaved={chiudi} />
+    </Modale>
+  );
+}
+
+/**
+ * Le impostazioni di un contest (attivita', scambio, categoria, dati del Cabrillo...): le stesse nella finestrella della pagina Contest
+ * e in Impostazioni › Modi › Contest · Fox/Hound. Si salvano col pulsante, non a ogni tasto.
+ */
+export function ContestSettingsForm({ id, t, onSaved }: { id: string; t: T; onSaved?: () => void }) {
+  const dati = useQuery({ queryKey: ['contest-regole', id], queryFn: () => getRegole(id), retry: false }).data;
   const [imp, setImp] = useState<Impostazioni | null>(null);
   useEffect(() => {
     if (dati && !imp) setImp(dati.impostazioni);
@@ -1536,12 +1550,12 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
     salvaImpostazioni(id, imp)
       .then(() => {
         toast(t('contest.set.saved'), 'info');
-        chiudi();
+        onSaved?.();
       })
       .catch((e: unknown) => toast(String(e), 'error'));
   const freq = Object.entries(r.bande.frequenze);
   return (
-    <Modale titolo={`${t('contest.settings')} · ${r.contest.nome}`} chiudi={chiudi} t={t}>
+    <>
       <div className="ctc-form">
         <label title={t('tip.contest.set.activity')}>
           {t('contest.set.activity')}
@@ -1642,6 +1656,6 @@ function ModaleImpostazioni({ id, t, chiudi }: { id: string; t: T; chiudi: () =>
           {t('contest.set.save')}
         </button>
       </div>
-    </Modale>
+    </>
   );
 }

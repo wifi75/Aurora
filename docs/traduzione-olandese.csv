@@ -708,7 +708,7 @@ sw.macros.mode,Mode in use: {mode}. Macros «only for this mode» apply to the m
 sw.wspr.beacon,Beacon,Baken
 sw.contest.open,Open the Contest page,Contestpagina openen
 sw.contest.title,Contest settings,Contestinstellingen
-sw.contest.note,"Category, operators, power and assistance are chosen on the Contest page, one contest at a time.","Categorie, operators, vermogen en assistentie kies je op de contestpagina, per contest."
+sw.contest.note,"Pick a contest from the list to prepare its settings: activity, exchange, category and Cabrillo data.","Kies een contest uit de lijst om de instellingen voor te bereiden: activiteit, uitwisseling, categorie en Cabrillo-gegevens."
 sw.p.operator,Operator,Operator
 sw.p.name,First name,Voornaam
 sw.p.surname,Last name,Achternaam
@@ -5204,3 +5204,13 @@ t.zs2myfrh2s,Clearer DX Map and unconfirmed countries,Duidelijkere DX-kaart en o
 t.2cy3qje3thm,"The DX Map follows the band in use, can show only who hears you on PSK Reporter, shows callsigns on hover and draws a red line to the station you call while transmitting; the Log panel map is the full one. Optionally, a country worked but not confirmed stays “new DXCC”. The RX window always jumps to the latest line.","De DX-kaart volgt de gebruikte band, kan alleen tonen wie jou hoort op PSK Reporter, toont roepnamen bij muisaanwijzing en trekt tijdens het zenden een rode lijn naar het station dat je oproept; de kaart van het logboekpaneel is de volledige. Optioneel blijft een land dat is gewerkt maar niet bevestigd “nieuw DXCC”. Het RX-venster springt altijd naar de laatste regel."
 t.27nkc6yzmfa,Safer updates and coloured multipliers,Veiligere updates en gekleurde multipliers
 t.2gnydjtxny3,"Updates now start on PCs where they did not before, and closing to update no longer sends false error reports. On the Contest page multipliers are coloured by state with a legend, and stations already worked on the band are struck through.","Updates starten nu op pc’s waar ze dat eerder niet deden, en afsluiten om te updaten stuurt geen valse foutrapporten meer. Op de Contest-pagina zijn multipliers per staat gekleurd met een legenda, en stations die al op de band zijn gewerkt zijn doorgestreept."
+sw.contest.which,Contest,Contest
+sw.contest.choose,Choose a contest…,Kies een contest…
+sw.contest.active,active,actief
+sw.pg.digiScan,Scan and memories,Scan en geheugens
+sw.scan.hint,Scanning is started and stopped from the Options › Scan menu of the PSK · RTTY · CW page.,De scan start en stopt via het menu Opties › Scan van de pagina PSK · RTTY · CW.
+sw.mem.title,Memories,Geheugens
+sw.mem.hint,"Each memory keeps mode, frequencies, RTTY, AFC, Snap and squelch. Save it from the page’s Options › Memory › Save to menu; recall or clear it here.","Elk geheugen bewaart modus, frequenties, RTTY, AFC, Snap en squelch. Opslaan via het menu Opties › Geheugen › Opslaan in van de pagina; hier oproepen of wissen."
+sw.mem.empty,empty,leeg
+sw.mem.load,Recall,Oproepen
+sw.mem.clear,Clear,Wissen

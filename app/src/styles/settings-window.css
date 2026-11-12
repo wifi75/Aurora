@@ -428,6 +428,16 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .sw-macros li:first-child{border-top:0}
 .sw-macro-key{padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--sw-fam) 30%,transparent);font-family:var(--font-data,monospace);font-size:11px;text-align:center}
 .sw-macro-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw-contest{--ct-surface:color-mix(in srgb,var(--text) 5%,transparent);--ct-line:color-mix(in srgb,var(--text) 14%,transparent);display:grid;gap:10px}
+.sw-contest .ctc-input{height:30px;font-size:12.5px}
+.sw-contest .ctc-form label{font-size:11.5px}
+.sw-contest-pick{display:grid;gap:4px;max-width:28rem;font-size:12.5px}
+.sw-contest-pick>span{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.sw-contest-pick select{min-height:32px;padding:0 9px;border-radius:7px}
+.sw-mems{display:grid;margin:0;padding:0;list-style:none}
+.sw-mems li{display:grid;grid-template-columns:7rem minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--sw-line);font-size:12.5px}
+.sw-mems li:first-child{border-top:0}
+.sw-mems .sw-mem-empty{opacity:.55}
 
 :root[data-theme='light'] .sw-fam{color:#0b1322}
 :root[data-theme='light'] .sw-l2{color:#25324a}

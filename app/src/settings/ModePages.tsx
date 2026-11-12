@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, type ReactNode } from 'react';
+import { getContest } from '../api/contest';
 import { getControls, getDigi, getSat, putDigi, putSat, satRefreshTle, type DigiSettings, type SatSettings } from '../api/client';
 import { ClusterOptionsFields } from '../components/digi/ClusterOptionsDialog';
 import { MacroEditor } from '../components/digi/MacroEditor';
@@ -8,9 +9,12 @@ import { SatSettingsPane, type SatCategory } from '../components/sat/SatSettings
 import { WsprExtras } from '../components/WsprExtras';
 import { useT } from '../i18n';
 import { useClusterOptions } from '../lib/clusterOptions';
+import { ContestSettingsForm } from '../pages/ContestPage';
 import { digiWithDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
+import { clearMemory, memorySummary, MEMORY_SLOTS, readMemories, readScan, writeScan, type ScanProps } from '../lib/digiScan';
 import { cssColor, effectiveMacros, EVENT_MACROS, keyNames, textColorFor, type Macro } from '../lib/macroLang';
 import { openInMain } from '../lib/sdr';
+import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { WsprnetGroup } from './OnlineTab';
 import { SequenceTab } from './SequenceTab';
@@ -119,6 +123,76 @@ export function DigiMacrosPage() {
   );
 }
 
+/** Modi › PSK · RTTY · CW › Scansione e memorie: le proprieta' della scansione e le 20 memorie del menu Modo, da vedere, richiamare e svuotare. */
+export function DigiScanPage() {
+  const t = useT();
+  const { snap, save } = useDigiSettings();
+  const [scan, setScan] = useState<ScanProps>(() => readScan(browserStorage()));
+  const [mems, setMems] = useState(() => readMemories(browserStorage()));
+  const setProp = (patch: Partial<ScanProps>) => {
+    const next = { ...scan, ...patch };
+    setScan(next);
+    writeScan(browserStorage(), next);
+  };
+  const slots = Array.from({ length: MEMORY_SLOTS }, (_, i) => i + 1);
+  return (
+    <Page>
+      <Group title={t('digi.scan.title')}>
+        <div className="sw-fields">
+          <label>
+            <span>{t('digi.scan.dwell')}</span>
+            <input type="number" min={2} max={600} value={scan.dwell} onChange={(e) => setProp({ dwell: Math.min(600, Math.max(2, Number(e.target.value) || 10)) })} />
+          </label>
+          {(['once', 'timeMarks', 'freqMarks'] as const).map((k) => (
+            <label key={k} className="sstv-check">
+              <input type="checkbox" checked={scan[k]} onChange={(e) => setProp({ [k]: e.target.checked })} />
+              <span>{t(`digi.scan.${k}` as 'digi.scan.once')}</span>
+            </label>
+          ))}
+          <p className="sstv-hint">{t('sw.scan.hint')}</p>
+        </div>
+      </Group>
+      <Group title={t('sw.mem.title')} span={2}>
+        <Message kind="muted">{t('sw.mem.hint')}</Message>
+        <ul className="sw-mems">
+          {slots.map((n) => {
+            const m = mems[String(n)];
+            return (
+              <li key={n}>
+                <b>{t('digi.mi.slot', { n })}</b>
+                {m ? <span>{memorySummary(m)}</span> : <span className="sw-mem-empty">{t('sw.mem.empty')}</span>}
+                <button
+                  type="button"
+                  className="glass"
+                  disabled={!m || !snap}
+                  onClick={() => {
+                    if (!m) return;
+                    save(m);
+                    toast(t('digi.run.memLoaded', { n }), 'ok');
+                  }}
+                >
+                  {t('sw.mem.load')}
+                </button>
+                <button
+                  type="button"
+                  className="glass"
+                  disabled={!m}
+                  onClick={() => {
+                    clearMemory(browserStorage(), n);
+                    setMems(readMemories(browserStorage()));
+                  }}
+                >
+                  {t('sw.mem.clear')}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </Group>
+    </Page>
+  );
+}
+
 /** Modi › PSK · RTTY · CW › Opzioni del DX Cluster: le stesse della rotella del cluster nella pagina. */
 export function DigiClusterPage() {
   const [options, setOptions] = useClusterOptions();
@@ -181,15 +255,44 @@ export function WsprPage() {
   );
 }
 
-/** Modi › Contest · Fox/Hound: la verifica del Fox (Hound) e la strada per le impostazioni di ogni contest, che stanno nella loro pagina. */
+/**
+ * Modi › Contest · Fox/Hound: la verifica del Fox (Hound) e le impostazioni di un contest, le stesse della finestrella della pagina Contest.
+ * Si apre sul contest attivo; senza, si sceglie dall'elenco quale preparare.
+ */
 export function ContestSettingsPage() {
   const t = useT();
+  const client = useQueryClient();
+  const stato = useQuery({ queryKey: ['contest'], queryFn: getContest, retry: false });
+  const [scelto, setScelto] = useState('');
+  const elenco = stato.data?.contest ?? [];
+  const id = scelto || stato.data?.attivo || '';
   return (
     <div className="sw-page">
       <SequenceTab part="fox" />
       <Page>
-        <Group title={t('sw.contest.title')}>
-          <Message kind="muted">{t('sw.contest.note')}</Message>
+        <Group title={t('sw.contest.title')} span={3}>
+          {stato.isError ? <Message kind="alert">{t('contest.unavailable')}</Message> : null}
+          {elenco.length ? (
+            <label className="sw-contest-pick">
+              <span>{t('sw.contest.which')}</span>
+              <select value={id} onChange={(e) => setScelto(e.target.value)}>
+                {id ? null : <option value="">{t('sw.contest.choose')}</option>}
+                {elenco.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                    {c.id === stato.data?.attivo ? ` · ${t('sw.contest.active')}` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {id ? (
+            <div className="sw-contest">
+              <ContestSettingsForm key={id} id={id} t={t} onSaved={() => void client.invalidateQueries({ queryKey: ['contest'] })} />
+            </div>
+          ) : (
+            <Message kind="muted">{t('sw.contest.note')}</Message>
+          )}
           <Actions>
             <button type="button" className="glass" onClick={() => openInMain('#/contest')}>
               {t('sw.contest.open')}

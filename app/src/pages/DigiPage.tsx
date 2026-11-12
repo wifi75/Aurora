@@ -16,6 +16,7 @@ import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
 import { ModeSettings } from '../components/digi/ModeSettings';
 import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
+import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
 import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
@@ -32,8 +33,6 @@ import '../styles/digi-dark.css';
 import '../styles/digi-log-corta.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
-const SCAN_KEY = 'aurora.digi.scansione';
-const MEM_KEY = 'aurora.digi.memorie';
 const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
@@ -61,15 +60,7 @@ interface Views {
   wideWaterfall: boolean;
 }
 
-interface ScanProps {
-  dwell: number;
-  once: boolean;
-  timeMarks: boolean;
-  freqMarks: boolean;
-}
-
 const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
-const DEFAULT_SCAN: ScanProps = { dwell: 10, once: false, timeMarks: true, freqMarks: true };
 
 /** Le righe trasmesse (iniziano con «» ») sottolineate nella finestra di ricezione. */
 function withSentUnderlined(text: string): React.ReactNode {
@@ -172,11 +163,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [saved, setSavedField] = usePersonal();
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
-  const [scanProps, setScanProps] = useState<ScanProps>(() => readJson(SCAN_KEY, DEFAULT_SCAN));
+  const [scanProps, setScanProps] = useState<ScanProps>(() => readScan(browserStorage()));
+  // la scansione si regola anche dalle Impostazioni (finestra a parte): qui si segue la modifica
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === SCAN_KEY) setScanProps(readScan(browserStorage()));
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
   const [problem, setProblem] = useState('');
   const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [scanDialog, setScanDialog] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
   const lastEsc = useRef(0);
   const [scanning, setScanning] = useState(false);
@@ -400,16 +398,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, [scanning]);
 
   // ---- memorie delle impostazioni (1-20) ----
-  const memories = (): Record<string, Partial<DigiSettings>> => readJson<Record<string, Partial<DigiSettings>>>(MEM_KEY, {});
   const memory = (write: boolean, slot: number) => {
-    const all = memories();
+    const all = readMemories(browserStorage());
     if (write) {
       const c = live.current.snap.settings;
       all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, squelch_db: c.squelch_db };
-      writeJson(MEM_KEY, all);
+      writeMemories(browserStorage(), all);
       toast(t('digi.run.memSaved', { n: slot }), 'ok');
     } else if (all[String(slot)]) {
-      save(all[String(slot)] as Partial<DigiSettings>);
+      save(all[String(slot)] as DigiMemory);
       toast(t('digi.run.memLoaded', { n: slot }), 'ok');
     } else {
       toast(t('digi.run.memEmpty', { n: slot }), 'info');
@@ -622,7 +619,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // i tasti F1-F12 con Ctrl e Shift, il «+» del tastierino (macro Gray+), Pausa (RX/TX) e Esc che ferma la trasmissione
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editing !== null || settingsOpen || scanDialog) return;
+      if (editing !== null || settingsOpen) return;
       if (e.key === 'Escape') {
         // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) ferma anche il CQ automatico
         const now = Date.now();
@@ -751,7 +748,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           items: [
             { label: t('digi.mi.scanStart'), disabled: scanning, onSelect: () => setScanning(true) },
             { label: t('digi.mi.scanStop'), disabled: !scanning, onSelect: () => { setScanning(false); toast(t('digi.run.scanOff'), 'info'); } },
-            { label: t('digi.mi.scanProps'), onSelect: () => setScanDialog(true) },
+            { label: t('digi.mi.scanProps'), onSelect: () => openSettingsWindow('digiscan') },
           ],
         },
         'sep',
@@ -967,31 +964,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
-      {scanDialog ? (
-        <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('digi.scan.title')}>
-          <div className="digi-dialog digi-dialog--small">
-            <header>
-              <strong>{t('digi.scan.title')}</strong>
-            </header>
-            <label>
-              <span>{t('digi.scan.dwell')}</span>
-              <input type="number" min={2} max={600} value={scanProps.dwell} onChange={(e) => { const next = { ...scanProps, dwell: Math.max(2, Number(e.target.value) || 10) }; setScanProps(next); writeJson(SCAN_KEY, next); }} />
-            </label>
-            {(['once', 'timeMarks', 'freqMarks'] as const).map((k) => (
-              <label key={k} className="sstv-check">
-                <input type="checkbox" checked={scanProps[k]} onChange={(e) => { const next = { ...scanProps, [k]: e.target.checked }; setScanProps(next); writeJson(SCAN_KEY, next); }} />
-                {t(`digi.scan.${k}` as 'digi.scan.once')}
-              </label>
-            ))}
-            <footer>
-              <span style={{ flex: 1 }} />
-              <button type="button" className="glass sstv-btn sstv-btn--primary" onClick={() => setScanDialog(false)}>
-                {t('digi.ms.close')}
-              </button>
-            </footer>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
