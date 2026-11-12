@@ -113,10 +113,13 @@ function SstvBody({ solo }: { solo: boolean }) {
         <h1>
           {t('sstv.title')}
         </h1>
-        <span className={`sstv-badge sstv-badge--${badge}`} role="status">
-          <span className="sstv-dot" aria-hidden="true" />
-          {t(`sstv.state.${badge}`)}
-        </span>
+        {/* «In ascolto» non serve (l'ascolto e' sempre acceso con la pagina aperta): l'etichetta compare solo negli altri stati */}
+        {badge !== 'listening' ? (
+          <span className={`sstv-badge sstv-badge--${badge}`} role="status">
+            <span className="sstv-dot" aria-hidden="true" />
+            {t(`sstv.state.${badge}`)}
+          </span>
+        ) : null}
         {/* banda e frequenze SSTV dal piano di banda IARU */}
         <FreqPicker dialHz={dialHz} mode="SSTV" rows={bandPlanRows('SSTV')} locked={sending} onPick={(hz) => void postFrequency(hz).catch(() => undefined)} />
         <div className="sstv-views" role="tablist">
