@@ -559,55 +559,17 @@ impl DigiService {
         Ok(())
     }
 
-    /// Importa le macro da una cartella (da indicare) nel modo scelto; con `Defaults` non legge niente e rimette le macro di Aurora.
-    pub fn import_macros(&self, folder: Option<&std::path::Path>, how: ImportHow) -> Result<crate::macro_files::Imported, DigiError> {
-        if how == ImportHow::Defaults {
-            let mut next = self.settings();
-            next.macros = default_macros();
-            next.mode_macros = default_mode_macros();
-            next.merge_macros.clear();
-            self.apply_settings(next)?;
-            return Ok(crate::macro_files::Imported::default());
+    /// Rimette le macro di Aurora (`Defaults`). L'importazione da file non c'e' piu': `Replace` e `Add` rispondono con un errore.
+    pub fn import_macros(&self, _folder: Option<&std::path::Path>, how: ImportHow) -> Result<crate::macro_files::Imported, DigiError> {
+        if how != ImportHow::Defaults {
+            return Err(DigiError::BadValue("l'importazione delle macro da file non c'e' piu': usa «Ripristina le macro di Aurora»".into()));
         }
-        let folder = match folder {
-            Some(f) => f.to_path_buf(),
-            None => return Err(DigiError::BadValue("manca la cartella delle macro".into())),
-        };
-        let (base, modes, report) = crate::macro_files::read_folder(&folder)?;
         let mut next = self.settings();
-        match how {
-            ImportHow::Replace => {
-                if !base.is_empty() {
-                    next.macros = base;
-                }
-                for (mode, set) in &modes {
-                    next.mode_macros.insert(mode.clone(), set.clone());
-                }
-                // «Merge» per ogni modo importato (solo per quelli di cui si sono lette le macro)
-                for (mode, merge) in crate::macro_files::read_merge_flags(&folder) {
-                    if modes.contains_key(&mode) {
-                        next.merge_macros.insert(mode, merge);
-                    }
-                }
-            }
-            // le mie macro restano: si aggiungono solo i tasti che non ho
-            ImportHow::Add => {
-                let add = |mine: &mut Vec<DigiMacro>, theirs: Vec<DigiMacro>| {
-                    for m in theirs {
-                        if !mine.iter().any(|x| x.name == m.name) {
-                            mine.push(m);
-                        }
-                    }
-                };
-                add(&mut next.macros, base);
-                for (mode, set) in modes {
-                    add(next.mode_macros.entry(mode).or_default(), set);
-                }
-            }
-            ImportHow::Defaults => {}
-        }
+        next.macros = default_macros();
+        next.mode_macros = default_mode_macros();
+        next.merge_macros.clear();
         self.apply_settings(next)?;
-        Ok(report)
+        Ok(crate::macro_files::Imported::default())
     }
 
     pub fn start_rx(&self) {
