@@ -71,6 +71,9 @@ const SOFT_BITS: f32 = 0.8;
 const LLR_SCALE: f32 = 0.03;
 /// Sotto questa probabilita' un carattere e' «incerto»: l'interfaccia lo mostra in chiaro.
 pub const WEAK_PROB: f32 = 0.9;
+/// Le soglie di base dello squelch statistico (probabilita' media degli ultimi quattro caratteri per aprire e per chiudere).
+pub const SQUELCH_OPEN: f32 = 0.7;
+pub const SQUELCH_CLOSE: f32 = 0.5;
 pub(crate) const FIGS: u8 = 27;
 pub(crate) const LTRS: u8 = 31;
 pub(crate) const SPACE: u8 = 4;
@@ -564,6 +567,59 @@ impl Frames {
     }
 }
 
+/// Lo squelch statistico (passo 9 di `docs/progetto-rtty-oltre.md`): guarda la probabilita' dei caratteri invece del rapporto
+/// segnale/rumore. Tiene gli ultimi `SQ_MEMORY` caratteri: chiuso, li trattiene e si apre quando la loro probabilita' media supera
+/// `open_at` (e allora escono anche quelli trattenuti: l'inizio del testo non si perde); aperto, si chiude quando la media scende sotto
+/// `close_at` (isteresi), e un carattere sotto `close_at` aspetta il seguente prima di uscire (il rumore alla fine del segnale non passa).
+/// Il rumore da' caratteri con probabilita' bassa e sparse: la media di quattro raramente sale.
+struct ProbSquelch {
+    open_at: f32,
+    close_at: f32,
+    hist: std::collections::VecDeque<f32>,
+    open: bool,
+    held: Vec<Frame>,
+}
+
+/// Caratteri ricordati dallo squelch statistico.
+const SQ_MEMORY: usize = 4;
+
+impl ProbSquelch {
+    fn new(open_at: f32, close_at: f32) -> Self {
+        Self { open_at, close_at, hist: std::collections::VecDeque::with_capacity(SQ_MEMORY), open: false, held: Vec::new() }
+    }
+
+    /// Un carattere nuovo: restituisce quelli da stampare.
+    fn push(&mut self, fr: Frame) -> Vec<Frame> {
+        if self.hist.len() == SQ_MEMORY {
+            self.hist.pop_front();
+        }
+        self.hist.push_back(fr.prob());
+        let mean = self.hist.iter().sum::<f32>() / self.hist.len() as f32;
+        if self.open {
+            // aperto: un carattere incerto aspetta il seguente, cosi' alla fine del segnale il rumore che chiude lo squelch non passa
+            self.held.push(fr);
+            if self.hist.len() == SQ_MEMORY && mean < self.close_at {
+                self.open = false;
+                self.held.clear();
+                return Vec::new();
+            }
+            if fr.prob() >= self.close_at || self.held.len() >= SQ_MEMORY {
+                return std::mem::take(&mut self.held);
+            }
+            return Vec::new();
+        }
+        self.held.push(fr);
+        if self.held.len() > SQ_MEMORY {
+            self.held.remove(0);
+        }
+        if self.hist.len() == SQ_MEMORY && mean >= self.open_at {
+            self.open = true;
+            return std::mem::take(&mut self.held);
+        }
+        Vec::new()
+    }
+}
+
 /// La media mobile esponenziale di fldigi (`decayavg` in `src/include/misc.h`).
 fn decayavg(average: f32, input: f32, weight: f32) -> f32 {
     if weight <= 1.0 { input } else { average + (input - average) / weight }
@@ -587,6 +643,8 @@ pub struct RttyDemodulator {
     uos: bool,
     /// Soglia dello squelch sul rapporto segnale/rumore (dB); `None` = spento.
     squelch_snr_db: Option<f32>,
+    /// Lo squelch statistico (sulla probabilita' dei caratteri), se acceso.
+    prob_squelch: Option<ProbSquelch>,
     level_db: f32,
     snr_db: f32,
     open: bool,
@@ -670,6 +728,7 @@ impl RttyDemodulator {
             afc: false,
             uos: true,
             squelch_snr_db: None,
+            prob_squelch: None,
             level_db: -90.0,
             snr_db: 0.0,
             open: true,
@@ -758,6 +817,12 @@ impl RttyDemodulator {
     /// Soglia dello squelch sul rapporto segnale/rumore in dB (`snr_db`); `None` lo spegne.
     pub fn set_squelch_snr_db(&mut self, db: Option<f32>) {
         self.squelch_snr_db = db;
+    }
+
+    /// Squelch statistico (passo 9): si stampa quando la probabilita' media degli ultimi quattro caratteri supera `open_at`, si smette
+    /// quando scende sotto `close_at`. Vale con la decodifica del carattere intero; `None` lo spegne.
+    pub fn set_squelch_prob(&mut self, levels: Option<(f32, f32)>) {
+        self.prob_squelch = levels.map(|(o, c)| ProbSquelch::new(o, c.min(o)));
     }
 
     /// Livello del segnale in dB e se lo squelch lo lascia passare.
@@ -1028,9 +1093,15 @@ impl RttyDemodulator {
                     if let Some(fr) = f.push(l)
                         && self.open
                     {
-                        self.data = fr.code;
-                        self.data_prob = fr.prob();
-                        self.emit(&mut out);
+                        let ready = match &mut self.prob_squelch {
+                            Some(sq) => sq.push(fr),
+                            None => vec![fr],
+                        };
+                        for fr in ready {
+                            self.data = fr.code;
+                            self.data_prob = fr.prob();
+                            self.emit(&mut out);
+                        }
                     }
                 }
                 None => self.rx_bit(l, &mut out),
@@ -1272,6 +1343,25 @@ mod tests {
         let chars = rx.process_chars(&rumore(240_000, 0.8, 21));
         let weak = chars.iter().filter(|c| c.prob < WEAK_PROB).count();
         assert!(weak * 10 >= chars.len() * 8, "incerti {weak} su {}", chars.len());
+    }
+
+    #[test]
+    fn lo_squelch_statistico_tace_sul_rumore_e_non_perde_l_inizio() {
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+        assert!(rx.process(&rumore(240_000, 0.8, 31)).is_empty());
+        // un segnale che arriva sul rumore: si stampa tutto, anche i primi caratteri trattenuti mentre lo squelch decideva
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+        let mut audio = vec![0.0; 36_000];
+        audio.extend(modulate(b"CQ DE IU3ABC IU3ABC K", RttyParams::default(), 0.3));
+        audio.extend(vec![0.0; 36_000]);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 0.2, 32)) {
+            *a += r;
+        }
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert_eq!(r, "CQ DE IU3ABC IU3ABC K");
     }
 
     #[test]

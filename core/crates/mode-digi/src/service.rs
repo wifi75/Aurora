@@ -302,7 +302,7 @@ impl Default for DigiSettings {
             rtty_baud: 45.45,
             rtty_reverse: false,
             rtty_uos: true,
-            rtty_squelch_snr_db: 6.0,
+            rtty_squelch_snr_db: 0.0,
             rtty_receiver: RttyReceiver::Auto,
             cw_wpm: 20.0,
             cw_bandwidth_hz: cw::BANDWIDTH_DEFAULT,
@@ -738,8 +738,10 @@ impl Demod {
                 d.set_afc(s.afc_on);
                 d.set_uos(s.rtty_uos);
                 d.set_discriminator(s.rtty_receiver.discriminator(s.rtty_shift_hz));
-                // lo squelch dell'RTTY guarda il rapporto segnale/rumore, come la «metric» di fldigi, non il livello
-                d.set_squelch_snr_db(s.squelch_on.then_some(s.rtty_squelch_snr_db));
+                // lo squelch dell'RTTY guarda la probabilita' dei caratteri (passo 9 di `docs/progetto-rtty-oltre.md`); la soglia sul
+                // rapporto segnale/rumore (come la «metric» di fldigi) si aggiunge solo se e' sopra 0 dB
+                d.set_squelch_snr_db(s.squelch_on.then_some(s.rtty_squelch_snr_db).filter(|&db| db > 0.0));
+                d.set_squelch_prob(s.squelch_on.then_some((rtty::SQUELCH_OPEN, rtty::SQUELCH_CLOSE)));
                 Demod::Rtty(Box::new(d))
             }
         }

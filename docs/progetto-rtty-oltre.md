@@ -152,3 +152,21 @@ cifra moltiplica anche quella del FIGS o LTRS da cui dipende. Taratura (prova `t
 −12 a 0 dB): detti al 90-100 % giusti al 98 %, al 80-90 % all'83 %, al 50-60 % al 58 %, al 10-20 % al 14 %. `process_chars` da' i
 caratteri con la probabilita'; l'evento `rx_text` porta in `weak` le posizioni dei caratteri sotto 0,9 e la finestra di ricezione li
 mostra in chiaro. Tabella identica al passo 7 (la decodifica non cambia).
+
+**Passo 9** (squelch statistico): guarda la probabilita' media degli ultimi quattro caratteri; chiuso li trattiene e si apre sopra 0,7
+(escono anche quelli trattenuti: l'inizio del testo non si perde), aperto si chiude sotto 0,5 e un carattere sotto 0,5 aspetta il
+seguente prima di uscire (il rumore che segue il segnale non passa). Prova `squelch` (480 caratteri per cella, soglia al 10 %):
+
+| scenario | spento | S/N 6 dB | statistico |
+|---|---|---|---|
+| rumore 170/45 | −7,6 | −7,4 | −8,0 |
+| CCIR medio | 2,2 | 2,0 | 1,0 |
+| space −12 dB | −4,8 | −3,2 | −5,0 |
+| rumore 170/75 | −5,3 | −5,3 | −6,6 |
+| QRM a 250 Hz +6 | −7,4 | -- | −7,7 |
+
+Sul minuto di solo rumore: 211 caratteri a squelch spento, 0 con quello su S/N, 0 con quello statistico (anche aprendo a 0,4). Lo
+squelch statistico apre quindi piu' in basso di quello su S/N (fino a 1,6 dB con un tono attenuato, e regge la stazione vicina che
+inganna il rapporto segnale/rumore) e toglie anche i caratteri inventati prima e dopo il testo, per cui la soglia migliora persino
+rispetto allo squelch spento. Con lo squelch acceso il servizio usa lo statistico; la soglia S/N (ora 0 dB di base) si aggiunge solo se
+alzata. La tabella a squelch spento resta identica.

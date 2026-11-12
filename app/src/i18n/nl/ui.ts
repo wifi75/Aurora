@@ -1372,7 +1372,7 @@ export const NL_UI: Record<string, string> = {
   "digi.rtty.shift": "Shift (Hz)",
   "digi.rtty.snrNow": "Huidige S/R: {db} dB",
   "digi.rtty.squelchSnr": "Squelch-drempel: S/R {db} dB",
-  "digi.rtty.squelchSnrHint": "In RTTY kijkt de squelch naar de verhouding tussen de twee tonen en de ruis ernaast (0 dB = alleen ruis), niet naar het niveau: hij werkt hetzelfde met luide of zachte audio.",
+  "digi.rtty.squelchSnrHint": "In RTTY kijkt de squelch naar hoe zeker de laatste tekens zijn: hij toont ze als ze waarschijnlijk zijn en zwijgt bij ruis, ook bij zeer lage S/R. Deze drempel op de verhouding tussen de twee tonen en de ruis ernaast komt er alleen boven 0 dB bij.",
   "digi.rtty.uos": "UOS (letters na een spatie)",
   "digi.rtty.uosTip": "Unshift on space: na een spatie gaat de decoder terug naar letters, zodat een gemiste LTRS de tekst niet in cijfers verandert. Standaard aan, zoals in fldigi.",
   "digi.run.autoCqNoMacro": "Automatische CQ herhaalt de macro “CQ” (F2): wijs die eerst toe.",

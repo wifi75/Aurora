@@ -95,12 +95,12 @@ export const digiStrings = {
   ],
   'digi.rtty.snrNow': ['S/N attuale: {db} dB', 'Current S/N: {db} dB', 'Aktuelles S/R: {db} dB', 'S/B actuel : {db} dB', 'S/R actual: {db} dB', 'S/R atual: {db} dB'],
   'digi.rtty.squelchSnrHint': [
-    'In RTTY lo squelch guarda il rapporto fra i due toni e il rumore accanto (0 dB = solo rumore), non il livello: funziona uguale con l’audio alto o basso.',
-    'In RTTY the squelch looks at the ratio between the two tones and the noise next to them (0 dB = noise only), not at the level: it works the same with loud or quiet audio.',
-    'In RTTY richtet sich der Squelch nach dem Verhältnis der beiden Töne zum Rauschen daneben (0 dB = nur Rauschen), nicht nach dem Pegel: er funktioniert bei lautem und leisem Audio gleich.',
-    'En RTTY le squelch regarde le rapport entre les deux tons et le bruit à côté (0 dB = bruit seul), pas le niveau : il fonctionne pareil avec un audio fort ou faible.',
-    'En RTTY el squelch mira la relación entre los dos tonos y el ruido de al lado (0 dB = solo ruido), no el nivel: funciona igual con audio alto o bajo.',
-    'Em RTTY o squelch olha para a relação entre os dois tons e o ruído ao lado (0 dB = só ruído), não para o nível: funciona igual com áudio alto ou baixo.',
+    'In RTTY lo squelch guarda quanto sono sicuri gli ultimi caratteri: stampa quando sono probabili e tace sul rumore, anche a S/N molto basso. Questa soglia sul rapporto fra i due toni e il rumore accanto si aggiunge solo sopra 0 dB.',
+    'In RTTY the squelch looks at how sure the last characters are: it prints when they are likely and stays quiet on noise, even at very low S/N. This threshold on the ratio between the two tones and the noise next to them is added only above 0 dB.',
+    'In RTTY prüft der Squelch, wie sicher die letzten Zeichen sind: Er gibt sie aus, wenn sie wahrscheinlich sind, und schweigt bei Rauschen, auch bei sehr niedrigem S/R. Diese Schwelle für das Verhältnis der beiden Töne zum Rauschen daneben kommt nur über 0 dB hinzu.',
+    'En RTTY le squelch regarde à quel point les derniers caractères sont sûrs : il les affiche quand ils sont probables et se tait sur le bruit, même à S/B très faible. Ce seuil sur le rapport entre les deux tons et le bruit à côté ne s’ajoute qu’au-dessus de 0 dB.',
+    'En RTTY el squelch mira cuán seguros son los últimos caracteres: los muestra cuando son probables y calla con el ruido, incluso con S/R muy baja. Este umbral sobre la relación entre los dos tonos y el ruido de al lado solo se añade por encima de 0 dB.',
+    'Em RTTY o squelch olha para quão seguros são os últimos caracteres: mostra-os quando são prováveis e cala-se com o ruído, mesmo com S/R muito baixa. Este limiar sobre a relação entre os dois tons e o ruído ao lado só se junta acima de 0 dB.',
   ],
   'digi.tx.title': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
   'digi.tx.placeholder': [

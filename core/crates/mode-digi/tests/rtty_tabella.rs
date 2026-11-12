@@ -223,11 +223,67 @@ fn inventati_sul_rumore() {
     rx.set_squelch_snr_db(Some(6.0));
     let n = audio.chunks(1024).map(|b| rx.process(b).len()).sum::<usize>();
     println!("Aurora     squelch S/N 6 dB: {n:4} caratteri al minuto");
+    let mut rx = aurora(&sc);
+    rx.set_squelch_prob(Some((mode_digi::rtty::SQUELCH_OPEN, mode_digi::rtty::SQUELCH_CLOSE)));
+    let n = audio.chunks(1024).map(|b| rx.process(b).len()).sum::<usize>();
+    println!("Aurora     squelch statistico: {n:4} caratteri al minuto");
     #[cfg(feature = "mmtty-oracle")]
     for p in mode_digi::mmtty_oracle::MmttyProfile::ALL {
         let mut rx = mode_digi::mmtty_oracle::MmttyRtty::new(p, f64::from(sc.baud), f64::from(sc.shift), f64::from(CENTRE), true);
         let n = rx.process(&audio).len();
         println!("{:<10} squelch del profilo: {n:4} caratteri al minuto", p.name());
+    }
+}
+
+/// Lo squelch (passo 9): per alcuni scenari la soglia al 10 % con lo squelch sul rapporto segnale/rumore (6 dB, quello di base del
+/// servizio) e con quello statistico, e i caratteri inventati su un minuto di rumore. `RTTY_SQ` = «apertura,chiusura» dello statistico.
+#[test]
+#[ignore]
+fn squelch() {
+    let (open_at, close_at) = std::env::var("RTTY_SQ")
+        .ok()
+        .and_then(|v| v.split_once(',').and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?))))
+        .unwrap_or((mode_digi::rtty::SQUELCH_OPEN, mode_digi::rtty::SQUELCH_CLOSE));
+    let modi: [(&str, Box<dyn Fn(&mut RttyDemodulator) + Sync>); 3] = [
+        ("spento", Box::new(|_| {})),
+        ("S/N 6 dB", Box::new(|d: &mut RttyDemodulator| d.set_squelch_snr_db(Some(6.0)))),
+        ("statistico", Box::new(move |d: &mut RttyDemodulator| d.set_squelch_prob(Some((open_at, close_at))))),
+    ];
+    let runs = env_num("RTTY_RUNS", 4.0) as u64;
+    let lista: Vec<Scenario> = match std::env::var("RTTY_SCENARIO") {
+        Ok(n) => n.split(',').filter_map(|x| scenario(x.trim())).collect(),
+        Err(_) => ["rumore 170/45", "CCIR medio", "space -12 dB", "rumore 170/75", "QRM a 250 Hz +6"].iter().filter_map(|n| scenario(n)).collect(),
+    };
+    println!("squelch statistico: apertura {open_at}, chiusura {close_at}");
+    for sc in &lista {
+        let mut riga = format!("{:<18}", sc.nome);
+        for (nome, imposta) in &modi {
+            let mut curva = Vec::new();
+            let mut snr = SNR_MIN;
+            while snr <= SNR_MAX + 1e-9 {
+                let (mut err, mut tot) = (0, 0);
+                for r in 0..runs {
+                    let (audio, sent) = genera(sc, snr, 7000 + r * 101, CHARS);
+                    let mut d = aurora(sc);
+                    imposta(&mut d);
+                    let got: Vec<u8> = audio.chunks(1024).flat_map(|b| d.process(b)).collect();
+                    err += errori(&sent, got);
+                    tot += sent.len();
+                }
+                curva.push((snr, err as f64 / tot.max(1) as f64));
+                snr += 1.0;
+            }
+            riga.push_str(&format!(" | {nome} {}", fmt_soglia(soglia(&curva, 0.10))));
+        }
+        println!("{riga}");
+    }
+    let sc = scenari()[0];
+    let audio = solo_rumore(60.0, 99);
+    for (nome, imposta) in &modi {
+        let mut d = aurora(&sc);
+        imposta(&mut d);
+        let n = audio.chunks(1024).map(|b| d.process(b).len()).sum::<usize>();
+        println!("rumore, squelch {nome}: {n} caratteri al minuto");
     }
 }
 
