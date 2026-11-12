@@ -572,6 +572,10 @@ impl Discriminator {
 struct Frame {
     code: u8,
     sums: [f32; 7],
+    /// Il centro dello start (campioni decimati dall'inizio).
+    t: f64,
+    /// Viene dalla catena principale (non da una variante).
+    main: bool,
 }
 
 impl Frame {
@@ -684,7 +688,7 @@ impl Frames {
                             code |= 1 << k;
                         }
                     }
-                    Some(Frame { code, sums })
+                    Some(Frame { code, sums, t: best, main: true })
                 } else {
                     self.next_min = best + 0.5 * self.t;
                     None
@@ -744,6 +748,95 @@ impl ProbSquelch {
             return std::mem::take(&mut self.held);
         }
         Vec::new()
+    }
+}
+
+/// Il soppressore d'impulsi (passo 10): soglia, in volte il livello medio.
+const BLANK_K: f32 = 8.0;
+/// Le varianti del passo 11: taratura delle LLR del limitatore (le sue ampiezze sono costanti e le LLR risulterebbero troppo sicure),
+/// medie del rumore della variante normalizzata (bit: salita lenta, discesa veloce per l'AGC della radio che scende di colpo) e
+/// probabilita' minima di un carattere visto solo da una variante.
+const LIMITER_LLR: f32 = 0.3;
+const NORM_UP_BITS: f32 = 32.0;
+const NORM_DOWN_BITS: f32 = 2.0;
+const FUSE_ALONE: f32 = 0.6;
+
+/// Le varianti della catena che decodificano in parallelo (passo 11).
+#[derive(Clone, Copy, Debug)]
+enum Variant {
+    /// Limitatore davanti ai filtri dei toni (come MMTTY): regge il fading veloce e l'AGC che pompa, perde nel rumore bianco.
+    Limiter,
+    /// Ampiezze divise per il rumore misurato accanto ai toni: i livelli dell'ATC non risentono dei salti di guadagno.
+    Normalized,
+}
+
+/// Il soppressore d'impulsi (passo 10): alla frequenza piena, un campione che supera di `k` volte il livello medio (media di |x| su
+/// circa 20 ms, senza i campioni soppressi) si azzera, e con lui i campioni per `hold` dopo l'ultimo sopra soglia.
+struct Blanker {
+    k: f32,
+    avg: f32,
+    alpha: f32,
+    hold: u32,
+    left: u32,
+}
+
+impl Blanker {
+    fn new(k: f32) -> Self {
+        let rate = RATE as f32;
+        Self { k, avg: 0.0, alpha: 1.0 / (0.02 * rate), hold: (0.0005 * rate) as u32, left: 0 }
+    }
+
+    fn push(&mut self, s: f32) -> f32 {
+        let a = s.abs();
+        // la media segue i campioni ritagliati alla soglia: parte da zero e sale in qualche decina di ms, un impulso non la sposta
+        let warm = self.avg > 1e-6;
+        self.avg += self.alpha * (a.min(self.k * self.avg.max(1e-6)) - self.avg);
+        if warm && a > self.k * self.avg {
+            self.left = self.hold;
+            return 0.0;
+        }
+        if self.left > 0 {
+            self.left -= 1;
+            return 0.0;
+        }
+        s
+    }
+}
+
+/// La fusione dei caratteri delle varianti (passo 11): i caratteri che cadono a meno di mezzo carattere l'uno dall'altro sono lo stesso
+/// carattere visto da catene diverse, e vince quello con la probabilita' piu' alta. Un carattere esce quando tutte le varianti hanno avuto
+/// il tempo di consegnare il loro.
+struct Fuser {
+    spb: f64,
+    pending: Vec<(f64, Frame)>,
+}
+
+impl Fuser {
+    fn new(spb: f64) -> Self {
+        Self { spb, pending: Vec::new() }
+    }
+
+    /// Caratteri nuovi (con il tempo) e il tempo attuale; restituisce quelli decisi, in ordine.
+    fn push(&mut self, new: Vec<(f64, Frame)>, now: f64) -> Vec<(f64, Frame)> {
+        self.pending.extend(new);
+        self.pending.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut out = Vec::new();
+        while let Some(&(t0, _)) = self.pending.first() {
+            if t0 > now - 11.0 * self.spb {
+                break;
+            }
+            let n = self.pending.iter().take_while(|(t, _)| *t < t0 + 3.5 * self.spb).count();
+            let cluster: Vec<(f64, Frame)> = self.pending.drain(..n).collect();
+            // un carattere che la catena principale non ha visto passa solo se e' probabile: il rumore fa caratteri diversi in ogni
+            // variante, e la loro unione ne stamperebbe di piu'
+            if !cluster.iter().any(|(_, f)| f.main) && cluster.iter().all(|(_, f)| f.prob() < FUSE_ALONE) {
+                continue;
+            }
+            if let Some(best) = cluster.into_iter().max_by(|a, b| a.1.prob().total_cmp(&b.1.prob())) {
+                out.push(best);
+            }
+        }
+        out
     }
 }
 
@@ -836,10 +929,30 @@ pub struct RttyDemodulator {
     /// C'e' un segnale RTTY (l'AFC lavora solo allora) e da quanti bit non c'e' piu'.
     locked: bool,
     lost_bits: u32,
+    blanker: Option<Blanker>,
+    /// Livello del rumore (il minore dei due canali, medio) con cui si normalizzano le ampiezze; pesi della media in salita e in discesa.
+    noise_ref: f32,
+    norm_w: f32,
+    norm_down: f32,
+    /// Le varianti che decodificano lo stesso audio in parallelo (passo 11) e la fusione dei loro caratteri.
+    variants: Vec<RttyDemodulator>,
+    fuser: Fuser,
+    /// Campioni decimati elaborati e ritardo dei filtri di questa catena (per mettere in fila i caratteri delle varianti).
+    dec_n: u64,
+    delay: f64,
+    /// Taratura delle LLR di questa catena rispetto a quella di base (le varianti danno probabilita' confrontabili).
+    llr_mul: f32,
+    /// Limitatore: filtro largo quanto la coppia di toni prima di limitare.
+    limiter: Option<(Channel, Vec<f32>)>,
 }
 
 impl RttyDemodulator {
     pub fn new(params: RttyParams) -> Self {
+        Self::new_plain(params)
+    }
+
+    /// Una catena sola, senza varianti.
+    fn new_plain(params: RttyParams) -> Self {
         let baud = f64::from(params.baud);
         let decim = ((f64::from(RATE) / (baud * SAMPLES_PER_BIT)).floor() as usize).max(1);
         let rate = f64::from(RATE) / decim as f64;
@@ -910,6 +1023,16 @@ impl RttyDemodulator {
             err_avg: 0.0,
             locked: false,
             lost_bits: 0,
+            blanker: Some(Blanker::new(BLANK_K)),
+            noise_ref: 0.0,
+            norm_w: 0.0,
+            norm_down: 0.0,
+            variants: Vec::new(),
+            fuser: Fuser::new(f64::from(spb)),
+            dec_n: 0,
+            delay: (len as f64 - 1.0) / 2.0,
+            llr_mul: 1.0,
+            limiter: None,
         }
     }
 
@@ -931,19 +1054,25 @@ impl RttyDemodulator {
         self.uos = on;
     }
 
-    /// Ricevitore a discriminatore di frequenza (`true`) invece dei due filtri sui toni (di base).
+    /// Ricevitore a discriminatore di frequenza (`true`) invece dei due filtri sui toni (di base). Le varianti valgono solo con i filtri.
     pub fn set_discriminator(&mut self, on: bool) {
         if on == self.disc.is_some() {
             return;
         }
         let rate = f64::from(RATE) / self.decim as f64;
         self.disc = on.then(|| Discriminator::new(&self.params, self.spb, rate));
+        if on {
+            self.variants.clear();
+        }
     }
 
-    /// Decodifica del carattere intero (`true`, di base) o macchina dei bit di fldigi (`false`).
+    /// Decodifica del carattere intero (`true`, di base) o macchina dei bit di fldigi (`false`, senza varianti).
     pub fn set_frame_decoder(&mut self, on: bool) {
         let w = self.soft_len;
         self.frames = on.then(|| Frames::new(self.spb, w));
+        if !on {
+            self.variants.clear();
+        }
     }
 
     /// Soglia dello squelch sul rapporto segnale/rumore in dB (`snr_db`); `None` lo spegne.
@@ -1117,7 +1246,7 @@ impl RttyDemodulator {
     /// La LLR di un campione: la decisione dell'ATC divisa per la varianza del rumore misurata sui due toni (0 finche' non c'e' misura).
     fn llr(&self, v: f32) -> f32 {
         let var = 0.25 * self.var.iter().sum::<f32>();
-        if var > 0.0 { v / var } else { v }
+        self.llr_mul * if var > 0.0 { v / var } else { v }
     }
 
     /// Una decisione nuova nella macchina dei caratteri (`rtty::rx` di fldigi).
@@ -1182,6 +1311,49 @@ impl RttyDemodulator {
         }
     }
 
+    /// Una variante della catena (passo 11), con la sua taratura e il ritardo dei suoi filtri.
+    fn variant(params: RttyParams, kind: Variant) -> Self {
+        let mut v = RttyDemodulator::new_plain(params);
+        let baud = f64::from(params.baud);
+        let rate = f64::from(RATE) / v.decim as f64;
+        match kind {
+            Variant::Limiter => {
+                let h = lowpass(f64::from(params.shift_hz) / 2.0 + baud, baud, rate);
+                v.delay += (h.len() as f64 - 1.0) / 2.0;
+                v.limiter = Some((Channel::new(0.0, h.len(), rate), h));
+                v.llr_mul = LIMITER_LLR;
+            }
+            Variant::Normalized => {
+                v.norm_w = v.spb * NORM_UP_BITS;
+                v.norm_down = v.spb * NORM_DOWN_BITS;
+            }
+        }
+        v
+    }
+
+    /// Le varianti in parallelo e la fusione dei caratteri (passo 11): una catena col limitatore e una con le ampiezze normalizzate sul
+    /// rumore accanto ai toni decodificano lo stesso audio, e per ogni carattere vince il piu' probabile. Solo con i due filtri e la
+    /// decodifica del carattere intero.
+    pub fn set_variants(&mut self, on: bool) {
+        self.variants.clear();
+        if on && self.disc.is_none() && self.frames.is_some() {
+            for kind in [Variant::Normalized, Variant::Limiter] {
+                let mut v = RttyDemodulator::variant(self.params, kind);
+                v.offset_hz = self.offset_hz;
+                v.retune_all();
+                self.variants.push(v);
+            }
+        }
+    }
+
+    /// Il soppressore d'impulsi (acceso alla creazione).
+    pub fn set_blanker(&mut self, on: bool) {
+        self.blanker = on.then(|| Blanker::new(BLANK_K));
+        for v in &mut self.variants {
+            v.set_blanker(on);
+        }
+    }
+
     /// Il set di caratteri (di base l'ITA2 americano in maiuscolo).
     pub fn set_charset(&mut self, charset: RttyCharset) {
         self.charset = charset;
@@ -1196,10 +1368,65 @@ impl RttyDemodulator {
     /// Come [`Self::process`], con la probabilita' che ogni carattere sia giusto (sempre 1 con la macchina dei bit di fldigi).
     pub fn process_chars(&mut self, samples: &[f32]) -> Vec<RttyChar> {
         let mut out = Vec::new();
+        let mut frames = self.run(samples, &mut out);
+        if !self.variants.is_empty() {
+            let mut variants = std::mem::take(&mut self.variants);
+            for v in &mut variants {
+                let mut none = Vec::new();
+                // i caratteri delle varianti hanno `main` falso: da soli devono essere probabili
+                frames.extend(v.run(samples, &mut none).into_iter().map(|(t, mut f)| {
+                    f.main = false;
+                    (t, f)
+                }));
+            }
+            // le varianti ascoltano dove ascolta la catena principale (AFC)
+            for v in &mut variants {
+                if (v.offset_hz - self.offset_hz).abs() > 1e-3 {
+                    v.offset_hz = self.offset_hz;
+                    v.retune_all();
+                }
+            }
+            self.variants = variants;
+            let now = self.dec_n as f64 - self.delay;
+            frames = self.fuser.push(frames, now);
+        }
+        if self.open {
+            for (_, fr) in frames {
+                let ready = match &mut self.prob_squelch {
+                    Some(sq) => sq.push(fr),
+                    None => vec![fr],
+                };
+                for fr in ready {
+                    self.data = fr.code;
+                    self.data_prob = fr.prob();
+                    self.emit(&mut out);
+                }
+            }
+        }
+        out
+    }
+
+    /// Il ricevitore su altro audio: i caratteri della decodifica intera con il loro tempo (centro dello start in campioni decimati,
+    /// senza il ritardo dei filtri), oppure, con la macchina dei bit di fldigi, i caratteri gia' stampati in `out`.
+    fn run(&mut self, samples: &[f32], out: &mut Vec<RttyChar>) -> Vec<(f64, Frame)> {
+        let mut found = Vec::new();
         for &s in samples {
+            let s = match &mut self.blanker {
+                Some(b) => b.push(s),
+                None => s,
+            };
             let Some(z) = self.front.push(s) else { continue };
-            self.mark.push(z);
-            self.space.push(z);
+            let zt = match &mut self.limiter {
+                Some((ch, h)) => {
+                    ch.push(z);
+                    let (i, q) = ch.output(h);
+                    let a = (i * i + q * q).sqrt().max(1e-9);
+                    (i / a, q / a)
+                }
+                None => z,
+            };
+            self.mark.push(zt);
+            self.space.push(zt);
             self.noise[0].push(z);
             self.noise[1].push(z);
             if let Some(d) = &mut self.disc {
@@ -1218,34 +1445,35 @@ impl RttyDemodulator {
             }
             let m = self.mark.magnitude(&self.h);
             let sp = self.space.magnitude(&self.h);
-            let nz = 0.5 * (self.noise[0].magnitude(&self.h) + self.noise[1].magnitude(&self.h));
+            let (n0, n1) = (self.noise[0].magnitude(&self.h), self.noise[1].magnitude(&self.h));
+            let nz = 0.5 * (n0 + n1);
             self.sum_m += m;
             self.sum_s += sp;
             self.sum_n += 2.0 * nz;
             self.sum_count += 1;
             self.level_db = (20.0 * (m + sp).max(1e-6).log10()).max(-90.0);
+            let (m, sp) = if self.norm_w > 0.0 {
+                let x = n0.min(n1);
+                let w = if x < self.noise_ref { self.norm_down } else { self.norm_w };
+                self.noise_ref = decayavg(self.noise_ref, x, w);
+                let g = 1.0 / self.noise_ref.max(1e-9);
+                (m * g, sp * g)
+            } else {
+                (m, sp)
+            };
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
             let l = self.llr(v);
+            self.dec_n += 1;
             match &mut self.frames {
                 Some(f) => {
-                    if let Some(fr) = f.push(l)
-                        && self.open
-                    {
-                        let ready = match &mut self.prob_squelch {
-                            Some(sq) => sq.push(fr),
-                            None => vec![fr],
-                        };
-                        for fr in ready {
-                            self.data = fr.code;
-                            self.data_prob = fr.prob();
-                            self.emit(&mut out);
-                        }
+                    if let Some(fr) = f.push(l) {
+                        found.push((fr.t - self.delay, fr));
                     }
                 }
-                None => self.rx_bit(l, &mut out),
+                None => self.rx_bit(l, out),
             }
         }
-        out
+        found
     }
 
     /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti. La probabilita' di una lettera o di una cifra tiene conto
@@ -1529,6 +1757,24 @@ mod tests {
         // l'ITA2 di sempre: le stesse onde di prima
         let p = RttyParams::default();
         assert_eq!(modulate_charset("CQ 599 73 DE IU3ABC", p, 0.5, RttyCharset::Ita2), modulate(b"CQ 599 73 DE IU3ABC", p, 0.5));
+    }
+
+    #[test]
+    fn il_soppressore_toglie_le_scariche() {
+        // una scarica forte (50 volte il segnale) ogni 40 ms: senza soppressore si perdono caratteri, con il soppressore no
+        let params = RttyParams::default();
+        let mut audio = vec![0.0; 6000];
+        audio.extend(modulate(b"RYRY CQ DE IU3ABC IU3ABC K", params, 0.1));
+        audio.extend(vec![0.0; 6000]);
+        for (i, a) in audio.iter_mut().enumerate() {
+            let k = i % 480;
+            if k < 24 {
+                *a += 5.0 * (-(k as f32) / 8.0).exp() * if k % 2 == 0 { 1.0 } else { -1.0 };
+            }
+        }
+        let mut rx = RttyDemodulator::new(params);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(r.contains("CQ DE IU3ABC IU3ABC K"), "con il soppressore: {r:?}");
     }
 
     #[test]

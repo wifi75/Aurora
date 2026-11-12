@@ -170,3 +170,12 @@ squelch statistico apre quindi piu' in basso di quello su S/N (fino a 1,6 dB con
 inganna il rapporto segnale/rumore) e toglie anche i caratteri inventati prima e dopo il testo, per cui la soglia migliora persino
 rispetto allo squelch spento. Con lo squelch acceso il servizio usa lo statistico; la soglia S/N (ora 0 dB di base) si aggiunge solo se
 alzata. La tabella a squelch spento resta identica.
+
+**Passo 10** (soppressore d'impulsi e limitatore): alla frequenza piena un campione oltre 8 volte il livello medio (media di |x| su 20 ms
+fatta sui campioni ritagliati alla soglia, cosi' un impulso non la sposta) si azzera insieme ai 0,5 ms seguenti. Rispetto al passo 7:
+soglie da −0,20 a +0,10 dB, CER medio da −0,38 (scariche) a +0,06 punti; tenuto, acceso di base (`set_blanker`). Con 5 volte invece di 8
+tocca anche il rumore e peggiora tutto di 0,1-0,2 dB. Il limitatore come MMTTY (filtro largo quanto la coppia di toni, poi ampiezza
+costante, poi i filtri dei toni) da solo perde molto nel rumore bianco (+2 … +11 dB di soglia) e guadagna solo con il flutter (CER −4,4
+punti), le alte latitudini (−3,0) e l'AGC che pompa (−10,8): non si usa da solo ma come variante del passo 11. Provati e scartati: le
+ampiezze normalizzate sul rumore accanto ai toni (AGC −16 punti ma portante +3,4 dB e space attenuato +1,6 dB) e un compensatore dei
+salti di guadagno che riscala i livelli dell'ATC (scatta anche sul rumore: +17,7 dB in somma).
