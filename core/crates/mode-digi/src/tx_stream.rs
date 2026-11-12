@@ -373,6 +373,7 @@ mod tests {
         audio.extend(m.token("D"));
         audio.extend(m.token("E"));
         audio.extend(m.postamble());
+        audio.extend(vec![0.0; 6000]);
         let mut rx = rtty::RttyDemodulator::new(p);
         assert_eq!(String::from_utf8_lossy(&rx.process(&audio)), "CQDE");
     }

@@ -179,3 +179,43 @@ costante, poi i filtri dei toni) da solo perde molto nel rumore bianco (+2 … +
 punti), le alte latitudini (−3,0) e l'AGC che pompa (−10,8): non si usa da solo ma come variante del passo 11. Provati e scartati: le
 ampiezze normalizzate sul rumore accanto ai toni (AGC −16 punti ma portante +3,4 dB e space attenuato +1,6 dB) e un compensatore dei
 salti di guadagno che riscala i livelli dell'ATC (scatta anche sul rumore: +17,7 dB in somma).
+
+**Passo 11** (varianti e fusione): accanto alla catena principale ne girano altre due sullo stesso audio, una col limitatore (LLR scalate
+di 0,3, che altrimenti sarebbero troppo sicure) e una con le ampiezze normalizzate sul rumore accanto ai toni (media in salita su 32 bit,
+in discesa su 2: l'AGC della radio che scende di colpo). I caratteri delle tre catene che cadono a meno di mezzo carattere (3,5 bit)
+sono lo stesso carattere e vince il piu' probabile; uno visto solo da una variante passa solo sopra 0,6 (senza questa regola il rumore
+dava caratteri diversi in ogni variante e la loro unione peggiorava tutto di 0,8 dB). Si decide 11 bit dopo lo start (circa 3 bit oltre
+la catena sola). Rispetto al passo 10: soglie da −1,57 (CCIR medio) a +0,16 dB, CER medio giu' quasi ovunque: AGC che pompa −17,0
+punti (e ora una soglia: −2,8 dB), flutter −4,3, alte latitudini −1,7, portante −1,9 punti e −0,66 dB, CCIR cattivo −1,1. La taratura
+delle probabilita' resta giusta (detti al 90-100 % giusti al 97,9 %), la velocita' scende a 448 volte il tempo reale. Una variante con il
+filtro piu' largo (2 baud) non aggiunge niente oltre queste due. Tenuto, di base (`set_variants`); spento con il discriminatore.
+
+Tabella dopo il passo 11 (Aurora, soglia al 10 % / CER medio):
+
+| scenario | passo 11 | passo 3 |
+|---|---|---|
+| rumore 170/45 | −8,1 / 19,4 | −8,2 / 20,6 |
+| rumore 170/75 | −5,5 / 30,3 | −5,5 / 30,5 |
+| rumore 425/50 | −8,1 / 21,6 | −7,7 / 22,8 |
+| rumore 850/45 | −8,2 / 19,5 | −8,0 / 20,7 |
+| rumore 85/45 | −8,3 / 19,2 | −7,7 / 20,0 |
+| fuori +10 Hz | −7,8 / 21,3 | −7,4 / 22,6 |
+| space −12 dB | −5,3 / 28,4 | −5,4 / 29,8 |
+| CCIR buono | −0,8 / 28,8 | −0,8 / 30,3 |
+| CCIR medio | 1,5 / 32,6 | 3,1 / 35,3 |
+| CCIR cattivo | -- / 37,6 | -- / 41,6 |
+| flutter 10 Hz | -- / 60,1 | -- / 67,1 |
+| alte latitudini | -- / 68,0 | -- / 73,9 |
+| QRM a 250 Hz +6 | −8,3 / 20,2 | −8,2 / 21,7 |
+| QRM a 120 Hz −6 | −8,2 / 20,1 | −8,2 / 21,1 |
+| portante +30 Hz | −3,3 / 30,3 | 4,0 / 39,5 |
+| PSK31 a 150 Hz | −7,8 / 19,7 | −8,0 / 20,7 |
+| scheda +500 ppm | −7,8 / 20,6 | −7,5 / 22,1 |
+| scheda −500 ppm | −7,7 / 20,7 | −7,4 / 22,3 |
+| 45 baud | −7,1 / 24,2 | −6,8 / 25,9 |
+| stop 1 bit | −8,4 / 19,0 | −7,6 / 22,1 |
+| stop 2 bit | −8,4 / 19,5 | −8,4 / 19,8 |
+| scariche | −7,8 / 20,0 | −7,3 / 22,0 |
+| filtro 250 Hz | −8,2 / 19,1 | −8,3 / 20,7 |
+| audio tagliato | −6,9 / 24,4 | −6,5 / 26,1 |
+| AGC che pompa | −2,8 / 29,6 | -- / 50,6 |

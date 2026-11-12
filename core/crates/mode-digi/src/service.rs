@@ -1017,7 +1017,9 @@ mod tests {
         // trasmissione e ricezione con le stesse impostazioni si capiscono, in USB e in LSB
         for lsb in [false, true] {
             let mut d = Demod::new(&s, lsb);
-            let out = d.process(&DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb)).0;
+            let mut wave = DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb);
+            wave.extend(vec![0.0; 6000]);
+            let out = d.process(&wave).0;
             assert!(out.contains("CQ DE IU3ABC 599"), "lsb {lsb}, ricevuto: {out:?}");
         }
     }

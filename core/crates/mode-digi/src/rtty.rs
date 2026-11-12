@@ -947,8 +947,11 @@ pub struct RttyDemodulator {
 }
 
 impl RttyDemodulator {
+    /// Il ricevitore con le impostazioni di base: decodifica del carattere intero, soppressore d'impulsi e le varianti in parallelo.
     pub fn new(params: RttyParams) -> Self {
-        Self::new_plain(params)
+        let mut d = Self::new_plain(params);
+        d.set_variants(true);
+        d
     }
 
     /// Una catena sola, senza varianti.
@@ -1597,7 +1600,9 @@ mod tests {
         }
         seq.push((true, 4.0));
         let params = p(1500.0, 170.0, 45.45);
-        let audio = synth(&seq, params, 0.5, 0.5);
+        // dopo il testo un po' di silenzio: la fusione delle varianti decide un carattere tre bit dopo la catena principale
+        let mut audio = synth(&seq, params, 0.5, 0.5);
+        audio.extend(vec![0.0; 6000]);
         let mut rx = RttyDemodulator::new(params);
         assert_eq!(String::from_utf8_lossy(&rx.process(&audio)), "599 TU");
         let mut rx = RttyDemodulator::new(params);

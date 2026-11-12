@@ -465,7 +465,9 @@ mod tests {
         assert!(wait_state(&svc, "done", 15), "stato: {:?}", svc.snapshot().tx);
         assert_eq!(sent(&events), "CQ CQ DE IU3ABC IU3ABC 599 K TU");
         let mut d = super::super::Demod::new(&svc.settings(), false);
-        let out = d.process(&lock(&port.wave)).0;
+        let mut wave = lock(&port.wave).clone();
+        wave.extend(vec![0.0; 6000]);
+        let out = d.process(&wave).0;
         assert!(out.contains("IU3ABC IU3ABC 599 K TU"), "ricevuto: {out:?}");
         assert!(svc.tx_replace(0, "X").is_err());
     }
