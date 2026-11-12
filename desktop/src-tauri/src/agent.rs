@@ -173,13 +173,17 @@ fn single_instance() -> bool {
 /// La lingua scelta in Aurora (`aurora-lang` in `ui-settings.json`): 0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt. Come l'interfaccia, senza scelta
 /// vale l'italiano. Si rilegge a ogni cartolina, cosi' un cambio di lingua in Aurora vale subito (il menu del tray al prossimo avvio).
 fn lang() -> usize {
-    let Some(base) = std::env::var_os("APPDATA") else { return 0 };
-    let code = std::fs::read_to_string(PathBuf::from(base).join("Aurora").join("ui-settings.json"))
+    lang_index(&ui_lang_code())
+}
+
+/// Il codice della lingua scelta in Aurora (`it`, `en`, ..., anche `nl`); vuoto se non c'e' una scelta salvata.
+pub(crate) fn ui_lang_code() -> String {
+    let Some(base) = std::env::var_os("APPDATA") else { return String::new() };
+    std::fs::read_to_string(PathBuf::from(base).join("Aurora").join("ui-settings.json"))
         .ok()
         .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
         .and_then(|v| v.get("desktop")?.get("aurora-lang")?.as_str().map(|s| s.trim().trim_matches('"').to_string()))
-        .unwrap_or_default();
-    lang_index(&code)
+        .unwrap_or_default()
 }
 
 /// La lingua dell'interfaccia per i messaggi di Windows mostrati prima della finestra (per esempio WebView2 mancante).

@@ -34,6 +34,22 @@ applyTheme(document.documentElement, resolveTheme(readThemeChoice(browserStorage
 startAppearance();
 
 const queryClient = new QueryClient();
+
+// l'ultima casella di testo su cui si e' aperto il menu del tasto destro
+let lastField: HTMLInputElement | HTMLTextAreaElement | null = null;
+
+// «Cancella tutto»: svuota la casella con il setter nativo di `value` e poi lancia `input`, cosi' i componenti controllati di React
+// (che scavalcano l'assegnazione diretta) vedono il cambio e aggiornano il loro stato, come se il testo fosse stato cancellato a mano
+function clearLastField() {
+  const field = lastField;
+  if (!field || !field.isConnected || field.readOnly || field.disabled || field.value === '') return;
+  const proto = field instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+  if (setter) setter.call(field, '');
+  else field.value = '';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.focus();
+}
 const root = document.getElementById('root');
 
 // le preferenze si portano dal server prima di disegnare (i moduli le leggono all'avvio) e poi si tengono allineate
@@ -77,9 +93,13 @@ async function start() {
   // il menu del tasto destro del browser (Indietro, Ricarica, Ispeziona...) non serve: resta solo nei campi di testo, per copia e incolla
   document.addEventListener('contextmenu', (e) => {
     const target = e.target instanceof Element ? e.target : null;
+    // la casella su cui si e' cliccato: la svuota la voce «Cancella tutto» del menu (programma Windows, desktop/src-tauri/src/context_menu.rs)
+    const field = target?.closest('input, textarea');
+    lastField = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? field : null;
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
     e.preventDefault();
   });
+  (window as Window & { __auroraClearField?: () => void }).__auroraClearField = clearLastField;
   // all'avvio si parte sempre dalla pagina Stazione (scelta del proprietario); fanno eccezione le finestre staccate,
   // il collegamento di associazione del telefono e la pagina dei messaggi dell'autore (aperta dalla sua icona sul desktop)
   const solo = location.hash.startsWith('#/finestra/');
