@@ -504,6 +504,9 @@ fn deliver(data: &[f32], channels: usize, channel: &AtomicU8, free: &mpsc::Recei
     let _ = tx.send(mono);
 }
 
+/// Il flusso appena costruito, il canale da cui leggere i blocchi e quello per restituire i buffer usati.
+type BuiltInput = (InputStream, mpsc::Receiver<Vec<f32>>, mpsc::Sender<Vec<f32>>);
+
 /// Costruisce il flusso con questo formato (ancora fermo: lo avvia chi chiama) e da' il canale da cui leggere i blocchi e quello per restituire i buffer.
 fn build_input(
     device: &cpal::Device,
@@ -511,7 +514,7 @@ fn build_input(
     config: cpal::StreamConfig,
     channel: &Arc<AtomicU8>,
     on_error: impl FnMut(cpal::Error) + Send + 'static,
-) -> Result<(InputStream, mpsc::Receiver<Vec<f32>>, mpsc::Sender<Vec<f32>>), String> {
+) -> Result<BuiltInput, String> {
     let channels = usize::from(config.channels).max(1);
     let (tx, chunks_rx) = mpsc::channel::<Vec<f32>>();
     let (free_tx, free) = mpsc::channel::<Vec<f32>>();
