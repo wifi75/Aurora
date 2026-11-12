@@ -1256,7 +1256,7 @@ export const NL_UI: Record<string, string> = {
   "digi.f.rstr": "RST ontvangen",
   "digi.f.rsts": "RST gegeven",
   "digi.freq.follow": "Zenden op dezelfde frequentie",
-  "digi.freq.hint": "PSK: de draaggolffrequentie. RTTY: de frequentie van de marktoon, de laagste (meestal 2125 Hz).",
+  "digi.freq.hint": "PSK: de draaggolffrequentie. RTTY: het midden tussen de twee tonen; mark is de hoogste toon in USB, zoals in fldigi en  (bijvoorbeeld 2210 Hz met mark 2295 en space 2125).",
   "digi.freq.rx": "Ontvangstfrequentie (Hz)",
   "digi.freq.tx": "Zendfrequentie (Hz)",
   "digi.level": "Niveau",
