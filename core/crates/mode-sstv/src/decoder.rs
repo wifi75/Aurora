@@ -287,7 +287,7 @@ impl Decoder {
     }
 
     /// I prodotti in memoria a partire dal campione assoluto `start`, se ci sono ancora.
-    fn from_history(&self, start: u64) -> Option<Vec<[f32; 2]>> {
+    fn history_since(&self, start: u64) -> Option<Vec<[f32; 2]>> {
         let hist_start = self.total - self.history.len() as u64;
         (start >= hist_start && start <= self.total).then(|| self.history.iter().skip((start - hist_start) as usize).copied().collect())
     }
@@ -297,7 +297,7 @@ impl Decoder {
         let start = hit.end_sample + (spec.lead_sync() * f64::from(RATE)).round() as u64;
         let mut rx = self.new_rx(hit.mode, hit.offset_hz, false);
         // i campioni dopo il VIS gia' demodulati vengono dalla memoria
-        if let Some(past) = self.from_history(start) {
+        if let Some(past) = self.history_since(start) {
             rx.buf.extend(past);
         }
         tracing::info!("SSTV: VIS di {} (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
@@ -310,7 +310,7 @@ impl Decoder {
         // si parte poco prima dell'inizio della riga del primo sincronismo ancora in memoria; la fase la ritrova la prima riga
         let margin = (0.01 * f64::from(RATE)) as u64;
         let back = (spec.sync_offset() * f64::from(RATE)).round() as u64 + margin;
-        let Some(past) = hit.syncs.iter().find_map(|&s| s.checked_sub(back).and_then(|start| self.from_history(start))) else { return };
+        let Some(past) = hit.syncs.iter().find_map(|&s| s.checked_sub(back).and_then(|start| self.history_since(start))) else { return };
         let mut rx = self.new_rx(hit.mode, hit.offset_hz, true);
         rx.buf.extend(past);
         tracing::info!("SSTV: {} riconosciuto dal periodo delle righe, senza VIS (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
@@ -332,7 +332,7 @@ impl Decoder {
     /// ancora in memoria.
     fn check_pending(&mut self, events: &mut Vec<DecoderEvent>) {
         let Some((hit, syncs_then, groups_then)) = self.pending else { return };
-        if self.from_history(hit.end_sample).is_none() {
+        if self.history_since(hit.end_sample).is_none() {
             self.pending = None;
             return;
         }
