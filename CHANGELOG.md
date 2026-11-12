@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Impostazioni riorganizzate ad albero**: cinque famiglie colorate (Stazione, Modi, Log cluster e servizi, Aspetto e avvisi, Accesso e assistenza) con sottofamiglie e pagine che si aprono a fisarmonica; i Modi hanno un ramo ciascuno (FT8 · FT4, JT65 · JT9 · FST4, VHF · EME, WSPR · FST4W, PSK · RTTY · CW, SSTV, Satelliti, Contest · Fox/Hound) con le impostazioni prese da Filtri, Generale, Servizi online e dalle finestre delle pagine. All'apertura tutto chiuso e la pagina Informazioni, con le ultime novita' e «Sostieni Aurora»; l'ingranaggio di ogni pagina apre il ramo del suo modo. Nuova pagina Dati personali (nome, cognome, QTH, email facoltativa) condivisa con PSK·RTTY·CW. I collegamenti vecchi alle schede portano alla pagina nuova; finestra un po' piu' larga.
 
 ## 0.11.239 - 2026-11-12
 - **Tune** parte subito anche a meta' di un periodo lungo (FST4, FST4W, WSPR), come WSJT-X; prima aspettava l'inizio del periodo dopo. Resta al massimo 2 minuti e il cambio di periodo non lo taglia.
