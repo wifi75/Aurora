@@ -491,7 +491,11 @@ impl Rigctld {
         }
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, tcp_port));
         // Hamlib 4.5 (Debian 12) apre la radio prima di mettersi in ascolto: una Icom a 4800 baud puo' metterci diversi secondi
-        let deadline = Instant::now() + Duration::from_secs(15);
+        // con «Accendi» Hamlib accende la radio e aspetta che sia pronta prima di mettersi in ascolto: una radio appena spenta puo' metterci
+        // un minuto. Con i 15 s di prima rigctld veniva chiuso a meta' accensione e rilanciato da capo, piu' volte di fila (registro del
+        // 2026-11-12: undici tentativi, tre minuti e mezzo senza frequenza dopo un aggiornamento)
+        let powering_on = config.conf.iter().any(|(k, v)| k == "auto_power_on" && v == "1");
+        let deadline = Instant::now() + Duration::from_secs(if powering_on { 75 } else { 15 });
         let client = loop {
             match RigctldClient::connect(addr, Duration::from_millis(250)) {
                 Ok(client) => break Ok(client),
