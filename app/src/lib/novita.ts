@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'fixed',
     title: [
       'Aggiornamento senza intoppi e WebView2',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'SSTV: FSK ID e modo riconosciuto da solo',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'changed',
     title: [
       'SSTV: ascolto sempre acceso e log più comodo',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'RTTY: ricevitore migliore e nuove impostazioni',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'PSK, RTTY e CW: trasmissione aperta',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'CW: decodifica migliore e tutta la banda',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'PSK: più probabilità, tutti i segnali e meno scariche',
@@ -168,7 +168,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'new',
     title: [
       'Log chiuso: i QSO arrivano dopo',
@@ -189,7 +189,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.241',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T19:34:38Z',
     kind: 'changed',
     title: [
       'Interfaccia: menu del tasto destro e altre rifiniture',
