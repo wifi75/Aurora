@@ -1826,6 +1826,12 @@ pub async fn run(
         digi.set_emitter(Arc::new(move |ev| {
             let _ = events.send(Event::Digi(ev));
         }));
+        // RTTY: con la radio in LSB mark e space si invertono da soli (come fldigi); il modo lo dice il CAT, OmniRig non lo riporta
+        let cat = Arc::clone(&cat);
+        digi.set_radio_mode_source(Arc::new(move || match cat.backend() {
+            rig_control::cat_config::Backend::Omnirig | rig_control::cat_config::Backend::None => None,
+            _ => cat.status().rig.and_then(|r| r.mode),
+        }));
     }
     // la trasmissione e' sempre abilitata (nessuna opzione): restano STOP TX, i tetti, il dead-man e le automazioni spente di base
     let native_controls = Arc::new(engine_native::NativeControls::default());

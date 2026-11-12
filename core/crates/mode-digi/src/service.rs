@@ -28,6 +28,38 @@ pub trait DigiTxPort: Send + Sync {
 
 pub type Emitter = Arc<dyn Fn(DigiEvent) + Send + Sync>;
 
+/// Il ricevitore RTTY: due filtri sui toni (come fldigi e il «tipo 0») o discriminatore di frequenza (il «tipo 1»).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RttyReceiver {
+    /// Due filtri, e il discriminatore sotto i 40 Hz di spostamento (dove i due filtri si sovrappongono: con 23 Hz e 3 dB di S/N i due filtri
+    /// sbagliano il 24% dei caratteri, il discriminatore il 5%; con 50 Hz e oltre vincono i due filtri, `tests/rtty_confronto.rs`, prova `stretti`).
+    #[default]
+    Auto,
+    Filters,
+    Discriminator,
+}
+
+impl RttyReceiver {
+    fn discriminator(self, shift_hz: f32) -> bool {
+        match self {
+            RttyReceiver::Auto => shift_hz < 40.0,
+            RttyReceiver::Filters => false,
+            RttyReceiver::Discriminator => true,
+        }
+    }
+}
+
+/// Il modo della radio letto dal CAT («USB», «PKTLSB», «DATA-L»...), se c'e' una radio collegata che lo dice.
+pub type RadioModeSource = Arc<dyn Fn() -> Option<String> + Send + Sync>;
+
+/// La radio e' in banda laterale inferiore (LSB, LSB dati): in RTTY mark e space si invertono da soli, come in fldigi
+/// (`reverse = Reverse ^ !USB`, `src/rtty/rtty.cxx`). Nomi di Hamlib (`LSB`, `PKTLSB`), di OmniRig e TCI (`DIGL`, `DATA-L`, `LSB-D`).
+pub fn is_lower_sideband(mode: &str) -> bool {
+    let m = mode.trim().to_ascii_uppercase().replace(['-', '_', ' '], "");
+    m.contains("LSB") || matches!(m.as_str(), "DIGL" | "DATAL" | "DIGLSB" | "PKTL")
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DigiMode {
@@ -147,13 +179,22 @@ pub(crate) fn valid_macro_name(name: &str) -> bool {
 #[serde(default)]
 pub struct DigiSettings {
     pub mode: DigiMode,
-    /// Frequenza della portante in ricezione (PSK) o del mark (RTTY), in Hz sull'audio.
+    /// Frequenza della portante in ricezione (PSK, CW) o del centro fra mark e space (RTTY, come in fldigi e come la disegna la cascata),
+    /// in Hz sull'audio.
     pub rx_freq_hz: f32,
     /// In trasmissione si usa la stessa frequenza della ricezione.
     pub tx_follow_rx: bool,
     pub tx_freq_hz: f32,
     pub rtty_shift_hz: f32,
     pub rtty_baud: f32,
+    /// RTTY: mark e space scambiati a mano (tasto «Rev» di fldigi e ). Con la radio in LSB si invertono gia' da soli.
+    pub rtty_reverse: bool,
+    /// RTTY: UOS, dopo uno spazio si torna alle lettere (acceso di base, come `UOSrx` di fldigi).
+    pub rtty_uos: bool,
+    /// RTTY: soglia dello squelch sul rapporto segnale/rumore (dB; 0 = solo rumore). L'RTTY non usa `squelch_db`.
+    pub rtty_squelch_snr_db: f32,
+    /// RTTY: il ricevitore (due filtri, discriminatore o scelta secondo lo spostamento).
+    pub rtty_receiver: RttyReceiver,
     /// Velocita' della CW in parole al minuto (trasmissione; in ricezione e' il valore di partenza, poi si adatta al segnale).
     pub cw_wpm: f32,
     /// AFC: la ricezione segue la deriva del segnale (Options › AFC).
@@ -231,6 +272,10 @@ impl Default for DigiSettings {
             tx_freq_hz: 1000.0,
             rtty_shift_hz: 170.0,
             rtty_baud: 45.45,
+            rtty_reverse: false,
+            rtty_uos: true,
+            rtty_squelch_snr_db: 6.0,
+            rtty_receiver: RttyReceiver::Auto,
             cw_wpm: 20.0,
             afc_on: true,
             squelch_on: false,
@@ -260,6 +305,9 @@ impl DigiSettings {
         if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
             return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
         }
+        if !self.rtty_squelch_snr_db.is_finite() || !(0.0..=40.0).contains(&self.rtty_squelch_snr_db) {
+            return Err(DigiError::BadValue("soglia S/N dello squelch RTTY fuori da 0-40 dB".into()));
+        }
         if !self.cw_wpm.is_finite() || !(cw::WPM_MIN..=cw::WPM_MAX).contains(&self.cw_wpm) {
             return Err(DigiError::BadValue("velocita' CW fuori da 5-60 WPM".into()));
         }
@@ -282,8 +330,9 @@ impl DigiSettings {
         if self.tx_follow_rx { self.rx_freq_hz } else { self.tx_freq_hz }
     }
 
-    fn rtty(&self, mark_hz: f32) -> RttyParams {
-        RttyParams { mark_hz, shift_hz: self.rtty_shift_hz, baud: self.rtty_baud }
+    /// I parametri RTTY sul centro dato; `lsb`: la radio e' in LSB e mark e space si invertono (oltre a «Rev»).
+    fn rtty(&self, centre_hz: f32, lsb: bool) -> RttyParams {
+        RttyParams { centre_hz, shift_hz: self.rtty_shift_hz, baud: self.rtty_baud, reverse: self.rtty_reverse ^ lsb }
     }
 }
 
@@ -295,6 +344,11 @@ pub struct RxStatus {
     pub freq_hz: f32,
     /// Lo squelch lascia passare il segnale.
     pub squelch_open: bool,
+    /// RTTY: rapporto segnale/rumore (dB) su cui lavora lo squelch.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snr_db: Option<f32>,
+    /// La radio e' in LSB: in RTTY mark e space sono gia' invertiti da soli.
+    pub radio_lsb: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -339,6 +393,9 @@ struct Inner {
     tx: Mutex<TxStatus>,
     port: Mutex<Option<Arc<dyn DigiTxPort>>>,
     emit: Mutex<Option<Emitter>>,
+    radio_mode: Mutex<Option<RadioModeSource>>,
+    /// L'ultima lettura: la radio e' in LSB.
+    radio_lsb: AtomicBool,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -346,6 +403,15 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 impl Inner {
+    /// Legge adesso il modo della radio (se c'e' da dove) e ricorda se e' LSB; senza radio resta l'ultima lettura (di base USB).
+    fn read_radio_lsb(&self) -> bool {
+        let source = lock(&self.radio_mode).clone();
+        if let Some(mode) = source.and_then(|f| f()) {
+            self.radio_lsb.store(is_lower_sideband(&mode), Ordering::Relaxed);
+        }
+        self.radio_lsb.load(Ordering::Relaxed)
+    }
+
     fn emit(&self, ev: DigiEvent) {
         let emitter = lock(&self.emit).clone();
         if let Some(e) = emitter {
@@ -395,10 +461,12 @@ impl DigiService {
             tx_active: AtomicBool::new(false),
             tx_abort: AtomicBool::new(false),
             queue,
-            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0, freq_hz: settings.rx_freq_hz, squelch_open: true }),
+            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0, freq_hz: settings.rx_freq_hz, squelch_open: true, snr_db: None, radio_lsb: false }),
             tx: Mutex::new(TxStatus { state: "idle".into(), ..TxStatus::default() }),
             port: Mutex::new(None),
             emit: Mutex::new(None),
+            radio_mode: Mutex::new(None),
+            radio_lsb: AtomicBool::new(false),
         });
         let worker = Arc::clone(&inner);
         if let Err(e) = std::thread::Builder::new().name("aurora-digi".into()).spawn(move || rx_loop(&worker, rx, settings)) {
@@ -413,6 +481,11 @@ impl DigiService {
 
     pub fn set_tx_port(&self, port: Arc<dyn DigiTxPort>) {
         *lock(&self.inner.port) = Some(port);
+    }
+
+    /// Da dove leggere il modo della radio (CAT): in RTTY con la radio in LSB mark e space si invertono da soli. Si rilegge ogni secondo.
+    pub fn set_radio_mode_source(&self, source: RadioModeSource) {
+        *lock(&self.inner.radio_mode) = Some(source);
     }
 
     /// Una copia dell'audio d'ingresso (frequenza della scheda). Con l'ascolto spento non costa niente.
@@ -517,13 +590,13 @@ impl DigiService {
         self.inner.rx_status_event();
     }
 
-    /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti.
-    pub fn wave_of(text: &str, s: &DigiSettings) -> Vec<f32> {
+    /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
+    pub fn wave_of(text: &str, s: &DigiSettings, lsb: bool) -> Vec<f32> {
         let bytes: Vec<u8> = text.chars().map(|c| if (c as u32) < 256 { c as u32 as u8 } else { b'?' }).collect();
         match (s.mode.psk(), s.mode) {
             (Some(mode), _) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
             (None, DigiMode::Cw) => cw::modulate(&bytes, s.tx_freq(), s.cw_wpm, 0.9),
-            (None, _) => rtty::modulate(&bytes, s.rtty(s.tx_freq()), 0.9),
+            (None, _) => rtty::modulate(&bytes, s.rtty(s.tx_freq(), lsb), 0.9),
         }
     }
 
@@ -537,7 +610,8 @@ impl DigiService {
             return Err(DigiError::Busy);
         }
         let settings = self.settings();
-        let wave = Self::wave_of(text, &settings);
+        let lsb = self.inner.read_radio_lsb();
+        let wave = Self::wave_of(text, &settings, lsb);
         let total = wave.len() as f32 / RATE;
         self.inner.tx_active.store(true, Ordering::SeqCst);
         self.inner.tx_abort.store(false, Ordering::SeqCst);
@@ -616,7 +690,7 @@ enum Demod {
 }
 
 impl Demod {
-    fn new(s: &DigiSettings) -> Demod {
+    fn new(s: &DigiSettings, lsb: bool) -> Demod {
         let squelch = s.squelch_on.then_some(s.squelch_db);
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
@@ -632,9 +706,12 @@ impl Demod {
                 Demod::Psk(Box::new(d))
             }
             None => {
-                let mut d = RttyDemodulator::new(s.rtty(s.rx_freq_hz));
+                let mut d = RttyDemodulator::new(s.rtty(s.rx_freq_hz, lsb));
                 d.set_afc(s.afc_on);
-                d.set_squelch_db(squelch);
+                d.set_uos(s.rtty_uos);
+                d.set_discriminator(s.rtty_receiver.discriminator(s.rtty_shift_hz));
+                // lo squelch dell'RTTY guarda il rapporto segnale/rumore, come la «metric» di fldigi, non il livello
+                d.set_squelch_snr_db(s.squelch_on.then_some(s.rtty_squelch_snr_db));
                 Demod::Rtty(Box::new(d))
             }
         }
@@ -646,6 +723,14 @@ impl Demod {
             Demod::Psk(d) => d.frequency(),
             Demod::Rtty(d) => d.frequency(),
             Demod::Cw(d) => d.frequency(),
+        }
+    }
+
+    /// Rapporto segnale/rumore (dB), solo per l'RTTY.
+    fn snr_db(&self) -> Option<f32> {
+        match self {
+            Demod::Rtty(d) => Some(d.snr_db()),
+            _ => None,
         }
     }
 
@@ -676,7 +761,9 @@ fn level_db(audio: &[f32]) -> f32 {
 }
 
 fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
-    let mut demod = Demod::new(&settings);
+    let mut lsb = inner.read_radio_lsb();
+    let mut last_radio = Instant::now();
+    let mut demod = Demod::new(&settings, lsb);
     let mut mode = settings.mode;
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
@@ -704,11 +791,21 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 }
             }
             Some(Msg::Config(s)) => {
-                demod = Demod::new(&s);
+                demod = Demod::new(&s, lsb);
                 mode = s.mode;
             }
-            Some(Msg::Reset) => demod = Demod::new(&lock(&inner.settings).clone()),
+            Some(Msg::Reset) => demod = Demod::new(&lock(&inner.settings).clone(), lsb),
             None => {}
+        }
+        // RTTY: con la radio passata da USB a LSB (o viceversa) mark e space si scambiano da soli
+        if mode == DigiMode::Rtty && last_radio.elapsed() >= Duration::from_secs(1) {
+            last_radio = Instant::now();
+            let now = inner.read_radio_lsb();
+            if now != lsb {
+                lsb = now;
+                tracing::info!("RTTY: radio in {}, mark e space {}", if lsb { "LSB" } else { "USB" }, if lsb { "invertiti" } else { "normali" });
+                demod = Demod::new(&lock(&inner.settings).clone(), lsb);
+            }
         }
         if last_status.elapsed() >= Duration::from_millis(400) {
             last_status = Instant::now();
@@ -717,6 +814,8 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 rx.level_db = peak_db;
                 rx.freq_hz = demod.frequency();
                 rx.squelch_open = demod.signal().1;
+                rx.snr_db = demod.snr_db();
+                rx.radio_lsb = lsb;
             }
             peak_db = -90.0;
             if inner.listening.load(Ordering::Relaxed) {
@@ -775,14 +874,56 @@ mod tests {
     #[test]
     fn il_testo_diventa_audio_e_si_rilegge() {
         let s = DigiSettings::default();
-        let wave = DigiService::wave_of("CQ DE IU3ABC", &s);
+        let wave = DigiService::wave_of("CQ DE IU3ABC", &s, false);
         assert!(!wave.is_empty());
-        let mut d = Demod::new(&s);
+        let mut d = Demod::new(&s, false);
         let mut all = vec![0.0; 4000];
         all.extend(wave);
         all.extend(vec![0.0; 4000]);
         let out = String::from_utf8_lossy(&d.process(&all)).into_owned();
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    #[test]
+    fn rtty_in_usb_il_mark_e_il_tono_alto_e_in_lsb_si_inverte() {
+        let s = DigiSettings { mode: DigiMode::Rtty, rx_freq_hz: 1500.0, tx_freq_hz: 1500.0, ..DigiSettings::default() };
+        let usb = s.rtty(1500.0, false);
+        assert_eq!((usb.mark_hz(), usb.space_hz()), (1585.0, 1415.0));
+        let lsb = s.rtty(1500.0, true);
+        assert_eq!((lsb.mark_hz(), lsb.space_hz()), (1415.0, 1585.0));
+        // «Rev» in LSB rimette il mark in alto
+        let rev = DigiSettings { rtty_reverse: true, ..s.clone() };
+        assert_eq!(rev.rtty(1500.0, true).mark_hz(), 1585.0);
+        assert_eq!(rev.rtty(1500.0, false).mark_hz(), 1415.0);
+        // trasmissione e ricezione con le stesse impostazioni si capiscono, in USB e in LSB
+        for lsb in [false, true] {
+            let mut d = Demod::new(&s, lsb);
+            let out = String::from_utf8_lossy(&d.process(&DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb))).into_owned();
+            assert!(out.contains("CQ DE IU3ABC 599"), "lsb {lsb}, ricevuto: {out:?}");
+        }
+    }
+
+    #[test]
+    fn i_modi_lsb_della_radio_si_riconoscono() {
+        for m in ["LSB", "PKTLSB", "lsb", "DATA-L", "DIGL", "LSB-D", "ECSSLSB"] {
+            assert!(is_lower_sideband(m), "{m}");
+        }
+        for m in ["USB", "PKTUSB", "DATA-U", "DIGU", "RTTY", "CW", "FM", ""] {
+            assert!(!is_lower_sideband(m), "{m}");
+        }
+    }
+
+    #[test]
+    fn le_impostazioni_rtty_vecchie_si_leggono_con_i_valori_di_base() {
+        let s: DigiSettings = serde_json::from_str(r#"{"mode":"rtty","rx_freq_hz":1500,"rtty_shift_hz":170,"rtty_baud":45.45}"#).expect("json");
+        assert!(!s.rtty_reverse);
+        assert!(s.rtty_uos);
+        assert_eq!(s.rtty_receiver, RttyReceiver::Auto);
+        assert!(!s.rtty_receiver.discriminator(170.0));
+        assert!(s.rtty_receiver.discriminator(23.0));
+        let d: DigiSettings = serde_json::from_str(r#"{"rtty_receiver":"discriminator"}"#).expect("json");
+        assert_eq!(d.rtty_receiver, RttyReceiver::Discriminator);
+        assert!(s.validate().is_ok());
     }
 
     /// Issue #45: dall'FT8 alla pagina dei modi testuali con il CW scelto. La pagina spegne l'ascolto uscendo e lo riaccende rientrando:
@@ -810,7 +951,7 @@ mod tests {
         svc.start_rx();
         assert!(svc.is_listening());
         let mut wave = vec![0.0; 6000];
-        wave.extend(DigiService::wave_of("CQ IU3ABC", &s));
+        wave.extend(DigiService::wave_of("CQ IU3ABC", &s, false));
         wave.extend(vec![0.0; 12000]);
         for chunk in wave.chunks(1200) {
             svc.feed(RATE as u32, chunk);
