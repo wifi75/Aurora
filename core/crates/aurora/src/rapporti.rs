@@ -369,7 +369,7 @@ impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for Strato {
         }
         let mut testo = Testo(String::new());
         event.record(&mut testo);
-        if scelta_dell_operatore(&testo.0) {
+        if scelta_dell_operatore(&testo.0) || rumore_di_libreria(&testo.0) {
             return;
         }
         let livello = if *meta.level() == tracing::Level::ERROR { "error" } else { "warn" };
@@ -420,6 +420,13 @@ fn scelta_dell_operatore(testo: &str) -> bool {
 }
 
 /// Gli errori sempre; gli avvisi solo di radio, PTT e audio. Mai quelli dei rapporti stessi e delle librerie di rete che usano.
+/// Messaggi di librerie che non sono errori di Aurora. Su Linux la libreria di PulseAudio scrive «Client disconnected» come errore ogni volta
+/// che un suo collegamento si chiude (a ogni elenco dei dispositivi audio, o quando il server PulseAudio non c'e' e si usa ALSA): nei rapporti
+/// del 2026-11-12 erano 63 righe da un solo PC, con l'audio che funzionava.
+fn rumore_di_libreria(testo: &str) -> bool {
+    testo.contains("pulseaudio::client::reactor") && testo.contains("Client disconnected")
+}
+
 fn da_segnalare(livello: tracing::Level, origine: &str) -> bool {
     const ESCLUSI: [&str; 6] = ["aurora::rapporti", "ureq", "rustls", "hyper", "h2", "tungstenite"];
     if ESCLUSI.iter().any(|e| origine.starts_with(e)) {
@@ -1347,6 +1354,12 @@ impl Rapporti {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn pulseaudio_disconnections_are_not_reported() {
+        assert!(rumore_di_libreria("Reactor error: Client disconnected log.target=pulseaudio::client::reactor log.module_path=pulseaudio::client::reactor"));
+        assert!(!rumore_di_libreria("ingresso audio non trovato"));
+    }
 
     #[test]
     fn il_pc_si_descrive_senza_dati_personali() {
