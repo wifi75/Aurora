@@ -6092,15 +6092,26 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   max-width: 18rem;
   padding: 0.45rem 0.6rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--line, rgba(127, 127, 127, 0.35));
-  background: var(--panel, #1c2430);
-  color: var(--text, inherit);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  /* fondo pieno e testo a contrasto: nero con testo bianco nei temi scuri, bianco con testo nero nel tema chiaro */
+  border: 1px solid #3a3a3a;
+  background: #0b0b0d;
+  color: #f4f4f4;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   font-family: inherit;
   font-size: 0.85rem;
   white-space: normal;
   pointer-events: none;
 }
+.calltip .muted { color: #b9b9b9; }
+.calltip-call { color: #ffffff; }
+:root[data-theme='light'] .calltip {
+  border-color: #c9ced6;
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+:root[data-theme='light'] .calltip .muted { color: #4d4d4d; }
+:root[data-theme='light'] .calltip-call { color: #000000; }
 .calltip-country { display: flex; align-items: center; gap: 0.3rem; }
 .calltip-name { font-weight: 600; }
 
