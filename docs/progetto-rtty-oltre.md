@@ -246,3 +246,12 @@ fuori +10 Hz −0,28 dB, ma portante +30 Hz +0,26 dB e +0,44 punti (la portante 
 toni era +6,2 dB, con la concordanza entro 3 Hz +0,33). Peggiora uno scenario: resta un'opzione spenta (`set_fine_tuning`), la tabella
 di base non cambia. Velocita' (45 contro 45,45 baud) e ±500 ppm: la decodifica del carattere intero ricentra ogni start, l'errore di
 orologio lungo un carattere resta sotto 0,08 bit e non serve un orologio a lungo termine (scheda ±500 ppm entro 0,1 dB dal rumore).
+
+**Passo 15** (multicanale): `rtty_multi::RttyMulti` trova da solo i segnali RTTY della banda audio (300-3000 Hz) e apre un ricevitore
+completo per ognuno (con varianti, modello del testo, ripetizioni e squelch statistico). Un banco di filtri di Goertzel a passi di 5 Hz
+misura la potenza su finestre di un bit; ogni secondo un centro e' un segnale se i due toni alla distanza dello spostamento sono picchi
+(entro 10 Hz), stanno 6 dB sopra la mediana della banda e le loro potenze bit per bit sono anticorrelate (sotto −0,5). Un canale nuovo
+non nasce a meno di mezzo spostamento da uno aperto; un canale senza caratteri sicuri per 30 s si chiude; al massimo 30. Prove: tre
+stazioni insieme a 805, 1500 e 2210 Hz con rumore si decodificano tutte (e non si aprono canali sui lobi laterali); una portante nel
+rumore non apre canali. Prima versione: i lobi a ±65 Hz dei toni forti aprivano canali falsi, tolti chiedendo i picchi. Il motore e'
+pronto; l'interfaccia (una riga per canale nella finestra di ricezione) non e' ancora fatta.

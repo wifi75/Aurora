@@ -6,6 +6,7 @@
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
 //! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee nostre);
+//! - [`rtty_multi`]: RTTY multicanale (trova i segnali nella banda e li decodifica tutti);
 //! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore a soglia adattiva);
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
 //! - [`tx_stream`]: i modulatori a flusso (trasmissione scritta dal vivo, avanzamento carattere per carattere);
@@ -19,6 +20,7 @@ pub mod macro_files;
 pub mod mmtty_oracle;
 pub mod psk;
 pub mod rtty;
+pub mod rtty_multi;
 pub mod service;
 pub mod tx_stream;
 pub mod varicode;
