@@ -2,6 +2,16 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-12 notte (0.11.242 pubblicata, sito aggiornato)
+
+- **0.11.242** (21:02 UTC): QSO del log da correggere e cancellare (#47); pannello Segnali con «Controllo» che si salva, Pulisci, altezza e
+  nominativi sulla cascata che spariscono (#50); SSTV con cronologie a strisce e freccette, «Trasmetti» in cima con F1 ed Esc; testo
+  trasmesso solo nella finestra TX, doppio Esc che spegne l'Auto CQ, tasto RX/TX che ferma; avvio sui Windows 10 prima della 2004
+  (`WerRegisterAppLocalDump` cercata quando serve); avvisi della stazione non nei primi 20 s; commento intero nel DX Cluster.
+- **In pausa**: ramo `lavoro/cw-riprova` (commit `wip`, non verificato): AGC, velocita' e QRN largo del CW; l'ultima media del banco letta
+  era 23,6% contro 26,5%, ma senza la tabella riga per riga. Da riprendere: finire le varianti, controllare che nessuna riga peggiori.
+- **Da provare con la radio** e a schermo: tutto quanto sopra e' passato solo dalle prove automatiche.
+
 ## Stato al 2026-11-12 sera (0.11.241 pubblicata, sito aggiornato)
 
 - **0.11.241** (19:34 UTC): CW con decodificatore probabilistico, noise blanker, rumore dalle bande laterali, aggancio rapido, «TX alla
