@@ -257,6 +257,8 @@ log.tab.mapTip,Show the DX Map in place of the log,Toon de DX-kaart in plaats va
 log.total,{n} QSOs,{n} QSO’s
 log.empty,No QSOs in the log,Geen QSO’s in het logboek
 log.loggedBadge,LOGGED,GELOGD
+log.readonly4om,"Log4OM2 log, read only: QSOs are corrected and deleted in Log4OM2.","Logboek van Log4OM2, alleen-lezen: QSO’s worden in Log4OM2 gecorrigeerd en verwijderd."
+log.editTip,Double click to correct or delete this QSO. It changes only Aurora’s log and its ADIF file: nothing is sent again to the external logs.,Dubbelklik om deze QSO te corrigeren of te verwijderen. Alleen het logboek van Aurora en het bijbehorende ADIF-bestand veranderen: naar de externe logboeken wordt niets opnieuw verzonden.
 log.unavailable,Log4OM2 log not connected: start Aurora with AURORA_LOG4OM_DB,Log4OM2-logboek niet verbonden: start Aurora met AURORA_LOG4OM_DB
 log.col.date,UTC date,UTC-datum
 log.col.call,Callsign,Roepnaam
@@ -2091,6 +2093,26 @@ exp.f.rcvd,Report received,Ontvangen rapport
 exp.f.grid,Grid,Locator
 exp.f.name,Name,Naam
 exp.f.comment,Comment,Opmerking
+exp.f.qth,QTH,QTH
+exp.edit.btn,Edit,Bewerken
+exp.edit.row,Edit the QSO with {call},QSO met {call} bewerken
+exp.edit.rowTip,"Opens the window to correct or delete this QSO (a double click on the row does the same). It changes only Aurora’s log and its ADIF file: nothing is sent again to the external logs (UDP, Wavelog, ClubLog, QRZ, LoTW).","Opent het venster om deze QSO te corrigeren of te verwijderen (dubbelklikken op de rij doet hetzelfde). Alleen het logboek van Aurora en het bijbehorende ADIF-bestand veranderen: naar de externe logboeken (UDP, Wavelog, ClubLog, QRZ, LoTW) wordt niets opnieuw verzonden."
+exp.edit.title,Correct or delete the QSO,QSO corrigeren of verwijderen
+exp.edit.note,"The correction applies to Aurora’s log and its ADIF file, and “worked before” is worked out again. Nothing is sent again to the external logs (UDP, Wavelog, ClubLog, QRZ, LoTW): there the QSO has to be corrected by hand.","De correctie geldt voor het logboek van Aurora en het bijbehorende ADIF-bestand, en ‘eerder gewerkt’ wordt opnieuw berekend. Naar de externe logboeken (UDP, Wavelog, ClubLog, QRZ, LoTW) wordt niets opnieuw verzonden: daar moet de QSO met de hand worden gecorrigeerd."
+exp.edit.save,Save,Opslaan
+exp.edit.saveTip,Saves the corrections to Aurora’s log and its ADIF file. Nothing is sent again to the external logs.,Slaat de correcties op in het logboek van Aurora en het bijbehorende ADIF-bestand. Naar de externe logboeken wordt niets opnieuw verzonden.
+exp.edit.cancel,Cancel,Annuleren
+exp.edit.delete,Delete,Verwijderen
+exp.edit.deleteTip,"Removes this QSO from Aurora’s log and its ADIF file, after a confirmation. It stays in the external logs.",Verwijdert deze QSO na een bevestiging uit het logboek van Aurora en het bijbehorende ADIF-bestand. In de externe logboeken blijft hij staan.
+exp.edit.deleteAsk,Delete the QSO with {call} of {date}? It cannot be recovered from the program. It stays in the external logs.,De QSO met {call} van {date} verwijderen? Hij kan niet vanuit het programma worden hersteld. In de externe logboeken blijft hij staan.
+exp.edit.saved,QSO with {call} corrected.,QSO met {call} gecorrigeerd.
+exp.edit.deletedOne,QSO with {call} deleted.,QSO met {call} verwijderd.
+exp.edit.failed,QSO not corrected: try again.,QSO niet gecorrigeerd: probeer het opnieuw.
+exp.edit.gone,This QSO is no longer in the log.,Deze QSO staat niet meer in het logboek.
+exp.edit.badCall,"Enter the callsign: 3 to 13 letters, digits or “/”.","Vul de roepnaam in: 3 tot 13 letters, cijfers of ‘/’."
+exp.edit.badTime,Date or time not valid.,Datum of tijd ongeldig.
+exp.edit.badGrid,"Grid not valid: 4, 6 or 8 characters (for example IO91wm), or empty.","Locator ongeldig: 4, 6 of 8 tekens (bijvoorbeeld IO91wm), of leeg."
+exp.edit.badFreq,"Frequency not valid: enter it in MHz (for example 14.074), or leave it empty.","Frequentie ongeldig: vul haar in MHz in (bijvoorbeeld 14.074), of laat het veld leeg."
 exp.mg.digital,Digital,Digitaal
 exp.mg.voice,Voice,Spraak
 exp.mg.cw,CW,CW
@@ -5251,6 +5273,14 @@ t.1r3dp264fbm,A QSO just logged flashes at the top. How many QSOs to see: [[nav.
 t.f9iaul69kt,The QSO total is in the panel bar; to see the whole log and export it as ADIF use [[nav.log]] in the top menu.,Het totaal aantal QSO’s staat in de balk van het paneel; om het hele logboek te zien en als ADIF te exporteren gebruik je [[nav.log]] in het bovenmenu.
 t.262541qcmzv,"On the page every QSO starts selected: filter by call, dates, band and mode, and untick or tick the rows you want.","Op de pagina begint elk QSO geselecteerd: filter op roepnaam, datums, band en modus, en vink de gewenste rijen uit of aan."
 t.2ta08in5ls,“Save ADIF…” opens the Windows window to choose folder and name: the file holds only the selected QSOs. From the phone the button downloads the file.,“ADIF opslaan…” opent het Windows-venster om map en naam te kiezen: het bestand bevat alleen de geselecteerde QSO’s. Op de telefoon downloadt de knop het bestand.
+t.2bxlau1uxbl,Correcting or deleting a QSO,Een QSO corrigeren of verwijderen
+t.1echqxiya8v,"A QSO already in Aurora’s log can be corrected (wrong callsign, time, band, reports, grid, name, comment) or removed.","Een QSO die al in het logboek van Aurora staat, kan worden gecorrigeerd (verkeerde roepnaam, tijd, band, rapporten, locator, naam, opmerking) of verwijderd."
+t.u99idmjpn0,"The correction stays in Aurora: nothing is sent again to the external logs (programs connected over UDP, Wavelog, ClubLog, QRZ, LoTW), there the QSO has to be corrected or deleted by hand. If the [[panel.log]] panel shows the Log4OM2 log, those QSOs are read only and are corrected in Log4OM2. It works only from the PC or the home network.","De correctie blijft in Aurora: naar de externe logboeken (programma’s die via UDP verbonden zijn, Wavelog, ClubLog, QRZ, LoTW) wordt niets opnieuw verzonden; daar moet de QSO met de hand worden gecorrigeerd of verwijderd. Als het paneel [[panel.log]] het logboek van Log4OM2 toont, zijn die QSO’s alleen-lezen en worden ze in Log4OM2 gecorrigeerd. Het kan alleen vanaf de pc of het thuisnetwerk."
+t.999zccnqgw,"Open [[nav.log]] from the top menu and find the QSO: type the callsign in the search box or filter by dates, band and mode.","Open [[nav.log]] in het menu bovenaan en zoek de QSO: typ de roepnaam in het zoekveld of filter op datums, band en mode."
+t.2gmsl3urntd,"Double click the row, or press “[[exp.edit.btn]]” at the end of the row: the “[[exp.edit.title]]” window opens. In the [[panel.log]] panel of the Station a double click on the row does the same.","Dubbelklik op de rij, of druk op ‘[[exp.edit.btn]]’ aan het einde van de rij: het venster ‘[[exp.edit.title]]’ gaat open. In het paneel [[panel.log]] van het Station doet een dubbelklik op de rij hetzelfde."
+t.2f2251yvs2a,"Correct the fields you need. Date and time are in UTC; the grid may stay empty or have 4, 6 or 8 characters (IO91wm).","Corrigeer de velden die nodig zijn. Datum en tijd zijn in UTC; de locator mag leeg blijven of 4, 6 of 8 tekens hebben (IO91wm)."
+t.tmggavdxxu,"Press “[[exp.edit.save]]”: the row is updated, the aurora_log.adi file is corrected and “worked before” (decode labels, DXCC card, map) is worked out again. If a value is wrong the window says which one and does not save. “[[exp.edit.cancel]]” or Esc close without changing anything.","Druk op ‘[[exp.edit.save]]’: de rij wordt bijgewerkt, het bestand aurora_log.adi wordt gecorrigeerd en ‘eerder gewerkt’ (labels van de decoderingen, DXCC-kaart, kaart) wordt opnieuw berekend. Als een waarde niet klopt, zegt het venster welke en wordt er niet opgeslagen. ‘[[exp.edit.cancel]]’ of Esc sluiten zonder iets te wijzigen."
+t.1ddsrwd8xau,To remove the QSO press “[[exp.edit.delete]]” and confirm: it disappears from Aurora’s log and ADIF file and cannot be recovered from the program.,Om de QSO te verwijderen druk je op ‘[[exp.edit.delete]]’ en bevestig je: hij verdwijnt uit het logboek en het ADIF-bestand van Aurora en kan niet vanuit het programma worden hersteld.
 t.19phv7jw6sm,Online log services and callsign lookup,Online logboekdiensten en roepnaamopzoeking
 t.1kppp22q67t,"Every QSO can go straight to eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com, HRDLOG.NET and LoTW, with no program in between.","Elk QSO kan rechtstreeks naar eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com, HRDLOG.NET en LoTW, zonder tussenliggend programma."
 t.22lgdc68zg9,"If your external log already uploads to a service, do not turn it on in Aurora too: the QSO would arrive twice.","Als je externe logboek al naar een dienst uploadt, zet die dan niet ook in Aurora aan: het QSO zou dubbel aankomen."

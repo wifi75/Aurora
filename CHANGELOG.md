@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Log, correggere o cancellare un QSO** (segnalazione #47): nella pagina Log un doppio clic sulla riga o «Modifica» apre la finestra con nominativo, data e ora, banda, frequenza, modo, rapporti, locatore, nome, QTH e commento, con «Salva», «Annulla» ed «Elimina» (con conferma); lo stesso con un doppio clic nel pannello Log della Stazione. La correzione cambia il log di Aurora e il suo file ADIF (riscritto tutto insieme, soli campi corretti) e i «gia' lavorati» si ricalcolano; ai log esterni (UDP, Wavelog, ClubLog, QRZ, LoTW) non si rimanda nulla. Il log di Log4OM2 resta in sola lettura e il pannello lo dice. Nuove rotte `GET`, `PATCH` e `DELETE /api/v1/log/qsos/{id}`; il log conserva anche il commento del QSO.
 
 ## 0.11.241 - 2026-11-12
 - **Installatore, schermata quando non riesce**: invece della pagina tecnica «Installazione interrotta» compare, nella lingua dell'installatore, il motivo in parole semplici (WebView2 non installato, file bloccati da un altro programma, poco spazio, programma tolto dall'antivirus, versione piu' nuova gia' installata) con cosa fare e se il rapporto anonimo e' partito; poi Riprova, Apri il registro (con la pagina delle segnalazioni) o Chiudi. Il programma tolto dall'antivirus subito dopo la copia ora conta come installazione non riuscita.
