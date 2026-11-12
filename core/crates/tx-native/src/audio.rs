@@ -17,6 +17,8 @@ use std::{
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
+use aurora_core::audio_format::{StreamChoice, StreamRange, buffer_candidates, channels_in_use, stream_candidates};
+
 use crate::{error::TxError, lock};
 
 /// Lo stadio finale della catena: suona campioni mono alla frequenza del dispositivo.
@@ -240,7 +242,7 @@ pub fn list_output_devices() -> Vec<String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutputDeviceInfo {
     pub name: String,
-    /// Il numero massimo di canali (1 = mono, 2 = stereo).
+    /// I canali con cui Aurora apre l'uscita (1 = mono, 2 = stereo).
     pub channels: u16,
     /// E' l'uscita predefinita del sistema.
     pub is_default: bool,
@@ -254,8 +256,8 @@ pub fn list_output_devices_info() -> Vec<OutputDeviceInfo> {
     devices
         .map(|d| {
             let name = device_name(&d);
-            let from_ranges = d.supported_output_configs().ok().and_then(|it| it.map(|c| c.channels()).max());
-            let channels = from_ranges.or_else(|| d.default_output_config().ok().map(|c| c.channels())).unwrap_or(1);
+            // i canali con cui l'uscita si apre davvero, non il massimo dichiarato (PulseAudio e PipeWire dichiarano fino a 31 canali per ogni scheda)
+            let channels = channels_in_use(default_choice(&d).ok().as_ref().map(as_choice), &as_ranges(&declared_ranges(&d)), &OUTPUT_FORMATS);
             OutputDeviceInfo { is_default: default.as_deref() == Some(name.as_str()), name, channels }
         })
         .collect()
@@ -379,6 +381,8 @@ pub struct CpalSink {
     /// Il nome chiesto all'apertura, per riaprire lo stesso dispositivo se si perde.
     hint: Option<String>,
     rate: u32,
+    /// I canali con cui il dispositivo e' aperto.
+    channels: u16,
     shared: Arc<SinkShared>,
     stop_thread: Arc<AtomicBool>,
     thread: Option<JoinHandle<()>>,
@@ -407,6 +411,147 @@ fn render<T: Copy>(shared: &SinkShared, scratch: &mut Vec<f32>, prev_gain: &mut 
     }
 }
 
+/// I tipi di campioni che l'uscita sa scrivere, dal preferito.
+const OUTPUT_FORMATS: [cpal::SampleFormat; 5] = [cpal::SampleFormat::F32, cpal::SampleFormat::I16, cpal::SampleFormat::I32, cpal::SampleFormat::I24, cpal::SampleFormat::U16];
+
+/// Il buffer che si chiede all'uscita fuori da Windows: 40 ms per volta (80 ms in tutto). Senza chiederlo PulseAudio e PipeWire (pipewire-pulse)
+/// tengono in coda circa due secondi di audio: il flusso suona silenzio di continuo, quindi l'onda partiva due secondi dopo l'inizio del periodo e
+/// il PTT si chiudeva (l'onda risulta «consegnata» appena entra nella coda) quando ne mancavano ancora due da suonare. Per FT8 vuol dire un segnale
+/// in ritardo e tagliato, che nessuno decodifica. WSJT-X chiede a sua volta un buffer corto all'uscita (`soundout.cpp`, `setBufferSize`).
+const OUTPUT_BUFFER_MS: u32 = 40;
+
+/// Su Windows (modalita' condivisa di WASAPI) la coda e' gia' di pochi millisecondi e il buffer resta quello del sistema, come sempre.
+const SHORT_BUFFER_FIRST: bool = !cfg!(windows);
+
+type OutputStream = <cpal::Device as DeviceTrait>::Stream;
+
+/// Un formato da provare, con i limiti del buffer che il dispositivo dichiara per quel formato.
+struct OutputAttempt {
+    choice: StreamChoice<cpal::SampleFormat>,
+    buffer_limits: Option<(u32, u32)>,
+}
+
+/// Com'e' stata aperta l'uscita.
+struct Opened {
+    rate: u32,
+    channels: u16,
+    /// «48000 Hz, 2 canali, I16, buffer 1920 campioni», per il registro.
+    what: String,
+}
+
+fn describe_format(rate: u32, channels: u16, format: cpal::SampleFormat, frames: Option<u32>) -> String {
+    let buffer = frames.map_or_else(|| "buffer del sistema".to_string(), |n| format!("buffer {n} campioni"));
+    format!("{rate} Hz, {channels} canali, {format:?}, {buffer}")
+}
+
+fn buffer_limits(size: &cpal::SupportedBufferSize) -> Option<(u32, u32)> {
+    match size {
+        cpal::SupportedBufferSize::Range { min, max } => Some((*min, *max)),
+        cpal::SupportedBufferSize::Unknown => None,
+    }
+}
+
+fn default_choice(device: &cpal::Device) -> Result<cpal::SupportedStreamConfig, String> {
+    device.default_output_config().map_err(|e| e.to_string())
+}
+
+fn declared_ranges(device: &cpal::Device) -> Vec<cpal::SupportedStreamConfigRange> {
+    device.supported_output_configs().map(|it| it.collect()).unwrap_or_default()
+}
+
+fn as_ranges(ranges: &[cpal::SupportedStreamConfigRange]) -> Vec<StreamRange<cpal::SampleFormat>> {
+    ranges.iter().map(|r| StreamRange { channels: r.channels(), min_rate: r.min_sample_rate(), max_rate: r.max_sample_rate(), format: r.sample_format() }).collect()
+}
+
+fn as_choice(config: &cpal::SupportedStreamConfig) -> StreamChoice<cpal::SampleFormat> {
+    StreamChoice { channels: config.channels(), rate: config.sample_rate(), format: config.sample_format() }
+}
+
+/// I formati con cui provare ad aprire l'uscita, nell'ordine (vedi `aurora_core::audio_format`), e l'errore del formato predefinito se manca.
+fn output_plan(device: &cpal::Device) -> (Vec<OutputAttempt>, Option<String>) {
+    let default = default_choice(device);
+    let ranges = declared_ranges(device);
+    let candidates = stream_candidates(default.as_ref().ok().map(as_choice), &as_ranges(&ranges), &OUTPUT_FORMATS);
+    let plan = candidates
+        .into_iter()
+        .map(|choice| {
+            let from_default = default.as_ref().ok().filter(|d| as_choice(d) == choice).map(|d| buffer_limits(d.buffer_size()));
+            let from_ranges = || {
+                ranges
+                    .iter()
+                    .find(|r| r.channels() == choice.channels && r.sample_format() == choice.format && r.min_sample_rate() <= choice.rate && choice.rate <= r.max_sample_rate())
+                    .and_then(|r| buffer_limits(r.buffer_size()))
+            };
+            OutputAttempt { choice, buffer_limits: from_default.unwrap_or_else(from_ranges) }
+        })
+        .collect();
+    (plan, default.err())
+}
+
+/// Cosa fare quando il flusso segnala un errore mentre suona.
+fn stream_error_handler(shared: Arc<SinkShared>) -> impl FnMut(cpal::Error) + Send + 'static {
+    move |e: cpal::Error| {
+        let n = shared.errors.fetch_add(1, Ordering::Relaxed) + 1;
+        // un attimo di ritardo della scheda (underrun) o il cambio del dispositivo predefinito non fermano l'uscita: il flusso
+        // continua. Prima ogni underrun la dava per persa e la trasmissione seguente falliva («il dispositivo non risponde piu'»).
+        // Linux: «snd_pcm_avail_delay failed» e' un intoppo di ALSA (POLLERR senza EPIPE, errore generico del backend): il flusso di
+        // cpal continua e un dispositivo staccato arriva a parte come `DeviceNotAvailable`. Prima chiudeva la trasmissione e
+        // finiva nei rapporti (37 volte con la 0.11.234)
+        let alsa_glitch = e.kind() == cpal::ErrorKind::BackendError && e.to_string().contains("avail_delay");
+        if alsa_glitch || matches!(e.kind(), cpal::ErrorKind::Xrun | cpal::ErrorKind::DeviceChanged) {
+            if n == 1 || n.is_power_of_two() && n >= 64 {
+                tracing::info!("uscita audio: {e} ({n} volte finora), il flusso continua");
+            }
+            return;
+        }
+        shared.failed.store(true, Ordering::SeqCst);
+        // Windows ha rifatto il dispositivo (cambio del predefinito, ritorno dalla sospensione, driver ricaricato): l'uscita si
+        // riapre da sola prima della trasmissione seguente (`recover_if_lost`), non e' un errore da segnalare
+        let testo = e.to_string();
+        if testo.contains("no longer valid") || testo.contains("current padding") {
+            tracing::info!("uscita audio da riaprire: {testo}");
+        } else {
+            tracing::warn!("errore del flusso di uscita audio: {testo}");
+        }
+    }
+}
+
+/// Costruisce il flusso con questo formato (ancora fermo: lo avvia chi chiama).
+fn build_output(device: &cpal::Device, format: cpal::SampleFormat, config: cpal::StreamConfig, shared: &Arc<SinkShared>) -> Result<OutputStream, String> {
+    let channels = usize::from(config.channels).max(1);
+    let on_error = stream_error_handler(Arc::clone(shared));
+    let cb_shared = Arc::clone(shared);
+    let mut scratch: Vec<f32> = Vec::new();
+    let mut prev_gain = 1.0f32;
+    let built = match format {
+        cpal::SampleFormat::F32 => device.build_output_stream(config, move |data: &mut [f32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| s), on_error, None),
+        cpal::SampleFormat::I16 => {
+            device.build_output_stream(config, move |data: &mut [i16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0) as i16), on_error, None)
+        }
+        cpal::SampleFormat::I32 => device.build_output_stream(
+            config,
+            move |data: &mut [i32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (f64::from(s.clamp(-1.0, 1.0)) * 2_147_483_647.0) as i32),
+            on_error,
+            None,
+        ),
+        // 24 bit: alcune schede in modalita' condivisa di Windows espongono solo questo; prima l'uscita non si apriva
+        cpal::SampleFormat::I24 => device.build_output_stream(
+            config,
+            move |data: &mut [cpal::I24], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| <cpal::I24 as cpal::Sample>::from_sample(s.clamp(-1.0, 1.0))),
+            on_error,
+            None,
+        ),
+        cpal::SampleFormat::U16 => device.build_output_stream(
+            config,
+            move |data: &mut [u16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0 + 32768.0) as u16),
+            on_error,
+            None,
+        ),
+        other => return Err(format!("formato campioni non gestito: {other:?}")),
+    };
+    built.map_err(|e| e.to_string())
+}
+
 impl CpalSink {
     /// Apre l'uscita (`device_hint` e' una parte del nome, senza distinzione di maiuscole; `None` = predefinita).
     pub fn open(device_hint: Option<&str>) -> Result<CpalSink, TxError> {
@@ -433,14 +578,15 @@ impl CpalSink {
             )));
         };
         let name = device_name(&device);
-        let supported = device.default_output_config().map_err(|e| TxError::Audio(format!("{name}: configurazione non disponibile: {e}")))?;
-        let rate = supported.sample_rate();
-        let channels = usize::from(supported.channels()).max(1);
-        let format = supported.sample_format();
+        let (plan, default_error) = output_plan(&device);
+        if plan.is_empty() {
+            let why = default_error.unwrap_or_else(|| "nessun formato utilizzabile (uno o due canali, 44,1 o 48 kHz)".into());
+            return Err(TxError::Audio(format!("{name}: configurazione non disponibile: {why}")));
+        }
 
         let shared = Arc::new(SinkShared { playback: Mutex::new(Playback::new()), failed: AtomicBool::new(false), errors: AtomicU64::new(0), gain, channel });
         let stop_thread = Arc::new(AtomicBool::new(false));
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TxError>>();
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<Opened, TxError>>();
         let thread_shared = Arc::clone(&shared);
         let thread_stop = Arc::clone(&stop_thread);
         let thread_name = name.clone();
@@ -448,82 +594,33 @@ impl CpalSink {
         let thread = std::thread::Builder::new()
             .name("aurora-tx-audio".into())
             .spawn(move || {
-                let err_shared = Arc::clone(&thread_shared);
-                let on_error = move |e: cpal::Error| {
-                    let n = err_shared.errors.fetch_add(1, Ordering::Relaxed) + 1;
-                    // un attimo di ritardo della scheda (underrun) o il cambio del dispositivo predefinito non fermano l'uscita: il flusso
-                    // continua. Prima ogni underrun la dava per persa e la trasmissione seguente falliva («il dispositivo non risponde piu'»).
-                    // Linux: «snd_pcm_avail_delay failed» e' un intoppo di ALSA (POLLERR senza EPIPE, errore generico del backend): il flusso di
-                    // cpal continua e un dispositivo staccato arriva a parte come `DeviceNotAvailable`. Prima chiudeva la trasmissione e
-                    // finiva nei rapporti (37 volte con la 0.11.234)
-                    let alsa_glitch = e.kind() == cpal::ErrorKind::BackendError && e.to_string().contains("avail_delay");
-                    if alsa_glitch || matches!(e.kind(), cpal::ErrorKind::Xrun | cpal::ErrorKind::DeviceChanged) {
-                        if n == 1 || n.is_power_of_two() && n >= 64 {
-                            tracing::info!("uscita audio: {e} ({n} volte finora), il flusso continua");
+                // un formato dopo l'altro, ognuno prima con il buffer corto e poi con quello del sistema: il primo che si apre e suona resta
+                let mut failures: Vec<String> = Vec::new();
+                let mut open: Option<(OutputStream, Opened)> = None;
+                'plan: for attempt in &plan {
+                    let StreamChoice { channels, rate, format } = attempt.choice;
+                    for frames in buffer_candidates(rate, OUTPUT_BUFFER_MS, attempt.buffer_limits, SHORT_BUFFER_FIRST) {
+                        let config = cpal::StreamConfig { channels, sample_rate: rate, buffer_size: frames.map_or(cpal::BufferSize::Default, cpal::BufferSize::Fixed) };
+                        let what = describe_format(rate, channels, format, frames);
+                        let built = build_output(&device, format, config, &thread_shared).and_then(|stream| stream.play().map(|()| stream).map_err(|e| e.to_string()));
+                        match built {
+                            Ok(stream) => {
+                                open = Some((stream, Opened { rate, channels, what }));
+                                break 'plan;
+                            }
+                            Err(e) => {
+                                tracing::info!("uscita audio \"{thread_name}\": {what} non accettato ({e}), si prova il formato seguente");
+                                failures.push(format!("{what}: {e}"));
+                            }
                         }
-                        return;
                     }
-                    err_shared.failed.store(true, Ordering::SeqCst);
-                    // Windows ha rifatto il dispositivo (cambio del predefinito, ritorno dalla sospensione, driver ricaricato): l'uscita si
-                    // riapre da sola prima della trasmissione seguente (`recover_if_lost`), non e' un errore da segnalare
-                    let testo = e.to_string();
-                    if testo.contains("no longer valid") || testo.contains("current padding") {
-                        tracing::info!("uscita audio da riaprire: {testo}");
-                    } else {
-                        tracing::warn!("errore del flusso di uscita audio: {testo}");
-                    }
-                };
-                let mut scratch: Vec<f32> = Vec::new();
-                let mut prev_gain = 1.0f32;
-                let cb_shared = Arc::clone(&thread_shared);
-                let config: cpal::StreamConfig = supported.into();
-                let built = match format {
-                    cpal::SampleFormat::F32 => {
-                        device.build_output_stream(config, move |data: &mut [f32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| s), on_error, None)
-                    }
-                    cpal::SampleFormat::I16 => device.build_output_stream(
-                        config,
-                        move |data: &mut [i16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0) as i16),
-                        on_error,
-                        None,
-                    ),
-                    cpal::SampleFormat::I32 => device.build_output_stream(
-                        config,
-                        move |data: &mut [i32], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (f64::from(s.clamp(-1.0, 1.0)) * 2_147_483_647.0) as i32),
-                        on_error,
-                        None,
-                    ),
-                    // 24 bit: alcune schede in modalita' condivisa di Windows espongono solo questo; prima l'uscita non si apriva
-                    cpal::SampleFormat::I24 => device.build_output_stream(
-                        config,
-                        move |data: &mut [cpal::I24], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| <cpal::I24 as cpal::Sample>::from_sample(s.clamp(-1.0, 1.0))),
-                        on_error,
-                        None,
-                    ),
-                    cpal::SampleFormat::U16 => device.build_output_stream(
-                        config,
-                        move |data: &mut [u16], _| render(&cb_shared, &mut scratch, &mut prev_gain, channels, data, |s| (s.clamp(-1.0, 1.0) * 32767.0 + 32768.0) as u16),
-                        on_error,
-                        None,
-                    ),
-                    other => {
-                        let _ = ready_tx.send(Err(TxError::Audio(format!("{thread_name}: formato campioni non gestito: {other:?}"))));
-                        return;
-                    }
-                };
-                let stream = match built {
-                    Ok(s) => s,
-                    Err(e) => {
-                        let _ = ready_tx.send(Err(TxError::Audio(format!("{thread_name}: uscita non aperta (occupata da un'altra applicazione?): {e}"))));
-                        return;
-                    }
-                };
-                if let Err(e) = stream.play() {
-                    let _ = ready_tx.send(Err(TxError::Audio(format!("{thread_name}: {e}"))));
-                    return;
                 }
-                let _ = ready_tx.send(Ok(()));
-                tracing::info!("uscita audio \"{thread_name}\" a {rate} Hz");
+                let Some((stream, opened)) = open else {
+                    let _ = ready_tx.send(Err(TxError::Audio(format!("{thread_name}: uscita non aperta (occupata da un'altra applicazione?): {}", failures.join("; ")))));
+                    return;
+                };
+                tracing::info!("uscita audio \"{thread_name}\" aperta: {}", opened.what);
+                let _ = ready_tx.send(Ok(opened));
                 while !thread_stop.load(Ordering::SeqCst) {
                     std::thread::sleep(Duration::from_millis(50));
                 }
@@ -532,13 +629,18 @@ impl CpalSink {
             .map_err(|e| TxError::Thread(e.to_string()))?;
 
         match ready_rx.recv() {
-            Ok(Ok(())) => Ok(CpalSink { name, hint: device_hint.map(str::to_string), rate, shared, stop_thread, thread: Some(thread) }),
+            Ok(Ok(opened)) => Ok(CpalSink { name, hint: device_hint.map(str::to_string), rate: opened.rate, channels: opened.channels, shared, stop_thread, thread: Some(thread) }),
             Ok(Err(e)) => {
                 let _ = thread.join();
                 Err(e)
             }
             Err(_) => Err(TxError::Audio("il thread dell'uscita audio si e' chiuso senza rispondere".into())),
         }
+    }
+
+    /// I canali con cui l'uscita e' aperta.
+    pub fn channels(&self) -> u16 {
+        self.channels
     }
 
     pub fn device_name(&self) -> &str {
@@ -669,7 +771,7 @@ impl SwitchState {
                 self.current = next;
             }
             Some(Err(e)) => {
-                tracing::debug!("uscita audio ancora assente: {e}");
+                tracing::info!("uscita audio non riaperta: {e}");
                 aurora_core::notice::notice("audio_out_missing", "");
             }
             None => {}
