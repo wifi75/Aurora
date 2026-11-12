@@ -27,13 +27,16 @@
 //!
 //! Di base pero' il testo lo decide il decodificatore probabilistico di [`crate::cw_bayes`] (traliccio con velocità, pugno e modello del
 //! testo, sulla banda base dopo il filtro); la parte a soglia resta per l'AGC, il cancello sullo spettro e la decodifica SOM. Davanti a
-//! tutto c'e' il noise blanker ([`crate::blanker`]).
+//! tutto c'e' il noise blanker ([`crate::blanker`]): gli istanti che cancella arrivano al decodificatore come «cancellati», con il peso
+//! che resta nel filtro. Il decodificatore riceve anche il rumore di ogni istante, misurato sulle bande laterali e con il minimo
+//! scorrevole ([`crate::cw_noise`]).
 //!
 //! Per un futuro riconoscimento probabilistico dei caratteri ogni elemento lascia anche la durata in unità e il livello
 //! ([`CwDemodulator::last_elements`]), non solo punto o linea.
 
 use crate::blanker::NoiseBlanker;
-use crate::cw_bayes::CwBayes;
+use crate::cw_bayes::{CwBayes, Observation};
+use crate::cw_noise::{MinTracker, SidebandNoise};
 use crate::psk::RATE;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
@@ -278,6 +281,19 @@ fn lowpass(len: usize, fc: f64) -> Vec<f32> {
     taps.into_iter().map(|t| t as f32).collect()
 }
 
+/// Un campione della banda base in attesa della decisione: uscita del filtro di ricezione e di quello del decodificatore, tono del mixer
+/// in quel momento, rumore dalle bande laterali e dal minimo scorrevole, peso dopo il noise blanker (guadagno e varianza).
+#[derive(Clone, Copy)]
+struct Delayed {
+    z: (f32, f32),
+    b: (f32, f32),
+    mixed_at: f32,
+    side: f64,
+    floor: f64,
+    gain: f32,
+    var: f32,
+}
+
 /// Un elemento ricevuto: tono o pausa, durata in unità della velocità di quel momento e livello medio (0-1 fra fondo e picco).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Element {
@@ -306,13 +322,21 @@ pub struct CwDemodulator {
     /// La banda base in attesa della decisione (vedi `GATE_DELAY_S`).
     /// Per ogni campione: l'uscita del filtro di ricezione e quella del filtro del decodificatore probabilistico.
     /// (e il tono del mixer in quel momento, che con l'AFC cambia)
-    delay: VecDeque<[f32; 5]>,
+    delay: VecDeque<Delayed>,
     /// Il filtro del decodificatore probabilistico: la banda scelta, ma mai sotto `BAYES_MIN_BW` (un filtro piu' stretto allunga i toni
     /// sulle pause; la selettivita' la danno gia' le somme coerenti sui toni e il cancello sullo spettro della banda scelta). Vuoto se e'
     /// lo stesso filtro di ricezione.
     bayes_fir: Vec<f32>,
-    /// Il noise blanker davanti a tutto (vedi `blanker`), acceso di base.
+    /// Il noise blanker davanti a tutto (vedi `blanker`), acceso di base, e per ogni campione dell'anello se e' stato cancellato (0) o no
+    /// (1); da quanti campioni non ne cancella.
     blanker: Option<NoiseBlanker>,
+    kept: Vec<f32>,
+    since_blank: usize,
+    /// Energia dei coefficienti del filtro del decodificatore (per la varianza dei campioni toccati dal blanker).
+    bayes_energy: f32,
+    /// Il rumore istante per istante: bande laterali (sulla strada larga) e minimo scorrevole (sulla banda base del decodificatore).
+    side: Option<SidebandNoise>,
+    min_noise: Option<MinTracker>,
     beam_override: Option<usize>,
     /// Il decodificatore probabilistico (vedi `cw_bayes`); spento si usa quello a soglia (sempre con la decodifica SOM).
     bayes: Option<CwBayes>,
@@ -389,6 +413,11 @@ impl CwDemodulator {
             delay: VecDeque::new(),
             bayes_fir: Vec::new(),
             blanker: Some(NoiseBlanker::new()),
+            kept: Vec::new(),
+            since_blank: usize::MAX,
+            bayes_energy: 1.0,
+            side: None,
+            min_noise: None,
             beam_override: None,
             bayes: None,
             use_bayes: true,
@@ -459,6 +488,8 @@ impl CwDemodulator {
         let len = fir_len(bw);
         self.fir = lowpass(len, f64::from(bw) / 2.0 / f64::from(RATE));
         self.ring = vec![(0.0, 0.0); len];
+        self.kept = vec![1.0; len];
+        self.since_blank = usize::MAX;
         self.pos = 0;
         if unit_s > 0.0 {
             self.dot = unit_s * self.fs;
@@ -469,6 +500,11 @@ impl CwDemodulator {
         self.delay.clear();
         self.bayes_fir = if bw < BAYES_MIN_BW { lowpass(fir_len(BAYES_MIN_BW), f64::from(BAYES_MIN_BW) / 2.0 / f64::from(RATE)) } else { Vec::new() };
         let taps = if self.bayes_fir.is_empty() { &self.fir } else { &self.bayes_fir };
+        self.bayes_energy = taps.iter().map(|h| h * h).sum::<f32>().max(1e-30);
+        self.side = Some(SidebandNoise::new(self.fs, self.decim, &self.wide_fir, taps, f64::from(self.hint_wpm)));
+        // gradi di liberta' (reali) di una media di 40 ms del rumore dopo il filtro: due per ogni campione complesso indipendente
+        let enbw = f64::from(RATE) * f64::from(self.bayes_energy) / f64::from(taps.iter().sum::<f32>()).powi(2).max(1e-30);
+        self.min_noise = Some(MinTracker::new(self.fs, 2.0 * 0.04 * enbw));
         let mut b = CwBayes::new(self.fs, taps, self.decim, self.hint_wpm);
         if let Some(n) = self.beam_override {
             b.set_beam(n);
@@ -608,10 +644,12 @@ impl CwDemodulator {
         let bayes = self.bayes_active();
         let len = self.ring.len();
         for &s in audio {
-            let s = match self.blanker.as_mut() {
-                Some(nb) => nb.process(s),
-                None => s,
+            let (s, blanked) = match self.blanker.as_mut() {
+                Some(nb) => nb.process_marked(s),
+                None => (s, false),
             };
+            self.kept[self.pos] = if blanked { 0.0 } else { 1.0 };
+            self.since_blank = if blanked { 0 } else { self.since_blank.saturating_add(1) };
             let (sin, cos) = self.phase.sin_cos();
             let z = (s * cos as f32, -s * sin as f32);
             self.phase += self.step;
@@ -651,13 +689,34 @@ impl CwDemodulator {
                     bq += c * q;
                 }
             }
-            if bayes && let Some(b) = self.bayes.as_mut() {
-                b.observe_level((bi, bq));
+            let (mut gain, mut var) = (1.0_f32, 1.0_f32);
+            if bayes {
+                if let Some(b) = self.bayes.as_mut() {
+                    b.observe_level((bi, bq));
+                }
+                // dopo il blanker il filtro del decodificatore ha in parte campioni azzerati: quanto segnale e quanto rumore restano
+                let taps = if self.bayes_fir.is_empty() { &self.fir } else { &self.bayes_fir };
+                if self.since_blank < taps.len() {
+                    let first = self.pos + len - taps.len();
+                    (gain, var) = (0.0, 0.0);
+                    for (k, &c) in taps.iter().enumerate() {
+                        let m = self.kept[(first + k) % len];
+                        gain += c * m;
+                        var += c * c * m;
+                    }
+                    var /= self.bayes_energy;
+                }
             }
-            self.delay.push_back([zi, zq, bi, bq, self.tone_hz]);
+            let side = if bayes { self.side.as_mut().map_or(0.0, |sd| sd.push((wi, wq))) } else { 0.0 };
+            let floor = if bayes { self.min_noise.as_mut().map_or(0.0, |m| m.push(f64::from(bi * bi + bq * bq))) } else { 0.0 };
+            self.delay.push_back(Delayed { z: (zi, zq), b: (bi, bq), mixed_at: self.tone_hz, side: 0.0, floor, gain, var });
+            // le bande laterali arrivano in ritardo sulla banda base del decodificatore: la misura va al campione che descrive
+            let lag = self.side.as_ref().map_or(0, SidebandNoise::lag);
+            if let Some(d) = self.delay.iter_mut().rev().nth(lag) {
+                d.side = side;
+            }
             if self.delay.len() as f64 > GATE_DELAY_S * self.fs {
-                let [zi, zq, bi, bq, mixed_at] = self.delay.pop_front().unwrap_or([0.0, 0.0, 0.0, 0.0, self.tone_hz]);
-                let z = (bi, bq);
+                let Some(Delayed { z: (zi, zq), b: z, mixed_at, side, floor, gain, var }) = self.delay.pop_front() else { continue };
                 let env = (zi * zi + zq * zq).sqrt() * 2.0;
                 if bayes {
                     let mut classic = std::mem::take(&mut self.classic_out);
@@ -668,7 +727,8 @@ impl CwDemodulator {
                     if let Some(b) = self.bayes.as_mut() {
                         // il segnale e' a tono + scarto fine; questo campione e' stato portato in banda base con il tono di allora
                         b.set_offset_hz(f64::from(self.tone_hz + self.fine_hz - mixed_at));
-                        b.push(z, gate, &mut out);
+                        let obs = Observation { noise: noise_of(side, floor), gain: f64::from(gain), var: f64::from(var) };
+                        b.push_observed(z, obs, gate, &mut out);
                     }
                 } else {
                     self.sample(env, &mut out);
@@ -677,6 +737,11 @@ impl CwDemodulator {
         }
         if bayes && let Some(b) = self.bayes.as_mut() {
             self.confidences = b.take_confidences();
+            // la larghezza dei filtri delle bande laterali segue la velocità misurata (non quella di partenza del traliccio, che all'avvio
+            // salta)
+            if let (Some(wpm), Some(sd)) = (b.measured_wpm(), self.side.as_mut()) {
+                sd.set_wpm(f64::from(wpm));
+            }
         }
         out
     }
@@ -938,6 +1003,15 @@ impl CwDemodulator {
     }
 }
 
+/// Il rumore di un istante per il decodificatore: le bande laterali, ma mai sotto il minimo scorrevole (che sul solo rumore vale la
+/// media); senza bande laterali il minimo, senza nessuno dei due 0 (non si sa).
+fn noise_of(side: f64, floor: f64) -> f64 {
+    if side > 0.0 { side.max(NOISE_FLOOR_SHARE * floor) } else { floor }
+}
+
+/// Quanto del minimo scorrevole fa da pavimento alle bande laterali.
+const NOISE_FLOOR_SHARE: f64 = 0.0;
+
 /// Decodifica SOM di fldigi (`cw::find_winner` e `cw::normalize`, tabella `som_table` di `src/cw/cw.cxx`): le durate dei toni si
 /// normalizzano (la piu' lunga vale 1 se e' una linea, 0,33 se e' un punto) e vince il carattere con la distanza minima, dove il punto
 /// vale 0,33 e la linea 1.
@@ -990,6 +1064,66 @@ mod tests {
         }
         assert_eq!(pattern_of(b'k'), Some("-.-"));
         assert_eq!(pattern_of(b'#'), None);
+    }
+
+    /// Sul solo rumore le bande laterali e il minimo scorrevole danno la potenza di rumore del filtro del decodificatore (entro il 15%),
+    /// con tutte le bande.
+    #[test]
+    fn noise_estimates_match_the_decoder_filter() {
+        let mut all = Vec::new();
+        for bw in [100.0, 150.0, 250.0, 500.0, 1000.0] {
+            let mut d = CwDemodulator::new(700.0, 20.0);
+            d.set_bandwidth(bw);
+            let mut x = 12345u64;
+            let audio: Vec<f32> = (0..12_000 * 8)
+                .map(|_| {
+                    // somma di 12 uniformi: quasi gaussiana
+                    (0..12)
+                        .map(|_| {
+                            x ^= x << 13;
+                            x ^= x >> 7;
+                            x ^= x << 17;
+                            (x >> 40) as f32 / (1u64 << 24) as f32 - 0.5
+                        })
+                        .sum::<f32>()
+                        * 0.1
+                })
+                .collect();
+            let (mut side, mut floor, mut power, mut n) = (0.0, 0.0, 0.0, 0.0);
+            for (k, chunk) in audio.chunks(480).enumerate() {
+                d.process(chunk);
+                if k > 100 {
+                    for e in &d.delay {
+                        side += e.side;
+                        floor += e.floor;
+                        power += f64::from(e.b.0 * e.b.0 + e.b.1 * e.b.1);
+                        n += 1.0;
+                    }
+                }
+            }
+            let (side, floor) = (side / power, floor / power);
+            println!("banda {bw}: bande laterali {side:.3} minimo {floor:.3}");
+            let _ = n;
+            all.push((bw, side, floor));
+        }
+        for (bw, side, floor) in all {
+            assert!((side - 1.0).abs() < 0.15, "banda {bw}: bande laterali {side:.2}");
+            assert!((floor - 1.0).abs() < 0.15, "banda {bw}: minimo scorrevole {floor:.2}");
+        }
+    }
+
+    /// La velocità capita (quella che «TX alla velocità ricevuta» usa per trasmettere) sta entro il 5% di quella vera, anche lontana da
+    /// quella di partenza (prima andava a gradini del 9%, le velocità del traliccio).
+    #[test]
+    fn the_received_speed_is_measured_within_five_percent() {
+        for wpm in [16.0_f32, 25.0, 32.0] {
+            let mut d = CwDemodulator::new(700.0, 20.0);
+            let wave = modulate(b"CQ CQ DE IU3ABC IU3ABC K TEST 599 73", 700.0, wpm, 0.8);
+            for chunk in wave.chunks(480) {
+                d.process(chunk);
+            }
+            assert!((d.wpm() / wpm - 1.0).abs() < 0.05, "a {wpm} WPM ne capisce {}", d.wpm());
+        }
     }
 
     #[test]

@@ -13,12 +13,14 @@
 //! - [`tx_stream`]: i modulatori a flusso (trasmissione scritta dal vivo, avanzamento carattere per carattere);
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
+//! - `cw_noise`: il rumore del ricevitore CW istante per istante (bande laterali e minimo scorrevole);
 //! - [`skim`]: decodifica di tutti i segnali CW della banda audio, con storico, nominativi e spot locali;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod blanker;
 pub mod cw;
 pub mod cw_bayes;
+mod cw_noise;
 #[cfg(feature = "fldigi-oracle")]
 pub mod fldigi_oracle;
 pub mod macro_files;
