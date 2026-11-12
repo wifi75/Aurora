@@ -116,6 +116,19 @@ export function ModeSettingsFields({
         <input type="checkbox" checked={s.band_spots !== false} onChange={(e) => onSave({ band_spots: e.target.checked })} />
         {t('digi.band.spots')}
       </label>
+      <label className="sstv-check">
+        <input type="checkbox" checked={s.band_spots_cq_only === true} disabled={s.band_spots === false} onChange={(e) => onSave({ band_spots_cq_only: e.target.checked })} />
+        {t('digi.band.spotsCqOnly')}
+      </label>
+      <label title={t('digi.band.validationTip')}>
+        <span>{t('digi.band.validation')}</span>
+        <select value={s.band_validation ?? 'normal'} onChange={(e) => onSave({ band_validation: e.target.value })}>
+          <option value="minimal">{t('digi.band.valMinimal')}</option>
+          <option value="normal">{t('digi.band.valNormal')}</option>
+          <option value="strict">{t('digi.band.valStrict')}</option>
+          <option value="maximum">{t('digi.band.valMaximum')}</option>
+        </select>
+      </label>
       <label>
         <span>{t('digi.cw.squelchSnr', { db: Math.round(cwSnr) })}</span>
         <input type="range" min={-30} max={20} step={1} value={cwSnr} onChange={(e) => setCwSnr(Number(e.target.value))} onPointerUp={() => onSave({ cw_squelch_snr_db: cwSnr })} onKeyUp={() => onSave({ cw_squelch_snr_db: cwSnr })} />

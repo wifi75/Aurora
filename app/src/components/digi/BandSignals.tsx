@@ -9,6 +9,13 @@ import '../../styles/digi-band.css';
 
 /** Caratteri dell'ultimo testo in una riga. */
 const ROW_CHARS = 44;
+/** I livelli di convalida dei nominativi. */
+const VALIDATIONS = [
+  ['minimal', 'digi.band.valMinimal'],
+  ['normal', 'digi.band.valNormal'],
+  ['strict', 'digi.band.valStrict'],
+  ['maximum', 'digi.band.valMaximum'],
+] as const;
 
 interface Props {
   signals: DigiSignal[];
@@ -20,6 +27,9 @@ interface Props {
   rxHz: number;
   /** Testo da mostrare quando non c'e' nessun segnale. */
   emptyText: string;
+  /** Il livello di convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`) e chi lo cambia. */
+  validation: string;
+  onValidation(v: string): void;
   onTune(hz: number): void;
   onCall(call: string): void;
 }
@@ -64,7 +74,7 @@ function CallCell({ s }: { s: DigiSignal }) {
  * Il pannello «Segnali»: una riga per ogni segnale della banda audio (frequenza, velocita', S/N, ultimo testo con i caratteri incerti in
  * grigio, nominativo con bandiera e ruolo). Clic: la ricezione va sul segnale; doppio clic: lo storico di 60 s.
  */
-export function BandSignals({ signals, showWpm, dialHz, rxHz, emptyText, onTune, onCall }: Props) {
+export function BandSignals({ signals, showWpm, dialHz, rxHz, emptyText, validation, onValidation, onTune, onCall }: Props) {
   const t = useT();
   const [historyId, setHistoryId] = useState<number | null>(null);
   // l'avviso dei CQ: quante stazioni chiamano adesso (le loro righe sono evidenziate)
@@ -76,6 +86,16 @@ export function BandSignals({ signals, showWpm, dialHz, rxHz, emptyText, onTune,
         <small>{signals.length > 0 ? t('digi.band.count', { n: signals.length }) : null}</small>
         {cqs > 0 ? <small className="digi-band-cqcount">{t('digi.band.cqCount', { n: cqs })}</small> : null}
         <small className="digi-band-legend">{t('digi.band.unsureTip')}</small>
+        <label className="digi-band-validation" title={t('digi.band.validationTip')}>
+          <span>{t('digi.band.validation')}</span>
+          <select value={validation} onChange={(e) => onValidation(e.target.value)}>
+            {VALIDATIONS.map(([id, key]) => (
+              <option key={id} value={id}>
+                {t(key)}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
       {signals.length === 0 ? (
         <p className="digi-band-empty">{emptyText}</p>

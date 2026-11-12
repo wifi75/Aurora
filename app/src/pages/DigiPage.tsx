@@ -829,6 +829,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 ? { label: t('digi.band.mi'), checked: s.band_cw !== false, onSelect: () => save({ band_cw: s.band_cw === false }) }
                 : { label: t('digi.band.miPsk'), checked: s.band_psk !== false, onSelect: () => save({ band_psk: s.band_psk === false }) },
               { label: t('digi.band.spots'), checked: s.band_spots !== false, onSelect: () => save({ band_spots: s.band_spots === false }) },
+              { label: t('digi.band.spotsCqOnly'), checked: s.band_spots_cq_only === true, disabled: s.band_spots === false, onSelect: () => save({ band_spots_cq_only: s.band_spots_cq_only !== true }) },
             ]
           : []),
         'sep',
@@ -1014,7 +1015,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           </div>
         </div>
         {bandOn && views.signals ? (
-          <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+          <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
           <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={bandLabels} />

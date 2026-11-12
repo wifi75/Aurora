@@ -11,10 +11,11 @@
 //! convalida scelta: uno per nominativo ogni 10 minuti, di nuovo se cambia frequenza di oltre 1 kHz o se lo si sente chiamare CQ.
 
 pub mod calls;
+pub mod forms;
 pub mod psk;
 
 use crate::cw::CwDemodulator;
-use calls::{CallTracker, HeardCall, Role, Validation};
+use calls::{CallCheck, CallTracker, HeardCall, Role, Validation};
 use rustfft::num_complex::Complex32;
 use rustfft::{Fft, FftPlanner};
 use std::collections::{HashMap, VecDeque};
@@ -36,8 +37,13 @@ const HISTORY_S: f64 = 60.0;
 const CHANNEL_BEAM: usize = 96;
 /// Di quanto l'AFC di un canale puo' allontanarsi dal tono su cui si e' aperto (Hz).
 const CHANNEL_AFC_HZ: f32 = 20.0;
-/// Un nominativo si ripete come spot dopo tanto (s).
+/// Un nominativo non sentito da tanto si dimentica (s).
 const SPOT_REPEAT_S: f64 = 600.0;
+/// Un nominativo ancora sentito si ripropone come spot dopo tanto (s); decide chi riceve gli spot.
+const SPOT_REOFFER_S: f64 = 60.0;
+/// S/N degli spot: quanto si tengono le misure a tasto abbassato (s) e quanto sopra il fondo deve stare la riga (6 dB).
+const KEYDOWN_S: f64 = 15.0;
+const KEYDOWN_RATIO: f32 = 4.0;
 
 /// Il testo di un canale: i caratteri degli ultimi 60 s con la loro probabilità e i nominativi sentiti.
 #[derive(Default)]
@@ -74,8 +80,8 @@ impl Transcript {
     }
 
     /// Quello che si mostra del canale.
-    pub(crate) fn info(&self, id: u32, freq_hz: f32, wpm: f32, snr_db: f32, level: Validation, dxcc: &dyn Fn(&str) -> Option<bool>) -> ChannelInfo {
-        let calls = self.calls.calls(level, dxcc);
+    pub(crate) fn info(&self, id: u32, freq_hz: f32, wpm: f32, snr_db: f32, level: Validation, check: &dyn Fn(&str) -> CallCheck) -> ChannelInfo {
+        let calls = self.calls.calls(level, check);
         ChannelInfo {
             id,
             freq_hz,
@@ -91,8 +97,9 @@ impl Transcript {
     }
 }
 
-/// Gli spot di tutta la banda: i nominativi verificati, ripetuti dopo `SPOT_REPEAT_S`, con un cambio di frequenza oltre 1 kHz o quando la
-/// stazione si scopre a chiamare CQ.
+/// I candidati agli spot di tutta la banda: i nominativi verificati che passano il livello di convalida, riproposti ogni `SPOT_REOFFER_S`
+/// (o subito se la frequenza cambia di oltre 1 kHz o la stazione si scopre a chiamare CQ). Le regole vere degli spot (uno per nominativo e
+/// banda ogni 10 minuti...) le applica chi li riceve ([`crate::band::SpotGate`]), che conosce la banda.
 #[derive(Default)]
 pub(crate) struct Spotter {
     spotted: HashMap<String, (f64, f32, bool)>,
@@ -105,19 +112,19 @@ impl Spotter {
         self.spots.clear();
     }
 
-    /// Guarda i nominativi di un canale (frequenza, velocità, S/N del canale) al momento `now`.
-    pub(crate) fn check(&mut self, tr: &mut Transcript, sig: (f32, f32, f32), now: f64, level: Validation, dxcc: &dyn Fn(&str) -> Option<bool>) {
+    /// Guarda i nominativi di un canale (frequenza, velocità, S/N per lo spot) al momento `now`.
+    pub(crate) fn check(&mut self, tr: &mut Transcript, sig: (f32, f32, f32), now: f64, level: Validation, check: &dyn Fn(&str) -> CallCheck) {
         let (freq, wpm, snr_db) = sig;
         tr.calls.expire(now, SPOT_REPEAT_S);
-        for call in tr.calls.calls(Validation::Strict.max(level), dxcc) {
+        for call in tr.calls.calls(level, check).into_iter().filter(HeardCall::verified) {
             let cq = call.role == Role::Cq;
             let again = match self.spotted.get(&call.call) {
                 None => true,
-                Some(&(at, f, was_cq)) => now - at > SPOT_REPEAT_S || (f - freq).abs() > 1_000.0 || (cq && !was_cq),
+                Some(&(at, f, was_cq)) => now - at > SPOT_REOFFER_S || (f - freq).abs() > 1_000.0 || (cq && !was_cq),
             };
             if again {
                 self.spotted.insert(call.call.clone(), (now, freq, cq));
-                self.spots.push(LocalSpot { call: call.call.clone(), freq_hz: freq, wpm, snr_db, cq, at_s: now });
+                self.spots.push(LocalSpot { call: call.call.clone(), freq_hz: freq, wpm, snr_db, cq, de: call.role == Role::De, at_s: now });
             }
         }
     }
@@ -127,8 +134,8 @@ impl Spotter {
     }
 }
 
-/// Dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
-pub type DxccCheck = Box<dyn Fn(&str) -> Option<bool> + Send>;
+/// Dice cosa si sa di un nominativo fuori dal segnale: paese DXCC e probabilita' a priori della forma.
+pub type CallCheckFn = Box<dyn Fn(&str) -> CallCheck + Send>;
 
 /// Un decodificatore di tutta la banda (CW o PSK), come lo usa il servizio.
 pub trait BandDecoder: Send {
@@ -141,10 +148,12 @@ pub trait BandDecoder: Send {
     /// Quanti canali al massimo (se sono di più si chiudono i più deboli).
     fn set_max_channels(&mut self, n: usize);
     fn channel_count(&self) -> usize;
-    /// Chi dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
-    fn set_dxcc(&mut self, f: DxccCheck);
+    /// Chi dice cosa si sa di un nominativo (paese DXCC, forma).
+    fn set_call_check(&mut self, f: CallCheckFn);
     /// Cancella tutto e ricomincia.
     fn clear(&mut self);
+    /// Il livello di convalida dei nominativi.
+    fn set_validation(&mut self, v: Validation);
 }
 
 /// Un canale: un segnale CW della banda.
@@ -153,6 +162,27 @@ pub struct Channel {
     rx: CwDemodulator,
     tr: Transcript,
     born_s: f64,
+    /// Il rapporto fra la riga del tono e il fondo negli spettri a tasto abbassato degli ultimi `KEYDOWN_S` secondi (per lo spot).
+    keydown: VecDeque<(f64, f32)>,
+}
+
+impl Channel {
+    /// S/N dello spot, riferito a 500 Hz: la mediana delle misure a tasto abbassato degli ultimi 15 s (il QSB e le pause non la spostano).
+    /// Il rapporto riga/fondo di uno spettro e' P/(N0·risoluzione), quindi P/N0 in 500 Hz = rapporto · risoluzione / 500. Senza misure a
+    /// tasto abbassato, il S/N del ricevitore (in 3 kHz) riportato a 500 Hz.
+    fn spot_snr_db(&self) -> f32 {
+        if self.keydown.len() < 3 {
+            return self.rx.snr_db() + 10.0 * (3_000.0_f32 / 500.0).log10();
+        }
+        let mut v: Vec<f32> = self.keydown.iter().map(|(_, r)| *r).collect();
+        v.sort_by(f32::total_cmp);
+        // uno spettro (170 ms) prende spesso un punto e una pausa insieme: a tasto davvero abbassato sono quelli vicini ai piu' forti
+        // (sopra il 70% del 90° percentile); di questi la mediana
+        let p90 = v[(v.len() * 9 / 10).min(v.len() - 1)];
+        let down: Vec<f32> = v.into_iter().filter(|r| *r >= 0.7 * p90).collect();
+        let median = down[down.len() / 2];
+        10.0 * (median * (RATE / FFT_N as f32) / 500.0).max(1e-6).log10()
+    }
 }
 
 /// Quello che si mostra di un canale.
@@ -182,6 +212,8 @@ pub struct LocalSpot {
     pub wpm: f32,
     pub snr_db: f32,
     pub cq: bool,
+    /// Lo si sente dopo «DE» (trasmette lui).
+    pub de: bool,
     pub at_s: f64,
 }
 
@@ -199,7 +231,7 @@ pub struct CwBandDecoder {
     next_id: u32,
     t: f64,
     validation: Validation,
-    dxcc: Option<DxccCheck>,
+    dxcc: Option<CallCheckFn>,
     spotter: Spotter,
 }
 
@@ -231,8 +263,8 @@ impl CwBandDecoder {
         self.validation = v;
     }
 
-    /// Chi dice se un nominativo porta a un paese DXCC (`Some(false)` = no; `None` = non si sa).
-    pub fn set_dxcc(&mut self, f: DxccCheck) {
+    /// Chi dice cosa si sa di un nominativo (paese DXCC, forma).
+    pub fn set_call_check(&mut self, f: CallCheckFn) {
         self.dxcc = Some(f);
     }
 
@@ -308,6 +340,29 @@ impl CwBandDecoder {
             }
         }
         self.stable = next;
+        self.measure_keydown(&buf, floor);
+    }
+
+    /// S/N per gli spot: in ogni spettro (non mediato) la potenza delle tre righe attorno al tono di ogni canale contro il fondo; conta solo
+    /// a tasto abbassato (6 dB sopra il fondo), e si tiene `KEYDOWN_S` secondi.
+    fn measure_keydown(&mut self, buf: &[Complex32], floor: f32) {
+        let res = RATE / FFT_N as f32;
+        let now = self.t;
+        // il fondo e' la mediana dello spettro mediato: per lo spettro di un solo istante va bene lo stesso (le scale sono uguali)
+        for ch in self.channels.iter_mut() {
+            let k = (ch.rx.frequency() / res).round() as usize;
+            if k < 2 || k + 2 >= buf.len() {
+                continue;
+            }
+            let p: f32 = buf[k - 1..=k + 1].iter().map(|c| c.norm_sqr()).sum();
+            let ratio = (p - 3.0 * floor) / floor;
+            if ratio > KEYDOWN_RATIO {
+                ch.keydown.push_back((now, ratio));
+            }
+            while ch.keydown.front().is_some_and(|(at, _)| now - at > KEYDOWN_S) {
+                ch.keydown.pop_front();
+            }
+        }
     }
 
     fn open_channel(&mut self, bin: usize) {
@@ -325,7 +380,7 @@ impl CwBandDecoder {
         // la stazione accanto puo' stare a 60-100 Hz: nelle pause l'AFC non deve saltarle addosso
         rx.set_afc_limit(CHANNEL_AFC_HZ);
         rx.set_beam(CHANNEL_BEAM);
-        self.channels.push(Channel { id: self.next_id, rx, tr: Transcript::new(self.t), born_s: self.t });
+        self.channels.push(Channel { id: self.next_id, rx, tr: Transcript::new(self.t), born_s: self.t, keydown: VecDeque::new() });
         self.next_id += 1;
     }
 
@@ -345,16 +400,16 @@ impl CwBandDecoder {
             }
         }
         let dxcc_db = self.dxcc.as_deref();
-        let dxcc = |c: &str| dxcc_db.and_then(|f| f(c));
+        let dxcc = |c: &str| dxcc_db.map(|f| f(c)).unwrap_or_default();
         for ch in self.channels.iter_mut() {
-            let sig = (ch.rx.frequency(), ch.rx.wpm(), ch.rx.snr_db());
+            let sig = (ch.rx.frequency(), ch.rx.wpm(), ch.spot_snr_db());
             self.spotter.check(&mut ch.tr, sig, now, self.validation, &dxcc);
         }
     }
 
     /// I canali aperti, dal tono più basso.
     pub fn channels(&self) -> Vec<ChannelInfo> {
-        let dxcc = |c: &str| self.dxcc.as_ref().and_then(|f| f(c));
+        let dxcc = |c: &str| self.dxcc.as_ref().map(|f| f(c)).unwrap_or_default();
         let mut v: Vec<ChannelInfo> = self.channels.iter().map(|ch| ch.tr.info(ch.id, ch.rx.frequency(), ch.rx.wpm(), ch.rx.snr_db(), self.validation, &dxcc)).collect();
         v.sort_by(|a, b| a.freq_hz.total_cmp(&b.freq_hz));
         v
@@ -382,11 +437,14 @@ impl BandDecoder for CwBandDecoder {
     fn channel_count(&self) -> usize {
         CwBandDecoder::channel_count(self)
     }
-    fn set_dxcc(&mut self, f: DxccCheck) {
-        CwBandDecoder::set_dxcc(self, f);
+    fn set_call_check(&mut self, f: CallCheckFn) {
+        CwBandDecoder::set_call_check(self, f);
     }
     fn clear(&mut self) {
         CwBandDecoder::clear(self);
+    }
+    fn set_validation(&mut self, v: Validation) {
+        CwBandDecoder::set_validation(self, v);
     }
 }
 
@@ -438,7 +496,10 @@ pub(crate) mod tests {
         // si scopre a chiamare CQ
         for (_, _, call) in stations {
             let mine: Vec<&LocalSpot> = spots.iter().filter(|s| s.call == call).collect();
-            assert!((1..=2).contains(&mine.len()) && mine.iter().any(|s| s.cq), "{spots:?}");
+            assert!(!mine.is_empty() && mine.iter().any(|s| s.cq), "{spots:?}");
+            // S/N in 500 Hz a tasto abbassato: tono di ampiezza 0,2 nel rumore di deviazione 0,05 a 12 kHz fa 19,8 dB
+            let last = mine.last().map_or(0.0, |s| s.snr_db);
+            assert!((last - 19.8).abs() < 3.0, "{call}: {last:.1} dB");
         }
         // meno canali: restano i più forti
         sk.set_max_channels(2);

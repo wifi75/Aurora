@@ -1815,6 +1815,10 @@ export interface DigiSettings {
   band_psk?: boolean;
   /** Tutta la banda: i nominativi verificati come spot locali nel pannello del DX Cluster di Aurora (mai in rete). */
   band_spots?: boolean;
+  /** Tutta la banda: spot locali solo di chi chiama CQ. */
+  band_spots_cq_only?: boolean;
+  /** Tutta la banda: convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`). */
+  band_validation?: string;
 }
 
 /** I segnali di tutta la banda con lo storico di 60 s di ciascuno. */

@@ -19,7 +19,8 @@ use std::{
 use aurora_core::{DigiEvent, DigiSignal, DigiSignalCall};
 
 use crate::service::{DigiMode, DigiSettings, Emitter};
-use crate::skim::calls::Role;
+use crate::skim::calls::{CallCheck, Role, Validation};
+use crate::skim::forms::FormTable;
 use crate::psk::PskMode;
 use crate::skim::psk::PskBandDecoder;
 use crate::skim::{BandDecoder, ChannelInfo, CwBandDecoder};
@@ -48,8 +49,58 @@ pub struct BandSpot {
     pub audio_hz: f32,
     pub mode: &'static str,
     pub wpm: Option<f32>,
+    /// S/N riferito a 500 Hz (CW: mediana degli ultimi 15 s a tasto abbassato).
     pub snr_db: f32,
     pub cq: bool,
+    /// Lo si sente dopo «DE».
+    pub de: bool,
+}
+
+impl BandSpot {
+    /// Il commento dello spot: modo, velocita', S/N in 500 Hz, CQ o DE (`CW 22 WPM 14 dB CQ`).
+    pub fn comment(&self) -> String {
+        let speed = self.wpm.map(|w| format!(" {w:.0} WPM")).unwrap_or_default();
+        let role = if self.cq { " CQ" } else if self.de { " DE" } else { "" };
+        format!("{}{speed} {:.0} dB{role}", self.mode, self.snr_db)
+    }
+}
+
+/// Le regole degli spot locali, applicate da chi conosce la banda: al piu' uno spot per nominativo e banda ogni 10 minuti, di nuovo se la
+/// frequenza cambia di oltre 1 kHz o se la stazione passa a chiamare CQ.
+#[derive(Default)]
+pub struct SpotGate {
+    sent: std::collections::HashMap<(String, String), (f64, f64, bool)>,
+}
+
+/// Uno spot per nominativo e banda ogni tanto (s).
+pub const SPOT_EVERY_S: f64 = 600.0;
+
+impl SpotGate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Lo spot `s` sulla banda `band` a `khz`, al momento `now_s` (secondi): passa?
+    pub fn allow(&mut self, s: &BandSpot, band: &str, khz: f64, now_s: f64) -> bool {
+        let key = (s.call.clone(), band.to_string());
+        let again = match self.sent.get(&key) {
+            None => true,
+            Some(&(at, f, was_cq)) => now_s - at >= SPOT_EVERY_S || (khz - f).abs() > 1.0 || (s.cq && !was_cq),
+        };
+        if again {
+            self.sent.insert(key, (now_s, khz, s.cq));
+            self.sent.retain(|_, (at, _, _)| now_s - *at < 2.0 * SPOT_EVERY_S);
+        }
+        again
+    }
+}
+
+/// Le opzioni di tutta la banda che non cambiano il decodificatore.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Options {
+    spots: bool,
+    cq_only: bool,
+    validation: Validation,
 }
 
 /// Chi riceve gli spot locali.
@@ -91,7 +142,7 @@ impl Kind {
 
 enum Msg {
     Audio(Vec<f32>),
-    Config(Option<Kind>, bool),
+    Config(Option<Kind>, Options),
     Reset,
 }
 
@@ -100,6 +151,7 @@ struct Hooks {
     emit: Mutex<Option<Emitter>>,
     spots: Mutex<Option<SpotSink>>,
     lookup: Mutex<Option<CallLookup>>,
+    forms: Mutex<Arc<FormTable>>,
     signals: Mutex<Vec<DigiSignal>>,
 }
 
@@ -140,11 +192,17 @@ impl BandLink {
         *lock(&self.hooks.lookup) = Some(lookup);
     }
 
+    /// Le forme dei nominativi noti per paese (probabilita' a priori per la convalida); si possono rimpiazzare quando si vuole.
+    pub fn set_call_forms(&self, forms: FormTable) {
+        *lock(&self.hooks.forms) = Arc::new(forms);
+    }
+
     /// Le impostazioni nuove: modo, acceso o spento, spot.
     pub fn configure(&self, s: &DigiSettings) {
         let kind = Kind::of(s);
         self.active.store(kind.is_some(), Ordering::Relaxed);
-        let _ = self.queue.send(Msg::Config(kind, s.band_spots));
+        let validation = Validation::from_id(&s.band_validation).unwrap_or_default();
+        let _ = self.queue.send(Msg::Config(kind, Options { spots: s.band_spots, cq_only: s.band_spots_cq_only, validation }));
     }
 
     /// Altro audio a 12 kHz (se il thread e' indietro il blocco si perde, solo per lui).
@@ -201,9 +259,17 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
     }
 }
 
+/// Cosa si sa di un nominativo: il paese da `cty.dat` (se c'e') e la probabilita' a priori della sua forma in quel paese.
+fn check_call(hooks: &Hooks, call: &str) -> CallCheck {
+    let Some(lookup) = lock(&hooks.lookup).clone() else { return CallCheck::default() };
+    let country = lookup(call);
+    let forms = Arc::clone(&lock(&hooks.forms));
+    CallCheck { dxcc: Some(country.is_some()), prob: country.as_deref().and_then(|c| forms.prob(call, c)) }
+}
+
 fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
     let mut kind: Option<Kind> = None;
-    let mut spots_on = true;
+    let mut opts = Options { spots: true, cq_only: false, validation: Validation::Normal };
     let mut decoder: Option<Box<dyn BandDecoder>> = None;
     let mut max_channels = MAX_CHANNELS;
     let (mut spent, mut heard) = (Duration::ZERO, 0.0_f64);
@@ -229,27 +295,33 @@ fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
                 let d = decoder.get_or_insert_with(|| {
                     let mut d = k.decoder();
                     d.set_max_channels(max_channels);
+                    d.set_validation(opts.validation);
                     let slot = Arc::clone(hooks);
-                    d.set_dxcc(Box::new(move |c: &str| lock(&slot.lookup).as_ref().map(|f| f(c).is_some())));
+                    d.set_call_check(Box::new(move |c: &str| check_call(&slot, c)));
                     d
                 });
                 let started = Instant::now();
                 d.process(&audio);
                 spent += started.elapsed();
                 heard += audio.len() as f64 / f64::from(crate::RATE);
-                if spots_on {
+                let spots = d.take_spots();
+                if opts.spots {
                     let sink = lock(&hooks.spots).clone();
-                    for s in d.take_spots() {
+                    // con «solo CQ» passano solo le stazioni che chiamano
+                    for s in spots.into_iter().filter(|s| s.cq || !opts.cq_only) {
                         if let Some(sink) = &sink {
-                            sink(BandSpot { call: s.call, audio_hz: s.freq_hz, mode: k.mode_name(), wpm: (k == Kind::Cw).then_some(s.wpm.round()), snr_db: s.snr_db.round(), cq: s.cq });
+                            sink(BandSpot { call: s.call, audio_hz: s.freq_hz, mode: k.mode_name(), wpm: (k == Kind::Cw).then_some(s.wpm.round()), snr_db: s.snr_db.round(), cq: s.cq, de: s.de });
                         }
                     }
-                } else {
-                    d.take_spots();
                 }
             }
-            Some(Msg::Config(k, spots)) => {
-                spots_on = spots;
+            Some(Msg::Config(k, o)) => {
+                if o.validation != opts.validation
+                    && let Some(d) = decoder.as_mut()
+                {
+                    d.set_validation(o.validation);
+                }
+                opts = o;
                 if k != kind {
                     kind = k;
                     decoder = None;
@@ -310,6 +382,25 @@ mod tests {
     use crate::skim::calls::HeardCall;
 
     #[test]
+    fn the_rules_of_the_local_spots() {
+        let spot = |cq: bool, de: bool| BandSpot { call: "IU3ABC".into(), audio_hz: 700.0, mode: "CW", wpm: Some(22.0), snr_db: 14.0, cq, de };
+        assert_eq!(spot(true, false).comment(), "CW 22 WPM 14 dB CQ");
+        assert_eq!(spot(false, true).comment(), "CW 22 WPM 14 dB DE");
+        let mut g = SpotGate::new();
+        assert!(g.allow(&spot(false, true), "20m", 14_025.0, 0.0));
+        // ancora lui, stessa banda: niente per 10 minuti
+        assert!(!g.allow(&spot(false, true), "20m", 14_025.3, 300.0));
+        // passa a chiamare CQ: si ripete subito
+        assert!(g.allow(&spot(true, false), "20m", 14_025.3, 310.0));
+        assert!(!g.allow(&spot(true, false), "20m", 14_025.3, 320.0));
+        // oltre 1 kHz piu' in la', o un'altra banda: subito
+        assert!(g.allow(&spot(true, false), "20m", 14_027.0, 330.0));
+        assert!(g.allow(&spot(true, false), "40m", 7_025.0, 340.0));
+        // dopo 10 minuti di nuovo
+        assert!(g.allow(&spot(true, false), "20m", 14_027.0, 330.0 + SPOT_EVERY_S));
+    }
+
+    #[test]
     fn the_tail_keeps_the_unsure_positions_in_step() {
         let ch = ChannelInfo {
             id: 3,
@@ -318,7 +409,7 @@ mod tests {
             snr_db: 9.4,
             text: "CQ DE IU3ABC K".into(),
             conf: vec![255, 255, 255, 255, 255, 255, 100, 255, 255, 255, 255, 255, 255, 40],
-            calls: vec![HeardCall { call: "IU3ABC".into(), role: Role::Cq, count: 2, score: 1.9, last_s: 3.0 }],
+            calls: vec![HeardCall { call: "IU3ABC".into(), role: Role::Cq, count: 2, score: 1.9, last_s: 3.0, shape: crate::skim::forms::Shape::Typical }],
             cq: true,
             last_report: None,
         };

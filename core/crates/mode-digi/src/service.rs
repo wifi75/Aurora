@@ -227,6 +227,10 @@ pub struct DigiSettings {
     pub band_psk: bool,
     /// Tutta la banda: i nominativi verificati vanno come spot locali nel pannello del DX Cluster di Aurora (mai in rete).
     pub band_spots: bool,
+    /// Tutta la banda: spot locali solo delle stazioni che chiamano CQ.
+    pub band_spots_cq_only: bool,
+    /// Tutta la banda: livello di convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`).
+    pub band_validation: String,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -306,6 +310,8 @@ impl Default for DigiSettings {
             band_cw: true,
             band_psk: true,
             band_spots: true,
+            band_spots_cq_only: false,
+            band_validation: "normal".into(),
         }
     }
 }
@@ -346,6 +352,9 @@ impl DigiSettings {
             if let Some(bad) = set.iter().find(|m| !valid_macro_name(&m.name)) {
                 return Err(DigiError::BadValue(format!("nome di macro non valido: {}", bad.name)));
             }
+        }
+        if crate::skim::calls::Validation::from_id(&self.band_validation).is_none() {
+            return Err(DigiError::BadValue("convalida dei nominativi non fra minimal, normal, strict e maximum".into()));
         }
         if self.mode_macros.keys().any(|k| DigiMode::from_id(k).is_none()) {
             return Err(DigiError::BadValue("insieme di macro per un modo sconosciuto".into()));
@@ -533,6 +542,11 @@ impl DigiService {
     /// Il paese DXCC di un nominativo (bandiera e convalida dei nominativi di tutta la banda).
     pub fn set_call_lookup(&self, lookup: crate::band::CallLookup) {
         self.inner.band.set_call_lookup(lookup);
+    }
+
+    /// Le forme dei nominativi noti per paese (convalida dei nominativi di tutta la banda).
+    pub fn set_call_forms(&self, forms: crate::skim::forms::FormTable) {
+        self.inner.band.set_call_forms(forms);
     }
 
     /// I segnali di tutta la banda di adesso, con lo storico di 60 s.

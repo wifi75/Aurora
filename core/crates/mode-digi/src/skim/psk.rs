@@ -12,7 +12,7 @@
 //! canale confermato si chiude dopo `IDLE_S` secondi senza segnale e senza testo. Nell'elenco vanno solo i canali confermati.
 
 use super::calls::Validation;
-use super::{BandDecoder, ChannelInfo, DxccCheck, LocalSpot, Spotter, Transcript};
+use super::{BandDecoder, ChannelInfo, CallCheckFn, LocalSpot, Spotter, Transcript};
 use crate::psk::{PskDemodulator, PskMode, SQUELCH_DEFAULT};
 use rustfft::num_complex::Complex32;
 use rustfft::{Fft, FftPlanner};
@@ -68,7 +68,7 @@ pub struct PskBandDecoder {
     next_id: u32,
     t: f64,
     validation: Validation,
-    dxcc: Option<DxccCheck>,
+    dxcc: Option<CallCheckFn>,
     spotter: Spotter,
 }
 
@@ -216,9 +216,10 @@ impl PskBandDecoder {
             }
         }
         let dxcc_db = self.dxcc.as_deref();
-        let dxcc = |c: &str| dxcc_db.and_then(|f| f(c));
+        let dxcc = |c: &str| dxcc_db.map(|f| f(c)).unwrap_or_default();
         for ch in self.channels.iter_mut().filter(|ch| ch.confirmed) {
-            let sig = (ch.rx.frequency(), 0.0, ch.snr());
+            // lo spot vuole il S/N in 500 Hz (quello dello spettro e' in 3 kHz)
+            let sig = (ch.rx.frequency(), 0.0, ch.snr() + 10.0 * (3_000.0_f32 / 500.0).log10());
             self.spotter.check(&mut ch.tr, sig, now, self.validation, &dxcc);
         }
     }
@@ -248,7 +249,7 @@ impl BandDecoder for PskBandDecoder {
     }
 
     fn channels(&self) -> Vec<ChannelInfo> {
-        let dxcc = |c: &str| self.dxcc.as_ref().and_then(|f| f(c));
+        let dxcc = |c: &str| self.dxcc.as_ref().map(|f| f(c)).unwrap_or_default();
         // i canali ancora in prova non si mostrano
         let mut v: Vec<ChannelInfo> = self.channels.iter().filter(|ch| ch.confirmed).map(|ch| ch.tr.info(ch.id, ch.rx.frequency(), 0.0, ch.snr(), self.validation, &dxcc)).collect();
         v.sort_by(|a, b| a.freq_hz.total_cmp(&b.freq_hz));
@@ -271,7 +272,7 @@ impl BandDecoder for PskBandDecoder {
         self.channels.len()
     }
 
-    fn set_dxcc(&mut self, f: DxccCheck) {
+    fn set_call_check(&mut self, f: CallCheckFn) {
         self.dxcc = Some(f);
     }
 
@@ -281,6 +282,10 @@ impl BandDecoder for PskBandDecoder {
         self.rejected.clear();
         self.spotter.clear();
         self.frames = 0;
+    }
+
+    fn set_validation(&mut self, v: Validation) {
+        self.validation = v;
     }
 }
 

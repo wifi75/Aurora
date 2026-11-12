@@ -1135,21 +1135,59 @@ fn apply_decode_settings(d: &remote_api::engine_settings::DecodeOptions) {
 /// Tutta la banda dei modi testuali (CW): il paese DXCC dei nominativi (bandiera e convalida) da `cty.dat`, e gli spot locali nel pannello
 /// del DX Cluster di Aurora con la frequenza vera (radio + tono audio, in USB). Solo in locale: niente va in rete. Senza frequenza della radio
 /// lo spot non si fa (non si saprebbe dove sta la stazione).
-fn wire_band_decoder(digi: &Arc<mode_digi::DigiService>, cluster: &Arc<dx_cluster::ClusterService>, dial_hz: &Arc<std::sync::atomic::AtomicU64>, db: Option<Arc<DxccDb>>) {
+fn wire_band_decoder(digi: &Arc<mode_digi::DigiService>, cluster: &Arc<dx_cluster::ClusterService>, dial_hz: &Arc<std::sync::atomic::AtomicU64>, db: Option<Arc<DxccDb>>, logbook: &Arc<Logbook>, data_dir: &Path) {
     if let Some(db) = db {
-        digi.set_call_lookup(Arc::new(move |call: &str| db.lookup(call).map(|l| db.entity(l.entity).name.clone())));
+        let lookup = Arc::clone(&db);
+        digi.set_call_lookup(Arc::new(move |call: &str| lookup.lookup(call).map(|l| lookup.entity(l.entity).name.clone())));
+        spawn_call_forms(Arc::clone(digi), Arc::clone(cluster), Arc::clone(logbook), data_dir.to_path_buf(), db);
     }
     let (cluster, dial) = (Arc::clone(cluster), Arc::clone(dial_hz));
+    // al piu' uno spot per nominativo e banda ogni 10 minuti (di nuovo se cambia frequenza di oltre 1 kHz o passa a chiamare CQ)
+    let gate = Mutex::new(mode_digi::band::SpotGate::new());
     digi.set_spot_sink(Arc::new(move |s: mode_digi::band::BandSpot| {
         let radio = dial.load(std::sync::atomic::Ordering::Relaxed);
         if radio == 0 {
             return;
         }
-        let khz = (radio as f64 + f64::from(s.audio_hz)) / 1000.0;
-        let speed = s.wpm.map(|w| format!(" {w:.0} WPM")).unwrap_or_default();
-        let cq = if s.cq { " CQ" } else { "" };
-        cluster.add_own_spot(&s.call, (khz * 10.0).round() / 10.0, &format!("{}{speed} {:.0} dB{cq}", s.mode, s.snr_db), "Aurora");
+        let khz = ((radio as f64 + f64::from(s.audio_hz)) / 100.0).round() / 10.0;
+        let band = dx_cluster::spot::band_of_khz(khz).unwrap_or("?");
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0.0, |d| d.as_secs_f64());
+        if gate.lock().map(|mut g| g.allow(&s, band, khz, now)).unwrap_or(false) {
+            cluster.add_own_spot(&s.call, khz, &s.comment(), "Aurora");
+        }
     }));
+}
+
+/// Le forme dei nominativi per paese, per la convalida di tutta la banda: dal log di Aurora, dagli spot del DX Cluster e da `MASTER.SCP`
+/// nella cartella dei dati (se c'e'). Si rifanno ogni mezz'ora in un thread suo (il conto costa pochi millisecondi).
+fn spawn_call_forms(digi: Arc<mode_digi::DigiService>, cluster: Arc<dx_cluster::ClusterService>, logbook: Arc<Logbook>, data_dir: PathBuf, db: Arc<DxccDb>) {
+    let spawned = std::thread::Builder::new().name("aurora-forme-nominativi".into()).spawn(move || {
+        loop {
+            let mut table = mode_digi::skim::forms::FormTable::new();
+            let mut add = |call: &str| {
+                let call = call.trim().to_ascii_uppercase();
+                if let Some(l) = db.lookup(&call) {
+                    table.add(&call, &db.entity(l.entity).name);
+                }
+            };
+            if let Ok(qsos) = logbook.all_qsos() {
+                qsos.iter().for_each(|q| add(&q.call));
+            }
+            cluster.spots_since(0, 100_000).iter().for_each(|s| add(&s.dx_call));
+            for name in ["MASTER.SCP", "master.scp"] {
+                if let Ok(text) = std::fs::read_to_string(data_dir.join(name)) {
+                    text.lines().filter(|l| !l.starts_with('#')).for_each(|l| add(l));
+                    break;
+                }
+            }
+            tracing::debug!("forme dei nominativi: {} nominativi contati", table.len());
+            digi.set_call_forms(table);
+            std::thread::sleep(Duration::from_secs(1_800));
+        }
+    });
+    if let Err(e) = spawned {
+        tracing::warn!("forme dei nominativi non calcolate: {e}");
+    }
 }
 
 /// «Cancella» premuta qui e frequenza Tx spostata a trasmissione in corso: come in WSJT-X il Clear va anche ai programmi collegati via UDP
@@ -2196,7 +2234,7 @@ pub async fn run(
     // senza CAT la frequenza la sceglie l'operatore con le bande (`with_manual_dial`) e resta al riavvio
     let manual_file = config.data_dir.join(MANUAL_DIAL_FILE);
     let dial_hz = Arc::new(std::sync::atomic::AtomicU64::new(std::fs::read_to_string(&manual_file).ok().and_then(|t| t.trim().parse().ok()).unwrap_or(0)));
-    wire_band_decoder(&digi, &cluster, &dial_hz, enrichment.as_ref().map(|(db, _)| Arc::clone(db)));
+    wire_band_decoder(&digi, &cluster, &dial_hz, enrichment.as_ref().map(|(db, _)| Arc::clone(db)), &logbook, &config.data_dir);
     // QMAP: ricezione panoramica Q65 da un flusso I/Q (TCI o file); spento finche' non si sceglie la sorgente. Nominativo e locatore
     // (ipotesi AP e Doppler dell'eco) li legge dalle impostazioni della stazione a ogni uso.
     let qmap_service = qmap::QmapService::open(Some(&config.data_dir.join("qmap.json")));
