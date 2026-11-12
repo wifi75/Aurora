@@ -71,14 +71,11 @@ fn is_rigctld(p: &Process) -> bool {
     stem(&p.name) == "rigctld"
 }
 
-/// Chi tiene la porta, dall'elenco dei processi (`own` = il processo di Aurora, che non conta). Prima un `rigctld` orfano (si risolve da
-/// soli), poi i programmi noti nell'ordine di [`KNOWN`]; un `rigctld` lanciato da Aurora stessa non conta, uno lanciato da un altro programma
-/// noto vale quel programma.
+/// Chi tiene la porta, dall'elenco dei processi (`own` = il processo di Aurora, che non conta): i programmi noti nell'ordine di [`KNOWN`].
+/// Un `rigctld` lanciato da Aurora stessa non conta, uno lanciato da un altro programma noto vale quel programma, uno orfano o di un
+/// programma sconosciuto vale «rigctld». Gli orfani di Aurora non arrivano qui: li chiude [`diagnose_open_error`] prima della diagnosi (un
+/// orfano qualunque non deve passare davanti al programma che tiene davvero la porta).
 pub fn holder(processes: &[Process], own: u32) -> Holder {
-    let alive = |pid: u32| pid != 0 && processes.iter().any(|p| p.pid == pid);
-    if processes.iter().any(|p| is_rigctld(p) && p.parent != own && !alive(p.parent)) {
-        return Holder::OrphanRigctld;
-    }
     let mut found: Option<(usize, &'static str)> = None;
     for p in processes.iter().filter(|p| p.pid != own) {
         let name = if is_rigctld(p) {
@@ -105,10 +102,9 @@ pub fn holder(processes: &[Process], own: u32) -> Holder {
 /// manca o che la radio non risponde.
 pub fn is_access_denied(message: &str) -> bool {
     let m = message.to_lowercase();
-    [
+    const WINDOWS: &[&str] = &[
         "(os error 5)",
         "(os error 32)",
-        "(os error 16)",
         "accesso negato",
         "access denied",
         "access is denied",
@@ -116,19 +112,19 @@ pub fn is_access_denied(message: &str) -> bool {
         "0x80070005",
         "0x80070020",
         "sharing violation",
-        "already open",
-        "resource busy",
         "utilizzato da un altro processo",
         "used by another process",
-    ]
-    .iter()
-    .any(|k| m.contains(k))
+    ];
+    // EBUSY (16) e i testi di porta gia' aperta valgono ovunque
+    const ANYWHERE: &[&str] = &["already open", "resource busy"];
+    let unix_busy = !cfg!(windows) && m.contains("(os error 16)");
+    unix_busy || ANYWHERE.iter().any(|k| m.contains(k)) || (cfg!(windows) && WINDOWS.iter().any(|k| m.contains(k)))
 }
 
 /// Il nome della porta da mostrare: `\\.\COM12` diventa `COM12`.
 pub fn port_label(port: &str) -> String {
     let p = port.trim().trim_start_matches(r"\\.\");
-    if p.len() > 3 && p[..3].eq_ignore_ascii_case("com") { p.to_ascii_uppercase() } else { p.to_string() }
+    if p.len() > 3 && p.get(..3).is_some_and(|s| s.eq_ignore_ascii_case("com")) { p.to_ascii_uppercase() } else { p.to_string() }
 }
 
 /// Il testo per l'operatore (l'interfaccia lo traduce: `app/src/lib/coreText.ts`, chiavi `core.portHeld*`).
@@ -156,9 +152,10 @@ pub fn is_busy_diagnosis(message: &str) -> bool {
         .is_some_and(|(port, _)| !port.is_empty() && !port.contains(' ') && port != "seriale")
 }
 
-/// Come `cat_config::friendly_error`, ma una diagnosi di porta occupata resta com'e' (dice gia' chi tiene la porta).
+/// Come `cat_config::friendly_error`, ma i messaggi gia' scritti per l'operatore restano come sono: la diagnosi di porta occupata (dice gia'
+/// chi tiene la porta) e i tempi scaduti di OmniRig (sostituiti dal consiglio generico di Hamlib dicevano «controlla baud e cavo»).
 pub fn friendly_error(raw: &str) -> String {
-    if is_busy_diagnosis(raw) { raw.to_string() } else { crate::cat_config::friendly_error(raw) }
+    if is_busy_diagnosis(raw) || crate::omnirig::is_timeout(raw) { raw.to_string() } else { crate::cat_config::friendly_error(raw) }
 }
 
 /// Chi tiene la porta adesso (elenco dei processi di sistema).
@@ -179,8 +176,9 @@ pub fn diagnose_open_error(port: &str, error: &str) -> Option<Diagnosis> {
     if !is_access_denied(error) {
         return None;
     }
-    let holder = diagnose();
-    let retry = holder == Holder::OrphanRigctld && close_orphan_rigctld();
+    // prima si chiudono gli orfani di Aurora (rimasti da un Aurora chiuso male): se ce n'era uno, era lui a tenere la porta e si riprova
+    let retry = close_orphan_rigctld();
+    let holder = if retry { Holder::OrphanRigctld } else { diagnose() };
     let message = busy_message(port, &holder);
     tracing::info!("porta {} non aperta ({error}): {message}", port_label(port));
     Some(Diagnosis { holder, message, retry })
@@ -257,8 +255,9 @@ pub fn close_orphan_rigctld() -> bool {
         let own = std::process::id();
         let alive = |pid: u32| pid != 0 && list.iter().any(|p| p.pid == pid);
         let mut closed = 0;
+        let ours = aurora_rigctld_dirs();
         for p in list.iter().filter(|p| is_rigctld(p) && p.parent != own && !alive(p.parent)) {
-            match sys::terminate_if_aurora(p.pid) {
+            match sys::terminate_if_aurora(p.pid, &ours) {
                 Ok(true) => closed += 1,
                 Ok(false) => tracing::info!("rigctld orfano {} non di Aurora: lasciato", p.pid),
                 Err(e) => tracing::info!("rigctld orfano {} non chiuso: {e}", p.pid),
@@ -275,6 +274,26 @@ pub fn close_orphan_rigctld() -> bool {
     {
         false
     }
+}
+
+/// Le cartelle dove Aurora cerca il suo `rigctld` (accanto al programma, la sua sottocartella `hamlib`, l'Hamlib ripristinato), in minuscolo
+/// e con la barra finale: un `rigctld` orfano si chiude solo se il suo programma sta qui.
+#[cfg(windows)]
+fn aurora_rigctld_dirs() -> Vec<String> {
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+    if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(std::path::Path::to_path_buf)) {
+        dirs.push(dir);
+    }
+    dirs.extend(crate::hamlib_restore::restored_dir());
+    dirs.iter()
+        .map(|d| {
+            let mut s = d.to_string_lossy().to_lowercase().replace('/', "\\");
+            if !s.ends_with('\\') {
+                s.push('\\');
+            }
+            s
+        })
+        .collect()
 }
 
 #[cfg(windows)]
@@ -319,8 +338,9 @@ mod sys {
         out
     }
 
-    /// Chiude il processo se il suo programma sta in una cartella di Aurora; `Ok(false)` se e' un altro.
-    pub(super) fn terminate_if_aurora(pid: u32) -> Result<bool, String> {
+    /// Chiude il processo se il suo programma sta in una delle cartelle di Aurora (`ours`, in minuscolo con la barra finale); `Ok(false)` se
+    /// e' un altro. Il percorso si legge dalla maniglia gia' aperta: un numero di processo riusato nel frattempo non inganna il controllo.
+    pub(super) fn terminate_if_aurora(pid: u32, ours: &[String]) -> Result<bool, String> {
         // SAFETY: apertura di un processo per numero; la maniglia si chiude con `Owned`.
         let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE, false, pid) }.map_err(|e| e.message())?;
         let handle = Owned(handle);
@@ -329,7 +349,7 @@ mod sys {
         // SAFETY: `buf` e `len` descrivono lo stesso spazio, valido per tutta la chiamata.
         unsafe { QueryFullProcessImageNameW(handle.0, PROCESS_NAME_FORMAT(0), PWSTR(buf.as_mut_ptr()), &mut len) }.map_err(|e| e.message())?;
         let path = String::from_utf16_lossy(&buf[..(len as usize).min(buf.len())]).to_lowercase();
-        if !path.contains("aurora") {
+        if !ours.iter().any(|dir| path.starts_with(dir.as_str())) {
             return Ok(false);
         }
         // SAFETY: maniglia aperta con PROCESS_TERMINATE.
@@ -373,8 +393,10 @@ mod tests {
 
     #[test]
     fn rigctld_orphan_ours_or_of_another_program() {
-        // padre morto: orfano (si chiude e si riprova)
-        assert_eq!(holder(&[p(20, 777, "rigctld.exe")], 99), Holder::OrphanRigctld);
+        // padre morto: un orfano qualunque vale «rigctld» (quelli di Aurora li chiude diagnose_open_error prima della diagnosi)
+        assert_eq!(holder(&[p(20, 777, "rigctld.exe")], 99), Holder::Program("rigctld (Hamlib)"));
+        // e non passa davanti al programma noto che tiene la porta
+        assert_eq!(holder(&[p(20, 777, "rigctld.exe"), p(11, 1, "OmniRig.exe")], 99), Holder::Program("OmniRig"));
         // lanciato da Aurora stessa: non conta
         assert_eq!(holder(&[p(99, 4, "aurora.exe"), p(20, 99, "rigctld.exe"), p(4, 1, "explorer.exe")], 99), Holder::Unknown);
         // lanciato da un programma noto: conta quel programma
@@ -385,11 +407,14 @@ mod tests {
 
     #[test]
     fn only_access_denied_is_a_busy_port() {
-        assert!(is_access_denied("Accesso negato. (os error 5)"));
-        assert!(is_access_denied("Access is denied. (os error 5)"));
-        assert!(is_access_denied("rigctld si e' fermato (exit code: 1): serial_open: Unable to open COM8 - Permission denied"));
-        assert!(is_access_denied("rig_open: Access denied"));
-        assert!(is_access_denied("porta \\\\.\\COM8 non apribile (occupata o assente): Accesso negato. (0x80070005)"));
+        // i codici e i testi di Windows valgono solo su Windows: su Linux «Permission denied» e' il gruppo dialout, 5 e' EIO
+        assert_eq!(is_access_denied("Accesso negato. (os error 5)"), cfg!(windows));
+        assert_eq!(is_access_denied("Access is denied. (os error 5)"), cfg!(windows));
+        assert_eq!(is_access_denied("rigctld si e' fermato (exit code: 1): serial_open: Unable to open COM8 - Permission denied"), cfg!(windows));
+        assert_eq!(is_access_denied("rig_open: Access denied"), cfg!(windows));
+        assert_eq!(is_access_denied("porta \\\\.\\COM8 non apribile (occupata o assente): Accesso negato. (0x80070005)"), cfg!(windows));
+        assert!(is_access_denied("serial_open: Device or resource busy"));
+        assert!(is_access_denied("Device or resource busy (os error 16)"));
         assert!(!is_access_denied("Impossibile trovare il file specificato. (os error 2)"));
         assert!(!is_access_denied("rigctld si e' fermato (exit code: 1): rig_open: error = Communication timed out"));
         assert!(!is_access_denied("(os error 50)"), "solo il codice 5, non quelli che iniziano per 5");

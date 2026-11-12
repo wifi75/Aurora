@@ -181,6 +181,8 @@ struct Inner {
     /// Split DX acceso (doppio clic su uno spot del cluster con «UP 5», «QSX ...»): il VFO di trasmissione l'ha scelto l'operatore e lo split
     /// di FT8 (XIT) non lo tocca finche' resta acceso. Si spegne al cambio di frequenza, da «Split DX: spegni» e alla chiusura.
     dx_split: AtomicBool,
+    /// La frequenza di trasmissione dello Split DX acceso (Hz, 0 = nessuno): serve a rimetterlo dopo una riconnessione.
+    dx_split_tx: AtomicU64,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
@@ -397,6 +399,19 @@ impl Inner {
             s.failures = 0;
             s.reconnect_attempt = 0;
         });
+        // la radio riavviata ha perso anche lo Split DX: si rimette (l'indicatore del cluster lo dice ancora acceso e l'operatore crede di
+        // trasmettere sul VFO B); se non si riesce si spegne il flag, cosi' torna lo split di FT8
+        let dx_tx = self.dx_split_tx.load(Ordering::SeqCst);
+        if self.dx_split.load(Ordering::SeqCst) && dx_tx != 0 && let Ok(link) = self.connected_link() {
+            let tx_vfo = if self.vfo_reversed.load(Ordering::SeqCst) { "VFOA" } else { "VFOB" };
+            match link.client().set_split_frequency(dx_tx).and_then(|()| link.client().set_split(true, tx_vfo)) {
+                Ok(()) => self.update(|s| s.split = Some(true)),
+                Err(e) => {
+                    tracing::warn!("split DX non rimesso dopo la riconnessione: {}", friendly_error(&e.0));
+                    self.dx_split.store(false, Ordering::SeqCst);
+                }
+            }
+        }
         // la radio riavviata ha perso lo split vero: si rimette quello scelto (dopo lo stato «collegata», che `connected_link` richiede)
         if self.config.split == SplitMode::Rig
             && self.tx_audio_hz.load(Ordering::SeqCst) != 0
@@ -767,6 +782,7 @@ impl HamlibRig {
             emulate_restore: Mutex::new(None),
             vfo_reversed: AtomicBool::new(false),
             dx_split: AtomicBool::new(false),
+            dx_split_tx: AtomicU64::new(0),
             epoch: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
             extras: Mutex::new(crate::extras::ExtrasPoll::default()),
@@ -984,10 +1000,16 @@ impl HamlibRig {
         let fr = |e: RigError| RigError(friendly_error(&e.0));
         link.client().set_split_frequency(tx_hz).map_err(fr)?;
         link.client().set_split(true, tx_vfo).map_err(fr)?;
+        inner.dx_split_tx.store(tx_hz, Ordering::SeqCst);
         inner.dx_split.store(true, Ordering::SeqCst);
         inner.update(|s| s.split = Some(true));
         inner.queue_quick_reads();
         Ok(())
+    }
+
+    /// Lo Split DX e' acceso (o non si e' riusciti a spegnerlo).
+    pub fn dx_split_active(&self) -> bool {
+        self.inner.dx_split.load(Ordering::SeqCst)
     }
 
     /// Spegne lo Split DX, se acceso: la radio torna in simplex sul VFO di ricezione.

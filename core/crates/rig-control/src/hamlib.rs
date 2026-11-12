@@ -430,24 +430,16 @@ impl Rigctld {
     /// Lancia `rigctld`. Se il demone si ferma perche' la porta seriale e' negata (la tiene un altro programma) l'errore dice quale
     /// ([`crate::busy_port`]) e l'avviso va a schermo; se la teneva un `rigctld` orfano di Aurora, chiuso quello si riprova una volta.
     pub fn start(config: &RigctldConfig) -> Result<Rigctld, RigError> {
-        let first = Rigctld::start_once(config);
-        let Err(e) = &first else { return first };
-        let Some(port) = config.port.as_deref().filter(|p| crate::cat_config::is_serial_port(p)) else { return first };
-        let Some(diagnosis) = crate::busy_port::diagnose_open_error(port, &e.0) else { return first };
-        if diagnosis.retry {
-            match Rigctld::start_once(config) {
-                Ok(daemon) => return Ok(daemon),
-                Err(again) => match crate::busy_port::diagnose_open_error(port, &again.0) {
-                    Some(d) => {
-                        crate::busy_port::notify(&d.message);
-                        return Err(d.error());
-                    }
-                    None => return Err(again),
-                },
+        let Some(port) = config.port.as_deref().filter(|p| crate::cat_config::is_serial_port(p)) else { return Rigctld::start_once(config) };
+        // solo l'errore del demone parla della porta seriale: «non avviato», «non trovato» e la porta TCP di condivisione no
+        let describe = |e: &RigError| if e.0.starts_with("rigctld non ") || e.0.contains("porta di condivisione") || e.0.starts_with("nessuna porta libera") { String::new() } else { e.0.clone() };
+        crate::busy_port::open_with_diagnosis(port, || Rigctld::start_once(config), describe).map_err(|(e, diagnosis)| match diagnosis {
+            Some(d) => {
+                crate::busy_port::notify(&d.message);
+                d.error()
             }
-        }
-        crate::busy_port::notify(&diagnosis.message);
-        Err(diagnosis.error())
+            None => e,
+        })
     }
 
     fn start_once(config: &RigctldConfig) -> Result<Rigctld, RigError> {
@@ -458,8 +450,7 @@ impl Rigctld {
         let wanted = config.tcp_port.unwrap_or(0);
         let mut first = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted));
         if first.is_err() && wanted != 0 && close_orphan_rigctld() {
-            // un rigctld rimasto da un Aurora chiuso male teneva la porta: chiuso quello, si riprova
-            std::thread::sleep(Duration::from_millis(500));
+            // un rigctld rimasto da un Aurora chiuso male teneva la porta: chiuso quello (con la sua attesa), si riprova
             first = TcpListener::bind((Ipv4Addr::LOCALHOST, wanted));
         }
         let probe = first.map_err(|e| {

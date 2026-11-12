@@ -378,6 +378,11 @@ fn on_rig_with<T: Send + 'static>(
     let n = rig();
     worker.run_with(crate::omnirig_com::Wait { allowance, skip_if_late }, move |com| {
         let r = com.rig(n)?;
+        // creare l'oggetto puo' aver richiesto molto (OmniRig che si avvia): un cambio di banda o uno split vecchio non arriva alla radio
+        // minuti dopo
+        if com.is_late() {
+            return Err(RigError(NOT_READY.to_string()));
+        }
         f(&r)
     })
 }
@@ -524,10 +529,19 @@ pub fn set_dx_split(rx_hz: u64, tx_hz: u64) -> Result<(), RigError> {
             Ok(())
         }
         Err(e) => {
-            DX_SPLIT.store(false, std::sync::atomic::Ordering::SeqCst);
+            // la sequenza puo' essere arrivata alla radio lo stesso (OmniRig lento) o avere lasciato lo split di prima: si prova a spegnerlo;
+            // se non si spegne DX_SPLIT resta acceso e «Split DX: spegni» resta possibile
+            if let Err(off) = clear_dx_split() {
+                tracing::warn!("OmniRig: split DX non spento dopo l'errore: {off}");
+            }
             Err(e)
         }
     }
+}
+
+/// Lo Split DX e' acceso (o non si e' riusciti a spegnerlo).
+pub fn dx_split_active() -> bool {
+    DX_SPLIT.load(std::sync::atomic::Ordering::SeqCst)
 }
 
 /// Spegne lo Split DX, se acceso (`PM_SPLITOFF`, non `SetSimplexMode`: vedi [`tune`]).

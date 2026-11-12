@@ -143,7 +143,7 @@ pub struct RigConfig {
     /// Il gruppo di Cat4OM (`id` o nome); vuoto = scoperta automatica (il gruppo con la radio scritta, altrimenti il primo in funzione).
     pub cat4om_group: String,
     /// Indirizzo `host:porta` del Control Port del gruppo scritto a mano; vuoto = quello scoperto dalla gestione. Il vecchio valore di base
-    /// `127.0.0.1:17301` vale come vuoto (vedi [`RigConfig::cat4om_control_override`]).
+    /// `127.0.0.1:17301` dei file salvati fino alla 0.11.237 diventa vuoto una volta sola all'apertura (vedi [`RigConfig::migrate`]).
     pub cat4om_address: String,
     /// La chiave del gruppo di Cat4OM (vuota se il gruppo non la chiede): va solo nella prova SHA-256 dell'`hello`, mai nei registri.
     pub cat4om_key: String,
@@ -277,16 +277,18 @@ impl RigConfig {
         Ok(())
     }
 
-    /// La porta Control di Cat4OM scritta a mano, da usare senza scoperta. `None` se vuota o se e' il vecchio valore di base
-    /// (`127.0.0.1:17301`, proposto da Aurora fino alla 0.11.237 ma sbagliato nelle installazioni vere): allora si scopre dalla gestione.
+    /// La porta Control di Cat4OM scritta a mano, da usare senza scoperta; `None` se vuota (allora si scopre dalla gestione). Anche
+    /// `127.0.0.1:17301` vale se l'ha scritta l'operatore: il vecchio valore di base si toglie solo dai file vecchi ([`RigConfig::migrate`]).
     pub fn cat4om_control_override(&self) -> Option<String> {
         let address = self.cat4om_address.trim();
-        (!address.is_empty() && address != crate::cat4om::LEGACY_CAT4OM_ADDRESS).then(|| address.to_string())
+        (!address.is_empty()).then(|| address.to_string())
     }
 
-    /// Le configurazioni salvate dalle versioni vecchie: il vecchio valore di base della porta Control di Cat4OM diventa vuoto (scoperta).
-    pub fn migrate(&mut self) {
-        if self.cat4om_address.trim() == crate::cat4om::LEGACY_CAT4OM_ADDRESS {
+    /// Le configurazioni salvate dalle versioni fino alla 0.11.237 (`from_old` = il file non ha ancora la porta di gestione di Cat4OM): il
+    /// vecchio valore di base della porta Control (`127.0.0.1:17301`, proposto da Aurora ma sbagliato nelle installazioni vere) diventa
+    /// vuoto, cioe' scoperta. Nei file nuovi un 17301 scritto a mano resta.
+    pub fn migrate(&mut self, from_old: bool) {
+        if from_old && self.cat4om_address.trim() == crate::cat4om::LEGACY_CAT4OM_ADDRESS {
             self.cat4om_address.clear();
         }
     }
@@ -471,18 +473,28 @@ pub struct RadioStore {
 impl RadioStore {
     /// Apre il file; se manca o non e' leggibile si parte dai valori di base (un file rovinato si mette da parte come `.bad`).
     pub fn open(path: &Path) -> RadioStore {
+        // un file salvato fino alla 0.11.237 non ha ancora la porta di gestione di Cat4OM: solo li' si toglie il vecchio valore di base
+        let mut old_config = false;
+        let mut old_profiles: Vec<bool> = Vec::new();
         let file = match std::fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str::<RadioFile>(&text).unwrap_or_else(|e| {
-                tracing::warn!("{} non leggibile ({e}): parto dai valori di base", path.display());
-                let _ = std::fs::rename(path, path.with_extension("json.bad"));
-                RadioFile::default()
-            }),
+            Ok(text) => {
+                if let Ok(raw) = serde_json::from_str::<serde_json::Value>(&text) {
+                    let old = |c: Option<&serde_json::Value>| c.is_some_and(|c| c.get("cat4om_management").is_none());
+                    old_config = old(raw.get("config"));
+                    old_profiles = raw.get("profiles").and_then(|p| p.as_array()).map(|list| list.iter().map(|p| old(p.get("config"))).collect()).unwrap_or_default();
+                }
+                serde_json::from_str::<RadioFile>(&text).unwrap_or_else(|e| {
+                    tracing::warn!("{} non leggibile ({e}): parto dai valori di base", path.display());
+                    let _ = std::fs::rename(path, path.with_extension("json.bad"));
+                    RadioFile::default()
+                })
+            }
             Err(_) => RadioFile::default(),
         };
         let mut file = file;
-        file.config.migrate();
-        for profile in &mut file.profiles {
-            profile.config.migrate();
+        file.config.migrate(old_config);
+        for (i, profile) in file.profiles.iter_mut().enumerate() {
+            profile.config.migrate(old_profiles.get(i).copied().unwrap_or(false));
         }
         RadioStore { path: path.to_path_buf(), file: Mutex::new(file) }
     }
@@ -720,7 +732,7 @@ mod tests {
     fn the_old_cat4om_default_becomes_discovery_and_a_written_port_is_kept() {
         let with = |address: &str| RigConfig { backend: Backend::Cat4om, cat4om_address: address.into(), ..RigConfig::default() };
         assert_eq!(with("").cat4om_control_override(), None, "vuoto: scoperta");
-        assert_eq!(with("127.0.0.1:17301").cat4om_control_override(), None, "il vecchio valore di base: scoperta");
+        assert_eq!(with("127.0.0.1:17301").cat4om_control_override().as_deref(), Some("127.0.0.1:17301"), "scritto a mano nella versione nuova: si usa");
         assert_eq!(with(" 127.0.0.1:5001 ").cat4om_control_override().as_deref(), Some("127.0.0.1:5001"), "scritta a mano: si usa");
         assert_eq!(with("192.168.1.20:17301").cat4om_control_override().as_deref(), Some("192.168.1.20:17301"), "un altro PC: si usa");
         // il file di una versione vecchia, con il valore di base di allora nella configurazione e in un profilo
@@ -734,6 +746,10 @@ mod tests {
         assert_eq!((f.config.cat4om_address.as_str(), f.config.cat4om_management.as_str(), f.config.cat4om_radio.as_str()), ("", "127.0.0.1:17300", "run"));
         assert_eq!(f.profiles[0].config.cat4om_address, "");
         assert_eq!(f.profiles[1].config.cat4om_address, "127.0.0.1:5001", "la porta scritta a mano resta");
+        // un file della versione nuova (con la porta di gestione): il 17301 scritto a mano resta
+        let new = r#"{"config":{"backend":"cat4om","cat4om_management":"127.0.0.1:17300","cat4om_address":"127.0.0.1:17301"}}"#;
+        std::fs::write(&path, new).expect("scrittura");
+        assert_eq!(RadioStore::open(&path).snapshot().config.cat4om_address, "127.0.0.1:17301");
     }
 
     #[test]

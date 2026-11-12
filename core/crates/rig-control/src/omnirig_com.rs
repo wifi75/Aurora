@@ -126,8 +126,13 @@ impl Worker {
 
     /// Chiude il thread: finisce i lavori in coda, lascia gli oggetti di OmniRig (che cosi' puo' chiudersi e liberare la porta) e esce.
     pub(crate) fn stop(&self) {
-        if let Ok(mut slot) = self.slot.lock() {
-            *slot = None;
+        let live = self.slot.lock().ok().and_then(|mut slot| slot.take());
+        if let Some(live) = live
+            && live.state.compare_exchange(RUNNING, ABANDONED, Ordering::SeqCst, Ordering::SeqCst).is_ok()
+            && let Ok(mut list) = self.abandoned.lock()
+        {
+            list.retain(|s| s.load(Ordering::SeqCst) == ABANDONED);
+            list.push(Arc::clone(&live.state));
         }
     }
 
@@ -190,7 +195,9 @@ impl Worker {
             if wait.skip_if_late && job_late.load(Ordering::SeqCst) {
                 return;
             }
+            com.late = wait.skip_if_late.then(|| Arc::clone(&job_late));
             let _ = reply_tx.send(f(com));
+            com.late = None;
         });
         let (mut generation, tx, mut ready, mut state) = self.sender()?;
         if let Err(mpsc::SendError(job)) = tx.send(job) {
@@ -215,8 +222,9 @@ impl Worker {
                     self.abandon(generation, &state);
                 }
                 let status = last_status();
-                let repeated = if starting || status != ST_ONLINE { 0 } else { self.online_timeouts.fetch_add(1, Ordering::SeqCst) + 1 };
-                let (cause, message) = timeout_verdict(starting, status, repeated);
+                let hung_before = self.online_timeouts.load(Ordering::SeqCst) > 0;
+                let repeated = if status != ST_ONLINE || (starting && !hung_before) { 0 } else { self.online_timeouts.fetch_add(1, Ordering::SeqCst) + 1 };
+                let (cause, message) = timeout_verdict(starting && repeated == 0, status, repeated);
                 let secs = limit.as_secs();
                 match cause {
                     TimeoutCause::Starting => tracing::info!("OmniRig: nessuna risposta entro {secs} s ({}) mentre si prepara l'oggetto (OmniRig che si avvia?)", self.name),
@@ -248,7 +256,7 @@ impl Drop for ExitMark {
 
 fn thread_main(rx: mpsc::Receiver<Job>, ready: Arc<AtomicBool>) {
     let init = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) };
-    let mut com = Com { init: init.ok().map_err(|e| format!("OmniRig: COM non inizializzato: {e}")), omni: None, rigs: [None, None], ready };
+    let mut com = Com { init: init.ok().map_err(|e| format!("OmniRig: COM non inizializzato: {e}")), omni: None, rigs: [None, None], ready, late: None };
     loop {
         match rx.recv_timeout(Duration::from_millis(50)) {
             Ok(job) => job(&mut com),
@@ -282,9 +290,17 @@ pub(crate) struct Com {
     rigs: [Option<Disp>; 2],
     /// L'oggetto e la radio ci sono e il primo contatto e' fatto: da qui i lavori hanno il tempo normale.
     ready: Arc<AtomicBool>,
+    /// Per il lavoro in corso: chi l'ha chiesto ha gia' smesso di aspettare (vedi [`Com::is_late`]).
+    late: Option<Arc<AtomicBool>>,
 }
 
 impl Com {
+    /// Il lavoro in corso e' scaduto per chi l'aveva chiesto (e non deve partire in ritardo): si guarda dopo la creazione dell'oggetto, che
+    /// con OmniRig che si avvia puo' durare decine di secondi.
+    pub(crate) fn is_late(&self) -> bool {
+        self.late.as_ref().is_some_and(|l| l.load(Ordering::SeqCst))
+    }
+
     fn forget(&mut self) {
         self.ready.store(false, Ordering::SeqCst);
         self.rigs = [None, None];

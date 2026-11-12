@@ -163,19 +163,7 @@ pub(crate) async fn cat_extra(State(state): State<AppState>, _: Authed, Peer(pee
         if cat.transmitting() && !stops_tune {
             return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
         }
-        cat.set_extra(item).map_err(|e| {
-            let lower = e.0.to_lowercase();
-            let (status, code) = if lower.contains("non collegata") || lower.contains("nessuna radio collegata") {
-                (StatusCode::CONFLICT, "not_connected")
-            } else if lower.contains("trasmettendo") {
-                (StatusCode::CONFLICT, "transmitting")
-            } else if lower.contains("non supporta") || lower.contains("non supportato") || lower.contains("non sa dare") || lower.contains("non si cambiano") {
-                (StatusCode::NOT_IMPLEMENTED, "unsupported")
-            } else {
-                (StatusCode::BAD_GATEWAY, "rig_error")
-            };
-            CatApiError { status, code, message: e.0 }
-        })?;
+        cat.set_extra(item).map_err(rig_api_error)?;
         Ok(cat.status().rig.map(|r| r.extras))
     })
     .await??;
@@ -198,14 +186,16 @@ fn split_dx_json(split: Option<rig_control::cat::DxSplit>) -> Value {
     }
 }
 
-/// Un errore della radio sullo Split DX con un codice che l'interfaccia sa tradurre.
-fn split_dx_error(e: rig_control::RigError) -> CatApiError {
+/// Un errore della radio (comandi extra, Split DX) con un codice che l'interfaccia sa tradurre. Una sola classificazione per tutti: «non
+/// supporta», «non supportato», «non e' supportato» (FT-991 Link) e «La radio non supporta questo comando.» (da `friendly_error`) sono
+/// tutti `unsupported`.
+fn rig_api_error(e: rig_control::RigError) -> CatApiError {
     let lower = e.0.to_lowercase();
     let (status, code) = if lower.contains("non collegata") || lower.contains("nessuna radio") {
         (StatusCode::CONFLICT, "not_connected")
     } else if lower.contains("trasmettendo") {
         (StatusCode::CONFLICT, "transmitting")
-    } else if lower.contains("non supportat") || lower.contains("esiste solo su windows") {
+    } else if lower.contains("non supporta") || lower.contains("supportato") || lower.contains("non sa dare") || lower.contains("non si cambiano") || lower.contains("esiste solo su windows") {
         (StatusCode::NOT_IMPLEMENTED, "unsupported")
     } else if lower.contains("non valid") || lower.contains("fuori dalla banda") {
         (StatusCode::BAD_REQUEST, "bad_split")
@@ -230,14 +220,18 @@ pub(crate) async fn cat_split_dx_set(State(state): State<AppState>, _: Authed, J
     }
     crate::routes::halt_for_band_change(&state, body.rx_hz);
     let (rx, tx) = (body.rx_hz, body.tx_hz);
-    let split = blocking(move || cat.set_dx_split(rx, tx)).await?.map_err(split_dx_error)?;
+    let split = blocking(move || cat.set_dx_split(rx, tx)).await?.map_err(rig_api_error)?;
     Ok(Json(json!({ "ok": true, "split": split_dx_json(Some(split)) })))
 }
 
-/// «Split DX: spegni»: la radio torna in simplex sulla frequenza di ricezione.
+/// «Split DX: spegni»: la radio torna in simplex sulla frequenza di ricezione. Come l'accensione, mai in trasmissione: la portante salterebbe
+/// sulla frequenza di ricezione, quella del DX.
 pub(crate) async fn cat_split_dx_clear(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
     let cat = service(&state)?;
-    let was_on = blocking(move || cat.clear_dx_split()).await?.map_err(split_dx_error)?;
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
+    }
+    let was_on = blocking(move || cat.clear_dx_split()).await?.map_err(rig_api_error)?;
     Ok(Json(json!({ "ok": true, "was_on": was_on, "split": split_dx_json(None) })))
 }
 

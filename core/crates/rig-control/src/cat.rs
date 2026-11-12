@@ -291,7 +291,7 @@ impl CatService {
                         // l'oggetto del PTT pronto prima della prima trasmissione (il PTT non aspetta mai una creazione lunga)
                         crate::omnirig::warm_up_ptt_in_background();
                     }
-                    Err(e) => self.set_omni(LinkState::Error, &friendly_error(&e.0)),
+                    Err(e) => self.set_omni(LinkState::Error, &crate::busy_port::friendly_error(&e.0)),
                 }
             }
             Backend::Tci => {
@@ -345,7 +345,7 @@ impl CatService {
             {
                 *o = match result {
                     Ok(_) => (LinkState::Connected, String::new()),
-                    Err(e) => (LinkState::Error, friendly_error(&e.0)),
+                    Err(e) => (LinkState::Error, crate::busy_port::friendly_error(&e.0)),
                 };
             }
             if let Ok(mut c) = check.lock() {
@@ -591,6 +591,7 @@ impl CatService {
         if self.transmitting() {
             return Err(RigError("la radio sta trasmettendo: split rifiutato".into()));
         }
+        let previous = self.dx_split();
         let done = match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_dx_split(rx_hz, tx_hz),
             Backend::Tci => self.tci()?.set_dx_split(rx_hz, tx_hz),
@@ -599,8 +600,14 @@ impl CatService {
             Backend::Ft991link => Err(RigError("FT-991(A) Link comanda solo il VFO A: lo split DX non e' supportato".into())),
             Backend::None => Err(RigError("nessuna radio: sistema di controllo «Nessuno»".into())),
         };
-        // la ricezione puo' essere gia' cambiata anche se lo split non si e' acceso: lo stato dice solo cio' che e' vero
-        let state = done.is_ok().then_some(DxSplit { rx_hz, tx_hz });
+        // la ricezione puo' essere gia' cambiata anche se lo split non si e' acceso: lo stato dice solo cio' che e' vero. Se l'accensione
+        // fallisce e la radio non ha potuto spegnere lo split (anche quello dello spot di prima), resta segnato: «Split DX: spegni» deve
+        // restare possibile e lo split di FT8 non deve toccare il VFO B
+        let state = match &done {
+            Ok(()) => Some(DxSplit { rx_hz, tx_hz }),
+            Err(_) if self.backend_dx_split_active() => previous.or(Some(DxSplit { rx_hz, tx_hz })),
+            Err(_) => None,
+        };
         if let Ok(mut d) = self.dx_split.lock() {
             *d = state;
         }
@@ -612,6 +619,10 @@ impl CatService {
         if self.dx_split().is_none() {
             return Ok(false);
         }
+        // come l'accensione, mai a portante accesa: la trasmissione salterebbe sulla frequenza di ricezione (quella del DX)
+        if self.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split non spento".into()));
+        }
         let done = match self.backend() {
             Backend::Hamlib => self.hamlib().and_then(|r| r.clear_dx_split()),
             Backend::Tci => self.tci().and_then(|r| r.clear_dx_split()),
@@ -622,6 +633,17 @@ impl CatService {
         done?;
         self.forget_dx_split();
         Ok(true)
+    }
+
+    /// Il sistema CAT ha ancora lo Split DX acceso (o non e' riuscito a spegnerlo).
+    fn backend_dx_split_active(&self) -> bool {
+        match self.backend() {
+            Backend::Hamlib => self.hamlib().is_ok_and(|r| r.dx_split_active()),
+            Backend::Tci => self.tci().is_ok_and(|r| r.dx_split_active()),
+            Backend::Cat4om => self.cat4om().is_ok_and(|r| r.dx_split_active()),
+            Backend::Omnirig => crate::omnirig::dx_split_active(),
+            Backend::Ft991link | Backend::None => false,
+        }
     }
 }
 
@@ -642,11 +664,11 @@ impl CatService {
 impl Rig for CatService {
     /// Cambio di frequenza; lo Split DX acceso finisce qui (spot senza «UP», cambio di banda, frequenza scritta a mano).
     fn set_frequency(&self, hz: u64) -> Result<(), RigError> {
+        // se lo Split DX non si spegne il cambio di frequenza non parte: con TCI e Cat4OM la radio resterebbe in split con il VFO B sulla
+        // frequenza del DX (anche su un'altra banda) mentre Aurora lo direbbe spento. Lo stato resta acceso e l'errore arriva a chi ha chiesto
         if let Err(e) = self.clear_dx_split() {
-            // la radio resta in split solo se non riesce a spegnerlo: lo stato di Aurora non lo dice piu' acceso (Hamlib e OmniRig lo spengono
-            // comunque con il cambio di frequenza)
             tracing::warn!("split DX non spento prima del cambio di frequenza: {e}");
-            self.forget_dx_split();
+            return Err(RigError(format!("split DX non spento, frequenza non cambiata: {}", e.0)));
         }
         match self.backend() {
             Backend::Hamlib => self.hamlib()?.set_frequency(hz),

@@ -346,7 +346,7 @@ pub fn float_payload(frame: &[u8], header: &StreamHeader) -> Option<Vec<f32>> {
         return None;
     }
     let bytes = frame.get(HEADER_SIZE..HEADER_SIZE + header.length as usize * 4)?;
-    Some(bytes.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+    Some(bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
 }
 
 /// Il «chrono» e' valido se float32 non compresso, alla frequenza attesa, non troppo lungo e a canali interi (`valid_tx_chrono`).
@@ -359,14 +359,14 @@ pub fn valid_tx_chrono(chrono: &StreamHeader, channel_field_supported: bool, exp
         && chrono.codec == UNCOMPRESSED_CODEC
         && chrono.sample_rate == expected_rate
         && chrono.length <= MAX_FLOAT_SAMPLES
-        && chrono.length % channels == 0;
+        && chrono.length.is_multiple_of(channels);
     ok.then_some(channels)
 }
 
 /// La risposta a un «chrono»: un blocco di audio da trasmettere con la stessa lunghezza, ricevitore e frequenza. `mono` e' l'audio
 /// (un campione per istante) copiato in tutti i canali; se e' piu' corto il resto e' silenzio, se e' piu' lungo si taglia.
 pub fn tx_audio_frame(chrono: &StreamHeader, channels: u32, mono: &[f32]) -> Option<Vec<u8>> {
-    if !(channels == 1 || channels == 2) || chrono.length % channels != 0 || chrono.length > MAX_FLOAT_SAMPLES {
+    if !(channels == 1 || channels == 2) || !chrono.length.is_multiple_of(channels) || chrono.length > MAX_FLOAT_SAMPLES {
         return None;
     }
     let header = StreamHeader {
@@ -971,10 +971,19 @@ impl TciRig {
                 Ok(())
             }
             Err(e) => {
-                inner.dx_split.store(false, Ordering::SeqCst);
+                // la radio puo' essere ancora in split (anche quello dello spot di prima): si prova a spegnerlo; se non si spegne il flag
+                // resta acceso, cosi' lo split di FT8 non tocca il VFO B e «Split DX: spegni» resta possibile
+                if let Err(off) = self.clear_dx_split() {
+                    tracing::warn!("TCI: split DX non spento dopo l'errore: {off}");
+                }
                 Err(e)
             }
         }
+    }
+
+    /// Lo Split DX e' acceso (o non si e' riusciti a spegnerlo).
+    pub fn dx_split_active(&self) -> bool {
+        self.inner.dx_split.load(Ordering::SeqCst)
     }
 
     /// Spegne lo Split DX, se acceso (`split_enable:<rx>,false;`, confermato).
@@ -1275,11 +1284,10 @@ impl Rig for TciRig {
         if inner.dial() != Some(hz) {
             inner.confirm_vfo(0, hz)?;
         }
-        if let Some(mode) = tci_mode(inner.cat_mode) {
-            if !inner.mode_is(mode) {
+        if let Some(mode) = tci_mode(inner.cat_mode)
+            && !inner.mode_is(mode) {
                 inner.confirm(&cmd_modulation(inner.rx, mode), MODE_ECHO, |s| s.mode_is(mode))?;
             }
-        }
         Ok(())
     }
 

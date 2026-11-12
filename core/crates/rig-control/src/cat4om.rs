@@ -859,7 +859,7 @@ impl Inner {
             if !present {
                 let mut choice = choose_radio(&self.wanted_radio, &s.radios);
                 if choice.is_err() && !s.group_id.is_empty() && self.wanted_radio.eq_ignore_ascii_case(&s.group_id) {
-                    // nel campo «Radio» c'e' il nome del gruppo (CT1BXX aveva scritto «group-1»): vale come vuoto, la prima radio disponibile
+                    // nel campo «Radio» c'e' il nome del gruppo (un utente aveva scritto «group-1»): vale come vuoto, la prima radio disponibile
                     choice = choose_radio("", &s.radios);
                 }
                 match choice {
@@ -1020,7 +1020,8 @@ impl Inner {
         if back != 0 && self.is_master() {
             let _ = self.call("setFrequency", true, json!({ "frequency": back }), quick);
         }
-        if self.split_by_us.swap(false, Ordering::SeqCst) && self.is_master() {
+        let dx = self.dx_split.swap(false, Ordering::SeqCst);
+        if (self.split_by_us.swap(false, Ordering::SeqCst) || dx) && self.is_master() {
             let _ = self.call("setSplit", true, json!({ "enabled": false }), quick);
         }
     }
@@ -1244,10 +1245,19 @@ impl Cat4omRig {
                 Ok(())
             }
             Err(e) => {
-                inner.dx_split.store(false, Ordering::SeqCst);
+                // la radio puo' essere ancora in split (anche quello dello spot di prima): si prova a spegnerlo; il flag resta acceso solo
+                // se non si spegne, cosi' «Split DX: spegni» resta possibile e la chiusura lo spegne
+                if let Err(off) = self.clear_dx_split() {
+                    tracing::warn!("Cat4OM: split DX non spento dopo l'errore: {off}");
+                }
                 Err(e)
             }
         }
+    }
+
+    /// Lo Split DX e' acceso (o non si e' riusciti a spegnerlo).
+    pub fn dx_split_active(&self) -> bool {
+        self.inner.dx_split.load(Ordering::SeqCst)
     }
 
     /// Spegne lo Split DX, se acceso (`setSplit` con `enabled: false`).
@@ -1511,7 +1521,7 @@ fn discover_on(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -
 
 /// Il motivo di un errore: alla prima volta errore, poi riconnessione in corso.
 fn report_failure(inner: &Inner, attempt: u32, message: String, keep_error: bool) {
-    tracing::warn!("Cat4OM: {message}");
+    tracing::info!("Cat4OM: {message}");
     inner.update(|s| {
         s.state = if keep_error || attempt == 1 { LinkState::Error } else { LinkState::Reconnecting };
         s.message = message;
@@ -2172,7 +2182,7 @@ mod tests {
 
     #[test]
     fn groups_are_read_and_chosen_like_decodium() {
-        // il caso di CT1BXX: un gruppo, porta Control 5001 assegnata da Cat4OM, una Kenwood TS-990
+        // il caso di un utente: un gruppo, porta Control 5001 assegnata da Cat4OM, una Kenwood TS-990
         let status = json!({ "groups": [
             { "id": "group-1", "name": "Group 1", "controlPort": 5001, "autoStart": true, "isRunning": true, "radioCount": 1,
               "radios": [ { "radioId": "kenwood/ts-990", "radioName": "kenwood/ts-990", "connectionState": "connected" } ], "x-futuro": 1 },
@@ -2300,21 +2310,16 @@ mod tests {
     }
 
     #[test]
-    fn the_old_default_17301_is_discovery_and_a_written_port_is_honoured() {
+    fn a_written_port_is_honoured_and_the_management_port_written_there_discovers() {
         let control = fake(vec![radio("run", &ALL)], None);
         let management = fake_management(vec![group("main", Some(port_of(&control.address)), &["run"])]);
-        let legacy = discovering(&management.address, |c| c.cat4om_address = LEGACY_CAT4OM_ADDRESS.into());
-        assert!(wait(|| legacy.status().state == LinkState::Connected), "{:?}", legacy.status());
-        assert_eq!((legacy.address(), legacy.endpoint().discovered), (control.address.clone(), true));
-        legacy.shutdown();
-        assert_eq!(management.connections(), 1);
-        // la porta scritta a mano si usa senza chiedere alla gestione
+        // la porta scritta a mano si usa senza chiedere alla gestione (il vecchio 17301 lo toglie solo l'apertura dei file vecchi)
         let written = discovering(&management.address, |c| c.cat4om_address = control.address.clone());
         assert!(wait(|| written.status().state == LinkState::Connected), "{:?}", written.status());
         assert_eq!((written.address(), written.endpoint().discovered), (control.address.clone(), false));
-        assert_eq!(management.connections(), 1, "la gestione non si tocca");
+        assert_eq!(management.connections(), 0, "la gestione non si tocca");
         written.shutdown();
-        // nel campo «Controllo» la porta di gestione (CT1BXX aveva provato 17300): Aurora scopre da li'
+        // nel campo «Controllo» la porta di gestione (un utente aveva provato 17300): Aurora scopre da li'
         let closed = TcpListener::bind("127.0.0.1:0").expect("porta");
         let nobody = closed.local_addr().expect("indirizzo").to_string();
         drop(closed);
