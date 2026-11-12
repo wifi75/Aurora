@@ -5,10 +5,24 @@ import { flagCode } from '../lib/flags';
 import { useT } from '../i18n';
 import { lotwDateToShow, useLotwView } from '../lib/lotw';
 
-/** Le ricerche gia' fatte (o in corso): lo stesso nominativo non si chiede due volte finche' la pagina resta aperta. */
-const cache = new Map<string, Promise<CallsignInfo | null>>();
-/** Le risposte gia' arrivate: il riquadro di questi nominativi si apre subito, senza attesa. */
-const ready = new Map<string, CallsignInfo | null>();
+/**
+ * Le ricerche gia' fatte (o in corso) e fino a quando valgono (`until`, ms): lo stesso nominativo non si chiede due volte finche' la
+ * risposta vale. Una risposta con l'ultimo invio a LoTW vale finche' la pagina resta aperta; senza, si rinfresca dopo qualche minuto
+ * (l'elenco LoTW dell'ARRL il motore lo scarica dopo l'avvio); una ricerca fallita si ritenta poco dopo.
+ */
+const cache = new Map<string, { p: Promise<CallsignInfo | null>; until: number }>();
+/** Le risposte gia' arrivate (mai gli errori): il riquadro di questi nominativi si apre subito, senza attesa. */
+const ready = new Map<string, CallsignInfo>();
+/** Una risposta senza `lotw_last_upload` si richiede dopo questo tempo. */
+const REFRESH_NO_LOTW_MS = 5 * 60_000;
+/** Una ricerca fallita non si conserva: si ritenta dopo questa pausa (non subito, per non tempestare il motore col precaricamento). */
+const RETRY_FAILED_MS = 30_000;
+
+/** La ricerca di questo nominativo e' in corso o la sua risposta vale ancora. */
+function fresh(key: string): boolean {
+  const entry = cache.get(key);
+  return entry !== undefined && Date.now() < entry.until;
+}
 
 /** Chi vuole sapere quando arriva una risposta (lo stato USA per «nuovo stato»). */
 export const readyListeners = new Set<() => void>();
@@ -26,18 +40,25 @@ export function clearCallsignCache(): void {
 
 export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
   const key = call.toUpperCase();
-  let p = cache.get(key);
-  if (!p) {
-    p = getCallsign(key)
-      .catch(() => null)
-      .then((v) => {
-        ready.set(key, v);
-        for (const f of readyListeners) f();
-        return v;
-      });
-    cache.set(key, p);
-  }
-  return p;
+  const known = cache.get(key);
+  if (known && Date.now() < known.until) return known.p;
+  // in corso: vale finche' non arriva la risposta
+  const entry: { p: Promise<CallsignInfo | null>; until: number } = { p: Promise.resolve(null), until: Number.POSITIVE_INFINITY };
+  entry.p = getCallsign(key)
+    .catch(() => null)
+    .then((v) => {
+      if (!v) {
+        // l'errore non resta: si ritenta fra poco, e intanto vale la risposta buona di prima (se c'era)
+        entry.until = Date.now() + RETRY_FAILED_MS;
+        return ready.get(key) ?? null;
+      }
+      entry.until = v.lotw_last_upload ? Number.POSITIVE_INFINITY : Date.now() + REFRESH_NO_LOTW_MS;
+      ready.set(key, v);
+      for (const f of readyListeners) f();
+      return v;
+    });
+  cache.set(key, entry);
+  return entry.p;
 }
 
 /** Nominativi in coda per il precaricamento: uno alla volta, senza ripetere quelli gia' cercati. */
@@ -50,7 +71,7 @@ const PREFETCH_GAP_MS = 250;
 export function prefetchCallsigns(calls: readonly string[]): void {
   for (const c of calls) {
     const key = c.trim().toUpperCase();
-    if (key !== '' && !cache.has(key) && !queue.includes(key)) queue.push(key);
+    if (key !== '' && !fresh(key) && !queue.includes(key)) queue.push(key);
   }
   if (draining) return;
   draining = true;
@@ -60,7 +81,7 @@ export function prefetchCallsigns(calls: readonly string[]): void {
       draining = false;
       return;
     }
-    if (cache.has(call)) {
+    if (fresh(call)) {
       next();
       return;
     }
@@ -82,7 +103,6 @@ export function CallsignTip({ call, lotwDate, children }: { call: string; /** Ul
 }
 
 function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate: string | null; children: ReactNode }) {
-  const t = useT();
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<CallsignInfo | null | undefined>(undefined);
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -101,12 +121,18 @@ function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate
     const r = box.getBoundingClientRect();
     const target = { x: r.left, y: r.bottom + 4 };
     if (timer.current) clearTimeout(timer.current);
-    // gia' precaricato: si mostra subito
-    const known = ready.get(call.toUpperCase());
+    // gia' precaricato: si mostra subito (e, se la risposta e' da rinfrescare, la nuova la sostituisce appena arriva)
+    const key = call.toUpperCase();
+    const known = ready.get(key);
     if (known !== undefined) {
       setPos(target);
       setInfo(known);
       setOpen(true);
+      if (!fresh(key)) {
+        void lookupCallsign(call).then((v) => {
+          if (alive.current && v) setInfo(v);
+        });
+      }
       return;
     }
     timer.current = setTimeout(() => {
@@ -121,6 +147,18 @@ function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate
     if (timer.current) clearTimeout(timer.current);
     setOpen(false);
   };
+  return (
+    <span className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
+      {children}
+      {/* nel corpo della pagina: dentro gli elenchi (cluster, Attivita' di banda) il riquadro finiva sotto le righe e si leggeva in filigrana */}
+      {open ? createPortal(<TipBox call={call} info={info} lotwDate={lotwDate} pos={pos} />, document.body) : null}
+    </span>
+  );
+}
+
+/** Il riquadro aperto: montato solo quando si vede, cosi' i nominativi chiusi (centinaia nelle tabelle) non seguono le preferenze LoTW. */
+function TipBox({ call, info, lotwDate, pos }: { call: string; info: CallsignInfo | null | undefined; lotwDate: string | null; pos: { x: number; y: number } }) {
+  const t = useT();
   const country = info?.dxcc?.country ?? info?.person?.country ?? null;
   const code = flagCode(country);
   const person = info?.person;
@@ -130,33 +168,26 @@ function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate
   const arrlDate = lotwDate ?? lotwDateToShow(info?.lotw_last_upload ?? null, lotwView, new Date());
   const fullName = person ? [person.fname, person.name].filter(Boolean).join(' ') : '';
   return (
-    <span className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
-      {children}
-      {/* nel corpo della pagina: dentro gli elenchi (cluster, Attivita' di banda) il riquadro finiva sotto le righe e si leggeva in filigrana */}
-      {open ? createPortal(
-        <span className="calltip" role="tooltip" style={{ left: pos.x, top: pos.y }} data-testid="calltip">
-          <strong className="calltip-call data">{call.toUpperCase()}</strong>
-          {info === undefined ? (
-            <span className="muted">{t('calltip.loading')}</span>
-          ) : !country && !person ? (
-            arrlDate ? <QslBadges person={{ lotw: true }} long /> : <span className="muted">{t('calltip.unknown')}</span>
-          ) : (
-            <>
-              {country ? (
-                <span className="calltip-country">
-                  {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {country}
-                  {info?.dxcc?.continent ? <span className="muted"> · {info.dxcc.continent}</span> : null}
-                </span>
-              ) : null}
-              {fullName ? <span className="calltip-name">{fullName}</span> : null}
-              {person?.city ? <span className="calltip-city">{person.city}</span> : null}
-              {/* LoTW una volta sola: dal servizio (QRZ.com/HamQTH) o, se la stazione non l'ha indicato li', dall'elenco pubblico dell'ARRL */}
-              {person || arrlDate ? <QslBadges person={{ ...(person ?? {}), lotw: person?.lotw === true || arrlDate !== null }} long /> : null}
-            </>
-          )}
-        </span>,
-        document.body,
-      ) : null}
+    <span className="calltip" role="tooltip" style={{ left: pos.x, top: pos.y }} data-testid="calltip">
+      <strong className="calltip-call data">{call.toUpperCase()}</strong>
+      {info === undefined ? (
+        <span className="muted">{t('calltip.loading')}</span>
+      ) : !country && !person ? (
+        arrlDate ? <QslBadges person={{ lotw: true }} long /> : <span className="muted">{t('calltip.unknown')}</span>
+      ) : (
+        <>
+          {country ? (
+            <span className="calltip-country">
+              {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null} {country}
+              {info?.dxcc?.continent ? <span className="muted"> · {info.dxcc.continent}</span> : null}
+            </span>
+          ) : null}
+          {fullName ? <span className="calltip-name">{fullName}</span> : null}
+          {person?.city ? <span className="calltip-city">{person.city}</span> : null}
+          {/* LoTW una volta sola: dal servizio (QRZ.com/HamQTH) o, se la stazione non l'ha indicato li', dall'elenco pubblico dell'ARRL */}
+          {person || arrlDate ? <QslBadges person={{ ...(person ?? {}), lotw: person?.lotw === true || arrlDate !== null }} long /> : null}
+        </>
+      )}
     </span>
   );
 }

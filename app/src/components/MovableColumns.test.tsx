@@ -102,6 +102,23 @@ describe('useMovableColumns', () => {
     expect(saved()?.widths.b).toBe(5.5);
   });
 
+  it('Alt+Shift+arrows on the elastic column start from the width it shows, not from its minimum', () => {
+    render(<Grid />);
+    const d = screen.getByRole('columnheader', { name: 'D' });
+    // 320 px a 16 px per em: 20 em mostrati
+    d.getBoundingClientRect = () => ({ left: 0, right: 320, width: 320, top: 0, bottom: 20, height: 20, x: 0, y: 0, toJSON: () => ({}) });
+    fireEvent.keyDown(d, { key: 'ArrowLeft', altKey: true, shiftKey: true });
+    expect(saved()?.widths.d ?? 0).toBeCloseTo(19.5, 5);
+  });
+
+  it('the header menu stays inside the window near the right and bottom edges', () => {
+    render(<Grid />);
+    fireEvent.contextMenu(screen.getByRole('columnheader', { name: 'A' }), { clientX: window.innerWidth - 10, clientY: window.innerHeight - 5 });
+    const menu = screen.getByRole('menu');
+    expect(parseFloat(menu.style.left)).toBeLessThanOrEqual(window.innerWidth - 200);
+    expect(parseFloat(menu.style.top)).toBeLessThanOrEqual(window.innerHeight - 48);
+  });
+
   it('dragging the right edge resizes the column and the width survives a reload', () => {
     const first = render(<Grid />);
     const grip = screen.getByRole('columnheader', { name: 'B' }).querySelector('.cl-grip');

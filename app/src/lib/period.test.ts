@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { noteTrPeriod, periodPosition, periodSecs } from './period';
+import { modeBase, noteTrPeriod, periodPosition, periodSecs } from './period';
 
 const at = (h: number, m: number, s: number, ms = 0) => Date.UTC(2026, 9, 24, h, m, s, ms);
 
@@ -59,5 +59,31 @@ describe('WSPR period', () => {
     expect(periodSecs('WSPR')).toBe(120);
     expect(periodPosition(at(13, 1, 30), 'WSPR').seconds).toBe(90);
     expect(periodPosition(at(13, 2, 0), 'WSPR').seconds).toBe(0);
+  });
+});
+
+describe('FST4 and FST4W periods', () => {
+  it('reads the period from the mode name reported by the engine', () => {
+    expect(periodSecs('FST4-15')).toBe(15);
+    expect(periodSecs('FST4-60')).toBe(60);
+    expect(periodSecs('FST4-1800')).toBe(1800);
+    expect(periodSecs('FST4W-120')).toBe(120);
+    expect(periodSecs('fst4w-900')).toBe(900);
+    expect(periodPosition(at(13, 3, 30), 'FST4W-300').seconds).toBe(210);
+  });
+
+  it('falls back to the WSJT-X defaults without a valid period', () => {
+    expect(periodSecs('FST4')).toBe(60);
+    expect(periodSecs('FST4W')).toBe(120);
+    expect(periodSecs('FST4-45')).toBe(60);
+    expect(periodSecs('FST4W-15')).toBe(120);
+  });
+
+  it('strips the period only from FST4 and FST4W', () => {
+    expect(modeBase('FST4-60')).toBe('FST4');
+    expect(modeBase('FST4W-1800')).toBe('FST4W');
+    expect(modeBase('FST4')).toBe('FST4');
+    expect(modeBase('FT8')).toBe('FT8');
+    expect(modeBase('Q65-30A')).toBe('Q65-30A');
   });
 });

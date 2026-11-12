@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ getCallsign: vi.fn() }));
 import { getCallsign } from '../api/client';
-import { CallsignTip, TIP_DELAY_MS, clearCallsignCache } from './CallsignTip';
+import { CallsignTip, TIP_DELAY_MS, clearCallsignCache, knownCallsign, lookupCallsign } from './CallsignTip';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -54,6 +54,30 @@ describe('CallsignTip', () => {
       vi.advanceTimersByTime(TIP_DELAY_MS * 2);
     });
     expect(getCallsign).not.toHaveBeenCalled();
+  });
+
+  it('a failed lookup is not kept: it is asked again a little later', async () => {
+    vi.mocked(getCallsign).mockRejectedValueOnce(new Error('giu')).mockResolvedValue(info);
+    expect(await lookupCallsign('IU3ABC')).toBeNull();
+    expect(knownCallsign('IU3ABC')).toBeUndefined();
+    // subito dopo non si ripete (niente raffica col precaricamento)
+    await lookupCallsign('IU3ABC');
+    expect(getCallsign).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(31_000);
+    expect(await lookupCallsign('IU3ABC')).toEqual(info);
+    expect(getCallsign).toHaveBeenCalledTimes(2);
+  });
+
+  it('an answer without the LoTW upload is refreshed after a few minutes, one with it is kept', async () => {
+    vi.mocked(getCallsign).mockResolvedValueOnce(info).mockResolvedValue({ ...info, lotw_last_upload: '2026-11-01' });
+    await lookupCallsign('IU3ABC');
+    await lookupCallsign('IU3ABC');
+    expect(getCallsign).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(6 * 60_000);
+    expect((await lookupCallsign('IU3ABC'))?.lotw_last_upload).toBe('2026-11-01');
+    vi.advanceTimersByTime(60 * 60_000);
+    await lookupCallsign('IU3ABC');
+    expect(getCallsign).toHaveBeenCalledTimes(2);
   });
 
   it('without lookups shows only the country', async () => {

@@ -25,8 +25,6 @@ import { applyTheme, browserStorage, readThemeChoice, resolveTheme } from './lib
 import { deviceKind, hydrate, keepSynced } from './lib/syncSettings';
 import { readFilters, useFilters } from './lib/filters';
 import { putBandFilters } from './api/client';
-import { useLang } from './i18n';
-import { firstLaunchLang } from './i18n/lang';
 
 // stile dei pulsanti e dei riquadri di tutta l'app (styles/bozze.css)
 document.documentElement.dataset.bozza = 'a';
@@ -48,10 +46,17 @@ async function start() {
   } catch {
     // senza archivio del browser l'interfaccia parte con i valori predefiniti
   }
-  // primo avvio senza lingua scelta: quella del sistema o del browser (olandese compreso), se Aurora la conosce
+  // primo avvio senza lingua scelta: quella del sistema o del browser (olandese compreso), se Aurora la conosce. La lingua si carica solo
+  // ora, dopo le preferenze portate dal server: caricata prima, partirebbe dall'italiano e ignorerebbe quella salvata.
   try {
+    const { firstLaunchLang, useLang } = await import('./i18n/lang');
     const detected = firstLaunchLang(window.localStorage, navigator.languages);
-    if (detected) useLang.getState().setLang(detected);
+    if (detected && kind === 'desktop') useLang.getState().setLang(detected);
+    // sul telefono la lingua e' una scelta condivisa con il PC: quella rilevata vale solo qui e non si salva (finirebbe nelle impostazioni del PC)
+    else if (detected) {
+      document.documentElement.lang = detected;
+      useLang.setState({ lang: detected });
+    }
   } catch {
     // senza archivio del browser resta la lingua predefinita
   }

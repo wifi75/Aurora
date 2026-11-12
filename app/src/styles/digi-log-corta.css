@@ -71,8 +71,6 @@
 .digi-rxctl .digi-hint { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
 /* colonne regolabili come in Excel: si trascina il bordo destro dell'intestazione, doppio clic per adattarla al contenuto */
-.digi-colgrip { position: absolute; top: 0; right: -3px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
-.digi-colgrip::after { content: ""; position: absolute; top: 15%; bottom: 15%; left: 4px; width: 1px; background: transparent; }
 .digi-colpop-btn { margin-top: 4px; padding: 3px 8px; border: 1px solid #3a4c85; background: #1c2a4f; color: #e6efff; font: inherit; cursor: pointer; text-align: left; }
 .digi-colpop-btn:hover, .digi-colpop-btn:focus-visible { background: #2d4380; color: #ffffff; border-color: #6c86d6; }
 html[data-theme='light'] .digi-colpop-btn { background: #e8edf7; color: #0b1322; border-color: #a9b8d6; }
@@ -102,7 +100,6 @@ html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td { backgrou
 html[data-theme='light'] .digi-log-table--completa tr.digi-log-cur td:first-child { border-left-color: #0284c7; color: #000; }
 html[data-theme='light'] .rst-good { color: #047857; } html[data-theme='light'] .rst-mid { color: #b45309; } html[data-theme='light'] .rst-low { color: #be123c; }
 html[data-theme='light'] .digi-cur-in { background: #fff; color: #000; }
-.digi-log-table--completa th:hover .digi-colgrip::after, .digi-colgrip:hover::after { background: #38bdf8; width: 2px; left: 3px; }
 .digi-colpop-btn { border-radius: 6px; }
 
 /* griglia ben visibile (righe e colonne), righe alternate e riga sotto il mouse illuminata: scuro e chiaro */
@@ -180,8 +177,8 @@ html[data-theme='light'] .digi-topline .digi-bandbar .freq-picker-btn .freq-pick
 .digi-status button.digi-st.on { background: linear-gradient(180deg, #7b66f2, #5a47d6); border-color: #b3a6ff; color: #fff; box-shadow: 0 0 10px rgba(142, 123, 255, 0.55); }
 .digi-status .digi-st--rx { background: #0f5a46; border-color: #2cf5a4; color: #c9ffe9; }
 .digi-status .digi-st--tx { background: linear-gradient(180deg, #ff6a77, #d92f42); border-color: #ffb3bb; color: #fff; box-shadow: 0 0 10px rgba(255, 93, 108, 0.6); }
-.digi-status .digi-st--freq input { color: #fff; font: 600 13px var(--font-data); }
-.digi-status .digi-st--info { color: #e6edff; font-family: var(--font-data); font-size: 12.5px; }
+.digi-status .digi-st--freq input { color: #fff; font: 600 13px var(--font-ui); }
+.digi-status .digi-st--info { color: #e6edff; font: 600 13px var(--font-ui); }
 html[data-theme='light'] .digi-status .digi-st { background: #ffffff; border-color: #7d8bb0; color: #0b1322; box-shadow: 0 1px 2px rgba(25, 35, 70, 0.25); }
 html[data-theme='light'] .digi-status button.digi-st:hover { background: #ece9ff; border-color: #5b4fe0; color: #000; }
 html[data-theme='light'] .digi-status button.digi-st.on { background: linear-gradient(180deg, #6a57e8, #4d3ccb); border-color: #3a2db0; color: #fff; box-shadow: 0 1px 4px rgba(60, 45, 190, 0.5); }
@@ -195,9 +192,11 @@ html[data-theme='light'] .digi-status .digi-st--info { background: #eef1fa; bord
 
 /* Barra di stato: tutte le caselle uguali (altezza, carattere, testo centrato), la frequenza allineata a destra con «Hz» staccato */
 .digi-status { align-items: center; flex-wrap: nowrap; }
-.digi-status .digi-st { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 30px; min-height: 30px; min-width: 52px; margin: 0; padding: 0 12px; font: 600 13px/1 var(--font-ui); white-space: nowrap; border-style: solid; }
+.digi-status .digi-st { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 30px; min-height: 30px; min-width: 52px; margin: 0; padding: 0 12px; font: 600 13px/1 var(--font-ui); letter-spacing: 0; white-space: nowrap; border-style: solid; }
+/* acceso o premuto resta dello stesso peso degli altri (digi.css lo mette in grassetto) */
+.digi-status button.digi-st.on, .digi-status button.digi-st:active { font-weight: 600; }
 .digi-status .digi-st--freq { gap: 4px; min-width: 116px; padding: 0 10px; cursor: text; }
-.digi-status .digi-st--freq input { width: 62px; height: 100%; padding: 0; border: 0; background: transparent; text-align: right; font: 600 13px/1 var(--font-ui); font-variant-numeric: tabular-nums; outline: none; }
+.digi-status .digi-st--freq input { width: 62px; height: 100%; padding: 0; border: 0; background: transparent; text-align: right; font: 600 13px/1 var(--font-ui); letter-spacing: 0; font-variant-numeric: tabular-nums; outline: none; }
 .digi-status .digi-st-unit { font: 600 13px/1 var(--font-ui); }
 .digi-status .digi-st--info { font: 600 13px/1 var(--font-ui); }
 .digi-status .digi-st--freq:focus-within { border-color: #8e7bff; box-shadow: 0 0 0 2px rgba(142, 123, 255, 0.35); }
@@ -216,5 +215,3 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-log-table--completa table.mv-grid td { border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
 .digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
 .digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
-/* un solo carattere in tutta la barra (anche frequenza e dati del modo, che prima erano a spaziatura fissa) */
-.digi-status .digi-st, .digi-status .digi-st--freq input, html[data-theme='light'] .digi-status .digi-st--freq input { font-family: var(--font-ui) !important; font-size: 13px !important; font-weight: 600 !important; letter-spacing: 0; }

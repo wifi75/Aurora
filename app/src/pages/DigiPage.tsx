@@ -20,6 +20,7 @@ import { RowAverager, seekSignal, snapToPeak, type SpectrumRow } from '../lib/di
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
+import { parseSpotSplit } from '../lib/spotSplit';
 import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
 import { useStation } from '../state/station';
@@ -345,37 +346,47 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     save({ rx_freq_hz: f, ...(l.snap.settings.tx_follow_rx ? { tx_freq_hz: f } : {}) });
   };
 
-  // clic su uno spot del DX Cluster: la radio si porta in modo che il segnale cada sul tono di ricezione; con «up N» nel commento la
-  // trasmissione si sposta di N kHz (split dentro l'audio, fino a 3,5 kHz); il nominativo va nel QSO. `splitDx`: doppio clic con lo Split DX,
-  // la radio va subito dopo in split vero (VFO B spostato) e la trasmissione resta sul tono di ricezione
+  // clic su uno spot del DX Cluster: la radio si porta in modo che il segnale cada sul tono di ricezione; con «UP N» nel commento (letto con
+  // le stesse regole del cluster) la trasmissione si sposta di N kHz (split dentro l'audio, fino a 3,5 kHz); il nominativo va nel QSO.
+  // `splitDx`: lo Split DX vero, la radio va subito dopo in split (VFO B spostato): il tono di trasmissione torna quello di ricezione e Lock si
+  // spegne (la trasmissione segue la ricezione), se no lo split nell'audio si sommerebbe a quello della radio. Una sola scrittura delle
+  // impostazioni: due di fila partirebbero entrambe dalle impostazioni di prima e la seconda cancellerebbe la prima (per esempio il modo).
   const tuneToSpot = async (spot: ClusterSpot, splitDx: boolean) => {
     const l = live.current;
     const want = (spot.mode ?? '').toUpperCase();
     const cur = l.snap.settings.mode;
-    if (want === 'RTTY' && cur !== 'rtty') save({ mode: 'rtty' });
-    else if (want === 'CW' && cur !== 'cw') save({ mode: 'cw' });
-    else if (want.startsWith('PSK') && (cur === 'rtty' || cur === 'cw')) save({ mode: 'psk31' });
+    const patch: Partial<DigiSettings> = {};
+    if (want === 'RTTY' && cur !== 'rtty') patch.mode = 'rtty';
+    else if (want === 'CW' && cur !== 'cw') patch.mode = 'cw';
+    else if (want.startsWith('PSK') && (cur === 'rtty' || cur === 'cw')) patch.mode = 'psk31';
     const signalHz = Math.round(spot.freq_khz * 1000);
-    const dial = signalHz - Math.round(l.rxHz);
+    const rxTone = Math.round(l.rxHz);
+    const dial = signalHz - rxTone;
     useStation.getState().patchStatus({ dial_hz: dial });
     await postFrequency(dial);
     setQso({ ...l.qso, call: spot.dx_call });
+    let note: string | null = null;
     if (splitDx) {
       // il segnale trasmesso cade sul VFO B piu' lo stesso tono: dove ascolta la DXpedition
-      if (Math.round(l.snap.settings.tx_freq_hz) !== Math.round(l.rxHz)) save({ tx_freq_hz: Math.round(l.rxHz) });
-      return;
-    }
-    const up = /\bup\s*(\d+(?:[.,]\d+)?)/i.exec(spot.comment ?? '');
-    if (up) {
-      const khz = Number((up[1] ?? '').replace(',', '.'));
-      const txAudio = Math.round(l.rxHz + khz * 1000);
-      if (khz > 0 && txAudio <= 3500) {
-        save({ tx_follow_rx: false, tx_freq_hz: txAudio });
-        toast(t('digi.spot.splitUp', { khz: String(khz) }), 'info');
-      } else {
-        toast(t('digi.spot.splitFar', { khz: String(khz) }), 'info');
+      if (Math.round(l.snap.settings.tx_freq_hz) !== rxTone) patch.tx_freq_hz = rxTone;
+      if (!l.snap.settings.tx_follow_rx) patch.tx_follow_rx = true;
+    } else {
+      const split = parseSpotSplit(spot.comment, spot.freq_khz, spot.mode);
+      // solo «UP N» (anche «N UP», «UP 1-3»): sotto o con la QSX il tono andrebbe sotto la ricezione, e gli avvisi parlano di «up»
+      if (split?.kind === 'up') {
+        const khz = String(split.offsetKhz);
+        const txAudio = Math.round(rxTone + split.offsetKhz * 1000);
+        if (txAudio <= 3500) {
+          patch.tx_follow_rx = false;
+          patch.tx_freq_hz = txAudio;
+          note = t('digi.spot.splitUp', { khz });
+        } else {
+          note = t('digi.spot.splitFar', { khz });
+        }
       }
     }
+    if (Object.keys(patch).length > 0) save(patch);
+    if (note) toast(note, 'info');
   };
 
   const seek = (direction: 'left' | 'right', quiet = false): number | null => {

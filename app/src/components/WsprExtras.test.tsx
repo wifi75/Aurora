@@ -31,14 +31,27 @@ describe('WsprExtras', () => {
     await waitFor(() => expect(postControlValue).toHaveBeenCalledWith('wspr_dbm', 30));
   });
 
-  it('sends Tx Pct between 0 and 100 and toggles type 1 messages', async () => {
+  it('sends Tx Pct only on Enter or leaving the field, between 0 and 100, and toggles type 1 messages', async () => {
     render(<WsprExtras />);
     const pct = screen.getByRole('spinbutton');
     expect(pct).toHaveValue(20);
+    // mentre si scrive non parte niente e il campo tiene i tasti
     fireEvent.change(pct, { target: { value: '33' } });
+    expect(pct).toHaveValue(33);
+    expect(postControlValue).not.toHaveBeenCalled();
+    fireEvent.keyDown(pct, { key: 'Enter' });
     await waitFor(() => expect(postControlValue).toHaveBeenCalledWith('wspr_pct', 33));
+    // vuoto: non manda 0 (il radiofaro non si ferma) e torna il valore del motore
+    vi.mocked(postControlValue).mockClear();
+    fireEvent.change(pct, { target: { value: '' } });
+    fireEvent.blur(pct);
+    expect(postControlValue).not.toHaveBeenCalled();
+    expect(pct).toHaveValue(20);
+    // oltre 100 si ferma a 100
     fireEvent.change(pct, { target: { value: '150' } });
+    fireEvent.blur(pct);
     expect(postControlValue).not.toHaveBeenCalledWith('wspr_pct', 150);
+    await waitFor(() => expect(postControlValue).toHaveBeenCalledWith('wspr_pct', 100));
     const type1 = screen.getByRole('button');
     expect(type1).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(type1);

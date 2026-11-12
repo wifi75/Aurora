@@ -9,6 +9,7 @@ import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 import { rememberDial, retuneForMode, retuneForText } from '../lib/modeRetune';
+import { modeBase } from '../lib/period';
 
 /** I modi in alto: ognuno ha le sue pagine; i gruppi FT8 e VHF dividono i modi del motore. Gli altri modi arrivano uno alla volta. */
 export type ModeGroup = 'ft8' | 'vhf';
@@ -20,6 +21,62 @@ export function groupOf(mode: string): ModeGroup {
   return 'ft8';
 }
 
+/** JT65 sta in tutti e due i gruppi (HF nel gruppo FT8, EME nel gruppo VHF): da solo il modo non dice in quale gruppo si e'. */
+export function isSharedMode(mode: string): boolean {
+  const up = mode.toUpperCase();
+  return up.startsWith('JT65') || up === 'JT';
+}
+
+const GROUP_KEY = 'aurora.modenav.gruppo';
+const GROUP_EVENT = 'aurora-modenav-gruppo';
+
+/** L'ultimo gruppo scelto (pulsanti in alto o un modo che sta in un gruppo solo). */
+function readPickedGroup(): ModeGroup | null {
+  try {
+    const raw = browserStorage()?.getItem(GROUP_KEY);
+    return raw === 'ft8' || raw === 'vhf' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberGroup(group: ModeGroup): void {
+  if (readPickedGroup() === group) return;
+  try {
+    browserStorage()?.setItem(GROUP_KEY, group);
+  } catch {
+    // senza archivio JT65 torna al suo gruppo di base (VHF)
+  }
+  try {
+    window.dispatchEvent(new Event(GROUP_EVENT));
+  } catch {
+    // fuori dal browser (prove) non c'e' nessuno da avvisare
+  }
+}
+
+/** Il gruppo del modo in uso tenendo conto della scelta: JT65 scelto dal gruppo FT8 resta nel gruppo FT8. */
+export function groupFor(mode: string, picked: ModeGroup | null): ModeGroup {
+  return isSharedMode(mode) && picked ? picked : groupOf(mode);
+}
+
+/** Il gruppo in uso, aggiornato quando lo si cambia (anche da un'altra finestra); un modo di un gruppo solo lo fissa. */
+export function useModeGroup(mode: string): ModeGroup {
+  const [picked, setPicked] = useState(readPickedGroup);
+  useEffect(() => {
+    const sync = () => setPicked(readPickedGroup());
+    window.addEventListener(GROUP_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(GROUP_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  useEffect(() => {
+    if (mode && !isSharedMode(mode)) rememberGroup(groupOf(mode));
+  }, [mode]);
+  return groupFor(mode || 'FT8', picked);
+}
+
 const DEFAULT_MODE: Record<ModeGroup, string> = { ft8: 'FT8', vhf: 'MSK144' };
 const KEY = 'aurora.modenav.ultimo';
 
@@ -27,7 +84,7 @@ const KEY = 'aurora.modenav.ultimo';
 function lastMode(group: ModeGroup): string {
   try {
     const raw = browserStorage()?.getItem(`${KEY}.${group}`);
-    if (raw && groupOf(raw) === group) return raw;
+    if (raw && (groupOf(raw) === group || isSharedMode(raw))) return raw;
   } catch {
     // senza archivio si parte dal modo di base
   }
@@ -51,7 +108,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   const t = useT();
   const mode = useStation((s) => s.status?.mode ?? '');
   const transmitting = useStation((s) => s.status?.transmitting ?? false);
-  const group = groupOf(mode);
+  const group = useModeGroup(mode);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLSpanElement>(null);
   const client = useQueryClient();
@@ -60,20 +117,22 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   const freqTable = useQuery({ queryKey: ['frequencies'], queryFn: getFrequencies, staleTime: 60_000, retry: false });
   useEffect(() => {
     if (!mode || dialHz <= 0) return;
-    const known = (freqTable.data ?? []).some((r) => r.mode.toUpperCase() === mode.toUpperCase() && r.hz === dialHz);
+    // FST4 e FST4W: lo stato porta il periodo («FST4-60»), la tabella il nome nudo
+    const base = modeBase(mode).toUpperCase();
+    const known = (freqTable.data ?? []).some((r) => r.mode.toUpperCase() === base && r.hz === dialHz);
     if (!known) return;
-    rememberDial(groupOf(mode), dialHz);
-  }, [mode, dialHz, freqTable.data]);
+    rememberDial(group, dialHz);
+  }, [mode, group, dialHz, freqTable.data]);
 
-  // si ricorda l'ultimo modo di ogni gruppo
+  // si ricorda l'ultimo modo di ogni gruppo (JT65 in quello in cui lo si e' scelto)
   useEffect(() => {
     if (!mode) return;
     try {
-      browserStorage()?.setItem(`${KEY}.${groupOf(mode)}`, mode);
+      browserStorage()?.setItem(`${KEY}.${group}`, mode);
     } catch {
       // niente archivio: si riparte dal modo di base
     }
-  }, [mode]);
+  }, [mode, group]);
 
   useEffect(() => {
     if (!open) return;
@@ -99,6 +158,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   };
   const pickGroup = (target: ModeGroup) => {
     if (transmitting) return;
+    rememberGroup(target);
     if (target === group) {
       // si torna da PSK, RTTY, SSTV o Satelliti allo stesso gruppo di prima: il modo c'e' gia', ma la radio e' rimasta sulla frequenza dell'altro modo
       if (!onModePage && mode) retune(() => retuneForMode(client, mode), mode);

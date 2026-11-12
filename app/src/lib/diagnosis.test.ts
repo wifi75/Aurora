@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { StationStatus } from '../api/schemas';
-import { diagnose, parseSlowPc, slowerDepth, type DiagnosisInput } from './diagnosis';
+import { diagnose, parseContestNotice, parseSlowPc, slowerDepth, type DiagnosisInput } from './diagnosis';
 
 const status = (over: Partial<StationStatus> = {}): StationStatus => ({ dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: false, de_call: 'IU3ABC', de_grid: 'IO91wm', ...over });
 const base = (over: Partial<DiagnosisInput> = {}): DiagnosisInput => ({
@@ -82,6 +82,44 @@ describe('notices from the engine', () => {
     expect(diagnose({ ...base, notices: { port_busy: { detail, at: 990_000 } } })).toEqual([
       expect.objectContaining({ id: 'port_busy', severity: 'problem', href: '#/impostazioni/radio', vars: { detail, at: 990_000 } }),
     ]);
+  });
+
+  it('drops the busy port notice once the CAT reads connected after it', () => {
+    const base = { now: 1_000_000, status: null, clockOffsetMs: null, periodSecs: 15, audio: null, lastDecodeAt: null, sessionStartAt: null };
+    const notices = { port_busy: { detail: 'occupata', at: 990_000 } };
+    expect(diagnose({ ...base, notices, cat: { connected: true, at: 995_000 } })).toEqual([]);
+    // uno stato collegato letto prima dell'avviso, o la radio non collegata, non lo tolgono
+    expect(diagnose({ ...base, notices, cat: { connected: true, at: 980_000 } })).toHaveLength(1);
+    expect(diagnose({ ...base, notices, cat: { connected: false, at: 995_000 } })).toHaveLength(1);
+  });
+});
+
+describe('contest notice from the engine', () => {
+  const band = "Contest: la banda 20m non e' ammessa dal regolamento del contest. Cambia banda o modo prima di trasmettere.";
+  const mode = "Contest: il modo FT4 non e' ammesso dal regolamento del contest. Cambia banda o modo prima di trasmettere.";
+  const at = 9_990_000;
+
+  it('reads the reason from the engine text', () => {
+    expect(parseContestNotice(band)).toEqual({ kind: 'band', value: '20m' });
+    expect(parseContestNotice(mode)).toEqual({ kind: 'mode', value: 'FT4' });
+    expect(parseContestNotice('Contest: il tuo nominativo composto non permette i messaggi di contest: ...')).toEqual({ kind: 'myCompound' });
+    expect(parseContestNotice('Contest: il nominativo composto del DX non permette i messaggi di contest: ...')).toEqual({ kind: 'dxCompound' });
+    expect(parseContestNotice('altro')).toBeNull();
+  });
+
+  it('shows a band or mode outside the rules as a problem with the Contest page, until band or mode change', () => {
+    expect(diagnose(base({ notices: { contest: { detail: band, at } } }))).toEqual([
+      expect.objectContaining({ id: 'contest', severity: 'problem', href: '#/contest', vars: expect.objectContaining({ reason: 'band', value: '20m' }) }),
+    ]);
+    expect(diagnose(base({ status: status({ dial_hz: 7_074_000 }), notices: { contest: { detail: band, at } } }))).toEqual([]);
+    expect(ids(base({ status: status({ mode: 'FT4' }), notices: { contest: { detail: mode, at } } }))).toEqual(['contest:problem']);
+    expect(diagnose(base({ notices: { contest: { detail: mode, at } } }))).toEqual([]);
+  });
+
+  it('warns about a compound callsign and forgets the notice after ten minutes', () => {
+    const detail = 'Contest: il nominativo composto del DX non permette i messaggi di contest: il QSO usa i messaggi normali.';
+    expect(ids(base({ notices: { contest: { detail, at } } }))).toEqual(['contest:warning']);
+    expect(diagnose(base({ now: at + 11 * 60_000, lastDecodeAt: at + 11 * 60_000, notices: { contest: { detail, at } } }))).toEqual([]);
   });
 });
 

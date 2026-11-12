@@ -254,8 +254,18 @@ export function RotorCard({ call, grid, place }: Props) {
   // staccata in una finestra a parte (secondo schermo): sopra la pagina non si mostra, niente doppioni
   const away = detachedItems(useGroups()).includes('rotator');
 
-  // mentre il rotore gira si legge piu' spesso, cosi' la lancetta si muove di continuo
-  const snap = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, refetchInterval: (q) => (q.state.data?.status.moving ? 400 : 1000) });
+  // si legge solo quando la scheda si disegna (sopra la pagina: mostrata e non staccata); mentre il rotore gira piu' spesso, cosi' la lancetta
+  // si muove di continuo; con il rotore spento nelle Impostazioni basta un giro ogni tanto, per accorgersi quando lo si accende
+  const drawn = !floating || (visible && !away);
+  const snap = useQuery({
+    queryKey: ['rotator'],
+    queryFn: getRotator,
+    retry: false,
+    enabled: drawn,
+    refetchInterval: (q) => (q.state.data?.status.moving ? 400 : q.state.data && !q.state.data.config.enabled ? 10_000 : 1000),
+  });
+  // lo stato non si e' mai potuto leggere: si dice l'errore, non «spento»
+  const loadFailed = snap.isError && !snap.data;
   const station = useStatusPick(['de_grid']);
   const status = snap.data?.status;
   const config = snap.data?.config;
@@ -277,7 +287,14 @@ export function RotorCard({ call, grid, place }: Props) {
   const refresh = (s: RotatorStatus) => client.setQueryData(['rotator'], (old: typeof snap.data) => (old ? { ...old, status: s } : old));
   // l'angolo si manda cosi' com'e': e' il core a scegliere, dentro il campo del rotore, quello piu' vicino
   const go = useMutation({ mutationFn: (az: number) => rotatorGoto(az), onSuccess: refresh });
-  const stop = useMutation({ mutationFn: rotatorStop, onSuccess: refresh });
+  const stop = useMutation({
+    mutationFn: rotatorStop,
+    onSuccess: (s) => {
+      refresh(s);
+      // fermato davvero: l'errore di un GO precedente non vale piu'
+      go.reset();
+    },
+  });
   const base = status?.target ?? status?.az ?? 0;
   const problem = go.error ?? stop.error;
   const problemText = problem instanceof ApiError && problem.code === 'not_connected' ? t('rot.err.notConnected') : problem instanceof ApiError && problem.detail ? problem.detail : problem ? t('rot.err.failed') : '';
@@ -291,7 +308,7 @@ export function RotorCard({ call, grid, place }: Props) {
   // il nome salvato e' «Azienda Modello» (per esempio «Yaesu GS-232B»): al centro della bussola va l'azienda
   const brand = (config?.model_name ?? '').trim().split(' ')[0] || t('digi.tab.rotor');
   const help = `${t('rot.clickHint')}${wide ? ` ${t('rot.wide', { min, max })}` : ''}`;
-  const stateKey = !status ? 'rot.state.off' : status.state === 'connected' ? (moving ? 'rot.state.moving' : 'rot.state.connected') : (`rot.state.${status.state}` as const);
+  const stateKey = loadFailed ? 'rot.state.error' : !status ? 'rot.state.off' : status.state === 'connected' ? (moving ? 'rot.state.moving' : 'rot.state.connected') : (`rot.state.${status.state}` as const);
 
   // se la finestra si rimpicciolisce e la scheda resta fuori, torna al suo posto
   useEffect(() => {
@@ -367,7 +384,7 @@ export function RotorCard({ call, grid, place }: Props) {
     else go.mutate(p);
   };
   const labelOf = (p: Preset) => (p === 'dx' ? 'DX' : p === 'park' ? 'Park' : String(p));
-  const isOff = !config?.enabled || status?.state === 'off';
+  const isOff = !loadFailed && (!config?.enabled || status?.state === 'off');
 
   return (
     <section
@@ -377,7 +394,7 @@ export function RotorCard({ call, grid, place }: Props) {
       aria-label={t('digi.tab.rotor')}
     >
       <div className="rotor-bar" onPointerDown={floating ? startDrag : undefined} onDoubleClick={floating ? resetPlace : undefined} title={floating ? t('rot.move') : undefined}>
-        <span className={`rotor-dot${moving ? ' rotor-dot--moving' : connected ? ' rotor-dot--on' : status?.state === 'error' ? ' rotor-dot--err' : ''}`} aria-hidden="true" />
+        <span className={`rotor-dot${moving ? ' rotor-dot--moving' : connected ? ' rotor-dot--on' : status?.state === 'error' || loadFailed ? ' rotor-dot--err' : ''}`} aria-hidden="true" />
         <strong>{t('digi.tab.rotor')}</strong>
         <span className="rotor-state" role="status">
           {t(stateKey)}
@@ -511,6 +528,12 @@ export function RotorCard({ call, grid, place }: Props) {
                   {t('rot.openSettings')}
                 </a>
               )}
+            </p>
+          ) : null}
+          {loadFailed ? (
+            <p className="rotor-note rotor-note--err" role="alert">
+              {t('rot.err.load')}
+              {snap.error instanceof ApiError && snap.error.detail ? ` ${snap.error.detail}` : ''}
             </p>
           ) : null}
           {status?.state === 'error' && status.error ? (

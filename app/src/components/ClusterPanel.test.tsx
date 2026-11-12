@@ -13,9 +13,18 @@ vi.mock('../api/client', () => ({
   getSplitDx: vi.fn().mockResolvedValue({ active: false }),
   postSplitDx: vi.fn(),
   deleteSplitDx: vi.fn().mockResolvedValue(undefined),
-  ApiError: class extends Error {},
+  ApiError: class extends Error {
+    constructor(
+      readonly status: number,
+      readonly code: string,
+      readonly retryAfterSecs?: number,
+      readonly detail?: string,
+    ) {
+      super(`${status} ${code}`);
+    }
+  },
 }));
-import { deleteSplitDx, getClusterSpots, postFrequency, postSplitDx } from '../api/client';
+import { ApiError, deleteSplitDx, getClusterSpots, getSplitDx, postFrequency, postSplitDx } from '../api/client';
 import { useStation } from '../state/station';
 import { ClusterPanel } from './ClusterPanel';
 
@@ -52,6 +61,7 @@ beforeEach(() => {
   vi.mocked(postFrequency).mockClear();
   vi.mocked(postSplitDx).mockReset();
   vi.mocked(deleteSplitDx).mockClear();
+  vi.mocked(getSplitDx).mockClear();
   localStorage.clear();
   useStation.setState({ status: { dial_hz: 14_074_000, mode: 'FT8', tx_enabled: false, transmitting: false, decoding: true, de_call: 'IU3ABC', de_grid: 'JN55' } });
 });
@@ -145,6 +155,76 @@ describe('ClusterPanel', () => {
     fireEvent.doubleClick(await screen.findByText('JA1ABC'));
     await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_074_000));
     expect(screen.queryByText('UP 5')).not.toBeInTheDocument();
+    expect(postSplitDx).not.toHaveBeenCalled();
+  });
+
+  it('Split DX switched off in the settings: the split state of the radio is not asked every 4 s', async () => {
+    localStorage.setItem('aurora.cluster.splitdx', 'off');
+    oneSpot();
+    show();
+    await screen.findByText('JA1ABC');
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(getSplitDx).not.toHaveBeenCalled();
+  });
+
+  it('Split DX the CAT cannot do: the radio still goes to the spot and the warning says why', async () => {
+    const dx = { ...spot(1, 'K1ABC', '20m', 'CW', 'United States'), freq_khz: 14_025, comment: 'UP 5' };
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [dx] });
+    vi.mocked(postSplitDx).mockRejectedValue(new ApiError(400, 'unsupported', undefined, 'FT-991 Link'));
+    show();
+    await screen.findByText('UP 5', { selector: '.cluster-split' });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    fireEvent.doubleClick(screen.getByText('K1ABC'));
+    await waitFor(() => expect(postFrequency).toHaveBeenCalledWith(14_025_000));
+    expect(postSplitDx).toHaveBeenCalledTimes(1);
+  });
+
+  it('single-click mode (PSK, RTTY, CW pages): the click alone does the whole Split DX, the double-click adds nothing', async () => {
+    const dx = { ...spot(1, 'K1ABC', '20m', 'CW', 'United States'), freq_khz: 14_025, comment: 'UP 5' };
+    vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [dx] });
+    vi.mocked(postSplitDx).mockResolvedValue({ active: true, rx_hz: 14_025_000, tx_hz: 14_030_000 });
+    const onSpot = vi.fn(async () => {});
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ClusterPanel onSpot={onSpot} options={{ ...DEFAULT_CLUSTER_OPTIONS, click: 'single' }} />
+      </QueryClientProvider>,
+    );
+    await screen.findByText('UP 5', { selector: '.cluster-split' });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    // un doppio clic vero: due clic (il secondo con detail 2) e il doppio clic
+    const row = screen.getByText('K1ABC');
+    fireEvent.click(row, { detail: 1 });
+    fireEvent.click(row, { detail: 2 });
+    fireEvent.doubleClick(row, { detail: 2 });
+    await waitFor(() => expect(postSplitDx).toHaveBeenCalledTimes(1));
+    // la pagina porta la radio una volta sola, e gia' sapendo che segue lo Split DX (niente split nell'audio)
+    expect(onSpot).toHaveBeenCalledTimes(1);
+    expect(onSpot).toHaveBeenCalledWith(dx, true);
+  });
+
+  it('single-click mode without a split in the comment: one click tunes once', async () => {
+    oneSpot();
+    const onSpot = vi.fn(async () => {});
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ClusterPanel onSpot={onSpot} options={{ ...DEFAULT_CLUSTER_OPTIONS, click: 'single' }} />
+      </QueryClientProvider>,
+    );
+    const row = await screen.findByText('JA1ABC');
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    fireEvent.click(row, { detail: 1 });
+    fireEvent.click(row, { detail: 2 });
+    fireEvent.doubleClick(row, { detail: 2 });
+    await waitFor(() => expect(onSpot).toHaveBeenCalledTimes(1));
+    expect(onSpot).toHaveBeenCalledWith(expect.objectContaining({ dx_call: 'JA1ABC' }), false);
     expect(postSplitDx).not.toHaveBeenCalled();
   });
 

@@ -3,7 +3,7 @@ import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../api/client', () => ({ getClock: vi.fn(), getEngineSettings: vi.fn(), putEngineSettings: vi.fn() }));
+vi.mock('../api/client', () => ({ getClock: vi.fn(), getEngineSettings: vi.fn(), putEngineSettings: vi.fn(), getCat: vi.fn() }));
 import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { resetSlowPcClosed } from '../lib/diagnosis';
 import { useStation } from '../state/station';
@@ -43,6 +43,16 @@ describe('DiagnosisBar', () => {
     render(<DiagnosisBar />);
     expect(await screen.findByText(/L’orologio del PC è fuori di 900 ms/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sistema' })).toHaveAttribute('href', '#/impostazioni/clock');
+  });
+
+  it('says the contest notice of the engine in the chosen language, with the Contest page', async () => {
+    station();
+    useStation.getState().apply({ type: 'notice', id: 'contest', detail: "Contest: la banda 20m non e' ammessa dal regolamento del contest. Cambia banda o modo prima di trasmettere." });
+    render(<DiagnosisBar />);
+    expect(await screen.findByText(/Contest: la banda 20m non è ammessa dal regolamento, Aurora non trasmette/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sistema' })).toHaveAttribute('href', '#/contest');
+    // gli avvisi del motore restano nello stato anche dopo reset(): non devono finire nelle prove che seguono
+    useStation.setState({ notices: {} });
   });
 
   it('warns about a missing callsign and an overdriven input', async () => {

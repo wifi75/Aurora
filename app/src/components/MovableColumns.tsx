@@ -104,8 +104,11 @@ export function useMovableColumns<C extends string>({ storageKey, columns, defau
     };
     const move = (m: PointerEvent) => {
       if (!active && Math.abs(m.clientX - startX) < DRAG_PX) return;
+      const next = slotAt(m.clientX);
+      // si ridisegna solo quando cambia il posto di arrivo, non a ogni movimento del mouse
+      if (active && next === before) return;
       active = true;
-      before = slotAt(m.clientX);
+      before = next;
       setDrag({ col, before });
     };
     const end = (apply: boolean) => {
@@ -189,7 +192,10 @@ export function useMovableColumns<C extends string>({ storageKey, columns, defau
     e.preventDefault();
     const left = e.key === 'ArrowLeft';
     if (e.shiftKey) {
-      setWidth(col, widthOf(col) + (left ? -0.5 : 0.5));
+      // come trascinando il bordo: la colonna elastica senza larghezza scelta parte da quella che ha adesso, non dal minimo
+      const shown = e.currentTarget.getBoundingClientRect().width;
+      const start = layout.widths[col] ?? (shown > 0 ? shown / emPx() : defaultEm[col]);
+      setWidth(col, start + (left ? -0.5 : 0.5));
       return;
     }
     const i = visible.indexOf(col);
@@ -268,6 +274,10 @@ export function MovableTh<C extends string>({ cols, col, index, className, title
   );
 }
 
+/** Ingombro del menu dei titoli (una voce), per tenerlo dentro la finestra. */
+const MENU_W = 200;
+const MENU_H = 48;
+
 /** Il menu del tasto destro sui titoli: «Ripristina colonne». Si chiude con Esc, con un clic fuori o se la finestra cambia. */
 export function ColumnsMenu<C extends string>({ cols }: { cols: MovableColumns<C> }) {
   const t = useT();
@@ -293,8 +303,11 @@ export function ColumnsMenu<C extends string>({ cols }: { cols: MovableColumns<C
     };
   }, [menu, closeMenu]);
   if (!menu) return null;
+  // dentro la finestra anche aperto vicino al bordo destro o in fondo, come il menu dei nominativi
+  const left = Math.max(4, Math.min(menu.x, window.innerWidth - MENU_W));
+  const top = Math.max(4, Math.min(menu.y, window.innerHeight - MENU_H));
   return createPortal(
-    <div ref={box} className="cl-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+    <div ref={box} className="cl-menu" role="menu" style={{ left, top }}>
       <button type="button" role="menuitem" autoFocus onClick={cols.reset}>
         {t('cluster.cols.reset')}
       </button>

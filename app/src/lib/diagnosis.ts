@@ -1,7 +1,9 @@
 import type { AudioLevel, StationStatus } from '../api/schemas';
+import { bandOf } from './format';
+import { modeBase } from './period';
 
 export type Severity = 'problem' | 'warning' | 'info';
-export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'no_cat' | 'ptt_failed' | 'power_knob' | 'omnirig' | 'port_busy' | 'slow_pc' | 'audio_missing' | 'audio_out_missing';
+export type IssueId = 'clock' | 'callsign' | 'audio' | 'quiet' | 'audio_loss' | 'no_radio' | 'no_cat' | 'ptt_failed' | 'power_knob' | 'omnirig' | 'port_busy' | 'slow_pc' | 'audio_missing' | 'audio_out_missing' | 'contest';
 
 /** Quanto resta sullo schermo un avviso arrivato dal motore. */
 export const NOTICE_MS = 10 * 60_000;
@@ -16,7 +18,25 @@ const NOTICES: Record<string, { id: IssueId; severity: Severity; href?: string }
   power_knob: { id: 'power_knob', severity: 'info' },
   omnirig: { id: 'omnirig', severity: 'problem', href: '#/impostazioni/radio' },
   port_busy: { id: 'port_busy', severity: 'problem', href: '#/impostazioni/radio' },
+  // contest acceso e banda o modo fuori regolamento (il motore non trasmette), o nominativo composto
+  contest: { id: 'contest', severity: 'warning', href: '#/contest' },
 };
+
+/** Il motivo dell'avviso `contest` del motore (testo in italiano, core/crates/engine-native/src/tx.rs), da dire nella lingua scelta. */
+export type ContestReason = { kind: 'band' | 'mode'; value: string } | { kind: 'myCompound' | 'dxCompound' };
+
+/** Il modo senza periodo e sottomodo («FST4-60» → «FST4», «Q65-30A» → «Q65»), per confrontare lo stato con il nome del motore. */
+const modeFamily = (mode: string) => modeBase(mode).toUpperCase().split('-')[0] ?? '';
+
+export function parseContestNotice(detail: string): ContestReason | null {
+  const band = /la banda (\S+) non e' ammessa/.exec(detail);
+  if (band?.[1]) return { kind: 'band', value: band[1] };
+  const mode = /il modo (\S+) non e' ammesso/.exec(detail);
+  if (mode?.[1]) return { kind: 'mode', value: mode[1] };
+  if (detail.includes('il tuo nominativo composto')) return { kind: 'myCompound' };
+  if (detail.includes('nominativo composto del DX')) return { kind: 'dxCompound' };
+  return null;
+}
 
 export interface Issue {
   id: IssueId;
@@ -46,6 +66,8 @@ export interface DiagnosisInput {
   decodeDepth?: string | null;
   /** Le profondita' per cui l'operatore ha chiuso il consiglio del PC lento in questa sessione. */
   slowPcDismissed?: readonly string[];
+  /** Lo stato del CAT letto per ultimo e quando (ms Unix), se letto: una radio collegata dopo l'avviso toglie `port_busy`. */
+  cat?: { connected: boolean; at: number } | null;
 }
 
 /** Il dettaglio dell'avviso `slow_pc` del motore, `"11.7|3"`: secondi della decodifica e profondita' in uso (le versioni di prima mandano solo i secondi). */
@@ -112,6 +134,18 @@ export function diagnose(i: DiagnosisInput): Issue[] {
     const def = NOTICES[key];
     // l'ingresso mancante non vale piu' appena l'audio arriva
     if (key === 'audio_missing' && i.audio) continue;
+    // la porta occupata non vale piu' appena la radio risulta collegata (letto dopo l'avviso)
+    if (key === 'port_busy' && i.cat?.connected && i.cat.at >= n.at) continue;
+    if (key === 'contest') {
+      if (i.now - n.at > NOTICE_MS) continue;
+      const why = parseContestNotice(n.detail);
+      // banda o modo gia' cambiati: l'avviso non vale piu'
+      if (why?.kind === 'band' && i.status && (bandOf(i.status.dial_hz) ?? '').toLowerCase() !== why.value.toLowerCase()) continue;
+      if (why?.kind === 'mode' && i.status && modeFamily(i.status.mode) !== modeFamily(why.value)) continue;
+      const vars: Record<string, string | number> = { detail: n.detail, at: n.at, ...(why ? { reason: why.kind } : {}), ...(why && 'value' in why ? { value: why.value } : {}) };
+      issues.push({ id: 'contest', severity: why?.kind === 'band' || why?.kind === 'mode' ? 'problem' : 'warning', href: '#/contest', vars });
+      continue;
+    }
     // PC lento: con la profondita' nota si propone il gradino sotto, con un pulsante; mai cambiata da sola
     if (key === 'slow_pc') {
       if (i.now - n.at > NOTICE_MS) continue;

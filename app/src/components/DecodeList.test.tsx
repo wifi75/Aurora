@@ -402,6 +402,18 @@ describe('DecodeList', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('the callsign menu says «Togli dalla coda» on every row of a queued station, not only on the newest', () => {
+    useStation.setState({ status: { dial_hz: 0, mode: 'FT8', tx_enabled: true, transmitting: false, decoding: true, de_call: 'AA1AA', de_grid: 'JN45', queue: ['CC3CC'] } });
+    render(
+      <DecodeList myCall="AA1AA" onQueue={() => {}} decodes={[decode({ id: 2, text: 'AA1AA CC3CC -07' }), decode({ id: 1, text: 'CQ CC3CC FN42' })]} onReply={() => {}} />,
+    );
+    const older = screen.getAllByRole('button').find((r) => r.textContent?.includes('CQ CC3CC')) as HTMLElement;
+    expect(older).not.toHaveClass('decode-row--queued');
+    fireEvent.contextMenu(older.querySelector('.decode-sender') as HTMLElement);
+    expect(screen.getByRole('menuitem', { name: 'Togli dalla coda' })).toBeInTheDocument();
+    useStation.setState({ status: null });
+  });
+
   it('closes the callsign menu with Esc', () => {
     render(<DecodeList decodes={[decode({ id: 1, text: 'CQ BB2BB IL18' })]} onReply={() => {}} />);
     fireEvent.contextMenu(document.querySelector('.decode-sender') as HTMLElement);
@@ -502,6 +514,12 @@ describe('DecodeList a griglia (Finestra RX)', () => {
     expect(row.querySelector('[data-dl-col="dt"]')).toHaveTextContent('0.3');
     // le linee di griglia: l'ultima colonna non ha la linea a destra
     expect(row.querySelector('[data-dl-col="country"]')).toHaveClass('dl-cell--last');
+  });
+
+  it('la colonna elastica e\' il messaggio (i messaggi Fox lunghi non si tagliano), il paese ha una larghezza fissa', () => {
+    render(<DecodeList decodes={[decode({ id: 42 })]} onReply={() => {}} columnsKey={KEY} />);
+    const section = screen.getByRole('region');
+    expect(section.style.getPropertyValue('--dl-cols')).toBe('5.8em 3em 3em minmax(14.5em, 1fr) 11em');
   });
 
   it("le celle seguono l'ordine salvato e senza DT la colonna sparisce", () => {

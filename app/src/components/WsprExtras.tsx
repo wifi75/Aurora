@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { postControlValue } from '../api/client';
 import { useControlValues } from '../state/controlValues';
 import { useT } from '../i18n';
@@ -20,6 +21,11 @@ export function WsprExtras({ disabled = false }: { disabled?: boolean }) {
   const dbm = useControlValues((s) => s.values.wspr_dbm) ?? 37;
   const pct = useControlValues((s) => s.values.wspr_pct) ?? 20;
   const type1 = (useControlValues((s) => s.values.wspr_type1) ?? 1) === 1;
+  // «Tx Pct» si scrive in una bozza: al motore va solo a Invio o uscendo dal campo, cosi' i tasti non si perdono e il campo vuoto non manda 0
+  const [pctDraft, setPctDraft] = useState<string | null>(null);
+  useEffect(() => {
+    setPctDraft(null);
+  }, [pct]);
 
   const send = async (id: 'wspr_dbm' | 'wspr_pct' | 'wspr_type1', value: number) => {
     try {
@@ -27,6 +33,17 @@ export function WsprExtras({ disabled = false }: { disabled?: boolean }) {
     } catch {
       // il prossimo giro di lettura rimette il valore vero
     }
+  };
+
+  /** Manda la bozza di «Tx Pct»: il vuoto o un valore non valido si scartano (torna quello del motore), il resto si tiene fra 0 e 100. */
+  const commitPct = () => {
+    if (pctDraft === null) return;
+    const text = pctDraft.trim();
+    const v = Math.round(Number(text.replace(',', '.')));
+    setPctDraft(null);
+    if (text === '' || !Number.isFinite(v)) return;
+    const clamped = Math.min(100, Math.max(0, v));
+    if (clamped !== pct) void send('wspr_pct', clamped);
   };
 
   return (
@@ -54,10 +71,12 @@ export function WsprExtras({ disabled = false }: { disabled?: boolean }) {
           step={1}
           aria-label={t('mode.wsprPct')}
           disabled={disabled}
-          value={pct}
-          onChange={(e) => {
-            const v = Math.round(Number(e.target.value));
-            if (Number.isFinite(v) && v >= 0 && v <= 100) void send('wspr_pct', v);
+          value={pctDraft ?? pct}
+          onChange={(e) => setPctDraft(e.target.value)}
+          onBlur={() => commitPct()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitPct();
+            else if (e.key === 'Escape') setPctDraft(null);
           }}
         />
       </label>

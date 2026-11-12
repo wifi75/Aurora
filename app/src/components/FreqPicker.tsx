@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getFrequencies, type FrequencyEntry } from '../api/client';
 import { useT } from '../i18n';
 import { bandOf } from '../lib/format';
+import { modeBase } from '../lib/period';
 
 interface Props {
   dialHz: number;
@@ -52,7 +53,8 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
     if (locked) setOpen(false);
   }, [locked]);
 
-  const m = mode.toUpperCase().split('+')[0];
+  // FST4 e FST4W: lo stato porta il periodo («FST4-60», «FST4W-120»), le righe della tabella il nome nudo
+  const m = modeBase(mode.toUpperCase().split('+')[0] ?? '');
   const rows = (own ?? table.data ?? []).filter((r) => r.mode.toUpperCase() === m && (!shown || shown.includes(r.band))).sort((a, b) => a.hz - b.hz);
   if (!onPick || rows.length === 0) return null;
   const bands = [...new Set(rows.map((r) => r.band))];

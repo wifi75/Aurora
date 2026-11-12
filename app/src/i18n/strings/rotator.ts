@@ -16,16 +16,7 @@ export const rotatorStrings = {
   'rot.state.moving': ['In movimento', 'Moving', 'Dreht', 'En mouvement', 'En movimiento', 'Em movimento'],
   'rot.state.error': ['Errore', 'Error', 'Fehler', 'Erreur', 'Error', 'Erro'],
   'rot.heading': ['Antenna', 'Antenna', 'Antenne', 'Antenne', 'Antena', 'Antena'],
-  'rot.target': ['Destinazione', 'Target', 'Ziel', 'Destination', 'Destino', 'Destino'],
   'rot.dx': ['Stazione DX', 'DX station', 'DX-Station', 'Station DX', 'Estación DX', 'Estação DX'],
-  'rot.noDx': [
-    'Nessuna stazione DX con locatore: scegline una nella Stazione',
-    'No DX station with a locator: pick one on the Station page',
-    'Keine DX-Station mit Locator: wähle eine auf der Seite Station',
-    'Aucune station DX avec locator : choisis-en une dans la Station',
-    'Ninguna estación DX con localizador: elige una en la Estación',
-    'Nenhuma estação DX com locator: escolhe uma na Estação',
-  ],
   'rot.noMyGrid': [
     'Manca il tuo locatore: scrivilo in Impostazioni › Generali',
     'Your locator is missing: enter it in Settings › General',
@@ -50,7 +41,6 @@ export const rotatorStrings = {
     'Haz clic en la rosa para mandar la antena en esa dirección',
     'Clica na rosa para mandar a antena nessa direção',
   ],
-  'rot.rose': ['Rosa dei venti: direzione dell’antenna', 'Compass rose: antenna direction', 'Windrose: Antennenrichtung', 'Rose des vents : direction de l’antenne', 'Rosa de los vientos: dirección de la antena', 'Rosa dos ventos: direção da antena'],
   'rot.offText': [
     'Il rotore non è acceso. Sceglilo e collegalo in Impostazioni › Rotore.',
     'The rotator is not on. Choose and connect it in Settings › Rotator.',
@@ -61,6 +51,14 @@ export const rotatorStrings = {
   ],
   'rot.openSettings': ['Impostazioni del rotore', 'Rotator settings', 'Rotor-Einstellungen', 'Paramètres du rotor', 'Ajustes del rotor', 'Definições do rotor'],
   'rot.err.notConnected': ['Il rotore non è collegato.', 'The rotator is not connected.', 'Der Rotor ist nicht verbunden.', 'Le rotor n’est pas connecté.', 'El rotor no está conectado.', 'O rotor não está ligado.'],
+  'rot.err.load': [
+    'Impossibile leggere lo stato del rotore.',
+    'Could not read the rotator status.',
+    'Der Rotorstatus konnte nicht gelesen werden.',
+    'Impossible de lire l’état du rotor.',
+    'No se pudo leer el estado del rotor.',
+    'Não foi possível ler o estado do rotor.',
+  ],
   'rot.err.failed': ['Comando non riuscito.', 'Command failed.', 'Befehl fehlgeschlagen.', 'Commande échouée.', 'Orden fallida.', 'Comando falhou.'],
 
   'sw.tab.rotator': ['Rotore', 'Rotator', 'Rotor', 'Rotor', 'Rotor', 'Rotor'],

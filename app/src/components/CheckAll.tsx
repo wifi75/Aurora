@@ -70,7 +70,7 @@ function CheckAll({ onClose }: { onClose: () => void }) {
     { id: 'radio', verdict: radio, href: '#/impostazioni/radio' },
     { id: 'audio', verdict: audioV, href: '#/impostazioni/audio' },
     { id: 'clock', verdict: clockV, href: '#/impostazioni/clock' },
-    { id: 'phone', verdict: phone, href: '#/impostazioni/access' },
+    { id: 'phone', verdict: phone, href: '#/impostazioni/phone' },
   ];
   const allOk = rows.every((r) => r.verdict === 'ok');
   return (

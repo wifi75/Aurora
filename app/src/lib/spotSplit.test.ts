@@ -84,6 +84,49 @@ describe('parseSpotSplit', () => {
     expect(parseSpotSplit('UP 5', 0, 'CW')).toBeNull();
   });
 
+  it('«UP 14.0305»: la frequenza con quattro decimali non diventa «UP 14» e nemmeno «UP» da solo', () => {
+    expect(at('UP 14.0305')).toBeNull();
+    expect(at('listening up 14.0305 pse')).toBeNull();
+    expect(at('UP 14.0305 then UP 2')?.offsetKhz).toBe(2);
+  });
+
+  it('«DN» attaccato a due cifre e\' un locatore, non uno spostamento in giu\'', () => {
+    expect(at('DN31')).toBeNull();
+    expect(at('QRV DN40')).toBeNull();
+    expect(at('dn40 tnx')).toBeNull();
+    // il locatore si salta, l'«UP» che segue vale
+    expect(at('DN31 UP')).toEqual({ kind: 'up', offsetKhz: 1, txKhz: 14026, label: 'UP 1' });
+    // con lo spazio resta uno spostamento
+    expect(at('DN 31')?.offsetKhz).toBe(-31);
+    // «UP» non e' mai un locatore
+    expect(at('UP31')?.offsetKhz).toBe(31);
+  });
+
+  it('QSX con uno o due decimali e\' in MHz, nella banda dello spot', () => {
+    expect(at('QSX 21.2', 21195, 'SSB')).toEqual({ kind: 'qsx', offsetKhz: 5, txKhz: 21200, label: 'QSX 21.200' });
+    expect(at('QSX 14.03')).toEqual({ kind: 'qsx', offsetKhz: 5, txKhz: 14030, label: 'QSX 14.030' });
+    expect(at('QSX 7.15', 7090, 'SSB')?.txKhz).toBe(7150);
+    // fuori dalla banda dello spot: niente split (non sono le ultime cifre)
+    expect(at('QSX 21.2')).toBeNull();
+    expect(at('QSX 30.5')).toBeNull();
+  });
+
+  it('un intervallo di frequenze assolute vale il suo centro; la frequenza dello spot accanto a UP vale come «UP» da solo', () => {
+    expect(at('UP 14.030-14.040')).toEqual({ kind: 'qsx', offsetKhz: 10, txKhz: 14035, label: 'QSX 14.035' });
+    expect(at('UP 14030-14040')?.txKhz).toBe(14035);
+    expect(at('14.030-14.040 UP')?.txKhz).toBe(14035);
+    // una frequenza e un numero qualunque: non si indovina
+    expect(at('UP 14.030-5')).toBeNull();
+    expect(at('14.025 UP')).toEqual({ kind: 'up', offsetKhz: 1, txKhz: 14026, label: 'UP 1' });
+    expect(at('14025 UP')?.offsetKhz).toBe(1);
+    expect(at('14.025 DN')?.offsetKhz).toBe(-1);
+    expect(at('UP 14.025')?.offsetKhz).toBe(1);
+    // la frequenza dello spot con i decimali che il cluster arrotonda
+    expect(at('14.025 UP', 14025.3)?.offsetKhz).toBe(1);
+    // e uno spostamento scritto dopo vale quello
+    expect(at('14.025 UP 5')?.offsetKhz).toBe(5);
+  });
+
   it('negli spot FT8, FT4 e degli altri modi WSJT niente Split DX; con CW, SSB, RTTY o modo ignoto si', () => {
     for (const mode of ['FT8', 'ft4', 'FST4', 'JT65', 'Q65', 'MSK144']) expect(at('UP 5', 14025, mode), mode).toBeNull();
     for (const mode of ['CW', 'SSB', 'RTTY', 'PSK31', null]) expect(at('UP 5', 14025, mode)?.offsetKhz, String(mode)).toBe(5);

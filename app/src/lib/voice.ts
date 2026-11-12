@@ -87,8 +87,17 @@ export function voiceParts(event: SoundEvent, call: string | undefined, lang: st
   return parts;
 }
 
+/** Le lingue che hanno le frasi registrate (cartelle in `public/voice/`): le altre (olandese) parlano inglese. */
+const VOICE_LANGS: readonly string[] = ['it', 'en', 'de', 'fr', 'es', 'pt'];
+
+/** La lingua della voce: l'inglese se scelto, altrimenti quella dell'interfaccia se ha le frasi registrate, se no l'inglese. */
+export function voiceLangOf(uiLang: string, voiceChoice: string): string {
+  if (voiceChoice === 'en') return 'en';
+  return VOICE_LANGS.includes(uiLang) ? uiLang : 'en';
+}
+
 function speak(event: SoundEvent, call: string | undefined, volume: number): void {
-  const lang = readVoiceLang() === 'en' ? 'en' : useLang.getState().lang;
+  const lang = voiceLangOf(useLang.getState().lang, readVoiceLang());
   playChain(voiceParts(event, call, lang), volume);
 }
 

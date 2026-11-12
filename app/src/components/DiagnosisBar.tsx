@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
+import { getCat, getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { AudioLossHelp } from './AudioLossHelp';
 import { coreText } from '../lib/coreText';
@@ -12,6 +12,8 @@ import { useStation } from '../state/station';
 
 function messageKey(issue: Issue): Key {
   if (issue.id === 'slow_pc' && issue.vars.next) return issue.vars.depth === '3' ? 'diag.slow_pc.deep' : 'diag.slow_pc.normal';
+  // contest: il motivo riconosciuto si dice nella lingua scelta; uno sconosciuto con il testo del motore
+  if (issue.id === 'contest') return (issue.vars.reason ? `diag.contest.${issue.vars.reason}` : 'diag.contest') as Key;
   return (issue.id === 'audio' ? `diag.audio.${issue.vars.state}` : `diag.${issue.id}`) as Key;
 }
 
@@ -28,6 +30,8 @@ export function DiagnosisBar() {
   // la profondita' di decodifica serve solo quando il motore dice che il PC e' lento
   const client = useQueryClient();
   const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, enabled: !!notices.slow_pc });
+  // lo stato del CAT serve solo con l'avviso della porta occupata: appena la radio si collega l'avviso sparisce
+  const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, enabled: !!notices.port_busy, refetchInterval: notices.port_busy ? 5000 : false });
   const [depthBusy, setDepthBusy] = useState(false);
   const [depthError, setDepthError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -51,6 +55,7 @@ export function DiagnosisBar() {
     notices,
     decodeDepth: engine.data?.values.DecodeDepth ?? null,
     slowPcDismissed: slowPcClosedDepths(),
+    cat: cat.data ? { connected: cat.data.status.state === 'connected', at: cat.dataUpdatedAt } : null,
   });
   const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
   const visible = issues.filter((issue) => !closed.includes(keyOf(issue)));

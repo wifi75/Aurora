@@ -80,6 +80,32 @@ describe('RotorCard (la scheda del rotore condivisa)', () => {
     expect(screen.getByRole('link', { name: 'Impostazioni del rotore' })).toBeTruthy();
   });
 
+  it('se lo stato non si legge dice l’errore, non «spento»', async () => {
+    vi.mocked(getRotator).mockRejectedValue(new Error('rete'));
+    card('page');
+    expect(await screen.findByText(/Impossibile leggere lo stato del rotore/)).toBeTruthy();
+    expect(screen.queryByText('Spento')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Impostazioni del rotore' })).toBeNull();
+  });
+
+  it('l’errore di un GO sparisce dopo uno STOP riuscito', async () => {
+    vi.mocked(rotatorGoto).mockRejectedValue(new Error('no'));
+    card('page');
+    await screen.findByText('Collegato');
+    fireEvent.click(screen.getByRole('button', { name: '90' }));
+    expect(await screen.findByText('Comando non riuscito.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ferma' }));
+    await waitFor(() => expect(screen.queryByText('Comando non riuscito.')).toBeNull());
+  });
+
+  it('sopra la pagina, nascosta, non interroga il rotore', async () => {
+    localStorage.setItem('aurora.digi.rotor.hidden', '1');
+    card('digi');
+    await new Promise((r) => setTimeout(r, 20));
+    expect(getRotator).not.toHaveBeenCalled();
+    expect(document.querySelector('.rotor-card')).toBeNull();
+  });
+
   it('senza DX lo dice, e senza il mio locatore chiede di scriverlo', async () => {
     card('page', '', '');
     expect(await screen.findByText('Nessuna stazione DX')).toBeTruthy();
@@ -166,5 +192,21 @@ describe('RotatorPage (pagina Rotore e finestra a parte)', () => {
     expect(document.querySelector('.rotor-card--window')).toBeTruthy();
     expect(screen.getByText('W1AW')).toBeTruthy();
     expect(screen.getByText('FN31')).toBeTruthy();
+  });
+
+  it('nella pagina Rotore vale il DX vivo della Stazione, non quello vecchio scritto da un’altra pagina', async () => {
+    publishRotorDx('w1aw', 'FN31');
+    wrap(<RotatorPage />);
+    await screen.findByText('Collegato');
+    const dx = within(document.querySelector('.rotor-dx') as HTMLElement);
+    expect(dx.getByText('JA1ABC')).toBeTruthy();
+    expect(dx.queryByText('W1AW')).toBeNull();
+  });
+
+  it('nella finestra a parte un DX scritto vuoto lascia il posto a quello vivo della Stazione', async () => {
+    publishRotorDx('', '');
+    wrap(<RotatorPage solo />);
+    await screen.findByText('Collegato');
+    expect(within(document.querySelector('.rotor-dx') as HTMLElement).getByText('JA1ABC')).toBeTruthy();
   });
 });

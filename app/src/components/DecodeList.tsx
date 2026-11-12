@@ -75,12 +75,11 @@ function rowTitle(state: string | undefined, hint: string | undefined): string |
   return state ?? hint;
 }
 
-/** Chi trasmette usa LoTW: la barra colorata sotto il suo nominativo e il suggerimento con la data dell'ultimo invio. */
+/** Chi trasmette usa LoTW: la barra colorata sotto il suo nominativo; la data dell'ultimo invio la dice il riquadro del nominativo. */
 export interface LotwMark {
   /** La data dell'ultimo invio, mostrata nel riquadro del nominativo (una volta sola: niente fumetto del browser). */
   date: string;
   color: string;
-  title: string;
 }
 
 function highlightCall(text: string, call: string, grid: string, answered?: { call: string; title: string }, sender = '', lotw?: LotwMark): ReactNode {
@@ -199,8 +198,11 @@ interface Props {
 /** Le colonne dell'elenco a griglia (Finestra RX), nell'ordine di partenza. */
 export const DECODE_COLUMNS = ['time', 'snr', 'dt', 'msg', 'country'] as const;
 export type DecodeCol = (typeof DECODE_COLUMNS)[number];
-/** Larghezze di partenza in em (le misure di prima della Finestra RX); il paese prende lo spazio che avanza. */
-const DECODE_EM: Record<DecodeCol, number> = { time: 5.8, snr: 3, dt: 3, msg: 14.5, country: 5 };
+/**
+ * Larghezze di partenza in em. Il messaggio prende lo spazio che avanza (14,5 em e' il suo minimo): i messaggi Fox/Hound lunghi
+ * («A RR73; B <FOX> -08») non si tagliano piu' lasciando spazio vuoto nel paese; il paese ha posto per bandierina, nome e distanza.
+ */
+const DECODE_EM: Record<DecodeCol, number> = { time: 5.8, snr: 3, dt: 3, msg: 14.5, country: 11 };
 
 /** Righe disegnate al primo colpo; le altre al giro dopo. */
 const FIRST_ROWS = 40;
@@ -265,11 +267,24 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     storageKey: columnsKey ?? 'aurora.decodes.cols',
     columns: DECODE_COLUMNS,
     defaultEm: DECODE_EM,
-    elastic: 'country',
+    elastic: 'msg',
     hidden: showDt ? undefined : ['dt'],
     // per adattare la colonna si misurano il suo titolo e le sue celle in tutte le righe
     fitCells: (col) => (listEl ? listEl.querySelectorAll(`.dl-head th[data-col="${col}"], [data-dl-col="${col}"]`) : []),
   });
+  // a griglia la riga ferma del QSO deve stare subito sotto i titoli, fermi anch'essi in cima: l'altezza dei titoli va nel CSS
+  // (--dl-head-h, decode-grid.css) e si aggiorna se cambia (corpo del carattere, titoli su due righe)
+  useEffect(() => {
+    if (!grid || !listEl) return;
+    const head = listEl.querySelector<HTMLElement>(':scope > .dl-head');
+    if (!head) return;
+    const write = () => listEl.style.setProperty('--dl-head-h', `${head.getBoundingClientRect().height}px`);
+    write();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(write);
+    observer.observe(head);
+    return () => observer.disconnect();
+  }, [grid, listEl]);
   // a scorrere puo' essere la lista o il riquadro del pannello che la contiene: si ascoltano entrambi (in cattura, perche' lo
   // scorrimento non risale), e si riporta in cima quello che si e' mosso
   useEffect(() => {
@@ -353,7 +368,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
   const lotwView = useLotwView((s) => s.view);
   const lotwMark = (d: DecodedMessage): LotwMark | undefined => {
     const date = d.id < 0 ? null : lotwDateToShow(d.lotw_last_upload, lotwView, new Date());
-    return date ? { color: lotwView.color, title: t('lotw.tip', { date }), date } : undefined;
+    return date ? { color: lotwView.color, date } : undefined;
   };
   // nominativi, prefissi e paesi da evidenziare (Impostazioni → Filtri)
   const filters = useFilters((s) => s.filters);
@@ -595,11 +610,12 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         const snrCell = <span className="c-snr num">{own ? 'Tx' : d.snr}</span>;
         const dtCell = <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span>;
         // passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta)
+        const lotw = own ? undefined : lotwMark(d);
         const msgCell = (
-          <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={own ? null : (lotwMark(d)?.date ?? null)}>
+          <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={lotw?.date ?? null}>
             <span className="decode-text">
               {queueMark}
-              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotwMark(d))}</span>
+              <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotw)}</span>
             </span>
           </CallsignTip>
         );
@@ -658,9 +674,11 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               if (clicked) {
                 e.preventDefault();
                 setSelected(d.id);
-                // «Metti in coda» dove il tasto destro sulla riga metteva gia' in coda (stessa regola di sotto): la coda resta la stazione della riga
+                // «Metti in coda» dove il tasto destro sulla riga metteva gia' in coda (stessa regola di sotto): la coda resta la stazione della riga.
+                // «Togli dalla coda» se la stazione e' in coda, da qualunque sua riga: il motore mette e toglie per nominativo (la sigla
+                // «in coda» invece va solo sulla riga piu' recente)
                 const canQueue = !own && !!talker && !!onQueue;
-                setCallMenu(callMenuAt(e, clicked, canQueue ? () => onQueue?.(d.id) : undefined, inQueue));
+                setCallMenu(callMenuAt(e, clicked, canQueue ? () => onQueue?.(d.id) : undefined, queuePos > 0));
                 return;
               }
               // tasto destro sul resto della riga: in coda (non sulle mie righe Tx ne' sui messaggi senza una stazione da chiamare)

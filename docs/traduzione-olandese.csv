@@ -2156,6 +2156,11 @@ diag.slow_pc.setting,Setting,Instelling
 diag.slow_pc.failed,Depth not changed: {message},Diepte niet gewijzigd: {message}
 diag.omnirig,"OmniRig does not answer even after three tries ({detail}): check that OmniRig shows the radio as “On-line”, or switch to Hamlib in Settings › Radio.","OmniRig antwoordt ook na drie pogingen niet ({detail}): controleer of OmniRig de radio als “On-line” toont, of schakel in Instellingen › Radio over op Hamlib."
 diag.port_busy,The radio does not connect: {detail},De radio maakt geen verbinding: {detail}
+diag.contest.band,"Contest: the {value} band is not allowed by the rules, Aurora does not transmit. Change band or mode before transmitting.","Contest: de band {value} is volgens het reglement niet toegestaan, Aurora zendt niet. Wissel van band of mode voordat je zendt."
+diag.contest.mode,"Contest: the {value} mode is not allowed by the rules, Aurora does not transmit. Change band or mode before transmitting.","Contest: de mode {value} is volgens het reglement niet toegestaan, Aurora zendt niet. Wissel van band of mode voordat je zendt."
+diag.contest.myCompound,Contest: your compound callsign does not allow contest messages. QSOs stay normal and may not count in the contest.,Contest: je samengestelde roepnaam staat geen contestberichten toe. De QSO’s blijven normaal en tellen in de contest mogelijk niet mee.
+diag.contest.dxCompound,Contest: the DX’s compound callsign does not allow contest messages. The QSO uses the normal messages.,Contest: de samengestelde roepnaam van het DX-station staat geen contestberichten toe. De QSO gebruikt de normale berichten.
+diag.contest,{detail},{detail}
 rd.title,Radio display style,Weergavestijl van de radio
 rd.intro,"The display in the header shows frequency, mode, receive or transmit and the meters read from the radio (S-meter, power, SWR, ALC). Meters the radio does not provide stay off.","Het display in de kop toont frequentie, mode, ontvangen of zenden en de meters die van de radio worden gelezen (S-meter, vermogen, SWR, ALC). Meters die de radio niet levert, blijven uit."
 rd.preview,Preview with sample data,Voorbeeld met voorbeeldgegevens
@@ -3632,9 +3637,7 @@ rot.state.connected,Connected,Verbonden
 rot.state.moving,Moving,Draait
 rot.state.error,Error,Fout
 rot.heading,Antenna,Antenne
-rot.target,Target,Doel
 rot.dx,DX station,DX-station
-rot.noDx,No DX station with a locator: pick one on the Station page,Geen DX-station met een locator: kies er een op de pagina Station
 rot.noMyGrid,Your locator is missing: enter it in Settings › General,Je locator ontbreekt: vul hem in bij Instellingen › Algemeen
 rot.short,Turn,Draaien
 rot.long,Long path,Lange weg
@@ -3645,10 +3648,10 @@ rot.go,Go,Ga
 rot.degrees,Degrees,Graden
 rot.steps,Steps,Stappen
 rot.clickHint,Click on the rose to send the antenna in that direction,Klik op de roos om de antenne in die richting te sturen
-rot.rose,Compass rose: antenna direction,Kompasroos: richting van de antenne
 rot.offText,The rotator is not on. Choose and connect it in Settings › Rotator.,De rotor staat niet aan. Kies en verbind hem in Instellingen › Rotor.
 rot.openSettings,Rotator settings,Rotorinstellingen
 rot.err.notConnected,The rotator is not connected.,De rotor is niet verbonden.
+rot.err.load,Could not read the rotator status.,De rotorstatus kon niet worden gelezen.
 rot.err.failed,Command failed.,Opdracht mislukt.
 sw.tab.rotator,Rotator,Rotor
 rot.set.grp.link,Rotator connection,Rotorverbinding

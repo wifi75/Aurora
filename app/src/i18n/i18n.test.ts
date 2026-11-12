@@ -176,5 +176,7 @@ describe('first launch language', () => {
     expect(firstLaunchLang(memory(), ['ja-JP'])).toBeNull();
     expect(firstLaunchLang(broken, ['nl'])).toBeNull();
     expect(firstLaunchLang(null, ['nl'])).toBe('nl');
+    // installazione gia' avviata senza lingua scelta: resta l'italiano di sempre
+    expect(firstLaunchLang(memory({ 'aurora-first-run-done': '1' }), ['nl-NL'])).toBeNull();
   });
 });

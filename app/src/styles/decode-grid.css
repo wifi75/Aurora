@@ -21,6 +21,16 @@
   background: var(--panel);
 }
 
+/* la riga ferma del QSO (onair.css: in cima, z-index 2) sta subito sotto i titoli (z-index 3), non coperta da loro: --dl-head-h e'
+   l'altezza dei titoli, misurata dal componente; anche l'aggancio dello scorrimento lascia libero quello spazio */
+.decode-list.decode-list--cols > .decode-row--pin {
+  top: var(--dl-head-h, 0px);
+}
+
+.decode-list.decode-list--cols {
+  scroll-padding-top: var(--dl-head-h, 0px);
+}
+
 .decode-list--cols > .dl-head th {
   position: relative;
   padding: 0.15em 0.4em;

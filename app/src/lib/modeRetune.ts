@@ -4,6 +4,7 @@ import { useStation } from '../state/station';
 import { bandPlanRows, type TextMode } from './bandplan';
 import { bandOf } from './format';
 import { browserStorage } from './theme';
+import { modeBase } from './period';
 
 const FREQ_KEY = 'aurora.modenav.freq';
 
@@ -77,7 +78,9 @@ async function retuneTo(client: QueryClient, rows: readonly FrequencyEntry[]): P
  */
 export async function retuneForMode(client: QueryClient, mode: string): Promise<number | null> {
   const table = await client.fetchQuery({ queryKey: ['frequencies'], queryFn: getFrequencies, staleTime: 60_000 });
-  return retuneTo(client, table.filter((r) => r.mode.toUpperCase() === mode.toUpperCase()));
+  // «FST4-60», «FST4W-120»: le righe della tabella si chiamano FST4 e FST4W
+  const base = modeBase(mode).toUpperCase();
+  return retuneTo(client, table.filter((r) => r.mode.toUpperCase() === base));
 }
 
 /** Lo stesso per i modi testuali e l'SSTV, che hanno il piano di banda IARU (`bandPlanRows`). */

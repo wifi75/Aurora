@@ -165,19 +165,21 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   }, [picking]);
   /** Il corpo del carattere della tabella in px: le larghezze sono in em e seguono la dimensione scelta nelle Impostazioni. */
   const emPx = () => parseFloat(getComputedStyle(body.current?.querySelector('table') ?? document.body).fontSize) || 12;
-  /** Tutte le colonne in vista larghe quanto il loro contenuto (mai meno di 6/10 della larghezza di partenza). */
+  /**
+   * Tutte le colonne in vista larghe quanto il loro contenuto (mai meno di 6/10 della larghezza di partenza); le colonne nascoste tengono la
+   * larghezza scelta prima (`setWidths` sostituisce tutto, quindi si parte da quelle gia' salvate).
+   */
   const autoFitAll = () => {
-    const next: Partial<Record<LogCol, number>> = {};
     const table = body.current?.querySelector('table');
-    if (table) {
-      grid.visible.forEach((c, i) => {
-        let max = 0;
-        table.querySelectorAll(`tr:not(.digi-log-cur) > :nth-child(${i + 1})`).forEach((el) => {
-          max = Math.max(max, (el as HTMLElement).scrollWidth);
-        });
-        next[c] = Math.max(max / emPx() + 0.3, DEFAULT_EM[c] * 0.6);
+    if (!table) return;
+    const next: Partial<Record<LogCol, number>> = { ...grid.layout.widths };
+    grid.visible.forEach((c, i) => {
+      let max = 0;
+      table.querySelectorAll(`tr:not(.digi-log-cur) > :nth-child(${i + 1})`).forEach((el) => {
+        max = Math.max(max, (el as HTMLElement).scrollWidth);
       });
-    }
+      next[c] = Math.max(max / emPx() + 0.3, DEFAULT_EM[c] * 0.6);
+    });
     grid.setWidths(next);
   };
   const resetWidths = () => grid.setWidths({});
