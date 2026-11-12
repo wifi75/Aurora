@@ -196,6 +196,12 @@ impl Default for RigConfig {
 pub const BAUDS: [u32; 8] = [1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
 
 /// Una porta seriale (`COM3`, `/dev/ttyUSB0`) e non un indirizzo di rete.
+/// I modelli «Dummy» di Hamlib (1 = Dummy, 6 = Dummy senza VFO): nessuna radio, al massimo il PTT su una linea della seriale.
+const DUMMY_MODELS: [u32; 2] = [1, 6];
+
+/// Il numero del driver Icom nei modelli di Hamlib (3xxx).
+const ICOM_BACKEND: u32 = 3;
+
 pub fn is_serial_port(port: &str) -> bool {
     let up = port.to_ascii_uppercase();
     if let Some(rest) = up.strip_prefix("COM") {
@@ -214,7 +220,7 @@ pub fn hamlib_port(port: &str) -> String {
 }
 
 fn token_ok(text: &str) -> bool {
-    !text.is_empty() && text.len() <= 64 && text.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':' | '/' | '\\'))
+    crate::hamlib::token_valid(text)
 }
 
 impl RigConfig {
@@ -346,14 +352,21 @@ impl RigConfig {
             PttMethod::Vox => conf.push(("ptt_type".into(), "None".into())),
             PttMethod::Dtr | PttMethod::Rts => {
                 conf.push(("ptt_type".into(), if self.ptt == PttMethod::Dtr { "DTR" } else { "RTS" }.into()));
+                // il modello Dummy non e' una radio seriale: Hamlib allora non copia la porta della radio su quella del PTT e apre un
+                // percorso vuoto (PTT morto con «solo RTS, senza CAT»). La porta del PTT gli si da' sempre.
                 if !ptt_same_port {
                     conf.push(("ptt_pathname".into(), hamlib_port(&self.ptt_port)));
+                } else if DUMMY_MODELS.contains(&self.model) && !self.port.is_empty() {
+                    conf.push(("ptt_pathname".into(), hamlib_port(&self.port)));
                 }
                 conf.push(("ptt_share".into(), "1".into()));
             }
         }
-        // «meno scatti» negli split delle Icom
-        conf.push(("no_xchg".into(), "1".into()));
+        // «meno scatti» negli split delle Icom. Solo per le Icom (modelli 3xxx): e' un'impostazione del loro driver, e Hamlib 4.5
+        // (Debian 12) con un'impostazione sconosciuta chiude rigctld prima di aprire la porta (FT-857D su Linux, segnalazione #41)
+        if self.model / 1000 == ICOM_BACKEND {
+            conf.push(("no_xchg".into(), "1".into()));
+        }
         // «Accendi»: Hamlib accende la radio da solo quando apre la porta (`auto_power_on`). Il comando `\set_powerstat 1` dopo il
         // collegamento non bastava: con la radio spenta il collegamento non andava a buon fine (FT-2000, 8/11/2026)
         if self.power_on {
@@ -677,6 +690,25 @@ mod tests {
         assert_eq!(m.get("dtr_state").map(String::as_str), Some("OFF"), "il DTR del PTT e' sull'altra porta: quello del CAT resta basso");
         c.force_dtr = Some(true);
         assert_eq!(conf(&c).get("dtr_state").map(String::as_str), Some("ON"));
+    }
+
+    #[test]
+    fn no_xchg_only_for_icom_and_the_dummy_gets_its_ptt_port() {
+        let conf = |c: &RigConfig| c.to_rigctld(Path::new("x")).expect("config").conf.into_iter().collect::<std::collections::BTreeMap<_, _>>();
+        // Hamlib 4.5 (Debian 12) chiude rigctld con un'impostazione che il driver non conosce: no_xchg e' solo delle Icom
+        let ic7100 = RigConfig { model: 3070, port: "/dev/ttyUSB0".into(), baud: 4800, ..RigConfig::default() };
+        assert_eq!(conf(&ic7100).get("no_xchg").map(String::as_str), Some("1"));
+        let ft857 = RigConfig { model: 1022, port: "/dev/ttyUSB1".into(), baud: 38400, ptt: PttMethod::Rts, ..RigConfig::default() };
+        assert_eq!(conf(&ft857).get("no_xchg"), None);
+        assert_eq!(conf(&ft857).get("ptt_pathname"), None, "radio seriale: Hamlib usa la stessa porta da solo");
+        // solo PTT su RTS, senza CAT (Dummy): Hamlib non copia la porta della radio su quella del PTT, gliela si da'
+        let dummy = RigConfig { model: 1, port: "/dev/ttyUSB1".into(), ptt: PttMethod::Rts, ..RigConfig::default() };
+        let m = conf(&dummy);
+        assert_eq!((m.get("ptt_type").map(String::as_str), m.get("ptt_pathname").map(String::as_str)), (Some("RTS"), Some("/dev/ttyUSB1")));
+        // i percorsi stabili di Linux sono lunghi
+        let long = RigConfig { model: 3070, port: "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_IC-7100_02012345-if00-port0".into(), ..RigConfig::default() };
+        assert!(long.validate().is_ok());
+        assert!(long.to_rigctld(Path::new("x")).is_ok());
     }
 
     #[test]

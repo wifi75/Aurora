@@ -5,6 +5,7 @@
 //! La fiducia segue Decodium: nome per esteso 90, firma USB 60-75 (+15 se e' la porta CAT «enhanced»), interfaccia generica 35, porta qualunque 15.
 //! Una firma sbagliata e' peggio di nessuna: dove il modello non e' certo si propone la famiglia e si lascia la scelta all'utente.
 
+#[cfg(windows)]
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
@@ -395,16 +396,17 @@ pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), Ri
 }
 
 /// Lo script: porte COM e schede audio in un colpo solo, come JSON. Solo letture.
+#[cfg(windows)]
 const SYSTEM_SCRIPT: &str = "$ErrorActionPreference='SilentlyContinue'; \
     $p = @(Get-CimInstance Win32_PnPEntity | Where-Object { $_.Name -match '\\(COM\\d+\\)' } | Select-Object Name, PNPDeviceID, Manufacturer); \
     $a = @(Get-CimInstance Win32_SoundDevice | Select-Object Name); \
     [pscustomobject]@{ ports = $p; audio = $a } | ConvertTo-Json -Depth 4 -Compress";
 
 /// Interroga Windows (PowerShell nascosto, sola lettura).
+#[cfg(windows)]
 pub fn read_system() -> Result<(Vec<SerialPortInfo>, Vec<String>), RigError> {
     let mut command = Command::new("powershell.exe");
     command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SYSTEM_SCRIPT]);
-    #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
         // niente finestra nera
@@ -417,9 +419,73 @@ pub fn read_system() -> Result<(Vec<SerialPortInfo>, Vec<String>), RigError> {
     parse_system(String::from_utf8_lossy(&out.stdout).trim())
 }
 
+/// Linux e macOS: le porte seriali USB da `/dev` (`ttyUSB*`, `ttyACM*`, `cu.usbserial*`, `cu.usbmodem*`...), con produttore, VID, PID
+/// e numero di serie letti da `/sys` dove ci sono. Il nome stabile di `/dev/serial/by-id` (non cambia se ttyUSB0 e ttyUSB1 si
+/// scambiano tra un avvio e l'altro) va nel nome mostrato. Le schede audio non servono qui (l'elenco audio arriva dal motore audio).
+#[cfg(not(windows))]
+pub fn read_system() -> Result<(Vec<SerialPortInfo>, Vec<String>), RigError> {
+    use std::path::{Path, PathBuf};
+    let by_id: Vec<(PathBuf, String)> = std::fs::read_dir("/dev/serial/by-id")
+        .map(|d| {
+            d.filter_map(Result::ok)
+                .filter_map(|e| {
+                    let target = std::fs::canonicalize(e.path()).ok()?;
+                    Some((target, e.path().to_string_lossy().into_owned()))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let read = |dir: &Path, file: &str| std::fs::read_to_string(dir.join(file)).ok().map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+    let mut ports = Vec::new();
+    for entry in std::fs::read_dir("/dev").map_err(|e| RigError(format!("/dev non leggibile: {e}")))?.filter_map(Result::ok) {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !unix_serial_name(&name) {
+            continue;
+        }
+        let path = entry.path();
+        // /sys/class/tty/ttyUSB0/device: l'interfaccia USB (ttyACM) o la porta sotto l'interfaccia (ttyUSB); idVendor sta piu' su
+        let sys = std::fs::canonicalize(Path::new("/sys/class/tty").join(&name).join("device")).ok();
+        let usb = sys.as_deref().and_then(|d| d.ancestors().take(4).find(|a| a.join("idVendor").is_file()).map(Path::to_path_buf));
+        let hex = |file: &str| usb.as_deref().and_then(|u| read(u, file)).and_then(|t| u16::from_str_radix(&t, 16).ok());
+        let stable = std::fs::canonicalize(&path).ok().and_then(|real| by_id.iter().find(|(t, _)| *t == real).map(|(_, id)| id.clone()));
+        let product = usb.as_deref().and_then(|u| read(u, "product"));
+        ports.push(SerialPortInfo {
+            port: path.to_string_lossy().into_owned(),
+            name: product.or_else(|| stable.clone()).unwrap_or_else(|| name.clone()),
+            instance_id: stable.unwrap_or_default(),
+            vid: hex("idVendor"),
+            pid: hex("idProduct"),
+            serial: usb.as_deref().and_then(|u| read(u, "serial")),
+            manufacturer: usb.as_deref().and_then(|u| read(u, "manufacturer")).unwrap_or_default(),
+            virtual_port: false,
+            virtual_kind: None,
+        });
+    }
+    ports.sort_by(|a, b| a.port.cmp(&b.port));
+    Ok((ports, Vec::new()))
+}
+
+/// Un nome di `/dev` che e' una porta seriale da radio: gli adattatori USB di Linux (`ttyUSB0`, `ttyACM0`) e di macOS (`cu.usbserial-…`,
+/// `cu.usbmodem…`, `cu.SLAB_USBtoUART`, `cu.wchusbserial…`). Le `ttyS*` di Linux esistono sempre anche senza porta vera: si scrivono a mano.
+#[cfg_attr(windows, allow(dead_code))]
+fn unix_serial_name(name: &str) -> bool {
+    ["ttyUSB", "ttyACM"].iter().any(|p| name.strip_prefix(p).is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit())))
+        || (name.starts_with("cu.") && ["usb", "SLAB", "wch"].iter().any(|k| name.contains(k)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_usb_serial_ports_of_linux_and_macos_are_recognized() {
+        for ok in ["ttyUSB0", "ttyUSB12", "ttyACM0", "cu.usbserial-A50285BI", "cu.usbmodem14101", "cu.SLAB_USBtoUART", "cu.wchusbserial1420"] {
+            assert!(unix_serial_name(ok), "{ok}");
+        }
+        for no in ["ttyS0", "tty1", "ttyUSB", "ttyUSBx", "cu.Bluetooth-Incoming-Port", "null"] {
+            assert!(!unix_serial_name(no), "{no}");
+        }
+    }
 
     fn port(port: &str, name: &str, pnp: &str) -> SerialPortInfo {
         SerialPortInfo {

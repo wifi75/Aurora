@@ -42,7 +42,9 @@ export function isSerialPort(port: string): boolean {
   return /^com\d+$/i.test(port) || /^\/dev\//i.test(port);
 }
 
-const PORT = /^[A-Za-z0-9_\-.:/\\]{1,64}$/;
+// come in rig-control (hamlib.rs, token_valid): fino a 64 caratteri, fino a 255 per i percorsi /dev/ di Linux e macOS
+const PORT_CHARS = /^[A-Za-z0-9_\-.:/\\]+$/;
+const PORT = { test: (p: string) => PORT_CHARS.test(p) && p.length <= (p.startsWith('/dev/') ? 255 : 64) };
 
 /**
  * I controlli che fa anche il core: il codice dell'errore (lo stesso del core) o `null` se i valori vanno.

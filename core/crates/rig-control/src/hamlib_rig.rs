@@ -563,6 +563,8 @@ impl Inner {
                 return;
             }
             let wait = self.timing.reconnect_step;
+            // nel registro il motivo intero (le righe di rigctld): a schermo resta il messaggio breve
+            tracing::warn!("CAT: collegamento con rigctld non riuscito: {}", e.0);
             self.update(|s| {
                 s.state = LinkState::Error;
                 s.message = format!("{} Nuovo tentativo tra {} s.", friendly_error(&e.0), wait.as_secs_f32().ceil());

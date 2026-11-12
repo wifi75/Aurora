@@ -57,8 +57,14 @@ pub fn rigctld_args(config: &RigctldConfig, tcp_port: u16) -> Result<Vec<String>
 }
 
 pub(crate) fn check_token(text: &str, what: &str) -> Result<(), RigError> {
-    let ok = !text.is_empty() && text.len() <= 64 && text.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':' | '/' | '\\'));
-    ok.then_some(()).ok_or_else(|| RigError(format!("{what} non valido per rigctld: {text:?}")))
+    token_valid(text).then_some(()).ok_or_else(|| RigError(format!("{what} non valido per rigctld: {text:?}")))
+}
+
+/// Un valore che si puo' passare a rigctld: niente spazi ne' caratteri strani, al massimo 64 caratteri. I percorsi di Linux e macOS
+/// (`/dev/serial/by-id/usb-Silicon_Labs_CP2102_..._0001-if00-port0`) spesso sono piu' lunghi: per quelli fino a 255.
+pub(crate) fn token_valid(text: &str) -> bool {
+    let max = if text.starts_with("/dev/") { 255 } else { 64 };
+    !text.is_empty() && text.len() <= max && text.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | ':' | '/' | '\\'))
 }
 
 /// Il codice di una risposta `RPRT n`: `Ok` se 0, errore di Hamlib altrimenti; `None` se la riga non e' un `RPRT`.
@@ -484,7 +490,8 @@ impl Rigctld {
             });
         }
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, tcp_port));
-        let deadline = Instant::now() + Duration::from_secs(6);
+        // Hamlib 4.5 (Debian 12) apre la radio prima di mettersi in ascolto: una Icom a 4800 baud puo' metterci diversi secondi
+        let deadline = Instant::now() + Duration::from_secs(15);
         let client = loop {
             match RigctldClient::connect(addr, Duration::from_millis(250)) {
                 Ok(client) => break Ok(client),
@@ -496,7 +503,9 @@ impl Rigctld {
                         break Err(RigError(format!("rigctld si e' fermato ({status}): {tail}")));
                     }
                     if Instant::now() >= deadline {
-                        break Err(e);
+                        // quello che rigctld ha scritto (es. «rig_open: error = ...») dice il motivo vero meglio di «non risponde»
+                        let tail = stderr_tail.lock().map(|l| l.join(" | ")).unwrap_or_default();
+                        break Err(if tail.is_empty() { e } else { RigError(format!("{} (rigctld: {tail})", e.0)) });
                     }
                 }
             }
