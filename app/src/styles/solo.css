@@ -154,9 +154,9 @@
 .dock-grip:has(.dock-detach-host) .dock-grip-extra--right { right: 1.8rem; }
 .dock-detach-host { z-index: 2; }
 
-/* Impostazioni › Audio: cursore del volume di Windows del dispositivo */
-.dev-vol { display: flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0; }
-.dev-vol label { flex: none; }
+/* Impostazioni › Audio: cursore del volume del dispositivo; su una finestra stretta il cursore va a capo sotto il nome invece di uscire dal riquadro */
+.dev-vol { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; min-width: 0; padding: 0.25rem 0; }
+.dev-vol label { flex: 0 1 auto; min-width: 0; }
 .dev-vol input[type='range'] { flex: 1; min-width: 6rem; accent-color: var(--accent); }
 .dev-vol-val { flex: none; width: 3rem; text-align: right; }
 .dev-vol-auto { flex: none; font-size: 0.7rem; }

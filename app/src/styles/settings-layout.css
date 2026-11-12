@@ -1686,6 +1686,54 @@
   column-gap: 0.6rem;
 }
 
+/*
+ * Radio > Collegamento nella finestra delle Impostazioni: quante colonne dipende dalla larghezza del riquadro, non da quella dello schermo.
+ * Con lo schermo a 1024 px le tre colonne fisse erano piu' strette delle caselle (larghezza minima 14 rem, nome su una riga): «Porta» usciva
+ * dalla sua cella e copriva «Velocità», la tendina «Radio» finiva tagliata. Ora al massimo tre colonne, poi due, poi una, e ogni casella
+ * resta dentro la sua cella.
+ */
+.sw-panel .sx-cells.cat-link {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(15rem, calc((100% - 46px) / 3))), 1fr));
+}
+
+.sw-panel .sx-cells.cat-link > .sx-field,
+.sw-panel .sx-cells.cat-link > .sx-field .sx-control {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sw-panel .sx-cells.cat-link > .sx-field .sx-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* l'avviso sotto l'indirizzo CI-V va a capo sotto la casella invece di allargare la cella */
+.sw-panel .sx-cells.cat-link > .sx-field .sx-control {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.cat-link .cat-civ-hex {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* fuori dalla finestra (telefono): la cella non supera mai la riga e le larghezze minime non superano la cella */
+.cat-link > .sx-field {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.cat-link .cat-w-l .sx-control {
+  min-width: min(14rem, 100%);
+}
+
+.cat-link .cat-w-m .sx-control,
+.cat-link .cat-w-s .sx-control {
+  min-width: min(11.5rem, 100%);
+}
+
 /* Aggiornamenti: la versione nuova si vede subito, stella gialla e targhetta NEW */
 .upd-new {
   display: inline-flex;
