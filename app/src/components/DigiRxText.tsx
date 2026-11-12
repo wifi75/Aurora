@@ -4,12 +4,13 @@ import type React from 'react';
  * Il testo della finestra di ricezione dei modi testuali: le righe trasmesse (iniziano con «» ») sottolineate se richiesto, i caratteri
  * incerti (RTTY: probabilita' sotto 0,9, `weak` con '1' alla stessa posizione) in chiaro.
  */
-export function DigiRxText({ text, weak, underlineSent }: { text: string; weak: string; underlineSent: boolean }): React.ReactNode {
+export function DigiRxText({ text, weak, underlineSent, showSent = true }: { text: string; weak: string; underlineSent: boolean; /** Spento: le righe trasmesse non si mostrano (restano nella finestra di trasmissione). */ showSent?: boolean }): React.ReactNode {
   let offset = 0;
   return text.split('\n').map((line, i, all) => {
     const nl = i < all.length - 1 ? '\n' : '';
     const body = withWeak(line, weak.slice(offset, offset + line.length));
     offset += line.length + 1;
+    if (!showSent && line.startsWith('»')) return null;
     return underlineSent && line.startsWith('» ') ? (
       <u key={i} className="digi-sent">
         {body}

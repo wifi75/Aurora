@@ -53,10 +53,10 @@ export function afterTransmission(box: string, p: TxProgress, done: boolean): st
  * Lo stato della finestra di trasmissione durante una trasmissione a flusso: segue gli eventi `tx_sent`, toglie il testo partito alla
  * fine e porta al motore quello che si scrive mentre si trasmette (`edit`).
  */
-export function useDigiTxLive(box: string, setBox: (next: string | ((prev: string) => string)) => void) {
+export function useDigiTxLive(box: string, setBox: (next: string | ((prev: string) => string)) => void, onSent?: (text: string) => void) {
   const [progress, setProgress] = useState<TxProgress>(TX_NONE);
-  const live = useRef({ box, progress });
-  live.current = { box, progress };
+  const live = useRef({ box, progress, onSent });
+  live.current = { box, progress, onSent };
 
   useEffect(
     () =>
@@ -67,6 +67,10 @@ export function useDigiTxLive(box: string, setBox: (next: string | ((prev: strin
         } else if (ev.kind === 'tx' && ev.state && ev.state !== 'sending') {
           const p = live.current.progress;
           if (p.queued > 0 || p.sent > 0) {
+            // il testo partito esce dalla casella e va nello storico della finestra di trasmissione
+            const before = live.current.box;
+            const rest = afterTransmission(before, p, ev.state === 'done');
+            live.current.onSent?.(before.slice(0, before.length - rest.length));
             setBox((b) => afterTransmission(b, p, ev.state === 'done'));
             setProgress(TX_NONE);
           }

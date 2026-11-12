@@ -60,6 +60,8 @@ interface Views {
   statusBar: boolean;
   /** Opzioni della Vista. */
   underlineSent: boolean;
+  /** Il testo trasmesso compare anche nella finestra di ricezione (di base no: resta nella finestra di trasmissione). */
+  echoRx?: boolean;
   capsOnly: boolean;
   slashedZero: boolean;
   flashTx: boolean;
@@ -141,7 +143,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
   // trasmissione a flusso: quanto del testo della finestra e' in coda e quanto e' gia' partito
-  const txLive = useDigiTxLive(tx, setTx);
+  // quello che e' gia' partito via radio: resta nella finestra di trasmissione, sopra la casella (al piu' gli ultimi 4000 caratteri)
+  const [txSent, setTxSent] = useState('');
+  const txSentBox = useRef<HTMLDivElement>(null);
+  const addSent = useCallback((sent: string) => {
+    const line = sent.trim();
+    if (line !== '') setTxSent((h) => (h === '' ? line : `${h}\n${line}`).slice(-4000));
+  }, []);
+  const txLive = useDigiTxLive(tx, setTx, addSent);
+  useEffect(() => {
+    if (txSentBox.current) txSentBox.current.scrollTop = txSentBox.current.scrollHeight;
+  }, [txSent]);
   const txLiveRef = useRef({ tx, txLive });
   txLiveRef.current = { tx, txLive };
   // larghezza del log di lato (si allarga trascinando il bordo), ricordata fra un avvio e l'altro
@@ -689,13 +701,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const onKey = (e: KeyboardEvent) => {
       if (editing !== null || settingsOpen || rttyOpen) return;
       if (e.key === 'Escape') {
-        // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) mette anche in pausa il CQ automatico, che resta
-        // acceso e riparte quando lo si ripreme
+        // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) spegne anche il CQ automatico (scelta del
+        // proprietario: non resta in pausa, per ripartire si ripreme Auto CQ)
         const now = Date.now();
         const twice = now - lastEsc.current < 600;
         lastEsc.current = twice ? 0 : now;
-        if (twice && autoCq && !autoCqPaused) {
-          setAutoCqPaused(true);
+        if (twice && autoCq) {
+          setAutoCq(false);
+          setAutoCqPaused(false);
           toast(t('digi.run.autoCqPaused'), 'info');
         }
         if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
@@ -803,7 +816,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       label: t('digi.menu.edit'),
       items: [
         { label: t('digi.mi.clearRx'), onSelect: () => clearDigiText() },
-        { label: t('digi.mi.clearTx'), onSelect: () => setTx('') },
+        { label: t('digi.mi.clearTx'), onSelect: () => { setTx(''); setTxSent(''); } },
         'sep',
         { label: t('digi.mi.copyRx'), onSelect: copyRx },
       ],
@@ -902,6 +915,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.band.view'), checked: views.signals, onSelect: () => setView({ signals: !views.signals }) },
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
         'sep' as const,
+        { label: t('digi.mi.echoRx'), checked: views.echoRx === true, onSelect: () => setView({ echoRx: !(views.echoRx === true) }) },
         { label: t('digi.mi.underlineSent'), checked: views.underlineSent, onSelect: () => setView({ underlineSent: !views.underlineSent }) },
         { label: t('digi.mi.capsOnly'), checked: views.capsOnly, onSelect: () => setView({ capsOnly: !views.capsOnly }) },
         { label: t('digi.mi.slashedZero'), checked: views.slashedZero, onSelect: () => setView({ slashedZero: !views.slashedZero }) },
@@ -1028,10 +1042,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
               if (word && isCallsign(word)) takeCall(word);
             }}>
-            {text === '' ? null : <DigiRxText text={text} weak={weak} underlineSent={views.underlineSent} />}
+            {text === '' ? null : <DigiRxText text={text} weak={weak} underlineSent={views.underlineSent} showSent={views.echoRx === true} />}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
+            {txSent !== '' ? (
+              <div ref={txSentBox} className={`digi-txhist${views.slashedZero ? ' digi-zero' : ''}`} aria-label={t('digi.tx.sentTitle')} title={t('digi.tx.sentTitle')}>
+                {txSent}
+              </div>
+            ) : null}
             <DigiTxBox
               boxRef={txBox}
               className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
@@ -1126,7 +1145,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }), rxWpm, onTxAtRx: txAtRx } : undefined}
           modeName={MODE_NAMES[s.mode]}
           onModeClick={s.mode === 'rtty' ? () => setRttyOpen(true) : undefined}
-          onToggleTx={toggleTx}
+          onToggleTx={() => {
+            // il tasto RX/TX della barra in basso premuto mentre si trasmette ferma subito la trasmissione (come Esc); da fermi la apre
+            if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
+            else toggleTx();
+          }}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
           onToggleAfc={() => toggleSetting('afc', 'toggle')}
           onToggleLock={() => toggleSetting('lock', 'toggle')}
