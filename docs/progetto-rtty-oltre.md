@@ -229,3 +229,11 @@ delle lettere della fila delle cifre (Q W E R T Y U I O P: «TOO» invece di «5
 da −0,11 a +0,09 dB, CER medio giu' in tutti gli scenari (−0,12 … −0,78 punti). Tenuto, di base (`set_prior`). Il prezzo: il testo esce
 a parole intere invece che carattere per carattere. Il testo delle prove e' di tipo QSO (numeri e nominativi frequenti): su un testo
 senza numeri il guadagno sara' minore. Il modello dello scambio di un contest (da `contest::Regole`) resta da collegare.
+
+**Passo 13** (ripetizioni combinate): si ricordano le ultime 8 parole di almeno 4 caratteri con i valori morbidi dei bit; una parola della
+stessa lunghezza con almeno il 70 % dei caratteri uguali e' una ripetizione («IU3ABC IU3ABC», «599 599»), e per ogni posizione si sommano
+i valori delle due copie (con due copie il rumore pesa la meta'); un carattere incerto (sotto 0,9) si cambia se la somma e' piu' sicura
+di lui, e la copia combinata resta in memoria per la ripetizione seguente. La prima versione (60 % uguali, 3 caratteri, ogni carattere
+cambiabile) peggiorava il CER medio di 0,1-0,3 punti: il rumore fa parole corte che si somigliano. Rispetto al passo 12: soglie da −0,13 a
++0,02 dB, CER medio da −0,12 a −0,01 punti; tenuto, di base (`set_repeats`). La pila dei nominativi (fusione dei nominativi simili anche
+non ripetuti di seguito) non e' fatta: la memoria delle ripetizioni ne copre la parte piu' utile.

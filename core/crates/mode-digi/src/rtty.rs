@@ -580,6 +580,11 @@ struct Frame {
 
 /// Quanto un'interpretazione deve superare quella letta (in nat: probabilita' dei codici piu' modello del testo) per cambiarla.
 const SHIFT_MARGIN: f32 = 1.0;
+/// Ripetizioni combinate (passo 13): parole ricordate e quanti decimi dei caratteri devono coincidere perche' una parola sia una
+/// ripetizione.
+const REPEAT_MEMORY: usize = 8;
+const REPEAT_AGREE: usize = 7;
+
 /// Parola trattenuta al massimo (caratteri), e dopo quanti bit dall'ultimo carattere esce comunque (il seguente arriverebbe dopo 18,5).
 const WORD_MAX: usize = 12;
 const WORD_WAIT_BITS: f64 = 20.0;
@@ -971,6 +976,9 @@ pub struct RttyDemodulator {
     /// Passo 12: la parola trattenuta per le correzioni di registro, quando e' arrivato il suo ultimo carattere e il modello del testo.
     word: Vec<Frame>,
     word_t: f64,
+    /// Passo 13: le ultime parole (con i valori morbidi dei bit) per combinare le ripetizioni, se accese.
+    recent: Vec<Vec<Frame>>,
+    repeats: bool,
     prior: Option<Box<dyn TextPrior + Send>>,
     charset: RttyCharset,
     last_char: char,
@@ -1073,6 +1081,8 @@ impl RttyDemodulator {
             cyrillic: false,
             word: Vec::new(),
             word_t: 0.0,
+            recent: Vec::new(),
+            repeats: true,
             prior: None,
             charset: RttyCharset::Ita2,
             last_char: '\0',
@@ -1502,7 +1512,10 @@ impl RttyDemodulator {
 
     /// Decide la parola trattenuta e la stampa.
     fn word_flush(&mut self, out: &mut Vec<RttyChar>) {
-        let word = std::mem::take(&mut self.word);
+        let mut word = std::mem::take(&mut self.word);
+        if self.repeats {
+            self.combine_repeats(&mut word);
+        }
         let codes: Vec<u8> = word.iter().map(|f| f.code).collect();
         let mut best = codes.clone();
         if let Some(prior) = &self.prior {
@@ -1556,6 +1569,59 @@ impl RttyDemodulator {
             self.data_prob = if code == f.code { f.prob() } else { f.prob_of(code) };
             self.emit(out);
         }
+    }
+
+    /// Ripetizioni combinate (passo 13): se la parola ripete una delle ultime (stessa lunghezza, almeno 3 caratteri, la maggior parte
+    /// uguali), per ogni posizione si sommano i valori morbidi dei bit delle due copie e il carattere si decide sulla somma: con due copie
+    /// il rumore pesa la meta'. La copia combinata resta in memoria e si somma alla prossima ripetizione.
+    fn combine_repeats(&mut self, word: &mut [Frame]) {
+        let n = word.len();
+        if n >= 4 {
+            let found = self.recent.iter().rposition(|old| {
+                old.len() == n && old.iter().zip(word.iter()).filter(|(a, b)| a.code == b.code).count() * 10 >= n * REPEAT_AGREE
+            });
+            if let Some(i) = found {
+                let old = self.recent.remove(i);
+                let mut changed = 0;
+                let mut combined = Vec::with_capacity(n);
+                for (o, w) in old.iter().zip(word.iter()) {
+                    let mut f = *w;
+                    for k in 0..7 {
+                        f.sums[k] = o.sums[k] + w.sums[k];
+                    }
+                    f.code = (0..5).fold(0, |c, k| if f.sums[k + 1] > 0.0 { c | 1 << k } else { c });
+                    combined.push(f);
+                }
+                for (w, c) in word.iter_mut().zip(combined.iter()) {
+                    if w.code != c.code {
+                        changed += 1;
+                    }
+                }
+                // si corregge solo poco: se cambierebbero quasi tutti i caratteri non era una ripetizione
+                if changed * 10 <= n * 4 {
+                    for (w, c) in word.iter_mut().zip(combined.iter()) {
+                        // si cambia solo un carattere incerto, e solo se la somma delle due copie e' piu' sicura di lui
+                        if w.code != c.code && w.prob() < WEAK_PROB && c.prob() > w.prob() {
+                            w.code = c.code;
+                        }
+                    }
+                }
+                self.recent.push(combined);
+                return;
+            }
+        }
+        if n >= 4 {
+            self.recent.push(word.to_vec());
+            if self.recent.len() > REPEAT_MEMORY {
+                self.recent.remove(0);
+            }
+        }
+    }
+
+    /// Le ripetizioni combinate (passo 13, accese alla creazione; valgono con il modello del testo, che trattiene le parole).
+    pub fn set_repeats(&mut self, on: bool) {
+        self.repeats = on;
+        self.recent.clear();
     }
 
     /// Il modello del testo per le correzioni di registro (passo 12); `None` le spegne. Di base [`HamPrior`].
