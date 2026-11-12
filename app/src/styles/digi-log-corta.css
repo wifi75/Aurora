@@ -215,3 +215,10 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-log-table--completa table.mv-grid td { border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
 .digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
 .digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
+
+/* Tendine della barra di stato (Shift, Baud, Banda CW): il testo prende il colore della casella, chiaro col tema scuro e scuro col chiaro;
+   prima restava nero anche sul fondo blu scuro e non si leggeva */
+.digi-status .digi-st--select select { color: inherit; font: inherit; color-scheme: dark; }
+.digi-status .digi-st--select select option { background: #1a2848; color: #dbe5ff; }
+html[data-theme='light'] .digi-status .digi-st--select select { color-scheme: light; }
+html[data-theme='light'] .digi-status .digi-st--select select option { background: #ffffff; color: #0b1322; }
