@@ -12,6 +12,10 @@ import {
   getCatModels,
   getCatPorts,
   putCat,
+  searchCat4om,
+  type Cat4omFoundGroup,
+  type Cat4omFoundRadio,
+  type Cat4omSearch,
   type CatCandidate,
   type CatConfig,
   type CatDetection,
@@ -134,6 +138,75 @@ function Detected({ detection, onUse }: { detection: CatDetection; onUse(c: CatC
   );
 }
 
+/** Lo stato di una radio di Cat4OM (`connectionStatus`, insieme aperto: un valore nuovo si mostra com'e'). */
+const CAT4OM_STATUS: Record<string, Key> = {
+  connected: 'cat.cat4om.st.connected',
+  disconnected: 'cat.cat4om.st.disconnected',
+  connecting: 'cat.cat4om.st.connecting',
+  reconnecting: 'cat.cat4om.st.connecting',
+  no_response: 'cat.cat4om.st.noResponse',
+  stopped: 'cat.cat4om.st.stopped',
+  unknown: 'cat.cat4om.st.unknown',
+};
+
+const sameName = (written: string | undefined, ...names: string[]) => {
+  const w = (written ?? '').trim().toLowerCase();
+  return w !== '' && names.some((n) => n.toLowerCase() === w);
+};
+
+/** I gruppi e le radio di Cat4OM trovati da «Cerca»: «Usa» scrive gruppo e radio nella bozza (si applicano da soli, come ogni modifica). */
+function Cat4omFound({ found, config, onUse }: { found: Cat4omSearch; config: CatConfig; onUse(g: Cat4omFoundGroup, r: Cat4omFoundRadio): void }) {
+  const t = useT();
+  return (
+    <div className="cat-cat4om-found" role="region" aria-label={t('cat.cat4om.found')}>
+      {found.management_error ? <Message kind="muted">{coreText(found.management_error, t)}</Message> : null}
+      {found.groups.length === 0 ? <p className="muted">{t('cat.cat4om.found.none')}</p> : null}
+      {found.groups.map((g) => {
+        const where = [g.running ? t('cat.cat4om.group.running', { port: g.control }) : t('cat.cat4om.group.stopped')];
+        if (g.manual) where.push(t('cat.cat4om.group.manual'));
+        if (g.audio) where.push(t('cat.cat4om.audio'));
+        const groupChosen = (config.cat4om_group ?? '').trim() === '' || sameName(config.cat4om_group, g.id, g.name);
+        return (
+          <div key={`${g.id}|${g.control}`}>
+            <p>
+              <strong>{g.name || g.id || g.control}</strong>
+              {g.id && g.name && g.id !== g.name ? ` (${g.id})` : ''} <span className="muted">— {where.join(' · ')}</span>
+            </p>
+            {g.error ? <Message kind="alert">{coreText(g.error, t)}</Message> : null}
+            {g.id && g.radios.length === 0 && !g.error ? <p className="muted">{t('cat.cat4om.found.noRadios')}</p> : null}
+            {g.id && g.radios.length > 0 ? (
+              <ul className="cat-detected">
+                {g.radios.map((r) => {
+                  const chosen = groupChosen && sameName(config.cat4om_radio, r.id, r.name);
+                  const status = CAT4OM_STATUS[r.status];
+                  const audio = [r.audio_rx ? 'RX' : '', r.audio_tx ? 'TX' : ''].filter(Boolean).join('/');
+                  return (
+                    <li key={r.id}>
+                      <div>
+                        <strong>{r.name}</strong>
+                        {r.name !== r.id ? <span className="muted"> ({r.id})</span> : null}
+                        {r.model ? ` — ${r.model}` : ''}
+                        <div className="muted">
+                          {status ? t(status) : r.status}
+                          {r.claimed_by ? ` · ${t('cat.cat4om.claimed', { by: r.claimed_by })}` : ''}
+                          {audio ? ` · ${t('cat.cat4om.audio')} ${audio}` : ''}
+                        </div>
+                      </div>
+                      <button type="button" className={`glass${chosen ? ' glass--on' : ''}`} aria-pressed={chosen} onClick={() => onUse(g, r)}>
+                        {chosen ? t('cat.cat4om.inUse') : t('cat.cat4om.use')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Le impostazioni consigliate per una radio nota: cosa mettere in Aurora (con il pulsante che le scrive), nella radio e in Audio. */
 function Preset({ preset, config, onApply }: { preset: RigPreset; config: CatConfig; onApply(): void }) {
   const t = useT();
@@ -193,6 +266,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
   const [profileName, setProfileName] = useState('');
   const [picked, setPicked] = useState('');
   const [detection, setDetection] = useState<CatDetection | null>(null);
+  const [cat4omFound, setCat4omFound] = useState<Cat4omSearch | null>(null);
 
   const config: CatConfig | null = draft ?? snap.data?.config ?? null;
   const hamlib = config?.backend === 'hamlib';
@@ -271,6 +345,20 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
     onError: failed,
   });
 
+  // «Cerca» di Cat4OM: con i valori scritti nella pagina (anche non ancora applicati), senza toccare il collegamento in uso
+  const cat4omSearch = useMutation({
+    mutationFn: (c: CatConfig) => searchCat4om({ management: c.cat4om_management ?? '', address: c.cat4om_address ?? '', key: c.cat4om_key ?? '' }),
+    onSuccess: (found) => {
+      setProblem('');
+      setNote('');
+      setCat4omFound(found);
+    },
+    onError: (e) => {
+      setCat4omFound(null);
+      failed(e);
+    },
+  });
+
   const modelList = useMemo(() => models.data ?? [], [models.data]);
   const shown = useMemo(() => {
     const found = filterModels(modelList, search).slice(0, 300);
@@ -288,6 +376,12 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
   const preset = hamlib ? presetFor(config.rig_name) : undefined;
   // Cat4OM: gruppo e porta Control trovati dalla scoperta (suggeriti nei campi lasciati vuoti)
   const discovered = snap.data.status.backend === 'cat4om' && snap.data.status.cat4om?.discovered ? snap.data.status.cat4om : undefined;
+  // un gruppo trovato dalla gestione si collega con la scoperta: la porta Control scritta a mano (di un altro gruppo) si toglie
+  const pickCat4om = (g: Cat4omFoundGroup, r: Cat4omFoundRadio) => {
+    set({ cat4om_group: g.id, cat4om_radio: r.id, ...(g.manual ? {} : { cat4om_address: '' }) });
+    setProblem('');
+    setNote(t('cat.cat4om.picked', { group: g.id, radio: r.id }));
+  };
   const useCandidate = (c: CatCandidate) => {
     setDraft(applyCandidate(config, c, modelForCandidate(modelList, c)));
     setNote(t('cat.detected.pick'));
@@ -421,6 +515,11 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
                 onChange={(e) => set({ cat4om_radio: e.target.value.trim() })}
               />
             </Field>
+            <Cell hint={t('tip.cat.cat4om.search')}>
+              <button type="button" className="glass" disabled={cat4omSearch.isPending} onClick={() => cat4omSearch.mutate(config)}>
+                {cat4omSearch.isPending ? t('cat.cat4om.searching') : t('cat.cat4om.search')}
+              </button>
+            </Cell>
           </>
         ) : null}
         {fields.rig ? (
@@ -547,6 +646,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           </Cell>
         ) : null}
       </Cells>
+      {fields.cat4om && cat4omFound ? <Cat4omFound found={cat4omFound} config={config} onUse={pickCat4om} /> : null}
       {fields.rig ? <Message kind="muted">{models.isLoading ? t('cat.rig.loading') : models.isError ? t('cat.rig.failed') : t('cat.rig.count', { n: modelList.length })}</Message> : null}
       <datalist id="cat-ports">
         {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (

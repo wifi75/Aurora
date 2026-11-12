@@ -130,6 +130,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/cat/ports", get(crate::cat::cat_ports))
         .route("/api/v1/cat/detect", post(crate::cat::cat_detect))
         .route("/api/v1/cat/extra", post(crate::cat::cat_extra))
+        .route("/api/v1/cat/cat4om/search", post(crate::cat::cat_cat4om_search))
         .route("/api/v1/cat/split-dx", get(crate::cat::cat_split_dx_get).post(crate::cat::cat_split_dx_set).delete(crate::cat::cat_split_dx_clear))
         .route("/api/v1/sstv", get(crate::sstv_api::sstv_get).put(crate::sstv_api::sstv_put))
         .route("/api/v1/sstv/rx/start", post(crate::sstv_api::sstv_rx_start))

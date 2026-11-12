@@ -16,9 +16,10 @@ vi.mock('../api/client', async (original) => {
     getCatPorts: vi.fn(),
     detectCat: vi.fn(),
     restoreHamlib: vi.fn(),
+    searchCat4om: vi.fn(),
   };
 });
-import { ApiError, catProfile, connectCat, detectCat, disconnectCat, getCat, getCatModels, getCatPorts, putCat, restoreHamlib, type CatSnapshot } from '../api/client';
+import { ApiError, catProfile, connectCat, detectCat, disconnectCat, getCat, getCatModels, getCatPorts, putCat, restoreHamlib, searchCat4om, type CatSnapshot } from '../api/client';
 import { DEFAULT_CAT } from '../lib/cat';
 import { CatTab } from './CatTab';
 
@@ -176,6 +177,57 @@ describe('CatTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Applica' }));
     await waitFor(() => expect(putCat).toHaveBeenCalled());
     expect(vi.mocked(putCat).mock.calls[0]![0]).toMatchObject({ model: 1029, port: 'COM5', baud: 38400 });
+  });
+
+  it('searches the Cat4OM groups and radios and puts the chosen one in the fields', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...idle, status: { ...idle.status, backend: 'cat4om' }, config: { ...DEFAULT_CAT, backend: 'cat4om', cat4om_address: '127.0.0.1:5009' } });
+    vi.mocked(searchCat4om).mockReset().mockResolvedValue({
+      management: '127.0.0.1:17300',
+      management_error: '',
+      groups: [
+        {
+          id: 'group-1',
+          name: 'Group 1',
+          control: '127.0.0.1:5001',
+          running: true,
+          manual: false,
+          audio: true,
+          error: '',
+          radios: [
+            { id: 'kenwood/ts-990', name: 'TS-990', model: 'Kenwood TS-990', status: 'connected', claimed_by: null, audio_rx: true, audio_tx: true },
+            { id: 'ft991', name: 'ft991', model: '', status: 'no_response', claimed_by: 'hamlib', audio_rx: null, audio_tx: null },
+          ],
+        },
+        { id: 'locked', name: 'locked', control: '127.0.0.1:5002', running: true, manual: false, audio: null, error: 'Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio', radios: [] },
+        { id: 'spare', name: 'spare', control: '', running: false, manual: false, audio: null, error: '', radios: [] },
+      ],
+    });
+    render(<CatTab />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cerca' }));
+    const list = await screen.findByRole('region', { name: 'Gruppi e radio di Cat4OM' });
+    expect(searchCat4om).toHaveBeenCalledWith({ management: '127.0.0.1:17300', address: '127.0.0.1:5009', key: '' });
+    expect(within(list).getByText(/in funzione, porta Control 127\.0\.0\.1:5001 · audio in rete/)).toBeInTheDocument();
+    expect(within(list).getByText(/collegata · audio in rete RX\/TX/)).toBeInTheDocument();
+    expect(within(list).getByText(/non risponde · presa da hamlib/)).toBeInTheDocument();
+    expect(within(list).getByText(/Cat4OM chiede la chiave del gruppo/)).toBeInTheDocument();
+    expect(within(list).getByText(/fermo: Aurora lo avvia al collegamento/)).toBeInTheDocument();
+    fireEvent.click(within(list).getAllByRole('button', { name: 'Usa' })[0]!);
+    expect(await screen.findByText(/Gruppo «group-1» e radio «kenwood\/ts-990» scelti/)).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: 'Scelta' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Applica' }));
+    // il gruppo trovato dalla gestione si collega con la scoperta: la porta scritta a mano si toglie
+    await waitFor(() => expect(putCat).toHaveBeenCalledWith(expect.objectContaining({ cat4om_group: 'group-1', cat4om_radio: 'kenwood/ts-990', cat4om_address: '' })));
+  });
+
+  it('says why the Cat4OM search failed', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...idle, status: { ...idle.status, backend: 'cat4om' }, config: { ...DEFAULT_CAT, backend: 'cat4om' } });
+    vi.mocked(searchCat4om)
+      .mockReset()
+      .mockRejectedValue(new ApiError(502, 'cat4om_search', undefined, 'Gestione di Cat4OM non raggiungibile su 127.0.0.1:17300: avvia Log4OM e Cat4OM; da un altro PC abilita la rete in Settings → SERVER (rifiutato)'));
+    render(<CatTab />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Cerca' }));
+    expect(await screen.findByText(/Gestione di Cat4OM non raggiungibile su 127\.0\.0\.1:17300/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Gruppi e radio di Cat4OM' })).toBeNull();
   });
 
   it('says so when nothing is found', async () => {

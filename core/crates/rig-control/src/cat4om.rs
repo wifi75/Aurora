@@ -312,6 +312,9 @@ pub struct RadioView {
     /// Il profilo di emulazione (TCI, Hamlib) che tiene la radio: i comandi nativi sono rifiutati.
     pub bridge_controlled_by: Option<String>,
     pub metering: Value,
+    /// `audioCaptureAvailable` / `audioTransmitAvailable`: l'audio in rete e' configurato per la radio (non che il dispositivo sia vivo).
+    pub audio_capture: Option<bool>,
+    pub audio_transmit: Option<bool>,
 }
 
 impl RadioView {
@@ -353,6 +356,8 @@ impl RadioView {
             frequency_active_only,
             bridge_controlled_by: text(v, "bridgeControlledBy").filter(|b| !b.trim().is_empty()),
             metering: v.get("metering").cloned().unwrap_or(Value::Null),
+            audio_capture: v.get("audioCaptureAvailable").and_then(Value::as_bool),
+            audio_transmit: v.get("audioTransmitAvailable").and_then(Value::as_bool),
             active_vfo,
             vfos,
             id,
@@ -582,6 +587,14 @@ impl Default for Cat4omTiming {
     }
 }
 
+/// Le attese sul WebSocket fuori dal giro del collegamento (handshake, gestione, ricerca): quanto aspettare e quando smettere.
+#[derive(Clone, Copy)]
+struct Waits<'a> {
+    handshake: Duration,
+    request: Duration,
+    stop: &'a AtomicBool,
+}
+
 /// L'esito di una richiesta.
 #[derive(Debug, Clone, PartialEq)]
 enum CallError {
@@ -654,6 +667,10 @@ struct Inner {
 }
 
 impl Inner {
+    fn waits(&self) -> Waits<'_> {
+        Waits { handshake: self.timing.handshake, request: self.timing.request, stop: &self.stop }
+    }
+
     fn update(&self, edit: impl FnOnce(&mut RigStatus)) {
         if let Ok(mut s) = self.status.lock() {
             edit(&mut s);
@@ -1327,20 +1344,23 @@ fn would_block(e: &tungstenite::Error) -> bool {
 /// `hello` e attesa del `welcome` (il primo messaggio del server). L'errore e' il testo per l'utente.
 fn handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>, address: &str) -> Result<Welcome, String> {
     let hello = hello_message(env!("CARGO_PKG_VERSION"), &inner.key, SystemTime::now());
+    let welcome = control_handshake(inner.waits(), ws, address, &hello)?;
+    if welcome.client_id.is_empty() {
+        return Err(not_control(address));
+    }
+    Ok(welcome)
+}
+
+/// Manda l'`hello` dato e aspetta il `welcome` del Control (il collegamento, oppure la ricerca che entra come osservatore).
+fn control_handshake(w: Waits<'_>, ws: &mut WebSocket<TcpStream>, address: &str, hello: &Value) -> Result<Welcome, String> {
     ws.send(Message::text(hello.to_string())).map_err(|e| not_answering(address, &e.to_string()))?;
-    let deadline = Instant::now() + inner.timing.handshake;
-    while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
+    let deadline = Instant::now() + w.handshake;
+    while Instant::now() < deadline && !w.stop.load(Ordering::SeqCst) {
         match ws.read() {
             Ok(Message::Text(text)) => {
                 return match parse_message(text.as_str()) {
-                    Some(Incoming::Welcome(w)) if w.endpoint == "control" || w.endpoint.is_empty() => {
-                        if !same_major(&w.protocol_version) {
-                            Err(VERSION_MISMATCH.into())
-                        } else if w.client_id.is_empty() {
-                            Err(not_control(address))
-                        } else {
-                            Ok(w)
-                        }
+                    Some(Incoming::Welcome(welcome)) if welcome.endpoint == "control" || welcome.endpoint.is_empty() => {
+                        if same_major(&welcome.protocol_version) { Ok(welcome) } else { Err(VERSION_MISMATCH.into()) }
                     }
                     Some(Incoming::ManagementWelcome { .. }) => Err(MANAGEMENT_PORT.into()),
                     Some(Incoming::Error(e)) => Err(match e.code.as_str() {
@@ -1416,11 +1436,11 @@ struct Discovered {
 }
 
 /// Una richiesta sulla porta di gestione con la sua risposta. Il collegamento serve solo alla scoperta: le risposte si leggono qui.
-fn management_call(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str, client_id: &str, action: &str, params: Value) -> Result<Value, String> {
+fn management_call(w: Waits<'_>, ws: &mut WebSocket<TcpStream>, management: &str, client_id: &str, action: &str, params: Value) -> Result<Value, String> {
     let id = new_request_id();
     ws.send(Message::text(request_message(&id, client_id, action, None, params))).map_err(|e| management_unreachable(management, &e.to_string()))?;
-    let deadline = Instant::now() + inner.timing.request;
-    while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
+    let deadline = Instant::now() + w.request;
+    while Instant::now() < deadline && !w.stop.load(Ordering::SeqCst) {
         match ws.read() {
             Ok(Message::Text(text)) => {
                 // i push (`serviceStatus`) e le risposte d'altro si ignorano
@@ -1441,15 +1461,15 @@ fn management_call(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &st
             Err(e) => return Err(management_unreachable(management, &e.to_string())),
         }
     }
-    Err(timeout_text(action, inner.timing.request))
+    Err(timeout_text(action, w.request))
 }
 
 /// `hello` sulla porta di gestione (senza chiave: la password di gestione e' un'altra) e attesa del `managementWelcome`; torna il `clientId`.
-fn management_handshake(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -> Result<String, String> {
+fn management_handshake(w: Waits<'_>, ws: &mut WebSocket<TcpStream>, management: &str) -> Result<String, String> {
     let hello = hello_message(env!("CARGO_PKG_VERSION"), "", SystemTime::now());
     ws.send(Message::text(hello.to_string())).map_err(|e| management_unreachable(management, &e.to_string()))?;
-    let deadline = Instant::now() + inner.timing.handshake;
-    while Instant::now() < deadline && !inner.stop.load(Ordering::SeqCst) {
+    let deadline = Instant::now() + w.handshake;
+    while Instant::now() < deadline && !w.stop.load(Ordering::SeqCst) {
         match ws.read() {
             Ok(Message::Text(text)) => {
                 return match parse_message(text.as_str()) {
@@ -1487,16 +1507,17 @@ fn discover(inner: &Inner, management: &str) -> Result<Discovered, String> {
 }
 
 fn discover_on(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -> Result<Discovered, String> {
-    let client_id = management_handshake(inner, ws, management)?;
-    let groups = parse_groups(&management_call(inner, ws, management, &client_id, "getServiceStatus", json!({}))?);
+    let w = inner.waits();
+    let client_id = management_handshake(w, ws, management)?;
+    let groups = parse_groups(&management_call(w, ws, management, &client_id, "getServiceStatus", json!({}))?);
     let mut group = choose_group(&inner.group, &inner.wanted_radio, &groups)?;
     if !group.running || group.control_port.is_none() {
         // un gruppo fermo non ha la porta Control aperta: lo si avvia, come Decodium, e si rilegge lo stato finche' la porta compare
         tracing::info!("Cat4OM: il gruppo «{}» e' fermo, lo avvio", group.id);
-        management_call(inner, ws, management, &client_id, "startGroup", json!({ "groupId": group.id }))?;
+        management_call(w, ws, management, &client_id, "startGroup", json!({ "groupId": group.id }))?;
         let until = Instant::now() + inner.timing.request;
         loop {
-            let groups = parse_groups(&management_call(inner, ws, management, &client_id, "getServiceStatus", json!({}))?);
+            let groups = parse_groups(&management_call(w, ws, management, &client_id, "getServiceStatus", json!({}))?);
             if let Some(again) = groups.into_iter().find(|g| g.id == group.id) {
                 group = again;
             }
@@ -1517,6 +1538,209 @@ fn discover_on(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -
         }
         _ => Err(group_stopped(&group.id)),
     }
+}
+
+// ---------------------------------------------------------------- ricerca di gruppi e radio (pagina Radio, «Cerca»)
+
+/// Una radio trovata dalla ricerca.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FoundRadio {
+    /// `radioId`: va nel campo «Radio».
+    pub id: String,
+    pub name: String,
+    /// Il modello, se il Control lo dice (la gestione no).
+    pub model: String,
+    /// `connectionStatus` del Control o `connectionState` della gestione: `connected`, `disconnected`, `connecting`, `reconnecting`,
+    /// `no_response`, `stopped`, `unknown` (insieme aperto).
+    pub status: String,
+    /// Il profilo di emulazione (TCI, Hamlib) che tiene la radio: finche' c'e' Aurora non la comanda.
+    pub claimed_by: Option<String>,
+    /// Audio in rete configurato in Cat4OM: ricezione e trasmissione (assente = non detto).
+    pub audio_rx: Option<bool>,
+    pub audio_tx: Option<bool>,
+}
+
+impl FoundRadio {
+    fn from_view(v: RadioView) -> FoundRadio {
+        FoundRadio {
+            id: v.id,
+            name: v.name,
+            model: v.model,
+            status: v.connection_status,
+            claimed_by: v.bridge_controlled_by,
+            audio_rx: v.audio_capture,
+            audio_tx: v.audio_transmit,
+        }
+    }
+}
+
+/// Un gruppo trovato dalla ricerca.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct FoundGroup {
+    /// L'`id` del gruppo (va nel campo «Gruppo»); vuoto per una porta Control scritta a mano che non ha risposto.
+    pub id: String,
+    pub name: String,
+    /// La porta Control (`host:porta`); vuota se il gruppo e' fermo.
+    pub control: String,
+    /// Il gruppo e' in funzione; uno fermo lo avvia Aurora al collegamento.
+    pub running: bool,
+    /// Il gruppo viene dalla porta Control scritta a mano, non dalla gestione.
+    pub manual: bool,
+    /// Il Control dichiara l'audio in rete (`audioStreaming`); assente se non interrogato.
+    pub audio: Option<bool>,
+    pub radios: Vec<FoundRadio>,
+    /// Perche' il Control del gruppo non ha dato l'elenco (chiave sbagliata, non raggiungibile...): testo per l'utente, vuoto se va bene.
+    pub error: String,
+}
+
+/// Il risultato di «Cerca».
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Cat4omSearch {
+    pub management: String,
+    /// La gestione non ha risposto ma c'e' una porta Control scritta a mano: l'elenco viene solo da li'.
+    pub management_error: String,
+    pub groups: Vec<FoundGroup>,
+}
+
+/// I tempi della ricerca: brevi, perche' l'operatore aspetta davanti alla pagina.
+pub const SEARCH_TIMEOUT: Duration = Duration::from_secs(3);
+
+/// Le radio di un gruppo come le elenca la gestione (`radios[]` con `connectionState`).
+fn management_radios(group: &Value) -> Vec<FoundRadio> {
+    group
+        .get("radios")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|r| {
+                    let id = text(r, "radioId")?;
+                    Some(FoundRadio {
+                        name: text(r, "radioName").unwrap_or_else(|| id.clone()),
+                        model: String::new(),
+                        status: text(r, "connectionState").unwrap_or_else(|| "unknown".into()),
+                        claimed_by: None,
+                        audio_rx: None,
+                        audio_tx: None,
+                        id,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Quel che dice il Control di un gruppo a chi entra come osservatore.
+struct Probe {
+    group_id: String,
+    radios: Vec<FoundRadio>,
+    audio: bool,
+}
+
+/// Entra nel Control come osservatore (`noRegister`: non conta come programma collegato, non prende il comando, non disturba Log4OM ne'
+/// il collegamento di Aurora), legge il `welcome` con le radio e chiude.
+fn probe_control(w: Waits<'_>, address: &str, key: &str) -> Result<Probe, String> {
+    let mut ws = open(address).map_err(|e| not_answering(address, &e))?;
+    let mut hello = hello_message(env!("CARGO_PKG_VERSION"), key, SystemTime::now());
+    hello["noRegister"] = json!(true);
+    let answer = control_handshake(w, &mut ws, address, &hello);
+    let _ = ws.close(None);
+    let _ = ws.flush();
+    let welcome = answer?;
+    Ok(Probe {
+        audio: welcome.features.iter().any(|f| f == "audioStreaming"),
+        radios: welcome.radios.iter().filter_map(RadioView::from_state).map(FoundRadio::from_view).collect(),
+        group_id: welcome.group_id,
+    })
+}
+
+/// I gruppi dalla gestione, ognuno con le sue radio come le vede la gestione. Non avvia nulla.
+fn management_groups(w: Waits<'_>, management: &str) -> Result<Vec<(GroupInfo, Vec<FoundRadio>)>, String> {
+    let mut ws = open(management).map_err(|e| management_unreachable(management, &e))?;
+    let answer = management_handshake(w, &mut ws, management).and_then(|client_id| management_call(w, &mut ws, management, &client_id, "getServiceStatus", json!({})));
+    let _ = ws.close(None);
+    let _ = ws.flush();
+    let status = answer?;
+    let raw: Vec<Value> = status.get("groups").and_then(Value::as_array).cloned().unwrap_or_default();
+    Ok(parse_groups(&status)
+        .into_iter()
+        .map(|g| {
+            let radios = raw.iter().find(|r| r.get("id").and_then(Value::as_str) == Some(g.id.as_str())).map(management_radios).unwrap_or_default();
+            (g, radios)
+        })
+        .collect())
+}
+
+/// «Cerca» della pagina Radio: i gruppi dalla gestione e, per quelli in funzione, le radio dal loro Control (stato, emulazione che le
+/// tiene, audio in rete). Non cambia il collegamento in uso, non avvia gruppi e non prende il comando di nulla. Con una porta Control
+/// scritta a mano si interroga anche quella (e basta quella se la gestione non risponde). L'errore e' il testo per l'utente.
+pub fn search(management: &str, control_override: Option<&str>, key: &str) -> Result<Cat4omSearch, String> {
+    search_with(management, control_override, key, SEARCH_TIMEOUT)
+}
+
+pub fn search_with(management: &str, control_override: Option<&str>, key: &str, timeout: Duration) -> Result<Cat4omSearch, String> {
+    let stop = AtomicBool::new(false);
+    let w = Waits { handshake: timeout, request: timeout, stop: &stop };
+    let management = management.trim();
+    let management = if management.is_empty() { DEFAULT_CAT4OM_MANAGEMENT } else { management }.to_string();
+    let control_override = control_override.map(str::trim).filter(|c| !c.is_empty());
+    let mut out = Cat4omSearch { management: management.clone(), management_error: String::new(), groups: Vec::new() };
+    match management_groups(w, &management) {
+        Ok(groups) => {
+            for (group, radios) in groups {
+                let control = group.control_port.map(|p| control_address(&management, p)).unwrap_or_default();
+                let mut found = FoundGroup {
+                    id: group.id,
+                    name: group.name,
+                    running: group.running && !control.is_empty(),
+                    manual: false,
+                    audio: None,
+                    radios,
+                    error: String::new(),
+                    control,
+                };
+                if found.running {
+                    match probe_control(w, &found.control, key) {
+                        Ok(probe) => {
+                            // un osservatore senza radio nel `welcome`: restano quelle della gestione
+                            if !probe.radios.is_empty() {
+                                found.radios = probe.radios;
+                            }
+                            found.audio = Some(probe.audio);
+                        }
+                        Err(e) => found.error = e,
+                    }
+                }
+                out.groups.push(found);
+            }
+        }
+        Err(e) if control_override.is_some() => out.management_error = e,
+        Err(e) => return Err(e),
+    }
+    if let Some(address) = control_override
+        && !out.groups.iter().any(|g| g.control == address)
+    {
+        let mut found = FoundGroup {
+            id: String::new(),
+            name: String::new(),
+            control: address.to_string(),
+            running: true,
+            manual: true,
+            audio: None,
+            radios: Vec::new(),
+            error: String::new(),
+        };
+        match probe_control(w, address, key) {
+            Ok(probe) => {
+                found.name = probe.group_id.clone();
+                found.id = probe.group_id;
+                found.radios = probe.radios;
+                found.audio = Some(probe.audio);
+            }
+            Err(e) => found.error = e,
+        }
+        out.groups.push(found);
+    }
+    Ok(out)
 }
 
 /// Il motivo di un errore: alla prima volta errore, poi riconnessione in corso.
@@ -2368,5 +2592,53 @@ mod tests {
         assert!(wait(|| rig.status().message.starts_with(&format!("Cat4OM non raggiungibile su {address}"))), "{:?}", rig.status());
         assert!(rig.frequency().is_err());
         assert!(rig.set_ptt(false).is_ok(), "lo spegnimento del PTT non fallisce a collegamento assente");
+    }
+
+    // ------------------------------------------------ «Cerca» della pagina Radio
+
+    #[test]
+    fn the_search_lists_groups_and_radios_without_touching_anything() {
+        let mut claimed = radio("mult", &ALL);
+        claimed["bridgeControlledBy"] = json!("tci");
+        claimed["audioCaptureAvailable"] = json!(true);
+        let control = fake(vec![radio("run", &ALL), claimed], None);
+        control.state.lock().unwrap().group = "group-1".into();
+        let locked = fake(vec![radio("x", &ALL)], Some("chiave-di-prova"));
+        let management = fake_management(vec![
+            group("group-1", Some(port_of(&control.address)), &["run", "mult"]),
+            group("spare", None, &["old"]),
+            group("locked", Some(port_of(&locked.address)), &["x"]),
+        ]);
+        let quick = Duration::from_secs(2);
+        let found = search_with(&management.address, None, "", quick).expect("ricerca");
+        assert_eq!(found.groups.len(), 3);
+        let g = &found.groups[0];
+        assert_eq!((g.id.as_str(), g.running, g.control.as_str(), g.audio, g.error.as_str()), ("group-1", true, control.address.as_str(), Some(false), ""));
+        assert_eq!(g.radios.iter().map(|r| r.id.as_str()).collect::<Vec<_>>(), ["run", "mult"]);
+        assert_eq!((g.radios[1].claimed_by.as_deref(), g.radios[1].audio_rx, g.radios[1].model.as_str()), (Some("tci"), Some(true), "Yaesu FT-991A"));
+        let spare = &found.groups[1];
+        assert_eq!((spare.running, spare.control.as_str(), spare.radios[0].id.as_str(), spare.radios[0].status.as_str()), (false, "", "old", "connected"));
+        assert_eq!(found.groups[2].error, AUTH_REQUIRED, "il gruppo con la chiave");
+        assert_eq!(found.groups[2].radios[0].id, "x", "restano le radio dette dalla gestione");
+        assert_eq!(management.actions(), ["getServiceStatus"], "nessun gruppo avviato");
+        assert!(control.requests().is_empty(), "nessuna richiesta: nessun comando preso");
+        assert_eq!(control.state.lock().unwrap().hellos[0]["noRegister"], json!(true), "entra come osservatore");
+        let with_key = search_with(&management.address, None, "chiave-di-prova", quick).expect("ricerca");
+        assert_eq!((with_key.groups[2].error.as_str(), with_key.groups[2].audio), ("", Some(false)));
+        // gestione spenta: senza porta Control scritta e' un errore, con la porta scritta l'elenco viene da quella
+        let closed = TcpListener::bind("127.0.0.1:0").expect("porta");
+        let nobody = closed.local_addr().expect("indirizzo").to_string();
+        drop(closed);
+        let none = search_with(&nobody, None, "", quick).expect_err("gestione assente");
+        assert!(none.starts_with(&format!("Gestione di Cat4OM non raggiungibile su {nobody}")), "{none}");
+        let only = search_with(&nobody, Some(&control.address), "", quick).expect("dalla porta scritta");
+        assert!(only.management_error.starts_with("Gestione di Cat4OM non raggiungibile"));
+        assert_eq!(only.groups.len(), 1);
+        assert_eq!((only.groups[0].id.as_str(), only.groups[0].manual, only.groups[0].radios.len()), ("group-1", true, 2));
+        // la porta scritta e' gia' quella di un gruppo trovato: non si ripete
+        let same = search_with(&management.address, Some(&control.address), "", quick).expect("ricerca");
+        assert_eq!(same.groups.len(), 3);
+        let wrong = search_with(&management.address, Some(&nobody), "", quick).expect("ricerca");
+        assert!(wrong.groups[3].manual && wrong.groups[3].error.starts_with(&format!("Cat4OM non raggiungibile su {nobody}")));
     }
 }

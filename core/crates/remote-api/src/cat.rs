@@ -235,6 +235,41 @@ pub(crate) async fn cat_split_dx_clear(State(state): State<AppState>, _: Authed)
     Ok(Json(json!({ "ok": true, "was_on": was_on, "split": split_dx_json(None) })))
 }
 
+#[derive(Deserialize, Default)]
+pub(crate) struct Cat4omSearchBody {
+    /// La porta di gestione scritta nella pagina (anche non ancora applicata); assente = quella salvata.
+    #[serde(default)]
+    management: Option<String>,
+    /// La porta Control scritta a mano; assente = quella salvata, vuota = nessuna.
+    #[serde(default)]
+    address: Option<String>,
+    /// La chiave del gruppo; assente = quella salvata.
+    #[serde(default)]
+    key: Option<String>,
+}
+
+/// «Cerca» di Cat4OM nella pagina Radio: i gruppi dalla gestione e le radio di ciascuno (stato, emulazione che le tiene, audio in rete),
+/// con attese brevi. Non tocca il collegamento in uso ne' avvia gruppi. Solo dal PC: la chiave del gruppo resta sul PC.
+pub(crate) async fn cat_cat4om_search(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<Cat4omSearchBody>) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    require_local(peer, &headers)?;
+    let mut config = cat.config();
+    if let Some(management) = body.management {
+        config.cat4om_management = management.trim().to_string();
+    }
+    if let Some(address) = body.address {
+        config.cat4om_address = address.trim().to_string();
+    }
+    if let Some(key) = body.key {
+        config.cat4om_key = key;
+    }
+    config.validate().map_err(|code| CatApiError::new(StatusCode::BAD_REQUEST, code))?;
+    let found = blocking(move || rig_control::cat4om::search(&config.cat4om_management, config.cat4om_control_override().as_deref(), &config.cat4om_key))
+        .await?
+        .map_err(|message| CatApiError { status: StatusCode::BAD_GATEWAY, code: "cat4om_search", message })?;
+    Ok(Json(json!(found)))
+}
+
 /// I modelli di Hamlib (da `rigctl -l`).
 pub(crate) async fn cat_models(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
     let cat = service(&state)?;

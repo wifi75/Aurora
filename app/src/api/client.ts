@@ -921,6 +921,50 @@ export async function detectCat(): Promise<CatDetection> {
   return (await (await request('/cat/detect', { method: 'POST' })).json()) as CatDetection;
 }
 
+/** Una radio di Cat4OM trovata da «Cerca». */
+export interface Cat4omFoundRadio {
+  /** `radioId`: va nel campo «Radio». */
+  id: string;
+  name: string;
+  model: string;
+  /** `connected`, `disconnected`, `connecting`, `reconnecting`, `no_response`, `stopped`, `unknown` (insieme aperto). */
+  status: string;
+  /** Il profilo di emulazione di Cat4OM (TCI, Hamlib) che tiene la radio: finche' c'e' Aurora non la comanda. */
+  claimed_by: string | null;
+  /** Audio in rete configurato in Cat4OM per ricezione e trasmissione (`null` = non detto). */
+  audio_rx: boolean | null;
+  audio_tx: boolean | null;
+}
+
+/** Un gruppo di Cat4OM trovato da «Cerca». */
+export interface Cat4omFoundGroup {
+  /** L'id del gruppo (va nel campo «Gruppo»); vuoto se la porta scritta a mano non ha risposto. */
+  id: string;
+  name: string;
+  /** La porta Control `host:porta`; vuota se il gruppo e' fermo. */
+  control: string;
+  running: boolean;
+  /** Viene dalla porta Control scritta a mano, non dalla gestione. */
+  manual: boolean;
+  /** Il Control dichiara l'audio in rete; `null` se non interrogato. */
+  audio: boolean | null;
+  radios: Cat4omFoundRadio[];
+  /** Perche' il Control del gruppo non ha dato le radio (testo del core, vuoto se va bene). */
+  error: string;
+}
+
+export interface Cat4omSearch {
+  management: string;
+  /** La gestione non ha risposto e l'elenco viene dalla porta Control scritta a mano (testo del core). */
+  management_error: string;
+  groups: Cat4omFoundGroup[];
+}
+
+/** «Cerca» di Cat4OM: gruppi e radio con i valori scritti nella pagina, senza toccare il collegamento in uso. Solo dal PC. */
+export async function searchCat4om(values: { management?: string; address?: string; key?: string }): Promise<Cat4omSearch> {
+  return (await (await request('/cat/cat4om/search', jsonInit(values))).json()) as Cat4omSearch;
+}
+
 /** Configurazione del rotore d'antenna (`rotore.json`): `launch` = Aurora lancia rotctld, `remote` = rotctld gia' acceso. */
 export interface RotatorConfig {
   enabled: boolean;
