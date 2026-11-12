@@ -242,13 +242,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const windowsRef = useRef<HTMLDivElement>(null);
   const [rxFrac, setRxFrac] = useState<number>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.rxfrac') ?? '');
-    return Number.isFinite(n) && n >= 0.2 && n <= 0.8 ? n : 0.55;
+    return Number.isFinite(n) && n >= 0.1 && n <= 0.9 ? n : 0.55;
   });
   const dragSplit = (e: React.PointerEvent) => {
     e.preventDefault();
     const box = windowsRef.current?.getBoundingClientRect();
     if (!box) return;
-    const move = (m: PointerEvent) => setRxFrac(Math.min(0.8, Math.max(0.2, (m.clientY - box.top) / box.height)));
+    const move = (m: PointerEvent) => setRxFrac(Math.min(0.9, Math.max(0.1, (m.clientY - box.top) / box.height)));
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);

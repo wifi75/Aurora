@@ -222,3 +222,17 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-status .digi-st--select select option { background: #1a2848; color: #dbe5ff; }
 html[data-theme='light'] .digi-status .digi-st--select select { color-scheme: light; }
 html[data-theme='light'] .digi-status .digi-st--select select option { background: #ffffff; color: #0b1322; }
+
+/* Maniglie ben visibili per ridimensionare: fra ricezione e trasmissione, sopra la cascata, a fianco del log e delle macro.
+   Una barretta con tre puntini al centro; al passaggio del mouse si accende in viola */
+.digi-split { height: 12px; margin: -2px 0; }
+.digi-split::after { top: 5px; border-top: 1px solid var(--border, #25365d); }
+.digi-split::before { content: ''; position: absolute; left: 50%; top: 2px; width: 46px; height: 8px; margin-left: -23px; border-radius: 6px; background: radial-gradient(circle, #9fb0d6 1.4px, transparent 1.6px) 0 0 / 12px 8px repeat-x, #3a4f86; border: 1px solid #6b7fc0; z-index: 1; }
+.digi-split:hover::before, .digi-split:active::before { background: radial-gradient(circle, #fff 1.4px, transparent 1.6px) 0 0 / 12px 8px repeat-x, #6b58e0; border-color: #8e7bff; }
+.digi-wf-grip { height: 10px; top: 0; }
+.digi-wf-grip::before { content: ''; position: absolute; left: 50%; top: 1px; width: 46px; height: 8px; margin-left: -23px; border-radius: 6px; background: radial-gradient(circle, #9fb0d6 1.4px, transparent 1.6px) 0 0 / 12px 8px repeat-x, #3a4f86; border: 1px solid #6b7fc0; }
+.digi-wf-grip:hover::before { background: radial-gradient(circle, #fff 1.4px, transparent 1.6px) 0 0 / 12px 8px repeat-x, #6b58e0; border-color: #8e7bff; }
+.digi-log-grip { width: 10px; left: 0; }
+.digi-log-grip::before, .digi-macrogrip::before { content: ''; position: absolute; top: 50%; left: 1px; width: 8px; height: 46px; margin-top: -23px; border-radius: 6px; background: radial-gradient(circle, #9fb0d6 1.4px, transparent 1.6px) 0 0 / 8px 12px repeat-y, #3a4f86; border: 1px solid #6b7fc0; }
+.digi-log-grip:hover::before, .digi-macrogrip:hover::before { background: radial-gradient(circle, #fff 1.4px, transparent 1.6px) 0 0 / 8px 12px repeat-y, #6b58e0; border-color: #8e7bff; }
+html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-grip::before, html[data-theme='light'] .digi-log-grip::before, html[data-theme='light'] .digi-macrogrip::before { background-color: #dfe6f5; border-color: #7d8bb0; }
