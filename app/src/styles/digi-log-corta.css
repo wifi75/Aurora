@@ -35,6 +35,8 @@
 .digi-zero { font-variant-numeric: slashed-zero; font-feature-settings: "zero" 1; }
 .digi-caps { text-transform: uppercase; }
 .digi-sent { text-decoration: underline; text-decoration-color: #6f81a8; text-underline-offset: 3px; }
+/* RTTY: caratteri incerti (probabilita' sotto 0,9) in chiaro */
+.digi-weak { opacity: 0.45; }
 .digi-st--flash { animation: digi-flash 0.8s steps(2, start) infinite; }
 @keyframes digi-flash { 50% { background: #7a1d27; } }
 .digi-wf-hair { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgba(255, 255, 255, 0.55); pointer-events: none; z-index: 2; }

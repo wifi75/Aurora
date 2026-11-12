@@ -399,6 +399,9 @@ pub struct DigiEvent {
     pub mode: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+    /// `rx_text`: le posizioni (in caratteri di `text`) dei caratteri incerti, che la finestra mostra in chiaro (RTTY).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weak: Option<Vec<u32>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

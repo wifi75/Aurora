@@ -254,3 +254,59 @@ fn velocita() {
     let s = t.elapsed().as_secs_f64();
     println!("Aurora: {:.0} s di audio in {s:.3} s, {:.0} volte il tempo reale ({n} caratteri)", audio.len() as f64 / 12_000.0, audio.len() as f64 / 12_000.0 / s);
 }
+
+/// Quali caratteri ricevuti sono giusti: allineamento di Levenshtein fra il testo mandato e quello ricevuto (senza ritorni a capo).
+fn giusti(sent: &[u8], got: &[u8]) -> Vec<bool> {
+    let (n, m) = (sent.len(), got.len());
+    let mut d = vec![vec![0usize; m + 1]; n + 1];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[0] = i;
+    }
+    for j in 0..=m {
+        d[0][j] = j;
+    }
+    for i in 1..=n {
+        for j in 1..=m {
+            d[i][j] = (d[i - 1][j - 1] + usize::from(sent[i - 1] != got[j - 1])).min(d[i - 1][j] + 1).min(d[i][j - 1] + 1);
+        }
+    }
+    let mut ok = vec![false; m];
+    let (mut i, mut j) = (n, m);
+    while i > 0 && j > 0 {
+        if d[i][j] == d[i - 1][j - 1] + usize::from(sent[i - 1] != got[j - 1]) {
+            ok[j - 1] = sent[i - 1] == got[j - 1];
+            i -= 1;
+            j -= 1;
+        } else if d[i][j] == d[i - 1][j] + 1 {
+            i -= 1;
+        } else {
+            j -= 1;
+        }
+    }
+    ok
+}
+
+/// Taratura della probabilita' dei caratteri (passo 8): per fasce di probabilita' detta, quanti caratteri sono giusti davvero.
+#[test]
+#[ignore]
+fn taratura() {
+    let mut fasce = [(0usize, 0usize); 10];
+    for sc in scenari().into_iter().filter(|s| ["rumore 170/45", "CCIR medio", "space -12 dB", "rumore 170/75"].contains(&s.nome)) {
+        for snr in [-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0] {
+            for r in 0..3 {
+                let (audio, sent) = genera(&sc, snr, 500 + r, CHARS);
+                let mut rx = aurora(&sc);
+                let got: Vec<mode_digi::RttyChar> = audio.chunks(1024).flat_map(|b| rx.process_chars(b)).filter(|c| c.ch != b'\r' && c.ch != b'\n').collect();
+                let testo: Vec<u8> = got.iter().map(|c| c.ch).collect();
+                for (c, ok) in got.iter().zip(giusti(sent.as_bytes(), &testo)) {
+                    let k = ((c.prob * 10.0) as usize).min(9);
+                    fasce[k].0 += 1;
+                    fasce[k].1 += usize::from(ok);
+                }
+            }
+        }
+    }
+    for (k, (n, ok)) in fasce.iter().enumerate() {
+        println!("probabilita' {:.1}-{:.1}: {n:6} caratteri, giusti {:5.1} %", k as f64 / 10.0, (k + 1) as f64 / 10.0, 100.0 * *ok as f64 / (*n).max(1) as f64);
+    }
+}

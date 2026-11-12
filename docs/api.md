@@ -111,7 +111,7 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `GET /sat/track?norad=&minutes=` | La traccia a terra, un punto ogni 30 s, meta' passata e meta' futura: `{points: [[lat, lon], ...]}` |
 | `GET /sat/positions` | I satelliti spuntati e quello scelto adesso: `{positions: [{norad, name, lat_deg, lon_deg, alt_km, az_deg, el_deg, footprint_km, visible}]}` |
 | `GET /sat/maps` · `GET /sat/maps/{name}` · `POST /sat/maps?name=` | Le mappe del mondo (immagini equirettangolari jpg, png, bmp, webp nella cartella `maps` dei dati, al massimo 20 MB); il caricamento solo dal PC stesso (`403 local_only`) |
-| Flusso: evento `digi` | `{type: "digi", kind, ...}`: `rx_text` (`text`, `mode`: caratteri nuovi), `rx_status` (`listening`, `level_db`, `mode`, `freq_hz`), `tx` (`state`, `progress`, `message`) |
+| Flusso: evento `digi` | `{type: "digi", kind, ...}`: `rx_text` (`text`, `mode`: caratteri nuovi; `weak`: posizioni in `text` dei caratteri incerti, RTTY), `rx_status` (`listening`, `level_db`, `mode`, `freq_hz`), `tx` (`state`, `progress`, `message`) |
 | `GET /rotator/models` | `{models: [{id, manufacturer, model, status}]}`: i modelli di rotore di `rotctld -l` (rotctld accanto a rigctld, o `AURORA_ROTCTLD`); `409 rotctld_missing`, `502 models_failed` |
 | `GET/PUT /dx-cluster?since=&limit=` | Impostazioni, stato dei collegamenti e spot recenti; `PUT` salva e rifa' i collegamenti (`400 bad_cluster`) |
 | `GET /dx-cluster/catalog` · `POST /dx-cluster/test` | Server pubblici noti; prova di raggiungibilita' `{host, port}` → `{ok, ms, banner, error}` (non entra nel cluster) |

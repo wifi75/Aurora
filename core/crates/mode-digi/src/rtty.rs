@@ -65,6 +65,12 @@ const PLL_GAIN: f32 = 0.5;
 /// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
 /// (passo 6: e' la «maggioranza» di MMTTY fatta sui valori morbidi).
 const SOFT_BITS: f32 = 0.8;
+/// Scala delle somme delle LLR per la probabilita' di un bit (passo 8): le LLR dei campioni vicini sono legate dal filtro e la loro somma
+/// conta la stessa prova piu' volte; il valore viene dalla prova `taratura` di `tests/rtty_tabella.rs` (probabilita' detta contro caratteri
+/// giusti davvero: con 0,03 i caratteri detti al 90-100 % sono giusti al 98 %, quelli al 50-60 % al 58 %).
+const LLR_SCALE: f32 = 0.03;
+/// Sotto questa probabilita' un carattere e' «incerto»: l'interfaccia lo mostra in chiaro.
+pub const WEAK_PROB: f32 = 0.9;
 const FIGS: u8 = 27;
 const LTRS: u8 = 31;
 const SPACE: u8 = 4;
@@ -431,10 +437,31 @@ impl Discriminator {
     }
 }
 
-/// Un carattere riconosciuto da [`Frames`]: il codice a 5 bit.
+/// Un carattere riconosciuto da [`Frames`]: il codice a 5 bit e le somme delle LLR dei sette bit (start, cinque dati, stop).
 #[derive(Clone, Copy, Debug)]
 struct Frame {
     code: u8,
+    sums: [f32; 7],
+}
+
+impl Frame {
+    /// La probabilita' che il carattere sia giusto: il prodotto delle probabilita' dei sette bit, start a space e stop a mark compresi
+    /// (le somme delle LLR scalate con `LLR_SCALE`).
+    fn prob(&self) -> f32 {
+        let sig = |x: f32| 1.0 / (1.0 + (-LLR_SCALE * x).exp());
+        let mut p = sig(-self.sums[0]) * sig(self.sums[6]);
+        for x in &self.sums[1..6] {
+            p *= sig(x.abs());
+        }
+        p
+    }
+}
+
+/// Un carattere ricevuto con la probabilita' che sia giusto (0..1). Sotto [`WEAK_PROB`] e' incerto e l'interfaccia lo mostra in chiaro.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RttyChar {
+    pub ch: u8,
+    pub prob: f32,
 }
 
 /// Decodifica del carattere intero (passo 7 di `docs/progetto-rtty-oltre.md`): invece di cercare lo start su decisioni dure e campionare
@@ -527,7 +554,7 @@ impl Frames {
                             code |= 1 << k;
                         }
                     }
-                    Some(Frame { code })
+                    Some(Frame { code, sums })
                 } else {
                     self.next_min = best + 0.5 * self.t;
                     None
@@ -592,6 +619,10 @@ pub struct RttyDemodulator {
     marks: usize,
     state: State,
     data: u8,
+    /// La probabilita' del carattere in decodifica e quella dell'ultimo cambio di registro (FIGS o LTRS), che vale per le lettere e le
+    /// cifre dopo.
+    data_prob: f32,
+    shift_prob: f32,
     figures: bool,
     last_char: u8,
     /// Livelli medi (decisione guidata) di mark acceso, mark spento, space acceso, space spento.
@@ -662,6 +693,8 @@ impl RttyDemodulator {
             marks: nbits,
             state: State::Idle,
             data: 0,
+            data_prob: 1.0,
+            shift_prob: 1.0,
             figures: false,
             last_char: 0,
             levels: [0.0; 4],
@@ -891,7 +924,7 @@ impl RttyDemodulator {
     }
 
     /// Una decisione nuova nella macchina dei caratteri (`rtty::rx` di fldigi).
-    fn rx_bit(&mut self, v: f32, out: &mut Vec<u8>) {
+    fn rx_bit(&mut self, v: f32, out: &mut Vec<RttyChar>) {
         let n = self.bits.len();
         let bit = v > 0.0;
         if self.bits[self.bit_pos] {
@@ -943,6 +976,7 @@ impl RttyDemodulator {
                 } else {
                     // lo stop deve essere mark; con lo squelch acceso si stampa solo se il rapporto segnale/rumore lo apre (come fldigi)
                     if self.mid_bit() && self.open {
+                        self.data_prob = 1.0;
                         self.emit(out);
                     }
                     self.state = State::Idle;
@@ -953,6 +987,11 @@ impl RttyDemodulator {
 
     /// Elabora altro audio; restituisce i caratteri nuovi.
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
+        self.process_chars(samples).into_iter().map(|c| c.ch).collect()
+    }
+
+    /// Come [`Self::process`], con la probabilita' che ogni carattere sia giusto (sempre 1 con la macchina dei bit di fldigi).
+    pub fn process_chars(&mut self, samples: &[f32]) -> Vec<RttyChar> {
         let mut out = Vec::new();
         for &s in samples {
             let Some(z) = self.front.push(s) else { continue };
@@ -990,6 +1029,7 @@ impl RttyDemodulator {
                         && self.open
                     {
                         self.data = fr.code;
+                        self.data_prob = fr.prob();
                         self.emit(&mut out);
                     }
                 }
@@ -999,25 +1039,33 @@ impl RttyDemodulator {
         out
     }
 
-    /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti.
-    fn emit(&mut self, out: &mut Vec<u8>) {
+    /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti. La probabilita' di una lettera o di una cifra tiene conto
+    /// anche del cambio di registro da cui dipende.
+    fn emit(&mut self, out: &mut Vec<RttyChar>) {
+        let mut prob = self.data_prob;
         let c = match self.data {
             FIGS => {
                 self.figures = true;
+                self.shift_prob = prob;
                 return;
             }
             LTRS => {
                 self.figures = false;
+                self.shift_prob = prob;
                 return;
             }
             0 => return,
             SPACE => {
                 if self.uos {
                     self.figures = false;
+                    self.shift_prob = 1.0;
                 }
                 b' '
             }
+            CR => b'\r',
+            LF => b'\n',
             c => {
+                prob *= self.shift_prob;
                 if self.figures {
                     FIGURES[c as usize]
                 } else {
@@ -1029,7 +1077,7 @@ impl RttyDemodulator {
             return;
         }
         self.last_char = c;
-        out.push(c);
+        out.push(RttyChar { ch: c, prob });
     }
 }
 
@@ -1211,6 +1259,19 @@ mod tests {
             let r = String::from_utf8_lossy(&rx.process(&synth(&seq, params, am, asp))).into_owned();
             assert!(r.contains("CQ DE IU3ABC"), "mark {am} space {asp}, ricevuto: {r:?}");
         }
+    }
+
+    #[test]
+    fn i_caratteri_hanno_la_loro_probabilita() {
+        // segnale pulito: tutti certi; solo rumore forte: quasi tutti incerti
+        let audio = modulate(b"RYRYRY CQ DE IU3ABC 599 K", RttyParams::default(), 0.5);
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        let chars = rx.process_chars(&audio);
+        assert!(!chars.is_empty() && chars.iter().all(|c| c.prob >= WEAK_PROB), "{chars:?}");
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        let chars = rx.process_chars(&rumore(240_000, 0.8, 21));
+        let weak = chars.iter().filter(|c| c.prob < WEAK_PROB).count();
+        assert!(weak * 10 >= chars.len() * 8, "incerti {weak} su {}", chars.len());
     }
 
     #[test]

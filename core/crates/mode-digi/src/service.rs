@@ -751,11 +751,16 @@ impl Demod {
         }
     }
 
-    fn process(&mut self, audio: &[f32]) -> Vec<u8> {
+    /// I caratteri nuovi e le posizioni di quelli incerti (RTTY: probabilita' sotto `rtty::WEAK_PROB`).
+    fn process(&mut self, audio: &[f32]) -> (Vec<u8>, Vec<u32>) {
         match self {
-            Demod::Psk(d) => d.process(audio),
-            Demod::Rtty(d) => d.process(audio),
-            Demod::Cw(d) => d.process(audio),
+            Demod::Psk(d) => (d.process(audio), Vec::new()),
+            Demod::Rtty(d) => {
+                let chars = d.process_chars(audio);
+                let weak = chars.iter().enumerate().filter(|(_, c)| c.prob < rtty::WEAK_PROB).map(|(i, _)| i as u32).collect();
+                (chars.iter().map(|c| c.ch).collect(), weak)
+            }
+            Demod::Cw(d) => (d.process(audio), Vec::new()),
         }
     }
 }
@@ -792,10 +797,11 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 audio.clear();
                 r.process(&samples, &mut audio);
                 peak_db = peak_db.max(level_db(&audio));
-                let text = demod.process(&audio);
+                let (text, weak) = demod.process(&audio);
                 if !text.is_empty() {
                     let s: String = text.iter().map(|&b| b as char).collect();
-                    inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(s), mode: Some(mode.id().into()), ..DigiEvent::default() });
+                    let weak = (!weak.is_empty()).then_some(weak);
+                    inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(s), weak, mode: Some(mode.id().into()), ..DigiEvent::default() });
                 }
             }
             Some(Msg::Config(s)) => {
@@ -889,7 +895,7 @@ mod tests {
         let mut all = vec![0.0; 4000];
         all.extend(wave);
         all.extend(vec![0.0; 4000]);
-        let out = String::from_utf8_lossy(&d.process(&all)).into_owned();
+        let out = String::from_utf8_lossy(&d.process(&all).0).into_owned();
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
     }
 
@@ -907,7 +913,7 @@ mod tests {
         // trasmissione e ricezione con le stesse impostazioni si capiscono, in USB e in LSB
         for lsb in [false, true] {
             let mut d = Demod::new(&s, lsb);
-            let out = String::from_utf8_lossy(&d.process(&DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb))).into_owned();
+            let out = String::from_utf8_lossy(&d.process(&DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb)).0).into_owned();
             assert!(out.contains("CQ DE IU3ABC 599"), "lsb {lsb}, ricevuto: {out:?}");
         }
     }

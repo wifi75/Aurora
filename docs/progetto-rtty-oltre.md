@@ -145,3 +145,10 @@ una finestra di un bit, poi il prossimo start non prima di 6,5 bit. Rispetto al 
 tutta dalla portante: −5,6 dB), CER medio giu' in tutti gli scenari (−0,1 … −7,6 punti; fading e AGC −2,4 … −4,0). Il prezzo: sul solo
 rumore, a squelch spento, 191 caratteri al minuto invece di 113 (li toglie lo squelch statistico del passo 9). Tenuto, di base; la macchina
 dei bit di fldigi resta con `set_frame_decoder(false)`.
+
+**Passo 8** (caratteri con affidabilita'): ogni carattere della decodifica intera porta la probabilita' di essere giusto, il prodotto
+delle probabilita' dei sette bit (start a space, cinque dati, stop a mark) dalle somme delle LLR scalate di 0,03, e una lettera o una
+cifra moltiplica anche quella del FIGS o LTRS da cui dipende. Taratura (prova `taratura`, rumore, CCIR medio, space −12 dB, 75 baud da
+−12 a 0 dB): detti al 90-100 % giusti al 98 %, al 80-90 % all'83 %, al 50-60 % al 58 %, al 10-20 % al 14 %. `process_chars` da' i
+caratteri con la probabilita'; l'evento `rx_text` porta in `weak` le posizioni dei caratteri sotto 0,9 e la finestra di ricezione li
+mostra in chiaro. Tabella identica al passo 7 (la decodifica non cambia).

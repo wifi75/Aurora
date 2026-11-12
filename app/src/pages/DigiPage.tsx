@@ -19,7 +19,8 @@ import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
+import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
+import { DigiRxText } from '../components/DigiRxText';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
@@ -61,24 +62,6 @@ interface Views {
 }
 
 const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
-
-/** Le righe trasmesse (iniziano con «» ») sottolineate nella finestra di ricezione. */
-function withSentUnderlined(text: string): React.ReactNode {
-  return text.split('\n').map((line, i, all) => {
-    const nl = i < all.length - 1 ? '\n' : '';
-    return line.startsWith('» ') ? (
-      <u key={i} className="digi-sent">
-        {line}
-        {nl}
-      </u>
-    ) : (
-      <span key={i}>
-        {line}
-        {nl}
-      </span>
-    );
-  });
-}
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -141,6 +124,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const client = useQueryClient();
   const status = useStation((s) => s.status);
   const text = useSyncExternalStore(onDigiText, getDigiText);
+  const weak = useSyncExternalStore(onDigiText, getDigiWeak);
   const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
@@ -910,7 +894,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef}>
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}>
-            {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
+            {text === '' ? null : <DigiRxText text={text} weak={weak} underlineSent={views.underlineSent} />}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
