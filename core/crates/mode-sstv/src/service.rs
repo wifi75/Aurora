@@ -379,7 +379,7 @@ impl SstvService {
                 (meta.is_file() && photo_ext(&name).is_some() && meta.len() <= PHOTO_MAX_BYTES).then_some(TxPhoto { name, size: meta.len() })
             })
             .collect();
-        out.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        out.sort_by_key(|a| a.name.to_lowercase());
         out.truncate(500);
         Ok(out)
     }

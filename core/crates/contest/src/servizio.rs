@@ -612,9 +612,7 @@ impl ContestService {
         let (_, grid) = (self.stazione)();
         let ora = ora_ms();
         let mut d = self.lock();
-        if d.stato.attivo.is_none() {
-            return None;
-        }
+        d.stato.attivo.as_ref()?;
         if let Some((t, v)) = &d.consiglio
             && ora - t < 10_000
         {

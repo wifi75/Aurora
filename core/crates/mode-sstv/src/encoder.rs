@@ -126,7 +126,7 @@ fn group_data(spec: &ModeSpec, img: &RgbImage, group: u32) -> GroupData {
                     d.y0.push(ya);
                     d.y1.push(yb);
                 } else {
-                    d.y0.push(if group % 2 == 0 { ya } else { yb });
+                    d.y0.push(if group.is_multiple_of(2) { ya } else { yb });
                 }
                 d.v.push(v);
                 d.u.push(u);

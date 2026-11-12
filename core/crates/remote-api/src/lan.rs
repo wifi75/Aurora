@@ -196,7 +196,7 @@ pub fn allow_in_firewall(port: u16) -> Result<(), String> {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?.display().to_string();
         let encoded = encoded_command(&firewall_script(&exe, port));
         let script = format!("Start-Process powershell -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '-NoProfile','-NonInteractive','-EncodedCommand','{encoded}'");
-        return powershell(&script).map(|_| ()).ok_or_else(|| "regola non aggiunta (conferma annullata?)".to_string());
+        powershell(&script).map(|_| ()).ok_or_else(|| "regola non aggiunta (conferma annullata?)".to_string())
     }
     #[cfg(not(windows))]
     {

@@ -2594,7 +2594,8 @@ pub async fn run(
             // i comandi della pagina e dell'automazione (doppio clic, CQ, STOP, frequenza Tx) arrivano al motore proprio
             let mut commands = io.commands;
             let controls = Arc::clone(&native_controls);
-            let task = tokio::spawn(async move {
+            
+            tokio::spawn(async move {
                 while let Some(command) = commands.recv().await {
                     let mapped = match command {
                         aurora_core::Command::HaltTx => engine_native::TxCommand::Halt,
@@ -2623,8 +2624,7 @@ pub async fn run(
                         tracing::warn!("comando di trasmissione non consegnato: {e}");
                     }
                 }
-            });
-            task
+            })
         }
         EngineKind::Sim => tokio::spawn(SimEngine::new(SimConfig { seed: 1, cycle_ms: config.cycle_ms }).run(io)),
     };
@@ -2881,6 +2881,24 @@ pub async fn run(
     Ok(RunningServer { addr, state, task })
 }
 
+/// La porta del server non si apre: se e' gia' in uso si dice da quale programma (su Windows), che di solito e' un'altra Aurora aperta.
+fn port_error(bind: std::net::SocketAddr, e: &std::io::Error) -> String {
+    if e.kind() != std::io::ErrorKind::AddrInUse {
+        return format!("{bind}: {e}");
+    }
+    let who = port_owner(bind.port()).map_or_else(|| "un altro programma (forse Aurora e' gia' aperta)".to_string(), |p| format!("il programma «{p}»"));
+    format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni > Accesso", bind.port())
+}
+
+#[cfg(windows)]
+fn port_owner(port: u16) -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    let script = format!("(Get-Process -Id (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop | Select-Object -First 1).OwningProcess).ProcessName");
+    let out = std::process::Command::new("powershell.exe").args(["-NoProfile", "-NonInteractive", "-Command", &script]).creation_flags(0x0800_0000).output().ok()?;
+    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    (out.status.success() && !name.is_empty()).then_some(name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2973,24 +2991,6 @@ mod tests {
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ACCEPT_REPLY").then(|| "4".to_string())).is_err());
         assert!(Config::from_lookup(|k| (k == "AURORA_UDP_ADIF").then(|| "si".to_string())).is_err());
     }
-}
-
-/// La porta del server non si apre: se e' gia' in uso si dice da quale programma (su Windows), che di solito e' un'altra Aurora aperta.
-fn port_error(bind: std::net::SocketAddr, e: &std::io::Error) -> String {
-    if e.kind() != std::io::ErrorKind::AddrInUse {
-        return format!("{bind}: {e}");
-    }
-    let who = port_owner(bind.port()).map_or_else(|| "un altro programma (forse Aurora e' gia' aperta)".to_string(), |p| format!("il programma «{p}»"));
-    format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni > Accesso", bind.port())
-}
-
-#[cfg(windows)]
-fn port_owner(port: u16) -> Option<String> {
-    use std::os::windows::process::CommandExt;
-    let script = format!("(Get-Process -Id (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop | Select-Object -First 1).OwningProcess).ProcessName");
-    let out = std::process::Command::new("powershell.exe").args(["-NoProfile", "-NonInteractive", "-Command", &script]).creation_flags(0x0800_0000).output().ok()?;
-    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    (out.status.success() && !name.is_empty()).then_some(name)
 }
 
 #[cfg(not(windows))]

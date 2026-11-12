@@ -278,7 +278,7 @@ impl SatService {
                 out.push((s.norad, s.name.clone(), true));
             }
         }
-        out.sort_by(|a, b| a.1.to_ascii_uppercase().cmp(&b.1.to_ascii_uppercase()));
+        out.sort_by_key(|a| a.1.to_ascii_uppercase());
         out
     }
 
@@ -489,7 +489,7 @@ fn tracking_loop(inner: &Arc<Inner>) {
         tick(inner, &mut st);
         // ogni minuto si guarda se e' ora di aggiornare i dati delle orbite; dopo un tentativo non si riprova prima di mezz'ora
         ticks += 1;
-        if ticks % 60 == 0 && now_unix() - last_try > 1800.0 && !inner.fetching.load(Ordering::SeqCst) && tle_stale(inner) {
+        if ticks.is_multiple_of(60) && now_unix() - last_try > 1800.0 && !inner.fetching.load(Ordering::SeqCst) && tle_stale(inner) {
             last_try = now_unix();
             let worker = Arc::clone(inner);
             let _ = std::thread::Builder::new().name("aurora-sat-tle".into()).spawn(move || {

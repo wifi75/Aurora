@@ -140,7 +140,7 @@ impl VisDetector {
                 code |= 1 << bit;
             }
         }
-        if code.count_ones() % 2 != 0 {
+        if !code.count_ones().is_multiple_of(2) {
             return None;
         }
         let mode = SstvMode::from_vis(code & 0x7f)?;

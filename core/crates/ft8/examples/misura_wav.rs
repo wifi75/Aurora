@@ -17,7 +17,7 @@ fn read_wav(path: &str) -> Vec<f32> {
         let len = u32::from_le_bytes([bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]]) as usize;
         if id == b"data" {
             let data = &bytes[i + 8..(i + 8 + len).min(bytes.len())];
-            return data.chunks_exact(2).map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect();
+            return data.as_chunks::<2>().0.iter().map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect();
         }
         i += 8 + len + (len & 1);
     }

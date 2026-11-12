@@ -91,6 +91,12 @@ impl FmDemod {
     }
 }
 
+
+/// Frequenza (Hz) dalla somma dei prodotti z(n)·z*(n-1).
+pub fn product_to_hz(re: f32, im: f32) -> f32 {
+    CENTER + im.atan2(re) * RATE as f32 / TAU
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,10 +111,4 @@ mod tests {
             assert!((mean - hz).abs() < 3.0, "{hz}: {mean}");
         }
     }
-}
-
-
-/// Frequenza (Hz) dalla somma dei prodotti z(n)·z*(n-1).
-pub fn product_to_hz(re: f32, im: f32) -> f32 {
-    CENTER + im.atan2(re) * RATE as f32 / TAU
 }

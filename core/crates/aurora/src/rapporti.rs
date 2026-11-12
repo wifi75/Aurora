@@ -1143,6 +1143,13 @@ fn scrivi_json<T: Serialize>(path: &Path, valore: &T) {
     }
 }
 
+/// La data di oggi in UTC, `AAAA-MM-GG`.
+fn giorno_utc() -> String {
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    let (y, m, d, ..) = crate::support::civil(secs);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -1328,11 +1335,4 @@ mod tests {
         assert_eq!(u.len(), 36);
         assert_eq!(&u[14..15], "4");
     }
-}
-
-/// La data di oggi in UTC, `AAAA-MM-GG`.
-fn giorno_utc() -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
-    let (y, m, d, ..) = crate::support::civil(secs);
-    format!("{y:04}-{m:02}-{d:02}")
 }

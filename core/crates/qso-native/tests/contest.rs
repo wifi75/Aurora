@@ -60,11 +60,10 @@ fn in_contest_dopo_il_qso_si_torna_al_cq_con_la_trasmissione_accesa() {
         let t = s.next_tx(Slot(slot), at(slot));
         // il periodo dopo arrivano le decodifiche (anche vuote) e la sequenza decide
         s.on_decodes_at(Slot(slot + 1), &[], Some(at(slot + 1) + 13.0));
-        if let Some(tx) = t {
-            if tx.text.starts_with("CQ ") && cq_again.is_none() {
+        if let Some(tx) = t
+            && tx.text.starts_with("CQ ") && cq_again.is_none() {
                 cq_again = Some(slot);
             }
-        }
         events.extend(s.drain_events());
     }
     assert!(events.iter().any(|e| matches!(e, Event::QsoComplete(_))), "il QSO e' a log: {events:?}");

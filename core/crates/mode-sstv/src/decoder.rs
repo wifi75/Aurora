@@ -261,11 +261,10 @@ impl Decoder {
             events.push(DecoderEvent::Rows { first, count: last_row - first });
         }
         let lost = rx.missed >= MAX_MISSED;
-        if rx.next_group >= groups || lost {
-            if let Some(ev) = self.finish(true) {
+        if (rx.next_group >= groups || lost)
+            && let Some(ev) = self.finish(true) {
                 events.push(ev);
             }
-        }
     }
 
     /// Chiude la ricezione in corso: `Finished` se c'e' abbastanza immagine, altrimenti `Lost`.

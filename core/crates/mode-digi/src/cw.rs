@@ -264,12 +264,12 @@ impl CwDemodulator {
             let env = (self.sum_i * self.sum_i + self.sum_q * self.sum_q).sqrt() / n;
 
             // la soglia: il picco sale subito e scende piano, il fondo scende subito e sale piano
-            self.peak = if env > self.peak { env } else { self.peak - (self.peak - self.floor) / (RATE as f32 * 6.0) };
-            self.floor = if env < self.floor { env.max(1e-6) } else { self.floor + (env - self.floor) / (RATE as f32 * 10.0) };
+            self.peak = if env > self.peak { env } else { self.peak - (self.peak - self.floor) / (RATE * 6.0) };
+            self.floor = if env < self.floor { env.max(1e-6) } else { self.floor + (env - self.floor) / (RATE * 10.0) };
             let span = self.peak - self.floor;
             // sale in fretta (30 ms) e scende piano (1 s): subito dopo l'avvio la media non e' ancora bassa
             let tau = if s * s > self.wide { 0.03 } else { 1.0 };
-            self.wide += (s * s - self.wide) / (RATE as f32 * tau);
+            self.wide += (s * s - self.wide) / (RATE * tau);
             let valid = self.peak > self.floor * 3.0 + 1e-4 && self.peak > 0.15 * self.wide.sqrt();
             let on_at = self.floor + 0.55 * span;
             let off_at = self.floor + 0.40 * span;

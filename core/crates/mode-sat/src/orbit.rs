@@ -290,7 +290,7 @@ pub fn angle_diff_deg(a: f64, b: f64) -> f64 {
 /// Il locatore Maidenhead (4, 6 o 8 caratteri) come latitudine e longitudine del suo centro.
 pub fn maidenhead_to_latlon(grid: &str) -> Option<(f64, f64)> {
     let g: Vec<char> = grid.trim().chars().collect();
-    if g.len() < 4 || g.len() % 2 != 0 {
+    if g.len() < 4 || !g.len().is_multiple_of(2) {
         return None;
     }
     let letter = |c: char, max: u32| {

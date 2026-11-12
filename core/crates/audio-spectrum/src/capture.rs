@@ -271,7 +271,7 @@ pub fn run_capture_with(
 const WIDER_BUFFER_MS: u32 = 40;
 
 fn stream_config(supported: &cpal::SupportedStreamConfig, wider: bool) -> cpal::StreamConfig {
-    let mut config: cpal::StreamConfig = supported.clone().into();
+    let mut config: cpal::StreamConfig = (*supported).into();
     if wider && let cpal::SupportedBufferSize::Range { min, max } = supported.buffer_size() {
         let frames = supported.sample_rate() / 1000 * WIDER_BUFFER_MS;
         config.buffer_size = cpal::BufferSize::Fixed(frames.clamp(*min, *max));
@@ -357,9 +357,9 @@ fn run_capture_inner(
             cpal::SampleFormat::F32 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
-                let free = std::mem::replace(&mut free_rx_slot, None);
+                let free = free_rx_slot.take();
                 device.build_input_stream(
-                    config.clone(),
+                    config,
                     move |data: &[f32], _| {
                         let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
                         mono.clear();
@@ -373,10 +373,10 @@ fn run_capture_inner(
             cpal::SampleFormat::I16 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
-                let free = std::mem::replace(&mut free_rx_slot, None);
+                let free = free_rx_slot.take();
                 let mut floats: Vec<f32> = Vec::new();
                 device.build_input_stream(
-                    config.clone(),
+                    config,
                     move |data: &[i16], _| {
                         floats.clear();
                         floats.extend(data.iter().map(|&s| f32::from(s) / 32768.0));
@@ -394,10 +394,10 @@ fn run_capture_inner(
             cpal::SampleFormat::I24 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
-                let free = std::mem::replace(&mut free_rx_slot, None);
+                let free = free_rx_slot.take();
                 let mut floats: Vec<f32> = Vec::new();
                 device.build_input_stream(
-                    config.clone(),
+                    config,
                     move |data: &[cpal::I24], _| {
                         floats.clear();
                         floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
@@ -413,10 +413,10 @@ fn run_capture_inner(
             cpal::SampleFormat::I32 => {
                 let tx = chunks_tx.clone();
                 let channel = Arc::clone(&channel);
-                let free = std::mem::replace(&mut free_rx_slot, None);
+                let free = free_rx_slot.take();
                 let mut floats: Vec<f32> = Vec::new();
                 device.build_input_stream(
-                    config.clone(),
+                    config,
                     move |data: &[i32], _| {
                         floats.clear();
                         floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));

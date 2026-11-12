@@ -80,16 +80,16 @@ pub fn parse_wav(b: &[u8]) -> Result<IqBlock, String> {
             }
             let data = &b[body..end];
             let samples: Vec<Complex<f32>> = match (tag, bits) {
-                (1, 16) => data.chunks_exact(4).map(|c| Complex::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0)).collect(),
+                (1, 16) => data.as_chunks::<4>().0.iter().map(|c| Complex::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0)).collect(),
                 (1, 24) => data
-                    .chunks_exact(6)
+                    .as_chunks::<6>().0.iter()
                     .map(|c| {
                         let s = |o: usize| (i32::from_le_bytes([0, c[o], c[o + 1], c[o + 2]]) >> 8) as f32 / 8_388_608.0;
                         Complex::new(s(0), s(3))
                     })
                     .collect(),
-                (1, 32) => data.chunks_exact(8).map(|c| Complex::new(i32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32 / 2_147_483_648.0, i32::from_le_bytes([c[4], c[5], c[6], c[7]]) as f32 / 2_147_483_648.0)).collect(),
-                (3, 32) => data.chunks_exact(8).map(|c| Complex::new(f32::from_le_bytes([c[0], c[1], c[2], c[3]]), f32::from_le_bytes([c[4], c[5], c[6], c[7]]))).collect(),
+                (1, 32) => data.as_chunks::<8>().0.iter().map(|c| Complex::new(i32::from_le_bytes([c[0], c[1], c[2], c[3]]) as f32 / 2_147_483_648.0, i32::from_le_bytes([c[4], c[5], c[6], c[7]]) as f32 / 2_147_483_648.0)).collect(),
+                (3, 32) => data.as_chunks::<8>().0.iter().map(|c| Complex::new(f32::from_le_bytes([c[0], c[1], c[2], c[3]]), f32::from_le_bytes([c[4], c[5], c[6], c[7]]))).collect(),
                 _ => return Err(format!("formato WAV non gestito ({tag}, {bits} bit)")),
             };
             return Ok(IqBlock { sample_rate: rate, center_hz: None, samples });

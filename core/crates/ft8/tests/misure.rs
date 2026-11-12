@@ -297,7 +297,7 @@ fn analisi_a_priori_su_messaggi_per_noi() {
 fn read_wav(path: &std::path::Path) -> Option<Vec<f32>> {
     let bytes = std::fs::read(path).ok()?;
     let data = bytes.windows(4).position(|w| w == b"data")? + 8;
-    Some(bytes.get(data..)?.chunks_exact(2).map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect())
+    Some(bytes.get(data..)?.as_chunks::<2>().0.iter().map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0).collect())
 }
 
 /// Banda piena vera: i WAV di una cartella fuori dal repository (`AURORA_WAV_DIR`, periodi FT8 da 15 s registrati da Aurora; contengono

@@ -143,7 +143,7 @@ impl State {
         // per le prove: un periodo si', uno no, la stazione «trasmette» un messaggio del QSO (righe Tx e STOP TX nella Finestra RX)
         self.cycles += 1;
         const TX: [&str; 5] = ["CQ {me} FN42", "K1ABC {me} FN42", "K1ABC {me} R-10", "K1ABC {me} RR73", "K1ABC {me} 73"];
-        let transmitting = self.cycles % 2 == 0;
+        let transmitting = self.cycles.is_multiple_of(2);
         self.status.transmitting = transmitting;
         self.status.tx_message = transmitting.then(|| TX[(self.cycles as usize / 2) % TX.len()].replace("{me}", &self.status.de_call));
         self.emit_status(io);
