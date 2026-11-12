@@ -10,6 +10,7 @@ import { openStream } from './api/stream';
 import { Footer } from './components/Footer';
 import { ModeNav } from './components/ModeNav';
 import { useT } from './i18n';
+import { useEngineOsSync } from './lib/engineOs';
 import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
 import { COLORS_STORAGE_KEY, applyColors, readColors } from './lib/colors';
@@ -60,6 +61,8 @@ const REMOTE = REMOTE_HOST;
 const REMOTE_TOUCH = REMOTE && typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
 
 export function App() {
+  // i testi che nominano Windows cambiano se il motore gira su un altro sistema
+  useEngineOsSync();
   const t = useT();
   const showQmap = usePrefs((p) => p.prefs.showQmap);
   const route = useRoute();

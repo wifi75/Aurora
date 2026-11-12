@@ -69,12 +69,15 @@ import { digiBandStrings } from './strings/digiband';
 import { sstvStrings } from './strings/sstv';
 import { lotwStrings } from './strings/lotw';
 import { decodeOptStrings } from './strings/decodeopts';
+import { systemStrings } from './strings/system';
+import { isWindowsOs, useEngineOs } from './os';
 
 export { DEFAULT_LANG, LANGS, LANG_NAMES, TABLE_LANGS, detectLang, langFromLocale, localeOf, type Lang } from './core';
 export { useLang } from './lang';
+export { useEngineOs } from './os';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...setWinStrings, ...sdrStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...log4omDbStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...lookupStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...contestStrings, ...qmapStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...phoneStrings, ...reportStrings, ...firstRunStrings, ...backupStrings, ...setupCtaStrings, ...appearanceStrings, ...rotatorStrings, ...sstvStrings, ...digiStrings, ...satStrings, ...clusterOptsStrings, ...digiMenuStrings, ...digiBandStrings, ...tooltipStrings, ...logPromptStrings, ...checkAllStrings, ...coreTextStrings, ...lotwStrings, ...decodeOptStrings } as const;
+export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...setWinStrings, ...sdrStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...log4omDbStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...lookupStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...contestStrings, ...qmapStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...phoneStrings, ...reportStrings, ...firstRunStrings, ...backupStrings, ...setupCtaStrings, ...appearanceStrings, ...rotatorStrings, ...sstvStrings, ...digiStrings, ...satStrings, ...clusterOptsStrings, ...digiMenuStrings, ...digiBandStrings, ...tooltipStrings, ...logPromptStrings, ...checkAllStrings, ...coreTextStrings, ...lotwStrings, ...decodeOptStrings, ...systemStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 
@@ -85,15 +88,26 @@ export function textOf(lang: Lang, key: Key): string | undefined {
   return lang === 'nl' ? (NL_UI[key] ?? entry[1]) : pick(entry, lang);
 }
 
-export function translate(lang: Lang, key: Key, vars?: Record<string, string | number>): string {
-  const text = textOf(lang, key);
+/**
+ * La chiave da usare sul sistema dove gira il motore: fuori da Windows (`otherSystem`) vale la variante `.sys` del testo, se c'e'
+ * (i testi che nominano Windows: «volume di Windows» diventa «mixer audio del sistema», vedi `strings/system.ts`).
+ */
+export function keyForSystem(key: Key, otherSystem: boolean): Key {
+  if (!otherSystem) return key;
+  const variant = `${key}.sys`;
+  return variant in STRINGS ? (variant as Key) : key;
+}
+
+export function translate(lang: Lang, key: Key, vars?: Record<string, string | number>, otherSystem = false): string {
+  const text = textOf(lang, keyForSystem(key, otherSystem));
   return text === undefined ? key : fill(text, vars);
 }
 
 export type T = (key: Key, vars?: Record<string, string | number>) => string;
 
-/** Funzione di traduzione che segue la lingua scelta e fa ridisegnare chi la usa quando cambia. */
+/** Funzione di traduzione che segue la lingua scelta (e il sistema del motore) e fa ridisegnare chi la usa quando cambiano. */
 export function useT(): T {
   const lang = useLang((s) => s.lang);
-  return useCallback((key, vars) => translate(lang, key, vars), [lang]);
+  const otherSystem = useEngineOs((s) => !isWindowsOs(s.os));
+  return useCallback((key, vars) => translate(lang, key, vars, otherSystem), [lang, otherSystem]);
 }

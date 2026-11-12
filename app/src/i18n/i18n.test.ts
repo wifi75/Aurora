@@ -3,7 +3,7 @@ import { DEFAULT_LANG, LANGS, LANG_NAMES, TABLE_LANGS, detectLang, fill, isLang,
 import { firstLaunchLang, readLang, saveLang } from './lang';
 import { GUIDE } from './guide';
 import { NOVITA } from '../lib/novita';
-import { STRINGS, textOf, translate, type Key } from './index';
+import { STRINGS, keyForSystem, textOf, translate, type Key } from './index';
 import { NL_TEXTS } from './nl/texts';
 import { NL_UI } from './nl/ui';
 
@@ -88,6 +88,38 @@ describe('translate', () => {
 
   it('falls back to the key text for an unknown key instead of failing', () => {
     expect(translate('en', 'chiave.che.non.esiste' as Key)).toBe('chiave.che.non.esiste');
+  });
+});
+
+describe('texts that name Windows', () => {
+  it('have a variant for the other systems, chosen from the system the engine runs on', () => {
+    expect(translate('en', 'aud.vol.off')).toBe('Windows volume not available for this device.');
+    expect(translate('en', 'aud.vol.off', undefined, true)).toBe('The volume of this device is set from the system audio mixer.');
+    expect(translate('it', 'aud.vol.out', undefined, true)).toBe('Livello di trasmissione (Pwr)');
+    expect(translate('en', 'rxl.volume.value', { pct: 40, device: 'USB' }, true)).toBe('40 % of the system recording volume (USB)');
+    // una chiave senza variante resta quella di sempre, su ogni sistema
+    expect(keyForSystem('nav.station' as Key, true)).toBe('nav.station');
+    expect(translate('it', 'nav.station' as Key, undefined, true)).toBe(translate('it', 'nav.station' as Key));
+  });
+
+  it('every variant belongs to an existing text, keeps its placeholders and never names Windows', () => {
+    const variants = (Object.keys(STRINGS) as Key[]).filter((k) => k.endsWith('.sys'));
+    expect(variants.length).toBeGreaterThan(10);
+    for (const key of variants) {
+      const base = key.slice(0, -'.sys'.length) as Key;
+      expect(STRINGS[base], `${key}: manca il testo di base`).toBeDefined();
+      for (const lang of TABLE_LANGS) {
+        expect(placeholders(textOf(lang, key) ?? ''), `${key} ${lang}`).toBe(placeholders(textOf(lang, base) ?? ''));
+        expect(textOf(lang, key), `${key} ${lang}`).not.toMatch(/Windows/);
+      }
+      expect(textOf('nl', key), `${key} nl`).not.toMatch(/Windows/);
+    }
+  });
+
+  it('no text shown on the Audio page outside Windows names it', () => {
+    for (const key of ['aud.vol.in', 'aud.vol.out', 'tip.aud.vol.in', 'tip.aud.vol.out', 'aud.vol.off', 'tip.aud.input', 'ens.audio.help'] as Key[]) {
+      for (const lang of [...TABLE_LANGS, 'nl'] as const) expect(translate(lang, key, undefined, true), `${key} ${lang}`).not.toMatch(/Windows/);
+    }
   });
 });
 
