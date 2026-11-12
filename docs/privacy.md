@@ -79,6 +79,43 @@ l'indirizzo IP del mittente: lo usa solo per limitare le richieste.
 
 **Come spegnerli**: togli il segno alle due opzioni. Spegnendo gli errori automatici si svuota anche la coda sul PC.
 
+## Rapporti dell'installatore
+
+Ogni installazione o aggiornamento su Windows scrive un **registro sul PC**, `installazione.log` nella cartella dei dati di Aurora
+(`%APPDATA%\Aurora`, o quella di `AURORA_DATA_DIR`); ogni installazione sovrascrive il registro della precedente. Contiene: versione
+nuova e versione installata prima, modo (normale, passivo, aggiornamento silenzioso da Aurora), versione e build di Windows,
+architettura, tipo di account (amministratore o utente), lingua dell'installatore, cartella di destinazione e spazio libero sul disco,
+WebView2 (versione presente, scaricamento e installazione), se Aurora o il suo core erano aperti e sono stati chiusi, la cartella
+di Hamlib vecchia non tolta (file bloccati), i file non copiati o spariti subito dopo la copia (per esempio `rigctld.exe` tolto da un
+antivirus), l'esito e, quando l'installatore mostra la sua finestra, l'elenco dei dettagli. Solo se qualcosa non va si aggiungono il
+nome e lo stato degli antivirus registrati in Sicurezza di Windows e i programmi ancora aperti dalla cartella di installazione. Il
+registro resta sul PC finché non parte uno dei rapporti qui sotto.
+
+**Quando l'installazione non riesce** (WebView2 non scaricato o non installato, Aurora che non si chiude, file che non si possono
+scrivere, versione più vecchia rifiutata in silenzio, installazione fermata da un errore) l'installatore manda:
+
+- un **rapporto breve** come quelli degli errori automatici, area `installatore`: identificativo casuale dell'installazione (lo
+  stesso di Aurora se c'è già, `rapporti-installazione.txt`, altrimenti uno nuovo che non si salva), giorno, versione, Windows,
+  processore, numero di core e memoria, e il messaggio con il motivo, gli avvisi e gli errori del registro, il modo e la versione di prima;
+- il **registro ripulito** in un pacchetto zip (motivo `installazione`), con un `info.json` con gli stessi dati.
+
+Prima dell'invio la stessa pulizia dei rapporti di Aurora toglie nome utente, nome del PC e dominio di Windows (i nomi generici
+come «User», «Admin» o «Radio» restano: non dicono chi sei), i percorsi `C:\Users\<nome>` (diventano `C:\Users\<utente>`), email,
+indirizzi IP, nominativi, locatori, valori dopo `password=` o `token:` e codici lunghi. L'invio passa da PowerShell (già presente in
+Windows 10 e 11; se manca non si manda nulla), nascosto e con un tempo massimo di 60 secondi: senza rete l'installatore non resta appeso
+e il registro resta comunque sul PC.
+
+**Quando l'installazione riesce ma con degli avvisi**, o si è fermata a metà, l'installatore non manda nulla: al primo avvio
+Aurora legge il registro e, se ci sono avvisi o errori, manda **un solo rapporto breve** area `installatore` con gli avvisi
+ripuliti, una volta per installazione (si ricorda l'impronta del registro in `rapporti-installazione-vista.txt`). Se l'installatore
+ha già mandato il suo rapporto, Aurora non lo rimanda. Il registro ripulito entra anche nel pacchetto dopo un crash, in quello
+«Manda il pacchetto a chi sviluppa Aurora» e nel pacchetto per l'assistenza sul Desktop.
+
+**La tua scelta vale anche qui**: se in Aurora hai spento «Manda in automatico i rapporti degli errori» (`"auto_errors": false` in
+`rapporti.json`), né l'installatore né Aurora mandano rapporti dell'installazione; il registro resta solo sul PC. Alla **prima
+installazione** la scelta non c'è ancora: vale quella di fabbrica di Aurora, cioè rapporti accesi, come dice la pagina «Dati che
+Aurora manda in rete» dell'installatore. Un'installazione annullata prima di cominciare non scrive il registro e non manda nulla.
+
 ## Conteggio delle installazioni attive
 
 Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Serve
