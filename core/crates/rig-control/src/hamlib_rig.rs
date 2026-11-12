@@ -356,7 +356,12 @@ impl Inner {
         if !link.alive() {
             return Err(RigError(format!("rigctld terminato: {}", link.note())));
         }
-        let freq = link.client().frequency()?;
+        // rigctld che si chiude subito dopo l'avvio (radio spenta, modello o velocita' sbagliati) dava solo «connessione interrotta
+        // forzatamente» nei rapporti (2026-11-12, piu' installazioni): se il processo e' uscito si dice e si aggiungono le sue ultime righe
+        let freq = link.client().frequency().map_err(|e| {
+            std::thread::sleep(Duration::from_millis(300));
+            if link.alive() { e } else { RigError(format!("rigctld terminato: {} ({})", link.note(), e.0)) }
+        })?;
         let mut mode = link.client().mode().ok();
         // il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, come WSJT-X (`RadioModePolicy`): prima solo al cambio di frequenza, e
         // dopo l'avvio sulla stessa frequenza si poteva trasmettere nel modo che la radio aveva (USB analogico, FM...)
