@@ -14,6 +14,8 @@ pub mod cw;
 #[cfg(feature = "fldigi-oracle")]
 pub mod fldigi_oracle;
 pub mod macro_files;
+#[cfg(feature = "mmtty-oracle")]
+pub mod mmtty_oracle;
 pub mod psk;
 pub mod rtty;
 pub mod service;

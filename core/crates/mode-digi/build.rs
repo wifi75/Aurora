@@ -1,10 +1,39 @@
 //! Con la feature `fldigi-oracle` (solo per le prove, mai nell'installatore) compila i ricevitori RTTY, PSK e CW di fldigi presi da
-//! `terze-parti/fldigi` (sottomodulo) piu' i nostri `oracle/fldigi_rtty_rx.cpp`, `fldigi_psk_rx.cpp` e `fldigi_cw_rx.cpp`. Senza la feature non fa niente.
+//! `terze-parti/fldigi` (sottomodulo) piu' i nostri `oracle/fldigi_rtty_rx.cpp`, `fldigi_psk_rx.cpp` e `fldigi_cw_rx.cpp`. Con `mmtty-oracle`
+//! compila il ricevitore RTTY di MMTTY 1.70L (`oracle/mmtty_rtty_rx.cpp` con le classi copiate in `oracle/mmtty/mmtty_dsp.inc`, LGPL).
+//! Senza le feature non fa niente.
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     #[cfg(feature = "fldigi-oracle")]
     oracle::build();
+    #[cfg(feature = "mmtty-oracle")]
+    mmtty::build();
+}
+
+#[cfg(feature = "mmtty-oracle")]
+mod mmtty {
+    use std::path::PathBuf;
+
+    pub fn build() {
+        let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_default());
+        let main = manifest.join("oracle/mmtty_rtty_rx.cpp");
+        let inc = manifest.join("oracle/mmtty/mmtty_dsp.inc");
+        for f in [&main, &inc] {
+            println!("cargo:rerun-if-changed={}", f.display());
+        }
+        cc::Build::new()
+            .cpp(true)
+            .file(&main)
+            .include(manifest.join("oracle"))
+            .define("_USE_MATH_DEFINES", None)
+            .define("_CRT_SECURE_NO_WARNINGS", None)
+            .flag_if_supported("/EHsc")
+            .flag_if_supported("/utf-8")
+            .flag_if_supported("-std=c++14")
+            .warnings(false)
+            .compile("aurora_mmtty");
+    }
 }
 
 #[cfg(feature = "fldigi-oracle")]

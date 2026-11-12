@@ -10,6 +10,8 @@ publish = false
 [features]
 # Solo per le prove: compila i ricevitori RTTY, PSK e CW di fldigi (sottomodulo terze-parti/fldigi) come arbitri dei nostri. Mai nell'installatore.
 fldigi-oracle = ["dep:cc"]
+# Solo per le prove: compila il ricevitore RTTY di MMTTY 1.70L (sottomodulo terze-parti/mmtty, LGPL) come secondo arbitro. Mai nell'installatore.
+mmtty-oracle = ["dep:cc"]
 
 [build-dependencies]
 cc = { version = "1.11.1", optional = true }
