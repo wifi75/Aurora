@@ -12,7 +12,9 @@
 //! Il ricevitore segue quello di fldigi 4.2.13 (`rtty::rx_process`, `rtty::rx`, `rtty::is_mark_space`, `rtty::baudot_dec`,
 //! `fftfilt::rtty_filter` in `src/filters/fftfilt.cxx`), con due idee (solo il comportamento, dall'analisi del programma: nessun
 //! codice) e una nostra; ogni scelta e' misurata in `tests/rtty_confronto.rs`:
-//! - due mixer portano mark e space in banda base e due filtri passa-basso a coseno rialzato larghi in base al baud li separano (fldigi);
+//! - un front-end decimato (oscillatore a rotazione sul centro, passa-basso FIR, circa 32 campioni per bit) porta la coppia di toni in
+//!   banda base; poi due mixer portano mark e space a zero e due filtri passa-basso a coseno rialzato larghi in base al baud li separano
+//!   (fldigi);
 //! - controllo automatico della soglia (ATC): si parte dall'«Optimal ATC» di fldigi e si passa a una variante nostra a decisione guidata,
 //!   che regge un tono che svanisce (fading selettivo, filtro della radio inclinato) anche con poco segnale;
 //! - l'inizio del carattere si cerca sulle ultime decisioni lunghe un bit: mark all'inizio, space alla fine e metà dei campioni a mark;
@@ -179,7 +181,8 @@ fn synth(seq: &[(bool, f64)], params: RttyParams, amp_mark: f32, amp_space: f32)
     out
 }
 
-/// Una finestra mobile di somme (I, Q) alla frequenza data: la sua ampiezza dice quanto c'è di quel tono nell'ultimo bit (filtri di controllo dell'AFC).
+/// Una finestra mobile di somme (I, Q) alla frequenza data: la sua ampiezza dice quanto c'è di quel tono nell'ultimo bit (filtri di controllo
+/// dell'AFC). Lavora sul segnale complesso del front-end, a frequenza `rate`, con la frequenza contata dal centro.
 struct Tone {
     step: f64,
     phase: f64,
@@ -190,20 +193,20 @@ struct Tone {
 }
 
 impl Tone {
-    fn new(freq_hz: f32, len: usize) -> Self {
-        Self { step: 2.0 * PI * f64::from(freq_hz) / f64::from(RATE), phase: 0.0, ring_i: vec![0.0; len], ring_q: vec![0.0; len], sum_i: 0.0, sum_q: 0.0 }
-    }
-    /// Cambia la frequenza senza perdere la fase.
-    fn retune(&mut self, freq_hz: f32) {
-        self.step = 2.0 * PI * f64::from(freq_hz) / f64::from(RATE);
+    fn new(freq_hz: f32, len: usize, rate: f64) -> Self {
+        Self { step: 2.0 * PI * f64::from(freq_hz) / rate, phase: 0.0, ring_i: vec![0.0; len], ring_q: vec![0.0; len], sum_i: 0.0, sum_q: 0.0 }
     }
 
-    fn push(&mut self, s: f32, pos: usize) -> f32 {
-        let i = s * self.phase.cos() as f32;
-        let q = -s * self.phase.sin() as f32;
+    fn push(&mut self, z: (f32, f32), pos: usize) -> f32 {
+        let (c, s) = (self.phase.cos() as f32, self.phase.sin() as f32);
+        // z * e^(-j fase)
+        let i = z.0 * c + z.1 * s;
+        let q = z.1 * c - z.0 * s;
         self.phase += self.step;
         if self.phase > 2.0 * PI {
             self.phase -= 2.0 * PI;
+        } else if self.phase < -2.0 * PI {
+            self.phase += 2.0 * PI;
         }
         self.sum_i += i - self.ring_i[pos];
         self.sum_q += q - self.ring_q[pos];
@@ -217,19 +220,20 @@ impl Tone {
 /// `cos^2(pi f / 2B)` per |f| < B = K * baud e zero oltre (la correzione 1/sinc di fldigi in quella banda vale meno dello 0,1% e si tralascia).
 /// Nel tempo e' la trasformata di una finestra di Hann larga 2B: `B [ sinc(u)/2 + sinc(u+1)/4 + sinc(u-1)/4 ]` con u = 2 B t.
 /// Guadagno 1 in continua.
-fn rtty_filter(baud: f64) -> Vec<f32> {
-    lowpass(FILTER_K * baud, baud)
+fn rtty_filter(baud: f64, rate: f64) -> Vec<f32> {
+    lowpass(FILTER_K * baud, baud, rate)
 }
 
-/// Passa-basso con risposta `cos^2(pi f / 2B)` fino a `b_hz` e zero oltre, lungo `FILTER_SPAN_BITS` bit; guadagno 1 in continua.
-fn lowpass(b_hz: f64, baud: f64) -> Vec<f32> {
+/// Passa-basso con risposta `cos^2(pi f / 2B)` fino a `b_hz` e zero oltre, lungo `FILTER_SPAN_BITS` bit, alla frequenza di campionamento
+/// `rate`; guadagno 1 in continua.
+fn lowpass(b_hz: f64, baud: f64, rate: f64) -> Vec<f32> {
     let b = b_hz;
     let sinc = |x: f64| if x.abs() < 1e-9 { 1.0 } else { (PI * x).sin() / (PI * x) };
-    let len = ((FILTER_SPAN_BITS * f64::from(RATE) / baud).round() as usize).max(3) | 1;
+    let len = ((FILTER_SPAN_BITS * rate / baud).round() as usize).max(3) | 1;
     let mid = (len / 2) as f64;
     let h: Vec<f64> = (0..len)
         .map(|n| {
-            let u = 2.0 * b * (n as f64 - mid) / f64::from(RATE);
+            let u = 2.0 * b * (n as f64 - mid) / rate;
             0.5 * sinc(u) + 0.25 * sinc(u + 1.0) + 0.25 * sinc(u - 1.0)
         })
         .collect();
@@ -237,7 +241,98 @@ fn lowpass(b_hz: f64, baud: f64) -> Vec<f32> {
     h.iter().map(|v| (v / sum) as f32).collect()
 }
 
-/// Un tono portato in banda base (mixer) e filtrato con `rtty_filter`; l'uscita si calcola solo ogni `decim` campioni.
+/// Il front-end decimato (passo 5 di `docs/progetto-rtty-oltre.md`): un oscillatore a rotazione porta il centro della coppia di toni a zero,
+/// un passa-basso FIR (finestra di Blackman) tiene i toni e i due canali del rumore e la decimazione riduce la frequenza a `RATE / decim`
+/// (circa 32 campioni per bit). Tutto il resto del ricevitore lavora su questo segnale complesso: i filtri dei toni costano molto meno che
+/// alla frequenza piena.
+struct FrontEnd {
+    /// Il fasore dell'oscillatore (cos, sin) e la rotazione di un campione.
+    rot: (f64, f64),
+    step: (f64, f64),
+    renorm: u32,
+    h: Vec<f32>,
+    re: Vec<f32>,
+    im: Vec<f32>,
+    pos: usize,
+    decim: usize,
+    count: usize,
+}
+
+impl FrontEnd {
+    /// `half_band_hz`: meta' della banda da tenere (dal centro al bordo del canale del rumore piu' lontano).
+    fn new(centre_hz: f32, half_band_hz: f64, decim: usize) -> Self {
+        let rate = f64::from(RATE);
+        let out_rate = rate / decim as f64;
+        // banda passante fino a `half_band_hz`, banda oscura da dove l'aliasing ricadrebbe dentro (`out_rate - half_band_hz`)
+        let stop = (out_rate - half_band_hz).max(half_band_hz + 50.0).min(rate / 2.0);
+        let fc = 0.5 * (half_band_hz + stop) / rate;
+        let width = (stop - half_band_hz).max(50.0);
+        let len = ((5.5 * rate / width).ceil() as usize).clamp(15, 1501) | 1;
+        let mid = (len / 2) as f64;
+        let h: Vec<f64> = (0..len)
+            .map(|k| {
+                let n = k as f64 - mid;
+                let sinc = if n == 0.0 { 2.0 * fc } else { (2.0 * PI * fc * n).sin() / (PI * n) };
+                let w = 0.42 - 0.5 * (2.0 * PI * k as f64 / (len - 1) as f64).cos() + 0.08 * (4.0 * PI * k as f64 / (len - 1) as f64).cos();
+                sinc * w
+            })
+            .collect();
+        let sum: f64 = h.iter().sum();
+        let mut fe = Self {
+            rot: (1.0, 0.0),
+            step: (1.0, 0.0),
+            renorm: 0,
+            h: h.iter().map(|v| (v / sum) as f32).collect(),
+            re: vec![0.0; 2 * len],
+            im: vec![0.0; 2 * len],
+            pos: 0,
+            decim,
+            count: 0,
+        };
+        fe.retune(centre_hz);
+        fe
+    }
+
+    /// Cambia la frequenza dell'oscillatore senza perdere la fase.
+    fn retune(&mut self, centre_hz: f32) {
+        let w = 2.0 * PI * f64::from(centre_hz) / f64::from(RATE);
+        self.step = (w.cos(), w.sin());
+    }
+
+    /// Un campione nuovo; restituisce un campione decimato (I, Q) ogni `decim`.
+    fn push(&mut self, s: f32) -> Option<(f32, f32)> {
+        let len = self.h.len();
+        // s * e^(-j fase)
+        let (re, im) = ((f64::from(s) * self.rot.0) as f32, (-f64::from(s) * self.rot.1) as f32);
+        let (c, d) = self.rot;
+        self.rot = (c * self.step.0 - d * self.step.1, c * self.step.1 + d * self.step.0);
+        self.renorm += 1;
+        if self.renorm >= 1024 {
+            self.renorm = 0;
+            let m = (self.rot.0 * self.rot.0 + self.rot.1 * self.rot.1).sqrt();
+            self.rot = (self.rot.0 / m, self.rot.1 / m);
+        }
+        self.re[self.pos] = re;
+        self.re[self.pos + len] = re;
+        self.im[self.pos] = im;
+        self.im[self.pos + len] = im;
+        self.pos = (self.pos + 1) % len;
+        self.count += 1;
+        if self.count < self.decim {
+            return None;
+        }
+        self.count = 0;
+        let (r, m) = (&self.re[self.pos..self.pos + len], &self.im[self.pos..self.pos + len]);
+        let (mut i, mut q) = (0.0_f32, 0.0_f32);
+        for k in 0..len {
+            i += self.h[k] * r[k];
+            q += self.h[k] * m[k];
+        }
+        Some((i, q))
+    }
+}
+
+/// Un tono portato in banda base (mixer, sul segnale complesso del front-end) e filtrato con `rtty_filter`.
 struct Channel {
     step: f64,
     phase: f64,
@@ -248,20 +343,20 @@ struct Channel {
 }
 
 impl Channel {
-    fn new(freq_hz: f32, len: usize) -> Self {
-        Self { step: 2.0 * PI * f64::from(freq_hz) / f64::from(RATE), phase: 0.0, re: vec![0.0; 2 * len], im: vec![0.0; 2 * len], pos: 0 }
+    /// `freq_hz`: la frequenza del tono contata dal centro; `rate`: la frequenza dei campioni del front-end.
+    fn new(freq_hz: f32, len: usize, rate: f64) -> Self {
+        Self { step: 2.0 * PI * f64::from(freq_hz) / rate, phase: 0.0, re: vec![0.0; 2 * len], im: vec![0.0; 2 * len], pos: 0 }
     }
 
-    fn retune(&mut self, freq_hz: f32) {
-        self.step = 2.0 * PI * f64::from(freq_hz) / f64::from(RATE);
-    }
-
-    fn push(&mut self, s: f32) {
+    fn push(&mut self, z: (f32, f32)) {
         let len = self.re.len() / 2;
-        let (re, im) = (s * self.phase.cos() as f32, -s * self.phase.sin() as f32);
+        let (c, s) = (self.phase.cos() as f32, self.phase.sin() as f32);
+        let (re, im) = (z.0 * c + z.1 * s, z.1 * c - z.0 * s);
         self.phase += self.step;
         if self.phase > 2.0 * PI {
             self.phase -= 2.0 * PI;
+        } else if self.phase < -2.0 * PI {
+            self.phase += 2.0 * PI;
         }
         self.re[self.pos] = re;
         self.re[self.pos + len] = re;
@@ -306,12 +401,13 @@ struct Discriminator {
 }
 
 impl Discriminator {
-    fn new(params: &RttyParams, spb: f32) -> Self {
+    fn new(params: &RttyParams, spb: f32, rate: f64) -> Self {
         let baud = f64::from(params.baud);
-        let h = lowpass(f64::from(params.shift_hz) / 2.0 + FILTER_K * baud, baud);
+        let h = lowpass(f64::from(params.shift_hz) / 2.0 + FILTER_K * baud, baud, rate);
         let half = ((spb / 2.0).round() as usize).max(1);
         let (fm, fs) = (params.mark_hz() - params.centre_hz, params.space_hz() - params.centre_hz);
-        Self { channel: Channel::new(params.centre_hz, h.len()), h, prev: (0.0, 0.0), ring: vec![0.0; half], pos: 0, sum: 0.0, f_mark: fm, f_space: fs }
+        // il segnale del front-end e' gia' centrato: il canale non sposta la frequenza
+        Self { channel: Channel::new(0.0, h.len(), rate), h, prev: (0.0, 0.0), ring: vec![0.0; half], pos: 0, sum: 0.0, f_mark: fm, f_space: fs }
     }
 
     /// La frequenza istantanea mediata (Hz rispetto al centro); `rate` e' la frequenza dei campioni decimati.
@@ -354,10 +450,11 @@ pub struct RttyDemodulator {
     level_db: f32,
     snr_db: f32,
     open: bool,
-    /// Il filtro di ricezione e i quattro canali: mark, space e i due del rumore (sotto il tono basso e sopra quello alto).
+    /// Il front-end decimato, il filtro di ricezione e i quattro canali: mark, space e i due del rumore (sotto il tono basso e sopra quello
+    /// alto).
+    front: FrontEnd,
     h: Vec<f32>,
     decim: usize,
-    decim_count: usize,
     mark: Channel,
     space: Channel,
     noise: [Channel; 2],
@@ -405,12 +502,15 @@ impl RttyDemodulator {
     pub fn new(params: RttyParams) -> Self {
         let baud = f64::from(params.baud);
         let decim = ((f64::from(RATE) / (baud * SAMPLES_PER_BIT)).floor() as usize).max(1);
-        let spb = (f64::from(RATE) / decim as f64 / baud) as f32;
-        let h = rtty_filter(baud);
+        let rate = f64::from(RATE) / decim as f64;
+        let spb = (rate / baud) as f32;
+        let h = rtty_filter(baud, rate);
         let len = h.len();
-        let probe_len = (f64::from(RATE) / baud).round() as usize;
-        let (m, s) = (params.mark_hz(), params.space_hz());
+        let probe_len = (rate / baud).round() as usize;
+        // i toni contati dal centro
+        let (m, s) = (params.mark_hz() - params.centre_hz, params.space_hz() - params.centre_hz);
         let (lo, hi) = (m.min(s), m.max(s));
+        let half_band = f64::from(hi + NOISE_GAP_HZ) + FILTER_K * baud;
         let nbits = (spb.round() as usize).max(4);
         Self {
             params,
@@ -421,12 +521,12 @@ impl RttyDemodulator {
             level_db: -90.0,
             snr_db: 0.0,
             open: true,
+            front: FrontEnd::new(params.centre_hz, half_band, decim),
             h,
             decim,
-            decim_count: 0,
-            mark: Channel::new(m, len),
-            space: Channel::new(s, len),
-            noise: [Channel::new(lo - NOISE_GAP_HZ, len), Channel::new(hi + NOISE_GAP_HZ, len)],
+            mark: Channel::new(m, len, rate),
+            space: Channel::new(s, len, rate),
+            noise: [Channel::new(lo - NOISE_GAP_HZ, len, rate), Channel::new(hi + NOISE_GAP_HZ, len, rate)],
             spb,
             mark_env: 0.0,
             space_env: 0.0,
@@ -442,7 +542,12 @@ impl RttyDemodulator {
             levels: [0.0; 4],
             level_age: [0; 4],
             disc: None,
-            probes: [Tone::new(m + PROBE_HZ, probe_len), Tone::new(m - PROBE_HZ, probe_len), Tone::new(s + PROBE_HZ, probe_len), Tone::new(s - PROBE_HZ, probe_len)],
+            probes: [
+                Tone::new(m + PROBE_HZ, probe_len, rate),
+                Tone::new(m - PROBE_HZ, probe_len, rate),
+                Tone::new(s + PROBE_HZ, probe_len, rate),
+                Tone::new(s - PROBE_HZ, probe_len, rate),
+            ],
             probe_len,
             probe_pos: 0,
             sum_m: 0.0,
@@ -482,11 +587,8 @@ impl RttyDemodulator {
         if on == self.disc.is_some() {
             return;
         }
-        self.disc = on.then(|| {
-            let mut p = self.params;
-            p.centre_hz += self.offset_hz;
-            Discriminator::new(&p, self.spb)
-        });
+        let rate = f64::from(RATE) / self.decim as f64;
+        self.disc = on.then(|| Discriminator::new(&self.params, self.spb, rate));
     }
 
     /// Soglia dello squelch sul rapporto segnale/rumore in dB (`snr_db`); `None` lo spegne.
@@ -504,21 +606,9 @@ impl RttyDemodulator {
         self.snr_db
     }
 
+    /// L'AFC sposta solo l'oscillatore del front-end: i toni, i filtri di controllo e i canali del rumore sono contati dal centro.
     fn retune_all(&mut self) {
-        let mut p = self.params;
-        p.centre_hz += self.offset_hz;
-        let (m, s) = (p.mark_hz(), p.space_hz());
-        self.mark.retune(m);
-        self.space.retune(s);
-        for (i, t) in self.probes.iter_mut().enumerate() {
-            let f = if i < 2 { m } else { s };
-            t.retune(f + if i % 2 == 0 { PROBE_HZ } else { -PROBE_HZ });
-        }
-        self.noise[0].retune(m.min(s) - NOISE_GAP_HZ);
-        self.noise[1].retune(m.max(s) + NOISE_GAP_HZ);
-        if let Some(d) = &mut self.disc {
-            d.channel.retune(p.centre_hz);
-        }
+        self.front.retune(self.params.centre_hz + self.offset_hz);
     }
 
     /// Una volta per bit: rapporto segnale/rumore (squelch) e AFC. L'AFC si muove solo se c'e' un segnale RTTY: i due toni devono superare di
@@ -718,17 +808,18 @@ impl RttyDemodulator {
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
         for &s in samples {
-            self.mark.push(s);
-            self.space.push(s);
-            self.noise[0].push(s);
-            self.noise[1].push(s);
+            let Some(z) = self.front.push(s) else { continue };
+            self.mark.push(z);
+            self.space.push(z);
+            self.noise[0].push(z);
+            self.noise[1].push(z);
             if let Some(d) = &mut self.disc {
-                d.channel.push(s);
+                d.channel.push(z);
             }
             if self.afc {
                 let pos = self.probe_pos;
                 for (i, t) in self.probes.iter_mut().enumerate() {
-                    self.last_probes[i] = t.push(s, pos);
+                    self.last_probes[i] = t.push(z, pos);
                 }
             }
             self.probe_pos += 1;
@@ -736,11 +827,6 @@ impl RttyDemodulator {
                 self.probe_pos = 0;
                 self.bit_step();
             }
-            self.decim_count += 1;
-            if self.decim_count < self.decim {
-                continue;
-            }
-            self.decim_count = 0;
             let m = self.mark.magnitude(&self.h);
             let sp = self.space.magnitude(&self.h);
             let nz = 0.5 * (self.noise[0].magnitude(&self.h) + self.noise[1].magnitude(&self.h));
@@ -832,12 +918,12 @@ mod tests {
         assert_eq!((r.mark_hz(), r.space_hz()), (1415.0, 1585.0));
         // in pausa si trasmette il mark: l'audio iniziale sta sul tono alto
         let audio = modulate(b"", q, 0.5);
-        let mut alto = Tone::new(1585.0, 264);
-        let mut basso = Tone::new(1415.0, 264);
+        let mut alto = Tone::new(1585.0, 264, f64::from(RATE));
+        let mut basso = Tone::new(1415.0, 264, f64::from(RATE));
         let (mut a, mut b) = (0.0, 0.0);
         for (i, &s) in audio[..2000].iter().enumerate() {
-            a = alto.push(s, i % 264);
-            b = basso.push(s, i % 264);
+            a = alto.push((s, 0.0), i % 264);
+            b = basso.push((s, 0.0), i % 264);
         }
         assert!(a > 10.0 * b, "mark {a} space {b}");
     }

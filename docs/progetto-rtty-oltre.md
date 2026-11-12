@@ -128,3 +128,8 @@ uscite degli altri programmi come `uscita-2tone.txt`, `uscita-.txt`, `uscita-mmt
 arbitri compilati) e stampa CER e nominativi trovati per ogni programma. `AURORA_WAV=<cartella>` con la prova `tabella` scrive i WAV a
 0 dB di ogni scenario, da far leggere a 2Tone e . Da fare sul PC del proprietario: registrare bollettini W1AW (testo noto) e un
 paio d'ore di contest, passarli a 2Tone, , MMTTY e  e mettere le uscite nelle cartelle.
+
+**Passo 5** (front-end decimato): oscillatore a rotazione sul centro, passa-basso FIR a finestra di Blackman che tiene toni e canali del
+rumore, decimazione a circa 32 campioni per bit; filtri dei toni, filtri dell'AFC, canali del rumore e discriminatore lavorano sul segnale
+complesso decimato e l'AFC sposta solo l'oscillatore. Tabella invariata entro il rumore della misura (scarti fra −0,1 e +0,25 dB; portante
+−1,0 dB), velocita' da 225 a 1490 volte il tempo reale (prova `velocita`): tenuto.

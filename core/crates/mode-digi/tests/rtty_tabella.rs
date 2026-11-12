@@ -242,3 +242,15 @@ fn a_snr_alto_aurora_riceve_in_ogni_scenario() {
         assert!(e * 100 <= sent.len() * 25, "{}: {e} errori su {}", sc.nome, sent.len());
     }
 }
+
+/// Quante volte piu' veloce del tempo reale decodifica Aurora (un minuto di rumore e segnale a 170 Hz / 45,45 baud).
+#[test]
+#[ignore]
+fn velocita() {
+    let sc = scenari()[0];
+    let (audio, _) = genera(&sc, 0.0, 5, 600);
+    let t = std::time::Instant::now();
+    let n = decodifica("Aurora", &sc, &audio).len();
+    let s = t.elapsed().as_secs_f64();
+    println!("Aurora: {:.0} s di audio in {s:.3} s, {:.0} volte il tempo reale ({n} caratteri)", audio.len() as f64 / 12_000.0, audio.len() as f64 / 12_000.0 / s);
+}
