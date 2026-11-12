@@ -1562,7 +1562,7 @@ async fn dxcc_lookup(State(state): State<AppState>, _: Authed, axum::extract::Pa
 
 /// Paese da `cty.dat` e, se accese, nome e citta' da QRZ.com (prima) o HamQTH (se QRZ e' spento o non lo trova). Del nominativo cercato
 /// si restituiscono solo nome, cognome, citta' e paese. Nessuna richiesta verso internet con le ricerche spente.
-#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `lotw`, `eqsl`, `direct`, `bureau` (true/false/null; da HamQTH se QRZ non li da'), `qsl_via`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`, `lotw_last_upload` (ultimo invio a LoTW dall'elenco dell'ARRL, `AAAA-MM-GG`, o null)"), (status = 400, description = "Nominativo non valido (bad_call)")))]
+#[utoipa::path(get, path = "/api/v1/callsign/{call}", responses((status = 200, description = "`call`, `dxcc` (come `dxcc/{call}`, o null), `person` (`fname`, `name`, `city`, `country`, `grid` (locatore, vuoto se non c'e'), `lotw`, `eqsl`, `direct`, `bureau` (true/false/null; da HamQTH se QRZ non li da'), `qsl_via`, `source`) o null, `lookup` (`off`, `found`, `not_found`, `error`), `subscriber` (QRZ con abbonamento XML; null se non si sa), `message`, `lotw_last_upload` (ultimo invio a LoTW dall'elenco dell'ARRL, `AAAA-MM-GG`, o null)"), (status = 400, description = "Nominativo non valido (bad_call)")))]
 async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract::Path(call): axum::extract::Path<String>) -> Result<Json<Value>, ApiError> {
     if call.is_empty() || call.len() > 20 || !call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_call"));
@@ -1612,7 +1612,7 @@ async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract
         }
     }
     if let Some((p, source)) = found {
-        out["person"] = json!({ "fname": p.fname, "name": p.name, "city": p.city, "country": p.country, "lotw": p.lotw, "eqsl": p.eqsl, "direct": p.direct, "bureau": p.bureau, "qsl_via": p.qsl_via, "source": source });
+        out["person"] = json!({ "fname": p.fname, "name": p.name, "city": p.city, "country": p.country, "grid": p.grid, "lotw": p.lotw, "eqsl": p.eqsl, "direct": p.direct, "bureau": p.bureau, "qsl_via": p.qsl_via, "source": source });
         out["lookup"] = json!("found");
     }
     Ok(Json(out))

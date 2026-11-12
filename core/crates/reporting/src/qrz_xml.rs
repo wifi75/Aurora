@@ -80,6 +80,9 @@ pub struct Person {
     pub qsl_via: String,
     /// Accetta la QSL via bureau (`qsl` di HamQTH; QRZ non lo dice).
     pub bureau: Option<bool>,
+    /// Locatore (`grid` di QRZ e di HamQTH), vuoto se il servizio non lo dice: serve a compilare il log (SSTV).
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub grid: String,
 }
 
 impl Person {
@@ -102,6 +105,9 @@ impl Person {
         }
         if self.state.is_empty() {
             self.state = other.state.clone();
+        }
+        if self.grid.is_empty() {
+            self.grid = other.grid.clone();
         }
         if self.fname.is_empty() && self.name.is_empty() {
             self.fname = other.fname.clone();
@@ -209,6 +215,22 @@ pub fn read_session(body: &str) -> Option<Session> {
     Some(Session { key: tag(s, "Key").filter(|k| !k.is_empty()), subscriber, expires, error: tag(s, "Error").filter(|e| !e.is_empty()) })
 }
 
+/// Un locatore Maidenhead valido (4, 6 o 8 caratteri), con le lettere come si scrivono di solito (IO91wm), o vuoto.
+fn grid_of(text: &str) -> String {
+    let g: Vec<char> = text.trim().chars().collect();
+    let ok = matches!(g.len(), 4 | 6 | 8)
+        && g[0].is_ascii_alphabetic()
+        && g[1].is_ascii_alphabetic()
+        && g[2].is_ascii_digit()
+        && g[3].is_ascii_digit()
+        && (g.len() < 6 || (g[4].is_ascii_alphabetic() && g[5].is_ascii_alphabetic()))
+        && (g.len() < 8 || (g[6].is_ascii_digit() && g[7].is_ascii_digit()));
+    if !ok {
+        return String::new();
+    }
+    g.iter().enumerate().map(|(i, c)| if i < 2 { c.to_ascii_uppercase() } else { c.to_ascii_lowercase() }).collect()
+}
+
 /// Solo i campi ammessi del nodo `<Callsign>`.
 pub fn read_person(body: &str) -> Option<Person> {
     let h = block(body, "search");
@@ -230,6 +252,7 @@ pub fn read_person(body: &str) -> Option<Person> {
             direct: yes_no(tag(h, "qsldirect")),
             qsl_via: get("qsl_via"),
             bureau: yes_no(tag(h, "qsl")),
+            grid: grid_of(&get("grid")),
         });
     }
     let c = block(body, "Callsign");
@@ -249,6 +272,7 @@ pub fn read_person(body: &str) -> Option<Person> {
         direct: yes_no(tag(c, "mqsl")),
         qsl_via: get("qslmgr"),
         bureau: None,
+        grid: grid_of(&get("grid")),
     })
 }
 
@@ -437,7 +461,7 @@ mod tests {
                     if expire_first && n == 0 {
                         "<QRZDatabase><Session><Error>Session Timeout</Error></Session></QRZDatabase>".to_string()
                     } else if line.contains("callsign=IU3ABC") {
-                        "<QRZDatabase><Callsign><call>IU3ABC</call><fname>Mario</fname><name>Rossi</name><addr1>Via Segreta 1</addr1><addr2>Padova</addr2><country>Italy</country><email>nascosta@example.com</email></Callsign><Session><Key>K9</Key><SubExp>non-subscriber</SubExp></Session></QRZDatabase>".to_string()
+                        "<QRZDatabase><Callsign><call>IU3ABC</call><fname>Mario</fname><name>Rossi</name><addr1>Via Segreta 1</addr1><addr2>Padova</addr2><country>Italy</country><grid>io91WM</grid><email>nascosta@example.com</email></Callsign><Session><Key>K9</Key><SubExp>non-subscriber</SubExp></Session></QRZDatabase>".to_string()
                     } else {
                         "<QRZDatabase><Session><Key>K9</Key><Error>Not found: XX1XX</Error></Session></QRZDatabase>".to_string()
                     }
@@ -464,7 +488,7 @@ mod tests {
         let (url, logins, searches) = fake(false);
         let q = Lookup::new(Provider::Qrz, &url, "Aurora/test", Duration::from_secs(5));
         let Found::Yes(p) = q.lookup("IU3ABC", "giusta", "iu3abc", 100).unwrap() else { panic!("trovato") };
-        assert_eq!((p.fname.as_str(), p.name.as_str(), p.city.as_str(), p.country.as_str()), ("Mario", "Rossi", "Padova", "Italy"));
+        assert_eq!((p.fname.as_str(), p.name.as_str(), p.city.as_str(), p.country.as_str(), p.grid.as_str()), ("Mario", "Rossi", "Padova", "Italy", "IO91wm"));
         assert_eq!(q.subscriber(), Some(false), "senza abbonamento: dati ridotti");
         // dalla memoria: nessuna nuova richiesta
         assert!(matches!(q.lookup("IU3ABC", "giusta", "IU3ABC", 200).unwrap(), Found::Yes(_)));
@@ -488,13 +512,22 @@ mod tests {
     }
 
     #[test]
+    fn only_real_locators_are_kept() {
+        assert_eq!(grid_of(" io91wm "), "IO91wm");
+        assert_eq!(grid_of("IO91"), "IO91");
+        assert_eq!(grid_of("IO91WM12"), "IO91wm12");
+        assert_eq!(grid_of("Padova"), "");
+        assert_eq!(grid_of("IO9"), "");
+    }
+
+    #[test]
     fn hamqth_answers_are_read() {
         let login = read_session("<HamQTH><session><session_id>abc</session_id></session></HamQTH>").unwrap();
         assert_eq!(login.key.as_deref(), Some("abc"));
         let expired = read_session("<HamQTH><session><error>Session does not exist or expired</error></session></HamQTH>").unwrap();
         assert!(expired.key.is_none());
-        let p = read_person("<HamQTH><search><callsign>iu3abc</callsign><nick>Mario</nick><qth>Padova</qth><country>Italy</country><adr_name></adr_name><email>x@y</email></search></HamQTH>").unwrap();
-        assert_eq!(p, Person { call: "IU3ABC".into(), fname: "Mario".into(), name: String::new(), city: "Padova".into(), country: "Italy".into(), ..Person::default() });
+        let p = read_person("<HamQTH><search><callsign>iu3abc</callsign><nick>Mario</nick><qth>Padova</qth><country>Italy</country><grid>IO91WM</grid><adr_name></adr_name><email>x@y</email></search></HamQTH>").unwrap();
+        assert_eq!(p, Person { call: "IU3ABC".into(), fname: "Mario".into(), name: String::new(), city: "Padova".into(), country: "Italy".into(), grid: "IO91wm".into(), ..Person::default() });
     }
 
     #[test]
