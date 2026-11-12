@@ -221,7 +221,8 @@ impl PskDemodulator {
                 out.push(c);
             }
             self.cur.clear();
-        } else if self.cur.len() > 12 {
+        } else if self.cur.len() > 13 {
+            // i codici piu' lunghi hanno 12 bit (da 232 a 255: è é ì ò ù...): con lo zero di separazione gia' entrato fanno 13
             self.cur.clear();
         }
     }
@@ -299,6 +300,20 @@ mod tests {
         let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
         assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
         assert!(rx.signal().1, "con il segnale lo squelch e' aperto");
+    }
+
+    #[test]
+    fn passano_tutti_i_256_caratteri() {
+        // anche i codici da 12 bit (è é ì ò ù e gli altri da 232 a 255), che prima si perdevano
+        let all: Vec<u8> = (1..=255u8).collect();
+        let audio = modulate(&all, 1500.0, PskMode::Psk63, 0.5);
+        let mut rx = PskDemodulator::new(PskMode::Psk63, 1500.0);
+        let mut input = vec![0.0; 4000];
+        input.extend(audio);
+        input.extend(vec![0.0; 4000]);
+        let got = rx.process(&input);
+        let start = got.iter().position(|&c| c == 1).unwrap_or(0);
+        assert_eq!(&got[start..], &all[..], "ricevuto: {got:?}");
     }
 
     #[test]
