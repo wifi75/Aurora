@@ -255,20 +255,31 @@ export function WsprPage() {
   );
 }
 
+/** I modi di ogni ramo Contest: FT8 · FT4 (con il Fox/Hound) e VHF · EME (MSK144 e Q65). */
+const CONTEST_MODES = { ft8: ['FT8', 'FT4'], vhf: ['MSK144', 'Q65'] } as const;
+export type ContestGroup = keyof typeof CONTEST_MODES;
+
+/** Vero se il contest ammette uno dei modi del ramo; senza l'elenco dei modi (motore vecchio) il contest sta nel ramo FT8 · FT4. */
+export function contestInGroup(modi: readonly string[] | undefined, group: ContestGroup): boolean {
+  if (!modi?.length) return group === 'ft8';
+  return modi.some((m) => (CONTEST_MODES[group] as readonly string[]).includes(m.toUpperCase()));
+}
+
 /**
- * Modi › Contest · Fox/Hound: la verifica del Fox (Hound) e le impostazioni di un contest, le stesse della finestrella della pagina Contest.
- * Si apre sul contest attivo; senza, si sceglie dall'elenco quale preparare.
+ * Modi › FT8 · FT4 › Contest · Fox/Hound e Modi › VHF · EME › Contest: le impostazioni dei contest di quel modo, le stesse della finestrella
+ * della pagina Contest (in FT8 · FT4 anche la verifica del Fox). Si apre sul contest attivo se e' di quel modo; senza, si sceglie dall'elenco.
  */
-export function ContestSettingsPage() {
+export function ContestSettingsPage({ group = 'ft8' }: { group?: ContestGroup }) {
   const t = useT();
   const client = useQueryClient();
   const stato = useQuery({ queryKey: ['contest'], queryFn: getContest, retry: false });
   const [scelto, setScelto] = useState('');
-  const elenco = stato.data?.contest ?? [];
-  const id = scelto || stato.data?.attivo || '';
+  const elenco = (stato.data?.contest ?? []).filter((c) => contestInGroup(c.modi, group));
+  const attivo = elenco.some((c) => c.id === stato.data?.attivo) ? (stato.data?.attivo ?? '') : '';
+  const id = scelto || attivo;
   return (
     <div className="sw-page">
-      <SequenceTab part="fox" />
+      {group === 'ft8' ? <SequenceTab part="fox" /> : null}
       <Page>
         <Group title={t('sw.contest.title')} span={3}>
           {stato.isError ? <Message kind="alert">{t('contest.unavailable')}</Message> : null}

@@ -870,6 +870,8 @@ impl ContestService {
                     "id": r.id(), "nome": r.contest.nome, "famiglia": r.contest.famiglia, "edizione": r.contest.edizione,
                     "finestra": calendario::prossima(&r.calendario, ora), "da_verificare": !r.contest.da_verificare.is_empty(),
                     "url_regole": r.contest.url_regole, "ore_massime": r.calendario.ore_massime, "pausa_minima_min": r.calendario.pausa_minima_min,
+                    // i modi ammessi: le Impostazioni mostrano ogni contest nel ramo del suo modo (FT8 · FT4, VHF · EME)
+                    "modi": r.modi.ammessi,
                 })
             })
             .collect();

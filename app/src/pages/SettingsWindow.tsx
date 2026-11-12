@@ -95,7 +95,8 @@ const RENDER: Readonly<Record<string, () => ReactNode>> = {
   satorbits: () => <SatSettingsPage cat="orbits" />,
   satmap: () => <SatSettingsPage cat="map" />,
   satradio: () => <SatSettingsPage cat="radio" />,
-  contest: () => <ContestSettingsPage />,
+  contest: () => <ContestSettingsPage group="ft8" />,
+  contestvhf: () => <ContestSettingsPage group="vhf" />,
   // Log, cluster e servizi
   logbooks: () => <LogServicesTab />,
   files: () => <LogTransfer />,

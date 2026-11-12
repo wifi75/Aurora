@@ -43,6 +43,8 @@ export interface ContestRef {
   url_regole?: string;
   ore_massime?: number | null;
   pausa_minima_min?: number | null;
+  /** I modi ammessi (FT8, FT4, MSK144, Q65...): le Impostazioni mostrano il contest nel ramo del suo modo. */
+  modi?: string[];
 }
 
 export interface Categoria {

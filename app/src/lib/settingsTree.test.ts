@@ -72,6 +72,8 @@ describe("l'ingranaggio delle pagine dei modi", () => {
     expect(settingsNodeFor('sstv', 'FT8')).toBe('modesstv');
     expect(settingsNodeFor('sat', 'FT8')).toBe('modesat');
     expect(settingsNodeFor('contest', 'FT8')).toBe('contest');
+    expect(settingsNodeFor('contest', 'Q65-60A')).toBe('contestvhf');
+    expect(settingsNodeFor('contest', 'MSK144')).toBe('contestvhf');
     expect(settingsNodeFor('fox', 'FT8')).toBe('contest');
     expect(settingsNodeFor('dxmap', 'FT8')).toBeUndefined();
   });
@@ -87,6 +89,6 @@ describe("l'ingranaggio delle pagine dei modi", () => {
     expect(modeNode('Q65-60A')).toBe('vhf');
     expect(modeNode('MSK144')).toBe('vhf');
     expect(modeNode('JT4')).toBe('vhf');
-    for (const node of ['modeft8', 'jt', 'wspr', 'vhf', 'modedigi', 'modesstv', 'modesat', 'contest']) expect(isKnownNode(node)).toBe(true);
+    for (const node of ['modeft8', 'jt', 'wspr', 'vhf', 'modevhf', 'modedigi', 'modesstv', 'modesat', 'contest', 'contestvhf']) expect(isKnownNode(node)).toBe(true);
   });
 });

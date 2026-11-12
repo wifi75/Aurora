@@ -62,14 +62,14 @@ export const SETTINGS_TREE: readonly TreeFamily[] = [
         page('macros', 'sw.tab.macros'),
         page('automation', 'nav.automation'),
         page('messages', 'sw.pg.messages'),
+        page('contest', 'sw.sub.contest'),
       ]),
       page('jt', 'sw.sub.jt'),
-      page('vhf', 'sw.sub.vhf'),
+      sub('modevhf', 'sw.sub.vhf', [page('vhf', 'sw.pg.vhfModes'), page('contestvhf', 'sw.pg.contest')]),
       page('wspr', 'sw.sub.wspr'),
       sub('modedigi', 'sw.sub.digi', [page('digi', 'sw.pg.digiRxTx'), page('digimacros', 'sw.pg.digiMacros'), page('digiscan', 'sw.pg.digiScan'), page('digicluster', 'cop.title')]),
       sub('modesstv', 'sw.sec.sstv', [page('sstv', 'sw.pg.rx'), page('sstvtx', 'sw.pg.tx'), page('sstvimages', 'sw.pg.images')]),
       sub('modesat', 'nav.sat', [page('satorbits', 'sw.pg.orbits'), page('satmap', 'sat.set.catMap'), page('satradio', 'sw.pg.doppler')]),
-      page('contest', 'sw.sub.contest'),
     ],
   },
   {
@@ -188,7 +188,9 @@ export function settingsNodeFor(route: string, mode: string): string | undefined
       return 'modesstv';
     case 'sat':
       return 'modesat';
+    // il contest nel ramo del suo modo: VHF · EME per MSK144 e Q65, altrimenti FT8 · FT4 (con il Fox/Hound)
     case 'contest':
+      return modeNode(mode) === 'vhf' ? 'contestvhf' : 'contest';
     case 'fox':
       return 'contest';
     case 'rotator':
