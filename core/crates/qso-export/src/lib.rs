@@ -20,6 +20,8 @@ use logbook::{
 };
 use tokio::{io::AsyncWriteExt, net::UdpSocket, sync::broadcast::error::RecvError};
 
+pub mod waiting;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Target {
     /// Il record ADIF di JTDX in un datagramma UDP, senza intestazione e senza andare a capo (Log4OM2, GridTracker2 in ascolto ADIF).
@@ -86,14 +88,51 @@ impl Exporter {
         now: Arc<dyn Fn() -> u64 + Send + Sync>,
         eqsl: Arc<AtomicBool>,
     ) -> Exporter {
+        Exporter::spawn_with_resend(bus, book, targets, station, now, eqsl, Arc::new(RwLock::new(Vec::new())), None)
+    }
+
+    /// Come `spawn_shared_eqsl`, con «Rimanda i QSO persi» (vedi [`waiting`]): per gli indirizzi di `resend` (ADIF su UDP e XML N1MM) un
+    /// QSO fatto con il log chiuso resta in coda nel file `queue_file` e parte quando il log si riapre.
+    #[allow(clippy::too_many_arguments)]
+    pub fn spawn_with_resend(
+        bus: &Bus,
+        book: Arc<Logbook>,
+        targets: Arc<RwLock<Vec<Target>>>,
+        station: Station,
+        now: Arc<dyn Fn() -> u64 + Send + Sync>,
+        eqsl: Arc<AtomicBool>,
+        resend: Arc<RwLock<Vec<SocketAddr>>>,
+        queue_file: Option<PathBuf>,
+    ) -> Exporter {
         let stats = Arc::new(Mutex::new(ExportStats::default()));
         let shared = Arc::clone(&stats);
         let mut events = bus.subscribe_events();
         tokio::spawn(async move {
             let socket = UdpSocket::bind("0.0.0.0:0").await.ok();
             let mut guard = DupeGuard::default();
+            let mut queue = waiting::Queue::load(queue_file);
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(5));
+            tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
             loop {
-                match events.recv().await {
+                let event = tokio::select! {
+                    e = events.recv() => e,
+                    _ = tick.tick() => {
+                        if !queue.is_empty() {
+                            let wanted = resend.read().map(|r| r.clone()).unwrap_or_default();
+                            for w in queue.due(&wanted, now()) {
+                                let target = Target::UdpAdif(w.to);
+                                let result = send(&target, socket.as_ref(), &w.record).await;
+                                if result.is_ok() {
+                                    tracing::info!("QSO con {} rimandato a {} (era in coda)", w.call, w.to);
+                                }
+                                record_result(&shared, &target, result);
+                                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+                            }
+                        }
+                        continue;
+                    }
+                };
+                match event {
                     Ok(Event::QsoLogged(q)) => {
                         let stamp = if q.time_off_unix_ms > 0 { q.time_off_unix_ms } else { now() * 1000 };
                         if !guard.accept(&q.call, &q.mode, stamp) {
@@ -109,12 +148,20 @@ impl Exporter {
                         let date = adif::utc_date(now());
                         let current = targets.read().map(|t| t.clone()).unwrap_or_default();
                         let eqsl_on = eqsl.load(Ordering::Relaxed);
+                        let held = resend.read().map(|r| r.clone()).unwrap_or_default();
                         for target in &current {
                             let record = match target {
                                 Target::UdpAdif(_) => adif::jtdx_record_with(&q, &station, &date, eqsl_on.then_some(date.as_str())),
                                 Target::File(_) => adif::jtdx_file_record_with(&q, &station, &date, eqsl_on),
                                 Target::N1mmXml(_) => n1mm_contact_info(&q, &station, now() * 1000),
                             };
+                            if let Target::UdpAdif(to) | Target::N1mmXml(to) = target
+                                && held.contains(to)
+                                && queue.should_hold(*to)
+                            {
+                                queue.push(waiting::Waiting { to: *to, record, at: now(), call: q.call.clone() });
+                                continue;
+                            }
                             let result = send(target, socket.as_ref(), &record).await;
                             record_result(&shared, target, result);
                         }

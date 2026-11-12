@@ -214,11 +214,14 @@ pub struct UdpDestination {
     pub ttl: u32,
     /// Indirizzo IPv4 dell'interfaccia di uscita del multicast; vuoto = scelta del sistema.
     pub iface: String,
+    /// «Rimanda i QSO persi»: con il log chiuso (nessuno in ascolto sulla porta, solo indirizzi di questo PC) l'ADIF su UDP e l'XML di N1MM
+    /// restano in coda e partono quando il log si riapre (vedi `qso_export::waiting`).
+    pub resend: bool,
 }
 
 impl Default for UdpDestination {
     fn default() -> Self {
-        UdpDestination { name: String::new(), host: String::new(), port: 2237, enabled: true, wsjtx: false, logged_adif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: String::new() }
+        UdpDestination { name: String::new(), host: String::new(), port: 2237, enabled: true, wsjtx: false, logged_adif: false, adif: false, n1mm: false, multicast: false, ttl: 1, iface: String::new(), resend: false }
     }
 }
 

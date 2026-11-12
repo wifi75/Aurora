@@ -20,7 +20,7 @@ const LOGBOOK: &str = "logbook.db";
 /// Un file di impostazioni piu' grande di cosi' non e' una impostazione.
 const MAX_FILE: u64 = 64 * 1024 * 1024;
 /// File della cartella dati che cambiano da soli e non sono scelte di chi usa Aurora.
-const SKIP: [&str; 6] = ["invii-in-coda.json", "rapporti-crash-visto.json", "update.notified", "clock.good", "desktop-primo-avvio", "jtdx-peer.txt"];
+const SKIP: [&str; 7] = ["invii-in-coda.json", "log-in-attesa.json", "rapporti-crash-visto.json", "update.notified", "clock.good", "desktop-primo-avvio", "jtdx-peer.txt"];
 /// Il segno che lo zip e' una copia delle impostazioni di Aurora.
 const MARK: &str = "aurora-impostazioni.txt";
 
