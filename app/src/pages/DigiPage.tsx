@@ -20,7 +20,7 @@ import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type 
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
 import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
-import { RowAverager, seekSignal, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
+import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
@@ -303,7 +303,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
   const pickFreq = (hz: number, viaClick: boolean, ctrl = false, snapIt = viaClick) => {
     const l = live.current;
-    const snapped = snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current ? snapToPeak(avg.current.values(), lastRow.current, hz) : hz;
+    // in RTTY la frequenza e' il centro fra i due toni: Snap cerca la coppia (un tono solo andrebbe sul mark o sullo space)
+    const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
+    const snapped =
+      snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current
+        ? rttyShift > 0
+          ? snapToPair(avg.current.values(), lastRow.current, hz, rttyShift)
+          : snapToPeak(avg.current.values(), lastRow.current, hz)
+        : hz;
     const f = Math.max(200, Math.min(3500, snapped));
     // in split (Lock) la ricezione resta ferma e il clic sposta la trasmissione; con Ctrl si sposta invece la ricezione
     if (viaClick && !l.snap.settings.tx_follow_rx && !ctrl) {
@@ -357,17 +364,24 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (note) toast(note, 'info');
   };
 
+  // Seek e Scan trovano un picco: in RTTY e' uno dei due toni, e la sintonia va al centro della coppia
+  const centreOfPair = (tone: number, row: SpectrumRow) => {
+    const c = live.current.snap.settings;
+    return c.mode === 'rtty' ? snapToPair(avg.current.values(), row, tone, c.rtty_shift_hz) : tone;
+  };
+
   const seek = (direction: 'left' | 'right', quiet = false): number | null => {
     const row = lastRow.current;
     if (!row || !avg.current.ready) {
       if (!quiet) toast(t('digi.run.noSpectrum'), 'info');
       return null;
     }
-    const found = seekSignal(avg.current.values(), row, live.current.rxHz, direction, SEEK_LIMITS);
-    if (found === null) {
+    const tone = seekSignal(avg.current.values(), row, live.current.rxHz, direction, SEEK_LIMITS);
+    if (tone === null) {
       if (!quiet) toast(t('digi.run.seekNone'), 'info');
       return null;
     }
+    const found = centreOfPair(tone, row);
     pickFreq(found, false);
     return found;
   };
@@ -379,9 +393,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       const l = live.current;
       const row = lastRow.current;
       if (!row || !avg.current.ready) return;
-      let found = seekSignal(avg.current.values(), row, l.rxHz, 'right', SEEK_LIMITS);
-      if (found === null) found = seekSignal(avg.current.values(), row, SEEK_LIMITS.min - 40, 'right', SEEK_LIMITS);
-      if (found === null) return;
+      let tone = seekSignal(avg.current.values(), row, l.rxHz, 'right', SEEK_LIMITS);
+      if (tone === null) tone = seekSignal(avg.current.values(), row, SEEK_LIMITS.min - 40, 'right', SEEK_LIMITS);
+      if (tone === null) return;
+      const found = centreOfPair(tone, row);
       pickFreq(found, false);
       const now = new Date();
       const marks = [l.scanProps.timeMarks ? `${now.toISOString().slice(11, 19)}z` : '', l.scanProps.freqMarks ? `${Math.round(found)} Hz` : ''].filter(Boolean);
@@ -402,7 +417,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const all = readMemories(browserStorage());
     if (write) {
       const c = live.current.snap.settings;
-      all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, squelch_db: c.squelch_db };
+      all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, rtty_reverse: c.rtty_reverse, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, squelch_db: c.squelch_db };
       writeMemories(browserStorage(), all);
       toast(t('digi.run.memSaved', { n: slot }), 'ok');
     } else if (all[String(slot)]) {
@@ -727,6 +742,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               'sep' as const,
               { label: `${t('digi.rtty.shift')}: ${s.rtty_shift_hz}`, items: withCurrent(RTTY_SHIFTS, s.rtty_shift_hz).map((v) => ({ label: `${v} Hz`, checked: v === s.rtty_shift_hz, onSelect: () => save({ rtty_shift_hz: v }) })) },
               { label: `${t('digi.rtty.baud')}: ${s.rtty_baud}`, items: withCurrent(RTTY_BAUDS, s.rtty_baud).map((v) => ({ label: `${v} baud`, checked: v === s.rtty_baud, onSelect: () => save({ rtty_baud: v }) })) },
+              { label: t('digi.rtty.reverse'), checked: s.rtty_reverse, onSelect: () => save({ rtty_reverse: !s.rtty_reverse }) },
+              { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
             ]
           : []),
         'sep' as const,
@@ -955,6 +972,19 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           snap={s.snap_on}
           freqHz={rxHz}
           modeData={modeData}
+          rtty={
+            s.mode === 'rtty'
+              ? {
+                  shiftHz: s.rtty_shift_hz,
+                  baud: s.rtty_baud,
+                  reverse: s.rtty_reverse,
+                  radioLsb: snap.rx.radio_lsb === true,
+                  onShift: (hz) => save({ rtty_shift_hz: hz }),
+                  onBaud: (baud) => save({ rtty_baud: baud }),
+                  onReverse: () => save({ rtty_reverse: !s.rtty_reverse }),
+                }
+              : undefined
+          }
           modeName={MODE_NAMES[s.mode]}
           onToggleTx={toggleTx}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
@@ -971,7 +1001,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
 
-      {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
+      {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
     </>
   );

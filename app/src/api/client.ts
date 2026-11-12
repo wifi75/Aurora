@@ -1720,6 +1720,14 @@ export interface DigiSettings {
   tx_freq_hz: number;
   rtty_shift_hz: number;
   rtty_baud: number;
+  /** RTTY: mark e space scambiati a mano («Rev»); con la radio in LSB il motore li inverte gia' da solo. */
+  rtty_reverse: boolean;
+  /** RTTY: UOS, dopo uno spazio si torna alle lettere (acceso di base, come fldigi). */
+  rtty_uos: boolean;
+  /** RTTY: soglia dello squelch sul rapporto segnale/rumore (dB, 0-40); l'RTTY non usa `squelch_db`. */
+  rtty_squelch_snr_db: number;
+  /** RTTY: ricevitore a due filtri, a discriminatore di frequenza o scelto dallo spostamento (`auto`: discriminatore sotto i 40 Hz). */
+  rtty_receiver: 'auto' | 'filters' | 'discriminator';
   afc_on: boolean;
   squelch_on: boolean;
   squelch_db: number;
@@ -1733,7 +1741,8 @@ export interface DigiSettings {
 }
 
 export interface DigiSnapshot {
-  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean };
+  /** `snr_db`: solo in RTTY, il rapporto segnale/rumore su cui lavora lo squelch; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
+  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; snr_db?: number; radio_lsb?: boolean };
   tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
   settings: DigiSettings;
   can_transmit: boolean;

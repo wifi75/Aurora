@@ -65,6 +65,51 @@ export function snapToPeak(avg: Float32Array, row: SpectrumRow, hz: number, wind
   return Math.round((row.fMinHz + (centre + 0.5) * w) * 10) / 10;
 }
 
+/**
+ * Snap per l'RTTY: il centro fra i due toni (la frequenza di Aurora, come in fldigi e ). Si cerca la coppia di picchi lontani `shiftHz`
+ * con il piu' debole dei due piu' forte possibile, entro `shiftHz/2 + 40` Hz dal clic; trovata, il centro e' esattamente a meta' fra i due
+ * picchi (ognuno rifinito sui bin vicini). Se si vede un tono solo vale la regola (Snap, analisi del comportamento): il tono sotto
+ * il clic e' quello basso (centro = tono + shift/2), quello sopra e' l'alto (centro = tono - shift/2). Senza niente di netto resta `hz`.
+ * Per gli spostamenti stretti (fino a 50 Hz) i due toni sono una macchia sola: basta `snapToPeak`.
+ */
+export function snapToPair(avg: Float32Array, row: SpectrumRow, hz: number, shiftHz: number, margin = 10): number {
+  if (avg.length === 0) return hz;
+  if (shiftHz <= 50) return snapToPeak(avg, row, hz);
+  const w = binHz(row);
+  const half = shiftHz / 2;
+  const reach = half + 40;
+  const at = (f: number) => {
+    const x = (f - row.fMinHz) / w - 0.5;
+    const i = Math.floor(x);
+    if (i < 0 || i + 1 >= avg.length) return 0;
+    const t = x - i;
+    return (avg[i] ?? 0) * (1 - t) + (avg[i + 1] ?? 0) * t;
+  };
+  // il fondo: la media della zona intorno alla coppia
+  const from = Math.max(0, Math.floor((hz - reach - half - row.fMinHz) / w));
+  const to = Math.min(avg.length - 1, Math.ceil((hz + reach + half - row.fMinHz) / w));
+  let total = 0;
+  for (let i = from; i <= to; i++) total += avg[i] ?? 0;
+  const mean = total / Math.max(1, to - from + 1);
+  let best = -1;
+  let bestC = hz;
+  for (let c = hz - reach; c <= hz + reach; c += w / 2) {
+    const v = Math.min(at(c - half), at(c + half));
+    if (v > best) {
+      best = v;
+      bestC = c;
+    }
+  }
+  if (best >= mean + margin) {
+    const lo = snapToPeak(avg, row, bestC - half, Math.max(2 * w, 10));
+    const hi = snapToPeak(avg, row, bestC + half, Math.max(2 * w, 10));
+    return Math.round(((lo + hi) / 2) * 10) / 10;
+  }
+  const one = snapToPeak(avg, row, hz, reach);
+  if (one === hz) return hz;
+  return Math.round((one <= hz ? one + half : one - half) * 10) / 10;
+}
+
 /** Il prossimo segnale da `fromHz` verso sinistra o destra (Seek); `null` se non ce ne sono entro i limiti. */
 export function seekSignal(avg: Float32Array, row: SpectrumRow, fromHz: number, direction: 'left' | 'right', limits: { min: number; max: number }, margin = 14): number | null {
   if (avg.length === 0) return null;

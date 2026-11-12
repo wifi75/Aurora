@@ -16,6 +16,8 @@ interface Props {
   personal: Personal;
   /** Il livello del segnale adesso (dB), per tarare la soglia dello squelch. */
   levelDb: number;
+  /** RTTY: il rapporto segnale/rumore adesso (dB), per tarare la soglia dello squelch dell'RTTY. */
+  snrDb?: number | null;
   onSave(patch: Partial<DigiSettings>): void;
   onPersonal(patch: Partial<Personal>): void;
   onClose(): void;
@@ -38,11 +40,56 @@ const fieldset: Section = (title, children) => (
  * Nel dialogo della pagina si vedono solo le voci del modo in uso; nelle Impostazioni (`allModes`) quelle di tutti i modi, in un riquadro
  * «Per modo». `section` disegna ogni parte (riquadro del dialogo o riquadro delle Impostazioni).
  */
-export function ModeSettingsFields({ settings: s, levelDb, onSave, allModes = false, section = fieldset }: { settings: DigiSettings; levelDb: number | null; onSave(patch: Partial<DigiSettings>): void; allModes?: boolean; section?: Section }) {
+export function ModeSettingsFields({
+  settings: s,
+  levelDb,
+  snrDb = null,
+  onSave,
+  allModes = false,
+  section = fieldset,
+}: {
+  settings: DigiSettings;
+  levelDb: number | null;
+  snrDb?: number | null;
+  onSave(patch: Partial<DigiSettings>): void;
+  allModes?: boolean;
+  section?: Section;
+}) {
   const t = useT();
   const [rx, setRx] = useState(s.rx_freq_hz);
   const [tx, setTx] = useState(s.tx_freq_hz);
   const [db, setDb] = useState(s.squelch_db);
+  const [snr, setSnr] = useState(s.rtty_squelch_snr_db);
+  const isRtty = !allModes && s.mode === 'rtty';
+  // RTTY in ricezione: Rev, UOS, il ricevitore e la soglia dello squelch sul rapporto segnale/rumore (l'RTTY non usa la soglia in dB)
+  const rttyRx = (
+    <Fragment key="rttyRx">
+      <label className="sstv-check" title={t('digi.rtty.reverseTip')}>
+        <input type="checkbox" checked={s.rtty_reverse} onChange={(e) => onSave({ rtty_reverse: e.target.checked })} />
+        {t('digi.rtty.reverse')}
+      </label>
+      <label className="sstv-check" title={t('digi.rtty.uosTip')}>
+        <input type="checkbox" checked={s.rtty_uos} onChange={(e) => onSave({ rtty_uos: e.target.checked })} />
+        {t('digi.rtty.uos')}
+      </label>
+      <label title={t('digi.rtty.receiverTip')}>
+        <span>{t('digi.rtty.receiver')}</span>
+        <select value={s.rtty_receiver} onChange={(e) => onSave({ rtty_receiver: e.target.value as DigiSettings['rtty_receiver'] })}>
+          <option value="auto">{t('digi.rtty.receiverAuto')}</option>
+          <option value="filters">{t('digi.rtty.receiverFilters')}</option>
+          <option value="discriminator">{t('digi.rtty.receiverDisc')}</option>
+        </select>
+      </label>
+      <label>
+        <span>{t('digi.rtty.squelchSnr', { db: Math.round(snr) })}</span>
+        <input type="range" min={0} max={40} step={1} value={snr} onChange={(e) => setSnr(Number(e.target.value))} onPointerUp={() => onSave({ rtty_squelch_snr_db: snr })} onKeyUp={() => onSave({ rtty_squelch_snr_db: snr })} />
+      </label>
+      <p className="sstv-hint">
+        {snrDb === null ? null : <>{t('digi.rtty.snrNow', { db: Math.round(snrDb) })} — </>}
+        {t('digi.rtty.squelchSnrHint')}
+      </p>
+    </Fragment>
+  );
   const cw = (
     <label key="cw">
       <span>{t('digi.cw.wpm', { wpm: Math.round(s.cw_wpm) })}</span>
@@ -95,14 +142,20 @@ export function ModeSettingsFields({ settings: s, levelDb, onSave, allModes = fa
             <input type="checkbox" checked={s.squelch_on} onChange={(e) => onSave({ squelch_on: e.target.checked })} />
             {t('digi.mi.squelch')}
           </label>
-          <label>
-            <span>{t('digi.ms.squelchDb', { db: Math.round(db) })}</span>
-            <input type="range" min={-90} max={0} step={1} value={db} onChange={(e) => setDb(Number(e.target.value))} onPointerUp={() => onSave({ squelch_db: db })} onKeyUp={() => onSave({ squelch_db: db })} />
-          </label>
-          <p className="sstv-hint">
-            {levelDb === null ? null : <>{t('digi.ms.level', { db: Math.round(levelDb) })} — </>}
-            {t('digi.ms.squelchHint')}
-          </p>
+          {isRtty ? (
+            rttyRx
+          ) : (
+            <>
+              <label>
+                <span>{t('digi.ms.squelchDb', { db: Math.round(db) })}</span>
+                <input type="range" min={-90} max={0} step={1} value={db} onChange={(e) => setDb(Number(e.target.value))} onPointerUp={() => onSave({ squelch_db: db })} onKeyUp={() => onSave({ squelch_db: db })} />
+              </label>
+              <p className="sstv-hint">
+                {levelDb === null ? null : <>{t('digi.ms.level', { db: Math.round(levelDb) })} — </>}
+                {t('digi.ms.squelchHint')}
+              </p>
+            </>
+          )}
         </>,
       )}
       {section(
@@ -130,6 +183,7 @@ export function ModeSettingsFields({ settings: s, levelDb, onSave, allModes = fa
             <>
               <b className="sw-digi-mode">RTTY</b>
               {rtty}
+              {rttyRx}
               <b className="sw-digi-mode">CW</b>
               {cw}
             </>,
@@ -140,7 +194,7 @@ export function ModeSettingsFields({ settings: s, levelDb, onSave, allModes = fa
 }
 
 /** «Mode settings»: le voci del modo in uso e i dati personali (gli stessi di Impostazioni › Stazione › Dati personali). */
-export function ModeSettings({ settings: s, personal, levelDb, onSave, onPersonal, onClose }: Props) {
+export function ModeSettings({ settings: s, personal, levelDb, snrDb = null, onSave, onPersonal, onClose }: Props) {
   const t = useT();
   return (
     <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('digi.ms.title')} onKeyDown={(e) => (e.key === 'Escape' ? onClose() : undefined)}>
@@ -149,7 +203,7 @@ export function ModeSettings({ settings: s, personal, levelDb, onSave, onPersona
           <strong>{t('digi.ms.title')}</strong>
         </header>
         <div className="digi-ms-grid">
-          <ModeSettingsFields settings={s} levelDb={levelDb} onSave={onSave} />
+          <ModeSettingsFields settings={s} levelDb={levelDb} snrDb={snrDb} onSave={onSave} />
           <fieldset>
             <legend>{t('digi.ms.personal')}</legend>
             <label>

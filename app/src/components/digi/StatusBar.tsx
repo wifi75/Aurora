@@ -1,5 +1,19 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
+import { RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from './ModeSettings';
+
+/** In RTTY la barra ha le tendine di spostamento e velocita' e il tasto «Rev», che salvano subito come il menu Modo. */
+export interface RttyStatus {
+  shiftHz: number;
+  baud: number;
+  /** «Rev» acceso a mano. */
+  reverse: boolean;
+  /** La radio e' in LSB: mark e space sono gia' invertiti dal motore. */
+  radioLsb: boolean;
+  onShift(hz: number): void;
+  onBaud(baud: number): void;
+  onReverse(): void;
+}
 
 interface Props {
   transmitting: boolean;
@@ -16,6 +30,8 @@ interface Props {
   freqHz: number;
   /** Velocita' e spostamento del modo, da mostrare («45 bd, 170 Hz»); vuoto per i modi che non ne hanno. */
   modeData: string;
+  /** Solo in RTTY: al posto dei dati del modo, tendine di spostamento e velocita' e il tasto «Rev». */
+  rtty?: RttyStatus;
   modeName: string;
   onToggleTx(): void;
   onToggleSquelch(): void;
@@ -80,7 +96,37 @@ export function DigiStatusBar(p: Props) {
         />
         <span className="digi-st-unit">Hz</span>
       </label>
-      {p.modeData !== '' ? (
+      {p.rtty ? (
+        <>
+          <label className="digi-st digi-st--select" title={t('digi.rtty.shift')}>
+            <select aria-label={t('digi.rtty.shift')} value={p.rtty.shiftHz} onChange={(e) => p.rtty?.onShift(Number(e.target.value))}>
+              {withCurrent(RTTY_SHIFTS, p.rtty.shiftHz).map((v) => (
+                <option key={v} value={v}>
+                  {v} Hz
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="digi-st digi-st--select" title={t('digi.rtty.baud')}>
+            <select aria-label={t('digi.rtty.baud')} value={p.rtty.baud} onChange={(e) => p.rtty?.onBaud(Number(e.target.value))}>
+              {withCurrent(RTTY_BAUDS, p.rtty.baud).map((v) => (
+                <option key={v} value={v}>
+                  {v} bd
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            className={`digi-st${p.rtty.reverse ? ' on' : ''}`}
+            aria-pressed={p.rtty.reverse}
+            title={p.rtty.radioLsb ? `${t('digi.rtty.reverseTip')} ${t('digi.rtty.lsbTip')}` : t('digi.rtty.reverseTip')}
+            onClick={p.rtty.onReverse}
+          >
+            Rev{p.rtty.radioLsb ? ' (LSB)' : ''}
+          </button>
+        </>
+      ) : p.modeData !== '' ? (
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>
           {p.modeData}
         </button>

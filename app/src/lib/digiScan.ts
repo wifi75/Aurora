@@ -25,7 +25,7 @@ export interface ScanProps {
 export const DEFAULT_SCAN: ScanProps = { dwell: 10, once: false, timeMarks: true, freqMarks: true };
 
 /** Una memoria: il modo e le impostazioni di sintonia salvate col menu Modo › Memorie. */
-export type DigiMemory = Partial<Pick<DigiSettings, 'mode' | 'rx_freq_hz' | 'tx_freq_hz' | 'tx_follow_rx' | 'rtty_shift_hz' | 'rtty_baud' | 'afc_on' | 'snap_on' | 'squelch_on' | 'squelch_db'>>;
+export type DigiMemory = Partial<Pick<DigiSettings, 'mode' | 'rx_freq_hz' | 'tx_freq_hz' | 'tx_follow_rx' | 'rtty_shift_hz' | 'rtty_baud' | 'rtty_reverse' | 'afc_on' | 'snap_on' | 'squelch_on' | 'squelch_db'>>;
 
 function read(storage: Storage | null | undefined, key: string): unknown {
   try {
