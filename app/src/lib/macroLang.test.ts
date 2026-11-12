@@ -36,6 +36,13 @@ describe('runMacro: comandi di testo', () => {
     expect(runMacro('<STARTTIME>', ctx).text).toBe('09:30');
   });
 
+  it('segni di procedura: un segno solo in CW, lettere negli altri modi', () => {
+    expect(runMacro('TNX 73 <SK>', { ...ctx, modeName: 'CW' }).text).toBe('TNX 73 <SK>');
+    expect(runMacro('<AR> <BT> <KN>', { ...ctx, modeName: 'CW' }).text).toBe('<AR> <BT> <KN>');
+    expect(runMacro('TNX 73 <SK>', ctx).text).toBe('TNX 73 SK');
+    expect(runMacro('TNX 73 <SK>', ctx).actions).toEqual([]);
+  });
+
   it('saluto secondo l\'ora', () => {
     expect(runMacro('<GA>', ctx).text).toBe('GA');
     expect(runMacro('<GAL>', { ...ctx, now: new Date(Date.UTC(2026, 0, 1, 7)) }).text).toBe('Good Morning');

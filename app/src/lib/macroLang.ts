@@ -112,6 +112,12 @@ function fixed(value: number, digits: string | undefined): string {
 /** Il valore di un comando di testo, o `null` se non e' un comando di testo. */
 function textTag(tag: string, arg: string | undefined, c: MacroContext): string | null {
   switch (tag) {
+    // segni di procedura: in CW il motore li manda come un segno solo; negli altri modi restano lettere
+    case 'AR':
+    case 'BT':
+    case 'KN':
+    case 'SK':
+      return c.modeName === 'CW' ? `<${tag}>` : tag;
     case 'CALL': return c.call.toUpperCase();
     case 'NAME': return c.name;
     case 'QTH': return c.qth;

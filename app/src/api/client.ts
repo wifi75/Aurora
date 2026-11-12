@@ -1761,6 +1761,14 @@ export interface DigiSettings {
   mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
   /** Velocita' della CW in parole al minuto. */
   cw_wpm: number;
+  /** CW: banda del filtro di ricezione (50, 100, 150, 250 o 500 Hz). */
+  cw_bandwidth_hz: number;
+  /** CW: soglia dello squelch sul rapporto segnale/rumore (dB in 3 kHz, -30..+20). */
+  cw_squelch_snr_db: number;
+  /** CW: decodifica SOM di fldigi (per il tasto a mano). */
+  cw_som: boolean;
+  /** PSK: soglia dello squelch sulla qualita' della fase (0-100, come fldigi). */
+  psk_squelch: number;
   rx_freq_hz: number;
   tx_follow_rx: boolean;
   tx_freq_hz: number;
@@ -1770,13 +1778,13 @@ export interface DigiSettings {
   rtty_reverse: boolean;
   /** RTTY: UOS, dopo uno spazio si torna alle lettere (acceso di base, come fldigi). */
   rtty_uos: boolean;
-  /** RTTY: soglia dello squelch sul rapporto segnale/rumore (dB, 0-40); l'RTTY non usa `squelch_db`. */
+  /** RTTY: soglia dello squelch sul rapporto segnale/rumore (dB, 0-40). */
   rtty_squelch_snr_db: number;
   /** RTTY: ricevitore a due filtri, a discriminatore di frequenza o scelto dallo spostamento (`auto`: discriminatore sotto i 40 Hz). */
   rtty_receiver: 'auto' | 'filters' | 'discriminator';
   afc_on: boolean;
+  /** Squelch acceso: la soglia e' quella del modo (`psk_squelch`, `rtty_squelch_snr_db`, `cw_squelch_snr_db`), sempre relativa. */
   squelch_on: boolean;
-  squelch_db: number;
   snap_on: boolean;
   auto_receive: boolean;
   macros: DigiMacro[];
@@ -1787,8 +1795,9 @@ export interface DigiSettings {
 }
 
 export interface DigiSnapshot {
-  /** `snr_db`: solo in RTTY, il rapporto segnale/rumore su cui lavora lo squelch; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
-  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; snr_db?: number; radio_lsb?: boolean };
+  /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz); `imd_db` e `quality` (0-100) solo
+   * in PSK; `wpm` la velocita' capita in CW; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
+  rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; snr_db?: number; imd_db?: number; quality?: number; wpm?: number; radio_lsb?: boolean };
   tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
   settings: DigiSettings;
   can_transmit: boolean;

@@ -5,6 +5,8 @@ import { useT } from '../../i18n';
 /** Gli spostamenti e le velocita' RTTY piu' usati (gli stessi elenchi di fldigi, piu' 450 Hz). */
 export const RTTY_SHIFTS = [23, 85, 160, 170, 182, 200, 240, 350, 425, 450, 850];
 export const RTTY_BAUDS = [45, 45.45, 50, 56, 75, 100, 110, 150, 200, 300];
+/** Le bande del filtro CW (le stesse del motore, 150 di base come fldigi). */
+export const CW_BANDWIDTHS = [50, 100, 150, 250, 500];
 
 export interface Personal {
   myname: string;
@@ -14,10 +16,12 @@ export interface Personal {
 interface Props {
   settings: DigiSettings;
   personal: Personal;
-  /** Il livello del segnale adesso (dB), per tarare la soglia dello squelch. */
+  /** Il livello del segnale adesso (dB). */
   levelDb: number;
-  /** RTTY: il rapporto segnale/rumore adesso (dB), per tarare la soglia dello squelch dell'RTTY. */
+  /** RTTY e CW: il rapporto segnale/rumore adesso (dB), per tarare la soglia dello squelch. */
   snrDb?: number | null;
+  /** PSK: la qualita' della fase adesso (0-100), per tarare la soglia dello squelch. */
+  quality?: number | null;
   onSave(patch: Partial<DigiSettings>): void;
   onPersonal(patch: Partial<Personal>): void;
   onClose(): void;
@@ -36,14 +40,15 @@ const fieldset: Section = (title, children) => (
 );
 
 /**
- * Ricezione e trasmissione di PSK, RTTY e CW: frequenze, spostamento e velocita' RTTY, AFC, Lock, Snap, squelch con la sua soglia.
+ * Ricezione e trasmissione di PSK, RTTY e CW: frequenze, spostamento e velocita' RTTY, banda e SOM del CW, AFC, Lock, Snap, squelch con
+ * la soglia del modo (qualita' della fase in PSK, rapporto segnale/rumore in RTTY e CW: mai il livello, che dipende dal volume).
  * Nel dialogo della pagina si vedono solo le voci del modo in uso; nelle Impostazioni (`allModes`) quelle di tutti i modi, in un riquadro
  * «Per modo». `section` disegna ogni parte (riquadro del dialogo o riquadro delle Impostazioni).
  */
 export function ModeSettingsFields({
   settings: s,
-  levelDb,
   snrDb = null,
+  quality = null,
   onSave,
   allModes = false,
   section = fieldset,
@@ -51,6 +56,7 @@ export function ModeSettingsFields({
   settings: DigiSettings;
   levelDb: number | null;
   snrDb?: number | null;
+  quality?: number | null;
   onSave(patch: Partial<DigiSettings>): void;
   allModes?: boolean;
   section?: Section;
@@ -58,9 +64,51 @@ export function ModeSettingsFields({
   const t = useT();
   const [rx, setRx] = useState(s.rx_freq_hz);
   const [tx, setTx] = useState(s.tx_freq_hz);
-  const [db, setDb] = useState(s.squelch_db);
   const [snr, setSnr] = useState(s.rtty_squelch_snr_db);
+  const [pskSq, setPskSq] = useState(s.psk_squelch);
+  const [cwSnr, setCwSnr] = useState(s.cw_squelch_snr_db);
   const isRtty = !allModes && s.mode === 'rtty';
+  const isCw = !allModes && s.mode === 'cw';
+  // PSK in ricezione: la soglia dello squelch sulla qualita' della fase (0-100, come fldigi), che non dipende dal volume
+  const pskRx = (
+    <Fragment key="pskRx">
+      <label>
+        <span>{t('digi.psk.squelch', { q: Math.round(pskSq) })}</span>
+        <input type="range" min={0} max={100} step={1} value={pskSq} onChange={(e) => setPskSq(Number(e.target.value))} onPointerUp={() => onSave({ psk_squelch: pskSq })} onKeyUp={() => onSave({ psk_squelch: pskSq })} />
+      </label>
+      <p className="sstv-hint">
+        {quality === null ? null : <>{t('digi.psk.qualityNow', { q: Math.round(quality) })} — </>}
+        {t('digi.psk.squelchHint')}
+      </p>
+    </Fragment>
+  );
+  // CW in ricezione: banda del filtro, decodifica SOM e soglia dello squelch sul rapporto segnale/rumore
+  const cwRx = (
+    <Fragment key="cwRx">
+      <label title={t('digi.cw.bandwidthTip')}>
+        <span>{t('digi.cw.bandwidth')}</span>
+        <select value={s.cw_bandwidth_hz} onChange={(e) => onSave({ cw_bandwidth_hz: Number(e.target.value) })}>
+          {CW_BANDWIDTHS.map((v) => (
+            <option key={v} value={v}>
+              {v} Hz
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="sstv-check" title={t('digi.cw.somTip')}>
+        <input type="checkbox" checked={s.cw_som} onChange={(e) => onSave({ cw_som: e.target.checked })} />
+        {t('digi.cw.som')}
+      </label>
+      <label>
+        <span>{t('digi.cw.squelchSnr', { db: Math.round(cwSnr) })}</span>
+        <input type="range" min={-30} max={20} step={1} value={cwSnr} onChange={(e) => setCwSnr(Number(e.target.value))} onPointerUp={() => onSave({ cw_squelch_snr_db: cwSnr })} onKeyUp={() => onSave({ cw_squelch_snr_db: cwSnr })} />
+      </label>
+      <p className="sstv-hint">
+        {snrDb === null ? null : <>{t('digi.rtty.snrNow', { db: Math.round(snrDb) })} — </>}
+        {t('digi.cw.squelchSnrHint')}
+      </p>
+    </Fragment>
+  );
   // RTTY in ricezione: Rev, UOS, il ricevitore e la soglia dello squelch sul rapporto segnale/rumore (l'RTTY non usa la soglia in dB)
   const rttyRx = (
     <Fragment key="rttyRx">
@@ -142,20 +190,7 @@ export function ModeSettingsFields({
             <input type="checkbox" checked={s.squelch_on} onChange={(e) => onSave({ squelch_on: e.target.checked })} />
             {t('digi.mi.squelch')}
           </label>
-          {isRtty ? (
-            rttyRx
-          ) : (
-            <>
-              <label>
-                <span>{t('digi.ms.squelchDb', { db: Math.round(db) })}</span>
-                <input type="range" min={-90} max={0} step={1} value={db} onChange={(e) => setDb(Number(e.target.value))} onPointerUp={() => onSave({ squelch_db: db })} onKeyUp={() => onSave({ squelch_db: db })} />
-              </label>
-              <p className="sstv-hint">
-                {levelDb === null ? null : <>{t('digi.ms.level', { db: Math.round(levelDb) })} — </>}
-                {t('digi.ms.squelchHint')}
-              </p>
-            </>
-          )}
+          {allModes ? null : isRtty ? rttyRx : isCw ? cwRx : pskRx}
         </>,
       )}
       {section(
@@ -181,11 +216,14 @@ export function ModeSettingsFields({
         ? section(
             t('sw.digi.perMode'),
             <>
+              <b className="sw-digi-mode">PSK31 · PSK63</b>
+              {pskRx}
               <b className="sw-digi-mode">RTTY</b>
               {rtty}
               {rttyRx}
               <b className="sw-digi-mode">CW</b>
               {cw}
+              {cwRx}
             </>,
           )
         : null}
@@ -194,7 +232,7 @@ export function ModeSettingsFields({
 }
 
 /** «Mode settings»: le voci del modo in uso e i dati personali (gli stessi di Impostazioni › Stazione › Dati personali). */
-export function ModeSettings({ settings: s, personal, levelDb, snrDb = null, onSave, onPersonal, onClose }: Props) {
+export function ModeSettings({ settings: s, personal, levelDb, snrDb = null, quality = null, onSave, onPersonal, onClose }: Props) {
   const t = useT();
   return (
     <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('digi.ms.title')} onKeyDown={(e) => (e.key === 'Escape' ? onClose() : undefined)}>
@@ -203,7 +241,7 @@ export function ModeSettings({ settings: s, personal, levelDb, snrDb = null, onS
           <strong>{t('digi.ms.title')}</strong>
         </header>
         <div className="digi-ms-grid">
-          <ModeSettingsFields settings={s} levelDb={levelDb} snrDb={snrDb} onSave={onSave} />
+          <ModeSettingsFields settings={s} levelDb={levelDb} snrDb={snrDb} quality={quality} onSave={onSave} />
           <fieldset>
             <legend>{t('digi.ms.personal')}</legend>
             <label>

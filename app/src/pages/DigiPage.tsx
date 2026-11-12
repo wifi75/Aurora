@@ -417,7 +417,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const all = readMemories(browserStorage());
     if (write) {
       const c = live.current.snap.settings;
-      all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, rtty_reverse: c.rtty_reverse, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, squelch_db: c.squelch_db };
+      all[String(slot)] = { mode: c.mode, rx_freq_hz: c.rx_freq_hz, tx_freq_hz: c.tx_freq_hz, tx_follow_rx: c.tx_follow_rx, rtty_shift_hz: c.rtty_shift_hz, rtty_baud: c.rtty_baud, rtty_reverse: c.rtty_reverse, afc_on: c.afc_on, snap_on: c.snap_on, squelch_on: c.squelch_on, psk_squelch: c.psk_squelch, cw_squelch_snr_db: c.cw_squelch_snr_db, rtty_squelch_snr_db: c.rtty_squelch_snr_db };
       writeMemories(browserStorage(), all);
       toast(t('digi.run.memSaved', { n: slot }), 'ok');
     } else if (all[String(slot)]) {
@@ -824,6 +824,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     },
   ];
 
+  // le misure del segnale per la barra: S/N in tutti i modi, IMD nel PSK (durante le inversioni), velocita' capita nel CW
+  const measures = [
+    snap.rx.snr_db != null ? `S/N ${Math.round(snap.rx.snr_db)} dB` : 'S/N —',
+    s.mode === 'psk31' || s.mode === 'psk63' ? (snap.rx.imd_db != null ? `IMD ${Math.round(snap.rx.imd_db)} dB` : 'IMD —') : null,
+    s.mode === 'cw' && snap.rx.wpm != null ? `${Math.round(snap.rx.wpm)} WPM` : null,
+  ]
+    .filter((v) => v !== null)
+    .join(' · ');
   const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'cw' ? `${Math.round(s.cw_wpm)} WPM` : s.mode === 'psk63' ? '63 bd' : '31 bd';
 
   return (
@@ -972,6 +980,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           snap={s.snap_on}
           freqHz={rxHz}
           modeData={modeData}
+          measures={snap.rx.listening ? measures : ''}
           rtty={
             s.mode === 'rtty'
               ? {
@@ -1001,7 +1010,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
 
-      {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
+      {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
     </>
   );

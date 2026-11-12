@@ -30,6 +30,8 @@ interface Props {
   freqHz: number;
   /** Velocita' e spostamento del modo, da mostrare («45 bd, 170 Hz»); vuoto per i modi che non ne hanno. */
   modeData: string;
+  /** Le misure del segnale («S/N 12 dB · IMD -26 dB», «S/N -8 dB · 22 WPM»); vuoto con l'ascolto spento. */
+  measures?: string;
   /** Solo in RTTY: al posto dei dati del modo, tendine di spostamento e velocita' e il tasto «Rev». */
   rtty?: RttyStatus;
   modeName: string;
@@ -45,7 +47,7 @@ interface Props {
   onThreshold(): void;
 }
 
-/** La barra di stato: RX/TX, Sq, AFC, Lock, Snap, frequenza audio, dati del modo e modo. Data e ora tolte (scelta del proprietario 2026-11-11:
+/** La barra di stato: RX/TX, Sq, AFC, Lock, Snap, frequenza audio, dati del modo, misure del segnale (S/N, IMD, WPM) e modo. Data e ora tolte (scelta del proprietario 2026-11-11:
  * l'ora c'e' gia' nella barra in alto di Aurora). */
 export function DigiStatusBar(p: Props) {
   const t = useT();
@@ -130,6 +132,11 @@ export function DigiStatusBar(p: Props) {
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>
           {p.modeData}
         </button>
+      ) : null}
+      {p.measures ? (
+        <span className="digi-st digi-st--info" title={t('digi.st.measures')}>
+          {p.measures}
+        </span>
       ) : null}
       <span className="digi-st digi-st--info">{p.modeName}</span>
     </div>
