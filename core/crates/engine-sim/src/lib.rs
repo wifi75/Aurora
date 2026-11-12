@@ -204,7 +204,7 @@ impl State {
             tag,
             country: country_of(&call).map(|(c, _)| c.to_string()),
             continent: country_of(&call).map(|(_, k)| k.to_string()),
-            lotw_last_upload: None, hint: false,
+            lotw_last_upload: None, hint: false, unconfirmed: false,
         }
     }
 

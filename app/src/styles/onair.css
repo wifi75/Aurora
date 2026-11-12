@@ -4497,6 +4497,24 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   border-radius: 0.4rem;
 }
 
+.unconf-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.unconf-sample {
+  --row-accent: var(--tag-new-grid);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font: 12px var(--font-data, monospace);
+  background: color-mix(in srgb, var(--row-accent) 34%, transparent);
+}
+
+.unconf-sample--light {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--row-accent) 26%, transparent) 0 5px, color-mix(in srgb, var(--row-accent) 8%, transparent) 5px 10px);
+}
+
 .jt-sample {
   padding: 0.15rem 0.5rem;
   font-family: var(--font-data);

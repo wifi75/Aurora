@@ -582,6 +582,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // il verde dei gia' lavorati compare solo con «Evidenzia gia' lavorati»; di base il messaggio e' barrato e senza colore
         const quiet = worked && !look.color;
         const accent = quiet ? null : accentOf(lit);
+        // paese o griglia lavorati ma non confermati («non confermato = nuovo»): lo stesso colore, piu' chiaro e a righe
+        const unconfirmed = !own && !quiet && lit !== null && d.unconfirmed === true;
         // riga nostra: la stazione e' quella a cui trasmettiamo (il primo nominativo, anche tra < >); il locatore nel messaggio e' il nostro e non conta
         const target = own ? (d.text.split(/\s+/)[0] ?? '').replace(/[<>]/g, '').toUpperCase() : '';
         const targetGrid = own ? (KNOWN_GRIDS.get(target) ?? KNOWN_GRIDS.get(target.split('/').sort((a, b) => b.length - a.length)[0] ?? '') ?? null) : null;
@@ -649,7 +651,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         ) : badge ? (
           <span
             className={`badge badge--tag badge-cell${quiet ? ' badge--quiet' : ''}`}
-            title={t(`kind.${lit}` as Key)}
+            title={unconfirmed ? `${t(`kind.${lit}` as Key)} · ${t('tag.unconfirmed')}` : t(`kind.${lit}` as Key)}
             style={quiet ? undefined : { background: `var(--tag-${badge.color})`, color: `var(--tag-${badge.color}-ink)` }}
           >
             {t(badge.label)}
@@ -663,7 +665,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}
-            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued decode-row--queue-pin' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}${d === pin ? pinClass : ''}`}
+            className={`decode-row${own ? ' decode-row--tx' : ''}${toMe ? ' decode-row--me' : ''}${answered ? ' decode-row--answered' : ''}${wanted ? ' decode-row--wanted' : ''}${picked ? ' decode-row--picked' : ''}${workedClass}${unconfirmed ? ' decode-row--unconfirmed' : ''}${myBackground}${named ? ' decode-row--dx' : ''}${selected === d.id ? ' decode-row--selected' : ''}${inQueue ? ' decode-row--queued decode-row--queue-pin' : ''}${fox ? ' decode-row--fox' : ''}${hlClass}${d === pin ? pinClass : ''}`}
             style={Object.keys(rowStyle).length > 0 ? (rowStyle as CSSProperties) : undefined}
             onClick={() => (tapReply && !own ? tapOnce(d.id) : setSelected(d.id))}
             onDoubleClick={() => (tapReply ? undefined : own || !prefs.doubleClickReply ? setSelected(d.id) : onReply(d.id))}

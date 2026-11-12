@@ -95,6 +95,8 @@ export const DecodedMessageSchema = z.object({
   continent: z.string().nullable().optional(),
   /** Data (AAAA-MM-GG) dell'ultimo invio a LoTW di chi trasmette, se e' nell'elenco pubblico dell'ARRL. */
   lotw_last_upload: z.string().nullable().optional(),
+  /** La novita' (paese o griglia) c'e' solo perche' sono lavorati ma non confermati: la riga e' piu' chiara e a righe (issue #40). */
+  unconfirmed: z.boolean().optional(),
 });
 export type DecodedMessage = z.infer<typeof DecodedMessageSchema>;
 

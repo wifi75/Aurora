@@ -10,7 +10,7 @@ const MIDNIGHT: u64 = 20_000 * 86_400;
 const T0: u64 = MIDNIGHT + 12 * 3600;
 
 fn decode(id: u64, text: &str, tag: Option<DecodeTag>) -> DecodedMessage {
-    DecodedMessage { id, time_ms: 0, snr: -10, delta_time: 0.0, freq_hz: 1500, text: text.into(), tag, country: None, continent: None, lotw_last_upload: None, hint: false }
+    DecodedMessage { id, time_ms: 0, snr: -10, delta_time: 0.0, freq_hz: 1500, text: text.into(), tag, country: None, continent: None, lotw_last_upload: None, hint: false, unconfirmed: false }
 }
 
 fn cq(id: u64, call: &str) -> DecodedMessage {

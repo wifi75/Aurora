@@ -2589,11 +2589,11 @@ pub async fn run(
                     Some(e) => match e.lock() {
                         Ok(e) => {
                             let a = e.annotate_in(text, band, Some(mode_controls.mode().name()));
-                            (a.country, a.continent, a.tag)
+                            (a.country, a.continent, a.tag, a.unconfirmed)
                         }
-                        Err(_) => (None, None, None),
+                        Err(_) => (None, None, None, false),
                     },
-                    None => (None, None, None),
+                    None => (None, None, None, false),
                 }),
             });
             // i comandi della pagina e dell'automazione (doppio clic, CQ, STOP, frequenza Tx) arrivano al motore proprio

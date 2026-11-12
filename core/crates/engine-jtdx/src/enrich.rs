@@ -13,6 +13,8 @@ pub struct Annotation {
     pub country: Option<String>,
     pub continent: Option<String>,
     pub tag: Option<DecodeTag>,
+    /// La novita' di `tag` c'e' solo perche' paese o griglia sono lavorati ma non confermati (vedi `DecodedMessage::unconfirmed`).
+    pub unconfirmed: bool,
 }
 
 /// I QSO gia' fatti, condivisi: chi registra un QSO o importa un log li aggiorna e le etichette delle decodifiche, la scheda DXCC e le
@@ -76,17 +78,19 @@ impl Enrichment {
         let continent = parsed.sender.as_deref().and_then(|call| self.continent_of(call));
         let base = parsed.is_cq.then_some(DecodeTag::Cq);
         let (Some(sender), Some(band)) = (parsed.sender.as_deref(), band) else {
-            return Annotation { country, continent, tag: base };
+            return Annotation { country, continent, tag: base, unconfirmed: false };
         };
         let Ok(worked) = self.worked.read() else {
-            return Annotation { country, continent, tag: base };
+            return Annotation { country, continent, tag: base, unconfirmed: false };
         };
         if worked.is_empty() {
-            return Annotation { country, continent, tag: base };
+            return Annotation { country, continent, tag: base, unconfirmed: false };
         }
         let flags = self.flags.read().map(|f| *f).unwrap_or_default();
-        let tag = worked.novelty_flags(sender, parsed.grid.as_deref(), band, mode, &flags, &self.db).and_then(|n| tag_for(n, parsed.is_cq || flags.potential));
-        Annotation { country, continent, tag: tag.or(base) }
+        let detail = worked.novelty_detail(sender, parsed.grid.as_deref(), band, mode, &flags, &self.db);
+        let tag = detail.and_then(|(n, _)| tag_for(n, parsed.is_cq || flags.potential));
+        let unconfirmed = tag.is_some() && detail.is_some_and(|(_, u)| u);
+        Annotation { country, continent, tag: tag.or(base), unconfirmed }
     }
 
     /// Un QSO appena chiuso: da subito la stazione non e' piu' una novita'.

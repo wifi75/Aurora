@@ -35,6 +35,14 @@ describe('DecodeList', () => {
     expect(screen.getByText('GRIGLIA')).toBeInTheDocument();
   });
 
+  it('shows a grid new only because unconfirmed lighter, with the reason in the tooltip; a really new one stays full (issue #40)', () => {
+    render(<DecodeList decodes={[decode({ id: 1, tag: 'new_grid', unconfirmed: true }), decode({ id: 2, tag: 'new_grid', text: 'CQ JA2XYZ PM96' })]} onReply={() => {}} />);
+    const [light, full] = screen.getAllByText('GRIGLIA');
+    expect(light?.closest('.decode-row')).toHaveClass('decode-row--unconfirmed');
+    expect(light).toHaveAttribute('title', expect.stringContaining('non confermato'));
+    expect(full?.closest('.decode-row')).not.toHaveClass('decode-row--unconfirmed');
+  });
+
   it('shows the country of the sender when known', () => {
     render(<DecodeList decodes={[decode({ country: 'Giappone' })]} onReply={() => {}} />);
     expect(screen.getByText('Giappone')).toBeInTheDocument();

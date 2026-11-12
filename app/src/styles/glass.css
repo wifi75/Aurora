@@ -460,6 +460,28 @@ button.glass,
   }
 }
 
+/* Novita' solo perche' non confermata (paese o griglia lavorati ma senza conferma, con «non confermato = nuovo» acceso): lo stesso colore
+   della novita', piu' chiaro e a righe, come lo sfondo sfumato di GridTracker; la novita' vera resta piena (issue #40) */
+.decode-list:not(.decode-list--invert) .decode-row.decode-row--unconfirmed {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--row-accent, transparent) 26%, transparent) 0 5px, color-mix(in srgb, var(--row-accent, transparent) 8%, transparent) 5px 10px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .decode-list:not(.decode-list--invert) .decode-row.decode-row--unconfirmed:hover {
+    background: color-mix(in srgb, var(--row-accent, var(--accent)) 40%, transparent);
+  }
+}
+
+.decode-row--unconfirmed .badge--tag {
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.32) 0 3px, transparent 3px 6px);
+  box-shadow: none;
+}
+
+.decode-list--invert .decode-row--unconfirmed .decode-text .data {
+  font-weight: 400;
+  font-style: italic;
+}
+
 /* Barra delle bande: la banda in uso e' accesa */
 .band-bar {
   display: flex;

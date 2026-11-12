@@ -845,7 +845,7 @@ mod tests {
     use super::*;
 
     fn decode(time_ms: u32) -> DecodedMessage {
-        DecodedMessage { id: 1, time_ms, snr: -7, delta_time: 0.1, freq_hz: 1000, text: "CQ K1ABC FN42".into(), tag: None, country: None, continent: None, lotw_last_upload: None, hint: false }
+        DecodedMessage { id: 1, time_ms, snr: -7, delta_time: 0.1, freq_hz: 1000, text: "CQ K1ABC FN42".into(), tag: None, country: None, continent: None, lotw_last_upload: None, hint: false, unconfirmed: false }
     }
 
     /// 2026-11-01 00:00:00 UTC.

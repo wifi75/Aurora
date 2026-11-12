@@ -168,6 +168,10 @@ pub struct DecodedMessage {
     /// nel flusso UDP porta il bit di bassa fiducia (`low_confidence`).
     #[serde(default)]
     pub hint: bool,
+    /// La novita' di `tag` (nuova griglia o nuovo paese, anche per banda) c'e' solo perche' la griglia o il paese sono gia' stati lavorati ma non
+    /// confermati, con la scelta «non confermato = nuovo» accesa: l'interfaccia la colora piu' chiara, come GridTracker (issue #40).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub unconfirmed: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]

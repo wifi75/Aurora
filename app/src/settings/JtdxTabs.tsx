@@ -646,6 +646,13 @@ export function NativeNotifications({ part = 'all' }: { part?: 'all' | 'colors' 
           <EngineBox k="newPotential" label={t('not2.potential')} doc={doc} draft={draft} />
           <EngineBox k="newDXCCUnconfirmed" label={t('not2.unconfirmed')} doc={doc} draft={draft} />
           <EngineBox k="newGridUnconfirmed" label={t('not2.unconfirmedGrid')} doc={doc} draft={draft} />
+          {/* come si distinguono nella lista: la novita' vera piena, quella solo non confermata piu' chiara e a righe (issue #40) */}
+          <Cell label={t('not2.unconfPreview')} wide>
+            <span className="unconf-samples">
+              <span className="unconf-sample">CQ K1ABC FN42 · {t('not2.sampleNew')}</span>
+              <span className="unconf-sample unconf-sample--light">CQ K1ABC FN42 · {t('not2.sampleUnconf')}</span>
+            </span>
+          </Cell>
         </Cells>
       </Group>
 

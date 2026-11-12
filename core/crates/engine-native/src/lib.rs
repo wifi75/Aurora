@@ -58,8 +58,8 @@ struct Stats {
     slots_decoded: u64,
 }
 
-/// Paese, continente ed etichetta di novita' di un messaggio sulla banda data.
-pub type Annotator = Arc<dyn Fn(&str, Option<&str>) -> (Option<String>, Option<String>, Option<DecodeTag>) + Send + Sync>;
+/// Paese, continente, etichetta di novita' di un messaggio sulla banda data e se la novita' e' solo di un paese o una griglia non confermati.
+pub type Annotator = Arc<dyn Fn(&str, Option<&str>) -> (Option<String>, Option<String>, Option<DecodeTag>, bool) + Send + Sync>;
 
 /// Il motore proprio come **unico** motore (senza JTDX): pubblica i messaggi decodificati e lo stato della stazione sul bus.
 #[derive(Clone)]
@@ -949,7 +949,7 @@ fn caller_info_provider(live: &LiveConfig) -> CallerInfoFn {
     let dial = Arc::clone(&live.dial_hz);
     Box::new(move |call| {
         let band = band_of(dial.load(Ordering::Relaxed));
-        let (_country, continent, tag) = annotate(&format!("CQ {call}"), band.as_deref());
+        let (_country, continent, tag, _) = annotate(&format!("CQ {call}"), band.as_deref());
         CallerInfo {
             continent: continent.unwrap_or_default(),
             prefix: String::new(),
@@ -1307,7 +1307,7 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
                 continue;
             }
         }
-        let (country, continent, tag) = (live.annotate)(&d.text, band.as_deref());
+        let (country, continent, tag, unconfirmed) = (live.annotate)(&d.text, band.as_deref());
         let lotw_last_upload = live.lotw_of.as_ref().and_then(|f| f(&d.text));
         let id = next_id.fetch_add(1, Ordering::Relaxed);
         if let Some(driver) = driver.as_deref_mut() {
@@ -1325,6 +1325,7 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
             continent,
             lotw_last_upload,
             hint: d.hint,
+            unconfirmed,
         }));
     }
 }
@@ -1433,7 +1434,7 @@ mod tests {
             band_of: Arc::new(|hz| (hz == 14_074_000).then(|| "20m".to_string())),
             annotate: Arc::new(|text, band| {
                 assert_eq!(band, Some("20m"));
-                (Some("United States".into()), Some("NA".into()), text.starts_with("CQ").then_some(DecodeTag::Cq))
+                (Some("United States".into()), Some("NA".into()), text.starts_with("CQ").then_some(DecodeTag::Cq), false)
             }),
         };
         let engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live)) });
@@ -1512,7 +1513,7 @@ mod tests {
             grid_check: None,
             lotw_of: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
-                annotate: Arc::new(|_, _| (None, None, None)),
+                annotate: Arc::new(|_, _| (None, None, None, false)),
             };
             let engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live)) });
             let t0 = 1_000_020_000u64 - 60_000;
@@ -1589,7 +1590,7 @@ mod tests {
             grid_check: None,
             lotw_of: None,
                 band_of: Arc::new(|hz| (hz == 14_076_000).then(|| "20m".to_string())),
-                annotate: Arc::new(|_, _| (None, None, None)),
+                annotate: Arc::new(|_, _| (None, None, None, false)),
             };
             let engine = runtime.block_on(async { start(events.clone(), rx, dir.clone(), false, Some(live)) });
             let t0 = 1_000_020_000u64 - 60_000;
@@ -1784,7 +1785,7 @@ mod tests {
             grid_check: None,
             lotw_of: None,
             band_of: Arc::new(|_| Some("20m".to_string())),
-            annotate: Arc::new(|_, _| (None, None, None)),
+            annotate: Arc::new(|_, _| (None, None, None, false)),
         }
     }
 

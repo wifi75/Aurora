@@ -101,7 +101,7 @@ mod tests {
     use decode_history::Query;
 
     fn decode(text: &str) -> DecodedMessage {
-        DecodedMessage { id: 1, time_ms: 0, snr: -7, delta_time: 0.3, freq_hz: 1234, text: text.into(), tag: Some(DecodeTag::NewDxcc), country: Some("Japan".into()), continent: Some("AS".into()), lotw_last_upload: None, hint: false }
+        DecodedMessage { id: 1, time_ms: 0, snr: -7, delta_time: 0.3, freq_hz: 1234, text: text.into(), tag: Some(DecodeTag::NewDxcc), country: Some("Japan".into()), continent: Some("AS".into()), lotw_last_upload: None, hint: false, unconfirmed: false }
     }
 
     #[test]

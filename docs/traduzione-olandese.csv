@@ -2805,8 +2805,8 @@ tip.kind.new_px_band,"A prefix worked, but not on this band.","Een prefix die ge
 tip.kind.new_call,A station never worked.,Een station dat nog nooit gewerkt is.
 tip.kind.new_call_band,"A station worked, but not on this band (or not in this mode, if “per mode” is ticked on the “New callsign” row in Reporting).","Een station dat gewerkt is, maar niet op deze band (of niet in deze modus, als “per modus” is aangevinkt op de rij “Nieuwe roepnaam” bij Rapportage)."
 tip.kind.worked_call,A station already in the log: shown struck through or underlined.,Een station dat al in het logboek staat: doorgestreept of onderstreept getoond.
-jxh.newDXCCUnconfirmed,"A country worked but not confirmed (LoTW or QSL in the Log4OM log or ADIF) stays “new DXCC” and “new DXCC on band”, in the colours, the Band activity filter and Automation. Only if the log has the confirmations.","Een gewerkt maar niet bevestigd land (LoTW of QSL in het Log4OM-logboek of ADIF) blijft “nieuw DXCC” en “nieuw DXCC op band”, in de kleuren, het filter Bandactiviteit en Automatisering. Alleen als het logboek de bevestigingen bevat."
-jxh.newGridUnconfirmed,"A grid worked but not confirmed (LoTW or QSL in the Log4OM log or ADIF) stays “new grid” and “new grid on band”, in the colours, the Band activity filter and Automation. Only if the log has the confirmations.","Een gewerkt maar niet bevestigd locatorvak (LoTW of QSL in het Log4OM-logboek of ADIF) blijft “nieuw locatorvak” en “nieuw locatorvak op band”, in de kleuren, het filter Bandactiviteit en Automatisering. Alleen als het logboek de bevestigingen bevat."
+jxh.newDXCCUnconfirmed,"A country worked but not confirmed (LoTW or QSL in the Log4OM log or ADIF) stays “new DXCC” and “new DXCC on band”, in the colours, the Band activity filter and Automation. Only if the log has the confirmations. In the list it has the same colour as the new one, lighter and striped.","Een gewerkt maar niet bevestigd land (LoTW of QSL in het Log4OM-logboek of ADIF) blijft “nieuw DXCC” en “nieuw DXCC op band”, in de kleuren, het filter Bandactiviteit en Automatisering. Alleen als het logboek de bevestigingen bevat. In de lijst heeft het dezelfde kleur als het nieuwe, lichter en gestreept."
+jxh.newGridUnconfirmed,"A grid worked but not confirmed (LoTW or QSL in the Log4OM log or ADIF) stays “new grid” and “new grid on band”, in the colours, the Band activity filter and Automation. Only if the log has the confirmations. In the list it has the same colour as the new one, lighter and striped.","Een gewerkt maar niet bevestigd locatorvak (LoTW of QSL in het Log4OM-logboek of ADIF) blijft “nieuw locatorvak” en “nieuw locatorvak op band”, in de kleuren, het filter Bandactiviteit en Automatisering. Alleen als het logboek de bevestigingen bevat. In de lijst heeft het dezelfde kleur als het nieuwe, lichter en gestreept."
 jxh.newPotential,"Highlights novelties (country, zone, grid...) also in messages between other stations, not only CQ calls.","Markeert nieuwtjes (land, zone, locatorvak...) ook in berichten tussen andere stations, niet alleen in CQ-oproepen."
 jxh.73RR73Marker,Marks 73 and RR73 between other stations: that station has finished its QSO and is free to call.,Markeert 73 en RR73 tussen andere stations: dat station heeft zijn QSO beëindigd en is vrij om te roepen.
 dxp.title,DXpeditions,DXpedities
@@ -5214,3 +5214,7 @@ sw.mem.hint,"Each memory keeps mode, frequencies, RTTY, AFC, Snap and squelch. S
 sw.mem.empty,empty,leeg
 sw.mem.load,Recall,Oproepen
 sw.mem.clear,Clear,Wissen
+tag.unconfirmed,worked but not confirmed,gewerkt maar niet bevestigd
+not2.unconfPreview,Preview in the list,Voorbeeld in de lijst
+not2.sampleNew,new,nieuw
+not2.sampleUnconf,not confirmed,niet bevestigd

@@ -429,6 +429,12 @@ impl WorkedLog {
     ///
     /// Il paese non riconosciuto da `cty.dat` non e' mai nuovo (`matchDXCC`: `WorkedBefore = true`); il locatore conta solo se c'e'.
     pub fn novelty_flags(&self, call: &str, grid: Option<&str>, band: &str, mode: Option<&str>, flags: &HighlightFlags, db: &DxccDb) -> Option<Novelty> {
+        self.novelty_detail(call, grid, band, mode, flags, db).map(|(n, _)| n)
+    }
+
+    /// Come `novelty_flags`, con in piu' `true` quando la novita' (paese o griglia) c'e' solo perche' sono lavorati ma non confermati
+    /// («non confermato = nuovo» acceso): l'interfaccia li mostra in un colore piu' chiaro.
+    pub fn novelty_detail(&self, call: &str, grid: Option<&str>, band: &str, mode: Option<&str>, flags: &HighlightFlags, db: &DxccDb) -> Option<(Novelty, bool)> {
         if !flags.any() {
             return None;
         }
@@ -437,7 +443,7 @@ impl WorkedLog {
         let class = mode.and_then(|m| ModeClass::from_adif(m, ""));
         let found = db.lookup(&call);
         let news = |crit: Crit, key: &str, c: Criterion| self.criterion_news(crit, key, c, &band, class);
-        let pick = |n: Option<bool>, broad: Novelty, narrow: Novelty| n.map(|only_band| if only_band { narrow } else { broad });
+        let pick = |n: Option<bool>, broad: Novelty, narrow: Novelty| n.map(|only_band| (if only_band { narrow } else { broad }, false));
         if let Some(f) = &found {
             if let Some(n) = pick(news(Crit::Cqz, &f.cq_zone.to_string(), flags.cqz), Novelty::NewZone, Novelty::NewZoneBand) {
                 return Some(n);
@@ -451,10 +457,10 @@ impl WorkedLog {
             // lavorato ma non confermato: con la scelta accesa conta ancora come nuovo (come GridTracker)
             if flags.dxcc_unconfirmed && flags.dxcc.on && self.has_confirmations {
                 if !self.confirmed_entities.contains(&f.entity) {
-                    return Some(Novelty::NewDxcc);
+                    return Some((Novelty::NewDxcc, true));
                 }
                 if (flags.dxcc.band || flags.dxcc.band_mode) && !band.is_empty() && !self.confirmed_entity_bands.contains(&(f.entity, band.clone())) {
-                    return Some(Novelty::NewDxccBand);
+                    return Some((Novelty::NewDxccBand, true));
                 }
             }
         }
@@ -465,10 +471,10 @@ impl WorkedLog {
             // lavorata ma non confermata: con la scelta accesa conta ancora come nuova (come «Hunting: New + Unconfirmed» di GridTracker)
             if flags.grid_unconfirmed && flags.grid.on && self.has_confirmations {
                 if !self.confirmed_grids.contains(&g) {
-                    return Some(Novelty::NewGrid);
+                    return Some((Novelty::NewGrid, true));
                 }
                 if (flags.grid.band || flags.grid.band_mode) && !band.is_empty() && !self.confirmed_grid_bands.contains(&(g.clone(), band.clone())) {
-                    return Some(Novelty::NewGridBand);
+                    return Some((Novelty::NewGridBand, true));
                 }
             }
         }
@@ -482,7 +488,7 @@ impl WorkedLog {
         }
         // «gia' lavorato» solo se proprio questo nominativo e' nel log (scelta del proprietario, diversa da JTDX: in JTDX con «nuovo
         // nominativo» spento ogni stazione di un paese gia' fatto risultava gia' lavorata, e la lista diventava quasi tutta verde)
-        self.any_call.contains(&call).then_some(Novelty::Worked)
+        self.any_call.contains(&call).then_some((Novelty::Worked, false))
     }
 
     pub fn novelty(&self, call: &str, grid: Option<&str>, band: &str, db: &DxccDb) -> Novelty {
@@ -786,8 +792,12 @@ Lemuria:                  05:  08:  NA:   10.00:    60.00:     5.0:  LM:
         assert_ne!(log.novelty_flags("AT9ZZ", Some("FN42"), "20m", Some("FT8"), &flags, &db), Some(Novelty::NewGrid), "di base conta il lavorato");
         flags.grid_unconfirmed = true;
         assert_eq!(log.novelty_flags("AT9ZZ", Some("FN42"), "20m", Some("FT8"), &flags, &db), Some(Novelty::NewGrid), "lavorata ma non confermata");
+        // l'interfaccia la colora piu' chiara: la novita' viene solo dalla mancata conferma (issue #40)
+        assert_eq!(log.novelty_detail("AT9ZZ", Some("FN42"), "20m", Some("FT8"), &flags, &db), Some((Novelty::NewGrid, true)));
+        assert_eq!(log.novelty_detail("AT9ZZ", Some("JN45"), "20m", Some("FT8"), &flags, &db), Some((Novelty::NewGrid, false)), "mai lavorata: nuova piena");
         log.add_adif_qso(&AdifQso { confirmed: Some(true), grid: "FN42".into(), ..qso("AT3CD", "40m", "FT8") }, &db);
         assert_eq!(log.novelty_flags("AT9ZZ", Some("FN42"), "20m", Some("FT8"), &flags, &db), Some(Novelty::NewGridBand), "confermata solo su 40 m");
+        assert_eq!(log.novelty_detail("AT9ZZ", Some("FN42"), "20m", Some("FT8"), &flags, &db), Some((Novelty::NewGridBand, true)));
         assert_ne!(log.novelty_flags("AT9ZZ", Some("FN42"), "40m", Some("FT8"), &flags, &db), Some(Novelty::NewGridBand), "confermata su 40 m");
     }
 

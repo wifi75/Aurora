@@ -44,7 +44,7 @@ fn status(dx: Option<&str>) -> StationStatus {
 }
 
 fn message(id: u64, text: &str, freq: u32) -> DecodedMessage {
-    DecodedMessage { id, time_ms: 45_015_000, snr: -12, delta_time: 0.3, freq_hz: freq, text: text.into(), tag: None, country: None, continent: None, lotw_last_upload: None, hint: false }
+    DecodedMessage { id, time_ms: 45_015_000, snr: -12, delta_time: 0.3, freq_hz: freq, text: text.into(), tag: None, country: None, continent: None, lotw_last_upload: None, hint: false, unconfirmed: false }
 }
 
 struct Rig {
