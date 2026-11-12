@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'fixed',
     title: [
       'RTTY: decodifica molto migliore',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'new',
     title: [
       'Cat4OM completo: scegli la radio e audio in rete',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'changed',
     title: [
       'Impostazioni ad albero, con pagine nuove',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'changed',
     title: [
       'PSK31 e PSK63: ricevitore rifatto',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'changed',
     title: [
       'CW: ricevitore rifatto e AFC che funziona',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'new',
     title: [
       'Non confermati distinguibili e avviso sulla frequenza Tx',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.240',
-    released: '2026-11-12T16:00:00Z',
+    released: '2026-11-12T14:10:48Z',
     kind: 'fixed',
     title: [
       'Installatore con registro e rapporti',
