@@ -782,6 +782,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined);
   };
 
+  // CW: la velocita' capita in ricezione (WPM interi, solo con l'ascolto acceso) e il comando che la usa per trasmettere
+  const rxWpm = snap.rx.listening && snap.rx.wpm != null && Number.isFinite(snap.rx.wpm) ? Math.round(Math.min(60, Math.max(5, snap.rx.wpm))) : null;
+  const txAtRx = () => {
+    if (rxWpm != null) save({ cw_wpm: rxWpm });
+  };
+
   // ---- i menu ----
   const slots = Array.from({ length: 20 }, (_, i) => i + 1);
   const menus: MenuDef[] = [
@@ -825,9 +831,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
             ]
           : []),
-        // CW: banda del filtro scelta al volo (anche larga, per la panoramica)
+        // CW: banda del filtro scelta al volo (anche larga, per la panoramica) e trasmissione alla velocita' ricevuta
         ...(s.mode === 'cw'
-          ? ['sep' as const, { label: `${t('digi.cw.bandwidth')}: ${s.cw_bandwidth_hz} Hz`, items: withCurrent(CW_BANDWIDTHS, s.cw_bandwidth_hz).map((v) => ({ label: v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`, checked: v === s.cw_bandwidth_hz, onSelect: () => save({ cw_bandwidth_hz: v }) })) }]
+          ? [
+              'sep' as const,
+              { label: `${t('digi.cw.bandwidth')}: ${s.cw_bandwidth_hz} Hz`, items: withCurrent(CW_BANDWIDTHS, s.cw_bandwidth_hz).map((v) => ({ label: v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`, checked: v === s.cw_bandwidth_hz, onSelect: () => save({ cw_bandwidth_hz: v }) })) },
+              { label: rxWpm != null ? t('digi.mi.txAtRx', { wpm: rxWpm }) : t('digi.mi.txAtRxNone'), title: t('digi.mi.txAtRxTip'), disabled: rxWpm == null, onSelect: txAtRx },
+            ]
           : []),
         'sep' as const,
         ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
@@ -898,6 +908,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.flashTx'), checked: views.flashTx, onSelect: () => setView({ flashTx: !views.flashTx }) },
         { label: t('digi.mi.hairlines'), checked: views.hairlines, onSelect: () => setView({ hairlines: !views.hairlines }) },
         { label: t('digi.mi.wideWaterfall'), checked: views.wideWaterfall, onSelect: () => setView({ wideWaterfall: !views.wideWaterfall }) },
+        { label: t('digi.mi.anticlick'), title: t('digi.mi.anticlickTip'), checked: s.wf_anticlick, onSelect: () => save({ wf_anticlick: !s.wf_anticlick }) },
         { label: t('digi.mi.defaultRst'), checked: views.defaultRst, onSelect: () => setView({ defaultRst: !views.defaultRst }) },
       ],
     },
@@ -1112,7 +1123,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 }
               : undefined
           }
-          cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }) } : undefined}
+          cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }), rxWpm, onTxAtRx: txAtRx } : undefined}
           modeName={MODE_NAMES[s.mode]}
           onModeClick={s.mode === 'rtty' ? () => setRttyOpen(true) : undefined}
           onToggleTx={toggleTx}

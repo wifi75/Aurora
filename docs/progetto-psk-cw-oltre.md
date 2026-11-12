@@ -176,6 +176,49 @@ La probabilita' a priori non entra nel modello del testo del decodificatore CW (
 ### Non fatto
 P7, P8, C4, C8; I2 come modulo comune; I3 nel testo del ricevitore principale (`channel`, `revise_from`); spot in rete dal browser (per scelta: solo locali); pacchetto WAV ed esempio `punteggio`.
 
+## CW: rumore istante per istante, aggancio rapido, anti-click (2026-11-12, ramo `lavoro/cw-resto`)
+Misure con `tests/cw_confronto.rs` (2 prove per casella, 11 righe: alle 9 di prima si aggiungono «AGC che pompa», una stazione forte
+nella banda che fa scendere il guadagno della radio di 20 dB a ogni elemento, e «QRN largo», scrosci di 50-300 ms 8-14 dB sopra il
+fondo) e con la prova nuova `avvio_a_freddo` (ricevitore nuovo come dopo un cambio di modo, stazione a velocità diversa da quella di
+partenza per 15 s, 3 s di silenzio, un'altra stazione a un'altra velocità per 30 s; 4 prove per riga). fldigi non c'era come arbitro
+(sottomodulo assente): i confronti sono fra versioni di Aurora.
+
+### Tenuto
+| Cosa | Dove | Prima | Dopo |
+|---|---|---|---|
+| Rumore istante per istante: due filtri ai lati del tono, larghi due volte la velocità di simbolo (30 Hz a 20 WPM, 60 Hz a 40), centrati a 2,5 larghezze (fascia 1,5-3,5), uno solo se dall'altra parte c'è una stazione (medie di 1 s); minimo scorrevole (medie di 40 ms, minimo su 3 s, diviso per il valore atteso del minimo, tarato nella prova `noise_estimates_match_the_decoder_filter`: le medie mobili valgono circa 600 medie indipendenti); nel traliccio la varianza di ogni tono è quella misurata in quei campioni, a metà strada (in dB) con la sua media lenta e solo se credibile rispetto al rumore delle pause | `cw_noise.rs`, `cw.rs`, `cw_bayes.rs` | media di tutte le righe 28,1 | **26,5** |
+| — AGC che pompa / QSB / tono +25 Hz / QRN / QRN largo | | 39,4 / 54,1 / 24,7 / 21,2 / 51,5 | **26,7 / 52,1 / 20,5 / 21,1** / 51,9 |
+| — rumore bianco / tasto a mano / 14 -> 28 WPM | | 16,9 / 23,6 / 20,6 | 16,9 / 25,3 / 22,0 |
+| Scariche come «cancellati»: il blanker dice quali campioni ha azzerato, il decodificatore riceve per ogni campione il guadagno e la varianza rimasti nel filtro (un istante cancellato non è né tono né pausa) | `blanker.rs`, `cw.rs`, `cw_bayes.rs` | QRN 21,2 (riga senza cancellazioni, con il rumore istantaneo) | 19,3 (stessa prova, media 26,0 -> 25,8) |
+| Stime del rumore che si agganciano subito (media lenta che all'inizio è la media di tutto, larghezza dei filtri laterali che segue solo la velocità misurata) | `cw_bayes.rs`, `cw_noise.rs` | avvio a freddo, primi 15 s a 0 e -6 dB: 1,4% (con il rumore istantaneo senza aggancio) | **0,0%** come il ricevitore di partenza |
+| Velocità mostrata da tono + pausa che lo segue (il filtro allunga i toni e accorcia le pause della stessa quantità) | `cw_bayes.rs` | a gradini del 9% (le velocità del traliccio) | entro il 5% (prova `the_received_speed_is_measured_within_five_percent`) |
+| Aggancio rapido del ricevitore a soglia (quello della 0.11.240, della decodifica SOM e del probabilistico spento): prime quattro coppie con peso 0,6, coppie anche fra caratteri chiusi troppo presto, AGC il doppio più veloce per 2 s, aggancio di nuovo dopo 2,5 s di silenzio | `cw.rs` | avvio a freddo, 0 dB: primi 15 s 7,1%, dopo 12,4% (30 -> 16 WPM: 78,8%); -6 dB: 16,1% e 28,5% | 0 dB: **4,1% e 4,4%** (3,6%); -6 dB: **13,5% e 13,9%** |
+| Anti-click della cascata: rivelatore dei click (spettri di 5 ms ogni 2,7 ms, un tratto di 1 kHz «sale» se più del 30% delle righe sta 12 dB sopra il livello tipico, click se dura meno di 10 ms), i campioni del click si spengono con fronti morbidi prima della trasformata delle righe; istanti dei click in `SpectrumAnalyzer::recent_clicks` e `ClickDetector` per i canali di tutta la banda (non ancora collegati) | `audio-spectrum/src/click.rs`, `analyzer.rs` | CW manipolato duro: 17,4 dB di energia in più a 1,5-2,5 kHz | **1,4 dB**, tono -0,6 dB |
+| «TX alla velocità ricevuta» (menu Modo, tasto «TX = RX») e interruttore anti-click (menu Vista, acceso di base, vale mentre la pagina ascolta) | `DigiPage.tsx`, `StatusBar.tsx`, `service.rs` | — | — |
+
+Il ricevitore probabilistico non aveva il problema dell'avvio a freddo segnalato sulla 0.11.240 (che usa quello a soglia): a 0 e -6 dB
+nessun errore nei primi 15 s, prima e dopo. A -10 dB i primi 15 s sbagliano in media un po' più di prima (5,6% contro 4,3% su tutte
+le righe della prova, soprattutto le stazioni a 28 WPM), i 30 s dopo restano uguali (6,2% contro 5,9%). Sul solo rumore, un minuto,
+nessun carattere falso con lo squelch spento e acceso.
+
+### Scartato (misurato, non migliorava)
+| Cosa | Risultato |
+|---|---|
+| Velocità del ricevitore a soglia come media delle ultime 4 soglie punto/linea (soglia = minima fra metà di punto + linea e punto + pausa interna), antidisturbo a 0,3 unità (minimo 6 ms), velocità a soglia come guida iniziale del traliccio | probabilistico 28,1 -> 28,1; a soglia 45,3 -> 48,4 (soglie dalle medie) e 49,4 (soglie di ogni coppia); con 0,3 unità di antidisturbo a +5 dB gli errori salgono da 1,6 a 4,0% |
+| Rumore delle bande laterali senza restringimento verso la media lenta, medie di 40 ms | 30,4 (peggio a -8 e -10 dB e col tasto a mano); medie di 250 ms 27,3 |
+| Rumore istantaneo moltiplicato per 2,5 (come la stima vecchia, che sovrastimava) | 43,3 |
+| Pavimento del rumore al 70% del minimo scorrevole | 29,3 |
+| Rumore istantaneo mai sotto la stima delle pause | 29,3 |
+| Limite del rapporto segnale/rumore per campione che scende con il rumore misurato (per l'AGC che pompa) | rompe i segnali puliti fra silenzi digitali (prove `it_hears_what_it_sends_at_several_speeds`) |
+| AGC a due inseguitori (bordo alto attacco 1 ms e rilascio 2 s, bordo basso sale in 2 s e scende in 50 ms) come normalizzazione all'ingresso del decodificatore: Aurora non ha un ascolto audio della ricezione digitale | 26,9 contro 25,9 (meglio AGC che pompa 22,4 e QRN largo 42,9, peggio QRM, segnale forte altrove e +5 dB) |
+| Sostituzione delle celle della cascata con la mediana di tre righe vicine | 17,7 dB contro 17,4: la finestra delle righe (0,14 s) è larga cinque righe, un click ne copre quattro o cinque |
+
+### Resta
+Il tasto a mano e il salto 14 -> 28 WPM perdono 1,4-1,7 punti con il rumore istantaneo; la riga QRN largo resta sopra il 50% (a -8 dB il
+traliccio perde la velocità); il ricevitore a soglia perde 2,3 punti nella tabella (colonne a -8 e -10 dB) in cambio dell'aggancio
+rapido; filtro del tono legato alla velocità dentro il decodificatore (oggi solo per le bande laterali: il traliccio fa già la somma
+coerente sull'elemento); collegare `ClickDetector` ai canali di tutta la banda.
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·

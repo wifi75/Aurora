@@ -15,12 +15,14 @@
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
 //! - [`band`]: il thread di tutta la banda del servizio (limite di CPU, eventi `band`, spot locali);
 //! - [`skim`]: decodifica di tutti i segnali CW e PSK della banda audio, con storico, nominativi e spot locali;
+//! - `cw_noise`: il rumore del ricevitore CW istante per istante (bande laterali e minimo scorrevole);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod band;
 pub mod blanker;
 pub mod cw;
 pub mod cw_bayes;
+mod cw_noise;
 #[cfg(feature = "fldigi-oracle")]
 pub mod fldigi_oracle;
 pub mod macro_files;

@@ -152,6 +152,12 @@ enum Prova {
     Livello,
     /// Un segnale 20 dB piu' forte a 1500 Hz (fuori dalla banda del CW).
     ForteAltrove,
+    /// L'AGC della radio che pompa: la stessa stazione forte a 1500 Hz fa scendere il guadagno di tutto l'audio (attacco 2 ms, rilascio
+    /// 300 ms), il segnale e il rumore salgono e scendono di 20 dB a ogni suo elemento.
+    Agc,
+    /// QRN largo: scrosci di rumore su tutta la banda da 50 a 300 ms, da 8 a 14 dB sopra il fondo, in media uno al secondo (troppo lunghi
+    /// per il noise blanker).
+    QrnLargo,
 }
 
 /// Il testo mandato e l'audio (12 kHz) di una prova.
@@ -174,7 +180,7 @@ fn audio_di_prova(prova: Prova, snr_db: f64, seed: u64) -> (String, Vec<f32>) {
                 *s += *q;
             }
         }
-        Prova::ForteAltrove => {
+        Prova::ForteAltrove | Prova::Agc => {
             let other = testo(&mut rng, 80);
             let strong = suona(&chiavi(&other, |_| 22.0, &KEYER, &mut rng), 1500.0, |_| 10.0 * AMP);
             for (s, q) in sig.iter_mut().zip(strong.iter()) {
@@ -198,6 +204,30 @@ fn audio_di_prova(prova: Prova, snr_db: f64, seed: u64) -> (String, Vec<f32>) {
             for k in n..(n + len).min(audio.len()) {
                 audio[k] += (15.0 * sigma.max(0.02) * rng.gauss()) as f32;
             }
+        }
+    }
+    if let Prova::QrnLargo = prova {
+        let mut n = 0usize;
+        while n < audio.len() {
+            n += (-(rng.uniform().ln()) * RATE) as usize + 1;
+            let len = ((0.05 + 0.25 * rng.uniform()) * RATE) as usize;
+            let extra = sigma * (10f64.powf((8.0 + 6.0 * rng.uniform()) / 20.0).powi(2) - 1.0).sqrt();
+            for k in n..(n + len).min(audio.len()) {
+                // fronti di 5 ms: lo scroscio sale e scende, non e' un impulso
+                let edge = (k - n).min(n + len - 1 - k) as f64 / (0.005 * RATE);
+                audio[k] += (extra * edge.min(1.0) * rng.gauss()) as f32;
+            }
+            n += len;
+        }
+    }
+    if let Prova::Agc = prova {
+        // il guadagno della radio: segue il picco dell'audio (attacco 2 ms, rilascio 300 ms) e lo porta a 0,5
+        let (att, rel) = (1.0 - (-1.0 / (0.002 * RATE)).exp(), 1.0 - (-1.0 / (0.3 * RATE)).exp());
+        let mut peak = 0.0_f64;
+        for s in audio.iter_mut() {
+            let x = f64::from(*s).abs();
+            peak += (x - peak) * if x > peak { att } else { rel };
+            *s = (f64::from(*s) * 0.5 / peak.max(0.02)) as f32;
         }
     }
     if matches!(prova, Prova::Livello) {
@@ -248,14 +278,18 @@ fn prova_contro_fldigi(prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, u
     (ours, errori("fldigi", &sent, &got), sent.len(), rx.wpm(), fl.wpm())
 }
 
-/// Il ricevitore con le impostazioni di base del servizio (20 WPM di partenza, squelch spento).
+/// Il ricevitore con le impostazioni di base del servizio (20 WPM di partenza, squelch spento); con `CW_CLASSICO=1` quello a soglia.
 fn ricevitore() -> CwDemodulator {
-    CwDemodulator::new(TONO, WPM as f32)
+    let mut rx = CwDemodulator::new(TONO, WPM as f32);
+    if std::env::var_os("CW_CLASSICO").is_some() {
+        rx.set_probabilistic(false);
+    }
+    rx
 }
 
 const SNRS: [f64; 7] = [5.0, 0.0, -4.0, -8.0, -10.0, -12.0, -15.0];
 
-const CASI: [(Prova, &str); 9] = [
+const CASI: [(Prova, &str); 11] = [
     (Prova::Awgn, "rumore"),
     (Prova::Mano, "tasto a mano"),
     (Prova::Salto, "14 -> 28 WPM"),
@@ -265,16 +299,26 @@ const CASI: [(Prova, &str); 9] = [
     (Prova::Spostato, "tono +25 Hz"),
     (Prova::Livello, "livello -40 dB"),
     (Prova::ForteAltrove, "forte a 1500 Hz"),
+    (Prova::Agc, "AGC che pompa"),
+    (Prova::QrnLargo, "QRN largo"),
 ];
+
+/// Le righe da provare: tutte, o solo quelle il cui nome contiene uno dei pezzi di `CW_RIGHE` (separati da virgole).
+fn casi() -> Vec<(Prova, &'static str)> {
+    let scelta = std::env::var("CW_RIGHE").unwrap_or_default().to_lowercase();
+    let pezzi: Vec<&str> = scelta.split(',').map(str::trim).filter(|p| !p.is_empty()).collect();
+    CASI.iter().copied().filter(|(_, nome)| pezzi.is_empty() || pezzi.iter().any(|p| nome.to_lowercase().contains(p))).collect()
+}
 
 #[test]
 #[ignore]
 fn confronto_tasso_di_errore() {
     const RUNS: u64 = 2;
     let mut totali = vec![(0usize, 0usize); SNRS.len()];
-    for (prova, nome) in CASI {
+    for (prova, nome) in casi() {
         let mut riga = format!("{nome:<16}|");
         let mut wpm = Vec::new();
+        let mut media_riga = 0.0;
         for (k, &snr) in SNRS.iter().enumerate() {
             let (mut e, mut n) = (0, 0);
             for r in 0..RUNS {
@@ -288,14 +332,18 @@ fn confronto_tasso_di_errore() {
             totali[k].0 += e;
             totali[k].1 += n;
             riga.push_str(&format!(" {:>6.1}", 100.0 * e as f64 / n as f64));
+            media_riga += 100.0 * e as f64 / n as f64 / SNRS.len() as f64;
         }
-        riga.push_str(&format!("  | WPM capiti {}", wpm.iter().map(|w| format!("{w:.0}")).collect::<Vec<_>>().join(" ")));
+        riga.push_str(&format!("  | media {media_riga:5.1} | WPM capiti {}", wpm.iter().map(|w| format!("{w:.0}")).collect::<Vec<_>>().join(" ")));
         println!("{riga}");
     }
     let mut media = format!("{:<16}|", "media");
+    let mut tutto = 0.0;
     for (e, n) in totali {
         media.push_str(&format!(" {:>6.1}", 100.0 * e as f64 / n as f64));
+        tutto += 100.0 * e as f64 / n as f64 / SNRS.len() as f64;
     }
+    media.push_str(&format!("  | media {tutto:5.1}"));
     println!("{}", "-".repeat(media.len()));
     println!("{media}");
     println!("(colonne: SNR in 3 kHz {SNRS:?} dB; valori: caratteri sbagliati in %)");
@@ -310,7 +358,8 @@ fn contro_fldigi() {
     const RUNS: u64 = 2;
     let mut peggiori = Vec::new();
     let (mut tot_a, mut tot_f) = (0.0, 0.0);
-    for (prova, nome) in CASI {
+    let casi = casi();
+    for &(prova, nome) in &casi {
         let mut riga = format!("{nome:<16}|");
         let (mut media_a, mut media_f) = (0.0, 0.0);
         let mut wpm = String::new();
@@ -330,8 +379,8 @@ fn contro_fldigi() {
             media_f += pf / SNRS.len() as f64;
             riga.push_str(&format!(" {pa:5.1}/{pf:5.1}"));
         }
-        tot_a += media_a / CASI.len() as f64;
-        tot_f += media_f / CASI.len() as f64;
+        tot_a += media_a / casi.len() as f64;
+        tot_f += media_f / casi.len() as f64;
         println!("{riga} | media {media_a:5.1}/{media_f:5.1} | WPM{wpm}");
         if media_a > media_f + TOLLERANZA {
             peggiori.push(riga);
@@ -395,6 +444,19 @@ fn studio() {
         riga.push_str(&format!(" {cer:5.1}"));
     }
     println!("STUDIO media {:5.1} |{riga}", tot / casi.len() as f64);
+}
+
+/// Una casella sola, per guardare il testo (`CW_PROVA=<nome della riga>`, `CW_SNR=<dB>`, `CW_SEME=<seme>`; con `CW_DEBUG=1`).
+#[test]
+#[ignore]
+fn una_casella() {
+    let nome = std::env::var("CW_PROVA").unwrap_or_else(|_| "rumore".into()).to_lowercase();
+    let snr: f64 = std::env::var("CW_SNR").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
+    let seme: u64 = std::env::var("CW_SEME").ok().and_then(|v| v.parse().ok()).unwrap_or(900);
+    for (prova, n) in CASI.iter().filter(|(_, n)| n.to_lowercase().contains(&nome)) {
+        let (e, len, w) = una_prova(*prova, snr, seme);
+        println!("{n} {snr} dB seme {seme}: {e}/{len} errori, {w:.1} WPM");
+    }
 }
 
 /// Tutta la banda: dieci stazioni CW fra 400 e 2300 Hz a -5 dB ognuna, un minuto. Stampa canali, nominativi verificati e quanto piu'
@@ -473,4 +535,68 @@ fn cpu_tutta_la_banda() {
         }
         println!("{stations} stazioni: canali {} · nominativi verificati {found}/{stations} · CPU {:.1}% di un core", chans.len(), 100.0 * secs / 60.0);
     }
+}
+
+/// Avvio a freddo e cambio di velocita' brusco: un ricevitore nuovo (come dopo un cambio di modo) con la velocita' di partenza `hint`
+/// ascolta una stazione a `wpm_a` per circa 15 s, poi 3 s di silenzio e un'altra a `wpm_b` per circa 30 s. Restituisce errori e
+/// caratteri della prima parte e della seconda (il testo uscito prima della meta' del silenzio, piu' il ritardo della decisione, e'
+/// della prima).
+fn due_parti(hint: f32, wpm_a: f64, wpm_b: f64, snr_db: f64, seed: u64) -> (usize, usize, usize, usize) {
+    let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
+    let a = testo(&mut rng, (15.0 * wpm_a / 12.0) as usize).trim_end().to_string();
+    let b = testo(&mut rng, (30.0 * wpm_b / 12.0) as usize).trim_end().to_string();
+    let mut seq = vec![(false, 0.5)];
+    seq.extend(chiavi(&a, |_| wpm_a, &KEYER, &mut rng));
+    let end_a: f64 = seq.iter().map(|s| s.1).sum();
+    seq.push((false, 3.0));
+    seq.extend(chiavi(&b, |_| wpm_b, &KEYER, &mut rng));
+    seq.push((false, 2.0));
+    let mut audio = suona(&seq, f64::from(TONO), |_| AMP);
+    aggiungi_rumore(&mut audio, sigma_per_snr(AMP, snr_db), &mut rng);
+    let mut rx = CwDemodulator::new(TONO, hint);
+    if std::env::var_os("CW_CLASSICO").is_some() {
+        rx.set_probabilistic(false);
+    }
+    // quello che esce fino a 2,5 s dopo la fine della prima stazione e' suo (decisione in ritardo fino a circa 2 s)
+    let split = ((end_a + 2.5) * RATE) as usize;
+    let (mut got_a, mut got_b) = (Vec::new(), Vec::new());
+    for (k, block) in audio.chunks(480).enumerate() {
+        let out = rx.process(block);
+        if (k + 1) * 480 <= split { got_a.extend(out) } else { got_b.extend(out) }
+    }
+    (errori("A", &a, &got_a), a.len(), errori("B", &b, &got_b), b.len())
+}
+
+/// Avvio a freddo e cambio brusco di velocita' (vedi `due_parti`): caratteri sbagliati nei primi 15 s e nei 30 s dopo.
+#[test]
+#[ignore]
+fn avvio_a_freddo() {
+    const RUNS: u64 = 4;
+    let casi: [(&str, f32, f64, f64); 8] = [
+        ("freddo 20 -> 18", 20.0, 18.0, 18.0),
+        ("freddo 20 -> 24", 20.0, 24.0, 24.0),
+        ("freddo 20 -> 28", 20.0, 28.0, 28.0),
+        ("freddo 25 -> 18", 25.0, 18.0, 18.0),
+        ("freddo 15 -> 28", 15.0, 28.0, 28.0),
+        ("brusco 16 -> 30", 20.0, 16.0, 30.0),
+        ("brusco 30 -> 16", 20.0, 30.0, 16.0),
+        ("brusco 22 -> 35", 22.0, 22.0, 35.0),
+    ];
+    let (mut tot_a, mut tot_b) = (0.0, 0.0);
+    let snrs = [0.0, -6.0, -10.0];
+    let celle = (snrs.len() * casi.len()) as f64;
+    for snr in snrs {
+        for (nome, hint, wa, wb) in casi {
+            let (mut ea, mut na, mut eb, mut nb) = (0, 0, 0, 0);
+            for r in 0..RUNS {
+                let (e1, n1, e2, n2) = due_parti(hint, wa, wb, snr, 300 + r * 17);
+                (ea, na, eb, nb) = (ea + e1, na + n1, eb + e2, nb + n2);
+            }
+            let (pa, pb) = (100.0 * ea as f64 / na as f64, 100.0 * eb as f64 / nb as f64);
+            tot_a += pa / celle;
+            tot_b += pb / celle;
+            println!("{nome:<16} {snr:>4} dB | primi 15 s {pa:5.1} | dopo {pb:5.1}");
+        }
+    }
+    println!("media: primi 15 s {tot_a:.1} | dopo {tot_b:.1} (caratteri sbagliati in %)");
 }

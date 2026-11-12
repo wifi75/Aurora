@@ -8,6 +8,8 @@ export type MenuItem =
       disabled?: boolean;
       /** Il tasto rapido da mostrare a destra (solo scritto). */
       shortcut?: string;
+      /** Il suggerimento che compare passandoci sopra. */
+      title?: string;
       onSelect?(): void;
       /** Un sottomenu. */
       items?: MenuItem[];
@@ -74,6 +76,7 @@ export function MenuList({ items, onDone }: { items: MenuItem[]; onDone(): void 
               type="button"
               role="menuitem"
               disabled={it.disabled}
+              title={it.title}
               aria-checked={it.checked === undefined ? undefined : it.checked}
               className={it.items ? 'has-sub' : ''}
               onClick={() => {

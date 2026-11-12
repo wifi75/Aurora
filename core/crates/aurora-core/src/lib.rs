@@ -8,6 +8,7 @@ pub mod event;
 pub mod filters;
 pub mod notice;
 pub mod version;
+pub mod waterfall;
 
 pub use bus::Bus;
 pub use command::{Command, ContestSetup, FoxCommand};

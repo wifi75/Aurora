@@ -229,6 +229,8 @@ pub struct DigiSettings {
     pub cw_squelch_snr_db: f32,
     /// CW: decodifica SOM di fldigi (aiuta col tasto a mano irregolare).
     pub cw_som: bool,
+    /// Anti-click della cascata (menu Vista): i click di manipolazione si tolgono dalle righe mentre la pagina ascolta.
+    pub wf_anticlick: bool,
     /// PSK: soglia dello squelch sulla metrica di qualita' della fase (0-100, come fldigi).
     pub psk_squelch: f32,
     /// AFC: la ricezione segue la deriva del segnale (Options › AFC).
@@ -328,6 +330,7 @@ impl Default for DigiSettings {
             cw_bandwidth_hz: cw::BANDWIDTH_DEFAULT,
             cw_squelch_snr_db: cw::SQUELCH_DEFAULT_DB,
             cw_som: false,
+            wf_anticlick: true,
             psk_squelch: psk::SQUELCH_DEFAULT,
             afc_on: true,
             squelch_on: false,
@@ -544,6 +547,12 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 impl Inner {
+    /// L'anti-click della cascata vale mentre la pagina ascolta, se e' scelto (l'analizzatore dello spettro legge l'opzione comune).
+    fn sync_anticlick(&self) {
+        let on = self.listening.load(Ordering::Relaxed) && lock(&self.settings).wf_anticlick;
+        aurora_core::waterfall::set_anticlick(on);
+    }
+
     /// Legge adesso il modo della radio (se c'e' da dove) e ricorda se e' LSB; senza radio resta l'ultima lettura (di base USB).
     fn read_radio_lsb(&self) -> bool {
         let source = lock(&self.radio_mode).clone();
@@ -618,6 +627,7 @@ impl DigiService {
             band: crate::band::BandLink::spawn(&settings),
         });
         let worker = Arc::clone(&inner);
+        inner.sync_anticlick();
         if let Err(e) = std::thread::Builder::new().name("aurora-digi".into()).spawn(move || rx_loop(&worker, rx, settings)) {
             tracing::error!("modi testuali: thread di ricezione non avviato: {e}");
         }
@@ -693,6 +703,7 @@ impl DigiService {
         let _ = self.inner.queue.send(Msg::Config(s.clone()));
         self.inner.band.configure(&s);
         *lock(&self.inner.settings) = s;
+        self.inner.sync_anticlick();
         self.inner.rx_status_event();
         Ok(())
     }
@@ -712,12 +723,14 @@ impl DigiService {
 
     pub fn start_rx(&self) {
         self.inner.listening.store(true, Ordering::Relaxed);
+        self.inner.sync_anticlick();
         lock(&self.inner.rx).listening = true;
         self.inner.rx_status_event();
     }
 
     pub fn stop_rx(&self) {
         self.inner.listening.store(false, Ordering::Relaxed);
+        self.inner.sync_anticlick();
         lock(&self.inner.rx).listening = false;
         let _ = self.inner.queue.send(Msg::Reset);
         self.inner.band.reset();

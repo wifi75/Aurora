@@ -58,6 +58,12 @@ impl NoiseBlanker {
 
     /// Un campione d'ingresso; restituisce quello di 2 ms prima, azzerato se cade in un buco.
     pub fn process(&mut self, x: f32) -> f32 {
+        self.process_marked(x).0
+    }
+
+    /// Come [`NoiseBlanker::process`], e dice se il campione restituito e' stato cancellato (per chi lo tratta come «nessuna
+    /// informazione» invece che come silenzio).
+    pub fn process_marked(&mut self, x: f32) -> (f32, bool) {
         let l = 20.0 * x.abs().max(1e-9).log10();
         self.warm += 1;
         if self.warm < 240 {
@@ -95,15 +101,15 @@ impl NoiseBlanker {
         self.q95_db += ETA_DB * (0.95 - if l < self.q95_db { 1.0 } else { 0.0 });
         self.line.push_back(x);
         if self.line.len() <= self.delay {
-            return 0.0;
+            return (0.0, false);
         }
         let y = self.line.pop_front().unwrap_or(0.0);
         if self.blank_left > 0 {
             self.blank_left -= 1;
             self.blanked += 1;
-            return 0.0;
+            return (0.0, true);
         }
-        y
+        (y, false)
     }
 }
 
