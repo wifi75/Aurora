@@ -17,6 +17,8 @@ Dettagli che servono solo quando si lavora su quella parte. Le regole sempre val
 - Test core: `cd core && cargo test --workspace --no-fail-fast --target-dir target/testrun`; lint: `cargo clippy --workspace --all-targets --target-dir target/testrun -- -D warnings`.
 - Test interfaccia: `cd app && npx tsc --noEmit && npx vitest run`; build: `npm run build`.
 - Test programma Windows: `cd desktop/src-tauri && cargo test`.
+- RTTY, prova di confronto del ricevitore (lenta, a mano): `cd core && cargo test --release -p mode-digi --test rtty_confronto -- --ignored --nocapture --test-threads=1` (tabella dei caratteri sbagliati per spostamento, velocità e SNR; `stretti` due filtri contro discriminatore; `studio` un punteggio solo per provare le varianti).
+- RTTY con fldigi come arbitro (solo prove, mai nell'installatore): `cd core && nice cargo test -j 6 -p mode-digi --features fldigi-oracle -- --test-threads=2 --nocapture`. La feature `fldigi-oracle` compila con `cc` (MSVC o g++) il ricevitore di fldigi 4.2.13 dal sottomodulo `terze-parti/fldigi` (`src/filters/fftfilt.cxx` e gli header di `src/include`, GPL 3, Dave Freese W1HKJ e contributori) più `core/crates/mode-digi/oracle/fldigi_rtty_rx.cpp`, la parte di ricezione di `src/rtty/rtty.cxx` estratta senza FLTK. Serve il sottomodulo: `git submodule update --init terze-parti/fldigi`. La prova `tests/rtty_fldigi.rs` dà lo stesso audio ai due ricevitori e fallisce se il nostro sbaglia più di fldigi oltre 2 punti.
 - Licenze delle dipendenze: `python scripts/licenze-terze-parti.py` (rigenera `docs/licenze-terze-parti.md`).
 
 ## Programma Windows
