@@ -1,5 +1,5 @@
 /* la scheda del rotore (una sola per PSK/RTTY/CW, Stazione, finestra a parte e pagina Rotore): bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
-.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(100vw - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
+.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(calc(100vw / var(--ui-zoom, 1)) - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
 /* il carattere segue la larghezza della scheda (cqw si misura sul contenitore, quindi sugli elementi dentro di lui): con la scheda piu' grande o piu' piccola testo e pulsanti si adattano e non escono dai riquadri */
 .rotor-card > * { font-size: max(9px, 4.4cqw); }
 .rotor-bar { display: flex; align-items: center; gap: 0.6em; padding: 0.4em 0.6em 0.4em 0.8em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 1.05em; }
@@ -62,7 +62,7 @@
 /* dentro la finestra a parte e nella pagina Rotore: non sta sopra la pagina, riempie il suo spazio (la bussola e' quadrata: la larghezza
    segue anche l'altezza della finestra, cosi' la scheda resta tutta in vista) */
 .rotor-card--window, .rotor-card--page { position: relative; right: auto; bottom: auto; z-index: auto; max-width: 100%; margin: 0 auto; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); }
-.rotor-card--window { width: min(100%, 30vh); min-width: 15rem; }
+.rotor-card--window { width: min(100%, calc(30vh / var(--ui-zoom, 1))); min-width: 15rem; }
 .rotor-card--page { width: min(100%, 16rem); }
 .rotor-card--window .rotor-bar, .rotor-card--page .rotor-bar { cursor: default; }
 .rotor-solo { box-sizing: border-box; height: 100%; padding: 0.5rem; overflow: auto; background: var(--bg); }

@@ -45,7 +45,7 @@
 /* ricezione */
 .sstv-rx { display: grid; grid-template-columns: minmax(0, 640px) minmax(300px, 420px); gap: 1.4rem; align-items: start; justify-content: start; }
 .sstv-stage { display: flex; flex-direction: column; gap: 0.5rem; }
-.sstv-screen { position: relative; width: 100%; max-width: 620px; max-height: 46vh; margin: 0 auto 0 0; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
+.sstv-screen { position: relative; width: 100%; max-width: 620px; max-height: calc(46vh / var(--ui-zoom, 1)); margin: 0 auto 0 0; background: #000; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35); }
 .sstv-canvas { display: block; width: 100%; height: 100%; }
 .sstv-canvas--crisp, .sstv-crisp { image-rendering: pixelated; image-rendering: crisp-edges; }
 .sstv-scanline { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); box-shadow: 0 0 12px var(--accent); pointer-events: none; transition: top 0.25s linear; }
@@ -92,7 +92,7 @@
 .sstv-field--call input { width: 9rem; text-transform: uppercase; font-family: var(--font-data); }
 .sstv-toolbar-edit { display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
 .sstv-editor { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr) minmax(290px, 380px); gap: 1.2rem; align-items: start; }
-.sstv-panel { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); max-height: 82vh; overflow: auto; }
+.sstv-panel { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.9rem; border-radius: 14px; background: var(--panel); border: 1px solid var(--border); max-height: calc(82vh / var(--ui-zoom, 1)); overflow: auto; }
 .sstv-panel h3 { margin: 0.2rem 0 0; font-size: 1rem; }
 .sstv-panel h4 { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .sstv-add { display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -109,7 +109,7 @@
 .sstv-templates li { display: flex; gap: 0.4rem; align-items: center; }
 
 .sstv-center { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
-/* la larghezza la limita anche il componente (46vh di altezza al massimo, sempre in proporzione W:H): niente max-height, che deformerebbe l'immagine */
+/* la larghezza la limita anche il componente (calc(46vh / var(--ui-zoom, 1)) di altezza al massimo, sempre in proporzione W:H): niente max-height, che deformerebbe l'immagine */
 .sstv-artboard { position: relative; width: 100%; max-width: 620px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: repeating-conic-gradient(#2a3442 0% 25%, #1d2530 0% 50%) 50% / 22px 22px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border); }
 .sstv-artboard--drop { box-shadow: 0 0 0 3px var(--accent), 0 14px 40px rgba(0, 0, 0, 0.4); }
 .sstv-canvas--edit { position: absolute; inset: 0; image-rendering: pixelated; }
@@ -139,8 +139,8 @@
 .sstv-thumb-meta span { color: var(--text-muted); font-family: var(--font-data); }
 .sstv-thumb-tag { position: absolute; top: 0.35rem; left: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 6px; background: var(--warn); color: #000; }
 .sstv-lightbox { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 1rem; background: rgba(3, 7, 13, 0.82); backdrop-filter: blur(4px); }
-.sstv-lightbox figure { margin: 0; display: flex; flex-direction: column; gap: 0.7rem; max-width: min(1200px, 96vw); }
-.sstv-lightbox img { display: block; max-width: 100%; max-height: 78vh; width: auto; height: auto; min-width: min(640px, 92vw); object-fit: contain; border-radius: 10px; background: #000; margin: 0 auto; }
+.sstv-lightbox figure { margin: 0; display: flex; flex-direction: column; gap: 0.7rem; max-width: min(1200px, calc(96vw / var(--ui-zoom, 1))); }
+.sstv-lightbox img { display: block; max-width: 100%; max-height: calc(78vh / var(--ui-zoom, 1)); width: auto; height: auto; min-width: min(640px, calc(92vw / var(--ui-zoom, 1))); object-fit: contain; border-radius: 10px; background: #000; margin: 0 auto; }
 .sstv-lightbox figcaption { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; justify-content: space-between; color: #e7eef7; }
 .sstv-lightbox-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .sstv-lightbox .sstv-check { color: #e7eef7; }
@@ -153,7 +153,7 @@
   .sstv-rx, .sstv-editor { grid-template-columns: minmax(0, 1fr); }
   .sstv-panel { max-height: none; }
   .sstv-toolbar-edit { margin-left: 0; }
-  .sstv-strip { grid-auto-columns: minmax(140px, 46vw); }
+  .sstv-strip { grid-auto-columns: minmax(140px, calc(46vw / var(--ui-zoom, 1))); }
   .sstv-lightbox img { min-width: 0; }
 }
 
@@ -386,7 +386,7 @@ html[data-theme='light'] .sstv-log-info { color: #46556f; }
 .sstv-composer .sstv-preview-cap { display: none; }
 @media (min-width: 1180px) {
   /* i pannelli scorrono dentro di se': la pagina no */
-  .sstv-composer .sstv-panel { max-height: calc(100vh - 12.5rem); }
+  .sstv-composer .sstv-panel { max-height: calc(calc(100vh / var(--ui-zoom, 1)) - 12.5rem); }
   /* con la colonna delle cronologie a destra i pannelli si stringono un po': l'anteprima resta grande */
   .sstv-editor { grid-template-columns: minmax(215px, 260px) minmax(0, 1fr) minmax(260px, 330px); gap: 0.6rem; }
 }

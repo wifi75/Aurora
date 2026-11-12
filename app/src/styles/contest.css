@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px max(12px, 1vw) 12px;
+  padding: 8px max(12px, calc(1vw / var(--ui-zoom, 1))) 12px;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -108,7 +108,7 @@ textarea.ctc-input { height: auto; padding: 4px 6px; }
 
 /* finestre: regole, calendario, export, impostazioni */
 .ctc-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 70%, transparent); }
-.ctc-modal-box { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 64px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--ct-violet); border-radius: 12px; overflow: hidden; }
+.ctc-modal-box { width: min(760px, calc(calc(100vw / var(--ui-zoom, 1)) - 32px)); max-height: calc(calc(100vh / var(--ui-zoom, 1)) - 64px); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--ct-violet); border-radius: 12px; overflow: hidden; }
 .ctc-modal-box header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--ct-line); }
 .ctc-modal-box h2 { margin: 0; font-size: 14px; flex: 1; }
 .ctc-modal-body { padding: 10px 12px; overflow: auto; }
@@ -117,7 +117,7 @@ textarea.ctc-input { height: auto; padding: 4px 6px; }
 .ctc-dl dt { color: var(--text-muted); }
 .ctc-dl dd { margin: 0; }
 .ctc-cal td { padding: 4px 8px; }
-.ctc-pre { max-height: 40vh; overflow: auto; padding: 8px; border-radius: 8px; background: var(--bg); font: 11px/1.4 var(--font-data); white-space: pre; }
+.ctc-pre { max-height: calc(40vh / var(--ui-zoom, 1)); overflow: auto; padding: 8px; border-radius: 8px; background: var(--bg); font: 11px/1.4 var(--font-data); white-space: pre; }
 .ctc-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 12px; }
 .ctc-form label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--text-muted); }
 .ctc-form label.ctc-check { flex-direction: row; align-items: center; gap: 6px; color: var(--text); }
@@ -180,7 +180,7 @@ html[data-theme='light'] .ctc-chip--sel option, html[data-theme='light'] .ctc-mi
 .ctc-pick-name { white-space: nowrap; }
 .ctc-pick-date { color: var(--text-muted); font-weight: 400; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ctc-pick-btn .ctc-pick-date { margin-left: 4px; }
-.ctc-pick-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 320px; max-height: min(70vh, 560px); overflow: auto; padding: 4px; border: 1px solid #27d6f5; border-radius: 10px; background: #0b1220; color: #e6edf3; box-shadow: 0 10px 28px rgb(0 0 0 / 0.45), 0 0 14px rgb(39 214 245 / 0.15); }
+.ctc-pick-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; min-width: 320px; max-height: min(calc(70vh / var(--ui-zoom, 1)), 560px); overflow: auto; padding: 4px; border: 1px solid #27d6f5; border-radius: 10px; background: #0b1220; color: #e6edf3; box-shadow: 0 10px 28px rgb(0 0 0 / 0.45), 0 0 14px rgb(39 214 245 / 0.15); }
 html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; border-color: #1f8fd0; box-shadow: 0 10px 24px rgb(0 0 0 / 0.18); }
 .ctc-pick-pop .ctc-pick-date { color: color-mix(in srgb, currentColor 60%, transparent); }
 .ctc-pick-group { padding: 6px 10px 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ct-cyan); }
@@ -194,7 +194,7 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 
 /* Tessera «Categoria»: solo la sigla nella barra, pannello a comparsa come il menu dei contest */
 .ctc-score .ctc-cat-btn { cursor: pointer; }
-.ctc-cat-pop { min-width: 340px; max-width: min(92vw, 440px); padding: 6px 6px 8px; }
+.ctc-cat-pop { min-width: 340px; max-width: min(calc(92vw / var(--ui-zoom, 1)), 440px); padding: 6px 6px 8px; }
 .ctc-cat-item { align-items: baseline; }
 .ctc-cat-item input { margin: 0; accent-color: var(--ct-cyan); }
 .ctc-cat-sigla { min-width: 56px; font-variant-numeric: tabular-nums; }
@@ -392,7 +392,7 @@ html[data-theme='light'] .ctc-pick-pop { background: #ffffff; color: #1a2233; bo
 .ctc-toggle-knob::after { border-radius: 3px !important; }
 .ctc-toggle--on { background: color-mix(in srgb, #2cf5a4 10%, transparent); }
 /* il riassunto va a capo dentro il pannello (la barra in alto non va a capo) */
-.ctc-dates-pop { width: min(420px, 90vw); white-space: normal !important; }
+.ctc-dates-pop { width: min(420px, calc(90vw / var(--ui-zoom, 1))); white-space: normal !important; }
 .ctc-dates-pop .ctc-how-text { white-space: normal !important; overflow-wrap: anywhere; display: block; }
 /* «Come funziona» e il conto alla rovescia in fondo a destra della barra, dove stava la scritta Fox/Hound */
 .ctc-score .ctc-dates { order: 20; margin-left: auto; }

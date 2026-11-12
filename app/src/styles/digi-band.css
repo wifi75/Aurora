@@ -32,10 +32,10 @@
 .digi-band-role--cq { border-color: #2cf5a4; color: #2cf5a4; }
 
 /* storico di un segnale */
-.digi-band-history { width: min(46rem, 94vw); }
+.digi-band-history { width: min(46rem, calc(94vw / var(--ui-zoom, 1))); }
 .digi-band-history header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .digi-band-full {
-  margin: 8px 0; max-height: 50vh; overflow: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #0a1324;
+  margin: 8px 0; max-height: calc(50vh / var(--ui-zoom, 1)); overflow: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #0a1324;
   color: #d8e6ff; font: 14px/1.5 var(--font-data); white-space: pre-wrap; word-break: break-word;
 }
 

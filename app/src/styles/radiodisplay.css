@@ -55,7 +55,7 @@
   top: calc(100% + 0.4rem);
   right: 0;
   z-index: var(--layer-overlay);
-  width: min(36rem, 92vw);
+  width: min(36rem, calc(92vw / var(--ui-zoom, 1)));
   padding: 0.35rem;
   background: var(--panel);
   border: var(--border-width) solid var(--border);
@@ -800,7 +800,7 @@
   top: calc(100% + 0.35rem);
   right: 0;
   z-index: var(--layer-overlay, 50);
-  width: min(44rem, 92vw);
+  width: min(44rem, calc(92vw / var(--ui-zoom, 1)));
   padding: 0.4rem;
   background: var(--panel, #fff);
   border: 1px solid var(--border, #c4cdda);
@@ -834,7 +834,7 @@
 
 /* Zoom del display: il doppio di prima */
 .rd-zoom {
-  width: min(88rem, 96vw);
+  width: min(88rem, calc(96vw / var(--ui-zoom, 1)));
 }
 
 .rd-zoom .rx-extras {
@@ -952,7 +952,7 @@
 
 .app-solo {
   box-sizing: border-box;
-  height: 100vh;
+  height: calc(100vh / var(--ui-zoom, 1));
   padding: 0.4rem;
   overflow: auto;
   background: var(--bg);
@@ -960,7 +960,7 @@
 
 /* mappa da sola: riempie tutta la finestra, qualunque misura le si dia */
 .map-page--solo {
-  height: calc(100vh - 0.8rem);
+  height: calc(calc(100vh / var(--ui-zoom, 1)) - 0.8rem);
 }
 
 .map-page--solo .worldmap-wrap {

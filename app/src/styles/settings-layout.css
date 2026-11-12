@@ -918,7 +918,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2, 0.5rem);
-  max-height: calc(100dvh - 2rem);
+  max-height: calc(calc(100dvh / var(--ui-zoom, 1)) - 2rem);
   overflow-y: auto;
   padding: var(--space-3, 0.75rem) var(--space-2, 0.5rem);
   background: color-mix(in srgb, var(--text) 3%, transparent);
@@ -1771,7 +1771,7 @@
 /* Rapporti degli errori: caselle e finestra «Vedi cosa mando» */
 .about-support .rep-check { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0.35rem 0; cursor: pointer; }
 .rep-dialog { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
-.rep-pre { max-height: 50vh; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.78rem; padding: 0.6rem; border-radius: 0.5rem; background: color-mix(in srgb, currentColor 6%, transparent); }
+.rep-pre { max-height: calc(50vh / var(--ui-zoom, 1)); overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.78rem; padding: 0.6rem; border-radius: 0.5rem; background: color-mix(in srgb, currentColor 6%, transparent); }
 
 /* avviso una tantum sui rapporti degli errori */
 .reports-notice {
@@ -1783,7 +1783,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.6rem;
-  max-width: min(46rem, calc(100vw - 2rem));
+  max-width: min(46rem, calc(calc(100vw / var(--ui-zoom, 1)) - 2rem));
   padding: 0.7rem 1rem;
   transform: translateX(-50%);
   border: 1px solid var(--accent);
@@ -1849,7 +1849,7 @@
 /* Frequenze: comandi sopra la tabella, tabella alta quanto la finestra (niente riquadro piccolo con lo scorrimento), righe fitte */
 .freq-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; }
 .freq-bar .glass--on { margin-left: auto; }
-.sx-tablewrap--scroll.freq-wrap { max-height: calc(100vh - 13.5rem); }
+.sx-tablewrap--scroll.freq-wrap { max-height: calc(calc(100vh / var(--ui-zoom, 1)) - 13.5rem); }
 .freq-tab { width: 100%; }
 .freq-tab td { padding-top: 0.15rem; padding-bottom: 0.15rem; vertical-align: middle; }
 .freq-tab td:nth-child(5), .freq-tab th:nth-child(5) { text-align: center; width: 6.5rem; }

@@ -137,7 +137,7 @@ html[data-theme='light'] .digi-log-table--completa tbody tr:not(.digi-log-cur):h
 html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { background: #cfeaff; }
 
 /* rotella del DX Cluster: finestra e colonne nascoste */
-.cop-dialog { width: min(34rem, 96vw); }
+.cop-dialog { width: min(34rem, calc(96vw / var(--ui-zoom, 1))); }
 .cop-dialog fieldset { display: flex; flex-direction: column; gap: 0.3rem; margin: 0; border: 1px solid var(--border, #3a3f7a); border-radius: 10px; padding: 0.6rem 0.9rem; }
 .cop-dialog legend { padding: 0 0.4rem; font-weight: 600; }
 .cop-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -264,7 +264,7 @@ html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-
 .digi-st-menu-sep { margin: 0.25rem 0.3rem; border: 0; border-top: 1px solid var(--border); }
 
 /* finestra «Impostazioni RTTY»: compatta, quattro profili con i pallini, soglia dello squelch in verticale */
-.rtty-dialog { width: min(46rem, 96vw); }
+.rtty-dialog { width: min(46rem, calc(96vw / var(--ui-zoom, 1))); }
 .rtty-sets { display: flex; gap: 0.9rem; margin-left: auto; }
 .rtty-dialog label.rtty-set, .rtty-dialog label.rtty-check { flex-direction: row; align-items: center; gap: 0.35rem; color: var(--text); }
 .rtty-body { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: flex-start; }

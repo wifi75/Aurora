@@ -8,7 +8,7 @@
 .digi-bar strong { margin-right: auto; font-size: 1.05rem; }
 .digi-level { width: 9rem; flex: none; }
 .digi-text {
-  margin: 0; min-height: 16rem; max-height: 52vh; overflow: auto; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 12px;
+  margin: 0; min-height: 16rem; max-height: calc(52vh / var(--ui-zoom, 1)); overflow: auto; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 12px;
   background: var(--panel-raised); color: var(--text); font: 1rem/1.55 var(--font-data); white-space: pre-wrap; word-break: break-word;
 }
 .digi-empty { color: var(--text-muted); font-family: inherit; }
@@ -116,7 +116,7 @@
 .digi-main--nolog { grid-template-columns: minmax(0, 1fr); }
 .digi-windows { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid #808080; }
 .digi-rxwin, .digi-txwin { margin: 0; padding: 4px 6px; background: #fff; color: #000; font: 15px/1.35 "Courier New", Consolas, monospace; white-space: pre-wrap; word-break: break-word; border: 0; border-radius: 0; resize: none; overflow: auto; }
-.digi-rxwin { flex: 1 1 55%; min-height: 12rem; max-height: 38vh; border-bottom: 2px solid #404040; }
+.digi-rxwin { flex: 1 1 55%; min-height: 12rem; max-height: calc(38vh / var(--ui-zoom, 1)); border-bottom: 2px solid #404040; }
 .digi-empty { color: #7a7a7a; font-family: Tahoma, Arial, sans-serif; font-size: 12px; }
 .digi-txwrap { display: flex; flex-direction: column; flex: 1 1 45%; min-height: 9rem; background: #fff; }
 .digi-txwin { flex: 1; width: 100%; box-sizing: border-box; outline: none; min-height: 9rem; }

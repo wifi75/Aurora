@@ -2,7 +2,7 @@
 .solo {
   display: flex;
   box-sizing: border-box;
-  height: 100vh;
+  height: calc(100vh / var(--ui-zoom, 1));
   padding: 0.3rem;
   gap: 0.3rem;
   background: var(--bg);
@@ -160,7 +160,7 @@
 .dev-vol input[type='range'] { flex: 1; min-width: 6rem; accent-color: var(--accent); }
 .dev-vol-val { flex: none; width: 3rem; text-align: right; }
 .dev-vol-auto { flex: none; font-size: 0.7rem; }
-.solo--grid { height: 100vh; padding: 0; }
+.solo--grid { height: calc(100vh / var(--ui-zoom, 1)); padding: 0; }
 
 /* display della radio in finestra a parte: centrato, scala con la finestra mantenendo le proporzioni */
 .display-fit { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
@@ -210,7 +210,7 @@
 button.clock-alert { font: inherit; cursor: pointer; }
 
 /* display da solo, finestra senza cornice: un bordino scuro da cui trascinarla, strumenti piccoli in alto a sinistra al passaggio */
-.solo-display { position: relative; box-sizing: border-box; height: 100vh; padding: 4px; background: #05080a; cursor: move; overflow: hidden; }
+.solo-display { position: relative; box-sizing: border-box; height: calc(100vh / var(--ui-zoom, 1)); padding: 4px; background: #05080a; cursor: move; overflow: hidden; }
 .solo-display .display-fit { cursor: default; }
 .solo-display-tools { position: absolute; top: 4px; left: 4px; z-index: 5; display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s ease-out; }
 .solo-display:hover .solo-display-tools { opacity: 1; }
@@ -236,7 +236,7 @@ html:has(.solo-display)::-webkit-scrollbar, .solo-display *::-webkit-scrollbar {
 html:has(.solo-display) *, html:has(.solo-display) { scrollbar-width: none; }
 
 /* Mappa DX */
-.dxmap-page { display: flex; flex-direction: column; gap: 0.35rem; height: calc(100vh - 9rem); min-height: 24rem; }
+.dxmap-page { display: flex; flex-direction: column; gap: 0.35rem; height: calc(calc(100vh / var(--ui-zoom, 1)) - 9rem); min-height: 24rem; }
 .dxmap-page.map-page--solo { height: 100%; padding: 0.3rem; box-sizing: border-box; }
 .dxmap-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.8rem; font-size: 0.78rem; }
 .dxmap-bar label { display: inline-flex; align-items: center; gap: 0.3rem; }

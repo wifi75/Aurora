@@ -62,7 +62,7 @@ button {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 36dvh;
+  height: calc(36dvh / var(--ui-zoom, 1));
   min-height: 12rem;
   background: var(--wf-bg);
   border: var(--border-width) solid var(--border);
@@ -96,7 +96,7 @@ button {
 /* Lista dei decode */
 .decode-list {
   min-width: 0;
-  max-height: 38dvh;
+  max-height: calc(38dvh / var(--ui-zoom, 1));
   overflow-y: auto;
   background: var(--panel);
   border: var(--border-width) solid var(--border);
@@ -440,7 +440,7 @@ button.primary {
 /* Schermo largo: cascata grande a sinistra, pannelli a destra, STOP TX in alto */
 @media (min-width: 64rem) {
   .app-shell {
-    height: 100dvh;
+    height: calc(100dvh / var(--ui-zoom, 1));
   }
 
   .app-main {
@@ -677,7 +677,7 @@ button.primary {
   bottom: var(--space-4);
   left: 50%;
   z-index: var(--layer-sticky);
-  max-width: min(32rem, calc(100vw - 2rem));
+  max-width: min(32rem, calc(calc(100vw / var(--ui-zoom, 1)) - 2rem));
   margin: 0;
   padding: var(--space-2) var(--space-3);
   transform: translateX(-50%);
@@ -749,7 +749,7 @@ button.primary {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  width: min(34rem, calc(100vw - 2rem));
+  width: min(34rem, calc(calc(100vw / var(--ui-zoom, 1)) - 2rem));
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1042,11 +1042,11 @@ button.primary {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 18vh;
+  padding-top: calc(18vh / var(--ui-zoom, 1));
   background: rgb(0 0 0 / 0.45);
 }
 .confirm-card {
-  width: min(26rem, 92vw);
+  width: min(26rem, calc(92vw / var(--ui-zoom, 1)));
   padding: 1.1rem 1.2rem 1rem;
   border: var(--border-width, 1px) solid var(--glass-edge, var(--border));
   border-radius: 0.8rem;

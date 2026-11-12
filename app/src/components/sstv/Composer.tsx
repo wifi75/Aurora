@@ -570,7 +570,7 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
           <div
             ref={stage}
             className={`sstv-artboard${dropping ? ' sstv-artboard--drop' : ''}`}
-            style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc(46vh * ${W} / ${H}))` }}
+            style={{ aspectRatio: `${W} / ${H}`, width: `min(100%, calc(46vh / var(--ui-zoom, 1) * ${W} / ${H}))` }}
             onDragOver={(e) => {
               if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) {
                 e.preventDefault();

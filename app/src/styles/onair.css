@@ -2358,7 +2358,7 @@
   width: 100%;
   /* altezza legata alla larghezza (non piu' fissa): il planisfero non si schiaccia mai in un riquadro troppo basso */
   aspect-ratio: 8 / 5;
-  max-height: calc(100dvh - 12rem);
+  max-height: calc(calc(100dvh / var(--ui-zoom, 1)) - 12rem);
   min-height: 22rem;
   overflow: hidden;
   border: 1px solid var(--row-line);
@@ -2529,7 +2529,7 @@
 @media (max-width: 40rem) {
   .worldmap {
     aspect-ratio: 4 / 3;
-    max-height: calc(100dvh - 15rem);
+    max-height: calc(calc(100dvh / var(--ui-zoom, 1)) - 15rem);
     min-height: 18rem;
   }
 }
@@ -3110,7 +3110,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 
 .export-table-wrap {
   overflow: auto;
-  max-height: calc(100dvh - 19rem);
+  max-height: calc(calc(100dvh / var(--ui-zoom, 1)) - 19rem);
   min-height: 12rem;
 }
 
@@ -3714,7 +3714,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   flex-direction: column;
   align-items: flex-end;
   gap: 0.45rem;
-  width: min(26rem, calc(100vw - 2rem));
+  width: min(26rem, calc(calc(100vw / var(--ui-zoom, 1)) - 2rem));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -4143,7 +4143,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    min-height: 40dvh;
+    min-height: calc(40dvh / var(--ui-zoom, 1));
     padding: var(--space-2);
     background: linear-gradient(180deg, var(--glass-lo), transparent);
     border: var(--border-width) solid var(--border);
@@ -4155,12 +4155,12 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   .phone-panel--cq .decode-list,
   .phone-panel--log .log4om,
   .phone-panel--cluster .cluster {
-    max-height: calc(100dvh - 15rem);
+    max-height: calc(calc(100dvh / var(--ui-zoom, 1)) - 15rem);
     overflow: auto;
   }
 
   .phone-panel--waterfall {
-    height: 60dvh;
+    height: calc(60dvh / var(--ui-zoom, 1));
     min-height: 18rem;
   }
 
@@ -4611,18 +4611,18 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 @keyframes log-flash {
   0%,
   100% {
-    box-shadow: inset 0 0 0 100vmax transparent;
+    box-shadow: inset 0 0 0 calc(100vmax / var(--ui-zoom, 1)) transparent;
   }
 
   50% {
-    box-shadow: inset 0 0 0 100vmax rgb(255 214 64 / 0.85);
+    box-shadow: inset 0 0 0 calc(100vmax / var(--ui-zoom, 1)) rgb(255 214 64 / 0.85);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .log4om-row--flash td {
     animation: none;
-    box-shadow: inset 0 0 0 100vmax rgb(255 214 64 / 0.6);
+    box-shadow: inset 0 0 0 calc(100vmax / var(--ui-zoom, 1)) rgb(255 214 64 / 0.6);
   }
 }
 
@@ -5912,7 +5912,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 /* Scheda della DXpedition (proposta 1): mappa grande sopra con riquadro ingrandito, dettagli sotto */
 .dxped-item { cursor: pointer; }
 .dxd-backdrop { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgb(0 0 0 / 0.45); }
-.dxd { position: relative; width: min(34rem, 94vw); max-height: 92vh; overflow: auto; background: var(--panel, #fff); color: var(--text, #1b2430); border-radius: 1rem; box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6); }
+.dxd { position: relative; width: min(34rem, calc(94vw / var(--ui-zoom, 1))); max-height: calc(92vh / var(--ui-zoom, 1)); overflow: auto; background: var(--panel, #fff); color: var(--text, #1b2430); border-radius: 1rem; box-shadow: 0 24px 60px -12px rgb(0 0 0 / 0.6); }
 .dxd--wait { visibility: hidden; }
 .dxd-close { position: absolute; top: 0.4rem; right: 0.5rem; z-index: 5; width: 2rem; height: 2rem; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 1.2rem; cursor: pointer; }
 .dxd-map { position: relative; height: 15rem; background: #0f2a44; }
@@ -5990,7 +5990,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 }
 
 /* Scheda DXpedition: la mappa e' quella della Propagazione, con la sua altezza */
-.dxd { width: min(44rem, 94vw); }
+.dxd { width: min(44rem, calc(94vw / var(--ui-zoom, 1))); }
 .dxd-map { height: auto; min-height: 16rem; background: none; }
 .dxd-map .world-map, .dxd-map .leaflet-container { height: 18rem; }
 
@@ -7090,7 +7090,7 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
 .diag-fix--minor { font-weight: 400; color: var(--text-muted); }
 .diag-error { display: block; margin-top: 0.25rem; color: var(--danger); }
 .alh { z-index: 1200; }
-.first-run.alh .alh-card { width: min(640px, 100%); max-width: none; max-height: 88vh; overflow-y: auto; padding: 1.2rem 1.4rem 1.1rem; gap: 0.7rem; }
+.first-run.alh .alh-card { width: min(640px, 100%); max-width: none; max-height: calc(88vh / var(--ui-zoom, 1)); overflow-y: auto; padding: 1.2rem 1.4rem 1.1rem; gap: 0.7rem; }
 .alh-head { display: flex; align-items: center; justify-content: space-between; }
 .alh-x { background: none; border: 0; color: var(--text-muted); font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; }
 .alh-x:hover { color: var(--text); }
@@ -7170,8 +7170,8 @@ html[data-theme='light'] .decode-list .decode-row.decode-row--queue-pin { backgr
   display: grid;
   width: max-content;
   min-width: 20rem;
-  max-width: min(36rem, calc(100vw - 2rem));
-  max-height: min(70vh, 34rem);
+  max-width: min(36rem, calc(calc(100vw / var(--ui-zoom, 1)) - 2rem));
+  max-height: min(calc(70vh / var(--ui-zoom, 1)), 34rem);
   overflow-y: auto;
   padding: 0.5rem;
   border-radius: 0.75rem;
