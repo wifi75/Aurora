@@ -247,7 +247,8 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
         }
         // la catena puo' impiegare qualche centinaio di ms per partire (PTT)
         if elapsed > 1.5 && !port.is_busy() {
-            break if closing { "done" } else { "error" };
+            // la catena si e' fermata senza un errore di scrittura: qualcuno l'ha fermata (STOP, Esc, un'altra trasmissione), non e' un guasto
+            break if closing { "done" } else { "aborted" };
         }
         {
             let mut tx = lock(&inner.tx);

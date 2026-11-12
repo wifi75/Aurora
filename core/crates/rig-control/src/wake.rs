@@ -2,10 +2,11 @@
 //! il comando di accensione nella lingua della radio. Con l'FT-2000 spento Hamlib 4.7.2 non apre nemmeno il collegamento («rig power is
 //! off?», «Some rigs cannot get_powerstat while off») e `auto_power_on` non parte mai (prova del 8/11/2026).
 //!
-//! - Yaesu (modelli Hamlib 1xxx), Kenwood ed Elecraft (2xxx): `PS1;` tre volte, a 0, 0,3 e 1,5 s. La prima sveglia il processore della
-//!   radio e la successiva deve arrivare entro circa un secondo: con una sola pausa di 1,0 s esatti l'FT-2000 a volte restava spento
-//!   (registro del 2026-11-11: comando mandato, radio non accesa). Con tre invii almeno una coppia cade nella finestra; a radio accesa
-//!   `PS1;` non fa nulla.
+//! - Yaesu (modelli Hamlib 1xxx), Kenwood ed Elecraft (2xxx): `PS1;` a coppie. Il manuale Yaesu vuole un primo invio che sveglia il
+//!   processore della radio e il comando vero dopo piu' di un secondo e meno di due. Con una sola pausa di 1,0 s esatti l'FT-2000 a volte
+//!   restava spento (registro del 2026-11-11) e con tre invii a 0, 0,3 e 1,5 s non si accendeva (proprietario, 2026-11-12: l'invio a
+//!   0,3 s cadeva dentro la finestra e la faceva ripartire). Ora due coppie pulite: 0 e 1,2 s, poi dopo 2,5 s un'altra a 1,5 s di
+//!   distanza; a radio accesa `PS1;` non fa nulla.
 //! - Icom (3xxx): una serie di byte `FE` di risveglio, poi il comando CI-V 0x18 0x01 all'indirizzo della radio (serve l'indirizzo CI-V).
 //!
 //! Gli altri modelli non si toccano: resta `auto_power_on` di Hamlib.
@@ -14,13 +15,13 @@ use std::{io::Write, time::Duration};
 
 use crate::cat_config::RigConfig;
 
-/// Le pause prima del secondo e del terzo messaggio (0,3 s e poi 1,2 s: invii a 0, 0,3 e 1,5 s).
-const PAUSES: [Duration; 2] = [Duration::from_millis(300), Duration::from_millis(1200)];
+/// Le pause prima del secondo, del terzo e del quarto messaggio: invii a 0, 1,2, 3,7 e 5,2 s (due coppie, una a 1,2 e una a 1,5 s).
+const PAUSES: [Duration; 3] = [Duration::from_millis(1200), Duration::from_millis(2500), Duration::from_millis(1500)];
 
 /// I messaggi da mandare per accendere questa radio, se Aurora li conosce.
 pub fn power_on_bytes(config: &RigConfig) -> Option<Vec<Vec<u8>>> {
     match config.model / 1000 {
-        1 | 2 => Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec(), b"PS1;".to_vec()]),
+        1 | 2 => Some(vec![b"PS1;".to_vec(); 4]),
         3 if config.civ_address != 0 => {
             // risveglio: piu' byte FE quanto piu' alta e' la velocita' (come il manuale Icom: 150 a 115200, 25 a 19200)
             let wake = match config.baud {
@@ -109,8 +110,9 @@ mod tests {
     #[test]
     fn yaesu_and_kenwood_get_ps1_and_icom_needs_its_address() {
         let ft2000 = RigConfig { model: 1029, ..RigConfig::default() };
-        assert_eq!(power_on_bytes(&ft2000), Some(vec![b"PS1;".to_vec(), b"PS1;".to_vec(), b"PS1;".to_vec()]));
-        assert_eq!(PAUSES[0] + PAUSES[1], Duration::from_millis(1500));
+        assert_eq!(power_on_bytes(&ft2000), Some(vec![b"PS1;".to_vec(); 4]));
+        // ogni coppia ha il secondo invio a piu' di un secondo e meno di due dal primo
+        assert!([PAUSES[0], PAUSES[2]].iter().all(|p| *p > Duration::from_millis(1000) && *p < Duration::from_millis(2000)));
         let ts590 = RigConfig { model: 2031, ..RigConfig::default() };
         assert!(power_on_bytes(&ts590).is_some());
         let icom_no_addr = RigConfig { model: 3073, ..RigConfig::default() };

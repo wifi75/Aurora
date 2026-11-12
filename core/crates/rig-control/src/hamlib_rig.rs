@@ -190,6 +190,8 @@ struct Inner {
     split_off_pending: AtomicBool,
     /// Cresce a ogni comando: una lettura iniziata prima di un comando non ne cancella l'effetto.
     epoch: AtomicU64,
+    /// Conta i cambi di frequenza chiesti: un cambio che ne vede arrivare uno piu' recente non insiste sulla sua frequenza.
+    qsy_seq: AtomicU64,
     /// I misuratori: cosa la radio non da', ultima lettura, turno di lettura.
     meter: Mutex<MeterPoll>,
     extras: Mutex<crate::extras::ExtrasPoll>,
@@ -817,6 +819,7 @@ impl HamlibRig {
             xit_split: AtomicBool::new(false),
             split_off_pending: AtomicBool::new(false),
             epoch: AtomicU64::new(0),
+            qsy_seq: AtomicU64::new(0),
             meter: Mutex::new(MeterPoll::default()),
             extras: Mutex::new(crate::extras::ExtrasPoll::default()),
         });
@@ -1161,10 +1164,16 @@ impl Rig for HamlibRig {
             return Err(RigError("la radio sta trasmettendo: cambio di frequenza rifiutato".into()));
         }
         inner.epoch.fetch_add(1, Ordering::SeqCst);
+        let mine = inner.qsy_seq.fetch_add(1, Ordering::SeqCst) + 1;
         let fr = |e: RigError| RigError(friendly_error(&e.0));
         link.client().set_frequency(hz).map_err(fr)?;
         for attempt in 0..3 {
             std::thread::sleep(inner.timing.qsy_check);
+            // un cambio piu' recente (due modi scelti uno dopo l'altro) ha gia' portato la radio altrove: questo non insiste e non e' un
+            // errore. Prima i due cambi si contendevano la radio e il primo finiva con «la radio non ha raggiunto la frequenza»
+            if inner.qsy_seq.load(Ordering::SeqCst) != mine {
+                return Ok(());
+            }
             match link.client().frequency() {
                 Ok(f) if f.abs_diff(hz) <= 100 => break,
                 Ok(_) if attempt < 2 => link.client().set_frequency(hz).map_err(fr)?,
