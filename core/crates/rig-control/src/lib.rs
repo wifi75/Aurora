@@ -5,6 +5,7 @@ pub mod bands;
 pub mod busy_port;
 pub mod cat;
 pub mod cat4om;
+pub mod cat4om_audio;
 pub mod cat_config;
 pub mod controls;
 pub mod detect;
