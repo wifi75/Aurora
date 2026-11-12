@@ -352,8 +352,8 @@ fn taratura() {
             for r in 0..3 {
                 let (audio, sent) = genera(&sc, snr, 500 + r, CHARS);
                 let mut rx = aurora(&sc);
-                let got: Vec<mode_digi::RttyChar> = audio.chunks(1024).flat_map(|b| rx.process_chars(b)).filter(|c| c.ch != b'\r' && c.ch != b'\n').collect();
-                let testo: Vec<u8> = got.iter().map(|c| c.ch).collect();
+                let got: Vec<mode_digi::RttyChar> = audio.chunks(1024).flat_map(|b| rx.process_chars(b)).filter(|c| c.ch != '\r' && c.ch != '\n').collect();
+                let testo: Vec<u8> = got.iter().map(|c| u8::try_from(u32::from(c.ch)).unwrap_or(b'?')).collect();
                 for (c, ok) in got.iter().zip(giusti(sent.as_bytes(), &testo)) {
                     let k = ((c.prob * 10.0) as usize).min(9);
                     fasce[k].0 += 1;

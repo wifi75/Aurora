@@ -1757,6 +1757,22 @@ export interface DigiMacro {
   color: number | null;
 }
 
+export type RttyCharset = 'ita2' | 'lowercase' | 'cyrillic' | 'swedish';
+
+/** Un profilo RTTY (Set 1-4): spostamento, velocita', Rev, ricevitore, set di caratteri, AFC, Snap, Squelch, UOS e soglia. */
+export interface RttyProfile {
+  shift_hz: number;
+  baud: number;
+  reverse: boolean;
+  receiver: 'auto' | 'filters' | 'discriminator';
+  charset: RttyCharset;
+  afc: boolean;
+  snap: boolean;
+  squelch: boolean;
+  uos: boolean;
+  squelch_snr_db: number;
+}
+
 export interface DigiSettings {
   mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
   /** Velocita' della CW in parole al minuto. */
@@ -1782,6 +1798,11 @@ export interface DigiSettings {
   rtty_squelch_snr_db: number;
   /** RTTY: ricevitore a due filtri, a discriminatore di frequenza o scelto dallo spostamento (`auto`: discriminatore sotto i 40 Hz). */
   rtty_receiver: 'auto' | 'filters' | 'discriminator';
+  /** RTTY: set di caratteri (ITA2 maiuscolo di base, minuscole, cirillico MTK-2, svedese). */
+  rtty_charset: RttyCharset;
+  /** RTTY: i quattro profili della finestra «Impostazioni RTTY» e quello scelto (0-3), gia' copiato nei campi qui sopra. */
+  rtty_profile: number;
+  rtty_profiles: RttyProfile[];
   afc_on: boolean;
   /** Squelch acceso: la soglia e' quella del modo (`psk_squelch`, `rtty_squelch_snr_db`, `cw_squelch_snr_db`), sempre relativa. */
   squelch_on: boolean;

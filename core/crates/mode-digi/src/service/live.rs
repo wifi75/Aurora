@@ -46,7 +46,7 @@ fn modulator(s: &DigiSettings, lsb: bool) -> TxModulator {
     match (s.mode.psk(), s.mode) {
         (Some(mode), _) => TxModulator::psk(mode, s.tx_freq()),
         (None, DigiMode::Cw) => TxModulator::cw(s.tx_freq(), s.cw_wpm),
-        (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb)),
+        (None, _) => TxModulator::rtty(s.rtty(s.tx_freq(), lsb), s.rtty_charset),
     }
 }
 
@@ -414,7 +414,7 @@ mod tests {
         // l'audio si rilegge
         let mut d = super::super::Demod::new(&svc.settings(), false);
         let wave = lock(&port.wave).clone();
-        let out = String::from_utf8_lossy(&d.process(&wave).0).into_owned();
+        let out = d.process(&wave).0;
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
         assert!(!out.contains("XYZ"), "ricevuto: {out:?}");
     }
@@ -465,7 +465,7 @@ mod tests {
         assert!(wait_state(&svc, "done", 15), "stato: {:?}", svc.snapshot().tx);
         assert_eq!(sent(&events), "CQ CQ DE IU3ABC IU3ABC 599 K TU");
         let mut d = super::super::Demod::new(&svc.settings(), false);
-        let out = String::from_utf8_lossy(&d.process(&lock(&port.wave)).0).into_owned();
+        let out = d.process(&lock(&port.wave)).0;
         assert!(out.contains("IU3ABC IU3ABC 599 K TU"), "ricevuto: {out:?}");
         assert!(svc.tx_replace(0, "X").is_err());
     }

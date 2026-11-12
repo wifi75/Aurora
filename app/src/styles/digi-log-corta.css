@@ -226,3 +226,14 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-log-table--completa table.mv-grid td { border-right: var(--border-width) solid var(--grid-col-line); border-bottom: var(--border-width) solid var(--grid-row-line); }
 .digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
 .digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
+
+/* finestra «Impostazioni RTTY»: compatta, quattro profili con i pallini, soglia dello squelch in verticale */
+.rtty-dialog { width: min(46rem, 96vw); }
+.rtty-sets { display: flex; gap: 0.9rem; margin-left: auto; }
+.rtty-dialog label.rtty-set, .rtty-dialog label.rtty-check { flex-direction: row; align-items: center; gap: 0.35rem; color: var(--text); }
+.rtty-body { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: flex-start; }
+.rtty-col { display: flex; flex-direction: column; gap: 0.5rem; min-width: 9rem; }
+.rtty-dialog label.rtty-sq { align-items: center; width: 6rem; text-align: center; }
+.rtty-vertical { writing-mode: vertical-lr; direction: rtl; height: 8.5rem; width: 1.6rem; padding: 0; }
+.rtty-foot { display: flex; gap: 0.6rem; align-items: center; }
+.rtty-spacer { flex: 1; }

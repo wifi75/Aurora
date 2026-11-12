@@ -35,6 +35,8 @@ interface Props {
   /** Solo in RTTY: al posto dei dati del modo, tendine di spostamento e velocita' e il tasto «Rev». */
   rtty?: RttyStatus;
   modeName: string;
+  /** Clic sul nome del modo (in RTTY: la finestra «Impostazioni RTTY»); senza, il nome non si clicca. */
+  onModeClick?(): void;
   onToggleTx(): void;
   onToggleSquelch(): void;
   onToggleAfc(): void;
@@ -138,7 +140,13 @@ export function DigiStatusBar(p: Props) {
           {p.measures}
         </span>
       ) : null}
-      <span className="digi-st digi-st--info">{p.modeName}</span>
+      {p.onModeClick ? (
+        <button type="button" className="digi-st" title={t('digi.rtty.title')} onClick={p.onModeClick}>
+          {p.modeName}
+        </button>
+      ) : (
+        <span className="digi-st digi-st--info">{p.modeName}</span>
+      )}
     </div>
   );
 }

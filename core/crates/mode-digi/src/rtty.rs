@@ -29,6 +29,7 @@
 //! - lo squelch guarda il rapporto segnale/rumore (come la «metric» di fldigi), non il livello assoluto.
 
 use crate::psk::{AFC_LIMIT_HZ, RATE};
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 const LETTERS: [u8; 32] = [
@@ -107,6 +108,91 @@ impl RttyParams {
     }
 }
 
+/// Il set di caratteri del Baudot. Le varianti nazionali usano le posizioni del registro delle cifre che l'ITA2 lascia all'uso nazionale
+/// (quelle di F, G, H) e, il cirillico, un terzo registro di lettere.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RttyCharset {
+    /// ITA2 con le cifre americane, lettere maiuscole (come fldigi e MMTTY).
+    #[default]
+    Ita2,
+    /// Lo stesso, con le lettere minuscole in ricezione.
+    Lowercase,
+    /// Cirillico (MTK-2): il codice 00000 passa alle lettere russe (А Б Ц Д... al posto di A B C D...), LTRS torna alle latine; nel
+    /// registro delle cifre Ч Э Ш Щ Ю al posto di $ ! & # '.
+    Cyrillic,
+    /// Svedese: Å Ä Ö nel registro delle cifre al posto di ! & #.
+    Swedish,
+}
+
+impl RttyCharset {
+    pub const ALL: [RttyCharset; 4] = [RttyCharset::Ita2, RttyCharset::Lowercase, RttyCharset::Cyrillic, RttyCharset::Swedish];
+}
+
+/// Le lettere russe del MTK-2, nell'ordine delle latine A-Z a cui corrispondono.
+const CYRILLIC: [char; 26] = ['А', 'Б', 'Ц', 'Д', 'Е', 'Ф', 'Г', 'Х', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Я', 'Р', 'С', 'Т', 'У', 'Ж', 'В', 'Ь', 'Ы', 'З'];
+/// Le posizioni del registro delle cifre (indicate con la lettera dello stesso codice) che le varianti nazionali cambiano.
+const CYRILLIC_FIGURES: [(u8, char); 5] = [(b'D', 'Ч'), (b'F', 'Э'), (b'G', 'Ш'), (b'H', 'Щ'), (b'J', 'Ю')];
+const SWEDISH_FIGURES: [(u8, char); 3] = [(b'F', 'Å'), (b'G', 'Ä'), (b'H', 'Ö')];
+
+/// Il codice a 5 bit della lettera latina `l` (A-Z).
+fn letter_code(l: u8) -> Option<u8> {
+    LETTERS.iter().position(|&x| x == l).map(|i| i as u8)
+}
+
+/// Il registro che un carattere richiede in trasmissione.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Reg {
+    Letters,
+    Figures,
+    Cyrillic,
+    /// Spazio e ritorni a capo: valgono in ogni registro.
+    Any,
+}
+
+/// Codice a 5 bit e registro di un carattere da trasmettere nel set dato (`None` se il set non lo ha).
+pub(crate) fn encode(charset: RttyCharset, c: char) -> Option<(u8, Reg)> {
+    let national: &[(u8, char)] = match charset {
+        RttyCharset::Cyrillic => &CYRILLIC_FIGURES,
+        RttyCharset::Swedish => &SWEDISH_FIGURES,
+        _ => &[],
+    };
+    let up = c.to_uppercase().next().unwrap_or(c);
+    if let Some(&(l, _)) = national.iter().find(|(_, n)| *n == up) {
+        return letter_code(l).map(|code| (code, Reg::Figures));
+    }
+    if charset == RttyCharset::Cyrillic
+        && let Some(i) = CYRILLIC.iter().position(|&x| x == up)
+    {
+        return letter_code(b'A' + i as u8).map(|code| (code, Reg::Cyrillic));
+    }
+    let b = u8::try_from(u32::from(c)).ok()?;
+    let (code, fig) = code_of(b)?;
+    // un simbolo che la variante ha sostituito non c'e' piu'
+    if fig && national.iter().any(|(l, _)| letter_code(*l) == Some(code)) {
+        return None;
+    }
+    Some((code, if matches!(code, SPACE | CR | LF) { Reg::Any } else if fig { Reg::Figures } else { Reg::Letters }))
+}
+
+/// Il carattere ricevuto per un codice (non di controllo) nel registro dato.
+fn decode(charset: RttyCharset, code: u8, figures: bool, cyrillic: bool) -> char {
+    let latin = LETTERS[code as usize];
+    if figures {
+        let national: &[(u8, char)] = match charset {
+            RttyCharset::Cyrillic => &CYRILLIC_FIGURES,
+            RttyCharset::Swedish => &SWEDISH_FIGURES,
+            _ => &[],
+        };
+        return national.iter().find(|(l, _)| *l == latin).map_or(char::from(FIGURES[code as usize]), |(_, c)| *c);
+    }
+    match charset {
+        RttyCharset::Lowercase => char::from(latin.to_ascii_lowercase()),
+        RttyCharset::Cyrillic if cyrillic && latin.is_ascii_uppercase() => CYRILLIC[(latin - b'A') as usize],
+        _ => char::from(latin),
+    }
+}
+
 pub(crate) fn code_of(c: u8) -> Option<(u8, bool)> {
     let up = c.to_ascii_uppercase();
     let valid = |i: &usize| *i != 0 && *i != 27 && *i != 31;
@@ -132,6 +218,47 @@ pub(crate) fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
 /// prima di ogni spazio; qui si spende un carattere solo quando serve).
 pub fn modulate(text: &[u8], params: RttyParams, amp: f32) -> Vec<f32> {
     synth(&sequence(text), params, amp, amp)
+}
+
+/// Come [`modulate`], con il set di caratteri dato (il testo in Unicode: lettere russe, Å Ä Ö...).
+pub fn modulate_charset(text: &str, params: RttyParams, amp: f32, charset: RttyCharset) -> Vec<f32> {
+    let mut seq: Vec<(bool, f64)> = vec![(true, 8.0)];
+    push_frame(&mut seq, LTRS);
+    let mut reg = Some(Reg::Letters);
+    for c in text.chars() {
+        push_char(&mut seq, &mut reg, charset, c);
+    }
+    seq.push((true, 4.0));
+    synth(&seq, params, amp, amp)
+}
+
+/// I bit di un carattere nel set dato, con il cambio di registro quando serve. `reg`: il registro di chi riceve (`None` = non noto, dopo
+/// uno spazio fra le cifre: chi ha l'UOS acceso e' tornato alle lettere, chi no e' rimasto nelle cifre).
+pub(crate) fn push_char(seq: &mut Vec<(bool, f64)>, reg: &mut Option<Reg>, charset: RttyCharset, c: char) {
+    let Some((code, need)) = encode(charset, c) else { return };
+    match need {
+        Reg::Any => {
+            push_frame(seq, code);
+            if code == SPACE && *reg == Some(Reg::Figures) {
+                *reg = None;
+            }
+        }
+        _ => {
+            if *reg != Some(need) {
+                push_frame(
+                    seq,
+                    match need {
+                        Reg::Figures => FIGS,
+                        // il cirillico si sceglie con il codice 00000
+                        Reg::Cyrillic => 0,
+                        _ => LTRS,
+                    },
+                );
+                *reg = Some(need);
+            }
+            push_frame(seq, code);
+        }
+    }
 }
 
 /// Come [`modulate`], con uno stop lungo `stop_bits` bit (1; 1,42; 1,5; 2): per le prove del ricevitore con le stazioni che non
@@ -463,7 +590,7 @@ impl Frame {
 /// Un carattere ricevuto con la probabilita' che sia giusto (0..1). Sotto [`WEAK_PROB`] e' incerto e l'interfaccia lo mostra in chiaro.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RttyChar {
-    pub ch: u8,
+    pub ch: char,
     pub prob: f32,
 }
 
@@ -682,7 +809,10 @@ pub struct RttyDemodulator {
     data_prob: f32,
     shift_prob: f32,
     figures: bool,
-    last_char: u8,
+    /// Il registro delle lettere russe (set cirillico).
+    cyrillic: bool,
+    charset: RttyCharset,
+    last_char: char,
     /// Livelli medi (decisione guidata) di mark acceso, mark spento, space acceso, space spento.
     levels: [f32; 4],
     /// Da quanti campioni ogni media non si aggiorna.
@@ -755,7 +885,9 @@ impl RttyDemodulator {
             data_prob: 1.0,
             shift_prob: 1.0,
             figures: false,
-            last_char: 0,
+            cyrillic: false,
+            charset: RttyCharset::Ita2,
+            last_char: '\0',
             levels: [0.0; 4],
             level_age: [0; 4],
             disc: None,
@@ -1050,9 +1182,15 @@ impl RttyDemodulator {
         }
     }
 
-    /// Elabora altro audio; restituisce i caratteri nuovi.
+    /// Il set di caratteri (di base l'ITA2 americano in maiuscolo).
+    pub fn set_charset(&mut self, charset: RttyCharset) {
+        self.charset = charset;
+    }
+
+    /// Elabora altro audio; restituisce i caratteri nuovi (oltre il Latin-1, come le lettere russe, un punto interrogativo: per il testo
+    /// intero c'e' [`Self::process_chars`]).
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
-        self.process_chars(samples).into_iter().map(|c| c.ch).collect()
+        self.process_chars(samples).into_iter().map(|c| u8::try_from(u32::from(c.ch)).unwrap_or(b'?')).collect()
     }
 
     /// Come [`Self::process`], con la probabilita' che ogni carattere sia giusto (sempre 1 con la macchina dei bit di fldigi).
@@ -1122,29 +1260,34 @@ impl RttyDemodulator {
             }
             LTRS => {
                 self.figures = false;
+                self.cyrillic = false;
                 self.shift_prob = prob;
                 return;
             }
-            0 => return,
+            // nel set cirillico il codice 00000 passa alle lettere russe; negli altri non stampa niente
+            0 => {
+                if self.charset == RttyCharset::Cyrillic {
+                    self.figures = false;
+                    self.cyrillic = true;
+                    self.shift_prob = prob;
+                }
+                return;
+            }
             SPACE => {
                 if self.uos {
                     self.figures = false;
                     self.shift_prob = 1.0;
                 }
-                b' '
+                ' '
             }
-            CR => b'\r',
-            LF => b'\n',
+            CR => '\r',
+            LF => '\n',
             c => {
                 prob *= self.shift_prob;
-                if self.figures {
-                    FIGURES[c as usize]
-                } else {
-                    LETTERS[c as usize]
-                }
+                decode(self.charset, c, self.figures, self.cyrillic)
             }
         };
-        if (c == b'\r' || c == b'\n') && c == self.last_char {
+        if (c == '\r' || c == '\n') && c == self.last_char {
             return;
         }
         self.last_char = c;
@@ -1362,6 +1505,30 @@ mod tests {
         }
         let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
         assert_eq!(r, "CQ DE IU3ABC IU3ABC K");
+    }
+
+    #[test]
+    fn ogni_set_di_caratteri_va_e_torna() {
+        let testi = [
+            (RttyCharset::Ita2, "CQ DE IU3ABC 599 73 ?!&#$", "CQ DE IU3ABC 599 73 ?!&#$"),
+            (RttyCharset::Lowercase, "CQ de IU3ABC 599", "cq de iu3abc 599"),
+            (RttyCharset::Cyrillic, "CQ ПРИВЕТ ЧАЙ ЩИ ЭХО ЮГ 599 DE IU3ABC", "CQ ПРИВЕТ ЧАЙ ЩИ ЭХО ЮГ 599 DE IU3ABC"),
+            (RttyCharset::Swedish, "HEJ SMÅ RÄV ÖL 73", "HEJ SMÅ RÄV ÖL 73"),
+        ];
+        for (cs, mandato, atteso) in testi {
+            let params = RttyParams::default();
+            let audio = modulate_charset(mandato, params, 0.5, cs);
+            let mut rx = RttyDemodulator::new(params);
+            rx.set_charset(cs);
+            let mut all = vec![0.0; 4000];
+            all.extend(audio);
+            all.extend(vec![0.0; 4000]);
+            let r: String = rx.process_chars(&all).iter().map(|c| c.ch).collect();
+            assert!(r.contains(atteso), "{cs:?}: ricevuto {r:?}");
+        }
+        // l'ITA2 di sempre: le stesse onde di prima
+        let p = RttyParams::default();
+        assert_eq!(modulate_charset("CQ 599 73 DE IU3ABC", p, 0.5, RttyCharset::Ita2), modulate(b"CQ 599 73 DE IU3ABC", p, 0.5));
     }
 
     #[test]

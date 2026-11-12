@@ -22,6 +22,7 @@ import { useT } from '../i18n';
 import { appendDigiNote, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
 import { DigiRxText } from '../components/DigiRxText';
 import { DigiTxBox } from '../components/DigiTxBox';
+import { RttySettingsDialog } from '../components/digi/RttySettingsDialog';
 import { useDigiTxLive } from '../lib/digiTxLive';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
@@ -165,6 +166,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [problem, setProblem] = useState('');
   const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // la finestra «Impostazioni RTTY» (clic sul modo nella barra in basso o sulla voce RTTY del menu Modo)
+  const [rttyOpen, setRttyOpen] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
   const lastEsc = useRef(0);
   const [scanning, setScanning] = useState(false);
@@ -647,7 +650,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // i tasti F1-F12 con Ctrl e Shift, il «+» del tastierino (macro Gray+), Pausa (RX/TX) e Esc che ferma la trasmissione
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editing !== null || settingsOpen) return;
+      if (editing !== null || settingsOpen || rttyOpen) return;
       if (e.key === 'Escape') {
         // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) ferma anche il CQ automatico
         const now = Date.now();
@@ -746,7 +749,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     {
       label: t('digi.menu.mode'),
       items: [
-        ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
+        ...snap.modes.map((m) => ({
+          label: m.name,
+          checked: s.mode === m.id,
+          onSelect: () => {
+            if (s.mode !== m.id) save({ mode: m.id as DigiSettings['mode'] });
+            if (m.id === 'rtty') setRttyOpen(true);
+          },
+        })),
         'sep' as const,
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
         // RTTY: spostamento e velocita' Baudot scelti dal menu (e nelle Impostazioni del modo)
@@ -1016,6 +1026,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               : undefined
           }
           modeName={MODE_NAMES[s.mode]}
+          onModeClick={s.mode === 'rtty' ? () => setRttyOpen(true) : undefined}
           onToggleTx={toggleTx}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
           onToggleAfc={() => toggleSetting('afc', 'toggle')}
@@ -1031,6 +1042,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
 
+      {rttyOpen ? <RttySettingsDialog settings={s} onApply={save} onClose={() => setRttyOpen(false)} /> : null}
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
     </>

@@ -10,7 +10,7 @@ use std::f64::consts::PI;
 
 use crate::cw::{PROSIGNS, pattern_of, unit_seconds};
 use crate::psk::{PskMode, RATE};
-use crate::rtty::{CR, FIGS, LF, LTRS, RttyParams, SPACE, code_of, push_frame};
+use crate::rtty::{LTRS, Reg, RttyCharset, RttyParams, push_char, push_frame};
 use crate::varicode;
 
 /// Ampiezza di picco delle onde trasmesse (la stessa di `DigiService::wave_of`).
@@ -24,8 +24,8 @@ pub enum TxModulator {
 }
 
 impl TxModulator {
-    pub fn rtty(params: RttyParams) -> Self {
-        TxModulator::Rtty(RttyTx::new(params))
+    pub fn rtty(params: RttyParams, charset: RttyCharset) -> Self {
+        TxModulator::Rtty(RttyTx::new(params, charset))
     }
 
     pub fn psk(mode: PskMode, freq_hz: f32) -> Self {
@@ -48,7 +48,7 @@ impl TxModulator {
     /// Un pezzo di testo (un carattere; in CW anche un segno di procedura come `<SK>`). Un carattere che il modo non ha non da' audio.
     pub fn token(&mut self, token: &str) -> Vec<f32> {
         match self {
-            TxModulator::Rtty(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
+            TxModulator::Rtty(m) => token.chars().flat_map(|c| m.char(c)).collect(),
             TxModulator::Psk(m) => token.chars().flat_map(|c| m.char(byte_of(c))).collect(),
             TxModulator::Cw(m) => m.token(token),
         }
@@ -98,17 +98,18 @@ fn byte_of(c: char) -> u8 {
 /// RTTY: FSK a fase continua, gli stessi conti di `rtty::modulate` (anche i FIGS e LTRS rimandati dopo uno spazio fra le cifre).
 pub struct RttyTx {
     params: RttyParams,
+    charset: RttyCharset,
     spb: f64,
     phase: f64,
     t_end: f64,
     emitted: usize,
     /// Il registro di chi riceve: `None` = non noto (dopo uno spazio fra le cifre).
-    shift: Option<bool>,
+    shift: Option<Reg>,
 }
 
 impl RttyTx {
-    fn new(params: RttyParams) -> Self {
-        Self { params, spb: f64::from(RATE) / f64::from(params.baud), phase: 0.0, t_end: 0.0, emitted: 0, shift: Some(false) }
+    fn new(params: RttyParams, charset: RttyCharset) -> Self {
+        Self { params, charset, spb: f64::from(RATE) / f64::from(params.baud), phase: 0.0, t_end: 0.0, emitted: 0, shift: Some(Reg::Letters) }
     }
 
     fn synth(&mut self, seq: &[(bool, f64)]) -> Vec<f32> {
@@ -130,36 +131,20 @@ impl RttyTx {
     fn preamble(&mut self) -> Vec<f32> {
         let mut seq = vec![(true, 8.0)];
         push_frame(&mut seq, LTRS);
-        self.shift = Some(false);
+        self.shift = Some(Reg::Letters);
         self.synth(&seq)
     }
 
-    fn char(&mut self, c: u8) -> Vec<f32> {
-        let Some((code, fig)) = code_of(c) else { return Vec::new() };
+    fn char(&mut self, c: char) -> Vec<f32> {
         let mut seq = Vec::new();
-        match code {
-            SPACE => {
-                push_frame(&mut seq, code);
-                if self.shift == Some(true) {
-                    self.shift = None;
-                }
-            }
-            CR | LF => push_frame(&mut seq, code),
-            _ => {
-                if self.shift != Some(fig) {
-                    push_frame(&mut seq, if fig { FIGS } else { LTRS });
-                    self.shift = Some(fig);
-                }
-                push_frame(&mut seq, code);
-            }
-        }
+        push_char(&mut seq, &mut self.shift, self.charset, c);
         self.synth(&seq)
     }
 
     fn idle(&mut self) -> Vec<f32> {
         let mut seq = Vec::new();
         push_frame(&mut seq, LTRS);
-        self.shift = Some(false);
+        self.shift = Some(Reg::Letters);
         self.synth(&seq)
     }
 
@@ -347,7 +332,9 @@ mod tests {
     #[test]
     fn rtty_a_pezzi_e_come_l_onda_intera() {
         let p = RttyParams::default();
-        assert_eq!(whole(&mut TxModulator::rtty(p), TEXT), rtty::modulate(TEXT.as_bytes(), p, AMP));
+        assert_eq!(whole(&mut TxModulator::rtty(p, RttyCharset::Ita2), TEXT), rtty::modulate(TEXT.as_bytes(), p, AMP));
+        let t = "CQ ПРИВЕТ 599 ЧАЙ DE IU3ABC";
+        assert_eq!(whole(&mut TxModulator::rtty(p, RttyCharset::Cyrillic), t), rtty::modulate_charset(t, p, AMP, RttyCharset::Cyrillic));
     }
 
     #[test]
@@ -370,14 +357,14 @@ mod tests {
         assert_eq!(m.next_token(&t, false), Some(1));
         let t: Vec<char> = "<sk> ".chars().collect();
         assert_eq!(m.next_token(&t, true), Some(4));
-        assert_eq!(TxModulator::rtty(RttyParams::default()).next_token(&t, true), Some(1));
+        assert_eq!(TxModulator::rtty(RttyParams::default(), RttyCharset::Ita2).next_token(&t, true), Some(1));
     }
 
     #[test]
     fn l_attesa_rtty_si_decodifica_come_niente() {
         // preambolo, «CQ», due tratti di attesa, «DE»: chi riceve legge «CQDE» (gli LTRS non stampano)
         let p = RttyParams::default();
-        let mut m = TxModulator::rtty(p);
+        let mut m = TxModulator::rtty(p, RttyCharset::Ita2);
         let mut audio = m.preamble();
         audio.extend(m.token("C"));
         audio.extend(m.token("Q"));
