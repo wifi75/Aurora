@@ -1,6 +1,7 @@
-; Modello NSIS dell'installatore di Aurora: e' quello di Tauri (tauri-bundler, @tauri-apps/cli 2.12.4, licenza MIT/Apache-2.0) con due
-; modifiche segnate «AURORA»: con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento, e la disinstallazione
-; non cancella mai i dati (niente casella «Elimina i dati»). Se si aggiorna @tauri-apps/cli, ripartire dal suo modello nuovo e rifare le due modifiche.
+; Modello NSIS dell'installatore di Aurora: e' quello di Tauri (tauri-bundler, @tauri-apps/cli 2.12.4, licenza MIT/Apache-2.0) con le
+; modifiche segnate «AURORA»: con una versione piu' vecchia gia' installata la scelta di base e' l'aggiornamento, la disinstallazione
+; non cancella mai i dati (niente casella «Elimina i dati»), la pagina dei dati che escono dal PC e il registro dell'installazione con il
+; rapporto quando non riesce (funzioni in hooks.nsh). Se si aggiorna @tauri-apps/cli, ripartire dal suo modello nuovo e rifare le modifiche.
 Unicode true
 ManifestDPIAware true
 ; Add in `dpiAwareness` `PerMonitorV2` to manifest for Windows 10 1607+ (note this should not affect lower versions since they should be able to ignore this and pick up `dpiAware` `true` set by `ManifestDPIAware true`)
@@ -638,6 +639,29 @@ LangString auroraUpdate ${LANG_FRENCH} "Mettre à jour (recommandé)"
 LangString auroraUpdate ${LANG_SPANISH} "Actualizar (recomendado)"
 LangString auroraUpdate ${LANG_PORTUGUESE} "Atualizar (recomendado)"
 LangString auroraUpdate ${LANG_DUTCH} "Bijwerken (aanbevolen)"
+; AURORA: registro dell'installazione e rapporto anonimo quando l'installazione non riesce (hooks.nsh)
+LangString auroraLogSaved ${LANG_ITALIAN} "Registro dell'installazione:"
+LangString auroraLogSaved ${LANG_ENGLISH} "Installation log:"
+LangString auroraLogSaved ${LANG_GERMAN} "Installationsprotokoll:"
+LangString auroraLogSaved ${LANG_FRENCH} "Journal de l'installation :"
+LangString auroraLogSaved ${LANG_SPANISH} "Registro de la instalación:"
+LangString auroraLogSaved ${LANG_PORTUGUESE} "Registo da instalação:"
+LangString auroraLogSaved ${LANG_DUTCH} "Installatielogboek:"
+LangString auroraReportSending ${LANG_ITALIAN} "Invio del rapporto anonimo sull'installazione non riuscita a chi sviluppa Aurora..."
+LangString auroraReportSending ${LANG_ENGLISH} "Sending the anonymous report about the failed installation to the Aurora developer..."
+LangString auroraReportSending ${LANG_GERMAN} "Anonymer Bericht über die fehlgeschlagene Installation wird an den Entwickler von Aurora gesendet..."
+LangString auroraReportSending ${LANG_FRENCH} "Envoi du rapport anonyme sur l'installation échouée au développeur d'Aurora..."
+LangString auroraReportSending ${LANG_SPANISH} "Enviando el informe anónimo de la instalación fallida al desarrollador de Aurora..."
+LangString auroraReportSending ${LANG_PORTUGUESE} "A enviar o relatório anónimo da instalação falhada ao programador do Aurora..."
+LangString auroraReportSending ${LANG_DUTCH} "Anoniem rapport over de mislukte installatie wordt naar de ontwikkelaar van Aurora gestuurd..."
+LangString auroraReportSent ${LANG_ITALIAN} "Rapporto anonimo mandato (senza nome utente, nome del PC né percorsi personali). Si spengono in Aurora: Impostazioni > Accesso e assistenza > Assistenza."
+LangString auroraReportSent ${LANG_ENGLISH} "Anonymous report sent (without user name, PC name or personal paths). Turn reports off in Aurora: Settings > Access and support > Support."
+LangString auroraReportSent ${LANG_GERMAN} "Anonymer Bericht gesendet (ohne Benutzernamen, PC-Namen oder persönliche Pfade). Abschalten in Aurora: Einstellungen > Zugang und Hilfe > Hilfe."
+LangString auroraReportSent ${LANG_FRENCH} "Rapport anonyme envoyé (sans nom d'utilisateur, nom du PC ni chemins personnels). Désactivation dans Aurora : Réglages > Accès et assistance > Assistance."
+LangString auroraReportSent ${LANG_SPANISH} "Informe anónimo enviado (sin nombre de usuario, nombre del PC ni rutas personales). Se desactivan en Aurora: Ajustes > Acceso y asistencia > Asistencia."
+LangString auroraReportSent ${LANG_PORTUGUESE} "Relatório anónimo enviado (sem nome de utilizador, nome do PC nem caminhos pessoais). Desative-os no Aurora: Definições > Acesso e assistência > Assistência."
+LangString auroraReportSent ${LANG_DUTCH} "Anoniem rapport verstuurd (zonder gebruikersnaam, pc-naam of persoonlijke paden). Uitzetten in Aurora: Instellingen > Toegang en ondersteuning > Ondersteuning."
+!insertmacro AuroraFunzioniRegistro
 {{#each language_files}}
   !include "{{this}}"
 {{/each}}
@@ -663,6 +687,9 @@ Function .onInit
   !endif
 
   !insertmacro SetContext
+
+  ; AURORA: la versione gia' installata, per il registro (la sezione Install la sovrascrive)
+  ReadRegStr $AuroraVersionePrima SHCTX "${UNINSTKEY}" "DisplayVersion"
 
   ${If} $INSTDIR == "${PLACEHOLDER_INSTALL_DIR}"
     ; Set default install location
@@ -717,6 +744,9 @@ Function .onInit
       ${Else}
         MessageBox MB_ICONSTOP "$(silentDowngrades)"
       ${EndIf}
+      ; AURORA: nel registro e nel rapporto
+      StrCpy $AuroraMotivo "versione piu' vecchia di quella installata, rifiutata in modo silenzioso o passivo"
+      Call AuroraFallita
       Abort
     ${EndIf}
   ${EndIf}
@@ -724,6 +754,9 @@ Function .onInit
 FunctionEnd
 
 Section WebView2
+  ; AURORA: il registro dell'installazione si apre qui, quando l'installazione parte davvero
+  Call AuroraApriRegistro
+  StrCpy $AuroraPasso "WebView2"
   ; Check if Webview2 is already installed and skip this section
   ${If} ${RunningX64}
     ReadRegStr $4 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\${WEBVIEW2APPGUID}" "pv"
@@ -735,6 +768,11 @@ Section WebView2
   ${EndIf}
 
   ${If} $4 == ""
+    !insertmacro AuroraScrivi "WebView2: non installato"
+    ; AURORA: aggiornando non lo si installa, ma Aurora senza WebView2 non apre la finestra
+    ${If} $UpdateMode = 1
+      !insertmacro AuroraScrivi "AVVISO: WebView2 assente e non installato perche' e' un aggiornamento (/UPDATE)"
+    ${EndIf}
     ; Webview2 installation
     ;
     ; Skip if updating
@@ -746,8 +784,10 @@ Section WebView2
         Pop $0
         ${If} $0 == "success"
           DetailPrint "$(webview2DownloadSuccess)"
+          !insertmacro AuroraScrivi "WebView2: programma di installazione scaricato"
         ${Else}
           DetailPrint "$(webview2DownloadError)"
+          StrCpy $AuroraMotivo "WebView2: scaricamento non riuscito ($0)"
           Abort "$(webview2AbortError)"
         ${EndIf}
         StrCpy $6 "$TEMP\MicrosoftEdgeWebview2Setup.exe"
@@ -778,13 +818,16 @@ Section WebView2
         ExecWait "$6 ${WEBVIEW2INSTALLERARGS} /install" $1
         ${If} $1 = 0
           DetailPrint "$(webview2InstallSuccess)"
+          !insertmacro AuroraScrivi "WebView2: installato"
         ${Else}
           DetailPrint "$(webview2InstallError)"
+          StrCpy $AuroraMotivo "WebView2: installazione non riuscita (codice di uscita $1)"
           Abort "$(webview2AbortError)"
         ${EndIf}
       webview2_done:
     ${EndIf}
   ${Else}
+    !insertmacro AuroraScrivi "WebView2: presente ($4)"
     !if "${MINIMUMWEBVIEW2VERSION}" != ""
       ${VersionCompare} "${MINIMUMWEBVIEW2VERSION}" "$4" $R0
       ${If} $R0 = 1
@@ -804,10 +847,15 @@ Section WebView2
             ExecWait `"$R1" /install appguid=${WEBVIEW2APPGUID}&needsadmin=true` $1
             ${If} $1 = 0
               DetailPrint "$(webview2InstallSuccess)"
+              !insertmacro AuroraScrivi "WebView2: aggiornato"
             ${Else}
               MessageBox MB_ICONEXCLAMATION|MB_ABORTRETRYIGNORE "$(webview2InstallError)" IDIGNORE ignore IDRETRY update_webview
+              ; AURORA: Quit non passa da .onInstFailed
+              StrCpy $AuroraMotivo "WebView2: aggiornamento alla versione minima non riuscito (codice di uscita $1), installazione interrotta"
+              Call AuroraFallita
               Quit
               ignore:
+              !insertmacro AuroraScrivi "AVVISO: WebView2 non aggiornato alla versione minima (codice di uscita $1), proseguito"
             ${EndIf}
           ${EndIf}
       ${EndIf}
@@ -824,6 +872,11 @@ Section Install
 
   !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
 
+  ; AURORA: un file non copiato (errore di scrittura ignorato) accende la segnalazione d'errore di NSIS: la si guarda dopo la copia
+  StrCpy $AuroraPasso "copia dei file"
+  !insertmacro AuroraScrivi "copia dei file"
+  ClearErrors
+
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
 
@@ -839,6 +892,12 @@ Section Install
   {{#each binaries}}
     File /a "/oname={{this}}" "{{no-escape @key}}"
   {{/each}}
+
+  ; AURORA: i file non scritti (bloccati da un programma o dall'antivirus) nel registro
+  ${If} ${Errors}
+    !insertmacro AuroraScrivi "AVVISO: alcuni file non sono stati copiati (errore di scrittura ignorato)"
+  ${EndIf}
+  StrCpy $AuroraPasso "registro di Windows, disinstallatore e collegamenti"
 
   ; Create file associations
   {{#each file_associations as |association| ~}}
@@ -919,6 +978,11 @@ Section Install
     SetAutoClose true
   ${EndIf}
 SectionEnd
+
+; AURORA: un Abort in una sezione (WebView2, Aurora che non si chiude, file non scritti): registro e rapporto anonimo
+Function .onInstFailed
+  Call AuroraFallita
+FunctionEnd
 
 Function .onInstSuccess
   ; Check for `/R` flag only in silent and passive installers because
