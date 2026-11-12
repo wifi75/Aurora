@@ -163,6 +163,16 @@ Le altre 18 righe sono identiche; caratteri falsi sul solo rumore invariati (35 
 - **P9** orologio della scheda come seconda costante del sincronismo (solo con il DCD): con guadagno 0,001 otto righe peggiori, con 0,0001 cinque (PSK63 rumore +0,8, vicina +0,6).
 - **P4 con cancellazioni** (LLR = 0 sui simboli con un buco del blanker): QRN PSK31 dal 12,6% al 39,0%; resta il solo blanker.
 
+### Convalida dei nominativi e regole degli spot
+| Cosa | Dove | Note |
+|---|---|---|
+| Forme dei nominativi | `skim/forms.rs`, `aurora/src/lib.rs` (`spawn_call_forms`) | forma = prefisso letterale di 2-3 caratteri (con un prefisso di una lettera entra la cifra: K1, A6) + cifre + lettere del suffisso, del nominativo di base (`X/CALL`, `CALL/P`); contate per paese DXCC dal log di Aurora, dagli spot del DX Cluster e da `MASTER.SCP` nella cartella dei dati, rifatte ogni mezz'ora; frequenza relativa = probabilita' a priori; tipica >= 1%, insolita 0,05-1%, sospetta sotto; paesi con meno di 200 nominativi non giudicati |
+| Serie ITU | `skim/forms.rs` | scartate Q, quelle che cominciano con 0 o 1 e le coppie lettera-cifra non assegnate (per le lettere divise fra piu' paesi); un prefisso che `cty.dat` conosce vince sempre |
+| Livelli | `skim/calls.rs` | Minima (forma), Normale (paese DXCC, sospetti solo verificati), Severa (niente sospetti, insoliti solo verificati), Massima (solo verificati di forma tipica); la probabilita' a priori entra nella verifica: punteggio 1,5 per una forma tipica, 2 per una insolita, 3 e tre ricorrenze per una sospetta. Impostazione `band_validation`, tendina nel pannello con il suggerimento |
+| Regole degli spot | `skim/mod.rs`, `band.rs` (`SpotGate`, `BandSpot::comment`) | S/N in 500 Hz da spettri a tasto abbassato (riga del tono 6 dB sopra il fondo; dei 15 s si tengono quelli sopra il 70% del 90° percentile e se ne prende la mediana: con tono 0,2 e rumore 0,05 la prova da' 19,8 ± 3 dB come atteso); commento `CW 22 WPM 14 dB CQ` o `DE`; solo verificati; uno per nominativo e banda ogni 10 minuti, di nuovo oltre 1 kHz o al passaggio a CQ; `band_spots_cq_only` |
+
+La probabilita' a priori non entra nel modello del testo del decodificatore CW (`cw_bayes.rs`): resta nella verifica dei nominativi.
+
 ### Non fatto
 P7, P8, C4, C8; I2 come modulo comune; I3 nel testo del ricevitore principale (`channel`, `revise_from`); spot in rete dal browser (per scelta: solo locali); pacchetto WAV ed esempio `punteggio`.
 
