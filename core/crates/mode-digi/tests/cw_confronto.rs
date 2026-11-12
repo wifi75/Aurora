@@ -370,15 +370,16 @@ fn rumore_e_squelch() {
 #[test]
 #[ignore]
 fn studio() {
-    let casi: [(Prova, f64); 8] = [
+    let casi: [(Prova, f64); 9] = [
         (Prova::Awgn, -8.0),
+        (Prova::Awgn, -10.0),
         (Prova::Awgn, -12.0),
-        (Prova::Mano, -4.0),
-        (Prova::Salto, -4.0),
-        (Prova::Qsb, -4.0),
-        (Prova::Qrn, 0.0),
-        (Prova::Qrm, -4.0),
-        (Prova::ForteAltrove, 0.0),
+        (Prova::Mano, -8.0),
+        (Prova::Salto, -8.0),
+        (Prova::Qsb, 0.0),
+        (Prova::Qrn, -8.0),
+        (Prova::Qrm, -8.0),
+        (Prova::Spostato, -8.0),
     ];
     let mut riga = String::new();
     let mut tot = 0.0;

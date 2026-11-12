@@ -6,11 +6,15 @@
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
 //! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee nostre);
-//! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore a soglia adattiva);
+//! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore);
+//! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
+//! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
+pub mod blanker;
 pub mod cw;
+pub mod cw_bayes;
 #[cfg(feature = "fldigi-oracle")]
 pub mod fldigi_oracle;
 pub mod macro_files;

@@ -25,9 +25,15 @@
 //! - AFC: lo spettro mediato attorno al tono (±75-100 Hz) cerca il picco del segnale e porta il tono su di esso; sul solo rumore il picco
 //!   non si stacca dal fondo e il tono resta fermo. fldigi in CW non ha AFC (solo il clic sulla cascata): è nostro.
 //!
+//! Di base pero' il testo lo decide il decodificatore probabilistico di [`crate::cw_bayes`] (traliccio con velocità, pugno e modello del
+//! testo, sulla banda base dopo il filtro); la parte a soglia resta per l'AGC, il cancello sullo spettro e la decodifica SOM. Davanti a
+//! tutto c'e' il noise blanker ([`crate::blanker`]).
+//!
 //! Per un futuro riconoscimento probabilistico dei caratteri ogni elemento lascia anche la durata in unità e il livello
 //! ([`CwDemodulator::last_elements`]), non solo punto o linea.
 
+use crate::blanker::NoiseBlanker;
+use crate::cw_bayes::CwBayes;
 use crate::psk::RATE;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
@@ -48,7 +54,7 @@ pub const SQUELCH_DEFAULT_DB: f32 = -15.0;
 pub const AFC_LIMIT_HZ: f32 = 100.0;
 
 /// Il Morse internazionale: lettere, cifre e i segni di punteggiatura più usati.
-const MORSE: &[(u8, &str)] = &[
+pub(crate) const MORSE: &[(u8, &str)] = &[
     (b'A', ".-"),
     (b'B', "-..."),
     (b'C', "-.-."),
@@ -107,7 +113,7 @@ const MORSE: &[(u8, &str)] = &[
 
 /// I segni di procedura (fldigi `src/cw/morse.cxx`): in ricezione si stampano così al posto di `+ = (`, in trasmissione si scrivono così
 /// e partono come un segno solo, senza pausa fra le lettere.
-const PROSIGNS: &[(&str, &str)] = &[("<AR>", ".-.-."), ("<BT>", "-...-"), ("<KN>", "-.--."), ("<SK>", "...-.-")];
+pub(crate) const PROSIGNS: &[(&str, &str)] = &[("<AR>", ".-.-."), ("<BT>", "-...-"), ("<KN>", "-.--."), ("<SK>", "...-.-")];
 
 fn pattern_of(c: u8) -> Option<&'static str> {
     let up = c.to_ascii_uppercase();
@@ -222,6 +228,8 @@ const MIN_SNR_DB: f32 = -16.0;
 const GATE_HYST_DB: f32 = 4.0;
 /// Un livello cosi' sopra il picco e' un segnale nuovo, non rumore.
 const JUMP_DB: f32 = 10.0;
+/// Banda minima del filtro del decodificatore probabilistico (Hz).
+const BAYES_MIN_BW: f32 = 150.0;
 /// Soglia di decisione fra fondo e picco, con isteresi (provate nella prova `cw_confronto`, `studio`: 0,5/0,3 meglio di 0,5/0,4 e 0,6/0,4).
 const ON_AT: f32 = 0.5;
 const OFF_AT: f32 = 0.3;
@@ -295,8 +303,27 @@ pub struct CwDemodulator {
     ring: Vec<(f32, f32)>,
     pos: usize,
     count: usize,
-    /// L'ampiezza in attesa della decisione (vedi `GATE_DELAY_S`).
-    delay: VecDeque<f32>,
+    /// La banda base in attesa della decisione (vedi `GATE_DELAY_S`).
+    /// Per ogni campione: l'uscita del filtro di ricezione e quella del filtro del decodificatore probabilistico.
+    /// (e il tono del mixer in quel momento, che con l'AFC cambia)
+    delay: VecDeque<[f32; 5]>,
+    /// Il filtro del decodificatore probabilistico: la banda scelta, ma mai sotto `BAYES_MIN_BW` (un filtro piu' stretto allunga i toni
+    /// sulle pause; la selettivita' la danno gia' le somme coerenti sui toni e il cancello sullo spettro della banda scelta). Vuoto se e'
+    /// lo stesso filtro di ricezione.
+    bayes_fir: Vec<f32>,
+    /// Il noise blanker davanti a tutto (vedi `blanker`), acceso di base.
+    blanker: Option<NoiseBlanker>,
+    /// Il decodificatore probabilistico (vedi `cw_bayes`); spento si usa quello a soglia (sempre con la decodifica SOM).
+    bayes: Option<CwBayes>,
+    use_bayes: bool,
+    /// Lo scarto fine del tono dal centro del filtro (Hz), dallo spettro: lo usa il decodificatore probabilistico.
+    fine_hz: f32,
+    /// L'ultima frequenza assoluta del picco trovata dallo spettro (per lo scarto fine serve che resti ferma).
+    fine_raw: Option<f32>,
+    /// I caratteri del ricevitore a soglia quando decide l'altro.
+    classic_out: Vec<u8>,
+    /// Le probabilità dei caratteri dell'ultima chiamata di `process` (255 = certo).
+    confidences: Vec<u8>,
     /// Filtro della strada larga (S/N e AFC): ±125 Hz, 20 ms, sugli stessi campioni del mixer.
     wide_fir: Vec<f32>,
     // media di 1/3 di punto
@@ -359,6 +386,14 @@ impl CwDemodulator {
             count: 0,
             wide_fir: lowpass(WIDE_LEN, 125.0 / f64::from(RATE)),
             delay: VecDeque::new(),
+            bayes_fir: Vec::new(),
+            blanker: Some(NoiseBlanker::new()),
+            bayes: None,
+            use_bayes: true,
+            fine_hz: 0.0,
+            fine_raw: None,
+            classic_out: Vec::new(),
+            confidences: Vec::new(),
             avg_buf: VecDeque::new(),
             avg_sum: 0.0,
             agc_ready: false,
@@ -400,6 +435,9 @@ impl CwDemodulator {
         self.hint_wpm = wpm.clamp(WPM_MIN, WPM_MAX);
         self.dot = unit_seconds(wpm) * self.fs;
         self.dash = 3.0 * self.dot;
+        if let Some(b) = self.bayes.as_mut() {
+            b.set_wpm_hint(self.hint_wpm);
+        }
     }
 
     /// La banda del filtro di ricezione (Hz), fra 50 e 1000.
@@ -427,6 +465,9 @@ impl CwDemodulator {
         self.afc_power.clear();
         self.afc_hist.clear();
         self.delay.clear();
+        self.bayes_fir = if bw < BAYES_MIN_BW { lowpass(fir_len(BAYES_MIN_BW), f64::from(BAYES_MIN_BW) / 2.0 / f64::from(RATE)) } else { Vec::new() };
+        let taps = if self.bayes_fir.is_empty() { &self.fir } else { &self.bayes_fir };
+        self.bayes = Some(CwBayes::new(self.fs, taps, self.decim, self.hint_wpm));
     }
 
     pub fn bandwidth(&self) -> f32 {
@@ -463,9 +504,38 @@ impl CwDemodulator {
         self.squelch_snr_db = db;
     }
 
-    /// Decodifica SOM di fldigi al posto della tabella (per il tasto a mano irregolare).
+    /// Decodifica SOM di fldigi al posto della tabella (per il tasto a mano irregolare): lavora sul ricevitore a soglia.
     pub fn set_som(&mut self, on: bool) {
         self.som = on;
+    }
+
+    /// Il decodificatore probabilistico (di base) o quello a soglia. Con la decodifica SOM si usa sempre quello a soglia.
+    pub fn set_probabilistic(&mut self, on: bool) {
+        self.use_bayes = on;
+    }
+
+    /// Peso del modello del testo nel decodificatore probabilistico (0 = nessuno).
+    pub fn set_text_model_weight(&mut self, w: f32) {
+        if let Some(b) = self.bayes.as_mut() {
+            b.set_lm_weight(w);
+        }
+    }
+
+    /// Il noise blanker contro le scariche (acceso di base).
+    pub fn set_noise_blanker(&mut self, on: bool) {
+        if on != self.blanker.is_some() {
+            self.blanker = on.then(NoiseBlanker::new);
+        }
+    }
+
+    fn bayes_active(&self) -> bool {
+        self.use_bayes && !self.som && self.bayes.is_some()
+    }
+
+    /// Le probabilità (0-255) dei caratteri restituiti dall'ultima chiamata di [`CwDemodulator::process`], uno per carattere o spazio; vuoto
+    /// con il ricevitore a soglia.
+    pub fn confidences(&self) -> &[u8] {
+        &self.confidences
     }
 
     /// Livello (dB) del tono e squelch aperto.
@@ -480,7 +550,10 @@ impl CwDemodulator {
 
     /// La velocità che il ricevitore ha capito, in parole al minuto.
     pub fn wpm(&self) -> f32 {
-        (1.2 / (self.unit() / self.fs)) as f32
+        match &self.bayes {
+            Some(b) if self.bayes_active() => b.wpm(),
+            _ => (1.2 / (self.unit() / self.fs)) as f32,
+        }
     }
 
     /// Gli elementi (toni e pause) dell'ultimo carattere stampato, con durata in unità e livello.
@@ -516,8 +589,14 @@ impl CwDemodulator {
     /// Passa l'audio (a 12 kHz); restituisce i caratteri decodificati.
     pub fn process(&mut self, audio: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
+        self.confidences.clear();
+        let bayes = self.bayes_active();
         let len = self.ring.len();
         for &s in audio {
+            let s = match self.blanker.as_mut() {
+                Some(nb) => nb.process(s),
+                None => s,
+            };
             let (sin, cos) = self.phase.sin_cos();
             let z = (s * cos as f32, -s * sin as f32);
             self.phase += self.step;
@@ -547,11 +626,42 @@ impl CwDemodulator {
             self.spectrum_step((wi, wq));
             // la decisione lavora in ritardo di GATE_DELAY_S: cosi' il rapporto segnale/rumore dello spettro (che ha bisogno di un quarto di
             // secondo per accorgersi di un segnale nuovo) vale gia' per il primo elemento, e il primo carattere non si perde
-            self.delay.push_back((zi * zi + zq * zq).sqrt() * 2.0);
-            if self.delay.len() as f64 > GATE_DELAY_S * self.fs {
-                let env = self.delay.pop_front().unwrap_or(0.0);
-                self.sample(env, &mut out);
+            let (mut bi, mut bq) = (zi, zq);
+            if bayes && !self.bayes_fir.is_empty() {
+                (bi, bq) = (0.0, 0.0);
+                let first = self.pos + len - self.bayes_fir.len();
+                for (k, &c) in self.bayes_fir.iter().enumerate() {
+                    let (i, q) = self.ring[(first + k) % len];
+                    bi += c * i;
+                    bq += c * q;
+                }
             }
+            if bayes && let Some(b) = self.bayes.as_mut() {
+                b.observe_level((bi, bq));
+            }
+            self.delay.push_back([zi, zq, bi, bq, self.tone_hz]);
+            if self.delay.len() as f64 > GATE_DELAY_S * self.fs {
+                let [zi, zq, bi, bq, mixed_at] = self.delay.pop_front().unwrap_or([0.0, 0.0, 0.0, 0.0, self.tone_hz]);
+                let z = (bi, bq);
+                let env = (zi * zi + zq * zq).sqrt() * 2.0;
+                if bayes {
+                    let mut classic = std::mem::take(&mut self.classic_out);
+                    self.sample(env, &mut classic);
+                    classic.clear();
+                    self.classic_out = classic;
+                    let gate = self.open && self.gate;
+                    if let Some(b) = self.bayes.as_mut() {
+                        // il segnale e' a tono + scarto fine; questo campione e' stato portato in banda base con il tono di allora
+                        b.set_offset_hz(f64::from(self.tone_hz + self.fine_hz - mixed_at));
+                        b.push(z, gate, &mut out);
+                    }
+                } else {
+                    self.sample(env, &mut out);
+                }
+            }
+        }
+        if bayes && let Some(b) = self.bayes.as_mut() {
+            self.confidences = b.take_confidences();
         }
         out
     }
@@ -757,10 +867,9 @@ impl CwDemodulator {
         let pass = ((f64::from(self.bandwidth) / 2.0 - 12.0).max(0.0) / res).round() as i64;
         let tone = ((kmax - pass).max(0)..=(kmax + pass).min(2 * kmax)).map(window).fold(f32::MIN, f32::max);
         self.snr_db = (10.0 * (tone.max(1e-6 * median) / median).log10() - 10.0 * (3000.0 / res).log10() as f32).max(-40.0);
-        if !self.afc {
-            return;
-        }
-        let best = (0..bins)
+        // senza AFC il picco si cerca solo dentro la banda del filtro (per lo scarto fine del decodificatore probabilistico)
+        let reach = if self.afc { kmax } else { pass.min(kmax) };
+        let best = ((kmax - reach).max(0) as usize..=((kmax + reach) as usize).min(bins - 1))
             .max_by(|&a, &b| {
                 let w = |i: usize| {
                     let d = (i as f64 - kmax as f64) * res / range;
@@ -785,11 +894,25 @@ impl CwDemodulator {
                 off += 0.5 * (a - c) / den * res;
             }
         }
+        // lo scarto fine vale solo se due spettri di fila trovano il picco nello stesso posto (all'inizio di un segnale lo spettro e'
+        // largo e il picco salta)
+        let abs_hz = self.tone_hz + off as f32;
+        let steady = self.fine_raw.is_some_and(|prev| (prev - abs_hz).abs() < 2.0 * res as f32);
+        self.fine_raw = Some(abs_hz);
+        if steady {
+            self.fine_hz = off as f32;
+        }
+        // anche l'AFC si muove solo su un picco fermo: all'inizio di un segnale il primo spettro lo vede spostato di decine di Hz
+        if !self.afc || !steady {
+            return;
+        }
         if off.abs() < 0.5 {
             return;
         }
         let moved = (0.5 * off) as f32;
         let f = (self.tone_hz + moved).clamp(self.base_hz - AFC_LIMIT_HZ, self.base_hz + AFC_LIMIT_HZ);
+        // il tono si sposta: lo scarto fine resta riferito a lui
+        self.fine_hz -= f - self.tone_hz;
         let shift = ((f - self.tone_hz) as f64 / res).round() as i64;
         self.tune(f);
         // lo spettro mediato si sposta con il tono
@@ -868,6 +991,20 @@ mod tests {
         for wpm in [12.0, 20.0, 30.0] {
             let wave = modulate(text.as_bytes(), 700.0, wpm, 0.8);
             assert_eq!(decode(&wave, 700.0, 20.0), text, "a {wpm} WPM");
+        }
+    }
+
+    #[test]
+    fn a_long_silence_before_does_not_eat_the_first_character() {
+        for lead in [6000usize, 30_000] {
+            for afc in [false, true] {
+                let mut wave = vec![0.0; lead];
+                wave.extend(modulate(b"CQ IU3ABC", 1000.0, 20.0, 0.9));
+                wave.extend(vec![0.0; 12_000]);
+                let mut d = CwDemodulator::new(1000.0, 20.0);
+                d.set_afc(afc);
+                assert_eq!(listen(&mut d, &wave), "CQ IU3ABC", "{lead} campioni di silenzio prima, AFC {afc}");
+            }
         }
     }
 
