@@ -21,6 +21,7 @@ use crate::{
     error::TxError,
     level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, cut_head, prepare_samples},
     lock,
+    resample::StreamResampler,
     ptt::{Ptt, PttGuard, release_ptt},
     slot::{Mode, Parity, choose_slot},
     watchdog::Watchdog,
@@ -28,6 +29,10 @@ use crate::{
 
 /// Passo delle attese: e' anche il tempo massimo con cui `halt` viene visto dal thread di trasmissione.
 const CHUNK: Duration = Duration::from_millis(10);
+/// Trasmissione a flusso: durata massima e quanto si aspetta un pezzo nuovo prima di dare il flusso per fermo (chi lo alimenta si e'
+/// bloccato: si spegne invece di restare in trasmissione col silenzio).
+const STREAM_MAX: Duration = Duration::from_secs(20 * 60);
+const STREAM_STALL: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TxConfig {
@@ -159,6 +164,17 @@ struct Inner {
     worker: Mutex<Option<JoinHandle<()>>>,
     /// Un'onda che sostituisce quella in attesa o in corso (ritrasmissione, `m_restart` di JTDX): il thread la prende al primo passo.
     replacement: Mutex<Option<Vec<f32>>>,
+    /// La trasmissione a flusso in corso (modi testuali): i pezzi a 12 kHz in attesa e se ne arriveranno altri.
+    stream: Mutex<Option<StreamFeed>>,
+    /// Trasmissione a flusso: frequenza dell'uscita, per contare in campioni a 12 kHz quelli gia' suonati.
+    stream_rate: AtomicU32,
+}
+
+/// I pezzi di una trasmissione a flusso in attesa del thread di trasmissione.
+#[derive(Default)]
+struct StreamFeed {
+    queue: Vec<f32>,
+    closed: bool,
 }
 
 impl Inner {
@@ -201,6 +217,8 @@ struct Job {
     fade: Duration,
     ptt_at: Duration,
     audio_at: Duration,
+    /// Trasmissione a flusso: l'onda arriva a pezzi (`Transmitter::append_stream`).
+    stream: bool,
 }
 
 impl Transmitter {
@@ -238,6 +256,8 @@ impl Transmitter {
             listener: Mutex::new(None),
             worker: Mutex::new(None),
             replacement: Mutex::new(None),
+            stream: Mutex::new(None),
+            stream_rate: AtomicU32::new(0),
         };
         Ok(Transmitter { inner: Arc::new(inner) })
     }
@@ -371,7 +391,7 @@ impl Transmitter {
         if let Some(old) = lock(&inner.worker).take() {
             let _ = old.join();
         }
-        let job = Job { wave, attenuation_tenths, lead: cfg.ptt_lead, tail: cfg.ptt_tail, grace: cfg.watchdog_grace, fade: cfg.fade, ptt_at, audio_at };
+        let job = Job { wave, attenuation_tenths, lead: cfg.ptt_lead, tail: cfg.ptt_tail, grace: cfg.watchdog_grace, fade: cfg.fade, ptt_at, audio_at, stream: false };
         let worker_inner = Arc::clone(inner);
         match std::thread::Builder::new().name("aurora-tx-free".into()).spawn(move || run_job(&worker_inner, &job)) {
             Ok(handle) => *lock(&inner.worker) = Some(handle),
@@ -382,6 +402,90 @@ impl Transmitter {
         }
         inner.notify(TxState::Waiting);
         Ok(TxPlan { slot_start: now, ptt_on: ptt_at, audio_start: audio_at, wave_len, late: Duration::ZERO })
+    }
+
+    /// Trasmissione a flusso, subito e fuori dai periodi FT8/FT4 (modi testuali scritti dal vivo): `first` e' il primo pezzo dell'onda a
+    /// 12 kHz, gli altri arrivano con [`Transmitter::append_stream`] mentre si trasmette e [`Transmitter::close_stream`] dice che non ne
+    /// arriveranno altri (la trasmissione finisce quando l'ultimo e' suonato). Le stesse regole di `start_now` per il permesso, il livello,
+    /// il PTT e `halt`; il controllo a tempo si rinnova a ogni passo, e se non arriva niente per 10 s (chi alimenta il flusso si e' bloccato)
+    /// o si superano 20 minuti la trasmissione si chiude con errore. Serve un'uscita che sappia accodare (`AudioSink::append`).
+    pub fn start_stream(&self, first: Vec<f32>) -> Result<TxPlan, TxError> {
+        if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
+            return Err(TxError::Busy);
+        }
+        let cfg = self.config();
+        cfg.validate()?;
+        if !cfg.allow_tx {
+            return Err(TxError::NotAllowed);
+        }
+        let attenuation_tenths = cfg.attenuation_tenths.ok_or(TxError::LevelNotSet)?;
+        if first.is_empty() {
+            return Err(TxError::EmptyWave);
+        }
+        if first.iter().any(|v| !v.is_finite()) {
+            return Err(TxError::InvalidWave);
+        }
+        let inner = &self.inner;
+        let now = inner.clock.now();
+        let audio_at = now + cfg.ptt_lead;
+        {
+            let mut st = lock(&inner.status);
+            if matches!(st.state, TxState::Waiting | TxState::Transmitting) {
+                return Err(TxError::Busy);
+            }
+            st.state = TxState::Waiting;
+            st.outcome = None;
+        }
+        inner.halt.store(false, Ordering::SeqCst);
+        *lock(&inner.replacement) = None;
+        *lock(&inner.stream) = Some(StreamFeed { queue: first, closed: false });
+        inner.stream_rate.store(0, Ordering::SeqCst);
+        if let Some(old) = lock(&inner.worker).take() {
+            let _ = old.join();
+        }
+        let job = Job { wave: Vec::new(), attenuation_tenths, lead: cfg.ptt_lead, tail: cfg.ptt_tail, grace: cfg.watchdog_grace, fade: cfg.fade, ptt_at: now, audio_at, stream: true };
+        let worker_inner = Arc::clone(inner);
+        match std::thread::Builder::new().name("aurora-tx-stream".into()).spawn(move || run_job(&worker_inner, &job)) {
+            Ok(handle) => *lock(&inner.worker) = Some(handle),
+            Err(e) => {
+                *lock(&inner.stream) = None;
+                inner.finish(TxOutcome::Failed(e.to_string()));
+                return Err(TxError::Thread(e.to_string()));
+            }
+        }
+        inner.notify(TxState::Waiting);
+        Ok(TxPlan { slot_start: now, ptt_on: now, audio_start: audio_at, wave_len: Duration::ZERO, late: Duration::ZERO })
+    }
+
+    /// Un pezzo in piu' della trasmissione a flusso in corso. `Err(NotRunning)` se non c'e' (o e' gia' chiusa).
+    pub fn append_stream(&self, wave: &[f32]) -> Result<(), TxError> {
+        if wave.iter().any(|v| !v.is_finite()) {
+            return Err(TxError::InvalidWave);
+        }
+        match &mut *lock(&self.inner.stream) {
+            Some(feed) if !feed.closed && matches!(self.state(), TxState::Waiting | TxState::Transmitting) => {
+                feed.queue.extend_from_slice(wave);
+                Ok(())
+            }
+            _ => Err(TxError::NotRunning),
+        }
+    }
+
+    /// Non arriveranno altri pezzi: la trasmissione a flusso finisce quando l'ultimo e' suonato.
+    pub fn close_stream(&self) {
+        if let Some(feed) = &mut *lock(&self.inner.stream) {
+            feed.closed = true;
+        }
+    }
+
+    /// Trasmissione a flusso: quanti campioni (a 12 kHz) dell'onda sono gia' passati al dispositivo. `None` se non c'e' o l'uscita non lo sa.
+    pub fn stream_played(&self) -> Option<u64> {
+        let rate = u64::from(self.inner.stream_rate.load(Ordering::SeqCst));
+        if rate == 0 {
+            return None;
+        }
+        let consumed = lock(&self.inner.sink).consumed()?;
+        Some(consumed * u64::from(WAVE_RATE) / rate)
     }
 
     /// Accetta una trasmissione e la fa partire al momento giusto, in un thread proprio.
@@ -444,6 +548,7 @@ impl Transmitter {
             fade: cfg.fade,
             ptt_at,
             audio_at,
+            stream: false,
         };
         let worker_inner = Arc::clone(inner);
         match std::thread::Builder::new().name("aurora-tx".into()).spawn(move || run_job(&worker_inner, &job)) {
@@ -532,6 +637,100 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
     inner.finish(outcome);
 }
 
+/// La trasmissione a flusso: ogni pezzo arrivato si ricampiona (con la memoria fra i pezzi: niente salti) e si accoda all'uscita; il
+/// controllo a tempo si rinnova a ogni passo. Finisce quando il flusso e' chiuso e l'ultimo pezzo e' suonato.
+fn execute_stream(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
+    let rate = lock(&inner.sink).sample_rate();
+    let mut rs = StreamResampler::new(crate::WAVE_RATE, rate)?;
+    if job.attenuation_tenths > MAX_ATTENUATION_TENTHS {
+        return Err(TxError::InvalidConfig(format!("attenuazione oltre {MAX_ATTENUATION_TENTHS} decimi di dB")));
+    }
+    let gain = if inner.live_gain.is_some() { 1.0 } else { attenuation_to_gain(job.attenuation_tenths) };
+    let level = |v: Vec<f32>| -> Vec<f32> { v.into_iter().map(|s| (s * gain).clamp(-1.0, 1.0)).collect() };
+    // i pezzi arrivati intanto: (campioni, flusso chiuso)
+    let take = || -> (Vec<f32>, bool) {
+        match &mut *lock(&inner.stream) {
+            Some(feed) => (std::mem::take(&mut feed.queue), feed.closed),
+            None => (Vec::new(), true),
+        }
+    };
+    let deadline = |extra: Duration| Instant::now() + STREAM_STALL + extra + job.lead + job.tail + job.grace;
+    if !wait_until(inner, job.ptt_at, true, &mut || Ok(()))? {
+        return Ok(TxOutcome::Halted);
+    }
+    inner.watchdog.arm(deadline(Duration::ZERO));
+    let mut guard = PttGuard::engage(Arc::clone(&inner.ptt))?;
+    if !wait_until(inner, job.audio_at, true, &mut || Ok(()))? {
+        guard.release()?;
+        return Ok(TxOutcome::Halted);
+    }
+    let (first, mut closed) = take();
+    let mut samples = level(rs.push(&first));
+    let mut flushed = false;
+    if closed {
+        samples.extend(level(rs.flush()));
+        flushed = true;
+    }
+    // salita all'inizio, come le altre trasmissioni
+    let fade_samples = ((job.fade.as_secs_f64() * f64::from(rate)).round() as usize).min(samples.len());
+    for (i, s) in samples.iter_mut().take(fade_samples).enumerate() {
+        *s *= (0.5 * (1.0 - (std::f64::consts::PI * i as f64 / fade_samples as f64).cos())) as f32;
+    }
+    inner.stream_rate.store(rate, Ordering::SeqCst);
+    lock(&inner.sink).start(samples)?;
+    inner.set_state(TxState::Transmitting);
+    let started = Instant::now();
+    let mut last_feed = Instant::now();
+    let halted = loop {
+        if inner.halt.load(Ordering::SeqCst) || !lock(&inner.config).allow_tx {
+            break true;
+        }
+        if !flushed {
+            let (more, now_closed) = take();
+            closed = now_closed;
+            if !more.is_empty() {
+                last_feed = Instant::now();
+                let out = level(rs.push(&more));
+                if !out.is_empty() {
+                    lock(&inner.sink).append(out)?;
+                }
+            }
+            if closed {
+                let out = level(rs.flush());
+                if !out.is_empty() {
+                    lock(&inner.sink).append(out)?;
+                }
+                flushed = true;
+            } else if last_feed.elapsed() > STREAM_STALL {
+                return Err(TxError::Audio("trasmissione a flusso ferma: non arriva piu' audio".into()));
+            }
+        }
+        if started.elapsed() > STREAM_MAX {
+            return Err(TxError::Audio("trasmissione a flusso oltre 20 minuti".into()));
+        }
+        let playing = lock(&inner.sink).is_playing();
+        if !playing {
+            if lock(&inner.sink).has_failed() {
+                return Err(TxError::Audio("uscita audio persa durante la trasmissione".into()));
+            }
+            // finito l'ultimo pezzo; prima della chiusura e' solo un pezzo in ritardo, si aspetta il seguente
+            if flushed {
+                break false;
+            }
+        }
+        inner.watchdog.arm(deadline(Duration::ZERO));
+        inner.clock.sleep(CHUNK);
+    };
+    if halted {
+        lock(&inner.sink).stop();
+        std::thread::sleep(job.fade.max(Duration::from_millis(5)));
+    } else {
+        wait_until(inner, inner.clock.now() + job.tail, false, &mut || Ok(()))?;
+    }
+    guard.release()?;
+    Ok(if halted { TxOutcome::Halted } else { TxOutcome::Completed })
+}
+
 /// Tolleranza in piu' sulla durata di un'onda lunga: l'orologio di una scheda audio (o di un'uscita che ricampiona) puo' andare piu' piano
 /// di qualche per mille, e su 2 minuti di Tune o di WSPR i 2 s fissi non bastavano. Il 2% della durata.
 fn playback_slack(len: Duration) -> Duration {
@@ -539,6 +738,11 @@ fn playback_slack(len: Duration) -> Duration {
 }
 
 fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
+    if job.stream {
+        let result = execute_stream(inner, job);
+        *lock(&inner.stream) = None;
+        return result;
+    }
     let rate = lock(&inner.sink).sample_rate();
     let fade_samples = (job.fade.as_secs_f64() * f64::from(rate)).round() as usize;
     // con il guadagno dal vivo il livello lo applica il dispositivo (e si puo' cambiare mentre si trasmette): l'onda parte a livello pieno
@@ -746,6 +950,36 @@ mod tests {
         assert!(!b.ptt.is_on());
         // oltre il limite chiesto: rifiutata
         assert!(matches!(b.tx.start_now(tone(5.0), Duration::from_secs(2)), Err(TxError::TooLong { .. })));
+    }
+
+    #[test]
+    fn a_stream_transmission_plays_every_piece_and_ends_after_closing() {
+        let b = bench(config());
+        let start = b.clock.now();
+        b.tx.start_stream(tone(0.5)).expect("partita");
+        b.run_to(start + ms(400));
+        assert_eq!(b.tx.state(), TxState::Transmitting);
+        assert!(b.ptt.is_on());
+        assert!(matches!(b.tx.start_now(tone(1.0), Duration::from_secs(60)), Err(TxError::Busy)));
+        // i pezzi arrivano mentre si trasmette: la trasmissione resta aperta finche' non si chiude
+        for _ in 0..4 {
+            b.tx.append_stream(&tone(0.5)).expect("pezzo");
+            b.run_to(b.clock.now() + ms(500));
+        }
+        b.run_to(b.clock.now() + ms(2000));
+        assert_eq!(b.tx.state(), TxState::Transmitting, "senza chiusura resta in trasmissione");
+        let played = b.tx.stream_played().expect("campioni suonati");
+        assert!(played >= 29_000 && played <= 30_000, "suonati {played} campioni a 12 kHz");
+        b.tx.append_stream(&tone(0.5)).expect("pezzo");
+        b.tx.close_stream();
+        assert!(matches!(b.tx.append_stream(&tone(0.1)), Err(TxError::NotRunning)));
+        b.run_to(b.clock.now() + ms(1500));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert_eq!(b.tx.last_outcome(), Some(TxOutcome::Completed));
+        assert!(!b.ptt.is_on());
+        // 3 s di onda a 12 kHz, a 48 kHz: tutti i campioni, ricampionati senza salti fra i pezzi
+        let n = lock(&b.sink.samples).len();
+        assert_eq!(n, 3 * RATE as usize, "campioni {n}");
     }
 
     #[test]

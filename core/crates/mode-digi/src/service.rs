@@ -18,12 +18,31 @@ use serde::{Deserialize, Serialize};
 
 use crate::{CwDemodulator, PskDemodulator, PskMode, RATE, RttyDemodulator, RttyParams, cw, psk, rtty};
 
+/// La trasmissione a flusso: aperta a levetta e scritta dal vivo, con l'avanzamento carattere per carattere (vedi `service/live.rs`).
+mod live;
+
 /// La catena di trasmissione vista dai modi testuali (la fornisce il programma: `tx-native` con il PTT scelto).
 pub trait DigiTxPort: Send + Sync {
     /// Trasmette subito l'onda (12 kHz, mono, picco 1), fuori dai periodi FT8.
     fn start(&self, wave: Vec<f32>) -> Result<(), String>;
     fn halt(&self);
     fn is_busy(&self) -> bool;
+    /// La catena sa trasmettere a flusso (`start_stream`, `append`, `close_stream`, `played`).
+    fn can_stream(&self) -> bool {
+        false
+    }
+    /// Trasmissione a flusso: `first` e' il primo pezzo, gli altri arrivano con `append`; `close_stream` dice che non ne arrivano altri.
+    fn start_stream(&self, _first: Vec<f32>) -> Result<(), String> {
+        Err("questa catena di trasmissione non trasmette a flusso".into())
+    }
+    fn append(&self, _wave: Vec<f32>) -> Result<(), String> {
+        Err("questa catena di trasmissione non trasmette a flusso".into())
+    }
+    fn close_stream(&self) {}
+    /// Quanti campioni (a 12 kHz) della trasmissione a flusso sono gia' usciti dalla scheda; `None` se la catena non lo sa.
+    fn played(&self) -> Option<u64> {
+        None
+    }
 }
 
 pub type Emitter = Arc<dyn Fn(DigiEvent) + Send + Sync>;
@@ -386,6 +405,8 @@ pub struct TxStatus {
     pub elapsed_s: f32,
     pub total_s: f32,
     pub message: Option<String>,
+    /// Trasmissione aperta (levetta RX/TX): resta in trasmissione finche' non si chiude, e il testo scritto parte mentre si scrive.
+    pub open: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -423,6 +444,8 @@ struct Inner {
     radio_mode: Mutex<Option<RadioModeSource>>,
     /// L'ultima lettura: la radio e' in LSB.
     radio_lsb: AtomicBool,
+    /// La trasmissione a flusso in corso: il testo ancora da modulare e se e' aperta.
+    session: Mutex<Option<live::Session>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -500,6 +523,7 @@ impl DigiService {
             emit: Mutex::new(None),
             radio_mode: Mutex::new(None),
             radio_lsb: AtomicBool::new(false),
+            session: Mutex::new(None),
         });
         let worker = Arc::clone(&inner);
         if let Err(e) = std::thread::Builder::new().name("aurora-digi".into()).spawn(move || rx_loop(&worker, rx, settings)) {
@@ -595,12 +619,16 @@ impl DigiService {
         }
     }
 
-    /// Trasmette il testo. Il modo e la frequenza sono quelli delle impostazioni.
+    /// Trasmette il testo. Il modo e la frequenza sono quelli delle impostazioni. Con una trasmissione a flusso in corso (anche aperta)
+    /// il testo si accoda a quello che sta partendo.
     pub fn transmit(&self, text: &str) -> Result<TxStatus, DigiError> {
         if text.trim().is_empty() {
             return Err(DigiError::Empty);
         }
         let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
+        if port.can_stream() {
+            return self.start_session(port, text, false);
+        }
         if self.inner.tx_active.load(Ordering::SeqCst) || port.is_busy() {
             return Err(DigiError::Busy);
         }
@@ -617,8 +645,10 @@ impl DigiService {
             return Err(DigiError::Tx(e));
         }
         tracing::info!("{}: trasmissione di {total:.0} s", settings.mode.name());
-        *lock(&self.inner.tx) = TxStatus { state: "sending".into(), progress: 0.0, elapsed_s: 0.0, total_s: total, message: None };
+        *lock(&self.inner.tx) = TxStatus { state: "sending".into(), progress: 0.0, elapsed_s: 0.0, total_s: total, message: None, open: false };
         self.inner.tx_event();
+        // l'eco nella finestra di ricezione: senza flusso tutto subito
+        self.inner.emit(DigiEvent { kind: "tx_sent".into(), text: Some(text.to_string()), mode: Some(settings.mode.id().into()), ..DigiEvent::default() });
         let inner = Arc::clone(&self.inner);
         let spawned = std::thread::Builder::new().name("aurora-digi-tx".into()).spawn(move || tx_monitor(&inner, &port, total));
         if let Err(e) = spawned {

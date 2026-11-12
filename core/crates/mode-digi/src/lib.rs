@@ -8,6 +8,7 @@
 //! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee nostre);
 //! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore a soglia adattiva);
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
+//! - [`tx_stream`]: i modulatori a flusso (trasmissione scritta dal vivo, avanzamento carattere per carattere);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod cw;
@@ -19,6 +20,7 @@ pub mod mmtty_oracle;
 pub mod psk;
 pub mod rtty;
 pub mod service;
+pub mod tx_stream;
 pub mod varicode;
 
 pub use cw::CwDemodulator;

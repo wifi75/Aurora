@@ -71,11 +71,11 @@ const SOFT_BITS: f32 = 0.8;
 const LLR_SCALE: f32 = 0.03;
 /// Sotto questa probabilita' un carattere e' «incerto»: l'interfaccia lo mostra in chiaro.
 pub const WEAK_PROB: f32 = 0.9;
-const FIGS: u8 = 27;
-const LTRS: u8 = 31;
-const SPACE: u8 = 4;
-const CR: u8 = 8;
-const LF: u8 = 2;
+pub(crate) const FIGS: u8 = 27;
+pub(crate) const LTRS: u8 = 31;
+pub(crate) const SPACE: u8 = 4;
+pub(crate) const CR: u8 = 8;
+pub(crate) const LF: u8 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RttyParams {
@@ -104,7 +104,7 @@ impl RttyParams {
     }
 }
 
-fn code_of(c: u8) -> Option<(u8, bool)> {
+pub(crate) fn code_of(c: u8) -> Option<(u8, bool)> {
     let up = c.to_ascii_uppercase();
     let valid = |i: &usize| *i != 0 && *i != 27 && *i != 31;
     if let Some(i) = LETTERS.iter().position(|&x| x == up).filter(valid) {
@@ -113,7 +113,7 @@ fn code_of(c: u8) -> Option<(u8, bool)> {
     FIGURES.iter().position(|&x| x == up).filter(valid).map(|i| (i as u8, true))
 }
 
-fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
+pub(crate) fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
     seq.push((false, 1.0));
     for b in 0..5 {
         seq.push(((code >> b) & 1 == 1, 1.0));

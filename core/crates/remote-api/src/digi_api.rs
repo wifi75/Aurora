@@ -83,6 +83,58 @@ pub(crate) async fn digi_tx(State(state): State<AppState>, _: Authed, headers: H
     Ok(Json(json!({ "tx": status })))
 }
 
+#[derive(Deserialize, Default)]
+pub(crate) struct OpenBody {
+    #[serde(default)]
+    text: String,
+}
+
+/// Apre la trasmissione (levetta RX/TX): si resta in trasmissione finche' non si chiude; `text` e' il testo gia' scritto (anche vuoto).
+#[utoipa::path(post, path = "/api/v1/digi/tx/open", responses((status = 200, description = "Trasmissione aperta: stato `tx`"), (status = 409, description = "Occupato o senza trasmettitore (busy, no_transmitter)")))]
+pub(crate) async fn digi_tx_open(State(state): State<AppState>, _: Authed, headers: HeaderMap, body: Option<Json<OpenBody>>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    check_tx_allowed(&state, &headers)?;
+    let text = body.map(|b| b.0.text).unwrap_or_default();
+    if text.chars().count() > TEXT_MAX {
+        return Err(api_error(DigiError::BadValue(format!("testo oltre {TEXT_MAX} caratteri"))));
+    }
+    let status = blocking(move || svc.tx_open(&text)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "tx": status })))
+}
+
+/// Testo scritto durante la trasmissione: si accoda a quello che sta partendo.
+#[utoipa::path(post, path = "/api/v1/digi/tx/type", responses((status = 200, description = "Accodato: stato `tx`"), (status = 400, description = "Nessuna trasmissione in corso o testo troppo lungo (bad_value)")))]
+pub(crate) async fn digi_tx_type(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<TxBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    check_tx_allowed(&state, &headers)?;
+    if body.text.chars().count() > TEXT_MAX {
+        return Err(api_error(DigiError::BadValue(format!("testo oltre {TEXT_MAX} caratteri"))));
+    }
+    let status = blocking(move || svc.tx_type(&body.text)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "tx": status })))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct UnsendBody {
+    count: usize,
+}
+
+/// Toglie fino a `count` caratteri non ancora partiti dalla fine del testo in coda (Backspace): `{removed}`.
+#[utoipa::path(post, path = "/api/v1/digi/tx/unsend", responses((status = 200, description = "`{removed}`: i caratteri tolti")))]
+pub(crate) async fn digi_tx_unsend(State(state): State<AppState>, _: Authed, Json(body): Json<UnsendBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let removed = blocking(move || svc.tx_unsend(body.count.min(TEXT_MAX))).await?;
+    Ok(Json(json!({ "removed": removed })))
+}
+
+/// Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione. Sempre consentito.
+#[utoipa::path(post, path = "/api/v1/digi/tx/close", responses((status = 200, description = "Chiusa")))]
+pub(crate) async fn digi_tx_close(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    blocking(move || svc.tx_close()).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 /// Ferma la trasmissione (audio e PTT). Sempre consentito.
 #[utoipa::path(post, path = "/api/v1/digi/tx/abort", responses((status = 200, description = "Fermata")))]
 pub(crate) async fn digi_tx_abort(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {

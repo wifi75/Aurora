@@ -106,9 +106,9 @@ const MORSE: &[(u8, &str)] = &[
 
 /// I segni di procedura (fldigi `src/cw/morse.cxx`): in ricezione si stampano così al posto di `+ = (`, in trasmissione si scrivono così
 /// e partono come un segno solo, senza pausa fra le lettere.
-const PROSIGNS: &[(&str, &str)] = &[("<AR>", ".-.-."), ("<BT>", "-...-"), ("<KN>", "-.--."), ("<SK>", "...-.-")];
+pub(crate) const PROSIGNS: &[(&str, &str)] = &[("<AR>", ".-.-."), ("<BT>", "-...-"), ("<KN>", "-.--."), ("<SK>", "...-.-")];
 
-fn pattern_of(c: u8) -> Option<&'static str> {
+pub(crate) fn pattern_of(c: u8) -> Option<&'static str> {
     let up = c.to_ascii_uppercase();
     MORSE.iter().find(|(ch, _)| *ch == up).map(|(_, p)| *p)
 }

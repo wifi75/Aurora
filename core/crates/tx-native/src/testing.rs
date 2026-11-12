@@ -143,4 +143,16 @@ impl AudioSink for RecordingSink {
             self.recorder.push(TxEventKind::AudioStop);
         }
     }
+
+    /// Trasmissione a flusso: i campioni in coda allungano l'onda (il finto dispositivo non va mai «a secco» nelle prove).
+    fn append(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+        lock(&self.state.samples).extend(samples);
+        Ok(())
+    }
+
+    fn consumed(&self) -> Option<u64> {
+        let start = (*lock(&self.state.started_at))?;
+        let len = lock(&self.state.samples).len() as u64;
+        Some(((self.clock.now().saturating_sub(start).as_secs_f64() * f64::from(self.rate)) as u64).min(len))
+    }
 }
