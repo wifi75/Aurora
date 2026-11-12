@@ -1,7 +1,7 @@
 import { Icon } from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getDigi, getFrequencies, postMode } from '../api/client';
+import { deleteSplitDx, getDigi, getFrequencies, postMode } from '../api/client';
 import { toast } from '../lib/toast';
 import type { TextMode } from '../lib/bandplan';
 import { useT } from '../i18n';
@@ -162,7 +162,14 @@ export function ModeNav({ route, showQmap, remote }: Props) {
     rememberGroup(target);
     if (target === group) {
       // si torna da PSK, RTTY, SSTV o Satelliti allo stesso gruppo di prima: il modo c'e' gia', ma la radio e' rimasta sulla frequenza dell'altro modo
-      if (!onModePage && mode) retune(() => retuneForMode(client, mode), mode);
+      // lo Split DX di uno spot («UP 5») acceso nella pagina PSK·RTTY·CW non vale nei modi del motore: si spegne anche se la radio e' gia'
+      // su una frequenza del modo (nessun cambio di frequenza che lo spenga) o se il CAT in quel momento non risponde
+      if (!onModePage && mode) {
+        retune(async () => {
+          await deleteSplitDx().catch(() => undefined);
+          return retuneForMode(client, mode);
+        }, mode);
+      }
       return;
     }
     const next = lastMode(target);
