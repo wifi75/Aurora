@@ -17,7 +17,10 @@
 //! - gli stati più brevi di 0,4 unità (minimo 8 ms), toni e pause, si ignorano;
 //! - velocità: medie separate di punti e linee, soglia a metà fra le due, aggiornate solo dalle coppie punto-linea con rapporto
 //!   fra 2 e 4 (fldigi `cw::update_tracking`, idea di Lawrence Glaister VE7IT), solo con elementi sicuri dello stesso carattere e fra la
-//!   metà e il doppio della velocità di partenza (fldigi: ±10 WPM);
+//!   metà e il doppio della velocità di partenza (fldigi: ±10 WPM). Aggancio rapido all'avvio, dopo un cambio di modo e dopo un silenzio
+//!   lungo: le prime quattro coppie pesano di più, valgono anche due toni di caratteri chiusi troppo presto (pausa più corta del tono più
+//!   lungo: con la velocità sbagliata il carattere si chiude prima del tempo e la velocità non si correggerebbe mai) e per due secondi
+//!   l'AGC corre il doppio;
 //! - fine del carattere dopo 2 unità di pausa, spazio fra le parole dopo 4,5 unità (fldigi dopo 4);
 //! - un carattere si stampa solo se i suoi toni e le sue pause sono ben distinti (contrasto 0,6 fra fondo e picco): col segnale troppo debole
 //!   si stampa meno, non spazzatura;
@@ -258,6 +261,14 @@ const WORD_GAP: f64 = 4.5;
 const MAX_ELEMENTS: usize = 7;
 /// Peso delle medie di punti e linee per ogni coppia valida.
 const SPEED_WEIGHT: f64 = 0.25;
+/// Aggancio rapido (ricevitore nuovo, cambio di modo, stazione nuova dopo un silenzio lungo): per le prime coppie la velocità si
+/// muove di piu'; l'AGC si muove piu' in fretta nei primi secondi (prova `avvio_a_freddo`).
+const BOOT_PAIRS: u32 = 4;
+const BOOT_WEIGHT: f64 = 0.6;
+const BOOT_AGC_S: f64 = 2.0;
+const BOOT_AGC_SPEED: f32 = 2.0;
+/// Un silenzio cosi' lungo (s) puo' essere il cambio di stazione: si torna all'aggancio rapido della velocità.
+const NEW_STATION_S: f64 = 2.5;
 
 fn blackman(x: f64) -> f64 {
     0.42 - 0.5 * (2.0 * PI * x).cos() + 0.08 * (4.0 * PI * x).cos()
@@ -376,6 +387,11 @@ pub struct CwDemodulator {
     dot: f64,
     dash: f64,
     last_mark: f64,
+    /// L'ultima pausa finita (campioni), coppie punto-linea accettate dall'avvio (o dall'ultimo silenzio lungo), campioni dall'avvio
+    /// dell'AGC.
+    last_gap: f64,
+    pairs: u32,
+    agc_age: usize,
     last_level: f32,
     hint_wpm: f32,
     pattern: String,
@@ -444,6 +460,9 @@ impl CwDemodulator {
             dot: 0.0,
             dash: 0.0,
             last_mark: 0.0,
+            last_gap: f64::MAX,
+            pairs: 0,
+            agc_age: 0,
             last_level: 0.0,
             pattern: String::new(),
             durations: Vec::new(),
@@ -466,6 +485,7 @@ impl CwDemodulator {
         self.hint_wpm = wpm.clamp(WPM_MIN, WPM_MAX);
         self.dot = unit_seconds(wpm) * self.fs;
         self.dash = 3.0 * self.dot;
+        self.pairs = 0;
         if let Some(b) = self.bayes.as_mut() {
             b.set_wpm_hint(self.hint_wpm);
         }
@@ -762,7 +782,7 @@ impl CwDemodulator {
         // piano come le medie di fldigi (salita circa 0,25 s, discesa qualche secondo), ma non si lasciano ingannare dal rumore: le medie di
         // fldigi (`noise_floor` sotto `sig_avg`, `agc_peak` sopra) sul solo rumore danno circa 17 dB di S/N e lo squelch non lo distingue.
         let l = 20.0 * v.max(1e-7).log10();
-        let eta = AGC_STEP_DB * (500.0 / self.fs as f32);
+        let mut eta = AGC_STEP_DB * (500.0 / self.fs as f32);
         if !self.agc_ready {
             // si parte quando il filtro e' pieno (64 ms): prima l'uscita e' solo il suo transitorio
             self.warmup += 1;
@@ -770,6 +790,11 @@ impl CwDemodulator {
                 return;
             }
             (self.noise, self.peak, self.agc_ready) = (l, l, true);
+        }
+        // nei primi secondi fondo e picco corrono: all'avvio (e dopo un cambio di modo) il primo segnale si legge subito
+        self.agc_age = self.agc_age.saturating_add(1);
+        if (self.agc_age as f64) < BOOT_AGC_S * self.fs {
+            eta *= BOOT_AGC_SPEED;
         }
         self.noise += NOISE_SPEED * eta * (Q_NOISE - if l < self.noise { 1.0 } else { 0.0 });
         self.peak += eta * (Q_PEAK - if l < self.peak { 1.0 } else { 0.0 });
@@ -813,6 +838,9 @@ impl CwDemodulator {
         }
         if !self.key_down {
             let gap = (self.run - self.pending) as f64;
+            if gap > NEW_STATION_S * self.fs {
+                self.pairs = 0;
+            }
             let u = self.unit();
             if !self.flushed && gap > CHAR_GAP * u {
                 self.emit(out);
@@ -836,12 +864,17 @@ impl CwDemodulator {
             self.elements.remove(0);
         }
         if !was_down {
+            self.last_gap = len;
             return;
         }
         // coppie punto-linea con rapporto fra 2 e 4 (fldigi): aggiornano le medie separate di punto e linea
         // solo elementi sicuri (livello medio vicino al picco) e dello stesso carattere: il rumore fa coppie a caso e porterebbe via la velocita'
         let last = self.last_mark;
-        let sure = level.min(self.last_level) >= SURE_LEVEL && !self.pattern.is_empty();
+        // i due toni sono dello stesso carattere (o la pausa fra loro e' piu' corta del piu' lungo: con la velocità sbagliata il carattere
+        // puo' essersi chiuso troppo presto) e netti
+        let boot = self.pairs < BOOT_PAIRS;
+        let same_char = !self.pattern.is_empty() || self.last_gap < len.max(last);
+        let sure = level.min(self.last_level) >= SURE_LEVEL && same_char;
         if last > 0.0 && sure {
             let pair = if len > 2.0 * last && len < 4.0 * last {
                 Some((last, len))
@@ -851,8 +884,10 @@ impl CwDemodulator {
                 None
             };
             if let Some((d, l)) = pair {
-                self.dot += SPEED_WEIGHT * (d - self.dot);
-                self.dash += SPEED_WEIGHT * (l - self.dash);
+                let w = if boot { BOOT_WEIGHT } else { SPEED_WEIGHT };
+                self.dot += w * (d - self.dot);
+                self.dash += w * (l - self.dash);
+                self.pairs = self.pairs.saturating_add(1);
                 self.clamp_speed();
             }
         }
