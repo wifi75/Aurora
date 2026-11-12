@@ -134,8 +134,15 @@ fn pulisci_percorsi(testo: &str) -> String {
                 continue;
             }
             let nome_da = fine + sep;
-            let nome_len = s[nome_da..].find(['\\', '/', '"', '\'', '\n', '\r', '\t', ':', ';', ',', ')', ']', '>']).unwrap_or(s.len() - nome_da);
-            if nome_len == 0 || s[nome_da..nome_da + nome_len].starts_with('<') {
+            // un nome gia' sostituito in parte («<personale> Rossi», dai valori noti) va tolto fino al separatore, segnaposto compreso:
+            // prima restava il cognome (registro dell'installatore, 2026-11-12)
+            let nome_len = if s[nome_da..].starts_with('<') {
+                s[nome_da..].find(['\\', '/', '"', '\'', '\n', '\r', '\t'])
+            } else {
+                s[nome_da..].find(['\\', '/', '"', '\'', '\n', '\r', '\t', ':', ';', ',', ')', ']', '>'])
+            }
+            .unwrap_or(s.len() - nome_da);
+            if nome_len == 0 || s[nome_da..].starts_with("<utente>") {
                 cerca = fine;
                 continue;
             }
@@ -1351,6 +1358,12 @@ mod tests {
         assert_eq!(chiave("cat", "x", "porta 4532 chiusa"), chiave("cat", "x", "porta 4533 chiusa"));
         assert_eq!(area("rig_control::hamlib", "rigctld fermo"), "cat");
         assert_eq!(area("aurora_desktop::health", "panic nel thread"), "panic");
+    }
+
+    #[test]
+    fn percorsi_con_un_nome_gia_tolto_in_parte() {
+        assert_eq!(pulisci(r"C:\Users\Mario Rossi\AppData", &["mario".into()]), r"C:\Users\<utente>\AppData");
+        assert_eq!(p(r"C:\Users\<utente>\AppData"), r"C:\Users\<utente>\AppData");
     }
 
     #[test]
