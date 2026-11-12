@@ -127,6 +127,25 @@ pub(crate) async fn digi_tx_unsend(State(state): State<AppState>, _: Authed, Jso
     Ok(Json(json!({ "removed": removed })))
 }
 
+#[derive(Deserialize)]
+pub(crate) struct ReplaceBody {
+    from: usize,
+    text: String,
+}
+
+/// Sostituisce il testo in coda dalla posizione `from` (contata dal primo carattere della trasmissione) con `text`, senza fermare la
+/// trasmissione: `{replaced}` falso se `from` cade su caratteri gia' modulati.
+#[utoipa::path(post, path = "/api/v1/digi/tx/replace", responses((status = 200, description = "`{replaced}`"), (status = 400, description = "Nessuna trasmissione in corso o testo troppo lungo (bad_value)")))]
+pub(crate) async fn digi_tx_replace(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<ReplaceBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    check_tx_allowed(&state, &headers)?;
+    if body.text.chars().count() > TEXT_MAX {
+        return Err(api_error(DigiError::BadValue(format!("testo oltre {TEXT_MAX} caratteri"))));
+    }
+    let replaced = blocking(move || svc.tx_replace(body.from, &body.text)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "replaced": replaced })))
+}
+
 /// Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione. Sempre consentito.
 #[utoipa::path(post, path = "/api/v1/digi/tx/close", responses((status = 200, description = "Chiusa")))]
 pub(crate) async fn digi_tx_close(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {

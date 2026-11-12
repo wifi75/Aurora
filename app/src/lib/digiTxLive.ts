@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { digiTxType, digiTxUnsend } from '../api/client';
+import { digiTxReplace } from '../api/client';
 import { onDigi } from './digiBus';
 
 /**
@@ -13,16 +13,11 @@ export interface TxProgress {
 
 export const TX_NONE: TxProgress = { queued: 0, sent: 0 };
 
-/** Cosa fare di una modifica della finestra mentre si trasmette. */
+/** Cosa fare di una modifica della finestra mentre si trasmette: `null` se tocca caratteri gia' partiti (si tiene il testo di prima),
+ * altrimenti sostituire la coda del motore da `from` con `text`. */
 export interface TxEdit {
-  /** Il testo da mostrare (quello vecchio se la modifica tocca caratteri gia' partiti). */
-  box: string;
-  /** Quanti caratteri in coda togliere dalla fine (Backspace sul testo non ancora partito). */
-  unsend: number;
-  /** Il testo da accodare dopo. */
-  append: string;
-  /** I caratteri che restano in coda prima di `append`, se il motore li toglie tutti. */
-  keep: number;
+  from: number;
+  text: string;
 }
 
 /** Il primo indice in cui due testi differiscono. */
@@ -34,14 +29,14 @@ function commonPrefix(a: string, b: string): number {
 }
 
 /**
- * Una modifica della finestra di trasmissione mentre si trasmette: si puo' scrivere in fondo (parte subito) e cancellare quello che non
- * e' ancora partito; i caratteri gia' partiti non si toccano.
+ * Una modifica della finestra di trasmissione mentre si trasmette: in qualunque punto della parte non ancora partita si corregge,
+ * cancella o aggiunge (il motore sostituisce la coda dal primo carattere cambiato); i caratteri gia' partiti non si toccano.
  */
-export function planEdit(old: string, next: string, p: TxProgress): TxEdit {
+export function planEdit(old: string, next: string, p: TxProgress): TxEdit | null {
   const at = commonPrefix(old, next);
-  if (at < p.sent) return { box: old, unsend: 0, append: '', keep: p.queued };
-  if (at >= p.queued) return { box: next, unsend: 0, append: next.slice(p.queued), keep: p.queued };
-  return { box: next, unsend: p.queued - at, append: next.slice(at), keep: at };
+  if (at < p.sent) return null;
+  const from = Math.min(at, p.queued);
+  return { from, text: next.slice(from) };
 }
 
 /** Quanti caratteri contare per un testo arrivato dal motore (per punti di codice, come li conta lui). */
@@ -83,33 +78,22 @@ export function useDigiTxLive(box: string, setBox: (next: string | ((prev: strin
   /** Il testo gia' nella finestra e' passato al motore (inizio di una trasmissione o macro accodata). */
   const queue = (count: number) => setProgress((p) => ({ queued: p.queued + count, sent: p.sent }));
 
-  /** Una modifica della finestra mentre si trasmette. */
+  /** Una modifica della finestra mentre si trasmette: la coda del motore si sostituisce dal primo carattere cambiato. Se quel punto e'
+   * gia' partito o sta per partire (il motore lo rifiuta) la finestra torna com'era. */
   const edit = (next: string) => {
     const { box: old, progress: p } = live.current;
     const plan = planEdit(old, next, p);
-    setBox(plan.box);
-    if (plan.box === old) return;
-    const sendRest = (queued: number, text: string) => {
-      setProgress((q) => ({ queued: queued + text.length, sent: q.sent }));
-      if (text !== '') void digiTxType(text).catch(() => undefined);
-    };
-    if (plan.unsend === 0) {
-      sendRest(p.queued, plan.append);
+    if (plan === null) {
+      setBox(old);
       return;
     }
-    // si toglie dal motore quello che non e' ancora partito; se qualche carattere stava gia' partendo resta nella finestra
-    setProgress((q) => ({ queued: plan.keep, sent: q.sent }));
-    void digiTxUnsend(plan.unsend).then(
-      (removed) => {
-        const kept = plan.unsend - removed;
-        if (kept > 0) setBox(old.slice(0, plan.keep + kept) + plan.append);
-        sendRest(plan.keep + kept, plan.append);
-      },
-      () => {
-        setBox(old);
-        setProgress((q) => ({ queued: p.queued, sent: q.sent }));
-      },
-    );
+    setBox(next);
+    setProgress((q) => ({ queued: next.length, sent: q.sent }));
+    const undo = () => {
+      setBox(old);
+      setProgress((q) => ({ queued: p.queued, sent: q.sent }));
+    };
+    void digiTxReplace(plan.from, plan.text).then((ok) => (ok ? undefined : undo()), undo);
   };
 
   return { progress, queue, edit, reset: () => setProgress(TX_NONE) };

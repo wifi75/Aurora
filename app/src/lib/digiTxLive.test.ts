@@ -3,16 +3,20 @@ import { afterTransmission, charCount, planEdit } from './digiTxLive';
 
 describe('finestra di trasmissione dal vivo', () => {
   it('quello che si scrive in fondo si accoda', () => {
-    expect(planEdit('CQ ', 'CQ DE', { queued: 3, sent: 1 })).toEqual({ box: 'CQ DE', unsend: 0, append: 'DE', keep: 3 });
+    expect(planEdit('CQ ', 'CQ DE', { queued: 3, sent: 1 })).toEqual({ from: 3, text: 'DE' });
   });
 
   it('il Backspace toglie dalla coda solo quello che non e partito', () => {
-    expect(planEdit('CQ DE', 'CQ D', { queued: 5, sent: 2 })).toEqual({ box: 'CQ D', unsend: 1, append: '', keep: 4 });
+    expect(planEdit('CQ DE', 'CQ D', { queued: 5, sent: 2 })).toEqual({ from: 4, text: '' });
+  });
+
+  it('si corregge anche a meta della parte non partita', () => {
+    expect(planEdit('CQ DE IU3ABC PSE K', 'CQ DE IU3ABC 599 K', { queued: 18, sent: 4 })).toEqual({ from: 13, text: '599 K' });
   });
 
   it('i caratteri gia partiti non si toccano', () => {
-    expect(planEdit('CQ DE', 'C', { queued: 5, sent: 3 }).box).toBe('CQ DE');
-    expect(planEdit('CQ DE', 'XQ DE', { queued: 5, sent: 1 }).box).toBe('CQ DE');
+    expect(planEdit('CQ DE', 'C', { queued: 5, sent: 3 })).toBeNull();
+    expect(planEdit('CQ DE', 'XQ DE', { queued: 5, sent: 1 })).toBeNull();
   });
 
   it('a fine trasmissione resta solo il testo non partito', () => {

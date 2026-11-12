@@ -1866,6 +1866,11 @@ export async function digiTxUnsend(count: number): Promise<number> {
   return ((await (await request('/digi/tx/unsend', jsonInit({ count }))).json()) as { removed: number }).removed;
 }
 
+/** Sostituisce il testo in coda dalla posizione `from` con `text` senza fermare la trasmissione; falso se `from` e' gia' modulato. */
+export async function digiTxReplace(from: number, text: string): Promise<boolean> {
+  return ((await (await request('/digi/tx/replace', jsonInit({ from, text }))).json()) as { replaced: boolean }).replaced;
+}
+
 /** Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione. */
 export async function digiTxClose(): Promise<void> {
   await request('/digi/tx/close', { method: 'POST' });

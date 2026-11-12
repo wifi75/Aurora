@@ -30,8 +30,15 @@ const STEP: Duration = Duration::from_millis(20);
 pub(super) struct Session {
     pending: VecDeque<char>,
     open: bool,
-    /// Caratteri messi in coda in tutto (per l'avanzamento).
-    total: usize,
+    /// Caratteri gia' passati al modulatore: non si possono piu' togliere ne' cambiare.
+    taken: usize,
+}
+
+impl Session {
+    /// I caratteri della trasmissione in tutto (modulati e in coda): le posizioni di [`DigiService::tx_replace`] contano da qui.
+    fn total(&self) -> usize {
+        self.taken + self.pending.len()
+    }
 }
 
 /// Il modulatore a flusso per le impostazioni attuali; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
@@ -60,7 +67,6 @@ impl DigiService {
             let mut session = lock(&self.inner.session);
             let Some(s) = session.as_mut() else { return Err(DigiError::BadValue("nessuna trasmissione in corso".into())) };
             s.pending.extend(text.chars());
-            s.total += text.chars().count();
         }
         Ok(lock(&self.inner.tx).clone())
     }
@@ -74,8 +80,22 @@ impl DigiService {
         for _ in 0..n {
             s.pending.pop_back();
         }
-        s.total -= n;
         n
+    }
+
+    /// Sostituisce il testo in coda dalla posizione `from` (contata dal primo carattere della trasmissione) con `text`, senza fermare la
+    /// trasmissione: si corregge, si cancella o si aggiunge in qualunque punto della parte non ancora modulata. `Ok(false)` se `from`
+    /// cade su caratteri gia' passati al modulatore (non si cambiano piu': circa 0,3 s prima che escano); `Err` senza trasmissione.
+    pub fn tx_replace(&self, from: usize, text: &str) -> Result<bool, DigiError> {
+        let mut session = lock(&self.inner.session);
+        let Some(s) = session.as_mut() else { return Err(DigiError::BadValue("nessuna trasmissione in corso".into())) };
+        if from < s.taken {
+            return Ok(false);
+        }
+        let keep = (from - s.taken).min(s.pending.len());
+        s.pending.truncate(keep);
+        s.pending.extend(text.chars());
+        Ok(true)
     }
 
     /// Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione.
@@ -93,7 +113,6 @@ impl DigiService {
             let mut session = lock(&self.inner.session);
             if let Some(s) = session.as_mut() {
                 s.pending.extend(text.chars());
-                s.total += text.chars().count();
                 s.open |= open;
                 drop(session);
                 if open {
@@ -105,7 +124,7 @@ impl DigiService {
             if self.inner.tx_active.load(Ordering::SeqCst) || port.is_busy() {
                 return Err(DigiError::Busy);
             }
-            *session = Some(Session { pending: text.chars().collect(), open, total: text.chars().count() });
+            *session = Some(Session { pending: text.chars().collect(), open, taken: 0 });
         }
         let settings = self.settings();
         let lsb = self.inner.read_radio_lsb();
@@ -154,7 +173,11 @@ fn next(inner: &Inner, m: &TxModulator) -> Next {
         return if s.open { Next::Idle } else { Next::End };
     }
     match m.next_token(&head, s.open) {
-        Some(n) => Next::Text(s.pending.drain(..n.min(head.len())).collect()),
+        Some(n) => {
+            let n = n.min(head.len());
+            s.taken += n;
+            Next::Text(s.pending.drain(..n).collect())
+        }
         // in CW un segno di procedura a meta' («<S» di «<SK>»): si aspetta il resto
         None => Next::Idle,
     }
@@ -169,7 +192,7 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
     let mut closing = false;
     let mut sent_chars = 0usize;
     let sent_event = |text: String, sent: usize| {
-        let total = lock(&inner.session).as_ref().map_or(sent, |s| s.total).max(1);
+        let total = lock(&inner.session).as_ref().map_or(sent, Session::total).max(1);
         inner.emit(DigiEvent { kind: "tx_sent".into(), text: Some(text), mode: Some(mode.id().into()), progress: Some((sent as f32 / total as f32).min(1.0)), ..DigiEvent::default() });
     };
     let state = loop {
@@ -230,7 +253,7 @@ fn run(inner: &Arc<Inner>, port: &Arc<dyn DigiTxPort>, mut m: TxModulator, mut g
             let mut tx = lock(&inner.tx);
             tx.elapsed_s = elapsed;
             tx.total_s = generated as f32 / RATE;
-            let total = lock(&inner.session).as_ref().map_or(0, |s| s.total);
+            let total = lock(&inner.session).as_ref().map_or(0, Session::total);
             tx.progress = if total > 0 { (sent_chars as f32 / total as f32).min(1.0) } else { 0.0 };
         }
         if last_emit.elapsed() >= Duration::from_millis(500) {
@@ -424,6 +447,27 @@ mod tests {
         assert!(wait_state(&svc, "done", 10));
         assert_eq!(sent(&events), "TU <SK>");
         assert!(lock(&port.wave).len() > 12_000);
+    }
+
+    #[test]
+    fn la_coda_si_sostituisce_senza_fermare_la_trasmissione() {
+        let (svc, port, events, _dir) = service(DigiMode::Rtty);
+        svc.tx_open("CQ CQ DE IU3ABC IU3ABC PSE K").expect("aperta");
+        std::thread::sleep(Duration::from_millis(1200));
+        // l'inizio e' gia' passato al modulatore: da li' non si cambia piu'
+        assert_eq!(svc.tx_replace(0, "XX").expect("in corso"), false);
+        // la coda si cambia a meta': «IU3ABC PSE K» diventa «IU3ABC 599 K»
+        assert!(svc.tx_replace(16, "IU3ABC 599 K").expect("in corso"));
+        // e si corregge ancora piu' avanti, aggiungendo in fondo
+        assert!(svc.tx_replace(28, " TU").expect("in corso"));
+        assert_eq!(svc.snapshot().tx.state, "sending");
+        svc.tx_close();
+        assert!(wait_state(&svc, "done", 15), "stato: {:?}", svc.snapshot().tx);
+        assert_eq!(sent(&events), "CQ CQ DE IU3ABC IU3ABC 599 K TU");
+        let mut d = super::super::Demod::new(&svc.settings(), false);
+        let out = String::from_utf8_lossy(&d.process(&lock(&port.wave)).0).into_owned();
+        assert!(out.contains("IU3ABC IU3ABC 599 K TU"), "ricevuto: {out:?}");
+        assert!(svc.tx_replace(0, "X").is_err());
     }
 
     #[test]
