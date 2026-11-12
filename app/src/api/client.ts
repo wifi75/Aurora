@@ -1851,6 +1851,11 @@ export async function getDigiBand(): Promise<DigiSignal[]> {
   return parsed.success ? parsed.data : [];
 }
 
+/** Svuota tutta la banda: nel core i canali, il loro storico e i nominativi ripartono da zero. */
+export async function clearDigiBand(): Promise<void> {
+  await request('/digi/band/clear', { method: 'POST' });
+}
+
 export interface DigiSnapshot {
   /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz); `imd_db` e `quality` (0-100) solo
    * in PSK; `wpm` la velocita' capita in CW; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
