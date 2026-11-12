@@ -273,3 +273,12 @@ html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-
 .rtty-vertical { writing-mode: vertical-lr; direction: rtl; height: 8.5rem; width: 1.6rem; padding: 0; }
 .rtty-foot { display: flex; gap: 0.6rem; align-items: center; }
 .rtty-spacer { flex: 1; }
+
+/* Maniglie piu' discrete (richiesta del proprietario): una lineetta sottile e tenue al centro del bordo, che si accende solo quando ci
+   si passa sopra. La maniglia fra le finestre e il log, che restava invisibile (opacita' zero ereditata), ora si vede come le altre. */
+.digi-split::before, .digi-wf-grip::before { width: 30px; height: 3px; margin-left: -15px; top: 4px; border: 0; border-radius: 2px; background: #6b7fc0; opacity: 0.45; transition: opacity 0.15s, background 0.15s; }
+.digi-wf-grip::before { top: 3px; }
+.digi-log-grip, .digi-log:hover .digi-log-grip, .digi-log-grip:hover, .digi-log-grip:active { opacity: 1; background: transparent; }
+.digi-log-grip::before, .digi-macrogrip::before { width: 3px; height: 30px; margin-top: -15px; left: 3px; border: 0; border-radius: 2px; background: #6b7fc0; opacity: 0.45; transition: opacity 0.15s, background 0.15s; }
+.digi-split:hover::before, .digi-split:active::before, .digi-wf-grip:hover::before, .digi-log-grip:hover::before, .digi-log-grip:active::before, .digi-macrogrip:hover::before { background: #8e7bff; opacity: 1; border: 0; }
+html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-grip::before, html[data-theme='light'] .digi-log-grip::before, html[data-theme='light'] .digi-macrogrip::before { background-color: #5d6b94; border: 0; }
