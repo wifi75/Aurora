@@ -154,6 +154,11 @@
 
 !macro NSIS_HOOK_POSTINSTALL
   Call AuroraDopoLaCopia
+  ${If} $AuroraCausa == "antivirus"
+    StrCpy $AuroraPasso "controllo dei file copiati"
+    Call AuroraFallita
+    Abort
+  ${EndIf}
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL
@@ -172,6 +177,12 @@
   ; il motivo dell'errore, scritto prima di ogni Abort conosciuto
   Var AuroraMotivo
   Var AuroraFallitaFatta
+  ; la causa per la schermata finale: webview2, versione, file, spazio, antivirus o vuota (altro)
+  Var AuroraCausa
+  ; il rapporto anonimo: mandato, spenti o non mandato
+  Var AuroraRapporto
+  ; 1 se sul disco di destinazione c'erano meno di 500 MB liberi
+  Var AuroraPocoSpazio
   Var AuroraPowerShell
   Var AuroraScript
 
@@ -357,6 +368,7 @@
     ${If} $1 != ""
     ${AndIf} $1 < 500
       !insertmacro AuroraScrivi "AVVISO: poco spazio libero sul disco di destinazione ($1 MB)"
+      StrCpy $AuroraPocoSpazio 1
     ${EndIf}
     Pop $1
     Pop $0
@@ -455,6 +467,10 @@
         StrCpy $2 1
       ${EndIf}
     ${Next}
+    ${IfNot} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
+      StrCpy $AuroraCausa "antivirus"
+      StrCpy $AuroraMotivo "programma mancante dopo la copia (tolto dall'antivirus?)"
+    ${EndIf}
     ${If} $2 = 1
       Call AuroraPreparaScript
       ${If} $AuroraScript != ""
@@ -524,15 +540,86 @@
       Push "rapporto dell'installatore: mandato ($1)"
       Call AuroraScriviNuda
       DetailPrint "$(auroraReportSent)"
+      StrCpy $AuroraRapporto "mandato"
     ${ElseIf} $0 == 2
       Push "rapporto dell'installatore: non mandato, rapporti spenti in Aurora"
       Call AuroraScriviNuda
+      StrCpy $AuroraRapporto "spenti"
     ${Else}
       Push "rapporto dell'installatore: non mandato ($0 $1)"
       Call AuroraScriviNuda
     ${EndIf}
     aurora_fallita_fine:
     DetailPrint "$(auroraLogSaved) $AuroraRegistro"
+    Pop $1
+    Pop $0
+    Call AuroraSpiega
+  FunctionEnd
+
+  ; La schermata finale di un'installazione non riuscita, nella lingua dell'installatore: il motivo in parole semplici, cosa fare e se il
+  ; rapporto anonimo e' partito; poi Riprova (riapre questo installatore), Apri il registro (con la pagina delle segnalazioni) o Chiudi.
+  ; In silenzio e in modo passivo niente finestre: l'aggiornamento di Aurora riapre l'installatore normale se non e' andato a buon fine.
+  Function AuroraSpiega
+    ${If} ${Silent}
+    ${OrIf} $PassiveMode = 1
+      Return
+    ${EndIf}
+    Push $0
+    Push $1
+    ; la causa, se chi si e' fermato non l'ha detta: dal passo in corso
+    ${If} $AuroraCausa == ""
+      ${If} $AuroraPasso == "copia dei file"
+        ${If} $AuroraPocoSpazio = 1
+          StrCpy $AuroraCausa "spazio"
+        ${Else}
+          StrCpy $AuroraCausa "file"
+        ${EndIf}
+      ${ElseIf} $AuroraPasso == "chiusura di Aurora"
+      ${OrIf} $AuroraPasso == "pulizia della cartella hamlib"
+      ${OrIf} $AuroraPasso == "controllo dei programmi che tengono aurora-desktop.exe (Restart Manager)"
+        StrCpy $AuroraCausa "file"
+      ${ElseIf} $AuroraPasso == "WebView2"
+        StrCpy $AuroraCausa "webview2"
+      ${EndIf}
+    ${EndIf}
+    ${Select} $AuroraCausa
+      ${Case} "webview2"
+        StrCpy $0 "$(auroraFailWebview2)"
+      ${Case} "versione"
+        StrCpy $0 "$(auroraFailVersion)"
+      ${Case} "file"
+        StrCpy $0 "$(auroraFailFiles)"
+      ${Case} "spazio"
+        StrCpy $0 "$(auroraFailSpace)"
+      ${Case} "antivirus"
+        StrCpy $0 "$(auroraFailAntivirus)"
+      ${CaseElse}
+        StrCpy $0 "$(auroraFailOther)"
+    ${EndSelect}
+    ${If} $AuroraRapporto == "mandato"
+      StrCpy $1 "$(auroraFailReportSent)"
+    ${ElseIf} $AuroraRapporto == "spenti"
+      StrCpy $1 "$(auroraFailReportOff)"
+    ${Else}
+      StrCpy $1 "$(auroraFailReportNot)"
+    ${EndIf}
+    DetailPrint " "
+    DetailPrint "$(auroraFailTitle)"
+    DetailPrint "$0"
+    DetailPrint "$1"
+    SetDetailsView show
+    !insertmacro AuroraScrivi "schermata finale: causa '$AuroraCausa', rapporto '$AuroraRapporto'"
+    MessageBox MB_ICONSTOP|MB_YESNOCANCEL|MB_DEFBUTTON1|MB_SETFOREGROUND "$(auroraFailTitle)$\r$\n$\r$\n$0$\r$\n$\r$\n$1$\r$\n$\r$\n$(auroraFailAsk)" IDYES aurora_spiega_riprova IDNO aurora_spiega_registro
+    Goto aurora_spiega_fine
+    aurora_spiega_riprova:
+      Exec '"$EXEPATH"'
+      Quit
+    aurora_spiega_registro:
+      ${If} $AuroraRegistro != ""
+        ExecShell "open" "notepad.exe" '"$AuroraRegistro"'
+      ${EndIf}
+      ExecShell "open" "https://github.com/wifi75/Aurora/issues"
+    aurora_spiega_fine:
     Pop $1
     Pop $0
   FunctionEnd

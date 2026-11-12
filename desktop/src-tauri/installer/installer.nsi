@@ -551,6 +551,8 @@ Var AppStartMenuFolder
 !insertmacro MUI_PAGE_STARTMENU Application $AppStartMenuFolder
 
 ; 7. Installation page
+; AURORA: il titolo della pagina quando l'installazione non riesce (il motivo e cosa fare li dice AuroraSpiega)
+!define MUI_INSTFILESPAGE_ABORTHEADER_TEXT "$(auroraFailTitle)"
 !insertmacro MUI_PAGE_INSTFILES
 
 ; 8. Finish page
@@ -661,6 +663,84 @@ LangString auroraReportSent ${LANG_FRENCH} "Rapport anonyme envoyé (sans nom d'
 LangString auroraReportSent ${LANG_SPANISH} "Informe anónimo enviado (sin nombre de usuario, nombre del PC ni rutas personales). Se desactivan en Aurora: Ajustes > Acceso y asistencia > Asistencia."
 LangString auroraReportSent ${LANG_PORTUGUESE} "Relatório anónimo enviado (sem nome de utilizador, nome do PC nem caminhos pessoais). Desative-os no Aurora: Definições > Acesso e assistência > Assistência."
 LangString auroraReportSent ${LANG_DUTCH} "Anoniem rapport verstuurd (zonder gebruikersnaam, pc-naam of persoonlijke paden). Uitzetten in Aurora: Instellingen > Toegang en ondersteuning > Ondersteuning."
+; AURORA: la schermata finale di un'installazione non riuscita (AuroraSpiega in hooks.nsh)
+LangString auroraFailTitle ${LANG_ITALIAN} "Aurora non è stata installata."
+LangString auroraFailTitle ${LANG_ENGLISH} "Aurora was not installed."
+LangString auroraFailTitle ${LANG_GERMAN} "Aurora wurde nicht installiert."
+LangString auroraFailTitle ${LANG_FRENCH} "Aurora n'a pas été installée."
+LangString auroraFailTitle ${LANG_SPANISH} "Aurora no se ha instalado."
+LangString auroraFailTitle ${LANG_PORTUGUESE} "O Aurora não foi instalado."
+LangString auroraFailTitle ${LANG_DUTCH} "Aurora is niet geïnstalleerd."
+LangString auroraFailWebview2 ${LANG_ITALIAN} "Motivo: non si è potuto installare Microsoft Edge WebView2, il componente di Windows con cui Aurora disegna la sua finestra.$\r$\nCosa fare: controlla di essere collegato a Internet e riprova. Se non basta, installa WebView2 dalla pagina di Microsoft (cerca «WebView2 Runtime») e poi riprova."
+LangString auroraFailWebview2 ${LANG_ENGLISH} "Reason: Microsoft Edge WebView2, the Windows component Aurora uses to draw its window, could not be installed.$\r$\nWhat to do: check that you are connected to the Internet and try again. If that is not enough, install WebView2 from Microsoft's page (search for “WebView2 Runtime”) and try again."
+LangString auroraFailWebview2 ${LANG_GERMAN} "Grund: Microsoft Edge WebView2, die Windows-Komponente, mit der Aurora sein Fenster zeichnet, konnte nicht installiert werden.$\r$\nWas tun: Prüfe die Internetverbindung und versuche es erneut. Reicht das nicht, installiere WebView2 von der Seite von Microsoft (Suche nach „WebView2 Runtime“) und versuche es dann erneut."
+LangString auroraFailWebview2 ${LANG_FRENCH} "Motif : impossible d'installer Microsoft Edge WebView2, le composant de Windows avec lequel Aurora dessine sa fenêtre.$\r$\nQue faire : vérifie que tu es connecté à Internet et réessaie. Si cela ne suffit pas, installe WebView2 depuis la page de Microsoft (cherche « WebView2 Runtime ») puis réessaie."
+LangString auroraFailWebview2 ${LANG_SPANISH} "Motivo: no se ha podido instalar Microsoft Edge WebView2, el componente de Windows con el que Aurora dibuja su ventana.$\r$\nQué hacer: comprueba que estás conectado a Internet y vuelve a intentarlo. Si no basta, instala WebView2 desde la página de Microsoft (busca «WebView2 Runtime») y vuelve a intentarlo."
+LangString auroraFailWebview2 ${LANG_PORTUGUESE} "Motivo: não foi possível instalar o Microsoft Edge WebView2, o componente do Windows com que o Aurora desenha a sua janela.$\r$\nO que fazer: verifica que estás ligado à Internet e tenta de novo. Se não chegar, instala o WebView2 a partir da página da Microsoft (procura «WebView2 Runtime») e tenta de novo."
+LangString auroraFailWebview2 ${LANG_DUTCH} "Reden: Microsoft Edge WebView2, het Windows-onderdeel waarmee Aurora zijn venster tekent, kon niet worden geïnstalleerd.$\r$\nWat te doen: controleer of je met internet verbonden bent en probeer het opnieuw. Is dat niet genoeg, installeer WebView2 via de pagina van Microsoft (zoek op „WebView2 Runtime”) en probeer het daarna opnieuw."
+LangString auroraFailVersion ${LANG_ITALIAN} "Motivo: sul PC c'è già una versione di Aurora più nuova di questa.$\r$\nCosa fare: non serve fare niente. Per tornare a questa versione disinstalla prima Aurora (i tuoi dati restano)."
+LangString auroraFailVersion ${LANG_ENGLISH} "Reason: a newer version of Aurora is already installed on this PC.$\r$\nWhat to do: nothing is needed. To go back to this version, uninstall Aurora first (your data stays)."
+LangString auroraFailVersion ${LANG_GERMAN} "Grund: Auf diesem PC ist bereits eine neuere Version von Aurora installiert.$\r$\nWas tun: Nichts nötig. Um zu dieser Version zurückzukehren, zuerst Aurora deinstallieren (deine Daten bleiben erhalten)."
+LangString auroraFailVersion ${LANG_FRENCH} "Motif : une version plus récente d'Aurora est déjà installée sur ce PC.$\r$\nQue faire : rien. Pour revenir à cette version, désinstalle d'abord Aurora (tes données restent)."
+LangString auroraFailVersion ${LANG_SPANISH} "Motivo: en el PC ya hay una versión de Aurora más nueva que esta.$\r$\nQué hacer: no hace falta nada. Para volver a esta versión desinstala antes Aurora (tus datos se conservan)."
+LangString auroraFailVersion ${LANG_PORTUGUESE} "Motivo: no PC já existe uma versão do Aurora mais recente do que esta.$\r$\nO que fazer: não é preciso nada. Para voltar a esta versão desinstala primeiro o Aurora (os teus dados ficam)."
+LangString auroraFailVersion ${LANG_DUTCH} "Reden: op deze pc staat al een nieuwere versie van Aurora.$\r$\nWat te doen: niets nodig. Wil je terug naar deze versie, verwijder dan eerst Aurora (je gegevens blijven bewaard)."
+LangString auroraFailFiles ${LANG_ITALIAN} "Motivo: i file di Aurora erano bloccati da un altro programma (Aurora ancora aperta, l'antivirus o un servizio di Windows).$\r$\nCosa fare: chiudi Aurora, anche l'icona vicino all'orologio, aspetta qualche secondo e riprova. Se si ripete, riavvia il PC e riprova."
+LangString auroraFailFiles ${LANG_ENGLISH} "Reason: Aurora's files were locked by another program (Aurora still open, the antivirus or a Windows service).$\r$\nWhat to do: close Aurora, including the icon near the clock, wait a few seconds and try again. If it happens again, restart the PC and try again."
+LangString auroraFailFiles ${LANG_GERMAN} "Grund: Die Dateien von Aurora waren durch ein anderes Programm gesperrt (Aurora noch offen, der Virenschutz oder ein Windows-Dienst).$\r$\nWas tun: Aurora schließen, auch das Symbol neben der Uhr, ein paar Sekunden warten und erneut versuchen. Wiederholt es sich, den PC neu starten und erneut versuchen."
+LangString auroraFailFiles ${LANG_FRENCH} "Motif : les fichiers d'Aurora étaient bloqués par un autre programme (Aurora encore ouverte, l'antivirus ou un service de Windows).$\r$\nQue faire : ferme Aurora, y compris l'icône près de l'horloge, attends quelques secondes et réessaie. Si cela se répète, redémarre le PC et réessaie."
+LangString auroraFailFiles ${LANG_SPANISH} "Motivo: los archivos de Aurora estaban bloqueados por otro programa (Aurora aún abierta, el antivirus o un servicio de Windows).$\r$\nQué hacer: cierra Aurora, también el icono junto al reloj, espera unos segundos y vuelve a intentarlo. Si se repite, reinicia el PC y vuelve a intentarlo."
+LangString auroraFailFiles ${LANG_PORTUGUESE} "Motivo: os ficheiros do Aurora estavam bloqueados por outro programa (o Aurora ainda aberto, o antivírus ou um serviço do Windows).$\r$\nO que fazer: fecha o Aurora, também o ícone junto ao relógio, espera alguns segundos e tenta de novo. Se se repetir, reinicia o PC e tenta de novo."
+LangString auroraFailFiles ${LANG_DUTCH} "Reden: de bestanden van Aurora waren vergrendeld door een ander programma (Aurora nog open, de virusscanner of een Windows-service).$\r$\nWat te doen: sluit Aurora, ook het pictogram bij de klok, wacht een paar seconden en probeer het opnieuw. Gebeurt het weer, start de pc opnieuw op en probeer het opnieuw."
+LangString auroraFailSpace ${LANG_ITALIAN} "Motivo: sul disco non c'è abbastanza spazio libero.$\r$\nCosa fare: libera almeno 500 MB (per esempio svuotando il Cestino) e riprova."
+LangString auroraFailSpace ${LANG_ENGLISH} "Reason: there is not enough free space on the disk.$\r$\nWhat to do: free at least 500 MB (for example by emptying the Recycle Bin) and try again."
+LangString auroraFailSpace ${LANG_GERMAN} "Grund: Auf der Festplatte ist nicht genug freier Platz.$\r$\nWas tun: Mindestens 500 MB freigeben (zum Beispiel den Papierkorb leeren) und erneut versuchen."
+LangString auroraFailSpace ${LANG_FRENCH} "Motif : il n'y a pas assez d'espace libre sur le disque.$\r$\nQue faire : libère au moins 500 Mo (par exemple en vidant la Corbeille) et réessaie."
+LangString auroraFailSpace ${LANG_SPANISH} "Motivo: no hay suficiente espacio libre en el disco.$\r$\nQué hacer: libera al menos 500 MB (por ejemplo vaciando la Papelera) y vuelve a intentarlo."
+LangString auroraFailSpace ${LANG_PORTUGUESE} "Motivo: não há espaço livre suficiente no disco.$\r$\nO que fazer: liberta pelo menos 500 MB (por exemplo esvaziando a Reciclagem) e tenta de novo."
+LangString auroraFailSpace ${LANG_DUTCH} "Reden: er is niet genoeg vrije ruimte op de schijf.$\r$\nWat te doen: maak minstens 500 MB vrij (bijvoorbeeld door de Prullenbak te legen) en probeer het opnieuw."
+LangString auroraFailAntivirus ${LANG_ITALIAN} "Motivo: il programma di Aurora è stato tolto subito dopo la copia, quasi sempre dall'antivirus.$\r$\nCosa fare: aggiungi la cartella di Aurora alle eccezioni dell'antivirus e riprova. Aurora è firmato e il suo codice è pubblico su GitHub."
+LangString auroraFailAntivirus ${LANG_ENGLISH} "Reason: Aurora's program was removed right after being copied, almost always by the antivirus.$\r$\nWhat to do: add Aurora's folder to the antivirus exceptions and try again. Aurora is signed and its code is public on GitHub."
+LangString auroraFailAntivirus ${LANG_GERMAN} "Grund: Das Programm von Aurora wurde gleich nach dem Kopieren entfernt, fast immer vom Virenschutz.$\r$\nWas tun: Den Ordner von Aurora zu den Ausnahmen des Virenschutzes hinzufügen und erneut versuchen. Aurora ist signiert und sein Code ist auf GitHub öffentlich."
+LangString auroraFailAntivirus ${LANG_FRENCH} "Motif : le programme d'Aurora a été retiré juste après la copie, presque toujours par l'antivirus.$\r$\nQue faire : ajoute le dossier d'Aurora aux exceptions de l'antivirus et réessaie. Aurora est signée et son code est public sur GitHub."
+LangString auroraFailAntivirus ${LANG_SPANISH} "Motivo: el programa de Aurora se eliminó justo después de copiarlo, casi siempre por el antivirus.$\r$\nQué hacer: añade la carpeta de Aurora a las excepciones del antivirus y vuelve a intentarlo. Aurora está firmada y su código es público en GitHub."
+LangString auroraFailAntivirus ${LANG_PORTUGUESE} "Motivo: o programa do Aurora foi removido logo depois de ser copiado, quase sempre pelo antivírus.$\r$\nO que fazer: adiciona a pasta do Aurora às exceções do antivírus e tenta de novo. O Aurora é assinado e o seu código é público no GitHub."
+LangString auroraFailAntivirus ${LANG_DUTCH} "Reden: het programma van Aurora is direct na het kopiëren verwijderd, bijna altijd door de virusscanner.$\r$\nWat te doen: voeg de map van Aurora toe aan de uitzonderingen van de virusscanner en probeer het opnieuw. Aurora is ondertekend en de code staat openbaar op GitHub."
+LangString auroraFailOther ${LANG_ITALIAN} "Motivo: l'installazione si è fermata durante: $AuroraPasso.$\r$\nCosa fare: riprova. Se si ripete, apri una segnalazione su GitHub e allega il registro dell'installazione."
+LangString auroraFailOther ${LANG_ENGLISH} "Reason: the installation stopped during: $AuroraPasso.$\r$\nWhat to do: try again. If it happens again, open an issue on GitHub and attach the installation log."
+LangString auroraFailOther ${LANG_GERMAN} "Grund: Die Installation wurde angehalten bei: $AuroraPasso.$\r$\nWas tun: Erneut versuchen. Wiederholt es sich, auf GitHub eine Meldung öffnen und das Installationsprotokoll anhängen."
+LangString auroraFailOther ${LANG_FRENCH} "Motif : l'installation s'est arrêtée pendant : $AuroraPasso.$\r$\nQue faire : réessaie. Si cela se répète, ouvre un signalement sur GitHub et joins le journal de l'installation."
+LangString auroraFailOther ${LANG_SPANISH} "Motivo: la instalación se detuvo durante: $AuroraPasso.$\r$\nQué hacer: vuelve a intentarlo. Si se repite, abre un aviso en GitHub y adjunta el registro de la instalación."
+LangString auroraFailOther ${LANG_PORTUGUESE} "Motivo: a instalação parou durante: $AuroraPasso.$\r$\nO que fazer: tenta de novo. Se se repetir, abre um relato no GitHub e anexa o registo da instalação."
+LangString auroraFailOther ${LANG_DUTCH} "Reden: de installatie stopte tijdens: $AuroraPasso.$\r$\nWat te doen: probeer het opnieuw. Gebeurt het weer, open een melding op GitHub en voeg het installatielogboek toe."
+LangString auroraFailReportSent ${LANG_ITALIAN} "È partito un rapporto anonimo (senza nome utente, nome del PC né percorsi personali): serve a capire e correggere il problema."
+LangString auroraFailReportSent ${LANG_ENGLISH} "An anonymous report was sent (without user name, PC name or personal paths): it helps to understand and fix the problem."
+LangString auroraFailReportSent ${LANG_GERMAN} "Ein anonymer Bericht wurde gesendet (ohne Benutzernamen, PC-Namen oder persönliche Pfade): er hilft, das Problem zu verstehen und zu beheben."
+LangString auroraFailReportSent ${LANG_FRENCH} "Un rapport anonyme a été envoyé (sans nom d'utilisateur, nom du PC ni chemins personnels) : il aide à comprendre et corriger le problème."
+LangString auroraFailReportSent ${LANG_SPANISH} "Se ha enviado un informe anónimo (sin nombre de usuario, nombre del PC ni rutas personales): sirve para entender y corregir el problema."
+LangString auroraFailReportSent ${LANG_PORTUGUESE} "Foi enviado um relatório anónimo (sem nome de utilizador, nome do PC nem caminhos pessoais): ajuda a perceber e corrigir o problema."
+LangString auroraFailReportSent ${LANG_DUTCH} "Er is een anoniem rapport verstuurd (zonder gebruikersnaam, pc-naam of persoonlijke paden): het helpt het probleem te begrijpen en op te lossen."
+LangString auroraFailReportOff ${LANG_ITALIAN} "Nessun rapporto anonimo: i rapporti sono spenti in Aurora."
+LangString auroraFailReportOff ${LANG_ENGLISH} "No anonymous report: reports are turned off in Aurora."
+LangString auroraFailReportOff ${LANG_GERMAN} "Kein anonymer Bericht: Berichte sind in Aurora abgeschaltet."
+LangString auroraFailReportOff ${LANG_FRENCH} "Aucun rapport anonyme : les rapports sont désactivés dans Aurora."
+LangString auroraFailReportOff ${LANG_SPANISH} "Ningún informe anónimo: los informes están desactivados en Aurora."
+LangString auroraFailReportOff ${LANG_PORTUGUESE} "Nenhum relatório anónimo: os relatórios estão desligados no Aurora."
+LangString auroraFailReportOff ${LANG_DUTCH} "Geen anoniem rapport: rapporten staan uit in Aurora."
+LangString auroraFailReportNot ${LANG_ITALIAN} "Il rapporto anonimo non è partito (niente Internet?): se il problema si ripete, apri una segnalazione su GitHub con il registro."
+LangString auroraFailReportNot ${LANG_ENGLISH} "The anonymous report could not be sent (no Internet?): if the problem happens again, open an issue on GitHub with the log."
+LangString auroraFailReportNot ${LANG_GERMAN} "Der anonyme Bericht konnte nicht gesendet werden (kein Internet?): wiederholt sich das Problem, auf GitHub eine Meldung mit dem Protokoll öffnen."
+LangString auroraFailReportNot ${LANG_FRENCH} "Le rapport anonyme n'a pas pu partir (pas d'Internet ?) : si le problème se répète, ouvre un signalement sur GitHub avec le journal."
+LangString auroraFailReportNot ${LANG_SPANISH} "El informe anónimo no se ha podido enviar (¿sin Internet?): si el problema se repite, abre un aviso en GitHub con el registro."
+LangString auroraFailReportNot ${LANG_PORTUGUESE} "O relatório anónimo não foi enviado (sem Internet?): se o problema se repetir, abre um relato no GitHub com o registo."
+LangString auroraFailReportNot ${LANG_DUTCH} "Het anonieme rapport kon niet worden verstuurd (geen internet?): gebeurt het weer, open dan een melding op GitHub met het logboek."
+LangString auroraFailAsk ${LANG_ITALIAN} "Sì = riprova adesso    No = apri il registro e le segnalazioni    Annulla = chiudi"
+LangString auroraFailAsk ${LANG_ENGLISH} "Yes = try again now    No = open the log and the issues page    Cancel = close"
+LangString auroraFailAsk ${LANG_GERMAN} "Ja = jetzt erneut versuchen    Nein = Protokoll und Meldungen öffnen    Abbrechen = schließen"
+LangString auroraFailAsk ${LANG_FRENCH} "Oui = réessayer maintenant    Non = ouvrir le journal et les signalements    Annuler = fermer"
+LangString auroraFailAsk ${LANG_SPANISH} "Sí = volver a intentarlo    No = abrir el registro y los avisos    Cancelar = cerrar"
+LangString auroraFailAsk ${LANG_PORTUGUESE} "Sim = tentar de novo agora    Não = abrir o registo e os relatos    Cancelar = fechar"
+LangString auroraFailAsk ${LANG_DUTCH} "Ja = nu opnieuw proberen    Nee = logboek en meldingen openen    Annuleren = sluiten"
 !insertmacro AuroraFunzioniRegistro
 {{#each language_files}}
   !include "{{this}}"
@@ -746,6 +826,7 @@ Function .onInit
       ${EndIf}
       ; AURORA: nel registro e nel rapporto
       StrCpy $AuroraMotivo "versione piu' vecchia di quella installata, rifiutata in modo silenzioso o passivo"
+      StrCpy $AuroraCausa "versione"
       Call AuroraFallita
       Abort
     ${EndIf}
@@ -788,6 +869,8 @@ Section WebView2
         ${Else}
           DetailPrint "$(webview2DownloadError)"
           StrCpy $AuroraMotivo "WebView2: scaricamento non riuscito ($0)"
+          StrCpy $AuroraCausa "webview2"
+          Call AuroraFallita
           Abort "$(webview2AbortError)"
         ${EndIf}
         StrCpy $6 "$TEMP\MicrosoftEdgeWebview2Setup.exe"
@@ -822,6 +905,8 @@ Section WebView2
         ${Else}
           DetailPrint "$(webview2InstallError)"
           StrCpy $AuroraMotivo "WebView2: installazione non riuscita (codice di uscita $1)"
+          StrCpy $AuroraCausa "webview2"
+          Call AuroraFallita
           Abort "$(webview2AbortError)"
         ${EndIf}
       webview2_done:
@@ -852,6 +937,7 @@ Section WebView2
               MessageBox MB_ICONEXCLAMATION|MB_ABORTRETRYIGNORE "$(webview2InstallError)" IDIGNORE ignore IDRETRY update_webview
               ; AURORA: Quit non passa da .onInstFailed
               StrCpy $AuroraMotivo "WebView2: aggiornamento alla versione minima non riuscito (codice di uscita $1), installazione interrotta"
+              StrCpy $AuroraCausa "webview2"
               Call AuroraFallita
               Quit
               ignore:
