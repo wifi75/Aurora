@@ -32,12 +32,14 @@
 //! testo, sulla banda base dopo il filtro); la parte a soglia resta per l'AGC, il cancello sullo spettro e la decodifica SOM. Davanti a
 //! tutto c'e' il noise blanker ([`crate::blanker`]): gli istanti che cancella arrivano al decodificatore come «cancellati», con il peso
 //! che resta nel filtro. Il decodificatore riceve anche il rumore di ogni istante, misurato sulle bande laterali e con il minimo
-//! scorrevole ([`crate::cw_noise`]).
+//! scorrevole ([`crate::cw_noise`]). Fra il noise blanker e il filtro c'e' l'AGC comandato dal fondo del rumore ([`crate::cw_agc`]):
+//! spento finche' il rumore sta fermo, rimette a posto il livello quando la radio pompa e negli scrosci larghi.
 //!
 //! Per un futuro riconoscimento probabilistico dei caratteri ogni elemento lascia anche la durata in unità e il livello
 //! ([`CwDemodulator::last_elements`]), non solo punto o linea.
 
 use crate::blanker::NoiseBlanker;
+use crate::cw_agc::{self, NoiseAgc};
 use crate::cw_bayes::{CwBayes, Observation};
 use crate::cw_noise::{MinTracker, SidebandNoise};
 use crate::psk::RATE;
@@ -269,6 +271,12 @@ const BOOT_AGC_S: f64 = 2.0;
 const BOOT_AGC_SPEED: f32 = 2.0;
 /// Un silenzio cosi' lungo (s) puo' essere il cambio di stazione: si torna all'aggancio rapido della velocità.
 const NEW_STATION_S: f64 = 2.5;
+/// Velocità robusta per il traliccio: media delle ultime `ROBUST_PAIRS` soglie punto/linea, offerta solo finche' le coppie contate
+/// dall'avvio (o dall'ultimo silenzio lungo) non superano `OFFER_PAIRS`. Sempre accesa peggiora il tasto a mano (prova `cw_confronto`).
+/// Dopo uno scroscio di rumore il ricevitore a soglia lascia stare il guadagno dell'AGC del rumore per tanti secondi (vedi `cw_agc`).
+const BURST_HOLD_S: f64 = 2.0;
+const ROBUST_PAIRS: usize = 4;
+const OFFER_PAIRS: u32 = 12;
 
 fn blackman(x: f64) -> f64 {
     0.42 - 0.5 * (2.0 * PI * x).cos() + 0.08 * (4.0 * PI * x).cos()
@@ -303,6 +311,8 @@ struct Delayed {
     floor: f64,
     gain: f32,
     var: f32,
+    /// Il guadagno sul segnale se l'AGC del rumore ha abbassato anche lui (vedi `cw_agc`); senza AGC e' `gain`.
+    alt: f32,
 }
 
 /// Un elemento ricevuto: tono o pausa, durata in unità della velocità di quel momento e livello medio (0-1 fra fondo e picco).
@@ -345,6 +355,17 @@ pub struct CwDemodulator {
     blanker: Option<NoiseBlanker>,
     kept: Vec<f32>,
     since_blank: usize,
+    /// L'AGC del rumore (vedi `cw_agc`), acceso di base: i campioni del mixer aspettano il suo guadagno; per ogni campione dell'anello
+    /// il guadagno avuto, e da quanti campioni vale 1.
+    /// Le ultime quattro soglie punto/linea misurate dal ricevitore a soglia sulle coppie punto-linea (la minore fra metà di punto +
+    /// linea e punto + pausa prima): la loro media, due unità, e' la velocità offerta al traliccio all'avvio e dopo un silenzio lungo.
+    robust: VecDeque<f64>,
+    agc: Option<NoiseAgc>,
+    agc_line: VecDeque<((f32, f32), bool)>,
+    agc_gain: Vec<f32>,
+    since_agc: usize,
+    /// Campioni dall'ultimo scroscio visto dall'AGC del rumore.
+    since_burst: usize,
     /// Energia dei coefficienti del filtro del decodificatore (per la varianza dei campioni toccati dal blanker).
     bayes_energy: f32,
     /// Il rumore istante per istante: bande laterali (sulla strada larga) e minimo scorrevole (sulla banda base del decodificatore).
@@ -436,6 +457,12 @@ impl CwDemodulator {
             blanker: Some(NoiseBlanker::new()),
             kept: Vec::new(),
             since_blank: usize::MAX,
+            agc: Some(NoiseAgc::new()),
+            agc_line: VecDeque::new(),
+            robust: VecDeque::new(),
+            agc_gain: Vec::new(),
+            since_agc: usize::MAX,
+            since_burst: usize::MAX,
             bayes_energy: 1.0,
             side: None,
             min_noise: None,
@@ -492,6 +519,7 @@ impl CwDemodulator {
         self.dot = unit_seconds(wpm) * self.fs;
         self.dash = 3.0 * self.dot;
         self.pairs = 0;
+        self.robust.clear();
         if let Some(b) = self.bayes.as_mut() {
             b.set_wpm_hint(self.hint_wpm);
         }
@@ -516,6 +544,8 @@ impl CwDemodulator {
         self.ring = vec![(0.0, 0.0); len];
         self.kept = vec![1.0; len];
         self.since_blank = usize::MAX;
+        self.agc_gain = vec![1.0; len];
+        self.since_agc = usize::MAX;
         self.pos = 0;
         if unit_s > 0.0 {
             self.dot = unit_s * self.fs;
@@ -611,6 +641,16 @@ impl CwDemodulator {
         }
     }
 
+    /// L'AGC comandato dal fondo del rumore (acceso di base): rimette a posto il livello quando la radio pompa e negli scrosci larghi.
+    pub fn set_noise_agc(&mut self, on: bool) {
+        if on != self.agc.is_some() {
+            self.agc = on.then(NoiseAgc::new);
+            self.agc_line.clear();
+            self.since_agc = usize::MAX;
+            self.agc_gain.fill(1.0);
+        }
+    }
+
     fn bayes_active(&self) -> bool {
         self.use_bayes && !self.som && self.bayes.is_some()
     }
@@ -680,14 +720,40 @@ impl CwDemodulator {
                 Some(nb) => nb.process_marked(s),
                 None => (s, false),
             };
-            self.kept[self.pos] = if blanked { 0.0 } else { 1.0 };
-            self.since_blank = if blanked { 0 } else { self.since_blank.saturating_add(1) };
             let (sin, cos) = self.phase.sin_cos();
             let z = (s * cos as f32, -s * sin as f32);
             self.phase += self.step;
             if self.phase > 2.0 * PI {
                 self.phase -= 2.0 * PI;
             }
+            // l'AGC del rumore: il campione (gia' al tono: il guadagno e' reale, vale lo stesso prima o dopo il mixer) aspetta il suo
+            // guadagno; spento vale 1 esatto e la banda base e' quella di sempre, solo piu' tardi
+            let (z, blanked, g) = match self.agc.as_mut() {
+                Some(agc) => {
+                    let (g, burst) = agc.push(s);
+                    self.agc_line.push_back((z, blanked));
+                    if self.agc_line.len() <= cw_agc::DELAY {
+                        ((0.0, 0.0), false, 1.0)
+                    } else {
+                        let (z, b) = self.agc_line.pop_front().unwrap_or(((0.0, 0.0), false));
+                        // in uno scroscio il segnale non era salito con il rumore: dopo il guadagno e' piu' basso (l'altra ipotesi
+                        // del decodificatore); con il guadagno della radio che risale no
+                        // (il ricevitore a soglia non ha due ipotesi: con gli scrosci, e per un po' dopo l'ultimo, il guadagno non si
+                        // tocca)
+                        self.since_burst = if burst { 0 } else { self.since_burst.saturating_add(1) };
+                        if g == 1.0 || (!bayes && (self.since_burst as f64) < BURST_HOLD_S * f64::from(RATE)) {
+                            (z, b, 1.0)
+                        } else {
+                            ((z.0 * g, z.1 * g), b, if burst { g } else { 1.0 })
+                        }
+                    }
+                }
+                None => (z, blanked, 1.0),
+            };
+            self.kept[self.pos] = if blanked { 0.0 } else { 1.0 };
+            self.since_blank = if blanked { 0 } else { self.since_blank.saturating_add(1) };
+            self.agc_gain[self.pos] = g;
+            self.since_agc = if g == 1.0 { self.since_agc.saturating_add(1) } else { 0 };
             self.ring[self.pos] = z;
             self.pos = (self.pos + 1) % len;
             self.count += 1;
@@ -722,6 +788,7 @@ impl CwDemodulator {
                 }
             }
             let (mut gain, mut var) = (1.0_f32, 1.0_f32);
+            let mut alt = None;
             if bayes {
                 if let Some(b) = self.bayes.as_mut() {
                     b.observe_level((bi, bq));
@@ -738,17 +805,28 @@ impl CwDemodulator {
                     }
                     var /= self.bayes_energy;
                 }
+                // lo stesso con il guadagno dell'AGC del rumore: quanto segnale resta se il segnale non era sceso con il rumore
+                if self.since_agc < taps.len() {
+                    let first = self.pos + len - taps.len();
+                    let mut a = 0.0;
+                    for (k, &c) in taps.iter().enumerate() {
+                        let i = (first + k) % len;
+                        a += c * self.kept[i] * self.agc_gain[i];
+                    }
+                    alt = Some(a);
+                }
             }
+            let alt = alt.unwrap_or(gain);
             let side = if bayes { self.side.as_mut().map_or(0.0, |sd| sd.push((wi, wq))) } else { 0.0 };
             let floor = if bayes { self.min_noise.as_mut().map_or(0.0, |m| m.push(f64::from(bi * bi + bq * bq))) } else { 0.0 };
-            self.delay.push_back(Delayed { z: (zi, zq), b: (bi, bq), mixed_at: self.tone_hz, side: 0.0, floor, gain, var });
+            self.delay.push_back(Delayed { z: (zi, zq), b: (bi, bq), mixed_at: self.tone_hz, side: 0.0, floor, gain, var, alt });
             // le bande laterali arrivano in ritardo sulla banda base del decodificatore: la misura va al campione che descrive
             let lag = self.side.as_ref().map_or(0, SidebandNoise::lag);
             if let Some(d) = self.delay.iter_mut().rev().nth(lag) {
                 d.side = side;
             }
             if self.delay.len() as f64 > GATE_DELAY_S * self.fs {
-                let Some(Delayed { z: (zi, zq), b: z, mixed_at, side, floor, gain, var }) = self.delay.pop_front() else { continue };
+                let Some(Delayed { z: (zi, zq), b: z, mixed_at, side, floor, gain, var, alt }) = self.delay.pop_front() else { continue };
                 let env = (zi * zi + zq * zq).sqrt() * 2.0;
                 if bayes {
                     let mut classic = std::mem::take(&mut self.classic_out);
@@ -757,9 +835,17 @@ impl CwDemodulator {
                     self.classic_out = classic;
                     let gate = self.open && self.gate;
                     if let Some(b) = self.bayes.as_mut() {
+                        // all'avvio e dopo un silenzio lungo la velocità robusta del ricevitore a soglia (media delle ultime quattro
+                        // soglie punto/linea, che valgono due unità) e' un'ipotesi in piu' per il traliccio, non una guida
+                        if self.robust.len() == ROBUST_PAIRS && self.pairs <= OFFER_PAIRS {
+                            let unit = self.robust.iter().sum::<f64>() / (2 * ROBUST_PAIRS) as f64;
+                            b.offer_speed(Some(1.2 * self.fs / unit));
+                        } else {
+                            b.offer_speed(None);
+                        }
                         // il segnale e' a tono + scarto fine; questo campione e' stato portato in banda base con il tono di allora
                         b.set_offset_hz(f64::from(self.tone_hz + self.fine_hz - mixed_at));
-                        let obs = Observation { noise: noise_of(side, floor), gain: f64::from(gain), var: f64::from(var) };
+                        let obs = Observation { noise: noise_of(side, floor), gain: f64::from(gain), var: f64::from(var), alt_gain: f64::from(alt) };
                         b.push_observed(z, obs, gate, &mut out);
                     }
                 } else {
@@ -798,7 +884,7 @@ impl CwDemodulator {
         if !self.agc_ready {
             // si parte quando il filtro e' pieno (64 ms): prima l'uscita e' solo il suo transitorio
             self.warmup += 1;
-            if self.warmup * self.decim < self.fir.len() {
+            if self.warmup * self.decim < self.fir.len() + if self.agc.is_some() { cw_agc::DELAY } else { 0 } {
                 return;
             }
             (self.noise, self.peak, self.agc_ready) = (l, l, true);
@@ -851,6 +937,9 @@ impl CwDemodulator {
         if !self.key_down {
             let gap = (self.run - self.pending) as f64;
             if gap > NEW_STATION_S * self.fs {
+                if self.pairs > 0 {
+                    self.robust.clear();
+                }
                 self.pairs = 0;
             }
             let u = self.unit();
@@ -896,6 +985,11 @@ impl CwDemodulator {
                 None
             };
             if let Some((d, l)) = pair {
+                // la soglia punto/linea di questa coppia: a metà fra i due, ma mai oltre punto + pausa (linee lunghe del tasto a mano)
+                self.robust.push_back(((d + l) / 2.0).min(d + self.last_gap));
+                if self.robust.len() > ROBUST_PAIRS {
+                    self.robust.pop_front();
+                }
                 let w = if boot { BOOT_WEIGHT } else { SPEED_WEIGHT };
                 self.dot += w * (d - self.dot);
                 self.dash += w * (l - self.dash);
@@ -1413,5 +1507,31 @@ mod tests {
             audio.extend(vec![0.0; RATE as usize]);
             assert_eq!(listen(&mut d, &audio), "CQ DE IU3ABC K", "banda {bw}");
         }
+    }
+
+    /// La radio che pompa: una stazione forte a 1500 Hz fa scendere di 20 dB il guadagno di tutto l'audio a ogni suo elemento (attacco
+    /// 2 ms, rilascio 300 ms). Con l'AGC del rumore il testo passa intero; senza, a questo livello, si perdono dei caratteri.
+    #[test]
+    fn a_pumping_radio_does_not_break_the_text() {
+        let text = "CQ CQ DE IU3ABC IU3ABC PSE K TNX FER CALL UR RST 599 599";
+        // (i primi caratteri servono all'AGC e al ricevitore per assestarsi)
+        let mut audio = keyed(&format!("VVV VVV {text}"), 20.0, |_| 700.0, 0.0, 1);
+        let strong = keyed("TEST IU3ABC TEST IU3ABC TEST IU3ABC TEST IU3ABC TEST IU3ABC", 22.0, |_| 1500.0, 0.0, 2);
+        for (i, (s, n)) in audio.iter_mut().zip(white(1 << 20, 0.17, 5)).enumerate() {
+            *s += 10.0 * strong.get(i).copied().unwrap_or(0.0) + n;
+        }
+        let (att, rel) = (1.0 - (-1.0_f32 / 24.0).exp(), 1.0 - (-1.0_f32 / 3600.0).exp());
+        let mut peak = 0.0_f32;
+        for s in audio.iter_mut() {
+            peak += (s.abs() - peak) * if s.abs() > peak { att } else { rel };
+            *s *= 0.5 / peak.max(0.02);
+        }
+        let mut with = CwDemodulator::new(700.0, 20.0);
+        let got = listen(&mut with, &audio);
+        assert!(got.ends_with(text), "con l'AGC del rumore: {got}");
+        let mut without = CwDemodulator::new(700.0, 20.0);
+        without.set_noise_agc(false);
+        let got = listen(&mut without, &audio);
+        assert!(!got.ends_with(text), "senza l'AGC del rumore: {got}");
     }
 }
