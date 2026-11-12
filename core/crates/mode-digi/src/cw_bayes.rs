@@ -351,6 +351,8 @@ pub struct CwBayes {
     confidences: Vec<u8>,
     /// Elementi gia' passati dall'apprendimento del pugno.
     learned: u32,
+    /// Ipotesi tenute (BEAM di base; meno per i canali della decodifica di tutta la banda).
+    beam_size: usize,
 }
 
 impl CwBayes {
@@ -408,10 +410,16 @@ impl CwBayes {
             best_speed: 0,
             hint_wpm: f64::from(wpm_hint),
             learned: 0,
+            beam_size: BEAM,
             confidences: Vec::new(),
         };
         d.reset_beam();
         d
+    }
+
+    /// Quante ipotesi tenere (minimo 32): meno ipotesi, meno CPU (per i canali della decodifica di tutta la banda).
+    pub fn set_beam(&mut self, n: usize) {
+        self.beam_size = n.max(32);
     }
 
     /// Peso del modello del testo (0 = solo l'albero del Morse).
@@ -788,9 +796,9 @@ impl CwBayes {
         }
         let extras: Vec<Hyp> = per_speed.iter().filter(|&&i| i != usize::MAX).map(|&i| self.cand[i]).filter(|h| h.score > best - 200.0).collect();
         self.cand.retain(|h| h.score > best - BEAM_DROP);
-        if self.cand.len() > BEAM {
-            self.cand.select_nth_unstable_by(BEAM - 1, |a, b| b.score.total_cmp(&a.score));
-            self.cand.truncate(BEAM);
+        if self.cand.len() > self.beam_size {
+            self.cand.select_nth_unstable_by(self.beam_size - 1, |a, b| b.score.total_cmp(&a.score));
+            self.cand.truncate(self.beam_size);
         }
         let floor = self.cand.iter().map(|h| h.score).fold(f32::MAX, f32::min);
         self.cand.extend(extras.into_iter().filter(|h| h.score < floor));

@@ -1234,6 +1234,7 @@ dependencies = [
  "aurora-core",
  "cc",
  "mode-sstv",
+ "rustfft",
  "serde",
  "serde_json",
  "tracing",

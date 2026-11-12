@@ -313,6 +313,7 @@ pub struct CwDemodulator {
     bayes_fir: Vec<f32>,
     /// Il noise blanker davanti a tutto (vedi `blanker`), acceso di base.
     blanker: Option<NoiseBlanker>,
+    beam_override: Option<usize>,
     /// Il decodificatore probabilistico (vedi `cw_bayes`); spento si usa quello a soglia (sempre con la decodifica SOM).
     bayes: Option<CwBayes>,
     use_bayes: bool,
@@ -388,6 +389,7 @@ impl CwDemodulator {
             delay: VecDeque::new(),
             bayes_fir: Vec::new(),
             blanker: Some(NoiseBlanker::new()),
+            beam_override: None,
             bayes: None,
             use_bayes: true,
             fine_hz: 0.0,
@@ -467,7 +469,11 @@ impl CwDemodulator {
         self.delay.clear();
         self.bayes_fir = if bw < BAYES_MIN_BW { lowpass(fir_len(BAYES_MIN_BW), f64::from(BAYES_MIN_BW) / 2.0 / f64::from(RATE)) } else { Vec::new() };
         let taps = if self.bayes_fir.is_empty() { &self.fir } else { &self.bayes_fir };
-        self.bayes = Some(CwBayes::new(self.fs, taps, self.decim, self.hint_wpm));
+        let mut b = CwBayes::new(self.fs, taps, self.decim, self.hint_wpm);
+        if let Some(n) = self.beam_override {
+            b.set_beam(n);
+        }
+        self.bayes = Some(b);
     }
 
     pub fn bandwidth(&self) -> f32 {
@@ -512,6 +518,15 @@ impl CwDemodulator {
     /// Il decodificatore probabilistico (di base) o quello a soglia. Con la decodifica SOM si usa sempre quello a soglia.
     pub fn set_probabilistic(&mut self, on: bool) {
         self.use_bayes = on;
+    }
+
+    /// Ipotesi del decodificatore probabilistico (meno = meno CPU, per i canali della decodifica di tutta la banda). Vale fino al prossimo
+    /// cambio di banda o di velocità di partenza.
+    pub fn set_beam(&mut self, n: usize) {
+        self.beam_override = Some(n);
+        if let Some(b) = self.bayes.as_mut() {
+            b.set_beam(n);
+        }
     }
 
     /// Peso del modello del testo nel decodificatore probabilistico (0 = nessuno).

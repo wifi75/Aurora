@@ -11,6 +11,7 @@
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
+//! - [`skim`]: decodifica di tutti i segnali CW della banda audio, con storico, nominativi e spot locali;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod blanker;
@@ -25,6 +26,7 @@ pub mod psk;
 pub mod psk_viterbi;
 pub mod rtty;
 pub mod service;
+pub mod skim;
 pub mod varicode;
 
 pub use cw::CwDemodulator;
