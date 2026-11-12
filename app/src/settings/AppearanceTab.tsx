@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LanguageSelect } from '../components/LanguageSelect';
 import { useT } from '../i18n';
 import {
   APPEARANCE_EVENT,
@@ -28,7 +29,7 @@ const SURFACES: Record<'dark' | 'light', Record<Appearance['contrast'], readonly
 /** Sotto 4,5:1 (WCAG AA per il testo normale) si avvisa. */
 const MIN_RATIO = 4.5;
 
-/** Impostazioni > Aspetto: tema, alto contrasto, caratteri, dimensione e colore del testo, con anteprima immediata. */
+/** Impostazioni > Aspetto: lingua, tema, alto contrasto, caratteri, dimensione e colore del testo, con anteprima immediata. */
 export function AppearanceTab() {
   const t = useT();
   const [a, setA] = useState<Appearance>(() => readAppearance());
@@ -88,6 +89,10 @@ export function AppearanceTab() {
     <Page>
       <Group title={t('ap.theme')}>
         <Cells>
+          {/* la lingua (prima nella scheda Generale) sta qui, con tema e testo: un posto solo per come si vede Aurora */}
+          <Cell label={t('gen.language')} wide>
+            <LanguageSelect />
+          </Cell>
           <Cell label={t('ap.theme')} hint={t('tip.ap.theme')} wide>
             {themes.map((x) => (
               <button key={x.id} type="button" className={`glass chip${choice === x.id ? ' glass--on' : ''}`} aria-pressed={choice === x.id} onClick={() => pickTheme(x.id)}>

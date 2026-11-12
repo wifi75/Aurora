@@ -1886,3 +1886,155 @@
 .sx-with-below > .sx-below {
   margin: 0 var(--space-3);
 }
+
+/* Informazioni, prima pagina delle Impostazioni: le ultime novita' e il riquadro per sostenere Aurora, nello stile dei riquadri sopra */
+.about-link {
+  white-space: normal;
+  max-width: 100%;
+}
+
+.about-news {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9rem 1.1rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  text-align: left;
+}
+
+.about-news h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.about-news ul {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-news li {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.about-news b {
+  font-size: 0.92rem;
+}
+
+/* il testo intero sta nelle Novita': qui le prime righe */
+.about-news-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.about-news-all {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.about-donate {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 1.1rem 1.3rem;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, #e0609a 35%, transparent);
+  background: linear-gradient(115deg, rgba(230, 96, 154, 0.14), rgba(142, 123, 255, 0.12) 55%, rgba(0, 112, 186, 0.12));
+  text-align: left;
+}
+
+.about-donate-heart {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, #e0609a 22%, transparent);
+  color: #e0609a;
+  font-size: 1.35rem;
+}
+
+.about-donate-body {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.about-donate h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.about-donate p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.about-donate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.about-donate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  background: linear-gradient(100deg, #0070ba, #1546a0);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0, 112, 186, 0.3);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.about-donate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0, 112, 186, 0.42);
+}
+
+.about-donate-btn:focus-visible {
+  outline: 2px solid #e0609a;
+  outline-offset: 2px;
+}
+
+.about-donate-star {
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-donate-btn {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .about-donate {
+    flex-direction: column;
+  }
+}

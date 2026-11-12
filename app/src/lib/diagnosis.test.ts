@@ -135,7 +135,7 @@ describe('slow PC: one step down in decoding depth, never on its own', () => {
   });
 
   it('suggests Normal at Deep and Fast at Normal, with the setting page', () => {
-    expect(slow('11.7|3')).toEqual([{ id: 'slow_pc', severity: 'warning', href: '#/impostazioni/filters', vars: { detail: '11.7', at: 990_000, depth: '3', next: '2' } }]);
+    expect(slow('11.7|3')).toEqual([{ id: 'slow_pc', severity: 'warning', href: '#/impostazioni/ft8decode', vars: { detail: '11.7', at: 990_000, depth: '3', next: '2' } }]);
     expect(slow('11.2|2', { decodeDepth: '2' })[0]?.vars).toMatchObject({ depth: '2', next: '1' });
   });
 

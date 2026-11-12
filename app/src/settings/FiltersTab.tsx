@@ -28,8 +28,13 @@ function Pill({ label, checked, onChange }: { label: string; checked: boolean; o
 
 const list = (text: string) => text.split(',').map((x) => x.trim()).filter(Boolean);
 
-/** Scheda Filtri: cosa nascondere o mostrare soltanto negli elenchi, come nel motore. */
-export function FiltersTab() {
+/** Le parti della vecchia scheda Filtri: gli elenchi (Modi › FT8 · FT4 › Messaggi e filtri) e la decodifica, divisa per modo. */
+export type FiltersPart = 'all' | 'lists' | 'ft8decode' | 'jtdecode' | 'vhfdecode';
+
+const DECODE_OF = { ft8decode: 'ft8', jtdecode: 'jt', vhfdecode: 'vhf' } as const;
+
+/** Scheda Filtri: cosa nascondere o mostrare soltanto negli elenchi, come nel motore; `part` ne mostra solo un pezzo. */
+export function FiltersTab({ part = 'all' }: { part?: FiltersPart } = {}) {
   const t = useT();
   const filters = useFilters((s) => s.filters);
   const set = useFilters.getState().set;
@@ -49,6 +54,19 @@ export function FiltersTab() {
   };
   const toggleContinent = (code: string) =>
     set({ hideContinents: filters.hideContinents.includes(code) ? filters.hideContinents.filter((c) => c !== code) : [...filters.hideContinents, code] });
+  if (part === 'ft8decode' || part === 'jtdecode' || part === 'vhfdecode') {
+    return (
+      <Page>
+        {native ? <NativeDecodeOptions part={DECODE_OF[part]} /> : null}
+        {/* con il motore di JTDX le opzioni avanzate di decodifica sono un elenco solo: stanno nella pagina FT8 · FT4 */}
+        {native === false && part === 'ft8decode' ? (
+          <Group title={t('fil.decode')} span={2}>
+            <EngineValues group="advanced" />
+          </Group>
+        ) : null}
+      </Page>
+    );
+  }
   return (
     <Page>
       <Group title={t('bfl.title')} span={3}>
@@ -154,8 +172,8 @@ export function FiltersTab() {
           </Field>
         </Cells>
       </Group>
-      {native ? <NativeDecodeOptions /> : null}
-      {native === false ? (
+      {native && part === 'all' ? <NativeDecodeOptions /> : null}
+      {native === false && part === 'all' ? (
         <Group title={t('fil.decode')} span={2}>
           <EngineValues group="advanced" />
         </Group>

@@ -8,7 +8,16 @@ import { usePrefs } from '../lib/prefs';
 import { SPOT_GROUPS, LOOKUP_GROUPS } from '../lib/engineSettingsLayout';
 import { EngineGroups, useServiceTest } from './NativeSettings';
 
-/** Scheda Servizi online: PSK Reporter e propagazione, spenti finche' non si accendono; ognuno dice cosa vede il sito. */
+/** Lo spot su WSPRnet sta nella pagina Modi › WSPR · FST4W; gli altri spot restano nei Servizi online. */
+const WSPRNET_GROUPS = SPOT_GROUPS.filter((g) => g.title === 'ens.g.wsprnet');
+const OTHER_SPOT_GROUPS = SPOT_GROUPS.filter((g) => g.title !== 'ens.g.wsprnet');
+
+/** Lo spot su WSPRnet da solo, per la pagina WSPR · FST4W (stessa bozza e stesso Applica degli altri). */
+export function WsprnetGroup() {
+  return <EngineGroups groups={WSPRNET_GROUPS} layout="rows" />;
+}
+
+/** Scheda Servizi online: PSK Reporter e propagazione, spenti finche' non si accendono; ognuno dice cosa vede il sito. WSPRnet sta con WSPR. */
 export function OnlineTab() {
   const t = useT();
   const client = useQueryClient();
@@ -43,7 +52,7 @@ export function OnlineTab() {
         </Cells>
         <Help>{t('onl.psk.note')}</Help>
       </Group>
-      <EngineGroups groups={[...SPOT_GROUPS, ...LOOKUP_GROUPS]} layout="rows" />
+      <EngineGroups groups={[...OTHER_SPOT_GROUPS, ...LOOKUP_GROUPS]} layout="rows" />
       <Group
         title={
           <>

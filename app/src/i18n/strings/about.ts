@@ -157,4 +157,17 @@ export const aboutStrings = {
     'Hola,\nte escribo por un problema con Aurora.\n\nVersión: {version}\nRadio: {radio}\nPTT en uso: {ptt}\n\nAdjunto el paquete {name} que está en el Escritorio.\n\nQué pasa:\n',
     'Olá,\nescrevo por causa de um problema com o Aurora.\n\nVersão: {version}\nRádio: {radio}\nPTT em uso: {ptt}\n\nAnexo o pacote {name} que está no Ambiente de Trabalho.\n\nO que acontece:\n',
   ],
+  'about.news': ['Ultime novità', 'Latest news', 'Neuigkeiten', 'Dernières nouveautés', 'Últimas novedades', 'Últimas novidades'],
+  'about.allNews': ['Tutte le novità →', 'All the news →', 'Alle Neuigkeiten →', 'Toutes les nouveautés →', 'Todas las novedades →', 'Todas as novidades →'],
+  'about.donateTitle': ['Sostieni Aurora', 'Support Aurora', 'Aurora unterstützen', 'Soutenir Aurora', 'Apoya Aurora', 'Apoie o Aurora'],
+  'about.donateText': [
+    'Aurora è gratuita e lo resterà. La usano tanti radioamatori e sarà sempre sviluppata e mantenuta: un contributo sostiene il lavoro fatto finora e quello che verrà. Non è un obbligo, è un modo per aiutare il progetto a continuare. Grazie di cuore!',
+    'Aurora is free and will stay free. Many radio amateurs use it, and it will always be developed and maintained: a contribution supports the work done so far and what is still to come. It is not an obligation, it is a way to help the project go on. Thank you from the heart!',
+    'Aurora ist kostenlos und bleibt es. Viele Funkamateure nutzen es, und es wird immer weiterentwickelt und gepflegt: Ein Beitrag unterstützt die bisherige Arbeit und alles, was noch kommt. Es ist keine Pflicht, sondern eine Möglichkeit, dem Projekt beim Weitermachen zu helfen. Von Herzen danke!',
+    'Aurora est gratuit et le restera. Beaucoup de radioamateurs l’utilisent, et il sera toujours développé et maintenu : une contribution soutient le travail fait jusqu’ici et celui à venir. Ce n’est pas une obligation, c’est une façon d’aider le projet à continuer. Merci de tout cœur !',
+    'Aurora es gratuito y lo seguirá siendo. Lo usan muchos radioaficionados y siempre se seguirá desarrollando y manteniendo: una aportación apoya el trabajo hecho hasta ahora y el que vendrá. No es una obligación, es una forma de ayudar a que el proyecto continúe. ¡Gracias de corazón!',
+    'O Aurora é gratuito e vai continuar a sê-lo. Usam-no muitos radioamadores e será sempre desenvolvido e mantido: uma contribuição apoia o trabalho feito até agora e o que está para vir. Não é uma obrigação, é uma forma de ajudar o projeto a continuar. Obrigado de coração!',
+  ],
+  'about.donateButton': ['Dona con PayPal', 'Donate with PayPal', 'Mit PayPal spenden', 'Faire un don avec PayPal', 'Donar con PayPal', 'Doar com PayPal'],
+  'about.star': ['Lascia una ⭐ su GitHub', 'Leave a ⭐ on GitHub', 'Einen ⭐ auf GitHub geben', 'Laisser une ⭐ sur GitHub', 'Deja una ⭐ en GitHub', 'Deixe uma ⭐ no GitHub'],
 } as const;

@@ -20,7 +20,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { useStation } from '../state/station';
 import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
-import { DecoderOptionFields } from './DecoderOptions';
+import { DecoderOptionFields, type DecoderPart } from './DecoderOptions';
 import { Check, Help } from './common';
 import { Cell, Cells, Field, Group, Help as Tip, Message, Notes, Page } from './layout';
 import { ToastGroup } from './ToastGroup';
@@ -346,8 +346,8 @@ export function NativeGeneral() {
   );
 }
 
-/** Le opzioni di trasmissione del motore (prima in Generali): monitoraggio Tx, ROS, WSJT-X 3, verifica del Fox, Band Hopping. Stanno nella scheda Sequenza. */
-export function NativeTxOptions() {
+/** Le opzioni di trasmissione del motore (prima in Generali): monitoraggio Tx, ROS, WSJT-X 3, Band Hopping nella Sequenza; la verifica del Fox (`part="fox"`) in Modi › Contest · Fox/Hound. */
+export function NativeTxOptions({ part = 'all' }: { part?: 'all' | 'nofox' | 'fox' } = {}) {
   const t = useT();
   const { settings, draft } = useDoc();
   if (settings.isError || !settings.data) return <Waiting error={settings.isError} />;
@@ -355,6 +355,24 @@ export function NativeTxOptions() {
   const field = (key: string, kind: 'bool' | 'text' | 'num' | 'choice', label: Key, extra: { min?: number; max?: number; step?: number; locked?: boolean; options?: SettingRow['options'] } = {}) => (
     <SettingField key={key} row={{ key, kind, min: extra.min, max: extra.max, step: extra.step, options: extra.options }} label={t(label)} doc={doc} draft={draft} locked={extra.locked} />
   );
+  const foxGroup = (
+    <Group title={t('gen2.fox')}>
+      <Cells min={15}>
+        {field('HoundAuto', 'bool', 'gen2.houndAuto')}
+        {field('OTPVerify', 'bool', 'gen2.otpVerify')}
+        {field('ShowOTP', 'bool', 'gen2.showOtp')}
+        {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}
+      </Cells>
+    </Group>
+  );
+  if (part === 'fox') {
+    return (
+      <>
+        {foxGroup}
+        <ApplyBar draft={draft} doc={doc} />
+      </>
+    );
+  }
   return (
     <>
       <Group title={t('gen2.operation')}>
@@ -374,14 +392,7 @@ export function NativeTxOptions() {
         </Cells>
       </Group>
 
-      <Group title={t('gen2.fox')}>
-        <Cells min={15}>
-          {field('HoundAuto', 'bool', 'gen2.houndAuto')}
-          {field('OTPVerify', 'bool', 'gen2.otpVerify')}
-          {field('ShowOTP', 'bool', 'gen2.showOtp')}
-          {field('OTPUrl', 'text', 'gen2.otpUrl', { locked: !isOn(doc, draft, 'OTPVerify') })}
-        </Cells>
-      </Group>
+      {part === 'all' ? foxGroup : null}
 
       <Group title={t('gen2.bandHop')}>
         <Cells min={18}>
@@ -395,8 +406,11 @@ export function NativeTxOptions() {
   );
 }
 
-/** Quando parte la decodifica FT8 (prima in Generali) e le opzioni dei decodificatori di WSJT-X: stanno nella scheda Filtri, con le altre scelte su cosa si riceve. */
-export function NativeDecodeOptions() {
+/**
+ * Quando parte la decodifica FT8 (prima in Generali) e le opzioni dei decodificatori di WSJT-X, divise per modo: `part` sceglie la pagina
+ * (FT8 · FT4 con l'avvio della decodifica, JT65 · JT9 · FST4, VHF · EME).
+ */
+export function NativeDecodeOptions({ part = 'all' }: { part?: DecoderPart } = {}) {
   const t = useT();
   const { settings, draft } = useDoc();
   if (settings.isError || !settings.data) return null;
@@ -404,8 +418,8 @@ export function NativeDecodeOptions() {
   return (
     <Group title={t('fil.decode')}>
       <Cells min={15}>
-        <SettingField row={{ key: 'FT8DecoderStart', kind: 'choice', options: DECODER_START_OPTIONS }} label={t('gen2.decStart')} doc={doc} draft={draft} />
-        <DecoderOptionFields doc={doc} draft={draft} />
+        {part === 'all' || part === 'ft8' ? <SettingField row={{ key: 'FT8DecoderStart', kind: 'choice', options: DECODER_START_OPTIONS }} label={t('gen2.decStart')} doc={doc} draft={draft} /> : null}
+        <DecoderOptionFields doc={doc} draft={draft} part={part} />
       </Cells>
       <ApplyBar draft={draft} doc={doc} />
     </Group>

@@ -155,7 +155,7 @@ export function diagnose(i: DiagnosisInput): Issue[] {
       const next = slowerDepth(depth);
       issues.push(
         next && depth
-          ? { id: 'slow_pc', severity: 'warning', href: '#/impostazioni/filters', vars: { detail: secs, at: n.at, depth, next } }
+          ? { id: 'slow_pc', severity: 'warning', href: '#/impostazioni/ft8decode', vars: { detail: secs, at: n.at, depth, next } }
           : { id: 'slow_pc', severity: 'warning', vars: { detail: secs, at: n.at, ...(depth ? { depth } : {}) } },
       );
       continue;

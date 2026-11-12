@@ -33,12 +33,21 @@ export const DECODER_ROWS: readonly { row: SettingRow; label: Key }[] = [
   { row: { key: 'Ftol_MSK144', kind: 'choice', options: hz(FTOL_MSK144_VALUES) }, label: 'dec.ftolMsk144' },
 ];
 
-/** Le righe delle opzioni dei decodificatori (dentro il riquadro «Decodifica» della scheda Filtri, con la stessa bozza e lo stesso Applica). */
-export function DecoderOptionFields({ doc, draft }: { doc: EngineSettings; draft: Draft }) {
+/** Quali opzioni stanno in ogni pagina dei modi: FT8 e FT4, JT65 e JT9, VHF ed EME (Q65 e MSK144). */
+export type DecoderPart = 'all' | 'ft8' | 'jt' | 'vhf';
+export const DECODER_PARTS: Readonly<Record<Exclude<DecoderPart, 'all'>, readonly string[]>> = {
+  ft8: ['DecodeDepth', 'SingleDecode'],
+  jt: ['JT65AP', 'IncludeCorrelation', 'JT65Aggressive', 'Ftol_JT65', 'Ftol_JT9'],
+  vhf: ['IncludeAveraging', 'AutoClearAvg', 'Ftol_Q65', 'Ftol_MSK144'],
+};
+
+/** Le righe delle opzioni dei decodificatori (dentro il riquadro «Decodifica» della pagina del modo, con la stessa bozza e lo stesso Applica). */
+export function DecoderOptionFields({ doc, draft, part = 'all' }: { doc: EngineSettings; draft: Draft; part?: DecoderPart }) {
   const t = useT();
+  const rows = part === 'all' ? DECODER_ROWS : DECODER_ROWS.filter(({ row }) => DECODER_PARTS[part].includes(row.key));
   return (
     <>
-      {DECODER_ROWS.map(({ row, label }) => (
+      {rows.map(({ row, label }) => (
         <SettingField key={row.key} row={row} label={t(label)} doc={doc} draft={draft} />
       ))}
     </>

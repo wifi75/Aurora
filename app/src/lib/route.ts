@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export type Route = { name: 'sat' } | { name: 'digi' } | { name: 'fox' } | { name: 'contest' } | { name: 'qmap' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'rotator' } | { name: 'sstv' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
 
-/** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<scheda>` apre una scheda precisa. */
+/** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<pagina>` apre una pagina precisa dell'albero (anche con i nomi delle vecchie schede). */
 export function parseRoute(hash: string): Route {
   // link del QR: `#/associa?codice=12345678&nome=aurora.local` (il nome e' l'indirizzo fisso da ricordare)
   const assoc = /^#\/associa(?:\?(.*))?$/.exec(hash);
@@ -13,7 +13,7 @@ export function parseRoute(hash: string): Route {
   }
   const match = /^#\/pair(?:\/(.*))?$/.exec(hash);
   if (match) return { name: 'pair', code: (match[1] ?? '').replace(/\D/g, '') };
-  const settings = /^#\/impostazioni(?:\/([a-z]+))?$/.exec(hash);
+  const settings = /^#\/impostazioni(?:\/([a-z0-9]{1,24}))?$/.exec(hash);
   if (settings) return settings[1] ? { name: 'settings', tab: settings[1] } : { name: 'settings' };
   // le Automazioni stanno nelle Impostazioni, nella loro scheda
   if (hash === '#/automazioni') return { name: 'settings', tab: 'automation' };

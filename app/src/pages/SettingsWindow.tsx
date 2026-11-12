@@ -1,15 +1,14 @@
 import { useStation } from '../state/station';
 import { askConfirm } from '../components/ConfirmHost';
-import { useQueryClient } from '@tanstack/react-query';
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { connectCat, getCat, postTune, putAutomation, putEngineSettings, putSstv } from '../api/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { connectCat, getCat, getHealth, postTune, putAutomation, putEngineSettings, putSstv } from '../api/client';
 import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { SettingsSearch } from '../settings/SettingsSearch';
 import { usePrefs } from '../lib/prefs';
-import { rememberTab } from '../lib/lastPage';
 import { SETTINGS_TAB_EVENT } from '../lib/settingsWindow';
-import { browserStorage } from '../lib/theme';
+import { allPages, INFO_ID, isKnownNode, resolveNode, SETTINGS_TREE, type FamilyId } from '../lib/settingsTree';
 import { AboutTab } from '../settings/AboutTab';
 import { AccessTab } from '../settings/AccessTab';
 import { AutomationTab, AUTOMATION_DRAFT } from '../settings/AutomationTab';
@@ -39,56 +38,90 @@ import { WaterfallTab } from '../settings/WaterfallTab';
 import { WishlistTab } from '../settings/WishlistTab';
 import { BandsTab, WindowsTab } from '../settings/WindowsBandsTabs';
 import { SessionDraft, type SharedDraft } from '../settings/session';
+import { PersonalTab } from '../settings/PersonalTab';
+import { ContestSettingsPage, DigiClusterPage, DigiMacrosPage, DigiModePage, SatSettingsPage, WsprPage } from '../settings/ModePages';
 import '../styles/settings-window.css';
 
-interface TabDef {
+/** Una pagina dell'albero: il nome e cosa disegna. */
+interface PageDef {
   id: string;
   label: Key;
-  icon: string;
-  /** Il gruppo della barra: il titolo compare davanti alla prima scheda di ogni gruppo. */
-  section?: Key;
-  /** L'ultima voce della barra, staccata dalle altre. */
-  last?: boolean;
   render(): ReactNode;
 }
 
-/** Le schede di riferimento (ognuna con solo il suo contenuto) e poi quelle che sono solo di Aurora, nell'ordine di `docs/prototipo-impostazioni.html`. */
-const TABS: readonly TabDef[] = [
-  { id: 'general', section: 'sw.sec.station', label: 'sw.tab.general', icon: '⚙', render: () => <GeneralWindowTab /> },
-  { id: 'radio', section: 'sw.sec.station', label: 'sw.tab.radio', icon: '▭', render: () => <RadioTab part="link" /> },
-  { id: 'profiles', section: 'sw.sec.station', label: 'sw.tab.profiles', icon: '☰', render: () => <RadioTab part="profiles" /> },
-  { id: 'rotator', section: 'sw.sec.station', label: 'sw.tab.rotator', icon: '⊕', render: () => <RotatorTab /> },
-  { id: 'sdr', section: 'sw.sec.station', label: 'sw.tab.sdr', icon: '⌁', render: () => <SdrTab /> },
-  { id: 'audio', section: 'sw.sec.station', label: 'sw.tab.audio', icon: '∿', render: () => <AudioTab /> },
-  { id: 'freq', section: 'sw.sec.station', label: 'sw.tab.freq', icon: '∼', render: () => <FrequenciesTab /> },
-  { id: 'bands', section: 'sw.sec.station', label: 'tab.bands', icon: '▦', render: () => <BandsTab /> },
-  { id: 'macros', section: 'sw.sec.operate', label: 'sw.tab.macros', icon: '≡', render: () => <MacrosTab /> },
-  { id: 'sequence', section: 'sw.sec.operate', label: 'tab.sequence', icon: '↻', render: () => <SequenceTab /> },
-  { id: 'autocq', section: 'sw.sec.operate', label: 'sw.tab.autocq', icon: '◷', render: () => <ScheduleTab /> },
-  { id: 'automation', section: 'sw.sec.operate', label: 'nav.automation', icon: '⚡', render: () => <AutomationTab /> },
-  { id: 'filters', section: 'sw.sec.operate', label: 'sw.tab.filters', icon: '▽', render: () => <FiltersTab /> },
-  { id: 'cqnews', section: 'sw.sec.operate', label: 'panel.cq', icon: '◉', render: () => <CqNewsTab /> },
-  { id: 'wishlist', section: 'sw.sec.operate', label: 'tab.wishlist', icon: '★', render: () => <WishlistTab /> },
-  { id: 'dxcc', section: 'sw.sec.operate', label: 'tab.dxcc', icon: '◎', render: () => <DxccTab /> },
-  { id: 'aspetto', section: 'sw.sec.look', label: 'sw.tab.appearance', icon: 'Aa', render: () => <AppearanceTab /> },
-  { id: 'colors', section: 'sw.sec.look', label: 'sw.tab.colors', icon: '◐', render: () => <NotificationsTab part="colors" /> },
-  { id: 'alerts', section: 'sw.sec.look', label: 'sw.tab.alerts', icon: '♫', render: () => <NotificationsTab part="alerts" /> },
-  { id: 'waterfall', section: 'sw.sec.look', label: 'tab.waterfall', icon: '▥', render: () => <WaterfallTab /> },
-  { id: 'windows', section: 'sw.sec.look', label: 'tab.windows', icon: '▢', render: () => <WindowsTab /> },
-  { id: 'clock', section: 'sw.sec.look', label: 'tab.clock', icon: '◔', render: () => <ClockTab /> },
-  { id: 'logbooks', section: 'sw.sec.log', label: 'sw.tab.logbooks', icon: '▤', render: () => <LogServicesTab /> },
-  { id: 'files', section: 'sw.sec.log', label: 'sw.tab.files', icon: '▣', render: () => <LogTransfer /> },
-  { id: 'reporting', section: 'sw.sec.log', label: 'sw.tab.reporting', icon: '⇄', render: () => <ReportsTab /> },
-  { id: 'online', section: 'sw.sec.log', label: 'tab.online', icon: '☁', render: () => <OnlineTab /> },
-  { id: 'cluster', section: 'sw.sec.log', label: 'tab.cluster', icon: '✦', render: () => <ClusterTab /> },
-  // l'SSTV ha la sua categoria, divisa per argomento; la rotella della pagina SSTV apre la prima scheda
-  { id: 'sstv', section: 'sw.sec.sstv', label: 'sw.tab.sstv', icon: '▣', render: () => <SstvTab part="rx" /> },
-  { id: 'sstvtx', section: 'sw.sec.sstv', label: 'sw.tab.sstvTx', icon: '▲', render: () => <SstvTab part="tx" /> },
-  { id: 'sstvimages', section: 'sw.sec.sstv', label: 'sw.tab.sstvImages', icon: '▤', render: () => <SstvTab part="images" /> },
-  { id: 'phone', section: 'sw.sec.access', label: 'sw.tab.phone', icon: '☎', render: () => <AccessTab /> },
-  { id: 'agent', section: 'sw.sec.access', label: 'agent.tab', icon: '◳', render: () => <AgentTab /> },
-  { id: 'support', section: 'sw.sec.access', label: 'tab.support', icon: '✚', render: () => <SupportTab /> },
-  { id: 'info', label: 'sw.tab.info', icon: 'ⓘ', last: true, render: () => <AboutTab /> },
+/**
+ * Cosa disegna ogni pagina dell'albero (`lib/settingsTree.ts`). I componenti sono quelli delle vecchie schede, alcuni divisi con `part`:
+ * nessuna voce sparisce e nessuna compare due volte (a parte le scorciatoie volute: la barra di WSPR in Live, i dialoghi delle pagine).
+ */
+const RENDER: Readonly<Record<string, () => ReactNode>> = {
+  // Stazione
+  personal: () => <PersonalTab />,
+  radio: () => <RadioTab part="link" />,
+  profiles: () => <RadioTab part="profiles" />,
+  audio: () => <AudioTab />,
+  rotator: () => <RotatorTab />,
+  sdr: () => <SdrTab />,
+  clock: () => <ClockTab />,
+  // Modi › Comune a tutti i modi
+  freq: () => <FrequenciesTab />,
+  qso: () => <GeneralWindowTab part="qso" />,
+  autocq: () => <ScheduleTab />,
+  // Modi › FT8 · FT4
+  ft8decode: () => <FiltersTab part="ft8decode" />,
+  sequence: () => <SequenceTab part="qso" />,
+  macros: () => <MacrosTab />,
+  automation: () => <AutomationTab />,
+  messages: () => (
+    <div className="sw-page">
+      <FiltersTab part="lists" />
+      <CqNewsTab />
+      <GeneralWindowTab part="screen" />
+    </div>
+  ),
+  // Modi › gli altri modi del motore
+  jt: () => <FiltersTab part="jtdecode" />,
+  vhf: () => <FiltersTab part="vhfdecode" />,
+  wspr: () => <WsprPage />,
+  // Modi › PSK · RTTY · CW
+  digi: () => <DigiModePage />,
+  digimacros: () => <DigiMacrosPage />,
+  digicluster: () => <DigiClusterPage />,
+  // Modi › SSTV
+  sstv: () => <SstvTab part="rx" />,
+  sstvtx: () => <SstvTab part="tx" />,
+  sstvimages: () => <SstvTab part="images" />,
+  // Modi › Satelliti
+  satorbits: () => <SatSettingsPage cat="orbits" />,
+  satmap: () => <SatSettingsPage cat="map" />,
+  satradio: () => <SatSettingsPage cat="radio" />,
+  contest: () => <ContestSettingsPage />,
+  // Log, cluster e servizi
+  logbooks: () => <LogServicesTab />,
+  files: () => <LogTransfer />,
+  reporting: () => <ReportsTab />,
+  cluster: () => <ClusterTab />,
+  online: () => <OnlineTab />,
+  wishlist: () => <WishlistTab />,
+  dxcc: () => <DxccTab />,
+  // Aspetto e avvisi
+  aspetto: () => <AppearanceTab />,
+  colors: () => <NotificationsTab part="colors" />,
+  alerts: () => <NotificationsTab part="alerts" />,
+  waterfall: () => <WaterfallTab />,
+  windows: () => <WindowsTab />,
+  bands: () => <BandsTab />,
+  // Accesso e assistenza
+  phone: () => <AccessTab />,
+  agent: () => <AgentTab />,
+  updates: () => <GeneralWindowTab part="updates" />,
+  support: () => <SupportTab />,
+  [INFO_ID]: () => <AboutTab />,
+};
+
+/** Tutte le pagine, nell'ordine dell'albero e con Informazioni in fondo: servono alla ricerca. */
+export const SETTINGS_PAGES: readonly PageDef[] = [
+  ...allPages().map(({ page }) => ({ id: page.id, label: page.label, render: RENDER[page.id] ?? (() => null) })),
+  { id: INFO_ID, label: 'sw.tab.info', render: RENDER[INFO_ID] ?? (() => null) },
 ];
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */
@@ -98,14 +131,32 @@ function closeWindow(): void {
 }
 
 /**
- * Le Impostazioni in una finestra a parte, piccola: a sinistra le 15 schede, a destra la scheda scelta, in basso Prova CAT, Prova PTT,
- * Annulla, Applica e Salva. Le voci del motore scrivono in una bozza unica (`SessionDraft`) e partono solo con Applica o Salva.
+ * Le Impostazioni in una finestra a parte (o nel riquadro sopra l'applicazione): a sinistra l'albero (famiglie colorate, sottofamiglie,
+ * pagine, che si aprono a fisarmonica), a destra il percorso e la pagina scelta, in basso Prova CAT, Prova PTT, Chiudi e Salva. Senza una
+ * pagina richiesta tutto e' chiuso e si vede Informazioni. Le voci del motore scrivono in una bozza unica (`SessionDraft`) e partono solo
+ * con Salva. Sotto i 760 px l'albero e' un elenco a tutta larghezza: scelta una pagina, compare il contenuto con «‹ Indietro».
  */
 export function SettingsWindow({ initialTab, embedded = false, onClose }: { initialTab?: string; /** Dentro l'applicazione (riquadro sopra la pagina) e non in una finestra a parte. */ embedded?: boolean; onClose?(): void }) {
   const t = useT();
   const client = useQueryClient();
   const settings = useSettings();
-  const [id, setId] = useState(TABS.some((x) => x.id === initialTab) ? (initialTab as string) : 'general');
+  const start = resolveNode(initialTab);
+  /** La pagina mostrata. */
+  const [id, setId] = useState(start.page);
+  /** La famiglia e la sottofamiglia aperte (una per livello: aprendone una le sorelle si chiudono). */
+  const [openFamily, setOpenFamily] = useState<FamilyId | null>(start.family?.id ?? null);
+  const [openSub, setOpenSub] = useState<string | null>(start.sub?.id ?? null);
+  /** Sul telefono: l'elenco dell'albero o la pagina scelta. */
+  const [view, setView] = useState<'tree' | 'page'>(initialTab && isKnownNode(initialTab) ? 'page' : 'tree');
+  const health = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
+  /** Porta su un nodo (pagina, sottofamiglia, famiglia o id vecchio) aprendo i rami fino a li'. */
+  const go = (node: string) => {
+    const path = resolveNode(node);
+    setId(path.page);
+    setOpenFamily(path.family?.id ?? null);
+    setOpenSub(path.sub?.id ?? null);
+    setView('page');
+  };
   const [changes, setChanges] = useState<Record<string, string>>({});
   /** Bozze di schede che non sono voci del motore (le regole delle Automazioni). */
   const [drafts, setDrafts] = useState<Record<string, unknown>>({});
@@ -125,17 +176,18 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   useEffect(() => {
     const onTab = (e: Event) => {
       const want = (e as CustomEvent<string>).detail;
-      if (!TABS.some((x) => x.id === want)) return;
+      if (!isKnownNode(want)) return;
       e.preventDefault();
-      setId(want);
-      rememberTab(browserStorage(), want);
+      go(want);
     };
     window.addEventListener(SETTINGS_TAB_EVENT, onTab);
     return () => window.removeEventListener(SETTINGS_TAB_EVENT, onTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // nel riquadro un nuovo indirizzo `#/impostazioni/<scheda>` con la finestra gia' aperta porta su quella scheda
   useEffect(() => {
-    if (initialTab && TABS.some((x) => x.id === initialTab)) setId(initialTab);
+    if (initialTab && isKnownNode(initialTab)) go(initialTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTab]);
   // finestra a parte: la pagina e' fissa (scorre solo il contenuto della scheda); nel riquadro non serve
   useEffect(() => {
@@ -279,21 +331,40 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
     }
   };
 
-  const shownTabs = TABS;
-  const tab = shownTabs.find((x) => x.id === id) ?? shownTabs[0]!;
+  const pageDef = SETTINGS_PAGES.find((x) => x.id === id) ?? SETTINGS_PAGES[SETTINGS_PAGES.length - 1]!;
+  const where = resolveNode(pageDef.id);
+  const accent = where.family?.color ?? '#8e7bff';
+  const version = health.data?.version ?? '';
+  /** Aprire una famiglia chiude le altre; aprirla di nuovo la chiude. La pagina mostrata non cambia. */
+  const toggleFamily = (fam: FamilyId) => {
+    setOpenFamily((now) => (now === fam ? null : fam));
+    setOpenSub(null);
+  };
+  /** Lo stesso per le sottofamiglie: una sola aperta. */
+  const toggleSub = (sub: string) => setOpenSub((now) => (now === sub ? null : sub));
+  const pageButton = (pid: string, label: Key, level: 2 | 3) => (
+    <button
+      key={pid}
+      type="button"
+      id={`swtab-${pid}`}
+      className={`sw-l${level}${pid === pageDef.id ? ' sw-on' : ''}`}
+      aria-current={pid === pageDef.id ? 'page' : undefined}
+      onClick={() => go(pid)}
+    >
+      {t(label)}
+    </button>
+  );
   const body = (
-    <div className={`sw-window${embedded ? ' sw-window--in' : ''}`} role="dialog" aria-label={t('set.title')}>
+    <div className={`sw-window${embedded ? ' sw-window--in' : ''}`} role="dialog" aria-label={t('set.title')} style={{ '--sw-fam': accent } as CSSProperties}>
       <header className="sw-top" data-tauri-drag-region>
         <strong>{t('set.title')}</strong>
-        <small>{t(tab.label)}</small>
-        {/* cerca ogni singola opzione in tutte le schede: un clic apre la scheda e porta all'opzione */}
+        {/* cerca ogni singola opzione in tutte le pagine: un clic apre la pagina (con i rami aperti) e porta all'opzione */}
         <SettingsSearch
-          tabs={TABS}
+          tabs={SETTINGS_PAGES}
           wrap={(node) => <SessionDraft.Provider value={draft}>{node}</SessionDraft.Provider>}
           onPick={(tabId, text) => {
-            setId(tabId);
-            rememberTab(browserStorage(), tabId);
-            // la scheda ha bisogno di un momento per disegnarsi: poi si porta in vista l'opzione e la si illumina
+            go(tabId);
+            // la pagina ha bisogno di un momento per disegnarsi: poi si porta in vista l'opzione e la si illumina
             window.setTimeout(() => {
               const panel = document.getElementById('sw-panel');
               if (!panel) return;
@@ -312,33 +383,68 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           ✕
         </button>
       </header>
-      <div className="sw-main">
-        <nav className="sw-nav" role="tablist" aria-orientation="vertical">
-          {shownTabs.map((x, i) => (
-            <Fragment key={x.id}>
-              {x.section && x.section !== shownTabs[i - 1]?.section ? <span className="sw-nav-sep">{t(x.section)}</span> : null}
-              {x.last ? <span className="sw-nav-sep sw-nav-sep--line" aria-hidden="true" /> : null}
-              <button
-                type="button"
-                role="tab"
-                id={`swtab-${x.id}`}
-                aria-selected={tab.id === x.id}
-                aria-controls="sw-panel"
-                className={tab.id === x.id ? 'sw-tab sw-tab--on' : 'sw-tab'}
-                onClick={() => {
-                  setId(x.id);
-                  rememberTab(browserStorage(), x.id);
-                }}
-              >
-                <i aria-hidden="true">{x.icon}</i>
-                {t(x.label)}
-              </button>
-            </Fragment>
-          ))}
+      <div className="sw-main" data-view={view}>
+        <nav className="sw-tree" aria-label={t('set.title')}>
+          {SETTINGS_TREE.map((fam) => {
+            const open = openFamily === fam.id;
+            return (
+              <div key={fam.id} className={`sw-fam-wrap${open ? ' sw-open' : ''}`} style={{ '--fam': fam.color } as CSSProperties}>
+                <button type="button" id={`swfam-${fam.id}`} className="sw-fam" aria-expanded={open} onClick={() => toggleFamily(fam.id)}>
+                  <span className="sw-bar" aria-hidden="true" />
+                  {t(fam.label)}
+                  <span className="sw-chev" aria-hidden="true">
+                    {open ? '⌄' : '›'}
+                  </span>
+                </button>
+                {open
+                  ? fam.items.map((item) => {
+                      if (item.kind === 'page') return pageButton(item.id, item.label, 2);
+                      const subOpen = openSub === item.id;
+                      return (
+                        <div key={item.id} className="sw-sub">
+                          <button type="button" id={`swsub-${item.id}`} className={`sw-l2 sw-l2--sub${subOpen ? ' sw-open' : ''}`} aria-expanded={subOpen} onClick={() => toggleSub(item.id)}>
+                            {t(item.label)}
+                            <span className="sw-chev" aria-hidden="true">
+                              {subOpen ? '⌄' : '›'}
+                            </span>
+                          </button>
+                          {subOpen ? item.pages.map((pg) => pageButton(pg.id, pg.label, 3)) : null}
+                        </div>
+                      );
+                    })
+                  : null}
+              </div>
+            );
+          })}
+          <span className="sw-tree-gap" aria-hidden="true" />
+          {/* Informazioni, staccata in fondo, con la versione */}
+          <button
+            type="button"
+            id={`swtab-${INFO_ID}`}
+            className={`sw-fam sw-fam--info${pageDef.id === INFO_ID ? ' sw-on' : ''}`}
+            aria-current={pageDef.id === INFO_ID ? 'page' : undefined}
+            onClick={() => go(INFO_ID)}
+          >
+            <span className="sw-bar" aria-hidden="true" />
+            {t('sw.tab.info')}
+            {version ? <span className="sw-ver data">{version}</span> : null}
+          </button>
         </nav>
-        <section className="sw-panel settings settings-layout" id="sw-panel" role="tabpanel" aria-label={t(tab.label)}>
-          <SessionDraft.Provider value={draft}>{tab.render()}</SessionDraft.Provider>
-        </section>
+        <div className="sw-content">
+          <div className="sw-crumbs">
+            <button type="button" className="sw-back" onClick={() => setView('tree')}>
+              ‹ {t('sw.back')}
+            </button>
+            <ol aria-label={t('sw.path')}>
+              {where.family ? <li className="sw-crumb-fam">{t(where.family.label)}</li> : null}
+              {where.sub ? <li>{t(where.sub.label)}</li> : null}
+              <li aria-current="page">{t(pageDef.label)}</li>
+            </ol>
+          </div>
+          <section className="sw-panel settings settings-layout" id="sw-panel" aria-label={t(pageDef.label)}>
+            <SessionDraft.Provider value={draft}>{pageDef.render()}</SessionDraft.Provider>
+          </section>
+        </div>
       </div>
       <footer className="sw-foot">
         <button type="button" className={`sw-btn${on('cat')}`} onClick={() => { setLast('cat'); void testCat(); }}>

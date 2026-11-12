@@ -333,10 +333,10 @@ fn open_solo_window(app: &AppHandle, page: &str, url: tauri::Url) {
         .decorations(!frameless)
         .shadow(true)
         .inner_size(
-            panel_size.map_or(if display_only { 660.0 } else if settings { 1040.0 } else { 1000.0 }, |(w, _)| w),
+            panel_size.map_or(if display_only { 660.0 } else if settings { 1120.0 } else { 1000.0 }, |(w, _)| w),
             panel_size.map_or(if display_only { 110.0 } else if settings { 760.0 } else { 700.0 }, |(_, h)| h),
         )
-        .min_inner_size(if display_only { 160.0 } else if settings { 1040.0 } else { 360.0 }, if display_only { 40.0 } else if settings { 760.0 } else { 260.0 })
+        .min_inner_size(if display_only { 160.0 } else if settings { 1120.0 } else { 360.0 }, if display_only { 40.0 } else if settings { 760.0 } else { 260.0 })
         .resizable(!settings)
         .always_on_top(settings)
         .visible(false)

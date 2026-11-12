@@ -671,6 +671,50 @@ sw.station,Station details,Stationsgegevens
 sw.behavior,Behavior,Gedrag
 sw.logging,QSO logging,QSO loggen
 sw.updatesSelf,Updates settings save by themselves.,Update-instellingen worden automatisch opgeslagen.
+sw.fam.modes,Modes,Modi
+sw.fam.log,"Log, cluster and services","Log, cluster en diensten"
+sw.sub.common,Common to all modes,Gemeenschappelijk voor alle modi
+sw.sub.ft8,FT8 · FT4,FT8 · FT4
+sw.sub.jt,JT65 · JT9 · FST4,JT65 · JT9 · FST4
+sw.sub.vhf,VHF · EME,VHF · EME
+sw.sub.wspr,WSPR · FST4W,WSPR · FST4W
+sw.sub.digi,PSK · RTTY · CW,PSK · RTTY · CW
+sw.sub.contest,Contest · Fox/Hound,Contest · Fox/Hound
+sw.pg.personal,Personal data,Persoonlijke gegevens
+sw.pg.radio,Radio (CAT and PTT),Radio (CAT en PTT)
+sw.pg.profiles,Radio profiles,Radioprofielen
+sw.pg.sdr,SDR · TCI · QMAP,SDR · TCI · QMAP
+sw.pg.qso,Logging and behavior,Loggen en gedrag
+sw.pg.messages,Messages and filters,Berichten en filters
+sw.pg.digiRxTx,Receive and transmit,Ontvangen en zenden
+sw.pg.digiMacros,Macros (F1…),Macro’s (F1…)
+sw.pg.rx,Receive,Ontvangen
+sw.pg.tx,Transmit,Zenden
+sw.pg.images,Pictures,Afbeeldingen
+sw.pg.orbits,Orbits,Banen
+sw.pg.doppler,Doppler and rotator,Doppler en rotor
+sw.pg.files,ADIF files,ADIF-bestanden
+sw.pg.reporting,Connected programs,Gekoppelde programma’s
+sw.pg.alerts,Alerts and sounds,Meldingen en geluiden
+sw.pg.bands,Bands in the bar,Banden in de balk
+sw.back,Back,Terug
+sw.path,Path,Pad
+sw.digi.perMode,Per mode,Per modus
+sw.digi.loading,"Reading the PSK, RTTY and CW settings…","De instellingen van PSK, RTTY en CW worden gelezen…"
+sw.macros.edit,Edit,Bewerken
+sw.macros.new,New macro,Nieuwe macro
+sw.macros.empty,No macro for this mode.,Geen macro voor deze modus.
+sw.macros.mode,Mode in use: {mode}. Macros «only for this mode» apply to the mode chosen on the PSK · RTTY · CW page.,Modus in gebruik: {mode}. Macro’s «alleen voor deze modus» gelden voor de modus die op de pagina PSK · RTTY · CW is gekozen.
+sw.wspr.beacon,Beacon,Baken
+sw.contest.open,Open the Contest page,Contestpagina openen
+sw.contest.title,Contest settings,Contestinstellingen
+sw.contest.note,"Category, operators, power and assistance are chosen on the Contest page, one contest at a time.","Categorie, operators, vermogen en assistentie kies je op de contestpagina, per contest."
+sw.p.operator,Operator,Operator
+sw.p.name,First name,Voornaam
+sw.p.surname,Last name,Achternaam
+sw.p.qth,QTH (town),QTH (plaats)
+sw.p.email,Email (optional),E-mail (optioneel)
+sw.p.note,"Name and QTH are the ones used by the PSK, RTTY and CW macros. This data stays on this PC.","Naam en QTH zijn die van de PSK-, RTTY- en CW-macro’s. Deze gegevens blijven op deze pc."
 sw.tab.sdr,SDR,SDR
 sdr.tci,TCI link,TCI-verbinding
 sdr.address,TCI server address,Adres van de TCI-server
@@ -2722,6 +2766,12 @@ Ik voeg het pakket {name} bij dat je op het Bureaublad vindt.
 
 Wat er gebeurt:
 "
+about.news,Latest news,Laatste nieuws
+about.allNews,All the news →,Al het nieuws →
+about.donateTitle,Support Aurora,Steun Aurora
+about.donateText,"Aurora is free and will stay free. Many radio amateurs use it, and it will always be developed and maintained: a contribution supports the work done so far and what is still to come. It is not an obligation, it is a way to help the project go on. Thank you from the heart!","Aurora is gratis en blijft gratis. Veel radioamateurs gebruiken het en het wordt altijd verder ontwikkeld en onderhouden: een bijdrage steunt het werk tot nu toe en wat nog komt. Het is geen verplichting, het is een manier om het project te helpen doorgaan. Van harte bedankt!"
+about.donateButton,Donate with PayPal,Doneren met PayPal
+about.star,Leave a ⭐ on GitHub,Geef een ⭐ op GitHub
 tip.not2.alertMy,Plays an alert when a station calls or answers your callsign.,Speelt een melding af wanneer een station jouw roepnaam roept of beantwoordt.
 tip.not2.alertDx,Plays an alert when a message arrives from the DX station you are working (the one in the yellow box).,Speelt een melding af wanneer er een bericht binnenkomt van het DX-station waarmee je werkt (dat in het gele vak).
 tip.not2.soundMy,The sound chosen for “Call to me” in Colours: heard on every message containing your callsign.,Het geluid dat bij “Oproep aan mij” in Kleuren is gekozen: te horen bij elk bericht met jouw roepnaam.

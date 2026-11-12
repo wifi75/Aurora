@@ -10,9 +10,12 @@ import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
-import { MacroEditor, type MacroScope } from '../components/digi/MacroEditor';
+import { MacroEditor } from '../components/digi/MacroEditor';
+import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
-import { ModeSettings, type Personal } from '../components/digi/ModeSettings';
+import { ModeSettings } from '../components/digi/ModeSettings';
+import { usePersonal } from '../lib/personal';
+import { openSettingsWindow } from '../lib/settingsWindow';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
 import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
@@ -28,7 +31,6 @@ import '../styles/digi.css';
 import '../styles/digi-dark.css';
 import '../styles/digi-log-corta.css';
 
-const FIELDS_KEY = 'aurora.digi.campi';
 const VIEWS_KEY = 'aurora.digi.viste';
 const SCAN_KEY = 'aurora.digi.scansione';
 const MEM_KEY = 'aurora.digi.memorie';
@@ -105,11 +107,6 @@ function writeJson(key: string, value: unknown): void {
   }
 }
 
-/** I dati della stazione che non cambiano da un QSO all'altro: restano salvati. */
-interface Saved extends Personal {
-  rsts: string;
-  rstr: string;
-}
 
 const EMPTY_QSO: Qso = { call: '', name: '', qth: '', wwloc: '', notes: '' };
 const toMacro = (m: DigiMacro): Macro => ({ name: m.name, label: m.label, text: m.text, color: m.color });
@@ -147,29 +144,6 @@ export function DigiPage() {
   );
 }
 
-/** Un core piu' vecchio puo' mandare meno campi: i mancanti si riempiono con i valori di base (macro senza tasto = nessuna). */
-function withDefaults(snap: DigiSnapshot): DigiSnapshot {
-  const raw = snap.settings as Partial<DigiSettings>;
-  const settings: DigiSettings = {
-    mode: raw.mode ?? 'psk31',
-    rx_freq_hz: raw.rx_freq_hz ?? 1000,
-    tx_follow_rx: raw.tx_follow_rx ?? true,
-    tx_freq_hz: raw.tx_freq_hz ?? 1000,
-    cw_wpm: raw.cw_wpm ?? 20,
-    rtty_shift_hz: raw.rtty_shift_hz ?? 170,
-    rtty_baud: raw.rtty_baud ?? 45.45,
-    afc_on: raw.afc_on ?? true,
-    squelch_on: raw.squelch_on ?? false,
-    squelch_db: raw.squelch_db ?? -45,
-    snap_on: raw.snap_on ?? true,
-    auto_receive: raw.auto_receive ?? false,
-    macros: (raw.macros ?? []).filter((m) => typeof m.name === 'string' && m.name !== ''),
-    mode_macros: raw.mode_macros ?? {},
-    merge_macros: raw.merge_macros ?? {},
-  };
-  return { ...snap, settings, rx: { ...snap.rx, freq_hz: snap.rx.freq_hz ?? 0, squelch_open: snap.rx.squelch_open ?? true } };
-}
-
 function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged: () => void }) {
   const snap = useMemo(() => withDefaults(rawSnap), [rawSnap]);
   const t = useT();
@@ -194,7 +168,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const v = Number(browserStorage()?.getItem('aurora.digi.macrow'));
     return Number.isFinite(v) && v >= 360 ? v : null;
   });
-  const [saved, setSaved] = useState<Saved>(() => readJson<Saved>(FIELDS_KEY, { myname: '', myqth: '', rsts: '599', rstr: '599' }));
+  // i dati che non cambiano da un QSO all'altro (nome, QTH, RST): gli stessi di Impostazioni › Stazione › Dati personali
+  const [saved, setSavedField] = usePersonal();
   const [startAt, setStartAt] = useState<Date | null>(null);
   const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
   const [scanProps, setScanProps] = useState<ScanProps>(() => readJson(SCAN_KEY, DEFAULT_SCAN));
@@ -248,11 +223,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     [client, onChanged, t],
   );
 
-  const setSavedField = (patch: Partial<Saved>) => {
-    const next = { ...saved, ...patch };
-    setSaved(next);
-    writeJson(FIELDS_KEY, next);
-  };
 
   // il divisore fra ricezione e trasmissione si trascina: la parte alta della colonna (0,2-0,8), ricordata
   // l'altezza della cascata si regola dalla barra sul suo bordo alto (da 50 a 400 px), ricordata
@@ -705,29 +675,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, [editing, macros]);
 
   const saveMacro = (m: Macro, where: MacroScope) => {
-    const original = editing?.name ?? m.name;
-    const blank = m.label.trim() === '' && m.text.trim() === '';
-    const strip = (list: DigiMacro[], name: string) => list.filter((x) => x.name !== name);
-    const entry: DigiMacro = { name: m.name, label: m.label, text: m.text, color: m.color };
-    let all = [...s.macros];
-    const modeSets = { ...s.mode_macros };
-    let forMode = [...(modeSets[s.mode] ?? [])];
-    // il tasto di partenza si libera dall'insieme che si sta modificando se e' stato cambiato
-    if (original !== m.name) {
-      all = strip(all, original);
-      forMode = strip(forMode, original);
-    }
-    if (where === 'all') {
-      all = strip(all, m.name);
-      forMode = strip(forMode, m.name);
-      if (!blank) all.push(entry);
-    } else {
-      forMode = strip(forMode, m.name);
-      // vuota per questo modo = il tasto resta libero anche se la macro di base esiste
-      if (!blank || all.some((x) => x.name === m.name)) forMode.push(blank ? { name: m.name, label: '', text: '', color: null } : entry);
-    }
-    modeSets[s.mode] = forMode;
-    save({ macros: all, mode_macros: modeSets });
+    save(editMacros(s, editing?.name ?? m.name, m, where));
     setEditing(null);
   };
 
@@ -778,7 +726,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
         ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
-        { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
+        { label: t('digi.mi.modeSettings'), onSelect: () => openSettingsWindow('digi') },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
       ],
     },
@@ -838,11 +786,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     {
       label: t('digi.menu.configure'),
       items: [
-        { label: t('digi.mi.macrosMode'), onSelect: () => setEditing({ name: 'F1', scope: 'mode' }) },
-        { label: t('digi.mi.macrosDefault'), onSelect: () => setEditing({ name: 'F1', scope: 'all' }) },
+        // le macro, le impostazioni del modo e i dati personali stanno nelle Impostazioni (Modi › PSK · RTTY · CW e Stazione › Dati personali);
+        // il clic destro su un tasto macro e la soglia dello squelch restano scorciatoie della pagina
+        { label: t('digi.mi.macrosMode'), onSelect: () => openSettingsWindow('digimacros') },
+        { label: t('digi.mi.macrosDefault'), onSelect: () => openSettingsWindow('digimacros') },
         'sep',
-        { label: t('digi.mi.modeSettings'), onSelect: () => setSettingsOpen(true) },
-        { label: t('digi.mi.personal'), onSelect: () => setSettingsOpen(true) },
+        { label: t('digi.mi.modeSettings'), onSelect: () => openSettingsWindow('digi') },
+        { label: t('digi.mi.personal'), onSelect: () => openSettingsWindow('personal') },
       ],
     },
     {

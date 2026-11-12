@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { getSat, getSatPasses, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, satUploadMap, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
 import { SatMap } from '../components/sat/SatMap';
 import { SatRadar } from '../components/sat/SatRadar';
-import { SatSettingsDialog } from '../components/sat/SatSettingsDialog';
+import { openSettingsWindow } from '../lib/settingsWindow';
 import { useT } from '../i18n';
 import { compass, countdown, formatLat, formatLon, mhz, mmss, SAT_BUILTIN_MAP } from '../lib/satGeo';
 import { toast } from '../lib/toast';
@@ -63,7 +63,6 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
   const look = now.look;
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [downDraft, setDownDraft] = useState<number | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const info: SatInfo | undefined = snap.catalog.find((c) => c.norad === s.selected);
@@ -132,12 +131,11 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
           <button type="button" className="glass icon-btn sat-icon-btn" disabled={busy} onClick={refreshTle} title={t('sat.tle.refresh')} aria-label={t('sat.tle.refresh')}>
             <Icon name="refresh" />
           </button>
-          <button type="button" className="glass icon-btn sat-icon-btn" onClick={() => setSettingsOpen(true)} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
+          <button type="button" className="glass icon-btn sat-icon-btn" onClick={() => openSettingsWindow('modesat')} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
             <Icon name="gear" />
           </button>
         </div>
       </header>
-      {settingsOpen ? <SatSettingsDialog snap={snap} busy={busy} onSave={save} onRefresh={refreshTle} onClose={() => setSettingsOpen(false)} /> : null}
 
       {!snap.observer ? <p className="notice">{t('sat.noObserver')}</p> : null}
 

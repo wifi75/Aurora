@@ -1,7 +1,10 @@
-/** Apre le Impostazioni nella loro finestra a parte (nel programma per Windows la crea il guscio, piccola e al centro). */
+/**
+ * Apre le Impostazioni nella loro finestra a parte (nel programma per Windows la crea il guscio, piccola e al centro), sul nodo `tab`
+ * dell'albero (pagina, sottofamiglia o id di una vecchia scheda); senza, su Informazioni.
+ */
 export function openSettingsWindow(tab?: string): void {
-  const q = tab && /^[a-z]{1,12}$/.test(tab) ? `?tab=${tab}` : '';
-  window.open(`${location.origin}/${q}#/finestra/impostazioni`, 'aurora-impostazioni', 'width=1040,height=760');
+  const q = tab && /^[a-z0-9]{1,24}$/.test(tab) ? `?tab=${tab}` : '';
+  window.open(`${location.origin}/${q}#/finestra/impostazioni`, 'aurora-impostazioni', 'width=1120,height=760');
 }
 
 /** Evento con cui un collegamento dentro una scheda chiede alla finestra Impostazioni di passare a un'altra scheda. */

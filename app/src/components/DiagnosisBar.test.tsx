@@ -68,7 +68,7 @@ describe('DiagnosisBar', () => {
     useStation.getState().apply({ type: 'notice', id: 'slow_pc', detail: '11.7|3' });
     render(<DiagnosisBar />);
     expect(await screen.findByText(/Il PC fatica a decodificare in tempo \(11\.7 s per periodo\): passa la profondità a Normale/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Impostazione' })).toHaveAttribute('href', '#/impostazioni/filters');
+    expect(screen.getByRole('link', { name: 'Impostazione' })).toHaveAttribute('href', '#/impostazioni/ft8decode');
     expect(putEngineSettings).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Passa a Normale' }));
     await vi.waitFor(() => expect(putEngineSettings).toHaveBeenCalledWith({ DecodeDepth: '2' }));

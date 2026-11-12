@@ -377,3 +377,75 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .sw-flash{animation:sw-flash 2.2s ease-out;border-radius:6px}
 @keyframes sw-flash{0%,60%{background:rgba(255,243,92,.45);box-shadow:0 0 0 4px rgba(255,243,92,.35)}100%{background:transparent;box-shadow:none}}
 
+
+/* L'albero delle Impostazioni (bozza «Albero» scelta dal proprietario, 2026-11-12): famiglie con la barretta colorata, sottofamiglie e
+   pagine a fisarmonica, Informazioni staccata in fondo; sopra il contenuto il percorso Famiglia › Sottofamiglia › Pagina */
+.settings-modal{width:min(1240px,calc(100vw - 80px))}
+.sw-main{grid-template-columns:288px minmax(0,1fr)}
+.sw-tree{display:flex;flex-direction:column;gap:2px;min-height:0;padding:12px;border-right:1px solid var(--sw-line);overflow:auto;scrollbar-gutter:stable;overscroll-behavior:contain}
+.sw-fam-wrap,.sw-sub{display:flex;flex-direction:column;gap:2px}
+.sw-fam,.sw-l2,.sw-l3{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;text-align:left;border:0;background:transparent;color:inherit;font-family:inherit;cursor:pointer;transition:background-color .16s ease,color .16s ease}
+.sw-fam{padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:#dbe4f3}
+.sw-bar{flex:none;width:4px;height:18px;border-radius:2px;background:var(--fam,#4a5a78)}
+.sw-chev{margin-left:auto;color:#6f81a1;font-size:12px;line-height:1}
+.sw-fam-wrap.sw-open>.sw-fam{background:color-mix(in srgb,var(--fam) 10%,transparent)}
+.sw-fam-wrap.sw-open>.sw-fam .sw-chev,.sw-l2--sub.sw-open .sw-chev{color:var(--fam)}
+.sw-l2{padding:7px 10px 7px 26px;border-radius:7px;font-size:12.5px;font-weight:500;color:#c3cfe3}
+.sw-l2--sub.sw-open{color:#fff;font-weight:700}
+.sw-l3{display:block;padding:6px 10px 6px 44px;border-radius:7px;font-size:12px;font-weight:500;color:#a7b6cf}
+.sw-l2.sw-on,.sw-l3.sw-on{color:#fff;background:color-mix(in srgb,var(--fam) 18%,transparent);box-shadow:inset 3px 0 0 var(--fam)}
+.sw-fam:hover,.sw-l2:hover,.sw-l3:hover{background-color:color-mix(in srgb,var(--fam,#8e7bff) 12%,transparent)}
+.sw-fam:focus-visible,.sw-l2:focus-visible,.sw-l3:focus-visible{outline:2px solid var(--fam,#8e7bff);outline-offset:-2px}
+.sw-tree-gap{flex:1 0 12px}
+.sw-fam--info{--fam:#4a5a78;color:#a7b6cf}
+.sw-fam--info.sw-on{--fam:#8e7bff;color:#dbe4f3;background:color-mix(in srgb,#8e7bff 14%,transparent);box-shadow:inset 0 0 0 1px #8e7bff}
+.sw-ver{margin-left:auto;font-size:11px;color:#6f81a1}
+.sw-content{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0}
+.sw-crumbs{display:flex;align-items:center;gap:12px;padding:12px 20px 0 18px}
+.sw-crumbs ol{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0;padding:0;list-style:none;font-size:13px;font-weight:600}
+.sw-crumbs li+li::before{content:'›';margin-right:6px;color:#8193b2;font-weight:400}
+.sw-crumbs li[aria-current='page']{font-weight:400}
+.sw-crumb-fam{color:var(--sw-fam)}
+.sw-back{display:none;flex:none;align-items:center;gap:4px;height:30px;padding:0 12px;border:1px solid var(--sw-line);border-radius:7px;background:transparent;color:inherit;font:600 12px inherit;cursor:pointer}
+/* il contenuto non finisce sotto la barra di scorrimento: spazio fisso a destra e pulsanti che vanno a capo */
+.sw-panel{padding:12px 20px 16px 18px;scrollbar-gutter:stable}
+.sw-panel .sx-field input[type='email']{width:100%;max-width:none}
+
+/* i riquadri presi dai dialoghi delle pagine dei modi (PSK·RTTY·CW, Satelliti) */
+.sw-fields{display:grid;gap:12px}
+.sw-fields>label,.sw-fields fieldset>label{display:grid;gap:4px;font-size:12.5px}
+.sw-fields>label>span:first-child:not(:only-child){font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.sw-fields .sstv-check,.sw-fields .cop-radio,.sw-fields .sat-check{display:flex;align-items:center;gap:8px}
+.sw-fields .sstv-check>span,.sw-fields .cop-radio>span,.sw-fields .sat-check>span{font-size:12.5px;letter-spacing:0;text-transform:none;opacity:1}
+.sw-fields input[type='number'],.sw-fields input[type='url'],.sw-fields select{box-sizing:border-box;width:100%;max-width:22rem;min-height:32px;padding:0 9px;border-radius:7px}
+.sw-fields fieldset{display:grid;gap:10px;margin:0;padding:0;border:0;min-width:0}
+.sw-fields legend{padding:0;margin:0 0 6px;font-size:12px;font-weight:700}
+.sw-fields .sstv-hint,.sw-fields .cop-hint,.sw-fields .sat-small{margin:0;font-size:11.5px;opacity:.7}
+.sw-digi-mode{font-size:10px;letter-spacing:.1em;color:var(--sw-fam)}
+.sw-wspr{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.sw-macros{display:grid;margin:0;padding:0;list-style:none}
+.sw-macros li{display:grid;grid-template-columns:3.4rem minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--sw-line);font-size:12.5px}
+.sw-macros li:first-child{border-top:0}
+.sw-macro-key{padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--sw-fam) 30%,transparent);font-family:var(--font-data,monospace);font-size:11px;text-align:center}
+.sw-macro-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+:root[data-theme='light'] .sw-fam{color:#0b1322}
+:root[data-theme='light'] .sw-l2{color:#25324a}
+:root[data-theme='light'] .sw-l3,:root[data-theme='light'] .sw-fam--info{color:#3a4a66}
+:root[data-theme='light'] .sw-l2--sub.sw-open,:root[data-theme='light'] .sw-l2.sw-on,:root[data-theme='light'] .sw-l3.sw-on,:root[data-theme='light'] .sw-fam--info.sw-on{color:#0b1322}
+:root[data-theme='light'] .sw-chev,:root[data-theme='light'] .sw-ver{color:#52627e}
+
+/* telefono e finestre strette: l'albero e' un elenco a tutta larghezza; scelta una pagina compare il contenuto con «‹ Indietro» */
+@media (max-width:760px){
+  .sw-main{grid-template-columns:minmax(0,1fr)}
+  .sw-tree{border-right:0;padding:10px 16px}
+  .sw-fam,.sw-l2,.sw-l3{min-height:40px}
+  .sw-main[data-view='tree'] .sw-content{display:none}
+  .sw-main[data-view='page'] .sw-tree{display:none}
+  .sw-back{display:inline-flex}
+  .sw-crumbs{padding:10px 16px 0}
+  .sw-panel{padding:10px 16px 14px}
+  .sw-macros li{grid-template-columns:3.4rem minmax(0,1fr) auto}
+  .sw-macros li small{display:none}
+}
+@media (prefers-reduced-motion:reduce){.sw-fam,.sw-l2,.sw-l3{transition:none}}

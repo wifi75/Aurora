@@ -14,7 +14,7 @@ import { UpdateBar } from './components/UpdateBar';
 import { WantedBar } from './components/WantedBar';
 import { COLORS_STORAGE_KEY, applyColors, readColors } from './lib/colors';
 import { useEscapeStop } from './lib/escapeStop';
-import { rememberRoute, rememberedTab } from './lib/lastPage';
+import { rememberRoute } from './lib/lastPage';
 import { addressFromName, findOtherAddress, rememberAddresses } from './lib/knownAddresses';
 import { REMOTE_HOST } from './lib/phone';
 import { followNavigateRequests } from './lib/sdr';
@@ -67,6 +67,11 @@ export function App() {
   const queryClient = useQueryClient();
   useEffect(() => {
     rememberRoute(browserStorage(), route);
+  }, [route]);
+  // chiudendo le Impostazioni si torna alla pagina da cui le si e' aperte (PSK, Satelliti...), non sempre alla Stazione
+  const beforeSettings = useRef('#/');
+  useEffect(() => {
+    if (route.name !== 'settings') beforeSettings.current = location.hash || '#/';
   }, [route]);
   useEffect(() => {
     applyColors(document.documentElement, readColors(browserStorage()));
@@ -251,7 +256,8 @@ export function App() {
       {/* i messaggi del proprietario (auguri, avvisi): sempre accesi, solo sul PC */}
       {session.data && !REMOTE ? <OwnerMessages /> : null}
     </div>
-    {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? (route.tab ?? rememberedTab(browserStorage())) : undefined} onClose={() => { location.hash = '#/'; }} /> : null}
+    {/* senza una pagina richiesta le Impostazioni si aprono su Informazioni, con l'albero tutto chiuso */}
+    {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? route.tab : undefined} onClose={() => { location.hash = beforeSettings.current; }} /> : null}
     {/* i messaggi brevi fuori da `.app-shell`: con le Impostazioni aperte (pagina sotto inert) si devono poter chiudere */}
     <Toaster />
     {/* fuori dalla pagina principale, dopo le Impostazioni: quando sono aperte la pagina sotto e' disattivata (inert) e la locandina

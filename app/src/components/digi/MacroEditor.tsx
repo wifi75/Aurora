@@ -3,7 +3,8 @@ import { TABLE_LANGS, useLang, useT } from '../../i18n';
 import { commandsOf, type CommandGroup } from '../../lib/macroCommands';
 import { EVENT_MACROS, keyNames, cssColor, type Macro } from '../../lib/macroLang';
 
-export type MacroScope = 'all' | 'mode';
+import type { MacroScope } from '../../lib/digiMacroEdit';
+export type { MacroScope };
 
 interface Props {
   /** La macro da modificare (vuota se il tasto non ne ha). */
