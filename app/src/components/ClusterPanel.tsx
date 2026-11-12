@@ -338,7 +338,8 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
         return <td key={c} className="data cluster-mode cl-c cl-c--mode">{s.mode ?? ''}</td>;
       case 'comment':
         return (
-          <td key={c} className="cluster-comment cl-c cl-c--comment">
+          // title vuoto: sulla cella Commenti non deve comparire il suggerimento lungo della riga («doppio clic per sintonizzare…»), solo il commento
+          <td key={c} className="cluster-comment cl-c cl-c--comment" title="">
             {splitTag(s, c)}
             {/* la cella e' spesso stretta: al passaggio del mouse il commento intero */}
             <TextTip text={s.comment}>{s.comment}</TextTip>

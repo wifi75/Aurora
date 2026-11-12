@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
 import type { DigiSettings, RttyCharset, RttyProfile } from '../../api/client';
-import { RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from './ModeSettings';
+import { RTTY_BAUDS, RTTY_SHIFTS, withCurrent, roundBaud } from './ModeSettings';
 
 const BASE_PROFILE: RttyProfile = { shift_hz: 170, baud: 45.45, reverse: false, receiver: 'auto', charset: 'ita2', afc: true, snap: true, squelch: false, uos: true, squelch_snr_db: 0 };
 
@@ -19,7 +19,7 @@ function currentProfile(s: DigiSettings, base: RttyProfile): RttyProfile {
   return {
     ...base,
     shift_hz: s.rtty_shift_hz,
-    baud: s.rtty_baud,
+    baud: roundBaud(s.rtty_baud),
     reverse: s.rtty_reverse,
     receiver: s.rtty_receiver,
     charset: s.rtty_charset,

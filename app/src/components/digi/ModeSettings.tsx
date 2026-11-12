@@ -67,8 +67,10 @@ export function ModeSettingsFields({
   section?: Section;
 }) {
   const t = useT();
-  const [rx, setRx] = useState(s.rx_freq_hz);
-  const [tx, setTx] = useState(s.tx_freq_hz);
+  // un decimale al piu': il valore del motore e' un numero a 32 bit e mostrava code come 2037,800048828125
+  const hz1 = (v: number) => Math.round(v * 10) / 10;
+  const [rx, setRx] = useState(hz1(s.rx_freq_hz));
+  const [tx, setTx] = useState(hz1(s.tx_freq_hz));
   const [snr, setSnr] = useState(s.rtty_squelch_snr_db);
   const [pskSq, setPskSq] = useState(s.psk_squelch);
   const [cwSnr, setCwSnr] = useState(s.cw_squelch_snr_db);
@@ -206,7 +208,7 @@ export function ModeSettingsFields({
         <>
           <label>
             <span>{t('digi.freq.rx')}</span>
-            <input type="number" min={200} max={3500} value={rx} onChange={(e) => setRx(Number(e.target.value))} onBlur={() => (rx >= 200 && rx <= 3500 && rx !== s.rx_freq_hz ? onSave({ rx_freq_hz: rx }) : setRx(s.rx_freq_hz))} />
+            <input type="number" min={200} max={3500} step={0.1} value={rx} onChange={(e) => setRx(Number(e.target.value))} onBlur={() => (rx >= 200 && rx <= 3500 && rx !== hz1(s.rx_freq_hz) ? onSave({ rx_freq_hz: rx }) : setRx(hz1(s.rx_freq_hz)))} />
           </label>
           <label className="sstv-check">
             <input type="checkbox" checked={s.afc_on} onChange={(e) => onSave({ afc_on: e.target.checked })} />
@@ -232,7 +234,7 @@ export function ModeSettingsFields({
           </label>
           <label>
             <span>{t('digi.freq.tx')}</span>
-            <input type="number" min={200} max={3500} value={tx} disabled={s.tx_follow_rx} onChange={(e) => setTx(Number(e.target.value))} onBlur={() => (tx >= 200 && tx <= 3500 && tx !== s.tx_freq_hz ? onSave({ tx_freq_hz: tx }) : setTx(s.tx_freq_hz))} />
+            <input type="number" min={200} max={3500} step={0.1} value={tx} disabled={s.tx_follow_rx} onChange={(e) => setTx(Number(e.target.value))} onBlur={() => (tx >= 200 && tx <= 3500 && tx !== hz1(s.tx_freq_hz) ? onSave({ tx_freq_hz: tx }) : setTx(hz1(s.tx_freq_hz)))} />
           </label>
           {!allModes && s.mode === 'cw' ? cw : null}
           {!allModes && s.mode === 'rtty' ? rtty : null}

@@ -288,3 +288,18 @@ html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-
 .digi-txwrap { display: flex; flex-direction: column; min-height: 0; }
 .digi-txhist { flex: 0 1 auto; max-height: 50%; overflow: auto; margin: 0; padding: 6px 14px 2px; font: 14px/1.5 var(--font-data); white-space: pre-wrap; word-break: break-word; color: #8fa3cf; text-decoration: underline; text-decoration-color: rgba(143, 163, 207, 0.5); text-underline-offset: 3px; border-bottom: 1px dashed var(--border, #25365d); user-select: text; }
 html[data-theme='light'] .digi-txhist { color: #4a5878; text-decoration-color: rgba(74, 88, 120, 0.5); }
+
+/* «Impostazioni del modo» in ordine: tre colonne che non si sovrappongono, caselle a sinistra con la scritta accanto, campi larghi
+   quanto la colonna */
+.digi-ms-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.digi-ms-grid fieldset { min-width: 0; margin: 0; padding: 12px 14px; gap: 10px; border-radius: 10px; }
+.digi-ms-grid fieldset > label { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; text-align: left; }
+.digi-ms-grid fieldset > label.sstv-check { flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; }
+.digi-ms-grid fieldset > label.sstv-check input { flex: none; margin: 0; }
+.digi-ms-grid input[type='number'], .digi-ms-grid input[type='text'], .digi-ms-grid select, .digi-ms-grid input[type='range'] { width: 100%; min-width: 0; box-sizing: border-box; }
+.digi-ms-grid p, .digi-ms-grid small { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 62rem) { .digi-ms-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* le misure del segnale (S/N, IMD, WPM) nella barra in basso: larghezza fissa, cosi' con «-1» o due cifre i blocchi accanto non si
+   spostano */
+.digi-status .digi-st--measures { flex: none; min-width: 9.5rem; justify-content: center; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }

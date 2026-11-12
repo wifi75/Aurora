@@ -1228,3 +1228,9 @@ html[data-theme='light'] .freq-picker-btn { background: #ffffff !important; bord
 html[data-theme='light'] .freq-picker-btn .freq-picker-btn-mhz { color: #0f172a !important; }
 html[data-theme='light'] .freq-picker-btn .freq-picker-btn-unit { color: #475569 !important; }
 html[data-theme='light'] .freq-picker-btn .freq-picker-btn-band { background: #6d5bf0 !important; }
+
+/* il selettore della frequenza a larghezza fissa: cambiando banda (14.074, 144.174, 3.573) i pulsanti accanto non si spostano */
+.freq-picker-btn { min-width: 11.6rem; justify-content: flex-start; }
+.freq-picker-btn .freq-picker-btn-band { min-width: 2.6rem; text-align: center; }
+.freq-picker-btn .freq-picker-btn-mhz { min-width: 4.6rem; text-align: right; font-variant-numeric: tabular-nums; }
+.freq-picker-btn .mode-switch-caret { margin-left: auto; }

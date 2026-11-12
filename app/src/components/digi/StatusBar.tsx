@@ -208,7 +208,7 @@ export function DigiStatusBar(p: Props) {
         </button>
       ) : null}
       {p.measures ? (
-        <span className="digi-st digi-st--info" title={t('digi.st.measures')}>
+        <span className="digi-st digi-st--info digi-st--measures" title={t('digi.st.measures')}>
           {p.measures}
         </span>
       ) : null}

@@ -823,8 +823,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           label: m.name,
           checked: s.mode === m.id,
           onSelect: () => {
+            // la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso, non scegliendo il modo
             if (s.mode !== m.id) save({ mode: m.id as DigiSettings['mode'] });
-            if (m.id === 'rtty') setRttyOpen(true);
           },
         })),
         'sep' as const,
