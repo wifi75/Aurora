@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'fixed',
     title: [
       'Aurora parte anche su Windows 10 più vecchi',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'changed',
     title: [
       'PSK · RTTY · CW: trasmissione più chiara',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'changed',
     title: [
       'SSTV: Trasmetti in cima e cronologie a strisce',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'new',
     title: [
       'Log: correggere e cancellare un QSO (#47)',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'changed',
     title: [
       'Pannello Segnali: Controllo, Pulisci e altezza (#50)',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'fixed',
     title: [
       'DX Cluster: commento intero sulla cella',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.242',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T21:02:05Z',
     kind: 'fixed',
     title: [
       'Avvisi della stazione meno invadenti',
