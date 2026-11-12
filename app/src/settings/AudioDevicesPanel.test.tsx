@@ -9,6 +9,7 @@ vi.mock('../api/client', async (original) => {
 });
 import { ApiError, getAudioDevices, putAudioSettings, type AudioDevices, type AudioResult } from '../api/client';
 import { AudioDevicesPanel } from './AudioDevicesPanel';
+import { useEngineOs } from '../i18n';
 
 function render(ui: ReactElement) {
   return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
@@ -32,6 +33,7 @@ const part = (status: AudioResult['input']['status'], in_use: string | null = nu
 
 describe('AudioDevicesPanel', () => {
   beforeEach(() => {
+    useEngineOs.setState({ os: 'windows' });
     vi.mocked(getAudioDevices).mockReset().mockResolvedValue(devices);
     vi.mocked(putAudioSettings).mockReset();
   });
@@ -97,6 +99,37 @@ describe('AudioDevicesPanel', () => {
     expect(await screen.findByText('Solo dal PC di casa.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Aggiorna elenco' }));
     await waitFor(() => expect(getAudioDevices).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows why the input or the output did not open, as the system says it', async () => {
+    vi.mocked(getAudioDevices).mockResolvedValue({
+      ...devices,
+      input_in_use: null,
+      output_in_use: null,
+      input_error: "ingresso audio non aperto (occupato da un'altra applicazione?): PCM2901: 48000 Hz, 2 canali, I16, buffer 1920 campioni: Device busy",
+      output_error: 'PCM2901: uscita non aperta: Device busy',
+    });
+    render(<AudioDevicesPanel />);
+    expect(await screen.findByText(/L’ingresso non si è aperto: .*48000 Hz, 2 canali, I16.*Device busy/)).toBeInTheDocument();
+    expect(screen.getByText('L’uscita non si è aperta: PCM2901: uscita non aperta: Device busy')).toBeInTheDocument();
+  });
+
+  it('with the engine on Linux no text names Windows: the volume is the one of the system mixer', async () => {
+    useEngineOs.setState({ os: 'linux' });
+    vi.mocked(getAudioDevices).mockResolvedValue({
+      ...devices,
+      inputs: [{ name: 'PCM2901 Audio Codec Analog Stereo', channels: 2, is_default: true }],
+      outputs: [{ name: 'PCM2901 Audio Codec Analog Stereo', channels: 2, is_default: true }],
+      input_in_use: 'PCM2901 Audio Codec Analog Stereo',
+      output_in_use: 'PCM2901 Audio Codec Analog Stereo',
+    });
+    const { container } = render(<AudioDevicesPanel />);
+    // i canali sono quelli con cui il dispositivo si apre (stereo), non i 31 dichiarati dal server audio
+    expect((await screen.findAllByRole('option', { name: 'PCM2901 Audio Codec Analog Stereo · stereo · in uso' })).length).toBe(2);
+    // il volume non si legge (nelle prove come su Linux per l'ingresso): il testo manda al mixer del sistema
+    expect((await screen.findAllByText('Il volume di questo dispositivo si regola dal mixer audio del sistema.')).length).toBeGreaterThan(0);
+    expect(container.textContent).not.toMatch(/Windows/);
+    expect(container.innerHTML).not.toMatch(/Windows/);
   });
 
   it('without a running input it says so and offers the saved choice', async () => {

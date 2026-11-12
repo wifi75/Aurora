@@ -2055,6 +2055,8 @@ async fn audio_devices(State(state): State<AppState>, _: Authed) -> Result<Json<
         "input_in_use": devices.input_in_use,
         "output_in_use": devices.output_in_use,
         "output_pending": devices.output_pending,
+        "input_error": devices.input_error,
+        "output_error": devices.output_error,
         "default_save_dir": devices.default_save_dir,
         "system_default": crate::audio_api::SYSTEM_DEFAULT,
         "values": audio_values_json(&store.audio()),

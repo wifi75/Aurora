@@ -1630,7 +1630,7 @@ cat.line.high,High,Hoog
 cat.line.low,Low,Laag
 cat.civ,CI-V address (Icom),CI-V-adres (Icom)
 cat.civ.hex,"{dec} = {hex}h. Icom manuals give the address in hexadecimal: if the manual says {dec}h, enter {asDec} here. With 0 the model’s factory address is used.","{dec} = {hex}h. Icom-handleidingen geven het adres hexadecimaal: staat er {dec}h in de handleiding, vul hier dan {asDec} in. Met 0 geldt het fabrieksadres van het model."
-cat.civ.useHex,Use {asDec} ({dec}h),"Gebruik {asDec} ({dec}h)"
+cat.civ.useHex,Use {asDec} ({dec}h),Gebruik {asDec} ({dec}h)
 tip.cat.civ,0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).,0 = de fabriekswaarde van het model (bijvoorbeeld 148 = 0x94 voor de IC-7300).
 cat.ptt.method,PTT method,PTT-methode
 tip.cat.ptt,"CAT: the PTT goes over the command cable. DTR or RTS: a serial port line. VOX: no command, the radio transmits when it hears audio.","CAT: de PTT loopt via de commandokabel. DTR of RTS: een lijn van de seriële poort. VOX: geen commando, de zender zendt wanneer hij audio hoort."
@@ -2444,6 +2444,8 @@ aud.chMany,{n} channels,{n} kanalen
 aud.inUse,in use,in gebruik
 aud.nowIn,In use now: {name},Nu in gebruik: {name}
 aud.nowInNone,No input active: the waterfall and the decoder are stopped. Choose a device and press Apply.,Geen ingang actief: de waterval en de decoder staan stil. Kies een apparaat en druk op Toepassen.
+aud.lastErr.in,The input did not open: {reason},De ingang is niet geopend: {reason}
+aud.lastErr.out,The output did not open: {reason},De uitgang is niet geopend: {reason}
 aud.nowOut,Transmitting on: {name},Zenden op: {name}
 aud.nowOutNone,Transmission not active (no output opened at startup): the choice is saved and applies from the next start.,Zenden niet actief (bij het opstarten is geen uitgang geopend): de keuze wordt opgeslagen en geldt vanaf de volgende start.
 aud.nextOut,From the next transmission: {name},Vanaf de volgende zending: {name}
@@ -4725,6 +4727,20 @@ jxh.Ftol_JT65,"JT65: frequency tolerance around Rx, used by «Single decode» an
 jxh.Ftol_JT9,"JT9: the window around Rx tried first, with lower thresholds. Like WSJT-X «F Tol»; default 50 Hz.","JT9: het venster rond Rx dat eerst wordt geprobeerd, met lagere drempels. Zoals «F Tol» in WSJT-X; standaard 50 Hz."
 jxh.Ftol_MSK144,MSK144: how far from Rx the pings are searched (20 to 500 Hz). Like WSJT-X «F Tol»; default 50 Hz.,MSK144: hoe ver van Rx de pings worden gezocht (20 tot 500 Hz). Zoals «F Tol» in WSJT-X; standaard 50 Hz.
 jxh.Ftol_Q65,"Q65: the window around Rx where the best signal, the QSO list and the average are always tried. Like WSJT-X «F Tol»; default 50 Hz.","Q65: het venster rond Rx waarin het beste signaal, de QSO-lijst en het gemiddelde altijd worden geprobeerd. Zoals «F Tol» in WSJT-X; standaard 50 Hz."
+rxl.volume.sys,System recording volume,Opnamevolume van het systeem
+rxl.volume.value.sys,{pct} % of the system recording volume ({device}),{pct} % van het opnamevolume van het systeem ({device})
+rxl.hint.silent.sys,"No signal for too long: check the cable, the chosen device and the recording volume in the system audio mixer.","Te lang geen signaal: controleer de kabel, het gekozen apparaat en het opnamevolume in de audiomixer van het systeem."
+rxl.hint.overdrive.sys,Input overdriven: signals distort and decodes get worse. Lower the recording volume in the system audio mixer or the radio audio level.,Ingang overstuurd: signalen vervormen en het decoderen verslechtert. Verlaag het opnamevolume in de audiomixer van het systeem of het audioniveau van de radio.
+diag.audio.silent.sys,"The audio input has been silent for too long: check the cable, the chosen device and the recording volume in the system audio mixer.","De audio-ingang is te lang stil geweest: controleer de kabel, het gekozen apparaat en het opnamevolume in de audiomixer van het systeem."
+jxh.SoundOutName.sys,The sound card that sends the signal to the radio to transmit. The Pwr slider lowers the generated signal; the output volume is set once in the system audio mixer.,De geluidskaart die het signaal naar de radio stuurt om te zenden. De schuifregelaar Pwr verlaagt het opgewekte signaal; het volume van de uitgang stel je één keer in de audiomixer van het systeem in.
+tip.snd.volume.sys,"Volume of all of Aurora’s sounds, without touching the system volume.","Volume van alle geluiden van Aurora, zonder het systeemvolume aan te raken."
+ens.audio.help.sys,Input and output are chosen here and are kept after a restart. The input level is set from the system audio mixer.,Ingang en uitgang kies je hier en blijven na een herstart bewaard. Het ingangsniveau stel je in via de audiomixer van het systeem.
+aud.vol.in.sys,Recording volume (system),Opnamevolume (systeem)
+aud.vol.out.sys,Transmit level (Pwr),Zendniveau (Pwr)
+tip.aud.vol.in.sys,"The recording volume of this input in the system, the same as in the system audio mixer.","Het opnamevolume van deze ingang in het systeem, hetzelfde als in de audiomixer van het systeem."
+tip.aud.vol.out.sys,The transmit Pwr level (the same slider as in the Transmit panel): it lowers the signal Aurora generates. The output volume is set once in the system audio mixer.,Het zendniveau Pwr (dezelfde schuifregelaar als in het Zendpaneel): het verlaagt het signaal dat Aurora opwekt. Het volume van de uitgang stel je één keer in de audiomixer van het systeem in.
+aud.vol.off.sys,The volume of this device is set from the system audio mixer.,Het volume van dit apparaat stel je in via de audiomixer van het systeem.
+tip.aud.input.sys,"The device that feeds the waterfall, the decoder and the input level. “System default” follows the one chosen in the system sound settings.","Het apparaat dat de waterval, de decoder en het ingangsniveau voedt. “Systeemstandaard” volgt het apparaat dat in de geluidsinstellingen van het systeem is gekozen."
 t.39j8oqw3rh,Getting started,Aan de slag
 t.7noy6nyclb,Installing Aurora,Aurora installeren
 t.vc90to0r5k,Aurora runs on Windows; install it once and it then updates itself.,Aurora draait op Windows; installeer het één keer en daarna werkt het zichzelf bij.

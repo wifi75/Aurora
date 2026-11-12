@@ -1066,6 +1066,9 @@ export interface AudioDevices {
   output_in_use: string | null;
   /** Un'uscita nuova gia' aperta che subentra alla fine della trasmissione in corso. */
   output_pending: string | null;
+  /** L'ultimo errore di apertura dell'ingresso e dell'uscita, come lo da' il sistema (`null` se si sono aperti). */
+  input_error?: string | null;
+  output_error?: string | null;
   default_save_dir: string;
   /** Il valore che vuol dire «predefinito del sistema». */
   system_default: string;

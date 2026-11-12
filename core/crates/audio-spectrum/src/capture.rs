@@ -1,6 +1,6 @@
 use std::{
     sync::{
-        atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering},
+        atomic::{AtomicBool, AtomicU8, Ordering},
         mpsc, Arc,
     },
     thread::JoinHandle,
@@ -10,6 +10,8 @@ use std::{
 use aurora_core::{AudioLevel, Event, SpectrumRow};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tokio::sync::broadcast;
+
+use aurora_core::audio_format::{buffer_candidates, channels_in_use, stream_candidates, StreamChoice, StreamRange};
 
 use crate::{channel::pick_channel, AnalyzerError, InputChannel, LevelMeter, SpectrumAnalyzer, F_MAX_HZ};
 
@@ -67,7 +69,7 @@ pub fn list_input_devices() -> Vec<String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InputDeviceInfo {
     pub name: String,
-    /// Il numero massimo di canali che il dispositivo offre (1 = mono, 2 = stereo).
+    /// I canali con cui Aurora apre l'ingresso (1 = mono, 2 = stereo).
     pub channels: u16,
     /// E' l'ingresso predefinito del sistema.
     pub is_default: bool,
@@ -78,14 +80,24 @@ pub fn list_input_devices_info() -> Vec<InputDeviceInfo> {
     let host = cpal::default_host();
     let default = host.default_input_device().map(|d| device_name(&d));
     let Ok(devices) = host.input_devices() else { return Vec::new() };
-    devices
+    let mut list: Vec<(bool, InputDeviceInfo)> = devices
         .map(|d| {
             let name = device_name(&d);
-            let from_ranges = d.supported_input_configs().ok().and_then(|it| it.map(|c| c.channels()).max());
-            let channels = from_ranges.or_else(|| d.default_input_config().ok().map(|c| c.channels())).unwrap_or(1);
-            InputDeviceInfo { is_default: default.as_deref() == Some(name.as_str()), name, channels }
+            // i canali con cui l'ingresso si apre davvero, non il massimo dichiarato (PulseAudio e PipeWire dichiarano fino a 31 canali per ogni scheda)
+            let channels = channels_in_use(default_choice(&d).ok().as_ref().map(as_choice), &as_ranges(&declared_ranges(&d)), &INPUT_FORMATS);
+            let monitor = d.id().is_ok_and(|id| is_monitor_id(id.id()));
+            (monitor, InputDeviceInfo { is_default: default.as_deref() == Some(name.as_str()), name, channels })
         })
-        .collect()
+        .collect();
+    // Linux: le sorgenti «Monitor of …» di PulseAudio e PipeWire ascoltano cio' che esce da un'uscita, non la radio. Restano scegliibili ma in
+    // fondo all'elenco, dopo le schede vere: chi prova le voci una alla volta trova prima quella giusta
+    list.sort_by_key(|(monitor, _)| *monitor);
+    list.into_iter().map(|(_, info)| info).collect()
+}
+
+/// L'identificativo e' di una sorgente «monitor» di PulseAudio o PipeWire (`alsa_output.….monitor`): l'ascolto di un'uscita, non un ingresso vero.
+fn is_monitor_id(id: &str) -> bool {
+    id.trim().to_ascii_lowercase().ends_with(".monitor")
 }
 
 /// Il nome vuol dire «il dispositivo predefinito del sistema» (anche come lo scrivevano JTDX e le versioni vecchie di Aurora)?
@@ -255,44 +267,16 @@ pub fn run_capture_tapped(
 }
 
 /// Come [`run_capture_tapped`] con il canale scelto (`channel` si puo' cambiare mentre l'ingresso e' aperto: vale dal blocco dopo).
+///
+/// Il formato con cui si apre non e' il massimo che il dispositivo dichiara ma quello con cui lavora (uno o due canali); se non si apre si provano
+/// stereo a 48 kHz, stereo a 44,1 kHz e mono (vedi `aurora_core::audio_format`), ognuno prima con un buffer piu' largo del predefinito (regge i
+/// rallentamenti del PC senza perdere campioni) e poi con quello del sistema. Ogni tentativo fallito resta nel registro con il suo errore.
 pub fn run_capture_with(
     device_hint: Option<&str>,
     channel: Arc<AtomicU8>,
     rows: broadcast::Sender<SpectrumRow>,
     events: broadcast::Sender<Event>,
     tap: Option<mpsc::Sender<AudioChunk>>,
-) -> Result<CaptureHandle, CaptureError> {
-    // prima con un buffer piu' largo del predefinito (regge i rallentamenti del PC senza perdere campioni); se la scheda lo rifiuta, come prima
-    match run_capture_inner(device_hint, Arc::clone(&channel), rows.clone(), events.clone(), tap.clone(), true) {
-        Err(CaptureError::Stream(why)) => {
-            tracing::info!("ingresso audio: buffer piu' largo non accettato ({why}), si riprova con quello predefinito");
-            run_capture_inner(device_hint, channel, rows, events, tap, false)
-        }
-        other => other,
-    }
-}
-
-/// Il buffer della cattura che si chiede alla scheda: circa 40 ms. Il predefinito della modalita' condivisa di Windows (10 ms) basta un attimo a svuotarsi
-/// se il PC e' impegnato (blocchi persi, causa `Xrun`); WSJT-X lo allarga in Full Duplex per lo stesso motivo (`RxAudioBufferPolicy.hpp`, 1 s lo' dove serve).
-/// Resta piccolo perche' l'ora di arrivo dei blocchi guida i periodi.
-const WIDER_BUFFER_MS: u32 = 40;
-
-fn stream_config(supported: &cpal::SupportedStreamConfig, wider: bool) -> cpal::StreamConfig {
-    let mut config: cpal::StreamConfig = (*supported).into();
-    if wider && let cpal::SupportedBufferSize::Range { min, max } = supported.buffer_size() {
-        let frames = supported.sample_rate() / 1000 * WIDER_BUFFER_MS;
-        config.buffer_size = cpal::BufferSize::Fixed(frames.clamp(*min, *max));
-    }
-    config
-}
-
-fn run_capture_inner(
-    device_hint: Option<&str>,
-    channel: Arc<AtomicU8>,
-    rows: broadcast::Sender<SpectrumRow>,
-    events: broadcast::Sender<Event>,
-    tap: Option<mpsc::Sender<AudioChunk>>,
-    wider: bool,
 ) -> Result<CaptureHandle, CaptureError> {
     let host = cpal::default_host();
     let device = match device_hint.filter(|h| !is_default_name(h)) {
@@ -308,13 +292,11 @@ fn run_capture_inner(
     };
     let name = device_name(&device);
     let name_for_handle = name.clone();
-    let supported = device.default_input_config().map_err(|e| CaptureError::Config(format!("{name}: {e}")))?;
-    let rate = supported.sample_rate();
-    let channels = usize::from(supported.channels()).max(1);
-    let format = supported.sample_format();
-    let config = stream_config(&supported, wider);
-    let mut analyzer = SpectrumAnalyzer::new(rate).map_err(CaptureError::Analyzer)?;
-    let mut meter = LevelMeter::new(rate);
+    let (plan, default_error) = input_plan(&device);
+    if plan.is_empty() {
+        let why = default_error.unwrap_or_else(|| "nessun formato utilizzabile (uno o due canali, 44,1 o 48 kHz)".into());
+        return Err(CaptureError::Config(format!("{name}: {why}")));
+    }
 
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = Arc::clone(&stop);
@@ -324,136 +306,46 @@ fn run_capture_inner(
 
     // lo stream non e' `Send` su tutte le piattaforme: vive e muore nel thread che lo crea
     let thread = std::thread::spawn(move || {
-        let (chunks_tx, chunks_rx) = mpsc::channel::<Vec<f32>>();
-        // i buffer tornano indietro dopo l'uso: nel thread audio niente allocazioni a ogni blocco (rallentano e fanno perdere campioni)
-        let (free_tx, free_rx) = mpsc::channel::<Vec<f32>>();
-        // Un buffer perso ogni tanto e' normale (USB, carico del PC): lascia un buco di pochi ms nella cascata.
-        // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
-        let glitches = Arc::new(AtomicU64::new(0));
-        let started = std::time::Instant::now();
         // un flusso che smette di dare audio senza segnalare errori (scheda in pausa, driver bloccato) si da' per perso: il controllo ogni 5 s lo
         // riapre e avvisa, come `soundin.cpp` di WSJT-X tratta Idle/Suspended/Interrupted. Prima la cascata restava ferma in silenzio
         let stalled = Arc::clone(&lost_thread);
         // dettagli per capire il problema dal rapporto: tipo di scheda (non il nome, che puo' dire chi e'), formato e ritmo delle perdite
         let kind = device_kind(&name);
-        let detail = format!("ingresso {kind}, {rate} Hz, {channels} canali, {format:?}");
-        let on_error = move |e: cpal::Error| {
-            let n = glitches.fetch_add(1, Ordering::Relaxed) + 1;
-            tracing::debug!("errore del flusso audio: {e}");
-            let cause = format!("{:?}", e.kind());
-            if matches!(e.kind(), cpal::ErrorKind::DeviceNotAvailable | cpal::ErrorKind::StreamInvalidated | cpal::ErrorKind::HostUnavailable) {
-                lost_thread.store(true, Ordering::SeqCst);
-            }
-            let minutes = started.elapsed().as_secs_f64() / 60.0;
-            let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };
-            // tante perdite di fila: si dice sullo schermo cosa controllare (l'avviso non si ripete per due minuti)
-            if n >= 20 && per_min >= 5.0 {
-                aurora_core::notice::notice("audio_loss", format!("{per_min:.0}"));
-            }
-            // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
-            if is_power_of_ten(n) {
-                if n >= 100 {
-                    tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte in {minutes:.0} min, {per_min:.1} al minuto, causa: {cause}; {detail}): la cascata resta attiva");
-                } else {
-                    tracing::info!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+        let mut failures: Vec<String> = Vec::new();
+        let mut open: Option<OpenInput> = None;
+        'plan: for attempt in &plan {
+            let StreamChoice { channels, rate, format } = attempt.choice;
+            let (analyzer, meter) = match SpectrumAnalyzer::new(rate) {
+                Ok(analyzer) => (analyzer, LevelMeter::new(rate)),
+                Err(e) => {
+                    failures.push(format!("{rate} Hz: {e}"));
+                    continue;
+                }
+            };
+            for frames in buffer_candidates(rate, WIDER_BUFFER_MS, attempt.buffer_limits, true) {
+                let config = cpal::StreamConfig { channels, sample_rate: rate, buffer_size: frames.map_or(cpal::BufferSize::Default, cpal::BufferSize::Fixed) };
+                let what = describe_format(rate, channels, format, frames);
+                let detail = format!("ingresso {kind}, {rate} Hz, {channels} canali, {format:?}");
+                let built = build_input(&device, format, config, &channel, input_error_handler(Arc::clone(&lost_thread), detail))
+                    .and_then(|(stream, chunks, free)| stream.play().map(|()| (stream, chunks, free)).map_err(|e| e.to_string()));
+                match built {
+                    Ok((stream, chunks, free)) => {
+                        tracing::info!("ingresso audio \"{name}\" aperto: {what}");
+                        open = Some(OpenInput { stream, chunks, free, rate, analyzer, meter });
+                        break 'plan;
+                    }
+                    Err(e) => {
+                        tracing::info!("ingresso audio \"{name}\": {what} non accettato ({e}), si prova il formato seguente");
+                        failures.push(format!("{what}: {e}"));
+                    }
                 }
             }
-        };
-        let mut free_rx_slot = Some(free_rx);
-        let built = match format {
-            cpal::SampleFormat::F32 => {
-                let tx = chunks_tx.clone();
-                let channel = Arc::clone(&channel);
-                let free = free_rx_slot.take();
-                device.build_input_stream(
-                    config,
-                    move |data: &[f32], _| {
-                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
-                        mono.clear();
-                        pick_channel(data, channels, InputChannel::load(&channel), &mut mono);
-                        let _ = tx.send(mono);
-                    },
-                    on_error,
-                    None,
-                )
-            }
-            cpal::SampleFormat::I16 => {
-                let tx = chunks_tx.clone();
-                let channel = Arc::clone(&channel);
-                let free = free_rx_slot.take();
-                let mut floats: Vec<f32> = Vec::new();
-                device.build_input_stream(
-                    config,
-                    move |data: &[i16], _| {
-                        floats.clear();
-                        floats.extend(data.iter().map(|&s| f32::from(s) / 32768.0));
-                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
-                        mono.clear();
-                        pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
-                        let _ = tx.send(mono);
-                    },
-                    on_error,
-                    None,
-                )
-            }
-            // 24 e 32 bit: alcune schede in modalita' condivisa di Windows espongono solo questi (WSJT-X chiede 16 bit e converte Qt); prima la
-            // scheda non si apriva («formato campioni non gestito»)
-            cpal::SampleFormat::I24 => {
-                let tx = chunks_tx.clone();
-                let channel = Arc::clone(&channel);
-                let free = free_rx_slot.take();
-                let mut floats: Vec<f32> = Vec::new();
-                device.build_input_stream(
-                    config,
-                    move |data: &[cpal::I24], _| {
-                        floats.clear();
-                        floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
-                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
-                        mono.clear();
-                        pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
-                        let _ = tx.send(mono);
-                    },
-                    on_error,
-                    None,
-                )
-            }
-            cpal::SampleFormat::I32 => {
-                let tx = chunks_tx.clone();
-                let channel = Arc::clone(&channel);
-                let free = free_rx_slot.take();
-                let mut floats: Vec<f32> = Vec::new();
-                device.build_input_stream(
-                    config,
-                    move |data: &[i32], _| {
-                        floats.clear();
-                        floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
-                        let mut mono = free.as_ref().and_then(|f| f.try_recv().ok()).unwrap_or_default();
-                        mono.clear();
-                        pick_channel(&floats, channels, InputChannel::load(&channel), &mut mono);
-                        let _ = tx.send(mono);
-                    },
-                    on_error,
-                    None,
-                )
-            }
-            other => {
-                let _ = ready_tx.send(Err(CaptureError::Config(format!("{name}: formato campioni non gestito: {other:?}"))));
-                return;
-            }
-        };
-        let stream = match built {
-            Ok(s) => s,
-            Err(e) => {
-                let _ = ready_tx.send(Err(CaptureError::Stream(format!("{name}: {e}"))));
-                return;
-            }
-        };
-        if let Err(e) = stream.play() {
-            let _ = ready_tx.send(Err(CaptureError::Stream(format!("{name}: {e}"))));
-            return;
         }
+        let Some(OpenInput { stream, chunks: chunks_rx, free: free_tx, rate, mut analyzer, mut meter }) = open else {
+            let _ = ready_tx.send(Err(CaptureError::Stream(format!("{name}: {}", failures.join("; ")))));
+            return;
+        };
         let _ = ready_tx.send(Ok(()));
-        tracing::info!("cascata dall'ingresso audio \"{name}\" a {rate} Hz");
 
         let mut seq = 0u64;
         let mut last_chunk = std::time::Instant::now();
@@ -495,6 +387,178 @@ fn run_capture_inner(
     }
 }
 
+/// Il buffer della cattura che si chiede alla scheda: circa 40 ms. Il predefinito della modalita' condivisa di Windows (10 ms) basta un attimo a svuotarsi
+/// se il PC e' impegnato (blocchi persi, causa `Xrun`); WSJT-X lo allarga in Full Duplex per lo stesso motivo (`RxAudioBufferPolicy.hpp`, 1 s lo' dove serve).
+/// Resta piccolo perche' l'ora di arrivo dei blocchi guida i periodi.
+const WIDER_BUFFER_MS: u32 = 40;
+
+/// I tipi di campioni che l'ingresso sa leggere, dal preferito.
+const INPUT_FORMATS: [cpal::SampleFormat; 4] = [cpal::SampleFormat::F32, cpal::SampleFormat::I16, cpal::SampleFormat::I32, cpal::SampleFormat::I24];
+
+type InputStream = <cpal::Device as DeviceTrait>::Stream;
+
+/// Un formato da provare, con i limiti del buffer che il dispositivo dichiara per quel formato.
+struct InputAttempt {
+    choice: StreamChoice<cpal::SampleFormat>,
+    buffer_limits: Option<(u32, u32)>,
+}
+
+/// L'ingresso aperto e cio' che serve per leggerlo.
+struct OpenInput {
+    stream: InputStream,
+    /// I blocchi di audio (mono) che arrivano dalla scheda.
+    chunks: mpsc::Receiver<Vec<f32>>,
+    /// I buffer usati tornano al thread audio.
+    free: mpsc::Sender<Vec<f32>>,
+    rate: u32,
+    analyzer: SpectrumAnalyzer,
+    meter: LevelMeter,
+}
+
+fn describe_format(rate: u32, channels: u16, format: cpal::SampleFormat, frames: Option<u32>) -> String {
+    let buffer = frames.map_or_else(|| "buffer del sistema".to_string(), |n| format!("buffer {n} campioni"));
+    format!("{rate} Hz, {channels} canali, {format:?}, {buffer}")
+}
+
+fn buffer_limits(size: &cpal::SupportedBufferSize) -> Option<(u32, u32)> {
+    match size {
+        cpal::SupportedBufferSize::Range { min, max } => Some((*min, *max)),
+        cpal::SupportedBufferSize::Unknown => None,
+    }
+}
+
+fn default_choice(device: &cpal::Device) -> Result<cpal::SupportedStreamConfig, String> {
+    device.default_input_config().map_err(|e| e.to_string())
+}
+
+fn declared_ranges(device: &cpal::Device) -> Vec<cpal::SupportedStreamConfigRange> {
+    device.supported_input_configs().map(|it| it.collect()).unwrap_or_default()
+}
+
+fn as_ranges(ranges: &[cpal::SupportedStreamConfigRange]) -> Vec<StreamRange<cpal::SampleFormat>> {
+    ranges.iter().map(|r| StreamRange { channels: r.channels(), min_rate: r.min_sample_rate(), max_rate: r.max_sample_rate(), format: r.sample_format() }).collect()
+}
+
+fn as_choice(config: &cpal::SupportedStreamConfig) -> StreamChoice<cpal::SampleFormat> {
+    StreamChoice { channels: config.channels(), rate: config.sample_rate(), format: config.sample_format() }
+}
+
+/// I formati con cui provare ad aprire l'ingresso, nell'ordine (vedi `aurora_core::audio_format`), e l'errore del formato predefinito se manca.
+fn input_plan(device: &cpal::Device) -> (Vec<InputAttempt>, Option<String>) {
+    let default = default_choice(device);
+    let ranges = declared_ranges(device);
+    let candidates = stream_candidates(default.as_ref().ok().map(as_choice), &as_ranges(&ranges), &INPUT_FORMATS);
+    let plan = candidates
+        .into_iter()
+        .map(|choice| {
+            let from_default = default.as_ref().ok().filter(|d| as_choice(d) == choice).map(|d| buffer_limits(d.buffer_size()));
+            let from_ranges = || {
+                ranges
+                    .iter()
+                    .find(|r| r.channels() == choice.channels && r.sample_format() == choice.format && r.min_sample_rate() <= choice.rate && choice.rate <= r.max_sample_rate())
+                    .and_then(|r| buffer_limits(r.buffer_size()))
+            };
+            InputAttempt { choice, buffer_limits: from_default.unwrap_or_else(from_ranges) }
+        })
+        .collect();
+    (plan, default.err())
+}
+
+/// Cosa fare quando il flusso segnala un errore mentre riceve.
+fn input_error_handler(lost: Arc<AtomicBool>, detail: String) -> impl FnMut(cpal::Error) + Send + 'static {
+    // Un buffer perso ogni tanto e' normale (USB, carico del PC): lascia un buco di pochi ms nella cascata.
+    // Si segnala solo la prima volta e poi a potenze di dieci, per non riempire il registro.
+    let mut glitches = 0u64;
+    let started = std::time::Instant::now();
+    move |e: cpal::Error| {
+        glitches += 1;
+        let n = glitches;
+        tracing::debug!("errore del flusso audio: {e}");
+        let cause = format!("{:?}", e.kind());
+        if matches!(e.kind(), cpal::ErrorKind::DeviceNotAvailable | cpal::ErrorKind::StreamInvalidated | cpal::ErrorKind::HostUnavailable) {
+            lost.store(true, Ordering::SeqCst);
+        }
+        let minutes = started.elapsed().as_secs_f64() / 60.0;
+        let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };
+        // tante perdite di fila: si dice sullo schermo cosa controllare (l'avviso non si ripete per due minuti)
+        if n >= 20 && per_min >= 5.0 {
+            aurora_core::notice::notice("audio_loss", format!("{per_min:.0}"));
+        }
+        // poche perdite sono normali (USB, PC carico): nel registro come informazione; diventano un avviso (e un rapporto) solo se frequenti
+        if is_power_of_ten(n) {
+            if n >= 100 {
+                tracing::warn!("l'audio ha perso un blocco di campioni ({n} volte in {minutes:.0} min, {per_min:.1} al minuto, causa: {cause}; {detail}): la cascata resta attiva");
+            } else {
+                tracing::info!("l'audio ha perso un blocco di campioni ({n} volte finora): la cascata resta attiva");
+            }
+        }
+    }
+}
+
+/// Manda al resto di Aurora un blocco arrivato dalla scheda: sceglie il canale e riusa un buffer gia' allocato (nel thread audio niente
+/// allocazioni a ogni blocco: rallentano e fanno perdere campioni).
+fn deliver(data: &[f32], channels: usize, channel: &AtomicU8, free: &mpsc::Receiver<Vec<f32>>, tx: &mpsc::Sender<Vec<f32>>) {
+    let mut mono = free.try_recv().unwrap_or_default();
+    mono.clear();
+    pick_channel(data, channels, InputChannel::load(channel), &mut mono);
+    let _ = tx.send(mono);
+}
+
+/// Il flusso appena costruito, il canale da cui leggere i blocchi e quello per restituire i buffer usati.
+type BuiltInput = (InputStream, mpsc::Receiver<Vec<f32>>, mpsc::Sender<Vec<f32>>);
+
+/// Costruisce il flusso con questo formato (ancora fermo: lo avvia chi chiama) e da' il canale da cui leggere i blocchi e quello per restituire i buffer.
+fn build_input(
+    device: &cpal::Device,
+    format: cpal::SampleFormat,
+    config: cpal::StreamConfig,
+    channel: &Arc<AtomicU8>,
+    on_error: impl FnMut(cpal::Error) + Send + 'static,
+) -> Result<BuiltInput, String> {
+    let channels = usize::from(config.channels).max(1);
+    let (tx, chunks_rx) = mpsc::channel::<Vec<f32>>();
+    let (free_tx, free) = mpsc::channel::<Vec<f32>>();
+    let channel = Arc::clone(channel);
+    let mut floats: Vec<f32> = Vec::new();
+    let built = match format {
+        cpal::SampleFormat::F32 => device.build_input_stream(config, move |data: &[f32], _| deliver(data, channels, &channel, &free, &tx), on_error, None),
+        cpal::SampleFormat::I16 => device.build_input_stream(
+            config,
+            move |data: &[i16], _| {
+                floats.clear();
+                floats.extend(data.iter().map(|&s| f32::from(s) / 32768.0));
+                deliver(&floats, channels, &channel, &free, &tx);
+            },
+            on_error,
+            None,
+        ),
+        // 24 e 32 bit: alcune schede in modalita' condivisa di Windows espongono solo questi (WSJT-X chiede 16 bit e converte Qt); prima la
+        // scheda non si apriva («formato campioni non gestito»)
+        cpal::SampleFormat::I24 => device.build_input_stream(
+            config,
+            move |data: &[cpal::I24], _| {
+                floats.clear();
+                floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
+                deliver(&floats, channels, &channel, &free, &tx);
+            },
+            on_error,
+            None,
+        ),
+        cpal::SampleFormat::I32 => device.build_input_stream(
+            config,
+            move |data: &[i32], _| {
+                floats.clear();
+                floats.extend(data.iter().map(|&s| <f32 as cpal::Sample>::from_sample(s)));
+                deliver(&floats, channels, &channel, &free, &tx);
+            },
+            on_error,
+            None,
+        ),
+        other => return Err(format!("formato campioni non gestito: {other:?}")),
+    };
+    built.map(|stream| (stream, chunks_rx, free_tx)).map_err(|e| e.to_string())
+}
+
 fn publish_level(events: &broadcast::Sender<Event>, level: AudioLevel) {
     // senza ascoltatori l'invio fallisce: e' normale
     let _ = events.send(Event::AudioLevel(level));
@@ -502,7 +566,14 @@ fn publish_level(events: &broadcast::Sender<Event>, level: AudioLevel) {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_power_of_ten, match_device_name};
+    use super::{is_monitor_id, is_power_of_ten, match_device_name};
+
+    #[test]
+    fn a_monitor_source_is_recognised_by_its_identifier() {
+        assert!(is_monitor_id("alsa_output.usb-Burr-Brown_from_TI_USB_Audio_CODEC-00.analog-stereo.monitor"));
+        assert!(!is_monitor_id("alsa_input.usb-Burr-Brown_from_TI_USB_Audio_CODEC-00.analog-stereo"));
+        assert!(!is_monitor_id("Microfono (USB Audio CODEC )"));
+    }
 
     #[test]
     fn an_exact_name_wins_over_a_name_that_merely_contains_it() {

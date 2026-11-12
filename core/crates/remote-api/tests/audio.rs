@@ -24,6 +24,8 @@ impl AudioControl for FakeAudio {
             input_in_use: Some(self.input.lock().unwrap().clone()),
             output_in_use: Some("Altoparlanti USB".into()),
             output_pending: None,
+            input_error: None,
+            output_error: None,
             default_save_dir: "D:/dati/save".into(),
         }
     }
