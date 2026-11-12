@@ -10,6 +10,7 @@ import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
+import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
@@ -153,6 +154,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
   // il menu del tasto destro su una parola della finestra di ricezione
   const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
+  // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
+  const takeCall = useCallLookup(setQso);
   const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
   // il DX del QSO anche per il rotore staccato in una finestra a parte
   usePublishRotorDx(qso.call, qso.wwloc);
@@ -713,7 +716,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const pickWord = (target: WordTarget, word: string) => {
     if (target === 'copy') void navigator.clipboard?.writeText(word).catch(() => undefined);
     else if (target === 'rst') setSavedField({ rstr: word.toUpperCase() });
-    else if (target === 'call') setQso((q) => ({ ...q, call: word.toUpperCase() }));
+    else if (target === 'call') takeCall(word);
     else if (target === 'grid') setQso((q) => ({ ...q, wwloc: word.toUpperCase() }));
     else setQso((q) => ({ ...q, [target]: word }));
   };
@@ -931,6 +934,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               e.preventDefault();
               const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
               setWordMenu(word ? { word, x: e.clientX, y: e.clientY } : null);
+            }}
+            onDoubleClick={(e) => {
+              // doppio clic su un nominativo: nel QSO in corso (non salvato) con la ricerca
+              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+              if (word && isCallsign(word)) takeCall(word);
             }}>
             {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
           </pre>
