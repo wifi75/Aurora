@@ -5,13 +5,15 @@ Sorgenti liberi da cui Aurora riprende i modi nuovi (P2 in `docs/tasks.md`). Son
 | Cartella | Progetto | Versione presa | Licenza | Fonte |
 |---|---|---|---|---|
 | `qsstv` | QSSTV di Johan Maes ON4QZ: SSTV e DRM | commit `31c323c` del 2026-11-02 | GPL-3.0 | <https://github.com/ON4QZ/QSSTV> |
-| `fldigi` | fldigi di Dave Freese W1HKJ e altri: RTTY, PSK, CW, MFSK, Olivia, MT63, Hell... | tag `v4.2.13` del 2026-07-29 | GPL-3.0 | <https://git.code.sf.net/p/fldigi/fldigi> (la copia su GitHub e' ferma al 2022) | si prendono solo funzioni, parametri e comportamento (macro, pulsanti, pagine), mai codice: vedi `memory.md`.
+| `fldigi` | fldigi di Dave Freese W1HKJ e altri: RTTY, PSK, CW, MFSK, Olivia, MT63, Hell... | tag `v4.2.13` del 2026-07-29 | GPL-3.0 | <https://git.code.sf.net/p/fldigi/fldigi> (la copia su GitHub e' ferma al 2022) |
+| `mmtty` | MMTTY di Makoto Mori JE3HHT (manutenzione AA6YQ, JA7UDE): RTTY | 1.70L, commit `e2c1327` del 2017-07-30 (ramo `JA7UDE-1.70L`) | LGPL-3.0 | <https://github.com/n5ac/mmtty> | si prendono solo funzioni, parametri e comportamento (macro, pulsanti, pagine), mai codice: vedi `memory.md`.
 
 ## Scaricarli
 
 ```
 git submodule update --init terze-parti/qsstv
 git submodule update --init terze-parti/fldigi
+git submodule update --init terze-parti/mmtty
 ```
 
 Su Windows fldigi contiene il percorso `flarq_doxygen/user_src_doc/aux/` («aux» e' un nome riservato di Windows): dopo il primo errore si esclude quella cartella e si rifa' il checkout:

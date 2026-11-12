@@ -4,3 +4,6 @@
 [submodule "terze-parti/fldigi"]
 	path = terze-parti/fldigi
 	url = https://git.code.sf.net/p/fldigi/fldigi
+[submodule "terze-parti/mmtty"]
+	path = terze-parti/mmtty
+	url = https://github.com/n5ac/mmtty.git
