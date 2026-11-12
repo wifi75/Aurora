@@ -2,7 +2,9 @@
 //! («Could not find the webview runtime») e Aurora ripartiva e ricadeva in pochi secondi, piu' volte di fila: lo hanno mandato i
 //! rapporti del 2026-11-12 (Windows 10, sette crash in mezz'ora). L'installatore lo installa se manca, ma un aggiornamento o una
 //! pulizia di Windows possono lasciarlo registrato e rotto. Qui lo si controlla prima di aprire la finestra: se manca, un messaggio
-//! di Windows spiega cosa fare e porta al programma d'installazione di Microsoft, e Aurora si chiude senza crash.
+//! di Windows lo spiega e, con «Sì», Aurora scarica l'installazione di Microsoft, la apre (con la sua finestra di avanzamento, per
+//! l'utente di Windows, senza diritti di amministratore) e alla fine si riapre da sola; se lo scaricamento non riesce si apre la pagina
+//! di Microsoft nel browser. Aurora si chiude senza crash.
 
 /// Il programma d'installazione di WebView2 di Microsoft (lo stesso che usa l'installatore di Aurora).
 #[cfg(windows)]
@@ -15,10 +17,33 @@ pub fn ensure() -> bool {
     eprintln!("WebView2 non disponibile: {e}");
     let lang = crate::agent::ui_lang();
     let (title, text) = texts(lang);
-    if ask_yes_no(title, text) {
+    if ask_yes_no(title, text) && install_and_restart().is_err() {
         crate::links::open_in_browser(DOWNLOAD_URL);
     }
     false
+}
+
+/// Scarica il programma d'installazione di WebView2 di Microsoft nella cartella temporanea, lo apre e, quando ha finito, riapre Aurora.
+/// Lo fa uno script di PowerShell nascosto, perche' Aurora intanto si chiude; se lo scaricamento non riesce lo script apre la pagina
+/// di Microsoft nel browser.
+#[cfg(windows)]
+fn install_and_restart() -> std::io::Result<()> {
+    use std::os::windows::process::CommandExt;
+    let exe = std::env::current_exe().ok().and_then(|p| p.to_str().map(|s| s.replace('\'', "''"))).unwrap_or_default();
+    let script = format!(
+        "$ErrorActionPreference='Stop'; $f = Join-Path $env:TEMP 'MicrosoftEdgeWebview2Setup.exe'; \
+         try {{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+         Invoke-WebRequest -UseBasicParsing -Uri '{DOWNLOAD_URL}' -OutFile $f; \
+         Start-Process -FilePath $f -ArgumentList '/install' -Wait; \
+         if ('{exe}' -ne '') {{ Start-Process -FilePath '{exe}' }} }} \
+         catch {{ Start-Process '{DOWNLOAD_URL}' }}"
+    );
+    std::process::Command::new(crate::installer::powershell_exe())
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &script])
+        // nessuna finestra nera
+        .creation_flags(0x0800_0000)
+        .spawn()
+        .map(|_| ())
 }
 
 #[cfg(not(windows))]
@@ -32,27 +57,27 @@ fn texts(lang: usize) -> (&'static str, &'static str) {
     const ALL: [(&str, &str); 6] = [
         (
             "Aurora: manca WebView2",
-            "Aurora non può aprire la sua finestra: su questo PC manca Microsoft Edge WebView2, il componente di Windows con cui la disegna (oppure non funziona).\n\nVuoi scaricare ora l'installazione gratuita di Microsoft? Dopo averla installata, riapri Aurora.",
+            "Aurora non può aprire la sua finestra: su questo PC manca Microsoft Edge WebView2, il componente di Windows con cui la disegna (oppure non funziona).\n\nVuoi che Aurora lo installi ora? Si apre l'installazione gratuita di Microsoft e alla fine Aurora si riapre da sola.",
         ),
         (
             "Aurora: WebView2 is missing",
-            "Aurora cannot open its window: Microsoft Edge WebView2, the Windows component it uses to draw it, is missing on this PC (or is not working).\n\nDownload Microsoft's free installer now? After installing it, open Aurora again.",
+            "Aurora cannot open its window: Microsoft Edge WebView2, the Windows component it uses to draw it, is missing on this PC (or is not working).\n\nShould Aurora install it now? Microsoft's free installer opens and, when it finishes, Aurora opens again by itself.",
         ),
         (
             "Aurora: WebView2 fehlt",
-            "Aurora kann sein Fenster nicht öffnen: Auf diesem PC fehlt Microsoft Edge WebView2, die Windows-Komponente, mit der es gezeichnet wird (oder sie funktioniert nicht).\n\nJetzt das kostenlose Installationsprogramm von Microsoft herunterladen? Danach Aurora erneut öffnen.",
+            "Aurora kann sein Fenster nicht öffnen: Auf diesem PC fehlt Microsoft Edge WebView2, die Windows-Komponente, mit der es gezeichnet wird (oder sie funktioniert nicht).\n\nSoll Aurora es jetzt installieren? Das kostenlose Installationsprogramm von Microsoft öffnet sich, danach startet Aurora von selbst neu.",
         ),
         (
             "Aurora : WebView2 est absent",
-            "Aurora ne peut pas ouvrir sa fenêtre : Microsoft Edge WebView2, le composant de Windows qui la dessine, est absent de ce PC (ou ne fonctionne pas).\n\nTélécharger maintenant l'installation gratuite de Microsoft ? Une fois installée, rouvre Aurora.",
+            "Aurora ne peut pas ouvrir sa fenêtre : Microsoft Edge WebView2, le composant de Windows qui la dessine, est absent de ce PC (ou ne fonctionne pas).\n\nAurora doit-elle l'installer maintenant ? L'installation gratuite de Microsoft s'ouvre et, à la fin, Aurora se rouvre toute seule.",
         ),
         (
             "Aurora: falta WebView2",
-            "Aurora no puede abrir su ventana: en este PC falta Microsoft Edge WebView2, el componente de Windows con el que la dibuja (o no funciona).\n\n¿Descargar ahora el instalador gratuito de Microsoft? Después de instalarlo, vuelve a abrir Aurora.",
+            "Aurora no puede abrir su ventana: en este PC falta Microsoft Edge WebView2, el componente de Windows con el que la dibuja (o no funciona).\n\n¿Quieres que Aurora lo instale ahora? Se abre el instalador gratuito de Microsoft y, al terminar, Aurora se vuelve a abrir sola.",
         ),
         (
             "Aurora: falta o WebView2",
-            "O Aurora não consegue abrir a sua janela: neste PC falta o Microsoft Edge WebView2, o componente do Windows com que a desenha (ou não funciona).\n\nTransferir agora o instalador gratuito da Microsoft? Depois de o instalar, abre de novo o Aurora.",
+            "O Aurora não consegue abrir a sua janela: neste PC falta o Microsoft Edge WebView2, o componente do Windows com que a desenha (ou não funciona).\n\nQueres que o Aurora o instale agora? Abre-se o instalador gratuito da Microsoft e, no fim, o Aurora volta a abrir sozinho.",
         ),
     ];
     ALL[lang.min(ALL.len() - 1)]

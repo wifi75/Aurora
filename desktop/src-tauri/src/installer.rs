@@ -415,7 +415,7 @@ mod tests {
 
 /// PowerShell con il percorso intero (`%SystemRoot%\System32\WindowsPowerShell1.0\powershell.exe`): su alcuni PC «powershell» non e'
 /// nel PATH del programma (2026-11-09: «installatore non avviato: program not found»). Se non c'e', il nome semplice.
-pub fn powershell_exe() -> std::path::PathBuf {
+pub(crate) fn powershell_exe() -> std::path::PathBuf {
     std::env::var_os("SystemRoot")
         .map(|r| std::path::PathBuf::from(r).join("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe"))
         .filter(|p| p.is_file())
