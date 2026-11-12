@@ -532,6 +532,12 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
     inner.finish(outcome);
 }
 
+/// Tolleranza in piu' sulla durata di un'onda lunga: l'orologio di una scheda audio (o di un'uscita che ricampiona) puo' andare piu' piano
+/// di qualche per mille, e su 2 minuti di Tune o di WSPR i 2 s fissi non bastavano. Il 2% della durata.
+fn playback_slack(len: Duration) -> Duration {
+    len / 50
+}
+
 fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
     let rate = lock(&inner.sink).sample_rate();
     let fade_samples = (job.fade.as_secs_f64() * f64::from(rate)).round() as usize;
@@ -554,7 +560,7 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
         return Ok(TxOutcome::Halted);
     }
     // la scadenza si arma prima di accendere: se il comando si blocca, il controllo a tempo scatta lo stesso
-    inner.watchdog.arm(Instant::now() + job.lead + audio_len + job.tail + job.grace);
+    inner.watchdog.arm(Instant::now() + job.lead + audio_len + job.tail + job.grace + playback_slack(audio_len));
     let mut guard = PttGuard::engage(Arc::clone(&inner.ptt))?;
 
     if !wait_until(inner, job.audio_at, true, &mut || take_replacement(&mut samples).map(|_| ()))? {
@@ -583,7 +589,7 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
     };
 
     let mut started = inner.clock.now();
-    let mut limit = tail_len + Duration::from_secs(2);
+    let mut limit = tail_len + Duration::from_secs(2) + playback_slack(tail_len);
     let halted = loop {
         if inner.halt.load(Ordering::SeqCst) || !lock(&inner.config).allow_tx {
             break true;
@@ -596,7 +602,7 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
                 Some(len) => {
                     tail_len = len;
                     started = inner.clock.now();
-                    limit = tail_len + Duration::from_secs(2);
+                    limit = tail_len + Duration::from_secs(2) + playback_slack(tail_len);
                 }
                 None => break false,
             }
@@ -609,9 +615,15 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
             }
             break false;
         }
-        if inner.clock.now().saturating_sub(started) > limit {
+        let elapsed = inner.clock.now().saturating_sub(started);
+        if elapsed > limit {
             let failed = lock(&inner.sink).has_failed();
-            return Err(TxError::Audio(if failed { "uscita audio persa durante la trasmissione" } else { "riproduzione oltre la durata prevista" }.into()));
+            // con i numeri: il rapporto dice di quanto il dispositivo e' piu' lento del previsto (segnalato dalla 0.11.239 su due PC)
+            return Err(TxError::Audio(if failed {
+                "uscita audio persa durante la trasmissione".into()
+            } else {
+                format!("riproduzione oltre la durata prevista ({:.1} s invece di {:.1} s, {rate} Hz)", elapsed.as_secs_f64(), tail_len.as_secs_f64())
+            }));
         }
         inner.clock.sleep(CHUNK);
     };
