@@ -1563,19 +1563,59 @@ impl engine_native::TxPort for WindowsVolumePort {
     }
 }
 
+/// Chi sta per trasmettere: `true` una trasmissione libera (PSK, RTTY, CW, SSTV), `false` il motore (FT8, FT4, WSPR...). Lo scrive chi
+/// avvia la trasmissione e lo legge il PTT: lo split scelto per FT8 (XIT) vale solo per le onde del motore, che sono spostate dello stesso
+/// valore; un'onda libera non lo e', e con quello split uscirebbe fuori frequenza lasciando la radio in split sul VFO B.
+type FreeTx = Arc<std::sync::atomic::AtomicBool>;
+
+/// Segna di chi e' la trasmissione che si avvia; se l'avvio fallisce (un'altra e' gia' in corso o in attesa) rimette il segno di prima.
+fn start_as<T>(free_tx: &FreeTx, free: bool, start: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
+    let before = free_tx.swap(free, std::sync::atomic::Ordering::SeqCst);
+    start().inspect_err(|_| free_tx.store(before, std::sync::atomic::Ordering::SeqCst))
+}
+
+/// La porta di trasmissione del motore: ogni sua trasmissione e' «del motore» (vedi [`FreeTx`]).
+struct EngineTxPort {
+    inner: Arc<dyn engine_native::TxPort>,
+    free_tx: FreeTx,
+}
+
+impl engine_native::TxPort for EngineTxPort {
+    fn schedule(&self, request: tx_native::TxRequest) -> Result<(), String> {
+        start_as(&self.free_tx, false, || self.inner.schedule(request))
+    }
+
+    fn halt(&self) {
+        self.inner.halt();
+    }
+
+    fn replace(&self, request: tx_native::TxRequest) -> Result<bool, String> {
+        self.inner.replace(request)
+    }
+
+    fn set_attenuation(&self, tenths: u32) {
+        self.inner.set_attenuation(tenths);
+    }
+
+    fn start_now(&self, request: tx_native::TxRequest) -> Result<(), String> {
+        start_as(&self.free_tx, false, || self.inner.start_now(request))
+    }
+}
+
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
 /// PTT comandato attraverso la radio collegata con Hamlib (`T 1` / `T 0` di rigctld): rigctld usa il PTT scelto in Impostazioni › Stazione › Radio
 /// (CAT, oppure DTR/RTS sulla porta indicata). Se la radio non e' collegata la trasmissione non parte.
 struct CatPtt {
     cat: Arc<rig_control::cat::CatService>,
     controls: Arc<engine_native::NativeControls>,
+    free_tx: FreeTx,
     on: std::sync::atomic::AtomicBool,
 }
 
 impl tx_native::Ptt for CatPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
         if on {
-            cat_tx_audio(&self.cat, &self.controls);
+            cat_tx_split(&self.cat, &self.controls, &self.free_tx);
         }
         cat_ptt(&self.cat, on)?;
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
@@ -1584,6 +1624,17 @@ impl tx_native::Ptt for CatPtt {
 
     fn is_on(&self) -> bool {
         self.on.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+/// Prima del PTT: lo split per la trasmissione che parte. Del motore: la frequenza audio dell'onda al CAT ([`cat_tx_audio`]). Libera (modi
+/// testuali, SSTV): lo split di FT8 si toglie, la radio trasmette in simplex (o con lo Split DX dello spot, se l'operatore l'ha acceso).
+fn cat_tx_split(cat: &rig_control::cat::CatService, controls: &engine_native::NativeControls, free_tx: &FreeTx) {
+    if !free_tx.load(std::sync::atomic::Ordering::SeqCst) {
+        return cat_tx_audio(cat, controls);
+    }
+    if let Err(e) = cat.release_tx_split() {
+        tracing::warn!("split di FT8 non tolto prima della trasmissione libera: {e}");
     }
 }
 
@@ -1628,13 +1679,15 @@ struct OmniRigSplitPtt {
     inner: tx_native::OmniRigPtt,
     cat: Arc<rig_control::cat::CatService>,
     controls: Arc<engine_native::NativeControls>,
+    free_tx: FreeTx,
 }
 
 impl tx_native::Ptt for OmniRigSplitPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
         let split = cat_split_active(&self.cat) && self.cat.backend() == rig_control::cat_config::Backend::Omnirig;
         if on && split {
-            cat_tx_audio(&self.cat, &self.controls);
+            // una trasmissione libera azzera la frequenza audio di FT8: lo split simulato qui sotto non sposta la radio
+            cat_tx_split(&self.cat, &self.controls, &self.free_tx);
             if let Err(e) = rig_control::omnirig::emulate_begin() {
                 tracing::warn!("split simulato con OmniRig: radio non spostata sulla frequenza di trasmissione: {e}");
             }
@@ -1745,6 +1798,7 @@ impl mode_sat::SatRadio for SatRadioAdapter {
 struct DigiTx {
     transmitter: Arc<tx_native::Transmitter>,
     volume: Option<Arc<WindowsVolumePort>>,
+    free_tx: FreeTx,
 }
 
 impl mode_digi::DigiTxPort for DigiTx {
@@ -1753,7 +1807,7 @@ impl mode_digi::DigiTxPort for DigiTx {
             v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
         // un testo lungo in PSK31 dura qualche minuto: lo stesso tetto dell'SSTV
-        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+        start_as(&self.free_tx, true, || self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string()))
     }
 
     fn halt(&self) {
@@ -1773,7 +1827,7 @@ impl mode_digi::DigiTxPort for DigiTx {
         if let Some(v) = &self.volume {
             v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
-        self.transmitter.start_stream(first).map(|_| ()).map_err(|e| e.to_string())
+        start_as(&self.free_tx, true, || self.transmitter.start_stream(first).map(|_| ()).map_err(|e| e.to_string()))
     }
 
     fn append(&self, wave: Vec<f32>) -> Result<(), String> {
@@ -1793,6 +1847,7 @@ impl mode_digi::DigiTxPort for DigiTx {
 struct SstvTx {
     transmitter: Arc<tx_native::Transmitter>,
     volume: Option<Arc<WindowsVolumePort>>,
+    free_tx: FreeTx,
 }
 
 impl mode_sstv::SstvTxPort for SstvTx {
@@ -1801,7 +1856,7 @@ impl mode_sstv::SstvTxPort for SstvTx {
             v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
         // le immagini piu' lunghe (PD 290, Scottie DX) durano meno di 5 minuti
-        self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string())
+        start_as(&self.free_tx, true, || self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string()))
     }
 
     fn halt(&self) {
@@ -1840,7 +1895,7 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
     }
 }
 
-fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
+fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, free_tx: &FreeTx, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
     // lo split della radio vale solo con il PTT dal CAT (con un PTT su seriale o VOX la radio non riceve la frequenza di trasmissione)
@@ -1849,7 +1904,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
         controls.set_split_probe(Arc::new(move || cat_split_active(&probe_cat)));
     }
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
-        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), controls: Arc::clone(controls), on: std::sync::atomic::AtomicBool::new(false) }),
+        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx), on: std::sync::atomic::AtomicBool::new(false) }),
         // nessun PTT da JTDX e nessuna radio ancora scelta all'avvio: si decide a ogni trasmissione
         "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
@@ -1869,7 +1924,7 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
             }
         }
         "omnirig" => match tx_native::OmniRigPtt::new(rig_control::omnirig::rig()) {
-            Ok(ptt) => Arc::new(OmniRigSplitPtt { inner: ptt, cat: Arc::clone(cat), controls: Arc::clone(controls) }),
+            Ok(ptt) => Arc::new(OmniRigSplitPtt { inner: ptt, cat: Arc::clone(cat), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx) }),
             Err(e) => {
                 tracing::error!("PTT con OmniRig non attivo ({e}): niente trasmissione");
                 return None;
@@ -2734,7 +2789,8 @@ pub async fn run(
                 dial_hz: Arc::clone(&dial_hz),
                 controls: Arc::clone(&native_controls),
                 transmitter: audio_manager.as_ref().and_then(|m| {
-                    let transmitter = build_transmitter(&config, &cat, &native_controls, &tx_interlock, m.build_output()?);
+                    let free_tx: FreeTx = Arc::new(std::sync::atomic::AtomicBool::new(false));
+                    let transmitter = build_transmitter(&config, &cat, &native_controls, &free_tx, &tx_interlock, m.build_output()?);
                     if transmitter.is_none() {
                         m.output_closed();
                     }
@@ -2747,15 +2803,15 @@ pub async fn run(
                             let output: Arc<dyn Fn() -> Option<String> + Send + Sync> = Arc::new(move || manager.output_name());
                             // l'SSTV trasmette con la stessa catena: prima di partire riallinea il volume di Windows al cursore Pwr
                             let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls) });
-                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)) }));
-                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume) }));
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)), free_tx: Arc::clone(&free_tx) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume), free_tx: Arc::clone(&free_tx) }));
                             let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls) };
-                            Arc::new(port) as Arc<dyn engine_native::TxPort>
+                            Arc::new(EngineTxPort { inner: Arc::new(port), free_tx }) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
-                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: None }));
-                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None }));
-                            inner
+                            sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: None, free_tx: Arc::clone(&free_tx) }));
+                            digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: None, free_tx: Arc::clone(&free_tx) }));
+                            Arc::new(EngineTxPort { inner, free_tx }) as Arc<dyn engine_native::TxPort>
                         }
                     })
                 }),
