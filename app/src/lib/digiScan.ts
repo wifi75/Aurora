@@ -83,6 +83,6 @@ export function memorySummary(m: DigiMemory): string {
   if (m.mode) parts.push(MODE_NAMES[m.mode] ?? m.mode);
   if (typeof m.rx_freq_hz === 'number') parts.push(`Rx ${Math.round(m.rx_freq_hz)} Hz`);
   if (m.tx_follow_rx === false && typeof m.tx_freq_hz === 'number') parts.push(`Tx ${Math.round(m.tx_freq_hz)} Hz`);
-  if (m.mode === 'rtty' && typeof m.rtty_shift_hz === 'number' && typeof m.rtty_baud === 'number') parts.push(`${Math.round(m.rtty_shift_hz)} Hz / ${m.rtty_baud} bd`);
+  if (m.mode === 'rtty' && typeof m.rtty_shift_hz === 'number' && typeof m.rtty_baud === 'number') parts.push(`${Math.round(m.rtty_shift_hz)} Hz / ${Math.round(m.rtty_baud * 100) / 100} bd`);
   return parts.join(' · ');
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
-import { RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from './ModeSettings';
+import { RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from './ModeSettings';
 
 /** In RTTY la barra ha le tendine di spostamento e velocita' e il tasto «Rev», che salvano subito come il menu Modo. */
 export interface RttyStatus {
@@ -110,8 +110,8 @@ export function DigiStatusBar(p: Props) {
             </select>
           </label>
           <label className="digi-st digi-st--select" title={t('digi.rtty.baud')}>
-            <select aria-label={t('digi.rtty.baud')} value={p.rtty.baud} onChange={(e) => p.rtty?.onBaud(Number(e.target.value))}>
-              {withCurrent(RTTY_BAUDS, p.rtty.baud).map((v) => (
+            <select aria-label={t('digi.rtty.baud')} value={roundBaud(p.rtty.baud)} onChange={(e) => p.rtty?.onBaud(Number(e.target.value))}>
+              {withCurrent(RTTY_BAUDS, roundBaud(p.rtty.baud)).map((v) => (
                 <option key={v} value={v}>
                   {v} bd
                 </option>

@@ -27,6 +27,9 @@ interface Props {
   onClose(): void;
 }
 
+/** La velocita' RTTY arriva dal motore in virgola mobile corta (45,45 → 45,4500007…): si arrotonda a due decimali per mostrarla e confrontarla. */
+export const roundBaud = (v: number) => Math.round(v * 100) / 100;
+
 export const withCurrent = (list: number[], value: number) => (list.includes(value) ? list : [...list, value].sort((a, b) => a - b));
 
 type Section = (title: string, children: ReactNode) => ReactNode;
@@ -158,8 +161,8 @@ export function ModeSettingsFields({
       </label>
       <label>
         <span>{t('digi.rtty.baud')}</span>
-        <select value={s.rtty_baud} onChange={(e) => onSave({ rtty_baud: Number(e.target.value) })}>
-          {withCurrent(RTTY_BAUDS, s.rtty_baud).map((v) => (
+        <select value={roundBaud(s.rtty_baud)} onChange={(e) => onSave({ rtty_baud: Number(e.target.value) })}>
+          {withCurrent(RTTY_BAUDS, roundBaud(s.rtty_baud)).map((v) => (
             <option key={v} value={v}>
               {v}
             </option>

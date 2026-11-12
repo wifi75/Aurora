@@ -13,7 +13,7 @@ import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
-import { ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from '../components/digi/ModeSettings';
+import { ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from '../components/digi/ModeSettings';
 import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
@@ -741,7 +741,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           ? [
               'sep' as const,
               { label: `${t('digi.rtty.shift')}: ${s.rtty_shift_hz}`, items: withCurrent(RTTY_SHIFTS, s.rtty_shift_hz).map((v) => ({ label: `${v} Hz`, checked: v === s.rtty_shift_hz, onSelect: () => save({ rtty_shift_hz: v }) })) },
-              { label: `${t('digi.rtty.baud')}: ${s.rtty_baud}`, items: withCurrent(RTTY_BAUDS, s.rtty_baud).map((v) => ({ label: `${v} baud`, checked: v === s.rtty_baud, onSelect: () => save({ rtty_baud: v }) })) },
+              { label: `${t('digi.rtty.baud')}: ${roundBaud(s.rtty_baud)}`, items: withCurrent(RTTY_BAUDS, roundBaud(s.rtty_baud)).map((v) => ({ label: `${v} baud`, checked: v === roundBaud(s.rtty_baud), onSelect: () => save({ rtty_baud: v }) })) },
               { label: t('digi.rtty.reverse'), checked: s.rtty_reverse, onSelect: () => save({ rtty_reverse: !s.rtty_reverse }) },
               { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
             ]
