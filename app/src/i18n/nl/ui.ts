@@ -4330,6 +4330,8 @@ export const NL_UI: Record<string, string> = {
   "tx.alert.houndSplit": "Hound-modus aan: Tx op {hz} Hz, split aan",
   "tx.alert.inhibited": "TX geblokkeerd door een externe controller: {holder}",
   "tx.alert.unrepresentable": "Bericht niet verzonden: “{text}” kan niet exact worden gecodeerd in FT8/FT4 (roepnaam, prefix of rapport). Zenden uitgeschakeld.",
+  "tx.audioHigh": "Zendfrequentie op {hz} Hz: het signaal komt boven 2700 Hz, waar veel transceivers het vermogen afknijpen. Zet het lager, tussen 200 en 2700 Hz.",
+  "tx.audioLow": "Zendfrequentie op {hz} Hz: het signaal begint onder 200 Hz, waar veel transceivers het vermogen afknijpen. Zet het hoger, tussen 200 en 2700 Hz.",
   "tx.closed": "Zenden gesloten: Aurora start met AURORA_ALLOW_TX=0. Het kan alleen vanaf de pc worden geopend, bij het opstarten.",
   "tx.cq": "CQ",
   "tx.cqAsked": "CQ aangevraagd",

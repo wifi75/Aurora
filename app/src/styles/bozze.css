@@ -359,6 +359,8 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .live-bottom-panel { contain: layout paint; }
 .live-bottom-panel .dock-body { contain: layout; }
 .bar-count, .period-text, .cmd-big-in, .bar-item b, .tx-n { font-variant-numeric: tabular-nums; }
+/* frequenza Tx fuori da 200-2700 Hz: molte radio li' tagliano la potenza */
+.cmd-big-in.cmd-big-in--warn { color: var(--danger, #ff5a5a); border-color: var(--danger, #ff5a5a); box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #ff5a5a) 45%, transparent); }
 .bar-count { display: inline-block; min-width: 3.2em; text-align: right; }
 .waterfall canvas { contain: strict; }
 

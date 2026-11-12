@@ -66,6 +66,7 @@ import { browserStorage } from '../lib/theme';
 import { applyCqPrefs, useCqPrefs } from '../lib/cqPrefs';
 import { useStation, useStatusPick } from '../state/station';
 import { toast, useToasts } from '../lib/toast';
+import { txAudioWarning } from '../lib/txAudio';
 import { afterMark, markNow, NO_MARK, type ClearMark } from '../lib/windowClear';
 
 
@@ -134,6 +135,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const phone = usePhone();
   const view = useStationView();
   const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df', 'tx_enabled']);
+  // all'inizio di ogni trasmissione con la frequenza Tx fuori da 200-2700 Hz un avviso rosso: molte radio li' tagliano la potenza
+  const transmittingNow = status?.transmitting ?? false;
+  useEffect(() => {
+    const warn = txAudioWarning(status?.tx_df, status?.mode);
+    if (transmittingNow && warn) toast(t(warn === 'high' ? 'tx.audioHigh' : 'tx.audioLow', { hz: status?.tx_df ?? 0 }), 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transmittingNow]);
   const decodes = useStation((s) => s.decodes);
   const txLog = useStation((s) => s.txLog);
   const connection = useStation((s) => s.connection);

@@ -7,6 +7,7 @@ import type { StationStatus } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { toast, type ToastKind } from '../lib/toast';
 import { replyErrorMessage } from '../lib/replyError';
+import { txAudioWarning } from '../lib/txAudio';
 import { TxQuickControls } from './TxQuickControls';
 import { holdControl, releaseControl, useShownControls } from '../lib/pendingControls';
 
@@ -116,6 +117,8 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
   };
 
   const hold = state.hold_tx === true;
+  // frequenza Tx fuori da 200-2700 Hz: il campo diventa rosso e sotto si spiega perche' (la radio li' puo' tagliare la potenza)
+  const txWarn = txAudioWarning(Number(txHz), status?.mode);
   return (
     <div className="tx-panel tx-commands">
       <div className="tx-main">
@@ -126,7 +129,7 @@ export function TxCommands({ txAllowed, initialFrequency = 1500, status: statusP
         <div className="cmd-big" role="group" aria-label={t('ctl.sec.freq')}>
           <label className="cmd-big-row">
             <span className="cmd-big-lab">Tx</span>
-            <input type="number" className="cmd-big-in" aria-label="Tx" title={t('tip.ctl.tx')} min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
+            <input type="number" className={`cmd-big-in${txWarn ? ' cmd-big-in--warn' : ''}`} aria-label="Tx" aria-invalid={txWarn ? true : undefined} title={txWarn ? t(txWarn === 'high' ? 'tx.audioHigh' : 'tx.audioLow', { hz: txHz }) : t('tip.ctl.tx')} min={200} max={3000} value={txHz} onChange={(e) => setTxHz(e.target.value)} onBlur={applyTx} onKeyDown={onEnter(applyTx)} />
             <span className="cmd-big-unit">Hz</span>
             <button type="button" className="glass cmd-big-btn" disabled={!reachable} title={t('tip.ctl.rx_to_tx')} aria-label="Tx=Rx" onClick={() => void setControl('rx_to_tx')}>
               ▲

@@ -5218,3 +5218,5 @@ tag.unconfirmed,worked but not confirmed,gewerkt maar niet bevestigd
 not2.unconfPreview,Preview in the list,Voorbeeld in de lijst
 not2.sampleNew,new,nieuw
 not2.sampleUnconf,not confirmed,niet bevestigd
+tx.audioHigh,"Tx frequency at {hz} Hz: the signal goes above 2700 Hz, where many radios cut the power. Move it lower, between 200 and 2700 Hz.","Zendfrequentie op {hz} Hz: het signaal komt boven 2700 Hz, waar veel transceivers het vermogen afknijpen. Zet het lager, tussen 200 en 2700 Hz."
+tx.audioLow,"Tx frequency at {hz} Hz: the signal starts below 200 Hz, where many radios cut the power. Move it higher, between 200 and 2700 Hz.","Zendfrequentie op {hz} Hz: het signaal begint onder 200 Hz, waar veel transceivers het vermogen afknijpen. Zet het hoger, tussen 200 en 2700 Hz."
