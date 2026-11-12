@@ -1,6 +1,11 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.243 - 2026-11-12
+- **PSK, RTTY e CW, interfaccia**: la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso; velocita' e frequenze senza cifre dopo la virgola; «Impostazioni del modo» in ordine; misure del segnale e selettore della frequenza a larghezza fissa; maniglia ben visibile fra le finestre e la colonna di destra.
+- **DX Cluster e menu**: sulla cella Commenti compare solo il commento (non piu' il suggerimento lungo della riga); menu del modo e della frequenza con il fondo pieno.
+- **CAT, indirizzo CI-V**: avviso quando il numero sembra scritto in esadecimale (88 al posto di 136), con il pulsante per correggerlo.
 - **«Accendi» sulle Yaesu e Kenwood**: il comando di accensione parte ora a due coppie pulite (0 e 1,2 s, poi 3,7 e 5,2 s); l'invio a 0,3 s di prima poteva far ripartire la finestra della radio e lasciarla spenta.
 - **Cambi di frequenza ravvicinati**: due cambi uno dopo l'altro (due modi scelti di seguito) non si contendono piu' la radio e il primo non finisce con «la radio non ha raggiunto la frequenza».
 - **Modi testuali**: una trasmissione fermata con STOP o Esc risulta «interrotta», non «errore».
