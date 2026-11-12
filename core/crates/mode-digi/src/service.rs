@@ -191,17 +191,26 @@ pub struct DigiSettings {
     pub rtty_reverse: bool,
     /// RTTY: UOS, dopo uno spazio si torna alle lettere (acceso di base, come `UOSrx` di fldigi).
     pub rtty_uos: bool,
-    /// RTTY: soglia dello squelch sul rapporto segnale/rumore (dB; 0 = solo rumore). L'RTTY non usa `squelch_db`.
+    /// RTTY: soglia dello squelch sul rapporto segnale/rumore (dB; 0 = solo rumore).
     pub rtty_squelch_snr_db: f32,
     /// RTTY: il ricevitore (due filtri, discriminatore o scelta secondo lo spostamento).
     pub rtty_receiver: RttyReceiver,
     /// Velocita' della CW in parole al minuto (trasmissione; in ricezione e' il valore di partenza, poi si adatta al segnale).
     pub cw_wpm: f32,
+    /// CW: banda del filtro di ricezione (Hz: 50, 100, 150, 250 o 500; 150 di base come fldigi).
+    pub cw_bandwidth_hz: f32,
+    /// CW: soglia dello squelch sul rapporto segnale/rumore (dB in 3 kHz, media nel tempo; -30..+20).
+    pub cw_squelch_snr_db: f32,
+    /// CW: decodifica SOM di fldigi (aiuta col tasto a mano irregolare).
+    pub cw_som: bool,
+    /// PSK: soglia dello squelch sulla metrica di qualita' della fase (0-100, come fldigi).
+    pub psk_squelch: f32,
     /// AFC: la ricezione segue la deriva del segnale (Options › AFC).
     pub afc_on: bool,
-    /// Squelch: si stampa solo sopra la soglia `squelch_db`.
+    /// Squelch: si stampa solo sopra la soglia del modo (`psk_squelch`, `rtty_squelch_snr_db`, `cw_squelch_snr_db`). Le soglie sono
+    /// relative (qualita' della fase o rapporto segnale/rumore), non dipendono dal volume: la vecchia `squelch_db` in dB assoluti delle
+    /// impostazioni salvate si ignora e valgono i valori di base.
     pub squelch_on: bool,
-    pub squelch_db: f32,
     /// Snap: un clic sulla cascata porta sul segnale piu' vicino (lo fa l'interfaccia).
     pub snap_on: bool,
     /// Ascolto acceso all'avvio di Aurora.
@@ -277,9 +286,12 @@ impl Default for DigiSettings {
             rtty_squelch_snr_db: 6.0,
             rtty_receiver: RttyReceiver::Auto,
             cw_wpm: 20.0,
+            cw_bandwidth_hz: cw::BANDWIDTH_DEFAULT,
+            cw_squelch_snr_db: cw::SQUELCH_DEFAULT_DB,
+            cw_som: false,
+            psk_squelch: psk::SQUELCH_DEFAULT,
             afc_on: true,
             squelch_on: false,
-            squelch_db: -45.0,
             snap_on: true,
             auto_receive: false,
             macros: default_macros(),
@@ -299,8 +311,14 @@ impl DigiSettings {
         if !self.rtty_shift_hz.is_finite() || !(20.0..=1000.0).contains(&self.rtty_shift_hz) {
             return Err(DigiError::BadValue("spostamento RTTY fuori da 20-1000 Hz".into()));
         }
-        if !self.squelch_db.is_finite() || !(-90.0..=0.0).contains(&self.squelch_db) {
-            return Err(DigiError::BadValue("soglia dello squelch fuori da -90..0 dB".into()));
+        if !self.psk_squelch.is_finite() || !(0.0..=100.0).contains(&self.psk_squelch) {
+            return Err(DigiError::BadValue("soglia dello squelch PSK fuori da 0-100".into()));
+        }
+        if !self.cw_squelch_snr_db.is_finite() || !(-30.0..=20.0).contains(&self.cw_squelch_snr_db) {
+            return Err(DigiError::BadValue("soglia S/N dello squelch CW fuori da -30..+20 dB".into()));
+        }
+        if !cw::BANDWIDTHS.contains(&self.cw_bandwidth_hz) {
+            return Err(DigiError::BadValue("banda CW non fra 50, 100, 150, 250 e 500 Hz".into()));
         }
         if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
             return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
@@ -344,9 +362,18 @@ pub struct RxStatus {
     pub freq_hz: f32,
     /// Lo squelch lascia passare il segnale.
     pub squelch_open: bool,
-    /// RTTY: rapporto segnale/rumore (dB) su cui lavora lo squelch.
+    /// Rapporto segnale/rumore (dB): RTTY quello dello squelch, PSK quello di fldigi (toni contro rumore), CW in 3 kHz (media nel tempo).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snr_db: Option<f32>,
+    /// PSK: IMD (dB), misurata durante le inversioni continue (preambolo o pausa).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imd_db: Option<f32>,
+    /// PSK: metrica di qualita' della fase (0-100) su cui lavora lo squelch.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quality: Option<f32>,
+    /// CW: la velocita' capita (WPM).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wpm: Option<f32>,
     /// La radio e' in LSB: in RTTY mark e space sono gia' invertiti da soli.
     pub radio_lsb: bool,
 }
@@ -461,7 +488,7 @@ impl DigiService {
             tx_active: AtomicBool::new(false),
             tx_abort: AtomicBool::new(false),
             queue,
-            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0, freq_hz: settings.rx_freq_hz, squelch_open: true, snr_db: None, radio_lsb: false }),
+            rx: Mutex::new(RxStatus { listening: settings.auto_receive, level_db: -90.0, freq_hz: settings.rx_freq_hz, squelch_open: true, ..RxStatus::default() }),
             tx: Mutex::new(TxStatus { state: "idle".into(), ..TxStatus::default() }),
             port: Mutex::new(None),
             emit: Mutex::new(None),
@@ -691,18 +718,21 @@ enum Demod {
 
 impl Demod {
     fn new(s: &DigiSettings, lsb: bool) -> Demod {
-        let squelch = s.squelch_on.then_some(s.squelch_db);
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
+            d.set_bandwidth(s.cw_bandwidth_hz);
             d.set_afc(s.afc_on);
-            d.set_squelch_snr_db(s.squelch_on.then_some(cw::SQUELCH_DEFAULT_DB));
+            d.set_som(s.cw_som);
+            // lo squelch del CW guarda il rapporto segnale/rumore misurato sullo spettro, non il livello
+            d.set_squelch_snr_db(s.squelch_on.then_some(s.cw_squelch_snr_db));
             return Demod::Cw(Box::new(d));
         }
         match s.mode.psk() {
             Some(mode) => {
                 let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
                 d.set_afc(s.afc_on);
-                d.set_squelch(s.squelch_on.then_some(psk::SQUELCH_DEFAULT));
+                // lo squelch del PSK guarda la metrica di qualita' della fase di fldigi (0-100), non il livello
+                d.set_squelch(s.squelch_on.then_some(s.psk_squelch));
                 Demod::Psk(Box::new(d))
             }
             None => {
@@ -726,11 +756,21 @@ impl Demod {
         }
     }
 
-    /// Rapporto segnale/rumore (dB), solo per l'RTTY.
+    /// Rapporto segnale/rumore (dB) nella misura di ogni modo.
     fn snr_db(&self) -> Option<f32> {
         match self {
             Demod::Rtty(d) => Some(d.snr_db()),
-            _ => None,
+            Demod::Psk(d) => d.snr_db(),
+            Demod::Cw(d) => Some(d.snr_db()),
+        }
+    }
+
+    /// Le misure in piu' di ogni modo: IMD e qualita' (PSK), velocita' (CW).
+    fn extras(&self) -> (Option<f32>, Option<f32>, Option<f32>) {
+        match self {
+            Demod::Psk(d) => (d.imd_db(), Some(d.metric()), None),
+            Demod::Cw(d) => (None, None, Some(d.wpm())),
+            Demod::Rtty(_) => (None, None, None),
         }
     }
 
@@ -815,6 +855,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 rx.freq_hz = demod.frequency();
                 rx.squelch_open = demod.signal().1;
                 rx.snr_db = demod.snr_db();
+                (rx.imd_db, rx.quality, rx.wpm) = demod.extras();
                 rx.radio_lsb = lsb;
             }
             peak_db = -90.0;
@@ -911,6 +952,24 @@ mod tests {
         for m in ["USB", "PKTUSB", "DATA-U", "DIGU", "RTTY", "CW", "FM", ""] {
             assert!(!is_lower_sideband(m), "{m}");
         }
+    }
+
+    #[test]
+    fn lo_squelch_vecchio_in_db_assoluti_lascia_il_posto_alle_soglie_relative() {
+        // un digi.json di prima: squelch acceso a -45 dB sul livello; ora le soglie sono relative e valgono quelle di base
+        let s: DigiSettings = serde_json::from_str(r#"{"mode":"psk31","squelch_on":true,"squelch_db":-45,"cw_wpm":22}"#).expect("json");
+        assert!(s.squelch_on);
+        assert_eq!(s.psk_squelch, psk::SQUELCH_DEFAULT);
+        assert_eq!(s.cw_squelch_snr_db, cw::SQUELCH_DEFAULT_DB);
+        assert_eq!(s.cw_bandwidth_hz, cw::BANDWIDTH_DEFAULT);
+        assert!(!s.cw_som);
+        assert!(s.validate().is_ok());
+        let json = serde_json::to_string(&s).expect("json");
+        assert!(!json.contains("\"squelch_db\""), "la soglia vecchia non si riscrive: {json}");
+        let bad = DigiSettings { cw_bandwidth_hz: 120.0, ..s.clone() };
+        assert!(bad.validate().is_err());
+        let bad = DigiSettings { psk_squelch: 120.0, ..s };
+        assert!(bad.validate().is_err());
     }
 
     #[test]
