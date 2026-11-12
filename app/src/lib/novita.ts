@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'fixed',
     title: [
       'Lo split non si accende più da solo',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'fixed',
     title: [
       '«Accendi»: attesa più lunga, sequenza nuova',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'new',
     title: [
       '«Rimanda i QSO persi» anche per l’UDP secondario',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'changed',
     title: [
       'CW: radio che pompa e scrosci di rumore',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'fixed',
     title: [
       'Linux: audio in uscita e pagina Radio',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'changed',
     title: [
       'PSK · RTTY · CW più ordinati',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'fixed',
     title: [
       'DX Cluster e menu con fondo pieno',
@@ -168,7 +168,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.243',
-    released: '2026-11-12T00:00:00Z',
+    released: '2026-11-12T22:42:07Z',
     kind: 'new',
     title: [
       'Avviso sull’indirizzo CI-V in esadecimale',
