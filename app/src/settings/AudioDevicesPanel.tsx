@@ -188,6 +188,8 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
         <DeviceVolume kind="input" />
         <ChannelSelect id="aud-inch" label={t('aud.inch')} tip={t('tip.aud.inch')} value={shown.input_channel} options={IN_CHANNELS} stereo={inStereo} onChange={(next) => set({ input_channel: next })} />
         <Message kind={data.input_in_use ? 'note' : 'alert'}>{data.input_in_use ? t('aud.nowIn', { name: data.input_in_use }) : t('aud.nowInNone')}</Message>
+        {/* il motivo vero per cui l'ingresso non si e' aperto, come lo da' il sistema: senza, restava solo «non attivo» */}
+        {data.input_error ? <Message kind="alert">{t('aud.lastErr.in', { reason: coreText(data.input_error, t) })}</Message> : null}
       </Group>
 
       <Group title={t('aud.output')} span={1}>
@@ -208,6 +210,7 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
           {data.output_in_use ? t('aud.nowOut', { name: data.output_in_use }) : t('aud.nowOutNone')}
           {data.output_pending ? ` ${t('aud.nextOut', { name: data.output_pending })}` : ''}
         </Message>
+        {data.output_error ? <Message kind="alert">{t('aud.lastErr.out', { reason: coreText(data.output_error, t) })}</Message> : null}
       </Group>
 
       <Group title={t('aud.mode')} span={1}>

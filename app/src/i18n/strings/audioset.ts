@@ -94,6 +94,8 @@ export const audioSetStrings = {
     'Ninguna entrada activa: la cascada y el decodificador están parados. Elige un dispositivo y pulsa Aplicar.',
     'Nenhuma entrada ativa: a cascata e o descodificador estão parados. Escolhe um dispositivo e carrega em Aplicar.',
   ],
+  'aud.lastErr.in': ['L’ingresso non si è aperto: {reason}', 'The input did not open: {reason}', 'Der Eingang ließ sich nicht öffnen: {reason}', 'L’entrée ne s’est pas ouverte : {reason}', 'La entrada no se abrió: {reason}', 'A entrada não abriu: {reason}'],
+  'aud.lastErr.out': ['L’uscita non si è aperta: {reason}', 'The output did not open: {reason}', 'Der Ausgang ließ sich nicht öffnen: {reason}', 'La sortie ne s’est pas ouverte : {reason}', 'La salida no se abrió: {reason}', 'A saída não abriu: {reason}'],
   'aud.nowOut': ['Trasmissione su: {name}', 'Transmitting on: {name}', 'Senden auf: {name}', 'Émission sur : {name}', 'Transmisión por: {name}', 'Transmissão em: {name}'],
   'aud.nowOutNone': [
     'Trasmissione non attiva (nessuna uscita aperta all’avvio): la scelta si salva e vale dal prossimo avvio.',

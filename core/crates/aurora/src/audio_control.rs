@@ -349,6 +349,9 @@ pub struct AudioManager {
     on_input: InputHook,
     /// Avvia il decodificatore alla prima volta che un ingresso si apre (con l'ingresso mai aperto non c'e' niente da decodificare).
     engine_starter: Mutex<Option<EngineStarter>>,
+    /// L'ultimo errore di apertura dell'ingresso e dell'uscita (vuoto quando si aprono): la scheda Audio lo mostra, cosi' si legge il motivo vero.
+    in_error: Arc<Mutex<Option<String>>>,
+    out_error: Arc<Mutex<Option<String>>>,
     state: Mutex<State>,
 }
 
@@ -389,6 +392,8 @@ impl AudioManager {
             initial,
             on_input,
             engine_starter: Mutex::new(None),
+            in_error: Arc::new(Mutex::new(None)),
+            out_error: Arc::new(Mutex::new(None)),
             state: Mutex::new(State { input: None, in_cur: Current::default(), in_channel, switch: None, out_cur: Current::default(), out_channel, out_pending: None }),
         })
     }
@@ -460,6 +465,8 @@ impl AudioManager {
             match self.backend.open_input(hint.as_deref(), Arc::clone(&self.in_channel), self.tap.clone()) {
                 Ok(stream) => {
                     let name = stream.name();
+                    tracing::info!("ingresso audio in uso: \"{name}\" (scelta: {}, canale {})", hint.as_deref().unwrap_or("predefinito del sistema"), st.in_channel.name());
+                    *lock(&self.in_error) = None;
                     st.in_cur = Current { value: if from_store { self.initial.input.trim().to_string() } else { String::new() }, from_env: !from_store, name: Some(name.clone()) };
                     st.input = Some(stream);
                     drop(st);
@@ -469,9 +476,18 @@ impl AudioManager {
                 }
                 // una scheda scelta per nome che non c'e' (radio spenta, USB staccato) viene riprovata ogni 5 secondi e l'utente ne vede l'avviso sullo schermo:
                 // non e' un guasto da segnalare. Una scheda che c'e' ma non si apre (occupata, formato rifiutato) resta un avviso vero.
-                Err(e) if log && hint.is_some() && device_missing(&e) => tracing::info!("cascata audio non ancora attiva da {}: {e} (si riprova da sola)", hint.as_deref().unwrap_or_default()),
-                Err(e) if log => tracing::warn!("cascata audio non attiva da {}: {e}", hint.as_deref().unwrap_or("predefinito")),
-                Err(_) => {}
+                Err(e) => {
+                    // il motivo resta a disposizione della scheda Audio; nei tentativi ripetuti (ogni 5 secondi) si scrive solo quando cambia
+                    let changed = lock(&self.in_error).replace(e.clone()).as_deref() != Some(e.as_str());
+                    let wanted = hint.as_deref().unwrap_or("predefinito");
+                    if log && hint.is_some() && device_missing(&e) {
+                        tracing::info!("cascata audio non ancora attiva da {wanted}: {e} (si riprova da sola)");
+                    } else if log {
+                        tracing::warn!("cascata audio non attiva da {wanted}: {e}");
+                    } else if changed {
+                        tracing::info!("ingresso audio {wanted} ancora non aperto: {e}");
+                    }
+                }
             }
         }
     }
@@ -486,14 +502,22 @@ impl AudioManager {
                 Ok((sink, name)) => {
                     let (switchable, switch) = SwitchableSink::new(sink, Arc::clone(&self.gain));
                     let mut st = lock(&self.state);
+                    tracing::info!("uscita audio in uso: \"{name}\" (scelta: {}, canale {})", hint.as_deref().unwrap_or("predefinita del sistema"), st.out_channel.name());
+                    *lock(&self.out_error) = None;
                     st.switch = Some(switch);
                     st.out_cur = Current { value: if from_store { self.initial.output.trim().to_string() } else { String::new() }, from_env: !from_store, name: Some(name) };
                     return Some(Box::new(switchable));
                 }
                 // con una scheda scelta che non c'e' ancora (radio spenta, USB staccato) sotto si prepara l'uscita «in attesa»: come WSJT-X («Not found»
                 // e il nome resta salvato) non e' un guasto e non va nei rapporti degli errori; senza quella rete di sicurezza si': e' un avviso vero
-                Err(e) if pending_possible && device_missing(&e) => tracing::info!("uscita audio per la trasmissione non ancora disponibile, resta in attesa della scheda: {e}"),
-                Err(e) => tracing::warn!("uscita audio per la trasmissione non disponibile: {e}"),
+                Err(e) => {
+                    if pending_possible && device_missing(&e) {
+                        tracing::info!("uscita audio per la trasmissione non ancora disponibile, resta in attesa della scheda: {e}");
+                    } else {
+                        tracing::warn!("uscita audio per la trasmissione non disponibile: {e}");
+                    }
+                    *lock(&self.out_error) = Some(e);
+                }
             }
         }
         // l'uscita scelta non c'e' ancora (radio spenta, cavo USB staccato): la trasmissione si prepara lo stesso con un'uscita «in attesa»
@@ -501,7 +525,21 @@ impl AudioManager {
         if pending_possible {
             let backend = Arc::clone(&self.backend);
             let (gain, channel, hint) = (Arc::clone(&self.gain), Arc::clone(&self.out_channel), stored.clone());
-            let reopen: tx_native::ReopenFn = Arc::new(move || backend.open_output(Some(&hint), Arc::clone(&gain), Arc::clone(&channel)).map(|(sink, _)| sink).map_err(tx_native::TxError::Audio));
+            let last_error = Arc::clone(&self.out_error);
+            let reopen: tx_native::ReopenFn = Arc::new(move || match backend.open_output(Some(&hint), Arc::clone(&gain), Arc::clone(&channel)) {
+                Ok((sink, name)) => {
+                    tracing::info!("uscita audio \"{name}\" comparsa: la trasmissione la usa da adesso");
+                    *lock(&last_error) = None;
+                    Ok(sink)
+                }
+                Err(e) => {
+                    // riprovata a ogni trasmissione: nel registro solo quando il motivo cambia
+                    if lock(&last_error).replace(e.clone()).as_deref() != Some(e.as_str()) {
+                        tracing::info!("uscita audio {hint} ancora non aperta: {e}");
+                    }
+                    Err(tx_native::TxError::Audio(e))
+                }
+            });
             let (switchable, switch) = SwitchableSink::new(Box::new(tx_native::PendingSink::new(stored.clone(), reopen)), Arc::clone(&self.gain));
             let mut st = lock(&self.state);
             st.switch = Some(switch);
@@ -533,6 +571,9 @@ impl AudioManager {
         let same = st.in_cur.is(requested, norm_in) && (st.input.is_some() || (requested.is_empty() && self.env_input.is_none()));
         if same {
             let changed = st.in_channel != channel;
+            if changed {
+                tracing::info!("canale d'ingresso audio: da {} a {} ({})", st.in_channel.name(), channel.name(), st.in_cur.name.as_deref().unwrap_or("nessun ingresso aperto"));
+            }
             st.in_channel = channel;
             self.in_channel.store(channel.code(), Ordering::Relaxed);
             return AudioPart::new(if changed { PartStatus::Applied } else { PartStatus::Unchanged }, st.in_cur.name.clone());
@@ -540,7 +581,10 @@ impl AudioManager {
         let hint: Option<String> = if requested.is_empty() {
             match self.env_input.as_deref().map(str::trim).filter(|e| !e.is_empty()) {
                 Some(env) => Some(env.to_string()),
-                None => return AudioPart::failed(st.in_cur.name.clone(), false, "nessun ingresso scelto: scegli un dispositivo"),
+                None => {
+                    tracing::warn!("ingresso audio: nessun dispositivo scelto, resta {}", st.in_cur.name.as_deref().unwrap_or("spento"));
+                    return AudioPart::failed(st.in_cur.name.clone(), false, "nessun ingresso scelto: scegli un dispositivo");
+                }
             }
         } else if is_system_default(requested) {
             None
@@ -559,13 +603,17 @@ impl AudioManager {
                 st.input = Some(stream);
                 st.in_channel = channel;
                 st.in_cur = Current { value: if from_env { String::new() } else { requested.to_string() }, from_env, name: Some(name.clone()) };
+                tracing::info!("ingresso audio cambiato: da \"{}\" a \"{name}\" (scelta: {}, canale {})", old_name.as_deref().unwrap_or("nessuno"), hint.as_deref().unwrap_or("predefinito del sistema"), channel.name());
+                *lock(&self.in_error) = None;
                 (self.on_input)(&name);
                 self.start_engine_once();
                 AudioPart::new(PartStatus::Applied, Some(name))
             }
             Err(error) => {
                 self.in_channel.store(old_channel.code(), Ordering::Relaxed);
+                *lock(&self.in_error) = Some(error.clone());
                 let Some(old) = old_name else {
+                    tracing::warn!("ingresso audio {requested}: {error}; nessun ingresso aperto");
                     return AudioPart::failed(None, false, error);
                 };
                 match self.backend.open_input(Some(&old), Arc::clone(&self.in_channel), self.tap.clone()) {
@@ -603,6 +651,9 @@ impl AudioManager {
         let Some(switch) = st.switch.clone() else {
             // niente catena di trasmissione: la scelta si ricorda e vale dal prossimo avvio
             let changed = !same || st.out_channel != channel;
+            if changed {
+                tracing::info!("uscita audio: scelta salvata ({}, canale {}), vale dal prossimo avvio perche' la trasmissione non e' attiva", if requested.is_empty() { "predefinita del sistema" } else { requested }, channel.name());
+            }
             st.out_channel = channel;
             if !same {
                 st.out_cur = Current { value: requested.to_string(), from_env: false, name: None };
@@ -616,23 +667,30 @@ impl AudioManager {
             match self.backend.open_output(hint, Arc::clone(&self.gain), Arc::clone(&self.out_channel)) {
                 Ok((sink, name)) => match switch.request(sink) {
                     SwitchOutcome::Applied => {
+                        tracing::info!("uscita audio cambiata: da \"{}\" a \"{name}\" (scelta: {}, canale {})", in_use.as_deref().unwrap_or("nessuna"), hint.unwrap_or("predefinita del sistema"), channel.name());
+                        *lock(&self.out_error) = None;
                         st.out_cur = Current { value: requested.to_string(), from_env: false, name: Some(name.clone()) };
                         st.out_pending = None;
                         in_use = Some(name);
                         status = PartStatus::Applied;
                     }
                     SwitchOutcome::Deferred => {
+                        tracing::info!("uscita audio \"{name}\" aperta: prende il posto di \"{}\" alla fine della trasmissione in corso", in_use.as_deref().unwrap_or("nessuna"));
+                        *lock(&self.out_error) = None;
                         st.out_pending = Some((requested.to_string(), name));
                         status = PartStatus::Deferred;
                     }
                 },
                 Err(error) => {
                     // l'uscita vecchia non e' stata toccata: si continua su quella
+                    tracing::warn!("uscita audio {}: {error}; resta {}", hint.unwrap_or("predefinita del sistema"), in_use.as_deref().unwrap_or("nessuna uscita aperta"));
+                    *lock(&self.out_error) = Some(error.clone());
                     return AudioPart { status: PartStatus::Failed, in_use, restored: st.out_cur.name.is_some(), message: Some(error) };
                 }
             }
         }
         if st.out_channel != channel {
+            tracing::info!("canale d'uscita audio: da {} a {} ({})", st.out_channel.name(), channel.name(), in_use.as_deref().unwrap_or("nessuna uscita aperta"));
             st.out_channel = channel;
             if status == PartStatus::Unchanged {
                 status = PartStatus::Applied;
@@ -678,6 +736,8 @@ impl AudioControl for AudioManager {
             input_in_use: st.in_cur.name.clone().filter(|_| st.input.is_some()),
             output_in_use: st.out_cur.name.clone(),
             output_pending: st.out_pending.as_ref().map(|(_, n)| n.clone()),
+            input_error: lock(&self.in_error).clone(),
+            output_error: lock(&self.out_error).clone(),
             default_save_dir: self.default_save_dir.display().to_string(),
         }
     }
@@ -917,6 +977,26 @@ mod tests {
         let out = r.manager.apply(&values("Rotto", ""));
         assert!(out.input.is_failed() && !out.input.restored && out.input.in_use.is_none());
         assert!(r.manager.devices().input_in_use.is_none());
+    }
+
+    #[test]
+    fn the_real_opening_error_stays_readable_until_the_device_opens() {
+        let r = rig("errori", values("Rotto", "Rotta"), None, None, &["Rotto", "Rotta"]);
+        r.manager.open_initial_input();
+        r.manager.build_output();
+        let devices = r.manager.devices();
+        assert_eq!(devices.input_error.as_deref(), Some("ingresso audio non aperto: Rotto"), "il motivo vero, non solo «non disponibile»");
+        assert_eq!(devices.output_error.as_deref(), Some("uscita audio non aperta: Rotta"));
+        // un ingresso che si apre cancella l'errore; un'uscita che non si apre lo aggiorna
+        let out = r.manager.apply(&values("Line In", "Rotta"));
+        assert_eq!(out.input.status, PartStatus::Applied);
+        let devices = r.manager.devices();
+        assert_eq!(devices.input_error, None);
+        assert!(devices.output_error.is_some());
+        // un'uscita che si apre cancella l'errore
+        lock(&r.backend.broken).clear();
+        let _ = r.manager.apply(&values("Line In", "Cuffie"));
+        assert_eq!(r.manager.devices().output_error, None);
     }
 
     #[test]

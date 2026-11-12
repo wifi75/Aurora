@@ -19,7 +19,7 @@ pub fn is_system_default(value: &str) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AudioDevice {
     pub name: String,
-    /// Il numero massimo di canali (1 = mono, 2 = stereo).
+    /// I canali con cui Aurora apre il dispositivo (1 = mono, 2 = stereo).
     pub channels: u16,
     /// E' il predefinito del sistema.
     pub is_default: bool,
@@ -36,6 +36,10 @@ pub struct AudioDevices {
     pub output_in_use: Option<String>,
     /// Un'uscita nuova gia' aperta che prende il posto della vecchia alla fine della trasmissione in corso.
     pub output_pending: Option<String>,
+    /// L'ultimo errore di apertura dell'ingresso, come lo da' il sistema (`null` se l'ingresso si e' aperto).
+    pub input_error: Option<String>,
+    /// L'ultimo errore di apertura dell'uscita (`null` se l'uscita si e' aperta).
+    pub output_error: Option<String>,
     /// La cartella dei file audio quando `SaveDir` e' vuota.
     pub default_save_dir: String,
 }
