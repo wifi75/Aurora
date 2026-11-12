@@ -237,3 +237,12 @@ di lui, e la copia combinata resta in memoria per la ripetizione seguente. La pr
 cambiabile) peggiorava il CER medio di 0,1-0,3 punti: il rumore fa parole corte che si somigliano. Rispetto al passo 12: soglie da −0,13 a
 +0,02 dB, CER medio da −0,12 a −0,01 punti; tenuto, di base (`set_repeats`). La pila dei nominativi (fusione dei nominativi simili anche
 non ripetuti di seguito) non e' fatta: la memoria delle ripetizioni ne copre la parte piu' utile.
+
+**Passo 14** (sintonia fine a decisione guidata e tolleranze): con i caratteri decodificati bene (probabilita' media sopra 0,8) si misura
+la rotazione di fase da un campione all'altro sul tono che la decisione dice acceso, separatamente per mark e space; ogni 16 bit, se i
+due toni danno lo stesso errore entro 1,5 Hz, l'oscillatore del front-end si sposta di meta' dell'errore, entro un limite (25 Hz nelle
+prove), anche con l'AFC spento. Rispetto al passo 13: 45 baud (scheda all'1 %, quindi toni spostati di 15 Hz) −0,44 dB e −0,92 punti,
+fuori +10 Hz −0,28 dB, ma portante +30 Hz +0,26 dB e +0,44 punti (la portante sposta la misura sul mark; con un solo errore medio dai due
+toni era +6,2 dB, con la concordanza entro 3 Hz +0,33). Peggiora uno scenario: resta un'opzione spenta (`set_fine_tuning`), la tabella
+di base non cambia. Velocita' (45 contro 45,45 baud) e ±500 ppm: la decodifica del carattere intero ricentra ogni start, l'errore di
+orologio lungo un carattere resta sotto 0,08 bit e non serve un orologio a lungo termine (scheda ±500 ppm entro 0,1 dB dal rumore).

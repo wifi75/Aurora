@@ -580,6 +580,11 @@ struct Frame {
 
 /// Quanto un'interpretazione deve superare quella letta (in nat: probabilita' dei codici piu' modello del testo) per cambiarla.
 const SHIFT_MARGIN: f32 = 1.0;
+/// Sintonia fine (passo 14): probabilita' media dei caratteri sopra la quale si misura l'errore di frequenza.
+const FINE_LOCK: f32 = 0.8;
+/// Sintonia fine: di quanto possono differire gli errori misurati sui due toni perche' si corregga.
+const FINE_AGREE_HZ: f32 = 1.5;
+
 /// Ripetizioni combinate (passo 13): parole ricordate e quanti decimi dei caratteri devono coincidere perche' una parola sia una
 /// ripetizione.
 const REPEAT_MEMORY: usize = 8;
@@ -976,6 +981,13 @@ pub struct RttyDemodulator {
     /// Passo 12: la parola trattenuta per le correzioni di registro, quando e' arrivato il suo ultimo carattere e il modello del testo.
     word: Vec<Frame>,
     word_t: f64,
+    /// Passo 14: sintonia fine (limite in Hz, 0 = spenta), probabilita' media degli ultimi caratteri, rotazione accumulata e uscite
+    /// precedenti dei due toni.
+    fine_limit: f32,
+    lock_prob: f32,
+    fine_acc: [(f64, f64); 2],
+    fine_prev: [(f32, f32); 2],
+    fine_n: u32,
     /// Passo 13: le ultime parole (con i valori morbidi dei bit) per combinare le ripetizioni, se accese.
     recent: Vec<Vec<Frame>>,
     repeats: bool,
@@ -1082,6 +1094,11 @@ impl RttyDemodulator {
             word: Vec::new(),
             word_t: 0.0,
             recent: Vec::new(),
+            fine_limit: 0.0,
+            lock_prob: 0.0,
+            fine_acc: [(0.0, 0.0); 2],
+            fine_prev: [(0.0, 0.0); 2],
+            fine_n: 0,
             repeats: true,
             prior: None,
             charset: RttyCharset::Ita2,
@@ -1618,6 +1635,16 @@ impl RttyDemodulator {
         }
     }
 
+    /// La sintonia fine a decisione guidata entro `limit_hz` (passo 14); `None` la spegne (di base: con una portante vicina a un tono
+    /// la soglia peggiora di 0,26 dB).
+    pub fn set_fine_tuning(&mut self, limit_hz: Option<f32>) {
+        self.fine_limit = limit_hz.unwrap_or(0.0).max(0.0);
+        if self.fine_limit == 0.0 && !self.afc && self.offset_hz != 0.0 {
+            self.offset_hz = 0.0;
+            self.retune_all();
+        }
+    }
+
     /// Le ripetizioni combinate (passo 13, accese alla creazione; valgono con il modello del testo, che trattiene le parole).
     pub fn set_repeats(&mut self, on: bool) {
         self.repeats = on;
@@ -1666,8 +1693,10 @@ impl RttyDemodulator {
                 self.probe_pos = 0;
                 self.bit_step();
             }
-            let m = self.mark.magnitude(&self.h);
-            let sp = self.space.magnitude(&self.h);
+            let zm = self.mark.output(&self.h);
+            let zs = self.space.output(&self.h);
+            let m = (zm.0 * zm.0 + zm.1 * zm.1).sqrt();
+            let sp = (zs.0 * zs.0 + zs.1 * zs.1).sqrt();
             let (n0, n1) = (self.noise[0].magnitude(&self.h), self.noise[1].magnitude(&self.h));
             let nz = 0.5 * (n0 + n1);
             self.sum_m += m;
@@ -1687,9 +1716,13 @@ impl RttyDemodulator {
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
             let l = self.llr(v);
             self.dec_n += 1;
+            if self.fine_limit > 0.0 {
+                self.fine_track(l, zm, zs);
+            }
             match &mut self.frames {
                 Some(f) => {
                     if let Some(fr) = f.push(l) {
+                        self.lock_prob += 0.25 * (fr.prob() - self.lock_prob);
                         found.push((fr.t - self.delay, fr));
                     }
                 }
@@ -1697,6 +1730,39 @@ impl RttyDemodulator {
             }
         }
         found
+    }
+
+    /// La sintonia fine a decisione guidata (passo 14): con un segnale RTTY decodificato bene (probabilita' media dei caratteri alta),
+    /// sul tono che la decisione dice acceso si misura di quanto ruota la fase da un campione all'altro; la rotazione media su 16 bit e'
+    /// l'errore di frequenza, che si corregge di meta' spostando l'oscillatore del front-end, entro `fine_limit` Hz. Vale anche con l'AFC
+    /// spento: e' una tolleranza del ricevitore, non insegue una stazione lontana.
+    fn fine_track(&mut self, l: f32, zm: (f32, f32), zs: (f32, f32)) {
+        let rot = |z: (f32, f32), p: (f32, f32)| (f64::from(z.0 * p.0 + z.1 * p.1), f64::from(z.1 * p.0 - z.0 * p.1));
+        if self.lock_prob >= FINE_LOCK && !self.afc {
+            let k = usize::from(l <= 0.0);
+            let (re, im) = if k == 0 { rot(zm, self.fine_prev[0]) } else { rot(zs, self.fine_prev[1]) };
+            self.fine_acc[k].0 += re;
+            self.fine_acc[k].1 += im;
+        }
+        self.fine_prev = [zm, zs];
+        self.fine_n += 1;
+        if self.fine_n as f32 >= 16.0 * self.spb {
+            self.fine_n = 0;
+            let acc = std::mem::take(&mut self.fine_acc);
+            let rate = f64::from(RATE) / self.decim as f64;
+            let hz = |(re, im): (f64, f64)| (re > 0.0).then(|| (im.atan2(re) * rate / (2.0 * PI)) as f32);
+            // i due toni devono dire la stessa cosa: un disturbo vicino a uno solo (una portante) sposterebbe solo quello
+            if let (Some(em), Some(es)) = (hz(acc[0]), hz(acc[1]))
+                && (em - es).abs() < FINE_AGREE_HZ
+            {
+                let err = 0.5 * (em + es);
+                let next = (self.offset_hz + 0.5 * err).clamp(-self.fine_limit, self.fine_limit);
+                if (next - self.offset_hz).abs() > 0.05 {
+                    self.offset_hz = next;
+                    self.retune_all();
+                }
+            }
+        }
     }
 
     /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti. La probabilita' di una lettera o di una cifra tiene conto
@@ -2014,6 +2080,21 @@ mod tests {
         for c in ["599", "TEST", "14080", "100W1"] {
             assert!(!is_callsign(c), "{c}");
         }
+    }
+
+    #[test]
+    fn la_sintonia_fine_corregge_un_segnale_fuori_di_qualche_hertz() {
+        let tx = p(1512.0, 170.0, 45.45);
+        let text = "RYRYRYRY CQ CQ DE IU3ABC IU3ABC PSE K ".repeat(4);
+        let mut audio = modulate(text.as_bytes(), tx, 0.3);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 0.2, 41)) {
+            *a += r;
+        }
+        let mut rx = RttyDemodulator::new(p(1500.0, 170.0, 45.45));
+        rx.set_fine_tuning(Some(25.0));
+        rx.process(&audio);
+        assert!((rx.frequency() - 1512.0).abs() < 3.0, "frequenza: {}", rx.frequency());
     }
 
     #[test]
