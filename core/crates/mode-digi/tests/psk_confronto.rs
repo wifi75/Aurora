@@ -11,7 +11,7 @@
 //! - `contro_fldigi` (con la feature `fldigi-oracle`): la stessa tabella con il ricevitore di fldigi 4.2.13 accanto al nostro.
 //!
 //! `cargo test --release -p mode-digi --test psk_confronto -- --ignored --nocapture --test-threads=1`
-//! (con `PSK_DEBUG=1` stampa il testo mandato e quello ricevuto; con `AURORA_WAV=<cartella>` scrive i file WAV dei casi, da riascoltare
+//! (con `PSK_DEBUG=1` stampa il testo mandato e quello ricevuto; con `PSK_SQUELCH=<soglia 0-100>` lo squelch e' acceso, anche in fldigi; con `AURORA_WAV=<cartella>` scrive i file WAV dei casi, da riascoltare
 //! con fldigi o ).
 
 mod common;
@@ -44,10 +44,11 @@ enum Prova {
     Livello,
 }
 
-/// Il ricevitore con le impostazioni di base del servizio.
+/// Il ricevitore con le impostazioni di base del servizio; con `PSK_SQUELCH=<soglia>` anche lo squelch acceso.
 fn ricevitore(mode: PskMode) -> PskDemodulator {
     let mut rx = PskDemodulator::new(mode, FREQ);
     rx.set_afc(true);
+    rx.set_squelch(std::env::var("PSK_SQUELCH").ok().and_then(|v| v.parse().ok()));
     rx
 }
 
@@ -125,12 +126,12 @@ fn una_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usi
     (errori("Aurora", &sent, &got), sent.len())
 }
 
-/// La stessa prova con il ricevitore di fldigi (AFC acceso, squelch spento come il nostro): (errori Aurora, errori fldigi, caratteri).
+/// La stessa prova con il ricevitore di fldigi (AFC acceso, squelch come il nostro): (errori Aurora, errori fldigi, caratteri).
 #[cfg(feature = "fldigi-oracle")]
 fn prova_contro_fldigi(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (usize, usize, usize) {
     let (sent, audio, from) = audio_di_prova(mode, prova, snr_db, seed);
     let ours = errori("Aurora", &sent, &decodifica(&mut ricevitore(mode), &audio, from));
-    let mut fl = mode_digi::fldigi_oracle::FldigiPsk::new(baud(mode), f64::from(FREQ), 8000.0, true, None);
+    let mut fl = mode_digi::fldigi_oracle::FldigiPsk::new(baud(mode), f64::from(FREQ), 8000.0, true, std::env::var("PSK_SQUELCH").ok().and_then(|v| v.parse().ok()));
     let low = common::a_8k(&audio);
     let from_8k = from * 2 / 3;
     for block in low[..from_8k].chunks(512) {
@@ -234,7 +235,7 @@ fn rumore_e_squelch() {
                 aggiungi_rumore(&mut audio, sigma, &mut rng);
                 let mut rx = ricevitore(mode);
                 if squelch {
-                    rx.set_squelch_db(Some(-45.0));
+                    rx.set_squelch(Some(mode_digi::psk::SQUELCH_DEFAULT));
                 }
                 let mut n = 0;
                 let mut lontano = 0.0_f32;

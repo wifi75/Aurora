@@ -68,7 +68,9 @@ const FILE_CRASH_VISTO: &str = "rapporti-crash-visto.json";
 pub fn pulisci(testo: &str, noti: &[String]) -> String {
     let mut s = testo.to_string();
     // i valori noti per primi: il nome utente potrebbe non stare in un percorso
-    let mut noti: Vec<&str> = noti.iter().map(|n| n.trim()).filter(|n| n.chars().count() >= 3).collect();
+    // le parole comuni non sono dati personali: un PC che si chiama «User» o «Radio» toglieva «Users» dai percorsi e «radio» dai messaggi
+    // (rapporti del 2026-11-12: «nessuna <personale> Cat4OM collegata»)
+    let mut noti: Vec<&str> = noti.iter().map(|n| n.trim()).filter(|n| n.chars().count() >= 3 && !parola_comune(n)).collect();
     noti.sort_by_key(|n| std::cmp::Reverse(n.len()));
     for n in noti {
         s = sostituisci_senza_maiuscole(&s, n, "<personale>");
@@ -77,20 +79,36 @@ pub fn pulisci(testo: &str, noti: &[String]) -> String {
     pulisci_parole(&s)
 }
 
-/// Sostituisce `cosa` ovunque compaia, senza guardare le maiuscole (solo per testo ASCII; altrimenti la forma esatta).
+/// Nomi generici di utenti e PC che non dicono chi e' la persona: non si tolgono dai rapporti.
+fn parola_comune(n: &str) -> bool {
+    const COMUNI: [&str; 22] = [
+        "user", "users", "utente", "admin", "administrator", "amministratore", "owner", "guest", "default", "radio", "ham", "shack", "station",
+        "stazione", "home", "desktop", "laptop", "notebook", "computer", "workgroup", "pc", "windows",
+    ];
+    let basso = n.to_lowercase();
+    COMUNI.contains(&basso.as_str())
+}
+
+/// Sostituisce `cosa` dove compare come parola intera (non dentro un'altra parola: «User» non tocca «Users»), senza guardare le
+/// maiuscole per il testo ASCII; altrimenti la forma esatta. I valori lunghi (6 caratteri o piu') si tolgono anche dentro altre parole,
+/// per non lasciarne pezzi («tizianocassone» in un nome composto).
 fn sostituisci_senza_maiuscole(testo: &str, cosa: &str, con: &str) -> String {
-    if !cosa.is_ascii() {
-        return testo.replace(cosa, con);
-    }
-    let basso = testo.to_ascii_lowercase();
-    let cosa = cosa.to_ascii_lowercase();
+    let (basso, cosa_cmp) = if cosa.is_ascii() { (testo.to_ascii_lowercase(), cosa.to_ascii_lowercase()) } else { (testo.to_string(), cosa.to_string()) };
+    let anche_dentro = cosa.chars().count() >= 6;
+    let alnum_prima = |i: usize| testo[..i].chars().next_back().is_some_and(char::is_alphanumeric);
+    let alnum_dopo = |j: usize| testo[j..].chars().next().is_some_and(char::is_alphanumeric);
     let mut out = String::with_capacity(testo.len());
     let mut da = 0;
-    while let Some(i) = basso[da..].find(&cosa) {
-        let i = da + i;
-        out.push_str(&testo[da..i]);
-        out.push_str(con);
-        da = i + cosa.len();
+    let mut cerca = 0;
+    while let Some(i) = basso[cerca..].find(&cosa_cmp) {
+        let i = cerca + i;
+        let j = i + cosa_cmp.len();
+        if anche_dentro || (!alnum_prima(i) && !alnum_dopo(j)) {
+            out.push_str(&testo[da..i]);
+            out.push_str(con);
+            da = j;
+        }
+        cerca = j;
     }
     out.push_str(&testo[da..]);
     out
@@ -1246,6 +1264,12 @@ mod tests {
     #[test]
     fn valori_noti_senza_maiuscole() {
         assert_eq!(pulisci("utente tiziano su PC-SALA", &["Tiziano".into(), "pc-sala".into()]), "utente <personale> su <personale>");
+        // parole intere per i valori corti; i nomi generici (User, Radio) restano: non sono dati personali
+        assert_eq!(pulisci("Bob e Bobby", &["bob".into()]), "<personale> e Bobby");
+        assert_eq!(pulisci("nessuna radio Cat4OM collegata", &["Radio".into(), "User".into()]), "nessuna radio Cat4OM collegata");
+        assert_eq!(pulisci(r"C:\Users\User\AppData", &["User".into()]), r"C:\Users\<utente>\AppData");
+        // i valori lunghi si tolgono anche dentro un'altra parola
+        assert_eq!(pulisci("cartella tizianocassone2", &["tizianocassone".into()]), "cartella <personale>2");
     }
 
     #[test]

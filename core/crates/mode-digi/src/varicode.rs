@@ -79,6 +79,16 @@ pub fn decode(bits: &str) -> Option<u8> {
     CODES.iter().position(|c| *c == bits).map(|i| i as u8)
 }
 
+/// Il carattere di un codice dato come numero (i bit del carattere, il primo nel bit piu' alto, senza i due zeri di coda): e' il registro
+/// dei bit ricevuti come lo tengono fldigi (`psk_varicode_decode`) e  (tabella inversa). `None` se il codice non esiste.
+pub fn decode_value(value: u32) -> Option<u8> {
+    static TABLE: std::sync::OnceLock<std::collections::HashMap<u32, u8>> = std::sync::OnceLock::new();
+    let table = TABLE.get_or_init(|| {
+        CODES.iter().enumerate().filter_map(|(i, c)| u32::from_str_radix(c, 2).ok().map(|v| (v, i as u8))).collect()
+    });
+    table.get(&value).copied()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,5 +111,10 @@ mod tests {
         assert_eq!(encode(b'\r'), "11111");
         assert_eq!(decode("1"), Some(b' '));
         assert_eq!(decode("0"), None);
+        for i in 0..=255u8 {
+            let v = u32::from_str_radix(encode(i), 2).expect("binario");
+            assert_eq!(decode_value(v), Some(i));
+        }
+        assert_eq!(decode_value(0), None);
     }
 }

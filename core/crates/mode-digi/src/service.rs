@@ -702,7 +702,7 @@ impl Demod {
             Some(mode) => {
                 let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
                 d.set_afc(s.afc_on);
-                d.set_squelch_db(squelch);
+                d.set_squelch(s.squelch_on.then_some(psk::SQUELCH_DEFAULT));
                 Demod::Psk(Box::new(d))
             }
             None => {
