@@ -164,11 +164,10 @@ fn run_jt9(jt9: &Path, work: &Path, args: &[String], files: &[PathBuf]) -> (Vec<
         eprintln!("jt9> {line}");
         if line.contains("<DecodeFinished>") {
             per_file.push(Vec::new());
-        } else if !line.trim().is_empty() {
-            if let Some(last) = per_file.last_mut() {
+        } else if !line.trim().is_empty()
+            && let Some(last) = per_file.last_mut() {
                 last.push(line.to_string());
             }
-        }
     }
     if !out.stderr.is_empty() {
         eprintln!("jt9 stderr: {}", String::from_utf8_lossy(&out.stderr).trim());

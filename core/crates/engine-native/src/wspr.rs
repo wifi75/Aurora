@@ -339,6 +339,14 @@ impl Scheduler {
     }
 }
 
+/// Le prove che cambiano i valori globali del radiofaro (Tx Pct, potenza, periodi) girano una alla volta: in parallelo una rimetteva il Tx
+/// Pct dell'altra e il radiofaro poteva non partire (prova che falliva ogni tanto).
+#[cfg(test)]
+pub(crate) fn test_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -369,14 +377,14 @@ mod tests {
     #[test]
     fn the_message_follows_wsjtx() {
         let alt = AtomicBool::new(false);
-        assert_eq!(compose("iu3abc", "JN55wm", 37, true, false, &alt), "IU3ABC JN55 37");
+        assert_eq!(compose("iu3abc", "IO91wm", 37, true, false, &alt), "IU3ABC IO91 37");
         // nominativo composto: prima il tipo 2, poi il tipo 3
         assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, false, &alt), "PJ4/K1ABC 37");
         assert_eq!(compose("PJ4/K1ABC", "FK52ud", 37, true, false, &alt), "<PJ4/K1ABC> FK52UD 37");
         // locatore a 6 caratteri senza «Prefer type 1»
-        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, false, &alt), "IU3ABC JN55 23");
-        assert_eq!(compose("IU3ABC", "JN55wm", 23, false, false, &alt), "<IU3ABC> JN55WM 23");
-        for m in ["IU3ABC JN55 37", "PJ4/K1ABC 37", "<PJ4/K1ABC> FK52UD 37", "<IU3ABC> JN55WM 23"] {
+        assert_eq!(compose("IU3ABC", "IO91wm", 23, false, false, &alt), "IU3ABC IO91 23");
+        assert_eq!(compose("IU3ABC", "IO91wm", 23, false, false, &alt), "<IU3ABC> IO91WM 23");
+        for m in ["IU3ABC IO91 37", "PJ4/K1ABC 37", "<PJ4/K1ABC> FK52UD 37", "<IU3ABC> IO91WM 23"] {
             assert!(jt::wspr::tx::tones(m).is_some(), "{m}");
         }
         assert!(!set_power_dbm(36));

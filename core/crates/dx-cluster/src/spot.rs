@@ -95,8 +95,13 @@ pub fn guess_mode(comment: &str, khz: f64) -> Option<String> {
         }
         .to_string());
     }
-    if let Some((mode, _, _)) = DIGITAL_KHZ.iter().find(|(_, near, list)| list.iter().any(|f| (khz - f).abs() <= *near)) {
-        return Some((*mode).to_string());
+    let nearest = DIGITAL_KHZ
+        .iter()
+        .flat_map(|(mode, near, list)| list.iter().map(move |f| (*mode, (khz - f).abs(), *near)))
+        .filter(|(_, distance, near)| distance <= near)
+        .min_by(|a, b| a.1.total_cmp(&b.1));
+    if let Some((mode, _, _)) = nearest {
+        return Some(mode.to_string());
     }
     if words.iter().any(|w| matches!(*w, "DIGI" | "DIGITAL" | "DATA" | "RTTY" | "BEACON" | "BCN" | "NCDXF")) {
         return None;
@@ -195,6 +200,10 @@ mod tests {
         assert_eq!(parse_spot("DX de AA1AA: 21074.2 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("FT8"));
         assert_eq!(parse_spot("DX de AA1AA: 21140.0 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("FT4"));
         assert_eq!(parse_spot("DX de AA1AA: 14095.6 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("WSPR"));
+        // la frequenza di lavoro piu' vicina vince anche dove le finestre si sovrappongono
+        assert_eq!(parse_spot("DX de AA1AA: 14078.5 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("JS8"));
+        assert_eq!(parse_spot("DX de AA1AA: 10138.7 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("WSPR"));
+        assert_eq!(parse_spot("DX de AA1AA: 18104.6 K1ABC strong 1200Z").unwrap().mode.as_deref(), Some("WSPR"));
     }
 
     #[test]

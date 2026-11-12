@@ -898,7 +898,7 @@ impl Rtd {
         }
         if o.swl && nsuccess >= 2 {
             // i brevi dell'ascolto si mostrano dalla seconda volta che si vedono, se non troppo deboli
-            let seenb4 = self.recent_shmsgs.iter().any(|m| *m == text);
+            let seenb4 = self.recent_shmsgs.contains(&text);
             if !seenb4 {
                 self.recent_shmsgs.pop();
                 self.recent_shmsgs.insert(0, text.clone());

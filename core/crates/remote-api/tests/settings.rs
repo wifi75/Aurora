@@ -137,7 +137,8 @@ async fn the_default_table_has_the_jtdx_rows_with_their_regions_and_a_saved_tabl
     let rows = list.as_array().unwrap();
     // dalla 0.11.194-195 anche JT4, Q65, MSK144 e le bande da 2200 m a 24 GHz con le frequenze di WSJT-X
     // 116: la riga FT8 dei 70 cm stava due volte (24aadb10) e la tabella di fabbrica non si poteva salvare
-    assert_eq!(rows.len(), 116,"le righe di JTDX e di WSJT-X delle bande e dei modi che Aurora conosce");
+    // 151 dalla 0.11.238: le righe di FST4, FST4W e WSPR di WSJT-X 3.3
+    assert_eq!(rows.len(), 151, "le righe di JTDX e di WSJT-X delle bande e dei modi che Aurora conosce");
     assert!(rows.iter().any(|e| e["band"] == "20m" && e["mode"] == "JT65" && e["hz"] == 14_076_000));
     assert!(rows.iter().any(|e| e["band"] == "20m" && e["mode"] == "JT9" && e["hz"] == 14_078_000));
     assert!(rows.iter().any(|e| e["band"] == "160m" && e["hz"] == 1_810_000 && e["region"] == "R1" && e["preferred"] == true));

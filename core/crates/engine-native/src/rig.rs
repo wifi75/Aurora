@@ -462,11 +462,13 @@ impl NativeControls {
         self.split_probe.lock().unwrap_or_else(|p| p.into_inner()).as_ref().is_some_and(|probe| probe())
     }
 
-    /// Il tono audio da trasmettere per la frequenza Tx `tx_hz`: con lo split della radio, in FT8 e FT4, `tx_hz - XIT` con XIT = `(tx/500)*500 - 1500`
-    /// (`setXIT` di `mainwindow.cpp`, WSJT-X 3.3: «Don't use XIT for VHF & up» salvo FT4/FT8), cosi' l'audio resta tra 1500 e 2000 Hz e il VFO di
-    /// trasmissione, spostato dello stesso XIT, porta il segnale dove deve stare. Negli altri modi e senza split il tono e' `tx_hz`.
-    pub fn tx_audio_hz(&self, tx_hz: u32, ft8_or_ft4: bool) -> u32 {
-        if !ft8_or_ft4 || !self.radio_split_active() {
+    /// Il tono audio da trasmettere per la frequenza Tx `tx_hz`: con lo split della radio `tx_hz - XIT` con XIT = `(tx/500)*500 - 1500` (`setXIT`
+    /// di `mainwindow.cpp`, WSJT-X 3.3), cosi' l'audio resta tra 1500 e 2000 Hz e il VFO di trasmissione, spostato dello stesso XIT, porta il
+    /// segnale dove deve stare. Vale per tutti i modi, come WSJT-X senza le funzioni VHF (Aurora non le ha): il CAT sposta il VFO per ogni modo,
+    /// quindi anche il tono di WSPR, FST4W, FST4, JT65... deve spostarsi (prima solo FT8 e FT4: WSPR a 1450 Hz usciva 500 Hz sotto). Senza
+    /// split il tono e' `tx_hz`.
+    pub fn tx_audio_hz(&self, tx_hz: u32) -> u32 {
+        if !self.radio_split_active() {
             return tx_hz;
         }
         let shifted = i64::from(tx_hz) - rig_control::cat_config::split_xit_hz(tx_hz);
@@ -1365,20 +1367,22 @@ impl Rig for NativeRig {
 mod tests {
     use super::*;
 
-    /// Con lo split della radio il tono si sposta di XIT = (tx/500)*500 - 1500 come `setXIT` di WSJT-X, solo in FT8/FT4: il VFO si sposta dello stesso
-    /// XIT e il segnale esce su dial + tx.
+    /// Con lo split della radio il tono si sposta di XIT = (tx/500)*500 - 1500 come `setXIT` di WSJT-X, in tutti i modi: il VFO si sposta dello
+    /// stesso XIT e il segnale esce su dial + tx.
     #[test]
     fn with_radio_split_the_tone_moves_by_the_wsjtx_xit() {
         let c = NativeControls::default();
-        assert_eq!(c.tx_audio_hz(2300, true), 2300, "senza split il tono e' la frequenza Tx");
+        assert_eq!(c.tx_audio_hz(2300), 2300, "senza split il tono e' la frequenza Tx");
         c.set_split_probe(std::sync::Arc::new(|| true));
         for tx in [300u32, 700, 1200, 1500, 1999, 2300, 2999] {
-            let audio = c.tx_audio_hz(tx, true);
+            let audio = c.tx_audio_hz(tx);
             let xit = rig_control::cat_config::split_xit_hz(tx);
             assert_eq!(i64::from(audio) + xit, i64::from(tx), "tx {tx}");
             assert!((1500..2000).contains(&audio), "tx {tx}: tono {audio} fuori da 1500-2000");
         }
-        assert_eq!(c.tx_audio_hz(2300, false), 2300, "JT65, JT9, Q65: niente XIT");
+        // WSPR e FST4W nella sottobanda 1400-1600: il tono sale e resta nella finestra con il VFO spostato
+        assert_eq!(c.tx_audio_hz(1450), 1950);
+        assert_eq!(c.tx_audio_hz(1550), 1550);
     }
 
     /// FST4 e FST4W con o senza periodo; i periodi che il modo non ha si scartano.
@@ -1502,6 +1506,7 @@ mod tests {
 
     #[test]
     fn what_the_user_sets_is_saved_and_restored_except_monitor() {
+        let _globals = crate::wspr::test_lock();
         let (rig, controls) = rig();
         rig.set_control("skip_tx1", Some(true)).expect("skip");
         rig.set_control("rrr", Some(true)).expect("rrr");

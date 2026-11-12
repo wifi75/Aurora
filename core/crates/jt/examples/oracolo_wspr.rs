@@ -213,7 +213,7 @@ fn cases() -> Vec<Case> {
     });
     v.push(Case {
         name: "tipo3".into(),
-        sigs: vec![sig("<PJ4/K1ABC> FK52UD 37", -18.0, 1470.0, 0.0, 0.0), sig("<IU3ABC> JN55WM 30", -18.0, 1530.0, 0.0, 0.0)],
+        sigs: vec![sig("<PJ4/K1ABC> FK52UD 37", -18.0, 1470.0, 0.0, 0.0), sig("<IU3ABC> IO91WM 30", -18.0, 1530.0, 0.0, 0.0)],
         seed: next(),
     });
     v.push(Case { name: "suffisso".into(), sigs: vec![sig("IU3ABC/P 33", -20.0, 1490.0, 0.0, 0.0)], seed: next() });

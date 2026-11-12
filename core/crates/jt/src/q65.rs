@@ -1882,7 +1882,7 @@ mod tests {
     #[test]
     fn tones_have_22_sync_symbols_on_tone_zero() {
         let t = tones("CQ IU3ABC IO91", &mut CallHashes::default()).expect("messaggio");
-        assert_eq!(t.iter().filter(|&&v| v == 0).count() >= 22, true);
+        assert!(t.iter().filter(|&&v| v == 0).count() >= 22);
         for p in ISYNC {
             assert_eq!(t[p - 1], 0);
         }

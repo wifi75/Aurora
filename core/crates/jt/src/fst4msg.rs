@@ -45,7 +45,7 @@ fn is_grid6(g: &str) -> bool {
     let b = g.as_bytes();
     match b.len() {
         4 => is_grid4(g),
-        6 => is_grid4(&g[..4]) && (b'A'..=b'X').contains(&b[4]) && (b'A'..=b'X').contains(&b[5]),
+        6 => g.get(..4).is_some_and(is_grid4) && (b'A'..=b'X').contains(&b[4]) && (b'A'..=b'X').contains(&b[5]),
         _ => false,
     }
 }

@@ -960,7 +960,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     fn tune(&mut self, now_s: f64) -> String {
         let tx_hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
         self.controls.tx_audio_planned.store(tx_hz, Ordering::Relaxed);
-        let hz = self.controls.tx_audio_hz(tx_hz, matches!(self.mode, Mode::Ft8 | Mode::Ft4));
+        let hz = self.controls.tx_audio_hz(tx_hz);
         let mode = match self.mode {
             Mode::Ft8 => tx_native::Mode::Ft8,
             Mode::Ft4 => tx_native::Mode::Ft4,
@@ -973,7 +973,8 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             Mode::Fst4w => tx_native::Mode::Fst4w,
             Mode::Wspr => tx_native::Mode::Wspr,
         };
-        let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).max(1.0);
+        // al massimo quanto un periodo di WSPR (118,5 s): nei modi a periodo lungo (FST4W-1800) erano 30 minuti di portante piena e 86 MB di onda
+        let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).clamp(1.0, 118.5);
         let rate = f64::from(tx_native::WAVE_RATE);
         let wave: Vec<f32> = (0..(secs * rate) as usize).map(|i| (2.0 * std::f64::consts::PI * f64::from(hz) * i as f64 / rate).sin() as f32 * 0.95).collect();
         let slot = Slot::at(self.mode, now_s).next();
@@ -1847,7 +1848,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let mode = self.mode;
         // con lo split della radio il tono si sposta (XIT) e il CAT sposta il VFO di trasmissione dello stesso valore al PTT
         self.controls.tx_audio_planned.store(freq, Ordering::Relaxed);
-        let freq = self.controls.tx_audio_hz(freq, matches!(mode, Mode::Ft8 | Mode::Ft4));
+        let freq = self.controls.tx_audio_hz(freq);
         let mut run = |t: &str| -> Result<Vec<f32>, String> {
             match mode {
                 Mode::Ft8 => {
@@ -2705,6 +2706,7 @@ mod tests {
     /// campioni, e il ricevitore di wsprd lo rilegge; senza Abilita Tx non parte niente e i messaggi ricevuti non toccano la sequenza.
     #[test]
     fn the_wspr_beacon_goes_out_with_enable_tx_and_decodes_back() {
+        let _globals = crate::wspr::test_lock();
         let (mut d, port) = jt_driver(Mode::Wspr);
         // l'inizio di un periodo di due minuti (minuto pari)
         let rx_ms = 1_700_000_040_000u64 / 120_000 * 120_000;
@@ -2729,6 +2731,7 @@ mod tests {
     /// messaggio FST4W non trasmette altro che il radiofaro.
     #[test]
     fn the_fst4w_beacon_goes_out_with_enable_tx_and_decodes_back() {
+        let _globals = crate::wspr::test_lock();
         let (mut d, port) = jt_driver(Mode::Fst4w);
         let rx_ms = 1_700_000_040_000u64 / 120_000 * 120_000;
         let now_s = (rx_ms + 119_200) as f64 / 1000.0;

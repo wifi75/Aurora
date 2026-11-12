@@ -1253,6 +1253,9 @@ fn fst4_options(wspr: bool, ft8_options: &Options, settings: &decode_opts::Decod
     let period_s = qso_native::slot::fst4_period_s(wspr);
     let ap = ft8_options.ap.as_ref();
     let rx = ap.and_then(|a| a.rx_freq_hz).or(ft8_options.rx_freq_hz).unwrap_or(1500.0).round() as i32;
+    // FST4W come WSJT-X (`sbFST4W_RxFreq`, 1500 Hz di fabbrica): si ascolta nella sottobanda dei radiofari 1400-1600 Hz, non attorno alla
+    // barra Rx lasciata in FT8 (a 800 Hz i radiofari non si sarebbero mai decodificati). Come il Tx del radiofaro: fuori da 1400-1600, 1500
+    let rx = if wspr && !(1400..=1600).contains(&rx) { 1500 } else { rx };
     let width = match period_s {
         0..=60 => 2000,
         120 => 1000,
