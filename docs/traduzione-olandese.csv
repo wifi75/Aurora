@@ -4088,6 +4088,8 @@ digi.cw.bandwidth,CW filter bandwidth,Bandbreedte CW-filter
 digi.cw.bandwidthTip,"Narrower removes more noise and nearby stations but needs the tone centred (the AFC follows it); 150 Hz as in fldigi suits almost every case, 50-100 Hz for weak signals in a crowd, 250-500 Hz for searching.","Smaller haalt meer ruis en nabije stations weg, maar wil de toon in het midden (de AFC volgt hem); 150 Hz zoals in fldigi past bijna altijd, 50-100 Hz voor zwakke signalen in de drukte, 250-500 Hz om te zoeken."
 digi.cw.som,SOM decoding (straight key),SOM-decodering (handsleutel)
 digi.cw.somTip,Instead of the table it picks the character closest to the lengths of dots and dashes (like fldigi’s SOM decoding): it helps with an irregular straight key.,In plaats van de tabel kiest hij het teken dat het dichtst bij de lengtes van punten en strepen ligt (zoals de SOM-decodering van fldigi): helpt bij een onregelmatige handsleutel.
+digi.st.menu,Bar options,Opties van de balk
+digi.st.threshold,Squelch threshold…,Squelch-drempel…
 digi.st.measures,"Signal measurements: S/N (in PSK as in fldigi, in CW in 3 kHz), PSK IMD (during the idle reversals; below -20 dB is fine) and the speed read in CW","Signaalmetingen: S/R (in PSK zoals fldigi, in CW in 3 kHz), IMD van PSK (tijdens de faseomkeringen in rust; onder -20 dB is goed) en de herkende snelheid in CW"
 tip.nav.sat,"Satellites: map, passes, Doppler on the radio and a rotator that follows","Satellieten: kaart, passages, Doppler op de radio en een rotor die volgt"
 sat.title,Satellites,Satellieten

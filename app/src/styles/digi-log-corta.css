@@ -227,6 +227,12 @@ html[data-theme='light'] .digi-classica .digi-gear:hover { color: #7a3400; backg
 .digi-log-table--completa table.mv-grid thead th { border-bottom-color: var(--grid-col-line); }
 .digi-log-table--completa table.mv-grid tr > :last-child { border-right: 0; }
 
+/* menu del tasto destro della barra di stato */
+.digi-st-menu { min-width: 13rem; }
+.digi-st-menu button { display: flex; align-items: center; gap: 0.35rem; }
+.digi-st-menu-check { display: inline-block; width: 1rem; text-align: center; color: var(--accent, #8e7bff); font-weight: 700; }
+.digi-st-menu-sep { margin: 0.25rem 0.3rem; border: 0; border-top: 1px solid var(--border); }
+
 /* finestra «Impostazioni RTTY»: compatta, quattro profili con i pallini, soglia dello squelch in verticale */
 .rtty-dialog { width: min(46rem, 96vw); }
 .rtty-sets { display: flex; gap: 0.9rem; margin-left: auto; }

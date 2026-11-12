@@ -62,6 +62,8 @@ interface Views {
   defaultRst: boolean;
   /** Cascata larga (0-5 kHz) o stretta (0-3,5 kHz). */
   wideWaterfall: boolean;
+  /** L'orologio UTC nella barra di stato (menu del tasto destro della barra). */
+  utc?: boolean;
 }
 
 const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
@@ -1034,7 +1036,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           onToggleSnap={() => toggleSetting('snap', 'toggle')}
           onFreq={(hz) => pickFreq(hz, false)}
           onModeSettings={() => setSettingsOpen(true)}
-          onThreshold={() => setSettingsOpen(true)}
+          onThreshold={() => (s.mode === 'rtty' ? setRttyOpen(true) : setSettingsOpen(true))}
+          showUtc={views.utc === true}
+          onToggleUtc={() => setView({ utc: views.utc !== true })}
+          onToggleFlashTx={() => setView({ flashTx: !views.flashTx })}
         />
       ) : null}
 

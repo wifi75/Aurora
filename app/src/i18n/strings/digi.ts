@@ -307,6 +307,8 @@ export const digiStrings = {
     'En lugar de la tabla elige el carácter más cercano a las duraciones de puntos y rayas (como la decodificación SOM de fldigi): ayuda con un manipulador vertical irregular.',
     'Em vez da tabela escolhe o carácter mais próximo das durações dos pontos e traços (como a descodificação SOM do fldigi): ajuda com um manipulador vertical irregular.',
   ],
+  'digi.st.menu': ['Opzioni della barra', 'Bar options', 'Leistenoptionen', 'Options de la barre', 'Opciones de la barra', 'Opções da barra'],
+  'digi.st.threshold': ['Soglia dello squelch…', 'Squelch threshold…', 'Squelch-Schwelle…', 'Seuil du squelch…', 'Umbral del squelch…', 'Limiar do squelch…'],
   'digi.st.measures': [
     'Misure del segnale: S/N (in PSK come fldigi, in CW in 3 kHz), IMD del PSK (durante le inversioni; sotto -20 dB va bene) e velocità capita in CW',
     'Signal measurements: S/N (in PSK as in fldigi, in CW in 3 kHz), PSK IMD (during the idle reversals; below -20 dB is fine) and the speed read in CW',
