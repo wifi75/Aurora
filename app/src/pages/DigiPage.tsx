@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -19,8 +19,10 @@ import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
+import { appendDigiNote, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
 import { DigiRxText } from '../components/DigiRxText';
+import { DigiTxBox } from '../components/DigiTxBox';
+import { useDigiTxLive } from '../lib/digiTxLive';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
@@ -128,6 +130,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
+  // trasmissione a flusso: quanto del testo della finestra e' in coda e quanto e' gia' partito
+  const txLive = useDigiTxLive(tx, setTx);
+  const txLiveRef = useRef({ tx, txLive });
+  txLiveRef.current = { tx, txLive };
   // larghezza del log di lato (si allarga trascinando il bordo), ricordata fra un avvio e l'altro
   const [logW, setLogW] = useState<number>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.logw') ?? '');
@@ -259,15 +265,21 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (views.defaultRst) setSavedField({ rsts: '599', rstr: '599' });
   };
 
+  // il testo parte e resta nella finestra di trasmissione, dove si vede a che punto e' arrivato (l'eco nella ricezione arriva dal motore)
   const send = useCallback(
     (body: string) => {
-      const message = (caps.current ? body.toUpperCase() : body).trim();
-      if (message === '') return;
+      const { tx: box, txLive: tl } = txLiveRef.current;
+      const queued = tl.progress.queued;
+      // dalla finestra parte solo quello che non e' gia' in coda; una macro si mette in coda dopo
+      const fromBox = body === box;
+      const upper = caps.current ? body.toUpperCase() : body;
+      const message = fromBox ? upper.slice(queued) : upper.trim();
+      if (message.trim() === '') return;
       setProblem('');
       digiTransmit(message).then(
         () => {
-          appendDigiTx(message);
-          setTx('');
+          if (!fromBox) setTx((v) => v.slice(0, queued) + message + v.slice(queued));
+          tl.queue(message.length);
           onChanged();
         },
         (e: unknown) => {
@@ -279,9 +291,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     [onChanged, t],
   );
 
+  // la levetta RX/TX (e il tasto Pausa): apre la trasmissione, che resta accesa e manda quello che si scrive; di nuovo la chiude a fine
+  // testo. Esc la ferma subito.
   const toggleTx = () => {
-    if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
-    else send(live.current.tx);
+    if (live.current.snap.tx.state === 'sending') {
+      void digiTxClose().then(onChanged, onChanged);
+      return;
+    }
+    const box = caps.current ? live.current.tx.toUpperCase() : live.current.tx;
+    setProblem('');
+    digiTxOpen(box).then(
+      () => {
+        setTx(box);
+        txLiveRef.current.txLive.queue(box.length);
+        onChanged();
+      },
+      (e: unknown) => {
+        const code = e instanceof ApiError ? e.code : '';
+        setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+      },
+    );
   };
 
   // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
@@ -898,12 +927,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
-            <textarea
-              ref={txBox}
+            <DigiTxBox
+              boxRef={txBox}
               className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
               value={tx}
-              aria-label={t('digi.tx.title')}
-              onChange={(e) => setTx(views.capsOnly ? e.target.value.toUpperCase() : e.target.value)}
+              progress={txLive.progress}
+              sending={sending}
+              label={t('digi.tx.title')}
+              placeholder={snap.tx.open ? t('digi.tx.openHint') : undefined}
+              onText={(v) => {
+                const next = views.capsOnly ? v.toUpperCase() : v;
+                // mentre si trasmette quello che si scrive parte subito (e il Backspace toglie solo quello che non e' ancora partito)
+                if (sending || txLive.progress.queued > 0) txLive.edit(next);
+                else setTx(next);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}

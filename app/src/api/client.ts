@@ -1798,7 +1798,8 @@ export interface DigiSnapshot {
   /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz); `imd_db` e `quality` (0-100) solo
    * in PSK; `wpm` la velocita' capita in CW; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
   rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; snr_db?: number; imd_db?: number; quality?: number; wpm?: number; radio_lsb?: boolean };
-  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
+  /** `open`: trasmissione aperta a levetta (resta in trasmissione, il testo scritto parte mentre si scrive). */
+  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null; open?: boolean };
   settings: DigiSettings;
   can_transmit: boolean;
   modes: { id: string; name: string }[];
@@ -1848,6 +1849,26 @@ export async function digiTextFile(name: string): Promise<string> {
 
 export async function digiAbort(): Promise<void> {
   await request('/digi/tx/abort', { method: 'POST' });
+}
+
+/** Apre la trasmissione (levetta RX/TX): resta in trasmissione finche' non si chiude; `text` e' il testo gia' scritto. */
+export async function digiTxOpen(text: string): Promise<void> {
+  await request('/digi/tx/open', jsonInit({ text }));
+}
+
+/** Testo scritto durante la trasmissione: si accoda a quello che sta partendo. */
+export async function digiTxType(text: string): Promise<void> {
+  await request('/digi/tx/type', jsonInit({ text }));
+}
+
+/** Toglie fino a `count` caratteri non ancora partiti dalla fine del testo in coda; restituisce quanti ne ha tolti. */
+export async function digiTxUnsend(count: number): Promise<number> {
+  return ((await (await request('/digi/tx/unsend', jsonInit({ count }))).json()) as { removed: number }).removed;
+}
+
+/** Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione. */
+export async function digiTxClose(): Promise<void> {
+  await request('/digi/tx/close', { method: 'POST' });
 }
 
 // ---- Satelliti (orbite, passaggi, Doppler sulla radio e rotore): vedi docs/api.md ----

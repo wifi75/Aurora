@@ -55,6 +55,23 @@ export function appendDigiNote(note: string): void {
   append(`${sep}[${note}]\n`);
 }
 
+/** L'eco della trasmissione e' aperta: i caratteri partiti via radio si aggiungono alla riga «» » corrente. */
+let echoOpen = false;
+
+/** L'eco dei caratteri appena partiti via radio (evento `tx_sent`), al ritmo della trasmissione. */
+function appendTxEcho(raw: string): void {
+  let add = '';
+  if (!echoOpen) {
+    add = `${text === '' || text.endsWith('\n') ? '' : '\n'}» `;
+    echoOpen = true;
+  }
+  for (const c of raw) {
+    if (c === '\r') continue;
+    add += c === '\n' ? '\n» ' : c;
+  }
+  append(add);
+}
+
 /** I caratteri ricevuti in coda al testo: i ritorni a capo diventano '\n', le posizioni in `weakAt` (nel testo dell'evento) incerte. */
 function appendRx(raw: string, weakAt: readonly number[] | undefined): void {
   const flags = new Set(weakAt ?? []);
@@ -92,5 +109,10 @@ export function onDigi(listener: Listener): () => void {
 
 export function emitDigi(event: DigiStreamEvent): void {
   if (event.kind === 'rx_text' && event.text) appendRx(event.text, event.weak);
+  if (event.kind === 'tx_sent' && event.text) appendTxEcho(event.text);
+  if (event.kind === 'tx' && event.state && event.state !== 'sending' && echoOpen) {
+    echoOpen = false;
+    append('\n');
+  }
   for (const l of listeners) l(event);
 }

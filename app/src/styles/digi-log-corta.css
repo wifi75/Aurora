@@ -37,6 +37,15 @@
 .digi-sent { text-decoration: underline; text-decoration-color: #6f81a8; text-underline-offset: 3px; }
 /* RTTY: caratteri incerti (probabilita' sotto 0,9) in chiaro */
 .digi-weak { opacity: 0.45; }
+
+/* finestra di trasmissione: sotto il testo uno sfondo con le stesse misure segna i caratteri partiti e quelli in coda */
+.digi-txstack { position: relative; flex: 1 1 0; min-height: 0; display: flex; }
+.digi-txstack > .digi-txwin { scrollbar-gutter: stable; }
+.digi-txstack > .digi-txfront { position: relative; background: transparent; }
+.digi-txstack > .digi-txback { position: absolute; inset: 0; overflow: hidden; color: transparent; pointer-events: none; user-select: none; }
+.digi-txsent { background: rgba(224, 72, 72, 0.32); border-radius: 2px; }
+.digi-txqueued { text-decoration: underline dotted rgba(224, 72, 72, 0.8); text-underline-offset: 3px; }
+.digi-txpoint { display: inline-block; width: 0; height: 1.15em; vertical-align: text-bottom; border-left: 2px solid #e04848; margin-right: -2px; }
 .digi-st--flash { animation: digi-flash 0.8s steps(2, start) infinite; }
 @keyframes digi-flash { 50% { background: #7a1d27; } }
 .digi-wf-hair { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgba(255, 255, 255, 0.55); pointer-events: none; z-index: 2; }

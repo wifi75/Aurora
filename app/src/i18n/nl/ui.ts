@@ -1439,6 +1439,7 @@ export const NL_UI: Record<string, string> = {
   "digi.tx.done": "Verzonden",
   "digi.tx.error": "Zending onderbroken",
   "digi.tx.notReady": "Zenden is niet gereed: het heeft Aurora’s eigen engine nodig, met de geluidskaart en de radio verbonden.",
+  "digi.tx.openHint": "Open uitzending: wat je typt gaat meteen de lucht in. RX/TX of Pause om na de tekst terug te gaan naar ontvangst, Esc om te stoppen.",
   "digi.tx.placeholder": "Typ de tekst om te verzenden, of kies een macro.",
   "digi.tx.progress": "Zenden {done} van {total}",
   "digi.tx.send": "Zenden",

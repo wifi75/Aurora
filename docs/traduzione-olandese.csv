@@ -4003,6 +4003,7 @@ digi.tx.aborted,Stopped,Gestopt
 digi.tx.error,Transmission interrupted,Zending onderbroken
 digi.tx.notReady,Transmit is not ready: it needs Aurora’s own engine with the sound card and the radio connected.,"Zenden is niet gereed: het heeft Aurora’s eigen engine nodig, met de geluidskaart en de radio verbonden."
 digi.tx.busy,Already transmitting.,Zendt al.
+digi.tx.openHint,"Open transmission: what you type goes out at once. RX/TX or Pause to go back to receive after the text, Esc to stop.","Open uitzending: wat je typt gaat meteen de lucht in. RX/TX of Pause om na de tekst terug te gaan naar ontvangst, Esc om te stoppen."
 digi.tx.disabled,Transmit is disabled in the access settings.,Zenden is uitgeschakeld in de toegangsinstellingen.
 digi.f.call,Their call,Roepnaam van de ander
 digi.f.myname,My name,Mijn naam

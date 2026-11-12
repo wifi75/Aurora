@@ -166,6 +166,14 @@ export const digiStrings = {
     'A transmissão não está pronta: é preciso o motor próprio do Aurora com a placa de som e o rádio ligados.',
   ],
   'digi.tx.busy': ['Sta già trasmettendo.', 'Already transmitting.', 'Es wird bereits gesendet.', 'Émission déjà en cours.', 'Ya está transmitiendo.', 'Já está a transmitir.'],
+  'digi.tx.openHint': [
+    'Trasmissione aperta: quello che scrivi parte subito. RX/TX o Pausa per tornare in ricezione a fine testo, Esc per fermare.',
+    'Open transmission: what you type goes out at once. RX/TX or Pause to go back to receive after the text, Esc to stop.',
+    'Offene Sendung: Was du tippst, geht sofort hinaus. RX/TX oder Pause, um nach dem Text auf Empfang zu gehen, Esc zum Anhalten.',
+    'Émission ouverte : ce que vous tapez part aussitôt. RX/TX ou Pause pour repasser en réception après le texte, Échap pour arrêter.',
+    'Transmisión abierta: lo que escribes sale enseguida. RX/TX o Pausa para volver a recepción al final del texto, Esc para parar.',
+    'Transmissão aberta: o que escreve sai logo. RX/TX ou Pausa para voltar à receção no fim do texto, Esc para parar.',
+  ],
   'digi.tx.disabled': [
     'La trasmissione è disabilitata nelle impostazioni di accesso.',
     'Transmit is disabled in the access settings.',
