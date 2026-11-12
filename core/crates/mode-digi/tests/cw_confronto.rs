@@ -20,6 +20,9 @@ use mode_digi::cw::CwDemodulator;
 use std::f64::consts::PI;
 
 const RATE: f64 = 12_000.0;
+/// Di quanti punti percentuali (media di una riga) il nostro ricevitore puo' sbagliare piu' di fldigi nella prova `contro_fldigi`.
+#[cfg(feature = "fldigi-oracle")]
+const TOLLERANZA: f64 = 2.0;
 const AMP: f64 = 0.3;
 const TONO: f32 = 700.0;
 const WPM: f64 = 20.0;
@@ -305,6 +308,7 @@ fn confronto_tasso_di_errore() {
 #[ignore]
 fn contro_fldigi() {
     const RUNS: u64 = 2;
+    let mut peggiori = Vec::new();
     let (mut tot_a, mut tot_f) = (0.0, 0.0);
     for (prova, nome) in CASI {
         let mut riga = format!("{nome:<16}|");
@@ -329,9 +333,15 @@ fn contro_fldigi() {
         tot_a += media_a / CASI.len() as f64;
         tot_f += media_f / CASI.len() as f64;
         println!("{riga} | media {media_a:5.1}/{media_f:5.1} | WPM{wpm}");
+        if media_a > media_f + TOLLERANZA {
+            peggiori.push(riga);
+        }
     }
     println!("media di tutte le righe: Aurora {tot_a:.1}% · fldigi {tot_f:.1}%");
     println!("(colonne: SNR in 3 kHz {SNRS:?} dB; caselle: Aurora/fldigi, caratteri sbagliati in %)");
+    assert!(peggiori.is_empty(), "righe dove Aurora sbaglia piu' di fldigi (oltre {TOLLERANZA} punti di media):
+{}", peggiori.join("
+"));
 }
 
 /// Un minuto di solo rumore (forte e debole): quanti caratteri si stampano con lo squelch spento e acceso.
