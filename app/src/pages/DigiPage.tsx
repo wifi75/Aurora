@@ -38,7 +38,7 @@ const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63
 const AUTOCQ_DELAY_S = 8;
 /** Il tratto di audio che si ascolta e si mostra (Hz). */
 const WF_MIN = 0;
-/** Il tratto di audio della cascata: di base 0-5 kHz (il massimo del motore;  ne mostra circa 6), oppure 0-3,5 kHz dal menu Vista. */
+/** Il tratto di audio della cascata: di base 0-5 kHz (il massimo del motore), oppure 0-3,5 kHz dal menu Vista. */
 const WF_MAX_WIDE = 5000;
 const WF_MAX_NARROW = 3500;
 const SEEK_LIMITS = { min: 300, max: 3300 };
@@ -116,7 +116,7 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
 }
 
 /** La larghezza del segnale (Hz): le freccette ai lati della bandierina nella cascata. */
-/** La pagina dei modi testuali, nella disposizione: menu, barra dei comandi, finestre RX e TX, log di lato, cascata e barra di stato. */
+/** La pagina dei modi testuali: menu, barra dei comandi, finestre RX e TX, log di lato, cascata e barra di stato. */
 export function DigiPage() {
   const t = useT();
   const client = useQueryClient();
@@ -469,7 +469,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       date: at.toISOString().slice(0, 10),
       time: at.toISOString().slice(11, 16),
       band: dial > 0 ? (bandOf(dial) ?? '') : '',
-      //: la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
+      // la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
       freq_hz: dial > 0 ? dial + Math.round(l.rxHz) : 0,
       mode: MODE_NAMES[l.snap.settings.mode],
       rst_sent: l.saved.rsts,
@@ -512,7 +512,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     else save({ tx_follow_rx: !on, tx_freq_hz: on ? live.current.rxHz : c.tx_freq_hz });
   };
 
-  /** Una macro. Se chiede file (`<TEXTFILE>`) o l'ultimo QSO (`<ANYQSOBEFORE...>`) prima si leggono, poi si esegue. */
+  /** Una macro. Se chiede file di testo (`<TEXTFILE>`) o l'ultimo QSO (`<ANYQSOBEFORE...>`) prima si leggono, poi si esegue. */
   const execute = (script: string) => {
     const files = [...script.matchAll(/<TEXTFILE:([^<>]*)>/g)].map((m) => (m[1] ?? '').trim()).filter((n) => n !== '');
     const wantsLast = /<ANYQSOBEFORE(?:DATE|BAND|MODE)>/.test(script);

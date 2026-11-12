@@ -143,7 +143,7 @@ describe('runMacro: comandi di programma', () => {
 });
 
 describe('tasti e insiemi', () => {
-  it('48 tasti nell\'ordine', () => {
+  it('48 tasti nell\'ordine F1-F12, Ctrl, Shift, Ctrl-Shift', () => {
     const names = keyNames();
     expect(names).toHaveLength(48);
     expect(names[0]).toBe('F1');

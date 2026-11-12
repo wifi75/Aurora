@@ -559,7 +559,6 @@ pub fn clear_dx_split() -> Result<(), RigError> {
 pub struct WindowsRig;
 
 /// Dove si scarica OmniRig (sito del suo autore).
-pub const OMNIRIG_URL: &str = "https://www./omnirig/";
 
 /// OmniRig e' installato su questo PC? Si guarda nel registro di Windows se c'e' il suo oggetto (`OmniRig.OmniRigX`), al massimo una volta
 /// al minuto: lo stato del CAT si chiede ogni pochi secondi. Fuori da Windows OmniRig non esiste.
@@ -605,7 +604,7 @@ fn registered() -> bool {
 /// Un errore di OmniRig detto in chiaro: «classe non registrata» vuol dire che OmniRig non c'e', «non risponde» che OmniRig e' bloccato.
 pub fn explain_omnirig(why: &str) -> String {
     if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || why.contains("CLSID") {
-        format!("OmniRig non e' installato su questo PC: in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig da {OMNIRIG_URL}")
+        "OmniRig non e' installato su questo PC: in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig".to_string()
     } else if why == "non risponde" {
         "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora)".to_string()
     } else {

@@ -231,7 +231,7 @@ export function ModeSettingsFields({
   );
 }
 
-/** «Mode settings»: le voci del modo in uso e i dati personali (gli stessi di Impostazioni › Stazione › Dati personali). */
+/** Le impostazioni del modo: le voci del modo in uso e i dati personali (gli stessi di Impostazioni › Stazione › Dati personali). */
 export function ModeSettings({ settings: s, personal, levelDb, snrDb = null, quality = null, onSave, onPersonal, onClose }: Props) {
   const t = useT();
   return (

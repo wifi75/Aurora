@@ -28,7 +28,7 @@ pub trait DigiTxPort: Send + Sync {
 
 pub type Emitter = Arc<dyn Fn(DigiEvent) + Send + Sync>;
 
-/// Il ricevitore RTTY: due filtri sui toni (come fldigi e il «tipo 0») o discriminatore di frequenza (il «tipo 1»).
+/// Il ricevitore RTTY: due filtri sui toni (come fldigi) o discriminatore di frequenza.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum RttyReceiver {
@@ -187,7 +187,7 @@ pub struct DigiSettings {
     pub tx_freq_hz: f32,
     pub rtty_shift_hz: f32,
     pub rtty_baud: f32,
-    /// RTTY: mark e space scambiati a mano (tasto «Rev» di fldigi e ). Con la radio in LSB si invertono gia' da soli.
+    /// RTTY: mark e space scambiati a mano (tasto «Rev» di fldigi). Con la radio in LSB si invertono gia' da soli.
     pub rtty_reverse: bool,
     /// RTTY: UOS, dopo uno spazio si torna alle lettere (acceso di base, come `UOSrx` di fldigi).
     pub rtty_uos: bool,
@@ -219,7 +219,7 @@ pub struct DigiSettings {
     pub macros: Vec<DigiMacro>,
     /// Le macro di un modo (chiave: `psk31`, `psk63`, `rtty`): sostituiscono quelle con lo stesso nome dell'insieme di base.
     pub mode_macros: std::collections::BTreeMap<String, Vec<DigiMacro>>,
-    /// Per modo: le macro del modo si uniscono a quelle di base (`true`, come l'opzione «Merge») oppure le sostituiscono del tutto (`false`). Un modo senza voce unisce.
+    /// Per modo: le macro del modo si uniscono a quelle di base (`true`, opzione «Merge») oppure le sostituiscono del tutto (`false`). Un modo senza voce unisce.
     pub merge_macros: std::collections::BTreeMap<String, bool>,
 }
 
@@ -227,7 +227,7 @@ fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
     DigiMacro { name: name.into(), label: label.into(), text: text.into(), color: Some(color) }
 }
 
-/// Le macro di base, nelle posizioni: prima riga AutoCQ · CQ · Call 3 · Call | Info · Brag · Bye · Clear | TX · RX · « · »;
+/// Le macro di base: prima riga AutoCQ · CQ · Call 3 · Call | Info · Brag · Bye · Clear | TX · RX · « · »;
 /// seconda riga (Ctrl) MyCall · MyName · MyQTH | Call · Name · QTH | BM. I testi sono modelli: le parole fra < > le riempie il programma.
 fn default_macros() -> Vec<DigiMacro> {
     const GIALLO: u32 = 0xFFFF80;
@@ -258,7 +258,7 @@ fn default_macros() -> Vec<DigiMacro> {
     ]
 }
 
-/// Le macro per modo, come i file di macro: i tasti della velocita' per PSK e per RTTY.
+/// Le macro per modo: i tasti della velocita' per PSK e per RTTY.
 fn default_mode_macros() -> std::collections::BTreeMap<String, Vec<DigiMacro>> {
     const CIANO: u32 = 0xFFFF80;
     let mut m = std::collections::BTreeMap::new();
@@ -480,6 +480,12 @@ impl DigiService {
         if settings.macros.iter().any(|m| m.name.is_empty()) {
             settings.macros = default_macros();
         }
+        // la macro evento di chiusura ha preso il nome «OnEnd»: un nome vecchio che comincia cosi' e non e' piu' valido si riporta a quello
+        for m in settings.macros.iter_mut().chain(settings.mode_macros.values_mut().flatten()) {
+            if m.name.starts_with("OnEnd") && !valid_macro_name(&m.name) {
+                m.name = "OnEnd".to_string();
+            }
+        }
         let (queue, rx) = sync_channel::<Msg>(128);
         let inner = Arc::new(Inner {
             settings_path,
@@ -553,7 +559,7 @@ impl DigiService {
         Ok(())
     }
 
-    /// Importa le macro da una cartella (di base `%APPDATA%\`) nel modo scelto; con `Defaults` non legge niente e rimette le macro di Aurora.
+    /// Importa le macro da una cartella (da indicare) nel modo scelto; con `Defaults` non legge niente e rimette le macro di Aurora.
     pub fn import_macros(&self, folder: Option<&std::path::Path>, how: ImportHow) -> Result<crate::macro_files::Imported, DigiError> {
         if how == ImportHow::Defaults {
             let mut next = self.settings();
@@ -565,7 +571,7 @@ impl DigiService {
         }
         let folder = match folder {
             Some(f) => f.to_path_buf(),
-            None => crate::macro_files::default_folder().ok_or_else(|| DigiError::BadValue("cartella non nota".into()))?,
+            None => return Err(DigiError::BadValue("manca la cartella delle macro".into())),
         };
         let (base, modes, report) = crate::macro_files::read_folder(&folder)?;
         let mut next = self.settings();
@@ -893,7 +899,7 @@ mod tests {
     }
 
     #[test]
-    fn le_macro_di_base_hanno_nomi_validi_e_le_posizioni_di_() {
+    fn le_macro_di_base_hanno_nomi_validi_e_le_posizioni_giuste() {
         let s = DigiSettings::default();
         assert!(s.validate().is_ok());
         let nomi: Vec<&str> = s.macros.iter().map(|m| m.name.as_str()).collect();

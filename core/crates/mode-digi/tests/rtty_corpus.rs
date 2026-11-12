@@ -6,7 +6,7 @@
 //!   `reverse` (`true` se il mark e' il tono basso), `nota` (libera);
 //! - `riferimento.txt` (facoltativo): il testo trasmesso, se noto (bollettini W1AW, prove fatte in casa);
 //! - `nominativi.txt` (facoltativo): i nominativi da trovare, uno per riga (dal log del contest);
-//! - `uscita-<programma>.txt` (facoltativi): il testo ricevuto da altri programmi (2Tone, , MMTTY, fldigi, ) sullo stesso file.
+//! - `uscita-<programma>.txt` (facoltativi): il testo ricevuto da altri programmi (2Tone, MMTTY, fldigi) sullo stesso file.
 //!
 //! La prova decodifica ogni file con Aurora (e con fldigi e MMTTY se compilati), scrive `uscita-aurora.txt` (e le altre) nella cartella e
 //! stampa per ogni programma il CER rispetto al riferimento e i nominativi trovati.

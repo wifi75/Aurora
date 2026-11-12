@@ -37,7 +37,7 @@
   .digi-edit-row { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* barra dei comandi come quella: 12 tasti per riga a gruppi di 4, 4 righe, etichette colorate */
+/* barra dei comandi: 12 tasti per riga a gruppi di 4, 4 righe, etichette colorate */
 .digi-bar-keys { padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-raised); overflow-x: auto; }
 .digi-keys { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
 .digi-keyrow { display: flex; align-items: center; gap: 4px; }
@@ -68,7 +68,7 @@
 @media (max-width: 62rem) { .digi-edit-body { grid-template-columns: minmax(0, 1fr); } }
 
 
-/* ======== disposizione e aspetto (grigio classico di Windows) ======== */
+/* ======== disposizione e aspetto classico (grigio di Windows) ======== */
 .digi-classica {
   --text: #000; --text-muted: #3a3a3a; --panel: #d4d0c8; --panel-raised: #ffffff; --border: #808080; --accent: #0a246a;
   --font-data: "Courier New", Consolas, monospace;

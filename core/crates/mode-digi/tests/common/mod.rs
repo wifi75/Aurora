@@ -1,5 +1,5 @@
 //! Pezzi comuni alle prove dei ricevitori RTTY, PSK e CW: generatore pseudocasuale con rumore gaussiano, testo da QSO, distanza fra testi,
-//! fading CCIR, spostamento di frequenza, errore d'orologio della scheda e file WAV per riascoltare i casi con fldigi o .
+//! fading CCIR, spostamento di frequenza, errore d'orologio della scheda e file WAV per riascoltare i casi con fldigi.
 #![allow(dead_code)]
 
 pub mod rtty_scenari;
@@ -170,7 +170,7 @@ pub fn errore_orologio(x: &[f32], ppm: f64) -> Vec<f32> {
         .collect()
 }
 
-/// Scrive un WAV mono a 16 bit (per riascoltare un caso con fldigi o ). Solo se la variabile `AURORA_WAV` indica una cartella.
+/// Scrive un WAV mono a 16 bit (per riascoltare un caso con fldigi). Solo se la variabile `AURORA_WAV` indica una cartella.
 pub fn salva_wav(nome: &str, rate: u32, x: &[f32]) {
     let Some(dir) = std::env::var_os("AURORA_WAV") else { return };
     let path = std::path::Path::new(&dir).join(format!("{nome}.wav"));

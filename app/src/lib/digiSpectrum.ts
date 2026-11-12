@@ -1,4 +1,4 @@
-/** Snap e Seek sulla cascata: trovano i segnali nelle righe dello spettro (0-5000 Hz), come i comandi omonimi. */
+/** Snap e Seek sulla cascata: trovano i segnali nelle righe dello spettro (0-5000 Hz). */
 
 export interface SpectrumRow {
   bins: Uint8Array;
@@ -66,9 +66,9 @@ export function snapToPeak(avg: Float32Array, row: SpectrumRow, hz: number, wind
 }
 
 /**
- * Snap per l'RTTY: il centro fra i due toni (la frequenza di Aurora, come in fldigi e ). Si cerca la coppia di picchi lontani `shiftHz`
+ * Snap per l'RTTY: il centro fra i due toni (la frequenza di Aurora, come in fldigi). Si cerca la coppia di picchi lontani `shiftHz`
  * con il piu' debole dei due piu' forte possibile, entro `shiftHz/2 + 40` Hz dal clic; trovata, il centro e' esattamente a meta' fra i due
- * picchi (ognuno rifinito sui bin vicini). Se si vede un tono solo vale la regola (Snap, analisi del comportamento): il tono sotto
+ * picchi (ognuno rifinito sui bin vicini). Se si vede un tono solo vale questa regola: il tono sotto
  * il clic e' quello basso (centro = tono + shift/2), quello sopra e' l'alto (centro = tono - shift/2). Senza niente di netto resta `hz`.
  * Per gli spostamenti stretti (fino a 50 Hz) i due toni sono una macchia sola: basta `snapToPeak`.
  */

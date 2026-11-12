@@ -7,7 +7,7 @@ const ROW_LABELS = ['', 'Ctrl', 'Shift', 'Ctrl+Shift'] as const;
 
 interface Props {
   macros: ReadonlyMap<string, Macro>;
-  /** Tutte e 4 le righe sempre in vista (come «Extended Bar»). */
+  /** Tutte e 4 le righe sempre in vista. */
   extended: boolean;
   disabled?: boolean;
   onToggleExtended(): void;
@@ -35,7 +35,7 @@ function useHeldModifiers(): { ctrl: boolean; shift: boolean } {
 }
 
 /**
- * La barra dei comandi («Control Bar»): 12 tasti per riga a gruppi di 4 (F1-F4 · F5-F8 · F9-F12), 4 righe (nessun modificatore,
+ * La barra dei comandi: 12 tasti per riga a gruppi di 4 (F1-F4 · F5-F8 · F9-F12), 4 righe (nessun modificatore,
  * Ctrl, Shift, Ctrl+Shift). Ogni pulsante ha etichetta e colore; clic o tasto eseguono la macro, clic destro la modificano.
  */
 export function ControlBar({ macros, extended, disabled = false, onToggleExtended, onRun, onEdit }: Props) {

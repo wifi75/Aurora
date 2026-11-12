@@ -3,17 +3,17 @@
 //! Il bit 0 inverte la fase, il bit 1 la lascia com'è. Un carattere è il suo varicode seguito da due zeri.
 //!
 //! Il ricevitore segue quello di fldigi 4.2.13 (`src/psk/psk.cxx`, Dave Freese W1HKJ e contributori, derivato da gmfsk di Tomi Manninen
-//! OH2BNS; GPL 3, copia in `terze-parti/fldigi`), con alcune idee (solo comportamento e parametri, dall'analisi in
+//! OH2BNS; GPL 3, copia in `terze-parti/fldigi`), con alcune scelte nostre (dall'analisi in
 //! `docs/analisi-psk-cw.md`):
 //! - mixer, primo filtro `fir1` a coseno rialzato (Hann) di 8 ms con decimazione a 16 campioni per simbolo, filtro adattato `fir2` di
 //!   4 simboli con i coefficienti `pskcore_filter` (`src/psk/pskcoeff.cxx`);
 //! - sincronismo di simbolo ad anticipo/ritardo sul `syncbuf` (fldigi `psk::rx_process`), con correzione frazionaria;
-//! - metrica di qualità della fase 0-100 indipendente dal livello (fldigi `psk::rx_symbol`) per lo squelch, con la tenuta di 20 simboli
-//!; DCD sul preambolo di inversioni e sulla coda di portante (fldigi), che azzera il registro dei bit;
+//! - metrica di qualità della fase 0-100 indipendente dal livello (fldigi `psk::rx_symbol`) per lo squelch, con la tenuta di 20 simboli;
+//!   DCD sul preambolo di inversioni e sulla coda di portante (fldigi), che azzera il registro dei bit;
 //! - AFC solo con il DCD acceso e la metrica sopra 0,05, guadagno 1/32 (PSK31) o 1/64 (PSK63) come fldigi, ma sull'errore di fase avvolto
 //!   in ±90° (fldigi tiene la fase in [0, 2π) e sui bit 1 corregge solo da una parte);
 //! - S/N e IMD con filtri di Goertzel (fldigi `psk::calcSN_IMD` e `psk::signalquality`); l'IMD vale solo durante almeno 21 inversioni
-//!   di fila (regola).
+//!   di fila.
 //!
 //! Per le decisioni «soft» future (varicode con più ipotesi, più ricevitori in parallelo) ogni simbolo lascia anche la sua affidabilità
 //! ([`PskDemodulator::soft_bits`]), non solo il bit deciso.
@@ -86,7 +86,7 @@ fn symbols_of(text: &[u8], mode: PskMode) -> Vec<TxSym> {
 }
 
 /// Audio (a 12 kHz) del testo, con la portante a `freq_hz`; `amp` è l'ampiezza di picco (0..1). Il primo simbolo sale dal silenzio con
-/// mezzo coseno (niente «click»), come la transizione dal silenzio, e l'ultimo torna al silenzio allo stesso modo.
+/// mezzo coseno (niente «click»), e l'ultimo torna al silenzio allo stesso modo.
 pub fn modulate(text: &[u8], freq_hz: f32, mode: PskMode, amp: f32) -> Vec<f32> {
     let n = mode.symbol_samples();
     let syms = symbols_of(text, mode);
@@ -198,11 +198,11 @@ const FIR1_LEN: usize = 96;
 const STEPS: usize = 16;
 /// Media mobile di fldigi per la metrica (`SQLDECAY`).
 const SQL_DECAY: f32 = 50.0;
-/// Tenuta dello squelch dopo l'ultima volta sopra la soglia (: 20 simboli).
+/// Tenuta dello squelch dopo l'ultima volta sopra la soglia (20 simboli).
 const SQUELCH_HOLD: u32 = 20;
 /// Lunghezza dei blocchi di Goertzel per S/N e IMD (fldigi: 160 campioni decimati, 10 simboli).
 const GOERTZEL_N: usize = 160;
-/// Inversioni di fila perche' l'IMD valga ().
+/// Inversioni di fila perche' l'IMD valga.
 const IMD_ZEROS: u32 = 21;
 /// Quante affidabilita' di simbolo si tengono.
 const SOFT_KEEP: usize = 256;
@@ -365,7 +365,7 @@ impl PskDemodulator {
     }
 
     /// IMD in dB (prodotti di terzo ordine a ±3·baud/2 contro i toni a ±baud/2), misurata solo durante almeno 21 inversioni di fila
-    /// (preambolo o pausa, regola); resta l'ultima misura valida finche' il DCD non si spegne.
+    /// (preambolo o pausa); resta l'ultima misura valida finche' il DCD non si spegne.
     pub fn imd_db(&self) -> Option<f32> {
         self.imd_db
     }

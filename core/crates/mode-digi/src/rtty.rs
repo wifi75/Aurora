@@ -10,7 +10,7 @@
 //! frequenza, la bandierina in mezzo), per cui il clic sulla cascata, l'AFC e Snap lavorano tutti sul centro del segnale.
 //!
 //! Il ricevitore segue quello di fldigi 4.2.13 (`rtty::rx_process`, `rtty::rx`, `rtty::is_mark_space`, `rtty::baudot_dec`,
-//! `fftfilt::rtty_filter` in `src/filters/fftfilt.cxx`), con due idee (solo il comportamento, dall'analisi del programma: nessun
+//! `fftfilt::rtty_filter` in `src/filters/fftfilt.cxx`), con due idee in piu' (nessun
 //! codice) e una nostra; ogni scelta e' misurata in `tests/rtty_confronto.rs`:
 //! - un front-end decimato (oscillatore a rotazione sul centro, passa-basso FIR, circa 32 campioni per bit) porta la coppia di toni in
 //!   banda base; poi due mixer portano mark e space a zero e due filtri passa-basso a coseno rialzato larghi in base al baud li separano
@@ -23,10 +23,10 @@
 //! - in alternativa (`set_frame_decoder(false)`) la macchina dei bit di fldigi: l'inizio del carattere si cerca sulle ultime decisioni
 //!   lunghe un bit: mark all'inizio, space alla fine e metà dei campioni a mark;
 //!   il numero di mark dice dov'è il passaggio e centra il campionamento a metà di ogni bit (fldigi); dentro il carattere ogni cambio di
-//!   livello corregge la fase di metà dell'errore (l'orologio di bit);
-//! - in alternativa ai due filtri, un discriminatore di frequenza (il «tipo 1») per gli spostamenti stretti;
+//!   livello corregge la fase di metà dell'errore (un orologio di bit che si corregge sui fronti);
+//! - in alternativa ai due filtri, un discriminatore di frequenza per gli spostamenti stretti;
 //! - stop bit controllato, UOS (si torna alle lettere dopo uno spazio), CR CR e LF LF ripetuti scartati (fldigi);
-//! - lo squelch guarda il rapporto segnale/rumore (come la «metric» di fldigi e il livello relativo), non il livello assoluto.
+//! - lo squelch guarda il rapporto segnale/rumore (come la «metric» di fldigi), non il livello assoluto.
 
 use crate::psk::{AFC_LIMIT_HZ, RATE};
 use std::f64::consts::PI;
@@ -60,7 +60,7 @@ const FILTER_SPAN_BITS: f64 = 3.5;
 const SAMPLES_PER_BIT: f64 = 32.0;
 /// Le medie dei livelli (ATC a decisione guidata, discriminatore) si fanno su questi bit: la prova di confronto da' il meglio fra 4 e 8.
 const LEVEL_BITS: f32 = 4.0;
-/// Quanto dell'errore di fase si corregge a ogni cambio di livello: meta', come l'orologio di bit.
+/// Quanto dell'errore di fase si corregge a ogni cambio di livello: meta' (orologio di bit che si corregge sui fronti).
 const PLL_GAIN: f32 = 0.5;
 /// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
 /// (passo 6: e' la «maggioranza» di MMTTY fatta sui valori morbidi).
@@ -391,7 +391,7 @@ impl Channel {
     }
 }
 
-/// Il discriminatore di frequenza (il ricevitore «tipo 1», ricostruito dal suo comportamento): un solo mixer al centro, un
+/// Il discriminatore di frequenza : un solo mixer al centro, un
 /// passa-basso largo quanto la coppia di toni, la frequenza istantanea dalla differenza di fase fra due campioni e una media su mezzo bit.
 /// Serve con gli spostamenti stretti (sotto i 50 Hz, come i 23 Hz dell'elenco), dove i due filtri separati si sovrappongono.
 struct Discriminator {

@@ -391,13 +391,10 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
 
   const link = (
     <Group title={t('cat.grp.link')} span={2}>
-      {/* OmniRig scelto ma non installato: lo si dice subito, con dove scaricarlo e il consiglio di usare Hamlib (gia' incluso) */}
+      {/* OmniRig scelto ma non installato: lo si dice subito, con il consiglio di usare Hamlib (gia' incluso) */}
       {config.backend === 'omnirig' && snap.data.status.omnirig_found === false ? (
         <Message kind="alert">
-          {t('cat.omnirig.missing')}{' '}
-          <a href="https://www./omnirig/" target="_blank" rel="noreferrer">
-            /omnirig
-          </a>
+          {t('cat.omnirig.missing')}
         </Message>
       ) : null}
       {hamlib && !snap.data.status.rigctld_found ? (

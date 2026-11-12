@@ -29,7 +29,7 @@ interface Props {
   onHeight?(px: number): void;
 }
 
-/** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso (come la cascata). */
+/** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
 function paletteColor(v: number): [number, number, number] {
   const x = v / 255;
   if (x < 0.25) return [0, 0, Math.round(60 + x * 4 * 150)];

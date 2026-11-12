@@ -1,4 +1,4 @@
-/* Pagina «PSK e RTTY»: restyling scuro nello stile di Aurora (al posto del grigio); stesse funzioni, stessi blocchetti delle macro */
+/* Pagina «PSK e RTTY»: restyling scuro nello stile di Aurora (al posto del grigio classico); stesse funzioni, stessi blocchetti delle macro */
 .digi-classica {
   --text: #e8eefc; --text-muted: #8b9cc0; --panel: #111b30; --panel-raised: #0d1628; --border: #25365d; --accent: #2cf5a4;
   --font-data: Consolas, "Cascadia Mono", "Courier New", monospace;

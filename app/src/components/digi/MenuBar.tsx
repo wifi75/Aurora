@@ -18,7 +18,7 @@ export interface MenuDef {
   items: MenuItem[];
 }
 
-/** La barra dei menu della finestra, come quella (File, Edit, Mode, Options, View, Configure, Help). */
+/** La barra dei menu della finestra (File, Edit, Mode, Options, View, Configure, Help). */
 export function MenuBar({ menus }: { menus: MenuDef[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);

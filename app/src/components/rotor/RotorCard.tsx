@@ -221,7 +221,7 @@ function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: D
 
 
 /**
- * La scheda del rotore, una sola per tutta Aurora: come il blocco (bussola nera, striscia gialla con le cifre a sette segmenti, GO e STOP,
+ * La scheda del rotore, una sola per tutta Aurora (bussola nera, striscia gialla con le cifre a sette segmenti, GO e STOP,
  * griglia di pulsanti) ma con la lancetta che si muove piano mentre il rotore gira, la zona di sovrapposizione per i rotori oltre i 360 gradi,
  * lo stato, la direzione del DX (corta e lunga) e, sotto l'ingranaggio, i comandi in piu': gradi a mano, -10/-2/+2/+10, DX corto e lungo, Park.
  * Nelle pagine PSK/RTTY/CW e nella Stazione sta sopra la pagina (si sposta e si ridimensiona) e si stacca in una finestra a parte con ⧉;

@@ -38,7 +38,7 @@ describe('snapToPair', () => {
     for (const click of [1500, 1420, 1580, 1460]) expect(Math.abs(snapToPair(avg, r, click, 170) - 1502)).toBeLessThan(6);
   });
 
-  it('con un tono solo vale la regola: sotto il clic è il basso, sopra l’alto', () => {
+  it('con un tono solo vale questa regola: sotto il clic è il basso, sopra l’alto', () => {
     const r = row([1400]);
     const avg = averaged(r);
     expect(Math.abs(snapToPair(avg, r, 1450, 170) - 1487)).toBeLessThan(6);

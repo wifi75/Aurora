@@ -4,8 +4,8 @@ import { browserStorage } from './theme';
 
 /**
  * Split DX: il commento di uno spot del DX Cluster dice dove ascolta la DXpedition («UP 5», «5UP», «10up», «UP 1-3», «DN 2», «QSX 14.030»).
- * Con un doppio clic sullo spot la radio riceve sulla frequenza dello spot (VFO A) e trasmette sull'altro VFO spostato (split vero), come
- * il doppio clic. Le regole:
+ * Con un doppio clic sullo spot la radio riceve sulla frequenza dello spot (VFO A) e trasmette sull'altro VFO spostato (split vero).
+ * Le regole:
  * - numero e UP/DN in qualunque ordine, attaccati o con lo spazio, maiuscole o minuscole, in qualunque punto del commento; kHz (anche «5K»,
  *   «5KHZ», «1,5»);
  * - «UP» o «DN» da soli: 1 kHz, la consuetudine dei pile-up (soprattutto in CW) quando la DXpedition non dice quanto;

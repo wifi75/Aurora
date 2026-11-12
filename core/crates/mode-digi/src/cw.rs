@@ -5,25 +5,25 @@
 //! quella del Morse internazionale (ITU-R M.1677) con i segni di procedura <AR> <BT> <KN> <SK>.
 //!
 //! Il ricevitore prende il meglio di fldigi 4.2.13 (`src/cw/cw.cxx`, Dave Freese W1HKJ e contributori, GPL 3, copia in
-//! `terze-parti/fldigi`) e (solo comportamento e parametri, dall'analisi in `docs/analisi-psk-cw.md`):
+//! `terze-parti/fldigi`), con alcune scelte nostre (dall'analisi in `docs/analisi-psk-cw.md`):
 //! - mixer al tono, filtro FIR passa-basso a finestra lungo 64 ms (i 512 coefficienti a 8 kHz di fldigi) e decimazione a
-//!   500 Hz (la frequenza interna); banda scelta fra 50, 100, 150, 250 e 500 Hz (150 di base, come fldigi);
+//!   500 Hz; banda scelta fra 50, 100, 150, 250 e 500 Hz (150 di base, come fldigi);
 //! - ampiezza |z| e media mobile (fldigi `bitfilter`, 1/3 di punto; qui 1/2, che regge meglio il rumore), legata pero' alla velocità
 //!   RICEVUTA e non a quella di trasmissione;
 //! - AGC che sale in fretta e scende piano come quello di fldigi (`cw::decode_stream`), con picco del segnale e fondo del rumore presi come
 //!   quantili del livello (le medie di fldigi sul solo rumore danno 17 dB di S/N), soglia a metà con isteresi;
-//! - rapporto segnale/rumore misurato sullo spettro attorno al tono (segnale e rumore separati, come i due filtri), in dB su
+//! - rapporto segnale/rumore misurato sullo spettro attorno al tono (segnale e rumore separati, con due filtri), in dB su
 //!   3 kHz: sotto -20 dB non si decodifica nemmeno con lo squelch spento (sul rumore niente caratteri falsi), lo squelch ha la sua soglia;
-//! - gli stati più brevi di 0,4 unità (minimo 8 ms), toni e pause, si ignorano ( ignora quelli di 24 ms o meno);
-//! - velocità: medie separate di punti e linee, soglia a metà fra le due (), aggiornate solo dalle coppie punto-linea con rapporto
+//! - gli stati più brevi di 0,4 unità (minimo 8 ms), toni e pause, si ignorano;
+//! - velocità: medie separate di punti e linee, soglia a metà fra le due, aggiornate solo dalle coppie punto-linea con rapporto
 //!   fra 2 e 4 (fldigi `cw::update_tracking`, idea di Lawrence Glaister VE7IT), solo con elementi sicuri dello stesso carattere e fra la
 //!   metà e il doppio della velocità di partenza (fldigi: ±10 WPM);
-//! - fine del carattere dopo 2 unità di pausa, spazio fra le parole dopo 4,5 unità (fldigi dopo 4,  dopo 4);
+//! - fine del carattere dopo 2 unità di pausa, spazio fra le parole dopo 4,5 unità (fldigi dopo 4);
 //! - un carattere si stampa solo se i suoi toni e le sue pause sono ben distinti (contrasto 0,6 fra fondo e picco): col segnale troppo debole
 //!   si stampa meno, non spazzatura;
 //! - decodifica SOM facoltativa (fldigi `cw::find_winner`: il carattere più vicino alle durate normalizzate), utile col tasto a mano;
 //! - AFC: lo spettro mediato attorno al tono (±75-100 Hz) cerca il picco del segnale e porta il tono su di esso; sul solo rumore il picco
-//!   non si stacca dal fondo e il tono resta fermo. fldigi e  in CW non hanno AFC (solo il clic sulla cascata): è nostro.
+//!   non si stacca dal fondo e il tono resta fermo. fldigi in CW non ha AFC (solo il clic sulla cascata): è nostro.
 //!
 //! Per un futuro riconoscimento probabilistico dei caratteri ogni elemento lascia anche la durata in unità e il livello
 //! ([`CwDemodulator::last_elements`]), non solo punto o linea.
@@ -224,7 +224,7 @@ const JUMP_DB: f32 = 10.0;
 /// Soglia di decisione fra fondo e picco, con isteresi (provate nella prova `cw_confronto`, `studio`: 0,5/0,3 meglio di 0,5/0,4 e 0,6/0,4).
 const ON_AT: f32 = 0.5;
 const OFF_AT: f32 = 0.3;
-/// Stati più brevi di cosi' (in unità, e mai sotto 8 ms) non contano:  ignora quelli di 24 ms (0,4 unità a 20 WPM).
+/// Stati più brevi di cosi' (in unità, e mai sotto 8 ms) non contano (0,4 unità sono 24 ms a 20 WPM).
 const GLITCH_UNITS: f64 = 0.4;
 /// Media mobile dopo il rivelatore, in unità: fldigi usa 1/3 di punto; piu' lunga rende meglio col rumore ma, se la velocità raddoppia di
 /// colpo, cancella le pause fra gli elementi prima che la stima si aggiorni (prova `studio`: 1/3 → 41, 0,4 → 41 con il salto a 18, 1/2 →
@@ -593,7 +593,7 @@ impl CwDemodulator {
         let raw = self.open && self.gate && if self.raw_down { norm > OFF_AT } else { norm > ON_AT };
         self.raw_down = raw;
 
-        // filtro degli stati brevi (): un cambio vale solo se dura almeno GLITCH; la sua durata parte da quando e' cominciato
+        // filtro degli stati brevi: un cambio vale solo se dura almeno GLITCH; la sua durata parte da quando e' cominciato
         let glitch = (GLITCH_UNITS * self.unit()).max(GLITCH_MIN_S * self.fs).round() as usize;
         self.run += 1;
         self.run_level += norm;
@@ -661,7 +661,7 @@ impl CwDemodulator {
         }
         self.last_mark = len;
         self.last_level = level;
-        // soglia a meta' fra punto e linea ()
+        // soglia a meta' fra punto e linea
         let threshold = (self.dot + self.dash) / 2.0;
         self.pattern.push(if len > threshold { '-' } else { '.' });
         self.durations.push(len);
@@ -700,7 +700,7 @@ impl CwDemodulator {
     ///
     /// S/N: la potenza nelle righe a ±12 Hz attorno al segnale piu' forte dentro la banda del filtro, contro la mediana delle righe (il rumore, anche con un'altra stazione vicina), riportata
     /// a 3 kHz come nelle prove e in WSJT-X; e' una media nel tempo, quindi un CW con il tasto giu' meta' del tempo legge circa 3 dB meno del
-    /// suo S/N a tasto giu'. Ha la stessa idea dei due filtri di larghezza diversa (segnale e rumore misurati a parte).
+    /// suo S/N a tasto giu'. L'idea e' quella di due filtri di larghezza diversa (segnale e rumore misurati a parte).
     ///
     /// AFC: se il picco si stacca dal fondo, il tono si sposta verso di lui; il picco piu' vicino al tono pesa di piu' (un'altra stazione
     /// lontana non lo porta via). Sul solo rumore il picco non si stacca e il tono resta fermo.

@@ -1,7 +1,7 @@
 /**
  * Il linguaggio delle macro: uno script è testo con comandi fra `<` e `>` in maiuscolo. I comandi di testo (`<CALL>`,
  * `<MYCALL>`, `<RSTS>`...) diventano le parole dei dati; i comandi di programma (`<TX>`, `<RX>`, `<MODE:RTTY>`, `<SAVEQSO>`...) si
- * raccolgono in un elenco di azioni che la pagina esegue. Funzioni e nomi dei comandi ripresi dalla Guida (solo il comportamento).
+ * raccolgono in un elenco di azioni che la pagina esegue.
  */
 
 /** I dati con cui si riempiono i comandi di testo. */
@@ -155,9 +155,9 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'ANYQSOBEFOREDATE': return c.lastQso?.date ?? '';
     case 'ANYQSOBEFOREBAND': return c.lastQso?.band ?? '';
     case 'ANYQSOBEFOREMODE': return c.lastQso?.mode ?? '';
-    // il testo di un file della cartella
+    // il testo di un file della cartella dei testi delle macro
     case 'TEXTFILE': return arg === undefined ? null : (c.files?.[arg.trim()] ?? '');
-    //  misura l'IMD del segnale PSK ricevuto; Aurora non la misura: il comando non scrive niente. `<SP>` segue i comandi per la radio e non scrive niente
+    // l'IMD del segnale PSK ricevuto: Aurora non la misura, il comando non scrive niente. `<SP>` segue i comandi per la radio e non scrive niente
     case 'IMD':
     case 'SP': return '';
     default: return null;

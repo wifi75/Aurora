@@ -5,9 +5,9 @@
 //!
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
-//! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee);
+//! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee nostre);
 //! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore a soglia adattiva);
-//! - [``]: importa le macro dai file dell'utente;
+//! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod cw;

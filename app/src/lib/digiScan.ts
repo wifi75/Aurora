@@ -1,7 +1,7 @@
 import type { DigiSettings } from '../api/client';
 
 /**
- * La scansione e le memorie della pagina PSK · RTTY · CW (menu Modo): stanno nel browser, e si leggono e cambiano sia
+ * La scansione e le memorie della pagina PSK · RTTY · CW (menu Modo): stanno nel browser e si leggono e cambiano sia
  * dalla pagina sia da Impostazioni › Modi › PSK · RTTY · CW › Scansione e memorie. La pagina segue le modifiche fatte nell'altra
  * finestra con l'evento `storage`.
  */

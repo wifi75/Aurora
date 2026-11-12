@@ -190,13 +190,13 @@ pub const CATALOG: &[CatalogEntry] = &[
     entry("N2KI New York", "dxc.n2ki.com", 7300, "DXSpider", "New York, USA", "Per inviare spot serve la registrazione"),
     entry("HamServe UK", "dxc.hamserve.uk", 7300, "DXSpider", "Regno Unito", ""),
     entry("Hamcloud", "dx.hamnet.network", 7300, "DXSpider", "Germania", "Dal 2025 raccoglie anche il vecchio DB0LJ"),
-    entry("VE7CC", "ve7cc.net", 23, "CC Cluster", "Vancouver, Canada", "Molto veloce, spot filtrati dagli decodificatori"),
+    entry("VE7CC", "ve7cc.net", 23, "CC Cluster", "Vancouver, Canada", "Molto veloce, spot automatici RBN filtrati"),
     entry("NC7J", "dxc.nc7j.com", 7373, "AR-Cluster", "Stati Uniti", ""),
     entry("W3LPL", "dxc.w3lpl.net", 7373, "AR-Cluster", "Stati Uniti", "Molto trafficato"),
     entry("AE5E", "dxspots.com", 7300, "CC Cluster", "Minnesota, USA", ""),
     entry("DXFun", "dxfun.com", 8000, "DXSpider", "Internazionale", ""),
-    entry("Reverse Beacon Network (CW, RTTY)", "telnet.reversebeacon.net", 7000, "RBN", "Rete mondiale", "Spot automatici, non di persone"),
-    entry("Reverse Beacon Network (FT8, FT4)", "telnet.reversebeacon.net", 7001, "RBN", "Rete mondiale", "Spot automatici dei segnali FT8 e FT4"),
+    entry("Reverse Beacon Network (CW, RTTY)", "telnet.reversebeacon.net", 7000, "RBN", "Rete mondiale di ricevitori automatici", "Spot automatici, non di persone"),
+    entry("Reverse Beacon Network (FT8, FT4)", "telnet.reversebeacon.net", 7001, "RBN", "Rete mondiale di ricevitori automatici", "Spot automatici dei segnali FT8 e FT4"),
 ];
 
 /// Uno spot con i dati del servizio.

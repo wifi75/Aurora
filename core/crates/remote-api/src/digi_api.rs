@@ -93,7 +93,7 @@ pub(crate) async fn digi_tx_abort(State(state): State<AppState>, _: Authed) -> R
 
 #[derive(Deserialize, Default)]
 pub(crate) struct ImportBody {
-    /// La cartella dei file; senza, `%APPDATA%\`.
+    /// La cartella dei file di macro (obbligatoria con `replace` e `add`).
     #[serde(default)]
     folder: Option<String>,
     /// `replace` (di base), `add` o `defaults`.
@@ -101,8 +101,8 @@ pub(crate) struct ImportBody {
     how: mode_digi::ImportHow,
 }
 
-/// Importa le macro (`Default.mc`, `rtty.mc`, `bpsk31.mc`, `bpsk63.mc`...) dalla cartella dell'utente. Solo dal PC stesso.
-#[utoipa::path(post, path = "/api/v1/digi/import-macros", responses((status = 200, description = "`{imported: {folder, default_count, default_file, modes, skipped}, ...snapshot}`"), (status = 400, description = "Cartella non trovata o senza file (bad_value)"), (status = 403, description = "Solo dal PC (local_only)")))]
+/// Importa le macro (`Default.mc` e i file per modo) dalla cartella dell'utente, oppure (`defaults`) rimette quelle di Aurora. Solo dal PC stesso.
+#[utoipa::path(post, path = "/api/v1/digi/import-macros", responses((status = 200, description = "`{imported: {folder, default_count, default_file, modes, skipped}, ...snapshot}`"), (status = 400, description = "Cartella non trovata o senza file di macro (bad_value)"), (status = 403, description = "Solo dal PC (local_only)")))]
 pub(crate) async fn digi_import_macros(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, body: Option<Json<ImportBody>>) -> Result<Json<Value>, ApiError> {
     let svc = service(&state)?;
     let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
@@ -142,7 +142,7 @@ pub(crate) struct TextFileQuery {
     name: String,
 }
 
-/// Il testo di un file della cartella (macro `<TEXTFILE:nome>`): solo il nome del file, niente percorsi, al massimo 64 KB. Solo dal PC stesso.
+/// Il testo di un file della cartella dei testi delle macro (`<TEXTFILE:nome>`, `%APPDATA%\Aurora\testi`): solo il nome del file, niente percorsi, al massimo 64 KB. Solo dal PC stesso.
 #[utoipa::path(get, path = "/api/v1/digi/textfile", responses((status = 200, description = "`{text}`"), (status = 400, description = "Nome non valido (bad_value)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "File non trovato (not_found)")))]
 pub(crate) async fn digi_textfile(_: Authed, Peer(peer): Peer, headers: HeaderMap, axum::extract::Query(q): axum::extract::Query<TextFileQuery>) -> Result<Json<Value>, ApiError> {
     let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
@@ -154,7 +154,7 @@ pub(crate) async fn digi_textfile(_: Authed, Peer(peer): Peer, headers: HeaderMa
     if !safe {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("nome di file non valido".to_string()));
     }
-    let folder = mode_digi::macro_files::default_folder().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))?;
+    let folder = mode_digi::macro_files::text_folder().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))?;
     let text = blocking(move || {
         let path = folder.join(name_owned(&q.name));
         match std::fs::metadata(&path) {

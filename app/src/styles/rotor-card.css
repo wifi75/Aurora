@@ -1,4 +1,4 @@
-/* la scheda del rotore (una sola per PSK/RTTY/CW, Stazione, finestra a parte e pagina Rotore), come il blocco: bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
+/* la scheda del rotore (una sola per PSK/RTTY/CW, Stazione, finestra a parte e pagina Rotore): bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
 .rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(100vw - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
 /* il carattere segue la larghezza della scheda (cqw si misura sul contenitore, quindi sugli elementi dentro di lui): con la scheda piu' grande o piu' piccola testo e pulsanti si adattano e non escono dai riquadri */
 .rotor-card > * { font-size: max(9px, 4.4cqw); }

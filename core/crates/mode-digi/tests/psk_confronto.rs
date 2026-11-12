@@ -12,7 +12,7 @@
 //!
 //! `cargo test --release -p mode-digi --test psk_confronto -- --ignored --nocapture --test-threads=1`
 //! (con `PSK_DEBUG=1` stampa il testo mandato e quello ricevuto; con `PSK_SQUELCH=<soglia 0-100>` lo squelch e' acceso, anche in fldigi; con `AURORA_WAV=<cartella>` scrive i file WAV dei casi, da riascoltare
-//! con fldigi o ).
+//! con fldigi).
 
 mod common;
 

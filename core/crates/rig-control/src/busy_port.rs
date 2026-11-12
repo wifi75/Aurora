@@ -26,7 +26,6 @@ const KNOWN: &[(&str, bool, &str)] = &[
     ("n1mmlogger", true, "N1MM Logger+"),
     ("fldigi", true, "fldigi"),
     ("flrig", true, "flrig"),
-    ("", true, ""),
     ("commander", false, "DXLab Commander"),
     ("logger32", true, "Logger32"),
     ("rigctld", false, RIGCTLD),
@@ -399,7 +398,6 @@ mod tests {
         assert_eq!(known_program("Log4OM_Communicator.exe"), Some("Log4OM"));
         assert_eq!(known_program("HamRadioDeluxe.exe"), Some("Ham Radio Deluxe"));
         assert_eq!(known_program("N1MMLogger.net.exe"), Some("N1MM Logger+"));
-        assert_eq!(known_program("2.exe"), Some(""));
         assert_eq!(known_program("js8call"), Some("JS8Call"), "su Linux senza .exe");
         assert_eq!(known_program("explorer.exe"), None);
         assert_eq!(known_program("TOTALCMD64.EXE"), None);

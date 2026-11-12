@@ -80,7 +80,7 @@ pub fn decode(bits: &str) -> Option<u8> {
 }
 
 /// Il carattere di un codice dato come numero (i bit del carattere, il primo nel bit piu' alto, senza i due zeri di coda): e' il registro
-/// dei bit ricevuti come lo tengono fldigi (`psk_varicode_decode`) e  (tabella inversa). `None` se il codice non esiste.
+/// dei bit ricevuti come lo tengono fldigi (`psk_varicode_decode`). `None` se il codice non esiste.
 pub fn decode_value(value: u32) -> Option<u8> {
     static TABLE: std::sync::OnceLock<std::collections::HashMap<u32, u8>> = std::sync::OnceLock::new();
     let table = TABLE.get_or_init(|| {

@@ -1831,7 +1831,7 @@ export interface DigiImported {
   skipped: number;
 }
 
-/** Importa le macro dai file dell'utente (di base `%APPDATA%\`); solo dal PC di Aurora. */
+/** Importa le macro dai file di una cartella dell'utente, oppure (`defaults`) rimette quelle di Aurora; solo dal PC di Aurora. */
 export async function importMacros(how: 'replace' | 'add' | 'defaults' = 'replace', folder?: string): Promise<{ imported: DigiImported; snapshot: DigiSnapshot }> {
   return (await (await request('/digi/import-macros', jsonInit({ how, ...(folder ? { folder } : {}) }))).json()) as { imported: DigiImported; snapshot: DigiSnapshot };
 }
@@ -1841,7 +1841,7 @@ export async function digiCat(cmd: string): Promise<void> {
   await request('/digi/cat', jsonInit({ cmd }));
 }
 
-/** Il testo di un file della cartella (macro `<TEXTFILE:nome>`); solo dal PC di Aurora. */
+/** Il testo di un file della cartella dei testi delle macro (macro `<TEXTFILE:nome>`); solo dal PC di Aurora. */
 export async function digiTextFile(name: string): Promise<string> {
   return ((await (await request('/digi/textfile?name=' + encodeURIComponent(name))).json()) as { text: string }).text;
 }
