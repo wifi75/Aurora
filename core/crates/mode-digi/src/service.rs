@@ -659,6 +659,11 @@ impl DigiService {
         self.inner.band.signals()
     }
 
+    /// «Pulisci» del pannello Segnali: i canali di tutta la banda ripartono da zero (elenco, storico e nominativi).
+    pub fn clear_band(&self) {
+        self.inner.band.reset();
+    }
+
     pub fn set_tx_port(&self, port: Arc<dyn DigiTxPort>) {
         *lock(&self.inner.port) = Some(port);
     }

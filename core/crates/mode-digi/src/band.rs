@@ -38,6 +38,9 @@ const EMIT_EVERY: Duration = Duration::from_millis(500);
 const TAIL_CHARS: usize = 64;
 /// Sotto questa probabilità (0-255) un carattere e' incerto e si mostra in grigio.
 const UNSURE_BELOW: u8 = 150;
+/// Un nominativo non sentito da tanto (s) e' «vecchio»: resta nell'elenco finche' c'e' il canale, ma l'etichetta sulla cascata si toglie.
+/// Lo storico di un canale e' di 60 s: poco oltre, del nominativo non resta piu' niente da leggere.
+const CALL_STALE_S: f64 = 75.0;
 /// La banda audio in cui si cercano i segnali (Hz).
 const LO_HZ: f32 = 150.0;
 const HI_HZ: f32 = 4_000.0;
@@ -215,7 +218,7 @@ impl BandLink {
         }
     }
 
-    /// Ascolto spento: si dimentica tutto.
+    /// Ascolto spento o «Pulisci»: si dimentica tutto (canali, storico, nominativi) e l'interfaccia riceve un elenco vuoto.
     pub fn reset(&self) {
         let _ = self.queue.send(Msg::Reset);
     }
@@ -252,6 +255,7 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
                 .into(),
                 verified: c.verified(),
                 country: lookup.and_then(|f| f(&c.call)),
+                stale: ch.now_s - c.last_s > CALL_STALE_S,
             })
             .collect(),
         cq: ch.cq,
@@ -412,6 +416,7 @@ mod tests {
             calls: vec![HeardCall { call: "IU3ABC".into(), role: Role::Cq, count: 2, score: 1.9, last_s: 3.0, shape: crate::skim::forms::Shape::Typical }],
             cq: true,
             last_report: None,
+            now_s: 10.0,
         };
         let lookup: CallLookup = Arc::new(|c: &str| c.starts_with("IU").then(|| "Italy".to_string()));
         let s = signal_of(&ch, true, Some(8), Some(&lookup));
@@ -422,6 +427,12 @@ mod tests {
         assert_eq!(s.calls[0].role, "cq");
         assert!(s.calls[0].verified);
         assert_eq!(s.calls[0].country.as_deref(), Some("Italy"));
+        // sentito 7 s fa: l'etichetta sulla cascata resta; dopo 75 s senza sentirlo si toglie (il nominativo resta nell'elenco)
+        assert!(!s.calls[0].stale);
+        let later = ChannelInfo { now_s: 3.0 + CALL_STALE_S + 1.0, ..ch.clone() };
+        let old = signal_of(&later, true, Some(8), Some(&lookup));
+        assert!(old.calls[0].stale);
+        assert_eq!(old.calls[0].call, "IU3ABC");
         let full = signal_of(&ch, false, None, None);
         assert_eq!(full.text.len(), 14);
         assert_eq!(full.wpm, None);
