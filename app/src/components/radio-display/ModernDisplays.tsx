@@ -19,7 +19,7 @@ import { useT } from '../../i18n';
 /**
  * Sei display «moderni»: tre estesi (640 x 90, nella riga dei comandi) e tre quasi quadrati (330 x 130, nell'angolo della testata
  * al posto delle icone). Ogni indicatore compare solo se la radio lo da' (il dato c'e') e se e' spuntato in
- * Impostazioni > Radio > «Display esteso: cosa mostrare»; con il clic (solo in testata) comanda la radio.
+ * Impostazioni › Stazione › Radio > «Display esteso: cosa mostrare»; con il clic (solo in testata) comanda la radio.
  */
 
 export interface ModernProps {

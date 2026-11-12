@@ -605,9 +605,9 @@ fn registered() -> bool {
 /// Un errore di OmniRig detto in chiaro: «classe non registrata» vuol dire che OmniRig non c'e', «non risponde» che OmniRig e' bloccato.
 pub fn explain_omnirig(why: &str) -> String {
     if why.contains("REGDB_E_CLASSNOTREG") || why.contains("80040154") || why.contains("CLSID") {
-        format!("OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig da {OMNIRIG_URL}")
+        format!("OmniRig non e' installato su questo PC: in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig da {OMNIRIG_URL}")
     } else if why == "non risponde" {
-        "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora)".to_string()
+        "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora)".to_string()
     } else {
         why.to_string()
     }
@@ -731,7 +731,7 @@ impl Rig for WindowsRig {
     }
 
     fn set_extra(&self, _item: crate::extras::ExtraItem) -> Result<(), RigError> {
-        Err(RigError("con OmniRig le impostazioni della radio (preamplificatore, AGC, NB, VFO...) non si cambiano da qui: scegli il CAT Hamlib in Impostazioni → Radio".into()))
+        Err(RigError("con OmniRig le impostazioni della radio (preamplificatore, AGC, NB, VFO...) non si cambiano da qui: scegli il CAT Hamlib in Impostazioni › Stazione › Radio".into()))
     }
 }
 

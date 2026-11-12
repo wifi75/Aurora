@@ -198,7 +198,7 @@ describe('CatTab', () => {
             { id: 'ft991', name: 'ft991', model: '', status: 'no_response', claimed_by: 'hamlib', audio_rx: null, audio_tx: null },
           ],
         },
-        { id: 'locked', name: 'locked', control: '127.0.0.1:5002', running: true, manual: false, audio: null, error: 'Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio', radios: [] },
+        { id: 'locked', name: 'locked', control: '127.0.0.1:5002', running: true, manual: false, audio: null, error: 'Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni › Stazione › Radio', radios: [] },
         { id: 'spare', name: 'spare', control: '', running: false, manual: false, audio: null, error: '', radios: [] },
       ],
     });

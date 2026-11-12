@@ -93,10 +93,10 @@ impl NetAudio {
     /// Il testo se il CAT scelto non e' quello giusto.
     fn needs_cat(self, input: bool) -> &'static str {
         match (self, input) {
-            (NetAudio::Tci, true) => "ingresso TCI: scegli prima TCI in Impostazioni → Radio",
-            (NetAudio::Tci, false) => "uscita TCI: scegli prima TCI in Impostazioni → Radio",
-            (NetAudio::Cat4om, true) => "ingresso Cat4OM: scegli prima Cat4OM in Impostazioni → Radio",
-            (NetAudio::Cat4om, false) => "uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio",
+            (NetAudio::Tci, true) => "ingresso TCI: scegli prima TCI in Impostazioni › Stazione › Radio",
+            (NetAudio::Tci, false) => "uscita TCI: scegli prima TCI in Impostazioni › Stazione › Radio",
+            (NetAudio::Cat4om, true) => "ingresso Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio",
+            (NetAudio::Cat4om, false) => "uscita Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio",
         }
     }
 }
@@ -713,9 +713,9 @@ mod tests {
         let backend = CpalBackend { rows, events, cat: None };
         let (tap, _) = mpsc::channel();
         let refused = backend.open_input(Some("Cat4OM (audio in rete)"), Arc::new(AtomicU8::new(0)), tap).err();
-        assert_eq!(refused.as_deref(), Some("ingresso Cat4OM: scegli prima Cat4OM in Impostazioni → Radio"));
+        assert_eq!(refused.as_deref(), Some("ingresso Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio"));
         let refused = backend.open_output(Some("Cat4OM (audio in rete)"), Arc::new(AtomicU32::new(0)), Arc::new(AtomicU8::new(0))).err();
-        assert_eq!(refused.as_deref(), Some("uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio"));
+        assert_eq!(refused.as_deref(), Some("uscita Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio"));
     }
 
     struct FakeStream {

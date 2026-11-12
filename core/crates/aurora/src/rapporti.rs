@@ -1189,7 +1189,7 @@ mod tests {
         assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: PTT bloccato per altri 3 s dopo il collegamento"));
         assert!(!super::scelta_dell_operatore("errore del flusso di uscita audio: Failed to get current padding"));
         // la porta tenuta da un altro programma e OmniRig che si avvia (o con la radio spenta): avvisi a schermo, non rapporti
-        assert!(super::scelta_dell_operatore("PTT sulla seriale non attivo: La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio"));
+        assert!(super::scelta_dell_operatore("PTT sulla seriale non attivo: La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio"));
         assert!(super::scelta_dell_operatore("trasmissione fallita: PTT: OmniRig non risponde: la radio e' accesa e in linea in OmniRig?"));
         assert!(!super::scelta_dell_operatore("trasmissione fallita: PTT: OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti"));
     }

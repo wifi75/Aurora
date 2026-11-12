@@ -59,11 +59,11 @@ describe('coreText', () => {
       'core.cat4om.audio.device{"code":"AUDIO_DEVICE_NOT_PRESENT"}',
     );
     expect(coreText("Cat4OM ha chiuso l'audio in rete: the radio is being reconfigured", t as never)).toBe('core.cat4om.audio.stopped{"raw":"the radio is being reconfigured"}');
-    expect(coreText('uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio', t as never)).toBe('core.cat4om.audio.needsCatOut');
+    expect(coreText('uscita Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio', t as never)).toBe('core.cat4om.audio.needsCatOut');
   });
 
   it('translates the busy serial port and OmniRig not ready', () => {
-    const omni = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
+    const omni = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio";
     expect(coreText(omni, t as never)).toBe('core.portHeldOmni{"port":"COM8"}');
     expect(coreText(`${omni} Nuovo tentativo tra 5 s.`, t as never)).toBe('core.retry{"cause":"core.portHeldOmni{\\"port\\":\\"COM8\\"}","s":"5"}');
     expect(coreText("La porta COM3 e' occupata da N1MM Logger+: chiudi N1MM Logger+ e premi Collega", t as never)).toBe('core.portHeldBy{"port":"COM3","who":"N1MM Logger+"}');

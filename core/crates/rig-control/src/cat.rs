@@ -444,7 +444,7 @@ impl CatService {
 
     /// La radio Hamlib collegata, per le funzioni che servono la radio vera (PTT, modo, split).
     pub fn hamlib(&self) -> Result<Arc<HamlibRig>, RigError> {
-        self.current().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni → Radio e premi Collega".into()))
+        self.current().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni › Stazione › Radio e premi Collega".into()))
     }
 
     fn tci_rig(&self) -> Option<Arc<TciRig>> {
@@ -453,7 +453,7 @@ impl CatService {
 
     /// La radio TCI collegata (PTT, ganci dell'audio).
     pub fn tci(&self) -> Result<Arc<TciRig>, RigError> {
-        self.tci_rig().ok_or_else(|| RigError("nessuna radio TCI collegata: scegli TCI in Impostazioni → Radio e premi Collega".into()))
+        self.tci_rig().ok_or_else(|| RigError("nessuna radio TCI collegata: scegli TCI in Impostazioni › Stazione › Radio e premi Collega".into()))
     }
 
     fn ft991_rig(&self) -> Option<Arc<Ft991Rig>> {
@@ -462,7 +462,7 @@ impl CatService {
 
     /// La FT-991/FT-991A collegata con FT-991(A) Link (PTT, split simulato).
     pub fn ft991(&self) -> Result<Arc<Ft991Rig>, RigError> {
-        self.ft991_rig().ok_or_else(|| RigError("nessuna radio FT-991(A) Link collegata: scegli FT-991(A) Link in Impostazioni → Radio e premi Collega".into()))
+        self.ft991_rig().ok_or_else(|| RigError("nessuna radio FT-991(A) Link collegata: scegli FT-991(A) Link in Impostazioni › Stazione › Radio e premi Collega".into()))
     }
 
     fn cat4om_rig(&self) -> Option<Arc<Cat4omRig>> {
@@ -471,7 +471,7 @@ impl CatService {
 
     /// La radio collegata attraverso Cat4OM (PTT, split).
     pub fn cat4om(&self) -> Result<Arc<Cat4omRig>, RigError> {
-        self.cat4om_rig().ok_or_else(|| RigError("nessuna radio Cat4OM collegata: scegli Cat4OM in Impostazioni → Radio e premi Collega".into()))
+        self.cat4om_rig().ok_or_else(|| RigError("nessuna radio Cat4OM collegata: scegli Cat4OM in Impostazioni › Stazione › Radio e premi Collega".into()))
     }
 
     /// L'audio ricevuto via TCI va a `hook` (`None` = flusso fermato), anche per le radio TCI collegate dopo.

@@ -21,14 +21,14 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['Chiusa, ma il PTT potrebbe essere rimasto acceso: controlla la radio.', 'core.pttMaybeOn'],
   ['radio non in linea', 'core.omniOffline'],
   ["OmniRig non risponde: la radio e' accesa e in linea in OmniRig?", 'core.omniNotReady'],
-  ["OmniRig non e' installato su questo PC: in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig", 'core.omniMissing'],
+  ["OmniRig non e' installato su questo PC: in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora) oppure installa OmniRig", 'core.omniMissing'],
   [
-    "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni > Radio scegli Hamlib (gia' incluso in Aurora)",
+    "OmniRig non risponde: apri OmniRig e controlla che Rig1 abbia la porta e il modello giusti e la radio accesa (stato «On-line»), oppure in Impostazioni › Stazione › Radio scegli Hamlib (gia' incluso in Aurora)",
     'core.omniNoAnswer',
   ],
   ['con OmniRig Aurora comanda solo la frequenza della radio', 'core.omniFreqOnly'],
   [
-    "con OmniRig le impostazioni della radio (preamplificatore, AGC, NB, VFO...) non si cambiano da qui: scegli il CAT Hamlib in Impostazioni → Radio",
+    "con OmniRig le impostazioni della radio (preamplificatore, AGC, NB, VFO...) non si cambiano da qui: scegli il CAT Hamlib in Impostazioni › Stazione › Radio",
     'core.omniNoExtras',
   ],
   ['nessuna risposta', 'core.noReply'],
@@ -36,7 +36,7 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['Collegamento con FT-991(A) Link perso: nuovo tentativo', 'core.ft991.lost'],
   ['radio Cat4OM non collegata', 'core.cat4om.notLinked'],
   ['Nessuna radio nel gruppo Cat4OM: aggiungila in Cat4OM', 'core.cat4om.noRadios'],
-  ['Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio', 'core.cat4om.authRequired'],
+  ['Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni › Stazione › Radio', 'core.cat4om.authRequired'],
   ["Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC", 'core.cat4om.authFailed'],
   ['Versione del protocollo Cat4OM non compatibile con Aurora (1.0.0)', 'core.cat4om.version'],
   ["Nel campo «Controllo» c'e' la porta di gestione di Cat4OM: lascialo vuoto, Aurora trova da sola la porta del gruppo", 'core.cat4om.management'],
@@ -48,8 +48,8 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ["Cat4OM: un altro programma sta gia' mandando l'audio di trasmissione a questa radio", 'core.cat4om.audio.txInUse'],
   ['Cat4OM: audio in rete non configurato per questa radio (scegli i dispositivi audio della radio in Cat4OM)', 'core.cat4om.audio.unavailable'],
   ["Cat4OM ha aperto l'audio in rete in un formato che Aurora non conosce", 'core.cat4om.audio.badGrant'],
-  ['ingresso Cat4OM: scegli prima Cat4OM in Impostazioni → Radio', 'core.cat4om.audio.needsCatIn'],
-  ['uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio', 'core.cat4om.audio.needsCatOut'],
+  ['ingresso Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio', 'core.cat4om.audio.needsCatIn'],
+  ['uscita Cat4OM: scegli prima Cat4OM in Impostazioni › Stazione › Radio', 'core.cat4om.audio.needsCatOut'],
   ['Accensione del ricevitore RX2', 'core.tci.rx2Wait'],
   ["La SDR non ha acceso il ricevitore RX2 (rx_enable): controlla che la SDR sia accesa e che abbia RX2, poi ricollega", 'core.tci.rx2Failed'],
   ['La SDR non ha ancora detto la potenza (drive): cambiala una volta dalla SDR', 'core.tci.noDrive'],
@@ -78,7 +78,7 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
 /** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
 const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: string[] }> = [
   // porta seriale tenuta da un altro programma (`rig_control::busy_port`): OmniRig ha il suo consiglio, il nome noto, nessun nome
-  { re: /^La porta (\S+) e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio$/s, key: 'core.portHeldOmni', vars: ['port'] },
+  { re: /^La porta (\S+) e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio$/s, key: 'core.portHeldOmni', vars: ['port'] },
   { re: /^La porta (\S+) e' occupata da un altro programma \(WSJT-X, JTDX, il log\.\.\.\): chiudilo e premi Collega$/s, key: 'core.portHeld', vars: ['port'] },
   { re: /^La porta (\S+) e' occupata da (.+?): chiudi \2 e premi Collega$/s, key: 'core.portHeldBy', vars: ['port', 'who'] },
   // la porta del PTT su seriale (RTS/DTR) si apre all'avvio: il consiglio e' riavviare Aurora (`busy_port::ptt_busy_message`)
@@ -159,7 +159,7 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
 const LOST = /^Collegamento perso: (.*) Nuovo tentativo (\d+) di (\d+) tra (\d+) s\.$/s;
 const RETRY = /^(.*) Nuovo tentativo tra (\d+) s\.$/s;
 const STOPPED = /^rigctld si e' fermato: controlla modello, porta e velocita'\. \((.*)\)$/s;
-const PORT_USED = /^la porta (\d+) e' gia' usata da (?:il programma «(.+)»|un altro programma \(forse Aurora e' gia' aperta\)): chiudilo o scegli un'altra porta in Impostazioni > Accesso$/s;
+const PORT_USED = /^la porta (\d+) e' gia' usata da (?:il programma «(.+)»|un altro programma \(forse Aurora e' gia' aperta\)): chiudilo o scegli un'altra porta in Impostazioni › Accesso e assistenza › Smartphone$/s;
 
 const EVIDENCE: ReadonlyArray<[RegExp, Key]> = [
   [/^il nome "(.*)" contiene il modello$/s, 'core.ev.nameModel'],

@@ -131,7 +131,7 @@ pub fn port_label(port: &str) -> String {
 pub fn busy_message(port: &str, holder: &Holder) -> String {
     match holder {
         Holder::Program(name) if *name == OMNIRIG => {
-            format!("La porta {} e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio", port_label(port))
+            format!("La porta {} e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio", port_label(port))
         }
         _ => held_message(port, holder, "premi Collega"),
     }
@@ -446,7 +446,7 @@ mod tests {
     fn the_message_names_the_holder_and_what_to_do() {
         assert_eq!(
             busy_message(r"\\.\COM8", &Holder::Program("OmniRig")),
-            "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio"
+            "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio"
         );
         assert_eq!(busy_message("com12", &Holder::Program("JTDX")), "La porta COM12 e' occupata da JTDX: chiudi JTDX e premi Collega");
         let generic = busy_message("COM3", &Holder::Unknown);

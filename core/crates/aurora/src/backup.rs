@@ -44,7 +44,7 @@ pub fn make(data_dir: &Path, logbook: &Logbook, dest: &Path, version: &str) -> R
         zip.start_file(name, options).map_err(|e| e.to_string())?;
         zip.write_all(data).map_err(|e| e.to_string())
     };
-    add(&mut zip, MARK, format!("Copia delle impostazioni di Aurora {version}\nSi ripristina da Impostazioni > Sistema > Copia delle impostazioni.\nPassword e chiavi dei servizi non sono incluse.\n").as_bytes())?;
+    add(&mut zip, MARK, format!("Copia delle impostazioni di Aurora {version}\nSi ripristina da Impostazioni › Accesso e assistenza › Assistenza.\nPassword e chiavi dei servizi non sono incluse.\n").as_bytes())?;
     let mut names: Vec<String> = std::fs::read_dir(data_dir)
         .map_err(|e| format!("{}: {e}", data_dir.display()))?
         .flatten()

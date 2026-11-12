@@ -1453,7 +1453,7 @@ impl engine_native::TxPort for WindowsVolumePort {
 }
 
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.
-/// PTT comandato attraverso la radio collegata con Hamlib (`T 1` / `T 0` di rigctld): rigctld usa il PTT scelto in Impostazioni > Radio
+/// PTT comandato attraverso la radio collegata con Hamlib (`T 1` / `T 0` di rigctld): rigctld usa il PTT scelto in Impostazioni › Stazione › Radio
 /// (CAT, oppure DTR/RTS sulla porta indicata). Se la radio non e' collegata la trasmissione non parte.
 struct CatPtt {
     cat: Arc<rig_control::cat::CatService>,
@@ -1556,7 +1556,7 @@ fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native
     cat.hamlib().map_err(failed)?.set_ptt(on).map_err(failed)
 }
 
-/// PTT senza scelta da JTDX: a ogni trasmissione guarda Impostazioni > Radio, cosi' vale anche una radio scelta dopo l'avvio
+/// PTT senza scelta da JTDX: a ogni trasmissione guarda Impostazioni › Stazione › Radio, cosi' vale anche una radio scelta dopo l'avvio
 /// (senza riavviare Aurora). Con Hamlib e una radio scelta il PTT passa da rigctld; con «VOX» o senza radio nessun comando.
 struct AutoPtt {
     cat: Arc<rig_control::cat::CatService>,
@@ -1575,7 +1575,7 @@ impl tx_native::Ptt for AutoPtt {
         if by_rig {
             cat_ptt(&self.cat, on)?;
         } else if on {
-            tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni > Radio");
+            tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni › Stazione › Radio");
             aurora_core::notice::notice("no_radio", "");
         }
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
@@ -1678,7 +1678,7 @@ impl mode_sstv::SstvTxPort for SstvTx {
     }
 }
 
-/// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni > Radio,
+/// Il PTT da usare: quello di `AURORA_PTT_METHOD` (o di JTDX) se c'e'; altrimenti quello scelto in Impostazioni › Stazione › Radio,
 /// cosi' chi non viene da JTDX trasmette con il PTT della radio invece di restare sul VOX senza comando.
 fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String {
     let radio = cat.config();
@@ -2240,7 +2240,7 @@ pub async fn run(
             },
         )
         .with_support_bundle_if(Some({
-            // il PTT si ricalcola a ogni pacchetto: la scelta in Impostazioni > Radio puo' essere cambiata
+            // il PTT si ricalcola a ogni pacchetto: la scelta in Impostazioni › Stazione › Radio puo' essere cambiata
             let config = config.clone();
             let cat = Arc::clone(&cat);
             Arc::new(move |req: remote_api::SupportRequest| {
@@ -2898,7 +2898,7 @@ fn port_error(bind: std::net::SocketAddr, e: &std::io::Error) -> String {
         return format!("{bind}: {e}");
     }
     let who = port_owner(bind.port()).map_or_else(|| "un altro programma (forse Aurora e' gia' aperta)".to_string(), |p| format!("il programma «{p}»"));
-    format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni > Accesso", bind.port())
+    format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni › Accesso e assistenza › Smartphone", bind.port())
 }
 
 #[cfg(windows)]

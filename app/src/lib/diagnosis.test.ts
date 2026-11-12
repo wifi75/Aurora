@@ -78,7 +78,7 @@ describe('notices from the engine', () => {
 
   it('shows a serial port held by another program as a problem with the Radio page', () => {
     const base = { now: 1_000_000, status: null, clockOffsetMs: null, periodSecs: 15, audio: null, lastDecodeAt: null, sessionStartAt: null };
-    const detail = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
+    const detail = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio";
     expect(diagnose({ ...base, notices: { port_busy: { detail, at: 990_000 } } })).toEqual([
       expect.objectContaining({ id: 'port_busy', severity: 'problem', href: '#/impostazioni/radio', vars: { detail, at: 990_000 } }),
     ]);

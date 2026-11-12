@@ -62,7 +62,7 @@ pub const AUTH_SCHEME: &str = "cat4om-sha256-minute-v1";
 /// Messaggi dello stato (tradotti dall'interfaccia, `coreText`).
 const NOT_LINKED: &str = "radio Cat4OM non collegata";
 const NO_RADIOS: &str = "Nessuna radio nel gruppo Cat4OM: aggiungila in Cat4OM";
-const AUTH_REQUIRED: &str = "Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni → Radio";
+const AUTH_REQUIRED: &str = "Cat4OM chiede la chiave del gruppo: scrivila in Impostazioni › Stazione › Radio";
 const AUTH_FAILED: &str = "Cat4OM ha rifiutato la chiave del gruppo: controlla la chiave e l'ora del PC";
 const VERSION_MISMATCH: &str = "Versione del protocollo Cat4OM non compatibile con Aurora (1.0.0)";
 const MANAGEMENT_PORT: &str = "Nel campo «Controllo» c'e' la porta di gestione di Cat4OM: lascialo vuoto, Aurora trova da sola la porta del gruppo";

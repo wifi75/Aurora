@@ -1376,7 +1376,7 @@ mod tests {
 
     #[test]
     fn a_busy_port_diagnosis_reaches_the_status_unchanged() {
-        let why = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
+        let why = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni › Stazione › Radio";
         let connector: Connector = Arc::new(move || Err(RigError(why.into())));
         let rig = HamlibRig::start(RigConfig::default(), connector, fast());
         let s = rig.wait_settled(Duration::from_secs(2));

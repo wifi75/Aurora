@@ -1126,7 +1126,7 @@ impl NativeRig {
     }
 
     fn radio(&self) -> Result<&Arc<dyn Rig>, RigError> {
-        self.radio.as_ref().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni → Radio".into()))
+        self.radio.as_ref().ok_or_else(|| RigError("nessuna radio collegata: scegli il CAT in Impostazioni › Stazione › Radio".into()))
     }
 
     /// Accensione di Hound a mano (vedi `NativeControls::hound_setup`), con l'avviso di cio' che e' stato fatto.
