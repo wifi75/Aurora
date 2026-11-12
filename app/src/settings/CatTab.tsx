@@ -376,6 +376,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
   const preset = hamlib ? presetFor(config.rig_name) : undefined;
   // Cat4OM: gruppo e porta Control trovati dalla scoperta (suggeriti nei campi lasciati vuoti)
   const discovered = snap.data.status.backend === 'cat4om' && snap.data.status.cat4om?.discovered ? snap.data.status.cat4om : undefined;
+  // l'audio in rete di Cat4OM scelto nella scheda Audio non va (comando della radio, frequenza, dispositivo...): lo dice il core
+  const cat4omAudioProblem = snap.data.status.backend === 'cat4om' ? (snap.data.status.cat4om?.audio_error ?? '') : '';
   // un gruppo trovato dalla gestione si collega con la scoperta: la porta Control scritta a mano (di un altro gruppo) si toglie
   const pickCat4om = (g: Cat4omFoundGroup, r: Cat4omFoundRadio) => {
     set({ cat4om_group: g.id, cat4om_radio: r.id, ...(g.manual ? {} : { cat4om_address: '' }) });
@@ -647,6 +649,12 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
         ) : null}
       </Cells>
       {fields.cat4om && cat4omFound ? <Cat4omFound found={cat4omFound} config={config} onUse={pickCat4om} /> : null}
+      {fields.cat4om && cat4omAudioProblem ? (
+        <Message kind="alert">
+          {t('cat.cat4om.audioProblem')} {coreText(cat4omAudioProblem, t)}
+        </Message>
+      ) : null}
+      {fields.cat4om ? <Message kind="muted">{t('cat.cat4om.audioHint')}</Message> : null}
       {fields.rig ? <Message kind="muted">{models.isLoading ? t('cat.rig.loading') : models.isError ? t('cat.rig.failed') : t('cat.rig.count', { n: modelList.length })}</Message> : null}
       <datalist id="cat-ports">
         {(ports.data ?? []).filter((p) => !p.virtual || p.virtual_kind === 'vspe' || p.virtual_kind === 'com0com').map((p) => (

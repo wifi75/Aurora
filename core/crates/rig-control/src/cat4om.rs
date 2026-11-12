@@ -41,8 +41,10 @@ use tungstenite::{Message, WebSocket};
 use crate::{
     Rig, RigError,
     cat_config::{CatMode, RigConfig, SplitMode, split_tx_dial_hz},
+    cat4om_audio::{self as net_audio, AudioFrame, Direction, SequenceCheck, SequenceTracker, StreamGrant},
     hamlib_rig::{LinkState, RigStatus, valid_dial_hz},
     meters::{self, Level, Meters},
+    tci::{RxAudioFn, TxAudioFn},
 };
 
 /// La porta di gestione di Cat4OM (una per servizio): da li' si leggono i gruppi e la porta Control di ciascuno.
@@ -547,6 +549,8 @@ pub struct Cat4omEndpoint {
     pub radio: String,
     /// `master`, `slave` o vuoto se non collegata.
     pub role: String,
+    /// Perche' l'audio in rete scelto nella scheda Audio non va (testo per l'utente); vuoto se va o se non e' scelto.
+    pub audio_error: String,
 }
 
 /// Il testo dello stato a radio collegata: «gruppo/radio — ruolo».
@@ -619,6 +623,61 @@ struct Session {
     radio_id: Option<String>,
     seq: Option<u64>,
     keepalive: Duration,
+    /// `welcome.features` (per l'audio in rete serve `audioStreaming`).
+    features: Vec<String>,
+}
+
+/// Uno stream di trasmissione aperto.
+#[derive(Debug, Clone, Copy)]
+struct TxStream {
+    grant: StreamGrant,
+    /// La `sequence` del prossimo blocco (da 1).
+    next_seq: u32,
+    opened: Instant,
+    /// L'ultimo blocco con audio (o l'apertura): oltre [`net_audio::TX_IDLE_REOPEN`] lo stream si riapre prima del PTT.
+    last_audio: Instant,
+    /// L'onda in corso: inizio e blocchi gia' mandati (il ritmo di 20 ms si conta da li').
+    wave: Option<(Instant, u64)>,
+}
+
+/// L'audio in rete (manuale, sez. 8). I ganci (dalla scheda Audio) restano tra un collegamento e l'altro; gli stream no: si chiudono con
+/// il WebSocket e si riaprono sul collegamento nuovo.
+#[derive(Default)]
+struct AudioLink {
+    /// Chi riceve l'audio della radio (mono, alla frequenza concessa).
+    rx_hook: Option<RxAudioFn>,
+    /// Chi da' l'audio da trasmettere (mono, alla frequenza concessa).
+    tx_hook: Option<TxAudioFn>,
+    rx: Option<StreamGrant>,
+    /// La radio dello stream di ricezione.
+    rx_radio: String,
+    /// `startAudioStream` di ricezione in attesa di risposta: id della richiesta e frequenza chiesta.
+    rx_pending: Option<(String, u32)>,
+    /// Non prima di questo istante si riprova ad aprire la ricezione (dopo un rifiuto).
+    rx_retry_at: Option<Instant>,
+    rx_seq: SequenceTracker,
+    /// La frequenza di ricezione gia' concessa una volta: alla riapertura si chiede quella (senza rifare il tentativo a 12 kHz).
+    rx_rate: Option<u32>,
+    /// Blocchi ricevuti persi dall'ultimo avviso nel registro.
+    rx_lost: u64,
+    rx_lost_logged: Option<Instant>,
+    tx: Option<TxStream>,
+    /// La radio dello stream di trasmissione.
+    tx_radio: String,
+    /// Perche' l'audio in rete non va (testo per l'utente), vuoto se va.
+    problem: String,
+}
+
+impl AudioLink {
+    /// Il collegamento e' caduto o ricomincia: gli stream non ci sono piu'.
+    fn reset_streams(&mut self) {
+        self.rx = None;
+        self.rx_pending = None;
+        self.rx_retry_at = None;
+        self.rx_seq = SequenceTracker::default();
+        self.tx = None;
+        self.problem.clear();
+    }
 }
 
 struct Inner {
@@ -664,6 +723,8 @@ struct Inner {
     dx_split: AtomicBool,
     /// PTT e split gia' rimessi a posto per questo collegamento.
     released: AtomicBool,
+    /// L'audio in rete: ganci, stream aperti, problemi.
+    audio: Mutex<AudioLink>,
 }
 
 impl Inner {
@@ -973,6 +1034,13 @@ impl Inner {
                         }
                         self.refresh();
                     }
+                } else if id.starts_with("audio-rx-") {
+                    // lo stream di ricezione chiesto dal collegamento stesso
+                    self.rx_granted(&id, success, &result, error);
+                } else if id.starts_with("audio-stop-") {
+                    if !success {
+                        tracing::debug!("Cat4OM: stopAudioStream rifiutato: {error:?}");
+                    }
                 } else {
                     let reply = if success && status.as_deref() == Some("FAILSAFE_UNKEY") {
                         // PTT forzato spento dal server: la richiesta non e' stata onorata
@@ -1007,6 +1075,7 @@ impl Inner {
                         }
                     }
                 }
+                "audioStreamStopped" => self.audio_stopped(&details),
                 _ => tracing::debug!("Cat4OM: evento {event} ({radio_id:?})"),
             },
             Some(Incoming::Error(e)) => tracing::warn!("Cat4OM: errore dal server: {} ({})", e.message, e.code),
@@ -1042,6 +1111,328 @@ impl Inner {
             let _ = self.call("setSplit", true, json!({ "enabled": false }), quick);
         }
     }
+}
+
+/// Prima di riprovare ad aprire la ricezione dopo un rifiuto, e dopo `audioStreamStopped`.
+const RX_RETRY: Duration = Duration::from_secs(10);
+const RX_REOPEN: Duration = Duration::from_secs(2);
+/// Ogni quanto si scrive nel registro quanti blocchi ricevuti si sono persi.
+const LOST_LOG: Duration = Duration::from_secs(30);
+
+/// L'audio in rete (manuale, sez. 8): ricezione aperta dal thread del collegamento, trasmissione aperta prima del PTT.
+impl Inner {
+    /// Il motivo per cui l'audio in rete non va (nel registro solo quando cambia).
+    fn set_audio_problem(&self, text: &str) {
+        if let Ok(mut a) = self.audio.lock()
+            && a.problem != text
+        {
+            if !text.is_empty() {
+                tracing::warn!("Cat4OM: {text}");
+            }
+            a.problem = text.to_string();
+        }
+    }
+
+    /// L'audio in rete c'e' in questa versione di Cat4OM (`audioStreaming` in `welcome.features`).
+    fn audio_feature(&self) -> bool {
+        self.session.lock().is_ok_and(|s| s.features.iter().any(|f| f == "audioStreaming"))
+    }
+
+    /// Chiude uno stream (dal thread del collegamento o da fuori: va in coda). La risposta non serve.
+    fn stop_stream(&self, stream_id: u32) {
+        let client_id = self.session.lock().map(|s| s.client_id.clone()).unwrap_or_default();
+        if !client_id.is_empty() && self.link_up.load(Ordering::SeqCst) {
+            self.send(request_message(&format!("audio-stop-{}", new_request_id()), &client_id, "stopAudioStream", None, json!({ "streamId": stream_id })));
+        }
+    }
+
+    /// Chiede lo stream di ricezione, se serve: c'e' chi ascolta, la radio e' scelta, il server ha l'audio e non c'e' gia' uno stream
+    /// (o una richiesta). Dal thread del collegamento: la risposta si riconosce dal prefisso dell'id.
+    fn open_rx_if_needed(&self) {
+        let (client_id, radio) = match self.session.lock() {
+            Ok(s) => (s.client_id.clone(), s.radio_id.clone()),
+            Err(_) => return,
+        };
+        let Some(radio) = radio.filter(|_| !client_id.is_empty() && self.link_up.load(Ordering::SeqCst)) else { return };
+        let stale = {
+            let Ok(mut a) = self.audio.lock() else { return };
+            if a.rx_hook.is_none() || a.rx_pending.is_some() || a.rx_retry_at.is_some_and(|t| Instant::now() < t) {
+                return;
+            }
+            match a.rx {
+                Some(_) if a.rx_radio == radio => return,
+                // la radio scelta e' cambiata: lo stream della vecchia si chiude
+                Some(g) => {
+                    a.rx = None;
+                    Some(g.stream_id)
+                }
+                None => None,
+            }
+        };
+        if let Some(old) = stale {
+            self.stop_stream(old);
+        }
+        // senza audio in Cat4OM o per la radio si riguarda ogni tanto (lo stato della radio puo' cambiare), non a ogni giro
+        let missing = if !self.audio_feature() {
+            Some(net_audio::NO_FEATURE)
+        } else if self.view().is_some_and(|v| v.audio_capture == Some(false)) {
+            Some(net_audio::UNAVAILABLE)
+        } else {
+            None
+        };
+        if let Some(text) = missing {
+            self.set_audio_problem(text);
+            if let Ok(mut a) = self.audio.lock() {
+                a.rx_retry_at = Some(Instant::now() + RX_REOPEN);
+            }
+            return;
+        }
+        let rate = self.audio.lock().ok().and_then(|a| a.rx_rate).unwrap_or(net_audio::RX_PREFERRED_RATE);
+        self.request_rx(&client_id, &radio, rate);
+    }
+
+    fn request_rx(&self, client_id: &str, radio: &str, rate: u32) {
+        let id = format!("audio-rx-{}", new_request_id());
+        if let Ok(mut a) = self.audio.lock() {
+            a.rx_pending = Some((id.clone(), rate));
+            a.rx_radio = radio.to_string();
+        }
+        self.send(request_message(&id, client_id, "startAudioStream", Some(radio), net_audio::start_params(Direction::Rx, rate)));
+    }
+
+    /// La risposta a `startAudioStream` di ricezione: si usano i valori concessi; a 12 kHz rifiutato si riprova a 48 kHz (manuale).
+    fn rx_granted(&self, id: &str, success: bool, result: &Value, error: Option<ServerError>) {
+        let asked = {
+            let Ok(mut a) = self.audio.lock() else { return };
+            match a.rx_pending.take() {
+                Some((pending, rate)) if pending == id => rate,
+                other => {
+                    // risposta a una richiesta superata (collegamento rifatto, ascolto tolto)
+                    a.rx_pending = other;
+                    return;
+                }
+            }
+        };
+        let has_hook = self.audio.lock().is_ok_and(|a| a.rx_hook.is_some());
+        if success {
+            let granted = net_audio::parse_grant(result, Direction::Rx, asked, 1);
+            match granted {
+                Some(g) if has_hook => {
+                    tracing::info!("Cat4OM: audio in rete in ricezione a {} Hz, {} canali (stream {})", g.sample_rate, g.channels, g.stream_id);
+                    if let Ok(mut a) = self.audio.lock() {
+                        a.rx = Some(g);
+                        a.rx_seq = SequenceTracker::default();
+                        a.rx_rate = Some(g.sample_rate);
+                        a.problem.clear();
+                    }
+                }
+                Some(g) => self.stop_stream(g.stream_id),
+                None => {
+                    if let Some(stream) = result.get("streamId").and_then(Value::as_u64).and_then(|s| u32::try_from(s).ok()) {
+                        self.stop_stream(stream);
+                    }
+                    self.set_audio_problem(net_audio::BAD_GRANT);
+                    if let Ok(mut a) = self.audio.lock() {
+                        a.rx_retry_at = Some(Instant::now() + RX_RETRY);
+                    }
+                }
+            }
+            return;
+        }
+        let e = error.unwrap_or(ServerError { code: "UNKNOWN".into(), message: String::new(), retry_after_ms: None, details: Value::Null });
+        if let Some(rate) = net_audio::retry_rate(&e.code, asked) {
+            tracing::info!("Cat4OM: audio di ricezione a {asked} Hz non accettato, nuova richiesta a {rate} Hz");
+            let (client_id, radio) = self.session.lock().map(|s| (s.client_id.clone(), s.radio_id.clone())).unwrap_or_default();
+            if let Some(radio) = radio.filter(|_| has_hook && !client_id.is_empty()) {
+                self.request_rx(&client_id, &radio, rate);
+            }
+            return;
+        }
+        let text = net_audio::error_text(&e.code, asked).unwrap_or_else(|| self.rig_error("startAudioStream", CallError::Server(e)).0);
+        self.set_audio_problem(&text);
+        if let Ok(mut a) = self.audio.lock() {
+            a.rx_retry_at = Some(Instant::now() + RX_RETRY);
+        }
+    }
+
+    /// Un messaggio binario del Control: un blocco di audio ricevuto. Si scartano i blocchi illeggibili, d'altri stream, vecchi o
+    /// ripetuti; al posto dei blocchi persi va silenzio (fino a 1 s), cosi' cascata e decodificatore restano a tempo.
+    fn handle_audio(&self, data: &[u8]) {
+        let frame = match net_audio::decode_frame(data) {
+            Ok(f) => f,
+            Err(e) => {
+                tracing::debug!("Cat4OM: {e}, scartato");
+                return;
+            }
+        };
+        let (hook, fill) = {
+            let Ok(mut a) = self.audio.lock() else { return };
+            let ours = frame.direction == Direction::Rx && a.rx.is_some_and(|g| g.stream_id == frame.stream_id);
+            let Some(hook) = a.rx_hook.clone().filter(|_| ours) else { return };
+            let fill = match a.rx_seq.check(frame.sequence) {
+                SequenceCheck::Old => return,
+                SequenceCheck::InOrder => 0,
+                SequenceCheck::Lost(n) => {
+                    a.rx_lost += u64::from(n);
+                    net_audio::gap_fill(n, frame.sample_count())
+                }
+            };
+            if a.rx_lost > 0 && a.rx_lost_logged.is_none_or(|t| t.elapsed() > LOST_LOG) {
+                tracing::info!("Cat4OM: {} blocchi di audio persi in rete (rete lenta o Aurora occupata)", a.rx_lost);
+                a.rx_lost = 0;
+                a.rx_lost_logged = Some(Instant::now());
+            }
+            (hook, fill)
+        };
+        if fill > 0 {
+            hook(&vec![0.0; fill], frame.sample_rate);
+        }
+        hook(&net_audio::to_mono(&frame), frame.sample_rate);
+    }
+
+    /// `audioStreamStopped` (solo al proprietario dello stream): la ricezione si riapre poco dopo, la trasmissione al prossimo PTT. La
+    /// chiusura per 60 s senza audio di trasmissione e' normale tra una trasmissione e l'altra e non si segnala.
+    fn audio_stopped(&self, details: &Value) {
+        let stream = details.get("streamId").and_then(Value::as_u64).and_then(|s| u32::try_from(s).ok());
+        let reason = details.get("reason").and_then(Value::as_str).unwrap_or_default().to_string();
+        let mut problem = None;
+        if let Ok(mut a) = self.audio.lock() {
+            if stream.is_some() && a.rx.map(|g| g.stream_id) == stream {
+                a.rx = None;
+                a.rx_retry_at = Some(Instant::now() + RX_REOPEN);
+                problem = Some(net_audio::stopped_text(&reason));
+            } else if stream.is_some() && a.tx.map(|t| t.grant.stream_id) == stream {
+                a.tx = None;
+                if !reason.contains("idle") {
+                    problem = Some(net_audio::stopped_text(&reason));
+                }
+            }
+        }
+        tracing::info!("Cat4OM: audio in rete chiuso dal server (stream {stream:?}): {reason}");
+        if let Some(text) = problem {
+            self.set_audio_problem(&text);
+        }
+    }
+
+    /// Prima del PTT: lo stream di trasmissione aperto (il manuale: prima della trasmissione, indispensabile con le radio TCI), se l'uscita
+    /// «Cat4OM (audio in rete)» e' scelta. Serve il comando della radio. Uno stream fermo da quasi 60 s si riapre (il server lo chiude).
+    fn open_tx_if_needed(&self) -> Result<(), RigError> {
+        let radio = self.session.lock().ok().and_then(|s| s.radio_id.clone()).unwrap_or_default();
+        let (need, old) = {
+            let Ok(a) = self.audio.lock() else { return Ok(()) };
+            let fresh = a.tx.is_some_and(|t| a.tx_radio == radio && t.last_audio.elapsed() < net_audio::TX_IDLE_REOPEN);
+            (a.tx_hook.is_some() && !fresh, a.tx.map(|t| t.grant.stream_id))
+        };
+        if !need {
+            return Ok(());
+        }
+        let failed = |text: String| {
+            self.set_audio_problem(&text);
+            Err(RigError(text))
+        };
+        if !self.audio_feature() {
+            return failed(net_audio::NO_FEATURE.into());
+        }
+        if self.view().is_some_and(|v| v.audio_transmit == Some(false)) {
+            return failed(net_audio::UNAVAILABLE.into());
+        }
+        let rate = net_audio::FALLBACK_RATE;
+        let params = net_audio::start_params(Direction::Tx, rate);
+        let answer = {
+            let _one = self.command_lock.lock();
+            self.ensure_master()?;
+            match self.call("startAudioStream", true, params.clone(), self.timing.request) {
+                Err(CallError::Server(e)) if e.code == "NOT_MASTER" => {
+                    if let Ok(mut s) = self.session.lock() {
+                        s.is_master = false;
+                    }
+                    self.ensure_master()?;
+                    self.call("startAudioStream", true, params, self.timing.request)
+                }
+                other => other,
+            }
+        };
+        let result = match answer {
+            Ok(result) => result,
+            Err(CallError::Server(e)) => return failed(net_audio::error_text(&e.code, rate).unwrap_or_else(|| self.rig_error("startAudioStream", CallError::Server(e)).0)),
+            Err(other) => return failed(self.rig_error("startAudioStream", other).0),
+        };
+        let Some(grant) = net_audio::parse_grant(&result, Direction::Tx, rate, 1) else {
+            if let Some(stream) = result.get("streamId").and_then(Value::as_u64).and_then(|s| u32::try_from(s).ok()) {
+                self.stop_stream(stream);
+            }
+            return failed(net_audio::BAD_GRANT.into());
+        };
+        if old.is_some_and(|o| o != grant.stream_id) {
+            tracing::debug!("Cat4OM: stream di trasmissione {old:?} sostituito da {}", grant.stream_id);
+        }
+        tracing::info!("Cat4OM: audio in rete in trasmissione a {} Hz, {} canali (stream {})", grant.sample_rate, grant.channels, grant.stream_id);
+        let now = Instant::now();
+        if let Ok(mut a) = self.audio.lock() {
+            a.tx = Some(TxStream { grant, next_seq: 1, opened: now, last_audio: now, wave: None });
+            a.tx_radio = radio;
+            a.problem.clear();
+        }
+        Ok(())
+    }
+}
+
+/// Il giro dell'audio nel thread del collegamento: apre la ricezione se serve e manda i blocchi da trasmettere al ritmo di 20 ms (con
+/// un piccolo anticipo). Torna `true` se un'onda e' in corso (il giro allora legge piu' spesso). L'errore e' quello del WebSocket.
+fn audio_tick(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> Result<bool, String> {
+    inner.open_rx_if_needed();
+    let (hook, mut stream) = match inner.audio.lock() {
+        Ok(a) => match (a.tx_hook.clone(), a.tx) {
+            (Some(hook), Some(stream)) => (hook, stream),
+            _ => return Ok(false),
+        },
+        Err(_) => return Ok(false),
+    };
+    let rate = stream.grant.sample_rate;
+    let channels = usize::from(stream.grant.channels.max(1));
+    let mut mono = vec![0.0f32; net_audio::frame_samples(rate)];
+    let now = Instant::now();
+    let mut result = Ok(());
+    loop {
+        let due = match stream.wave {
+            // a riposo: si guarda se l'onda e' cominciata (la sorgente da' 0 campioni finche' non c'e' niente da trasmettere)
+            None => 1,
+            Some((start, sent)) => net_audio::frames_due(now.saturating_duration_since(start), sent, net_audio::TX_LEAD),
+        };
+        if due == 0 {
+            break;
+        }
+        let got = hook(&mut mono, rate).min(mono.len());
+        if got == 0 {
+            stream.wave = None;
+            break;
+        }
+        let (start, sent) = stream.wave.unwrap_or((now, 0));
+        stream.wave = Some((start, sent + 1));
+        let samples: Vec<i16> = net_audio::to_pcm16(&mono[..got]).into_iter().flat_map(|s| std::iter::repeat_n(s, channels)).collect();
+        let frame = AudioFrame {
+            direction: Direction::Tx,
+            channels: stream.grant.channels.max(1),
+            stream_id: stream.grant.stream_id,
+            sample_rate: rate,
+            sequence: stream.next_seq,
+            timestamp_us: u64::try_from(stream.opened.elapsed().as_micros()).unwrap_or(u64::MAX),
+            samples,
+        };
+        stream.next_seq = stream.next_seq.wrapping_add(1);
+        stream.last_audio = now;
+        if let Err(e) = ws.send(Message::binary(net_audio::encode_frame(&frame))) {
+            result = Err(e.to_string());
+            break;
+        }
+    }
+    if let Ok(mut a) = inner.audio.lock()
+        && let Some(current) = a.tx.as_mut()
+        && current.grant.stream_id == stream.grant.stream_id
+    {
+        *current = stream;
+    }
+    result.map(|()| stream.wave.is_some())
 }
 
 /// Una radio comandata attraverso Cat4OM. Il collegamento vive in un thread, si ricollega da solo e non legge mai la radio a intervalli:
@@ -1108,6 +1499,7 @@ impl Cat4omRig {
             split_by_us: AtomicBool::new(false),
             dx_split: AtomicBool::new(false),
             released: AtomicBool::new(false),
+            audio: Mutex::new(AudioLink::default()),
         });
         let worker_inner = Arc::clone(&inner);
         let worker = std::thread::Builder::new().name("cat4om".into()).spawn(move || run(&worker_inner)).ok();
@@ -1131,7 +1523,64 @@ impl Cat4omRig {
             endpoint.radio = s.radio_id.clone().unwrap_or_default();
             endpoint.role = if s.is_master { "master" } else { "slave" }.into();
         }
+        endpoint.audio_error = self.audio_problem();
         endpoint
+    }
+
+    /// L'ingresso «Cat4OM (audio in rete)»: l'audio ricevuto della radio va a `hook` (mono, alla frequenza concessa da Cat4OM). Con
+    /// `Some` lo stream di ricezione si apre (subito o al collegamento), con `None` si chiude.
+    pub fn set_rx_audio(&self, hook: Option<RxAudioFn>) {
+        let inner = &self.inner;
+        let open = {
+            let Ok(mut a) = inner.audio.lock() else { return };
+            let on = hook.is_some();
+            a.rx_hook = hook;
+            a.rx_retry_at = None;
+            if !on {
+                a.rx_pending = None;
+                if a.tx_hook.is_none() {
+                    a.problem.clear();
+                }
+                a.rx.take()
+            } else {
+                None
+            }
+        };
+        if let Some(g) = open {
+            inner.stop_stream(g.stream_id);
+        }
+    }
+
+    /// L'uscita «Cat4OM (audio in rete)»: l'audio da trasmettere viene da `hook` (riempie un blocco mono alla frequenza concessa e dice
+    /// quanti campioni ha scritto, 0 = niente da trasmettere). Lo stream si apre prima del PTT; con `None` si chiude.
+    pub fn set_tx_audio(&self, hook: Option<TxAudioFn>) {
+        let inner = &self.inner;
+        let open = {
+            let Ok(mut a) = inner.audio.lock() else { return };
+            let on = hook.is_some();
+            a.tx_hook = hook;
+            if !on {
+                if a.rx_hook.is_none() {
+                    a.problem.clear();
+                }
+                a.tx.take()
+            } else {
+                None
+            }
+        };
+        if let Some(t) = open {
+            inner.stop_stream(t.grant.stream_id);
+        }
+    }
+
+    /// Perche' l'audio in rete non va (testo per l'utente); vuoto se va o non e' scelto.
+    pub fn audio_problem(&self) -> String {
+        self.inner.audio.lock().map(|a| a.problem.clone()).unwrap_or_default()
+    }
+
+    /// Lo stream di ricezione e' aperto (la frequenza concessa), per lo stato e le prove.
+    pub fn rx_audio_rate(&self) -> Option<u32> {
+        self.inner.audio.lock().ok().and_then(|a| a.rx.map(|g| g.sample_rate))
     }
 
     pub fn status(&self) -> RigStatus {
@@ -1171,6 +1620,10 @@ impl Cat4omRig {
             return Ok(());
         }
         inner.connected()?;
+        // con l'uscita «Cat4OM (audio in rete)» lo stream di trasmissione va aperto prima del PTT; se non si apre non si trasmette
+        if on {
+            inner.open_tx_if_needed()?;
+        }
         if on && inner.split_mode() == SplitMode::Emulate && !inner.dx_split.load(Ordering::SeqCst) {
             let audio = inner.tx_audio_hz.load(Ordering::SeqCst);
             if let Some(dial) = inner.dial()
@@ -1396,7 +1849,11 @@ fn adopt_welcome(inner: &Inner, welcome: Welcome, address: &str) {
             radio_id: None,
             seq: welcome.seq,
             keepalive: Duration::from_millis(welcome.keepalive_ms.filter(|ms| *ms > 0).unwrap_or(10_000)),
+            features: welcome.features,
         };
+    }
+    if let Ok(mut a) = inner.audio.lock() {
+        a.reset_streams();
     }
     tracing::info!("Cat4OM: collegato al gruppo «{}» su {address} (ruolo {})", welcome.group_id, welcome.role);
     inner.released.store(false, Ordering::SeqCst);
@@ -1421,6 +1878,9 @@ fn reset_link(inner: &Inner) {
     if let Ok(mut s) = inner.session.lock() {
         s.is_master = false;
         s.client_id.clear();
+    }
+    if let Ok(mut a) = inner.audio.lock() {
+        a.reset_streams();
     }
     if let Ok(mut o) = inner.outbox.lock() {
         o.clear();
@@ -1836,6 +2296,8 @@ fn run(inner: &Inner) {
 /// il server tace per 3 intervalli di keepalive o quando si chiude.
 fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
     let mut last_rx = Instant::now();
+    // durante un'onda da trasmettere si legge con attese piu' brevi: i blocchi da 20 ms partono a tempo
+    let mut fast = false;
     loop {
         let pending: Vec<String> = inner.outbox.lock().map(|mut o| o.drain(..).collect()).unwrap_or_default();
         for text in pending {
@@ -1847,6 +2309,14 @@ fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
             let _ = ws.flush();
             return "chiuso".into();
         }
+        match audio_tick(inner, ws) {
+            Ok(wave) if wave != fast => {
+                fast = wave;
+                let _ = ws.get_ref().set_read_timeout(Some(Duration::from_millis(if fast { 5 } else { 20 })));
+            }
+            Ok(_) => {}
+            Err(e) => return e,
+        }
         let silence = inner.session.lock().map(|s| s.keepalive).unwrap_or(Duration::from_secs(10)) * 3;
         if last_rx.elapsed() > silence {
             return format!("nessun messaggio da {} s", silence.as_secs());
@@ -1856,7 +2326,11 @@ fn serve(inner: &Inner, ws: &mut WebSocket<TcpStream>) -> String {
                 last_rx = Instant::now();
                 inner.handle_text(text.as_str());
             }
-            // nessun audio richiesto: i blocchi binari si ignorano
+            // l'audio in rete: arriva solo dopo `startAudioStream`, quel che non e' dello stream aperto si scarta
+            Ok(Message::Binary(data)) => {
+                last_rx = Instant::now();
+                inner.handle_audio(&data);
+            }
             Ok(Message::Close(_)) => return "chiuso dal server".into(),
             Ok(_) => last_rx = Instant::now(),
             Err(e) if would_block(&e) => {
@@ -2070,6 +2544,17 @@ mod tests {
         drop_now: bool,
         cooldown_once: bool,
         connections: u32,
+        /// Audio in rete: `audioStreaming` nel `welcome`, frequenze di ricezione accettate (vuoto = tutte), ultimo `streamId`, un altro
+        /// programma che trasmette audio, `NOT_MASTER` sempre sullo stream di trasmissione.
+        audio: bool,
+        rx_rates: Vec<u64>,
+        streams: u32,
+        tx_busy: bool,
+        audio_not_master: bool,
+        /// Da mandare al client (eventi e blocchi audio) e blocchi ricevuti dal client.
+        outgoing_text: VecDeque<String>,
+        outgoing_binary: VecDeque<Vec<u8>>,
+        incoming_binary: Vec<Vec<u8>>,
     }
 
     struct Fake {
@@ -2110,6 +2595,14 @@ mod tests {
             drop_now: false,
             cooldown_once: false,
             connections: 0,
+            audio: false,
+            rx_rates: Vec::new(),
+            streams: 0,
+            tx_busy: false,
+            audio_not_master: false,
+            outgoing_text: VecDeque::new(),
+            outgoing_binary: VecDeque::new(),
+            incoming_binary: Vec::new(),
         }));
         let shared = Arc::clone(&state);
         std::thread::spawn(move || {
@@ -2154,7 +2647,8 @@ mod tests {
             let client = format!("client-{}", s.connections);
             let welcome = json!({ "type": "welcome", "endpoint": "control", "protocolVersion": "1.0.0", "groupId": s.group, "clientId": client,
                 "role": if s.master == client { "master" } else { "slave" }, "sessionToken": null, "radios": s.radios, "seq": s.seq,
-                "authRequired": s.key.is_some(), "features": ["stateUpdateSeq"], "instanceId": "fake", "keepaliveIntervalMs": 10000 });
+                "authRequired": s.key.is_some(), "features": if s.audio { json!(["stateUpdateSeq", "audioStreaming"]) } else { json!(["stateUpdateSeq"]) },
+                "instanceId": "fake", "keepaliveIntervalMs": 10000 });
             if ws.send(Message::text(welcome.to_string())).is_err() {
                 return;
             }
@@ -2175,6 +2669,12 @@ mod tests {
                         return;
                     }
                 }
+                while let Some(text) = s.outgoing_text.pop_front() {
+                    let _ = ws.send(Message::text(text));
+                }
+                while let Some(frame) = s.outgoing_binary.pop_front() {
+                    let _ = ws.send(Message::binary(frame));
+                }
             }
             match ws.read() {
                 Ok(Message::Text(t)) => {
@@ -2188,6 +2688,7 @@ mod tests {
                         let _ = ws.send(Message::text(update));
                     }
                 }
+                Ok(Message::Binary(b)) => shared.lock().unwrap().incoming_binary.push(b.to_vec()),
                 Ok(Message::Close(_)) => return,
                 Ok(_) => {}
                 Err(e) if would_block(&e) => {}
@@ -2214,6 +2715,23 @@ mod tests {
                 (ok(json!({ "role": "master" })), true)
             }
             "getAllState" => (ok(json!({ "radios": s.radios })), false),
+            "startAudioStream" => {
+                let direction = p["direction"].as_str().unwrap_or_default().to_string();
+                let rate = p["sampleRateHz"].as_u64().unwrap_or(48_000);
+                if direction == "tx" {
+                    if s.audio_not_master || s.master != client {
+                        return (fail("NOT_MASTER", None), false);
+                    }
+                    if s.tx_busy {
+                        return (fail("AUDIO_TRANSMIT_IN_USE", None), false);
+                    }
+                } else if !s.rx_rates.is_empty() && !s.rx_rates.contains(&rate) {
+                    return (fail("AUDIO_RATE_UNAVAILABLE", None), false);
+                }
+                s.streams += 1;
+                (ok(json!({ "streamId": s.streams, "radioId": r["radioId"], "direction": direction, "sampleRateHz": rate, "channels": 1, "codec": "pcm16" })), false)
+            }
+            "stopAudioStream" => (ok(Value::Null), false),
             "setFrequency" | "setMode" | "setPtt" | "setSplit" | "powerOff" => {
                 if s.master != client {
                     return (fail("NOT_MASTER", None), false);
@@ -2640,5 +3158,157 @@ mod tests {
         assert_eq!(same.groups.len(), 3);
         let wrong = search_with(&management.address, Some(&nobody), "", quick).expect("ricerca");
         assert!(wrong.groups[3].manual && wrong.groups[3].error.starts_with(&format!("Cat4OM non raggiungibile su {nobody}")));
+    }
+
+    // ------------------------------------------------ audio in rete
+
+    fn audio_fake(radios: Vec<Value>) -> Fake {
+        let f = fake(radios, None);
+        f.state.lock().unwrap().audio = true;
+        f
+    }
+
+    fn starts(fake: &Fake) -> Vec<Value> {
+        fake.requests().into_iter().filter(|r| r["action"] == "startAudioStream").collect()
+    }
+
+    fn rx_frame(stream: u32, sequence: u32, samples: &[i16]) -> Vec<u8> {
+        net_audio::encode_frame(&AudioFrame { direction: Direction::Rx, channels: 1, stream_id: stream, sample_rate: 48_000, sequence, timestamp_us: 0, samples: samples.to_vec() })
+    }
+
+    #[test]
+    fn network_audio_is_received_at_the_granted_rate_with_gaps_filled() {
+        let fake = audio_fake(vec![radio("run", &ALL)]);
+        fake.state.lock().unwrap().rx_rates = vec![48_000];
+        let rig = rig(&fake, |_| {});
+        let heard: Arc<Mutex<Vec<(Vec<f32>, u32)>>> = Arc::default();
+        let sink = Arc::clone(&heard);
+        rig.set_rx_audio(Some(Arc::new(move |s: &[f32], rate: u32| sink.lock().unwrap().push((s.to_vec(), rate)))));
+        assert!(wait(|| rig.rx_audio_rate() == Some(48_000)), "{:?}", fake.requests());
+        let asked = starts(&fake);
+        assert_eq!(asked.len(), 2);
+        assert_eq!((&asked[0]["params"], &asked[0]["radioId"]), (&json!({ "direction": "rx", "sampleRateHz": 12000, "channels": 1 }), &json!("run")));
+        assert_eq!(asked[1]["params"]["sampleRateHz"], 48000, "12 kHz rifiutato: si riprova a 48 kHz e vale quella concessa");
+        assert!(fake.actions().iter().all(|a| a != "getOwnership"), "la ricezione non chiede il comando della radio");
+        {
+            let mut s = fake.state.lock().unwrap();
+            let mut bad = rx_frame(1, 3, &[9; 4]);
+            bad[0] = b'X';
+            for f in [rx_frame(1, 1, &[16_384; 4]), rx_frame(1, 2, &[0; 4]), rx_frame(1, 5, &[-16_384; 4]), rx_frame(1, 4, &[1; 4]), rx_frame(7, 6, &[1; 4]), bad] {
+                s.outgoing_binary.push_back(f);
+            }
+        }
+        let total = || heard.lock().unwrap().iter().map(|(s, _)| s.len()).sum::<usize>();
+        assert!(wait(|| total() >= 20));
+        std::thread::sleep(Duration::from_millis(150));
+        let got = heard.lock().unwrap().clone();
+        let all: Vec<f32> = got.iter().flat_map(|(s, _)| s.clone()).collect();
+        assert!(got.iter().all(|(_, rate)| *rate == 48_000));
+        assert_eq!(all.len(), 4 + 4 + 8 + 4, "due blocchi persi diventano silenzio; vecchi, d'altri stream e illeggibili si scartano");
+        assert_eq!((all[0], all[19]), (0.5, -0.5));
+        assert!(all[8..16].iter().all(|v| *v == 0.0));
+        // il server chiude lo stream: lo si dice e lo si riapre
+        fake.state.lock().unwrap().outgoing_text.push_back(
+            json!({ "type": "event", "event": "audioStreamStopped", "radioId": "run",
+                "details": { "streamId": 1, "radioId": "run", "direction": "rx", "reason": "the radio is being reconfigured" } })
+            .to_string(),
+        );
+        assert!(wait(|| rig.audio_problem() == "Cat4OM ha chiuso l'audio in rete: the radio is being reconfigured"), "{}", rig.audio_problem());
+        assert!(wait(|| starts(&fake).len() == 3 && rig.audio_problem().is_empty() && rig.rx_audio_rate().is_some()));
+        // l'ingresso si cambia: lo stream si chiude
+        rig.set_rx_audio(None);
+        assert!(wait(|| fake.actions().last().map(String::as_str) == Some("stopAudioStream")));
+        assert_eq!(fake.requests().last().expect("richiesta")["params"], json!({ "streamId": 2 }));
+        assert_eq!(rig.rx_audio_rate(), None);
+    }
+
+    #[test]
+    fn network_audio_is_sent_in_20_ms_frames_on_a_stream_opened_before_the_ptt() {
+        let fake = audio_fake(vec![radio("run", &ALL)]);
+        let rig = rig(&fake, |_| {});
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        // la sorgente: tanti blocchi quanti ne restano, poi niente (0 = nessuna onda)
+        let left = Arc::new(AtomicU32::new(0));
+        let pulls = Arc::clone(&left);
+        rig.set_tx_audio(Some(Arc::new(move |buf: &mut [f32], rate: u32| {
+            assert_eq!(rate, 48_000);
+            if pulls.load(Ordering::SeqCst) == 0 {
+                return 0;
+            }
+            pulls.fetch_sub(1, Ordering::SeqCst);
+            buf.fill(0.25);
+            buf.len()
+        })));
+        rig.set_ptt(true).expect("PTT");
+        assert_eq!(fake.actions(), ["getOwnership", "startAudioStream", "setPtt"], "lo stream prima del PTT");
+        assert_eq!(fake.requests()[1]["params"], json!({ "direction": "tx", "sampleRateHz": 48000, "channels": 1 }));
+        left.store(5, Ordering::SeqCst);
+        let received = || fake.state.lock().unwrap().incoming_binary.clone();
+        assert!(wait(|| received().len() == 5));
+        let sent: Vec<AudioFrame> = received().iter().map(|b| net_audio::decode_frame(b).expect("blocco")).collect();
+        assert!(sent.iter().all(|f| f.direction == Direction::Tx && f.stream_id == 1 && f.sample_rate == 48_000 && f.channels == 1 && f.sample_count() == 960));
+        assert_eq!(sent.iter().map(|f| f.sequence).collect::<Vec<_>>(), [1, 2, 3, 4, 5], "sequence da 1");
+        assert_eq!(sent[0].samples[0], 8192);
+        rig.set_ptt(false).expect("PTT");
+        // la trasmissione dopo usa lo stesso stream
+        rig.set_ptt(true).expect("PTT");
+        rig.set_ptt(false).expect("PTT");
+        assert_eq!(starts(&fake).len(), 1);
+        // dopo 60 s senza audio il server lo chiude: e' normale, si riapre al PTT dopo e la sequence riparte da 1
+        fake.state.lock().unwrap().outgoing_text.push_back(
+            json!({ "type": "event", "event": "audioStreamStopped", "radioId": "run",
+                "details": { "streamId": 1, "radioId": "run", "direction": "tx", "reason": "idle for too long; the transmit lease was reclaimed" } })
+            .to_string(),
+        );
+        assert!(wait(|| rig.inner.audio.lock().unwrap().tx.is_none()));
+        assert_eq!(rig.audio_problem(), "", "la chiusura per inattivita' non e' un problema");
+        rig.set_ptt(true).expect("PTT");
+        assert_eq!(starts(&fake).len(), 2);
+        left.store(1, Ordering::SeqCst);
+        assert!(wait(|| received().len() == 6));
+        let last = net_audio::decode_frame(&received()[5]).expect("blocco");
+        assert_eq!((last.stream_id, last.sequence), (2, 1));
+        rig.set_ptt(false).expect("PTT");
+        // l'uscita si cambia: lo stream si chiude
+        rig.set_tx_audio(None);
+        assert!(wait(|| fake.actions().last().map(String::as_str) == Some("stopAudioStream")));
+        assert_eq!(fake.requests().last().expect("richiesta")["params"], json!({ "streamId": 2 }));
+    }
+
+    #[test]
+    fn network_audio_errors_are_clear_and_stop_the_transmission() {
+        let fake = audio_fake(vec![radio("run", &ALL)]);
+        fake.state.lock().unwrap().tx_busy = true;
+        let rig = rig(&fake, |_| {});
+        assert!(wait(|| rig.status().state == LinkState::Connected));
+        rig.set_tx_audio(Some(Arc::new(|_: &mut [f32], _: u32| 0)));
+        assert_eq!(rig.set_ptt(true).expect_err("audio occupato").0, net_audio::TX_IN_USE);
+        assert!(fake.actions().iter().all(|a| a != "setPtt"), "senza audio non si trasmette");
+        assert_eq!(rig.endpoint().audio_error, net_audio::TX_IN_USE);
+        {
+            let mut s = fake.state.lock().unwrap();
+            s.tx_busy = false;
+            s.audio_not_master = true;
+        }
+        assert_eq!(rig.set_ptt(true).expect_err("non master").0, net_audio::NOT_MASTER);
+        assert_eq!(fake.actions().iter().filter(|a| *a == "getOwnership").count(), 2, "il comando si chiede di nuovo una volta");
+        rig.set_tx_audio(None);
+        assert_eq!(rig.audio_problem(), "", "tolta l'uscita, nessun problema");
+        // una versione di Cat4OM senza audio in rete
+        let old = super::tests::fake(vec![radio("run", &ALL)], None);
+        let plain = super::tests::rig(&old, |_| {});
+        assert!(wait(|| plain.status().state == LinkState::Connected));
+        plain.set_tx_audio(Some(Arc::new(|_: &mut [f32], _: u32| 0)));
+        assert_eq!(plain.set_ptt(true).expect_err("senza audio").0, net_audio::NO_FEATURE);
+        plain.set_rx_audio(Some(Arc::new(|_: &[f32], _: u32| {})));
+        assert!(wait(|| plain.audio_problem() == net_audio::NO_FEATURE));
+        // una radio senza audio configurato in Cat4OM
+        let mut deaf = radio("run", &ALL);
+        deaf["audioCaptureAvailable"] = json!(false);
+        let quiet = audio_fake(vec![deaf]);
+        let other = super::tests::rig(&quiet, |_| {});
+        other.set_rx_audio(Some(Arc::new(|_: &[f32], _: u32| {})));
+        assert!(wait(|| other.audio_problem() == net_audio::UNAVAILABLE));
+        assert!(old.actions().iter().chain(quiet.actions().iter()).all(|a| a != "startAudioStream"), "nessuna richiesta inutile");
     }
 }

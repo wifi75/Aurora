@@ -219,6 +219,18 @@ describe('CatTab', () => {
     await waitFor(() => expect(putCat).toHaveBeenCalledWith(expect.objectContaining({ cat4om_group: 'group-1', cat4om_radio: 'kenwood/ts-990', cat4om_address: '' })));
   });
 
+  it('says how to get the Cat4OM network audio and why it does not work', async () => {
+    const audio_error = "Cat4OM: un altro programma sta gia' mandando l'audio di trasmissione a questa radio";
+    vi.mocked(getCat).mockResolvedValue({
+      ...idle,
+      status: { ...idle.status, backend: 'cat4om', cat4om: { management: '127.0.0.1:17300', control: '127.0.0.1:5001', discovered: true, group: 'group-1', radio: 'run', role: 'slave', audio_error } },
+      config: { ...DEFAULT_CAT, backend: 'cat4om' },
+    });
+    render(<CatTab />);
+    expect(await screen.findByText(/Audio in rete: Cat4OM: un altro programma sta già mandando l’audio di trasmissione/)).toBeInTheDocument();
+    expect(screen.getByText(/scegli «Cat4OM \(audio in rete\)» come ingresso e come uscita/)).toBeInTheDocument();
+  });
+
   it('says why the Cat4OM search failed', async () => {
     vi.mocked(getCat).mockResolvedValue({ ...idle, status: { ...idle.status, backend: 'cat4om' }, config: { ...DEFAULT_CAT, backend: 'cat4om' } });
     vi.mocked(searchCat4om)

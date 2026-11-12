@@ -55,13 +55,56 @@ fn device_missing(error: &str) -> bool {
 pub struct CpalBackend {
     pub rows: broadcast::Sender<SpectrumRow>,
     pub events: broadcast::Sender<Event>,
-    /// La radio: con il CAT su TCI ingresso e uscita possono essere il flusso audio della SDR.
+    /// La radio: con il CAT su TCI o su Cat4OM ingresso e uscita possono essere l'audio che arriva in rete con il CAT.
     pub cat: Option<Arc<rig_control::cat::CatService>>,
 }
 
+/// L'audio che non passa da una scheda ma dal collegamento del CAT: il flusso della SDR (TCI) o l'audio in rete di Cat4OM.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum NetAudio {
+    Tci,
+    Cat4om,
+}
+
+impl NetAudio {
+    const ALL: [NetAudio; 2] = [NetAudio::Tci, NetAudio::Cat4om];
+
+    fn backend(self) -> rig_control::cat_config::Backend {
+        match self {
+            NetAudio::Tci => rig_control::cat_config::Backend::Tci,
+            NetAudio::Cat4om => rig_control::cat_config::Backend::Cat4om,
+        }
+    }
+
+    fn input_name(self) -> &'static str {
+        match self {
+            NetAudio::Tci => audio_spectrum::TCI_INPUT_NAME,
+            NetAudio::Cat4om => rig_control::cat4om_audio::CAT4OM_AUDIO_NAME,
+        }
+    }
+
+    fn output_name(self) -> &'static str {
+        match self {
+            NetAudio::Tci => tx_native::TCI_OUTPUT_NAME,
+            NetAudio::Cat4om => rig_control::cat4om_audio::CAT4OM_AUDIO_NAME,
+        }
+    }
+
+    /// Il testo se il CAT scelto non e' quello giusto.
+    fn needs_cat(self, input: bool) -> &'static str {
+        match (self, input) {
+            (NetAudio::Tci, true) => "ingresso TCI: scegli prima TCI in Impostazioni → Radio",
+            (NetAudio::Tci, false) => "uscita TCI: scegli prima TCI in Impostazioni → Radio",
+            (NetAudio::Cat4om, true) => "ingresso Cat4OM: scegli prima Cat4OM in Impostazioni → Radio",
+            (NetAudio::Cat4om, false) => "uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio",
+        }
+    }
+}
+
 impl CpalBackend {
-    fn tci_cat(&self) -> Option<&Arc<rig_control::cat::CatService>> {
-        self.cat.as_ref().filter(|c| c.backend() == rig_control::cat_config::Backend::Tci)
+    /// Il CAT, se e' quello che porta questo audio.
+    fn net_cat(&self, kind: NetAudio) -> Option<&Arc<rig_control::cat::CatService>> {
+        self.cat.as_ref().filter(|c| c.backend() == kind.backend())
     }
 }
 
@@ -70,35 +113,50 @@ pub fn is_tci_device(hint: Option<&str>, name: &str) -> bool {
     hint.is_some_and(|h| h.trim().eq_ignore_ascii_case(name))
 }
 
+/// L'ingresso non e' una scheda di Windows ma l'audio del CAT (TCI o Cat4OM): niente volume di registrazione da regolare.
+pub fn is_network_input(hint: Option<&str>) -> bool {
+    NetAudio::ALL.iter().any(|k| is_tci_device(hint, k.input_name()))
+}
+
+/// L'uscita non e' una scheda di Windows ma l'audio del CAT (TCI o Cat4OM): la potenza si regola nella radio o nella SDR.
+pub fn is_network_output(name: &str) -> bool {
+    NetAudio::ALL.iter().any(|k| is_tci_device(Some(name), k.output_name()))
+}
+
 struct Capture(audio_spectrum::CaptureHandle);
 
-/// L'ingresso TCI: chiuderlo ferma il flusso audio della SDR (`audio_stop`).
-struct TciInput {
+/// L'ingresso dal CAT: chiuderlo ferma il flusso audio (TCI `audio_stop`, Cat4OM `stopAudioStream`).
+struct NetInput {
     _feed: audio_spectrum::TciFeedHandle,
     hook: audio_spectrum::TciRxSink,
     cat: Arc<rig_control::cat::CatService>,
+    kind: NetAudio,
 }
 
-impl InputStream for TciInput {
+impl InputStream for NetInput {
     fn name(&self) -> String {
-        audio_spectrum::TCI_INPUT_NAME.to_string()
+        self.kind.input_name().to_string()
     }
 }
 
-impl Drop for TciInput {
+impl Drop for NetInput {
     fn drop(&mut self) {
-        self.cat.release_tci_rx_audio(&self.hook);
+        match self.kind {
+            NetAudio::Tci => self.cat.release_tci_rx_audio(&self.hook),
+            NetAudio::Cat4om => self.cat.release_cat4om_rx_audio(&self.hook),
+        }
     }
 }
 
-/// L'uscita TCI: chiuderla rida' alla SDR la sua sorgente audio.
-struct TciOutput {
+/// L'uscita verso il CAT: chiuderla rida' alla radio la sua sorgente audio (con Cat4OM chiude lo stream di trasmissione).
+struct NetOutput {
     sink: tx_native::TciSink,
     source: tx_native::TciTxSource,
     cat: Arc<rig_control::cat::CatService>,
+    kind: NetAudio,
 }
 
-impl AudioSink for TciOutput {
+impl AudioSink for NetOutput {
     fn sample_rate(&self) -> u32 {
         self.sink.sample_rate()
     }
@@ -119,9 +177,12 @@ impl AudioSink for TciOutput {
     }
 }
 
-impl Drop for TciOutput {
+impl Drop for NetOutput {
     fn drop(&mut self) {
-        self.cat.release_tci_tx_audio(&self.source);
+        match self.kind {
+            NetAudio::Tci => self.cat.release_tci_tx_audio(&self.source),
+            NetAudio::Cat4om => self.cat.release_cat4om_tx_audio(&self.source),
+        }
     }
 }
 
@@ -137,36 +198,48 @@ impl InputStream for Capture {
 impl Backend for CpalBackend {
     fn input_devices(&self) -> Vec<AudioDevice> {
         let mut list: Vec<AudioDevice> = audio_spectrum::list_input_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect();
-        if self.tci_cat().is_some() {
-            list.insert(0, AudioDevice { name: audio_spectrum::TCI_INPUT_NAME.to_string(), channels: 1, is_default: false });
+        for kind in NetAudio::ALL {
+            if self.net_cat(kind).is_some() {
+                list.insert(0, AudioDevice { name: kind.input_name().to_string(), channels: 1, is_default: false });
+            }
         }
         list
     }
 
     fn output_devices(&self) -> Vec<AudioDevice> {
         let mut list: Vec<AudioDevice> = tx_native::list_output_devices_info().into_iter().map(|d| AudioDevice { name: d.name, channels: d.channels, is_default: d.is_default }).collect();
-        if self.tci_cat().is_some() {
-            list.insert(0, AudioDevice { name: tx_native::TCI_OUTPUT_NAME.to_string(), channels: 1, is_default: false });
+        for kind in NetAudio::ALL {
+            if self.net_cat(kind).is_some() {
+                list.insert(0, AudioDevice { name: kind.output_name().to_string(), channels: 1, is_default: false });
+            }
         }
         list
     }
 
     fn open_input(&self, hint: Option<&str>, channel: Arc<AtomicU8>, tap: mpsc::Sender<AudioChunk>) -> Result<Box<dyn InputStream>, String> {
-        if is_tci_device(hint, audio_spectrum::TCI_INPUT_NAME) {
-            let cat = self.tci_cat().ok_or("ingresso TCI: scegli prima TCI in Impostazioni → Radio")?;
+        if let Some(kind) = NetAudio::ALL.into_iter().find(|k| is_tci_device(hint, k.input_name())) {
+            let cat = self.net_cat(kind).ok_or(kind.needs_cat(true))?;
+            // lo stesso ingresso del TCI: blocchi mono alla frequenza del server, portati a 12 kHz dal decodificatore
             let (feed, sink) = audio_spectrum::run_tci_feed(self.rows.clone(), self.events.clone(), Some(tap));
-            cat.set_tci_rx_audio(Some(Arc::clone(&sink)));
-            return Ok(Box::new(TciInput { _feed: feed, hook: sink, cat: Arc::clone(cat) }));
+            match kind {
+                NetAudio::Tci => cat.set_tci_rx_audio(Some(Arc::clone(&sink))),
+                NetAudio::Cat4om => cat.set_cat4om_rx_audio(Some(Arc::clone(&sink))),
+            }
+            return Ok(Box::new(NetInput { _feed: feed, hook: sink, cat: Arc::clone(cat), kind }));
         }
         audio_spectrum::run_capture_with(hint, channel, self.rows.clone(), self.events.clone(), Some(tap)).map(|h| Box::new(Capture(h)) as Box<dyn InputStream>).map_err(|e| e.to_string())
     }
 
     fn open_output(&self, hint: Option<&str>, gain: Arc<AtomicU32>, channel: Arc<AtomicU8>) -> Result<(Box<dyn AudioSink>, String), String> {
-        if is_tci_device(hint, tx_native::TCI_OUTPUT_NAME) {
-            let cat = self.tci_cat().ok_or("uscita TCI: scegli prima TCI in Impostazioni → Radio")?;
+        if let Some(kind) = NetAudio::ALL.into_iter().find(|k| is_tci_device(hint, k.output_name())) {
+            let cat = self.net_cat(kind).ok_or(kind.needs_cat(false))?;
+            // la stessa uscita del TCI: l'onda a 48 kHz, portata alla frequenza chiesta da chi la tira (SDR o collegamento Cat4OM)
             let (sink, source) = tx_native::TciSink::new(gain);
-            cat.set_tci_tx_audio(Some(Arc::clone(&source)));
-            return Ok((Box::new(TciOutput { sink, source, cat: Arc::clone(cat) }), tx_native::TCI_OUTPUT_NAME.to_string()));
+            match kind {
+                NetAudio::Tci => cat.set_tci_tx_audio(Some(Arc::clone(&source))),
+                NetAudio::Cat4om => cat.set_cat4om_tx_audio(Some(Arc::clone(&source))),
+            }
+            return Ok((Box::new(NetOutput { sink, source, cat: Arc::clone(cat), kind }), kind.output_name().to_string()));
         }
         let sink = tx_native::CpalSink::open_with(hint, gain, channel).map_err(|e| e.to_string())?;
         let name = sink.device_name().to_string();
@@ -625,6 +698,25 @@ mod tests {
         collections::BTreeSet,
         sync::atomic::{AtomicBool, AtomicUsize},
     };
+
+    #[test]
+    fn the_audio_of_the_cat_is_not_a_windows_device() {
+        for name in ["TCI (dalla radio)", "cat4om (AUDIO IN RETE)", " Cat4OM (audio in rete) "] {
+            assert!(is_network_input(Some(name)), "{name}");
+        }
+        assert!(is_network_output("TCI (alla radio)") && is_network_output("Cat4OM (audio in rete)"));
+        assert!(!is_network_input(Some("Microfono (USB Audio CODEC)")) && !is_network_input(None));
+        assert!(!is_network_output("Altoparlanti (USB Audio CODEC)"));
+        // senza CAT nessun audio di rete nell'elenco e la scelta dice cosa manca
+        let (rows, _) = broadcast::channel(4);
+        let (events, _) = broadcast::channel(4);
+        let backend = CpalBackend { rows, events, cat: None };
+        let (tap, _) = mpsc::channel();
+        let refused = backend.open_input(Some("Cat4OM (audio in rete)"), Arc::new(AtomicU8::new(0)), tap).err();
+        assert_eq!(refused.as_deref(), Some("ingresso Cat4OM: scegli prima Cat4OM in Impostazioni → Radio"));
+        let refused = backend.open_output(Some("Cat4OM (audio in rete)"), Arc::new(AtomicU32::new(0)), Arc::new(AtomicU8::new(0))).err();
+        assert_eq!(refused.as_deref(), Some("uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio"));
+    }
 
     struct FakeStream {
         name: String,

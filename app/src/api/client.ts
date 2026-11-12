@@ -802,6 +802,8 @@ export interface Cat4omEndpoint {
   radio: string;
   /** `master`, `slave` o vuoto se non collegata. */
   role: string;
+  /** Perche' l'audio in rete non va (testo del core); vuoto se va o se non e' scelto. Assente nelle versioni vecchie del core. */
+  audio_error?: string;
 }
 
 export interface CatProfile {

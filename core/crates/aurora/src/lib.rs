@@ -1404,9 +1404,9 @@ impl WindowsVolumePort {
     fn apply(&self, tenths: u32) {
         let volume = 1.0 - (tenths.min(450) as f32 / 450.0);
         let Some(name) = (self.output)() else { return };
-        // «TCI (alla radio)» non e' una scheda di Windows: la potenza la regola la SDR (PWR − / + del display). Prima ogni trasmissione
+        // «TCI (alla radio)» e «Cat4OM (audio in rete)» non sono schede di Windows: la potenza la regola la SDR (PWR − / + del display) o la radio. Prima ogni trasmissione
         // scriveva due volte «Pwr: uscita non trovata» nel registro (pacchetto di assistenza di Luc, 2026-11-10: 498 righe in due giorni)
-        if name == tx_native::TCI_OUTPUT_NAME {
+        if audio_control::is_network_output(&name) {
             return;
         }
         let out = match audio_spectrum::OutputEndpoint::find(&name) {
@@ -2111,8 +2111,8 @@ pub async fn run(
         Some(store) => audio_control::input_candidates(&store.audio().input, config.audio_device.as_deref()).into_iter().next().map(|(hint, _)| hint),
         None => config.audio_device.clone().map(Some),
     };
-    // l'ingresso TCI non e' un dispositivo di Windows: niente volume di registrazione da regolare (il livello si regola nella SDR)
-    let level_hint = level_hint.filter(|h| !audio_control::is_tci_device(h.as_deref(), audio_spectrum::TCI_INPUT_NAME));
+    // l'ingresso TCI o Cat4OM non e' un dispositivo di Windows: niente volume di registrazione da regolare (il livello si regola nella SDR o in Cat4OM)
+    let level_hint = level_hint.filter(|h| !audio_control::is_network_input(h.as_deref()));
     let input_level = level_hint.and_then(|hint| match audio_control::find_endpoint(hint.as_deref()) {
         Ok(endpoint) => {
             let service = input_level::InputLevelService::open(Arc::new(endpoint), &config.data_dir.join("input-level.json"));
@@ -2475,7 +2475,7 @@ pub async fn run(
         let level = input_level.clone();
         let hook: audio_control::InputHook = Arc::new(move |name| {
             if let Some(level) = &level
-                && !audio_control::is_tci_device(Some(name), audio_spectrum::TCI_INPUT_NAME)
+                && !audio_control::is_network_input(Some(name))
             {
                 match audio_control::find_endpoint(Some(name)) {
                     Ok(endpoint) => level.set_control(Arc::new(endpoint)),

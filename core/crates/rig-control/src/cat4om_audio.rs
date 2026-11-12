@@ -31,6 +31,9 @@ pub const RX_PREFERRED_RATE: u32 = 12_000;
 pub const FALLBACK_RATE: u32 = 48_000;
 /// La durata di un blocco da trasmettere (gli esempi del manuale).
 pub const FRAME: Duration = Duration::from_millis(20);
+/// L'anticipo con cui si mandano i blocchi da trasmettere: copre i ritardi del giro di lettura senza buchi nell'audio (il manuale
+/// non da' la latenza accettata: da verificare con Cat4OM vero).
+pub const TX_LEAD: Duration = Duration::from_millis(40);
 /// Uno stream di trasmissione senza audio per 60 s (a radio non in trasmissione) lo chiude il server: oltre questo tempo senza audio
 /// lo si riapre prima del PTT (un secondo `startAudioStream` sostituisce il vecchio, quindi non costa nulla).
 pub const TX_IDLE_REOPEN: Duration = Duration::from_secs(50);

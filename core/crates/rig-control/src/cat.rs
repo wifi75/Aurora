@@ -152,6 +152,8 @@ pub struct CatService {
     cat4om: Mutex<Option<Arc<Cat4omRig>>>,
     /// L'audio TCI chiesto dalla scheda Audio (ricezione, trasmissione): si da' a ogni radio TCI collegata, anche dopo un cambio.
     tci_hooks: Mutex<(Option<RxAudioFn>, Option<TxAudioFn>)>,
+    /// L'audio in rete di Cat4OM chiesto dalla scheda Audio (ricezione, trasmissione): come per TCI, vale anche per la radio collegata dopo.
+    cat4om_hooks: Mutex<(Option<RxAudioFn>, Option<TxAudioFn>)>,
     models: Mutex<Option<Vec<RigModel>>>,
     /// Lo Split DX acceso adesso (vedi [`DxSplit`]).
     dx_split: Mutex<Option<DxSplit>>,
@@ -184,6 +186,7 @@ impl CatService {
             ft991: Mutex::new(None),
             cat4om: Mutex::new(None),
             tci_hooks: Mutex::new((None, None)),
+            cat4om_hooks: Mutex::new((None, None)),
             models: Mutex::new(None),
             dx_split: Mutex::new(None),
         })
@@ -302,6 +305,10 @@ impl CatService {
             Backend::Cat4om => {
                 // il collegamento prosegue nel suo thread (con ricollegamento): lo stato dice se Cat4OM risponde e se la radio e' collegata
                 let rig = Arc::new(Cat4omRig::from_config(&config));
+                // l'audio in rete scelto nella scheda Audio vale anche per la radio appena collegata
+                let (rx, tx) = self.cat4om_hooks.lock().map(|h| h.clone()).unwrap_or_default();
+                rig.set_tx_audio(tx);
+                rig.set_rx_audio(rx);
                 if let Ok(mut slot) = self.cat4om.lock() {
                     *slot = Some(rig);
                 }
@@ -500,6 +507,42 @@ impl CatService {
         let mine = self.tci_hooks.lock().is_ok_and(|h| h.1.as_ref().is_some_and(|c| Arc::ptr_eq(c, hook)));
         if mine {
             self.set_tci_tx_audio(None);
+        }
+    }
+
+    /// L'audio ricevuto in rete da Cat4OM va a `hook` (`None` = stream chiuso), anche per la radio Cat4OM collegata dopo.
+    pub fn set_cat4om_rx_audio(&self, hook: Option<RxAudioFn>) {
+        if let Ok(mut h) = self.cat4om_hooks.lock() {
+            h.0 = hook.clone();
+        }
+        if let Some(rig) = self.cat4om_rig() {
+            rig.set_rx_audio(hook);
+        }
+    }
+
+    /// L'audio da trasmettere in rete con Cat4OM viene da `hook` (`None` = stream chiuso: la radio usa la sua sorgente audio).
+    pub fn set_cat4om_tx_audio(&self, hook: Option<TxAudioFn>) {
+        if let Ok(mut h) = self.cat4om_hooks.lock() {
+            h.1 = hook.clone();
+        }
+        if let Some(rig) = self.cat4om_rig() {
+            rig.set_tx_audio(hook);
+        }
+    }
+
+    /// Toglie l'audio di ricezione di Cat4OM solo se e' ancora `hook` (un ingresso nuovo puo' averlo gia' sostituito).
+    pub fn release_cat4om_rx_audio(&self, hook: &RxAudioFn) {
+        let mine = self.cat4om_hooks.lock().is_ok_and(|h| h.0.as_ref().is_some_and(|c| Arc::ptr_eq(c, hook)));
+        if mine {
+            self.set_cat4om_rx_audio(None);
+        }
+    }
+
+    /// Come [`CatService::release_cat4om_rx_audio`] per l'audio da trasmettere.
+    pub fn release_cat4om_tx_audio(&self, hook: &TxAudioFn) {
+        let mine = self.cat4om_hooks.lock().is_ok_and(|h| h.1.as_ref().is_some_and(|c| Arc::ptr_eq(c, hook)));
+        if mine {
+            self.set_cat4om_tx_audio(None);
         }
     }
 

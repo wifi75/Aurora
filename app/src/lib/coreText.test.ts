@@ -49,6 +49,19 @@ describe('coreText', () => {
     expect(coreText('Cat4OM ha rifiutato setMode: mode not supported (INVALID_MODE)', t as never)).toBe('core.cat4om.refused{"cmd":"setMode","raw":"mode not supported","code":"INVALID_MODE"}');
   });
 
+  it('translates the errors of the Cat4OM network audio', () => {
+    expect(coreText("Cat4OM: un altro programma sta gia' mandando l'audio di trasmissione a questa radio", t as never)).toBe('core.cat4om.audio.txInUse');
+    expect(coreText("Cat4OM: per trasmettere l'audio in rete Aurora deve avere il comando della radio, che ora e' di un altro programma", t as never)).toBe('core.cat4om.audio.notMaster');
+    expect(coreText("Questa versione di Cat4OM non ha l'audio in rete: aggiorna Cat4OM o usa una scheda audio", t as never)).toBe('core.cat4om.audio.noFeature');
+    expect(coreText('Cat4OM: audio in rete non configurato per questa radio (scegli i dispositivi audio della radio in Cat4OM)', t as never)).toBe('core.cat4om.audio.unavailable');
+    expect(coreText("Cat4OM non accetta l'audio a 48000 Hz per questa radio", t as never)).toBe('core.cat4om.audio.rate{"rate":"48000"}');
+    expect(coreText('Cat4OM non riesce ad aprire il dispositivo audio della radio: controlla che sia collegato (AUDIO_DEVICE_NOT_PRESENT)', t as never)).toBe(
+      'core.cat4om.audio.device{"code":"AUDIO_DEVICE_NOT_PRESENT"}',
+    );
+    expect(coreText("Cat4OM ha chiuso l'audio in rete: the radio is being reconfigured", t as never)).toBe('core.cat4om.audio.stopped{"raw":"the radio is being reconfigured"}');
+    expect(coreText('uscita Cat4OM: scegli prima Cat4OM in Impostazioni → Radio', t as never)).toBe('core.cat4om.audio.needsCatOut');
+  });
+
   it('translates the busy serial port and OmniRig not ready', () => {
     const omni = "La porta COM8 e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio";
     expect(coreText(omni, t as never)).toBe('core.portHeldOmni{"port":"COM8"}');
