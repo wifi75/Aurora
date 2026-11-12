@@ -19,3 +19,6 @@ desktop/src-tauri/cty/*
 app/tsconfig.tsbuildinfo
 dist-sviluppo/
 installer/
+
+# registrazioni RTTY per le prove (docs/progetto-rtty-oltre.md, passo 4): restano sul PC
+rtty-corpus/

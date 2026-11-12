@@ -120,3 +120,11 @@ demodulatori).
 Il ricevitore di partenza e' gia' il migliore sul rumore bianco, ma perde con il fading (CCIR medio e cattivo, flutter, alte latitudini:
 il limitatore di MMTTY e l'ATC veloce di fldigi reggono meglio), con la portante dentro la banda, con l'AGC che pompa e, di poco, con le
 scariche e con la scheda a −500 ppm: sono questi i bersagli dei passi successivi.
+
+**Passo 4** (registrazioni vere): `tests/rtty_corpus.rs` legge ogni cartella di `rtty-corpus/` (fuori dal repository, in `.gitignore`; o
+quella di `AURORA_RTTY_CORPUS`): `audio.wav` (PCM 16 bit o float 32, qualunque frequenza, si porta a 12 kHz; stereo: sinistro, il destro
+servira' alla diversity), `meta.toml` (`centre_hz`, `shift_hz`, `baud`, `reverse`), `riferimento.txt` e `nominativi.txt` facoltativi e le
+uscite degli altri programmi come `uscita-2tone.txt`, `uscita-.txt`, `uscita-mmtty.txt`. Scrive `uscita-aurora.txt` (e quelle degli
+arbitri compilati) e stampa CER e nominativi trovati per ogni programma. `AURORA_WAV=<cartella>` con la prova `tabella` scrive i WAV a
+0 dB di ogni scenario, da far leggere a 2Tone e . Da fare sul PC del proprietario: registrare bollettini W1AW (testo noto) e un
+paio d'ore di contest, passarli a 2Tone, , MMTTY e  e mettere le uscite nelle cartelle.
