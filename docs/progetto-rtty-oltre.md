@@ -133,3 +133,16 @@ paio d'ore di contest, passarli a 2Tone, , MMTTY e  e mettere le uscite nelle ca
 rumore, decimazione a circa 32 campioni per bit; filtri dei toni, filtri dell'AFC, canali del rumore e discriminatore lavorano sul segnale
 complesso decimato e l'AFC sposta solo l'oscillatore. Tabella invariata entro il rumore della misura (scarti fra −0,1 e +0,25 dB; portante
 −1,0 dB), velocita' da 225 a 1490 volte il tempo reale (prova `velocita`): tenuto.
+
+**Passo 6** (LLR e rumore in banda): ogni campione da' un valore morbido, la decisione dell'ATC divisa per la varianza del rumore misurata
+sulle ampiezze dei due toni (decisione guidata, quattro stati), e il bit si decide sulla somma dei valori morbidi intorno al centro invece
+che su un campione solo (la «maggioranza» di MMTTY, ma morbida). Da solo non cambia niente: con gli stessi semi la somma degli scarti delle
+soglie e' −0,13 dB su 25 scenari (finestra di 0,25 bit; con 0,5 e 0,75 bit le differenze restano nel rumore della misura). Non tenuto come
+passo a se': le LLR entrano nel passo 7, che ne ha bisogno.
+
+**Passo 7** (carattere intero): per ogni possibile centro dello start il punteggio del carattere (bit precedente a mark, start a space, i
+cinque dati comunque, stop a mark) sulle somme delle LLR intorno ai centri dei bit (0,8 bit; 0,5 e 1,0 bit fanno peggio), il migliore in
+una finestra di un bit, poi il prossimo start non prima di 6,5 bit. Rispetto al passo 5: soglie da −0,8 a +0,15 dB (somma −10,4 dB, quasi
+tutta dalla portante: −5,6 dB), CER medio giu' in tutti gli scenari (−0,1 … −7,6 punti; fading e AGC −2,4 … −4,0). Il prezzo: sul solo
+rumore, a squelch spento, 191 caratteri al minuto invece di 113 (li toglie lo squelch statistico del passo 9). Tenuto, di base; la macchina
+dei bit di fldigi resta con `set_frame_decoder(false)`.

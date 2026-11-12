@@ -17,7 +17,11 @@
 //!   (fldigi);
 //! - controllo automatico della soglia (ATC): si parte dall'«Optimal ATC» di fldigi e si passa a una variante nostra a decisione guidata,
 //!   che regge un tono che svanisce (fading selettivo, filtro della radio inclinato) anche con poco segnale;
-//! - l'inizio del carattere si cerca sulle ultime decisioni lunghe un bit: mark all'inizio, space alla fine e metà dei campioni a mark;
+//! - ogni campione da' un valore morbido (LLR: la decisione dell'ATC divisa per la varianza del rumore misurata sui due toni) e il carattere
+//!   si decodifica intero: per ogni possibile centro dello start si somma quanto sono verosimili bit precedente a mark, start a space, i
+//!   cinque dati e lo stop a mark, e vince il centro migliore in una finestra di un bit (passo 7 di `docs/progetto-rtty-oltre.md`);
+//! - in alternativa (`set_frame_decoder(false)`) la macchina dei bit di fldigi: l'inizio del carattere si cerca sulle ultime decisioni
+//!   lunghe un bit: mark all'inizio, space alla fine e metà dei campioni a mark;
 //!   il numero di mark dice dov'è il passaggio e centra il campionamento a metà di ogni bit (fldigi); dentro il carattere ogni cambio di
 //!   livello corregge la fase di metà dell'errore (l'orologio di bit);
 //! - in alternativa ai due filtri, un discriminatore di frequenza (il «tipo 1») per gli spostamenti stretti;
@@ -58,6 +62,9 @@ const SAMPLES_PER_BIT: f64 = 32.0;
 const LEVEL_BITS: f32 = 4.0;
 /// Quanto dell'errore di fase si corregge a ogni cambio di livello: meta', come l'orologio di bit.
 const PLL_GAIN: f32 = 0.5;
+/// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
+/// (passo 6: e' la «maggioranza» di MMTTY fatta sui valori morbidi).
+const SOFT_BITS: f32 = 0.8;
 const FIGS: u8 = 27;
 const LTRS: u8 = 31;
 const SPACE: u8 = 4;
@@ -424,6 +431,112 @@ impl Discriminator {
     }
 }
 
+/// Un carattere riconosciuto da [`Frames`]: il codice a 5 bit.
+#[derive(Clone, Copy, Debug)]
+struct Frame {
+    code: u8,
+}
+
+/// Decodifica del carattere intero (passo 7 di `docs/progetto-rtty-oltre.md`): invece di cercare lo start su decisioni dure e campionare
+/// ogni bit una volta, si tengono le LLR degli ultimi 9 bit e per ogni possibile centro dello start si calcola quanto il carattere intero
+/// e' verosimile: bit prima dello start a mark (pausa o stop del carattere precedente), start a space, cinque bit di dati comunque, stop a
+/// mark. Il centro con il punteggio piu' alto in una finestra lunga un bit e' quello buono; i dati sono i segni delle somme a quei centri.
+/// Il carattere arriva con circa 7 bit di ritardo.
+struct Frames {
+    /// Campioni per bit.
+    t: f64,
+    /// Campioni sommati intorno al centro di ogni bit.
+    w: usize,
+    /// Somme cumulative delle LLR (anello): `prefix[i % len]` = somma dei campioni prima dell'i-esimo.
+    prefix: Vec<f64>,
+    n: u64,
+    /// Il primo centro di start ammesso (dopo lo stop del carattere precedente).
+    next_min: f64,
+    /// La ricerca in corso: inizio, centro migliore, punteggio migliore.
+    search: Option<(f64, f64, f32)>,
+}
+
+impl Frames {
+    fn new(spb: f32, w: usize) -> Self {
+        let t = f64::from(spb);
+        // la storia copre il bit prima dello start, il carattere e la finestra di ricerca lunga un bit
+        let len = (9.5 * t).ceil() as usize + w + 8;
+        Self { t, w: w.max(1), prefix: vec![0.0; len], n: 0, next_min: 0.0, search: None }
+    }
+
+    /// La somma delle LLR intorno al centro `c` (in campioni dall'inizio).
+    fn sum(&self, c: f64) -> f32 {
+        let len = self.prefix.len() as u64;
+        let a = (c - self.w as f64 / 2.0).round().max(0.0) as u64;
+        let b = a + self.w as u64;
+        if b > self.n || self.n - a >= len {
+            return 0.0;
+        }
+        (self.prefix[(b % len) as usize] - self.prefix[(a % len) as usize]) as f32
+    }
+
+    /// Le somme dei sette bit di un carattere con lo start centrato in `c`.
+    fn sums(&self, c: f64) -> [f32; 7] {
+        let mut v = [0.0; 7];
+        for (k, x) in v.iter_mut().enumerate() {
+            *x = self.sum(c + k as f64 * self.t);
+        }
+        v
+    }
+
+    /// Il punteggio del carattere con lo start centrato in `c`.
+    fn score(&self, c: f64) -> f32 {
+        let v = self.sums(c);
+        self.sum(c - self.t) - v[0] + v[1..6].iter().map(|x| x.abs()).sum::<f32>() + v[6]
+    }
+
+    /// Un valore morbido nuovo; restituisce il carattere finito, se c'e'.
+    fn push(&mut self, llr: f32) -> Option<Frame> {
+        let len = self.prefix.len() as u64;
+        let last = self.prefix[(self.n % len) as usize];
+        self.n += 1;
+        self.prefix[(self.n % len) as usize] = last + f64::from(llr);
+        // l'ultimo centro di start per cui lo stop e' gia' tutto arrivato
+        let c = self.n as f64 - 6.0 * self.t - self.w as f64 / 2.0 - 1.0;
+        if c - self.t - (self.w as f64) < 0.0 || c < self.next_min {
+            return None;
+        }
+        match self.search {
+            None => {
+                if self.sum(c) < 0.0 && self.sum(c - self.t) > 0.0 {
+                    self.search = Some((c, c, self.score(c)));
+                }
+                None
+            }
+            Some((begin, best, best_score)) => {
+                if c - begin <= self.t {
+                    let sc = self.score(c);
+                    if sc > best_score {
+                        self.search = Some((begin, c, sc));
+                    }
+                    return None;
+                }
+                self.search = None;
+                let sums = self.sums(best);
+                if sums[0] < 0.0 && sums[6] > 0.0 && self.sum(best - self.t) > 0.0 {
+                    // il prossimo start non prima di 6,5 bit (stop di un bit con mezzo bit di tolleranza)
+                    self.next_min = best + 6.5 * self.t;
+                    let mut code = 0;
+                    for k in 0..5 {
+                        if sums[k + 1] > 0.0 {
+                            code |= 1 << k;
+                        }
+                    }
+                    Some(Frame { code })
+                } else {
+                    self.next_min = best + 0.5 * self.t;
+                    None
+                }
+            }
+        }
+    }
+}
+
 /// La media mobile esponenziale di fldigi (`decayavg` in `src/include/misc.h`).
 fn decayavg(average: f32, input: f32, weight: f32) -> f32 {
     if weight <= 1.0 { input } else { average + (input - average) / weight }
@@ -467,6 +580,14 @@ pub struct RttyDemodulator {
     space_noise: f32,
     /// Le ultime decisioni lunghe un bit (`true` = mark), la prossima da scrivere e quante sono mark.
     bits: Vec<bool>,
+    /// I valori morbidi (LLR, positivi = mark) degli stessi campioni.
+    soft: Vec<f32>,
+    /// La decodifica del carattere intero (passo 7); `None` = la macchina dei bit di fldigi.
+    frames: Option<Frames>,
+    /// Quanti campioni intorno al centro del bit entrano nella decisione.
+    soft_len: usize,
+    /// Varianza del rumore sulle ampiezze dei due toni (decisione guidata, mark acceso/spento, space acceso/spento): scala le LLR.
+    var: [f32; 4],
     bit_pos: usize,
     marks: usize,
     state: State,
@@ -533,6 +654,10 @@ impl RttyDemodulator {
             mark_noise: 0.0,
             space_noise: 0.0,
             bits: vec![true; nbits],
+            soft: vec![0.0; nbits],
+            soft_len: ((spb * SOFT_BITS).round() as usize).clamp(1, nbits),
+            frames: Some(Frames::new(spb, ((spb * SOFT_BITS).round() as usize).clamp(1, nbits))),
+            var: [0.0; 4],
             bit_pos: 0,
             marks: nbits,
             state: State::Idle,
@@ -589,6 +714,12 @@ impl RttyDemodulator {
         }
         let rate = f64::from(RATE) / self.decim as f64;
         self.disc = on.then(|| Discriminator::new(&self.params, self.spb, rate));
+    }
+
+    /// Decodifica del carattere intero (`true`, di base) o macchina dei bit di fldigi (`false`).
+    pub fn set_frame_decoder(&mut self, on: bool) {
+        let w = self.soft_len;
+        self.frames = on.then(|| Frames::new(self.spb, w));
     }
 
     /// Soglia dello squelch sul rapporto segnale/rumore in dB (`snr_db`); `None` lo spegne.
@@ -688,6 +819,11 @@ impl RttyDemodulator {
             mc * me - sc * se - 0.25 * (me * me - se * se)
         };
         let w = sl * LEVEL_BITS;
+        // il rumore in banda: lo scarto delle due ampiezze dal livello che la decisione dice (passo 6), su una media piu' lunga dei livelli
+        let (a, b) = if v > 0.0 { (0, 3) } else { (1, 2) };
+        let wv = 4.0 * w;
+        self.var[a] = decayavg(self.var[a], (m - self.levels[a]).powi(2), wv);
+        self.var[b] = decayavg(self.var[b], (s - self.levels[b]).powi(2), wv);
         if v > 0.0 {
             self.levels[0] = decayavg(self.levels[0], m, w);
             self.levels[3] = decayavg(self.levels[3], s, w);
@@ -740,17 +876,28 @@ impl RttyDemodulator {
         self.bits[(self.bit_pos + n - 1 - age.min(n - 1)) % n]
     }
 
-    /// Il campione a meta' del bit che e' appena finito.
+    /// La decisione sul bit che e' appena finito: la somma dei valori morbidi intorno al suo centro.
     fn mid_bit(&self) -> bool {
-        self.bit_at(self.bits.len() / 2)
+        let n = self.bits.len();
+        let first = n / 2 + self.soft_len / 2;
+        let sum: f32 = (0..self.soft_len).map(|k| self.soft[(self.bit_pos + 2 * n - 1 - (first - k).min(n - 1)) % n]).sum();
+        sum > 0.0
+    }
+
+    /// La LLR di un campione: la decisione dell'ATC divisa per la varianza del rumore misurata sui due toni (0 finche' non c'e' misura).
+    fn llr(&self, v: f32) -> f32 {
+        let var = 0.25 * self.var.iter().sum::<f32>();
+        if var > 0.0 { v / var } else { v }
     }
 
     /// Una decisione nuova nella macchina dei caratteri (`rtty::rx` di fldigi).
-    fn rx_bit(&mut self, bit: bool, out: &mut Vec<u8>) {
+    fn rx_bit(&mut self, v: f32, out: &mut Vec<u8>) {
         let n = self.bits.len();
+        let bit = v > 0.0;
         if self.bits[self.bit_pos] {
             self.marks -= 1;
         }
+        self.soft[self.bit_pos] = v;
         self.bits[self.bit_pos] = bit;
         if bit {
             self.marks += 1;
@@ -836,7 +983,18 @@ impl RttyDemodulator {
             self.sum_count += 1;
             self.level_db = (20.0 * (m + sp).max(1e-6).log10()).max(-90.0);
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
-            self.rx_bit(v > 0.0, &mut out);
+            let l = self.llr(v);
+            match &mut self.frames {
+                Some(f) => {
+                    if let Some(fr) = f.push(l)
+                        && self.open
+                    {
+                        self.data = fr.code;
+                        self.emit(&mut out);
+                    }
+                }
+                None => self.rx_bit(l, &mut out),
+            }
         }
         out
     }
