@@ -33,6 +33,7 @@ import {
 import { boxPoint, fontString, layerBox, loadImageFile, renderComposition } from '../../lib/sstvRender';
 import { browserStorage } from '../../lib/theme';
 import { useStatusPick } from '../../state/station';
+import { useSstvMode } from '../../lib/sstvMode';
 
 const TEMPLATES_KEY = 'aurora.sstv.templates';
 
@@ -61,7 +62,12 @@ function loadTemplates(): SavedTemplate[] {
 export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: SstvSnapshot; incoming: IncomingImage | null; onChanged: () => void; sendRequest?: number }) {
   const t = useT();
   const station = useStatusPick(['de_call', 'de_grid', 'dx_call', 'report']);
-  const [modeId, setModeId] = useState(snap.settings.default_mode);
+  // il modo di trasmissione segue quello della ricezione (scelto o dell'ultima immagine in arrivo); si puo' sempre cambiare a mano
+  const rxMode = useSstvMode((s) => s.rxMode);
+  const [modeId, setModeId] = useState(rxMode ?? snap.settings.lock_mode ?? snap.settings.default_mode);
+  useEffect(() => {
+    if (rxMode && snap.modes.some((m) => m.id === rxMode)) setModeId(rxMode);
+  }, [rxMode, snap.modes]);
   const mode = snap.modes.find((m) => m.id === modeId) ?? snap.modes[0];
   const W = mode?.width ?? 320;
   const H = mode?.height ?? 256;

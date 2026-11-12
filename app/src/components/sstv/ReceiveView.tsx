@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getSstvCurrentBlob, sstvCurrentCleanUrl, sstvForce, sstvRx, type SstvSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
 import { usePrefs } from '../../lib/prefs';
+import { useSstvMode } from '../../lib/sstvMode';
 import { base64ToBytes, rgbIntoRgba } from '../../lib/sstv';
 import { onSstv } from '../../lib/sstvBus';
 
@@ -44,6 +45,11 @@ export function ReceiveView({
   const smooth = usePrefs((s) => s.prefs.sstvSmooth);
   const [note, setNote] = useState<'saved' | 'lost' | null>(null);
   const [forceMode, setForceMode] = useState(snap.settings.lock_mode ?? snap.settings.default_mode);
+  // il modo della ricezione lo segue anche il compositore: si trasmette nello stesso modo
+  const setRxMode = useSstvMode((s) => s.setRxMode);
+  useEffect(() => {
+    setRxMode(mode ?? forceMode);
+  }, [mode, forceMode, setRxMode]);
   const [fskCall, setFskCall] = useState<string | null>(snap.rx.last_call ?? null);
   const [source, setSource] = useState<string | null>(snap.rx.source ?? null);
   // pulizia dal rumore dell'immagine in arrivo o appena ricevuta: l'originale (e quella salvata) non cambia
