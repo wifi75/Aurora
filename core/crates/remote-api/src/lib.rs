@@ -66,6 +66,9 @@ pub type LogChangedHook = Arc<dyn Fn() + Send + Sync>;
 /// Senza radio comandabile (niente CAT): imposta la frequenza di Aurora a mano (la radio si sposta a mano).
 pub type ManualDialHook = Arc<dyn Fn(u64) + Send + Sync>;
 pub type LogDeletedHook = Arc<dyn Fn(Option<Vec<logbook::LogEntry>>) + Send + Sync>;
+/// Un QSO del log corretto a mano: il programma corregge lo stesso QSO nei file ADIF che scrive e rilegge i lavorati. I log esterni
+/// (UDP, Wavelog, ClubLog, QRZ, LoTW) non ricevono nulla.
+pub type LogEditedHook = Arc<dyn Fn(logbook::LogChange) + Send + Sync>;
 /// La finestra «Salva con nome» del sistema, aperta nel programma Windows: riceve il nome proposto e ritorna il file scelto
 /// (`None` = annullato). E' bloccante: si chiama fuori dal thread asincrono.
 pub type SaveFileDialog = Arc<dyn Fn(&str) -> Option<std::path::PathBuf> + Send + Sync>;
@@ -194,6 +197,7 @@ pub struct AppState {
     pub log_station: Option<LogStationProvider>,
     pub log_changed: Option<LogChangedHook>,
     pub log_deleted: Option<LogDeletedHook>,
+    pub log_edited: Option<LogEditedHook>,
     pub manual_dial: Option<ManualDialHook>,
     /// «Salva con nome» del programma Windows, per salvare il log ADIF dove si vuole (solo dal PC stesso).
     pub save_dialog: Option<SaveFileDialog>,
@@ -314,7 +318,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, lotw: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, log_edited: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, lotw: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -471,6 +475,11 @@ impl AppState {
 
     pub fn with_log_deleted(mut self, hook: LogDeletedHook) -> AppState {
         self.log_deleted = Some(hook);
+        self
+    }
+
+    pub fn with_log_edited(mut self, hook: LogEditedHook) -> AppState {
+        self.log_edited = Some(hook);
         self
     }
 

@@ -96,7 +96,7 @@ fn reopening_keeps_data() {
 #[test]
 fn migration_sets_user_version_4() {
     let lb = Logbook::open_in_memory().unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 4);
+    assert_eq!(lb.schema_version().unwrap(), 5);
 }
 
 fn station() -> logbook::adif::Station {
@@ -210,7 +210,7 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
         .unwrap();
     }
     let lb = Logbook::open(&path).unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 4);
+    assert_eq!(lb.schema_version().unwrap(), 5);
     let all = lb.all_qsos().unwrap();
     assert_eq!((all.len(), all[0].time_on.as_str(), all[0].date_off.as_str(), all[0].confirmed), (1, "123015", "20261024", None));
     drop(lb);
@@ -234,8 +234,110 @@ fn qsos_are_deleted_by_id_and_the_log_can_be_cleared() {
 #[test]
 fn deleted_qsos_are_removed_from_the_adif_file_too() {
     let text = "Aurora\n<adif_ver:5>3.1.4 <eoh>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <eor>\n<call:6>DL1ABC <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <mode:3>FT8 <eor>\n";
-    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new() }];
+    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new() }];
     let (out, n) = logbook::adif_without(text, &gone);
     assert_eq!(n, 1);
     assert!(!out.contains("K1ABC") && out.contains("DL1ABC") && out.contains("<eoh>"), "{out}");
+}
+
+/// Un QSO con inizio e fine veri: 2026-10-24 16:46:45 UTC, 44 secondi.
+fn logged(call: &str, mode: &str) -> QsoRecord {
+    let on = 1_792_860_405_000;
+    QsoRecord { time_ms: (on % 86_400_000) as u32, time_on_unix_ms: on, time_off_unix_ms: on + 44_000, comment: "FT8  Sent: -08  Rcvd: -12".into(), ..qso(call, "20m", mode) }
+}
+
+#[test]
+fn a_qso_is_corrected_by_id_and_keeps_its_length() {
+    let book = Logbook::open_in_memory().expect("log");
+    let id = book.add(&logged("K1ABX", "FT8")).expect("aggiunto");
+    let other = book.add(&logged("DL1ABC", "FT8")).expect("aggiunto");
+    let before = book.entry(id).expect("letto").expect("c'e'");
+    assert_eq!((before.date.as_str(), before.time.as_str(), before.comment.as_str()), ("20261024", "164645", "FT8  Sent: -08  Rcvd: -12"));
+    let mut edit = logbook::LogEdit::from_entry(&before);
+    edit.call = "k1abc".into();
+    edit.time = "235950".into();
+    edit.grid = "FN42".into();
+    edit.name = "Joe".into();
+    let change = book.update(id, &edit).expect("corretto").expect("c'e'");
+    assert_eq!(change.old, before);
+    assert_eq!((change.new.call.as_str(), change.new.time.as_str(), change.new.grid.as_str(), change.new.name.as_str()), ("K1ABC", "235950", "FN42", "Joe"));
+    // la fine si sposta con l'inizio e passa al giorno dopo
+    assert_eq!((change.date_off.as_str(), change.time_off.as_str()), ("20261025", "000034"));
+    assert_eq!(book.entry(id).expect("letto"), Some(change.new.clone()));
+    // i «gia' lavorati» leggono `all_qsos`: il nominativo vecchio non c'e' piu'
+    let all = book.all_qsos().expect("tutti");
+    assert!(all.iter().any(|q| q.call == "K1ABC" && q.time_on == "235950" && q.date_off == "20261025") && !all.iter().any(|q| q.call == "K1ABX"), "{all:?}");
+    assert!(book.is_dupe("K1ABC", "20m", "FT8").expect("doppione") && !book.is_dupe("K1ABX", "20m", "FT8").expect("doppione"));
+    // l'altro QSO non e' stato toccato
+    assert_eq!(book.entry(other).expect("letto").map(|e| e.call), Some("DL1ABC".to_string()));
+    assert_eq!(book.count().expect("conta"), 2);
+}
+
+#[test]
+fn correcting_a_qso_that_is_not_there_changes_nothing() {
+    let book = Logbook::open_in_memory().expect("log");
+    let id = book.add(&logged("K1ABC", "FT8")).expect("aggiunto");
+    let edit = logbook::LogEdit { call: "ZZ9ZZ".into(), ..logbook::LogEdit::from_entry(&book.entry(id).expect("letto").expect("c'e'")) };
+    assert_eq!(book.update(999, &edit).expect("nessun errore"), None);
+    assert_eq!(book.entry(999).expect("letto"), None);
+    assert_eq!(book.entry(id).expect("letto").map(|e| e.call), Some("K1ABC".to_string()));
+    // una data che non esiste e' un errore e non cambia nulla
+    let bad = logbook::LogEdit { date: "20261340".into(), ..edit };
+    assert!(book.update(id, &bad).is_err());
+    assert_eq!(book.entry(id).expect("letto").map(|e| e.date), Some("20261024".to_string()));
+    assert!(book.delete(&[999]).expect("niente").is_empty());
+}
+
+#[test]
+fn the_adif_file_follows_the_correction_and_keeps_everything_else() {
+    let station = logbook::adif::Station { call: "IU3ABC".into(), grid: "IO91wm".into(), tx_power: String::new() };
+    let book = Logbook::open_in_memory().expect("log");
+    let id = book.add(&logged("K1ABX", "FT8")).expect("aggiunto");
+    book.add(&logged("DL1ABC", "FT4")).expect("aggiunto");
+    // il file com'e' scritto da Aurora: intestazione e una riga per QSO, con un campo in piu' che il log non conosce
+    let mut text = String::from(logbook::adif::JTDX_FILE_HEADER);
+    text.push_str(&logbook::adif::jtdx_file_record(&logged("K1ABX", "FT8"), &station, "20261024").replace(" <eor>", " <app_x:3>a<b <eor>"));
+    let untouched = logbook::adif::jtdx_file_record(&logged("DL1ABC", "FT4"), &station, "20261024");
+    text.push_str(&untouched);
+
+    let mut edit = logbook::LogEdit::from_entry(&book.entry(id).expect("letto").expect("c'e'"));
+    edit.call = "K1ABC".into();
+    edit.mode = "FT4".into();
+    edit.date = "20261025".into();
+    edit.time = "101500".into();
+    edit.band = "40m".into();
+    edit.freq_hz = 7_047_500;
+    edit.rst_sent = "+03".into();
+    edit.grid = String::new();
+    edit.qth = "Boston".into();
+    edit.comment = String::new();
+    let change = book.update(id, &edit).expect("corretto").expect("c'e'");
+    let (out, n) = logbook::adif_with_edit(&text, &change);
+    assert_eq!(n, 1);
+    assert!(out.starts_with(logbook::adif::JTDX_FILE_HEADER) && out.ends_with(&untouched), "{out}");
+    let line = out.lines().nth(1).expect("riga del QSO");
+    assert!(line.starts_with("<call:5>K1ABC <gridsquare:0> <mode:4>MFSK <rst_sent:3>+03 <rst_rcvd:3>-12 <qso_date:8>20261025 <time_on:6>101500 <qso_date_off:8>20261025 <time_off:6>101544 <band:3>40m <freq:8>7.047500 "), "{line}");
+    assert!(line.contains(" <app_x:3>a<b ") && line.contains(" <submode:3>FT4 ") && line.contains(" <qth:6>Boston ") && !line.contains("comment") && line.ends_with(" <eor>"), "{line}");
+    // riletto come lo leggono i «gia' lavorati», il file dice le stesse cose del log
+    let read = aurora_core::adif::parse_qsos(&out);
+    let row = book.all_qsos().expect("tutti").into_iter().find(|q| q.call == "K1ABC").expect("nel log");
+    let from_file = read.iter().find(|q| q.call == "K1ABC").expect("nel file");
+    assert_eq!((from_file.band.as_str(), from_file.mode.as_str(), from_file.date.as_str(), from_file.time_on.as_str(), from_file.freq_hz), (row.band.as_str(), row.mode.as_str(), row.date.as_str(), row.time_on.as_str(), row.freq_hz));
+    assert_eq!(read.len(), 2);
+    assert!(!read.iter().any(|q| q.call == "K1ABX"));
+    // tornando da FT4 a FT8 il sottomodo sparisce; un QSO che nel file non c'e' non cambia nulla
+    let back = book.update(id, &logbook::LogEdit { mode: "FT8".into(), ..logbook::LogEdit::from_entry(&change.new) }).expect("corretto").expect("c'e'");
+    let (again, n) = logbook::adif_with_edit(&out, &back);
+    assert!(n == 1 && again.lines().nth(1).is_some_and(|l| l.contains("<mode:3>FT8 ") && !l.contains("submode")), "{again}");
+    assert_eq!(logbook::adif_with_edit(&text, &back), (text.clone(), 0));
+}
+
+#[test]
+fn a_record_in_capitals_is_corrected_in_capitals() {
+    let text = "Aurora\n<adif_ver:5>3.1.8 <EOH>\n<CALL:5>K1ABX <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <COMMENT:9><call:3>x <EOR>\n";
+    let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new() };
+    let new = logbook::LogEntry { call: "K1ABC".into(), name: "Joe".into(), ..old.clone() };
+    let (out, n) = logbook::adif_with_edit(text, &logbook::LogChange { old, new, date_off: "20261107".into(), time_off: "120015".into() });
+    assert_eq!(n, 1);
+    assert_eq!(out, "Aurora\n<adif_ver:5>3.1.8 <EOH>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <COMMENT:9><call:3>x <NAME:3>Joe <EOR>\n");
 }

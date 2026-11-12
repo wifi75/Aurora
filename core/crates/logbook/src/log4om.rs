@@ -22,6 +22,9 @@ pub struct Log4omQso {
     pub freq_hz: u64,
     pub name: String,
     pub qth: String,
+    /// Il numero del QSO nel log interno di Aurora (per correggerlo o cancellarlo); assente nel log di Log4OM2, che e' in sola lettura.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
 }
 
 /// La frequenza di Log4OM2 in Hz: il campo puo' essere in MHz (14.074), in kHz (14074) o in Hz (14074000).
@@ -76,6 +79,7 @@ pub fn read_recent(path: &Path, limit: usize) -> Result<Log4omView, LogError> {
                 freq_hz: freq_to_hz(&r.get::<_, String>(8)?),
                 name: r.get(9)?,
                 qth: r.get(10)?,
+                id: None,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
