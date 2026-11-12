@@ -279,6 +279,7 @@ export const digiStrings = {
     'Más estrecho quita más ruido y estaciones cercanas pero quiere el tono centrado (el AFC lo sigue); 150 Hz como fldigi va bien casi siempre, 50-100 Hz para señales débiles entre muchas, 250-500 Hz para buscar.',
     'Mais estreita tira mais ruído e estações vizinhas mas quer o tom centrado (o AFC segue-o); 150 Hz como o fldigi serve quase sempre, 50-100 Hz para sinais fracos no meio de outros, 250-500 Hz para procurar.',
   ],
+  'digi.cw.wide': ['larga, panoramica', 'wide, overview', 'breit, Übersicht', 'large, vue d’ensemble', 'ancha, panorámica', 'larga, panorâmica'],
   'digi.cw.som': ['Decodifica SOM (tasto a mano)', 'SOM decoding (straight key)', 'SOM-Dekodierung (Handtaste)', 'Décodage SOM (pioche)', 'Decodificación SOM (manipulador vertical)', 'Descodificação SOM (manipulador vertical)'],
   'digi.cw.somTip': [
     'Al posto della tabella sceglie il carattere più vicino alle durate dei punti e delle linee (come la decodifica SOM di fldigi): aiuta con il tasto a mano irregolare.',

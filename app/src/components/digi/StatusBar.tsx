@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../../i18n';
-import { RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from './ModeSettings';
+import { CW_BANDWIDTHS, CW_WIDE_HZ, RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from './ModeSettings';
 
 /** In RTTY la barra ha le tendine di spostamento e velocita' e il tasto «Rev», che salvano subito come il menu Modo. */
 export interface RttyStatus {
@@ -13,6 +13,12 @@ export interface RttyStatus {
   onShift(hz: number): void;
   onBaud(baud: number): void;
   onReverse(): void;
+}
+
+/** In CW la barra ha la tendina della banda del filtro, che salva subito come il menu Modo. */
+export interface CwStatus {
+  bandwidthHz: number;
+  onBandwidth(hz: number): void;
 }
 
 interface Props {
@@ -34,6 +40,8 @@ interface Props {
   measures?: string;
   /** Solo in RTTY: al posto dei dati del modo, tendine di spostamento e velocita' e il tasto «Rev». */
   rtty?: RttyStatus;
+  /** Solo in CW: la tendina della banda del filtro accanto ai dati del modo. */
+  cw?: CwStatus;
   modeName: string;
   onToggleTx(): void;
   onToggleSquelch(): void;
@@ -128,7 +136,19 @@ export function DigiStatusBar(p: Props) {
             Rev{p.rtty.radioLsb ? ' (LSB)' : ''}
           </button>
         </>
-      ) : p.modeData !== '' ? (
+      ) : null}
+      {p.cw ? (
+        <label className="digi-st digi-st--select" title={t('digi.cw.bandwidth')}>
+          <select aria-label={t('digi.cw.bandwidth')} value={p.cw.bandwidthHz} onChange={(e) => p.cw?.onBandwidth(Number(e.target.value))}>
+            {withCurrent(CW_BANDWIDTHS, p.cw.bandwidthHz).map((v) => (
+              <option key={v} value={v}>
+                {v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {p.rtty ? null : p.modeData !== '' ? (
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>
           {p.modeData}
         </button>

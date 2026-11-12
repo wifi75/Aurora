@@ -13,7 +13,7 @@ import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
-import { ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from '../components/digi/ModeSettings';
+import { CW_BANDWIDTHS, CW_WIDE_HZ, ModeSettings, RTTY_BAUDS, RTTY_SHIFTS, withCurrent } from '../components/digi/ModeSettings';
 import { usePersonal } from '../lib/personal';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
@@ -746,6 +746,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               { label: t('digi.rtty.uos'), checked: s.rtty_uos, onSelect: () => save({ rtty_uos: !s.rtty_uos }) },
             ]
           : []),
+        // CW: banda del filtro scelta al volo (anche larga, per la panoramica)
+        ...(s.mode === 'cw'
+          ? ['sep' as const, { label: `${t('digi.cw.bandwidth')}: ${s.cw_bandwidth_hz} Hz`, items: withCurrent(CW_BANDWIDTHS, s.cw_bandwidth_hz).map((v) => ({ label: v >= CW_WIDE_HZ ? `${v} Hz, ${t('digi.cw.wide')}` : `${v} Hz`, checked: v === s.cw_bandwidth_hz, onSelect: () => save({ cw_bandwidth_hz: v }) })) }]
+          : []),
         'sep' as const,
         ...['QPSK31', 'FSK31', 'MFSK', 'Olivia', 'Contestia', 'MT63', 'Throb', 'Hellschreiber', 'Packet', 'Pactor', 'Amtor'].map((n) => ({ label: `${n} ${t('digi.mi.soon')}`, disabled: true })),
         'sep' as const,
@@ -994,6 +998,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 }
               : undefined
           }
+          cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }) } : undefined}
           modeName={MODE_NAMES[s.mode]}
           onToggleTx={toggleTx}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}

@@ -1225,6 +1225,7 @@ export const NL_UI: Record<string, string> = {
   "digi.cw.somTip": "In plaats van de tabel kiest hij het teken dat het dichtst bij de lengtes van punten en strepen ligt (zoals de SOM-decodering van fldigi): helpt bij een onregelmatige handsleutel.",
   "digi.cw.squelchSnr": "Squelchdrempel: S/R {db} dB",
   "digi.cw.squelchSnrHint": "In CW kijkt de squelch naar de signaal-ruisverhouding, gemeten in het spectrum rond de toon, in 3 kHz zoals WSJT-X en gemiddeld in de tijd (CW dat de helft van de tijd geseind wordt, leest ongeveer 3 dB lager). Bij alleen ruis ligt hij rond -25 dB; onder -16 dB wordt niets afgedrukt, ook niet met de squelch uit.",
+  "digi.cw.wide": "breed, overzicht",
   "digi.cw.wpm": "CW-snelheid: {wpm} WPM",
   "digi.edit.cancel": "Annuleren",
   "digi.edit.clear": "Wissen",

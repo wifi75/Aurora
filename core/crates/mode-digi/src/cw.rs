@@ -36,8 +36,9 @@ use std::f64::consts::PI;
 pub const WPM_MIN: f32 = 5.0;
 pub const WPM_MAX: f32 = 60.0;
 
-/// Le bande del filtro di ricezione (Hz) e quella di base (fldigi: 150).
-pub const BANDWIDTHS: [f32; 5] = [50.0, 100.0, 150.0, 250.0, 500.0];
+/// Le bande del filtro di ricezione (Hz) e quella di base (fldigi: 150). 1000 Hz e' la banda larga per la panoramica (ascolto e cascata):
+/// lascia entrare anche le stazioni vicine, il decodificatore sente la piu' forte.
+pub const BANDWIDTHS: [f32; 6] = [50.0, 100.0, 150.0, 250.0, 500.0, 1000.0];
 pub const BANDWIDTH_DEFAULT: f32 = 150.0;
 
 /// Soglia di base dello squelch sul rapporto segnale/rumore (dB in 3 kHz, media nel tempo: vedi `snr_db`).
@@ -401,13 +402,19 @@ impl CwDemodulator {
         self.dash = 3.0 * self.dot;
     }
 
-    /// La banda del filtro di ricezione (Hz), fra 50 e 500.
+    /// La banda del filtro di ricezione (Hz), fra 50 e 1000.
     pub fn set_bandwidth(&mut self, hz: f32) {
         let bw = hz.clamp(BANDWIDTHS[0], BANDWIDTHS[BANDWIDTHS.len() - 1]);
         let unit_s = self.dot / self.fs;
         self.bandwidth = bw;
-        // con la banda di 500 Hz serve un campionamento interno di 1000 Hz
-        self.decim = if bw > 250.0 { 12 } else { 24 };
+        // con la banda di 500 Hz serve un campionamento interno di 1000 Hz, con quella di 1000 Hz uno di 2000 Hz
+        self.decim = if bw > 500.0 {
+            6
+        } else if bw > 250.0 {
+            12
+        } else {
+            24
+        };
         self.fs = f64::from(RATE) / self.decim as f64;
         let len = fir_len(bw);
         self.fir = lowpass(len, f64::from(bw) / 2.0 / f64::from(RATE));
