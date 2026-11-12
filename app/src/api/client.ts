@@ -612,7 +612,7 @@ export async function getDxcc(call: string): Promise<DxccInfo> {
 export interface CallsignInfo {
   call: string;
   dxcc: DxccInfo | null;
-  person: { fname: string; name: string; city: string; country: string; state?: string; lotw?: boolean | null; eqsl?: boolean | null; direct?: boolean | null; bureau?: boolean | null; qsl_via?: string; source: string } | null;
+  person: { fname: string; name: string; city: string; country: string; state?: string; grid?: string; lotw?: boolean | null; eqsl?: boolean | null; direct?: boolean | null; bureau?: boolean | null; qsl_via?: string; source: string } | null;
   lookup: 'off' | 'found' | 'not_found' | 'error';
   subscriber: boolean | null;
   message: string | null;
@@ -1612,6 +1612,10 @@ export interface SstvSettings {
   rx_offset_hz: number;
   tx_offset_hz: number;
   slant_ppm: number;
+  /** Il nominativo della stazione in FSK dopo ogni immagine (formato di MMSSTV). Assente con un motore vecchio. */
+  fsk_id?: boolean;
+  /** Modo riconosciuto anche senza VIS, dal periodo delle righe. Assente con un motore vecchio. */
+  auto_sync?: boolean;
 }
 
 export interface SstvRxStatus {
@@ -1625,6 +1629,10 @@ export interface SstvRxStatus {
   offset_hz: number;
   level_db: number;
   last_image: string | null;
+  /** Come e' partita l'immagine: `vis`, `sync` (dal periodo delle righe, senza VIS) o `forced`. */
+  source?: string | null;
+  /** L'ultimo nominativo letto dall'FSK ID dopo un'immagine. */
+  last_call?: string | null;
 }
 
 export interface SstvTxStatus {
@@ -1725,6 +1733,15 @@ export async function getSstvImageCleanBlob(id: string, order: number, smooth: n
 
 export async function getSstvImageBlob(id: string): Promise<Blob> {
   return (await request(`/sstv/images/${encodeURIComponent(id)}`)).blob();
+}
+
+/** L'immagine in arrivo (o l'ultima finita) pulita dal rumore; `v` cambia l'indirizzo quando l'immagine cambia. */
+export function sstvCurrentCleanUrl(order: number, smooth: number, v: number): string {
+  return `${BASE}/sstv/rx/current/clean?order=${order}&smooth=${smooth}&v=${v}`;
+}
+
+export async function getSstvCurrentCleanBlob(order: number, smooth: number): Promise<Blob> {
+  return (await request(`/sstv/rx/current/clean?order=${order}&smooth=${smooth}`)).blob();
 }
 
 export async function getSstvCurrentBlob(): Promise<Blob> {

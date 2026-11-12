@@ -214,6 +214,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     level_db: z.number().optional(),
     listening: z.boolean().optional(),
     message: z.string().optional(),
+    call: z.string().optional(),
   }),
   WantedAlertSchema.extend({ type: z.literal('wanted') }),
   UpdateNoticeSchema.extend({ type: z.literal('update_available') }),

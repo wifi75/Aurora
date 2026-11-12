@@ -48,6 +48,25 @@ function SstvBody({ solo }: { solo: boolean }) {
   keepListening.current = snap.data?.settings.auto_receive === true;
   useListenWhileOpen(sstvRx, () => keepListening.current, refresh);
 
+  // con la pagina aperta l'ascolto resta acceso finche' l'operatore non preme «Ferma ascolto», anche mentre compone (la ricezione vive
+  // nel motore e continua in sottofondo). L'accensione mandata una volta sola all'apertura poteva perdersi: motore non ancora pronto
+  // quando la finestra si apre gia' sulla pagina SSTV, oppure un'altra vista (finestra staccata, telefono) che lasciando la pagina spegne
+  // l'ascolto. Allora l'ascolto restava spento fino alla visita successiva: ora, se lo stato dice spento, si riaccende.
+  const wantListen = useRef(true);
+  const lastStart = useRef(0);
+  const listening = snap.data?.rx.listening;
+  const txState = snap.data?.tx.state;
+  useEffect(() => {
+    if (listening !== false || !wantListen.current || txState === 'sending') return;
+    if (Date.now() - lastStart.current < 2500) return;
+    lastStart.current = Date.now();
+    void sstvRx('start').then(refresh, refresh);
+  }, [listening, txState, refresh]);
+  const onListen = useCallback((on: boolean) => {
+    wantListen.current = on;
+    if (on) lastStart.current = Date.now();
+  }, []);
+
   // a fine trasmissione la cronologia delle trasmesse si aggiorna
   useEffect(
     () =>
@@ -58,6 +77,7 @@ function SstvBody({ solo }: { solo: boolean }) {
           // finita la trasmissione (anche fermata o in errore) si torna subito alla ricezione, che non si e' mai fermata
           if (ev.state === 'done' || ev.state === 'aborted' || ev.state === 'error') {
             setView('rx');
+            wantListen.current = true;
             void sstvRx('start').then(refresh, refresh);
           }
         }
@@ -130,7 +150,8 @@ function SstvBody({ solo }: { solo: boolean }) {
                 setView('tx');
                 setSendRequest((n) => n + 1);
               }}
-              spectrum={<SstvSpectrum />}
+              onListen={onListen}
+              spectrum={<SstvSpectrum offsetHz={rx && (rx.receiving || rx.rows > 0) ? rx.offset_hz : null} />}
               log={<SstvLogCard dialHz={dialHz} />}
             />
           </div>

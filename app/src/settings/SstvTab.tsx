@@ -22,7 +22,7 @@ export interface SstvDraft extends Omit<SstvSettings, 'rx_offset_hz' | 'tx_offse
 }
 
 function toDraft(s: SstvSettings): SstvDraft {
-  return { ...s, tx_folder: s.tx_folder ?? '', rx_offset_hz: String(s.rx_offset_hz), tx_offset_hz: String(s.tx_offset_hz), slant_ppm: String(s.slant_ppm) };
+  return { ...s, tx_folder: s.tx_folder ?? '', fsk_id: s.fsk_id ?? true, auto_sync: s.auto_sync ?? true, rx_offset_hz: String(s.rx_offset_hz), tx_offset_hz: String(s.tx_offset_hz), slant_ppm: String(s.slant_ppm) };
 }
 
 /** Un intero fra -lim e +lim, o `null`. */
@@ -109,6 +109,8 @@ function SstvForm({ snap, part }: { snap: SstvSnapshot; part: SstvPart }) {
             <Field label={t('sstv.set.txOffset')} hint={t('sstv.set.txOffsetHint')} changed={ch('tx_offset_hz')}>
               <input type="number" min={-200} max={200} step={5} value={shown.tx_offset_hz} onChange={(e) => set({ tx_offset_hz: e.target.value })} />
             </Field>
+            {/* il nominativo e' quello della stazione (Impostazioni › Stazione), lo stesso che va nei QSO a log */}
+            <Check label={t('sstv.set.fskId')} hint={t('sstv.set.fskIdHint')} checked={shown.fsk_id !== false} onChange={(v) => set({ fsk_id: v })} />
           </Cells>
           {status}
         </Group>
@@ -165,6 +167,7 @@ function SstvForm({ snap, part }: { snap: SstvSnapshot; part: SstvPart }) {
             <input type="number" min={-200} max={200} step={5} value={shown.rx_offset_hz} onChange={(e) => set({ rx_offset_hz: e.target.value })} />
           </Field>
           <Check label={t('sstv.set.autoReceive')} hint={t('sstv.set.autoReceiveHint')} checked={shown.auto_receive} onChange={(v) => set({ auto_receive: v })} />
+          <Check label={t('sstv.set.autoSync')} hint={t('sstv.set.autoSyncHint')} checked={shown.auto_sync !== false} onChange={(v) => set({ auto_sync: v })} />
         </Cells>
         {status}
       </Group>
