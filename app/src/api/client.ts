@@ -1,7 +1,7 @@
 import { AutomationCountriesSchema, AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
+import { DigiSignalSchema, EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type DigiSignal, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { parseControlValues, useControlValues } from '../state/controlValues';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
@@ -1830,6 +1830,23 @@ export interface DigiSettings {
   mode_macros: Record<string, DigiMacro[]>;
   /** Per modo: `false` = le macro del modo sostituiscono quelle di base (opzione «Merge»); senza voce si uniscono. */
   merge_macros: Record<string, boolean>;
+  /** CW: si decodificano tutti i segnali della banda audio (pannello «Segnali»). */
+  band_cw?: boolean;
+  /** PSK31 e PSK63: tutti i segnali della banda audio («browser», pannello «Segnali»). */
+  band_psk?: boolean;
+  /** Tutta la banda: i nominativi verificati come spot locali nel pannello del DX Cluster di Aurora (mai in rete). */
+  band_spots?: boolean;
+  /** Tutta la banda: spot locali solo di chi chiama CQ. */
+  band_spots_cq_only?: boolean;
+  /** Tutta la banda: convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`). */
+  band_validation?: string;
+}
+
+/** I segnali di tutta la banda con lo storico di 60 s di ciascuno. */
+export async function getDigiBand(): Promise<DigiSignal[]> {
+  const body = (await (await request('/digi/band')).json()) as { signals?: unknown };
+  const parsed = DigiSignalSchema.array().safeParse(body.signals ?? []);
+  return parsed.success ? parsed.data : [];
 }
 
 export interface DigiSnapshot {

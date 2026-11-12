@@ -12,6 +12,8 @@ import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
+import { BandSignals } from '../components/digi/BandSignals';
+import { getBandMode, getBandSignals, mainCall, onBandSignals } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
@@ -37,6 +39,7 @@ import { useStation } from '../state/station';
 import '../styles/digi.css';
 import '../styles/digi-dark.css';
 import '../styles/digi-log-corta.css';
+import '../styles/digi-band.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
 const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
@@ -66,9 +69,11 @@ interface Views {
   wideWaterfall: boolean;
   /** L'orologio UTC nella barra di stato (menu del tasto destro della barra). */
   utc?: boolean;
+  /** Il pannello «Segnali» di tutta la banda. */
+  signals: boolean;
 }
 
-const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true };
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -185,6 +190,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const sending = snap.tx.state === 'sending';
   const lock = !s.tx_follow_rx;
   const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
+
+  // tutta la banda: i segnali del modo in uso (CW; PSK31 e PSK63, il browser), con il nominativo sopra la traccia nella cascata
+  const bandAll = useSyncExternalStore(onBandSignals, getBandSignals);
+  const isPsk = s.mode === 'psk31' || s.mode === 'psk63';
+  const bandOn = (s.mode === 'cw' && s.band_cw !== false) || (isPsk && s.band_psk !== false);
+  const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
+  const bandLabels = useMemo(
+    () =>
+      band.flatMap((sig) => {
+        const c = mainCall(sig);
+        return c ? [{ hz: sig.freq_hz, text: c.call, cq: sig.cq, sure: c.verified }] : [];
+      }),
+    [band],
+  );
 
   const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);
 
@@ -827,6 +846,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.snap'), checked: s.snap_on, onSelect: () => toggleSetting('snap', 'toggle') },
         { label: t('digi.mi.squelch'), checked: s.squelch_on, onSelect: () => toggleSetting('squelch', 'toggle') },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
+        // tutta la banda (CW e PSK): acceso di base, e gli spot locali verso il pannello del DX Cluster di Aurora
+        ...(s.mode === 'cw' || isPsk
+          ? [
+              'sep' as const,
+              s.mode === 'cw'
+                ? { label: t('digi.band.mi'), checked: s.band_cw !== false, onSelect: () => save({ band_cw: s.band_cw === false }) }
+                : { label: t('digi.band.miPsk'), checked: s.band_psk !== false, onSelect: () => save({ band_psk: s.band_psk === false }) },
+              { label: t('digi.band.spots'), checked: s.band_spots !== false, onSelect: () => save({ band_spots: s.band_spots === false }) },
+              { label: t('digi.band.spotsCqOnly'), checked: s.band_spots_cq_only === true, disabled: s.band_spots === false, onSelect: () => save({ band_spots_cq_only: s.band_spots_cq_only !== true }) },
+            ]
+          : []),
         'sep',
         { label: t('digi.mi.rx'), checked: !sending, onSelect: () => (sending ? toggleTx() : undefined) },
         { label: t('digi.mi.tx'), checked: sending, shortcut: 'Pausa', onSelect: () => (sending ? undefined : toggleTx()) },
@@ -859,6 +889,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.log'), checked: views.log, onSelect: () => setView({ log: !views.log }) },
         { label: t('digi.mi.rotor'), checked: rotorShown, onSelect: () => setRotorShown(!rotorShown) },
         { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
+        { label: t('digi.band.view'), checked: views.signals, onSelect: () => setView({ signals: !views.signals }) },
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
         'sep' as const,
         { label: t('digi.mi.underlineSent'), checked: views.underlineSent, onSelect: () => setView({ underlineSent: !views.underlineSent }) },
@@ -1016,8 +1047,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             ) : null}
           </div>
         </div>
+        {bandOn && views.signals ? (
+          <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+        ) : null}
         {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} />
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={bandLabels} />
         ) : null}
         </div>
         <RotorCard call={qso.call} grid={qso.wwloc} place="digi" />

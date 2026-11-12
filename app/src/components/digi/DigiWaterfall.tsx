@@ -27,6 +27,8 @@ interface Props {
   dialHz?: number;
   /** Cambia l'altezza della cascata (si trascina la barra sul bordo alto). */
   onHeight?(px: number): void;
+  /** I nominativi dei segnali di tutta la banda, scritti sopra la loro traccia (`cq`: chiama CQ; `sure`: verificato). */
+  labels?: { hz: number; text: string; cq: boolean; sure: boolean }[];
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
@@ -42,7 +44,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, labels = [] }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -238,6 +240,19 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       {hairlines && split && txShown >= minHz && txShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txShown) }} aria-hidden="true" /> : null}
       {pair(rxShown, 'rx', t('digi.wf.rxTip'))}
       {pair(txShown, 'tx', t('digi.wf.txTip'))}
+      {/* i nominativi di tutta la banda appena sotto la scala, sopra la traccia (la riga nuova della cascata e' in cima); due vicini si alternano in altezza */}
+      {labels
+        .filter((l) => l.hz >= minHz && l.hz <= maxHz)
+        .sort((a, b) => a.hz - b.hz)
+        .map((l, i, all) => {
+          const prev = all[i - 1];
+          const low = prev !== undefined && xOf(l.hz) - xOf(prev.hz) < 70 && i % 2 === 1;
+          return (
+            <span key={`${l.text}-${Math.round(l.hz)}`} className={`digi-wf-call${l.cq ? ' digi-wf-call--cq' : ''}${l.sure ? '' : ' digi-wf-call--maybe'}`} style={{ left: xOf(l.hz), top: SCALE_H + (low ? 20 : 3) }} aria-hidden="true">
+              {l.text}
+            </span>
+          );
+        })}
     </div>
   );
 }

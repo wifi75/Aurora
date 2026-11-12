@@ -434,3 +434,43 @@ fn tutta_la_banda() {
     }
     println!("canali {} · nominativi verificati {found}/10 · tempo vero / tempo di calcolo = {:.1}", chans.len(), 60.0 / secs);
 }
+
+/// CPU di tutta la banda: 10 e 30 stazioni CW fra 300 e 3700 Hz a -5 dB, un minuto ciascuna prova, con il limite di canali del servizio
+/// (40). Stampa canali aperti, nominativi verificati e la CPU in percento di un core (tempo di calcolo diviso per il tempo dell'audio).
+#[test]
+#[ignore]
+fn cpu_tutta_la_banda() {
+    use mode_digi::skim::CwBandDecoder;
+    for stations in [10_usize, 30] {
+        let mut rng = Rng(91 + stations as u64);
+        let n = 60 * RATE as usize;
+        let mut band = vec![0.0_f32; n];
+        let step = 3_400.0 / stations as f64;
+        let calls: Vec<String> = (0..stations).map(|i| format!("IU{}A{}", i % 10, ["BC", "BD", "BE", "BF"][i / 10])).collect();
+        for (i, call) in calls.iter().enumerate() {
+            let hz = 320.0 + step * i as f64 + 7.0 * (i % 3) as f64;
+            let wpm = 16.0 + (i % 8) as f64 * 2.0;
+            let text = format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K   CQ DE {call} {call} K");
+            let seq = chiavi(&text, |_| wpm, &KEYER, &mut rng);
+            let wave = suona(&seq, hz, |_| AMP);
+            for (s, w) in band.iter_mut().skip(6_000 + 1_000 * i).zip(wave) {
+                *s += w;
+            }
+        }
+        aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+        let mut sk = CwBandDecoder::new(150.0, 4_000.0, 40);
+        let t0 = std::time::Instant::now();
+        for block in band.chunks(1_200) {
+            sk.process(block);
+        }
+        let secs = t0.elapsed().as_secs_f64();
+        let chans = sk.channels();
+        let found = calls.iter().filter(|c| chans.iter().any(|ch| ch.calls.iter().any(|h| h.verified() && &h.call == *c))).count();
+        if std::env::var_os("CW_DEBUG").is_some() {
+            for ch in &chans {
+                println!("{:7.1} Hz {:4.0} WPM {:5.1} dB {:?}", ch.freq_hz, ch.wpm, ch.snr_db, ch.calls.iter().map(|c| (c.call.clone(), c.verified())).collect::<Vec<_>>());
+            }
+        }
+        println!("{stations} stazioni: canali {} · nominativi verificati {found}/{stations} · CPU {:.1}% di un core", chans.len(), 100.0 * secs / 60.0);
+    }
+}

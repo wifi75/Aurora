@@ -43,6 +43,8 @@ enum Prova {
     Vicina,
     /// La scheda audio sbaglia l'orologio di tante parti per milione.
     Orologio(f64),
+    /// Scariche (QRN) di 1-3 ms, 15 volte la deviazione del rumore, quattro al secondo in media.
+    Qrn,
     /// Segnale e rumore 40 dB piu' bassi (ingresso a basso volume).
     Livello,
 }
@@ -97,7 +99,19 @@ fn audio_di_prova(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (Strin
     let mut audio = vec![0.0_f32; pad_before];
     audio.extend_from_slice(&sig);
     audio.extend(std::iter::repeat_n(0.0, RATE as usize));
-    aggiungi_rumore(&mut audio, sigma_per_snr(AMP, snr_db), &mut rng);
+    let sigma = sigma_per_snr(AMP, snr_db);
+    aggiungi_rumore(&mut audio, sigma, &mut rng);
+    if let Prova::Qrn = prova {
+        // come nella prova CW: scariche di 1-3 ms, 15 volte la deviazione del rumore
+        let mut n = 0usize;
+        while n < audio.len() {
+            n += (-(rng.uniform().ln()) * RATE / 4.0) as usize + 1;
+            let len = 12 + (rng.next_u64() % 24) as usize;
+            for k in n..(n + len).min(audio.len()) {
+                audio[k] += (15.0 * sigma.max(0.02) * rng.gauss()) as f32;
+            }
+        }
+    }
     if matches!(prova, Prova::Livello) {
         for s in audio.iter_mut() {
             *s *= 0.01;
@@ -153,7 +167,7 @@ fn prova_contro_fldigi(mode: PskMode, prova: Prova, snr_db: f64, seed: u64) -> (
 
 const SNRS: [f64; 7] = [5.0, 0.0, -5.0, -8.0, -10.0, -12.0, -15.0];
 
-const CASI: [(Prova, &str); 9] = [
+const CASI: [(Prova, &str); 10] = [
     (Prova::Awgn, "rumore"),
     (Prova::Fuori(4.0), "fuori +4 Hz"),
     (Prova::Fuori(-6.0), "fuori -6 Hz"),
@@ -163,6 +177,7 @@ const CASI: [(Prova, &str); 9] = [
     (Prova::Vicina, "vicina +6 dB"),
     (Prova::Orologio(200.0), "orologio 200ppm"),
     (Prova::Livello, "livello -40 dB"),
+    (Prova::Qrn, "QRN"),
 ];
 
 #[test]
@@ -291,4 +306,51 @@ fn studio() {
         riga.push_str(&format!(" {cer:5.1}"));
     }
     println!("STUDIO media {:5.1} |{riga}", tot / casi.len() as f64);
+}
+
+/// Tutti i segnali (browser): 10 e 30 stazioni PSK31 fra 320 e 2800 Hz a -8 dB in 3 kHz ognuna, un minuto. Stampa canali aperti, nominativi
+/// verificati e la CPU in percento di un core (tempo di calcolo diviso per il tempo dell'audio). Con `PSK_DEBUG=1` anche i canali.
+#[test]
+#[ignore]
+fn tutti_i_segnali() {
+    use mode_digi::skim::BandDecoder;
+    use mode_digi::skim::psk::PskBandDecoder;
+    for stations in [10_usize, 30] {
+        let mut rng = Rng(171 + stations as u64);
+        let n = 60 * RATE as usize;
+        let mut band = vec![0.0_f32; n];
+        let step = 2_450.0 / stations as f32;
+        let calls: Vec<String> = (0..stations).map(|i| format!("IU{}A{}", i % 10, ["BC", "BD", "BE", "BF"][i / 10])).collect();
+        for (i, call) in calls.iter().enumerate() {
+            let hz = 330.0 + step * i as f32 + 3.0 * (i % 3) as f32;
+            let text = format!("cq cq cq de {call} {call} {call} pse k   cq cq cq de {call} {call} {call} pse k");
+            let wave = psk::modulate(text.as_bytes(), hz, PskMode::Psk31, AMP as f32);
+            for (s, w) in band.iter_mut().skip(6_000 + 2_000 * i).zip(wave) {
+                *s += w;
+            }
+        }
+        aggiungi_rumore(&mut band, sigma_per_snr(AMP, -8.0), &mut rng);
+        let mut b = PskBandDecoder::new(PskMode::Psk31, 150.0, 4_000.0, 40);
+        // le stazioni finiscono prima del minuto e i loro canali si chiudono: contano gli spot (nominativi verificati) e i canali aperti
+        // insieme al massimo
+        let (mut spotted, mut most, mut secs) = (Vec::new(), 0, 0.0);
+        for (k, block) in band.chunks(1_200).enumerate() {
+            let t0 = std::time::Instant::now();
+            b.process(block);
+            secs += t0.elapsed().as_secs_f64();
+            spotted.extend(b.take_spots().into_iter().map(|s| s.call));
+            if k % 25 == 0 {
+                let chans = b.channels();
+                most = most.max(chans.len());
+                if std::env::var_os("PSK_DEBUG").is_some() && k == 250 {
+                    for ch in &chans {
+                        println!("{:7.1} Hz {:5.1} dB {:?} | {}", ch.freq_hz, ch.snr_db, ch.calls.iter().map(|c| (c.call.clone(), c.verified())).collect::<Vec<_>>(), ch.text);
+                    }
+                }
+            }
+        }
+        let found = calls.iter().filter(|c| spotted.contains(c)).count();
+        let wrong = spotted.iter().filter(|s| !calls.contains(s)).count();
+        println!("{stations} stazioni PSK31: canali insieme {most} · nominativi verificati {found}/{stations}, sbagliati {wrong} · CPU {:.1}% di un core", 100.0 * secs / 60.0);
+    }
 }

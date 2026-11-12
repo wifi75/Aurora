@@ -81,6 +81,10 @@ export function ModeSettingsFields({
         <span>{t('digi.psk.squelch', { q: Math.round(pskSq) })}</span>
         <input type="range" min={0} max={100} step={1} value={pskSq} onChange={(e) => setPskSq(Number(e.target.value))} onPointerUp={() => onSave({ psk_squelch: pskSq })} onKeyUp={() => onSave({ psk_squelch: pskSq })} />
       </label>
+      <label className="sstv-check" title={t('digi.band.miPskTip')}>
+        <input type="checkbox" checked={s.band_psk !== false} onChange={(e) => onSave({ band_psk: e.target.checked })} />
+        {t('digi.band.miPsk')}
+      </label>
       <p className="sstv-hint">
         {quality === null ? null : <>{t('digi.psk.qualityNow', { q: Math.round(quality) })} — </>}
         {t('digi.psk.squelchHint')}
@@ -103,6 +107,27 @@ export function ModeSettingsFields({
       <label className="sstv-check" title={t('digi.cw.somTip')}>
         <input type="checkbox" checked={s.cw_som} onChange={(e) => onSave({ cw_som: e.target.checked })} />
         {t('digi.cw.som')}
+      </label>
+      <label className="sstv-check" title={t('digi.band.miTip')}>
+        <input type="checkbox" checked={s.band_cw !== false} onChange={(e) => onSave({ band_cw: e.target.checked })} />
+        {t('digi.band.mi')}
+      </label>
+      <label className="sstv-check" title={t('digi.band.spotsTip')}>
+        <input type="checkbox" checked={s.band_spots !== false} onChange={(e) => onSave({ band_spots: e.target.checked })} />
+        {t('digi.band.spots')}
+      </label>
+      <label className="sstv-check">
+        <input type="checkbox" checked={s.band_spots_cq_only === true} disabled={s.band_spots === false} onChange={(e) => onSave({ band_spots_cq_only: e.target.checked })} />
+        {t('digi.band.spotsCqOnly')}
+      </label>
+      <label title={t('digi.band.validationTip')}>
+        <span>{t('digi.band.validation')}</span>
+        <select value={s.band_validation ?? 'normal'} onChange={(e) => onSave({ band_validation: e.target.value })}>
+          <option value="minimal">{t('digi.band.valMinimal')}</option>
+          <option value="normal">{t('digi.band.valNormal')}</option>
+          <option value="strict">{t('digi.band.valStrict')}</option>
+          <option value="maximum">{t('digi.band.valMaximum')}</option>
+        </select>
       </label>
       <label>
         <span>{t('digi.cw.squelchSnr', { db: Math.round(cwSnr) })}</span>

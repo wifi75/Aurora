@@ -30,6 +30,8 @@ pub struct NoiseBlanker {
     event_peak: f32,
     /// Campioni azzerati in tutto (per le prove e la diagnosi).
     blanked: u64,
+    /// Il ritardo (campioni): `GUARD` di base, 0 senza ritardo (il buco copre solo da dove la scarica supera la soglia in poi).
+    delay: usize,
 }
 
 impl Default for NoiseBlanker {
@@ -40,7 +42,13 @@ impl Default for NoiseBlanker {
 
 impl NoiseBlanker {
     pub fn new() -> Self {
-        NoiseBlanker { q95_db: -200.0, warm: 0, line: VecDeque::with_capacity(GUARD + 1), blank_left: 0, event: 0, quiet: 0, event_peak: -200.0, blanked: 0 }
+        NoiseBlanker { q95_db: -200.0, warm: 0, line: VecDeque::with_capacity(GUARD + 1), blank_left: 0, event: 0, quiet: 0, event_peak: -200.0, blanked: 0, delay: GUARD }
+    }
+
+    /// Senza ritardo: il buco comincia dove la scarica supera la soglia (se ne perde il fronte, 1-2 campioni) e senza scariche l'uscita e'
+    /// l'ingresso, campione per campione. Serve al PSK, dove anche un ritardo di 2 ms sposta il sincronismo.
+    pub fn without_delay() -> Self {
+        NoiseBlanker { delay: 0, ..Self::new() }
     }
 
     /// Campioni azzerati finora.
@@ -86,7 +94,7 @@ impl NoiseBlanker {
         // quantile 95% (le scariche, rare, non lo spostano)
         self.q95_db += ETA_DB * (0.95 - if l < self.q95_db { 1.0 } else { 0.0 });
         self.line.push_back(x);
-        if self.line.len() <= GUARD {
+        if self.line.len() <= self.delay {
             return 0.0;
         }
         let y = self.line.pop_front().unwrap_or(0.0);
@@ -113,6 +121,19 @@ mod tests {
                 ((x.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 40) as f32 / (1u64 << 23) as f32 - 1.0) * amp
             })
             .collect()
+    }
+
+    #[test]
+    fn without_delay_the_output_is_the_input_until_an_impulse() {
+        let mut input = noise(12_000, 0.1, 5);
+        for (i, s) in input[6_000..6_024].iter_mut().enumerate() {
+            *s += if i % 2 == 0 { 3.0 } else { -3.0 };
+        }
+        let mut nb = NoiseBlanker::without_delay();
+        let out: Vec<f32> = input.iter().map(|&x| nb.process(x)).collect();
+        assert_eq!(&out[..6_000], &input[..6_000]);
+        assert!(out[6_002..6_024].iter().all(|&y| y == 0.0));
+        assert_eq!(&out[6_200..], &input[6_200..]);
     }
 
     #[test]

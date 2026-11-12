@@ -1,0 +1,65 @@
+/* Tutta la banda dei modi testuali: pannello «Segnali», storico di un segnale, nominativi sulla cascata. Tema scuro di base, chiaro sotto. */
+.digi-band {
+  display: flex; flex-direction: column; min-height: 0; margin-top: 10px; border: 1px solid var(--border); border-radius: 14px;
+  background: linear-gradient(180deg, #121e36, #0f192d); box-shadow: 0 8px 24px #0006; color: var(--text); overflow: hidden;
+}
+.digi-band-head { display: flex; align-items: baseline; gap: 10px; padding: 5px 12px; border-bottom: 1px solid var(--border); }
+.digi-band-head small { color: var(--text-muted); font-size: 11px; }
+.digi-band-legend { margin-left: auto; }
+.digi-band-validation { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 11px; }
+.digi-band-validation select { padding: 1px 4px; border: 1px solid var(--border); border-radius: 6px; background: #0a1324; color: var(--text); font: inherit; }
+.digi-band-head .digi-band-cqcount { padding: 0 6px; border: 1px solid #2cf5a4; border-radius: 6px; color: #2cf5a4; font-weight: 700; }
+.digi-band-empty { margin: 8px 12px; color: var(--text-muted); font-size: 12px; }
+.digi-band-scroll { max-height: 9.5rem; overflow: auto; }
+.digi-band table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: auto; }
+.digi-band th {
+  position: sticky; top: 0; z-index: 1; padding: 3px 8px; background: #0e1729; color: var(--text-muted); border-bottom: 1px solid var(--border);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; white-space: nowrap;
+}
+.digi-band td { padding: 2px 8px; border-bottom: 1px solid #1a2745; color: #d8e6ff; white-space: nowrap; }
+.digi-band tbody tr { cursor: pointer; }
+.digi-band tbody tr:hover td { background: #8e7bff22; }
+.digi-band-num { font-family: var(--font-data); text-align: right; }
+.digi-band-text { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-data); }
+.digi-band-unsure { color: #6f7c99; }
+.digi-band tr.digi-band-cq td { background: #2cf5a414; }
+.digi-band tr.digi-band-cq td:first-child { box-shadow: inset 3px 0 #2cf5a4; }
+.digi-band tr.digi-band-on td { background: #8e7bff33; }
+.digi-band-call { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-data); }
+.digi-band-call b { color: #fff; font-weight: 700; }
+.digi-band-call--maybe b { color: #b8c6e4; font-weight: 400; font-style: italic; }
+.digi-band-role { padding: 0 4px; border: 1px solid #8b9cc0; border-radius: 4px; color: #c9d8f5; font-size: 9.5px; font-style: normal; font-weight: 700; }
+.digi-band-role--cq { border-color: #2cf5a4; color: #2cf5a4; }
+
+/* storico di un segnale */
+.digi-band-history { width: min(46rem, 94vw); }
+.digi-band-history header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.digi-band-full {
+  margin: 8px 0; max-height: 50vh; overflow: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #0a1324;
+  color: #d8e6ff; font: 14px/1.5 var(--font-data); white-space: pre-wrap; word-break: break-word;
+}
+
+/* nominativi sulla cascata, sopra la traccia di ogni segnale */
+.digi-wf-call {
+  position: absolute; z-index: 4; transform: translateX(-50%); padding: 0 4px; border-radius: 4px; background: rgb(0 0 0 / 0.72); color: #fff;
+  font: 600 11px/15px Consolas, "Cascadia Mono", monospace; white-space: nowrap; pointer-events: none;
+}
+.digi-wf-call--cq { color: #2cf5a4; box-shadow: inset 0 0 0 1px #2cf5a4; }
+.digi-wf-call--maybe { color: #c9d0dd; font-weight: 400; font-style: italic; }
+
+/* tema chiaro */
+html[data-theme='light'] .digi-band { background: #ffffff; box-shadow: 0 4px 14px rgb(20 40 90 / 0.1); }
+html[data-theme='light'] .digi-band th { background: #eef2fa; color: #46556f; }
+html[data-theme='light'] .digi-band td { color: #0b1322; border-bottom-color: #e3e9f6; }
+html[data-theme='light'] .digi-band tbody tr:hover td { background: #e5e9ff; }
+html[data-theme='light'] .digi-band-unsure { color: #8a94a8; }
+html[data-theme='light'] .digi-band tr.digi-band-cq td { background: #e3f8ee; }
+html[data-theme='light'] .digi-band tr.digi-band-cq td:first-child { box-shadow: inset 3px 0 #0f9d63; }
+html[data-theme='light'] .digi-band tr.digi-band-on td { background: #dfe7ff; }
+html[data-theme='light'] .digi-band-call b { color: #000; }
+html[data-theme='light'] .digi-band-call--maybe b { color: #46556f; }
+html[data-theme='light'] .digi-band-role { border-color: #46556f; color: #26324a; }
+html[data-theme='light'] .digi-band-role--cq { border-color: #0f9d63; color: #0b7a4c; }
+html[data-theme='light'] .digi-band-head .digi-band-cqcount { border-color: #0f9d63; color: #0b7a4c; }
+html[data-theme='light'] .digi-band-full { background: #ffffff; color: #0b1322; }
+html[data-theme='light'] .digi-band-validation select { background: #ffffff; color: #000; }

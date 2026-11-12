@@ -13,9 +13,11 @@
 //! - [`tx_stream`]: i modulatori a flusso (trasmissione scritta dal vivo, avanzamento carattere per carattere);
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
-//! - [`skim`]: decodifica di tutti i segnali CW della banda audio, con storico, nominativi e spot locali;
+//! - [`band`]: il thread di tutta la banda del servizio (limite di CPU, eventi `band`, spot locali);
+//! - [`skim`]: decodifica di tutti i segnali CW e PSK della banda audio, con storico, nominativi e spot locali;
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
+pub mod band;
 pub mod blanker;
 pub mod cw;
 pub mod cw_bayes;

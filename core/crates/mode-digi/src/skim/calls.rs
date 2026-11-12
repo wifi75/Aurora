@@ -6,22 +6,54 @@
 //! inventa due volte lo stesso nominativo. Il punteggio di una ricorrenza è la probabilità media dei suoi caratteri (dal decodificatore
 //! probabilistico): due ricorrenze certe fanno «verificato», tante incerte pesano meno.
 
+//!
+//! La forma del nominativo nel suo paese ([`super::forms`]) fa da probabilita' a priori: un nominativo dalla forma insolita deve ricorrere
+//! di piu' per essere «verificato» (punteggio 2 invece di 1,5), uno dalla forma sospetta ancora di piu' (3, e almeno tre volte).
+
+use super::forms::{Shape, itu_unassigned};
 use std::collections::HashMap;
 
-/// Quanto deve valere la somma delle probabilità delle ricorrenze perché il nominativo sia «verificato».
+/// Quanto deve valere la somma delle probabilità delle ricorrenze perché il nominativo sia «verificato» (forma tipica o non giudicabile).
 pub const VERIFIED_SCORE: f32 = 1.5;
+/// Lo stesso per una forma insolita e per una sospetta.
+const VERIFIED_SCORE_UNUSUAL: f32 = 2.0;
+const VERIFIED_SCORE_SUSPICIOUS: f32 = 3.0;
 /// Nominativi tenuti per segnale (i più recenti).
 const MAX_CALLS: usize = 8;
 
-/// Il livello di convalida: quanto si è severi prima di mostrare (o mandare come spot) un nominativo.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// Il livello di convalida: quanto si è severi prima di mostrare (o mandare come spot) un nominativo. Gli spot vogliono sempre un
+/// nominativo verificato, in piu' delle condizioni del livello.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Validation {
-    /// Basta la forma del nominativo.
+    /// Basta la forma del nominativo (e una serie ITU assegnata).
     Minimal,
-    /// Forma e paese DXCC (se `cty.dat` c'e').
+    /// Forma e paese DXCC (se `cty.dat` c'e'); le forme sospette solo se verificate.
+    #[default]
     Normal,
-    /// Forma, paese e almeno due ricorrenze («verificato»).
+    /// Come Normale, ma le forme sospette mai e quelle insolite solo se verificate.
     Strict,
+    /// Solo nominativi verificati dalla forma tipica (o di paesi con pochi nominativi noti).
+    Maximum,
+}
+
+impl Validation {
+    pub fn from_id(id: &str) -> Option<Validation> {
+        match id {
+            "minimal" => Some(Validation::Minimal),
+            "normal" => Some(Validation::Normal),
+            "strict" => Some(Validation::Strict),
+            "maximum" => Some(Validation::Maximum),
+            _ => None,
+        }
+    }
+}
+
+/// Quello che si sa di un nominativo fuori dal segnale: se porta a un paese DXCC (`None` = non si sa, senza `cty.dat`) e la probabilita'
+/// a priori della sua forma nel paese (`None` = non giudicabile).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct CallCheck {
+    pub dxcc: Option<bool>,
+    pub prob: Option<f32>,
 }
 
 /// Il ruolo di un nominativo nel segnale.
@@ -45,11 +77,33 @@ pub struct HeardCall {
     pub score: f32,
     /// Momento (secondi del flusso) dell'ultima ricorrenza.
     pub last_s: f64,
+    /// Quanto e' comune la sua forma nel paese (la mette [`CallTracker::calls`]).
+    pub shape: Shape,
 }
 
 impl HeardCall {
     pub fn verified(&self) -> bool {
-        self.score >= VERIFIED_SCORE && self.count >= 2
+        match self.shape {
+            Shape::Typical | Shape::Unknown => self.score >= VERIFIED_SCORE && self.count >= 2,
+            Shape::Unusual => self.score >= VERIFIED_SCORE_UNUSUAL && self.count >= 2,
+            Shape::Suspicious => self.score >= VERIFIED_SCORE_SUSPICIOUS && self.count >= 3,
+        }
+    }
+
+    /// Passa il livello di convalida, sapendo cosa dice `check` del nominativo.
+    pub fn passes(&self, level: Validation, check: CallCheck) -> bool {
+        // una serie che l'ITU non ha assegnato si scarta, salvo che cty.dat la conosca (prefissi speciali)
+        if check.dxcc != Some(true) && itu_unassigned(&self.call) {
+            return false;
+        }
+        let country = check.dxcc != Some(false);
+        let verified = self.verified();
+        match level {
+            Validation::Minimal => true,
+            Validation::Normal => country && (self.shape != Shape::Suspicious || verified),
+            Validation::Strict => country && self.shape != Shape::Suspicious && (self.shape != Shape::Unusual || verified),
+            Validation::Maximum => country && verified && matches!(self.shape, Shape::Typical | Shape::Unknown),
+        }
     }
 }
 
@@ -182,7 +236,7 @@ impl CallTracker {
             } else {
                 Role::Other
             };
-            let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, score: 0.0, last_s: now_s });
+            let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, score: 0.0, last_s: now_s, shape: Shape::Unknown });
             e.count += 1;
             e.score += conf;
             e.last_s = now_s;
@@ -205,17 +259,17 @@ impl CallTracker {
         }
     }
 
-    /// I nominativi che passano la convalida, dal più probabile; `dxcc`: il nominativo porta a un paese (se si sa).
-    pub fn calls(&self, level: Validation, dxcc: &dyn Fn(&str) -> Option<bool>) -> Vec<HeardCall> {
+    /// I nominativi che passano la convalida, dal più probabile; `check`: cosa si sa del nominativo (paese DXCC, forma).
+    pub fn calls(&self, level: Validation, check: &dyn Fn(&str) -> CallCheck) -> Vec<HeardCall> {
         let mut v: Vec<HeardCall> = self
             .calls
             .values()
-            .filter(|c| match level {
-                Validation::Minimal => true,
-                Validation::Normal => dxcc(&c.call) != Some(false),
-                Validation::Strict => dxcc(&c.call) != Some(false) && c.verified(),
+            .filter_map(|c| {
+                let info = check(&c.call);
+                let mut c = c.clone();
+                c.shape = Shape::of(info.prob);
+                c.passes(level, info).then_some(c)
             })
-            .cloned()
             .collect();
         v.sort_by(|a, b| b.score.total_cmp(&a.score));
         v
@@ -257,7 +311,7 @@ mod tests {
         t.push(b"CQ CQ DE IU3ABC IU3ABC K ", &[], 1.0);
         t.push(b"IU3ABC DE K1ABC K1ABC KN ", &[], 5.0);
         t.push(b"K1ABC DE IU3ABC UR RST 599 599 ", &[], 9.0);
-        let all = t.calls(Validation::Minimal, &|_| None);
+        let all = t.calls(Validation::Minimal, &|_| CallCheck::default());
         let me = all.iter().find(|c| c.call == "IU3ABC").cloned();
         let you = all.iter().find(|c| c.call == "K1ABC").cloned();
         assert!(me.as_ref().is_some_and(|c| c.role == Role::Cq && c.verified()), "{me:?}");
@@ -270,9 +324,37 @@ mod tests {
         let mut t = CallTracker::new();
         t.push(b"DE IU3XQZ ", &[0, 0, 0, 90, 90, 90, 90, 90, 90, 90, 0], 1.0);
         t.flush(2.0);
-        assert!(t.calls(Validation::Strict, &|_| None).is_empty());
-        assert_eq!(t.calls(Validation::Minimal, &|_| None).len(), 1);
+        assert!(t.calls(Validation::Maximum, &|_| CallCheck::default()).is_empty());
+        assert_eq!(t.calls(Validation::Minimal, &|_| CallCheck::default()).len(), 1);
         // un prefisso che non porta a nessun paese si scarta dal livello normale
-        assert!(t.calls(Validation::Normal, &|_| Some(false)).is_empty());
+        assert!(t.calls(Validation::Normal, &|_| CallCheck { dxcc: Some(false), prob: None }).is_empty());
+    }
+
+    #[test]
+    fn the_levels_follow_the_shape_of_the_call() {
+        let mut t = CallTracker::new();
+        // due volte, certo: verificato con una forma tipica o insolita (punteggio 2), non con una sospetta (vuole 3 e tre volte)
+        t.push(b"DE IU3ABC IU3ABC ", &[], 1.0);
+        t.flush(2.0);
+        let with = |p: f32| move |_: &str| CallCheck { dxcc: Some(true), prob: Some(p) };
+        let typical = t.calls(Validation::Maximum, &with(0.2));
+        assert!(typical.len() == 1 && typical[0].shape == Shape::Typical && typical[0].verified());
+        // insolita: verificata, passa fino a Severo ma non Massimo
+        assert_eq!(t.calls(Validation::Strict, &with(0.002)).len(), 1);
+        assert!(t.calls(Validation::Maximum, &with(0.002)).is_empty());
+        // sospetta e non verificata: solo Minimo
+        assert!(t.calls(Validation::Normal, &with(0.0001)).is_empty());
+        assert_eq!(t.calls(Validation::Minimal, &with(0.0001)).len(), 1);
+        // una terza volta la verifica anche sospetta: Normale la mostra, Severo no
+        t.push(b"IU3ABC ", &[], 3.0);
+        t.flush(4.0);
+        assert_eq!(t.calls(Validation::Normal, &with(0.0001)).len(), 1);
+        assert!(t.calls(Validation::Strict, &with(0.0001)).is_empty());
+        // una serie ITU non assegnata si scarta sempre, salvo che cty.dat la conosca
+        let mut q = CallTracker::new();
+        q.push(b"DE QA1ABC QA1ABC ", &[], 1.0);
+        q.flush(2.0);
+        assert!(q.calls(Validation::Minimal, &|_| CallCheck::default()).is_empty());
+        assert_eq!(q.calls(Validation::Minimal, &|_| CallCheck { dxcc: Some(true), prob: None }).len(), 1);
     }
 }

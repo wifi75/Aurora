@@ -151,6 +151,24 @@ export const HighlightCallsignSchema = z.object({
 });
 export type HighlightCallsign = z.infer<typeof HighlightCallsignSchema>;
 
+/** Un segnale di tutta la banda dei modi testuali (evento `digi` di tipo `band`, rotta `GET /digi/band`). */
+export const DigiSignalSchema = z.object({
+  id: z.number(),
+  freq_hz: z.number(),
+  wpm: z.number().optional(),
+  snr_db: z.number(),
+  text: z.string(),
+  /** Le posizioni dei caratteri incerti di `text` (in grigio). */
+  unsure: z.array(z.number()).optional().default([]),
+  calls: z
+    .array(z.object({ call: z.string(), role: z.string(), verified: z.boolean(), country: z.string().optional() }))
+    .optional()
+    .default([]),
+  cq: z.boolean(),
+  report: z.string().optional(),
+});
+export type DigiSignal = z.infer<typeof DigiSignalSchema>;
+
 const FoxCallerSchema = z.object({ call: z.string(), grid: z.string(), snr: z.number(), freq_hz: z.number(), age: z.number(), order: z.number().optional().default(0) });
 const FoxLogSchema = z.object({ call: z.string(), grid: z.string(), band: z.string(), mode: z.string(), freq_hz: z.number(), sent: z.string(), rcvd: z.string(), time_ms: z.number(), continent: z.string().optional() });
 export type FoxLogEntry = z.infer<typeof FoxLogSchema>;
@@ -194,6 +212,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     listening: z.boolean().optional(),
     squelch_open: z.boolean().optional(),
     message: z.string().optional(),
+    signals: z.array(DigiSignalSchema).optional(),
   }),
   z.object({ type: z.literal('tx_halted') }),
   z.object({ type: z.literal('notice'), id: z.string(), detail: z.string() }),

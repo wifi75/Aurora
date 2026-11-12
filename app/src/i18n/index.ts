@@ -65,6 +65,7 @@ import { digiStrings } from './strings/digi';
 import { satStrings } from './strings/sat';
 import { clusterOptsStrings } from './strings/clusteropts';
 import { digiMenuStrings } from './strings/digimenu';
+import { digiBandStrings } from './strings/digiband';
 import { sstvStrings } from './strings/sstv';
 import { lotwStrings } from './strings/lotw';
 import { decodeOptStrings } from './strings/decodeopts';
@@ -73,7 +74,7 @@ export { DEFAULT_LANG, LANGS, LANG_NAMES, TABLE_LANGS, detectLang, langFromLocal
 export { useLang } from './lang';
 
 /** Tutti i testi dell'interfaccia, raccolti dalle tabelle per area. */
-export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...setWinStrings, ...sdrStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...log4omDbStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...lookupStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...contestStrings, ...qmapStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...phoneStrings, ...reportStrings, ...firstRunStrings, ...backupStrings, ...setupCtaStrings, ...appearanceStrings, ...rotatorStrings, ...sstvStrings, ...digiStrings, ...satStrings, ...clusterOptsStrings, ...digiMenuStrings, ...tooltipStrings, ...logPromptStrings, ...checkAllStrings, ...coreTextStrings, ...lotwStrings, ...decodeOptStrings } as const;
+export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ...settingsStrings, ...setWinStrings, ...sdrStrings, ...automationStrings, ...accessStrings, ...outputStrings, ...statsStrings, ...dxccStrings, ...dxccSetStrings, ...cqPrefsStrings, ...toastSetStrings, ...newsStrings, ...wikiStrings, ...controlStrings, ...engineConfigStrings, ...engineSettingsStrings, ...clockStrings, ...catStrings, ...clusterStrings, ...mapStrings, ...wishStrings, ...updateStrings, ...audioStrings, ...historyStrings, ...logExportStrings, ...log4omDbStrings, ...onlineStrings, ...diagnosisStrings, ...radioDisplayStrings, ...jtdxTabStrings, ...audioSetStrings, ...lookupStrings, ...layoutStrings, ...soundStrings, ...engineHintStrings, ...settingHintStrings, ...aboutStrings, ...notifyHintStrings, ...dxpedStrings, ...foxStrings, ...contestStrings, ...qmapStrings, ...radioExtraStrings, ...waterfallStrings, ...integrationStrings, ...phoneStrings, ...reportStrings, ...firstRunStrings, ...backupStrings, ...setupCtaStrings, ...appearanceStrings, ...rotatorStrings, ...sstvStrings, ...digiStrings, ...satStrings, ...clusterOptsStrings, ...digiMenuStrings, ...digiBandStrings, ...tooltipStrings, ...logPromptStrings, ...checkAllStrings, ...coreTextStrings, ...lotwStrings, ...decodeOptStrings } as const;
 
 export type Key = keyof typeof STRINGS;
 
