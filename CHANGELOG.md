@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Split da RTTY a FT8**: la radio non va piu' in split da sola. Dopo una caduta breve del CAT (la frequenza che sparisce e ritorna) Aurora riaccendeva lo split vero sul VFO B con l'ultima frequenza di FT8 anche se un cambio di frequenza l'aveva gia' spento, e rimetteva lo Split DX di uno spot «UP N» lasciato mentre la radio non rispondeva; ora lo split di FT8 («Split: Radio») si accende solo prima di una trasmissione FT8, con OmniRig, TCI e Cat4OM il cambio di frequenza lascia la radio in simplex come con Hamlib, e tornando a FT8 dalla pagina PSK · RTTY · CW lo Split DX si spegne sempre. In PSK, RTTY, CW e SSTV si trasmette in simplex (o con lo Split DX scelto): prima, con lo split di FT8 acceso, la trasmissione usciva spostata e la radio restava in split.
 - **«Rimanda i QSO persi» anche per il server UDP secondario**: nella pagina Programmi collegati, gruppo «Invia file ADIF del QSO per il log», la casella «Rimanda i QSO persi quando il log si riapre» (accesa di base): con Log4OM chiuso il QSO resta in coda e parte quando si riapre, senza creare un destinatario nelle Integrazioni.
 
 ## 0.11.242 - 2026-11-12
