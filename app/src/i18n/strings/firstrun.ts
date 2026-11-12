@@ -35,7 +35,7 @@ export const firstRunStrings = {
   'fr.audio.in': ['Ingresso (ricezione)', 'Input (receive)', 'Eingang (Empfang)', 'Entrée (réception)', 'Entrada (recepción)', 'Entrada (receção)'],
   'fr.audio.out': ['Uscita (trasmissione)', 'Output (transmit)', 'Ausgang (Senden)', 'Sortie (émission)', 'Salida (transmisión)', 'Saída (transmissão)'],
   'fr.audio.default': ['Predefinito di Windows', 'System default', 'Systemstandard', 'Par défaut du système', 'Predeterminado del sistema', 'Predefinido do sistema'],
-  'fr.audio.hint': ['Canali, livelli e registrazione si regolano poi in Impostazioni > Audio.', 'Channels, levels and recording are set later in Settings > Audio.', 'Kanäle, Pegel und Aufnahme stellst du später unter Einstellungen > Audio ein.', 'Canaux, niveaux et enregistrement se règlent ensuite dans Réglages > Audio.', 'Canales, niveles y grabación se ajustan luego en Ajustes > Audio.', 'Canais, níveis e gravação ajustam-se depois em Definições > Áudio.'],
+  'fr.audio.hint': ['Canali, livelli e registrazione si regolano poi in Impostazioni › Stazione › Audio.', 'Channels, levels and recording are set later in Settings › Station › Audio.', 'Kanäle, Pegel und Aufnahme stellst du später unter Einstellungen › Station › Audio ein.', 'Canaux, niveaux et enregistrement se règlent ensuite dans Réglages › Station › Audio.', 'Canales, niveles y grabación se ajustan luego en Ajustes › Estación › Audio.', 'Canais, níveis e gravação ajustam-se depois em Definições › Estação › Áudio.'],
   'fr.radio.title': ['La radio', 'The radio', 'Das Funkgerät', 'La radio', 'La radio', 'O rádio'],
   'fr.radio.text': [
     'Con il CAT Aurora legge e cambia la frequenza e comanda la trasmissione. Hamlib è già incluso: non serve installare altro.',
@@ -66,11 +66,11 @@ export const firstRunStrings = {
   'fr.skipStep': ['Salta questo passo', 'Skip this step', 'Diesen Schritt überspringen', 'Passer cette étape', 'Saltar este paso', 'Saltar este passo'],
   'fr.done.titleNoCall': ['Tutto pronto!', 'All set!', 'Alles bereit!', 'Tout est prêt !', '¡Todo listo!', 'Tudo pronto!'],
   'fr.done.noCall': [
-    'Per trasmettere manca il tuo nominativo: lo scrivi in Impostazioni > Generali.',
-    'Your callsign is still missing for transmitting: enter it in Settings > General.',
-    'Zum Senden fehlt noch dein Rufzeichen: trage es unter Einstellungen > Allgemein ein.',
-    'Pour émettre il manque ton indicatif : saisis-le dans Réglages > Général.',
-    'Para transmitir falta tu indicativo: escríbelo en Ajustes > General.',
-    'Para transmitir falta o teu indicativo: escreve-o em Definições > Geral.',
+    'Per trasmettere manca il tuo nominativo: lo scrivi in Impostazioni › Stazione › Dati personali.',
+    'Your callsign is still missing for transmitting: enter it in Settings › Station › Personal data.',
+    'Zum Senden fehlt noch dein Rufzeichen: trage es unter Einstellungen › Station › Persönliche Daten ein.',
+    'Pour émettre il manque ton indicatif : saisis-le dans Réglages › Station › Données personnelles.',
+    'Para transmitir falta tu indicativo: escríbelo en Ajustes › Estación › Datos personales.',
+    'Para transmitir falta o teu indicativo: escreve-o em Definições › Estação › Dados pessoais.',
   ],
 } as const;

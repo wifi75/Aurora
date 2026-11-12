@@ -33,12 +33,12 @@ export const catStrings = {
   'cat.backend.tci': ['TCI (SDR: ExpertSDR, Thetis)', 'TCI (SDR: ExpertSDR, Thetis)', 'TCI (SDR: ExpertSDR, Thetis)', 'TCI (SDR : ExpertSDR, Thetis)', 'TCI (SDR: ExpertSDR, Thetis)', 'TCI (SDR: ExpertSDR, Thetis)'],
   'cat.tci.address': ['Indirizzo TCI', 'TCI address', 'TCI-Adresse', 'Adresse TCI', 'Dirección TCI', 'Endereço TCI'],
   'tip.cat.tci.address': [
-    'Indirizzo e porta del server TCI della SDR (host:porta). Di base 127.0.0.1:40001: attiva il TCI in ExpertSDR o in Thetis. Per l’audio scegli «TCI (dalla radio)» e «TCI (alla radio)» nella scheda Audio, oppure usa il cavo audio virtuale.',
-    'Address and port of the SDR’s TCI server (host:port). Default 127.0.0.1:40001: enable TCI in ExpertSDR or Thetis. For audio pick “TCI (dalla radio)” and “TCI (alla radio)” in the Audio tab, or use the virtual audio cable.',
-    'Adresse und Port des TCI-Servers der SDR (Host:Port). Standard 127.0.0.1:40001: TCI in ExpertSDR oder Thetis einschalten. Für den Ton im Reiter Audio „TCI (dalla radio)“ und „TCI (alla radio)“ wählen oder das virtuelle Audiokabel nutzen.',
-    'Adresse et port du serveur TCI de la SDR (hôte:port). Par défaut 127.0.0.1:40001 : active le TCI dans ExpertSDR ou Thetis. Pour l’audio, choisis « TCI (dalla radio) » et « TCI (alla radio) » dans l’onglet Audio, ou utilise le câble audio virtuel.',
-    'Dirección y puerto del servidor TCI de la SDR (host:puerto). Por defecto 127.0.0.1:40001: activa el TCI en ExpertSDR o Thetis. Para el audio elige «TCI (dalla radio)» y «TCI (alla radio)» en la pestaña Audio, o usa el cable de audio virtual.',
-    'Endereço e porta do servidor TCI do SDR (host:porta). Por omissão 127.0.0.1:40001: ativa o TCI no ExpertSDR ou no Thetis. Para o áudio escolhe «TCI (dalla radio)» e «TCI (alla radio)» no separador Áudio, ou usa o cabo de áudio virtual.',
+    'Indirizzo e porta del server TCI della SDR (host:porta). Di base 127.0.0.1:40001: attiva il TCI in ExpertSDR o in Thetis. Per l’audio scegli «TCI (dalla radio)» e «TCI (alla radio)» in Impostazioni › Stazione › Audio, oppure usa il cavo audio virtuale.',
+    'Address and port of the SDR’s TCI server (host:port). Default 127.0.0.1:40001: enable TCI in ExpertSDR or Thetis. For audio pick “TCI (dalla radio)” and “TCI (alla radio)” in Settings › Station › Audio, or use the virtual audio cable.',
+    'Adresse und Port des TCI-Servers der SDR (Host:Port). Standard 127.0.0.1:40001: TCI in ExpertSDR oder Thetis einschalten. Für den Ton unter Einstellungen › Station › Audio „TCI (dalla radio)“ und „TCI (alla radio)“ wählen oder das virtuelle Audiokabel nutzen.',
+    'Adresse et port du serveur TCI de la SDR (hôte:port). Par défaut 127.0.0.1:40001 : active le TCI dans ExpertSDR ou Thetis. Pour l’audio, choisis « TCI (dalla radio) » et « TCI (alla radio) » dans Réglages › Station › Audio, ou utilise le câble audio virtuel.',
+    'Dirección y puerto del servidor TCI de la SDR (host:puerto). Por defecto 127.0.0.1:40001: activa el TCI en ExpertSDR o Thetis. Para el audio elige «TCI (dalla radio)» y «TCI (alla radio)» en Ajustes › Estación › Audio, o usa el cable de audio virtual.',
+    'Endereço e porta do servidor TCI do SDR (host:porta). Por omissão 127.0.0.1:40001: ativa o TCI no ExpertSDR ou no Thetis. Para o áudio escolhe «TCI (dalla radio)» e «TCI (alla radio)» em Definições › Estação › Áudio, ou usa o cabo de áudio virtual.',
   ],
   'cat.omnirig.rig': ['Radio di OmniRig', 'OmniRig radio', 'OmniRig-Gerät', 'Radio OmniRig', 'Radio de OmniRig', 'Rádio do OmniRig'],
   'tip.cat.omnirig.rig': [

@@ -88,12 +88,12 @@ export const sstvStrings = {
   'sstv.tx.error': ['Trasmissione non riuscita', 'Transmission failed', 'Senden fehlgeschlagen', 'Émission échouée', 'Transmisión fallida', 'Transmissão falhou'],
   'sstv.tx.busy': ['Aurora sta già trasmettendo', 'Aurora is already transmitting', 'Aurora sendet bereits', 'Aurora émet déjà', 'Aurora ya está transmitiendo', 'A Aurora já está a transmitir'],
   'sstv.tx.notReady': [
-    'Trasmissione non pronta: servono il motore proprio di Aurora e l’uscita audio verso la radio (Impostazioni › Audio).',
-    'Transmit not ready: Aurora’s own engine and the audio output to the radio are needed (Settings › Audio).',
-    'Senden nicht bereit: Auroras eigene Engine und der Audioausgang zum Funkgerät werden gebraucht (Einstellungen › Audio).',
-    'Émission pas prête : il faut le moteur propre d’Aurora et la sortie audio vers la radio (Réglages › Audio).',
-    'Transmisión no lista: hacen falta el motor propio de Aurora y la salida de audio a la radio (Ajustes › Audio).',
-    'Transmissão não pronta: são precisos o motor próprio da Aurora e a saída de áudio para o rádio (Definições › Áudio).',
+    'Trasmissione non pronta: servono il motore proprio di Aurora e l’uscita audio verso la radio (Impostazioni › Stazione › Audio).',
+    'Transmit not ready: Aurora’s own engine and the audio output to the radio are needed (Settings › Station › Audio).',
+    'Senden nicht bereit: Auroras eigene Engine und der Audioausgang zum Funkgerät werden gebraucht (Einstellungen › Station › Audio).',
+    'Émission pas prête : il faut le moteur propre d’Aurora et la sortie audio vers la radio (Réglages › Station › Audio).',
+    'Transmisión no lista: hacen falta el motor propio de Aurora y la salida de audio a la radio (Ajustes › Estación › Audio).',
+    'Transmissão não pronta: são precisos o motor próprio da Aurora e a saída de áudio para o rádio (Definições › Estação › Áudio).',
   ],
   'sstv.tx.disabled': ['Trasmissione non consentita da questo collegamento', 'Transmitting is not allowed from this connection', 'Senden über diese Verbindung nicht erlaubt', 'Émission non autorisée depuis cette connexion', 'Transmisión no permitida desde esta conexión', 'Transmissão não permitida a partir desta ligação'],
 

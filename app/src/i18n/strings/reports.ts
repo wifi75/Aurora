@@ -9,7 +9,7 @@ export const reportStrings = {
     'Aurora envía los errores de forma anónima a quien la desarrolla para corregirlos: sin indicativo, localizador, mensajes ni contraseñas. Puedes apagarlo cuando quieras.',
     'A Aurora envia os erros de forma anónima a quem a desenvolve para os corrigir: sem indicativo, locator, mensagens nem palavras-passe. Podes desligá-lo quando quiseres.',
   ],
-  'rep.notice.open': ['Impostazioni > Assistenza', 'Settings > Support', 'Einstellungen > Support', 'Réglages > Assistance', 'Ajustes > Asistencia', 'Definições > Assistência'],
+  'rep.notice.open': ['Impostazioni › Accesso e assistenza › Assistenza', 'Settings › Access and support › Support', 'Einstellungen › Zugang und Hilfe › Support', 'Réglages › Accès et assistance › Assistance', 'Ajustes › Acceso y asistencia › Asistencia', 'Definições › Acesso e assistência › Assistência'],
   'rep.notice.ok': ['Ho capito', 'Got it', 'Verstanden', 'Compris', 'Entendido', 'Percebi'],
   'rep.intro': [
     'Accesi di fabbrica, si possono spegnere. Aiutano chi sviluppa Aurora a trovare e correggere i problemi. Nominativi, locatori, messaggi, indirizzi IP, email, password e il tuo nome utente vengono tolti prima dell’invio.',

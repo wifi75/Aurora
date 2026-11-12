@@ -174,12 +174,12 @@ export const audioSetStrings = {
     'Os dispositivos não foram alterados porque o ficheiro das definições não pôde ser guardado.',
   ],
   'aud.err.unavailable': [
-    'La scheda Audio è disponibile solo con il motore proprio di Aurora.',
-    'The Audio tab is only available with Aurora’s own engine.',
-    'Der Reiter Audio gibt es nur mit dem eigenen Motor von Aurora.',
-    'L’onglet Audio n’est disponible qu’avec le moteur propre d’Aurora.',
-    'La pestaña Audio solo está disponible con el motor propio de Aurora.',
-    'O separador Áudio só está disponível com o motor próprio da Aurora.',
+    'La pagina Audio è disponibile solo con il motore proprio di Aurora.',
+    'The Audio page is only available with Aurora’s own engine.',
+    'Die Seite Audio gibt es nur mit dem eigenen Motor von Aurora.',
+    'La page Audio n’est disponible qu’avec le moteur propre d’Aurora.',
+    'La página Audio solo está disponible con el motor propio de Aurora.',
+    'A página Áudio só está disponível com o motor próprio da Aurora.',
   ],
   'aud.err.generic': ['Non è riuscito: riprova.', 'It did not work: try again.', 'Es hat nicht geklappt: versuche es erneut.', 'Ça n’a pas marché : réessaie.', 'No ha funcionado: inténtalo de nuevo.', 'Não funcionou: tenta de novo.'],
 } as const satisfies Record<string, Entry>;

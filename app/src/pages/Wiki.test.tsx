@@ -35,7 +35,7 @@ describe('Wiki', () => {
 
   it('uses the real interface names: the radio tab and the Filter button', () => {
     render(<Wiki />);
-    expect(screen.getAllByText(/Impostazioni → Radio/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Impostazioni › Stazione › Radio/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Spegni Filtro/).length).toBe(1);
   });
 

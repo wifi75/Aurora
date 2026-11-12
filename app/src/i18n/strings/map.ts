@@ -48,7 +48,7 @@ export const mapStrings = {
   ],
   'dxmap.spotRx': ['Spot RX: {n}', 'Spot RX: {n}', 'Spot RX: {n}', 'Spot RX : {n}', 'Spot RX: {n}', 'Spot RX: {n}'],
   'dxmap.spotMax': ['Durata massima', 'Maximum age', 'Höchstdauer', 'Durée maximale', 'Duración máxima', 'Duração máxima'],
-  'dxmap.pskOff': ['PSK Reporter è spento (Impostazioni › Online)', 'PSK Reporter is off (Settings › Online)', 'PSK Reporter ist aus (Einstellungen › Online)', 'PSK Reporter est désactivé (Réglages › En ligne)', 'PSK Reporter está apagado (Ajustes › En línea)', 'PSK Reporter está desligado (Definições › Online)'],
+  'dxmap.pskOff': ['PSK Reporter è spento (Impostazioni › Log, cluster e servizi › Servizi online)', 'PSK Reporter is off (Settings › Log, cluster and services › Online services)', 'PSK Reporter ist aus (Einstellungen › Log, Cluster und Dienste › Online-Dienste)', 'PSK Reporter est désactivé (Réglages › Journal, cluster et services › Services en ligne)', 'PSK Reporter está apagado (Ajustes › Log, clúster y servicios › Servicios en línea)', 'PSK Reporter está desligado (Definições › Log, cluster e serviços › Serviços online)'],
   'dxmap.linkColor': ['Colore', 'Color', 'Farbe', 'Couleur', 'Color', 'Cor'],
   'dxmap.linkMeColor': ['Verso di me', 'To me', 'Zu mir', 'Vers moi', 'Hacia mí', 'Para mim'],
   'dxmap.linkWidth': ['Spessore', 'Width', 'Stärke', 'Épaisseur', 'Grosor', 'Espessura'],

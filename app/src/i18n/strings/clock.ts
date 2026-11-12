@@ -295,12 +295,12 @@ export const clockStrings = {
   ],
   'clock.pill': ['Orologio', 'Clock', 'Uhr', 'Horloge', 'Reloj', 'Relógio'],
   'tip.clock.pill': [
-    'Scarto dell’orologio di Windows rispetto ai server NTP. Verde: allineato; giallo: oltre la soglia, in Impostazioni → Orologio puoi correggerlo. DT è lo scarto medio di tempo dei messaggi appena decodificati (come «Med» di Aurora): vicino a zero va bene.',
-    'Windows clock error against the NTP servers. Green: in sync; yellow: beyond the threshold, in Settings → Clock you can correct it. DT is the mean time error of the messages just decoded: close to zero is good.',
-    'Abweichung der Windows-Uhr gegenüber den NTP-Servern. Grün: synchron; gelb: über der Schwelle, unter Einstellungen → Uhr korrigierbar. DT ist der mittlere Zeitfehler der gerade dekodierten Nachrichten: nahe null ist gut.',
-    'Écart de l’horloge de Windows par rapport aux serveurs NTP. Vert : synchronisée ; jaune : au-delà du seuil, tu peux la corriger dans Réglages → Horloge. DT est l’écart de temps moyen des messages qui viennent d’être décodés (comme « Med » d’Aurora) : proche de zéro, c’est bien.',
-    'Error del reloj de Windows frente a los servidores NTP. Verde: sincronizado; amarillo: por encima del umbral, puedes corregirlo en Ajustes → Reloj. DT es el error de tiempo medio de los mensajes recién decodificados (como «Med» de Aurora): cerca de cero está bien.',
-    'Erro do relógio do Windows face aos servidores NTP. Verde: sincronizado; amarelo: acima do limiar, podes corrigi-lo em Definições → Relógio. DT é o erro de tempo médio das mensagens acabadas de descodificar (como «Med» da Aurora): perto de zero está bem.',
+    'Scarto dell’orologio di Windows rispetto ai server NTP. Verde: allineato; giallo: oltre la soglia, in Impostazioni › Stazione › Orologio puoi correggerlo. DT è lo scarto medio di tempo dei messaggi appena decodificati (come «Med» di Aurora): vicino a zero va bene.',
+    'Windows clock error against the NTP servers. Green: in sync; yellow: beyond the threshold, in Settings › Station › Clock you can correct it. DT is the mean time error of the messages just decoded: close to zero is good.',
+    'Abweichung der Windows-Uhr gegenüber den NTP-Servern. Grün: synchron; gelb: über der Schwelle, unter Einstellungen › Station › Uhr korrigierbar. DT ist der mittlere Zeitfehler der gerade dekodierten Nachrichten: nahe null ist gut.',
+    'Écart de l’horloge de Windows par rapport aux serveurs NTP. Vert : synchronisée ; jaune : au-delà du seuil, tu peux la corriger dans Réglages › Station › Horloge. DT est l’écart de temps moyen des messages qui viennent d’être décodés (comme « Med » d’Aurora) : proche de zéro, c’est bien.',
+    'Error del reloj de Windows frente a los servidores NTP. Verde: sincronizado; amarillo: por encima del umbral, puedes corregirlo en Ajustes › Estación › Reloj. DT es el error de tiempo medio de los mensajes recién decodificados (como «Med» de Aurora): cerca de cero está bien.',
+    'Erro do relógio do Windows face aos servidores NTP. Verde: sincronizado; amarelo: acima do limiar, podes corrigi-lo em Definições › Estação › Relógio. DT é o erro de tempo médio das mensagens acabadas de descodificar (como «Med» da Aurora): perto de zero está bem.',
   ],
   'clock.dt': ['DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s', 'DT {dt} s'],
 } as const satisfies Record<string, Entry>;

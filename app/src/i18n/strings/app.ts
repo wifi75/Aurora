@@ -178,12 +178,12 @@ export const appStrings = {
     'Escolhe o idioma da interface; fica guardado neste dispositivo.',
   ],
   'app.moved': [
-    'Aurora ha cambiato indirizzo: inquadra di nuovo il QR dal PC (Impostazioni > Accesso), oppure prova qui:',
-    'Aurora has changed address: scan the QR again from the PC (Settings > Access), or try here:',
-    'Aurora hat die Adresse gewechselt: scanne den QR erneut am PC (Einstellungen > Zugang) oder versuche es hier:',
-    "Aurora a changé d'adresse : scanne à nouveau le QR depuis le PC (Réglages > Accès), ou essaie ici :",
-    'Aurora ha cambiado de dirección: escanea de nuevo el QR desde el PC (Ajustes > Acceso), o prueba aquí:',
-    'A Aurora mudou de endereço: lê de novo o QR a partir do PC (Definições > Acesso), ou experimenta aqui:',
+    'Aurora ha cambiato indirizzo: inquadra di nuovo il QR dal PC (Impostazioni › Accesso e assistenza › Smartphone), oppure prova qui:',
+    'Aurora has changed address: scan the QR again from the PC (Settings › Access and support › Smartphone), or try here:',
+    'Aurora hat die Adresse gewechselt: scanne den QR erneut am PC (Einstellungen › Zugang und Hilfe › Smartphone) oder versuche es hier:',
+    "Aurora a changé d'adresse : scanne à nouveau le QR depuis le PC (Réglages › Accès et assistance › Smartphone), ou essaie ici :",
+    'Aurora ha cambiado de dirección: escanea de nuevo el QR desde el PC (Ajustes › Acceso y asistencia › Smartphone), o prueba aquí:',
+    'A Aurora mudou de endereço: lê de novo o QR a partir do PC (Definições › Acesso e assistência › Smartphone), ou experimenta aqui:',
   ],
   'app.moveTo': ['Apri {url}', 'Open {url}', '{url} öffnen', 'Ouvrir {url}', 'Abrir {url}', 'Abrir {url}'],
   'tip.app.moved': [
