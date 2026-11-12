@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **SSTV, cronologie in strisce orizzontali**: «Ricevute» e «Trasmesse» passano dalla colonna a destra a due strisce larghe quanto la pagina sotto la finestra, miniature basse su una riga (la ricezione resta tutta in vista su 1366x768); freccette ◀ ▶ a lato di ogni striscia (si spengono agli estremi), rotella e frecce della tastiera; nell'immagine aperta in grande le frecce precedente/successiva (anche ← →) scorrono la stessa cronologia. Su finestre strette e telefono resta in fondo alla pagina.
 
 ## 0.11.241 - 2026-11-12
 - **Installatore, schermata quando non riesce**: invece della pagina tecnica «Installazione interrotta» compare, nella lingua dell'installatore, il motivo in parole semplici (WebView2 non installato, file bloccati da un altro programma, poco spazio, programma tolto dall'antivirus, versione piu' nuova gia' installata) con cosa fare e se il rapporto anonimo e' partito; poi Riprova, Apri il registro (con la pagina delle segnalazioni) o Chiudi. Il programma tolto dall'antivirus subito dopo la copia ora conta come installazione non riuscita.

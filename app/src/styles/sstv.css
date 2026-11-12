@@ -414,3 +414,33 @@ html[data-theme='light'] .sstv-log-info { color: #46556f; }
   .sstv-side-col .sstv-strip { grid-auto-columns: 4.2rem; }
   .sstv-hist-tools .sstv-btn { padding: 1px 6px; }
 }
+
+/* ===== cronologie in strisce orizzontali sotto la finestra (finestra larga) =====
+   due strisce larghe quanto la pagina, miniature basse su una riga sola con scorrimento orizzontale e freccette ◀ ▶;
+   finestra stretta e telefono: com'era (in fondo alla pagina, senza freccette: si scorre col dito) */
+.sstv-strip-wrap { display: flex; align-items: stretch; gap: 0.35rem; min-width: 0; }
+.sstv-strip-wrap .sstv-strip { flex: 1 1 auto; min-width: 0; }
+.sstv-strip-arrow { flex: none; width: 1.7rem; padding: 0; border-radius: 8px; font-size: 0.8rem; line-height: 1; cursor: pointer; }
+.sstv-strip-arrow:disabled { opacity: 0.3; cursor: default; }
+.sstv-strip-arrow:focus-visible { outline: 2px solid #8e7bff; outline-offset: 1px; }
+.sstv-strip:focus-visible { outline: 2px solid #8e7bff; outline-offset: 1px; border-radius: 8px; }
+.sstv-lightbox-stage { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.sstv-lightbox-stage img { flex: 0 1 auto; min-width: 0; margin: 0; }
+.sstv-lightbox-nav { flex: none; width: 2.6rem; height: 3.6rem; padding: 0; border-radius: 10px; font-size: 1.1rem; cursor: pointer; }
+.sstv-lightbox-nav:disabled { opacity: 0.3; cursor: default; }
+@media (max-width: 820px) {
+  .sstv-lightbox-nav { width: 2rem; height: 3rem; }
+}
+@media (max-width: 1179px) {
+  .sstv-strip-arrow { display: none; }
+}
+@media (min-width: 1180px) {
+  .sstv-body { flex-direction: column; overflow: hidden; gap: 0.5rem; }
+  .sstv-main { flex: 1 1 0; min-height: 0; overflow: auto; }
+  .sstv-side-col { flex: none; width: auto; min-height: 0; }
+  .sstv-side-col .sstv-history--both { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 0.35rem; padding: 0.35rem 0.6rem 0.4rem; }
+  .sstv-side-col .sstv-hist-col { gap: 0.2rem; }
+  .sstv-side-col .sstv-hist-head { flex-wrap: nowrap; }
+  .sstv-side-col .sstv-strip { flex: 1 1 auto; display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 5.4rem; grid-auto-rows: auto; align-content: start; gap: 0.45rem; overflow-x: auto; overflow-y: hidden; padding: 0.1rem 0.1rem 0.3rem; }
+  .sstv-side-col .sstv-slot { min-height: 0; aspect-ratio: 1 / 1; }
+}
