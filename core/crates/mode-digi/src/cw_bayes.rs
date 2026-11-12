@@ -22,7 +22,10 @@
 //! Il percorso migliore aggiorna anche l'ampiezza del segnale (sui toni) e il rumore (sulle pause lunghe). Se il ricevitore misura il
 //! rumore istante per istante (bande laterali e minimo scorrevole, [`crate::cw_noise`]) la verosimiglianza usa quello: ogni tono si
 //! giudica con il rumore che c'era in quel momento (AGC della radio, QRN largo). I campioni toccati dal noise blanker arrivano con il loro
-//! peso (quanto del filtro è rimasto): un istante cancellato non dice niente, né tono né pausa.
+//! peso (quanto del filtro è rimasto): un istante cancellato non dice niente, né tono né pausa. Lo stesso vale per gli scrosci di
+//! rumore larghi che l'AGC del rumore ([`crate::cw_agc`]) ha riportato al fondo: lì il segnale può essere più basso, e il traliccio tiene
+//! aperte le due ipotesi. Gli elementi toccati da un buco o da uno scroscio non insegnano niente (ampiezza, rumore, pugno e velocità
+//! restano quelli di prima) e in quei tratti le ipotesi tenute sono il doppio.
 
 use crate::cw::{MORSE, PROSIGNS};
 use std::collections::HashMap;
@@ -54,6 +57,15 @@ pub const LM_WEIGHT_DEFAULT: f32 = 0.5;
 /// Cambi di velocità (passi del traliccio, probabilità per verso) fra i caratteri e fra le parole.
 const SPEED_MOVES_CHAR: [(i32, f32); 1] = [(1, 0.01)];
 const SPEED_MOVES_WORD: [(i32, f32); 4] = [(1, 0.04), (2, 0.01), (4, 0.004), (8, 0.002)];
+
+/// Probabilità, fra un carattere e l'altro, del salto alla velocità offerta da fuori ([`CwBayes::offer_speed`]). Provata nella prova
+/// `cw_confronto`: con 0,02 il tasto a mano peggiora (23,7 -> 24,5), con 0,004 no.
+const OFFER_P: f32 = 0.004;
+/// Tratti disturbati: quanto del segnale deve restare (dopo il noise blanker e l'AGC del rumore) perche' un elemento serva a imparare
+/// e perche' l'ultimo tratto (s) conti come pulito; nei tratti disturbati le ipotesi tenute si moltiplicano.
+const CLEAN_SHARE: f64 = 0.9;
+const DISTURBED_S: f64 = 0.5;
+const DISTURBED_BEAM: usize = 2;
 
 /// Le classi di durata: punto, linea, pausa fra gli elementi, fra i caratteri, fra le parole.
 const DOT: usize = 0;
@@ -88,11 +100,15 @@ pub struct Observation {
     pub noise: f64,
     pub gain: f64,
     pub var: f64,
+    /// Il guadagno sul segnale nell'altra ipotesi: l'AGC del rumore ([`crate::cw_agc`]) ha abbassato il livello perche' il rumore era
+    /// salito da solo (uno scroscio) e il segnale, che non era salito, adesso e' piu' basso. Uguale a `gain` se l'AGC non ha toccato
+    /// niente.
+    pub alt_gain: f64,
 }
 
 impl Default for Observation {
     fn default() -> Self {
-        Observation { noise: 0.0, gain: 1.0, var: 1.0 }
+        Observation { noise: 0.0, gain: 1.0, var: 1.0, alt_gain: 1.0 }
     }
 }
 
@@ -106,6 +122,8 @@ struct Cum {
     /// Somma dei guadagni (segnale atteso) e della varianza del rumore di ogni campione.
     gain: f64,
     nvar: f64,
+    /// Somma dei guadagni nell'altra ipotesi (il segnale abbassato dall'AGC del rumore).
+    alt: f64,
 }
 
 /// Un pezzo di testo deciso o ancora in sospeso: un nodo terminale dell'albero del Morse, o lo spazio.
@@ -396,6 +414,9 @@ pub struct CwBayes {
     ext_slow: f64,
     /// Misure del rumore arrivate: finche' sono poche la media lenta e' la media di tutte (si aggancia subito, poi si muove piano).
     ext_n: u32,
+    /// La velocità (indice) misurata dal ricevitore a soglia all'avvio o dopo un silenzio lungo: un'ipotesi in più fra un carattere e
+    /// l'altro (vedi [`CwBayes::offer_speed`]).
+    offer: Option<u8>,
 }
 
 impl CwBayes {
@@ -459,6 +480,7 @@ impl CwBayes {
             unit_avg: 0.0,
             ext_slow: 0.0,
             ext_n: 0,
+            offer: None,
         };
         d.reset_beam();
         d
@@ -478,6 +500,14 @@ impl CwBayes {
     pub fn set_wpm_hint(&mut self, wpm: f32) {
         self.hint_wpm = f64::from(wpm);
         self.reset_beam();
+    }
+
+    /// Una velocità candidata (WPM) misurata da fuori, o `None` per toglierla: fra un carattere e l'altro ogni ipotesi puo' saltare a
+    /// lei, con probabilità [`OFFER_P`]. Non e' un vincolo: se il segnale non le da' ragione l'ipotesi si perde da sola. Serve all'avvio
+    /// e dopo un silenzio lungo, quando la stazione nuova puo' andare a tutt'altra velocità e i passi del traliccio (al massimo otto
+    /// velocità per volta, fra le parole) ci metterebbero qualche parola.
+    pub fn offer_speed(&mut self, wpm: Option<f64>) {
+        self.offer = wpm.map(|wpm| ((wpm.clamp(WPM_LO, WPM_HI) / WPM_LO).ln() / (WPM_HI / WPM_LO).ln() * (N_SPEEDS - 1) as f64).round() as u8);
     }
 
     /// Lo scarto del tono dal centro del filtro (Hz), dalla stima dello spettro.
@@ -562,6 +592,7 @@ impl CwBayes {
         self.acc.p += p;
         self.acc.open = self.acc.open.wrapping_add(u32::from(gate));
         self.acc.gain += gain;
+        self.acc.alt += obs.alt_gain.clamp(0.0, 1.0);
         // il rumore di questo campione: quello misurato adesso (rispetto alla sua media lenta, sulla scala della stima del percorso
         // migliore), o la stima del percorso migliore
         let noise = if obs.noise > 0.0 {
@@ -605,7 +636,7 @@ impl CwBayes {
     fn cum(&self, a: u32, b: u32) -> Cum {
         let ra = self.ring[a as usize & self.mask];
         let rb = self.ring[b as usize & self.mask];
-        Cum { re: rb.re - ra.re, im: rb.im - ra.im, p: rb.p - ra.p, open: rb.open.wrapping_sub(ra.open), gain: rb.gain - ra.gain, nvar: rb.nvar - ra.nvar }
+        Cum { re: rb.re - ra.re, im: rb.im - ra.im, p: rb.p - ra.p, open: rb.open.wrapping_sub(ra.open), gain: rb.gain - ra.gain, nvar: rb.nvar - ra.nvar, alt: rb.alt - ra.alt }
     }
 
     /// Il rumore medio (potenza per campione) fra `a` e `b`.
@@ -661,6 +692,11 @@ impl CwBayes {
 
     /// Il rapporto di verosimiglianza (logaritmo) di un tono fra `a` e `b` contro il solo rumore: somme coerenti a pezzi di al massimo
     /// `piece` campioni, miscela sulle ampiezze.
+    ///
+    /// Dove l'AGC del rumore ([`crate::cw_agc`]) ha abbassato il livello per uno scroscio le ipotesi sono due, con lo stesso peso: il
+    /// segnale era salito con il rumore (dopo il guadagno e' quello di sempre) o no (dopo il guadagno e' piu' basso, e con lui il
+    /// pavimento del rumore che si crede). Un tono attraversato da uno scroscio si giudica cosi' con i pezzi fuori dallo scroscio, e
+    /// quelli dentro pesano per quanto segnale ci si puo' ancora vedere.
     fn mark_llr(&self, a: u32, b: u32, piece: u32) -> f32 {
         let n = b.wrapping_sub(a);
         if n == 0 || self.noise <= 0.0 {
@@ -670,8 +706,9 @@ impl CwBayes {
         // il rumore non si considera mai sotto 1/MAX_SNR del livello forte che si vede (il quantile alto, che sale subito). Farlo scendere
         // con il rumore misurato (l'AGC della radio abbassa insieme segnale e rumore) rompe i segnali puliti fra silenzi digitali.
         let floor = MAX_SNR.recip() * 10f64.powf(self.q_hi / 10.0);
-        let mut pieces = [(0.0_f64, 0.0_f64, 0.0_f64, 0.0_f64); 16];
-        let (mut coherent, mut gain_all) = (0.0, 0.0);
+        // per ogni pezzo: campioni, modulo della somma, guadagno nelle due ipotesi, rumore
+        let mut pieces = [(0.0_f64, 0.0_f64, [0.0_f64; 2], [0.0_f64; 2]); 16];
+        let (mut coherent, mut gain_all) = (0.0, [0.0_f64; 2]);
         for (j, p) in pieces.iter_mut().enumerate().take(k as usize) {
             let j = j as u32;
             let pa = a.wrapping_add(j * n / k);
@@ -681,27 +718,42 @@ impl CwBayes {
             let mag = (c.re * c.re + c.im * c.im).sqrt();
             // il rumore medio del pezzo, nella stessa misura di `noise` (la varianza tolta dal blanker sta nella somma)
             let local = if len > 0 { c.nvar / len as f64 } else { 0.0 };
-            let noise = local.max(floor);
-            *p = (len as f64, mag, c.gain, noise);
+            // nell'altra ipotesi il livello forte e' sceso con il guadagno dell'AGC del rumore, e il pavimento con lui: un segnale forte
+            // dentro uno scroscio si legge ancora
+            let cut = if c.gain > 0.0 { (c.alt / c.gain).min(1.0) } else { 1.0 };
+            let noise = [local.max(floor), local.max(floor * cut * cut)];
+            *p = (len as f64, mag, [c.gain, c.alt], noise);
             coherent += mag;
-            gain_all += c.gain;
+            gain_all[0] += c.gain;
+            gain_all[1] += c.alt;
         }
-        // l'ampiezza: quattro valori attorno alla stima e quella che spiega meglio questo tono (un segnale che sale o un QSB)
-        let ml = if gain_all > 0.0 { (coherent / gain_all).powi(2) } else { 0.0 };
-        let mut acc = [0.0_f64; AMP_FACTORS.len() + 1];
-        for &(len, mag, gain, noise) in pieces.iter().take(k as usize) {
-            if len == 0.0 || gain <= 0.0 || noise <= 0.0 {
-                continue;
+        // l'altra ipotesi si guarda solo se l'AGC del rumore ha toccato questi campioni
+        let models = if gain_all[1] < 0.98 * gain_all[0] { 2 } else { 1 };
+        let mut total = [f64::MIN; 2];
+        for (m, tot) in total.iter_mut().enumerate().take(models) {
+            // l'ampiezza: quattro valori attorno alla stima e quella che spiega meglio questo tono (un segnale che sale o un QSB)
+            let ml = if gain_all[m] > 0.0 { (coherent / gain_all[m]).powi(2) } else { 0.0 };
+            let mut acc = [0.0_f64; AMP_FACTORS.len() + 1];
+            for &(len, mag, gain, noise) in pieces.iter().take(k as usize) {
+                if len == 0.0 || gain[m] <= 0.0 || noise[m] <= 0.0 {
+                    continue;
+                }
+                let var = noise[m] * self.var_of(len as usize);
+                for (i, a2) in AMP_FACTORS.iter().map(|f| self.signal * f).chain(std::iter::once(ml)).enumerate() {
+                    let mu = gain[m] * a2.sqrt();
+                    acc[i] += ln_i0(2.0 * mu * mag / var) - mu * mu / var;
+                }
             }
-            let var = noise * self.var_of(len as usize);
-            for (i, a2) in AMP_FACTORS.iter().map(|f| self.signal * f).chain(std::iter::once(ml)).enumerate() {
-                let mu = gain * a2.sqrt();
-                acc[i] += ln_i0(2.0 * mu * mag / var) - mu * mu / var;
-            }
+            let best = acc.iter().copied().fold(f64::MIN, f64::max);
+            let mix: f64 = acc.iter().zip(AMP_WEIGHTS.iter().map(|w| w * (1.0 - ML_WEIGHT)).chain(std::iter::once(ML_WEIGHT))).map(|(l, w)| w * (l - best).exp()).sum();
+            *tot = best + mix.ln();
         }
-        let best = acc.iter().copied().fold(f64::MIN, f64::max);
-        let mix: f64 = acc.iter().zip(AMP_WEIGHTS.iter().map(|w| w * (1.0 - ML_WEIGHT)).chain(std::iter::once(ML_WEIGHT))).map(|(l, w)| w * (l - best).exp()).sum();
-        (best + mix.ln()) as f32
+        if models == 1 {
+            return total[0] as f32;
+        }
+        // le due ipotesi valgono uguale a priori
+        let best = total[0].max(total[1]);
+        (best + (0.5 * (total[0] - best).exp() + 0.5 * (total[1] - best).exp()).ln()) as f32
     }
 
     /// log della densità (per passo del traliccio) di una durata `d` (campioni) nella classe `c` alla velocità `s`.
@@ -873,6 +925,11 @@ impl CwBayes {
                         let p_stay = 1.0 - 2.0 * moves.iter().map(|m| m.1).sum::<f32>();
                         let stay = base + p_stay.ln();
                         self.add(Hyp { score: stay, base: stay, ..next });
+                        // la velocità misurata dal ricevitore a soglia (solo all'avvio e dopo un silenzio lungo): un'ipotesi in piu'
+                        if let Some(o) = self.offer.filter(|o| *o != h.speed) {
+                            let b2 = base + OFFER_P.ln();
+                            self.add(Hyp { score: b2, base: b2, speed: o, ..next });
+                        }
                         for &(step, p) in moves {
                             for ds in [-step, step] {
                                 let ns = i32::from(h.speed) + ds;
@@ -898,9 +955,14 @@ impl CwBayes {
         }
         let extras: Vec<Hyp> = per_speed.iter().filter(|&&i| i != usize::MAX).map(|&i| self.cand[i]).filter(|h| h.score > best - 200.0).collect();
         self.cand.retain(|h| h.score > best - BEAM_DROP);
-        if self.cand.len() > self.beam_size {
-            self.cand.select_nth_unstable_by(self.beam_size - 1, |a, b| b.score.total_cmp(&a.score));
-            self.cand.truncate(self.beam_size);
+        // nei tratti disturbati (nell'ultimo mezzo secondo il noise blanker o l'AGC del rumore hanno tolto piu' di un decimo del
+        // segnale) si tengono il doppio delle ipotesi: la lettura giusta resta indietro finche' lo scroscio non passa
+        let recent = self.cum(t.wrapping_sub((DISTURBED_S * self.fs) as u32), t);
+        let disturbed = recent.alt.min(recent.gain) < CLEAN_SHARE * DISTURBED_S * self.fs;
+        let beam_size = if disturbed { DISTURBED_BEAM * self.beam_size } else { self.beam_size };
+        if self.cand.len() > beam_size {
+            self.cand.select_nth_unstable_by(beam_size - 1, |a, b| b.score.total_cmp(&a.score));
+            self.cand.truncate(beam_size);
         }
         let floor = self.cand.iter().map(|h| h.score).fold(f32::MAX, f32::min);
         self.cand.extend(extras.into_iter().filter(|h| h.score < floor));
@@ -939,6 +1001,15 @@ impl CwBayes {
         if best.mark && best.marks == 0 {
             return;
         }
+        // un elemento attraversato da un buco del noise blanker o da uno scroscio non insegna niente: ne' ampiezza, ne' rumore, ne'
+        // pugno, ne' velocità (le stime restano quelle di prima e riprendono dal primo elemento pulito)
+        let c = self.cum(a, t);
+        if c.alt.min(c.gain) < CLEAN_SHARE * f64::from(n) {
+            if !best.mark {
+                self.last_mark = (0, DOT);
+            }
+            return;
+        }
         if best.mark {
             // e' appena finita una pausa: rumore dalla sua parte centrale (il filtro sbava i toni per qualche ms) e pugno
             let edge = (0.012 * self.fs) as u32;
@@ -971,7 +1042,6 @@ impl CwBayes {
             self.last_mark = (0, DOT);
         } else {
             // e' appena finito un tono: ampiezza e pugno
-            let c = self.cum(a, t);
             let est = if c.gain > 0.5 * f64::from(n) {
                 ((c.re * c.re + c.im * c.im) - self.noise_between(a, t) * self.var_of(n as usize)) / (c.gain * c.gain)
             } else {
