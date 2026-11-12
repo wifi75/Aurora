@@ -424,8 +424,7 @@ mod platform {
                 MiniDumpWithUnloadedModules, MiniDumpWriteDump, RtlCaptureStackBackTrace,
                 SetUnhandledExceptionFilter,
             },
-            ErrorReporting::WerRegisterAppLocalDump,
-            LibraryLoader::GetModuleHandleW,
+            LibraryLoader::{GetModuleHandleW, GetProcAddress},
             SystemInformation::GetLocalTime,
             Threading::{GetCurrentProcess, GetCurrentProcessId, GetCurrentThreadId},
         },
@@ -596,8 +595,25 @@ mod platform {
     /// installato normalmente Windows risponde con un errore, che si annota nel log. Non richiede diritti di amministratore.
     pub fn register_wer() {
         let relative: Vec<u16> = "crash".encode_utf16().chain(std::iter::once(0)).collect();
-        // SAFETY: stringa UTF-16 terminata da zero, viva durante la chiamata.
-        let hr = unsafe { WerRegisterAppLocalDump(relative.as_ptr()) };
+        // `WerRegisterAppLocalDump` esiste solo da Windows 10 versione 2004: importata in modo fisso, sui Windows 10 piu' vecchi Aurora non
+        // partiva nemmeno («Impossibile trovare il punto di ingresso WerRegisterAppLocalDump», segnalato il 2026-11-12). Si cerca quando
+        // serve: se non c'e' si va avanti senza.
+        let kernel: Vec<u16> = "kernel32.dll".encode_utf16().chain(std::iter::once(0)).collect();
+        // SAFETY: nomi terminati da zero e vivi durante le chiamate; kernel32 e' sempre caricata nel processo.
+        let found = unsafe {
+            let module = GetModuleHandleW(kernel.as_ptr());
+            if module.is_null() { None } else { GetProcAddress(module, c"WerRegisterAppLocalDump".as_ptr().cast()) }
+        };
+        let Some(found) = found else {
+            tracing::debug!("dump locale di Windows Error Reporting non disponibile su questa versione di Windows: resta il guardiano interno");
+            return;
+        };
+        // SAFETY: la funzione trovata ha questa firma (`HRESULT WerRegisterAppLocalDump(PCWSTR)`); la stringa UTF-16 e' terminata da zero
+        // e viva durante la chiamata.
+        let hr = unsafe {
+            let register: unsafe extern "system" fn(*const u16) -> i32 = std::mem::transmute(found);
+            register(relative.as_ptr())
+        };
         if hr == 0 {
             tracing::info!("Windows Error Reporting terra' un dump locale dei crash");
         } else {
