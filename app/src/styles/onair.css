@@ -7655,3 +7655,20 @@ html[data-theme='light'] .dock-panel--cq .decode-list .badge.badge--fox {
   color: #8a3a00 !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #c25400 55%, transparent);
 }
+
+/* I menu a tendina del modo e della frequenza: fondo pieno, senza il vetro traslucido. Con il fondo trasparente, passando con il mouse
+   sulle voci, a tratti si vedeva la scheda di sotto (il vetro si ridisegna a ogni cambio di colore della voce). */
+.mode-switch-menu.glass, .freq-picker-menu.glass {
+  z-index: 1200;
+  background: #101a2e;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid var(--border, #25365d);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  isolation: isolate;
+}
+html[data-theme='light'] .mode-switch-menu.glass, html[data-theme='light'] .freq-picker-menu.glass {
+  background: #ffffff;
+  border-color: #c9ced6;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
