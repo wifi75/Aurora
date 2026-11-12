@@ -2,7 +2,6 @@
 //!
 //! Metodo «non-local means»: ogni punto diventa la media dei punti vicini pesata da quanto la loro zona (una finestra di `2n+1` punti di lato) somiglia
 //! alla sua. Il rumore e' stimato riga per riga, perche' in SSTV ogni riga e' un tratto di segnale a se' e arriva con il suo rumore.
-//! L'idea e' descritta in `docs/analisi-sstv.md`; il codice e' scritto da zero.
 
 use crate::RgbImage;
 
