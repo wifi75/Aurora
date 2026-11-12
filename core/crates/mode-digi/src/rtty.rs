@@ -988,6 +988,9 @@ pub struct RttyDemodulator {
     fine_acc: [(f64, f64); 2],
     fine_prev: [(f32, f32); 2],
     fine_n: u32,
+    /// Diversity (passo 16): le LLR del secondo ingresso da sommare (catena principale) o da consegnare (catena del secondo ingresso).
+    llr_in: std::collections::VecDeque<f32>,
+    llr_out: Option<Vec<f32>>,
     /// Passo 13: le ultime parole (con i valori morbidi dei bit) per combinare le ripetizioni, se accese.
     recent: Vec<Vec<Frame>>,
     repeats: bool,
@@ -1099,6 +1102,8 @@ impl RttyDemodulator {
             fine_acc: [(0.0, 0.0); 2],
             fine_prev: [(0.0, 0.0); 2],
             fine_n: 0,
+            llr_in: std::collections::VecDeque::new(),
+            llr_out: None,
             repeats: true,
             prior: None,
             charset: RttyCharset::Ita2,
@@ -1714,7 +1719,16 @@ impl RttyDemodulator {
                 (m, sp)
             };
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
-            let l = self.llr(v);
+            let mut l = self.llr(v);
+            // diversity (passo 16): la catena del secondo ingresso consegna le sue LLR, quella principale le somma alle sue
+            if let Some(collect) = &mut self.llr_out {
+                collect.push(l);
+                self.dec_n += 1;
+                continue;
+            }
+            if let Some(extra) = self.llr_in.pop_front() {
+                l += extra;
+            }
             self.dec_n += 1;
             if self.fine_limit > 0.0 {
                 self.fine_track(l, zm, zs);
@@ -1809,6 +1823,40 @@ impl RttyDemodulator {
         }
         self.last_char = c;
         out.push(RttyChar { ch: c, prob });
+    }
+}
+
+/// Diversity (passo 16 di `docs/progetto-rtty-oltre.md`): due ingressi (i due canali di una scheda stereo con due ricevitori o due
+/// antenne) decodificati insieme. Ogni ingresso ha la sua catena fino ai valori morbidi; campione per campione le due LLR si sommano
+/// (combinazione a rapporto massimo: ognuna e' gia' pesata dal rumore del suo ingresso) e la decodifica del carattere intero, il modello
+/// del testo e lo squelch lavorano sulla somma. Con fading indipendenti sui due ingressi un tono che svanisce su uno resta sull'altro.
+pub struct RttyDiversity {
+    main: RttyDemodulator,
+    second: RttyDemodulator,
+}
+
+impl RttyDiversity {
+    pub fn new(params: RttyParams) -> Self {
+        let mut main = RttyDemodulator::new_plain(params);
+        main.set_prior(Some(Box::new(HamPrior)));
+        let mut second = RttyDemodulator::new_plain(params);
+        second.llr_out = Some(Vec::new());
+        Self { main, second }
+    }
+
+    /// Il ricevitore principale, per le altre impostazioni (squelch, set di caratteri, UOS).
+    pub fn main(&mut self) -> &mut RttyDemodulator {
+        &mut self.main
+    }
+
+    /// Due blocchi di audio lunghi uguali (sinistro e destro); restituisce i caratteri nuovi.
+    pub fn process_chars(&mut self, first: &[f32], second: &[f32]) -> Vec<RttyChar> {
+        let n = first.len().min(second.len());
+        self.second.run(&second[..n], &mut Vec::new());
+        if let Some(out) = &mut self.second.llr_out {
+            self.main.llr_in.extend(out.drain(..));
+        }
+        self.main.process_chars(&first[..n])
     }
 }
 
@@ -2095,6 +2143,44 @@ mod tests {
         rx.set_fine_tuning(Some(25.0));
         rx.process(&audio);
         assert!((rx.frequency() - 1512.0).abs() < 3.0, "frequenza: {}", rx.frequency());
+    }
+
+    #[test]
+    fn la_diversity_regge_i_fading_indipendenti() {
+        // lo stesso segnale su due ingressi che svaniscono a turno (fading lento in controfase) con rumori indipendenti
+        let params = RttyParams::default();
+        let text = "CQ CQ DE IU3ABC IU3ABC 599 TU 73 ".repeat(6);
+        let clean = modulate(text.as_bytes(), params, 1.0);
+        let fade = |i: usize, phase: f32| 0.05 + 0.25 * (0.5 + 0.5 * (2.0 * std::f32::consts::PI * 0.4 * i as f32 / 12_000.0 + phase).sin());
+        let n = clean.len();
+        let mut left: Vec<f32> = clean.iter().enumerate().map(|(i, s)| s * fade(i, 0.0)).collect();
+        let mut right: Vec<f32> = clean.iter().enumerate().map(|(i, s)| s * fade(i, std::f32::consts::PI)).collect();
+        for (a, r) in left.iter_mut().zip(rumore(n, 1.2, 51)) {
+            *a += r;
+        }
+        for (a, r) in right.iter_mut().zip(rumore(n, 1.2, 52)) {
+            *a += r;
+        }
+        left.extend(vec![0.0; 12_000]);
+        right.extend(vec![0.0; 12_000]);
+        let errori = |got: &str| {
+            let (a, b): (Vec<char>, Vec<char>) = (text.chars().collect(), got.chars().filter(|c| *c != '\r' && *c != '\n').collect());
+            let mut prev: Vec<usize> = (0..=b.len()).collect();
+            for (i, ca) in a.iter().enumerate() {
+                let mut cur = vec![i + 1; b.len() + 1];
+                for (j, cb) in b.iter().enumerate() {
+                    cur[j + 1] = (prev[j] + usize::from(ca != cb)).min(prev[j + 1] + 1).min(cur[j] + 1);
+                }
+                prev = cur;
+            }
+            prev[b.len()]
+        };
+        let mut solo = RttyDemodulator::new(params);
+        let uno: String = left.chunks(1024).flat_map(|b| solo.process_chars(b)).map(|c| c.ch).collect();
+        let mut div = RttyDiversity::new(params);
+        let due: String = left.chunks(1024).zip(right.chunks(1024)).flat_map(|(a, b)| div.process_chars(a, b)).map(|c| c.ch).collect();
+        let (e1, e2) = (errori(&uno), errori(&due));
+        assert!(e2 * 2 < e1, "errori con un ingresso {e1}, con due {e2}");
     }
 
     #[test]

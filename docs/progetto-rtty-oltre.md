@@ -255,3 +255,13 @@ non nasce a meno di mezzo spostamento da uno aperto; un canale senza caratteri s
 stazioni insieme a 805, 1500 e 2210 Hz con rumore si decodificano tutte (e non si aprono canali sui lobi laterali); una portante nel
 rumore non apre canali. Prima versione: i lobi a ±65 Hz dei toni forti aprivano canali falsi, tolti chiedendo i picchi. Il motore e'
 pronto; l'interfaccia (una riga per canale nella finestra di ricezione) non e' ancora fatta.
+
+**Passo 16** (diversity): `RttyDiversity` decodifica due ingressi (i due canali di una scheda stereo con due ricevitori o due antenne):
+ogni ingresso ha la sua catena fino ai valori morbidi e campione per campione le due LLR si sommano (combinazione a rapporto massimo:
+ognuna e' gia' divisa per il rumore del suo ingresso), poi decodifica del carattere intero, modello del testo, ripetizioni e squelch
+lavorano sulla somma. Prova: lo stesso testo su due ingressi che svaniscono a turno (fading lento in controfase, 0,4 Hz, fra −15 dB e 0
+dB) con rumori indipendenti: 81 errori su 198 caratteri con un ingresso, 0 con due. La tabella non cambia (un ingresso). Il motore e'
+pronto; il servizio riceve ancora un ingresso solo (l'audio stereo e la scelta del secondo canale nelle Impostazioni sono da fare).
+
+Fine dei passi 8-16, con le impostazioni di base: sul minuto di solo rumore 185 caratteri a squelch spento, 0 con lo squelch statistico;
+439 volte il tempo reale.
