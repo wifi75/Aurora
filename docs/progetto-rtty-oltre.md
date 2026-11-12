@@ -67,3 +67,56 @@ Fonti: [W0YK CTU 2019](https://www.contestuniversity.com/wp-content/uploads/2019
 [2Tone Operational Information](https://www.sp2pby.pl/pdf/2Tone%202102a.pdf), [manuale 2Tone](http://ok2pad.webz.cz/logger32/g3yyd_2tone.pdf),
 [W8TN su Repeat Match](https://w8tn.blogspot.com/2016/11/new-feature-of-2tone-rtty-decoder.html), [](https:///),
 [ demo](https:////Demo), [decodificatore Server](https://www.//Files/.pdf).
+
+## Risultati dei passi
+
+Misure con `tests/rtty_tabella.rs` (`--features fldigi-oracle,mmtty-oracle`, 480 caratteri per cella, griglia da −15 a +6 dB a passi di 1
+dB, AFC spento in tutti, squelch spento): soglia S/N (dB in 3 kHz) a cui il CER scende sotto il 10 % e CER medio sulla griglia (%). Per
+MMTTY il migliore dei sette profili in quello scenario. «--» = non scende mai sotto il 10 %.
+
+**Passo 1** (scenari e misure): `tests/common/rtty_scenari.rs` con 25 scenari (rumore a 85/170/425/850 Hz e 45,45/50/75 baud, errore di
+sintonia, space attenuato, CCIR buono/medio/cattivo, flutter 10 Hz, alte latitudini 30 Hz/7 ms, QRM RTTY a 250 Hz +6 dB e a 120 Hz −6 dB,
+portante 30 Hz sopra il mark, PSK31 a 150 Hz, scheda a ±500 ppm, trasmettitore a 45 baud, stop di 1 e 2 bit, scariche, filtro della radio a
+250 Hz, audio tagliato, AGC che pompa), soglia al 5 e al 10 % interpolata, CER medio, caratteri inventati su un minuto di rumore.
+
+**Passo 2** (MMTTY arbitro): `oracle/mmtty_rtty_rx.cpp` e `oracle/mmtty/mmtty_dsp.inc` (generato da `oracle/mmtty/estrai.py` dai sorgenti
+1.70L), sette profili di `UserPara.ini` (Standard, Fluttered, Fluttered FIR, Multi-path, AA6YQ FIR512, FFT, 23 Hz PLL). Tutti decodificano
+il nostro segnale pulito (`tests/rtty_mmtty.rs`). Da fare sul PC del proprietario: confronto di fedelta' con `mmtty.exe` sugli stessi file.
+
+**Passo 3** (tabella di partenza, ricevitore del 12 novembre):
+
+| scenario | Aurora | fldigi | miglior MMTTY |
+|---|---|---|---|
+| rumore 170/45 | −8,2 / 20,6 | −8,1 / 21,7 | AA6YQ512 −7,9 / 20,8 |
+| rumore 170/75 | −5,5 / 30,5 | −5,2 / 32,0 | Fluttered −5,1 / 33,9 |
+| rumore 425/50 | −7,7 / 22,8 | −7,6 / 24,0 | AA6YQ512 −7,4 / 23,0 |
+| rumore 850/45 | −8,0 / 20,7 | −7,7 / 21,6 | AA6YQ512 −7,3 / 22,5 |
+| rumore 85/45 | −7,7 / 20,0 | −7,9 / 20,9 | Fluttered −7,5 / 24,3 |
+| fuori +10 Hz | −7,4 / 22,6 | −7,4 / 22,8 | Fluttered −7,0 / 26,4 |
+| space −12 dB | −5,4 / 29,8 | 2,5 / 49,9 | Flutt.FIR 5,1 / 71,6 |
+| CCIR buono | −0,8 / 30,3 | −0,5 / 31,9 | AA6YQ512 3,2 / 32,4 |
+| CCIR medio | 3,1 / 35,3 | 1,1 / 35,2 | Flutt.FIR 5,2 / 42,1 |
+| CCIR cattivo | -- / 41,6 | 1,8 / 36,7 | Flutt.FIR 5,9 / 47,0 |
+| flutter 10 Hz | -- / 67,1 | -- / 50,5 | Fluttered 4,0 / 48,2 |
+| alte latitudini | -- / 73,9 | -- / 63,9 | Flutt.FIR 3,8 / 50,9 |
+| QRM a 250 Hz +6 | −8,2 / 21,7 | −7,7 / 22,7 | AA6YQ512 −8,0 / 21,2 |
+| QRM a 120 Hz −6 | −8,2 / 21,1 | −6,8 / 23,0 | FFT −8,0 / 22,5 |
+| portante +30 Hz | 4,0 / 39,5 | -- / 50,7 | AA6YQ512 −6,2 / 22,4 |
+| PSK31 a 150 Hz | −8,0 / 20,7 | −8,0 / 21,6 | AA6YQ512 −7,8 / 20,4 |
+| scheda +500 ppm | −7,5 / 22,1 | −7,5 / 22,9 | AA6YQ512 −7,7 / 21,8 |
+| scheda −500 ppm | −7,4 / 22,3 | −7,2 / 22,7 | AA6YQ512 −8,0 / 22,1 |
+| 45 baud | −6,8 / 25,9 | −6,0 / 27,5 | Flutt.FIR −6,5 / 27,8 |
+| stop 1 bit | −7,6 / 22,1 | −7,4 / 22,1 | AA6YQ512 −7,7 / 21,1 |
+| stop 2 bit | −8,4 / 19,8 | −8,0 / 20,9 | AA6YQ512 −8,3 / 19,9 |
+| scariche | −7,3 / 22,0 | −7,7 / 22,6 | AA6YQ512 −8,0 / 21,0 |
+| filtro 250 Hz | −8,3 / 20,7 | −8,1 / 21,6 | FFT −8,1 / 21,1 |
+| audio tagliato | −6,5 / 26,1 | −6,2 / 27,3 | AA6YQ512 −6,5 / 25,2 |
+| AGC che pompa | -- / 50,6 | −6,9 / 23,5 | AA6YQ512 −7,8 / 20,7 |
+
+Caratteri inventati su un minuto di solo rumore, squelch spento: Aurora 113, fldigi 123, MMTTY 132-147. Con lo squelch: Aurora (S/N 6 dB)
+0, MMTTY Standard/Fluttered/Multi-path 0, AA6YQ512 13, Flutt.FIR 101, FFT 154, PLL 122 (la soglia 600 di MMTTY non e' tarata per quei
+demodulatori).
+
+Il ricevitore di partenza e' gia' il migliore sul rumore bianco, ma perde con il fading (CCIR medio e cattivo, flutter, alte latitudini:
+il limitatore di MMTTY e l'ATC veloce di fldigi reggono meglio), con la portante dentro la banda, con l'AGC che pompa e, di poco, con le
+scariche e con la scheda a −500 ppm: sono questi i bersagli dei passi successivi.
