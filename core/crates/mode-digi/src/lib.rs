@@ -5,6 +5,7 @@
 //!
 //! - [`varicode`]: la tabella dei caratteri di PSK31;
 //! - [`psk`]: PSK31 e PSK63 (modulatore e ricevitore);
+//! - [`psk_viterbi`]: la varicode letta con le probabilità dei bit, con lo squelch sulla probabilità dei caratteri;
 //! - [`rtty`]: RTTY a 5 bit (modulatore e ricevitore, che segue quello di fldigi con alcune idee nostre);
 //! - [`cw`]: CW, alfabeto Morse (modulatore a tono e ricevitore);
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
@@ -21,6 +22,7 @@ pub mod macro_files;
 #[cfg(feature = "mmtty-oracle")]
 pub mod mmtty_oracle;
 pub mod psk;
+pub mod psk_viterbi;
 pub mod rtty;
 pub mod service;
 pub mod varicode;

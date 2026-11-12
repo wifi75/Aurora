@@ -52,6 +52,10 @@ fn ricevitore(mode: PskMode) -> PskDemodulator {
     let mut rx = PskDemodulator::new(mode, FREQ);
     rx.set_afc(true);
     rx.set_squelch(std::env::var("PSK_SQUELCH").ok().and_then(|v| v.parse().ok()));
+    // con `PSK_HARD=1` la varicode si legge bit per bit come fldigi (per confrontare)
+    if std::env::var_os("PSK_HARD").is_some() {
+        rx.set_soft_decoding(false);
+    }
     rx
 }
 

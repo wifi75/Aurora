@@ -18,6 +18,7 @@
 //! Per le decisioni «soft» future (varicode con più ipotesi, più ricevitori in parallelo) ogni simbolo lascia anche la sua affidabilità
 //! ([`PskDemodulator::soft_bits`]), non solo il bit deciso.
 
+use crate::psk_viterbi::PskViterbi;
 use crate::varicode;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
@@ -258,6 +259,15 @@ pub struct PskDemodulator {
     zeros: u32,
     idle: [f32; 4],
     idle_blocks: u32,
+    /// La varicode letta con le probabilità (vedi `psk_viterbi`); `None` = bit per bit come fldigi.
+    viterbi: Option<Box<PskViterbi>>,
+    /// Momenti del prodotto con il simbolo prima (secondo e quarto), per la scala dei rapporti di verosimiglianza.
+    m2: f32,
+    m4: f32,
+    moments_n: u32,
+    /// Potenza media degli ultimi simboli.
+    p_local: f32,
+    confidences: Vec<u8>,
 }
 
 impl PskDemodulator {
@@ -308,7 +318,32 @@ impl PskDemodulator {
             zeros: 0,
             idle: [0.0; 4],
             idle_blocks: 0,
+            viterbi: Some(Box::new(PskViterbi::new())),
+            m2: 0.0,
+            m4: 0.0,
+            moments_n: 0,
+            p_local: 0.0,
+            confidences: Vec::new(),
         }
+    }
+
+    /// La varicode letta con le probabilità (di base) o bit per bit come fldigi.
+    pub fn set_soft_decoding(&mut self, on: bool) {
+        if on != self.viterbi.is_some() {
+            self.viterbi = on.then(|| Box::new(PskViterbi::new()));
+        }
+    }
+
+    /// Probabilità minima (0-255) di un carattere per stamparlo con la lettura probabilistica (0 = tutto).
+    pub fn set_min_confidence(&mut self, c: u8) {
+        if let Some(v) = self.viterbi.as_mut() {
+            v.set_min_confidence(c);
+        }
+    }
+
+    /// Le probabilità (0-255) dei caratteri restituiti dall'ultima chiamata di [`PskDemodulator::process`] (vuoto bit per bit).
+    pub fn confidences(&self) -> &[u8] {
+        &self.confidences
     }
 
     pub fn mode(&self) -> PskMode {
@@ -379,6 +414,7 @@ impl PskDemodulator {
     /// Elabora altro audio; restituisce i caratteri nuovi (Latin-1).
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
+        self.confidences.clear();
         let len1 = self.ring1.len();
         for &s in samples {
             let (sin, cos) = self.phase.sin_cos();
@@ -401,6 +437,9 @@ impl PskDemodulator {
                 zq += c * q;
             }
             self.decimated((zi, zq), &mut out);
+        }
+        if let Some(v) = self.viterbi.as_mut() {
+            self.confidences = v.take_confidences();
         }
         out
     }
@@ -455,6 +494,20 @@ impl PskDemodulator {
             self.soft.pop_front();
         }
         self.soft.push_back(soft);
+        // rapporto di verosimiglianza del bit: il prodotto con il simbolo prima vale ±mu piu' rumore; mu e la varianza dai momenti
+        // secondo e quarto (mu^4 = (3 m2^2 - m4) / 2), che non dipendono dal volume e non si gonfiano col rumore
+        // il prodotto si divide per la potenza degli ultimi quattro simboli (provate 1, 2, 4, 8, 24 e 64 nella prova `psk_confronto`, `studio`: 4 e' la migliore): con il fading l'ampiezza cambia e i momenti la scambierebbero per rumore
+        let p = (z.0 * z.0 + z.1 * z.1 + prev.0 * prev.0 + prev.1 * prev.1) / 2.0;
+        self.p_local += (p - self.p_local) / if self.p_local > 0.0 { 4.0 } else { 1.0 };
+        let dot = dot / self.p_local.max(1e-30);
+        let d2 = dot * dot;
+        self.moments_n = (self.moments_n + 1).min(64);
+        let a = 1.0 / self.moments_n as f32;
+        self.m2 += a * (d2 - self.m2);
+        self.m4 += a * (d2 * d2 - self.m4);
+        let mu2 = ((3.0 * self.m2 * self.m2 - self.m4) / 2.0).max(0.0).sqrt();
+        let var = (self.m2 - mu2).max(0.05 * self.m2).max(1e-30);
+        let llr = (2.0 * mu2.sqrt() * dot / var).clamp(-30.0, 30.0);
 
         // metrica di fldigi: media di e^(j 2 dphi), cosi' 0 e 180 gradi coincidono (fldigi confronta per sbaglio anche la parte immaginaria
         // con quella reale per scegliere fra salita e discesa: qui le due medie sono uguali e il problema non c'e')
@@ -482,6 +535,11 @@ impl PskDemodulator {
                 self.open = true;
                 // un segnale che comincia: i bit rimasti nel registro non sono suoi
                 self.shreg = 0;
+                if let Some(v) = self.viterbi.as_mut() {
+                    v.reset();
+                }
+                // la scala dei rapporti di verosimiglianza riparte dal segnale nuovo (i momenti del rumore di prima non gli servono)
+                self.moments_n = 0;
             }
             0 => {
                 self.dcd_off += 1;
@@ -494,6 +552,9 @@ impl PskDemodulator {
                     self.snr_db = None;
                     self.imd_db = None;
                     self.shreg = 0;
+                    if let Some(v) = self.viterbi.as_mut() {
+                        v.flush(out);
+                    }
                 }
             }
             _ => {
@@ -504,7 +565,10 @@ impl PskDemodulator {
         self.zeros = if one { 0 } else { self.zeros.saturating_add(1) };
 
         if self.dcd {
-            self.push_bit(one, out);
+            match self.viterbi.as_mut() {
+                Some(v) => v.push(llr, out),
+                None => self.push_bit(one, out),
+            }
             if self.afc && self.afcmetric >= 0.05 {
                 // errore di fase rimasto dopo aver tolto il bit (0 = inversione di 180 gradi), avvolto in ±90 gradi
                 let err = if one { dphi } else { (dphi + 2.0 * PI as f32).rem_euclid(2.0 * PI as f32) - PI as f32 };
