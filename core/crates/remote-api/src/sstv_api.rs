@@ -212,14 +212,17 @@ pub(crate) struct TxQuery {
     call: Option<String>,
 }
 
-/// Trasmette un'immagine (corpo: PNG o JPEG; `?mode=PD120&call=IU3ABC`). Se non e' alla risoluzione del modo la si adatta.
+/// Trasmette un'immagine (corpo: PNG o JPEG; `?mode=PD120&call=IU3ABC`). Se non e' alla risoluzione del modo la si adatta; con l'FSK ID
+/// acceso (impostazioni SSTV) dopo l'immagine va il nominativo della stazione in FSK, nel formato di MMSSTV.
 #[utoipa::path(post, path = "/api/v1/sstv/tx", responses((status = 200, description = "Trasmissione partita: stato `tx`"), (status = 400, description = "Immagine o modo non validi (bad_image, unknown_mode)"), (status = 403, description = "Trasmissione non consentita (tx_disabled)"), (status = 409, description = "Gia' in trasmissione o catena non pronta (busy, no_transmitter)"), (status = 502, description = "La catena di trasmissione ha rifiutato (tx_failed)")))]
 pub(crate) async fn sstv_tx(State(state): State<AppState>, _: Authed, headers: HeaderMap, Query(q): Query<TxQuery>, body: Bytes) -> Result<Json<Value>, ApiError> {
     let svc = service(&state)?;
     check_tx_allowed(&state, &headers)?;
     let mode = SstvMode::from_id(&q.mode).ok_or_else(|| api_error(SstvError::UnknownMode(q.mode.clone())))?;
     let call = q.call.filter(|c| c.len() <= 16 && c.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '/'));
-    let status = blocking(move || svc.transmit(mode, &body, call)).await?.map_err(api_error)?;
+    // il nominativo della stazione per l'FSK ID: lo stesso che va nei QSO a log
+    let station = state.log_station.as_ref().map(|s| s().call).filter(|c| !c.trim().is_empty());
+    let status = blocking(move || svc.transmit(mode, &body, call, station.as_deref())).await?.map_err(api_error)?;
     Ok(Json(json!({ "tx": status })))
 }
 

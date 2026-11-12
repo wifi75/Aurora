@@ -157,6 +157,18 @@ impl ImageStore {
         std::fs::read(self.dir.join(&entry.file)).map_err(|_| SstvError::NotFound)
     }
 
+    /// Mette il nominativo a un'immagine; con `overwrite` falso non tocca quello che c'e' gia'. Ritorna se e' cambiato.
+    pub fn set_call(&mut self, id: &str, call: &str, overwrite: bool) -> Result<bool, SstvError> {
+        let call = call.trim().to_uppercase();
+        let entry = self.entries.iter_mut().find(|e| e.id == id).ok_or(SstvError::NotFound)?;
+        if call.is_empty() || entry.call.as_deref() == Some(call.as_str()) || (!overwrite && entry.call.is_some()) {
+            return Ok(false);
+        }
+        entry.call = Some(call);
+        self.save_index()?;
+        Ok(true)
+    }
+
     pub fn delete(&mut self, id: &str) -> Result<(), SstvError> {
         let pos = self.entries.iter().position(|e| e.id == id).ok_or(SstvError::NotFound)?;
         let gone = self.entries.remove(pos);
@@ -187,6 +199,10 @@ mod tests {
         let again = ImageStore::open(&dir);
         assert_eq!(again.list().len(), 1);
         assert!(!again.png(&e.id).expect("png").is_empty());
+        // il nominativo dell'FSK ID non copre quello scritto a mano
+        assert!(!store.set_call(&e.id, "IU3XYZ", false).expect("nominativo"));
+        assert!(store.set_call(&e.id, "iu3xyz", true).expect("nominativo"));
+        assert_eq!(ImageStore::open(&dir).list()[0].call.as_deref(), Some("IU3XYZ"));
         store.delete(&e.id).expect("cancellata");
         assert!(ImageStore::open(&dir).list().is_empty());
         // le trasmesse oltre la ventesima si tolgono, le ricevute restano

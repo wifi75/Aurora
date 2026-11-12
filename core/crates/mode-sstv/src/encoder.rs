@@ -143,6 +143,12 @@ pub fn encode(mode: SstvMode, img: &RgbImage, rate: u32) -> Result<Vec<f32>, Sst
 
 /// Come [`encode`] con tutti i toni spostati di `shift_hz` (correzione della sintonia in trasmissione).
 pub fn encode_shifted(mode: SstvMode, img: &RgbImage, rate: u32, shift_hz: f32) -> Result<Vec<f32>, SstvError> {
+    encode_with_id(mode, img, rate, shift_hz, None)
+}
+
+/// Come [`encode_shifted`] e, con `fsk_id`, il nominativo in FSK dopo l'immagine (formato di MMSSTV, vedi [`crate::fskid`]).
+/// Un nominativo che non si puo' mandare in FSK si salta.
+pub fn encode_with_id(mode: SstvMode, img: &RgbImage, rate: u32, shift_hz: f32, fsk_id: Option<&str>) -> Result<Vec<f32>, SstvError> {
     let spec = mode.spec();
     if img.width != spec.width || img.height != spec.height || img.data.len() != (img.width * img.height * 3) as usize {
         return Err(SstvError::BadImage(format!("servono {}x{} pixel RGB", spec.width, spec.height)));
@@ -150,7 +156,7 @@ pub fn encode_shifted(mode: SstvMode, img: &RgbImage, rate: u32, shift_hz: f32) 
     if rate < 8000 {
         return Err(SstvError::BadRate(rate));
     }
-    let mut s = Synth::new(rate, spec.total_seconds(), f64::from(shift_hz.clamp(-300.0, 300.0)));
+    let mut s = Synth::new(rate, spec.total_seconds() + fsk_id.map_or(0.0, crate::fskid::seconds), f64::from(shift_hz.clamp(-300.0, 300.0)));
     header(&mut s, spec.vis);
     if spec.lead_sync() > 0.0 {
         s.tone(SYNC_HZ, spec.lead_sync());
@@ -186,5 +192,10 @@ pub fn encode_shifted(mode: SstvMode, img: &RgbImage, rate: u32, shift_hz: f32) 
     }
     // breve coda a 1500 Hz: chi riceve chiude bene l'ultima riga
     s.tone(1500.0, 0.05);
+    if let Some(tones) = fsk_id.and_then(crate::fskid::tones) {
+        for (hz, dur) in tones {
+            s.tone(hz, dur);
+        }
+    }
     Ok(s.out)
 }

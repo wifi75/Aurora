@@ -355,7 +355,8 @@ pub struct WsprSpot {
 }
 
 /// Un avvenimento dell'SSTV. `kind`: `rx_start` (modo, larghezza, altezza), `rx_rows` (righe nuove da `first_row`, `rows` righe, `rgb`
-/// in base64, 3 byte per pixel), `rx_done` (immagine salvata `image_id`), `rx_lost`, `rx_status` (livello, sincronismo, ascolto),
+/// in base64, 3 byte per pixel), `rx_done` (immagine salvata `image_id`), `rx_lost`, `rx_fskid` (nominativo `call` dall'FSK ID, messo
+/// all'immagine `image_id`), `rx_status` (livello, sincronismo, ascolto),
 /// `tx` (stato e avanzamento della trasmissione).
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct SstvEvent {
@@ -388,6 +389,9 @@ pub struct SstvEvent {
     pub listening: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    /// Il nominativo letto dall'FSK ID (`rx_fskid`, e `rx_done` se arrivato prima che l'immagine si chiudesse).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub call: Option<String>,
 }
 
 /// Un avvenimento dei modi testuali. `kind`: `rx_text` (caratteri nuovi in `text`), `rx_status` (ascolto, livello, modo, frequenza),

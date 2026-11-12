@@ -3,6 +3,11 @@
 //! Lo schema segue `sstvrx.cpp`, `syncprocessor.cpp` e `modes/*.cpp` di QSSTV (Johan Maes ON4QZ, GPL): posizione di ogni sincronismo
 //! misurata riga per riga, retta dei sincronismi (orologio vero di chi trasmette) usata per collocare i pixel, e alla fine l'immagine
 //! ridisegnata con la retta definitiva, cosi' l'inclinazione sparisce anche dalle prime righe.
+//!
+//! Il modo arriva dal VIS o, senza VIS, dal periodo delle righe ([`crate::syncdetect`], come il modo automatico di MMSSTV). Una volta
+//! agganciato, il modo resta fino alla fine dell'immagine: un VIS che arriva mentre le righe hanno ancora il sincronismo si ignora (come
+//! MMSSTV, che durante la ricezione non guarda il VIS), e ne apre una nuova solo se l'immagine in corso ha perso il sincronismo da
+//! almeno [`NEW_VIS_AFTER_S`] secondi. Dopo l'immagine si legge l'FSK ID ([`crate::fskid`]).
 
 use std::collections::VecDeque;
 
@@ -10,11 +15,13 @@ use crate::{
     RgbImage,
     color::{hz_to_value, to_u8, yuv_to_rgb},
     demod::{FmDemod, RATE, product_to_hz},
+    fskid::FskIdDetector,
     modes::{Chan, Family, ModeSpec, SegKind, SstvMode},
-    vis::VisDetector,
+    syncdetect::{SyncDetector, SyncHit},
+    vis::{VisDetector, VisHit},
 };
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DecoderConfig {
     /// Solo questo modo (gli altri VIS si ignorano).
     pub lock: Option<SstvMode>,
@@ -22,6 +29,14 @@ pub struct DecoderConfig {
     pub offset_hz: f32,
     /// Correzione manuale dell'orologio di chi trasmette, in parti per milione.
     pub slant_ppm: f32,
+    /// Senza VIS il modo si riconosce dal periodo delle righe.
+    pub auto_sync: bool,
+}
+
+impl Default for DecoderConfig {
+    fn default() -> Self {
+        DecoderConfig { lock: None, offset_hz: 0.0, slant_ppm: 0.0, auto_sync: true }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -39,12 +54,15 @@ pub struct DecodedImage {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DecoderEvent {
-    Started { mode: SstvMode, offset_hz: f32, forced: bool },
+    /// `forced`: avviata a mano; `by_sync`: riconosciuta dal periodo delle righe, senza VIS.
+    Started { mode: SstvMode, offset_hz: f32, forced: bool, by_sync: bool },
     /// Righe dell'immagine in corso aggiornate (vedi [`Decoder::current`]).
     Rows { first: u32, count: u32 },
     Finished(DecodedImage),
     /// Ricezione interrotta senza abbastanza righe da salvare.
     Lost,
+    /// Il nominativo in FSK dopo l'immagine (formato di MMSSTV).
+    FskId(String),
 }
 
 /// Valori di un gruppo (0-255 per canale).
@@ -79,8 +97,16 @@ struct Rx {
 
 /// Quanti gruppi di fila senza sincronismo chiudono la ricezione.
 const MAX_MISSED: u32 = 20;
+/// ...o quanti secondi di fila senza sincronismo (nei modi lenti 20 righe sono quasi 20 secondi: il segnale e' finito da un pezzo).
+const MAX_MISSED_S: f64 = 6.0;
 /// Parte minima dell'immagine per salvarla quando la ricezione si interrompe.
 const MIN_SAVE: f32 = 0.3;
+/// Un VIS nuovo chiude l'immagine in corso solo se questa e' senza sincronismo da tanto: una trasmissione nuova ha comunque davanti
+/// 1,7 s di toni di calibrazione, leader e VIS, mentre un falso VIS in mezzo a un disturbo arriva con il sincronismo appena perso.
+pub const NEW_VIS_AFTER_S: f64 = 3.0;
+/// Secondi di audio tenuti in memoria (prodotti del discriminatore): l'immagine riconosciuta senza VIS riparte dal primo sincronismo
+/// usato, e un VIS rimasto in attesa puo' ancora partire dal suo punto.
+const HISTORY_S: usize = 8;
 
 pub struct Decoder {
     cfg: DecoderConfig,
@@ -91,6 +117,10 @@ pub struct Decoder {
     rx: Option<Rx>,
     scratch: Vec<f32>,
     products: Vec<[f32; 2]>,
+    sync: SyncDetector,
+    fsk: FskIdDetector,
+    /// Un VIS arrivato durante un'immagine con il sincronismo: (VIS, sincronismi e gruppi dell'immagine in quel momento).
+    pending: Option<(VisHit, usize, u32)>,
 }
 
 /// Frequenza media fra le posizioni `t0` e `t1` (campioni frazionari: il campione n copre [n-0,5; n+0,5)): somma pesata dei
@@ -116,12 +146,26 @@ fn mean_between(buf: &[[f32; 2]], t0: f64, t1: f64) -> Option<f32> {
 
 impl Decoder {
     pub fn new(cfg: DecoderConfig) -> Decoder {
-        Decoder { cfg, demod: FmDemod::new(), vis: VisDetector::new(cfg.offset_hz), history: VecDeque::with_capacity(RATE as usize * 2), total: 0, rx: None, scratch: Vec::new(), products: Vec::new() }
+        Decoder {
+            cfg,
+            demod: FmDemod::new(),
+            vis: VisDetector::new(cfg.offset_hz),
+            history: VecDeque::with_capacity(RATE as usize * HISTORY_S),
+            total: 0,
+            rx: None,
+            scratch: Vec::new(),
+            products: Vec::new(),
+            sync: SyncDetector::new(cfg.offset_hz),
+            fsk: FskIdDetector::new(),
+            pending: None,
+        }
     }
 
     pub fn set_config(&mut self, cfg: DecoderConfig) {
         self.cfg = cfg;
         self.vis.set_manual_offset(cfg.offset_hz);
+        self.sync.set_manual_offset(cfg.offset_hz);
+        self.fsk.set_offset(cfg.offset_hz);
     }
 
     pub fn config(&self) -> DecoderConfig {
@@ -152,14 +196,18 @@ impl Decoder {
     /// Butta l'immagine in corso.
     pub fn cancel(&mut self) {
         self.rx = None;
+        self.pending = None;
         self.vis.reset();
+        self.sync.reset();
+        self.fsk.reset();
     }
 
     /// Parte subito nel modo dato, senza VIS (la fase della riga si cerca dal primo sincronismo).
     pub fn force_start(&mut self, mode: SstvMode) -> DecoderEvent {
         let offset = self.cfg.offset_hz;
         self.rx = Some(self.new_rx(mode, offset, true));
-        DecoderEvent::Started { mode, offset_hz: offset, forced: true }
+        self.pending = None;
+        DecoderEvent::Started { mode, offset_hz: offset, forced: true, by_sync: false }
     }
 
     fn new_rx(&self, mode: SstvMode, offset: f32, forced: bool) -> Rx {
@@ -191,43 +239,130 @@ impl Decoder {
         self.demod.process_full(samples, &mut freqs, Some(&mut prods));
         let first = self.total;
         self.total += freqs.len() as u64;
+        let keep = RATE as usize * HISTORY_S;
         for &p in &prods {
-            if self.history.len() == RATE as usize {
+            if self.history.len() == keep {
                 self.history.pop_front();
             }
             self.history.push_back(p);
         }
-        let hit = self.vis.push(&freqs, first);
+        let lock = self.cfg.lock;
+        let hit = self.vis.push(&freqs, first).filter(|h| lock.is_none_or(|m| m == h.mode));
+        // senza un'immagine in corso si cerca il modo anche dal periodo delle righe
+        let by_sync = if self.rx.is_none() && self.cfg.auto_sync { self.sync.push(&freqs, first, lock) } else { None };
+        let call = self.fsk.push(&freqs);
         if let Some(rx) = &mut self.rx {
             rx.buf.extend_from_slice(&prods);
         }
         self.scratch = freqs;
         self.products = prods;
 
-        if let Some(hit) = hit
-            && self.cfg.lock.is_none_or(|m| m == hit.mode)
-        {
-            // un VIS nuovo durante una ricezione vale solo se l'immagine di prima ha perso il sincronismo
-            let busy = self.rx.as_ref().is_some_and(|rx| rx.missed < 4 && rx.next_group > 0);
-            if !busy {
-                if let Some(ev) = self.finish(false) {
-                    events.push(ev);
+        if let Some(hit) = hit {
+            match &self.rx {
+                // il modo agganciato resta: il VIS aspetta di vedere se l'immagine in corso ha davvero smesso
+                Some(rx) if !rx.lost_for(NEW_VIS_AFTER_S) => {
+                    tracing::debug!("SSTV: VIS di {} durante la ricezione, in attesa", hit.mode.spec().name);
+                    self.pending = Some((hit, rx.syncs.len(), rx.next_group));
                 }
-                let spec = hit.mode.spec();
-                let start = hit.end_sample + (spec.lead_sync() * f64::from(RATE)).round() as u64;
-                let mut rx = self.new_rx(hit.mode, hit.offset_hz, false);
-                // i campioni dopo il VIS gia' demodulati vengono dalla memoria
-                let hist_start = self.total - self.history.len() as u64;
-                if start >= hist_start {
-                    rx.buf.extend(self.history.iter().skip((start - hist_start) as usize));
+                _ => {
+                    if let Some(ev) = self.finish(false) {
+                        events.push(ev);
+                    }
+                    self.start_from_vis(hit, &mut events);
                 }
-                tracing::info!("SSTV: VIS di {} (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
-                events.push(DecoderEvent::Started { mode: hit.mode, offset_hz: hit.offset_hz, forced: false });
-                self.rx = Some(rx);
             }
+        } else if let Some(found) = by_sync {
+            self.start_from_sync(found, &mut events);
         }
         self.advance(&mut events);
+        self.check_pending(&mut events);
+        // l'FSK ID vale dopo l'immagine (o con l'immagine ormai senza sincronismo), mai in mezzo alle righe
+        if let Some(call) = call
+            && self.rx.as_ref().is_none_or(|rx| rx.missed >= 4)
+        {
+            tracing::info!("SSTV: FSK ID {call}");
+            events.push(DecoderEvent::FskId(call));
+        }
         events
+    }
+
+    /// I prodotti in memoria a partire dal campione assoluto `start`, se ci sono ancora.
+    fn from_history(&self, start: u64) -> Option<Vec<[f32; 2]>> {
+        let hist_start = self.total - self.history.len() as u64;
+        (start >= hist_start && start <= self.total).then(|| self.history.iter().skip((start - hist_start) as usize).copied().collect())
+    }
+
+    fn start_from_vis(&mut self, hit: VisHit, events: &mut Vec<DecoderEvent>) {
+        let spec = hit.mode.spec();
+        let start = hit.end_sample + (spec.lead_sync() * f64::from(RATE)).round() as u64;
+        let mut rx = self.new_rx(hit.mode, hit.offset_hz, false);
+        // i campioni dopo il VIS gia' demodulati vengono dalla memoria
+        if let Some(past) = self.from_history(start) {
+            rx.buf.extend(past);
+        }
+        tracing::info!("SSTV: VIS di {} (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
+        events.push(DecoderEvent::Started { mode: hit.mode, offset_hz: hit.offset_hz, forced: false, by_sync: false });
+        self.begin(rx, hit.offset_hz);
+    }
+
+    fn start_from_sync(&mut self, hit: SyncHit, events: &mut Vec<DecoderEvent>) {
+        let spec = hit.mode.spec();
+        // si parte poco prima dell'inizio della riga del primo sincronismo ancora in memoria; la fase la ritrova la prima riga
+        let margin = (0.01 * f64::from(RATE)) as u64;
+        let back = (spec.sync_offset() * f64::from(RATE)).round() as u64 + margin;
+        let Some(past) = hit.syncs.iter().find_map(|&s| s.checked_sub(back).and_then(|start| self.from_history(start))) else { return };
+        let mut rx = self.new_rx(hit.mode, hit.offset_hz, true);
+        rx.buf.extend(past);
+        tracing::info!("SSTV: {} riconosciuto dal periodo delle righe, senza VIS (scarto {:+.0} Hz)", spec.name, hit.offset_hz);
+        events.push(DecoderEvent::Started { mode: hit.mode, offset_hz: hit.offset_hz, forced: false, by_sync: true });
+        self.begin(rx, hit.offset_hz);
+    }
+
+    fn begin(&mut self, rx: Rx, offset: f32) {
+        self.rx = Some(rx);
+        self.pending = None;
+        self.sync.reset();
+        self.fsk.reset();
+        self.fsk.set_offset(offset);
+    }
+
+    /// Il VIS rimasto in attesa. Se dopo il VIS l'immagine in corso ritrova il sincronismo (almeno tre righe, almeno meta' delle righe)
+    /// era falso. Se invece per [`NEW_VIS_AFTER_S`] secondi le righe hanno il sincronismo al piu' una volta su quattro (qualche colpo
+    /// a caso puo' venire dai sincronismi della trasmissione nuova), o l'immagine e' finita, la nuova parte dal punto del VIS, se e'
+    /// ancora in memoria.
+    fn check_pending(&mut self, events: &mut Vec<DecoderEvent>) {
+        let Some((hit, syncs_then, groups_then)) = self.pending else { return };
+        if self.from_history(hit.end_sample).is_none() {
+            self.pending = None;
+            return;
+        }
+        match &self.rx {
+            Some(rx) => {
+                let found = rx.syncs.len().saturating_sub(syncs_then) as u32;
+                let groups = rx.next_group.saturating_sub(groups_then);
+                let seconds = f64::from(groups) * rx.spec.group_seconds();
+                if found >= 3 && found * 2 >= groups {
+                    tracing::debug!("SSTV: VIS di {} ignorato, l'immagine in corso continua", hit.mode.spec().name);
+                    self.pending = None;
+                    return;
+                }
+                if seconds < NEW_VIS_AFTER_S || found * 4 > groups {
+                    return;
+                }
+                self.switch_to(hit, events);
+            }
+            None => self.switch_to(hit, events),
+        }
+    }
+
+    /// Chiude l'immagine in corso e apre quella del VIS in attesa.
+    fn switch_to(&mut self, hit: VisHit, events: &mut Vec<DecoderEvent>) {
+        self.pending = None;
+        if let Some(ev) = self.finish(false) {
+            events.push(ev);
+        }
+        self.start_from_vis(hit, events);
+        self.advance(events);
     }
 
     fn advance(&mut self, events: &mut Vec<DecoderEvent>) {
@@ -253,14 +388,14 @@ impl Decoder {
             first_row = Some(first_row.map_or(r0, |f: u32| f.min(r0)));
             last_row = last_row.max(r0 + n);
             rx.next_group += 1;
-            if rx.missed >= MAX_MISSED {
+            if rx.missed >= MAX_MISSED || rx.lost_for(MAX_MISSED_S) {
                 break;
             }
         }
         if let Some(first) = first_row {
             events.push(DecoderEvent::Rows { first, count: last_row - first });
         }
-        let lost = rx.missed >= MAX_MISSED;
+        let lost = rx.missed >= MAX_MISSED || rx.lost_for(MAX_MISSED_S);
         if (rx.next_group >= groups || lost)
             && let Some(ev) = self.finish(true) {
                 events.push(ev);
@@ -271,6 +406,7 @@ impl Decoder {
     pub fn finish(&mut self, _natural: bool) -> Option<DecoderEvent> {
         let mut rx = self.rx.take()?;
         self.vis.reset();
+        self.sync.reset();
         let groups = rx.spec.groups();
         let done = rx.next_group.min(groups);
         let part = done as f32 / groups as f32;
@@ -295,6 +431,13 @@ impl Decoder {
         let clock_ppm = ((rx.fit.1 / (rx.spec.group_seconds() * f64::from(RATE)) - 1.0) * 1e6) as f32;
         tracing::info!("SSTV: immagine {} ricevuta, {} righe, sincronismo {:.0} %, orologio {:+.0} ppm", rx.spec.name, rows, sync_quality * 100.0, clock_ppm);
         Some(DecoderEvent::Finished(DecodedImage { mode: rx.spec.mode, image, sync_quality, offset_hz: rx.offset, clock_ppm, complete: done >= groups }))
+    }
+}
+
+impl Rx {
+    /// L'immagine e' senza sincronismo da almeno `seconds` secondi.
+    fn lost_for(&self, seconds: f64) -> bool {
+        self.missed >= 4 && f64::from(self.missed) * self.spec.group_seconds() >= seconds
     }
 }
 

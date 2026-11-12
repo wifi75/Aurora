@@ -238,3 +238,182 @@ fn echo_is_tolerated() {
         assert!(done.complete && q > 14.0, "{}: PSNR {q:.1} dB con eco", mode.spec().name);
     }
 }
+
+/// Tutti gli avvenimenti del decodificatore su un audio, a blocchi come dalla scheda.
+fn events_of(audio: &[f32], cfg: DecoderConfig) -> Vec<DecoderEvent> {
+    let mut dec = Decoder::new(cfg);
+    audio.chunks(1024).flat_map(|c| dec.push(c)).collect()
+}
+
+fn add_noise(audio: &mut [f32], sigma: f32, seed: u64) {
+    let mut noise = Noise(seed);
+    for s in audio {
+        *s += sigma * noise.gauss();
+    }
+}
+
+fn starts_of(events: &[DecoderEvent]) -> Vec<SstvMode> {
+    events.iter().filter_map(|e| if let DecoderEvent::Started { mode, .. } = e { Some(*mode) } else { None }).collect()
+}
+
+fn last_image(events: &[DecoderEvent]) -> Option<mode_sstv::DecodedImage> {
+    events.iter().rev().find_map(|e| if let DecoderEvent::Finished(d) = e { Some(d.clone()) } else { None })
+}
+
+/// La PSNR migliore spostando le righe ricevute (l'immagine presa a meta' comincia da una riga che non si sa).
+fn best_shifted_psnr(img: &RgbImage, got: &RgbImage) -> f64 {
+    let row = (img.width * 3) as usize;
+    (0..40u32)
+        .filter(|&k| k < img.height)
+        .map(|k| psnr(&RgbImage { width: img.width, height: img.height - k, data: img.data[k as usize * row..].to_vec() }, got))
+        .fold(0.0, f64::max)
+}
+
+#[test]
+fn fsk_id_round_trips_after_the_image_with_noise() {
+    for (mode, sigma) in [(SstvMode::Robot36, 0.08), (SstvMode::Martin2, 0.3), (SstvMode::Scottie2, 0.2)] {
+        let spec = mode.spec();
+        let img = test_image(spec.width, spec.height);
+        let mut audio = vec![0.0f32; RATE as usize / 2];
+        audio.extend(mode_sstv::encoder::encode_with_id(mode, &img, RATE, 0.0, Some("iu3abc/p")).expect("codifica"));
+        audio.extend(vec![0.0f32; RATE as usize * 2]);
+        add_noise(&mut audio, sigma, 5);
+        let events = events_of(&audio, DecoderConfig::default());
+        let finished = events.iter().position(|e| matches!(e, DecoderEvent::Finished(_)));
+        let id = events.iter().position(|e| *e == DecoderEvent::FskId("IU3ABC/P".into()));
+        assert!(finished.is_some() && id.is_some(), "{}: immagine {finished:?}, FSK ID {id:?}", spec.name);
+        assert!(id > finished, "{}: l'FSK ID viene dopo l'immagine", spec.name);
+        assert_eq!(events.iter().filter(|e| matches!(e, DecoderEvent::FskId(_))).count(), 1);
+    }
+}
+
+#[test]
+fn fsk_id_is_read_with_a_mistuned_signal() {
+    let mode = SstvMode::Robot36;
+    let spec = mode.spec();
+    let img = test_image(spec.width, spec.height);
+    let mut audio = mode_sstv::encoder::encode_with_id(mode, &img, RATE, 70.0, Some("IU3ABC")).expect("codifica");
+    audio.extend(vec![0.0f32; RATE as usize]);
+    add_noise(&mut audio, 0.05, 9);
+    let events = events_of(&audio, DecoderConfig::default());
+    assert!(events.contains(&DecoderEvent::FskId("IU3ABC".into())), "{:?}", starts_of(&events));
+}
+
+#[test]
+fn noise_alone_gives_no_image_and_no_fsk_id() {
+    let mut audio = vec![0.0f32; RATE as usize * 90];
+    add_noise(&mut audio, 0.3, 21);
+    let events = events_of(&audio, DecoderConfig::default());
+    assert!(events.is_empty(), "{:?}", starts_of(&events));
+}
+
+#[test]
+fn every_mode_is_recognised_without_vis_from_the_line_period() {
+    let mut bad = Vec::new();
+    for spec in mode_sstv::MODES.iter() {
+        let img = test_image(spec.width, spec.height);
+        let audio = encode_shifted(spec.mode, &img, RATE, 0.0).expect("codifica");
+        // si accende l'ascolto a immagine cominciata: niente VIS, si entra a meta' della sesta riga
+        let skip = ((mode_sstv::modes::HEADER_SECONDS + spec.group_seconds() * 5.5) * f64::from(RATE)) as usize;
+        let mut tail = audio[skip..].to_vec();
+        // dopo l'immagine 8 s di solo rumore: la ricezione presa a meta' si chiude da sola (6 s senza sincronismo)
+        tail.extend(vec![0.0f32; RATE as usize * 8]);
+        add_noise(&mut tail, 0.08, 13);
+        let events = events_of(&tail, DecoderConfig::default());
+        let by_sync: Vec<SstvMode> = events.iter().filter_map(|e| if let DecoderEvent::Started { mode, by_sync: true, .. } = e { Some(*mode) } else { None }).collect();
+        match (by_sync.as_slice(), last_image(&events)) {
+            ([m], Some(d)) if *m == spec.mode && d.mode == spec.mode => {
+                let q = best_shifted_psnr(&img, &d.image);
+                eprintln!("senza VIS {}: PSNR {q:.1} dB, sincronismo {:.0} %, {} righe", spec.name, d.sync_quality * 100.0, d.image.height);
+                if q < 18.0 {
+                    bad.push(format!("{}: PSNR {q:.1}", spec.name));
+                }
+            }
+            (s, d) => bad.push(format!("{}: partenze {s:?} ({:?}), finita {:?}", spec.name, starts_of(&events), d.map(|d| d.mode))),
+        }
+    }
+    assert!(bad.is_empty(), "{bad:?}");
+}
+
+#[test]
+fn recognition_without_vis_follows_the_locked_mode_and_can_be_turned_off() {
+    let spec = SstvMode::Martin1.spec();
+    let img = test_image(spec.width, spec.height);
+    let audio = encode_shifted(spec.mode, &img, RATE, 0.0).expect("codifica");
+    let skip = ((mode_sstv::modes::HEADER_SECONDS + spec.group_seconds() * 3.5) * f64::from(RATE)) as usize;
+    let tail = &audio[skip..skip + RATE as usize * 20];
+    let events = events_of(tail, DecoderConfig { lock: Some(SstvMode::Scottie1), ..DecoderConfig::default() });
+    assert!(starts_of(&events).is_empty(), "{:?}", starts_of(&events));
+    let events = events_of(tail, DecoderConfig { auto_sync: false, ..DecoderConfig::default() });
+    assert!(starts_of(&events).is_empty(), "{:?}", starts_of(&events));
+}
+
+/// Il VIS di un modo (leader, bit di partenza, codice, arresto) da solo, come lo produce il codificatore.
+fn vis_burst(mode: SstvMode) -> Vec<f32> {
+    let spec = mode.spec();
+    let img = test_image(spec.width, spec.height);
+    let audio = encode_shifted(mode, &img, RATE, 0.0).expect("codifica");
+    // dalla fine dei toni di calibrazione alla fine del VIS
+    audio[(0.8 * f64::from(RATE)) as usize..(mode_sstv::modes::HEADER_SECONDS * f64::from(RATE)) as usize].to_vec()
+}
+
+#[test]
+fn a_false_vis_in_a_disturbed_image_does_not_change_the_mode() {
+    let mode = SstvMode::Martin1;
+    let spec = mode.spec();
+    let img = test_image(spec.width, spec.height);
+    let mut audio = encode_shifted(mode, &img, RATE, 0.0).expect("codifica");
+    // a meta' immagine due secondi di disturbo (le righe perdono il sincronismo) e dentro un VIS di Robot 36
+    let at = ((mode_sstv::modes::HEADER_SECONDS + spec.group_seconds() * 100.0) * f64::from(RATE)) as usize;
+    let burst_len = RATE as usize * 2;
+    let mut noise = Noise(3);
+    for s in &mut audio[at..at + burst_len] {
+        *s = 0.6 * noise.gauss();
+    }
+    let vis = vis_burst(SstvMode::Robot36);
+    let vis_at = at + burst_len - vis.len();
+    audio[vis_at..vis_at + vis.len()].copy_from_slice(&vis);
+    audio.extend(vec![0.0f32; RATE as usize]);
+    add_noise(&mut audio, 0.05, 17);
+    let events = events_of(&audio, DecoderConfig::default());
+    assert_eq!(starts_of(&events), [mode], "{:?}", starts_of(&events));
+    let done = last_image(&events).expect("immagine");
+    assert!(done.complete && done.mode == mode);
+}
+
+#[test]
+fn a_new_transmission_after_an_interrupted_image_starts_from_its_vis() {
+    let m1 = SstvMode::Martin1.spec();
+    let img1 = test_image(m1.width, m1.height);
+    let first = encode_shifted(m1.mode, &img1, RATE, 0.0).expect("codifica");
+    // la prima trasmissione si ferma al 40 %, mezzo secondo di silenzio, poi un Robot 36 intero
+    let cut = ((mode_sstv::modes::HEADER_SECONDS + m1.image_seconds() * 0.4) * f64::from(RATE)) as usize;
+    let mut audio = first[..cut].to_vec();
+    audio.extend(vec![0.0f32; RATE as usize / 2]);
+    let r36 = SstvMode::Robot36.spec();
+    let img2 = test_image(r36.width, r36.height);
+    audio.extend(encode_shifted(r36.mode, &img2, RATE, 0.0).expect("codifica"));
+    audio.extend(vec![0.0f32; RATE as usize]);
+    add_noise(&mut audio, 0.05, 19);
+    let events = events_of(&audio, DecoderConfig::default());
+    assert_eq!(starts_of(&events), [SstvMode::Martin1, SstvMode::Robot36], "{:?}", starts_of(&events));
+    let done = last_image(&events).expect("immagine");
+    assert_eq!(done.mode, SstvMode::Robot36);
+    assert!(done.complete && psnr(&img2, &done.image) > 20.0);
+}
+
+#[test]
+fn recognition_without_vis_estimates_the_tuning_offset() {
+    let spec = SstvMode::Scottie1.spec();
+    let img = test_image(spec.width, spec.height);
+    let audio = encode_shifted(spec.mode, &img, RATE, 80.0).expect("codifica");
+    let skip = ((mode_sstv::modes::HEADER_SECONDS + spec.group_seconds() * 20.5) * f64::from(RATE)) as usize;
+    let mut tail = audio[skip..].to_vec();
+    tail.extend(vec![0.0f32; RATE as usize * 8]);
+    add_noise(&mut tail, 0.05, 23);
+    let events = events_of(&tail, DecoderConfig::default());
+    let offset = events.iter().find_map(|e| if let DecoderEvent::Started { offset_hz, by_sync: true, .. } = e { Some(*offset_hz) } else { None });
+    assert!(offset.is_some_and(|o| (o - 80.0).abs() < 25.0), "scarto {offset:?}");
+    let done = last_image(&events).expect("immagine");
+    assert!(best_shifted_psnr(&img, &done.image) > 22.0);
+}

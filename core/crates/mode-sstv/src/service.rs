@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     Decoder, DecoderConfig, DecoderEvent, RATE, RgbImage, SstvError, SstvMode,
-    encoder::encode_shifted,
+    encoder::encode_with_id,
     image_io::{decode_image, encode_png, fit_cover},
     resample::Resampler,
     store::{EntryExtra, ImageEntry, ImageStore},
@@ -57,11 +57,15 @@ pub struct SstvSettings {
     pub tx_offset_hz: f32,
     /// Correzione dell'orologio di chi trasmette (ppm, l'inclinazione si corregge comunque da sola).
     pub slant_ppm: f32,
+    /// Alla fine di ogni trasmissione il nominativo della stazione in FSK (FSK ID, formato di MMSSTV).
+    pub fsk_id: bool,
+    /// Senza VIS il modo si riconosce dal periodo delle righe (come il modo automatico di MMSSTV).
+    pub auto_sync: bool,
 }
 
 impl Default for SstvSettings {
     fn default() -> Self {
-        SstvSettings { default_mode: SstvMode::Martin1, auto_save: true, save_tx: true, auto_receive: false, lock_mode: None, folder: String::new(), tx_folder: String::new(), rx_offset_hz: 0.0, tx_offset_hz: 0.0, slant_ppm: 0.0 }
+        SstvSettings { default_mode: SstvMode::Martin1, auto_save: true, save_tx: true, auto_receive: false, lock_mode: None, folder: String::new(), tx_folder: String::new(), rx_offset_hz: 0.0, tx_offset_hz: 0.0, slant_ppm: 0.0, fsk_id: true, auto_sync: true }
     }
 }
 
@@ -77,7 +81,7 @@ impl SstvSettings {
     }
 
     fn decoder(&self) -> DecoderConfig {
-        DecoderConfig { lock: self.lock_mode, offset_hz: self.rx_offset_hz, slant_ppm: self.slant_ppm }
+        DecoderConfig { lock: self.lock_mode, offset_hz: self.rx_offset_hz, slant_ppm: self.slant_ppm, auto_sync: self.auto_sync }
     }
 }
 
@@ -94,6 +98,10 @@ pub struct RxStatus {
     pub level_db: f32,
     /// L'ultima immagine salvata.
     pub last_image: Option<String>,
+    /// Come e' partita l'immagine in corso o l'ultima: `vis`, `sync` (dal periodo delle righe, senza VIS) o `forced` (a mano).
+    pub source: Option<String>,
+    /// L'ultimo nominativo letto dall'FSK ID.
+    pub last_call: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -249,6 +257,17 @@ impl Inner {
             offset_hz: Some(st.offset_hz),
             ..SstvEvent::default()
         });
+    }
+
+    /// Mette il nominativo letto dall'FSK ID a un'immagine dell'archivio (se non ne ha gia' uno scritto a mano).
+    fn tag_image(&self, id: &str, call: &str) -> bool {
+        match lock(&self.store).set_call(id, call, false) {
+            Ok(changed) => changed,
+            Err(e) => {
+                tracing::debug!("SSTV: nominativo non messo all'immagine {id}: {e}");
+                false
+            }
+        }
     }
 
     fn tx_event(&self) {
@@ -467,8 +486,9 @@ impl SstvService {
         lock(&self.inner.store).delete(id)
     }
 
-    /// Trasmette un'immagine (PNG o JPEG, portata alla risoluzione del modo se serve). `call`: il corrispondente, per la cronologia.
-    pub fn transmit(&self, mode: SstvMode, bytes: &[u8], call: Option<String>) -> Result<TxStatus, SstvError> {
+    /// Trasmette un'immagine (PNG o JPEG, portata alla risoluzione del modo se serve). `call`: il corrispondente, per la cronologia;
+    /// `station`: il nominativo della stazione, mandato in FSK dopo l'immagine se l'FSK ID e' acceso.
+    pub fn transmit(&self, mode: SstvMode, bytes: &[u8], call: Option<String>, station: Option<&str>) -> Result<TxStatus, SstvError> {
         let port = lock(&self.inner.port).clone().ok_or(SstvError::NoTransmitter)?;
         if self.inner.tx_active.load(Ordering::SeqCst) || port.is_busy() {
             return Err(SstvError::Busy);
@@ -476,7 +496,8 @@ impl SstvService {
         let spec = mode.spec();
         let img = fit_cover(&decode_image(bytes)?, spec.width, spec.height);
         let settings = self.settings();
-        let wave = encode_shifted(mode, &img, RATE, settings.tx_offset_hz)?;
+        let fsk_id = station.filter(|_| settings.fsk_id).and_then(crate::fskid::clean_call);
+        let wave = encode_with_id(mode, &img, RATE, settings.tx_offset_hz, fsk_id.as_deref())?;
         let total = wave.len() as f32 / RATE as f32;
         self.inner.tx_active.store(true, Ordering::SeqCst);
         self.inner.tx_abort.store(false, Ordering::SeqCst);
@@ -486,7 +507,7 @@ impl SstvService {
             self.inner.tx_active.store(false, Ordering::SeqCst);
             return Err(SstvError::Tx(e));
         }
-        tracing::info!("SSTV: trasmissione {} ({total:.0} s)", spec.name);
+        tracing::info!("SSTV: trasmissione {} ({total:.0} s){}", spec.name, fsk_id.as_deref().map(|c| format!(", FSK ID {c}")).unwrap_or_default());
         if settings.save_tx
             && let Err(e) = lock(&self.inner.store).add("tx", mode, &img, EntryExtra { complete: true, call, ..EntryExtra::default() })
         {
@@ -569,8 +590,19 @@ fn rows_event(mode: SstvMode, img: &RgbImage, first: u32, count: u32) -> SstvEve
     }
 }
 
+/// Quanto dopo la fine di un'immagine un FSK ID le appartiene ancora (l'FSK ID segue subito l'immagine e dura un paio di secondi).
+const FSK_ID_WINDOW: Duration = Duration::from_secs(20);
+
+/// Il ricordo del thread di ricezione: l'ultima immagine salvata e un FSK ID letto prima che l'immagine si chiudesse.
+#[derive(Default)]
+struct RxMemory {
+    last_saved: Option<(String, Instant)>,
+    early_call: Option<(String, Instant)>,
+}
+
 fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut decoder = Decoder::new(cfg);
+    let mut memory = RxMemory::default();
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
     let mut last_status = Instant::now();
@@ -605,7 +637,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
             None => {}
         }
         for ev in events {
-            handle(inner, &decoder, ev);
+            handle(inner, &decoder, &mut memory, ev);
         }
         if last_status.elapsed() >= Duration::from_millis(700) {
             last_status = Instant::now();
@@ -623,9 +655,10 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     }
 }
 
-fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
+fn handle(inner: &Arc<Inner>, decoder: &Decoder, memory: &mut RxMemory, ev: DecoderEvent) {
     match ev {
-        DecoderEvent::Started { mode, offset_hz, forced } => {
+        DecoderEvent::Started { mode, offset_hz, forced, by_sync } => {
+            let source = if forced { "forced" } else if by_sync { "sync" } else { "vis" };
             let spec = mode.spec();
             {
                 let mut st = lock(&inner.rx);
@@ -636,7 +669,10 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
                 st.rows = 0;
                 st.offset_hz = offset_hz;
                 st.sync = 0.0;
+                st.source = Some(source.into());
+                st.last_call = None;
             }
+            memory.early_call = None;
             *lock(&inner.current) = Some(RgbImage { width: spec.width, height: spec.height, data: vec![0; (spec.width * spec.height * 3) as usize] });
             inner.emit(SstvEvent {
                 kind: "rx_start".into(),
@@ -644,7 +680,7 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
                 width: Some(spec.width),
                 height: Some(spec.height),
                 offset_hz: Some(offset_hz),
-                message: forced.then(|| "forced".to_string()),
+                message: Some(source.to_string()),
                 ..SstvEvent::default()
             });
         }
@@ -662,8 +698,10 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
         DecoderEvent::Finished(done) => {
             *lock(&inner.current) = Some(done.image.clone());
             let auto_save = lock(&inner.settings).auto_save;
+            // un FSK ID letto mentre l'immagine aspettava di chiudersi (righe senza sincronismo in coda) e' il suo
+            let call = memory.early_call.take().filter(|(_, at)| at.elapsed() < FSK_ID_WINDOW).map(|(c, _)| c);
             let saved = if auto_save {
-                match lock(&inner.store).add("rx", done.mode, &done.image, EntryExtra { sync_quality: Some(done.sync_quality), offset_hz: Some(done.offset_hz), clock_ppm: Some(done.clock_ppm), complete: done.complete, call: None }) {
+                match lock(&inner.store).add("rx", done.mode, &done.image, EntryExtra { sync_quality: Some(done.sync_quality), offset_hz: Some(done.offset_hz), clock_ppm: Some(done.clock_ppm), complete: done.complete, call: call.clone() }) {
                     Ok(e) => Some(e.id),
                     Err(e) => {
                         tracing::warn!("SSTV: immagine non salvata: {e}");
@@ -682,9 +720,22 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
                     st.last_image = saved.clone();
                 }
             }
+            memory.last_saved = saved.clone().map(|id| (id, Instant::now()));
             // l'immagine finita e' ridisegnata con l'inclinazione corretta: si rimanda tutta
             inner.emit(rows_event(done.mode, &done.image, 0, done.image.height));
-            inner.emit(SstvEvent { kind: "rx_done".into(), mode: Some(done.mode.id().into()), image_id: saved, sync: Some(done.sync_quality), height: Some(done.image.height), width: Some(done.image.width), ..SstvEvent::default() });
+            inner.emit(SstvEvent { kind: "rx_done".into(), mode: Some(done.mode.id().into()), image_id: saved, sync: Some(done.sync_quality), height: Some(done.image.height), width: Some(done.image.width), call, ..SstvEvent::default() });
+        }
+        DecoderEvent::FskId(call) => {
+            lock(&inner.rx).last_call = Some(call.clone());
+            // l'immagine appena finita prende il nominativo; se ce n'e' ancora una aperta, lo prende lei quando si chiude
+            let recent = memory.last_saved.as_ref().filter(|(_, at)| at.elapsed() < FSK_ID_WINDOW).map(|(id, _)| id.clone());
+            let image_id = if decoder.is_receiving() {
+                memory.early_call = Some((call.clone(), Instant::now()));
+                None
+            } else {
+                recent.filter(|id| inner.tag_image(id, &call))
+            };
+            inner.emit(SstvEvent { kind: "rx_fskid".into(), call: Some(call), image_id, ..SstvEvent::default() });
         }
         DecoderEvent::Lost => {
             lock(&inner.rx).receiving = false;
@@ -702,6 +753,34 @@ mod cartelle_tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("cartella di prova");
         dir
+    }
+
+    #[test]
+    fn il_nominativo_dell_fsk_id_finisce_nell_immagine_salvata() {
+        let data = temp("fskid");
+        let svc = SstvService::open(&data);
+        let mut s = svc.settings();
+        s.folder = data.join("immagini").display().to_string();
+        svc.apply_settings(s).expect("impostazioni");
+        svc.start_rx();
+        let spec = SstvMode::Robot36.spec();
+        let img = RgbImage { width: spec.width, height: spec.height, data: (0..spec.width * spec.height * 3).map(|i| (i % 251) as u8).collect() };
+        let mut audio = vec![0.0f32; RATE as usize / 2];
+        audio.extend(encode_with_id(SstvMode::Robot36, &img, RATE, 0.0, Some("IU3ABC")).expect("codifica"));
+        audio.extend(vec![0.0f32; RATE as usize * 2]);
+        for chunk in audio.chunks(8192) {
+            svc.feed(RATE, chunk);
+        }
+        let started = Instant::now();
+        let mut tagged = None;
+        while started.elapsed() < Duration::from_secs(60) && tagged.is_none() {
+            std::thread::sleep(Duration::from_millis(100));
+            tagged = svc.images().into_iter().find(|e| e.direction == "rx").and_then(|e| e.call);
+        }
+        assert_eq!(tagged.as_deref(), Some("IU3ABC"));
+        assert_eq!(svc.snapshot().rx.last_call.as_deref(), Some("IU3ABC"));
+        assert_eq!(svc.snapshot().rx.source.as_deref(), Some("vis"));
+        let _ = std::fs::remove_dir_all(&data);
     }
 
     #[test]

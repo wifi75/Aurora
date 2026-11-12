@@ -6,7 +6,8 @@
 //!
 //! - [`modes`]: Martin 1/2, Scottie 1/2/DX, Robot 36/72, PD 50/90/120/160/180/240/290, Wraase SC2-180;
 //! - [`encoder`]: immagine RGB -> audio con VIS;
-//! - [`decoder`]: audio a 12 kHz -> VIS, modo, righe e immagine finita;
+//! - [`decoder`]: audio a 12 kHz -> VIS (o periodo delle righe), modo, righe e immagine finita, poi l'FSK ID;
+//! - [`fskid`]: il nominativo in FSK dopo l'immagine, nel formato di MMSSTV (Makoto Mori JE3HHT, LGPL, `terze-parti/mmsstv`);
 //! - [`service`]: ricezione dall'ingresso audio, trasmissione, archivio delle immagini in `sstv/`.
 
 pub mod color;
@@ -14,11 +15,13 @@ pub mod decoder;
 pub mod demod;
 pub mod denoise;
 pub mod encoder;
+pub mod fskid;
 pub mod image_io;
 pub mod modes;
 pub mod resample;
 pub mod service;
 pub mod store;
+pub mod syncdetect;
 pub mod vis;
 
 pub use decoder::{DecodedImage, Decoder, DecoderConfig, DecoderEvent};
