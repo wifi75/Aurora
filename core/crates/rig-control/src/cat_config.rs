@@ -415,6 +415,8 @@ pub fn friendly_error(raw: &str) -> String {
         "La porta seriale e' occupata da un altro programma: chiudilo (o scegli un'altra porta) e riprova.".into()
     } else if has(&["no such file", "cannot find", "non trova", "invalid port", "does not exist", "specificato"]) {
         "La porta seriale non esiste: controlla il numero (Windows puo' rinumerarla) e che la radio sia accesa e collegata.".into()
+    } else if has(&["ha chiuso il collegamento"]) {
+        "La radio non risponde a Hamlib (rigctld chiude il collegamento): controlla che sia accesa, la porta COM, la velocita' (baud) e il modello scelto; per le Yaesu anche le impostazioni CAT della radio.".into()
     } else if has(&["timeout", "non risponde"]) {
         "La radio non risponde: controlla accensione, cavo, porta, velocita' (baud) e, per le Yaesu, le impostazioni CAT della radio.".into()
     } else if has(&["ingresso/uscita", "lettura:", "scrittura:", "chiuso la connessione"]) {
@@ -428,6 +430,13 @@ pub fn friendly_error(raw: &str) -> String {
     } else {
         raw.to_string()
     }
+}
+
+/// Un collegamento TCP chiuso di colpo dall'altra parte (Windows 10054 e 10053, «connection reset», «interrotta forzatamente»), in
+/// qualunque lingua di Windows: si riconosce dal codice dell'errore o dalle parole inglesi.
+pub fn is_connection_reset(raw: &str) -> bool {
+    let m = raw.to_lowercase();
+    ["os error 10054", "os error 10053", "os error 104)", "connection reset", "forcibly closed", "connection aborted", "broken pipe", "os error 32)"].iter().any(|w| m.contains(w))
 }
 
 /// Un profilo salvato: nome e configurazione.
@@ -639,6 +648,16 @@ fn write_atomic(path: &Path, file: &RadioFile) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_connection_closed_by_rigctld_says_the_radio_does_not_answer() {
+        for raw in ["rigctld: lettura: Se ha forzado la interrupción de una conexión existente por el host remoto. (os error 10054)", "rigctld: write: Connection reset by peer (os error 104)"] {
+            assert!(is_connection_reset(raw), "{raw}");
+        }
+        assert!(!is_connection_reset("rigctld: lettura: timeout"));
+        let msg = friendly_error("rigctld ha chiuso il collegamento: la radio non risponde a Hamlib (x)");
+        assert!(msg.contains("non risponde a Hamlib"), "{msg}");
+    }
     use super::*;
 
     fn temp(name: &str) -> PathBuf {

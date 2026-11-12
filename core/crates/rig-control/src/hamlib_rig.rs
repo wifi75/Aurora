@@ -360,7 +360,17 @@ impl Inner {
         // forzatamente» nei rapporti (2026-11-12, piu' installazioni): se il processo e' uscito si dice e si aggiungono le sue ultime righe
         let freq = link.client().frequency().map_err(|e| {
             std::thread::sleep(Duration::from_millis(300));
-            if link.alive() { e } else { RigError(format!("rigctld terminato: {} ({})", link.note(), e.0)) }
+            if !link.alive() {
+                RigError(format!("rigctld terminato: {} ({})", link.note(), e.0))
+            } else if crate::cat_config::is_connection_reset(&e.0) {
+                // rigctld vivo che chiude subito il collegamento: non riesce ad aprire la radio (spenta, porta, velocita' o modello
+                // sbagliati). Rapporti del 2026-11-12, cinque PC: prima solo «connessione interrotta forzatamente dall'host remoto»
+                let tail = link.note();
+                let tail = if tail.is_empty() { String::new() } else { format!("; rigctld: {tail}") };
+                RigError(format!("rigctld ha chiuso il collegamento: la radio non risponde a Hamlib ({}{tail})", e.0))
+            } else {
+                e
+            }
         })?;
         let mut mode = link.client().mode().ok();
         // il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, come WSJT-X (`RadioModePolicy`): prima solo al cambio di frequenza, e
