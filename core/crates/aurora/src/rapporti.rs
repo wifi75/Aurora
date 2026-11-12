@@ -676,6 +676,8 @@ impl Rapporti {
     }
 
     fn lavora(self: Arc<Self>) {
+        // l'ultima installazione, una volta all'avvio: il rapporto va in coda e parte al primo giro
+        self.segnala_installazione();
         loop {
             let eventi = {
                 let Ok(mut attesa) = IN_ATTESA.lock() else { return };
@@ -825,6 +827,12 @@ impl Rapporti {
             let testo = pulisci(&String::from_utf8_lossy(&dati), &noti);
             usati += testo.len() as u64;
             file.push((format!("crash/{nome}"), testo.into_bytes()));
+        }
+        // il registro dell'ultima installazione, ripulito: dice come e' stato installato Aurora (WebView2, file non copiati, antivirus)
+        if let Some(testo) = registro_installazione(&self.dir) {
+            let pulito = pulisci(&testo, &noti);
+            usati += pulito.len() as u64;
+            file.push((FILE_INSTALLAZIONE.into(), pulito.into_bytes()));
         }
         if let Ok(dati) = crate::support::read_tail(&self.dir.join("logs").join("aurora.log"), MAX_LOG.min(MAX_PACCHETTO.saturating_sub(usati))) {
             let testo = String::from_utf8_lossy(&dati);
@@ -1175,6 +1183,168 @@ fn giorno_utc() -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------
+// Il registro dell'installatore
+// ---------------------------------------------------------------------------------------------------------------------------------
+
+/// Il registro che l'installatore di Windows scrive nella cartella dati a ogni installazione o aggiornamento (sovrascrive il precedente):
+/// versioni, modo, Windows, spazio, WebView2, i passi, gli avvisi e l'esito (`desktop/src-tauri/installer/hooks.nsh`).
+const FILE_INSTALLAZIONE: &str = "installazione.log";
+/// L'impronta dell'ultimo registro dell'installazione gia' guardato: il suo rapporto parte una volta sola.
+const FILE_INSTALLAZIONE_VISTA: &str = "rapporti-installazione-vista.txt";
+/// Un registro dell'installazione piu' grande di cosi' non e' dell'installatore: non si legge.
+const MAX_REGISTRO: u64 = 1024 * 1024;
+/// Le righe dei dettagli (l'elenco della finestra dell'installatore) stanno tra questi due segni: non sono passi di Aurora.
+const INIZIO_DETTAGLI: &str = "--- dettagli dell'installazione";
+const FINE_DETTAGLI: &str = "--- fine dei dettagli";
+
+/// Il registro dell'installazione come testo, se c'e': UTF-16LE con BOM (lo scrive NSIS), oppure UTF-8.
+pub(crate) fn registro_installazione(dir: &Path) -> Option<String> {
+    let file = dir.join(FILE_INSTALLAZIONE);
+    if std::fs::metadata(&file).ok()?.len() > MAX_REGISTRO {
+        return None;
+    }
+    std::fs::read(&file).ok().map(|d| testo_registro(&d))
+}
+
+fn testo_registro(dati: &[u8]) -> String {
+    if let Some(resto) = dati.strip_prefix(&[0xFF, 0xFE]) {
+        let unita = resto.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c));
+        return char::decode_utf16(unita).map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER)).collect();
+    }
+    String::from_utf8_lossy(dati.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(dati)).into_owned()
+}
+
+/// Com'e' andata l'installazione, secondo il suo registro.
+#[derive(Debug, Default, PartialEq, Eq)]
+struct Installazione {
+    versione_nuova: String,
+    versione_prima: String,
+    modo: String,
+    /// Le righe «AVVISO: …» ed «ERRORE: …», senza l'ora.
+    problemi: Vec<String>,
+    /// «riuscita», «fallita», «annullata»; vuoto se il registro non arriva in fondo (installatore chiuso a meta').
+    esito: String,
+    /// L'installatore ha gia' mandato il suo rapporto (installazione non riuscita): Aurora non lo rimanda.
+    gia_mandato: bool,
+    /// L'ultimo passo scritto prima dei dettagli: dove si e' fermata un'installazione interrotta.
+    ultimo_passo: String,
+}
+
+/// Una riga del registro senza l'ora davanti («[10:22:34] »).
+fn senza_ora(riga: &str) -> &str {
+    let r = riga.trim();
+    match r.strip_prefix('[').and_then(|x| x.split_once(']')) {
+        Some((ora, resto)) if ora.chars().all(|c| c.is_ascii_digit() || c == ':') => resto.trim_start(),
+        _ => r,
+    }
+}
+
+fn leggi_installazione(testo: &str) -> Installazione {
+    let mut i = Installazione::default();
+    let mut dettagli = false;
+    for riga in testo.lines() {
+        // dopo i dettagli possono venire l'ambiente (antivirus, file bloccati) e l'esito dell'invio
+        if riga.starts_with(INIZIO_DETTAGLI) || riga.starts_with(FINE_DETTAGLI) {
+            dettagli = riga.starts_with(INIZIO_DETTAGLI);
+            continue;
+        }
+        let r = senza_ora(riga);
+        if dettagli || r.is_empty() {
+            continue;
+        }
+        if let Some(v) = r.strip_prefix("versione nuova:") {
+            i.versione_nuova = v.split_whitespace().next().unwrap_or_default().to_string();
+        } else if let Some(v) = r.strip_prefix("versione installata prima:") {
+            i.versione_prima = v.trim().to_string();
+        } else if let Some(v) = r.strip_prefix("modo:") {
+            i.modo = v.trim().to_string();
+        } else if let Some(v) = r.strip_prefix("esito:") {
+            i.esito = v.split([':', ' ']).find(|p| !p.is_empty()).unwrap_or_default().to_string();
+        } else if r.starts_with("rapporto dell'installatore: mandato") {
+            i.gia_mandato = true;
+        } else if r.starts_with("AVVISO:") || r.starts_with("ERRORE:") {
+            i.problemi.push(r.to_string());
+        }
+        // i passi dopo l'esito (fine, invio del rapporto) non dicono dove si e' fermata
+        if i.esito.is_empty() {
+            i.ultimo_passo = r.to_string();
+        }
+    }
+    i
+}
+
+/// Il rapporto per questa installazione, livello e messaggio (ancora da ripulire): `None` se e' andata bene, se l'ha annullata la
+/// persona o se l'installatore ha gia' mandato il suo. Prima la situazione (il servizio raggruppa sui primi 300 caratteri), poi modo e versioni.
+fn messaggio_installazione(i: &Installazione) -> Option<(&'static str, String)> {
+    if i.gia_mandato {
+        return None;
+    }
+    let (livello, mut m) = match i.esito.as_str() {
+        "riuscita" if i.problemi.is_empty() => return None,
+        "annullata" => return None,
+        "riuscita" => ("warn", "installazione riuscita con avvisi".to_string()),
+        "" => ("error", format!("installazione interrotta prima della fine (ultimo passo: {})", i.ultimo_passo)),
+        altro => ("error", format!("installazione non riuscita ({altro})")),
+    };
+    for p in i.problemi.iter().take(6) {
+        m.push_str(" | ");
+        m.push_str(p);
+    }
+    let versioni = match (i.versione_prima.as_str(), i.versione_nuova.as_str()) {
+        ("" | "nessuna", nuova) => format!("prima installazione di {nuova}"),
+        (prima, nuova) => format!("da {prima} a {nuova}"),
+    };
+    m.push_str(&format!(" ({}; {versioni})", if i.modo.is_empty() { "modo ?" } else { i.modo.as_str() }));
+    Some((livello, m))
+}
+
+/// L'impronta del registro (SHA-256, i primi 16 caratteri): lo stesso registro non fa partire due rapporti.
+fn impronta(dati: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(dati).iter().take(8).map(|b| format!("{b:02x}")).collect()
+}
+
+impl Rapporti {
+    /// Al primo giro dopo l'avvio: se l'ultima installazione ha avuto avvisi o errori (WebView2 mancante, file non copiati, Hamlib tolto
+    /// dall'antivirus, installatore fermato a meta') parte un rapporto area «installatore», una sola volta per installazione. Con gli
+    /// errori automatici spenti il registro si da' per visto e non parte nulla (riaccendendoli non torna un'installazione vecchia).
+    fn segnala_installazione(&self) {
+        let file = self.dir.join(FILE_INSTALLAZIONE);
+        let Ok(meta) = std::fs::metadata(&file) else { return };
+        if meta.len() > MAX_REGISTRO {
+            return;
+        }
+        let Ok(dati) = std::fs::read(&file) else { return };
+        let firma = impronta(&dati);
+        let vista = self.dir.join(FILE_INSTALLAZIONE_VISTA);
+        if std::fs::read_to_string(&vista).is_ok_and(|v| v.trim() == firma) {
+            return;
+        }
+        let installazione = leggi_installazione(&testo_registro(&dati));
+        // senza esito e appena scritto: l'installatore potrebbe essere ancora al lavoro, se ne riparla al prossimo avvio
+        let recente = meta.modified().ok().and_then(|t| t.elapsed().ok()).is_some_and(|d| d < Duration::from_secs(300));
+        if installazione.esito.is_empty() && recente {
+            return;
+        }
+        let acceso = self.stato.lock().map(|s| s.impostazioni.auto_errors).unwrap_or(false);
+        if let Some((livello, messaggio)) = messaggio_installazione(&installazione).filter(|_| acceso && configurato()) {
+            let contesto = self.contesto();
+            let messaggio: String = pulisci(&messaggio, &contesto.noti).chars().take(MAX_MESSAGGIO).collect();
+            let g = Gruppo { livello, area: "installatore", origine: "installatore".into(), messaggio, conteggio: 1 };
+            if let Ok(mut s) = self.stato.lock() {
+                let r = rapporto(&s.id, &contesto, &giorno(secondi()), &g);
+                s.coda.push(r);
+                if s.coda.len() > MAX_CODA {
+                    s.coda.remove(0);
+                }
+                scrivi_json(&self.dir.join(FILE_CODA), &s.coda);
+            }
+        }
+        let _ = std::fs::write(&vista, &firma);
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -1358,6 +1528,122 @@ mod tests {
         assert_eq!(chiave("cat", "x", "porta 4532 chiusa"), chiave("cat", "x", "porta 4533 chiusa"));
         assert_eq!(area("rig_control::hamlib", "rigctld fermo"), "cat");
         assert_eq!(area("aurora_desktop::health", "panic nel thread"), "panic");
+    }
+
+    /// Un registro dell'installatore come lo scrive `hooks.nsh` (con i dati personali da togliere).
+    const REGISTRO: &str = "Registro dell'installazione di Aurora
+inizio: 2026-11-12 10:22:33
+versione nuova: 0.11.240 (x64)
+versione installata prima: 0.11.239
+modo: aggiornamento silenzioso da Aurora (/S /UPDATE)
+Windows: Windows 11 Pro 24H2 (build 26100.2314)
+cartella dei dati: C:\\Users\\Mario Rossi\\AppData\\Roaming\\Aurora
+[10:22:34] WebView2: presente (131.0.2903.70)
+[10:22:34] cartella di installazione: C:\\Users\\mario\\AppData\\Local\\Aurora (spazio libero 51234 MB)
+[10:22:39] AVVISO: cartella hamlib vecchia non tolta dopo 4 tentativi (file bloccati) su PC-MARIO di mario
+[10:22:41] rete: 192.168.1.20:4532 fe80::1 mario.rossi@example.com IU3ABC JN65ab token: abc123
+[10:22:41] chiave 9f8e7d6c5b4a39281706f5e4d3c2b1a0 su C:\\Users\\User\\Desktop e radio User
+[10:22:45] AVVISO: file mancante dopo la copia: hamlib\\rigctld.exe (tolto dall'antivirus?)
+esito: riuscita
+fine: 2026-11-12 10:22:46
+--- dettagli dell'installazione (2 righe) ---
+Estrazione: rigctld.exe
+AVVISO: questa riga e' dell'elenco, non un passo
+--- fine dei dettagli ---
+antivirus: Windows Defender (acceso, aggiornato)
+";
+
+    fn noti_di_prova() -> Vec<String> {
+        vec!["mario".into(), "PC-MARIO".into(), "User".into()]
+    }
+
+    #[test]
+    fn il_registro_dell_installatore_si_ripulisce() {
+        let p = pulisci(REGISTRO, &noti_di_prova());
+        assert!(p.contains(r"cartella dei dati: C:\Users\<utente>\AppData\Roaming\Aurora"), "il cognome dopo il nome noto non resta: {p}");
+        assert!(p.contains(r"cartella di installazione: C:\Users\<utente>\AppData\Local\Aurora"), "{p}");
+        assert!(p.contains("(file bloccati) su <personale> di <personale>"), "{p}");
+        assert!(p.contains("rete: <ip> <ip> <personale><email> <nominativo> <locatore> token: ***"), "{p}");
+        assert!(p.contains(r"chiave <codice> su C:\Users\<utente>\Desktop e radio User"), "{p}");
+        // versioni, build di Windows e WebView2 restano
+        assert!(p.contains("versione nuova: 0.11.240 (x64)") && p.contains("build 26100.2314") && p.contains("131.0.2903.70"), "{p}");
+        for via in ["mario", "Mario", "Rossi", "192.168", "example.com", "IU3ABC", "JN65"] {
+            assert!(!p.contains(via), "{via} e' rimasto: {p}");
+        }
+    }
+
+    #[test]
+    fn il_registro_si_legge_in_utf16_e_in_utf8() {
+        let mut utf16 = vec![0xFF, 0xFE];
+        utf16.extend("esito: riuscita è\r\n".encode_utf16().flat_map(u16::to_le_bytes));
+        assert_eq!(testo_registro(&utf16), "esito: riuscita è\r\n");
+        assert_eq!(testo_registro(b"\xEF\xBB\xBFesito: fallita"), "esito: fallita");
+        assert_eq!(testo_registro(b"esito: annullata"), "esito: annullata");
+    }
+
+    #[test]
+    fn dal_registro_un_rapporto_solo_se_qualcosa_non_va() {
+        // riuscita con avvisi: rapporto di livello warn con gli avvisi (non le righe dell'elenco dei dettagli), modo e versioni
+        let i = leggi_installazione(REGISTRO);
+        assert_eq!((i.versione_nuova.as_str(), i.versione_prima.as_str(), i.esito.as_str()), ("0.11.240", "0.11.239", "riuscita"));
+        assert_eq!(i.problemi.len(), 2, "{i:?}");
+        let (livello, m) = messaggio_installazione(&i).unwrap_or_default();
+        assert_eq!(livello, "warn");
+        assert!(m.starts_with("installazione riuscita con avvisi | AVVISO: cartella hamlib vecchia non tolta"), "{m}");
+        assert!(m.contains("AVVISO: file mancante dopo la copia: hamlib\\rigctld.exe") && !m.contains("dell'elenco"), "{m}");
+        assert!(m.ends_with("(aggiornamento silenzioso da Aurora (/S /UPDATE); da 0.11.239 a 0.11.240)"), "{m}");
+        // riuscita senza avvisi: niente
+        let ok = "versione nuova: 0.11.240 (x64)\nversione installata prima: nessuna\nmodo: normale\n[10:00:01] WebView2: presente (131)\nesito: riuscita\n";
+        assert_eq!(messaggio_installazione(&leggi_installazione(ok)), None);
+        // annullata dalla persona: niente
+        assert_eq!(messaggio_installazione(&leggi_installazione("modo: normale\nesito: annullata\n")), None);
+        // fallita: errore con il motivo; se l'installatore l'ha gia' mandato Aurora non lo rimanda
+        let ko = "versione nuova: 0.11.240 (x64)\nversione installata prima: nessuna\nmodo: normale, con le finestre\n[10:00:01] ERRORE: WebView2: installazione non riuscita (codice di uscita 1603)\nesito: fallita\n";
+        let (livello, m) = messaggio_installazione(&leggi_installazione(ko)).unwrap_or_default();
+        assert_eq!(livello, "error");
+        assert_eq!(m, "installazione non riuscita (fallita) | ERRORE: WebView2: installazione non riuscita (codice di uscita 1603) (normale, con le finestre; prima installazione di 0.11.240)");
+        let mandato = format!("{ko}rapporto dell'installatore: mandato (rapporto mandato, pacchetto 1A2B3C4D)\n");
+        assert_eq!(messaggio_installazione(&leggi_installazione(&mandato)), None);
+        // interrotta (senza esito): errore con l'ultimo passo
+        let rotto = "versione nuova: 0.11.240 (x64)\nmodo: aggiornamento silenzioso da Aurora (/S /UPDATE)\n[10:00:01] WebView2: presente (131)\n[10:00:02] copia dei file\n";
+        let (livello, m) = messaggio_installazione(&leggi_installazione(rotto)).unwrap_or_default();
+        assert_eq!(livello, "error");
+        assert!(m.starts_with("installazione interrotta prima della fine (ultimo passo: copia dei file)"), "{m}");
+    }
+
+    #[test]
+    fn il_rapporto_dell_installazione_parte_una_volta_e_non_con_i_rapporti_spenti() {
+        let dir = std::env::temp_dir().join(format!("aurora-rapporti-installazione-{}", std::process::id()));
+        let r = rapporti_di_prova(&dir, Limiti::default());
+        let mut utf16 = vec![0xFF, 0xFE];
+        utf16.extend(REGISTRO.encode_utf16().flat_map(u16::to_le_bytes));
+        let _ = std::fs::write(dir.join(FILE_INSTALLAZIONE), &utf16);
+        r.segnala_installazione();
+        let coda = r.stato.lock().map(|s| s.coda.clone()).unwrap_or_default();
+        assert_eq!(coda.len(), 1);
+        assert_eq!(coda[0]["area"], "installatore");
+        assert_eq!(coda[0]["livello"], "warn");
+        let m = coda[0]["messaggio"].as_str().unwrap_or_default();
+        assert!(m.contains("file mancante dopo la copia") && !m.contains("192.168"), "{m}");
+        // lo stesso registro non riparte
+        r.segnala_installazione();
+        assert_eq!(r.stato.lock().map(|s| s.coda.len()).unwrap_or(0), 1);
+        // un registro nuovo con i rapporti spenti: nulla in coda, ma dato per visto
+        let spenti = rapporti_di_prova(&dir, Limiti::default());
+        if let Ok(mut s) = spenti.stato.lock() {
+            s.impostazioni.auto_errors = false;
+        }
+        let _ = std::fs::write(dir.join(FILE_INSTALLAZIONE), format!("{REGISTRO}\nfine bis\n"));
+        spenti.segnala_installazione();
+        assert_eq!(spenti.stato.lock().map(|s| s.coda.len()).unwrap_or(9), 0);
+        let firma = impronta(&std::fs::read(dir.join(FILE_INSTALLAZIONE)).unwrap_or_default());
+        assert_eq!(std::fs::read_to_string(dir.join(FILE_INSTALLAZIONE_VISTA)).unwrap_or_default(), firma);
+        // nel pacchetto del crash il registro c'e', ripulito
+        let file = r.pacchetto_crash();
+        let (_, dati) = file.iter().find(|(n, _)| n == FILE_INSTALLAZIONE).cloned().unwrap_or_default();
+        let testo = String::from_utf8_lossy(&dati);
+        assert!(testo.contains("esito: riuscita") && !testo.contains("192.168"), "{testo}");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -113,6 +113,11 @@ fn fill(pack: &mut Pack, ctx: &Context, req: &SupportRequest, now: i64) -> Resul
             pack.add_file(&format!("logs/{name}"), &path, true, MAX_LOG)?;
         }
     }
+    // il registro dell'ultima installazione (versioni, WebView2, file non copiati, antivirus), ripulito come nei rapporti
+    if let Some(text) = crate::rapporti::registro_installazione(dir) {
+        let known: Vec<String> = ["USERNAME", "COMPUTERNAME", "USERDOMAIN"].iter().filter_map(|v| std::env::var(v).ok()).collect();
+        pack.add("installazione.log", crate::rapporti::pulisci(&text, &known).as_bytes())?;
+    }
     // la configurazione, con i segreti tolti
     add_configs(pack, dir, "")?;
     // le ultime righe di ALL.TXT
