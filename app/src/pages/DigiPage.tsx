@@ -176,6 +176,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
+  // doppio Esc: l'Auto CQ resta acceso ma in pausa; riparte quando si ripreme (macro <AUTOCQ>)
+  const [autoCqPaused, setAutoCqPaused] = useState(false);
   const lastEsc = useRef(0);
   const [scanning, setScanning] = useState(false);
   const s = snap.settings;
@@ -593,7 +595,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'audioFq': pickFreq(Math.max(200, Math.min(3500, a.relative ? l.rxHz + a.hz : a.hz)), false); break;
         case 'cursor': if (a.target === 'TX') txBox.current?.focus(); break;
         case 'beep': beep(); break;
-        case 'autoCq': setAutoCq((on) => !on); break;
+        case 'autoCq':
+          if (autoCqPaused && autoCq) {
+            setAutoCqPaused(false);
+            toast(t('digi.run.autoCqOn', { s: AUTOCQ_DELAY_S }), 'info');
+          } else {
+            setAutoCqPaused(false);
+            setAutoCq((on) => !on);
+          }
+          break;
         case 'seek': seek(a.direction); break;
         case 'toggle': toggleSetting(a.what, a.value); break;
         case 'scan': setScanning(a.run); break;
@@ -636,11 +646,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const onKey = (e: KeyboardEvent) => {
       if (editing !== null || settingsOpen) return;
       if (e.key === 'Escape') {
-        // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) ferma anche il CQ automatico
+        // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) mette anche in pausa il CQ automatico, che resta
+        // acceso e riparte quando lo si ripreme
         const now = Date.now();
         const twice = now - lastEsc.current < 600;
         lastEsc.current = twice ? 0 : now;
-        if (twice) setAutoCq(false);
+        if (twice && autoCq && !autoCqPaused) {
+          setAutoCqPaused(true);
+          toast(t('digi.run.autoCqPaused'), 'info');
+        }
         if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
         return;
       }
@@ -658,7 +672,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // CQ automatico: ripete la macro «CQ» finche' non si spegne, con una pausa fra una chiamata e l'altra
   useEffect(() => {
-    if (!autoCq || sending || !snap.can_transmit) return;
+    if (!autoCq || autoCqPaused || sending || !snap.can_transmit) return;
     const m = live.current.macros.get('AutoCqText') ?? live.current.macros.get('F2');
     if (!m || m.text.trim() === '') {
       toast(t('digi.run.autoCqNoMacro'), 'info');
@@ -668,7 +682,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const timer = window.setTimeout(() => execute(m.text), AUTOCQ_DELAY_S * 1000);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoCq, sending, snap.can_transmit, snap.tx.state]);
+  }, [autoCq, autoCqPaused, sending, snap.can_transmit, snap.tx.state]);
 
   // l'avviso del CQ automatico solo quando cambia, non all'apertura della pagina
   const autoCqFirst = useRef(true);

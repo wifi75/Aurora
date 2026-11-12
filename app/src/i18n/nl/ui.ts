@@ -1378,6 +1378,7 @@ export const NL_UI: Record<string, string> = {
   "digi.run.autoCqNoMacro": "Automatische CQ herhaalt de macro “CQ” (F2): wijs die eerst toe.",
   "digi.run.autoCqOff": "Automatische CQ uit",
   "digi.run.autoCqOn": "Automatische CQ aan: herhaalt elke {s} seconden",
+  "digi.run.autoCqPaused": "Automatische CQ gepauzeerd: druk opnieuw op Auto CQ om verder te gaan",
   "digi.run.baudUnsupported": "Snelheid niet beschikbaar in deze modus: {baud}",
   "digi.run.catFail": "De CAT-opdracht is niet verzonden: {why}",
   "digi.run.memEmpty": "Geheugen {n} is leeg.",

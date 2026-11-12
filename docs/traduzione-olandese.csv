@@ -777,7 +777,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -4078,6 +4078,7 @@ digi.run.saved,QSO saved to the log: {call},QSO opgeslagen in het logboek: {call
 digi.run.noCall,The other station’s callsign is missing.,De roepnaam van het andere station ontbreekt.
 digi.run.autoCqOn,Automatic CQ on: repeats every {s} seconds,Automatische CQ aan: herhaalt elke {s} seconden
 digi.run.autoCqOff,Automatic CQ off,Automatische CQ uit
+digi.run.autoCqPaused,Automatic CQ paused: press Auto CQ again to resume,Automatische CQ gepauzeerd: druk opnieuw op Auto CQ om verder te gaan
 digi.run.autoCqNoMacro,Automatic CQ repeats the “CQ” macro (F2): assign it first.,Automatische CQ herhaalt de macro “CQ” (F2): wijs die eerst toe.
 digi.f.rstr,RST received,RST ontvangen
 digi.f.rsts,RST sent,RST gegeven
