@@ -856,7 +856,7 @@ struct Blanker {
 
 impl Blanker {
     fn new(k: f32) -> Self {
-        let rate = RATE as f32;
+        let rate = RATE;
         Self { k, avg: 0.0, alpha: 1.0 / (0.02 * rate), hold: (0.0005 * rate) as u32, left: 0 }
     }
 

@@ -265,3 +265,40 @@ pronto; il servizio riceve ancora un ingresso solo (l'audio stereo e la scelta d
 
 Fine dei passi 8-16, con le impostazioni di base: sul minuto di solo rumore 185 caratteri a squelch spento, 0 con lo squelch statistico;
 439 volte il tempo reale.
+
+**Tabella dopo il passo 16** (Aurora con le impostazioni di base; fldigi e il miglior profilo MMTTY dalla tabella del passo 3, stessi
+scenari e stessi semi: gli arbitri non cambiano). Soglia al 10 % / CER medio; in grassetto dove Aurora e' dietro.
+
+| scenario | Aurora | fldigi | miglior MMTTY |
+|---|---|---|---|
+| rumore 170/45 | −8,1 / 19,0 | −8,1 / 21,7 | −7,9 / 20,8 |
+| rumore 170/75 | −5,7 / 29,4 | −5,2 / 32,0 | −5,1 / 33,9 |
+| rumore 425/50 | −8,2 / 21,4 | −7,6 / 24,0 | −7,4 / 23,0 |
+| rumore 850/45 | −8,3 / 19,1 | −7,7 / 21,6 | −7,3 / 22,5 |
+| rumore 85/45 | −8,4 / 18,9 | −7,9 / 20,9 | −7,5 / 24,3 |
+| fuori +10 Hz | −7,9 / 20,7 | −7,4 / 22,8 | −7,0 / 26,4 |
+| space −12 dB | −5,4 / 28,2 | 2,5 / 49,9 | 5,1 / 71,6 |
+| CCIR buono | −0,8 / 28,5 | −0,5 / 31,9 | 3,2 / 32,4 |
+| CCIR medio | **1,4** / 32,2 | 1,1 / 35,2 | 5,2 / 42,1 |
+| CCIR cattivo | **--** / 37,3 | 1,8 / 36,7 | 5,9 / 47,0 |
+| flutter 10 Hz | **-- / 59,7** | -- / 50,5 | 4,0 / 48,2 |
+| alte latitudini | **-- / 67,8** | -- / 63,9 | 3,8 / 50,9 |
+| QRM a 250 Hz +6 | −8,4 / 19,8 | −7,7 / 22,7 | −8,0 / 21,2 |
+| QRM a 120 Hz −6 | −8,3 / 19,6 | −6,8 / 23,0 | −8,0 / 22,5 |
+| portante +30 Hz | **−3,3 / 30,1** | -- / 50,7 | −6,2 / 22,4 |
+| PSK31 a 150 Hz | −8,1 / 19,3 | −8,0 / 21,6 | −7,8 / 20,4 |
+| scheda +500 ppm | −7,8 / 20,4 | −7,5 / 22,9 | −7,7 / 21,8 |
+| scheda −500 ppm | **−7,8** / 20,4 | −7,2 / 22,7 | −8,0 / 22,1 |
+| 45 baud | −7,2 / 23,8 | −6,0 / 27,5 | −6,5 / 27,8 |
+| stop 1 bit | −8,4 / 18,8 | −7,4 / 22,1 | −7,7 / 21,1 |
+| stop 2 bit | −8,5 / 19,2 | −8,0 / 20,9 | −8,3 / 19,9 |
+| scariche | **−7,9** / 19,6 | −7,7 / 22,6 | −8,0 / 21,0 |
+| filtro 250 Hz | −8,2 / 18,8 | −8,1 / 21,6 | −8,1 / 21,1 |
+| audio tagliato | −6,9 / 24,2 | −6,2 / 27,3 | −6,5 / 25,2 |
+| AGC che pompa | **−2,8 / 29,3** | −6,9 / 23,5 | −7,8 / 20,7 |
+
+Aurora e' davanti a tutti in 18 scenari su 25 (CER medio il piu' basso in 20). Restano dietro: fading veloce (flutter, alte latitudini:
+MMTTY coi profili per il flutter), CCIR cattivo (fldigi), portante dentro la banda e AGC che pompa (il filtro AA6YQ di MMTTY), e di
+0,1-0,3 dB scheda −500 ppm, scariche e CCIR medio. Il criterio «battere tutti di 0,5 dB in ogni scenario» non e' ancora raggiunto: i
+prossimi bersagli sono un demodulatore per il fading veloce (finestra corta, decisione per tono come nel modo «Selective») come terza
+variante, un notch adattivo per le portanti, e il collegamento all'interfaccia di multicanale e diversity.
