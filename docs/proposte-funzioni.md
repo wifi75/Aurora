@@ -129,7 +129,6 @@ Legenda stato: **assente** = non c'è e nessun progetto lo prevede · **parziale
 | CC-13 | Invio a PSK Reporter di ciò che si decodifica in PSK, CW e RTTY | fldigi, MultiPSK | Gli altri vedono dove si ascolta | da verificare (c'è per FT8) | medio | media |
 | CC-14 | Integrazione col log esterno via UDP (N1MM, Log4OM) anche per i modi a tastiera | N1MM, Log4OM | Un solo log vero | parziale (già per FT8) | piccolo | media |
 | CC-15 | SO2R: due radio, una in ascolto mentre l'altra trasmette | N1MM | Gare di alto livello | assente | grande | bassa |
-| CC-16 | Consegna ritardata verso Log4OM: i QSO mandati via UDP con Log4OM chiuso restano in coda e partono quando Log4OM si riapre, con la verifica nel suo archivio SQLite | — | Non serve tenere Log4OM sempre aperto (richiesta di un utente, per QSOcard Creator) | assente | piccolo | media |
 
 ---
 
