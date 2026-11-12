@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { addLogQso, ApiError, deleteLogQsos, getLogQsos, logExportUrl, saveLogAdif, type LogQso, type ManualQso } from '../api/client';
 import { askConfirm } from '../components/ConfirmHost';
+import { BANDS_FOR_ADD, LogEditDialog, MODE_GROUPS } from '../components/LogEditDialog';
 import { useT } from '../i18n';
 import { BAND_NAMES } from '../lib/format';
 import { toast } from '../lib/toast';
@@ -46,6 +47,8 @@ export function ExportPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
+  // il QSO aperto nella finestra di correzione (doppio clic sulla riga o pulsante «Modifica»)
+  const [editing, setEditing] = useState<LogQso | null>(null);
   const client = useQueryClient();
   const reload = () => client.invalidateQueries({ queryKey: ['log-qsos'] });
   const remove = async (all: boolean) => {
@@ -163,13 +166,16 @@ export function ExportPage() {
               </th>
               <th className="export-grid" title={t('tip.ui.colGrid')}>{t('exp.col.grid')}</th>
               <th>{t('exp.col.country')}</th>
+              <th className="export-edit">
+                <span className="visually-hidden">{t('exp.edit.btn')}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {shown.slice(0, limit).map((q) => {
               const on = selected.has(q.id);
               return (
-                <tr key={q.id} className={on ? 'export-row export-row--on' : 'export-row'} onClick={() => toggle(q.id)}>
+                <tr key={q.id} className={on ? 'export-row export-row--on' : 'export-row'} onClick={() => toggle(q.id)} onDoubleClick={() => setEditing(q)}>
                   <td className="export-check">
                     <input type="checkbox" title={t('tip.ui.selectRow')} aria-label={t('exp.selectRow', { call: q.call })} checked={on} onChange={() => toggle(q.id)} onClick={(e) => e.stopPropagation()} />
                   </td>
@@ -186,6 +192,21 @@ export function ExportPage() {
                       {flagCode(q.country) ? <span className={`fi fi-${flagCode(q.country)} export-flag`} aria-hidden="true" /> : null}
                       {q.country}
                     </span>
+                  </td>
+                  <td className="export-edit">
+                    <button
+                      type="button"
+                      className="glass export-edit-btn"
+                      title={t('exp.edit.rowTip')}
+                      aria-label={t('exp.edit.row', { call: q.call })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditing(q);
+                      }}
+                      onDoubleClick={(e) => e.stopPropagation()}
+                    >
+                      {t('exp.edit.btn')}
+                    </button>
                   </td>
                 </tr>
               );
@@ -317,19 +338,24 @@ export function ExportPage() {
       ) : null}
 
       {body}
+      {editing ? (
+        <LogEditDialog
+          qso={editing}
+          onClose={(done) => {
+            // un QSO eliminato non resta fra quelli scelti per l'esportazione
+            if (done === 'deleted')
+              setSelected((sel) => {
+                const next = new Set(sel);
+                next.delete(editing.id);
+                return next;
+              });
+            setEditing(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
-
-/** I modi del QSO scritto a mano, come li scrive l'ADIF (MODE), per tipo. */
-const MODE_GROUPS: ReadonlyArray<readonly ['exp.mg.digital' | 'exp.mg.voice' | 'exp.mg.cw' | 'exp.mg.other', readonly string[]]> = [
-  ['exp.mg.digital', ['FT8', 'FT4', 'JT65', 'JT9', 'JT4', 'Q65', 'MSK144', 'FST4', 'FST4W', 'WSPR', 'JS8', 'RTTY', 'PSK31', 'PSK63', 'PSK125', 'BPSK', 'QPSK', 'OLIVIA', 'CONTESTIA', 'MFSK', 'DOMINO', 'THOR', 'HELL', 'PACKET', 'PKT', 'VARA', 'ARDOP', 'PACTOR', 'SSTV', 'FAX']],
-  ['exp.mg.voice', ['SSB', 'USB', 'LSB', 'AM', 'FM', 'DIGITALVOICE', 'DSTAR', 'C4FM', 'DMR', 'FREEDV', 'M17']],
-  ['exp.mg.cw', ['CW']],
-  ['exp.mg.other', ['ATV', 'SATELLITE']],
-];
-
-const BANDS_FOR_ADD = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m', '2m', '70cm'];
 
 /** Il modulo per scrivere un QSO a mano: nominativo, data e ora UTC, banda (o frequenza), modo, rapporti, locatore, nome e commento. */
 function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {

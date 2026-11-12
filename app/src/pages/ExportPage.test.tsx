@@ -1,15 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LogQso, LogQsos } from '../api/client';
 
 vi.mock('../api/client', async () => {
   const real = await vi.importActual<typeof import('../api/client')>('../api/client');
-  return { ...real, getLogQsos: vi.fn(), saveLogAdif: vi.fn() };
+  return { ...real, getLogQsos: vi.fn(), saveLogAdif: vi.fn(), editLogQso: vi.fn(), deleteLogQso: vi.fn() };
 });
 vi.mock('../lib/toast', () => ({ toast: vi.fn() }));
-import { compactIds, getLogQsos, saveLogAdif } from '../api/client';
+import { compactIds, deleteLogQso, editLogQso, getLogQsos, saveLogAdif } from '../api/client';
 import { toast } from '../lib/toast';
 import { ExportPage, filterQsos } from './ExportPage';
 
@@ -31,6 +31,8 @@ beforeEach(() => {
   vi.mocked(getLogQsos).mockReset();
   vi.mocked(saveLogAdif).mockReset();
   vi.mocked(toast).mockReset();
+  vi.mocked(editLogQso).mockReset();
+  vi.mocked(deleteLogQso).mockReset();
 });
 
 describe('filterQsos', () => {
@@ -101,5 +103,44 @@ describe('ExportPage', () => {
     const link = screen.getByRole('link', { name: 'Scarica ADIF' });
     expect(link.getAttribute('href')).toBe('/api/v1/log/export.adi?ids=1-2');
     expect(link.getAttribute('download')).toMatch(/^aurora_log_\d{8}\.adi$/);
+  });
+
+  it('opens the correction window with a double click or with «Modifica» and shows the corrected row', async () => {
+    vi.mocked(getLogQsos).mockResolvedValueOnce(LOG).mockResolvedValue({ ...LOG, qsos: [q(3, 'K1ABD', '2026-10-27', '40m'), ...LOG.qsos.slice(1)] });
+    vi.mocked(editLogQso).mockResolvedValue(q(3, 'K1ABD', '2026-10-27', '40m'));
+    show();
+    await userEvent.dblClick(await screen.findByText('DL2XYZ'));
+    const first = screen.getByRole('dialog', { name: 'Correggi o cancella il QSO' });
+    expect(within(first).getByLabelText('Nominativo')).toHaveValue('DL2XYZ');
+    await userEvent.click(within(first).getByRole('button', { name: 'Annulla' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // il doppio clic non cambia la selezione (due clic: tolta e rimessa)
+    expect(screen.getByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Modifica il QSO con K1ABC' }));
+    const dialog = screen.getByRole('dialog');
+    const call = within(dialog).getByLabelText('Nominativo');
+    await userEvent.clear(call);
+    await userEvent.type(call, 'K1ABD');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salva' }));
+    expect(vi.mocked(editLogQso)).toHaveBeenCalledWith(3, { call: 'K1ABD' });
+    // la finestra si chiude e la riga si rilegge dal log
+    expect(await screen.findByText('K1ABD')).toBeInTheDocument();
+    expect(screen.queryByText('K1ABC')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByText('3 selezionati su 3 mostrati (3 nel log)')).toBeInTheDocument();
+  });
+
+  it('deletes a QSO from the window after the confirmation and forgets it in the selection', async () => {
+    vi.mocked(getLogQsos).mockResolvedValueOnce(LOG).mockResolvedValue({ ...LOG, total: 2, qsos: LOG.qsos.slice(1) });
+    vi.mocked(deleteLogQso).mockResolvedValue();
+    show();
+    await screen.findByText('K1ABC');
+    await userEvent.click(screen.getByRole('button', { name: 'Modifica il QSO con K1ABC' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Elimina' }));
+    await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(vi.mocked(deleteLogQso)).toHaveBeenCalledWith(3));
+    expect(await screen.findByText('2 selezionati su 2 mostrati (2 nel log)')).toBeInTheDocument();
+    expect(screen.queryByText('K1ABC')).not.toBeInTheDocument();
   });
 });
