@@ -41,11 +41,25 @@ static LAST_WINDOW_SAVE: std::sync::LazyLock<Mutex<std::collections::HashMap<Str
 
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
 
+/// Il programma vecchio che l'installatore ha messo da parte (`aurora-desktop.exe.old`) quando un altro programma lo teneva aperto e non lo
+/// si e' potuto cancellare subito: ora non serve piu'.
+fn remove_old_exe() {
+    if let Ok(exe) = std::env::current_exe() {
+        let mut old = exe.into_os_string();
+        old.push(".old");
+        let old = std::path::PathBuf::from(old);
+        if old.is_file() {
+            let _ = std::fs::remove_file(&old);
+        }
+    }
+}
+
 pub fn run() {
     // senza WebView2 Tauri si fermerebbe con un panic e Aurora ripartirebbe e ricadrebbe: prima un messaggio che spiega e si esce
     if !webview_check::ensure() {
         return;
     }
+    remove_old_exe();
     let built = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))

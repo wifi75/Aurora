@@ -83,8 +83,73 @@
   !insertmacro AuroraStopRunning 1
   StrCpy $AuroraPasso "pulizia della cartella hamlib"
   !insertmacro AuroraCleanHamlib 1
-  ; CheckIfAppIsRunning (Restart Manager) puo' fermare l'installazione se qualcosa tiene ancora il programma
+  ; al posto di CheckIfAppIsRunning del modello (vedi AuroraControlloProgramma): non ferma piu' l'installazione
   StrCpy $AuroraPasso "controllo dei programmi che tengono aurora-desktop.exe (Restart Manager)"
+  !insertmacro AuroraControlloProgramma
+!macroend
+
+; Al posto di CheckIfAppIsRunning del modello di Tauri (Restart Manager), che in un aggiornamento silenzioso si fermava se un programma
+; estraneo (antivirus, servizio di Windows) teneva aurora-desktop.exe e non si lasciava chiudere: rapporti del 2026-11-12, due PC fermi
+; sulla 0.11.238 e 0.11.239 con Aurora gia' chiusa. Qui: si scrive nel registro chi tiene il file, si richiude Aurora e si riprova per
+; qualche secondo; se resta tenuto si prova a chiuderlo con il Restart Manager e, se non si lascia chiudere, si va avanti lo stesso: il
+; programma vecchio si rinomina (aurora-desktop.exe.old, cosa che Windows permette anche a un file aperto) e il nuovo si copia accanto.
+; Il file .old lo toglie Aurora al primo avvio se qui non si e' potuto.
+!define /ifndef ERROR_MORE_DATA 234
+!macro AuroraControlloProgramma
+  StrCpy $R6 0
+  aurora_rm_giro:
+  StrCpy $R5 0
+  !insertmacro RestartManager_StartSession $R0
+  ${If} $R0 != ""
+    !insertmacro RestartManager_RegisterFile $R0 "$INSTDIR\${MAINBINARYNAME}.exe"
+    ${If} $0 = 0
+      System::Call 'RSTRTMGR::RmGetList(p R0, *i .r1, *i .r2, p 0, *i .r3) i .r0'
+      ${If} $0 = ${ERROR_MORE_DATA}
+        StrCpy $R5 $1
+        ; chi lo tiene (il primo dell'elenco): RM_PROCESS_INFO = pid, ora di avvio, nome (256), servizio (64), tipo... 668 byte l'uno
+        IntOp $2 $1 * 668
+        System::Alloc $2
+        Pop $4
+        StrCpy $2 $1
+        System::Call 'RSTRTMGR::RmGetList(p R0, *i .r1, *i r2 .r2, p r4, *i .r3) i .r0'
+        ${If} $0 = 0
+          System::Call '*$4(i .r5, i, i, &w256 .r6, &w64 .r7, i .r8)'
+          !insertmacro AuroraScrivi "AVVISO: aurora-desktop.exe tenuto da $R5 programmi; il primo: $6 (pid $5, servizio '$7', tipo $8)"
+        ${EndIf}
+        System::Free $4
+        ${If} $R6 >= 4
+          System::Call 'RSTRTMGR::RmShutdown(p R0, i ${RmForceShutdown}, p 0) i .r0'
+          ${If} $0 = 0
+            !insertmacro AuroraScrivi "chiusi con il Restart Manager"
+            StrCpy $R5 0
+          ${Else}
+            !insertmacro AuroraScrivi "AVVISO: non si lasciano chiudere dal Restart Manager ($0): si va avanti rinominando il programma vecchio"
+          ${EndIf}
+        ${EndIf}
+      ${EndIf}
+    ${EndIf}
+    !insertmacro RestartManager_EndSession $R0
+  ${EndIf}
+  ${If} $R5 != 0
+  ${AndIf} $R6 < 4
+    IntOp $R6 $R6 + 1
+    nsExec::Exec /TIMEOUT=6000 'taskkill /F /IM ${MAINBINARYNAME}.exe'
+    Pop $0
+    Sleep 1000
+    Goto aurora_rm_giro
+  ${EndIf}
+  ; il programma vecchio da parte: la copia del nuovo non trova piu' il file occupato
+  Delete "$INSTDIR\${MAINBINARYNAME}.exe.old"
+  ${If} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
+    ClearErrors
+    Rename "$INSTDIR\${MAINBINARYNAME}.exe" "$INSTDIR\${MAINBINARYNAME}.exe.old"
+    ${If} ${Errors}
+      !insertmacro AuroraScrivi "AVVISO: programma vecchio non rinominato: la copia prova a sovrascriverlo"
+    ${Else}
+      Delete "$INSTDIR\${MAINBINARYNAME}.exe.old"
+    ${EndIf}
+  ${EndIf}
+  ClearErrors
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL

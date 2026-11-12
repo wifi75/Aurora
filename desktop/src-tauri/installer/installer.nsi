@@ -870,7 +870,7 @@ Section Install
     !insertmacro NSIS_HOOK_PREINSTALL
   !endif
 
-  !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
+  ; AURORA: il controllo dei programmi che tengono il file e' nel gancio (AuroraControlloProgramma), che non ferma l'installazione
 
   ; AURORA: un file non copiato (errore di scrittura ignorato) accende la segnalazione d'errore di NSIS: la si guarda dopo la copia
   StrCpy $AuroraPasso "copia dei file"
