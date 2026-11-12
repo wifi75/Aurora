@@ -23,7 +23,32 @@ permissions:
   contents: read
 
 jobs:
+  # Se il PC ha gia' allegato l'installatore firmato e la sua firma (scripts/rilascio-windows.ps1, chiave in %USERPROFILE%\.aurora-signing),
+  # su GitHub non si ricompila niente: il proprietario compila Windows sul PC dal 2026-11-11.
+  pc:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      done: ${{ steps.check.outputs.done }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          nomi=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')
+          setup=$(echo "$nomi" | grep -- '-setup.exe$' | grep -v '^Aurora-Setup.exe$' | head -1 || true)
+          if [ -n "$setup" ] && echo "$nomi" | grep -qx "$setup.sig"; then
+            echo "installatore e firma gia' allegati dal PC: $setup"
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=false" >> "$GITHUB_OUTPUT"
+          fi
+
   windows:
+    needs: pc
+    if: needs.pc.outputs.done != 'true'
     # macchina di GitHub: SignPath accetta solo questo (controlla che tutto sia stato fatto su macchine ospitate da GitHub)
     runs-on: windows-latest
     permissions:
