@@ -13,7 +13,7 @@ Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeW
 ## Decisioni del 2026-11-11 mezzanotte
 
 - **LoTW nel riquadro del nominativo**: solo se la stazione lo usa, verde e senza data (la data non serve); se non lo usa non compare (mai «✖ LoTW»).
-- ****: niente voci di importazione delle macro nel menu; il codice dell'importazione resta solo per «Ripristina le macro di Aurora».
+- **Macro**: niente voci di importazione delle macro nel menu; il codice dell'importazione resta solo per «Ripristina le macro di Aurora».
 - **Rotore**: piccolo (16rem nella pagina, 30vh nella finestra a parte).
 - **Donazioni**: PayPal (`hosted_button_id=MY55Q6GDQEH8L`), nominativi dei sostenitori solo con consenso e solo in `SOSTENITORI.md`, mai importi.
 - **Compilazione**: il proprietario non vuole compilare su GitHub; finche' la chiave di firma non e' sul PC l'installatore firmato lo fa comunque il lavoro Windows.
@@ -24,7 +24,7 @@ Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeW
 - **Modo degli spot**: dal commento, poi dalle frequenze di lavoro di FT8/FT4/JS8/WSPR/PSK31, poi dal band plan IARU Regione 1 (solo tratti con un uso solo: CW o fonia); nei tratti misti resta vuoto (`dx-cluster/src/spot.rs`).
 - **Elenco DXpedition**: nello spazio libero della riga la via QSL accorciata (LoTW, OQRS, via MANAGER); le altre idee (bande e modi, distanza, gia' lavorato) scartate dal proprietario.
 - **Barra di stato PSK/RTTY/CW**: niente data e ora (l'ora c'e' gia' in alto).
-- ****: nei testi per l'utente non si confronta piu' Aurora con ; resta solo «Importa le macro», che nomina i file da leggere.
+- **Programmi di terzi**: nei testi, nel codice e nei documenti non si nominano programmi da cui non si prende codice (scelta del proprietario, 2026-11-12); fldigi, MMTTY, WSJT-X, JTDX e gli altri con licenza restano citati.
 - **WSPRnet**: solo `wsprnet.org` (non anche `wsprnet.eu`, che WSJT-X 3.3 usa per gli spot con locatore), spento di fabbrica, senza pulsante «Prova» (uno spot di prova finirebbe nel database pubblico).
 
 ## Decisioni del 2026-11-11 sera (ramo unico, nome multimodo, FST4/WSPR)
@@ -50,7 +50,7 @@ Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeW
 - **PTT**: una lettura mancata della radio non scarta piu' il PTT (`HamlibRig::set_ptt`); se la trasmissione fallisce per il PTT, un avviso `ptt_failed` a schermo dice il motivo. Nessuna prova su radio vera: aspettare i pacchetti di assistenza di chi lo segnalava (IC-7300 e altri).
 - **CW** (ramo `sviluppo`): tono audio keyed (non linea DTR/RTS ne' Winkeyer, per ora), velocita' in WPM, ricevitore a soglia adattiva; da provare con la radio.
 - **Log della pagina PSK/RTTY/CW**: e' lo stesso del pannello Log (Log4OM2 se configurato, altrimenti il log interno, schema v4 con nome e QTH); la frequenza registrata e' quella vera del segnale (radio + tono).
-- **Aspetto delle pagine dei modi**: restyling scuro/chiaro nello stile di Aurora (non il grigio), ma con le stesse funzioni e le macro a blocchetti 4 x 12;  si guarda solo per le funzioni.
+- **Aspetto delle pagine dei modi**: restyling scuro/chiaro nello stile di Aurora (non il grigio classico), ma con le stesse funzioni e le macro a blocchetti 4 x 12.
 - **Regola dei rami**: `sviluppo` riceve ogni versione di `main` con un merge; il merge non si spinge mentre l'installatore di sviluppo si sta compilando.
 
 ## Decisioni del 2026-11-10
@@ -58,8 +58,8 @@ Stato al 2026-11-12, versione 0.11.239 pubblicata (Linux: audio PulseAudio/PipeW
 - **Ramo privato `sviluppo`** (github.com/wifi75/Aurora-sviluppo, remote `sviluppo`): SSTV e i modi nuovi stanno solo li', non sono pubblici ne' scaricabili finche' il proprietario non decide. `main` pubblico: FT8, Rotore, correzioni; le correzioni si portano poi su `sviluppo`. L'installatore del proprietario lo fa `sviluppo.yml` (release `sviluppo-ultima`) senza aggiornamento automatico.
 - **SSTV** (crate `mode-sstv`, da QSSTV di ON4QZ): modi Martin, Scottie, Robot, PD, Wraase; storico 200 ricevute e 20 inviate; editor grafico nella pagina SSTV.
 
-- **Rotori con Hamlib rotctld** (proprietario): niente codice;  solo come elenco di funzioni (Gira, Via lunga, ±2°, rosa cliccabile). `rotctld.exe` va nell'installatore con rigctld.
-- **Codice di altri programmi**: mai copiare o ritoccare codice proprietario (); per i modi nuovi codice GPL (QSSTV, fldigi, slowrx) citando gli autori, o scritto da zero.
+- **Rotori con Hamlib rotctld** (proprietario): niente codice di altri programmi; funzioni: Gira, Via lunga, ±2°, rosa cliccabile. `rotctld.exe` va nell'installatore con rigctld.
+- **Codice di altri programmi**: mai copiare o ritoccare codice proprietario; per i modi nuovi codice GPL (QSSTV, fldigi, slowrx) citando gli autori, o scritto da zero.
 
 - **Release mai vuota per le copie installate** (dopo l'errore «la release non ha il pacchetto di installazione con la sua firma» della 0.11.221 e 0.11.222): la release si crea SEMPRE con `gh release create vX.Y.Z --latest=false` e senza file; il lavoro `Windows` allega installatore e `.sig` e solo allora la segna come ultima (passo «Release segnata come ultima solo con installatore e firma» di `windows.yml`). Mai creare una release come ultima senza installatore e firma. Se il lavoro Windows fallisce, la release resta non ultima e le copie installate restano sulla versione precedente, completa. In piu', dalla 0.11.222, Aurora richiede la release a GitHub se al momento di scaricare manca il pacchetto (`updater::prepare_locked`).
 

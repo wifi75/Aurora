@@ -255,7 +255,7 @@ Thetis, AetherSDR, ColibriNANO ecc.).
 
 ### 3.3 OmniRig
 
-- COM `OmniRig.OmniRigX` via `QAxObject`; se manca il server si avvia `OmniRig.exe` da `Program Files (x86)\\OmniRig` o `Program Files`
+- COM `OmniRig.OmniRigX` via `QAxObject`; se manca il server si avvia `OmniRig.exe` dalla cartella di installazione di OmniRig in `Program Files (x86)` o `Program Files`
   e si riprova per 10 x 500 ms (`DecodiumOmniRigManager.cpp:160-190`). I «rig» sono `OmniRig Rig 1/2`; il PTT puo' passare da CAT o da RTS/DTR
   comandati da OmniRig (`has_CAT_indirect_serial_PTT`, `OmniRigTransceiver.cpp:79-99`).
 - Modi: `PM_CW_U`->`CW-R`, `PM_CW_L`->`CW`, `PM_DIG_U`->`DATA-U`, `PM_DIG_L`->`DATA-L`, `PM_SSB_U`->`USB`, `PM_SSB_L`->`LSB` (`:20-77`).

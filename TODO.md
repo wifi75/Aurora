@@ -16,7 +16,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 
 ## Dopo la 0.11.238 (entrati nella 0.11.239)
 - [x] Riquadro del nominativo: LoTW solo se c'e', verde e senza data, anche dal DX Cluster (elenco ARRL).
-- [x] Tolte dal menu di PSK·RTTY·CW le voci per importare le macro; barra di stato con un solo carattere; rotore piu' piccolo.
+- [x] Tolte dal menu di PSK·RTTY·CW le voci per importare le macro da altri programmi; barra di stato con un solo carattere; rotore piu' piccolo.
 - [x] Donazioni con PayPal: badge, sezione nei README, `SOSTENITORI.md`, `.github/FUNDING.yml`.
 
 ## 0.11.238 (2026-11-11 notte, pubblicata)

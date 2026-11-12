@@ -71,9 +71,9 @@ Ognuno e' un progetto a se', da fare a fasi, con un piano scritto e un prototipo
 
 ## P2. Altri modi: RTTY, PSK, CW, SSTV
 
-- Regola (proprietario, 2026-11-10): si prendono solo funzioni, parametri e comportamento (elenco di cosa offrire, `D:\progetti\pc\-analisi\documentazione`), mai il codice ne' codice decompilato e ritoccato. Il codice viene da progetti liberi compatibili con la GPL-3 (QSSTV, fldigi, slowrx), citandone gli autori, o si scrive da zero dalle specifiche.
+- Regola (proprietario, 2026-11-10): da programmi chiusi si prendono solo funzioni, parametri e comportamento, mai il codice ne' codice decompilato e ritoccato. Il codice viene da progetti liberi compatibili con la GPL-3 (QSSTV, fldigi, slowrx), citandone gli autori, o si scrive da zero dalle specifiche.
 - Il proprietario ha gia' il materiale da cui riprendere le tabelle per codifica e decodifica in trasmissione e ricezione: prima di cominciare va controllata la licenza di ogni fonte (deve essere compatibile con la GPL-3 di Aurora).
-- Struttura decisa dal proprietario (2026-11-10): ogni modo ha il suo motore in un crate a parte (`core/crates/mode-sstv`, `mode-fldigi`...) che non tocca FT8/engine-native; in comune restano Log, Mappa DX, DX Cluster. Ogni modo ha la sua pagina; RTTY, PSK e CW possono stare in una pagina unica che cambia modo, con macro e pulsanti per modo (`MACRO_E_COMANDI.md`, `MACRO_DETTAGLIO.md` dell'analisi).
+- Struttura decisa dal proprietario (2026-11-10): ogni modo ha il suo motore in un crate a parte (`core/crates/mode-sstv`, `mode-fldigi`...) che non tocca FT8/engine-native; in comune restano Log, Mappa DX, DX Cluster. Ogni modo ha la sua pagina; RTTY, PSK e CW possono stare in una pagina unica che cambia modo, con macro e pulsanti per modo.
 - Si comincia dall'SSTV: pagina con ricezione, galleria, trasmissione di foto caricate con testo e scritte grafiche sopra.
 - Ordine proposto: PSK31/PSK63 e RTTY (testo, simili per interfaccia), poi CW (decodifica e trasmissione), poi SSTV (immagini, interfaccia a parte).
 - Per ognuno: motore di modulazione e demodulazione in `core/crates`, finestra di ricezione testo (o immagine), macro di trasmissione, log come per FT8, Guida e Novita' nelle sei lingue.

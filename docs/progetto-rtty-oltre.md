@@ -1,8 +1,8 @@
 # RTTY oltre tutti gli altri programmi (progetto, 2026-11-12)
 
 Punto di partenza: il ricevitore rifatto il 2026-11-12 (`core/crates/mode-digi/src/rtty.rs`): centro fra i toni e mark alto in USB, filtro a
-coseno rialzato K=1,35 (fldigi), ATC con livelli acceso/spento per tono, start come `is_mark_space` (fldigi), PLL di bit (), UOS, squelch su
-S/N, discriminatore sotto 40 Hz (). Prove: `tests/rtty_confronto.rs`, `tests/rtty_fldigi.rs` (fldigi arbitro, feature `fldigi-oracle`).
+coseno rialzato K=1,35 (fldigi), ATC con livelli acceso/spento per tono, start come `is_mark_space` (fldigi), PLL di bit che si corregge sui fronti, UOS, squelch su
+S/N, discriminatore sotto 40 Hz. Prove: `tests/rtty_confronto.rs`, `tests/rtty_fldigi.rs` (fldigi arbitro, feature `fldigi-oracle`).
 Le cifre in dB sono **stime da misurare**.
 
 ## Il margine che resta
@@ -18,9 +18,9 @@ va misurato a parte.
   niente diversity, niente piu' decodificatori insieme (si aprono piu' istanze).
 - **2Tone** (G3YYD, chiuso): modi Flat/Flutter/Selective/Spread; Selective tratta i due toni separati («diversity in banda»); squelch da 1,5 dB con
   memoria di 4 caratteri; Contest Mode (alfabeto ridotto); **Repeat Match** (ripetizioni combinate per autocorrelazione).
-- **** (, chiuso): **bayesiano**, probabilita' d'errore per bit e per carattere, caratteri incerti in chiaro, **squelch sulla
+- **Decodifica bayesiana** (idea generale): probabilita' d'errore per bit e per carattere, caratteri incerti in chiaro, **squelch sulla
   probabilita'**, fusione bayesiana dei nominativi simili, correzioni di registro, numeri, CQ e DE, conoscenza dei QSO e dei contest.
-- fldigi e : gia' portati (vedi `docs/analisi-psk-cw.md` e il CHANGELOG).
+- fldigi: gia' portato (vedi `docs/analisi-psk-cw.md` e il CHANGELOG).
 
 ## Il progetto (catena per ogni segnale)
 1. **B1 soppressore d'impulsi** e variante a limitatore (come MMTTY) contro QRN, AGC che pompa, cattura.
@@ -55,7 +55,7 @@ Robustezza: avviso di audio tagliato, livelli ad attacco veloce, filtri stretti 
 - **Criterio «battere tutti»**: in ogni scenario Aurora (impostazioni di base) almeno pari al migliore fra fldigi e il miglior profilo MMTTY, con
   almeno 0,5 dB di vantaggio sulla soglia al 10 %.
 - **Registrazioni vere** in `rtty-corpus/<id>/` (WAV 12 kHz, .mmv, `meta.toml`, testo di riferimento, nominativi dal log, uscite di ogni
-  decodificatore) per confrontare anche 2Tone e  sul PC del proprietario; bollettini RTTY di W1AW come testo noto.
+  decodificatore) per confrontare anche 2Tone sul PC del proprietario; bollettini RTTY di W1AW come testo noto.
 
 ## Piano (un commit per passo)
 1 scenari comuni e misure · 2 MMTTY arbitro · 3 tabella Aurora/fldigi/MMTTY · 4 raccolta WAV e valutazione · 5 front-end decimato · 6 LLR e rumore in
@@ -65,8 +65,7 @@ limitatore · 11 varianti e fusione · 12 registro e prior del contest · 13 rip
 
 Fonti: [W0YK CTU 2019](https://www.contestuniversity.com/wp-content/uploads/2019/05/13-W0YK-Taking-Digital-Contesting-to-the-Limit_2019.pdf),
 [2Tone Operational Information](https://www.sp2pby.pl/pdf/2Tone%202102a.pdf), [manuale 2Tone](http://ok2pad.webz.cz/logger32/g3yyd_2tone.pdf),
-[W8TN su Repeat Match](https://w8tn.blogspot.com/2016/11/new-feature-of-2tone-rtty-decoder.html), [](https:///),
-[ demo](https:////Demo), [decodificatore Server](https://www.//Files/.pdf).
+[W8TN su Repeat Match](https://w8tn.blogspot.com/2016/11/new-feature-of-2tone-rtty-decoder.html).
 
 ## Risultati dei passi
 
@@ -124,10 +123,10 @@ scariche e con la scheda a −500 ppm: sono questi i bersagli dei passi successi
 **Passo 4** (registrazioni vere): `tests/rtty_corpus.rs` legge ogni cartella di `rtty-corpus/` (fuori dal repository, in `.gitignore`; o
 quella di `AURORA_RTTY_CORPUS`): `audio.wav` (PCM 16 bit o float 32, qualunque frequenza, si porta a 12 kHz; stereo: sinistro, il destro
 servira' alla diversity), `meta.toml` (`centre_hz`, `shift_hz`, `baud`, `reverse`), `riferimento.txt` e `nominativi.txt` facoltativi e le
-uscite degli altri programmi come `uscita-2tone.txt`, `uscita-.txt`, `uscita-mmtty.txt`. Scrive `uscita-aurora.txt` (e quelle degli
+uscite degli altri programmi come `uscita-2tone.txt`, `uscita-mmtty.txt`. Scrive `uscita-aurora.txt` (e quelle degli
 arbitri compilati) e stampa CER e nominativi trovati per ogni programma. `AURORA_WAV=<cartella>` con la prova `tabella` scrive i WAV a
-0 dB di ogni scenario, da far leggere a 2Tone e . Da fare sul PC del proprietario: registrare bollettini W1AW (testo noto) e un
-paio d'ore di contest, passarli a 2Tone, , MMTTY e  e mettere le uscite nelle cartelle.
+0 dB di ogni scenario, da far leggere a 2Tone. Da fare sul PC del proprietario: registrare bollettini W1AW (testo noto) e un
+paio d'ore di contest, passarli a 2Tone e MMTTY e mettere le uscite nelle cartelle.
 
 **Passo 5** (front-end decimato): oscillatore a rotazione sul centro, passa-basso FIR a finestra di Blackman che tiene toni e canali del
 rumore, decimazione a circa 32 campioni per bit; filtri dei toni, filtri dell'AFC, canali del rumore e discriminatore lavorano sul segnale

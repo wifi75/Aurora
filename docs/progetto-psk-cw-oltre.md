@@ -2,11 +2,11 @@
 
 Parte da «L1», cioè da Aurora dopo il lavoro di `docs/analisi-psk-cw.md` (filtro adattato, sincronismo, AFC con DCD, squelch su metrica,
 FIR e AGC del CW, velocità a coppie, filtro degli stati brevi, segni di procedura, SOM di fldigi). Le cifre in dB sono **stime da misurare**.
-Il vantaggio su fldigi, , MMVARI, decodificatore, MRP40 e DigiPan verrà da tre cose:
-1. **decisioni probabilistiche** al posto delle soglie: per il CW un decodificatore bayesiano a traliccio (Bell 1977, decodificatore); per il PSK
+Il vantaggio su fldigi, MMVARI, MRP40 e DigiPan verrà da tre cose:
+1. **decisioni probabilistiche** al posto delle soglie: per il CW un decodificatore bayesiano a traliccio (Bell 1977); per il PSK
    la varicode decodificata con Viterbi su bit soft;
 2. **modello del testo e dei nominativi** costruito su dati che Aurora ha già (DXCC, registro, spot del cluster);
-3. **decodifica di tutti i segnali della banda audio** con lo storico di ciascuno (decodificatori CW, browser PSK).
+3. **decodifica di tutti i segnali della banda audio** con lo storico di ciascuno (tutti i segnali CW, browser PSK).
 
 Da L1 servono due uscite: per il PSK il campione complesso di ogni simbolo dopo filtro adattato e sincronismo, con la stima del rumore;
 per il CW la banda base complessa decimata (circa 500 Hz) dopo il FIR, prima dell'isteresi.
@@ -22,7 +22,7 @@ per il CW la banda base complessa decimata (circa 500 Hz) dopo il FIR, prima del
 - **I2** modello del testo `lm.rs`: trigrammi di caratteri (CW maiuscolo, PSK sensibile alle maiuscole), lessico dei QSO, grammatica dei
   nominativi convalidata con `dxcc::DxccDb::lookup`, probabilità dal registro e dagli spot, MASTER.SCP facoltativo.
 - **I3** eventi: `channel`, `seq`, `conf`, `revise_from` in `DigiEvent` (`aurora-core/src/event.rs`); tipo `browser` per l'elenco dei canali.
-- **I4** thread «decodificatori» separato in `service.rs` con buffer di 60 s, perché il ricevitore principale non perda blocchi.
+- **I4** thread «tutta la banda» separato in `service.rs` con buffer di 60 s, perché il ricevitore principale non perda blocchi.
 
 ## CW
 | # | Tecnica | Guadagno atteso | CPU | Rischi |
@@ -49,14 +49,14 @@ per il CW la banda base complessa decimata (circa 500 Hz) dopo il FIR, prima del
 | P8 | diversità: due ingressi (TCI/SDR) combinati a rapporto massimo; più rami interni; fusione delle ripetizioni dei nominativi | 3 dB AWGN, 5-8 dB in Rayleigh | ×2 | serve l'hardware |
 | P9 | correzione dell'orologio della scheda in ppm (come MMVARI) | 0,2-0,5 dB con ±300 ppm | trascurabile | — |
 
-## Più segnali insieme (decodificatori CW, browser PSK)
+## Più segnali insieme (tutti i segnali CW, browser PSK)
 Modulo `mode-digi/src/skim/`: canalizzatore FFT (rustfft), rivelatore senza griglia fissa (CW: inviluppo bimodale; PSK: righe a ±baud/2,
 riga del quadrato, ciclostazionarietà), un decodificatore completo L1+L2 per segnale (64 canali CW, 30 PSK, CPU stimata < 10% di un core
 con 40 canali CW), storico di 60 s per canale (il clic sintonizza e mostra tutto il passaggio), estrazione dei nominativi con DXCC e «già
 lavorato», spot locali verso il cluster (in rete solo su richiesta e con alta confidenza). Con I/Q largo via TCI lo stesso canalizzatore
 coprirebbe 48-192 kHz.
 
-Interfaccia: pannello decodificatori/Browser (frequenza, WPM o modo, S/N, testo, nominativo con bandiera, CQ), nominativi sulla cascata,
+Interfaccia: pannello Tutta la banda/Browser (frequenza, WPM o modo, S/N, testo, nominativo con bandiera, CQ), nominativi sulla cascata,
 caratteri incerti in grigio con le correzioni, impostazioni classica/avanzata, peso del modello del testo, «tasto a mano», canali massimi,
 spot automatici, secondo ingresso. Testi in sette lingue.
 
@@ -69,8 +69,8 @@ spot automatici, secondo ingresso. Testi in sette lingue.
   falsi al minuto, tempo d'aggancio, WPM stimati, fattore di tempo reale con 1/10/40/64 canali.
 - **fldigi come arbitro** anche per PSK e CW (stessa feature `fldigi-oracle` dell'RTTY): mai peggiori di fldigi (tolleranza 0,5 dB), in media
   +1 dB PSK AWGN, +3 dB PSK con QRN e fading, +3 dB CW AWGN, CER dimezzato CW a mano.
-- **Pacchetto WAV** (12 e 48 kHz, testo di riferimento, `elenco.csv`) ed esempio `punteggio` per confrontare decodificatore, MRP40, DigiPan,
-  , MultiPSK sul PC del proprietario; registrazioni vere con testo noto (esercitazioni CW e bollettini BPSK31 di W1AW) e di contest.
+- **Pacchetto WAV** (12 e 48 kHz, testo di riferimento, `elenco.csv`) ed esempio `punteggio` per confrontare MRP40, DigiPan,
+  MultiPSK sul PC del proprietario; registrazioni vere con testo noto (esercitazioni CW e bollettini BPSK31 di W1AW) e di contest.
 
 ## Piano (dopo L1), un commit per passo
 0. banchi di prova, fldigi arbitro per PSK e CW, soglia S/N e fattore di tempo reale, pacchetto WAV e `punteggio`;
@@ -82,7 +82,7 @@ spot automatici, secondo ingresso. Testi in sette lingue.
 6. risultati contro fldigi e contro gli altri programmi, Guida; facoltativo C8.
 
 ## Fonti
-decodificatore <https:///Cw/> ·  <https:///> · E. L. Bell, tesi NPS 1977
+E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·
 MRP40 <https://www.polar-electric.com/Morse/MRP40-EN/features.html> · MMVARI <https://github.com/n5ac/mmvari> · DigiPan
 <https://www.digipan.net/> · WinWarbler <https://dxlabsuite.com/winwarbler/Help/BroadbandDecode.htm> · specifica PSK31 ARRL
