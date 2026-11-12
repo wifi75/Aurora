@@ -111,6 +111,15 @@ pub(crate) async fn sstv_rx_current(State(state): State<AppState>, _: Authed) ->
     Ok(png(bytes))
 }
 
+/// L'immagine in arrivo (o l'ultima finita) pulita dal rumore, in PNG (`order` 1..6, `smooth` 0,05..2; predefiniti 3 e 0,4).
+#[utoipa::path(get, path = "/api/v1/sstv/rx/current/clean", responses((status = 200, description = "PNG pulito"), (status = 404, description = "Nessuna immagine (not_found)")))]
+pub(crate) async fn sstv_rx_current_clean(State(state): State<AppState>, _: Authed, Query(q): Query<CleanQuery>) -> Result<Response, ApiError> {
+    let svc = service(&state)?;
+    let (order, smooth) = (q.order.unwrap_or(mode_sstv::denoise::DEFAULT_ORDER), q.smooth.unwrap_or(mode_sstv::denoise::DEFAULT_SMOOTH));
+    let bytes = blocking(move || svc.current_clean_png(order, smooth)).await?.ok_or_else(|| api_error(SstvError::NotFound))?;
+    Ok(png(bytes))
+}
+
 /// Le immagini ricevute e trasmesse, dalla piu' recente.
 #[utoipa::path(get, path = "/api/v1/sstv/images", responses((status = 200, description = "`{images: [{id, direction, mode, width, height, time_ms, sync_quality, call}]}`")))]
 pub(crate) async fn sstv_images(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {

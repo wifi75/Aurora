@@ -468,6 +468,12 @@ impl SstvService {
         lock(&self.inner.current).as_ref().and_then(|img| encode_png(img).ok())
     }
 
+    /// L'immagine in arrivo (o l'ultima finita) pulita dal rumore, in PNG: come [`SstvService::image_clean_png`].
+    pub fn current_clean_png(&self, order: u32, smooth: f32) -> Option<Vec<u8>> {
+        let img = lock(&self.inner.current).clone()?;
+        encode_png(&crate::denoise::denoise(&img, order, smooth)).ok()
+    }
+
     pub fn images(&self) -> Vec<ImageEntry> {
         lock(&self.inner.store).list()
     }
