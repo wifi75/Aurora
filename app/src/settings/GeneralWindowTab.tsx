@@ -1,7 +1,9 @@
 import { useT, type Key } from '../i18n';
 import type { SettingRow } from '../lib/engineSettingsLayout';
 import { PrefCheck, REGION_OPTIONS, ScreenExtras, TYPE2_OPTIONS } from './JtdxTabs';
-import { SettingField, useDraft, useSettings } from './NativeSettings';
+import { QSO_LOG_GROUPS } from '../lib/engineSettingsLayout';
+import { EngineGroups, SettingField, useDraft, useSettings } from './NativeSettings';
+import { Page } from './layout';
 import { UpdatesTab } from './UpdatesTab';
 import { Check } from './common';
 import { usePrefs } from '../lib/prefs';
@@ -70,14 +72,11 @@ export function GeneralWindowTab({ part = 'all' }: { part?: GeneralPart } = {}) 
         <h3>{t('sw.behavior')}</h3>
         <div className="sw-grid">
           {f('MonitorOFF', 'bool', 'gen2.monitorOff')}
-          {f('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
         </div>
       </section>
-      <section className="sw-box" aria-label={t('sw.logging')}>
-        <h3>{t('sw.logging')}</h3>
+      <section className="sw-box" aria-label={t('gen2.logFilter')}>
+        <h3>{t('gen2.logFilter')}</h3>
         <div className="sw-grid">
-          {f('PromptToLog', 'bool', 'jx.PromptToLog')}
-          {f('ClearCallGrid', 'bool', 'jx.ClearCallGrid')}
           {f('callsignLogFiltering', 'bool', 'gen2.useCall')}
           {f('gridLogFiltering', 'bool', 'gen2.useGrid')}
           {f('timeFromLogFiltering', 'text', 'gen2.fromDate')}
@@ -86,7 +85,17 @@ export function GeneralWindowTab({ part = 'all' }: { part?: GeneralPart } = {}) 
     </>
   );
   if (part === 'station') return <div className="sw-page">{station}</div>;
-  if (part === 'qso') return <div className="sw-page">{qso}</div>;
+  // la registrazione dei QSO (chiedere, registrare da solo, svuotare DX Call e Grid, ALL.TXT) e' di tutti i modi: sta qui e non nella
+  // Sequenza di FT8; il tempo di sorveglianza Tx invece sta con le altre opzioni di trasmissione (Modi › FT8 · FT4 › Sequenza)
+  if (part === 'qso')
+    return (
+      <div className="sw-page">
+        {qso}
+        <Page>
+          <EngineGroups groups={QSO_LOG_GROUPS} />
+        </Page>
+      </div>
+    );
   return (
     <div className="sw-page">
       {updates}
