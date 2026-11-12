@@ -41,3 +41,13 @@ Kazakistan 14, Belgio 12, Paesi Bassi 11, Cechia 9, Brasile 7, poi altri 35 paes
 - **#27** (UN7MBV): ringrazia per la mappa; dice che col solo rumore l'RTTY stampa caratteri (risolto dallo squelch su S/N del nuovo
   ricevitore RTTY) e che il livello Rx e' scomodo da regolare; riporta che sul forum locale c'e' chi chiede di non caricare il programma di
   funzioni in piu'.
+
+## Correzioni fatte lo stesso giorno (commit locali)
+- WebView2 mancante: controllo prima di aprire la finestra, messaggio di Windows nelle sei lingue con il link all'installazione di Microsoft e
+  uscita pulita, niente piu' crash a ripetizione (`desktop/src-tauri/src/webview_check.rs`).
+- «Riproduzione oltre la durata prevista»: tolleranza del 2 % sulla durata delle onde lunghe (anche per il watchdog del PTT) e numeri nel
+  messaggio (durata vera, durata prevista, frequenza di campionamento) per capire la causa dai prossimi rapporti.
+- Riavvio dopo l'aggiornamento: se il programma non c'e' a fine installazione si riapre l'installatore con le sue finestre.
+- Pulizia dei rapporti: i nomi generici (User, Radio, Admin...) non sono dati personali; i valori corti si tolgono solo come parole intere.
+- Messaggi del motore con i percorsi nuovi delle Impostazioni (Stazione › Radio, Accesso e assistenza).
+- rigctld che si chiude appena collegato: il messaggio lo dice e riporta le sue ultime righe.
