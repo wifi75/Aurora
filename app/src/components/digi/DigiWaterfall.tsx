@@ -161,7 +161,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       </span>
     ) : null;
 
-  // la coppia di marcatori uniti da una linea, ai due lati della frequenza (mark e space dell'RTTY): il triangolo blu (ricezione) sta sotto
+  // la coppia di marcatori uniti da una linea, ai due lati della frequenza (mark e space dell'RTTY): il triangolo viola scuro (ricezione) sta sotto
   // la linea e il rosso (trasmissione) sopra, cosi' quando coincidono formano un rombo; in split la coppia rossa va per conto suo
   const pair = (hz: number, kind: 'rx' | 'tx', title: string) => {
     // senza coppia di toni (PSK, CW) si mostra un solo rombo sulla frequenza: la banda passante non si disegna

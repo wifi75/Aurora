@@ -236,3 +236,12 @@ html[data-theme='light'] .digi-status .digi-st--select select option { backgroun
 .digi-log-grip::before, .digi-macrogrip::before { content: ''; position: absolute; top: 50%; left: 1px; width: 8px; height: 46px; margin-top: -23px; border-radius: 6px; background: radial-gradient(circle, #9fb0d6 1.4px, transparent 1.6px) 0 0 / 8px 12px repeat-y, #3a4f86; border: 1px solid #6b7fc0; }
 .digi-log-grip:hover::before, .digi-macrogrip:hover::before { background: radial-gradient(circle, #fff 1.4px, transparent 1.6px) 0 0 / 8px 12px repeat-y, #6b58e0; border-color: #8e7bff; }
 html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-grip::before, html[data-theme='light'] .digi-log-grip::before, html[data-theme='light'] .digi-macrogrip::before { background-color: #dfe6f5; border-color: #7d8bb0; }
+
+/* Marcatori della cascata: la punta di ricezione (sotto la linea) viola scuro come la vuole il proprietario, con un alone chiaro che
+   la stacca dal fondo blu; le punte un po' piu' grandi. La trasmissione resta rossa sopra la linea */
+.digi-wf-pair::before, .digi-wf-pair::after { border-left-width: 5px; border-right-width: 5px; filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.95)); }
+.digi-wf-pair::before { left: -5px; }
+.digi-wf-pair::after { right: -5px; }
+.digi-wf-pair--rx::before, .digi-wf-pair--rx::after { border-top: 9px solid #5b0e91; }
+.digi-wf-pair--tx::before, .digi-wf-pair--tx::after { border-bottom: 9px solid #ff2d2d; }
+.digi-wf-pair--single::before { left: -5px; }
