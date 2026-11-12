@@ -45,6 +45,7 @@ export function digiWithDefaults(snap: DigiSnapshot): DigiSnapshot {
     cw_bandwidth_hz: raw.cw_bandwidth_hz ?? 150,
     cw_squelch_snr_db: raw.cw_squelch_snr_db ?? -15,
     cw_som: raw.cw_som ?? false,
+    wf_anticlick: raw.wf_anticlick ?? true,
     psk_squelch: raw.psk_squelch ?? 15,
     rtty_shift_hz: raw.rtty_shift_hz ?? 170,
     rtty_baud: raw.rtty_baud ?? 45.45,

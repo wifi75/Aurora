@@ -17,10 +17,14 @@ export interface RttyStatus {
   onReverse(): void;
 }
 
-/** In CW la barra ha la tendina della banda del filtro, che salva subito come il menu Modo. */
+/** In CW la barra ha la tendina della banda del filtro, che salva subito come il menu Modo, e il tasto «TX = RX». */
 export interface CwStatus {
   bandwidthHz: number;
   onBandwidth(hz: number): void;
+  /** La velocita' capita in ricezione (WPM interi), se c'e' un segnale. */
+  rxWpm?: number | null;
+  /** La velocita' di trasmissione diventa quella ricevuta. */
+  onTxAtRx?(): void;
 }
 
 interface Props {
@@ -192,6 +196,11 @@ export function DigiStatusBar(p: Props) {
             ))}
           </select>
         </label>
+      ) : null}
+      {p.cw?.onTxAtRx ? (
+        <button type="button" className="digi-st" disabled={p.cw.rxWpm == null} title={t('digi.mi.txAtRxTip')} onClick={p.cw.onTxAtRx}>
+          {t('digi.st.txAtRx')}
+        </button>
       ) : null}
       {p.rtty ? null : p.modeData !== '' ? (
         <button type="button" className="digi-st" title={t('digi.st.modeData')} onClick={p.onModeSettings}>

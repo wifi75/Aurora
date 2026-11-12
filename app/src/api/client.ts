@@ -1800,6 +1800,8 @@ export interface DigiSettings {
   cw_squelch_snr_db: number;
   /** CW: decodifica SOM di fldigi (per il tasto a mano). */
   cw_som: boolean;
+  /** Anti-click della cascata mentre la pagina ascolta (acceso di base). */
+  wf_anticlick: boolean;
   /** PSK: soglia dello squelch sulla qualita' della fase (0-100, come fldigi). */
   psk_squelch: number;
   rx_freq_hz: number;
