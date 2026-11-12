@@ -167,6 +167,15 @@ impl AudioSink for TciSink {
         Some(Arc::clone(&self.shared.gain))
     }
 
+    fn append(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+        lock(&self.shared.playback).append(&samples);
+        Ok(())
+    }
+
+    fn consumed(&self) -> Option<u64> {
+        Some(lock(&self.shared.playback).consumed())
+    }
+
     /// Un'onda in corso che il server non chiede piu' (SDR chiusa, TCI scollegato): la trasmissione non deve restare appesa.
     fn has_failed(&self) -> bool {
         self.is_playing() && now_ms().saturating_sub(self.shared.last_pull_ms.load(Ordering::SeqCst)) > STALL.as_millis() as u64

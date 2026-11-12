@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../i18n';
+import { PopupMenu } from '../PopupMenu';
 import { CW_BANDWIDTHS, CW_WIDE_HZ, RTTY_BAUDS, RTTY_SHIFTS, roundBaud, withCurrent } from './ModeSettings';
+import '../../styles/call-menu.css';
 
 /** In RTTY la barra ha le tendine di spostamento e velocita' e il tasto «Rev», che salvano subito come il menu Modo. */
 export interface RttyStatus {
@@ -43,6 +45,8 @@ interface Props {
   /** Solo in CW: la tendina della banda del filtro accanto ai dati del modo. */
   cw?: CwStatus;
   modeName: string;
+  /** Clic sul nome del modo (in RTTY: la finestra «Impostazioni RTTY»); senza, il nome non si clicca. */
+  onModeClick?(): void;
   onToggleTx(): void;
   onToggleSquelch(): void;
   onToggleAfc(): void;
@@ -51,8 +55,22 @@ interface Props {
   onFreq(hz: number): void;
   /** Clic sui dati del modo: la finestra delle impostazioni del modo. */
   onModeSettings(): void;
-  /** Clic destro sulla barra: soglia dello squelch. */
+  /** «Soglia dello squelch…» nel menu del tasto destro (in RTTY la finestra «Impostazioni RTTY»). */
   onThreshold(): void;
+  /** L'orologio UTC nella barra e «TX lampeggiante», dal menu del tasto destro. */
+  showUtc?: boolean;
+  onToggleUtc?(): void;
+  onToggleFlashTx?(): void;
+}
+
+/** L'ora UTC (HH:MM:SS), aggiornata ogni secondo. */
+function UtcClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return <span className="digi-st digi-st--info">{now.toISOString().slice(11, 19)} UTC</span>;
 }
 
 /** La barra di stato: RX/TX, Sq, AFC, Lock, Snap, frequenza audio, dati del modo, misure del segnale (S/N, IMD, WPM) e modo. Data e ora tolte (scelta del proprietario 2026-11-11:
@@ -60,6 +78,23 @@ interface Props {
 export function DigiStatusBar(p: Props) {
   const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
+  // il menu del tasto destro (su qualunque casella della barra)
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const item = (label: string, checked: boolean | null, run: () => void) => (
+    <button
+      type="button"
+      role={checked === null ? 'menuitem' : 'menuitemcheckbox'}
+      aria-checked={checked === null ? undefined : checked}
+      onClick={() => {
+        setMenu(null);
+        run();
+      }}
+    >
+      <span className="digi-st-menu-check">{checked ? '✓' : ''}</span>
+      {label}
+    </button>
+  );
   const freqText = draft ?? p.freqHz.toFixed(1).replace('.', ',');
   const commit = () => {
     if (draft === null) return;
@@ -74,9 +109,19 @@ export function DigiStatusBar(p: Props) {
       role="status"
       onContextMenu={(e) => {
         e.preventDefault();
-        p.onThreshold();
+        setMenu({ x: e.clientX, y: e.clientY });
       }}
     >
+      <PopupMenu at={menu} onClose={closeMenu} className="call-menu digi-st-menu" width={230} height={230} label={t('digi.st.menu')}>
+        {item(t('digi.mi.squelch'), p.squelchOn, p.onToggleSquelch)}
+        {item(t('digi.mi.afc'), p.afc, p.onToggleAfc)}
+        {item('Lock', p.lock, p.onToggleLock)}
+        {item(t('digi.mi.snap'), p.snap, p.onToggleSnap)}
+        {item(t('digi.st.threshold'), null, p.onThreshold)}
+        <hr className="digi-st-menu-sep" />
+        {item('UTC', p.showUtc === true, () => p.onToggleUtc?.())}
+        {item(t('digi.mi.flashTx'), p.flashTx === true, () => p.onToggleFlashTx?.())}
+      </PopupMenu>
       <button type="button" className={`digi-st digi-st--${p.transmitting ? 'tx' : 'rx'}${p.transmitting && p.flashTx ? ' digi-st--flash' : ''}`} title={t('digi.st.txrx')} onClick={p.onToggleTx}>
         {p.transmitting ? 'TX' : 'RX'}
       </button>
@@ -158,7 +203,14 @@ export function DigiStatusBar(p: Props) {
           {p.measures}
         </span>
       ) : null}
-      <span className="digi-st digi-st--info">{p.modeName}</span>
+      {p.showUtc ? <UtcClock /> : null}
+      {p.onModeClick ? (
+        <button type="button" className="digi-st" title={t('digi.rtty.title')} onClick={p.onModeClick}>
+          {p.modeName}
+        </button>
+      ) : (
+        <span className="digi-st digi-st--info">{p.modeName}</span>
+      )}
     </div>
   );
 }

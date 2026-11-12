@@ -1652,6 +1652,30 @@ impl mode_digi::DigiTxPort for DigiTx {
     fn is_busy(&self) -> bool {
         matches!(self.transmitter.state(), tx_native::TxState::Waiting | tx_native::TxState::Transmitting)
     }
+
+    // trasmissione a flusso: aperta a levetta e scritta dal vivo, con l'avanzamento sui campioni usciti davvero dalla scheda
+    fn can_stream(&self) -> bool {
+        true
+    }
+
+    fn start_stream(&self, first: Vec<f32>) -> Result<(), String> {
+        if let Some(v) = &self.volume {
+            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        }
+        self.transmitter.start_stream(first).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn append(&self, wave: Vec<f32>) -> Result<(), String> {
+        self.transmitter.append_stream(&wave).map_err(|e| e.to_string())
+    }
+
+    fn close_stream(&self) {
+        self.transmitter.close_stream();
+    }
+
+    fn played(&self) -> Option<u64> {
+        self.transmitter.stream_played()
+    }
 }
 
 /// La catena di trasmissione vista dall'SSTV: trasmissione libera (fuori dai periodi FT8) con lo stesso PTT, la stessa uscita e lo stesso Pwr.

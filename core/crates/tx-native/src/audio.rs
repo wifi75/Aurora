@@ -42,6 +42,15 @@ pub trait AudioSink: Send {
     fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
         None
     }
+    /// Accoda altri campioni a quelli dell'onda in corso (trasmissione a flusso dei modi testuali): se l'onda era gia' finita riprende
+    /// a suonare. Di base un'uscita non lo sa fare.
+    fn append(&mut self, _samples: Vec<f32>) -> Result<(), TxError> {
+        Err(TxError::Audio("questa uscita audio non accoda campioni".into()))
+    }
+    /// Quanti campioni dell'onda in corso (dall'ultimo `start`) sono gia' passati al dispositivo; `None` se l'uscita non lo sa.
+    fn consumed(&self) -> Option<u64> {
+        None
+    }
 }
 
 /// Il canale d'uscita come nella scheda Audio di JTDX (`AudioOutputChannel`). In JTDX (`Modulator::readData`, `SoundOutput::setFormat`):
@@ -134,6 +143,8 @@ pub struct Playback {
     playing: bool,
     /// Discesa in corso dopo uno `stop`: (campioni totali, fatti).
     fade: Option<(usize, usize)>,
+    /// Campioni passati al dispositivo dall'ultimo `start` (anche quelli gia' tolti da `samples`).
+    consumed: u64,
 }
 
 impl Playback {
@@ -146,6 +157,26 @@ impl Playback {
         self.samples = samples;
         self.pos = 0;
         self.fade = None;
+        self.consumed = 0;
+    }
+
+    /// Accoda campioni all'onda in corso (trasmissione a flusso); se era finita riprende. Dopo uno `stop` non fa niente.
+    pub fn append(&mut self, samples: &[f32]) {
+        if self.fade.is_some() || samples.is_empty() {
+            return;
+        }
+        // i campioni gia' suonati non servono piu'
+        if self.pos >= 1 << 16 {
+            self.samples.drain(..self.pos);
+            self.pos = 0;
+        }
+        self.samples.extend_from_slice(samples);
+        self.playing = true;
+    }
+
+    /// Campioni passati al dispositivo dall'ultimo `start`.
+    pub fn consumed(&self) -> u64 {
+        self.consumed
     }
 
     pub fn is_playing(&self) -> bool {
@@ -173,6 +204,7 @@ impl Playback {
             }
             let mut s = self.samples[self.pos];
             self.pos += 1;
+            self.consumed += 1;
             if let Some((total, done)) = &mut self.fade {
                 s *= (0.5 * (1.0 + (PI * *done as f64 / *total as f64).cos())) as f32;
                 *done += 1;
@@ -544,6 +576,18 @@ impl AudioSink for CpalSink {
         self.shared.failed.load(Ordering::SeqCst)
     }
 
+    fn append(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+        if self.shared.failed.load(Ordering::SeqCst) {
+            return Err(TxError::Audio(format!("{}: il dispositivo non risponde piu'", self.name)));
+        }
+        lock(&self.shared.playback).append(&samples);
+        Ok(())
+    }
+
+    fn consumed(&self) -> Option<u64> {
+        Some(lock(&self.shared.playback).consumed())
+    }
+
     fn reopen(&self) -> Option<Result<Box<dyn AudioSink>, TxError>> {
         // lo stesso nome scelto (non quello del dispositivo: Windows puo' rinumerarlo, «2- USB Audio CODEC»), lo stesso guadagno e canale
         let hint = self.hint.as_deref().or(Some(self.name.as_str()));
@@ -708,6 +752,14 @@ impl AudioSink for SwitchableSink {
 
     fn live_gain(&self) -> Option<Arc<AtomicU32>> {
         Some(Arc::clone(&self.gain))
+    }
+
+    fn append(&mut self, samples: Vec<f32>) -> Result<(), TxError> {
+        lock(&self.shared).current.append(samples)
+    }
+
+    fn consumed(&self) -> Option<u64> {
+        lock(&self.shared).current.consumed()
     }
 }
 

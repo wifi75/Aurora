@@ -115,7 +115,7 @@ pub(crate) const MORSE: &[(u8, &str)] = &[
 /// e partono come un segno solo, senza pausa fra le lettere.
 pub(crate) const PROSIGNS: &[(&str, &str)] = &[("<AR>", ".-.-."), ("<BT>", "-...-"), ("<KN>", "-.--."), ("<SK>", "...-.-")];
 
-fn pattern_of(c: u8) -> Option<&'static str> {
+pub(crate) fn pattern_of(c: u8) -> Option<&'static str> {
     let up = c.to_ascii_uppercase();
     MORSE.iter().find(|(ch, _)| *ch == up).map(|(_, p)| *p)
 }

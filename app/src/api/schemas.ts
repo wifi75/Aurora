@@ -186,6 +186,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     kind: z.string(),
     mode: z.string().optional(),
     text: z.string().optional(),
+    weak: z.array(z.number()).optional(),
     state: z.string().optional(),
     progress: z.number().optional(),
     level_db: z.number().optional(),

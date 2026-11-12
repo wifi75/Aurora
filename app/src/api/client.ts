@@ -1774,6 +1774,22 @@ export interface DigiMacro {
   color: number | null;
 }
 
+export type RttyCharset = 'ita2' | 'lowercase' | 'cyrillic' | 'swedish';
+
+/** Un profilo RTTY (Set 1-4): spostamento, velocita', Rev, ricevitore, set di caratteri, AFC, Snap, Squelch, UOS e soglia. */
+export interface RttyProfile {
+  shift_hz: number;
+  baud: number;
+  reverse: boolean;
+  receiver: 'auto' | 'filters' | 'discriminator';
+  charset: RttyCharset;
+  afc: boolean;
+  snap: boolean;
+  squelch: boolean;
+  uos: boolean;
+  squelch_snr_db: number;
+}
+
 export interface DigiSettings {
   mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
   /** Velocita' della CW in parole al minuto. */
@@ -1799,6 +1815,11 @@ export interface DigiSettings {
   rtty_squelch_snr_db: number;
   /** RTTY: ricevitore a due filtri, a discriminatore di frequenza o scelto dallo spostamento (`auto`: discriminatore sotto i 40 Hz). */
   rtty_receiver: 'auto' | 'filters' | 'discriminator';
+  /** RTTY: set di caratteri (ITA2 maiuscolo di base, minuscole, cirillico MTK-2, svedese). */
+  rtty_charset: RttyCharset;
+  /** RTTY: i quattro profili della finestra «Impostazioni RTTY» e quello scelto (0-3), gia' copiato nei campi qui sopra. */
+  rtty_profile: number;
+  rtty_profiles: RttyProfile[];
   afc_on: boolean;
   /** Squelch acceso: la soglia e' quella del modo (`psk_squelch`, `rtty_squelch_snr_db`, `cw_squelch_snr_db`), sempre relativa. */
   squelch_on: boolean;
@@ -1815,7 +1836,8 @@ export interface DigiSnapshot {
   /** `snr_db`: rapporto segnale/rumore del modo (RTTY quello dello squelch, PSK come fldigi, CW in 3 kHz); `imd_db` e `quality` (0-100) solo
    * in PSK; `wpm` la velocita' capita in CW; `radio_lsb`: la radio e' in LSB (RTTY invertito da solo). */
   rx: { listening: boolean; level_db: number; freq_hz: number; squelch_open: boolean; snr_db?: number; imd_db?: number; quality?: number; wpm?: number; radio_lsb?: boolean };
-  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null };
+  /** `open`: trasmissione aperta a levetta (resta in trasmissione, il testo scritto parte mentre si scrive). */
+  tx: { state: string; progress: number; elapsed_s: number; total_s: number; message: string | null; open?: boolean };
   settings: DigiSettings;
   can_transmit: boolean;
   modes: { id: string; name: string }[];
@@ -1865,6 +1887,31 @@ export async function digiTextFile(name: string): Promise<string> {
 
 export async function digiAbort(): Promise<void> {
   await request('/digi/tx/abort', { method: 'POST' });
+}
+
+/** Apre la trasmissione (levetta RX/TX): resta in trasmissione finche' non si chiude; `text` e' il testo gia' scritto. */
+export async function digiTxOpen(text: string): Promise<void> {
+  await request('/digi/tx/open', jsonInit({ text }));
+}
+
+/** Testo scritto durante la trasmissione: si accoda a quello che sta partendo. */
+export async function digiTxType(text: string): Promise<void> {
+  await request('/digi/tx/type', jsonInit({ text }));
+}
+
+/** Toglie fino a `count` caratteri non ancora partiti dalla fine del testo in coda; restituisce quanti ne ha tolti. */
+export async function digiTxUnsend(count: number): Promise<number> {
+  return ((await (await request('/digi/tx/unsend', jsonInit({ count }))).json()) as { removed: number }).removed;
+}
+
+/** Sostituisce il testo in coda dalla posizione `from` con `text` senza fermare la trasmissione; falso se `from` e' gia' modulato. */
+export async function digiTxReplace(from: number, text: string): Promise<boolean> {
+  return ((await (await request('/digi/tx/replace', jsonInit({ from, text }))).json()) as { replaced: boolean }).replaced;
+}
+
+/** Chiude la trasmissione aperta: finito il testo gia' scritto si torna in ricezione. */
+export async function digiTxClose(): Promise<void> {
+  await request('/digi/tx/close', { method: 'POST' });
 }
 
 // ---- Satelliti (orbite, passaggi, Doppler sulla radio e rotore): vedi docs/api.md ----

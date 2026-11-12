@@ -16,7 +16,11 @@ use aurora_core::DigiEvent;
 use mode_sstv::resample::Resampler;
 use serde::{Deserialize, Serialize};
 
+use crate::rtty::RttyCharset;
 use crate::{CwDemodulator, PskDemodulator, PskMode, RATE, RttyDemodulator, RttyParams, cw, psk, rtty};
+
+/// La trasmissione a flusso: aperta a levetta e scritta dal vivo, con l'avanzamento carattere per carattere (vedi `service/live.rs`).
+mod live;
 
 /// La catena di trasmissione vista dai modi testuali (la fornisce il programma: `tx-native` con il PTT scelto).
 pub trait DigiTxPort: Send + Sync {
@@ -24,6 +28,22 @@ pub trait DigiTxPort: Send + Sync {
     fn start(&self, wave: Vec<f32>) -> Result<(), String>;
     fn halt(&self);
     fn is_busy(&self) -> bool;
+    /// La catena sa trasmettere a flusso (`start_stream`, `append`, `close_stream`, `played`).
+    fn can_stream(&self) -> bool {
+        false
+    }
+    /// Trasmissione a flusso: `first` e' il primo pezzo, gli altri arrivano con `append`; `close_stream` dice che non ne arrivano altri.
+    fn start_stream(&self, _first: Vec<f32>) -> Result<(), String> {
+        Err("questa catena di trasmissione non trasmette a flusso".into())
+    }
+    fn append(&self, _wave: Vec<f32>) -> Result<(), String> {
+        Err("questa catena di trasmissione non trasmette a flusso".into())
+    }
+    fn close_stream(&self) {}
+    /// Quanti campioni (a 12 kHz) della trasmissione a flusso sono gia' usciti dalla scheda; `None` se la catena non lo sa.
+    fn played(&self) -> Option<u64> {
+        None
+    }
 }
 
 pub type Emitter = Arc<dyn Fn(DigiEvent) + Send + Sync>;
@@ -195,6 +215,12 @@ pub struct DigiSettings {
     pub rtty_squelch_snr_db: f32,
     /// RTTY: il ricevitore (due filtri, discriminatore o scelta secondo lo spostamento).
     pub rtty_receiver: RttyReceiver,
+    /// RTTY: il set di caratteri (ITA2 di base, minuscole, cirillico, svedese).
+    pub rtty_charset: RttyCharset,
+    /// RTTY: i quattro profili della finestra «Impostazioni RTTY» e quello scelto (0-3). Il profilo scelto e' gia' copiato nei campi
+    /// qui sopra e in `afc_on`, `snap_on`, `squelch_on`: il motore usa quelli.
+    pub rtty_profile: u8,
+    pub rtty_profiles: Vec<RttyProfile>,
     /// Velocita' della CW in parole al minuto (trasmissione; in ricezione e' il valore di partenza, poi si adatta al segnale).
     pub cw_wpm: f32,
     /// CW: banda del filtro di ricezione (Hz: 50, 100, 150, 250 o 500; 150 di base come fldigi).
@@ -283,8 +309,11 @@ impl Default for DigiSettings {
             rtty_baud: 45.45,
             rtty_reverse: false,
             rtty_uos: true,
-            rtty_squelch_snr_db: 6.0,
+            rtty_squelch_snr_db: 0.0,
             rtty_receiver: RttyReceiver::Auto,
+            rtty_charset: RttyCharset::Ita2,
+            rtty_profile: 0,
+            rtty_profiles: RttyProfile::factory(),
             cw_wpm: 20.0,
             cw_bandwidth_hz: cw::BANDWIDTH_DEFAULT,
             cw_squelch_snr_db: cw::SQUELCH_DEFAULT_DB,
@@ -298,6 +327,64 @@ impl Default for DigiSettings {
             mode_macros: default_mode_macros(),
             merge_macros: std::collections::BTreeMap::new(),
         }
+    }
+}
+
+/// Da 10 baud (il profilo lento dei programmi classici) a 300.
+fn rtty_baud_ok(baud: f32) -> bool {
+    baud.is_finite() && (10.0..=300.0).contains(&baud)
+}
+
+/// Un profilo della finestra «Impostazioni RTTY» (Set 1-4): tutto quello che serve per passare da un tipo di segnale a un altro.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RttyProfile {
+    pub shift_hz: f32,
+    pub baud: f32,
+    pub reverse: bool,
+    pub receiver: RttyReceiver,
+    pub charset: RttyCharset,
+    pub afc: bool,
+    pub snap: bool,
+    pub squelch: bool,
+    pub uos: bool,
+    pub squelch_snr_db: f32,
+}
+
+impl Default for RttyProfile {
+    fn default() -> Self {
+        RttyProfile {
+            shift_hz: 170.0,
+            baud: 45.45,
+            reverse: false,
+            receiver: RttyReceiver::Auto,
+            charset: RttyCharset::Ita2,
+            afc: true,
+            snap: true,
+            squelch: false,
+            uos: true,
+            squelch_snr_db: 0.0,
+        }
+    }
+}
+
+impl RttyProfile {
+    /// I quattro profili di fabbrica: 170 Hz / 45,45 baud; 22 Hz / 45,45 con il discriminatore; 30 Hz / 10 baud; 170 Hz / 45,45.
+    pub fn factory() -> Vec<RttyProfile> {
+        vec![
+            RttyProfile::default(),
+            RttyProfile { shift_hz: 22.0, receiver: RttyReceiver::Discriminator, ..RttyProfile::default() },
+            RttyProfile { shift_hz: 30.0, baud: 10.0, ..RttyProfile::default() },
+            RttyProfile::default(),
+        ]
+    }
+
+    fn is_valid(&self) -> bool {
+        self.shift_hz.is_finite()
+            && (20.0..=1000.0).contains(&self.shift_hz)
+            && rtty_baud_ok(self.baud)
+            && self.squelch_snr_db.is_finite()
+            && (0.0..=40.0).contains(&self.squelch_snr_db)
     }
 }
 
@@ -320,11 +407,14 @@ impl DigiSettings {
         if !cw::BANDWIDTHS.contains(&self.cw_bandwidth_hz) {
             return Err(DigiError::BadValue("banda CW non fra 50, 100, 150, 250 e 500 Hz".into()));
         }
-        if !self.rtty_baud.is_finite() || !(30.0..=300.0).contains(&self.rtty_baud) {
-            return Err(DigiError::BadValue("velocita' RTTY fuori da 30-300 baud".into()));
+        if !rtty_baud_ok(self.rtty_baud) {
+            return Err(DigiError::BadValue("velocita' RTTY fuori da 10-300 baud".into()));
         }
         if !self.rtty_squelch_snr_db.is_finite() || !(0.0..=40.0).contains(&self.rtty_squelch_snr_db) {
             return Err(DigiError::BadValue("soglia S/N dello squelch RTTY fuori da 0-40 dB".into()));
+        }
+        if self.rtty_profile > 3 || self.rtty_profiles.len() > 4 || !self.rtty_profiles.iter().all(RttyProfile::is_valid) {
+            return Err(DigiError::BadValue("profili RTTY non validi".into()));
         }
         if !self.cw_wpm.is_finite() || !(cw::WPM_MIN..=cw::WPM_MAX).contains(&self.cw_wpm) {
             return Err(DigiError::BadValue("velocita' CW fuori da 5-60 WPM".into()));
@@ -386,6 +476,8 @@ pub struct TxStatus {
     pub elapsed_s: f32,
     pub total_s: f32,
     pub message: Option<String>,
+    /// Trasmissione aperta (levetta RX/TX): resta in trasmissione finche' non si chiude, e il testo scritto parte mentre si scrive.
+    pub open: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -423,6 +515,8 @@ struct Inner {
     radio_mode: Mutex<Option<RadioModeSource>>,
     /// L'ultima lettura: la radio e' in LSB.
     radio_lsb: AtomicBool,
+    /// La trasmissione a flusso in corso: il testo ancora da modulare e se e' aperta.
+    session: Mutex<Option<live::Session>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -500,6 +594,7 @@ impl DigiService {
             emit: Mutex::new(None),
             radio_mode: Mutex::new(None),
             radio_lsb: AtomicBool::new(false),
+            session: Mutex::new(None),
         });
         let worker = Arc::clone(&inner);
         if let Err(e) = std::thread::Builder::new().name("aurora-digi".into()).spawn(move || rx_loop(&worker, rx, settings)) {
@@ -591,16 +686,20 @@ impl DigiService {
         match (s.mode.psk(), s.mode) {
             (Some(mode), _) => psk::modulate(&bytes, s.tx_freq(), mode, 0.9),
             (None, DigiMode::Cw) => cw::modulate(&bytes, s.tx_freq(), s.cw_wpm, 0.9),
-            (None, _) => rtty::modulate(&bytes, s.rtty(s.tx_freq(), lsb), 0.9),
+            (None, _) => rtty::modulate_charset(text, s.rtty(s.tx_freq(), lsb), 0.9, s.rtty_charset),
         }
     }
 
-    /// Trasmette il testo. Il modo e la frequenza sono quelli delle impostazioni.
+    /// Trasmette il testo. Il modo e la frequenza sono quelli delle impostazioni. Con una trasmissione a flusso in corso (anche aperta)
+    /// il testo si accoda a quello che sta partendo.
     pub fn transmit(&self, text: &str) -> Result<TxStatus, DigiError> {
         if text.trim().is_empty() {
             return Err(DigiError::Empty);
         }
         let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
+        if port.can_stream() {
+            return self.start_session(port, text, false);
+        }
         if self.inner.tx_active.load(Ordering::SeqCst) || port.is_busy() {
             return Err(DigiError::Busy);
         }
@@ -617,8 +716,10 @@ impl DigiService {
             return Err(DigiError::Tx(e));
         }
         tracing::info!("{}: trasmissione di {total:.0} s", settings.mode.name());
-        *lock(&self.inner.tx) = TxStatus { state: "sending".into(), progress: 0.0, elapsed_s: 0.0, total_s: total, message: None };
+        *lock(&self.inner.tx) = TxStatus { state: "sending".into(), progress: 0.0, elapsed_s: 0.0, total_s: total, message: None, open: false };
         self.inner.tx_event();
+        // l'eco nella finestra di ricezione: senza flusso tutto subito
+        self.inner.emit(DigiEvent { kind: "tx_sent".into(), text: Some(text.to_string()), mode: Some(settings.mode.id().into()), ..DigiEvent::default() });
         let inner = Arc::clone(&self.inner);
         let spawned = std::thread::Builder::new().name("aurora-digi-tx".into()).spawn(move || tx_monitor(&inner, &port, total));
         if let Err(e) = spawned {
@@ -707,9 +808,12 @@ impl Demod {
                 let mut d = RttyDemodulator::new(s.rtty(s.rx_freq_hz, lsb));
                 d.set_afc(s.afc_on);
                 d.set_uos(s.rtty_uos);
+                d.set_charset(s.rtty_charset);
                 d.set_discriminator(s.rtty_receiver.discriminator(s.rtty_shift_hz));
-                // lo squelch dell'RTTY guarda il rapporto segnale/rumore, come la «metric» di fldigi, non il livello
-                d.set_squelch_snr_db(s.squelch_on.then_some(s.rtty_squelch_snr_db));
+                // lo squelch dell'RTTY guarda la probabilita' dei caratteri (passo 9 di `docs/progetto-rtty-oltre.md`); la soglia sul
+                // rapporto segnale/rumore (come la «metric» di fldigi) si aggiunge solo se e' sopra 0 dB
+                d.set_squelch_snr_db(s.squelch_on.then_some(s.rtty_squelch_snr_db).filter(|&db| db > 0.0));
+                d.set_squelch_prob(s.squelch_on.then_some((rtty::SQUELCH_OPEN, rtty::SQUELCH_CLOSE)));
                 Demod::Rtty(Box::new(d))
             }
         }
@@ -751,11 +855,17 @@ impl Demod {
         }
     }
 
-    fn process(&mut self, audio: &[f32]) -> Vec<u8> {
+    /// I caratteri nuovi e le posizioni di quelli incerti (RTTY: probabilita' sotto `rtty::WEAK_PROB`).
+    fn process(&mut self, audio: &[f32]) -> (String, Vec<u32>) {
+        let text = |b: Vec<u8>| b.into_iter().map(char::from).collect::<String>();
         match self {
-            Demod::Psk(d) => d.process(audio),
-            Demod::Rtty(d) => d.process(audio),
-            Demod::Cw(d) => d.process(audio),
+            Demod::Psk(d) => (text(d.process(audio)), Vec::new()),
+            Demod::Rtty(d) => {
+                let chars = d.process_chars(audio);
+                let weak = chars.iter().enumerate().filter(|(_, c)| c.prob < rtty::WEAK_PROB).map(|(i, _)| i as u32).collect();
+                (chars.iter().map(|c| c.ch).collect(), weak)
+            }
+            Demod::Cw(d) => (text(d.process(audio)), Vec::new()),
         }
     }
 }
@@ -792,10 +902,10 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 audio.clear();
                 r.process(&samples, &mut audio);
                 peak_db = peak_db.max(level_db(&audio));
-                let text = demod.process(&audio);
+                let (text, weak) = demod.process(&audio);
                 if !text.is_empty() {
-                    let s: String = text.iter().map(|&b| b as char).collect();
-                    inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(s), mode: Some(mode.id().into()), ..DigiEvent::default() });
+                    let weak = (!weak.is_empty()).then_some(weak);
+                    inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), ..DigiEvent::default() });
                 }
             }
             Some(Msg::Config(s)) => {
@@ -888,8 +998,8 @@ mod tests {
         let mut d = Demod::new(&s, false);
         let mut all = vec![0.0; 4000];
         all.extend(wave);
-        all.extend(vec![0.0; 4000]);
-        let out = String::from_utf8_lossy(&d.process(&all)).into_owned();
+        all.extend(vec![0.0; 12000]);
+        let out = d.process(&all).0;
         assert!(out.contains("CQ DE IU3ABC"), "ricevuto: {out:?}");
     }
 
@@ -907,7 +1017,9 @@ mod tests {
         // trasmissione e ricezione con le stesse impostazioni si capiscono, in USB e in LSB
         for lsb in [false, true] {
             let mut d = Demod::new(&s, lsb);
-            let out = String::from_utf8_lossy(&d.process(&DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb))).into_owned();
+            let mut wave = DigiService::wave_of("CQ DE IU3ABC 599", &s, lsb);
+            wave.extend(vec![0.0; 6000]);
+            let out = d.process(&wave).0;
             assert!(out.contains("CQ DE IU3ABC 599"), "lsb {lsb}, ricevuto: {out:?}");
         }
     }

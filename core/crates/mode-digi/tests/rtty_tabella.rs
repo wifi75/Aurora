@@ -223,11 +223,67 @@ fn inventati_sul_rumore() {
     rx.set_squelch_snr_db(Some(6.0));
     let n = audio.chunks(1024).map(|b| rx.process(b).len()).sum::<usize>();
     println!("Aurora     squelch S/N 6 dB: {n:4} caratteri al minuto");
+    let mut rx = aurora(&sc);
+    rx.set_squelch_prob(Some((mode_digi::rtty::SQUELCH_OPEN, mode_digi::rtty::SQUELCH_CLOSE)));
+    let n = audio.chunks(1024).map(|b| rx.process(b).len()).sum::<usize>();
+    println!("Aurora     squelch statistico: {n:4} caratteri al minuto");
     #[cfg(feature = "mmtty-oracle")]
     for p in mode_digi::mmtty_oracle::MmttyProfile::ALL {
         let mut rx = mode_digi::mmtty_oracle::MmttyRtty::new(p, f64::from(sc.baud), f64::from(sc.shift), f64::from(CENTRE), true);
         let n = rx.process(&audio).len();
         println!("{:<10} squelch del profilo: {n:4} caratteri al minuto", p.name());
+    }
+}
+
+/// Lo squelch (passo 9): per alcuni scenari la soglia al 10 % con lo squelch sul rapporto segnale/rumore (6 dB, quello di base del
+/// servizio) e con quello statistico, e i caratteri inventati su un minuto di rumore. `RTTY_SQ` = «apertura,chiusura» dello statistico.
+#[test]
+#[ignore]
+fn squelch() {
+    let (open_at, close_at) = std::env::var("RTTY_SQ")
+        .ok()
+        .and_then(|v| v.split_once(',').and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?))))
+        .unwrap_or((mode_digi::rtty::SQUELCH_OPEN, mode_digi::rtty::SQUELCH_CLOSE));
+    let modi: [(&str, Box<dyn Fn(&mut RttyDemodulator) + Sync>); 3] = [
+        ("spento", Box::new(|_| {})),
+        ("S/N 6 dB", Box::new(|d: &mut RttyDemodulator| d.set_squelch_snr_db(Some(6.0)))),
+        ("statistico", Box::new(move |d: &mut RttyDemodulator| d.set_squelch_prob(Some((open_at, close_at))))),
+    ];
+    let runs = env_num("RTTY_RUNS", 4.0) as u64;
+    let lista: Vec<Scenario> = match std::env::var("RTTY_SCENARIO") {
+        Ok(n) => n.split(',').filter_map(|x| scenario(x.trim())).collect(),
+        Err(_) => ["rumore 170/45", "CCIR medio", "space -12 dB", "rumore 170/75", "QRM a 250 Hz +6"].iter().filter_map(|n| scenario(n)).collect(),
+    };
+    println!("squelch statistico: apertura {open_at}, chiusura {close_at}");
+    for sc in &lista {
+        let mut riga = format!("{:<18}", sc.nome);
+        for (nome, imposta) in &modi {
+            let mut curva = Vec::new();
+            let mut snr = SNR_MIN;
+            while snr <= SNR_MAX + 1e-9 {
+                let (mut err, mut tot) = (0, 0);
+                for r in 0..runs {
+                    let (audio, sent) = genera(sc, snr, 7000 + r * 101, CHARS);
+                    let mut d = aurora(sc);
+                    imposta(&mut d);
+                    let got: Vec<u8> = audio.chunks(1024).flat_map(|b| d.process(b)).collect();
+                    err += errori(&sent, got);
+                    tot += sent.len();
+                }
+                curva.push((snr, err as f64 / tot.max(1) as f64));
+                snr += 1.0;
+            }
+            riga.push_str(&format!(" | {nome} {}", fmt_soglia(soglia(&curva, 0.10))));
+        }
+        println!("{riga}");
+    }
+    let sc = scenari()[0];
+    let audio = solo_rumore(60.0, 99);
+    for (nome, imposta) in &modi {
+        let mut d = aurora(&sc);
+        imposta(&mut d);
+        let n = audio.chunks(1024).map(|b| d.process(b).len()).sum::<usize>();
+        println!("rumore, squelch {nome}: {n} caratteri al minuto");
     }
 }
 
@@ -253,4 +309,60 @@ fn velocita() {
     let n = decodifica("Aurora", &sc, &audio).len();
     let s = t.elapsed().as_secs_f64();
     println!("Aurora: {:.0} s di audio in {s:.3} s, {:.0} volte il tempo reale ({n} caratteri)", audio.len() as f64 / 12_000.0, audio.len() as f64 / 12_000.0 / s);
+}
+
+/// Quali caratteri ricevuti sono giusti: allineamento di Levenshtein fra il testo mandato e quello ricevuto (senza ritorni a capo).
+fn giusti(sent: &[u8], got: &[u8]) -> Vec<bool> {
+    let (n, m) = (sent.len(), got.len());
+    let mut d = vec![vec![0usize; m + 1]; n + 1];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[0] = i;
+    }
+    for j in 0..=m {
+        d[0][j] = j;
+    }
+    for i in 1..=n {
+        for j in 1..=m {
+            d[i][j] = (d[i - 1][j - 1] + usize::from(sent[i - 1] != got[j - 1])).min(d[i - 1][j] + 1).min(d[i][j - 1] + 1);
+        }
+    }
+    let mut ok = vec![false; m];
+    let (mut i, mut j) = (n, m);
+    while i > 0 && j > 0 {
+        if d[i][j] == d[i - 1][j - 1] + usize::from(sent[i - 1] != got[j - 1]) {
+            ok[j - 1] = sent[i - 1] == got[j - 1];
+            i -= 1;
+            j -= 1;
+        } else if d[i][j] == d[i - 1][j] + 1 {
+            i -= 1;
+        } else {
+            j -= 1;
+        }
+    }
+    ok
+}
+
+/// Taratura della probabilita' dei caratteri (passo 8): per fasce di probabilita' detta, quanti caratteri sono giusti davvero.
+#[test]
+#[ignore]
+fn taratura() {
+    let mut fasce = [(0usize, 0usize); 10];
+    for sc in scenari().into_iter().filter(|s| ["rumore 170/45", "CCIR medio", "space -12 dB", "rumore 170/75"].contains(&s.nome)) {
+        for snr in [-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0] {
+            for r in 0..3 {
+                let (audio, sent) = genera(&sc, snr, 500 + r, CHARS);
+                let mut rx = aurora(&sc);
+                let got: Vec<mode_digi::RttyChar> = audio.chunks(1024).flat_map(|b| rx.process_chars(b)).filter(|c| c.ch != '\r' && c.ch != '\n').collect();
+                let testo: Vec<u8> = got.iter().map(|c| u8::try_from(u32::from(c.ch)).unwrap_or(b'?')).collect();
+                for (c, ok) in got.iter().zip(giusti(sent.as_bytes(), &testo)) {
+                    let k = ((c.prob * 10.0) as usize).min(9);
+                    fasce[k].0 += 1;
+                    fasce[k].1 += usize::from(ok);
+                }
+            }
+        }
+    }
+    for (k, (n, ok)) in fasce.iter().enumerate() {
+        println!("probabilita' {:.1}-{:.1}: {n:6} caratteri, giusti {:5.1} %", k as f64 / 10.0, (k + 1) as f64 / 10.0, 100.0 * *ok as f64 / (*n).max(1) as f64);
+    }
 }

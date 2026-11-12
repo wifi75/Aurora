@@ -29,6 +29,7 @@
 //! - lo squelch guarda il rapporto segnale/rumore (come la «metric» di fldigi), non il livello assoluto.
 
 use crate::psk::{AFC_LIMIT_HZ, RATE};
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 const LETTERS: [u8; 32] = [
@@ -65,11 +66,20 @@ const PLL_GAIN: f32 = 0.5;
 /// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
 /// (passo 6: e' la «maggioranza» di MMTTY fatta sui valori morbidi).
 const SOFT_BITS: f32 = 0.8;
-const FIGS: u8 = 27;
-const LTRS: u8 = 31;
-const SPACE: u8 = 4;
-const CR: u8 = 8;
-const LF: u8 = 2;
+/// Scala delle somme delle LLR per la probabilita' di un bit (passo 8): le LLR dei campioni vicini sono legate dal filtro e la loro somma
+/// conta la stessa prova piu' volte; il valore viene dalla prova `taratura` di `tests/rtty_tabella.rs` (probabilita' detta contro caratteri
+/// giusti davvero: con 0,03 i caratteri detti al 90-100 % sono giusti al 98 %, quelli al 50-60 % al 58 %).
+const LLR_SCALE: f32 = 0.03;
+/// Sotto questa probabilita' un carattere e' «incerto»: l'interfaccia lo mostra in chiaro.
+pub const WEAK_PROB: f32 = 0.9;
+/// Le soglie di base dello squelch statistico (probabilita' media degli ultimi quattro caratteri per aprire e per chiudere).
+pub const SQUELCH_OPEN: f32 = 0.7;
+pub const SQUELCH_CLOSE: f32 = 0.5;
+pub(crate) const FIGS: u8 = 27;
+pub(crate) const LTRS: u8 = 31;
+pub(crate) const SPACE: u8 = 4;
+pub(crate) const CR: u8 = 8;
+pub(crate) const LF: u8 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RttyParams {
@@ -98,7 +108,92 @@ impl RttyParams {
     }
 }
 
-fn code_of(c: u8) -> Option<(u8, bool)> {
+/// Il set di caratteri del Baudot. Le varianti nazionali usano le posizioni del registro delle cifre che l'ITA2 lascia all'uso nazionale
+/// (quelle di F, G, H) e, il cirillico, un terzo registro di lettere.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RttyCharset {
+    /// ITA2 con le cifre americane, lettere maiuscole (come fldigi e MMTTY).
+    #[default]
+    Ita2,
+    /// Lo stesso, con le lettere minuscole in ricezione.
+    Lowercase,
+    /// Cirillico (MTK-2): il codice 00000 passa alle lettere russe (А Б Ц Д... al posto di A B C D...), LTRS torna alle latine; nel
+    /// registro delle cifre Ч Э Ш Щ Ю al posto di $ ! & # '.
+    Cyrillic,
+    /// Svedese: Å Ä Ö nel registro delle cifre al posto di ! & #.
+    Swedish,
+}
+
+impl RttyCharset {
+    pub const ALL: [RttyCharset; 4] = [RttyCharset::Ita2, RttyCharset::Lowercase, RttyCharset::Cyrillic, RttyCharset::Swedish];
+}
+
+/// Le lettere russe del MTK-2, nell'ordine delle latine A-Z a cui corrispondono.
+const CYRILLIC: [char; 26] = ['А', 'Б', 'Ц', 'Д', 'Е', 'Ф', 'Г', 'Х', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Я', 'Р', 'С', 'Т', 'У', 'Ж', 'В', 'Ь', 'Ы', 'З'];
+/// Le posizioni del registro delle cifre (indicate con la lettera dello stesso codice) che le varianti nazionali cambiano.
+const CYRILLIC_FIGURES: [(u8, char); 5] = [(b'D', 'Ч'), (b'F', 'Э'), (b'G', 'Ш'), (b'H', 'Щ'), (b'J', 'Ю')];
+const SWEDISH_FIGURES: [(u8, char); 3] = [(b'F', 'Å'), (b'G', 'Ä'), (b'H', 'Ö')];
+
+/// Il codice a 5 bit della lettera latina `l` (A-Z).
+fn letter_code(l: u8) -> Option<u8> {
+    LETTERS.iter().position(|&x| x == l).map(|i| i as u8)
+}
+
+/// Il registro che un carattere richiede in trasmissione.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Reg {
+    Letters,
+    Figures,
+    Cyrillic,
+    /// Spazio e ritorni a capo: valgono in ogni registro.
+    Any,
+}
+
+/// Codice a 5 bit e registro di un carattere da trasmettere nel set dato (`None` se il set non lo ha).
+pub(crate) fn encode(charset: RttyCharset, c: char) -> Option<(u8, Reg)> {
+    let national: &[(u8, char)] = match charset {
+        RttyCharset::Cyrillic => &CYRILLIC_FIGURES,
+        RttyCharset::Swedish => &SWEDISH_FIGURES,
+        _ => &[],
+    };
+    let up = c.to_uppercase().next().unwrap_or(c);
+    if let Some(&(l, _)) = national.iter().find(|(_, n)| *n == up) {
+        return letter_code(l).map(|code| (code, Reg::Figures));
+    }
+    if charset == RttyCharset::Cyrillic
+        && let Some(i) = CYRILLIC.iter().position(|&x| x == up)
+    {
+        return letter_code(b'A' + i as u8).map(|code| (code, Reg::Cyrillic));
+    }
+    let b = u8::try_from(u32::from(c)).ok()?;
+    let (code, fig) = code_of(b)?;
+    // un simbolo che la variante ha sostituito non c'e' piu'
+    if fig && national.iter().any(|(l, _)| letter_code(*l) == Some(code)) {
+        return None;
+    }
+    Some((code, if matches!(code, SPACE | CR | LF) { Reg::Any } else if fig { Reg::Figures } else { Reg::Letters }))
+}
+
+/// Il carattere ricevuto per un codice (non di controllo) nel registro dato.
+fn decode(charset: RttyCharset, code: u8, figures: bool, cyrillic: bool) -> char {
+    let latin = LETTERS[code as usize];
+    if figures {
+        let national: &[(u8, char)] = match charset {
+            RttyCharset::Cyrillic => &CYRILLIC_FIGURES,
+            RttyCharset::Swedish => &SWEDISH_FIGURES,
+            _ => &[],
+        };
+        return national.iter().find(|(l, _)| *l == latin).map_or(char::from(FIGURES[code as usize]), |(_, c)| *c);
+    }
+    match charset {
+        RttyCharset::Lowercase => char::from(latin.to_ascii_lowercase()),
+        RttyCharset::Cyrillic if cyrillic && latin.is_ascii_uppercase() => CYRILLIC[(latin - b'A') as usize],
+        _ => char::from(latin),
+    }
+}
+
+pub(crate) fn code_of(c: u8) -> Option<(u8, bool)> {
     let up = c.to_ascii_uppercase();
     let valid = |i: &usize| *i != 0 && *i != 27 && *i != 31;
     if let Some(i) = LETTERS.iter().position(|&x| x == up).filter(valid) {
@@ -107,7 +202,7 @@ fn code_of(c: u8) -> Option<(u8, bool)> {
     FIGURES.iter().position(|&x| x == up).filter(valid).map(|i| (i as u8, true))
 }
 
-fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
+pub(crate) fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
     seq.push((false, 1.0));
     for b in 0..5 {
         seq.push(((code >> b) & 1 == 1, 1.0));
@@ -123,6 +218,47 @@ fn push_frame(seq: &mut Vec<(bool, f64)>, code: u8) {
 /// prima di ogni spazio; qui si spende un carattere solo quando serve).
 pub fn modulate(text: &[u8], params: RttyParams, amp: f32) -> Vec<f32> {
     synth(&sequence(text), params, amp, amp)
+}
+
+/// Come [`modulate`], con il set di caratteri dato (il testo in Unicode: lettere russe, Å Ä Ö...).
+pub fn modulate_charset(text: &str, params: RttyParams, amp: f32, charset: RttyCharset) -> Vec<f32> {
+    let mut seq: Vec<(bool, f64)> = vec![(true, 8.0)];
+    push_frame(&mut seq, LTRS);
+    let mut reg = Some(Reg::Letters);
+    for c in text.chars() {
+        push_char(&mut seq, &mut reg, charset, c);
+    }
+    seq.push((true, 4.0));
+    synth(&seq, params, amp, amp)
+}
+
+/// I bit di un carattere nel set dato, con il cambio di registro quando serve. `reg`: il registro di chi riceve (`None` = non noto, dopo
+/// uno spazio fra le cifre: chi ha l'UOS acceso e' tornato alle lettere, chi no e' rimasto nelle cifre).
+pub(crate) fn push_char(seq: &mut Vec<(bool, f64)>, reg: &mut Option<Reg>, charset: RttyCharset, c: char) {
+    let Some((code, need)) = encode(charset, c) else { return };
+    match need {
+        Reg::Any => {
+            push_frame(seq, code);
+            if code == SPACE && *reg == Some(Reg::Figures) {
+                *reg = None;
+            }
+        }
+        _ => {
+            if *reg != Some(need) {
+                push_frame(
+                    seq,
+                    match need {
+                        Reg::Figures => FIGS,
+                        // il cirillico si sceglie con il codice 00000
+                        Reg::Cyrillic => 0,
+                        _ => LTRS,
+                    },
+                );
+                *reg = Some(need);
+            }
+            push_frame(seq, code);
+        }
+    }
 }
 
 /// Come [`modulate`], con uno stop lungo `stop_bits` bit (1; 1,42; 1,5; 2): per le prove del ricevitore con le stazioni che non
@@ -431,10 +567,109 @@ impl Discriminator {
     }
 }
 
-/// Un carattere riconosciuto da [`Frames`]: il codice a 5 bit.
+/// Un carattere riconosciuto da [`Frames`]: il codice a 5 bit e le somme delle LLR dei sette bit (start, cinque dati, stop).
 #[derive(Clone, Copy, Debug)]
 struct Frame {
     code: u8,
+    sums: [f32; 7],
+    /// Il centro dello start (campioni decimati dall'inizio).
+    t: f64,
+    /// Viene dalla catena principale (non da una variante).
+    main: bool,
+}
+
+/// Quanto un'interpretazione deve superare quella letta (in nat: probabilita' dei codici piu' modello del testo) per cambiarla.
+const SHIFT_MARGIN: f32 = 1.0;
+/// Sintonia fine (passo 14): probabilita' media dei caratteri sopra la quale si misura l'errore di frequenza.
+const FINE_LOCK: f32 = 0.8;
+/// Sintonia fine: di quanto possono differire gli errori misurati sui due toni perche' si corregga.
+const FINE_AGREE_HZ: f32 = 1.5;
+
+/// Ripetizioni combinate (passo 13): parole ricordate e quanti decimi dei caratteri devono coincidere perche' una parola sia una
+/// ripetizione.
+const REPEAT_MEMORY: usize = 8;
+const REPEAT_AGREE: usize = 7;
+
+/// Parola trattenuta al massimo (caratteri), e dopo quanti bit dall'ultimo carattere esce comunque (il seguente arriverebbe dopo 18,5).
+const WORD_MAX: usize = 12;
+const WORD_WAIT_BITS: f64 = 20.0;
+
+/// Il modello del testo per le correzioni (passo 12): quanto una parola e' verosimile (in nat, 0 = neutra). Un contest puo' darne uno suo
+/// (scambio atteso, nominativi gia' sentiti).
+pub trait TextPrior {
+    fn word(&self, w: &str) -> f32;
+}
+
+/// Il modello di base del testo radioamatoriale: numeri, nominativi e parole di sole lettere sono verosimili, i miscugli di lettere e
+/// cifre che non sono nominativi e i segni d'interpunzione dentro le parole no.
+pub struct HamPrior;
+
+impl TextPrior for HamPrior {
+    fn word(&self, w: &str) -> f32 {
+        let letters = w.chars().filter(|c| c.is_alphabetic()).count();
+        let digits = w.chars().filter(char::is_ascii_digit).count();
+        let other = w.chars().count() - letters - digits;
+        if other > 0 {
+            // l'interpunzione sta di solito in fondo («K?», «73.»), non dentro
+            let inside = w.chars().skip(1).take(w.chars().count().saturating_sub(2)).any(|c| !c.is_alphanumeric());
+            return if inside { -2.0 } else { -0.5 };
+        }
+        if letters == 0 {
+            return 1.5;
+        }
+        if digits == 0 {
+            // le lettere della fila delle cifre (Q W E R T Y U I O P) da sole sono spesso un numero letto senza il FIGS
+            return if w.chars().all(|c| "QWERTYUIOP".contains(c.to_ascii_uppercase())) { 0.0 } else { 1.0 };
+        }
+        if is_callsign(w) { 1.5 } else { -2.0 }
+    }
+}
+
+/// Un nominativo: uno o due caratteri di prefisso (lettere, o una cifra e una lettera), una cifra, da una a quattro lettere; con
+/// l'eventuale /P, /M o /cifra.
+fn is_callsign(w: &str) -> bool {
+    let core = w.split('/').max_by_key(|p| p.len()).unwrap_or(w);
+    let b = core.as_bytes();
+    let Some(d) = b.iter().rposition(u8::is_ascii_digit) else { return false };
+    let (pre, suf) = (&b[..d], &b[d + 1..]);
+    (1..=3).contains(&pre.len()) && pre.iter().any(u8::is_ascii_alphabetic) && pre.iter().all(u8::is_ascii_alphanumeric) && (1..=4).contains(&suf.len()) && suf.iter().all(u8::is_ascii_alphabetic)
+}
+
+impl Frame {
+    /// Il logaritmo della probabilita' che i cinque bit di dati fossero quelli di `code`.
+    fn code_log_prob(&self, code: u8) -> f32 {
+        (0..5)
+            .map(|k| {
+                let x = LLR_SCALE * self.sums[k + 1] * if (code >> k) & 1 == 1 { 1.0 } else { -1.0 };
+                // log(sigmoide(x)) senza traboccare
+                -(1.0 + (-x).exp()).ln().min(80.0)
+            })
+            .sum()
+    }
+
+    /// La probabilita' del carattere se il codice vero era `code` (start e stop come letti).
+    fn prob_of(&self, code: u8) -> f32 {
+        let sig = |x: f32| 1.0 / (1.0 + (-LLR_SCALE * x).exp());
+        sig(-self.sums[0]) * sig(self.sums[6]) * self.code_log_prob(code).exp()
+    }
+
+    /// La probabilita' che il carattere sia giusto: il prodotto delle probabilita' dei sette bit, start a space e stop a mark compresi
+    /// (le somme delle LLR scalate con `LLR_SCALE`).
+    fn prob(&self) -> f32 {
+        let sig = |x: f32| 1.0 / (1.0 + (-LLR_SCALE * x).exp());
+        let mut p = sig(-self.sums[0]) * sig(self.sums[6]);
+        for x in &self.sums[1..6] {
+            p *= sig(x.abs());
+        }
+        p
+    }
+}
+
+/// Un carattere ricevuto con la probabilita' che sia giusto (0..1). Sotto [`WEAK_PROB`] e' incerto e l'interfaccia lo mostra in chiaro.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RttyChar {
+    pub ch: char,
+    pub prob: f32,
 }
 
 /// Decodifica del carattere intero (passo 7 di `docs/progetto-rtty-oltre.md`): invece di cercare lo start su decisioni dure e campionare
@@ -527,13 +762,155 @@ impl Frames {
                             code |= 1 << k;
                         }
                     }
-                    Some(Frame { code })
+                    Some(Frame { code, sums, t: best, main: true })
                 } else {
                     self.next_min = best + 0.5 * self.t;
                     None
                 }
             }
         }
+    }
+}
+
+/// Lo squelch statistico (passo 9 di `docs/progetto-rtty-oltre.md`): guarda la probabilita' dei caratteri invece del rapporto
+/// segnale/rumore. Tiene gli ultimi `SQ_MEMORY` caratteri: chiuso, li trattiene e si apre quando la loro probabilita' media supera
+/// `open_at` (e allora escono anche quelli trattenuti: l'inizio del testo non si perde); aperto, si chiude quando la media scende sotto
+/// `close_at` (isteresi), e un carattere sotto `close_at` aspetta il seguente prima di uscire (il rumore alla fine del segnale non passa).
+/// Il rumore da' caratteri con probabilita' bassa e sparse: la media di quattro raramente sale.
+struct ProbSquelch {
+    open_at: f32,
+    close_at: f32,
+    hist: std::collections::VecDeque<f32>,
+    open: bool,
+    held: Vec<Frame>,
+}
+
+/// Caratteri ricordati dallo squelch statistico.
+const SQ_MEMORY: usize = 4;
+
+impl ProbSquelch {
+    fn new(open_at: f32, close_at: f32) -> Self {
+        Self { open_at, close_at, hist: std::collections::VecDeque::with_capacity(SQ_MEMORY), open: false, held: Vec::new() }
+    }
+
+    /// Un carattere nuovo: restituisce quelli da stampare.
+    fn push(&mut self, fr: Frame) -> Vec<Frame> {
+        if self.hist.len() == SQ_MEMORY {
+            self.hist.pop_front();
+        }
+        self.hist.push_back(fr.prob());
+        let mean = self.hist.iter().sum::<f32>() / self.hist.len() as f32;
+        if self.open {
+            // aperto: un carattere incerto aspetta il seguente, cosi' alla fine del segnale il rumore che chiude lo squelch non passa
+            self.held.push(fr);
+            if self.hist.len() == SQ_MEMORY && mean < self.close_at {
+                self.open = false;
+                self.held.clear();
+                return Vec::new();
+            }
+            if fr.prob() >= self.close_at || self.held.len() >= SQ_MEMORY {
+                return std::mem::take(&mut self.held);
+            }
+            return Vec::new();
+        }
+        self.held.push(fr);
+        if self.held.len() > SQ_MEMORY {
+            self.held.remove(0);
+        }
+        if self.hist.len() == SQ_MEMORY && mean >= self.open_at {
+            self.open = true;
+            return std::mem::take(&mut self.held);
+        }
+        Vec::new()
+    }
+}
+
+/// Il soppressore d'impulsi (passo 10): soglia, in volte il livello medio.
+const BLANK_K: f32 = 8.0;
+/// Le varianti del passo 11: taratura delle LLR del limitatore (le sue ampiezze sono costanti e le LLR risulterebbero troppo sicure),
+/// medie del rumore della variante normalizzata (bit: salita lenta, discesa veloce per l'AGC della radio che scende di colpo) e
+/// probabilita' minima di un carattere visto solo da una variante.
+const LIMITER_LLR: f32 = 0.3;
+const NORM_UP_BITS: f32 = 32.0;
+const NORM_DOWN_BITS: f32 = 2.0;
+const FUSE_ALONE: f32 = 0.6;
+
+/// Le varianti della catena che decodificano in parallelo (passo 11).
+#[derive(Clone, Copy, Debug)]
+enum Variant {
+    /// Limitatore davanti ai filtri dei toni (come MMTTY): regge il fading veloce e l'AGC che pompa, perde nel rumore bianco.
+    Limiter,
+    /// Ampiezze divise per il rumore misurato accanto ai toni: i livelli dell'ATC non risentono dei salti di guadagno.
+    Normalized,
+}
+
+/// Il soppressore d'impulsi (passo 10): alla frequenza piena, un campione che supera di `k` volte il livello medio (media di |x| su
+/// circa 20 ms, senza i campioni soppressi) si azzera, e con lui i campioni per `hold` dopo l'ultimo sopra soglia.
+struct Blanker {
+    k: f32,
+    avg: f32,
+    alpha: f32,
+    hold: u32,
+    left: u32,
+}
+
+impl Blanker {
+    fn new(k: f32) -> Self {
+        let rate = RATE;
+        Self { k, avg: 0.0, alpha: 1.0 / (0.02 * rate), hold: (0.0005 * rate) as u32, left: 0 }
+    }
+
+    fn push(&mut self, s: f32) -> f32 {
+        let a = s.abs();
+        // la media segue i campioni ritagliati alla soglia: parte da zero e sale in qualche decina di ms, un impulso non la sposta
+        let warm = self.avg > 1e-6;
+        self.avg += self.alpha * (a.min(self.k * self.avg.max(1e-6)) - self.avg);
+        if warm && a > self.k * self.avg {
+            self.left = self.hold;
+            return 0.0;
+        }
+        if self.left > 0 {
+            self.left -= 1;
+            return 0.0;
+        }
+        s
+    }
+}
+
+/// La fusione dei caratteri delle varianti (passo 11): i caratteri che cadono a meno di mezzo carattere l'uno dall'altro sono lo stesso
+/// carattere visto da catene diverse, e vince quello con la probabilita' piu' alta. Un carattere esce quando tutte le varianti hanno avuto
+/// il tempo di consegnare il loro.
+struct Fuser {
+    spb: f64,
+    pending: Vec<(f64, Frame)>,
+}
+
+impl Fuser {
+    fn new(spb: f64) -> Self {
+        Self { spb, pending: Vec::new() }
+    }
+
+    /// Caratteri nuovi (con il tempo) e il tempo attuale; restituisce quelli decisi, in ordine.
+    fn push(&mut self, new: Vec<(f64, Frame)>, now: f64) -> Vec<(f64, Frame)> {
+        self.pending.extend(new);
+        self.pending.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut out = Vec::new();
+        while let Some(&(t0, _)) = self.pending.first() {
+            if t0 > now - 11.0 * self.spb {
+                break;
+            }
+            let n = self.pending.iter().take_while(|(t, _)| *t < t0 + 3.5 * self.spb).count();
+            let cluster: Vec<(f64, Frame)> = self.pending.drain(..n).collect();
+            // un carattere che la catena principale non ha visto passa solo se e' probabile: il rumore fa caratteri diversi in ogni
+            // variante, e la loro unione ne stamperebbe di piu'
+            if !cluster.iter().any(|(_, f)| f.main) && cluster.iter().all(|(_, f)| f.prob() < FUSE_ALONE) {
+                continue;
+            }
+            if let Some(best) = cluster.into_iter().max_by(|a, b| a.1.prob().total_cmp(&b.1.prob())) {
+                out.push(best);
+            }
+        }
+        out
     }
 }
 
@@ -560,6 +937,8 @@ pub struct RttyDemodulator {
     uos: bool,
     /// Soglia dello squelch sul rapporto segnale/rumore (dB); `None` = spento.
     squelch_snr_db: Option<f32>,
+    /// Lo squelch statistico (sulla probabilita' dei caratteri), se acceso.
+    prob_squelch: Option<ProbSquelch>,
     level_db: f32,
     snr_db: f32,
     open: bool,
@@ -592,8 +971,32 @@ pub struct RttyDemodulator {
     marks: usize,
     state: State,
     data: u8,
+    /// La probabilita' del carattere in decodifica e quella dell'ultimo cambio di registro (FIGS o LTRS), che vale per le lettere e le
+    /// cifre dopo.
+    data_prob: f32,
+    shift_prob: f32,
     figures: bool,
-    last_char: u8,
+    /// Il registro delle lettere russe (set cirillico).
+    cyrillic: bool,
+    /// Passo 12: la parola trattenuta per le correzioni di registro, quando e' arrivato il suo ultimo carattere e il modello del testo.
+    word: Vec<Frame>,
+    word_t: f64,
+    /// Passo 14: sintonia fine (limite in Hz, 0 = spenta), probabilita' media degli ultimi caratteri, rotazione accumulata e uscite
+    /// precedenti dei due toni.
+    fine_limit: f32,
+    lock_prob: f32,
+    fine_acc: [(f64, f64); 2],
+    fine_prev: [(f32, f32); 2],
+    fine_n: u32,
+    /// Diversity (passo 16): le LLR del secondo ingresso da sommare (catena principale) o da consegnare (catena del secondo ingresso).
+    llr_in: std::collections::VecDeque<f32>,
+    llr_out: Option<Vec<f32>>,
+    /// Passo 13: le ultime parole (con i valori morbidi dei bit) per combinare le ripetizioni, se accese.
+    recent: Vec<Vec<Frame>>,
+    repeats: bool,
+    prior: Option<Box<dyn TextPrior + Send>>,
+    charset: RttyCharset,
+    last_char: char,
     /// Livelli medi (decisione guidata) di mark acceso, mark spento, space acceso, space spento.
     levels: [f32; 4],
     /// Da quanti campioni ogni media non si aggiorna.
@@ -617,10 +1020,34 @@ pub struct RttyDemodulator {
     /// C'e' un segnale RTTY (l'AFC lavora solo allora) e da quanti bit non c'e' piu'.
     locked: bool,
     lost_bits: u32,
+    blanker: Option<Blanker>,
+    /// Livello del rumore (il minore dei due canali, medio) con cui si normalizzano le ampiezze; pesi della media in salita e in discesa.
+    noise_ref: f32,
+    norm_w: f32,
+    norm_down: f32,
+    /// Le varianti che decodificano lo stesso audio in parallelo (passo 11) e la fusione dei loro caratteri.
+    variants: Vec<RttyDemodulator>,
+    fuser: Fuser,
+    /// Campioni decimati elaborati e ritardo dei filtri di questa catena (per mettere in fila i caratteri delle varianti).
+    dec_n: u64,
+    delay: f64,
+    /// Taratura delle LLR di questa catena rispetto a quella di base (le varianti danno probabilita' confrontabili).
+    llr_mul: f32,
+    /// Limitatore: filtro largo quanto la coppia di toni prima di limitare.
+    limiter: Option<(Channel, Vec<f32>)>,
 }
 
 impl RttyDemodulator {
+    /// Il ricevitore con le impostazioni di base: decodifica del carattere intero, soppressore d'impulsi e le varianti in parallelo.
     pub fn new(params: RttyParams) -> Self {
+        let mut d = Self::new_plain(params);
+        d.set_variants(true);
+        d.set_prior(Some(Box::new(HamPrior)));
+        d
+    }
+
+    /// Una catena sola, senza varianti.
+    fn new_plain(params: RttyParams) -> Self {
         let baud = f64::from(params.baud);
         let decim = ((f64::from(RATE) / (baud * SAMPLES_PER_BIT)).floor() as usize).max(1);
         let rate = f64::from(RATE) / decim as f64;
@@ -639,6 +1066,7 @@ impl RttyDemodulator {
             afc: false,
             uos: true,
             squelch_snr_db: None,
+            prob_squelch: None,
             level_db: -90.0,
             snr_db: 0.0,
             open: true,
@@ -662,8 +1090,24 @@ impl RttyDemodulator {
             marks: nbits,
             state: State::Idle,
             data: 0,
+            data_prob: 1.0,
+            shift_prob: 1.0,
             figures: false,
-            last_char: 0,
+            cyrillic: false,
+            word: Vec::new(),
+            word_t: 0.0,
+            recent: Vec::new(),
+            fine_limit: 0.0,
+            lock_prob: 0.0,
+            fine_acc: [(0.0, 0.0); 2],
+            fine_prev: [(0.0, 0.0); 2],
+            fine_n: 0,
+            llr_in: std::collections::VecDeque::new(),
+            llr_out: None,
+            repeats: true,
+            prior: None,
+            charset: RttyCharset::Ita2,
+            last_char: '\0',
             levels: [0.0; 4],
             level_age: [0; 4],
             disc: None,
@@ -686,6 +1130,16 @@ impl RttyDemodulator {
             err_avg: 0.0,
             locked: false,
             lost_bits: 0,
+            blanker: Some(Blanker::new(BLANK_K)),
+            noise_ref: 0.0,
+            norm_w: 0.0,
+            norm_down: 0.0,
+            variants: Vec::new(),
+            fuser: Fuser::new(f64::from(spb)),
+            dec_n: 0,
+            delay: (len as f64 - 1.0) / 2.0,
+            llr_mul: 1.0,
+            limiter: None,
         }
     }
 
@@ -707,24 +1161,36 @@ impl RttyDemodulator {
         self.uos = on;
     }
 
-    /// Ricevitore a discriminatore di frequenza (`true`) invece dei due filtri sui toni (di base).
+    /// Ricevitore a discriminatore di frequenza (`true`) invece dei due filtri sui toni (di base). Le varianti valgono solo con i filtri.
     pub fn set_discriminator(&mut self, on: bool) {
         if on == self.disc.is_some() {
             return;
         }
         let rate = f64::from(RATE) / self.decim as f64;
         self.disc = on.then(|| Discriminator::new(&self.params, self.spb, rate));
+        if on {
+            self.variants.clear();
+        }
     }
 
-    /// Decodifica del carattere intero (`true`, di base) o macchina dei bit di fldigi (`false`).
+    /// Decodifica del carattere intero (`true`, di base) o macchina dei bit di fldigi (`false`, senza varianti).
     pub fn set_frame_decoder(&mut self, on: bool) {
         let w = self.soft_len;
         self.frames = on.then(|| Frames::new(self.spb, w));
+        if !on {
+            self.variants.clear();
+        }
     }
 
     /// Soglia dello squelch sul rapporto segnale/rumore in dB (`snr_db`); `None` lo spegne.
     pub fn set_squelch_snr_db(&mut self, db: Option<f32>) {
         self.squelch_snr_db = db;
+    }
+
+    /// Squelch statistico (passo 9): si stampa quando la probabilita' media degli ultimi quattro caratteri supera `open_at`, si smette
+    /// quando scende sotto `close_at`. Vale con la decodifica del carattere intero; `None` lo spegne.
+    pub fn set_squelch_prob(&mut self, levels: Option<(f32, f32)>) {
+        self.prob_squelch = levels.map(|(o, c)| ProbSquelch::new(o, c.min(o)));
     }
 
     /// Livello del segnale in dB e se lo squelch lo lascia passare.
@@ -887,11 +1353,11 @@ impl RttyDemodulator {
     /// La LLR di un campione: la decisione dell'ATC divisa per la varianza del rumore misurata sui due toni (0 finche' non c'e' misura).
     fn llr(&self, v: f32) -> f32 {
         let var = 0.25 * self.var.iter().sum::<f32>();
-        if var > 0.0 { v / var } else { v }
+        self.llr_mul * if var > 0.0 { v / var } else { v }
     }
 
     /// Una decisione nuova nella macchina dei caratteri (`rtty::rx` di fldigi).
-    fn rx_bit(&mut self, v: f32, out: &mut Vec<u8>) {
+    fn rx_bit(&mut self, v: f32, out: &mut Vec<RttyChar>) {
         let n = self.bits.len();
         let bit = v > 0.0;
         if self.bits[self.bit_pos] {
@@ -943,6 +1409,7 @@ impl RttyDemodulator {
                 } else {
                     // lo stop deve essere mark; con lo squelch acceso si stampa solo se il rapporto segnale/rumore lo apre (come fldigi)
                     if self.mid_bit() && self.open {
+                        self.data_prob = 1.0;
                         self.emit(out);
                     }
                     self.state = State::Idle;
@@ -951,13 +1418,270 @@ impl RttyDemodulator {
         }
     }
 
-    /// Elabora altro audio; restituisce i caratteri nuovi.
+    /// Una variante della catena (passo 11), con la sua taratura e il ritardo dei suoi filtri.
+    fn variant(params: RttyParams, kind: Variant) -> Self {
+        let mut v = RttyDemodulator::new_plain(params);
+        let baud = f64::from(params.baud);
+        let rate = f64::from(RATE) / v.decim as f64;
+        match kind {
+            Variant::Limiter => {
+                let h = lowpass(f64::from(params.shift_hz) / 2.0 + baud, baud, rate);
+                v.delay += (h.len() as f64 - 1.0) / 2.0;
+                v.limiter = Some((Channel::new(0.0, h.len(), rate), h));
+                v.llr_mul = LIMITER_LLR;
+            }
+            Variant::Normalized => {
+                v.norm_w = v.spb * NORM_UP_BITS;
+                v.norm_down = v.spb * NORM_DOWN_BITS;
+            }
+        }
+        v
+    }
+
+    /// Le varianti in parallelo e la fusione dei caratteri (passo 11): una catena col limitatore e una con le ampiezze normalizzate sul
+    /// rumore accanto ai toni decodificano lo stesso audio, e per ogni carattere vince il piu' probabile. Solo con i due filtri e la
+    /// decodifica del carattere intero.
+    pub fn set_variants(&mut self, on: bool) {
+        self.variants.clear();
+        if on && self.disc.is_none() && self.frames.is_some() {
+            for kind in [Variant::Normalized, Variant::Limiter] {
+                let mut v = RttyDemodulator::variant(self.params, kind);
+                v.offset_hz = self.offset_hz;
+                v.retune_all();
+                self.variants.push(v);
+            }
+        }
+    }
+
+    /// Il soppressore d'impulsi (acceso alla creazione).
+    pub fn set_blanker(&mut self, on: bool) {
+        self.blanker = on.then(|| Blanker::new(BLANK_K));
+        for v in &mut self.variants {
+            v.set_blanker(on);
+        }
+    }
+
+    /// Il set di caratteri (di base l'ITA2 americano in maiuscolo).
+    pub fn set_charset(&mut self, charset: RttyCharset) {
+        self.charset = charset;
+    }
+
+    /// Elabora altro audio; restituisce i caratteri nuovi (oltre il Latin-1, come le lettere russe, un punto interrogativo: per il testo
+    /// intero c'e' [`Self::process_chars`]).
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
+        self.process_chars(samples).into_iter().map(|c| u8::try_from(u32::from(c.ch)).unwrap_or(b'?')).collect()
+    }
+
+    /// Come [`Self::process`], con la probabilita' che ogni carattere sia giusto (sempre 1 con la macchina dei bit di fldigi).
+    pub fn process_chars(&mut self, samples: &[f32]) -> Vec<RttyChar> {
         let mut out = Vec::new();
+        let mut frames = self.run(samples, &mut out);
+        if !self.variants.is_empty() {
+            let mut variants = std::mem::take(&mut self.variants);
+            for v in &mut variants {
+                let mut none = Vec::new();
+                // i caratteri delle varianti hanno `main` falso: da soli devono essere probabili
+                frames.extend(v.run(samples, &mut none).into_iter().map(|(t, mut f)| {
+                    f.main = false;
+                    (t, f)
+                }));
+            }
+            // le varianti ascoltano dove ascolta la catena principale (AFC)
+            for v in &mut variants {
+                if (v.offset_hz - self.offset_hz).abs() > 1e-3 {
+                    v.offset_hz = self.offset_hz;
+                    v.retune_all();
+                }
+            }
+            self.variants = variants;
+            let now = self.dec_n as f64 - self.delay;
+            frames = self.fuser.push(frames, now);
+        }
+        if self.open {
+            for (_, fr) in frames {
+                let ready = match &mut self.prob_squelch {
+                    Some(sq) => sq.push(fr),
+                    None => vec![fr],
+                };
+                for fr in ready {
+                    self.word_push(fr, &mut out);
+                }
+            }
+        }
+        // una parola ferma (squelch chiuso, fine del segnale) esce com'e' quando il carattere seguente sarebbe gia' arrivato
+        if !self.word.is_empty() && (self.dec_n as f64 - self.delay) - self.word_t > WORD_WAIT_BITS * f64::from(self.spb) {
+            self.word_flush(&mut out);
+        }
+        out
+    }
+
+    /// Un carattere nella parola in corso (passo 12): a fine parola si guarda se un cambio di registro (FIGS o LTRS) e' stato letto come
+    /// un altro carattere, oppure un carattere come un cambio di registro.
+    fn word_push(&mut self, fr: Frame, out: &mut Vec<RttyChar>) {
+        if self.prior.is_none() {
+            self.data = fr.code;
+            self.data_prob = fr.prob();
+            self.emit(out);
+            return;
+        }
+        self.word_t = fr.t - self.delay;
+        let end = matches!(fr.code, SPACE | CR | LF);
+        self.word.push(fr);
+        if end || self.word.len() >= WORD_MAX {
+            self.word_flush(out);
+        }
+    }
+
+    /// Decide la parola trattenuta e la stampa.
+    fn word_flush(&mut self, out: &mut Vec<RttyChar>) {
+        let mut word = std::mem::take(&mut self.word);
+        if self.repeats {
+            self.combine_repeats(&mut word);
+        }
+        let codes: Vec<u8> = word.iter().map(|f| f.code).collect();
+        let mut best = codes.clone();
+        if let Some(prior) = &self.prior {
+            // il testo che darebbe una sequenza di codici, partendo dal registro di adesso
+            let text = |seq: &[u8]| -> String {
+                let (mut fig, mut cyr) = (self.figures, self.cyrillic);
+                let mut s = String::new();
+                for &c in seq {
+                    match c {
+                        FIGS => fig = true,
+                        LTRS => {
+                            fig = false;
+                            cyr = false;
+                        }
+                        0 => {
+                            if self.charset == RttyCharset::Cyrillic {
+                                fig = false;
+                                cyr = true;
+                            }
+                        }
+                        SPACE | CR | LF => s.push(' '),
+                        c => s.push(decode(self.charset, c, fig, cyr)),
+                    }
+                }
+                s
+            };
+            let score = |seq: &[u8]| -> f32 { text(seq).split(' ').filter(|w| !w.is_empty()).map(|w| prior.word(w)).sum() };
+            let base = score(&codes);
+            let mut best_gain = SHIFT_MARGIN;
+            // un solo carattere cambiato per parola: quello che piu' probabilmente era un cambio di registro (o il contrario)
+            for (i, f) in word.iter().enumerate() {
+                if matches!(f.code, SPACE | CR | LF) {
+                    continue;
+                }
+                for alt in [FIGS, LTRS] {
+                    if alt == f.code {
+                        continue;
+                    }
+                    let mut seq = codes.clone();
+                    seq[i] = alt;
+                    let gain = f.code_log_prob(alt) - f.code_log_prob(f.code) + score(&seq) - base;
+                    if gain > best_gain {
+                        best_gain = gain;
+                        best = seq;
+                    }
+                }
+            }
+        }
+        for (f, code) in word.iter().zip(best) {
+            self.data = code;
+            self.data_prob = if code == f.code { f.prob() } else { f.prob_of(code) };
+            self.emit(out);
+        }
+    }
+
+    /// Ripetizioni combinate (passo 13): se la parola ripete una delle ultime (stessa lunghezza, almeno 3 caratteri, la maggior parte
+    /// uguali), per ogni posizione si sommano i valori morbidi dei bit delle due copie e il carattere si decide sulla somma: con due copie
+    /// il rumore pesa la meta'. La copia combinata resta in memoria e si somma alla prossima ripetizione.
+    fn combine_repeats(&mut self, word: &mut [Frame]) {
+        let n = word.len();
+        if n >= 4 {
+            let found = self.recent.iter().rposition(|old| {
+                old.len() == n && old.iter().zip(word.iter()).filter(|(a, b)| a.code == b.code).count() * 10 >= n * REPEAT_AGREE
+            });
+            if let Some(i) = found {
+                let old = self.recent.remove(i);
+                let mut changed = 0;
+                let mut combined = Vec::with_capacity(n);
+                for (o, w) in old.iter().zip(word.iter()) {
+                    let mut f = *w;
+                    for k in 0..7 {
+                        f.sums[k] = o.sums[k] + w.sums[k];
+                    }
+                    f.code = (0..5).fold(0, |c, k| if f.sums[k + 1] > 0.0 { c | 1 << k } else { c });
+                    combined.push(f);
+                }
+                for (w, c) in word.iter_mut().zip(combined.iter()) {
+                    if w.code != c.code {
+                        changed += 1;
+                    }
+                }
+                // si corregge solo poco: se cambierebbero quasi tutti i caratteri non era una ripetizione
+                if changed * 10 <= n * 4 {
+                    for (w, c) in word.iter_mut().zip(combined.iter()) {
+                        // si cambia solo un carattere incerto, e solo se la somma delle due copie e' piu' sicura di lui
+                        if w.code != c.code && w.prob() < WEAK_PROB && c.prob() > w.prob() {
+                            w.code = c.code;
+                        }
+                    }
+                }
+                self.recent.push(combined);
+                return;
+            }
+        }
+        if n >= 4 {
+            self.recent.push(word.to_vec());
+            if self.recent.len() > REPEAT_MEMORY {
+                self.recent.remove(0);
+            }
+        }
+    }
+
+    /// La sintonia fine a decisione guidata entro `limit_hz` (passo 14); `None` la spegne (di base: con una portante vicina a un tono
+    /// la soglia peggiora di 0,26 dB).
+    pub fn set_fine_tuning(&mut self, limit_hz: Option<f32>) {
+        self.fine_limit = limit_hz.unwrap_or(0.0).max(0.0);
+        if self.fine_limit == 0.0 && !self.afc && self.offset_hz != 0.0 {
+            self.offset_hz = 0.0;
+            self.retune_all();
+        }
+    }
+
+    /// Le ripetizioni combinate (passo 13, accese alla creazione; valgono con il modello del testo, che trattiene le parole).
+    pub fn set_repeats(&mut self, on: bool) {
+        self.repeats = on;
+        self.recent.clear();
+    }
+
+    /// Il modello del testo per le correzioni di registro (passo 12); `None` le spegne. Di base [`HamPrior`].
+    pub fn set_prior(&mut self, prior: Option<Box<dyn TextPrior + Send>>) {
+        self.prior = prior;
+    }
+
+    /// Il ricevitore su altro audio: i caratteri della decodifica intera con il loro tempo (centro dello start in campioni decimati,
+    /// senza il ritardo dei filtri), oppure, con la macchina dei bit di fldigi, i caratteri gia' stampati in `out`.
+    fn run(&mut self, samples: &[f32], out: &mut Vec<RttyChar>) -> Vec<(f64, Frame)> {
+        let mut found = Vec::new();
         for &s in samples {
+            let s = match &mut self.blanker {
+                Some(b) => b.push(s),
+                None => s,
+            };
             let Some(z) = self.front.push(s) else { continue };
-            self.mark.push(z);
-            self.space.push(z);
+            let zt = match &mut self.limiter {
+                Some((ch, h)) => {
+                    ch.push(z);
+                    let (i, q) = ch.output(h);
+                    let a = (i * i + q * q).sqrt().max(1e-9);
+                    (i / a, q / a)
+                }
+                None => z,
+            };
+            self.mark.push(zt);
+            self.space.push(zt);
             self.noise[0].push(z);
             self.noise[1].push(z);
             if let Some(d) = &mut self.disc {
@@ -974,62 +1698,165 @@ impl RttyDemodulator {
                 self.probe_pos = 0;
                 self.bit_step();
             }
-            let m = self.mark.magnitude(&self.h);
-            let sp = self.space.magnitude(&self.h);
-            let nz = 0.5 * (self.noise[0].magnitude(&self.h) + self.noise[1].magnitude(&self.h));
+            let zm = self.mark.output(&self.h);
+            let zs = self.space.output(&self.h);
+            let m = (zm.0 * zm.0 + zm.1 * zm.1).sqrt();
+            let sp = (zs.0 * zs.0 + zs.1 * zs.1).sqrt();
+            let (n0, n1) = (self.noise[0].magnitude(&self.h), self.noise[1].magnitude(&self.h));
+            let nz = 0.5 * (n0 + n1);
             self.sum_m += m;
             self.sum_s += sp;
             self.sum_n += 2.0 * nz;
             self.sum_count += 1;
             self.level_db = (20.0 * (m + sp).max(1e-6).log10()).max(-90.0);
+            let (m, sp) = if self.norm_w > 0.0 {
+                let x = n0.min(n1);
+                let w = if x < self.noise_ref { self.norm_down } else { self.norm_w };
+                self.noise_ref = decayavg(self.noise_ref, x, w);
+                let g = 1.0 / self.noise_ref.max(1e-9);
+                (m * g, sp * g)
+            } else {
+                (m, sp)
+            };
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
-            let l = self.llr(v);
+            let mut l = self.llr(v);
+            // diversity (passo 16): la catena del secondo ingresso consegna le sue LLR, quella principale le somma alle sue
+            if let Some(collect) = &mut self.llr_out {
+                collect.push(l);
+                self.dec_n += 1;
+                continue;
+            }
+            if let Some(extra) = self.llr_in.pop_front() {
+                l += extra;
+            }
+            self.dec_n += 1;
+            if self.fine_limit > 0.0 {
+                self.fine_track(l, zm, zs);
+            }
             match &mut self.frames {
                 Some(f) => {
-                    if let Some(fr) = f.push(l)
-                        && self.open
-                    {
-                        self.data = fr.code;
-                        self.emit(&mut out);
+                    if let Some(fr) = f.push(l) {
+                        self.lock_prob += 0.25 * (fr.prob() - self.lock_prob);
+                        found.push((fr.t - self.delay, fr));
                     }
                 }
-                None => self.rx_bit(l, &mut out),
+                None => self.rx_bit(l, out),
             }
         }
-        out
+        found
     }
 
-    /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti.
-    fn emit(&mut self, out: &mut Vec<u8>) {
+    /// La sintonia fine a decisione guidata (passo 14): con un segnale RTTY decodificato bene (probabilita' media dei caratteri alta),
+    /// sul tono che la decisione dice acceso si misura di quanto ruota la fase da un campione all'altro; la rotazione media su 16 bit e'
+    /// l'errore di frequenza, che si corregge di meta' spostando l'oscillatore del front-end, entro `fine_limit` Hz. Vale anche con l'AFC
+    /// spento: e' una tolleranza del ricevitore, non insegue una stazione lontana.
+    fn fine_track(&mut self, l: f32, zm: (f32, f32), zs: (f32, f32)) {
+        let rot = |z: (f32, f32), p: (f32, f32)| (f64::from(z.0 * p.0 + z.1 * p.1), f64::from(z.1 * p.0 - z.0 * p.1));
+        if self.lock_prob >= FINE_LOCK && !self.afc {
+            let k = usize::from(l <= 0.0);
+            let (re, im) = if k == 0 { rot(zm, self.fine_prev[0]) } else { rot(zs, self.fine_prev[1]) };
+            self.fine_acc[k].0 += re;
+            self.fine_acc[k].1 += im;
+        }
+        self.fine_prev = [zm, zs];
+        self.fine_n += 1;
+        if self.fine_n as f32 >= 16.0 * self.spb {
+            self.fine_n = 0;
+            let acc = std::mem::take(&mut self.fine_acc);
+            let rate = f64::from(RATE) / self.decim as f64;
+            let hz = |(re, im): (f64, f64)| (re > 0.0).then(|| (im.atan2(re) * rate / (2.0 * PI)) as f32);
+            // i due toni devono dire la stessa cosa: un disturbo vicino a uno solo (una portante) sposterebbe solo quello
+            if let (Some(em), Some(es)) = (hz(acc[0]), hz(acc[1]))
+                && (em - es).abs() < FINE_AGREE_HZ
+            {
+                let err = 0.5 * (em + es);
+                let next = (self.offset_hz + 0.5 * err).clamp(-self.fine_limit, self.fine_limit);
+                if (next - self.offset_hz).abs() > 0.05 {
+                    self.offset_hz = next;
+                    self.retune_all();
+                }
+            }
+        }
+    }
+
+    /// `rtty::baudot_dec` di fldigi, con UOS e senza CR CR o LF LF ripetuti. La probabilita' di una lettera o di una cifra tiene conto
+    /// anche del cambio di registro da cui dipende.
+    fn emit(&mut self, out: &mut Vec<RttyChar>) {
+        let mut prob = self.data_prob;
         let c = match self.data {
             FIGS => {
                 self.figures = true;
+                self.shift_prob = prob;
                 return;
             }
             LTRS => {
                 self.figures = false;
+                self.cyrillic = false;
+                self.shift_prob = prob;
                 return;
             }
-            0 => return,
+            // nel set cirillico il codice 00000 passa alle lettere russe; negli altri non stampa niente
+            0 => {
+                if self.charset == RttyCharset::Cyrillic {
+                    self.figures = false;
+                    self.cyrillic = true;
+                    self.shift_prob = prob;
+                }
+                return;
+            }
             SPACE => {
                 if self.uos {
                     self.figures = false;
+                    self.shift_prob = 1.0;
                 }
-                b' '
+                ' '
             }
+            CR => '\r',
+            LF => '\n',
             c => {
-                if self.figures {
-                    FIGURES[c as usize]
-                } else {
-                    LETTERS[c as usize]
-                }
+                prob *= self.shift_prob;
+                decode(self.charset, c, self.figures, self.cyrillic)
             }
         };
-        if (c == b'\r' || c == b'\n') && c == self.last_char {
+        if (c == '\r' || c == '\n') && c == self.last_char {
             return;
         }
         self.last_char = c;
-        out.push(c);
+        out.push(RttyChar { ch: c, prob });
+    }
+}
+
+/// Diversity (passo 16 di `docs/progetto-rtty-oltre.md`): due ingressi (i due canali di una scheda stereo con due ricevitori o due
+/// antenne) decodificati insieme. Ogni ingresso ha la sua catena fino ai valori morbidi; campione per campione le due LLR si sommano
+/// (combinazione a rapporto massimo: ognuna e' gia' pesata dal rumore del suo ingresso) e la decodifica del carattere intero, il modello
+/// del testo e lo squelch lavorano sulla somma. Con fading indipendenti sui due ingressi un tono che svanisce su uno resta sull'altro.
+pub struct RttyDiversity {
+    main: RttyDemodulator,
+    second: RttyDemodulator,
+}
+
+impl RttyDiversity {
+    pub fn new(params: RttyParams) -> Self {
+        let mut main = RttyDemodulator::new_plain(params);
+        main.set_prior(Some(Box::new(HamPrior)));
+        let mut second = RttyDemodulator::new_plain(params);
+        second.llr_out = Some(Vec::new());
+        Self { main, second }
+    }
+
+    /// Il ricevitore principale, per le altre impostazioni (squelch, set di caratteri, UOS).
+    pub fn main(&mut self) -> &mut RttyDemodulator {
+        &mut self.main
+    }
+
+    /// Due blocchi di audio lunghi uguali (sinistro e destro); restituisce i caratteri nuovi.
+    pub fn process_chars(&mut self, first: &[f32], second: &[f32]) -> Vec<RttyChar> {
+        let n = first.len().min(second.len());
+        self.second.run(&second[..n], &mut Vec::new());
+        if let Some(out) = &mut self.second.llr_out {
+            self.main.llr_in.extend(out.drain(..));
+        }
+        self.main.process_chars(&first[..n])
     }
 }
 
@@ -1046,7 +1873,7 @@ mod tests {
         let mut rx = RttyDemodulator::new(params);
         let mut all = vec![0.0; 4000];
         all.extend(audio);
-        all.extend(vec![0.0; 4000]);
+        all.extend(vec![0.0; 12000]);
         String::from_utf8_lossy(&rx.process(&all)).into_owned()
     }
 
@@ -1107,7 +1934,9 @@ mod tests {
         }
         seq.push((true, 4.0));
         let params = p(1500.0, 170.0, 45.45);
-        let audio = synth(&seq, params, 0.5, 0.5);
+        // dopo il testo un po' di silenzio: la fusione delle varianti decide un carattere tre bit dopo la catena principale
+        let mut audio = synth(&seq, params, 0.5, 0.5);
+        audio.extend(vec![0.0; 6000]);
         let mut rx = RttyDemodulator::new(params);
         assert_eq!(String::from_utf8_lossy(&rx.process(&audio)), "599 TU");
         let mut rx = RttyDemodulator::new(params);
@@ -1130,7 +1959,7 @@ mod tests {
         rx.set_afc(true);
         let mut all = vec![0.0; 4000];
         all.extend(audio);
-        all.extend(vec![0.0; 4000]);
+        all.extend(vec![0.0; 12000]);
         let r = String::from_utf8_lossy(&rx.process(&all)).into_owned();
         assert!((rx.frequency() - 2222.0).abs() < 6.0, "frequenza raggiunta: {}", rx.frequency());
         assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
@@ -1211,6 +2040,147 @@ mod tests {
             let r = String::from_utf8_lossy(&rx.process(&synth(&seq, params, am, asp))).into_owned();
             assert!(r.contains("CQ DE IU3ABC"), "mark {am} space {asp}, ricevuto: {r:?}");
         }
+    }
+
+    #[test]
+    fn i_caratteri_hanno_la_loro_probabilita() {
+        // segnale pulito: tutti certi; solo rumore forte: quasi tutti incerti
+        let audio = modulate(b"RYRYRY CQ DE IU3ABC 599 K", RttyParams::default(), 0.5);
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        let chars = rx.process_chars(&audio);
+        assert!(!chars.is_empty() && chars.iter().all(|c| c.prob >= WEAK_PROB), "{chars:?}");
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        let chars = rx.process_chars(&rumore(240_000, 0.8, 21));
+        let weak = chars.iter().filter(|c| c.prob < WEAK_PROB).count();
+        assert!(weak * 10 >= chars.len() * 8, "incerti {weak} su {}", chars.len());
+    }
+
+    #[test]
+    fn lo_squelch_statistico_tace_sul_rumore_e_non_perde_l_inizio() {
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+        assert!(rx.process(&rumore(240_000, 0.8, 31)).is_empty());
+        // un segnale che arriva sul rumore: si stampa tutto, anche i primi caratteri trattenuti mentre lo squelch decideva
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+        let mut audio = vec![0.0; 36_000];
+        audio.extend(modulate(b"CQ DE IU3ABC IU3ABC K", RttyParams::default(), 0.3));
+        audio.extend(vec![0.0; 36_000]);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 0.2, 32)) {
+            *a += r;
+        }
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert_eq!(r, "CQ DE IU3ABC IU3ABC K");
+    }
+
+    #[test]
+    fn ogni_set_di_caratteri_va_e_torna() {
+        let testi = [
+            (RttyCharset::Ita2, "CQ DE IU3ABC 599 73 ?!&#$", "CQ DE IU3ABC 599 73 ?!&#$"),
+            (RttyCharset::Lowercase, "CQ de IU3ABC 599", "cq de iu3abc 599"),
+            (RttyCharset::Cyrillic, "CQ ПРИВЕТ ЧАЙ ЩИ ЭХО ЮГ 599 DE IU3ABC", "CQ ПРИВЕТ ЧАЙ ЩИ ЭХО ЮГ 599 DE IU3ABC"),
+            (RttyCharset::Swedish, "HEJ SMÅ RÄV ÖL 73", "HEJ SMÅ RÄV ÖL 73"),
+        ];
+        for (cs, mandato, atteso) in testi {
+            let params = RttyParams::default();
+            let audio = modulate_charset(mandato, params, 0.5, cs);
+            let mut rx = RttyDemodulator::new(params);
+            rx.set_charset(cs);
+            let mut all = vec![0.0; 4000];
+            all.extend(audio);
+            all.extend(vec![0.0; 12000]);
+            let r: String = rx.process_chars(&all).iter().map(|c| c.ch).collect();
+            assert!(r.contains(atteso), "{cs:?}: ricevuto {r:?}");
+        }
+        // l'ITA2 di sempre: le stesse onde di prima
+        let p = RttyParams::default();
+        assert_eq!(modulate_charset("CQ 599 73 DE IU3ABC", p, 0.5, RttyCharset::Ita2), modulate(b"CQ 599 73 DE IU3ABC", p, 0.5));
+    }
+
+    #[test]
+    fn il_soppressore_toglie_le_scariche() {
+        // una scarica forte (50 volte il segnale) ogni 40 ms: senza soppressore si perdono caratteri, con il soppressore no
+        let params = RttyParams::default();
+        let mut audio = vec![0.0; 6000];
+        audio.extend(modulate(b"RYRY CQ DE IU3ABC IU3ABC K", params, 0.1));
+        audio.extend(vec![0.0; 6000]);
+        for (i, a) in audio.iter_mut().enumerate() {
+            let k = i % 480;
+            if k < 24 {
+                *a += 5.0 * (-(k as f32) / 8.0).exp() * if k % 2 == 0 { 1.0 } else { -1.0 };
+            }
+        }
+        let mut rx = RttyDemodulator::new(params);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(r.contains("CQ DE IU3ABC IU3ABC K"), "con il soppressore: {r:?}");
+    }
+
+    #[test]
+    fn il_modello_del_testo_riconosce_numeri_e_nominativi() {
+        let p = HamPrior;
+        assert!(p.word("599") > p.word("TOO"));
+        assert!(p.word("IU3ABC") > p.word("IU3A8C"));
+        assert!(p.word("CQ") > p.word("C-Q"));
+        for c in ["IU3ABC", "K1JT", "DL2ABC/P", "9A1A", "3B8CF"] {
+            assert!(is_callsign(c), "{c}");
+        }
+        for c in ["599", "TEST", "14080", "100W1"] {
+            assert!(!is_callsign(c), "{c}");
+        }
+    }
+
+    #[test]
+    fn la_sintonia_fine_corregge_un_segnale_fuori_di_qualche_hertz() {
+        let tx = p(1512.0, 170.0, 45.45);
+        let text = "RYRYRYRY CQ CQ DE IU3ABC IU3ABC PSE K ".repeat(4);
+        let mut audio = modulate(text.as_bytes(), tx, 0.3);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 0.2, 41)) {
+            *a += r;
+        }
+        let mut rx = RttyDemodulator::new(p(1500.0, 170.0, 45.45));
+        rx.set_fine_tuning(Some(25.0));
+        rx.process(&audio);
+        assert!((rx.frequency() - 1512.0).abs() < 3.0, "frequenza: {}", rx.frequency());
+    }
+
+    #[test]
+    fn la_diversity_regge_i_fading_indipendenti() {
+        // lo stesso segnale su due ingressi che svaniscono a turno (fading lento in controfase) con rumori indipendenti
+        let params = RttyParams::default();
+        let text = "CQ CQ DE IU3ABC IU3ABC 599 TU 73 ".repeat(6);
+        let clean = modulate(text.as_bytes(), params, 1.0);
+        let fade = |i: usize, phase: f32| 0.05 + 0.25 * (0.5 + 0.5 * (2.0 * std::f32::consts::PI * 0.4 * i as f32 / 12_000.0 + phase).sin());
+        let n = clean.len();
+        let mut left: Vec<f32> = clean.iter().enumerate().map(|(i, s)| s * fade(i, 0.0)).collect();
+        let mut right: Vec<f32> = clean.iter().enumerate().map(|(i, s)| s * fade(i, std::f32::consts::PI)).collect();
+        for (a, r) in left.iter_mut().zip(rumore(n, 1.2, 51)) {
+            *a += r;
+        }
+        for (a, r) in right.iter_mut().zip(rumore(n, 1.2, 52)) {
+            *a += r;
+        }
+        left.extend(vec![0.0; 12_000]);
+        right.extend(vec![0.0; 12_000]);
+        let errori = |got: &str| {
+            let (a, b): (Vec<char>, Vec<char>) = (text.chars().collect(), got.chars().filter(|c| *c != '\r' && *c != '\n').collect());
+            let mut prev: Vec<usize> = (0..=b.len()).collect();
+            for (i, ca) in a.iter().enumerate() {
+                let mut cur = vec![i + 1; b.len() + 1];
+                for (j, cb) in b.iter().enumerate() {
+                    cur[j + 1] = (prev[j] + usize::from(ca != cb)).min(prev[j + 1] + 1).min(cur[j] + 1);
+                }
+                prev = cur;
+            }
+            prev[b.len()]
+        };
+        let mut solo = RttyDemodulator::new(params);
+        let uno: String = left.chunks(1024).flat_map(|b| solo.process_chars(b)).map(|c| c.ch).collect();
+        let mut div = RttyDiversity::new(params);
+        let due: String = left.chunks(1024).zip(right.chunks(1024)).flat_map(|(a, b)| div.process_chars(a, b)).map(|c| c.ch).collect();
+        let (e1, e2) = (errori(&uno), errori(&due));
+        assert!(e2 * 2 < e1, "errori con un ingresso {e1}, con due {e2}");
     }
 
     #[test]

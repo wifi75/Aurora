@@ -35,6 +35,17 @@
 .digi-zero { font-variant-numeric: slashed-zero; font-feature-settings: "zero" 1; }
 .digi-caps { text-transform: uppercase; }
 .digi-sent { text-decoration: underline; text-decoration-color: #6f81a8; text-underline-offset: 3px; }
+/* RTTY: caratteri incerti (probabilita' sotto 0,9) in chiaro */
+.digi-weak { opacity: 0.45; }
+
+/* finestra di trasmissione: sotto il testo uno sfondo con le stesse misure segna i caratteri partiti e quelli in coda */
+.digi-txstack { position: relative; flex: 1 1 0; min-height: 0; display: flex; }
+.digi-txstack > .digi-txwin { scrollbar-gutter: stable; }
+.digi-txstack > .digi-txfront { position: relative; background: transparent; }
+.digi-txstack > .digi-txback { position: absolute; inset: 0; overflow: hidden; color: transparent; pointer-events: none; user-select: none; }
+.digi-txsent { background: rgba(224, 72, 72, 0.32); border-radius: 2px; }
+.digi-txqueued { text-decoration: underline dotted rgba(224, 72, 72, 0.8); text-underline-offset: 3px; }
+.digi-txpoint { display: inline-block; width: 0; height: 1.15em; vertical-align: text-bottom; border-left: 2px solid #e04848; margin-right: -2px; }
 .digi-st--flash { animation: digi-flash 0.8s steps(2, start) infinite; }
 @keyframes digi-flash { 50% { background: #7a1d27; } }
 .digi-wf-hair { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgba(255, 255, 255, 0.55); pointer-events: none; z-index: 2; }
@@ -245,3 +256,20 @@ html[data-theme='light'] .digi-split::before, html[data-theme='light'] .digi-wf-
 .digi-wf-pair--rx::before, .digi-wf-pair--rx::after { border-top: 9px solid #5b0e91; }
 .digi-wf-pair--tx::before, .digi-wf-pair--tx::after { border-bottom: 9px solid #ff2d2d; }
 .digi-wf-pair--single::before { left: -5px; }
+
+/* menu del tasto destro della barra di stato */
+.digi-st-menu { min-width: 13rem; }
+.digi-st-menu button { display: flex; align-items: center; gap: 0.35rem; }
+.digi-st-menu-check { display: inline-block; width: 1rem; text-align: center; color: var(--accent, #8e7bff); font-weight: 700; }
+.digi-st-menu-sep { margin: 0.25rem 0.3rem; border: 0; border-top: 1px solid var(--border); }
+
+/* finestra «Impostazioni RTTY»: compatta, quattro profili con i pallini, soglia dello squelch in verticale */
+.rtty-dialog { width: min(46rem, 96vw); }
+.rtty-sets { display: flex; gap: 0.9rem; margin-left: auto; }
+.rtty-dialog label.rtty-set, .rtty-dialog label.rtty-check { flex-direction: row; align-items: center; gap: 0.35rem; color: var(--text); }
+.rtty-body { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: flex-start; }
+.rtty-col { display: flex; flex-direction: column; gap: 0.5rem; min-width: 9rem; }
+.rtty-dialog label.rtty-sq { align-items: center; width: 6rem; text-align: center; }
+.rtty-vertical { writing-mode: vertical-lr; direction: rtl; height: 8.5rem; width: 1.6rem; padding: 0; }
+.rtty-foot { display: flex; gap: 0.6rem; align-items: center; }
+.rtty-spacer { flex: 1; }

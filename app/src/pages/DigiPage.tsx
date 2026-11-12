@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -21,7 +21,11 @@ import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiNote, appendDigiTx, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
+import { appendDigiNote, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
+import { DigiRxText } from '../components/DigiRxText';
+import { DigiTxBox } from '../components/DigiTxBox';
+import { RttySettingsDialog } from '../components/digi/RttySettingsDialog';
+import { useDigiTxLive } from '../lib/digiTxLive';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
@@ -60,27 +64,11 @@ interface Views {
   defaultRst: boolean;
   /** Cascata larga (0-5 kHz) o stretta (0-3,5 kHz). */
   wideWaterfall: boolean;
+  /** L'orologio UTC nella barra di stato (menu del tasto destro della barra). */
+  utc?: boolean;
 }
 
 const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true };
-
-/** Le righe trasmesse (iniziano con «» ») sottolineate nella finestra di ricezione. */
-function withSentUnderlined(text: string): React.ReactNode {
-  return text.split('\n').map((line, i, all) => {
-    const nl = i < all.length - 1 ? '\n' : '';
-    return line.startsWith('» ') ? (
-      <u key={i} className="digi-sent">
-        {line}
-        {nl}
-      </u>
-    ) : (
-      <span key={i}>
-        {line}
-        {nl}
-      </span>
-    );
-  });
-}
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -143,9 +131,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const client = useQueryClient();
   const status = useStation((s) => s.status);
   const text = useSyncExternalStore(onDigiText, getDigiText);
+  const weak = useSyncExternalStore(onDigiText, getDigiWeak);
   const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
+  // trasmissione a flusso: quanto del testo della finestra e' in coda e quanto e' gia' partito
+  const txLive = useDigiTxLive(tx, setTx);
+  const txLiveRef = useRef({ tx, txLive });
+  txLiveRef.current = { tx, txLive };
   // larghezza del log di lato (si allarga trascinando il bordo), ricordata fra un avvio e l'altro
   const [logW, setLogW] = useState<number>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.logw') ?? '');
@@ -181,6 +174,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [problem, setProblem] = useState('');
   const [editing, setEditing] = useState<{ name: string; scope: MacroScope } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // la finestra «Impostazioni RTTY» (clic sul modo nella barra in basso o sulla voce RTTY del menu Modo)
+  const [rttyOpen, setRttyOpen] = useState(false);
   const [autoCq, setAutoCq] = useState(false);
   // doppio Esc: l'Auto CQ resta acceso ma in pausa; riparte quando si ripreme (macro <AUTOCQ>)
   const [autoCqPaused, setAutoCqPaused] = useState(false);
@@ -283,15 +278,21 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (views.defaultRst) setSavedField({ rsts: '599', rstr: '599' });
   };
 
+  // il testo parte e resta nella finestra di trasmissione, dove si vede a che punto e' arrivato (l'eco nella ricezione arriva dal motore)
   const send = useCallback(
     (body: string) => {
-      const message = (caps.current ? body.toUpperCase() : body).trim();
-      if (message === '') return;
+      const { tx: box, txLive: tl } = txLiveRef.current;
+      const queued = tl.progress.queued;
+      // dalla finestra parte solo quello che non e' gia' in coda; una macro si mette in coda dopo
+      const fromBox = body === box;
+      const upper = caps.current ? body.toUpperCase() : body;
+      const message = fromBox ? upper.slice(queued) : upper.trim();
+      if (message.trim() === '') return;
       setProblem('');
       digiTransmit(message).then(
         () => {
-          appendDigiTx(message);
-          setTx('');
+          if (!fromBox) setTx((v) => v.slice(0, queued) + message + v.slice(queued));
+          tl.queue(message.length);
           onChanged();
         },
         (e: unknown) => {
@@ -303,9 +304,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     [onChanged, t],
   );
 
+  // la levetta RX/TX (e il tasto Pausa): apre la trasmissione, che resta accesa e manda quello che si scrive; di nuovo la chiude a fine
+  // testo. Esc la ferma subito.
   const toggleTx = () => {
-    if (live.current.snap.tx.state === 'sending') void digiAbort().then(onChanged, onChanged);
-    else send(live.current.tx);
+    if (live.current.snap.tx.state === 'sending') {
+      void digiTxClose().then(onChanged, onChanged);
+      return;
+    }
+    const box = caps.current ? live.current.tx.toUpperCase() : live.current.tx;
+    setProblem('');
+    digiTxOpen(box).then(
+      () => {
+        setTx(box);
+        txLiveRef.current.txLive.queue(box.length);
+        onChanged();
+      },
+      (e: unknown) => {
+        const code = e instanceof ApiError ? e.code : '';
+        setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+      },
+    );
   };
 
   // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
@@ -650,7 +668,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // i tasti F1-F12 con Ctrl e Shift, il «+» del tastierino (macro Gray+), Pausa (RX/TX) e Esc che ferma la trasmissione
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (editing !== null || settingsOpen) return;
+      if (editing !== null || settingsOpen || rttyOpen) return;
       if (e.key === 'Escape') {
         // Esc una volta ferma la trasmissione; due volte di seguito (entro mezzo secondo) mette anche in pausa il CQ automatico, che resta
         // acceso e riparte quando lo si ripreme
@@ -768,7 +786,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     {
       label: t('digi.menu.mode'),
       items: [
-        ...snap.modes.map((m) => ({ label: m.name, checked: s.mode === m.id, onSelect: () => (s.mode === m.id ? undefined : save({ mode: m.id as DigiSettings['mode'] })) })),
+        ...snap.modes.map((m) => ({
+          label: m.name,
+          checked: s.mode === m.id,
+          onSelect: () => {
+            if (s.mode !== m.id) save({ mode: m.id as DigiSettings['mode'] });
+            if (m.id === 'rtty') setRttyOpen(true);
+          },
+        })),
         'sep' as const,
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
         // RTTY: spostamento e velocita' Baudot scelti dal menu (e nelle Impostazioni del modo)
@@ -961,16 +986,24 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
               if (word && isCallsign(word)) takeCall(word);
             }}>
-            {text === '' ? null : views.underlineSent ? withSentUnderlined(text) : text}
+            {text === '' ? null : <DigiRxText text={text} weak={weak} underlineSent={views.underlineSent} />}
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>
-            <textarea
-              ref={txBox}
+            <DigiTxBox
+              boxRef={txBox}
               className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
               value={tx}
-              aria-label={t('digi.tx.title')}
-              onChange={(e) => setTx(views.capsOnly ? e.target.value.toUpperCase() : e.target.value)}
+              progress={txLive.progress}
+              sending={sending}
+              label={t('digi.tx.title')}
+              placeholder={snap.tx.open ? t('digi.tx.openHint') : undefined}
+              onText={(v) => {
+                const next = views.capsOnly ? v.toUpperCase() : v;
+                // mentre si trasmette quello che si scrive parte subito (e il Backspace toglie solo quello che non e' ancora partito)
+                if (sending || txLive.progress.queued > 0) txLive.edit(next);
+                else setTx(next);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx);
               }}
@@ -1047,6 +1080,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           }
           cw={s.mode === 'cw' ? { bandwidthHz: s.cw_bandwidth_hz, onBandwidth: (hz) => save({ cw_bandwidth_hz: hz }) } : undefined}
           modeName={MODE_NAMES[s.mode]}
+          onModeClick={s.mode === 'rtty' ? () => setRttyOpen(true) : undefined}
           onToggleTx={toggleTx}
           onToggleSquelch={() => toggleSetting('squelch', 'toggle')}
           onToggleAfc={() => toggleSetting('afc', 'toggle')}
@@ -1054,7 +1088,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           onToggleSnap={() => toggleSetting('snap', 'toggle')}
           onFreq={(hz) => pickFreq(hz, false)}
           onModeSettings={() => setSettingsOpen(true)}
-          onThreshold={() => setSettingsOpen(true)}
+          onThreshold={() => (s.mode === 'rtty' ? setRttyOpen(true) : setSettingsOpen(true))}
+          showUtc={views.utc === true}
+          onToggleUtc={() => setView({ utc: views.utc !== true })}
+          onToggleFlashTx={() => setView({ flashTx: !views.flashTx })}
         />
       ) : null}
 
@@ -1063,7 +1100,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       ) : null}
 
       {wordMenu ? <RxWordMenu at={wordMenu} onPick={pickWord} onClose={() => setWordMenu(null)} /> : null}
-
+      {rttyOpen ? <RttySettingsDialog settings={s} onApply={save} onClose={() => setRttyOpen(false)} /> : null}
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
     </>

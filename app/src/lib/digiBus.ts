@@ -11,30 +11,84 @@ const textListeners = new Set<() => void>();
 /** Il testo della finestra di ricezione: resta anche lasciando la pagina (ultimi 40000 caratteri). */
 const MAX_TEXT = 40000;
 let text = '';
+/** Accanto al testo, carattere per carattere: '1' = incerto (RTTY, mostrato in chiaro), '0' = certo. */
+let weak = '';
 
 export function getDigiText(): string {
   return text;
 }
 
-function setText(next: string): void {
-  text = next.length > MAX_TEXT ? next.slice(next.length - MAX_TEXT) : next;
+export function getDigiWeak(): string {
+  return weak;
+}
+
+function notify(): void {
   for (const l of textListeners) l();
 }
 
+/** Aggiunge in coda al testo; `mask`: i caratteri incerti ('1'), di base tutti certi. */
+function append(add: string, mask = '0'.repeat(add.length)): void {
+  text += add;
+  weak += mask;
+  if (text.length > MAX_TEXT) {
+    text = text.slice(text.length - MAX_TEXT);
+    weak = weak.slice(weak.length - MAX_TEXT);
+  }
+  notify();
+}
+
 export function clearDigiText(): void {
-  setText('');
+  text = '';
+  weak = '';
+  notify();
 }
 
 /** Il testo trasmesso compare nella finestra, in una riga a parte (come in fldigi). */
 export function appendDigiTx(sent: string): void {
   const sep = text === '' || text.endsWith('\n') ? '' : '\n';
-  setText(`${text}${sep}» ${sent.trim()}\n`);
+  append(`${sep}» ${sent.trim()}\n`);
 }
 
 /** Una nota nella finestra di ricezione (ora, frequenza della stazione trovata dalla scansione...), su una riga a parte. */
 export function appendDigiNote(note: string): void {
   const sep = text === '' || text.endsWith('\n') ? '' : '\n';
-  setText(`${text}${sep}[${note}]\n`);
+  append(`${sep}[${note}]\n`);
+}
+
+/** L'eco della trasmissione e' aperta: i caratteri partiti via radio si aggiungono alla riga «» » corrente. */
+let echoOpen = false;
+
+/** L'eco dei caratteri appena partiti via radio (evento `tx_sent`), al ritmo della trasmissione. */
+function appendTxEcho(raw: string): void {
+  let add = '';
+  if (!echoOpen) {
+    add = `${text === '' || text.endsWith('\n') ? '' : '\n'}» `;
+    echoOpen = true;
+  }
+  for (const c of raw) {
+    if (c === '\r') continue;
+    add += c === '\n' ? '\n» ' : c;
+  }
+  append(add);
+}
+
+/** I caratteri ricevuti in coda al testo: i ritorni a capo diventano '\n', le posizioni in `weakAt` (nel testo dell'evento) incerte. */
+function appendRx(raw: string, weakAt: readonly number[] | undefined): void {
+  const flags = new Set(weakAt ?? []);
+  let add = '';
+  let mask = '';
+  for (let k = 0; k < raw.length; k++) {
+    const c = raw[k];
+    if (c === '\r') {
+      if (raw[k + 1] === '\n') continue;
+      add += '\n';
+      mask += '0';
+    } else {
+      add += c;
+      mask += c !== '\n' && flags.has(k) ? '1' : '0';
+    }
+  }
+  append(add, mask);
 }
 
 /** Chi mostra il testo si iscrive qui: cambia a ogni carattere nuovo. */
@@ -54,6 +108,11 @@ export function onDigi(listener: Listener): () => void {
 }
 
 export function emitDigi(event: DigiStreamEvent): void {
-  if (event.kind === 'rx_text' && event.text) setText(text + event.text.replace(/\r\n?/g, '\n'));
+  if (event.kind === 'rx_text' && event.text) appendRx(event.text, event.weak);
+  if (event.kind === 'tx_sent' && event.text) appendTxEcho(event.text);
+  if (event.kind === 'tx' && event.state && event.state !== 'sending' && echoOpen) {
+    echoOpen = false;
+    append('\n');
+  }
   for (const l of listeners) l(event);
 }
