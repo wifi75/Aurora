@@ -240,3 +240,44 @@ export function DxQsl({ call }: { call: string }) {
   }, [call]);
   return person ? <QslBadges person={person} /> : null;
 }
+
+/**
+ * Un testo intero al passaggio del mouse, nel riquadro con lo stile di quello del nominativo (nero nei temi scuri, bianco nel tema chiaro):
+ * per le celle troppo strette, come i Commenti del DX Cluster. Si apre solo se il testo non ci sta tutto nella cella.
+ */
+export function TextTip({ text, children }: { text: string; children: ReactNode }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  if (text.trim() === '') return <>{children}</>;
+  const enter = (e: React.MouseEvent<HTMLElement>) => {
+    const box = e.currentTarget.closest('td') ?? e.currentTarget;
+    // tutto visibile: niente riquadro
+    if (box.scrollWidth <= box.clientWidth + 1) return;
+    const r = box.getBoundingClientRect();
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setPos({ x: r.left, y: r.bottom + 4 }), TIP_DELAY_MS);
+  };
+  const leave = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setPos(null);
+  };
+  return (
+    <span className="texttip-anchor" onMouseEnter={enter} onMouseLeave={leave}>
+      {children}
+      {pos
+        ? createPortal(
+            <span className="calltip calltip--text" role="tooltip" style={{ left: pos.x, top: pos.y }}>
+              {text}
+            </span>,
+            document.body,
+          )
+        : null}
+    </span>
+  );
+}

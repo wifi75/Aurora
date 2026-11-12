@@ -15,7 +15,7 @@ import { SpotDialog } from './digi/SpotDialog';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
-import { CallsignTip, prefetchCallsigns } from './CallsignTip';
+import { CallsignTip, prefetchCallsigns, TextTip } from './CallsignTip';
 import { CallMenu, callMenuAt, type CallMenuState } from './CallMenu';
 import { cleanCall } from '../lib/callsignPage';
 import { BAND_NAMES, bandOf } from '../lib/format';
@@ -340,7 +340,8 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
         return (
           <td key={c} className="cluster-comment cl-c cl-c--comment">
             {splitTag(s, c)}
-            {s.comment}
+            {/* la cella e' spesso stretta: al passaggio del mouse il commento intero */}
+            <TextTip text={s.comment}>{s.comment}</TextTip>
           </td>
         );
       case 'time':

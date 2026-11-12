@@ -6112,6 +6112,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
 }
 :root[data-theme='light'] .calltip .muted { color: #4d4d4d; }
 :root[data-theme='light'] .calltip-call { color: #000000; }
+.calltip--text { max-width: 28rem; overflow-wrap: anywhere; }
 .calltip-country { display: flex; align-items: center; gap: 0.3rem; }
 .calltip-name { font-weight: 600; }
 
