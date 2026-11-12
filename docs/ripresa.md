@@ -1,12 +1,26 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-11 mezzanotte)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-12)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-12 (0.11.239)
+
+- **0.11.239**: revisione completa con le sue correzioni (sicurezza dell'accesso locale, Split DX, XIT, SQLite) e i punti lasciati
+  (Tune subito, Clear Avg di JT65, testi del cluster, PTT con la porta occupata, coda di WSPRnet, pulizie); Linux per la #41
+  (audio PulseAudio/PipeWire, CAT con l'Hamlib 4.5 di Debian 12, PTT del Dummy, porte /dev); mappa del mondo dei satelliti (#27).
+- **Installatore Windows compilato e firmato sul PC** con `scripts/rilascio-windows.ps1`: la chiave (`%USERPROFILE%\.aurora-signing\aurora.key`,
+  id `92a42c12993d4c27`) l'ha ritrovata il proprietario ed e' verificata contro `desktop/updater.pub`. Il lavoro Windows di GitHub salta la
+  compilazione se la release ha gia' installatore e `.sig` (lavoro `pc`); Linux e macOS restano su GitHub (gratuiti, repository pubblico).
+  Procedura in `docs/rilascio.md`.
+- **Da provare con la radio** (proprietario e utenti): Split DX, WSPR/FST4W con split, Cat4OM, OmniRig; su Linux KE4OZD (IC-7100, FT-857D,
+  audio) — la #41 resta aperta finche' non conferma.
+- **Lavori di una volta**: la cartella di compilazione del Rust su `D:\build\aurora-target` (C: era pieno); `cargo` con `-j 12` e prove con
+  `--test-threads=2`, una compilazione alla volta.
 
 ## Stato al 2026-11-11 mezzanotte (0.11.238 pubblicata, sito aggiornato)
 
 - **Pubblicata**: 0.11.238 (tre lavori verdi, installatore firmato da GitHub; sito compilato sul PC e caricato, mostra la 0.11.238).
 - **Su `main` dopo la 0.11.238**: riquadro del nominativo con LoTW solo se la stazione lo usa (verde, senza data), anche dal DX Cluster con l'elenco dell'ARRL (`lotw_last_upload` in `/api/v1/callsign`); voci per importare le macro tolte dal menu di PSK·RTTY·CW; barra di stato con un solo carattere; rotore meno della meta' nella sua pagina e nella finestra a parte; donazioni con PayPal (badge, sezione nei README, `SOSTENITORI.md`, `.github/FUNDING.yml`).
-- **Chiave di firma degli aggiornamenti**: non e' sul PC (`%USERPROFILE%\.aurora-signing\aurora.key` manca) ed e' solo nei segreti di GitHub, che non si rileggono: l'installatore firmato lo fa il lavoro Windows di GitHub (gratis, repository pubblico). Il proprietario non vuole compilare su GitHub: serve la sua copia della chiave per compilare sul PC.
+- **Chiave di firma degli aggiornamenti** (superato il 2026-11-12, vedi sopra): non e' sul PC (`%USERPROFILE%\.aurora-signing\aurora.key` manca) ed e' solo nei segreti di GitHub, che non si rileggono: l'installatore firmato lo fa il lavoro Windows di GitHub (gratis, repository pubblico). Il proprietario non vuole compilare su GitHub: serve la sua copia della chiave per compilare sul PC.
 - **Attenzione, cartella principale**: in `Desktop\Progetti\Aurora` il ramo `main` e' fermo alla storia vecchia (`1bce05e4`, 692 commit diversi da GitHub); si lavora in `Aurora-fix-remoto` da `origin/main`. Allinearla solo con il via del proprietario (copia in `backup-pre-rewrite`).
 - **Un'altra sessione pusha su `main`** (es. `d7847b06`): prima di ogni push `git fetch` e `git rebase origin/main`.
 

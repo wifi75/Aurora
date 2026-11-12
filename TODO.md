@@ -2,19 +2,29 @@
 
 Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da WSJT-X 3.x stanno in `docs/tasks.md`. Stato a colpo d'occhio al 2026-11-05, v0.11.151.
 
-## Dopo la 0.11.238 (su `main`, non ancora in una release)
+## 0.11.239 (2026-11-12)
+- [x] Revisione completa (17 revisori) e correzioni: sicurezza dell'accesso locale, Split DX coerente, XIT in WSPR/FST4/FST4W, SQLite aggiornato.
+- [x] Punti lasciati dalla revisione: Tune subito, Clear Avg di JT65, testi del cluster, PTT con la porta occupata, coda di WSPRnet, pulizie.
+- [x] Linux (segnalazione #41, KE4OZD): audio con PulseAudio/PipeWire, CAT con l'Hamlib 4.5 di Debian 12 (`no_xchg` solo alle Icom), PTT del Dummy, porte /dev.
+- [x] Satelliti: mappa del mondo inclusa (UN7MBV, #27).
+- [x] Installatore compilato e firmato sul PC: chiave ritrovata dal proprietario e verificata (`%USERPROFILE%\.aurora-signing\aurora.key`).
+- [ ] Riscontro di KE4OZD su Debian 12 (IC-7100 a 4800 baud, FT-857D, audio): la #41 resta aperta finche' non funziona da lui.
+- [ ] Linux: PTT diretto su RTS/DTR senza Hamlib (`AURORA_PTT_METHOD`, `tx-native/src/ptt_serial.rs`) c'e' solo per Windows; serve un ramo con `ioctl(TIOCMBIS/TIOCMBIC)`.
+- [ ] Linux: volume d'ingresso e d'uscita (AUTO del livello Rx) solo su Windows (`endpoint_volume.rs`); valutare il volume di PulseAudio.
+- [ ] UN7MBV: RTTY che decodifica male (servono velocita'/shift, schermata, registrazione); idea dei cursori Rx e Pwr sempre visibili (il proprietario per ora non la vuole).
+- [ ] Allineare `main` nella cartella `Desktop\Progetti\Aurora` a `origin/main` (solo con il via del proprietario).
+
+## Dopo la 0.11.238 (entrati nella 0.11.239)
 - [x] Riquadro del nominativo: LoTW solo se c'e', verde e senza data, anche dal DX Cluster (elenco ARRL).
 - [x] Tolte dal menu di PSK·RTTY·CW le voci per importare le macro; barra di stato con un solo carattere; rotore piu' piccolo.
 - [x] Donazioni con PayPal: badge, sezione nei README, `SOSTENITORI.md`, `.github/FUNDING.yml`.
-- [ ] Prossima versione (0.11.239): decidere dove compilare l'installatore firmato (GitHub, oppure PC con la chiave del proprietario).
-- [ ] Allineare `main` nella cartella `Desktop\Progetti\Aurora` a `origin/main` (solo con il via del proprietario).
 
 ## 0.11.238 (2026-11-11 notte, pubblicata)
 - [x] Split DX dal cluster, Cat4OM con la scoperta automatica, olandese (settima lingua), radiofaro FST4W e invio a WSPRnet.
 - [x] Porta COM occupata con il nome del programma, OmniRig lento come avviso, PC lento con «Passa a Normale».
 - [x] Griglie e colonne spostabili in Finestra RX e Log; modo degli spot dal band plan; via QSL delle DXpedition; donazioni con PayPal.
 - [ ] Prove dal vivo con la radio (proprietario): Split DX, Cat4OM, FST4W/WSPRnet, porta occupata, griglie.
-- [ ] Chiave di firma degli aggiornamenti sul PC (`%USERPROFILE%\.aurora-signing\aurora.key`) se si vuole compilare l'installatore in locale.
+- [x] Chiave di firma degli aggiornamenti sul PC (`%USERPROFILE%\.aurora-signing\aurora.key`): copiata dal proprietario il 2026-11-12.
 
 ## Dal lavoro del 2026-11-11 sera e notte (0.11.237)
 - [x] FST4 e FST4W (periodi 15 s-30 min), verificati con `jt9.exe` di WSJT-X 3.3.0-beta6.
