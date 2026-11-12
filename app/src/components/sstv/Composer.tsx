@@ -485,28 +485,37 @@ export function Composer({ snap, incoming, onChanged, sendRequest }: { snap: Sst
                   <span className={`sstv-layer-kind sstv-layer-kind--${l.kind}`} aria-hidden="true" />
                   <span className={l.hidden ? 'sstv-muted' : ''}>{layerName(l)}</span>
                 </button>
+                {/* i comandi stanno sulla stessa riga del nome, piccoli: con tre o quattro testi la lista resta corta */}
                 <span className="sstv-layer-tools">
-                  <button type="button" onClick={() => commit({ ...comp, layers: moveLayer(comp.layers, l.id, 1) })}>
-                    {t('sstv.layer.up')}
+                  <button type="button" title={t('sstv.layer.up')} aria-label={t('sstv.layer.up')} onClick={() => commit({ ...comp, layers: moveLayer(comp.layers, l.id, 1) })}>
+                    ▲
                   </button>
-                  <button type="button" onClick={() => commit({ ...comp, layers: moveLayer(comp.layers, l.id, -1) })}>
-                    {t('sstv.layer.down')}
+                  <button type="button" title={t('sstv.layer.down')} aria-label={t('sstv.layer.down')} onClick={() => commit({ ...comp, layers: moveLayer(comp.layers, l.id, -1) })}>
+                    ▼
                   </button>
-                  <button type="button" onClick={() => commit({ ...comp, layers: updateLayer(comp.layers, l.id, { hidden: !l.hidden }) })}>
-                    {l.hidden ? t('sstv.layer.show') : t('sstv.layer.hide')}
+                  <button
+                    type="button"
+                    title={l.hidden ? t('sstv.layer.show') : t('sstv.layer.hide')}
+                    aria-label={l.hidden ? t('sstv.layer.show') : t('sstv.layer.hide')}
+                    aria-pressed={l.hidden}
+                    onClick={() => commit({ ...comp, layers: updateLayer(comp.layers, l.id, { hidden: !l.hidden }) })}
+                  >
+                    {l.hidden ? '○' : '◉'}
                   </button>
-                  <button type="button" onClick={() => commit({ ...comp, layers: duplicateLayer(comp.layers, l.id) })}>
-                    {t('sstv.layer.dup')}
+                  <button type="button" title={t('sstv.layer.dup')} aria-label={t('sstv.layer.dup')} onClick={() => commit({ ...comp, layers: duplicateLayer(comp.layers, l.id) })}>
+                    ⧉
                   </button>
                   <button
                     type="button"
                     className="sstv-danger"
+                    title={t('sstv.layer.del')}
+                    aria-label={t('sstv.layer.del')}
                     onClick={() => {
                       commit({ ...comp, layers: comp.layers.filter((x) => x.id !== l.id) });
                       if (selected === l.id) setSelected(null);
                     }}
                   >
-                    {t('sstv.layer.del')}
+                    ✕
                   </button>
                 </span>
               </li>
@@ -722,7 +731,9 @@ function LayerInspector({ layer, patch }: { layer: Layer; patch: (p: Partial<Tex
         <Field label={t('sstv.p.text')}>
           <textarea rows={2} value={layer.text} onChange={(e) => patch({ text: e.target.value }, 'text')} />
         </Field>
-        <p className="sstv-hint sstv-tokens">{t('sstv.p.tokens')}</p>
+        <p className="sstv-hint sstv-tokens" title={t('sstv.p.tokens')}>
+          {t('sstv.p.tokens')}
+        </p>
         <Field label={t('sstv.p.font')}>
           <select value={layer.font} onChange={(e) => patch({ font: e.target.value }, 'font')} style={{ fontFamily: layer.font }}>
             {FONTS.map((f) => (
@@ -733,35 +744,40 @@ function LayerInspector({ layer, patch }: { layer: Layer; patch: (p: Partial<Tex
           </select>
         </Field>
         <Slider label={t('sstv.p.size')} value={Math.round(layer.size * 100)} min={2} max={60} step={1} show={`${Math.round(layer.size * 100)} %`} onChange={(v) => patch({ size: v / 100 }, 'size')} />
-        <div className="sstv-seg">
-          <button type="button" className={layer.bold ? 'on' : ''} onClick={() => patch({ bold: !layer.bold }, 'bold')}>
-            <b>{t('sstv.p.bold')}</b>
-          </button>
-          <button type="button" className={layer.italic ? 'on' : ''} onClick={() => patch({ italic: !layer.italic }, 'italic')}>
-            <i>{t('sstv.p.italic')}</i>
-          </button>
-        </div>
-        <div className="sstv-seg" role="group" aria-label={t('sstv.p.align')}>
-          {(['left', 'center', 'right'] as const).map((a) => (
-            <button key={a} type="button" className={layer.align === a ? 'on' : ''} onClick={() => patch({ align: a }, 'align')}>
-              {t(`sstv.p.${a}`)}
+        {/* grassetto, corsivo e allineamento sulla stessa riga */}
+        <div className="sstv-row">
+          <div className="sstv-seg">
+            <button type="button" className={layer.bold ? 'on' : ''} aria-pressed={layer.bold} onClick={() => patch({ bold: !layer.bold }, 'bold')}>
+              <b>{t('sstv.p.bold')}</b>
             </button>
-          ))}
+            <button type="button" className={layer.italic ? 'on' : ''} aria-pressed={layer.italic} onClick={() => patch({ italic: !layer.italic }, 'italic')}>
+              <i>{t('sstv.p.italic')}</i>
+            </button>
+          </div>
+          <div className="sstv-seg" role="group" aria-label={t('sstv.p.align')}>
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button key={a} type="button" className={layer.align === a ? 'on' : ''} title={t(`sstv.p.${a}`)} aria-label={t(`sstv.p.${a}`)} onClick={() => patch({ align: a }, 'align')}>
+                {a === 'left' ? '⇤' : a === 'center' ? '↔' : '⇥'}
+              </button>
+            ))}
+          </div>
         </div>
         <h4>{t('sstv.p.fill')}</h4>
         <FillField fill={layer.fill} onChange={(fill) => patch({ fill }, 'fill')} />
         <h4>{t('sstv.p.outline')}</h4>
         <Slider label={t('sstv.p.width')} value={Math.round(layer.outline * 100)} min={0} max={30} step={1} onChange={(v) => patch({ outline: v / 100 }, 'outline')} />
-        <ColorField label={t('sstv.p.color')} value={layer.outlineColor} onChange={(outlineColor) => patch({ outlineColor }, 'outlineColor')} />
-        <label className="sstv-check">
-          <input type="checkbox" checked={layer.shadow} onChange={(e) => patch({ shadow: e.target.checked }, 'shadow')} />
-          {t('sstv.p.shadow')}
-        </label>
-        {layer.shadow ? <ColorField label={t('sstv.p.color')} value={layer.shadowColor} onChange={(shadowColor) => patch({ shadowColor }, 'shadowColor')} /> : null}
-        <label className="sstv-check">
-          <input type="checkbox" checked={layer.box} onChange={(e) => patch({ box: e.target.checked }, 'box')} />
-          {t('sstv.p.box')}
-        </label>
+        {layer.outline > 0 ? <ColorField label={t('sstv.p.color')} value={layer.outlineColor} onChange={(outlineColor) => patch({ outlineColor }, 'outlineColor')} /> : null}
+        <div className="sstv-row">
+          <label className="sstv-check">
+            <input type="checkbox" checked={layer.shadow} onChange={(e) => patch({ shadow: e.target.checked }, 'shadow')} />
+            {t('sstv.p.shadow')}
+          </label>
+          <label className="sstv-check">
+            <input type="checkbox" checked={layer.box} onChange={(e) => patch({ box: e.target.checked }, 'box')} />
+            {t('sstv.p.box')}
+          </label>
+        </div>
+        {layer.shadow ? <ColorField label={t('sstv.p.shadow')} value={layer.shadowColor} onChange={(shadowColor) => patch({ shadowColor }, 'shadowColor')} /> : null}
         {layer.box ? (
           <>
             <ColorField label={t('sstv.p.color')} value={layer.boxColor} onChange={(boxColor) => patch({ boxColor }, 'boxColor')} />

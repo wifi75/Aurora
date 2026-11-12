@@ -310,3 +310,107 @@ html[data-theme='light'] .sstv-log-f input { background: #ffffff; color: #0b1322
   .sstv-rx--log > .sstv-log .sstv-log-call, .sstv-rx--log > .sstv-log .sstv-log-note, .sstv-rx--log > .sstv-log .sstv-log-btns { grid-column: 1 / -1; }
 }
 .sstv-gear { flex: none; }
+
+/* ===== ricezione: nominativo dell'FSK ID sull'immagine, pulizia dal rumore sotto il visore, come e' partita l'immagine ===== */
+.sstv-canvas--clean { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.sstv-fskid { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 2; padding: 0.1rem 0.55rem; border-radius: 8px; background: rgba(5, 10, 18, 0.78); border: 1px solid rgba(255, 224, 102, 0.55); color: #ffe066; font: 700 1.05rem var(--font-data); letter-spacing: 0.04em; }
+.sstv-rxbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.8rem; min-height: 1.9rem; }
+.sstv-rxbar .sstv-views { padding: 0.12rem; }
+.sstv-rxbar .sstv-views button { padding: 0.12rem 0.7rem; font-size: 0.8rem; }
+.sstv-rxbar .sstv-views button:disabled { opacity: 0.45; cursor: not-allowed; }
+.sstv-rxbar .sstv-slider { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #9db0da; white-space: nowrap; }
+.sstv-rxbar .sstv-slider input { width: 6rem; }
+.sstv-rxbar .sstv-note { margin-left: auto; font-size: 0.82rem; }
+.sstv-readouts .sstv-source { margin: 0; font-family: inherit; font-size: 0.74rem; color: #9db0da; }
+.sstv-fskid-text { color: #ffe066; font-family: var(--font-data); letter-spacing: 0.03em; }
+html[data-theme='light'] .sstv-fskid-text { color: #7a4f00; }
+html[data-theme='light'] .sstv-readouts .sstv-source, html[data-theme='light'] .sstv-rxbar .sstv-slider { color: #46556f; }
+
+/* ===== segni di sintonia sullo spettro: sincronismo 1200, nero 1500, bianco 2300, VIS 1100/1300 e leader 1900; in rosso lo scarto stimato ===== */
+.sstv-mark { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(255, 255, 255, 0.45); pointer-events: none; }
+.sstv-mark i { position: absolute; top: 1px; left: 3px; font: 600 9px/1 var(--font-data); font-style: normal; color: rgba(225, 233, 255, 0.85); white-space: nowrap; }
+.sstv-mark--sync { border-left: 1.5px solid #ffd400; }
+.sstv-mark--sync i { color: #ffd400; }
+.sstv-mark--vis { border-left: 1px dotted rgba(142, 180, 255, 0.7); }
+.sstv-mark--found { border-left: 2px solid #ff4d6d; }
+.sstv-mark--found i { top: auto; bottom: 1px; color: #ff8fa3; font-weight: 700; }
+
+/* ===== log: riga di stato della ricerca del nominativo, locatore accanto alle note ===== */
+.sstv-log-info { grid-column: 1 / -1; margin: 0; color: #9db0da; font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-theme='light'] .sstv-log-info { color: #46556f; }
+.sstv-log .sstv-log-note { grid-column: auto; }
+@media (max-width: 1179px) {
+  .sstv-rx--log > .sstv-log { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .sstv-rx--log > .sstv-log .sstv-log-note { grid-column: 1 / 5; }
+  .sstv-rx--log > .sstv-log .sstv-log-btns { grid-column: 5 / 7; }
+}
+@media (max-width: 820px) {
+  .sstv-rx--log > .sstv-log { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sstv-rx--log > .sstv-log .sstv-log-note { grid-column: auto; }
+  .sstv-rx--log > .sstv-log .sstv-log-btns { grid-column: 1 / -1; }
+}
+
+/* ===== compositore compatto: righe basse, controlli affiancati, tavolozza piccola; con 3-4 testi tutto resta in vista ===== */
+.sstv-composer { gap: 0.5rem; }
+.sstv-composer .sstv-toolbar { padding: 0.45rem 0.7rem; gap: 0.6rem; }
+.sstv-composer .sstv-panel { gap: 0.35rem; padding: 0.55rem 0.65rem; }
+.sstv-composer .sstv-panel h3 { margin: 0; font-size: 0.9rem; }
+.sstv-composer .sstv-panel h4 { margin: 0.2rem 0 0; font-size: 0.72rem; }
+.sstv-composer .sstv-inspector { gap: 0.3rem; }
+.sstv-composer .sstv-group { gap: 0.3rem; }
+.sstv-composer .sstv-field { gap: 0.12rem; font-size: 0.76rem; }
+.sstv-page .sstv-composer .sstv-field input:not([type='range']):not([type='color']), .sstv-page .sstv-composer .sstv-field select, .sstv-page .sstv-composer .sstv-field textarea { padding: 0.2rem 0.45rem; font-size: 0.85rem; }
+.sstv-composer .sstv-field textarea { min-height: 2.4rem; }
+.sstv-composer .sstv-slider { display: grid; grid-template-columns: 6.4rem minmax(0, 1fr); align-items: center; gap: 0.4rem; }
+.sstv-composer .sstv-slider > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sstv-composer .sstv-slider input { height: 1rem; margin: 0; }
+.sstv-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; }
+.sstv-row .sstv-seg { flex: 1 1 auto; }
+.sstv-page .sstv-composer .sstv-seg button { min-height: 24px; padding: 1px 6px; font-size: 12px; border-radius: 0; }
+.sstv-composer .sstv-check { font-size: 0.8rem; gap: 0.3rem; }
+.sstv-composer .sstv-color { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); align-items: center; gap: 0.4rem; }
+.sstv-composer .sstv-color-row { gap: 0.3rem; }
+.sstv-composer .sstv-color input[type='color'] { width: 1.45rem; height: 1.45rem; border-radius: 6px; }
+.sstv-composer .sstv-swatches { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; }
+.sstv-composer .sstv-swatch { aspect-ratio: auto; height: 0.75rem; border-radius: 3px; }
+.sstv-composer .sstv-swatch--on { outline-width: 2px; outline-offset: 0; }
+.sstv-composer .sstv-hint { margin: 0; font-size: 0.72rem; line-height: 1.25; }
+.sstv-composer .sstv-tokens { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sstv-page .sstv-composer .sstv-add button { min-height: 24px; padding: 1px 8px; font-size: 12px; }
+.sstv-composer .sstv-layers { gap: 0.2rem; }
+.sstv-composer .sstv-layer { display: flex; align-items: center; gap: 0.3rem; padding: 0.1rem 0.25rem; }
+.sstv-composer .sstv-layer-name { flex: 1 1 auto; min-width: 0; padding: 0.05rem; font-size: 0.84rem; }
+.sstv-composer .sstv-layer-tools { flex: none; flex-wrap: nowrap; gap: 2px; margin: 0; }
+.sstv-composer .sstv-layer-tools button { width: 1.4rem; height: 1.4rem; padding: 0; font-size: 0.68rem; line-height: 1; }
+.sstv-composer .sstv-sendbar { padding: 0.45rem 0.7rem; }
+.sstv-composer .sstv-preview-cap { display: none; }
+@media (min-width: 1180px) {
+  /* i pannelli scorrono dentro di se': la pagina no */
+  .sstv-composer .sstv-panel { max-height: calc(100vh - 12.5rem); }
+  /* con la colonna delle cronologie a destra i pannelli si stringono un po': l'anteprima resta grande */
+  .sstv-editor { grid-template-columns: minmax(215px, 260px) minmax(0, 1fr) minmax(260px, 330px); gap: 0.6rem; }
+}
+
+/* ===== ricevute e trasmesse: due riquadri identici (stesse misure, stesse miniature) che non spingono giu' la pagina =====
+   finestra larga: una colonna a destra, le due cronologie una sopra l'altra, ognuna con lo scorrimento suo;
+   finestra stretta e telefono: una fascia bassa in fondo, le due cronologie affiancate con le miniature in fila */
+.sstv-side-col .sstv-strip { grid-auto-columns: 4.8rem; }
+.sstv-side-col .sstv-slot { min-height: 0; aspect-ratio: 5 / 5.2; }
+.sstv-hist-head { flex-wrap: wrap; row-gap: 0.25rem; font-size: 0.85rem; }
+.sstv-history--both { gap: 0.6rem; }
+@media (min-width: 1180px) {
+  .sstv-body { flex-direction: row; align-items: stretch; overflow: hidden; gap: 0.6rem; }
+  .sstv-main { flex: 1 1 0; min-width: 0; min-height: 0; overflow: auto; }
+  .sstv-side-col { flex: 0 0 13.4rem; width: 13.4rem; min-height: 0; }
+  .sstv-side-col .sstv-history--both { height: 100%; box-sizing: border-box; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); padding: 0.45rem 0.5rem; }
+  .sstv-side-col .sstv-hist-col { min-height: 0; }
+  .sstv-side-col .sstv-strip { flex: 1 1 auto; min-height: 0; grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; grid-auto-rows: max-content; align-content: start; overflow-x: hidden; overflow-y: auto; }
+}
+@media (max-width: 1179px) {
+  .sstv-side-col .sstv-history--both { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 0.4rem 0.5rem; }
+  .sstv-main { min-height: 0; }
+}
+@media (max-width: 520px) {
+  .sstv-side-col .sstv-strip { grid-auto-columns: 4.2rem; }
+  .sstv-hist-tools .sstv-btn { padding: 1px 6px; }
+}
