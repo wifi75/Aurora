@@ -2,6 +2,8 @@ use std::{collections::VecDeque, sync::Arc};
 
 use rustfft::{num_complex::Complex, Fft, FftPlanner};
 
+use crate::click::{ClickDetector, ClickSpan};
+
 /// Fino a 5000 Hz, come il Wide Graph di JTDX (`iz = nint(5000/df3)` in `symspec.f90`); la cascata mostra poi
 /// solo la parte che passa dal filtro della radio.
 pub const F_MAX_HZ: u32 = 5000;
@@ -25,6 +27,13 @@ const FAC0: f32 = 0.1 * 32768.0;
 pub const DB_MIN: f32 = -40.0;
 pub const DB_STEP: f32 = 80.0 / 255.0;
 
+/// Anti-click: campioni da spegnere prima e dopo il click trovato (s) e fronte morbido ai due lati (s).
+const CLICK_PAD_S: f32 = 0.001;
+const CLICK_TAPER_S: f32 = 0.002;
+/// Campioni passati al rivelatore dei click alla volta, e quanti click recenti si tengono.
+const CLICK_CHUNK: usize = 64;
+const RECENT_CLICKS: usize = 64;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum AnalyzerError {
     SampleRateTooLow(u32),
@@ -45,6 +54,10 @@ impl std::error::Error for AnalyzerError {}
 /// Trasforma l'audio in righe di 6827 byte su 0-5000 Hz (canali da 0,732 Hz), circa 15 al secondo, con lo spettro di JTDX:
 /// finestra gaussiana, FFT di 1,365 s, ampiezza `(|re| + |im|) / n`. Il byte e' l'ampiezza in dB (`DB_MIN`, `DB_STEP`):
 /// la scala mediana, i canali per pixel, il guadagno e i colori li applica il client come il Wide Graph.
+///
+/// Anti-click (`aurora_core::waterfall::anticlick`, o [`SpectrumAnalyzer::set_anticlick`] nelle prove): i click di manipolazione trovati
+/// da [`ClickDetector`] si spengono, con fronti morbidi, prima della trasformata; gli istanti dei click si leggono con
+/// [`SpectrumAnalyzer::recent_clicks`] anche con l'opzione spenta.
 pub struct SpectrumAnalyzer {
     fft: Arc<dyn Fft<f32>>,
     n: usize,
@@ -54,6 +67,15 @@ pub struct SpectrumAnalyzer {
     since_row: usize,
     buf: Vec<Complex<f32>>,
     scratch: Vec<Complex<f32>>,
+    /// Per ogni campione della finestra quanto resta dopo l'anti-click (1 = tutto).
+    gains: VecDeque<f32>,
+    clicks: ClickDetector,
+    pending: Vec<f32>,
+    recent: VecDeque<ClickSpan>,
+    total: u64,
+    pad: u64,
+    taper: u64,
+    anticlick: Option<bool>,
 }
 
 impl SpectrumAnalyzer {
@@ -78,28 +100,111 @@ impl SpectrumAnalyzer {
         // come JTDX, che azzera i campioni mancanti all'inizio: le prime righe sono scure invece di aspettare la finestra piena
         let mut samples = VecDeque::with_capacity(n + 1);
         samples.extend(std::iter::repeat_n(0.0, n));
-        Ok(SpectrumAnalyzer { fft, n, hop, window, samples, since_row: 0, buf: vec![Complex::new(0.0, 0.0); n], scratch })
+        let mut gains = VecDeque::with_capacity(n + 1);
+        gains.extend(std::iter::repeat_n(1.0, n));
+        Ok(SpectrumAnalyzer {
+            fft,
+            n,
+            hop,
+            window,
+            samples,
+            since_row: 0,
+            buf: vec![Complex::new(0.0, 0.0); n],
+            scratch,
+            gains,
+            clicks: ClickDetector::new(sample_rate),
+            pending: Vec::with_capacity(CLICK_CHUNK),
+            recent: VecDeque::with_capacity(RECENT_CLICKS + 1),
+            total: 0,
+            pad: (CLICK_PAD_S * rate).round() as u64,
+            taper: (CLICK_TAPER_S * rate).round().max(1.0) as u64,
+            anticlick: None,
+        })
+    }
+
+    /// Accende o spegne l'anti-click per questo analizzatore, al posto dell'opzione comune (`None` torna all'opzione comune).
+    pub fn set_anticlick(&mut self, on: Option<bool>) {
+        self.anticlick = on;
+    }
+
+    /// Gli ultimi click trovati (al massimo 64), in campioni contati dall'inizio del flusso (vedi [`SpectrumAnalyzer::samples_seen`]).
+    pub fn recent_clicks(&self) -> impl Iterator<Item = &ClickSpan> {
+        self.recent.iter()
+    }
+
+    /// Campioni arrivati finora.
+    pub fn samples_seen(&self) -> u64 {
+        self.total
+    }
+
+    /// Passa al rivelatore i campioni in attesa e spegne nella finestra quelli dei click trovati.
+    fn detect_clicks(&mut self) {
+        if self.pending.is_empty() {
+            return;
+        }
+        let spans = self.clicks.push(&self.pending);
+        self.pending.clear();
+        // il campione assoluto del primo della finestra (all'avvio la finestra e' piena di zeri che non contano)
+        let first = self.total as i64 - self.n as i64;
+        for span in spans {
+            let (a, b) = (span.start.saturating_sub(self.pad), span.end + self.pad);
+            for abs in a.saturating_sub(self.taper).max(first.max(0) as u64)..(b + self.taper).min(self.total) {
+                // fronte a coseno rialzato prima e dopo il tratto spento
+                let d = if abs < a {
+                    a - abs
+                } else if abs >= b {
+                    abs - b + 1
+                } else {
+                    0
+                };
+                let g = if d == 0 { 0.0 } else { 0.5 - 0.5 * (std::f32::consts::PI * d as f32 / self.taper as f32).cos() };
+                if let Some(slot) = self.gains.get_mut((abs as i64 - first) as usize) {
+                    *slot = slot.min(g);
+                }
+            }
+            self.recent.push_back(span);
+            while self.recent.len() > RECENT_CLICKS {
+                self.recent.pop_front();
+            }
+        }
     }
 
     /// Aggiunge campioni mono in [-1, 1]; restituisce le righe diventate pronte (anche zero).
     /// I campioni non finiti (NaN, infinito) valgono zero.
     pub fn push(&mut self, input: &[f32]) -> Vec<Vec<u8>> {
         let mut rows = Vec::new();
+        let anticlick = self.anticlick.unwrap_or_else(aurora_core::waterfall::anticlick);
         for &s in input {
-            self.samples.push_back(if s.is_finite() { s } else { 0.0 });
+            let s = if s.is_finite() { s } else { 0.0 };
+            self.samples.push_back(s);
             self.samples.pop_front();
+            self.gains.push_back(1.0);
+            self.gains.pop_front();
+            self.total += 1;
+            self.pending.push(s);
+            if self.pending.len() >= CLICK_CHUNK {
+                self.detect_clicks();
+            }
             self.since_row += 1;
             if self.since_row >= self.hop {
                 self.since_row = 0;
-                rows.push(self.compute_row());
+                rows.push(self.compute_row(anticlick));
             }
         }
         rows
     }
 
-    fn compute_row(&mut self) -> Vec<u8> {
-        for (i, s) in self.samples.iter().enumerate() {
-            self.buf[i] = Complex::new(s * FAC0 * self.window[i], 0.0);
+    fn compute_row(&mut self, anticlick: bool) -> Vec<u8> {
+        if anticlick {
+            // i campioni piu' recenti hanno peso nullo nella finestra: il ritardo del rivelatore (qualche ms) non conta
+            self.detect_clicks();
+            for (i, (s, g)) in self.samples.iter().zip(&self.gains).enumerate() {
+                self.buf[i] = Complex::new(s * g * FAC0 * self.window[i], 0.0);
+            }
+        } else {
+            for (i, s) in self.samples.iter().enumerate() {
+                self.buf[i] = Complex::new(s * FAC0 * self.window[i], 0.0);
+            }
         }
         self.fft.process_with_scratch(&mut self.buf, &mut self.scratch);
         let fac1 = 1.0 / self.n as f32;
@@ -117,3 +222,4 @@ impl SpectrumAnalyzer {
             .collect()
     }
 }
+

@@ -178,3 +178,94 @@ fn quiet_or_invalid_samples_never_produce_garbage() {
     let rows = b.push(&bad);
     assert!(!rows.is_empty(), "campioni non validi non devono bloccare l'analisi");
 }
+
+/// CW manipolato duro (fronti istantanei, 25 WPM, a 800 Hz) nel rumore: i click fanno righe orizzontali lontano dal tono. Con
+/// l'anti-click l'energia in piu' a 1,5-2,5 kHz deve quasi sparire e il tono restare com'era; accanto, per confronto, la sostituzione
+/// delle celle con la mediana delle tre righe vicine nel tempo (che con la finestra di 0,14 s, larga cinque righe, non basta).
+#[test]
+fn anticlick_removes_key_clicks_and_keeps_the_signal() {
+    let rate = 12_000u32;
+    let unit = (1.2 / 25.0 * rate as f32) as usize;
+    let mut x = 99u64;
+    let mut noise = || {
+        x ^= x >> 12;
+        x ^= x << 25;
+        x ^= x >> 27;
+        ((x.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 40) as f32 / (1u64 << 23) as f32 - 1.0) * 0.003
+    };
+    // 2 s di solo rumore (riferimento), poi 6 s di punti e linee
+    let mut audio: Vec<f32> = (0..2 * rate as usize).map(|_| noise()).collect();
+    let pattern = [1usize, 1, 3, 1, 1, 1, 3, 3, 1, 3];
+    let mut on = Vec::new();
+    while on.len() < 6 * rate as usize {
+        for &p in &pattern {
+            on.extend(std::iter::repeat_n(true, p * unit));
+            on.extend(std::iter::repeat_n(false, unit));
+        }
+        on.extend(std::iter::repeat_n(false, 2 * unit));
+    }
+    on.truncate(6 * rate as usize);
+    for &k in &on {
+        let t = audio.len() as f32 / rate as f32;
+        audio.push(noise() + if k { 0.5 * (2.0 * std::f32::consts::PI * 800.0 * t).sin() } else { 0.0 });
+    }
+    let rows_with = |anticlick: bool| {
+        let mut a = SpectrumAnalyzer::new(rate).unwrap();
+        a.set_anticlick(Some(anticlick));
+        let rows = a.push(&audio);
+        let clicks = a.recent_clicks().count();
+        (rows, clicks)
+    };
+    let (off, clicks) = rows_with(false);
+    let (on_rows, _) = rows_with(true);
+    // la mediana di tre righe vicine nel tempo, cella per cella, sulle righe senza anti-click
+    let median: Vec<Vec<u8>> = (0..off.len())
+        .map(|r| {
+            if r == 0 || r + 1 >= off.len() {
+                return off[r].clone();
+            }
+            (0..off[r].len())
+                .map(|k| {
+                    let mut v = [off[r - 1][k], off[r][k], off[r + 1][k]];
+                    v.sort_unstable();
+                    v[1]
+                })
+                .collect()
+        })
+        .collect();
+    let far = (bin_of(1500.0) as usize)..(bin_of(2500.0) as usize);
+    let tone = bin_of(800.0).round() as usize;
+    let mean_db = |rows: &[Vec<u8>], from: usize, to: usize, bins: std::ops::Range<usize>| {
+        let (mut sum, mut n) = (0.0, 0.0);
+        for row in &rows[from..to] {
+            for k in bins.clone() {
+                sum += db_of(row[k]);
+                n += 1.0;
+            }
+        }
+        sum / n
+    };
+    let rows_per_s = off.len() / 8;
+    let (quiet, keyed) = ((rows_per_s / 2, 3 * rows_per_s / 2), (3 * rows_per_s, 8 * rows_per_s - 2));
+    let excess = |rows: &[Vec<u8>]| mean_db(rows, keyed.0, keyed.1, far.clone()) - mean_db(rows, quiet.0, quiet.1, far.clone());
+    let carrier = |rows: &[Vec<u8>]| mean_db(rows, keyed.0, keyed.1, tone..tone + 1);
+    let (e_off, e_on, e_med) = (excess(&off), excess(&on_rows), excess(&median));
+    println!("ultimi click trovati {clicks}; energia in piu' a 1,5-2,5 kHz: senza {e_off:.1} dB, anti-click {e_on:.1} dB, mediana di tre righe {e_med:.1} dB");
+    println!("tono: senza {:.1} dB, anti-click {:.1} dB, mediana {:.1} dB", carrier(&off), carrier(&on_rows), carrier(&median));
+    assert!(clicks > 20, "click trovati {clicks}");
+    assert!(e_off > 6.0, "la prova non fa click visibili ({e_off:.1} dB)");
+    assert!(e_on < 3.0, "con l'anti-click restano {e_on:.1} dB");
+    assert!((carrier(&on_rows) - carrier(&off)).abs() < 1.5, "il tono cambia");
+}
+
+#[test]
+fn anticlick_without_clicks_changes_nothing() {
+    let audio = sine(800.0, 0.5, 12_000, 3.0);
+    let mut a = SpectrumAnalyzer::new(12_000).unwrap();
+    a.set_anticlick(Some(false));
+    let mut b = SpectrumAnalyzer::new(12_000).unwrap();
+    b.set_anticlick(Some(true));
+    let (ra, rb) = (a.push(&audio), b.push(&audio));
+    assert_eq!(b.recent_clicks().count(), 0);
+    assert_eq!(ra, rb);
+}
