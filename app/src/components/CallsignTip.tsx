@@ -243,7 +243,7 @@ export function DxQsl({ call }: { call: string }) {
 
 /**
  * Un testo intero al passaggio del mouse, nel riquadro con lo stile di quello del nominativo (nero nei temi scuri, bianco nel tema chiaro):
- * per le celle troppo strette, come i Commenti del DX Cluster. Si apre solo se il testo non ci sta tutto nella cella.
+ * per le celle troppo strette, come i Commenti del DX Cluster. Mostra solo quel testo e copre tutta la cella.
  */
 export function TextTip({ text, children }: { text: string; children: ReactNode }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -256,9 +256,8 @@ export function TextTip({ text, children }: { text: string; children: ReactNode 
   );
   if (text.trim() === '') return <>{children}</>;
   const enter = (e: React.MouseEvent<HTMLElement>) => {
+    // sempre, su tutta la cella: nelle tabelle la misura del testo tagliato non e' affidabile e il riquadro non compariva
     const box = e.currentTarget.closest('td') ?? e.currentTarget;
-    // tutto visibile: niente riquadro
-    if (box.scrollWidth <= box.clientWidth + 1) return;
     const r = box.getBoundingClientRect();
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => setPos({ x: r.left, y: r.bottom + 4 }), TIP_DELAY_MS);

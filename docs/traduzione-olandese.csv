@@ -3926,6 +3926,10 @@ sstv.set.saveTx,Keep sent pictures,Verzonden beelden bewaren
 sstv.set.autoReceive,Listen from Aurora start-up,Luisteren vanaf het starten van Aurora
 sstv.set.folder,Picture folder,Beeldenmap
 sstv.set.folderHint,Empty: the history folder inside Aurora’s folder. Can only be changed from the PC.,Leeg: de geschiedenismap in de map van Aurora. Kan alleen vanaf de pc worden gewijzigd.
+sstv.hist.scrollPrev,Scroll left,Naar links bladeren
+sstv.hist.scrollNext,Scroll right,Naar rechts bladeren
+sstv.img.prev,Previous picture (←),Vorige foto (←)
+sstv.img.next,Next picture (→),Volgende foto (→)
 sstv.sel.start,Select,Selecteren
 sstv.sel.all,All,Alles
 sstv.sel.delete,Delete ({n}),Verwijderen ({n})
