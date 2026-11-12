@@ -182,6 +182,11 @@ fn lang() -> usize {
     lang_index(&code)
 }
 
+/// La lingua dell'interfaccia per i messaggi di Windows mostrati prima della finestra (per esempio WebView2 mancante).
+pub(crate) fn ui_lang() -> usize {
+    lang()
+}
+
 fn lang_index(code: &str) -> usize {
     ["it", "en", "de", "fr", "es", "pt"].iter().position(|c| *c == code).unwrap_or(0)
 }

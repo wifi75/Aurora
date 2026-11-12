@@ -9,6 +9,7 @@ mod links;
 mod save_dialog;
 mod stale;
 mod settings;
+mod webview_check;
 mod window_state;
 
 use std::{
@@ -40,6 +41,10 @@ static LAST_WINDOW_SAVE: std::sync::LazyLock<Mutex<std::collections::HashMap<Str
 const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
 
 pub fn run() {
+    // senza WebView2 Tauri si fermerebbe con un panic e Aurora ripartirebbe e ricadrebbe: prima un messaggio che spiega e si esce
+    if !webview_check::ensure() {
+        return;
+    }
     let built = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))
