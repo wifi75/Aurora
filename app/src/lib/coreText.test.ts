@@ -56,6 +56,9 @@ describe('coreText', () => {
     expect(coreText("La porta COM3 e' occupata da N1MM Logger+: chiudi N1MM Logger+ e premi Collega", t as never)).toBe('core.portHeldBy{"port":"COM3","who":"N1MM Logger+"}');
     expect(coreText("La porta /dev/ttyUSB0 e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e premi Collega", t as never)).toBe('core.portHeld{"port":"/dev/ttyUSB0"}');
     expect(coreText("OmniRig non risponde: la radio e' accesa e in linea in OmniRig?", t as never)).toBe('core.omniNotReady');
+    // la porta del PTT su seriale: riavviare Aurora, non «Collega»
+    expect(coreText("La porta COM5 e' occupata da JTDX: chiudi JTDX e riavvia Aurora", t as never)).toBe('core.pttPortHeldBy{"port":"COM5","who":"JTDX"}');
+    expect(coreText("La porta COM5 e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e riavvia Aurora", t as never)).toBe('core.pttPortHeld{"port":"COM5"}');
   });
 
   it('leaves an unknown message as it is', () => {

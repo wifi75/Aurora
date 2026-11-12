@@ -277,6 +277,8 @@ const STATUS_OF: Record<string, string> = {
 function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind: string; compact?: boolean }) {
   const t = useT();
   const st = doc.status?.[kind];
+  // WSPRnet mette in coda richieste (spot e stato della stazione), non QSO
+  const pendingKey = kind === 'wsprnet' ? 'ens.st.pendingWspr' : 'ens.st.pending';
   // riga dei servizi: niente «Ultimo invio: mai»; dopo un invio solo l'esito in breve, il dettaglio nel suggerimento
   if (compact) {
     if (!st || st.ok === null) return null;
@@ -284,12 +286,12 @@ function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind:
     return (
       <small className={`ens-reason ${st.ok ? 'muted' : 'live-note'}`} role="status" title={detail} data-testid={`status-${kind}`}>
         {t('ens.st.title')}: {st.ok ? t('ens.st.ok') : t('ens.st.err')} {new Date(st.at_ms).toLocaleTimeString()}
-        {st.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : ''}
+        {st.pending ? ` — ${t(pendingKey, { n: st.pending })}` : ''}
       </small>
     );
   }
   const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${coreText(st.message, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
-  const pending = st?.pending ? ` — ${t('ens.st.pending', { n: st.pending })}` : '';
+  const pending = st?.pending ? ` — ${t(pendingKey, { n: st.pending })}` : '';
   return (
     <p className={`ens-reason ${st?.ok === false ? 'live-note' : 'muted'}`} role="status" data-testid={`status-${kind}`}>
       {t('ens.st.title')}: {text}

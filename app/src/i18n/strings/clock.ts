@@ -3,14 +3,6 @@ import type { Entry } from '../core';
 /** Orologio: client NTP, indicatore nella barra di stato. [it, en, de, fr, es, pt] */
 export const clockStrings = {
   'tab.clock': ['Orologio', 'Clock', 'Uhr', 'Horloge', 'Reloj', 'Relógio'],
-  'tip.tab.clock': [
-    'Client NTP: controlla quanto l’orologio di Windows è fuori ora e, se vuoi, lo corregge. Per FT8 e FT4 serve entro mezzo secondo, meglio entro 0,2 s.',
-    'NTP client: checks how far the Windows clock is off and, if you want, corrects it. FT8 and FT4 need it within half a second, better within 0.2 s.',
-    'NTP-Client: prüft, wie weit die Windows-Uhr abweicht, und korrigiert sie auf Wunsch. FT8 und FT4 brauchen eine Genauigkeit unter einer halben Sekunde, besser unter 0,2 s.',
-    'Client NTP : vérifie de combien l’horloge de Windows est décalée et, si tu veux, la corrige. FT8 et FT4 demandent moins d’une demi-seconde, mieux moins de 0,2 s.',
-    'Cliente NTP: comprueba cuánto se desvía el reloj de Windows y, si quieres, lo corrige. FT8 y FT4 piden menos de medio segundo, mejor menos de 0,2 s.',
-    'Cliente NTP: verifica quanto o relógio do Windows está desfasado e, se quiseres, corrige-o. O FT8 e o FT4 pedem menos de meio segundo, melhor menos de 0,2 s.',
-  ],
   'clock.intro': [
     'FT8 e FT4 decodificano bene solo se l’orologio del PC è giusto: oltre mezzo secondo di scarto i messaggi si perdono e gli altri non ti decodificano. Aurora interroga i server NTP, mostra lo scarto e può correggere l’orologio di Windows.',
     'FT8 and FT4 decode well only if the PC clock is right: beyond half a second of error messages are lost and others cannot decode you. Aurora queries NTP servers, shows the error and can correct the Windows clock.',

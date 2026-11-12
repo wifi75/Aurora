@@ -4,14 +4,6 @@ import type { Entry } from '../core';
 export const onlineStrings = {
   'nav.propagation': ['Propagazione', 'Propagation', 'Ausbreitung', 'Propagation', 'Propagación', 'Propagação'],
   'tab.online': ['Servizi online', 'Online services', 'Online-Dienste', 'Services en ligne', 'Servicios en línea', 'Serviços online'],
-  'tip.tab.online': [
-    'PSK Reporter (chi ti ha ricevuto), propagazione e calendario delle DXpedition: richieste di sola lettura a siti pubblici, accese di fabbrica, si spengono qui.',
-    'PSK Reporter (who received you), propagation and the DXpedition calendar: read-only requests to public sites, on from the factory, switched off here.',
-    'PSK Reporter (wer dich empfangen hat), Ausbreitung und DXpedition-Kalender: reine Leseanfragen an öffentliche Seiten, ab Werk an, hier abschaltbar.',
-    'PSK Reporter (qui t’a reçu), propagation et calendrier des DXpéditions : requêtes en lecture seule vers des sites publics, activées d’usine, désactivables ici.',
-    'PSK Reporter (quién te ha recibido), propagación y calendario de DXpediciones: consultas de solo lectura a sitios públicos, encendidas de fábrica, se apagan aquí.',
-    'PSK Reporter (quem te recebeu), propagação e calendário das DXpedições: pedidos só de leitura a sites públicos, ligados de fábrica, desligam-se aqui.',
-  ],
   'onl.intro': [
     'Servizi facoltativi, accesi di fabbrica: puoi spegnerli qui quando vuoi. Aurora fa solo richieste di lettura, rare (a PSK Reporter manda il tuo nominativo per sapere chi ti ha ricevuto), e non invia nulla di ciò che ricevi o trasmetti.',
     'Optional services, on from the factory: you can switch them off here at any time. Aurora only makes rare, read-only requests (it sends your callsign to PSK Reporter to learn who received you) and sends nothing you receive or transmit.',

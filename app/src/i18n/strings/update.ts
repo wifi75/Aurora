@@ -1,14 +1,6 @@
 /** Aggiornamenti: controllo delle nuove versioni sul repository. [it, en, de, fr, es, pt] */
 export const updateStrings = {
   'tab.updates': ['Aggiornamenti', 'Updates', 'Aktualisierungen', 'Mises à jour', 'Actualizaciones', 'Atualizações'],
-  'tip.tab.updates': [
-    'Aurora controlla ogni tanto se sul repository è uscita una versione nuova e ti avvisa. Qui scegli dove guardare e ogni quanto.',
-    'Aurora checks every so often whether a new version has appeared on the repository and tells you. Here you choose where to look and how often.',
-    'Aurora prüft regelmäßig, ob im Repository eine neue Version erschienen ist, und meldet es dir. Hier legst du fest, wo und wie oft.',
-    'Aurora vérifie de temps en temps si une nouvelle version est sortie sur le dépôt et te prévient. Ici tu choisis où regarder et à quelle fréquence.',
-    'Aurora comprueba de vez en cuando si ha salido una versión nueva en el repositorio y te avisa. Aquí eliges dónde mirar y cada cuánto.',
-    'A Aurora verifica de vez em quando se saiu uma versão nova no repositório e avisa-te. Aqui escolhes onde olhar e com que frequência.',
-  ],
   'upd.intro': [
     'Il controllo legge l’ultima release pubblicata (nome, note e indirizzo). Quando esce una versione nuova, sul PC Aurora la scarica subito in sottofondo e ne controlla la firma, senza installarla: in alto compare una barretta con l’avanzamento e poi «Installa e riavvia». Se hai scritto l’indirizzo ntfy nella scheda Desiderati, l’avviso arriva anche sul telefono.',
     'The check reads the latest published release (name, notes and address). When a new version comes out, on the PC Aurora downloads it right away in the background and checks its signature, without installing it: a small bar at the top shows the progress and then “Install and restart”. If you wrote the ntfy address in the Wanted tab, the notice reaches your phone too.',

@@ -3,14 +3,6 @@ import type { Entry } from '../core';
 /** Scheda Accesso: codice di associazione, accesso senza codice dalla rete di casa, dispositivi. [it, en, de, fr, es, pt] */
 export const accessStrings = {
   'tab.access': ['Smartphone/Tablet', 'Smartphone/Tablet', 'Smartphone/Tablet', 'Smartphone/Tablette', 'Smartphone/Tableta', 'Smartphone/Tablet'],
-  'tip.tab.access': [
-    'Come ci si collega ad Aurora: indirizzo fisso, accesso senza codice dalla rete di casa, associazione con QR e dispositivi collegati.',
-    'How to connect to Aurora: fixed address, code-free access from the home network, QR pairing and connected devices.',
-    'Wie man sich mit Aurora verbindet: feste Adresse, Zugang ohne Code aus dem Heimnetz, Kopplung per QR und verbundene Geräte.',
-    'Comment se connecter à Aurora : adresse fixe, accès sans code depuis le réseau domestique, association par QR et appareils connectés.',
-    'Cómo conectarse a Aurora: dirección fija, acceso sin código desde la red doméstica, vinculación con QR y dispositivos conectados.',
-    'Como ligar à Aurora: endereço fixo, acesso sem código a partir da rede doméstica, associação por QR e dispositivos ligados.',
-  ],
   'acc.open': [
     'Accesso senza codice dalla rete di casa',
     'Code-free access from the home network',

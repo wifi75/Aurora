@@ -40,6 +40,22 @@ export const coreTextStrings = {
     'El puerto {port} está ocupado por otro programa (WSJT-X, JTDX, el libro de guardia…): ciérralo y pulsa Conectar.',
     'A porta {port} está ocupada por outro programa (WSJT-X, JTDX, o logbook…): fecha-o e carrega em Ligar.',
   ],
+  'core.pttPortHeldBy': [
+    'La porta {port} è occupata da {who}: chiudi {who} e riavvia Aurora.',
+    'Port {port} is in use by {who}: close {who} and restart Aurora.',
+    'Die Schnittstelle {port} wird von {who} benutzt: Schließe {who} und starte Aurora neu.',
+    'Le port {port} est occupé par {who} : ferme {who} et redémarre Aurora.',
+    'El puerto {port} está ocupado por {who}: cierra {who} y reinicia Aurora.',
+    'A porta {port} está ocupada por {who}: fecha o {who} e reinicia o Aurora.',
+  ],
+  'core.pttPortHeld': [
+    'La porta {port} è occupata da un altro programma (WSJT-X, JTDX, il log…): chiudilo e riavvia Aurora.',
+    'Port {port} is in use by another program (WSJT-X, JTDX, the logbook…): close it and restart Aurora.',
+    'Die Schnittstelle {port} wird von einem anderen Programm benutzt (WSJT-X, JTDX, das Logbuch…): Schließe es und starte Aurora neu.',
+    'Le port {port} est occupé par un autre programme (WSJT-X, JTDX, le carnet de trafic…) : ferme-le et redémarre Aurora.',
+    'El puerto {port} está ocupado por otro programa (WSJT-X, JTDX, el libro de guardia…): ciérralo y reinicia Aurora.',
+    'A porta {port} está ocupada por outro programa (WSJT-X, JTDX, o logbook…): fecha-o e reinicia o Aurora.',
+  ],
   'core.portMissing': [
     'La porta seriale non esiste: controlla il numero (Windows può rinumerarla) e che la radio sia accesa e collegata.',
     'The serial port does not exist: check the number (Windows may renumber it) and that the radio is on and connected.',

@@ -175,6 +175,7 @@ export const engineSettingsStrings = {
     'Desligado: é preciso a proteção de segredos do Windows para guardar chaves e palavras-passe (indisponível neste sistema).',
   ],
   'ens.st.pending': ['{n} QSO in coda', '{n} QSOs queued', '{n} QSOs in der Warteschlange', '{n} QSO en attente', '{n} QSO en cola', '{n} QSO em fila'],
+  'ens.st.pendingWspr': ['{n} invii a WSPRnet in coda', '{n} WSPRnet uploads queued', '{n} WSPRnet-Sendungen in der Warteschlange', '{n} envois à WSPRnet en attente', '{n} envíos a WSPRnet en cola', '{n} envios para o WSPRnet em fila'],
   'ens.test': ['Prova', 'Test', 'Testen', 'Tester', 'Probar', 'Testar'],
   'ens.test.running': ['Prova in corso…', 'Testing…', 'Test läuft…', 'Test en cours…', 'Probando…', 'A testar…'],
   'ens.test.ok': ['prova riuscita', 'test passed', 'Test erfolgreich', 'test réussi', 'prueba correcta', 'teste com êxito'],

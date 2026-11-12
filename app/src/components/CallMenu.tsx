@@ -1,7 +1,7 @@
-import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from 'react';
-import { createPortal } from 'react-dom';
+import { type MouseEvent as ReactMouseEvent } from 'react';
 import { useT } from '../i18n';
 import { qrzUrl } from '../lib/callsignPage';
+import { PopupMenu } from './PopupMenu';
 import '../styles/call-menu.css';
 
 /** Il menu aperto: su quale nominativo, dove, e la voce «Metti in coda» se in quel punto si puo'. */
@@ -31,50 +31,29 @@ export function callMenuAt(e: ReactMouseEvent<HTMLElement>, call: string, onQueu
  */
 export function CallMenu({ menu, onClose }: { menu: CallMenuState | null; onClose(): void }) {
   const t = useT();
-  const box = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (!menu) return;
-    const out = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) onClose();
-    };
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('pointerdown', out);
-    window.addEventListener('keydown', key);
-    window.addEventListener('blur', onClose);
-    window.addEventListener('resize', onClose);
-    return () => {
-      document.removeEventListener('pointerdown', out);
-      window.removeEventListener('keydown', key);
-      window.removeEventListener('blur', onClose);
-      window.removeEventListener('resize', onClose);
-    };
-  }, [menu, onClose]);
-  if (!menu) return null;
-  const href = qrzUrl(menu.call);
-  if (!href) return null;
+  const href = menu ? qrzUrl(menu.call) : null;
   // vicino al bordo destro o in basso il menu si apre verso l'interno, per restare tutto visibile
-  const left = Math.max(4, Math.min(menu.x, window.innerWidth - 200));
-  const top = Math.max(4, Math.min(menu.y, window.innerHeight - 90));
-  return createPortal(
-    <div ref={box} className="call-menu" role="menu" aria-label={menu.call} style={{ left, top }}>
-      <a role="menuitem" href={href} target="_blank" rel="noreferrer noopener" title={t('callmenu.qrz.tip', { call: menu.call })} autoFocus onClick={onClose}>
-        {t('callmenu.qrz')}
-      </a>
-      {menu.onQueue ? (
-        <button
-          type="button"
-          role="menuitem"
-          onClick={() => {
-            menu.onQueue?.();
-            onClose();
-          }}
-        >
-          {t(menu.queued ? 'callmenu.unqueue' : 'callmenu.queue')}
-        </button>
+  return (
+    <PopupMenu at={menu && href ? menu : null} onClose={onClose} className="call-menu" width={200} height={90} label={menu?.call}>
+      {menu && href ? (
+        <>
+          <a role="menuitem" href={href} target="_blank" rel="noreferrer noopener" title={t('callmenu.qrz.tip', { call: menu.call })} autoFocus onClick={onClose}>
+            {t('callmenu.qrz')}
+          </a>
+          {menu.onQueue ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                menu.onQueue?.();
+                onClose();
+              }}
+            >
+              {t(menu.queued ? 'callmenu.unqueue' : 'callmenu.queue')}
+            </button>
+          ) : null}
+        </>
       ) : null}
-    </div>,
-    document.body,
+    </PopupMenu>
   );
 }

@@ -1373,7 +1373,7 @@ export async function getStats(): Promise<StatsResponse> {
 
 export type ControlId =
   | 'autoseq' | 'tx_period' | 'single_qso' | 'answer_all' | 'jt_both' | 'ap_list' | 'mtd' | 'wait_call' | 'pounce' | 'answer_b4' | 'bypass' | 'skip_tx1' | 'rrr' | 'split' | 'show_wanted'
-  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx' | 'hold_tx' | 'fox' | 'q65_gauss' | 'q65_clear_avg' | 'q65_eme' | 'q65_drift' | 'q65_contest' | 'msk_sh' | 'msk144_period' | 'wspr_dbm' | 'wspr_pct' | 'wspr_type1';
+  | 'auto_tx' | 'enable_tx' | 'hound' | 'jt' | 'monitor' | 'swl' | 'sync' | 'agc' | 'filter' | 'decode' | 'erase' | 'stop_rx' | 'clear_dx' | 'gen_msgs' | 'rx_to_tx' | 'tx_to_rx' | 'hold_tx' | 'fox' | 'q65_gauss' | 'q65_clear_avg' | 'jt65_clear_avg' | 'q65_eme' | 'q65_drift' | 'q65_contest' | 'msk_sh' | 'msk144_period' | 'wspr_dbm' | 'wspr_pct' | 'wspr_type1';
 
 /** Stato degli interruttori del motore (AutoSeq, 1 QSO, Abilita Tx...). */
 export async function getControls(): Promise<Partial<Record<ControlId, boolean>>> {

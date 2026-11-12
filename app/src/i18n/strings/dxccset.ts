@@ -1,14 +1,6 @@
 /** Scheda Impostazioni «DXCC»: bande, modi, colori e aspetto della scheda DXCC. [it, en, de, fr, es, pt] */
 export const dxccSetStrings = {
   'tab.dxcc': ['DXCC', 'DXCC', 'DXCC', 'DXCC', 'DXCC', 'DXCC'],
-  'tip.tab.dxcc': [
-    'Come si presenta la scheda DXCC sotto il log: bande e modi mostrati, colori e aspetto.',
-    'How the DXCC card under the log looks: bands and modes shown, colours and appearance.',
-    'Wie die DXCC-Karte unter dem Log aussieht: angezeigte Bänder und Modi, Farben und Aussehen.',
-    'Aspect de la fiche DXCC sous le log : bandes et modes affichés, couleurs et présentation.',
-    'Cómo se ve la ficha DXCC bajo el log: bandas y modos mostrados, colores y aspecto.',
-    'Como se apresenta a ficha DXCC sob o log: bandas e modos mostrados, cores e aspeto.',
-  ],
   'dxs.intro': [
     'Scegli cosa mostra la scheda DXCC e con quali colori. Le scelte valgono subito, si salvano in questo programma e restano al riavvio.',
     'Choose what the DXCC card shows and in which colours. Changes apply at once, are saved in this program and stay after a restart.',

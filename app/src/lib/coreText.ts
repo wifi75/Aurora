@@ -73,6 +73,9 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
   { re: /^La porta (\S+) e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio$/s, key: 'core.portHeldOmni', vars: ['port'] },
   { re: /^La porta (\S+) e' occupata da un altro programma \(WSJT-X, JTDX, il log\.\.\.\): chiudilo e premi Collega$/s, key: 'core.portHeld', vars: ['port'] },
   { re: /^La porta (\S+) e' occupata da (.+?): chiudi \2 e premi Collega$/s, key: 'core.portHeldBy', vars: ['port', 'who'] },
+  // la porta del PTT su seriale (RTS/DTR) si apre all'avvio: il consiglio e' riavviare Aurora (`busy_port::ptt_busy_message`)
+  { re: /^La porta (\S+) e' occupata da un altro programma \(WSJT-X, JTDX, il log\.\.\.\): chiudilo e riavvia Aurora$/s, key: 'core.pttPortHeld', vars: ['port'] },
+  { re: /^La porta (\S+) e' occupata da (.+?): chiudi \2 e riavvia Aurora$/s, key: 'core.pttPortHeldBy', vars: ['port', 'who'] },
   // FT-991(A) Link: il programma non risponde (con l'errore del socket tra parentesi, se c'e')
   { re: /^FT-991\(A\) Link non risponde su (\S+): in FT991Link apri COM Port e premi Start UDP(?: \((.*)\))?$/s, key: 'core.ft991.noAnswer', vars: ['address', 'raw'] },
   // Cat4OM: servizio non raggiungibile, porta sbagliata, radio mancante, scollegata o presa dall'emulazione, collegamento perso, rifiuti

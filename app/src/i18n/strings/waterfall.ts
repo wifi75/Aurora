@@ -3,14 +3,6 @@ import type { Entry } from '../core';
 /** Impostazioni → Cascata: le opzioni del Wide Graph di JTDX. [it, en, de, fr, es, pt] */
 export const waterfallStrings = {
   'tab.waterfall': ['Cascata', 'Waterfall', 'Wasserfall', 'Cascade', 'Cascada', 'Cascata'],
-  'tip.tab.waterfall': [
-    'Come si disegnano cascata e spettro: canali per pixel, medie, tavolozza, guadagno e spettro, con i loro valori di fabbrica.',
-    'How the waterfall and the spectrum are drawn: bins per pixel, averages, palette, gain and spectrum, with their factory values.',
-    'Wie Wasserfall und Spektrum gezeichnet werden: Kanäle pro Pixel, Mittelung, Palette, Verstärkung und Spektrum, mit ihren Werkseinstellungen.',
-    'Comment la cascade et le spectre sont dessinés : canaux par pixel, moyennes, palette, gain et spectre, avec leurs valeurs d’usine.',
-    'Cómo se dibujan la cascada y el espectro: canales por píxel, medias, paleta, ganancia y espectro, con sus valores de fábrica.',
-    'Como se desenham a cascata e o espectro: canais por pixel, médias, paleta, ganho e espectro, com os seus valores de fábrica.',
-  ],
   'wfs.preview.title': ['Anteprima dal vivo', 'Live preview', 'Live-Vorschau', 'Aperçu en direct', 'Vista previa en directo', 'Pré-visualização ao vivo'],
   'wfs.preview.show': ['Mostra anteprima dal vivo', 'Show live preview', 'Live-Vorschau zeigen', 'Afficher l’aperçu en direct', 'Mostrar vista previa en directo', 'Mostrar pré-visualização ao vivo'],
   'wfs.preview.hide': ['Nascondi anteprima', 'Hide preview', 'Vorschau ausblenden', 'Masquer l’aperçu', 'Ocultar vista previa', 'Ocultar pré-visualização'],

@@ -575,6 +575,15 @@ export const stationStrings = {
     'Mensajes cortos de MSK144, como «Sh» de WSJT-X: R+reporte, RRR y 73 salen como «<DX MÍO> R+03» en tramas de 20 ms (reporte redondeado a -03, +00, +03, +06, +10, +13, +16) y se decodifican los que te llegan. Excluye SWL.',
     'Mensagens curtas de MSK144, como o «Sh» do WSJT-X: R+relatório, RRR e 73 saem como «<DX MEU> R+03» em tramas de 20 ms (relatório arredondado a -03, +00, +03, +06, +10, +13, +16) e as que te chegam são descodificadas. Exclui SWL.',
   ],
+  'mode.jt65clearAvg': ['Cancella media JT65', 'Clear JT65 average', 'JT65-Mittelung löschen', 'Effacer la moyenne JT65', 'Borrar promedio JT65', 'Limpar média JT65'],
+  'tip.mode.jt65clearAvg': [
+    'Svuota la media dei periodi di JT65 («Clear Avg» di WSJT-X). Si svuota anche da sola al cambio di sottomodo e, con «Auto Clear Avg», dopo una decodifica dalla media.',
+    'Clears the JT65 period average (“Clear Avg” in WSJT-X). It also clears by itself when the submode changes and, with “Auto Clear Avg”, after a decode from the average.',
+    'Löscht die JT65-Periodenmittelung („Clear Avg“ in WSJT-X). Sie wird auch beim Wechsel des Untermodus und, mit „Auto Clear Avg“, nach einer Decodierung aus der Mittelung gelöscht.',
+    'Vide la moyenne des périodes JT65 (« Clear Avg » de WSJT-X). Elle se vide aussi d’elle-même au changement de sous-mode et, avec « Auto Clear Avg », après un décodage depuis la moyenne.',
+    'Vacía el promedio de periodos JT65 («Clear Avg» de WSJT-X). También se vacía solo al cambiar de submodo y, con «Auto Clear Avg», tras una decodificación desde el promedio.',
+    'Esvazia a média dos períodos JT65 («Clear Avg» do WSJT-X). Também se esvazia sozinha ao mudar de submodo e, com «Auto Clear Avg», após uma descodificação a partir da média.',
+  ],
   'mode.q65clearAvg': ['Cancella media Q65', 'Clear Q65 average', 'Q65-Mittelung löschen', 'Effacer la moyenne Q65', 'Borrar promedio Q65', 'Limpar média Q65'],
   'tip.mode.q65clearAvg': [
     'Svuota la media dei periodi di Q65. Si svuota anche da sola dopo una decodifica dalla media e al cambio di modo o periodo.',

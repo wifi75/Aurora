@@ -578,7 +578,7 @@ async fn run(
                 }
                 // WSPRnet spento: quello che aspettava non parte piu'
                 if !service.config.borrow().wsprnet {
-                    service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).clear();
+                    with_wsprnet(&service, wsprnet::Queue::clear);
                     service.wsprnet_wake.notify_one();
                 }
             }
@@ -718,12 +718,21 @@ fn queue_wsprnet(service: &Arc<Service>, cycle: &aurora_core::WsprCycle) {
         if !service.config.borrow().wsprnet {
             return;
         }
-        let dropped = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).push(requests, Instant::now());
+        let dropped = with_wsprnet(&service, |q| q.push(requests, Instant::now()));
         if dropped > 0 {
             tracing::warn!("WSPRnet: {dropped} richieste vecchie lasciate perdere");
         }
         service.wsprnet_wake.notify_one();
     });
+}
+
+/// Lavora sulla coda di WSPRnet e poi riporta nello stato quante richieste aspettano ancora: l'esito dell'ultimo invio da solo non dice che
+/// altre richieste (gli spot dello stesso periodo, un nuovo tentativo dopo un errore) sono ancora da mandare.
+fn with_wsprnet<R>(service: &Service, change: impl FnOnce(&mut wsprnet::Queue) -> R) -> R {
+    let mut queue = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner());
+    let out = change(&mut queue);
+    service.status.set_pending("wsprnet", queue.outstanding() as u64);
+    out
 }
 
 /// Manda a WSPRnet le richieste in coda, una alla volta, con i nuovi tentativi di WSJT-X. Prima di ogni invio controlla che l'invio sia
@@ -744,19 +753,31 @@ async fn wsprnet_worker(service: Arc<Service>) {
             }
         }
         if !service.config.borrow().wsprnet {
-            service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).clear();
+            with_wsprnet(&service, wsprnet::Queue::clear);
             continue;
         }
-        let Some(pending) = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).take_due(Instant::now()) else { continue };
+        // la richiesta in volo conta fra quelle da mandare finche' non se ne conosce l'esito
+        let taken = with_wsprnet(&service, |q| {
+            let p = q.take_due(Instant::now());
+            q.sending = p.is_some();
+            p
+        });
+        let Some(pending) = taken else { continue };
         let (url, timeout, agent) = (service.endpoints.wsprnet_url.clone(), service.endpoints.wsprnet_timeout, service.endpoints.user_agent.clone());
         let request = pending.request.clone();
         let result = tokio::task::spawn_blocking(move || wsprnet::send(&url, &request, timeout, &agent)).await.unwrap_or_else(|e| Err(format!("invio interrotto: {e}")));
         let what = if pending.request.kind == wsprnet::Kind::Spot { "spot" } else { "stato della stazione" };
         match result {
-            Ok(_) => service.status.ok("wsprnet", format!("{what} inviato")),
+            Ok(_) => {
+                service.status.ok("wsprnet", format!("{what} inviato"));
+                with_wsprnet(&service, |q| q.sending = false);
+            }
             Err(e) => {
                 service.status.fail("wsprnet", format!("{what} non inviato: {e}"));
-                let retry = service.wsprnet.lock().unwrap_or_else(|p| p.into_inner()).retry(pending, Instant::now(), random_unit());
+                let retry = with_wsprnet(&service, |q| {
+                    q.sending = false;
+                    q.retry(pending, Instant::now(), random_unit())
+                });
                 match retry {
                     Some(d) => tracing::info!("WSPRnet: nuovo tentativo fra {} s", d.as_secs()),
                     None => tracing::warn!("WSPRnet: richiesta lasciata perdere dopo i tentativi"),

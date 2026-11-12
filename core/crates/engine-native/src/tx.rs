@@ -41,11 +41,39 @@ pub trait TxPort: Send + Sync {
     }
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB, da usare per le prossime trasmissioni.
     fn set_attenuation(&self, _tenths: u32) {}
+    /// Trasmette subito, senza aspettare l'inizio di un periodo («Tune» di WSJT-X parte appena premuto). Chi non sa farlo passa da `schedule`.
+    fn start_now(&self, request: TxRequest) -> Result<(), String> {
+        self.schedule(request)
+    }
+}
+
+/// Durata massima della portante di «Tune»: quanto un periodo di WSPR (nei modi a periodo lungo, FST4W-1800, sarebbero 30 minuti di portante).
+const TUNE_MAX_S: f64 = 118.5;
+
+/// Il modo del trasmettitore che corrisponde al modo del motore.
+fn tx_mode(mode: Mode) -> tx_native::Mode {
+    match mode {
+        Mode::Ft8 => tx_native::Mode::Ft8,
+        Mode::Ft4 => tx_native::Mode::Ft4,
+        Mode::Jt65 => tx_native::Mode::Jt65,
+        Mode::Jt9 => tx_native::Mode::Jt9,
+        Mode::Jt4 => tx_native::Mode::Jt4,
+        Mode::Q65 => tx_native::Mode::Q65,
+        Mode::Msk144 => tx_native::Mode::Msk144,
+        Mode::Fst4 => tx_native::Mode::Fst4,
+        Mode::Fst4w => tx_native::Mode::Fst4w,
+        Mode::Wspr => tx_native::Mode::Wspr,
+    }
 }
 
 impl TxPort for Transmitter {
     fn schedule(&self, request: TxRequest) -> Result<(), String> {
         Transmitter::schedule(self, request).map(|_| ()).map_err(|e| e.to_string())
+    }
+
+    fn start_now(&self, request: TxRequest) -> Result<(), String> {
+        // un secondo di margine sulla portante piu' lunga
+        Transmitter::start_now(self, request.wave, std::time::Duration::from_secs_f64(TUNE_MAX_S + 1.0)).map(|_| ()).map_err(|e| e.to_string())
     }
 
     fn halt(&self) {
@@ -457,18 +485,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// punto in cui si trova (JTDX con «consenti cambi di frequenza Tx durante la trasmissione»: il tono si sposta subito).
     fn retune_on_air(&mut self, hz: u32) -> Vec<String> {
         let Some((text, free, parity, start_ms)) = self.on_air_tx.clone() else { return Vec::new() };
-        let mode = match self.mode {
-            Mode::Ft8 => tx_native::Mode::Ft8,
-            Mode::Ft4 => tx_native::Mode::Ft4,
-            Mode::Jt65 => tx_native::Mode::Jt65,
-            Mode::Jt9 => tx_native::Mode::Jt9,
-            Mode::Jt4 => tx_native::Mode::Jt4,
-            Mode::Q65 => tx_native::Mode::Q65,
-            Mode::Msk144 => tx_native::Mode::Msk144,
-            Mode::Fst4 => tx_native::Mode::Fst4,
-            Mode::Fst4w => tx_native::Mode::Fst4w,
-            Mode::Wspr => tx_native::Mode::Wspr,
-        };
+        let mode = tx_mode(self.mode);
         let before = self.controls.tx_audio_planned.load(Ordering::Relaxed);
         match self.encode(&text, hz, free) {
             Ok((wave, sent)) => match self.port.replace(TxRequest { wave, mode, parity }) {
@@ -956,32 +973,22 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
     }
 
-    /// «Tune»: un'onda sinusoidale sulla frequenza Tx, lunga quanto una trasmissione del modo, nel prossimo periodo utile.
+    /// «Tune»: un'onda sinusoidale sulla frequenza Tx, lunga quanto una trasmissione del modo. Parte subito, come in WSJT-X (`m_tune` in
+    /// `guiUpdate`: «Tune takes precedence», niente attesa dell'inizio del periodo) e non si ferma al cambio di periodo.
     fn tune(&mut self, now_s: f64) -> String {
         let tx_hz = self.controls.tx_df.load(Ordering::Relaxed).clamp(200, 3000);
         self.controls.tx_audio_planned.store(tx_hz, Ordering::Relaxed);
         let hz = self.controls.tx_audio_hz(tx_hz);
-        let mode = match self.mode {
-            Mode::Ft8 => tx_native::Mode::Ft8,
-            Mode::Ft4 => tx_native::Mode::Ft4,
-            Mode::Jt65 => tx_native::Mode::Jt65,
-            Mode::Jt9 => tx_native::Mode::Jt9,
-            Mode::Jt4 => tx_native::Mode::Jt4,
-            Mode::Q65 => tx_native::Mode::Q65,
-            Mode::Msk144 => tx_native::Mode::Msk144,
-            Mode::Fst4 => tx_native::Mode::Fst4,
-            Mode::Fst4w => tx_native::Mode::Fst4w,
-            Mode::Wspr => tx_native::Mode::Wspr,
-        };
+        let mode = tx_mode(self.mode);
         // al massimo quanto un periodo di WSPR (118,5 s): nei modi a periodo lungo (FST4W-1800) erano 30 minuti di portante piena e 86 MB di onda
-        let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).clamp(1.0, 118.5);
+        let secs = (mode.slot_len().saturating_sub(mode.tx_delay()).as_secs_f64() - 0.5).clamp(1.0, TUNE_MAX_S);
         let rate = f64::from(tx_native::WAVE_RATE);
         let wave: Vec<f32> = (0..(secs * rate) as usize).map(|i| (2.0 * std::f64::consts::PI * f64::from(hz) * i as f64 / rate).sin() as f32 * 0.95).collect();
-        let slot = Slot::at(self.mode, now_s).next();
-        let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
+        // la parita' non conta (la portante parte subito): quella del periodo in corso
+        let parity = if Slot::at(self.mode, now_s).is_even() { Parity::Even } else { Parity::Odd };
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
-        match self.port.schedule(TxRequest { wave, mode, parity }) {
-            Ok(()) => format!("Tune: portante a {hz} Hz nel prossimo periodo"),
+        match self.port.start_now(TxRequest { wave, mode, parity }) {
+            Ok(()) => format!("Tune: portante a {hz} Hz"),
             Err(e) => format!("Tune non partito: {e}"),
         }
     }
@@ -1124,18 +1131,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 }
             }
             if !waves.is_empty() {
-                let mode = match self.mode {
-                    Mode::Ft8 => tx_native::Mode::Ft8,
-                    Mode::Ft4 => tx_native::Mode::Ft4,
-                    Mode::Jt65 => tx_native::Mode::Jt65,
-                    Mode::Jt9 => tx_native::Mode::Jt9,
-                    Mode::Jt4 => tx_native::Mode::Jt4,
-                    Mode::Q65 => tx_native::Mode::Q65,
-                    Mode::Msk144 => tx_native::Mode::Msk144,
-                    Mode::Fst4 => tx_native::Mode::Fst4,
-                    Mode::Fst4w => tx_native::Mode::Fst4w,
-                    Mode::Wspr => tx_native::Mode::Wspr,
-                };
+                let mode = tx_mode(self.mode);
                 self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
                 match self.port.schedule(TxRequest { wave: crate::fox::mix_waves(&waves), mode, parity: Parity::Even }) {
                     Ok(()) => {
@@ -1735,18 +1731,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         match self.encode(&text, freq, n == 0) {
             Ok((wave, sent)) => {
-                let mode = match self.mode {
-                    Mode::Ft8 => tx_native::Mode::Ft8,
-                    Mode::Ft4 => tx_native::Mode::Ft4,
-                    Mode::Jt65 => tx_native::Mode::Jt65,
-                    Mode::Jt9 => tx_native::Mode::Jt9,
-                    Mode::Jt4 => tx_native::Mode::Jt4,
-                    Mode::Q65 => tx_native::Mode::Q65,
-                    Mode::Msk144 => tx_native::Mode::Msk144,
-                    Mode::Fst4 => tx_native::Mode::Fst4,
-                    Mode::Fst4w => tx_native::Mode::Fst4w,
-                    Mode::Wspr => tx_native::Mode::Wspr,
-                };
+                let mode = tx_mode(self.mode);
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
                 let note = TxNote { start_ms: slot.start_ms(self.mode), mode: self.mode, tx_df: freq, text: sent.clone(), retransmit: already };
@@ -1984,11 +1969,19 @@ mod tests {
         /// Se vero c'e' una trasmissione «in corso» e `replace` la sostituisce; se falso `replace` dice che non c'e' niente.
         running: std::sync::atomic::AtomicBool,
         halts: StdMutex<u32>,
+        /// Le trasmissioni partite subito, fuori dai periodi (Tune).
+        started: StdMutex<Vec<TxRequest>>,
     }
 
     impl TxPort for FakePort {
         fn schedule(&self, request: TxRequest) -> Result<(), String> {
             self.requests.lock().map_err(|_| "avvelenato".to_string())?.push(request);
+            self.running.store(true, Ordering::Relaxed);
+            Ok(())
+        }
+
+        fn start_now(&self, request: TxRequest) -> Result<(), String> {
+            self.started.lock().map_err(|_| "avvelenato".to_string())?.push(request);
             self.running.store(true, Ordering::Relaxed);
             Ok(())
         }
@@ -2750,6 +2743,24 @@ mod tests {
         assert!(decoded[0].starts_with("IU3ABC IO91 "), "{decoded:?}");
         let note = d.notes.last().expect("nota della trasmissione");
         assert_eq!((note.tx_df, note.start_ms), (1500, rx_ms + 120_000), "frequenza riportata a 1500 Hz, periodo che comincia ora");
+    }
+
+    /// «Tune» parte subito anche a meta' di un periodo lungo (FST4W), come in WSJT-X, senza aspettare il periodo dopo; la portante dura al
+    /// massimo 118,5 s e «Tune» spento la ferma.
+    #[test]
+    fn tune_starts_at_once_even_in_the_middle_of_a_long_period() {
+        let (mut d, port) = jt_driver(Mode::Fst4w);
+        let rx_ms = 1_700_000_040_000u64 / 120_000 * 120_000;
+        let log = d.handle(TxCommand::Tune(true), (rx_ms + 61_000) as f64 / 1000.0);
+        assert!(log.iter().any(|l| l.starts_with("Tune: portante a ")), "{log:?}");
+        assert!(port.requests.lock().expect("richieste").is_empty(), "niente attesa del periodo dopo");
+        let started = port.started.lock().expect("partite").clone();
+        assert_eq!(started.len(), 1, "una portante, partita subito");
+        assert_eq!(started[0].mode, tx_native::Mode::Fst4w);
+        let secs = started[0].wave.len() as f64 / f64::from(tx_native::WAVE_RATE);
+        assert!((1.0..=TUNE_MAX_S).contains(&secs), "durata {secs} s");
+        d.handle(TxCommand::Tune(false), (rx_ms + 70_000) as f64 / 1000.0);
+        assert_eq!(*port.halts.lock().expect("fermate"), 1, "Tune spento ferma la portante");
     }
 
     /// JT9: lo stesso, con 85 simboli da 0,576 s.

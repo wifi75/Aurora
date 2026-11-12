@@ -1,14 +1,6 @@
 /** Lista dei desiderati: stazioni volute e avvisi. [it, en, de, fr, es, pt] */
 export const wishStrings = {
   'tab.wishlist': ['Desiderati', 'Wanted', 'Gesuchte', 'Recherchées', 'Deseadas', 'Desejadas'],
-  'tip.tab.wishlist': [
-    'Le stazioni che vuoi collegare: nominativi, prefissi, paesi e griglie. Quando una compare in un messaggio o in uno spot del cluster, Aurora ti avvisa nella pagina e, se vuoi, sul telefono.',
-    'The stations you want to work: callsigns, prefixes, countries and grids. When one shows up in a message or in a cluster spot, Aurora alerts you on the page and, if you want, on your phone.',
-    'Die Stationen, die du arbeiten willst: Rufzeichen, Präfixe, Länder und Felder. Taucht eine in einer Nachricht oder einem Cluster-Spot auf, warnt Aurora dich auf der Seite und, wenn du willst, auf dem Handy.',
-    'Les stations que tu veux contacter : indicatifs, préfixes, pays et carrés. Quand l’une apparaît dans un message ou un spot du cluster, Aurora te prévient dans la page et, si tu veux, sur ton téléphone.',
-    'Las estaciones que quieres contactar: indicativos, prefijos, países y cuadrículas. Cuando una aparece en un mensaje o en un spot del cluster, Aurora te avisa en la página y, si quieres, en el teléfono.',
-    'As estações que queres contactar: indicativos, prefixos, países e quadrados. Quando uma aparece numa mensagem ou num spot do cluster, a Aurora avisa-te na página e, se quiseres, no telemóvel.',
-  ],
   'wish.intro': [
     'Scrivi una voce per riga. Aurora guarda ogni messaggio decodificato e ogni spot del cluster, anche con la pagina chiusa, e ti avvisa una volta sola per stazione (poi aspetta il tempo che scegli).',
     'Write one entry per line. Aurora watches every decoded message and every cluster spot, even with the page closed, and alerts you once per station (then waits for the time you choose).',

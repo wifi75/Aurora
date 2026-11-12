@@ -1,23 +1,6 @@
 /** Informazioni sul programma: autore, versione, licenza e collegamenti. [it, en, de, fr, es, pt] */
 export const aboutStrings = {
   'tab.support': ['Assistenza', 'Support', 'Support', 'Assistance', 'Asistencia', 'Assistência'],
-  'tip.tab.support': [
-    'Manda log ed errori a chi ti aiuta: pacchetto sul Desktop e posta già pronta.',
-    'Send log and errors to whoever helps you: package on the Desktop and a ready-made email.',
-    'Log und Fehler an deinen Helfer senden: Paket auf dem Desktop und fertige E-Mail.',
-    'Envoie journal et erreurs à la personne qui t’aide : paquet sur le Bureau et e-mail prêt.',
-    'Envía registro y errores a quien te ayuda: paquete en el Escritorio y correo listo.',
-    'Envia registo e erros a quem te ajuda: pacote no Ambiente de trabalho e email pronto.',
-  ],
-  'tab.about': ['Informazioni', 'About', 'Über', 'À propos', 'Acerca de', 'Sobre'],
-  'tip.tab.about': [
-    'Chi ha fatto Aurora, la versione in uso, la licenza e dove trovare sorgenti e aggiornamenti.',
-    'Who made Aurora, the version in use, the licence and where to find sources and updates.',
-    'Wer Aurora gemacht hat, die laufende Version, die Lizenz und wo Quellen und Updates zu finden sind.',
-    'Qui a fait Aurora, la version utilisée, la licence et où trouver sources et mises à jour.',
-    'Quién hizo Aurora, la versión en uso, la licencia y dónde encontrar fuentes y actualizaciones.',
-    'Quem fez Aurora, a versão em uso, a licença e onde encontrar fontes e atualizações.',
-  ],
   'about.tagline': [
     'Stazione radioamatoriale multimodo con automazione dei QSO e controllo remoto',
     'Multimode ham radio station with QSO automation and remote control',

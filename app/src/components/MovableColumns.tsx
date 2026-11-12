@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
-import { createPortal } from 'react-dom';
 import { useT } from '../i18n';
 import { clampColumnEm, defaultColumnLayout, placeColumn, readColumnLayout, saveColumnLayout, type ColumnLayout } from '../lib/movableColumns';
+import { PopupMenu } from './PopupMenu';
 import '../styles/movable-grid.css';
 
 /** Quanto si sposta il mouse prima che il clic sul titolo diventi un trascinamento della colonna. */
@@ -274,44 +274,15 @@ export function MovableTh<C extends string>({ cols, col, index, className, title
   );
 }
 
-/** Ingombro del menu dei titoli (una voce), per tenerlo dentro la finestra. */
-const MENU_W = 200;
-const MENU_H = 48;
-
 /** Il menu del tasto destro sui titoli: «Ripristina colonne». Si chiude con Esc, con un clic fuori o se la finestra cambia. */
 export function ColumnsMenu<C extends string>({ cols }: { cols: MovableColumns<C> }) {
   const t = useT();
-  const box = useRef<HTMLDivElement | null>(null);
-  const { menu, closeMenu } = cols;
-  useEffect(() => {
-    if (!menu) return;
-    const out = (e: PointerEvent) => {
-      if (!box.current?.contains(e.target as Node)) closeMenu();
-    };
-    const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeMenu();
-    };
-    document.addEventListener('pointerdown', out);
-    window.addEventListener('keydown', key);
-    window.addEventListener('blur', closeMenu);
-    window.addEventListener('resize', closeMenu);
-    return () => {
-      document.removeEventListener('pointerdown', out);
-      window.removeEventListener('keydown', key);
-      window.removeEventListener('blur', closeMenu);
-      window.removeEventListener('resize', closeMenu);
-    };
-  }, [menu, closeMenu]);
-  if (!menu) return null;
-  // dentro la finestra anche aperto vicino al bordo destro o in fondo, come il menu dei nominativi
-  const left = Math.max(4, Math.min(menu.x, window.innerWidth - MENU_W));
-  const top = Math.max(4, Math.min(menu.y, window.innerHeight - MENU_H));
-  return createPortal(
-    <div ref={box} className="cl-menu" role="menu" style={{ left, top }}>
+  // dentro la finestra anche aperto vicino al bordo destro o in fondo, come il menu dei nominativi (una voce: 200 x 48)
+  return (
+    <PopupMenu at={cols.menu} onClose={cols.closeMenu} className="cl-menu" width={200} height={48}>
       <button type="button" role="menuitem" autoFocus onClick={cols.reset}>
         {t('cluster.cols.reset')}
       </button>
-    </div>,
-    document.body,
+    </PopupMenu>
   );
 }

@@ -98,21 +98,10 @@ pub fn form(fields: &[(&str, String)]) -> String {
     fields.iter().map(|(k, v)| format!("{k}={}", encode_value(v))).collect::<Vec<_>>().join("&")
 }
 
+/// Data (`AAMMGG`) e ora (`HHMM`) UTC dei campi `date` e `time` di WSPRnet, dalla stessa funzione dei record ADIF (`AAAAMMGG`, `HHMMSS`).
 fn utc_date_time(unix_ms: u64) -> (String, String) {
-    let secs = unix_ms / 1000;
-    let days = (secs / 86_400) as i64;
-    let tod = secs % 86_400;
-    // da giorni dall'epoca a data civile (algoritmo di Howard Hinnant)
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = yoe + era * 400 + i64::from(m <= 2);
-    (format!("{:02}{:02}{:02}", y.rem_euclid(100), m, d), format!("{:02}{:02}", tod / 3600, (tod % 3600) / 60))
+    let (date, time) = logbook::adif::utc_datetime(unix_ms);
+    (date.get(2..).unwrap_or_default().to_string(), time.get(..4).unwrap_or_default().to_string())
 }
 
 fn is_call_char(c: char) -> bool {
@@ -299,6 +288,8 @@ pub struct Pending {
 #[derive(Debug, Default)]
 pub struct Queue {
     items: VecDeque<Pending>,
+    /// Una richiesta tolta dalla coda e in volo (se ne aspetta l'esito): conta fra quelle da mandare.
+    pub sending: bool,
 }
 
 impl Queue {
@@ -308,6 +299,11 @@ impl Queue {
 
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
+    }
+
+    /// Le richieste ancora da mandare: quelle in coda e quella in volo.
+    pub fn outstanding(&self) -> usize {
+        self.items.len() + usize::from(self.sending)
     }
 
     pub fn clear(&mut self) {

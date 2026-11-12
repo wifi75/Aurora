@@ -129,17 +129,28 @@ pub fn port_label(port: &str) -> String {
 
 /// Il testo per l'operatore (l'interfaccia lo traduce: `app/src/lib/coreText.ts`, chiavi `core.portHeld*`).
 pub fn busy_message(port: &str, holder: &Holder) -> String {
-    let port = port_label(port);
     match holder {
         Holder::Program(name) if *name == OMNIRIG => {
-            format!("La porta {port} e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio")
+            format!("La porta {} e' occupata da OmniRig: chiudi OmniRig oppure scegli OmniRig come sistema di controllo in Impostazioni > Radio", port_label(port))
         }
-        Holder::Program(name) => format!("La porta {port} e' occupata da {name}: chiudi {name} e premi Collega"),
+        _ => held_message(port, holder, "premi Collega"),
+    }
+}
+
+/// Lo stesso testo per la porta del PTT su seriale (RTS/DTR): quella porta si apre solo all'avvio di Aurora, e «Collega» ricollega il CAT,
+/// non il PTT; chiuso l'altro programma si riavvia Aurora (chiavi `core.pttPortHeld*`).
+pub fn ptt_busy_message(port: &str, holder: &Holder) -> String {
+    held_message(port, holder, "riavvia Aurora")
+}
+
+/// «La porta X e' occupata da Y: chiudi Y e `then`».
+fn held_message(port: &str, holder: &Holder, then: &str) -> String {
+    let port = port_label(port);
+    match holder {
+        Holder::Program(name) => format!("La porta {port} e' occupata da {name}: chiudi {name} e {then}"),
         // un rigctld orfano che non si e' potuto chiudere (non di Aurora, o senza permessi)
-        Holder::OrphanRigctld => format!("La porta {port} e' occupata da {RIGCTLD}: chiudi {RIGCTLD} e premi Collega"),
-        Holder::Unknown => {
-            format!("La porta {port} e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e premi Collega")
-        }
+        Holder::OrphanRigctld => format!("La porta {port} e' occupata da {RIGCTLD}: chiudi {RIGCTLD} e {then}"),
+        Holder::Unknown => format!("La porta {port} e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e {then}"),
     }
 }
 
@@ -263,10 +274,9 @@ pub fn close_orphan_rigctld() -> bool {
                 Err(e) => tracing::info!("rigctld orfano {} non chiuso: {e}", p.pid),
             }
         }
+        // niente attesa fissa: `terminate_if_aurora` aspetta che ogni processo sia uscito davvero (porta libera)
         if closed > 0 {
             tracing::info!("chiusi {closed} rigctld rimasti orfani");
-            // il tempo che Windows liberi la porta
-            std::thread::sleep(std::time::Duration::from_millis(500));
         }
         closed > 0
     }
@@ -300,16 +310,22 @@ fn aurora_rigctld_dirs() -> Vec<String> {
 mod sys {
     use windows::{
         Win32::{
-            Foundation::{CloseHandle, HANDLE},
+            Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0},
             System::{
                 Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS},
-                Threading::{OpenProcess, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE, QueryFullProcessImageNameW, TerminateProcess},
+                Threading::{
+                    OpenProcess, PROCESS_NAME_FORMAT, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, QueryFullProcessImageNameW, TerminateProcess,
+                    WaitForSingleObject,
+                },
             },
         },
         core::PWSTR,
     };
 
     use super::Process;
+
+    /// Quanto si aspetta al massimo che un `rigctld` chiuso sia uscito davvero (e abbia lasciato la porta): di solito pochi millisecondi.
+    const EXIT_WAIT_MS: u32 = 2000;
 
     /// Una maniglia che si chiude da sola.
     struct Owned(HANDLE);
@@ -342,7 +358,7 @@ mod sys {
     /// e' un altro. Il percorso si legge dalla maniglia gia' aperta: un numero di processo riusato nel frattempo non inganna il controllo.
     pub(super) fn terminate_if_aurora(pid: u32, ours: &[String]) -> Result<bool, String> {
         // SAFETY: apertura di un processo per numero; la maniglia si chiude con `Owned`.
-        let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE, false, pid) }.map_err(|e| e.message())?;
+        let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE | PROCESS_SYNCHRONIZE, false, pid) }.map_err(|e| e.message())?;
         let handle = Owned(handle);
         let mut buf = [0u16; 1024];
         let mut len = buf.len() as u32;
@@ -354,6 +370,12 @@ mod sys {
         }
         // SAFETY: maniglia aperta con PROCESS_TERMINATE.
         unsafe { TerminateProcess(handle.0, 1) }.map_err(|e| e.message())?;
+        // Windows libera la porta quando il processo e' uscito (le sue maniglie si chiudono prima che diventi segnalato): si aspetta quello,
+        // con un tempo massimo, invece di una pausa fissa
+        // SAFETY: maniglia aperta con PROCESS_SYNCHRONIZE, valida finche' vive `handle`.
+        if unsafe { WaitForSingleObject(handle.0, EXIT_WAIT_MS) } != WAIT_OBJECT_0 {
+            tracing::info!("rigctld orfano {pid} chiuso ma non ancora uscito dopo {EXIT_WAIT_MS} ms");
+        }
         Ok(true)
     }
 }
@@ -431,6 +453,18 @@ mod tests {
         assert_eq!(generic, "La porta COM3 e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e premi Collega");
         assert_eq!(busy_message("/dev/ttyUSB0", &Holder::Unknown), generic.replace("COM3", "/dev/ttyUSB0"));
         assert_eq!(busy_message("COM4", &Holder::OrphanRigctld), "La porta COM4 e' occupata da rigctld (Hamlib): chiudi rigctld (Hamlib) e premi Collega");
+    }
+
+    /// La porta del PTT su seriale si apre all'avvio: il consiglio e' riavviare Aurora, non premere «Collega» (che ricollega solo il CAT).
+    #[test]
+    fn the_serial_ptt_message_says_to_restart_aurora() {
+        assert_eq!(ptt_busy_message(r"\\.\COM5", &Holder::Program("JTDX")), "La porta COM5 e' occupata da JTDX: chiudi JTDX e riavvia Aurora");
+        assert_eq!(ptt_busy_message("COM5", &Holder::Program("OmniRig")), "La porta COM5 e' occupata da OmniRig: chiudi OmniRig e riavvia Aurora");
+        assert_eq!(ptt_busy_message("COM5", &Holder::OrphanRigctld), "La porta COM5 e' occupata da rigctld (Hamlib): chiudi rigctld (Hamlib) e riavvia Aurora");
+        let generic = ptt_busy_message("COM5", &Holder::Unknown);
+        assert_eq!(generic, "La porta COM5 e' occupata da un altro programma (WSJT-X, JTDX, il log...): chiudilo e riavvia Aurora");
+        assert!(!generic.contains("Collega"));
+        assert!(is_busy_diagnosis(&generic), "resta una diagnosi di porta occupata (avviso a schermo, non rapporto d'errore)");
     }
 
     #[test]

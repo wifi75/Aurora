@@ -1445,6 +1445,11 @@ impl engine_native::TxPort for WindowsVolumePort {
         self.inner.set_attenuation(0);
         self.apply(tenths);
     }
+
+    fn start_now(&self, request: tx_native::TxRequest) -> Result<(), String> {
+        self.apply(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        self.inner.start_now(request)
+    }
 }
 
 /// La catena di trasmissione del motore proprio: uscita audio, PTT e pianificazione. Senza uscita audio il motore riceve soltanto.

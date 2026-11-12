@@ -292,7 +292,10 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
     const split = splits.get(s.id) ?? null;
     if (!split) return null;
     const shift = `${split.offsetKhz > 0 ? '+' : '−'}${String(Math.abs(split.offsetKhz))}`;
-    const tip = splitDxOn ? t('cluster.splitDx.tag', { shift, tx: formatMhz(Math.round(split.txKhz * 1000)) }) : t('cluster.splitDx.tagOff', { label: split.label });
+    // il gesto detto nel testo e' quello che agisce davvero: clic singolo (rotella delle pagine PSK, RTTY e CW) o doppio clic
+    const tip = splitDxOn
+      ? t(single ? 'cluster.splitDx.tagClick' : 'cluster.splitDx.tag', { shift, tx: formatMhz(Math.round(split.txKhz * 1000)) })
+      : t(single ? 'cluster.splitDx.tagOffClick' : 'cluster.splitDx.tagOff', { label: split.label });
     return (
       <span className={`cluster-split${splitDxOn ? '' : ' cluster-split--off'}`} title={tip}>
         {split.label}
@@ -419,7 +422,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
                   key={s.id}
                   className={`cluster-row${mine ? ' cluster-row--mine' : ''}${wanted ? ' cluster-row--wanted' : ''}${dxped ? ' cluster-row--dxped' : ''}`}
                   data-dxped={dxped || undefined}
-                  title={t('tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
+                  title={t(single ? 'tip.cluster.rowClick' : 'tip.cluster.row', { spotter: s.spotter, server: s.server, freq: formatKhz(s.freq_khz) })}
                   onClick={
                     single
                       ? (e) => {

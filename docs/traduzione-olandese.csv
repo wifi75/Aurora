@@ -155,7 +155,7 @@ cmd.cqKind,CQ type,CQ-type
 tip.cmd.cqKind,"Who the CQ is for: everyone (CQ), far stations only (CQ DX), one continent (NA, SA, EU, AS, AF, OC), activations (POTA, SOTA) or contest (TEST).","Voor wie de CQ is: iedereen (CQ), alleen verre stations (CQ DX), één werelddeel (NA, SA, EU, AS, AF, OC), activeringen (POTA, SOTA) of contest (TEST)."
 cmd.tune,Tune,Tune
 tip.cmd.tune,"Transmits a steady carrier on the Tx frequency for one period, to tune the antenna or set the level. Press again to stop. Transmit must be open.","Zendt één periode lang een constante draaggolf op de Tx-frequentie, om de antenne af te stemmen of het niveau in te stellen. Druk opnieuw om te stoppen. Zenden moet geopend zijn."
-cmd.tuneOn,Tune: carrier in the next period,Tune: draaggolf in de volgende periode
+cmd.tuneOn,Tune: carrier on,Tune: draaggolf aan
 cmd.tuneOff,Tune stopped,Tune gestopt
 cmd.logQso,Log QSO,QSO loggen
 tip.cmd.logQso,"Logs the QSO with the DX station now, with the known reports. Use it when the QSO is over but the sequence didn’t log it by itself.","Logt nu de QSO met het DX-station, met de bekende rapporten. Gebruik het als de QSO afgelopen is maar de reeks hem niet zelf gelogd heeft."
@@ -377,6 +377,8 @@ mode.wsprType1,Type 1,Type 1
 tip.mode.wsprType1,"Type 1 messages (call, 4-character locator, power), like WSJT-X “Prefer type 1 messages”. Off, with a 6-character locator, type 2 and type 3 (<CALL> 6-character locator) alternate; compound calls always alternate them.","Type 1-berichten (roepnaam, locator van 4 tekens, vermogen), zoals “Prefer type 1 messages” in WSJT-X. Uit, met een locator van 6 tekens, wisselen type 2 en type 3 (<CALL> locator van 6 tekens) elkaar af; samengestelde roepnamen wisselen ze altijd af."
 mode.mskSh,Sh,Sh
 tip.mode.mskSh,"MSK144 short messages, like WSJT-X “Sh”: R+report, RRR and 73 go out as “<DX MINE> R+03” in 20 ms frames (report rounded to -03, +00, +03, +06, +10, +13, +16) and the ones sent to you are decoded. Excludes SWL.","Korte MSK144-berichten, zoals “Sh” in WSJT-X: R+rapport, RRR en 73 gaan uit als “<DX MINE> R+03” in frames van 20 ms (rapport afgerond op -03, +00, +03, +06, +10, +13, +16) en de naar jou gestuurde worden gedecodeerd. Sluit SWL uit."
+mode.jt65clearAvg,Clear JT65 average,JT65-gemiddelde wissen
+tip.mode.jt65clearAvg,"Clears the JT65 period average (“Clear Avg” in WSJT-X). It also clears by itself when the submode changes and, with “Auto Clear Avg”, after a decode from the average.","Wist het gemiddelde van de JT65-periodes („Clear Avg” van WSJT-X). Het wordt ook vanzelf gewist bij een andere submode en, met „Auto Clear Avg”, na een decode uit het gemiddelde."
 mode.q65clearAvg,Clear Q65 average,Q65-gemiddelde wissen
 tip.mode.q65clearAvg,Clears the Q65 period average. It also clears by itself after a decode from the average and when the mode or period changes.,Wist het gemiddelde van de Q65-periode. Het wordt ook vanzelf gewist na een decode uit het gemiddelde en wanneer mode of periode verandert.
 band.freqs,Frequencies,Frequenties
@@ -448,7 +450,6 @@ err.badText,"Invalid text: at most 13 characters of letters, digits and + - . / 
 set.title,Settings,Instellingen
 set.back,Back to the station,Terug naar het station
 toast.close,Click to close,Klik om te sluiten
-set.search,Search a setting…,Zoek een instelling…
 set.loading,Loading…,Laden…
 set.loadError,I cannot read the station status.,Ik kan de stationsstatus niet lezen.
 set.saved,Saved.,Opgeslagen.
@@ -465,32 +466,12 @@ tab.sequence,Sequence,Reeks
 tab.macros,TX macros,TX-macro’s
 tab.reports,Connected programs,Gekoppelde programma’s
 tab.logservices,Log services,Logboekdiensten
-tip.tab.logservices,"eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com and LoTW: where Aurora sends each logged QSO.","eQSL, Wavelog/Cloudlog, ClubLog, QRZ.com en LoTW: waarheen Aurora elke gelogde QSO stuurt."
 tab.frequencies,Frequencies,Frequenties
-tab.notifications,Notifications,Meldingen
-tab.cqnews,CQ and new ones,CQ en nieuwe
 tab.filters,Filters,Filters
 tab.schedule,Schedule,Schema
 tab.windows,Windows,Vensters
 tab.bands,Bands,Banden
-tip.tab.general,"How messages are shown, language and theme.","Hoe berichten worden getoond, taal en thema."
-tip.tab.radio,How Aurora drives the radio.,Hoe Aurora de radio aanstuurt.
-tip.tab.audio,"Audio input and output, channels and saving of audio files.","Audio-ingang en -uitgang, kanalen en opslaan van audiobestanden."
-tip.tab.sequence,Rules for automatic replies to CQ calls.,Regels voor automatische antwoorden op CQ-oproepen.
-tip.tab.macros,"Ready-made free messages, with symbols for DX, your callsign and report.","Kant-en-klare vrije berichten, met symbolen voor DX, je roepnaam en rapport."
-tip.tab.reports,"Programs that receive Aurora’s data: UDP server, ADIF over UDP, TCP (N1MM) and integrations.","Programma’s die de gegevens van Aurora ontvangen: UDP-server, ADIF via UDP, TCP (N1MM) en integraties."
-tip.tab.frequencies,The frequency the radio goes to for each band and mode.,De frequentie waarheen de radio gaat voor elke band en mode.
-tip.tab.notifications,"Colours, labels and sounds for each kind of message.","Kleuren, labels en geluiden voor elk soort bericht."
-tip.tab.cqnews,"What to list in the “CQ and new ones” window: new ones, stations to always or never show, how many rows.","Wat in het venster “CQ en nieuwe” wordt getoond: nieuwe, stations die je altijd of nooit wilt zien, hoeveel rijen."
-tip.tab.filters,Hide or show only certain messages in the list.,Verberg of toon alleen bepaalde berichten in de lijst.
-tip.tab.schedule,Changes band by itself at a set time (UTC).,Wisselt vanzelf van band op een ingestelde tijd (UTC).
 tip.tab.advanced,Decoder parameters: they live in Aurora.,Decoderparameters: die staan in Aurora.
-tip.tab.windows,Layout and size of the panels.,Indeling en grootte van de panelen.
-tip.tab.bands,Which bands to show in the station bar.,Welke banden in de stationsbalk worden getoond.
-gen.station,Station description,Stationsbeschrijving
-gen.call,My callsign,Mijn roepnaam
-gen.grid,My locator,Mijn locator
-gen.fromEngine,They are set in Aurora (Settings → General) and Aurora reads them from there.,Ze worden ingesteld in Aurora (Instellingen → Algemeen) en Aurora leest ze daar.
 gen.screen,Display,Weergave
 gen.miles,Distance in miles instead of km,Afstand in mijlen in plaats van km
 gen.showCountry,Show the country name,Toon de landnaam
@@ -503,9 +484,7 @@ gen.textSize,Text size,Tekstgrootte
 tip.gen.textSize,"Enlarges the whole interface: text, buttons, lists. Also with Ctrl + and Ctrl −; Ctrl 0 goes back to 100%. Applies to this device.","Vergroot de hele interface: tekst, knoppen, lijsten. Ook met Ctrl + en Ctrl −; Ctrl 0 gaat terug naar 100%. Geldt voor dit apparaat."
 gen.theme,Theme,Thema
 tip.gen.miles,Shows distances in miles; kilometres by default.,Toont afstanden in mijlen; standaard kilometers.
-tip.gen.country,"The sender's country, from cty.dat, next to every message.","Het land van de zender, uit cty.dat, naast elk bericht."
 tip.gen.flag,A small flag next to the country.,Een kleine vlag naast het land.
-tip.gen.distance,The distance from your locator to the message's one.,De afstand van jouw locator tot die van het bericht.
 gen.showAge,Message age instead of the time,Leeftijd van het bericht in plaats van de tijd
 tip.gen.age,"In Band activity and the RX window the first column shows how old the message is (45 s, 3 min) instead of the UTC time, and updates by itself. Hover to see the time.","In Bandactiviteit en het RX-venster toont de eerste kolom hoe oud het bericht is (45 s, 3 min) in plaats van de UTC-tijd, en wordt vanzelf bijgewerkt. Houd de muis erboven om de tijd te zien."
 tip.gen.dt,The DT column: signal time offset. Remove it to gain space.,De kolom DT: tijdsverschuiving van het signaal. Verwijder hem om ruimte te winnen.
@@ -851,7 +830,6 @@ auto.kind.call_cq,CQ,CQ
 auto.kind.would_call_cq,CQ (trial),CQ (proef)
 tip.auto.log,"The last 100 decisions, newest on top. Green: replies and CQs; orange: skipped CQs, with the reason; red: blocked by a limit or by STOP.","De laatste 100 beslissingen, de nieuwste bovenaan. Groen: antwoorden en CQ’s; oranje: overgeslagen CQ’s, met de reden; rood: geblokkeerd door een limiet of door STOP."
 tab.access,Smartphone/Tablet,Smartphone/tablet
-tip.tab.access,"How to connect to Aurora: fixed address, code-free access from the home network, QR pairing and connected devices.","Hoe verbinding maken met Aurora: vast adres, toegang zonder code vanaf het thuisnetwerk, koppelen met QR en verbonden apparaten."
 acc.open,Code-free access from the home network,Toegang zonder code vanaf het thuisnetwerk
 tip.acc.open,"Anyone on the home network can control Aurora without a code, transmission included. Never from the internet, tunnels or proxies. It survives a restart; it can only be changed from the PC.","Iedereen op het thuisnetwerk kan Aurora zonder code bedienen, zenden inbegrepen. Nooit vanaf internet, tunnels of proxy’s. Het blijft na een herstart; het kan alleen vanaf de pc worden gewijzigd."
 acc.openWarn,"Careful: while on, any device on the home network can control Aurora, including transmission if it is open. It does not apply to the internet, tunnels or proxies. Switch it off when testing is over.","Opgelet: zolang dit aan staat kan elk apparaat op het thuisnetwerk Aurora bedienen, ook het zenden als dat open is. Het geldt niet voor internet, tunnels of proxy’s. Zet het uit als het testen voorbij is."
@@ -966,7 +944,6 @@ logio.import.empty,The file is empty.,Het bestand is leeg.
 logio.import.tooBig,The file is over 256 MB: export it in two parts (for example by years) and import them one after the other.,Het bestand is groter dan 256 MB: exporteer het in twee delen (bijvoorbeeld per jaren) en importeer ze na elkaar.
 logio.import.error,The file could not be imported.,Het bestand kon niet worden geïmporteerd.
 tab.dxcc,DXCC,DXCC
-tip.tab.dxcc,"How the DXCC card under the log looks: bands and modes shown, colours and appearance.","Hoe de DXCC-kaart onder het logboek eruitziet: getoonde banden en modi, kleuren en uiterlijk."
 dxs.intro,"Choose what the DXCC card shows and in which colours. Changes apply at once, are saved in this program and stay after a restart.","Kies wat de DXCC-kaart toont en in welke kleuren. Wijzigingen gelden meteen, worden in dit programma opgeslagen en blijven na een herstart."
 dxs.guide.title,How it works,Hoe het werkt
 dxs.guide.what,"The DXCC card (under the log, on the Station page) tells you, for the station you are calling, whether its country is new and on which bands and modes you have already worked it. The data comes from the Aurora log and from the external software connected in Settings (for example Log4OM2).","De DXCC-kaart (onder het logboek, op de pagina Station) vertelt je, voor het station dat je oproept, of zijn land nieuw is en op welke banden en in welke modi je het al gewerkt hebt. De gegevens komen uit het logboek van Aurora en uit de externe software die in Instellingen is verbonden (bijvoorbeeld Log4OM2)."
@@ -1399,6 +1376,7 @@ ens.k.LoTWTqsl,Path of tqsl.exe (empty = found automatically),Pad van tqsl.exe (
 ens.k.LoTWLocation,Station location in TQSL,Stationslocatie in TQSL
 ens.r.upload_secrets,Off: the Windows secret protection is needed to store keys and passwords (not available on this system).,Uit: de geheimenbescherming van Windows is nodig om sleutels en wachtwoorden op te slaan (niet beschikbaar op dit systeem).
 ens.st.pending,{n} QSOs queued,{n} QSO’s in de wachtrij
+ens.st.pendingWspr,{n} WSPRnet uploads queued,{n} verzendingen naar WSPRnet in de wachtrij
 ens.test,Test,Test
 ens.test.running,Testing…,Testen…
 ens.test.ok,test passed,test geslaagd
@@ -1414,7 +1392,6 @@ ens.up.clublog.help,"Each logged QSO goes straight to ClubLog (real-time upload,
 ens.up.qrz.help,Each logged QSO goes straight to your logbook on QRZ.com. The key is in the logbook settings on QRZ.com; inserting through the API needs a QRZ subscription. Duplicates do not overwrite QSOs already there. “Test” asks QRZ for the logbook status without writing anything.,Elke gelogde QSO gaat rechtstreeks naar jouw logboek op QRZ.com. De sleutel staat in de logboekinstellingen op QRZ.com; invoegen via de API vereist een QRZ-abonnement. Dubbele QSO’s overschrijven bestaande niet. “Test” vraagt QRZ om de status van het logboek zonder iets te schrijven.
 ens.up.lotw.help,"Aurora does not sign by itself: it uses TQSL installed on the PC, with your certificate and the station location created in TQSL (enter the same name here). TQSL is looked for in the usual folders; if it is elsewhere give the path of tqsl.exe. The certificate must not ask for a password (or TQSL stops). Waiting QSOs go out together in one upload; duplicates and QSOs outside the certificate dates are skipped. “Test” checks TQSL and the location without uploading anything.","Aurora ondertekent niet zelf: het gebruikt TQSL dat op de pc is geïnstalleerd, met jouw certificaat en de stationslocatie die in TQSL is aangemaakt (vul hier dezelfde naam in). TQSL wordt in de gebruikelijke mappen gezocht; staat het elders, geef dan het pad van tqsl.exe op. Het certificaat mag niet om een wachtwoord vragen (anders blijft TQSL hangen). Wachtende QSO’s gaan samen in één upload; dubbele QSO’s en QSO’s buiten de data van het certificaat worden overgeslagen. “Test” controleert TQSL en de locatie zonder iets te uploaden."
 tab.clock,Clock,Klok
-tip.tab.clock,"NTP client: checks how far the Windows clock is off and, if you want, corrects it. FT8 and FT4 need it within half a second, better within 0.2 s.","NTP-client: controleert hoeveel de Windows-klok afwijkt en corrigeert die, als je wilt. FT8 en FT4 hebben hem binnen een halve seconde nodig, liever binnen 0,2 s."
 clock.intro,"FT8 and FT4 decode well only if the PC clock is right: beyond half a second of error messages are lost and others cannot decode you. Aurora queries NTP servers, shows the error and can correct the Windows clock.","FT8 en FT4 decoderen alleen goed als de pc-klok klopt: bij meer dan een halve seconde afwijking gaan berichten verloren en kunnen anderen jou niet decoderen. Aurora bevraagt NTP-servers, toont de afwijking en kan de Windows-klok corrigeren."
 clock.enabled,Periodic check on,Periodieke controle aan
 tip.clock.enabled,"Aurora checks the clock by itself at the chosen interval. When off, it is checked only with the button.","Aurora controleert de klok zelf met het gekozen interval. Als dit uit staat, wordt alleen met de knop gecontroleerd."
@@ -1630,7 +1607,6 @@ cat.warn.icomBaud,"Icom with CAT PTT: the speed must be 115200, as in the radio.
 wf.spot,{call} · spotted by {spotter} on {freq} kHz: click to move the receive frequency here,{call} · gespot door {spotter} op {freq} kHz: klik om de ontvangstfrequentie hierheen te verplaatsen
 wf.spotMore,"{n} more spots nearby, with no room for a label:","{n} andere spots in de buurt, zonder ruimte voor een label:"
 tab.cluster,DX Cluster,DX Cluster
-tip.tab.cluster,"Connects Aurora to one or more DX Clusters (public or your own telnet servers) to see other hams’ spots: who is on the air, on which frequency and mode.","Verbindt Aurora met een of meer DX Clusters (openbare of je eigen telnet-servers) om de spots van andere zendamateurs te zien: wie in de lucht is, op welke frequentie en mode."
 panel.cluster,DX Cluster,DX Cluster
 cluster.off,The DX Cluster is off. Switch it on in Settings → DX Cluster.,De DX Cluster staat uit. Zet hem aan in Instellingen → DX Cluster.
 cluster.noCall,Your callsign is missing: enter it in the station data (Settings → General).,Je roepnaam ontbreekt: vul die in bij de stationsgegevens (Instellingen → Algemeen).
@@ -1667,6 +1643,7 @@ cluster.dxpedCustom,Custom colour,Eigen kleur
 tip.cluster.dxpedColor,The colour used in the DX Cluster for spots of DXpeditions on the air according to the NG3K calendar: pick a fluorescent colour from the palette or any colour. The text turns dark or light by itself to stay readable.,De kleur die in de DX Cluster wordt gebruikt voor spots van DXpedities die volgens de NG3K-kalender in de lucht zijn: kies een fluorescerende kleur uit het palet of een willekeurige kleur. De tekst wordt vanzelf donker of licht om leesbaar te blijven.
 tip.cluster.dxped,DXpedition on the air according to the NG3K calendar,DXpeditie in de lucht volgens de NG3K-kalender
 tip.cluster.row,Spot by {spotter} on {server}. Double-click: the radio goes to {freq} kHz by itself (without transmitting). Highlighted: it is your band.,Spot van {spotter} op {server}. Dubbelklik: de zender gaat vanzelf naar {freq} kHz (zonder te zenden). Gemarkeerd: het is jouw band.
+tip.cluster.rowClick,Spot by {spotter} on {server}. Click: the radio goes to {freq} kHz by itself (without transmitting). Highlighted: it is your band.,Spot van {spotter} op {server}. Klik: de zender gaat vanzelf naar {freq} kHz (zonder te zenden). Gemarkeerd: het is jouw band.
 cluster.tuned,Radio moved to {freq} kHz.,Zender verplaatst naar {freq} kHz.
 cluster.noRig,Radio control is not active: change band in Aurora.,Zenderbesturing is niet actief: wissel van band in Aurora.
 cluster.intro,"A DX Cluster is a network of servers where hams report (spot) the stations they hear: frequency, callsign, mode. Aurora logs in with your callsign over telnet and shows others’ spots; it never sends any. For rare stations it is the fastest way to know where they are.","Een DX Cluster is een netwerk van servers waar zendamateurs de stations melden (spotten) die ze horen: frequentie, roepnaam, mode. Aurora logt in met jouw roepnaam via telnet en toont de spots van anderen; het stuurt er zelf nooit een. Voor zeldzame stations is het de snelste manier om te weten waar ze zijn."
@@ -1723,7 +1700,9 @@ cluster.failed,The operation failed.,De bewerking is mislukt.
 cluster.splitDx.set,DX split: double-clicking a spot with UP/DN/QSX puts the radio in split,DX-split: dubbelklikken op een spot met UP/DN/QSX zet de zender in split
 tip.cluster.splitDx,"Aurora reads the spot comment: “UP 5”, “UP5”, “5 UP”, “5UP”, “10up”, “UP 1-3” (the middle of the window, here 2 kHz), “DN 2” or “DOWN 2” (below), “QSX 14.030”, “QSX 14030” or “QSX 030” (the frequency being listened on); “UP” alone means 1 kHz; numbers in kHz, upper or lower case, anywhere in the comment. The row shows a “UP 5” tag. The double-click puts receive (VFO A) on the spot frequency, transmit on the other VFO (VFO B) shifted, and turns the radio’s split on. Works with Hamlib, OmniRig, TCI and Cat4OM (if the radio declares split); not with FT-991(A) Link, which drives VFO A only. It turns off with “DX split: turn off” in the cluster, when you change band or frequency, when you double-click a spot without UP and when you go back to FT8 or FT4. Not used on FT8 and FT4 spots: there the split in Settings › Radio applies. When off, the double-click only tunes and the tag is just information.","Aurora leest het commentaar van de spot: “UP 5”, “UP5”, “5 UP”, “5UP”, “10up”, “UP 1-3” (het midden van het venster, hier 2 kHz), “DN 2” of “DOWN 2” (lager), “QSX 14.030”, “QSX 14030” of “QSX 030” (de frequentie waarop geluisterd wordt); “UP” alleen betekent 1 kHz; getallen in kHz, hoofd- of kleine letters, overal in het commentaar. De regel toont een label “UP 5”. Het dubbelklikken zet de ontvangst (VFO A) op de frequentie van de spot, het zenden op de andere VFO (VFO B) verschoven, en zet de split van de zender aan. Werkt met Hamlib, OmniRig, TCI en Cat4OM (als de zender split ondersteunt); niet met FT-991(A) Link, dat alleen VFO A bestuurt. Het gaat uit met “DX-split: uitzetten” in de cluster, als je van band of frequentie wisselt, als je dubbelklikt op een spot zonder UP en als je teruggaat naar FT8 of FT4. Niet gebruikt bij FT8- en FT4-spots: daar geldt de split in Instellingen › Radio. Staat het uit, dan stemt het dubbelklikken alleen af en is het label alleen informatie."
 cluster.splitDx.tag,"Double-click: Rx here, Tx on VFO B {shift} kHz ({tx}) and split on","Dubbelklik: Rx hier, Tx op VFO B {shift} kHz ({tx}) en split aan"
+cluster.splitDx.tagClick,"Click: Rx here, Tx on VFO B {shift} kHz ({tx}) and split on","Klik: Rx hier, Tx op VFO B {shift} kHz ({tx}) en split aan"
 cluster.splitDx.tagOff,"The comment says {label}: DX split is off in Settings › DX Cluster, the double-click only tunes","Het commentaar zegt {label}: DX-split staat uit in Instellingen › DX Cluster, dubbelklikken stemt alleen af"
+cluster.splitDx.tagOffClick,"The comment says {label}: DX split is off in Settings › DX Cluster, the click only tunes","Het commentaar zegt {label}: DX-split staat uit in Instellingen › DX Cluster, klikken stemt alleen af"
 cluster.splitDx.active,DX split: Tx {tx},DX-split: Tx {tx}
 tip.cluster.splitDxActive,"DX split on: you receive on {rx} (VFO A) and transmit on {tx} (VFO B). It turns off by itself when you change band or frequency, pick a spot without UP or go back to FT8 or FT4.","DX-split aan: je ontvangt op {rx} (VFO A) en zendt op {tx} (VFO B). Het gaat vanzelf uit als je van band of frequentie wisselt, een spot zonder UP kiest of teruggaat naar FT8 of FT4."
 cluster.splitDx.off,DX split: turn off,DX-split: uitzetten
@@ -1819,7 +1798,6 @@ map.legend.qso,In QSO,In QSO
 map.legend.home,Your station,Jouw station
 map.selected,{call} · {grid} · {snr} dB,{call} · {grid} · {snr} dB
 tab.wishlist,Wanted,Gezocht
-tip.tab.wishlist,"The stations you want to work: callsigns, prefixes, countries and grids. When one shows up in a message or in a cluster spot, Aurora alerts you on the page and, if you want, on your phone.","De stations die je wilt werken: roepnamen, prefixen, landen en locatorvakken. Zodra er een verschijnt in een bericht of in een clusterspot, waarschuwt Aurora je op de pagina en, als je wilt, op je telefoon."
 wish.intro,"Write one entry per line. Aurora watches every decoded message and every cluster spot, even with the page closed, and alerts you once per station (then waits for the time you choose).","Schrijf één item per regel. Aurora bewaakt elk gedecodeerd bericht en elke clusterspot, ook als de pagina gesloten is, en waarschuwt je één keer per station (en wacht dan de tijd die je kiest)."
 wish.enabled,Alerts on,Meldingen aan
 tip.wish.enabled,"Off, the list stays but no alert fires.",Uit: de lijst blijft bestaan maar er gaat geen melding af.
@@ -1861,7 +1839,6 @@ wish.close,Close,Sluiten
 tip.row.picked,"Highlighted by the Filters (callsign, prefix or country)","Gemarkeerd door de filters (roepnaam, prefix of land)"
 tip.row.wanted,Station from your wanted list.,Station uit je lijst met gezochte stations.
 tab.updates,Updates,Updates
-tip.tab.updates,Aurora checks every so often whether a new version has appeared on the repository and tells you. Here you choose where to look and how often.,Aurora controleert regelmatig of er een nieuwe versie in de repository staat en meldt dat. Hier kies je waar er gekeken wordt en hoe vaak.
 upd.intro,"The check reads the latest published release (name, notes and address). When a new version comes out, on the PC Aurora downloads it right away in the background and checks its signature, without installing it: a small bar at the top shows the progress and then “Install and restart”. If you wrote the ntfy address in the Wanted tab, the notice reaches your phone too.","De controle leest de laatst gepubliceerde release (naam, notities en adres). Verschijnt er een nieuwe versie, dan downloadt Aurora die op de pc meteen op de achtergrond en controleert de handtekening, zonder te installeren: een kleine balk bovenaan toont de voortgang en daarna «Installeren en herstarten». Als je het ntfy-adres in het tabblad Gezocht hebt ingevuld, komt de melding ook op je telefoon."
 upd.current,Version in use,Gebruikte versie
 upd.latest,Latest version found,Laatst gevonden versie
@@ -2056,7 +2033,6 @@ l4.localOnly,It can only be changed from the home network.,Dit kan alleen vanaf 
 l4.failed,Failed: {message},Mislukt: {message}
 nav.propagation,Propagation,Propagatie
 tab.online,Online services,Onlinediensten
-tip.tab.online,"PSK Reporter (who received you), propagation and the DXpedition calendar: read-only requests to public sites, on from the factory, switched off here.","PSK Reporter (wie jou ontving), propagatie en de DXpeditie-agenda: alleen-lezen verzoeken aan openbare sites, standaard aan, hier uit te schakelen."
 onl.intro,"Optional services, on from the factory: you can switch them off here at any time. Aurora only makes rare, read-only requests (it sends your callsign to PSK Reporter to learn who received you) and sends nothing you receive or transmit.","Optionele diensten, standaard aan: je kunt ze hier op elk moment uitschakelen. Aurora doet slechts zeldzame, alleen-lezen verzoeken (het stuurt je roepnaam naar PSK Reporter om te weten wie jou ontving) en verstuurt niets van wat je ontvangt of zendt."
 onl.psk,Who received me (PSK Reporter),Wie ontving mij (PSK Reporter)
 onl.psk.note,Aurora listens in real time to mqtt.pskreporter.info for new receptions of your callsign and every 5 minutes asks pskreporter.info for those of the last 3 hours. Both sites see your callsign and your IP address.,Aurora luistert in realtime naar mqtt.pskreporter.info voor nieuwe ontvangsten van je roepnaam en vraagt elke 5 minuten aan pskreporter.info welke er in de laatste 3 uur waren. Beide sites zien je roepnaam en je IP-adres.
@@ -2667,8 +2643,6 @@ tip.fil.only,Shows only messages containing these words or callsigns; empty = al
 tip.cqp.only,Only these stations appear in the “CQ and news” window. Useful to follow an activity or an expedition.,Alleen deze stations verschijnen in het venster “CQ en nieuws”. Handig om een activiteit of een expeditie te volgen.
 tip.cqp.hide,These stations never appear in the “CQ and news” window (e.g. someone calling non-stop you are not interested in).,Deze stations verschijnen nooit in het venster “CQ en nieuws” (bijv. iemand die non-stop roept en die je niet interesseert).
 tip.cqp.limit,How many rows to keep in the “CQ and news” window: the oldest go out.,Hoeveel rijen in het venster “CQ en nieuws” bewaard worden: de oudste verdwijnen.
-tip.gen.call,Your callsign as you transmit it. Used to recognise who calls you and for the messages.,Jouw roepnaam zoals je die uitzendt. Gebruikt om te herkennen wie je roept en voor de berichten.
-tip.gen.grid,"Your locator (6 characters is better, e.g. JN55ab): distances, bearings, map and PSK Reporter.","Jouw locator (6 tekens is beter, bijv. JN55ab): afstanden, richtingen, kaart en PSK Reporter."
 tip.alert.button,"Master switch for sounds: off, Aurora plays nothing. The slider next to it sets the volume.","Hoofdschakelaar voor geluiden: uit, dan speelt Aurora niets af. De schuifregelaar ernaast stelt het volume in."
 tip.not2.muteTx,"While you transmit, alerts are silent (except your own Tx sound): useful if the PC audio also reaches the radio.",Tijdens het zenden zijn meldingen stil (behalve je eigen Tx-geluid): handig als de pc-audio ook de radio bereikt.
 tip.not2.strike,Already-worked stations appear struck through in the list.,Al gewerkte stations verschijnen doorgestreept in de lijst.
@@ -2691,9 +2665,6 @@ tip.wish.fromDecodes,Looks for the wanted stations among the messages you receiv
 tip.wish.fromCluster,Also looks for the wanted stations in DX Cluster spots (you see them even before you receive them).,Zoekt de gezochte stations ook in DX Cluster-spots (je ziet ze zelfs voordat je ze ontvangt).
 tip.audio.input,"The sound card carrying the radio signal in, for the waterfall and decoding. It is changed in the devices box.","De geluidskaart die het radiosignaal binnenbrengt, voor de waterval en het decoderen. Wordt gewijzigd in het vak met apparaten."
 tab.support,Support,Ondersteuning
-tip.tab.support,Send log and errors to whoever helps you: package on the Desktop and a ready-made email.,Stuur logboek en fouten naar wie je helpt: een pakket op het Bureaublad en een kant-en-klare e-mail.
-tab.about,About,Info
-tip.tab.about,"Who made Aurora, the version in use, the licence and where to find sources and updates.","Wie Aurora gemaakt heeft, de gebruikte versie, de licentie en waar je de bronnen en updates vindt."
 about.tagline,Multimode ham radio station with QSO automation and remote control,Multimode-zendamateurstation met QSO-automatisering en afstandsbediening
 about.dedica,"To Aurora, my daughter: the light this program is named after.","Voor Aurora, mijn dochter: het licht waarnaar dit programma is genoemd."
 about.dedicaFirma,"— Dad, Tiziano","— Papa, Tiziano"
@@ -3339,7 +3310,6 @@ rx.err.tx,The radio is transmitting: try again when it stops.,De radio is aan he
 rx.err.local,Radio settings can only be changed from the PC where Aurora runs.,Radio-instellingen kunnen alleen gewijzigd worden vanaf de pc waarop Aurora draait.
 rd.layoutFace,With the FT-2000 or IC-7610 panel the layout cannot be chosen: the panel takes all the space by itself. To choose between a single block and two side-by-side blocks pick one of the other styles.,Met het FT-2000- of IC-7610-paneel kan de indeling niet gekozen worden: het paneel neemt zelf alle ruimte in. Kies een van de andere stijlen om te kiezen tussen één blok en twee blokken naast elkaar.
 tab.waterfall,Waterfall,Waterval
-tip.tab.waterfall,"How the waterfall and the spectrum are drawn: bins per pixel, averages, palette, gain and spectrum, with their factory values.","Hoe de waterval en het spectrum getekend worden: bins per pixel, gemiddelden, palet, versterking en spectrum, met hun fabriekswaarden."
 wfs.preview.title,Live preview,Live voorbeeld
 wfs.preview.show,Show live preview,Toon live voorbeeld
 wfs.preview.hide,Hide preview,Verberg voorbeeld
@@ -4080,7 +4050,7 @@ sat.map.title,Map,Kaart
 sat.map.pick,World map,Wereldkaart
 sat.map.add,Add a map…,Een kaart toevoegen…
 sat.map.addHint,"An equirectangular image (360° × 180°), jpg, png, bmp or webp.","Een equirectangulair beeld (360° × 180°), jpg, png, bmp of webp."
-sat.map.none,No map: add one (maps folder in Aurora’s data).,Geen kaart: voeg er een toe (map maps in de gegevens van Aurora).
+sat.map.builtin,Aurora map,Aurora-kaart
 sat.sun,Sun,Zon
 sat.moon,Moon,Maan
 sat.station,Station,Station
@@ -4179,7 +4149,7 @@ digi.spot.bad,A callsign and a frequency in kHz are needed.,Een roepnaam en een 
 digi.spot.fail,The spot was not sent: check “Spots to DXSummit” in Settings › Online services.,De spot is niet verstuurd: controleer “Spots naar DXSummit” in Instellingen › Online diensten.
 digi.spot.tip,Report a station on DXSummit (frequency = radio + signal frequency).,Meld een station op DXSummit (frequentie = radio + signaalfrequentie).
 digi.spot.splitUp,Split: transmitting {khz} kHz up (the spot comment says “up”).,Split: zenden {khz} kHz hoger (de opmerking bij de spot zegt “up”).
-digi.spot.splitFar,"The spot says “up {khz}”: that is beyond the 3.5 kHz of audio, so the radio split is needed (not done yet).","De spot zegt “up {khz}”: dat is meer dan de 3,5 kHz audio, dus de split van de radio is nodig (nog niet gedaan)."
+digi.spot.splitFar,"The spot says “up {khz}”: that is beyond the 3.5 kHz of audio, so transmission stays here. The radio split is needed: DX split does it (Settings › DX Cluster), with the CAT of a radio that supports split.","De spot zegt “up {khz}”: dat is meer dan de 3,5 kHz audio, dus de uitzending blijft hier. De split van de radio is nodig: DX-split doet dat (Instellingen › DX Cluster), met de CAT van een radio die split kan."
 digi.mi.underlineSent,Underline sent text,Verzonden tekst onderstrepen
 digi.mi.capsOnly,Capitals only,Alleen hoofdletters
 digi.mi.slashedZero,Slashed zero,Doorgestreepte nul
@@ -4363,6 +4333,8 @@ core.portBusy,The serial port is in use by another program: close it (or choose 
 core.portHeldOmni,Port {port} is in use by OmniRig: close OmniRig or choose OmniRig as the control system in Settings › Radio.,Poort {port} wordt gebruikt door OmniRig: sluit OmniRig of kies OmniRig als besturingssysteem in Instellingen › Radio.
 core.portHeldBy,Port {port} is in use by {who}: close {who} and press Connect.,Poort {port} wordt gebruikt door {who}: sluit {who} en druk op Verbinden.
 core.portHeld,"Port {port} is in use by another program (WSJT-X, JTDX, the logbook…): close it and press Connect.","Poort {port} wordt gebruikt door een ander programma (WSJT-X, JTDX, het logboek…): sluit het en druk op Verbinden."
+core.pttPortHeldBy,Port {port} is in use by {who}: close {who} and restart Aurora.,Poort {port} wordt gebruikt door {who}: sluit {who} en start Aurora opnieuw.
+core.pttPortHeld,"Port {port} is in use by another program (WSJT-X, JTDX, the logbook…): close it and restart Aurora.","Poort {port} wordt gebruikt door een ander programma (WSJT-X, JTDX, het logboek…): sluit het en start Aurora opnieuw."
 core.portMissing,The serial port does not exist: check the number (Windows may renumber it) and that the radio is on and connected.,De seriële poort bestaat niet: controleer het nummer (Windows kan het hernummeren) en of de radio aan staat en verbonden is.
 core.noAnswer,"The radio does not answer: check power, cable, port, speed (baud) and, for Yaesu, the radio CAT settings.","De radio antwoordt niet: controleer voeding, kabel, poort, snelheid (baud) en, bij Yaesu, de CAT-instellingen van de radio."
 core.portError,Serial port error: the connection with the radio was interrupted.,Fout op de seriële poort: de verbinding met de radio is onderbroken.

@@ -128,22 +128,6 @@ export const settingHintStrings = {
     'Cuántas filas mantener en la ventana «CQ y novedades»: las más antiguas salen.',
     'Quantas linhas manter na janela «CQ e novidades»: as mais antigas saem.',
   ],
-  'tip.gen.call': [
-    'Il tuo nominativo come lo trasmetti. Serve per riconoscere chi ti chiama e per i messaggi.',
-    'Your callsign as you transmit it. Used to recognise who calls you and for the messages.',
-    'Dein Rufzeichen, wie du es sendest. Damit werden Anrufer erkannt und die Nachrichten gebildet.',
-    'Ton indicatif tel que tu l’émets. Sert à reconnaître qui t’appelle et pour les messages.',
-    'Tu indicativo tal como lo transmites. Sirve para reconocer quién te llama y para los mensajes.',
-    'O teu indicativo como o transmites. Serve para reconhecer quem te chama e para as mensagens.',
-  ],
-  'tip.gen.grid': [
-    'Il tuo locatore (6 caratteri è meglio, per esempio JN55ab): distanze, direzioni, mappa e PSK Reporter.',
-    'Your locator (6 characters is better, e.g. JN55ab): distances, bearings, map and PSK Reporter.',
-    'Dein Locator (6 Zeichen ist besser, z. B. JN55ab): Entfernungen, Richtungen, Karte und PSK Reporter.',
-    'Ton locator (6 caractères c’est mieux, par ex. JN55ab) : distances, directions, carte et PSK Reporter.',
-    'Tu localizador (mejor de 6 caracteres, por ejemplo JN55ab): distancias, rumbos, mapa y PSK Reporter.',
-    'O teu locator (6 caracteres é melhor, por exemplo JN55ab): distâncias, rumos, mapa e PSK Reporter.',
-  ],
   'tip.alert.button': [
     'Interruttore generale dei suoni: spento, Aurora non suona niente. Il cursore accanto regola il volume.',
     'Master switch for sounds: off, Aurora plays nothing. The slider next to it sets the volume.',

@@ -488,6 +488,7 @@ async fn wsprnet_on_posts_the_spots_and_the_station_status_like_wsjtx() {
     }
     settle().await;
     assert_eq!(r.status.get("wsprnet").ok, Some(true));
+    assert_eq!(r.status.get("wsprnet").pending, 0, "mandato: niente piu' in coda");
     r.bus.events().send(wspr_cycle(Vec::new())).unwrap();
     let (_, body) = timeout(Duration::from_secs(5), requests.recv()).await.expect("stato entro 5 s").expect("stato");
     assert!(body.starts_with("function=wsprstat&rcall=IU3ABC&rgrid=JN45&rqrg=14.097100&tpct=20&tqrg=14.097100&dbm=37&version=Aurora%20v"), "{body}");
@@ -524,4 +525,5 @@ async fn wsprnet_refused_spot_is_an_error() {
     let st = r.status.get("wsprnet");
     assert_eq!(st.ok, Some(false), "{st:?}");
     assert!(st.message.contains("non ha accettato"), "{}", st.message);
+    assert_eq!(st.pending, 1, "lo spot rifiutato aspetta il nuovo tentativo e lo stato lo dice");
 }

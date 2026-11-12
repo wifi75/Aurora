@@ -24,7 +24,7 @@ import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
 import { ModeSwitch, q65Parts } from '../components/ModeSwitch';
 import { retuneForMode } from '../lib/modeRetune';
 import { Q65Extras } from '../components/Q65Extras';
-import { DecodeToggles } from '../components/DecodeToggles';
+import { Jt65Extras } from '../components/Jt65Extras';
 import { MskExtras } from '../components/MskExtras';
 import { WsprExtras, isBeaconMode } from '../components/WsprExtras';
 import { PhoneTabs } from '../components/PhoneTabs';
@@ -580,8 +580,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
             onPick={info.data?.rig_control || info.data?.engine === 'native' ? (mode) => void pickMode(mode) : undefined}
           />
           {info.data?.engine === 'native' && q65Parts(status?.mode ?? '') ? <Q65Extras disabled={status?.transmitting ?? false} /> : null}
-          {/* JT65: «Enable AP» e «Enable deep search» del menu Decode di WSJT-X, accanto al modo */}
-          {info.data?.engine === 'native' && /^JT65/i.test(status?.mode ?? '') ? <DecodeToggles keys={['JT65AP', 'IncludeCorrelation']} disabled={status?.transmitting ?? false} /> : null}
+          {/* JT65: «Enable AP» e «Enable deep search» del menu Decode di WSJT-X e «Clear Avg», accanto al modo */}
+          {info.data?.engine === 'native' && /^JT65/i.test(status?.mode ?? '') ? <Jt65Extras disabled={status?.transmitting ?? false} /> : null}
           {info.data?.engine === 'native' && (status?.mode ?? '').toUpperCase() === 'MSK144' ? <MskExtras disabled={status?.transmitting ?? false} /> : null}
           {info.data?.engine === 'native' && isBeaconMode(status?.mode ?? '') ? <WsprExtras disabled={status?.transmitting ?? false} /> : null}
           <FreqPicker

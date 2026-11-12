@@ -210,42 +210,30 @@ impl CatService {
         let config = self.store.config();
         let rigctld_found = (self.parts.locate)().is_some();
         let omnirig_found = crate::omnirig::installed();
+        // una sola costruzione per tutti i sistemi: stato e messaggio dalla lettura della radio (scollegato se non c'e'), o quelli dati (OmniRig)
+        let make = |backend: Backend, link: Option<(LinkState, String)>, rig: Option<RigStatus>, share: Option<ShareInfo>, cat4om: Option<crate::cat4om::Cat4omEndpoint>| {
+            let (state, message) = link.or_else(|| rig.as_ref().map(|r| (r.state, r.message.clone()))).unwrap_or((LinkState::Disconnected, String::new()));
+            CatStatus { backend, state, message, rigctld_found, omnirig_found, rig, share, cat4om }
+        };
         match config.backend {
-            Backend::Hamlib => match self.current() {
-                Some(rig) => {
-                    let rig_status = rig.status();
-                    let share = (config.share_enabled && rig_status.state == LinkState::Connected).then(|| ShareInfo { host: "127.0.0.1".into(), port: config.share_port });
-                    CatStatus { backend: Backend::Hamlib, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, omnirig_found, rig: Some(rig_status), share, cat4om: None }
-                }
-                None => CatStatus { backend: Backend::Hamlib, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None, cat4om: None },
-            },
+            Backend::Hamlib => {
+                let rig = self.current().map(|r| r.status());
+                let connected = rig.as_ref().is_some_and(|r| r.state == LinkState::Connected);
+                let share = (config.share_enabled && connected).then(|| ShareInfo { host: "127.0.0.1".into(), port: config.share_port });
+                make(Backend::Hamlib, None, rig, share, None)
+            }
             Backend::Omnirig => {
                 self.recheck_omni();
-                let (state, message) = self.omni.lock().map(|o| o.clone()).unwrap_or((LinkState::Disconnected, String::new()));
-                CatStatus { backend: Backend::Omnirig, state, message, rigctld_found, omnirig_found, rig: None, share: None, cat4om: None }
+                let link = self.omni.lock().map(|o| o.clone()).unwrap_or((LinkState::Disconnected, String::new()));
+                make(Backend::Omnirig, Some(link), None, None, None)
             }
-            Backend::Tci => match self.tci_rig() {
-                Some(rig) => {
-                    let rig_status = rig.status();
-                    CatStatus { backend: Backend::Tci, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, omnirig_found, rig: Some(rig_status), share: None, cat4om: None }
-                }
-                None => CatStatus { backend: Backend::Tci, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None, cat4om: None },
-            },
-            Backend::Ft991link => match self.ft991_rig() {
-                Some(rig) => {
-                    let rig_status = rig.status();
-                    CatStatus { backend: Backend::Ft991link, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, omnirig_found, rig: Some(rig_status), share: None, cat4om: None }
-                }
-                None => CatStatus { backend: Backend::Ft991link, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None, cat4om: None },
-            },
-            Backend::Cat4om => match self.cat4om_rig() {
-                Some(rig) => {
-                    let rig_status = rig.status();
-                    CatStatus { backend: Backend::Cat4om, state: rig_status.state, message: rig_status.message.clone(), rigctld_found, omnirig_found, rig: Some(rig_status), share: None, cat4om: Some(rig.endpoint()) }
-                }
-                None => CatStatus { backend: Backend::Cat4om, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None, cat4om: None },
-            },
-            Backend::None => CatStatus { backend: Backend::None, state: LinkState::Disconnected, message: String::new(), rigctld_found, omnirig_found, rig: None, share: None, cat4om: None },
+            Backend::Tci => make(Backend::Tci, None, self.tci_rig().map(|r| r.status()), None, None),
+            Backend::Ft991link => make(Backend::Ft991link, None, self.ft991_rig().map(|r| r.status()), None, None),
+            Backend::Cat4om => {
+                let rig = self.cat4om_rig();
+                make(Backend::Cat4om, None, rig.as_ref().map(|r| r.status()), None, rig.map(|r| r.endpoint()))
+            }
+            Backend::None => make(Backend::None, None, None, None, None),
         }
     }
 

@@ -53,7 +53,7 @@ export const commandStrings = {
     'Transmite una portadora fija en la frecuencia Tx durante un periodo, para sintonizar la antena o ajustar el nivel. Pulsa otra vez para pararla.',
     'Transmite uma portadora fixa na frequência Tx durante um período, para sintonizar a antena ou ajustar o nível. Prime de novo para parar.',
   ],
-  'cmd.tuneOn': ['Tune: portante nel prossimo periodo', 'Tune: carrier in the next period', 'Tune: Träger in der nächsten Periode', 'Tune : porteuse à la période suivante', 'Tune: portadora en el próximo periodo', 'Tune: portadora no próximo período'],
+  'cmd.tuneOn': ['Tune: portante accesa', 'Tune: carrier on', 'Tune: Träger an', 'Tune : porteuse activée', 'Tune: portadora activada', 'Tune: portadora ligada'],
   'cmd.tuneOff': ['Tune fermato', 'Tune stopped', 'Tune gestoppt', 'Tune arrêté', 'Tune detenido', 'Tune parado'],
   'cmd.logQso': ['Log QSO', 'Log QSO', 'Log QSO', 'Log QSO', 'Log QSO', 'Log QSO'],
   'tip.cmd.logQso': [

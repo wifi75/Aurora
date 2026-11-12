@@ -19,14 +19,6 @@ export const clusterStrings = {
     'Mais {n} spots aqui perto, sem espaço para a etiqueta:',
   ],
   'tab.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
-  'tip.tab.cluster': [
-    'Collega Aurora a uno o più DX Cluster (server telnet pubblici o tuoi) per vedere gli spot degli altri radioamatori: chi è in aria, su che frequenza e con che modo.',
-    'Connects Aurora to one or more DX Clusters (public or your own telnet servers) to see other hams’ spots: who is on the air, on which frequency and mode.',
-    'Verbindet Aurora mit einem oder mehreren DX-Clustern (öffentliche oder eigene Telnet-Server), um die Spots anderer Funkamateure zu sehen: wer auf welcher Frequenz und in welchem Modus aktiv ist.',
-    'Connecte Aurora à un ou plusieurs DX Clusters (serveurs telnet publics ou à toi) pour voir les spots des autres radioamateurs : qui est en l’air, sur quelle fréquence et quel mode.',
-    'Conecta Aurora a uno o varios DX Cluster (servidores telnet públicos o tuyos) para ver los spots de otros radioaficionados: quién está en el aire, en qué frecuencia y modo.',
-    'Liga a Aurora a um ou mais DX Cluster (servidores telnet públicos ou teus) para ver os spots de outros radioamadores: quem está no ar, em que frequência e modo.',
-  ],
   'panel.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'cluster.off': [
     'Il DX Cluster è spento. Accendilo in Impostazioni → DX Cluster.',
@@ -153,6 +145,14 @@ export const clusterStrings = {
     'Spot de {spotter} sur {server}. Double-clic : la radio va seule sur {freq} kHz (sans émettre). En surbrillance : c’est ta bande.',
     'Spot de {spotter} en {server}. Doble clic: el equipo va solo a {freq} kHz (sin transmitir). Resaltado: es tu banda.',
     'Spot de {spotter} em {server}. Duplo clique: o rádio vai sozinho para {freq} kHz (sem transmitir). Realçado: é a tua banda.',
+  ],
+  'tip.cluster.rowClick': [
+    'Spot di {spotter} su {server}. Clic: la radio va su {freq} kHz in automatico (senza trasmettere). Evidenziato: è la tua banda.',
+    'Spot by {spotter} on {server}. Click: the radio goes to {freq} kHz by itself (without transmitting). Highlighted: it is your band.',
+    'Spot von {spotter} auf {server}. Klick: das Funkgerät geht von selbst auf {freq} kHz (ohne zu senden). Hervorgehoben: es ist dein Band.',
+    'Spot de {spotter} sur {server}. Clic : la radio va seule sur {freq} kHz (sans émettre). En surbrillance : c’est ta bande.',
+    'Spot de {spotter} en {server}. Clic: el equipo va solo a {freq} kHz (sin transmitir). Resaltado: es tu banda.',
+    'Spot de {spotter} em {server}. Clique: o rádio vai sozinho para {freq} kHz (sem transmitir). Realçado: é a tua banda.',
   ],
   'cluster.tuned': [
     'Radio portata su {freq} kHz.',
@@ -539,6 +539,14 @@ export const clusterStrings = {
     'Doble clic: Rx aquí, Tx en VFO B {shift} kHz ({tx}) y split activado',
     'Duplo clique: Rx aqui, Tx no VFO B {shift} kHz ({tx}) e split ligado',
   ],
+  'cluster.splitDx.tagClick': [
+    'Clic: Rx qui, Tx su VFO B {shift} kHz ({tx}) e split acceso',
+    'Click: Rx here, Tx on VFO B {shift} kHz ({tx}) and split on',
+    'Klick: Rx hier, Tx auf VFO B {shift} kHz ({tx}) und Split an',
+    'Clic : Rx ici, Tx sur VFO B {shift} kHz ({tx}) et split activé',
+    'Clic: Rx aquí, Tx en VFO B {shift} kHz ({tx}) y split activado',
+    'Clique: Rx aqui, Tx no VFO B {shift} kHz ({tx}) e split ligado',
+  ],
   'cluster.splitDx.tagOff': [
     'Il commento dice {label}: Split DX spento in Impostazioni › DX Cluster, il doppio clic sintonizza soltanto',
     'The comment says {label}: DX split is off in Settings › DX Cluster, the double-click only tunes',
@@ -546,6 +554,14 @@ export const clusterStrings = {
     'Le commentaire dit {label} : le Split DX est désactivé dans Réglages › DX Cluster, le double-clic ne fait que régler',
     'El comentario dice {label}: el Split DX está apagado en Ajustes › DX Cluster, el doble clic solo sintoniza',
     'O comentário diz {label}: o Split DX está desligado em Definições › DX Cluster, o duplo clique só sintoniza',
+  ],
+  'cluster.splitDx.tagOffClick': [
+    'Il commento dice {label}: Split DX spento in Impostazioni › DX Cluster, il clic sintonizza soltanto',
+    'The comment says {label}: DX split is off in Settings › DX Cluster, the click only tunes',
+    'Der Kommentar sagt {label}: Split DX ist in Einstellungen › DX Cluster aus, der Klick stimmt nur ab',
+    'Le commentaire dit {label} : le Split DX est désactivé dans Réglages › DX Cluster, le clic ne fait que régler',
+    'El comentario dice {label}: el Split DX está apagado en Ajustes › DX Cluster, el clic solo sintoniza',
+    'O comentário diz {label}: o Split DX está desligado em Definições › DX Cluster, o clique só sintoniza',
   ],
   'cluster.splitDx.active': [
     'Split DX: Tx {tx}',
