@@ -252,6 +252,59 @@ pub(crate) fn is_proxied(headers: &HeaderMap) -> bool {
         .any(|name| headers.contains_key(*name))
 }
 
+/// L'host di un'intestazione `Host` o `Origin`, senza schema, porta e parentesi di IPv6, in minuscolo («http://127.0.0.1:8787» e
+/// «127.0.0.1:8787» danno «127.0.0.1», «[::1]:8787» da' «::1»).
+fn host_of(value: &str) -> String {
+    let v = value.trim();
+    let v = v.split_once("://").map_or(v, |(_, rest)| rest);
+    let v = v.split('/').next().unwrap_or(v);
+    let host = match v.strip_prefix('[') {
+        Some(rest) => rest.split(']').next().unwrap_or(rest),
+        None => match v.rsplit_once(':') {
+            Some((h, port)) if !port.is_empty() && port.chars().all(|c| c.is_ascii_digit()) => h,
+            _ => v,
+        },
+    };
+    host.to_ascii_lowercase()
+}
+
+fn is_loopback_host(host: &str) -> bool {
+    host == "localhost" || host.parse::<std::net::IpAddr>().is_ok_and(|ip| ip.is_loopback())
+}
+
+/// Una richiesta da questo stesso PC e' davvero di Aurora: la pagina servita da Aurora (`Origin` di loopback) o un programma senza
+/// `Origin` (l'agente nel vassoio, curl), con un `Host` di loopback. Una pagina di un altro sito aperta nel browser dello stesso PC manda il
+/// suo `Origin` (le WebSocket e le richieste «semplici» non hanno il controllo CORS): senza questo controllo leggeva lo stato (nominativo,
+/// locatore, log) e poteva far trasmettere la radio. Un `Host` diverso da loopback e' il DNS rebinding (un nome del sito che punta a
+/// 127.0.0.1).
+fn is_local_page_or_program(headers: &HeaderMap) -> bool {
+    let host_ok = headers.get(header::HOST).and_then(|v| v.to_str().ok()).is_none_or(|h| is_loopback_host(&host_of(h)));
+    let origin_ok = match headers.get(header::ORIGIN) {
+        None => true,
+        Some(v) => v.to_str().ok().is_some_and(|o| o != "null" && is_loopback_host(&host_of(o))),
+    };
+    host_ok && origin_ok
+}
+
+/// Un nome con cui si raggiunge Aurora sulla rete di casa: un indirizzo IP, `localhost`, il nome del PC senza punto o un nome dei domini
+/// locali (`.local`, `.lan`, `.home.arpa`...). Un sito esterno non puo' registrare nessuno di questi nomi, quindi non puo' far puntare il suo
+/// nome all'indirizzo di Aurora (DNS rebinding) e passare per «stessa origine».
+fn is_home_host(host: &str) -> bool {
+    const LOCAL_SUFFIXES: [&str; 6] = [".local", ".lan", ".home", ".home.arpa", ".internal", ".localdomain"];
+    host.parse::<std::net::IpAddr>().is_ok() || host == "localhost" || (!host.is_empty() && !host.contains('.')) || LOCAL_SUFFIXES.iter().any(|s| host.ends_with(s))
+}
+
+/// La richiesta viene dalla pagina di Aurora sulla rete di casa, non da un altro sito: l'`Host` e' un nome di casa ([`is_home_host`]) e
+/// l'`Origin`, se c'e', e' sullo stesso host.
+fn is_same_origin(headers: &HeaderMap) -> bool {
+    let host = headers.get(header::HOST).and_then(|v| v.to_str().ok()).map(host_of);
+    if host.as_deref().is_some_and(|h| !is_home_host(h)) {
+        return false;
+    }
+    let Some(origin) = headers.get(header::ORIGIN) else { return true };
+    origin.to_str().ok().is_some_and(|o| o != "null" && host.is_some_and(|h| h == host_of(o)))
+}
+
 fn session_token(headers: &HeaderMap) -> Option<String> {
     let cookies = headers.get(header::COOKIE)?.to_str().ok()?;
     cookies
@@ -281,14 +334,14 @@ impl FromRequestParts<AppState> for Authed {
         // programma Windows: chi arriva da questo stesso PC (loopback, non da un proxy) entra senza codice
         if state.local_trust {
             let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
-            if peer.is_some_and(|ip| ip.is_loopback()) && !is_proxied(&parts.headers) {
+            if peer.is_some_and(|ip| ip.is_loopback()) && !is_proxied(&parts.headers) && is_local_page_or_program(&parts.headers) {
                 return Ok(Authed(DeviceId(0)));
             }
         }
-        // accesso senza codice acceso: entra chi e' sulla rete di casa e non arriva da un proxy
+        // accesso senza codice acceso: entra chi e' sulla rete di casa, non arriva da un proxy e non e' la pagina di un altro sito
         if state.open_access.load(std::sync::atomic::Ordering::SeqCst) {
             let peer = parts.extensions.get::<ConnectInfo<SocketAddr>>().map(|c| c.0.ip());
-            if peer.is_some_and(is_home_network) && !is_proxied(&parts.headers) {
+            if peer.is_some_and(is_home_network) && !is_proxied(&parts.headers) && is_same_origin(&parts.headers) {
                 return Ok(Authed(DeviceId(0)));
             }
         }
@@ -449,11 +502,10 @@ fn phone_addresses(state: &AppState, base: Option<&str>) -> Vec<String> {
             out.push(url);
         }
     }
-    if let Some(m) = mdns_url(state) {
-        if !out.contains(&m) {
+    if let Some(m) = mdns_url(state)
+        && !out.contains(&m) {
             out.push(m);
         }
-    }
     out
 }
 
