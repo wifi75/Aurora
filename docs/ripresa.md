@@ -2,6 +2,21 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-12 tarda notte (0.11.243 pubblicata, sito aggiornato)
+
+- **0.11.243** (22:42 UTC): lo split di FT8 non si riaccende alla riconnessione del CAT ne' al cambio di frequenza, lo Split DX si spegne
+  lasciando i modi testuali, PSK/RTTY/CW/SSTV trasmettono in simplex (Hamlib, OmniRig, TCI, Cat4OM); «Accendi» con 75 s di attesa e la
+  sequenza `PS1;` a due coppie (0 e 1,2 s, 3,7 e 5,2 s); cambi di frequenza ravvicinati che non si contendono la radio; «Rimanda i QSO
+  persi» anche per il server UDP secondario (`UDP2Resend`, acceso di base); CW con AGC dal fondo del rumore (banco 26,5% → 23,4%);
+  Linux: uscita audio con buffer di 40 ms e formato a 1-2 canali, registro dei cambi di scheda, testi del volume senza «Windows», pagina
+  Radio a 1024 px; avviso sull'indirizzo CI-V in esadecimale; ritocchi dell'interfaccia dei modi testuali, del DX Cluster e dei menu.
+- **Dal registro del proprietario** (FT-2000 su COM11, Hamlib, «Accendi» e «Spegni»): dopo l'aggiornamento il CAT e' rimasto 3,5 minuti
+  senza collegarsi perche' rigctld veniva chiuso dopo 15 s a meta' accensione; il proprietario dice che «Accendi» non accende la radio.
+  La sequenza nuova e' da provare dal vivo: se non accende ancora, servono le righe `rig_control::wake` del registro.
+- **Non provato**: tutto quanto sopra con la radio vera e, per Linux, su Linux (compilato solo su Windows; aspettare la conferma
+  dell'utente con la IC-7100).
+- **Prossimo passo**: prove del proprietario; collegare il rilevatore dei click ai canali di tutta la banda; QPSK.
+
 ## Stato al 2026-11-12 notte (0.11.242 pubblicata, sito aggiornato)
 
 - **0.11.242** (21:02 UTC): QSO del log da correggere e cancellare (#47); pannello Segnali con «Controllo» che si salva, Pulisci, altezza e
