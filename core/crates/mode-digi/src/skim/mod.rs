@@ -72,7 +72,7 @@ pub struct LocalSpot {
     pub at_s: f64,
 }
 
-pub struct CwSkimmer {
+pub struct CwBandDecoder {
     fft: Arc<dyn Fft<f32>>,
     window: Vec<f32>,
     input: Vec<f32>,
@@ -91,12 +91,12 @@ pub struct CwSkimmer {
     spots: Vec<LocalSpot>,
 }
 
-impl CwSkimmer {
+impl CwBandDecoder {
     /// Cerca i segnali fra `lo_hz` e `hi_hz` (audio), con al massimo `max_channels` canali aperti.
     pub fn new(lo_hz: f32, hi_hz: f32, max_channels: usize) -> Self {
         let mut planner = FftPlanner::new();
         let res = RATE / FFT_N as f32;
-        CwSkimmer {
+        CwBandDecoder {
             fft: planner.plan_fft_forward(FFT_N),
             window: (0..FFT_N).map(|i| 0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / FFT_N as f32).cos()).collect(),
             input: Vec::with_capacity(FFT_N * 2),
@@ -312,7 +312,7 @@ mod tests {
         for (s, n) in band.iter_mut().zip(hiss) {
             *s += n;
         }
-        let mut sk = CwSkimmer::new(300.0, 2_500.0, 16);
+        let mut sk = CwBandDecoder::new(300.0, 2_500.0, 16);
         for block in band.chunks(4_800) {
             sk.process(block);
         }
@@ -334,7 +334,7 @@ mod tests {
 
     #[test]
     fn noise_opens_no_channel() {
-        let mut sk = CwSkimmer::new(300.0, 2_500.0, 16);
+        let mut sk = CwBandDecoder::new(300.0, 2_500.0, 16);
         for block in noise(12_000 * 20, 0.2, 3).chunks(4_800) {
             sk.process(block);
         }

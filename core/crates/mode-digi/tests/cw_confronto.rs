@@ -402,7 +402,7 @@ fn studio() {
 #[test]
 #[ignore]
 fn tutta_la_banda() {
-    use mode_digi::skim::CwSkimmer;
+    use mode_digi::skim::CwBandDecoder;
     let mut rng = Rng(77);
     let n = 60 * RATE as usize;
     let mut band = vec![0.0_f32; n];
@@ -418,7 +418,7 @@ fn tutta_la_banda() {
         }
     }
     aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
-    let mut sk = CwSkimmer::new(300.0, 2_600.0, 40);
+    let mut sk = CwBandDecoder::new(300.0, 2_600.0, 40);
     let t0 = std::time::Instant::now();
     for block in band.chunks(4_800) {
         sk.process(block);
