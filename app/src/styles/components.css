@@ -1234,3 +1234,7 @@ html[data-theme='light'] .freq-picker-btn .freq-picker-btn-band { background: #6
 .freq-picker-btn .freq-picker-btn-band { min-width: 2.6rem; text-align: center; }
 .freq-picker-btn .freq-picker-btn-mhz { min-width: 4.6rem; text-align: right; font-variant-numeric: tabular-nums; }
 .freq-picker-btn .mode-switch-caret { margin-left: auto; }
+
+/* l'avviso sotto l'indirizzo CI-V (esadecimale o decimale) */
+.cat-civ-hex { display: block; margin-top: 4px; font-size: 0.78rem; line-height: 1.35; color: #f0b429; }
+.cat-civ-hex button { margin-top: 3px; padding: 1px 8px; font-size: 0.78rem; }

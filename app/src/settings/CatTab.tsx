@@ -633,6 +633,15 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
             {fields.civ ? (
               <Field label={t('cat.civ')} className="cat-w-s" hint={t('tip.cat.civ')}>
                 <input type="number" min={0} max={255} value={config.civ_address} onChange={(e) => set({ civ_address: Number(e.target.value) })} />
+                {/* i manuali Icom danno l'indirizzo in esadecimale (IC-7100: 88h = 136): chi scrive 88 qui mette 58h e la radio non risponde */}
+                {config.civ_address > 0 && parseInt(String(config.civ_address), 16) <= 255 ? (
+                  <small className="cat-civ-hex" role="note">
+                    {t('cat.civ.hex', { dec: config.civ_address, hex: config.civ_address.toString(16).toUpperCase(), asDec: parseInt(String(config.civ_address), 16) })}{' '}
+                    <button type="button" className="glass" onClick={() => set({ civ_address: parseInt(String(config.civ_address), 16) })}>
+                      {t('cat.civ.useHex', { asDec: parseInt(String(config.civ_address), 16), dec: config.civ_address })}
+                    </button>
+                  </small>
+                ) : null}
               </Field>
             ) : null}
           </>

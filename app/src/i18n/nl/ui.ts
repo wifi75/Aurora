@@ -429,6 +429,8 @@ export const NL_UI: Record<string, string> = {
   "cat.catmode.none": "Ongemoeid laten",
   "cat.catmode.usb": "USB",
   "cat.civ": "CI-V-adres (Icom)",
+  "cat.civ.hex": "{dec} = {hex}h. Icom-handleidingen geven het adres hexadecimaal: staat er {dec}h in de handleiding, vul hier dan {asDec} in. Met 0 geldt het fabrieksadres van het model.",
+  "cat.civ.useHex": "Gebruik {asDec} ({dec}h)",
   "cat.connect": "Verbinden",
   "cat.databits": "Databits",
   "cat.default": "Standaard van het model",

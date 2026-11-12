@@ -1360,7 +1360,7 @@ ens.k.TCPServerPort,TCP port,TCP-poort
 ens.k.EnableTCPConnection,Enable sending to the TCP server,Verzenden naar de TCP-server inschakelen
 ens.k.UDP2Server,UDP2 server,UDP2-server
 ens.k.UDP2ServerPort,UDP port,UDP-poort
-ens.k.UDP2Resend,Resend missed QSOs when the log is opened again,"Gemiste QSO’s opnieuw sturen wanneer het log weer open is"
+ens.k.UDP2Resend,Resend missed QSOs when the log is opened again,Gemiste QSO’s opnieuw sturen wanneer het log weer open is
 ens.k.EnableUDP2adifBroadcast,Enable sending to the secondary UDP server,Verzenden naar de secundaire UDP-server inschakelen
 ens.k.WriteDecodedALLTXT,Decoded messages,Gedecodeerde berichten
 ens.k.WriteDecodedDebugALLTXT,Decoded and debug messages,Gedecodeerde en debugberichten
@@ -1629,6 +1629,8 @@ cat.line.auto,Automatic (safe),Automatisch (veilig)
 cat.line.high,High,Hoog
 cat.line.low,Low,Laag
 cat.civ,CI-V address (Icom),CI-V-adres (Icom)
+cat.civ.hex,"{dec} = {hex}h. Icom manuals give the address in hexadecimal: if the manual says {dec}h, enter {asDec} here. With 0 the model’s factory address is used.","{dec} = {hex}h. Icom-handleidingen geven het adres hexadecimaal: staat er {dec}h in de handleiding, vul hier dan {asDec} in. Met 0 geldt het fabrieksadres van het model."
+cat.civ.useHex,Use {asDec} ({dec}h),"Gebruik {asDec} ({dec}h)"
 tip.cat.civ,0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).,0 = de fabriekswaarde van het model (bijvoorbeeld 148 = 0x94 voor de IC-7300).
 cat.ptt.method,PTT method,PTT-methode
 tip.cat.ptt,"CAT: the PTT goes over the command cable. DTR or RTS: a serial port line. VOX: no command, the radio transmits when it hears audio.","CAT: de PTT loopt via de commandokabel. DTR of RTS: een lijn van de seriële poort. VOX: geen commando, de zender zendt wanneer hij audio hoort."

@@ -346,6 +346,15 @@ export const catStrings = {
   'cat.line.high': ['Alta', 'High', 'Hoch', 'Haute', 'Alta', 'Alta'],
   'cat.line.low': ['Bassa', 'Low', 'Niedrig', 'Basse', 'Baja', 'Baixa'],
   'cat.civ': ['Indirizzo CI-V (Icom)', 'CI-V address (Icom)', 'CI-V-Adresse (Icom)', 'Adresse CI-V (Icom)', 'Dirección CI-V (Icom)', 'Endereço CI-V (Icom)'],
+  'cat.civ.hex': [
+    '{dec} = {hex}h. I manuali Icom scrivono l’indirizzo in esadecimale: se sul manuale c’è {dec}h, qui va {asDec}. Con 0 vale quello di fabbrica del modello.',
+    '{dec} = {hex}h. Icom manuals give the address in hexadecimal: if the manual says {dec}h, enter {asDec} here. With 0 the model’s factory address is used.',
+    '{dec} = {hex}h. Icom-Handbücher nennen die Adresse hexadezimal: steht dort {dec}h, gehört hier {asDec} hin. Mit 0 gilt die Werksadresse des Modells.',
+    '{dec} = {hex}h. Les manuels Icom donnent l’adresse en hexadécimal : si le manuel indique {dec}h, il faut mettre {asDec} ici. Avec 0, c’est l’adresse d’usine du modèle.',
+    '{dec} = {hex}h. Los manuales de Icom dan la dirección en hexadecimal: si el manual dice {dec}h, aquí va {asDec}. Con 0 vale la de fábrica del modelo.',
+    '{dec} = {hex}h. Os manuais da Icom dão o endereço em hexadecimal: se o manual diz {dec}h, aqui é {asDec}. Com 0 vale o de fábrica do modelo.',
+  ],
+  'cat.civ.useHex': ['Usa {asDec} ({dec}h)', 'Use {asDec} ({dec}h)', '{asDec} verwenden ({dec}h)', 'Utiliser {asDec} ({dec}h)', 'Usar {asDec} ({dec}h)', 'Usar {asDec} ({dec}h)'],
   'tip.cat.civ': [
     '0 = quello di fabbrica del modello (per esempio 148 = 0x94 per la IC-7300).',
     '0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).',
