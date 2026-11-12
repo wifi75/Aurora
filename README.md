@@ -156,4 +156,6 @@ A heartfelt thank you to everyone who has already donated: your support matters.
 
 Aurora is free software, released under the **GNU General Public License version 3** (`GPL-3.0-only`: the own engine contains algorithms from JTDX and WSJT-X, released under GPL 3): full text in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone (IU3WJQ). Third-party libraries and their notices are in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) and [`docs/licenze-terze-parti.md`](docs/licenze-terze-parti.md) (documentation in Italian).
 
+If you use Aurora's code or tables in a project of yours, I kindly ask you to let me know by opening an issue on GitHub and to credit the author, Tiziano Cassone IU3WJQ.
+
 Anyone who redistributes Aurora, even modified, must do so under the same licence and make the source available. The third-party libraries included in the interface (`leaflet` for the map, BSD-2-Clause licence, `world-atlas` and `topojson-client`, ISC licence; the map background tiles are from Esri and National Geographic, with their attribution on the map, and the other dependencies listed in `app/package.json` and `core/Cargo.toml`) keep their own licences.
