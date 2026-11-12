@@ -11,6 +11,8 @@
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod cw;
+#[cfg(feature = "fldigi-oracle")]
+pub mod fldigi_oracle;
 pub mod macro_files;
 pub mod psk;
 pub mod rtty;
