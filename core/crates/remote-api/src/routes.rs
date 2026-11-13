@@ -23,7 +23,7 @@ const COOKIE_NAME: &str = "aurora_session";
 const COOKIE_MAX_AGE_SECS: u64 = 31_536_000;
 
 #[derive(OpenApi)]
-#[openapi(paths(crate::digi_api::digi_get, crate::digi_api::digi_put, crate::digi_api::digi_rx_start, crate::digi_api::digi_rx_stop, crate::digi_api::digi_rx_hold, crate::digi_api::digi_rx_release, crate::digi_api::digi_tx, crate::digi_api::digi_tx_abort, crate::digi_api::digi_import_macros, crate::digi_api::digi_cat, crate::digi_api::digi_textfile, crate::sstv_api::sstv_get, crate::sstv_api::sstv_put, crate::sstv_api::sstv_rx_start, crate::sstv_api::sstv_rx_stop, crate::sstv_api::sstv_rx_hold, crate::sstv_api::sstv_rx_release, crate::sstv_api::sstv_rx_force, crate::sstv_api::sstv_rx_cancel, crate::sstv_api::sstv_rx_current, crate::sstv_api::sstv_rx_current_clean, crate::sstv_api::sstv_images, crate::sstv_api::sstv_tx_folder, crate::sstv_api::sstv_tx_photo, crate::sstv_api::sstv_tx_folder_delete, crate::sstv_api::sstv_images_delete, crate::sstv_api::sstv_image, crate::sstv_api::sstv_image_clean, crate::sstv_api::sstv_image_delete, crate::sstv_api::sstv_tx, crate::sstv_api::sstv_tx_abort, crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_qso_get, log_qso_edit, log_qso_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, health_resources, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi, crate::digi_api::digi_tx_open, crate::digi_api::digi_tx_type, crate::digi_api::digi_tx_unsend, crate::digi_api::digi_tx_close, crate::digi_api::digi_tx_replace, crate::digi_api::digi_band, crate::digi_api::digi_band_clear))]
+#[openapi(paths(crate::digi_api::digi_get, crate::digi_api::digi_put, crate::digi_api::digi_rx_start, crate::digi_api::digi_rx_stop, crate::digi_api::digi_rx_hold, crate::digi_api::digi_rx_release, crate::digi_api::digi_tx, crate::digi_api::digi_tx_abort, crate::digi_api::digi_import_macros, crate::digi_api::digi_cat, crate::digi_api::digi_textfile, crate::sstv_api::sstv_get, crate::sstv_api::sstv_put, crate::sstv_api::sstv_rx_start, crate::sstv_api::sstv_rx_stop, crate::sstv_api::sstv_rx_hold, crate::sstv_api::sstv_rx_release, crate::sstv_api::sstv_rx_force, crate::sstv_api::sstv_rx_cancel, crate::sstv_api::sstv_rx_current, crate::sstv_api::sstv_rx_current_clean, crate::sstv_api::sstv_images, crate::sstv_api::sstv_tx_folder, crate::sstv_api::sstv_tx_photo, crate::sstv_api::sstv_tx_folder_delete, crate::sstv_api::sstv_images_delete, crate::sstv_api::sstv_image, crate::sstv_api::sstv_image_clean, crate::sstv_api::sstv_image_delete, crate::sstv_api::sstv_tx, crate::sstv_api::sstv_tx_abort, crate::rotator_api::rotator_get, crate::rotator_api::rotator_put, crate::rotator_api::rotator_goto, crate::rotator_api::rotator_stop, crate::rotator_api::rotator_models, update_install, update_download, online_get, online_put, online_psk, online_solar, online_dxped, set_dx, set_report, tune, log_qso, fox_command, fox_clublog, online_refresh, history_get, history_stats, history_clear, output_level_get, output_level_put, input_level_get, input_level_put, controls_get, control_press, tx_message, tx_text, access_get, access_put, pairing_get, pairing_put, frequencies_get, frequencies_put, frequencies_defaults, schedule_get, schedule_put, stats, dxcc_matrix, log_qsos, log_add, log_delete, log_qso_get, log_qso_edit, log_qso_delete, log_export, log_export_save, log4om_db_get, log4om_db_put, log4om_db_choose, diagnostics_get, diagnostics_crash_folder, diagnostics_support_bundle, diagnostics_support_reveal, reports_get, reports_put, reports_new_id, reports_crash_preview, reports_crash_send, reports_crash_dismiss, reports_bundle_send, log_pending, log_pending_answer, log_import, log_new_empty_get, log_new_empty, log4om, map_worked, wishlist_get, wishlist_put, wishlist_test, update_get, update_put, update_check, engine_settings_get, engine_settings_put, spot_dxsummit, audio_devices, audio_settings_put, dxcc_lookup, callsign_lookup, cluster_get, cluster_put, cluster_catalog, cluster_test, cluster_command, clock_get, clock_put, clock_check, clock_correct, ui_settings_get, ui_settings_put, band_filters_get, band_filters_put, change_band, change_frequency, change_mode, rx_frequency, free_text, call_cq, tx_frequency, station_info, health, health_resources, pair_start, pair_finish, devices, revoke_device, halt_tx, reply, queue_reply, automation_get, automation_put, automation_countries, ws::stream, qso_upload_test, wavelog_stations, band_hop_next, crate::qmap_api::qmap_get, crate::qmap_api::qmap_put, crate::qmap_api::qmap_decode, crate::qmap_api::qmap_clear_average, crate::qmap_api::qmap_tune, crate::contest_api::contest_get, crate::contest_api::contest_regole, crate::contest_api::contest_attiva, crate::contest_api::contest_disattiva, crate::contest_api::contest_impostazioni, crate::contest_api::contest_valuta, crate::contest_api::contest_lavorati, crate::contest_api::contest_consiglio, crate::contest_api::contest_mappa, crate::contest_api::contest_log, crate::contest_api::contest_log_modifica, crate::contest_api::contest_log_azzera, crate::contest_api::contest_esporta, crate::contest_api::contest_calendario, crate::contest_api::contest_analisi, crate::digi_api::digi_tx_open, crate::digi_api::digi_tx_type, crate::digi_api::digi_tx_unsend, crate::digi_api::digi_tx_close, crate::digi_api::digi_tx_replace, crate::digi_api::digi_band, crate::digi_api::digi_band_clear))]
 struct ApiDoc;
 
 pub fn router(state: AppState) -> Router {
@@ -100,6 +100,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/log/pending", get(log_pending))
         .route("/api/v1/log/pending/{id}", post(log_pending_answer))
         .route("/api/v1/log/import", post(log_import).layer(axum::extract::DefaultBodyLimit::max(LOG_IMPORT_MAX_BYTES)))
+        .route("/api/v1/log/new-empty", get(log_new_empty_get).post(log_new_empty))
         .route("/api/v1/log4om", get(log4om))
         .route("/api/v1/map/worked", get(map_worked))
         .route("/api/v1/wishlist", get(wishlist_get).put(wishlist_put))
@@ -1383,7 +1384,7 @@ struct ModeBody {
 }
 
 /// Cambia tra FT8 e FT4 (con JTDX preme il suo pulsante). Con il motore proprio funziona anche senza radio collegata. Mai durante la trasmissione.
-#[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
+#[utoipa::path(post, path = "/api/v1/commands/mode", responses((status = 200, description = "Modo cambiato"), (status = 400, description = "Modo sconosciuto (bad_mode) o conferma mancante (confirm_required)"), (status = 409, description = "In trasmissione (transmitting) o QSO in corso (qso_in_progress)"), (status = 409, description = "In trasmissione (transmitting)"), (status = 502, description = "JTDX non ha risposto (rig_error)"), (status = 503, description = "Comando non disponibile (rig_unavailable)")))]
 async fn change_mode(State(state): State<AppState>, _: Authed, Json(body): Json<ModeBody>) -> Result<Json<Value>, ApiError> {
     if state.active_rig().is_none() {
         return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"));
@@ -3054,6 +3055,95 @@ async fn log_import(State(state): State<AppState>, _: Authed, Peer(peer): Peer, 
         let _ = tokio::task::spawn_blocking(move || changed()).await;
     }
     Ok(Json(json!(report)))
+}
+
+/// Dove si mette da parte il log con «Nuovo log vuoto»: accanto al file, `<nome>-archivio-AAAAMMGG-HHMMSS.<est>` (UTC).
+fn log_archive_path(path: &std::path::Path) -> std::path::PathBuf {
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let stamp = format!("{}-{:02}{:02}{:02}", logbook::adif::utc_date(secs), secs / 3600 % 24, secs / 60 % 60, secs % 60);
+    let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "logbook".into());
+    let ext = path.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+    path.with_file_name(format!("{stem}-archivio-{stamp}{ext}"))
+}
+
+/// Per la finestra di conferma di «Nuovo log vuoto»: quanti QSO ha il log e in che cartella va l'archivio.
+#[utoipa::path(get, path = "/api/v1/log/new-empty", responses((status = 200, description = "{qsos, file, folder}"), (status = 404, description = "Log solo in memoria (log_archive_unavailable)")))]
+async fn log_new_empty_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let path = state.logbook.path().map(std::path::Path::to_path_buf).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "log_archive_unavailable"))?;
+    let book = state.logbook.clone();
+    let qsos = tokio::task::spawn_blocking(move || book.count())
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|_| ApiError::new(StatusCode::BAD_GATEWAY, "log_read"))?;
+    let folder = path.parent().map(|p| p.display().to_string()).unwrap_or_default();
+    Ok(Json(json!({ "qsos": qsos, "file": path.display().to_string(), "folder": folder })))
+}
+
+#[derive(Deserialize)]
+struct NewEmptyBody {
+    /// `keep` (il log attuale si mette da parte) o `replace` (si cancella).
+    mode: String,
+    /// Con `replace` deve essere `DELETE`: una richiesta per sbaglio (o vecchia) non cancella il log.
+    #[serde(default)]
+    confirm: String,
+}
+
+/// «Nuovo log vuoto». `{mode: "keep"}`: copia il log in un archivio accanto al file (`logbook-archivio-AAAAMMGG-HHMMSS.db`) e solo dopo
+/// lo svuota, risponde `{archived, archive}`. `{mode: "replace", confirm: "DELETE"}`: svuota il log, risponde `{deleted}`
+/// (senza `confirm` `400 confirm_required`). Mai in trasmissione (`409 transmitting`) o con Enable Tx acceso (`409 qso_in_progress`). In tutti e due i casi il file ADIF di
+/// Aurora si mette da parte e i lavorati si rileggono. Solo dalla rete di casa.
+#[utoipa::path(post, path = "/api/v1/log/new-empty", responses((status = 200, description = "{archived, archive} o {deleted}"), (status = 400, description = "Modo sconosciuto (bad_mode)"), (status = 403, description = "Solo dalla rete di casa (local_only)"), (status = 404, description = "Log solo in memoria (log_archive_unavailable)"), (status = 502, description = "Archivio non scritto, log intatto (log_write)")))]
+async fn log_new_empty(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<NewEmptyBody>) -> Result<Json<Value>, ApiError> {
+    if !from_home_network(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    // mai durante una trasmissione o con «Enable Tx» acceso (un QSO in corso finirebbe in un log e non nell'altro)
+    if let Some(st) = state.current_status() {
+        if st.transmitting {
+            return Err(ApiError::new(StatusCode::CONFLICT, "transmitting"));
+        }
+        if st.tx_enabled {
+            return Err(ApiError::new(StatusCode::CONFLICT, "qso_in_progress"));
+        }
+    }
+    if body.mode == "replace" && body.confirm != "DELETE" {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "confirm_required"));
+    }
+    if body.mode == "replace" {
+        let book = state.logbook.clone();
+        let deleted = tokio::task::spawn_blocking(move || book.clear())
+            .await
+            .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+            .map_err(|e| {
+                tracing::warn!("log non svuotato: {e}");
+                ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+            })?;
+        tracing::info!("nuovo log vuoto: {deleted} QSO cancellati (scelta dell'utente)");
+        if let Some(hook) = state.log_deleted.clone() {
+            let _ = tokio::task::spawn_blocking(move || hook(None)).await;
+        }
+        return Ok(Json(json!({ "deleted": deleted })));
+    }
+    if body.mode != "keep" {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_mode"));
+    }
+    let path = state.logbook.path().map(std::path::Path::to_path_buf).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "log_archive_unavailable"))?;
+    let archive = log_archive_path(&path);
+    let book = state.logbook.clone();
+    let target = archive.clone();
+    let archived = tokio::task::spawn_blocking(move || book.archive_and_reset(&target))
+        .await
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "log_task"))?
+        .map_err(|e| {
+            tracing::warn!("nuovo log non creato, log intatto: {e}");
+            ApiError::new(StatusCode::BAD_GATEWAY, "log_write")
+        })?;
+    tracing::info!("nuovo log vuoto: {archived} QSO messi da parte in {}", archive.display());
+    // come per il log svuotato: il file ADIF di Aurora si mette da parte e i lavorati si rileggono
+    if let Some(hook) = state.log_deleted.clone() {
+        let _ = tokio::task::spawn_blocking(move || hook(None)).await;
+    }
+    Ok(Json(json!({ "archived": archived, "archive": archive.display().to_string() })))
 }
 
 #[derive(Deserialize)]

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Nuovo log vuoto**: in Impostazioni › Log, cluster e servizi › File ADIF il pulsante «Nuovo log vuoto» apre un avviso con il numero di QSO, l'invito a esportare prima l'ADIF e due scelte (Annulla e' quella predefinita): tenere il log attuale, copiato e verificato in `logbook-archivio-AAAAMMGG-HHMMSS.db` accanto al file, oppure cancellarlo con una seconda conferma rossa in cui si scrive la parola. Senza riavvio; mai durante una trasmissione o con Enable Tx acceso; solo dalla rete di casa.
 - **«Accendi» con Cat4OM**: la casella c'e' anche con Cat4OM e all'avvio Aurora chiede a Cat4OM di accendere la radio (prima con Cat4OM la radio si spegneva alla chiusura ma non si accendeva, perche' la porta e' di Cat4OM e Aurora non ci puo' scrivere).
 - **«Accendi» sulle Yaesu (FT-2000)**: durante l'accensione la linea RTS resta alta (come fa Hamlib per queste radio con «CAT RTS» acceso); prima era bassa e la radio ignorava il comando, cosi' si spegneva via CAT ma non si accendeva.
 - **DX Cluster della pagina principale come in PSK·RTTY·CW**: «Spot DX» passa dalla barra dei filtri alla barra del titolo, accanto alla nuova rotella «Opzioni del DX Cluster» (clic singolo o doppio, rotore verso la stazione, durata degli spot, colonne); le opzioni sono le stesse della pagina PSK·RTTY·CW.

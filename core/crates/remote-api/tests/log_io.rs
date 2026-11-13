@@ -336,3 +336,112 @@ async fn correcting_and_deleting_are_only_for_the_home_network() {
     status_is(&call(&router(&s), req(Method::DELETE, &uri).cookie(&cookie).via_loopback().header("x-forwarded-for", "203.0.113.9")).await, StatusCode::FORBIDDEN);
     assert_eq!(s.logbook.entry(id).unwrap().map(|e| e.call), Some("K1ABC".to_string()));
 }
+
+#[tokio::test]
+async fn a_new_empty_log_puts_the_old_one_aside_and_tells_the_log_was_emptied() {
+    let dir = std::env::temp_dir().join(format!("aurora-new-log-{}-{}", std::process::id(), DAY1));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let book = Arc::new(logbook::Logbook::open(&dir.join("logbook.db")).unwrap());
+    let emptied = Arc::new(AtomicU32::new(0));
+    let e = Arc::clone(&emptied);
+    let s = remote_api::AppState::new(
+        aurora_core::Bus::new(64),
+        Arc::new(auth::DeviceStore::open_in_memory(Arc::new(auth::SystemClock)).unwrap()),
+        book,
+        remote_api::TxPolicy::default_safe(),
+        false,
+    )
+    .with_log_deleted(Arc::new(move |gone| {
+        assert!(gone.is_none());
+        e.fetch_add(1, Ordering::SeqCst);
+    }));
+    s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    s.logbook.add(&qso("K1ABD", "FT4", DAY2)).unwrap();
+    let info = body_json(get(&s, "/api/v1/log/new-empty").await).await;
+    assert_eq!(info["qsos"], 2);
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).header("x-forwarded-for", "1.2.3.4").json(r#"{"mode":"keep"}"#)).await;
+    status_is(&resp, StatusCode::FORBIDDEN);
+    assert_eq!(s.logbook.count().unwrap(), 2);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).json(r#"{"mode":"keep"}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    let v = body_json(resp).await;
+    assert_eq!(v["archived"], 2);
+    let archive = std::path::PathBuf::from(v["archive"].as_str().unwrap());
+    assert!(archive.file_name().unwrap().to_string_lossy().starts_with("logbook-archivio-"));
+    assert_eq!(s.logbook.count().unwrap(), 0);
+    assert_eq!(logbook::Logbook::open(&archive).unwrap().count().unwrap(), 2);
+    assert_eq!(emptied.load(Ordering::SeqCst), 1);
+    drop(s);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn a_log_only_in_memory_cannot_be_put_aside() {
+    let s = state();
+    let resp = get(&s, "/api/v1/log/new-empty").await;
+    status_is(&resp, StatusCode::NOT_FOUND);
+    assert_eq!(body_json(resp).await["error"], "log_archive_unavailable");
+}
+
+#[tokio::test]
+async fn a_new_empty_log_can_replace_the_old_one_and_an_unknown_mode_is_refused() {
+    let emptied = Arc::new(AtomicU32::new(0));
+    let e = Arc::clone(&emptied);
+    let s = state().with_log_deleted(Arc::new(move |_| {
+        e.fetch_add(1, Ordering::SeqCst);
+    }));
+    s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let cookie = cookie_for(&s);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).json(r#"{"mode":"boh"}"#)).await;
+    status_is(&resp, StatusCode::BAD_REQUEST);
+    assert_eq!(s.logbook.count().unwrap(), 1);
+    // senza la conferma esplicita non si cancella niente
+    for body in [r#"{"mode":"replace"}"#, r#"{"mode":"replace","confirm":"si"}"#] {
+        let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).json(body)).await;
+        status_is(&resp, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(resp).await["error"], "confirm_required");
+    }
+    assert_eq!(s.logbook.count().unwrap(), 1);
+    let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).json(r#"{"mode":"replace","confirm":"DELETE"}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    assert_eq!(body_json(resp).await["deleted"], 1);
+    assert_eq!(s.logbook.count().unwrap(), 0);
+    assert_eq!(emptied.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn no_new_log_while_transmitting_or_with_a_qso_in_progress() {
+    use aurora_core::{Event, StationStatus};
+    let s = state();
+    s.logbook.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    let cookie = cookie_for(&s);
+    for (status, code) in [
+        (StationStatus { transmitting: true, ..StationStatus::default() }, "transmitting"),
+        (StationStatus { tx_enabled: true, ..StationStatus::default() }, "qso_in_progress"),
+    ] {
+        s.bus.events().send(Event::Status(status)).unwrap();
+        tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        for body in [r#"{"mode":"keep"}"#, r#"{"mode":"replace","confirm":"DELETE"}"#] {
+            let resp = call(&router(&s), req(Method::POST, "/api/v1/log/new-empty").cookie(&cookie).json(body)).await;
+            status_is(&resp, StatusCode::CONFLICT);
+            assert_eq!(body_json(resp).await["error"], code);
+        }
+    }
+    assert_eq!(s.logbook.count().unwrap(), 1);
+}
+
+#[test]
+fn a_failed_archive_leaves_the_log_untouched() {
+    let dir = std::env::temp_dir().join(format!("aurora-bad-archive-{}-{}", std::process::id(), DAY2));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let book = logbook::Logbook::open(&dir.join("logbook.db")).unwrap();
+    book.add(&qso("K1ABC", "FT8", DAY1)).unwrap();
+    // cartella che non esiste: la copia non si scrive e il log resta com'era
+    assert!(book.archive_and_reset(&dir.join("manca").join("archivio.db")).is_err());
+    assert_eq!(book.count().unwrap(), 1);
+    drop(book);
+    let _ = std::fs::remove_dir_all(&dir);
+}

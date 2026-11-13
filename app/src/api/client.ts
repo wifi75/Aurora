@@ -1306,6 +1306,26 @@ export async function importLog(file: Blob): Promise<LogImportResult> {
   return (await (await request('/log/import', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: file })).json()) as LogImportResult;
 }
 
+/** Per la finestra di «Nuovo log vuoto»: quanti QSO ha il log interno, il suo file e la cartella dove va l'archivio. */
+export interface NewLogInfo {
+  qsos: number;
+  file: string;
+  folder: string;
+}
+
+export async function newLogInfo(): Promise<NewLogInfo> {
+  return (await (await request('/log/new-empty')).json()) as NewLogInfo;
+}
+
+/** «Nuovo log vuoto»: `keep` mette da parte il log attuale (risponde `archive`), `replace` lo cancella (risponde `deleted`). */
+export async function startNewLog(mode: 'keep' | 'replace'): Promise<{ archived?: number; archive?: string; deleted?: number }> {
+  return (await (await request('/log/new-empty', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(mode === 'replace' ? { mode, confirm: 'DELETE' } : { mode }) })).json()) as {
+    archived?: number;
+    archive?: string;
+    deleted?: number;
+  };
+}
+
 /** Copia delle impostazioni sul Desktop (solo dal PC stesso). */
 export async function makeSettingsBackup(): Promise<{ ok: boolean; path: string; name: string; files: number }> {
   return (await (await request('/settings-backup', { method: 'POST' })).json()) as { ok: boolean; path: string; name: string; files: number };

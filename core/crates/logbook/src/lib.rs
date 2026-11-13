@@ -154,11 +154,39 @@ pub struct LogChange {
 
 pub struct Logbook {
     conn: Mutex<Connection>,
+    /// Il file del log (`None` in memoria): serve per metterlo da parte con «Nuovo log vuoto».
+    path: Option<std::path::PathBuf>,
 }
 
 impl Logbook {
     pub fn open(path: &Path) -> Result<Logbook, LogError> {
-        Self::from_connection(Connection::open(path)?)
+        let mut book = Self::from_connection(Connection::open(path)?)?;
+        book.path = Some(path.to_path_buf());
+        Ok(book)
+    }
+
+    /// Il file del log (`None` per il log in memoria).
+    pub fn path(&self) -> Option<&Path> {
+        self.path.as_deref()
+    }
+
+    /// «Nuovo log vuoto»: copia tutto il log in `archive` (che non deve esistere) e solo se la copia riesce svuota il log. Non si perde niente:
+    /// l'archivio e' un log completo, da riaprire o da cui esportare. Ritorna quanti QSO sono stati messi da parte.
+    pub fn archive_and_reset(&self, archive: &Path) -> Result<u64, LogError> {
+        if archive.exists() {
+            return Err(LogError::Storage(format!("{} esiste gia'", archive.display())));
+        }
+        let mut conn = self.conn()?;
+        conn.execute("VACUUM INTO ?1", [archive.to_string_lossy().as_ref()])?;
+        let copied: i64 = Connection::open(archive)?.query_row("SELECT COUNT(*) FROM qso", [], |r| r.get(0))?;
+        let tx = conn.transaction()?;
+        let present: i64 = tx.query_row("SELECT COUNT(*) FROM qso", [], |r| r.get(0))?;
+        if copied != present {
+            return Err(LogError::Storage(format!("archivio incompleto: {copied} QSO su {present}")));
+        }
+        tx.execute("DELETE FROM qso", [])?;
+        tx.commit()?;
+        Ok(present as u64)
     }
 
     /// Una copia coerente del log in `path` (che non deve esistere), anche mentre e' aperto: per la copia delle impostazioni.
@@ -229,7 +257,7 @@ impl Logbook {
                  PRAGMA user_version = 5;",
             )?;
         }
-        Ok(Logbook { conn: Mutex::new(conn) })
+        Ok(Logbook { conn: Mutex::new(conn), path: None })
     }
 
     fn conn(&self) -> Result<std::sync::MutexGuard<'_, Connection>, LogError> {

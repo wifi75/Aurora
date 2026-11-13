@@ -1263,3 +1263,20 @@ html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; 
   :where(button:not(:disabled), [role='button'], a.glass):hover { box-shadow: 0 0 0 4px rgb(56 189 248 / 0.28); }
   html[data-theme='light'] button:not(:disabled):hover, html[data-theme='light'] [role='button']:not([aria-disabled='true']):hover, html[data-theme='light'] a.glass:hover { outline-color: #0284c7; }
 }
+
+/* «Nuovo log vuoto»: avviso con due scelte; quella che cancella e' rossa e chiede una seconda conferma */
+.newlog-card { width: min(32rem, calc(94vw / var(--ui-zoom, 1))); border-color: var(--warn, #e0a030); }
+.newlog-card--danger { border-color: var(--danger, #e05050); }
+.newlog-title { margin: 0 0 0.6rem; font-weight: 700; letter-spacing: 0.04em; color: var(--warn, #e0a030); }
+.newlog-card--danger .newlog-title, .newlog-danger-text { color: var(--danger, #e05050); }
+.newlog-card .confirm-text p { margin: 0 0 0.5rem; }
+.newlog-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.newlog-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; text-align: left; }
+.newlog-choice span { font-size: 0.78rem; font-weight: 400; opacity: 0.85; }
+.newlog-export { text-align: center; text-decoration: none; }
+.newlog-btn--danger { border-color: var(--danger, #e05050); color: var(--danger, #e05050); }
+.newlog-btn--danger:hover { background: color-mix(in srgb, var(--danger, #e05050) 15%, transparent); }
+.newlog-card--danger .newlog-btn--danger { background: var(--danger, #e05050); color: #fff; font-weight: 600; }
+.newlog-type { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.82rem; }
+.newlog-type input { font: inherit; padding: 0.3rem 0.5rem; border-radius: 0.4rem; border: var(--border-width, 1px) solid var(--danger, #e05050); background: transparent; color: var(--text); }
+.newlog-btn--danger:disabled { opacity: 0.45; cursor: not-allowed; }

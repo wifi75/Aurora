@@ -341,3 +341,34 @@ fn a_record_in_capitals_is_corrected_in_capitals() {
     assert_eq!(n, 1);
     assert_eq!(out, "Aurora\n<adif_ver:5>3.1.8 <EOH>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <COMMENT:9><call:3>x <NAME:3>Joe <EOR>\n");
 }
+
+#[test]
+fn archive_and_reset_keeps_the_old_log_and_starts_empty() {
+    let dir = std::env::temp_dir().join(format!(
+        "aurora-logbook-archive-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("logbook.db");
+    let archive = dir.join("logbook-archivio-20261113-101500.db");
+    let lb = Logbook::open(&path).unwrap();
+    lb.add(&qso("JA1XYZ", "20m", "FT8")).unwrap();
+    lb.add(&qso("IU3ABC", "40m", "FT4")).unwrap();
+    assert_eq!(lb.path(), Some(path.as_path()));
+    assert_eq!(lb.archive_and_reset(&archive).unwrap(), 2);
+    // il log aperto e' vuoto e continua a funzionare
+    assert_eq!(lb.count().unwrap(), 0);
+    assert!(!lb.is_dupe("JA1XYZ", "20m", "FT8").unwrap());
+    lb.add(&qso("K1ABC", "20m", "FT8")).unwrap();
+    assert_eq!(lb.count().unwrap(), 1);
+    // l'archivio ha tutti i QSO di prima e non si sovrascrive
+    let old = Logbook::open(&archive).unwrap();
+    assert_eq!(old.count().unwrap(), 2);
+    assert!(old.is_dupe("JA1XYZ", "20m", "FT8").unwrap());
+    assert!(old.is_dupe("IU3ABC", "40m", "FT4").unwrap());
+    assert!(lb.archive_and_reset(&archive).is_err());
+    assert_eq!(lb.count().unwrap(), 1);
+    drop((lb, old));
+    let _ = std::fs::remove_dir_all(&dir);
+}
