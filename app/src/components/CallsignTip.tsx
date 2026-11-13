@@ -4,6 +4,9 @@ import { getCallsign, type CallsignInfo } from '../api/client';
 import { flagCode } from '../lib/flags';
 import { useT } from '../i18n';
 import { lotwDateToShow, useLotwView } from '../lib/lotw';
+import { bearingDeg, distanceKm, gridCenter } from '../lib/geo';
+import { formatDistance, usePrefs } from '../lib/prefs';
+import { useStatusPick } from '../state/station';
 
 /**
  * Le ricerche gia' fatte (o in corso) e fino a quando valgono (`until`, ms): lo stesso nominativo non si chiede due volte finche' la
@@ -124,12 +127,12 @@ export const TIP_DELAY_MS = 350;
  * Un nominativo con il suo riquadro al passaggio del mouse: bandiera, paese e continente (da `cty.dat`) e, se le ricerche sono accese,
  * nome e citta' da QRZ.com o HamQTH. La ricerca parte solo dopo un breve ritardo e si ricorda.
  */
-export function CallsignTip({ call, lotwDate, children }: { call: string; /** Ultimo invio a LoTW dall'elenco pubblico dell'ARRL (gia' filtrato dalle preferenze), se la stazione c'e'. */ lotwDate?: string | null; children: ReactNode }) {
+export function CallsignTip({ call, lotwDate, grid, children }: { call: string; /** Ultimo invio a LoTW dall'elenco pubblico dell'ARRL (gia' filtrato dalle preferenze), se la stazione c'e'. */ lotwDate?: string | null; /** Il locatore della stazione, se si conosce gia' (dal messaggio); se manca si usa quello della ricerca. */ grid?: string | null; children: ReactNode }) {
   if (call.trim() === '') return <>{children}</>;
-  return <CallsignTipInner call={call} lotwDate={lotwDate ?? null}>{children}</CallsignTipInner>;
+  return <CallsignTipInner call={call} lotwDate={lotwDate ?? null} grid={grid ?? null}>{children}</CallsignTipInner>;
 }
 
-function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate: string | null; children: ReactNode }) {
+function CallsignTipInner({ call, lotwDate, grid, children }: { call: string; lotwDate: string | null; grid: string | null; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [info, setInfo] = useState<CallsignInfo | null | undefined>(undefined);
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -178,14 +181,20 @@ function CallsignTipInner({ call, lotwDate, children }: { call: string; lotwDate
     <span className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
       {children}
       {/* nel corpo della pagina: dentro gli elenchi (cluster, Attivita' di banda) il riquadro finiva sotto le righe e si leggeva in filigrana */}
-      {open ? createPortal(<TipBox call={call} info={info} lotwDate={lotwDate} pos={pos} />, document.body) : null}
+      {open ? createPortal(<TipBox call={call} info={info} lotwDate={lotwDate} grid={grid} pos={pos} />, document.body) : null}
     </span>
   );
 }
 
 /** Il riquadro aperto: montato solo quando si vede, cosi' i nominativi chiusi (centinaia nelle tabelle) non seguono le preferenze LoTW. */
-function TipBox({ call, info, lotwDate, pos }: { call: string; info: CallsignInfo | null | undefined; lotwDate: string | null; pos: { x: number; y: number } }) {
+function TipBox({ call, info, lotwDate, grid, pos }: { call: string; info: CallsignInfo | null | undefined; lotwDate: string | null; grid: string | null; pos: { x: number; y: number } }) {
   const t = useT();
+  const myGrid = useStatusPick(['de_grid'])?.de_grid ?? '';
+  const unit = usePrefs((s) => s.prefs.distanceUnit);
+  // direzione per l'antenna: sempre, con il locatore del messaggio o, se manca, quello della ricerca e il nostro
+  const mine = myGrid ? gridCenter(myGrid) : null;
+  const theirs = grid || info?.person?.grid ? gridCenter((grid || info?.person?.grid) ?? '') : null;
+  const heading = mine && theirs ? { az: Math.round(bearingDeg(mine, theirs)) % 360, km: distanceKm(mine, theirs) } : null;
   const country = info?.dxcc?.country ?? info?.person?.country ?? null;
   const code = flagCode(country);
   const person = info?.person;
@@ -211,6 +220,7 @@ function TipBox({ call, info, lotwDate, pos }: { call: string; info: CallsignInf
           ) : null}
           {fullName ? <span className="calltip-name">{fullName}</span> : null}
           {person?.city ? <span className="calltip-city">{person.city}</span> : null}
+          {heading ? <span className="calltip-bearing data">{t('calltip.bearing', { az: heading.az, dist: formatDistance(heading.km, unit) })}</span> : null}
           {/* LoTW una volta sola: dal servizio (QRZ.com/HamQTH) o, se la stazione non l'ha indicato li', dall'elenco pubblico dell'ARRL */}
           {person || arrlDate ? <QslBadges person={{ ...(person ?? {}), lotw: person?.lotw === true || arrlDate !== null }} long /> : null}
         </>

@@ -624,7 +624,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta)
         const lotw = own ? undefined : lotwMark(d);
         const msgCell = (
-          <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={lotw?.date ?? null}>
+          <CallsignTip call={tapReply ? '' : own ? target : (talker?.call ?? foxCall ?? '')} lotwDate={lotw?.date ?? null} grid={own ? targetGrid : gridOfSender(d.text)}>
             <span className="decode-text">
               {queueMark}
               <span className="data">{highlightCall(d.text, view.highlightDxCall ? (dxCall ?? '') : '', view.highlightDxGrid ? (dxGrid ?? '') : '', answered && talker ? { call: talker.call, title: t('tip.row.answeredCall') } : undefined, own ? '' : (talker?.call ?? ''), lotw)}</span>

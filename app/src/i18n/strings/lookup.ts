@@ -5,6 +5,7 @@ export const lookupStrings = {
   // riquadro al passaggio del mouse sul nominativo
   'calltip.loading': ['ricerca…', 'looking up…', 'suche…', 'recherche…', 'buscando…', 'a procurar…'],
   'calltip.unknown': ['paese non riconosciuto', 'country not recognised', 'Land nicht erkannt', 'pays non reconnu', 'país no reconocido', 'país não reconhecido'],
+  'calltip.bearing': ['Azimut {az}° · {dist}', 'Azimuth {az}° · {dist}', 'Azimut {az}° · {dist}', 'Azimut {az}° · {dist}', 'Acimut {az}° · {dist}', 'Azimute {az}° · {dist}'],
   'calltip.source': ['da {source}', 'from {source}', 'von {source}', 'depuis {source}', 'de {source}', 'de {source}'],
   'calltip.reduced': [
     'dati ridotti: senza abbonamento XML di QRZ',

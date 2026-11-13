@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ getCallsign: vi.fn() }));
 import { getCallsign } from '../api/client';
+var myGrid = '';
+vi.mock('../state/station', () => ({ useStatusPick: () => (myGrid ? { de_grid: myGrid } : null) }));
 import { CallsignTip, TIP_DELAY_MS, callsignCacheSize, clearCallsignCache, knownCallsign, lookupCallsign } from './CallsignTip';
 
 beforeEach(() => {
@@ -104,5 +106,31 @@ describe('callsign cache', () => {
     expect(callsignCacheSize().ready).toBeLessThanOrEqual(3000);
     expect(knownCallsign('K0ABC')).toBeUndefined();
     expect(knownCallsign('K3099ABC')?.call).toBe('K3099ABC');
+  });
+});
+
+describe('CallsignTip bearing', () => {
+  afterEach(() => {
+    myGrid = '';
+  });
+  it('shows azimuth and distance when both locators are known', async () => {
+    myGrid = 'JN55';
+    vi.mocked(getCallsign).mockResolvedValue(info);
+    render(<CallsignTip call="IU3ABC" grid="JN65">IU3ABC</CallsignTip>);
+    fireEvent.mouseEnter(screen.getByText('IU3ABC'));
+    await act(async () => {
+      vi.advanceTimersByTime(TIP_DELAY_MS + 10);
+    });
+    expect(screen.getByTestId('calltip')).toHaveTextContent(/Azimut \d+° · \d+ km/);
+  });
+
+  it('shows no bearing without our own locator', async () => {
+    vi.mocked(getCallsign).mockResolvedValue(info);
+    render(<CallsignTip call="IU3ABC" grid="JN65">IU3ABC</CallsignTip>);
+    fireEvent.mouseEnter(screen.getByText('IU3ABC'));
+    await act(async () => {
+      vi.advanceTimersByTime(TIP_DELAY_MS + 10);
+    });
+    expect(screen.getByTestId('calltip')).not.toHaveTextContent('Azimut');
   });
 });
