@@ -9,6 +9,7 @@ pub mod qpc;
 pub mod ultrafox;
 pub mod ultrafox_rx;
 mod alltxt;
+pub mod cleanup;
 mod known;
 mod mskrt;
 pub use ft8::filters::GridCheck;

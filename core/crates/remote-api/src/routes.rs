@@ -2040,7 +2040,7 @@ fn audio_control(state: &AppState) -> Result<(std::sync::Arc<dyn crate::audio_ap
 }
 
 fn audio_values_json(v: &crate::engine_settings::AudioValues) -> Value {
-    json!({ "input": v.input, "output": v.output, "input_channel": v.input_channel, "output_channel": v.output_channel, "save_dir": v.save_dir, "save_mode": v.save_mode })
+    json!({ "input": v.input, "output": v.output, "input_channel": v.input_channel, "output_channel": v.output_channel, "save_dir": v.save_dir, "save_mode": v.save_mode, "save_keep_days": v.save_keep_days })
 }
 
 /// Gli ingressi e le uscite del sistema (con i canali e il predefinito), quelli in uso adesso e i valori scelti. Le voci con `name` vuoto o
@@ -2071,6 +2071,7 @@ struct AudioSettingsBody {
     output_channel: Option<String>,
     save_dir: Option<String>,
     save_mode: Option<u8>,
+    save_keep_days: Option<u32>,
 }
 
 /// Cambia la scheda Audio: controlla i valori, **apre i dispositivi nuovi e li applica** (l'ingresso a caldo, l'uscita dalla prossima trasmissione)
@@ -2090,6 +2091,7 @@ async fn audio_settings_put(State(state): State<AppState>, _: Authed, Peer(peer)
         ("AudioOutputChannel", body.output_channel),
         ("SaveDir", body.save_dir),
         ("SaveWav", body.save_mode.map(|m| m.to_string())),
+        ("SaveKeepDays", body.save_keep_days.map(|d| d.to_string())),
     ] {
         if let Some(value) = value {
             asked.insert(key.to_string(), value.trim().to_string());
@@ -2103,15 +2105,15 @@ async fn audio_settings_put(State(state): State<AppState>, _: Authed, Peer(peer)
         let mut wanted = store.values();
         wanted.extend(asked);
         let get = |k: &str| wanted.get(k).cloned().unwrap_or_default();
-        let desired = es::AudioValues { input: get("SoundInName"), output: get("SoundOutName"), input_channel: get("AudioInputChannel"), output_channel: get("AudioOutputChannel"), save_dir: get("SaveDir"), save_mode: get("SaveWav") };
+        let desired = es::AudioValues { input: get("SoundInName"), output: get("SoundOutName"), input_channel: get("AudioInputChannel"), output_channel: get("AudioOutputChannel"), save_dir: get("SaveDir"), save_mode: get("SaveWav"), save_keep_days: get("SaveKeepDays") };
         let outcome = control.apply(&desired);
         // si salvano solo le parti riuscite; chi e' fallito resta come nel file
         let mut changes = std::collections::BTreeMap::new();
-        for (part, keys) in [(&outcome.input, a::keys_of_input()), (&outcome.output, a::keys_of_output()), (&outcome.save, a::keys_of_save())] {
+        for (part, keys) in [(&outcome.input, &a::keys_of_input()[..]), (&outcome.output, &a::keys_of_output()[..]), (&outcome.save, &a::keys_of_save()[..])] {
             if part.is_failed() {
                 continue;
             }
-            for key in keys {
+            for &key in keys {
                 let value = get(key);
                 if store.values().get(key).map(String::as_str).unwrap_or("") != value {
                     changes.insert(key.to_string(), value);

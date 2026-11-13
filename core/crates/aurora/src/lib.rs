@@ -3002,6 +3002,8 @@ pub async fn run(
     let audio = match &audio_manager {
         // motore proprio: ingresso, canali e salvataggio vengono dalla scheda Audio e si cambiano a caldo; il decodificatore parte con il primo ingresso aperto
         Some(manager) => {
+            // periodi salvati e ALL.TXT oltre i giorni scelti nella scheda Audio: pulizia all'avvio e una volta al giorno
+            engine_native::cleanup::spawn_daily(manager.save_settings(), config.data_dir.clone());
             manager.set_engine_starter(Box::new(move |save| start_engine(Some(save))));
             manager.open_initial_input();
             // la scheda audio della radio puo' comparire dopo (radio accesa dopo Aurora, cavo USB rimesso): si riprova da soli

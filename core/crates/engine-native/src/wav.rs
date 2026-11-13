@@ -113,11 +113,21 @@ impl SaveMode {
 #[derive(Debug, Default)]
 pub struct SaveSettings {
     state: RwLock<(SaveMode, PathBuf)>,
+    /// «Tieni i file salvati per N giorni» (0 = per sempre): lo legge la pulizia (`cleanup`), non il motore.
+    keep_days: std::sync::atomic::AtomicU32,
 }
 
 impl SaveSettings {
     pub fn new(mode: SaveMode, dir: PathBuf) -> SaveSettings {
-        SaveSettings { state: RwLock::new((mode, dir)) }
+        SaveSettings { state: RwLock::new((mode, dir)), keep_days: std::sync::atomic::AtomicU32::new(crate::cleanup::DEFAULT_KEEP_DAYS) }
+    }
+
+    pub fn keep_days(&self) -> u32 {
+        self.keep_days.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    pub fn set_keep_days(&self, days: u32) {
+        self.keep_days.store(days, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn set(&self, mode: SaveMode, dir: PathBuf) {
