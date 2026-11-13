@@ -397,6 +397,19 @@ impl RigctldClient {
         self.ask(&format!("S {} {tx_vfo}", u8::from(on)), 0).map(|_| ())
     }
 
+    /// Frequenza del VFO di trasmissione in split (`i`): con le radio che non danno `get_vfo_info` (molte Yaesu, per esempio FT-2000) e' la
+    /// via per leggere il VFO B.
+    pub fn split_frequency(&self) -> Result<u64, RigError> {
+        let r = self.ask("i", 1)?;
+        r[0].trim().parse::<f64>().map(|f| f as u64).map_err(|_| RigError(format!("frequenza di split illeggibile: {}", r[0])))
+    }
+
+    /// Modo del VFO di trasmissione in split (`x`).
+    pub fn split_mode(&self) -> Result<String, RigError> {
+        let r = self.ask("x", 2)?;
+        Ok(r[0].clone())
+    }
+
     /// Frequenza del VFO di trasmissione (Hz), per lo split.
     pub fn set_split_frequency(&self, hz: u64) -> Result<(), RigError> {
         self.ask(&format!("I {hz}"), 0).map(|_| ())

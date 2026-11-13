@@ -186,7 +186,14 @@ fn read_item(client: &RigctldClient, item: Item, out: &mut RigExtras) -> Result<
         Item::Xit => out.xit_hz = Some(client.offset(true)?),
         Item::Vfo => out.vfo = Some(client.vfo()?),
         Item::VfoB => {
-            let (hz, mode) = client.vfo_info("VFOB")?;
+            // `get_vfo_info` manca su molte Yaesu (FT-2000): allora la frequenza e il modo del VFO di trasmissione in split
+            let (hz, mode) = match client.vfo_info("VFOB") {
+                Ok(v) => v,
+                Err(e) => match client.split_frequency() {
+                    Ok(hz) if hz > 0 => (hz, client.split_mode().unwrap_or_default()),
+                    _ => return Err(e),
+                },
+            };
             out.vfo_b_hz = Some(hz);
             out.vfo_b_mode = Some(mode).filter(|m| !m.is_empty());
         }
