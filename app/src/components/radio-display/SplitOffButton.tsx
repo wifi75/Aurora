@@ -15,6 +15,8 @@ export function SplitOffButton({ split }: { split: boolean | null | undefined })
   const [busy, setBusy] = useState(false);
   // sempre visibile (il proprietario non lo trovava quando compariva solo in split): spento e grigio con la radio in simplex
   const on = split === true;
+  // radio spenta o che non risponde (split sconosciuto): il pulsante non serve e non compare
+  if (split === null || split === undefined) return null;
   const off = async () => {
     setBusy(true);
     try {

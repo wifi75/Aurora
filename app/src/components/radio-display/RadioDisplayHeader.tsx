@@ -46,12 +46,22 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const meters = useMeterBallistics(raw.meters);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
   const tuning = useTuning();
+  const radioOff = !!cat.data && cat.data.config.backend !== 'none' && cat.data.status.state !== 'connected';
+  // il display «spento» come quello vero: scuro con la radio spenta, si illumina quando la radio risponde (classe sul body, cosi' vale per
+  // ogni stile e anche per il display staccato)
+  useEffect(() => {
+    document.body.classList.toggle('rd-radio-off', radioOff);
+    return () => document.body.classList.remove('rd-radio-off');
+  }, [radioOff]);
   if (pref.hidden) return null;
   // il display sta in una finestra a parte (secondo schermo): qui resta solo un segnaposto vuoto
   if (detached && !solo) return <span className="rd-detached" aria-hidden="true" />;
   // TX acceso anche mentre la radio accorda (TUNE del display) o con la portante di accordo della SDR TCI accesa
   const tciTune = cat.data?.config.backend === 'tci' && cat.data?.status.rig?.extras?.tuner === true;
-  const model = { ...raw, meters, transmitting: raw.transmitting || tuning || tciTune };
+  // radio spenta o che non risponde (CAT non collegato): niente frequenza, S-meter e TX rimasti dall'ultima lettura o presi dall'audio; il
+  // display mostra «radio spenta» (prima restavano la frequenza vecchia e lo S-meter che si muoveva con il rumore: proprietario, 2026-11-13)
+  const live = { ...raw, meters, transmitting: raw.transmitting || tuning || tciTune };
+  const model = radioOff ? { ...live, dialHz: 0, meters: null, transmitting: false } : live;
   // radio mai configurata: un solo riquadro che porta alla configurazione. Radio configurata ma spenta o che non risponde: resta il display,
   // spento, con la scritta «Radio non risponde» (il CAT riprova da solo; il riquadro «configura» qui era fuorviante)
   // «Nessuno (senza CAT)» scelto apposta: il display non ha niente da mostrare (frequenza, S-meter, potenza arrivano dal CAT) e sparisce
@@ -170,8 +180,9 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
   const power = rig?.extras?.power_set;
   return (
     <div className="rd-face-row">
-      <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>
+      {/* «Spegni split» a sinistra del display (richiesta del proprietario) */}
       <SplitOffButton split={rig?.split} />
+      <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>
       {/* la potenza della radio, a passi del 5%: nel pannello disegnato non c'e' posto per i pulsanti */}
       {power != null && style !== 'ft2000' ? (
         <div className="rd-pwr" role="group" aria-label="PWR">
@@ -212,12 +223,12 @@ function ModernHeader({ model, style, solo = false }: { model: DisplayModel; sty
     : <YaesuSquare {...props} />;
   const splitOff = <SplitOffButton split={rig?.split} />;
   // il quasi quadrato va sulla pagina (non dentro la riga dei comandi, che fa da contenitore e lo spostava sotto la testata)
-  if (square && solo) return <div className="rd-square-preview">{view}{splitOff}</div>;
+  if (square && solo) return <div className="rd-square-preview">{splitOff}{view}</div>;
   if (square)
     return createPortal(
       <div className="rd-square-slot rd-detachable">
-        {view}
         {splitOff}
+        {view}
         <span className="rd-detach-corner">
           <DetachButton item="display" className="dock-detach" />
         </span>

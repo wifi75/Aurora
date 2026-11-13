@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Display della radio spento con la radio spenta**: quando la radio non risponde il display diventa scuro come quello vero, senza frequenza, S-meter e TX rimasti dall'ultima lettura o mossi dal rumore dell'audio, e si illumina quando la radio torna; «Spegni split» sta a sinistra del display e non compare con la radio spenta.
 - **«Log QSO» anche per chi ascolta (SWL)**: senza un QSO in corso della sequenza il pulsante apre la finestra di registrazione gia' compilata con la stazione DX (nominativo, locatore, frequenza, modo, ora); prima non salvava nulla ma mostrava lo stesso l'avviso «Log QSO». L'avviso ora dice «QSO con … salvato nel log», in tutte le lingue, e solo quando e' salvato davvero.
 - **Nuovo log vuoto**: in Impostazioni › Log, cluster e servizi › File ADIF il pulsante «Nuovo log vuoto» apre un avviso con il numero di QSO, l'invito a esportare prima l'ADIF e due scelte (Annulla e' quella predefinita): tenere il log attuale, copiato e verificato in `logbook-archivio-AAAAMMGG-HHMMSS.db` accanto al file, oppure cancellarlo con una seconda conferma rossa in cui si scrive la parola. Senza riavvio; mai durante una trasmissione o con Enable Tx acceso; solo dalla rete di casa.
 - **«Accendi» con Cat4OM**: la casella c'e' anche con Cat4OM e all'avvio Aurora chiede a Cat4OM di accendere la radio (prima con Cat4OM la radio si spegneva alla chiusura ma non si accendeva, perche' la porta e' di Cat4OM e Aurora non ci puo' scrivere).
