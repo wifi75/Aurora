@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.251',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T23:07:29Z',
     kind: 'new',
     title: [
       'Club Log con il token',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.251',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T23:07:29Z',
     kind: 'changed',
     title: [
       'HRDLog e automazioni nella tua lingua',

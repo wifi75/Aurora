@@ -2,7 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 sera (0.11.250 pubblicata, sito aggiornato)
+## Stato al 2026-11-14 (0.11.251 pubblicata, sito aggiornato)
+
+- **0.11.251** (2026-11-13T23:07:29Z): Club Log col token personale dell'API REST v1 (`ClublogToken`, `POST /api/v1/qso` con Bearer, prova con `GET /me/usage`; vecchio `realtime.php` se manca il token); messaggi di HRDLOG.NET tradotti; frasi del registro delle decisioni tradotte (continente escluso, Abilita Tx riacceso, stato nuovo); VFO B delle Yaesu senza `get_vfo_info` letto da `get_split_freq` (FT-2000, non provato con la radio); impostazioni allineate a sinistra sotto le etichette; doppione ADIF tolto da Programmi collegati. Compilazione: `tsc --singleThreaded` e `CARGO_BUILD_JOBS=4`, il PC finiva la memoria. Non provato il token con Club Log vero.
+- Da fare: pagina Informazioni (proposte A/B/C in attesa); PowerShell nascosto sostituibile con API di Windows in 4 punti (proposta, non chiesta); risposte a #47, #52, #53 date all'utente.
 
 - **0.11.250** (2026-11-13T19:09:28Z): spot dal cluster telnet a scelta al posto di DXSummit (`dx_cluster::SpotVia`, `send_spot` aspetta la ripetuta `DX de <noi>`), nome di accesso e password per server (password mai rimandata all'interfaccia, `has_password`); azimut e distanza nel riquadro del nominativo; `auto_connect` acceso al primo collegamento (`auto_connect_offered`); stato di Club Log con `code`/`params` tradotti; verifica DXSummit filtrata per DX. Non provato con un cluster vero con password. Bozza di risposta all'issue #47 data all'utente.
 
