@@ -560,6 +560,20 @@ describe('DecodeList a griglia (Finestra RX)', () => {
     expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
     expect(screen.getByText('1500')).toBeInTheDocument();
   });
+
+  it("Attivita' di banda: anche frequenza ed etichetta, e le colonne si riordinano e restano ricordate", () => {
+    render(<DecodeList decodes={[decode({ id: 42 })]} onReply={() => {}} columnsKey={KEY} allColumns />);
+    const heads = () => screen.getAllByRole('columnheader').map((th) => th.dataset.col);
+    expect(heads()).toEqual(['time', 'snr', 'dt', 'freq', 'msg', 'country', 'tag']);
+    expect(screen.getByRole('button', { name: /JA1XYZ/ }).querySelector('[data-dl-col="freq"]')).toHaveTextContent('1500');
+    // Alt+freccia sul titolo sposta la colonna, come trascinarla
+    const freq = screen.getAllByRole('columnheader').find((th) => th.dataset.col === 'freq');
+    if (!freq) throw new Error('manca la colonna Hz');
+    fireEvent.keyDown(freq, { key: 'ArrowRight', altKey: true });
+    expect(heads()).toEqual(['time', 'snr', 'dt', 'msg', 'freq', 'country', 'tag']);
+    expect(cellsOf(screen.getByRole('button', { name: /JA1XYZ/ }))).toEqual(heads());
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').order).toEqual(['time', 'snr', 'dt', 'msg', 'freq', 'country', 'tag']);
+  });
   it('shows every own transmission of the QSO while it is still running (#42)', () => {
     render(
       <DecodeList

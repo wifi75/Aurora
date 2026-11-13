@@ -112,3 +112,25 @@
   margin: 0 !important;
   flex: 0 0 auto;
 }
+
+/* Attivita' di banda a griglia: le linee le danno le celle, non le vecchie righe del pannello (bordi di paese ed etichetta, che le
+   raddoppiavano); frequenza, distanza ed etichetta restano nelle loro colonne anche nel pannello stretto */
+.decode-list.decode-list--cols .dl-cell > .decode-where,
+.decode-list.decode-list--cols .dl-cell > .badge-cell {
+  border: 0 !important;
+}
+
+.decode-list.decode-list--cols .dl-cell > .c-freq {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left;
+}
+
+.decode-list.decode-list--cols .decode-row .dl-cell .decode-where .w-km:not(:empty) {
+  display: inline !important;
+}
+
+.decode-list.decode-list--cols .dl-cell--tag {
+  justify-content: center;
+}

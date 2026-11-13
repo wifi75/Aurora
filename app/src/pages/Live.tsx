@@ -78,6 +78,8 @@ function withOwnTx(shown: DecodedMessage[], txLog: DecodedMessage[]): DecodedMes
 const LOG_TAB_KEY = 'aurora-log-linguetta';
 /** Ordine e larghezze delle colonne della Finestra RX (titoli che si trascinano, come nel DX Cluster). */
 const RXW_COLS_KEY = 'aurora.rxw.cols';
+/** Ordine e larghezze delle colonne di Attivita' di banda, con la sua chiave. */
+const BAND_COLS_KEY = 'aurora.band.cols';
 
 /** Il messaggio contiene il nominativo della stazione con cui si sta facendo il QSO: con la finestra RX aperta lo si vede lì e si toglie da Attività di banda. */
 function fromDx(text: string, dx: string | null | undefined): boolean {
@@ -325,7 +327,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
         const rxShown = rxOn && !soloPanel && prefs.rxExclusive;
-        const list = <DecodeList decodes={afterMark(rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog), bandMark)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} />;
+        const list = <DecodeList decodes={afterMark(rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog), bandMark)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} columnsKey={BAND_COLS_KEY} allColumns />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }

@@ -211,6 +211,8 @@ export const stationStrings = {
   'rxw.col.age': ['Età', 'Age', 'Alter', 'Âge', 'Edad', 'Idade'],
   'rxw.col.msg': ['Messaggio', 'Message', 'Nachricht', 'Message', 'Mensaje', 'Mensagem'],
   'rxw.col.country': ['Paese', 'Country', 'Land', 'Pays', 'País', 'País'],
+  'rxw.col.tag': ['Etichetta', 'Tag', 'Kennung', 'Étiquette', 'Etiqueta', 'Etiqueta'],
+  'rxw.col.tagTip': ['Novità della stazione (paese, zona, griglia nuovi…), posto in coda o FOX.', 'What is new about the station (new country, zone, grid…), queue position or FOX.', 'Was an der Station neu ist (neues Land, Zone, Locator…), Platz in der Warteschlange oder FOX.', 'Ce qui est nouveau pour la station (pays, zone, locator nouveaux…), place dans la file ou FOX.', 'Lo que es nuevo de la estación (país, zona, cuadrícula nuevos…), puesto en la cola o FOX.', 'O que é novo da estação (país, zona, grelha novos…), lugar na fila ou FOX.'],
   'rxw.col.dtTip': ['Scarto di tempo del segnale, in secondi, rispetto al tuo orologio.', 'Time offset of the signal, in seconds, against your clock.', 'Zeitversatz des Signals in Sekunden gegenüber deiner Uhr.', 'Décalage temporel du signal, en secondes, par rapport à ton horloge.', 'Desfase de tiempo de la señal, en segundos, respecto a tu reloj.', 'Desvio de tempo do sinal, em segundos, em relação ao teu relógio.'],
   'tip.rxw.toggle': [
     'Finestra RX: chi trasmette dove sta la barretta Rx della cascata (±50 Hz), i messaggi diretti a te e le tue trasmissioni. Metti la barretta Rx sul DX per seguire solo il suo QSO.',

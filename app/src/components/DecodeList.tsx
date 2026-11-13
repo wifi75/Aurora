@@ -193,16 +193,18 @@ interface Props {
    * DX Cluster; ordine e larghezze restano sotto questa chiave. Senza, l'elenco di sempre (le etichette e la frequenza ci sono solo li').
    */
   columnsKey?: string;
+  /** A griglia anche le colonne della frequenza audio e dell'etichetta (novita', in coda, FOX): Attivita' di banda. */
+  allColumns?: boolean;
 }
 
 /** Le colonne dell'elenco a griglia (Finestra RX), nell'ordine di partenza. */
-export const DECODE_COLUMNS = ['time', 'snr', 'dt', 'msg', 'country'] as const;
+export const DECODE_COLUMNS = ['time', 'snr', 'dt', 'freq', 'msg', 'country', 'tag'] as const;
 export type DecodeCol = (typeof DECODE_COLUMNS)[number];
 /**
  * Larghezze di partenza in em. Il messaggio prende lo spazio che avanza (14,5 em e' il suo minimo): i messaggi Fox/Hound lunghi
  * («A RR73; B <FOX> -08») non si tagliano piu' lasciando spazio vuoto nel paese; il paese ha posto per bandierina, nome e distanza.
  */
-const DECODE_EM: Record<DecodeCol, number> = { time: 5.8, snr: 3, dt: 3, msg: 14.5, country: 11 };
+const DECODE_EM: Record<DecodeCol, number> = { time: 5.8, snr: 3, dt: 3, freq: 3.6, msg: 14.5, country: 11, tag: 6.5 };
 
 /** Righe disegnate al primo colpo; le altre al giro dopo. */
 const FIRST_ROWS = 40;
@@ -247,7 +249,7 @@ function AgeCell({ time, shownAt }: { time: number; shownAt: number }) {
     </span>
   );
 }
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey }: Props) {
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey, allColumns = false }: Props) {
   const [firstPaint, setFirstPaint] = useState(true);
   useEffect(() => {
     const id = window.setTimeout(() => setFirstPaint(false), 60);
@@ -268,7 +270,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     columns: DECODE_COLUMNS,
     defaultEm: DECODE_EM,
     elastic: 'msg',
-    hidden: showDt ? undefined : ['dt'],
+    // la Finestra RX non ha frequenza ne' etichetta; DT solo se acceso nelle Impostazioni
+    hidden: [...(showDt ? [] : (['dt'] as DecodeCol[])), ...(allColumns ? [] : (['freq', 'tag'] as DecodeCol[]))],
     // per adattare la colonna si misurano il suo titolo e le sue celle in tutte le righe
     fitCells: (col) => (listEl ? listEl.querySelectorAll(`.dl-head th[data-col="${col}"], [data-dl-col="${col}"]`) : []),
   });
@@ -518,6 +521,10 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         return { label: 'dB', tip: t('tip.ui.colSnr') };
       case 'dt':
         return { label: 'DT', tip: t('rxw.col.dtTip') };
+      case 'freq':
+        return { label: 'Hz', tip: t('tip.ui.colFreq') };
+      case 'tag':
+        return { label: t('rxw.col.tag'), tip: t('rxw.col.tagTip') };
       case 'msg':
         return { label: t('rxw.col.msg'), tip: t('tip.ui.colText') };
       case 'country':
@@ -612,6 +619,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // le celle della riga: nell'elenco di sempre una dopo l'altra, a griglia nell'ordine delle colonne scelto
         const timeCell = prefs.showAge ? <AgeCell time={d.time_ms} shownAt={d.time_ms + periodSecs(mode) * 1000} /> : <span className="c-time num muted">{formatClock(d.time_ms)}</span>;
         const snrCell = <span className="c-snr num">{own ? 'Tx' : d.snr}</span>;
+        const freqCell = <span className="c-freq num muted">{d.freq_hz}</span>;
         const dtCell = <span className="c-dt num muted">{own ? '' : d.delta_time.toFixed(1)}</span>;
         // passando col mouse sul messaggio: il riquadro con le informazioni della stazione (paese, nome, citta', LoTW/eQSL/diretta)
         const lotw = own ? undefined : lotwMark(d);
@@ -704,7 +712,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
               // a griglia: ogni cella sa a quale colonna appartiene, le colonne cambiano posto e le celle le seguono
               cols.visible.map((c, i) => (
                 <span key={c} className={`dl-cell dl-cell--${c}${i === cols.visible.length - 1 ? ' dl-cell--last' : ''}`} data-dl-col={c}>
-                  {c === 'time' ? timeCell : c === 'snr' ? snrCell : c === 'dt' ? dtCell : c === 'msg' ? msgCell : whereCell}
+                  {c === 'time' ? timeCell : c === 'snr' ? snrCell : c === 'dt' ? dtCell : c === 'freq' ? freqCell : c === 'msg' ? msgCell : c === 'tag' ? badgeCell : whereCell}
                 </span>
               ))
             ) : (
@@ -712,7 +720,7 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
                 {timeCell}
                 {snrCell}
                 {prefs.showDt ? dtCell : null}
-                <span className="c-freq num muted">{d.freq_hz}</span>
+                {freqCell}
                 {msgCell}
                 {whereCell}
                 {badgeCell}
