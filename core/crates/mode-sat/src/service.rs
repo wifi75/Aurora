@@ -1,6 +1,10 @@
 //! Il servizio dei satelliti: tiene i TLE, calcola ogni secondo dove sta il satellite scelto e, se acceso, **corregge il Doppler sulla radio**
 //! (ricezione e trasmissione, anche con il transponder invertente) e **fa seguire il satellite al rotore** in azimut ed elevazione.
 //! Impostazioni in `satelliti.json`; i satelliti dell'utente in `satelliti-utente.json`; le mappe nella cartella `maps`.
+//!
+//! Solo quando servono: il calcolo di ogni secondo e lo scaricamento automatico dei dati delle orbite girano mentre una pagina dei
+//! satelliti e' aperta (ogni sua lettura e' un battito, [`SatService::touch`]) oppure mentre il Doppler o il rotore sono accesi (lavorano
+//! sulla radio e sul rotore anche a pagina chiusa). Altrimenti, lavorando in FT8, il servizio dorme.
 
 use std::{
     path::PathBuf,
@@ -163,6 +167,18 @@ struct Inner {
     rotor: Mutex<Option<Arc<dyn SatRotator>>>,
     observer: Arc<dyn Fn() -> Option<Observer> + Send + Sync>,
     stop: AtomicBool,
+    /// L'ultima lettura di una pagina dei satelliti (`None`: mai aperta da quando Aurora e' partita).
+    seen: Mutex<Option<Instant>>,
+}
+
+/// Dopo tanto tempo senza letture la pagina dei satelliti si considera chiusa (la pagina legge una volta al secondo).
+const PAGE_GONE: Duration = Duration::from_secs(30);
+
+/// Il servizio lavora: pagina aperta di recente, oppure Doppler o rotore accesi.
+fn in_use(inner: &Inner) -> bool {
+    let page = lock(&inner.seen).is_some_and(|t| t.elapsed() < PAGE_GONE);
+    let s = lock(&inner.settings);
+    page || s.doppler_on || s.rotor_on
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -195,18 +211,25 @@ impl SatService {
             rotor: Mutex::new(None),
             observer,
             stop: AtomicBool::new(false),
+            seen: Mutex::new(None),
         });
         load_sats(&inner);
         let worker = Arc::clone(&inner);
         if let Err(e) = std::thread::Builder::new().name("aurora-sat".into()).spawn(move || tracking_loop(&worker)) {
             tracing::error!("satelliti: ciclo di tracking non avviato: {e}");
         }
-        let svc = SatService { inner };
-        // dati vecchi o assenti: si scaricano da soli, senza bloccare l'avvio
-        if tle_stale(&svc.inner) {
-            svc.refresh_tle_background();
-        }
-        svc
+        // i dati vecchi o assenti non si scaricano piu' all'avvio: li scarica il ciclo appena una pagina dei satelliti li chiede
+        SatService { inner }
+    }
+
+    /// Una pagina dei satelliti sta guardando (ogni sua lettura): il calcolo di ogni secondo e lo scaricamento automatico ripartono.
+    pub fn touch(&self) {
+        *lock(&self.inner.seen) = Some(Instant::now());
+    }
+
+    /// Il servizio sta lavorando (pagina aperta, Doppler o rotore accesi).
+    pub fn in_use(&self) -> bool {
+        in_use(&self.inner)
     }
 
     pub fn set_radio(&self, radio: Arc<dyn SatRadio>) {
@@ -236,15 +259,6 @@ impl SatService {
     /// Scarica i TLE da CelesTrak (bloccante). Restituisce quanti satelliti ci sono adesso.
     pub fn refresh_tle(&self) -> Result<usize, String> {
         refresh(&self.inner)
-    }
-
-    fn refresh_tle_background(&self) {
-        let inner = Arc::clone(&self.inner);
-        let _ = std::thread::Builder::new().name("aurora-sat-tle".into()).spawn(move || {
-            if let Err(e) = refresh(&inner) {
-                tracing::warn!("satelliti: TLE non scaricati: {e}");
-            }
-        });
     }
 
     pub fn catalog(&self) -> Vec<SatInfo> {
@@ -484,15 +498,25 @@ fn tracking_loop(inner: &Arc<Inner>) {
     let mut st = LoopState::default();
     let mut ticks: u64 = 0;
     let mut last_try = 0.0_f64;
+    let mut was_in_use = false;
     while !inner.stop.load(Ordering::SeqCst) {
         let started = Instant::now();
-        tick(inner, &mut st);
-        // ogni minuto si guarda se e' ora di aggiornare i dati delle orbite; dopo un tentativo non si riprova prima di mezz'ora
-        ticks += 1;
-        if ticks.is_multiple_of(60) && now_unix() - last_try > 1800.0 && !inner.fetching.load(Ordering::SeqCst) && tle_stale(inner) {
+        // pagina chiusa e Doppler e rotore spenti: niente calcoli e niente scaricamenti (si riguarda una volta al secondo)
+        let using = in_use(inner);
+        if using {
+            tick(inner, &mut st);
+            ticks += 1;
+        }
+        // appena il servizio riparte e poi ogni minuto si guarda se e' ora di aggiornare i dati delle orbite; dopo un tentativo non si
+        // riprova prima di mezz'ora
+        let check = using && (!was_in_use || ticks.is_multiple_of(60));
+        was_in_use = using;
+        if check && now_unix() - last_try > 1800.0 && !inner.fetching.load(Ordering::SeqCst) && tle_stale(inner) {
             last_try = now_unix();
             let worker = Arc::clone(inner);
             let _ = std::thread::Builder::new().name("aurora-sat-tle".into()).spawn(move || {
+                // PC lento: lo scaricamento e la lettura dei dati aspettano la fine della decodifica (al massimo 30 s)
+                aurora_core::idle::wait_free_blocking(aurora_core::idle::MAX_WAIT);
                 if let Err(e) = refresh(&worker) {
                     tracing::warn!("satelliti: aggiornamento automatico dei dati delle orbite non riuscito: {e}");
                 }
