@@ -180,7 +180,16 @@ pub fn check(path: &Path) -> Result<u64, String> {
     // la stessa forma che leggono `read_all` e `read_recent`
     conn.query_row("SELECT COUNT(*) FROM Log WHERE callsign IS NOT NULL OR qsodate IS NOT NULL OR band IS NOT NULL", [], |r| r.get::<_, i64>(0))
         .map(|n| n.max(0) as u64)
-        .map_err(|_| "non sembra un database di Log4OM2 (manca la tabella dei QSO)".to_string())
+        // il motivo vero nel messaggio: «manca la tabella» solo quando manca davvero; un file occupato o illeggibile lo dice (issue #51:
+        // con «Scegli» il messaggio era sempre «manca la tabella dei QSO» e non si capiva perche')
+        .map_err(|e| {
+            let why = e.to_string();
+            if why.contains("no such table") || why.contains("no such column") {
+                format!("non sembra un database di Log4OM2 (manca la tabella dei QSO): {}", path.display())
+            } else {
+                format!("database di Log4OM non leggibile ({why}): {}", path.display())
+            }
+        })
 }
 
 /// Le colonne di Log4OM2 che dicono se il QSO e' confermato (QSL cartacea, LoTW, eQSL): quelle che il file ha davvero.
