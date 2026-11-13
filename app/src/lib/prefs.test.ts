@@ -11,7 +11,7 @@ describe('display preferences', () => {
   beforeEach(() => localStorage.clear());
 
   it('start in kilometres with country, flag, distance and DT shown', () => {
-    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, cmdTune: false, cmdLogQso: false, supportEmail: '', sstvSmooth: false });
+    expect(defaultPrefs()).toEqual({ distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, cmdTune: true, cmdLogQso: true, supportEmail: '', sstvSmooth: false });
     expect(readPrefs(memory())).toEqual(defaultPrefs());
     expect(readPrefs(null)).toEqual(defaultPrefs());
   });

@@ -56,7 +56,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: true, cmdLogQso: true, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -68,6 +68,12 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
     for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
+    }
+    // «Tune» e «Log QSO» nei Comandi: prima erano nascosti di base e nessuno li trovava (proprietario, 2026-11-13). Le preferenze salvate
+    // prima di questa versione li avevano spenti senza che l'utente l'avesse scelto: si riaccendono una volta, poi vale la scelta
+    if (parsed.cmdShown !== true) {
+      prefs.cmdTune = true;
+      prefs.cmdLogQso = true;
     }
     if (parsed.gapStyle === 'bold' || parsed.gapStyle === 'thin') prefs.gapStyle = parsed.gapStyle;
     if (parsed.contestOrder === 'valore' || parsed.contestOrder === 'ora') prefs.contestOrder = parsed.contestOrder;
@@ -82,7 +88,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
 
 export function savePrefs(storage: WritableStorage, prefs: Prefs): void {
   try {
-    storage?.setItem(KEY, JSON.stringify(prefs));
+    storage?.setItem(KEY, JSON.stringify({ ...prefs, cmdShown: true }));
   } catch {
     // senza archivio le preferenze non vengono ricordate, ma l'interfaccia funziona lo stesso
   }
