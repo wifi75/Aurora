@@ -4348,6 +4348,7 @@ digi.spot.splitUp,Split: transmitting {khz} kHz up (the spot comment says “up�
 digi.spot.splitFar,"The spot says “up {khz}”: that is beyond the 3.5 kHz of audio, so transmission stays here. The radio split is needed: DX split does it (Settings › Log, cluster and services › DX Cluster), with the CAT of a radio that supports split.","De spot zegt “up {khz}”: dat is meer dan de 3,5 kHz audio, dus de uitzending blijft hier. De split van de radio is nodig: DX-split doet dat (Instellingen › Log, cluster en diensten › DX Cluster), met de CAT van een radio die split kan."
 digi.mi.echoRx,Sent text also in the receive window,Verzonden tekst ook in het ontvangstvenster
 digi.tx.sentTitle,Text already sent,Al verzonden tekst
+digi.winw.tip,Drag to change the width of the receive and transmit windows (log and DX Cluster stay where they are); double-click to go back to full width,Sleep om de breedte van het ontvangst- en zendvenster te wijzigen (log en DX Cluster blijven waar ze zijn); dubbelklik om terug te gaan naar volle breedte
 digi.mi.underlineSent,Underline sent text,Verzonden tekst onderstrepen
 digi.mi.capsOnly,Capitals only,Alleen hoofdletters
 digi.mi.slashedZero,Slashed zero,Doorgestreepte nul

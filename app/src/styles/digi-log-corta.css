@@ -315,3 +315,10 @@ html[data-theme='light'] .digi-log-grip::before { background-color: #5a4bd6; box
 .digi-rightcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
 .digi-rightcol > :last-child { flex: 1 1 0; min-height: 0; }
 .digi-main--nolog .digi-rightcol:empty { display: none; }
+
+/* Maniglia sul bordo destro delle finestre RX e TX: ne cambia la larghezza senza toccare log e DX Cluster */
+.digi-windows { position: relative; }
+.digi-wingrip { position: absolute; top: 0; bottom: 0; right: -6px; width: 12px; z-index: 3; cursor: col-resize; touch-action: none; }
+.digi-wingrip::before { content: ''; position: absolute; top: 50%; left: 3px; width: 6px; height: 90px; margin-top: -45px; border-radius: 3px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.digi-wingrip:hover::before, .digi-wingrip:active::before { background: #38bdf8; opacity: 1; }
+html[data-theme='light'] .digi-wingrip::before { background: #4a5a8a; }

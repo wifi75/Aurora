@@ -1521,6 +1521,7 @@ export const NL_UI: Record<string, string> = {
   "digi.wf.resize": "Sleep om de hoogte van de waterval te wijzigen",
   "digi.wf.rxTip": "Ontvangen: de twee blauwe driehoeken zijn de tonen (mark en space bij RTTY). Met split blijven ze staan.",
   "digi.wf.txTip": "Zenden (split): een klik op de waterval verplaatst hem; met Ctrl verplaatst in plaats daarvan de ontvangst.",
+  "digi.winw.tip": "Sleep om de breedte van het ontvangst- en zendvenster te wijzigen (log en DX Cluster blijven waar ze zijn); dubbelklik om terug te gaan naar volle breedte",
   "digi.word.call": "Roepnaam",
   "digi.word.copy": "Kopiëren",
   "digi.word.grid": "Locator",

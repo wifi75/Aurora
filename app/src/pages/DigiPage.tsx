@@ -260,6 +260,44 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
   };
   const windowsRef = useRef<HTMLDivElement>(null);
+  // larghezza delle finestre RX e TX scelta con la maniglia sul loro bordo destro (null = tutta la colonna): log e DX Cluster restano fermi
+  // dove sono, lo spazio che si libera resta vuoto (richiesta del proprietario, per esempio per tenere accanto la scheda del rotore)
+  const [winW, setWinW] = useState<number | null>(() => {
+    const n = Number(browserStorage()?.getItem('aurora.digi.winw') ?? '');
+    return Number.isFinite(n) && n >= 240 ? n : null;
+  });
+  const dragWinW = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const box = windowsRef.current?.getBoundingClientRect();
+    const col = windowsRef.current?.parentElement?.getBoundingClientRect();
+    if (!box || !col) return;
+    let last: number | null = null;
+    const move = (m: PointerEvent) => {
+      last = Math.round(Math.min(col.width, Math.max(240, m.clientX - box.left)));
+      setWinW(last >= col.width - 4 ? null : last);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      try {
+        if (last === null) return;
+        if (last >= col.width - 4) browserStorage()?.removeItem('aurora.digi.winw');
+        else browserStorage()?.setItem('aurora.digi.winw', String(last));
+      } catch {
+        // la larghezza vale comunque finche' la pagina e' aperta
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  const resetWinW = () => {
+    setWinW(null);
+    try {
+      browserStorage()?.removeItem('aurora.digi.winw');
+    } catch {
+      // niente da togliere
+    }
+  };
   const [rxFrac, setRxFrac] = useState<number>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.rxfrac') ?? '');
     return Number.isFinite(n) && n >= 0.1 && n <= 0.9 ? n : 0.55;
@@ -1018,7 +1056,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-leftcol">
-        <div className="digi-windows" ref={windowsRef}>
+        <div className="digi-windows" ref={windowsRef} style={winW !== null ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
+          <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
             onContextMenu={(e) => {
               // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
