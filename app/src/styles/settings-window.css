@@ -475,3 +475,14 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 html[data-theme='light'] .sw-fam{color:#111827;background:#eef1f6;border-color:#cfd6e2;border-left-color:var(--fam,#4a5a78)}
 html[data-theme='light'] .sw-fam-wrap.sw-open>.sw-fam{background:color-mix(in srgb,var(--fam) 20%,#ffffff)}
 html[data-theme='light'] .sw-l2,html[data-theme='light'] .sw-l3{color:#1f2937}
+
+/* Sottovoci a «linea guida» (scelta del proprietario): rientrate con una linea verticale del colore della famiglia, come un albero, ogni voce
+   con un fondo leggero; la selezionata tinta del suo colore con testo bianco in grassetto */
+.sw-sub { position: relative; gap: 4px; margin: 2px 0 6px 14px; padding-left: 10px; border-left: 2px solid var(--fam, #4a5a78); }
+.sw-l2 { min-height: 34px; padding: 7px 12px; font-size: 14px; color: #dbe4f3; background: #151a24; border-radius: 7px; }
+.sw-l3 { padding: 6px 12px 6px 22px; font-size: 13.5px; color: #c9d4e6; background: #12161f; border-radius: 7px; }
+.sw-l2:hover, .sw-l3:hover { background: color-mix(in srgb, var(--fam, #8e7bff) 14%, #151a24); color: #ffffff; }
+.sw-l2.sw-on, .sw-l3.sw-on { background: color-mix(in srgb, var(--fam) 25%, #151a24); color: #ffffff; font-weight: 700; box-shadow: none; }
+html[data-theme='light'] .sw-l2 { background: #f1f4f9; color: #1f2937; }
+html[data-theme='light'] .sw-l3 { background: #f6f8fb; color: #1f2937; }
+html[data-theme='light'] .sw-l2.sw-on, html[data-theme='light'] .sw-l3.sw-on { background: color-mix(in srgb, var(--fam) 22%, #ffffff); color: #111827; }
