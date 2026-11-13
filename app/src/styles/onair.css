@@ -7785,3 +7785,10 @@ html[data-theme='light'] .hl-tip, html[data-theme='light'] .hl-dialog { box-shad
 .hl-btn:hover { background: #e5e7eb; }
 .hl-btn--primary { background: #16a34a; border-color: #15803d; color: #ffffff; }
 .hl-btn--primary:hover { background: #15803d; }
+
+/* Comandi: i pulsanti sotto le frequenze vanno a capo invece di essere tagliati quando il pannello e' stretto; lo stesso per il gruppo
+   Tx/Rx Split · Log QSO · Canc DX che sta dentro la riga */
+.tx-commands .cmd-buttons { display: flex; flex-wrap: wrap; gap: 6px; overflow: visible; }
+.tx-commands .cmd-buttons > *, .tx-commands .cmd-buttons .tx-quick > * { flex: none; white-space: nowrap; }
+.tx-commands .cmd-buttons .tx-quick { display: contents; }
+.tx-commands .tx-main { overflow: visible; min-width: 0; }
