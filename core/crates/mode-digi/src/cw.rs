@@ -339,6 +339,8 @@ pub struct CwDemodulator {
     step: f64,
     phase: f64,
     fir: Vec<f32>,
+    /// La banda base a 12 kHz per i filtri, ad anello lungo quanto il filtro e scritto due volte di fila (al posto `pos` e `pos + len`):
+    /// ogni finestra dei filtri e' una fetta contigua, senza un resto di divisione per coefficiente. Lo stesso per `kept` e `agc_gain`.
     ring: Vec<(f32, f32)>,
     pos: usize,
     count: usize,
@@ -541,10 +543,10 @@ impl CwDemodulator {
         self.fs = f64::from(RATE) / self.decim as f64;
         let len = fir_len(bw);
         self.fir = lowpass(len, f64::from(bw) / 2.0 / f64::from(RATE));
-        self.ring = vec![(0.0, 0.0); len];
-        self.kept = vec![1.0; len];
+        self.ring = vec![(0.0, 0.0); 2 * len];
+        self.kept = vec![1.0; 2 * len];
         self.since_blank = usize::MAX;
-        self.agc_gain = vec![1.0; len];
+        self.agc_gain = vec![1.0; 2 * len];
         self.since_agc = usize::MAX;
         self.pos = 0;
         if unit_s > 0.0 {
@@ -714,7 +716,7 @@ impl CwDemodulator {
         let mut out = Vec::new();
         self.confidences.clear();
         let bayes = self.bayes_active();
-        let len = self.ring.len();
+        let len = self.fir.len();
         for &s in audio {
             let (s, blanked) = match self.blanker.as_mut() {
                 Some(nb) => nb.process_marked(s),
@@ -750,27 +752,30 @@ impl CwDemodulator {
                 }
                 None => (z, blanked, 1.0),
             };
-            self.kept[self.pos] = if blanked { 0.0 } else { 1.0 };
+            let kept = if blanked { 0.0 } else { 1.0 };
+            self.kept[self.pos] = kept;
+            self.kept[self.pos + len] = kept;
             self.since_blank = if blanked { 0 } else { self.since_blank.saturating_add(1) };
             self.agc_gain[self.pos] = g;
+            self.agc_gain[self.pos + len] = g;
             self.since_agc = if g == 1.0 { self.since_agc.saturating_add(1) } else { 0 };
             self.ring[self.pos] = z;
+            self.ring[self.pos + len] = z;
             self.pos = (self.pos + 1) % len;
             self.count += 1;
             if self.count < self.decim {
                 continue;
             }
             self.count = 0;
+            // le finestre dei filtri finiscono tutte all'ultimo campione scritto (`pos + len - 1` nell'anello doppio)
             let (mut zi, mut zq) = (0.0_f32, 0.0_f32);
-            for (k, &c) in self.fir.iter().enumerate() {
-                let (i, q) = self.ring[(self.pos + k) % len];
+            for (&c, &(i, q)) in self.fir.iter().zip(&self.ring[self.pos..self.pos + len]) {
                 zi += c * i;
                 zq += c * q;
             }
             let (mut wi, mut wq) = (0.0_f32, 0.0_f32);
             let first = self.pos + len - self.wide_fir.len();
-            for (k, &c) in self.wide_fir.iter().enumerate() {
-                let (i, q) = self.ring[(first + k) % len];
+            for (&c, &(i, q)) in self.wide_fir.iter().zip(&self.ring[first..self.pos + len]) {
                 wi += c * i;
                 wq += c * q;
             }
@@ -781,8 +786,7 @@ impl CwDemodulator {
             if bayes && !self.bayes_fir.is_empty() {
                 (bi, bq) = (0.0, 0.0);
                 let first = self.pos + len - self.bayes_fir.len();
-                for (k, &c) in self.bayes_fir.iter().enumerate() {
-                    let (i, q) = self.ring[(first + k) % len];
+                for (&c, &(i, q)) in self.bayes_fir.iter().zip(&self.ring[first..self.pos + len]) {
                     bi += c * i;
                     bq += c * q;
                 }
@@ -798,8 +802,7 @@ impl CwDemodulator {
                 if self.since_blank < taps.len() {
                     let first = self.pos + len - taps.len();
                     (gain, var) = (0.0, 0.0);
-                    for (k, &c) in taps.iter().enumerate() {
-                        let m = self.kept[(first + k) % len];
+                    for (&c, &m) in taps.iter().zip(&self.kept[first..self.pos + len]) {
                         gain += c * m;
                         var += c * c * m;
                     }
@@ -809,9 +812,8 @@ impl CwDemodulator {
                 if self.since_agc < taps.len() {
                     let first = self.pos + len - taps.len();
                     let mut a = 0.0;
-                    for (k, &c) in taps.iter().enumerate() {
-                        let i = (first + k) % len;
-                        a += c * self.kept[i] * self.agc_gain[i];
+                    for ((&c, &m), &g) in taps.iter().zip(&self.kept[first..self.pos + len]).zip(&self.agc_gain[first..self.pos + len]) {
+                        a += c * m * g;
                     }
                     alt = Some(a);
                 }
