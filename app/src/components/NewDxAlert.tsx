@@ -12,8 +12,8 @@ import { useStation } from '../state/station';
 
 /** Dopo quanto senza riceverla di nuovo la stazione esce dall'avviso. */
 const KEEP_MS = 10 * 60_000;
-/** Quante stazioni al massimo nell'avviso. */
-const MAX = 4;
+/** Quante stazioni al massimo nell'avviso: con un log nuovo quasi tutto e' «nuovo» e quattro schede coprivano mezza pagina. */
+const MAX = 2;
 
 /** L'ora UTC del giorno (hh:mm:ss) di una decodifica. */
 /** Le stazioni gia' mostrate e quelle chiuse: restano finche' Aurora e' aperto, anche cambiando pagina. */
@@ -123,6 +123,10 @@ export function NewDxAlert({ onReply }: { onReply(decodeId: number): void }) {
           </div>
         );
       })}
+      {/* spegnerli da qui, senza cercare la casella nelle Impostazioni (domanda di un utente, 2026-11-13) */}
+      <button type="button" className="newdx-off" title={t('newdx.offTip')} onClick={() => useNotifyView.getState().set({ popNew: false, popNewBand: false })}>
+        {t('newdx.off')}
+      </button>
     </div>,
     document.body,
   );

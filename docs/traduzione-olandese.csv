@@ -2427,7 +2427,7 @@ aud.inch,Input channel,Ingangskanaal
 aud.outch,Output channel,Uitgangskanaal
 aud.dir,Audio files folder,Map met audiobestanden
 aud.keep,Keep saved files (days),Opgeslagen bestanden bewaren (dagen)
-tip.aud.keep,How many days Aurora keeps the period audio files (yymmdd_hhmmss.wav in the folder above) and ALL.TXT: older ones are removed at startup and once a day. ALL.TXT over 50 MB is renamed to ALL-<date>.TXT. Other files are never touched. 0 = forever. Default 7.,"Hoeveel dagen Aurora de audiobestanden van de perioden (jjmmdd_uummss.wav in de map hierboven) en ALL.TXT bewaart: oudere worden bij het starten en één keer per dag verwijderd. ALL.TXT groter dan 50 MB krijgt de naam ALL-<datum>.TXT. Andere bestanden worden nooit aangeraakt. 0 = voor altijd. Standaard 7."
+tip.aud.keep,How many days Aurora keeps the period audio files (yymmdd_hhmmss.wav in the folder above) and ALL.TXT: older ones are removed at startup and once a day. ALL.TXT over 50 MB is renamed to ALL-<date>.TXT. Other files are never touched. 0 = forever. Default 7.,Hoeveel dagen Aurora de audiobestanden van de perioden (jjmmdd_uummss.wav in de map hierboven) en ALL.TXT bewaart: oudere worden bij het starten en één keer per dag verwijderd. ALL.TXT groter dan 50 MB krijgt de naam ALL-<datum>.TXT. Andere bestanden worden nooit aangeraakt. 0 = voor altijd. Standaard 7.
 aud.mode,Saving audio files,Audiobestanden opslaan
 tip.aud.input,"The device that feeds the waterfall, the decoder and the input level. “System default” follows the one chosen in Windows.","Het apparaat dat de waterval, de decoder en het ingangsniveau voedt. “Systeemstandaard” volgt het apparaat dat in Windows is gekozen."
 tip.aud.output,The device the transmit audio goes out on (the radio’s sound card). A change takes effect from the next transmission: the one in progress is not cut.,Het apparaat waarop de zendaudio uitgaat (de geluidskaart van de radio). Een wijziging gaat in vanaf de volgende zending: de lopende wordt niet afgebroken.
@@ -2571,6 +2571,8 @@ snd.ev.new_dx_popup,Highlighted alert: new DXCC,Opvallende melding: nieuw DXCC
 newdx.dxcc,New DXCC,Nieuw DXCC
 newdx.band,New DXCC on the band,Nieuw DXCC op de band
 newdx.last,last heard,laatst gehoord
+newdx.off,Turn these alerts off,"Deze meldingen uitzetten"
+newdx.offTip,No more cards for new DXCCs. New countries stay colored in Band activity; turn the cards back on in Settings › Look and alerts › Alerts and sounds.,"Geen kaarten meer voor nieuwe DXCC’s. Nieuwe landen blijven gekleurd in Bandactiviteit; weer aanzetten via Instellingen › Uiterlijk en meldingen › Meldingen en geluiden."
 newdx.close,Close this alert,Deze melding sluiten
 newdx.tip,Double click: answer this station. The time updates at each of its transmissions; the alert goes away 10 minutes after the last reception. Set it in Settings › Look and alerts › Alerts and sounds.,Dubbelklik: dit station beantwoorden. De tijd wordt bij elke zending van het station bijgewerkt; de melding verdwijnt 10 minuten na de laatste ontvangst. Instellen in Instellingen › Uiterlijk en meldingen › Meldingen en geluiden.
 snd.myFiles,My files,Mijn bestanden

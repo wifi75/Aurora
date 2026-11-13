@@ -1475,3 +1475,8 @@ header.app-header .app-nav { flex: 1 1 auto; min-width: 0; display: flex; }
 .digi-dialog--small { width: min(26rem, calc(94vw / var(--ui-zoom, 1))); }
 /* UTC tagliata sul bordo destro: altri 5 px di margine (23 px) */
 .cluster-table td.cluster-utc, .cluster-table th:last-child { padding-right: 23px !important; }
+
+/* «Spegni questi avvisi» sotto le schede dei DXCC nuovi */
+.newdx-off { pointer-events: auto; align-self: flex-end; padding: 4px 10px; border: 1px solid rgb(255 255 255 / .25); border-radius: 8px; background: rgb(10 16 30 / .85); color: #f4f4f4; font-size: 12px; cursor: pointer; }
+.newdx-off:hover { background: rgb(40 50 80 / .95); }
+html[data-theme='light'] .newdx-off { background: #ffffff; color: #111; border-color: #c9ced6; }

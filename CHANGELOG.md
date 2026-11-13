@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Schede dei DXCC nuovi**: al massimo due insieme (con un log nuovo quasi tutto e' nuovo e quattro schede coprivano mezza pagina) e sotto c'e' «Spegni questi avvisi», che le spegne senza cercare la casella nelle Impostazioni.
 - **Avviso di aggiornamento nella lingua giusta**: il riquadro dell'aggiornamento e la locandina mostrano le novita' nella lingua di Aurora; se non e' scelta, in quella di Windows; se manca, in inglese (prima arrivava sempre l'inglese). Anche i testi del riquadro, senza una lingua scelta, seguono Windows invece di partire in italiano.
 - **PTT non spento, messaggio**: quando il CAT cade durante lo spegnimento del PTT l'avviso e il registro dicevano «PTT non spento: PTT: PTT non spento: …»; ora la causa compare una volta sola.
 - **Tabella delle frequenze non valida**: il registro dice il motivo e il file viene messo da parte (`frequencies.json.non-valido`), cosi' l'avviso non torna a ogni avvio.
