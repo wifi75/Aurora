@@ -469,7 +469,9 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     .filter((d): d is DecodedMessage => !!d && d !== pin && !inQso(d));
   // in cima resta la riga ferma del QSO; delle altre righe del QSO resta in lista solo la sua ultima risposta a me (una basta),
   // altrimenti quando l'ultimo messaggio e' il mio non si capisce piu' se e cosa ha risposto (richiesta del proprietario)
-  const rest = (pin ? decodes.filter((d) => d !== pin && (!inQso(d) || d === hisLast)) : decodes).filter((d) => !queued.includes(d));
+  // le mie trasmissioni del QSO restano invece tutte al loro posto, man mano che partono: prima comparivano solo a QSO finito, quando
+  // il DX si liberava (segnalazione #42, 2026-11-13)
+  const rest = (pin ? decodes.filter((d) => d !== pin && (!inQso(d) || d === hisLast || d.id < 0)) : decodes).filter((d) => !queued.includes(d));
   const top = pin ? [pin, ...queued] : queued;
   // l'etichetta piu' recente di ogni stazione che ho chiamato (per la mia riga Tx)
   const lastTagOf = new Map<string, DecodedMessage['tag']>();
