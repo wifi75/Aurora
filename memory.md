@@ -1,7 +1,14 @@
 # Memoria di progetto
 
-Stato al 2026-11-13, versione 0.11.251 pubblicata (titolo della finestra con autore, log interno sempre pronto, Tune e Log QSO visibili, radio spenta a 14 segmenti, notch e passabanda nei modi testuali con AFC vincolato, Nuovo log vuoto protetto, Log QSO per gli SWL, Accendi con Cat4OM e RTS alto per le Yaesu, display spento con la radio spenta, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-14, versione 0.11.251 pubblicata (Club Log col token personale dell'API REST v1, HRDLog e registro delle decisioni tradotti, VFO B delle Yaesu da `get_split_freq`, impostazioni allineate a sinistra, ADIF solo in File ADIF). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
+
+## Decisioni del 2026-11-13/14
+- **Club Log**: si usa l'API REST v1 col token personale del radioamatore (`cl_...`, Settings › API su clublog.org); niente piu' chiave dello sviluppatore. Il vecchio `realtime.php` resta per chi lo usa; se c'e' il token vale il token. Documentazione ufficiale: articoli «REST API» della knowledge base di Club Log (pagina «for LLMs» con tutti i dettagli).
+- **Spot**: a scelta da DXSummit o dal cluster telnet collegato (`spot_via`); lo spot via telnet conta solo quando il cluster lo ripete.
+- **Compilazione della release**: `tsc --noEmit --singleThreaded` nel `build` dell'app e `CARGO_BUILD_JOBS=4`: in parallelo il PC finiva la memoria di sistema (errore 1455). Google Drive per PC occupa oltre 5 GB: chiuderlo prima di compilare.
+- **Impostazioni**: con l'etichetta sopra, i controlli stanno a sinistra (`.sw-panel .sx-control` senza `justify-content: flex-end`).
+- **WSJT-X**: parti di Aurora sono algoritmi di WSJT-X e JTDX tradotti in Rust (lo dice Informazioni › Codice derivato): non dire che Aurora «non contiene WSJT-X».
 
 ## Decisioni del 2026-11-12
 
