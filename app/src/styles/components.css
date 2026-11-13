@@ -1280,3 +1280,8 @@ html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; 
 .newlog-type { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.82rem; }
 .newlog-type input { font: inherit; padding: 0.3rem 0.5rem; border-radius: 0.4rem; border: var(--border-width, 1px) solid var(--danger, #e05050); background: transparent; color: var(--text); }
 .newlog-btn--danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* «Log QSO» senza QSO in corso: la finestra di registrazione gia' compilata, al centro, leggibile nei due temi */
+.logqso-backdrop { position: fixed; inset: 0; z-index: 950; display: grid; place-items: center; background: rgb(0 0 0 / 0.55); }
+.logqso-dialog { width: min(46rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); overflow: auto; padding: 1rem 1.2rem; border-radius: 0.8rem; background: var(--panel, #13203a); color: var(--text, #e6ecf5); border: 1px solid var(--border, #2a3a58); box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.5); }
+.logqso-dialog h3 { margin: 0 0 0.8rem; font-size: 1.05rem; }

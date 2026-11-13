@@ -159,6 +159,8 @@ tip.cmd.tune,"Transmits a steady carrier on the Tx frequency for one period, to 
 cmd.tuneOn,Tune: carrier on,Tune: draaggolf aan
 cmd.tuneOff,Tune stopped,Tune gestopt
 cmd.logQso,Log QSO,QSO loggen
+cmd.logQsoDone,QSO with {call} saved to the log,QSO met {call} opgeslagen in het log
+cmd.logQsoTitle,Log the QSO,QSO loggen
 tip.cmd.logQso,"Logs the QSO with the DX station now, with the known reports. Use it when the QSO is over but the sequence didn’t log it by itself.","Logt nu de QSO met het DX-station, met de bekende rapporten. Gebruik het als de QSO afgelopen is maar de reeks hem niet zelf gelogd heeft."
 cmd.logged,Logging requested: {call},Loggen aangevraagd: {call}
 ctl.hold_tx,Hold Tx Freq,Hold Tx Freq
@@ -2102,6 +2104,7 @@ exp.clearAsk,Clear the log ({n} QSOs)? Aurora’s ADIF file is kept aside in the
 exp.deleted,{n} QSOs deleted.,{n} QSO’s verwijderd.
 exp.deleteFailed,QSOs not deleted: try again.,QSO’s niet verwijderd: probeer opnieuw.
 exp.localOnly,Only from the PC or the home network.,Alleen vanaf de pc of het thuisnetwerk.
+exp.savedQso,QSO with {call} saved to the log,QSO met {call} opgeslagen in het log
 exp.added,QSO with {call} logged.,QSO met {call} gelogd.
 exp.addFailed,QSO not logged: try again.,QSO niet gelogd: probeer opnieuw.
 exp.addBad,Check the “{field}” field.,Controleer het veld “{field}”.

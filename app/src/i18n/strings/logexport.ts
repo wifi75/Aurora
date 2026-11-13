@@ -167,6 +167,7 @@ export const logExportStrings = {
   'exp.deleted': ['{n} QSO cancellati.', '{n} QSOs deleted.', '{n} QSOs gelöscht.', '{n} QSO supprimés.', '{n} QSO borrados.', '{n} QSO apagados.'],
   'exp.deleteFailed': ['QSO non cancellati: riprova.', 'QSOs not deleted: try again.', 'QSOs nicht gelöscht: erneut versuchen.', 'QSO non supprimés : réessaie.', 'QSO no borrados: inténtalo de nuevo.', 'QSO não apagados: tenta de novo.'],
   'exp.localOnly': ['Si può fare solo dal PC o dalla rete di casa.', 'Only from the PC or the home network.', 'Nur vom PC oder aus dem Heimnetz.', 'Seulement depuis le PC ou le réseau de la maison.', 'Solo desde el PC o la red de casa.', 'Só a partir do PC ou da rede de casa.'],
+  'exp.savedQso': ['QSO con {call} salvato nel log', 'QSO with {call} saved to the log', 'QSO mit {call} im Log gespeichert', 'QSO avec {call} enregistré dans le journal', 'QSO con {call} guardado en el log', 'QSO com {call} guardado no log'],
   'exp.added': ['QSO con {call} a log.', 'QSO with {call} logged.', 'QSO mit {call} geloggt.', 'QSO avec {call} au log.', 'QSO con {call} en el log.', 'QSO com {call} no log.'],
   'exp.addFailed': ['QSO non registrato: riprova.', 'QSO not logged: try again.', 'QSO nicht geloggt: erneut versuchen.', 'QSO non enregistré : réessaie.', 'QSO no registrado: inténtalo de nuevo.', 'QSO não registado: tenta de novo.'],
   'exp.addBad': ['Controlla il campo «{field}».', 'Check the “{field}” field.', 'Prüfe das Feld „{field}“.', 'Vérifie le champ « {field} ».', 'Revisa el campo «{field}».', 'Verifica o campo «{field}».'],

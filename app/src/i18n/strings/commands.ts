@@ -56,6 +56,8 @@ export const commandStrings = {
   'cmd.tuneOn': ['Tune: portante accesa', 'Tune: carrier on', 'Tune: Träger an', 'Tune : porteuse activée', 'Tune: portadora activada', 'Tune: portadora ligada'],
   'cmd.tuneOff': ['Tune fermato', 'Tune stopped', 'Tune gestoppt', 'Tune arrêté', 'Tune detenido', 'Tune parado'],
   'cmd.logQso': ['Log QSO', 'Log QSO', 'Log QSO', 'Log QSO', 'Log QSO', 'Log QSO'],
+  'cmd.logQsoDone': ['QSO con {call} salvato nel log', 'QSO with {call} saved to the log', 'QSO mit {call} im Log gespeichert', 'QSO avec {call} enregistré dans le journal', 'QSO con {call} guardado en el log', 'QSO com {call} guardado no log'],
+  'cmd.logQsoTitle': ['Registra il QSO', 'Log the QSO', 'QSO loggen', 'Enregistrer le QSO', 'Registrar el QSO', 'Registar o QSO'],
   'tip.cmd.logQso': [
     'Registra subito il QSO con la stazione DX, con i rapporti che si conoscono. Serve quando il QSO è finito ma la sequenza non l’ha registrato da sola.',
     'Logs the QSO with the DX station now, with the known reports. Use it when the QSO is over but the sequence didn’t log it by itself.',

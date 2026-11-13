@@ -358,7 +358,8 @@ export function ExportPage() {
 }
 
 /** Il modulo per scrivere un QSO a mano: nominativo, data e ora UTC, banda (o frequenza), modo, rapporti, locatore, nome e commento. */
-function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
+/** Il modulo «Aggiungi QSO»; `initial` lo precompila (pulsante «Log QSO» dei Comandi, per chi ascolta senza trasmettere). */
+export function AddQso({ onDone, onCancel, initial }: { onDone(): void; onCancel(): void; initial?: Partial<ManualQso> }) {
   const t = useT();
   const now = new Date();
   const [q, setQ] = useState<ManualQso>({
@@ -373,6 +374,7 @@ function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
     grid: '',
     name: '',
     comment: '',
+    ...initial,
   });
   const [busy, setBusy] = useState(false);
   const set = (patch: Partial<ManualQso>) => setQ((v) => ({ ...v, ...patch }));
@@ -381,7 +383,7 @@ function AddQso({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
     setBusy(true);
     try {
       await addLogQso({ ...q, call: q.call.trim().toUpperCase() });
-      toast(t('exp.added', { call: q.call.trim().toUpperCase() }), 'ok');
+      toast(t('exp.savedQso', { call: q.call.trim().toUpperCase() }), 'ok');
       onDone();
     } catch (error) {
       const field = error instanceof ApiError ? error.detail : undefined;
