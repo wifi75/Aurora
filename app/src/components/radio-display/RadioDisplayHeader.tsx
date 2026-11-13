@@ -18,6 +18,7 @@ import { getCat } from '../../api/client';
 import { SetupCta } from '../SetupCta';
 import { RigSwitch } from './RigSwitch';
 import { SplitOffButton } from './SplitOffButton';
+import { useTuning } from './RadioExtras';
 
 /**
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
@@ -44,10 +45,13 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const raw = displayModel(status);
   const meters = useMeterBallistics(raw.meters);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
+  const tuning = useTuning();
   if (pref.hidden) return null;
   // il display sta in una finestra a parte (secondo schermo): qui resta solo un segnaposto vuoto
   if (detached && !solo) return <span className="rd-detached" aria-hidden="true" />;
-  const model = { ...raw, meters };
+  // TX acceso anche mentre la radio accorda (TUNE del display) o con la portante di accordo della SDR TCI accesa
+  const tciTune = cat.data?.config.backend === 'tci' && cat.data?.status.rig?.extras?.tuner === true;
+  const model = { ...raw, meters, transmitting: raw.transmitting || tuning || tciTune };
   // radio mai configurata: un solo riquadro che porta alla configurazione. Radio configurata ma spenta o che non risponde: resta il display,
   // spento, con la scritta «Radio non risponde» (il CAT riprova da solo; il riquadro «configura» qui era fuorviante)
   // «Nessuno (senza CAT)» scelto apposta: il display non ha niente da mostrare (frequenza, S-meter, potenza arrivano dal CAT) e sparisce

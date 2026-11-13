@@ -1,5 +1,5 @@
 import { powerPct } from '../../lib/radioDisplay';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, getCat, postCatExtra, type CatExtraItem } from '../../api/client';
 import { useT, type Key } from '../../i18n';
@@ -40,6 +40,28 @@ function Bar({ value, tone }: { value: number; tone: string }) {
  * Lettura dei dati in piu' della radio e clic sugli indicatori, condivisi dal display esteso e dai display a pannello unico
  * (FT-2000, IC-7610): l'indicatore appena cliccato resta in attesa finche' la radio non ha risposto.
  */
+/** Quanto resta accesa la scritta TX dopo «TUNE»: la radio accorda da sola (qualche secondo di portante) e il CAT non lo dice. */
+export const TUNE_TX_MS = 6000;
+const tuneTx = { until: 0, subs: new Set<() => void>() };
+
+/** Segna l'accordatura appena avviata: il display accende TX per {@link TUNE_TX_MS}. */
+export function markTuning(now = Date.now()) {
+  tuneTx.until = now + TUNE_TX_MS;
+  tuneTx.subs.forEach((f) => f());
+  setTimeout(() => tuneTx.subs.forEach((f) => f()), TUNE_TX_MS + 50);
+}
+
+/** La radio sta accordando dopo un «TUNE» del display. */
+export function useTuning(): boolean {
+  return useSyncExternalStore(
+    (f) => {
+      tuneTx.subs.add(f);
+      return () => tuneTx.subs.delete(f);
+    },
+    () => Date.now() < tuneTx.until,
+  );
+}
+
 export function useCatExtras() {
   const t = useT();
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
@@ -50,6 +72,8 @@ export function useCatExtras() {
     setWaiting(item);
     try {
       await postCatExtra(item);
+      // l'accordatore della radio trasmette da solo: TX acceso sul display mentre accorda
+      if (item === 'tune' && cat.data?.config.backend !== 'tci') markTuning();
     } catch (e) {
       const code = e instanceof ApiError ? e.code : '';
       const detail = e instanceof ApiError && e.detail ? coreText(e.detail, t) : undefined;
