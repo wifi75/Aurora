@@ -3,6 +3,8 @@
 ## Non rilasciato
 
 ## 0.11.251 - 2026-11-13
+- **VFO B delle Yaesu senza `get_vfo_info`** (per esempio FT-2000 con Hamlib): se Hamlib non da' il VFO B, Aurora legge frequenza e modo del VFO di trasmissione in split, cosi' il display della radio lo mostra.
+- **Server del DX Cluster leggibili**: nome e indirizzo dei server in caratteri piu' grandi.
 - **Club Log col token**: in Impostazioni › Invio dei QSO › Club Log basta incollare il token personale creato in Club Log › Settings › API (comincia con `cl_`); niente piu' email, password e chiave API dello sviluppatore. «Prova» controlla davvero il token senza inviare QSO. Il vecchio metodo resta per chi lo usa; se c'e' il token vale il token.
 - **Messaggi di HRDLOG.NET nella lingua dell'interfaccia**, come quelli di Club Log; con nominativo o codice rifiutati il messaggio ricorda che serve il codice «Upload code» del profilo, non la password, e una risposta che non si capisce mostra il suo inizio.
 
