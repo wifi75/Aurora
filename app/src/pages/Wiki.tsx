@@ -1,9 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { STRINGS, textOf, useLang, useT, type Key } from '../i18n';
 import { pick, type Entry, type Lang } from '../i18n/core';
 import { GUIDE, type GuideSection } from '../i18n/guide';
 
 /** `[[chiave]]` diventa il testo vero dell'interfaccia (nome di una scheda, di un pulsante): la guida dice sempre cio' che si vede. */
+/** Il testo con le parole cercate evidenziate (`<mark>`), senza badare a maiuscole e minuscole; senza ricerca il testo com'e'. */
+export function highlight(text: string, needle: string): ReactNode {
+  if (needle === '') return text;
+  const lower = text.toLowerCase();
+  const out: ReactNode[] = [];
+  let from = 0;
+  let at = lower.indexOf(needle);
+  while (at >= 0) {
+    if (at > from) out.push(text.slice(from, at));
+    out.push(<mark key={at} className="guide-hit">{text.slice(at, at + needle.length)}</mark>);
+    from = at + needle.length;
+    at = lower.indexOf(needle, from);
+  }
+  if (from < text.length) out.push(text.slice(from));
+  return out;
+}
+
 export function guideText(entry: Entry, lang: Lang): string {
   return pick(entry, lang).replace(/\[\[([\w.]+)\]\]/g, (whole, key: string) => (key in STRINGS ? (textOf(lang, key as Key) ?? whole) : whole));
 }
@@ -18,6 +35,27 @@ export function Wiki() {
   const lang = useLang((s) => s.lang);
   const [query, setQuery] = useState('');
   const needle = query.trim().toLowerCase();
+  // come la ricerca di un lettore PDF: quante volte la parola compare, quale si sta guardando, ▲▼ (e Invio / Maiusc+Invio) per saltare
+  const [hits, setHits] = useState(0);
+  const [cur, setCur] = useState(0);
+  const goHit = (to: number) => {
+    const marks = Array.from(document.querySelectorAll<HTMLElement>('mark.guide-hit'));
+    if (marks.length === 0) return;
+    const i = ((to % marks.length) + marks.length) % marks.length;
+    marks.forEach((m, k) => m.classList.toggle('guide-hit--on', k === i));
+    marks[i]?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+    setCur(i);
+  };
+  useEffect(() => {
+    const n = document.querySelectorAll('mark.guide-hit').length;
+    setHits(n);
+    setCur(0);
+    if (n > 0) {
+      const first = document.querySelector<HTMLElement>('mark.guide-hit');
+      first?.classList.add('guide-hit--on');
+      first?.scrollIntoView?.({ block: 'center' });
+    }
+  }, [needle, lang]);
 
   // `#/guida/<sezione>` (dalla scheda SDR delle Impostazioni): si scorre fino a quella sezione, anche se la Guida era gia' aperta
   useEffect(() => {
@@ -45,7 +83,19 @@ export function Wiki() {
   return (
     <div className="guide">
       <aside className="guide-index" aria-label={t('wiki.title')}>
-        <input type="search" className="guide-search" title={t('tip.ui.search')} placeholder={t('guide.search')} aria-label={t('guide.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" className="guide-search" title={t('tip.ui.search')} placeholder={t('guide.search')} aria-label={t('guide.search')} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              goHit(e.shiftKey ? cur - 1 : cur + 1);
+            }
+          }} />
+        {needle !== '' ? (
+          <div className="guide-hits" role="status">
+            <span className="data">{hits > 0 ? t('guide.hits', { n: cur + 1, total: hits }) : t('guide.noHits')}</span>
+            <button type="button" className="glass chip" title={t('guide.prevHit')} aria-label={t('guide.prevHit')} disabled={hits === 0} onClick={() => goHit(cur - 1)}>▲</button>
+            <button type="button" className="glass chip" title={t('guide.nextHit')} aria-label={t('guide.nextHit')} disabled={hits === 0} onClick={() => goHit(cur + 1)}>▼</button>
+          </div>
+        ) : null}
         <nav>
           <ol>
             {GUIDE.map((c) => (
@@ -75,22 +125,22 @@ export function Wiki() {
             <div className="guide-sections">
               {c.sections.map((s) => (
                 <article key={s.id} id={`guida-sez-${s.id}`} className="guide-section">
-                  <h3>{guideText(s.title, lang)}</h3>
-                  {s.text ? <p>{guideText(s.text, lang)}</p> : null}
+                  <h3>{highlight(guideText(s.title, lang), needle)}</h3>
+                  {s.text ? <p>{highlight(guideText(s.text, lang), needle)}</p> : null}
                   {s.steps ? (
                     <ol className="guide-steps">
                       {s.steps.map((step, i) => (
-                        <li key={i}>{guideText(step, lang)}</li>
+                        <li key={i}>{highlight(guideText(step, lang), needle)}</li>
                       ))}
                     </ol>
                   ) : null}
-                  {s.tip ? <p className="guide-tip">{guideText(s.tip, lang)}</p> : null}
+                  {s.tip ? <p className="guide-tip">{highlight(guideText(s.tip, lang), needle)}</p> : null}
                   {s.fix ? (
                     <div className="guide-fix">
                       <h4>{t('guide.fix')}</h4>
                       <ul>
                         {s.fix.map((f, i) => (
-                          <li key={i}>{guideText(f, lang)}</li>
+                          <li key={i}>{highlight(guideText(f, lang), needle)}</li>
                         ))}
                       </ul>
                     </div>
