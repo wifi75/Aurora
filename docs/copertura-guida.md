@@ -75,6 +75,7 @@ Gli id `s-...` sono delle sezioni nuove; gli altri sono voci già presenti in `g
 | Canale d'uscita (Mono, Sinistro, Destro, Entrambi) | Audio › Uscita audio (trasmissione) | s-audio |
 | Salvataggio dei file audio (Nessuno, Decodificati, Tutti) | Audio › Salvataggio dei file audio | s-audio |
 | Cartella dei file audio | Audio › Salvataggio dei file audio | s-audio |
+| Tieni i file salvati (giorni): 0 = per sempre, di base 7; pulizia dei .wav all'avvio e ogni giorno, rotazione di ALL.TXT | Audio › Salvataggio dei file audio | s-audio |
 | Applica, Annulla, Aggiorna elenco, «Modifiche da applicare», esito dell'applicazione | Audio › Applica | s-audio |
 | Audio TCI e Cat4OM nelle tendine | Audio › Ingresso/Uscita | s-audio, `tci` |
 | Riquadro Note | Audio › Note | s-audio |
