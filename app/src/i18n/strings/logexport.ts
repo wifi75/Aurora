@@ -157,6 +157,7 @@ export const logExportStrings = {
     'Las fechas están en UTC, como en el log. Puedes indicar solo «Desde» o solo «Hasta».',
     'As datas estão em UTC, como no log. Podes indicar só «De» ou só «Até».',
   ],
+  'log.noQsoYet': ['Ancora nessun QSO in questo log', 'No QSOs in this log yet', 'Noch keine QSOs in diesem Log', 'Pas encore de QSO dans ce journal', 'Todavía no hay QSO en este log', 'Ainda não há QSO neste log'],
   'log.importAdif': ['Importa un file ADIF', 'Import an ADIF file', 'ADIF-Datei importieren', 'Importer un fichier ADIF', 'Importar un archivo ADIF', 'Importar um ficheiro ADIF'],
   'exp.add': ['Aggiungi QSO', 'Add QSO', 'QSO hinzufügen', 'Ajouter un QSO', 'Añadir QSO', 'Adicionar QSO'],
   'exp.delete': ['Elimina selezionati ({n})', 'Delete selected ({n})', 'Ausgewählte löschen ({n})', 'Supprimer la sélection ({n})', 'Eliminar seleccionados ({n})', 'Eliminar selecionados ({n})'],

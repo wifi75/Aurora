@@ -175,7 +175,7 @@ function Log4omPanelInner() {
           {empty ? (
             <tr className="log4om-empty">
               <td colSpan={cols.visible.length}>
-                <span className="muted">{t('cta.log.none')}</span>
+                <span className="muted">{t('log.noQsoYet')}</span>
                 {readOnly ? null : (
                   <button type="button" className="glass chip" onClick={() => setAdding(true)}>
                     {t('exp.add')}

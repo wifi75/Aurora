@@ -2637,6 +2637,7 @@ export const NL_UI: Record<string, string> = {
   "log.empty": "Geen QSO’s in het logboek",
   "log.importAdif": "ADIF-bestand importeren",
   "log.loggedBadge": "GELOGD",
+  "log.noQsoYet": "Nog geen QSO’s in dit log",
   "log.readonly4om": "Logboek van Log4OM2, alleen-lezen: QSO’s worden in Log4OM2 gecorrigeerd en verwijderd.",
   "log.tab.internal": "Intern logboek",
   "log.tab.log": "Logboek",
