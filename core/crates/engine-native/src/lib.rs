@@ -744,9 +744,9 @@ pub fn start_with_save(
                         early.extend(fresh.iter().map(|d| d.text.clone()));
                         publish(l, driver.as_mut(), &message_events, &next_id, slot.start_unix_ms, &fresh);
                     };
-                    ft8::decode::decode_slot_streaming(&slot.samples, &options, &mut hashes, Some(&mut ft8_history), &mut on_pass).into_iter().map(|d| d.decoded).collect()
+                    guarded(mode.name(), || ft8::decode::decode_slot_streaming(&slot.samples, &options, &mut hashes, Some(&mut ft8_history), &mut on_pass).into_iter().map(|d| d.decoded).collect())
                 } else {
-                    decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history, &mut q65_avg)
+                    guarded(mode.name(), || decode_period(mode, &slot.samples, &options, &ft4_slot, &mut hashes, &mut ft8_history, &mut q65_avg))
                 };
                 // `avexdt` di WSJT-X dai ritardi dei messaggi FT8 del periodo, nell'ordine in cui sono usciti (`ft8_engine_kernel.f90:444-478`)
                 if mode == Mode::Ft8 {
@@ -1101,6 +1101,19 @@ fn msk144_options(rx_hz: Option<f32>, my_call: &str, his_call: &str, swl: bool) 
 /// `ft8_history` tiene i segnali CQ, le chiamate dirette a noi e il segnale del canale QSO tra un periodo FT8 e l'altro
 /// (sottopassate 3-11 di `ft8b`); gli altri modi non la usano.
 #[allow(clippy::too_many_arguments)]
+/// Una decodifica che va in panic (un difetto del decoder con un audio particolare) fermava per sempre il thread del motore: niente piu'
+/// decodifiche ne' trasmissioni fino al riavvio, senza avviso. Cosi' si perde solo quel periodo e l'errore resta nel log.
+fn guarded<T: Default>(what: &str, decode: impl FnOnce() -> T) -> T {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(decode)) {
+        Ok(found) => found,
+        Err(cause) => {
+            let why = cause.downcast_ref::<&str>().map(|s| (*s).to_string()).or_else(|| cause.downcast_ref::<String>().cloned()).unwrap_or_default();
+            tracing::error!("motore proprio ({what}): la decodifica del periodo si e' fermata per un errore interno ({why}); il periodo si salta");
+            T::default()
+        }
+    }
+}
+
 fn decode_period(
     mode: Mode,
     samples: &[f32],
@@ -1332,6 +1345,14 @@ fn publish(live: &LiveConfig, mut driver: Option<&mut TxDriver<dyn TxPort>>, eve
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_panicking_decode_skips_only_that_period() {
+        let found: Vec<ft8::decode::Decoded> = super::guarded("prova", || panic!("difetto simulato"));
+        assert!(found.is_empty());
+        let next = super::guarded("prova", || vec![1, 2, 3]);
+        assert_eq!(next, vec![1, 2, 3], "il periodo dopo si decodifica");
+    }
+
     use super::*;
     use ft8::{modem, SAMPLE_RATE};
 
