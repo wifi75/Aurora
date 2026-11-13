@@ -35,7 +35,7 @@
 //! - Un limite di tempo opzionale ([`Options::deadline`]): passato, non si prova un altro candidato. In WSJT-X non c'e'.
 //! - L'OSD e' quello di `ft8::ldpc` (stesso algoritmo di `osd4_174_91`, il codice e' identico).
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use ft8::ap::{ApContext, ApOptions, NAPTYPES};
 use ft8::filters::{self, CallBook, GridCheck, MessageCheck};
@@ -151,8 +151,9 @@ pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) 
     if options.agc {
         ft8::sync::agc_compensate_len(&mut audio, options.f_low_hz, options.f_high_hz, NMAX);
     }
-    let tables = SyncTables::new();
-    let subtractor = Subtractor::new();
+    // riferimenti di Costas e filtro della sottrazione sono sempre gli stessi: si calcolano una volta per tutto il programma
+    let tables = shared_tables();
+    let subtractor = Subtractor::shared();
     let ap = (options.ap.is_some() || options.ap_cq).then(|| ApContext::new(&options.ap.clone().unwrap_or_else(|| ApOptions::new(""))));
     let mut found: Vec<Decoded> = Vec::new();
     let mut before_pass = 0;
@@ -173,7 +174,7 @@ pub fn decode_slot(samples: &[f32], options: &Options, hashes: &mut CallHashes) 
             if options.deadline.is_some_and(|d| std::time::Instant::now() >= d) {
                 break;
             }
-            let Some(hit) = try_candidate(&ds, &tables, cand, options, ap.as_ref(), hashes) else { continue };
+            let Some(hit) = try_candidate(&ds, tables, cand, options, ap.as_ref(), hashes) else { continue };
             // come nel Fortran la sottrazione precede il controllo dei doppioni
             if options.subtract {
                 subtractor.subtract(&mut audio, &hit.tones, hit.decoded.freq_hz, hit.start);
@@ -414,7 +415,17 @@ struct Subtractor {
     kernel: Vec<Complex>,
 }
 
+fn shared_tables() -> &'static SyncTables {
+    static TABLES: OnceLock<SyncTables> = OnceLock::new();
+    TABLES.get_or_init(SyncTables::new)
+}
+
 impl Subtractor {
+    fn shared() -> &'static Subtractor {
+        static SUBTRACTOR: OnceLock<Subtractor> = OnceLock::new();
+        SUBTRACTOR.get_or_init(Subtractor::new)
+    }
+
     fn new() -> Self {
         let mut planner = FftPlanner::<f32>::new();
         let forward = planner.plan_fft_forward(NMAX);
