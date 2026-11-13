@@ -1314,3 +1314,18 @@ body.rd-radio-off .rd-header::after, body.rd-radio-off .rd-square-slot::after, b
 /* niente doppioni quando un display sta dentro un altro contenitore con la scritta */
 body.rd-radio-off .rd-square-slot .rd-header::after, body.rd-radio-off .rd-square-preview .rd-header::after, body.rd-radio-off .rd-header .rd-header::after { content: none; }
 body.rd-radio-off .md-noradio { display: none; }
+
+/* Radio spenta «come le cifre» (scelta del proprietario): scritta chiara in carattere da display digitale (Orbitron, gia' nel programma),
+   leggibile, con il bagliore delle cifre; si adatta alla misura del display */
+@font-face { font-family: 'Orbitron'; src: url('../assets/fonts/sstv/Orbitron.ttf') format('truetype'); font-weight: 400 900; font-display: swap; }
+body.rd-radio-off .rd-header::after, body.rd-radio-off .rd-square-slot::after, body.rd-radio-off .rd-square-preview::after {
+  font-family: 'Orbitron', 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: 0.18em;
+  color: #f1f5f9; font-size: clamp(14px, 4.6cqi, 38px);
+  text-shadow: 0 0 6px rgb(255 255 255 / 0.55), 0 0 16px rgb(186 230 253 / 0.35), 0 0 2px #000;
+  background: rgb(0 0 0 / 0.45);
+}
+/* il grigio del pannello spento non deve spegnere anche la scritta: il filtro va sui figli, non sul contenitore */
+body.rd-radio-off .rd-header, body.rd-radio-off .rd-square-slot, body.rd-radio-off .rd-square-preview { filter: none; }
+body.rd-radio-off .rd-header > *, body.rd-radio-off .rd-square-slot > *, body.rd-radio-off .rd-square-preview > * { filter: grayscale(1) brightness(0.55); }
+body.rd-radio-off .rd-face-row { filter: none; }
+body.rd-radio-off .rd-face-row > :not(.rd-header) { filter: grayscale(1) brightness(0.55); }

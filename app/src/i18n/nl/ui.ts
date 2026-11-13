@@ -3130,7 +3130,7 @@ export const NL_UI: Record<string, string> = {
   "rd.layout.single": "Eén dual-VFO-blok (FT-2000-stijl)",
   "rd.layoutFace": "Met het FT-2000- of IC-7610-paneel kan de indeling niet gekozen worden: het paneel neemt zelf alle ruimte in. Kies een van de andere stijlen om te kiezen tussen één blok en twee blokken naast elkaar.",
   "rd.noRadio": "Radio reageert niet",
-  "rd.off": "⏻  RADIO UIT",
+  "rd.off": "RADIO UIT",
   "rd.open": "Vergrote meters tonen",
   "rd.popover": "Vergroot radiodisplay",
   "rd.preview": "Voorbeeld met voorbeeldgegevens",
