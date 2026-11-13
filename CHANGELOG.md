@@ -1,7 +1,9 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.247 - 2026-11-13
 - **Notch, passabanda e AFC vincolato in PSK·RTTY·CW**: Ctrl+clic sulla cascata mette un notch (30 Hz, da 10 a 100 Hz trascinando il bordo; si sposta trascinandolo, il tasto destro lo toglie, «Togli i notch» li toglie tutti), quanti se ne vogliono; tagliano oltre 60 dB prima del decodificatore e della ricerca di tutta la banda e non si salvano (si tolgono al cambio di banda o frequenza della radio). «BPF» accanto ad AFC accende un passabanda stretto intorno alla ricezione (larghezza secondo il modo). L'AFC non esce piu' da ±15 Hz in PSK31 (±30 PSK63), meta' spostamento in RTTY, ±50 Hz in CW, non entra nei notch e si ferma quando il segnale sparisce. In split la ricezione si sposta ora con Maiusc+clic. Nuove rotte `GET`/`PUT /api/v1/digi/notches`, campi `passband_on` e `passband_hz` nelle impostazioni.
+- **Display della radio spento ben visibile e che non sparisce piu'**: con la radio spenta il display e' grigio e si distingue bene, e non scompare piu' con Cat4OM, TCI o FT-991(A) Link.
+- **DX Cluster della pagina principale**: «Spot DX» e la rotella delle opzioni stanno a destra nella barra del titolo, non piu' sopra la tabella.
 
 ## 0.11.246 - 2026-11-13
 - **Ricerca nella Guida come in un lettore PDF**: le parole trovate sono evidenziate (quella corrente in arancione), sotto la casella «3 di 12» e i pulsanti ▲▼ per saltare da una all'altra (anche Invio e Maiusc+Invio).
