@@ -1246,3 +1246,7 @@ html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; 
 /* «Spegni split» sempre al suo posto: grigio con la radio in simplex, arancione acceso quando la radio e' in split */
 .rd-split-off:disabled { opacity: .45; cursor: default; border-color: #6b7280; color: #9ca3af; }
 .rd-split-off--on { background: rgb(240 160 32 / .18); }
+
+/* Gli avvisi a comparsa larghi quanto il testo con un po' d'aria (prima sempre 34rem anche per tre parole); i testi lunghi vanno a capo */
+.toast { width: fit-content; max-width: 100%; padding-right: 1.6rem; }
+.toast-text { flex: 0 1 auto; }
