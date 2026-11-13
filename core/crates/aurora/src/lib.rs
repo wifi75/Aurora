@@ -1097,8 +1097,16 @@ fn load_frequencies(path: &Path) -> FrequencyTable {
     if let Ok(text) = std::fs::read_to_string(path) {
         // una tabella salvata prima delle regioni (una riga per banda e modo, quelle di allora) passa alla tabella di JTDX; una modificata dall'utente resta com'e'
         let loaded = serde_json::from_str::<Vec<rig_control::table::Entry>>(&text).map_err(|e| e.to_string()).and_then(|entries| table.set(FrequencyTable::upgraded(entries)).map_err(String::from));
-        if loaded.is_err() {
-            tracing::warn!("frequenze non valide in {}: uso quelle predefinite", path.display());
+        // il motivo nel registro, e il file messo da parte: prima l'avviso tornava a ogni avvio senza dire perche' (rapporti del
+        // 2026-11-13, quindici avvii di fila) e la tabella dell'utente restava ignorata in silenzio
+        if let Err(why) = loaded {
+            let aside = path.with_extension("json.non-valido");
+            let kept = std::fs::rename(path, &aside).is_ok();
+            tracing::warn!(
+                "frequenze non valide in {} ({why}): uso quelle predefinite{}",
+                path.display(),
+                if kept { format!("; il file e' stato messo da parte come {}", aside.display()) } else { String::new() }
+            );
         }
     }
     table

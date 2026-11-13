@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Tabella delle frequenze non valida**: il registro dice il motivo e il file viene messo da parte (`frequencies.json.non-valido`), cosi' l'avviso non torna a ogni avvio.
 
 ## 0.11.243 - 2026-11-12
 - **PSK, RTTY e CW, interfaccia**: la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso; velocita' e frequenze senza cifre dopo la virgola; «Impostazioni del modo» in ordine; misure del segnale e selettore della frequenza a larghezza fissa; maniglia ben visibile fra le finestre e la colonna di destra.
