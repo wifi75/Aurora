@@ -9,6 +9,7 @@ import { LEVEL_STALE_MS } from '../lib/audioLevel';
 import { closeSlowPc, diagnose, slowPcClosedDepths, type Issue } from '../lib/diagnosis';
 import { periodSecs } from '../lib/period';
 import { useStation } from '../state/station';
+import { useTuning } from './radio-display/RadioExtras';
 
 function messageKey(issue: Issue): Key {
   if (issue.id === 'slow_pc' && issue.vars.next) return issue.vars.depth === '3' ? 'diag.slow_pc.deep' : 'diag.slow_pc.normal';
@@ -26,6 +27,7 @@ export const startup = { graceMs: 20_000, audioHoldMs: 90_000 };
 export function DiagnosisBar() {
   const t = useT();
   const status = useStation((s) => s.status);
+  const tuning = useTuning();
   const audio = useStation((s) => s.audioLevel);
   const audioAt = useStation((s) => s.audioLevelAt);
   const lastDecodeAt = useStation((s) => s.lastDecodeAt);
@@ -75,12 +77,16 @@ export function DiagnosisBar() {
   // il livello dell'ingresso debole o muto si dice solo se dura: all'apertura la radio si sta accendendo e la banda puo' essere
   // semplicemente vuota; prima l'avviso compariva subito a ogni avvio
   const audioSince = useRef(new Map<string, number>());
+  // in trasmissione (o mentre la radio accorda dopo TUNE) l'ingresso e' muto per forza: l'avviso non ha senso e il conteggio riparte da capo
+  const busyTx = status?.transmitting === true || tuning;
+  if (busyTx) for (const k of [...audioSince.current.keys()]) if (k.startsWith('audio-')) audioSince.current.delete(k);
   for (const issue of issues) {
+    if (busyTx) continue;
     if (issue.id === 'audio' && !audioSince.current.has(keyOf(issue))) audioSince.current.set(keyOf(issue), now);
   }
   for (const k of [...audioSince.current.keys()]) if (!issues.some((i) => keyOf(i) === k)) audioSince.current.delete(k);
   const lasting = (issue: Issue) =>
-    issue.id !== 'audio' || issue.vars.state === 'overdrive' || now - (audioSince.current.get(keyOf(issue)) ?? now) >= startup.audioHoldMs;
+    issue.id !== 'audio' || issue.vars.state === 'overdrive' || (!busyTx && now - (audioSince.current.get(keyOf(issue)) ?? now) >= startup.audioHoldMs);
   const visible = starting ? [] : issues.filter((issue) => !closed.includes(keyOf(issue)) && lasting(issue));
   const close = (issue: Issue) => {
     if (issue.id === 'slow_pc' && issue.vars.depth) closeSlowPc(String(issue.vars.depth));
