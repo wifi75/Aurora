@@ -40,6 +40,25 @@ export function openUpdatePoster(): void {
 
 
 /** Le note della release in punti brevi: una riga per frase (al massimo sei), senza i segni del Markdown. */
+const NOTE_LANG_NAMES: Record<string, string> = { it: 'Italiano', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', nl: 'Nederlands' };
+
+/** La parte delle note nella lingua `lang`: il blocco `<details>` della lingua, altrimenti l'inglese in cima (senza «Download:»). */
+export function notesForLang(notes: string, lang: string): string {
+  const name = NOTE_LANG_NAMES[lang];
+  if (name) {
+    for (const m of notes.matchAll(/<details>([\s\S]*?)(?:<\/details>|$)/g)) {
+      const block = m[1] ?? '';
+      const end = block.indexOf('</summary>');
+      if (end >= 0 && block.slice(0, end).includes(name)) return block.slice(end + '</summary>'.length).trim();
+    }
+  }
+  return (notes.split('<details>')[0] ?? notes)
+    .split('\n')
+    .filter((l) => !l.trimStart().startsWith('Download:'))
+    .join('\n')
+    .trim();
+}
+
 export function noteLines(notes: string): string[] {
   return notes
     .replace(/[#*_`>]/g, '')
@@ -117,7 +136,7 @@ export function UpdatePoster({ onlyWhenAsked = false }: { onlyWhenAsked?: boolea
   const ready = update.data?.can_install === true && update.data?.stage?.phase === 'ready' && update.data.stage.version === release.version;
   const autoGo = ready && !installing && !cancelled && !transmitting && !failure;
   const when = release.published_at ? new Date(release.published_at).toLocaleString(localeOf(lang), { dateStyle: 'short', timeStyle: 'short' }) : '';
-  const lines = noteLines(release.notes || release.name || '');
+  const lines = noteLines(notesForLang(release.notes || release.name || '', lang));
 
   return (
     <div className="first-run upd-poster" role="dialog" aria-modal="true" aria-labelledby="upd-poster-title">

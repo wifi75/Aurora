@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Avviso di aggiornamento nella lingua giusta**: il riquadro dell'aggiornamento e la locandina mostrano le novita' nella lingua di Aurora; se non e' scelta, in quella di Windows; se manca, in inglese (prima arrivava sempre l'inglese). Anche i testi del riquadro, senza una lingua scelta, seguono Windows invece di partire in italiano.
 - **PTT non spento, messaggio**: quando il CAT cade durante lo spegnimento del PTT l'avviso e il registro dicevano «PTT non spento: PTT: PTT non spento: …»; ora la causa compare una volta sola.
 - **Tabella delle frequenze non valida**: il registro dice il motivo e il file viene messo da parte (`frequencies.json.non-valido`), cosi' l'avviso non torna a ogni avvio.
 - **Interfaccia piu' leggera**: l'Attivita' di banda non si ridisegna piu' quattro volte al secondo quando ci sono stazioni in coda; la pagina PSK · RTTY · CW non si ridisegna piu' intera a ogni carattere ricevuto (la finestra di ricezione ridisegna solo l'ultima riga); la pagina del telefono non si ridisegna piu' intera quattro volte al secondo per l'orologio del periodo; la memoria dei nominativi gia' cercati non cresce piu' senza limite; un errore nella barra in fondo, nella barra dei desiderati o nel rotore non svuota piu' tutta la finestra. Misure in `docs/prestazioni-interfaccia.md`.

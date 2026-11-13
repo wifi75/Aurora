@@ -170,10 +170,37 @@ fn single_instance() -> bool {
     }
 }
 
-/// La lingua scelta in Aurora (`aurora-lang` in `ui-settings.json`): 0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt. Come l'interfaccia, senza scelta
-/// vale l'italiano. Si rilegge a ogni cartolina, cosi' un cambio di lingua in Aurora vale subito (il menu del tray al prossimo avvio).
+/// La lingua dei testi dell'agente: 0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt. Quella scelta in Aurora (`aurora-lang` in `ui-settings.json`),
+/// altrimenti quella di Windows, altrimenti l'inglese. Si rilegge a ogni cartolina, cosi' un cambio di lingua in Aurora vale subito.
 fn lang() -> usize {
-    lang_index(&ui_lang_code())
+    lang_index(&lang_code())
+}
+
+/// Il codice della lingua da usare (`it`, `en`, `de`, `fr`, `es`, `pt`, `nl`): quella scelta in Aurora, poi quella del sistema, poi `en`.
+pub(crate) fn lang_code() -> String {
+    let chosen = ui_lang_code();
+    let code = if chosen.is_empty() { system_lang() } else { chosen };
+    if ["it", "en", "de", "fr", "es", "pt", "nl"].contains(&code.as_str()) { code } else { "en".to_string() }
+}
+
+/// La lingua del sistema in due lettere (`it-IT` → `it`); vuota se non si sa.
+fn system_lang() -> String {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::Globalization::GetUserDefaultLocaleName;
+        let mut buf = [0u16; 85];
+        // SAFETY: il buffer e' lungo quanto dichiarato (LOCALE_NAME_MAX_LENGTH = 85) e vive per tutta la chiamata.
+        let n = unsafe { GetUserDefaultLocaleName(buf.as_mut_ptr(), buf.len() as i32) };
+        if n > 1 {
+            let name = String::from_utf16_lossy(&buf[..(n as usize - 1)]);
+            return name.split(['-', '_']).next().unwrap_or("").to_lowercase();
+        }
+        String::new()
+    }
+    #[cfg(not(windows))]
+    {
+        std::env::var("LC_ALL").or_else(|_| std::env::var("LANG")).unwrap_or_default().split(['_', '.', '-']).next().unwrap_or("").to_lowercase()
+    }
 }
 
 /// Il codice della lingua scelta in Aurora (`it`, `en`, ..., anche `nl`); vuoto se non c'e' una scelta salvata.
@@ -192,7 +219,8 @@ pub(crate) fn ui_lang() -> usize {
 }
 
 fn lang_index(code: &str) -> usize {
-    ["it", "en", "de", "fr", "es", "pt"].iter().position(|c| *c == code).unwrap_or(0)
+    // una lingua che i testi dell'agente non hanno (anche l'olandese) vale l'inglese
+    ["it", "en", "de", "fr", "es", "pt"].iter().position(|c| *c == code).unwrap_or(1)
 }
 
 /// I testi dell'agente nelle sei lingue di Aurora (it, en, de, fr, es, pt). `{v}` e' il valore da mettere dentro.
@@ -543,7 +571,8 @@ fn check(app: &AppHandle, asked: bool) {
     if let Some(release) = get_json(REPO_API) {
         let tag = release.get("tag_name").and_then(|v| v.as_str()).unwrap_or("").trim_start_matches('v').to_string();
         if !tag.is_empty() && updater::is_newer(&tag, VERSION) && (asked || (!open && !seen.versions.contains(&tag))) {
-            let notes = release.get("body").and_then(|v| v.as_str()).unwrap_or("");
+            // le note nella lingua di Aurora o del PC (inglese se manca): prima arrivava sempre l'inglese in cima
+            let notes = updater::notes_for_lang(release.get("body").and_then(|v| v.as_str()).unwrap_or(""), &lang_code());
             let summary: String = notes
                 .lines()
                 .map(|l| l.trim().trim_start_matches(['-', '*', ' ']).replace("**", ""))

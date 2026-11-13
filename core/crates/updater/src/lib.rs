@@ -231,6 +231,33 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
     c.3 && !l.3
 }
 
+/// La parte delle note di una release nella lingua `lang` (`it`, `en`, `de`, `fr`, `es`, `pt`, `nl`). Le note di Aurora hanno l'inglese
+/// in cima e le altre lingue in blocchi `<details><summary>🇮🇹 Italiano</summary> ... </details>`: si prende il blocco della lingua chiesta,
+/// altrimenti la parte inglese in cima (senza la riga «Download:»). Note senza blocchi tornano come sono.
+pub fn notes_for_lang(body: &str, lang: &str) -> String {
+    let names: &[(&str, &str)] = &[("it", "Italiano"), ("de", "Deutsch"), ("fr", "Français"), ("es", "Español"), ("pt", "Português"), ("nl", "Nederlands")];
+    if let Some((_, name)) = names.iter().find(|(code, _)| *code == lang) {
+        let mut rest = body;
+        while let Some(start) = rest.find("<details>") {
+            let after = &rest[start..];
+            let end = after.find("</details>").map_or(after.len(), |e| e + "</details>".len());
+            let block = &after[..end];
+            if let Some(sum_end) = block.find("</summary>")
+                && block[..sum_end].contains(name)
+            {
+                let inner = block[sum_end + "</summary>".len()..].trim_end_matches("</details>");
+                return inner.trim().to_string();
+            }
+            rest = &after[end..];
+        }
+    }
+    let top = body.split("<details>").next().unwrap_or(body);
+    top.lines().filter(|l| !l.trim_start().starts_with("Download:")).collect::<Vec<_>>().join("\n").trim().to_string()
+}
+
+/// Quanto testo delle note si tiene: abbastanza per l'inglese e i sei blocchi delle altre lingue.
+const NOTES_MAX: usize = 40_000;
+
 fn shorten(text: &str, max: usize) -> String {
     let t = text.trim();
     if t.chars().count() <= max {
@@ -260,7 +287,7 @@ pub fn parse_release(json: &serde_json::Value) -> Option<Release> {
     Some(Release {
         version: tag.trim_start_matches(['v', 'V']).to_string(),
         name: json["name"].as_str().unwrap_or(&tag).to_string(),
-        notes: shorten(json["body"].as_str().unwrap_or(""), 1500),
+        notes: shorten(json["body"].as_str().unwrap_or(""), NOTES_MAX),
         url: json["html_url"].as_str().unwrap_or("").to_string(),
         published_at: json["published_at"].as_str().unwrap_or("").to_string(),
         prerelease: json["prerelease"].as_bool().unwrap_or(false),
@@ -767,6 +794,17 @@ impl UpdateService {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn the_notes_come_in_the_chosen_language_or_in_english() {
+        let body = "- **Split**: fixed\n\nDownload: https://x\n\n<details>\n<summary>🇮🇹 Italiano</summary>\n\n- **Split**: corretto\n\n</details>\n\n<details>\n<summary>🇩🇪 Deutsch</summary>\n\n- **Split**: behoben\n\n</details>\n";
+        assert_eq!(notes_for_lang(body, "it"), "- **Split**: corretto");
+        assert_eq!(notes_for_lang(body, "de"), "- **Split**: behoben");
+        assert_eq!(notes_for_lang(body, "en"), "- **Split**: fixed");
+        // una lingua senza blocco: l'inglese
+        assert_eq!(notes_for_lang(body, "fr"), "- **Split**: fixed");
+        assert_eq!(notes_for_lang("solo testo", "it"), "solo testo");
+    }
     use super::*;
     use std::io::{Read, Write};
 
@@ -832,8 +870,8 @@ mod tests {
 
     #[test]
     fn long_notes_are_shortened() {
-        let r = parse_release(&serde_json::json!({ "tag_name": "v1.0.0", "body": "x".repeat(5000) })).unwrap();
-        assert!(r.notes.chars().count() <= 1501);
+        let r = parse_release(&serde_json::json!({ "tag_name": "v1.0.0", "body": "x".repeat(50_000) })).unwrap();
+        assert!(r.notes.chars().count() <= NOTES_MAX + 1);
         assert!(r.notes.ends_with('…'));
     }
 
