@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.245',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T12:38:51Z',
     kind: 'new',
     title: [
       'Spia di salute della stazione',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.245',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T12:38:51Z',
     kind: 'changed',
     title: [
       'Avvisi e finestre più leggibili',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.245',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T12:38:51Z',
     kind: 'fixed',
     title: [
       'TX durante TUNE, split, falsi crash e tabella delle frequenze',

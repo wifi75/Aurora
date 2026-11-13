@@ -2,7 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 mattina (0.11.244 pubblicata, sito aggiornato)
+## Stato al 2026-11-13 pomeriggio (0.11.245 pubblicata, sito aggiornato)
+
+- **0.11.245** (12:38 UTC): spia di salute della stazione (`GET /api/v1/health/resources`, `HealthLight.tsx`), avvisi e tooltip su fondo bianco, avviso di ingresso debole solo se dura 90 s e mai in TX/TUNE, niente falsi crash da `stderr.log` (`rumore_stderr`), tabella delle frequenze con righe sbagliate tolte una per una (`keep_valid`), menu delle Impostazioni a tasselli, scheda DXpedition «scuro nitido», TX durante TUNE, «Spegni split» sempre visibile, messaggio vero sul database di Log4OM (#51, causa ancora da capire).
+
 
 - **0.11.244** (09:23 UTC): «Spegni split» accanto al display (`POST /cat/split-off`, `force_split_off`); aggiornamento in un solo
   giro (niente `/R`, riapre solo lo script, l'agente nel tray aggiorna da se' con Aurora chiusa: si vede dall'aggiornamento SUCCESSIVO);
