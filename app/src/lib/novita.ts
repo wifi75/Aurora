@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.247',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T14:37:32Z',
     kind: 'new',
     title: [
       'Notch e passabanda in PSK, RTTY e CW',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.247',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T14:37:32Z',
     kind: 'fixed',
     title: [
       'Display della radio spento e Spot DX al loro posto',

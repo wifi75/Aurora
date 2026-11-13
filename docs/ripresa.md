@@ -2,7 +2,9 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 pomeriggio (0.11.246 pubblicata, sito aggiornato)
+## Stato al 2026-11-13 pomeriggio (0.11.247 pubblicata, sito aggiornato)
+
+- **0.11.247** (2026-11-13T14:37:32Z): notch e passabanda in frequenza davanti ai ricevitori PSK/RTTY/CW (`mode-digi/src/notch.rs`, oltre 60 dB, ritardo circa 0,3 s solo con filtri accesi), AFC vincolato, display spento grigio, Spot DX nella barra del cluster. FT-2000 del proprietario: l'accensione via CAT non funziona nemmeno a mano su COM10 senza VSPE (porta CAT della radio non alimentata da spenta): serve una presa comandata.
 
 - **0.11.246** (14:01 UTC): Nuovo log vuoto protetto (archivio controllato o cancellazione con doppia conferma e `confirm: DELETE`), Log QSO apre la finestra compilata senza QSO in corso (SWL), Accendi con Cat4OM (`powerOnRadio`) e RTS alto per le Yaesu (proprietario: FT-2000 con microHAM e VSPE, da provare), display spento con radio che non risponde, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8, ricerca della Guida con risultati. In studio: notch e AFC dei modi testuali.
 
