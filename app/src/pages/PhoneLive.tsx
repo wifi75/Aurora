@@ -69,6 +69,20 @@ function usePeriod(mode: string) {
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /**
+ * I secondi del periodo («07/15») e la barretta che scorre: componenti a parte, cosi' quattro volte al secondo si ridisegnano solo loro e
+ * non tutta la pagina (prima l'orologio ridisegnava la pagina intera, cluster e log compresi).
+ */
+function PeriodSecs({ mode }: { mode: string }) {
+  const period = usePeriod(mode);
+  return <>{`${pad2(period.seconds)}/${pad2(Math.round(period.length))}`}</>;
+}
+
+function PeriodFill({ mode }: { mode: string }) {
+  const period = usePeriod(mode);
+  return <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />;
+}
+
+/**
  * La pagina Stazione sul telefono: un telecomando compatto al posto dei pannelli. Dati e comandi sono quelli della pagina a finestre
  * (li passa Live): qui cambia solo la disposizione, dall'alto in basso come nel prototipo approvato.
  */
@@ -80,8 +94,6 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
   const pendingBand = useStation((s) => s.pendingBand);
   const transmitting = status?.transmitting === true;
   const mode = (status?.mode ?? '').toUpperCase();
-  const period = usePeriod(mode);
-  const seconds = `${pad2(period.seconds)}/${pad2(Math.round(period.length))}`;
   const band = pendingBand ?? (status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null);
   // le bande sono quelle scelte in Aurora (Impostazioni > Bande), come la barra della pagina Stazione
   const chosenBands = useBandFilter((s) => s.bands);
@@ -226,7 +238,9 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
             ) : null}
           </span>
         ) : null}
-        <span className="data phone-secs">{seconds}</span>
+        <span className="data phone-secs">
+          <PeriodSecs mode={mode} />
+        </span>
         <button type="button" className="phone-refresh" aria-label={t('phone.refresh')} title={t('phone.refresh')} onClick={() => void forceFreshUi()}>
           ⟳
         </button>
@@ -235,7 +249,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         </span>
       </div>
       <div className="phone-prog" aria-hidden="true">
-        <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
+        <PeriodFill mode={mode} />
       </div>
 
       {/* sul telefono le colonne non contano (display: contents); sul tablet sono due */}
@@ -310,7 +324,11 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       <section className={`phone-txbox${transmitting ? ' phone-txbox--tx' : ''}`} aria-live="polite">
         <div className="phone-txh">
           <span>{transmitting ? `${t('phone.transmitting')} · ${status?.tx_df ?? '—'} Hz` : `${t('phone.txMessages')} · ${status?.tx_df ?? '—'} Hz`}</span>
-          {transmitting ? <span className="data">{seconds}</span> : null}
+          {transmitting ? (
+            <span className="data">
+              <PeriodSecs mode={mode} />
+            </span>
+          ) : null}
         </div>
         {isCq ? (
           <div className="phone-dxline">
@@ -343,7 +361,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
         </ol>
         {transmitting ? (
           <div className="phone-txbar" aria-hidden="true">
-            <i style={{ width: `${Math.round(period.fraction * 100)}%` }} />
+            <PeriodFill mode={mode} />
           </div>
         ) : null}
       </section>
