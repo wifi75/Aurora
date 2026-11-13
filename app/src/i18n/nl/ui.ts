@@ -2791,6 +2791,7 @@ export const NL_UI: Record<string, string> = {
   "newlog.error": "Het nieuwe logboek is niet gemaakt: het huidige logboek is ongewijzigd.",
   "newlog.exportFirst": "Eerst ADIF exporteren",
   "newlog.exportHint": "Voordat je verdergaat, kun je het logboek het best exporteren naar een ADIF-bestand.",
+  "newlog.intro": "Aurora heeft een eigen intern log, actief vanaf de allereerste installatie: elk QSO komt daar terecht, en daaruit komen gewerkte stations, nieuwe DXCC, statistieken en kaart. Als je wilt, kun je ook een extern log koppelen (Log4OM, hieronder) of je geschiedenis importeren uit een ADIF-bestand (pagina ADIF-bestanden). „Nieuw leeg log” begint opnieuw bij nul.",
   "newlog.keep": "Nieuw logboek maken en het huidige bewaren (aanbevolen)",
   "newlog.keepHint": "Het huidige logboek blijft bewaard in {folder}, met datum en tijd in de naam. Er gaat geen QSO verloren.",
   "newlog.replace": "Nieuw logboek maken en het huidige wissen",

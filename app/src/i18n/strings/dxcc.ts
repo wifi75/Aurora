@@ -183,6 +183,14 @@ export const dxccStrings = {
     'No se pudo importar el archivo.',
     'Não foi possível importar o ficheiro.',
   ],
+  'newlog.intro': [
+    'Aurora ha un suo log interno, attivo fin dalla prima installazione: ogni QSO finisce lì, e da lì vengono lavorati, novità DXCC, statistiche e mappa. Se vuoi, puoi anche collegare un log esterno (Log4OM, qui sotto) o importare il tuo storico da un file ADIF (pagina File ADIF). «Nuovo log vuoto» ricomincia da zero.',
+    'Aurora has its own internal log, active from the very first installation: every QSO goes there, and worked stations, new DXCC, statistics and map come from it. If you like, you can also connect an external log (Log4OM, below) or import your history from an ADIF file (ADIF files page). “New empty log” starts again from zero.',
+    'Aurora hat ein eigenes internes Log, aktiv ab der ersten Installation: Jedes QSO landet dort, und daraus kommen gearbeitete Stationen, neue DXCC, Statistik und Karte. Wenn du willst, kannst du auch ein externes Log verbinden (Log4OM, unten) oder deine Historie aus einer ADIF-Datei importieren (Seite ADIF-Dateien). „Neues leeres Log“ fängt bei null an.',
+    'Aurora a son propre journal interne, actif dès la première installation : chaque QSO y va, et c’est de là que viennent stations contactées, nouveaux DXCC, statistiques et carte. Si tu veux, tu peux aussi relier un journal externe (Log4OM, ci-dessous) ou importer ton historique depuis un fichier ADIF (page Fichiers ADIF). « Nouveau journal vide » repart de zéro.',
+    'Aurora tiene su propio log interno, activo desde la primera instalación: cada QSO va allí, y de él salen las estaciones trabajadas, los DXCC nuevos, las estadísticas y el mapa. Si quieres, también puedes conectar un log externo (Log4OM, abajo) o importar tu historial desde un archivo ADIF (página Archivos ADIF). «Nuevo log vacío» empieza desde cero.',
+    'A Aurora tem o seu próprio log interno, ativo desde a primeira instalação: cada QSO vai para lá, e daí vêm as estações trabalhadas, os DXCC novos, as estatísticas e o mapa. Se quiseres, podes também ligar um log externo (Log4OM, abaixo) ou importar o teu histórico de um ficheiro ADIF (página Ficheiros ADIF). «Novo log vazio» recomeça do zero.',
+  ],
   'newlog.button': ['Nuovo log vuoto', 'New empty log', 'Neues leeres Log', 'Nouveau log vide', 'Nuevo log vacío', 'Novo log vazio'],
   'newlog.tip': [
     'Apre un log nuovo vuoto. Prima chiede conferma: il log attuale si può tenere da parte (consigliato) o cancellare. Solo dalla rete di casa.',

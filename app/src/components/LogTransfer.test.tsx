@@ -20,12 +20,13 @@ vi.mock('../api/client', () => {
   };
 });
 import { ApiError, importLog, newLogInfo, startNewLog } from '../api/client';
-import { LogTransfer } from './LogTransfer';
+import { LogTransfer, NewLogBox } from './LogTransfer';
 
 function show() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <LogTransfer />
+      <NewLogBox />
     </QueryClientProvider>,
   );
 }
