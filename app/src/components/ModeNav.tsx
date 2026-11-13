@@ -10,7 +10,6 @@ import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 import { rememberDial, retuneForMode, retuneForText } from '../lib/modeRetune';
 import { modeBase } from '../lib/period';
-import { settingsNodeFor } from '../lib/settingsTree';
 
 /** I modi in alto: ognuno ha le sue pagine; i gruppi FT8 e VHF dividono i modi del motore. Gli altri modi arrivano uno alla volta. */
 export type ModeGroup = 'ft8' | 'vhf';
@@ -215,8 +214,9 @@ export function ModeNav({ route, showQmap, remote }: Props) {
     </a>
   );
 
-  const settingsNode = settingsNodeFor(route.name, mode);
-  const settingsHref = settingsNode ? `#/impostazioni/${settingsNode}` : '#/impostazioni';
+  // la voce «Impostazioni» del menu apre sempre la pagina Informazioni (richiesta del proprietario); i rami dei modi si aprono
+  // dagli ingranaggi delle singole pagine
+  const settingsHref = '#/impostazioni';
 
   return (
     <>
