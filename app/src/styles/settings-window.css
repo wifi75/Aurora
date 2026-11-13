@@ -40,7 +40,8 @@
 .sw-panel .sx-field{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;align-items:end;gap:3px;min-height:0;padding:0;background:none;border:0;border-radius:0}
 .sw-panel .sx-field--wide{grid-column:1/-1}
 .sw-panel .sx-label{display:block;overflow:visible;-webkit-line-clamp:unset;line-clamp:unset;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
-.sw-panel .sx-control{min-width:0}
+/* il contenuto parte sotto l'inizio dell'etichetta: non centrato ne' spinto a destra (era lo schema vecchio, etichetta a sinistra e controllo a destra) */
+.sw-panel .sx-control{min-width:0;max-width:none;justify-content:flex-start;text-align:left;flex-wrap:wrap}
 .sw-panel .sx-field input[type='text'],.sw-panel .sx-field input[type='search'],.sw-panel .sx-field input[type='password'],.sw-panel .sx-field input[type='url'],.sw-panel .sx-field select{width:100%;max-width:none}
 /* le caselle: quadratino e testo sulla stessa riga, il testo non in maiuscoletto */
 .sw-panel .sx-field:has(> .sx-control > input[type='checkbox']),.sw-panel .set-check.sx-field{display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;gap:8px}
