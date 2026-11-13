@@ -157,6 +157,7 @@ export const logExportStrings = {
     'Las fechas están en UTC, como en el log. Puedes indicar solo «Desde» o solo «Hasta».',
     'As datas estão em UTC, como no log. Podes indicar só «De» ou só «Até».',
   ],
+  'log.importAdif': ['Importa un file ADIF', 'Import an ADIF file', 'ADIF-Datei importieren', 'Importer un fichier ADIF', 'Importar un archivo ADIF', 'Importar um ficheiro ADIF'],
   'exp.add': ['Aggiungi QSO', 'Add QSO', 'QSO hinzufügen', 'Ajouter un QSO', 'Añadir QSO', 'Adicionar QSO'],
   'exp.delete': ['Elimina selezionati ({n})', 'Delete selected ({n})', 'Ausgewählte löschen ({n})', 'Supprimer la sélection ({n})', 'Eliminar seleccionados ({n})', 'Eliminar selecionados ({n})'],
   'exp.deleteTip': ['Cancella dal log i QSO spuntati (anche dal file ADIF di Aurora). Chiede conferma.', 'Deletes the ticked QSOs from the log (also from Aurora’s ADIF file). Asks first.', 'Löscht die markierten QSOs aus dem Log (auch aus Auroras ADIF-Datei). Fragt vorher.', 'Supprime du log les QSO cochés (aussi du fichier ADIF d’Aurora). Demande confirmation.', 'Borra del log los QSO marcados (también del archivo ADIF de Aurora). Pide confirmación.', 'Apaga do log os QSO marcados (também do ficheiro ADIF do Aurora). Pede confirmação.'],

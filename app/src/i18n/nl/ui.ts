@@ -2635,6 +2635,7 @@ export const NL_UI: Record<string, string> = {
   "log.col.rst": "Rapporten",
   "log.editTip": "Dubbelklik om deze QSO te corrigeren of te verwijderen. Alleen het logboek van Aurora en het bijbehorende ADIF-bestand veranderen: naar de externe logboeken wordt niets opnieuw verzonden.",
   "log.empty": "Geen QSO’s in het logboek",
+  "log.importAdif": "ADIF-bestand importeren",
   "log.loggedBadge": "GELOGD",
   "log.readonly4om": "Logboek van Log4OM2, alleen-lezen: QSO’s worden in Log4OM2 gecorrigeerd en verwijderd.",
   "log.tab.internal": "Intern logboek",

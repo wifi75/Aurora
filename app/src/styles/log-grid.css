@@ -62,3 +62,8 @@ html[data-theme='light'] .log4om-table.log4om-grid td.lg-c--country {
 .log4om-table.log4om-grid tr.log4om-row--flash td:last-child {
   padding-right: 62px !important;
 }
+
+/* log vuoto: una riga con il messaggio e i pulsanti «Aggiungi QSO» e «Importa un file ADIF» sotto le intestazioni */
+.log4om-empty td { padding: 14px 10px; text-align: center; }
+.log4om-empty td > * { margin: 0 6px; }
+.log4om-empty a.glass { text-decoration: none; display: inline-block; }

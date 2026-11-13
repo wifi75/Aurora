@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SetupCta } from './SetupCta';
+import { AddQso } from '../pages/ExportPage';
 import { useEffect, useLayoutEffect, useRef, useState, memo } from 'react';
 import { getLog4om, getLogQso, type LogQso } from '../api/client';
 import { LogEditDialog } from './LogEditDialog';
@@ -124,6 +124,7 @@ function Log4omPanelInner() {
 
   // doppio clic su un QSO del log interno di Aurora: si apre la finestra per correggerlo o cancellarlo (il log di Log4OM2 e' in sola lettura)
   const [editing, setEditing] = useState<LogQso | null>(null);
+  const [adding, setAdding] = useState(false);
   const readOnly = log.data?.source === 'log4om';
   const edit = (q: Log4omQso) => {
     if (readOnly) {
@@ -138,7 +139,9 @@ function Log4omPanelInner() {
 
   if (log.isError) return <p className="muted log4om-note">{t('log.unavailable')}</p>;
   if (!log.data) return <p className="muted log4om-note">…</p>;
-  if (log.data.qsos.length === 0) return <SetupCta className="setup-cta--log" href="#/impostazioni/files" title="cta.log.none" action="cta.log.go" />;
+  // log vuoto: le intestazioni delle colonne restano e sotto ci sono «Aggiungi QSO» e «Importa»; prima c'era solo il riquadro «Il log e'
+  // vuoto» e un log nuovo non diceva come aggiungere un QSO a mano
+  const empty = log.data.qsos.length === 0;
   return (
     <div className="log4om" ref={boxRef}>
       {fx ? (
@@ -147,6 +150,14 @@ function Log4omPanelInner() {
           <i className="qso-fx-trail qso-fx-trail--top" />
           <i className="qso-fx-trail qso-fx-trail--bottom" />
           <b className="qso-fx-badge">{t('log.loggedBadge')}</b>
+        </div>
+      ) : null}
+      {adding ? (
+        <div className="logqso-backdrop" onClick={(e) => e.target === e.currentTarget && setAdding(false)}>
+          <div className="logqso-dialog" role="dialog" aria-modal="true" aria-label={t('exp.add')}>
+            <h3>{t('exp.add')}</h3>
+            <AddQso onCancel={() => setAdding(false)} onDone={() => { setAdding(false); void client.invalidateQueries({ queryKey: ['log4om'] }); }} />
+          </div>
         </div>
       ) : null}
       <table ref={cols.tableRef} className="log4om-table log4om-grid mv-grid" style={cols.tableStyle}>
@@ -161,6 +172,21 @@ function Log4omPanelInner() {
           </tr>
         </thead>
         <tbody>
+          {empty ? (
+            <tr className="log4om-empty">
+              <td colSpan={cols.visible.length}>
+                <span className="muted">{t('cta.log.none')}</span>
+                {readOnly ? null : (
+                  <button type="button" className="glass chip" onClick={() => setAdding(true)}>
+                    {t('exp.add')}
+                  </button>
+                )}
+                <a className="glass chip" href="#/impostazioni/files">
+                  {t('log.importAdif')}
+                </a>
+              </td>
+            </tr>
+          ) : null}
           {shownQsos.map((q, i) => (
             <tr
               key={`${q.date}-${q.call}-${i}`}

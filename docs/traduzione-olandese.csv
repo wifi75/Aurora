@@ -2098,6 +2098,7 @@ exp.col.grid,Grid,Locator
 exp.col.country,Country,Land
 exp.rstTip,"Reports in dB: «Sent» is the one you sent, «Rcvd» the one you received.","Rapporten in dB: «Verz.» is het rapport dat je gaf, «Ontv.» het rapport dat je kreeg."
 exp.datesTip,"Dates are in UTC, as in the log. You can give only «From» or only «To».","Datums zijn in UTC, zoals in het logboek. Je kunt alleen «Van» of alleen «Tot» invullen."
+log.importAdif,Import an ADIF file,ADIF-bestand importeren
 exp.add,Add QSO,QSO toevoegen
 exp.delete,Delete selected ({n}),Geselecteerde verwijderen ({n})
 exp.deleteTip,Deletes the ticked QSOs from the log (also from Aurora’s ADIF file). Asks first.,Verwijdert de aangevinkte QSO’s uit het logboek (ook uit het ADIF-bestand van Aurora). Vraagt eerst bevestiging.
