@@ -1712,6 +1712,11 @@ export async function sstvRx(action: 'start' | 'stop' | 'cancel'): Promise<void>
   await sstvRxQueue(() => request(`/sstv/rx/${action}`, { method: 'POST' }));
 }
 
+/** La pagina SSTV `id` e' aperta (battito) o e' stata lasciata: il core spegne l'ascolto quando non ne resta nessuna. */
+export async function sstvRxPage(action: 'hold' | 'release', id: string): Promise<void> {
+  await sstvRxQueue(() => request(`/sstv/rx/${action}?id=${encodeURIComponent(id)}`, { method: 'POST', keepalive: true }));
+}
+
 export async function sstvForce(mode: string): Promise<void> {
   await request('/sstv/rx/force', jsonInit({ mode }));
 }
@@ -1908,6 +1913,11 @@ const digiRxQueue = inOrder();
 
 export async function digiRx(action: 'start' | 'stop'): Promise<void> {
   await digiRxQueue(() => request(`/digi/rx/${action}`, { method: 'POST' }));
+}
+
+/** La pagina dei modi testuali `id` e' aperta (battito) o e' stata lasciata: il core spegne l'ascolto quando non ne resta nessuna. */
+export async function digiRxPage(action: 'hold' | 'release', id: string): Promise<void> {
+  await digiRxQueue(() => request(`/digi/rx/${action}?id=${encodeURIComponent(id)}`, { method: 'POST', keepalive: true }));
 }
 
 export async function digiTransmit(text: string): Promise<void> {

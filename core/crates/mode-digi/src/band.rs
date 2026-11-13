@@ -200,6 +200,11 @@ impl BandLink {
         *lock(&self.hooks.forms) = Arc::new(forms);
     }
 
+    /// Le impostazioni chiedono un decodificatore (CW, o PSK31/PSK63 con «tutta la banda»).
+    pub fn is_active(&self) -> bool {
+        self.active.load(Ordering::Relaxed)
+    }
+
     /// Le impostazioni nuove: modo, acceso o spento, spot.
     pub fn configure(&self, s: &DigiSettings) {
         let kind = Kind::of(s);

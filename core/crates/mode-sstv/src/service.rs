@@ -146,6 +146,8 @@ struct Inner {
     port: Mutex<Option<Arc<dyn SstvTxPort>>>,
     emit: Mutex<Option<Emitter>>,
     store: Mutex<ImageStore>,
+    /// Le pagine SSTV aperte (finestra principale, staccata, telefono): lasciata l'ultima, l'ascolto si spegne.
+    users: aurora_core::users::PageUsers,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -270,6 +272,22 @@ impl Inner {
         }
     }
 
+    fn stop_rx(&self) {
+        self.listening.store(false, Ordering::Relaxed);
+        lock(&self.rx).listening = false;
+        let _ = self.queue.send(Msg::Cancel);
+        self.rx_status_event();
+    }
+
+    /// Nessuna pagina SSTV aperta: l'ascolto si spegne (niente piu' audio ne' CPU), salvo «Ascolto acceso all'avvio di Aurora».
+    /// Una trasmissione in corso continua: spegnere l'ascolto non la tocca.
+    fn page_left(&self) {
+        if self.listening.load(Ordering::Relaxed) && !lock(&self.settings).auto_receive {
+            tracing::info!("SSTV: nessuna pagina aperta, ascolto spento");
+            self.stop_rx();
+        }
+    }
+
     fn tx_event(&self) {
         let st = lock(&self.tx).clone();
         self.emit(SstvEvent { kind: "tx".into(), state: Some(st.state), mode: st.mode.map(|m| m.id().to_string()), progress: Some(st.progress), message: st.message, ..SstvEvent::default() });
@@ -307,6 +325,7 @@ impl SstvService {
             port: Mutex::new(None),
             emit: Mutex::new(None),
             store: Mutex::new(store),
+            users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
         let worker = Arc::clone(&inner);
         let cfg = settings.decoder();
@@ -446,10 +465,19 @@ impl SstvService {
     }
 
     pub fn stop_rx(&self) {
-        self.inner.listening.store(false, Ordering::Relaxed);
-        lock(&self.inner.rx).listening = false;
-        let _ = self.inner.queue.send(Msg::Cancel);
-        self.inner.rx_status_event();
+        self.inner.stop_rx();
+    }
+
+    /// Un battito della pagina SSTV `id` (aperta in una finestra o sul telefono): finche' qualcuna batte, l'ascolto non si spegne da solo.
+    pub fn hold_rx(&self, id: &str) {
+        self.inner.users.hold(id);
+    }
+
+    /// La pagina `id` e' stata lasciata: se era l'ultima l'ascolto si spegne, salvo «Ascolto acceso all'avvio» (la trasmissione no).
+    pub fn release_rx(&self, id: &str) {
+        if self.inner.users.release(id) {
+            self.inner.page_left();
+        }
     }
 
     /// Ricezione subito nel modo dato, senza aspettare il VIS (immagine gia' cominciata).
@@ -612,6 +640,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
     let mut last_status = Instant::now();
+    let mut last_users = Instant::now();
     loop {
         let msg = match queue.recv_timeout(Duration::from_millis(500)) {
             Ok(m) => Some(m),
@@ -645,7 +674,15 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
         for ev in events {
             handle(inner, &decoder, &mut memory, ev);
         }
-        if last_status.elapsed() >= Duration::from_millis(700) {
+        // le pagine sparite senza salutare (finestra chiusa, rete caduta) escono da sole
+        if last_users.elapsed() >= Duration::from_secs(1) {
+            last_users = Instant::now();
+            if inner.users.expire() {
+                inner.page_left();
+            }
+        }
+        // lo stato va all'interfaccia solo con l'ascolto acceso: prima partiva un evento ogni 0,7 s verso ogni client anche in FT8
+        if last_status.elapsed() >= Duration::from_millis(700) && inner.listening.load(Ordering::Relaxed) {
             last_status = Instant::now();
             {
                 let mut st = lock(&inner.rx);
@@ -759,6 +796,27 @@ mod cartelle_tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("cartella di prova");
         dir
+    }
+
+    /// Due pagine SSTV aperte: chiudendone una l'ascolto resta, chiudendo l'ultima si spegne (salvo «Ascolto acceso all'avvio»).
+    #[test]
+    fn l_ascolto_si_spegne_solo_quando_esce_l_ultima_pagina() {
+        let data = temp("pagine");
+        let svc = SstvService::open(&data);
+        svc.hold_rx("principale");
+        svc.hold_rx("telefono");
+        svc.start_rx();
+        svc.release_rx("telefono");
+        assert!(svc.is_listening(), "la finestra principale e' ancora aperta");
+        svc.release_rx("principale");
+        assert!(!svc.is_listening(), "nessuna pagina: ascolto spento");
+        let s = SstvSettings { auto_receive: true, ..svc.settings() };
+        svc.apply_settings(s).expect("impostazioni");
+        svc.hold_rx("principale");
+        svc.start_rx();
+        svc.release_rx("principale");
+        let _ = std::fs::remove_dir_all(&data);
+        assert!(svc.is_listening(), "«Ascolto acceso all'avvio»: resta acceso");
     }
 
     #[test]

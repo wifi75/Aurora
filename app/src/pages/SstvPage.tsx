@@ -1,7 +1,7 @@
 import { Icon } from '../components/Icon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, type SstvImageEntry } from '../api/client';
+import { getSstv, getSstvImageBlob, getSstvImages, postFrequency, sstvRx, sstvRxPage, type SstvImageEntry } from '../api/client';
 import { FreqPicker } from '../components/FreqPicker';
 import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
@@ -46,7 +46,7 @@ function SstvBody({ solo }: { solo: boolean }) {
   // salvo «Ascolto acceso all'avvio di Aurora»
   const keepListening = useRef(false);
   keepListening.current = snap.data?.settings.auto_receive === true;
-  useListenWhileOpen(sstvRx, () => keepListening.current, refresh);
+  useListenWhileOpen(sstvRx, () => keepListening.current, refresh, sstvRxPage);
 
   // con la pagina aperta l'ascolto resta acceso finche' l'operatore non preme «Ferma ascolto», anche mentre compone (la ricezione vive
   // nel motore e continua in sottofondo). L'accensione mandata una volta sola all'apertura poteva perdersi: motore non ancora pronto
