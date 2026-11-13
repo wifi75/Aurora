@@ -20,6 +20,20 @@ pub struct SendState {
     pub failed: u64,
     /// QSO in coda in attesa di partire (solo per l'invio diretto).
     pub pending: u64,
+    /// Codice stabile dell'esito (es. `clublog_denied`), per tradurre il messaggio nella lingua dell'interfaccia; vuoto = solo il testo.
+    pub code: String,
+    /// Valori da inserire nel testo tradotto (nominativi, dettaglio della risposta del servizio, ora del nuovo tentativo...).
+    pub params: BTreeMap<String, String>,
+}
+
+/// I valori che accompagnano un codice di esito.
+pub type Params<'a> = &'a [(&'a str, &'a str)];
+
+impl SendState {
+    fn set_code(&mut self, code: &str, params: Params<'_>) {
+        self.code = code.to_string();
+        self.params = params.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect();
+    }
 }
 
 #[derive(Default)]
@@ -43,17 +57,28 @@ impl ReportStatus {
 
     /// Un invio riuscito.
     pub fn ok(&self, kind: &'static str, message: impl Into<String>) {
+        self.ok_coded(kind, "", &[], message);
+    }
+
+    /// Un invio riuscito, con il codice che l'interfaccia traduce (il testo resta come ripiego).
+    pub fn ok_coded(&self, kind: &'static str, code: &str, params: Params<'_>, message: impl Into<String>) {
         let message = message.into();
         self.with(kind, |s| {
             s.ok = Some(true);
             s.at_ms = now_ms();
             s.message = message;
             s.sent += 1;
+            s.set_code(code, params);
         });
     }
 
     /// Un invio fallito: l'errore va anche nel registro.
     pub fn fail(&self, kind: &'static str, message: impl Into<String>) {
+        self.fail_coded(kind, "", &[], message);
+    }
+
+    /// Un invio fallito, con il codice che l'interfaccia traduce (il testo resta come ripiego e nel registro).
+    pub fn fail_coded(&self, kind: &'static str, code: &str, params: Params<'_>, message: impl Into<String>) {
         let message = message.into();
         tracing::warn!("invio {kind} non riuscito: {message}");
         self.with(kind, |s| {
@@ -61,6 +86,7 @@ impl ReportStatus {
             s.at_ms = now_ms();
             s.message = message;
             s.failed += 1;
+            s.set_code(code, params);
         });
     }
 
@@ -80,7 +106,7 @@ impl ReportStatus {
             let s = self.get(kind);
             out.insert(
                 kind.to_string(),
-                json!({ "ok": s.ok, "at_ms": s.at_ms, "message": s.message, "sent": s.sent, "failed": s.failed, "pending": s.pending }),
+                json!({ "ok": s.ok, "at_ms": s.at_ms, "message": s.message, "sent": s.sent, "failed": s.failed, "pending": s.pending, "code": s.code, "params": s.params }),
             );
         }
         Value::Object(out)
@@ -105,6 +131,11 @@ mod tests {
         assert_eq!(snap["psk"]["sent"], 2);
         assert_eq!(snap["eqsl"]["ok"], Value::Null, "un servizio mai usato ha ok nullo");
         assert_eq!(snap.as_object().map(serde_json::Map::len), Some(KINDS.len()));
+        s.fail_coded("clublog", "clublog_denied", &[("detail", "Login failed")], "Club Log ha negato l'accesso");
+        let snap = s.snapshot();
+        assert_eq!((snap["clublog"]["code"].as_str(), snap["clublog"]["params"]["detail"].as_str()), (Some("clublog_denied"), Some("Login failed")));
+        s.ok("clublog", "QSO inviato");
+        assert_eq!(s.snapshot()["clublog"]["code"], "", "un esito senza codice azzera il vecchio");
         s.set_pending("qrz", 3);
         assert_eq!((s.get("qrz").pending, s.get("qrz").ok), (3, None), "la coda non e' un esito");
     }

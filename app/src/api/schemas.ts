@@ -266,7 +266,7 @@ export const EngineSettingsSchema = z.object({
   /** Segreti: solo se ci sono (mai il valore). */
   secrets: z.record(z.string(), z.boolean()).optional(),
   /** Esito dell'ultimo invio di ogni servizio. */
-  status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number(), pending: z.number().optional() })).optional(),
+  status: z.record(z.string(), z.object({ ok: z.boolean().nullable(), at_ms: z.number(), message: z.string(), sent: z.number(), failed: z.number(), pending: z.number().optional(), code: z.string().optional(), params: z.record(z.string(), z.string()).optional() })).optional(),
 });
 export type EngineSettings = z.infer<typeof EngineSettingsSchema>;
 
@@ -276,5 +276,5 @@ export const WavelogStationsSchema = z.object({ stations: z.array(z.object({ id:
 export type WavelogStation = z.infer<typeof WavelogStationsSchema>['stations'][number];
 
 /** Esito dello spot su DXSummit (`POST /api/v1/spot/dxsummit`): chi, su che frequenza (Hz) e con che testo. */
-export const SpotResultSchema = z.object({ ok: z.boolean(), dx_call: z.string(), frequency_hz: z.number(), info: z.string() });
+export const SpotResultSchema = z.object({ ok: z.boolean(), dx_call: z.string(), frequency_hz: z.number(), info: z.string(), via: z.enum(['dxsummit', 'telnet']).optional(), server: z.string().optional() });
 export type SpotResult = z.infer<typeof SpotResultSchema>;

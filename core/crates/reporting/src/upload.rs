@@ -323,14 +323,14 @@ pub(crate) async fn worker(service: Arc<Service>, target: Target) {
         let config = service.config.borrow().clone();
         let now = (service.now)();
         for call in queue.expire(target, now) {
-            service.status.fail(kind, format!("QSO con {call} scartato: in coda da piu' di sette giorni"));
+            service.status.fail_coded(kind, "upload_expired", &[("calls", call.as_str())], format!("QSO con {call} scartato: in coda da piu' di sette giorni"));
         }
         service.status.set_pending(kind, queue.count(target) as u64);
         if enabled(&config, target) && !queue.is_blocked(target) {
             let items = queue.due(target, now, target.batch());
             if !items.is_empty() {
-                let outcome = send(&service, target, &config, &items).await;
-                settle(&service, target, &items, outcome);
+                let (outcome, code, detail) = send(&service, target, &config, &items).await;
+                settle(&service, target, &items, outcome, code, &detail);
                 continue;
             }
         }
@@ -353,7 +353,9 @@ pub(crate) async fn worker(service: Arc<Service>, target: Target) {
 }
 
 /// Lo stato e la coda dopo un invio.
-fn settle(service: &Service, target: Target, items: &[Pending], outcome: Outcome) {
+/// `code` e `detail` (solo ClubLog per ora) sono il codice stabile dell'esito e il dettaglio della risposta: l'interfaccia li traduce nella
+/// sua lingua, il testo italiano resta come ripiego e nel registro.
+fn settle(service: &Service, target: Target, items: &[Pending], outcome: Outcome, code: &str, detail: &str) {
     let kind = target.kind();
     let ids: Vec<u64> = items.iter().map(|p| p.id).collect();
     let calls = items.iter().map(|p| p.call.as_str()).collect::<Vec<_>>().join(", ");
@@ -361,24 +363,25 @@ fn settle(service: &Service, target: Target, items: &[Pending], outcome: Outcome
     match outcome {
         Outcome::Sent(msg) => {
             queue.remove(&ids);
-            service.status.ok(kind, with_detail(&format!("QSO con {calls} inviato"), &msg));
+            service.status.ok_coded(kind, code, &[("calls", &calls), ("detail", detail)], with_detail(&format!("QSO con {calls} inviato"), &msg));
         }
         Outcome::Duplicate(msg) => {
             queue.remove(&ids);
-            service.status.ok(kind, with_detail(&format!("QSO con {calls} gia' presente"), &msg));
+            service.status.ok_coded(kind, code, &[("calls", &calls), ("detail", detail)], with_detail(&format!("QSO con {calls} gia' presente"), &msg));
         }
         Outcome::Retry(msg) => {
             let at = queue.later(&ids, (service.now)());
             let (h, m) = (at / 3600 % 24, at / 60 % 60);
-            service.status.fail(kind, format!("{msg}: nuovo tentativo alle {h:02}:{m:02} UTC"));
+            let time = format!("{h:02}:{m:02}");
+            service.status.fail_coded(kind, code, &[("detail", detail), ("time", &time)], format!("{msg}: nuovo tentativo alle {time} UTC"));
         }
         Outcome::Blocked(msg) => {
             queue.set_blocked(target, true);
-            service.status.fail(kind, format!("{msg}; invio fermo (i QSO restano in coda) finche' non cambi le impostazioni"));
+            service.status.fail_coded(kind, code, &[("detail", detail)], format!("{msg}; invio fermo (i QSO restano in coda) finche' non cambi le impostazioni"));
         }
         Outcome::Rejected(msg) => {
             queue.remove(&ids);
-            service.status.fail(kind, format!("QSO con {calls} rifiutato: {msg}"));
+            service.status.fail_coded(kind, code, &[("calls", &calls), ("detail", detail)], format!("QSO con {calls} rifiutato: {msg}"));
         }
     }
     service.status.set_pending(kind, queue.count(target) as u64);
@@ -389,7 +392,7 @@ fn with_detail(base: &str, detail: &str) -> String {
 }
 
 /// Manda (in un thread a parte: le richieste e TQSL sono bloccanti).
-async fn send(service: &Service, target: Target, config: &Config, items: &[Pending]) -> Outcome {
+async fn send(service: &Service, target: Target, config: &Config, items: &[Pending]) -> (Outcome, &'static str, String) {
     let secrets = Arc::clone(&service.secrets);
     let endpoints = service.endpoints.clone();
     let config = config.clone();
@@ -398,43 +401,44 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
     let id = items.first().map_or(0, |p| p.id);
     tokio::task::spawn_blocking(move || {
         let record = records.first().map_or("", String::as_str);
+        let plain = |o: Outcome| (o, "", String::new());
         match target {
             Target::Wavelog => {
-                let Some(account) = &config.wavelog else { return Outcome::Blocked("Wavelog/Cloudlog spento".into()) };
-                let Some(key) = secrets.get(crate::WAVELOG_SECRET) else { return Outcome::Blocked("chiave API di Wavelog/Cloudlog non impostata".into()) };
-                crate::wavelog::upload(&account.url, &key, &account.station_id, record, endpoints.upload_timeout, &endpoints.user_agent)
+                let Some(account) = &config.wavelog else { return plain(Outcome::Blocked("Wavelog/Cloudlog spento".into())) };
+                let Some(key) = secrets.get(crate::WAVELOG_SECRET) else { return plain(Outcome::Blocked("chiave API di Wavelog/Cloudlog non impostata".into())) };
+                plain(crate::wavelog::upload(&account.url, &key, &account.station_id, record, endpoints.upload_timeout, &endpoints.user_agent))
             }
             Target::Clublog => {
-                let Some(account) = &config.clublog else { return Outcome::Blocked("ClubLog spento".into()) };
+                let Some(account) = &config.clublog else { return (Outcome::Blocked("ClubLog spento".into()), "clublog_off", String::new()) };
                 let (Some(password), Some(api)) = (secrets.get(crate::CLUBLOG_SECRET), secrets.get(crate::CLUBLOG_API_SECRET)) else {
-                    return Outcome::Blocked("password o chiave API di ClubLog non impostate".into());
+                    return (Outcome::Blocked("password o chiave API di ClubLog non impostate".into()), "clublog_secrets_missing", String::new());
                 };
                 let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
                 let form = crate::clublog::Form { email: &account.email, password: &password, callsign: &call, api: &api };
-                crate::clublog::upload(&endpoints.clublog_url, &form, record, endpoints.upload_timeout, &endpoints.user_agent)
+                crate::clublog::upload_coded(&endpoints.clublog_url, &form, record, endpoints.upload_timeout, &endpoints.user_agent)
             }
             Target::Qrz => {
-                let Some(key) = secrets.get(crate::QRZ_SECRET) else { return Outcome::Blocked("chiave del logbook QRZ non impostata".into()) };
+                let Some(key) = secrets.get(crate::QRZ_SECRET) else { return plain(Outcome::Blocked("chiave del logbook QRZ non impostata".into())) };
                 let record = crate::qrz::force_station_call(record, &config.qrz_call);
-                crate::qrz::insert(&endpoints.qrz_url, &key, &record, endpoints.upload_timeout, &endpoints.user_agent)
+                plain(crate::qrz::insert(&endpoints.qrz_url, &key, &record, endpoints.upload_timeout, &endpoints.user_agent))
             }
             Target::Hrdlog => {
-                let Some(account) = &config.hrdlog else { return Outcome::Blocked("HRDLOG.NET spento".into()) };
-                let Some(code) = secrets.get(crate::HRDLOG_SECRET) else { return Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into()) };
+                let Some(account) = &config.hrdlog else { return plain(Outcome::Blocked("HRDLOG.NET spento".into())) };
+                let Some(code) = secrets.get(crate::HRDLOG_SECRET) else { return plain(Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into())) };
                 let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
-                crate::hrdlog::upload(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent)
+                plain(crate::hrdlog::upload(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent))
             }
             Target::Lotw => {
-                let Some(setup) = &config.lotw else { return Outcome::Blocked("LoTW spento".into()) };
+                let Some(setup) = &config.lotw else { return plain(Outcome::Blocked("LoTW spento".into())) };
                 let Some(tqsl) = crate::lotw::find_tqsl(&setup.tqsl, &endpoints.tqsl_candidates) else {
-                    return Outcome::Blocked("TQSL non trovato (indica il percorso di tqsl.exe)".into());
+                    return plain(Outcome::Blocked("TQSL non trovato (indica il percorso di tqsl.exe)".into()));
                 };
-                crate::lotw::run(&tqsl, &setup.location, &records, &work_dir, id, endpoints.lotw_timeout)
+                plain(crate::lotw::run(&tqsl, &setup.location, &records, &work_dir, id, endpoints.lotw_timeout))
             }
         }
     })
     .await
-    .unwrap_or_else(|e| Outcome::Retry(format!("invio interrotto: {e}")))
+    .unwrap_or_else(|e| (Outcome::Retry(format!("invio interrotto: {e}")), "", String::new()))
 }
 
 /// Il pulsante «Prova»: controlla le credenziali **senza** registrare QSO (dove il servizio lo permette).

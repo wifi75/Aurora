@@ -174,6 +174,7 @@ async fn clublog_stops_on_a_credentials_error_and_restarts_when_they_change() {
     }
     let st = wait_status(&r, "clublog", false).await;
     assert!(st.message.contains("fermo"), "{}", st.message);
+    assert_eq!(st.code, "clublog_denied", "il codice stabile per tradurre l'errore");
     // fermo: un altro QSO resta in coda senza richieste
     r.bus.events().send(Event::QsoLogged(QsoRecord { time_off_unix_ms: 1_792_861_449_000, ..qso("F5ABC") })).unwrap();
     assert!(timeout(Duration::from_millis(800), requests.recv()).await.is_err(), "nessuna richiesta con credenziali sbagliate");

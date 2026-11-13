@@ -13,6 +13,7 @@ import { useAutosave } from './useAutosave';
 import { WavelogStationSelect } from './WavelogStationSelect';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { coreText } from '../lib/coreText';
+import { sendText } from '../lib/sendStatus';
 import { useSharedDraft } from './session';
 
 /** Vero quando Aurora gira con il motore proprio: le impostazioni sono sue, non di un altro programma. */
@@ -282,7 +283,7 @@ function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind:
   // riga dei servizi: niente «Ultimo invio: mai»; dopo un invio solo l'esito in breve, il dettaglio nel suggerimento
   if (compact) {
     if (!st || st.ok === null) return null;
-    const detail = `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${coreText(st.message, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
+    const detail = `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${sendText(st, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
     return (
       <small className={`ens-reason ${st.ok ? 'muted' : 'live-note'}`} role="status" title={detail} data-testid={`status-${kind}`}>
         {t('ens.st.title')}: {st.ok ? t('ens.st.ok') : t('ens.st.err')} {new Date(st.at_ms).toLocaleTimeString()}
@@ -290,7 +291,7 @@ function SendStatus({ doc, kind, compact = false }: { doc: EngineSettings; kind:
       </small>
     );
   }
-  const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${coreText(st.message, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
+  const text = !st || st.ok === null ? t('ens.st.never') : `${st.ok ? t('ens.st.ok') : t('ens.st.err')}: ${sendText(st, t)} (${new Date(st.at_ms).toLocaleTimeString()})`;
   const pending = st?.pending ? ` — ${t(pendingKey, { n: st.pending })}` : '';
   return (
     <p className={`ens-reason ${st?.ok === false ? 'live-note' : 'muted'}`} role="status" data-testid={`status-${kind}`}>
@@ -309,6 +310,12 @@ export interface TestResult {
 
 /** Il colore della spia di un servizio: spento o non configurato, da provare, ultima prova o invio riuscito, fallito. */
 export type Led = 'off' | 'untested' | 'ok' | 'err';
+
+/** L'esito dell'ultimo invio per la spia, con il messaggio gia' nella lingua dell'interfaccia. */
+function ledStatus(doc: EngineSettings, kind: string | undefined, t: T): { ok: boolean | null; message: string } | undefined {
+  const st = kind ? doc.status?.[kind] : undefined;
+  return st ? { ok: st.ok, message: sendText(st, t) } : undefined;
+}
 
 export function ledOf(enabled: boolean, result: TestResult | null, status: { ok: boolean | null; message: string } | undefined): { led: Led; why: string } {
   if (!enabled) return { led: 'off', why: '' };
@@ -402,7 +409,7 @@ export function SettingGroups({ groups, doc, draft, span = 1, layout = 'boxes' }
         const enabled = group.upload?.always === true || (toggle ? doc.values[toggle.key] === 'true' : false);
         const service = group.upload?.service ?? kinds[0];
         const result = service ? (results[service] ?? null) : null;
-        const led = service ? ledOf(enabled, result, kinds[0] ? doc.status?.[kinds[0]] : undefined) : null;
+        const led = service ? ledOf(enabled, result, ledStatus(doc, kinds[0], t)) : null;
         const test = group.upload ? <UploadTest service={group.upload.service} waiting={waiting} keys={group.rows.filter((r) => r.kind === 'secret').map((r) => r.key)} result={result} setResult={(v) => setResults((p) => ({ ...p, [group.upload!.service]: v }))} autoStart={enabled && group.upload.auto !== false} tip={group.upload.tip} compact={layout === 'rows'} /> : null;
         if (layout === 'rows') {
           // un servizio per riga: spia, nome con «?», campi in linea, «Prova» ed esito; su schermi stretti va a capo

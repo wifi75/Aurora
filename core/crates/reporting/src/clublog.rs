@@ -27,28 +27,54 @@ pub struct Form<'a> {
 
 /// Come e' andata, dalla risposta.
 pub fn read_reply(status: u16, body: &str) -> Outcome {
+    read_reply_coded(status, body).0
+}
+
+/// Come [`read_reply`], con il codice stabile dell'esito e il valore `detail` (testo di Club Log o numero della risposta) per tradurlo:
+/// - `clublog_sent`: 200, QSO registrato (anche «QSO Modified»);
+/// - `clublog_duplicate`: 200 con «dupe» o «duplicate» nel testo (vale come riuscito);
+/// - `clublog_rejected`: 400, QSO rifiutato dal lettore ADIF (esce dalla coda; `detail` vuoto = dati non validi);
+/// - `clublog_denied`: 401 o 403, accesso negato (email, password, chiave API o nominativo non accettati); l'invio si ferma;
+/// - `clublog_retry_http`: 408, 429 o 5xx, servizio occupato (si riprova);
+/// - `clublog_rejected_status`: ogni altro numero, QSO rifiutato.
+pub fn read_reply_coded(status: u16, body: &str) -> (Outcome, &'static str, String) {
     let text = short(body, 120);
     let lower = text.to_lowercase();
     match status {
-        200 if lower.contains("dupe") || lower.contains("duplicate") => Outcome::Duplicate(text),
-        200 => Outcome::Sent(text),
-        400 => Outcome::Rejected(if text.is_empty() { "dati non validi".into() } else { text }),
-        401 | 403 => Outcome::Blocked(format!("Club Log ha negato l'accesso ({})", if text.is_empty() { status.to_string() } else { text })),
-        408 | 429 | 500..=599 => Outcome::Retry(format!("Club Log ha risposto {status}")),
-        s => Outcome::Rejected(format!("risposta {s}")),
+        200 if lower.contains("dupe") || lower.contains("duplicate") => (Outcome::Duplicate(text.clone()), "clublog_duplicate", text),
+        200 => (Outcome::Sent(text.clone()), "clublog_sent", text),
+        400 => (Outcome::Rejected(if text.is_empty() { "dati non validi".into() } else { text.clone() }), "clublog_rejected", text),
+        401 | 403 => {
+            let detail = if text.is_empty() { status.to_string() } else { text };
+            (Outcome::Blocked(format!("Club Log ha negato l'accesso ({detail})")), "clublog_denied", detail)
+        }
+        408 | 429 | 500..=599 => (Outcome::Retry(format!("Club Log ha risposto {status}")), "clublog_retry_http", status.to_string()),
+        s => (Outcome::Rejected(format!("risposta {s}")), "clublog_rejected_status", s.to_string()),
     }
 }
 
 /// Manda un QSO (bloccante).
 pub fn upload(url: &str, form: &Form<'_>, record: &str, timeout: Duration, user_agent: &str) -> Outcome {
+    upload_coded(url, form, record, timeout, user_agent).0
+}
+
+/// Come [`upload`], con codice e `detail` dell'esito (vedi [`read_reply_coded`]); un errore di rete e' `clublog_retry_network` con la causa.
+pub fn upload_coded(url: &str, form: &Form<'_>, record: &str, timeout: Duration, user_agent: &str) -> (Outcome, &'static str, String) {
     let fields = [("email", form.email), ("password", form.password), ("callsign", form.callsign), ("adif", record), ("api", form.api)];
     match agent(timeout, user_agent).post(url).send_form(fields) {
         Ok(mut response) => {
             let status = response.status().as_u16();
             let text = response.body_mut().read_to_string().unwrap_or_default();
-            read_reply(status, &text)
+            read_reply_coded(status, &text)
         }
-        Err(e) => network(&e),
+        Err(e) => {
+            let outcome = network(&e);
+            let cause = match &outcome {
+                Outcome::Retry(m) => m.clone(),
+                _ => String::new(),
+            };
+            (outcome, "clublog_retry_network", cause)
+        }
     }
 }
 
@@ -81,6 +107,21 @@ mod tests {
         assert!(matches!(read_reply(400, "Rejected: invalid call"), Outcome::Rejected(m) if m.contains("invalid call")));
         assert!(matches!(read_reply(403, "Access denied"), Outcome::Blocked(_)));
         assert!(matches!(read_reply(500, ""), Outcome::Retry(_)));
+    }
+
+    #[test]
+    fn every_reply_has_a_stable_code_and_its_detail() {
+        let code = |status, body| {
+            let (_, c, d) = read_reply_coded(status, body);
+            (c, d)
+        };
+        assert_eq!(code(200, "QSO OK"), ("clublog_sent", "QSO OK".to_string()));
+        assert_eq!(code(200, "QSO Duplicate"), ("clublog_duplicate", "QSO Duplicate".to_string()));
+        assert_eq!(code(400, "Rejected: invalid call"), ("clublog_rejected", "Rejected: invalid call".to_string()));
+        assert_eq!(code(403, "Login failed"), ("clublog_denied", "Login failed".to_string()));
+        assert_eq!(code(403, ""), ("clublog_denied", "403".to_string()), "senza testo il dettaglio e' il numero");
+        assert_eq!(code(503, ""), ("clublog_retry_http", "503".to_string()));
+        assert_eq!(code(404, ""), ("clublog_rejected_status", "404".to_string()));
     }
 
     #[test]
