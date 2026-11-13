@@ -37,8 +37,8 @@ CPU in millisecondi di calcolo per secondo di audio (10 ms/s = 1% di un core). "
 | SSTV Robot36 / Martin1 (12 kHz) | 5,1 ms/s | invariato (4,5-4,7, rumore della misura) | = |
 | PSK31 / PSK63, un ricevitore | 0,42 / 0,56 ms/s | invariato | |
 | RTTY, un ricevitore (tre catene) | 2,4 ms/s | invariato | |
-| CW, un ricevitore (bayesiano + AGC) | 21,2 ms/s (2,1%) | invariato | |
-| Tutta la banda CW, 10 / 30 stazioni | 8,6% / 25,1% di un core | invariato | |
+| CW, un ricevitore (bayesiano + AGC) | 21,2 ms/s (2,1%) | 11,6 ms/s (1,2%), vedi «CW di tutta la banda più leggero» | = `609fc49e09fc0b1c`, 398 caratteri |
+| Tutta la banda CW, 10 / 30 stazioni | 8,6% / 25,1% di un core | 5,4% / 16,9% (-37%) | = (stessi canali, nominativi e caratteri) |
 | Tutta la banda PSK31, 10 / 30 stazioni | 0,4% / 1,1% di un core | invariato | |
 
 Con il motore proprio acceso e una scheda a 48 kHz il lavoro fisso (ricampionamento + cascata) scende da circa 25 a circa 5 ms per secondo di
@@ -93,6 +93,53 @@ binaria), che conta solo per il telefono su rete mobile.
    Ora la decodifica del periodo e' dentro `guarded` (`catch_unwind`): si perde quel periodo, l'errore va nel log, il periodo dopo si
    decodifica. Prova `a_panicking_decode_skips_only_that_period`.
 
+## CW di tutta la banda più leggero (2026-11-13, ramo `lavoro/cw-banda-leggero`)
+Regola: entra solo cio' che riduce la CPU in modo misurabile e non peggiora nessuna riga del banco CW (`cw_confronto`, decodificatore
+probabilistico) di piu' di 0,3 punti, ne' i nominativi verificati con 10 e 30 stazioni. La prova `cpu_tutta_la_banda` ora stampa anche i
+caratteri sbagliati dei canali (testo del canale piu' vicino a ogni stazione contro quello mandato), un controllo piu' fine dei nominativi.
+
+**Dove va il tempo** (contatori di cicli messi per la misura e poi tolti, 30 canali): il traliccio del decodificatore probabilistico era
+circa l'80% di un canale (espansione delle ipotesi con sopravvivenze e densita' delle durate circa il 30%, indice delle ipotesi circa il
+15%, verosimiglianza dei toni circa il 12%, potatura circa il 7%); filtri circa il 7% (un resto di divisione per coefficiente); noise
+blanker e AGC del rumore insieme solo il 5-8%. Per questo i guadagni sono venuti dal traliccio e non dal blanker e dall'AGC comuni.
+
+### Prima e dopo (stessi bit: impronta dell'uscita, banco e prove di tutta la banda identici)
+Misure alternate sullo stesso PC carico (altre compilazioni in corso; le percentuali assolute sono piu' alte di quelle della tabella sopra,
+il rapporto e' quello che conta):
+
+| Misura | Prima | Dopo |
+|---|---|---|
+| Tutta la banda CW, 10 stazioni (`cpu_tutta_la_banda`) | 8,9-9,2% di un core | 5,4% (-40%) |
+| Tutta la banda CW, 30 stazioni | 26,1-28,1% di un core | 16,7-17,1% (-38%) |
+| Nominativi verificati 10 / 30 stazioni, caratteri sbagliati | 10/10 e 23/30, 6,9% e 17,7% | identici |
+| `tutta_la_banda` (10 stazioni) | 10/10 | 10/10 |
+| CW, un ricevitore (`prestazioni`, fascio di 320) | 21,7-22,6 ms/s | 11,6-11,8 ms/s (-47%), impronta `609fc49e09fc0b1c` uguale |
+| Banco `confronto_tasso_di_errore`, tutte le 11 righe | media 23,4 | identico casella per casella (media 23,4) |
+| Un canale (30 canali, cicli del thread) | 30,2-30,9 Mcicli/s | 18,9-19,5 Mcicli/s |
+
+### Entrato
+1. **Sopravvivenze e densita' delle durate in memoria** (`cw_bayes.rs`, `Memo`): dipendono solo da durata, velocita' e pugno, e le stesse
+   durate tornano a ogni passo per altre ipotesi della stessa velocita'. Tabella a indirizzo diretto (2048 posti), svuotata quando il pugno
+   cambia; le soglie delle pause per velocita' si calcolano allo stesso momento. Un canale da circa 30,5 a circa 25 Mcicli/s.
+2. **Indice delle ipotesi a indirizzamento aperto** con un timbro per passo al posto della `HashMap` (`HypIndex`).
+3. **Filtri su un anello scritto due volte** (`cw.rs`): ogni finestra dei filtri (ricezione, strada larga, decodificatore, campioni
+   cancellati e guadagni dell'AGC) e' una fetta contigua; prima ogni coefficiente (circa 1000 per campione decimato) costava un resto di
+   divisione. Insieme a 1 e 2: da circa 30,5 a circa 24 Mcicli/s.
+4. **Niente allocazioni a ogni passo del traliccio** (lo spazio delle ipotesi di prima passa ai candidati del passo dopo, il vettore delle
+   migliori per velocita' si riusa) e radici delle cinque ampiezze calcolate una volta per tono invece che per ogni pezzo: da circa 24 a
+   circa 19 Mcicli/s.
+
+Tutte e quattro valgono anche per il ricevitore della pagina CW (stesso codice), che costa la meta'.
+
+### Provato e scartato
+| Idea | Risultato |
+|---|---|
+| **Noise blanker e AGC del rumore calcolati una volta sull'audio largo**, campioni cancellati e guadagno passati a tutti i canali (`SharedFront`, i canali mescolano il campione gia' ritardato) | CPU entro il rumore della misura (30 stazioni 647-668 contro 640-667 Mcicli/s, 10 stazioni 214-218 contro 222-233): blanker e AGC pesano il 5-8% di un canale, e cambiando di poco la decodifica cambia anche il lavoro del traliccio. Con 30 stazioni **22/30** nominativi invece di 23/30 e caratteri sbagliati dal 17,7% al **18,6%**: scartato |
+| Solo il noise blanker comune (AGC di ogni canale) | 30 stazioni 24/30 e 17,3%, 10 stazioni uguale, ma la CPU non scende in modo misurabile (699-745 contro 640-667 Mcicli/s con 30 stazioni, 218-231 contro 222-233 con 10): non entra |
+| Spettro dell'AFC dei canali calcolato una volta | non costruito: lo spettro dell'AFC e' l'1% di un canale (DFT su 53 righe, otto volte al secondo, gia' con le tabelle calcolate una volta) |
+| Canali silenziosi aggiornati meno spesso | non costruito: saltare passi del traliccio cambia le durate delle pause (e quindi i risultati) alla ripresa del segnale, e nella prova le stazioni trasmettono tutto il minuto, quindi il guadagno non si vedrebbe; resta un'idea per la banda vera, da misurare con stazioni che ascoltano |
+| Memoria delle durate da 4096 o 16384 posti invece di 2048 | nessuna differenza misurabile; 2048 occupa meno (32 kB per canale) |
+
 ## Problemi trovati e non corretti (con il motivo)
 
 ### Memoria e file che crescono
@@ -131,11 +178,12 @@ Il WebSocket (`remote-api/src/ws.rs:65`) dopo un `Lagged` rimanda solo lo stato:
   lettura (fino a `io_timeout`). Ordine dei lock sempre lo stesso: nessun deadlock trovato nei crate esaminati.
 
 ### CPU che si puo' ancora togliere (cambia i calcoli: serve rifare i banchi di confronto)
-- **CW di tutta la banda** (25% di un core con 30 stazioni, la voce piu' pesante): ognuno dei fino a 40 canali rifa' sullo stesso audio a
-  banda larga noise blanker (`log10` per campione, `blanker.rs:67`) e AGC (FFT da 128 ogni 64 campioni, `powf` per campione,
-  `cw_agc.rs:143-168`), prima del mixer (`skim/mod.rs:299`, `cw.rs:719-733`). Calcolarli una volta per la banda toglierebbe gran parte del
-  lavoro, ma i canali nati in momenti diversi oggi hanno stati diversi: i risultati cambierebbero e vanno rimisurati con `cw_confronto`.
-- **CW, un ricevitore** (2,1% di un core): `sin_cos`, `log10` e `powf` per campione (`cw.rs:723`, `877-906`, `cw_bayes.rs:584`, `669`).
+- **CW di tutta la banda** (dopo il 2026-11-13 circa il 17% di un core con 30 stazioni, ancora la voce piu' pesante): blanker e AGC comuni
+  provati e scartati (vedi «CW di tutta la banda più leggero»: pesano poco e cambiano i nominativi). Quello che resta e' il traliccio
+  (fascio di 96 ipotesi per canale: con 32 un canale costa circa un terzo in meno, ma decodifica diversamente e va rimisurato) e i canali
+  silenziosi, che oggi lavorano come gli altri.
+- **CW, un ricevitore** (1,2% di un core): `sin_cos`, `log10` e `powf` per campione (`cw.rs`, `cw_bayes.rs`, `push_observed` e
+  `observe_level`); la verosimiglianza dei toni (`ln_i0` per pezzo e ampiezza).
 - **RTTY**: le catene Normalized e Limiter ricalcolano front-end e filtri della catena principale (`rtty.rs:1447-1487`, `1666-1686`).
 - **PSK di tutta la banda**: un blanker e un `sin_cos` in f64 per campione per canale (`skim/psk.rs:230`, `psk.rs:426`).
 - **Ricampionamento a 44,1 kHz** (1,9% di un core): servirebbe un filtro polifase, con campioni diversi (di poco) da quelli di oggi.
@@ -146,8 +194,8 @@ Il WebSocket (`remote-api/src/ws.rs:65`) dopo un `Lagged` rimanda solo lo stato:
 - **SSTV**: a ogni gruppo di righe si clona l'immagine intera (`mode-sstv/src/service.rs:695`, fino a 1,5 MB).
 
 ## Cosa conviene fare dopo
-1. CW di tutta la banda: blanker e AGC comuni, rimisurando `cpu_tutta_la_banda` e `cw_confronto` (la CPU scenderebbe di molto, ma i
-   caratteri cambiano e vanno confrontati).
+1. CW di tutta la banda: fatto in parte (-37%, stessi bit, vedi sopra); il passo dopo e' rallentare i canali silenziosi, da misurare con
+   stazioni che ascoltano (pause lunghe) e non solo con stazioni che chiamano CQ tutto il minuto.
 2. Un avviso nel log a ogni `Lagged` dei consumatori dei QSO, e una ripartenza (o almeno un avviso) per i thread CAT morti.
 3. Un limite (giorni o GB) per i periodi salvati «come JTDX» e per `ALL.TXT`, da decidere con il proprietario.
 4. Flusso audio unico a 12 kHz condiviso fra motore, SSTV e modi testuali.
