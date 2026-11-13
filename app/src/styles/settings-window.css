@@ -486,3 +486,7 @@ html[data-theme='light'] .sw-l2,html[data-theme='light'] .sw-l3{color:#1f2937}
 html[data-theme='light'] .sw-l2 { background: #f1f4f9; color: #1f2937; }
 html[data-theme='light'] .sw-l3 { background: #f6f8fb; color: #1f2937; }
 html[data-theme='light'] .sw-l2.sw-on, html[data-theme='light'] .sw-l3.sw-on { background: color-mix(in srgb, var(--fam) 22%, #ffffff); color: #111827; }
+/* la linea guida unica per tutte le sottovoci della famiglia aperta (pagine dirette e gruppi): una riga del colore sotto la famiglia */
+.sw-sub { margin: 0; padding-left: 0; border-left: 0; }
+.sw-fam-wrap.sw-open { background: linear-gradient(var(--fam), var(--fam)) 15px 50px / 2px calc(100% - 54px) no-repeat; }
+.sw-fam-wrap.sw-open > .sw-l2, .sw-fam-wrap.sw-open > .sw-sub { margin-left: 26px; width: calc(100% - 26px); }
