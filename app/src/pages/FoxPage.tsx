@@ -15,7 +15,7 @@ import { bandOf } from '../lib/format';
 import { useT } from '../i18n';
 import { useFox } from '../state/fox';
 import { toast } from '../lib/toast';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import { getContest } from '../api/contest';
 import '../styles/fox.css';
 
@@ -55,7 +55,7 @@ const snr = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 export function FoxPage() {
   const t = useT();
   const fox = useFox((s) => s.fox) ?? EMPTY;
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['dial_hz', 'de_call', 'de_grid', 'mode', 'transmitting', 'tx_enabled']);
   // con un contest attivo il regolamento vieta Fox/Hound: la Fox resta spenta e la pagina lo spiega
   const contest = useQuery({ queryKey: ['contest'], queryFn: getContest, refetchInterval: 10_000, retry: false }).data;
   const contestBlock = contest?.attivo && contest.fox_vietato ? (contest.regole?.contest.nome ?? contest.attivo) : null;
@@ -334,7 +334,7 @@ export function FoxPage() {
 /** La cascata con le barre Rx/Tx e i comandi di ricezione. */
 function Spectrum({ height, onPointerDown }: { height: number; onPointerDown(e: React.PointerEvent<HTMLDivElement>): void }) {
   const t = useT();
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['rx_df', 'tx_df']);
   return (
     <section className="foxc-card foxc-card--flush foxc-tone--slate">
       <header className="foxc-card-head">

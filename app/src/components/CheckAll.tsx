@@ -7,7 +7,7 @@ import { getCat, getClock, getNetworkCheck } from '../api/client';
 import { useT, type Key } from '../i18n';
 import { LEVEL_STALE_MS } from '../lib/audioLevel';
 import { periodSecs } from '../lib/period';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 
 type Verdict = 'ok' | 'warn' | 'bad' | 'wait';
 interface Row {
@@ -38,7 +38,7 @@ export function CheckAllBox() {
 
 function CheckAll({ onClose }: { onClose: () => void }) {
   const t = useT();
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_call', 'de_grid', 'mode']);
   const audio = useStation((s) => s.audioLevel);
   const audioAt = useStation((s) => s.audioLevelAt);
   const notices = useStation((s) => s.notices);
