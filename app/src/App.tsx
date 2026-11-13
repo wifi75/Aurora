@@ -243,14 +243,15 @@ export function App() {
         </span>
       </header>
       )}
-      {session.data ? <WantedBar /> : null}
+      {session.data ? <PageGuard resetKey={route.name}><WantedBar /></PageGuard> : null}
       <main className="app-main">
         <PageGuard resetKey={route.name}>{content}</PageGuard>
       </main>
       {/* il rotore sopra la Stazione in tutti i modi del motore (FT8, FT4, JT65, Q65, ...), Fox e Contest: la stessa scheda di PSK/RTTY/CW;
           con le Impostazioni aperte no (starebbe sopra il loro riquadro) */}
-      {session.data === true && !REMOTE_TOUCH && !settingsOpen && (content === LIVE || route.name === 'fox' || route.name === 'contest') ? <StationRotor /> : null}
-      {REMOTE_TOUCH ? null : <Footer page={route.name} />}
+      {session.data === true && !REMOTE_TOUCH && !settingsOpen && (content === LIVE || route.name === 'fox' || route.name === 'contest') ? <PageGuard resetKey={route.name}><StationRotor /></PageGuard> : null}
+      {/* la barra in fondo, la barra dei desiderati e il rotore stanno fuori dalla pagina: un loro errore non deve svuotare tutta la finestra */}
+      {REMOTE_TOUCH ? null : <PageGuard resetKey={route.name}><Footer page={route.name} /></PageGuard>}
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
