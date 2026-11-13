@@ -23,8 +23,8 @@ import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiNote, clearDigiText, getDigiText, getDigiWeak, onDigi, onDigiText } from '../lib/digiBus';
-import { DigiRxText } from '../components/DigiRxText';
+import { appendDigiNote, clearDigiText, getDigiText, onDigi } from '../lib/digiBus';
+import { DigiRxLive } from '../components/DigiRxText';
 import { DigiTxBox } from '../components/DigiTxBox';
 import { RttySettingsDialog } from '../components/digi/RttySettingsDialog';
 import { useDigiTxLive } from '../lib/digiTxLive';
@@ -35,7 +35,7 @@ import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { parseSpotSplit } from '../lib/spotSplit';
 import { browserStorage } from '../lib/theme';
 import { toast } from '../lib/toast';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import '../styles/digi.css';
 import '../styles/digi-dark.css';
 import '../styles/digi-log-corta.css';
@@ -138,9 +138,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const snap = useMemo(() => withDefaults(rawSnap), [rawSnap]);
   const t = useT();
   const client = useQueryClient();
-  const status = useStation((s) => s.status);
-  const text = useSyncExternalStore(onDigiText, getDigiText);
-  const weak = useSyncExternalStore(onDigiText, getDigiWeak);
+  const status = useStatusPick(['dial_hz', 'de_call', 'de_grid']);
   const rxBox = useRef<HTMLPreElement>(null);
   const txBox = useRef<HTMLTextAreaElement>(null);
   const [tx, setTx] = useState('');
@@ -225,11 +223,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
   const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz });
   live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz };
-
-  useEffect(() => {
-    const el = rxBox.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [text]);
 
   const setView = (patch: Partial<Views>) => {
     const next = { ...views, ...patch };
@@ -1038,7 +1031,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
               if (word && isCallsign(word)) takeCall(word);
             }}>
-            {text === '' ? null : <DigiRxText text={text} weak={weak} underlineSent={views.underlineSent} showSent={views.echoRx === true} />}
+            <DigiRxLive box={rxBox} underlineSent={views.underlineSent} showSent={views.echoRx === true} />
           </pre>
           <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
           <div className="digi-txwrap" style={{ flex: `${1 - rxFrac} 1 0` }}>

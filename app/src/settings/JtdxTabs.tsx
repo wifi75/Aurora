@@ -17,7 +17,7 @@ import { usePrefs, type Prefs } from '../lib/prefs';
 import { browserStorage } from '../lib/theme';
 import { LanguageSelect } from '../components/LanguageSelect';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import type { SettingRow } from '../lib/engineSettingsLayout';
 import { ApplyBar, SettingField, useDraft, useSettings, type Draft } from './NativeSettings';
 import { DecoderOptionFields, type DecoderPart } from './DecoderOptions';
@@ -273,7 +273,7 @@ export function ScreenExtras() {
 export function NativeGeneral() {
   const t = useT();
   const { settings, draft } = useDoc();
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['de_call', 'de_grid']);
   const prefs = usePrefs((s) => s.prefs);
   const set = usePrefs.getState().set;
   if (settings.isError || !settings.data) {

@@ -5,7 +5,7 @@ import { bandOf } from '../lib/format';
 import { filterWindowHz, signalBandwidthHz, signalStartOffsetHz } from '../lib/markers';
 import { registerSpectrum, spanFromPassband, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
-import { useStation } from '../state/station';
+import { useStation, useStatusPick } from '../state/station';
 import { FrequencyMarkers } from './FrequencyMarkers';
 import { FrequencyRuler } from './FrequencyRuler';
 import { SpotMarkers } from './SpotMarkers';
@@ -16,7 +16,7 @@ import { Waterfall } from './Waterfall';
  * clic che sposta Rx (Maiusc+clic la Tx) e righello con i messaggi. Riempie il contenitore, che ne decide l'altezza.
  */
 export function WaterfallStack() {
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['mode', 'dial_hz', 'rx_df', 'tx_df']);
   const decodes = useStation((s) => s.decodes);
   const passbandHz = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 }).data?.status.rig?.passband_hz;
   const spanHz = useSpectrumSpan((s) => s.spanHz);

@@ -6,7 +6,7 @@ import { useT } from '../i18n';
 import { signalBandwidthHz, signalStartOffsetHz } from '../lib/markers';
 import { registerSpectrum, useSpectrumSpan, visibleRange } from '../lib/spectrumFeed';
 import { useWfPrefs } from '../lib/wfPrefs';
-import { useStation } from '../state/station';
+import { useStatusPick } from '../state/station';
 import { Help } from './layout';
 
 const OPEN_KEY = 'aurora.wfPreview.open';
@@ -63,7 +63,7 @@ function LivePreview() {
   const t = useT();
   const wf = useWfPrefs((s) => s.prefs);
   const spanHz = useSpectrumSpan((s) => s.spanHz);
-  const status = useStation((s) => s.status);
+  const status = useStatusPick(['mode', 'rx_df', 'tx_df']);
   const receiving = useReceiving();
   const { from, to } = visibleRange(wf.startHz, spanHz);
   return (

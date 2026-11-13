@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../api/client', () => ({ getCallsign: vi.fn() }));
 import { getCallsign } from '../api/client';
-import { CallsignTip, TIP_DELAY_MS, clearCallsignCache, knownCallsign, lookupCallsign } from './CallsignTip';
+import { CallsignTip, TIP_DELAY_MS, callsignCacheSize, clearCallsignCache, knownCallsign, lookupCallsign } from './CallsignTip';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -89,5 +89,20 @@ describe('CallsignTip', () => {
     });
     expect(screen.getByTestId('calltip')).toHaveTextContent('Italy');
     expect(screen.getByTestId('calltip')).not.toHaveTextContent('Mario');
+  });
+});
+
+describe('callsign cache', () => {
+  it('remembers at most 3000 callsigns, forgetting the oldest ones', async () => {
+    vi.mocked(getCallsign).mockImplementation((call: string) => Promise.resolve({ ...info, call }));
+    for (let i = 0; i < 3100; i++) void lookupCallsign(`K${i}ABC`);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(callsignCacheSize().cache).toBe(3000);
+    expect(callsignCacheSize().ready).toBeLessThanOrEqual(3000);
+    expect(knownCallsign('K0ABC')).toBeUndefined();
+    expect(knownCallsign('K3099ABC')?.call).toBe('K3099ABC');
   });
 });

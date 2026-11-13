@@ -265,4 +265,19 @@ describe('useStation', () => {
     useStation.getState().reset();
     expect(useStation.getState().pendingDx).toBeNull();
   });
+
+  it('keeps the same status object while the engine repeats the same status, and the unchanged parts when something changes', () => {
+    const { apply } = useStation.getState();
+    apply({ type: 'status', ...status, queue: ['K1ABC'], meters: { s_points: 5 } });
+    const first = useStation.getState().status;
+    apply({ type: 'status', ...status, queue: ['K1ABC'], meters: { s_points: 5 } });
+    expect(useStation.getState().status).toBe(first);
+    apply({ type: 'status', ...status, queue: ['K1ABC'], meters: { s_points: 7 } });
+    const second = useStation.getState().status;
+    expect(second).not.toBe(first);
+    expect(second?.meters?.s_points).toBe(7);
+    expect(second?.queue).toBe(first?.queue);
+    apply({ type: 'status', ...status, meters: { s_points: 7 } });
+    expect(useStation.getState().status?.queue).toBeUndefined();
+  });
 });

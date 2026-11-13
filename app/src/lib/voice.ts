@@ -132,6 +132,9 @@ export async function addSoundFile(file: File): Promise<string> {
   if (file.size > 5 * 1024 * 1024) throw new Error('too_big');
   const name = file.name.replace(/[^\w .()-]/g, '_').slice(0, 60) || 'suono';
   await tx('readwrite', (s) => s.put(file, name));
+  // un file con lo stesso nome sostituisce il vecchio: l'indirizzo del vecchio si libera (prima restava in memoria fino alla chiusura)
+  const old = urls.get(name);
+  if (old) URL.revokeObjectURL(old);
   urls.delete(name);
   window.dispatchEvent(new Event(FILES_EVENT));
   return FILE_PREFIX + name;

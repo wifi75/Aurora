@@ -174,6 +174,42 @@ function clearedForBand(band: string | null): Cleared {
   return { decodes: [], txLog: [], pendingDx: null, pendingSince: 0, clearedBand: band };
 }
 
+/** Uguaglianza fra valori JSON (lo stato arriva dal motore come JSON: numeri, testi, elenchi, oggetti semplici). */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    return a.every((v, i) => sameJson(v, b[i]));
+  }
+  const ra = a as Record<string, unknown>;
+  const rb = b as Record<string, unknown>;
+  const keys = Object.keys(ra);
+  return keys.length === Object.keys(rb).length && keys.every((k) => k in rb && sameJson(ra[k], rb[k]));
+}
+
+/**
+ * Lo stato nuovo con dentro i pezzi uguali a quelli di prima (stesso oggetto): il motore manda lo stato quattro volte al secondo, quasi sempre
+ * identico, e ogni copia nuova ridisegnava chi lo legge intero o ne legge un elenco (la coda, gli strumenti) anche se nulla era cambiato.
+ * Se non cambia niente resta lo stato di prima.
+ */
+export function shareStatus(prev: StationStatus | null, next: StationStatus): StationStatus {
+  if (!prev) return next;
+  const before = prev as Record<string, unknown>;
+  const keys = Object.keys(next);
+  let same = keys.length === Object.keys(before).length;
+  const out: Record<string, unknown> = {};
+  for (const k of keys) {
+    const value = (next as Record<string, unknown>)[k];
+    if (k in before && sameJson(before[k], value)) out[k] = before[k];
+    else {
+      out[k] = value;
+      same = false;
+    }
+  }
+  return same ? prev : (out as unknown as StationStatus);
+}
+
 /** Lo stato con la Stazione DX azzerata (nominativo, locatore, rapporto). */
 function withoutDx(status: StationStatus): StationStatus {
   return { ...status, ...DX_CLEARED };
@@ -217,7 +253,7 @@ export const useStation = create<StationState>((set) => ({
           const band = bandChanged(s.status, shown) && 'clearedBand' in cleared;
           const stale = s.clearedDx !== null && Date.now() < s.clearedDx.until && (shown.dx_call ?? '').toUpperCase() === s.clearedDx.call;
           // il motore azzera il DX da solo al cambio di banda: se il suo stato porta ancora quello di prima, e' in ritardo
-          const status = band || stale ? withoutDx(shown) : shown;
+          const status = shareStatus(s.status, band || stale ? withoutDx(shown) : shown);
           // la banda scelta resta evidenziata finche' lo stato del motore non e' su quella banda
           const keep = { pending, pendingBand: s.pendingBand !== null && bandOf(status.dial_hz) === s.pendingBand ? null : s.pendingBand };
           const message = status.tx_message?.trim() ?? '';

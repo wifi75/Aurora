@@ -17,6 +17,24 @@ const ready = new Map<string, CallsignInfo>();
 const REFRESH_NO_LOTW_MS = 5 * 60_000;
 /** Una ricerca fallita non si conserva: si ritenta dopo questa pausa (non subito, per non tempestare il motore col precaricamento). */
 const RETRY_FAILED_MS = 30_000;
+/**
+ * Quanti nominativi si ricordano al massimo: con la pagina aperta per giorni il precaricamento ne cerca migliaia e la memoria cresceva
+ * senza fine. Oltre, si dimenticano i meno recenti (se ripassano sotto il mouse si richiedono).
+ */
+const MAX_CACHED = 3000;
+
+/** Tiene `cache` e `ready` entro `MAX_CACHED`, togliendo i nominativi cercati per primi. */
+function trimCache(): void {
+  for (const key of cache.keys()) {
+    if (cache.size <= MAX_CACHED) break;
+    cache.delete(key);
+    ready.delete(key);
+  }
+  for (const key of ready.keys()) {
+    if (ready.size <= MAX_CACHED) break;
+    ready.delete(key);
+  }
+}
 
 /** La ricerca di questo nominativo e' in corso o la sua risposta vale ancora. */
 function fresh(key: string): boolean {
@@ -38,6 +56,11 @@ export function clearCallsignCache(): void {
   ready.clear();
 }
 
+/** Solo per le prove: quanti nominativi si ricordano. */
+export function callsignCacheSize(): { cache: number; ready: number } {
+  return { cache: cache.size, ready: ready.size };
+}
+
 export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
   const key = call.toUpperCase();
   const known = cache.get(key);
@@ -53,11 +76,15 @@ export function lookupCallsign(call: string): Promise<CallsignInfo | null> {
         return ready.get(key) ?? null;
       }
       entry.until = v.lotw_last_upload ? Number.POSITIVE_INFINITY : Date.now() + REFRESH_NO_LOTW_MS;
-      ready.set(key, v);
+      // dimenticata mentre era in corso (oltre `MAX_CACHED`): la risposta vale per chi l'aspettava ma non si conserva
+      if (cache.get(key) === entry) ready.set(key, v);
       for (const f of readyListeners) f();
       return v;
     });
+  // in fondo all'elenco: il piu' recente e' l'ultimo a essere dimenticato
+  cache.delete(key);
   cache.set(key, entry);
+  trimCache();
   return entry.p;
 }
 
