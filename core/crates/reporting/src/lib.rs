@@ -472,6 +472,7 @@ impl Service {
             }
             *last = Some((dx_call.clone(), Instant::now()));
         }
+        let request_call = config.call.clone();
         let request = dxsummit::SpotRequest { my_call: config.call, dx_call: dx_call.clone(), freq_hz, info: info.trim().chars().take(200).collect() };
         let (url, timeout) = (self.endpoints.dxsummit_url.clone(), self.endpoints.dxsummit_timeout);
         let result = tokio::task::spawn_blocking(move || dxsummit::send(&url, &request, timeout)).await.unwrap_or_else(|e| Err(format!("invio interrotto: {e}")));
@@ -479,6 +480,26 @@ impl Service {
             Ok(()) => {
                 tracing::info!("spot inviato a DXSummit: {dx_call} su {} kHz", dxsummit::frequency_khz(freq_hz));
                 self.status.ok("dxsummit", format!("spot inviato: {dx_call} su {} kHz", dxsummit::frequency_khz(freq_hz)));
+                // la risposta «200» di DXSummit non dice che lo spot e' stato pubblicato: si controlla l'elenco pubblico per un minuto e mezzo
+                // (solo con il servizio vero: nelle prove l'indirizzo e' un server locale)
+                if self.endpoints.dxsummit_url == dxsummit::URL {
+                    let status = self.status.clone();
+                    let (me, dx) = (request_call.clone(), dx_call.clone());
+                    tokio::spawn(async move {
+                        for wait in [10u64, 20, 30, 30] {
+                            tokio::time::sleep(Duration::from_secs(wait)).await;
+                            let (me2, dx2) = (me.clone(), dx.clone());
+                            let found = tokio::task::spawn_blocking(move || dxsummit::check(dxsummit::CHECK_URL, &me2, &dx2, freq_hz, Duration::from_secs(10))).await;
+                            if let Ok(Ok(true)) = found {
+                                tracing::info!("spot confermato su DXSummit: {dx} su {} kHz", dxsummit::frequency_khz(freq_hz));
+                                status.ok("dxsummit", format!("spot pubblicato: {dx} su {} kHz", dxsummit::frequency_khz(freq_hz)));
+                                return;
+                            }
+                        }
+                        tracing::warn!("spot a DXSummit accettato ma non comparso nell'elenco dopo 90 s: {dx} su {} kHz", dxsummit::frequency_khz(freq_hz));
+                        status.fail("dxsummit", format!("spot accettato ma non pubblicato da DXSummit: {dx} su {} kHz", dxsummit::frequency_khz(freq_hz)));
+                    });
+                }
                 Ok(())
             }
             Err(e) => {

@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Spot verificati su DXSummit**: dopo l'invio Aurora controlla per un minuto e mezzo l'elenco pubblico di DXSummit; lo stato del servizio dice «spot pubblicato» quando lo spot c'e' davvero, oppure «accettato ma non pubblicato» (prima bastava la risposta «200» di DXSummit, che non garantisce la pubblicazione).
+
 ## 0.11.248 - 2026-11-13
 - **Titolo della finestra**: «Aurora — Multimode Ham Radio Station 0.11.248 By IU3WJQ - Tiziano Cassone»; tolta la firma dalla barra in fondo, dove ora volume dei messaggi, icone dell'audio e del tema e ora UTC stanno tutti a destra.
 - **«Nuovo log vuoto»** spostato nella pagina Log e servizi, con la spiegazione del log interno di Aurora, attivo fin dalla prima installazione; il pannello Log vuoto mostra «Ancora nessun QSO in questo log» invece dell'invito a configurarlo.

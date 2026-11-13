@@ -7,6 +7,8 @@ use std::time::Duration;
 
 /// Indirizzo di DXSummit (quello di JTDX).
 pub const URL: &str = "http://www.dxsummit.fi/SendSpot.aspx";
+/// L'elenco pubblico degli spot degli ultimi minuti: dopo l'invio si controlla che lo spot ci sia davvero (un «200» di SendSpot non basta).
+pub const CHECK_URL: &str = "https://www.dxsummit.fi/api/v1/spots";
 pub const TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -91,8 +93,47 @@ pub fn send(url: &str, req: &SpotRequest, timeout: Duration) -> Result<(), Strin
     if (200..300).contains(&status) { Ok(()) } else { Err(format!("DXSummit ha risposto {status}")) }
 }
 
+/// Lo spot compare nell'elenco di DXSummit? `json` e' la risposta di [`CHECK_URL`]: si cerca lo stesso DX, uno spotter che comincia con il
+/// nostro nominativo (DXSummit aggiunge suffissi come `-@`) e una frequenza entro 1 kHz.
+pub fn listed(json: &str, my_call: &str, dx_call: &str, freq_hz: u64) -> bool {
+    let Ok(serde_json::Value::Array(spots)) = serde_json::from_str::<serde_json::Value>(json) else { return false };
+    let khz = freq_hz as f64 / 1000.0;
+    let me = my_call.trim().to_uppercase();
+    let dx = dx_call.trim().to_uppercase();
+    spots.iter().any(|s| {
+        let de = s.get("de_call").and_then(|v| v.as_str()).unwrap_or("").to_uppercase();
+        let call = s.get("dx_call").and_then(|v| v.as_str()).unwrap_or("").to_uppercase();
+        let f = s.get("frequency").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+        call == dx && de.starts_with(&me) && (f - khz).abs() <= 1.0
+    })
+}
+
+/// Scarica l'elenco degli spot degli ultimi 10 minuti e dice se c'e' il nostro.
+pub fn check(url: &str, my_call: &str, dx_call: &str, freq_hz: u64, timeout: Duration) -> Result<bool, String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(timeout)).build().into();
+    let body = agent
+        .get(url)
+        .query("limit_time", "600")
+        .query("refresh", "1")
+        .call()
+        .map_err(|e| crate::eqsl::describe(&e))?
+        .body_mut()
+        .read_to_string()
+        .map_err(|e| e.to_string())?;
+    Ok(listed(&body, my_call, dx_call, freq_hz))
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_sent_spot_is_found_in_the_public_list_with_the_suffix_of_the_spotter() {
+        let json = r#"[{"de_call":"IU3ABC-@","dx_call":"TR8CA","frequency":24953.0},{"de_call":"K1ABC","dx_call":"SX200H","frequency":14023.0}]"#;
+        assert!(super::listed(json, "iu3abc", "TR8CA", 24_953_300));
+        assert!(!super::listed(json, "IU3ABC", "TR8CA", 24_960_000));
+        assert!(!super::listed(json, "IU3ABC", "SX200H", 14_023_000));
+        assert!(!super::listed("non json", "IU3ABC", "TR8CA", 24_953_000));
+    }
+
     use super::*;
 
     #[test]
