@@ -2,6 +2,23 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-13 mattina (0.11.244 pubblicata, sito aggiornato)
+
+- **0.11.244** (09:23 UTC): «Spegni split» accanto al display (`POST /cat/split-off`, `force_split_off`); aggiornamento in un solo
+  giro (niente `/R`, riapre solo lo script, l'agente nel tray aggiorna da se' con Aurora chiusa: si vede dall'aggiornamento SUCCESSIVO);
+  ascolto SSTV e modi testuali con battito e conteggio delle pagine, satelliti e forme dei nominativi solo quando servono; modalita'
+  «PC lento» (`dec.slowPc`, porta `aurora_core::idle`); CW di tutta la banda -40% di CPU e ricampionamento del motore 20 volte piu'
+  leggero (risultati identici); file salvati tenuti `aud.keep` giorni (7) e `ALL.TXT` che ruota; guardiano del thread CAT; avvisi
+  `LagWatch` sul bus; coda audio limitata a 30 s; frequenze CW/SSTV/RTTY/PSK dai piani ARI (`app/src/lib/bandplan.ts`); manuale
+  completo (`guide-*.ts`, copertura in `docs/copertura-guida.md`); separatore dei periodi e Tx nella finestra RX durante il QSO
+  (#38, #42); schede DXCC nuovi al massimo due con «Spegni questi avvisi»; avviso di aggiornamento nella lingua di Aurora/Windows.
+- **Attivita' pianificata** `aurora-rapporti-cloudflare` (ogni 8 ore, app Claude aperta): scarica e svuota i rapporti, corregge i
+  difetti piccoli con commit senza push.
+- **CPU**: il PC e' quello di lavoro del proprietario: al massimo 12 thread in tutto, agenti compresi (con tre agenti `-j 2` ciascuno).
+- **Non provato**: tutto quanto sopra con la radio vera e a schermo; Linux solo compilato da GitHub.
+- **Prossimo passo**: prove del proprietario; idee rimaste in `docs/prestazioni-motore.md` e `docs/prestazioni-interfaccia.md`
+  (cascata e vetro da misurare in WebView2); QPSK; tabella ITU ufficiale per la convalida dei nominativi.
+
 ## Stato al 2026-11-12 tarda notte (0.11.243 pubblicata, sito aggiornato)
 
 - **0.11.243** (22:42 UTC): lo split di FT8 non si riaccende alla riconnessione del CAT ne' al cambio di frequenza, lo Split DX si spegne
