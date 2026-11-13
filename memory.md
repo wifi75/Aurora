@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-12, versione 0.11.244 pubblicata (CW probabilistico e tutta la banda, PSK e RTTY oltre fldigi nei banchi, SSTV con FSK ID, trasmissione aperta, «Rimanda i QSO persi» per i log chiusi, schermata d'errore dell'installatore, correzioni dai rapporti; installatore compilato e firmato sul PC). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-12, versione 0.11.244 pubblicata (Spegni split, aggiornamento in un solo giro, modalita' PC lento, CW piu' leggero, robustezza, frequenze ARI, manuale completo, finestre FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-12
