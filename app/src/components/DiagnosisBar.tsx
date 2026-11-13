@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getCat, getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { useT, type Key } from '../i18n';
@@ -20,7 +20,7 @@ function messageKey(issue: Issue): Key {
 /** Quando si e' aperta l'interfaccia: nei primi secondi nessun avviso (la radio e l'audio si stanno ancora accendendo). */
 const APP_START = Date.now();
 /** Il tempo lasciato alla stazione per accendersi prima di mostrare avvisi (le prove lo azzerano). */
-export const startup = { graceMs: 20_000 };
+export const startup = { graceMs: 20_000, audioHoldMs: 90_000 };
 
 /** Cio' che non va nella stazione, in chiaro e con dove sistemarlo; non compare quando e' tutto a posto. */
 export function DiagnosisBar() {
@@ -72,7 +72,16 @@ export function DiagnosisBar() {
   });
   const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
   const starting = now - APP_START < startup.graceMs;
-  const visible = starting ? [] : issues.filter((issue) => !closed.includes(keyOf(issue)));
+  // il livello dell'ingresso debole o muto si dice solo se dura: all'apertura la radio si sta accendendo e la banda puo' essere
+  // semplicemente vuota; prima l'avviso compariva subito a ogni avvio
+  const audioSince = useRef(new Map<string, number>());
+  for (const issue of issues) {
+    if (issue.id === 'audio' && !audioSince.current.has(keyOf(issue))) audioSince.current.set(keyOf(issue), now);
+  }
+  for (const k of [...audioSince.current.keys()]) if (!issues.some((i) => keyOf(i) === k)) audioSince.current.delete(k);
+  const lasting = (issue: Issue) =>
+    issue.id !== 'audio' || issue.vars.state === 'overdrive' || now - (audioSince.current.get(keyOf(issue)) ?? now) >= startup.audioHoldMs;
+  const visible = starting ? [] : issues.filter((issue) => !closed.includes(keyOf(issue)) && lasting(issue));
   const close = (issue: Issue) => {
     if (issue.id === 'slow_pc' && issue.vars.depth) closeSlowPc(String(issue.vars.depth));
     setClosed((c) => [...c, keyOf(issue)]);

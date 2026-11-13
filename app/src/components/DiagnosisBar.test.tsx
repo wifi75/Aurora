@@ -11,6 +11,7 @@ import { DiagnosisBar, startup } from './DiagnosisBar';
 
 // nelle prove gli avvisi compaiono subito: l'attesa dell'avvio ha la sua prova
 startup.graceMs = 0;
+startup.audioHoldMs = 0;
 
 function render(ui: ReactElement) {
   return rtlRender(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
