@@ -329,3 +329,12 @@ html[data-theme='light'] .digi-log-grip::before { background-color: #5a4bd6; box
 .digi-wingrip::before { content: ''; position: absolute; top: 50%; left: 3px; width: 6px; height: 90px; margin-top: -45px; border-radius: 3px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
 .digi-wingrip:hover::before, .digi-wingrip:active::before { background: #38bdf8; opacity: 1; }
 html[data-theme='light'] .digi-wingrip::before { background: #4a5a8a; }
+
+/* Notch ben visibili (richiesta del proprietario): fascia verde fluo semitrasparente con bordi pieni e una maniglia in alto da prendere
+   col mouse; si trascina per spostarlo, i bordi per allargarlo */
+.digi-wf-notch { background: rgb(57 255 20 / 0.28); border-left: 2px solid #39ff14; border-right: 2px solid #39ff14; box-shadow: 0 0 8px rgb(57 255 20 / 0.7); }
+.digi-wf-notch::before { content: ''; position: absolute; top: 0; left: -2px; right: -2px; height: 8px; background: #39ff14; border-radius: 0 0 3px 3px; }
+.digi-wf-notch:hover { background: rgb(57 255 20 / 0.4); }
+.digi-wf-notch-edge { width: 10px; }
+.digi-wf-notch-edge--l { left: -6px; }
+.digi-wf-notch-edge--r { right: -6px; }
