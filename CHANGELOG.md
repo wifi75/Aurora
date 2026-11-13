@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.250 - 2026-11-13
 - **Radio collegata da sola agli avvii successivi**: al primo collegamento riuscito fatto a mano (Hamlib, TCI, OmniRig, Cat4OM, FT-991 Link) si accende «Collega la radio all'avvio di Aurora» e viene salvata, una volta sola: chi poi la spegne la ritrova spenta; «Scollega», l'avvio forzato e il ricollegamento dopo un guasto non la toccano. Prima restava spenta e chi aveva una SunSDR in TCI doveva premere «Connetti» a ogni avvio.
 - **Errori di ClubLog nella lingua dell'interfaccia**: lo stato dei servizi porta anche un codice stabile (`clublog_denied`, `clublog_rejected`, `clublog_retry_http`...) e i valori da inserire; l'interfaccia lo traduce in sei lingue e, per un codice sconosciuto, ripiega sul testo scritto dal core. Prima l'esito di ClubLog compariva sempre in italiano.
 - **Spot dal cluster telnet**: in Impostazioni › DX Cluster si sceglie da dove parte lo spot di «Spot DX», il sito DXSummit (come prima, lo spot resta su DXSummit) o il cluster telnet collegato (comando `DX`, entra nella rete dei cluster); lo spot via telnet conta come riuscito solo quando il cluster lo ripete. Accanto a ogni server «Nome di accesso» (nominativo, anche con SSID) e «Password», mandata solo quando il cluster la chiede e mai rimandata all'interfaccia.
