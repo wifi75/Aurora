@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
-    sync::mpsc,
+    sync::{mpsc, oneshot},
     task::JoinHandle,
 };
 
@@ -32,12 +32,18 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const KEEPALIVE: Duration = Duration::from_secs(240);
 const MAX_LINE: usize = 2_000;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct ServerCfg {
     pub name: String,
     pub host: String,
     pub port: u16,
     pub enabled: bool,
+    /// Nome con cui si entra (per esempio il nominativo con un SSID, `IU3ABC-2`); vuoto = il nominativo di stazione.
+    #[serde(default)]
+    pub username: String,
+    /// Password del cluster, se ne chiede una (molti cluster la vogliono per accettare gli spot). Non torna mai all'interfaccia.
+    #[serde(default)]
+    pub password: String,
 }
 
 impl ServerCfg {
@@ -45,6 +51,17 @@ impl ServerCfg {
     pub fn key(&self) -> String {
         format!("{}:{}", self.host, self.port)
     }
+}
+
+/// Da dove partono gli spot del pulsante «Spot DX».
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SpotVia {
+    /// Il sito DXSummit (come JTDX): lo spot resta su DXSummit e non entra nella rete dei cluster.
+    #[default]
+    Dxsummit,
+    /// Il cluster telnet collegato (comando `DX`): lo spot entra nella rete dei cluster.
+    Telnet,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -60,11 +77,17 @@ pub struct Config {
     pub max_spots: usize,
     /// Dopo quanti minuti uno spot si scarta.
     pub max_age_min: u32,
+    /// Da dove partono gli spot: DXSummit o il cluster telnet.
+    #[serde(default)]
+    pub spot_via: SpotVia,
+    /// Il cluster (`host:porta`) da cui partono gli spot via telnet; vuoto = il primo collegato.
+    #[serde(default)]
+    pub spot_server: String,
 }
 
 impl Default for Config {
     fn default() -> Config {
-        let server = |name: &str, host: &str, port: u16| ServerCfg { name: name.into(), host: host.into(), port, enabled: true };
+        let server = |name: &str, host: &str, port: u16| ServerCfg { name: name.into(), host: host.into(), port, enabled: true, ..ServerCfg::default() };
         Config {
             enabled: true,
             callsign: String::new(),
@@ -72,6 +95,8 @@ impl Default for Config {
             login_commands: Vec::new(),
             max_spots: 500,
             max_age_min: 60,
+            spot_via: SpotVia::Dxsummit,
+            spot_server: String::new(),
         }
     }
 }
@@ -116,6 +141,12 @@ impl Config {
             }
             if !valid_host(&s.host) || s.port == 0 {
                 return Err(format!("servers: {}:{} non e' un indirizzo valido", s.host, s.port));
+            }
+            if !s.username.is_empty() && !valid_callsign(&s.username) {
+                return Err("servers: il nome di accesso deve essere un nominativo (anche con SSID)".into());
+            }
+            if s.password.len() > 64 || s.password.chars().any(|c| !c.is_ascii() || c.is_ascii_control()) {
+                return Err("servers: password non valida".into());
             }
         }
         if self.login_commands.len() > MAX_COMMANDS || self.login_commands.iter().any(|c| !valid_command(c)) {
@@ -249,6 +280,8 @@ pub struct ClusterService {
     enricher: Mutex<Option<Enricher>>,
     /// Il nominativo dei dati di stazione: e' quello con cui si entra nei cluster (quello del file vale solo se questo manca).
     station_call: Mutex<String>,
+    /// Spot mandati via telnet che aspettano di tornare indietro dal cluster (`DX de <noi>: ...`): server, DX, chi aspetta.
+    waiting: Mutex<Vec<(String, String, oneshot::Sender<()>)>>,
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -273,6 +306,7 @@ impl ClusterService {
             tasks: Mutex::new(Vec::new()),
             enricher: Mutex::new(None),
             station_call: Mutex::new(String::new()),
+            waiting: Mutex::new(Vec::new()),
         })
     }
 
@@ -354,6 +388,71 @@ impl ClusterService {
         sender.send(text.trim().to_string()).map_err(|_| "server non collegato".to_string())
     }
 
+    /// Manda uno spot dal cluster telnet scelto (o dal primo collegato) con il comando `DX <kHz> <nominativo> <commento>` e aspetta che il
+    /// cluster lo ripeta (`DX de <noi>: ...`), segno che l'ha accettato. Restituisce il nome del cluster. Il commento si riduce a 30 caratteri
+    /// stampabili, come lo tagliano i cluster.
+    pub async fn send_spot(&self, dx_call: &str, freq_khz: f64, comment: &str, wait: Duration) -> Result<String, String> {
+        let dx = dx_call.trim().to_uppercase();
+        if dx.is_empty() || dx.len() > 20 || !dx.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') {
+            return Err("nominativo non valido".into());
+        }
+        if !freq_khz.is_finite() || !(100.0..=1_000_000.0).contains(&freq_khz) {
+            return Err("frequenza non valida".into());
+        }
+        let comment: String = comment.chars().filter(|c| c.is_ascii() && !c.is_ascii_control()).take(30).collect();
+        let config = self.config();
+        let (key, name, sender) = {
+            let senders = lock(&self.senders);
+            let status = lock(&self.status);
+            let connected = |k: &str| status.get(k).is_some_and(|s| s.state == "connected");
+            let chosen = if config.spot_server.is_empty() {
+                senders.keys().find(|k| connected(k)).cloned()
+            } else if senders.contains_key(&config.spot_server) && connected(&config.spot_server) {
+                Some(config.spot_server.clone())
+            } else {
+                None
+            };
+            let key = chosen.ok_or_else(|| {
+                if config.spot_server.is_empty() { "nessun cluster telnet collegato".to_string() } else { format!("il cluster {} non e' collegato", config.spot_server) }
+            })?;
+            let name = config.servers.iter().find(|s| s.key() == key).map_or_else(|| key.clone(), |s| s.name.clone());
+            let sender = senders.get(&key).cloned().ok_or_else(|| "nessun cluster telnet collegato".to_string())?;
+            (key, name, sender)
+        };
+        let (tx, rx) = oneshot::channel();
+        lock(&self.waiting).push((key.clone(), dx.clone(), tx));
+        let command = format!("DX {freq_khz:.1} {dx} {comment}").trim_end().to_string();
+        if sender.send(command).is_err() {
+            lock(&self.waiting).retain(|(k, d, _)| !(k == &key && d == &dx));
+            return Err(format!("il cluster {name} non e' collegato"));
+        }
+        let echoed = tokio::time::timeout(wait, rx).await;
+        lock(&self.waiting).retain(|(_, _, s)| !s.is_closed());
+        match echoed {
+            Ok(Ok(())) => Ok(name),
+            _ => Err(format!("il cluster {name} non ha ripetuto lo spot: forse vuole l'accesso con password (Impostazioni › DX Cluster)")),
+        }
+    }
+
+    /// Il nostro spot e' tornato indietro da un cluster: chi lo aspettava viene avvisato.
+    fn spot_echoed(&self, server_key: &str, spotter: &str, dx_call: &str) {
+        let me = self.callsign();
+        let base = |c: &str| c.split('-').next().unwrap_or(c).to_uppercase();
+        if me.is_empty() || base(spotter) != base(&me) {
+            return;
+        }
+        let mut waiting = lock(&self.waiting);
+        let mut i = 0;
+        while i < waiting.len() {
+            if waiting[i].0 == server_key && waiting[i].1 == dx_call {
+                let (_, _, tx) = waiting.remove(i);
+                let _ = tx.send(());
+            } else {
+                i += 1;
+            }
+        }
+    }
+
     fn set_status(&self, server: &ServerCfg, state: &'static str, detail: Option<String>) {
         let mut all = lock(&self.status);
         let key = server.key();
@@ -383,6 +482,7 @@ impl ClusterService {
     }
 
     fn push_spot(&self, server: &ServerCfg, parsed: spot::Parsed) {
+        self.spot_echoed(&server.key(), &parsed.spotter, &parsed.dx_call);
         self.push_parsed(&server.name, Some(server.key()), parsed);
     }
 
@@ -471,6 +571,8 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
     let mut line: Vec<u8> = Vec::new();
     let mut buf = [0u8; 4096];
     let mut logged_in = false;
+    let mut password_sent = false;
+    let login = if server.username.trim().is_empty() { callsign.to_string() } else { server.username.trim().to_uppercase() };
     let mut keepalive = tokio::time::interval(KEEPALIVE);
     keepalive.tick().await;
 
@@ -498,7 +600,10 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                                 svc.push_spot(server, parsed);
                             } else if !logged_in && telnet::is_login_prompt(&text) {
                                 logged_in = true;
-                                log_in(&mut writer, callsign, commands).await?;
+                                log_in(&mut writer, &login, commands).await?;
+                            } else if logged_in && !password_sent && telnet::is_password_prompt(&text) {
+                                password_sent = true;
+                                send_password(&mut writer, &server.password).await?;
                             }
                         }
                         // \r, NUL e i BEL (due a fine riga negli spot di DXSpider) non fanno parte del testo
@@ -513,7 +618,12 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                 if !logged_in && telnet::is_login_prompt(&String::from_utf8_lossy(&line)) {
                     logged_in = true;
                     line.clear();
-                    log_in(&mut writer, callsign, commands).await?;
+                    log_in(&mut writer, &login, commands).await?;
+                } else if logged_in && !password_sent && telnet::is_password_prompt(&String::from_utf8_lossy(&line)) {
+                    // anche la richiesta della password di solito non finisce con un a capo
+                    password_sent = true;
+                    line.clear();
+                    send_password(&mut writer, &server.password).await?;
                 }
             }
             Some(command) = outgoing.recv() => {
@@ -524,6 +634,14 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
             }
         }
     }
+}
+
+/// Il cluster chiede la password: si manda quella salvata; se non c'e', ci si ferma con un errore che dice cosa fare.
+async fn send_password(writer: &mut tokio::net::tcp::OwnedWriteHalf, password: &str) -> Result<(), String> {
+    if password.is_empty() {
+        return Err("il cluster chiede una password: scrivila nelle impostazioni del DX Cluster".into());
+    }
+    writer.write_all(format!("{password}\r\n").as_bytes()).await.map_err(|e| format!("scrittura: {e}"))
 }
 
 async fn log_in(writer: &mut tokio::net::tcp::OwnedWriteHalf, callsign: &str, commands: &[String]) -> Result<(), String> {
@@ -551,7 +669,7 @@ mod tests {
     }
 
     fn local(port: u16) -> ServerCfg {
-        ServerCfg { name: "Prova".into(), host: "127.0.0.1".into(), port, enabled: true }
+        ServerCfg { name: "Prova".into(), host: "127.0.0.1".into(), port, enabled: true, ..ServerCfg::default() }
     }
 
     #[tokio::test]
@@ -589,7 +707,7 @@ mod tests {
     #[test]
     fn the_catalog_entries_are_all_valid_servers() {
         for e in CATALOG {
-            let s = ServerCfg { name: e.name.into(), host: e.host.into(), port: e.port, enabled: true };
+            let s = ServerCfg { name: e.name.into(), host: e.host.into(), port: e.port, enabled: true, ..ServerCfg::default() };
             assert!(Config { servers: vec![s], ..Config::default() }.validate().is_ok(), "{}", e.name);
         }
     }
@@ -687,6 +805,70 @@ mod tests {
         let (call, command) = server.await.unwrap();
         assert!(call.contains("IU3ABC"), "{call:?}");
         assert_eq!(command.trim(), "sh/dx 5");
+    }
+
+    #[tokio::test]
+    async fn logs_in_with_name_and_password_and_a_spot_counts_only_when_the_cluster_repeats_it() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            let (read, mut write) = stream.into_split();
+            let mut reader = BufReader::new(read);
+            write.write_all(b"Please enter your real callsign:\r\nlogin: ").await.unwrap();
+            let mut login = String::new();
+            reader.read_line(&mut login).await.unwrap();
+            write.write_all(b"password: ").await.unwrap();
+            let mut password = String::new();
+            reader.read_line(&mut password).await.unwrap();
+            write.write_all(b"Hello IU3ABC-2\r\n").await.unwrap();
+            // il primo spot si ripete (accettato), il secondo no
+            let mut first = String::new();
+            reader.read_line(&mut first).await.unwrap();
+            write.write_all(b"DX de IU3ABC-2:   14083.2  IZ7XYZ       FT8 +5 dB                      1713Z\r\n").await.unwrap();
+            let mut second = String::new();
+            reader.read_line(&mut second).await.unwrap();
+            (login, password, first, second)
+        });
+
+        let svc = ClusterService::open(&temp("spot"));
+        let mut cfg = local(port);
+        cfg.username = "IU3ABC-2".into();
+        cfg.password = "segreta".into();
+        let c = Config { enabled: true, callsign: "IU3ABC".into(), servers: vec![cfg], spot_via: SpotVia::Telnet, ..Config::default() };
+        svc.set_config(c).unwrap();
+        let mut waited = 0;
+        while !svc.statuses().first().is_some_and(|s| s.state == "connected") && waited < 50 {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            waited += 1;
+        }
+        tokio::time::sleep(Duration::from_millis(300)).await;
+
+        let done = svc.send_spot("iz7xyz", 14083.2, "FT8 +5 dB \u{7}", Duration::from_secs(5)).await;
+        assert_eq!(done.as_deref(), Ok("Prova"));
+        let refused = svc.send_spot("K1ABC", 7010.5, "cw", Duration::from_millis(500)).await;
+        assert!(refused.is_err_and(|e| e.contains("non ha ripetuto")));
+        assert!(svc.send_spot("K1ABC", f64::NAN, "", Duration::from_millis(10)).await.is_err());
+
+        let (login, password, first, second) = server.await.unwrap();
+        assert_eq!(login.trim(), "IU3ABC-2");
+        assert_eq!(password.trim(), "segreta");
+        assert_eq!(first.trim(), "DX 14083.2 IZ7XYZ FT8 +5 dB", "commento senza caratteri di controllo");
+        assert_eq!(second.trim(), "DX 7010.5 K1ABC cw");
+    }
+
+    #[test]
+    fn a_login_name_must_be_a_callsign_and_old_files_without_the_new_fields_still_load() {
+        let mut c = Config::default();
+        c.servers[0].username = "not a call".into();
+        assert!(c.validate().is_err());
+        c.servers[0].username = "IU3ABC-2".into();
+        c.servers[0].password = "a\nb".into();
+        assert!(c.validate().is_err());
+        let old = r#"{"enabled":true,"callsign":"","servers":[{"name":"A","host":"a.b","port":7300,"enabled":true}],"login_commands":[],"max_spots":500,"max_age_min":60}"#;
+        let parsed: Config = serde_json::from_str(old).unwrap();
+        assert_eq!(parsed.spot_via, SpotVia::Dxsummit);
+        assert!(parsed.servers[0].password.is_empty());
     }
 
     #[tokio::test]

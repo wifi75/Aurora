@@ -36,7 +36,8 @@ export function SpotDialog({ call, dialHz, audioHz, modeName, onClose }: Props) 
     setProblem('');
     postSpotDxsummit({ dx_call: dx.trim(), freq_khz: f, info: info.trim() })
       .then((res) => {
-        toast(t('ctl.spotOk', { call: res.dx_call, khz: (res.frequency_hz / 1000).toFixed(1) }), 'ok');
+        const khz = (res.frequency_hz / 1000).toFixed(1);
+        toast(res.via === 'telnet' ? t('ctl.spotOkCluster', { call: res.dx_call, khz, server: res.server ?? '' }) : t('ctl.spotOk', { call: res.dx_call, khz }), 'ok');
         onClose();
       })
       .catch((e: unknown) => {

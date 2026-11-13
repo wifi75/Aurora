@@ -432,6 +432,14 @@ impl Service {
     /// stazione ogni 5 minuti, con un thread a parte e attesa massima di 10 s. La frequenza e' quella della radio piu' la frequenza di ricezione
     /// (dove si sente il DX), il campo `info` e' il modo con il testo (macro espanse) come lo compone JTDX. L'esito finisce anche nello stato.
     pub async fn spot_current(&self, params: SpotParams) -> Result<SpotDone, SpotError> {
+        let done = self.compose_current(params)?;
+        self.spot_dxsummit(&done.dx_call, done.freq_hz, &done.info).await?;
+        Ok(done)
+    }
+
+    /// Frequenza e testo dello spot della stazione scelta (vedi [`Service::spot_current`]), senza mandarlo: serve anche all'invio dal cluster
+    /// telnet.
+    pub fn compose_current(&self, params: SpotParams) -> Result<SpotDone, SpotError> {
         let live = self.live.lock().unwrap_or_else(|p| p.into_inner()).clone();
         let config_grid = self.config.borrow().grid.clone();
         let freq_hz = match live.rx_df {
@@ -448,12 +456,12 @@ impl Service {
         let mode = if live.mode.is_empty() { "FT8" } else { live.mode.as_str() };
         let info: String = dxsummit::compose_info(mode, params.text.trim(), &params.prop, macros).chars().take(200).collect();
         let dx_call = params.dx_call.trim().to_uppercase();
-        self.spot_dxsummit(&dx_call, freq_hz, &info).await?;
         Ok(SpotDone { dx_call, freq_hz, info })
     }
 
-    /// Lo spot vero e proprio, con frequenza e `info` gia' pronti (vedi [`Service::spot_current`]).
-    pub async fn spot_dxsummit(&self, dx_call: &str, freq_hz: u64, info: &str) -> Result<(), SpotError> {
+    /// I controlli di ogni spot, da qualunque parte parta: spotting acceso, proprio nominativo, nominativo DX valido, non la stessa stazione
+    /// da meno di 5 minuti (che da qui conta come segnalata). Restituisce il nominativo DX in maiuscolo.
+    pub fn claim_spot(&self, dx_call: &str) -> Result<String, SpotError> {
         let config = self.config.borrow().clone();
         if !config.dxsummit {
             return Err(SpotError::Off);
@@ -465,13 +473,23 @@ impl Service {
         if dx_call.is_empty() || !dx_call.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') || dx_call.len() > 20 {
             return Err(SpotError::BadDxCall);
         }
-        {
-            let mut last = self.last_spot.lock().unwrap_or_else(|p| p.into_inner());
-            if last.as_ref().is_some_and(|(c, at)| *c == dx_call && at.elapsed() < Duration::from_secs(300)) {
-                return Err(SpotError::Already);
-            }
-            *last = Some((dx_call.clone(), Instant::now()));
+        let mut last = self.last_spot.lock().unwrap_or_else(|p| p.into_inner());
+        if last.as_ref().is_some_and(|(c, at)| *c == dx_call && at.elapsed() < Duration::from_secs(300)) {
+            return Err(SpotError::Already);
         }
+        *last = Some((dx_call.clone(), Instant::now()));
+        Ok(dx_call)
+    }
+
+    /// Uno spot non e' partito: non conta, si puo' riprovare subito.
+    pub fn unclaim_spot(&self) {
+        *self.last_spot.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    }
+
+    /// Lo spot vero e proprio, con frequenza e `info` gia' pronti (vedi [`Service::spot_current`]).
+    pub async fn spot_dxsummit(&self, dx_call: &str, freq_hz: u64, info: &str) -> Result<(), SpotError> {
+        let dx_call = self.claim_spot(dx_call)?;
+        let config = self.config.borrow().clone();
         let request_call = config.call.clone();
         let request = dxsummit::SpotRequest { my_call: config.call, dx_call: dx_call.clone(), freq_hz, info: info.trim().chars().take(200).collect() };
         let (url, timeout) = (self.endpoints.dxsummit_url.clone(), self.endpoints.dxsummit_timeout);

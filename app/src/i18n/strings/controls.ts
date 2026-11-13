@@ -362,6 +362,14 @@ export const controlStrings = {
     'Texto opcional del spot (tras el modo). Macros: #G locators «el tuyo<>DX», #D distancia, #R informe.',
     'Texto opcional do spot (depois do modo). Macros: #G locators «o teu<>DX», #D distância, #R relatório.',
   ],
+  'ctl.spotOkCluster': [
+    'Spot inviato dal cluster {server} e ripetuto dal cluster: {call} su {khz} kHz',
+    'Spot sent from the {server} cluster and repeated by it: {call} on {khz} kHz',
+    'Spot über den Cluster {server} gesendet und von ihm wiederholt: {call} auf {khz} kHz',
+    'Spot envoyé par le cluster {server} et répété par lui : {call} sur {khz} kHz',
+    'Spot enviado desde el clúster {server} y repetido por él: {call} en {khz} kHz',
+    'Spot enviado pelo cluster {server} e repetido por ele: {call} em {khz} kHz',
+  ],
   'ctl.spotOk': [
     'Spot inviato a DXSummit: {call} su {khz} kHz',
     'Spot sent to DXSummit: {call} on {khz} kHz',

@@ -1644,6 +1644,9 @@ async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract
     Ok(Json(out))
 }
 
+/// Valore del campo password che la toglie (vuoto vuol dire «non cambiarla»).
+const CLEAR_PASSWORD: &str = "\u{1}clear";
+
 fn cluster_service(state: &AppState) -> Result<std::sync::Arc<dx_cluster::ClusterService>, ApiError> {
     state.cluster.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cluster_unavailable"))
 }
@@ -1658,12 +1661,36 @@ struct ClusterQuery {
 async fn cluster_get(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<ClusterQuery>) -> Result<Json<Value>, ApiError> {
     let cluster = cluster_service(&state)?;
     let limit = q.limit.unwrap_or(200).clamp(1, dx_cluster::MAX_SPOTS);
-    Ok(Json(json!({ "config": cluster.config(), "callsign": cluster.callsign(), "servers": cluster.statuses(), "spots": cluster.spots_since(q.since.unwrap_or(0), limit) })))
+    Ok(Json(json!({ "config": cluster_config_public(&cluster.config()), "callsign": cluster.callsign(), "servers": cluster.statuses(), "spots": cluster.spots_since(q.since.unwrap_or(0), limit) })))
+}
+
+/// Le impostazioni del cluster senza le password: al loro posto `has_password` per server.
+fn cluster_config_public(config: &dx_cluster::Config) -> Value {
+    let mut value = json!(config);
+    if let Some(servers) = value.get_mut("servers").and_then(Value::as_array_mut) {
+        for (s, cfg) in servers.iter_mut().zip(&config.servers) {
+            s["password"] = json!("");
+            s["has_password"] = json!(!cfg.password.is_empty());
+        }
+    }
+    value
 }
 
 #[utoipa::path(put, path = "/api/v1/dx-cluster", responses((status = 200, description = "Impostazioni salvate e collegamenti rifatti"), (status = 400, description = "Valori non validi (bad_cluster)"), (status = 404, description = "Non disponibile (cluster_unavailable)"), (status = 500, description = "Scrittura non riuscita (cluster_write)")))]
-async fn cluster_put(State(state): State<AppState>, _: Authed, Json(config): Json<dx_cluster::Config>) -> Result<Json<Value>, ApiError> {
+async fn cluster_put(State(state): State<AppState>, _: Authed, Json(mut config): Json<dx_cluster::Config>) -> Result<Json<Value>, ApiError> {
     let cluster = cluster_service(&state)?;
+    // la password non torna mai all'interfaccia: vuota vuol dire «tieni quella salvata» per lo stesso server (`clear_password` la toglie)
+    let saved = cluster.config();
+    for s in &mut config.servers {
+        if s.password.is_empty()
+            && let Some(old) = saved.servers.iter().find(|o| o.key() == s.key())
+        {
+            s.password = old.password.clone();
+        }
+        if s.password == CLEAR_PASSWORD {
+            s.password.clear();
+        }
+    }
     config.validate().map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "bad_cluster"))?;
     // salva e rifa' i collegamenti: servono dentro il runtime, ma la scrittura su disco e' breve
     cluster.set_config(config).map_err(|e| {
@@ -1846,6 +1873,29 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
         Some(_) => return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_spot")),
         None => None,
     };
+    let via_telnet = state.cluster.as_ref().filter(|c| c.config().spot_via == dx_cluster::SpotVia::Telnet).cloned();
+    if let Some(cluster) = via_telnet {
+        // spot dal cluster telnet (Impostazioni › DX Cluster › «Invia gli spot da»): entra nella rete dei cluster
+        let done = match manual {
+            Some((freq_hz, info)) => reporting::SpotDone { dx_call: body.dx_call.trim().to_uppercase(), freq_hz, info },
+            None => service
+                .compose_current(reporting::SpotParams { dx_call: body.dx_call, dx_grid: body.dx_grid, text: body.text, prop: body.prop })
+                .map_err(spot_error)?,
+        };
+        let dx_call = service.claim_spot(&done.dx_call).map_err(spot_error)?;
+        let khz = done.freq_hz as f64 / 1000.0;
+        return match cluster.send_spot(&dx_call, khz, &done.info, std::time::Duration::from_secs(20)).await {
+            Ok(server) => {
+                tracing::info!("spot inviato dal cluster {server}: {dx_call} su {khz:.1} kHz");
+                Ok(Json(json!({ "ok": true, "dx_call": dx_call, "frequency_hz": done.freq_hz, "info": done.info, "via": "telnet", "server": server })))
+            }
+            Err(e) => {
+                service.unclaim_spot();
+                tracing::warn!("spot dal cluster telnet non riuscito ({dx_call}): {e}");
+                Err(ApiError::new(StatusCode::BAD_GATEWAY, "spot_failed").with_message(e))
+            }
+        };
+    }
     let sent = if let Some((freq_hz, info)) = manual {
         let call = body.dx_call.trim().to_uppercase();
         service.spot_dxsummit(&call, freq_hz, &info).await.map(|()| reporting::SpotDone { dx_call: call, freq_hz, info })
@@ -1859,18 +1909,20 @@ async fn spot_dxsummit(State(state): State<AppState>, _: Authed, Peer(peer): Pee
             if let Some(cluster) = &state.cluster {
                 cluster.add_own_spot(&done.dx_call, done.freq_hz as f64 / 1000.0, &done.info, "DXSummit");
             }
-            Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info })))
+            Ok(Json(json!({ "ok": true, "dx_call": done.dx_call, "frequency_hz": done.freq_hz, "info": done.info, "via": "dxsummit" })))
         }
-        Err(e) => {
-            use reporting::SpotError;
-            let status = match e {
-                SpotError::BadDxCall => StatusCode::BAD_REQUEST,
-                SpotError::Failed(_) => StatusCode::BAD_GATEWAY,
-                SpotError::Off | SpotError::NoOwnCall | SpotError::Already | SpotError::NoFrequency => StatusCode::CONFLICT,
-            };
-            Err(ApiError::new(status, e.code()).with_message(e.to_string()))
-        }
+        Err(e) => Err(spot_error(e)),
     }
+}
+
+fn spot_error(e: reporting::SpotError) -> ApiError {
+    use reporting::SpotError;
+    let status = match e {
+        SpotError::BadDxCall => StatusCode::BAD_REQUEST,
+        SpotError::Failed(_) => StatusCode::BAD_GATEWAY,
+        SpotError::Off | SpotError::NoOwnCall | SpotError::Already | SpotError::NoFrequency => StatusCode::CONFLICT,
+    };
+    ApiError::new(status, e.code()).with_message(e.to_string())
 }
 
 #[derive(Deserialize)]

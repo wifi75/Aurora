@@ -141,3 +141,73 @@ async fn the_upload_test_route_checks_the_saved_settings_and_refuses_unknown_ser
     outside.peer = axum::extract::ConnectInfo("8.8.8.8:50000".parse().unwrap());
     status_is(&call(&router(&s), outside).await, StatusCode::FORBIDDEN);
 }
+
+/// Un cluster telnet finto: chiede il nominativo e la password, poi ripete ogni spot `DX` come `DX de IU3ABC: ...`. Manda al canale le righe ricevute.
+async fn fake_cluster() -> (u16, tokio::sync::mpsc::UnboundedReceiver<String>) {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("cluster");
+    let port = listener.local_addr().expect("porta").port();
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    tokio::spawn(async move {
+        let Ok((stream, _)) = listener.accept().await else { return };
+        let (read, mut write) = stream.into_split();
+        let mut lines = BufReader::new(read).lines();
+        let _ = write.write_all(b"login: ").await;
+        let _ = lines.next_line().await.map(|l| tx.send(l.unwrap_or_default()));
+        let _ = write.write_all(b"password: ").await;
+        let _ = lines.next_line().await.map(|l| tx.send(l.unwrap_or_default()));
+        while let Ok(Some(line)) = lines.next_line().await {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.first() == Some(&"DX") && parts.len() >= 3 {
+                let echo = format!("DX de IU3ABC:     {:>8}  {:<12} {:<30} 1713Z\r\n", parts[1], parts[2], parts[3..].join(" "));
+                let _ = write.write_all(echo.as_bytes()).await;
+            }
+            let _ = tx.send(line);
+        }
+    });
+    (port, rx)
+}
+
+#[tokio::test]
+async fn with_the_telnet_choice_the_spot_leaves_from_the_cluster_and_dxsummit_is_not_called() {
+    let (url, requests) = local_server("200 OK");
+    let s = with_service("telnet", url, true).await;
+    let (port, mut seen) = fake_cluster().await;
+    let dir = std::env::temp_dir().join(format!("aurora-route-spot-cluster-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).ok();
+    let cluster = dx_cluster::ClusterService::open(&dir.join("cluster.json"));
+    let server = dx_cluster::ServerCfg { name: "Casa".into(), host: "127.0.0.1".into(), port, enabled: true, password: "segreta".into(), ..dx_cluster::ServerCfg::default() };
+    cluster
+        .set_config(dx_cluster::Config { enabled: true, callsign: "IU3ABC".into(), servers: vec![server], spot_via: dx_cluster::SpotVia::Telnet, ..dx_cluster::Config::default() })
+        .expect("config");
+    let s = s.with_cluster(Arc::clone(&cluster));
+    for _ in 0..50 {
+        if cluster.statuses().first().is_some_and(|st| st.state == "connected") {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    tokio::time::sleep(Duration::from_millis(300)).await;
+    let cookie = cookie_for(&s);
+
+    // la password non torna mai all'interfaccia
+    let got = body_json(call(&router(&s), req(Method::GET, "/api/v1/dx-cluster?limit=1").cookie(&cookie)).await).await;
+    assert_eq!(got["config"]["servers"][0]["password"], "");
+    assert_eq!(got["config"]["servers"][0]["has_password"], true);
+
+    let resp = call(&router(&s), spot(&s, &cookie, r#"{"dx_call":"dl1abc"}"#)).await;
+    status_is(&resp, StatusCode::OK);
+    let doc = body_json(resp).await;
+    assert_eq!((doc["via"].clone(), doc["server"].clone(), doc["dx_call"].clone()), ("telnet".into(), "Casa".into(), "DL1ABC".into()));
+    assert_eq!(seen.recv().await.as_deref(), Some("IU3ABC"));
+    assert_eq!(seen.recv().await.as_deref(), Some("segreta"));
+    let command = seen.recv().await.unwrap_or_default();
+    assert!(command.starts_with("DX 14075.2 DL1ABC FT8"), "{command}");
+    assert!(requests.try_recv().is_err(), "DXSummit non si usa");
+
+    // salvare senza password tiene quella salvata
+    let mut config = got["config"].clone();
+    config["max_spots"] = 600.into();
+    status_is(&call(&router(&s), req(Method::PUT, "/api/v1/dx-cluster").cookie(&cookie).json(&config.to_string())).await, StatusCode::OK);
+    assert_eq!(cluster.config().servers[0].password, "segreta");
+}

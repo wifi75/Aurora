@@ -10,7 +10,7 @@ async fn main() {
     let dir = std::env::temp_dir().join("aurora-probe");
     let _ = std::fs::create_dir_all(&dir);
     let svc: Arc<ClusterService> = ClusterService::open(&dir.join("dx-cluster.json"));
-    let config = Config { enabled: true, callsign: call, servers: vec![ServerCfg { name: "probe".into(), host, port, enabled: true }], ..Config::default() };
+    let config = Config { enabled: true, callsign: call, servers: vec![ServerCfg { name: "probe".into(), host, port, enabled: true, ..ServerCfg::default() }], ..Config::default() };
     svc.set_config(config).expect("config");
     for _ in 0..20 {
         tokio::time::sleep(Duration::from_secs(1)).await;

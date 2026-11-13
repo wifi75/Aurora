@@ -1,6 +1,10 @@
 # Changelog
 
 ## Non rilasciato
+- **Radio collegata da sola agli avvii successivi**: al primo collegamento riuscito fatto a mano (Hamlib, TCI, OmniRig, Cat4OM, FT-991 Link) si accende «Collega la radio all'avvio di Aurora» e viene salvata, una volta sola: chi poi la spegne la ritrova spenta; «Scollega», l'avvio forzato e il ricollegamento dopo un guasto non la toccano. Prima restava spenta e chi aveva una SunSDR in TCI doveva premere «Connetti» a ogni avvio.
+- **Errori di ClubLog nella lingua dell'interfaccia**: lo stato dei servizi porta anche un codice stabile (`clublog_denied`, `clublog_rejected`, `clublog_retry_http`...) e i valori da inserire; l'interfaccia lo traduce in sei lingue e, per un codice sconosciuto, ripiega sul testo scritto dal core. Prima l'esito di ClubLog compariva sempre in italiano.
+- **Spot dal cluster telnet**: in Impostazioni › DX Cluster si sceglie da dove parte lo spot di «Spot DX», il sito DXSummit (come prima, lo spot resta su DXSummit) o il cluster telnet collegato (comando `DX`, entra nella rete dei cluster); lo spot via telnet conta come riuscito solo quando il cluster lo ripete. Accanto a ogni server «Nome di accesso» (nominativo, anche con SSID) e «Password», mandata solo quando il cluster la chiede e mai rimandata all'interfaccia.
+- **Azimut e distanza nel riquadro del nominativo**: passando il mouse su un nominativo (messaggi decodificati, DX Cluster) il riquadro mostra anche «Azimut 123° · 4567 km» dalla propria stazione, con il locatore del messaggio o, se manca, quello della ricerca; sempre, anche con «Mostra azimut» spento; la distanza segue km o miglia.
 - **Verifica degli spot su DXSummit**: si chiedono a DXSummit gli spot della stazione DX; senza filtro rendeva solo gli ultimi 50 del mondo (circa un minuto) e uno spot vero poteva risultare «non pubblicato».
 
 ## 0.11.249 - 2026-11-13

@@ -70,6 +70,12 @@ pub fn is_login_prompt(text: &str) -> bool {
     lower.ends_with(':') && (lower.contains("login") || lower.contains("call"))
 }
 
+/// Il server chiede la password: `password:`, `Password: `...
+pub fn is_password_prompt(text: &str) -> bool {
+    let lower = text.trim_end().to_lowercase();
+    lower.ends_with(':') && (lower.contains("password") || lower.contains("passwd"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

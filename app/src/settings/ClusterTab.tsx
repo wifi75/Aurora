@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, getClusterCatalog, getClusterSpots, putCluster, sendClusterCommand, testClusterServer, type ClusterConfig, type ClusterServer } from '../api/client';
+import { ApiError, CLUSTER_CLEAR_PASSWORD, getClusterCatalog, getClusterSpots, putCluster, sendClusterCommand, testClusterServer, type ClusterConfig, type ClusterServer } from '../api/client';
 import { useT, type T } from '../i18n';
 import { Check, Help } from './common';
 import { Actions, Cells, Field, Group, Message, Notes, Page } from './layout';
@@ -17,10 +17,21 @@ interface Draft {
   login: string;
   maxSpots: string;
   maxAge: string;
+  spotVia: 'dxsummit' | 'telnet';
+  spotServer: string;
 }
 
 function toDraft(c: ClusterConfig): Draft {
-  return { enabled: c.enabled, callsign: c.callsign, servers: c.servers, login: c.login_commands.join('\n'), maxSpots: String(c.max_spots), maxAge: String(c.max_age_min) };
+  return {
+    enabled: c.enabled,
+    callsign: c.callsign,
+    servers: c.servers.map((s) => ({ ...s, username: s.username ?? '', password: '' })),
+    login: c.login_commands.join('\n'),
+    maxSpots: String(c.max_spots),
+    maxAge: String(c.max_age_min),
+    spotVia: c.spot_via ?? 'dxsummit',
+    spotServer: c.spot_server ?? '',
+  };
 }
 
 const CALLSIGN = /^[A-Za-z0-9/-]{3,16}$/;
@@ -32,6 +43,9 @@ export function draftToConfig(d: Draft): ClusterConfig | null {
   if (callsign !== '' && !(CALLSIGN.test(callsign) && /\d/.test(callsign))) return null;
   if (d.servers.length > MAX_SERVERS) return null;
   if (d.servers.some((s) => s.name.trim() === '' || !HOST.test(s.host) || !Number.isInteger(s.port) || s.port < 1 || s.port > 65535)) return null;
+  const okLogin = (u: string) => u === '' || (CALLSIGN.test(u) && /\d/.test(u));
+  const okPassword = (p: string) => p === CLUSTER_CLEAR_PASSWORD || (p.length <= 64 && [...p].every((ch) => ch >= ' ' && ch <= '~'));
+  if (d.servers.some((s) => !okLogin((s.username ?? '').trim()) || !okPassword(s.password ?? ''))) return null;
   const login = d.login.split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '');
   const prefixes = ['sh/', 'show/', 'sh ', 'show ', 'set/', 'unset/', 'accept/', 'reject/', 'clear/', 'help', 'bye'];
   if (login.length > 10 || login.some((l) => l.length > 80 || !prefixes.some((p) => l.toLowerCase().startsWith(p)))) return null;
@@ -39,7 +53,8 @@ export function draftToConfig(d: Draft): ClusterConfig | null {
   const maxAge = Number(d.maxAge);
   if (!Number.isInteger(maxSpots) || maxSpots < 50 || maxSpots > 2000) return null;
   if (!Number.isInteger(maxAge) || maxAge < 5 || maxAge > 1440) return null;
-  return { enabled: d.enabled, callsign, servers: d.servers.map((s) => ({ ...s, name: s.name.trim() })), login_commands: login, max_spots: maxSpots, max_age_min: maxAge };
+  const servers = d.servers.map(({ has_password: _saved, ...s }) => ({ ...s, name: s.name.trim(), username: (s.username ?? '').trim().toUpperCase(), password: s.password ?? '' }));
+  return { enabled: d.enabled, callsign, servers, login_commands: login, max_spots: maxSpots, max_age_min: maxAge, spot_via: d.spotVia, spot_server: d.spotServer };
 }
 
 function errorText(error: unknown, t: T): string {
@@ -170,6 +185,30 @@ export function ClusterTab() {
                   {t('cluster.server.remove')}
                 </button>
               </span>
+              <span className="sx-control cluster-access" title={t('tip.cluster.access')}>
+                <input
+                  type="text"
+                  aria-label={t('cluster.access.user')}
+                  placeholder={state.data?.callsign || t('cluster.access.user')}
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={s.username ?? ''}
+                  onChange={(e) => changeServer(i, { username: e.target.value.toUpperCase() })}
+                />
+                <input
+                  type="password"
+                  aria-label={t('cluster.access.password')}
+                  placeholder={s.has_password && s.password !== CLUSTER_CLEAR_PASSWORD ? t('cluster.access.saved') : t('cluster.access.password')}
+                  autoComplete="new-password"
+                  value={s.password === CLUSTER_CLEAR_PASSWORD ? '' : (s.password ?? '')}
+                  onChange={(e) => changeServer(i, { password: e.target.value })}
+                />
+                {s.has_password && s.password !== CLUSTER_CLEAR_PASSWORD ? (
+                  <button type="button" className="glass chip" title={t('tip.cluster.access.clear')} onClick={() => changeServer(i, { password: CLUSTER_CLEAR_PASSWORD })}>
+                    {t('cluster.access.clear')}
+                  </button>
+                ) : null}
+              </span>
             </div>
           ))}
         </div>
@@ -200,6 +239,30 @@ export function ClusterTab() {
         </Cells>
         {!parsed ? <Message kind="alert">{t('cluster.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
+      </Group>
+
+      <Group title={t('cluster.spotVia')} span={2}>
+        <Help>{t('tip.cluster.spotVia')}</Help>
+        <div className="cmd-line" role="radiogroup" aria-label={t('cluster.spotVia')}>
+          <label className="set-check">
+            <input type="radio" name="spot-via" checked={shown.spotVia === 'dxsummit'} onChange={() => set({ spotVia: 'dxsummit' })} />
+            <span>{t('cluster.spotVia.dxsummit')}</span>
+          </label>
+          <label className="set-check">
+            <input type="radio" name="spot-via" checked={shown.spotVia === 'telnet'} onChange={() => set({ spotVia: 'telnet' })} />
+            <span>{t('cluster.spotVia.telnet')}</span>
+          </label>
+          {shown.spotVia === 'telnet' ? (
+            <select aria-label={t('cluster.spotVia.server')} title={t('cluster.spotVia.server')} value={shown.spotServer} onChange={(e) => set({ spotServer: e.target.value })}>
+              <option value="">{t('cluster.spotVia.first')}</option>
+              {shown.servers.map((s) => (
+                <option key={`${s.host}:${s.port}`} value={`${s.host}:${s.port}`}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </div>
       </Group>
 
       <Group title={t('cluster.add.heading')} span={2}>

@@ -510,7 +510,16 @@ export interface ClusterServer {
   host: string;
   port: number;
   enabled: boolean;
+  /** Nome di accesso (nominativo, anche con SSID); vuoto = il nominativo di stazione. */
+  username?: string;
+  /** Password: non arriva mai dal core (vuota); vuota nel salvataggio = tieni quella salvata, `CLUSTER_CLEAR_PASSWORD` = toglila. */
+  password?: string;
+  /** Il core ha una password salvata per questo server. */
+  has_password?: boolean;
 }
+
+/** Valore del campo password che la toglie (vuoto vuol dire «non cambiarla»). */
+export const CLUSTER_CLEAR_PASSWORD = '\u0001clear';
 
 export interface ClusterConfig {
   enabled: boolean;
@@ -519,6 +528,10 @@ export interface ClusterConfig {
   login_commands: string[];
   max_spots: number;
   max_age_min: number;
+  /** Da dove partono gli spot di «Spot DX»: il sito DXSummit o il cluster telnet. */
+  spot_via?: 'dxsummit' | 'telnet';
+  /** Il cluster (`host:porta`) da cui partono gli spot via telnet; vuoto = il primo collegato. */
+  spot_server?: string;
 }
 
 export interface ClusterSpot {
@@ -712,6 +725,8 @@ export interface CatConfig {
   civ_address: number;
   poll_secs: number;
   auto_connect: boolean;
+  /** Indicatore del core: l'accensione automatica al primo collegamento riuscito e' gia' stata fatta (si conserva nei salvataggi). */
+  auto_connect_offered?: boolean;
   /** Legge a turno anche preamplificatore, AGC, NB/NR, guadagni, RIT/XIT e secondo VFO (spento di base). */
   read_extras?: boolean;
   /** «Accendi» e «Spegni» di JTDX: la radio si accende via CAT al primo collegamento e si spegne alla chiusura di Aurora. */
