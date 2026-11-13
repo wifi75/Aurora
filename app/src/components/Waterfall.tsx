@@ -54,15 +54,27 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   // «Time stamp»: l'ora di ogni inizio di periodo scende con la cascata; `age` conta le righe arrivate dopo
   const stampsRef = useRef<HTMLCanvasElement>(null);
   const marks = useRef<Array<{ label: string; age: number }>>([]);
+  // le misure di cascata e spettro: leggerle a ogni riga (circa 3,5 al secondo) poteva forzare il ricalcolo dell'impaginazione; si
+  // rileggono solo al ridimensionamento (`ResizeObserver`) e quando cambia la quota dello spettro
+  const layoutRef = useRef<{ top: number; mainW: number; mainH: number; plotW: number; plotH: number } | null>(null);
+  const measure = () => {
+    const main = canvasRef.current;
+    const rect = plotRef.current?.getBoundingClientRect();
+    layoutRef.current = { top: main?.offsetTop ?? 0, mainW: main?.clientWidth ?? 0, mainH: main?.clientHeight ?? 0, plotW: rect?.width ?? 0, plotH: rect?.height ?? 0 };
+    return layoutRef.current;
+  };
+  const layout = () => layoutRef.current ?? measure();
   const drawStamps = () => {
     const stamps = stampsRef.current;
     const main = canvasRef.current;
     if (!stamps || !main) return;
     const dpr = window.devicePixelRatio || 1;
-    stamps.style.top = `${main.offsetTop}px`;
-    stamps.style.height = `${main.clientHeight}px`;
-    const w = Math.max(1, Math.round(main.clientWidth * dpr));
-    const h = Math.max(1, Math.round(main.clientHeight * dpr));
+    const { top, mainW, mainH } = layout();
+    // lo stile si scrive solo se cambia (leggere `style` non chiede l'impaginazione)
+    if (stamps.style.top !== `${top}px`) stamps.style.top = `${top}px`;
+    if (stamps.style.height !== `${mainH}px`) stamps.style.height = `${mainH}px`;
+    const w = Math.max(1, Math.round(mainW * dpr));
+    const h = Math.max(1, Math.round(mainH * dpr));
     if (stamps.width !== w) stamps.width = w;
     if (stamps.height !== h) stamps.height = h;
     const ctx = stamps.getContext('2d');
@@ -99,9 +111,9 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
     const canvas = plotRef.current;
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(1, Math.round(rect.width * dpr));
-    const h = Math.max(1, Math.round(rect.height * dpr));
+    const { plotW, plotH } = layout();
+    const w = Math.max(1, Math.round(plotW * dpr));
+    const h = Math.max(1, Math.round(plotH * dpr));
     if (canvas.width !== w) canvas.width = w;
     if (canvas.height !== h) canvas.height = h;
     drawSpectrum(canvas, curveRef.current, live.current.from, live.current.to);
@@ -139,12 +151,15 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
         };
         fit();
         observer = new ResizeObserver(() => {
+          measure();
           fit();
           drawPlot();
           drawStamps();
         });
         observer.observe(canvas);
         if (plotRef.current) observer.observe(plotRef.current);
+        // il riquadro intero: la barra sopra la cascata puo' spostarla senza cambiarne la misura
+        if (boxRef.current) observer.observe(boxRef.current);
 
         const pacer = new RowPacer();
         const periodAverage = new PeriodAverage();
@@ -219,6 +234,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   }, [colors, phase]);
   // il grafico si ridisegna anche se non arriva una riga (altezza, Start, ampiezza)
   useEffect(() => {
+    measure();
     drawPlot();
   }, [prefs.spectrumPercent, range.from, range.to]);
 
