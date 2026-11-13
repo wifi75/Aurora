@@ -1289,3 +1289,9 @@ html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; 
 /* Display della radio «spento» quando la radio non risponde, come quello vero: scuro e senza colori; si illumina all'accensione */
 .rd-header, .rd-face-row, .rd-square-slot, .rd-square-preview { transition: filter 0.8s ease, opacity 0.8s ease; }
 body.rd-radio-off .rd-header, body.rd-radio-off .rd-face-row, body.rd-radio-off .rd-square-slot, body.rd-radio-off .rd-square-preview { filter: brightness(0.32) grayscale(0.85); }
+
+/* Guida: le parole cercate evidenziate, ben visibili nei due temi */
+mark.guide-hit { background: #facc15; color: #111827; border-radius: 3px; padding: 0 2px; box-shadow: 0 0 0 1px #a16207; }
+mark.guide-hit--on { background: #f97316; color: #ffffff; box-shadow: 0 0 0 2px #c2410c; }
+.guide-hits { display: flex; align-items: center; gap: 6px; margin: 6px 0 4px; font-size: 13px; }
+.guide-hits .data { min-width: 6.5em; }

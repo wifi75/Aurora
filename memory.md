@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-13, versione 0.11.245 pubblicata (spia di salute della stazione, avvisi e finestre leggibili, niente falsi crash, tabella delle frequenze salvata, TX durante TUNE, Spegni split sempre visibile). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-13, versione 0.11.246 pubblicata (Nuovo log vuoto protetto, Log QSO per gli SWL, Accendi con Cat4OM e RTS alto per le Yaesu, display spento con la radio spenta, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-12

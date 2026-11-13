@@ -1,6 +1,7 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.246 - 2026-11-13
+- **Ricerca nella Guida come in un lettore PDF**: le parole trovate sono evidenziate (quella corrente in arancione), sotto la casella «3 di 12» e i pulsanti ▲▼ per saltare da una all'altra (anche Invio e Maiusc+Invio).
 - **Display della radio spento con la radio spenta**: quando la radio non risponde il display diventa scuro come quello vero, senza frequenza, S-meter e TX rimasti dall'ultima lettura o mossi dal rumore dell'audio, e si illumina quando la radio torna; «Spegni split» sta a sinistra del display e non compare con la radio spenta.
 - **«Log QSO» anche per chi ascolta (SWL)**: senza un QSO in corso della sequenza il pulsante apre la finestra di registrazione gia' compilata con la stazione DX (nominativo, locatore, frequenza, modo, ora); prima non salvava nulla ma mostrava lo stesso l'avviso «Log QSO». L'avviso ora dice «QSO con … salvato nel log», in tutte le lingue, e solo quando e' salvato davvero.
 - **Nuovo log vuoto**: in Impostazioni › Log, cluster e servizi › File ADIF il pulsante «Nuovo log vuoto» apre un avviso con il numero di QSO, l'invito a esportare prima l'ADIF e due scelte (Annulla e' quella predefinita): tenere il log attuale, copiato e verificato in `logbook-archivio-AAAAMMGG-HHMMSS.db` accanto al file, oppure cancellarlo con una seconda conferma rossa in cui si scrive la parola. Senza riavvio; mai durante una trasmissione o con Enable Tx acceso; solo dalla rete di casa.
@@ -8,6 +9,10 @@
 - **«Accendi» sulle Yaesu (FT-2000)**: durante l'accensione la linea RTS resta alta (come fa Hamlib per queste radio con «CAT RTS» acceso); prima era bassa e la radio ignorava il comando, cosi' si spegneva via CAT ma non si accendeva.
 - **DX Cluster della pagina principale come in PSK·RTTY·CW**: «Spot DX» passa dalla barra dei filtri alla barra del titolo, accanto alla nuova rotella «Opzioni del DX Cluster» (clic singolo o doppio, rotore verso la stazione, durata degli spot, colonne); le opzioni sono le stesse della pagina PSK·RTTY·CW.
 - **Attivita' di banda a colonne**: titoli e linee della griglia ben visibili come nel DX Cluster; le colonne (ora, dB, DT, Hz, messaggio, paese, etichetta) si spostano trascinando il titolo, si allargano dal bordo (doppio clic: adatta al contenuto) e si ripristinano col tasto destro; ordine e larghezze restano ricordati.
+- **Maniglia di «Segnali» in PSK·RTTY·CW** ben visibile, e le finestre RX e TX si stringono fino in fondo.
+- **Maniglia sul bordo destro delle finestre RX/TX** (PSK·RTTY·CW) per cambiarne la larghezza senza spostare log e DX Cluster.
+- **Pulsanti evidenziati**: tutti i pulsanti hanno il bordo azzurro e l'alone al passaggio del mouse.
+- **Sottovoci delle Impostazioni a «linea guida»**: le pagine di un ramo si leggono come un elenco con la linea di raccordo.
 
 ## 0.11.245 - 2026-11-13
 - **Spia di salute della stazione** in alto a destra, prima dell'ingranaggio (e nell'intestazione del telefono): verde, ambra o rossa secondo CPU di Aurora, tempo di decodifica, audio, CAT e orologio; passando il mouse i numeri, con un clic la finestra «Salute della stazione» con cosa fare, il grafico degli ultimi 10 minuti e, se la decodifica sfora spesso, la proposta di accendere «PC lento». Nuova rotta `GET /api/v1/health/resources`.
