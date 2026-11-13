@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.248',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T15:24:44Z',
     kind: 'changed',
     title: [
       'Radio spenta ben chiara',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.248',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T15:24:44Z',
     kind: 'fixed',
     title: [
       'Pulsanti dei Comandi e frequenza del mouse',
