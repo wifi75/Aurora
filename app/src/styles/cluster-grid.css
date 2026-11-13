@@ -94,3 +94,8 @@
 /* «Spot DX» e la rotella sopra il pannello quando manca la barra del titolo (telefono, finestra staccata) */
 .cluster-headtools { display: flex; justify-content: flex-end; }
 .cluster-headtools .dock-grip-extra { position: static; display: flex; gap: 4px; align-items: center; }
+
+/* «Spot DX» e la rotella nella barra del titolo del DX Cluster, tutto a destra: dentro la barra (non posizionati sopra la tabella, dove
+   finivano in certe disposizioni dei pannelli) */
+.dock-panel--cluster .dock-grip { display: flex; align-items: center; }
+.dock-panel--cluster .dock-grip .dock-grip-extra--right { position: static; left: auto; right: auto; top: auto; bottom: auto; margin-left: auto; padding: 0 0.4rem; justify-content: flex-end; }
