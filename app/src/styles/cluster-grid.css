@@ -90,3 +90,7 @@
   background: color-mix(in srgb, var(--warn) 18%, transparent);
   box-shadow: inset 0 0 0 var(--border-width) var(--warn);
 }
+
+/* «Spot DX» e la rotella sopra il pannello quando manca la barra del titolo (telefono, finestra staccata) */
+.cluster-headtools { display: flex; justify-content: flex-end; }
+.cluster-headtools .dock-grip-extra { position: static; display: flex; gap: 4px; align-items: center; }

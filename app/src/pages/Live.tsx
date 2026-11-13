@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { FreqPicker } from '../components/FreqPicker';
 import { getContest } from '../api/contest';
 import { getAutomation, getCat, getLog4om, getControls, getOnline, getStationInfo, postBand, postBandHopNext, postControl, postFrequency, postMode, postQueueReply, postReply, postRxFrequency, postTxFrequency } from '../api/client';
-import { ClusterPanel } from '../components/ClusterPanel';
+import { ClusterHeadTools, ClusterPanel } from '../components/ClusterPanel';
+import { useClusterOptions } from '../lib/clusterOptions';
 import { CqStrip } from '../components/CqStrip';
 import { DecodeList, gridOfSender } from '../components/DecodeList';
 import { ActivityTagPills } from '../components/ActivityTagPills';
@@ -135,6 +136,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastLogged, external]);
   const phone = usePhone();
+  // le opzioni del DX Cluster (rotella): le stesse della pagina PSK · RTTY · CW
+  const [clusterOptions, setClusterOptions] = useClusterOptions();
   const view = useStationView();
   const status = useStatusPick(['de_call', 'de_grid', 'dial_hz', 'dx_call', 'dx_grid', 'mode', 'own_continent', 'rx_df', 'transmitting', 'tx_df', 'tx_enabled']);
   // all'inizio di ogni trasmissione con la frequenza Tx fuori da 200-2700 Hz un avviso rosso: molte radio li' tagliano la potenza
@@ -299,7 +302,17 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           );
         }
       case 'cluster':
-        return <ClusterPanel />;
+        // sul telefono e nella finestra staccata non c'e' la barra del titolo: «Spot DX» e la rotella stanno sopra il pannello
+        if (phone || soloPanel)
+          return (
+            <>
+              <div className="cluster-headtools">
+                <ClusterHeadTools options={clusterOptions} onChange={setClusterOptions} />
+              </div>
+              <ClusterPanel options={clusterOptions} />
+            </>
+          );
+        return <ClusterPanel options={clusterOptions} />;
       case 'log': {
         // sotto: il log (con la scheda DXCC) oppure la Mappa DX
         const below =
@@ -541,6 +554,8 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       </div>
       {logTab === 'log' ? <LogHeader /> : null}
     </>
+  ) : id === 'cluster' ? (
+    <ClusterHeadTools options={clusterOptions} onChange={setClusterOptions} />
   ) : id === 'cq' && dxpedOn ? (
     <div className="dock-grip-extra">
       <h2>{t('dxp.title')}</h2>

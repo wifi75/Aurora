@@ -12,6 +12,8 @@ import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT, type Key } from '../i18n';
 import { MultiPick } from './MultiPick';
 import { SpotDialog } from './digi/SpotDialog';
+import { ClusterOptionsDialog } from './digi/ClusterOptionsDialog';
+import { Icon } from './Icon';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
 import { flagCode } from '../lib/flags';
@@ -94,7 +96,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
   const day = today();
   const dxpedColor = useDxpedColor();
   const dxpedCalls = new Set((dxpedQuery.data?.dxped.items ?? []).filter((d) => dxpedState(d, day, 0) === 'active').map((d) => d.call.toUpperCase()));
-  const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid', 'dx_call', 'rx_df']);
+  const status = useStatusPick(['dial_hz', 'mode', 'own_continent', 'de_grid']);
   const info = useQuery({ queryKey: ['station-info'], queryFn: getStationInfo, retry: false });
   const cluster = useQuery({ queryKey: ['dx-cluster'], queryFn: () => getClusterSpots(), retry: false, refetchInterval: 4000 });
   // lo Split DX acceso sulla radio (anche da un'altra finestra o dal telefono); il core lo spegne al cambio di frequenza, di banda o di modo
@@ -104,7 +106,6 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
   const spotList = cluster.data?.spots;
   const splits = useMemo(() => new Map((spotList ?? []).map((s) => [s.id, parseSpotSplit(s.comment, s.freq_khz, s.mode)] as const)), [spotList]);
   const [filters, setFilters] = useState<SpotFilters>(readFilters);
-  const [spotOpen, setSpotOpen] = useState(false);
   const wishlist = useWishlist((s) => s.list);
   // ordine e larghezze delle colonne: si cambiano trascinando i titoli e restano ricordati su questo dispositivo (la chiave di sempre)
   const cols = useMovableColumns({ storageKey: CLUSTER_COLS_KEY, columns: CLUSTER_COLUMNS, defaultEm: CLUSTER_COL_EM, elastic: 'comment', hidden: options?.hidden });
@@ -378,9 +379,6 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
         <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
           {t('cluster.filter.newOnly')}
         </button>
-        <button type="button" className="glass chip" title={t('tip.cluster.spot')} onClick={() => setSpotOpen(true)}>
-          {t('ctl.spot')}
-        </button>
         <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
         <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
           {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
@@ -394,7 +392,6 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
           </button>
         </div>
       ) : null}
-      {spotOpen ? <SpotDialog call={status?.dx_call ?? ''} dialHz={status?.dial_hz ?? 0} audioHz={status?.rx_df ?? 0} modeName={status?.mode ?? ''} onClose={() => setSpotOpen(false)} /> : null}
       {spots.length === 0 ? (
         <p className="muted cluster-note">{t('cluster.waiting')}</p>
       ) : shown.length === 0 ? (
@@ -443,6 +440,29 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
       )}
       <ColumnsMenu cols={cols} />
       <CallMenu menu={callMenu} onClose={closeCallMenu} />
+    </div>
+  );
+}
+
+/**
+ * I comandi nella barra del titolo del pannello DX Cluster della pagina principale, come nella pagina PSK · RTTY · CW: «Spot DX» e la
+ * rotella con le opzioni del cluster (le stesse, salvate una volta sola per tutte le pagine).
+ */
+export function ClusterHeadTools({ options, onChange }: { options: ClusterOptions; onChange(patch: Partial<ClusterOptions>): void }) {
+  const t = useT();
+  const status = useStatusPick(['dial_hz', 'mode', 'dx_call', 'rx_df']);
+  const [spotOpen, setSpotOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  return (
+    <div className="dock-grip-extra dock-grip-extra--right" onPointerDown={(e) => e.stopPropagation()}>
+      <button type="button" className="dock-mini" title={t('tip.cluster.spot')} onClick={() => setSpotOpen(true)}>
+        {t('ctl.spot')}
+      </button>
+      <button type="button" className="dock-mini icon-btn icon-btn--sm" title={t('cop.tip')} aria-label={t('cop.tip')} onClick={() => setOptionsOpen(true)}>
+        <Icon name="gear" />
+      </button>
+      {optionsOpen ? <ClusterOptionsDialog options={options} onChange={onChange} onClose={() => setOptionsOpen(false)} /> : null}
+      {spotOpen ? <SpotDialog call={status?.dx_call ?? ''} dialHz={status?.dial_hz ?? 0} audioHz={status?.rx_df ?? 0} modeName={status?.mode ?? ''} onClose={() => setSpotOpen(false)} /> : null}
     </div>
   );
 }
