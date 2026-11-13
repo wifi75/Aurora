@@ -18,6 +18,8 @@ describe('coreText', () => {
   });
 
   it('translates the automation log and the audio errors', () => {
+    expect(coreText('UT0UO: continente EU escluso', t as never)).toBe('core.au.contExcluded{"call":"UT0UO","cont":"EU"}');
+    expect(coreText('Abilita Tx riacceso dalle automazioni (era stato spento a fine QSO)', t as never)).toBe('core.au.txAgain');
     expect(coreText('K1ABC: segnale -24 dB sotto il minimo di -20 dB', t as never)).toBe('core.au.weak{"call":"K1ABC","snr":"-24","min":"-20"}');
     expect(coreText('Rispondo a K1ABC: paese nuovo', t as never)).toBe('core.au.reply{"call":"K1ABC","why":"core.au.newDxcc"}');
     expect(coreText('K1ABC: tentativi esauriti senza QSO', t as never)).toBe('core.au.callWhy{"call":"K1ABC","why":"core.au.exhausted"}');

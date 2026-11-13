@@ -73,6 +73,7 @@ export const EXACT: ReadonlyArray<[string, Key]> = [
   ['paese nuovo in questo modo', 'core.au.newMode'],
   ['continente sconosciuto', 'core.au.contUnknown'],
   ["Di nuovo nella fascia oraria: l'automazione riprende", 'core.au.inWindow'],
+  ['Abilita Tx riacceso dalle automazioni (era stato spento a fine QSO)', 'core.au.txAgain'],
 ];
 
 /** Frasi con valori dentro: chiave e nomi delle variabili nell'ordine dei gruppi; `inner` sono i gruppi da tradurre a loro volta. */
@@ -135,6 +136,10 @@ const PATTERNS: ReadonlyArray<{ re: RegExp; key: Key; vars: string[]; inner?: st
   { re: /^Nessun CQ a cui rispondere da (\d+) min: chiamo CQ$/s, key: 'core.au.callCq', vars: ['n'] },
   { re: /^(\S+): (.+) e' tra i paesi esclusi$/s, key: 'core.au.countryExcluded', vars: ['call', 'country'] },
   { re: /^(\S+): continente (\S+) non tra quelli scelti$/s, key: 'core.au.contOff', vars: ['call', 'cont'] },
+  { re: /^(\S+): continente (\S+) escluso$/s, key: 'core.au.contExcluded', vars: ['call', 'cont'] },
+  { re: /^(.+) \(ci chiama: il motore non risponde\)$/s, key: 'core.au.callsUs', vars: ['why'], inner: ['why'] },
+  { re: /^stato nuovo sulla banda \((.*)\)$/s, key: 'core.au.newStateBand', vars: ['st'] },
+  { re: /^stato nuovo \((.*)\)$/s, key: 'core.au.newState', vars: ['st'] },
   { re: /^Rispondo a (\S+): (.*)$/s, key: 'core.au.reply', vars: ['call', 'why'], inner: ['why'] },
   { re: /^Risponderei a (\S+): (.*) \(prova a vuoto\)$/s, key: 'core.au.wouldReply', vars: ['call', 'why'], inner: ['why'] },
   { re: /^nella lista dei desiderati \((.*)\)$/s, key: 'core.au.wanted', vars: ['why'] },

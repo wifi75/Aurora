@@ -4686,6 +4686,11 @@ core.au.sameContinent,CQ DX from your own continent ({own}),CQ DX van je eigen c
 core.au.newMode,new country in this mode,nieuw land in deze mode
 core.au.contUnknown,unknown continent,onbekend continent
 core.au.countryExcluded,{call}: {country} is an excluded country,{call}: {country} is een uitgesloten land
+core.au.txAgain,Enable Tx switched on again by the automation (it had been switched off at the end of the QSO),Tx inschakelen opnieuw aangezet door de automatisering (was aan het einde van de QSO uitgezet)
+core.au.contExcluded,{call}: continent {cont} excluded,{call}: continent {cont} uitgesloten
+core.au.callsUs,{why} (calling us: the engine does not answer),{why} (roept ons: de engine antwoordt niet)
+core.au.newState,new state ({st}),nieuwe staat ({st})
+core.au.newStateBand,new state on this band ({st}),nieuwe staat op deze band ({st})
 core.au.contOff,{call}: continent {cont} not among the chosen ones,{call}: continent {cont} niet onder de gekozen continenten
 core.au.maxHour,Reached the limit of {n} QSOs per hour,Limiet van {n} QSO's per uur bereikt
 core.au.outWindow,Outside the time window {range} (local time): automation waiting,Buiten het tijdvenster {range} (lokale tijd): automatisering wacht
