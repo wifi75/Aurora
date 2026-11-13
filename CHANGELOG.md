@@ -1,6 +1,6 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.249 - 2026-11-13
 - **Spot verificati su DXSummit**: dopo l'invio Aurora controlla per un minuto e mezzo l'elenco pubblico di DXSummit; lo stato del servizio dice «spot pubblicato» quando lo spot c'e' davvero, oppure «accettato ma non pubblicato» (prima bastava la risposta «200» di DXSummit, che non garantisce la pubblicazione).
 
 ## 0.11.248 - 2026-11-13

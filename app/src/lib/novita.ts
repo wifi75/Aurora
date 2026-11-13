@@ -20,6 +20,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.249',
+    released: '2026-11-13T00:00:00Z',
+    kind: 'changed',
+    title: [
+      'Spot verificati su DXSummit',
+      'Spots checked on DXSummit',
+      'Spots auf DXSummit überprüft',
+      'Spots vérifiés sur DXSummit',
+      'Spots verificados en DXSummit',
+      'Spots verificados no DXSummit',
+    ],
+    text: [
+      'Dopo l’invio di uno spot Aurora controlla per un minuto e mezzo l’elenco pubblico di DXSummit: lo stato del servizio dice «spot pubblicato» quando lo spot c’è davvero, oppure «accettato ma non pubblicato».',
+      'After sending a spot, Aurora checks the public DXSummit list for a minute and a half: the service status says «spot published» when the spot is really there, or «accepted but not published».',
+      'Nach dem Senden eines Spots prüft Aurora anderthalb Minuten lang die öffentliche Liste von DXSummit: Der Dienststatus meldet «Spot veröffentlicht», wenn der Spot wirklich da ist, sonst «angenommen, aber nicht veröffentlicht».',
+      'Après l’envoi d’un spot, Aurora vérifie pendant une minute et demie la liste publique de DXSummit : l’état du service indique «spot publié» quand le spot y est vraiment, ou «accepté mais non publié».',
+      'Tras enviar un spot, Aurora comprueba durante un minuto y medio la lista pública de DXSummit: el estado del servicio dice «spot publicado» cuando el spot está de verdad, o «aceptado pero no publicado».',
+      'Depois de enviar um spot, a Aurora verifica durante um minuto e meio a lista pública do DXSummit: o estado do serviço diz «spot publicado» quando o spot está mesmo lá, ou «aceite mas não publicado».',
+    ],
+  },
+  {
     version: '0.11.248',
     released: '2026-11-13T15:24:44Z',
     kind: 'changed',
@@ -836,27 +857,6 @@ export const NOVITA: readonly Novita[] = [
       'RX/TX et Pause ouvrent l’émission et la gardent active : le texte part pendant que vous le tapez et la partie pas encore partie se corrige même en cours de route, aussi pendant une macro. Les caractères émis se colorent au vrai rythme de l’audio et l’écho en réception arrive caractère par caractère.',
       'RX/TX y Pausa abren la transmisión y la mantienen: el texto sale mientras lo escribes y la parte aún no enviada se corrige incluso a medias, también durante una macro. Los caracteres transmitidos se colorean al ritmo real del audio y el eco en recepción llega carácter a carácter.',
       'RX/TX e Pausa abrem a transmissão e mantêm-na ligada: o texto sai enquanto escreves e a parte ainda não enviada corrige-se mesmo a meio, também durante uma macro. Os caracteres transmitidos colorem-se ao ritmo real do áudio e o eco na receção chega carácter a carácter.',
-    ],
-  },
-  {
-    version: '0.11.241',
-    released: '2026-11-12T19:34:38Z',
-    kind: 'new',
-    title: [
-      'CW: decodifica migliore e tutta la banda',
-      'CW: better decoding and the whole band',
-      'CW: bessere Dekodierung und das ganze Band',
-      'CW : meilleur décodage et toute la bande',
-      'CW: mejor decodificación y toda la banda',
-      'CW: melhor descodificação e toda a banda',
-    ],
-    text: [
-      'Il nuovo decodificatore sceglie le letture più probabili e ha un filtro contro le scariche: nella prova gli errori scendono dal 45% al 24% (fldigi 74%). Il pannello «Segnali» decodifica ogni segnale CW della banda con una riga ciascuno; i nominativi vengono convalidati su più livelli e finiscono come spot locali nel DX Cluster di Aurora, mai in rete. La banda del filtro si cambia al volo.',
-      'The new decoder picks the most probable readings and has a filter against static crashes: in the test errors drop from 45% to 24% (fldigi 74%). The «Signals» panel decodes every CW signal in the band, one row each; callsigns are validated at several levels and end up as local spots in Aurora’s DX Cluster, never on the network. The filter bandwidth can be changed on the fly.',
-      'Der neue Dekoder wählt die wahrscheinlichsten Lesarten und hat einen Filter gegen Knackstörungen: Im Test sinken die Fehler von 45% auf 24% (fldigi 74%). Das Fenster «Signale» dekodiert jedes CW-Signal des Bandes, eine Zeile pro Signal; Rufzeichen werden in mehreren Stufen geprüft und erscheinen als lokale Spots im DX-Cluster von Aurora, nie im Netz. Die Filterbandbreite lässt sich im Betrieb ändern.',
-      'Le nouveau décodeur choisit les lectures les plus probables et a un filtre contre les parasites : dans l’essai les erreurs passent de 45% à 24% (fldigi 74%). Le panneau «Signaux» décode chaque signal CW de la bande, une ligne chacun ; les indicatifs sont validés à plusieurs niveaux et deviennent des spots locaux dans le DX Cluster d’Aurora, jamais sur le réseau. La largeur du filtre se change à la volée.',
-      'El nuevo decodificador elige las lecturas más probables y tiene un filtro contra las descargas: en la prueba los errores bajan del 45% al 24% (fldigi 74%). El panel «Señales» decodifica cada señal CW de la banda, una fila cada una; los indicativos se validan en varios niveles y acaban como spots locales en el DX Cluster de Aurora, nunca en la red. El ancho del filtro se cambia al vuelo.',
-      'O novo descodificador escolhe as leituras mais prováveis e tem um filtro contra as descargas: no teste os erros descem de 45% para 24% (fldigi 74%). O painel «Sinais» descodifica cada sinal CW da banda, uma linha cada; os indicativos são validados em vários níveis e ficam como spots locais no DX Cluster do Aurora, nunca na rede. A largura do filtro muda-se em andamento.',
     ],
   },
 ];
