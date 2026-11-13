@@ -355,6 +355,15 @@ export const catStrings = {
     '{dec} = {hex}h. Os manuais da Icom dão o endereço em hexadecimal: se o manual diz {dec}h, aqui é {asDec}. Com 0 vale o de fábrica do modelo.',
   ],
   'cat.civ.useHex': ['Usa {asDec} ({dec}h)', 'Use {asDec} ({dec}h)', '{asDec} verwenden ({dec}h)', 'Utiliser {asDec} ({dec}h)', 'Usar {asDec} ({dec}h)', 'Usar {asDec} ({dec}h)'],
+  'rd.splitOff': ['Spegni split', 'Split off', 'Split aus', 'Couper le split', 'Apagar split', 'Desligar split'],
+  'rd.splitOff.tip': [
+    'La radio è in split (trasmette sul VFO B): la riporta in simplex sulla frequenza di ricezione, qualunque cosa l’abbia accesa. Non durante una trasmissione.',
+    'The radio is in split (transmitting on VFO B): brings it back to simplex on the receive frequency, whatever turned it on. Not while transmitting.',
+    'Das Funkgerät ist im Split (sendet auf VFO B): bringt es zurück auf Simplex auf der Empfangsfrequenz, egal was den Split eingeschaltet hat. Nicht während des Sendens.',
+    'La radio est en split (émet sur le VFO B) : la remet en simplex sur la fréquence de réception, quelle que soit la cause. Pas pendant une émission.',
+    'La radio está en split (transmite en el VFO B): la devuelve a simplex en la frecuencia de recepción, sea lo que sea lo que lo activó. No durante una transmisión.',
+    'O rádio está em split (transmite no VFO B): volta a simplex na frequência de receção, seja o que for que o ligou. Não durante uma transmissão.',
+  ],
   'tip.cat.civ': [
     '0 = quello di fabbrica del modello (per esempio 148 = 0x94 per la IC-7300).',
     '0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).',

@@ -3070,6 +3070,8 @@ export const NL_UI: Record<string, string> = {
   "rd.popover": "Vergroot radiodisplay",
   "rd.preview": "Voorbeeld met voorbeeldgegevens",
   "rd.size": "{w} × {h} punten",
+  "rd.splitOff": "Split uit",
+  "rd.splitOff.tip": "Het toestel staat in split (zendt op VFO B): zet het terug op simplex op de ontvangstfrequentie, wat de split ook heeft aangezet. Niet tijdens het zenden.",
   "rd.square": "vervangt de pictogrammen",
   "rd.style.amber": "Kenwood amberkleurig LCD",
   "rd.style.analog": "Analoge naald",

@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getCat } from '../../api/client';
 import { SetupCta } from '../SetupCta';
 import { RigSwitch } from './RigSwitch';
+import { SplitOffButton } from './SplitOffButton';
 
 /**
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
@@ -166,6 +167,7 @@ function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | '
   return (
     <div className="rd-face-row">
       <div className="rd-header rd-face-slot">{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>
+      <SplitOffButton split={rig?.split} />
       {/* la potenza della radio, a passi del 5%: nel pannello disegnato non c'e' posto per i pulsanti */}
       {power != null && style !== 'ft2000' ? (
         <div className="rd-pwr" role="group" aria-label="PWR">
@@ -204,12 +206,14 @@ function ModernHeader({ model, style, solo = false }: { model: DisplayModel; sty
     : style === 'icblueq' ? <IcBlueSquare {...props} />
     : style === 'icblackq' ? <IcBlackSquare {...props} />
     : <YaesuSquare {...props} />;
+  const splitOff = <SplitOffButton split={rig?.split} />;
   // il quasi quadrato va sulla pagina (non dentro la riga dei comandi, che fa da contenitore e lo spostava sotto la testata)
-  if (square && solo) return <div className="rd-square-preview">{view}</div>;
+  if (square && solo) return <div className="rd-square-preview">{view}{splitOff}</div>;
   if (square)
     return createPortal(
       <div className="rd-square-slot rd-detachable">
         {view}
+        {splitOff}
         <span className="rd-detach-corner">
           <DetachButton item="display" className="dock-detach" />
         </span>

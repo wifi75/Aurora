@@ -1631,6 +1631,8 @@ cat.line.low,Low,Laag
 cat.civ,CI-V address (Icom),CI-V-adres (Icom)
 cat.civ.hex,"{dec} = {hex}h. Icom manuals give the address in hexadecimal: if the manual says {dec}h, enter {asDec} here. With 0 the model’s factory address is used.","{dec} = {hex}h. Icom-handleidingen geven het adres hexadecimaal: staat er {dec}h in de handleiding, vul hier dan {asDec} in. Met 0 geldt het fabrieksadres van het model."
 cat.civ.useHex,Use {asDec} ({dec}h),Gebruik {asDec} ({dec}h)
+rd.splitOff,Split off,"Split uit"
+rd.splitOff.tip,"The radio is in split (transmitting on VFO B): brings it back to simplex on the receive frequency, whatever turned it on. Not while transmitting.","Het toestel staat in split (zendt op VFO B): zet het terug op simplex op de ontvangstfrequentie, wat de split ook heeft aangezet. Niet tijdens het zenden."
 tip.cat.civ,0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).,0 = de fabriekswaarde van het model (bijvoorbeeld 148 = 0x94 voor de IC-7300).
 cat.ptt.method,PTT method,PTT-methode
 tip.cat.ptt,"CAT: the PTT goes over the command cable. DTR or RTS: a serial port line. VOX: no command, the radio transmits when it hears audio.","CAT: de PTT loopt via de commandokabel. DTR of RTS: een lijn van de seriële poort. VOX: geen commando, de zender zendt wanneer hij audio hoort."
@@ -2571,8 +2573,8 @@ snd.ev.new_dx_popup,Highlighted alert: new DXCC,Opvallende melding: nieuw DXCC
 newdx.dxcc,New DXCC,Nieuw DXCC
 newdx.band,New DXCC on the band,Nieuw DXCC op de band
 newdx.last,last heard,laatst gehoord
-newdx.off,Turn these alerts off,"Deze meldingen uitzetten"
-newdx.offTip,No more cards for new DXCCs. New countries stay colored in Band activity; turn the cards back on in Settings › Look and alerts › Alerts and sounds.,"Geen kaarten meer voor nieuwe DXCC’s. Nieuwe landen blijven gekleurd in Bandactiviteit; weer aanzetten via Instellingen › Uiterlijk en meldingen › Meldingen en geluiden."
+newdx.off,Turn these alerts off,Deze meldingen uitzetten
+newdx.offTip,No more cards for new DXCCs. New countries stay colored in Band activity; turn the cards back on in Settings › Look and alerts › Alerts and sounds.,Geen kaarten meer voor nieuwe DXCC’s. Nieuwe landen blijven gekleurd in Bandactiviteit; weer aanzetten via Instellingen › Uiterlijk en meldingen › Meldingen en geluiden.
 newdx.close,Close this alert,Deze melding sluiten
 newdx.tip,Double click: answer this station. The time updates at each of its transmissions; the alert goes away 10 minutes after the last reception. Set it in Settings › Look and alerts › Alerts and sounds.,Dubbelklik: dit station beantwoorden. De tijd wordt bij elke zending van het station bijgewerkt; de melding verdwijnt 10 minuten na de laatste ontvangst. Instellen in Instellingen › Uiterlijk en meldingen › Meldingen en geluiden.
 snd.myFiles,My files,Mijn bestanden

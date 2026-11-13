@@ -810,6 +810,36 @@ impl CatService {
         }
     }
 
+    /// «Spegni split» (pulsante del display): la radio torna in simplex qualunque cosa avesse acceso lo split (Split DX di uno spot, split
+    /// di FT8, la radio stessa o un altro programma). Mai in trasmissione.
+    pub fn force_split_off(&self) -> Result<(), RigError> {
+        if self.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split non spento".into()));
+        }
+        let done = match self.backend() {
+            Backend::Hamlib => self.hamlib()?.force_split_off(),
+            Backend::Tci => {
+                let r = self.tci()?;
+                r.clear_dx_split()?;
+                r.release_tx_split()
+            }
+            Backend::Cat4om => {
+                let r = self.cat4om()?;
+                r.clear_dx_split()?;
+                r.release_tx_split()
+            }
+            Backend::Omnirig => crate::omnirig::clear_dx_split().and_then(|()| crate::omnirig::release_tx_split()),
+            Backend::Ft991link => {
+                self.ft991()?.release_tx_split();
+                Ok(())
+            }
+            Backend::None => Ok(()),
+        };
+        done?;
+        self.forget_dx_split();
+        Ok(())
+    }
+
     /// Il sistema CAT ha ancora lo Split DX acceso (o non e' riuscito a spegnerlo).
     fn backend_dx_split_active(&self) -> bool {
         match self.backend() {

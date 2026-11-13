@@ -954,6 +954,24 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// «Spegni split»: la radio torna in simplex sul VFO di ricezione anche se Aurora non sapeva che fosse in split (acceso a mano sulla
+    /// radio, da un altro programma o rimasto da prima). Non in trasmissione.
+    pub fn force_split_off(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: split non spento".into()));
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        inner.tx_audio_hz.store(0, Ordering::SeqCst);
+        let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
+        link.client().set_split(false, rx_vfo).map_err(|e| RigError(friendly_error(&e.0)))?;
+        inner.xit_split.store(false, Ordering::SeqCst);
+        inner.dx_split.store(false, Ordering::SeqCst);
+        inner.update(|s| s.split = Some(false));
+        Ok(())
+    }
+
     /// Split simulato a trasmissione in corso con la frequenza audio cambiata: la radio va subito sulla nuova frequenza di trasmissione
     /// (in WSJT-X `EmulateSplitTransceiver::set` col PTT acceso porta la radio sulla frequenza Tx a ogni cambio).
     fn emulate_follow(&self, link: &Link) -> Result<(), RigError> {

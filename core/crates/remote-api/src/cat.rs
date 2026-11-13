@@ -235,6 +235,16 @@ pub(crate) async fn cat_split_dx_clear(State(state): State<AppState>, _: Authed)
     Ok(Json(json!({ "ok": true, "was_on": was_on, "split": split_dx_json(None) })))
 }
 
+/// «Spegni split» del display della radio: simplex sul VFO di ricezione, qualunque cosa avesse acceso lo split. Mai in trasmissione.
+pub(crate) async fn cat_split_off(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, CatApiError> {
+    let cat = service(&state)?;
+    if state.current_status().is_some_and(|s| s.transmitting) {
+        return Err(CatApiError { status: StatusCode::CONFLICT, code: "transmitting", message: "La radio sta trasmettendo: aspetta la fine della trasmissione.".into() });
+    }
+    blocking(move || cat.force_split_off()).await?.map_err(rig_api_error)?;
+    Ok(Json(json!({ "ok": true, "split": split_dx_json(None) })))
+}
+
 #[derive(Deserialize, Default)]
 pub(crate) struct Cat4omSearchBody {
     /// La porta di gestione scritta nella pagina (anche non ancora applicata); assente = quella salvata.

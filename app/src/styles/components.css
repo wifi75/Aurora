@@ -1238,3 +1238,8 @@ html[data-theme='light'] .freq-picker-btn .freq-picker-btn-band { background: #6
 /* l'avviso sotto l'indirizzo CI-V (esadecimale o decimale) */
 .cat-civ-hex { display: block; margin-top: 4px; font-size: 0.78rem; line-height: 1.35; color: #f0b429; }
 .cat-civ-hex button { margin-top: 3px; padding: 1px 8px; font-size: 0.78rem; }
+
+/* «Spegni split» accanto al display della radio: arancione, compare solo con la radio in split */
+.rd-split-off { align-self: center; flex: none; padding: 4px 10px; border: 1px solid #f0a020; border-radius: 8px; color: #ffcf70; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.rd-split-off:hover { background: rgb(240 160 32 / .2); }
+html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; }

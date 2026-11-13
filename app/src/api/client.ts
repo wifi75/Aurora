@@ -902,6 +902,11 @@ export async function getSplitDx(): Promise<SplitDx> {
 }
 
 /** Doppio clic su uno spot con «UP 5», «QSX ...»: la radio riceve su `rxHz` e trasmette su `txHz` con lo split acceso. */
+/** «Spegni split»: la radio torna in simplex sul VFO di ricezione, qualunque cosa avesse acceso lo split. */
+export async function postSplitOff(): Promise<void> {
+  await request('/cat/split-off', jsonInit({}));
+}
+
 export async function postSplitDx(rxHz: number, txHz: number): Promise<SplitDx> {
   return ((await (await request('/cat/split-dx', jsonInit({ rx_hz: rxHz, tx_hz: txHz }))).json()) as { split: SplitDx }).split;
 }
