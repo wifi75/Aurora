@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { HealthLight } from './HealthLight';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteSplitDx, getDigi, getFrequencies, postMode } from '../api/client';
@@ -247,6 +248,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('dxmap', '#/mappa-dx', t('nav.dxmap'))}
         {common('propagation', '#/propagazione', t('nav.propagation'))}
         {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
+        {/* spia di salute della stazione, subito prima dell'ingranaggio */}
+        <HealthLight />
         <span className="nav-more" ref={box}>
           <button
             type="button"

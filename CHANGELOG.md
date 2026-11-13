@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Spia di salute della stazione** in alto a destra, prima dell'ingranaggio (e nell'intestazione del telefono): verde, ambra o rossa secondo CPU di Aurora, tempo di decodifica, audio, CAT e orologio; passando il mouse i numeri, con un clic la finestra «Salute della stazione» con cosa fare, il grafico degli ultimi 10 minuti e, se la decodifica sfora spesso, la proposta di accendere «PC lento». Nuova rotta `GET /api/v1/health/resources`.
 - Avviso «segnale in ingresso debole»: non compare piu' all'apertura, solo se dura 90 secondi; avvisi della stazione leggibili (fondo pieno, bordo colorato per gravita').
 - PSK·RTTY·CW: con la scheda del rotore accesa log e DX Cluster restano nella colonna di destra invece di finire sotto le finestre.
 - **Impostazioni dal menu**: la voce «Impostazioni» apre sempre la pagina Informazioni; il ramo di un modo si apre dall'ingranaggio della sua pagina.

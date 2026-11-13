@@ -856,4 +856,42 @@ export const GUIDE_ASPETTO: readonly GuideSection[] = [
       'Se só usas algumas bandas, desliga as outras: a barra fica mais curta e legível (o texto de ajuda da página diz: a banda em uso vê-se sempre).',
     ],
   },
+  {
+    id: 's-spia-salute',
+    title: ['[[hl.title]]', '[[hl.title]]', '[[hl.title]]', '[[hl.title]]', '[[hl.title]]', '[[hl.title]]'],
+    text: [
+      'In alto a destra, subito prima dell’ingranaggio (sul telefono nell’intestazione), c’è un pallino: la spia di salute. Verde vuol dire tutto a posto. Diventa ambra se la CPU di Aurora resta sopra il 50 % per almeno 10 secondi o se la decodifica usa più del 70 % del tempo del periodo; rossa sopra l’80 % di CPU per 10 secondi o con la decodifica che non finisce in tempo. Tiene conto anche degli avvisi su audio, CAT e orologio. Quando cambia verso ambra o rosso pulsa piano per qualche secondo.',
+      'At the top right, just before the gear (on the phone in the header), there is a dot: the health light. Green means all good. It turns amber if Aurora’s CPU stays above 50 % for at least 10 seconds or decoding takes more than 70 % of the period; red above 80 % CPU for 10 seconds or when decoding does not finish in time. It also takes the audio, CAT and clock warnings into account. When it turns amber or red it pulses gently for a few seconds.',
+      'Oben rechts, direkt vor dem Zahnrad (am Telefon in der Kopfzeile), sitzt ein Punkt: die Zustandsanzeige. Grün heißt alles in Ordnung. Sie wird gelb, wenn die CPU von Aurora mindestens 10 Sekunden über 50 % bleibt oder die Dekodierung mehr als 70 % der Periode braucht; rot über 80 % CPU für 10 Sekunden oder wenn die Dekodierung nicht rechtzeitig fertig wird. Sie berücksichtigt auch die Warnungen zu Audio, CAT und Uhr. Wechselt sie auf Gelb oder Rot, pulsiert sie einige Sekunden sanft.',
+      'En haut à droite, juste avant l’engrenage (sur le téléphone dans l’en-tête), il y a un point : le voyant de santé. Vert veut dire que tout va bien. Il passe à l’ambre si le CPU d’Aurora reste au-dessus de 50 % pendant au moins 10 secondes ou si le décodage prend plus de 70 % de la période ; au rouge au-dessus de 80 % de CPU pendant 10 secondes ou quand le décodage ne finit pas à temps. Il tient compte aussi des avertissements sur l’audio, le CAT et l’horloge. Quand il passe à l’ambre ou au rouge, il pulse doucement quelques secondes.',
+      'Arriba a la derecha, justo antes del engranaje (en el teléfono en la cabecera), hay un punto: el indicador de salud. Verde quiere decir que todo está en orden. Se pone ámbar si la CPU de Aurora se queda por encima del 50 % al menos 10 segundos o si la decodificación usa más del 70 % del periodo; rojo por encima del 80 % de CPU durante 10 segundos o cuando la decodificación no termina a tiempo. También tiene en cuenta los avisos de audio, CAT y reloj. Cuando cambia a ámbar o rojo late suavemente unos segundos.',
+      'Em cima à direita, logo antes da roda dentada (no telefone no cabeçalho), há um ponto: o indicador de saúde. Verde quer dizer que está tudo em ordem. Fica âmbar se a CPU da Aurora ficar acima de 50 % durante pelo menos 10 segundos ou se a descodificação usar mais de 70 % do período; vermelho acima de 80 % de CPU durante 10 segundos ou quando a descodificação não acaba a tempo. Também tem em conta os avisos de áudio, CAT e relógio. Quando muda para âmbar ou vermelho pulsa devagar alguns segundos.',
+    ],
+    steps: [
+      [
+        'Passando il mouse vedi [[hl.cpu]], [[hl.mem]], l’ultima decodifica (per esempio «0,9 s su 15,0 s»), i [[hl.threads]] e lo stato di [[hl.audio]], [[hl.cat]] e [[hl.clock]].',
+        'Hovering shows [[hl.cpu]], [[hl.mem]], the last decoding (for example “0.9 s of 15.0 s”), the [[hl.threads]] and the state of [[hl.audio]], [[hl.cat]] and [[hl.clock]].',
+        'Beim Überfahren mit der Maus siehst du [[hl.cpu]], [[hl.mem]], die letzte Dekodierung (zum Beispiel „0,9 s von 15,0 s“), die [[hl.threads]] und den Zustand von [[hl.audio]], [[hl.cat]] und [[hl.clock]].',
+        'En passant la souris tu vois [[hl.cpu]], [[hl.mem]], le dernier décodage (par exemple « 0,9 s sur 15,0 s »), les [[hl.threads]] et l’état de [[hl.audio]], [[hl.cat]] et [[hl.clock]].',
+        'Al pasar el ratón ves [[hl.cpu]], [[hl.mem]], la última decodificación (por ejemplo «0,9 s de 15,0 s»), los [[hl.threads]] y el estado de [[hl.audio]], [[hl.cat]] y [[hl.clock]].',
+        'Ao passar o rato vês [[hl.cpu]], [[hl.mem]], a última descodificação (por exemplo «0,9 s de 15,0 s»), os [[hl.threads]] e o estado de [[hl.audio]], [[hl.cat]] e [[hl.clock]].',
+      ],
+      [
+        'Con un clic si apre la finestra «[[hl.title]]»: una riga per CPU, decodifica, audio, CAT e orologio con il suo pallino e cosa fare, e il grafico degli ultimi 10 minuti (CPU in percento e decodifica in percento del tempo disponibile, con la soglia del 70 % tratteggiata). Si chiude con ×, «[[hl.close]]» o Esc.',
+        'A click opens the “[[hl.title]]” window: one row each for CPU, decoding, audio, CAT and clock with its dot and what to do, and the chart of the last 10 minutes (CPU in percent and decoding in percent of the available time, with the 70 % limit dashed). Close it with ×, “[[hl.close]]” or Esc.',
+        'Ein Klick öffnet das Fenster „[[hl.title]]“: je eine Zeile für CPU, Dekodierung, Audio, CAT und Uhr mit ihrem Punkt und was zu tun ist, dazu das Diagramm der letzten 10 Minuten (CPU in Prozent und Dekodierung in Prozent der verfügbaren Zeit, die 70-%-Grenze gestrichelt). Schließen mit ×, „[[hl.close]]“ oder Esc.',
+        'Un clic ouvre la fenêtre « [[hl.title]] » : une ligne pour le CPU, le décodage, l’audio, le CAT et l’horloge avec son point et quoi faire, et le graphique des 10 dernières minutes (CPU en pour cent et décodage en pour cent du temps disponible, avec le seuil de 70 % en pointillés). On la ferme avec ×, « [[hl.close]] » ou Échap.',
+        'Con un clic se abre la ventana «[[hl.title]]»: una fila para CPU, decodificación, audio, CAT y reloj con su punto y qué hacer, y el gráfico de los últimos 10 minutos (CPU en porcentaje y decodificación en porcentaje del tiempo disponible, con el umbral del 70 % discontinuo). Se cierra con ×, «[[hl.close]]» o Esc.',
+        'Com um clique abre-se a janela «[[hl.title]]»: uma linha para CPU, descodificação, áudio, CAT e relógio com o seu ponto e o que fazer, e o gráfico dos últimos 10 minutos (CPU em percentagem e descodificação em percentagem do tempo disponível, com o limite de 70 % tracejado). Fecha-se com ×, «[[hl.close]]» ou Esc.',
+      ],
+      [
+        'Se la decodifica sfora spesso, la finestra propone «[[hl.slow.yes]]» (l’impostazione «[[dec.slowPc]]» passa a «[[dec.slowPc.always]]») oppure «[[hl.slow.no]]». La spia da sola non cambia mai niente.',
+        'If decoding often runs over, the window offers “[[hl.slow.yes]]” (the “[[dec.slowPc]]” setting becomes “[[dec.slowPc.always]]”) or “[[hl.slow.no]]”. The light never changes anything by itself.',
+        'Überschreitet die Dekodierung oft die Zeit, bietet das Fenster „[[hl.slow.yes]]“ (die Einstellung „[[dec.slowPc]]“ wird „[[dec.slowPc.always]]“) oder „[[hl.slow.no]]“ an. Die Anzeige selbst ändert nie etwas.',
+        'Si le décodage dépasse souvent, la fenêtre propose « [[hl.slow.yes]] » (le réglage « [[dec.slowPc]] » passe à « [[dec.slowPc.always]] ») ou « [[hl.slow.no]] ». Le voyant seul ne change jamais rien.',
+        'Si la decodificación se pasa a menudo, la ventana propone «[[hl.slow.yes]]» (el ajuste «[[dec.slowPc]]» pasa a «[[dec.slowPc.always]]») o «[[hl.slow.no]]». El indicador por sí solo nunca cambia nada.',
+        'Se a descodificação passa muitas vezes o tempo, a janela propõe «[[hl.slow.yes]]» (a definição «[[dec.slowPc]]» passa a «[[dec.slowPc.always]]») ou «[[hl.slow.no]]». O indicador sozinho nunca muda nada.',
+      ],
+    ],
+  },
 ];

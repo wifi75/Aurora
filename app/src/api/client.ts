@@ -2122,3 +2122,27 @@ export function satMapUrl(name: string): string {
 export async function satUploadMap(name: string, file: Blob): Promise<string[]> {
   return ((await (await request(`/sat/maps?name=${encodeURIComponent(name)}`, { method: 'POST', body: file })).json()) as { maps: string[] }).maps;
 }
+
+/** Un campione della storia delle risorse (uno ogni 5 s, ultimi 10 minuti). */
+export interface ResourceSample {
+  t: number;
+  cpu_pct: number;
+  decode_ms: number;
+  period_ms: number;
+}
+
+/** Risorse di Aurora per la spia di salute (`GET /api/v1/health/resources`). */
+export interface HealthResources {
+  cpu_pct: number;
+  mem_mb: number | null;
+  cores: number;
+  decode_threads: number | null;
+  last_decode_ms: number | null;
+  period_ms: number | null;
+  last_decode_at: number | null;
+  history: ResourceSample[];
+}
+
+export async function getHealthResources(): Promise<HealthResources> {
+  return (await (await request('/health/resources')).json()) as HealthResources;
+}

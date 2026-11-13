@@ -4740,6 +4740,36 @@ jxh.Ftol_JT9,"JT9: the window around Rx tried first, with lower thresholds. Like
 jxh.Ftol_MSK144,MSK144: how far from Rx the pings are searched (20 to 500 Hz). Like WSJT-X «F Tol»; default 50 Hz.,MSK144: hoe ver van Rx de pings worden gezocht (20 tot 500 Hz). Zoals «F Tol» in WSJT-X; standaard 50 Hz.
 jxh.Ftol_Q65,"Q65: the window around Rx where the best signal, the QSO list and the average are always tried. Like WSJT-X «F Tol»; default 50 Hz.","Q65: het venster rond Rx waarin het beste signaal, de QSO-lijst en het gemiddelde altijd worden geprobeerd. Zoals «F Tol» in WSJT-X; standaard 50 Hz."
 jxh.SlowPcMode,"On PCs that struggle, while decoding runs the DX Cluster, DXpeditions, PSK Reporter, callsign lookup, LoTW list, satellite data and the update check wait for the decode to finish (30 s at most): the audio loses no blocks and decoding does not overrun. Nothing is lost, it just arrives a few seconds later. «Automatic» (default) turns on by itself after 3 periods out of 10 over 70% of the time, 3 audio blocks lost in 10 minutes or with 2 processors or fewer, and turns off after 20 quiet periods. «Always» keeps it on, «Never» off.","Op pc's die het zwaar hebben wachten DX Cluster, DXpedities, PSK Reporter, roepnaam opzoeken, LoTW-lijst, satellietgegevens en de updatecontrole tijdens het decoderen tot het decoderen klaar is (hoogstens 30 s): de audio verliest geen blokken en het decoderen loopt niet uit. Er gaat niets verloren, het komt alleen een paar seconden later. «Automatisch» (standaard) schakelt zichzelf in na 3 van de 10 periodes boven 70% van de tijd, 3 verloren audioblokken in 10 minuten of met 2 processors of minder, en schakelt uit na 20 rustige periodes. «Altijd» houdt hem aan, «Nooit» uit."
+hl.title,Station health,Gezondheid van het station
+hl.state.ok,All good,Alles in orde
+hl.state.warn,Worth watching,In de gaten houden
+hl.state.bad,There is a problem,Er is een probleem
+hl.state.none,No data,Geen gegevens
+hl.cpu,Aurora CPU,CPU van Aurora
+hl.mem,Memory,Geheugen
+hl.decode,Decoding,Decoderen
+hl.decodeOf,{a} s of {b} s,{a} s van {b} s
+hl.threads,Decoding threads,Decodeerthreads
+hl.audio,Audio,Audio
+hl.cat,CAT,CAT
+hl.clock,Clock,Klok
+hl.open,Click for details,Klik voor details
+hl.do.ok,Nothing to do.,Niets te doen.
+hl.do.cpu,Close heavy programs running alongside Aurora or lower the decoding depth.,Sluit zware programma’s naast Aurora of verlaag de decodeerdiepte.
+hl.do.decode,Turn on “Slow PC” or choose a lower decoding depth.,Zet «Trage pc» aan of kies een lagere decodeerdiepte.
+hl.do.audio,Check device and level in Settings › Audio.,Controleer apparaat en niveau in Instellingen › Audio.
+hl.do.cat,Check radio and port in Settings › Radio.,Controleer radio en poort in Instellingen › Radio.
+hl.do.clock,Synchronise the clock in Settings › Clock.,Synchroniseer de klok in Instellingen › Klok.
+hl.chart,Last 10 minutes,Laatste 10 minuten
+hl.chart.cpu,CPU %,CPU %
+hl.chart.decode,"Decoding, % of the time","Decoderen, % van de tijd"
+hl.chart.limit,70 % limit,Grens 70 %
+hl.chart.empty,The chart fills up over the next minutes.,De grafiek vult zich in de komende minuten.
+hl.slow.ask,Decoding often runs over the available time. Turn on Slow PC?,Het decoderen loopt vaak uit over de beschikbare tijd. Trage pc aanzetten?
+hl.slow.yes,Turn on Slow PC,Trage pc aanzetten
+hl.slow.no,Not now,Niet nu
+hl.slow.done,Slow PC is on.,Trage pc staat aan.
+hl.close,Close,Sluiten
 rxl.volume.sys,System recording volume,Opnamevolume van het systeem
 rxl.volume.value.sys,{pct} % of the system recording volume ({device}),{pct} % van het opnamevolume van het systeem ({device})
 rxl.hint.silent.sys,"No signal for too long: check the cable, the chosen device and the recording volume in the system audio mixer.","Te lang geen signaal: controleer de kabel, het gekozen apparaat en het opnamevolume in de audiomixer van het systeem."
@@ -6803,6 +6833,11 @@ t.gs2zqhpdnm,In [[nav.settings]] › [[sw.sec.look]] › [[sw.pg.bands]] you cho
 t.27o5bsdp2vf,"If you only use a few bands, turn the others off: the bar stays shorter and easier to read (the page’s help text says: the band in use is always shown).","Gebruik je maar een paar banden, zet de andere dan uit: de balk blijft korter en overzichtelijker (de helptekst van de pagina zegt: de band die je gebruikt wordt altijd getoond)."
 t.l87e21wi4x,"[[tab.bands]]: a button with a checkbox for each band, from 2200 m to 1.25 cm (25 in all); a click turns it on or off in the bar. By default the bands from 160 m to 2 m are on (160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 6 and 2 m); 2200 m, 630 m, 8 m, 4 m, UHF and microwave are turned on here. At least one always stays on, and the band the radio is on is always shown, even if you turned it off.","[[tab.bands]]: een knop met een selectievakje voor elke band, van 2200 m tot 1,25 cm (25 in totaal); met een klik zet je hem aan of uit in de balk. Standaard staan de banden van 160 m tot 2 m aan (160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 6 en 2 m); 2200 m, 630 m, 8 m, 4 m, UHF en microgolven zet je hier aan. Er blijft er altijd minstens één aan, en de band waarop de radio staat wordt altijd getoond, ook als je hem hebt uitgezet."
 t.6mg9gb24dv,"[[tab.bands]] · [[bands.all]]: puts the list back to the starting one, bands from 160 m to 2 m (despite the name, it does not also turn on the rare bands: those are turned on one by one).","[[tab.bands]] · [[bands.all]]: zet de lijst terug op de beginstand, banden van 160 m tot 2 m (ondanks de naam zet het de zeldzame banden niet ook aan: die zet je een voor een aan)."
+t.20a5tqkgjzi,[[hl.title]],[[hl.title]]
+t.vm1qzmw6qb,"At the top right, just before the gear (on the phone in the header), there is a dot: the health light. Green means all good. It turns amber if Aurora’s CPU stays above 50 % for at least 10 seconds or decoding takes more than 70 % of the period; red above 80 % CPU for 10 seconds or when decoding does not finish in time. It also takes the audio, CAT and clock warnings into account. When it turns amber or red it pulses gently for a few seconds.","Rechtsboven, net voor het tandwiel (op de telefoon in de kop), staat een stip: het gezondheidslampje. Groen betekent alles in orde. Het wordt oranje als de CPU van Aurora minstens 10 seconden boven 50 % blijft of als het decoderen meer dan 70 % van de periode kost; rood boven 80 % CPU gedurende 10 seconden of als het decoderen niet op tijd klaar is. Het houdt ook rekening met de waarschuwingen over audio, CAT en klok. Als het naar oranje of rood gaat, pulseert het een paar seconden zachtjes."
+t.b50c7d04mf,"Hovering shows [[hl.cpu]], [[hl.mem]], the last decoding (for example “0.9 s of 15.0 s”), the [[hl.threads]] and the state of [[hl.audio]], [[hl.cat]] and [[hl.clock]].","Met de muis erboven zie je [[hl.cpu]], [[hl.mem]], het laatste decoderen (bijvoorbeeld «0,9 s van 15,0 s»), de [[hl.threads]] en de toestand van [[hl.audio]], [[hl.cat]] en [[hl.clock]]."
+t.1rzewyz4ro5,"A click opens the “[[hl.title]]” window: one row each for CPU, decoding, audio, CAT and clock with its dot and what to do, and the chart of the last 10 minutes (CPU in percent and decoding in percent of the available time, with the 70 % limit dashed). Close it with ×, “[[hl.close]]” or Esc.","Een klik opent het venster «[[hl.title]]»: een regel voor CPU, decoderen, audio, CAT en klok met hun stip en wat te doen, en de grafiek van de laatste 10 minuten (CPU in procent en decoderen in procent van de beschikbare tijd, met de grens van 70 % gestippeld). Sluiten met ×, «[[hl.close]]» of Esc."
+t.1juazpii2qi,"If decoding often runs over, the window offers “[[hl.slow.yes]]” (the “[[dec.slowPc]]” setting becomes “[[dec.slowPc.always]]”) or “[[hl.slow.no]]”. The light never changes anything by itself.","Als het decoderen vaak uitloopt, biedt het venster «[[hl.slow.yes]]» (de instelling «[[dec.slowPc]]» wordt «[[dec.slowPc.always]]») of «[[hl.slow.no]]» aan. Het lampje zelf verandert nooit iets."
 t.2f750qz2l2b,Settings: Access and support,Instellingen: Toegang en ondersteuning
 t.e0690gb2u8,[[sw.tab.phone]],[[sw.tab.phone]]
 t.1kt5z6okc1r,"[[nav.settings]] › [[sw.sec.access]] › [[sw.tab.phone]]. It lets you control Aurora, which runs on the PC, from a phone or tablet on the home network. The page has four boxes, one under the other. You can change it only from the PC where Aurora runs: if you open it from a phone the change is refused and “[[acc.pcOnly]]” appears.","[[nav.settings]] › [[sw.sec.access]] › [[sw.tab.phone]]. Hiermee bestuur je Aurora, dat op de pc draait, vanaf een telefoon of tablet op het thuisnetwerk. De pagina heeft vier vakken onder elkaar. Je kunt hem alleen wijzigen vanaf de pc waarop Aurora draait: als je hem vanaf een telefoon opent, wordt de wijziging geweigerd en verschijnt “[[acc.pcOnly]]”."

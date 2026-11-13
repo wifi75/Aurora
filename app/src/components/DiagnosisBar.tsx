@@ -6,6 +6,7 @@ import { useT, type Key } from '../i18n';
 import { AudioLossHelp } from './AudioLossHelp';
 import { coreText } from '../lib/coreText';
 import { LEVEL_STALE_MS } from '../lib/audioLevel';
+import { publishHealthIssues } from '../lib/healthIssues';
 import { closeSlowPc, diagnose, slowPcClosedDepths, type Issue } from '../lib/diagnosis';
 import { periodSecs } from '../lib/period';
 import { useStation } from '../state/station';
@@ -88,6 +89,12 @@ export function DiagnosisBar() {
   const lasting = (issue: Issue) =>
     issue.id !== 'audio' || issue.vars.state === 'overdrive' || (!busyTx && now - (audioSince.current.get(keyOf(issue)) ?? now) >= startup.audioHoldMs);
   const visible = starting ? [] : issues.filter((issue) => !closed.includes(keyOf(issue)) && lasting(issue));
+  // la spia di salute guarda gli stessi avvisi (anche quelli chiusi: il problema resta)
+  const forLight = starting ? [] : issues.filter(lasting);
+  const lightKey = forLight.map(keyOf).join('|');
+  const lightRef = useRef(forLight);
+  lightRef.current = forLight;
+  useEffect(() => publishHealthIssues(lightRef.current), [lightKey]);
   const close = (issue: Issue) => {
     if (issue.id === 'slow_pc' && issue.vars.depth) closeSlowPc(String(issue.vars.depth));
     setClosed((c) => [...c, keyOf(issue)]);

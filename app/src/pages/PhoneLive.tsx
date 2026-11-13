@@ -1,3 +1,4 @@
+import { HealthLight } from '../components/HealthLight';
 import { askConfirm } from '../components/ConfirmHost';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -198,6 +199,7 @@ export function PhoneLive({ waterfall, decodes, onReply, onQueue, pickBand, pick
       <div className="phone-top">
         <span className="data phone-freq">{status && status.dial_hz > 0 ? (status.dial_hz / 1e6).toFixed(3) : '—'}</span>
         <span className={`phone-pill phone-pill--${transmitting ? 'tx' : 'rx'}`}>{transmitting ? t('status.tx') : t('status.rx')}</span>
+        <HealthLight compact />
         {/* banda e modo: due tendine piccole nella barra, con l'area di tocco allargata dal padding */}
         <label className="phone-sel" title={t('phone.band')}>
           <select aria-label={t('phone.band')} value={band ?? ''} disabled={!rigControl} onChange={(e) => onBand(e.target.value)}>
