@@ -13,7 +13,8 @@ export function SplitOffButton({ split }: { split: boolean | null | undefined })
   const t = useT();
   const client = useQueryClient();
   const [busy, setBusy] = useState(false);
-  if (split !== true) return null;
+  // sempre visibile (il proprietario non lo trovava quando compariva solo in split): spento e grigio con la radio in simplex
+  const on = split === true;
   const off = async () => {
     setBusy(true);
     try {
@@ -27,7 +28,7 @@ export function SplitOffButton({ split }: { split: boolean | null | undefined })
     }
   };
   return (
-    <button type="button" className="glass rd-split-off" title={t('rd.splitOff.tip')} disabled={busy} onClick={() => void off()}>
+    <button type="button" className={`glass rd-split-off${on ? ' rd-split-off--on' : ''}`} title={t('rd.splitOff.tip')} disabled={busy || !on} onClick={() => void off()}>
       {t('rd.splitOff')}
     </button>
   );

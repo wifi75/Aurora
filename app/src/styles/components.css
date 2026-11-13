@@ -1243,3 +1243,6 @@ html[data-theme='light'] .freq-picker-btn .freq-picker-btn-band { background: #6
 .rd-split-off { align-self: center; flex: none; padding: 4px 10px; border: 1px solid #f0a020; border-radius: 8px; color: #ffcf70; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
 .rd-split-off:hover { background: rgb(240 160 32 / .2); }
 html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; }
+/* «Spegni split» sempre al suo posto: grigio con la radio in simplex, arancione acceso quando la radio e' in split */
+.rd-split-off:disabled { opacity: .45; cursor: default; border-color: #6b7280; color: #9ca3af; }
+.rd-split-off--on { background: rgb(240 160 32 / .18); }
