@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Frequenze CW, SSTV, RTTY e PSK** dai piani di banda dell'ARI (HF dal piano IARU Regione 1, dal 6 m in su dal piano ARI): in CW una frequenza dentro il tratto CW e i centri di attivita' QRS e QRP in HF, i centri di attivita', l'EME e il meteor scatter in VHF, UHF e microonde (fino a 24 GHz); SSTV a 3735 e 7165 kHz in Regione 1 e 433,400 MHz in 70 cm; PSK31 anche a 2,3 GHz.
 - **Schede dei DXCC nuovi**: al massimo due insieme (con un log nuovo quasi tutto e' nuovo e quattro schede coprivano mezza pagina) e sotto c'e' «Spegni questi avvisi», che le spegne senza cercare la casella nelle Impostazioni.
 - **Avviso di aggiornamento nella lingua giusta**: il riquadro dell'aggiornamento e la locandina mostrano le novita' nella lingua di Aurora; se non e' scelta, in quella di Windows; se manca, in inglese (prima arrivava sempre l'inglese). Anche i testi del riquadro, senza una lingua scelta, seguono Windows invece di partire in italiano.
 - **PTT non spento, messaggio**: quando il CAT cade durante lo spegnimento del PTT l'avviso e il registro dicevano «PTT non spento: PTT: PTT non spento: …»; ora la causa compare una volta sola.
