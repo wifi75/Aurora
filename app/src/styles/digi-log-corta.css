@@ -338,3 +338,5 @@ html[data-theme='light'] .digi-wingrip::before { background: #4a5a8a; }
 .digi-wf-notch-edge { width: 10px; }
 .digi-wf-notch-edge--l { left: -6px; }
 .digi-wf-notch-edge--r { right: -6px; }
+/* «Togli i notch» a larghezza fissa: non cambia misura quando compare o cresce il numero dei notch */
+.digi-st--notch { width: 11.5em; flex: none; justify-content: center; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }

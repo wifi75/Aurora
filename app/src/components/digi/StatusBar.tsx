@@ -146,11 +146,12 @@ export function DigiStatusBar(p: Props) {
           BPF
         </button>
       ) : null}
-      {p.onClearNotches ? (
-        <button type="button" className="digi-st" disabled={(p.notchCount ?? 0) === 0} title={t('digi.notch.clearTip')} onClick={p.onClearNotches}>
-          {t('digi.notch.clear')}
-          {(p.notchCount ?? 0) > 0 ? ` (${p.notchCount})` : ''}
-        </button>
+      {/* «Togli i notch» compare solo quando c'e' almeno un notch */}
+      {p.onClearNotches && (p.notchCount ?? 0) > 0 ? (
+          <button type="button" className="digi-st digi-st--notch" title={t('digi.notch.clearTip')} onClick={p.onClearNotches}>
+            {t('digi.notch.clear')}
+            {` (${p.notchCount ?? 0})`}
+          </button>
       ) : null}
       <button type="button" className={`digi-st${p.lock ? ' on' : ''}`} aria-pressed={p.lock} title={t('digi.st.lock')} onClick={p.onToggleLock}>
         Lock
