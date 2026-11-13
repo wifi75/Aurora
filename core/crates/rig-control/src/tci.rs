@@ -1091,6 +1091,11 @@ impl TciRig {
         self.inner.audio_on.load(Ordering::SeqCst)
     }
 
+    /// Il thread del collegamento e' morto per un panic? Ne restituisce il testo, una volta sola (lo guarda il servizio CAT per ricollegare).
+    pub fn worker_panic(&self) -> Option<String> {
+        crate::watchdog::reap_panic(&self.worker)
+    }
+
     /// Chiude: flusso audio fermato, PTT e accordo spenti, split e RX2 rimessi come prima, collegamento chiuso.
     pub fn shutdown(&self) {
         if self.inner.ready.load(Ordering::SeqCst) && self.audio_streaming() {

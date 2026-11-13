@@ -4,7 +4,8 @@
 
 use std::{
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, Weak},
+    time::{Duration, Instant},
 };
 
 use serde::Serialize;
@@ -16,6 +17,7 @@ use crate::{
     hamlib_rig::{HamlibRig, Link, LinkState, RigStatus, Timing},
     ft991link::Ft991Rig,
     tci::{RxAudioFn, TciRig, TxAudioFn},
+    watchdog::Restarts,
     Rig, RigError, WindowsRig,
 };
 
@@ -32,6 +34,8 @@ pub struct CatParts {
     locate: Locator,
     models: ModelsFn,
     timing: TimingFn,
+    /// Prima pausa prima di ricollegare quando il thread della radio muore per un panic (poi raddoppia, vedi `watchdog::Restarts`).
+    restart_pause: Duration,
 }
 
 impl CatParts {
@@ -55,7 +59,7 @@ impl CatParts {
                 None => list_models(&rigctld),
             }
         });
-        CatParts { factory, locate: Arc::new(locate_rigctld), models, timing: Arc::new(Timing::standard) }
+        CatParts { factory, locate: Arc::new(locate_rigctld), models, timing: Arc::new(Timing::standard), restart_pause: Duration::from_secs(1) }
     }
 
     /// Per le prove: il modo di aprire il collegamento, l'elenco dei modelli e le attese scelti da chi prova.
@@ -65,8 +69,24 @@ impl CatParts {
             locate: Arc::new(move || rigctld.clone()),
             models: Arc::new(move || Ok(models.clone())),
             timing: Arc::new(move |_| timing.clone()),
+            restart_pause: Duration::from_secs(1),
         }
     }
+
+    /// Per le prove: la prima pausa prima di ricollegare dopo un panic del thread della radio.
+    pub fn with_restart_pause(mut self, pause: Duration) -> CatParts {
+        self.restart_pause = pause;
+        self
+    }
+}
+
+/// Il thread della radio morto per un panic: ripartenza in attesa o tentativi finiti.
+#[derive(Debug)]
+struct Crash {
+    restarts: Restarts,
+    /// Quando ricollegare e quale tentativo e'.
+    pending: Option<(Instant, usize)>,
+    gave_up: bool,
 }
 
 /// Un errore con un codice breve (per l'interfaccia) e il testo.
@@ -109,6 +129,20 @@ pub struct CatStatus {
     /// Con Cat4OM: gestione, porta Control scoperta (o scritta), gruppo, radio e ruolo.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cat4om: Option<crate::cat4om::Cat4omEndpoint>,
+}
+
+impl CatStatus {
+    fn with_crash(mut self, crash: &Crash) -> CatStatus {
+        if let Some((at, n)) = crash.pending {
+            let left = at.saturating_duration_since(Instant::now()).as_secs_f64().ceil();
+            self.state = LinkState::Reconnecting;
+            self.message = format!("Il collegamento con la radio si e' fermato per un errore interno: nuovo tentativo ({n} di {}) fra {left:.0} s", crate::watchdog::MAX_RESTARTS);
+        } else if crash.gave_up {
+            self.state = LinkState::Error;
+            self.message = "Il collegamento con la radio si e' fermato troppe volte per un errore interno: ricollegare a mano".into();
+        }
+        self
+    }
 }
 
 /// L'indirizzo a cui un altro programma si collega a `rigctld` (modello «Hamlib NET rigctl»).
@@ -157,6 +191,8 @@ pub struct CatService {
     models: Mutex<Option<Vec<RigModel>>>,
     /// Lo Split DX acceso adesso (vedi [`DxSplit`]).
     dx_split: Mutex<Option<DxSplit>>,
+    /// Ripartenza dopo un panic del thread della radio (vedi `watchdog`).
+    crash: Mutex<Crash>,
 }
 
 /// Lo split che vale per OmniRig: quello scelto se il sistema di controllo e' OmniRig, altrimenti nessuno (cosi' il distacco di un altro CAT
@@ -176,7 +212,9 @@ impl CatService {
         let store = RadioStore::open(path);
         crate::omnirig::set_rig(store.config().omnirig_rig);
         crate::omnirig::set_split_mode(omnirig_split(&store.config()));
-        Arc::new(CatService {
+        let restarts = Restarts::new(parts.restart_pause);
+        let tick = (parts.restart_pause / 2).clamp(Duration::from_millis(10), Duration::from_millis(500));
+        let service = Arc::new(CatService {
             store,
             parts,
             current: Mutex::new(None),
@@ -189,7 +227,78 @@ impl CatService {
             cat4om_hooks: Mutex::new((None, None)),
             models: Mutex::new(None),
             dx_split: Mutex::new(None),
-        })
+            crash: Mutex::new(Crash { restarts, pending: None, gave_up: false }),
+        });
+        // il guardiano: se il thread della radio muore per un panic lo si vede qui e si ricollega (finisce con il servizio)
+        let weak: Weak<CatService> = Arc::downgrade(&service);
+        let spawned = std::thread::Builder::new().name("aurora-cat-watchdog".into()).spawn(move || {
+            loop {
+                std::thread::sleep(tick);
+                let Some(service) = weak.upgrade() else { break };
+                service.watch(Instant::now());
+            }
+        });
+        if let Err(e) = spawned {
+            tracing::warn!("CAT: guardiano del collegamento non avviato: {e}");
+        }
+        service
+    }
+
+    fn crash(&self) -> std::sync::MutexGuard<'_, Crash> {
+        self.crash.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
+    /// Il thread di una radio collegata e' morto per un panic? Sistema e testo del panic.
+    fn dead_worker(&self) -> Option<(Backend, String)> {
+        if let Some(p) = self.current().and_then(|r| r.worker_panic()) {
+            return Some((Backend::Hamlib, p));
+        }
+        if let Some(p) = self.tci_rig().and_then(|r| r.worker_panic()) {
+            return Some((Backend::Tci, p));
+        }
+        if let Some(p) = self.ft991_rig().and_then(|r| r.worker_panic()) {
+            return Some((Backend::Ft991link, p));
+        }
+        self.cat4om_rig().and_then(|r| r.worker_panic()).map(|p| (Backend::Cat4om, p))
+    }
+
+    /// Un giro del guardiano: ricollega se e' l'ora, altrimenti guarda se il thread della radio e' morto.
+    fn watch(&self, now: Instant) {
+        let due = {
+            let mut c = self.crash();
+            match c.pending {
+                Some((at, n)) if now >= at => {
+                    c.pending = None;
+                    Some(n)
+                }
+                _ => None,
+            }
+        };
+        if let Some(n) = due {
+            tracing::warn!("CAT: nuovo collegamento con la radio (tentativo {n} di {}) dopo l'errore interno", crate::watchdog::MAX_RESTARTS);
+            if let Err(e) = self.connect_inner() {
+                tracing::warn!("CAT: nuovo collegamento non riuscito: {}", e.message);
+            }
+            return;
+        }
+        let Some((backend, reason)) = self.dead_worker() else { return };
+        // PTT spento (se si puo') e radio liberata subito, prima della pausa
+        self.detach(true);
+        let mut c = self.crash();
+        match c.restarts.next(now) {
+            Some((pause, n)) => {
+                c.pending = Some((now + pause, n));
+                tracing::warn!("CAT: il thread del collegamento con la radio ({backend:?}) si e' fermato per un errore interno ({reason}): riconnessione fra {:.1} s", pause.as_secs_f64());
+            }
+            None => {
+                c.gave_up = true;
+                tracing::error!(
+                    "CAT: il thread del collegamento con la radio ({backend:?}) si e' fermato per un errore interno ({reason}) per la {}a volta in {} minuti: riconnessione sospesa, ricollegare a mano",
+                    crate::watchdog::MAX_RESTARTS + 1,
+                    crate::watchdog::WINDOW.as_secs() / 60
+                );
+            }
+        }
     }
 
     /// Prende il backend dalla scelta di avvio (`AURORA_RIG`) senza salvarla.
@@ -218,7 +327,7 @@ impl CatService {
             let (state, message) = link.or_else(|| rig.as_ref().map(|r| (r.state, r.message.clone()))).unwrap_or((LinkState::Disconnected, String::new()));
             CatStatus { backend, state, message, rigctld_found, omnirig_found, rig, share, cat4om }
         };
-        match config.backend {
+        let status = match config.backend {
             Backend::Hamlib => {
                 let rig = self.current().map(|r| r.status());
                 let connected = rig.as_ref().is_some_and(|r| r.state == LinkState::Connected);
@@ -237,7 +346,8 @@ impl CatService {
                 make(Backend::Cat4om, None, rig.as_ref().map(|r| r.status()), None, rig.map(|r| r.endpoint()))
             }
             Backend::None => make(Backend::None, None, None, None, None),
-        }
+        };
+        status.with_crash(&self.crash())
     }
 
     pub fn snapshot(&self) -> CatSnapshot {
@@ -247,12 +357,24 @@ impl CatService {
 
     /// `true` se c'e' qualcosa da riavviare quando cambia la configurazione (collegata, in collegamento o in errore).
     fn is_active(&self) -> bool {
-        self.current().is_some() || self.tci_rig().is_some() || self.ft991_rig().is_some() || self.cat4om_rig().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
+        self.crash().pending.is_some()
+            || self.current().is_some() || self.tci_rig().is_some() || self.ft991_rig().is_some() || self.cat4om_rig().is_some() || self.omni.lock().is_ok_and(|o| o.0 != LinkState::Disconnected)
     }
 
     /// Collega la radio con la configurazione salvata. Per Hamlib ritorna subito (il collegamento prosegue in un thread e lo stato lo racconta);
     /// per OmniRig controlla che risponda (puo' volerci qualche secondo).
     pub fn connect(&self) -> Result<CatStatus, CatError> {
+        // a mano (o all'avvio) si riparte da zero anche con i tentativi dopo un panic
+        {
+            let mut c = self.crash();
+            c.restarts.reset();
+            c.pending = None;
+            c.gave_up = false;
+        }
+        self.connect_inner()
+    }
+
+    fn connect_inner(&self) -> Result<CatStatus, CatError> {
         let config = self.store.config();
         // ricollegando OmniRig l'oggetto aperto si tiene (si toglie solo lo split messo da Aurora): lasciarlo e ricrearlo subito chiuderebbe e
         // riaprirebbe OmniRig con la sua finestra
@@ -357,6 +479,11 @@ impl CatService {
 
     /// Scollega: il PTT si spegne, lo split vero si toglie e `rigctld` si ferma (la porta seriale si libera).
     pub fn disconnect(&self) -> CatStatus {
+        {
+            let mut c = self.crash();
+            c.pending = None;
+            c.gave_up = false;
+        }
         self.detach(true);
         self.status()
     }
@@ -975,6 +1102,59 @@ mod tests {
         t.fake.fail_with(0);
         t.service.connect().expect("riprova");
         assert_eq!(wait_state(&t.service, LinkState::Connected).state, LinkState::Connected);
+    }
+
+    /// Un collegamento finto che va in panic le prime `panics` volte (`u32::MAX`: sempre), poi parla con il finto rigctld.
+    fn panicking_service(name: &str, panics: u32) -> (Arc<CatService>, Arc<AtomicU32>, Arc<FakeRigctld>) {
+        let fake = Arc::new(FakeRigctld::start(14_074_000));
+        let opened = Arc::new(AtomicU32::new(0));
+        let (f, o) = (Arc::clone(&fake), Arc::clone(&opened));
+        let factory: LinkFactory = Arc::new(move |_: &RigConfig| {
+            if o.fetch_add(1, Ordering::SeqCst) < panics {
+                panic!("collegamento finto rotto");
+            }
+            f.client(Duration::from_millis(500)).map(Link::from_client)
+        });
+        let parts = CatParts::custom(factory, Some("rigctld.exe".into()), models(), timing()).with_restart_pause(Duration::from_millis(30));
+        let service = CatService::with_parts(&path(name), parts);
+        service.apply_config(ft2000()).expect("salva");
+        (service, opened, fake)
+    }
+
+    #[test]
+    fn a_cat_thread_that_panics_is_restarted_and_the_page_says_reconnecting() {
+        let (service, opened, _fake) = panicking_service("panic-restart", 2);
+        service.connect().expect("parte");
+        let s = wait_state(&service, LinkState::Reconnecting);
+        assert_eq!(s.state, LinkState::Reconnecting, "fra un panic e il tentativo dopo la pagina dice «riconnessione»");
+        assert!(s.message.contains("errore interno"), "{}", s.message);
+        let s = wait_state(&service, LinkState::Connected);
+        assert_eq!(s.state, LinkState::Connected, "{}", s.message);
+        assert_eq!(opened.load(Ordering::SeqCst), 3, "due panic, poi il terzo collegamento riesce");
+        assert_eq!(service.frequency().expect("frequenza"), 14_074_000);
+    }
+
+    #[test]
+    fn a_cat_thread_that_keeps_panicking_stops_after_the_close_attempts() {
+        let (service, opened, _fake) = panicking_service("panic-limit", u32::MAX);
+        service.connect().expect("parte");
+        let until = std::time::Instant::now() + Duration::from_secs(10);
+        let mut s = service.status();
+        while s.state != LinkState::Error && std::time::Instant::now() < until {
+            std::thread::sleep(Duration::from_millis(10));
+            s = service.status();
+        }
+        assert_eq!(s.state, LinkState::Error);
+        assert!(s.message.contains("ricollegare a mano"), "{}", s.message);
+        let tries = opened.load(Ordering::SeqCst);
+        assert_eq!(tries, crate::watchdog::MAX_RESTARTS as u32 + 1, "il primo collegamento e i tentativi ravvicinati, poi basta");
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(opened.load(Ordering::SeqCst), tries, "dopo il limite non riprova da solo");
+        // ricollegando a mano si riparte da capo
+        service.connect().expect("a mano");
+        assert_eq!(wait_state(&service, LinkState::Reconnecting).state, LinkState::Reconnecting);
+        service.disconnect();
+        assert_eq!(service.status().state, LinkState::Disconnected, "scollegando non resta in attesa di ricollegare");
     }
 
     #[test]

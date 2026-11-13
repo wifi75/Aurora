@@ -651,6 +651,11 @@ impl Ft991Rig {
         }
     }
 
+    /// Il thread del collegamento e' morto per un panic? Ne restituisce il testo, una volta sola (lo guarda il servizio CAT per ricollegare).
+    pub fn worker_panic(&self) -> Option<String> {
+        crate::watchdog::reap_panic(&self.worker)
+    }
+
     /// Chiude: PTT spento (e frequenza rimessa se lo split simulato l'aveva spostata), collegamento chiuso.
     pub fn shutdown(&self) {
         if self.inner.ready.load(Ordering::SeqCst) && (self.transmitting() || self.inner.emulate_restore.load(Ordering::SeqCst) != 0) {

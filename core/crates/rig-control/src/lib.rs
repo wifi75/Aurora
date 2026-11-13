@@ -25,6 +25,7 @@ pub mod rotator;
 pub mod schedule;
 pub mod table;
 pub mod tci;
+pub mod watchdog;
 
 pub use omnirig::WindowsRig;
 
