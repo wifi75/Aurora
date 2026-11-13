@@ -1,6 +1,6 @@
 # Cosa manca ad Aurora (elenco ordinato)
 
-Stato al 2026-11-12, versione 0.11.243 pubblicata. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
+Stato al 2026-11-12, versione 0.11.244 pubblicata. Priorità: **A** indispensabile per sostituire JTDX nell'uso quotidiano, **M** utile, **B** rinviabile.
 Fonti: specifica (`2026-10-24-aurora-design.md`), inventario di parità (`fase0-parita-funzioni.md`), rapporti dei piani.
 
 ## Già fatto

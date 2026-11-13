@@ -49,7 +49,7 @@ Projeto e desenvolvimento: Tiziano Cassone (IU3WJQ)
 
 ## Estado
 
-Versão 0.11.243: motor próprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) com recepção e transmissão, CAT para todos os rádios e display do rádio, mais as páginas PSK31/PSK63, RTTY, CW, SSTV e Satélites. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
+Versão 0.11.244: motor próprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) com recepção e transmissão, CAT para todos os rádios e display do rádio, mais as páginas PSK31/PSK63, RTTY, CW, SSTV e Satélites. A transmissão com o rádio real ainda precisa ser testada pelo proprietário.
 
 - **Estação**: lista de mensagens como no JTDX (país com bandeira, distância, linhas coloridas por tipo, indicativo chamado e chamadas dirigidas a você em destaque), cascata WebGPU/WebGL2 com barras Rx/Tx arrastáveis, Tx1–Tx6 com a fase do QSO, barra de bandas e modo (FT8/FT4) com troca pela própria página.
 - **Fila de chamadores**: clique direito em uma estação que chama para colocá-la na fila (etiqueta «IN CODA» com a posição); com o QSO registrado, o Aurora responde à primeira; o interruptor «Risp. a tutti» coloca na fila automaticamente quem chama você; «Canc DX» interrompe a transmissão na hora. Somente com o motor próprio.

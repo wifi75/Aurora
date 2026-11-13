@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.244 - 2026-11-13
 - **Separatore fra i periodi ben visibile** nell'Attivita' di banda e nella finestra RX: una fascia sottile del colore d'accento con l'ora UTC del periodo e una riga piena, nei temi scuro e chiaro e con la dimensione del testo scelta; acceso di base nelle installazioni nuove. «Separatore sottile fra i periodi» nelle Impostazioni (Schermo) riporta il filo di prima (segnalazione #38).
 - **Le mie trasmissioni nella finestra RX durante il QSO**: ogni riga Tx del QSO compare quando parte, nell'ordine giusto con le decodifiche; prima, finche' il QSO era in corso, restava visibile solo l'ultima (nella riga ferma in cima) e le altre comparivano tutte a QSO finito (segnalazione #42).
 - **«Spegni split» accanto al display della radio**: compare quando la radio e' in split (trasmette sul VFO B) e la riporta in simplex sulla frequenza di ricezione, qualunque cosa l'abbia accesa (spot «UP», split di FT8, la radio stessa o un altro programma); mai durante una trasmissione.
