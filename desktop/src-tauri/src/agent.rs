@@ -265,7 +265,7 @@ fn tr_in(lang: usize, key: &str) -> &'static str {
         "p_downloading" => ["Scarico la versione nuova…", "Downloading the new version…", "Neue Version wird geladen…", "Je télécharge la nouvelle version…", "Descargando la versión nueva…", "A transferir a versão nova…"],
         "p_verifying" => ["Controllo la firma del pacchetto…", "Checking the package signature…", "Signatur des Pakets wird geprüft…", "Je vérifie la signature du paquet…", "Comprobando la firma del paquete…", "A verificar a assinatura do pacote…"],
         "p_ready" => ["Pacchetto pronto e firmato: avvio l'installazione…", "Package ready and signed: starting the installation…", "Paket bereit und signiert: Installation startet…", "Paquet prêt et signé : je lance l'installation…", "Paquete listo y firmado: iniciando la instalación…", "Pacote pronto e assinado: a iniciar a instalação…"],
-        "p_installing" => ["Avvio l'installatore: Aurora si chiude e si riapre da sola.", "Starting the installer: Aurora closes and reopens by itself.", "Installationsprogramm startet: Aurora schließt sich und öffnet sich wieder.", "Je lance l'installateur : Aurora se ferme et se rouvre toute seule.", "Iniciando el instalador: Aurora se cierra y se vuelve a abrir sola.", "A iniciar o instalador: o Aurora fecha-se e volta a abrir sozinho."],
+        "p_installing" => ["Aurora si chiude per installare l'aggiornamento e si riapre alla fine.", "Aurora closes to install the update and reopens when it is done.", "Aurora schließt sich, um das Update zu installieren, und öffnet sich danach wieder.", "Aurora se ferme pour installer la mise à jour et se rouvre à la fin.", "Aurora se cierra para instalar la actualización y se vuelve a abrir al terminar.", "O Aurora fecha-se para instalar a atualização e volta a abrir no fim."],
         "p_restart" => ["Aurora si sta riavviando…", "Aurora is restarting…", "Aurora startet neu…", "Aurora redémarre…", "Aurora se está reiniciando…", "O Aurora está a reiniciar…"],
         "p_failed" => ["Aggiornamento non riuscito.", "Update failed.", "Update fehlgeschlagen.", "Mise à jour impossible.", "La actualización ha fallado.", "A atualização falhou."],
         _ => return "",
@@ -338,27 +338,108 @@ fn install_refusal(status: u16, body: &serde_json::Value) -> String {
     }
 }
 
-/// «Aggiorna ora» dalla cartolina: Aurora installa la versione nuova (gia' scaricata in anticipo, oppure la scarica adesso). Se Aurora e'
-/// chiusa la si apre e si aspetta che risponda. La cartolina resta aperta e ogni ~300 ms riceve lo stato da `GET /api/v1/update`:
-/// barra, MB, velocita', tempo e i passi Scarico → Controllo → Installo → Riavvio; in errore mostra il motivo e «Riprova».
+/// «Aggiorna ora» dalla cartolina. Con Aurora aperta l'installazione la fa lei (che rifiuta durante una trasmissione); con Aurora chiusa
+/// la fa l'agente stesso, **senza aprire Aurora**: prima l'agente apriva Aurora solo per farle installare l'aggiornamento, e Aurora si
+/// apriva, si richiudeva per installare e si riapriva (difetto del 2026-11-13). La cartolina resta aperta con la barra, i MB, la
+/// velocita', il tempo e i passi Scarico → Controllo → Installo → Riavvio; in errore mostra il motivo e «Riprova».
 fn install_update(app: AppHandle) {
     if UPDATING.swap(true, Ordering::SeqCst) {
         return;
     }
-    // il segno per Aurora: l'aggiornamento parte dal tray, niente locandina nella finestra (c'e' gia' questa cartolina). Si lascia prima
-    // di aprire Aurora, cosi' vale anche all'avvio
+    if aurora_open() {
+        install_through_aurora(&app);
+    } else {
+        install_here(&app);
+    }
+    UPDATING.store(false, Ordering::SeqCst);
+}
+
+/// La cartella dei dati di Aurora, come la sceglie il programma: `AURORA_DATA_DIR`, altrimenti `%APPDATA%\Aurora`.
+#[cfg(windows)]
+fn data_dir() -> Option<PathBuf> {
+    std::env::var_os("AURORA_DATA_DIR").map(PathBuf::from).or_else(|| std::env::var_os("APPDATA").map(|b| PathBuf::from(b).join("Aurora")))
+}
+
+/// Aggiornamento con Aurora chiusa, fatto dall'agente: scarica il pacchetto e ne controlla la firma (lo stesso servizio e la stessa chiave di
+/// Aurora, con l'avanzamento nella cartolina), poi lancia lo script che installa e che a installazione riuscita riapre Aurora una volta
+/// sola (Aurora riaccende anche l'agente). L'agente si chiude subito dopo: l'installatore deve poter sostituire il programma.
+#[cfg(windows)]
+fn install_here(app: &AppHandle) {
+    let Some(dir) = data_dir() else {
+        card_state(app, &serde_json::json!({ "phase": "error", "error": tr("p_failed") }));
+        return;
+    };
+    let service = updater::UpdateService::open(&dir.join("update.json"), VERSION);
+    card_state(app, &serde_json::json!({ "phase": "idle" }));
+    let (tx, rx) = std::sync::mpsc::channel();
+    let worker = std::sync::Arc::clone(&service);
+    std::thread::spawn(move || {
+        let _ = tx.send(crate::installer::prepare_package(&worker));
+    });
+    // la cartolina chiusa a meta' non ferma niente: «Aggiorna ora» e' stato premuto, si va avanti
+    let prepared = loop {
+        match rx.recv_timeout(Duration::from_millis(300)) {
+            Ok(result) => break result,
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                card_state(app, &serde_json::json!(service.stage()));
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break Err(tr("p_failed").to_string()),
+        }
+    };
+    let prepared = match prepared {
+        Ok(p) => p,
+        Err(e) => {
+            agent_log(&format!("aggiornamento non riuscito: {e}"));
+            card_state(app, &serde_json::json!({ "phase": "error", "error": e }));
+            return;
+        }
+    };
+    // Aurora aperta nel frattempo: installa lei (controlla che non si stia trasmettendo e trova il pacchetto pronto sul disco)
+    if aurora_open() {
+        install_through_aurora(app);
+        return;
+    }
+    if !crate::installer::claim_install() {
+        return;
+    }
+    service.set_installing();
+    card_state(app, &serde_json::json!(service.stage()));
+    // il tempo di leggere «Aurora si chiude per installare l'aggiornamento»
+    std::thread::sleep(Duration::from_millis(1500));
+    match crate::installer::launch_update_script(&prepared.path) {
+        Ok(()) => {
+            agent_log(&format!("aggiornamento {} avviato dall'agente con Aurora chiusa", prepared.version));
+            crate::crash::exiting();
+            app.exit(0);
+        }
+        Err(e) => {
+            crate::installer::release_install();
+            agent_log(&format!("aggiornamento non riuscito: {e}"));
+            card_state(app, &serde_json::json!({ "phase": "error", "error": e }));
+        }
+    }
+}
+
+/// Fuori da Windows l'agente non sa installare: apre Aurora e le chiede l'aggiornamento.
+#[cfg(not(windows))]
+fn install_here(app: &AppHandle) {
+    card_state(app, &serde_json::json!({ "phase": "starting" }));
+    open_aurora();
+    for _ in 0..60 {
+        std::thread::sleep(Duration::from_secs(1));
+        if aurora_open() {
+            break;
+        }
+    }
+    install_through_aurora(app);
+}
+
+/// L'aggiornamento chiesto ad Aurora aperta (`POST /api/v1/update/install`), con lo stato da `GET /api/v1/update` ogni ~300 ms.
+fn install_through_aurora(app: &AppHandle) {
+    let app = app.clone();
+    // il segno per Aurora: l'aggiornamento parte dal tray, niente locandina nella finestra (c'e' gia' questa cartolina)
     if let Some(base) = std::env::var_os("APPDATA") {
         let _ = std::fs::write(PathBuf::from(base).join("Aurora").join(updater::TRAY_MARK), b"1");
-    }
-    if !aurora_open() {
-        card_state(&app, &serde_json::json!({ "phase": "starting" }));
-        open_aurora();
-        for _ in 0..60 {
-            std::thread::sleep(Duration::from_secs(1));
-            if aurora_open() {
-                break;
-            }
-        }
     }
     // la richiesta di installazione resta aperta per tutto lo scaricamento (se il pacchetto non era gia' pronto): a parte, con molta pazienza
     let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
@@ -436,7 +517,6 @@ fn install_update(app: AppHandle) {
         Some(Err(_)) => {}
         None => agent_log("cartolina dell'aggiornamento chiusa prima della fine"),
     }
-    UPDATING.store(false, Ordering::SeqCst);
 }
 
 /// Apre Aurora (se e' gia' aperta, il programma porta davanti la sua finestra).
