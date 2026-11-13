@@ -2685,8 +2685,9 @@ pub async fn run(
     qmap_service.set_tx_probe(state.transmitting_probe());
     // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
     let (native_tx, captured) = std::sync::mpsc::channel::<audio_spectrum::AudioChunk>();
-    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV
-    let (to_engine, native_rx) = std::sync::mpsc::channel();
+    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV.
+    // Verso il motore una coda con un tetto (30 s di audio): se il motore resta fermo si buttano i blocchi vecchi invece di crescere
+    let (to_engine, native_rx) = audio_spectrum::queue::channel(audio_spectrum::queue::DEFAULT_MAX_SECS);
     {
         let sstv = Arc::clone(&sstv);
         let digi = Arc::clone(&digi);
