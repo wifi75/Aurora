@@ -118,6 +118,9 @@ pub struct RigConfig {
     pub poll_secs: u32,
     /// Collega la radio da solo all'avvio di Aurora (spento di base: la trasmissione non parte mai senza che lo si sia scelto).
     pub auto_connect: bool,
+    /// Indicatore salvato: l'accensione automatica di `auto_connect` al primo collegamento riuscito e' gia' stata fatta (una volta sola),
+    /// cosi' chi poi la spegne la ritrova spenta.
+    pub auto_connect_offered: bool,
     /// «Condividi la radio»: `rigctld` ascolta (solo su questo PC, 127.0.0.1) sulla porta fissa `share_port` invece che su una a caso,
     /// cosi' Log4OM2, GridTracker, JTDX e gli altri si collegano ad Aurora come a una radio «Hamlib NET rigctl».
     pub share_enabled: bool,
@@ -174,6 +177,7 @@ impl Default for RigConfig {
             civ_address: 0,
             poll_secs: 2,
             auto_connect: false,
+            auto_connect_offered: false,
             read_extras: false,
             share_enabled: false,
             share_port: DEFAULT_SHARE_PORT,
@@ -549,9 +553,26 @@ impl RadioStore {
     pub fn set_config(&self, config: RigConfig) -> Result<RadioFile, StoreError> {
         config.validate().map_err(StoreError::Invalid)?;
         self.change(|f| {
+            // l'indicatore non si perde mai: una schermata con dati vecchi non lo riazzera
+            let offered = f.config.auto_connect_offered;
             f.config = config;
+            f.config.auto_connect_offered |= offered;
             Ok(())
         })
+    }
+
+    /// Al primo collegamento riuscito fatto dall'utente accende `auto_connect` e segna l'indicatore. Ritorna `true` se l'ha acceso ora;
+    /// con l'indicatore gia' segnato non cambia nulla (chi l'ha spenta la ritrova spenta).
+    pub fn offer_auto_connect(&self) -> Result<bool, StoreError> {
+        if self.config().auto_connect_offered {
+            return Ok(false);
+        }
+        self.change(|f| {
+            f.config.auto_connect = true;
+            f.config.auto_connect_offered = true;
+            Ok(())
+        })
+        .map(|_| true)
     }
 
     /// Salva la configurazione viva come profilo `name` (se esiste lo sostituisce).
@@ -575,7 +596,9 @@ impl RadioStore {
     pub fn load_profile(&self, name: &str) -> Result<RadioFile, StoreError> {
         self.change(|f| {
             let p = f.profiles.iter().find(|p| p.name.eq_ignore_ascii_case(name.trim())).cloned().ok_or(StoreError::NotFound)?;
+            let offered = f.config.auto_connect_offered;
             f.config = p.config;
+            f.config.auto_connect_offered |= offered;
             f.active_profile = Some(p.name);
             Ok(())
         })

@@ -421,12 +421,12 @@ export const catStrings = {
   'cat.catmode.data': ['USB dati (Data/Pkt)', 'USB data (Data/Pkt)', 'USB-Daten (Data/Pkt)', 'USB données (Data/Pkt)', 'USB datos (Data/Pkt)', 'USB dados (Data/Pkt)'],
   'cat.auto': ['Collega la radio all’avvio di Aurora', 'Connect the radio when Aurora starts', 'Funkgerät beim Start von Aurora verbinden', 'Connecter la radio au démarrage d’Aurora', 'Conectar la radio al iniciar Aurora', 'Ligar o rádio ao iniciar a Aurora'],
   'tip.cat.auto': [
-    'Spento di base: la radio non si collega mai se non lo hai scelto.',
-    'Off by default: the radio never connects unless you chose so.',
-    'Standardmäßig aus: das Gerät verbindet sich nie, wenn du es nicht gewählt hast.',
-    'Désactivé de base : la radio ne se connecte jamais sans que tu l’aies choisi.',
-    'Apagado de base: la radio nunca se conecta si no lo has elegido.',
-    'Desligado de base: o rádio nunca se liga se não o escolheres.',
+    'Si accende da sola al primo collegamento riuscito, così la radio si collega ad ogni avvio di Aurora; puoi spegnerla quando vuoi e resta spenta.',
+    'It switches on by itself at the first successful connection, so the radio connects every time Aurora starts; you can switch it off at any time and it stays off.',
+    'Schaltet sich beim ersten erfolgreichen Verbinden von selbst ein, so verbindet sich das Funkgerät bei jedem Start von Aurora; du kannst sie jederzeit ausschalten und sie bleibt aus.',
+    'S’active toute seule à la première connexion réussie, ainsi la radio se connecte à chaque démarrage d’Aurora ; tu peux la désactiver quand tu veux et elle reste désactivée.',
+    'Se activa sola en la primera conexión lograda, así la radio se conecta en cada inicio de Aurora; puedes apagarla cuando quieras y se queda apagada.',
+    'Liga-se sozinha à primeira ligação bem-sucedida, assim o rádio liga-se em cada arranque da Aurora; podes desligá-la quando quiseres e fica desligada.',
   ],
   'cat.apply': ['Applica', 'Apply', 'Anwenden', 'Appliquer', 'Aplicar', 'Aplicar'],
   'tip.cat.apply': [

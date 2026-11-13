@@ -4,7 +4,10 @@
 
 use std::{
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, Weak},
+    sync::{
+        Arc, Mutex, Weak,
+        atomic::{AtomicBool, Ordering},
+    },
     time::{Duration, Instant},
 };
 
@@ -193,6 +196,8 @@ pub struct CatService {
     dx_split: Mutex<Option<DxSplit>>,
     /// Ripartenza dopo un panic del thread della radio (vedi `watchdog`).
     crash: Mutex<Crash>,
+    /// Collegamento chiesto dall'utente non ancora riuscito: al primo «collegata» si accende `auto_connect` (una volta sola).
+    offer_pending: AtomicBool,
 }
 
 /// Lo split che vale per OmniRig: quello scelto se il sistema di controllo e' OmniRig, altrimenti nessuno (cosi' il distacco di un altro CAT
@@ -228,6 +233,7 @@ impl CatService {
             models: Mutex::new(None),
             dx_split: Mutex::new(None),
             crash: Mutex::new(Crash { restarts, pending: None, gave_up: false }),
+            offer_pending: AtomicBool::new(false),
         });
         // il guardiano: se il thread della radio muore per un panic lo si vede qui e si ricollega (finisce con il servizio)
         let weak: Weak<CatService> = Arc::downgrade(&service);
@@ -347,7 +353,15 @@ impl CatService {
             }
             Backend::None => make(Backend::None, None, None, None, None),
         };
-        status.with_crash(&self.crash())
+        let status = status.with_crash(&self.crash());
+        if status.state == LinkState::Connected && self.offer_pending.swap(false, Ordering::SeqCst) {
+            match self.store.offer_auto_connect() {
+                Ok(true) => tracing::info!("primo collegamento riuscito: acceso il collegamento automatico all'avvio"),
+                Ok(false) => {}
+                Err(e) => tracing::warn!("collegamento automatico non salvato: {e:?}"),
+            }
+        }
+        status
     }
 
     pub fn snapshot(&self) -> CatSnapshot {
@@ -364,6 +378,15 @@ impl CatService {
     /// Collega la radio con la configurazione salvata. Per Hamlib ritorna subito (il collegamento prosegue in un thread e lo stato lo racconta);
     /// per OmniRig controlla che risponda (puo' volerci qualche secondo).
     pub fn connect(&self) -> Result<CatStatus, CatError> {
+        // chiesto dall'utente: al primo collegamento riuscito si accende `auto_connect` (una volta sola, vedi `offer_auto_connect`)
+        if !self.store.config().auto_connect_offered {
+            self.offer_pending.store(true, Ordering::SeqCst);
+        }
+        self.connect_fresh()
+    }
+
+    /// Come `connect`, ma senza proporre `auto_connect` (avvio del programma).
+    fn connect_fresh(&self) -> Result<CatStatus, CatError> {
         // a mano (o all'avvio) si riparte da zero anche con i tentativi dopo un panic
         {
             let mut c = self.crash();
@@ -479,6 +502,7 @@ impl CatService {
 
     /// Scollega: il PTT si spegne, lo split vero si toglie e `rigctld` si ferma (la porta seriale si libera).
     pub fn disconnect(&self) -> CatStatus {
+        self.offer_pending.store(false, Ordering::SeqCst);
         {
             let mut c = self.crash();
             c.pending = None;
@@ -564,7 +588,7 @@ impl CatService {
     /// Avvio del programma: collega se la scelta salvata lo chiede (`auto_connect`) o se l'ha imposto `AURORA_RIG` (`forced`).
     pub fn start_up(&self, forced: bool) -> Option<CatStatus> {
         if forced || self.store.config().auto_connect {
-            return self.connect().map_err(|e| tracing::warn!("CAT non collegato all'avvio: {e}")).ok();
+            return self.connect_fresh().map_err(|e| tracing::warn!("CAT non collegato all'avvio: {e}")).ok();
         }
         None
     }
@@ -1197,6 +1221,33 @@ mod tests {
         t.service.apply_config(ft2000()).expect("salva");
         assert!(t.service.start_up(true).is_some());
         assert_eq!(wait_state(&t.service, LinkState::Connected).state, LinkState::Connected);
+    }
+
+    #[test]
+    fn the_first_user_connection_turns_auto_connect_on_once() {
+        let t = service("offer", Some("rigctld.exe".into()));
+        t.service.apply_config(ft2000()).expect("salva");
+        assert!(!t.service.config().auto_connect);
+        t.service.connect().expect("collega");
+        assert_eq!(wait_state(&t.service, LinkState::Connected).state, LinkState::Connected);
+        let c = t.service.config();
+        assert!(c.auto_connect && c.auto_connect_offered, "il primo collegamento la accende e segna l'indicatore");
+        // l'utente la spegne (anche con una schermata che porta l'indicatore vecchio): resta spenta
+        t.service.apply_config(RigConfig { auto_connect: false, auto_connect_offered: false, ..t.service.config() }).expect("salva");
+        assert!(!t.service.config().auto_connect && t.service.config().auto_connect_offered);
+        t.service.disconnect();
+        t.service.connect().expect("ricollega");
+        assert_eq!(wait_state(&t.service, LinkState::Connected).state, LinkState::Connected);
+        assert!(!t.service.config().auto_connect, "dopo che l'utente l'ha spenta non si riaccende");
+    }
+
+    #[test]
+    fn the_forced_startup_does_not_turn_auto_connect_on() {
+        let t = service("offer-start", Some("rigctld.exe".into()));
+        t.service.apply_config(ft2000()).expect("salva");
+        assert!(t.service.start_up(true).is_some());
+        assert_eq!(wait_state(&t.service, LinkState::Connected).state, LinkState::Connected);
+        assert!(!t.service.config().auto_connect, "l'avvio forzato non e' una scelta dell'utente");
     }
 
     #[test]
