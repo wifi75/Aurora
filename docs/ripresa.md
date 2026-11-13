@@ -2,7 +2,9 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 sera (0.11.249 pubblicata, sito aggiornato)
+## Stato al 2026-11-13 sera (0.11.250 pubblicata, sito aggiornato)
+
+- **0.11.250** (2026-11-13T19:09:28Z): spot dal cluster telnet a scelta al posto di DXSummit (`dx_cluster::SpotVia`, `send_spot` aspetta la ripetuta `DX de <noi>`), nome di accesso e password per server (password mai rimandata all'interfaccia, `has_password`); azimut e distanza nel riquadro del nominativo; `auto_connect` acceso al primo collegamento (`auto_connect_offered`); stato di Club Log con `code`/`params` tradotti; verifica DXSummit filtrata per DX. Non provato con un cluster vero con password. Bozza di risposta all'issue #47 data all'utente.
 
 - **0.11.249** (2026-11-13T16:56:56Z): spot verificati sull'elenco pubblico di DXSummit dopo l'invio (`reporting/src/dxsummit.rs` `check`/`listed`; controlli a 10, 30, 60, 90 s; stato «spot pubblicato» o «accettato ma non pubblicato»). Non ancora provato con uno spot vero.
 
