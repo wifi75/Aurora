@@ -1329,3 +1329,11 @@ body.rd-radio-off .rd-header, body.rd-radio-off .rd-square-slot, body.rd-radio-o
 body.rd-radio-off .rd-header > *, body.rd-radio-off .rd-square-slot > *, body.rd-radio-off .rd-square-preview > * { filter: grayscale(1) brightness(0.55); }
 body.rd-radio-off .rd-face-row { filter: none; }
 body.rd-radio-off .rd-face-row > :not(.rd-header) { filter: grayscale(1) brightness(0.55); }
+/* la scritta della radio spenta disegnata a 14 segmenti (immagine generata da segText.ts) al posto del testo: centrata e adattata al display */
+body.rd-radio-off .rd-header::after, body.rd-radio-off .rd-square-slot::after, body.rd-radio-off .rd-square-preview::after {
+  content: '';
+  background: var(--rd-off-img) center / contain no-repeat, rgb(0 0 0 / 0.45);
+  background-origin: content-box, padding-box;
+  padding: clamp(6px, 2.6cqi, 22px) 5%;
+  box-sizing: border-box;
+}
