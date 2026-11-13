@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Aggiornamento in un solo giro**: dopo «Aggiorna» Aurora scarica la versione nuova con la barra, si chiude insieme all'agente nel tray, installa e solo alla fine si riapre, una volta. Prima l'agente nel tray apriva Aurora solo per farle installare l'aggiornamento (si apriva, si richiudeva, installava e si riapriva), Aurora la riaprivano in due (l'installatore e lo script) e, con un'installazione lenta, lo script la riapriva vecchia a meta' installazione. Con Aurora chiusa ora aggiorna l'agente stesso; due richieste ravvicinate non avviano piu' due installatori; se l'installazione non riesce si apre l'installatore con le sue finestre invece di Aurora vecchia.
 - **Avviso di aggiornamento nella lingua giusta**: il riquadro dell'aggiornamento e la locandina mostrano le novita' nella lingua di Aurora; se non e' scelta, in quella di Windows; se manca, in inglese (prima arrivava sempre l'inglese). Anche i testi del riquadro, senza una lingua scelta, seguono Windows invece di partire in italiano.
 - **PTT non spento, messaggio**: quando il CAT cade durante lo spegnimento del PTT l'avviso e il registro dicevano «PTT non spento: PTT: PTT non spento: …»; ora la causa compare una volta sola.
 - **Tabella delle frequenze non valida**: il registro dice il motivo e il file viene messo da parte (`frequencies.json.non-valido`), cosi' l'avviso non torna a ogni avvio.
