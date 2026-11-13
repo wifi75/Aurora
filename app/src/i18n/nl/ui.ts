@@ -2725,6 +2725,8 @@ export const NL_UI: Record<string, string> = {
   "newdx.close": "Deze melding sluiten",
   "newdx.dxcc": "Nieuw DXCC",
   "newdx.last": "laatst gehoord",
+  "newdx.off": "Deze meldingen uitzetten",
+  "newdx.offTip": "Geen kaarten meer voor nieuwe DXCC’s. Nieuwe landen blijven gekleurd in Bandactiviteit; weer aanzetten via Instellingen › Uiterlijk en meldingen › Meldingen en geluiden.",
   "newdx.tip": "Dubbelklik: dit station beantwoorden. De tijd wordt bij elke zending van het station bijgewerkt; de melding verdwijnt 10 minuten na de laatste ontvangst. Instellen in Instellingen › Uiterlijk en meldingen › Meldingen en geluiden.",
   "news.current": "In gebruik",
   "news.intro": "De laatste {n} functies die zijn toegevoegd, gewijzigd of verholpen, de nieuwste eerst, met datum en tijd van uitgave (in de tijd van je apparaat).",
