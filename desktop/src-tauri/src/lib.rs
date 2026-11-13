@@ -281,11 +281,17 @@ fn show_main(app: &AppHandle) {
     }
 }
 
+/// Il titolo della finestra principale: nome completo, versione e autore.
+fn main_title() -> String {
+    format!("Aurora — Multimode Ham Radio Station {} By IU3WJQ - Tiziano Cassone", env!("CARGO_PKG_VERSION"))
+}
+
 fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn Error>> {
     let parsed: tauri::Url = url.parse()?;
     // si crea nascosta, si rimette la dimensione dell'ultima volta e solo dopo si mostra (niente salti)
     let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
-        .title("Aurora")
+        // il titolo della finestra con nome completo, versione e autore (prima c'era solo «Aurora» e la firma stava nella barra in fondo)
+        .title(main_title())
         .inner_size(1360.0, 860.0)
         .min_inner_size(f64::from(window_state::MIN_WIDTH), f64::from(window_state::MIN_HEIGHT))
         .visible(false)

@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.11.248 - 2026-11-13
+- **Titolo della finestra**: «Aurora — Multimode Ham Radio Station 0.11.248 By IU3WJQ - Tiziano Cassone»; tolta la firma dalla barra in fondo, dove ora volume dei messaggi, icone dell'audio e del tema e ora UTC stanno tutti a destra.
+- **«Nuovo log vuoto»** spostato nella pagina Log e servizi, con la spiegazione del log interno di Aurora, attivo fin dalla prima installazione; il pannello Log vuoto mostra «Ancora nessun QSO in questo log» invece dell'invito a configurarlo.
 - **«Tune» e «Log QSO» nei Comandi sempre visibili**: prima erano nascosti di base (si accendevano in Impostazioni) e nessuno li trovava; si riaccendono una volta per tutti, poi resta la scelta dell'utente.
 - **Log vuoto**: il pannello Log mostra le intestazioni delle colonne e, sotto, «Aggiungi QSO» (finestra per registrare un QSO a mano) e «Importa un file ADIF»; prima c'era solo il riquadro «Il log e' vuoto».
 - **DX Cluster, durata degli spot**: c'e' anche 45 minuti nella scelta «Gli spot spariscono dopo».

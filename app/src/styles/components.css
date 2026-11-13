@@ -1337,3 +1337,8 @@ body.rd-radio-off .rd-header::after, body.rd-radio-off .rd-square-slot::after, b
   padding: clamp(6px, 2.6cqi, 22px) 5%;
   box-sizing: border-box;
 }
+
+/* Barra in fondo: volume dei messaggi, icone dell'audio e del tema e ora UTC tutti in fondo a destra (la firma e' andata nel titolo della
+   finestra) */
+.app-footer .bar-tools { margin-left: auto; }
+.app-footer .bar-utc { margin-right: 0.4rem; }

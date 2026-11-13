@@ -76,13 +76,8 @@ export function Footer({ page }: { page?: string } = {}) {
       <span className="bar-utc num" title="UTC">
         {new Date(now).toISOString().slice(11, 19)} <i>UTC</i>
       </span>
-      <small>
-        {data
-          ? t('footer.credit', { name: data.name, version: data.version })
-          : isError
-            ? t('footer.coreDown')
-            : t('footer.connecting')}
-      </small>
+      {/* nome, versione e autore ora stanno nel titolo della finestra; qui solo se il core non risponde */}
+      {data ? null : <small>{isError ? t('footer.coreDown') : t('footer.connecting')}</small>}
     </footer>
   );
 }

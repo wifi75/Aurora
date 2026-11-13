@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Footer } from './Footer';
 
@@ -13,7 +13,7 @@ function renderFooter() {
 }
 
 describe('Footer', () => {
-  it('shows name, version and the author signature on one line', async () => {
+  it('no longer shows the signature (it is in the window title) once the core answers', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -24,7 +24,8 @@ describe('Footer', () => {
       ),
     );
     renderFooter();
-    expect(await screen.findByText('Aurora v0.1.0 — By IU3WJQ -Tiziano Cassone')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText(/Aurora v0\.1\.0/)).toBeNull());
+    expect(screen.getByTitle('UTC')).toBeInTheDocument();
   });
 
   it('shows a clear message when the core is unreachable', async () => {
