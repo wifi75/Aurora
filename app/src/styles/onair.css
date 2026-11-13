@@ -7728,3 +7728,10 @@ html:not([data-theme='light']) .dxd-st--soon b { color: #93c5fd; }
 html:not([data-theme='light']) .dxd-facts { font-size: 0.92rem; }
 html:not([data-theme='light']) .dxd-facts dt { color: #cbd5e1; }
 html:not([data-theme='light']) .dxd-facts dd { color: #ffffff; }
+
+/* DX Cluster, pulsanti della barra ben visibili al passaggio del mouse («bordo acceso», scelta del proprietario): bordo azzurro con alone */
+.cluster-bar button, .cluster-bar .glass { transition: border-color 120ms ease, box-shadow 120ms ease, color 120ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .cluster-bar button:hover:not(:disabled), .cluster-bar .glass:hover { border-color: #38bdf8 !important; box-shadow: 0 0 0 1px #38bdf8, 0 0 0 4px rgb(56 189 248 / 0.3) !important; color: #ffffff; }
+  html[data-theme='light'] .cluster-bar button:hover:not(:disabled), html[data-theme='light'] .cluster-bar .glass:hover { border-color: #0284c7 !important; box-shadow: 0 0 0 1px #0284c7, 0 0 0 4px rgb(2 132 199 / 0.25) !important; color: #0b1424; }
+}
