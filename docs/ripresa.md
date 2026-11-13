@@ -25,7 +25,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
   `LagWatch` sul bus; coda audio limitata a 30 s; frequenze CW/SSTV/RTTY/PSK dai piani ARI (`app/src/lib/bandplan.ts`); manuale
   completo (`guide-*.ts`, copertura in `docs/copertura-guida.md`); separatore dei periodi e Tx nella finestra RX durante il QSO
   (#38, #42); schede DXCC nuovi al massimo due con «Spegni questi avvisi»; avviso di aggiornamento nella lingua di Aurora/Windows.
-- **Attivita' pianificata** `aurora-rapporti-cloudflare` (ogni 8 ore, app Claude aperta): scarica e svuota i rapporti, corregge i
+- **Attivita' pianificata** `aurora-rapporti-cloudflare` (ogni 8 ore, a PC acceso): scarica e svuota i rapporti, corregge i
   difetti piccoli con commit senza push.
 - **CPU**: il PC e' quello di lavoro del proprietario: al massimo 12 thread in tutto, agenti compresi (con tre agenti `-j 2` ciascuno).
 - **Non provato**: tutto quanto sopra con la radio vera e a schermo; Linux solo compilato da GitHub.
