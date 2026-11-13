@@ -95,7 +95,7 @@ describe('pannello Segnali: pulizia, etichette e altezza', () => {
   });
 
   it('l’altezza: almeno tre righe, al massimo meta’ della colonna, ricordata', () => {
-    expect(bandHeightLimits(20, 24, 600)).toEqual({ min: 84, max: 300 });
+    expect(bandHeightLimits(20, 24, 600)).toEqual({ min: 84, max: 370 });
     // senza misure (pannello vuoto): valori di riserva
     expect(bandHeightLimits(0, 0, 0)).toEqual({ min: 85, max: 400 });
     // colonna bassissima: il minimo vince

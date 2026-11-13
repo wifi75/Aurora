@@ -74,3 +74,10 @@ html[data-theme='light'] .digi-band-head .digi-band-cqcount { border-color: #0f9
 html[data-theme='light'] .digi-band-full { background: #ffffff; color: #0b1322; }
 html[data-theme='light'] .digi-band-pick, html[data-theme='light'] .digi-band-clear { background: #ffffff; color: #000; }
 html[data-theme='light'] .digi-band-grip::before { background: #5d6b94; }
+
+/* Maniglia di «Segnali» ben visibile (il proprietario non la trovava): una barra larga e chiara con tre puntini, zona di presa piu' alta;
+   trascinandola in su le finestre di ricezione e trasmissione si stringono insieme */
+.digi-band-grip { top: -6px; height: 16px; }
+.digi-band-grip::before { top: 5px; width: 90px; height: 6px; margin-left: -45px; border-radius: 3px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.digi-band-grip:hover::before, .digi-band-grip:active::before { background: #38bdf8; opacity: 1; }
+html[data-theme='light'] .digi-band-grip::before { background: #4a5a8a; }

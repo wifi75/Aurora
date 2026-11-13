@@ -24,13 +24,16 @@ export const BAND_HEIGHT_KEY = 'aurora.digi.bandh';
 /** Misure di riserva di una riga e dell'intestazione della tabella (px), quando non si possono misurare. */
 const ROW_PX = 21;
 const HEAD_PX = 22;
+/** Quanto spazio restano ad avere, insieme, le finestre di ricezione e trasmissione (con la cascata sotto) quando si allarga «Segnali». */
+export const WINDOWS_MIN_PX = 230;
 /** Quanto aspetta la scelta della convalida che il salvataggio torni, prima di rimostrare il valore salvato (ms). */
 const PICK_WAIT_MS = 4000;
 
-/** I limiti dell'altezza dell'elenco: almeno l'intestazione e tre righe, al massimo meta' della colonna (senza misura: 400 px). */
+/** I limiti dell'altezza dell'elenco: almeno l'intestazione e tre righe; al massimo quanto lascia alle finestre di ricezione e trasmissione
+ * {@link WINDOWS_MIN_PX} (prima si fermava a meta' colonna e le due finestre non si potevano stringere: richiesta ripetuta del proprietario). */
 export function bandHeightLimits(rowPx: number, headPx: number, columnPx: number): { min: number; max: number } {
   const min = Math.round((headPx > 0 ? headPx : HEAD_PX) + 3 * (rowPx > 0 ? rowPx : ROW_PX));
-  const max = Math.max(min, Math.round(columnPx > 0 ? columnPx / 2 : 400));
+  const max = Math.max(min, Math.round(columnPx > 0 ? columnPx - WINDOWS_MIN_PX : 400));
   return { min, max };
 }
 
