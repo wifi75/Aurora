@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Interfaccia piu' leggera**: l'Attivita' di banda non si ridisegna piu' quattro volte al secondo quando ci sono stazioni in coda; la pagina PSK · RTTY · CW non si ridisegna piu' intera a ogni carattere ricevuto (la finestra di ricezione ridisegna solo l'ultima riga); la pagina del telefono non si ridisegna piu' intera quattro volte al secondo per l'orologio del periodo; la memoria dei nominativi gia' cercati non cresce piu' senza limite; un errore nella barra in fondo, nella barra dei desiderati o nel rotore non svuota piu' tutta la finestra. Misure in `docs/prestazioni-interfaccia.md`.
 
 ## 0.11.243 - 2026-11-12
 - **PSK, RTTY e CW, interfaccia**: la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso; velocita' e frequenze senza cifre dopo la virgola; «Impostazioni del modo» in ordine; misure del segnale e selettore della frequenza a larghezza fissa; maniglia ben visibile fra le finestre e la colonna di destra.
