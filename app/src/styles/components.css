@@ -1250,3 +1250,16 @@ html[data-theme='light'] .rd-split-off { color: #8a4b00; border-color: #c97a00; 
 /* Gli avvisi a comparsa larghi quanto il testo con un po' d'aria (prima sempre 34rem anche per tre parole); i testi lunghi vanno a capo */
 .toast { width: fit-content; max-width: 100%; padding-right: 1.6rem; }
 .toast-text { flex: 0 1 auto; }
+
+/* Tutti i pulsanti ben visibili al passaggio del mouse (richiesta del proprietario), lo stesso «bordo acceso» del DX Cluster: bordo azzurro
+   e alone. Il contorno (outline) non tocca i colori propri dei pulsanti (macro, RX/TX); l'alone ha specificita' zero, cosi' chi ha gia' un'ombra
+   sua la tiene. Niente effetto sui pulsanti spenti e sugli schermi senza mouse */
+@media (hover: hover) and (pointer: fine) {
+  button:not(:disabled):hover, [role='button']:not([aria-disabled='true']):hover, a.glass:hover {
+    outline: 2px solid #38bdf8;
+    outline-offset: 0;
+    transition: outline-color 120ms ease, box-shadow 120ms ease;
+  }
+  :where(button:not(:disabled), [role='button'], a.glass):hover { box-shadow: 0 0 0 4px rgb(56 189 248 / 0.28); }
+  html[data-theme='light'] button:not(:disabled):hover, html[data-theme='light'] [role='button']:not([aria-disabled='true']):hover, html[data-theme='light'] a.glass:hover { outline-color: #0284c7; }
+}
