@@ -45,6 +45,8 @@ pub const WAVELOG_SECRET: &str = "wavelog";
 pub const CLUBLOG_SECRET: &str = "clublog";
 /// La chiave API dell'applicazione per ClubLog.
 pub const CLUBLOG_API_SECRET: &str = "clublog-api";
+/// Il token personale della nuova API di Club Log (`cl_...`): se c'e', si usa al posto di password e chiave.
+pub const CLUBLOG_TOKEN_SECRET: &str = "clublog-token";
 /// La chiave del logbook di QRZ.com.
 pub const QRZ_SECRET: &str = "qrz";
 /// Il codice di caricamento («upload code») di HRDLOG.NET.
@@ -137,6 +139,8 @@ pub struct Endpoints {
     pub software: String,
     /// Invio diretto: indirizzi fissi di ClubLog e QRZ, attese massime, il programma dichiarato (User-Agent).
     pub clublog_url: String,
+    /// La base della nuova API REST di Club Log (invio col token).
+    pub clublog_api_url: String,
     pub qrz_url: String,
     pub hrdlog_url: String,
     pub upload_timeout: Duration,
@@ -163,6 +167,7 @@ impl Default for Endpoints {
             wsprnet_delay: wsprnet::MAX_DELAY,
             software: format!("Aurora v{}", aurora_core::version::APP_VERSION),
             clublog_url: clublog::URL.to_string(),
+            clublog_api_url: clublog::API_URL.to_string(),
             qrz_url: qrz::URL.to_string(),
             hrdlog_url: hrdlog::URL.to_string(),
             upload_timeout: upload::HTTP_TIMEOUT,

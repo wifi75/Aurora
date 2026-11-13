@@ -218,6 +218,8 @@ Fonti: https://www.aribusto.it/bblogger.htm, PDF https://www.aribusto.it/BBL/Wsj
 - **Invio diretto**: fatto (sezione 6), senza programmi in mezzo. Non attivare insieme WaveLogGate verso lo stesso log: doppioni.
 
 ### ClubLog
+
+Dal 2026-11-13 si usa l'**API REST v1** (`https://clublog.org/api/v1`): il radioamatore crea un token in Club Log › Settings › API e lo incolla (voce `ClublogToken`, segreto `clublog-token`). Invio `POST /qso` con `Authorization: Bearer <token>` e JSON `{"call", "adif"}`; risposte 201 `created`, 200 `duplicate`/`updated`/`dropped`, errori `{"error":{"code","message"}}` (401 token non valido: invio fermo; 403/404 nominativo; 422 rifiutato; 429/5xx si riprova). «Prova» = `GET /me/usage?days=1`, non scrive niente. Limiti: 60 richieste/minuto, 10.000 invii di QSO al giorno. Se il token manca si usa il vecchio `realtime.php` descritto qui sotto.
 - Documentazione per sviluppatori: per i QSO singoli «real-time», una richiesta HTTP con **un solo record ADIF** terminato da `<eor>` per chiamata; per i lotti un altro punto di accesso (putlogs). Esito 200 = registrato (anche doppione), 400 = rifiutato. Il programma non deve ripetere richieste con credenziali errate (blocco dell'indirizzo). Serve una chiave applicazione.
 - **Invio diretto**: fatto (sezione 6).
 

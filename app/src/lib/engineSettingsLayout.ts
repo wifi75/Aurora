@@ -74,6 +74,7 @@ export const LOG_SERVICE_GROUPS: readonly SettingGroup[] = [
     upload: { service: 'clublog', help: 'ens.up.clublog.help' },
     rows: [
       { key: 'ClublogSend', kind: 'bool' },
+      { key: 'ClublogToken', kind: 'secret' },
       { key: 'ClublogEmail', kind: 'text' },
       { key: 'ClublogPasswd', kind: 'secret' },
       { key: 'ClublogCall', kind: 'text' },

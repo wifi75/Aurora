@@ -153,6 +153,14 @@ export const sendStatusStrings = {
     'Club Log está apagado en los ajustes; envío detenido (los QSO siguen en cola) hasta que cambies los ajustes',
     'O Club Log está desligado nas definições; envio parado (os QSO ficam na fila) até alterares as definições',
   ],
+  'send.clublog_token_denied': [
+    'Club Log non accetta il token ({detail}): creane uno nuovo in Club Log › Settings › API e incollalo nelle impostazioni; invio fermo (i QSO restano in coda)',
+    'Club Log does not accept the token ({detail}): create a new one in Club Log › Settings › API and paste it in the settings; sending is paused (the QSOs stay queued)',
+    'Club Log akzeptiert das Token nicht ({detail}): erstelle in Club Log › Settings › API ein neues und füge es in den Einstellungen ein; das Senden ist angehalten (die QSOs bleiben in der Warteschlange)',
+    'Club Log n’accepte pas le jeton ({detail}) : crées-en un nouveau dans Club Log › Settings › API et colle-le dans les réglages ; envoi suspendu (les QSO restent en file d’attente)',
+    'Club Log no acepta el token ({detail}): crea uno nuevo en Club Log › Settings › API y pégalo en los ajustes; envío detenido (los QSO siguen en cola)',
+    'O Club Log não aceita o token ({detail}): cria um novo em Club Log › Settings › API e cola-o nas definições; envio parado (os QSO ficam na fila)',
+  ],
   'send.clublog_secrets_missing': [
     'Password o chiave API di Club Log non impostate; invio fermo (i QSO restano in coda) finché non cambi le impostazioni',
     'Club Log password or API key not set; sending is paused (the QSOs stay queued) until you change the settings',

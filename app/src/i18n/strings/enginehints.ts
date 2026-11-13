@@ -894,6 +894,14 @@ export const engineHintStrings = {
     'Envía cada QSO registrado a ClubLog en tiempo real. Con credenciales erróneas el envío se para solo, para que ClubLog no te bloquee.',
     'Envia cada QSO registado para o ClubLog em tempo real. Com credenciais erradas o envio pára sozinho, para o ClubLog não te bloquear.',
   ],
+  'jxh.ClublogToken': [
+    'Il token personale di Club Log: in Club Log apri Settings › API, crea un token e incollalo qui (comincia con cl_). Con il token non servono email, password né chiave API. Resta protetto su questo PC.',
+    'Your personal Club Log token: in Club Log open Settings › API, create a token and paste it here (it starts with cl_). With the token you need no email, password or API key. It stays protected on this PC.',
+    'Dein persönliches Club-Log-Token: in Club Log Settings › API öffnen, ein Token erstellen und hier einfügen (beginnt mit cl_). Mit dem Token brauchst du weder E-Mail noch Passwort noch API-Schlüssel. Es bleibt auf diesem PC geschützt.',
+    'Ton jeton personnel Club Log : dans Club Log ouvre Settings › API, crée un jeton et colle-le ici (il commence par cl_). Avec le jeton il ne faut ni e-mail, ni mot de passe, ni clé API. Il reste protégé sur ce PC.',
+    'Tu token personal de Club Log: en Club Log abre Settings › API, crea un token y pégalo aquí (empieza por cl_). Con el token no hacen falta correo, contraseña ni clave API. Queda protegido en este PC.',
+    'O teu token pessoal do Club Log: no Club Log abre Settings › API, cria um token e cola-o aqui (começa por cl_). Com o token não precisas de email, palavra-passe nem chave API. Fica protegido neste PC.',
+  ],
   'jxh.ClublogEmail': [
     'L’email con cui sei registrato su ClubLog.',
     'The email you are registered with on ClubLog.',

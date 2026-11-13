@@ -81,6 +81,7 @@ pub const EXTRA_KEYS: &[&str] = &[
     "ClublogPasswd",
     "ClublogCall",
     "ClublogApiKey",
+    "ClublogToken",
     "QRZLogSend",
     "QRZLogKey",
     "QRZLogCall",
@@ -302,7 +303,7 @@ pub fn seed_destinations(env_forward: &[SocketAddr], env_export: &[SocketAddr], 
 }
 
 /// Le voci che non finiscono mai nel file delle impostazioni ne' nelle risposte dell'API: hanno un posto protetto (`SecretStore`).
-pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "QRZLogKey", "HrdlogCode", "QRZPasswd", "HamQTHPasswd"];
+pub const SECRET_KEYS: &[&str] = &["EQSLPasswd", "WavelogKey", "ClublogPasswd", "ClublogApiKey", "ClublogToken", "QRZLogKey", "HrdlogCode", "QRZPasswd", "HamQTHPasswd"];
 
 /// Il nome con cui una voce segreta si salva nella protezione dei segreti.
 pub fn secret_name(key: &str) -> Option<&'static str> {
@@ -311,6 +312,7 @@ pub fn secret_name(key: &str) -> Option<&'static str> {
         "WavelogKey" => Some(reporting::WAVELOG_SECRET),
         "ClublogPasswd" => Some(reporting::CLUBLOG_SECRET),
         "ClublogApiKey" => Some(reporting::CLUBLOG_API_SECRET),
+        "ClublogToken" => Some(reporting::CLUBLOG_TOKEN_SECRET),
         "QRZLogKey" => Some(reporting::QRZ_SECRET),
         "HrdlogCode" => Some(reporting::HRDLOG_SECRET),
         "QRZPasswd" => Some(reporting::qrz_xml::SECRET),
@@ -408,7 +410,7 @@ pub fn support(key: &str) -> Support {
         "PSKReporter" | "AllowSpotsDXSummit" | "WSPRnetUpload" => Support::Live(Apply::Now),
         "EQSLSend" | "EQSLUser" | "EQSLPasswd" | "EQSLNick" => Support::Needs(Feature::Secrets, "eqsl", Apply::Now),
         // invio diretto dei QSO: chiavi e password solo nella protezione dei segreti; LoTW usa il certificato di TQSL e non ne ha bisogno
-        "WavelogSend" | "WavelogUrl" | "WavelogKey" | "WavelogStation" | "ClublogSend" | "ClublogEmail" | "ClublogPasswd" | "ClublogCall" | "ClublogApiKey" | "QRZLogSend"
+        "WavelogSend" | "WavelogUrl" | "WavelogKey" | "WavelogStation" | "ClublogSend" | "ClublogEmail" | "ClublogPasswd" | "ClublogCall" | "ClublogApiKey" | "ClublogToken" | "QRZLogSend"
         | "QRZLogKey" | "QRZLogCall" | "HrdlogSend" | "HrdlogCall" | "HrdlogCode" | "QRZLookup" | "QRZUser" | "QRZPasswd" | "HamQTHLookup" | "HamQTHUser" | "HamQTHPasswd" | "LookupToQso" => {
             Support::Needs(Feature::Secrets, "upload_secrets", Apply::Now)
         }
@@ -1020,6 +1022,8 @@ fn validate_upload(key: &str, value: &str) -> Option<Result<(), SettingsError>> 
         "QRZUser" | "HamQTHUser" if value.len() > 40 || !value.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '_' | '-' | '.' | '@')) => bad("nome utente non valido"),
         "QRZLogCall" | "HrdlogCall" | "QRZUser" | "HamQTHUser" => Some(Ok(())),
         "ClublogCall" if value.len() > 20 || !value.chars().all(|c| c.is_ascii_alphanumeric() || c == '/') => bad("nominativo non valido"),
+        "ClublogToken" if !value.is_empty() && !reporting::clublog::token_looks_valid(value) => bad("il token di Club Log comincia con cl_"),
+        "ClublogToken" => Some(Ok(())),
         "LoTWTqsl" if !path_ok(value) => bad("percorso non valido"),
         "LoTWLocation" if value.chars().count() > 80 || value.chars().any(|c| c.is_control() || c == '"') => bad("nome della posizione non valido"),
         "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall" | "LoTWTqsl" | "LoTWLocation" => Some(Ok(())),
@@ -1092,7 +1096,8 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         wavelog: truthy(values.get("WavelogSend")) && reporting::wavelog::api_base(get("WavelogUrl")).is_some() && !get("WavelogStation").is_empty(),
         wavelog_url: get("WavelogUrl").trim().to_string(),
         wavelog_station: get("WavelogStation").to_string(),
-        clublog: truthy(values.get("ClublogSend")) && !get("ClublogEmail").is_empty(),
+        // con il token l'email non serve: che ci sia il token o la vecchia terna lo controlla il salvataggio
+        clublog: truthy(values.get("ClublogSend")),
         clublog_email: get("ClublogEmail").to_string(),
         clublog_call: if get("ClublogCall").is_empty() { get("MyCall").to_uppercase() } else { get("ClublogCall").to_uppercase() },
         qrz: truthy(values.get("QRZLogSend")),
@@ -1469,8 +1474,9 @@ impl EngineSettingsStore {
         if touches(&["WavelogSend", "WavelogUrl", "WavelogStation", "WavelogKey"]) && truthy(next.get("WavelogSend")) && (!r.wavelog || !has_secret("WavelogKey")) {
             return Err(SettingsError::BadValue("WavelogSend: servono indirizzo, numero della stazione e chiave API per accendere l'invio".into()));
         }
-        if touches(&["ClublogSend", "ClublogEmail", "ClublogCall", "ClublogPasswd", "ClublogApiKey", "MyCall"]) && truthy(next.get("ClublogSend")) && (!r.clublog || r.clublog_call.is_empty() || !has_secret("ClublogPasswd") || !has_secret("ClublogApiKey")) {
-            return Err(SettingsError::BadValue("ClublogSend: servono email, nominativo, password e chiave API per accendere l'invio".into()));
+        let clublog_legacy = !next.get("ClublogEmail").is_none_or(String::is_empty) && has_secret("ClublogPasswd") && has_secret("ClublogApiKey");
+        if touches(&["ClublogSend", "ClublogEmail", "ClublogCall", "ClublogPasswd", "ClublogApiKey", "ClublogToken", "MyCall"]) && truthy(next.get("ClublogSend")) && (r.clublog_call.is_empty() || !(has_secret("ClublogToken") || clublog_legacy)) {
+            return Err(SettingsError::BadValue("ClublogSend: servono il nominativo e il token di Club Log (oppure email, password e chiave API) per accendere l'invio".into()));
         }
         if touches(&["QRZLogSend", "QRZLogKey"]) && truthy(next.get("QRZLogSend")) && !has_secret("QRZLogKey") {
             return Err(SettingsError::BadValue("QRZLogSend: serve la chiave del logbook per accendere l'invio".into()));
@@ -2082,6 +2088,11 @@ SaveWav=2
         store.update(&map(&[("MyCall", "K1ABC"), ("ClublogEmail", "k1abc@example.com"), ("ClublogPasswd", "p"), ("ClublogApiKey", "a"), ("ClublogSend", "true")])).unwrap();
         assert_eq!((store.reports().clublog, store.reports().clublog_call.as_str()), (true, "K1ABC"));
         assert_eq!(secrets.get(reporting::CLUBLOG_API_SECRET).as_deref(), Some("a"));
+        // col token bastano nominativo e token, senza email
+        assert!(store.update(&map(&[("ClublogToken", "abc")])).is_err(), "il token comincia con cl_");
+        store.update(&map(&[("ClublogEmail", ""), ("ClublogPasswd", ""), ("ClublogApiKey", ""), ("ClublogToken", "cl_test123"), ("ClublogSend", "true")])).unwrap();
+        assert_eq!(secrets.get(reporting::CLUBLOG_TOKEN_SECRET).as_deref(), Some("cl_test123"));
+        assert!(store.reports().clublog);
         // QRZ: solo la chiave
         assert!(store.update(&map(&[("QRZLogSend", "true")])).is_err());
         store.update(&map(&[("QRZLogKey", "ABCD-0A0B"), ("QRZLogSend", "true")])).unwrap();

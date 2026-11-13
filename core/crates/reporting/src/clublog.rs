@@ -95,6 +95,108 @@ pub fn check(form: &Form<'_>) -> Result<String, String> {
     ))
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// API REST v1 con il token personale (articoli «REST API» dell'assistenza di Club Log). Il radioamatore crea il token in Club Log › Settings ›
+// API (comincia con `cl_`, si vede una volta sola, sparisce dopo sei mesi senza uso) e lo incolla in Aurora: niente email, password ne' chiave
+// dello sviluppatore. Richiesta `POST {API_URL}/qso` con `Authorization: Bearer <token>` e JSON `{"call": <log>, "adif": <un record>}`.
+// Risposte: 201 `created` (con `warning` resta creato; con un token di prova `qsoid` nullo e `test_mode`), 200 `duplicate`/`updated`/`dropped`,
+// errori `{"error":{"code","message"}}`: 401 token non valido (non si ripete), 403 nominativo non dell'account, 404 nominativo non registrato,
+// 422 QSO rifiutato, 429 attendere `Retry-After`, 500 non ripetere subito.
+
+/// La base dell'API REST.
+pub const API_URL: &str = "https://clublog.org/api/v1";
+
+/// Il messaggio d'errore dell'API (`error.message`), o il testo corto della risposta.
+fn api_message(body: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(body)
+        .ok()
+        .and_then(|v| v.pointer("/error/message").or_else(|| v.get("message")).and_then(|m| m.as_str()).map(|m| short(m, 160)))
+        .unwrap_or_else(|| short(body, 120))
+}
+
+/// Come e' andato un invio col token. Codici come [`read_reply_coded`], piu' `clublog_token_denied` (401: token non valido o revocato).
+pub fn read_token_reply(status: u16, body: &str) -> (Outcome, &'static str, String) {
+    let json = serde_json::from_str::<serde_json::Value>(body).ok();
+    let state = json.as_ref().and_then(|v| v.get("status")).and_then(|s| s.as_str()).unwrap_or_default().to_lowercase();
+    let message = api_message(body);
+    match status {
+        200 | 201 => match state.as_str() {
+            "duplicate" => (Outcome::Duplicate(message.clone()), "clublog_duplicate", message),
+            "dropped" | "rejected" => (Outcome::Rejected(if message.is_empty() { "dati non validi".into() } else { message.clone() }), "clublog_rejected", message),
+            _ => (Outcome::Sent(message.clone()), "clublog_sent", message),
+        },
+        401 => (Outcome::Blocked(format!("Club Log non accetta il token ({message})")), "clublog_token_denied", message),
+        403 | 404 => {
+            let detail = if message.is_empty() { status.to_string() } else { message };
+            (Outcome::Blocked(format!("Club Log ha negato l'accesso ({detail})")), "clublog_denied", detail)
+        }
+        408 | 429 | 500..=599 => (Outcome::Retry(format!("Club Log ha risposto {status}")), "clublog_retry_http", status.to_string()),
+        400 | 422 => (Outcome::Rejected(if message.is_empty() { "dati non validi".into() } else { message.clone() }), "clublog_rejected", message),
+        s => (Outcome::Rejected(format!("risposta {s}")), "clublog_rejected_status", s.to_string()),
+    }
+}
+
+/// Il corpo JSON di un QSO.
+pub fn token_body(callsign: &str, record: &str) -> String {
+    serde_json::json!({ "call": callsign, "adif": record }).to_string()
+}
+
+/// Manda un QSO col token (bloccante).
+pub fn upload_token(api_url: &str, token: &str, callsign: &str, record: &str, timeout: Duration, user_agent: &str) -> (Outcome, &'static str, String) {
+    let url = format!("{}/qso", api_url.trim_end_matches('/'));
+    let bearer = format!("Bearer {}", token.trim());
+    let request = agent(timeout, user_agent)
+        .post(&url)
+        .header("Authorization", &bearer)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json");
+    match request.send(token_body(callsign, record)) {
+        Ok(mut response) => {
+            let status = response.status().as_u16();
+            let text = response.body_mut().read_to_string().unwrap_or_default();
+            read_token_reply(status, &text)
+        }
+        Err(e) => {
+            let outcome = network(&e);
+            let cause = match &outcome {
+                Outcome::Retry(m) => m.clone(),
+                _ => String::new(),
+            };
+            (outcome, "clublog_retry_network", cause)
+        }
+    }
+}
+
+/// Il token ha la forma giusta (`cl_` e solo caratteri stampabili, senza spazi).
+pub fn token_looks_valid(token: &str) -> bool {
+    let t = token.trim();
+    t.starts_with("cl_") && t.len() > 3 && t.len() <= 200 && t.chars().all(|c| c.is_ascii_graphic())
+}
+
+/// La prova vera del token: `GET /me/usage?days=1` non scrive niente e risponde 200 se il token vale.
+pub fn check_token(api_url: &str, token: &str, callsign: &str, timeout: Duration, user_agent: &str) -> Result<String, String> {
+    if !token_looks_valid(token) {
+        return Err("il token di Club Log comincia con cl_: copialo intero da Club Log › Settings › API".into());
+    }
+    if callsign.is_empty() {
+        return Err("serve il nominativo del log (o il tuo nominativo nella scheda Generali)".into());
+    }
+    let url = format!("{}/me/usage?days=1", api_url.trim_end_matches('/'));
+    let bearer = format!("Bearer {}", token.trim());
+    match agent(timeout, user_agent).get(&url).header("Authorization", &bearer).header("Accept", "application/json").call() {
+        Ok(mut response) => {
+            let status = response.status().as_u16();
+            let text = response.body_mut().read_to_string().unwrap_or_default();
+            match status {
+                200 => Ok(format!("token accettato da Club Log: i QSO andranno nel log {callsign}")),
+                401 => Err(format!("Club Log non accetta il token ({}): creane uno nuovo in Settings › API", api_message(&text))),
+                s => Err(format!("Club Log ha risposto {s}: {}", api_message(&text))),
+            }
+        }
+        Err(e) => Err(crate::eqsl::describe(&e)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,5 +233,24 @@ mod tests {
         assert!(check(&Form { email: "k1abc", ..ok }).is_err());
         assert!(check(&Form { api: "", ..ok }).is_err());
         assert!(check(&Form { callsign: "", ..ok }).is_err());
+    }
+    #[test]
+    fn the_token_replies_are_understood() {
+        let code = |status, body| read_token_reply(status, body).1;
+        assert_eq!(code(201, r#"{"status":"created","qsoid":12,"message":"QSO added"}"#), "clublog_sent");
+        assert_eq!(code(201, r#"{"status":"created","qsoid":null,"test_mode":true}"#), "clublog_sent");
+        assert_eq!(code(200, r#"{"status":"duplicate","message":"dupe"}"#), "clublog_duplicate");
+        assert_eq!(code(200, r#"{"status":"dropped","message":"dropped"}"#), "clublog_rejected");
+        assert_eq!(code(401, r#"{"error":{"code":"unauthorized","message":"bad token","details":null}}"#), "clublog_token_denied");
+        assert_eq!(read_token_reply(422, r#"{"error":{"code":"unprocessable","message":"invalid band"}}"#).2, "invalid band");
+        assert!(matches!(read_token_reply(429, "").0, Outcome::Retry(_)));
+        assert!(matches!(read_token_reply(403, "").0, Outcome::Blocked(_)));
+    }
+
+    #[test]
+    fn the_token_body_and_its_shape() {
+        let v: serde_json::Value = serde_json::from_str(&token_body("IU3ABC", "<call:4>K1AB<eor>")).unwrap();
+        assert_eq!((v["call"].as_str(), v["adif"].as_str()), (Some("IU3ABC"), Some("<call:4>K1AB<eor>")));
+        assert!(token_looks_valid("cl_abc123") && !token_looks_valid("abc") && !token_looks_valid("cl_ a"));
     }
 }

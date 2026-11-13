@@ -410,10 +410,13 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
             }
             Target::Clublog => {
                 let Some(account) = &config.clublog else { return (Outcome::Blocked("ClubLog spento".into()), "clublog_off", String::new()) };
+                let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
+                if let Some(token) = secrets.get(crate::CLUBLOG_TOKEN_SECRET) {
+                    return crate::clublog::upload_token(&endpoints.clublog_api_url, &token, &call, record, endpoints.upload_timeout, &endpoints.user_agent);
+                }
                 let (Some(password), Some(api)) = (secrets.get(crate::CLUBLOG_SECRET), secrets.get(crate::CLUBLOG_API_SECRET)) else {
                     return (Outcome::Blocked("password o chiave API di ClubLog non impostate".into()), "clublog_secrets_missing", String::new());
                 };
-                let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
                 let form = crate::clublog::Form { email: &account.email, password: &password, callsign: &call, api: &api };
                 crate::clublog::upload_coded(&endpoints.clublog_url, &form, record, endpoints.upload_timeout, &endpoints.user_agent)
             }
@@ -469,7 +472,11 @@ pub(crate) async fn test(service: &Service, target: Target) -> Result<String, St
             crate::wavelog::test(&account.url, &key, &account.station_id, endpoints.upload_timeout, &endpoints.user_agent)
         }
         Target::Clublog => {
-            let account = config.clublog.as_ref().ok_or("accendi l'invio e compila email e nominativo")?;
+            let account = config.clublog.as_ref().ok_or("accendi l'invio e incolla il token (o compila email e nominativo)")?;
+            if let Some(token) = secrets.get(crate::CLUBLOG_TOKEN_SECRET) {
+                let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
+                return crate::clublog::check_token(&endpoints.clublog_api_url, &token, &call, endpoints.upload_timeout, &endpoints.user_agent);
+            }
             let password = secrets.get(crate::CLUBLOG_SECRET).ok_or("password di ClubLog non impostata")?;
             let api = secrets.get(crate::CLUBLOG_API_SECRET).ok_or("chiave API dell'applicazione non impostata")?;
             let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
