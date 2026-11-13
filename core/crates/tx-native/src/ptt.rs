@@ -117,6 +117,17 @@ pub fn release_ptt(ptt: &dyn Ptt) -> Result<(), TxError> {
     Err(last)
 }
 
+/// Il testo di «PTT non spento» con la causa una volta sola: l'errore del CAT porta gia' «PTT non spento: » davanti e `TxError::Ptt`
+/// aggiunge «PTT: », e sullo schermo e nel registro usciva «PTT non spento: PTT: PTT non spento: …».
+pub fn not_released_text(e: &TxError) -> String {
+    let cause = match e {
+        TxError::Ptt(c) => c.clone(),
+        other => other.to_string(),
+    };
+    let cause = cause.strip_prefix("PTT non spento: ").unwrap_or(&cause);
+    format!("PTT non spento: {cause}")
+}
+
 /// Tiene acceso il PTT finche' vive: cadendo (anche per un panico) lo spegne.
 pub struct PttGuard {
     ptt: Arc<dyn Ptt>,
@@ -149,7 +160,7 @@ impl Drop for PttGuard {
         if self.armed
             && let Err(e) = release_ptt(&*self.ptt)
         {
-            tracing::error!("PTT non spento: {e}");
+            tracing::error!("{}", not_released_text(&e));
         }
     }
 }
@@ -479,6 +490,14 @@ mod interlock_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn not_released_text_says_the_cause_once() {
+        let from_cat = TxError::Ptt("PTT non spento: Errore sulla porta seriale".into());
+        assert_eq!(not_released_text(&from_cat), "PTT non spento: Errore sulla porta seriale");
+        assert_eq!(not_released_text(&TxError::Ptt("OmniRig non risponde".into())), "PTT non spento: OmniRig non risponde");
+        assert_eq!(not_released_text(&TxError::Busy), format!("PTT non spento: {}", TxError::Busy));
+    }
     use std::{
         io::{BufRead, Write},
         net::{SocketAddr, TcpListener},

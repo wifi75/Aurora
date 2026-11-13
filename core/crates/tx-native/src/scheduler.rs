@@ -22,7 +22,7 @@ use crate::{
     level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, cut_head, prepare_samples},
     lock,
     resample::StreamResampler,
-    ptt::{Ptt, PttGuard, release_ptt},
+    ptt::{Ptt, PttGuard, not_released_text, release_ptt},
     slot::{Mode, Parity, choose_slot},
     watchdog::Watchdog,
 };
@@ -613,7 +613,7 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
             Err(e) => {
                 tracing::error!("PTT ancora acceso a fine trasmissione: {e}");
                 inner.watchdog.retry_soon();
-                outcome = TxOutcome::Failed(format!("PTT non spento: {e}"));
+                outcome = TxOutcome::Failed(not_released_text(&e));
             }
         }
     } else {
