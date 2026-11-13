@@ -10,6 +10,13 @@ const DEPTH_OPTIONS: SettingRow['options'] = [
   { value: '3', label: 'dec.depth3' },
 ];
 
+/** Modalita' «PC lento»: automatica, sempre accesa, mai (voce di Aurora `SlowPcMode`). */
+const SLOW_PC_OPTIONS: SettingRow['options'] = [
+  { value: 'auto', label: 'dec.slowPc.auto' },
+  { value: 'always', label: 'dec.slowPc.always' },
+  { value: 'never', label: 'dec.slowPc.never' },
+];
+
 /** I valori della tendina «F Tol» di WSJT-X: tutti i modi (`mainwindow.cpp:12296`) e MSK144 (`mainwindow.cpp:12114`). */
 export const FTOL_VALUES = [1, 2, 5, 10, 20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000] as const;
 export const FTOL_MSK144_VALUES = [20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500] as const;
@@ -22,6 +29,7 @@ const hz = (values: readonly number[]): SettingRow['options'] => values.map((v) 
 export const DECODER_ROWS: readonly { row: SettingRow; label: Key }[] = [
   { row: { key: 'DecodeDepth', kind: 'choice', options: DEPTH_OPTIONS }, label: 'dec.depth' },
   { row: { key: 'SingleDecode', kind: 'bool' }, label: 'dec.singleDecode' },
+  { row: { key: 'SlowPcMode', kind: 'choice', options: SLOW_PC_OPTIONS }, label: 'dec.slowPc' },
   { row: { key: 'IncludeAveraging', kind: 'bool' }, label: 'dec.includeAveraging' },
   { row: { key: 'AutoClearAvg', kind: 'bool' }, label: 'dec.autoClearAvg' },
   { row: { key: 'Ftol_Q65', kind: 'choice', options: hz(FTOL_VALUES) }, label: 'dec.ftolQ65' },
@@ -36,7 +44,7 @@ export const DECODER_ROWS: readonly { row: SettingRow; label: Key }[] = [
 /** Quali opzioni stanno in ogni pagina dei modi: FT8 e FT4, JT65 e JT9, VHF ed EME (Q65 e MSK144). */
 export type DecoderPart = 'all' | 'ft8' | 'jt' | 'vhf';
 export const DECODER_PARTS: Readonly<Record<Exclude<DecoderPart, 'all'>, readonly string[]>> = {
-  ft8: ['DecodeDepth', 'SingleDecode'],
+  ft8: ['DecodeDepth', 'SingleDecode', 'SlowPcMode'],
   jt: ['JT65AP', 'IncludeCorrelation', 'JT65Aggressive', 'Ftol_JT65', 'Ftol_JT9'],
   vhf: ['IncludeAveraging', 'AutoClearAvg', 'Ftol_Q65', 'Ftol_MSK144'],
 };

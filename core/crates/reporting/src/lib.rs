@@ -566,7 +566,11 @@ async fn run(
                     break;
                 }
             },
-            _ = tick.tick() => flush_psk(&service, &mut packetizer, &mut queue).await,
+            _ = tick.tick() => {
+                // PC lento: l'invio periodico degli spot aspetta la fine della decodifica (al massimo 30 s); gli spot restano in coda
+                aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
+                flush_psk(&service, &mut packetizer, &mut queue).await;
+            }
             Some(reply) = flush_rx.recv() => {
                 flush_psk(&service, &mut packetizer, &mut queue).await;
                 let _ = reply.send(());

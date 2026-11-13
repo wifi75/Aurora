@@ -1176,6 +1176,8 @@ fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_ap
     controls.pounce_policy.store(engine_native::features::PouncePolicy::parse(&r.pounce_policy).code(), Ordering::Relaxed);
     controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
     apply_decode_settings(&r.decode);
+    // «PC lento: automatico / sempre / mai» (riquadro «Decodifica»): vale subito per la porta dei servizi di contorno
+    aurora_core::idle::set_mode(aurora_core::idle::SlowPcMode::parse(&r.slow_pc));
 }
 
 /// Le opzioni dei decodificatori (riquadro «Decodifica» della scheda Filtri) al motore proprio: valgono dal periodo che segue.
@@ -1222,10 +1224,19 @@ fn wire_band_decoder(digi: &Arc<mode_digi::DigiService>, cluster: &Arc<dx_cluste
 }
 
 /// Le forme dei nominativi per paese, per la convalida di tutta la banda: dal log di Aurora, dagli spot del DX Cluster e da `MASTER.SCP`
-/// nella cartella dei dati (se c'e'). Si rifanno ogni mezz'ora in un thread suo (il conto costa pochi millisecondi).
+/// nella cartella dei dati (se c'e'). Servono solo al decodificatore di tutta la banda: si contano quando lavora (ascolto acceso in CW o PSK
+/// con «tutta la banda») e poi al massimo ogni mezz'ora; in FT8 non si fa niente (prima: all'avvio e ogni mezz'ora, sempre).
 fn spawn_call_forms(digi: Arc<mode_digi::DigiService>, cluster: Arc<dx_cluster::ClusterService>, logbook: Arc<Logbook>, data_dir: PathBuf, db: Arc<DxccDb>) {
     let spawned = std::thread::Builder::new().name("aurora-forme-nominativi".into()).spawn(move || {
+        let mut last: Option<std::time::Instant> = None;
         loop {
+            if !digi.band_in_use() || last.is_some_and(|t| t.elapsed() < Duration::from_secs(1_800)) {
+                std::thread::sleep(Duration::from_secs(5));
+                continue;
+            }
+            // PC lento: il conto (log intero, spot, MASTER.SCP) aspetta la fine della decodifica
+            aurora_core::idle::wait_free_blocking(aurora_core::idle::MAX_WAIT);
+            last = Some(std::time::Instant::now());
             let mut table = mode_digi::skim::forms::FormTable::new();
             let mut add = |call: &str| {
                 let call = call.trim().to_ascii_uppercase();
@@ -1245,7 +1256,6 @@ fn spawn_call_forms(digi: Arc<mode_digi::DigiService>, cluster: Arc<dx_cluster::
             }
             tracing::debug!("forme dei nominativi: {} nominativi contati", table.len());
             digi.set_call_forms(table);
-            std::thread::sleep(Duration::from_secs(1_800));
         }
     });
     if let Err(e) = spawned {

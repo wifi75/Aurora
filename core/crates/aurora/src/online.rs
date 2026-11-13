@@ -31,6 +31,8 @@ pub fn spawn_refresher(service: Arc<OnlineService>, mut events: broadcast::Recei
                     let callsign = callsign.clone();
                     // i rapporti di PSK Reporter in tempo reale (si avvia da solo con il nominativo, si ferma se l'interruttore e' spento)
                     service.ensure_live(&callsign);
+                    // PC lento: PSK Reporter, propagazione e DXpedition si chiedono (e si leggono) fuori dalla decodifica, al massimo 30 s dopo
+                    aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
                     // la richiesta di rete e' bloccante
                     let _ = tokio::task::spawn_blocking(move || service.refresh_due(now_ms(), &callsign)).await;
                 }

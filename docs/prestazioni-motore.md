@@ -224,3 +224,81 @@ Il WebSocket (`remote-api/src/ws.rs:65`) dopo un `Lagged` rimanda solo lo stato:
 2. Un avviso nel log a ogni `Lagged` dei consumatori dei QSO, e una ripartenza (o almeno un avviso) per i thread CAT morti.
 3. Un limite (giorni o GB) per i periodi salvati «come JTDX» e per `ALL.TXT`, da decidere con il proprietario.
 4. Flusso audio unico a 12 kHz condiviso fra motore, SSTV e modi testuali.
+
+## Solo il modo in uso consuma, e modalita' «PC lento» (2026-11-13)
+
+### Inventario: cosa gira con l'FT8 sulla pagina principale
+Sempre (servono all'FT8 o alla stazione): cattura audio (`audio-spectrum/src/capture.rs:308`, priorita' tempo reale), passaggio
+`aurora-audio-tap` (`aurora/src/lib.rs`, consegna i blocchi al motore), motore e decodifica (`engine-native/src/lib.rs`, thread di
+decodifica `ft8/src/pool.rs` a priorita' sotto il normale), cascata, frequenza della radio ogni 250 ms e strumenti ogni 100 ms
+(`aurora/src/lib.rs:2939`, `:2953`), riapertura dell'audio ogni 5 s se manca (`:3019`), automazioni (1 s), programmazione delle bande
+(15 s, `:1387`), band hopping (5 s), storico (scrittura ogni 2 s, pulizia oraria, `aurora/src/history.rs:50`), desiderati (3 s,
+`aurora/src/wanted.rs`), servizi online (30 s, `aurora/src/online.rs`), aggiornamenti (60 s, `aurora/src/updates.rs`), elenco LoTW (ogni
+ora, `online-info/src/lotw.rs:153`), DX Cluster (connessione TCP), PSK Reporter (invio periodico, `reporting/src/lib.rs:513`), orologio
+(15 min), rapporti (60 s).
+
+Di altri modi, e cosa si fa adesso:
+
+| Cosa | Dove | Prima | Adesso |
+|---|---|---|---|
+| Ascolto SSTV (copia, ricampionamento, decoder) | `mode-sstv/src/service.rs` (`feed`, `rx_loop`) | la pagina lo spegneva uscendo, ma una finestra staccata o un telefono che uscivano lo spegnevano anche agli altri, e una finestra chiusa senza smontare la pagina lo lasciava acceso per sempre | conteggio delle pagine con battito (`aurora_core::users`): si spegne quando esce l'ultima o dopo 90 s senza battiti, salvo «Ascolto acceso all'avvio» |
+| Stato SSTV verso l'interfaccia | `mode-sstv/src/service.rs`, `rx_loop` | un evento `sstv rx_status` ogni 0,7 s a ogni client anche con l'ascolto spento | solo con l'ascolto acceso |
+| Ascolto PSK · RTTY · CW e tutta la banda | `mode-digi/src/service.rs`, `band.rs` | come l'SSTV | come l'SSTV (tutta la banda riceve audio solo dall'ascolto) |
+| Lettura del modo della radio per l'RTTY | `mode-digi/src/service.rs`, `rx_loop` | ogni secondo anche ad ascolto spento | solo in ascolto |
+| Forme dei nominativi (log intero, 100 000 spot, MASTER.SCP) | `aurora/src/lib.rs`, `spawn_call_forms` | all'avvio e ogni 30 min, sempre | solo con tutta la banda CW/PSK al lavoro, al massimo ogni 30 min |
+| Satelliti: posizione ogni secondo, passaggi delle 24 ore ogni minuto | `mode-sat/src/service.rs`, `tracking_loop` | sempre | solo con la pagina aperta (ogni `GET /sat` e' un battito valido 30 s) o con Doppler o rotore accesi |
+| Dati delle orbite | `mode-sat/src/service.rs` | scaricati all'avvio se vecchi, poi ogni `tle_update_hours` | solo mentre il servizio lavora, ogni `tle_update_hours` (24 h di base) |
+| Copie e ricampionamenti dell'audio per SSTV e modi testuali | `feed` dei due servizi | gia' nessuna copia ad ascolto spento | invariato (verificato) |
+| QMAP | `qmap/src/service.rs` | lavora solo a richiesta (I/Q TCI) | invariato |
+
+Con Doppler o rotore accesi i satelliti continuano a pagina chiusa: comandano radio e rotore, spegnerli a meta' passaggio romperebbe il QSO.
+
+### Misura della CPU (processo del core fermo in FT8, senza segnale)
+`aurora.exe` in release con una cartella dati nuova, ingresso il microfono della webcam (rumore di stanza: il motore decodifica ogni
+periodo, 0 messaggi), nessuna pagina aperta; tempo di CPU del processo in 120 s dopo 45 s di riscaldamento. «Lasciati»: pagine SSTV e
+PSK · RTTY · CW aperte e sparite senza salutare (battito e accensione, poi niente) e pagina dei satelliti letta una volta; la finestra di
+misura comincia 100 s dopo. Script PowerShell `misura-cpu.ps1` (parametri `-Exe`, `-Etichetta`, `-Scenario fermo|lasciati`; non nel
+repository). Durante le misure altri lavori compilavano sul PC: i numeri ballano di 1-2 punti.
+
+| Scenario | Prima (2 giri) | Dopo (2 giri) |
+|---|---|---|
+| Fermo in FT8 | 9,3-11,1% di un core | 8,7-8,9% |
+| Pagine SSTV e PSK · RTTY · CW lasciate accese | 12,3-15,5% (ascolto acceso per sempre) | 9,4-10,9% (ascolto spento dopo 90 s) |
+
+### Modalita' «PC lento» (`aurora_core::idle`)
+- **Porta**: il motore segna «decodifica in corso» per il lavoro di ogni periodo (`engine-native/src/lib.rs`, `idle::busy()`). Con la
+  modalita' accesa i lavori pesanti di contorno aspettano la fine della decodifica, al massimo 30 s (`idle::MAX_WAIT`), poi partono
+  comunque; i dati non si perdono (restano nel buffer TCP o in coda, oppure si chiedono dopo). Con la modalita' spenta la porta e'
+  sempre aperta.
+- **Chi la usa**: DX Cluster (lettura degli spot), PSK Reporter (invio periodico), servizi online (PSK Reporter in lettura, propagazione,
+  DXpedition), ricerca dei nominativi QRZ/HamQTH, elenco LoTW, dati dei satelliti, forme dei nominativi, controllo degli aggiornamenti,
+  pulizia oraria dello storico. Non la usano: la ricerca del nominativo al momento di registrare il QSO (ha gia' un limite di 2,5 s) e
+  il flusso MQTT di PSK Reporter in tempo reale (deve rispondere ai ping del server; i pacchetti sono pochi e piccoli).
+- **Quando si accende** (`Auto`, di fabbrica): 3 periodi su 10 oltre il 70% del periodo, oppure 3 blocchi audio persi in 10 minuti
+  (`capture.rs`, errori del flusso con la scheda presente), oppure 2 processori o meno. **Si spegne** dopo 20 periodi di fila sotto il
+  50% senza blocchi persi negli ultimi 10 minuti. Ogni cambio va nel registro (`aurora::pc_lento`).
+- **Impostazione**: `SlowPcMode` (`auto`, `always`, `never`), Impostazioni › Modi › FT8 · FT4 › Decodifica, «PC lento», con il «?».
+
+Misura (`cargo test -p ft8 --release --test misure -- --ignored --nocapture pc_lento`): PC simulato con 4 processori (affinita' del
+processo), decodifica FT8 profonda con 2 thread sotto il normale come il motore, 4 lavori di contorno a priorita' normale sempre pronti,
+periodo simulato pari a 2 volte la decodifica a PC scarico (713 ms, quindi 1426 ms; lento oltre 998 ms), 8 periodi, finto thread audio a
+10 ms:
+
+| Giro | Decodifica media / peggiore | Periodi lenti | Audio in ritardo (>30 ms) | Lavori di contorno | Attesa massima di un lavoro | Impronta |
+|---|---|---|---|---|---|---|
+| Contorno libero (modalita' spenta) | 1003 / 1174 ms | 4 su 8 | 0 | 124/s | 0 | `94c44064512265e1` |
+| Contorno con la porta (modalita' accesa) | 819 / 1030 ms | 1 su 8 | 0 | 56/s | 1018 ms | = |
+| Contorno libero a priorita' minima | 829 / 991 ms | 0 su 8 | 0 | 120/s | 0 | = |
+
+I messaggi decodificati sono identici nei tre giri. Nella prova nessun blocco audio arriva in ritardo nemmeno senza porta (il thread
+audio vero ha poi priorita' tempo reale): la porta serve soprattutto alla decodifica. **Priorita'**: abbassare i thread di contorno al
+minimo da' lo stesso guadagno sulla decodifica senza rallentare il contorno, ma la maggior parte del contorno gira nei thread di Tokio,
+gli stessi che servono l'interfaccia e il WebSocket: abbassarli rallenterebbe la pagina. Per questo non si e' cambiata nessuna priorita';
+i thread dedicati (LoTW, dati delle orbite, forme dei nominativi) usano la porta.
+
+### Non verificato
+- Sul PC del proprietario con radio vera, finestre staccate e telefono: il conteggio delle pagine e' provato da prove automatiche
+  (`l_ascolto_si_spegne_solo_quando_esce_l_ultima_pagina` in SSTV e modi testuali, `listenWhileOpen.test.tsx`), non a mano.
+- Il rallentamento dei timer di WebView2 a finestra ridotta a icona: il battito ogni 20 s e la scadenza a 90 s lasciano margine anche
+  con i timer a uno al minuto, ma non e' stato misurato.
+- Un PC lento vero (2 processori): la modalita' si accende da sola, ma i numeri sono quelli della simulazione.

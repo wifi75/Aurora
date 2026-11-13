@@ -13,3 +13,7 @@ rustfft = "6.4.1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = ["Win32_System_Threading"] }
+
+[dev-dependencies]
+# solo per la prova `pc_lento` (porta dei servizi di contorno)
+aurora-core = { path = "../aurora-core" }

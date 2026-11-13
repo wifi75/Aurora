@@ -12,6 +12,7 @@ vi.mock('../api/client', () => ({
   getCallsign: vi.fn(),
   postFrequency: vi.fn(() => Promise.resolve()),
   sstvRx: vi.fn(() => Promise.resolve()),
+  sstvRxPage: vi.fn(() => Promise.resolve()),
   sstvForce: vi.fn(() => Promise.resolve()),
   addLogQso: vi.fn(() => Promise.resolve()),
 }));

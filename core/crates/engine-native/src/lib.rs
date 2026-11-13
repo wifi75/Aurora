@@ -698,6 +698,8 @@ pub fn start_with_save(
                     tracing::warn!("registrazione del periodo non salvata: {e}");
                 }
                 let started = Instant::now();
+                // PC lento: finche' questo valore vive i servizi di contorno (cluster, PSK Reporter, LoTW...) aspettano (`aurora_core::idle`)
+                let busy = aurora_core::idle::busy();
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
                 let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)
@@ -794,6 +796,9 @@ pub fn start_with_save(
                 let millis = started.elapsed().as_millis() as u64;
                 tracing::info!("motore proprio ({}): {} messaggi nel periodo {} in {} ms", mode.name(), decoded.len(), slot.start_unix_ms, millis);
                 let depth = decode_opts::current().depth;
+                // la decodifica e' finita: il contorno puo' lavorare; il tempo del periodo serve a riconoscere un PC lento
+                drop(busy);
+                aurora_core::idle::note_period(millis, mode.period_ms());
                 if let Some(r) = slow_watch.record(millis, mode.period_ms(), depth) {
                     let swl = live.as_ref().is_some_and(|l| l.controls.switch_on("swl"));
                     // il rapporto automatico parte al massimo una volta per installazione e versione (`rapporti.rs`): un PC lento e'

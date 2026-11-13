@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { inOrder, useListenWhileOpen, type RxCommand } from './listenWhileOpen';
+import { HOLD_EVERY_MS, inOrder, useListenWhileOpen, type PageCommand, type RxCommand } from './listenWhileOpen';
 
 interface Snap {
   rx: { listening: boolean };
@@ -51,6 +51,32 @@ describe('useListenWhileOpen', () => {
     await flush();
     expect(calls).toEqual(['start', 'stop', 'start']);
     again.unmount();
+  });
+
+  it('con il conteggio delle pagine: battito all apertura e ogni 20 s, uscita allo smontaggio (lo spegnimento lo decide il core)', async () => {
+    vi.useFakeTimers();
+    try {
+      const rx = vi.fn<RxCommand>(() => Promise.resolve());
+      const page = vi.fn<PageCommand>(() => Promise.resolve());
+      function Counted() {
+        useListenWhileOpen(rx, () => false, () => undefined, page);
+        return null;
+      }
+      const view = render(<Counted />);
+      expect(page.mock.calls.map((c) => c[0])).toEqual(['hold']);
+      vi.advanceTimersByTime(HOLD_EVERY_MS * 2);
+      expect(page.mock.calls.map((c) => c[0])).toEqual(['hold', 'hold', 'hold']);
+      view.unmount();
+      expect(page.mock.calls.map((c) => c[0])).toEqual(['hold', 'hold', 'hold', 'release']);
+      // stesso identificativo per tutta la visita
+      expect(new Set(page.mock.calls.map((c) => c[1])).size).toBe(1);
+      // niente «stop» dalla pagina: con un'altra finestra ancora aperta l'ascolto deve restare
+      expect(rx.mock.calls.map((c) => c[0])).toEqual(['start']);
+      vi.advanceTimersByTime(HOLD_EVERY_MS * 3);
+      expect(page).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('con «Ascolto acceso all avvio» uscendo l ascolto resta acceso', async () => {

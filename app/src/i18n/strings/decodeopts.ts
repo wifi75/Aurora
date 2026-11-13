@@ -14,6 +14,11 @@ export const decodeOptStrings = {
   'dec.ftolJt9': ['F Tol JT9', 'F Tol JT9', 'F Tol JT9', 'F Tol JT9', 'F Tol JT9', 'F Tol JT9'],
   'dec.ftolMsk144': ['F Tol MSK144', 'F Tol MSK144', 'F Tol MSK144', 'F Tol MSK144', 'F Tol MSK144', 'F Tol MSK144'],
   'dec.ftolQ65': ['F Tol Q65', 'F Tol Q65', 'F Tol Q65', 'F Tol Q65', 'F Tol Q65', 'F Tol Q65'],
+  // modalita' «PC lento» (porta dei servizi di contorno, `aurora_core::idle`)
+  'dec.slowPc': ['PC lento', 'Slow PC', 'Langsamer PC', 'PC lent', 'PC lento', 'PC lento'],
+  'dec.slowPc.auto': ['Automatico', 'Automatic', 'Automatisch', 'Automatique', 'Automático', 'Automático'],
+  'dec.slowPc.always': ['Sempre', 'Always', 'Immer', 'Toujours', 'Siempre', 'Sempre'],
+  'dec.slowPc.never': ['Mai', 'Never', 'Nie', 'Jamais', 'Nunca', 'Nunca'],
   // pulsanti rapidi accanto al modo (come le voci del menu Decode di WSJT-X)
   'dec.short.IncludeAveraging': ['Media', 'Avg', 'Mittel', 'Moy.', 'Prom.', 'Média'],
   'dec.short.AutoClearAvg': ['Auto ⟲', 'Auto ⟲', 'Auto ⟲', 'Auto ⟲', 'Auto ⟲', 'Auto ⟲'],
@@ -107,5 +112,13 @@ export const decodeOptStrings = {
     'Q65 : la fenêtre autour de Rx où l’on essaie toujours le meilleur signal, la liste du QSO et la moyenne. Comme «F Tol» de WSJT-X ; par défaut 50 Hz.',
     'Q65: la ventana alrededor de Rx donde siempre se prueban la mejor señal, la lista del QSO y el promedio. Como «F Tol» de WSJT-X; de serie 50 Hz.',
     'Q65: a janela à volta de Rx onde se tentam sempre o melhor sinal, a lista do QSO e a média. Como «F Tol» do WSJT-X; de origem 50 Hz.',
+  ],
+  'jxh.SlowPcMode': [
+    'Sui PC che faticano, mentre si decodifica DX Cluster, DXpedition, PSK Reporter, ricerca dei nominativi, elenco LoTW, dati dei satelliti e controllo degli aggiornamenti aspettano la fine della decodifica (al massimo 30 s): l’audio non perde blocchi e la decodifica non sfora. Niente si perde, arriva solo qualche secondo dopo. «Automatico» (di fabbrica) si accende da sola dopo 3 periodi su 10 oltre il 70% del tempo, 3 blocchi audio persi in 10 minuti o con 2 processori o meno, e si spegne dopo 20 periodi tranquilli. «Sempre» la tiene accesa, «Mai» spenta.',
+    'On PCs that struggle, while decoding runs the DX Cluster, DXpeditions, PSK Reporter, callsign lookup, LoTW list, satellite data and the update check wait for the decode to finish (30 s at most): the audio loses no blocks and decoding does not overrun. Nothing is lost, it just arrives a few seconds later. «Automatic» (default) turns on by itself after 3 periods out of 10 over 70% of the time, 3 audio blocks lost in 10 minutes or with 2 processors or fewer, and turns off after 20 quiet periods. «Always» keeps it on, «Never» off.',
+    'Auf PCs, die sich schwertun, warten DX-Cluster, DXpeditionen, PSK Reporter, Rufzeichensuche, LoTW-Liste, Satellitendaten und die Update-Prüfung während der Dekodierung, bis sie fertig ist (höchstens 30 s): das Audio verliert keine Blöcke und die Dekodierung überzieht nicht. Nichts geht verloren, es kommt nur ein paar Sekunden später. «Automatisch» (Standard) schaltet sich selbst ein nach 3 von 10 Intervallen über 70% der Zeit, 3 verlorenen Audioblöcken in 10 Minuten oder bei 2 Prozessoren oder weniger, und aus nach 20 ruhigen Intervallen. «Immer» hält sie an, «Nie» aus.',
+    'Sur les PC qui peinent, pendant le décodage le DX Cluster, les DXpéditions, PSK Reporter, la recherche d’indicatifs, la liste LoTW, les données des satellites et la vérification des mises à jour attendent la fin du décodage (30 s au plus) : l’audio ne perd pas de blocs et le décodage ne déborde pas. Rien n’est perdu, cela arrive juste quelques secondes plus tard. «Automatique» (par défaut) s’active seul après 3 périodes sur 10 au-delà de 70% du temps, 3 blocs audio perdus en 10 minutes ou avec 2 processeurs ou moins, et s’éteint après 20 périodes calmes. «Toujours» le garde actif, «Jamais» éteint.',
+    'En los PC que van justos, mientras se decodifica el DX Cluster, las DXpediciones, PSK Reporter, la búsqueda de indicativos, la lista LoTW, los datos de los satélites y la comprobación de actualizaciones esperan a que termine la decodificación (30 s como máximo): el audio no pierde bloques y la decodificación no se pasa de tiempo. No se pierde nada, solo llega unos segundos después. «Automático» (de serie) se enciende solo tras 3 periodos de 10 por encima del 70% del tiempo, 3 bloques de audio perdidos en 10 minutos o con 2 procesadores o menos, y se apaga tras 20 periodos tranquilos. «Siempre» lo deja encendido, «Nunca» apagado.',
+    'Nos PC com dificuldades, enquanto se descodifica o DX Cluster, as DXpedições, o PSK Reporter, a pesquisa de indicativos, a lista LoTW, os dados dos satélites e a verificação de atualizações esperam pelo fim da descodificação (30 s no máximo): o áudio não perde blocos e a descodificação não ultrapassa o tempo. Nada se perde, só chega uns segundos depois. «Automático» (de origem) liga-se sozinho após 3 períodos em 10 acima de 70% do tempo, 3 blocos de áudio perdidos em 10 minutos ou com 2 processadores ou menos, e desliga-se após 20 períodos calmos. «Sempre» mantém-no ligado, «Nunca» desligado.',
   ],
 } as const;

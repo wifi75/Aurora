@@ -31,6 +31,8 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 #[utoipa::path(get, path = "/api/v1/sat", responses((status = 200, description = "`{observer, tle, listing, catalog, settings, now, sky, details, maps}`"), (status = 404, description = "Non disponibile (sat_unavailable)")))]
 pub(crate) async fn sat_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let svc = service(&state)?;
+    // la pagina legge una volta al secondo: ogni lettura tiene acceso il calcolo dei satelliti (senza letture, a pagina chiusa, dorme)
+    svc.touch();
     let s = svc.settings();
     let (count, age) = svc.tle_status();
     let listing: Vec<Value> = svc.listing().into_iter().map(|(norad, name, has_tle)| json!({ "norad": norad, "name": name, "has_tle": has_tle })).collect();

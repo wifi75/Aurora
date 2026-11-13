@@ -66,6 +66,27 @@ pub(crate) async fn digi_rx_stop(State(state): State<AppState>, _: Authed) -> Re
     Ok(Json(json!({ "ok": true })))
 }
 
+/// La pagina aperta (identificativo scelto dalla pagina, uno per finestra o telefono).
+#[derive(Deserialize)]
+pub(crate) struct PageQuery {
+    id: String,
+}
+
+/// Battito della pagina `id` (all'apertura e ogni 20 s): finche' una pagina batte l'ascolto non si spegne da solo. Non accende l'ascolto.
+#[utoipa::path(post, path = "/api/v1/digi/rx/hold", params(("id" = String, Query, description = "Identificativo della pagina")), responses((status = 200, description = "Pagina contata")))]
+pub(crate) async fn digi_rx_hold(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<PageQuery>) -> Result<Json<Value>, ApiError> {
+    service(&state)?.hold_rx(&q.id);
+    Ok(Json(json!({ "ok": true })))
+}
+
+/// La pagina `id` e' stata lasciata: se non ne resta nessuna l'ascolto si spegne, salvo «Ascolto acceso all'avvio».
+#[utoipa::path(post, path = "/api/v1/digi/rx/release", params(("id" = String, Query, description = "Identificativo della pagina")), responses((status = 200, description = "Pagina tolta")))]
+pub(crate) async fn digi_rx_release(State(state): State<AppState>, _: Authed, axum::extract::Query(q): axum::extract::Query<PageQuery>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    blocking(move || svc.release_rx(&q.id)).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 #[derive(Deserialize)]
 pub(crate) struct TxBody {
     text: String,

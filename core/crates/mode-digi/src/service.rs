@@ -583,6 +583,8 @@ struct Inner {
     session: Mutex<Option<live::Session>>,
     /// Il thread di tutta la banda (CW, PSK).
     band: crate::band::BandLink,
+    /// Le pagine PSK · RTTY · CW aperte (finestra principale, staccata, telefono): lasciata l'ultima, l'ascolto si spegne.
+    users: aurora_core::users::PageUsers,
 }
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -590,6 +592,24 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 impl Inner {
+    fn stop_rx(&self) {
+        self.listening.store(false, Ordering::Relaxed);
+        self.sync_anticlick();
+        lock(&self.rx).listening = false;
+        let _ = self.queue.send(Msg::Reset);
+        self.band.reset();
+        self.rx_status_event();
+    }
+
+    /// Nessuna pagina dei modi testuali aperta: l'ascolto (ricevitore e tutta la banda) si spegne, salvo «Ascolto acceso all'avvio di
+    /// Aurora». Una trasmissione in corso continua: spegnere l'ascolto non la tocca.
+    fn page_left(&self) {
+        if self.listening.load(Ordering::Relaxed) && !lock(&self.settings).auto_receive {
+            tracing::info!("modi testuali: nessuna pagina aperta, ascolto spento");
+            self.stop_rx();
+        }
+    }
+
     /// L'anti-click della cascata vale mentre la pagina ascolta, se e' scelto (l'analizzatore dello spettro legge l'opzione comune).
     fn sync_anticlick(&self) {
         let on = self.listening.load(Ordering::Relaxed) && lock(&self.settings).wf_anticlick;
@@ -674,6 +694,7 @@ impl DigiService {
             radio_lsb: AtomicBool::new(false),
             session: Mutex::new(None),
             band: crate::band::BandLink::spawn(&settings),
+            users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
         let worker = Arc::clone(&inner);
         inner.sync_anticlick();
@@ -785,12 +806,25 @@ impl DigiService {
     }
 
     pub fn stop_rx(&self) {
-        self.inner.listening.store(false, Ordering::Relaxed);
-        self.inner.sync_anticlick();
-        lock(&self.inner.rx).listening = false;
-        let _ = self.inner.queue.send(Msg::Reset);
-        self.inner.band.reset();
-        self.inner.rx_status_event();
+        self.inner.stop_rx();
+    }
+
+    /// Un battito della pagina dei modi testuali `id`: finche' qualcuna batte, l'ascolto non si spegne da solo.
+    pub fn hold_rx(&self, id: &str) {
+        self.inner.users.hold(id);
+    }
+
+    /// La pagina `id` e' stata lasciata: se era l'ultima l'ascolto si spegne, salvo «Ascolto acceso all'avvio» (la trasmissione no).
+    pub fn release_rx(&self, id: &str) {
+        if self.inner.users.release(id) {
+            self.inner.page_left();
+        }
+    }
+
+    /// Il decodificatore di tutta la banda sta lavorando (ascolto acceso e CW o PSK con «tutta la banda»): solo allora servono le forme
+    /// dei nominativi.
+    pub fn band_in_use(&self) -> bool {
+        self.inner.listening.load(Ordering::Relaxed) && self.inner.band.is_active()
     }
 
     /// Il testo da trasmettere diventa audio con il modo e la frequenza scelti; `lsb`: la radio e' in LSB (RTTY: mark e space invertiti).
@@ -1000,6 +1034,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
     let mut audio = Vec::new();
     let mut last_status = Instant::now();
     let mut peak_db = -90.0_f32;
+    let mut last_users = Instant::now();
     loop {
         let msg = match queue.recv_timeout(Duration::from_millis(500)) {
             Ok(m) => Some(m),
@@ -1029,8 +1064,15 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
             Some(Msg::Reset) => demod = Demod::new(&lock(&inner.settings).clone(), lsb),
             None => {}
         }
-        // RTTY: con la radio passata da USB a LSB (o viceversa) mark e space si scambiano da soli
-        if mode == DigiMode::Rtty && last_radio.elapsed() >= Duration::from_secs(1) {
+        // le pagine sparite senza salutare (finestra chiusa, rete caduta) escono da sole
+        if last_users.elapsed() >= Duration::from_secs(1) {
+            last_users = Instant::now();
+            if inner.users.expire() {
+                inner.page_left();
+            }
+        }
+        // RTTY: con la radio passata da USB a LSB (o viceversa) mark e space si scambiano da soli (solo in ascolto: spento, il CAT non si legge)
+        if mode == DigiMode::Rtty && inner.listening.load(Ordering::Relaxed) && last_radio.elapsed() >= Duration::from_secs(1) {
             last_radio = Instant::now();
             let now = inner.read_radio_lsb();
             if now != lsb {
@@ -1286,5 +1328,29 @@ mod tests {
         }
         let _ = std::fs::remove_dir_all(&dir);
         assert!(out.contains("CQ IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    /// Due pagine aperte (finestra principale e finestra staccata): chiudendone una l'ascolto resta, chiudendo l'ultima si spegne; con
+    /// «Ascolto acceso all'avvio» resta acceso anche senza pagine.
+    #[test]
+    fn l_ascolto_si_spegne_solo_quando_esce_l_ultima_pagina() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-pagine-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        let svc = DigiService::open(&dir);
+        svc.hold_rx("principale");
+        svc.hold_rx("staccata");
+        svc.start_rx();
+        svc.release_rx("staccata");
+        assert!(svc.is_listening(), "la finestra principale e' ancora aperta");
+        svc.release_rx("principale");
+        assert!(!svc.is_listening(), "nessuna pagina: ascolto spento");
+        assert!(!svc.band_in_use());
+        let s = DigiSettings { auto_receive: true, ..svc.settings() };
+        svc.apply_settings(s).expect("impostazioni");
+        svc.hold_rx("principale");
+        svc.start_rx();
+        svc.release_rx("principale");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(svc.is_listening(), "«Ascolto acceso all'avvio»: resta acceso");
     }
 }

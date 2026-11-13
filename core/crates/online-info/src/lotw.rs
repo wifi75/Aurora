@@ -151,6 +151,8 @@ pub fn spawn(shared: SharedLotw, data_dir: PathBuf, app_version: String) {
     // la copia su disco si legge subito, prima che il motore pubblichi le prime decodifiche; nel thread resta solo il download
     load_cache(&shared, &data_dir);
     let spawned = std::thread::Builder::new().name("lotw".into()).spawn(move || loop {
+        // PC lento: lo scaricamento e la lettura dell'elenco (centinaia di migliaia di righe) aspettano la fine della decodifica
+        aurora_core::idle::wait_free_blocking(aurora_core::idle::MAX_WAIT);
         refresh(&shared, &data_dir, &app_version);
         std::thread::sleep(Duration::from_secs(3600));
     });

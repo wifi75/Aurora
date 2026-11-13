@@ -135,6 +135,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     // «gia' lavorato ma non confermato = nuovo» per paese e griglia (scheda Colori): voci di Aurora, non di JTDX (issue #17 e #37)
     "newDXCCUnconfirmed",
     "newGridUnconfirmed",
+    // modalita' «PC lento» (voce di Aurora): `auto`, `always`, `never` (vedi `aurora_core::idle`)
+    "SlowPcMode",
 ];
 
 /// Le opzioni dei decodificatori di WSJT-X 3.3 che il motore proprio usa (riquadro «Decodifica» della scheda Filtri). I nomi sono quelli
@@ -370,7 +372,7 @@ pub fn support(key: &str) -> Support {
         "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "TxDelay" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
-        "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
+        "SlowPcMode" | "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
         // opzioni dei decodificatori di WSJT-X: valgono dal periodo che segue
         k if DECODE_KEYS.contains(&k) => Support::Live(Apply::Now),
         "MonitorLastUsed" => Support::Hidden("monitor_last"),
@@ -610,6 +612,8 @@ pub struct Reports {
     pub destinations: Vec<UdpDestination>,
     /// Momento di avvio della decodifica FT8 (`early`, `normal`, `late`).
     pub ft8_decoder_start: String,
+    /// Modalita' «PC lento» (`SlowPcMode`: `auto`, `always`, `never`).
+    pub slow_pc: String,
     /// «Full duplex»: si decodifica anche il periodo in cui si trasmette (satelliti).
     pub full_duplex: bool,
     /// Wait and Reply / Wait and Call (`WaitFeaturesEnabled` di WSJT-X).
@@ -776,6 +780,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("OTPUrl", "https://www.9dx.cc"),
         ("BandHopping", "false"),
         ("BandHopList", ""),
+        // «PC lento»: automatica (si accende da sola con decodifiche lente, audio perso o pochi processori)
+        ("SlowPcMode", "auto"),
         // decodificatori: i valori di fabbrica di WSJT-X 3.3 (vedi `DECODE_KEYS`)
         ("DecodeDepth", "3"),
         ("IncludeAveraging", "false"),
@@ -966,6 +972,7 @@ fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> 
         "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
+        "SlowPcMode" => if matches!(value, "auto" | "always" | "never") { Some(Ok(())) } else { bad("auto, always o never") },
         "OTPUrl" if value.len() > 200 || !(value.starts_with("https://") || value.starts_with("http://")) || value.chars().any(|c| c.is_whitespace() || c.is_control()) => {
             bad("serve un indirizzo che comincia con http:// o https://")
         }
@@ -1044,6 +1051,7 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         watchdog_min: get("TxWatchdogTimer").parse().ok().filter(|n| *n <= 99).unwrap_or(6),
         tx_qsy_allowed: values.get("TxQSYAllowed").is_none_or(|v| v == "true"),
         ft8_decoder_start: values.get("FT8DecoderStart").cloned().unwrap_or_else(|| "normal".into()),
+        slow_pc: values.get("SlowPcMode").cloned().unwrap_or_else(|| "auto".into()),
         full_duplex: truthy(values.get("FullDuplex")),
         wait_features: truthy(values.get("WaitFeaturesEnabled")),
         hound_auto: values.get("HoundAuto").is_none_or(|v| v == "true"),

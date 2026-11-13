@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -287,7 +287,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // entrando nella pagina l'ascolto parte da solo (si ferma e riparte dal menu Opzioni); lasciandola (per esempio tornando all'FT8)
   // si spegne, cosi' il motore non consuma in secondo piano, salvo «Ascolto acceso all'avvio di Aurora»
-  useListenWhileOpen(digiRx, () => live.current.snap.settings.auto_receive, onChanged);
+  useListenWhileOpen(digiRx, () => live.current.snap.settings.auto_receive, onChanged, digiRxPage);
 
   const caps = useRef(false);
   caps.current = views.capsOnly;
