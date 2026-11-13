@@ -2,7 +2,9 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 pomeriggio (0.11.245 pubblicata, sito aggiornato)
+## Stato al 2026-11-13 pomeriggio (0.11.246 pubblicata, sito aggiornato)
+
+- **0.11.246** (14:01 UTC): Nuovo log vuoto protetto (archivio controllato o cancellazione con doppia conferma e `confirm: DELETE`), Log QSO apre la finestra compilata senza QSO in corso (SWL), Accendi con Cat4OM (`powerOnRadio`) e RTS alto per le Yaesu (proprietario: FT-2000 con microHAM e VSPE, da provare), display spento con radio che non risponde, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8, ricerca della Guida con risultati. In studio: notch e AFC dei modi testuali.
 
 - **0.11.245** (12:38 UTC): spia di salute della stazione (`GET /api/v1/health/resources`, `HealthLight.tsx`), avvisi e tooltip su fondo bianco, avviso di ingresso debole solo se dura 90 s e mai in TX/TUNE, niente falsi crash da `stderr.log` (`rumore_stderr`), tabella delle frequenze con righe sbagliate tolte una per una (`keep_valid`), menu delle Impostazioni a tasselli, scheda DXpedition «scuro nitido», TX durante TUNE, «Spegni split» sempre visibile, messaggio vero sul database di Log4OM (#51, causa ancora da capire).
 

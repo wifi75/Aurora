@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.246',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T14:01:09Z',
     kind: 'new',
     title: [
       'Nuovo log vuoto e Attività di banda a colonne',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.246',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T14:01:09Z',
     kind: 'fixed',
     title: [
       '«Log QSO» per chi ascolta e «Accendi» con Cat4OM e Yaesu',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.246',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T14:01:09Z',
     kind: 'changed',
     title: [
       'Display, cluster, finestre PSK·RTTY·CW e pulsanti',
