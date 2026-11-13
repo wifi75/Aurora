@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'new',
     title: [
       'Spegni split accanto al display della radio',
@@ -42,7 +42,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'changed',
     title: [
       'Aggiornamento in un solo giro',
@@ -63,7 +63,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'new',
     title: [
       'In FT8 i modi non usati non consumano; modalità «PC lento»',
@@ -84,7 +84,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'changed',
     title: [
       'CW di tutta la banda più leggero',
@@ -105,7 +105,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'fixed',
     title: [
       'Più robustezza: file puliti, CAT che riparte, meno blocchi',
@@ -126,7 +126,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'changed',
     title: [
       'Frequenze dai piani di banda dell’ARI',
@@ -147,7 +147,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'new',
     title: [
       'Manuale completo di tutte le Impostazioni',
@@ -168,7 +168,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'fixed',
     title: [
       'Finestre FT8: separatore dei periodi e Tx nel QSO',
@@ -189,7 +189,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.244',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T09:23:34Z',
     kind: 'changed',
     title: [
       'DXCC nuovi meno invadenti, avviso nella tua lingua',
