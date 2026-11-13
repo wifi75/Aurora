@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.11.248
+## 0.11.248 - 2026-11-13
 - **«Tune» e «Log QSO» nei Comandi sempre visibili**: prima erano nascosti di base (si accendevano in Impostazioni) e nessuno li trovava; si riaccendono una volta per tutti, poi resta la scelta dell'utente.
-- **Log vuoto**: il pannello Log mostra le intestazioni delle colonne e, sotto, «Aggiungi QSO» (finestra per registrare un QSO a mano) e «Importa un file ADIF»; prima c'era solo il riquadro «Il log e' vuoto». - 2026-11-13
+- **Log vuoto**: il pannello Log mostra le intestazioni delle colonne e, sotto, «Aggiungi QSO» (finestra per registrare un QSO a mano) e «Importa un file ADIF»; prima c'era solo il riquadro «Il log e' vuoto».
 - **DX Cluster, durata degli spot**: c'e' anche 45 minuti nella scelta «Gli spot spariscono dopo».
 - **Radio spenta**: al centro di ogni display una scritta grande «⏻ RADIO SPENTA» (in tutte le lingue) che si adatta alla misura del display; tolta la scritta piccola che si accavallava agli strumenti PO e SWR.
 - **Notch ben visibili**: i notch sono di un verde fluo; «Togli i notch» ha larghezza fissa e compare solo con almeno un notch.
