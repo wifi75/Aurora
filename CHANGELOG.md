@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Meno CPU e piu' stabilita' del motore** (misure in `docs/prestazioni-motore.md`, risultati identici): il ricampionamento dell'audio della scheda per il decoder costa 20 volte meno a 48 e 96 kHz (da circa il 2% al 0,1% di un core a 48 kHz, sempre acceso), quello di SSTV e modi testuali un terzo in meno, FT4 e FT8 qualche per cento in meno per periodo. Un `digi.json` con valori impossibili (velocita' RTTY 0) o un solo campione audio non valido (NaN, per esempio da TCI) non fermano piu' per sempre la ricezione di PSK, RTTY e CW; un errore interno del decoder fa saltare solo quel periodo invece di fermare decodifica e trasmissione fino al riavvio.
 
 ## 0.11.243 - 2026-11-12
 - **PSK, RTTY e CW, interfaccia**: la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso; velocita' e frequenze senza cifre dopo la virgola; «Impostazioni del modo» in ordine; misure del segnale e selettore della frequenza a larghezza fissa; maniglia ben visibile fra le finestre e la colonna di destra.
