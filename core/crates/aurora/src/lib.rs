@@ -1101,6 +1101,23 @@ fn load_frequencies(path: &Path) -> FrequencyTable {
         let loaded = serde_json::from_str::<Vec<rig_control::table::Entry>>(&text).map_err(|e| e.to_string()).and_then(|entries| table.set(FrequencyTable::upgraded(entries)).map_err(String::from));
         // il motivo nel registro, e il file messo da parte: prima l'avviso tornava a ogni avvio senza dire perche' (rapporti del
         // 2026-11-13, quindici avvii di fila) e la tabella dell'utente restava ignorata in silenzio
+        // una o piu' righe sbagliate: si tengono le altre (la copia intera resta da parte) invece di buttare tutta la tabella
+        let loaded = match loaded {
+            Err(why) => match serde_json::from_str::<Vec<rig_control::table::Entry>>(&text) {
+                Ok(entries) => {
+                    let (good, dropped) = rig_control::table::keep_valid(FrequencyTable::upgraded(entries));
+                    if !good.is_empty() && table.set(good).is_ok() {
+                        let _ = std::fs::copy(path, path.with_extension("json.prima"));
+                        tracing::warn!("frequenze: {dropped} righe non valide tolte da {} (copia intera in frequencies.json.prima)", path.display());
+                        Ok(())
+                    } else {
+                        Err(why)
+                    }
+                }
+                Err(_) => Err(why),
+            },
+            ok => ok,
+        };
         if let Err(why) = loaded {
             let aside = path.with_extension("json.non-valido");
             let kept = std::fs::rename(path, &aside).is_ok();

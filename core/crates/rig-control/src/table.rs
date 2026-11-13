@@ -323,6 +323,22 @@ fn valid_entries(entries: &[Entry]) -> bool {
     })
 }
 
+/// Le righe valide di una tabella (banda e modo noti, frequenza nella banda, senza doppioni) e quante ne sono state tolte: una riga sbagliata
+/// non fa piu' perdere tutta la tabella dell'utente.
+pub fn keep_valid(entries: Vec<Entry>) -> (Vec<Entry>, usize) {
+    let total = entries.len();
+    let mut kept: Vec<Entry> = Vec::with_capacity(total);
+    for entry in entries {
+        let mut trial = kept.clone();
+        trial.push(entry.clone());
+        if valid_entries(&trial) {
+            kept.push(entry);
+        }
+    }
+    let dropped = total - kept.len();
+    (kept, dropped)
+}
+
 impl FrequencyTable {
     pub fn entries(&self) -> &[Entry] {
         &self.0

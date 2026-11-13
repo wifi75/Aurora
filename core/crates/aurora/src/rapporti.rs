@@ -612,7 +612,10 @@ impl Rapporti {
         // un crash nuovo si propone solo se la domanda e' accesa; spenta, lo si da' per visto (accendendola dopo non torna un crash vecchio)
         let adesso = guarda_crash(&data_dir.join("crash"));
         let visto: Option<CrashVisto> = leggi_json(&data_dir.join(FILE_CRASH_VISTO));
-        let nuovo = visto.is_some_and(|v| adesso.ultimo_ms > v.ultimo_ms || adesso.stderr > v.stderr);
+        // stderr.log cresce anche a ogni chiusura normale (righe innocue di WebView2, «Failed to unregister class Chrome_WidgetWin_0», e
+        // l'errore di PowerShell del riavvio dopo l'aggiornamento): conta come crash solo se le righe nuove hanno qualcosa di vero.
+        // Prima ogni aggiornamento e ogni spegnimento del PC mandavano un pacchetto «crash» (rapporti del 2026-11-13)
+        let nuovo = visto.is_some_and(|v| adesso.ultimo_ms > v.ultimo_ms || (adesso.stderr > v.stderr && stderr_vero(&data_dir.join("crash").join("stderr.log"), v.stderr)));
         let crash_pendente = (nuovo && impostazioni.ask_after_crash).then_some(adesso);
         if crash_pendente.is_none() {
             scrivi_json(&data_dir.join(FILE_CRASH_VISTO), &adesso);
@@ -1007,6 +1010,28 @@ fn riga_di_log(riga: &str, noti: &[String]) -> Option<String> {
     Some(pulita)
 }
 
+/// Le righe di `stderr.log` scritte dopo il byte `da` contengono un errore vero (non solo il rumore noto di WebView2 e del riavvio)?
+fn stderr_vero(path: &Path, da: u64) -> bool {
+    let Ok(bytes) = std::fs::read(path) else { return false };
+    let start = usize::try_from(da).unwrap_or(0).min(bytes.len());
+    String::from_utf8_lossy(&bytes[start..]).lines().any(|riga| {
+        let r = riga.trim();
+        !r.is_empty() && !rumore_stderr(r)
+    })
+}
+
+/// Righe di `stderr.log` che non indicano un crash: WebView2 alla chiusura e l'errore di PowerShell quando il riavvio dopo l'aggiornamento
+/// non trova il file (con le righe che lo accompagnano).
+fn rumore_stderr(riga: &str) -> bool {
+    riga.contains("Failed to unregister class Chrome_WidgetWin")
+        || riga.contains("window_impl.cc")
+        || riga.starts_with("Start-Process")
+        || riga.starts_with('+')
+        || riga.contains("CategoryInfo")
+        || riga.contains("FullyQualifiedErrorId")
+        || !riga.is_ascii() && !riga.to_ascii_lowercase().contains("panic")
+}
+
 fn guarda_crash(dir: &Path) -> CrashVisto {
     let mut ultimo_ms = 0;
     let mut stderr = 0;
@@ -1354,6 +1379,20 @@ impl Rapporti {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn webview2_noise_in_stderr_is_not_a_crash() {
+        let dir = std::env::temp_dir().join(format!("aurora-stderr-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let f = dir.join("stderr.log");
+        let _ = std::fs::write(&f, "[1113/142415.207:ERROR:window_impl.cc:172] Failed to unregister class Chrome_WidgetWin_0. Error = 1412
+");
+        assert!(!stderr_vero(&f, 0));
+        let _ = std::fs::write(&f, "thread 'main' panicked at src/x.rs:1:1
+");
+        assert!(stderr_vero(&f, 0));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn pulseaudio_disconnections_are_not_reported() {
