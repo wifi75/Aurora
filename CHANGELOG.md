@@ -13,6 +13,7 @@
 - **Registro piu' chiaro quando si perdono eventi**: se una parte del programma resta indietro e perde eventi interni lo scrive nel registro (al massimo una riga al minuto); per il log dei QSO, l'invio ADIF e il log del contest la riga e' un errore, perche' potrebbe mancare un QSO.
 - **Memoria con il motore fermo**: la coda dell'audio verso il decoder tiene al massimo 30 secondi; se il decoder resta bloccato si buttano i blocchi piu' vecchi con un avviso, invece di far crescere la memoria.
 - **Cascata**: le misure della finestra si leggono solo quando cambia la sua grandezza, non piu' a ogni riga (meno lavoro per il browser, aspetto identico).
+- **CW piu' leggero, stessa decodifica**: la decodifica CW di tutta la banda costa circa il 37% in meno (con 30 stazioni da circa un quarto a circa un sesto di un core) e il ricevitore della pagina CW la meta'; testo, nominativi e velocita' restano identici carattere per carattere (misure in `docs/prestazioni-motore.md`).
 
 ## 0.11.243 - 2026-11-12
 - **PSK, RTTY e CW, interfaccia**: la finestra «Impostazioni RTTY» si apre solo dalla scritta RTTY nella barra in basso; velocita' e frequenze senza cifre dopo la virgola; «Impostazioni del modo» in ordine; misure del segnale e selettore della frequenza a larghezza fissa; maniglia ben visibile fra le finestre e la colonna di destra.
