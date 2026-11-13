@@ -9,6 +9,7 @@ Con l'**accesso senza codice** acceso (solo prove) chi è sulla rete di casa e n
 | Rotta | Auth | Descrizione |
 |---|---|---|
 | `GET /health` | no | `{status, name, version, author}` |
+| `GET /health/resources` | sì | Spia di salute: `{cpu_pct, mem_mb, cores, decode_threads, last_decode_ms, period_ms, last_decode_at, sample_every_s, history}`. `cpu_pct` è l'uso di CPU del processo su tutti i processori (0-100) tra due letture a 5 s; `mem_mb` la memoria privata (`null` dove non si misura); `last_decode_ms`/`period_ms` l'ultima decodifica e il tempo disponibile del periodo (`null` prima della prima). `history`: ultimi 10 minuti, un campione ogni 5 s (al massimo 120), `[{t, cpu_pct, decode_ms, period_ms}]`. Leggera: va letta ogni 2-5 s |
 | `POST /pair/start` | solo da loopback | Codice di 8 cifre e QR; vale `code_ttl_secs` (predefinito 600 s). Corpo facoltativo `{"base_url": "http://192.168.1.10:8787"}` |
 | `POST /pair/finish` | no | `{code, device_name}` → `204` + cookie. Errori: `400 bad_code`/`bad_name`, `410 expired`, `429 locked` con `Retry-After` |
 | `GET /devices` · `DELETE /devices/{id}` | sì | Dispositivi associati; revoca (`204` o `404`) |

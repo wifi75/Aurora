@@ -799,6 +799,7 @@ pub fn start_with_save(
                 // la decodifica e' finita: il contorno puo' lavorare; il tempo del periodo serve a riconoscere un PC lento
                 drop(busy);
                 aurora_core::idle::note_period(millis, mode.period_ms());
+                aurora_core::resources::note_decode(millis, mode.period_ms(), options.threads, now_unix_ms());
                 if let Some(r) = slow_watch.record(millis, mode.period_ms(), depth) {
                     let swl = live.as_ref().is_some_and(|l| l.controls.switch_on("swl"));
                     // il rapporto automatico parte al massimo una volta per installazione e versione (`rapporti.rs`): un PC lento e'

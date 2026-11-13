@@ -14,6 +14,7 @@ pub mod pair_watch;
 mod policy;
 mod qmap_api;
 mod contest_api;
+mod resources;
 mod routes;
 pub use routes::{is_secret_name, redact_json};
 pub mod ui_settings;

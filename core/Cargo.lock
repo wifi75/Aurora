@@ -1772,6 +1772,7 @@ dependencies = [
  "udp-bridge",
  "updater",
  "utoipa",
+ "windows",
  "wishlist",
 ]
 
