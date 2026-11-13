@@ -674,6 +674,13 @@
   display: block;
   -webkit-line-clamp: unset;
   overflow-wrap: anywhere;
+  font-size: 0.95rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.sx-field.cluster-server .sx-label .data {
+  font-size: 0.85rem;
 }
 
 .sx-field.cluster-server .sx-control {
