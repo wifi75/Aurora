@@ -39,6 +39,31 @@ pub fn power_on_bytes(config: &RigConfig) -> Option<Vec<Vec<u8>>> {
     }
 }
 
+/// Le linee DTR e RTS durante l'accensione. Le Yaesu come l'FT-2000 hanno di fabbrica «CAT RTS» acceso: con RTS basso la radio ignora i
+/// comandi, e Hamlib per questi modelli usa l'handshake hardware (RTS alto). Prima RTS era sempre basso qui: la radio si spegneva via CAT
+/// (con Hamlib, RTS alto) ma «Accendi» non arrivava mai (proprietario, FT-2000, 2026-11-13). RTS alto con handshake hardware o
+/// «predefinito» su una Yaesu, salvo che RTS sia il PTT di questa porta; le scelte esplicite dell'utente vincono. DTR come in `to_rigctld`.
+/// CTS e DSR non si guardano (`OCTS=OFF`): a radio spenta potrebbero restare bassi e bloccare la scrittura.
+fn wake_lines(config: &RigConfig) -> (&'static str, &'static str) {
+    use crate::cat_config::{Handshake, PttMethod};
+    let same_port = config.ptt_port.is_empty() || config.ptt_port == config.port;
+    let rts_is_ptt = same_port && config.ptt == PttMethod::Rts;
+    let dtr_is_ptt = same_port && config.ptt == PttMethod::Dtr;
+    let on = |b: bool| if b { "ON" } else { "OFF" };
+    let dtr = if dtr_is_ptt { "OFF" } else { on(config.force_dtr.unwrap_or(false)) };
+    let rts = if rts_is_ptt {
+        "OFF"
+    } else {
+        match (config.force_rts, config.handshake) {
+            (_, Handshake::Hardware) => "ON",
+            (Some(high), _) => on(high),
+            (None, Handshake::Default) => on(config.model / 1000 == 1),
+            (None, _) => "OFF",
+        }
+    };
+    (dtr, rts)
+}
+
 /// Manda l'accensione sulla porta seriale (solo Windows: la porta si imposta con `mode`); errori solo nel registro.
 pub fn wake(config: &RigConfig) {
     let Some(messages) = power_on_bytes(config) else {
@@ -53,8 +78,9 @@ pub fn wake(config: &RigConfig) {
         let port = config.port.trim().to_uppercase();
         let baud = if config.baud == 0 { 38_400 } else { config.baud };
         let stop = if config.stop_bits == 2 { 2 } else { 1 };
+        let (dtr, rts) = wake_lines(config);
         let _ = std::process::Command::new("mode")
-            .args([port.as_str(), &format!("BAUD={baud}"), "PARITY=N", "DATA=8", &format!("STOP={stop}"), "DTR=OFF", "RTS=OFF"])
+            .args([port.as_str(), &format!("BAUD={baud}"), "PARITY=N", "DATA=8", &format!("STOP={stop}"), &format!("DTR={dtr}"), &format!("RTS={rts}"), "OCTS=OFF", "ODSR=OFF"])
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .status();
@@ -105,6 +131,16 @@ fn busy_hint(e: &std::io::Error) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_yaesu_gets_rts_high_while_waking_unless_rts_is_the_ptt() {
+        let mut c = RigConfig { model: 1026, port: "COM3".into(), ..RigConfig::default() };
+        assert_eq!(wake_lines(&c), ("OFF", "ON"));
+        c.ptt = crate::cat_config::PttMethod::Rts;
+        assert_eq!(wake_lines(&c).1, "OFF");
+        let k = RigConfig { model: 2014, port: "COM3".into(), ..RigConfig::default() };
+        assert_eq!(wake_lines(&k).1, "OFF");
+    }
     use super::*;
 
     #[test]

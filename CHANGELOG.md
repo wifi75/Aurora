@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **«Accendi» sulle Yaesu (FT-2000)**: durante l'accensione la linea RTS resta alta (come fa Hamlib per queste radio con «CAT RTS» acceso); prima era bassa e la radio ignorava il comando, cosi' si spegneva via CAT ma non si accendeva.
 - **DX Cluster della pagina principale come in PSK·RTTY·CW**: «Spot DX» passa dalla barra dei filtri alla barra del titolo, accanto alla nuova rotella «Opzioni del DX Cluster» (clic singolo o doppio, rotore verso la stazione, durata degli spot, colonne); le opzioni sono le stesse della pagina PSK·RTTY·CW.
 - **Attivita' di banda a colonne**: titoli e linee della griglia ben visibili come nel DX Cluster; le colonne (ora, dB, DT, Hz, messaggio, paese, etichetta) si spostano trascinando il titolo, si allargano dal bordo (doppio clic: adatta al contenuto) e si ripristinano col tasto destro; ordine e larghezze restano ricordati.
 
