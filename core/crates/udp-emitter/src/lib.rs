@@ -801,6 +801,7 @@ impl Emitter {
                 tick.tick().await;
                 let mut inhibit_tick = tokio::time::interval(INHIBIT_TICK);
                 inhibit_tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+                let mut lag = aurora_core::lag::LagWatch::new("messaggi UDP verso i programmi esterni");
                 loop {
                     tokio::select! {
                         event = events.recv() => match event {
@@ -808,7 +809,7 @@ impl Emitter {
                                 let out = lock(&session).map(|mut s| s.on_event(&event, tx_first(), now_unix_ms())).unwrap_or_default();
                                 send_all(&sockets, &routes, &out).await;
                             }
-                            Err(RecvError::Lagged(_)) => {}
+                            Err(RecvError::Lagged(n)) => lag.lost(n),
                             Err(RecvError::Closed) => break,
                         },
                         _ = tick.tick() => {

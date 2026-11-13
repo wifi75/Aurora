@@ -151,12 +151,12 @@ pub fn genera(sc: &Scenario, snr_db: f64, seed: u64, chars: usize) -> (Vec<f32>,
                 if rng.uniform() < p {
                     // una scarica: oscillazione smorzata in 2 ms, segno e fase a caso
                     let f = 500.0 + 2500.0 * rng.uniform();
-                    let ph = rng.uniform() * 6.283;
+                    let ph = rng.uniform() * std::f64::consts::TAU;
                     let amp = a * (0.5 + rng.uniform());
                     for k in 0..48 {
                         if let Some(s) = audio.get_mut(n + k) {
                             let t = k as f64 / RATE;
-                            *s += (amp * (-t / 0.0007).exp() * (6.283 * f * t + ph).sin()) as f32;
+                            *s += (amp * (-t / 0.0007).exp() * (std::f64::consts::TAU * f * t + ph).sin()) as f32;
                         }
                     }
                 }

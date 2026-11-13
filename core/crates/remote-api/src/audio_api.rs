@@ -96,7 +96,7 @@ pub struct AudioOutcome {
 pub trait AudioControl: Send + Sync {
     /// I dispositivi del sistema e quelli in uso (puo' bloccare: la rotta lo chiama fuori dal ciclo di rete).
     fn devices(&self) -> AudioDevices;
-    /// Applica i valori voluti (tutti e sei). Chi fallisce lascia le cose come stavano e lo dice nella sua parte.
+    /// Applica i valori voluti (tutti e sette). Chi fallisce lascia le cose come stavano e lo dice nella sua parte.
     fn apply(&self, wanted: &AudioValues) -> AudioOutcome;
 }
 
@@ -109,6 +109,6 @@ pub fn keys_of_output() -> [&'static str; 2] {
     ["SoundOutName", "AudioOutputChannel"]
 }
 
-pub fn keys_of_save() -> [&'static str; 2] {
-    ["SaveDir", "SaveWav"]
+pub fn keys_of_save() -> [&'static str; 3] {
+    ["SaveDir", "SaveWav", "SaveKeepDays"]
 }

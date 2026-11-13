@@ -105,6 +105,7 @@ impl Automation {
             // i messaggi dello stesso ciclo si valutano insieme: si risponde a uno solo, il migliore
             let mut pending: Vec<DecodedMessage> = Vec::new();
             let mut flush_at: Option<tokio::time::Instant> = None;
+            let mut lag = aurora_core::lag::LagWatch::new("automazione dei QSO");
             loop {
                 tokio::select! {
                     received = events.recv() => {
@@ -118,7 +119,7 @@ impl Automation {
                                 handle_event(&inner, event);
                                 sync_tx_switch(&inner);
                             }
-                            Err(RecvError::Lagged(_)) => {}
+                            Err(RecvError::Lagged(n)) => lag.lost(n),
                             Err(RecvError::Closed) => break,
                         }
                     }

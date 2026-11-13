@@ -107,6 +107,8 @@ pub const EXTRA_KEYS: &[&str] = &[
     "SWRLimit",
     // ritardo tra PTT e audio (voce di Aurora, «Tx delay» di WSJT-X: `TxDelay`, 0-0,5 s, di fabbrica 0,2)
     "TxDelay",
+    // «Tieni i file salvati per N giorni» della scheda Audio (voce di Aurora: periodi salvati e `ALL.TXT`, 0 = per sempre; vedi `engine_native::cleanup`)
+    "SaveKeepDays",
     // funzioni di WSJT-X 3.x nel motore proprio (vedi `engine_native::features` e `aurora::band_hop`)
     "FT8DecoderStart",
     "FullDuplex",
@@ -332,7 +334,7 @@ impl Default for Lookups {
 }
 
 /// Le voci della scheda Audio: stanno nel file ma si cambiano solo dalla rotta `audio/settings` (apre i dispositivi, poi salva).
-pub const AUDIO_KEYS: &[&str] = &["SoundInName", "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav"];
+pub const AUDIO_KEYS: &[&str] = &["SoundInName", "SoundOutName", "AudioInputChannel", "AudioOutputChannel", "SaveDir", "SaveWav", "SaveKeepDays"];
 
 /// Le voci delle evidenziazioni di «nuovo» (scheda Notifiche): una per criterio, con «per banda» e «per modo».
 const NEW_PREFIXES: [&str; 6] = ["newCQZ", "newITUZ", "newDXCC", "newGrid", "newPx", "newCall"];
@@ -412,7 +414,7 @@ pub fn support(key: &str) -> Support {
         "Language" | "Miles" | "showDistance" | "countryName" | "UseDarkStyle" => Support::Hidden("own_screen"),
         "Rig" | "PTTport" | "CATSerialPort" | "CATSerialRate" | "Polling" | "CATForceDTR" | "CATForceRTS" | "TCIAudio" => Support::Hidden("radio_cat"),
         // scheda Audio: si cambiano solo dalla rotta `audio/settings`, che apre i dispositivi prima di salvare
-        "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" | "SaveDir" | "SaveWav" => Support::Needs(Feature::AudioControl, "audio_start", Apply::Now),
+        "SoundInName" | "SoundOutName" | "AudioInputChannel" | "AudioOutputChannel" | "SaveDir" | "SaveWav" | "SaveKeepDays" => Support::Needs(Feature::AudioControl, "audio_start", Apply::Now),
         "AutoSequence" | "SingleShotQSO" | "SkipTx1" | "AnswerWorkedB4" => Support::Hidden("own_rules"),
         k if k.starts_with("AlertOn") || k.starts_with("BeepOn") => Support::Hidden("own_alerts"),
         _ => Support::Hidden("own_decoder"),
@@ -627,7 +629,8 @@ pub struct Reports {
     pub decode: DecodeOptions,
 }
 
-/// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2).
+/// Le voci della scheda Audio (nomi di dispositivo vuoti = predefinito del sistema; `save_dir` vuota = cartella `save` dei dati; `save_mode` 0, 1, 2;
+/// `save_keep_days` giorni per cui si tengono i file salvati, 0 = per sempre).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AudioValues {
     pub input: String,
@@ -636,6 +639,15 @@ pub struct AudioValues {
     pub output_channel: String,
     pub save_dir: String,
     pub save_mode: String,
+    pub save_keep_days: String,
+}
+
+/// Giorni massimi di «Tieni i file salvati per N giorni» (dieci anni).
+pub const MAX_KEEP_DAYS: u32 = 3650;
+
+/// «Tieni i file salvati per N giorni»: un intero da 0 (per sempre) a [`MAX_KEEP_DAYS`].
+pub fn parse_keep_days(value: &str) -> Option<u32> {
+    value.trim().parse::<u32>().ok().filter(|d| *d <= MAX_KEEP_DAYS)
 }
 
 fn truthy(value: Option<&String>) -> bool {
@@ -726,6 +738,8 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("AudioOutputChannel", "Mono"),
         ("SaveDir", ""),
         ("SaveWav", "0"),
+        // i periodi salvati e `ALL.TXT` si tengono una settimana (0 = per sempre)
+        ("SaveKeepDays", "7"),
         // Sequenza: valori di fabbrica dei contatori di JTDX (2 / 3 / 5 / 4); accesi come la configurazione che Aurora ha sempre avuto (rapporto R e chiusura)
         ("SeqAnswerCQCount", "false"),
         ("SeqAnswerCQCounterValue", "2"),
@@ -904,6 +918,9 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     }
     if key == "TxDelay" {
         return parse_tx_delay(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("TxDelay: da 0 a 0,5 secondi".into()));
+    }
+    if key == "SaveKeepDays" {
+        return parse_keep_days(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SaveKeepDays: da 0 (per sempre) a 3650 giorni".into()));
     }
     if let Some(result) = validate_wsjtx3(key, value) {
         return result;
@@ -1224,6 +1241,7 @@ impl EngineSettingsStore {
             output_channel: get("AudioOutputChannel"),
             save_dir: get("SaveDir"),
             save_mode: get("SaveWav"),
+            save_keep_days: get("SaveKeepDays"),
         }
     }
 
@@ -1984,7 +2002,7 @@ TxWatchdogTimer=9
     fn the_audio_entries_are_kept_validated_and_changed_only_by_the_audio_route() {
         let path = temp("audio");
         let store = EngineSettingsStore::open(&path, defaults);
-        assert_eq!(store.audio(), AudioValues { input: "".into(), output: "".into(), input_channel: "Mono".into(), output_channel: "Mono".into(), save_dir: "".into(), save_mode: "0".into() });
+        assert_eq!(store.audio(), AudioValues { input: "".into(), output: "".into(), input_channel: "Mono".into(), output_channel: "Mono".into(), save_dir: "".into(), save_mode: "0".into(), save_keep_days: "7".into() });
         // finche' il componente audio non e' pronto le voci non sono vive
         assert!(store.state_of("SoundInName").is_err());
         store.set_feature(Feature::AudioControl, true);

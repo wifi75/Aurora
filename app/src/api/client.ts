@@ -1057,6 +1057,8 @@ export interface AudioValues {
   save_dir: string;
   /** «0» Nessuno, «1» Decodificati, «2» Tutti. */
   save_mode: string;
+  /** Giorni per cui si tengono i file salvati e ALL.TXT («0» per sempre, di base «7»). */
+  save_keep_days: string;
 }
 
 export interface AudioDevices {
@@ -1098,7 +1100,7 @@ export async function getAudioDevices(): Promise<AudioDevices> {
 }
 
 /** Apre i dispositivi nuovi, li applica e salva solo cio' che e' riuscito. */
-export async function putAudioSettings(change: Partial<Omit<AudioValues, 'save_mode'>> & { save_mode?: number }): Promise<AudioResult> {
+export async function putAudioSettings(change: Partial<Omit<AudioValues, 'save_mode' | 'save_keep_days'>> & { save_mode?: number; save_keep_days?: number }): Promise<AudioResult> {
   return (await (await request('/audio/settings', { ...jsonInit(change), method: 'PUT' })).json()) as AudioResult;
 }
 

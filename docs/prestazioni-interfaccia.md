@@ -92,12 +92,14 @@ restano gli stessi elementi), `components/CallsignTip.test.tsx` (limite della ca
 - Le animazioni infinite del CSS (36) sono quasi tutte legate a uno stato (in trasmissione, in onda, lampeggio di un avviso), non sempre
   accese; 36 regole `prefers-reduced-motion`.
 
+10. **Cascata, letture della misura a ogni riga** (`components/Waterfall.tsx`, 2026-11-13): `drawStamps` leggeva `offsetTop`,
+   `clientWidth` e `clientHeight` e `drawPlot` `getBoundingClientRect` per ogni riga (circa 3,5 al secondo), con possibili ricalcoli forzati
+   dell'impaginazione. Ora le misure stanno in cache e le aggiorna il `ResizeObserver` (canvas, spettro e riquadro) o il cambio della quota
+   dello spettro; lo stile dei segni dell'ora si scrive solo se cambia. Prova `components/Waterfall.test.tsx`: letture per riga da 5 a 0.
+   Il guadagno vero va confermato con il profiler di WebView2 («Forced reflow»), che in jsdom non c'e'.
+
 ## Non corretti (da misurare in WebView2 prima di toccarli)
 
-- **Cascata, letture della misura a ogni riga** (`components/Waterfall.tsx:62` e `:102`): `drawStamps` scrive `style.top`/`height` e legge
-  `offsetTop`/`clientHeight`, `drawPlot` legge `getBoundingClientRect` per ogni riga (circa 3,5 al secondo): possibili ricalcoli forzati
-  dell'impaginazione. In jsdom non si misura; serve il profiler di WebView2 (`Performance`, «Forced reflow»). Le misure si potrebbero tenere
-  dal `ResizeObserver` che c'e' gia'.
 - **Vetro sfocato sui pannelli** (`styles/glass.css:134`, `.panel` con `backdrop-filter: blur(14px)`; `styles/components.css:771` sulle
   notifiche): i pannelli contengono liste che cambiano spesso. Toglierlo cambia l'aspetto, quindi va prima misurato (WebView2,
   `Rendering > Paint flashing` e tempo di composizione).

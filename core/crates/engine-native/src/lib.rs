@@ -9,6 +9,7 @@ pub mod qpc;
 pub mod ultrafox;
 pub mod ultrafox_rx;
 mod alltxt;
+pub mod cleanup;
 mod known;
 mod mskrt;
 pub use ft8::filters::GridCheck;
@@ -32,7 +33,7 @@ use std::{
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
 
-use audio_spectrum::AudioChunk;
+use audio_spectrum::ChunkSource;
 use aurora_core::{DecodeTag, DecodedMessage, Event, StationStatus};
 use ft8::{decode::Options, message::CallHashes};
 use qso_native::{CallerInfo, CallerInfoFn, Mode, Options as SeqOptions};
@@ -246,7 +247,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
 /// Va chiamato dentro il runtime di Tokio.
 /// Con `live` il motore proprio fa da unico motore: pubblica anche i messaggi e lo stato sul bus (senza `live` lavora solo in ombra).
 /// Con `record` ogni periodo si salva anche in WAV nella cartella `recordings` dei dati, per provare il decoder sulle stesse registrazioni.
-pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, data_dir: PathBuf, record: bool, live: Option<LiveConfig>) -> Arc<NativeEngine> {
+pub fn start(events: broadcast::Sender<Event>, tap: impl ChunkSource, data_dir: PathBuf, record: bool, live: Option<LiveConfig>) -> Arc<NativeEngine> {
     start_with_save(events, tap, data_dir, record, live, None)
 }
 
@@ -254,7 +255,7 @@ pub fn start(events: broadcast::Sender<Event>, tap: mpsc::Receiver<AudioChunk>, 
 /// `save` si puo' cambiare mentre il motore gira (`SaveSettings::set`): vale dal periodo dopo.
 pub fn start_with_save(
     events: broadcast::Sender<Event>,
-    tap: mpsc::Receiver<AudioChunk>,
+    tap: impl ChunkSource,
     data_dir: PathBuf,
     record: bool,
     live: Option<LiveConfig>,
@@ -266,11 +267,13 @@ pub fn start_with_save(
     let parity = Arc::clone(&engine.parity);
     let mut rx = events.subscribe();
     tokio::spawn(async move {
+        let mut lag = aurora_core::lag::LagWatch::new("motore proprio, confronto con JTDX");
         loop {
             match rx.recv().await {
                 // i messaggi del motore proprio (id alti) non sono di JTDX: non entrano nel confronto
                 Ok(Event::Decode(m)) if m.id < 1_000_000_000 => parity.add_jtdx(slot_of_time_ms(m.time_ms, now_unix_ms()), &m.text, i64::from(m.freq_hz)),
-                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Ok(_) => {}
+                Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                 Err(broadcast::error::RecvError::Closed) => break,
             }
         }
@@ -1354,6 +1357,7 @@ mod tests {
     }
 
     use super::*;
+    use audio_spectrum::AudioChunk;
     use ft8::{modem, SAMPLE_RATE};
 
     /// «Filtro»: solo +-60 Hz attorno alla frequenza di ricezione, +-290 Hz in Hound; spento, tutta la banda; «Modo SWL» passa al decodificatore.

@@ -172,6 +172,7 @@ impl InputLevelService {
         let service = Arc::clone(self);
         tokio::spawn(async move {
             let start = Instant::now();
+            let mut lag = aurora_core::lag::LagWatch::new("regolazione del livello d'ingresso");
             loop {
                 match events.recv().await {
                     Ok(Event::AudioLevel(level)) => {
@@ -181,7 +182,8 @@ impl InputLevelService {
                         let _ = tokio::task::spawn_blocking(move || service.on_level(&level, now_ms)).await;
                     }
                     Ok(Event::Status(status)) => service.set_transmitting(status.transmitting),
-                    Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                    Ok(_) => {}
+                    Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                     Err(broadcast::error::RecvError::Closed) => return,
                 }
             }

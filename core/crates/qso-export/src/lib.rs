@@ -111,6 +111,7 @@ impl Exporter {
             let socket = UdpSocket::bind("0.0.0.0:0").await.ok();
             let mut guard = DupeGuard::default();
             let mut queue = waiting::Queue::load(queue_file);
+            let mut lag = aurora_core::lag::LagWatch::critical("log e invio dei QSO (qso-export)");
             let mut tick = tokio::time::interval(std::time::Duration::from_secs(5));
             tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
             loop {
@@ -166,7 +167,8 @@ impl Exporter {
                             record_result(&shared, target, result);
                         }
                     }
-                    Ok(_) | Err(RecvError::Lagged(_)) => {}
+                    Ok(_) => {}
+                    Err(RecvError::Lagged(n)) => lag.lost(n),
                     Err(RecvError::Closed) => break,
                 }
             }

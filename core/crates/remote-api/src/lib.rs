@@ -286,6 +286,7 @@ impl AppState {
         let mut rx = bus.subscribe_events();
         let indexed = Arc::clone(&shared);
         tokio::spawn(async move {
+            let mut lag = aurora_core::lag::LagWatch::new("stato e evidenziazioni per l'interfaccia");
             loop {
                 match rx.recv().await {
                     Ok(event) => {
@@ -312,7 +313,10 @@ impl AppState {
                             }
                         }
                     }
-                    Err(RecvError::Lagged(_)) => continue,
+                    Err(RecvError::Lagged(n)) => {
+                        lag.lost(n);
+                        continue;
+                    }
                     Err(RecvError::Closed) => break,
                 }
             }

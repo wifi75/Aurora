@@ -385,7 +385,11 @@ impl AudioManager {
             in_channel: Arc::new(AtomicU8::new(in_channel.code())),
             out_channel: Arc::new(AtomicU8::new(out_channel.code())),
             gain: Arc::new(AtomicU32::new(1.0f32.to_bits())),
-            save: Arc::new(SaveSettings::new(SaveMode::parse(&initial.save_mode), dir)),
+            save: {
+                let save = SaveSettings::new(SaveMode::parse(&initial.save_mode), dir);
+                save.set_keep_days(remote_api::engine_settings::parse_keep_days(&initial.save_keep_days).unwrap_or(engine_native::cleanup::DEFAULT_KEEP_DAYS));
+                Arc::new(save)
+            },
             default_save_dir,
             env_input,
             env_output,
@@ -710,8 +714,10 @@ impl AudioManager {
         {
             return AudioPart::failed(None, false, format!("{}: {e}", dir.display()));
         }
-        let changed = self.save.get() != (mode, dir.clone());
+        let keep = remote_api::engine_settings::parse_keep_days(&w.save_keep_days).unwrap_or(engine_native::cleanup::DEFAULT_KEEP_DAYS);
+        let changed = self.save.get() != (mode, dir.clone()) || self.save.keep_days() != keep;
         self.save.set(mode, dir);
+        self.save.set_keep_days(keep);
         AudioPart::new(if changed { PartStatus::Applied } else { PartStatus::Unchanged }, None)
     }
 }
@@ -869,7 +875,7 @@ mod tests {
     }
 
     fn values(input: &str, output: &str) -> AudioValues {
-        AudioValues { input: input.into(), output: output.into(), input_channel: "Mono".into(), output_channel: "Mono".into(), save_dir: String::new(), save_mode: "0".into() }
+        AudioValues { input: input.into(), output: output.into(), input_channel: "Mono".into(), output_channel: "Mono".into(), save_dir: String::new(), save_mode: "0".into(), save_keep_days: "7".into() }
     }
 
     fn rig(name: &str, initial: AudioValues, env_in: Option<&str>, env_out: Option<&str>, broken: &[&str]) -> Rig {

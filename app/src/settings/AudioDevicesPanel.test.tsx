@@ -26,7 +26,7 @@ const devices: AudioDevices = {
   output_pending: null,
   default_save_dir: 'D:/dati/save',
   system_default: 'Default',
-  values: { input: 'Microfono USB', output: '', input_channel: 'Left', output_channel: 'Mono', save_dir: '', save_mode: '0' },
+  values: { input: 'Microfono USB', output: '', input_channel: 'Left', output_channel: 'Mono', save_dir: '', save_mode: '0', save_keep_days: '7' },
 };
 
 const part = (status: AudioResult['input']['status'], in_use: string | null = null, extra: Partial<AudioResult['input']> = {}): AudioResult['input'] => ({ status, in_use, restored: false, message: null, ...extra });
@@ -72,6 +72,18 @@ describe('AudioDevicesPanel', () => {
     await waitFor(() => expect(putAudioSettings).toHaveBeenCalledWith({ input: 'Line In', input_channel: 'Mono', save_mode: 1 }));
     expect(await screen.findByText('Ingresso: applicato, in uso Line In.')).toBeInTheDocument();
     expect(screen.getByText('Impostazioni audio applicate e salvate.')).toBeInTheDocument();
+  });
+
+  it('sends the days to keep the saved files as a number and ignores an impossible value', async () => {
+    vi.mocked(putAudioSettings).mockResolvedValue({ ok: true, input: part('unchanged'), output: part('unchanged'), save: part('applied'), values: { ...devices.values, save_keep_days: '30' } });
+    render(<AudioDevicesPanel />);
+    const keep = (await screen.findByLabelText('Tieni i file salvati (giorni)')) as HTMLInputElement;
+    expect(keep.value).toBe('7');
+    fireEvent.change(keep, { target: { value: '5000' } });
+    expect(screen.getByRole('button', { name: 'Applica' })).toBeEnabled();
+    fireEvent.change(keep, { target: { value: '30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Applica' }));
+    await waitFor(() => expect(putAudioSettings).toHaveBeenCalledWith({ save_keep_days: 30 }));
   });
 
   it('says clearly when a device did not open and which one stays in use', async () => {

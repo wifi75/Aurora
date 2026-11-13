@@ -12,7 +12,13 @@ const IN_CHANNELS = ['Mono', 'Left', 'Right'] as const;
 const OUT_CHANNELS = ['Mono', 'Left', 'Right', 'Both'] as const;
 const SAVE_MODES = ['0', '1', '2'] as const;
 
-const FIELDS: ReadonlyArray<keyof AudioValues> = ['input', 'output', 'input_channel', 'output_channel', 'save_dir', 'save_mode'];
+const FIELDS: ReadonlyArray<keyof AudioValues> = ['input', 'output', 'input_channel', 'output_channel', 'save_dir', 'save_mode', 'save_keep_days'];
+
+/** «Tieni i file salvati»: un intero da 0 (per sempre) a 3650 giorni, come nel core. */
+function keepDays(text: string): number | null {
+  const n = Number(text.trim());
+  return text.trim() !== '' && Number.isInteger(n) && n >= 0 && n <= 3650 ? n : null;
+}
 
 /** Per l'uscita «predefinito» e vuoto sono la stessa scelta. */
 function sameOutput(a: string, b: string, systemDefault: string): boolean {
@@ -138,7 +144,10 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
         const next = draft[key];
         if (next === undefined || next === data.values[key]) continue;
         if (key === 'save_mode') body.save_mode = Number(next);
-        else body[key] = next;
+        else if (key === 'save_keep_days') {
+          const days = keepDays(next);
+          if (days !== null) body.save_keep_days = days;
+        } else body[key] = next;
       }
       return putAudioSettings(body);
     },
@@ -153,7 +162,7 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
   });
 
   // le scelte si applicano da sole, dopo una breve pausa e uscendo dalla scheda
-  const pendingNow = devices.data ? FIELDS.some((k) => draft[k] !== undefined && draft[k] !== devices.data.values[k]) : false;
+  const pendingNow = devices.data ? FIELDS.some((k) => draft[k] !== undefined && draft[k] !== devices.data.values[k] && (k !== 'save_keep_days' || keepDays(draft[k] ?? '') !== null)) : false;
   useAutosave(devices.data && pendingNow ? { data: devices.data, draft } : null, pendingNow, (v) => apply.mutate(v.data), (v) => apply.mutate(v.data), 1000);
   if (devices.isError) return <p className="notice">{errorText(devices.error, t)}</p>;
   if (!devices.data) return <p className="muted">{t('set.loading')}</p>;
@@ -225,6 +234,9 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
         </Field>
         <Field label={t('aud.dir')} hint={t('tip.aud.dir')} stack>
           <input id="aud-dir" type="text" className="jx-text" maxLength={260} spellCheck={false} autoComplete="off" value={shown.save_dir} placeholder={t('aud.dirPlaceholder', { dir: data.default_save_dir })} onChange={(e) => set({ save_dir: e.target.value })} />
+        </Field>
+        <Field label={t('aud.keep')} hint={t('tip.aud.keep')}>
+          <input id="aud-keep" type="number" min={0} max={3650} step={1} value={shown.save_keep_days || '7'} onChange={(e) => set({ save_keep_days: e.target.value })} />
         </Field>
       </Group>
 

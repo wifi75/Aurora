@@ -787,6 +787,7 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
     // un QSO concluso dal motore diventa un QSO registrato, con modo e commento come la finestra di registrazione di JTDX
     let (store, events, mut completed) = (Arc::clone(store), bus.events(), bus.subscribe_events());
     tokio::spawn(async move {
+        let mut lag = aurora_core::lag::LagWatch::critical("QSO conclusi verso il log");
         loop {
             match completed.recv().await {
                 Ok(Event::QsoCompleted(mut q)) => {
@@ -826,7 +827,8 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
                         let _ = events.send(Event::QsoLogged(q));
                     }
                 }
-                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Ok(_) => {}
+                Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                 Err(broadcast::error::RecvError::Closed) => break,
             }
         }
@@ -2685,8 +2687,9 @@ pub async fn run(
     qmap_service.set_tx_probe(state.transmitting_probe());
     // l'audio del decodificatore: con il motore proprio lo apre e lo cambia a caldo il gestore della scheda Audio (`audio_control`)
     let (native_tx, captured) = std::sync::mpsc::channel::<audio_spectrum::AudioChunk>();
-    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV
-    let (to_engine, native_rx) = std::sync::mpsc::channel();
+    // un passaggio in mezzo: ogni blocco va al decodificatore FT8 com'e' e, solo con l'ascolto SSTV acceso, una copia va all'SSTV.
+    // Verso il motore una coda con un tetto (30 s di audio): se il motore resta fermo si buttano i blocchi vecchi invece di crescere
+    let (to_engine, native_rx) = audio_spectrum::queue::channel(audio_spectrum::queue::DEFAULT_MAX_SECS);
     {
         let sstv = Arc::clone(&sstv);
         let digi = Arc::clone(&digi);
@@ -2764,6 +2767,7 @@ pub async fn run(
                 let enrich = Arc::clone(enrich);
                 let mut events = bus.subscribe_events();
                 tokio::spawn(async move {
+                    let mut lag = aurora_core::lag::LagWatch::new("novita' dei QSO registrati");
                     loop {
                         match events.recv().await {
                             Ok(Event::QsoLogged(q)) => {
@@ -2771,7 +2775,8 @@ pub async fn run(
                                     e.record_qso(&q.call, &q.grid, &q.band, &q.mode);
                                 }
                             }
-                            Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                            Ok(_) => {}
+                            Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                             Err(broadcast::error::RecvError::Closed) => break,
                         }
                     }
@@ -2997,6 +3002,8 @@ pub async fn run(
     let audio = match &audio_manager {
         // motore proprio: ingresso, canali e salvataggio vengono dalla scheda Audio e si cambiano a caldo; il decodificatore parte con il primo ingresso aperto
         Some(manager) => {
+            // periodi salvati e ALL.TXT oltre i giorni scelti nella scheda Audio: pulizia all'avvio e una volta al giorno
+            engine_native::cleanup::spawn_daily(manager.save_settings(), config.data_dir.clone());
             manager.set_engine_starter(Box::new(move |save| start_engine(Some(save))));
             manager.open_initial_input();
             // la scheda audio della radio puo' comparire dopo (radio accesa dopo Aurora, cavo USB rimesso): si riprova da soli

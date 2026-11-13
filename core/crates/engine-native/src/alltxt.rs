@@ -270,7 +270,8 @@ impl AllTxt {
         }
         let at = Utc::from_unix_ms(slot_start_ms);
         let secs = at.hour * 3600 + at.minute * 60 + at.second;
-        if self.last_secs.is_some_and(|last| secs < last) {
+        // cambio di giorno, o file tolto o ruotato dalla pulizia: il file nuovo comincia con la riga di frequenza
+        if self.last_secs.is_some_and(|last| secs < last) || !self.dir.join(at.file_name()).exists() {
             self.header_pending = true;
         }
         self.last_secs = Some(secs);

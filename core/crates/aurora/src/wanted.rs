@@ -118,6 +118,7 @@ pub fn spawn_watcher(service: Arc<WishlistService>, events: broadcast::Sender<Ev
     let decode_events = events.clone();
     tokio::spawn(async move {
         let mut dial_hz: Option<u64> = None;
+        let mut lag = aurora_core::lag::LagWatch::new("lista dei desiderati");
         loop {
             match receiver.recv().await {
                 Ok(Event::Status(s)) => dial_hz = (s.dial_hz > 0).then_some(s.dial_hz),
@@ -128,7 +129,7 @@ pub fn spawn_watcher(service: Arc<WishlistService>, events: broadcast::Sender<Ev
                     }
                 }
                 Ok(_) => {}
-                Err(broadcast::error::RecvError::Lagged(n)) => tracing::warn!("lista dei desiderati: {n} eventi persi"),
+                Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                 Err(broadcast::error::RecvError::Closed) => return,
             }
         }

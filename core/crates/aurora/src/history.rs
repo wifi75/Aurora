@@ -49,6 +49,7 @@ fn spawn_recorder_every(store: Arc<HistoryStore>, mut events: broadcast::Receive
         let mut pending: Vec<Entry> = Vec::new();
         let mut flush = tokio::time::interval(every);
         let mut prune = tokio::time::interval(PRUNE);
+        let mut lag = aurora_core::lag::LagWatch::new("storico delle decodifiche");
         loop {
             tokio::select! {
                 received = events.recv() => match received {
@@ -57,7 +58,8 @@ fn spawn_recorder_every(store: Arc<HistoryStore>, mut events: broadcast::Receive
                         mode = s.mode;
                     }
                     Ok(Event::Decode(d)) => pending.push(entry_for(&d, dial_hz, &mode, now_ms())),
-                    Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                    Ok(_) => {}
+                    Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                     Err(broadcast::error::RecvError::Closed) => {
                         write(&store, std::mem::take(&mut pending)).await;
                         return;

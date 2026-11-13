@@ -93,7 +93,7 @@ async fn lists_the_devices_with_channels_default_and_the_chosen_values() {
 async fn a_change_is_applied_then_saved_and_survives_a_restart() {
     let (s, store, fake, path) = with_audio("put");
     let cookie = cookie_for(&s);
-    let body = r#"{"input":"Line In","output":"Altoparlanti USB","input_channel":"Left","output_channel":"Both","save_dir":"D:/audio/ft8","save_mode":1}"#;
+    let body = r#"{"input":"Line In","output":"Altoparlanti USB","input_channel":"Left","output_channel":"Both","save_dir":"D:/audio/ft8","save_mode":1,"save_keep_days":30}"#;
     let resp = call(&router(&s), put(&cookie, body).via_loopback()).await;
     status_is(&resp, StatusCode::OK);
     let doc = body_json(resp).await;
@@ -106,6 +106,7 @@ async fn a_change_is_applied_then_saved_and_survives_a_restart() {
     assert_eq!(again.audio(), store.audio());
     assert_eq!(again.audio().save_dir, "D:/audio/ft8");
     assert_eq!(again.audio().output_channel, "Both");
+    assert_eq!((seen.save_keep_days.as_str(), again.audio().save_keep_days.as_str(), doc["values"]["save_keep_days"].as_str()), ("30", "30", Some("30")));
 }
 
 #[tokio::test]
@@ -130,7 +131,7 @@ async fn refuses_bad_values_empty_bodies_and_remote_peers_without_touching_the_d
     let (s, store, fake, _) = with_audio("refuse");
     let cookie = cookie_for(&s);
     let before = store.audio();
-    for body in [r#"{}"#, r#"{"input_channel":"Both"}"#, r#"{"output_channel":"Centro"}"#, r#"{"save_mode":3}"#, r#"{"save_dir":"D:/a|b"}"#, r#"{"input":"a\nb"}"#] {
+    for body in [r#"{}"#, r#"{"input_channel":"Both"}"#, r#"{"output_channel":"Centro"}"#, r#"{"save_mode":3}"#, r#"{"save_dir":"D:/a|b"}"#, r#"{"input":"a\nb"}"#, r#"{"save_keep_days":3651}"#] {
         let resp = call(&router(&s), put(&cookie, body)).await;
         status_is(&resp, StatusCode::BAD_REQUEST);
         assert_eq!(body_json(resp).await["error"], "bad_audio_setting", "{body}");

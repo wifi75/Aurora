@@ -17,11 +17,13 @@ pub fn spawn_refresher(service: Arc<OnlineService>, mut events: broadcast::Recei
     tokio::spawn(async move {
         let mut callsign = String::new();
         let mut tick = tokio::time::interval(TICK);
+        let mut lag = aurora_core::lag::LagWatch::new("informazioni in rete");
         loop {
             tokio::select! {
                 received = events.recv() => match received {
                     Ok(Event::Status(s)) => callsign = s.de_call,
-                    Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                    Ok(_) => {}
+                    Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                     Err(broadcast::error::RecvError::Closed) => return,
                 },
                 _ = tick.tick() => {

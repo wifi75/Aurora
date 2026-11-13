@@ -93,16 +93,35 @@ binaria), che conta solo per il telefono su rete mobile.
    Ora la decodifica del periodo e' dentro `guarded` (`catch_unwind`): si perde quel periodo, l'errore va nel log, il periodo dopo si
    decodifica. Prova `a_panicking_decode_skips_only_that_period`.
 
+### Robustezza (2026-11-13, dopo la verifica; ogni punto con la sua prova)
+8. **File salvati e `ALL.TXT` senza limite**: voce «Tieni i file salvati (giorni)» nella scheda Audio (`SaveKeepDays`, di base 7, 0 = per
+   sempre). `engine_native::cleanup`, all'avvio e una volta al giorno: nella cartella dei salvataggi toglie solo i file `aammgg_hhmmss.wav`
+   piu' vecchi del limite (eta' dal nome, niente sottocartelle); nella cartella dei dati ruota `AAAAMM_ALL.TXT` in `ALL-<data>.TXT` oltre
+   50 MB o se cominciato prima del limite, e toglie i ruotati e i mesi finiti oltre il limite. Nessun altro file si tocca; riga nel registro
+   con file tolti, MB liberati e rotazioni. Prove su cartelle temporanee in `cleanup.rs`.
+9. **Thread del CAT morto per un panic** (Hamlib, TCI, FT-991(A) Link, Cat4OM): il guardiano del servizio CAT (`rig-control/src/watchdog.rs`
+   e `cat.rs`) vede il thread finito per un panic, stacca la radio (PTT spento se si puo'), scrive un `warn` e ricollega dopo 1, 2, 4, 8,
+   16 s (massimo 30); oltre 5 tentativi in 10 minuti resta in errore fino al collegamento a mano. In pagina lo stato e' «riconnessione».
+   OmniRig si riprendeva gia' da solo. Prove con un collegamento finto che va in panic.
+10. **Eventi persi sul bus**: ogni `RecvError::Lagged` ora scrive una riga (`aurora_core::lag::LagWatch`): `warn` al massimo ogni 60 s per
+    ascoltatore, `error` a ogni perdita per chi scrive i QSO (`qso-export`, `QsoCompleted` -> `QsoLogged`, log del contest).
+11. **Coda dell'audio verso il motore senza limite**: `audio_spectrum::queue`, tetto di 30 s di audio (quasi tre volte la decodifica piu'
+    lunga, quindi nell'uso normale non si perde niente); oltre si buttano i blocchi piu' vecchi con un `warn` al massimo ogni 30 s. Cinque
+    prove unitarie; le 220 prove di `engine-native` passano (il motore riceve da qualunque `ChunkSource`).
+12. **Prove RTTY**: `6.283` sostituito da `TAU` in `tests/common/rtty_scenari.rs` (clippy `approx_constant`); la tabella dello scenario
+    «scariche» e' identica prima e dopo (soglie -7,16 / -7,89 dB, CER medio 19,56).
+
 ## Problemi trovati e non corretti (con il motivo)
 
 ### Memoria e file che crescono
-- **Salvataggio dei periodi «come JTDX» senza pulizia** (`engine-native/src/wav.rs:193`, `save_jtdx_style`): con «Salva tutti» un file ogni
+- *Chiuso (punto 8)*: **Salvataggio dei periodi «come JTDX» senza pulizia** (`engine-native/src/wav.rs:193`, `save_jtdx_style`): con «Salva tutti» un file ogni
   15 s, circa 360 kB, cioe' circa 2 GB al giorno. JTDX fa lo stesso e i file sono dell'utente: cancellarli e' una scelta del proprietario
   (proposta: un limite in GB o in giorni nelle impostazioni). Le registrazioni di misura (`save_slot`) tengono gia' gli ultimi 400 file.
-- **`ALL.TXT`** (`engine-native/src/alltxt.rs`): un file al mese, mai cancellato (come JTDX); decine di MB a settimana su banda piena.
+- *Chiuso (punto 8)*: **`ALL.TXT`** (`engine-native/src/alltxt.rs`): un file al mese, mai cancellato (come JTDX); decine di MB a settimana su banda piena.
 - **Storico delle decodifiche** (`decode-history`): pulizia oraria a 30 giorni, ma con `AURORA_HISTORY_DAYS=0` cresce senza limite e il
   file SQLite non si restringe mai (nessun `VACUUM`).
-- **Canali audio illimitati verso il motore** (`aurora/src/lib.rs:2679` e `:2681`, `std::sync::mpsc::channel`): il motore decodifica nello
+- *Chiuso (punto 11) per la coda verso il motore; quella fra la scheda e il passaggio resta un mpsc, ma il passaggio non si blocca mai
+  (manda a SSTV e modi testuali con `try_send`)*: **Canali audio illimitati verso il motore** (`aurora/src/lib.rs:2679` e `:2681`, `std::sync::mpsc::channel`): il motore decodifica nello
   stesso thread che li svuota; durante una decodifica lunga (fino a 11 s, poi `deadline`) i blocchi si accumulano (circa 190 kB/s a 48 kHz)
   e poi si recuperano. Limitato dal tempo della decodifica, non dalla coda: se il thread si bloccasse (CAT, PTT appesi) crescerebbero
   senza fine. Non toccato: una coda limitata perderebbe audio del periodo.
@@ -113,6 +132,7 @@ binaria), che conta solo per il telefono su rete mobile.
   `native-parity.log` (rotazione a 20 MB), elenchi del cervello delle automazioni (5000/100), liste interne del motore.
 
 ### Eventi che si possono perdere (`broadcast`, `RecvError::Lagged`)
+*Avviso nel registro aggiunto (punto 10); gli eventi persi restano persi.*
 Chi resta indietro sul bus perde gli eventi senza avviso: `QsoCompleted` -> `QsoLogged` (`aurora/src/lib.rs:829`), log e ADIF
 (`qso-export/src/lib.rs:169`), invii ai servizi (`reporting/src/lib.rs:560`), contest (`contest/src/servizio.rs:1100`), automazione
 (`qso-engine/src/runner.rs:121`), storico (`aurora/src/history.rs:60`). Con 4096 posti e pochi eventi al secondo serve un blocco di minuti,
@@ -120,7 +140,7 @@ quindi e' improbabile; non misurato in pratica, non toccato. Conviene almeno scr
 Il WebSocket (`remote-api/src/ws.rs:65`) dopo un `Lagged` rimanda solo lo stato: decodifiche e evidenziazioni di quel tratto mancano.
 
 ### Thread che, se muoiono, non ripartono
-- CAT (`rig-control/src/hamlib_rig.rs:827`, `tci.rs:869`, `cat4om.rs:1516`, `ft991link.rs:567`, `rotator.rs:463`): handle tenuto ma mai
+- *Chiuso (punto 9), tranne il rotore*: CAT (`rig-control/src/hamlib_rig.rs:827`, `tci.rs:869`, `cat4om.rs:1516`, `ft991link.rs:567`, `rotator.rs:463`): handle tenuto ma mai
   controllato; lo stato resta l'ultima istantanea.
 - Ricezione di SSTV e modi testuali: `feed` ignora `Disconnected` (thread morto) mentre l'ascolto risulta acceso. Con le correzioni 5 e 6
   le due cause di panic trovate sono tolte.
@@ -148,6 +168,6 @@ Il WebSocket (`remote-api/src/ws.rs:65`) dopo un `Lagged` rimanda solo lo stato:
 ## Cosa conviene fare dopo
 1. CW di tutta la banda: blanker e AGC comuni, rimisurando `cpu_tutta_la_banda` e `cw_confronto` (la CPU scenderebbe di molto, ma i
    caratteri cambiano e vanno confrontati).
-2. Un avviso nel log a ogni `Lagged` dei consumatori dei QSO, e una ripartenza (o almeno un avviso) per i thread CAT morti.
-3. Un limite (giorni o GB) per i periodi salvati «come JTDX» e per `ALL.TXT`, da decidere con il proprietario.
+2. *Fatto (punti 9 e 10).* Resta il rotore (`rotator.rs:463`), che non riparte.
+3. *Fatto (punto 8).*
 4. Flusso audio unico a 12 kHz condiviso fra motore, SSTV e modi testuali.

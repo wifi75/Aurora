@@ -1115,6 +1115,11 @@ impl HamlibRig {
         }
     }
 
+    /// Il thread del collegamento e' morto per un panic? Ne restituisce il testo, una volta sola (lo guarda il servizio CAT per ricollegare).
+    pub fn worker_panic(&self) -> Option<String> {
+        crate::watchdog::reap_panic(&self.thread)
+    }
+
     pub fn shutdown(&self) {
         self.inner.stop.store(true, Ordering::SeqCst);
         if let Some(handle) = self.thread.lock().ok().and_then(|mut h| h.take()) {
