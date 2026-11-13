@@ -7,7 +7,9 @@ pub mod command;
 pub mod engine;
 pub mod event;
 pub mod filters;
+pub mod idle;
 pub mod notice;
+pub mod users;
 pub mod version;
 pub mod waterfall;
 
