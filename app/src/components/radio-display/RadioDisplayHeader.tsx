@@ -67,7 +67,9 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   // «Nessuno (senza CAT)» scelto apposta: il display non ha niente da mostrare (frequenza, S-meter, potenza arrivano dal CAT) e sparisce
   if (cat.data?.config.backend === 'none') return null;
   const state = cat.data?.status.state;
-  const configured = !!cat.data && (cat.data.config.backend === 'omnirig' || cat.data.config.model !== 0);
+  // configurata: Hamlib con un modello scelto, oppure qualunque altro sistema (OmniRig, TCI, FT-991(A) Link, Cat4OM non hanno un modello
+  // Hamlib: prima con Cat4OM spento il display spariva e al suo posto compariva «configura la radio»)
+  const configured = !!cat.data && (cat.data.config.backend !== 'hamlib' || cat.data.config.model !== 0);
   if (!phone && cat.data && !configured && (state === 'disconnected' || state === 'error')) {
     return <SetupCta className="setup-cta--radio" href="#/impostazioni/radio" title="cta.radio.none" action="cta.radio.go" />;
   }
