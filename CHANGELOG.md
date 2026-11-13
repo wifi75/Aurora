@@ -3,6 +3,8 @@
 ## Non rilasciato
 
 ## 0.11.251 - 2026-11-13
+- **Impostazioni allineate**: i controlli (menu, pulsanti, colori, bandiera della lingua) partono a sinistra sotto la loro etichetta, non piu' centrati o spinti a destra.
+- **Esporta e importa ADIF solo in «File ADIF»**: tolto il doppione da «Programmi collegati».
 - **VFO B delle Yaesu senza `get_vfo_info`** (per esempio FT-2000 con Hamlib): se Hamlib non da' il VFO B, Aurora legge frequenza e modo del VFO di trasmissione in split, cosi' il display della radio lo mostra.
 - **Server del DX Cluster leggibili**: nome e indirizzo dei server in caratteri piu' grandi.
 - **Club Log col token**: in Impostazioni › Invio dei QSO › Club Log basta incollare il token personale creato in Club Log › Settings › API (comincia con `cl_`); niente piu' email, password e chiave API dello sviluppatore. «Prova» controlla davvero il token senza inviare QSO. Il vecchio metodo resta per chi lo usa; se c'e' il token vale il token.
