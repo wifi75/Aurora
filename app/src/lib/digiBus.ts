@@ -13,6 +13,8 @@ const MAX_TEXT = 40000;
 let text = '';
 /** Accanto al testo, carattere per carattere: '1' = incerto (RTTY, mostrato in chiaro), '0' = certo. */
 let weak = '';
+/** Quanti caratteri sono usciti dall'inizio del testo da quando la pagina e' aperta: la posizione assoluta di ogni riga, che fa da chiave stabile. */
+let dropped = 0;
 
 export function getDigiText(): string {
   return text;
@@ -20,6 +22,11 @@ export function getDigiText(): string {
 
 export function getDigiWeak(): string {
   return weak;
+}
+
+/** La posizione assoluta del primo carattere del testo (cresce quando l'inizio si taglia o si cancella). */
+export function getDigiBase(): number {
+  return dropped;
 }
 
 function notify(): void {
@@ -31,6 +38,7 @@ function append(add: string, mask = '0'.repeat(add.length)): void {
   text += add;
   weak += mask;
   if (text.length > MAX_TEXT) {
+    dropped += text.length - MAX_TEXT;
     text = text.slice(text.length - MAX_TEXT);
     weak = weak.slice(weak.length - MAX_TEXT);
   }
@@ -38,6 +46,7 @@ function append(add: string, mask = '0'.repeat(add.length)): void {
 }
 
 export function clearDigiText(): void {
+  dropped += text.length;
   text = '';
   weak = '';
   notify();
