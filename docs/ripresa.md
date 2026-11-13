@@ -2,7 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-13 pomeriggio (0.11.247 pubblicata, sito aggiornato)
+## Stato al 2026-11-13 sera (0.11.249 pubblicata, sito aggiornato)
+
+- **0.11.249** (2026-11-13T16:56:56Z): spot verificati sull'elenco pubblico di DXSummit dopo l'invio (`reporting/src/dxsummit.rs` `check`/`listed`; controlli a 10, 30, 60, 90 s; stato «spot pubblicato» o «accettato ma non pubblicato»). Non ancora provato con uno spot vero.
+
+- **0.11.248** (15:24 UTC): titolo della finestra con nome e autore, radio spenta a 14 segmenti, Tune e Log QSO sempre visibili, log vuoto con Aggiungi QSO e Importa ADIF.
 
 - **0.11.247** (2026-11-13T14:37:32Z): notch e passabanda in frequenza davanti ai ricevitori PSK/RTTY/CW (`mode-digi/src/notch.rs`, oltre 60 dB, ritardo circa 0,3 s solo con filtri accesi), AFC vincolato, display spento grigio, Spot DX nella barra del cluster. FT-2000 del proprietario: l'accensione via CAT non funziona nemmeno a mano su COM10 senza VSPE (porta CAT della radio non alimentata da spenta): serve una presa comandata.
 

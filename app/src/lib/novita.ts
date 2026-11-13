@@ -21,7 +21,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.249',
-    released: '2026-11-13T00:00:00Z',
+    released: '2026-11-13T16:56:56Z',
     kind: 'changed',
     title: [
       'Spot verificati su DXSummit',
