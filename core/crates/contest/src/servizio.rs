@@ -1083,6 +1083,7 @@ impl ContestService {
         let mut events = bus.subscribe_events();
         let commands = bus.commands();
         tokio::spawn(async move {
+            let mut lag = aurora_core::lag::LagWatch::critical("log del contest");
             loop {
                 match events.recv().await {
                     Ok(Event::QsoLogged(q)) => {
@@ -1097,7 +1098,8 @@ impl ContestService {
                     }
                     Ok(Event::Decode(m)) => me.nota_decodifica(&m),
                     Ok(Event::Status(s)) => me.nota_radio(s.dial_hz, &s.mode),
-                    Ok(_) | Err(RecvError::Lagged(_)) => {}
+                    Ok(_) => {}
+                    Err(RecvError::Lagged(n)) => lag.lost(n),
                     Err(RecvError::Closed) => break,
                 }
             }

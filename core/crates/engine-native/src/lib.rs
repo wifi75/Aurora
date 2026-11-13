@@ -266,11 +266,13 @@ pub fn start_with_save(
     let parity = Arc::clone(&engine.parity);
     let mut rx = events.subscribe();
     tokio::spawn(async move {
+        let mut lag = aurora_core::lag::LagWatch::new("motore proprio, confronto con JTDX");
         loop {
             match rx.recv().await {
                 // i messaggi del motore proprio (id alti) non sono di JTDX: non entrano nel confronto
                 Ok(Event::Decode(m)) if m.id < 1_000_000_000 => parity.add_jtdx(slot_of_time_ms(m.time_ms, now_unix_ms()), &m.text, i64::from(m.freq_hz)),
-                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Ok(_) => {}
+                Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                 Err(broadcast::error::RecvError::Closed) => break,
             }
         }

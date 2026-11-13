@@ -787,6 +787,7 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
     // un QSO concluso dal motore diventa un QSO registrato, con modo e commento come la finestra di registrazione di JTDX
     let (store, events, mut completed) = (Arc::clone(store), bus.events(), bus.subscribe_events());
     tokio::spawn(async move {
+        let mut lag = aurora_core::lag::LagWatch::critical("QSO conclusi verso il log");
         loop {
             match completed.recv().await {
                 Ok(Event::QsoCompleted(mut q)) => {
@@ -826,7 +827,8 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
                         let _ = events.send(Event::QsoLogged(q));
                     }
                 }
-                Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                Ok(_) => {}
+                Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                 Err(broadcast::error::RecvError::Closed) => break,
             }
         }
@@ -2765,6 +2767,7 @@ pub async fn run(
                 let enrich = Arc::clone(enrich);
                 let mut events = bus.subscribe_events();
                 tokio::spawn(async move {
+                    let mut lag = aurora_core::lag::LagWatch::new("novita' dei QSO registrati");
                     loop {
                         match events.recv().await {
                             Ok(Event::QsoLogged(q)) => {
@@ -2772,7 +2775,8 @@ pub async fn run(
                                     e.record_qso(&q.call, &q.grid, &q.band, &q.mode);
                                 }
                             }
-                            Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                            Ok(_) => {}
+                            Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                             Err(broadcast::error::RecvError::Closed) => break,
                         }
                     }

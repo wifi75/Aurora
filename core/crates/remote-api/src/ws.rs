@@ -55,6 +55,8 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
         }
     }
 
+    let mut lag_events = aurora_core::lag::LagWatch::new("WebSocket, eventi verso un client");
+    let mut lag_rows = aurora_core::lag::LagWatch::new("WebSocket, righe della cascata verso un client");
     loop {
         tokio::select! {
             received = events.recv() => match received {
@@ -62,7 +64,8 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
                 Ok(Event::WsprCycle(_)) => {}
                 Ok(event) => if !send_event(&mut socket, &event).await { return; },
                 // Un client in ritardo riparte dallo stato corrente, non dagli arretrati.
-                Err(RecvError::Lagged(_)) => {
+                Err(RecvError::Lagged(n)) => {
+                    lag_events.lost(n);
                     if let Some(status) = state.current_status()
                         && !send_event(&mut socket, &Event::Status(status)).await
                     {
@@ -79,7 +82,7 @@ async fn run(mut socket: WebSocket, state: AppState, device: DeviceId) {
                         return;
                     }
                 }
-                Err(RecvError::Lagged(_)) => {}
+                Err(RecvError::Lagged(n)) => lag_rows.lost(n),
                 Err(RecvError::Closed) => return,
             },
             incoming = socket.recv() => match incoming {

@@ -512,6 +512,7 @@ async fn run(
     let mut guard = DupeGuard::default();
     let mut tick = tokio::time::interval(service.endpoints.psk_every);
     tick.tick().await;
+    let mut lag = aurora_core::lag::LagWatch::new("invii ai servizi (PSK Reporter e log in rete)");
     loop {
         tokio::select! {
             event = events.recv() => match event {
@@ -557,7 +558,8 @@ async fn run(
                         dispatch_qso(&service, config, q);
                     }
                 }
-                Ok(_) | Err(RecvError::Lagged(_)) => {}
+                Ok(_) => {}
+                Err(RecvError::Lagged(n)) => lag.lost(n),
                 Err(RecvError::Closed) => {
                     // alla chiusura si manda quello che e' in coda (WSJT-X invia alla chiusura e al cambio di banda)
                     flush_psk(&service, &mut packetizer, &mut queue).await;
