@@ -1,10 +1,20 @@
 # Changelog
 
-## Non rilasciato
+## 0.11.245 - 2026-11-13
 - **Spia di salute della stazione** in alto a destra, prima dell'ingranaggio (e nell'intestazione del telefono): verde, ambra o rossa secondo CPU di Aurora, tempo di decodifica, audio, CAT e orologio; passando il mouse i numeri, con un clic la finestra «Salute della stazione» con cosa fare, il grafico degli ultimi 10 minuti e, se la decodifica sfora spesso, la proposta di accendere «PC lento». Nuova rotta `GET /api/v1/health/resources`.
 - Avviso «segnale in ingresso debole»: non compare piu' all'apertura, solo se dura 90 secondi; avvisi della stazione leggibili (fondo pieno, bordo colorato per gravita').
 - PSK·RTTY·CW: con la scheda del rotore accesa log e DX Cluster restano nella colonna di destra invece di finire sotto le finestre.
 - **Impostazioni dal menu**: la voce «Impostazioni» apre sempre la pagina Informazioni; il ramo di un modo si apre dall'ingranaggio della sua pagina.
+- **Avvisi e tooltip leggibili**: il tooltip del commento nel DX Cluster e gli avvisi in basso a destra hanno fondo bianco e testo scuro (leggibili in tema chiaro e scuro); l'avviso di ingresso debole non compare in trasmissione ne' mentre la radio accorda dopo TUNE.
+- **Falsi crash**: le righe innocue che WebView2 scrive alla chiusura (e l'errore del riavvio dopo l'aggiornamento) non contano piu' come crash; prima ogni aggiornamento o spegnimento del PC mandava un pacchetto «crash».
+- **Tabella delle frequenze con una riga non valida**: si tolgono solo le righe sbagliate (copia intera in `frequencies.json.prima`) invece di perdere tutta la tabella dell'utente.
+- **Menu delle Impostazioni a «tasselli»**: voci piu' grandi con fondo e bordo del loro colore.
+- **Scheda della DXpedition leggibile nel tema scuro**: testi chiari e stato in pillole piene.
+- **TUNE dal display**: la scritta TX si accende mentre la radio accorda (circa 6 s; con TCI finche' la portante e' accesa).
+- **«Spegni split» sempre visibile** accanto al display: grigio in simplex, acceso con la radio in split.
+- **DX Cluster**: i pulsanti della barra hanno il bordo azzurro e l'alone al passaggio del mouse.
+- **Avvisi a comparsa** larghi quanto il testo (non piu' sempre a tutta larghezza).
+- **Database di Log4OM**: il messaggio d'errore dice il motivo vero e il file scelto (segnalazione #51).
 
 ## 0.11.244 - 2026-11-13
 - **Separatore fra i periodi ben visibile** nell'Attivita' di banda e nella finestra RX: una fascia sottile del colore d'accento con l'ora UTC del periodo e una riga piena, nei temi scuro e chiaro e con la dimensione del testo scelta; acceso di base nelle installazioni nuove. «Separatore sottile fra i periodi» nelle Impostazioni (Schermo) riporta il filo di prima (segnalazione #38).

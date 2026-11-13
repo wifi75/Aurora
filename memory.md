@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-12, versione 0.11.244 pubblicata (Spegni split, aggiornamento in un solo giro, modalita' PC lento, CW piu' leggero, robustezza, frequenze ARI, manuale completo, finestre FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-13, versione 0.11.245 pubblicata (spia di salute della stazione, avvisi e finestre leggibili, niente falsi crash, tabella delle frequenze salvata, TX durante TUNE, Spegni split sempre visibile). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-12
