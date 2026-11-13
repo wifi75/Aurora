@@ -1298,3 +1298,19 @@ mark.guide-hit--on { background: #f97316; color: #ffffff; box-shadow: 0 0 0 2px 
 /* il display spento resta ben visibile come un apparecchio spento (prima era cosi' scuro da sembrare sparito): tutto grigio e un po' piu'
    scuro, senza cifre ne' S-meter */
 body.rd-radio-off .rd-header, body.rd-radio-off .rd-face-row, body.rd-radio-off .rd-square-slot, body.rd-radio-off .rd-square-preview { filter: grayscale(1) brightness(0.7); }
+
+/* Radio spenta: la scritta grande al centro di ogni display, che si adatta alla misura del display (container query: piu' grande sui
+   display larghi, piu' piccola su quelli stretti o quasi quadrati); il pannello resta grigio dietro */
+.rd-header, .rd-square-slot, .rd-square-preview { position: relative; container-type: inline-size; }
+body.rd-radio-off .rd-header::after, body.rd-radio-off .rd-square-slot::after, body.rd-radio-off .rd-square-preview::after {
+  content: var(--rd-off-text, '⏻  RADIO OFF');
+  position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; pointer-events: none;
+  font-weight: 800; letter-spacing: 0.12em; white-space: nowrap; color: #f1f5f9;
+  font-size: clamp(14px, 5.2cqi, 40px);
+  text-shadow: 0 0 6px rgb(0 0 0 / 0.95), 0 0 14px rgb(0 0 0 / 0.8);
+  background: rgb(0 0 0 / 0.35);
+  border-radius: inherit;
+}
+/* niente doppioni quando un display sta dentro un altro contenitore con la scritta */
+body.rd-radio-off .rd-square-slot .rd-header::after, body.rd-radio-off .rd-square-preview .rd-header::after, body.rd-radio-off .rd-header .rd-header::after { content: none; }
+body.rd-radio-off .md-noradio { display: none; }

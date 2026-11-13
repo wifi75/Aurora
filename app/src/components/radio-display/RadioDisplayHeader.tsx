@@ -38,6 +38,7 @@ export function RadioDisplayHeader({ solo = false }: { solo?: boolean } = {}) {
 }
 
 function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
+  const t = useT();
   const detached = useGroups().some((g) => g.open && g.items.includes('display'));
   const phone = usePhone();
   const pref = useRadioDisplay((s) => s.pref);
@@ -51,8 +52,10 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   // ogni stile e anche per il display staccato)
   useEffect(() => {
     document.body.classList.toggle('rd-radio-off', radioOff);
+    // la scritta grande al centro di ogni display spento, nella lingua scelta (la usa il CSS con `content: var(--rd-off-text)`)
+    document.body.style.setProperty('--rd-off-text', JSON.stringify(t('rd.off')));
     return () => document.body.classList.remove('rd-radio-off');
-  }, [radioOff]);
+  }, [radioOff, t]);
   if (pref.hidden) return null;
   // il display sta in una finestra a parte (secondo schermo): qui resta solo un segnaposto vuoto
   if (detached && !solo) return <span className="rd-detached" aria-hidden="true" />;

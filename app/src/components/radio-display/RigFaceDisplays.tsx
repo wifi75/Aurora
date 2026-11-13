@@ -267,7 +267,7 @@ function FtMeters({ powerW, swr, powerText, swrText }: { powerW: number | null; 
 
 export function Ft2000Display({
   model,
-  noRadio,
+  noRadio: _noRadio,
   ariaLabel,
   data,
   onAction,
@@ -501,16 +501,7 @@ export function Ft2000Display({
           offOpacity={0.1}
         />
         {/* la scala di sintonia - ... + sotto la frequenza non serviva (scelta del proprietario): resta solo l'avviso senza radio */}
-        {known ? null : (
-          <Label
-            x={252}
-            y={78}
-            text={noRadio}
-            fill={FT.amber}
-            size={12}
-            weight={600}
-          />
-        )}
+        {/* radio spenta: nessuna scritta sopra gli strumenti (si accavallava a PO e SWR); il pannello spento e grigio basta, come quello vero */}
         <g aria-hidden="true" opacity={rit == null ? 0.35 : 1}>
           <rect
             x={480}
@@ -837,7 +828,7 @@ function IcTag({
 
 export function Ic7610Display({
   model,
-  noRadio,
+  noRadio: _noRadio,
   ariaLabel,
   data,
   onAction,
@@ -1000,16 +991,7 @@ export function Ic7610Display({
               size={30}
               weight={700}
             />
-            {!sub ? (
-              <Label
-                x={x0 + 52}
-                y={82}
-                text={noRadio}
-                fill="#ffd34a"
-                size={10}
-                weight={600}
-              />
-            ) : null}
+
           </>
         )}
         <IcArc

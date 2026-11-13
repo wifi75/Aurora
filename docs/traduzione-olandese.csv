@@ -2290,6 +2290,7 @@ rd.layout.pair,Two equal blocks side by side,Twee gelijke blokken naast elkaar
 tip.rd.layout,"How the radio display and the extended display (second VFO and buttons) sit top right: one panel with a large VFO A and VFO B beside it, like dual-VFO radios, or two blocks of the same size side by side.","Hoe het radiodisplay en het uitgebreide display (tweede VFO en knoppen) rechtsboven staan: één paneel met een grote VFO A en VFO B ernaast, zoals bij dual-VFO-radio’s, of twee even grote blokken naast elkaar."
 rd.hide,Hide the display,Display verbergen
 tip.rd.hide,Removes the display from the header; the chosen style is remembered.,Haalt het display uit de kop; de gekozen stijl wordt onthouden.
+rd.off,⏻  RADIO OFF,⏻  RADIO UIT
 rd.noRadio,Radio not responding,Radio reageert niet
 rd.open,Show the enlarged meters,Vergrote meters tonen
 rd.popover,Enlarged radio display,Vergroot radiodisplay

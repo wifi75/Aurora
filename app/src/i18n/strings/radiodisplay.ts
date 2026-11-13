@@ -110,6 +110,7 @@ export const radioDisplayStrings = {
     'Quita la pantalla de la cabecera; el estilo elegido se recuerda.',
     'Retira o ecrã do cabeçalho; o estilo escolhido fica guardado.',
   ],
+  'rd.off': ['⏻  RADIO SPENTA', '⏻  RADIO OFF', '⏻  FUNKGERÄT AUS', '⏻  RADIO ÉTEINTE', '⏻  RADIO APAGADA', '⏻  RÁDIO DESLIGADO'],
   'rd.noRadio': [
     'Radio non risponde',
     'Radio not responding',
