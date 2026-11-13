@@ -1,7 +1,7 @@
 {
   "name": "aurora-desktop",
   "private": true,
-  "version": "0.11.250",
+  "version": "0.11.251",
   "license": "GPL-3.0-only",
   "scripts": {
     "tauri": "tauri"

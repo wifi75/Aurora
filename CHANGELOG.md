@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.251 - 2026-11-13
 - **Club Log col token**: in Impostazioni › Invio dei QSO › Club Log basta incollare il token personale creato in Club Log › Settings › API (comincia con `cl_`); niente piu' email, password e chiave API dello sviluppatore. «Prova» controlla davvero il token senza inviare QSO. Il vecchio metodo resta per chi lo usa; se c'e' il token vale il token.
 - **Messaggi di HRDLOG.NET nella lingua dell'interfaccia**, come quelli di Club Log; con nominativo o codice rifiutati il messaggio ricorda che serve il codice «Upload code» del profilo, non la password, e una risposta che non si capisce mostra il suo inizio.
 
