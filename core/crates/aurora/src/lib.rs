@@ -1223,6 +1223,9 @@ fn wire_band_decoder(digi: &Arc<mode_digi::DigiService>, cluster: &Arc<dx_cluste
         digi.set_call_lookup(Arc::new(move |call: &str| lookup.lookup(call).map(|l| lookup.entity(l.entity).name.clone())));
         spawn_call_forms(Arc::clone(digi), Arc::clone(cluster), Arc::clone(logbook), data_dir.to_path_buf(), db);
     }
+    // i notch dei modi testuali valgono per una frequenza della radio: cambiata, si tolgono
+    let notch_dial = Arc::clone(dial_hz);
+    digi.set_dial_source(Arc::new(move || notch_dial.load(std::sync::atomic::Ordering::Relaxed)));
     let (cluster, dial) = (Arc::clone(cluster), Arc::clone(dial_hz));
     // al piu' uno spot per nominativo e banda ogni 10 minuti (di nuovo se cambia frequenza di oltre 1 kHz o passa a chiamare CQ)
     let gate = Mutex::new(mode_digi::band::SpotGate::new());

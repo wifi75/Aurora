@@ -12,6 +12,7 @@
 //! - [`macro_files`]: importa le macro dai file di una cartella dell'utente;
 //! - [`tx_stream`]: i modulatori a flusso (trasmissione scritta dal vivo, avanzamento carattere per carattere);
 //! - [`cw_bayes`]: il decodificatore CW probabilistico (traliccio con velocità, pugno e modello del testo), di base nel ricevitore CW;
+//! - [`notch`]: notch e passabanda in frequenza davanti ai ricevitori, e i limiti dell'AFC;
 //! - [`blanker`]: noise blanker contro le scariche, davanti ai filtri stretti;
 //! - [`band`]: il thread di tutta la banda del servizio (limite di CPU, eventi `band`, spot locali);
 //! - [`skim`]: decodifica di tutti i segnali CW e PSK della banda audio, con storico, nominativi e spot locali;
@@ -30,6 +31,7 @@ pub mod fldigi_oracle;
 pub mod macro_files;
 #[cfg(feature = "mmtty-oracle")]
 pub mod mmtty_oracle;
+pub mod notch;
 pub mod psk;
 pub mod psk_viterbi;
 pub mod rtty;

@@ -372,6 +372,11 @@ impl PskDemodulator {
         self.freq_hz
     }
 
+    /// Porta l'ascolto su `freq_hz` senza cambiare la frequenza scelta (i limiti dell'AFC, `notch::AfcGuard`).
+    pub fn steer(&mut self, freq_hz: f32) {
+        self.tune(freq_hz);
+    }
+
     pub fn set_afc(&mut self, on: bool) {
         self.afc = on;
         if !on {

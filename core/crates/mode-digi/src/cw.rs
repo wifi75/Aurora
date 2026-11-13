@@ -590,6 +590,11 @@ impl CwDemodulator {
         self.step = 2.0 * PI * f64::from(hz) / f64::from(RATE);
     }
 
+    /// Porta l'ascolto su `hz` senza cambiare il tono scelto (i limiti dell'AFC, `notch::AfcGuard`).
+    pub fn steer(&mut self, hz: f32) {
+        self.tune(hz);
+    }
+
     /// AFC: il tono segue il segnale entro `AFC_LIMIT_HZ` da quello scelto; spento si torna al tono scelto.
     pub fn set_afc(&mut self, on: bool) {
         self.afc = on;

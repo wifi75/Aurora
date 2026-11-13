@@ -272,6 +272,26 @@ pub(crate) async fn digi_band_clear(State(state): State<AppState>, _: Authed) ->
     Ok(Json(json!({ "ok": true })))
 }
 
+/// Il corpo di `PUT /digi/notches`.
+#[derive(Deserialize)]
+pub(crate) struct NotchesBody {
+    notches: Vec<mode_digi::notch::Notch>,
+}
+
+/// I notch della ricezione (PSK, RTTY, CW): `{notches: [{hz, width_hz}]}`. Non si salvano: all'avvio e a ogni cambio di frequenza della radio sono vuoti.
+#[utoipa::path(get, path = "/api/v1/digi/notches", responses((status = 200, description = "`{notches}`"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_notches_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    Ok(Json(json!({ "notches": service(&state)?.notches() })))
+}
+
+/// Sostituisce i notch: corpo `{notches: [{hz (50-5950), width_hz (10-100, 30 se manca)}]}`; `[]` li toglie tutti. Risponde `{notches}`.
+#[utoipa::path(put, path = "/api/v1/digi/notches", responses((status = 200, description = "`{notches}`"), (status = 400, description = "Valori non validi (bad_value)"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_notches_put(State(state): State<AppState>, _: Authed, Json(body): Json<NotchesBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    svc.set_notches(body.notches).map_err(api_error)?;
+    Ok(Json(json!({ "notches": svc.notches() })))
+}
+
 fn name_owned(name: &str) -> String {
     name.trim().to_string()
 }

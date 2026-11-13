@@ -16,6 +16,7 @@ use aurora_core::DigiEvent;
 use mode_sstv::resample::Resampler;
 use serde::{Deserialize, Serialize};
 
+use crate::notch::{AfcGuard, Notch, RxFilters};
 use crate::rtty::RttyCharset;
 use crate::{CwDemodulator, PskDemodulator, PskMode, RATE, RttyDemodulator, RttyParams, cw, psk, rtty};
 
@@ -72,6 +73,9 @@ impl RttyReceiver {
 
 /// Il modo della radio letto dal CAT («USB», «PKTLSB», «DATA-L»...), se c'e' una radio collegata che lo dice.
 pub type RadioModeSource = Arc<dyn Fn() -> Option<String> + Send + Sync>;
+
+/// La frequenza della radio in Hz (0 = non nota): cambiata, i notch si tolgono.
+pub type DialSource = Arc<dyn Fn() -> u64 + Send + Sync>;
 
 /// La radio e' in banda laterale inferiore (LSB, LSB dati): in RTTY mark e space si invertono da soli, come in fldigi
 /// (`reverse = Reverse ^ !USB`, `src/rtty/rtty.cxx`). Nomi di Hamlib (`LSB`, `PKTLSB`), di OmniRig e TCI (`DIGL`, `DATA-L`, `LSB-D`).
@@ -259,6 +263,10 @@ pub struct DigiSettings {
     pub band_spots_cq_only: bool,
     /// Tutta la banda: livello di convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`).
     pub band_validation: String,
+    /// Passabanda «a coltello» intorno alla frequenza di ricezione, davanti al ricevitore (non a tutta la banda).
+    pub passband_on: bool,
+    /// Larghezza del passabanda (Hz, 20-1000); 0 = quella di base del modo (`notch::default_passband`).
+    pub passband_hz: f32,
 }
 
 fn mac(name: &str, label: &str, text: &str, color: u32) -> DigiMacro {
@@ -344,11 +352,17 @@ impl Default for DigiSettings {
             band_spots: true,
             band_spots_cq_only: false,
             band_validation: "normal".into(),
+            passband_on: false,
+            passband_hz: 0.0,
         }
     }
 }
 
 /// Da 10 baud (il profilo lento dei programmi classici) a 300.
+fn passband_ok(hz: f32) -> bool {
+    hz == 0.0 || (hz.is_finite() && (20.0..=1000.0).contains(&hz))
+}
+
 fn rtty_baud_ok(baud: f32) -> bool {
     baud.is_finite() && (10.0..=300.0).contains(&baud)
 }
@@ -452,6 +466,9 @@ impl DigiSettings {
         if self.mode_macros.keys().any(|k| DigiMode::from_id(k).is_none()) {
             return Err(DigiError::BadValue("insieme di macro per un modo sconosciuto".into()));
         }
+        if !passband_ok(self.passband_hz) {
+            return Err(DigiError::BadValue("larghezza del passabanda fuori da 20-1000 Hz (0 = di base)".into()));
+        }
         Ok(())
     }
 
@@ -494,6 +511,9 @@ impl DigiSettings {
         if crate::skim::calls::Validation::from_id(&self.band_validation).is_none() {
             self.band_validation = base.band_validation.clone();
         }
+        if !passband_ok(self.passband_hz) {
+            self.passband_hz = base.passband_hz;
+        }
         self.mode_macros.retain(|k, _| DigiMode::from_id(k).is_some());
         if self.validate().is_ok() { self } else { base }
     }
@@ -503,6 +523,25 @@ impl DigiSettings {
     }
 
     /// I parametri RTTY sul centro dato; `lsb`: la radio e' in LSB e mark e space si invertono (oltre a «Rev»).
+    /// Il passabanda acceso (basso, alto) intorno alla frequenza di ricezione scelta.
+    fn passband(&self) -> Option<(f32, f32)> {
+        if !self.passband_on {
+            return None;
+        }
+        let w = if self.passband_hz > 0.0 { self.passband_hz } else { crate::notch::default_passband(self.mode, self.rtty_shift_hz, self.rtty_baud) };
+        Some((self.rx_freq_hz - w / 2.0, self.rx_freq_hz + w / 2.0))
+    }
+
+    /// Di quanto l'AFC puo' allontanarsi dalla frequenza scelta: ±15 Hz in PSK31 (in proporzione al baud), meta' spostamento in RTTY, ±50 Hz in CW.
+    fn afc_limit(&self) -> f32 {
+        match self.mode {
+            DigiMode::Psk31 => 15.0,
+            DigiMode::Psk63 => 30.0,
+            DigiMode::Rtty => self.rtty_shift_hz / 2.0,
+            DigiMode::Cw => 50.0,
+        }
+    }
+
     fn rtty(&self, centre_hz: f32, lsb: bool) -> RttyParams {
         RttyParams { centre_hz, shift_hz: self.rtty_shift_hz, baud: self.rtty_baud, reverse: self.rtty_reverse ^ lsb }
     }
@@ -561,6 +600,7 @@ pub struct Snapshot {
 
 enum Msg {
     Audio(u32, Vec<f32>),
+    Notches(Vec<Notch>),
     Config(DigiSettings),
     Reset,
 }
@@ -583,6 +623,10 @@ struct Inner {
     session: Mutex<Option<live::Session>>,
     /// Il thread di tutta la banda (CW, PSK).
     band: crate::band::BandLink,
+    /// I notch della ricezione: non si salvano, si azzerano all'avvio e a ogni cambio di frequenza della radio.
+    notches: Mutex<Vec<Notch>>,
+    /// Da dove leggere la frequenza della radio (Hz, 0 = non nota).
+    dial: Mutex<Option<DialSource>>,
     /// Le pagine PSK · RTTY · CW aperte (finestra principale, staccata, telefono): lasciata l'ultima, l'ascolto si spegne.
     users: aurora_core::users::PageUsers,
 }
@@ -623,6 +667,17 @@ impl Inner {
             self.radio_lsb.store(is_lower_sideband(&mode), Ordering::Relaxed);
         }
         self.radio_lsb.load(Ordering::Relaxed)
+    }
+
+    fn set_notches(&self, notches: Vec<Notch>) {
+        *lock(&self.notches) = notches.clone();
+        let _ = self.queue.send(Msg::Notches(notches));
+        self.emit(DigiEvent { kind: "notches".into(), ..DigiEvent::default() });
+    }
+
+    fn read_dial(&self) -> u64 {
+        let source = lock(&self.dial).clone();
+        source.map_or(0, |f| f())
     }
 
     fn emit(&self, ev: DigiEvent) {
@@ -694,6 +749,8 @@ impl DigiService {
             radio_lsb: AtomicBool::new(false),
             session: Mutex::new(None),
             band: crate::band::BandLink::spawn(&settings),
+            notches: Mutex::new(Vec::new()),
+            dial: Mutex::new(None),
             users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
         let worker = Arc::clone(&inner);
@@ -753,6 +810,30 @@ impl DigiService {
         if let Err(TrySendError::Full(_)) = self.inner.queue.try_send(Msg::Audio(rate, copy)) {
             tracing::debug!("modi testuali: blocco audio perso");
         }
+    }
+
+    /// Da dove leggere la frequenza della radio: quando cambia (banda o sintonia) i notch si tolgono da soli.
+    pub fn set_dial_source(&self, source: DialSource) {
+        *lock(&self.inner.dial) = Some(source);
+    }
+
+    /// I notch della ricezione.
+    pub fn notches(&self) -> Vec<Notch> {
+        lock(&self.inner.notches).clone()
+    }
+
+    /// Sostituisce i notch (frequenze 50-5950 Hz, larghezze 10-100 Hz). Non si salvano.
+    pub fn set_notches(&self, notches: Vec<Notch>) -> Result<(), DigiError> {
+        if notches.len() > crate::notch::NOTCH_MAX || !notches.iter().all(Notch::is_valid) {
+            return Err(DigiError::BadValue("notch non validi (frequenza 50-5950 Hz, larghezza 10-100 Hz)".into()));
+        }
+        self.inner.set_notches(notches);
+        Ok(())
+    }
+
+    /// Toglie tutti i notch.
+    pub fn clear_notches(&self) {
+        self.inner.set_notches(Vec::new());
     }
 
     pub fn is_listening(&self) -> bool {
@@ -993,6 +1074,25 @@ impl Demod {
         }
     }
 
+    /// Porta l'ascolto su `hz` (limiti dell'AFC) senza cambiare la frequenza scelta.
+    fn steer(&mut self, hz: f32) {
+        match self {
+            Demod::Psk(d) => d.steer(hz),
+            Demod::Rtty(d) => d.steer(hz),
+            Demod::Cw(d) => d.steer(hz),
+        }
+    }
+
+    /// La misura del segnale per i limiti dell'AFC, con le soglie d'isteresi (accendi, spegni): PSK la qualita' della fase (0-100), RTTY il
+    /// rapporto segnale/rumore dei toni, CW quello in 3 kHz.
+    fn presence(&self) -> (Option<f32>, (f32, f32)) {
+        match self {
+            Demod::Psk(d) => (Some(d.metric()), (25.0, 12.0)),
+            Demod::Rtty(d) => (Some(d.snr_db()), (11.0, 6.0)),
+            Demod::Cw(d) => (Some(d.snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
+        }
+    }
+
     /// Livello (dB) e squelch aperto.
     fn signal(&self) -> (f32, bool) {
         match self {
@@ -1025,11 +1125,25 @@ fn level_db(audio: &[f32]) -> f32 {
     (20.0 * rms.max(1e-5).log10()).max(-90.0)
 }
 
+/// I limiti dell'AFC per le impostazioni e i notch dati.
+fn afc_guard(s: &DigiSettings, notches: &[Notch]) -> AfcGuard {
+    let mut g = AfcGuard::new(s.rx_freq_hz, s.afc_limit());
+    g.set_filters(notches, s.passband());
+    g
+}
+
 fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
     let mut lsb = inner.read_radio_lsb();
     let mut last_radio = Instant::now();
     let mut demod = Demod::new(&settings, lsb);
     let mut mode = settings.mode;
+    // notch e passabanda davanti ai ricevitori; senza nessuno dei due l'audio passa com'e'
+    let mut cur = settings;
+    let mut notches: Vec<Notch> = Vec::new();
+    let mut filters = RxFilters::new();
+    let mut guard = afc_guard(&cur, &notches);
+    let mut dial = inner.read_dial();
+    let mut last_dial = Instant::now();
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
     let mut last_status = Instant::now();
@@ -1050,8 +1164,15 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 audio.clear();
                 r.process(&samples, &mut audio);
                 peak_db = peak_db.max(level_db(&audio));
-                inner.band.feed(&audio);
-                let (text, weak) = demod.process(&audio);
+                let (band_audio, rx_audio) = filters.process(&audio);
+                inner.band.feed(band_audio);
+                let (text, weak) = demod.process(rx_audio);
+                if cur.afc_on {
+                    let (level, th) = demod.presence();
+                    if let Some(hz) = guard.step(demod.frequency(), level, th, demod.signal().1) {
+                        demod.steer(hz);
+                    }
+                }
                 if !text.is_empty() {
                     let weak = (!weak.is_empty()).then_some(weak);
                     inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), ..DigiEvent::default() });
@@ -1060,8 +1181,20 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
             Some(Msg::Config(s)) => {
                 demod = Demod::new(&s, lsb);
                 mode = s.mode;
+                cur = s;
+                filters.configure(&notches, cur.passband());
+                guard = afc_guard(&cur, &notches);
             }
-            Some(Msg::Reset) => demod = Demod::new(&lock(&inner.settings).clone(), lsb),
+            Some(Msg::Notches(n)) => {
+                notches = n;
+                filters.configure(&notches, cur.passband());
+                guard.set_filters(&notches, cur.passband());
+            }
+            Some(Msg::Reset) => {
+                cur = lock(&inner.settings).clone();
+                demod = Demod::new(&cur, lsb);
+                guard = afc_guard(&cur, &notches);
+            }
             None => {}
         }
         // le pagine sparite senza salutare (finestra chiusa, rete caduta) escono da sole
@@ -1069,6 +1202,18 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
             last_users = Instant::now();
             if inner.users.expire() {
                 inner.page_left();
+            }
+        }
+        // i notch valgono per la frequenza della radio su cui si sono messi: cambiata la banda o la sintonia si tolgono
+        if last_dial.elapsed() >= Duration::from_secs(1) {
+            last_dial = Instant::now();
+            let now = inner.read_dial();
+            if now != 0 && now != dial {
+                if dial != 0 && !lock(&inner.notches).is_empty() {
+                    tracing::info!("modi testuali: radio da {dial} a {now} Hz, notch tolti");
+                    inner.set_notches(Vec::new());
+                }
+                dial = now;
             }
         }
         // RTTY: con la radio passata da USB a LSB (o viceversa) mark e space si scambiano da soli (solo in ascolto: spento, il CAT non si legge)

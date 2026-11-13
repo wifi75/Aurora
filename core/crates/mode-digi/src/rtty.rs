@@ -1148,6 +1148,15 @@ impl RttyDemodulator {
         self.params.centre_hz + self.offset_hz
     }
 
+    /// Porta l'ascolto sul centro `hz` senza cambiare quello scelto (i limiti dell'AFC, `notch::AfcGuard`).
+    pub fn steer(&mut self, hz: f32) {
+        let off = hz - self.params.centre_hz;
+        if (off - self.offset_hz).abs() > 1e-3 {
+            self.offset_hz = off;
+            self.retune_all();
+        }
+    }
+
     pub fn set_afc(&mut self, on: bool) {
         self.afc = on;
         if !on && self.offset_hz != 0.0 {
