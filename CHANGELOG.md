@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **Manuale completo**: la Guida spiega ora ogni pagina delle Impostazioni (famiglia › pagina › riquadro, una riga per ogni casella, campo e tendina), tutte le pagine e i pannelli, i menu e i tasti rapidi di PSK · RTTY · CW e SSTV, il telefono e l'agente nel tray, con un capitolo di domande frequenti (per esempio come spegnere gli avvisi del DXCC nuovo, cambiare lingua e testo, l'indirizzo CI-V delle Icom in decimale, il gruppo dialout su Linux, i QSO rimandati ai log); corretti percorsi e dettagli non piu' veri; olandese completo; `docs/copertura-guida.md` e' la tabella che dimostra la copertura.
 - **Avviso di aggiornamento nella lingua giusta**: il riquadro dell'aggiornamento e la locandina mostrano le novita' nella lingua di Aurora; se non e' scelta, in quella di Windows; se manca, in inglese (prima arrivava sempre l'inglese). Anche i testi del riquadro, senza una lingua scelta, seguono Windows invece di partire in italiano.
 - **PTT non spento, messaggio**: quando il CAT cade durante lo spegnimento del PTT l'avviso e il registro dicevano «PTT non spento: PTT: PTT non spento: …»; ora la causa compare una volta sola.
 - **Tabella delle frequenze non valida**: il registro dice il motivo e il file viene messo da parte (`frequencies.json.non-valido`), cosi' l'avviso non torna a ogni avvio.
