@@ -23,7 +23,7 @@ export interface ClusterOptions {
 export const DEFAULT_CLUSTER_OPTIONS: ClusterOptions = { click: 'double', rotor: false, expireMin: 0, hidden: [] };
 
 /** Dopo quanti minuti uno spot sparisce: quelli offerti nella rotella. */
-export const EXPIRE_CHOICES = [0, 5, 10, 15, 20, 30, 60, 120] as const;
+export const EXPIRE_CHOICES = [0, 5, 10, 15, 20, 30, 45, 60, 120] as const;
 
 const KEY = 'aurora.cluster.opts';
 const EVENT = 'aurora-cluster-opts';

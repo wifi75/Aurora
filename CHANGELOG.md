@@ -1,6 +1,7 @@
 # Changelog
 
 ## Non rilasciato
+- **DX Cluster, durata degli spot**: c'e' anche 45 minuti nella scelta «Gli spot spariscono dopo».
 - **Radio spenta**: al centro di ogni display una scritta grande «⏻ RADIO SPENTA» (in tutte le lingue) che si adatta alla misura del display; tolta la scritta piccola che si accavallava agli strumenti PO e SWR.
 
 ## 0.11.247 - 2026-11-13
