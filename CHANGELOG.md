@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Attivita' di banda a colonne**: titoli e linee della griglia ben visibili come nel DX Cluster; le colonne (ora, dB, DT, Hz, messaggio, paese, etichetta) si spostano trascinando il titolo, si allargano dal bordo (doppio clic: adatta al contenuto) e si ripristinano col tasto destro; ordine e larghezze restano ricordati.
+
 ## 0.11.245 - 2026-11-13
 - **Spia di salute della stazione** in alto a destra, prima dell'ingranaggio (e nell'intestazione del telefono): verde, ambra o rossa secondo CPU di Aurora, tempo di decodifica, audio, CAT e orologio; passando il mouse i numeri, con un clic la finestra «Salute della stazione» con cosa fare, il grafico degli ultimi 10 minuti e, se la decodifica sfora spesso, la proposta di accendere «PC lento». Nuova rotta `GET /api/v1/health/resources`.
 - Avviso «segnale in ingresso debole»: non compare piu' all'apertura, solo se dura 90 secondi; avvisi della stazione leggibili (fondo pieno, bordo colorato per gravita').
