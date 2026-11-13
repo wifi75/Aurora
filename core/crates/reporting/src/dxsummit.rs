@@ -113,6 +113,8 @@ pub fn check(url: &str, my_call: &str, dx_call: &str, freq_hz: u64, timeout: Dur
     let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(timeout)).build().into();
     let body = agent
         .get(url)
+        // senza filtro DXSummit rende solo gli ultimi 50 spot del mondo (circa un minuto): si chiedono quelli della stazione DX
+        .query("dx_calls", dx_call)
         .query("limit_time", "600")
         .query("refresh", "1")
         .call()

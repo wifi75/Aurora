@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Verifica degli spot su DXSummit**: si chiedono a DXSummit gli spot della stazione DX; senza filtro rendeva solo gli ultimi 50 del mondo (circa un minuto) e uno spot vero poteva risultare «non pubblicato».
+
 ## 0.11.249 - 2026-11-13
 - **Spot verificati su DXSummit**: dopo l'invio Aurora controlla per un minuto e mezzo l'elenco pubblico di DXSummit; lo stato del servizio dice «spot pubblicato» quando lo spot c'e' davvero, oppure «accettato ma non pubblicato» (prima bastava la risposta «200» di DXSummit, che non garantisce la pubblicazione).
 
