@@ -68,6 +68,8 @@ const DISTURBED_S: f64 = 0.5;
 const DISTURBED_BEAM: usize = 2;
 
 /// Le classi di durata: punto, linea, pausa fra gli elementi, fra i caratteri, fra le parole.
+/// Dopo un tono la pausa e' fra gli elementi (60%), fra i caratteri (30%) o fra le parole (10%).
+const GAP_PRIOR: [f64; 5] = [0.0, 0.0, 0.6, 0.3, 0.1];
 const DOT: usize = 0;
 const DASH: usize = 1;
 const INTRA: usize = 2;
@@ -332,6 +334,119 @@ impl std::hash::Hasher for FastHash {
 }
 type FastMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<FastHash>>;
 
+/// L'indice delle ipotesi candidate di un passo (chiave → posto in `cand`): indirizzamento aperto con un timbro per passo, così
+/// svuotarlo a ogni passo non costa niente; raddoppia quando è mezzo pieno.
+struct HypIndex {
+    stamp: u32,
+    used: usize,
+    slots: Vec<(u32, u32, u64)>,
+}
+
+impl HypIndex {
+    fn new() -> Self {
+        HypIndex { stamp: 1, used: 0, slots: vec![(0, 0, 0); 1 << 10] }
+    }
+
+    fn clear(&mut self) {
+        self.used = 0;
+        self.stamp = self.stamp.wrapping_add(1);
+        if self.stamp == 0 {
+            self.slots.fill((0, 0, 0));
+            self.stamp = 1;
+        }
+    }
+
+    fn home(&self, key: u64) -> usize {
+        let bits = self.slots.len().trailing_zeros();
+        (key.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> (64 - bits)) as usize
+    }
+
+    /// Il posto dell'ipotesi con questa chiave, o `None` dopo averle dato il posto `next`.
+    fn get_or_insert(&mut self, key: u64, next: usize) -> Option<usize> {
+        if 2 * (self.used + 1) > self.slots.len() {
+            self.grow();
+        }
+        let mask = self.slots.len() - 1;
+        let mut i = self.home(key);
+        loop {
+            let (stamp, at, k) = self.slots[i];
+            if stamp != self.stamp {
+                self.slots[i] = (self.stamp, next as u32, key);
+                self.used += 1;
+                return None;
+            }
+            if k == key {
+                return Some(at as usize);
+            }
+            i = (i + 1) & mask;
+        }
+    }
+
+    fn grow(&mut self) {
+        let bigger = vec![(0, 0, 0); 2 * self.slots.len()];
+        let old = std::mem::replace(&mut self.slots, bigger);
+        let mask = self.slots.len() - 1;
+        for (stamp, at, key) in old {
+            if stamp != self.stamp {
+                continue;
+            }
+            let mut i = self.home(key);
+            while self.slots[i].0 == self.stamp {
+                i = (i + 1) & mask;
+            }
+            self.slots[i] = (stamp, at, key);
+        }
+    }
+}
+
+/// Memoria dei termini del traliccio che dipendono solo da durata, velocità e pugno (sopravvivenze e densità delle durate): le stesse
+/// durate tornano a ogni passo per altre ipotesi della stessa velocità, e il pugno cambia qualche volta al secondo. Tabella a indirizzo
+/// diretto: un valore trovato e' quello calcolato con gli stessi ingressi (stessi bit), uno mancante si calcola; si svuota quando il pugno
+/// cambia.
+struct Memo {
+    keys: Vec<u64>,
+    vals: Vec<f64>,
+}
+
+const MEMO_BITS: u32 = 11;
+const MEMO_EMPTY: u64 = u64::MAX;
+
+impl Memo {
+    fn new() -> Self {
+        Memo { keys: vec![MEMO_EMPTY; 1 << MEMO_BITS], vals: vec![0.0; 1 << MEMO_BITS] }
+    }
+
+    /// La chiave: che termine (`kind`), velocità e durata.
+    fn key(kind: u64, s: usize, d: u32) -> u64 {
+        u64::from(d) | ((s as u64) << 32) | (kind << 40)
+    }
+
+    fn slot(key: u64) -> usize {
+        (key.wrapping_mul(0x9E37_79B9_7F4A_7C15) >> (64 - MEMO_BITS)) as usize
+    }
+
+    fn get(&self, key: u64) -> Option<f64> {
+        let i = Self::slot(key);
+        (self.keys[i] == key).then(|| self.vals[i])
+    }
+
+    fn put(&mut self, key: u64, v: f64) {
+        let i = Self::slot(key);
+        self.keys[i] = key;
+        self.vals[i] = v;
+    }
+
+    fn clear(&mut self) {
+        self.keys.fill(MEMO_EMPTY);
+    }
+}
+
+/// I termini della memoria: sopravvivenza della pausa aperta (dalla sua classe), del tono aperto (dai figli del nodo: 1 solo punto, 2
+/// sola linea, 3 tutti e due), densità di una durata (5 + classe).
+const MEMO_GAP: u64 = 0;
+const MEMO_MARK: u64 = 1;
+const MEMO_PDF: u64 = 5;
+
 /// log(I0(x)), la funzione di Bessel modificata (Abramowitz e Stegun 9.8.1-2).
 fn ln_i0(x: f64) -> f64 {
     let ax = x.abs();
@@ -395,8 +510,11 @@ pub struct CwBayes {
     warm: u32,
     beam: Vec<Hyp>,
     cand: Vec<Hyp>,
-    index: FastMap<u64, usize>,
+    index: HypIndex,
     llr_cache: FastMap<u32, f32>,
+    /// Sopravvivenze e densità delle durate già calcolate con il pugno di adesso, e le soglie delle pause per velocità.
+    memo: Memo,
+    gaps: [(u32, u32); N_SPEEDS],
     /// L'ultimo cambio del percorso migliore gia' usato per adattare ampiezza, rumore e pugno.
     learned_at: u32,
     best_speed: u8,
@@ -468,8 +586,10 @@ impl CwBayes {
             warm: 0,
             beam: Vec::with_capacity(BEAM * 4),
             cand: Vec::with_capacity(BEAM * 8),
-            index: FastMap::default(),
+            index: HypIndex::new(),
             llr_cache: FastMap::default(),
+            memo: Memo::new(),
+            gaps: [(0, 0); N_SPEEDS],
             learned_at: 0,
             best_speed: 0,
             hint_wpm: f64::from(wpm_hint),
@@ -482,8 +602,63 @@ impl CwBayes {
             ext_n: 0,
             offer: None,
         };
+        d.fist_changed();
         d.reset_beam();
         d
+    }
+
+    /// Il pugno e' cambiato: i termini calcolati con quello di prima non valgono piu'.
+    fn fist_changed(&mut self) {
+        self.memo.clear();
+        for s in 0..N_SPEEDS {
+            self.gaps[s] = self.gap_thresholds(s);
+        }
+    }
+
+    /// La sopravvivenza della pausa aperta da `d` campioni alla velocità `s` (classe `cls` dalle soglie): dalla memoria o calcolata.
+    fn gap_surv(&mut self, cls: usize, d: u32, s: usize) -> f64 {
+        let key = Memo::key(MEMO_GAP, s, d);
+        if let Some(v) = self.memo.get(key) {
+            return v;
+        }
+        let prior = GAP_PRIOR;
+        let v = match cls {
+            INTRA => (prior[INTRA] * self.ln_surv(INTRA, d, s).exp() + prior[CHARGAP] * self.ln_surv(CHARGAP, d, s).exp() + prior[WORDGAP] * self.ln_surv(WORDGAP, d, s).exp()).ln(),
+            CHARGAP => (prior[CHARGAP] * self.ln_surv(CHARGAP, d, s).exp() + prior[WORDGAP] * self.ln_surv(WORDGAP, d, s).exp()).ln(),
+            _ => prior[WORDGAP].ln() + self.ln_surv(WORDGAP, d, s),
+        };
+        self.memo.put(key, v);
+        v
+    }
+
+    /// La sopravvivenza del tono aperto da `d` campioni alla velocità `s`, con i figli `has` (punto, linea) del nodo dell'albero.
+    fn mark_surv(&mut self, has: [bool; 2], d: u32, s: usize) -> f64 {
+        let kind = u64::from(has[0]) | (u64::from(has[1]) << 1);
+        if kind == 0 {
+            return f64::NEG_INFINITY;
+        }
+        let key = Memo::key(MEMO_MARK + kind - 1, s, d);
+        if let Some(v) = self.memo.get(key) {
+            return v;
+        }
+        let v = match has {
+            [true, true] => (0.5 * self.ln_surv(DOT, d, s).exp() + 0.5 * self.ln_surv(DASH, d, s).exp()).ln(),
+            [true, false] => self.ln_surv(DOT, d, s),
+            _ => self.ln_surv(DASH, d, s),
+        };
+        self.memo.put(key, v);
+        v
+    }
+
+    /// [`CwBayes::ln_pdf`] dalla memoria o calcolata.
+    fn pdf(&mut self, c: usize, d: u32, s: usize) -> f32 {
+        let key = Memo::key(MEMO_PDF + c as u64, s, d);
+        if let Some(v) = self.memo.get(key) {
+            return v as f32;
+        }
+        let v = self.ln_pdf(c, d, s);
+        self.memo.put(key, f64::from(v));
+        v
     }
 
     /// Quante ipotesi tenere (minimo 32): meno ipotesi, meno CPU (per i canali della decodifica di tutta la banda).
@@ -801,16 +976,13 @@ impl CwBayes {
         if !h.score.is_finite() {
             return;
         }
-        match self.index.get(&h.key()) {
-            Some(&i) => {
+        match self.index.get_or_insert(h.key(), self.cand.len()) {
+            Some(i) => {
                 if h.score > self.cand[i].score {
                     self.cand[i] = h;
                 }
             }
-            None => {
-                self.index.insert(h.key(), self.cand.len());
-                self.cand.push(h);
-            }
+            None => self.cand.push(h),
         }
     }
 
@@ -839,12 +1011,7 @@ impl CwBayes {
                 let has = [kids[0] != NO_CHILD, kids[1] != NO_CHILD];
                 // continua: il tono e' ancora acceso
                 if f64::from(d) < 2.5 * self.fist_mean[DASH] * self.units[s] {
-                    let surv = match has {
-                        [true, true] => (0.5 * self.ln_surv(DOT, d, s).exp() + 0.5 * self.ln_surv(DASH, d, s).exp()).ln(),
-                        [true, false] => self.ln_surv(DOT, d, s),
-                        [false, true] => self.ln_surv(DASH, d, s),
-                        [false, false] => f64::NEG_INFINITY,
-                    };
+                    let surv = self.mark_surv(has, d, s);
                     let mut c = *h;
                     c.score = h.base + llr + surv as f32;
                     self.add(c);
@@ -855,7 +1022,7 @@ impl CwBayes {
                     if !has[k] {
                         continue;
                     }
-                    let base = h.base + llr + self.ln_pdf(cls, d, s) - n_kids.ln();
+                    let base = h.base + llr + self.pdf(cls, d, s) - n_kids.ln();
                     self.add(Hyp {
                         score: base,
                         base,
@@ -871,7 +1038,7 @@ impl CwBayes {
                 }
             } else {
                 let mut h = *h;
-                let (t1, t2) = self.gap_thresholds(s);
+                let (t1, t2) = self.gaps[s];
                 // la pausa e' gia' lunga abbastanza: si scrive il carattere (e poi lo spazio) senza aspettare il prossimo tono
                 if !h.char_done && d >= t1 {
                     let node = usize::from(h.node);
@@ -902,19 +1069,14 @@ impl CwBayes {
                 } else {
                     WORDGAP
                 };
-                // dopo un tono la pausa e' fra gli elementi (60%), fra i caratteri (30%) o fra le parole (10%)
-                let prior = [0.0, 0.0, 0.6_f64, 0.3, 0.1];
-                let surv = match cls {
-                    INTRA => (prior[INTRA] * self.ln_surv(INTRA, d, s).exp() + prior[CHARGAP] * self.ln_surv(CHARGAP, d, s).exp() + prior[WORDGAP] * self.ln_surv(WORDGAP, d, s).exp()).ln(),
-                    CHARGAP => (prior[CHARGAP] * self.ln_surv(CHARGAP, d, s).exp() + prior[WORDGAP] * self.ln_surv(WORDGAP, d, s).exp()).ln(),
-                    _ => prior[WORDGAP].ln() + self.ln_surv(WORDGAP, d, s),
-                };
+                let prior = GAP_PRIOR;
+                let surv = self.gap_surv(cls, d, s);
                 let mut c = h;
                 c.score = h.base + surv as f32;
                 self.add(c);
                 // comincia un tono (solo con un segnale nello spettro)
                 if gate && d > 0 {
-                    let base = h.base + self.ln_pdf(cls, d, s) + (prior[cls] as f32).ln();
+                    let base = h.base + self.pdf(cls, d, s) + (prior[cls] as f32).ln();
                     let next = Hyp { score: base, base, start: t, prev_start: h.start, mark: true, char_done: false, word_done: false, ..h };
                     if cls == INTRA {
                         self.add(next);
@@ -1071,9 +1233,13 @@ impl CwBayes {
             return;
         }
         let (lo, hi) = FIST_LIMITS[cls];
+        let before = (self.fist_mean[cls], self.fist_sigma[cls]);
         self.fist_mean[cls] = (self.fist_mean[cls] * (0.03 * r).exp()).clamp(lo, hi);
         let v = self.fist_sigma[cls] * self.fist_sigma[cls];
         self.fist_sigma[cls] = (v + 0.02 * (r * r - v)).sqrt().clamp(FIST_SIGMA[cls] * 0.8, FIST_SIGMA[cls] * 1.3);
+        if (self.fist_mean[cls], self.fist_sigma[cls]) != before {
+            self.fist_changed();
+        }
     }
 
     /// Stampa il primo pezzo in sospeso del percorso migliore quando ne ha altri dopo, o dopo `DELAY_S`; scarta chi diceva altro.
