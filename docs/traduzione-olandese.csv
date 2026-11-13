@@ -1631,7 +1631,7 @@ cat.line.low,Low,Laag
 cat.civ,CI-V address (Icom),CI-V-adres (Icom)
 cat.civ.hex,"{dec} = {hex}h. Icom manuals give the address in hexadecimal: if the manual says {dec}h, enter {asDec} here. With 0 the model’s factory address is used.","{dec} = {hex}h. Icom-handleidingen geven het adres hexadecimaal: staat er {dec}h in de handleiding, vul hier dan {asDec} in. Met 0 geldt het fabrieksadres van het model."
 cat.civ.useHex,Use {asDec} ({dec}h),Gebruik {asDec} ({dec}h)
-rd.splitOff,Split off,"Split uit"
+rd.splitOff,Split off,Split uit
 rd.splitOff.tip,"The radio is in split (transmitting on VFO B): brings it back to simplex on the receive frequency, whatever turned it on. Not while transmitting.","Het toestel staat in split (zendt op VFO B): zet het terug op simplex op de ontvangstfrequentie, wat de split ook heeft aangezet. Niet tijdens het zenden."
 tip.cat.civ,0 = the model’s factory value (for example 148 = 0x94 for the IC-7300).,0 = de fabriekswaarde van het model (bijvoorbeeld 148 = 0x94 voor de IC-7300).
 cat.ptt.method,PTT method,PTT-methode
@@ -2316,6 +2316,7 @@ gen2.useGrid,Use this grid,Deze locator gebruiken
 gen2.fromDate,Filter the log from date/time (YYYYMMDDHHMMSS),Logboek filteren vanaf datum/tijd (JJJJMMDDUUMMSS)
 gen2.logHelp,"The filter decides which log QSOs count for «new» and «already worked»: with the callsign and grid only QSOs made with those count (STATION_CALLSIGN and MY_GRIDSQUARE fields of the ADIF files; the internal log and Log4OM2 do not say which callsign was used and are not excluded), with the date only QSOs from then on. It applies at once.","Het filter bepaalt welke QSO’s uit het logboek meetellen voor «nieuw» en «al gewerkt»: met roepnaam en locator tellen alleen QSO’s mee die daarmee zijn gemaakt (de velden STATION_CALLSIGN en MY_GRIDSQUARE van de ADIF-bestanden; het interne logboek en Log4OM2 geven niet aan welke roepnaam is gebruikt en worden niet uitgesloten), met de datum alleen QSO’s vanaf dat moment. Het geldt meteen."
 gen2.screen,Display,Weergave
+gen2.gapThin,Thin separator between periods,Dunne scheiding tussen perioden
 gen2.blank,Blank line between decoding periods,Lege regel tussen decodeerperioden
 gen2.fontApp,Application font…,Lettertype van de toepassing…
 gen2.fontRx,Received text font…,Lettertype van de ontvangen tekst…
@@ -2857,6 +2858,7 @@ tip.not2.perMode,"Also counts the novelty per mode: new if not worked in this mo
 tip.not2.alsoSound,"Besides the colour, plays the sound chosen for that kind in Colours.",Speelt naast de kleur ook het geluid af dat voor dat soort in Kleuren gekozen is.
 tip.not2.colAlert,"A clear alert, hard to miss even away from the PC (next column: only if new on the band).","Een duidelijke melding, moeilijk te missen, ook als je niet bij de pc zit (volgende kolom: alleen als nieuw op de band)."
 tip.not2.restoreColors,"Restores colours, sounds and message look to Aurora’s defaults.","Zet kleuren, geluiden en het uiterlijk van berichten terug naar de standaardwaarden van Aurora."
+tip.pref.gapThin,"Off: a clearly visible band with the UTC time of the period between one period and the next. On: just a thin line, as in earlier versions.","Uit: tussen twee perioden een goed zichtbare balk met de UTC-tijd van de periode. Aan: alleen een dunne lijn, zoals in eerdere versies."
 tip.pref.insertBlank,"A blank line between periods, to separate groups of messages.","Een lege regel tussen perioden, om groepen berichten te scheiden."
 tip.pref.showTx,Also shows your transmitted messages in the received list.,Toont je gezonden berichten ook in de lijst met ontvangen berichten.
 tip.pref.showCountry,The DXCC country name next to each message.,De naam van het DXCC-land naast elk bericht.

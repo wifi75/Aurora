@@ -4413,6 +4413,32 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   border-bottom: var(--border-width) solid var(--border);
 }
 
+/* separatore «evidente» fra i periodi (segnalazione #38): una fascia sottile del colore d'accento, con l'ora UTC del periodo a sinistra e
+   una riga piena che arriva al bordo; segue la dimensione del testo dell'elenco (em) e i colori del tema */
+.decode-gap.decode-gap--bold {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  height: auto;
+  margin: 0.25em 0 0.1em;
+  padding: 0.05em 0.5em;
+  border: 0;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 0.8em;
+  line-height: 1.3;
+  color: var(--accent);
+}
+.decode-gap--bold::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.decode-gap__time {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 /* «Inverti colore sfondo/testo»: il colore del tipo di messaggio va sul testo, lo sfondo resta quello di tutti */
 .decode-list--invert .decode-row {
   background: transparent;

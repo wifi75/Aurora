@@ -560,4 +560,33 @@ describe('DecodeList a griglia (Finestra RX)', () => {
     expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
     expect(screen.getByText('1500')).toBeInTheDocument();
   });
+  it('shows every own transmission of the QSO while it is still running (#42)', () => {
+    render(
+      <DecodeList
+        dxCall="ON7AVL"
+        myCall="R70V"
+        decodes={[
+          decode({ id: -2, time_ms: 45_045_000, snr: 0, text: 'ON7AVL R70V RR73' }),
+          decode({ id: 3, time_ms: 45_030_000, text: 'R70V ON7AVL R-12' }),
+          decode({ id: -1, time_ms: 45_015_000, snr: 0, text: 'ON7AVL R70V -10' }),
+        ]}
+        onReply={() => {}}
+      />,
+    );
+    expect(screen.getByText(/R70V -10/)).toBeInTheDocument();
+    expect(screen.getAllByText(/R70V RR73/)).toHaveLength(1);
+  });
+
+  it('draws a bold separator with the UTC time between periods, or the thin one on request (#38)', () => {
+    const decodes = [decode({ id: 1, time_ms: 45_030_000 }), decode({ id: 2, time_ms: 45_015_000, text: 'CQ BB2BB FN42' })];
+    usePrefs.getState().set({ insertBlank: true, gapStyle: 'bold' });
+    const { container, unmount } = render(<DecodeList decodes={decodes} onReply={() => {}} />);
+    expect(container.querySelector('.decode-gap--bold')?.textContent).toMatch(/12:30:15/);
+    unmount();
+    usePrefs.getState().set({ gapStyle: 'thin' });
+    const thin = render(<DecodeList decodes={decodes} onReply={() => {}} />);
+    expect(thin.container.querySelector('.decode-gap')).not.toBeNull();
+    expect(thin.container.querySelector('.decode-gap--bold')).toBeNull();
+    usePrefs.getState().set({ insertBlank: true, gapStyle: 'bold' });
+  });
 });

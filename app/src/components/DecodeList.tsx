@@ -469,7 +469,9 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
     .filter((d): d is DecodedMessage => !!d && d !== pin && !inQso(d));
   // in cima resta la riga ferma del QSO; delle altre righe del QSO resta in lista solo la sua ultima risposta a me (una basta),
   // altrimenti quando l'ultimo messaggio e' il mio non si capisce piu' se e cosa ha risposto (richiesta del proprietario)
-  const rest = (pin ? decodes.filter((d) => d !== pin && (!inQso(d) || d === hisLast)) : decodes).filter((d) => !queued.includes(d));
+  // le mie trasmissioni del QSO restano invece tutte al loro posto, man mano che partono: prima comparivano solo a QSO finito, quando
+  // il DX si liberava (segnalazione #42, 2026-11-13)
+  const rest = (pin ? decodes.filter((d) => d !== pin && (!inQso(d) || d === hisLast || d.id < 0)) : decodes).filter((d) => !queued.includes(d));
   const top = pin ? [pin, ...queued] : queued;
   // l'etichetta piu' recente di ogni stazione che ho chiamato (per la mia riga Tx)
   const lastTagOf = new Map<string, DecodedMessage['tag']>();
@@ -661,7 +663,15 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         );
         return (
           <Fragment key={d.id}>
-          {gap ? <div className="decode-gap" role="separator" /> : null}
+          {gap ? (
+            prefs.gapStyle === 'thin' ? (
+              <div className="decode-gap" role="separator" />
+            ) : (
+              <div className="decode-gap decode-gap--bold" role="separator" aria-label={formatClock(d.time_ms)}>
+                <span className="decode-gap__time num">{formatClock(d.time_ms)}</span>
+              </div>
+            )
+          ) : null}
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}

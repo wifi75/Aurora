@@ -66,6 +66,13 @@ export function PrefCheck({ k, label }: { k: keyof Prefs & ('insertBlank' | 'sho
   return <Check label={label} hint={t(`tip.pref.${k}` as Key)} checked={prefs[k]} onChange={(v) => usePrefs.getState().set({ [k]: v })} />;
 }
 
+/** «Separatore sottile fra i periodi»: spento, la fascia evidente con l'ora del periodo; acceso, il filo di prima. */
+export function GapStyleCheck() {
+  const t = useT();
+  const prefs = usePrefs((s) => s.prefs);
+  return <Check label={t('gen2.gapThin')} hint={t('tip.pref.gapThin')} checked={prefs.gapStyle === 'thin'} onChange={(v) => usePrefs.getState().set({ gapStyle: v ? 'thin' : 'bold' })} />;
+}
+
 /** Le scelte della regione IARU (i nomi di JTDX) e dei messaggi per i nominativi composti di tipo 2. */
 export const REGION_OPTIONS: SettingRow['options'] = [
   { value: 'ALL', label: 'gen2.regionAll' },
@@ -318,6 +325,7 @@ export function NativeGeneral() {
       <Group title={t('gen2.screen')} span={2} rows={2}>
         <Cells min={15}>
           <PrefCheck k="insertBlank" label={t('gen2.blank')} />
+          <GapStyleCheck />
           <Check label={t('gen.miles')} hint={t('tip.gen.miles')} checked={prefs.distanceUnit === 'mi'} onChange={(v) => set({ distanceUnit: v ? 'mi' : 'km' })} />
           <PrefCheck k="showTx" label={t('gen2.showTx')} />
           <PrefCheck k="showCountry" label={t('gen.showCountry')} />

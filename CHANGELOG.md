@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **Separatore fra i periodi ben visibile** nell'Attivita' di banda e nella finestra RX: una fascia sottile del colore d'accento con l'ora UTC del periodo e una riga piena, nei temi scuro e chiaro e con la dimensione del testo scelta; acceso di base nelle installazioni nuove. «Separatore sottile fra i periodi» nelle Impostazioni (Schermo) riporta il filo di prima (segnalazione #38).
+- **Le mie trasmissioni nella finestra RX durante il QSO**: ogni riga Tx del QSO compare quando parte, nell'ordine giusto con le decodifiche; prima, finche' il QSO era in corso, restava visibile solo l'ultima (nella riga ferma in cima) e le altre comparivano tutte a QSO finito (segnalazione #42).
 - **«Spegni split» accanto al display della radio**: compare quando la radio e' in split (trasmette sul VFO B) e la riporta in simplex sulla frequenza di ricezione, qualunque cosa l'abbia accesa (spot «UP», split di FT8, la radio stessa o un altro programma); mai durante una trasmissione.
 - **Frequenze CW, SSTV, RTTY e PSK** dai piani di banda dell'ARI (HF dal piano IARU Regione 1, dal 6 m in su dal piano ARI): in CW una frequenza dentro il tratto CW e i centri di attivita' QRS e QRP in HF, i centri di attivita', l'EME e il meteor scatter in VHF, UHF e microonde (fino a 24 GHz); SSTV a 3735 e 7165 kHz in Regione 1 e 433,400 MHz in 70 cm; PSK31 anche a 2,3 GHz.
 - **Schede dei DXCC nuovi**: al massimo due insieme (con un log nuovo quasi tutto e' nuovo e quattro schede coprivano mezza pagina) e sotto c'e' «Spegni questi avvisi», che le spegne senza cercare la casella nelle Impostazioni.
