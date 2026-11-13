@@ -179,8 +179,9 @@ export function FrequencyMarkers({ fMinHz, fMaxHz, rxHz: rxEngine, txHz: txEngin
           {hoverWidth > 0 ? <div className="wf-hover-line" aria-hidden="true" style={{ left: `${Math.min(100, hoverLeft + hoverWidth)}%` }} /> : null}
         </>
       ) : null}
+      {/* la frequenza del mouse al centro tra le due linee (inizio e fine del segnale), non sulla prima: il numero resta l'inizio */}
       {showFreq && hoverLeft !== null ? (
-        <div className="wf-hover-freq" aria-hidden="true" style={{ left: `${hoverLeft}%` }}>
+        <div className="wf-hover-freq" aria-hidden="true" style={{ left: `${Math.min(100, hoverLeft + hoverWidth / 2)}%` }}>
           {hzAt(hover ?? 0, fMinHz, fMaxHz)}
         </div>
       ) : null}
