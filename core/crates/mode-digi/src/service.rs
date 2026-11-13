@@ -455,6 +455,49 @@ impl DigiSettings {
         Ok(())
     }
 
+    /// Le stesse impostazioni con i valori che [`DigiSettings::validate`] rifiuta riportati a quelli di base, uno per uno (per un `digi.json`
+    /// scritto a mano o rovinato). Se resta qualcosa di non valido (le macro), tutto torna ai valori di base.
+    fn repaired(mut self) -> Self {
+        let base = DigiSettings::default();
+        let in_band = |f: f32| f.is_finite() && (200.0..=3500.0).contains(&f);
+        if !in_band(self.rx_freq_hz) {
+            self.rx_freq_hz = base.rx_freq_hz;
+        }
+        if !in_band(self.tx_freq_hz) {
+            self.tx_freq_hz = base.tx_freq_hz;
+        }
+        if !self.rtty_shift_hz.is_finite() || !(20.0..=1000.0).contains(&self.rtty_shift_hz) {
+            self.rtty_shift_hz = base.rtty_shift_hz;
+        }
+        if !self.psk_squelch.is_finite() || !(0.0..=100.0).contains(&self.psk_squelch) {
+            self.psk_squelch = base.psk_squelch;
+        }
+        if !self.cw_squelch_snr_db.is_finite() || !(-30.0..=20.0).contains(&self.cw_squelch_snr_db) {
+            self.cw_squelch_snr_db = base.cw_squelch_snr_db;
+        }
+        if !cw::BANDWIDTHS.contains(&self.cw_bandwidth_hz) {
+            self.cw_bandwidth_hz = base.cw_bandwidth_hz;
+        }
+        if !rtty_baud_ok(self.rtty_baud) {
+            self.rtty_baud = base.rtty_baud;
+        }
+        if !self.rtty_squelch_snr_db.is_finite() || !(0.0..=40.0).contains(&self.rtty_squelch_snr_db) {
+            self.rtty_squelch_snr_db = base.rtty_squelch_snr_db;
+        }
+        if self.rtty_profile > 3 || self.rtty_profiles.len() > 4 || !self.rtty_profiles.iter().all(RttyProfile::is_valid) {
+            self.rtty_profile = base.rtty_profile;
+            self.rtty_profiles = base.rtty_profiles.clone();
+        }
+        if !self.cw_wpm.is_finite() || !(cw::WPM_MIN..=cw::WPM_MAX).contains(&self.cw_wpm) {
+            self.cw_wpm = base.cw_wpm;
+        }
+        if crate::skim::calls::Validation::from_id(&self.band_validation).is_none() {
+            self.band_validation = base.band_validation.clone();
+        }
+        self.mode_macros.retain(|k, _| DigiMode::from_id(k).is_some());
+        if self.validate().is_ok() { self } else { base }
+    }
+
     fn tx_freq(&self) -> f32 {
         if self.tx_follow_rx { self.rx_freq_hz } else { self.tx_freq_hz }
     }
@@ -609,6 +652,12 @@ impl DigiService {
                 m.name = "OnEnd".to_string();
             }
         }
+        // un file scritto a mano o rovinato (velocita' RTTY 0, frequenza fuori banda...) faceva cadere il thread di ricezione al primo blocco
+        // audio: i valori fuori dai limiti tornano quelli di base, il resto resta com'era
+        if let Err(e) = settings.validate() {
+            tracing::warn!("modi testuali: {} con valori non validi ({e}): quelli tornano ai valori di base", settings_path.display());
+            settings = settings.repaired();
+        }
         let (queue, rx) = sync_channel::<Msg>(128);
         let inner = Arc::new(Inner {
             settings_path,
@@ -678,7 +727,9 @@ impl DigiService {
         if !self.inner.listening.load(Ordering::Relaxed) || self.inner.tx_active.load(Ordering::Relaxed) {
             return;
         }
-        if let Err(TrySendError::Full(_)) = self.inner.queue.try_send(Msg::Audio(rate, samples.to_vec())) {
+        // un campione non finito (TCI, driver) bloccherebbe per sempre i filtri dei ricevitori: vale zero, come nella cascata
+        let copy: Vec<f32> = samples.iter().map(|&x| if x.is_finite() { x } else { 0.0 }).collect();
+        if let Err(TrySendError::Full(_)) = self.inner.queue.try_send(Msg::Audio(rate, copy)) {
             tracing::debug!("modi testuali: blocco audio perso");
         }
     }
@@ -1126,6 +1177,72 @@ mod tests {
         let d: DigiSettings = serde_json::from_str(r#"{"rtty_receiver":"discriminator"}"#).expect("json");
         assert_eq!(d.rtty_receiver, RttyReceiver::Discriminator);
         assert!(s.validate().is_ok());
+    }
+
+    /// Manda `wave` al servizio (gia' in ascolto) e aspetta fino a 10 s che nel testo ricevuto compaia `want`.
+    fn ricevi(svc: &DigiService, wave: &[f32], want: &str) -> String {
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
+        let tx = Mutex::new(tx);
+        svc.set_emitter(Arc::new(move |ev: DigiEvent| {
+            if ev.kind == "rx_text"
+                && let Some(t) = ev.text
+            {
+                let _ = lock(&tx).send(t);
+            }
+        }));
+        for chunk in wave.chunks(1200) {
+            svc.feed(RATE as u32, chunk);
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let mut out = String::new();
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !out.contains(want) && Instant::now() < deadline {
+            if let Ok(t) = rx.recv_timeout(Duration::from_millis(200)) {
+                out.push_str(&t);
+            }
+        }
+        out
+    }
+
+    /// Un `digi.json` con la velocita' RTTY a 0 (scritto a mano o rovinato) faceva cadere il thread di ricezione appena acceso: la velocita'
+    /// torna quella di base, il resto resta, e l'RTTY si riceve.
+    #[test]
+    fn un_digi_json_con_valori_impossibili_non_ferma_la_ricezione() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-bad-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        std::fs::write(dir.join("digi.json"), r#"{"mode":"rtty","rtty_baud":0,"rx_freq_hz":1500,"tx_freq_hz":1500,"auto_receive":true}"#).expect("digi.json");
+        let svc = DigiService::open(&dir);
+        let s = svc.settings();
+        assert!(rtty_baud_ok(s.rtty_baud), "velocita' {}", s.rtty_baud);
+        assert_eq!(s.mode, DigiMode::Rtty);
+        assert!((s.rx_freq_hz - 1500.0).abs() < 0.1, "la frequenza scelta resta");
+        svc.start_rx();
+        let mut wave = vec![0.0; 6000];
+        wave.extend(DigiService::wave_of("RYRYRY CQ IU3ABC IU3ABC K", &s, false));
+        wave.extend(vec![0.0; 12000]);
+        let out = ricevi(&svc, &wave, "IU3ABC");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(out.contains("IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    /// Un campione non finito (NaN) nell'audio (TCI, driver) bloccava per sempre i filtri del ricevitore: dopo, niente piu' testo.
+    #[test]
+    fn un_campione_nan_non_blocca_il_ricevitore() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-nan-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        let s = DigiSettings { mode: DigiMode::Cw, cw_wpm: 20.0, ..DigiSettings::default() };
+        std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
+        let svc = DigiService::open(&dir);
+        svc.start_rx();
+        let mut wave = vec![0.0; 1200];
+        wave[100] = f32::NAN;
+        wave[200] = f32::INFINITY;
+        wave.extend(vec![0.0; 6000]);
+        wave.extend(DigiService::wave_of("CQ IU3ABC", &s, false));
+        wave.extend(vec![0.0; 12000]);
+        let out = ricevi(&svc, &wave, "CQ IU3ABC");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(out.contains("CQ IU3ABC"), "ricevuto: {out:?}");
     }
 
     /// Issue #45: dall'FT8 alla pagina dei modi testuali con il CW scelto. La pagina spegne l'ascolto uscendo e lo riaccende rientrando:

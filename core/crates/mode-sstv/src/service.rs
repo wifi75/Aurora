@@ -789,6 +789,36 @@ mod cartelle_tests {
         let _ = std::fs::remove_dir_all(&data);
     }
 
+    /// Un campione non finito (NaN) prima dell'immagine non deve bloccare il decodificatore (verificato: si riprende da solo, a differenza dei
+    /// ricevitori dei modi testuali).
+    #[test]
+    fn un_campione_nan_non_blocca_la_ricezione() {
+        let data = temp("nan");
+        let svc = SstvService::open(&data);
+        let mut s = svc.settings();
+        s.folder = data.join("immagini").display().to_string();
+        svc.apply_settings(s).expect("impostazioni");
+        svc.start_rx();
+        let spec = SstvMode::Robot36.spec();
+        let img = RgbImage { width: spec.width, height: spec.height, data: (0..spec.width * spec.height * 3).map(|i| (i % 251) as u8).collect() };
+        let mut audio = vec![0.0f32; RATE as usize / 2];
+        audio[100] = f32::NAN;
+        audio[200] = f32::NEG_INFINITY;
+        audio.extend(encode_with_id(SstvMode::Robot36, &img, RATE, 0.0, None).expect("codifica"));
+        audio.extend(vec![0.0f32; RATE as usize * 2]);
+        for chunk in audio.chunks(8192) {
+            svc.feed(RATE, chunk);
+        }
+        let started = Instant::now();
+        let mut got = false;
+        while started.elapsed() < Duration::from_secs(60) && !got {
+            std::thread::sleep(Duration::from_millis(100));
+            got = svc.images().into_iter().any(|e| e.direction == "rx");
+        }
+        let _ = std::fs::remove_dir_all(&data);
+        assert!(got, "nessuna immagine ricevuta");
+    }
+
     #[test]
     fn le_estensioni_delle_foto() {
         assert_eq!(photo_ext("a.JPG").as_deref(), Some("jpg"));

@@ -9,6 +9,7 @@ const TAPS: usize = 63;
 pub struct Resampler {
     in_rate: u32,
     taps: Vec<f32>,
+    /// Gli ultimi `TAPS` campioni, due volte di fila (vedi `process`).
     hist: Vec<f32>,
     pos: usize,
     filtered: Vec<f32>,
@@ -32,7 +33,7 @@ impl Resampler {
         for t in &mut taps {
             *t /= sum;
         }
-        Resampler { in_rate, taps: taps.into_iter().map(|t| t as f32).collect(), hist: vec![0.0; TAPS], pos: 0, filtered: Vec::new(), next: 0.0 }
+        Resampler { in_rate, taps: taps.into_iter().map(|t| t as f32).collect(), hist: vec![0.0; 2 * TAPS], pos: 0, filtered: Vec::new(), next: 0.0 }
     }
 
     pub fn in_rate(&self) -> u32 {
@@ -45,13 +46,14 @@ impl Resampler {
             return;
         }
         for &x in input {
+            // lo storico e' scritto due volte (a `pos` e a `pos + TAPS`): gli ultimi TAPS campioni, dal piu' vecchio, sono sempre
+            // `hist[pos..pos + TAPS]` senza resti della divisione; somme nello stesso ordine di prima, quindi stessi bit
             self.hist[self.pos] = x;
+            self.hist[self.pos + TAPS] = x;
             self.pos = (self.pos + 1) % TAPS;
             let mut acc = 0.0;
-            let mut k = self.pos;
-            for t in &self.taps {
-                acc += t * self.hist[k];
-                k = (k + 1) % TAPS;
+            for (t, h) in self.taps.iter().zip(&self.hist[self.pos..self.pos + TAPS]) {
+                acc += t * h;
             }
             self.filtered.push(acc);
         }

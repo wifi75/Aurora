@@ -92,9 +92,16 @@ fn nint(x: f32) -> i64 {
     x.round() as i64
 }
 
+/// La FFT di `n` punti. Un pianificatore per thread le ricorda: prima ogni chiamata (piu' volte per passata e per candidato) ricalcolava
+/// piano e tabelle dei fattori; lo stesso pianificatore sceglie lo stesso algoritmo, quindi i risultati sono gli stessi.
 fn fft_plan(n: usize, inverse: bool) -> Arc<dyn Fft<f32>> {
-    let mut planner = FftPlanner::<f32>::new();
-    if inverse { planner.plan_fft_inverse(n) } else { planner.plan_fft_forward(n) }
+    thread_local! {
+        static PLANNER: std::cell::RefCell<FftPlanner<f32>> = std::cell::RefCell::new(FftPlanner::new());
+    }
+    PLANNER.with(|planner| {
+        let mut planner = planner.borrow_mut();
+        if inverse { planner.plan_fft_inverse(n) } else { planner.plan_fft_forward(n) }
+    })
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
