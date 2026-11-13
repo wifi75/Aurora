@@ -1174,6 +1174,8 @@ fn apply_wsjtx3_settings(controls: &engine_native::NativeControls, r: &remote_ap
     controls.pounce_policy.store(engine_native::features::PouncePolicy::parse(&r.pounce_policy).code(), Ordering::Relaxed);
     controls.set_otp_settings(engine_native::features::OtpSettings { show: r.show_otp, verify: r.otp_verify, url: r.otp_url.clone() });
     apply_decode_settings(&r.decode);
+    // «PC lento: automatico / sempre / mai» (riquadro «Decodifica»): vale subito per la porta dei servizi di contorno
+    aurora_core::idle::set_mode(aurora_core::idle::SlowPcMode::parse(&r.slow_pc));
 }
 
 /// Le opzioni dei decodificatori (riquadro «Decodifica» della scheda Filtri) al motore proprio: valgono dal periodo che segue.

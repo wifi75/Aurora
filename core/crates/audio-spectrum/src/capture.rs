@@ -477,6 +477,9 @@ fn input_error_handler(lost: Arc<AtomicBool>, detail: String) -> impl FnMut(cpal
         let cause = format!("{:?}", e.kind());
         if matches!(e.kind(), cpal::ErrorKind::DeviceNotAvailable | cpal::ErrorKind::StreamInvalidated | cpal::ErrorKind::HostUnavailable) {
             lost.store(true, Ordering::SeqCst);
+        } else {
+            // un blocco perso con la scheda presente: PC che non sta dietro all'audio (riconoscimento del «PC lento»)
+            aurora_core::idle::note_audio_lost();
         }
         let minutes = started.elapsed().as_secs_f64() / 60.0;
         let per_min = if minutes > 0.0 { n as f64 / minutes } else { 0.0 };

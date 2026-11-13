@@ -1594,6 +1594,8 @@ async fn callsign_lookup(State(state): State<AppState>, _: Authed, axum::extract
             break;
         }
         let Some((user, password)) = settings.lookup_credentials(provider) else { continue };
+        // PC lento: la ricerca in rete (e il precaricamento dei nominativi in vista) aspetta la fine della decodifica, al massimo 30 s
+        aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
         let lookup = match provider {
             reporting::qrz_xml::Provider::Qrz => std::sync::Arc::clone(&settings.lookups().qrz),
             reporting::qrz_xml::Provider::HamQth => std::sync::Arc::clone(&settings.lookups().hamqth),

@@ -4712,6 +4712,10 @@ dec.ftolJt65,F Tol JT65,F Tol JT65
 dec.ftolJt9,F Tol JT9,F Tol JT9
 dec.ftolMsk144,F Tol MSK144,F Tol MSK144
 dec.ftolQ65,F Tol Q65,F Tol Q65
+dec.slowPc,Slow PC,Trage pc
+dec.slowPc.auto,Automatic,Automatisch
+dec.slowPc.always,Always,Altijd
+dec.slowPc.never,Never,Nooit
 dec.short.IncludeAveraging,Avg,Gem.
 dec.short.AutoClearAvg,Auto ⟲,Auto ⟲
 dec.short.JT65AP,AP,AP
@@ -4727,6 +4731,7 @@ jxh.Ftol_JT65,"JT65: frequency tolerance around Rx, used by «Single decode» an
 jxh.Ftol_JT9,"JT9: the window around Rx tried first, with lower thresholds. Like WSJT-X «F Tol»; default 50 Hz.","JT9: het venster rond Rx dat eerst wordt geprobeerd, met lagere drempels. Zoals «F Tol» in WSJT-X; standaard 50 Hz."
 jxh.Ftol_MSK144,MSK144: how far from Rx the pings are searched (20 to 500 Hz). Like WSJT-X «F Tol»; default 50 Hz.,MSK144: hoe ver van Rx de pings worden gezocht (20 tot 500 Hz). Zoals «F Tol» in WSJT-X; standaard 50 Hz.
 jxh.Ftol_Q65,"Q65: the window around Rx where the best signal, the QSO list and the average are always tried. Like WSJT-X «F Tol»; default 50 Hz.","Q65: het venster rond Rx waarin het beste signaal, de QSO-lijst en het gemiddelde altijd worden geprobeerd. Zoals «F Tol» in WSJT-X; standaard 50 Hz."
+jxh.SlowPcMode,"On PCs that struggle, while decoding runs the DX Cluster, DXpeditions, PSK Reporter, callsign lookup, LoTW list, satellite data and the update check wait for the decode to finish (30 s at most): the audio loses no blocks and decoding does not overrun. Nothing is lost, it just arrives a few seconds later. «Automatic» (default) turns on by itself after 3 periods out of 10 over 70% of the time, 3 audio blocks lost in 10 minutes or with 2 processors or fewer, and turns off after 20 quiet periods. «Always» keeps it on, «Never» off.","Op pc's die het zwaar hebben wachten DX Cluster, DXpedities, PSK Reporter, roepnaam opzoeken, LoTW-lijst, satellietgegevens en de updatecontrole tijdens het decoderen tot het decoderen klaar is (hoogstens 30 s): de audio verliest geen blokken en het decoderen loopt niet uit. Er gaat niets verloren, het komt alleen een paar seconden later. «Automatisch» (standaard) schakelt zichzelf in na 3 van de 10 periodes boven 70% van de tijd, 3 verloren audioblokken in 10 minuten of met 2 processors of minder, en schakelt uit na 20 rustige periodes. «Altijd» houdt hem aan, «Nooit» uit."
 rxl.volume.sys,System recording volume,Opnamevolume van het systeem
 rxl.volume.value.sys,{pct} % of the system recording volume ({device}),{pct} % van het opnamevolume van het systeem ({device})
 rxl.hint.silent.sys,"No signal for too long: check the cable, the chosen device and the recording volume in the system audio mixer.","Te lang geen signaal: controleer de kabel, het gekozen apparaat en het opnamevolume in de audiomixer van het systeem."

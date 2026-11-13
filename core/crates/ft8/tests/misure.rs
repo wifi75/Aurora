@@ -380,3 +380,126 @@ fn prestazioni_periodo() {
         println!("FT8 profondita' 3, thread {threads:>2}: messaggi {total:>4}  impronta {h:016x}  media {:>6.0} ms/periodo  peggiore {worst:>6.0} ms", ms / periods.len() as f64);
     }
 }
+
+/// Modalita' «PC lento» (`aurora_core::idle`, vedi `docs/prestazioni-motore.md`): un PC lento simulato (decodifica con 2 thread a
+/// priorita' sotto il normale, come il motore) mentre tanti lavori di contorno (cluster, LoTW, PSK Reporter...) occupano tutti i
+/// processori a priorita' normale. Tre giri sugli stessi periodi: contorno libero (porta spenta), contorno che aspetta la porta, contorno
+/// libero ma a priorita' minima (solo Windows). Per ogni giro: tempo di decodifica, periodi oltre il 70% del periodo simulato, blocchi di
+/// un finto thread audio (10 ms) arrivati con oltre 30 ms di ritardo, lavori di contorno fatti e attesa massima di un lavoro. L'impronta
+/// dei messaggi deve restare la stessa.
+/// `cargo test -p ft8 --release --test misure -- --ignored --nocapture pc_lento`
+#[test]
+#[ignore]
+fn pc_lento() {
+    use aurora_core::idle::{self, SlowPcMode};
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::time::Duration;
+
+    // il PC lento simulato ha 4 processori: su Windows la prova si chiude sui primi 4 (cosi' non occupa tutto il PC di sviluppo)
+    #[cfg(windows)]
+    {
+        use windows::Win32::System::Threading::{GetCurrentProcess, SetProcessAffinityMask};
+        // SAFETY: pseudo-maniglia del processo corrente, sempre valida
+        let _ = unsafe { SetProcessAffinityMask(GetCurrentProcess(), 0b1111) };
+    }
+    let periods: Vec<Vec<f32>> = (0..8).map(|k| main_period(k).1).collect();
+    let options = Options { threads: 2, ..Options::depth(3) };
+    let _ = decode_slot(&periods[0], &options, &mut CallHashes::default());
+    // il periodo simulato: il doppio del tempo di decodifica a PC scarico (un PC che normalmente usa meta' del suo periodo)
+    let t0 = Instant::now();
+    for audio in &periods {
+        let _ = decode_slot(audio, &options, &mut CallHashes::default());
+    }
+    let unloaded = t0.elapsed().as_secs_f64() * 1000.0 / periods.len() as f64;
+    let period_ms = 2.0 * unloaded;
+    println!("PC lento simulato: decodifica a PC scarico {unloaded:.0} ms/periodo, periodo simulato {period_ms:.0} ms, lento oltre {:.0} ms", period_ms * 0.7);
+
+    let workers = if cfg!(windows) { 4 } else { std::thread::available_parallelism().map_or(4, std::num::NonZero::get) };
+    for (name, mode, lowest) in [("contorno libero", SlowPcMode::Never, false), ("contorno con la porta", SlowPcMode::Always, false), ("contorno a priorita' minima", SlowPcMode::Never, true)] {
+        if lowest && !cfg!(windows) {
+            continue;
+        }
+        idle::set_mode(mode);
+        let stop = Arc::new(AtomicBool::new(false));
+        let (jobs, max_wait_ms, late) = (Arc::new(AtomicU64::new(0)), Arc::new(AtomicU64::new(0)), Arc::new(AtomicU64::new(0)));
+        let mut handles = Vec::new();
+        for _ in 0..workers {
+            let (stop, jobs, max_wait_ms) = (Arc::clone(&stop), Arc::clone(&jobs), Arc::clone(&max_wait_ms));
+            handles.push(std::thread::spawn(move || {
+                #[cfg(windows)]
+                if lowest {
+                    use windows::Win32::System::Threading::{GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_LOWEST};
+                    // SAFETY: pseudo-maniglia del thread corrente, sempre valida
+                    let _ = unsafe { SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST) };
+                }
+                let data: Vec<u8> = (0..2_000_000u32).map(|i| (i % 251) as u8).collect();
+                while !stop.load(Ordering::Relaxed) {
+                    let asked = Instant::now();
+                    idle::wait_free_blocking(idle::MAX_WAIT);
+                    max_wait_ms.fetch_max(asked.elapsed().as_millis() as u64, Ordering::Relaxed);
+                    // un lavoro di contorno: circa un decimo di secondo di CPU (lettura di un elenco, parsing di spot...)
+                    let mut h = 0xcbf2_9ce4_8422_2325u64;
+                    for _ in 0..6 {
+                        for b in &data {
+                            h = (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3);
+                        }
+                    }
+                    std::hint::black_box(h);
+                    jobs.fetch_add(1, Ordering::Relaxed);
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+            }));
+        }
+        // il finto thread audio: un blocco ogni 10 ms; un blocco che arriva con oltre 30 ms di ritardo riempirebbe il buffer della scheda
+        let audio = {
+            let (stop, late) = (Arc::clone(&stop), Arc::clone(&late));
+            std::thread::spawn(move || {
+                let mut last = Instant::now();
+                while !stop.load(Ordering::Relaxed) {
+                    std::thread::sleep(Duration::from_millis(10));
+                    let now = Instant::now();
+                    if now.duration_since(last) > Duration::from_millis(30) {
+                        late.fetch_add(1, Ordering::Relaxed);
+                    }
+                    last = now;
+                }
+            })
+        };
+        std::thread::sleep(Duration::from_millis(300));
+        let (mut ms, mut worst, mut slow, mut h) = (0.0f64, 0.0f64, 0usize, 0u64);
+        let started = Instant::now();
+        for audio in &periods {
+            let t = Instant::now();
+            let out = {
+                let _busy = idle::busy();
+                decode_slot(audio, &options, &mut CallHashes::default())
+            };
+            let took = t.elapsed().as_secs_f64() * 1000.0;
+            ms += took;
+            worst = worst.max(took);
+            if took >= period_ms * 0.7 {
+                slow += 1;
+            }
+            h = h.rotate_left(5) ^ impronta(&out);
+            // fino all'inizio del periodo dopo il PC e' libero
+            std::thread::sleep(Duration::from_secs_f64(((period_ms - took) / 1000.0).max(0.0)));
+        }
+        let secs = started.elapsed().as_secs_f64();
+        stop.store(true, Ordering::Relaxed);
+        for handle in handles {
+            let _ = handle.join();
+        }
+        let _ = audio.join();
+        println!(
+            "{name:<28} decodifica media {:>6.0} ms peggiore {worst:>6.0} ms  lenti {slow}/{}  audio in ritardo {:>3}  lavori di contorno {:>5} ({:.0}/s)  attesa massima {:>5} ms  impronta {h:016x}",
+            ms / periods.len() as f64,
+            periods.len(),
+            late.load(Ordering::Relaxed),
+            jobs.load(Ordering::Relaxed),
+            jobs.load(Ordering::Relaxed) as f64 / secs,
+            max_wait_ms.load(Ordering::Relaxed),
+        );
+    }
+    idle::set_mode(SlowPcMode::Auto);
+}

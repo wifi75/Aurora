@@ -65,6 +65,8 @@ fn spawn_recorder_every(store: Arc<HistoryStore>, mut events: broadcast::Receive
                 },
                 _ = flush.tick() => write(&store, std::mem::take(&mut pending)).await,
                 _ = prune.tick() => {
+                    // PC lento: la pulizia oraria del database aspetta la fine della decodifica (al massimo 30 s)
+                    aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
                     if days > 0 {
                         let store = Arc::clone(&store);
                         let cutoff = now_ms().saturating_sub(u64::from(days) * DAY_MS);

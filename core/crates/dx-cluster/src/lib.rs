@@ -481,6 +481,9 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                 if n == 0 {
                     return Ok(());
                 }
+                // PC lento: gli spot arrivati durante la decodifica si leggono appena finisce (al massimo 30 s dopo); nel frattempo il
+                // resto aspetta nel buffer della connessione, non si perde niente
+                aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
                 let (text, replies) = decoder.feed(&buf[..n]);
                 if !replies.is_empty() {
                     writer.write_all(&replies).await.map_err(|e| format!("scrittura: {e}"))?;
