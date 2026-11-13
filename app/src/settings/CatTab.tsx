@@ -785,7 +785,10 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
             </>
           ) : null}
-          {/* Cat4OM sa solo spegnere la radio (`powerOff`, se dichiarato dalla radio): l'accensione passa dalla gestione di Cat4OM */}
+          {/* Cat4OM: «Accendi» chiede l'accensione alla gestione di Cat4OM (`powerOnRadio`), «Spegni» usa `powerOff` se la radio lo dichiara */}
+          {config.backend === 'cat4om' ? (
+            <Check label={t('cat.powerOn')} hint={t('tip.cat.powerOn')} checked={config.power_on === true} onChange={(v) => { set({ power_on: v }); saveNow.mutate({ power_on: v }); }} />
+          ) : null}
           {config.backend === 'cat4om' ? (
             <Check label={t('cat.powerOff')} hint={t('tip.cat.powerOff')} checked={config.power_off === true} onChange={(v) => { set({ power_off: v }); saveNow.mutate({ power_off: v }); }} />
           ) : null}

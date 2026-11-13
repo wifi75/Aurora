@@ -695,6 +695,8 @@ struct Inner {
     cat_mode: CatMode,
     split: SplitMode,
     power_off: bool,
+    /// «Accendi»: all'avvio Aurora chiede a Cat4OM di accendere la radio (`powerOnRadio` della gestione), una volta per avvio.
+    power_on: bool,
     timing: Cat4omTiming,
     stop: AtomicBool,
     /// `welcome` ricevuto: le richieste si possono mandare.
@@ -1480,6 +1482,7 @@ impl Cat4omRig {
             cat_mode: config.cat_mode,
             split: config.split,
             power_off: config.power_off,
+            power_on: config.power_on,
             timing,
             stop: AtomicBool::new(false),
             link_up: AtomicBool::new(false),
@@ -2010,6 +2013,19 @@ fn discover_on(inner: &Inner, ws: &mut WebSocket<TcpStream>, management: &str) -
             let pause = Instant::now() + Duration::from_millis(250);
             while Instant::now() < pause && !inner.stop.load(Ordering::SeqCst) {
                 std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+    // «Accendi» con Cat4OM: la porta della radio e' di Cat4OM (Aurora non la puo' aprire per mandare l'accensione da se'), quindi la si chiede
+    // a lui con `powerOnRadio`. Prima con Cat4OM «Accendi» non mandava nulla: la radio si spegneva alla chiusura ma non si accendeva
+    // (proprietario, FT-2000 con microHAM, 2026-11-13). Una volta per avvio di Aurora; un errore resta nel registro.
+    static POWERED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if inner.power_on && group.running && !POWERED.swap(true, Ordering::SeqCst) {
+        let radio = if inner.wanted_radio.is_empty() { group.radios.first().map(|(id, _)| id.clone()) } else { Some(inner.wanted_radio.clone()) };
+        if let Some(radio) = radio {
+            match management_call(w, ws, management, &client_id, "powerOnRadio", json!({ "groupId": group.id, "radioId": radio })) {
+                Ok(_) => tracing::info!("«Accendi»: chiesto a Cat4OM di accendere la radio «{radio}» del gruppo «{}»", group.id),
+                Err(e) => tracing::warn!("«Accendi»: Cat4OM non ha acceso la radio «{radio}»: {e}"),
             }
         }
     }
