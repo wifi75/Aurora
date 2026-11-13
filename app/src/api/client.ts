@@ -1902,6 +1902,27 @@ export interface DigiSettings {
   band_spots_cq_only?: boolean;
   /** Tutta la banda: convalida dei nominativi (`minimal`, `normal`, `strict`, `maximum`). */
   band_validation?: string;
+  /** Passabanda «a coltello» intorno alla frequenza di ricezione, davanti al ricevitore. */
+  passband_on?: boolean;
+  /** Larghezza del passabanda (Hz, 20-1000); 0 = quella di base del modo. */
+  passband_hz?: number;
+}
+
+/** Un notch della ricezione: frequenza audio e larghezza della zona tolta (Hz). Non si salva. */
+export interface DigiNotch {
+  hz: number;
+  width_hz: number;
+}
+
+export async function getDigiNotches(): Promise<DigiNotch[]> {
+  const body = (await (await request('/digi/notches')).json()) as { notches?: DigiNotch[] };
+  return Array.isArray(body.notches) ? body.notches : [];
+}
+
+/** Sostituisce tutti i notch (`[]` li toglie). */
+export async function putDigiNotches(notches: DigiNotch[]): Promise<DigiNotch[]> {
+  const body = (await (await request('/digi/notches', { ...jsonInit({ notches }), method: 'PUT' })).json()) as { notches?: DigiNotch[] };
+  return Array.isArray(body.notches) ? body.notches : [];
 }
 
 /** I segnali di tutta la banda con lo storico di 60 s di ciascuno. */

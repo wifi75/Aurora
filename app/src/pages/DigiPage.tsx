@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, importMacros, putDigi, type ClusterSpot, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -202,6 +202,21 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const sending = snap.tx.state === 'sending';
   const lock = !s.tx_follow_rx;
   const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
+
+  // i notch della ricezione: stanno nel motore (non si salvano: all'avvio e al cambio di frequenza della radio sono vuoti)
+  const notchQuery = useQuery({ queryKey: ['digi-notches'], queryFn: getDigiNotches, retry: false });
+  const notches = notchQuery.data ?? [];
+  useEffect(() => onDigi((ev) => (ev.kind === 'notches' ? void client.invalidateQueries({ queryKey: ['digi-notches'] }) : undefined)), [client]);
+  const setNotches = useCallback(
+    (list: DigiNotch[]) => {
+      client.setQueryData(['digi-notches'], list);
+      void putDigiNotches(list).then(
+        (next) => client.setQueryData(['digi-notches'], next),
+        () => void client.invalidateQueries({ queryKey: ['digi-notches'] }),
+      );
+    },
+    [client],
+  );
 
   // tutta la banda: i segnali del modo in uso (CW; PSK31 e PSK63, il browser), con il nominativo sopra la traccia nella cascata
   const bandAll = useSyncExternalStore(onBandSignals, getBandSignals);
@@ -891,6 +906,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.listen'), checked: snap.rx.listening, onSelect: () => void (snap.rx.listening ? digiRx('stop') : digiRx('start')).then(onChanged, onChanged) },
         'sep' as const,
         { label: t('digi.mi.afc'), checked: s.afc_on, onSelect: () => toggleSetting('afc', 'toggle') },
+        { label: t('digi.mi.passband'), checked: s.passband_on === true, onSelect: () => save({ passband_on: s.passband_on !== true }) },
+        { label: t('digi.notch.clear'), disabled: notches.length === 0, onSelect: () => setNotches([]) },
         { label: t('digi.mi.lock'), checked: lock, onSelect: () => toggleSetting('lock', 'toggle') },
         { label: t('digi.mi.snap'), checked: s.snap_on, onSelect: () => toggleSetting('snap', 'toggle') },
         { label: t('digi.mi.squelch'), checked: s.squelch_on, onSelect: () => toggleSetting('squelch', 'toggle') },
@@ -1109,7 +1126,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} />
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
         ) : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}
@@ -1155,6 +1172,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           squelchOn={s.squelch_on}
           squelchOpen={snap.rx.squelch_open}
           afc={s.afc_on}
+          passband={s.passband_on === true}
+          onTogglePassband={() => save({ passband_on: s.passband_on !== true })}
+          notchCount={notches.length}
+          onClearNotches={() => setNotches([])}
           lock={lock}
           snap={s.snap_on}
           freqHz={rxHz}

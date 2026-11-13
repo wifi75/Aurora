@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useT } from '../../i18n';
 import { registerSpectrum } from '../../lib/spectrumFeed';
 import type { SpectrumRow } from '../../lib/digiSpectrum';
+import type { DigiNotch } from '../../api/client';
+import { addNotch } from '../../lib/digiNotches';
+import { WaterfallNotches } from './WaterfallNotches';
 
 interface Props {
   /** Il tratto di frequenza audio mostrato (Hz). */
@@ -12,7 +15,7 @@ interface Props {
   txHz: number | null;
   /** La distanza fra i due triangoli di ogni coppia (Hz): lo shift dell'RTTY (mark e space) o la larghezza del segnale che si decodifica. */
   bandwidthHz: number;
-  /** Split acceso: la coppia rossa della trasmissione sta altrove e il clic la sposta; con Ctrl si sposta la ricezione. */
+  /** Split acceso: la coppia rossa della trasmissione sta altrove e il clic la sposta; con Maiusc si sposta la ricezione. */
   split?: boolean;
   /** «Show hairlines»: due righe sottili su tutta la cascata alle frequenze di ricezione (e di trasmissione in split). */
   hairlines?: boolean;
@@ -21,8 +24,12 @@ interface Props {
   height?: number;
   /** Ogni riga che arriva (per Snap, Seek e Scan). */
   onRow?(row: SpectrumRow): void;
-  /** Un clic sulla cascata (`ctrl`: con il tasto Ctrl premuto). */
+  /** Un clic sulla cascata (`ctrl`: con il tasto Maiusc premuto, in split sposta la ricezione; il nome resta per i chiamanti). */
   onPick(hz: number, ctrl: boolean, commit?: boolean): void;
+  /** I notch della ricezione (strisce sulla cascata). */
+  notches?: DigiNotch[];
+  /** Notch cambiati: Ctrl+clic ne aggiunge uno, si trascinano, il tasto destro li toglie. Senza, Ctrl+clic non fa niente di speciale. */
+  onNotches?(list: DigiNotch[]): void;
   /** Frequenza della radio (Hz): la scala mostra le frequenze vere in kHz (radio + audio, in USB); 0 = scala in Hz dell'audio. */
   dialHz?: number;
   /** Cambia l'altezza della cascata (si trascina la barra sul bordo alto). */
@@ -44,7 +51,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, labels = [] }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, labels = [], notches = [], onNotches }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -205,36 +212,44 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
       <canvas
         ref={flow}
         className="digi-wf-flow"
+        title={onNotches ? t('digi.notch.addTip') : undefined}
         onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
+          // Ctrl+clic: un notch nel punto (la frequenza di ricezione non si muove)
+          if (e.ctrlKey && onNotches) {
+            if (e.button === 0) onNotches(addNotch(notches, hzAt(e)));
+            return;
+          }
+          if (e.button !== 0) return;
+          e.currentTarget.setPointerCapture?.(e.pointerId);
           dragging.current = true;
           const hz = hzAt(e);
-          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
+          setOver({ which: split && !e.shiftKey ? 'tx' : 'rx', hz });
           lastSent.current = Date.now();
-          onPick(hz, e.ctrlKey, false);
+          onPick(hz, e.shiftKey, false);
         }}
         onPointerMove={(e) => {
           if (!dragging.current) return;
           const hz = hzAt(e);
-          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
+          setOver({ which: split && !e.shiftKey ? 'tx' : 'rx', hz });
           // al motore al massimo dieci volte al secondo: il marcatore segue il mouse lo stesso
           if (Date.now() - lastSent.current >= 100) {
             lastSent.current = Date.now();
-            onPick(hz, e.ctrlKey, false);
+            onPick(hz, e.shiftKey, false);
           }
         }}
         onPointerUp={(e) => {
           if (!dragging.current) return;
           dragging.current = false;
           const hz = hzAt(e);
-          setOver({ which: split && !e.ctrlKey ? 'tx' : 'rx', hz });
-          onPick(hz, e.ctrlKey, true);
+          setOver({ which: split && !e.shiftKey ? 'tx' : 'rx', hz });
+          onPick(hz, e.shiftKey, true);
         }}
         onPointerCancel={() => {
           dragging.current = false;
           setOver(null);
         }}
       />
+      {onNotches ? <WaterfallNotches notches={notches} minHz={minHz} maxHz={maxHz} width={width} top={SCALE_H} onChange={onNotches} /> : null}
       {flag(rxShown)}
       {hairlines && rxShown >= minHz && rxShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxShown) }} aria-hidden="true" /> : null}
       {hairlines && split && txShown >= minHz && txShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txShown) }} aria-hidden="true" /> : null}
