@@ -28,6 +28,8 @@ export interface Prefs {
   dxpedDays: number;
   /** «Riga vuota tra i periodi di decodifica» (`InsertBlank`): uno spazio tra i messaggi di un periodo e quelli del successivo. */
   insertBlank: boolean;
+  /** Il separatore fra i periodi: «evidente» (una fascia con l'ora UTC del periodo) o «sottile» (una riga vuota con un filo). */
+  gapStyle: 'bold' | 'thin';
   /** «Visualizza i tuoi messaggi Tx nella finestra Rx» (`Tx2QSO`): le righe Tx si vedono nell'elenco. */
   showTx: boolean;
   /** «Mostra l'azimut nei messaggi con locatore» (`showAzimuth`): accanto alla distanza. */
@@ -54,7 +56,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: false, showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: false, cmdLogQso: false, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -67,6 +69,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
+    if (parsed.gapStyle === 'bold' || parsed.gapStyle === 'thin') prefs.gapStyle = parsed.gapStyle;
     if (parsed.contestOrder === 'valore' || parsed.contestOrder === 'ora') prefs.contestOrder = parsed.contestOrder;
     if (typeof parsed.dxpedDays === 'number' && Number.isFinite(parsed.dxpedDays)) prefs.dxpedDays = Math.min(90, Math.max(0, Math.round(parsed.dxpedDays)));
   if (typeof parsed.supportEmail === 'string') prefs.supportEmail = parsed.supportEmail.trim().slice(0, 200);

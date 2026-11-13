@@ -94,6 +94,7 @@ export const jtdxTabStrings = {
     'O filtro decide que QSO do registo contam para «novo» e «já contactado»: com o indicativo e o locator só contam os QSO feitos com eles (campos STATION_CALLSIGN e MY_GRIDSQUARE dos ADIF; o registo interno e o Log4OM2 não dizem com que indicativo se operou e não são excluídos), com a data só os QSO a partir daí. Vale logo.',
   ],
   'gen2.screen': ['Schermo', 'Display', 'Anzeige', 'Écran', 'Pantalla', 'Ecrã'],
+  'gen2.gapThin': ['Separatore sottile fra i periodi', 'Thin separator between periods', 'Dünner Trenner zwischen den Perioden', 'Séparateur fin entre les périodes', 'Separador fino entre periodos', 'Separador fino entre períodos'],
   'gen2.blank': ['Riga vuota tra i periodi di decodifica', 'Blank line between decoding periods', 'Leerzeile zwischen Dekodierperioden', 'Ligne vide entre les périodes de décodage', 'Línea vacía entre periodos de decodificación', 'Linha vazia entre períodos de descodificação'],
   'gen2.fontApp': ['Carattere dell’applicazione…', 'Application font…', 'Schriftart der Anwendung…', 'Police de l’application…', 'Fuente de la aplicación…', 'Tipo de letra da aplicação…'],
   'gen2.fontRx': ['Carattere del testo ricevuto…', 'Received text font…', 'Schriftart des Empfangstexts…', 'Police du texte reçu…', 'Fuente del texto recibido…', 'Tipo de letra do texto recebido…'],

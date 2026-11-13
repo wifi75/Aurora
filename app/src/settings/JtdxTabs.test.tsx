@@ -365,6 +365,7 @@ describe('General tab (as in JTDX)', () => {
     fireEvent.click(await screen.findByLabelText(it_('gen2.blank')));
     fireEvent.click(screen.getByLabelText(it_('gen2.azimuth')));
     fireEvent.click(screen.getByLabelText(it_('gen2.showTx')));
-    expect(usePrefs.getState().prefs).toMatchObject({ insertBlank: true, showAzimuth: true, showTx: false });
+    fireEvent.click(screen.getByLabelText(it_('gen2.gapThin')));
+    expect(usePrefs.getState().prefs).toMatchObject({ insertBlank: false, showAzimuth: true, showTx: false, gapStyle: 'thin' });
   });
 });

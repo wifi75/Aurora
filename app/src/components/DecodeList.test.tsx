@@ -577,4 +577,16 @@ describe('DecodeList a griglia (Finestra RX)', () => {
     expect(screen.getAllByText(/R70V RR73/)).toHaveLength(1);
   });
 
+  it('draws a bold separator with the UTC time between periods, or the thin one on request (#38)', () => {
+    const decodes = [decode({ id: 1, time_ms: 45_030_000 }), decode({ id: 2, time_ms: 45_015_000, text: 'CQ BB2BB FN42' })];
+    usePrefs.getState().set({ insertBlank: true, gapStyle: 'bold' });
+    const { container, unmount } = render(<DecodeList decodes={decodes} onReply={() => {}} />);
+    expect(container.querySelector('.decode-gap--bold')?.textContent).toMatch(/12:30:15/);
+    unmount();
+    usePrefs.getState().set({ gapStyle: 'thin' });
+    const thin = render(<DecodeList decodes={decodes} onReply={() => {}} />);
+    expect(thin.container.querySelector('.decode-gap')).not.toBeNull();
+    expect(thin.container.querySelector('.decode-gap--bold')).toBeNull();
+    usePrefs.getState().set({ insertBlank: true, gapStyle: 'bold' });
+  });
 });

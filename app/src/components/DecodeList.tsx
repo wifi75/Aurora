@@ -663,7 +663,15 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         );
         return (
           <Fragment key={d.id}>
-          {gap ? <div className="decode-gap" role="separator" /> : null}
+          {gap ? (
+            prefs.gapStyle === 'thin' ? (
+              <div className="decode-gap" role="separator" />
+            ) : (
+              <div className="decode-gap decode-gap--bold" role="separator" aria-label={formatClock(d.time_ms)}>
+                <span className="decode-gap__time num">{formatClock(d.time_ms)}</span>
+              </div>
+            )
+          ) : null}
           <button
             type="button"
             title={rowTitle(own ? t('tip.row.tx') : inQueue ? t('tip.row.queued') : answered ? t('tip.row.answered') : toMe ? t('tip.row.me') : wanted ? t('tip.row.wanted') : picked ? t('tip.row.picked') : worked ? t('tip.row.worked') : undefined, !own && !!talker && !!onQueue ? t('tip.row.queue') : undefined)}

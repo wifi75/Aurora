@@ -1,6 +1,6 @@
 import { useT, type Key } from '../i18n';
 import type { SettingRow } from '../lib/engineSettingsLayout';
-import { PrefCheck, REGION_OPTIONS, ScreenExtras, TYPE2_OPTIONS } from './JtdxTabs';
+import { GapStyleCheck, PrefCheck, REGION_OPTIONS, ScreenExtras, TYPE2_OPTIONS } from './JtdxTabs';
 import { QSO_LOG_GROUPS } from '../lib/engineSettingsLayout';
 import { EngineGroups, SettingField, useDraft, useSettings } from './NativeSettings';
 import { Page } from './layout';
@@ -37,6 +37,7 @@ export function GeneralWindowTab({ part = 'all' }: { part?: GeneralPart } = {}) 
       <h3>{t('gen.screen')}</h3>
       <div className="sw-grid">
         <PrefCheck k="insertBlank" label={t('gen2.blank')} />
+        <GapStyleCheck />
         <Check label={t('gen.miles')} hint={t('tip.gen.miles')} checked={prefs.distanceUnit === 'mi'} onChange={(v) => set({ distanceUnit: v ? 'mi' : 'km' })} />
         <PrefCheck k="showTx" label={t('gen2.showTx')} />
         <PrefCheck k="showCountry" label={t('gen.showCountry')} />
