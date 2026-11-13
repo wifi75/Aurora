@@ -509,11 +509,13 @@ fn cpu_tutta_la_banda() {
         let mut band = vec![0.0_f32; n];
         let step = 3_400.0 / stations as f64;
         let calls: Vec<String> = (0..stations).map(|i| format!("IU{}A{}", i % 10, ["BC", "BD", "BE", "BF"][i / 10])).collect();
+        let mut texts = Vec::new();
         for (i, call) in calls.iter().enumerate() {
             let hz = 320.0 + step * i as f64 + 7.0 * (i % 3) as f64;
             let wpm = 16.0 + (i % 8) as f64 * 2.0;
             let text = format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K   CQ DE {call} {call} K");
             let seq = chiavi(&text, |_| wpm, &KEYER, &mut rng);
+            texts.push(text);
             let wave = suona(&seq, hz, |_| AMP);
             for (s, w) in band.iter_mut().skip(6_000 + 1_000 * i).zip(wave) {
                 *s += w;
@@ -528,12 +530,27 @@ fn cpu_tutta_la_banda() {
         let secs = t0.elapsed().as_secs_f64();
         let chans = sk.channels();
         let found = calls.iter().filter(|c| chans.iter().any(|ch| ch.calls.iter().any(|h| h.verified() && &h.call == *c))).count();
+        // caratteri sbagliati: il testo del canale piu' vicino a ogni stazione (entro 15 Hz) contro quello mandato; l'inizio perso mentre il
+        // canale si apre e la fine oltre il minuto contano come errori, uguali da una versione all'altra
+        let (mut wrong, mut total) = (0usize, 0usize);
+        for (i, sent) in texts.iter().enumerate() {
+            let hz = (320.0 + step * i as f64 + 7.0 * (i % 3) as f64) as f32;
+            let near = chans.iter().filter(|ch| (ch.freq_hz - hz).abs() < 15.0).min_by(|a, b| (a.freq_hz - hz).abs().total_cmp(&(b.freq_hz - hz).abs()));
+            let got: Vec<u8> = near.map(|ch| ch.text.trim().bytes().collect()).unwrap_or_default();
+            wrong += levenshtein(sent.as_bytes(), &got);
+            total += sent.len();
+        }
         if std::env::var_os("CW_DEBUG").is_some() {
             for ch in &chans {
                 println!("{:7.1} Hz {:4.0} WPM {:5.1} dB {:?}", ch.freq_hz, ch.wpm, ch.snr_db, ch.calls.iter().map(|c| (c.call.clone(), c.verified())).collect::<Vec<_>>());
             }
         }
-        println!("{stations} stazioni: canali {} · nominativi verificati {found}/{stations} · CPU {:.1}% di un core", chans.len(), 100.0 * secs / 60.0);
+        println!(
+            "{stations} stazioni: canali {} · nominativi verificati {found}/{stations} · caratteri sbagliati {:.1}% · CPU {:.1}% di un core",
+            chans.len(),
+            100.0 * wrong as f64 / total as f64,
+            100.0 * secs / 60.0
+        );
     }
 }
 
