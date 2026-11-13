@@ -342,3 +342,41 @@ fn banda_vera_da_wav() {
         }
     }
 }
+
+/// Impronta (FNV-1a) dei messaggi di un periodo, ordinati: testo, frequenza, ritardo, SNR e marcatore a priori al bit. Serve a
+/// controllare che un'ottimizzazione non cambi niente.
+fn impronta(out: &[Decoded]) -> u64 {
+    let mut righe: Vec<String> = out.iter().map(|d| format!("{}|{:08x}|{:08x}|{}|{}", d.text, d.freq_hz.to_bits(), d.dt_s.to_bits(), d.snr_db, d.hint)).collect();
+    righe.sort();
+    let mut h = 0xcbf2_9ce4_8422_2325u64;
+    for b in righe.join("\n").bytes() {
+        h = (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3);
+    }
+    h
+}
+
+/// Prestazioni del motore (vedi `docs/prestazioni-motore.md`): 12 periodi dell'insieme principale decodificati con la profondita' 3 del
+/// motore, con 1 thread e con tutti i processori. Stampa messaggi, impronta dei risultati e millisecondi per periodo (media e peggiore).
+/// `cargo test -p ft8 --release --test misure -- --ignored --nocapture prestazioni_periodo`
+#[test]
+#[ignore]
+fn prestazioni_periodo() {
+    let periods: Vec<Vec<f32>> = (0..12).map(|k| main_period(k).1).collect();
+    let cpus = std::thread::available_parallelism().map_or(1, std::num::NonZero::get);
+    for threads in [1, cpus] {
+        let options = Options { threads, ..Options::depth(3) };
+        // un giro a vuoto: pool di thread e tabelle pronte
+        let _ = decode_slot(&periods[0], &options, &mut CallHashes::default());
+        let (mut total, mut ms, mut worst, mut h) = (0usize, 0.0f64, 0.0f64, 0u64);
+        for audio in &periods {
+            let t0 = Instant::now();
+            let out = decode_slot(audio, &options, &mut CallHashes::default());
+            let t = t0.elapsed().as_secs_f64() * 1000.0;
+            worst = worst.max(t);
+            ms += t;
+            total += out.len();
+            h = h.rotate_left(5) ^ impronta(&out);
+        }
+        println!("FT8 profondita' 3, thread {threads:>2}: messaggi {total:>4}  impronta {h:016x}  media {:>6.0} ms/periodo  peggiore {worst:>6.0} ms", ms / periods.len() as f64);
+    }
+}
