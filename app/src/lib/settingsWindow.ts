@@ -4,7 +4,7 @@
  */
 export function openSettingsWindow(tab?: string): void {
   const q = tab && /^[a-z0-9]{1,24}$/.test(tab) ? `?tab=${tab}` : '';
-  window.open(`${location.origin}/${q}#/finestra/impostazioni`, 'aurora-impostazioni', 'width=1120,height=760');
+  window.open(`${location.origin}/${q}#/finestra/impostazioni`, 'aurora-impostazioni', 'width=1280,height=840');
 }
 
 /** Evento con cui un collegamento dentro una scheda chiede alla finestra Impostazioni di passare a un'altra scheda. */

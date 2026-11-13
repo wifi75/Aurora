@@ -2086,3 +2086,22 @@
     flex-direction: column;
   }
 }
+
+/* Pagina Informazioni piu' larga e su due colonne quando c'e' posto (richiesta del proprietario: tutto in una pagina, senza scorrere):
+   a sinistra logo, dedica e dati; a destra novita' e donazione */
+@media (min-width: 60rem) {
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-auto-flow: row dense;
+    align-items: start;
+    column-gap: 1.5rem;
+    row-gap: 1rem;
+    max-width: 76rem;
+    padding: 0.25rem 0 0.75rem;
+  }
+  .about > .about-hero, .about > .about-dedica, .about > .about-facts { grid-column: 1; }
+  .about > .about-news, .about > .about-donate { grid-column: 2; }
+  .about > .about-news { grid-row: 1 / span 2; }
+  .about > :not(.about-hero):not(.about-dedica):not(.about-facts):not(.about-news):not(.about-donate) { grid-column: 1 / -1; }
+}
