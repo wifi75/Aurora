@@ -7,6 +7,7 @@ const t = (key: string, vars?: Record<string, string | number>) => (vars ? `${ke
 
 describe('sendText', () => {
   it('translates a ClubLog code with its values', () => {
+    expect(sendText({ message: 'x', code: 'hrdlog_denied', params: { detail: 'Invalid upload code' } }, t as never)).toContain('send.hrdlog_denied');
     const st = { message: "Club Log ha negato l'accesso (Login failed); invio fermo", code: 'clublog_denied', params: { detail: 'Login failed' } };
     expect(sendText(st, t as never)).toBe('send.clublog_denied{"calls":"","detail":"Login failed","time":"","d":" (Login failed)"}');
   });

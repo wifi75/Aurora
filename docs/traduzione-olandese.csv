@@ -4746,6 +4746,16 @@ core.cat4om.audio.stopped,Cat4OM closed the network audio: {raw}.,Cat4OM heeft d
 core.cat4om.audio.needsCatIn,Cat4OM input: first choose Cat4OM in Settings › Station › Radio.,Cat4OM-ingang: kies eerst Cat4OM in Instellingen › Station › Radio.
 core.cat4om.audio.needsCatOut,Cat4OM output: first choose Cat4OM in Settings › Station › Radio.,Cat4OM-uitgang: kies eerst Cat4OM in Instellingen › Station › Radio.
 core.ft991.lost,Connection with FT-991(A) Link lost: trying again.,Verbinding met FT-991(A) Link verbroken: opnieuw proberen.
+send.hrdlog_sent,QSO with {calls} sent to HRDLOG.NET,QSO met {calls} verzonden naar HRDLOG.NET
+send.hrdlog_duplicate,QSO with {calls} already on HRDLOG.NET{d},QSO met {calls} staat al op HRDLOG.NET{d}
+send.hrdlog_denied,"HRDLOG.NET refused the callsign or the upload code ({detail}); sending is paused (the QSOs stay queued) until you change the settings. You need the “Upload code” from your HRDLOG.NET profile, not the password.","HRDLOG.NET weigerde de roepnaam of de uploadcode ({detail}); het verzenden staat stil (de QSO’s blijven in de wachtrij) tot je de instellingen wijzigt. Je hebt de “Upload code” uit je HRDLOG.NET-profiel nodig, niet het wachtwoord."
+send.hrdlog_rejected,QSO with {calls} rejected by HRDLOG.NET: {detail},QSO met {calls} geweigerd door HRDLOG.NET: {detail}
+send.hrdlog_rejected_status,QSO with {calls} rejected by HRDLOG.NET (reply {detail}),QSO met {calls} geweigerd door HRDLOG.NET (antwoord {detail})
+send.hrdlog_retry_http,HRDLOG.NET replied {detail}: next attempt at {time} UTC,HRDLOG.NET antwoordde {detail}: volgende poging om {time} UTC
+send.hrdlog_retry_network,HRDLOG.NET: {detail}: next attempt at {time} UTC,HRDLOG.NET: {detail}: volgende poging om {time} UTC
+send.hrdlog_unreadable,HRDLOG.NET reply not understood ({detail}): next attempt at {time} UTC,Antwoord van HRDLOG.NET niet begrijpelijk ({detail}): volgende poging om {time} UTC
+send.hrdlog_off,HRDLOG.NET is switched off in the settings; sending is paused (the QSOs stay queued) until you change the settings,HRDLOG.NET staat uit in de instellingen; het verzenden staat stil (de QSO’s blijven in de wachtrij) tot je de instellingen wijzigt
+send.hrdlog_code_missing,HRDLOG.NET upload code not set; sending is paused (the QSOs stay queued) until you change the settings,Uploadcode van HRDLOG.NET niet ingesteld; het verzenden staat stil (de QSO’s blijven in de wachtrij) tot je de instellingen wijzigt
 send.clublog_sent,QSO with {calls} sent to Club Log{d},QSO met {calls} verzonden naar Club Log{d}
 send.clublog_duplicate,QSO with {calls} already on Club Log{d},QSO met {calls} staat al op Club Log{d}
 send.clublog_rejected,QSO with {calls} rejected by Club Log: {detail},QSO met {calls} geweigerd door Club Log: {detail}

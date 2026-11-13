@@ -18,7 +18,7 @@ export function sendText(st: SendStatusLike, t: T): string {
   const p = st.params ?? {};
   // «QSO OK» e simili: tra parentesi solo se c'e'
   const vars: Record<string, string> = { calls: p.calls ?? '', detail: p.detail ?? '', time: p.time ?? '', d: p.detail ? ` (${p.detail})` : '' };
-  if (code === 'clublog_retry_network') vars.detail = coreText(vars.detail, t);
+  if (code === 'clublog_retry_network' || code === 'hrdlog_retry_network') vars.detail = coreText(vars.detail, t);
   const key = (code === 'clublog_rejected' && !vars.detail ? 'send.clublog_rejected.plain' : `send.${code}`) as Key;
   if (!(key in STRINGS)) return coreText(st.message, t);
   return t(key, vars);

@@ -1,5 +1,8 @@
 # Changelog
 
+## Non rilasciato
+- **Messaggi di HRDLOG.NET nella lingua dell'interfaccia**, come quelli di Club Log; con nominativo o codice rifiutati il messaggio ricorda che serve il codice «Upload code» del profilo, non la password, e una risposta che non si capisce mostra il suo inizio.
+
 ## 0.11.250 - 2026-11-13
 - **Radio collegata da sola agli avvii successivi**: al primo collegamento riuscito fatto a mano (Hamlib, TCI, OmniRig, Cat4OM, FT-991 Link) si accende «Collega la radio all'avvio di Aurora» e viene salvata, una volta sola: chi poi la spegne la ritrova spenta; «Scollega», l'avvio forzato e il ricollegamento dopo un guasto non la toccano. Prima restava spenta e chi aveva una SunSDR in TCI doveva premere «Connetti» a ogni avvio.
 - **Errori di ClubLog nella lingua dell'interfaccia**: lo stato dei servizi porta anche un codice stabile (`clublog_denied`, `clublog_rejected`, `clublog_retry_http`...) e i valori da inserire; l'interfaccia lo traduce in sei lingue e, per un codice sconosciuto, ripiega sul testo scritto dal core. Prima l'esito di ClubLog compariva sempre in italiano.

@@ -26,39 +26,66 @@ fn tag(body: &str, name: &str) -> Option<String> {
 
 /// Come e' andato un invio.
 pub fn read_reply(status: u16, body: &str) -> Outcome {
+    read_reply_coded(status, body).0
+}
+
+/// Come [`read_reply`], con il codice stabile dell'esito e il valore `detail` per tradurlo nell'interfaccia:
+/// - `hrdlog_sent`: QSO inserito (`detail` = quanti);
+/// - `hrdlog_duplicate`: gia' presente (`detail` = testo di HRDLOG.NET, vuoto per `<insert>0</insert>`);
+/// - `hrdlog_denied`: nominativo o codice di caricamento rifiutati (`detail` = testo di HRDLOG.NET); l'invio si ferma;
+/// - `hrdlog_rejected`: QSO rifiutato con un errore di HRDLOG.NET (`detail` = il testo);
+/// - `hrdlog_retry_http`: 408, 429 o 5xx (si riprova); `hrdlog_rejected_status`: ogni altro numero;
+/// - `hrdlog_unreadable`: risposta che non si capisce (si riprova; `detail` = l'inizio della risposta).
+pub fn read_reply_coded(status: u16, body: &str) -> (Outcome, &'static str, String) {
     if matches!(status, 408 | 429 | 500..=599) {
-        return Outcome::Retry(format!("HRDLOG.NET ha risposto {status}"));
+        return (Outcome::Retry(format!("HRDLOG.NET ha risposto {status}")), "hrdlog_retry_http", status.to_string());
     }
     if status != 200 {
-        return Outcome::Rejected(format!("risposta {status}"));
+        return (Outcome::Rejected(format!("risposta {status}")), "hrdlog_rejected_status", status.to_string());
     }
     if let Some(error) = tag(body, "error") {
         let reason = short(&error, 120);
         let lower = reason.to_lowercase();
         return if lower.contains("duplicat") || lower.contains("already") {
-            Outcome::Duplicate(reason)
+            (Outcome::Duplicate(reason.clone()), "hrdlog_duplicate", reason)
         } else if lower.contains("code") || lower.contains("token") || lower.contains("callsign") || lower.contains("auth") || lower.contains("user") {
-            Outcome::Blocked(format!("HRDLOG.NET ha rifiutato nominativo o codice ({reason})"))
+            (Outcome::Blocked(format!("HRDLOG.NET ha rifiutato nominativo o codice ({reason})")), "hrdlog_denied", reason)
         } else {
-            Outcome::Rejected(reason)
+            (Outcome::Rejected(reason.clone()), "hrdlog_rejected", reason)
         };
     }
     match tag(body, "insert").and_then(|n| n.parse::<u32>().ok()) {
-        Some(0) => Outcome::Duplicate("HRDLOG.NET non ha inserito il QSO (gia' presente)".into()),
-        Some(n) => Outcome::Sent(format!("{n} QSO")),
-        None => Outcome::Retry("risposta di HRDLOG.NET non leggibile".into()),
+        Some(0) => (Outcome::Duplicate("HRDLOG.NET non ha inserito il QSO (gia' presente)".into()), "hrdlog_duplicate", String::new()),
+        Some(n) => (Outcome::Sent(format!("{n} QSO")), "hrdlog_sent", String::new()),
+        None => {
+            // l'inizio della risposta aiuta a capire cosa ha mandato HRDLOG.NET (pagina d'errore, manutenzione...)
+            let start = short(body, 80);
+            (Outcome::Retry(format!("risposta di HRDLOG.NET non leggibile ({start})")), "hrdlog_unreadable", start)
+        }
     }
 }
 
 /// Invia un QSO (bloccante).
 pub fn upload(url: &str, call: &str, code: &str, record: &str, timeout: Duration, user_agent: &str) -> Outcome {
+    upload_coded(url, call, code, record, timeout, user_agent).0
+}
+
+/// Come [`upload`], con codice e `detail` dell'esito (vedi [`read_reply_coded`]); un errore di rete e' `hrdlog_retry_network` con la causa.
+pub fn upload_coded(url: &str, call: &str, code: &str, record: &str, timeout: Duration, user_agent: &str) -> (Outcome, &'static str, String) {
     match agent(timeout, user_agent).post(url).send_form([("Callsign", call), ("Code", code), ("App", user_agent), ("ADIFData", record)]) {
         Ok(mut response) => {
             let status = response.status().as_u16();
             let text = response.body_mut().read_to_string().unwrap_or_default();
-            read_reply(status, &text)
+            read_reply_coded(status, &text)
         }
-        Err(e) => network(&e),
+        Err(e) => {
+            let outcome = network(&e);
+            let cause = match &outcome {
+                Outcome::Retry(m) => m.clone(),
+                _ => String::new(),
+            };
+            (outcome, "hrdlog_retry_network", cause)
+        }
     }
 }
 
@@ -87,6 +114,11 @@ mod tests {
         assert!(matches!(read_reply(200, "<error>bad adif</error>"), Outcome::Rejected(_)));
         assert!(matches!(read_reply(503, ""), Outcome::Retry(_)));
         assert!(matches!(read_reply(200, "<html>"), Outcome::Retry(_)));
+        assert_eq!(read_reply_coded(200, "<error>Invalid upload code</error>").1, "hrdlog_denied");
+        assert_eq!(read_reply_coded(200, "<insert>1</insert>").1, "hrdlog_sent");
+        assert_eq!(read_reply_coded(503, "").1, "hrdlog_retry_http");
+        let (_, code, detail) = read_reply_coded(200, "<html><body>Service Unavailable</body></html>");
+        assert_eq!((code, detail.as_str()), ("hrdlog_unreadable", "Service Unavailable"));
         assert!(check("IU3ABC", true).is_ok());
         assert!(check("IU3ABC", false).is_err());
     }

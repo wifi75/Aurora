@@ -353,7 +353,7 @@ pub(crate) async fn worker(service: Arc<Service>, target: Target) {
 }
 
 /// Lo stato e la coda dopo un invio.
-/// `code` e `detail` (solo ClubLog per ora) sono il codice stabile dell'esito e il dettaglio della risposta: l'interfaccia li traduce nella
+/// `code` e `detail` (ClubLog e HRDLOG.NET per ora) sono il codice stabile dell'esito e il dettaglio della risposta: l'interfaccia li traduce nella
 /// sua lingua, il testo italiano resta come ripiego e nel registro.
 fn settle(service: &Service, target: Target, items: &[Pending], outcome: Outcome, code: &str, detail: &str) {
     let kind = target.kind();
@@ -423,10 +423,12 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
                 plain(crate::qrz::insert(&endpoints.qrz_url, &key, &record, endpoints.upload_timeout, &endpoints.user_agent))
             }
             Target::Hrdlog => {
-                let Some(account) = &config.hrdlog else { return plain(Outcome::Blocked("HRDLOG.NET spento".into())) };
-                let Some(code) = secrets.get(crate::HRDLOG_SECRET) else { return plain(Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into())) };
+                let Some(account) = &config.hrdlog else { return (Outcome::Blocked("HRDLOG.NET spento".into()), "hrdlog_off", String::new()) };
+                let Some(code) = secrets.get(crate::HRDLOG_SECRET) else {
+                    return (Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into()), "hrdlog_code_missing", String::new());
+                };
                 let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
-                plain(crate::hrdlog::upload(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent))
+                crate::hrdlog::upload_coded(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent)
             }
             Target::Lotw => {
                 let Some(setup) = &config.lotw else { return plain(Outcome::Blocked("LoTW spento".into())) };
