@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-13, versione 0.11.247 pubblicata (notch e passabanda nei modi testuali con AFC vincolato, Nuovo log vuoto protetto, Log QSO per gli SWL, Accendi con Cat4OM e RTS alto per le Yaesu, display spento con la radio spenta, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-13, versione 0.11.248 pubblicata (titolo della finestra con autore, log interno sempre pronto, Tune e Log QSO visibili, radio spenta a 14 segmenti, notch e passabanda nei modi testuali con AFC vincolato, Nuovo log vuoto protetto, Log QSO per gli SWL, Accendi con Cat4OM e RTS alto per le Yaesu, display spento con la radio spenta, Attivita' di banda a colonne spostabili, opzioni del cluster in FT8). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-12
