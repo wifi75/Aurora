@@ -515,6 +515,8 @@ pub struct CwBayes {
     /// Sopravvivenze e densità delle durate già calcolate con il pugno di adesso, e le soglie delle pause per velocità.
     memo: Memo,
     gaps: [(u32, u32); N_SPEEDS],
+    /// Le migliori di ogni velocità tenute a ogni passo (riusato fra un passo e l'altro).
+    extras: Vec<Hyp>,
     /// L'ultimo cambio del percorso migliore gia' usato per adattare ampiezza, rumore e pugno.
     learned_at: u32,
     best_speed: u8,
@@ -590,6 +592,7 @@ impl CwBayes {
             llr_cache: FastMap::default(),
             memo: Memo::new(),
             gaps: [(0, 0); N_SPEEDS],
+            extras: Vec::with_capacity(2 * N_SPEEDS),
             learned_at: 0,
             best_speed: 0,
             hint_wpm: f64::from(wpm_hint),
@@ -909,13 +912,18 @@ impl CwBayes {
             // l'ampiezza: quattro valori attorno alla stima e quella che spiega meglio questo tono (un segnale che sale o un QSB)
             let ml = if gain_all[m] > 0.0 { (coherent / gain_all[m]).powi(2) } else { 0.0 };
             let mut acc = [0.0_f64; AMP_FACTORS.len() + 1];
+            // le ampiezze (radici) sono le stesse per tutti i pezzi
+            let mut amp = [0.0_f64; AMP_FACTORS.len() + 1];
+            for (a, a2) in amp.iter_mut().zip(AMP_FACTORS.iter().map(|f| self.signal * f).chain(std::iter::once(ml))) {
+                *a = a2.sqrt();
+            }
             for &(len, mag, gain, noise) in pieces.iter().take(k as usize) {
                 if len == 0.0 || gain[m] <= 0.0 || noise[m] <= 0.0 {
                     continue;
                 }
                 let var = noise[m] * self.var_of(len as usize);
-                for (i, a2) in AMP_FACTORS.iter().map(|f| self.signal * f).chain(std::iter::once(ml)).enumerate() {
-                    let mu = gain[m] * a2.sqrt();
+                for (i, a) in amp.iter().enumerate() {
+                    let mu = gain[m] * a;
                     acc[i] += ln_i0(2.0 * mu * mag / var) - mu * mu / var;
                 }
             }
@@ -1115,7 +1123,9 @@ impl CwBayes {
                 *k = i;
             }
         }
-        let extras: Vec<Hyp> = per_speed.iter().filter(|&&i| i != usize::MAX).map(|&i| self.cand[i]).filter(|h| h.score > best - 200.0).collect();
+        let mut extras = std::mem::take(&mut self.extras);
+        extras.clear();
+        extras.extend(per_speed.iter().filter(|&&i| i != usize::MAX).map(|&i| self.cand[i]).filter(|h| h.score > best - 200.0));
         self.cand.retain(|h| h.score > best - BEAM_DROP);
         // nei tratti disturbati (nell'ultimo mezzo secondo il noise blanker o l'AGC del rumore hanno tolto piu' di un decimo del
         // segnale) si tengono il doppio delle ipotesi: la lettura giusta resta indietro finche' lo scroscio non passa
@@ -1127,13 +1137,15 @@ impl CwBayes {
             self.cand.truncate(beam_size);
         }
         let floor = self.cand.iter().map(|h| h.score).fold(f32::MAX, f32::min);
-        self.cand.extend(extras.into_iter().filter(|h| h.score < floor));
+        self.cand.extend(extras.iter().copied().filter(|h| h.score < floor));
+        self.extras = extras;
         // i punteggi restano vicini allo zero
         for h in self.cand.iter_mut() {
             h.score -= best;
             h.base -= best;
         }
-        self.beam = std::mem::take(&mut self.cand);
+        // le ipotesi di prima lasciano il loro spazio ai candidati del passo dopo (niente allocazioni a ogni passo)
+        self.beam = std::mem::replace(&mut self.cand, beam);
         if self.beam.is_empty() {
             self.reset_beam();
             return;
