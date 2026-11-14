@@ -81,11 +81,25 @@ function appendTxEcho(raw: string): void {
   append(add);
 }
 
+/** Dopo una pausa cosi' (ms) senza caratteri la ricezione va a capo da sola (le stazioni mandano il ritorno a capo all'inizio della
+ * trasmissione, dove spesso si perde mentre il ricevitore si aggancia). */
+export const RX_GAP_MS = 1500;
+let lastRxAt = 0;
+const lastExtraAt = new Map<number, number>();
+
 /** I caratteri ricevuti in coda al testo: i ritorni a capo diventano '\n', le posizioni in `weakAt` (nel testo dell'evento) incerte. */
 function appendRx(raw: string, weakAt: readonly number[] | undefined): void {
   const flags = new Set(weakAt ?? []);
   let add = '';
   let mask = '';
+  // dopo una pausa si va a capo da soli: ogni chiamata e ogni risposta su una riga sua
+  const now = Date.now();
+  const before = getDigiText();
+  if (lastRxAt > 0 && now - lastRxAt > RX_GAP_MS && before !== '' && !before.endsWith('\n') && !/^[\r\n]/.test(raw)) {
+    add += '\n';
+    mask += '0';
+  }
+  lastRxAt = now;
   for (let k = 0; k < raw.length; k++) {
     const c = raw[k];
     if (c === '\r') {
@@ -139,8 +153,13 @@ export function onExtraText(listener: () => void): () => void {
 }
 
 function appendExtra(id: number, raw: string): void {
-  const add = raw.replace(/\r\n?/g, '\n');
-  const next = (extraText.get(id) ?? '') + add;
+  const now = Date.now();
+  const old = extraText.get(id) ?? '';
+  const last = lastExtraAt.get(id) ?? 0;
+  lastExtraAt.set(id, now);
+  const gap = last > 0 && now - last > RX_GAP_MS && old !== '' && !old.endsWith('\n') && !/^[\r\n]/.test(raw);
+  const add = (gap ? '\n' : '') + raw.replace(/\r\n?/g, '\n');
+  const next = old + add;
   extraText.set(id, next.length > EXTRA_MAX_CHARS ? next.slice(next.length - EXTRA_MAX_CHARS) : next);
   for (const l of extraListeners) l();
 }

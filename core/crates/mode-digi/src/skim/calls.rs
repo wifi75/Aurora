@@ -221,6 +221,12 @@ impl CallTracker {
         self.word_conf = 0.0;
         if cq_word(&word) {
             self.cq = true;
+            // contest: «CT7BJG TEST», «CT7BJG QRZ»: il nominativo subito prima di TEST, CQ o QRZ e' di chi chiama
+            if let Some(prev) = self.recent.last()
+                && let Some(c) = self.calls.get_mut(prev.as_str())
+            {
+                c.role = Role::Cq;
+            }
         }
         if word == "QRL?" || word == "QRL" {
             self.qrl = true;
@@ -230,7 +236,8 @@ impl CallTracker {
         }
         if looks_like_call(&word) {
             let prev = self.recent.last().map(String::as_str).unwrap_or("");
-            let role = if prev == "DE" {
+            // «TU CT7BJG»: nei contest chi chiude il QSO scrive il proprio nominativo dopo TU (trasmette lui)
+            let role = if prev == "DE" || prev == "TU" {
                 Role::De
             } else if cq_word(prev) || (self.cq && self.recent.iter().rev().take(3).any(|w| cq_word(w))) {
                 Role::Cq
@@ -363,6 +370,18 @@ mod tests {
         let all: Vec<String> = t.calls(Validation::Minimal, &|_| CallCheck::default()).into_iter().map(|c| c.call).collect();
         assert!(all.contains(&"IU3ABC".to_string()) && all.contains(&"IU3ABD".to_string()), "{all:?}");
         assert!(!all.contains(&"TU3ABC".to_string()), "{all:?}");
+    }
+
+    /// Contest RTTY: chi trasmette scrive il proprio nominativo dopo TU e prima di TEST o QRZ; il corrispondente resta «altro».
+    #[test]
+    fn contest_exchanges_give_the_role_of_the_station_transmitting() {
+        let mut t = CallTracker::new();
+        t.push(b"DL4YAY 599 428 428 DL4YAY TU CT7BJG CFM QRZ CT7BJG CT7BJG TEST ", &[], 1.0);
+        let all = t.calls(Validation::Minimal, &|_| CallCheck::default());
+        let me = all.iter().find(|c| c.call == "CT7BJG").cloned();
+        let you = all.iter().find(|c| c.call == "DL4YAY").cloned();
+        assert!(me.as_ref().is_some_and(|c| c.role == Role::Cq), "{me:?}");
+        assert!(you.as_ref().is_some_and(|c| c.role == Role::Other), "{you:?}");
     }
 
     #[test]
