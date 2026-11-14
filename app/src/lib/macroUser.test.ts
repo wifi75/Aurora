@@ -3,7 +3,7 @@ import { runMacro, type MacroContext } from './macroLang';
 
 const ctx: MacroContext = { mycall: 'iu3abc', myname: 'Tiz', myqth: 'X', mywwloc: 'io91wm', call: 'ec7yy', name: '', qth: '', wwloc: '', rstr: '599', rsts: '599', notes: '', nrr: '015', nrs: '007', startTime: null, now: new Date('2026-11-14T12:00:00Z'), dialHz: 21_091_000, band: '15m', modeName: 'RTTY', qsoNumber: 7 };
 
-describe('macro di contest come in MixW', () => {
+describe('macro di contest', () => {
   it('<TX><FIXSTARTTIME> de <MYCALL> UR 5NN  TU<RXANDCLEAR>', () => {
     const r = runMacro('<TX><FIXSTARTTIME> de <MYCALL> UR 5NN  TU<RXANDCLEAR>', ctx);
     expect(r.text).toBe('de IU3ABC UR 5NN TU');

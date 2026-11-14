@@ -1,5 +1,5 @@
 /**
- * Il numero progressivo dei contest (come MixW): quanti QSO si sono salvati finora + 1. Il contatore sta nelle preferenze del browser
+ * Il numero progressivo dei contest: quanti QSO si sono salvati finora + 1. Il contatore sta nelle preferenze del browser
  * (chiave `aurora.`, copiata anche sul server), avanza quando il QSO si salva e si puo' correggere o azzerare dal log.
  */
 export const SERIAL_KEY = 'aurora.digi.qsonr';

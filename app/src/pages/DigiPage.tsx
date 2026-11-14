@@ -869,7 +869,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const busy = l.snap.tx.state === 'sending';
     if (toTx) {
       // un comando <TX> da solo trasmette quello che c'e' nella casella
-      // come in MixW: senza <RX> la trasmissione resta aperta finito il testo (si continua a scrivere), con <RX> si torna in ricezione;
+      // senza <RX> la trasmissione resta aperta finito il testo (si continua a scrivere), con <RX> si torna in ricezione;
       // si apre solo dopo che il testo e' partito davvero, mai una trasmissione vuota
       void send(body !== '' ? body : l.tx).then((ok) => {
         if (!ok) clearAfterTx.current = false;
