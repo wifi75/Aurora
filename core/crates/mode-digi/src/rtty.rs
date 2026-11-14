@@ -74,6 +74,11 @@ const LEVEL_BITS: f32 = 4.0;
 const GAIN_DROP: f32 = 0.85;
 const GAIN_AVG_BITS: f32 = 0.5;
 const GAIN_HOLD_BITS: f32 = 3.0;
+/// AGC confermato: se insieme ai toni cala anche il rumore accanto (media veloce sotto `AGC_NOISE_DROP` volte la lenta) e' il guadagno
+/// della radio, non un fading del solo segnale, e si riscala dopo `AGC_HOLD_BITS` bit invece di `GAIN_HOLD_BITS`.
+const AGC_NOISE_DROP: f32 = 0.5;
+const AGC_HOLD_BITS: f32 = 1.0;
+const AGC_SLOW_BITS: f32 = 16.0;
 /// Quanto dell'errore di fase si corregge a ogni cambio di livello: meta' (orologio di bit che si corregge sui fronti).
 const PLL_GAIN: f32 = 0.5;
 /// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
@@ -1012,6 +1017,10 @@ pub struct RttyDemodulator {
     /// Somma media delle ampiezze dei due toni e da quanti campioni resta sotto quella attesa (salti di guadagno).
     gain_sum: f32,
     gain_low: f32,
+    /// Rumore accanto ai toni: adesso, media veloce e media lenta (conferma dell'AGC della radio).
+    noise_now: f32,
+    noise_fast: f32,
+    noise_slow: f32,
     /// Le ultime decisioni lunghe un bit (`true` = mark), la prossima da scrivere e quante sono mark.
     bits: Vec<bool>,
     /// I valori morbidi (LLR, positivi = mark) degli stessi campioni.
@@ -1142,6 +1151,9 @@ impl RttyDemodulator {
             space_noise: 0.0,
             gain_sum: 0.0,
             gain_low: 0.0,
+            noise_now: 0.0,
+            noise_fast: 0.0,
+            noise_slow: 0.0,
             bits: vec![true; nbits],
             soft: vec![0.0; nbits],
             soft_len: ((spb * SOFT_BITS).round() as usize).clamp(1, nbits),
@@ -1396,6 +1408,9 @@ impl RttyDemodulator {
     fn rescale_on_gain_drop(&mut self, sum: f32) {
         let sl = self.spb;
         self.gain_sum = decayavg(self.gain_sum, sum, sl * GAIN_AVG_BITS);
+        self.noise_fast = decayavg(self.noise_fast, self.noise_now, sl * GAIN_AVG_BITS);
+        self.noise_slow = decayavg(self.noise_slow, self.noise_now, sl * AGC_SLOW_BITS);
+        let agc = self.noise_fast < AGC_NOISE_DROP * self.noise_slow;
         let [m_on, m_off, s_on, s_off] = self.levels;
         let expect = (m_on + s_off).min(m_off + s_on);
         if expect <= 0.0 || self.gain_sum >= GAIN_DROP * expect {
@@ -1403,7 +1418,7 @@ impl RttyDemodulator {
             return;
         }
         self.gain_low += 1.0;
-        if self.gain_low > GAIN_HOLD_BITS * sl {
+        if self.gain_low > if agc { AGC_HOLD_BITS } else { GAIN_HOLD_BITS } * sl {
             let r = self.gain_sum / (GAIN_DROP * expect);
             for l in &mut self.levels {
                 *l *= r;
@@ -1826,6 +1841,7 @@ impl RttyDemodulator {
             let sp = (zs.0 * zs.0 + zs.1 * zs.1).sqrt();
             let (n0, n1) = (self.noise[0].magnitude(&self.h), self.noise[1].magnitude(&self.h));
             let nz = 0.5 * (n0 + n1);
+            self.noise_now = nz;
             self.sum_m += m;
             self.sum_s += sp;
             self.sum_n += 2.0 * nz;
