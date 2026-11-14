@@ -82,3 +82,11 @@ html[data-theme='light'] .radar-c9 { --radar-c: #9a2fae; }
 .radar--off { min-height: 0; width: auto; align-self: flex-start; }
 html[data-theme='light'] .radar-switch { background: #ffffff; }
 html[data-theme='light'] .radar-switch--on { background: #0a7a52; border-color: #0a7a52; color: #ffffff; }
+
+/* segno del log accanto al nominativo: stessi colori dei tipi «paese nuovo» e «gia' collegato» della pagina FT8 */
+.radar-log { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px; font-size: 9px; font-weight: 700; line-height: 13px; vertical-align: middle; }
+.radar-log--new-dxcc { background: var(--tag-new-dxcc, #800080); color: var(--tag-new-dxcc-ink, #fff); }
+.radar-log--worked { background: var(--tag-worked-call, #00bf00); color: var(--tag-worked-call-ink, #000); }
+.radar-log--worked-other { border: 1px solid var(--tag-worked-call, #00bf00); color: var(--tag-worked-call, #00bf00); line-height: 11px; }
+.radar-legend { display: inline-flex; gap: 2px; cursor: help; }
+.radar-legend .radar-log { margin-left: 0; }
