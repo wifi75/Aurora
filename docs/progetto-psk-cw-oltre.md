@@ -329,6 +329,17 @@ sesto: scartata. La CPU sta nel traliccio.
 
 Resta: avvio di ogni canale (i primi caratteri persi mentre si apre); prove su registrazioni vere; traliccio più leggero per avere più canali.
 
+### Incrementi successivi (2026-11-14)
+| Cosa | Dove | Misura prima -> dopo |
+|---|---|---|
+| Il canale nuovo ascolta gli ultimi 2,5 s di audio (l'inizio della stazione non si perde mentre il tono viene riconosciuto) | `skim/mod.rs` (`CATCH_UP_S`) | 30 stazioni: caratteri sbagliati 8,9 -> 7,0%; 10 stazioni 6,9 -> 5,6% |
+| Frammenti di nominativo (spazio inventato del tasto a mano: «OH2AB C») e letture di un carattere diverse da un nominativo sentito molto di piu' (I/T: «TU3ABC») non si mostrano, anche fra canali entro 30 Hz | `skim/calls.rs` (`shadows`), `skim/mod.rs` (`shadow_across`) | `tasto_a_mano_nominativi` (10 stazioni, 3 semi): nominativi sbagliati verificati a +5/0/-5/-8/-10 dB da 0/0/0/1/1 (e 2/2/1 a +5/0/-5 prima dei frammenti) a 0 ovunque, giusti invariati (30/30/29/27/16) |
+| Ipotesi del traliccio adattive: 64 per i canali forti (S/N a tasto abbassato in 500 Hz >= 0 dB), 96 per gli altri | `skim/mod.rs` (`STRONG_BEAM`, `STRONG_SNR_DB`) | CPU 30 stazioni 16,0 -> 14,0%, 10 stazioni 5,3 -> 4,6%; nominativi e caratteri uguali. Scartati: 64 per tutti (-10 dB: 16 -> 14 nominativi), 48 (3 nominativi sbagliati a -10 dB) |
+| QSB 15 dB: nessun difetto proprio | — | l'errore misurato (7,9% a +5 dB, 19% a 0 dB) e' quello atteso dalle colonne del rumore costante pesate per il tempo passato sotto -8 dB |
+| Tre letture per confermare un nominativo (al posto di due) | provato, non tenuto | a -8/-10 dB i giusti scendono da 27/16 a 24/12 senza togliere sbagliati (gia' 0) |
+
+Il RTTY entra nella decodifica di tutta la banda (`skim/rtty.rs`, `band_rtty`): ogni segnale trovato da `RttyMulti` diventa un canale con testo e nominativi; prova `two_rtty_stations_two_channels_with_their_calls`.
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·

@@ -726,7 +726,7 @@ fn tasto_a_mano_nominativi() {
                 println!("{snr} dB seme {seed}: {sentiti:?}");
                 for ch in sk.channels() {
                     let v: Vec<String> = ch.calls.iter().map(|c| format!("{}:{}x{:.1}{}", c.call, c.count, c.score, if c.verified() { "v" } else { "" })).collect();
-                    println!("   {:7.1} Hz {v:?}", ch.freq_hz);
+                    println!("   {:7.1} Hz {:5.1} dB {v:?}", ch.freq_hz, ch.snr_db);
                 }
             }
         }

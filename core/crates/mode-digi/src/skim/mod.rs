@@ -36,6 +36,11 @@ const IDLE_S: f64 = 45.0;
 const HISTORY_S: f64 = 60.0;
 /// Ipotesi del decodificatore probabilistico per canale (il canale scelto dall'operatore ne ha 320).
 const CHANNEL_BEAM: usize = 96;
+/// Ipotesi per i canali forti e la soglia (S/N in 500 Hz a tasto abbassato, dB).
+const STRONG_BEAM: usize = 64;
+/// Misurato (`cpu_tutta_la_banda`, `tasto_a_mano_nominativi`): a 0 dB la CPU di 30 stazioni scende da 16,0 a 13,8% di un core e i
+/// nominativi a -8 e -10 dB restano 27 e 16 su 30; con 64 ipotesi per tutti a -10 dB 14, con 48 compaiono nominativi sbagliati.
+const STRONG_SNR_DB: f32 = 0.0;
 /// Di quanto l'AFC di un canale puo' allontanarsi dal tono su cui si e' aperto (Hz).
 const CHANNEL_AFC_HZ: f32 = 20.0;
 /// Un nominativo non sentito da tanto si dimentica (s).
@@ -436,6 +441,11 @@ impl CwBandDecoder {
             } else {
                 i += 1;
             }
+        }
+        // le stazioni forti (S/N a tasto abbassato misurato sullo spettro) bastano meno ipotesi: meno CPU dove la lettura e' facile
+        for ch in self.channels.iter_mut() {
+            let beam = if ch.keydown.len() >= 3 && ch.spot_snr_db() >= STRONG_SNR_DB { STRONG_BEAM } else { CHANNEL_BEAM };
+            ch.rx.set_beam(beam);
         }
         let dxcc_db = self.dxcc.as_deref();
         let dxcc = |c: &str| dxcc_db.map(|f| f(c)).unwrap_or_default();
