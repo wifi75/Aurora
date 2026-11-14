@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.252',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T09:57:44Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.252',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T09:57:44Z',
     kind: 'changed',
     title: [
       'CW e RTTY più precisi, niente PowerShell',

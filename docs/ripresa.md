@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-14 (0.11.252 pubblicata, sito aggiornato)
+
+- **0.11.252** (2026-11-14T09:57:44Z): **Aurora BIGScan** (CW e RTTY: elenco delle stazioni sicure a destra delle finestre RX/TX, una riga per nominativo, colore per stazione, colonne spostabili, maniglia; `RadarList.tsx`, `lib/digiBand.ts` `radarStations`, `skim/rtty.rs`, `band_rtty`), in primo piano nelle Novita' (`featured`). CW di tutta la banda: rumore non ingannato da due vicine (`SIDE_OCCUPIED` 2,5; 30 stazioni 23 -> 30/30), recupero degli ultimi 2,5 s, frammenti e letture di un carattere nascosti (`shadows`, `shadow_across`), 64 ipotesi sui canali forti. RTTY: cancello interno a squelch spento (rumore 182 -> 18 car/min), AFC dalla fase (aggancio < 1 s fino a 50 Hz), riscalatura dopo un salto di guadagno. Niente piu' PowerShell (SetupAPI, IP Helper, WLAN/NLM/Firewall COM, registro, copia di aiuto `--applica-aggiornamento` con `aggiornamento.log`).
+- Da provare con la radio: tutto, in particolare aggiornamento senza PowerShell, «Consenti Aurora», RTTY accanto all'altro programma sul file del proprietario (`tmp12856.wav`, 2 stazioni a 1976 e 2806 Hz di centro).
+- Prossimo: confronto RTTY con l'altro programma sui suoi testi (`mixw-forte.txt`, `mixw-debole.txt`), fading veloce RTTY (confermare il calo sui canali del rumore), registrazioni CW vere.
+
 ## Stato al 2026-11-14 (0.11.251 pubblicata, sito aggiornato)
 
 - **0.11.251** (2026-11-13T23:07:29Z): Club Log col token personale dell'API REST v1 (`ClublogToken`, `POST /api/v1/qso` con Bearer, prova con `GET /me/usage`; vecchio `realtime.php` se manca il token); messaggi di HRDLOG.NET tradotti; frasi del registro delle decisioni tradotte (continente escluso, Abilita Tx riacceso, stato nuovo); VFO B delle Yaesu senza `get_vfo_info` letto da `get_split_freq` (FT-2000, non provato con la radio); impostazioni allineate a sinistra sotto le etichette; doppione ADIF tolto da Programmi collegati. Compilazione: `tsc --singleThreaded` e `CARGO_BUILD_JOBS=4`, il PC finiva la memoria. Non provato il token con Club Log vero.
