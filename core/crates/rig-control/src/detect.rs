@@ -5,9 +5,6 @@
 //! La fiducia segue Decodium: nome per esteso 90, firma USB 60-75 (+15 se e' la porta CAT «enhanced»), interfaccia generica 35, porta qualunque 15.
 //! Una firma sbagliata e' peggio di nessuna: dove il modello non e' certo si propone la famiglia e si lascia la scelta all'utente.
 
-#[cfg(windows)]
-use std::process::Command;
-
 use serde::{Deserialize, Serialize};
 
 use crate::RigError;
@@ -348,18 +345,31 @@ fn one_or_many<T: serde::de::DeserializeOwned>(value: &serde_json::Value) -> Vec
     }
 }
 
-/// Legge il JSON di `Get-CimInstance` (porte e schede audio). PowerShell da' un oggetto, non una lista, se ce n'e' uno solo.
+/// Legge il JSON nel formato del vecchio `Get-CimInstance` (porte e schede audio; un oggetto solo invece di una lista se ce n'e' uno).
+/// Resta per le prove: su Windows le stesse voci arrivano da SetupAPI ([`read_system`]).
 pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), RigError> {
     let raw: RawSystem = serde_json::from_str(json.trim_start_matches('\u{feff}')).map_err(|e| RigError(format!("risposta di sistema illeggibile: {e}")))?;
+    let audio = one_or_many::<serde_json::Value>(&raw.audio)
+        .into_iter()
+        .filter_map(|v| v.get("Name").and_then(|n| n.as_str()).map(str::to_string).or_else(|| v.as_str().map(str::to_string)))
+        .collect();
+    Ok((build_ports(one_or_many::<RawPort>(&raw.ports)), audio))
+}
+
+/// La porta dal nome amichevole di Windows: «USB Serial Port (COM3)» -> (`COM3`, `USB Serial Port`). `None` se non c'e' una `(COMn)`.
+pub fn com_of_friendly_name(full: &str) -> Option<(String, String)> {
+    // «Silicon Labs Dual CP210x USB to UART Bridge: Enhanced COM Port (COM5)»
+    let open = full.rfind("(COM")?;
+    let port = full[open + 1..].trim_end_matches(')').trim().to_string();
+    (com_number(&port) != u32::MAX).then(|| (port, full[..open].trim().to_string()))
+}
+
+/// Le porte riconosciute dalle voci del sistema (nome amichevole, identificatore PnP, costruttore), in ordine di numero.
+fn build_ports(raw: Vec<RawPort>) -> Vec<SerialPortInfo> {
     let mut ports = Vec::new();
-    for p in one_or_many::<RawPort>(&raw.ports) {
+    for p in raw {
         let full = p.name.unwrap_or_default();
-        // «Silicon Labs Dual CP210x USB to UART Bridge: Enhanced COM Port (COM5)»
-        let Some(open) = full.rfind("(COM") else { continue };
-        let port = full[open + 1..].trim_end_matches(')').trim().to_string();
-        if com_number(&port) == u32::MAX {
-            continue;
-        }
+        let Some((port, name)) = com_of_friendly_name(&full) else { continue };
         let pnp = p.pnp.unwrap_or_default();
         let upper = pnp.to_ascii_uppercase();
         let virtual_port = ["ROOT\\", "COM0COM", "VSP", "VIRTUAL", "BTHENUM"].iter().any(|k| upper.starts_with(k) || upper.contains(k)) || full.to_ascii_lowercase().contains("virtual");
@@ -377,7 +387,7 @@ pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), Ri
         };
         ports.push(SerialPortInfo {
             port,
-            name: full[..open].trim().to_string(),
+            name,
             vid: hex4(&pnp, "VID_"),
             pid: hex4(&pnp, "PID_"),
             serial: serial_of(&pnp),
@@ -388,35 +398,88 @@ pub fn parse_system(json: &str) -> Result<(Vec<SerialPortInfo>, Vec<String>), Ri
         });
     }
     ports.sort_by_key(|p| com_number(&p.port));
-    let audio = one_or_many::<serde_json::Value>(&raw.audio)
-        .into_iter()
-        .filter_map(|v| v.get("Name").and_then(|n| n.as_str()).map(str::to_string).or_else(|| v.as_str().map(str::to_string)))
-        .collect();
-    Ok((ports, audio))
+    ports
 }
 
-/// Lo script: porte COM e schede audio in un colpo solo, come JSON. Solo letture.
-#[cfg(windows)]
-const SYSTEM_SCRIPT: &str = "$ErrorActionPreference='SilentlyContinue'; \
-    $p = @(Get-CimInstance Win32_PnPEntity | Where-Object { $_.Name -match '\\(COM\\d+\\)' } | Select-Object Name, PNPDeviceID, Manufacturer); \
-    $a = @(Get-CimInstance Win32_SoundDevice | Select-Object Name); \
-    [pscustomobject]@{ ports = $p; audio = $a } | ConvertTo-Json -Depth 4 -Compress";
-
-/// Interroga Windows (PowerShell nascosto, sola lettura).
+/// Interroga Windows con SetupAPI, senza avviare programmi (prima era PowerShell nascosto, che gli antivirus segnalano). Solo letture:
+/// tutte le periferiche presenti con «(COMn)» nel nome (come `Win32_PnPEntity`) e quelle della classe audio (come `Win32_SoundDevice`).
 #[cfg(windows)]
 pub fn read_system() -> Result<(Vec<SerialPortInfo>, Vec<String>), RigError> {
-    let mut command = Command::new("powershell.exe");
-    command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SYSTEM_SCRIPT]);
-    {
-        use std::os::windows::process::CommandExt;
-        // niente finestra nera
-        command.creation_flags(0x0800_0000);
+    use windows::Win32::Devices::DeviceAndDriverInstallation::{DIGCF_ALLCLASSES, DIGCF_PRESENT, GUID_DEVCLASS_MEDIA};
+    let ports = setupapi::devices(None, DIGCF_PRESENT | DIGCF_ALLCLASSES)?
+        .into_iter()
+        .filter(|d| d.name.contains("(COM"))
+        .map(|d| RawPort { name: Some(d.name), pnp: Some(d.instance_id), manufacturer: Some(d.manufacturer).filter(|m| !m.is_empty()) })
+        .collect();
+    let audio = setupapi::devices(Some(&GUID_DEVCLASS_MEDIA), DIGCF_PRESENT)?.into_iter().map(|d| d.name).filter(|n| !n.is_empty()).collect();
+    Ok((build_ports(ports), audio))
+}
+
+#[cfg(windows)]
+mod setupapi {
+    use windows::Win32::Devices::DeviceAndDriverInstallation::{
+        HDEVINFO, SETUP_DI_GET_CLASS_DEVS_FLAGS, SETUP_DI_REGISTRY_PROPERTY, SP_DEVINFO_DATA, SPDRP_DEVICEDESC, SPDRP_FRIENDLYNAME, SPDRP_MFG, SetupDiDestroyDeviceInfoList,
+        SetupDiEnumDeviceInfo, SetupDiGetClassDevsW, SetupDiGetDeviceInstanceIdW, SetupDiGetDeviceRegistryPropertyW,
+    };
+    use windows::core::{GUID, PCWSTR};
+
+    use crate::RigError;
+
+    pub(super) struct Device {
+        pub name: String,
+        pub instance_id: String,
+        pub manufacturer: String,
     }
-    let out = command.output().map_err(|e| RigError(format!("PowerShell non avviabile: {e}")))?;
-    if !out.status.success() {
-        return Err(RigError("PowerShell non ha risposto".into()));
+
+    /// Chiude l'elenco anche se si esce prima.
+    struct List(HDEVINFO);
+    impl Drop for List {
+        fn drop(&mut self) {
+            // SAFETY: l'handle viene da SetupDiGetClassDevsW ed e' valido
+            unsafe {
+                let _ = SetupDiDestroyDeviceInfoList(self.0);
+            }
+        }
     }
-    parse_system(String::from_utf8_lossy(&out.stdout).trim())
+
+    fn utf16(buffer: &[u16]) -> String {
+        let end = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+        String::from_utf16_lossy(&buffer[..end]).trim().to_string()
+    }
+
+    fn property(list: &List, data: &SP_DEVINFO_DATA, which: SETUP_DI_REGISTRY_PROPERTY) -> String {
+        let mut buffer = [0u8; 1024];
+        // SAFETY: buffer e dimensione coerenti, data viene da SetupDiEnumDeviceInfo
+        let ok = unsafe { SetupDiGetDeviceRegistryPropertyW(list.0, data, which, None, Some(&mut buffer), None) };
+        if ok.is_err() {
+            return String::new();
+        }
+        let words: Vec<u16> = buffer.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect();
+        utf16(&words)
+    }
+
+    pub(super) fn devices(class: Option<&GUID>, flags: SETUP_DI_GET_CLASS_DEVS_FLAGS) -> Result<Vec<Device>, RigError> {
+        // SAFETY: nessun puntatore proprio oltre al GUID, che vive per tutta la chiamata
+        let handle = unsafe { SetupDiGetClassDevsW(class.map(|g| g as *const GUID), PCWSTR::null(), None, flags) }.map_err(|e| RigError(format!("elenco periferiche non leggibile: {e}")))?;
+        let list = List(handle);
+        let mut found = Vec::new();
+        for index in 0u32.. {
+            let mut data = SP_DEVINFO_DATA { cbSize: size_of::<SP_DEVINFO_DATA>() as u32, ..Default::default() };
+            // SAFETY: cbSize impostato, l'elenco e' valido; finisce con ERROR_NO_MORE_ITEMS
+            if unsafe { SetupDiEnumDeviceInfo(list.0, index, &mut data) }.is_err() {
+                break;
+            }
+            let mut name = property(&list, &data, SPDRP_FRIENDLYNAME);
+            if name.is_empty() {
+                name = property(&list, &data, SPDRP_DEVICEDESC);
+            }
+            let mut id = [0u16; 512];
+            // SAFETY: buffer della dimensione passata
+            let instance_id = if unsafe { SetupDiGetDeviceInstanceIdW(list.0, &data, Some(&mut id), None) }.is_ok() { utf16(&id) } else { String::new() };
+            found.push(Device { name, instance_id, manufacturer: property(&list, &data, SPDRP_MFG) });
+        }
+        Ok(found)
+    }
 }
 
 /// Linux e macOS: le porte seriali USB da `/dev` (`ttyUSB*`, `ttyACM*`, `cu.usbserial*`, `cu.usbmodem*`...), con produttore, VID, PID
@@ -532,7 +595,15 @@ mod tests {
     }
 
     #[test]
-    fn a_single_port_is_not_a_list_for_powershell() {
+    fn the_port_comes_from_the_friendly_name() {
+        assert_eq!(com_of_friendly_name("USB Serial Port (COM3)"), Some(("COM3".into(), "USB Serial Port".into())));
+        assert_eq!(com_of_friendly_name("Silicon Labs Dual CP210x USB to UART Bridge: Enhanced COM Port (COM15)").map(|p| p.0), Some("COM15".into()));
+        assert_eq!(com_of_friendly_name("Realtek High Definition Audio"), None);
+        assert_eq!(com_of_friendly_name("Porta strana (COMx)"), None);
+    }
+
+    #[test]
+    fn a_single_port_is_not_a_list() {
         let one = r#"{"ports":{"Name":"USB-SERIAL CH340 (COM4)","PNPDeviceID":"USB\\VID_1A86&PID_7523\\5&1&0&2","Manufacturer":"wch.cn"},"audio":{"Name":"USB PnP Sound Device"}}"#;
         let (ports, audio) = parse_system(one).expect("lettura");
         assert_eq!((ports.len(), audio.len()), (1, 1));

@@ -287,7 +287,7 @@ pub(crate) async fn cat_models(State(state): State<AppState>, _: Authed) -> Resu
     Ok(Json(json!({ "models": models })))
 }
 
-/// Le porte seriali con il loro nome (PowerShell nascosto, sola lettura).
+/// Le porte seriali con il loro nome (SetupAPI di Windows, sola lettura).
 pub(crate) async fn cat_ports(_: Authed) -> Result<Json<Value>, CatApiError> {
     let (ports, _) = blocking(detect::read_system)
         .await?
