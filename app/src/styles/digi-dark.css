@@ -133,3 +133,32 @@ html[data-theme='light'] .digi-classica .sstv-btn { background: #eef2fa; color: 
 .digi-key.digi-key--acq-paused { background: #b58900 !important; border-color: #ffd54f !important; color: #111 !important; box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.5); }
 @keyframes digi-acq-pulse { 50% { box-shadow: 0 0 0 2px rgba(255, 138, 128, 0.9), 0 0 18px rgba(255, 82, 82, 0.9); } }
 @media (prefers-reduced-motion: reduce) { .digi-key.digi-key--acq-on { animation: none; } }
+
+/* barra sopra la finestra RX, per i pulsantini */
+.digi-rxbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border, #2a3550);
+  background: var(--surface-2, #16203a);
+}
+.digi-rxbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.digi-rxbar-btn:hover {
+  border-color: var(--border, #2a3550);
+  background: rgba(255, 255, 255, 0.06);
+}

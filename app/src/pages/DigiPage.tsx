@@ -208,6 +208,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [scanning, setScanning] = useState(false);
   const s = snap.settings;
   const sending = snap.tx.state === 'sending';
+  // <RXANDCLEAR>: pulizia della finestra di trasmissione rimandata alla fine della trasmissione
+  const clearAfterTx = useRef(false);
+  const wasSending = useRef(false);
+  useEffect(() => {
+    if (sending) wasSending.current = true;
+    else if (wasSending.current) {
+      wasSending.current = false;
+      if (clearAfterTx.current) {
+        clearAfterTx.current = false;
+        setTx('');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sending]);
   const lock = !s.tx_follow_rx;
   const rxHz = snap.rx.freq_hz > 0 ? snap.rx.freq_hz : s.rx_freq_hz;
 
@@ -726,13 +740,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const result = runMacro(script, { ...context(), ...extra });
     let toTx = false;
     let rxClear = false;
+    let wantRx = false;
     let clearTx = false;
     let wantSave = false;
     const apply = (a: MacroAction) => {
       switch (a.type) {
         case 'tx':
+        case 'txe':
         case 'txToggle': toTx = true; break;
-        case 'rx': rxClear = rxClear || a.clear; break;
+        case 'rx': wantRx = true; rxClear = rxClear || a.clear; break;
+        case 'rxe': wantRx = true; break;
         case 'clearTx': clearTx = true; break;
         case 'clearRx': clearDigiText(); break;
         case 'clearWindow': clearDigiText(); clearTx = true; break;
@@ -798,8 +815,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'memory': memory(a.write, a.slot); break;
         case 'modeSettings':
         case 'threshold': setSettingsOpen(true); break;
-        case 'txe':
-        case 'rxe': break;
         case 'cat':
           void digiCat(a.cmd).catch((e: unknown) => toast(t('digi.run.catFail', { why: e instanceof ApiError ? (e.message ?? e.code) : String(e) }), 'error'));
           break;
@@ -809,9 +824,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     };
     result.actions.forEach(apply);
     const body = result.text.replace(/^[\r\n\t ]+|[\r\n\t ]+$/g, '');
+    const busy = l.snap.tx.state === 'sending';
     if (toTx) {
       // un comando <TX> da solo trasmette quello che c'e' nella casella
       send(body !== '' ? body : l.tx);
+      // come in MixW: senza <RX> la trasmissione resta aperta finito il testo (si continua a scrivere), con <RX> si torna in ricezione
+      if (!wantRx) void digiTxOpen('').then(onChanged, () => undefined);
+      else if (busy) void digiTxClose().then(onChanged, onChanged);
+    } else if (wantRx && busy) {
+      // <RX> durante una trasmissione: si torna in ricezione appena partito il testo gia' scritto
+      if (body !== '') send(body);
+      void digiTxClose().then(onChanged, onChanged);
     } else if (body !== '') {
       setTx((v) => (clearTx || v === '' ? body : `${v} ${body}`));
     } else if (clearTx) {
@@ -819,7 +842,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
     if (clearTx && toTx) setTx('');
     if (wantSave) saveQso();
-    if (rxClear && !toTx) setTx('');
+    // <RXANDCLEAR>: la finestra di trasmissione si pulisce quando il testo e' partito e si e' tornati in ricezione
+    if (rxClear) {
+      if (toTx || busy) clearAfterTx.current = true;
+      else setTx('');
+    }
   };
 
   const runMacroByName = (name: string): boolean => {
@@ -1169,6 +1196,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <div className={`digi-winrow${radarMode && radarOn ? ' digi-winrow--radar' : ''}`}>
         <div className="digi-windows" ref={windowsRef} style={winW !== null && !(radarMode && radarOn) ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
+          {/* barra sopra la finestra RX: posto per i pulsantini */}
+          <div className="digi-rxbar" role="toolbar" aria-label={t('digi.rx.title')}>
+            <button type="button" className="digi-rxbar-btn" title={t('digi.mi.clearRx')} aria-label={t('digi.mi.clearRx')} onClick={() => clearDigiText()}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+              </svg>
+            </button>
+          </div>
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
             onContextMenu={(e) => {
               // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
