@@ -960,7 +960,7 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
         }
         return Ok(Json(json!({ "ok": true, "dial_hz": hz, "manual": true })));
     };
-    // il comando blocca (PowerShell e COM): fuori dal thread asincrono
+    // il comando blocca (porta seriale o COM): fuori dal thread asincrono
     let done = tokio::task::spawn_blocking(move || rig.set_frequency(hz)).await;
     match done {
         Ok(Ok(())) => Ok(Json(json!({ "ok": true, "dial_hz": hz }))),
