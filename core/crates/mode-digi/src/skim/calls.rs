@@ -271,6 +271,10 @@ impl CallTracker {
                 c.passes(level, info).then_some(c)
             })
             .collect();
+        // un pezzo di un nominativo piu' lungo dello stesso segnale, sentito almeno altrettanto, e' un frammento (uno spazio inventato
+        // dentro il nominativo, frequente con il tasto a mano: «OH2AB C», «O H2ABC»): non si mostra
+        let all: Vec<(String, f32)> = self.calls.values().map(|c| (c.call.clone(), c.score)).collect();
+        v.retain(|c| !all.iter().any(|(other, score)| other.len() > c.call.len() && other.contains(c.call.as_str()) && *score >= c.score));
         v.sort_by(|a, b| b.score.total_cmp(&a.score));
         v
     }
@@ -317,6 +321,17 @@ mod tests {
         assert!(me.as_ref().is_some_and(|c| c.role == Role::Cq && c.verified()), "{me:?}");
         assert!(you.as_ref().is_some_and(|c| c.role == Role::De && c.verified()), "{you:?}");
         assert_eq!(t.last_report.as_deref(), Some("599"));
+    }
+
+    /// Uno spazio inventato dentro il nominativo (tasto a mano) fa leggere un pezzo: «OH2AB C», «O H2ABC». Il pezzo non si mostra
+    /// accanto al nominativo intero sentito piu' volte; un nominativo diverso che non e' un pezzo resta.
+    #[test]
+    fn a_fragment_of_a_longer_call_is_not_shown() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ DE OH2ABC OH2ABC K CQ DE OH2AB C OH2ABC K CQ DE O H2ABC OH2AB C K DE K1XYZ K1XYZ ", &[], 1.0);
+        let all: Vec<String> = t.calls(Validation::Minimal, &|_| CallCheck::default()).into_iter().map(|c| c.call).collect();
+        assert!(all.contains(&"OH2ABC".to_string()) && all.contains(&"K1XYZ".to_string()), "{all:?}");
+        assert!(!all.contains(&"OH2AB".to_string()) && !all.contains(&"H2ABC".to_string()), "{all:?}");
     }
 
     #[test]

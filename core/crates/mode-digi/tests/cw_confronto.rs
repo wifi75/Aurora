@@ -688,3 +688,44 @@ fn studio_cpu_canale() {
         println!("{nome:<28} CPU {:.2}% di un core", 100.0 * t0.elapsed().as_secs_f64() / 60.0);
     }
 }
+
+/// Nominativi con il tasto a mano: 10 stazioni con la manipolazione irregolare (15% di irregolarita', pause fra lettere di 3,6 unita' e
+/// fra parole di 6: si confondono) fra 400 e 2300 Hz, un minuto, per tre rapporti segnale/rumore. Stampa i nominativi verificati giusti e
+/// quelli verificati sbagliati (letture che non sono di nessuna stazione).
+#[test]
+#[ignore]
+fn tasto_a_mano_nominativi() {
+    use mode_digi::skim::CwBandDecoder;
+    let calls = ["IU3ABC", "K1XYZ", "DL1ABC", "G4ABC", "JA1ABC", "VK2ABC", "F5ABC", "EA3ABC", "OH2ABC", "W1AW"];
+    for snr in [5.0, 0.0, -5.0] {
+        let (mut giusti, mut sbagliati) = (0usize, 0usize);
+        for seed in 0..3u64 {
+            let mut rng = Rng(300 + seed);
+            let n = 60 * RATE as usize;
+            let mut band = vec![0.0_f32; n];
+            for (i, call) in calls.iter().enumerate() {
+                let hz = 400.0 + 200.0 * i as f64 + 13.0 * (i % 3) as f64;
+                let wpm = 16.0 + 1.5 * i as f64;
+                let text = format!("CQ CQ DE {call} {call} K   CQ CQ DE {call} {call} K   CQ DE {call} {call} K");
+                let seq = chiavi(&text, |_| wpm, &TASTO, &mut rng);
+                for (s, w) in band.iter_mut().skip(6_000 + 3_000 * i).zip(suona(&seq, hz, |_| AMP)) {
+                    *s += w;
+                }
+            }
+            aggiungi_rumore(&mut band, sigma_per_snr(AMP, snr), &mut rng);
+            let mut sk = CwBandDecoder::new(300.0, 2_600.0, 40);
+            for block in band.chunks(4_800) {
+                sk.process(block);
+            }
+            let mut sentiti: Vec<String> = sk.channels().iter().flat_map(|ch| ch.calls.iter().filter(|c| c.verified()).map(|c| c.call.clone()).collect::<Vec<_>>()).collect();
+            sentiti.sort();
+            sentiti.dedup();
+            giusti += calls.iter().filter(|c| sentiti.iter().any(|s| s == *c)).count();
+            sbagliati += sentiti.iter().filter(|s| !calls.contains(&s.as_str())).count();
+            if std::env::var_os("CW_DEBUG").is_some() {
+                println!("{snr} dB seme {seed}: {sentiti:?}");
+            }
+        }
+        println!("tasto a mano {snr:>4} dB: nominativi verificati giusti {giusti}/30, sbagliati {sbagliati}");
+    }
+}
