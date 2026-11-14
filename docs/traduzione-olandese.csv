@@ -4457,6 +4457,7 @@ radar.colFreq,Frequency,Frequentie
 radar.empty,No reliable station yet: a callsign appears once it has been read several times without doubt.,Nog geen betrouwbaar station: een roepnaam verschijnt zodra die meerdere keren zonder twijfel is gelezen.
 radar.rowTip,Click: listen to this station · double-click: callsign to the QSO,Klik: naar dit station luisteren · dubbelklik: roepnaam naar de QSO
 radar.tip,"Radar: Aurora listens to the whole band and shows, next to the waterfall, the stations read reliably, one row per callsign. Off: no list, only the station you are listening to is decoded.","Radar: Aurora luistert naar de hele band en toont naast de waterval de betrouwbaar gelezen stations, één regel per roepnaam. Uit: geen lijst, alleen het station waarnaar je luistert wordt gedecodeerd."
+radar.resize,Drag to change the Radar width (double-click: default),Sleep om de breedte van de Radar te wijzigen (dubbelklik: standaard)
 radar.mi,Radar (all stations in the band),Radar (alle stations in de band)
 digi.band.title,Signals,Signalen
 digi.band.count,{n} signals,{n} signalen

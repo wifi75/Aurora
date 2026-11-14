@@ -284,6 +284,32 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const windowsRef = useRef<HTMLDivElement>(null);
   // larghezza delle finestre RX e TX scelta con la maniglia sul loro bordo destro (null = tutta la colonna): log e DX Cluster restano fermi
   // dove sono, lo spazio che si libera resta vuoto (richiesta del proprietario, per esempio per tenere accanto la scheda del rotore)
+  // larghezza del Radar (px), scelta trascinando la maniglia fra le finestre RX/TX e il Radar; resta ricordata
+  const [radarW, setRadarW] = useState<number>(() => {
+    const n = Number(browserStorage()?.getItem('aurora.digi.radarw') ?? '');
+    return Number.isFinite(n) && n >= 220 && n <= 900 ? n : 330;
+  });
+  const dragRadarW = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = radarW;
+    let last = startW;
+    const move = (m: PointerEvent) => {
+      last = Math.round(Math.min(900, Math.max(220, startW - (m.clientX - startX))));
+      setRadarW(last);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      try {
+        browserStorage()?.setItem('aurora.digi.radarw', String(last));
+      } catch {
+        // la larghezza vale comunque finche' la pagina e' aperta
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
   const [winW, setWinW] = useState<number | null>(() => {
     const n = Number(browserStorage()?.getItem('aurora.digi.winw') ?? '');
     return Number.isFinite(n) && n >= 240 ? n : null;
@@ -1084,10 +1110,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
-        {/* Radar: a destra delle finestre RX e TX e della cascata, alto quanto tutta la colonna */}
-        <div className="digi-leftwrap">
         <div className="digi-leftcol">
-        <div className="digi-windows" ref={windowsRef} style={winW !== null ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
+        {/* Radar: a destra delle finestre RX e TX, alto quanto loro; la cascata sotto resta larga */}
+        <div className={`digi-winrow${radarMode && radarOn ? ' digi-winrow--radar' : ''}`}>
+        <div className="digi-windows" ref={windowsRef} style={winW !== null && !(radarMode && radarOn) ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
           <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
             onContextMenu={(e) => {
@@ -1136,15 +1162,25 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             ) : null}
           </div>
         </div>
+        {radarMode && radarOn ? (
+          <div className="digi-radargrip" role="separator" aria-orientation="vertical" title={t('radar.resize')} onPointerDown={dragRadarW} onDoubleClick={() => {
+            setRadarW(330);
+            try {
+              browserStorage()?.removeItem('aurora.digi.radarw');
+            } catch {
+              // niente da fare
+            }
+          }} />
+        ) : null}
+        {radarMode && radarOn ? (
+          <RadarList width={radarW} stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+        ) : null}
+        </div>
         {bandOn && !radarMode && views.signals ? (
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
           <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
-        ) : null}
-        </div>
-        {radarMode && radarOn ? (
-          <RadarList stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}

@@ -8,15 +8,12 @@
 .radar-head small { color: var(--text-muted); font-size: 11px; margin-left: auto; }
 .radar-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .radar-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
-.radar-col-call { width: 46%; }
-.radar-col-freq { width: 26%; }
-.radar-col-num { width: 12%; }
-.radar-col-cq { width: 12%; }
+.radar-grid th { cursor: grab; }
 .radar-grid th {
-  position: sticky; top: 0; z-index: 1; padding: 4px 7px; background: #0e1729; color: var(--text-muted); border: 1px solid #22314f;
+  position: sticky; top: 0; z-index: 1; padding: 4px 7px; background: #0e1729; color: var(--text-muted); border: 1px solid #ffffff10;
   font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; white-space: nowrap; overflow: hidden;
 }
-.radar-grid td { padding: 3px 7px; border: 1px solid #1d2b48; color: #d8e6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.radar-grid td { padding: 3px 7px; border: 1px solid #ffffff0a; color: #d8e6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .radar-grid tbody tr { cursor: pointer; }
 .radar-grid tbody tr:hover td { background: #8e7bff22; }
 .radar-grid tr.radar-on td { background: #8e7bff33; }
@@ -40,18 +37,23 @@
 .radar-c7 { --radar-c: #ff9966; }
 .radar-c8 { --radar-c: #8ab4ff; }
 .radar-c9 { --radar-c: #f0a6ff; }
-/* le finestre RX e TX con la cascata a sinistra, il Radar a destra alto quanto tutta la colonna */
-.digi-leftwrap { display: flex; gap: 10px; align-items: stretch; min-width: 0; min-height: 0; }
-.digi-leftwrap > .digi-leftcol { flex: 1 1 auto; min-width: 0; }
+/* le finestre RX e TX a sinistra, il Radar a destra alto quanto loro; la cascata sotto, larga */
+.digi-winrow { display: flex; gap: 10px; align-items: stretch; flex: 1 1 0; min-width: 0; min-height: 0; }
+.digi-winrow > .digi-windows { flex: 1 1 auto; min-width: 0; min-height: 0; }
+/* con il Radar la maniglia delle finestre lascia il posto a quella del Radar (stessa forma) */
+.digi-winrow--radar .digi-wingrip { display: none; }
+.digi-radargrip { position: relative; flex: none; width: 12px; margin: 0 -6px; z-index: 3; cursor: col-resize; touch-action: none; }
+.digi-radargrip::before { content: ''; position: absolute; top: 50%; left: 3px; width: 6px; height: 90px; margin-top: -45px; border-radius: 3px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.digi-radargrip:hover::before, .digi-radargrip:active::before { background: #38bdf8; opacity: 1; }
 .digi-radar-btn { padding: 2px 10px; border: 1px solid var(--border); border-radius: 7px; background: #0a1324; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .digi-radar-btn[aria-pressed='true'] { border-color: #5ec8e0; color: #5ec8e0; background: #123a45; }
 @media (max-width: 900px) {
-  .digi-leftwrap { flex-direction: column; }
+  .digi-winrow { flex-direction: column; }
   .radar { width: auto; max-height: 14rem; }
 }
 html[data-theme='light'] .radar { background: #ffffff; }
-html[data-theme='light'] .radar-grid th { background: #eef2fa; color: #46556f; border-color: #d6deee; }
-html[data-theme='light'] .radar-grid td { color: #0b1322; border-color: #e3e9f6; }
+html[data-theme='light'] .radar-grid th { background: #eef2fa; color: #46556f; border-color: #0b13220f; }
+html[data-theme='light'] .radar-grid td { color: #0b1322; border-color: #0b13220a; }
 html[data-theme='light'] .radar-grid tbody tr:hover td { background: #e5e9ff; }
 html[data-theme='light'] .radar-grid tr.radar-on td { background: #d9dcff; }
 html[data-theme='light'] .radar-cq em { color: #0a7a52; border-color: #0a7a52; }

@@ -1,9 +1,12 @@
 import { useT } from '../../i18n';
+import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../MovableColumns';
 import type { RadarStation } from '../../lib/digiBand';
 import { flagCode } from '../../lib/flags';
 import '../../styles/digi-radar.css';
 
 interface Props {
+  /** Larghezza scelta con la maniglia (px). */
+  width?: number;
   stations: RadarStation[];
   /** CW: colonna della velocita'. */
   showWpm: boolean;
@@ -18,6 +21,11 @@ interface Props {
   onCall(call: string): void;
 }
 
+/** Le colonne del Radar: si spostano trascinando il titolo e si allargano dal bordo, come nel DX Cluster; ordine e larghezze restano ricordati. */
+const RADAR_COLUMNS = ['call', 'freq', 'wpm', 'snr', 'cq'] as const;
+type RadarCol = (typeof RADAR_COLUMNS)[number];
+const RADAR_COL_EM: Record<RadarCol, number> = { call: 9, freq: 6.5, wpm: 3.6, snr: 3.6, cq: 3.2 };
+
 function freqLabel(hz: number, dialHz: number): string {
   return dialHz > 0 ? ((dialHz + hz) / 1000).toFixed(2) : `${Math.round(hz)} Hz`;
 }
@@ -26,10 +34,51 @@ function freqLabel(hz: number, dialHz: number): string {
  * Il Radar: le stazioni della banda decodificate con sicurezza, una riga per nominativo, in una griglia a colonne fisse. Ogni stazione ha
  * il suo colore. Clic: la ricezione va sulla stazione; doppio clic: il nominativo va nel QSO.
  */
-export function RadarList({ stations, showWpm, showSnr, dialHz, rxHz, modeName, onTune, onCall }: Props) {
+export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, modeName, onTune, onCall }: Props) {
   const t = useT();
+  const hidden: RadarCol[] = [...(showWpm ? [] : (['wpm'] as const)), ...(showSnr ? [] : (['snr'] as const))];
+  const cols = useMovableColumns({ storageKey: 'aurora.digi.radar.cols', columns: RADAR_COLUMNS, defaultEm: RADAR_COL_EM, elastic: 'call', hidden });
+  const head: Record<RadarCol, string> = { call: t('radar.colCall'), freq: t('radar.colFreq'), wpm: 'WPM', snr: 'S/N', cq: 'CQ' };
+  const cell = (c: RadarCol, s: RadarStation) => {
+    switch (c) {
+      case 'call': {
+        const code = flagCode(s.country);
+        return (
+          <td key={c} className="radar-call">
+            <span className="radar-dot" aria-hidden="true" />
+            {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
+            <b>{s.call}</b>
+          </td>
+        );
+      }
+      case 'freq':
+        return (
+          <td key={c} className="radar-num">
+            {freqLabel(s.freqHz, dialHz)}
+          </td>
+        );
+      case 'wpm':
+        return (
+          <td key={c} className="radar-num">
+            {s.wpm != null ? Math.round(s.wpm) : ''}
+          </td>
+        );
+      case 'snr':
+        return (
+          <td key={c} className="radar-num">
+            {Math.round(s.snrDb)}
+          </td>
+        );
+      case 'cq':
+        return (
+          <td key={c} className="radar-cq">
+            {s.cq ? <em>CQ</em> : ''}
+          </td>
+        );
+    }
+  };
   return (
-    <section className="radar" aria-label={`${t('radar.title')} ${modeName}`}>
+    <section className="radar" style={width ? { width } : undefined} aria-label={`${t('radar.title')} ${modeName}`}>
       <header className="radar-head">
         <strong>
           {t('radar.title')} {modeName}
@@ -37,33 +86,26 @@ export function RadarList({ stations, showWpm, showSnr, dialHz, rxHz, modeName, 
         <small>{t('radar.count', { n: stations.length })}</small>
       </header>
       <div className="radar-scroll">
-        <table className="radar-grid">
-          <colgroup>
-            <col className="radar-col-call" />
-            <col className="radar-col-freq" />
-            {showWpm ? <col className="radar-col-num" /> : null}
-            {showSnr ? <col className="radar-col-num" /> : null}
-            <col className="radar-col-cq" />
-          </colgroup>
-          <thead>
+        <table ref={cols.tableRef} className="radar-grid mv-grid" style={cols.tableStyle}>
+          <MovableColGroup cols={cols} />
+          <thead onContextMenu={cols.openMenu}>
             <tr>
-              <th>{t('radar.colCall')}</th>
-              <th>{t('radar.colFreq')}</th>
-              {showWpm ? <th>WPM</th> : null}
-              {showSnr ? <th>S/N</th> : null}
-              <th>CQ</th>
+              {cols.visible.map((c, i) => (
+                <MovableTh key={c} cols={cols} col={c} index={i}>
+                  {head[c]}
+                </MovableTh>
+              ))}
             </tr>
           </thead>
           <tbody>
             {stations.length === 0 ? (
               <tr>
-                <td className="radar-empty" colSpan={3 + (showWpm ? 1 : 0) + (showSnr ? 1 : 0)}>
+                <td className="radar-empty" colSpan={cols.visible.length}>
                   {t('radar.empty')}
                 </td>
               </tr>
             ) : (
               stations.map((s) => {
-                const code = flagCode(s.country);
                 const tuned = Math.abs(s.freqHz - rxHz) < 12;
                 return (
                   <tr
@@ -74,15 +116,7 @@ export function RadarList({ stations, showWpm, showSnr, dialHz, rxHz, modeName, 
                     onClick={() => onTune(s.freqHz)}
                     onDoubleClick={() => onCall(s.call)}
                   >
-                    <td className="radar-call">
-                      <span className="radar-dot" aria-hidden="true" />
-                      {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
-                      <b>{s.call}</b>
-                    </td>
-                    <td className="radar-num">{freqLabel(s.freqHz, dialHz)}</td>
-                    {showWpm ? <td className="radar-num">{s.wpm != null ? Math.round(s.wpm) : ''}</td> : null}
-                    {showSnr ? <td className="radar-num">{Math.round(s.snrDb)}</td> : null}
-                    <td className="radar-cq">{s.cq ? <em>CQ</em> : ''}</td>
+                    {cols.visible.map((c) => cell(c, s))}
                   </tr>
                 );
               })
@@ -90,6 +124,7 @@ export function RadarList({ stations, showWpm, showSnr, dialHz, rxHz, modeName, 
           </tbody>
         </table>
       </div>
+      <ColumnsMenu cols={cols} />
     </section>
   );
 }

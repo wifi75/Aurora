@@ -3132,6 +3132,7 @@ export const NL_UI: Record<string, string> = {
   "radar.count": "{n} stations",
   "radar.empty": "Nog geen betrouwbaar station: een roepnaam verschijnt zodra die meerdere keren zonder twijfel is gelezen.",
   "radar.mi": "Radar (alle stations in de band)",
+  "radar.resize": "Sleep om de breedte van de Radar te wijzigen (dubbelklik: standaard)",
   "radar.rowTip": "Klik: naar dit station luisteren · dubbelklik: roepnaam naar de QSO",
   "radar.tip": "Radar: Aurora luistert naar de hele band en toont naast de waterval de betrouwbaar gelezen stations, één regel per roepnaam. Uit: geen lijst, alleen het station waarnaar je luistert wordt gedecodeerd.",
   "radar.title": "Radar",
