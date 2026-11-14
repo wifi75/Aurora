@@ -244,6 +244,15 @@ impl CallTracker {
             } else {
                 Role::Other
             };
+            // una lettura che differisce di un solo carattere da un nominativo gia' sentito («SV5BYP» poi «SVOBYP», con un segnale debole)
+            // conta mezza conferma per quello: la ripetizione dei contest conferma prima la stazione, senza inventarne una
+            if !self.calls.contains_key(&word)
+                && let Some(near) = self.calls.values_mut().find(|c| c.call.len() == word.len() && c.call.bytes().zip(word.bytes()).filter(|(a, b)| a != b).count() == 1)
+            {
+                near.score += NEAR_CREDIT * conf;
+                near.count += 1;
+                near.last_s = now_s;
+            }
             let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, score: 0.0, last_s: now_s, shape: Shape::Unknown });
             e.count += 1;
             e.score += conf;
@@ -300,6 +309,8 @@ impl CallTracker {
 /// Quanto deve essere sentito di piu' un nominativo perche' una lettura che ne differisce di un solo carattere sia presa per un suo
 /// errore (in Morse I e T, S e H, U e V si scambiano per un elemento). Misurato su `tasto_a_mano_nominativi`: «TU3ABC» 2,0 contro
 /// «IU3ABC» 3,0.
+/// Quanto vale, per un nominativo gia' sentito, una lettura che ne differisce di un solo carattere (frazione della sua probabilita').
+const NEAR_CREDIT: f32 = 0.5;
 const MISREAD_RATIO: f32 = 1.4;
 /// Un pezzo sparisce se il nominativo intero e' sentito almeno cosi' (i punteggi delle due letture sono quasi pari: 2,04 contro 1,98).
 const FRAGMENT_RATIO: f32 = 0.75;

@@ -6,6 +6,9 @@
 .radar-head { display: flex; align-items: baseline; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .radar-head strong { font-size: 13px; }
 .radar-head small { color: var(--text-muted); font-size: 11px; margin-left: auto; }
+.radar-clear { padding: 1px 8px; border: 1px solid var(--border); border-radius: 6px; background: #0a1324; color: var(--text); font: inherit; font-size: 11px; cursor: pointer; }
+.radar-clear:hover, .radar-clear:focus-visible { border-color: #d32f2f; color: #fff; background: #d32f2f; }
+html[data-theme='light'] .radar-clear { background: #ffffff; }
 .radar-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
 .radar-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
 .radar-grid th { cursor: grab; }

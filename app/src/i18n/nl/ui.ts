@@ -3129,6 +3129,8 @@ export const NL_UI: Record<string, string> = {
   "qsl.no": "{what}: nee",
   "qsl.via": "QSL via {call}",
   "qsl.yes": "{what}: ja",
+  "radar.clear": "Wissen",
+  "radar.clearTip": "Maakt de lijst en de roepnamen op de waterval leeg: stations die nog uitzenden verschijnen vanzelf weer.",
   "radar.colCall": "Roepnaam",
   "radar.colFreq": "Frequentie",
   "radar.count": "{n} stations",

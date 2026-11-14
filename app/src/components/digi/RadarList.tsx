@@ -1,4 +1,6 @@
+import { clearDigiBand } from '../../api/client';
 import { useT } from '../../i18n';
+import { clearBandSignals } from '../../lib/digiBand';
 import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../MovableColumns';
 import type { RadarStation } from '../../lib/digiBand';
 import { flagCode } from '../../lib/flags';
@@ -84,6 +86,17 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
           {t('radar.title')} {modeName}
         </strong>
         <small>{t('radar.count', { n: stations.length })}</small>
+        <button
+          type="button"
+          className="radar-clear"
+          title={t('radar.clearTip')}
+          onClick={() => {
+            clearBandSignals();
+            void clearDigiBand().catch(() => undefined);
+          }}
+        >
+          {t('radar.clear')}
+        </button>
       </header>
       <div className="radar-scroll">
         <table ref={cols.tableRef} className="radar-grid mv-grid" style={cols.tableStyle}>

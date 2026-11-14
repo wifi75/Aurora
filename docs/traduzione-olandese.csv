@@ -4478,6 +4478,8 @@ radar.resize,Drag to change the Aurora BIGScan width (double-click: default),Sle
 radar.dotLive,"The station colour (always the same for the same callsign, also on the waterfall). Bright: the station is heard now.","De kleur van het station (altijd dezelfde voor dezelfde roepnaam, ook op de waterval). Fel: het station is nu te horen."
 radar.dotStale,"The station colour. Paler: not heard for over 75 seconds (it stays in the list, but its callsign leaves the waterfall).","De kleur van het station. Lichter: al meer dan 75 seconden niet gehoord (het blijft in de lijst, maar de roepnaam verdwijnt van de waterval)."
 radar.cqTip,The station is calling CQ (or TEST): you can answer it.,Het station roept CQ (of TEST): je kunt antwoorden.
+radar.clear,Clear,Wissen
+radar.clearTip,Empties the list and the callsigns on the waterfall: stations still transmitting come back by themselves.,Maakt de lijst en de roepnamen op de waterval leeg: stations die nog uitzenden verschijnen vanzelf weer.
 radar.mi,Aurora BIGScan (all stations in the band),Aurora BIGScan (alle stations in de band)
 digi.band.title,Signals,Signalen
 digi.band.count,{n} signals,{n} signalen
