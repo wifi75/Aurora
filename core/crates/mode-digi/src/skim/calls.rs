@@ -279,7 +279,8 @@ impl CallTracker {
                 _ => Role::Other,
             };
             if self.calls.len() > MAX_CALLS {
-                let oldest = self.calls.values().min_by(|a, b| a.last_s.total_cmp(&b.last_s)).map(|c| c.call.clone());
+                // chi chiama CQ verificato non si toglie mai per far posto (un canale di contest affollato di corrispondenti)
+                let oldest = self.calls.values().filter(|c| !(c.role == Role::Cq && c.verified())).min_by(|a, b| a.last_s.total_cmp(&b.last_s)).map(|c| c.call.clone());
                 if let Some(o) = oldest {
                     self.calls.remove(&o);
                 }
@@ -491,6 +492,17 @@ mod tests {
         // EC7YZ letto intero e' lui, non un errore di EC7YY
         u.push(b"EC7YZ ", &[], 70.0);
         assert_eq!(last_s_of(&u, "EC7YY"), 1.0);
+    }
+
+    /// Un canale di contest con tanti corrispondenti: chi chiama CQ verificato non viene tolto per far posto ai nuovi.
+    #[test]
+    fn a_busy_channel_keeps_the_verified_runner() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ TEST EC7YY EC7YY TEST ", &[], 1.0);
+        for (i, c) in ["DL1AA", "DL1AB", "DL1AC", "DL1AD", "DL1AE", "DL1AF", "DL1AG", "DL1AH", "DL1AI", "DL1AJ"].iter().enumerate() {
+            t.push(format!("{c} 599 {i} ").as_bytes(), &[], 10.0 + i as f64);
+        }
+        assert!(t.calls.contains_key("EC7YY") && t.calls.len() <= MAX_CALLS);
     }
 
     /// Chi risponde a un CQ scrive il suo nominativo poco dopo TEST: resta «altro»; chi chiama e' solo quello accanto a CQ/TEST/QRZ.
