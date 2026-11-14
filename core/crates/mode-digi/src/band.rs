@@ -41,6 +41,9 @@ const UNSURE_BELOW: u8 = 150;
 /// Un nominativo non sentito da tanto (s) e' «vecchio»: resta nell'elenco finche' c'e' il canale, ma l'etichetta sulla cascata si toglie.
 /// Lo storico di un canale e' di 60 s: poco oltre, del nominativo non resta piu' niente da leggere.
 const CALL_STALE_S: f64 = 75.0;
+/// Chi chiama CQ, verificato, resta finche' lo si legge sul suo canale, anche a pezzi ([`crate::skim::calls`]): «vecchio» solo dopo tre
+/// minuti senza nessuna lettura.
+const CALL_STALE_CQ_S: f64 = 180.0;
 /// Regole per le etichette e l'elenco quando le stazioni cambiano (fine di un contest, chi lascia la frequenza a un altro):
 /// - sulla stessa frequenza vale l'ultima stazione che trasmette: una che trasmetteva prima e non si sente da `SUPERSEDED_S` perde
 ///   l'etichetta sulla cascata;
@@ -275,7 +278,8 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
                 let replaced = c.role != Role::Other && latest > c.last_s;
                 let behind = latest - c.last_s;
                 let silent = ch.now_s - c.last_s;
-                (c, silent > CALL_STALE_S || (replaced && behind > SUPERSEDED_S), silent > CALL_GONE_S || (replaced && behind > SUPERSEDED_GONE_S))
+                let stale_after = if c.role == Role::Cq && c.verified() { CALL_STALE_CQ_S } else { CALL_STALE_S };
+                (c, silent > stale_after || (replaced && behind > SUPERSEDED_S), silent > CALL_GONE_S || (replaced && behind > SUPERSEDED_GONE_S))
             })
             .map(|(c, stale, gone)| DigiSignalCall {
                 call: c.call.clone(),
@@ -460,9 +464,11 @@ mod tests {
         assert_eq!(s.calls[0].role, "cq");
         assert!(s.calls[0].verified);
         assert_eq!(s.calls[0].country.as_deref(), Some("Italy"));
-        // sentito 7 s fa: l'etichetta sulla cascata resta; dopo 75 s senza sentirlo si toglie (il nominativo resta nell'elenco)
+        // sentito 7 s fa: l'etichetta sulla cascata resta; chi chiama CQ verificato resta anche dopo 75 s, si toglie dopo 180 s
         assert!(!s.calls[0].stale);
-        let later = ChannelInfo { now_s: 3.0 + CALL_STALE_S + 1.0, ..ch.clone() };
+        let mid = signal_of(&ChannelInfo { now_s: 3.0 + CALL_STALE_S + 1.0, ..ch.clone() }, true, Some(8), Some(&lookup));
+        assert!(!mid.calls[0].stale);
+        let later = ChannelInfo { now_s: 3.0 + CALL_STALE_CQ_S + 1.0, ..ch.clone() };
         let old = signal_of(&later, true, Some(8), Some(&lookup));
         assert!(old.calls[0].stale);
         assert_eq!(old.calls[0].call, "IU3ABC");

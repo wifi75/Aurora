@@ -234,6 +234,7 @@ impl CallTracker {
         if is_report(&word) {
             self.last_report = Some(word.clone());
         }
+        self.partial_sighting(&word, now_s);
         if looks_like_call(&word) {
             let prev = self.recent.last().map(String::as_str).unwrap_or("");
             // «TU CT7BJG»: nei contest chi chiude il QSO scrive il proprio nominativo dopo TU (trasmette lui)
@@ -273,6 +274,38 @@ impl CallTracker {
         self.recent.push(word);
         if self.recent.len() > 6 {
             self.recent.remove(0);
+        }
+    }
+
+    /// Una lettura parziale di un nominativo verificato del canale («EC7Y», «C7YY», «EC7YV» per EC7YY) conta come un avvistamento: ne
+    /// rinfresca `last_s` (non il punteggio), cosi' la stazione che continua a chiamare resta nell'elenco anche quando il segnale e' debole
+    /// o il pile-up la copre. Il pezzo deve avere almeno `FRAGMENT_MIN` caratteri con una cifra; se somiglia altrettanto (o di piu') a un
+    /// altro nominativo verificato del canale non rinfresca nessuno.
+    fn partial_sighting(&mut self, word: &str, now_s: f64) {
+        if word.len() < FRAGMENT_MIN || !word.bytes().any(|b| b.is_ascii_digit()) {
+            return;
+        }
+        let mut best: Option<(&str, usize)> = None;
+        let mut tie = false;
+        for c in self.calls.values().filter(|c| c.verified()) {
+            let Some(m) = partial_match(word, &c.call) else { continue };
+            match best {
+                Some((_, b)) if m < b => {}
+                Some((_, b)) if m == b => tie = true,
+                _ => {
+                    best = Some((c.call.as_str(), m));
+                    tie = false;
+                }
+            }
+        }
+        let Some((call, m)) = best else { return };
+        // una lettura esatta passa per la via normale; due nominativi somiglianti allo stesso modo: non si sa quale
+        if tie || m > word.len() {
+            return;
+        }
+        let call = call.to_string();
+        if let Some(c) = self.calls.get_mut(&call) {
+            c.last_s = c.last_s.max(now_s);
         }
     }
 
@@ -325,6 +358,21 @@ pub fn shadows(other: &str, os: f32, call: &str, cs: f32) -> bool {
         return true;
     }
     other.len() == call.len() && os >= MISREAD_RATIO * cs && other.bytes().zip(call.bytes()).filter(|(a, b)| a != b).count() == 1
+}
+
+/// Il pezzo piu' corto di un nominativo che ne rinfresca l'avvistamento.
+const FRAGMENT_MIN: usize = 4;
+
+/// Quanto `word` somiglia a `call` (piu' alto = meglio): `len + 1` se e' lui, `len` dei caratteri giusti se e' un suo pezzo contiguo o se
+/// ha la stessa lunghezza con un solo carattere sbagliato; `None` altrimenti.
+fn partial_match(word: &str, call: &str) -> Option<usize> {
+    if word == call {
+        return Some(word.len() + 1);
+    }
+    if word.len() < call.len() && call.contains(word) {
+        return Some(word.len());
+    }
+    (word.len() == call.len() && word.bytes().zip(call.bytes()).filter(|(a, b)| a != b).count() == 1).then(|| word.len() - 1)
 }
 
 /// Un rapporto RST (599, 579, 5NN, 4NN...).
@@ -393,6 +441,55 @@ mod tests {
         let you = all.iter().find(|c| c.call == "DL4YAY").cloned();
         assert!(me.as_ref().is_some_and(|c| c.role == Role::Cq), "{me:?}");
         assert!(you.as_ref().is_some_and(|c| c.role == Role::Other), "{you:?}");
+    }
+
+    fn last_s_of(t: &CallTracker, call: &str) -> f64 {
+        t.calls.get(call).map_or(f64::NAN, |c| c.last_s)
+    }
+
+    /// Una stazione verificata che continua a chiamare resta viva anche quando se ne legge solo un pezzo o una lettura con un errore.
+    #[test]
+    fn fragments_of_a_verified_call_refresh_its_sighting() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ CQ DE EC7YY EC7YY K ", &[], 1.0);
+        assert_eq!(last_s_of(&t, "EC7YY"), 1.0);
+        for (i, frag) in ["EC7Y", "C7YY", "EC7YV"].iter().enumerate() {
+            let at = 100.0 + i as f64 * 50.0;
+            t.push(format!("CQ {frag} K ").as_bytes(), &[], at);
+            assert_eq!(last_s_of(&t, "EC7YY"), at, "{frag}");
+        }
+        // troppo corto o senza cifra: niente
+        t.push(b"C7Y ECYY ", &[], 400.0);
+        assert_eq!(last_s_of(&t, "EC7YY"), 200.0);
+    }
+
+    /// Un nominativo diverso non rinfresca; un pezzo che somiglia altrettanto a due nominativi verificati non rinfresca nessuno.
+    #[test]
+    fn a_different_call_does_not_refresh() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ DE EC7YY EC7YY K ", &[], 1.0);
+        t.push(b"DL1ABC DL1ABC ", &[], 50.0);
+        assert_eq!(last_s_of(&t, "EC7YY"), 1.0);
+        let mut u = CallTracker::new();
+        u.push(b"CQ DE EC7YY EC7YY K DE EC7YZ EC7YZ ", &[], 1.0);
+        u.push(b"EC7Y ", &[], 60.0);
+        assert_eq!(last_s_of(&u, "EC7YY"), 1.0);
+        assert_eq!(last_s_of(&u, "EC7YZ"), 1.0);
+        // EC7YZ letto intero e' lui, non un errore di EC7YY
+        u.push(b"EC7YZ ", &[], 70.0);
+        assert_eq!(last_s_of(&u, "EC7YY"), 1.0);
+    }
+
+    /// Contest: chi chiama si legge a pezzi fra i corrispondenti del pile-up; resta vivo.
+    #[test]
+    fn a_contest_pile_up_keeps_the_runner() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ TEST EC7YY EC7YY TEST ", &[], 1.0);
+        t.push(b"DL4YAY 599 428 428 TU C7YY TEST ", &[], 60.0);
+        t.push(b"F5ABC 599 12 TU EC7Y TEST ", &[], 120.0);
+        t.push(b"OK1XYZ 5NN 33 TU EC7YV QRZ ", &[], 170.0);
+        let c = t.calls.get("EC7YY").cloned();
+        assert!(c.as_ref().is_some_and(|c| c.role == Role::Cq && c.last_s == 170.0), "{c:?}");
     }
 
     #[test]
