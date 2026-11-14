@@ -18,7 +18,7 @@ import { RadarList } from '../components/digi/RadarList';
 import { ExtraRxWindow } from '../components/digi/ExtraRxWindow';
 import { PopupMenu } from '../components/PopupMenu';
 import { addNotch } from '../lib/digiNotches';
-import { clearExtraText } from '../lib/digiBus';
+import { clearExtraText, getExtraText, onExtraText } from '../lib/digiBus';
 import { takePendingSpot, textModeOfSpot } from '../lib/spotMode';
 import { getBandMode, getBandSignals, onBandSignals, cqCallOf, radarColor, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
@@ -292,24 +292,37 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const bandOn = radarOn || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
   // la stazione che chiama CQ nella finestra RX principale resta sempre in BIGScan, anche se la ricerca di tutta la banda la perde
-  const [mainCq, setMainCq] = useState<{ call: string; hz: number; at: number } | null>(null);
-  useEffect(
-    () =>
-      onDigiText(() => {
-        const call = cqCallOf(getDigiText().slice(-800));
-        if (call) setMainCq((o) => (o && o.call === call && Date.now() - o.at < 2000 ? o : { call, hz: live.current.rxHz, at: Date.now() }));
-      }),
-    [],
-  );
+  // (lo stesso per le finestre RX in piu': ognuna manda il suo CQ alla sua frequenza)
+  const [rxCq, setRxCq] = useState<Record<string, { call: string; hz: number; at: number }>>({});
+  const extrasRef = useRef(extras);
+  extrasRef.current = extras;
+  useEffect(() => {
+    const seen = (key: string, text: string, hz: number) => {
+      const call = cqCallOf(text.slice(-800));
+      if (!call) return;
+      setRxCq((all) => {
+        const o = all[key];
+        return o && o.call === call && Date.now() - o.at < 2000 ? all : { ...all, [key]: { call, hz, at: Date.now() } };
+      });
+    };
+    const offMain = onDigiText(() => seen('main', getDigiText(), live.current.rxHz));
+    const offExtra = onExtraText(() => {
+      for (const x of extrasRef.current) seen(`x${x.id}`, getExtraText(x.id), x.freq_hz);
+    });
+    return () => {
+      offMain();
+      offExtra();
+    };
+  }, []);
   const radar = useMemo(() => {
     if (!radarMode) return [];
     const list = radarStations(band, views.radarAnswering);
-    if (mainCq && Date.now() - mainCq.at < 75_000 && !list.some((r) => r.call === mainCq.call)) {
-      list.push({ call: mainCq.call, freqHz: mainCq.hz, wpm: null, snrDb: 0, cq: true, country: null, stale: false, color: radarColor(mainCq.call) });
-      list.sort((a, b) => a.freqHz - b.freqHz);
+    for (const c of Object.values(rxCq)) {
+      if (Date.now() - c.at >= 75_000 || list.some((r) => r.call === c.call)) continue;
+      list.push({ call: c.call, freqHz: c.hz, wpm: null, snrDb: 0, cq: true, country: null, stale: false, color: radarColor(c.call) });
     }
-    return list;
-  }, [band, radarMode, views.radarAnswering, mainCq]);
+    return list.sort((a, b) => a.freqHz - b.freqHz);
+  }, [band, radarMode, views.radarAnswering, rxCq]);
   // sulla cascata del Radar solo i nominativi sicuri (verificati)
   // sulla cascata di Aurora BIGScan gli stessi nominativi dell'elenco (di base solo chi chiama CQ)
   const bandLabels = useMemo(() => {
@@ -968,6 +981,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     );
   };
 
+  // la finestra di ricezione in un file di testo (cartella dei download)
+  const saveRxText = () => {
+    const url = URL.createObjectURL(new Blob([getDigiText().replace(/\r?\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aurora-rx-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.txt`;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   // la parola scelta col tasto destro va nel campo del log del QSO in corso (il rapporto e' quello ricevuto) o negli appunti
   const pickWord = (target: WordTarget, word: string) => {
     if (target === 'copy') {
@@ -1231,6 +1254,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
           {/* barra sopra la finestra RX: posto per i pulsantini */}
           <div className="digi-rxbar" role="toolbar" aria-label={t('digi.rx.title')}>
+            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.copy')} aria-label={t('digi.rxbar.copy')} onClick={() => void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined)}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4V4h11v1" /></svg>
+            </button>
+            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.save')} aria-label={t('digi.rxbar.save')} onClick={saveRxText}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+            </button>
             <button type="button" className="digi-rxbar-btn" title={t('digi.mi.clearRx')} aria-label={t('digi.mi.clearRx')} onClick={() => clearDigiText()}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />

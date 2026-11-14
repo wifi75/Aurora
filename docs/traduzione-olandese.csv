@@ -4333,6 +4333,8 @@ digi.mi.macrosReset,Restore Aurora’s default macros,Standaardmacro’s van Aur
 digi.mi.macrosRestored,Aurora’s default macros restored.,Standaardmacro’s van Aurora hersteld.
 digi.mi.importErr,Cannot import: {why},Kan niet importeren: {why}
 digi.mi.importLocal,Importing works only from the Aurora PC itself.,Importeren werkt alleen op de Aurora-pc zelf.
+digi.rxbar.copy,Copy the whole receive window,Het hele ontvangstvenster kopiëren
+digi.rxbar.save,Save the receive window to a text file,Het ontvangstvenster opslaan als tekstbestand
 digi.mi.clearRx,Clear the receive window,Het ontvangstvenster wissen
 digi.mi.clearTx,Clear the transmit window,Het zendvenster wissen
 digi.mi.copyRx,Copy the received text,De ontvangen tekst kopiëren

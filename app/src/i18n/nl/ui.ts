@@ -1493,6 +1493,8 @@ export const NL_UI: Record<string, string> = {
   "digi.rx.start": "Beginnen met luisteren",
   "digi.rx.stop": "Stoppen met luisteren",
   "digi.rx.title": "Ontvangen",
+  "digi.rxbar.copy": "Het hele ontvangstvenster kopiëren",
+  "digi.rxbar.save": "Het ontvangstvenster opslaan als tekstbestand",
   "digi.save": "Opslaan",
   "digi.saveError": "Niet opgeslagen: ongeldige waarden of Aurora antwoordt niet.",
   "digi.saved": "Opgeslagen",
