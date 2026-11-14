@@ -11,7 +11,7 @@
 .radar-grid th { cursor: grab; }
 .radar-grid th {
   position: sticky; top: 0; z-index: 1; padding: 4px 7px; background: #0e1729; color: var(--text-muted); border: 1px solid #ffffff10;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: right; text-transform: uppercase; white-space: nowrap; overflow: hidden;
 }
 .radar-grid td { padding: 3px 7px; border: 1px solid #ffffff0a; color: #d8e6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .radar-grid tbody tr { cursor: pointer; }
@@ -19,11 +19,11 @@
 .radar-grid tr.radar-on td { background: #8e7bff33; }
 .radar-grid tr.radar-stale td { opacity: 0.55; }
 .radar-num { font-family: var(--font-data); text-align: right; }
-.radar-call { font-family: var(--font-data); }
+.radar-call { font-family: var(--font-data); text-align: right; }
 .radar-call b { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--radar-c); }
 .radar-call .decode-flag { margin-right: 5px; }
 .radar-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--radar-c); vertical-align: 0; }
-.radar-cq { text-align: center; }
+.radar-cq { text-align: right; }
 .radar-cq em { padding: 0 5px; border: 1px solid #2cf5a4; border-radius: 5px; color: #2cf5a4; font-style: normal; font-weight: 700; font-size: 10px; }
 .radar-empty { color: var(--text-muted); white-space: normal; text-align: center; padding: 10px 7px; }
 /* i colori delle stazioni: dieci tinte ben distinte, leggibili sul fondo scuro */
@@ -38,12 +38,12 @@
 .radar-c8 { --radar-c: #8ab4ff; }
 .radar-c9 { --radar-c: #f0a6ff; }
 /* le finestre RX e TX a sinistra, il Radar a destra alto quanto loro; la cascata sotto, larga */
-.digi-winrow { display: flex; gap: 10px; align-items: stretch; flex: 1 1 0; min-width: 0; min-height: 0; }
+.digi-winrow { display: flex; gap: 4px; align-items: stretch; flex: 1 1 0; min-width: 0; min-height: 0; }
 .digi-winrow > .digi-windows { flex: 1 1 auto; min-width: 0; min-height: 0; }
 /* con il Radar la maniglia delle finestre lascia il posto a quella del Radar (stessa forma) */
 .digi-winrow--radar .digi-wingrip { display: none; }
-.digi-radargrip { position: relative; flex: none; width: 12px; margin: 0 -6px; z-index: 3; cursor: col-resize; touch-action: none; }
-.digi-radargrip::before { content: ''; position: absolute; top: 50%; left: 3px; width: 6px; height: 90px; margin-top: -45px; border-radius: 3px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.digi-radargrip { position: relative; flex: none; width: 6px; margin: 0 -2px; z-index: 3; cursor: col-resize; touch-action: none; }
+.digi-radargrip::before { content: ''; position: absolute; top: 50%; left: 2px; width: 2px; height: 70px; margin-top: -35px; border-radius: 1px; background: #8ea2e0; opacity: 0.9; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
 .digi-radargrip:hover::before, .digi-radargrip:active::before { background: #38bdf8; opacity: 1; }
 .digi-radar-btn { padding: 2px 10px; border: 1px solid var(--border); border-radius: 7px; background: #0a1324; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .digi-radar-btn[aria-pressed='true'] { border-color: #5ec8e0; color: #5ec8e0; background: #123a45; }

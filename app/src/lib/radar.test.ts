@@ -18,6 +18,11 @@ describe('radar', () => {
     expect(st[0]?.freqHz).toBe(905);
   });
 
+  it('i nominativi solo nominati da una stazione (il corrispondente) non sono stazioni', () => {
+    const st = radarStations([sig(1, 900, -6, [{ call: 'SV5BYP', role: 'de', verified: true }, { call: 'IV3IPS', role: 'other', verified: true }])]);
+    expect(st.map((s) => s.call)).toEqual(['SV5BYP']);
+  });
+
   it('una stazione sentita adesso batte la stessa non sentita da tempo', () => {
     const st = radarStations([sig(1, 900, 5, [{ call: 'IU3ABC', role: 'de', verified: true, stale: true }]), sig(2, 1400, -9, [{ call: 'IU3ABC', role: 'de', verified: true }])]);
     expect(st).toHaveLength(1);

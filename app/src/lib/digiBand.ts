@@ -100,14 +100,16 @@ export function radarColor(call: string): number {
 }
 
 /**
- * Le stazioni del Radar: solo i nominativi verificati (sentiti piu' volte con caratteri sicuri), una riga per nominativo. Se due canali
+ * Le stazioni del Radar: solo i nominativi verificati (sentiti piu' volte con caratteri sicuri) di chi trasmette (CQ o DE), una riga per
+ * nominativo. Se due canali
  * leggono lo stesso nominativo resta quello sentito di recente e piu' forte. Ordine: dalla frequenza piu' bassa.
  */
 export function radarStations(list: DigiSignal[]): RadarStation[] {
   const best = new Map<string, RadarStation>();
   for (const sig of list) {
     for (const c of sig.calls) {
-      if (!c.verified) continue;
+      // solo chi trasmette (dopo CQ o DE): i nominativi che una stazione nomina («IV3IPS 599 DE SV5BYP») non sono stazioni della banda
+      if (!c.verified || c.role === 'other') continue;
       const st: RadarStation = {
         call: c.call,
         freqHz: sig.freq_hz,
