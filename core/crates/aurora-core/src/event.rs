@@ -466,6 +466,9 @@ pub struct DigiSignalCall {
     /// Non lo si sente da oltre 75 s: resta nell'elenco, ma la sua etichetta sulla cascata si toglie.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub stale: bool,
+    /// Non c'e' piu': non lo si sente da 3 minuti, o un'altra stazione ha preso il suo posto da oltre 60 s. L'elenco non lo mostra.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub gone: bool,
 }
 
 /// Una riga della cascata: viaggia su un canale proprio, non e' un `Event`.

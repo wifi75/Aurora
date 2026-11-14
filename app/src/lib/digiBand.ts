@@ -109,7 +109,7 @@ export function radarStations(list: DigiSignal[]): RadarStation[] {
   for (const sig of list) {
     for (const c of sig.calls) {
       // solo chi trasmette (dopo CQ o DE): i nominativi che una stazione nomina («IV3IPS 599 DE SV5BYP») non sono stazioni della banda
-      if (!c.verified || c.role === 'other') continue;
+      if (!c.verified || c.role === 'other' || c.gone === true) continue;
       const st: RadarStation = {
         call: c.call,
         freqHz: sig.freq_hz,

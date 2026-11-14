@@ -197,7 +197,8 @@ impl CallTracker {
     pub fn push(&mut self, text: &[u8], conf: &[u8], now_s: f64) {
         for (i, &c) in text.iter().enumerate() {
             let p = conf.get(i).map_or(1.0, |&v| f32::from(v) / 255.0);
-            if c == b' ' || c == b'\n' {
+            // anche il ritorno a capo del RTTY chiude la parola (prima finiva dentro il nominativo: «PR1TW\r»)
+            if c == b' ' || c == b'\n' || c == b'\r' {
                 self.end_word(now_s);
             } else {
                 self.word.push(char::from(c.to_ascii_uppercase()));

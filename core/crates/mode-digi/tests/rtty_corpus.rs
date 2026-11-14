@@ -248,3 +248,29 @@ fn il_wav_scritto_dalle_prove_si_rilegge() {
     assert_eq!(y.len(), 1800);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Aurora BIGScan RTTY su ogni file del corpus: quanti segnali trova in tutta la banda e i nominativi verificati di ognuno.
+#[test]
+#[ignore]
+fn banda_intera() {
+    use mode_digi::skim::BandDecoder;
+    use mode_digi::skim::rtty::RttyBandDecoder;
+    let dir = cartella_corpus();
+    let Ok(voci) = std::fs::read_dir(&dir) else { return };
+    let mut cartelle: Vec<PathBuf> = voci.flatten().map(|e| e.path()).filter(|p| p.join("audio.wav").is_file()).collect();
+    cartelle.sort();
+    for c in cartelle.into_iter().take(1) {
+        let Ok(wav) = leggi_wav(&c.join("audio.wav")) else { continue };
+        let audio = a_12k(&wav.canali[0], wav.rate);
+        let mut d = RttyBandDecoder::new(170.0, 45.45, 30);
+        for b in audio.chunks(4800) {
+            d.process(b);
+        }
+        println!("== {}", c.display());
+        for ch in d.channels() {
+            let calls: Vec<String> = ch.calls.iter().map(|k| format!("{}{}", k.call, if k.verified() { "*" } else { "" })).collect();
+            let tail: String = ch.text.chars().rev().take(70).collect::<Vec<_>>().into_iter().rev().collect();
+            println!("{:7.1} Hz {calls:?} | {}", ch.freq_hz, tail.replace('\n', " "));
+        }
+    }
+}

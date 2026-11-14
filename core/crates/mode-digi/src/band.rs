@@ -41,6 +41,13 @@ const UNSURE_BELOW: u8 = 150;
 /// Un nominativo non sentito da tanto (s) e' «vecchio»: resta nell'elenco finche' c'e' il canale, ma l'etichetta sulla cascata si toglie.
 /// Lo storico di un canale e' di 60 s: poco oltre, del nominativo non resta piu' niente da leggere.
 const CALL_STALE_S: f64 = 75.0;
+/// Regole per le etichette e l'elenco quando le stazioni cambiano (fine di un contest, chi lascia la frequenza a un altro):
+/// - sulla stessa frequenza vale l'ultima stazione che trasmette: una che trasmetteva prima e non si sente da `SUPERSEDED_S` perde
+///   l'etichetta sulla cascata;
+/// - esce dall'elenco quando un'altra ha preso il suo posto da `SUPERSEDED_GONE_S`, o quando non la si sente da `CALL_GONE_S`.
+const SUPERSEDED_S: f64 = 10.0;
+const SUPERSEDED_GONE_S: f64 = 60.0;
+const CALL_GONE_S: f64 = 180.0;
 /// La banda audio in cui si cercano i segnali (Hz).
 const LO_HZ: f32 = 150.0;
 const HI_HZ: f32 = 4_000.0;
@@ -256,7 +263,15 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
         calls: ch
             .calls
             .iter()
-            .map(|c| DigiSignalCall {
+            .map(|c| {
+                // l'ultima stazione che trasmette su questo canale (verificata, dopo CQ o DE)
+                let latest = ch.calls.iter().filter(|o| o.role != Role::Other && o.verified()).map(|o| o.last_s).fold(f64::MIN, f64::max);
+                let replaced = c.role != Role::Other && latest > c.last_s;
+                let behind = latest - c.last_s;
+                let silent = ch.now_s - c.last_s;
+                (c, silent > CALL_STALE_S || (replaced && behind > SUPERSEDED_S), silent > CALL_GONE_S || (replaced && behind > SUPERSEDED_GONE_S))
+            })
+            .map(|(c, stale, gone)| DigiSignalCall {
                 call: c.call.clone(),
                 role: match c.role {
                     Role::Cq => "cq",
@@ -266,7 +281,8 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
                 .into(),
                 verified: c.verified(),
                 country: lookup.and_then(|f| f(&c.call)),
-                stale: ch.now_s - c.last_s > CALL_STALE_S,
+                stale,
+                gone,
             })
             .collect(),
         cq: ch.cq,
@@ -444,6 +460,18 @@ mod tests {
         let old = signal_of(&later, true, Some(8), Some(&lookup));
         assert!(old.calls[0].stale);
         assert_eq!(old.calls[0].call, "IU3ABC");
+        // un'altra stazione prende la frequenza: la vecchia perde l'etichetta dopo 10 s, esce dall'elenco dopo 60 s
+        let mut swap = ch.clone();
+        swap.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::De, count: 2, score: 2.0, last_s: 20.0, shape: crate::skim::forms::Shape::Typical });
+        swap.now_s = 20.0;
+        let s2 = signal_of(&swap, true, Some(8), Some(&lookup));
+        let old2 = s2.calls.iter().find(|c| c.call == "IU3ABC").expect("vecchia");
+        let new2 = s2.calls.iter().find(|c| c.call == "K1XYZ").expect("nuova");
+        assert!(old2.stale && !old2.gone && !new2.stale, "{s2:?}");
+        swap.calls[1].last_s = 70.0;
+        swap.now_s = 70.0;
+        let s3 = signal_of(&swap, true, Some(8), Some(&lookup));
+        assert!(s3.calls.iter().any(|c| c.call == "IU3ABC" && c.gone), "{s3:?}");
         let full = signal_of(&ch, false, None, None);
         assert_eq!(full.text.len(), 14);
         assert_eq!(full.wpm, None);
