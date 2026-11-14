@@ -1070,11 +1070,14 @@ mod tests {
     }
 
     #[test]
-    fn la_lingua_di_aurora_sceglie_i_testi_e_senza_scelta_vale_l_italiano() {
+    fn la_lingua_di_aurora_sceglie_i_testi_e_senza_testi_suoi_vale_l_inglese() {
+        assert_eq!(lang_index("it"), 0);
         assert_eq!(lang_index("en"), 1);
         assert_eq!(lang_index("pt"), 5);
-        assert_eq!(lang_index(""), 0);
-        assert_eq!(lang_index("klingon"), 0);
+        // una lingua che i testi dell'agente non hanno (l'olandese, o nessuna scelta) vale l'inglese
+        assert_eq!(lang_index("nl"), 1);
+        assert_eq!(lang_index(""), 1);
+        assert_eq!(lang_index("klingon"), 1);
         assert_eq!(tr_in(1, "open"), "Open Aurora");
         assert_eq!(tr_in(0, "open"), "Apri Aurora");
     }
