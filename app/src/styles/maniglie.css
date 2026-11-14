@@ -62,7 +62,7 @@ html:root:root .grid-board--moving .grid-divider::before {
 }
 
 /* via i disegni vecchi: righe tratteggiate, barrette sull'altro pseudo-elemento, sfondi che si accendono */
-html:root:root :is(.digi-split, .digi-macrogrip, .wf-splitter, .live-bottom-split, .live-bottom-resizer, .grid-divider, .dock-resize)::after {
+html:root:root :is(.digi-macrogrip, .wf-splitter, .live-bottom-split, .live-bottom-resizer, .grid-divider, .dock-resize)::after {
   content: none !important;
   display: none !important;
 }
@@ -86,3 +86,19 @@ html:root:root :is(.ctc-wf-handle, .foxc-wf-handle):is(:hover, :active) span {
   background: var(--grip-color-hover);
   opacity: 1;
 }
+
+/* fra le finestre RX e TX resta la riga di separazione, con la lineetta della maniglia sopra */
+html:root:root .digi-split::after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border, #2a3a5e);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+html:root:root .digi-split:is(:hover, :active)::after { border-top-color: var(--grip-color-hover); }
