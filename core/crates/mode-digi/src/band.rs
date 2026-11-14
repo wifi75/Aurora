@@ -265,7 +265,13 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
             .iter()
             .map(|c| {
                 // l'ultima stazione che trasmette su questo canale (verificata, dopo CQ o DE)
-                let latest = ch.calls.iter().filter(|o| o.role != Role::Other && o.verified()).map(|o| o.last_s).fold(f64::MIN, f64::max);
+                // chi chiama CQ lo sostituisce solo un altro che chiama CQ: chi risponde trasmette sulla sua frequenza ma non la prende
+                let latest = ch
+                    .calls
+                    .iter()
+                    .filter(|o| o.role != Role::Other && o.verified() && (c.role != Role::Cq || o.role == Role::Cq))
+                    .map(|o| o.last_s)
+                    .fold(f64::MIN, f64::max);
                 let replaced = c.role != Role::Other && latest > c.last_s;
                 let behind = latest - c.last_s;
                 let silent = ch.now_s - c.last_s;
@@ -462,7 +468,7 @@ mod tests {
         assert_eq!(old.calls[0].call, "IU3ABC");
         // un'altra stazione prende la frequenza: la vecchia perde l'etichetta dopo 10 s, esce dall'elenco dopo 60 s
         let mut swap = ch.clone();
-        swap.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::De, count: 2, score: 2.0, last_s: 20.0, shape: crate::skim::forms::Shape::Typical });
+        swap.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::Cq, count: 2, score: 2.0, last_s: 20.0, shape: crate::skim::forms::Shape::Typical });
         swap.now_s = 20.0;
         let s2 = signal_of(&swap, true, Some(8), Some(&lookup));
         let old2 = s2.calls.iter().find(|c| c.call == "IU3ABC").expect("vecchia");
@@ -472,6 +478,13 @@ mod tests {
         swap.now_s = 70.0;
         let s3 = signal_of(&swap, true, Some(8), Some(&lookup));
         assert!(s3.calls.iter().any(|c| c.call == "IU3ABC" && c.gone), "{s3:?}");
+        // chi risponde sulla frequenza di chi chiama CQ non lo toglie
+        let mut answer = ch.clone();
+        answer.calls[0].last_s = 20.0;
+        answer.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::De, count: 2, score: 2.0, last_s: 90.0, shape: crate::skim::forms::Shape::Typical });
+        answer.now_s = 90.0;
+        let s4 = signal_of(&answer, true, Some(8), Some(&lookup));
+        assert!(s4.calls.iter().any(|c| c.call == "IU3ABC" && !c.stale && !c.gone), "{s4:?}");
         let full = signal_of(&ch, false, None, None);
         assert_eq!(full.text.len(), 14);
         assert_eq!(full.wpm, None);

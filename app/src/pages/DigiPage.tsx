@@ -19,7 +19,7 @@ import { PopupMenu } from '../components/PopupMenu';
 import { addNotch } from '../lib/digiNotches';
 import { clearExtraText } from '../lib/digiBus';
 import { takePendingSpot, textModeOfSpot } from '../lib/spotMode';
-import { getBandMode, getBandSignals, onBandSignals, radarColor, radarStations, waterfallLabels } from '../lib/digiBand';
+import { getBandMode, getBandSignals, onBandSignals, cqCallOf, radarColor, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
@@ -29,7 +29,7 @@ import { openSettingsWindow } from '../lib/settingsWindow';
 import { readMemories, readScan, SCAN_KEY, writeMemories, type DigiMemory, type ScanProps } from '../lib/digiScan';
 import { DigiStatusBar } from '../components/digi/StatusBar';
 import { useT } from '../i18n';
-import { appendDigiNote, clearDigiText, getDigiText, onDigi } from '../lib/digiBus';
+import { appendDigiNote, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
 import { DigiRxLive } from '../components/DigiRxText';
 import { DigiTxBox } from '../components/DigiTxBox';
 import { RttySettingsDialog } from '../components/digi/RttySettingsDialog';
@@ -287,7 +287,25 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const radarOn = (s.mode === 'cw' && s.band_cw !== false) || (s.mode === 'rtty' && s.band_rtty !== false);
   const bandOn = radarOn || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
-  const radar = useMemo(() => (radarMode ? radarStations(band, views.radarAnswering) : []), [band, radarMode, views.radarAnswering]);
+  // la stazione che chiama CQ nella finestra RX principale resta sempre in BIGScan, anche se la ricerca di tutta la banda la perde
+  const [mainCq, setMainCq] = useState<{ call: string; hz: number; at: number } | null>(null);
+  useEffect(
+    () =>
+      onDigiText(() => {
+        const call = cqCallOf(getDigiText().slice(-800));
+        if (call) setMainCq((o) => (o && o.call === call && Date.now() - o.at < 2000 ? o : { call, hz: live.current.rxHz, at: Date.now() }));
+      }),
+    [],
+  );
+  const radar = useMemo(() => {
+    if (!radarMode) return [];
+    const list = radarStations(band, views.radarAnswering);
+    if (mainCq && Date.now() - mainCq.at < 75_000 && !list.some((r) => r.call === mainCq.call)) {
+      list.push({ call: mainCq.call, freqHz: mainCq.hz, wpm: null, snrDb: 0, cq: true, country: null, stale: false, color: radarColor(mainCq.call) });
+      list.sort((a, b) => a.freqHz - b.freqHz);
+    }
+    return list;
+  }, [band, radarMode, views.radarAnswering, mainCq]);
   // sulla cascata del Radar solo i nominativi sicuri (verificati)
   // sulla cascata di Aurora BIGScan gli stessi nominativi dell'elenco (di base solo chi chiama CQ)
   const bandLabels = useMemo(() => {

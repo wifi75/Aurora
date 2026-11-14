@@ -137,3 +137,26 @@ export function radarStations(list: DigiSignal[], answering = false): RadarStati
   }
   return [...best.values()].sort((a, b) => a.freqHz - b.freqHz);
 }
+
+const CALL_SHAPE = /^(?=.*\d)(?=.*[A-Z])[A-Z0-9]{1,3}\d[A-Z0-9]{0,4}[A-Z]$/;
+
+/**
+ * Chi chiama CQ nel testo della finestra RX principale (le ultime righe): un nominativo ripetuto almeno due volte nelle righe con CQ,
+ * TEST o QRZ («CQ EC7YY EC7YY», «TU EC7YY CQ»). Serve a non perdere in Aurora BIGScan la stazione che si sta ascoltando.
+ */
+export function cqCallOf(text: string): string | null {
+  const lines = text.toUpperCase().split(/[\r\n]+/).slice(-8);
+  const count = new Map<string, number>();
+  for (const line of lines) {
+    const words = line.split(/[^A-Z0-9/]+/).filter(Boolean);
+    if (!words.some((w) => w === 'CQ' || w === 'TEST' || w === 'QRZ')) continue;
+    for (const w of words) {
+      const call = w.split('/').sort((a, b) => b.length - a.length)[0] ?? '';
+      if (CALL_SHAPE.test(call)) count.set(call, (count.get(call) ?? 0) + 1);
+    }
+  }
+  let best: string | null = null;
+  let most = 1;
+  for (const [call, n] of count) if (n > most) [best, most] = [call, n];
+  return best;
+}
