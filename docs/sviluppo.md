@@ -23,7 +23,9 @@ Dettagli che servono solo quando si lavora su quella parte. Le regole sempre val
 - Licenze delle dipendenze: `python scripts/licenze-terze-parti.py` (rigenera `docs/licenze-terze-parti.md`).
 
 ## Programma Windows
-- Ogni processo figlio (PowerShell, cmd) parte con `CREATE_NO_WINDOW`; l'installatore dell'aggiornamento parte staccato da Aurora (`cmd /C start`) e la riga di chiusura dell'installatore non deve uccidere i processi figli.
+- **Aurora non avvia mai PowerShell** (ne' `cmd` per fare il lavoro): gli antivirus segnalano i programmi che lo avviano nascosto (Bitdefender ha messo Aurora in quarantena dopo un aggiornamento). Tutto passa dalle API di Windows (crate `windows` nel core, `windows-sys` nel desktop): porte seriali e schede audio da SetupAPI, chi tiene una porta TCP da IP Helper, Wi-Fi da WLAN, categoria di rete da Network List Manager, firewall da `INetFwPolicy2`, icona del tray dal registro. «Consenti Aurora» apre il firewall con `netsh -f` (programma di sistema firmato) avviato da amministratore con `ShellExecuteExW`. Nessuna riga nuova deve avviare `powershell.exe`.
+- Aggiornamento: Aurora copia il proprio programma in `%TEMP%\Aurora-update\aurora-aggiorna-<pid>.exe` e lo avvia staccato con `--applica-aggiornamento <installatore> <pid> <programma>`; la copia aspetta la chiusura di Aurora e dell'agente, lancia l'installatore (`/S /UPDATE`, senza `/R`), ne aspetta la fine e riapre Aurora una volta (registro in `%TEMP%\Aurora-update\aggiornamento.log`). La riga di chiusura dell'installatore non deve uccidere i processi figli. Le copie rimaste si cancellano all'avvio successivo.
+- I processi figli che restano (rigctld, programmi esterni) partono con `CREATE_NO_WINDOW`.
 - La trasmissione e' aperta di default (`AURORA_ALLOW_TX=0` la chiude): STOP TX, tetti, dead-man e automazioni spente di default restano.
 
 ## Linux (non provata dall'autore, senza assistenza)
