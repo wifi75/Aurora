@@ -454,3 +454,28 @@ tabella non cambia (26,02 %).
 **Scartate (numeri)**: rotazione di fase senza la conferma dei due toni: aggancio 10 Hz in 0,3 s, ma stazione +200 Hz +6 dB CER 89 % e una
 stazione sola a +200 Hz tirava l'AFC di 30 Hz; con la conferma ma soglia e limite vecchi: a -5 dB 20 Hz agganciato 2 volte su 3, 30 Hz
 mai; soglia di aggancio 2,2: a -5 dB 30 Hz in 1,4 s ma una stazione sola a +200 Hz tira di 16,2 Hz.
+
+## Salti di guadagno: rivelatore sulla dispersione del rumore (2026-11-14, scartato)
+
+Seguito del lavoro sui salti di guadagno: per far scattare la riscalatura senza attesa ma non sulle fluttuazioni del rumore, la somma dei
+due toni deve stare sotto `GAIN_DROP` volte l'attesa e in piu' sotto di K volte la dispersione del rumore misurata sui toni
+(`sqrt(somma delle quattro varianze / 2)`). A S/N alto scatta subito, nel rumore quasi mai. Base: tabella dopo il cancello interno
+(CER medio 26,02 %, 18 caratteri al minuto sul rumore). Righe di fading: CCIR cattivo 36,0, flutter 56,8, alte latitudini 67,2, AGC 24,4.
+
+| K / attesa | CER medio | CCIR cattivo | flutter | alte lat. | AGC | rumore car./min | righe oltre +0,5 |
+|---|---|---|---|---|---|---|---|
+| 2 / 0 bit (senza cancello) | 26,58 (base 26,35) | +0,8 | +2,9 | +0,8 | +3,2 | 185 | 4 (non scatta quasi mai) |
+| 0,5 / 0 (senza cancello) | 25,69 (base 26,35) | -2,6 | -5,4 | -5,2 | -4,9 | 198 | 170/75 +1,0, stop 1 bit +0,6 |
+| 0,2 / 0 (senza cancello) | 25,54 (base 26,35) | -3,6 | -6,7 | -6,4 | -5,1 | 202 | 4 |
+| 0,5 / 0,5 | 25,46 | -1,8 | -5,4 | -4,7 | -4,4 | 84 | 4 (170/75 +0,8) |
+| 0,3 / 1 | 25,59 | -1,3 | -4,5 | -3,3 | -4,1 | 19 | 170/75 +0,7, +500 ppm +0,6 |
+| 0,4 / 1 | 25,67 | -1,4 | -4,0 | -2,3 | -3,8 | 18 | +500 ppm +0,6 |
+| **0,5 / 1** | **25,77** | -1,1 | -3,4 | -1,4 | -3,6 | 17 | nessuna (170/75 +0,47) |
+| 1 / 0 | 25,90 | +0,4 | -1,7 | -0,5 | -4,1 | 27 | nessuna |
+| 1 / 1 | 26,14 | +0,8 | +2,4 | +0,8 | -2,3 | 17 | 3 |
+
+K 0,5 con 1 bit d'attesa passa la regola della tabella, ma sulla registrazione vera del contest la stazione debole perde il rapporto:
+«SP5H 599 150» diventa «SP5HBTOO 150» (anche con K 1), e sulla forte compaiono piu' caratteri casuali (261 -> 280). Non si tiene: il
+margine sul fading sintetico c'e' (fino a -3,4 punti sul flutter), ma la registrazione vera dice che scattare dopo 1 bit invece di 3
+rovina i caratteri di un segnale debole vero. Prossimo passo possibile: conferma sui canali del rumore (un AGC abbassa anche quelli, un
+fading del solo segnale no) o sulla catena normalizzata, misurando sempre anche la registrazione.
