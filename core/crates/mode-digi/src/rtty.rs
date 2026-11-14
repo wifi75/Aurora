@@ -28,7 +28,7 @@
 //! - stop bit controllato, UOS (si torna alle lettere dopo uno spazio), CR CR e LF LF ripetuti scartati (fldigi);
 //! - lo squelch guarda il rapporto segnale/rumore (come la «metric» di fldigi), non il livello assoluto.
 
-use crate::psk::{AFC_LIMIT_HZ, RATE};
+use crate::psk::RATE;
 use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
@@ -40,16 +40,23 @@ const FIGURES: [u8; 32] = [
     0, b'3', b'\n', b'-', b' ', 7, b'8', b'7', b'\r', b'$', b'4', b'\'', b',', b'!', b':', b'(', b'5', b'"', b')', b'2', b'#', b'6', b'0',
     b'1', b'9', b'?', b'&', b' ', b'.', b'/', b';', b' ',
 ];
-/// Distanza dei filtri di controllo dell'AFC dai due toni (Hz).
-const PROBE_HZ: f32 = 8.0;
 /// Distanza dei due filtri del rumore (uno sotto il tono basso, uno sopra quello alto): servono a capire se c'e' un segnale RTTY stretto o
 /// solo rumore (rapporto segnale/rumore per lo squelch e per l'AFC).
 const NOISE_GAP_HZ: f32 = 110.0;
-/// L'AFC si accende quando i due toni superano il rumore di questo rapporto (in ampiezza, circa 11 dB) e si spegne sotto l'altro (circa 6 dB).
-const LOCK_ON: f32 = 3.5;
+/// L'AFC si accende quando i due toni superano il rumore di questo rapporto (in ampiezza, circa 8,6 dB) e si spegne sotto l'altro (circa
+/// 6 dB). Con la conferma dei due toni (`AFC_AGREE_HZ`) la soglia puo' stare piu' bassa dei vecchi 11 dB: aggancia anche i segnali deboli;
+/// 2,2 (6,8 dB) faceva gia' tirare l'AFC di 16 Hz da una stazione sola a 200 Hz (prova `tests/rtty_afc.rs`).
+const LOCK_ON: f32 = 2.7;
 const LOCK_OFF: f32 = 2.0;
-/// Quanto sposta l'AFC a ogni bit (Hz per unita' di errore), e dopo quanti bit senza segnale (circa 8 s) la correzione rientra piano verso la frequenza scelta.
-const AFC_GAIN: f32 = 0.4;
+/// AFC: l'errore di frequenza in Hz e' la rotazione di fase da un campione all'altro sul tono che la decisione dice acceso, accumulata lungo
+/// ogni bit e mediata (peso `AFC_SMOOTH` per bit) separatamente per mark e space; si corregge di `AFC_STEP` volte l'errore a ogni bit solo
+/// se i due toni dicono lo stesso entro `AFC_AGREE_HZ` (una stazione accanto vicina a un tono solo non tira). Entro `AFC_LIMIT_HZ` dalla
+/// frequenza scelta (oltre circa 45 Hz i toni escono dai filtri e non si aggancia comunque: li' serve il clic sulla cascata). Dopo
+/// `AFC_HOLD_BITS` bit senza segnale (circa 8 s) la correzione rientra piano verso la frequenza scelta.
+const AFC_STEP: f32 = 0.1;
+const AFC_SMOOTH: f64 = 0.2;
+const AFC_AGREE_HZ: f32 = 4.0;
+const AFC_LIMIT_HZ: f32 = 60.0;
 const AFC_HOLD_BITS: u32 = 360;
 /// Fattore di forma del filtro di ricezione (`fftfilt::rtty_filter` di fldigi): la risposta va a zero a `K * baud` Hz dal tono. fldigi
 /// 4.2.13 scrive nel codice 1,4 e nelle impostazioni (`rtty_filter`, non usato da quella versione) 1,25. Nella prova `studio` di
@@ -335,8 +342,9 @@ fn synth(seq: &[(bool, f64)], params: RttyParams, amp_mark: f32, amp_space: f32)
     out
 }
 
-/// Una finestra mobile di somme (I, Q) alla frequenza data: la sua ampiezza dice quanto c'è di quel tono nell'ultimo bit (filtri di controllo
-/// dell'AFC). Lavora sul segnale complesso del front-end, a frequenza `rate`, con la frequenza contata dal centro.
+/// Una finestra mobile di somme (I, Q) alla frequenza data: la sua ampiezza dice quanto c'è di quel tono nell'ultimo bit. Lavora sul
+/// segnale complesso del front-end, a frequenza `rate`, con la frequenza contata dal centro (solo nelle prove).
+#[cfg(test)]
 struct Tone {
     step: f64,
     phase: f64,
@@ -346,6 +354,7 @@ struct Tone {
     sum_q: f32,
 }
 
+#[cfg(test)]
 impl Tone {
     fn new(freq_hz: f32, len: usize, rate: f64) -> Self {
         Self { step: 2.0 * PI * f64::from(freq_hz) / rate, phase: 0.0, ring_i: vec![0.0; len], ring_q: vec![0.0; len], sum_i: 0.0, sum_q: 0.0 }
@@ -1017,8 +1026,6 @@ pub struct RttyDemodulator {
     level_age: [u32; 4],
     /// Il discriminatore di frequenza, se scelto al posto dei due filtri.
     disc: Option<Discriminator>,
-    /// Quattro filtri appena sopra e sotto i due toni (solo con l'AFC): dicono da che parte la portante e' scivolata.
-    probes: [Tone; 4],
     probe_len: usize,
     probe_pos: usize,
     /// Somme lungo un bit delle ampiezze di mark, space e rumore; poi le medie lente che servono a squelch e AFC.
@@ -1026,11 +1033,13 @@ pub struct RttyDemodulator {
     sum_s: f32,
     sum_n: f32,
     sum_count: u32,
-    last_probes: [f32; 4],
     mark_avg: f32,
     space_avg: f32,
     noise_avg: f32,
-    err_avg: f32,
+    /// AFC: rotazione di fase accumulata lungo l'ultimo bit sul tono acceso (mark, space), la sua media e le uscite precedenti dei toni.
+    afc_acc: [(f64, f64); 2],
+    afc_avg: [(f64, f64); 2],
+    afc_prev: [(f32, f32); 2],
     /// C'e' un segnale RTTY (l'AFC lavora solo allora) e da quanti bit non c'e' piu'.
     locked: bool,
     lost_bits: u32,
@@ -1127,23 +1136,18 @@ impl RttyDemodulator {
             levels: [0.0; 4],
             level_age: [0; 4],
             disc: None,
-            probes: [
-                Tone::new(m + PROBE_HZ, probe_len, rate),
-                Tone::new(m - PROBE_HZ, probe_len, rate),
-                Tone::new(s + PROBE_HZ, probe_len, rate),
-                Tone::new(s - PROBE_HZ, probe_len, rate),
-            ],
             probe_len,
             probe_pos: 0,
             sum_m: 0.0,
             sum_s: 0.0,
             sum_n: 0.0,
             sum_count: 0,
-            last_probes: [0.0; 4],
             mark_avg: 0.0,
             space_avg: 0.0,
             noise_avg: 0.0,
-            err_avg: 0.0,
+            afc_acc: [(0.0, 0.0); 2],
+            afc_avg: [(0.0, 0.0); 2],
+            afc_prev: [(0.0, 0.0); 2],
             locked: false,
             lost_bits: 0,
             blanker: Some(Blanker::new(BLANK_K)),
@@ -1266,18 +1270,27 @@ impl RttyDemodulator {
         if self.locked && self.open {
             self.lost_bits = 0;
             // da che parte e' scivolata la portante, pesando ogni tono per quanto e' presente (in pausa trasmette solo il mark)
-            let p = self.last_probes;
-            let em = (p[0] - p[1]) / (p[0] + p[1]).max(1e-6);
-            let es = (p[2] - p[3]) / (p[2] + p[3]).max(1e-6);
-            let (wm, ws) = (self.mark_avg / signal.max(1e-6), self.space_avg / signal.max(1e-6));
-            self.err_avg += 0.3 * (wm * em + ws * es - self.err_avg);
-            if self.err_avg.abs() > 0.03 {
-                self.offset_hz = (self.offset_hz + AFC_GAIN * self.err_avg).clamp(-AFC_LIMIT_HZ, AFC_LIMIT_HZ);
-                self.retune_all();
+            let acc = std::mem::take(&mut self.afc_acc);
+            let rate = f64::from(RATE) / self.decim as f64;
+            for (a, n) in self.afc_avg.iter_mut().zip(acc) {
+                a.0 += AFC_SMOOTH * (n.0 - a.0);
+                a.1 += AFC_SMOOTH * (n.1 - a.1);
+            }
+            let hz = |(re, im): (f64, f64)| (re > 0.0).then(|| (im.atan2(re) * rate / (2.0 * PI)) as f32);
+            if let (Some(em), Some(es)) = (hz(self.afc_avg[0]), hz(self.afc_avg[1]))
+                && (em - es).abs() < AFC_AGREE_HZ
+            {
+                let (pm, ps) = (self.afc_avg[0].0.hypot(self.afc_avg[0].1), self.afc_avg[1].0.hypot(self.afc_avg[1].1));
+                let err = ((f64::from(em) * pm + f64::from(es) * ps) / (pm + ps).max(1e-12)) as f32;
+                if (AFC_STEP * err).abs() > 0.02 {
+                    self.offset_hz = (self.offset_hz + AFC_STEP * err).clamp(-AFC_LIMIT_HZ, AFC_LIMIT_HZ);
+                    self.retune_all();
+                }
             }
             return;
         }
-        self.err_avg = 0.0;
+        self.afc_avg = [(0.0, 0.0); 2];
+        self.afc_acc = [(0.0, 0.0); 2];
         self.lost_bits = self.lost_bits.saturating_add(1);
         if self.lost_bits > AFC_HOLD_BITS && self.offset_hz != 0.0 {
             self.offset_hz -= self.offset_hz.signum() * self.offset_hz.abs().min(0.05);
@@ -1741,12 +1754,6 @@ impl RttyDemodulator {
             if let Some(d) = &mut self.disc {
                 d.channel.push(z);
             }
-            if self.afc {
-                let pos = self.probe_pos;
-                for (i, t) in self.probes.iter_mut().enumerate() {
-                    self.last_probes[i] = t.push(z, pos);
-                }
-            }
             self.probe_pos += 1;
             if self.probe_pos >= self.probe_len {
                 self.probe_pos = 0;
@@ -1773,6 +1780,14 @@ impl RttyDemodulator {
                 (m, sp)
             };
             let v = if self.disc.is_some() { self.decide_disc() } else { self.decide(m, sp) };
+            if self.afc {
+                let rot = |z: (f32, f32), p: (f32, f32)| (f64::from(z.0 * p.0 + z.1 * p.1), f64::from(z.1 * p.0 - z.0 * p.1));
+                let k = usize::from(v <= 0.0);
+                let (re, im) = if k == 0 { rot(zm, self.afc_prev[0]) } else { rot(zs, self.afc_prev[1]) };
+                self.afc_acc[k].0 += re;
+                self.afc_acc[k].1 += im;
+                self.afc_prev = [zm, zs];
+            }
             let mut l = self.llr(v);
             // diversity (passo 16): la catena del secondo ingresso consegna le sue LLR, quella principale le somma alle sue
             if let Some(collect) = &mut self.llr_out {
@@ -2047,6 +2062,21 @@ mod tests {
         let tono: Vec<f32> = rumore(120_000, 0.8, 5).iter().enumerate().map(|(i, r)| r + 0.05 * (2.0 * std::f32::consts::PI * 2310.0 * i as f32 / 12_000.0).sin()).collect();
         rx.process(&tono);
         assert!((rx.frequency() - 2210.0).abs() < 1.0, "frequenza: {}", rx.frequency());
+    }
+
+    #[test]
+    fn l_afc_aggancia_in_fretta_un_segnale_fuori_di_25_hz() {
+        // segnale 25 Hz sopra, con rumore: entro 2 s l'AFC e' a meno di 3 Hz (con i filtri di controllo a +-8 Hz servivano circa 10 s)
+        let tx = p(2235.0, 170.0, 45.45);
+        let mut audio = modulate(b"RYRYRY CQ CQ DE IU3ABC IU3ABC PSE K RYRYRY CQ CQ DE IU3ABC IU3ABC PSE K", tx, 0.4);
+        audio.truncate(24_000);
+        for (a, r) in audio.iter_mut().zip(rumore(24_000, 0.3, 21)) {
+            *a += r;
+        }
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_afc(true);
+        rx.process(&audio);
+        assert!((rx.frequency() - 2235.0).abs() < 3.0, "frequenza dopo 2 s: {}", rx.frequency());
     }
 
     #[test]

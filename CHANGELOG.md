@@ -8,6 +8,7 @@
 - **CW di tutta la banda, stazioni veloci fra due vicine**: la stima del rumore non si fa ingannare dalle stazioni a ±100 Hz su tutti e due i lati (con 30 stazioni a 113 Hz: nominativi da 23 a 30 su 30, caratteri sbagliati da 17,7% a 8,9%, CPU da 18% a 15% di un core; una stazione a 30 WPM fra due vicine da 69% a 8% di errori).
 - **RTTY, salti di guadagno**: quando l'AGC della radio o un fading piatto abbassano il segnale di colpo il ricevitore riporta subito i livelli dei toni alla scala nuova invece di perdere caratteri per circa 16 bit (AGC che pompa: CER medio da 29,3 a 24,6 %, flutter da 59,7 a 56,8 %).
 - **RTTY, meno caratteri strani a squelch spento**: un cancello interno sulla probabilita' dei caratteri toglie la spazzatura sul rumore e fra una trasmissione e l'altra senza togliere testo vero (solo rumore: da 182 a 18 caratteri al minuto; CER medio da 26,35 a 26,02 %).
+- **RTTY, AFC**: misura l'errore in hertz sul tono acceso e corregge solo se mark e space sono d'accordo: aggancia un segnale fuori di 20 Hz in 0,7 s invece di 9-14 s, aggancia fino a 40 Hz e anche i segnali deboli, segue una deriva di 3 Hz/s e non si fa tirare da una stazione accanto (portante a 30 Hz: CER da 66 a 41 %).
 
 ## 0.11.251 - 2026-11-13
 - **Impostazioni allineate**: i controlli (menu, pulsanti, colori, bandiera della lingua) partono a sinistra sotto la loro etichetta, non piu' centrati o spinti a destra.

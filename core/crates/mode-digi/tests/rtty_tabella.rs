@@ -3,14 +3,15 @@
 //! CER medio sulla griglia; a parte i caratteri inventati su un minuto di solo rumore. Con le feature `fldigi-oracle` e `mmtty-oracle`
 //! entrano anche fldigi 4.2.13 e i sette profili di MMTTY 1.70L (per ogni scenario si riporta il migliore).
 //!
-//! Aurora lavora con le impostazioni di base del servizio, AFC spento come negli arbitri.
+//! Aurora lavora con le impostazioni di base del servizio, AFC spento come negli arbitri (acceso con `RTTY_AFC`).
 //!
 //! `cargo test --release -j 12 -p mode-digi --features fldigi-oracle,mmtty-oracle --test rtty_tabella -- --ignored --nocapture --test-threads=1`
 //!
 //! Variabili: `RTTY_RUNS` prove da 120 caratteri per cella (4 di base), `RTTY_PASSO` passo della griglia in dB (1 di base),
 //! `RTTY_SCENARIO` solo alcune righe (nomi separati da virgole), `RTTY_THREADS` (6 di base), `RTTY_CSV` file dove scrivere la tabella, `RTTY_BASE` una tabella
 //! scritta prima con cui confrontare Aurora (la prova fallisce se una soglia peggiora di oltre 0,5 dB o il CER medio di oltre 1 punto),
-//! `AURORA_WAV` cartella dove scrivere i WAV a 0 dB di ogni scenario (per 2Tone e gli altri sul PC del proprietario).
+//! `AURORA_WAV` cartella dove scrivere i WAV a 0 dB di ogni scenario (per 2Tone e gli altri sul PC del proprietario), `RTTY_AFC` (qualsiasi
+//! valore) Aurora con l'AFC acceso, come nelle impostazioni di base del servizio.
 
 mod common;
 
@@ -34,6 +35,7 @@ pub fn aurora(sc: &Scenario) -> RttyDemodulator {
     let mut d = RttyDemodulator::new(sc.params(CENTRE));
     d.set_uos(true);
     d.set_discriminator(sc.shift < 40.0);
+    d.set_afc(std::env::var_os("RTTY_AFC").is_some());
     d
 }
 

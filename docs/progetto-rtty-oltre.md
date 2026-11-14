@@ -417,3 +417,40 @@ spazzatura scende a poche righe. Restano righe casuali con probabilita' alta: se
 
 **Scartate (CER medio / caratteri al minuto sul rumore)**: 0,7/0,5 29,51 / 0; 0,5/0,3 26,58 / 0 (alte latitudini +1,7, portante +1,2,
 CCIR buono +0,8); 0,4/0,25 26,12 / 5 (alte latitudini +0,6); 0,35/0,22 26,09 / 18; 0,3/0,2 26,14 / 33; 0,2/0,12 26,28 / 161.
+
+## AFC piu' veloce e piu' largo (2026-11-14)
+
+Dalla radio vera: l'AFC (acceso di base nel servizio) aggancia peggio di quello di un altro programma. Prova nuova `tests/rtty_afc.rs`
+(a mano): segnale spostato di 10-100 Hz a S/N 10, 0 e -5 dB (3 prove), deriva di 1 e 3 Hz/s, stazione accanto, stazione accanto senza
+il nostro segnale.
+
+**Punto debole**: l'errore veniva da quattro filtri a +-8 Hz dai toni, che danno solo da che parte sta la portante, con un passo di al
+massimo 0,4 Hz per bit e un limite di 30 Hz: aggancio lento (10 Hz in 5,3 s, 30 Hz in 13-17 s), a -5 dB nessun aggancio gia' da 20 Hz,
+deriva di 3 Hz/s persa (fermo al limite, CER 22 %).
+
+**Tenuto**: l'errore in Hz si misura dalla rotazione di fase da un campione all'altro sul tono che la decisione dice acceso (come la
+sintonia fine del passo 14), accumulata lungo il bit e mediata per mark e space separati; si corregge di 0,1 volte l'errore a ogni bit solo
+se i due toni dicono lo stesso entro 4 Hz; soglia di aggancio da 3,5 a 2,7 (circa 8,6 dB), limite da 30 a 60 Hz (solo RTTY). Test
+`l_afc_aggancia_in_fretta_un_segnale_fuori_di_25_hz`: col vecchio AFC dopo 2 s era ancora a 20 Hz dal segnale, ora a meno di 3.
+
+| prova | prima | dopo |
+|---|---|---|
+| 10 Hz, S/N 10 / 0 / -5: aggancio | 5,3 / 8,7 / 11,8 s | 0,4 / 0,4 / 0,6 s |
+| 20 Hz, S/N 10 / 0 / -5: aggancio | 9,2 / 14,1 s / mai | 0,7 / 0,7 / 1,1 s |
+| 30 Hz, S/N 10 / 0 / -5: aggancio | 13,3 / 17,4 s / mai (CER 18,5 %) | 0,8 / 0,8 / 6,8 s (CER 4,5 %) |
+| 40 Hz, S/N 10 / 0: aggancio | mai (CER 2,8 / 36,4 %) | 0,7 / 2,0 s (CER 3,9 / 4,2 %) |
+| 50-100 Hz | mai | mai (toni fuori dai filtri: serve il clic sulla cascata) |
+| deriva 1 Hz/s, S/N 10 / 0: errore finale | -3,6 / -8,1 Hz | -0,3 / -0,4 Hz |
+| deriva 3 Hz/s, S/N 10 / 0: errore finale, CER | -37,6 Hz, 21,8 / 23,5 % | -7,6 Hz, 2,5 / 4,2 % |
+| stazione +200 Hz +6 dB, S/N 10 / 0: CER | 68,9 / 77,3 % | 47,9 / 65,5 % |
+| stazione +120 Hz 0 dB, S/N 10: aggancio | mai (errore -7,5 Hz) | 1,8 s |
+| solo una stazione a +200 Hz +10 dB: AFC mosso | 13,8 Hz | 2,6 Hz |
+| solo una stazione a +60 / +100 Hz | 0 Hz | 0 Hz |
+
+Tabella con l'AFC acceso (`RTTY_AFC=1`, come nel servizio): CER medio 27,47 -> 26,42 %, nessuna riga peggiora di oltre 0,2 punti;
+«portante +30 Hz» 66,4 -> 40,5 % (il vecchio AFC si faceva tirare dalla portante; con l'AFC spento la riga vale 29,9). Con l'AFC spento la
+tabella non cambia (26,02 %).
+
+**Scartate (numeri)**: rotazione di fase senza la conferma dei due toni: aggancio 10 Hz in 0,3 s, ma stazione +200 Hz +6 dB CER 89 % e una
+stazione sola a +200 Hz tirava l'AFC di 30 Hz; con la conferma ma soglia e limite vecchi: a -5 dB 20 Hz agganciato 2 volte su 3, 30 Hz
+mai; soglia di aggancio 2,2: a -5 dB 30 Hz in 1,4 s ma una stazione sola a +200 Hz tira di 16,2 Hz.
