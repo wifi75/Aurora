@@ -474,24 +474,26 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // il testo parte e resta nella finestra di trasmissione, dove si vede a che punto e' arrivato (l'eco nella ricezione arriva dal motore)
   const send = useCallback(
-    (body: string) => {
+    (body: string): Promise<boolean> => {
       const { tx: box, txLive: tl } = txLiveRef.current;
       const queued = tl.progress.queued;
       // dalla finestra parte solo quello che non e' gia' in coda; una macro si mette in coda dopo
       const fromBox = body === box;
       const upper = caps.current ? body.toUpperCase() : body;
       const message = fromBox ? upper.slice(queued) : upper.trim();
-      if (message.trim() === '') return;
+      if (message.trim() === '') return Promise.resolve(false);
       setProblem('');
-      digiTransmit(message).then(
+      return digiTransmit(message).then(
         () => {
           if (!fromBox) setTx((v) => v.slice(0, queued) + message + v.slice(queued));
           tl.queue(message.length);
           onChanged();
+          return true;
         },
         (e: unknown) => {
           const code = e instanceof ApiError ? e.code : '';
           setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+          return false;
         },
       );
     },
@@ -854,10 +856,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const busy = l.snap.tx.state === 'sending';
     if (toTx) {
       // un comando <TX> da solo trasmette quello che c'e' nella casella
-      send(body !== '' ? body : l.tx);
-      // come in MixW: senza <RX> la trasmissione resta aperta finito il testo (si continua a scrivere), con <RX> si torna in ricezione
-      if (!wantRx) void digiTxOpen('').then(onChanged, () => undefined);
-      else if (busy) void digiTxClose().then(onChanged, onChanged);
+      // come in MixW: senza <RX> la trasmissione resta aperta finito il testo (si continua a scrivere), con <RX> si torna in ricezione;
+      // si apre solo dopo che il testo e' partito davvero, mai una trasmissione vuota
+      void send(body !== '' ? body : l.tx).then((ok) => {
+        if (!ok) clearAfterTx.current = false;
+        else if (!wantRx) void digiTxOpen('').then(onChanged, () => undefined);
+        else if (busy) void digiTxClose().then(onChanged, onChanged);
+      });
     } else if (wantRx && busy) {
       // <RX> durante una trasmissione: si torna in ricezione appena partito il testo gia' scritto
       if (body !== '') send(body);
