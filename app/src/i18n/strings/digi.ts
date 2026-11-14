@@ -305,6 +305,7 @@ export const digiStrings = {
   'digi.word.qth': ['QTH', 'QTH', 'QTH', 'QTH', 'QTH', 'QTH'],
   'digi.word.grid': ['Locatore', 'Locator', 'Locator', 'Locator', 'Locator', 'Locator'],
   'digi.word.rst': ['Rapporto ricevuto', 'Report received', 'Empfangener Rapport', 'Report reçu', 'Reporte recibido', 'Reporte recebido'],
+  'digi.word.nrr': ['Scambio ricevuto (contest)', 'Exchange received (contest)', 'Empfangener Austausch (Contest)', 'Échange reçu (concours)', 'Intercambio recibido (concurso)', 'Troca recebida (concurso)'],
   'digi.word.copy': ['Copia', 'Copy', 'Kopieren', 'Copier', 'Copiar', 'Copiar'],
   'digi.cw.wide': ['larga, panoramica', 'wide, overview', 'breit, Übersicht', 'large, vue d’ensemble', 'ancha, panorámica', 'larga, panorâmica'],
   'digi.cw.som': ['Decodifica SOM (tasto a mano)', 'SOM decoding (straight key)', 'SOM-Dekodierung (Handtaste)', 'Décodage SOM (pioche)', 'Decodificación SOM (manipulador vertical)', 'Descodificação SOM (manipulador vertical)'],

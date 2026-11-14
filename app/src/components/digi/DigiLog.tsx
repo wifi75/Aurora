@@ -9,6 +9,7 @@ import { ClusterOptionsDialog } from './ClusterOptionsDialog';
 import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
 import { useT } from '../../i18n';
+import { formatSerial } from '../../lib/contestSerial';
 import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../MovableColumns';
 
 export interface Qso {
@@ -17,6 +18,9 @@ export interface Qso {
   qth: string;
   wwloc: string;
   notes: string;
+  /** Scambio da mandare (contest; vuoto = il numero progressivo) e ricevuto. */
+  nrs?: string;
+  nrr?: string;
   /** Il paese del nominativo (da cty.dat, con la ricerca): solo da vedere, il log lo ricava da se'. */
   country?: string;
 }
@@ -36,6 +40,9 @@ interface Props {
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;
   onClear(): void;
+  /** Il numero progressivo del contest (<QSONR>) e come correggerlo. */
+  serial: number;
+  onSerial(n: number): void;
   /** Larghezza del log in px e come cambiarla (barra di trascinamento sul bordo sinistro). */
   width: number;
   onWidth(px: number): void;
@@ -126,7 +133,7 @@ function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
  * Il log di lato: la riga azzurra del QSO in corso (si scrive sul posto) e sotto i QSO del log, il piu' recente in testa.
  * Nell'altra linguetta c'e' il DX Cluster, con il QSO in corso in un riquadro sotto.
  */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, width, onWidth }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, serial, onSerial, width, onWidth }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
@@ -341,6 +348,21 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
           </div>
           <div className="digi-log-bar">
+            <label className="digi-log-ex" title={t('digi.log.serialTip')}>
+              {t('digi.log.serial')}
+              <input className="digi-cur-in" type="number" min={1} max={99999} style={{ width: '5em' }} value={serial} onChange={(e) => onSerial(Number(e.target.value))} />
+            </label>
+            <button type="button" className="digi-tool" title={t('digi.log.serialReset')} aria-label={t('digi.log.serialReset')} onClick={() => onSerial(1)}>
+              ↺
+            </button>
+            <label className="digi-log-ex" title={t('digi.log.nrsTip')}>
+              NRS
+              <input className="digi-cur-in" style={{ width: '5em' }} maxLength={12} value={qso.nrs ?? ''} placeholder={formatSerial(serial)} onChange={(e) => onQso({ nrs: e.target.value.toUpperCase() })} />
+            </label>
+            <label className="digi-log-ex" title={t('digi.log.nrrTip')}>
+              NRR
+              <input className="digi-cur-in" style={{ width: '5em' }} maxLength={12} value={qso.nrr ?? ''} onChange={(e) => onQso({ nrr: e.target.value.toUpperCase() })} />
+            </label>
             <button type="button" className="digi-tool" title={t('digi.log.save')} aria-label={t('digi.log.save')} onClick={onSave}>
               💾
             </button>

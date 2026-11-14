@@ -22,6 +22,8 @@ const props = {
   onSave: () => {},
   onClear: () => {},
   width: 400,
+  serial: 1,
+  onSerial: () => {},
   onWidth: () => {},
 };
 

@@ -3,6 +3,7 @@
  * `<MYCALL>`, `<RSTS>`...) diventano le parole dei dati; i comandi di programma (`<TX>`, `<RX>`, `<MODE:RTTY>`, `<SAVEQSO>`...) si
  * raccolgono in un elenco di azioni che la pagina esegue.
  */
+import { formatSerial } from './contestSerial';
 
 /** I dati con cui si riempiono i comandi di testo. */
 export interface MacroContext {
@@ -29,6 +30,7 @@ export interface MacroContext {
   band: string;
   /** Il modo in uso, come si legge a schermo (PSK31, RTTY...). */
   modeName: string;
+  /** Il numero progressivo del contest (`<QSONR>`, almeno tre cifre: 001). */
   qsoNumber: number;
   /** L'ultimo QSO con lo stesso nominativo nel log (per `<ANYQSOBEFOREDATE>`, `<ANYQSOBEFOREBAND>`, `<ANYQSOBEFOREMODE>`): senza, i tre comandi restano vuoti. */
   lastQso?: { date: string; band: string; mode: string } | null;
@@ -149,7 +151,7 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'MHZ': return c.dialHz > 0 ? fixed(c.dialHz / 1_000_000, arg) : '';
     case 'BAND': return c.band;
     case 'MODE': return arg === undefined ? c.modeName : null;
-    case 'QSONR': return String(c.qsoNumber);
+    case 'QSONR': return formatSerial(c.qsoNumber);
     case 'VER': return 'Aurora';
     // l'ultimo QSO con questo nominativo, dal log
     case 'ANYQSOBEFOREDATE': return c.lastQso?.date ?? '';

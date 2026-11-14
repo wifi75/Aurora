@@ -4,7 +4,7 @@ import { MenuList } from './MenuBar';
 
 /** Dove mettere la parola scelta nella finestra di ricezione: un campo del log del QSO in corso, negli appunti (il testo selezionato o la
  * parola), oppure si svuota la finestra. */
-export type WordTarget = 'call' | 'name' | 'qth' | 'grid' | 'rst' | 'copy' | 'clear';
+export type WordTarget = 'call' | 'name' | 'qth' | 'grid' | 'rst' | 'nrr' | 'copy' | 'clear';
 
 export interface WordAt {
   /** La parola cliccata; `null` fuori dalle parole (allora solo Copia e Cancella tutto). */
@@ -54,7 +54,7 @@ export function wordAtPoint(x: number, y: number, box: HTMLElement): string | nu
 }
 
 /** Il menu del tasto destro della finestra di ricezione: sulla parola la mette nel campo scelto del log (nominativo, nome, QTH, locatore,
- * rapporto ricevuto); sempre Copia (il testo selezionato o la parola) e Cancella tutto. Si chiude con un clic fuori, Esc o lo scorrimento. */
+ * rapporto ricevuto, scambio ricevuto del contest); sempre Copia (il testo selezionato o la parola) e Cancella tutto. Si chiude con un clic fuori, Esc o lo scorrimento. */
 export function RxWordMenu({ at, onPick, onClose }: { at: WordAt; onPick(target: WordTarget, word: string): void; onClose(): void }) {
   const t = useT();
   const box = useRef<HTMLDivElement>(null);
@@ -96,7 +96,7 @@ export function RxWordMenu({ at, onPick, onClose }: { at: WordAt; onPick(target:
       <MenuList
         items={
           at.word
-            ? [item('call', t('digi.word.call')), item('name', t('digi.word.name')), item('qth', t('digi.word.qth')), item('grid', t('digi.word.grid')), item('rst', t('digi.word.rst')), 'sep', ...always]
+            ? [item('call', t('digi.word.call')), item('name', t('digi.word.name')), item('qth', t('digi.word.qth')), item('grid', t('digi.word.grid')), item('rst', t('digi.word.rst')), item('nrr', t('digi.word.nrr')), 'sep', ...always]
             : always
         }
         onDone={onClose}

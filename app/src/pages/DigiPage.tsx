@@ -9,6 +9,7 @@ import { bandPlanRows } from '../lib/bandplan';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
+import { commentWithExchange, exchangeSent, readSerial, writeSerial } from '../lib/contestSerial';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
@@ -170,6 +171,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     return Number.isFinite(n) && n >= 300 ? n : 432;
   });
   const [qso, setQso] = useState<Qso>(EMPTY_QSO);
+  // il numero progressivo del contest (<QSONR>): avanza a ogni QSO salvato, ricordato nelle preferenze
+  const [serial, setSerialState] = useState<number>(() => readSerial(browserStorage()));
+  const setSerial = (n: number) => setSerialState(writeSerial(browserStorage(), n));
   // il menu del tasto destro su una parola della finestra di ricezione
   const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
   // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
@@ -328,8 +332,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, []);
 
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
-  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz });
-  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz };
+  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial });
+  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial };
 
   const setView = (patch: Partial<Views>) => {
     const next = { ...views, ...patch };
@@ -666,14 +670,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       rstr: l.saved.rstr,
       rsts: l.saved.rsts,
       notes: l.qso.notes,
-      nrr: '',
-      nrs: '',
+      nrr: l.qso.nrr ?? '',
+      nrs: exchangeSent(l.qso.nrs, l.serial),
       startTime: l.startAt,
       now: new Date(),
       dialHz: dial,
       band: dial > 0 ? (bandOf(dial) ?? '') : '',
       modeName: MODE_NAMES[l.snap.settings.mode],
-      qsoNumber: 1,
+      qsoNumber: l.serial,
     };
   };
 
@@ -686,6 +690,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
     const dial = l.status?.dial_hz ?? 0;
     const at = l.startAt ?? new Date();
+    const nrs = exchangeSent(l.qso.nrs, l.serial);
     void addLogQso({
       call,
       date: at.toISOString().slice(0, 10),
@@ -699,9 +704,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       grid: l.qso.wwloc,
       name: l.qso.name,
       qth: l.qso.qth,
-      comment: l.qso.notes,
+      // il log non ha campi per gli scambi del contest: vanno in coda alle note
+      comment: commentWithExchange(l.qso.notes, nrs, l.qso.nrr ?? ''),
     }).then(
       () => {
+        // il QSO e' a log: il numero progressivo avanza e gli scambi si azzerano
+        setSerialState((n) => writeSerial(browserStorage(), n + 1));
+        setQso((q) => ({ ...q, nrs: '', nrr: '' }));
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
       },
@@ -965,6 +974,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     } else if (target === 'clear') clearDigiText();
     else if (target === 'rst') setSavedField({ rstr: word.toUpperCase() });
     else if (target === 'call') takeCall(word);
+    else if (target === 'nrr') setQso((q) => ({ ...q, nrr: word.toUpperCase() }));
     else if (target === 'grid') setQso((q) => ({ ...q, wwloc: word.toUpperCase() }));
     else setQso((q) => ({ ...q, [target]: word }));
   };
@@ -1325,6 +1335,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             onQso={(patch) => setQso({ ...qso, ...patch })}
             onRst={(patch) => setSavedField(patch)}
             onSave={saveQso}
+            serial={serial}
+            onSerial={setSerial}
             onClear={() => {
               setQso(EMPTY_QSO);
               setStartAt(null);
