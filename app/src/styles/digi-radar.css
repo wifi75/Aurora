@@ -16,19 +16,19 @@ html[data-theme='light'] .radar-clear { background: #ffffff; }
 .radar-grid th { cursor: grab; }
 .radar-grid th {
   position: sticky; top: 0; z-index: 1; padding: 4px 7px; background: #0e1729; color: var(--text-muted); border: 1px solid #ffffff10;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: right; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; white-space: nowrap; overflow: hidden;
 }
 .radar-grid td { padding: 3px 7px; border: 1px solid #ffffff0a; color: #d8e6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .radar-grid tbody tr { cursor: pointer; }
 .radar-grid tbody tr:hover td { background: #8e7bff22; }
 .radar-grid tr.radar-on td { background: #8e7bff33; }
 .radar-grid tr.radar-stale td { opacity: 0.55; }
-.radar-num { font-family: var(--font-data); text-align: right; }
-.radar-call { font-family: var(--font-data); text-align: right; }
+.radar-num { font-family: var(--font-data); text-align: left; }
+.radar-call { font-family: var(--font-data); text-align: left; }
 .radar-call b { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--radar-c); }
 .radar-call .decode-flag { margin-right: 5px; }
 .radar-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--radar-c); vertical-align: 0; }
-.radar-cq { text-align: right; }
+.radar-cq { text-align: left; }
 .radar-cq em { padding: 0 5px; border: 1px solid #2cf5a4; border-radius: 5px; color: #2cf5a4; font-style: normal; font-weight: 700; font-size: 10px; }
 .radar-empty { color: var(--text-muted); white-space: normal; text-align: center; padding: 10px 7px; }
 /* i colori delle stazioni: dieci tinte ben distinte, leggibili sul fondo scuro */

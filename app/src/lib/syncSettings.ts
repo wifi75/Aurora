@@ -5,7 +5,8 @@
  * lingua, tema...) lo prende dalle impostazioni di Aurora sul PC, cosi' rispetta le stesse scelte.
  */
 
-const PREFIX = 'aurora-';
+/** Le preferenze dell'interfaccia: `aurora-...` e `aurora....` (le disposizioni delle finestre: colonne, larghezze, altezze). */
+const isAuroraKey = (k: string): boolean => k.startsWith('aurora-') || k.startsWith('aurora.');
 const BASE = '/api/v1/ui-settings';
 const SAVE_DELAY_MS = 400;
 const LOAD_TIMEOUT_MS = 1500;
@@ -29,7 +30,7 @@ async function fetchKind(kind: DeviceKind, doFetch: Fetch): Promise<[string, str
   const response = await doFetch(`${BASE}/${kind}`, { credentials: 'include', signal: AbortSignal.timeout(LOAD_TIMEOUT_MS) });
   if (!response.ok) return null;
   const saved = (await response.json()) as Record<string, unknown>;
-  return Object.entries(saved).filter((e): e is [string, string] => e[0].startsWith(PREFIX) && typeof e[1] === 'string');
+  return Object.entries(saved).filter((e): e is [string, string] => isAuroraKey(e[0]) && typeof e[1] === 'string');
 }
 type Fetch = typeof fetch;
 
@@ -38,7 +39,7 @@ export function collect(storage: Store): Record<string, string> {
   const out: Record<string, string> = {};
   for (let i = 0; i < storage.length; i++) {
     const key = storage.key(i);
-    const value = key?.startsWith(PREFIX) ? storage.getItem(key) : null;
+    const value = key != null && isAuroraKey(key) ? storage.getItem(key) : null;
     if (key && value !== null) out[key] = value;
   }
   return out;
@@ -110,7 +111,7 @@ export function keepSynced(kind: DeviceKind, doFetch: Fetch = fetch): void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let shared = false;
   const schedule = (key: string) => {
-    if (!key.startsWith(PREFIX)) return;
+    if (!isAuroraKey(key)) return;
     if (kind === 'mobile' && !isPhoneOwn(key)) shared = true;
     clearTimeout(timer);
     timer = setTimeout(() => {

@@ -11,7 +11,7 @@ use std::{
 pub type Entries = BTreeMap<String, String>;
 
 /// Oltre questa dimensione una richiesta e' rifiutata: sono preferenze, non dati.
-pub const MAX_BYTES: usize = 256 * 1024;
+pub const MAX_BYTES: usize = 1024 * 1024;
 
 pub struct UiSettings {
     path: PathBuf,
@@ -47,9 +47,13 @@ pub fn valid_kind(kind: &str) -> bool {
     matches!(kind, "desktop" | "mobile")
 }
 
-/// Solo chiavi dell'interfaccia di Aurora e di dimensione ragionevole.
+/// Voci al massimo: con 64 le preferenze erano gia' piu' di cosi' e il salvataggio intero si rifiutava (le disposizioni delle finestre
+/// non restavano piu').
+pub const MAX_ENTRIES: usize = 512;
+
+/// Solo chiavi dell'interfaccia di Aurora (`aurora-...` e `aurora....`, come le disposizioni delle colonne) e di dimensione ragionevole.
 pub fn valid_entries(entries: &Entries) -> bool {
-    entries.len() <= 64 && entries.keys().all(|k| k.starts_with("aurora-") && k.len() <= 64)
+    entries.len() <= MAX_ENTRIES && entries.keys().all(|k| (k.starts_with("aurora-") || k.starts_with("aurora.")) && k.len() <= 96)
 }
 
 #[cfg(test)]
@@ -89,5 +93,9 @@ mod tests {
         assert!(valid_kind("desktop") && valid_kind("mobile") && !valid_kind("../x") && !valid_kind(""));
         assert!(valid_entries(&Entries::from([("aurora-prefs".into(), "x".into())])));
         assert!(!valid_entries(&Entries::from([("altro".into(), "x".into())])));
+        // le disposizioni delle finestre (`aurora.digi.radar.cols`...) si salvano, e molte voci insieme non fanno rifiutare tutto
+        assert!(valid_entries(&Entries::from([("aurora.digi.radar.cols".into(), "{}".into())])));
+        let many: Entries = (0..200).map(|i| (format!("aurora-prova-{i}"), "x".to_string())).collect();
+        assert!(valid_entries(&many));
     }
 }
