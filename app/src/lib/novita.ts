@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.254',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T12:39:20Z',
     kind: 'changed',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.254',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T12:39:20Z',
     kind: 'changed',
     title: [
       'Macro di contest complete',

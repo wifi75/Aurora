@@ -1,6 +1,11 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-12)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-14)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Stato al 2026-11-14 sera (0.11.254 pubblicata, sito aggiornato)
+
+- **0.11.254** (2026-11-14T12:39:20Z): Aurora BIGScan piu' affidabile: CQ solo per il nominativo accanto a CQ/TEST/QRZ (`calls.rs`, `cq_count`), sostituisce un CQ solo un altro CQ letto 2 volte, rinfresco con pezzi del nominativo (`partial_sighting`, 180 s per i CQ), canali RTTY aperti piu' a lungo e memoria dei nominativi per frequenza (`CallCache`, 240 s), CQ mai sfrattato, radio spostata di poco = frequenze ricalcolate (`Msg::Shift`, `band_follow`); la stazione CQ letta nella finestra RX o nelle finestre RX in piu' compare sempre (`cqCallOf`); doppio clic su una stazione, segni NEW/B4 dal log (`logStatus.ts`). Banco di prova `tests/bigscan_misura.rs` (`AURORA_BIGSCAN_WAV`, `AURORA_BIGSCAN_MODE=cw`): su `tmp30515.wav` interruzioni 37 -> 13, solo banda 57 -> 17, ritardo mediano 7 -> 12 s. Macro: `<TX>` senza `<RX>` resta aperta, `<RXANDCLEAR>` pulisce a fine trasmissione, `<TXE>`/`<RXE>`, `<QSONR>` progressivo a 3 cifre (`contestSerial.ts`), `<NRS>`/`<NRR>`. Barra sopra la finestra RX (Copia, Salva, Pulisci); maniglie tutte uguali (`maniglie.css`).
+- Prossimo: stazioni deboli accanto alle forti (RZ3Z, UC0A mai trovate: fondo locale ±300 Hz in `rtty_multi.rs`, correlazione su 2-3 s, toni vicini, AFC dei canali), ritardo 12 s da riportare sotto 7; icone Pausa e Cerca nella barra RX; registrazione CW per il banco.
 
 ## Stato al 2026-11-14 pomeriggio (0.11.253 pubblicata, sito aggiornato)
 
