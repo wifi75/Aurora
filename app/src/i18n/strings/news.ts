@@ -14,6 +14,7 @@ export const newsStrings = {
   'news.kind.new': ['Nuovo', 'New', 'Neu', 'Nouveau', 'Nuevo', 'Novo'],
   'news.kind.changed': ['Modificato', 'Changed', 'Geändert', 'Modifié', 'Modificado', 'Alterado'],
   'news.kind.fixed': ['Corretto', 'Fixed', 'Korrigiert', 'Corrigé', 'Corregido', 'Corrigido'],
+  'news.featured': ['Nuova funzione', 'New feature', 'Neue Funktion', 'Nouvelle fonction', 'Nueva función', 'Nova função'],
   'news.current': ['In uso', 'In use', 'In Benutzung', 'En cours d’utilisation', 'En uso', 'Em uso'],
   'news.released': ['Rilasciata {when}', 'Released {when}', 'Veröffentlicht {when}', 'Publiée {when}', 'Publicada {when}', 'Publicada {when}'],
 } as const;

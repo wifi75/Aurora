@@ -2820,6 +2820,7 @@ export const NL_UI: Record<string, string> = {
   "newlog.typeWord": "Typ {word} om te bevestigen:",
   "newlog.word": "WISSEN",
   "news.current": "In gebruik",
+  "news.featured": "Nieuwe functie",
   "news.intro": "De laatste {n} functies die zijn toegevoegd, gewijzigd of verholpen, de nieuwste eerst, met datum en tijd van uitgave (in de tijd van je apparaat).",
   "news.kind.changed": "Gewijzigd",
   "news.kind.fixed": "Verholpen",

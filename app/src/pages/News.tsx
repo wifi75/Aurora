@@ -63,14 +63,17 @@ export function News() {
           const current = health.data?.version === n.version;
           return (
             <li key={`${n.version}-${pick(n.title, 'it')}`}>
-              <details className={`news-row news-row--${n.kind}`} open={current}>
+              <details className={`news-row news-row--${n.kind}${n.featured ? ' news-row--featured' : ''}`} open={current || n.featured === true}>
                 <summary>
                   <span className={`news-badge news-kind--${n.kind}`} title={t(`news.kind.${n.kind}` as Key)}>
                     <span aria-hidden="true">{ICON[n.kind]}</span>
                   </span>
                   <span className="news-version">v{n.version}</span>
                   {current ? <span className="news-current">{t('news.current')}</span> : null}
-                  <span className="news-title">{pick(n.title, lang)}</span>
+                  <span className="news-title">
+                    {n.featured ? <span className="news-featured">{t('news.featured')}</span> : null}
+                    {pick(n.title, lang)}
+                  </span>
                   <time className="news-date" dateTime={n.released} title={releaseLabel(n.released, lang)}>
                     {shortLabel(n.released, lang)}
                   </time>

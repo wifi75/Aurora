@@ -277,3 +277,11 @@
   .news-row .news-title { grid-column: 3; }
   .news-row p { padding-left: 0.9rem; }
 }
+
+/* la funzione nuova di punta: riquadro in evidenza, aperta da sola */
+.news-row--featured { border: 1px solid #5ec8e0; background: linear-gradient(135deg, #123a45 0%, var(--panel) 70%); box-shadow: 0 0 0 1px #5ec8e033, 0 6px 22px #5ec8e01f; }
+.news-row--featured .news-title { font-weight: 700; font-size: 1.02rem; color: var(--text); }
+.news-row--featured > p { font-size: 0.95rem; line-height: 1.55; }
+.news-featured { margin-right: 0.5rem; padding: 0.05rem 0.5rem; border-radius: 999px; background: #5ec8e0; color: #04222b; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+html[data-theme='light'] .news-row--featured { border-color: #0b6f86; background: linear-gradient(135deg, #e1f5fa 0%, var(--panel) 70%); box-shadow: 0 0 0 1px #0b6f8622, 0 6px 18px #0b6f8614; }
+html[data-theme='light'] .news-featured { background: #0b6f86; color: #ffffff; }
