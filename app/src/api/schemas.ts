@@ -214,6 +214,7 @@ export const EventSchema = z.discriminatedUnion('type', [
     squelch_open: z.boolean().optional(),
     message: z.string().optional(),
     signals: z.array(DigiSignalSchema).optional(),
+    rx_id: z.number().optional(),
   }),
   z.object({ type: z.literal('tx_halted') }),
   z.object({ type: z.literal('notice'), id: z.string(), detail: z.string() }),

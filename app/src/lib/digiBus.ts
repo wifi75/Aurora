@@ -116,7 +116,42 @@ export function onDigi(listener: Listener): () => void {
   };
 }
 
+/** Il testo di ogni finestra RX in piu' (per numero), al massimo `EXTRA_MAX_CHARS` caratteri ciascuna. */
+const EXTRA_MAX_CHARS = 6000;
+const extraText = new Map<number, string>();
+const extraListeners = new Set<() => void>();
+
+export function getExtraText(id: number): string {
+  return extraText.get(id) ?? '';
+}
+
+/** Svuota il testo di una finestra in piu' (chiusa o spostata su un'altra stazione). */
+export function clearExtraText(id: number): void {
+  extraText.delete(id);
+  for (const l of extraListeners) l();
+}
+
+export function onExtraText(listener: () => void): () => void {
+  extraListeners.add(listener);
+  return () => {
+    extraListeners.delete(listener);
+  };
+}
+
+function appendExtra(id: number, raw: string): void {
+  const add = raw.replace(/\r\n?/g, '\n');
+  const next = (extraText.get(id) ?? '') + add;
+  extraText.set(id, next.length > EXTRA_MAX_CHARS ? next.slice(next.length - EXTRA_MAX_CHARS) : next);
+  for (const l of extraListeners) l();
+}
+
 export function emitDigi(event: DigiStreamEvent): void {
+  // il testo di una finestra RX in piu' va nella sua finestra, non in quella principale
+  if (event.kind === 'rx_text' && event.text && event.rx_id != null) {
+    appendExtra(event.rx_id, event.text);
+    for (const l of listeners) l(event);
+    return;
+  }
   if (event.kind === 'rx_text' && event.text) appendRx(event.text, event.weak);
   if (event.kind === 'tx_sent' && event.text) appendTxEcho(event.text);
   if (event.kind === 'tx' && event.state && event.state !== 'sending' && echoOpen) {

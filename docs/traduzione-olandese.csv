@@ -4451,6 +4451,21 @@ digi.run.noSpectrum,The waterfall has no data yet: turn listening on.,De waterva
 digi.run.memSaved,Settings saved to memory {n},Instellingen opgeslagen in geheugen {n}
 digi.run.memEmpty,Memory {n} is empty.,Geheugen {n} is leeg.
 digi.run.memLoaded,Settings recalled from memory {n},Instellingen opgeroepen uit geheugen {n}
+xrx.dragTip,Drag to move the window,Sleep om het venster te verplaatsen
+xrx.close,Close this RX window,Dit RX-venster sluiten
+xrx.empty,Listening: this station’s text appears here.,Luisteren: de tekst van dit station verschijnt hier.
+xrx.markerTip,RX window {n}: drag to move it to another station,RX-venster {n}: sleep om het naar een ander station te verplaatsen
+wfm.title,Waterfall menu,Watervalmenu
+wfm.calls,Callsigns on the waterfall,Roepnamen op de waterval
+wfm.wide,Wide waterfall (up to 5000 Hz),Brede waterval (tot 5000 Hz)
+wfm.notchAdd,Add a notch at {hz} Hz,Notch toevoegen op {hz} Hz
+wfm.notchClear,Remove all notches,Alle notches verwijderen
+wfm.rxNew,New RX window at {hz} Hz,Nieuw RX-venster op {hz} Hz
+wfm.rxFull,At most 4 extra RX windows,Hoogstens 4 extra RX-vensters
+wfm.rxClose,Close RX window {n},RX-venster {n} sluiten
+wfm.rxCloseNone,Close an RX window,Een RX-venster sluiten
+wfm.rxSwap,Swap RX window {n} with the main reception,RX-venster {n} wisselen met de hoofdontvangst
+wfm.rxSwapNone,Swap an RX window with the main one,Een RX-venster wisselen met het hoofdvenster
 radar.title,Aurora BIGScan,Aurora BIGScan
 radar.count,{n} stations,{n} stations
 radar.colCall,Callsign,Roepnaam

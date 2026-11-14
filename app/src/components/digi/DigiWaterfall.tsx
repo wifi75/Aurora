@@ -36,6 +36,11 @@ interface Props {
   onHeight?(px: number): void;
   /** I nominativi dei segnali di tutta la banda, scritti sopra la loro traccia (`cq`: chiama CQ; `sure`: verificato). */
   labels?: { hz: number; text: string; cq: boolean; sure: boolean }[];
+  /** Le finestre RX in piu': un indicatore numerato per ognuna, che si trascina. */
+  extraRx?: { id: number; freq_hz: number }[];
+  onExtraMove?(id: number, hz: number, commit: boolean): void;
+  /** Tasto destro sulla cascata: la frequenza sotto il mouse e il punto dello schermo (per il menu). */
+  onMenu?(hz: number, x: number, y: number): void;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
@@ -51,7 +56,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, labels = [], notches = [], onNotches }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, labels = [], notches = [], onNotches, extraRx = [], onExtraMove, onMenu }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -248,7 +253,46 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
           dragging.current = false;
           setOver(null);
         }}
+        onContextMenu={(e) => {
+          if (!onMenu) return;
+          e.preventDefault();
+          const r = e.currentTarget.getBoundingClientRect();
+          const hz = Math.round(Math.min(maxHz, Math.max(minHz, minHz + ((e.clientX - r.left) / r.width) * (maxHz - minHz))));
+          onMenu(hz, e.clientX, e.clientY);
+        }}
       />
+      {extraRx
+        .filter((x) => x.freq_hz >= minHz && x.freq_hz <= maxHz)
+        .map((x) => (
+          <span
+            key={`xrx-${x.id}`}
+            className="digi-wf-xrx"
+            style={{ left: xOf(x.freq_hz) }}
+            title={t('xrx.markerTip', { n: x.id })}
+            onPointerDown={(e) => {
+              if (e.button !== 0 || !onExtraMove) return;
+              e.preventDefault();
+              e.stopPropagation();
+              const box = e.currentTarget.parentElement?.getBoundingClientRect();
+              if (!box) return;
+              const at = (cx: number) => Math.round(Math.min(maxHz, Math.max(minHz, minHz + ((cx - box.left) / box.width) * (maxHz - minHz))));
+              let last = x.freq_hz;
+              const move = (m: PointerEvent) => {
+                last = at(m.clientX);
+                onExtraMove(x.id, last, false);
+              };
+              const up = () => {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                onExtraMove(x.id, last, true);
+              };
+              window.addEventListener('pointermove', move);
+              window.addEventListener('pointerup', up);
+            }}
+          >
+            <b>{x.id}</b>
+          </span>
+        ))}
       {onNotches ? <WaterfallNotches notches={notches} minHz={minHz} maxHz={maxHz} width={width} top={SCALE_H} onChange={onNotches} /> : null}
       {flag(rxShown)}
       {hairlines && rxShown >= minHz && rxShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxShown) }} aria-hidden="true" /> : null}

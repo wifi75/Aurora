@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -14,6 +14,10 @@ import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { BandSignals } from '../components/digi/BandSignals';
 import { RadarList } from '../components/digi/RadarList';
+import { ExtraRxWindow } from '../components/digi/ExtraRxWindow';
+import { PopupMenu } from '../components/PopupMenu';
+import { addNotch } from '../lib/digiNotches';
+import { clearExtraText } from '../lib/digiBus';
 import { getBandMode, getBandSignals, onBandSignals, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
@@ -218,6 +222,45 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     },
     [client],
   );
+
+  // finestre RX in piu': stanno nel motore (non si salvano), ognuna con la sua finestra piccola e il suo indicatore sulla cascata
+  const extraQuery = useQuery({ queryKey: ['digi-extra-rx'], queryFn: getExtraRx, retry: false });
+  const extras = extraQuery.data ?? [];
+  useEffect(() => onDigi((ev) => (ev.kind === 'extra_rx' ? void client.invalidateQueries({ queryKey: ['digi-extra-rx'] }) : undefined)), [client]);
+  const setExtras = useCallback(
+    (list: ExtraRx[]) => {
+      client.setQueryData(['digi-extra-rx'], list);
+      void putExtraRx(list).then(
+        (next) => client.setQueryData(['digi-extra-rx'], next),
+        () => void client.invalidateQueries({ queryKey: ['digi-extra-rx'] }),
+      );
+    },
+    [client],
+  );
+  const addExtra = (hz: number) => {
+    const used = new Set(extras.map((x) => x.id));
+    const id = [1, 2, 3, 4].find((n) => !used.has(n));
+    if (id === undefined) return;
+    clearExtraText(id);
+    setExtras([...extras, { id, freq_hz: hz }]);
+  };
+  const closeExtra = (id: number) => {
+    clearExtraText(id);
+    setExtras(extras.filter((x) => x.id !== id));
+  };
+  // la finestra RX in piu' e la ricezione principale si scambiano la frequenza
+  const swapExtra = (id: number) => {
+    const x = extras.find((e) => e.id === id);
+    if (!x) return;
+    const main = rxHz;
+    pickFreq(x.freq_hz, false);
+    clearExtraText(id);
+    setExtras(extras.map((e) => (e.id === id ? { ...e, freq_hz: main } : e)));
+  };
+  // il menu del tasto destro sulla cascata: dove e su che frequenza
+  const [wfMenu, setWfMenu] = useState<{ x: number; y: number; hz: number } | null>(null);
+  const closeWfMenu = useCallback(() => setWfMenu(null), []);
+  const nearestExtra = (hz: number) => extras.reduce<ExtraRx | null>((best, x) => (best === null || Math.abs(x.freq_hz - hz) < Math.abs(best.freq_hz - hz) ? x : best), null);
 
   // tutta la banda: i segnali del modo in uso (CW; PSK31 e PSK63, il browser), con il nominativo sopra la traccia nella cascata
   const bandAll = useSyncExternalStore(onBandSignals, getBandSignals);
@@ -1180,7 +1223,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches}
+            extraRx={extras}
+            onExtraMove={(id, hz, commit) => {
+              const next = extras.map((x) => (x.id === id ? { ...x, freq_hz: hz } : x));
+              if (commit) {
+                clearExtraText(id);
+                setExtras(next);
+              } else client.setQueryData(['digi-extra-rx'], next);
+            }}
+            onMenu={(hz, x, y) => setWfMenu({ x, y, hz })}
+          />
         ) : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}
@@ -1275,6 +1328,52 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
       {wordMenu ? <RxWordMenu at={wordMenu} onPick={pickWord} onClose={() => setWordMenu(null)} /> : null}
       {rttyOpen ? <RttySettingsDialog settings={s} onApply={save} onClose={() => setRttyOpen(false)} /> : null}
+      {extras.map((x, i) => (
+        <ExtraRxWindow key={x.id} id={x.id} freqHz={x.freq_hz} modeName={MODE_NAMES[s.mode]} index={i} onClose={() => closeExtra(x.id)} onWord={takeCall} />
+      ))}
+      <PopupMenu at={wfMenu} onClose={closeWfMenu} className="call-menu digi-st-menu" width={250} height={300} label={t('wfm.title')}>
+        {wfMenu ? (
+          <>
+            <button type="button" role="menuitemcheckbox" aria-checked={views.wfCalls} onClick={() => { setView({ wfCalls: !views.wfCalls }); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true">{views.wfCalls ? '✓' : ''}</span>
+              {t('wfm.calls')}
+            </button>
+            <button type="button" role="menuitemcheckbox" aria-checked={views.wideWaterfall} onClick={() => { setView({ wideWaterfall: !views.wideWaterfall }); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true">{views.wideWaterfall ? '✓' : ''}</span>
+              {t('wfm.wide')}
+            </button>
+            <hr />
+            <button type="button" role="menuitem" onClick={() => { setNotches(addNotch(notches, wfMenu.hz)); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true" />
+              {t('wfm.notchAdd', { hz: wfMenu.hz })}
+            </button>
+            <button type="button" role="menuitem" disabled={notches.length === 0} onClick={() => { setNotches([]); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true" />
+              {t('wfm.notchClear')}
+            </button>
+            <hr />
+            <button type="button" role="menuitem" disabled={extras.length >= 4} title={extras.length >= 4 ? t('wfm.rxFull') : undefined} onClick={() => { addExtra(wfMenu.hz); setWfMenu(null); }}>
+              <span className="digi-st-menu-check" aria-hidden="true" />
+              {t('wfm.rxNew', { hz: wfMenu.hz })}
+            </button>
+            {(() => {
+              const near = nearestExtra(wfMenu.hz);
+              return (
+                <>
+                  <button type="button" role="menuitem" disabled={near === null} onClick={() => { if (near) closeExtra(near.id); setWfMenu(null); }}>
+                    <span className="digi-st-menu-check" aria-hidden="true" />
+                    {near ? t('wfm.rxClose', { n: near.id }) : t('wfm.rxCloseNone')}
+                  </button>
+                  <button type="button" role="menuitem" disabled={near === null} onClick={() => { if (near) swapExtra(near.id); setWfMenu(null); }}>
+                    <span className="digi-st-menu-check" aria-hidden="true" />
+                    {near ? t('wfm.rxSwap', { n: near.id }) : t('wfm.rxSwapNone')}
+                  </button>
+                </>
+              );
+            })()}
+          </>
+        ) : null}
+      </PopupMenu>
       {settingsOpen ? <ModeSettings settings={s} personal={saved} levelDb={snap.rx.level_db} snrDb={snap.rx.snr_db ?? null} quality={snap.rx.quality ?? null} onSave={save} onPersonal={setSavedField} onClose={() => setSettingsOpen(false)} /> : null}
 
     </>

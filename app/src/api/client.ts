@@ -1931,6 +1931,23 @@ export interface DigiNotch {
   width_hz: number;
 }
 
+/** Una finestra RX in piu': numero e frequenza audio (Hz). */
+export interface ExtraRx {
+  id: number;
+  freq_hz: number;
+}
+
+/** Le finestre RX in piu' (fino a 4); il loro testo arriva negli eventi `rx_text` con `rx_id`. */
+export async function getExtraRx(): Promise<ExtraRx[]> {
+  const body = (await (await request('/digi/extra-rx')).json()) as { extra?: ExtraRx[] };
+  return body.extra ?? [];
+}
+
+export async function putExtraRx(extra: ExtraRx[]): Promise<ExtraRx[]> {
+  const body = (await (await request('/digi/extra-rx', { ...jsonInit({ extra }), method: 'PUT' })).json()) as { extra?: ExtraRx[] };
+  return body.extra ?? [];
+}
+
 export async function getDigiNotches(): Promise<DigiNotch[]> {
   const body = (await (await request('/digi/notches')).json()) as { notches?: DigiNotch[] };
   return Array.isArray(body.notches) ? body.notches : [];
