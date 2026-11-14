@@ -1084,6 +1084,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       </div>
 
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
+        {/* Radar: a destra delle finestre RX e TX e della cascata, alto quanto tutta la colonna */}
+        <div className="digi-leftwrap">
         <div className="digi-leftcol">
         <div className="digi-windows" ref={windowsRef} style={winW !== null ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
@@ -1137,15 +1139,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         {bandOn && !radarMode && views.signals ? (
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
-        {views.waterfall || (radarMode && radarOn) ? (
-          <div className="digi-wfrow">
-            {views.waterfall ? (
-            <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
-            ) : <div />}
-            {radarMode && radarOn ? (
-              <RadarList stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
-            ) : null}
-          </div>
+        {views.waterfall ? (
+          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
+        ) : null}
+        </div>
+        {radarMode && radarOn ? (
+          <RadarList stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}

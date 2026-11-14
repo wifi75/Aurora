@@ -40,13 +40,13 @@
 .radar-c7 { --radar-c: #ff9966; }
 .radar-c8 { --radar-c: #8ab4ff; }
 .radar-c9 { --radar-c: #f0a6ff; }
-/* la cascata e il Radar affiancati */
-.digi-wfrow { display: flex; gap: 10px; align-items: stretch; min-height: 0; }
-.digi-wfrow > :first-child { flex: 1 1 auto; min-width: 0; }
+/* le finestre RX e TX con la cascata a sinistra, il Radar a destra alto quanto tutta la colonna */
+.digi-leftwrap { display: flex; gap: 10px; align-items: stretch; min-width: 0; min-height: 0; }
+.digi-leftwrap > .digi-leftcol { flex: 1 1 auto; min-width: 0; }
 .digi-radar-btn { padding: 2px 10px; border: 1px solid var(--border); border-radius: 7px; background: #0a1324; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .digi-radar-btn[aria-pressed='true'] { border-color: #5ec8e0; color: #5ec8e0; background: #123a45; }
 @media (max-width: 900px) {
-  .digi-wfrow { flex-direction: column; }
+  .digi-leftwrap { flex-direction: column; }
   .radar { width: auto; max-height: 14rem; }
 }
 html[data-theme='light'] .radar { background: #ffffff; }
