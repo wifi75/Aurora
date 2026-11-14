@@ -184,6 +184,8 @@ pub struct CallTracker {
     calls: HashMap<String, HeardCall>,
     /// Il nominativo gia' contato come chi chiama nella frase in corso (dall'ultimo CQ, TEST o QRZ): le sue ripetizioni non contano.
     phrase_cq: Option<String>,
+    /// I nominativi verificati di un canale chiuso poco fa sulla stessa frequenza: alla prima lettura esatta tornano con il loro storico.
+    remembered: Vec<HeardCall>,
     /// L'ultimo rapporto visto (599, 5NN...).
     pub last_report: Option<String>,
     /// Ha chiesto se la frequenza e' libera («QRL?»).
@@ -264,6 +266,13 @@ impl CallTracker {
                 near.count += 1;
                 near.last_s = now_s;
             }
+            // un nominativo verificato del canale chiuso poco fa sulla stessa frequenza: torna con il suo storico
+            if !self.calls.contains_key(&word)
+                && let Some(i) = self.remembered.iter().position(|c| c.call == word)
+            {
+                let back = self.remembered.swap_remove(i);
+                self.calls.insert(word.clone(), back);
+            }
             let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, cq_count: 0, score: 0.0, last_s: now_s, shape: Shape::Unknown });
             e.count += 1;
             if role == Role::Cq && self.phrase_cq.as_deref() != Some(word.as_str()) {
@@ -342,6 +351,16 @@ impl CallTracker {
         v.retain(|c| !all.iter().any(|(other, score)| shadows(other, *score, &c.call, c.score)));
         v.sort_by(|a, b| b.score.total_cmp(&a.score));
         v
+    }
+
+    /// I nominativi verificati (da ricordare quando il canale si chiude).
+    pub fn verified_calls(&self) -> Vec<HeardCall> {
+        self.calls.values().filter(|c| c.verified()).cloned().collect()
+    }
+
+    /// Ricorda i nominativi verificati di un canale chiuso sulla stessa frequenza (vedi `remembered`).
+    pub fn remember(&mut self, calls: Vec<HeardCall>) {
+        self.remembered = calls;
     }
 
     /// Dimentica i nominativi non sentiti da `max_age_s`.
@@ -492,6 +511,19 @@ mod tests {
         // EC7YZ letto intero e' lui, non un errore di EC7YY
         u.push(b"EC7YZ ", &[], 70.0);
         assert_eq!(last_s_of(&u, "EC7YY"), 1.0);
+    }
+
+    /// Un nominativo ricordato da un canale chiuso torna verificato alla prima lettura esatta; uno mai letto resta fuori.
+    #[test]
+    fn a_remembered_call_is_verified_at_the_first_sighting() {
+        let mut old = CallTracker::new();
+        old.push(b"CQ TEST EC7YY EC7YY TEST ", &[], 1.0);
+        let mut t = CallTracker::new();
+        t.remember(old.verified_calls());
+        assert!(t.calls(Validation::Minimal, &|_| CallCheck::default()).is_empty());
+        t.push(b"TU EC7YY TEST ", &[], 90.0);
+        let c = t.calls.get("EC7YY").cloned();
+        assert!(c.as_ref().is_some_and(|c| c.verified() && c.role == Role::Cq && c.last_s == 90.0), "{c:?}");
     }
 
     /// Un canale di contest con tanti corrispondenti: chi chiama CQ verificato non viene tolto per far posto ai nuovi.

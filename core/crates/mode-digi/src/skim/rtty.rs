@@ -3,14 +3,14 @@
 //! degli ultimi 60 secondi e i nominativi sentiti, come i canali CW e PSK.
 
 use super::calls::Validation;
-use super::{BandDecoder, CallCheckFn, ChannelInfo, LocalSpot, SHIFT_HI_HZ, SHIFT_LO_HZ, Spotter, Transcript};
+use super::{BandDecoder, CallCache, CallCheckFn, ChannelInfo, LocalSpot, SHIFT_HI_HZ, SHIFT_LO_HZ, Spotter, Transcript};
 use crate::rtty_multi::RttyMulti;
 
 const RATE: f64 = 12_000.0;
 /// Un canale si riconosce nel segnale nuovo se il centro sta entro questa frazione dello spostamento.
 const SAME_FRACTION: f32 = 0.5;
-/// Un canale senza testo da tanto si dimentica (s); `RttyMulti` chiude il suo ricevitore dopo 30 s.
-const IDLE_S: f64 = 45.0;
+/// Un canale senza testo da tanto si dimentica (s); `RttyMulti` chiude il suo ricevitore dopo 75 s senza caratteri credibili.
+const IDLE_S: f64 = 90.0;
 
 struct Lane {
     id: u32,
@@ -28,6 +28,7 @@ pub struct RttyBandDecoder {
     validation: Validation,
     dxcc: Option<CallCheckFn>,
     spotter: Spotter,
+    cache: CallCache,
 }
 
 impl RttyBandDecoder {
@@ -42,6 +43,7 @@ impl RttyBandDecoder {
             validation: Validation::Normal,
             dxcc: None,
             spotter: Spotter::default(),
+            cache: CallCache::default(),
         }
     }
 }
@@ -59,7 +61,9 @@ impl BandDecoder for RttyBandDecoder {
                         if self.lanes.len() >= self.max_channels {
                             continue;
                         }
-                        self.lanes.push(Lane { id: self.next_id, centre_hz: lt.centre_hz, tr: Transcript::new(self.t) });
+                        let mut tr = Transcript::new(self.t);
+                        tr.calls.remember(self.cache.take_near(lt.centre_hz, self.t));
+                        self.lanes.push(Lane { id: self.next_id, centre_hz: lt.centre_hz, tr });
                         self.next_id += 1;
                         self.lanes.len() - 1
                     }
@@ -81,7 +85,14 @@ impl BandDecoder for RttyBandDecoder {
         for l in self.lanes.iter_mut() {
             l.tr.trim(now);
         }
-        self.lanes.retain(|l| now - l.tr.last_text_s < IDLE_S);
+        let cache = &mut self.cache;
+        self.lanes.retain(|l| {
+            let open = now - l.tr.last_text_s < IDLE_S;
+            if !open {
+                cache.store(l.centre_hz, now, &l.tr);
+            }
+            open
+        });
         let dxcc_db = self.dxcc.as_deref();
         let dxcc = |c: &str| dxcc_db.map(|f| f(c)).unwrap_or_default();
         for l in self.lanes.iter_mut() {
@@ -116,6 +127,7 @@ impl BandDecoder for RttyBandDecoder {
     fn clear(&mut self) {
         self.lanes.clear();
         self.spotter.clear();
+        self.cache.clear();
     }
 
     fn set_validation(&mut self, v: Validation) {
@@ -128,6 +140,7 @@ impl BandDecoder for RttyBandDecoder {
         for l in self.lanes.iter_mut() {
             l.centre_hz += audio_hz;
         }
+        self.cache.shift(audio_hz);
     }
 }
 

@@ -176,6 +176,50 @@ pub trait BandDecoder: Send {
     }
 }
 
+/// I nominativi verificati dei canali chiusi, per frequenza: un canale che si riapre entro `CALL_CACHE_HZ` e `CALL_CACHE_S` li ritrova
+/// (verificati alla prima lettura esatta) invece di ricominciare da zero quando la stazione torna dopo una pausa o un QSB.
+const CALL_CACHE_HZ: f32 = 50.0;
+const CALL_CACHE_S: f64 = 240.0;
+
+#[derive(Default)]
+pub(crate) struct CallCache {
+    items: Vec<(f32, f64, Vec<HeardCall>)>,
+}
+
+impl CallCache {
+    /// Un canale chiuso a `freq_hz` al momento `now_s`.
+    pub(crate) fn store(&mut self, freq_hz: f32, now_s: f64, tr: &Transcript) {
+        let calls = tr.calls.verified_calls();
+        if !calls.is_empty() {
+            self.items.push((freq_hz, now_s, calls));
+        }
+    }
+
+    /// I nominativi per un canale nuovo a `freq_hz` (si tolgono dalla memoria).
+    pub(crate) fn take_near(&mut self, freq_hz: f32, now_s: f64) -> Vec<HeardCall> {
+        self.items.retain(|(_, at, _)| now_s - at <= CALL_CACHE_S);
+        let mut out = Vec::new();
+        self.items.retain(|(f, _, calls)| {
+            let near = (f - freq_hz).abs() <= CALL_CACHE_HZ;
+            if near {
+                out.extend(calls.iter().cloned());
+            }
+            !near
+        });
+        out
+    }
+
+    pub(crate) fn shift(&mut self, audio_hz: f32) {
+        for it in self.items.iter_mut() {
+            it.0 += audio_hz;
+        }
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.items.clear();
+    }
+}
+
 /// La banda audio in cui un canale spostato resta aperto (Hz).
 pub const SHIFT_LO_HZ: f32 = 150.0;
 pub const SHIFT_HI_HZ: f32 = 4_000.0;
@@ -273,6 +317,7 @@ pub struct CwBandDecoder {
     validation: Validation,
     dxcc: Option<CallCheckFn>,
     spotter: Spotter,
+    cache: CallCache,
 }
 
 impl CwBandDecoder {
@@ -296,6 +341,7 @@ impl CwBandDecoder {
             validation: Validation::Normal,
             dxcc: None,
             spotter: Spotter::default(),
+            cache: CallCache::default(),
         }
     }
 
@@ -315,6 +361,7 @@ impl CwBandDecoder {
         self.stable.clear();
         self.recent.clear();
         self.spotter.clear();
+        self.cache.clear();
     }
 
     /// La radio spostata di poco: i canali seguono il loro segnale (vedi [`BandDecoder::shift`]).
@@ -331,6 +378,7 @@ impl CwBandDecoder {
         self.power = (0..old.len() as isize).map(|k| usize::try_from(k - bins).ok().and_then(|j| old.get(j).copied()).unwrap_or(0.0)).collect();
         self.stable.clear();
         self.recent.clear();
+        self.cache.shift(audio_hz);
     }
 
     /// Quanti canali al massimo: se sono di più si chiudono i più deboli.
@@ -445,6 +493,7 @@ impl CwBandDecoder {
         rx.set_beam(CHANNEL_BEAM);
         // il canale ascolta prima l'audio recente (fino alla fine del blocco in corso): l'inizio della stazione non si perde
         let mut tr = Transcript::new(self.t);
+        tr.calls.remember(self.cache.take_near(hz, self.t));
         let recent: Vec<f32> = self.recent.iter().copied().collect();
         for block in recent.chunks(960) {
             let out = rx.process(block);
@@ -457,7 +506,14 @@ impl CwBandDecoder {
     /// Chiude i canali muti e quelli doppi, e raccoglie gli spot.
     fn housekeeping(&mut self) {
         let now = self.t;
-        self.channels.retain(|ch| now - ch.tr.last_text_s < IDLE_S);
+        let cache = &mut self.cache;
+        self.channels.retain(|ch| {
+            let open = now - ch.tr.last_text_s < IDLE_S;
+            if !open {
+                cache.store(ch.rx.frequency(), now, &ch.tr);
+            }
+            open
+        });
         // due canali sulla stessa stazione: resta il più vecchio
         let mut i = 0;
         while i < self.channels.len() {
@@ -620,6 +676,21 @@ pub(crate) mod tests {
         // fuori dalla banda audio: il canale si chiude
         sk.shift(-1_000.0);
         assert!(sk.channels().is_empty());
+    }
+
+    /// La memoria dei canali chiusi: un canale nuovo vicino ritrova i nominativi verificati, uno lontano o troppo tardi no.
+    #[test]
+    fn closed_channels_leave_their_calls_to_a_reopened_one() {
+        let mut tr = Transcript::new(0.0);
+        tr.calls.push(b"CQ TEST EC7YY EC7YY TEST ", &[], 1.0);
+        let mut cache = CallCache::default();
+        cache.store(1_000.0, 50.0, &tr);
+        assert!(cache.take_near(1_100.0, 60.0).is_empty());
+        cache.shift(100.0);
+        assert!(cache.take_near(1_130.0, 60.0).iter().any(|c| c.call == "EC7YY"));
+        assert!(cache.take_near(1_100.0, 60.0).is_empty());
+        cache.store(1_000.0, 50.0, &tr);
+        assert!(cache.take_near(1_000.0, 50.0 + CALL_CACHE_S + 1.0).is_empty());
     }
 
     #[test]

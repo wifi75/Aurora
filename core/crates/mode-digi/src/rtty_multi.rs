@@ -8,7 +8,7 @@
 //! Un canale senza caratteri sicuri per 30 secondi si chiude.
 
 use crate::psk::RATE;
-use crate::rtty::{RttyChar, RttyDemodulator, RttyParams, SQUELCH_CLOSE, SQUELCH_OPEN, WEAK_PROB};
+use crate::rtty::{RttyChar, RttyDemodulator, RttyParams, SQUELCH_CLOSE, SQUELCH_OPEN};
 use std::f64::consts::PI;
 
 /// Passo del banco di filtri (Hz) e banda esplorata.
@@ -24,7 +24,9 @@ const ANTI_CORR: f64 = -0.5;
 /// Un canale nuovo non nasce a meno di questa distanza (in frazioni dello spostamento) da uno che c'e' gia'.
 const SAME_FRACTION: f32 = 0.5;
 /// Secondi senza caratteri sicuri dopo cui un canale si chiude, e canali al massimo.
-const IDLE_S: f32 = 30.0;
+const IDLE_S: f32 = 75.0;
+/// Un carattere da questa probabilita' in su tiene aperto il canale (un segnale debole o in QSB legge spesso fra 0,7 e 0,9).
+const ACTIVE_PROB: f32 = 0.7;
 const MAX_CHANNELS: usize = 30;
 
 /// Un segnale seguito.
@@ -123,7 +125,7 @@ impl RttyMulti {
         let secs = samples.len() as f32 / RATE;
         for lane in &mut self.lanes {
             let chars = lane.demod.process_chars(samples);
-            if chars.iter().any(|c| c.prob >= WEAK_PROB) {
+            if chars.iter().any(|c| c.prob >= ACTIVE_PROB) {
                 lane.idle_s = 0.0;
             } else {
                 lane.idle_s += secs;
