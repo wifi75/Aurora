@@ -3,8 +3,8 @@
 //! rapporti del 2026-11-12 (Windows 10, sette crash in mezz'ora). L'installatore lo installa se manca, ma un aggiornamento o una
 //! pulizia di Windows possono lasciarlo registrato e rotto. Qui lo si controlla prima di aprire la finestra: se manca, un messaggio
 //! di Windows lo spiega e, con «Sì», Aurora scarica l'installazione di Microsoft, la apre (con la sua finestra di avanzamento, per
-//! l'utente di Windows, senza diritti di amministratore) e alla fine si riapre da sola; se lo scaricamento non riesce si apre la pagina
-//! di Microsoft nel browser. Aurora si chiude senza crash.
+//! l'utente di Windows, senza diritti di amministratore), ne aspetta la fine e si riapre da sola; se lo scaricamento non riesce si apre
+//! la pagina di Microsoft nel browser. Aurora si chiude senza crash.
 
 /// Il programma d'installazione di WebView2 di Microsoft (lo stesso che usa l'installatore di Aurora).
 #[cfg(windows)]
@@ -17,33 +17,48 @@ pub fn ensure() -> bool {
     eprintln!("WebView2 non disponibile: {e}");
     let lang = crate::agent::ui_lang();
     let (title, text) = texts(lang);
-    if ask_yes_no(title, text) && install_and_restart().is_err() {
+    if ask_yes_no(title, text)
+        && let Err(e) = install_and_restart()
+    {
+        eprintln!("{e}");
         crate::links::open_in_browser(DOWNLOAD_URL);
     }
     false
 }
 
-/// Scarica il programma d'installazione di WebView2 di Microsoft nella cartella temporanea, lo apre e, quando ha finito, riapre Aurora.
-/// Lo fa uno script di PowerShell nascosto, perche' Aurora intanto si chiude; se lo scaricamento non riesce lo script apre la pagina
-/// di Microsoft nel browser.
+/// Scarica il programma d'installazione di WebView2 di Microsoft nella cartella temporanea (qui, in Rust, prima che Aurora si chiuda),
+/// lo apre (`/install`, con la sua finestra di avanzamento) e ne aspetta la fine; poi riapre Aurora. Niente PowerShell: prima lo faceva
+/// uno script nascosto, che gli antivirus segnalano. Se lo scaricamento o l'avvio non riescono, l'errore fa aprire la pagina di Microsoft.
 #[cfg(windows)]
-fn install_and_restart() -> std::io::Result<()> {
-    use std::os::windows::process::CommandExt;
-    let exe = std::env::current_exe().ok().and_then(|p| p.to_str().map(|s| s.replace('\'', "''"))).unwrap_or_default();
-    let script = format!(
-        "$ErrorActionPreference='Stop'; $f = Join-Path $env:TEMP 'MicrosoftEdgeWebview2Setup.exe'; \
-         try {{ [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
-         Invoke-WebRequest -UseBasicParsing -Uri '{DOWNLOAD_URL}' -OutFile $f; \
-         Start-Process -FilePath $f -ArgumentList '/install' -Wait; \
-         if ('{exe}' -ne '') {{ Start-Process -FilePath '{exe}' }} }} \
-         catch {{ Start-Process '{DOWNLOAD_URL}' }}"
-    );
-    std::process::Command::new(crate::installer::powershell_exe())
-        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &script])
-        // nessuna finestra nera
-        .creation_flags(0x0800_0000)
-        .spawn()
-        .map(|_| ())
+fn install_and_restart() -> Result<(), String> {
+    let file = std::env::temp_dir().join("MicrosoftEdgeWebview2Setup.exe");
+    download(&file)?;
+    let process = crate::installer::win::shell_start(&file, "/install", None, true)?;
+    if let Some(process) = process {
+        // l'installazione di Microsoft scarica il componente: puo' metterci qualche minuto
+        process.wait(30 * 60 * 1000);
+    }
+    let _ = std::fs::remove_file(&file);
+    if let Ok(exe) = std::env::current_exe() {
+        let dir = exe.parent().map(std::path::Path::to_path_buf);
+        crate::installer::win::shell_start(&exe, "", dir.as_deref(), false)?;
+    }
+    Ok(())
+}
+
+/// Lo scaricamento del programma d'installazione (un paio di MB) da Microsoft, con lo stesso cliente HTTP del resto di Aurora.
+#[cfg(windows)]
+fn download(file: &std::path::Path) -> Result<(), String> {
+    use std::io::Read;
+    let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(std::time::Duration::from_secs(120))).build().into();
+    let mut response = agent.get(DOWNLOAD_URL).call().map_err(|e| format!("WebView2 non scaricato: {e}"))?;
+    let mut data = Vec::new();
+    response.body_mut().as_reader().take(50 * 1024 * 1024).read_to_end(&mut data).map_err(|e| format!("WebView2 non scaricato: {e}"))?;
+    // un eseguibile di Windows comincia con «MZ»: una pagina d'errore non si apre
+    if !data.starts_with(b"MZ") {
+        return Err("lo scaricamento di WebView2 non e' un programma".into());
+    }
+    std::fs::write(file, data).map_err(|e| format!("WebView2 non salvato: {e}"))
 }
 
 #[cfg(not(windows))]

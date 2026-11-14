@@ -1,6 +1,7 @@
 //! L'installazione di un aggiornamento: il pacchetto e la sua firma si scaricano in anticipo (appena il controllo trova la versione nuova)
 //! e si controllano con la chiave pubblica di Aurora; all'«Installa» si ricontrolla la firma del file pronto e si installa:
-//! - Windows: si chiudono Aurora e l'agente nel tray, si installa in silenzio e solo alla fine lo script di `update_script` riapre Aurora, una volta;
+//! - Windows: si chiudono Aurora e l'agente nel tray, si installa in silenzio e solo alla fine la copia di aiuto (vedi [`apply_update`])
+//!   riapre Aurora, una volta;
 //! - macOS: si estrae Aurora.app dal pacchetto, si sostituisce quella in uso, si toglie la quarantena e si riapre Aurora dopo la chiusura.
 //!
 //! **Senza firma valida non si installa mai nulla.**
@@ -32,8 +33,8 @@ const MAX_PACKAGE_BYTES: u64 = 300 * 1024 * 1024;
 const RELEASES_URL: &str = "https://github.com/wifi75/Aurora/releases/latest";
 
 /// Gli argomenti dell'installatore NSIS di Tauri: `/S` lo fa girare in silenzio, senza finestre (come le app che si aggiornano da sole),
-/// `/UPDATE` dice che e' un aggiornamento di una copia gia' installata. **Niente `/R`**: Aurora la riapre soltanto lo script di
-/// `update_script`, a installazione finita e riuscita. Con `/R` la riaprivano in due (l'installatore e lo script) e, se l'installatore
+/// `/UPDATE` dice che e' un aggiornamento di una copia gia' installata. **Niente `/R`**: Aurora la riapre soltanto la copia di aiuto
+/// ([`apply_update`]), a installazione finita e riuscita. Con `/R` la riaprivano in due (l'installatore e lo script di allora) e, se l'installatore
 /// ci metteva piu' dei 240 s che lo script aspettava, lo script riapriva Aurora vecchia mentre l'installazione era ancora in corso e
 /// l'installatore la richiudeva (una delle cause del difetto del 2026-11-13 «si chiude, si riapre, si richiude e installa»; l'altra era
 /// l'agente nel tray che apriva Aurora per farle installare l'aggiornamento, vedi `agent::install_update`).
@@ -41,54 +42,300 @@ pub fn installer_args() -> [&'static str; 2] {
     ["/S", "/UPDATE"]
 }
 
-/// Quanto lo script aspetta la fine dell'installatore prima di smettere di guardarlo (20 minuti: un antivirus puo' rallentarlo molto).
-/// Se l'installatore e' ancora al lavoro dopo questo tempo, lo script esce senza riaprire niente: mai Aurora a meta' installazione.
+/// Quanto la copia di aiuto aspetta la fine dell'installatore prima di smettere di guardarlo (20 minuti: un antivirus puo' rallentarlo
+/// molto). Se l'installatore e' ancora al lavoro dopo questo tempo, esce senza riaprire niente: mai Aurora a meta' installazione.
 const INSTALLER_WAIT_MS: u32 = 20 * 60 * 1000;
+/// Quanto si aspetta che Aurora e l'agente nel tray si chiudano da soli prima di chiuderli (il core si ferma con calma, fino a 6 s).
+const CLOSE_WAIT_MS: u64 = 30_000;
 
-/// Lo script PowerShell (staccato da Aurora) che fa l'aggiornamento su Windows, in quest'ordine e con un solo attore per ogni passo:
-/// 1. aspetta che Aurora **e l'agente nel tray** (sono entrambi `aurora-desktop.exe`) siano chiusi, al massimo 30 s, poi chiude chi resta;
-/// 2. avvia l'installatore in silenzio (`/S /UPDATE`, senza `/R`) e ne aspetta la fine;
-/// 3. se e' andato bene (codice 0) riapre Aurora, **una volta sola** (Aurora all'avvio riaccende anche l'agente nel tray); se non e'
-///    andato bene, o il programma non c'e' piu', riapre l'installatore con le sue finestre, che mostra cosa non va;
-/// 4. se l'installatore non e' nemmeno partito, riapre Aurora com'era (i file non sono stati toccati).
-///
-/// I percorsi entrano tra apici singoli (raddoppiati se ci sono nel percorso).
-pub fn update_script(installer: &str, exe: &str) -> String {
-    let quote = |s: &str| s.replace('\'', "''");
-    // la cartella del programma (a mano, cosi' il testo dello script e' lo stesso anche dove `\` non separa le cartelle, nelle prove su Linux)
-    let dir = exe.rfind(['\\', '/']).map_or("", |i| &exe[..i]);
-    let args = installer_args().iter().map(|a| format!("'{a}'")).collect::<Vec<_>>().join(",");
-    const TEMPLATE: &str = "$t=0; while ((Get-Process aurora-desktop -ErrorAction SilentlyContinue) -and $t -lt 60) { Start-Sleep -Milliseconds 500; $t++ }; \
-Get-Process aurora-desktop,aurora -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Milliseconds 500; \
-$p = Start-Process -FilePath '{INSTALLER}' -ArgumentList {ARGS} -PassThru; \
-if (-not $p) { if ('{EXE}' -ne '' -and (Test-Path -LiteralPath '{EXE}')) { Start-Process -FilePath '{EXE}' -WorkingDirectory '{DIR}' }; exit }; \
-$null = $p.Handle; \
-if (-not $p.WaitForExit({WAIT})) { exit }; \
-$c = $p.ExitCode; \
-if (Get-Process aurora-desktop -ErrorAction SilentlyContinue) { exit }; \
-if (($c -eq 0 -or $null -eq $c) -and '{EXE}' -ne '' -and (Test-Path -LiteralPath '{EXE}')) { Start-Process -FilePath '{EXE}' -WorkingDirectory '{DIR}' } else { Start-Process -FilePath '{INSTALLER}' }";
-    TEMPLATE
-        .replace("{INSTALLER}", &quote(installer))
-        .replace("{EXE}", &quote(exe))
-        .replace("{DIR}", &quote(dir))
-        .replace("{ARGS}", &args)
-        .replace("{WAIT}", &INSTALLER_WAIT_MS.to_string())
+/// L'argomento con cui Aurora avvia la propria copia di aiuto che applica l'aggiornamento (vedi [`apply_update`]).
+pub const APPLY_ARG: &str = "--applica-aggiornamento";
+
+/// Cosa la copia di aiuto deve fare: l'installatore, il processo di Aurora da aspettare, il programma da riaprire (vuoto: non si sa).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ApplyArgs {
+    pub installer: PathBuf,
+    pub pid: u32,
+    pub exe: Option<PathBuf>,
 }
 
-/// Lancia lo script di `update_script` per l'installatore `installer`, nascosto e staccato da chi lo lancia (Aurora o l'agente nel tray,
-/// che subito dopo si chiudono).
+/// Gli argomenti per la copia di aiuto: `--applica-aggiornamento <installatore> <pid> <programma>`. Passano come argomenti separati,
+/// non dentro il testo di uno script: apici e spazi nei percorsi non rompono niente.
+pub fn apply_command_args(installer: &str, pid: u32, exe: &str) -> Vec<String> {
+    vec![APPLY_ARG.to_string(), installer.to_string(), pid.to_string(), exe.to_string()]
+}
+
+/// Legge gli argomenti della riga di comando (senza il nome del programma): `Some` solo se il primo e' [`APPLY_ARG`] e gli altri ci sono.
+pub fn parse_apply_args(args: &[String]) -> Option<ApplyArgs> {
+    match args {
+        [flag, installer, pid, exe] if flag == APPLY_ARG && !installer.is_empty() => Some(ApplyArgs {
+            installer: PathBuf::from(installer),
+            pid: pid.parse().ok()?,
+            exe: (!exe.is_empty()).then(|| PathBuf::from(exe)),
+        }),
+        _ => None,
+    }
+}
+
+/// Cosa fare quando l'installatore ha finito.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AfterInstall {
+    /// Aurora e' gia' aperta (riaperta da qualcun altro): non se ne apre un'altra.
+    Nothing,
+    /// Installazione riuscita: si riapre Aurora, una volta sola (all'avvio riaccende anche l'agente nel tray).
+    ReopenAurora,
+    /// Non riuscita, o il programma non c'e' piu': si riapre l'installatore con le sue finestre, che mostra cosa non va.
+    ReopenInstaller,
+}
+
+/// La scelta dopo l'installatore, come nello script di prima: `code` e' il codice di uscita (`None` se non si sa, che conta come riuscita).
+pub fn after_install(code: Option<u32>, aurora_running: bool, exe_exists: bool) -> AfterInstall {
+    if aurora_running {
+        AfterInstall::Nothing
+    } else if matches!(code, None | Some(0)) && exe_exists {
+        AfterInstall::ReopenAurora
+    } else {
+        AfterInstall::ReopenInstaller
+    }
+}
+
+/// Il nome della copia di aiuto nella cartella del pacchetto.
+fn helper_name(pid: u32) -> String {
+    format!("aurora-aggiorna-{pid}.exe")
+}
+
+/// Avvia l'aggiornamento su Windows **senza PowerShell ne' cmd** (gli antivirus mettevano in quarantena Aurora che avviava PowerShell
+/// nascosto): Aurora copia il proprio programma nella cartella del pacchetto e avvia la copia con [`APPLY_ARG`], staccata da chi la lancia
+/// (Aurora o l'agente nel tray, che subito dopo si chiudono). La copia serve perche' l'installatore deve poter sostituire
+/// `aurora-desktop.exe`: un programma in uso non si sostituisce. Quello che fa la copia e' in [`apply_update`].
 #[cfg(windows)]
 pub(crate) fn launch_update_script(installer: &std::path::Path) -> Result<(), String> {
     use std::os::windows::process::CommandExt;
     let installer = installer.to_str().ok_or("percorso del pacchetto non valido")?;
-    let exe = std::env::current_exe().ok().and_then(|p| p.to_str().map(str::to_string)).unwrap_or_default();
-    let script = update_script(installer, &exe);
-    // percorso intero: su alcuni PC «powershell» non e' nel PATH del programma (2026-11-09: «installatore non avviato: program not found»)
-    let mut launcher = Command::new(powershell_exe());
-    launcher.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", &script]);
-    // niente finestra nera: l'installatore parte da solo
-    launcher.creation_flags(0x0800_0000);
-    launcher.spawn().map(|_| ()).map_err(|e| format!("installatore non avviato: {e}"))
+    let exe_path = std::env::current_exe().map_err(|e| format!("percorso del programma sconosciuto: {e}"))?;
+    let exe = exe_path.to_str().map(str::to_string).unwrap_or_default();
+    let dir = package_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| format!("cartella dell'aggiornamento: {e}"))?;
+    let helper = dir.join(helper_name(std::process::id()));
+    std::fs::copy(&exe_path, &helper).map_err(|e| format!("copia di aiuto non creata: {e}"))?;
+    let args = apply_command_args(installer, std::process::id(), &exe);
+    // DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, e se si puo' fuori dal job di chi lancia (CREATE_BREAKAWAY_FROM_JOB)
+    const DETACHED: u32 = 0x0000_0008 | 0x0000_0200;
+    const BREAKAWAY: u32 = 0x0100_0000;
+    let spawn = |flags: u32| Command::new(&helper).args(&args).current_dir(&dir).creation_flags(flags).spawn();
+    spawn(DETACHED | BREAKAWAY).or_else(|_| spawn(DETACHED)).map(|_| ()).map_err(|e| format!("installatore non avviato: {e}"))
+}
+
+/// Cancella le copie di aiuto rimaste dagli aggiornamenti passati (una copia non puo' cancellare se stessa). Quelle ancora al lavoro
+/// sono aperte e restano.
+pub(crate) fn remove_old_helpers() {
+    let Ok(entries) = std::fs::read_dir(package_dir()) else { return };
+    for entry in entries.filter_map(Result::ok) {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name.starts_with("aurora-aggiorna-") && name.ends_with(".exe") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
+/// Una riga nel registro dell'aggiornamento (`%TEMP%\Aurora-update\aggiornamento.log`): la copia di aiuto non ha finestre ne' console.
+#[cfg(windows)]
+fn log_line(text: &str) {
+    use std::io::Write;
+    let file = package_dir().join("aggiornamento.log");
+    // il registro non cresce senza fine: oltre 256 kB si ricomincia
+    if std::fs::metadata(&file).is_ok_and(|m| m.len() > 256 * 1024) {
+        let _ = std::fs::remove_file(&file);
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&file) {
+        let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let _ = writeln!(f, "[{secs}] {text}");
+    }
+}
+
+/// Il lavoro della copia di aiuto, in quest'ordine e con un solo attore per ogni passo (come lo script PowerShell di prima):
+/// 1. aspetta che Aurora **e l'agente nel tray** (sono entrambi `aurora-desktop.exe`) siano chiusi, al massimo 30 s, poi chiude chi resta
+///    (anche `aurora.exe`, il server senza finestra);
+/// 2. avvia l'installatore in silenzio (`/S /UPDATE`, senza `/R`) e ne aspetta la fine (al massimo [`INSTALLER_WAIT_MS`]: dopo, esce
+///    senza riaprire niente);
+/// 3. se e' andato bene (codice 0) riapre Aurora, **una volta sola**; se non e' andato bene, o il programma non c'e' piu', riapre
+///    l'installatore con le sue finestre; se Aurora e' gia' aperta non fa niente (vedi [`after_install`]);
+/// 4. se l'installatore non e' nemmeno partito, riapre Aurora com'era (i file non sono stati toccati).
+///
+/// L'installatore e Aurora si aprono con `ShellExecuteExW` come faceva `Start-Process`: se l'installatore chiede i diritti di
+/// amministratore (installazione per tutti gli utenti) Windows mostra la sua conferma.
+#[cfg(windows)]
+pub fn apply_update(args: &ApplyArgs) {
+    use std::time::Instant;
+    log_line(&format!("aggiornamento: installatore {}, Aurora {:?}, processo {}", args.installer.display(), args.exe, args.pid));
+    let started = Instant::now();
+    win::wait_process(args.pid, CLOSE_WAIT_MS as u32);
+    while win::running(&["aurora-desktop.exe"]) && started.elapsed() < Duration::from_millis(CLOSE_WAIT_MS) {
+        std::thread::sleep(Duration::from_millis(500));
+    }
+    let killed = win::kill_all(&["aurora-desktop.exe", "aurora.exe"]);
+    if killed > 0 {
+        log_line(&format!("chiusi {killed} processi di Aurora rimasti aperti"));
+    }
+    std::thread::sleep(Duration::from_millis(500));
+
+    let exe_dir = args.exe.as_deref().and_then(std::path::Path::parent).map(std::path::Path::to_path_buf);
+    let reopen_aurora = || {
+        if let Some(exe) = args.exe.as_deref().filter(|p| p.is_file())
+            && let Err(e) = win::shell_start(exe, "", exe_dir.as_deref(), false)
+        {
+            log_line(&format!("Aurora non riaperta: {e}"));
+        }
+    };
+    let process = match win::shell_start(&args.installer, &installer_args().join(" "), None, true) {
+        Ok(Some(process)) => process,
+        Ok(None) => {
+            log_line("installatore avviato senza processo da aspettare: si esce senza riaprire niente");
+            return;
+        }
+        Err(e) => {
+            log_line(&format!("installatore non avviato: {e}; si riapre Aurora com'era"));
+            reopen_aurora();
+            return;
+        }
+    };
+    let Some(code) = process.wait(INSTALLER_WAIT_MS) else {
+        log_line("installatore ancora al lavoro dopo 20 minuti: non si riapre niente");
+        return;
+    };
+    log_line(&format!("installatore finito con codice {code:?}"));
+    match after_install(code, win::running(&["aurora-desktop.exe"]), args.exe.as_deref().is_some_and(std::path::Path::is_file)) {
+        AfterInstall::Nothing => log_line("Aurora e' gia' aperta"),
+        AfterInstall::ReopenAurora => reopen_aurora(),
+        AfterInstall::ReopenInstaller => {
+            log_line("installazione non riuscita: si riapre l'installatore con le sue finestre");
+            if let Err(e) = win::shell_start(&args.installer, "", None, false) {
+                log_line(&format!("installatore non riaperto: {e}"));
+            }
+        }
+    }
+}
+
+/// Avvio di programmi e processi con le API di Windows (niente PowerShell ne' cmd).
+#[cfg(windows)]
+pub(crate) mod win {
+    use std::path::Path;
+
+    use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0};
+    use windows_sys::Win32::System::Diagnostics::ToolHelp::{CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW, TH32CS_SNAPPROCESS};
+    use windows_sys::Win32::System::Threading::{GetExitCodeProcess, OpenProcess, PROCESS_SYNCHRONIZE, PROCESS_TERMINATE, TerminateProcess, WaitForSingleObject};
+    use windows_sys::Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW, ShellExecuteExW};
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+    fn wide(s: &std::ffi::OsStr) -> Vec<u16> {
+        use std::os::windows::ffi::OsStrExt;
+        s.encode_wide().chain(std::iter::once(0)).collect()
+    }
+
+    /// Un processo avviato, che si chiude da solo.
+    pub struct Process(HANDLE);
+    impl Process {
+        /// Aspetta la fine al massimo `ms`: `None` se non e' finito, altrimenti il codice di uscita (`Some(None)` se non si legge).
+        pub fn wait(&self, ms: u32) -> Option<Option<u32>> {
+            // SAFETY: handle valido finche' vive `self`
+            unsafe {
+                if WaitForSingleObject(self.0, ms) != WAIT_OBJECT_0 {
+                    return None;
+                }
+                let mut code = 0u32;
+                Some((GetExitCodeProcess(self.0, &mut code) != 0).then_some(code))
+            }
+        }
+    }
+    impl Drop for Process {
+        fn drop(&mut self) {
+            // SAFETY: handle avuto da ShellExecuteExW, chiuso una volta sola
+            unsafe { CloseHandle(self.0) };
+        }
+    }
+
+    /// Apre `file` con i suoi argomenti come `Start-Process` (`ShellExecuteExW`, verbo predefinito: se il programma chiede i diritti
+    /// di amministratore Windows mostra la conferma). Con `keep` restituisce il processo da aspettare.
+    pub fn shell_start(file: &Path, params: &str, dir: Option<&Path>, keep: bool) -> Result<Option<Process>, String> {
+        let file_w = wide(file.as_os_str());
+        let params_w = wide(std::ffi::OsStr::new(params));
+        let dir_w = dir.map(|d| wide(d.as_os_str()));
+        // SAFETY: struttura azzerata e poi riempita; le stringhe vivono fino alla fine della chiamata
+        unsafe {
+            let mut info: SHELLEXECUTEINFOW = std::mem::zeroed();
+            info.cbSize = size_of::<SHELLEXECUTEINFOW>() as u32;
+            info.fMask = SEE_MASK_NOASYNC | SEE_MASK_FLAG_NO_UI | if keep { SEE_MASK_NOCLOSEPROCESS } else { 0 };
+            info.lpFile = file_w.as_ptr();
+            info.lpParameters = if params.is_empty() { std::ptr::null() } else { params_w.as_ptr() };
+            info.lpDirectory = dir_w.as_ref().map_or(std::ptr::null(), |d| d.as_ptr());
+            info.nShow = SW_SHOWNORMAL;
+            if ShellExecuteExW(&mut info) == 0 {
+                return Err(std::io::Error::last_os_error().to_string());
+            }
+            Ok((keep && !info.hProcess.is_null()).then(|| Process(info.hProcess)))
+        }
+    }
+
+    /// I processi con uno di questi nomi di file (minuscoli), tranne questo.
+    fn find(names: &[&str]) -> Vec<u32> {
+        let me = std::process::id();
+        let mut found = Vec::new();
+        // SAFETY: istantanea chiusa in fondo; dwSize impostato come vuole Process32FirstW
+        unsafe {
+            let snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if snap == INVALID_HANDLE_VALUE {
+                return found;
+            }
+            let mut entry = PROCESSENTRY32W { dwSize: size_of::<PROCESSENTRY32W>() as u32, ..Default::default() };
+            let mut ok = Process32FirstW(snap, &mut entry) != 0;
+            while ok {
+                let end = entry.szExeFile.iter().position(|&c| c == 0).unwrap_or(entry.szExeFile.len());
+                let name = String::from_utf16_lossy(&entry.szExeFile[..end]).to_lowercase();
+                if entry.th32ProcessID != me && names.contains(&name.as_str()) {
+                    found.push(entry.th32ProcessID);
+                }
+                ok = Process32NextW(snap, &mut entry) != 0;
+            }
+            CloseHandle(snap);
+        }
+        found
+    }
+
+    /// `true` se c'e' un processo con uno di questi nomi.
+    pub fn running(names: &[&str]) -> bool {
+        !find(names).is_empty()
+    }
+
+    /// Chiude d'autorita' i processi con questi nomi (come `Stop-Process -Force`); restituisce quanti.
+    pub fn kill_all(names: &[&str]) -> usize {
+        find(names)
+            .into_iter()
+            .filter(|&pid| {
+                // SAFETY: handle chiuso subito dopo
+                unsafe {
+                    let h = OpenProcess(PROCESS_TERMINATE, 0, pid);
+                    if h.is_null() {
+                        return false;
+                    }
+                    let ok = TerminateProcess(h, 1) != 0;
+                    CloseHandle(h);
+                    ok
+                }
+            })
+            .count()
+    }
+
+    /// Aspetta che il processo `pid` finisca, al massimo `ms` (se non c'e' piu' torna subito).
+    pub fn wait_process(pid: u32, ms: u32) {
+        // SAFETY: handle chiuso subito dopo l'attesa
+        unsafe {
+            let h = OpenProcess(PROCESS_SYNCHRONIZE, 0, pid);
+            if !h.is_null() {
+                WaitForSingleObject(h, ms);
+                CloseHandle(h);
+            }
+        }
+    }
 }
 
 /// Un solo avvio dell'installatore per vita del programma: due richieste ravvicinate (la locandina che parte da sola e la barretta, o
@@ -109,15 +356,6 @@ pub(crate) fn release_install() {
 /// lo usa anche l'agente nel tray quando aggiorna con Aurora chiusa.
 pub(crate) fn prepare_package(updates: &UpdateService) -> Result<updater::Prepared, String> {
     updates.prepare(PUBLIC_KEY, &package_dir(), MAX_PACKAGE_BYTES)
-}
-
-/// Come lanciare l'installatore **staccato** da Aurora: tramite `cmd /C start`, che termina subito, cosi' l'installatore non risulta figlio di
-/// Aurora e non viene chiuso insieme a lei quando la chiude per sostituirla (ne' dalla riga di chiusura dei vecchi disinstallatori).
-#[allow(dead_code)]
-pub fn detached_command_args(installer: &str) -> Vec<String> {
-    let mut args = vec!["/C".to_string(), "start".to_string(), String::new(), installer.to_string()];
-    args.extend(installer_args().iter().map(|a| (*a).to_string()));
-    args
 }
 
 /// La cartella dove si tiene il pacchetto scaricato in anticipo.
@@ -169,9 +407,9 @@ impl UpdateInstaller for DesktopInstaller {
         updates.set_installing();
         // un attimo perche' la barra e la cartolina del tray mostrino «Aurora si chiude per installare» prima della chiusura
         std::thread::sleep(Duration::from_millis(700));
-        // lo script aspetta che Aurora e l'agente siano chiusi (il core si ferma con calma, fino a 6 s: un installatore partito subito
-        // trovava Aurora ancora aperta, 2026-11-08), installa e solo alla fine riapre Aurora, una volta; se l'installazione non riesce
-        // riapre l'installatore con le sue finestre (vedi `update_script`)
+        // la copia di aiuto aspetta che Aurora e l'agente siano chiusi (il core si ferma con calma, fino a 6 s: un installatore partito
+        // subito trovava Aurora ancora aperta, 2026-11-08), installa e solo alla fine riapre Aurora, una volta; se l'installazione non
+        // riesce riapre l'installatore con le sue finestre (vedi `apply_update`)
         if let Err(message) = launch_update_script(&ready.path) {
             release_install();
             updates.set_error(&message);
@@ -391,44 +629,44 @@ mod tests {
     const SETUP: &str = r"C:\Users\IU3ABC\AppData\Local\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe";
     const EXE: &str = r"C:\Users\IU3ABC\AppData\Local\Aurora\aurora-desktop.exe";
 
-    #[test]
-    fn the_script_closes_aurora_and_the_agent_before_installing_and_reopens_once_after() {
-        let s = update_script(SETUP, EXE);
-        let open_exe = format!("Start-Process -FilePath '{EXE}'");
-        let wait = s.find("while ((Get-Process aurora-desktop").expect("aspetta la chiusura di Aurora e dell'agente");
-        let kill = s.find("Stop-Process -Force").expect("chiude chi resta");
-        let start = s.find(&format!("Start-Process -FilePath '{SETUP}' -ArgumentList '/S','/UPDATE' -PassThru")).expect("installatore in silenzio, senza /R");
-        let done = s.find("WaitForExit(").expect("aspetta la fine dell'installatore");
-        let reopen = s.rfind(&open_exe).expect("riapre Aurora");
-        assert!(wait < kill && kill < start && start < done && done < reopen, "ordine: chiusura, installazione, riapertura\n{s}");
-        // due punti soli: dopo la fine dell'installatore, oppure se l'installatore non e' nemmeno partito (file non toccati)
-        assert_eq!(s.matches(&open_exe).count(), 2, "{s}");
-        assert_eq!(s[..start].matches(&open_exe).count(), 0, "mai prima di avviare l'installatore");
-        assert!(!s.contains("Wait-Process -Timeout 240"), "il vecchio limite di 240 s riapriva Aurora a meta' installazione");
-        assert!(s.contains(&format!("WaitForExit({INSTALLER_WAIT_MS})) {{ exit }}")), "installatore ancora al lavoro: non si riapre niente\n{s}");
-        assert!(s.contains(r"-WorkingDirectory 'C:\Users\IU3ABC\AppData\Local\Aurora'"), "{s}");
+    fn strings(args: &[&str]) -> Vec<String> {
+        args.iter().map(|a| (*a).to_string()).collect()
     }
 
     #[test]
-    fn a_failed_installation_reopens_the_installer_with_its_windows_not_old_aurora() {
-        let s = update_script(SETUP, EXE);
-        let ok = s.find("$c -eq 0").expect("si guarda il codice di uscita");
-        let fallback = s.rfind(&format!("else {{ Start-Process -FilePath '{SETUP}' }}")).expect("in errore l'installatore con le sue finestre");
-        assert!(ok < fallback);
-        assert!(!s[fallback..].contains("/S"), "l'installatore riaperto non e' silenzioso");
-        // se nel frattempo Aurora e' gia' aperta non se ne apre un'altra
-        assert!(s.contains("if (Get-Process aurora-desktop -ErrorAction SilentlyContinue) { exit }"));
+    fn the_helper_arguments_go_and_come_back_unchanged() {
+        let odd = r"C:\Temp\O'Brien \Aurora-setup.exe";
+        let args = apply_command_args(odd, 4321, EXE);
+        assert_eq!(args, strings(&[APPLY_ARG, odd, "4321", EXE]));
+        assert_eq!(parse_apply_args(&args), Some(ApplyArgs { installer: odd.into(), pid: 4321, exe: Some(EXE.into()) }));
+        // programma sconosciuto: si installa lo stesso, ma non si riapre niente
+        assert_eq!(parse_apply_args(&apply_command_args(SETUP, 7, "")).and_then(|a| a.exe), None);
     }
 
     #[test]
-    fn quotes_in_the_paths_are_doubled() {
-        let s = update_script(r"C:\Temp\O'Brien\Aurora-setup.exe", r"C:\Programmi\D'Aurora\aurora-desktop.exe");
-        assert!(s.contains(r"'C:\Temp\O''Brien\Aurora-setup.exe'"));
-        assert!(s.contains(r"'C:\Programmi\D''Aurora\aurora-desktop.exe'"));
-        assert!(s.contains(r"-WorkingDirectory 'C:\Programmi\D''Aurora'"));
-        for placeholder in ["{EXE}", "{INSTALLER}", "{DIR}", "{WAIT}", "{ARGS}"] {
-            assert!(!s.contains(placeholder), "{placeholder} non sostituito");
-        }
+    fn other_command_lines_are_not_an_update() {
+        assert_eq!(parse_apply_args(&[]), None);
+        assert_eq!(parse_apply_args(&strings(&["--agente"])), None);
+        assert_eq!(parse_apply_args(&strings(&[APPLY_ARG, SETUP, "4321"])), None, "manca il programma");
+        assert_eq!(parse_apply_args(&strings(&[APPLY_ARG, SETUP, "non un numero", EXE])), None);
+        assert_eq!(parse_apply_args(&strings(&[APPLY_ARG, "", "1", EXE])), None, "senza installatore");
+        assert_eq!(parse_apply_args(&strings(&["--altro", SETUP, "1", EXE])), None);
+    }
+
+    #[test]
+    fn after_the_installer_aurora_reopens_once_or_the_installer_shows_the_error() {
+        assert_eq!(after_install(Some(0), false, true), AfterInstall::ReopenAurora);
+        assert_eq!(after_install(None, false, true), AfterInstall::ReopenAurora, "codice sconosciuto come nello script");
+        assert_eq!(after_install(Some(2), false, true), AfterInstall::ReopenInstaller, "in errore l'installatore con le sue finestre, non Aurora vecchia");
+        assert_eq!(after_install(Some(0), false, false), AfterInstall::ReopenInstaller, "programma sparito");
+        assert_eq!(after_install(Some(0), true, true), AfterInstall::Nothing, "Aurora gia' aperta: non se ne apre un'altra");
+        assert_eq!(after_install(Some(1), true, true), AfterInstall::Nothing);
+    }
+
+    #[test]
+    fn the_helper_copy_has_its_own_name() {
+        assert_eq!(helper_name(42), "aurora-aggiorna-42.exe");
+        assert!(!helper_name(42).eq_ignore_ascii_case("aurora-desktop.exe"), "non deve contare come Aurora aperta");
     }
 
     #[test]
@@ -439,14 +677,6 @@ mod tests {
         release_install();
         assert!(claim_install(), "dopo un avvio fallito si puo' riprovare");
         release_install();
-    }
-
-    #[test]
-    fn the_installer_is_started_detached_through_cmd_start() {
-        let args = detached_command_args(r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
-        assert_eq!(&args[..3], ["/C", "start", ""], "start vuole prima il titolo (vuoto)");
-        assert_eq!(args[3], r"C:\Temp\Aurora-update\Aurora_1.0.0_x64-setup.exe");
-        assert_eq!(&args[4..], ["/S", "/UPDATE"]);
     }
 
     #[test]
@@ -525,13 +755,4 @@ mod tests {
             assert!(verify_package(&tampered, &signature).is_err(), "un pacchetto alterato va rifiutato");
         }
     }
-}
-
-/// PowerShell con il percorso intero (`%SystemRoot%\System32\WindowsPowerShell1.0\powershell.exe`): su alcuni PC «powershell» non e'
-/// nel PATH del programma (2026-11-09: «installatore non avviato: program not found»). Se non c'e', il nome semplice.
-pub(crate) fn powershell_exe() -> std::path::PathBuf {
-    std::env::var_os("SystemRoot")
-        .map(|r| std::path::PathBuf::from(r).join("System32").join("WindowsPowerShell").join("v1.0").join("powershell.exe"))
-        .filter(|p| p.is_file())
-        .unwrap_or_else(|| std::path::PathBuf::from("powershell"))
 }

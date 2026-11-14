@@ -54,12 +54,24 @@ fn remove_old_exe() {
     }
 }
 
+/// Se Aurora e' stata avviata come copia di aiuto dell'aggiornamento ([`installer::APPLY_ARG`]), fa quel lavoro e restituisce `true`.
+pub fn apply_update_if_asked() -> bool {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let Some(apply) = installer::parse_apply_args(&args) else { return false };
+    #[cfg(windows)]
+    installer::apply_update(&apply);
+    #[cfg(not(windows))]
+    let _ = apply;
+    true
+}
+
 pub fn run() {
     // senza WebView2 Tauri si fermerebbe con un panic e Aurora ripartirebbe e ricadrebbe: prima un messaggio che spiega e si esce
     if !webview_check::ensure() {
         return;
     }
     remove_old_exe();
+    installer::remove_old_helpers();
     let built = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--nascosto"])))
