@@ -128,6 +128,30 @@ mod tests {
     use super::*;
     use crate::rtty::{RttyParams, modulate};
 
+    /// Le estremita' della banda: una stazione forte a 450 Hz e una a 3700 Hz di centro si trovano e si leggono come quelle in mezzo.
+    #[test]
+    fn stations_at_the_edges_of_the_band_are_read() {
+        let mut band = vec![0.0_f32; 12_000 * 40];
+        for (centre, call) in [(450.0_f32, "IU3ABC"), (3_700.0, "K1XYZ")] {
+            let text = format!("RYRY CQ TEST {call} {call} {call}  CQ TEST {call} {call} {call}  CQ TEST {call} {call} ");
+            let wave = modulate(text.as_bytes(), RttyParams { centre_hz: centre, shift_hz: 170.0, baud: 45.45, reverse: false }, 0.3);
+            for (s, w) in band.iter_mut().skip(6_000).zip(wave) {
+                *s += w;
+            }
+        }
+        for (s, n) in band.iter_mut().zip(crate::skim::tests::noise(12_000 * 40, 0.02, 7)) {
+            *s += n;
+        }
+        let mut d = RttyBandDecoder::new(170.0, 45.45, 10);
+        for block in band.chunks(4_800) {
+            d.process(block);
+        }
+        let chans = d.channels();
+        for call in ["IU3ABC", "K1XYZ"] {
+            assert!(chans.iter().any(|ch| ch.calls.iter().any(|c| c.call == call && c.verified())), "{call}: {chans:#?}");
+        }
+    }
+
     /// Due stazioni RTTY nella banda: due canali, ognuno con il suo nominativo verificato.
     #[test]
     fn two_rtty_stations_two_channels_with_their_calls() {
