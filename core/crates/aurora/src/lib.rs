@@ -3171,18 +3171,89 @@ fn port_error(bind: std::net::SocketAddr, e: &std::io::Error) -> String {
     format!("la porta {} e' gia' usata da {who}: chiudilo o scegli un'altra porta in Impostazioni › Accesso e assistenza › Smartphone", bind.port())
 }
 
+/// Chi tiene la porta TCP in ascolto, con le API di Windows (tabella TCP di IP Helper e nome del processo), senza avviare programmi:
+/// prima passava da PowerShell nascosto, che gli antivirus segnalano. Il nome e' quello del file senza `.exe` («aurora»), come `ProcessName`.
 #[cfg(windows)]
 fn port_owner(port: u16) -> Option<String> {
-    use std::os::windows::process::CommandExt;
-    let script = format!("(Get-Process -Id (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction Stop | Select-Object -First 1).OwningProcess).ProcessName");
-    let out = std::process::Command::new("powershell.exe").args(["-NoProfile", "-NonInteractive", "-Command", &script]).creation_flags(0x0800_0000).output().ok()?;
-    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    (out.status.success() && !name.is_empty()).then_some(name)
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::NetworkManagement::IpHelper::{GetExtendedTcpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCPROW_OWNER_PID, TCP_TABLE_OWNER_PID_LISTENER};
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW};
+    use windows::core::PWSTR;
+
+    /// La tabella intera (dwNumEntries seguito dalle righe), letta due volte se la prima misura non basta.
+    fn table(family: u32) -> Option<Vec<u8>> {
+        let mut size = 0u32;
+        for _ in 0..3 {
+            let mut buffer = vec![0u8; size as usize + 1024];
+            size = buffer.len() as u32;
+            // SAFETY: buffer lungo `size` byte; la funzione scrive al piu' `size` byte o dice quanti ne servono
+            let rc = unsafe { GetExtendedTcpTable(Some(buffer.as_mut_ptr().cast()), &mut size, false, family, TCP_TABLE_OWNER_PID_LISTENER, 0) };
+            if rc == 0 {
+                return Some(buffer);
+            }
+            if rc != 122 {
+                // non ERROR_INSUFFICIENT_BUFFER
+                return None;
+            }
+        }
+        None
+    }
+    fn rows<T: Copy>(buffer: &[u8]) -> Vec<T> {
+        let count = buffer.get(..4).and_then(|b| b.try_into().ok()).map(u32::from_ne_bytes).unwrap_or(0) as usize;
+        // le righe iniziano dopo dwNumEntries, allineate come la struttura (4 byte per entrambe)
+        let start = 4usize;
+        (0..count)
+            .filter_map(|i| {
+                let at = start + i * size_of::<T>();
+                let bytes = buffer.get(at..at + size_of::<T>())?;
+                // SAFETY: `bytes` e' lungo quanto T, T e' una struttura C di soli interi (ogni sequenza di byte e' valida)
+                Some(unsafe { std::ptr::read_unaligned(bytes.as_ptr().cast::<T>()) })
+            })
+            .collect()
+    }
+    let local = |p: u32| u16::from_be(p as u16);
+    let pid = table(2)
+        .and_then(|t| rows::<MIB_TCPROW_OWNER_PID>(&t).into_iter().find(|r| local(r.dwLocalPort) == port).map(|r| r.dwOwningPid))
+        .or_else(|| table(23).and_then(|t| rows::<MIB_TCP6ROW_OWNER_PID>(&t).into_iter().find(|r| local(r.dwLocalPort) == port).map(|r| r.dwOwningPid)))?;
+    // SAFETY: handle chiuso subito dopo; buffer e dimensione coerenti
+    unsafe {
+        let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let mut path = [0u16; 1024];
+        let mut len = path.len() as u32;
+        let ok = QueryFullProcessImageNameW(process, PROCESS_NAME_WIN32, PWSTR(path.as_mut_ptr()), &mut len);
+        let _ = CloseHandle(process);
+        ok.ok()?;
+        process_name(&String::from_utf16_lossy(&path[..len as usize]))
+    }
+}
+
+/// Il nome del processo dal percorso dell'eseguibile: `C:\Programmi\Aurora\aurora.exe` -> `aurora`.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn process_name(path: &str) -> Option<String> {
+    let file = path.rsplit(['\\', '/']).next()?;
+    let name = file.strip_suffix(".exe").or_else(|| file.strip_suffix(".EXE")).unwrap_or(file);
+    (!name.is_empty()).then(|| name.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_process_name_is_the_file_without_exe() {
+        assert_eq!(process_name(r"C:\Program Files\Aurora\aurora.exe").as_deref(), Some("aurora"));
+        assert_eq!(process_name("JTDX.EXE").as_deref(), Some("JTDX"));
+        assert_eq!(process_name(r"C:\dir\"), None);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn the_owner_of_a_listening_port_is_found() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("porta");
+        let port = listener.local_addr().expect("indirizzo").port();
+        let me = std::env::current_exe().ok().and_then(|p| process_name(&p.to_string_lossy()));
+        assert_eq!(port_owner(port), me);
+    }
 
     #[test]
     fn a_corrected_qso_is_rewritten_in_the_adif_file_and_nothing_is_left_behind() {
