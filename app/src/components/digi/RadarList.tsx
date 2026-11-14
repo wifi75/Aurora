@@ -45,7 +45,7 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
         const code = flagCode(s.country);
         return (
           <td key={c} className="radar-call">
-            <span className="radar-dot" aria-hidden="true" />
+            <span className="radar-dot" title={s.stale ? t('radar.dotStale') : t('radar.dotLive')} aria-label={s.stale ? t('radar.dotStale') : t('radar.dotLive')} />
             {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
             <b>{s.call}</b>
           </td>
@@ -72,7 +72,7 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
       case 'cq':
         return (
           <td key={c} className="radar-cq">
-            {s.cq ? <em>CQ</em> : ''}
+            {s.cq ? <em title={t('radar.cqTip')}>CQ</em> : ''}
           </td>
         );
     }

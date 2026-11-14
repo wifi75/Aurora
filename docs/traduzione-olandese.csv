@@ -4459,6 +4459,9 @@ radar.empty,No reliable station yet: a callsign appears once it has been read se
 radar.rowTip,Click: listen to this station · double-click: callsign to the QSO,Klik: naar dit station luisteren · dubbelklik: roepnaam naar de QSO
 radar.tip,"Aurora BIGScan: Aurora listens to the whole band and shows, next to the waterfall, the stations read reliably, one row per callsign. Off: no list, only the station you are listening to is decoded.","Aurora BIGScan: Aurora luistert naar de hele band en toont naast de waterval de betrouwbaar gelezen stations, één regel per roepnaam. Uit: geen lijst, alleen het station waarnaar je luistert wordt gedecodeerd."
 radar.resize,Drag to change the Aurora BIGScan width (double-click: default),Sleep om de breedte van Aurora BIGScan te wijzigen (dubbelklik: standaard)
+radar.dotLive,"The station colour (always the same for the same callsign, also on the waterfall). Bright: the station is heard now.","De kleur van het station (altijd dezelfde voor dezelfde roepnaam, ook op de waterval). Fel: het station is nu te horen."
+radar.dotStale,"The station colour. Paler: not heard for over 75 seconds (it stays in the list, but its callsign leaves the waterfall).","De kleur van het station. Lichter: al meer dan 75 seconden niet gehoord (het blijft in de lijst, maar de roepnaam verdwijnt van de waterval)."
+radar.cqTip,The station is calling CQ (or TEST): you can answer it.,Het station roept CQ (of TEST): je kunt antwoorden.
 radar.mi,Aurora BIGScan (all stations in the band),Aurora BIGScan (alle stations in de band)
 digi.band.title,Signals,Signalen
 digi.band.count,{n} signals,{n} signalen
