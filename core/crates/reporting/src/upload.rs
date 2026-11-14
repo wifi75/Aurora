@@ -430,8 +430,11 @@ async fn send(service: &Service, target: Target, config: &Config, items: &[Pendi
                 let Some(code) = secrets.get(crate::HRDLOG_SECRET) else {
                     return (Outcome::Blocked("codice di caricamento di HRDLOG.NET non impostato".into()), "hrdlog_code_missing", String::new());
                 };
-                let call = if account.callsign.is_empty() { config.call.clone() } else { account.callsign.clone() };
-                crate::hrdlog::upload_coded(&endpoints.hrdlog_url, &call, &code, record, endpoints.upload_timeout, &endpoints.user_agent)
+                // nominativo in maiuscolo e codice senza spazi: incollato da una pagina web spesso porta uno spazio o un a capo in coda
+                let call = if account.callsign.trim().is_empty() { config.call.clone() } else { account.callsign.clone() };
+                let call = call.trim().to_uppercase();
+                let code = code.trim();
+                crate::hrdlog::upload_coded(&endpoints.hrdlog_url, &call, code, record, endpoints.upload_timeout, &endpoints.user_agent)
             }
             Target::Lotw => {
                 let Some(setup) = &config.lotw else { return plain(Outcome::Blocked("LoTW spento".into())) };
