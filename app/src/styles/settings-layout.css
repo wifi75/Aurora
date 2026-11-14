@@ -2112,3 +2112,18 @@
   .about > .about-news { grid-row: 1 / span 2; }
   .about > :not(.about-hero):not(.about-dedica):not(.about-facts):not(.about-news):not(.about-donate) { grid-column: 1 / -1; }
 }
+
+/* Informazioni in tre colonne (proposta A): logo e dedica | novita', sostegno e collegamenti | progettazione, licenza, codice derivato,
+   grazie a. Sotto i 60rem le colonne tornano una sotto l'altra */
+.about--cols .about-col { display: flex; flex-direction: column; align-items: stretch; gap: 1rem; min-width: 0; width: 100%; }
+@media (min-width: 60rem) {
+  .about.about--cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; column-gap: 1.25rem; max-width: 84rem; }
+  .about.about--cols > .about-col { grid-column: auto; grid-row: auto; }
+  /* l'ordine a schermo: logo e dedica, poi novita' e sostegno al centro, dati e crediti a destra */
+  .about.about--cols > .about-col--news { order: 2; }
+  .about.about--cols > .about-col--facts { order: 3; }
+  .about--cols .about-col--facts .about-facts { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
+  .about--cols .about-col--facts .about-fact { padding: 0.65rem 0.9rem; }
+  .about--cols .about-col--facts .about-fact p { font-size: 0.82rem; line-height: 1.45; }
+  .about--cols .about-links { justify-content: flex-start; }
+}

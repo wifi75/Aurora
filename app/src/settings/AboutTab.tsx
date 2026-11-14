@@ -29,7 +29,9 @@ export function AboutTab() {
     [t('about.qrz'), 'https://www.qrz.com/db/IU3WJQ'],
   ];
   return (
-    <div className="about">
+    <div className="about about--cols">
+      {/* tre colonne (scelta del proprietario, proposta A): logo e dedica, novita' e sostegno, dati e crediti; tutto senza scorrere */}
+      <div className="about-col">
       <header className="about-hero">
         <Logo size={96} animated className="about-logo" />
         <div className="about-title">
@@ -46,6 +48,8 @@ export function AboutTab() {
         <blockquote>{t('about.dedica')}</blockquote>
         <figcaption>{t('about.dedicaFirma')}</figcaption>
       </figure>
+      </div>
+      <div className="about-col about-col--facts">
       <div className="about-facts">
         <section className="about-fact">
           <h3>{t('about.author')}</h3>
@@ -68,6 +72,8 @@ export function AboutTab() {
           <p>{t('about.thanksText')}</p>
         </section>
       </div>
+      </div>
+      <div className="about-col about-col--news">
       <section className="about-news" aria-label={t('about.news')}>
         <h3>{t('about.news')}</h3>
         <ul>
@@ -113,6 +119,7 @@ export function AboutTab() {
           </a>
         ))}
       </nav>
+      </div>
     </div>
   );
 }
