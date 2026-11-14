@@ -41,6 +41,9 @@ const CHANNEL_AFC_HZ: f32 = 20.0;
 const SPOT_REPEAT_S: f64 = 600.0;
 /// Un nominativo ancora sentito si ripropone come spot dopo tanto (s); decide chi riceve gli spot.
 const SPOT_REOFFER_S: f64 = 60.0;
+/// Audio tenuto per i canali nuovi (s): un tono si vede dopo qualche spettro e il canale si apre in ritardo; il canale nuovo ascolta
+/// prima questi secondi, cosi' l'inizio della stazione (spesso il «CQ» e il nominativo) non si perde.
+const CATCH_UP_S: f32 = 2.5;
 /// S/N degli spot: quanto si tengono le misure a tasto abbassato (s) e quanto sopra il fondo deve stare la riga (6 dB).
 const KEYDOWN_S: f64 = 15.0;
 const KEYDOWN_RATIO: f32 = 4.0;
@@ -227,6 +230,8 @@ pub struct CwBandDecoder {
     fft: Arc<dyn Fft<f32>>,
     window: Vec<f32>,
     input: Vec<f32>,
+    /// Gli ultimi `CATCH_UP_S` secondi di audio, per i canali nuovi.
+    recent: VecDeque<f32>,
     power: Vec<f32>,
     lo_bin: usize,
     hi_bin: usize,
@@ -250,6 +255,7 @@ impl CwBandDecoder {
             fft: planner.plan_fft_forward(FFT_N),
             window: (0..FFT_N).map(|i| 0.5 - 0.5 * (2.0 * std::f32::consts::PI * i as f32 / FFT_N as f32).cos()).collect(),
             input: Vec::with_capacity(FFT_N * 2),
+            recent: VecDeque::with_capacity((CATCH_UP_S * RATE) as usize + 1),
             power: vec![0.0; FFT_N / 2],
             lo_bin: ((lo_hz.max(100.0) / res) as usize).max(4),
             hi_bin: ((hi_hz.min(5_500.0) / res) as usize).min(FFT_N / 2 - 5),
@@ -278,6 +284,7 @@ impl CwBandDecoder {
     pub fn clear(&mut self) {
         self.channels.clear();
         self.stable.clear();
+        self.recent.clear();
         self.spotter.clear();
     }
 
@@ -302,6 +309,11 @@ impl CwBandDecoder {
                 ch.tr.push(&out, ch.rx.confidences(), self.t);
             }
             ch.tr.trim(self.t);
+        }
+        let keep = (CATCH_UP_S * RATE) as usize;
+        self.recent.extend(audio.iter().copied());
+        while self.recent.len() > keep {
+            self.recent.pop_front();
         }
         self.input.extend_from_slice(audio);
         while self.input.len() >= FFT_N {
@@ -386,7 +398,14 @@ impl CwBandDecoder {
         // la stazione accanto puo' stare a 60-100 Hz: nelle pause l'AFC non deve saltarle addosso
         rx.set_afc_limit(CHANNEL_AFC_HZ);
         rx.set_beam(CHANNEL_BEAM);
-        self.channels.push(Channel { id: self.next_id, rx, tr: Transcript::new(self.t), born_s: self.t, keydown: VecDeque::new() });
+        // il canale ascolta prima l'audio recente (fino alla fine del blocco in corso): l'inizio della stazione non si perde
+        let mut tr = Transcript::new(self.t);
+        let recent: Vec<f32> = self.recent.iter().copied().collect();
+        for block in recent.chunks(960) {
+            let out = rx.process(block);
+            tr.push(&out, rx.confidences(), self.t);
+        }
+        self.channels.push(Channel { id: self.next_id, rx, tr, born_s: self.t, keydown: VecDeque::new() });
         self.next_id += 1;
     }
 
