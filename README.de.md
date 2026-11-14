@@ -49,7 +49,7 @@ Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
 ## Stand
 
-Version 0.11.253: eigene Multimode-Engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W und WSPR) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW, SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
+Version 0.11.254: eigene Multimode-Engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W und WSPR) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW, SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
 
 - **Station**: Nachrichtenliste wie in JTDX (Land mit Flagge, Entfernung, nach Typ gefärbte Zeilen, gerufenes Rufzeichen und Anrufe an dich hervorgehoben), WebGPU/WebGL2-Wasserfall mit verschiebbaren Rx/Tx-Balken, Tx1–Tx6 mit der QSO-Phase, Band- und Modusleiste (FT8/FT4) mit Umschaltung direkt auf der Seite.
 - **Anruferwarteschlange**: Rechtsklick auf eine rufende Station reiht sie ein (Kennzeichnung «IN CODA» mit Platz); nach dem geloggten QSO antwortet Aurora dem Ersten in der Schlange; der Schalter «Risp. a tutti» reiht automatisch jeden ein, der dich ruft; «Canc DX» stoppt das Senden sofort. Nur mit der eigenen Engine.
