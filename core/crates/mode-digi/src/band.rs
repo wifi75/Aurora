@@ -116,6 +116,8 @@ pub type CallLookup = Arc<dyn Fn(&str) -> Option<String> + Send + Sync>;
 enum Kind {
     Cw,
     Psk(PskMode),
+    /// RTTY con spostamento e velocita' (Hz, baud) del ricevitore principale.
+    Rtty(u32, u32),
 }
 
 impl Kind {
@@ -124,6 +126,8 @@ impl Kind {
             DigiMode::Cw if s.band_cw => Some(Kind::Cw),
             DigiMode::Psk31 if s.band_psk => Some(Kind::Psk(PskMode::Psk31)),
             DigiMode::Psk63 if s.band_psk => Some(Kind::Psk(PskMode::Psk63)),
+            // spostamento in Hz e velocita' in centesimi di baud: interi, cosi' un cambio si riconosce con `==`
+            DigiMode::Rtty if s.band_rtty => Some(Kind::Rtty(s.rtty_shift_hz.round() as u32, (s.rtty_baud * 100.0).round() as u32)),
             _ => None,
         }
     }
@@ -132,6 +136,7 @@ impl Kind {
         match self {
             Kind::Cw => "CW",
             Kind::Psk(m) => m.name(),
+            Kind::Rtty(..) => "RTTY",
         }
     }
 
@@ -139,6 +144,7 @@ impl Kind {
         match self {
             Kind::Cw => Box::new(CwBandDecoder::new(LO_HZ, HI_HZ, MAX_CHANNELS)),
             Kind::Psk(m) => Box::new(PskBandDecoder::new(m, LO_HZ, HI_HZ, MAX_CHANNELS)),
+            Kind::Rtty(shift, baud) => Box::new(crate::skim::rtty::RttyBandDecoder::new(shift as f32, baud as f32 / 100.0, MAX_CHANNELS)),
         }
     }
 }

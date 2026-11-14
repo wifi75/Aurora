@@ -13,6 +13,7 @@
 pub mod calls;
 pub mod forms;
 pub mod psk;
+pub mod rtty;
 
 use crate::cw::CwDemodulator;
 use calls::{CallCheck, CallTracker, HeardCall, Role, Validation};

@@ -257,6 +257,8 @@ pub struct DigiSettings {
     pub band_cw: bool,
     /// PSK31 e PSK63: si decodificano tutti i segnali della banda audio («browser», pannello «Segnali»).
     pub band_psk: bool,
+    /// RTTY: si decodificano tutti i segnali della banda audio («Radar» RTTY, thread a parte con limite di CPU).
+    pub band_rtty: bool,
     /// Tutta la banda: i nominativi verificati vanno come spot locali nel pannello del DX Cluster di Aurora (mai in rete).
     pub band_spots: bool,
     /// Tutta la banda: spot locali solo delle stazioni che chiamano CQ.
@@ -349,6 +351,7 @@ impl Default for DigiSettings {
             merge_macros: std::collections::BTreeMap::new(),
             band_cw: true,
             band_psk: true,
+            band_rtty: true,
             band_spots: true,
             band_spots_cq_only: false,
             band_validation: "normal".into(),
