@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+
+## 0.11.252 - 2026-11-14
 - **CW di tutta la banda piu' leggero**: i canali con il segnale forte usano meno ipotesi (CPU con 30 stazioni da 16% a 14% di un core, stessa qualita').
 - **Niente piu' PowerShell**: Aurora non avvia piu' `powershell.exe` nascosto, che alcuni antivirus (Bitdefender) segnalano fino a mettere in quarantena il programma dopo l'aggiornamento. Porte seriali, schede audio, rete, firewall, icona del tray, WebView2 e aggiornamento usano direttamente le API di Windows; «Consenti Aurora» passa da `netsh`, l'aggiornamento da una copia di aiuto di Aurora stessa.
 - **Aurora BIGScan (CW e RTTY)**: nelle pagine di CW e RTTY, a destra della cascata, le stazioni della banda lette con sicurezza in una griglia a colonne fisse (nominativo con il suo colore, frequenza, WPM e S/N in CW, CQ), una riga per nominativo e solo nominativi verificati; pulsante «Aurora BIGScan» nella barra in alto per accenderlo o spegnerlo, separato per CW e RTTY. Il RTTY entra nella decodifica di tutta la banda (`band_rtty`).
