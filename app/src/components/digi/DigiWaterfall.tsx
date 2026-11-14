@@ -266,8 +266,12 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
         .map((x) => (
           <span
             key={`xrx-${x.id}`}
-            className="digi-wf-xrx"
-            style={{ left: xOf(x.freq_hz) }}
+            className={`digi-wf-xrx${bandwidthHz > 0 ? '' : ' digi-wf-xrx--single'}`}
+            style={
+              bandwidthHz > 0
+                ? { left: xOf(x.freq_hz - bandwidthHz / 2), width: Math.max(16, xOf(x.freq_hz + bandwidthHz / 2) - xOf(x.freq_hz - bandwidthHz / 2)) }
+                : { left: xOf(x.freq_hz) }
+            }
             title={t('xrx.markerTip', { n: x.id })}
             onPointerDown={(e) => {
               if (e.button !== 0 || !onExtraMove) return;
