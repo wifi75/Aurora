@@ -611,8 +611,19 @@ pub struct ExtraRx {
     pub afc: bool,
 }
 
-/// Spostamento della radio (Hz) oltre il quale l'elenco di tutta la banda si ripulisce.
-const BAND_CLEAR_HZ: u64 = 50;
+/// Spostamento della radio (Hz) da cui l'elenco di tutta la banda si ripulisce invece di spostare i toni: piu' della banda audio.
+const BAND_CLEAR_HZ: u64 = 3_500;
+
+/// Cosa fare dell'elenco di tutta la banda quando la radio passa da `from` a `to` (Hz): `None` = ripulire (altra banda o salto grande),
+/// `Some(hz)` = spostare i toni audio di `hz` (in USB il contrario dello spostamento della radio, in LSB lo stesso).
+fn band_follow(from: u64, to: u64, lsb: bool) -> Option<f32> {
+    let band = aurora_core::adif::band_from_freq_hz;
+    if from.abs_diff(to) >= BAND_CLEAR_HZ || band(from).is_none() || band(from) != band(to) {
+        return None;
+    }
+    let delta = to as f64 - from as f64;
+    Some((if lsb { delta } else { -delta }) as f32)
+}
 
 /// Quante finestre RX in piu' al massimo (ognuna e' un ricevitore completo).
 pub const EXTRA_RX_MAX: usize = 4;
@@ -1304,11 +1315,16 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                     tracing::info!("modi testuali: radio da {dial} a {now} Hz, notch tolti");
                     inner.set_notches(Vec::new());
                 }
-                // tutta la banda (Aurora BIGScan): spostata la radio di 50 Hz o piu' (o cambiata banda) ogni stazione cambia tono audio e
-                // l'elenco vecchio non vale piu': si ripulisce
-                if dial != 0 && now.abs_diff(dial) >= BAND_CLEAR_HZ {
-                    tracing::info!("modi testuali: radio da {dial} a {now} Hz, tutta la banda ripulita");
-                    inner.band.reset();
+                // tutta la banda (Aurora BIGScan): spostata di poco la radio ogni stazione cambia tono audio e i canali la seguono;
+                // cambiata banda (o un salto oltre la banda audio) l'elenco vecchio non vale piu': si ripulisce
+                if dial != 0 {
+                    match band_follow(dial, now, inner.read_radio_lsb()) {
+                        Some(hz) => inner.band.shift(hz),
+                        None => {
+                            tracing::info!("modi testuali: radio da {dial} a {now} Hz, tutta la banda ripulita");
+                            inner.band.reset();
+                        }
+                    }
                 }
                 dial = now;
             }
@@ -1348,6 +1364,19 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Tutta la banda e la radio che si sposta: di poco nella stessa banda i toni si spostano (al contrario in USB, uguale in LSB);
+    /// un salto oltre la banda audio, un cambio di banda o una frequenza fuori dalle bande ripuliscono l'elenco.
+    #[test]
+    fn the_band_list_follows_small_dial_moves() {
+        assert_eq!(band_follow(14_080_000, 14_080_300, false), Some(-300.0));
+        assert_eq!(band_follow(14_080_300, 14_080_000, false), Some(300.0));
+        assert_eq!(band_follow(3_580_000, 3_580_200, true), Some(200.0));
+        assert_eq!(band_follow(14_080_000, 14_084_000, false), None);
+        assert_eq!(band_follow(7_040_000, 14_080_000, false), None);
+        assert_eq!(band_follow(13_999_900, 14_000_100, false), None);
+        assert_eq!(band_follow(12_000_000, 12_000_100, false), None);
+    }
 
     #[test]
     fn i_modi_si_riconoscono_dal_nome() {

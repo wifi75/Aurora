@@ -163,6 +163,8 @@ enum Msg {
     Audio(Vec<f32>),
     Config(Option<Kind>, Options),
     Reset,
+    /// La radio spostata di poco: i toni audio cambiano di tanto (Hz).
+    Shift(f32),
 }
 
 #[derive(Default)]
@@ -242,6 +244,11 @@ impl BandLink {
     /// Ascolto spento o «Pulisci»: si dimentica tutto (canali, storico, nominativi) e l'interfaccia riceve un elenco vuoto.
     pub fn reset(&self) {
         let _ = self.queue.send(Msg::Reset);
+    }
+
+    /// La radio si e' spostata di poco nella stessa banda: ogni segnale cambia tono audio di `audio_hz`; l'elenco resta.
+    pub fn shift(&self, audio_hz: f32) {
+        let _ = self.queue.send(Msg::Shift(audio_hz));
     }
 
     /// I segnali di adesso con tutto lo storico di 60 s.
@@ -379,6 +386,11 @@ fn band_loop(hooks: &Arc<Hooks>, queue: Receiver<Msg>) {
                 lock(&hooks.signals).clear();
                 last_sent = None;
                 emit(empty(kind));
+            }
+            Some(Msg::Shift(hz)) => {
+                if let Some(d) = decoder.as_mut() {
+                    d.shift(hz);
+                }
             }
             None => {}
         }

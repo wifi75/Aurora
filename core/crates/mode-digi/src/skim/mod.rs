@@ -167,7 +167,18 @@ pub trait BandDecoder: Send {
     fn clear(&mut self);
     /// Il livello di convalida dei nominativi.
     fn set_validation(&mut self, v: Validation);
+    /// La radio si e' spostata di poco nella stessa banda: ogni segnale cambia tono audio di `audio_hz` (con la radio in USB e' meno lo
+    /// spostamento della radio). I canali seguono il loro segnale con lo storico e i nominativi; quelli fuori da `SHIFT_LO_HZ`-`SHIFT_HI_HZ`
+    /// si chiudono. Chi non sa spostarsi ricomincia da capo.
+    fn shift(&mut self, audio_hz: f32) {
+        let _ = audio_hz;
+        self.clear();
+    }
 }
+
+/// La banda audio in cui un canale spostato resta aperto (Hz).
+pub const SHIFT_LO_HZ: f32 = 150.0;
+pub const SHIFT_HI_HZ: f32 = 4_000.0;
 
 /// Un canale: un segnale CW della banda.
 pub struct Channel {
@@ -304,6 +315,22 @@ impl CwBandDecoder {
         self.stable.clear();
         self.recent.clear();
         self.spotter.clear();
+    }
+
+    /// La radio spostata di poco: i canali seguono il loro segnale (vedi [`BandDecoder::shift`]).
+    pub fn shift(&mut self, audio_hz: f32) {
+        self.channels.retain(|ch| (SHIFT_LO_HZ..=SHIFT_HI_HZ).contains(&(ch.rx.frequency() + audio_hz)));
+        for ch in self.channels.iter_mut() {
+            let f = ch.rx.frequency() + audio_hz;
+            ch.rx.set_frequency(f);
+            ch.keydown.clear();
+        }
+        // lo spettro mediato si sposta con i segnali; le righe candidate e l'audio recente (della sintonia vecchia) si dimenticano
+        let bins = (audio_hz / (RATE / FFT_N as f32)).round() as isize;
+        let old = std::mem::take(&mut self.power);
+        self.power = (0..old.len() as isize).map(|k| usize::try_from(k - bins).ok().and_then(|j| old.get(j).copied()).unwrap_or(0.0)).collect();
+        self.stable.clear();
+        self.recent.clear();
     }
 
     /// Quanti canali al massimo: se sono di più si chiudono i più deboli.
@@ -495,6 +522,9 @@ impl BandDecoder for CwBandDecoder {
     fn set_validation(&mut self, v: Validation) {
         CwBandDecoder::set_validation(self, v);
     }
+    fn shift(&mut self, audio_hz: f32) {
+        CwBandDecoder::shift(self, audio_hz);
+    }
 }
 
 #[cfg(test)]
@@ -553,6 +583,43 @@ pub(crate) mod tests {
         // meno canali: restano i più forti
         sk.set_max_channels(2);
         assert_eq!(sk.channel_count(), 2);
+    }
+
+    /// La radio si sposta di poco: i canali seguono il tono nuovo con i loro nominativi, quelli che escono dalla banda audio si chiudono,
+    /// e l'ascolto continua sul tono nuovo senza aprire canali doppi.
+    #[test]
+    fn a_small_dial_move_shifts_the_channels() {
+        let make = |hz: f32, secs: usize| {
+            let mut band = vec![0.0_f32; 12_000 * secs];
+            let wave = modulate(b"CQ CQ DE IU3ABC IU3ABC K   CQ CQ DE IU3ABC IU3ABC K", hz, 20.0, 0.2);
+            for (s, w) in band.iter_mut().skip(6_000).zip(wave) {
+                *s += w;
+            }
+            for (s, n) in band.iter_mut().zip(noise(12_000 * secs, 0.05, 11)) {
+                *s += n;
+            }
+            band
+        };
+        let mut sk = CwBandDecoder::new(150.0, 4_000.0, 16);
+        for block in make(800.0, 30).chunks(4_800) {
+            sk.process(block);
+        }
+        let before = sk.channels();
+        assert!(before.len() == 1 && before[0].calls.iter().any(|c| c.call == "IU3ABC" && c.verified()), "{before:#?}");
+        // radio 300 Hz piu' in basso (USB): il tono sale di 300 Hz
+        sk.shift(300.0);
+        let after = sk.channels();
+        assert_eq!(after.len(), 1);
+        assert!((after[0].freq_hz - 1_100.0).abs() < 5.0 && after[0].id == before[0].id, "{after:#?}");
+        assert!(after[0].calls.iter().any(|c| c.call == "IU3ABC"), "{after:#?}");
+        for block in make(1_100.0, 30).chunks(4_800) {
+            sk.process(block);
+        }
+        let later = sk.channels();
+        assert!(later.len() == 1 && later[0].id == before[0].id, "{later:#?}");
+        // fuori dalla banda audio: il canale si chiude
+        sk.shift(-1_000.0);
+        assert!(sk.channels().is_empty());
     }
 
     #[test]

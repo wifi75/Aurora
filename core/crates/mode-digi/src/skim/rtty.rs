@@ -3,7 +3,7 @@
 //! degli ultimi 60 secondi e i nominativi sentiti, come i canali CW e PSK.
 
 use super::calls::Validation;
-use super::{BandDecoder, CallCheckFn, ChannelInfo, LocalSpot, Spotter, Transcript};
+use super::{BandDecoder, CallCheckFn, ChannelInfo, LocalSpot, SHIFT_HI_HZ, SHIFT_LO_HZ, Spotter, Transcript};
 use crate::rtty_multi::RttyMulti;
 
 const RATE: f64 = 12_000.0;
@@ -121,6 +121,14 @@ impl BandDecoder for RttyBandDecoder {
     fn set_validation(&mut self, v: Validation) {
         self.validation = v;
     }
+
+    fn shift(&mut self, audio_hz: f32) {
+        self.multi.shift(audio_hz, SHIFT_LO_HZ, SHIFT_HI_HZ);
+        self.lanes.retain(|l| (SHIFT_LO_HZ..=SHIFT_HI_HZ).contains(&(l.centre_hz + audio_hz)));
+        for l in self.lanes.iter_mut() {
+            l.centre_hz += audio_hz;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -150,6 +158,41 @@ mod tests {
         for call in ["IU3ABC", "K1XYZ"] {
             assert!(chans.iter().any(|ch| ch.calls.iter().any(|c| c.call == call && c.verified())), "{call}: {chans:#?}");
         }
+    }
+
+    /// La radio si sposta di poco: il canale segue il centro nuovo con i nominativi e continua a leggere senza aprirne un altro.
+    #[test]
+    fn a_small_dial_move_shifts_the_lanes() {
+        let make = |centre: f32| {
+            let text = "RYRY CQ CQ DE IU3ABC IU3ABC IU3ABC K  CQ CQ DE IU3ABC IU3ABC IU3ABC K ";
+            let mut band = vec![0.0_f32; 12_000 * 25];
+            let wave = modulate(text.as_bytes(), RttyParams { centre_hz: centre, shift_hz: 170.0, baud: 45.45, reverse: false }, 0.2);
+            for (s, w) in band.iter_mut().skip(6_000).zip(wave) {
+                *s += w;
+            }
+            for (s, n) in band.iter_mut().zip(crate::skim::tests::noise(12_000 * 25, 0.02, 3)) {
+                *s += n;
+            }
+            band
+        };
+        let mut d = RttyBandDecoder::new(170.0, 45.45, 10);
+        for block in make(1_000.0).chunks(4_800) {
+            d.process(block);
+        }
+        let before = d.channels();
+        assert!(before.len() == 1 && before[0].calls.iter().any(|c| c.call == "IU3ABC" && c.verified()), "{before:#?}");
+        // radio 400 Hz piu' in alto (USB): il centro scende di 400 Hz
+        d.shift(-400.0);
+        let after = d.channels();
+        assert!(after.len() == 1 && after[0].id == before[0].id && (after[0].freq_hz - 600.0).abs() < 15.0, "{after:#?}");
+        for block in make(600.0).chunks(4_800) {
+            d.process(block);
+        }
+        let later = d.channels();
+        assert!(later.len() == 1 && later[0].id == before[0].id, "{later:#?}");
+        assert_eq!(d.multi.channels().len(), 1, "{:?}", d.multi.channels());
+        d.shift(-1_000.0);
+        assert!(d.channels().is_empty() && d.multi.channels().is_empty());
     }
 
     /// Due stazioni RTTY nella banda: due canali, ognuno con il suo nominativo verificato.

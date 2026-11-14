@@ -73,6 +73,23 @@ impl RttyMulti {
         }
     }
 
+    /// La radio spostata di poco: ogni segnale cambia centro di `audio_hz`; i ricevitori ripartono sul centro nuovo, quelli fuori da
+    /// `lo_hz`-`hi_hz` (o dal banco) si chiudono. Le potenze misurate (della sintonia vecchia) si dimenticano.
+    pub fn shift(&mut self, audio_hz: f32, lo_hz: f32, hi_hz: f32) {
+        let (lo, hi) = (lo_hz.max(LOW_HZ), hi_hz.min(HIGH_HZ));
+        self.lanes.retain(|l| (lo..=hi).contains(&(l.centre_hz + audio_hz)));
+        for l in self.lanes.iter_mut() {
+            l.centre_hz += audio_hz;
+            let mut demod = RttyDemodulator::new(RttyParams { centre_hz: l.centre_hz, shift_hz: self.shift_hz, baud: self.baud, reverse: false });
+            demod.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+            l.demod = demod;
+        }
+        self.history.clear();
+        self.s1.iter_mut().for_each(|v| *v = 0.0);
+        self.s2.iter_mut().for_each(|v| *v = 0.0);
+        self.fill = 0;
+    }
+
     /// I centri dei canali aperti (Hz).
     pub fn channels(&self) -> Vec<f32> {
         self.lanes.iter().map(|l| l.centre_hz).collect()
