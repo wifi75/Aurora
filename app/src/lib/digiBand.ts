@@ -71,3 +71,56 @@ export function waterfallLabels(list: DigiSignal[]): WaterfallLabel[] {
     return c ? [{ hz: sig.freq_hz, text: c.call, cq: c.role === 'cq', sure: c.verified }] : [];
   });
 }
+
+/** Una stazione del Radar: un nominativo verificato, una riga sola anche se piu' canali lo hanno letto. */
+export interface RadarStation {
+  call: string;
+  freqHz: number;
+  wpm: number | null;
+  snrDb: number;
+  cq: boolean;
+  country: string | null;
+  /** Non la si sente da oltre 75 s. */
+  stale: boolean;
+  /** Indice del colore della stazione (0..RADAR_COLORS-1), fisso per nominativo. */
+  color: number;
+}
+
+/** Quanti colori distinti hanno le stazioni del Radar (le classi `radar-c0`...). */
+export const RADAR_COLORS = 10;
+
+/** Il colore di un nominativo: sempre lo stesso per la stessa stazione. */
+export function radarColor(call: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < call.length; i++) {
+    h ^= call.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) % RADAR_COLORS;
+}
+
+/**
+ * Le stazioni del Radar: solo i nominativi verificati (sentiti piu' volte con caratteri sicuri), una riga per nominativo. Se due canali
+ * leggono lo stesso nominativo resta quello sentito di recente e piu' forte. Ordine: dalla frequenza piu' bassa.
+ */
+export function radarStations(list: DigiSignal[]): RadarStation[] {
+  const best = new Map<string, RadarStation>();
+  for (const sig of list) {
+    for (const c of sig.calls) {
+      if (!c.verified) continue;
+      const st: RadarStation = {
+        call: c.call,
+        freqHz: sig.freq_hz,
+        wpm: sig.wpm ?? null,
+        snrDb: sig.snr_db,
+        cq: c.role === 'cq' || (sig.cq && c.role !== 'other'),
+        country: c.country ?? null,
+        stale: c.stale === true,
+        color: radarColor(c.call),
+      };
+      const old = best.get(c.call);
+      if (!old || (old.stale && !st.stale) || (old.stale === st.stale && st.snrDb > old.snrDb)) best.set(c.call, st);
+    }
+  }
+  return [...best.values()].sort((a, b) => a.freqHz - b.freqHz);
+}

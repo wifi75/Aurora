@@ -1,0 +1,70 @@
+/* Radar dei modi CW e RTTY: le stazioni sicure della banda in una griglia a colonne fisse, un colore per stazione. Tema scuro di base, chiaro sotto. */
+.radar {
+  display: flex; flex-direction: column; min-height: 10rem; width: 330px; flex: none; border: 1px solid var(--border); border-radius: 14px;
+  background: linear-gradient(180deg, #121e36, #0f192d); color: var(--text); overflow: hidden;
+}
+.radar-head { display: flex; align-items: baseline; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+.radar-head strong { font-size: 13px; }
+.radar-head small { color: var(--text-muted); font-size: 11px; margin-left: auto; }
+.radar-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.radar-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.radar-col-call { width: 46%; }
+.radar-col-freq { width: 26%; }
+.radar-col-num { width: 12%; }
+.radar-col-cq { width: 12%; }
+.radar-grid th {
+  position: sticky; top: 0; z-index: 1; padding: 4px 7px; background: #0e1729; color: var(--text-muted); border: 1px solid #22314f;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-align: left; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+}
+.radar-grid td { padding: 3px 7px; border: 1px solid #1d2b48; color: #d8e6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.radar-grid tbody tr { cursor: pointer; }
+.radar-grid tbody tr:hover td { background: #8e7bff22; }
+.radar-grid tr.radar-on td { background: #8e7bff33; }
+.radar-grid tr.radar-stale td { opacity: 0.55; }
+.radar-num { font-family: var(--font-data); text-align: right; }
+.radar-call { font-family: var(--font-data); }
+.radar-call b { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--radar-c); }
+.radar-call .decode-flag { margin-right: 5px; }
+.radar-dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--radar-c); vertical-align: 0; }
+.radar-cq { text-align: center; }
+.radar-cq em { padding: 0 5px; border: 1px solid #2cf5a4; border-radius: 5px; color: #2cf5a4; font-style: normal; font-weight: 700; font-size: 10px; }
+.radar-empty { color: var(--text-muted); white-space: normal; text-align: center; padding: 10px 7px; }
+/* i colori delle stazioni: dieci tinte ben distinte, leggibili sul fondo scuro */
+.radar-c0 { --radar-c: #5ec8e0; }
+.radar-c1 { --radar-c: #ffb84d; }
+.radar-c2 { --radar-c: #7ee787; }
+.radar-c3 { --radar-c: #ff7b9c; }
+.radar-c4 { --radar-c: #b49cff; }
+.radar-c5 { --radar-c: #ffe36e; }
+.radar-c6 { --radar-c: #4fd1c5; }
+.radar-c7 { --radar-c: #ff9966; }
+.radar-c8 { --radar-c: #8ab4ff; }
+.radar-c9 { --radar-c: #f0a6ff; }
+/* la cascata e il Radar affiancati */
+.digi-wfrow { display: flex; gap: 10px; align-items: stretch; min-height: 0; }
+.digi-wfrow > :first-child { flex: 1 1 auto; min-width: 0; }
+.digi-radar-btn { padding: 2px 10px; border: 1px solid var(--border); border-radius: 7px; background: #0a1324; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.digi-radar-btn[aria-pressed='true'] { border-color: #5ec8e0; color: #5ec8e0; background: #123a45; }
+@media (max-width: 900px) {
+  .digi-wfrow { flex-direction: column; }
+  .radar { width: auto; max-height: 14rem; }
+}
+html[data-theme='light'] .radar { background: #ffffff; }
+html[data-theme='light'] .radar-grid th { background: #eef2fa; color: #46556f; border-color: #d6deee; }
+html[data-theme='light'] .radar-grid td { color: #0b1322; border-color: #e3e9f6; }
+html[data-theme='light'] .radar-grid tbody tr:hover td { background: #e5e9ff; }
+html[data-theme='light'] .radar-grid tr.radar-on td { background: #d9dcff; }
+html[data-theme='light'] .radar-cq em { color: #0a7a52; border-color: #0a7a52; }
+html[data-theme='light'] .digi-radar-btn { background: #ffffff; }
+html[data-theme='light'] .digi-radar-btn[aria-pressed='true'] { background: #e1f5fa; color: #0b6f86; border-color: #0b6f86; }
+/* sul fondo chiaro le stesse tinte, piu' scure */
+html[data-theme='light'] .radar-c0 { --radar-c: #0b6f86; }
+html[data-theme='light'] .radar-c1 { --radar-c: #a35c00; }
+html[data-theme='light'] .radar-c2 { --radar-c: #1f7a2e; }
+html[data-theme='light'] .radar-c3 { --radar-c: #b8264f; }
+html[data-theme='light'] .radar-c4 { --radar-c: #5b3fc4; }
+html[data-theme='light'] .radar-c5 { --radar-c: #7a6400; }
+html[data-theme='light'] .radar-c6 { --radar-c: #0f766e; }
+html[data-theme='light'] .radar-c7 { --radar-c: #b44a12; }
+html[data-theme='light'] .radar-c8 { --radar-c: #1f4fb8; }
+html[data-theme='light'] .radar-c9 { --radar-c: #9a2fae; }

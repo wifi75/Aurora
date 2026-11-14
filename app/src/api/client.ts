@@ -1911,6 +1911,8 @@ export interface DigiSettings {
   band_cw?: boolean;
   /** PSK31 e PSK63: tutti i segnali della banda audio («browser», pannello «Segnali»). */
   band_psk?: boolean;
+  /** RTTY: Radar, tutti i segnali RTTY della banda. */
+  band_rtty?: boolean;
   /** Tutta la banda: i nominativi verificati come spot locali nel pannello del DX Cluster di Aurora (mai in rete). */
   band_spots?: boolean;
   /** Tutta la banda: spot locali solo di chi chiama CQ. */

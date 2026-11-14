@@ -13,7 +13,8 @@ import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../compon
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { BandSignals } from '../components/digi/BandSignals';
-import { getBandMode, getBandSignals, onBandSignals, waterfallLabels } from '../lib/digiBand';
+import { RadarList } from '../components/digi/RadarList';
+import { getBandMode, getBandSignals, onBandSignals, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
@@ -221,9 +222,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // tutta la banda: i segnali del modo in uso (CW; PSK31 e PSK63, il browser), con il nominativo sopra la traccia nella cascata
   const bandAll = useSyncExternalStore(onBandSignals, getBandSignals);
   const isPsk = s.mode === 'psk31' || s.mode === 'psk63';
-  const bandOn = (s.mode === 'cw' && s.band_cw !== false) || (isPsk && s.band_psk !== false);
+  // Radar: CW e RTTY (tutte le stazioni sicure della banda accanto alla cascata); il PSK ha il pannello «Segnali»
+  const radarMode = s.mode === 'cw' || s.mode === 'rtty';
+  const radarOn = (s.mode === 'cw' && s.band_cw !== false) || (s.mode === 'rtty' && s.band_rtty !== false);
+  const bandOn = radarOn || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
-  const bandLabels = useMemo(() => waterfallLabels(band), [band]);
+  const radar = useMemo(() => (radarMode ? radarStations(band) : []), [band, radarMode]);
+  // sulla cascata del Radar solo i nominativi sicuri (verificati)
+  const bandLabels = useMemo(() => (radarMode ? waterfallLabels(band).filter((l) => l.sure) : waterfallLabels(band)), [band, radarMode]);
+  const toggleRadar = () => (s.mode === 'cw' ? save({ band_cw: s.band_cw === false }) : save({ band_rtty: s.band_rtty === false }));
 
   const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);
 
@@ -913,11 +920,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.squelch'), checked: s.squelch_on, onSelect: () => toggleSetting('squelch', 'toggle') },
         { label: t('digi.mi.threshold'), onSelect: () => setSettingsOpen(true) },
         // tutta la banda (CW e PSK): acceso di base, e gli spot locali verso il pannello del DX Cluster di Aurora
-        ...(s.mode === 'cw' || isPsk
+        ...(radarMode || isPsk
           ? [
               'sep' as const,
-              s.mode === 'cw'
-                ? { label: t('digi.band.mi'), checked: s.band_cw !== false, onSelect: () => save({ band_cw: s.band_cw === false }) }
+              radarMode
+                ? { label: t('radar.mi'), checked: radarOn, onSelect: toggleRadar }
                 : { label: t('digi.band.miPsk'), checked: s.band_psk !== false, onSelect: () => save({ band_psk: s.band_psk === false }) },
               { label: t('digi.band.spots'), checked: s.band_spots !== false, onSelect: () => save({ band_spots: s.band_spots === false }) },
               { label: t('digi.band.spotsCqOnly'), checked: s.band_spots_cq_only === true, disabled: s.band_spots === false, onSelect: () => save({ band_spots_cq_only: s.band_spots_cq_only !== true }) },
@@ -1063,6 +1070,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           locked={sending}
           onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
         />
+        {radarMode ? (
+          <button type="button" className="digi-radar-btn" aria-pressed={radarOn} title={t('radar.tip')} onClick={toggleRadar}>
+            {t('radar.title')}
+          </button>
+        ) : null}
       </div>
       {sending ? (
         <div className={`digi-txflag${views.flashTx ? ' digi-txflag--flash' : ''}`} role="status" aria-label="TX">
@@ -1122,11 +1134,18 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             ) : null}
           </div>
         </div>
-        {bandOn && views.signals ? (
+        {bandOn && !radarMode && views.signals ? (
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
-        {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
+        {views.waterfall || (radarMode && radarOn) ? (
+          <div className="digi-wfrow">
+            {views.waterfall ? (
+            <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? bandLabels : []} notches={notches} onNotches={setNotches} />
+            ) : <div />}
+            {radarMode && radarOn ? (
+              <RadarList stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+            ) : null}
+          </div>
         ) : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}
