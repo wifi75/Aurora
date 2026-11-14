@@ -59,6 +59,8 @@ export interface WaterfallLabel {
   text: string;
   cq: boolean;
   sure: boolean;
+  /** Il colore della stazione (indice `radar-c0`...), lo stesso dell'elenco di Aurora BIGScan; senza: rosso. */
+  color?: number;
 }
 
 /**

@@ -19,7 +19,7 @@ import { PopupMenu } from '../components/PopupMenu';
 import { addNotch } from '../lib/digiNotches';
 import { clearExtraText } from '../lib/digiBus';
 import { takePendingSpot, textModeOfSpot } from '../lib/spotMode';
-import { getBandMode, getBandSignals, onBandSignals, radarStations, waterfallLabels } from '../lib/digiBand';
+import { getBandMode, getBandSignals, onBandSignals, radarColor, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
 import { MenuBar, type MenuDef } from '../components/digi/MenuBar';
@@ -273,7 +273,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
   const radar = useMemo(() => (radarMode ? radarStations(band) : []), [band, radarMode]);
   // sulla cascata del Radar solo i nominativi sicuri (verificati)
-  const bandLabels = useMemo(() => (radarMode ? waterfallLabels(band).filter((l) => l.sure) : waterfallLabels(band)), [band, radarMode]);
+  const bandLabels = useMemo(() => (radarMode ? waterfallLabels(band).filter((l) => l.sure).map((l) => ({ ...l, color: radarColor(l.text) })) : waterfallLabels(band)), [band, radarMode]);
   const toggleRadar = () => (s.mode === 'cw' ? save({ band_cw: s.band_cw === false }) : save({ band_rtty: s.band_rtty === false }));
 
   const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);

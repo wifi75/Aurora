@@ -35,7 +35,7 @@ interface Props {
   /** Cambia l'altezza della cascata (si trascina la barra sul bordo alto). */
   onHeight?(px: number): void;
   /** I nominativi dei segnali di tutta la banda, scritti sopra la loro traccia (`cq`: chiama CQ; `sure`: verificato). */
-  labels?: { hz: number; text: string; cq: boolean; sure: boolean }[];
+  labels?: { hz: number; text: string; cq: boolean; sure: boolean; color?: number }[];
   /** Le finestre RX in piu': un indicatore numerato per ognuna, che si trascina. */
   extraRx?: { id: number; freq_hz: number }[];
   onExtraMove?(id: number, hz: number, commit: boolean): void;
@@ -307,7 +307,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
           const prev = all[i - 1];
           const low = prev !== undefined && xOf(l.hz) - xOf(prev.hz) < 70 && i % 2 === 1;
           return (
-            <span key={`${l.text}-${Math.round(l.hz)}`} className={`digi-wf-call${l.cq ? ' digi-wf-call--cq' : ''}${l.sure ? '' : ' digi-wf-call--maybe'}`} style={{ left: xOf(l.hz), top: SCALE_H + (low ? 42 : 22) }} aria-hidden="true">
+            <span key={`${l.text}-${Math.round(l.hz)}`} className={`digi-wf-call${l.cq ? ' digi-wf-call--cq' : ''}${l.sure ? '' : ' digi-wf-call--maybe'}${l.color !== undefined ? ` digi-wf-call--station radar-c${l.color}` : ''}`} style={{ left: xOf(l.hz), top: SCALE_H + (low ? 42 : 22) }} aria-hidden="true">
               {l.text}
             </span>
           );

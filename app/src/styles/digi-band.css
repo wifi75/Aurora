@@ -57,6 +57,8 @@
 }
 /* chi chiama CQ: lo stesso rosso con il bordo bianco pieno, cosi' si riconosce al volo */
 .digi-wf-call--cq { box-shadow: 0 0 0 2px #ffffff, 0 1px 4px rgb(0 0 0 / 0.6); }
+/* Aurora BIGScan: l'etichetta ha il colore della stazione, lo stesso del pallino nell'elenco (scritta scura sulle tinte chiare) */
+.digi-wf-call--station { background: var(--radar-c); color: #06121c; text-shadow: none; }
 .digi-wf-call--maybe { color: #c9d0dd; font-weight: 400; font-style: italic; }
 
 /* tema chiaro */
