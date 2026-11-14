@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-14 pomeriggio (0.11.253 pubblicata, sito aggiornato)
+
+- **0.11.253** (2026-11-14T11:28:30Z): finestre RX in piu' (fino a 4, `PUT /api/v1/digi/extra-rx`, `rx_text` con `rx_id`, `ExtraRxWindow.tsx`, indicatori trascinabili) e menu del tasto destro sulla cascata; Aurora BIGScan di base solo chi chiama CQ (`radarAnswering`), ruoli dei contest (dopo TU, prima di TEST/QRZ), stazioni non attive tolte (`stale`/`gone`, `SUPERSEDED_S` 10 s, 60 s, 3 min), ripulitura al cambio banda o di 50 Hz (`BAND_CLEAR_HZ`), interruttore ON/OFF e Pulisci, etichette col colore della stazione; RTTY: caratteri uno alla volta, a capo dopo 1,5 s di pausa (`RX_GAP_MS`), a capo persi recuperati, AGC confermato dal rumore, banda 200-4000 Hz; clic su spot RTTY/PSK porta alla pagina dei modi testuali (`lib/spotMode.ts`); display «RADIO NON COLLEGATA» in testo (#55); Informazioni in tre colonne.
+- In attesa: seconda registrazione RTTY del proprietario (`Desktop	mp30515.wav`, ~110 MB, era ancora aperta da un altro programma); testi dell'altro programma per il confronto; registrazioni CW vere.
+
 ## Stato al 2026-11-14 (0.11.252 pubblicata, sito aggiornato)
 
 - **0.11.252** (2026-11-14T09:57:44Z): **Aurora BIGScan** (CW e RTTY: elenco delle stazioni sicure a destra delle finestre RX/TX, una riga per nominativo, colore per stazione, colonne spostabili, maniglia; `RadarList.tsx`, `lib/digiBand.ts` `radarStations`, `skim/rtty.rs`, `band_rtty`), in primo piano nelle Novita' (`featured`). CW di tutta la banda: rumore non ingannato da due vicine (`SIDE_OCCUPIED` 2,5; 30 stazioni 23 -> 30/30), recupero degli ultimi 2,5 s, frammenti e letture di un carattere nascosti (`shadows`, `shadow_across`), 64 ipotesi sui canali forti. RTTY: cancello interno a squelch spento (rumore 182 -> 18 car/min), AFC dalla fase (aggancio < 1 s fino a 50 Hz), riscalatura dopo un salto di guadagno. Niente piu' PowerShell (SetupAPI, IP Helper, WLAN/NLM/Firewall COM, registro, copia di aiuto `--applica-aggiornamento` con `aggiornamento.log`).
