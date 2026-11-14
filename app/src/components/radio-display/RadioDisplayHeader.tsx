@@ -47,7 +47,11 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const meters = useMeterBallistics(raw.meters);
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
   const tuning = useTuning();
-  const radioOff = !!cat.data && cat.data.config.backend !== 'none' && cat.data.status.state !== 'connected';
+  // la radio risponde se il CAT e' collegato, oppure se dalla radio arriva una frequenza senza errori (issue #55: CAT funzionante, FT8 a
+  // posto, ma uno stato diverso da «connected» spegneva il display di tutti gli stili)
+  const rig = cat.data?.status.rig;
+  const answering = cat.data?.status.state === 'connected' || rig?.state === 'connected' || ((rig?.frequency_hz ?? 0) > 0 && (rig?.failures ?? 1) === 0);
+  const radioOff = !!cat.data && cat.data.config.backend !== 'none' && !answering;
   // il display «spento» come quello vero: scuro con la radio spenta, si illumina quando la radio risponde (classe sul body, cosi' vale per
   // ogni stile e anche per il display staccato)
   useEffect(() => {
