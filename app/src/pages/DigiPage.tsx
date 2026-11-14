@@ -18,6 +18,7 @@ import { ExtraRxWindow } from '../components/digi/ExtraRxWindow';
 import { PopupMenu } from '../components/PopupMenu';
 import { addNotch } from '../lib/digiNotches';
 import { clearExtraText } from '../lib/digiBus';
+import { takePendingSpot, textModeOfSpot } from '../lib/spotMode';
 import { getBandMode, getBandSignals, onBandSignals, radarStations, waterfallLabels } from '../lib/digiBand';
 import { MacroEditor } from '../components/digi/MacroEditor';
 import { digiWithDefaults as withDefaults, editMacros, type MacroScope } from '../lib/digiMacroEdit';
@@ -502,12 +503,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // impostazioni: due di fila partirebbero entrambe dalle impostazioni di prima e la seconda cancellerebbe la prima (per esempio il modo).
   const tuneToSpot = async (spot: ClusterSpot, splitDx: boolean) => {
     const l = live.current;
-    const want = (spot.mode ?? '').toUpperCase();
+    // il modo: prima il piano di banda, poi quello scritto dal cluster (girare la manopola della radio non cambia mai il modo)
+    const want = textModeOfSpot(spot);
     const cur = l.snap.settings.mode;
     const patch: Partial<DigiSettings> = {};
-    if (want === 'RTTY' && cur !== 'rtty') patch.mode = 'rtty';
-    else if (want === 'CW' && cur !== 'cw') patch.mode = 'cw';
-    else if (want.startsWith('PSK') && (cur === 'rtty' || cur === 'cw')) patch.mode = 'psk31';
+    if (want !== null && want !== cur) patch.mode = want;
     const signalHz = Math.round(spot.freq_khz * 1000);
     const rxTone = Math.round(l.rxHz);
     const dial = signalHz - rxTone;
@@ -537,6 +537,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (Object.keys(patch).length > 0) save(patch);
     if (note) toast(note, 'info');
   };
+  // uno spot RTTY, CW o PSK cliccato in un'altra pagina: appena aperta questa, lo si sintonizza nel modo giusto (una volta sola)
+  const tuneToSpotRef = useRef(tuneToSpot);
+  tuneToSpotRef.current = tuneToSpot;
+  useEffect(() => {
+    const spot = takePendingSpot();
+    if (spot) void tuneToSpotRef.current(spot, false).catch(() => toast(t('digi.spot.failed'), 'info'));
+  }, [t]);
 
   // Seek e Scan trovano un picco: in RTTY e' uno dei due toni, e la sintonia va al centro della coppia
   const centreOfPair = (tone: number, row: SpectrumRow) => {

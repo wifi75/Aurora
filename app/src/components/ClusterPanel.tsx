@@ -1,4 +1,5 @@
 import { toast } from '../lib/toast';
+import { setPendingSpot, textModeOfSpot } from '../lib/spotMode';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, memo } from 'react';
 import { ApiError, deleteSplitDx, getClusterSpots, getDxcc, getDxped, getSplitDx, getStationInfo, postFrequency, postMode, postSplitDx, rotatorGoto, type ClusterSpot, type SplitDx } from '../api/client';
@@ -56,6 +57,14 @@ export function readFilters(): SpotFilters {
  * fallisce torna quella di prima e l'errore passa a chi chiama.
  */
 export async function tuneSpot(spot: ClusterSpot): Promise<void> {
+  // uno spot RTTY o PSK (piano di banda, poi cluster): si apre la pagina dei modi testuali, che lo sintonizza nel modo giusto. Il CW resta
+  // qui: il doppio clic sugli spot CW delle DXpedition mette la radio in Split DX
+  const text = textModeOfSpot(spot);
+  if (text !== null && text !== 'cw') {
+    setPendingSpot(spot);
+    window.location.hash = '#/testo';
+    return;
+  }
   const hz = Math.round(spot.freq_khz * 1000);
   const before = useStation.getState().status?.dial_hz;
   useStation.getState().patchStatus({ dial_hz: hz });

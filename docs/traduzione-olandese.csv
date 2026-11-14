@@ -4399,6 +4399,7 @@ digi.spot.cancel,Cancel,Annuleren
 digi.spot.bad,A callsign and a frequency in kHz are needed.,Een roepnaam en een frequentie in kHz zijn nodig.
 digi.spot.fail,"The spot was not sent: check “Spots to DXSummit” in Settings › Log, cluster and services › Online services.","De spot is niet verstuurd: controleer “Spots naar DXSummit” in Instellingen › Log, cluster en diensten › Onlinediensten."
 digi.spot.tip,Report a station on DXSummit (frequency = radio + signal frequency).,Meld een station op DXSummit (frequentie = radio + signaalfrequentie).
+digi.spot.failed,The radio did not move to the spot: check the CAT connection.,De radio is niet naar de spot gegaan: controleer de CAT-verbinding.
 digi.spot.splitUp,Split: transmitting {khz} kHz up (the spot comment says “up”).,Split: zenden {khz} kHz hoger (de opmerking bij de spot zegt “up”).
 digi.spot.splitFar,"The spot says “up {khz}”: that is beyond the 3.5 kHz of audio, so transmission stays here. The radio split is needed: DX split does it (Settings › Log, cluster and services › DX Cluster), with the CAT of a radio that supports split.","De spot zegt “up {khz}”: dat is meer dan de 3,5 kHz audio, dus de uitzending blijft hier. De split van de radio is nodig: DX-split doet dat (Instellingen › Log, cluster en diensten › DX Cluster), met de CAT van een radio die split kan."
 digi.mi.echoRx,Sent text also in the receive window,Verzonden tekst ook in het ontvangstvenster

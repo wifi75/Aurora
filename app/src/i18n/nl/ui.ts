@@ -1502,6 +1502,7 @@ export const NL_UI: Record<string, string> = {
   "digi.spot.cancel": "Annuleren",
   "digi.spot.de": "DX de (jouw station)",
   "digi.spot.fail": "De spot is niet verstuurd: controleer “Spots naar DXSummit” in Instellingen › Log, cluster en diensten › Onlinediensten.",
+  "digi.spot.failed": "De radio is niet naar de spot gegaan: controleer de CAT-verbinding.",
   "digi.spot.freq": "Frequentie (kHz)",
   "digi.spot.info": "Info (modus en opmerking)",
   "digi.spot.ok": "Versturen",
