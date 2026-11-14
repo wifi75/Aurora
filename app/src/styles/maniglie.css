@@ -12,10 +12,11 @@
   --grip-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
 }
 
-/* tema chiaro: stessi valori della maniglia di riferimento (che non cambia colore); qui si ritoccano se servisse */
+/* tema chiaro: lineetta piu' scura (contrasto circa 6:1 sul bianco) con il bordo chiaro, che sul chiaro non sporca */
 html[data-theme='light'] {
-  --grip-color: #8ea2e0;
-  --grip-color-hover: #38bdf8;
+  --grip-color: #4f63a8;
+  --grip-color-hover: #0284c7;
+  --grip-shadow: 0 0 0 1px rgb(255 255 255 / 0.7);
 }
 
 /* l'area attiva fa da riferimento per la lineetta */
