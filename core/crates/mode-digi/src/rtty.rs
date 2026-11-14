@@ -613,6 +613,9 @@ const REPEAT_AGREE: usize = 7;
 /// Parola trattenuta al massimo (caratteri), e dopo quanti bit dall'ultimo carattere esce comunque (il seguente arriverebbe dopo 18,5).
 const WORD_MAX: usize = 12;
 const WORD_WAIT_BITS: f64 = 20.0;
+/// Un carattere almeno cosi' probabile, se nella parola non ne e' ancora arrivato uno incerto, esce subito invece di aspettare la fine
+/// della parola: il testo scorre un carattere alla volta e le correzioni restano per le parole con caratteri incerti.
+const WORD_SURE: f32 = 0.95;
 
 /// Il modello del testo per le correzioni (passo 12): quanto una parola e' verosimile (in nat, 0 = neutra). Un contest puo' darne uno suo
 /// (scambio atteso, nominativi gia' sentiti).
@@ -803,18 +806,40 @@ struct ProbSquelch {
     hist: std::collections::VecDeque<f32>,
     open: bool,
     held: Vec<Frame>,
+    /// Un CR o un LF buttato a cancello chiuso: all'apertura seguente si manda un a capo prima del testo.
+    nl_pending: bool,
+    /// Appena aperto con un a capo in sospeso (lo legge chi stampa, se l'ultimo carattere non era gia' un a capo).
+    nl_now: bool,
 }
 
 /// Caratteri ricordati dallo squelch statistico.
 const SQ_MEMORY: usize = 4;
+/// Probabilita' minima di un CR o LF buttato a cancello chiuso perche' all'apertura seguente si vada a capo.
+const SQ_NL_MIN: f32 = 0.1;
 
 impl ProbSquelch {
     fn new(open_at: f32, close_at: f32) -> Self {
-        Self { open_at, close_at, hist: std::collections::VecDeque::with_capacity(SQ_MEMORY), open: false, held: Vec::new() }
+        Self {
+            open_at,
+            close_at,
+            hist: std::collections::VecDeque::with_capacity(SQ_MEMORY),
+            open: false,
+            held: Vec::new(),
+            nl_pending: false,
+            nl_now: false,
+        }
+    }
+
+    /// Ricorda se fra i caratteri buttati c'era un CR o un LF non del tutto incerto (sul rumore il 62 % dei caratteri sta sotto 0,1).
+    fn drop_frames(&mut self, frames: impl IntoIterator<Item = Frame>) {
+        if frames.into_iter().any(|f| matches!(f.code, CR | LF) && f.prob() >= SQ_NL_MIN) {
+            self.nl_pending = true;
+        }
     }
 
     /// Un carattere nuovo: restituisce quelli da stampare.
     fn push(&mut self, fr: Frame) -> Vec<Frame> {
+        self.nl_now = false;
         if self.hist.len() == SQ_MEMORY {
             self.hist.pop_front();
         }
@@ -825,7 +850,8 @@ impl ProbSquelch {
             self.held.push(fr);
             if self.hist.len() == SQ_MEMORY && mean < self.close_at {
                 self.open = false;
-                self.held.clear();
+                let held = std::mem::take(&mut self.held);
+                self.drop_frames(held);
                 return Vec::new();
             }
             if fr.prob() >= self.close_at || self.held.len() >= SQ_MEMORY {
@@ -835,11 +861,17 @@ impl ProbSquelch {
         }
         self.held.push(fr);
         if self.held.len() > SQ_MEMORY {
-            self.held.remove(0);
+            let old = self.held.remove(0);
+            self.drop_frames([old]);
         }
         if self.hist.len() == SQ_MEMORY && mean >= self.open_at {
             self.open = true;
-            return std::mem::take(&mut self.held);
+            let ready = std::mem::take(&mut self.held);
+            if self.nl_pending && !ready.first().is_some_and(|f| matches!(f.code, CR | LF)) {
+                self.nl_now = true;
+            }
+            self.nl_pending = false;
+            return ready;
         }
         Vec::new()
     }
@@ -1004,6 +1036,10 @@ pub struct RttyDemodulator {
     /// Passo 12: la parola trattenuta per le correzioni di registro, quando e' arrivato il suo ultimo carattere e il modello del testo.
     word: Vec<Frame>,
     word_t: f64,
+    /// Caratteri della parola in corso gia' stampati (sicuri, arrivati prima di ogni carattere incerto) e registro all'inizio della
+    /// parola: le correzioni guardano tutta la parola ma cambiano solo il resto.
+    word_printed: usize,
+    word_reg: (bool, bool),
     /// Passo 14: sintonia fine (limite in Hz, 0 = spenta), probabilita' media degli ultimi caratteri, rotazione accumulata e uscite
     /// precedenti dei due toni.
     fine_limit: f32,
@@ -1121,6 +1157,8 @@ impl RttyDemodulator {
             cyrillic: false,
             word: Vec::new(),
             word_t: 0.0,
+            word_printed: 0,
+            word_reg: (false, false),
             recent: Vec::new(),
             fine_limit: 0.0,
             lock_prob: 0.0,
@@ -1565,21 +1603,35 @@ impl RttyDemodulator {
             frames = self.fuser.push(frames, now);
         }
         if self.open {
-            for (_, fr) in frames {
-                let ready = match &mut self.prob_squelch {
-                    Some(sq) => sq.push(fr),
-                    None => vec![fr],
-                };
-                for fr in ready {
-                    self.word_push(fr, &mut out);
-                }
-            }
+            self.deliver(frames.into_iter().map(|(_, fr)| fr), &mut out);
         }
         // una parola ferma (squelch chiuso, fine del segnale) esce com'e' quando il carattere seguente sarebbe gia' arrivato
         if !self.word.is_empty() && (self.dec_n as f64 - self.delay) - self.word_t > WORD_WAIT_BITS * f64::from(self.spb) {
             self.word_flush(&mut out);
         }
         out
+    }
+
+    /// I caratteri riconosciuti attraverso il cancello (squelch statistico o interno) fino alla stampa.
+    fn deliver(&mut self, frames: impl IntoIterator<Item = Frame>, out: &mut Vec<RttyChar>) {
+        for fr in frames {
+            let (ready, newline) = match &mut self.prob_squelch {
+                Some(sq) => {
+                    let r = sq.push(fr);
+                    (r, sq.nl_now)
+                }
+                None => (vec![fr], false),
+            };
+            // un CR o LF buttato a cancello chiuso: un solo a capo prima del testo, se l'ultimo carattere non lo era gia'
+            if newline && !matches!(self.last_char, '\r' | '\n' | '\0') {
+                if let Some(&first) = ready.first() {
+                    self.word_push(Frame { code: LF, ..first }, out);
+                }
+            }
+            for fr in ready {
+                self.word_push(fr, out);
+            }
+        }
     }
 
     /// Un carattere nella parola in corso (passo 12): a fine parola si guarda se un cambio di registro (FIGS o LTRS) e' stato letto come
@@ -1593,24 +1645,33 @@ impl RttyDemodulator {
         }
         self.word_t = fr.t - self.delay;
         let end = matches!(fr.code, SPACE | CR | LF);
+        if self.word.is_empty() {
+            self.word_reg = (self.figures, self.cyrillic);
+        }
         self.word.push(fr);
         if end || self.word.len() >= WORD_MAX {
             self.word_flush(out);
+        } else if self.word_printed + 1 == self.word.len() && fr.prob() >= WORD_SURE {
+            self.word_printed += 1;
+            self.data = fr.code;
+            self.data_prob = fr.prob();
+            self.emit(out);
         }
     }
 
     /// Decide la parola trattenuta e la stampa.
     fn word_flush(&mut self, out: &mut Vec<RttyChar>) {
         let mut word = std::mem::take(&mut self.word);
+        let printed = std::mem::take(&mut self.word_printed).min(word.len());
         if self.repeats {
             self.combine_repeats(&mut word);
         }
         let codes: Vec<u8> = word.iter().map(|f| f.code).collect();
         let mut best = codes.clone();
         if let Some(prior) = &self.prior {
-            // il testo che darebbe una sequenza di codici, partendo dal registro di adesso
+            // il testo che darebbe una sequenza di codici, partendo dal registro d'inizio parola
             let text = |seq: &[u8]| -> String {
-                let (mut fig, mut cyr) = (self.figures, self.cyrillic);
+                let (mut fig, mut cyr) = self.word_reg;
                 let mut s = String::new();
                 for &c in seq {
                     match c {
@@ -1635,7 +1696,7 @@ impl RttyDemodulator {
             let base = score(&codes);
             let mut best_gain = SHIFT_MARGIN;
             // un solo carattere cambiato per parola: quello che piu' probabilmente era un cambio di registro (o il contrario)
-            for (i, f) in word.iter().enumerate() {
+            for (i, f) in word.iter().enumerate().skip(printed) {
                 if matches!(f.code, SPACE | CR | LF) {
                     continue;
                 }
@@ -1653,7 +1714,7 @@ impl RttyDemodulator {
                 }
             }
         }
-        for (f, code) in word.iter().zip(best) {
+        for (f, code) in word.iter().zip(best).skip(printed) {
             self.data = code;
             self.data_prob = if code == f.code { f.prob() } else { f.prob_of(code) };
             self.emit(out);
@@ -2034,6 +2095,66 @@ mod tests {
         assert!(r.contains("IU3ABC"), "ricevuto: {r:?}");
     }
 
+    /// Misura dell'inizio della trasmissione (a mano): rumore, poi `\r\nCQ TEST DE IU3ABC IU3ABC K`, audio a blocchi di 20 ms. Il ritardo
+    /// medio fra la fine di ogni carattere nell'audio e la sua uscita (solo quando il testo e' arrivato intero), il blocco piu' grande
+    /// uscito in una chiamata e quante volte prima del testo e' uscito un a capo.
+    #[test]
+    #[ignore]
+    fn misura_inizio_trasmissione() {
+        let params = RttyParams::default();
+        let testo = "CQ TEST DE IU3ABC IU3ABC K";
+        let char_len = 7.5 * 12_000.0 / f64::from(params.baud);
+        let bit = 12_000.0 / f64::from(params.baud);
+        for prior in [false, true] {
+            let (mut somma, mut n, mut presi, mut a_capo, mut blocco_max, mut prove) = (0.0, 0usize, 0usize, 0usize, 0usize, 0usize);
+            for (k, &rum) in [0.2f32, 0.4, 0.6, 0.8].iter().enumerate() {
+                for seed in 0..6u32 {
+                    prove += 1;
+                    let lead = 24_000 + seed as usize * 1_000;
+                    let mut audio = rumore(lead, rum, 900 + seed);
+                    audio.extend(modulate(format!("\r\n{testo}").as_bytes(), params, 0.3));
+                    audio.extend(vec![0.0; 24_000]);
+                    let len = audio.len();
+                    for (a, r) in audio[lead..].iter_mut().zip(rumore(len - lead, rum, 500 + seed + k as u32 * 31)) {
+                        *a += r;
+                    }
+                    let mut rx = RttyDemodulator::new(params);
+                    if !prior {
+                        rx.set_prior(None);
+                    }
+                    let (mut out, mut t_out, mut pos) = (String::new(), Vec::new(), 0usize);
+                    for b in audio.chunks(240) {
+                        pos += b.len();
+                        let s: String = rx.process(b).iter().map(|&c| c as char).collect();
+                        if out.contains('C') || s.contains('C') {
+                            blocco_max = blocco_max.max(s.chars().filter(|c| !c.is_whitespace()).count());
+                        }
+                        for c in s.chars() {
+                            out.push(c);
+                            t_out.push(pos as f64);
+                        }
+                    }
+                    if let Some(i) = out.find(testo) {
+                        presi += 1;
+                        if out[..i].ends_with('\n') || out[..i].ends_with('\r') {
+                            a_capo += 1;
+                        }
+                        // nell'audio: 8 bit di mark, LTRS, CR, LF, poi il testo
+                        for j in 0..testo.len() {
+                            let fine = lead as f64 + 8.0 * bit + (3 + j + 1) as f64 * char_len;
+                            somma += t_out[i + j] - fine;
+                            n += 1;
+                        }
+                    }
+                }
+            }
+            eprintln!(
+                "prior {prior}: testo intero {presi}/{prove}, ritardo medio {:.0} ms, blocco massimo {blocco_max}, a capo prima {a_capo}/{presi}",
+                somma / n.max(1) as f64 / 12.0
+            );
+        }
+    }
+
     fn rumore(n: usize, ampiezza: f32, mut seed: u32) -> Vec<f32> {
         (0..n)
             .map(|_| {
@@ -2177,6 +2298,43 @@ mod tests {
         }
         let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
         assert_eq!(r, "CQ DE IU3ABC IU3ABC K");
+    }
+
+    /// Un carattere riconosciuto con la lettera (o il CR, LF, spazio) data e somme delle LLR di ampiezza `b` (0 = rumore, 200 = sicuro).
+    fn frame_di(c: u8, b: f32) -> Frame {
+        let code = LETTERS.iter().position(|&x| x == c).unwrap_or(0) as u8;
+        let mut sums = [-b, 0.0, 0.0, 0.0, 0.0, 0.0, b];
+        for k in 0..5 {
+            sums[k + 1] = if code >> k & 1 == 1 { b } else { -b };
+        }
+        Frame { code, sums, t: 0.0, main: true }
+    }
+
+    #[test]
+    fn un_a_capo_buttato_a_cancello_chiuso_torna_all_apertura() {
+        // fine di una trasmissione con un CR incerto seguito dal rumore: il cancello si chiude e lo butta; alla trasmissione seguente
+        // si va a capo prima del testo (senza la correzione «AAABCD» tutto attaccato)
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        rx.set_prior(None);
+        let mut out = Vec::new();
+        let seq = [(b'A', 200.0), (b'A', 200.0), (b'A', 200.0), (b'B', 200.0), (b'\r', 39.0), (b'U', 0.0), (b'U', 0.0), (b'U', 0.0), (b'C', 200.0), (b'D', 200.0)];
+        rx.deliver(seq.iter().map(|&(c, b)| frame_di(c, b)), &mut out);
+        let r: String = out.iter().map(|c| c.ch).collect();
+        assert_eq!(r, "AAAB\nCD");
+    }
+
+    #[test]
+    fn i_caratteri_sicuri_escono_uno_alla_volta() {
+        // con il modello del testo (di base) una parola di caratteri sicuri non aspetta lo spazio: ogni carattere esce appena arriva
+        let mut rx = RttyDemodulator::new(RttyParams::default());
+        let mut out = Vec::new();
+        rx.deliver(b"CQ ".iter().chain(b"DE ").map(|&c| frame_di(c, 200.0)), &mut out);
+        for &c in b"TEST" {
+            let mut o = Vec::new();
+            rx.deliver([frame_di(c, 200.0)], &mut o);
+            let r: String = o.iter().map(|c| c.ch).collect();
+            assert_eq!(r, (c as char).to_string());
+        }
     }
 
     #[test]
