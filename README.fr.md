@@ -49,7 +49,7 @@ Conception et développement : Tiziano Cassone (IU3WJQ)
 
 ## État
 
-Version 0.11.254 : moteur propre multimode (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W et WSPR) avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
+Version 0.11.255 : moteur propre multimode (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W et WSPR) avec réception et émission, CAT pour toutes les radios et affichage de la radio, plus les pages PSK31/PSK63, RTTY, CW, SSTV et Satellites. L'émission avec une vraie radio reste à tester par le propriétaire.
 
 - **Station** : liste des messages comme dans JTDX (pays avec drapeau, distance, lignes colorées par type, indicatif appelé et appels qui te sont adressés mis en évidence), cascade WebGPU/WebGL2 avec barres Rx/Tx déplaçables, Tx1–Tx6 avec la phase du QSO, barre de bandes et de mode (FT8/FT4) avec changement depuis la page.
 - **File des appelants** : clic droit sur une station qui appelle pour la mettre en file (étiquette «IN CODA» avec sa place) ; une fois le QSO enregistré, Aurora répond au premier ; l'interrupteur «Risp. a tutti» met automatiquement en file qui t'appelle ; «Canc DX» arrête aussitôt l'émission. Moteur propre uniquement.
