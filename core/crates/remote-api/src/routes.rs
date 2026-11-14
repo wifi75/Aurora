@@ -3426,6 +3426,11 @@ struct LogAddBody {
     qth: String,
     #[serde(default)]
     comment: String,
+    /// Scambi del contest mandato e ricevuto (pagina dei modi testuali in gara).
+    #[serde(default)]
+    exch_sent: String,
+    #[serde(default)]
+    exch_rcvd: String,
 }
 
 /// Un QSO scritto a mano: va a log come quelli fatti da Aurora (log interno, file ADIF, programmi collegati e servizi di log accesi).
@@ -3467,8 +3472,15 @@ async fn log_add(State(state): State<AppState>, _: Authed, Peer(peer): Peer, hea
         name: clip(&b.name, 60),
         qth: clip(&b.qth, 60),
         comment: clip(&b.comment, 200),
+        exch_sent: clip(&b.exch_sent, 20).to_uppercase(),
+        exch_rcvd: clip(&b.exch_rcvd, 20).to_uppercase(),
         ..Default::default()
     };
+    // salvato in gara dalla pagina dei modi testuali (`X-Aurora-Origine: contest`): entra anche nel log del contest; senza l'intestazione
+    // l'origine resta quella dell'ultima chiamata o dell'ultimo CQ
+    if headers.get("x-aurora-origine").is_some_and(|v| v.as_bytes().eq_ignore_ascii_case(b"contest")) {
+        segna_origine(&state, &headers);
+    }
     tracing::info!("QSO scritto a mano: {} {} {}", q.call, q.band, q.mode);
     let _ = state.bus.events().send(aurora_core::Event::QsoLogged(q));
     Ok(Json(json!({ "ok": true })))
