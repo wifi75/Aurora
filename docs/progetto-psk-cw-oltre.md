@@ -307,8 +307,27 @@ Dopo: 30 stazioni 25/30 nominativi, 15,0% di caratteri sbagliati, 18,5% di un co
 singolo (`confronto_tasso_di_errore`, 11 righe): media 23,4 come prima, tutte le righe uguali tranne QRN largo 29,8 -> 29,3.
 Sviluppo nostro (misura e correzione), nessuna parte presa da altri programmi.
 
-Resta: a 36 WPM con due vicine 41,7%; i 5 nominativi mancanti sono di stazioni a 27-31 WPM. Ogni canale filtra tutto l'audio a 12 kHz con
-il suo mixer e il suo FIR: una canalizzazione comune (una sola trasformata per tutti i canali) ridurrebbe la CPU per canale.
+### Seconda passata: la soglia del lato occupato
+Senza rumore le due vicine non danno errori nemmeno a 36 WPM (5,3%, solo l'aggancio): non entrano nel filtro, resta la stima del rumore.
+Soglia del lato occupato (media di 1 s / minimo scorrevole), prova `studio_veloci` con due vicine, 24 / 30 / 36 WPM: 1,5 -> 6,7 / 5,7 / 9,7;
+2,5 -> 6,7 / 8,0 / 11,7; 4 -> 20,3 / 24,0 / 41,7; 8 -> 36,7 / 63,3 / 81,3. Banco a canale singolo: con 1,5 media 23,3 ma QSB 51,4 -> 52,1
+(oltre la regola dei 0,5 punti); con 2,5 tutte le righe uguali (QRN largo 29,4). Tenuto **2,5**.
+
+| `cpu_tutta_la_banda` | 0.11.251 | soglia 4 | **soglia 2,5** |
+|---|---|---|---|
+| 30 stazioni: nominativi verificati | 23/30 | 25/30 | **30/30** |
+| 30 stazioni: caratteri sbagliati | 17,7% | 15,0% | **8,9%** |
+| 30 stazioni: CPU di un core | 18,0% | 18,5% | **15,1%** |
+| 10 stazioni | 10/10, 6,9%, 5,1% | uguale | 10/10, 6,9%, 5,2% |
+
+Solo rumore (`rumore_e_squelch`): nessun carattere falso.
+
+### Dove va la CPU di un canale (`studio_cpu_canale`, un minuto, una stazione a -5 dB)
+Probabilistico con fascio 96 (quello dei canali) 0,62% di un core, con fascio 320 1,11%, solo il ricevitore a soglia (mixer, FIR, AGC)
+0,10%. Una canalizzazione comune (una trasformata per tutti i canali al posto di mixer e FIR per canale) risparmierebbe al massimo un
+sesto: scartata. La CPU sta nel traliccio.
+
+Resta: avvio di ogni canale (i primi caratteri persi mentre si apre); prove su registrazioni vere; traliccio più leggero per avere più canali.
 
 ## Fonti
 E. L. Bell, tesi NPS 1977

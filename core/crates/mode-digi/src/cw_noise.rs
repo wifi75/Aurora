@@ -36,7 +36,8 @@ const SIDE_MISMATCH: f64 = 2.0;
 /// Un lato la cui media lunga sta tanto sopra il minimo scorrevole del filtro del tono ha un'altra stazione, anche se l'altro lato e'
 /// occupato allo stesso modo: con due stazioni vicine ai due lati (a ±113 Hz e 30 WPM le bande laterali cadono a ±105 Hz) le medie dei
 /// due lati si somigliano, il rumore stimato saliva di 10-15 dB e il decodificatore perdeva la stazione (prova `studio_veloci`).
-const SIDE_OCCUPIED: f64 = 4.0;
+/// Provati 1,5 / 2,5 / 4 / 8: 2,5 e' il piu' basso che non peggiora nessuna riga del banco (con 1,5 il QSB perde 0,7 punti).
+const SIDE_OCCUPIED: f64 = 2.5;
 /// Media lunga (s) per decidere se un lato e' occupato.
 const SIDE_LONG_S: f64 = 1.0;
 /// Quante medie indipendenti valgono, per il minimo, le medie mobili di 3 secondi (misurato: vedi `expected_min_ratio`).

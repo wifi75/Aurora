@@ -626,7 +626,7 @@ fn avvio_a_freddo() {
 fn studio_veloci() {
     for wpm in [18.0, 24.0, 30.0, 36.0] {
         let mut riga = format!("{wpm:>4.0} WPM |");
-        for (vicine, beam, bw, lato) in [(false, 96usize, 150.0f32, 0u8), (true, 96, 150.0, 0), (true, 96, 100.0, 0), (true, 96, 75.0, 0), (true, 96, 150.0, 1)] {
+        for (vicine, beam, bw, lato) in [(false, 96usize, 150.0f32, 0u8), (true, 96, 150.0, 0), (true, 96, 100.0, 0), (true, 96, 75.0, 0), (true, 96, 150.0, 1), (true, 96, 150.0, 9)] {
             let (mut e, mut n) = (0usize, 0usize);
             for seed in 0..4u64 {
                 let mut rng = Rng(500 + seed);
@@ -636,7 +636,7 @@ fn studio_veloci() {
                 band.splice(0..0, std::iter::repeat_n(0.0, 6_000));
                 band.extend(std::iter::repeat_n(0.0, 24_000));
                 if vicine {
-                    for (k, hz) in [(1u64, 887.0), (2, 1_113.0)].into_iter().filter(|(k, _)| lato == 0 || *k == 2) {
+                    for (k, hz) in [(1u64, 887.0), (2, 1_113.0)].into_iter().filter(|(k, _)| lato != 1 || *k == 2) {
                         let other = format!("CQ TEST DE IU{k}XYZ IU{k}XYZ TEST CQ TEST DE IU{k}XYZ IU{k}XYZ TEST CQ DE IU{k}XYZ");
                         let s2 = chiavi(&other, |_| 22.0 + 4.0 * k as f64, &KEYER, &mut rng);
                         for (s, w) in band.iter_mut().skip(3_000 * k as usize).zip(suona(&s2, hz, |_| AMP)) {
@@ -644,7 +644,9 @@ fn studio_veloci() {
                         }
                     }
                 }
-                aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+                if lato != 9 {
+                    aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+                }
                 let mut rx = CwDemodulator::new(1_000.0, 20.0);
                 rx.set_beam(beam);
                 rx.set_bandwidth(bw);
@@ -656,8 +658,33 @@ fn studio_veloci() {
                 n += text.len();
             }
             let _ = beam;
-            riga.push_str(&format!(" {}{} bw{:>3.0}: {:5.1}", if vicine { "vicine" } else { "sola  " }, if lato == 1 { "1" } else { "2" }, bw, 100.0 * e as f64 / n as f64));
+            riga.push_str(&format!(" {}{} bw{:>3.0}: {:5.1}", if vicine { "vicine" } else { "sola  " }, match lato { 1 => "1", 9 => "S", _ => "2" }, bw, 100.0 * e as f64 / n as f64));
         }
         println!("{riga}");
+    }
+}
+
+/// Studio: dove va la CPU di un canale. Un minuto di audio (una stazione a -5 dB), un ricevitore come quelli dei canali di tutta la
+/// banda, con il probabilistico acceso e spento; stampa la CPU in percento di un core.
+#[test]
+#[ignore]
+fn studio_cpu_canale() {
+    let mut rng = Rng(3);
+    let text = "CQ CQ DE IU3ABC IU3ABC K   ".repeat(8);
+    let seq = chiavi(&text, |_| 24.0, &KEYER, &mut rng);
+    let mut band = suona(&seq, 1_000.0, |_| AMP);
+    band.resize(60 * RATE as usize, 0.0);
+    aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+    for (nome, prob, beam) in [("probabilistico, fascio 96", true, 96usize), ("probabilistico, fascio 320", true, 320), ("a soglia", false, 96)] {
+        let mut rx = CwDemodulator::new(1_000.0, 20.0);
+        rx.set_afc(true);
+        rx.set_afc_limit(20.0);
+        rx.set_beam(beam);
+        rx.set_probabilistic(prob);
+        let t0 = std::time::Instant::now();
+        for b in band.chunks(960) {
+            let _ = rx.process(b);
+        }
+        println!("{nome:<28} CPU {:.2}% di un core", 100.0 * t0.elapsed().as_secs_f64() / 60.0);
     }
 }

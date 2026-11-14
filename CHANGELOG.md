@@ -1,7 +1,7 @@
 # Changelog
 
 ## Non rilasciato
-- **CW di tutta la banda, stazioni veloci fra due vicine**: la stima del rumore non si fa ingannare dalle stazioni a ±100 Hz su tutti e due i lati (con 30 stazioni a 113 Hz: nominativi da 23 a 25 su 30, caratteri sbagliati da 17,7% a 15,0%; una stazione a 30 WPM fra due vicine da 69% a 24% di errori).
+- **CW di tutta la banda, stazioni veloci fra due vicine**: la stima del rumore non si fa ingannare dalle stazioni a ±100 Hz su tutti e due i lati (con 30 stazioni a 113 Hz: nominativi da 23 a 30 su 30, caratteri sbagliati da 17,7% a 8,9%, CPU da 18% a 15% di un core; una stazione a 30 WPM fra due vicine da 69% a 8% di errori).
 
 ## 0.11.251 - 2026-11-13
 - **Impostazioni allineate**: i controlli (menu, pulsanti, colori, bandiera della lingua) partono a sinistra sotto la loro etichetta, non piu' centrati o spinti a destra.
