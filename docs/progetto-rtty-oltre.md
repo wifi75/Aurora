@@ -365,3 +365,55 @@ costo sistematico, non rumore della misura); 182 caratteri al minuto sul solo ru
 
 Le soglie s10 di CCIR medio e degli scenari col fading saltano di 1-2 dB per variazioni di CER di pochi decimi (curva piatta intorno al
 10 %): per questi si guarda il CER medio.
+
+## Caratteri inventati a squelch spento (2026-11-14)
+
+Problema dalla radio vera: a squelch spento (impostazione di base del servizio, `squelch_on: false`) il ricevitore stampa righe di lettere
+casuali sul rumore e fra una trasmissione e l'altra; 182 caratteri al minuto sul solo rumore della tabella. Lo squelch statistico di
+base (0,7 / 0,5) li toglie tutti ma toglie anche testo vero: CER medio da 26,35 a 29,51 %, tutte le 25 righe peggiorano (alte
+latitudini +11,9, portante +30 Hz +7,4): non si puo' accendere di base.
+
+**Studio**: probabilita' dei caratteri sul solo rumore (3 minuti, 631 caratteri): 62 % sotto 0,1, 83 % sotto 0,2, 93 % sotto 0,3. Sul
+segnale (prova `taratura`) i caratteri sotto 0,2 sono giusti il 15-21 % delle volte, quelli sopra 0,9 il 98 %. Un cancello con le regole
+dello squelch statistico (media degli ultimi quattro caratteri, i primi trattenuti mentre decide) e soglie basse separa le due cose.
+
+**Tenuto**: cancello interno sempre attivo quando lo squelch statistico dell'utente e' spento (`GATE_OPEN` 0,4, `GATE_CLOSE` 0,2); vale
+anche per le impostazioni gia' salvate con `squelch_on: false`, perche' non dipende da un valore delle impostazioni. Test
+`a_squelch_spento_il_rumore_fra_due_trasmissioni_non_stampa_spazzatura` (rumore, trasmissione, rumore, trasmissione, rumore): senza il
+cancello 80 caratteri inventati, con al massimo 10; il testo vero c'e' tutto.
+
+| scenario | prima s10 / CER | dopo s10 / CER |
+|---|---|---|
+| rumore 170/45 | -8,0 / 19,1 | -8,2 / 18,7 |
+| rumore 170/75 | -5,6 / 29,6 | -5,9 / 27,9 |
+| rumore 425/50 | -8,2 / 21,6 | -8,2 / 21,1 |
+| rumore 850/45 | -8,2 / 19,3 | -8,3 / 19,1 |
+| rumore 85/45 | -8,3 / 19,0 | -8,4 / 18,5 |
+| fuori +10 Hz | -7,8 / 20,9 | -7,9 / 20,5 |
+| space -12 dB | -5,4 / 28,2 | -5,4 / 28,0 |
+| CCIR buono | -0,8 / 28,6 | -0,8 / 28,6 |
+| CCIR medio | 1,3 / 31,9 | 1,2 / 31,6 |
+| CCIR cattivo | -- / 36,5 | -- / 36,0 |
+| flutter 10 Hz | -- / 56,8 | -- / 56,8 |
+| alte latitudini | -- / 67,0 | -- / 67,2 |
+| QRM a 250 Hz +6 | -8,4 / 19,9 | -8,4 / 19,5 |
+| QRM a 120 Hz -6 | -8,3 / 19,8 | -8,4 / 19,5 |
+| portante +30 Hz | -3,2 / 30,1 | -3,3 / 29,9 |
+| PSK31 a 150 Hz | -8,0 / 19,5 | -8,3 / 19,1 |
+| scheda +500 ppm | -7,8 / 20,6 | -7,9 / 20,2 |
+| scheda -500 ppm | -7,7 / 20,6 | -7,8 / 20,4 |
+| 45 baud | -7,2 / 24,0 | -7,3 / 23,9 |
+| stop 1 bit | -8,4 / 18,9 | -8,5 / 18,6 |
+| stop 2 bit | -8,4 / 19,3 | -8,5 / 18,8 |
+| scariche | -7,9 / 19,9 | -8,0 / 19,4 |
+| filtro 250 Hz | -8,1 / 19,0 | -8,3 / 18,7 |
+| audio tagliato | -7,0 / 24,3 | -7,0 / 24,1 |
+| AGC che pompa | -3,6 / 24,6 | -3,6 / 24,4 |
+
+CER medio 26,35 -> 26,02 %, nessuna riga peggiora di oltre 0,2 punti; solo rumore 182 -> 18 caratteri al minuto. Registrazione vera di un
+contest (121 s, squelch spento): stazione forte 283 -> 261 caratteri stampati, tutto il testo vero resta («CQ TEST PR1T», «LY6A LY6A»,
+«OH9VD 599 276», «PR1T QRZ?») e si accorciano le righe casuali; stazione debole 368 -> 102 caratteri, resta «SP5H 599 150» e la
+spazzatura scende a poche righe. Restano righe casuali con probabilita' alta: servira' altro.
+
+**Scartate (CER medio / caratteri al minuto sul rumore)**: 0,7/0,5 29,51 / 0; 0,5/0,3 26,58 / 0 (alte latitudini +1,7, portante +1,2,
+CCIR buono +0,8); 0,4/0,25 26,12 / 5 (alte latitudini +0,6); 0,35/0,22 26,09 / 18; 0,3/0,2 26,14 / 33; 0,2/0,12 26,28 / 161.

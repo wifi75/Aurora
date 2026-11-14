@@ -81,6 +81,11 @@ pub const WEAK_PROB: f32 = 0.9;
 /// Le soglie di base dello squelch statistico (probabilita' media degli ultimi quattro caratteri per aprire e per chiudere).
 pub const SQUELCH_OPEN: f32 = 0.7;
 pub const SQUELCH_CLOSE: f32 = 0.5;
+/// Il cancello sempre attivo quando lo squelch statistico e' spento: le stesse regole con soglie basse (probabilita' media degli ultimi
+/// quattro caratteri). Sul solo rumore l'83 % dei caratteri ha probabilita' sotto 0,2, sul segnale i caratteri sotto 0,2 sono giusti
+/// meno di una volta su cinque (prova `taratura`): toglie la spazzatura fra le trasmissioni senza togliere testo vero.
+pub const GATE_OPEN: f32 = 0.4;
+pub const GATE_CLOSE: f32 = 0.2;
 pub(crate) const FIGS: u8 = 27;
 pub(crate) const LTRS: u8 = 31;
 pub(crate) const SPACE: u8 = 4;
@@ -1075,7 +1080,7 @@ impl RttyDemodulator {
             afc: false,
             uos: true,
             squelch_snr_db: None,
-            prob_squelch: None,
+            prob_squelch: Some(ProbSquelch::new(GATE_OPEN, GATE_CLOSE)),
             level_db: -90.0,
             snr_db: 0.0,
             open: true,
@@ -1208,9 +1213,11 @@ impl RttyDemodulator {
     }
 
     /// Squelch statistico (passo 9): si stampa quando la probabilita' media degli ultimi quattro caratteri supera `open_at`, si smette
-    /// quando scende sotto `close_at`. Vale con la decodifica del carattere intero; `None` lo spegne.
+    /// quando scende sotto `close_at`. Vale con la decodifica del carattere intero; `None` lascia il cancello di base ([`GATE_OPEN`],
+    /// [`GATE_CLOSE`]), che toglie la spazzatura sul rumore anche a squelch spento.
     pub fn set_squelch_prob(&mut self, levels: Option<(f32, f32)>) {
-        self.prob_squelch = levels.map(|(o, c)| ProbSquelch::new(o, c.min(o)));
+        let (o, c) = levels.unwrap_or((GATE_OPEN, GATE_CLOSE));
+        self.prob_squelch = Some(ProbSquelch::new(o, c.min(o)));
     }
 
     /// Livello del segnale in dB e se lo squelch lo lascia passare.
@@ -2140,6 +2147,27 @@ mod tests {
         }
         let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
         assert_eq!(r, "CQ DE IU3ABC IU3ABC K");
+    }
+
+    #[test]
+    fn a_squelch_spento_il_rumore_fra_due_trasmissioni_non_stampa_spazzatura() {
+        // rumore, una trasmissione, rumore, un'altra trasmissione, rumore; squelch spento (impostazioni di base): il cancello interno
+        // lascia il testo vero e toglie quasi tutti i caratteri inventati sul rumore (senza il cancello 80 in piu', con al massimo 10)
+        let params = RttyParams::default();
+        let mut audio = vec![0.0; 120_000];
+        audio.extend(modulate(b"CQ TEST DE IU3ABC IU3ABC K", params, 0.3));
+        audio.extend(vec![0.0; 120_000]);
+        audio.extend(modulate(b"IU3ABC 599 150 TU", params, 0.3));
+        audio.extend(vec![0.0; 120_000]);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 0.6, 41)) {
+            *a += r;
+        }
+        let mut rx = RttyDemodulator::new(params);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        assert!(r.contains("CQ TEST DE IU3ABC IU3ABC K") && r.contains("IU3ABC 599 150 TU"), "ricevuto: {r:?}");
+        let extra = r.chars().filter(|c| !c.is_whitespace()).count() - "CQTESTDEIU3ABCIU3ABCKIU3ABC599150TU".len();
+        assert!(extra <= 10, "{extra} caratteri inventati: {r:?}");
     }
 
     #[test]
