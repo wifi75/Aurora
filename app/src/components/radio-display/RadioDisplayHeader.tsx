@@ -19,7 +19,6 @@ import { SetupCta } from '../SetupCta';
 import { RigSwitch } from './RigSwitch';
 import { SplitOffButton } from './SplitOffButton';
 import { useTuning } from './RadioExtras';
-import { segTextCssUrl } from '../../lib/segText';
 
 /**
  * Il display in testata: piccolo; passandoci sopra col mouse si apre una copia identica ingrandita 2 volte (lente) con gli stessi
@@ -53,9 +52,9 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   // ogni stile e anche per il display staccato)
   useEffect(() => {
     document.body.classList.toggle('rd-radio-off', radioOff);
-    // la scritta grande al centro di ogni display spento, nella lingua scelta (la usa il CSS con `content: var(--rd-off-text)`)
-    // la scritta come immagine a 14 segmenti (si legge bene anche la R e la D), chiara con i segmenti spenti appena visibili
-    document.body.style.setProperty('--rd-off-img', segTextCssUrl(t('rd.off'), { on: '#f1f5f9', off: 'rgba(255,255,255,0.07)', glow: '#bae6fd' }));
+    // la scritta grande al centro di ogni display spento, nella lingua scelta (la usa il CSS con `content: var(--rd-off-text)`): testo vero,
+    // non piu' un'immagine generata (issue #55: se l'immagine non si generava restava solo un riquadro nero)
+    document.body.style.setProperty('--rd-off-text', JSON.stringify(t('rd.off')));
     return () => document.body.classList.remove('rd-radio-off');
   }, [radioOff, t]);
   if (pref.hidden) return null;

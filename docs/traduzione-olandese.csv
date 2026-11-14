@@ -783,7 +783,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -2308,7 +2308,7 @@ rd.layout.pair,Two equal blocks side by side,Twee gelijke blokken naast elkaar
 tip.rd.layout,"How the radio display and the extended display (second VFO and buttons) sit top right: one panel with a large VFO A and VFO B beside it, like dual-VFO radios, or two blocks of the same size side by side.","Hoe het radiodisplay en het uitgebreide display (tweede VFO en knoppen) rechtsboven staan: één paneel met een grote VFO A en VFO B ernaast, zoals bij dual-VFO-radio’s, of twee even grote blokken naast elkaar."
 rd.hide,Hide the display,Display verbergen
 tip.rd.hide,Removes the display from the header; the chosen style is remembered.,Haalt het display uit de kop; de gekozen stijl wordt onthouden.
-rd.off,RADIO OFF,RADIO UIT
+rd.off,RADIO NOT CONNECTED,RADIO NIET VERBONDEN
 rd.noRadio,Radio not responding,Radio reageert niet
 rd.open,Show the enlarged meters,Vergrote meters tonen
 rd.popover,Enlarged radio display,Vergroot radiodisplay
