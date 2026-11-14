@@ -28,6 +28,9 @@ const IDLE_S: f32 = 75.0;
 /// Un carattere da questa probabilita' in su tiene aperto il canale (un segnale debole o in QSB legge spesso fra 0,7 e 0,9).
 const ACTIVE_PROB: f32 = 0.7;
 const MAX_CHANNELS: usize = 30;
+/// La sintonia fine dei ricevitori dei canali (Hz): il centro nasce al passo del banco (2,5 Hz di errore) e la stazione puo' scivolare;
+/// sul banco di prova BIGScan il ritardo mediano scende da 12 a 9 s.
+const FINE_TUNING_HZ: f32 = 15.0;
 
 /// Un segnale seguito.
 struct Lane {
@@ -82,9 +85,7 @@ impl RttyMulti {
         self.lanes.retain(|l| (lo..=hi).contains(&(l.centre_hz + audio_hz)));
         for l in self.lanes.iter_mut() {
             l.centre_hz += audio_hz;
-            let mut demod = RttyDemodulator::new(RttyParams { centre_hz: l.centre_hz, shift_hz: self.shift_hz, baud: self.baud, reverse: false });
-            demod.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
-            l.demod = demod;
+            l.demod = new_demod(l.centre_hz, self.shift_hz, self.baud);
         }
         self.history.clear();
         self.s1.iter_mut().for_each(|v| *v = 0.0);
@@ -179,11 +180,17 @@ impl RttyMulti {
             if self.lanes.iter().any(|l| near(l.centre_hz)) || self.lanes.len() >= MAX_CHANNELS {
                 continue;
             }
-            let mut demod = RttyDemodulator::new(RttyParams { centre_hz: centre, shift_hz: self.shift_hz, baud: self.baud, reverse: false });
-            demod.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
-            self.lanes.push(Lane { centre_hz: centre, demod, idle_s: 0.0 });
+            self.lanes.push(Lane { centre_hz: centre, demod: new_demod(centre, self.shift_hz, self.baud), idle_s: 0.0 });
         }
     }
+}
+
+/// Il ricevitore di un canale: squelch statistico e sintonia fine entro `FINE_TUNING_HZ`.
+fn new_demod(centre_hz: f32, shift_hz: f32, baud: f32) -> RttyDemodulator {
+    let mut demod = RttyDemodulator::new(RttyParams { centre_hz, shift_hz, baud, reverse: false });
+    demod.set_squelch_prob(Some((SQUELCH_OPEN, SQUELCH_CLOSE)));
+    demod.set_fine_tuning(Some(FINE_TUNING_HZ));
+    demod
 }
 
 #[cfg(test)]
@@ -238,6 +245,24 @@ mod tests {
             assert!(ok, "stazione a {f} Hz ({parola}) non trovata: canali {:?}", testo);
         }
         assert!(multi.channels().len() <= 4, "canali: {:?}", multi.channels());
+    }
+
+    /// Una stazione fuori di 14 Hz dal centro del canale (fra due passi del banco e scivolata), debole: con la sintonia fine si leggono 10
+    /// nominativi su 12, senza 7.
+    #[test]
+    fn un_canale_fuori_centro_si_legge_con_la_sintonia_fine() {
+        let p = RttyParams { centre_hz: 1014.0, shift_hz: 170.0, baud: 45.45, reverse: false };
+        let mut audio = modulate("CQ TEST IU3ABC IU3ABC TEST ".repeat(6).as_bytes(), p, 0.2);
+        let n = audio.len();
+        for (a, r) in audio.iter_mut().zip(rumore(n, 1.8, 11)) {
+            *a += r;
+        }
+        let mut rx = new_demod(1000.0, 170.0, 45.45);
+        let mut testo = String::new();
+        for blocco in audio.chunks(1200) {
+            testo.extend(rx.process_chars(blocco).iter().map(|c| c.ch));
+        }
+        assert!(testo.matches("IU3ABC").count() >= 9, "{} {testo}", testo.matches("IU3ABC").count());
     }
 
     #[test]
