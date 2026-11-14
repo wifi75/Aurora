@@ -608,6 +608,9 @@ pub struct ExtraRx {
     pub freq_hz: f32,
 }
 
+/// Spostamento della radio (Hz) oltre il quale l'elenco di tutta la banda si ripulisce.
+const BAND_CLEAR_HZ: u64 = 50;
+
 /// Quante finestre RX in piu' al massimo (ognuna e' un ricevitore completo).
 pub const EXTRA_RX_MAX: usize = 4;
 
@@ -1287,6 +1290,12 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 if dial != 0 && !lock(&inner.notches).is_empty() {
                     tracing::info!("modi testuali: radio da {dial} a {now} Hz, notch tolti");
                     inner.set_notches(Vec::new());
+                }
+                // tutta la banda (Aurora BIGScan): spostata la radio di 50 Hz o piu' (o cambiata banda) ogni stazione cambia tono audio e
+                // l'elenco vecchio non vale piu': si ripulisce
+                if dial != 0 && now.abs_diff(dial) >= BAND_CLEAR_HZ {
+                    tracing::info!("modi testuali: radio da {dial} a {now} Hz, tutta la banda ripulita");
+                    inner.band.reset();
                 }
                 dial = now;
             }
