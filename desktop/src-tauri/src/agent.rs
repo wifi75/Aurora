@@ -86,13 +86,52 @@ pub fn prefs() -> Prefs {
         .unwrap_or_default()
 }
 
-/// Promuove l'icona di Aurora accanto all'orologio (chiave `NotifyIconSettings` di Windows 11, solo per questo utente).
+/// `true` se il percorso del programma di una voce di `NotifyIconSettings` e' Aurora (come il `-like '*aurora-desktop.exe'` di prima).
+#[cfg_attr(not(windows), allow(dead_code))]
+fn is_aurora_icon(path: &str) -> bool {
+    path.to_lowercase().ends_with("aurora-desktop.exe")
+}
+
+/// Promuove l'icona di Aurora accanto all'orologio (chiave `NotifyIconSettings` di Windows 11, solo per questo utente): `IsPromoted`=1
+/// nelle sottochiavi il cui `ExecutablePath` e' Aurora. Direttamente nel registro: prima passava da PowerShell nascosto, che gli antivirus
+/// segnalano.
 fn promote_icon() {
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
-        let script = "Get-ChildItem 'HKCU:\\Control Panel\\NotifyIconSettings' -ErrorAction SilentlyContinue | ForEach-Object { $p = (Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).ExecutablePath; if ($p -and $p -like '*aurora-desktop.exe') { Set-ItemProperty $_.PSPath -Name IsPromoted -Value 1 -Type DWord } }";
-        let _ = std::process::Command::new(crate::installer::powershell_exe()).args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script]).creation_flags(0x0800_0000).status();
+        use windows_sys::Win32::Foundation::ERROR_SUCCESS;
+        use windows_sys::Win32::System::Registry::{HKEY, HKEY_CURRENT_USER, KEY_READ, REG_DWORD, RRF_RT_REG_SZ, RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, RegSetKeyValueW};
+        let wide = |s: &str| s.encode_utf16().chain(std::iter::once(0)).collect::<Vec<u16>>();
+        let root_name = wide(r"Control Panel\NotifyIconSettings");
+        let (path_value, promoted) = (wide("ExecutablePath"), wide("IsPromoted"));
+        let mut root: HKEY = std::ptr::null_mut();
+        // SAFETY: stringhe UTF-16 terminate da zero, buffer con la loro lunghezza; la chiave si chiude in fondo
+        unsafe {
+            if RegOpenKeyExW(HKEY_CURRENT_USER, root_name.as_ptr(), 0, KEY_READ | windows_sys::Win32::System::Registry::KEY_SET_VALUE, &mut root) != ERROR_SUCCESS {
+                return;
+            }
+            let mut sub = Vec::new();
+            for index in 0u32.. {
+                let mut name = [0u16; 256];
+                let mut len = name.len() as u32;
+                if RegEnumKeyExW(root, index, name.as_mut_ptr(), &mut len, std::ptr::null(), std::ptr::null_mut(), std::ptr::null_mut(), std::ptr::null_mut()) != ERROR_SUCCESS {
+                    break;
+                }
+                sub.push(name[..len as usize].iter().copied().chain(std::iter::once(0)).collect::<Vec<u16>>());
+            }
+            for key in sub {
+                let mut buffer = [0u16; 1024];
+                let mut size = (buffer.len() * 2) as u32;
+                if RegGetValueW(root, key.as_ptr(), path_value.as_ptr(), RRF_RT_REG_SZ, std::ptr::null_mut(), buffer.as_mut_ptr().cast(), &mut size) != ERROR_SUCCESS {
+                    continue;
+                }
+                let end = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+                if is_aurora_icon(&String::from_utf16_lossy(&buffer[..end])) {
+                    let one: u32 = 1;
+                    let _ = RegSetKeyValueW(root, key.as_ptr(), promoted.as_ptr(), REG_DWORD, (&one as *const u32).cast(), 4);
+                }
+            }
+            RegCloseKey(root);
+        }
     }
 }
 
@@ -1021,6 +1060,14 @@ n.forEach(function(f,i){var at=s+i*.085,g=x.createGain(),v=x.createOscillator();
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn l_icona_da_promuovere_e_quella_di_aurora() {
+        assert!(is_aurora_icon(r"C:\Users\IU3ABC\AppData\Local\Aurora\aurora-desktop.exe"));
+        assert!(is_aurora_icon(r"C:\PROGRAM FILES\AURORA\AURORA-DESKTOP.EXE"));
+        assert!(!is_aurora_icon(r"C:\Windows\explorer.exe"));
+        assert!(!is_aurora_icon(""));
+    }
 
     #[test]
     fn la_lingua_di_aurora_sceglie_i_testi_e_senza_scelta_vale_l_italiano() {

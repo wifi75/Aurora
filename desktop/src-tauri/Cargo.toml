@@ -35,7 +35,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_Globalization", "Win32_System_ProcessStatus", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_SystemInformation", "Win32_System_ErrorReporting", "Win32_System_Console", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_Storage_FileSystem", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_Globalization", "Win32_System_ProcessStatus", "Win32_System_Diagnostics_Debug", "Win32_System_Kernel", "Win32_System_SystemInformation", "Win32_System_ErrorReporting", "Win32_System_Console", "Win32_System_LibraryLoader", "Win32_System_Memory", "Win32_Storage_FileSystem", "Win32_UI_WindowsAndMessaging", "Win32_System_Registry", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_Shell"] }
 # la finestra «Salva con nome» di Windows (pagina di esportazione del log)
 rfd = { version = "0.17.2", default-features = false }
 # il menu del tasto destro di WebView2 (solo le voci di modifica): le stesse versioni che usa wry, vedi Cargo.lock
