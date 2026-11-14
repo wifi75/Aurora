@@ -606,6 +606,9 @@ pub struct Snapshot {
 pub struct ExtraRx {
     pub id: u32,
     pub freq_hz: f32,
+    /// L'AFC di questa finestra (suo, non quello della ricezione principale): segue la sua stazione.
+    #[serde(default)]
+    pub afc: bool,
 }
 
 /// Spostamento della radio (Hz) oltre il quale l'elenco di tutta la banda si ripulisce.
@@ -1183,11 +1186,11 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
     let mut demod = Demod::new(&settings, lsb);
     let mut mode = settings.mode;
     // le finestre RX in piu': ognuna un ricevitore sulla sua frequenza, con le impostazioni del principale
-    let mut extras: Vec<(ExtraRx, Demod)> = Vec::new();
+    let mut extras: Vec<(ExtraRx, Demod, AfcGuard)> = Vec::new();
     let extra_demod = |s: &DigiSettings, x: &ExtraRx, lsb: bool| {
         let mut s = s.clone();
         s.rx_freq_hz = x.freq_hz;
-        Demod::new(&s, lsb)
+        (Demod::new(&s, lsb), afc_guard(&s, &[]))
     };
     // notch e passabanda davanti ai ricevitori; senza nessuno dei due l'audio passa com'e'
     let mut cur = settings;
@@ -1230,8 +1233,15 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                     inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), ..DigiEvent::default() });
                 }
                 // le finestre in piu' ascoltano la banda intera (i notch e il passabanda sono del ricevitore principale)
-                for (x, d) in extras.iter_mut() {
+                for (x, d, g) in extras.iter_mut() {
                     let (text, weak) = d.process(band_audio);
+                    // l'AFC di ogni finestra e' suo: si muove solo se acceso su quella finestra
+                    if x.afc {
+                        let (level, th) = d.presence();
+                        if let Some(hz) = g.step(d.frequency(), level, th, d.signal().1) {
+                            d.steer(hz);
+                        }
+                    }
                     if !text.is_empty() {
                         let weak = (!weak.is_empty()).then_some(weak);
                         inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), rx_id: Some(x.id), freq_hz: Some(d.frequency()), ..DigiEvent::default() });
@@ -1242,20 +1252,23 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 // un ricevitore gia' aperto sulla stessa frequenza resta (non perde quello che sta leggendo)
                 let mut old = std::mem::take(&mut extras);
                 for x in list {
-                    let keep = old.iter().position(|(o, _)| o.id == x.id && (o.freq_hz - x.freq_hz).abs() < 1.0);
-                    let d = match keep {
-                        Some(i) => old.swap_remove(i).1,
+                    let keep = old.iter().position(|(o, _, _)| o.id == x.id && (o.freq_hz - x.freq_hz).abs() < 1.0);
+                    let (d, g) = match keep {
+                        Some(i) => {
+                            let (_, d, g) = old.swap_remove(i);
+                            (d, g)
+                        }
                         None => extra_demod(&cur, &x, lsb),
                     };
-                    extras.push((x, d));
+                    extras.push((x, d, g));
                 }
             }
             Some(Msg::Config(s)) => {
                 demod = Demod::new(&s, lsb);
                 mode = s.mode;
                 cur = s;
-                for (x, d) in extras.iter_mut() {
-                    *d = extra_demod(&cur, x, lsb);
+                for (x, d, g) in extras.iter_mut() {
+                    (*d, *g) = extra_demod(&cur, x, lsb);
                 }
                 filters.configure(&notches, cur.passband());
                 guard = afc_guard(&cur, &notches);
@@ -1269,8 +1282,8 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 cur = lock(&inner.settings).clone();
                 demod = Demod::new(&cur, lsb);
                 guard = afc_guard(&cur, &notches);
-                for (x, d) in extras.iter_mut() {
-                    *d = extra_demod(&cur, x, lsb);
+                for (x, d, g) in extras.iter_mut() {
+                    (*d, *g) = extra_demod(&cur, x, lsb);
                 }
             }
             None => {}
@@ -1308,8 +1321,8 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 lsb = now;
                 tracing::info!("RTTY: radio in {}, mark e space {}", if lsb { "LSB" } else { "USB" }, if lsb { "invertiti" } else { "normali" });
                 demod = Demod::new(&lock(&inner.settings).clone(), lsb);
-                for (x, d) in extras.iter_mut() {
-                    *d = extra_demod(&cur, x, lsb);
+                for (x, d, g) in extras.iter_mut() {
+                    (*d, *g) = extra_demod(&cur, x, lsb);
                 }
             }
         }
@@ -1508,9 +1521,9 @@ mod tests {
         let s = DigiSettings { mode: DigiMode::Cw, cw_wpm: 20.0, rx_freq_hz: 700.0, auto_receive: true, ..DigiSettings::default() };
         std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
         let svc = DigiService::open(&dir);
-        assert!(svc.set_extra_rx(vec![ExtraRx { id: 1, freq_hz: 50.0 }]).is_err(), "frequenza fuori banda");
-        assert!(svc.set_extra_rx(vec![ExtraRx { id: 2, freq_hz: 900.0 }, ExtraRx { id: 2, freq_hz: 1100.0 }]).is_err(), "numeri uguali");
-        svc.set_extra_rx(vec![ExtraRx { id: 3, freq_hz: 1500.0 }]).expect("finestra in piu'");
+        assert!(svc.set_extra_rx(vec![ExtraRx { id: 1, freq_hz: 50.0, afc: false }]).is_err(), "frequenza fuori banda");
+        assert!(svc.set_extra_rx(vec![ExtraRx { id: 2, freq_hz: 900.0, afc: false }, ExtraRx { id: 2, freq_hz: 1100.0, afc: false }]).is_err(), "numeri uguali");
+        svc.set_extra_rx(vec![ExtraRx { id: 3, freq_hz: 1500.0, afc: false }]).expect("finestra in piu'");
         assert_eq!(svc.extra_rx().len(), 1);
         svc.start_rx();
         let (tx, rx) = std::sync::mpsc::channel::<(Option<u32>, String)>();

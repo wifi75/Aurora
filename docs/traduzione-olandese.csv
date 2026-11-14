@@ -4453,6 +4453,7 @@ digi.run.memSaved,Settings saved to memory {n},Instellingen opgeslagen in geheug
 digi.run.memEmpty,Memory {n} is empty.,Geheugen {n} is leeg.
 digi.run.memLoaded,Settings recalled from memory {n},Instellingen opgeroepen uit geheugen {n}
 xrx.dragTip,Drag to move the window,Sleep om het venster te verplaatsen
+xrx.afcTip,"AFC of this RX window: it follows its station if it drifts. It is its own, separate from the AFC in the bottom bar (which is for the main reception).","AFC van dit RX-venster: volgt zijn station als het verloopt. Alleen van dit venster, los van de AFC in de onderste balk (die voor de hoofdontvangst geldt)."
 xrx.close,Close this RX window,Dit RX-venster sluiten
 xrx.empty,Listening: this station’s text appears here.,Luisteren: de tekst van dit station verschijnt hier.
 xrx.markerTip,RX window {n}: drag to move it to another station,RX-venster {n}: sleep om het naar een ander station te verplaatsen

@@ -1935,6 +1935,8 @@ export interface DigiNotch {
 export interface ExtraRx {
   id: number;
   freq_hz: number;
+  /** L'AFC di questa finestra (suo, non quello della ricezione principale). */
+  afc?: boolean;
 }
 
 /** Le finestre RX in piu' (fino a 4); il loro testo arriva negli eventi `rx_text` con `rx_id`. */

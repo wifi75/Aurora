@@ -1340,7 +1340,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {wordMenu ? <RxWordMenu at={wordMenu} onPick={pickWord} onClose={() => setWordMenu(null)} /> : null}
       {rttyOpen ? <RttySettingsDialog settings={s} onApply={save} onClose={() => setRttyOpen(false)} /> : null}
       {extras.map((x, i) => (
-        <ExtraRxWindow key={x.id} id={x.id} freqHz={x.freq_hz} modeName={MODE_NAMES[s.mode]} index={i} onClose={() => closeExtra(x.id)} onWord={takeCall} />
+        <ExtraRxWindow key={x.id} id={x.id} freqHz={x.freq_hz} modeName={MODE_NAMES[s.mode]} index={i} afc={x.afc === true} onAfc={(on) => setExtras(extras.map((e) => (e.id === x.id ? { ...e, afc: on } : e)))} onClose={() => closeExtra(x.id)} onWord={takeCall} />
       ))}
       <PopupMenu at={wfMenu} onClose={closeWfMenu} className="call-menu digi-st-menu" width={250} height={300} label={t('wfm.title')}>
         {wfMenu ? (

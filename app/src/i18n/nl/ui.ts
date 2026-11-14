@@ -4864,6 +4864,7 @@ export const NL_UI: Record<string, string> = {
   "wish.testNoUrl": "Testmelding getoond op de pagina. Schrijf voor de telefoon eerst het ntfy-adres.",
   "wish.testSent": "Testmelding ook naar de telefoon gestuurd: controleer of hij is aangekomen.",
   "wish.tune": "Ga naar de frequentie",
+  "xrx.afcTip": "AFC van dit RX-venster: volgt zijn station als het verloopt. Alleen van dit venster, los van de AFC in de onderste balk (die voor de hoofdontvangst geldt).",
   "xrx.close": "Dit RX-venster sluiten",
   "xrx.dragTip": "Sleep om het venster te verplaatsen",
   "xrx.empty": "Luisteren: de tekst van dit station verschijnt hier.",

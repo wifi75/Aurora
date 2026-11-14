@@ -3,7 +3,9 @@
 .xrx-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; background: #15233f; border-bottom: 1px solid var(--border); cursor: move; user-select: none; touch-action: none; }
 .xrx-head strong { font-size: 12px; }
 .xrx-head span { color: var(--text-muted); font-size: 11px; }
-.xrx-close { margin-left: auto; width: 22px; height: 22px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer; }
+.xrx-afc { margin-left: auto; padding: 0 6px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--text-muted); font: 700 10px/18px var(--font-data); cursor: pointer; }
+.xrx-afc--on { border-color: #2cf5a4; background: #2cf5a4; color: #062217; }
+.xrx-close { width: 22px; height: 22px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); font-size: 16px; line-height: 1; cursor: pointer; }
 .xrx-close:hover { background: #d32f2f; color: #fff; }
 .xrx-text { margin: 0; flex: 1 1 auto; min-height: 0; overflow: auto; padding: 6px 9px; font: 13px/1.45 var(--font-data); white-space: pre-wrap; word-break: break-word; }
 .xrx-empty { color: var(--text-muted); font-style: italic; }
