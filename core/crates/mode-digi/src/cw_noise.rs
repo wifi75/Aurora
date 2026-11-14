@@ -33,6 +33,10 @@ const WIDTH_MIN_HZ: f64 = 20.0;
 const WIDTH_MAX_HZ: f64 = 60.0;
 /// Un lato piu' forte dell'altro di cosi' (rapporto delle medie lunghe) ha un'altra stazione: si usa l'altro.
 const SIDE_MISMATCH: f64 = 2.0;
+/// Un lato la cui media lunga sta tanto sopra il minimo scorrevole del filtro del tono ha un'altra stazione, anche se l'altro lato e'
+/// occupato allo stesso modo: con due stazioni vicine ai due lati (a ±113 Hz e 30 WPM le bande laterali cadono a ±105 Hz) le medie dei
+/// due lati si somigliano, il rumore stimato saliva di 10-15 dB e il decodificatore perdeva la stazione (prova `studio_veloci`).
+const SIDE_OCCUPIED: f64 = 4.0;
 /// Media lunga (s) per decidere se un lato e' occupato.
 const SIDE_LONG_S: f64 = 1.0;
 /// Quante medie indipendenti valgono, per il minimo, le medie mobili di 3 secondi (misurato: vedi `expected_min_ratio`).
@@ -170,7 +174,8 @@ impl SidebandNoise {
 
     /// Un campione della strada larga; restituisce il rumore stimato (potenza per campione del filtro del decodificatore), 0 finche' le
     /// medie non sono piene.
-    pub(crate) fn push(&mut self, w: (f32, f32)) -> f64 {
+    /// `floor`: il minimo scorrevole dello stesso istante (0 = non ancora noto).
+    pub(crate) fn push(&mut self, w: (f32, f32), floor: f64) -> f64 {
         let (x, y) = (f64::from(w.0), f64::from(w.1));
         self.phase += self.theta;
         if self.phase > 2.0 * PI {
@@ -201,6 +206,16 @@ impl SidebandNoise {
             self.long[side] = if self.long[side] > 0.0 { self.long[side] + a * (p - self.long[side]) } else { p };
         }
         self.last = est;
+        // un lato occupato rispetto al rumore misurato altrove: non conta; tutti e due occupati: 0, cioe' vale il minimo scorrevole
+        if floor > 0.0 {
+            let busy = [self.long[0] > SIDE_OCCUPIED * floor, self.long[1] > SIDE_OCCUPIED * floor];
+            match busy {
+                [true, true] => return 0.0,
+                [true, false] => return est[1],
+                [false, true] => return est[0],
+                [false, false] => {}
+            }
+        }
         // un lato occupato (medie lunghe): solo l'altro; altrimenti la media dei due
         if self.long[0] > SIDE_MISMATCH * self.long[1] {
             est[1]

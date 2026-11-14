@@ -283,6 +283,33 @@ ogni ricevitore ha il suo AGC (un solo AGC per tutti costerebbe meno, ma `skim/`
 23 nominativi su 30; seconda passata all'indietro (C4) per l'avvio a -10 dB; non c'è un interruttore dell'AGC nell'interfaccia
 (`CwDemodulator::set_noise_agc`, acceso di base).
 
+## CW multicanale: stazioni veloci fra due vicine (2026-11-14)
+Misura di partenza (`cpu_tutta_la_banda`, 30 stazioni a 113 Hz l'una dall'altra, -5 dB, 16-31 WPM): 23/30 nominativi verificati, 17,7%
+di caratteri sbagliati, 18% di un core. Tutti i nominativi persi o sbagliati erano delle stazioni a 27-31 WPM.
+
+La prova `studio_veloci` (una stazione a 1000 Hz, -5 dB, 4 prove per casella, caratteri sbagliati in %) separa le cause:
+
+| WPM | sola | vicine ai due lati (±113 Hz), prima | vicina da un lato solo | vicine ai due lati, dopo |
+|---|---|---|---|---|
+| 18 | 5,3 | 5,3 | 5,3 | 5,3 |
+| 24 | 5,3 | 38,3 | 5,3 | **20,3** |
+| 30 | 5,3 | 69,3 | 5,3 | **24,0** |
+| 36 | 6,7 | 81,3 | 6,0 | **41,7** |
+
+Il 5,3% della stazione sola è l'inizio perso mentre il ricevitore si aggancia. La banda del filtro (150, 100, 75 Hz) non cambia niente
+(il probabilistico usa comunque almeno 150 Hz): non è selettività. La causa è la stima del rumore dalle bande laterali: a 2,5 larghezze dal
+tono, cioè a circa 105 Hz a 30 WPM, proprio sulle vicine; un lato occupato si scartava solo se l'altro era pulito, con due vicine il rumore
+stimato saliva di 10-15 dB. Correzione (`cw_noise.rs`, `SIDE_OCCUPIED`): un lato la cui media di 1 s supera di 4 volte il minimo scorrevole
+del filtro del tono non conta; se sono occupati tutti e due vale il minimo scorrevole. Prova `a_fast_station_between_two_neighbours_is_still_read`
+(fallisce senza la correzione).
+
+Dopo: 30 stazioni 25/30 nominativi, 15,0% di caratteri sbagliati, 18,5% di un core; 10 stazioni uguali (10/10, 6,9%). Banco a canale
+singolo (`confronto_tasso_di_errore`, 11 righe): media 23,4 come prima, tutte le righe uguali tranne QRN largo 29,8 -> 29,3.
+Sviluppo nostro (misura e correzione), nessuna parte presa da altri programmi.
+
+Resta: a 36 WPM con due vicine 41,7%; i 5 nominativi mancanti sono di stazioni a 27-31 WPM. Ogni canale filtra tutto l'audio a 12 kHz con
+il suo mixer e il suo FIR: una canalizzazione comune (una sola trasformata per tutti i canali) ridurrebbe la CPU per canale.
+
 ## Fonti
 E. L. Bell, tesi NPS 1977
 <https://archive.org/details/optimalbayesiane00bell> · AG1LE <https://ag1le.blogspot.com/2013/09/new-morse-decoder-part-1.html> ·

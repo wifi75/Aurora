@@ -824,8 +824,8 @@ impl CwDemodulator {
                 }
             }
             let alt = alt.unwrap_or(gain);
-            let side = if bayes { self.side.as_mut().map_or(0.0, |sd| sd.push((wi, wq))) } else { 0.0 };
             let floor = if bayes { self.min_noise.as_mut().map_or(0.0, |m| m.push(f64::from(bi * bi + bq * bq))) } else { 0.0 };
+            let side = if bayes { self.side.as_mut().map_or(0.0, |sd| sd.push((wi, wq), floor)) } else { 0.0 };
             self.delay.push_back(Delayed { z: (zi, zq), b: (bi, bq), mixed_at: self.tone_hz, side: 0.0, floor, gain, var, alt });
             // le bande laterali arrivano in ritardo sulla banda base del decodificatore: la misura va al campione che descrive
             let lag = self.side.as_ref().map_or(0, SidebandNoise::lag);
@@ -1287,6 +1287,34 @@ mod tests {
         let wave = modulate(b"PARIS ", 700.0, 20.0, 0.9);
         let secs = wave.len() as f64 / f64::from(RATE) - 0.05 - 0.25;
         assert!((secs - 3.0).abs() < 0.02, "{secs}");
+    }
+
+    /// Una stazione veloce fra due vicine a ±113 Hz, nel rumore (-5 dB in 3 kHz): le bande laterali della stima del rumore cadono
+    /// sulle vicine da tutti e due i lati. Prima della correzione (lati confrontati anche con il minimo scorrevole) il nominativo non
+    /// usciva mai e i caratteri sbagliati erano oltre il 60%.
+    #[test]
+    fn a_fast_station_between_two_neighbours_is_still_read() {
+        let text = "CQ CQ DE IU3ABC IU3ABC K   CQ CQ DE IU3ABC IU3ABC K";
+        let mut band = vec![0.0_f32; 6_000];
+        band.extend(modulate(text.as_bytes(), 1_000.0, 30.0, 0.3));
+        band.extend(vec![0.0; 12_000]);
+        for (hz, wpm, call) in [(887.0_f32, 26.0_f32, "IU1XYZ"), (1_113.0, 30.0, "IU2XYZ")] {
+            let other = format!("CQ TEST DE {call} {call} TEST CQ TEST DE {call} {call} TEST CQ TEST DE {call}");
+            for (s, w) in band.iter_mut().skip(3_000).zip(modulate(other.as_bytes(), hz, wpm, 0.3)) {
+                *s += w;
+            }
+        }
+        let hiss = crate::skim::tests::noise(band.len(), 0.53, 11);
+        for (s, n) in band.iter_mut().zip(hiss) {
+            *s += n;
+        }
+        let mut d = CwDemodulator::new(1_000.0, 20.0);
+        let mut got = Vec::new();
+        for chunk in band.chunks(960) {
+            got.extend(d.process(chunk));
+        }
+        let got = String::from_utf8_lossy(&got).trim().to_string();
+        assert!(got.matches("IU3ABC").count() >= 2, "{got}");
     }
 
     #[test]

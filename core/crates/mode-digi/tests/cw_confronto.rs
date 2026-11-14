@@ -617,3 +617,47 @@ fn avvio_a_freddo() {
     }
     println!("media: primi 15 s {tot_a:.1} | dopo {tot_b:.1} (caratteri sbagliati in %)");
 }
+
+/// Studio: perché nella banda si perdono le stazioni veloci (selettività o rumore stimato). Per ogni velocità, una stazione sola a un tono fisso nel
+/// rumore a -5 dB (3 kHz), decodificata da un `CwDemodulator` sintonizzato a mano con il fascio dei canali (96) e con quello pieno (320),
+/// e la stessa stazione con due vicine a ±113 Hz. Stampa i caratteri sbagliati in %.
+#[test]
+#[ignore]
+fn studio_veloci() {
+    for wpm in [18.0, 24.0, 30.0, 36.0] {
+        let mut riga = format!("{wpm:>4.0} WPM |");
+        for (vicine, beam, bw, lato) in [(false, 96usize, 150.0f32, 0u8), (true, 96, 150.0, 0), (true, 96, 100.0, 0), (true, 96, 75.0, 0), (true, 96, 150.0, 1)] {
+            let (mut e, mut n) = (0usize, 0usize);
+            for seed in 0..4u64 {
+                let mut rng = Rng(500 + seed);
+                let text = "CQ CQ DE IU3ABC IU3ABC K   CQ CQ DE IU3ABC IU3ABC K   CQ DE IU3ABC IU3ABC K";
+                let seq = chiavi(text, |_| wpm, &KEYER, &mut rng);
+                let mut band = suona(&seq, 1_000.0, |_| AMP);
+                band.splice(0..0, std::iter::repeat_n(0.0, 6_000));
+                band.extend(std::iter::repeat_n(0.0, 24_000));
+                if vicine {
+                    for (k, hz) in [(1u64, 887.0), (2, 1_113.0)].into_iter().filter(|(k, _)| lato == 0 || *k == 2) {
+                        let other = format!("CQ TEST DE IU{k}XYZ IU{k}XYZ TEST CQ TEST DE IU{k}XYZ IU{k}XYZ TEST CQ DE IU{k}XYZ");
+                        let s2 = chiavi(&other, |_| 22.0 + 4.0 * k as f64, &KEYER, &mut rng);
+                        for (s, w) in band.iter_mut().skip(3_000 * k as usize).zip(suona(&s2, hz, |_| AMP)) {
+                            *s += w;
+                        }
+                    }
+                }
+                aggiungi_rumore(&mut band, sigma_per_snr(AMP, -5.0), &mut rng);
+                let mut rx = CwDemodulator::new(1_000.0, 20.0);
+                rx.set_beam(beam);
+                rx.set_bandwidth(bw);
+                let mut got = Vec::new();
+                for b in band.chunks(960) {
+                    got.extend(rx.process(b));
+                }
+                e += errori("", text, &got);
+                n += text.len();
+            }
+            let _ = beam;
+            riga.push_str(&format!(" {}{} bw{:>3.0}: {:5.1}", if vicine { "vicine" } else { "sola  " }, if lato == 1 { "1" } else { "2" }, bw, 100.0 * e as f64 / n as f64));
+        }
+        println!("{riga}");
+    }
+}
