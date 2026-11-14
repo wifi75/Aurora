@@ -9,7 +9,9 @@ import { bandPlanRows } from '../lib/bandplan';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type Qso } from '../components/digi/DigiLog';
-import { commentWithExchange, exchangeSent, readSerial, writeSerial } from '../lib/contestSerial';
+import { commentWithExchange, contestNextSerial, exchangeSent, readSerial, writeSerial } from '../lib/contestSerial';
+import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
+import { useContestLog } from '../lib/useContestLog';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
@@ -174,6 +176,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // il numero progressivo del contest (<QSONR>): avanza a ogni QSO salvato, ricordato nelle preferenze
   const [serial, setSerialState] = useState<number>(() => readSerial(browserStorage()));
   const setSerial = (n: number) => setSerialState(writeSerial(browserStorage(), n));
+  // in gara <QSONR> viene dal log del contest (ultimo numero mandato + 1, 001 all'inizio); fuori gara il contatore della pagina
+  const contest = useContestLog();
+  const inContest = !!contest.attivo;
+  const qsoSerial = inContest && contest.log ? contestNextSerial(contest.log) : serial;
   // il menu del tasto destro su una parola della finestra di ricezione
   const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
   // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
@@ -345,8 +351,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, []);
 
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
-  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial });
-  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial };
+  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest });
+  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest };
 
   const setView = (patch: Partial<Views>) => {
     const next = { ...views, ...patch };
@@ -719,12 +725,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       grid: l.qso.wwloc,
       name: l.qso.name,
       qth: l.qso.qth,
-      // il log non ha campi per gli scambi del contest: vanno in coda alle note
+      // il log non ha campi per gli scambi del contest: vanno in coda alle note (e a parte per il log del contest)
       comment: commentWithExchange(l.qso.notes, nrs, l.qso.nrr ?? ''),
-    }).then(
+      exch_sent: nrs,
+      exch_rcvd: l.qso.nrr ?? '',
+    }, l.inContest).then(
       () => {
-        // il QSO e' a log: il numero progressivo avanza e gli scambi si azzerano
-        setSerialState((n) => writeSerial(browserStorage(), n + 1));
+        // il QSO e' a log: il numero progressivo avanza (in gara lo da' il log del contest) e gli scambi si azzerano
+        if (l.inContest) void client.invalidateQueries({ queryKey: ['contest'] });
+        else setSerialState((n) => writeSerial(browserStorage(), n + 1));
         setQso((q) => ({ ...q, nrs: '', nrr: '' }));
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
@@ -855,6 +864,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'toggle': toggleSetting(a.what, a.value); break;
         case 'scan': setScanning(a.run); break;
         case 'memory': memory(a.write, a.slot); break;
+        // la finestra dei segni del log di BIGScan fuori gara: BIGScan la rilegge al prossimo giro
+        case 'ignoreBefore': writeIgnoreBefore(browserStorage(), a.at); break;
+        case 'period': writePeriod(browserStorage(), a.minutes); break;
         case 'modeSettings':
         case 'threshold': setSettingsOpen(true); break;
         case 'cat':
@@ -1369,7 +1381,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             onQso={(patch) => setQso({ ...qso, ...patch })}
             onRst={(patch) => setSavedField(patch)}
             onSave={saveQso}
-            serial={serial}
+            serial={qsoSerial}
             onSerial={setSerial}
             onClear={() => {
               setQso(EMPTY_QSO);

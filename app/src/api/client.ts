@@ -1444,10 +1444,14 @@ export interface ManualQso {
   name: string;
   qth?: string;
   comment: string;
+  /** Scambi del contest mandato e ricevuto (per il log del contest). */
+  exch_sent?: string;
+  exch_rcvd?: string;
 }
 
-export async function addLogQso(q: ManualQso): Promise<void> {
-  await request('/log/qsos', jsonInit(q));
+/** `contest`: salvato con un contest attivo (pagina dei modi testuali): il QSO entra anche nel log del contest. */
+export async function addLogQso(q: ManualQso, contest = false): Promise<void> {
+  await request('/log/qsos', fromContest(jsonInit(q), contest));
 }
 
 /** Il database di Log4OM2 per i QSO gia' fatti: percorso, da dove viene (`auto`, `chosen`, `env`, `none`), se e' bloccato da aurora.env. */

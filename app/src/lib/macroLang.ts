@@ -4,6 +4,7 @@
  * raccolgono in un elenco di azioni che la pagina esegue.
  */
 import { formatSerial } from './contestSerial';
+import { parseIgnoreBefore } from './logWindow';
 
 /** I dati con cui si riempiono i comandi di testo. */
 export interface MacroContext {
@@ -73,6 +74,10 @@ export type MacroAction =
   /** Salva (`write`) o rilegge le impostazioni nella memoria n (1-20). */
   | { type: 'memory'; write: boolean; slot: number }
   | { type: 'modeSettings' }
+  /** I segni del log contano solo i QSO da questo istante (ms UTC); `erase` toglie il limite. */
+  | { type: 'ignoreBefore'; at: number | 'erase' }
+  /** I segni del log contano solo gli ultimi n minuti (0 = spento). */
+  | { type: 'period'; minutes: number }
   | { type: 'threshold' }
   | { type: 'cursor'; target: string }
   | { type: 'macros'; file: string }
@@ -210,6 +215,14 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'STARTSCAN': return { type: 'scan', run: true };
     case 'STOPSCAN': return { type: 'scan', run: false };
     case 'MODESETTINGS': return { type: 'modeSettings' };
+    case 'IGNOREBEFORE': {
+      const at = arg === undefined ? null : parseIgnoreBefore(arg);
+      return at === null ? null : { type: 'ignoreBefore', at };
+    }
+    case 'PERIOD': {
+      const n = number(arg);
+      return n === null || n < 0 ? null : { type: 'period', minutes: Math.trunc(n) };
+    }
     case 'THRESHOLD': return { type: 'threshold' };
     case 'MEMW':
     case 'MEMR': {

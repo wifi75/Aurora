@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SERIAL_KEY, commentWithExchange, exchangeSent, formatSerial, readSerial, writeSerial } from './contestSerial';
+import { SERIAL_KEY, commentWithExchange, contestNextSerial, exchangeSent, formatSerial, readSerial, writeSerial } from './contestSerial';
 
 const mem = () => {
   const m = new Map<string, string>();
@@ -34,5 +34,13 @@ describe('numero progressivo dei contest', () => {
   it('gli scambi vanno nelle note solo se ricevuti', () => {
     expect(commentWithExchange('ciao', '001', '015')).toBe('ciao NRS 001 NRR 015');
     expect(commentWithExchange('', '001', '')).toBe('');
+  });
+});
+
+describe('contestNextSerial', () => {
+  it('001 senza QSO, poi l\'ultimo mandato + 1', () => {
+    expect(contestNextSerial([])).toBe(1);
+    expect(contestNextSerial([{ n: 1, exch_sent: '001' }, { n: 2, exch_sent: '599 002' }])).toBe(3);
+    expect(contestNextSerial([{ n: 3, exch_sent: '007' }, { n: 1, exch_sent: '009' }])).toBe(8);
   });
 });

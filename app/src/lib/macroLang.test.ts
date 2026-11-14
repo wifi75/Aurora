@@ -175,3 +175,11 @@ describe('tasti e insiemi', () => {
     expect(textColorFor(0x000080)).toBe('#ffffff');
   });
 });
+
+describe('IGNOREBEFORE e PERIOD', () => {
+  it('diventano azioni', () => {
+    expect(runMacro('<IGNOREBEFORE:2026-11-14 12:30>', ctx).actions).toEqual([{ type: 'ignoreBefore', at: Date.UTC(2026, 10, 14, 12, 30) }]);
+    expect(runMacro('<IGNOREBEFORE:ERASE>', ctx).actions).toEqual([{ type: 'ignoreBefore', at: 'erase' }]);
+    expect(runMacro('<PERIOD:60>', ctx).actions).toEqual([{ type: 'period', minutes: 60 }]);
+  });
+});

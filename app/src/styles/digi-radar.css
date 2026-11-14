@@ -85,8 +85,12 @@ html[data-theme='light'] .radar-switch--on { background: #0a7a52; border-color: 
 
 /* segno del log accanto al nominativo: stessi colori dei tipi «paese nuovo» e «gia' collegato» della pagina FT8 */
 .radar-log { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px; font-size: 9px; font-weight: 700; line-height: 13px; vertical-align: middle; }
-.radar-log--new-dxcc { background: var(--tag-new-dxcc, #800080); color: var(--tag-new-dxcc-ink, #fff); }
+.radar-log--dupe { background: #d32f2f; color: #fff; }
 .radar-log--worked { background: var(--tag-worked-call, #00bf00); color: var(--tag-worked-call-ink, #000); }
-.radar-log--worked-other { border: 1px solid var(--tag-worked-call, #00bf00); color: var(--tag-worked-call, #00bf00); line-height: 11px; }
+.radar-log--mult { background: var(--tag-new-dxcc, #800080); color: var(--tag-new-dxcc-ink, #fff); }
+.radar-log--new-call { background: #ffd600; color: #000; }
+.radar-log--new-band-mode,
+.radar-log--new-band { background: #81d4fa; color: #000; }
+.radar-log--new-mode { background: #a5d6a7; color: #000; }
 .radar-legend { display: inline-flex; gap: 2px; cursor: help; }
 .radar-legend .radar-log { margin-left: 0; }

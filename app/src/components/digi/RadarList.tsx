@@ -7,7 +7,11 @@ import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../M
 import type { RadarStation } from '../../lib/digiBand';
 import { flagCode } from '../../lib/flags';
 import { bandOf } from '../../lib/format';
-import { buildLogIndex, logStatus, type LogStatus } from '../../lib/logStatus';
+import { valuta } from '../../api/contest';
+import { buildLogIndex, contestStatus, logStatus, type ContestMark, type LogStatus } from '../../lib/logStatus';
+import { logWindowStart, qsoTimeMs } from '../../lib/logWindow';
+import { browserStorage } from '../../lib/theme';
+import { useContestLog } from '../../lib/useContestLog';
 import '../../styles/digi-radar.css';
 
 interface Props {
@@ -38,11 +42,25 @@ const RADAR_COLUMNS = ['call', 'freq', 'wpm', 'snr', 'cq'] as const;
 type RadarCol = (typeof RADAR_COLUMNS)[number];
 const RADAR_COL_EM: Record<RadarCol, number> = { call: 9, freq: 6.5, wpm: 3.6, snr: 3.6, cq: 3.2 };
 
-/** Il segno del log accanto al nominativo: paese nuovo, gia' collegato su banda e modo, collegato altrove. */
-const LOG_MARK: Record<Exclude<LogStatus, null>, { label: string; tip: 'radar.logNewTip' | 'radar.logWorkedTip' | 'radar.logOtherTip' }> = {
-  new_dxcc: { label: 'NEW', tip: 'radar.logNewTip' },
-  worked: { label: 'B4', tip: 'radar.logWorkedTip' },
-  worked_other: { label: 'B4', tip: 'radar.logOtherTip' },
+type MarkTip = 'radar.logDupeTip' | 'radar.logWorkedTip' | 'radar.logMultTip' | 'radar.logDxccTip' | 'radar.logNewCallTip' | 'radar.logBandModeTip' | 'radar.logBandTip' | 'radar.logModeTip';
+
+/** Il segno del log accanto al nominativo: etichetta breve e spiegazione (in gara il moltiplicatore e' «MULT», fuori gara il paese «DXCC»). */
+function logMark(st: Exclude<LogStatus, null>, contest: boolean): { label: string; tip: MarkTip } {
+  switch (st) {
+    case 'dupe': return { label: 'DUPE', tip: 'radar.logDupeTip' };
+    case 'worked': return { label: 'B4', tip: 'radar.logWorkedTip' };
+    case 'mult': return contest ? { label: 'MULT', tip: 'radar.logMultTip' } : { label: 'DXCC', tip: 'radar.logDxccTip' };
+    case 'new_call': return { label: 'NEW', tip: 'radar.logNewCallTip' };
+    case 'new_band_mode': return { label: 'BM', tip: 'radar.logBandModeTip' };
+    case 'new_band': return { label: 'B', tip: 'radar.logBandTip' };
+    case 'new_mode': return { label: 'M', tip: 'radar.logModeTip' };
+  }
+}
+
+/** I segni della legenda, nell'ordine di importanza. */
+const LEGEND: Record<'contest' | 'log', Exclude<LogStatus, null>[]> = {
+  contest: ['dupe', 'mult', 'new_call', 'new_band_mode', 'new_band', 'new_mode'],
+  log: ['worked', 'mult', 'new_call', 'new_band_mode', 'new_band', 'new_mode'],
 };
 
 function freqLabel(hz: number, dialHz: number): string {
@@ -58,23 +76,43 @@ export function RadarList({ on = true, onToggle, width, answering = false, onAns
   const t = useT();
   const hidden: RadarCol[] = [...(showWpm ? [] : (['wpm'] as const)), ...(showSnr ? [] : (['snr'] as const))];
   const cols = useMovableColumns({ storageKey: 'aurora.digi.radar.cols', columns: RADAR_COLUMNS, defaultEm: RADAR_COL_EM, elastic: 'call', hidden });
-  const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchOnWindowFocus: false });
-  const index = useMemo(() => (log.data ? buildLogIndex(log.data.qsos) : null), [log.data]);
+  const contest = useContestLog();
+  const inContest = !!contest.attivo;
   const band = dialHz > 0 ? bandOf(dialHz) : null;
+  const log = useQuery({ queryKey: ['log-qsos'], queryFn: getLogQsos, retry: false, refetchOnWindowFocus: false, enabled: !inContest });
+  // fuori gara: i QSO dentro la finestra scelta con <IGNOREBEFORE> e <PERIOD> (al minuto, per non ricalcolare a ogni giro)
+  const from = logWindowStart(browserStorage(), Math.floor(Date.now() / 60_000) * 60_000);
+  const index = useMemo(() => {
+    if (inContest) return contest.log ? buildLogIndex(contest.log.filter((q) => q.stato !== 'errore').map((q) => ({ ...q, country: '' }))) : null;
+    if (!log.data) return null;
+    return buildLogIndex(from == null ? log.data.qsos : log.data.qsos.filter((q) => !(qsoTimeMs(q) < from)));
+  }, [inContest, contest.log, log.data, from]);
+  // in gara il doppio e i moltiplicatori vengono dal contest: una richiesta quando cambia l'elenco dei nominativi o il log, non a ogni giro
+  const calls = useMemo(() => Array.from(new Set(stations.map((s) => s.call.toUpperCase()))).sort(), [stations]);
+  const valori = useQuery({
+    queryKey: ['contest-valuta-radar', contest.attivo, contest.nQso, band, modeName, calls.join(',')],
+    queryFn: () => valuta(calls.map((call) => ({ call, grid: '' })), band ?? undefined, modeName),
+    enabled: inContest && on && calls.length > 0,
+    retry: false,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
+  }).data;
+  const marks = useMemo(() => (inContest && valori ? new Map<string, ContestMark>(valori.valori.map((v) => [v.call, v])) : null), [inContest, valori]);
+  const source = inContest ? t('radar.srcContest', { name: contest.nome ?? '' }) : from != null ? t('radar.srcLogFrom', { t: new Date(from).toISOString().slice(0, 16).replace('T', ' ') }) : t('radar.srcLog');
   const head: Record<RadarCol, string> = { call: t('radar.colCall'), freq: t('radar.colFreq'), wpm: 'WPM', snr: 'S/N', cq: 'CQ' };
   const cell = (c: RadarCol, s: RadarStation) => {
     switch (c) {
       case 'call': {
         const code = flagCode(s.country);
-        const st = logStatus(index, s.call, s.country, band, modeName);
-        const mark = st ? LOG_MARK[st] : null;
+        const st = inContest ? contestStatus(marks, index, s.call, band, modeName) : logStatus(index, s.call, s.country, band, modeName);
+        const mark = st ? logMark(st, inContest) : null;
         return (
           <td key={c} className="radar-call">
             <span className="radar-dot" title={s.stale ? t('radar.dotStale') : t('radar.dotLive')} aria-label={s.stale ? t('radar.dotStale') : t('radar.dotLive')} />
             {code ? <span className={`fi fi-${code} decode-flag`} aria-hidden="true" /> : null}
             <b>{s.call}</b>
             {st && mark ? (
-              <span className={`radar-log radar-log--${st.replace('_', '-')}`} title={t(mark.tip)}>
+              <span className={`radar-log radar-log--${st.replaceAll('_', '-')}`} title={t(mark.tip)}>
                 {mark.label}
               </span>
             ) : null}
@@ -120,12 +158,12 @@ export function RadarList({ on = true, onToggle, width, answering = false, onAns
         </strong>
         {on ? <small>{t('radar.count', { n: stations.length })}</small> : null}
         {on ? (
-          <span className="radar-legend" title={`NEW: ${t('radar.logNewTip')}
-B4: ${t('radar.logWorkedTip')}
-B4: ${t('radar.logOtherTip')}`}>
-            <span className="radar-log radar-log--new-dxcc">NEW</span>
-            <span className="radar-log radar-log--worked">B4</span>
-            <span className="radar-log radar-log--worked-other">B4</span>
+          <span className="radar-legend" title={[source, ...LEGEND[inContest ? 'contest' : 'log'].map((k) => { const m = logMark(k, inContest); return `${m.label}: ${t(m.tip)}`; })].join('\n')}>
+            {LEGEND[inContest ? 'contest' : 'log'].map((k) => (
+              <span key={k} className={`radar-log radar-log--${k.replaceAll('_', '-')}`}>
+                {logMark(k, inContest).label}
+              </span>
+            ))}
           </span>
         ) : null}
         {on && onAnswering ? (

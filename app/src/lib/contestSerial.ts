@@ -43,3 +43,17 @@ export function commentWithExchange(notes: string, nrs: string, nrr: string): st
   const ex = nrr.trim() === '' ? '' : `NRS ${nrs.trim()} NRR ${nrr.trim()}`;
   return [notes.trim(), ex].filter(Boolean).join(' ');
 }
+
+/**
+ * In gara il numero viene dal log del contest: l'ultimo numero mandato (nello scambio inviato del QSO piu' recente) + 1; senza QSO
+ * si riparte da 1 (`001`), quindi ogni contest attivato ricomincia da capo.
+ */
+export function contestNextSerial(log: readonly { n: number; exch_sent: string }[]): number {
+  let last: { n: number; exch_sent: string } | null = null;
+  for (const q of log) if (/\d/.test(q.exch_sent) && (!last || q.n > last.n)) last = q;
+  if (!last) return 1;
+  const nums = last.exch_sent.match(/\d+/g) ?? [];
+  // lo scambio puo' avere anche il rapporto davanti (`599 015`): il numero e' l'ultimo gruppo di cifre
+  const n = Number(nums[nums.length - 1]);
+  return Number.isInteger(n) && n >= 0 ? n + 1 : 1;
+}

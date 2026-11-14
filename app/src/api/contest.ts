@@ -222,7 +222,7 @@ export const getRegole = (id: string) => call<{ regole: Regole; impostazioni: Im
 export const attivaContest = (id: string) => call<{ ok: boolean; avvisi: string[] }>('/attiva', json('POST', { id }));
 export const disattivaContest = () => call<{ ok: boolean; avvisi: string[] }>('/disattiva', { method: 'POST' });
 export const salvaImpostazioni = (id: string, imp: Impostazioni) => call<{ ok: boolean }>(`/impostazioni/${encodeURIComponent(id)}`, json('PUT', imp));
-export const valuta = (stazioni: { call: string; grid: string }[]) => call<{ banda: string; modo: string; valori: Valore[] }>('/valuta', json('POST', { stazioni }));
+export const valuta = (stazioni: { call: string; grid: string }[], banda?: string, modo?: string) => call<{ banda: string; modo: string; valori: Valore[] }>('/valuta', json('POST', { stazioni, banda, modo }));
 export const getLavorati = (banda: string) => call<{ banda: string; moltiplicatori: { tipo: string; valori: string[] }[] }>(`/lavorati?banda=${encodeURIComponent(banda)}`);
 export const getContestLog = () => call<{ qso: LogQso[]; totali: Totali | null }>('/log');
 export const modificaQso = (n: number, patch: { exch_rcvd?: string; grid?: string; stato?: LogQso['stato'] }) => call<{ ok: boolean }>(`/log/${n}`, json('PATCH', patch));
