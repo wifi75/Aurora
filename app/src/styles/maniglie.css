@@ -1,0 +1,87 @@
+/* Maniglie di ridimensionamento: tutte uguali a quella fra le finestre RX/TX e il pannello BIGScan dei modi testuali
+   (una lineetta tonda al centro dello spazio fra i due elementi). In verticale 2 x 70 px, in orizzontale ruotata (70 x 2 px).
+   L'area che si afferra e il comportamento restano quelli di ogni maniglia: qui cambia solo il disegno.
+   Il selettore e' piu' forte di quelli dei fogli delle pagine (caricati dopo) per non dipendere dall'ordine. */
+:root {
+  --grip-color: #8ea2e0;
+  --grip-color-hover: #38bdf8;
+  --grip-thick: 2px;
+  --grip-len: 70px;
+  --grip-radius: 1px;
+  --grip-opacity: 0.9;
+  --grip-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+}
+
+/* tema chiaro: stessi valori della maniglia di riferimento (che non cambia colore); qui si ritoccano se servisse */
+html[data-theme='light'] {
+  --grip-color: #8ea2e0;
+  --grip-color-hover: #38bdf8;
+}
+
+/* l'area attiva fa da riferimento per la lineetta */
+html:root:root .dock-splitter,
+html:root:root .dock-resize,
+html:root:root .solo-divider { position: relative; }
+html:root:root .solo-divider { position: absolute; }
+
+/* il disegno: lineetta centrata */
+html:root:root :is(.digi-wingrip, .digi-radargrip, .digi-macrogrip, .digi-log-grip, .live-bottom-split, .dock-splitter, .grid-divider, .solo--row .solo-divider,
+  .digi-split, .digi-wf-grip, .digi-band-grip, .wf-splitter, .live-bottom-resizer, .dock-resize, .solo--col .solo-divider)::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: var(--grip-radius);
+  background: var(--grip-color);
+  opacity: var(--grip-opacity);
+  box-shadow: var(--grip-shadow);
+  transition: none;
+  pointer-events: none;
+}
+html:root:root :is(.digi-wingrip, .digi-radargrip, .digi-macrogrip, .digi-log-grip, .live-bottom-split, .dock-splitter, .grid-divider, .solo--row .solo-divider)::before {
+  width: var(--grip-thick);
+  height: var(--grip-len);
+  max-height: 100%;
+}
+html:root:root :is(.digi-split, .digi-wf-grip, .digi-band-grip, .wf-splitter, .live-bottom-resizer, .dock-resize, .solo--col .solo-divider)::before {
+  width: var(--grip-len);
+  height: var(--grip-thick);
+  max-width: 100%;
+}
+
+/* al passaggio e durante il trascinamento */
+html:root:root :is(.digi-wingrip, .digi-radargrip, .digi-macrogrip, .digi-log-grip, .live-bottom-split, .dock-splitter, .grid-divider, .solo-divider,
+  .digi-split, .digi-wf-grip, .digi-band-grip, .wf-splitter, .live-bottom-resizer, .dock-resize):is(:hover, :active)::before,
+html:root:root .grid-board--moving .grid-divider::before {
+  background: var(--grip-color-hover);
+  opacity: 1;
+}
+
+/* via i disegni vecchi: righe tratteggiate, barrette sull'altro pseudo-elemento, sfondi che si accendono */
+html:root:root :is(.digi-split, .digi-macrogrip, .wf-splitter, .live-bottom-split, .live-bottom-resizer, .grid-divider, .dock-resize)::after {
+  content: none !important;
+  display: none !important;
+}
+html:root:root :is(.digi-split, .digi-wf-grip, .digi-log-grip, .digi-macrogrip, .dock-splitter, .solo-divider, .grid-divider):is(:hover, :active) {
+  background: none;
+}
+html:root:root .digi-log-grip { background: none; opacity: 1; }
+html:root:root .dock-splitter { background: none; }
+html:root:root .solo-divider { background: none; }
+
+/* maniglie con la lineetta in un elemento interno (scheda Contest e Fox) */
+html:root:root :is(.ctc-wf-handle, .foxc-wf-handle) span {
+  width: var(--grip-len);
+  height: var(--grip-thick);
+  border-radius: var(--grip-radius);
+  background: var(--grip-color);
+  opacity: var(--grip-opacity);
+  box-shadow: var(--grip-shadow);
+}
+html:root:root :is(.ctc-wf-handle, .foxc-wf-handle):is(:hover, :active) span {
+  background: var(--grip-color-hover);
+  opacity: 1;
+}
