@@ -697,7 +697,7 @@ fn studio_cpu_canale() {
 fn tasto_a_mano_nominativi() {
     use mode_digi::skim::CwBandDecoder;
     let calls = ["IU3ABC", "K1XYZ", "DL1ABC", "G4ABC", "JA1ABC", "VK2ABC", "F5ABC", "EA3ABC", "OH2ABC", "W1AW"];
-    for snr in [5.0, 0.0, -5.0] {
+    for snr in [5.0, 0.0, -5.0, -8.0, -10.0] {
         let (mut giusti, mut sbagliati) = (0usize, 0usize);
         for seed in 0..3u64 {
             let mut rng = Rng(300 + seed);
@@ -724,6 +724,10 @@ fn tasto_a_mano_nominativi() {
             sbagliati += sentiti.iter().filter(|s| !calls.contains(&s.as_str())).count();
             if std::env::var_os("CW_DEBUG").is_some() {
                 println!("{snr} dB seme {seed}: {sentiti:?}");
+                for ch in sk.channels() {
+                    let v: Vec<String> = ch.calls.iter().map(|c| format!("{}:{}x{:.1}{}", c.call, c.count, c.score, if c.verified() { "v" } else { "" })).collect();
+                    println!("   {:7.1} Hz {v:?}", ch.freq_hz);
+                }
             }
         }
         println!("tasto a mano {snr:>4} dB: nominativi verificati giusti {giusti}/30, sbagliati {sbagliati}");

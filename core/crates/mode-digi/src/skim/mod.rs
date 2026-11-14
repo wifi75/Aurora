@@ -193,6 +193,18 @@ impl Channel {
     }
 }
 
+/// Due canali vicini (la stessa stazione presa due volte, o una lettura dall'altro lato del suo tono): un frammento o una lettura sbagliata
+/// di un nominativo sentito di piu' sul canale accanto non si mostra (stessa regola di [`calls::shadows`] dentro un canale).
+const SHADOW_HZ: f32 = 30.0;
+
+pub(crate) fn shadow_across(v: &mut [ChannelInfo]) {
+    let all: Vec<(f32, String, f32)> = v.iter().flat_map(|ch| ch.calls.iter().map(|c| (ch.freq_hz, c.call.clone(), c.score)).collect::<Vec<_>>()).collect();
+    for ch in v.iter_mut() {
+        let f = ch.freq_hz;
+        ch.calls.retain(|c| !all.iter().any(|(of, other, os)| (of - f).abs() < SHADOW_HZ && calls::shadows(other, *os, &c.call, c.score)));
+    }
+}
+
 /// Quello che si mostra di un canale.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChannelInfo {
@@ -437,6 +449,7 @@ impl CwBandDecoder {
     pub fn channels(&self) -> Vec<ChannelInfo> {
         let dxcc = |c: &str| self.dxcc.as_ref().map(|f| f(c)).unwrap_or_default();
         let mut v: Vec<ChannelInfo> = self.channels.iter().map(|ch| ch.tr.info(ch.id, ch.rx.frequency(), ch.rx.wpm(), ch.rx.snr_db(), self.validation, &dxcc)).collect();
+        shadow_across(&mut v);
         v.sort_by(|a, b| a.freq_hz.total_cmp(&b.freq_hz));
         v
     }

@@ -274,7 +274,7 @@ impl CallTracker {
         // un pezzo di un nominativo piu' lungo dello stesso segnale, sentito almeno altrettanto, e' un frammento (uno spazio inventato
         // dentro il nominativo, frequente con il tasto a mano: «OH2AB C», «O H2ABC»): non si mostra
         let all: Vec<(String, f32)> = self.calls.values().map(|c| (c.call.clone(), c.score)).collect();
-        v.retain(|c| !all.iter().any(|(other, score)| other.len() > c.call.len() && other.contains(c.call.as_str()) && *score >= c.score));
+        v.retain(|c| !all.iter().any(|(other, score)| shadows(other, *score, &c.call, c.score)));
         v.sort_by(|a, b| b.score.total_cmp(&a.score));
         v
     }
@@ -287,6 +287,25 @@ impl CallTracker {
             self.qrl = false;
         }
     }
+}
+
+/// Quanto deve essere sentito di piu' un nominativo perche' una lettura che ne differisce di un solo carattere sia presa per un suo
+/// errore (in Morse I e T, S e H, U e V si scambiano per un elemento). Misurato su `tasto_a_mano_nominativi`: «TU3ABC» 2,0 contro
+/// «IU3ABC» 3,0.
+const MISREAD_RATIO: f32 = 1.4;
+/// Un pezzo sparisce se il nominativo intero e' sentito almeno cosi' (i punteggi delle due letture sono quasi pari: 2,04 contro 1,98).
+const FRAGMENT_RATIO: f32 = 0.75;
+
+/// `other` (punteggio `os`) fa sparire `call` (punteggio `cs`): `call` e' un suo pezzo sentito non piu' di lui (uno spazio inventato dentro
+/// il nominativo) oppure ne differisce di un solo carattere ed e' sentito molto meno (una lettura sbagliata).
+pub fn shadows(other: &str, os: f32, call: &str, cs: f32) -> bool {
+    if other == call {
+        return false;
+    }
+    if other.len() > call.len() && other.contains(call) && os >= FRAGMENT_RATIO * cs {
+        return true;
+    }
+    other.len() == call.len() && os >= MISREAD_RATIO * cs && other.bytes().zip(call.bytes()).filter(|(a, b)| a != b).count() == 1
 }
 
 /// Un rapporto RST (599, 579, 5NN, 4NN...).
@@ -332,6 +351,17 @@ mod tests {
         let all: Vec<String> = t.calls(Validation::Minimal, &|_| CallCheck::default()).into_iter().map(|c| c.call).collect();
         assert!(all.contains(&"OH2ABC".to_string()) && all.contains(&"K1XYZ".to_string()), "{all:?}");
         assert!(!all.contains(&"OH2AB".to_string()) && !all.contains(&"H2ABC".to_string()), "{all:?}");
+    }
+
+    /// Una lettura che differisce di un carattere (I e T in Morse) da un nominativo sentito molto di piu' non si mostra; due nominativi
+    /// diversi sentiti in modo simile restano tutti e due.
+    #[test]
+    fn a_misread_of_a_call_heard_much_more_is_not_shown() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ DE IU3ABC IU3ABC K CQ DE IU3ABC IU3ABC K CQ DE TU3ABC TU3ABC K DE IU3ABD IU3ABD IU3ABD IU3ABD ", &[], 1.0);
+        let all: Vec<String> = t.calls(Validation::Minimal, &|_| CallCheck::default()).into_iter().map(|c| c.call).collect();
+        assert!(all.contains(&"IU3ABC".to_string()) && all.contains(&"IU3ABD".to_string()), "{all:?}");
+        assert!(!all.contains(&"TU3ABC".to_string()), "{all:?}");
     }
 
     #[test]
