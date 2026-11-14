@@ -66,10 +66,17 @@ export interface WaterfallLabel {
  * (`stale`, lo dice il core) restano nell'elenco dei segnali ma non sulla cascata.
  */
 export function waterfallLabels(list: DigiSignal[]): WaterfallLabel[] {
-  return list.flatMap((sig) => {
-    const c = mainCall({ ...sig, calls: sig.calls.filter((x) => x.stale !== true) });
-    return c ? [{ hz: sig.freq_hz, text: c.call, cq: c.role === 'cq', sure: c.verified }] : [];
+  const all = list.flatMap((sig) => {
+    const c = mainCall({ ...sig, calls: sig.calls.filter((x) => x.stale !== true && x.gone !== true) });
+    return c ? [{ hz: sig.freq_hz, text: c.call, cq: c.role === 'cq', sure: c.verified, snr: sig.snr_db }] : [];
   });
+  // lo stesso nominativo letto da due canali vicini: un'etichetta sola, quella del canale piu' forte
+  const best = new Map<string, (typeof all)[number]>();
+  for (const l of all) {
+    const old = best.get(l.text);
+    if (!old || l.snr > old.snr) best.set(l.text, l);
+  }
+  return [...best.values()].map(({ hz, text, cq, sure }) => ({ hz, text, cq, sure }));
 }
 
 /** Una stazione del Radar: un nominativo verificato, una riga sola anche se piu' canali lo hanno letto. */

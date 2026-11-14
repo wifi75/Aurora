@@ -307,7 +307,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, split = f
           const prev = all[i - 1];
           const low = prev !== undefined && xOf(l.hz) - xOf(prev.hz) < 70 && i % 2 === 1;
           return (
-            <span key={`${l.text}-${Math.round(l.hz)}`} className={`digi-wf-call${l.cq ? ' digi-wf-call--cq' : ''}${l.sure ? '' : ' digi-wf-call--maybe'}`} style={{ left: xOf(l.hz), top: SCALE_H + (low ? 20 : 3) }} aria-hidden="true">
+            <span key={`${l.text}-${Math.round(l.hz)}`} className={`digi-wf-call${l.cq ? ' digi-wf-call--cq' : ''}${l.sure ? '' : ' digi-wf-call--maybe'}`} style={{ left: xOf(l.hz), top: SCALE_H + (low ? 42 : 22) }} aria-hidden="true">
               {l.text}
             </span>
           );
