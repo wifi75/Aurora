@@ -810,12 +810,12 @@ export const GUIDE_ASPETTO: readonly GuideSection[] = [
       ],
     ],
     tip: [
-      'Per spostare e ridimensionare i pannelli non serve questa pagina: trascinali dalla barra del titolo, ridimensionali dal bordo inferiore, e con un doppio clic sul titolo si riducono.',
-      'You do not need this page to move and resize panels: drag them by the title bar, resize from the bottom edge, and a double click on the title folds them.',
-      'Zum Verschieben und Ändern der Größe der Felder brauchst du diese Seite nicht: an der Titelleiste ziehen, am unteren Rand skalieren, und ein Doppelklick auf den Titel klappt sie zu.',
-      'Pour déplacer et redimensionner les panneaux cette page n’est pas nécessaire : glisse-les par la barre de titre, redimensionne-les par le bord inférieur, et un double clic sur le titre les réduit.',
-      'Para mover y cambiar el tamaño de los paneles no hace falta esta página: arrástralos por la barra del título, cambia el tamaño desde el borde inferior, y con doble clic en el título se pliegan.',
-      'Para mover e redimensionar os painéis não é preciso esta página: arrasta-os pela barra do título, redimensiona pela margem inferior, e com duplo clique no título recolhem-se.',
+      'Per spostare e ridimensionare i pannelli non serve questa pagina: trascinali dalla barra del titolo, ridimensionali dal bordo inferiore, e con un doppio clic sul titolo si riducono. Tutte le maniglie di ridimensionamento hanno lo stesso disegno: una breve linea al centro.',
+      'You do not need this page to move and resize panels: drag them by the title bar, resize from the bottom edge, and a double click on the title folds them. All resize handles share one design: a short line in the middle.',
+      'Zum Verschieben und Ändern der Größe der Felder brauchst du diese Seite nicht: an der Titelleiste ziehen, am unteren Rand skalieren, und ein Doppelklick auf den Titel klappt sie zu. Alle Griffe zum Ändern der Größe haben dasselbe Aussehen: eine kurze Linie in der Mitte.',
+      'Pour déplacer et redimensionner les panneaux cette page n’est pas nécessaire : glisse-les par la barre de titre, redimensionne-les par le bord inférieur, et un double clic sur le titre les réduit. Toutes les poignées de redimensionnement ont le même dessin : un court trait au centre.',
+      'Para mover y cambiar el tamaño de los paneles no hace falta esta página: arrástralos por la barra del título, cambia el tamaño desde el borde inferior, y con doble clic en el título se pliegan. Todas las asas de cambio de tamaño tienen el mismo diseño: una línea corta en el centro.',
+      'Para mover e redimensionar os painéis não é preciso esta página: arrasta-os pela barra do título, redimensiona pela margem inferior, e com duplo clique no título recolhem-se. Todas as pegas de redimensionamento têm o mesmo desenho: uma linha curta ao centro.',
     ],
   },
   {
