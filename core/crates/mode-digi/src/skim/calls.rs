@@ -74,6 +74,8 @@ pub struct HeardCall {
     pub role: Role,
     /// Quante volte e la somma delle probabilità delle ricorrenze.
     pub count: u32,
+    /// Quante volte lo si e' letto come chi chiama (accanto a CQ, TEST, QRZ).
+    pub cq_count: u32,
     pub score: f32,
     /// Momento (secondi del flusso) dell'ultima ricorrenza.
     pub last_s: f64,
@@ -180,8 +182,8 @@ pub struct CallTracker {
     /// Le ultime parole (per i ruoli).
     recent: Vec<String>,
     calls: HashMap<String, HeardCall>,
-    /// Ha chiamato CQ (o TEST) di recente.
-    cq: bool,
+    /// Il nominativo gia' contato come chi chiama nella frase in corso (dall'ultimo CQ, TEST o QRZ): le sue ripetizioni non contano.
+    phrase_cq: Option<String>,
     /// L'ultimo rapporto visto (599, 5NN...).
     pub last_report: Option<String>,
     /// Ha chiesto se la frequenza e' libera («QRL?»).
@@ -220,13 +222,15 @@ impl CallTracker {
         let conf = self.word_conf / word.len().max(1) as f32;
         self.word_conf = 0.0;
         if cq_word(&word) {
-            self.cq = true;
-            // contest: «CT7BJG TEST», «CT7BJG QRZ»: il nominativo subito prima di TEST, CQ o QRZ e' di chi chiama
+            // contest: «CT7BJG TEST», «CT7BJG QRZ»: il nominativo subito prima di TEST, CQ o QRZ e' di chi chiama (una sola volta per
+            // frase: «CQ CQ» non conta doppio)
             if let Some(prev) = self.recent.last()
                 && let Some(c) = self.calls.get_mut(prev.as_str())
             {
                 c.role = Role::Cq;
+                c.cq_count += 1;
             }
+            self.phrase_cq = None;
         }
         if word == "QRL?" || word == "QRL" {
             self.qrl = true;
@@ -237,11 +241,17 @@ impl CallTracker {
         self.partial_sighting(&word, now_s);
         if looks_like_call(&word) {
             let prev = self.recent.last().map(String::as_str).unwrap_or("");
+            // chi chiama: il nominativo subito dopo CQ, TEST o QRZ, saltando un «DE» e le ripetizioni di se stesso nella stessa frase
+            // («CQ DE IU3ABC IU3ABC», «CQ TEST EC7YY EC7YY»). Chi risponde scrive il suo nominativo dopo quello di chi chiama
+            // («CQ TEST EC7YY DL1ABC»): non e' un CQ e non deve prendere il posto di chi chiama
+            let mut back = self.recent.iter().rev().map(String::as_str).skip_while(|w| *w == word);
+            let first = back.next().unwrap_or("");
+            let after_cq = cq_word(first) || (first == "DE" && back.next().is_some_and(cq_word));
             // «TU CT7BJG»: nei contest chi chiude il QSO scrive il proprio nominativo dopo TU (trasmette lui)
-            let role = if prev == "DE" || prev == "TU" {
-                Role::De
-            } else if cq_word(prev) || (self.cq && self.recent.iter().rev().take(3).any(|w| cq_word(w))) {
+            let role = if after_cq {
                 Role::Cq
+            } else if prev == "DE" || prev == "TU" {
+                Role::De
             } else {
                 Role::Other
             };
@@ -254,8 +264,12 @@ impl CallTracker {
                 near.count += 1;
                 near.last_s = now_s;
             }
-            let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, score: 0.0, last_s: now_s, shape: Shape::Unknown });
+            let e = self.calls.entry(word.clone()).or_insert(HeardCall { call: word.clone(), role, count: 0, cq_count: 0, score: 0.0, last_s: now_s, shape: Shape::Unknown });
             e.count += 1;
+            if role == Role::Cq && self.phrase_cq.as_deref() != Some(word.as_str()) {
+                e.cq_count += 1;
+                self.phrase_cq = Some(word.clone());
+            }
             e.score += conf;
             e.last_s = now_s;
             // il ruolo piu' forte resta: CQ batte DE, DE batte «altro»
@@ -333,7 +347,6 @@ impl CallTracker {
     pub fn expire(&mut self, now_s: f64, max_age_s: f64) {
         self.calls.retain(|_, c| now_s - c.last_s <= max_age_s);
         if self.calls.is_empty() {
-            self.cq = false;
             self.qrl = false;
         }
     }
@@ -478,6 +491,19 @@ mod tests {
         // EC7YZ letto intero e' lui, non un errore di EC7YY
         u.push(b"EC7YZ ", &[], 70.0);
         assert_eq!(last_s_of(&u, "EC7YY"), 1.0);
+    }
+
+    /// Chi risponde a un CQ scrive il suo nominativo poco dopo TEST: resta «altro»; chi chiama e' solo quello accanto a CQ/TEST/QRZ.
+    #[test]
+    fn answering_stations_are_not_cq() {
+        let mut t = CallTracker::new();
+        t.push(b"CQ TEST EC7YY EC7YY TEST DL1ABC DL1ABC F5XYZ ", &[], 1.0);
+        t.push(b"DL1ABC 599 12 TU EC7YY TEST ", &[], 10.0);
+        let role = |c: &str| t.calls.get(c).map(|c| (c.role, c.cq_count));
+        assert!(role("EC7YY").is_some_and(|(r, n)| r == Role::Cq && n >= 2), "{:?}", role("EC7YY"));
+        // subito dopo TEST non si distingue da chi chiama, ma letto cosi' una volta sola non basta a prendere il posto di EC7YY
+        assert!(role("DL1ABC").is_some_and(|(_, n)| n < 2), "{:?}", role("DL1ABC"));
+        assert_eq!(role("F5XYZ").map(|r| r.0), Some(Role::Other));
     }
 
     /// Contest: chi chiama si legge a pezzi fra i corrispondenti del pile-up; resta vivo.

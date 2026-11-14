@@ -279,7 +279,8 @@ fn signal_of(ch: &ChannelInfo, wpm: bool, tail: Option<usize>, lookup: Option<&C
                 let latest = ch
                     .calls
                     .iter()
-                    .filter(|o| o.role != Role::Other && o.verified() && (c.role != Role::Cq || o.role == Role::Cq))
+                    // e a chi chiama CQ verificato serve un altro letto come chi chiama almeno due volte (non chi risponde in un pile-up)
+                    .filter(|o| o.role != Role::Other && o.verified() && (c.role != Role::Cq || (o.role == Role::Cq && (o.cq_count >= 2 || !c.verified()))))
                     .map(|o| o.last_s)
                     .fold(f64::MIN, f64::max);
                 let replaced = c.role != Role::Other && latest > c.last_s;
@@ -462,7 +463,7 @@ mod tests {
             snr_db: 9.4,
             text: "CQ DE IU3ABC K".into(),
             conf: vec![255, 255, 255, 255, 255, 255, 100, 255, 255, 255, 255, 255, 255, 40],
-            calls: vec![HeardCall { call: "IU3ABC".into(), role: Role::Cq, count: 2, score: 1.9, last_s: 3.0, shape: crate::skim::forms::Shape::Typical }],
+            calls: vec![HeardCall { call: "IU3ABC".into(), role: Role::Cq, count: 2, cq_count: 2, score: 1.9, last_s: 3.0, shape: crate::skim::forms::Shape::Typical }],
             cq: true,
             last_report: None,
             now_s: 10.0,
@@ -486,7 +487,7 @@ mod tests {
         assert_eq!(old.calls[0].call, "IU3ABC");
         // un'altra stazione prende la frequenza: la vecchia perde l'etichetta dopo 10 s, esce dall'elenco dopo 60 s
         let mut swap = ch.clone();
-        swap.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::Cq, count: 2, score: 2.0, last_s: 20.0, shape: crate::skim::forms::Shape::Typical });
+        swap.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::Cq, count: 2, cq_count: 2, score: 2.0, last_s: 20.0, shape: crate::skim::forms::Shape::Typical });
         swap.now_s = 20.0;
         let s2 = signal_of(&swap, true, Some(8), Some(&lookup));
         let old2 = s2.calls.iter().find(|c| c.call == "IU3ABC").expect("vecchia");
@@ -499,10 +500,16 @@ mod tests {
         // chi risponde sulla frequenza di chi chiama CQ non lo toglie
         let mut answer = ch.clone();
         answer.calls[0].last_s = 20.0;
-        answer.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::De, count: 2, score: 2.0, last_s: 90.0, shape: crate::skim::forms::Shape::Typical });
+        answer.calls.push(HeardCall { call: "K1XYZ".into(), role: Role::De, count: 2, cq_count: 0, score: 2.0, last_s: 90.0, shape: crate::skim::forms::Shape::Typical });
         answer.now_s = 90.0;
         let s4 = signal_of(&answer, true, Some(8), Some(&lookup));
         assert!(s4.calls.iter().any(|c| c.call == "IU3ABC" && !c.stale && !c.gone), "{s4:?}");
+        // uno letto una sola volta accanto a TEST (chi risponde in un pile-up) non prende il posto di chi chiama CQ verificato
+        let mut once = answer.clone();
+        once.calls[1].role = Role::Cq;
+        once.calls[1].cq_count = 1;
+        let s5 = signal_of(&once, true, Some(8), Some(&lookup));
+        assert!(s5.calls.iter().any(|c| c.call == "IU3ABC" && !c.stale && !c.gone), "{s5:?}");
         let full = signal_of(&ch, false, None, None);
         assert_eq!(full.text.len(), 14);
         assert_eq!(full.wpm, None);
