@@ -302,3 +302,66 @@ MMTTY coi profili per il flutter), CCIR cattivo (fldigi), portante dentro la ban
 0,1-0,3 dB scheda −500 ppm, scariche e CCIR medio. Il criterio «battere tutti di 0,5 dB in ogni scenario» non e' ancora raggiunto: i
 prossimi bersagli sono un demodulatore per il fading veloce (finestra corta, decisione per tono come nel modo «Selective») come terza
 variante, un notch adattivo per le portanti, e il collegamento all'interfaccia di multicanale e diversity.
+
+
+## Salti di guadagno (2026-11-14)
+
+Tabella di partenza: `rtty_tabella` (solo Aurora, 4 prove da 120 caratteri per cella, griglia -15..6 dB), uguale a quella del passo 16;
+CER medio sui 25 scenari 26,61 %, 185 caratteri al minuto sul solo rumore a squelch spento (0 con gli squelch).
+
+**Causa trovata** (scenario peggiore rispetto agli arbitri: «AGC che pompa», soglia -2,8 dB contro -7,8 del miglior MMTTY). Prova di
+studio: lo stesso scenario a 30 dB di S/N perde 2-4 caratteri dopo ogni discesa del guadagno, uguale a 6 dB: non e' rumore. La catena
+principale da sola sbaglia il 46 % dei caratteri. Stampando ampiezze e livelli campione per campione: dopo la discesa di 15 dB il livello
+medio del mark acceso resta quello di prima (0,134 contro un mark che ora vale 0,03), il mark sta sotto la sua soglia, la decisione dice
+sempre space e aggiorna solo i livelli dello spento; il livello stantio si sblocca solo dopo 16 bit (limite dell'eta' dei livelli
+all'inviluppo lento di fldigi). Varianti provate una alla volta: varianza delle LLR piu' corta (nessun effetto), eta' dei livelli piu'
+corta con un inviluppo veloce (AGC 46 -> 30 % ma rumore 170/45 +2,5 e space -12 dB +7,6 punti: scartata).
+
+**Correzione tenuta**: la somma delle ampiezze dei due toni (che non cala ai cambi di bit) si confronta con quella attesa dai livelli,
+la minore fra «mark acceso + space spento» e il contrario (cosi' un tono attenuato non scatta); se resta per piu' di 3 bit sotto 0,85
+volte l'attesa, livelli e varianza si riportano alla scala misurata. Test `un_guadagno_che_scende_di_colpo_non_perde_caratteri`
+(catena principale, AGC senza rumore): 18 caratteri persi su 88 senza la correzione, 4 con.
+
+| scenario | prima s10 / CER | dopo s10 / CER |
+|---|---|---|
+| rumore 170/45 | -8,1 / 19,0 | -8,0 / 19,1 |
+| rumore 170/75 | -5,7 / 29,4 | -5,6 / 29,6 |
+| rumore 425/50 | -8,2 / 21,4 | -8,2 / 21,6 |
+| rumore 850/45 | -8,3 / 19,1 | -8,2 / 19,3 |
+| rumore 85/45 | -8,4 / 18,9 | -8,3 / 19,0 |
+| fuori +10 Hz | -7,9 / 20,7 | -7,8 / 20,9 |
+| space -12 dB | -5,4 / 28,2 | -5,4 / 28,2 |
+| CCIR buono | -0,8 / 28,5 | -0,8 / 28,6 |
+| CCIR medio | 1,5 / 32,2 | 1,3 / 31,9 |
+| CCIR cattivo | -- / 37,3 | -- / 36,5 |
+| flutter 10 Hz | -- / 59,7 | -- / 56,8 |
+| alte latitudini | -- / 67,8 | -- / 67,0 |
+| QRM a 250 Hz +6 | -8,4 / 19,8 | -8,4 / 19,9 |
+| QRM a 120 Hz -6 | -8,3 / 19,6 | -8,3 / 19,8 |
+| portante +30 Hz | -3,3 / 30,1 | -3,3 / 30,1 |
+| PSK31 a 150 Hz | -8,1 / 19,3 | -8,0 / 19,5 |
+| scheda +500 ppm | -7,8 / 20,4 | -7,9 / 20,6 |
+| scheda -500 ppm | -7,8 / 20,4 | -7,7 / 20,6 |
+| 45 baud | -7,2 / 23,8 | -7,2 / 24,0 |
+| stop 1 bit | -8,4 / 18,8 | -8,4 / 18,9 |
+| stop 2 bit | -8,5 / 19,2 | -8,4 / 19,3 |
+| scariche | -7,9 / 19,6 | -7,9 / 19,9 |
+| filtro 250 Hz | -8,2 / 18,8 | -8,1 / 19,0 |
+| audio tagliato | -6,9 / 24,2 | -7,0 / 24,3 |
+| AGC che pompa | -2,8 / 29,3 | -3,6 / 24,6 |
+
+CER medio 26,61 -> 26,35 %; nessuna riga peggiora di oltre 0,3 punti (gli scenari a rumore bianco salgono tutti di 0,1-0,3: piccolo
+costo sistematico, non rumore della misura); 182 caratteri al minuto sul solo rumore (prima 185), 0 con gli squelch.
+
+**Scartate (numeri)**:
+- stessa correzione senza attesa di 3 bit (soglia 0,85, media 0,5 bit): CER medio 25,50, AGC -10,0, flutter -9,9, alte latitudini
+  -8,0, CCIR cattivo -4,6 punti, ma rumore 170/75 +1,7 e 9 righe oltre +0,5, 206 caratteri inventati: fuori regola. Con l'attesa di 1
+  bit rumore 170/75 +1,2, di 2 bit +0,8 (sempre fuori regola). Il margine sul fading veloce c'e': serve un rilevatore del salto che non
+  scatti sulle fluttuazioni del rumore (prossimo passo).
+- solo nella catena principale (non nelle varianti): CER medio 25,63 ma rumore 170/75 +1,4.
+- variante normalizzata con media del rumore piu' veloce (salita 1 bit, media dei due canali invece del minimo): AGC -4,4 ma CER medio
+  26,68 e space -12 dB +0,9; salita 4 bit: AGC -2,4, CER medio 26,63. Il rumore piu' veloce fa vincere alla fusione caratteri sbagliati
+  della variante in tutti gli scenari.
+
+Le soglie s10 di CCIR medio e degli scenari col fading saltano di 1-2 dB per variazioni di CER di pochi decimi (curva piatta intorno al
+10 %): per questi si guarda il CER medio.

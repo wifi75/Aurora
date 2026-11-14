@@ -61,6 +61,12 @@ const FILTER_SPAN_BITS: f64 = 3.5;
 const SAMPLES_PER_BIT: f64 = 32.0;
 /// Le medie dei livelli (ATC a decisione guidata, discriminatore) si fanno su questi bit: la prova di confronto da' il meglio fra 4 e 8.
 const LEVEL_BITS: f32 = 4.0;
+/// Salti di guadagno (AGC della radio, fading piatto): la somma delle ampiezze dei due toni (media su `GAIN_AVG_BITS` bit) che resta
+/// per piu' di `GAIN_HOLD_BITS` bit sotto `GAIN_DROP` volte quella attesa dai livelli (tono acceso piu' l'altro spento, la minore delle
+/// due ipotesi) riporta livelli e varianza alla scala nuova.
+const GAIN_DROP: f32 = 0.85;
+const GAIN_AVG_BITS: f32 = 0.5;
+const GAIN_HOLD_BITS: f32 = 3.0;
 /// Quanto dell'errore di fase si corregge a ogni cambio di livello: meta' (orologio di bit che si corregge sui fronti).
 const PLL_GAIN: f32 = 0.5;
 /// La decisione di ogni bit somma i valori morbidi (LLR) di questa frazione di bit intorno al centro, invece di guardare un campione solo
@@ -957,6 +963,9 @@ pub struct RttyDemodulator {
     space_env: f32,
     mark_noise: f32,
     space_noise: f32,
+    /// Somma media delle ampiezze dei due toni e da quanti campioni resta sotto quella attesa (salti di guadagno).
+    gain_sum: f32,
+    gain_low: f32,
     /// Le ultime decisioni lunghe un bit (`true` = mark), la prossima da scrivere e quante sono mark.
     bits: Vec<bool>,
     /// I valori morbidi (LLR, positivi = mark) degli stessi campioni.
@@ -1081,6 +1090,8 @@ impl RttyDemodulator {
             space_env: 0.0,
             mark_noise: 0.0,
             space_noise: 0.0,
+            gain_sum: 0.0,
+            gain_low: 0.0,
             bits: vec![true; nbits],
             soft: vec![0.0; nbits],
             soft_len: ((spb * SOFT_BITS).round() as usize).clamp(1, nbits),
@@ -1281,6 +1292,7 @@ impl RttyDemodulator {
         self.mark_noise = decayavg(self.mark_noise, m, if m < self.mark_noise { sl / 4.0 } else { sl * 48.0 });
         self.space_env = decayavg(self.space_env, s, if s > self.space_env { sl / 4.0 } else { sl * 16.0 });
         self.space_noise = decayavg(self.space_noise, s, if s < self.space_noise { sl / 4.0 } else { sl * 48.0 });
+        self.rescale_on_gain_drop(m + s);
         let [m_on, m_off, s_on, s_off] = self.levels;
         // un tono mai visto acceso (o con le medie scambiate dal rumore) pesa zero: decide l'altro, e intanto la sua media si rifa'
         let (dm, ds) = ((m_on - m_off).max(0.0), (s_on - s_off).max(0.0));
@@ -1316,6 +1328,32 @@ impl RttyDemodulator {
             }
         }
         v
+    }
+
+    /// Un guadagno che scende di colpo (l'AGC della radio dopo una scarica, un fading piatto) lascia i livelli medi dei toni accesi
+    /// troppo alti: un tono acceso resta sotto la sua soglia e i livelli si aggiornerebbero solo dalla parte dello spento, cosi' per
+    /// circa 16 bit ogni bit pare space. Quando la somma delle due ampiezze resta per qualche bit sotto quella che i livelli prevedono, si
+    /// riportano livelli e varianza alla scala misurata (le LLR non cambiano di scala). La somma dei due toni non cala ai cambi di bit
+    /// (i filtri sono lineari) e l'attesa e' la minore fra «mark acceso, space spento» e il contrario, cosi' un tono attenuato non scatta.
+    fn rescale_on_gain_drop(&mut self, sum: f32) {
+        let sl = self.spb;
+        self.gain_sum = decayavg(self.gain_sum, sum, sl * GAIN_AVG_BITS);
+        let [m_on, m_off, s_on, s_off] = self.levels;
+        let expect = (m_on + s_off).min(m_off + s_on);
+        if expect <= 0.0 || self.gain_sum >= GAIN_DROP * expect {
+            self.gain_low = 0.0;
+            return;
+        }
+        self.gain_low += 1.0;
+        if self.gain_low > GAIN_HOLD_BITS * sl {
+            let r = self.gain_sum / (GAIN_DROP * expect);
+            for l in &mut self.levels {
+                *l *= r;
+            }
+            for v in &mut self.var {
+                *v *= r * r;
+            }
+        }
     }
 
     /// La decisione del discriminatore: la frequenza mediata contro la soglia a meta' fra le frequenze medie di mark e space.
@@ -2049,6 +2087,27 @@ mod tests {
             let r = String::from_utf8_lossy(&rx.process(&synth(&seq, params, am, asp))).into_owned();
             assert!(r.contains("CQ DE IU3ABC"), "mark {am} space {asp}, ricevuto: {r:?}");
         }
+    }
+
+    #[test]
+    fn un_guadagno_che_scende_di_colpo_non_perde_caratteri() {
+        // l'AGC della radio scende di 15 dB in 20 ms e risale in 1,5 s, ogni 2 s, senza rumore: la catena principale da sola (senza
+        // varianti ne' modello del testo) non deve perdere caratteri dopo ogni discesa (senza riportare i livelli alla scala nuova ogni
+        // tono acceso restava sotto la soglia per circa 16 bit: 18 caratteri persi su 88, con la correzione 4)
+        let params = RttyParams::default();
+        let text = "CQ CQ DE IU3ABC IU3ABC IO91WM PSE K TNX FER CALL UR 599 599 NAME TEST QTH TEST HW CPY BK";
+        let mut audio = vec![0.0; 6000];
+        audio.extend(modulate(text.as_bytes(), params, 0.5));
+        audio.extend(vec![0.0; 6000]);
+        for (n, s) in audio.iter_mut().enumerate() {
+            let t = (n as f64 / f64::from(RATE)) % 2.0;
+            let g_db = if t < 0.02 { -15.0 * t / 0.02 } else { -15.0 * (1.0 - ((t - 0.02) / 1.5).min(1.0)) };
+            *s *= 10f64.powf(g_db / 20.0) as f32;
+        }
+        let mut rx = RttyDemodulator::new_plain(params);
+        let r = String::from_utf8_lossy(&rx.process(&audio)).into_owned();
+        let r = r.trim();
+        assert!(r.chars().count() + 8 >= text.len(), "ricevuto: {r:?}");
     }
 
     #[test]
