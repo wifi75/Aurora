@@ -601,9 +601,26 @@ pub struct Snapshot {
     pub modes: Vec<ModeInfo>,
 }
 
+/// Una finestra RX in piu': un ricevitore che decodifica un'altra frequenza della stessa banda audio, accanto a quello principale.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtraRx {
+    pub id: u32,
+    pub freq_hz: f32,
+}
+
+/// Quante finestre RX in piu' al massimo (ognuna e' un ricevitore completo).
+pub const EXTRA_RX_MAX: usize = 4;
+
+impl ExtraRx {
+    pub fn is_valid(&self) -> bool {
+        self.id > 0 && self.freq_hz.is_finite() && (100.0..=5_900.0).contains(&self.freq_hz)
+    }
+}
+
 enum Msg {
     Audio(u32, Vec<f32>),
     Notches(Vec<Notch>),
+    Extra(Vec<ExtraRx>),
     Config(DigiSettings),
     Reset,
 }
@@ -628,6 +645,8 @@ struct Inner {
     band: crate::band::BandLink,
     /// I notch della ricezione: non si salvano, si azzerano all'avvio e a ogni cambio di frequenza della radio.
     notches: Mutex<Vec<Notch>>,
+    /// Le finestre RX in piu' (non si salvano).
+    extra: Mutex<Vec<ExtraRx>>,
     /// Da dove leggere la frequenza della radio (Hz, 0 = non nota).
     dial: Mutex<Option<DialSource>>,
     /// Le pagine PSK · RTTY · CW aperte (finestra principale, staccata, telefono): lasciata l'ultima, l'ascolto si spegne.
@@ -753,6 +772,7 @@ impl DigiService {
             session: Mutex::new(None),
             band: crate::band::BandLink::spawn(&settings),
             notches: Mutex::new(Vec::new()),
+            extra: Mutex::new(Vec::new()),
             dial: Mutex::new(None),
             users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
@@ -831,6 +851,25 @@ impl DigiService {
             return Err(DigiError::BadValue("notch non validi (frequenza 50-5950 Hz, larghezza 10-100 Hz)".into()));
         }
         self.inner.set_notches(notches);
+        Ok(())
+    }
+
+    /// Le finestre RX in piu'.
+    pub fn extra_rx(&self) -> Vec<ExtraRx> {
+        lock(&self.inner.extra).clone()
+    }
+
+    /// Sostituisce le finestre RX in piu' (al massimo `EXTRA_RX_MAX`, frequenze 100-5900 Hz, numeri diversi e non zero). Non si salvano.
+    pub fn set_extra_rx(&self, list: Vec<ExtraRx>) -> Result<(), DigiError> {
+        let mut ids: Vec<u32> = list.iter().map(|x| x.id).collect();
+        ids.sort_unstable();
+        ids.dedup();
+        if list.len() > EXTRA_RX_MAX || ids.len() != list.len() || !list.iter().all(ExtraRx::is_valid) {
+            return Err(DigiError::BadValue(format!("finestre RX non valide (al massimo {EXTRA_RX_MAX}, frequenza 100-5900 Hz, numeri diversi)")));
+        }
+        *lock(&self.inner.extra) = list.clone();
+        let _ = self.inner.queue.send(Msg::Extra(list));
+        self.inner.emit(DigiEvent { kind: "extra_rx".into(), ..DigiEvent::default() });
         Ok(())
     }
 
@@ -1140,6 +1179,13 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
     let mut last_radio = Instant::now();
     let mut demod = Demod::new(&settings, lsb);
     let mut mode = settings.mode;
+    // le finestre RX in piu': ognuna un ricevitore sulla sua frequenza, con le impostazioni del principale
+    let mut extras: Vec<(ExtraRx, Demod)> = Vec::new();
+    let extra_demod = |s: &DigiSettings, x: &ExtraRx, lsb: bool| {
+        let mut s = s.clone();
+        s.rx_freq_hz = x.freq_hz;
+        Demod::new(&s, lsb)
+    };
     // notch e passabanda davanti ai ricevitori; senza nessuno dei due l'audio passa com'e'
     let mut cur = settings;
     let mut notches: Vec<Notch> = Vec::new();
@@ -1180,11 +1226,34 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                     let weak = (!weak.is_empty()).then_some(weak);
                     inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), ..DigiEvent::default() });
                 }
+                // le finestre in piu' ascoltano la banda intera (i notch e il passabanda sono del ricevitore principale)
+                for (x, d) in extras.iter_mut() {
+                    let (text, weak) = d.process(band_audio);
+                    if !text.is_empty() {
+                        let weak = (!weak.is_empty()).then_some(weak);
+                        inner.emit(DigiEvent { kind: "rx_text".into(), text: Some(text), weak, mode: Some(mode.id().into()), rx_id: Some(x.id), freq_hz: Some(d.frequency()), ..DigiEvent::default() });
+                    }
+                }
+            }
+            Some(Msg::Extra(list)) => {
+                // un ricevitore gia' aperto sulla stessa frequenza resta (non perde quello che sta leggendo)
+                let mut old = std::mem::take(&mut extras);
+                for x in list {
+                    let keep = old.iter().position(|(o, _)| o.id == x.id && (o.freq_hz - x.freq_hz).abs() < 1.0);
+                    let d = match keep {
+                        Some(i) => old.swap_remove(i).1,
+                        None => extra_demod(&cur, &x, lsb),
+                    };
+                    extras.push((x, d));
+                }
             }
             Some(Msg::Config(s)) => {
                 demod = Demod::new(&s, lsb);
                 mode = s.mode;
                 cur = s;
+                for (x, d) in extras.iter_mut() {
+                    *d = extra_demod(&cur, x, lsb);
+                }
                 filters.configure(&notches, cur.passband());
                 guard = afc_guard(&cur, &notches);
             }
@@ -1197,6 +1266,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 cur = lock(&inner.settings).clone();
                 demod = Demod::new(&cur, lsb);
                 guard = afc_guard(&cur, &notches);
+                for (x, d) in extras.iter_mut() {
+                    *d = extra_demod(&cur, x, lsb);
+                }
             }
             None => {}
         }
@@ -1227,6 +1299,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 lsb = now;
                 tracing::info!("RTTY: radio in {}, mark e space {}", if lsb { "LSB" } else { "USB" }, if lsb { "invertiti" } else { "normali" });
                 demod = Demod::new(&lock(&inner.settings).clone(), lsb);
+                for (x, d) in extras.iter_mut() {
+                    *d = extra_demod(&cur, x, lsb);
+                }
             }
         }
         if last_status.elapsed() >= Duration::from_millis(400) {
@@ -1413,6 +1488,58 @@ mod tests {
         let out = ricevi(&svc, &wave, "IU3ABC");
         let _ = std::fs::remove_dir_all(&dir);
         assert!(out.contains("IU3ABC"), "ricevuto: {out:?}");
+    }
+
+    /// Una finestra RX in piu' su un'altra frequenza legge la sua stazione e manda il testo con il suo numero; la ricezione principale
+    /// legge la sua. Valori non validi si rifiutano.
+    #[test]
+    fn una_finestra_rx_in_piu_legge_la_sua_stazione() {
+        let dir = std::env::temp_dir().join(format!("aurora-digi-extra-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("cartella di prova");
+        let s = DigiSettings { mode: DigiMode::Cw, cw_wpm: 20.0, rx_freq_hz: 700.0, auto_receive: true, ..DigiSettings::default() };
+        std::fs::write(dir.join("digi.json"), serde_json::to_vec(&s).expect("json")).expect("digi.json");
+        let svc = DigiService::open(&dir);
+        assert!(svc.set_extra_rx(vec![ExtraRx { id: 1, freq_hz: 50.0 }]).is_err(), "frequenza fuori banda");
+        assert!(svc.set_extra_rx(vec![ExtraRx { id: 2, freq_hz: 900.0 }, ExtraRx { id: 2, freq_hz: 1100.0 }]).is_err(), "numeri uguali");
+        svc.set_extra_rx(vec![ExtraRx { id: 3, freq_hz: 1500.0 }]).expect("finestra in piu'");
+        assert_eq!(svc.extra_rx().len(), 1);
+        svc.start_rx();
+        let (tx, rx) = std::sync::mpsc::channel::<(Option<u32>, String)>();
+        let tx = Mutex::new(tx);
+        svc.set_emitter(Arc::new(move |ev: DigiEvent| {
+            if ev.kind == "rx_text"
+                && let Some(t) = ev.text
+            {
+                let _ = lock(&tx).send((ev.rx_id, t));
+            }
+        }));
+        let main = crate::cw::modulate(b"CQ IU3ABC IU3ABC K", 700.0, 20.0, 0.3);
+        let other = crate::cw::modulate(b"CQ K1XYZ K1XYZ K", 1500.0, 20.0, 0.3);
+        let mut wave = vec![0.0_f32; 6000 + main.len().max(other.len()) + 12_000];
+        for (w, m) in wave.iter_mut().skip(6000).zip(main) {
+            *w += m;
+        }
+        for (w, o) in wave.iter_mut().skip(6000).zip(other) {
+            *w += o;
+        }
+        for chunk in wave.chunks(1200) {
+            svc.feed(RATE as u32, chunk);
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let (mut main_text, mut extra_text) = (String::new(), String::new());
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while !(main_text.contains("IU3ABC") && extra_text.contains("K1XYZ")) && Instant::now() < deadline {
+            if let Ok((id, t)) = rx.recv_timeout(Duration::from_millis(200)) {
+                if id == Some(3) {
+                    extra_text.push_str(&t);
+                } else {
+                    main_text.push_str(&t);
+                }
+            }
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(main_text.contains("IU3ABC") && !main_text.contains("K1XYZ"), "principale: {main_text:?}");
+        assert!(extra_text.contains("K1XYZ") && !extra_text.contains("IU3ABC"), "in piu': {extra_text:?}");
     }
 
     /// Un campione non finito (NaN) nell'audio (TCI, driver) bloccava per sempre i filtri del ricevitore: dopo, niente piu' testo.

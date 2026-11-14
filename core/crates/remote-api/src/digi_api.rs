@@ -295,3 +295,24 @@ pub(crate) async fn digi_notches_put(State(state): State<AppState>, _: Authed, J
 fn name_owned(name: &str) -> String {
     name.trim().to_string()
 }
+
+/// Il corpo di `PUT /digi/extra-rx`.
+#[derive(Deserialize)]
+pub(crate) struct ExtraRxBody {
+    extra: Vec<mode_digi::service::ExtraRx>,
+}
+
+/// Le finestre RX in piu' (PSK, RTTY, CW): `{extra: [{id, freq_hz}]}`. Non si salvano.
+#[utoipa::path(get, path = "/api/v1/digi/extra-rx", responses((status = 200, description = "`{extra}`"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_extra_rx_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    Ok(Json(json!({ "extra": service(&state)?.extra_rx() })))
+}
+
+/// Sostituisce le finestre RX in piu': corpo `{extra: [{id (> 0, diversi), freq_hz (100-5900)}]}`, al massimo 4; `[]` le chiude tutte.
+/// Il testo di ognuna arriva negli eventi `rx_text` con `rx_id`. Risponde `{extra}`.
+#[utoipa::path(put, path = "/api/v1/digi/extra-rx", responses((status = 200, description = "`{extra}`"), (status = 400, description = "Valori non validi (bad_value)"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_extra_rx_put(State(state): State<AppState>, _: Authed, Json(body): Json<ExtraRxBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    svc.set_extra_rx(body.extra).map_err(api_error)?;
+    Ok(Json(json!({ "extra": svc.extra_rx() })))
+}

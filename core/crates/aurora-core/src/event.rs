@@ -424,6 +424,9 @@ pub struct DigiEvent {
     /// `band`: i segnali di tutta la banda audio (CW, PSK) che si stanno decodificando, al massimo due volte al secondo.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signals: Option<Vec<DigiSignal>>,
+    /// `rx_text` di una finestra RX in piu': il suo numero (senza: la ricezione principale).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rx_id: Option<u32>,
 }
 
 /// Un segnale di tutta la banda audio (evento `band` dei modi testuali): frequenza, misure, ultimo testo e nominativi sentiti.

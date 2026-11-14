@@ -13,8 +13,10 @@ use std::f64::consts::PI;
 
 /// Passo del banco di filtri (Hz) e banda esplorata.
 const BIN_HZ: f32 = 5.0;
-const LOW_HZ: f32 = 300.0;
-const HIGH_HZ: f32 = 3000.0;
+// tutta la banda audio che si ascolta, come il CW di tutta la banda (150-4000 Hz): prima si fermava a 3000 Hz e una stazione piu' in alto
+// non si vedeva
+const LOW_HZ: f32 = 200.0;
+const HIGH_HZ: f32 = 4000.0;
 /// I due toni devono superare il fondo della banda di questo rapporto di potenza (circa 6 dB) e le loro potenze bit per bit essere
 /// anticorrelate almeno cosi'.
 const FLOOR_RATIO: f64 = 4.0;
