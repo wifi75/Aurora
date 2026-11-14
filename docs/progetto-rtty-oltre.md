@@ -479,3 +479,55 @@ K 0,5 con 1 bit d'attesa passa la regola della tabella, ma sulla registrazione v
 margine sul fading sintetico c'e' (fino a -3,4 punti sul flutter), ma la registrazione vera dice che scattare dopo 1 bit invece di 3
 rovina i caratteri di un segnale debole vero. Prossimo passo possibile: conferma sui canali del rumore (un AGC abbassa anche quelli, un
 fading del solo segnale no) o sulla catena normalizzata, misurando sempre anche la registrazione.
+
+## Inizio della trasmissione e AGC confermato dal rumore (2026-11-14 sera)
+
+Base: tabella dopo il lavoro del pomeriggio (CER medio 26,02 %, 18 caratteri al minuto sul rumore a squelch spento); registrazione vera
+del contest: forte 317 caratteri stampati, debole 113.
+
+### Testo a blocchi e a capo persi (tenuto)
+
+Dalla radio vera: ricezione «a blocchi» e righe attaccate. Prova nuova `misura_inizio_trasmissione` (a mano, in `rtty.rs`): rumore,
+poi `\r\nCQ TEST DE IU3ABC IU3ABC K`, audio a blocchi di 20 ms, 24 prove; ritardo medio fra la fine di ogni carattere nell'audio e la
+sua uscita, blocco piu' grande uscito in una chiamata.
+
+**Causa**: non il cancello interno (con soglia 0,4 la media di quattro si apre gia' dopo due caratteri sicuri: un'apertura svelta con
+due caratteri sopra 0,8 non cambia niente nella tabella ne' nella misura, scartata perche' inutile) ma la parola trattenuta per le
+correzioni di registro (passo 12): ogni carattere aspettava lo spazio. Senza modello del testo 368 ms, con il modello (di base) 807 ms e
+blocchi di 6 caratteri.
+
+**Tenuto**: (a) un carattere con probabilita' almeno 0,95 (`WORD_SURE`), se nella parola non e' ancora arrivato un carattere incerto, esce
+subito; le correzioni guardano sempre tutta la parola (dal registro d'inizio parola) ma cambiano solo i caratteri non ancora stampati.
+(b) Un CR o LF con probabilita' almeno 0,1 buttato a cancello chiuso (anche quello incerto che aspettava il seguente quando il cancello si
+chiude alla fine del segnale) fa andare a capo una volta all'apertura seguente, se l'ultimo carattere stampato non era gia' un a capo.
+Test `i_caratteri_sicuri_escono_uno_alla_volta` e `un_a_capo_buttato_a_cancello_chiuso_torna_all_apertura`: falliscono senza la
+correzione (nessun carattere prima dello spazio; «AAABCD» attaccato), passano con.
+
+| misura | prima | dopo |
+|---|---|---|
+| ritardo medio, con il modello del testo | 807 ms | 368 ms (come senza modello) |
+| blocco massimo in 20 ms | 6 caratteri | 2 |
+| tabella, CER medio / caratteri al minuto sul rumore | 26,02 / 18 | 26,02 / 18 (tutte le righe uguali) |
+| registrazione vera | testo vero letto | uguale (PR1T, LY6A, «OH9VD 599 276», «SP5H 599 150»); qualche a capo in piu' fra le righe casuali |
+
+### AGC confermato dal rumore accanto ai toni (tenuto)
+
+La riscalatura dopo un salto di guadagno aspetta 3 bit perche' non scatti sulle fluttuazioni del rumore. Un AGC della radio abbassa anche
+il rumore accanto ai toni, un fading del solo segnale no: se la media veloce del rumore dei due canali accanto (mezzo bit) scende sotto
+`AGC_NOISE_DROP` volte la lenta (16 bit), l'attesa passa a `AGC_HOLD_BITS`.
+
+| riga | base | 0,7 / 0,5 bit | **0,5 / 1 bit** |
+|---|---|---|---|
+| AGC che pompa | -3,6 / 24,4 | -8,0 / 19,2 | -7,8 / 19,7 |
+| CCIR cattivo | 36,0 | 34,7 | 36,0 |
+| flutter 10 Hz | 56,8 | 54,4 | 56,6 |
+| alte latitudini | 67,2 | 65,0 | 67,2 |
+| peggiore delle altre | | +0,30 (+500 ppm) | +0,27 (QRM 250 Hz) |
+| CER medio | 26,02 | 25,56 | 25,85 |
+| caratteri al minuto sul rumore | 18 | 36 | 18 |
+| registrazione vera forte / debole (caratteri) | 317 / 113 | 362 / 203 | 327 / 116 |
+
+0,7 / 0,5 bit scartata: sul solo rumore la media veloce scende spesso sotto 0,7 volte la lenta, i caratteri inventati raddoppiano e la
+stazione debole della registrazione vera si riempie di righe casuali (113 -> 203 caratteri; il testo vero resta). Tenuta 0,5 / 1 bit:
+passa la regola, testo vero della registrazione uguale («SP5H 599 150», «OH9VD 599 276», PR1T, LY6A). Le righe di fading del solo segnale
+non migliorano, come atteso dalla regola: per quelle serve altro.

@@ -1,6 +1,8 @@
 # Changelog
 
 ## Non rilasciato
+- **RTTY: testo che scorre**: i caratteri sicuri escono uno alla volta invece che a fine parola (ritardo medio da 807 a 368 ms), e un a capo perso mentre il ricevitore taceva torna all'inizio della trasmissione seguente: niente piu' righe attaccate.
+- **RTTY: AGC della radio**: quando il guadagno cala insieme al rumore accanto ai toni il ricevitore si riadatta dopo 1 bit invece di 3 (scenario «AGC che pompa»: errori da 24,4 % a 19,7 %).
 
 ## 0.11.252 - 2026-11-14
 - **CW di tutta la banda piu' leggero**: i canali con il segnale forte usano meno ipotesi (CPU con 30 stazioni da 16% a 14% di un core, stessa qualita').
