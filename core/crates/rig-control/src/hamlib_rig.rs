@@ -159,6 +159,9 @@ pub fn failure_limit(timing: &Timing, message: &str) -> u32 {
 struct Inner {
     /// «Accendi» gia' mandato in questa sessione di Aurora (si accende una volta sola, al primo collegamento).
     powered_on: AtomicBool,
+    /// La radio non ha accettato il modo dati `PKTUSB` (radio senza modo dati, come la TS-480): da qui in poi si
+    /// scrive `USB`, senza riprovare il modo dati a ogni cambio di banda.
+    pktusb_fallback: AtomicBool,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -341,6 +344,46 @@ impl Inner {
         }
     }
 
+    /// Scrive il modo della radio secondo la scelta «Modo» (dati/USB). Se la radio non accetta `PKTUSB` (modo dati)
+    /// il comando di Hamlib fallisce e lei resta nel modo precedente: una Kenwood TS-480, per esempio, restava in
+    /// LSB e sui modi digitali delle bande basse non si vedeva niente. Si ripiega allora su `USB` (per FT8/FT4/JT65
+    /// la banda laterale giusta e' sempre la superiore) e il ripiego resta per la sessione, senza riprovarlo a ogni banda.
+    fn set_cat_mode(&self, link: &Link) -> Option<String> {
+        let wanted = if self.pktusb_fallback.load(Ordering::SeqCst) {
+            "USB"
+        } else {
+            self.config.cat_mode.hamlib_name()?
+        };
+        let current = link.client().mode().map(|m| m.0).ok();
+        if current.as_deref().is_some_and(|c| mode_satisfies(wanted, c)) {
+            return Some(wanted.to_string());
+        }
+        match link.client().set_mode(wanted, 0) {
+            Ok(()) => {
+                self.update(|s| s.mode = Some(wanted.to_string()));
+                Some(wanted.to_string())
+            }
+            Err(e) if wanted == "PKTUSB" => {
+                tracing::warn!("modo dati {wanted} non supportato dalla radio: si usa USB ({e})");
+                self.pktusb_fallback.store(true, Ordering::SeqCst);
+                match link.client().set_mode("USB", 0) {
+                    Ok(()) => {
+                        self.update(|s| s.mode = Some("USB".to_string()));
+                        Some("USB".to_string())
+                    }
+                    Err(e2) => {
+                        tracing::warn!("nemmeno USB e' stato scritto: {e2}");
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!("modo {wanted} non scritto: {e}");
+                None
+            }
+        }
+    }
+
     /// Apre la connessione: PTT spento subito, poi la prima lettura (se la radio non risponde l'apertura non e' riuscita).
     fn open(&self) -> Result<(), RigError> {
         self.update(|s| {
@@ -382,13 +425,8 @@ impl Inner {
         let mut mode = link.client().mode().ok();
         // il modo scelto in «Modo» (dati/USB) si scrive anche al collegamento, come WSJT-X (`RadioModePolicy`): prima solo al cambio di frequenza, e
         // dopo l'avvio sulla stessa frequenza si poteva trasmettere nel modo che la radio aveva (USB analogico, FM...)
-        if let Some(wanted) = self.config.cat_mode.hamlib_name()
-            && !mode.as_ref().is_some_and(|m| mode_satisfies(wanted, &m.0))
-        {
-            match link.client().set_mode(wanted, 0) {
-                Ok(()) => mode = link.client().mode().ok().or(Some((wanted.to_string(), 0))),
-                Err(e) => tracing::warn!("modo {wanted} non scritto al collegamento: {e}"),
-            }
+        if let Some(name) = self.set_cat_mode(&link) {
+            mode = link.client().mode().ok().or(Some((name, 0)));
         }
         self.ptt_readable.store(true, Ordering::SeqCst);
         if let Ok(mut until) = self.ptt_blocked_until.lock() {
@@ -787,6 +825,7 @@ impl HamlibRig {
     pub fn start(config: RigConfig, connector: Connector, timing: Timing) -> HamlibRig {
         let inner = Arc::new(Inner {
             powered_on: AtomicBool::new(false),
+            pktusb_fallback: AtomicBool::new(false),
             config,
             connector,
             timing,
@@ -1206,15 +1245,7 @@ impl Rig for HamlibRig {
         }
         inner.rx_dial.store(hz, Ordering::SeqCst);
         inner.update(|s| s.frequency_hz = Some(hz));
-        if let Some(wanted) = inner.config.cat_mode.hamlib_name() {
-            let current = link.client().mode().map(|m| m.0).ok();
-            if !current.as_deref().is_some_and(|c| mode_satisfies(wanted, c)) {
-                match link.client().set_mode(wanted, 0) {
-                    Ok(()) => inner.update(|s| s.mode = Some(wanted.to_string())),
-                    Err(e) => tracing::warn!("modo {wanted} non scritto dopo il cambio di frequenza: {e}"),
-                }
-            }
-        }
+        inner.set_cat_mode(&link);
         // split vero: al cambio di frequenza (banda) la radio esce dallo split. Il VFO di trasmissione si rimette sulla banda nuova solo un
         // attimo prima del PTT (`set_tx_audio_frequency`, chiamato da Aurora prima di ogni trasmissione): cosi' la radio non resta mai in split
         // con il VFO B sulla banda vecchia o su una frequenza che il proprietario non si aspetta (segnalazione del 2026-11-11)
