@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.255',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T14:08:57Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.255',
-    released: '2026-11-14T00:00:00Z',
+    released: '2026-11-14T14:08:57Z',
     kind: 'fixed',
     title: [
       'BIGScan più rapido, display e HRDLOG.NET',
