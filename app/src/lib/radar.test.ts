@@ -12,22 +12,24 @@ describe('radar', () => {
       sig(3, 1500, -8, [{ call: 'K1XYZ', role: 'de', verified: false }]),
       sig(4, 1200, -6, [{ call: 'DL1ABC', role: 'de', verified: true }]),
     ];
-    const st = radarStations(list);
+    const st = radarStations(list, true);
     expect(st.map((s) => s.call)).toEqual(['IU3ABC', 'DL1ABC']);
+    // di base solo chi chiama CQ
+    expect(radarStations(list).map((s) => s.call)).toEqual(['IU3ABC']);
     // dei due canali con lo stesso nominativo resta il piu' forte
     expect(st[0]?.freqHz).toBe(905);
   });
 
   it('i nominativi solo nominati da una stazione (il corrispondente) non sono stazioni', () => {
-    const st = radarStations([sig(1, 900, -6, [{ call: 'SV5BYP', role: 'de', verified: true }, { call: 'IV3IPS', role: 'other', verified: true }])]);
+    const st = radarStations([sig(1, 900, -6, [{ call: 'SV5BYP', role: 'de', verified: true }, { call: 'IV3IPS', role: 'other', verified: true }])], true);
     expect(st.map((s) => s.call)).toEqual(['SV5BYP']);
   });
 
-  it('una stazione sentita adesso batte la stessa non sentita da tempo', () => {
-    const st = radarStations([sig(1, 900, 5, [{ call: 'IU3ABC', role: 'de', verified: true, stale: true }]), sig(2, 1400, -9, [{ call: 'IU3ABC', role: 'de', verified: true }])]);
+  it('una stazione non piu attiva sparisce, quella sentita adesso resta', () => {
+    const st = radarStations([sig(1, 900, 5, [{ call: 'IU3ABC', role: 'de', verified: true, stale: true }]), sig(2, 1400, -9, [{ call: 'IU3ABC', role: 'de', verified: true }])], true);
     expect(st).toHaveLength(1);
     expect(st[0]?.freqHz).toBe(1400);
-    expect(st[0]?.stale).toBe(false);
+    expect(radarStations([sig(1, 900, 5, [{ call: 'K1XYZ', role: 'cq', verified: true, stale: true }])])).toHaveLength(0);
   });
 
   it('il colore di una stazione e sempre lo stesso', () => {

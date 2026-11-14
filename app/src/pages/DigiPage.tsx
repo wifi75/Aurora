@@ -81,9 +81,11 @@ interface Views {
   signals: boolean;
   /** I nominativi di tutta la banda scritti sulla cascata. */
   wfCalls: boolean;
+  /** Aurora BIGScan: anche chi risponde (dopo DE o TU), non solo chi chiama CQ. */
+  radarAnswering: boolean;
 }
 
-const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true, wfCalls: true };
+const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true, wfCalls: true, radarAnswering: false };
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -271,9 +273,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const radarOn = (s.mode === 'cw' && s.band_cw !== false) || (s.mode === 'rtty' && s.band_rtty !== false);
   const bandOn = radarOn || (isPsk && s.band_psk !== false);
   const band = useMemo(() => (bandOn && getBandMode() === s.mode ? bandAll : []), [bandAll, bandOn, s.mode]);
-  const radar = useMemo(() => (radarMode ? radarStations(band) : []), [band, radarMode]);
+  const radar = useMemo(() => (radarMode ? radarStations(band, views.radarAnswering) : []), [band, radarMode, views.radarAnswering]);
   // sulla cascata del Radar solo i nominativi sicuri (verificati)
-  const bandLabels = useMemo(() => (radarMode ? waterfallLabels(band).filter((l) => l.sure).map((l) => ({ ...l, color: radarColor(l.text) })) : waterfallLabels(band)), [band, radarMode]);
+  // sulla cascata di Aurora BIGScan gli stessi nominativi dell'elenco (di base solo chi chiama CQ)
+  const bandLabels = useMemo(() => {
+    if (!radarMode) return waterfallLabels(band);
+    const shown = new Set(radar.map((r) => r.call));
+    return waterfallLabels(band)
+      .filter((l) => l.sure && shown.has(l.text))
+      .map((l) => ({ ...l, color: radarColor(l.text) }));
+  }, [band, radarMode, radar]);
   const toggleRadar = () => (s.mode === 'cw' ? save({ band_cw: s.band_cw === false }) : save({ band_rtty: s.band_rtty === false }));
 
   const macros = useMemo(() => effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode]);
@@ -1146,11 +1155,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           locked={sending}
           onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
         />
-        {radarMode ? (
-          <button type="button" className="digi-radar-btn" aria-pressed={radarOn} title={t('radar.tip')} onClick={toggleRadar}>
-            {t('radar.title')}
-          </button>
-        ) : null}
       </div>
       {sending ? (
         <div className={`digi-txflag${views.flashTx ? ' digi-txflag--flash' : ''}`} role="status" aria-label="TX">
@@ -1222,8 +1226,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             }
           }} />
         ) : null}
-        {radarMode && radarOn ? (
-          <RadarList width={radarW} stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
+        {radarMode ? (
+          <RadarList on={radarOn} onToggle={toggleRadar} width={radarW} answering={views.radarAnswering} onAnswering={(v) => setView({ radarAnswering: v })} stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         </div>
         {bandOn && !radarMode && views.signals ? (

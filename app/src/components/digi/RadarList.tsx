@@ -7,8 +7,14 @@ import { flagCode } from '../../lib/flags';
 import '../../styles/digi-radar.css';
 
 interface Props {
+  /** Acceso (decodifica tutta la banda) e chi lo accende o spegne: spento resta solo la barra con l'interruttore. */
+  on?: boolean;
+  onToggle?(): void;
   /** Larghezza scelta con la maniglia (px). */
   width?: number;
+  /** Anche chi risponde (dopo DE o TU), non solo chi chiama CQ; e chi la cambia. */
+  answering?: boolean;
+  onAnswering?(v: boolean): void;
   stations: RadarStation[];
   /** CW: colonna della velocita'. */
   showWpm: boolean;
@@ -36,7 +42,7 @@ function freqLabel(hz: number, dialHz: number): string {
  * Il Radar: le stazioni della banda decodificate con sicurezza, una riga per nominativo, in una griglia a colonne fisse. Ogni stazione ha
  * il suo colore. Clic: la ricezione va sulla stazione; doppio clic: il nominativo va nel QSO.
  */
-export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, modeName, onTune, onCall }: Props) {
+export function RadarList({ on = true, onToggle, width, answering = false, onAnswering, stations, showWpm, showSnr, dialHz, rxHz, modeName, onTune, onCall }: Props) {
   const t = useT();
   const hidden: RadarCol[] = [...(showWpm ? [] : (['wpm'] as const)), ...(showSnr ? [] : (['snr'] as const))];
   const cols = useMovableColumns({ storageKey: 'aurora.digi.radar.cols', columns: RADAR_COLUMNS, defaultEm: RADAR_COL_EM, elastic: 'call', hidden });
@@ -80,12 +86,24 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
     }
   };
   return (
-    <section className="radar" style={width ? { width } : undefined} aria-label={`${t('radar.title')} ${modeName}`}>
+    <section className={`radar${on ? '' : ' radar--off'}`} style={on && width ? { width } : undefined} aria-label={`${t('radar.title')} ${modeName}`}>
       <header className="radar-head">
+        {onToggle ? (
+          <button type="button" role="switch" aria-checked={on} className={`radar-switch${on ? ' radar-switch--on' : ''}`} title={t('radar.tip')} onClick={onToggle}>
+            {on ? 'ON' : 'OFF'}
+          </button>
+        ) : null}
         <strong>
           {t('radar.title')} {modeName}
         </strong>
-        <small>{t('radar.count', { n: stations.length })}</small>
+        {on ? <small>{t('radar.count', { n: stations.length })}</small> : null}
+        {on && onAnswering ? (
+          <label className="radar-answering" title={t('radar.answeringTip')}>
+            <input type="checkbox" checked={answering} onChange={(e) => onAnswering(e.target.checked)} />
+            {t('radar.answering')}
+          </label>
+        ) : null}
+        {on ? (
         <button
           type="button"
           className="radar-clear"
@@ -97,7 +115,9 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
         >
           {t('radar.clear')}
         </button>
+        ) : null}
       </header>
+      {on ? (
       <div className="radar-scroll">
         <table ref={cols.tableRef} className="radar-grid mv-grid" style={cols.tableStyle}>
           <MovableColGroup cols={cols} />
@@ -137,6 +157,7 @@ export function RadarList({ width, stations, showWpm, showSnr, dialHz, rxHz, mod
           </tbody>
         </table>
       </div>
+      ) : null}
       <ColumnsMenu cols={cols} />
     </section>
   );

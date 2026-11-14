@@ -113,20 +113,22 @@ export function radarColor(call: string): number {
  * nominativo. Se due canali
  * leggono lo stesso nominativo resta quello sentito di recente e piu' forte. Ordine: dalla frequenza piu' bassa.
  */
-export function radarStations(list: DigiSignal[]): RadarStation[] {
+export function radarStations(list: DigiSignal[], answering = false): RadarStation[] {
   const best = new Map<string, RadarStation>();
   for (const sig of list) {
     for (const c of sig.calls) {
       // solo chi trasmette (dopo CQ o DE): i nominativi che una stazione nomina («IV3IPS 599 DE SV5BYP») non sono stazioni della banda
-      if (!c.verified || c.role === 'other' || c.gone === true) continue;
+      // di base solo chi chiama CQ (TEST, QRZ): sta di sicuro su quella frequenza; con `answering` anche chi risponde (dopo DE o TU)
+      // le stazioni non piu' attive (zitte da 75 s, o sostituite da un'altra sulla stessa frequenza) spariscono: resta solo chi c'e' adesso
+      if (!c.verified || c.gone === true || c.stale === true || (c.role !== 'cq' && !(answering && c.role === 'de'))) continue;
       const st: RadarStation = {
         call: c.call,
         freqHz: sig.freq_hz,
         wpm: sig.wpm ?? null,
         snrDb: sig.snr_db,
-        cq: c.role === 'cq' || (sig.cq && c.role !== 'other'),
+        cq: c.role === 'cq',
         country: c.country ?? null,
-        stale: c.stale === true,
+        stale: false,
         color: radarColor(c.call),
       };
       const old = best.get(c.call);

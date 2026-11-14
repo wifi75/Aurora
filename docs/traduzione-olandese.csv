@@ -4480,6 +4480,8 @@ radar.dotStale,"The station colour. Paler: not heard for over 75 seconds (it sta
 radar.cqTip,The station is calling CQ (or TEST): you can answer it.,Het station roept CQ (of TEST): je kunt antwoorden.
 radar.clear,Clear,Wissen
 radar.clearTip,Empties the list and the callsigns on the waterfall: stations still transmitting come back by themselves.,Maakt de lijst en de roepnamen op de waterval leeg: stations die nog uitzenden verschijnen vanzelf weer.
+radar.answering,Also who answers,Ook wie antwoordt
+radar.answeringTip,"Off: only stations calling CQ (TEST, QRZ), surely on that frequency. On: also those answering and transmitting after DE or TU (they often move right after the QSO). Always only stations actually heard while transmitting, never callsigns only mentioned.","Uit: alleen wie CQ roept (TEST, QRZ), zeker op die frequentie. Aan: ook wie antwoordt en na DE of TU uitzendt (vaak meteen na de QSO weg). Altijd alleen stations die echt tijdens het uitzenden zijn gehoord, nooit roepnamen die alleen genoemd worden."
 radar.mi,Aurora BIGScan (all stations in the band),Aurora BIGScan (alle stations in de band)
 digi.band.title,Signals,Signalen
 digi.band.count,{n} signals,{n} signalen

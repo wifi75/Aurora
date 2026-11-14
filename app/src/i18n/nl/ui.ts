@@ -3129,6 +3129,8 @@ export const NL_UI: Record<string, string> = {
   "qsl.no": "{what}: nee",
   "qsl.via": "QSL via {call}",
   "qsl.yes": "{what}: ja",
+  "radar.answering": "Ook wie antwoordt",
+  "radar.answeringTip": "Uit: alleen wie CQ roept (TEST, QRZ), zeker op die frequentie. Aan: ook wie antwoordt en na DE of TU uitzendt (vaak meteen na de QSO weg). Altijd alleen stations die echt tijdens het uitzenden zijn gehoord, nooit roepnamen die alleen genoemd worden.",
   "radar.clear": "Wissen",
   "radar.clearTip": "Maakt de lijst en de roepnamen op de waterval leeg: stations die nog uitzenden verschijnen vanzelf weer.",
   "radar.colCall": "Roepnaam",
