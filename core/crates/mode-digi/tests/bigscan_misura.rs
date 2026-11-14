@@ -27,6 +27,7 @@ const BAUD: f32 = 45.45;
 const SNAP_S: f64 = 5.0;
 /// Come `band.rs`.
 const CALL_STALE_S: f64 = 75.0;
+const CALL_STALE_CQ_S: f64 = 180.0;
 const SUPERSEDED_S: f64 = 10.0;
 const SUPERSEDED_GONE_S: f64 = 60.0;
 const CALL_GONE_S: f64 = 180.0;
@@ -106,13 +107,14 @@ fn snapshot(d: &dyn BandDecoder, t: f64) -> Snap {
             let latest = ch
                 .calls
                 .iter()
-                .filter(|o| o.role != Role::Other && o.verified() && (c.role != Role::Cq || o.role == Role::Cq))
+                .filter(|o| o.role != Role::Other && o.verified() && (c.role != Role::Cq || (o.role == Role::Cq && (o.cq_count >= 2 || !c.verified()))))
                 .map(|o| o.last_s)
                 .fold(f64::MIN, f64::max);
             let replaced = c.role != Role::Other && latest > c.last_s;
             let behind = latest - c.last_s;
             let silent = ch.now_s - c.last_s;
-            let stale = silent > CALL_STALE_S || (replaced && behind > SUPERSEDED_S);
+            let stale_after = if c.role == Role::Cq && c.verified() { CALL_STALE_CQ_S } else { CALL_STALE_S };
+            let stale = silent > stale_after || (replaced && behind > SUPERSEDED_S);
             let gone = silent > CALL_GONE_S || (replaced && behind > SUPERSEDED_GONE_S);
             let role = match c.role {
                 Role::Cq => "cq",
