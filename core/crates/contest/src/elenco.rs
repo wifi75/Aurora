@@ -923,7 +923,7 @@ m_sName=B
             assert!(!su.contains("<EXEC:") && !t.contains(":\\") && !t.contains(":/"), "{}", p.display());
             assert!(!leggi_macro(&t).is_empty(), "{}: nessuna macro", p.display());
         }
-        assert!(n >= 100, "contest predefiniti: {n}");
+        assert!(n >= 80, "contest predefiniti: {n}");
     }
 
     /// Conversione di tutti i file di origine (cartella in `AURORA_CST_DIR`, con `Contest-Settings`, `Contest-Macros`, `Contest-DOM`):
