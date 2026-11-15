@@ -402,6 +402,42 @@ function action9(tag: string, arg: string | undefined): MacroAction | null {
   return r === null ? cmd('ROTORBAD', arg) : { type: 'rotor', az: r };
 }
 
+function special10(tag: string, r: MacroRun): boolean {
+  // il testo fra HIDETEXT e SHOWTEXT erano comandi per un TNC esterno: non si trasmette
+  if (tag === 'HIDETEXT' || tag === 'SHOWTEXT') {
+    r.setHidden(tag === 'HIDETEXT');
+    return true;
+  }
+  // i tasti Ctrl (Ctrl-C, Ctrl-T...) andavano al TNC: in Aurora non scrivono niente
+  return /^CTRL-[A-Z]$/.test(tag);
+}
+
+function action10(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'NEWRXWINDOW':
+    case 'NEWRXWINDOW1':
+    case 'NEWRXWINDOW2':
+    case 'CLOSERXWINDOWS':
+    case 'CLEAR':
+    case 'SHOW':
+    case 'HIDE':
+    case 'TOGGLE':
+    case 'SCROLLLOCK':
+    case 'SCROLLOCK':
+    case 'FONTSIZE':
+    case 'FACE':
+    case 'COLOR':
+    case 'BOLD':
+    case 'ITALIC':
+    case 'MARK':
+    case 'MARKERS':
+    case 'BMERASE':
+    case 'ALERT':
+    case 'PRINT':
+    case 'ACTIVATE': return cmd(tag === 'SCROLLOCK' ? 'SCROLLLOCK' : tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -414,6 +450,7 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
     special2(tag, r) ||
     special3(tag, arg, r) ||
     special5(tag, r) ||
+    special10(tag, r) ||
     false
   );
 }
@@ -441,12 +478,14 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     const at = arg === undefined ? null : parseIgnoreBefore(arg);
     return at === null ? null : { type: 'ignoreBefore', at };
   }
+  if (tag === 'EXT') return { type: 'exec', file: arg ?? '' };
   return (
     action5(tag, arg) ??
     action6(tag, arg) ??
     action7(tag, arg) ??
     action8(tag, arg) ??
     action9(tag, arg) ??
+    action10(tag, arg) ??
     null
   );
 }

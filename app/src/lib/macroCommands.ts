@@ -253,9 +253,27 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('cw', "<WKPOT>", "la velocità la decide il potenziometro del WinKeyer (<WKNOPOT>: la decide Aurora)", "the WinKeyer knob sets the speed (<WKNOPOT>: Aurora sets it)", "der WinKeyer-Drehknopf stellt die Geschwindigkeit ein (<WKNOPOT>: Aurora stellt sie ein)", "le bouton du WinKeyer règle la vitesse (<WKNOPOT> : Aurora la règle)", "el mando del WinKeyer fija la velocidad (<WKNOPOT>: la fija Aurora)", "o botão do WinKeyer define a velocidade (<WKNOPOT>: o Aurora define-a)"),
   c('rotor', "<ROTORCMD:comando>", "comando del rotore alla GS-232: M o W con i gradi gira, S o A ferma; si fa con il rotore di Aurora", "GS-232 style rotator command: M or W with degrees turns, S or A stops; done with Aurora's rotator", "Rotor-Befehl im Stil von GS-232: M oder W mit Grad dreht, S oder A stoppt; erledigt mit dem Rotor von Aurora", "commande de rotor de type GS-232 : M ou W avec des degrés tourne, S ou A arrête ; exécutée avec le rotor d'Aurora", "comando de rotor estilo GS-232: M o W con grados gira, S o A detiene; se hace con el rotor de Aurora", "comando de rotor ao estilo GS-232: M ou W com graus roda, S ou A pára; feito com o rotor do Aurora"),
   c('rotor', "<ROTORCMDHEX:byte>", "come <ROTORCMD> con il comando scritto in esadecimale", "like <ROTORCMD> with the command written in hex", "wie <ROTORCMD> mit dem Befehl in Hex geschrieben", "comme <ROTORCMD> avec la commande écrite en hexadécimal", "como <ROTORCMD> con el comando escrito en hexadecimal", "como <ROTORCMD> com o comando escrito em hexadecimal"),
+  c('program', "<NEWRXWINDOW>", "apre una finestra RX in più sulla frequenza di ricezione", "opens an extra RX window on the receive frequency", "öffnet ein zusätzliches RX-Fenster auf der Empfangsfrequenz", "ouvre une fenêtre RX supplémentaire sur la fréquence de réception", "abre una ventana RX adicional en la frecuencia de recepción", "abre uma janela RX adicional na frequência de receção"),
+  c('program', "<CLOSERXWINDOWS>", "chiude tutte le finestre RX in più", "closes all extra RX windows", "schließt alle zusätzlichen RX-Fenster", "ferme toutes les fenêtres RX supplémentaires", "cierra todas las ventanas RX adicionales", "fecha todas as janelas RX adicionais"),
+  c('program', "<CLEAR>", "pulisce la finestra RX e quella di trasmissione", "clears the RX and transmit windows", "leert das RX- und das Sendefenster", "efface les fenêtres RX et d'émission", "borra las ventanas RX y de transmisión", "limpa as janelas RX e de transmissão"),
+  c('program', "<SHOW:nome>", "mostra (HIDE nasconde, TOGGLE alterna) una parte di Aurora: CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (cascata), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (mappa), BEACONS, CALLBOOK, KIWISDR (ricevitore in rete: avviso)", "shows (HIDE hides, TOGGLE switches) a part of Aurora: CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (waterfall), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (map), BEACONS, CALLBOOK, KIWISDR (web receiver: notice)", "zeigt (HIDE verbirgt, TOGGLE schaltet um) einen Teil von Aurora: CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (Wasserfall), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (Karte), BEACONS, CALLBOOK, KIWISDR (Web-Empfänger: Hinweis)", "affiche (HIDE masque, TOGGLE bascule) une partie d'Aurora : CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (cascade), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (carte), BEACONS, CALLBOOK, KIWISDR (récepteur web : avis)", "muestra (HIDE oculta, TOGGLE alterna) una parte de Aurora: CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (cascada), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (mapa), BEACONS, CALLBOOK, KIWISDR (receptor web: aviso)", "mostra (HIDE esconde, TOGGLE alterna) uma parte do Aurora: CONTROLBAR, LOGBAR, STATUSBAR, TUNINGBAR (cascata), CONTESTSTATS, QSOSTATISTIC, ROTOR, DXCLUSTER, WORLDMAP (mapa), BEACONS, CALLBOOK, KIWISDR (recetor web: aviso)"),
+  c('program', "<SCROLLLOCK:ON>", "ferma lo scorrimento della finestra RX (OFF lo riprende)", "stops the RX window from scrolling (OFF resumes it)", "hält das Scrollen des RX-Fensters an (OFF setzt es fort)", "arrête le défilement de la fenêtre RX (OFF le reprend)", "detiene el desplazamiento de la ventana RX (OFF lo reanuda)", "pára o deslocamento da janela RX (OFF retoma-o)"),
+  c('program', "<CTRL-C>", "tasti Ctrl per un TNC esterno: in Aurora non scrivono niente", "Ctrl keys for an external TNC: in Aurora they write nothing", "Strg-Tasten für einen externen TNC: in Aurora schreiben sie nichts", "touches Ctrl pour un TNC externe : dans Aurora elles n'écrivent rien", "teclas Ctrl para un TNC externo: en Aurora no escriben nada", "teclas Ctrl para um TNC externo: no Aurora não escrevem nada"),
+  c('program', "<FONTSIZE:n>", "grandezza del testo della finestra RX in pixel (vuoto: quella di base)", "RX window text size in pixels (empty: the default)", "Textgröße des RX-Fensters in Pixeln (leer: Standard)", "taille du texte de la fenêtre RX en pixels (vide : la valeur par défaut)", "tamaño del texto de la ventana RX en píxeles (vacío: el predeterminado)", "tamanho do texto da janela RX em píxeis (vazio: o predefinido)"),
+  c('program', "<FACE:nome>", "carattere della finestra RX", "RX window font", "Schriftart des RX-Fensters", "police de la fenêtre RX", "fuente de la ventana RX", "tipo de letra da janela RX"),
+  c('program', "<COLOR:RRGGBB>", "colore del testo della finestra RX", "RX window text colour", "Textfarbe des RX-Fensters", "couleur du texte de la fenêtre RX", "color del texto de la ventana RX", "cor do texto da janela RX"),
+  c('program', "<BOLD:ON>", "testo della finestra RX in grassetto (OFF normale)", "RX window text in bold (OFF normal)", "Text des RX-Fensters fett (OFF normal)", "texte de la fenêtre RX en gras (OFF normal)", "texto de la ventana RX en negrita (OFF normal)", "texto da janela RX em negrito (OFF normal)"),
+  c('program', "<ITALIC:ON>", "testo della finestra RX in corsivo (OFF normale)", "RX window text in italics (OFF normal)", "Text des RX-Fensters kursiv (OFF normal)", "texte de la fenêtre RX en italique (OFF normal)", "texto de la ventana RX en cursiva (OFF normal)", "texto da janela RX em itálico (OFF normal)"),
+  c('program', "<MARK>", "segna ora e frequenza nella finestra RX", "marks time and frequency in the RX window", "markiert Zeit und Frequenz im RX-Fenster", "marque l'heure et la fréquence dans la fenêtre RX", "marca la hora y la frecuencia en la ventana RX", "marca a hora e a frequência na janela RX"),
+  c('program', "<MARKERS:OFF>", "OFF: <MARK> e <BOOKMARK> non scrivono più segni; ON li riaccende", "OFF: <MARK> and <BOOKMARK> stop writing marks; ON turns them back on", "OFF: <MARK> und <BOOKMARK> schreiben keine Markierungen mehr; ON schaltet sie wieder ein", "OFF : <MARK> et <BOOKMARK> n'écrivent plus de marques ; ON les réactive", "OFF: <MARK> y <BOOKMARK> dejan de escribir marcas; ON las vuelve a activar", "OFF: <MARK> e <BOOKMARK> deixam de escrever marcas; ON volta a ativá-las"),
+  c('program', "<BMERASE>", "toglie dalla finestra RX le righe dei segni", "removes the mark lines from the RX window", "entfernt die Markierungszeilen aus dem RX-Fenster", "supprime les lignes de marques de la fenêtre RX", "quita las líneas de marcas de la ventana RX", "remove as linhas de marcas da janela RX"),
+  c('program', "<ALERT:testo>", "avviso a schermo con un suono", "on-screen alert with a sound", "Meldung auf dem Bildschirm mit Ton", "alerte à l'écran avec un son", "alerta en pantalla con sonido", "alerta no ecrã com som"),
+  c('program', "<PRINT:>", "stampa il testo della finestra RX", "prints the RX window text", "druckt den Text des RX-Fensters", "imprime le texte de la fenêtre RX", "imprime el texto de la ventana RX", "imprime o texto da janela RX"),
+  c('program', "<ACTIVATE>", "porta la finestra di Aurora davanti", "brings the Aurora window to the front", "bringt das Aurora-Fenster in den Vordergrund", "met la fenêtre d'Aurora au premier plan", "trae la ventana de Aurora al frente", "traz a janela do Aurora para a frente"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
+  cb('program', "<EXT:programma>", "non supportato per sicurezza: Aurora non avvia programmi esterni", "not supported for safety: Aurora does not start external programs", "aus Sicherheitsgründen nicht unterstützt: Aurora startet keine externen Programme", "non pris en charge par sécurité : Aurora ne lance pas de programmes externes", "no admitido por seguridad: Aurora no inicia programas externos", "não suportado por segurança: o Aurora não inicia programas externos"),
 ];
 
 /** Le categorie della «Guida alle macro» (pagina dei modi testuali). */
@@ -681,6 +699,43 @@ CATEGORY["<ROTORCMD:comando>"] = 'rotor';
 EXAMPLE["<ROTORCMD:comando>"] = "<ROTORCMD:M180>";
 CATEGORY["<ROTORCMDHEX:byte>"] = 'rotor';
 EXAMPLE["<ROTORCMDHEX:byte>"] = "<ROTORCMDHEX:4D 31 38 30>";
+CATEGORY["<NEWRXWINDOW>"] = 'windows';
+EXAMPLE["<NEWRXWINDOW>"] = "<NEWRXWINDOW>";
+ALIASES["<NEWRXWINDOW>"] = ["<NEWRXWINDOW1>", "<NEWRXWINDOW2>"];
+CATEGORY["<CLOSERXWINDOWS>"] = 'windows';
+EXAMPLE["<CLOSERXWINDOWS>"] = "<CLOSERXWINDOWS>";
+CATEGORY["<CLEAR>"] = 'windows';
+EXAMPLE["<CLEAR>"] = "<CLEAR>";
+CATEGORY["<SHOW:nome>"] = 'windows';
+EXAMPLE["<SHOW:nome>"] = "<TOGGLE:WORLDMAP>";
+ALIASES["<SHOW:nome>"] = ["<HIDE:nome>", "<TOGGLE:nome>"];
+CATEGORY["<SCROLLLOCK:ON>"] = 'windows';
+EXAMPLE["<SCROLLLOCK:ON>"] = "<SCROLLLOCK:OFF>";
+CATEGORY["<CTRL-C>"] = 'windows';
+EXAMPLE["<CTRL-C>"] = "<HIDETEXT><CTRL-C>X<SHOWTEXT>";
+ALIASES["<CTRL-C>"] = ["<CTRL-T>"];
+CATEGORY["<FONTSIZE:n>"] = 'windows';
+EXAMPLE["<FONTSIZE:n>"] = "<FONTSIZE:16>";
+CATEGORY["<FACE:nome>"] = 'windows';
+EXAMPLE["<FACE:nome>"] = "<FACE:Consolas>";
+CATEGORY["<COLOR:RRGGBB>"] = 'windows';
+EXAMPLE["<COLOR:RRGGBB>"] = "<COLOR:FFD700>";
+CATEGORY["<BOLD:ON>"] = 'windows';
+EXAMPLE["<BOLD:ON>"] = "<BOLD:ON>";
+CATEGORY["<ITALIC:ON>"] = 'windows';
+EXAMPLE["<ITALIC:ON>"] = "<ITALIC:ON>";
+CATEGORY["<MARK>"] = 'windows';
+EXAMPLE["<MARK>"] = "<MARK>";
+CATEGORY["<MARKERS:OFF>"] = 'windows';
+EXAMPLE["<MARKERS:OFF>"] = "<MARKERS:OFF>";
+CATEGORY["<BMERASE>"] = 'windows';
+EXAMPLE["<BMERASE>"] = "<BMERASE>";
+CATEGORY["<ALERT:testo>"] = 'windows';
+EXAMPLE["<ALERT:testo>"] = "<ALERT:QSY!>";
+CATEGORY["<PRINT:>"] = 'windows';
+EXAMPLE["<PRINT:>"] = "<PRINT:>";
+CATEGORY["<ACTIVATE>"] = 'windows';
+EXAMPLE["<ACTIVATE>"] = "<ACTIVATE>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';
@@ -688,6 +743,8 @@ EXAMPLE["<CALL?>"] = "<CALL?> <RSTS?> <NRS?>";
 ALIASES["<CALL?>"] = ["<RSTS?>", "<RSTR?>", "<NRS?>", "<NRR?>"];
 CATEGORY["<F1?>"] = 'nested';
 EXAMPLE["<F1?>"] = "<F5?>";
+CATEGORY["<EXT:programma>"] = 'files';
+EXAMPLE["<EXT:programma>"] = "<EXT:prog.exe>";
 
 export const MACRO_COMMANDS: readonly MacroCommand[] = RAW_COMMANDS.map((r) => ({
   ...r,

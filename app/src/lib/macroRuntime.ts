@@ -302,6 +302,42 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'WKNOPOT': if (s.winkeyer) d.save({ winkeyer: { ...s.winkeyer, use_pot: tag === 'WKPOT' } }); return;
     case 'ROTORSTOP': void rotatorStop().catch(fail(d, tag)); return;
     case 'ROTORBAD': d.toast(d.t('digi.run.cmdFail', { tag: 'ROTORCMD', why: arg }), 'error'); return;
+    case 'NEWRXWINDOW':
+    case 'NEWRXWINDOW1':
+    case 'NEWRXWINDOW2': d.extras.add(); return;
+    case 'CLOSERXWINDOWS': d.extras.closeAll(); return;
+    case 'CLEAR': d.clearRx(); d.clearTx(); return;
+    case 'SHOW':
+    case 'HIDE':
+    case 'TOGGLE': {
+      const what = arg.trim().toUpperCase();
+      if (!d.view(what, tag === 'SHOW' ? 'show' : tag === 'HIDE' ? 'hide' : 'toggle')) notInAurora(d, `${tag}:${what}`, what);
+      return;
+    }
+    case 'SCROLLLOCK': d.setRxPaused(on(arg)); return;
+    case 'FONTSIZE': d.rxStyle({ fontSize: num !== null && num >= 6 && num <= 72 ? `${num}px` : '' }); return;
+    case 'FACE': d.rxStyle({ fontFamily: arg.replace(/["<>;{}]/g, '').trim() }); return;
+    case 'COLOR': {
+      const hex = arg.trim().replace(/^#|^0x/i, '');
+      d.rxStyle({ color: /^[0-9a-f]{6}$/i.test(hex) ? `#${hex}` : '' });
+      return;
+    }
+    case 'BOLD': d.rxStyle({ fontWeight: on(arg) ? 'bold' : '' }); return;
+    case 'ITALIC': d.rxStyle({ fontStyle: on(arg) ? 'italic' : '' }); return;
+    case 'MARK': mark(d); return;
+    case 'MARKERS': macroState.markers = on(arg); return;
+    case 'BMERASE': d.removeRxLines((l) => l.startsWith(`[${MARK_PREFIX}`)); return;
+    case 'ALERT': d.toast(arg, 'info'); beepOnce(); return;
+    case 'PRINT': {
+      const w = window.open('', '_blank');
+      if (!w) return;
+      const pre = w.document.createElement('pre');
+      pre.textContent = d.rxText();
+      w.document.body.appendChild(pre);
+      w.print();
+      return;
+    }
+    case 'ACTIVATE': window.focus(); return;
     default: return;
   }
 }

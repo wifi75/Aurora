@@ -334,6 +334,22 @@ describe('rotore', () => {
   });
 });
 
+describe('finestre e testo', () => {
+  it('HIDETEXT toglie il testo per il TNC, CTRL-x non scrive niente', () => {
+    const r = runMacro('<HIDETEXT><AUDIOFQ:2200><CTRL-C>X<CR><LF>PACTOR<SHOWTEXT>CQ', ctx);
+    expect(r.text).toBe('CQ');
+    expect(r.actions).toEqual([{ type: 'audioFq', hz: 2200, relative: false }]);
+  });
+  it('barre, finestre e stile', () => {
+    expect(cmdOf('<TOGGLE:KIWISDR><SCROLLOCK:OFF><NEWRXWINDOW1><FONTSIZE:14>')).toEqual([
+      { type: 'cmd', tag: 'TOGGLE', arg: 'KIWISDR' },
+      { type: 'cmd', tag: 'SCROLLLOCK', arg: 'OFF' },
+      { type: 'cmd', tag: 'NEWRXWINDOW1', arg: '' },
+      { type: 'cmd', tag: 'FONTSIZE', arg: '14' },
+    ]);
+    expect(cmdOf('<EXT:prog.exe>')).toEqual([{ type: 'exec', file: 'prog.exe' }]);
+  });
+});
 
 
 
