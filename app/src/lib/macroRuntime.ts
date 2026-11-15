@@ -156,6 +156,28 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     }
     // la lingua resta per le macro seguenti (vedi DigiPage: `forcedLang`)
     case 'FORCELANGUAGE': return;
+    case 'STARTTIME': {
+      const m = /^(\d{1,2}):?(\d{2})$/.exec(arg.trim());
+      if (!m) return;
+      const at = new Date();
+      at.setUTCHours(Number(m[1]), Number(m[2]), 0, 0);
+      d.setStart(at);
+      return;
+    }
+    case 'TIMER': {
+      const [secs = '', macro = ''] = arg.split(',');
+      const sec = Number(secs.trim());
+      for (const id of macroState.timers) window.clearTimeout(id);
+      macroState.timers = [];
+      if (!Number.isFinite(sec) || sec <= 0) return;
+      d.toast(d.t('digi.run.timer', { s: sec }), 'info');
+      macroState.timers.push(
+        window.setTimeout(() => {
+          if (macro.trim() === '' || !d.runMacro(macro.trim())) d.toast(d.t('digi.run.timer', { s: 0 }), 'info');
+        }, sec * 1000),
+      );
+      return;
+    }
     default: return;
   }
 }

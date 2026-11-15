@@ -277,6 +277,14 @@ describe('frasi automatiche', () => {
   });
 });
 
+describe('ora e data', () => {
+  it('formati, TXTIME, STARTTIME e TIMER', () => {
+    expect(runMacro('<TIME:%H%M%S> <DATE:%d/%m/%y> <DATE:%j>', ctx).text).toBe('140507 10/11/26 314');
+    expect(runMacro('<TXTIME>', { ...ctx, txStart: new Date(Date.UTC(2026, 10, 10, 13, 2)) }).text).toBe('13:02');
+    expect(cmdOf('<STARTTIME:1230><TIMER:60,F2>')).toEqual([{ type: 'cmd', tag: 'STARTTIME', arg: '1230' }, { type: 'cmd', tag: 'TIMER', arg: '60,F2' }]);
+    expect(runMacro('<STARTTIME:%H%M>', ctx).text).toBe('0930');
+  });
+});
 
 
 

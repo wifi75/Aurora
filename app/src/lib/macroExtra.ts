@@ -217,6 +217,25 @@ function special3(tag: string, arg: string | undefined, r: MacroRun): boolean {
   return false;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** Data e ora con un formato alla strftime: %H %M %S %d %m %Y %y %j %b %A(nno breve). Senza `%` restano le lettere scritte. */
+export function formatTime(d: Date, fmt: string, utc: boolean): string {
+  const g = utc
+    ? { y: d.getUTCFullYear(), mo: d.getUTCMonth(), da: d.getUTCDate(), h: d.getUTCHours(), mi: d.getUTCMinutes(), s: d.getUTCSeconds() }
+    : { y: d.getFullYear(), mo: d.getMonth(), da: d.getDate(), h: d.getHours(), mi: d.getMinutes(), s: d.getSeconds() };
+  const yday = Math.floor((Date.UTC(g.y, g.mo, g.da) - Date.UTC(g.y, 0, 1)) / 86_400_000) + 1;
+  return fmt.replace(/%([HMSdmYyjb%])/g, (_, k: string) =>
+    ({ H: pad(g.h), M: pad(g.mi), S: pad(g.s), d: pad(g.da), m: pad(g.mo + 1), Y: String(g.y), y: pad(g.y % 100), j: pad(yday, 3), b: MONTHS[g.mo] ?? '', '%': '%' })[k] ?? '',
+  );
+}
+
+function family4(tag: string, c: MacroContext): string | null {
+  switch (tag) {
+    case 'TXTIME': return formatTime(c.txStart ?? c.now, '%H:%M', true);
+    case 'LOCALDATE': return formatTime(c.now, '%Y-%m-%d', false);
+    default: return null;
+  }
+}
 
 
 
@@ -243,6 +262,7 @@ export function extraText(tag: string, arg: string | undefined, c: MacroContext)
   return (
     family1(tag, arg, c) ??
     family3(tag, c) ??
+    family4(tag, c) ??
     null
   );
 }
@@ -250,6 +270,8 @@ export function extraText(tag: string, arg: string | undefined, c: MacroContext)
 /** L'azione di un comando in piu', o `null`. */
 export function extraAction(tag: string, arg: string | undefined): MacroAction | null {
   if (tag === 'SAVESELTEXT') return cmd('SAVESELTEXT');
+  if (tag === 'TIMER') return cmd('TIMER', arg);
+  if (tag === 'STARTTIME' && arg !== undefined) return cmd('STARTTIME', arg);
   return (
     null
   );
