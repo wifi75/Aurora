@@ -43,3 +43,7 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=80,40,20,15,10
+points=my_dxcc:YO&dxcc:YO=0; my_dxcc:YO&cont:EU=4; my_dxcc:YO=8; dxcc:YO=8; same_dxcc=1; same_cont=2; other_cont=4
+mult=dxcc/band; exch/band/if:dxcc:YO&not_my_dxcc:YO

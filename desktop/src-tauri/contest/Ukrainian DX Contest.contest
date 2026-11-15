@@ -34,7 +34,7 @@ m_bAutoGrabNumber=1
 m_iGrabNumberType=0
 m_bAutoGrabTime=0
 m_bAutoGrabState=0
-m_sStateListFile=
+m_sStateListFile=dom/udxc.dom
 m_iGrabDomainTo=1
 m_bSuggestCqZone=0
 m_bSuggestItuZone=0
@@ -43,3 +43,7 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=160,80,40,20,15,10
+points=my_dxcc:UR&dxcc:UR=1; dxcc:UR=10; same_dxcc=1; same_cont=2; other_cont=3
+mult=dxcc/band; exch/band/if:dxcc:UR&not_my_dxcc:UR

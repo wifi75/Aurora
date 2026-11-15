@@ -44,3 +44,13 @@ m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
 m_iQtc=1
+[Score]
+bands=80,40,20,15,10
+points=any=1
+mult=dxcc/band/if:cont:EU; dxcc/band/if:my_cont:EU/except:K,VE,VK,ZL,ZS,JA,BY,PY; area:K,VE,VK,ZL,ZS,JA,BY,PY/band/if:my_cont:EU
+mult_band=80:4,40:3,20:2,15:2,10:2
+[Script]
+// in CW e SSB valgono solo i QSO fra Europa e resto del mondo
+fn ammesso(qso) {
+    if (qso.cont == "EU") != (qso.my_cont == "EU") { true } else { [false, "continente"] }
+}
