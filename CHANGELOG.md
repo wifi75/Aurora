@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Modi testuali: menu Opzioni › Auto CQ con Avvia, Ferma, Testo… (macro AutoCqText) e Pausa… (secondi fra due chiamate, salvati).
+
 ## 0.11.271 - 2026-11-15
 
 - Macro: tutti i comandi delle macro funzionano, nessuno viene piu' saltato. Nuove famiglie: dati del corrispondente e del QSO precedente (ACALL, PREVNAME, PREVCALL, PREVRSTS, QSOBEFORE...), testo selezionato nella finestra RX (SELCALL, SELNAME...), frasi automatiche e saluti in sette lingue (INTQRZ, INTAGNNR, GM/GE/GN...), ora e data con il formato, QSO e log (INCNRR, CLEARNRR, SENDSPOT, WKD...), modo e ricevitore (LOCK, INV, FILTER, `<SET BW:250>`, TUNE...), CAT (CATCMDHEX, CATWAIT...), WinKeyer (WKTEXT, WKHEX), rotore (ROTORCMD), finestre e testo, audio (STARTRECORD, REPLAY, `<WAVE:...>`, DTMF), file e script (FILE, INIFILE, RANDOM, SCRIPT), SSTV (PIC, SSTVMODE), macro dentro una macro (`<F1>`, fino a 10 livelli) e il `?` che chiede il valore se manca.
