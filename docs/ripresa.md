@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-15 (0.11.272 pubblicata 2026-11-15T20:32:28Z)
+
+- Menu Opzioni › Auto CQ nei modi testuali (Avvia, Ferma, Testo… = macro AutoCqText, Pausa… salvata in localStorage `aurora-digi-acq-delay`). RBN: spenta di base (Impostazioni › DX Cluster), elenco «Sentiti dalla rete RBN» sotto BIGScan con etichetta RBN; il proprietario non la vuole nel pannello DX Cluster.
+
 ## Stato al 2026-11-15 (0.11.271 pubblicata 2026-11-15T20:14:27Z)
 
 - Tutti i comandi delle macro integrati in 15 famiglie (`macroLang.ts`, `DigiPage.tsx`, rotte `/digi/winkeyer/send`, `/digi/play`, `/digi/record`), tabella in `docs/macro-comandi.md`, Guida delle macro per famiglia; GRABCALL, PREVCALL, PREVRSTS. EXEC/EXT esclusi. Comandi «al piu' vicino» (packet, DDE, MFSK/Hell, KiwiSDR) e significati dedotti (ACALL, OM, BROADCASTMODE, CORRECTCALLTX, TEST, frasi INT) da verificare dal vivo.

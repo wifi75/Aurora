@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.272',
-    released: '2026-11-16T00:00:00Z',
+    released: '2026-11-15T20:32:28Z',
     kind: 'new',
     title: [
       'Menu Auto CQ nei modi testuali',
