@@ -155,6 +155,27 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('hell', '<SET FILTER:n>', "Hell non c'è in Aurora: parametro saltato", "Aurora has no Hell: parameter skipped", "Aurora hat kein Hell: Parameter übersprungen", "Aurora n'a pas de Hell : paramètre ignoré", "Aurora no tiene Hell: parámetro omitido", "O Aurora não tem Hell: parâmetro ignorado"),
   c('hell', '<SET FONT:nome>', "Hell non c'è in Aurora: parametro saltato", "Aurora has no Hell: parameter skipped", "Aurora hat kein Hell: Parameter übersprungen", "Aurora n'a pas de Hell : paramètre ignoré", "Aurora no tiene Hell: parámetro omitido", "O Aurora não tem Hell: parâmetro ignorado"),
   c('hell', '<SET SUBMODE:n>', "sottomodo: BPSK31, PSK63, RTTY, CW cambiano modo; quelli che Aurora non ha (Hell, MFSK) si saltano", "submode: BPSK31, PSK63, RTTY, CW change mode; those Aurora lacks (Hell, MFSK) are skipped", "Submodus: BPSK31, PSK63, RTTY, CW wechseln den Modus; die, die Aurora nicht hat (Hell, MFSK), werden übersprungen", "sous-mode : BPSK31, PSK63, RTTY, CW changent de mode ; ceux qu'Aurora n'a pas (Hell, MFSK) sont ignorés", "submodo: BPSK31, PSK63, RTTY, CW cambian de modo; los que Aurora no tiene (Hell, MFSK) se omiten", "submodo: BPSK31, PSK63, RTTY, CW mudam de modo; os que o Aurora não tem (Hell, MFSK) são ignorados"),
+  c('text', "<ACALL>", "nominativo del corrispondente senza /P, /M e prefissi", "the other station's callsign without /P, /M and prefixes", "Rufzeichen der Gegenstation ohne /P, /M und Präfixe", "l'indicatif de la station correspondante sans /P, /M ni préfixes", "el indicativo de la estación corresponsal sin /P, /M ni prefijos", "o indicativo da estação correspondente sem /P, /M e prefixos"),
+  c('text', "<CALLPOST:testo>", "il nominativo seguito dal testo, solo se il nominativo c'è", "the callsign followed by the text, only if there is a callsign", "das Rufzeichen gefolgt vom Text, nur wenn ein Rufzeichen vorhanden ist", "l'indicatif suivi du texte, seulement s'il y a un indicatif", "el indicativo seguido del texto, solo si hay indicativo", "o indicativo seguido do texto, só se houver indicativo"),
+  c('text', "<POST:sì,no>", "il primo testo se c'è un nominativo, il secondo se manca", "the first text if there is a callsign, the second if not", "der erste Text, wenn ein Rufzeichen vorhanden ist, der zweite, wenn nicht", "le premier texte s'il y a un indicatif, le second sinon", "el primer texto si hay indicativo, el segundo si no", "o primeiro texto se houver indicativo, o segundo se não houver"),
+  c('text', "<OM>", "OM o YL secondo il nome del corrispondente", "OM or YL from the other operator's name", "OM oder YL nach dem Namen des Funkpartners", "OM ou YL selon le prénom du correspondant", "OM o YL según el nombre del corresponsal", "OM ou YL conforme o nome do correspondente"),
+  c('text', "<DIST>", "distanza in km dal tuo locatore a quello del corrispondente (? se manca)", "distance in km from your locator to the other station's (? if missing)", "Entfernung in km von deinem Locator zu dem der Gegenstation (? wenn unbekannt)", "distance en km de ton locator à celui de la station correspondante (? s'il manque)", "distancia en km desde tu locator al de la estación corresponsal (? si falta)", "distância em km do teu locator ao da estação correspondente (? se faltar)"),
+  c('text', "<MILES>", "come <DIST>, in miglia", "like <DIST>, in miles", "wie <DIST>, in Meilen", "comme <DIST>, en miles", "como <DIST>, en millas", "como <DIST>, em milhas"),
+  c('text', "<AZ>", "direzione in gradi verso il corrispondente (? se manca il locatore)", "heading in degrees to the other station (? without a locator)", "Richtung in Grad zur Gegenstation (? ohne Locator)", "direction en degrés vers la station correspondante (? sans locator)", "rumbo en grados hacia la estación corresponsal (? sin locator)", "direção em graus para a estação correspondente (? sem locator)"),
+  c('text', "<PREVNRR>", "lo scambio ricevuto nell'ultimo QSO del log", "the exchange received in the last logged QSO", "der Austausch, der im letzten geloggten QSO empfangen wurde", "l'échange reçu dans le dernier QSO du log", "el intercambio recibido en el último QSO del log", "a troca recebida no último QSO do log"),
+  c('text', "<PREVCCALL>", "il nominativo dell'ultimo QSO senza /P e prefissi", "the callsign of the last QSO without /P and prefixes", "das Rufzeichen des letzten QSO ohne /P und Präfixe", "l'indicatif du dernier QSO sans /P ni préfixes", "el indicativo del último QSO sin /P ni prefijos", "o indicativo do último QSO sem /P e prefixos"),
+  c('text', "<PREVNAME>", "il nome dell'ultimo QSO del log", "the name in the last logged QSO", "der Name im letzten geloggten QSO", "le nom du dernier QSO du log", "el nombre del último QSO del log", "o nome no último QSO do log"),
+  c('text', "<PREVQTH>", "il QTH dell'ultimo QSO del log", "the QTH in the last logged QSO", "das QTH im letzten geloggten QSO", "le QTH du dernier QSO du log", "el QTH del último QSO del log", "o QTH no último QSO do log"),
+  c('text', "<PREVRSTR>", "il rapporto ricevuto nell'ultimo QSO del log", "the report received in the last logged QSO", "der Rapport, der im letzten geloggten QSO empfangen wurde", "le report reçu dans le dernier QSO du log", "el reporte recibido en el último QSO del log", "o relatório recebido no último QSO do log"),
+  c('text', "<PREVCTIME>", "ora UTC (HHMM) dell'ultimo QSO del log", "UTC time (HHMM) of the last logged QSO", "UTC-Zeit (HHMM) des letzten geloggten QSO", "heure UTC (HHMM) du dernier QSO du log", "hora UTC (HHMM) del último QSO del log", "hora UTC (HHMM) do último QSO do log"),
+  c('text', "<PREVSUF2>", "le ultime due lettere del nominativo dell'ultimo QSO", "the last two letters of the last QSO's callsign", "die letzten zwei Buchstaben des Rufzeichens des letzten QSO", "les deux dernières lettres de l'indicatif du dernier QSO", "las dos últimas letras del indicativo del último QSO", "as duas últimas letras do indicativo do último QSO"),
+  c('text', "<LASTCALL>", "rimette nel QSO il nominativo dell'ultimo QSO del log", "puts the callsign of the last logged QSO back into the QSO", "übernimmt das Rufzeichen des letzten geloggten QSO wieder ins QSO", "remet dans le QSO l'indicatif du dernier QSO du log", "vuelve a poner en el QSO el indicativo del último QSO del log", "volta a pôr no QSO o indicativo do último QSO do log"),
+  c('text', "<NRRPOST:testo>", "lo scambio ricevuto con i numeri abbreviati della CW tradotti (T e O = 0, A = 1, N = 9), poi il testo", "the received exchange with CW cut numbers turned back into digits (T and O = 0, A = 1, N = 9), then the text", "der empfangene Austausch mit zurück in Ziffern verwandelten CW-Kurzzahlen (T und O = 0, A = 1, N = 9), dann der Text", "l'échange reçu avec les chiffres abrégés CW redevenus des chiffres (T et O = 0, A = 1, N = 9), puis le texte", "el intercambio recibido con los números abreviados de CW convertidos de nuevo en cifras (T y O = 0, A = 1, N = 9), y luego el texto", "a troca recebida com os números abreviados de CW convertidos de novo em algarismos (T e O = 0, A = 1, N = 9), depois o texto"),
+  c('text', "<QSOBEFORE>", "data e ora del QSO già fatto con questo nominativo sulla stessa banda e nello stesso modo (vuoto se non c'è)", "date and time of the earlier QSO with this callsign on the same band and mode (empty if none)", "Datum und Uhrzeit des früheren QSO mit diesem Rufzeichen auf demselben Band und in demselben Modus (leer, wenn keins)", "date et heure du QSO précédent avec cet indicatif sur la même bande et dans le même mode (vide s'il n'y en a pas)", "fecha y hora del QSO anterior con este indicativo en la misma banda y modo (vacío si no hay)", "data e hora do QSO anterior com este indicativo na mesma banda e modo (vazio se não houver)"),
+  c('text', "<QSOBEFORETIME1>", "ora UTC (HHMM) del QSO già fatto con questo nominativo", "UTC time (HHMM) of the earlier QSO with this callsign", "UTC-Zeit (HHMM) des früheren QSO mit diesem Rufzeichen", "heure UTC (HHMM) du QSO précédent avec cet indicatif", "hora UTC (HHMM) del QSO anterior con este indicativo", "hora UTC (HHMM) do QSO anterior com este indicativo"),
+  c('text', "<QSOBEFOREBAND>", "banda del QSO già fatto con questo nominativo", "band of the earlier QSO with this callsign", "Band des früheren QSO mit diesem Rufzeichen", "bande du QSO précédent avec cet indicatif", "banda del QSO anterior con este indicativo", "banda do QSO anterior com este indicativo"),
+  c('text', "<QSOBEFOREMODE>", "modo del QSO già fatto con questo nominativo", "mode of the earlier QSO with this callsign", "Modus des früheren QSO mit diesem Rufzeichen", "mode du QSO précédent avec cet indicatif", "modo del QSO anterior con este indicativo", "modo do QSO anterior com este indicativo"),
+  c('text', "<ONQSOBEFORE:macro>", "se il nominativo è già stato lavorato esegue la macro indicata", "runs the given macro if the callsign was already worked", "startet das angegebene Makro, wenn das Rufzeichen schon gearbeitet wurde", "exécute la macro indiquée si l'indicatif a déjà été contacté", "ejecuta la macro indicada si el indicativo ya se trabajó", "executa a macro indicada se o indicativo já foi trabalhado"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -368,6 +389,49 @@ export const MACRO_EVENTS: readonly MacroEvent[] = [
 ];
 
 /** Categoria, esempio e altri nomi dei comandi aggiunti famiglia per famiglia. */
+CATEGORY["<ACALL>"] = 'prev';
+EXAMPLE["<ACALL>"] = "<ACALL> de <MYCALL>";
+CATEGORY["<CALLPOST:testo>"] = 'prev';
+EXAMPLE["<CALLPOST:testo>"] = "<CALLPOST: TU>";
+CATEGORY["<POST:sì,no>"] = 'prev';
+EXAMPLE["<POST:sì,no>"] = "<POST:QRZ?,CQ>";
+CATEGORY["<OM>"] = 'prev';
+EXAMPLE["<OM>"] = "TU <OM> <NAME>";
+CATEGORY["<DIST>"] = 'prev';
+EXAMPLE["<DIST>"] = "QRB <DIST> km";
+CATEGORY["<MILES>"] = 'prev';
+EXAMPLE["<MILES>"] = "QRB <MILES> mi";
+CATEGORY["<AZ>"] = 'prev';
+EXAMPLE["<AZ>"] = "BEAM <AZ>";
+CATEGORY["<PREVNRR>"] = 'prev';
+EXAMPLE["<PREVNRR>"] = "PREV NR <PREVNRR>";
+CATEGORY["<PREVCCALL>"] = 'prev';
+EXAMPLE["<PREVCCALL>"] = "<PREVCCALL> TU";
+CATEGORY["<PREVNAME>"] = 'prev';
+EXAMPLE["<PREVNAME>"] = "TU <PREVNAME>";
+CATEGORY["<PREVQTH>"] = 'prev';
+EXAMPLE["<PREVQTH>"] = "<PREVQTH>";
+CATEGORY["<PREVRSTR>"] = 'prev';
+EXAMPLE["<PREVRSTR>"] = "UR RST WAS <PREVRSTR>";
+CATEGORY["<PREVCTIME>"] = 'prev';
+EXAMPLE["<PREVCTIME>"] = "QSO AT <PREVCTIME>";
+CATEGORY["<PREVSUF2>"] = 'prev';
+EXAMPLE["<PREVSUF2>"] = "<PREVSUF2> TU";
+CATEGORY["<LASTCALL>"] = 'prev';
+EXAMPLE["<LASTCALL>"] = "<LASTCALL><CALL> AGN";
+CATEGORY["<NRRPOST:testo>"] = 'prev';
+EXAMPLE["<NRRPOST:testo>"] = "<NRRPOST: TU>";
+CATEGORY["<QSOBEFORE>"] = 'prev';
+EXAMPLE["<QSOBEFORE>"] = "QSO B4 <QSOBEFORE>";
+CATEGORY["<QSOBEFORETIME1>"] = 'prev';
+EXAMPLE["<QSOBEFORETIME1>"] = "B4 <QSOBEFORETIME1>";
+ALIASES["<QSOBEFORETIME1>"] = ["<TIME1>"];
+CATEGORY["<QSOBEFOREBAND>"] = 'prev';
+EXAMPLE["<QSOBEFOREBAND>"] = "B4 <QSOBEFOREBAND>";
+CATEGORY["<QSOBEFOREMODE>"] = 'prev';
+EXAMPLE["<QSOBEFOREMODE>"] = "B4 <QSOBEFOREMODE>";
+CATEGORY["<ONQSOBEFORE:macro>"] = 'prev';
+EXAMPLE["<ONQSOBEFORE:macro>"] = "<ONQSOBEFORE:F9>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

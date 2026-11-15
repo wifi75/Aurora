@@ -229,6 +229,28 @@ describe('macro dentro una macro e ?', () => {
   });
 });
 
+describe('corrispondente e QSO precedente', () => {
+  const prevQso = { call: 'F5ABC/P', name: 'Jean', qth: 'Paris', rsts: '589', rstr: '579', nrr: '015', ms: Date.UTC(2026, 10, 9, 8, 7) };
+  it('ACALL, CALLPOST, POST, OM, DIST, AZ', () => {
+    expect(runMacro('<ACALL><CALLPOST:?> <POST:YES,NO> <OM>', ctx).text).toBe('DL1XYZDL1XYZ? YES OM');
+    expect(runMacro('<POST:YES,NO>', { ...ctx, call: '' }).text).toBe('NO');
+    expect(runMacro('<OM>', { ...ctx, name: 'Maria' }).text).toBe('YL');
+    expect(runMacro('<DIST> <AZ>', { ...ctx, wwloc: '' }).text).toBe('? ?');
+    expect(Number(runMacro('<DIST>', ctx).text)).toBeGreaterThan(500);
+  });
+  it('dati dell\'ultimo QSO e LASTCALL', () => {
+    expect(runMacro('<PREVNAME> <PREVQTH> <PREVRSTR> <PREVCTIME> <PREVSUF2> <PREVCCALL> <PREVNRR> <PREVCALL>', { ...ctx, prevQso }).text).toBe('Jean Paris 579 0807 BC F5ABC 015 F5ABC/P');
+    expect(cmdOf('<LASTCALL>', { prevQso })).toEqual([{ type: 'setField', field: 'call', value: 'F5ABC/P' }]);
+  });
+  it('NRRPOST, QSOBEFORE e ONQSOBEFORE', () => {
+    expect(runMacro('<NRRPOST:!>', { ...ctx, nrr: '5NN TT1' }).text).toBe('599 001!');
+    const before = { ms: Date.UTC(2026, 10, 1, 10, 0), band: '20m', mode: 'PSK31' };
+    expect(runMacro('<QSOBEFORE> <QSOBEFORETIME1> <QSOBEFOREBAND> <QSOBEFOREMODE>', { ...ctx, before }).text).toBe('2026-11-01 10:00 1000 20m PSK31');
+    const macros = new Map([['F9', 'QSO B4']]);
+    expect(runMacro('<ONQSOBEFORE:F9>', { ...ctx, before, macros }).text).toBe('QSO B4');
+    expect(runMacro('<ONQSOBEFORE:F9>', { ...ctx, macros }).text).toBe('');
+  });
+});
 
 
 
