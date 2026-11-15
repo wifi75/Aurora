@@ -4,6 +4,10 @@ Aurora è un programma che gira sul tuo PC. I dati della stazione (nominativo, l
 servizi) restano nella cartella dati sul PC (di norma `%APPDATA%\Aurora`). Escono solo verso i servizi elencati qui sotto,
 con le regole di quei servizi.
 
+Dalla 0.11.269 Aurora fa una copia automatica al giorno di impostazioni, log dei QSO, macro e contest nella sottocartella
+`copie-automatiche` della stessa cartella dati (restano le ultime 28): resta sul PC, non viene mandata da nessuna parte, e password e
+chiavi dei servizi non ci sono.
+
 ## Servizi accesi di fabbrica
 
 Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono in qualunque momento:
