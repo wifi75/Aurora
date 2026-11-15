@@ -41,6 +41,8 @@ pub enum Pezzo {
     Call(Vec<String>),
     Banda(Vec<String>),
     Modo(Vec<String>),
+    /// Ora UTC del QSO dentro l'intervallo `hhmm-hhmm`, estremi compresi (`hour:0100-0459`); se il primo e' maggiore passa la mezzanotte.
+    Ora(String, String),
 }
 
 /// Una condizione: tutti i pezzi veri.
@@ -116,6 +118,8 @@ pub struct DefMolt {
     pub eccetto: Vec<String>,
     /// Punti in piu' per ogni valore nuovo invece di moltiplicare (`add:10`, Open Ukraine RTTY): 0 = moltiplicatore normale.
     pub aggiunta: i64,
+    /// Valori che non sono moltiplicatori (`skip:XXX`: la sezione dei non soci UBA).
+    pub salta: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -132,6 +136,8 @@ pub struct RegoleScore {
     pub speciale: String,
     /// Il punteggio si moltiplica anche per il numero dei QSO validi (`times_qso=1`, Alessandro Volta).
     pub per_qso: bool,
+    /// Il punteggio e' la somma, banda per banda, dei punti per i moltiplicatori della banda (`band_score=1`, IPA).
+    pub per_banda: bool,
 }
 
 /// Una banda senza la `m` (`20m` -> `20`).
@@ -173,6 +179,15 @@ pub fn leggi_cond(s: &str) -> Result<Cond, String> {
             "call" => Pezzo::Call(l()),
             "band" => Pezzo::Banda(arg.split(',').map(banda_corta).collect()),
             "mode" => Pezzo::Modo(l()),
+            "hour" => {
+                let (a, b) = arg.split_once('-').ok_or_else(|| format!("ore non valide: {arg}"))?;
+                let ok = |h: &str| h.len() == 4 && h.bytes().all(|c| c.is_ascii_digit());
+                let (a, b) = (a.trim(), b.trim());
+                if !ok(a) || !ok(b) {
+                    return Err(format!("ore non valide: {arg}"));
+                }
+                Pezzo::Ora(a.to_string(), b.to_string())
+            }
             x => return Err(format!("condizione sconosciuta: {x}")),
         });
     }
@@ -182,8 +197,23 @@ pub fn leggi_cond(s: &str) -> Result<Cond, String> {
     Ok(Cond(v))
 }
 
+/// Le opzioni dei moltiplicatori.
+const OPZIONI: [&str; 8] = ["band", "mode", "once", "product", "if", "except", "add", "skip"];
+
 fn leggi_molt(s: &str) -> Result<DefMolt, String> {
-    let mut parti = s.split('/').map(str::trim);
+    // una barra dentro un elenco (`if:dxcc:SV,SV/A`) non separa le opzioni: il pezzo che non e' un'opzione torna al precedente
+    let mut pezzi: Vec<String> = Vec::new();
+    for p in s.split('/') {
+        let k = p.split(':').next().unwrap_or_default().trim().to_ascii_lowercase();
+        match pezzi.last_mut() {
+            Some(u) if !k.is_empty() && !OPZIONI.contains(&k.as_str()) && u.contains(':') => {
+                u.push('/');
+                u.push_str(p);
+            }
+            _ => pezzi.push(p.to_string()),
+        }
+    }
+    let mut parti = pezzi.iter().map(|p| p.trim());
     let t = parti.next().unwrap_or_default();
     let (k, arg) = t.split_once(':').map_or((t, ""), |(a, b)| (a.trim(), b));
     let tipo = match k.to_ascii_lowercase().as_str() {
@@ -197,7 +227,7 @@ fn leggi_molt(s: &str) -> Result<DefMolt, String> {
         "call" => TipoM::Nominativo,
         x => return Err(format!("moltiplicatore sconosciuto: {x}")),
     };
-    let mut d = DefMolt { tipo, per_banda: false, per_modo: false, prodotto: false, se: None, eccetto: Vec::new(), aggiunta: 0 };
+    let mut d = DefMolt { tipo, per_banda: false, per_modo: false, prodotto: false, se: None, eccetto: Vec::new(), aggiunta: 0, salta: Vec::new() };
     for o in parti.filter(|o| !o.is_empty()) {
         let (k, arg) = o.split_once(':').map_or((o, ""), |(a, b)| (a.trim(), b));
         match k.to_ascii_lowercase().as_str() {
@@ -207,6 +237,7 @@ fn leggi_molt(s: &str) -> Result<DefMolt, String> {
             "product" => d.prodotto = true,
             "if" => d.se = Some(leggi_cond(arg)?),
             "except" => d.eccetto = lista(arg),
+            "skip" => d.salta = lista(arg),
             "add" => d.aggiunta = arg.trim().parse().map_err(|_| format!("punti in piu' non validi: {arg}"))?,
             x => return Err(format!("opzione sconosciuta: {x}")),
         }
@@ -257,6 +288,7 @@ impl RegoleScore {
                     }
                 }
                 "times_qso" => r.per_qso = v == "1",
+                "band_score" => r.per_banda = v == "1",
                 _ => {
                     if let Some(n) = k.strip_prefix("cq").and_then(|n| n.parse::<usize>().ok()).filter(|n| (1..=40).contains(n)) {
                         righe_cq.insert(n, v.split(',').map(|x| x.trim().parse().unwrap_or(0)).collect());
@@ -288,7 +320,7 @@ impl RegoleScore {
                 TipoMolt::Itu => TipoM::Itu,
                 _ => TipoM::Scambio,
             };
-            r.molt.push(DefMolt { tipo, per_banda: c.band_mult, per_modo: false, prodotto: false, se: None, eccetto: Vec::new(), aggiunta: 0 });
+            r.molt.push(DefMolt { tipo, per_banda: c.band_mult, per_modo: false, prodotto: false, se: None, eccetto: Vec::new(), aggiunta: 0, salta: Vec::new() });
         }
         for b in &c.bands {
             if b.on && b.weight > 0 {
@@ -337,6 +369,11 @@ impl Pezzo {
             Pezzo::Call(l) => l.iter().any(|c| c.eq_ignore_ascii_case(x.call) || x.call.split('/').any(|p| p.eq_ignore_ascii_case(c))),
             Pezzo::Banda(l) => l.contains(&banda_corta(&x.q.band)),
             Pezzo::Modo(l) => in_lista(l, x.q.mode.trim()),
+            Pezzo::Ora(a, b) => {
+                let h = crate::calendario::hhmm(x.q.time_ms);
+                let h = h.as_str();
+                if a <= b { h >= a.as_str() && h <= b.as_str() } else { h >= a.as_str() || h <= b.as_str() }
+            }
         }
     }
 }
@@ -434,13 +471,14 @@ pub fn punti_makrothen(q: &QsoTesto) -> i64 {
     }
 }
 
-/// L'area numerica di un nominativo: la cifra dopo la barra (`K5DJ/1`), altrimenti l'ultima cifra del prefisso WPX.
+/// L'area numerica di un nominativo: la cifra dopo la barra (`K5DJ/1`), altrimenti la prima cifra del prefisso WPX dopo la prima
+/// lettera (`OZ150A` -> 1, `8S3A` -> 3, `LA/G3XYZ` -> prefisso `LA0` -> 0).
 pub fn cifra_area(call: &str) -> Option<char> {
     let up = call.trim().to_ascii_uppercase();
     if let Some(d) = up.split('/').skip(1).find(|p| p.len() == 1 && p.bytes().all(|b| b.is_ascii_digit())) {
         return d.chars().next();
     }
-    geo::prefisso_wpx(&up).chars().rev().find(char::is_ascii_digit)
+    geo::prefisso_wpx(&up).chars().skip_while(|c| !c.is_ascii_alphabetic()).find(char::is_ascii_digit)
 }
 
 /// Il valore di un moltiplicatore per un QSO (`None`: il QSO non lo porta).
@@ -474,7 +512,7 @@ pub fn valore_molt(d: &DefMolt, x: &Ctx, dominio: Option<&Dominio>) -> Option<St
         TipoM::Nominativo => x.call.to_string(),
     };
     let v = v.trim().to_ascii_uppercase();
-    (!v.is_empty()).then_some(v)
+    (!v.is_empty() && !in_lista(&d.salta, &v)).then_some(v)
 }
 
 /// La sigla di una parola dello scambio: le lettere iniziali se seguono solo cifre (`PO001` -> `PO`, Open Ukraine RTTY),
@@ -534,6 +572,16 @@ mod tests {
         assert_eq!(coordinate_raem("599 001"), None);
         assert_eq!(cifra_area("K5DJ/1"), Some('1'));
         assert_eq!(cifra_area("JA7XYZ"), Some('7'));
+        assert_eq!(cifra_area("OZ150A"), Some('1'));
+        assert_eq!(cifra_area("8S3A"), Some('3'));
+        assert_eq!(cifra_area("LA/G3XYZ"), Some('0'));
+        let r = RegoleScore::da_testo("points=hour:0100-0459=2; any=1\nmult=exch/band/skip:XXX; dxcc/band/if:dxcc:SV,SV/A\nband_score=1").unwrap_or_default();
+        assert_eq!(r.punti[0].cond.0[0], Pezzo::Ora("0100".into(), "0459".into()));
+        assert_eq!(r.molt[0].salta, vec!["XXX".to_string()]);
+        assert_eq!(r.molt.len(), 2);
+        assert_eq!(r.molt[1].se, Some(Cond(vec![Pezzo::Dxcc(vec!["SV".into(), "SV/A".into()])])));
+        assert!(r.per_banda);
+        assert!(RegoleScore::da_testo("points=hour:1=2").is_err());
         assert_eq!(sigla("po001"), "PO");
         assert_eq!(sigla("05"), "05");
         assert_eq!(sigla("K1A"), "K1A");

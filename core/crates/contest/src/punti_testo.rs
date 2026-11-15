@@ -223,6 +223,16 @@ pub struct Punteggio {
     pub script: String,
     #[serde(skip)]
     pub primo_mandato: String,
+    /// Il punteggio e' la somma, banda per banda, dei punti per i moltiplicatori (`band_score=1`, IPA).
+    #[serde(skip)]
+    pub per_banda: bool,
+    /// Il paese della propria stazione e i QSO validi per paese (per `punteggio(totali)` dello script).
+    #[serde(skip)]
+    pub mio_dxcc: String,
+    #[serde(skip)]
+    pub mio_cont: String,
+    #[serde(skip)]
+    pub paesi: BTreeMap<String, crate::script::PerPaese>,
 }
 
 /// Un QSO che ha portato moltiplicatori nuovi.
@@ -236,7 +246,7 @@ pub struct NuovoMolt {
 
 impl Default for Punteggio {
     fn default() -> Self {
-        Punteggio { qso: 0, doppi: 0, punti: 0, molt: 0, punteggio: 0, qtc: 0, tipi: Vec::new(), bande: Vec::new(), esclusi: 0, fattore_mille: 1000, per_qso: false, griglia: Vec::new(), mancanti: Vec::new(), rate10: 0, rate60: 0, media_ora: 0.0, recenti: Vec::new(), errore_script: None, script: String::new(), primo_mandato: String::new() }
+        Punteggio { qso: 0, doppi: 0, punti: 0, molt: 0, punteggio: 0, qtc: 0, tipi: Vec::new(), bande: Vec::new(), esclusi: 0, fattore_mille: 1000, per_qso: false, griglia: Vec::new(), mancanti: Vec::new(), rate10: 0, rate60: 0, media_ora: 0.0, recenti: Vec::new(), errore_script: None, script: String::new(), primo_mandato: String::new(), per_banda: false, mio_dxcc: String::new(), mio_cont: String::new(), paesi: BTreeMap::new() }
     }
 }
 
@@ -324,7 +334,8 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
             continue;
         }
         let riga = bande.entry(banda.clone()).or_insert_with(|| RigaBanda { band: banda.clone(), ..RigaBanda::default() });
-        let chiave = (call.clone(), if c.dupe_no_band { String::new() } else { banda.clone() }, if c.dupe_no_mode { String::new() } else { q.mode.to_ascii_uppercase() });
+        let turno = sc.map(|s| s.turno(&xs)).transpose()?.flatten().unwrap_or_default();
+        let chiave = (format!("{call}~{turno}"), if c.dupe_no_band { String::new() } else { banda.clone() }, if c.dupe_no_mode { String::new() } else { q.mode.to_ascii_uppercase() });
         if !visti.insert(chiave) {
             tot.doppi += 1;
             riga.doppi += 1;
@@ -381,6 +392,13 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
         }
         tot.qso += 1;
         tot.punti += p;
+        if let Some(i) = info.as_ref().filter(|i| !i.dxcc.is_empty()) {
+            let pp = tot.paesi.entry(i.dxcc.clone()).or_default();
+            pp.qso += 1;
+            pp.punti += p;
+            pp.continente = i.continente.clone();
+            pp.bande.insert(banda.clone());
+        }
         riga.qso += 1;
         riga.punti += p;
         match categoria(&q.mode) {
@@ -401,6 +419,9 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
     };
     tot.primo_mandato = qsos.iter().map(|q| q.exch_sent.clone()).find(|e| !e.trim().is_empty()).unwrap_or_default();
     tot.per_qso = r.per_qso;
+    tot.per_banda = r.per_banda;
+    tot.mio_dxcc = mio.map(|m| m.dxcc.clone()).unwrap_or_default();
+    tot.mio_cont = mio.map(|m| m.continente.clone()).unwrap_or_default();
     tot.griglia = griglia.into_iter().map(|((i, valore), b)| CellaMolt { tipo: r.molt[i].tipo.nome().to_string(), valore, bande: ordina_bande(b.into_iter().collect()) }).collect();
     tot.griglia.extend(griglia_script.into_iter().map(|((tipo, valore), b)| CellaMolt { tipo, valore, bande: ordina_bande(b.into_iter().collect()) }));
     for d in r.molt.iter().filter(|_| !molt_script) {
@@ -412,9 +433,9 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
         tot.mancanti.push(Mancanti { tipo: d.tipo.nome().to_string(), per_banda: d.per_banda, totali: tutti.len() as u32, valori: tutti.iter().filter(|v| !presi.contains(v.as_str())).cloned().collect() });
     }
     tot.recenti = out.iter().rev().filter(|v| !v.nuovi.is_empty()).take(10).map(|v| NuovoMolt { call: v.qso.call.trim().to_ascii_uppercase(), band: v.qso.band.to_ascii_lowercase(), time_ms: v.qso.time_ms, nuovi: v.nuovi.clone() }).collect();
-    calcola(&mut tot);
     tot.bande = bande.into_values().collect();
     tot.bande.sort_by_key(|r| ordine_banda(&r.band));
+    calcola(&mut tot);
     Ok((out, tot))
 }
 
@@ -427,13 +448,20 @@ fn ordina_bande(mut v: Vec<String>) -> Vec<String> {
 /// Con la funzione `punteggio(totali)` dello script e' lei a dare il totale (un errore la toglie e resta in `errore_script`).
 fn calcola(tot: &mut Punteggio) {
     let base = tot.punti + i64::from(tot.qtc);
-    let lordo = if tot.tipi.is_empty() { base } else { base * tot.molt };
+    let lordo = if tot.tipi.is_empty() {
+        base
+    } else if tot.per_banda {
+        // banda per banda: punti x moltiplicatori della banda
+        tot.bande.iter().map(|b| b.punti * i64::from(b.molt)).sum()
+    } else {
+        base * tot.molt
+    };
     let lordo = if tot.per_qso { lordo * i64::from(tot.qso) } else { lordo };
     tot.punteggio = (lordo * tot.fattore_mille + 500) / 1000;
     if tot.script.trim().is_empty() || tot.errore_script.is_some() {
         return;
     }
-    let t = crate::script::Totali { qso: tot.qso, doppi: tot.doppi, esclusi: tot.esclusi, punti: tot.punti, qtc: tot.qtc, molt: tot.molt, exch_sent: &tot.primo_mandato };
+    let t = crate::script::Totali { qso: tot.qso, doppi: tot.doppi, esclusi: tot.esclusi, punti: tot.punti, qtc: tot.qtc, molt: tot.molt, exch_sent: &tot.primo_mandato, my_dxcc: &tot.mio_dxcc, my_cont: &tot.mio_cont, paesi: &tot.paesi };
     match crate::script::ScriptContest::compila(&tot.script).and_then(|s| s.punteggio(&t)) {
         Ok(Some(p)) => tot.punteggio = p,
         Ok(None) => {}

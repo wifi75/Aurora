@@ -4,7 +4,8 @@
 //! - `punti(qso)` -> intero: sostituisce i punti del QSO;
 //! - `moltiplicatori(qso)` -> elenco di chiavi (`["dxcc:I@20"]`): sostituisce i moltiplicatori di `[Score]`;
 //! - `ammesso(qso)` -> `true`, `false` o `[false, "motivo"]`;
-//! - `punteggio(totali)` -> intero: il punteggio finale.
+//! - `punteggio(totali)` -> intero: il punteggio finale;
+//! - `turno(qso)` -> testo: il turno del QSO (la stessa stazione in un altro turno non e' un doppio).
 //!
 //! Sicurezza: niente moduli (`import`), niente `eval`, nessuna funzione di file, rete o processi (Rhai non ne ha); `print` e `debug`
 //! non scrivono niente. Limiti di operazioni, profondita', chiamate e memoria: uno script sbagliato o con un ciclo infinito si ferma
@@ -98,6 +99,21 @@ pub struct Totali<'a> {
     pub molt: i64,
     /// Lo scambio mandato nel primo QSO (per le coordinate della propria stazione).
     pub exch_sent: &'a str,
+    /// Il paese e il continente della propria stazione.
+    pub my_dxcc: &'a str,
+    pub my_cont: &'a str,
+    /// I QSO validi per paese.
+    pub paesi: &'a std::collections::BTreeMap<String, PerPaese>,
+}
+
+/// I QSO validi con un paese (campo `paesi` dei totali).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct PerPaese {
+    pub qso: u32,
+    pub punti: i64,
+    pub continente: String,
+    /// Le bande dove il paese e' stato lavorato.
+    pub bande: std::collections::BTreeSet<String>,
 }
 
 impl ScriptContest {
@@ -170,6 +186,15 @@ impl ScriptContest {
         Err("script, ammesso(): serve true, false o [false, \"motivo\"]".into())
     }
 
+    /// `turno(qso)`, se c'e': il turno del QSO, che entra nella chiave dei doppi.
+    pub fn turno(&self, x: &QsoScript) -> Result<Option<String>, String> {
+        if !self.ha("turno") {
+            return Ok(None);
+        }
+        let v = self.chiama("turno", Dynamic::from_map(x.mappa()))?;
+        Ok(Some(if v.is_unit() { String::new() } else { v.to_string() }))
+    }
+
     /// `punteggio(totali)`, se c'e'.
     pub fn punteggio(&self, t: &Totali) -> Result<Option<i64>, String> {
         if !self.ha("punteggio") {
@@ -183,6 +208,18 @@ impl ScriptContest {
         m.insert("qtc".into(), Dynamic::from_int(INT::from(t.qtc)));
         m.insert("molt".into(), Dynamic::from_int(t.molt));
         m.insert("exch_sent".into(), s(t.exch_sent));
+        m.insert("my_dxcc".into(), s(t.my_dxcc));
+        m.insert("my_cont".into(), s(t.my_cont));
+        let mut paesi = Map::new();
+        for (k, p) in t.paesi {
+            let mut e = Map::new();
+            e.insert("qso".into(), Dynamic::from_int(INT::from(p.qso)));
+            e.insert("punti".into(), Dynamic::from_int(p.punti));
+            e.insert("cont".into(), s(&p.continente));
+            e.insert("bande".into(), Dynamic::from_int(p.bande.len() as INT));
+            paesi.insert(k.as_str().into(), Dynamic::from_map(e));
+        }
+        m.insert("paesi".into(), Dynamic::from_map(paesi));
         let v = self.chiama("punteggio", Dynamic::from_map(m))?;
         Self::intero("punteggio", v).map(Some)
     }
@@ -218,7 +255,8 @@ mod tests {
         assert_eq!(sc.ammesso(&x(&q, Some(&i))), Ok(Some(Ok(()))));
         let q160 = QsoTesto { band: "160m".into(), ..q.clone() };
         assert_eq!(sc.ammesso(&x(&q160, Some(&i))), Ok(Some(Err("band".to_string()))));
-        let t = Totali { qso: 1, doppi: 0, esclusi: 0, punti: 10, qtc: 0, molt: 2, exch_sent: "001 45N12E" };
+        let paesi = std::collections::BTreeMap::new();
+        let t = Totali { qso: 1, doppi: 0, esclusi: 0, punti: 10, qtc: 0, molt: 2, exch_sent: "001 45N12E", my_dxcc: "I", my_cont: "EU", paesi: &paesi };
         assert_eq!(sc.punteggio(&t), Ok(Some(65)));
     }
 

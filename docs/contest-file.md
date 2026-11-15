@@ -108,20 +108,24 @@ Dopo `[Contest]` un file puo' avere la sezione `[Score]` con le regole vere del 
 | `cq1` ... `cq40` | tabella dei punti zona CQ -> zona CQ: riga della propria zona, 40 valori separati da virgola | `cq15=10,10,...` |
 | `special` | regole scritte a mano | `makrothen` |
 | `times_qso` | il punteggio si moltiplica anche per il numero dei QSO validi | `1` |
+| `band_score` | il punteggio e' la somma, banda per banda, dei punti per i moltiplicatori della banda (IPA) | `1` |
 
 Condizioni (pezzi uniti da `&`, tutti veri): `any`, `same_dxcc` (stesso paese della stazione), `other_dxcc` (altro paese o sconosciuto),
 `same_cont` (stesso continente),
 `other_cont` (altro continente o sconosciuto), `dxcc:K,VE`, `not_dxcc:K,VE`, `cont:EU,AS`, `my_dxcc:...`, `not_my_dxcc:...`, `my_cont:...`, `call:RAEM`
-(nominativo o una sua parte fra le barre), `band:80,40`, `mode:RTTY,BPSK63`. I paesi sono i prefissi principali del database DXCC di
+(nominativo o una sua parte fra le barre), `band:80,40`, `mode:RTTY,BPSK63`, `hour:0100-0459` (ora UTC del QSO, estremi compresi; se la
+prima e' maggiore l'intervallo passa la mezzanotte). I paesi sono i prefissi principali del database DXCC di
 Aurora (cty.dat): `K` Stati Uniti, `VE` Canada, `UA` Russia europea, `UA9` asiatica, `UA2` Kaliningrad, `UR` Ucraina...
 
 Tipi di moltiplicatore: `dxcc` paese, `cq` e `itu` zone (dal database DXCC), `wpx` prefisso WPX, `cont` continente, `area:K,VE,JA`
-area numerica dei paesi elencati (`K1`, `VE3`: la cifra dopo la barra `K5DJ/1`, altrimenti quella del prefisso), `exch` lo scambio
+area numerica dei paesi elencati (`K1`, `VE3`: la cifra dopo la barra `K5DJ/1`, altrimenti la prima cifra del prefisso dopo la prima
+lettera, `OZ150A` area 1, `8S3A` area 3; senza cifra area 0, `LA/G3XYZ` -> `LA0`), `exch` lo scambio
 ricevuto (la parola trovata nell'elenco `.dom` del contest, oppure l'ultima parola non numerica: stato, provincia, oblast; di una parola
 fatta di lettere e cifre come `PO001` contano le lettere), `call` il nominativo stesso (ogni stazione OK nell'OK DX RTTY).
 Opzioni: `band` per banda (con il peso di `mult_band`), `mode` per modo, `once` una volta sola (il predefinito), `product` moltiplica
 a parte, `if:<condizione>` solo per i QSO che la rispettano, `except:<paesi>` non per questi paesi, `add:<punti>` non moltiplica ma da'
-quei punti in piu' al QSO che porta il valore nuovo (i 10 punti per regione nuova dell'Open Ukraine RTTY).
+quei punti in piu' al QSO che porta il valore nuovo, `skip:<valori>` valori che non sono moltiplicatori (`skip:XXX`, la sezione dei non
+soci UBA). Una barra dentro un elenco (`if:dxcc:SV,SV/A`) resta nell'elenco.
 
 Punteggio = (punti + QTC) x (somma dei moltiplicatori pesati senza `product`) x (somma di quelli `product`). Un QSO
 non ammesso (`bands`, `valid`) vale zero punti e nessun moltiplicatore e non fa doppio. I casi che questi pezzi non coprono
@@ -156,11 +160,13 @@ con un parametro; quelle che mancano lasciano la parte di `[Score]`:
 | `moltiplicatori(qso)` | elenco di chiavi, `["dxcc:" + qso.dxcc + "@" + qso.band]` (la parte dopo `@` e' la banda della griglia) | i moltiplicatori di `mult`: ogni chiave nuova conta 1 |
 | `ammesso(qso)` | `true`, `false` o `[false, "motivo"]` | `bands` e `valid` |
 | `punteggio(totali)` | intero | il punteggio finale |
+| `turno(qso)` | testo | niente: il turno entra nella chiave dei doppi, la stessa stazione in un altro turno non e' un doppio (`"1"`, `"2"`) |
 
 Campi di `qso`: `callsign`, `band` (`20`), `mode`, `time` (ms UTC), `hour` (`hhmm`), `rst_sent`, `rst_rcvd`, `exch_sent`, `exch_rcvd`,
 `dxcc`, `cont`, `cq`, `itu`, `wpx` (paese, continente e zone dal database DXCC, prefisso WPX) e della propria stazione `my_dxcc`,
 `my_cont`, `my_cq`, `my_itu`. Campi di `totali`: `qso`, `doppi`, `esclusi`, `punti`, `qtc`, `molt`, `exch_sent` (lo scambio mandato nel
-primo QSO). Funzione in piu': `coords(scambio)` -> `[latitudine, longitudine]` in gradi con il segno (`57N85E`), `()` se mancano.
+primo QSO), `my_dxcc`, `my_cont` e `paesi`, i QSO validi per paese (`t.paesi["ON"]` con `qso`, `punti`, `cont` e `bande`, il numero
+delle bande dove il paese e' stato lavorato). Funzione in piu': `coords(scambio)` -> `[latitudine, longitudine]` in gradi con il segno (`57N85E`), `()` se mancano.
 
 Sicurezza: lo script non puo' leggere o scrivere file, usare la rete o avviare programmi (niente `import`, niente `eval`; `print` non
 scrive niente). Ogni chiamata ha un limite di operazioni (200 000), di profondita' delle chiamate e delle espressioni e di memoria
