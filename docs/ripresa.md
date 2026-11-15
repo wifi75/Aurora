@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-15 (0.11.271 pubblicata 2026-11-15T20:14:27Z)
+
+- Tutti i comandi delle macro integrati in 15 famiglie (`macroLang.ts`, `DigiPage.tsx`, rotte `/digi/winkeyer/send`, `/digi/play`, `/digi/record`), tabella in `docs/macro-comandi.md`, Guida delle macro per famiglia; GRABCALL, PREVCALL, PREVRSTS. EXEC/EXT esclusi. Comandi «al piu' vicino» (packet, DDE, MFSK/Hell, KiwiSDR) e significati dedotti (ACALL, OM, BROADCASTMODE, CORRECTCALLTX, TEST, frasi INT) da verificare dal vivo.
+
 ## Stato al 2026-11-15 (0.11.270 pubblicata 2026-11-15T19:02:36Z)
 
 - 0.11.269: copia automatica giornaliera (`backup::automatic`, `copie-automatiche`, ultime 28) al posto dei Backup.bat; EXEC tolto dai file delle macro all'avvio.
