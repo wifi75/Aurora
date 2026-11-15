@@ -43,3 +43,20 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=same_dxcc=1; same_cont&band:80,40=4; same_cont=2; band:80,40=6; any=3
+mult=wpx/band/if:cont:SA; dxcc
+
+[Script]
+// 10 punti con i soci CWJF, le QRP e le YL: lo scambio finisce con M, Q o Y (599 EUM, 599 SAQ, 599 OCY)
+fn punti(qso) {
+    let s = qso.exch_rcvd; s.trim(); let p = s.to_upper().split(" ");
+    let w = p[p.len() - 1];
+    if w.len() == 3 && (w.ends_with("M") || w.ends_with("Q") || w.ends_with("Y")) { return 10; }
+    let basse = qso.band == "80" || qso.band == "40";
+    if qso.dxcc == qso.my_dxcc { 1 }
+    else if qso.cont == qso.my_cont { if basse { 4 } else { 2 } }
+    else if basse { 6 } else { 3 }
+}

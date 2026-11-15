@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=same_dxcc=0; my_cont:NA&cont:NA=2; same_cont=1; any=3
+mult=cq/band; dxcc/band

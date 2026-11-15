@@ -43,3 +43,7 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80
+points=my_dxcc:ES,YL,LY&cont:EU=1; my_dxcc:ES,YL,LY=2; my_cont:EU&dxcc:ES,YL,LY=10; my_cont:EU=1; dxcc:ES,YL,LY=20; any=1
