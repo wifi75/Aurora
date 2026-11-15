@@ -222,3 +222,38 @@ Fonte: <https://www.uba.be/en/hf/contest-rules/uba-psk63-prefix-contest> (UBA, e
 - UBA PSK63 Prefix: la sezione XXX dei non soci conta come moltiplicatore.
 - I moltiplicatori `call` (stazioni OK, stazioni portoghesi) non compaiono nella griglia della finestra delle statistiche.
 - Eliminati il 2026-11-15 perche' non piu' organizzati o senza regolamento: DRCG WW RTTY, DL-DX RTTY, Aegean RTTY, SCC RTTY Championship, Poland WW BPSK63, ARR PSK63 (si aggiungeranno se tornano).
+## Gruppo 3C
+
+Regolamenti letti il 2026-11-15. Prove in `core/crates/contest/tests/regole_contest_3c.rs`.
+
+| Contest | Regola in breve | Fonte (edizione) |
+|---|---|---|
+| RUSSIAN DX Contest | Russia 10, stesso paese 2, stesso continente 3, altro 5 (russi fra loro 2/5); paesi e oblast per banda (`dom/russian.dom`), CW e SSB con la stessa stazione | <https://www.rdxc.org/rules> (2027) |
+| Russian WW MultiMode Contest | stesso paese 1, altro paese 3, altro continente 5, il doppio su 160/80/40; paesi e oblast per banda e modo | <http://www.rdrclub.ru/news-radio/russian-ww-mm-contest/159-rus-ww-multimode-contest> (2026) |
+| Scandinavian Activity Contest | solo QSO fra Scandinavia e resto del mondo; non scandinavi: 1 punto (3 su 80/40 m fuori Europa), aree numeriche scandinave per banda; scandinavi: 2 Europa, 3 fuori, paesi per banda (`[Script]` per l'ammissione) | <https://www.sactest.net/blog/rules/> (2023, contest in calendario 2027) |
+| Stew Perry Topband Distance Challenge | 160 m; 1 punto + 1 ogni 500 km interi fra i centri dei quadrati; nessun moltiplicatore (`[Script]`) | <https://www.kkn.net/stew/stew_rules.html> (rev. 2025) |
+| TRC DX Contest | 160-10 m CW/SSB; stesso continente 1, altro 2, stazione TRC 10, fra soci 1; paesi DXCC e paesi TRC per banda e modo (`[Script]`) | <https://trcdx.org/rules-trc-dx/> (2026) |
+| TRC DIGI Contest | come il TRC DX, solo RTTY, moltiplicatori per banda (`[Script]`) | <https://trcdx.org/rules-trc-digi/> (2025) |
+| UA2 QSO Party | 80/40/20 m; 2 punti CW, 3 SSB, il triplo con le stazioni R2F; 15 punti per distretto RDA di Kaliningrad nuovo per banda, sommati (`[Script]`) | <https://www.qrz.ru/contest/detail/382.html> (2027) |
+| UBA CW contest, UBA SSB Contest | 80-10 m; Belgio 10, paesi UE 3, altri 1, Russia e Bielorussia esclusi; sezioni UBA, prefissi belgi e paesi UE per banda | <https://www.uba.be/en/hf/contest-rules/uba-dx-contest> (2026-2027) |
+| UBA Spring 80M CW, 80M SSB, 6M SSB-CW, 2M SSB | per gli stranieri solo QSO con ON, 3 punti; moltiplicatori le sezioni UBA (anche XXX e UBA) | <https://www.uba.be/en/hf/contest-rules/spring-contest-dst> (2026) |
+| UK_EI DX Contest | tabella europei/UK-EI/DX con il doppio su 80/40 m; paesi (tranne UK/EI) e distretti UK/EI per banda | <https://www.ukeicc.com/dx-contest-rules.php> (2026, v19) |
+| Ukrainian DX Contest | Ucraina 10, stesso paese 1, continente 2, altro 3; paesi e oblast per banda (`dom/udxc.dom`) | <https://www.qsl.net/ut1ia/rules.html> (pagina senza data; urdxc.org non raggiungibile) |
+| Venezuelan Independence Contest | stesso paese 1, continente 3, altro 5; paesi per banda e circuiti YV una volta | regole 2017 riportate da <https://dxnews.com/forum/forum/contesting/1223-venezuelan-independence-contest>; contest in calendario 2027 |
+| WAEDC CW-SSB Contest | solo QSO fra Europa e resto del mondo, 1 punto + QTC; europei: paesi non europei e aree di W, VE, VK, ZL, ZS, JA, BY, PY; gli altri: paesi europei; pesi 4/3/2/2/2 (`[Script]` per l'ammissione) | <https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/> (2025, date 2026) |
+| YB DX Contest, YB DX RTTY Contest | 80-10 m; YB 10, stesso paese 1, continente 2, altro 3; prefissi YB e paesi per banda | <https://ybdxcontest.com/>, <https://rtty.ybdxcontest.com/> (2026-2027) |
+| YO DX HF Contest | 80-10 m; YO 8, altro continente 4, continente 2, paese 1 (YO: DX 8, EU 4, YO 0); paesi e distretti YO per banda | <https://www.yodx.ro/rules.php> (2025-2026) |
+
+Approssimati:
+- RDXC e Ukrainian DX: i paesi WAE non sono distinti dal DXCC; le stazioni /MM e RI1FJ/RI1AN non sono riconosciute.
+- SAC: i nominativi senza cifra (area 0) non portano moltiplicatore.
+- Stew Perry: i fattori di potenza (x2/x4 per la stazione lavorata, x1,5/x3 per la propria) non sono applicati.
+- UA2 QSO Party: i due turni non sono distinti (la stessa stazione nel secondo turno conta come doppio).
+- UBA DX: il bonus percentuale per i QSO con il Belgio non e' calcolato; la sezione XXX conta come moltiplicatore; Monte Athos
+  (SV/A) manca dall'elenco dei paesi UE.
+- UK/EI: il doppio dei punti fra le 01 e le 05 per le stazioni UK/EI non e' applicato.
+- WAEDC CW-SSB: l'elenco WAE non e' distinto dal DXCC.
+
+Tolti perche' non piu' organizzati (ultima edizione o regolamento prima del 2024, o contest sospeso): RememberSK, SA_Sprint, SSTV,
+Sumy, TARA Skirmish, TARA-Grid-Dip, TARA-Rumble, Taras 200, Triathlon DX, UBA Low Band Winter, UBA-Millcontest (BMA), UCC Party,
+UKRAINIAN DX CLASSIC RTTY, UN DIGI, UN DX, URDA Winter, Ukrainian RTTY Championship, VLADIMIR, YO International PSK31, ZHAS.
