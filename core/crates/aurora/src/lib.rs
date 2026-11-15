@@ -2095,6 +2095,8 @@ pub async fn run(
     let pair_ttl = load_pair_ttl(&config.data_dir.join("pairing.json"), config.pair_ttl_secs);
     // un ripristino fatto da Impostazioni > Sistema si applica qui, prima di aprire log e impostazioni
     backup::apply_pending(&config.data_dir);
+    // copia automatica di impostazioni, log, macro e contest (le ultime 28), prima di aprire il log
+    backup::automatic(&config.data_dir);
     let (auth, logbook) = open_storage(&config.data_dir, pair_ttl)?;
     // il CAT: configurazione e profili in radio.json; la scelta salvata con «collega all'avvio» vale come AURORA_RIG
     let cat = rig_control::cat::CatService::open(&config.data_dir.join("radio.json"));

@@ -123,9 +123,94 @@ pub fn apply_pending(data_dir: &Path) {
     tracing::info!("impostazioni ripristinate dalla copia: {moved} file");
 }
 
+/// La cartella delle copie fatte da sole all'avvio.
+pub const AUTO_DIR: &str = "copie-automatiche";
+/// Quante copie automatiche si tengono (le piu' vecchie si cancellano).
+const AUTO_KEEP: usize = 28;
+/// Le sottocartelle copiate per intero (macro dei modi e contest con le loro macro e liste).
+const AUTO_SUBDIRS: [&str; 2] = ["macro", "contest"];
+
+/// Copia una cartella (file e sottocartelle, senza le copie gia' fatte) e ritorna quanti file.
+fn copy_tree(from: &Path, to: &Path) -> usize {
+    let Ok(rd) = std::fs::read_dir(from) else { return 0 };
+    if std::fs::create_dir_all(to).is_err() {
+        return 0;
+    }
+    let mut n = 0;
+    for e in rd.flatten() {
+        let (src, dst) = (e.path(), to.join(e.file_name()));
+        match e.file_type() {
+            Ok(t) if t.is_dir() => n += copy_tree(&src, &dst),
+            Ok(t) if t.is_file() && e.metadata().is_ok_and(|m| m.len() <= MAX_FILE) => {
+                if std::fs::copy(&src, &dst).is_ok() {
+                    n += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+    n
+}
+
+/// All'avvio, prima di aprire il log: una copia delle impostazioni, del log dei QSO, delle macro e dei contest in
+/// `copie-automatiche/AAAAMMGG`, una al giorno, tenendo le ultime 28 (prende il posto dei vecchi file `.bat` lanciati dalle macro con
+/// `<EXEC:Backup.bat>`, che Aurora non esegue). Password e chiavi restano fuori come nella copia a mano.
+pub fn automatic(data_dir: &Path) {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    let (y, mo, d, ..) = crate::support::civil(now);
+    let root = data_dir.join(AUTO_DIR);
+    // una copia al giorno (la prima apertura del giorno): con il log dei QSO dentro, una per avvio riempirebbe il disco
+    let dest = root.join(format!("{y:04}{mo:02}{d:02}"));
+    if dest.exists() || std::fs::create_dir_all(&dest).is_err() {
+        return;
+    }
+    let mut count = 0;
+    if let Ok(rd) = std::fs::read_dir(data_dir) {
+        for e in rd.flatten().filter(|e| e.file_type().is_ok_and(|t| t.is_file())) {
+            let Some(name) = e.file_name().to_str().map(str::to_string) else { continue };
+            if wanted(&name) && e.metadata().is_ok_and(|m| m.len() <= MAX_FILE) && std::fs::copy(e.path(), dest.join(&name)).is_ok() {
+                count += 1;
+            }
+        }
+    }
+    for sub in AUTO_SUBDIRS {
+        count += copy_tree(&data_dir.join(sub), &dest.join(sub));
+    }
+    // le copie piu' vecchie se ne vanno (i nomi AAAAMMGG si ordinano per data)
+    let mut old: Vec<PathBuf> = std::fs::read_dir(&root).map(|rd| rd.flatten().filter(|e| e.file_type().is_ok_and(|t| t.is_dir())).map(|e| e.path()).collect()).unwrap_or_default();
+    old.sort();
+    if old.len() > AUTO_KEEP {
+        for p in &old[..old.len() - AUTO_KEEP] {
+            let _ = std::fs::remove_dir_all(p);
+        }
+    }
+    tracing::info!("copia automatica all'avvio: {count} file in {}", dest.display());
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn automatic_copy_keeps_settings_macros_and_the_last_28() {
+        let dir = std::env::temp_dir().join(format!("aurora-auto-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("macro")).unwrap();
+        std::fs::write(dir.join("radio.json"), "{}").unwrap();
+        std::fs::write(dir.join("qrz.secret"), "x").unwrap();
+        std::fs::write(dir.join("macro").join("comuni.macro"), "[Macros]").unwrap();
+        for i in 0..30 {
+            std::fs::create_dir_all(dir.join(AUTO_DIR).join(format!("2020{:02}{:02}", 1 + i / 28, 1 + i % 28))).unwrap();
+        }
+        automatic(&dir);
+        let copies: Vec<_> = std::fs::read_dir(dir.join(AUTO_DIR)).unwrap().flatten().collect();
+        assert_eq!(copies.len(), 28);
+        let newest = copies.iter().map(|e| e.path()).max().unwrap();
+        assert!(newest.join("radio.json").is_file());
+        assert!(newest.join("macro").join("comuni.macro").is_file());
+        assert!(!newest.join("qrz.secret").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn secrets_and_noise_stay_out() {
