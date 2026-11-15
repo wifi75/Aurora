@@ -314,3 +314,50 @@ Fonte: <https://www.arifano.it/contest_marconi.html> (ARI Fano, 30a edizione, 20
 - Primo fine settimana di luglio, sabato 14:00 - domenica 13:59 UTC; CW, 160-10 m. Scambio RST + numero.
 - Punti: 1 per QSO. Moltiplicatori: paesi della lista CQ WW, per banda.
 - `[Score]`: `points=any=1`, `mult=dxcc/band`.
+
+### Japan International DX Contest (CW e SSB)
+Fonte: <https://jidx.org/jidxrule-e.html> (JIDX, edizione di ottobre 2026).
+- CW secondo fine settimana pieno di aprile, Phone di novembre, sabato 07:00 - domenica 13:00 UTC; 160-10 m. JA RS(T) + prefettura
+  (01-50), gli altri RS(T) + zona CQ.
+- Solo i QSO JA-DX: 1 punto su 40/20/15 m, 2 su 80 e 10 m, 4 su 160 m.
+- Moltiplicatori per banda: per i DX le prefetture JA; per i JA i paesi DXCC e le zone CQ.
+- `[Score]`: `points=dxcc:JA&not_my_dxcc:JA=1; my_dxcc:JA&not_dxcc:JA=1`, `points_band=160:4,80:2,10:2`,
+  `mult=exch/band/if:dxcc:JA&not_my_dxcc:JA; dxcc/band/if:my_dxcc:JA&not_dxcc:JA; cq/band/if:my_dxcc:JA&not_dxcc:JA`.
+
+### KCJ Contest
+Fonte: <https://kcj-cw.com/contest/rule/2026_47_kcj_dx_t.pdf> (KCJ, 47a edizione, 2026).
+- Terzo fine settimana di agosto, 12:00-12:00 UTC; CW, 160-6 m senza WARC. DX RST + zona CQ, JA RST + prefettura o distretto.
+- Punti: DX con JA 2, DX con DX 1; JA con JA 1, JA con DX 2.
+- Moltiplicatori per banda: prefetture e distretti JA; i JA anche le zone CQ.
+- `[Score]`: `points=my_dxcc:JA&dxcc:JA=1; my_dxcc:JA=2; dxcc:JA=2; any=1`, `mult=exch/band/if:dxcc:JA; cq/band/if:my_dxcc:JA&not_dxcc:JA`.
+
+### King of Spain CW Contest
+Fonte: <https://concursos.ure.es/en/?p=63> (URE, 2026).
+- Terzo fine settimana di maggio, sabato 12:00 - domenica 11:59 UTC; CW, 160-10 m. EA RST + provincia (EF0F manda SMR), gli altri RST + numero.
+- Punti: EA con EA 2, EA con DX 1; DX con EA 3, DX con DX 1.
+- Moltiplicatori per banda: entita' EADX-100, province spagnole ed EF0F (SMR).
+- `[Score]`: `points=my_dxcc:EA,EA6,EA8,EA9&dxcc:EA,EA6,EA8,EA9=2; my_dxcc:EA,EA6,EA8,EA9=1; dxcc:EA,EA6,EA8,EA9=3; any=1`,
+  `mult=dxcc/band; exch/band/if:dxcc:EA,EA6,EA8,EA9`.
+
+### OK-OM DX Contest (CW e SSB)
+Fonte: <https://okomdx.crk.cz/> (CRK, regole inglesi 2026 di CW e SSB, uguali).
+- CW secondo fine settimana di novembre, SSB aprile, sabato 12:00 - domenica 11:59 UTC; 160-10 m. OK/OM RS(T) + distretto, gli altri RS(T) + numero.
+- Punti: con OK/OM 10, stesso paese 1, stesso continente 3, altro continente 5; da OK/OM: stesso paese 2, stesso continente 3, altro 5.
+- Moltiplicatori per banda: distretti OK/OM e paesi DXCC/WAE.
+- `[Score]`: `points=my_dxcc:OK,OM&same_dxcc=2; my_dxcc:OK,OM&same_cont=3; my_dxcc:OK,OM=5; dxcc:OK,OM=10; same_dxcc=1; same_cont=3; other_cont=5`,
+  `mult=exch/band/if:dxcc:OK,OM; dxcc/band`.
+
+### PDC (Pro Digi Contest)
+Fonte: <https://www.proradiocontestclub.com/PDC%20Rules.html> (Pro Radio Contest Club, 8a edizione, 2027).
+- Terzo fine settimana di gennaio, sabato 12:00 - domenica 11:59 UTC; PSK63, FT4, RTTY45, 80-10 m; una stazione per banda in ogni modo.
+  Scambio RST + numero. Le note del file dicevano CW e SSB: corrette.
+- Punti: stesso paese 1, altro paese 2. Moltiplicatori: prefissi WPX per banda, esclusi quelli del proprio paese.
+- `[Score]`: `points=same_dxcc=1; any=2`, `mult=wpx/band/if:other_dxcc`.
+
+### RAC Canada Winter Contest
+Fonte: <https://www.rac.ca/rac-canada-winter-contest-rules-2025/> (RAC, 2025).
+- Sabato di fine dicembre, 00:00-23:59 UTC; CW e fonia, 160-2 m. VE RS(T) + provincia o territorio, gli altri RS(T) + numero.
+- Punti: Canada 10, estero 2, stazioni ufficiali RAC 20. Moltiplicatori: 13 province e territori, per banda e per modo.
+- Senza QSO con il Canada i moltiplicatori valgono 1.
+- `[Score]`: `points=call:<stazioni RAC>=20; dxcc:VE=10; any=2`, `mult=exch/band/mode/if:dxcc:VE`; `[Script]`: `punteggio(t)` con il caso
+  senza moltiplicatori.

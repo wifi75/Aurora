@@ -43,3 +43,9 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=dxcc:JA&not_my_dxcc:JA=1; my_dxcc:JA&not_dxcc:JA=1
+points_band=160:4,80:2,10:2
+mult=exch/band/if:dxcc:JA&not_my_dxcc:JA; dxcc/band/if:my_dxcc:JA&not_dxcc:JA; cq/band/if:my_dxcc:JA&not_dxcc:JA

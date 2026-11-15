@@ -43,3 +43,12 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10,6,2
+points=call:VA2RAC,VA3RAC,VE1RAC,VE3RHQ,VE4RAC,VE5RAC,VE6RAC,VE7RAC,VE8RAC,VE9RAC,VO1RAC,VO2RAC,VY0RAC,VY1RAC,VY2RAC=20; dxcc:VE=10; any=2
+mult=exch/band/mode/if:dxcc:VE
+
+[Script]
+// senza QSO con il Canada i moltiplicatori valgono 1
+fn punteggio(t) { if t.molt == 0 { t.punti } else { t.punti * t.molt } }

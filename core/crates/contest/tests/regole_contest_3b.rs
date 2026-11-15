@@ -20,7 +20,8 @@ fn contest(nome: &str) -> ContestTesto {
 
 /// Un piccolo database DXCC finto: (prefisso del nominativo, paese, continente, zona CQ, zona ITU), il primo che combacia.
 fn paese(call: &str) -> Option<InfoPaese> {
-    const T: [(&str, &str, &str, u8, u8); 26] = [
+    const T: [(&str, &str, &str, u8, u8); 27] = [
+        ("EF", "EA", "EU", 14, 37),
         ("UA9", "UA9", "AS", 17, 30),
         ("FM", "FM", "NA", 8, 11),
         ("HA", "HA", "EU", 15, 28),
@@ -188,4 +189,111 @@ fn marconi_memorial() {
     let t = punteggio("Marconi Memorial Contest", &log);
     // 5 punti; paesi per banda DL 20, DL 40, K 10, I 160 = 4; 5 x 4 = 20
     assert_eq!((t.punti, t.molt, t.punteggio), (5, 4, 20));
+}
+
+#[test]
+fn japan_international_dx() {
+    for nome in ["Japan International DX CW Contest", "Japan International DX SSB Contest"] {
+        let log = [
+            c("JA1ABC", "20m", 0, "13"),  // JA: 1 punto; prefettura 13 su 20 m
+            c("JA2ABC", "80m", 1, "20"),  // 1 x 2 su 80 m = 2; prefettura 20
+            c("JA3ABC", "160m", 2, "25"), // 1 x 4 su 160 m = 4; prefettura 25
+            c("DL1ABC", "20m", 3, "14"),  // DX con DX: niente
+            c("JA1ABC", "10m", 4, "13"),  // 1 x 2 su 10 m = 2; prefettura 13 su 10 m
+        ];
+        let t = punteggio(nome, &log);
+        // punti 1+2+4+2 = 9; moltiplicatori 4; 9 x 4 = 36
+        assert_eq!((t.punti, t.molt, t.punteggio), (9, 4, 36), "{nome}");
+    }
+    // dal Giappone: paesi e zone CQ per banda, solo i QSO con i DX
+    let log = [
+        c("W1AW", "20m", 0, "05"),   // 1; K e zona 5
+        c("JA2ABC", "20m", 1, "20"), // JA con JA: niente
+        c("DL1ABC", "40m", 2, "14"), // 1; DL e zona 14 su 40 m
+    ];
+    let t = punteggio_da("Japan International DX CW Contest", &log, "JA1XYZ");
+    assert_eq!((t.punti, t.molt, t.punteggio), (2, 4, 8));
+}
+
+#[test]
+fn kcj() {
+    let log = [
+        c("JA1ABC", "20m", 0, "TK"), // DX con JA: 2; TK su 20 m
+        c("JA2ABC", "20m", 1, "AC"), // 2; AC
+        c("DL1ABC", "20m", 2, "14"), // DX con DX: 1, nessun moltiplicatore
+        c("JA1ABC", "6m", 3, "TK"),  // 2; TK su 6 m
+    ];
+    let t = punteggio("KCJ Contest", &log);
+    // punti 7; moltiplicatori 3; 7 x 3 = 21
+    assert_eq!((t.punti, t.molt, t.punteggio), (7, 3, 21));
+}
+
+#[test]
+fn king_of_spain_cw() {
+    let log = [
+        c("EA1ABC", "20m", 0, "M"),   // DX con EA: 3; EA e provincia M
+        c("EA2ABC", "20m", 1, "BI"),  // 3; BI
+        c("DL1ABC", "20m", 2, "001"), // DX con DX: 1; DL
+        c("EF0F", "40m", 3, "SMR"),   // 3; EA su 40 m e SMR
+    ];
+    let t = punteggio("King of Spain CW Contest", &log);
+    // punti 10; moltiplicatori EA 20, M, BI, DL, EA 40, SMR = 6; 10 x 6 = 60
+    assert_eq!((t.punti, t.molt, t.punteggio), (10, 6, 60));
+}
+
+#[test]
+fn ok_om_dx_cw() {
+    let log = [
+        c("OK1ABC", "20m", 0, "PRC"), // stazione OK: 10; distretto PRC e OK
+        c("OM3ABC", "20m", 1, "BAA"), // 10; BAA e OM
+        c("IK2XYZ", "20m", 2, "001"), // stesso paese: 1; I
+        c("DL1ABC", "40m", 3, "001"), // stesso continente: 3; DL su 40 m
+        c("W1AW", "15m", 4, "001"),   // altro continente: 5; K su 15 m
+    ];
+    let t = punteggio("OK-OM-DX-CW Contest", &log);
+    // punti 29; moltiplicatori 7; 29 x 7 = 203
+    assert_eq!((t.punti, t.molt, t.punteggio), (29, 7, 203));
+}
+
+#[test]
+fn ok_om_dx_ssb() {
+    let log = [q("OK1ABC", "80m", "SSB", 0, "001", "PRC"), q("JA1ABC", "20m", "SSB", 1, "002", "001")];
+    let t = punteggio("OK-OM-DX-SSB Contest", &log);
+    // 10 + 5 = 15; PRC, OK, JA = 3; 45
+    assert_eq!((t.punti, t.molt, t.punteggio), (15, 3, 45));
+    // da OK: stesso paese 2, OM 3, altro continente 5
+    let log = [q("OK2ABC", "20m", "SSB", 0, "PRC", "BRN"), q("OM3ABC", "20m", "SSB", 1, "PRC", "BAA"), q("W1AW", "20m", "SSB", 2, "PRC", "001")];
+    let t = punteggio_da("OK-OM-DX-SSB Contest", &log, "OK1XYZ");
+    // 2 + 3 + 5 = 10; BRN, OK, BAA, OM, K = 5; 50
+    assert_eq!((t.punti, t.molt, t.punteggio), (10, 5, 50));
+}
+
+#[test]
+fn pdc() {
+    let log = [
+        q("IK2XYZ", "20m", "BPSK63", 0, "001", "001"), // stesso paese: 1; prefisso del proprio paese escluso
+        q("DL1ABC", "20m", "BPSK63", 1, "002", "001"), // 2; DL1 su 20 m
+        q("DL1ABC", "20m", "RTTY", 2, "003", "002"),   // altro modo, non doppio: 2
+        q("DL1ABC", "20m", "BPSK63", 3, "004", "003"), // doppio
+        q("W1AW", "40m", "FT4", 4, "005", "001"),      // 2; W1 su 40 m
+    ];
+    let t = punteggio("PDC Contest", &log);
+    // punti 7; prefissi 2; 7 x 2 = 14
+    assert_eq!((t.doppi, t.punti, t.molt, t.punteggio), (1, 7, 2, 14));
+}
+
+#[test]
+fn rac() {
+    let log = [
+        q("VA3RAC", "20m", "CW", 0, "001", "ON"),  // stazione ufficiale RAC: 20; ON su 20 m in CW
+        q("VE3ABC", "20m", "CW", 1, "002", "ON"),  // Canada: 10
+        q("VE3ABC", "20m", "SSB", 2, "003", "ON"), // altro modo: 10; ON su 20 m in fonia
+        q("DL1ABC", "40m", "CW", 3, "004", "001"), // estero: 2
+    ];
+    let t = punteggio("RAC Contest", &log);
+    // punti 42; moltiplicatori 2; 84
+    assert_eq!((t.punti, t.molt, t.punteggio), (42, 2, 84));
+    // senza QSO con il Canada i moltiplicatori valgono 1
+    let t = punteggio("RAC Contest", &[q("DL1ABC", "40m", "CW", 0, "001", "001"), q("W1AW", "20m", "CW", 1, "002", "001")]);
+    assert_eq!((t.punti, t.punteggio, t.errore_script.clone()), (4, 4, None));
 }

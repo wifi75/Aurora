@@ -1,6 +1,6 @@
 [Contest]
 m_sName=PDC Contest
-m_sNotes=CW SSB; i soci aggiungono /M al numero (scambio in m_sNrs)
+m_sNotes=PSK63, FT4, RTTY45
 m_dtStart=
 m_dtEnd=
 m_iWorkTime=0
@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=same_dxcc=1; any=2
+mult=wpx/band/if:other_dxcc
