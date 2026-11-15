@@ -187,6 +187,10 @@ export interface TextContestCheck {
   doppio: boolean;
   punti: number;
   nuovi: string[];
+  /** L'ultimo QSO del contest con lo stesso nominativo (assente con un core vecchio). */
+  precedente?: { time_ms: number; band: string; mode: string; exch_rcvd: string; exch_sent: string } | null;
+  /** Lo scambio mandato nell'ultimo QSO del log del contest (`<PREVNRS>`). */
+  ultimo_mandato?: string | null;
 }
 export const getTextContestCheck = (call_: string, band: string, mode: string, exch = '') =>
   call<TextContestCheck>(`/ammesso?${new URLSearchParams({ call: call_, band, mode, exch }).toString()}`);

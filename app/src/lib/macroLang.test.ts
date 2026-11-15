@@ -102,6 +102,12 @@ describe('runMacro: comandi di programma', () => {
     expect(runMacro('[<ANYQSOBEFOREDATE>][<TEXTFILE:wx.txt>]', ctx).text).toBe('[][]');
   });
 
+  it('numero mandato e QSO già fatto vengono dal log del contest', () => {
+    const withContest = { ...ctx, contestPrev: { lastSent: '057', beforeMs: Date.UTC(2026, 10, 15, 14, 32) } };
+    expect(runMacro('NR <PREVNRS> QSO B4 <QSOBEFOREDATE> <QSOBEFORETIME>', withContest).text).toBe('NR 057 QSO B4 2026-11-15 14:32');
+    expect(runMacro('[<PREVNRS>][<QSOBEFORETIME>]', ctx).text).toBe('[][]');
+  });
+
   it('la velocita della CW, assoluta o relativa', () => {
     expect(runMacro('<WPM:20><WPM:+3><WPM:-2>', ctx).actions).toEqual([
       { type: 'wpm', wpm: 20, relative: false },

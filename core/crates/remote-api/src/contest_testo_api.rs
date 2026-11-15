@@ -174,7 +174,15 @@ pub(crate) async fn ammesso(State(state): State<AppState>, _: Authed, Query(q): 
     let prova = contest::punti_testo::QsoTesto { call: q.call.trim().to_ascii_uppercase(), band: q.band, mode: q.mode, exch_rcvd: q.exch, ..Default::default() };
     let (_, valutati, _, _, _) = valuta_attivo(&state, Some(prova)).await?;
     let v = valutati.last().ok_or_else(|| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "contest_eval"))?;
-    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi })))
+    // l'ultimo QSO del contest con lo stesso nominativo (per le macro `<PREVNRS>`, `<QSOBEFORETIME>`...): ora, banda, modo e scambi
+    let precedente = valutati[..valutati.len() - 1]
+        .iter()
+        .rev()
+        .find(|p| p.qso.call.eq_ignore_ascii_case(&v.qso.call))
+        .map(|p| json!({ "time_ms": p.qso.time_ms, "band": p.qso.band, "mode": p.qso.mode, "exch_rcvd": p.qso.exch_rcvd, "exch_sent": p.qso.exch_sent }));
+    // lo scambio mandato nell'ultimo QSO del log (`<PREVNRS>`: si ripete a chi chiede di nuovo il numero dopo che il QSO e' a log)
+    let ultimo_mandato = valutati[..valutati.len() - 1].last().map(|p| p.qso.exch_sent.clone());
+    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi, "precedente": precedente, "ultimo_mandato": ultimo_mandato })))
 }
 
 /// Il punteggio del contest attivo dei modi testuali: QSO, doppi, punti, moltiplicatori, punteggio e righe per banda.

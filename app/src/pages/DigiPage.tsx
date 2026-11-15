@@ -13,7 +13,7 @@ import { DigiLog, type Qso } from '../components/digi/DigiLog';
 import { commentWithExchange, contestNextSerial, exchangeSent, readSerial, writeSerial } from '../lib/contestSerial';
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
-import { getActiveTextContest, type TextContest } from '../api/contestTesto';
+import { getActiveTextContest, getTextContestCheck, type TextContest } from '../api/contestTesto';
 import { contestWindow, grabExchange, startSerial, withContestMacros } from '../lib/textContest';
 import { ContestEditDialog, ContestListDialog, useSelectTextContest } from '../components/digi/ContestListDialog';
 import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useTextContestScore } from '../components/digi/ContestStatsDialog';
@@ -1009,7 +1009,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
     const files = [...script.matchAll(/<TEXTFILE:([^<>]*)>/g)].map((m) => (m[1] ?? '').trim()).filter((n) => n !== '');
     const wantsLast = /<ANYQSOBEFORE(?:DATE|BAND|MODE)>/.test(script);
-    if (files.length === 0 && !wantsLast) {
+    // <PREVNRS>, <QSOBEFORETIME>, <QSOBEFOREDATE>: dal log del contest attivo (senza contest restano vuoti)
+    const wantsContest = /<(?:PREVNRS|QSOBEFORETIME|QSOBEFOREDATE)>/.test(script);
+    if (files.length === 0 && !wantsLast && !wantsContest) {
       run(script, {});
       return;
     }
@@ -1017,9 +1019,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     void Promise.all([
       Promise.all(files.map((n) => digiTextFile(n).then((text) => [n, text] as const, () => [n, ''] as const))),
       wantsLast && call !== '' ? getLogQsos().then((r) => r.qsos, () => []) : Promise.resolve([]),
-    ]).then(([read, qsos]) => {
+      wantsContest ? getTextContestCheck(call || '-', (live.current.status?.dial_hz ?? 0) > 0 ? (bandOf(live.current.status?.dial_hz ?? 0) ?? '') : '', MODE_NAMES[live.current.snap.settings.mode]).then((r) => r, () => null) : Promise.resolve(null),
+    ]).then(([read, qsos, check]) => {
       const mine = qsos.filter((q) => q.call.toUpperCase() === call).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
-      run(script, { files: Object.fromEntries(read), lastQso: mine ? { date: mine.date, band: mine.band, mode: mine.mode } : null });
+      const contestPrev = check ? { lastSent: check.ultimo_mandato ?? '', beforeMs: call !== '' ? (check.precedente?.time_ms ?? null) : null } : null;
+      run(script, { files: Object.fromEntries(read), lastQso: mine ? { date: mine.date, band: mine.band, mode: mine.mode } : null, contestPrev });
     });
   };
 
@@ -1027,7 +1031,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
    * Una macro nell'ordine dello script (vedi `planMacro`): i comandi subito, poi il testo prima di `<RX>` in trasmissione (o nella
    * casella), il testo dopo `<RX>` resta nella finestra, e a fine trasmissione il ritorno in ricezione e la pulizia.
    */
-  const run = (script: string, extra: Pick<MacroContext, 'files' | 'lastQso'>) => {
+  const run = (script: string, extra: Pick<MacroContext, 'files' | 'lastQso' | 'contestPrev'>) => {
     const l = live.current;
     const result = runMacro(script, { ...context(), ...extra });
     // in trasmissione anche se lo stato letto ogni secondo non lo dice ancora: una macro appena partita o testo ancora in coda.
