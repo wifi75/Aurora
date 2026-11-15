@@ -798,7 +798,7 @@ auto.modeDry,Dry run,Proefmodus
 auto.turnOn,Turn on,Inschakelen
 auto.turnOff,Turn off,Uitschakelen
 auto.liveOnPc,Live mode is enabled from the PC.,Live-modus wordt vanaf de pc ingeschakeld.
-auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0."
+auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Zenden is nu vergrendeld: Aurora is gestart met AURORA_ALLOW_TX=0.
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Op de pc ingestelde limieten: {cycles} antwoorden achter elkaar zonder QSO, {perDay} per dag, uitgeschakeld na {dead} s zonder verbonden apparaat. Vandaag: {today} antwoorden."
 auto.rules,Rules,Regels
 auto.replyTo,Reply to CQ calls with,CQ-oproepen beantwoorden met
@@ -7666,6 +7666,7 @@ t.26jiqxihpxl,clears the transmit window (box and text already sent) up to this 
 t.v4ooe4ha9m,Where you put it matters: at the start it clears the window and then the macro text goes in clean; after the text it erases it. After an <RX> it clears when back to receive.,"De plaats waar je het zet, is belangrijk: aan het begin wist het het venster en komt de macrotekst er schoon in; na de tekst wist het die. Na een <RX> wist het zodra hij terug is in ontvangst."
 t.or5m153g6w,clears the receive and transmit windows,wist het ontvangst- en het zendvenster
 t.114ay4x5tb8,clears the QSO data,wist de QSO-gegevens
+t.255ebaro6az,takes the last callsign received in the RX window (not yours) and puts it in the QSO: the <CALL> after it uses it at once,neemt de laatst ontvangen roepnaam in het RX-venster (niet de jouwe) over in de QSO: de <CALL> erna gebruikt hem meteen
 t.1gjcrn8sh45,fixes now as the QSO start time,legt nu de starttijd van de QSO vast
 t.183kqdzbm5l,saves the QSO to the log (put it before any clear command),slaat de QSO op in het log (zet het vóór een wisopdracht)
 t.t630ybzkk5,Saves the current QSO to the log with the data of that moment. Put it before <CLEARQSO>: commands run in the order you write them.,Slaat de huidige QSO met de gegevens van dat moment op in het log. Zet het vóór <CLEARQSO>: commando’s worden uitgevoerd in de volgorde waarin je ze schrijft.

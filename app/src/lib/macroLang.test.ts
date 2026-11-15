@@ -102,6 +102,11 @@ describe('runMacro: comandi di programma', () => {
     expect(runMacro('[<ANYQSOBEFOREDATE>][<TEXTFILE:wx.txt>]', ctx).text).toBe('[][]');
   });
 
+  it('<GRABCALL> diventa un comando con il nominativo trovato', () => {
+    expect(runMacro('<GRABCALL:K1ABC>', ctx).actions).toEqual([{ type: 'grabCall', call: 'K1ABC' }]);
+    expect(runMacro('<GRABCALL:>', ctx).actions).toEqual([{ type: 'grabCall', call: '' }]);
+  });
+
   it('numero mandato e QSO già fatto vengono dal log del contest', () => {
     const withContest = { ...ctx, contestPrev: { lastSent: '057', beforeMs: Date.UTC(2026, 10, 15, 14, 32) } };
     expect(runMacro('NR <PREVNRS> QSO B4 <QSOBEFOREDATE> <QSOBEFORETIME>', withContest).text).toBe('NR 057 QSO B4 2026-11-15 14:32');

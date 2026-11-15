@@ -97,6 +97,8 @@ export type MacroAction =
   | { type: 'cat'; cmd: string }
   /** `<EXEC:...>`: avvierebbe un programma esterno; Aurora non lo fa e lo dice (non supportato per sicurezza). */
   | { type: 'exec'; file: string }
+  /** `<GRABCALL>`: il nominativo preso dal testo ricevuto va nel QSO (gia' cercato prima dell'esecuzione, vuoto se non c'era). */
+  | { type: 'grabCall'; call: string }
   /** Un comando che Aurora non conosce ancora: resta nell'elenco per dirlo all'utente. */
   | { type: 'unknown'; tag: string };
 
@@ -241,6 +243,7 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'SEEKRIGHT': return { type: 'seek', direction: 'right' };
     case 'BOOKMARK': return { type: 'bookmark' };
     case 'EXEC': return { type: 'exec', file: arg ?? '' };
+    case 'GRABCALL': return { type: 'grabCall', call: (arg ?? '').trim().toUpperCase() };
     case 'AFCON': return { type: 'toggle', what: 'afc', value: true };
     case 'AFCOFF': return { type: 'toggle', what: 'afc', value: false };
     case 'AFC': return { type: 'toggle', what: 'afc', value: 'toggle' };

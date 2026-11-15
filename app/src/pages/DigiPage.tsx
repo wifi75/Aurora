@@ -20,6 +20,7 @@ import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useT
 import { QtcDialog, type QtcDir } from '../components/digi/QtcDialog';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
 import { isCallsign, useCallLookup } from '../components/digi/callLookup';
+import { grabCall } from '../lib/grabCall';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { BandSignals } from '../components/digi/BandSignals';
 import { RadarList } from '../components/digi/RadarList';
@@ -1000,7 +1001,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   /** Una macro. Se chiede file di testo (`<TEXTFILE>`) o l'ultimo QSO (`<ANYQSOBEFORE...>`) prima si leggono, poi si esegue. */
   const execute = (full: string) => {
     // <AUTOCQ>testo: il testo diventa la chiamata dell'Auto CQ, che si accende; si esegue subito solo quello che sta prima
-    const { before: script, cq } = splitAutoCq(full);
+    const { before: autoBefore, cq } = splitAutoCq(full);
+    // <GRABCALL>: l'ultimo nominativo ricevuto va subito nel QSO, cosi' il <CALL> della stessa macro lo usa gia'; il comando resta nella
+    // macro (con il nominativo trovato) per rimetterlo nel QSO al suo posto, anche dopo un <CLEARQSO>
+    let script = autoBefore;
+    if (/<GRABCALL>/i.test(script)) {
+      const grabbed = grabCall(getDigiText(), live.current.status?.de_call ?? '');
+      if (grabbed !== '') live.current = { ...live.current, qso: { ...live.current.qso, call: grabbed } };
+      script = script.replace(/<GRABCALL>/gi, `<GRABCALL:${grabbed}>`);
+    }
     if (cq !== null) {
       autoCqScript.current = cq;
       setAutoCqPaused(false);
@@ -1047,6 +1056,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           else toast(t('qtc.notWae'), 'info');
           break;
         case 'clearQso': setQso(EMPTY_QSO); setStartAt(null); resetRst(); break;
+        case 'grabCall': if (a.call !== '') takeCall(a.call); break;
         case 'fixStartTime': setStartAt(new Date()); break;
         case 'mode': {
           const m = modeFromName(a.mode);
