@@ -48,5 +48,14 @@ m_iLogBarDispMode=1
 points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2
 
 [Script]
-// moltiplicatore di potenza: 2 per chi resta entro 100 W (la classe piu' comune); oltre 100 W vale 1, QRP a batteria 5
-fn punteggio(t) { t.punti * 2 }
+// moltiplicatore di potenza dallo scambio mandato: QRP (a batteria, fino a 5 W) 5, HP (oltre 100 W) 1, LP o niente
+// (fino a 100 W, la classe piu' comune) 2
+fn potenza(s) {
+    for w in s.to_upper().split(" ") {
+        if w == "QRP" { return 5; }
+        if w == "HP" { return 1; }
+        if w == "LP" { return 2; }
+    }
+    2
+}
+fn punteggio(t) { t.punti * potenza(t.exch_sent) }

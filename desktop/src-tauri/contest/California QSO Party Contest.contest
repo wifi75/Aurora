@@ -48,3 +48,24 @@ m_iLogBarDispMode=1
 bands=160,80,40,20,15,10
 points=any=3
 mult=exch
+
+[Script]
+// i californiani mandano la contea di quattro lettere, gli altri lo stato, la provincia o DX: un QSO fra due non californiani
+// non conta. Fuori dalla California: moltiplicatori le 58 contee. Californiani: stati e province (la California con il primo QSO
+// con una contea), DX non e' un moltiplicatore, al massimo 58.
+fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
+fn ultima(s) { let u = ""; for w in s.split(" ") { if w != "" && !cifre(w) { u = w.to_upper(); } } u }
+fn ca(s) { ultima(s).len() == 4 }
+fn ammesso(qso) { if ca(qso.exch_sent) || ca(qso.exch_rcvd) { true } else { [false, "valid"] } }
+fn moltiplicatori(qso) {
+    let w = ultima(qso.exch_rcvd);
+    if w == "" { return []; }
+    if ca(qso.exch_sent) {
+        if w.len() == 4 { ["state:CA"] } else if w == "DX" { [] } else { ["state:" + w] }
+    } else if w.len() == 4 { ["county:" + w] } else { [] }
+}
+fn punteggio(t) {
+    let m = t.molt;
+    if ca(t.exch_sent) && m > 58 { m = 58; }
+    t.punti * m
+}

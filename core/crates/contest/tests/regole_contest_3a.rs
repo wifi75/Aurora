@@ -156,6 +156,10 @@ fn arrl_field_day() {
     let t = punteggio("ARRL-FD", &log);
     // punti 6, nessun moltiplicatore; moltiplicatore di potenza 2 (fino a 100 W): 12
     assert_eq!((t.punti, t.punteggio), (6, 12));
+    // QRP o HP nello scambio mandato: 5 o 1
+    let con = |sent: &str| log.iter().map(|x| QsoTesto { exch_sent: sent.into(), ..x.clone() }).collect::<Vec<_>>();
+    assert_eq!(punteggio("ARRL-FD", &con("1B QRP EMA")).punteggio, 30);
+    assert_eq!(punteggio("ARRL-FD", &con("3A HP EMA")).punteggio, 6);
 }
 
 #[test]
@@ -309,6 +313,19 @@ fn california_qso_party() {
     let t = punteggio("California QSO Party Contest", &log);
     // punti 9; moltiplicatori 2; 18
     assert_eq!((t.doppi, t.punti, t.molt, t.punteggio), (1, 9, 2, 18));
+    // fra due stazioni fuori dalla California il QSO non conta
+    let fuori = [q("W1AW", "20m", "CW", 0, "12 CT")];
+    assert_eq!(punteggio("California QSO Party Contest", &fuori).esclusi, 1);
+    // stazione californiana (manda la contea): stati e province, la California con una contea, DX niente
+    let ca = |call: &str, min: i64, rcvd: &str| QsoTesto { exch_sent: format!("{} SCLA", min + 1), ..q(call, "20m", "CW", min, rcvd) };
+    let log = [ca("W1AW", 0, "5 CT"), ca("VE3ABC", 1, "6 ON"), ca("DL1ABC", 2, "7 DX"), ca("K6ABC", 3, "8 ALAM")];
+    let t = punteggio("California QSO Party Contest", &log);
+    // punti 12; moltiplicatori CT, ON, CA = 3; 36
+    assert_eq!((t.punti, t.molt, t.punteggio), (12, 3, 36));
+    // al massimo 58 moltiplicatori: 60 stati finti
+    let log: Vec<QsoTesto> = (0..60).map(|i| ca(&format!("W{i}ABC"), i, &format!("{i} X{i:02}"))).collect();
+    let t = punteggio("California QSO Party Contest", &log);
+    assert_eq!((t.punti, t.molt, t.punteggio), (180, 60, 180 * 58));
 }
 
 #[test]
