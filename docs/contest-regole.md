@@ -123,10 +123,11 @@ zona CQ -> zona CQ viene dal file `Points_AVOLTA.txt` dei dati di <https://www.d
 - Punti dalla tabella delle zone; fuori dal proprio continente su 80 e 10 m il doppio. QSO nello stesso paese (o nella stessa area di
   VK, VE, JA, ZL, W) non validi.
 - Moltiplicatori per banda: paesi DXCC; per VK, VE, JA, ZL e W contano solo le aree. Un moltiplicatore in piu' per ogni paese di un
-  altro continente lavorato su almeno 4 bande (non calcolato).
+  altro continente lavorato su almeno 4 bande.
 - Punteggio = punti x moltiplicatori x numero dei QSO.
 - `[Score]`: `valid=other_dxcc`, `points=other_cont&band:80,10=cqtab*2; any=cqtab`, `mult=dxcc/band/except:JA,VE,VK,K,ZL;
-  area:JA,VE,VK,K,ZL/band`, `times_qso=1`.
+  area:JA,VE,VK,K,ZL/band`, `times_qso=1`; `[Script]`: `punteggio(t)` con i paesi su 4 bande. La stessa area di VK, VE, JA, ZL e W
+  e' sempre lo stesso paese, quindi gia' esclusa da `valid=other_dxcc`.
 
 ### Russian «Radio» WW RTTY Contest
 Fonte: <http://www.radio.ru/cq/contest/rule-results/index2.shtml> (rivista «Radio»).
@@ -140,7 +141,9 @@ Fonte: <http://uarl.com.ua/openrtty/2012/rtty2012e.txt> (UARL, indicato da <http
 - Parte bassa 160 e 80 m (a turni), parte alta 40-10 m. Scambio: sigla della regione + numero (`PO001`).
 - Punti: 2 per QSO, piu' 10 per ogni regione nuova su ogni banda (e su ogni turno della parte bassa). Nessun moltiplicatore: il
   risultato e' la somma delle bande.
-- `[Score]`: `points=any=2`, `mult=exch/band/add:10` (i turni della parte bassa non sono distinti).
+- Turni della parte bassa: 20:00-21:59 e 22:00-23:59 UTC; in ogni turno la stessa stazione si lavora di nuovo.
+- `[Score]`: `points=any=2`; `[Script]`: `turno(qso)`, `moltiplicatori(qso)` (regione per banda e turno), `punteggio(t)` = punti + 10 x
+  regioni.
 
 ### JARTS WW RTTY Contest
 Fonte: il sito <http://jarts.jp/> (indicato da <https://www.digitalrus.ru/>) non si legge in modo automatico; regole dal riassunto ARI
@@ -202,19 +205,17 @@ Fonte: <https://www.uba.be/en/hf/contest-rules/uba-psk63-prefix-contest> (UBA, e
 - BPSK63, bande 80-10 m. Scambio: ON RST + sezione UBA (tre lettere, XXX per chi non e' socio), gli altri RST + numero.
 - Punti: 1 per QSO. I QSO con Russia e Bielorussia valgono zero punti e nessun moltiplicatore.
 - Moltiplicatori per banda: prefissi WPX e sezioni UBA.
-- `[Score]`: `valid=not_dxcc:UA,UA9,UA2,EU`, `mult=wpx/band; exch/band/if:dxcc:ON`.
+- `[Score]`: `valid=not_dxcc:UA,UA9,UA2,EU`, `mult=wpx/band; exch/band/if:dxcc:ON/skip:XXX` (XXX non e' un moltiplicatore).
 
 ## Cosa resta approssimato
 
 - Zone CQ e ITU vengono dal database DXCC di Aurora, non dallo scambio ricevuto (un W6 che passa zona 3 conta la zona del paese).
-- Elenco WAE (IT9, GM/Shetland, JW/Bear, 4U1V...) non distinto dal DXCC; nel WAE RTTY contano tutti i paesi per tutti.
-- Stazioni /MM, QRP (5 punti nel Russian WW Digital) e i segmenti di frequenza del BARTG non sono riconosciuti.
-- Stati, province e oblast si prendono dallo scambio cosi' com'e' scritto: senza elenco dei domini non si controlla che esistano.
-- Alessandro Volta: i QSO nella stessa area di VK, VE, JA, ZL, W non sono esclusi (lo e' solo lo stesso paese) e manca il moltiplicatore
-  per i paesi di un altro continente lavorati su 4 bande.
-- Open Ukraine RTTY: i turni della parte bassa (160 e 80 m) non sono distinti.
-- UBA PSK63 Prefix: la sezione XXX dei non soci conta come moltiplicatore.
-- I moltiplicatori `call` (stazioni OK, stazioni portoghesi) non compaiono nella griglia della finestra delle statistiche.
+- Elenco WAE (IT9, GM/Shetland, JW/Bear, 4U1V...) non distinto dal DXCC; nel WAE RTTY contano tutti i paesi per tutti (il database di
+  Aurora, cty.dat, ha solo i paesi DXCC).
+- Stazioni /MM, QRP (5 punti nel Russian WW Digital) e i segmenti di frequenza del BARTG non sono riconosciuti (i regolamenti non
+  dicono come la stazione QRP si fa riconoscere nello scambio; la frequenza del QSO non arriva agli script).
+- Stati, province e oblast si prendono dallo scambio cosi' com'e' scritto: senza elenco dei domini non si controlla che esistano
+  (gli elenchi ufficiali di alcuni contest non sono pubblicati).
 - Eliminati il 2026-11-15 perche' non piu' organizzati o senza regolamento: DRCG WW RTTY, DL-DX RTTY, Aegean RTTY, SCC RTTY Championship, Poland WW BPSK63, ARR PSK63, TARA Mêlée (si aggiungeranno se tornano).
 ## Gruppo 3C
 
@@ -225,13 +226,13 @@ Regolamenti letti il 2026-11-15. Prove in `core/crates/contest/tests/regole_cont
 | RUSSIAN DX Contest | Russia 10, stesso paese 2, stesso continente 3, altro 5 (russi fra loro 2/5); paesi e oblast per banda (`dom/russian.dom`), CW e SSB con la stessa stazione | <https://www.rdxc.org/rules> (2027) |
 | Russian WW MultiMode Contest | stesso paese 1, altro paese 3, altro continente 5, il doppio su 160/80/40; paesi e oblast per banda e modo | <http://www.rdrclub.ru/news-radio/russian-ww-mm-contest/159-rus-ww-multimode-contest> (2026) |
 | Scandinavian Activity Contest | solo QSO fra Scandinavia e resto del mondo; non scandinavi: 1 punto (3 su 80/40 m fuori Europa), aree numeriche scandinave per banda; scandinavi: 2 Europa, 3 fuori, paesi per banda (`[Script]` per l'ammissione) | <https://www.sactest.net/blog/rules/> (2023, contest in calendario 2027) |
-| Stew Perry Topband Distance Challenge | 160 m; 1 punto + 1 ogni 500 km interi fra i centri dei quadrati; nessun moltiplicatore (`[Script]`) | <https://www.kkn.net/stew/stew_rules.html> (rev. 2025) |
+| Stew Perry Topband Distance Challenge | 160 m; 1 punto + 1 ogni 500 km interi fra i centri dei quadrati, x2 con una stazione LP e x4 con una QRP (LP o QRP nello scambio ricevuto); il totale x1,5 se si e' LP, x3 se QRP (nello scambio mandato); nessun moltiplicatore (`[Script]`) | <https://www.kkn.net/stew/stew_rules.html> (rev. 2025) |
 | TRC DX Contest | 160-10 m CW/SSB; stesso continente 1, altro 2, stazione TRC 10, fra soci 1; paesi DXCC e paesi TRC per banda e modo (`[Script]`) | <https://trcdx.org/rules-trc-dx/> (2026) |
 | TRC DIGI Contest | come il TRC DX, solo RTTY, moltiplicatori per banda (`[Script]`) | <https://trcdx.org/rules-trc-digi/> (2025) |
-| UA2 QSO Party | 80/40/20 m; 2 punti CW, 3 SSB, il triplo con le stazioni R2F; 15 punti per distretto RDA di Kaliningrad nuovo per banda, sommati (`[Script]`) | <https://www.qrz.ru/contest/detail/382.html> (2027) |
-| UBA CW contest, UBA SSB Contest | 80-10 m; Belgio 10, paesi UE 3, altri 1, Russia e Bielorussia esclusi; sezioni UBA, prefissi belgi e paesi UE per banda | <https://www.uba.be/en/hf/contest-rules/uba-dx-contest> (2026-2027) |
+| UA2 QSO Party | 80/40/20 m; 2 punti CW, 3 SSB, il triplo con le stazioni R2F; 15 punti per distretto RDA di Kaliningrad nuovo per banda, sommati; due turni, 14:00-15:59 e 16:00-17:59 UTC, in ognuno la stessa stazione si lavora di nuovo (`[Script]`) | <https://www.qrz.ru/contest/detail/382.html> (2027) |
+| UBA CW contest, UBA SSB Contest | 80-10 m; Belgio 10, paesi UE (anche il Monte Athos) 3, altri 1, Russia e Bielorussia esclusi; sezioni UBA (non XXX), prefissi belgi e paesi UE per banda; bonus = punti dei QSO ON x la loro percentuale sui QSO validi, sommato ai punti (`[Script]`); i belgi: ON 1, UE 2, altri 3, paesi DXCC e sezioni per banda | <https://www.uba.be/en/hf/contest-rules/uba-dx-contest> (2026-2027) |
 | UBA Spring 80M CW, 80M SSB, 6M SSB-CW, 2M SSB | per gli stranieri solo QSO con ON, 3 punti; moltiplicatori le sezioni UBA (anche XXX e UBA) | <https://www.uba.be/en/hf/contest-rules/spring-contest-dst> (2026) |
-| UK_EI DX Contest | tabella europei/UK-EI/DX con il doppio su 80/40 m; paesi (tranne UK/EI) e distretti UK/EI per banda | <https://www.ukeicc.com/dx-contest-rules.php> (2026, v19) |
+| UK_EI DX Contest | tabella europei/UK-EI/DX con il doppio su 80/40 m, per le stazioni UK/EI il doppio anche dalle 01:00 alle 04:59 UTC (`hour:0100-0459`); paesi (tranne UK/EI) e distretti UK/EI per banda | <https://www.ukeicc.com/dx-contest-rules.php> (2026, v19) |
 | Ukrainian DX Contest | Ucraina 10, stesso paese 1, continente 2, altro 3; paesi e oblast per banda (`dom/udxc.dom`) | <https://www.qsl.net/ut1ia/rules.html> (pagina senza data; urdxc.org non raggiungibile) |
 | Venezuelan Independence Contest | stesso paese 1, continente 3, altro 5; paesi per banda e circuiti YV una volta | regole 2017 riportate da <https://dxnews.com/forum/forum/contesting/1223-venezuelan-independence-contest>; contest in calendario 2027 |
 | WAEDC CW-SSB Contest | solo QSO fra Europa e resto del mondo, 1 punto + QTC; europei: paesi non europei e aree di W, VE, VK, ZL, ZS, JA, BY, PY; gli altri: paesi europei; pesi 4/3/2/2/2 (`[Script]` per l'ammissione) | <https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/> (2025, date 2026) |
@@ -240,12 +241,6 @@ Regolamenti letti il 2026-11-15. Prove in `core/crates/contest/tests/regole_cont
 
 Approssimati:
 - RDXC e Ukrainian DX: i paesi WAE non sono distinti dal DXCC; le stazioni /MM e RI1FJ/RI1AN non sono riconosciute.
-- SAC: i nominativi senza cifra (area 0) non portano moltiplicatore.
-- Stew Perry: i fattori di potenza (x2/x4 per la stazione lavorata, x1,5/x3 per la propria) non sono applicati.
-- UA2 QSO Party: i due turni non sono distinti (la stessa stazione nel secondo turno conta come doppio).
-- UBA DX: il bonus percentuale per i QSO con il Belgio non e' calcolato; la sezione XXX conta come moltiplicatore; Monte Athos
-  (SV/A) manca dall'elenco dei paesi UE.
-- UK/EI: il doppio dei punti fra le 01 e le 05 per le stazioni UK/EI non e' applicato.
 - WAEDC CW-SSB: l'elenco WAE non e' distinto dal DXCC.
 
 Tolti perche' non piu' organizzati (ultima edizione o regolamento prima del 2024, o contest sospeso): RememberSK, SA_Sprint, SSTV,
@@ -390,14 +385,16 @@ confermate da <https://www.qrz.ru/>).
 - Primo fine settimana pieno di novembre: CW sabato, SSB domenica, 06:00-18:00 UTC; 80-10 m. RS(T) + numero; i soci aggiungono IPA
   (gli statunitensi anche lo stato).
 - Punti: 1 per QSO, 5 con una stazione IPARC. Moltiplicatori per banda: paesi DXCC e stati USA con una stazione IPARC.
-- `[Score]`: `points=any=1`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)` con IPA.
+- Punteggio = somma, banda per banda, dei punti per i moltiplicatori della banda.
+- `[Score]`: `points=any=1`, `band_score=1`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)` con IPA.
 
 ### R3A Cup Digi («MSK TIME» Cup)
 Fonte: <http://www.rdrclub.ru/r3a-cup-digi/296-r3a-cup-digi-rules> (Russian Digital Radio Club, 2027), trovato tramite <https://www.digitalrus.ru/>.
 - Ultimo venerdi' di marzo, 17:00-19:59 UTC in tre turni; RTTY45, 80 e 40 m. Mosca RST + area di due lettere, Russia RST + distretto RDA,
   gli altri RST + numero.
 - Punti: fra Mosca e fuori Mosca 5, altrimenti 1. Moltiplicatori per banda: aree di Mosca e distretti RDA.
-- `[Score]`: `bands=80,40`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)`.
+- Turni di un'ora (17, 18, 19 UTC): in un altro turno la stessa stazione si lavora di nuovo, nello stesso solo su un'altra banda.
+- `[Score]`: `bands=80,40`; `[Script]`: `punti(qso)`, `moltiplicatori(qso)` e `turno(qso)`.
 
 ### RDA Contest
 Fonte: <http://rdaward.org/rdac1.htm> (RDA, edizione 2025).
@@ -424,10 +421,11 @@ Fonte: <https://www.rsgbcc.org/hf/rules/2025/r80mcc.shtml> (RSGB, 2025).
 - Helvetia e Holyland: regolamento letto da un riassunto (WA7BNM); per l'Helvetia la Svizzera conta solo con i cantoni, non come paese.
 - HA-DX, OK-OM, Helvetia, Holyland, King of Spain: i punti delle stazioni del paese organizzatore fra loro seguono il riassunto, le /MM e
   /AM non sono distinte; l'elenco EADX-100 del King of Spain e' sostituito dal DXCC, il CQ WW del Marconi dal DXCC.
-- IARU R1 Field Day: si suppone di essere stazione portatile; da stazione fissa i QSO con altre fisse valgono 0 (non distinto).
-- IPA: il regolamento somma punti x moltiplicatori banda per banda; Aurora fa il totale dei punti per il totale dei moltiplicatori.
+- IARU R1 Field Day: si suppone di essere stazione portatile; da stazione fissa i QSO con altre fisse valgono 0 (non distinto: lo
+  script non conosce il proprio nominativo).
 - JIDX: le isole JD1 non sono distinte da JA. KCJ: i codici di prefettura e distretto non si controllano.
-- R3A Cup: i doppi in turni diversi non sono distinti. RDA: la stazione portatile (C1/C2, 10 punti) non e' distinta.
+- RDA: la stazione portatile (C1/C2, 10 punti) non e' distinta (il regolamento non dice come la si riconosce dal nominativo o dallo
+  scambio).
 - RAC: si usa il Winter Contest; il Canada Day ha un regolamento a parte (PDF 2026 non leggibile).
 - HSC: un QSO senza scambio vale come non socio.
 
@@ -463,7 +461,8 @@ Fonte: <https://contests.arrl.org/ContestRules/DX-Rules.pdf> (ARRL, versione 2.0
 Fonte: <https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf> (ARRL, 2026).
 - Punti: fonia 1, CW e digitale 2, la stessa stazione una volta per banda e modo. Nessun moltiplicatore.
 - Punteggio = punti x moltiplicatore di potenza (oltre 100 W 1, fino a 100 W 2, QRP a batteria 5) + punti bonus.
-- `[Score]`: `points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2`; `[Script]`: `punteggio(t)` con il moltiplicatore 2.
+- `[Score]`: `points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2`; `[Script]`: `punteggio(t)` con il moltiplicatore di potenza dallo
+  scambio mandato (QRP 5, HP 1, LP o niente 2).
 
 ### Africa All Mode International DX Contest
 Fonte: <https://www.darc.de/fileadmin/filemounts/referate/conteste/contest/Contestrules/The_Africa_All_Mode_International_DX_Contest.pdf>
@@ -524,7 +523,9 @@ Fonte: regolamento inglese del CWJF Group collegato da <https://www.cqmmdx.com/r
 Fonte: <https://www.cqp.org/Rules.html> (NCCC, regole 2026 aggiornate il 19-07-2026).
 - Bande 160-10 m, una volta in CW e una in fonia su ogni banda. Punti: 3 per QSO (anche in fonia dal 2026).
 - Moltiplicatori una volta sola: per chi e' fuori dalla California le 58 contee, per i californiani stati e province (al massimo 58).
-- `[Score]`: `points=any=3`, `mult=exch`.
+- I californiani mandano la contea di quattro lettere, gli altri lo stato, la provincia o DX: un QSO fra due non californiani non conta.
+  Per i californiani la California e' un moltiplicatore con il primo QSO con una contea; DX non e' un moltiplicatore.
+- `[Score]`: `points=any=3`, `mult=exch`; `[Script]`: `ammesso(qso)`, `moltiplicatori(qso)` e `punteggio(t)` con il tetto di 58.
 
 ### DARC Easter Contest (Ostercontest)
 Fonte: <https://www.darc.de/der-club/referate/conteste/ostercontest/rules-easter-contest/> (DARC, edizione 2026).
@@ -566,9 +567,10 @@ Fonte: <http://fd.qrz.ru/> (regolamento 2026).
 - ARI: le province non si controllano sull'elenco.
 - ARRL 10 m: le regioni ITU delle /MM non sono moltiplicatori; i modi di fonia scritti in modo diverso (USB, LSB) contano come modi
   separati per i moltiplicatori.
-- ARRL Field Day: il moltiplicatore di potenza e' sempre 2 (fino a 100 W) e i punti bonus non ci sono.
-- California QSO Party: non si sa se una stazione W e' in California (i QSO fra non californiani non sono esclusi), il tetto di 58
-  moltiplicatori non e' applicato e la parola DX conta come moltiplicatore.
+- ARRL Field Day: la potenza si legge dallo scambio mandato (QRP, HP; senza, fino a 100 W); i punti bonus (alimentazione di
+  emergenza, messaggi, visite...) non ci sono perche' non stanno nel log.
+- California QSO Party: californiano e' chi manda o riceve una parola di quattro lettere (la contea); le contee non si controllano
+  sull'elenco.
 - CQ-M: l'elenco R-150-S e' sostituito dal DXCC.
 - HF Field Day: i distretti federali russi non sono moltiplicatori e la 1a Regione IARU si ricava dal continente piu' un elenco di paesi.
 
