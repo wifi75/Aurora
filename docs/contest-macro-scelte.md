@@ -6,17 +6,21 @@ regolamento (`docs/contest-regole.md`), solo comandi che Aurora conosce (`app/sr
 e nessun dato personale.
 
 Esito: le macro di Aurora vincono quasi sempre, perche' le versioni nuove si appoggiano a comandi che Aurora non esegue (richiami di altri
-tasti, scorciatoie del nominativo precedente) e spesso mancano del TU con salvataggio o del QSO gia' fatto. Due sono unite, i 14 contest
+tasti, scorciatoie del nominativo precedente) e spesso mancano del TU con salvataggio o del QSO gia' fatto. Due sono unite, i 13 contest
 nuovi hanno un file `.contest` e una macro scritta da capo con l'ordine dei tasti della versione nuova e i comandi di Aurora.
 
 | Contest | Versione | Motivo |
 |---|---|---|
 | 10-Meter RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 11 comandi che Aurora non conosce |
+
+| Aegean RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 14 comandi che Aurora non conosce |
 | Africa All Mode International DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 13 comandi che Aurora non conosce |
 | Alesandro Volta RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | All Asian DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | ARI International DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 10 comandi che Aurora non conosce |
 | Arktika Cup Digital | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 13 comandi che Aurora non conosce |
+
+| ARR PSK63 Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 7 comandi che Aurora non conosce |
 | ARRL 10 meter Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | ARRL International DX-CW Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | ARRL International DX-SSB Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha CQ, scambio, TU con salvataggio, QSO B4 e usa 2 comandi che Aurora non conosce |
@@ -27,8 +31,6 @@ nuovi hanno un file `.contest` e una macro scritta da capo con l'ordine dei tast
 | BARTG Sprint RTTY | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | CBNR_CW (Contest Riachuelo Naval Battle) | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 10 comandi che Aurora non conosce |
 | CBNR_SSB (Contest Riachuelo Naval Battle) | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha CQ, scambio, TU con salvataggio, QSO B4 e usa 2 comandi che Aurora non conosce |
-| CDX Test Independence Day | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 7 comandi che Aurora non conosce |
-| CQ BDM RTTY WW Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | CQ WPX RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | CQ WW 160 meter contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | CQ WW DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
@@ -38,12 +40,13 @@ nuovi hanno un file `.contest` e una macro scritta da capo con l'ordine dei tast
 | CQ-MM-DX | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | DigiFest Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | DMC RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
+
+| DL DX RTTY CONTEST | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
+| DRCG-WW-RTTY | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | DX Expedition | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 10 comandi che Aurora non conosce |
 | EA PSK63 Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | EA RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
-| EPC Ukraine DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 14 comandi che Aurora non conosce |
 | EU-HF Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| Eurasia Championship | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | Fieldday Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha QSO B4 e usa 9 comandi che Aurora non conosce |
 | French HF Championship | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | GACW WWSA CW DX Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
