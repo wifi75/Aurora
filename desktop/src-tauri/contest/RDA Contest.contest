@@ -43,3 +43,28 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=any=0
+
+[Script]
+// distretti RDA (TB02) una volta sola; i russi contano anche i paesi DXCC per banda
+fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
+fn russo(d) { d == "UA" || d == "UA9" || d == "UA2" }
+fn rda(s) {
+    for w in s.split(" ") { let x = w.to_upper(); if x.len() == 4 && !cifre(x.sub_string(0, 1)) && cifre(x.sub_string(2)) { return x; } }
+    ""
+}
+fn punti(qso) {
+    if !russo(qso.my_dxcc) { if russo(qso.dxcc) { 10 } else { 0 } }
+    else if russo(qso.dxcc) { if qso.cont == qso.my_cont { 1 } else { 2 } }
+    else if qso.cont != "" && qso.cont == qso.my_cont { 3 } else { 5 }
+}
+fn moltiplicatori(qso) {
+    let k = [];
+    let r = rda(qso.exch_rcvd);
+    if r != "" && russo(qso.dxcc) { k.push("rda:" + r); }
+    if russo(qso.my_dxcc) && qso.dxcc != "" { k.push("dxcc:" + qso.dxcc + "@" + qso.band); }
+    k
+}

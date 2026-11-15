@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160
+points=any=2
+mult=exch/add:5/if:dxcc:G,GM,GW,GI,GD,GU,GJ; dxcc/add:5/except:G,GM,GW,GI,GD,GU,GJ

@@ -43,3 +43,21 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=any=1
+
+[Script]
+// stazioni IPARC (mandano IPA): 5 punti; moltiplicatori per banda: paesi con stazione IPARC, per gli USA gli stati
+fn parole(s) { let v = []; for w in s.split(" ") { if w != "" { v.push(w.to_upper()); } } v }
+fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
+fn punti(qso) { if parole(qso.exch_rcvd).contains("IPA") { 5 } else { 1 } }
+fn moltiplicatori(qso) {
+    let p = parole(qso.exch_rcvd);
+    if !p.contains("IPA") { return []; }
+    if qso.dxcc != "K" { return ["dxcc:" + qso.dxcc + "@" + qso.band]; }
+    let k = [];
+    for w in p { if w != "IPA" && !cifre(w) { k.push("state:" + w + "@" + qso.band); } }
+    k
+}

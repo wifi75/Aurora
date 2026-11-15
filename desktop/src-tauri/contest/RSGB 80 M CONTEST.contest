@@ -43,3 +43,14 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80
+points=call:G6XX,GM6XX,GW6XX,GI6XX,GD6XX,GU6XX,GJ6XX=5; any=1
+
+[Script]
+// almeno una delle due stazioni nel Regno Unito o nelle dipendenze della Corona
+fn ammesso(qso) {
+    let uk = ["G", "GM", "GW", "GI", "GD", "GU", "GJ"];
+    if uk.contains(qso.my_dxcc) || uk.contains(qso.dxcc) { true } else { [false, "valid"] }
+}

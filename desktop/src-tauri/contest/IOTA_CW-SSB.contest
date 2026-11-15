@@ -43,3 +43,25 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=any=2
+
+[Script]
+// stazioni Island (riferimento IOTA nello scambio, EU115 o EU-115) e World; moltiplicatori: riferimenti IOTA per banda e modo
+fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
+fn iota(s) {
+    for w in s.split(" ") {
+        let x = w.to_upper();
+        x.replace("-", "");
+        if x.len() == 5 && ["EU", "AF", "AN", "AS", "NA", "OC", "SA"].contains(x.sub_string(0, 2)) && cifre(x.sub_string(2)) { return x; }
+    }
+    ""
+}
+fn punti(qso) {
+    let mia = iota(qso.exch_sent);
+    let sua = iota(qso.exch_rcvd);
+    if mia != "" { if sua == "" || sua == mia { 5 } else { 15 } } else if sua == "" { 2 } else { 15 }
+}
+fn moltiplicatori(qso) { let r = iota(qso.exch_rcvd); if r == "" { [] } else { ["iota:" + r + "/" + qso.mode + "@" + qso.band] } }

@@ -43,3 +43,16 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40
+points=any=1
+
+[Script]
+// Mosca manda il codice di due lettere dell'area, la Russia il distretto RDA, gli altri il numero:
+// fra Mosca e fuori Mosca 5 punti, altrimenti 1; moltiplicatori per banda: aree di Mosca e distretti RDA
+fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
+fn ultima(s) { let u = ""; for w in s.split(" ") { if w != "" { u = w.to_upper(); } } u }
+fn mosca(s) { let w = ultima(s); w.len() == 2 && !cifre(w) }
+fn punti(qso) { if mosca(qso.exch_sent) == mosca(qso.exch_rcvd) { 1 } else { 5 } }
+fn moltiplicatori(qso) { let w = ultima(qso.exch_rcvd); if w == "" || cifre(w) { [] } else { ["rda:" + w + "@" + qso.band] } }

@@ -361,3 +361,72 @@ Fonte: <https://www.rac.ca/rac-canada-winter-contest-rules-2025/> (RAC, 2025).
 - Senza QSO con il Canada i moltiplicatori valgono 1.
 - `[Score]`: `points=call:<stazioni RAC>=20; dxcc:VE=10; any=2`, `mult=exch/band/mode/if:dxcc:VE`; `[Script]`: `punteggio(t)` con il caso
   senza moltiplicatori.
+
+### HSC CW Contest
+Fonte: <https://hsc.lima-city.de/en/contests.html> (High Speed Club) e <https://www.contestcalendar.com/contestdetails.php?ref=264>
+(WA7BNM); il testo completo del regolamento non e' pubblicato.
+- Ultima domenica di febbraio e prima di novembre, 14:00-17:00 UTC; CW, 80-10 m. Soci RST + numero HSC, non soci RST + NM.
+- Punti: socio 5, non socio 2. Moltiplicatori: paesi DXCC per banda.
+- `[Score]`: `points=any=2`, `mult=dxcc/band`; `[Script]`: `punti(qso)` con NM.
+
+### IARU HF World Championship
+Fonte: <https://contests.arrl.org/ContestRules/IARU-HF-Rules.pdf> (ARRL, versione 1.21).
+- Seconda settimana piena di luglio, sabato 12:00 - domenica 11:59 UTC; CW e SSB, 160-10 m, una volta per banda e modo. Scambio RS(T) +
+  zona ITU; le stazioni HQ e gli ufficiali IARU la sigla (ARRL, DARC, R1, AC...).
+- Punti: stessa zona 1, HQ e ufficiali 1, stesso continente altra zona 3, altro continente e zona 5.
+- Moltiplicatori per banda (non per modo): zone ITU e stazioni HQ/ufficiali.
+- `[Score]`: `points=any=1`, `mult=itu/band`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)` con la zona presa dallo scambio.
+
+### IOTA Contest (RSGB)
+Fonte: <https://www.rsgbcc.org/hf/rules/2026/riota.shtml> (RSGB, 10 febbraio 2026).
+- Fine luglio, sabato 12:00 - domenica 12:00 UTC; CW e SSB, 80-10 m. World RS(T) + numero, Island anche il riferimento IOTA.
+- Punti: World con World 2, con Island 15; Island con World o con la stessa isola 5, con un'altra isola 15.
+- Moltiplicatori: riferimenti IOTA per banda e per modo.
+- `[Score]`: `points=any=2`; `[Script]`: `punti(qso)` (stazione Island se il proprio scambio ha un riferimento IOTA) e `moltiplicatori(qso)`.
+
+### IPA Contest
+Fonte: <https://www.darc.de/fileadmin/filemounts/referate/conteste/contest/Contestrules/IPARC_23.pdf> (IPARC, 2023; date 2026
+confermate da <https://www.qrz.ru/>).
+- Primo fine settimana pieno di novembre: CW sabato, SSB domenica, 06:00-18:00 UTC; 80-10 m. RS(T) + numero; i soci aggiungono IPA
+  (gli statunitensi anche lo stato).
+- Punti: 1 per QSO, 5 con una stazione IPARC. Moltiplicatori per banda: paesi DXCC e stati USA con una stazione IPARC.
+- `[Score]`: `points=any=1`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)` con IPA.
+
+### R3A Cup Digi («MSK TIME» Cup)
+Fonte: <http://www.rdrclub.ru/r3a-cup-digi/296-r3a-cup-digi-rules> (Russian Digital Radio Club, 2027), trovato tramite <https://www.digitalrus.ru/>.
+- Ultimo venerdi' di marzo, 17:00-19:59 UTC in tre turni; RTTY45, 80 e 40 m. Mosca RST + area di due lettere, Russia RST + distretto RDA,
+  gli altri RST + numero.
+- Punti: fra Mosca e fuori Mosca 5, altrimenti 1. Moltiplicatori per banda: aree di Mosca e distretti RDA.
+- `[Score]`: `bands=80,40`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)`.
+
+### RDA Contest
+Fonte: <http://rdaward.org/rdac1.htm> (RDA, edizione 2025).
+- Meta' agosto, 08:00-08:00 UTC; CW e SSB, 160-10 m. Russi RS(T) + distretto RDA, gli altri RS(T) + numero.
+- Punti: stranieri 10 per ogni QSO con la Russia (gli altri 0); russi: Russia stesso continente 1, altro continente 2, altro paese stesso
+  continente 3, altro continente 5.
+- Moltiplicatori: distretti RDA una volta sola; i russi anche i paesi DXCC per banda.
+- `[Score]`: `points=any=0`; `[Script]`: `punti(qso)` e `moltiplicatori(qso)`.
+
+### RSGB 1.8 MHz Contest
+Fonte: <https://www.rsgbcc.org/hf/rules/2025/r160m.shtml> (RSGB, 2025).
+- Febbraio (CW e SSB) e novembre (CW), 20:00-23:00 UTC; 160 m. RST + numero, UK&CD anche il distretto.
+- Punti: 2 per QSO; 5 in piu' per il primo QSO con ogni distretto UK&CD e con ogni paese fuori UK&CD. Nessun moltiplicatore.
+- `[Score]`: `points=any=2`, `mult=exch/add:5/if:dxcc:G,GM,GW,GI,GD,GU,GJ; dxcc/add:5/except:G,GM,GW,GI,GD,GU,GJ`.
+
+### RSGB 80 m Club Championship
+Fonte: <https://www.rsgbcc.org/hf/rules/2025/r80mcc.shtml> (RSGB, 2025).
+- Serate di febbraio-luglio di 90 minuti; CW, SSB o Data (PSK63 e RTTY), 80 m. RS(T) + numero; almeno una stazione UK&CD.
+- Punti: 1 per QSO, 5 con la stazione RSGB (G6XX e le varianti regionali). Nessun moltiplicatore.
+- `[Score]`: `points=call:G6XX,GM6XX,GW6XX,GI6XX,GD6XX,GU6XX,GJ6XX=5; any=1`; `[Script]`: `ammesso(qso)` con il Regno Unito.
+
+### Gruppo 3B: cosa resta approssimato
+- French HF Championship: i punti delle stazioni francesi non sono nella fonte (Aurora usa quelli degli stranieri).
+- Helvetia e Holyland: regolamento letto da un riassunto (WA7BNM); per l'Helvetia la Svizzera conta solo con i cantoni, non come paese.
+- HA-DX, OK-OM, Helvetia, Holyland, King of Spain: i punti delle stazioni del paese organizzatore fra loro seguono il riassunto, le /MM e
+  /AM non sono distinte; l'elenco EADX-100 del King of Spain e' sostituito dal DXCC, il CQ WW del Marconi dal DXCC.
+- IARU R1 Field Day: si suppone di essere stazione portatile; da stazione fissa i QSO con altre fisse valgono 0 (non distinto).
+- IPA: il regolamento somma punti x moltiplicatori banda per banda; Aurora fa il totale dei punti per il totale dei moltiplicatori.
+- JIDX: le isole JD1 non sono distinte da JA. KCJ: i codici di prefettura e distretto non si controllano.
+- R3A Cup: i doppi in turni diversi non sono distinti. RDA: la stazione portatile (C1/C2, 10 punti) non e' distinta.
+- RAC: si usa il Winter Contest; il Canada Day ha un regolamento a parte (PDF 2026 non leggibile).
+- HSC: un QSO senza scambio vale come non socio.

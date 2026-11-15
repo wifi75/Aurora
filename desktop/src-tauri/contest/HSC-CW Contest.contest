@@ -43,3 +43,16 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=any=2
+mult=dxcc/band
+
+[Script]
+// soci HSC (mandano il numero di socio) 5 punti, non soci (mandano NM) 2
+fn punti(qso) {
+    let n = 0;
+    for w in qso.exch_rcvd.split(" ") { if w.to_upper() == "NM" { return 2; } if w != "" { n += 1; } }
+    if n == 0 { 2 } else { 5 }
+}

@@ -297,3 +297,123 @@ fn rac() {
     let t = punteggio("RAC Contest", &[q("DL1ABC", "40m", "CW", 0, "001", "001"), q("W1AW", "20m", "CW", 1, "002", "001")]);
     assert_eq!((t.punti, t.punteggio, t.errore_script.clone()), (4, 4, None));
 }
+
+#[test]
+fn hsc_cw() {
+    let log = [
+        c("DL1ABC", "20m", 0, "1234"), // socio HSC: 5; DL su 20 m
+        c("W1AW", "20m", 1, "NM"),     // non socio: 2; K
+        c("DL2ABC", "40m", 2, "NM"),   // 2; DL su 40 m
+    ];
+    let t = punteggio("HSC-CW Contest", &log);
+    // punti 9; moltiplicatori 3; 27
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (9, 3, 27, None));
+}
+
+#[test]
+fn iaru_hf() {
+    let log = [
+        c("DL1ABC", "20m", 0, "28"),  // stessa zona ITU: 1; zona 28
+        c("EA1ABC", "20m", 1, "37"),  // stesso continente, altra zona: 3; zona 37
+        c("W1AW", "20m", 2, "08"),    // altro continente e zona: 5; zona 8
+        c("DA0HQ", "20m", 3, "DARC"), // stazione HQ: 1; DARC
+        c("W1AW", "40m", 4, "08"),    // 5; zona 8 su 40 m
+    ];
+    let t = punteggio("IARU HF World-Championship-CW-SSB Contest", &log);
+    // punti 15; moltiplicatori 28, 37, 8, DARC su 20 m e 8 su 40 m = 5; 75
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (15, 5, 75, None));
+}
+
+#[test]
+fn iota() {
+    let log = [
+        q("G3ABC", "20m", "CW", 0, "001", "001 EU005"),     // World con Island: 15; EU005 in CW su 20 m
+        q("DL1ABC", "20m", "CW", 1, "002", "002"),          // World con World: 2
+        q("G3ABC", "20m", "SSB", 2, "003", "003 EU005"),    // altro modo: 15; EU005 in SSB
+        q("GM3ABC", "40m", "CW", 3, "004", "004 EU-010"),   // 15; EU010 su 40 m
+    ];
+    let t = punteggio("IOTA_CW-SSB", &log);
+    // punti 47; moltiplicatori 3; 141
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (47, 3, 141, None));
+    // da un'isola (EU130): World 5, stessa isola 5, altra isola 15
+    let log = [
+        q("G3ABC", "20m", "CW", 0, "001 EU130", "001 EU005"),
+        q("DL1ABC", "20m", "CW", 1, "002 EU130", "002"),
+        q("IK1ABC", "20m", "CW", 2, "003 EU130", "003 EU130"),
+    ];
+    let t = punteggio("IOTA_CW-SSB", &log);
+    assert_eq!((t.punti, t.molt, t.punteggio), (25, 2, 50));
+}
+
+#[test]
+fn ipa() {
+    let log = [
+        c("DL1ABC", "20m", 0, "001 IPA"),    // socio IPARC: 5; DL su 20 m
+        c("DL2ABC", "20m", 1, "002"),        // 1
+        c("W1AW", "20m", 2, "003 IPA NY"),   // 5; stato NY
+        c("W2ABC", "20m", 3, "004 IPA CA"),  // 5; stato CA
+        c("DL3ABC", "40m", 4, "005 IPA"),    // 5; DL su 40 m
+    ];
+    let t = punteggio("IPA CW-SSB Contest", &log);
+    // punti 21; moltiplicatori 4; 84
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (21, 4, 84, None));
+}
+
+#[test]
+fn r3a_cup_digi() {
+    let log = [
+        q("RA3ABC", "80m", "RTTY", 0, "001", "LF"),   // Mosca: 5; LF su 80 m
+        q("RA1ABC", "80m", "RTTY", 1, "002", "MO54"), // Russia: 1; MO54
+        q("UA9ABC", "40m", "RTTY", 2, "001", "NS01"), // 1; NS01 su 40 m
+        q("DL1ABC", "40m", "RTTY", 3, "002", "005"),  // 1; nessun moltiplicatore
+        q("RA3ABD", "20m", "RTTY", 4, "003", "LF"),   // 20 m non ammessa
+    ];
+    let t = punteggio("R3A-CUP-DIGI", &log);
+    // punti 8; moltiplicatori 3; 24
+    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio, t.errore_script.clone()), (1, 8, 3, 24, None));
+}
+
+#[test]
+fn rda() {
+    let log = [
+        c("RA3ABC", "20m", 0, "TB02"), // stazione russa: 10; distretto TB02
+        c("UA9ABC", "40m", 1, "NS01"), // 10; NS01
+        c("RA3ABC", "40m", 2, "TB02"), // 10; TB02 gia' preso (una volta sola)
+        c("DL1ABC", "20m", 3, "001"),  // non russa: 0
+    ];
+    let t = punteggio("RDA Contest", &log);
+    // punti 30; moltiplicatori 2; 60
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (30, 2, 60, None));
+    // dalla Russia europea: Russia stesso continente 1, altro 2, altro paese stesso continente 3, altro continente 5
+    let log = [c("RA1ABC", "20m", 0, "SP01"), c("UA9ABC", "20m", 1, "NS01"), c("DL1ABC", "20m", 2, "001"), c("W1AW", "40m", 3, "001")];
+    let t = punteggio_da("RDA Contest", &log, "RA3XYZ");
+    // punti 11; SP01, NS01 e i paesi UA, UA9, DL su 20 m, K su 40 m = 6; 66
+    assert_eq!((t.punti, t.molt, t.punteggio), (11, 6, 66));
+}
+
+#[test]
+fn rsgb_160() {
+    let log = [
+        c("G3ABC", "160m", 0, "001 LN"),               // 2 + 5 per il distretto LN
+        c("G4ABC", "160m", 1, "002 LN"),               // 2
+        c("DL1ABC", "160m", 2, "003"),                 // 2 + 5 per il paese DL
+        c("DL2ABC", "160m", 3, "004"),                 // 2
+        q("G3ABC", "160m", "SSB", 4, "005", "005 LN"), // altro modo: 2
+        c("G5ABC", "80m", 5, "006 LN"),                // 80 m non ammessa
+    ];
+    let t = punteggio("RSGB 160 M CONTEST", &log);
+    // punti 20 con i bonus, nessun moltiplicatore
+    assert_eq!((t.esclusi, t.punti, t.punteggio), (1, 20, 20));
+}
+
+#[test]
+fn rsgb_80() {
+    let log = [
+        c("G3ABC", "80m", 0, "001"),                 // 1
+        c("G6XX", "80m", 1, "002"),                  // stazione RSGB: 5
+        c("DL1ABC", "80m", 2, "003"),                // nessuna delle due nel Regno Unito: non ammesso
+        q("GM6XX", "80m", "SSB", 3, "004", "004"),   // 5
+    ];
+    let t = punteggio("RSGB 80 M CONTEST", &log);
+    assert_eq!((t.esclusi, t.punti, t.punteggio, t.errore_script.clone()), (1, 11, 11, None));
+}
