@@ -430,3 +430,164 @@ Fonte: <https://www.rsgbcc.org/hf/rules/2025/r80mcc.shtml> (RSGB, 2025).
 - R3A Cup: i doppi in turni diversi non sono distinti. RDA: la stazione portatile (C1/C2, 10 punti) non e' distinta.
 - RAC: si usa il Winter Contest; il Canada Day ha un regolamento a parte (PDF 2026 non leggibile).
 - HSC: un QSO senza scambio vale come non socio.
+
+
+## Gruppo 3A
+
+Letti il 2026-11-15; prove in `core/crates/contest/tests/regole_contest_3a.rs`.
+
+### ARI International DX Contest
+Fonte: <https://www.ari.it/images/stories/ContestHF/ariinternationaldxcontest-dxrules2026.pdf> e, per gli italiani,
+`ariinternationaldxcontest-regolamento2026.pdf` nella stessa cartella (ARI, edizione 2026).
+- Bande 80-10 m, CW, SSB e RTTY: la stessa stazione una volta per modo su ogni banda. Gli italiani non si collegano fra loro.
+- Punti per gli italiani: Europa 1, fuori Europa 3. Per gli altri: con l'Italia (I, IS, IT9) 10, stesso paese 0, stesso continente 1,
+  altro continente 3.
+- Moltiplicatori per banda (una volta in qualsiasi modo): paesi DXCC e WAE tranne I, IS, IT9, e le province italiane.
+- `[Score]`: `points=my_dxcc:I,IT9,IS&cont:EU=1; my_dxcc:I,IT9,IS=3; dxcc:I,IT9,IS=10; same_dxcc=0; same_cont=1; any=3`,
+  `mult=dxcc/band/except:I,IT9,IS; exch/band/if:dxcc:I,IT9,IS`; `[Script]`: `ammesso(qso)` toglie i QSO fra italiani.
+
+### ARRL 10-Meter Contest
+Fonte: <https://www.arrl.org/files/file/Contest%20Rules%20PDFs/2026/10%20Meter%20Rules%20v%202_0%20-%202026.pdf> (ARRL, v2.0 2026).
+- Solo 10 m, una volta per modo. Punti: fonia 2, CW 4.
+- Moltiplicatori una volta in fonia e una in CW: stati USA (KH6 e KL7 compresi) e DC, province canadesi, stati messicani, paesi DXCC
+  (e regioni ITU delle /MM, non distinte).
+- `[Score]`: `points=mode:CW=4; any=2`, `mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL7; dxcc/mode/except:K,VE,XE,KH6,KL7`.
+
+### ARRL International DX Contest (CW e SSB)
+Fonte: <https://contests.arrl.org/ContestRules/DX-Rules.pdf> (ARRL, versione 2.0).
+- Bande 160-10 m. W/VE lavorano solo il DX (KH6 e KL7 sono DX), il DX solo W/VE. Punti: 3 per QSO.
+- Moltiplicatori per banda: per W/VE i paesi DXCC tranne USA e Canada; per il DX stati USA, DC e province canadesi (lo scambio).
+- `[Score]`: `points=any=3`, `mult=exch/band/if:dxcc:K,VE; dxcc/band/except:K,VE`; `[Script]`: `ammesso(qso)` per chi lavora chi.
+
+### ARRL Field Day
+Fonte: <https://www.arrl.org/files/file/Field-Day/2026/2026-Field-Day-Rules.pdf> (ARRL, 2026).
+- Punti: fonia 1, CW e digitale 2, la stessa stazione una volta per banda e modo. Nessun moltiplicatore.
+- Punteggio = punti x moltiplicatore di potenza (oltre 100 W 1, fino a 100 W 2, QRP a batteria 5) + punti bonus.
+- `[Score]`: `points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2`; `[Script]`: `punteggio(t)` con il moltiplicatore 2.
+
+### Africa All Mode International DX Contest
+Fonte: <https://www.darc.de/fileadmin/filemounts/referate/conteste/contest/Contestrules/The_Africa_All_Mode_International_DX_Contest.pdf>
+(SARL, edizione 2024: la piu' recente pubblicata).
+- Bande 160-10 m, CW, SSB e RTTY; la stessa stazione una volta per modo su ogni banda. Punti: 1 per QSO.
+- Moltiplicatori: ogni paese DXCC africano una volta per modo, su qualsiasi banda.
+- `[Score]`: `points=any=1`, `mult=dxcc/mode/if:cont:AF`.
+
+### All Asian DX Contest
+Fonte: <https://www.jarl.org/English/4_Library/A-4-3_Contests/AA_rule_en.htm> (JARL, regole 2025 con le date 2026).
+- Bande 160-10 m. Gli asiatici lavorano tutti tranne il proprio paese; gli altri solo l'Asia.
+- Punti degli asiatici: 160 m 3 (Asia) o 9 (fuori Asia), 80 e 10 m 2 o 6, le altre bande 1 o 3. Degli altri: 160 m 3, 80 e 10 m 2, le
+  altre 1.
+- Moltiplicatori per banda: per gli asiatici i paesi DXCC, per gli altri i prefissi WPX asiatici.
+- `[Score]`: punti con `my_cont:AS`, `cont:AS` e le bande, `mult=dxcc/band/if:my_cont:AS; wpx/band/if:my_cont:EU,AF,NA,SA,OC`;
+  `[Script]`: `ammesso(qso)` per chi lavora chi.
+
+### Baltic Contest
+Fonte: <http://www.lrsf.lt/wp-content/uploads/2026/04/BC-2026-61th-BALTIC-CONTEST.pdf> (LRSF, 61a edizione 2026).
+- Solo 80 m, una volta in CW e una in SSB. Punti dai paesi baltici (ES, YL, LY): Europa 1, altri continenti 2. Dall'Europa: con ES, YL,
+  LY 10, gli altri 1. Da fuori Europa: con ES, YL, LY 20, gli altri 1. Nessun moltiplicatore: punteggio = somma dei punti.
+- `[Score]`: `points=my_dxcc:ES,YL,LY&cont:EU=1; my_dxcc:ES,YL,LY=2; my_cont:EU&dxcc:ES,YL,LY=10; my_cont:EU=1; dxcc:ES,YL,LY=20; any=1`.
+
+### CQ WW 160-Meter Contest
+Fonte: <https://www.cq160.com/rules/> (CQ).
+- Solo 160 m. Punti: stesso paese 2, stesso continente 5, altro continente 10.
+- Moltiplicatori una volta sola: stati USA (48) e DC, province canadesi, paesi DXCC e WAE.
+- `[Score]`: `points=same_dxcc=2; same_cont=5; any=10`, `mult=exch/if:dxcc:K,VE; dxcc/except:K,VE`.
+
+### CQ WW DX Contest
+Fonte: <https://www.cqww.com/rules/> (CQ, regole 2026).
+- Bande 160-10 m. Punti: altro continente 3, stesso continente 1 (fra paesi del Nord America 2), stesso paese 0.
+- Moltiplicatori per banda: zone CQ e paesi DXCC e WAE.
+- `[Score]`: `points=same_dxcc=0; my_cont:NA&cont:NA=2; same_cont=1; any=3`, `mult=cq/band; dxcc/band`.
+
+### CQ WW WPX Contest (CW e SSB)
+Fonte: <https://www.cqwpx.com/rules/> (CQ, regole 2026).
+- Bande 160-10 m. Punti: altro continente 3 su 28/21/14 MHz e 6 su 7/3,5/1,8; stesso continente 1 e 2 (fra stazioni del Nord America
+  2 e 4); stesso paese 1 su ogni banda.
+- Moltiplicatori: prefissi WPX, una volta sola.
+- `[Score]`: punti con `band:160,80,40`, `mult=wpx`.
+
+### CQ-M International DX Contest
+Fonte: <https://srr.ru/wp-content/uploads/2026/05/Reglament_MS_KV_CQ-M_2026.pdf> (SRR, regolamento 2026).
+- Bande 160-10 m, la stessa stazione una volta per banda e modo. Punti: stesso continente 2 (Europa e Asia sono un solo continente),
+  altro continente 3.
+- Moltiplicatori per banda: paesi dell'elenco R-150-S (qui il DXCC).
+- `[Score]`: `points=my_cont:EU,AS&cont:EU,AS=2; same_cont=2; any=3`, `mult=dxcc/band`.
+
+### CQMM DX Contest
+Fonte: regolamento inglese del CWJF Group collegato da <https://www.cqmmdx.com/rules/> (con le novita' del 2027).
+- Solo CW, bande 80-10 m. Scambio RST + continente, con M (soci CWJF), Q (QRP), Y (YL), C (multioperatore).
+- Punti: stesso paese 1; stesso continente 2 (4 su 40 e 80 m); altro continente 3 (6 su 40 e 80 m); soci CWJF, QRP e YL 10.
+- Moltiplicatori: prefissi del Sud America per banda e paesi DXCC una volta sola.
+- `[Score]`: `mult=wpx/band/if:cont:SA; dxcc`; `[Script]`: `punti(qso)` con la lettera finale dello scambio.
+
+### California QSO Party
+Fonte: <https://www.cqp.org/Rules.html> (NCCC, regole 2026 aggiornate il 19-07-2026).
+- Bande 160-10 m, una volta in CW e una in fonia su ogni banda. Punti: 3 per QSO (anche in fonia dal 2026).
+- Moltiplicatori una volta sola: per chi e' fuori dalla California le 58 contee, per i californiani stati e province (al massimo 58).
+- `[Score]`: `points=any=3`, `mult=exch`.
+
+### DARC Easter Contest (Ostercontest)
+Fonte: <https://www.darc.de/der-club/referate/conteste/ostercontest/rules-easter-contest/> (DARC, edizione 2026).
+- 80 e 40 m, una volta per banda (in MIXED anche per modo). Scambio: DL RS(T) + DOK (NM per chi non e' socio), gli altri RS(T) + numero.
+- Punti: 1 per QSO. Moltiplicatori per banda e per modo: prefissi WPX e DOK (NM non conta).
+- `[Score]`: `bands=80,40`, `points=any=1`; `[Script]`: `moltiplicatori(qso)` con prefissi e DOK.
+
+### EPC WW DX Contest
+Fonte: <https://epcwwdx.com/contest-rules/> (European PSK Club, regole 2027).
+- BPSK125, bande 80-10 m. Punti per banda (stesso paese / stesso continente / altro continente): 80 m 1/2/6, 40 e 20 m 1/2/4, 15 m 1/3/4,
+  10 m 1/3/5.
+- Moltiplicatori: paesi DXCC per banda.
+- `[Score]`: `points=same_dxcc=1; same_cont&band:15,10=3; same_cont=2; band:80=6; band:10=5; any=4`, `mult=dxcc/band`.
+
+### EU PSK DX Contest
+Fonte: <https://eupsk.club/eupskdx/eupskdxrules.pdf> (European PSK Club, edizioni 2025-2029).
+- BPSK63, bande 80-10 m. Scambio: EU RST + area EU (`NOTMSE`), gli altri RST + numero.
+- Punti: stesso paese 1, stesso continente 2, altro continente 3; per chi e' fuori Europa le stazioni europee valgono 5.
+- Moltiplicatori per banda: aree EU e paesi DXCC.
+- `[Score]`: `points=my_cont:AF,AS,NA,SA,OC&cont:EU=5; same_dxcc=1; same_cont=2; any=3`, `mult=exch/band/if:cont:EU; dxcc/band`.
+
+### European HF Championship
+Fonte: <https://euhf.s5cc.eu/rules/euhfc_rules_latest.pdf> (SCC, aggiornate il 30-06-2026).
+- Bande 160-10 m, una volta per banda e modo; contano solo i QSO con l'Europa. Scambio RS(T) + ultime due cifre dell'anno della prima
+  licenza.
+- Punti: 1 per QSO. Moltiplicatori: gli anni diversi, una volta per banda in qualsiasi modo.
+- `[Score]`: `valid=cont:EU`, `points=any=1`; `[Script]`: `moltiplicatori(qso)` con l'anno.
+
+### HF Field Day (Fieldday Contest)
+Fonte: <http://fd.qrz.ru/> (regolamento 2026).
+- Bande 160-10 m, la stessa stazione una volta per banda. Scambio RS(T) + numero.
+- Punti: con le stazioni portatili e mobili (/P, /M, /MM, /AM, /PM) 5; con le fisse della propria regione (1a Regione IARU o fuori) 2,
+  con le altre 3.
+- Moltiplicatori per banda: paesi DXCC e distretti federali russi; /MM e /AM non sono moltiplicatori.
+- `[Score]`: `points=any=2`, `mult=dxcc/band`; `[Script]`: `punti(qso)` con la 1a Regione e le portatili, `moltiplicatori(qso)`.
+
+### Cosa resta approssimato (gruppo 3A)
+
+- ARI: le province non si controllano sull'elenco.
+- ARRL 10 m: le regioni ITU delle /MM non sono moltiplicatori; i modi di fonia scritti in modo diverso (USB, LSB) contano come modi
+  separati per i moltiplicatori.
+- ARRL Field Day: il moltiplicatore di potenza e' sempre 2 (fino a 100 W) e i punti bonus non ci sono.
+- California QSO Party: non si sa se una stazione W e' in California (i QSO fra non californiani non sono esclusi), il tetto di 58
+  moltiplicatori non e' applicato e la parola DX conta come moltiplicatore.
+- CQ-M: l'elenco R-150-S e' sostituito dal DXCC.
+- HF Field Day: i distretti federali russi non sono moltiplicatori e la 1a Regione IARU si ricava dal continente piu' un elenco di paesi.
+
+### Contest tolti perche' non piu' organizzati
+
+| Contest | Motivo |
+|---|---|
+| 10-10 Open Seasons | il regolamento di Ten-Ten International elenca solo Winter, Summer e Sprint; ultima Open Season 2023 |
+| 10-Meter RTTY Contest | sostituito dagli sponsor con un contest FT8 nel 2018 |
+| AGB-Party | ultimo regolamento sul sito dell'AGB per il 2022 |
+| Arktika Cup Digital | nessuna edizione dopo il 2019 |
+| BMA Contest | annullato nel 2024 e tolto dai regolamenti dell'UBA |
+| CBNR (CW e SSB) | ultimo regolamento trovato del 2016 |
+| CDX Test Independence Day | ultima edizione nota del 2011 |
+| CQ BDM RTTY WW | unica edizione nota del 2013 |
+| Croatian CW Contest | ultima edizione del 2022, sostituito dal 9A DX Contest |
+| DMC RTTY Contest | sito del club chiuso, ultima edizione nota del 2017 |
+| DigiFest | ultimi risultati del 2014, pagina del regolamento non raggiungibile |
+| EPC Russia DX Contest | ultima edizione del 2011 |
+| EPC Ukraine DX Contest | ultimo regolamento del 2014 |
+| Eurasia Championship | sito chiuso, nessuna edizione trovata dopo il 2020 |
+| Flavors PSK Contest | non piu' nel calendario dei contest del Club 070 |
