@@ -237,6 +237,41 @@ function family4(tag: string, c: MacroContext): string | null {
   }
 }
 
+function special5(tag: string, r: MacroRun): boolean {
+  const c = r.ctx;
+  switch (tag) {
+    case 'CLEARNRR': setField(r, 'nrr', ''); return true;
+    case 'INCNRR': {
+      // il numero ricevuto piu' uno, con gli stessi zeri davanti
+      const m = /^(\D*)(\d+)(.*)$/.exec(fromCutNumbers(c.nrr.trim()));
+      const next = m ? `${m[1]}${String(Number(m[2]) + 1).padStart(m[2]?.length ?? 1, '0')}${m[3]}` : '1';
+      setField(r, 'nrr', next);
+      return true;
+    }
+    // il nominativo corretto si ritrasmette (dopo averlo sistemato nel campo)
+    case 'CORRECTCALLTX': r.text(c.call.toUpperCase()); return true;
+    case 'SAVESHAUTO': r.act({ type: 'saveQso' }); r.act({ type: 'clearQso' }); return true;
+    default: return false;
+  }
+}
+
+function action5(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'SAVE':
+    case 'SAVESH': return { type: 'saveQso' };
+    case 'ERASE': return { type: 'ignoreBefore', at: 'erase' };
+    case 'READLOG':
+    case 'REFRESH':
+    case 'WKD':
+    case 'PRINTQSL':
+    case 'QSLPRINT':
+    case 'SENDEQSL':
+    case 'SENDEQSLNP':
+    case 'SENDSPOT':
+    case 'QSOCMDDDE': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -253,6 +288,7 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
     special1(tag, arg, r) ||
     special2(tag, r) ||
     special3(tag, arg, r) ||
+    special5(tag, r) ||
     false
   );
 }
@@ -272,7 +308,12 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
   if (tag === 'SAVESELTEXT') return cmd('SAVESELTEXT');
   if (tag === 'TIMER') return cmd('TIMER', arg);
   if (tag === 'STARTTIME' && arg !== undefined) return cmd('STARTTIME', arg);
+  if (tag === 'WKDIGNOREBEFORE') {
+    const at = arg === undefined ? null : parseIgnoreBefore(arg);
+    return at === null ? null : { type: 'ignoreBefore', at };
+  }
   return (
+    action5(tag, arg) ??
     null
   );
 }

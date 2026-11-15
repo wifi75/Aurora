@@ -203,6 +203,19 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('text', "<TIME:formato>", "ora UTC con un formato: %H %M %S ore minuti secondi, %d %m %Y %y giorno mese anno, %j giorno dell'anno, %b mese (vale anche per DATE, LOCALTIME, CTIME)", "UTC time with a format: %H %M %S hours minutes seconds, %d %m %Y %y day month year, %j day of year, %b month (also for DATE, LOCALTIME, CTIME)", "UTC-Zeit mit Format: %H %M %S Stunden Minuten Sekunden, %d %m %Y %y Tag Monat Jahr, %j Tag des Jahres, %b Monat (auch für DATE, LOCALTIME, CTIME)", "heure UTC avec un format : %H %M %S heures minutes secondes, %d %m %Y %y jour mois année, %j jour de l'année, %b mois (aussi pour DATE, LOCALTIME, CTIME)", "hora UTC con formato: %H %M %S horas minutos segundos, %d %m %Y %y día mes año, %j día del año, %b mes (también para DATE, LOCALTIME, CTIME)", "hora UTC com um formato: %H %M %S horas minutos segundos, %d %m %Y %y dia mês ano, %j dia do ano, %b mês (também para DATE, LOCALTIME, CTIME)"),
   c('program', "<STARTTIME:hhmm>", "fissa l'ora di inizio del QSO (con % scrive l'ora di inizio con quel formato)", "sets the QSO start time (with % it writes the start time in that format)", "setzt die Startzeit des QSO (mit % schreibt es die Startzeit in diesem Format)", "règle l'heure de début du QSO (avec % elle écrit l'heure de début dans ce format)", "fija la hora de inicio del QSO (con % escribe la hora de inicio en ese formato)", "define a hora de início do QSO (com % escreve a hora de início nesse formato)"),
   c('program', "<TIMER:s,macro>", "dopo s secondi esegue la macro (senza macro suona un avviso); <TIMER:0> lo ferma", "after s seconds runs the macro (without a macro it sounds an alert); <TIMER:0> stops it", "startet nach s Sekunden das Makro (ohne Makro ertönt ein Alarm); <TIMER:0> stoppt es", "après s secondes exécute la macro (sans macro, elle émet une alerte) ; <TIMER:0> l'arrête", "tras s segundos ejecuta la macro (sin macro suena una alerta); <TIMER:0> lo detiene", "passados s segundos executa a macro (sem macro toca um alerta); <TIMER:0> pára-o"),
+  c('program', "<CLEARNRR>", "svuota lo scambio ricevuto", "clears the received exchange", "löscht den empfangenen Austausch", "efface l'échange reçu", "borra el intercambio recibido", "limpa a troca recebida"),
+  c('program', "<INCNRR>", "lo scambio ricevuto più uno (stessi zeri davanti)", "the received exchange plus one (same leading zeros)", "der empfangene Austausch plus eins (gleiche führende Nullen)", "l'échange reçu plus un (mêmes zéros initiaux)", "el intercambio recibido más uno (mismos ceros a la izquierda)", "a troca recebida mais um (mesmos zeros à esquerda)"),
+  c('program', "<CORRECTCALLTX>", "ritrasmette il nominativo, dopo che l'hai corretto", "sends the callsign again after you corrected it", "sendet das Rufzeichen erneut, nachdem du es korrigiert hast", "renvoie l'indicatif après que tu l'as corrigé", "vuelve a enviar el indicativo después de que lo corrijas", "volta a enviar o indicativo depois de o corrigires"),
+  c('program', "<SAVE>", "salva il QSO nel log (come <SAVEQSO>)", "saves the QSO in the log (like <SAVEQSO>)", "speichert das QSO im Log (wie <SAVEQSO>)", "enregistre le QSO dans le log (comme <SAVEQSO>)", "guarda el QSO en el log (como <SAVEQSO>)", "guarda o QSO no log (como <SAVEQSO>)"),
+  c('program', "<SAVESHAUTO>", "salva il QSO e svuota i campi", "saves the QSO and clears the fields", "speichert das QSO und leert die Felder", "enregistre le QSO et efface les champs", "guarda el QSO y borra los campos", "guarda o QSO e limpa os campos"),
+  c('program', "<READLOG>", "rilegge il log e i suoi segni", "reloads the log and its marks", "lädt das Log und seine Markierungen neu", "recharge le log et ses marques", "recarga el log y sus marcas", "recarrega o log e as suas marcas"),
+  c('program', "<WKD>", "dice a schermo se e quando hai già lavorato il nominativo", "shows whether and when you already worked the callsign", "zeigt an, ob und wann du das Rufzeichen schon gearbeitet hast", "indique si et quand tu as déjà contacté l'indicatif", "muestra si ya trabajaste el indicativo y cuándo", "mostra se já trabalhaste o indicativo e quando"),
+  c('program', "<WKDIGNOREBEFORE:data>", "come <IGNOREBEFORE:data>", "like <IGNOREBEFORE:date>", "wie <IGNOREBEFORE:date>", "comme <IGNOREBEFORE:date>", "como <IGNOREBEFORE:date>", "como <IGNOREBEFORE:date>"),
+  c('program', "<ERASE>", "toglie il limite di <IGNOREBEFORE>: i segni del log contano di nuovo tutti i QSO", "removes the <IGNOREBEFORE> limit: log marks count all QSOs again", "hebt die Grenze von <IGNOREBEFORE> auf: die Log-Markierungen zählen wieder alle QSOs", "supprime la limite de <IGNOREBEFORE> : les marques du log comptent de nouveau tous les QSO", "quita el límite de <IGNOREBEFORE>: las marcas del log vuelven a contar todos los QSO", "remove o limite de <IGNOREBEFORE>: as marcas do log voltam a contar todos os QSO"),
+  c('program', "<PRINTQSL>", "stampa l'etichetta QSL del QSO in corso", "prints the QSL label of the current QSO", "druckt das QSL-Etikett des aktuellen QSO", "imprime l'étiquette QSL du QSO en cours", "imprime la etiqueta QSL del QSO actual", "imprime a etiqueta QSL do QSO atual"),
+  c('program', "<SENDEQSL>", "conferme in rete: Aurora manda ogni QSO salvato ai servizi scelti nelle Impostazioni (eQSL, LoTW, Club Log...), il comando lo ricorda", "online confirmations: Aurora sends every saved QSO to the services chosen in Settings (eQSL, LoTW, Club Log...), the command reminds you", "Online-Bestätigungen: Aurora sendet jedes gespeicherte QSO an die in den Einstellungen gewählten Dienste (eQSL, LoTW, Club Log...), der Befehl erinnert dich daran", "confirmations en ligne : Aurora envoie chaque QSO enregistré aux services choisis dans les Paramètres (eQSL, LoTW, Club Log...), la commande te le rappelle", "confirmaciones en línea: Aurora envía cada QSO guardado a los servicios elegidos en Ajustes (eQSL, LoTW, Club Log...), el comando te lo recuerda", "confirmações online: o Aurora envia cada QSO guardado para os serviços escolhidos nas Definições (eQSL, LoTW, Club Log...), o comando lembra-te disso"),
+  c('program', "<SENDSPOT:commento>", "manda al DX cluster uno spot del corrispondente sulla frequenza del segnale", "sends a DX cluster spot of the other station on the signal frequency", "sendet einen DX-Cluster-Spot der Gegenstation auf der Signalfrequenz", "envoie un spot DX cluster de la station correspondante sur la fréquence du signal", "envía un spot de DX cluster de la estación corresponsal en la frecuencia de la señal", "envia um spot de DX cluster da estação correspondente na frequência do sinal"),
+  c('program', "<QSOCMDDDE:comando>", "Aurora non usa il DDE: i QSO salvati arrivano già ai programmi di log collegati", "Aurora does not use DDE: saved QSOs already reach the connected logging programs", "Aurora nutzt kein DDE: gespeicherte QSOs erreichen die verbundenen Logprogramme bereits", "Aurora n'utilise pas DDE : les QSO enregistrés arrivent déjà aux programmes de log connectés", "Aurora no usa DDE: los QSO guardados ya llegan a los programas de log conectados", "O Aurora não usa DDE: os QSO guardados já chegam aos programas de log ligados"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -515,6 +528,36 @@ CATEGORY["<STARTTIME:hhmm>"] = 'time';
 EXAMPLE["<STARTTIME:hhmm>"] = "<STARTTIME:1230>";
 CATEGORY["<TIMER:s,macro>"] = 'time';
 EXAMPLE["<TIMER:s,macro>"] = "<TIMER:600,F2>";
+CATEGORY["<CLEARNRR>"] = 'qso';
+EXAMPLE["<CLEARNRR>"] = "<CLEARNRR>";
+CATEGORY["<INCNRR>"] = 'qso';
+EXAMPLE["<INCNRR>"] = "<INCNRR>";
+CATEGORY["<CORRECTCALLTX>"] = 'qso';
+EXAMPLE["<CORRECTCALLTX>"] = "<CORRECTCALLTX> <CORRECTCALLTX> TU";
+CATEGORY["<SAVE>"] = 'qso';
+EXAMPLE["<SAVE>"] = "<SAVE>";
+ALIASES["<SAVE>"] = ["<SAVESH>"];
+CATEGORY["<SAVESHAUTO>"] = 'qso';
+EXAMPLE["<SAVESHAUTO>"] = "TU <SAVESHAUTO>";
+CATEGORY["<READLOG>"] = 'qso';
+EXAMPLE["<READLOG>"] = "<READLOG>";
+ALIASES["<READLOG>"] = ["<REFRESH>"];
+CATEGORY["<WKD>"] = 'qso';
+EXAMPLE["<WKD>"] = "<WKD>";
+CATEGORY["<WKDIGNOREBEFORE:data>"] = 'qso';
+EXAMPLE["<WKDIGNOREBEFORE:data>"] = "<WKDIGNOREBEFORE:2026-11-14 12:00>";
+CATEGORY["<ERASE>"] = 'qso';
+EXAMPLE["<ERASE>"] = "<ERASE>";
+CATEGORY["<PRINTQSL>"] = 'qso';
+EXAMPLE["<PRINTQSL>"] = "<PRINTQSL>";
+ALIASES["<PRINTQSL>"] = ["<QSLPRINT>"];
+CATEGORY["<SENDEQSL>"] = 'qso';
+EXAMPLE["<SENDEQSL>"] = "<SAVEQSO><SENDEQSL>";
+ALIASES["<SENDEQSL>"] = ["<SENDEQSLNP>"];
+CATEGORY["<SENDSPOT:commento>"] = 'qso';
+EXAMPLE["<SENDSPOT:commento>"] = "<SENDSPOT:RTTY TNX QSO>";
+CATEGORY["<QSOCMDDDE:comando>"] = 'qso';
+EXAMPLE["<QSOCMDDDE:comando>"] = "<QSOCMDDDE:LOG>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

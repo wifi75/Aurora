@@ -178,6 +178,49 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       );
       return;
     }
+    case 'READLOG':
+    case 'REFRESH': d.invalidateLog(); return;
+    case 'WKD': {
+      const call = d.qsoCall().trim().toUpperCase();
+      if (call === '') return;
+      void getLogQsos().then((r) => {
+        const q = r.qsos.filter((x) => x.call.toUpperCase() === call).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
+        d.toast(q ? d.t('digi.run.wkd', { call, date: q.date, time: q.time, band: q.band, mode: q.mode }) : d.t('digi.run.wkdNone', { call }), 'info');
+      }, fail(d, tag));
+      return;
+    }
+    case 'PRINTQSL':
+    case 'QSLPRINT': {
+      const w = window.open('', '_blank', 'width=480,height=320');
+      if (!w) return;
+      const call = d.qsoCall().toUpperCase();
+      const now = new Date().toISOString();
+      w.document.title = `QSL ${call}`;
+      w.document.body.innerHTML = '';
+      const pre = w.document.createElement('pre');
+      pre.style.font = '16px monospace';
+      pre.textContent = `TO: ${call}\nDATE: ${now.slice(0, 10)}  UTC: ${now.slice(11, 16)}\nMHZ: ${(d.dialHz() / 1e6).toFixed(3)}  MODE: ${s.mode.toUpperCase()}\nPSE/TNX QSL`;
+      w.document.body.appendChild(pre);
+      w.print();
+      return;
+    }
+    case 'SENDEQSL':
+    case 'SENDEQSLNP': d.toast(d.t('digi.run.eqsl'), 'info'); return;
+    case 'SENDSPOT': {
+      const call = d.qsoCall().trim().toUpperCase();
+      if (call === '' || d.dialHz() <= 0) return;
+      const khz = ((d.dialHz() + d.rxHz()) / 1000).toFixed(1);
+      void getClusterSpots(1).then((r) => {
+        const server = r.servers.find((x) => x.state === 'connected')?.key;
+        if (!server) {
+          d.toast(d.t('digi.run.noCluster'), 'info');
+          return undefined;
+        }
+        return sendClusterCommand(server, `DX ${khz} ${call} ${arg || s.mode.toUpperCase()}`.trim()).then(() => d.toast(d.t('digi.run.spotSent', { call, khz }), 'ok'));
+      }, fail(d, tag));
+      return;
+    }
+    case 'QSOCMDDDE': notInAurora(d, tag, 'DDE'); return;
     default: return;
   }
 }

@@ -286,6 +286,17 @@ describe('ora e data', () => {
   });
 });
 
+describe('QSO e log', () => {
+  it('scambio, salvataggio e comandi del log', () => {
+    expect(cmdOf('<INCNRR>', { nrr: '009' })).toEqual([{ type: 'setField', field: 'nrr', value: '010' }]);
+    expect(cmdOf('<CLEARNRR>')).toEqual([{ type: 'setField', field: 'nrr', value: '' }]);
+    expect(cmdOf('<SAVE><SAVESHAUTO>')).toEqual([{ type: 'saveQso' }, { type: 'saveQso' }, { type: 'clearQso' }]);
+    expect(cmdOf('<ERASE>')).toEqual([{ type: 'ignoreBefore', at: 'erase' }]);
+    expect(cmdOf('<WKDIGNOREBEFORE:ERASE>')).toEqual([{ type: 'ignoreBefore', at: 'erase' }]);
+    expect(cmdOf('<SENDSPOT:TNX>')).toEqual([{ type: 'cmd', tag: 'SENDSPOT', arg: 'TNX' }]);
+    expect(runMacro('<CORRECTCALLTX>', ctx).text).toBe('DL1XYZ');
+  });
+});
 
 
 
