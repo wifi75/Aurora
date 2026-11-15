@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=80,40,20,15,10
+valid=not_dxcc:UA,UA9,UA2,EU
+points=dxcc:ON=10; dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO=3; any=1
+mult=exch/band/if:dxcc:ON; wpx/band/if:dxcc:ON; dxcc/band/if:dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO

@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=2
+valid=dxcc:ON
+points=any=3
+mult=exch
