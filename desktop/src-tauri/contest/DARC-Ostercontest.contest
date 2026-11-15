@@ -43,3 +43,20 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40
+points=any=1
+
+[Script]
+// per banda e per modo: ogni prefisso e ogni DOK delle stazioni DL (NM, non socio, non conta)
+fn moltiplicatori(qso) {
+    let b = "/" + qso.mode + "@" + qso.band;
+    let m = ["pfx:" + qso.wpx + b];
+    if qso.dxcc == "DL" {
+        let s = qso.exch_rcvd; s.trim(); let p = s.to_upper().split(" ");
+        let w = p[p.len() - 1];
+        if w != "" && w != "NM" { m.push("dok:" + w + b); }
+    }
+    m
+}

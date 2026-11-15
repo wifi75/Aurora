@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=my_cont:AF,AS,NA,SA,OC&cont:EU=5; same_dxcc=1; same_cont=2; any=3
+mult=exch/band/if:cont:EU; dxcc/band

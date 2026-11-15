@@ -43,3 +43,30 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=any=2
+mult=dxcc/band
+
+[Script]
+// 1a Regione IARU: Europa, Africa (senza le isole a est di 60 E e a sud dell'equatore), ex URSS, zona ITU 39, Mongolia
+fn r1(dxcc, cont) {
+    if dxcc in ["3B9", "FT5X", "FT5Z", "VK0H", "VQ9"] { return false; }
+    cont == "EU" || cont == "AF" || dxcc in ["UA9", "UN", "EX", "EY", "EZ", "4J", "4L", "A4", "A6", "A7", "A9", "HZ", "JY", "OD", "TA", "YI", "YK", "4X", "5B", "7O", "9K", "JT", "E4", "ZC4"]
+}
+fn portatile(nom) {
+    let s = false;
+    for p in nom.to_upper().split("/") { if p in ["P", "M", "MM", "AM", "PM"] { s = true; } }
+    s
+}
+// 5 punti con le stazioni portatili e mobili, 2 con le fisse della propria regione, 3 con le altre
+fn punti(qso) {
+    if portatile(qso.callsign) { 5 }
+    else if r1(qso.dxcc, qso.cont) == r1(qso.my_dxcc, qso.my_cont) { 2 } else { 3 }
+}
+// paese DXCC per banda; /MM e /AM non sono moltiplicatori
+fn moltiplicatori(qso) {
+    let parti = qso.callsign.to_upper().split("/");
+    if "MM" in parti || "AM" in parti || qso.dxcc == "" { [] } else { ["dxcc:" + qso.dxcc + "@" + qso.band] }
+}

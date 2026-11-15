@@ -43,3 +43,16 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+valid=cont:EU
+points=any=1
+
+[Script]
+// moltiplicatore: le ultime due cifre dell'anno della prima licenza, una volta per banda in qualsiasi modo
+fn moltiplicatori(qso) {
+    let s = qso.exch_rcvd; s.trim(); let p = s.split(" ");
+    let w = p[p.len() - 1];
+    if w == "" { [] } else { ["anno:" + w + "@" + qso.band] }
+}
