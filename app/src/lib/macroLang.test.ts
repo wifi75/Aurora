@@ -383,3 +383,12 @@ describe('SSTV', () => {
   });
 });
 
+describe('packet e rete', () => {
+  it('TALK e i comandi del packet', () => {
+    expect(cmdOf('<TALK:IU3ABC,QSY><YAPPSEND:x><PACKET>')).toEqual([
+      { type: 'cmd', tag: 'TALK', arg: 'IU3ABC,QSY' },
+      { type: 'cmd', tag: 'YAPPSEND', arg: 'x' },
+      { type: 'cmd', tag: 'PACKET', arg: '' },
+    ]);
+  });
+});

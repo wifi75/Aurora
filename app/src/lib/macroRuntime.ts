@@ -422,6 +422,24 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'PUTHEADER':
     case 'LIMITSCANLINES':
     case 'FONT': window.location.hash = '#/sstv'; return;
+    case 'TALK': {
+      const cut = arg.indexOf(',');
+      const to = (cut < 0 ? arg : arg.slice(0, cut)).trim().toUpperCase();
+      const msg = cut < 0 ? '' : arg.slice(cut + 1).trim();
+      if (to === '') return;
+      void getClusterSpots(1).then((r) => {
+        const server = r.servers.find((x) => x.state === 'connected')?.key;
+        if (!server) {
+          d.toast(d.t('digi.run.noCluster'), 'info');
+          return undefined;
+        }
+        return sendClusterCommand(server, `TALK ${to} ${msg}`.trim());
+      }, fail(d, tag));
+      return;
+    }
+    case 'YAPPRECV':
+    case 'YAPPSEND':
+    case 'PACKET': notInAurora(d, tag, 'packet'); return;
     default: return;
   }
 }

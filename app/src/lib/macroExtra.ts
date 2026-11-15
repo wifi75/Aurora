@@ -528,6 +528,15 @@ function action13(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+function action14(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'YAPPRECV':
+    case 'YAPPSEND':
+    case 'PACKET':
+    case 'TALK': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 /** I comandi che cambiano i dati della macro o espandono altro testo: `true` se il comando e' stato gestito. */
 export function special(tag: string, arg: string | undefined, r: MacroRun): boolean {
@@ -577,6 +586,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action11(tag, arg) ??
     action12(tag, arg) ??
     action13(tag, arg) ??
+    action14(tag, arg) ??
     null
   );
 }
