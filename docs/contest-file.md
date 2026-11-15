@@ -219,7 +219,7 @@ corrispondono al nominativo, poi tutto l'elenco.
 
 ## Contest predefiniti e convertitore
 
-I contest in `desktop/src-tauri/contest` (135 contest, 132 file di macro, 10 elenchi di domini) vengono da file di contest di
+I contest in `desktop/src-tauri/contest` (90 contest con il punteggio dei loro regolamenti, 89 file di macro, 10 elenchi di domini; i contest non piu' organizzati sono stati tolti il 2026-11-15) vengono da file di contest di
 utenti nello stesso formato INI, convertiti con
 
 ```
