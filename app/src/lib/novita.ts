@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.268',
-    released: '2026-11-15T20:00:00Z',
+    released: '2026-11-15T18:12:22Z',
     kind: 'changed',
     title: [
       'Contest: 89 su 90 con il punteggio vero',

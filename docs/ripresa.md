@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-15 (0.11.268 pubblicata 2026-11-15T18:12:22Z)
+
+- 90 contest dei modi testuali, 89 con `[Score]`/`[Script]` dai regolamenti (gruppi 3A/3B/3C, prove in `tests/regole_contest_3*.rs`); tolti 59 contest non piu' organizzati (elenco e motivi in `docs/contest-regole.md`). Le macro saltano in silenzio i comandi non eseguiti (EXEC, MACROS, sconosciuti).
+- Prossimi: comandi macro mancanti (`PREVNRS`, `QSOBEFORETIME`, `GRABCALL`, `WAVE`); approssimazioni elencate in `docs/contest-regole.md`; `dom/KDA.dom` e `dom/s50p13dc.dom` non piu' usati.
+
 ## Stato al 2026-11-15 (0.11.267 pubblicata 2026-11-15T17:33:24Z)
 
 - Contest dei modi testuali: `[Score]` vero per 30 contest (fonti in `docs/contest-regole.md`), sezione `[Script]` in Rhai (`contest/src/script.rs`, RAEM come esempio), importa/esporta `.zip` (`pacchetto.rs`), 14 contest nuovi con macro (`docs/contest-macro-scelte.md`), `<EXEC:...>` ignorato con avviso, barre Rx/Tx della cascata con una richiesta per volta.
