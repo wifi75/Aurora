@@ -7642,6 +7642,8 @@ t.8s37mh88k,date of the last QSO with this callsign in the log (empty if none),d
 t.tjjcon5pbl,band of the last QSO with this callsign,band van de laatste QSO met deze roepnaam
 t.1keqpjlzqfg,mode of the last QSO with this callsign,mode van de laatste QSO met deze roepnaam
 t.eqe7n3gqq,contest: the exchange you sent in the last logged QSO (to repeat it when asked again),contest: de uitwisseling die je in de laatst gelogde QSO hebt verzonden (om te herhalen als erom gevraagd wordt)
+t.1upjl8lr9ne,contest: the callsign of the last logged QSO,contest: de roepnaam van de laatst gelogde QSO
+t.1e59gl2dhf3,contest: the report sent in the last logged QSO,contest: het rapport dat in de laatst gelogde QSO is verzonden
 t.9nj12hlsc5,contest: UTC time of the earlier QSO with this callsign (empty if none),contest: UTC-tijd van de eerdere QSO met deze roepnaam (leeg als er geen is)
 t.27rl18sw1i8,contest: date of the earlier QSO with this callsign,contest: datum van de eerdere QSO met deze roepnaam
 t.1k3dj142bju,the text of a file in the macro texts folder,de tekst van een bestand in de map met macroteksten

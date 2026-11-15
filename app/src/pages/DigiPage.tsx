@@ -1019,7 +1019,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const files = [...script.matchAll(/<TEXTFILE:([^<>]*)>/g)].map((m) => (m[1] ?? '').trim()).filter((n) => n !== '');
     const wantsLast = /<ANYQSOBEFORE(?:DATE|BAND|MODE)>/.test(script);
     // <PREVNRS>, <QSOBEFORETIME>, <QSOBEFOREDATE>: dal log del contest attivo (senza contest restano vuoti)
-    const wantsContest = /<(?:PREVNRS|QSOBEFORETIME|QSOBEFOREDATE)>/.test(script);
+    const wantsContest = /<(?:PREVNRS|PREVCALL|PREVRSTS|QSOBEFORETIME|QSOBEFOREDATE)>/.test(script);
     if (files.length === 0 && !wantsLast && !wantsContest) {
       run(script, {});
       return;
@@ -1031,7 +1031,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       wantsContest ? getTextContestCheck(call || '-', (live.current.status?.dial_hz ?? 0) > 0 ? (bandOf(live.current.status?.dial_hz ?? 0) ?? '') : '', MODE_NAMES[live.current.snap.settings.mode]).then((r) => r, () => null) : Promise.resolve(null),
     ]).then(([read, qsos, check]) => {
       const mine = qsos.filter((q) => q.call.toUpperCase() === call).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
-      const contestPrev = check ? { lastSent: check.ultimo_mandato ?? '', beforeMs: call !== '' ? (check.precedente?.time_ms ?? null) : null } : null;
+      const contestPrev = check ? { lastSent: check.ultimo_mandato ?? '', beforeMs: call !== '' ? (check.precedente?.time_ms ?? null) : null, lastCall: check.ultimo?.call ?? '', lastRst: check.ultimo?.rst_sent ?? '' } : null;
       run(script, { files: Object.fromEntries(read), lastQso: mine ? { date: mine.date, band: mine.band, mode: mine.mode } : null, contestPrev });
     });
   };

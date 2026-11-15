@@ -111,6 +111,8 @@ describe('runMacro: comandi di programma', () => {
     const withContest = { ...ctx, contestPrev: { lastSent: '057', beforeMs: Date.UTC(2026, 10, 15, 14, 32) } };
     expect(runMacro('NR <PREVNRS> QSO B4 <QSOBEFOREDATE> <QSOBEFORETIME>', withContest).text).toBe('NR 057 QSO B4 2026-11-15 14:32');
     expect(runMacro('[<PREVNRS>][<QSOBEFORETIME>]', ctx).text).toBe('[][]');
+    const last = { ...ctx, contestPrev: { lastSent: '057', beforeMs: null, lastCall: 'K1ABC', lastRst: '599' } };
+    expect(runMacro('<PREVCALL> <PREVRSTS> <PREVNRS>', last).text).toBe('K1ABC 599 057');
   });
 
   it('la velocita della CW, assoluta o relativa', () => {

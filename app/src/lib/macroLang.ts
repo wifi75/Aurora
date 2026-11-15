@@ -37,7 +37,7 @@ export interface MacroContext {
   lastQso?: { date: string; band: string; mode: string } | null;
   /** Dal log del contest attivo: lo scambio mandato nell'ultimo QSO (`<PREVNRS>`) e il QSO precedente con questo nominativo
    *  (`<QSOBEFORETIME>`, `<QSOBEFOREDATE>`, ora e data UTC). Senza contest attivo restano vuoti. */
-  contestPrev?: { lastSent: string; beforeMs: number | null } | null;
+  contestPrev?: { lastSent: string; beforeMs: number | null; lastCall?: string; lastRst?: string } | null;
   /** Il contenuto dei file chiesti con `<TEXTFILE:nome>`, gia' letti. */
   files?: Record<string, string>;
 }
@@ -185,6 +185,8 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'ANYQSOBEFOREMODE': return c.lastQso?.mode ?? '';
     // dal log del contest attivo
     case 'PREVNRS': return c.contestPrev?.lastSent ?? '';
+    case 'PREVCALL': return c.contestPrev?.lastCall ?? '';
+    case 'PREVRSTS': return c.contestPrev?.lastRst ?? '';
     case 'QSOBEFORETIME': return c.contestPrev?.beforeMs != null ? utcTime(new Date(c.contestPrev.beforeMs)) : '';
     case 'QSOBEFOREDATE': return c.contestPrev?.beforeMs != null ? utcDate(new Date(c.contestPrev.beforeMs)) : '';
     // il testo di un file della cartella dei testi delle macro

@@ -181,8 +181,11 @@ pub(crate) async fn ammesso(State(state): State<AppState>, _: Authed, Query(q): 
         .find(|p| p.qso.call.eq_ignore_ascii_case(&v.qso.call))
         .map(|p| json!({ "time_ms": p.qso.time_ms, "band": p.qso.band, "mode": p.qso.mode, "exch_rcvd": p.qso.exch_rcvd, "exch_sent": p.qso.exch_sent }));
     // lo scambio mandato nell'ultimo QSO del log (`<PREVNRS>`: si ripete a chi chiede di nuovo il numero dopo che il QSO e' a log)
-    let ultimo_mandato = valutati[..valutati.len() - 1].last().map(|p| p.qso.exch_sent.clone());
-    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi, "precedente": precedente, "ultimo_mandato": ultimo_mandato })))
+    let ultimo_qso = valutati[..valutati.len() - 1].last();
+    let ultimo_mandato = ultimo_qso.map(|p| p.qso.exch_sent.clone());
+    // nominativo e rapporto mandato dell'ultimo QSO del log (`<PREVCALL>`, `<PREVRSTS>`)
+    let ultimo = ultimo_qso.map(|p| json!({ "call": p.qso.call, "rst_sent": p.qso.rst_sent }));
+    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi, "precedente": precedente, "ultimo_mandato": ultimo_mandato, "ultimo": ultimo })))
 }
 
 /// Il punteggio del contest attivo dei modi testuali: QSO, doppi, punti, moltiplicatori, punteggio e righe per banda.

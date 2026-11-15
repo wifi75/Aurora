@@ -191,6 +191,8 @@ export interface TextContestCheck {
   precedente?: { time_ms: number; band: string; mode: string; exch_rcvd: string; exch_sent: string } | null;
   /** Lo scambio mandato nell'ultimo QSO del log del contest (`<PREVNRS>`). */
   ultimo_mandato?: string | null;
+  /** Nominativo e rapporto mandato dell'ultimo QSO del log del contest (`<PREVCALL>`, `<PREVRSTS>`). */
+  ultimo?: { call: string; rst_sent: string } | null;
 }
 export const getTextContestCheck = (call_: string, band: string, mode: string, exch = '') =>
   call<TextContestCheck>(`/ammesso?${new URLSearchParams({ call: call_, band, mode, exch }).toString()}`);
