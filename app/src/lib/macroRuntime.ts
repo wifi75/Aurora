@@ -363,6 +363,28 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'WAVE': if (arg) void digiMacroPlay({ wave: arg }).catch(fail(d, tag)); return;
     case 'DTMF': if (arg) void digiMacroPlay({ dtmf: arg }).catch(fail(d, tag)); return;
     case 'STOPPLAY': void digiAbort(); return;
+    case 'FILE': {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.txt,text/plain';
+      input.onchange = () => {
+        const f = input.files?.[0];
+        if (f && f.size <= 65_536) void f.text().then((txt) => d.setTx(txt));
+      };
+      input.click();
+      return;
+    }
+    case 'ONRX': {
+      const cut = arg.lastIndexOf(',');
+      if (arg.trim() === '' || cut < 0) {
+        macroState.onRx = [];
+        return;
+      }
+      const macro = arg.slice(cut + 1).trim();
+      const text = arg.slice(0, cut);
+      macroState.onRx = [...macroState.onRx.filter((w) => w.macro !== macro), { pattern: wildcard(text), macro }];
+      return;
+    }
     default: return;
   }
 }

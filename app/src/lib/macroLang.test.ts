@@ -363,5 +363,14 @@ describe('audio', () => {
   });
 });
 
+describe('file e script', () => {
+  const files = { 'a.ini': '[Rig]\nPower = 100\n', 'r.txt': 'uno\n\ndue\n', 's.txt': 'CQ <MYCALL>', 'f.txt': 'TESTO' };
+  it('INIFILE, RANDOM, FILE e SCRIPT', () => {
+    expect(runMacro('<INIFILE:a.ini,rig,power>W <FILE:f.txt>', { ...ctx, files }).text).toBe('100W TESTO');
+    expect(runMacro('<RANDOM:r.txt>', { ...ctx, files, rand: () => 0.9 }).text).toBe('due');
+    expect(runMacro('<SCRIPT:s.txt>', { ...ctx, files }).text).toBe('CQ IU3ABC');
+    expect(cmdOf('<FILE><OnRX:*QRZ*,F3>')).toEqual([{ type: 'cmd', tag: 'FILE', arg: '' }, { type: 'cmd', tag: 'ONRX', arg: '*QRZ*,F3' }]);
+  });
+});
 
 

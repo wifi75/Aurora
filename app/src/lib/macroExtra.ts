@@ -455,6 +455,60 @@ function action11(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+/** Il valore di una chiave di un file INI (sezione e chiave senza maiuscole/minuscole). */
+export function iniValue(text: string, section: string, key: string): string {
+  let inSection = section.trim() === '';
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.trim();
+    const sec = /^\[(.*)\]$/.exec(t);
+    if (sec) {
+      inSection = (sec[1] ?? '').trim().toLowerCase() === section.trim().toLowerCase();
+      continue;
+    }
+    const eq = t.indexOf('=');
+    if (inSection && eq > 0 && t.slice(0, eq).trim().toLowerCase() === key.trim().toLowerCase()) return t.slice(eq + 1).trim();
+  }
+  return '';
+}
+
+/** I file letti dalla cartella dei testi delle macro per questi comandi (`<INIFILE:file,sez,chiave>`: il primo pezzo). */
+export const FILE_TAGS = ['TEXTFILE', 'FILE', 'RANDOM', 'INIFILE', 'SCRIPT', 'TNCSCRIPT', 'TELNETSCRIPT'] as const;
+export function fileOf(tag: string, arg: string): string {
+  return (tag === 'INIFILE' ? (arg.split(',')[0] ?? '') : arg).trim();
+}
+
+function family12(tag: string, arg: string | undefined, c: MacroContext): string | null {
+  if (arg === undefined) return null;
+  const file = (n: string) => c.files?.[n] ?? '';
+  switch (tag) {
+    case 'FILE': return file(arg.trim());
+    case 'INIFILE': {
+      const [name = '', section = '', key = ''] = arg.split(',');
+      return iniValue(file(name.trim()), section, key);
+    }
+    case 'RANDOM': {
+      const lines = file(arg.trim()).split(/\r?\n/).map((l) => l.trim()).filter((l) => l !== '');
+      return lines.length === 0 ? '' : (lines[Math.floor((c.rand ?? Math.random)() * lines.length)] ?? '');
+    }
+    default: return null;
+  }
+}
+
+function special12(tag: string, arg: string | undefined, r: MacroRun): boolean {
+  // uno script di macro di Aurora da file: il testo si esegue come una macro (mai programmi esterni)
+  if ((tag === 'SCRIPT' || tag === 'TNCSCRIPT' || tag === 'TELNETSCRIPT') && arg !== undefined) {
+    const text = r.ctx.files?.[arg.trim()];
+    if (text !== undefined && text !== '') r.expand(text);
+    return true;
+  }
+  return false;
+}
+
+function action12(tag: string, arg: string | undefined): MacroAction | null {
+  if (tag === 'FILE' && arg === undefined) return cmd('FILE');
+  if (tag === 'ONRX') return cmd('ONRX', arg);
+  return null;
+}
 
 
 
@@ -466,6 +520,7 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
     special3(tag, arg, r) ||
     special5(tag, r) ||
     special10(tag, r) ||
+    special12(tag, arg, r) ||
     false
   );
 }
@@ -478,6 +533,7 @@ export function extraText(tag: string, arg: string | undefined, c: MacroContext)
     family3(tag, c) ??
     family4(tag, c) ??
     family6(tag, arg, c) ??
+    family12(tag, arg, c) ??
     null
   );
 }
@@ -502,6 +558,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action9(tag, arg) ??
     action10(tag, arg) ??
     action11(tag, arg) ??
+    action12(tag, arg) ??
     null
   );
 }
