@@ -373,4 +373,13 @@ describe('file e script', () => {
   });
 });
 
+describe('SSTV', () => {
+  it('immagini e modo', () => {
+    expect(cmdOf('<SSTVMODE:Martin 1><PIC:1-ON2AD-001.jpg %C><FROMCLIP>')).toEqual([
+      { type: 'cmd', tag: 'SSTVMODE', arg: 'Martin 1' },
+      { type: 'cmd', tag: 'PIC', arg: '1-ON2AD-001.jpg %C' },
+      { type: 'cmd', tag: 'FROMCLIP', arg: '' },
+    ]);
+  });
+});
 

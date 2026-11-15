@@ -510,6 +510,23 @@ function action12(tag: string, arg: string | undefined): MacroAction | null {
   return null;
 }
 
+function action13(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'SSTVMODE':
+    case 'PUTRXPICT':
+    case 'FROMCLIP':
+    case 'PLACETEXT':
+    case 'TEXTSTYLE':
+    case 'TRANSPARENTCOLOR':
+    case 'LOADPICTURE':
+    case 'ONLY':
+    case 'PUTHEADER':
+    case 'LIMITSCANLINES':
+    case 'PIC':
+    case 'FONT': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 /** I comandi che cambiano i dati della macro o espandono altro testo: `true` se il comando e' stato gestito. */
@@ -559,6 +576,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action10(tag, arg) ??
     action11(tag, arg) ??
     action12(tag, arg) ??
+    action13(tag, arg) ??
     null
   );
 }

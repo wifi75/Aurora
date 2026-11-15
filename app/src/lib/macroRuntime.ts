@@ -385,6 +385,43 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       macroState.onRx = [...macroState.onRx.filter((w) => w.macro !== macro), { pattern: wildcard(text), macro }];
       return;
     }
+    case 'SSTVMODE': macroState.sstvMode = arg.trim(); return;
+    case 'PIC': {
+      const parts = arg.trim().split(/\s+/);
+      const withCall = parts.includes('%C');
+      const name = parts.filter((p) => p !== '%C').join(' ');
+      if (name === '') return;
+      void getSstvTxPhoto(name).then((b) => sendPicture(d, tag, b, withCall ? d.qsoCall().toUpperCase() || null : null)).catch(fail(d, tag));
+      return;
+    }
+    case 'FROMCLIP': {
+      void (async () => {
+        const items = await navigator.clipboard.read();
+        for (const it of items) {
+          const type = it.types.find((x) => x.startsWith('image/'));
+          if (type) return sendPicture(d, tag, await it.getType(type), null);
+        }
+        throw new Error('no image');
+      })().catch(fail(d, tag));
+      return;
+    }
+    case 'PUTRXPICT': {
+      const k = Math.max(1, Math.round(num ?? 1));
+      void getSstvImages().then(async (list) => {
+        const rx = list.filter((x) => x.direction !== 'tx').sort((a, b) => b.time_ms - a.time_ms)[k - 1];
+        if (!rx) throw new Error('no image');
+        await sendPicture(d, tag, await (await fetch(sstvImageUrl(rx.id), { credentials: 'include' })).blob(), null);
+      }).catch(fail(d, tag));
+      return;
+    }
+    case 'LOADPICTURE':
+    case 'PLACETEXT':
+    case 'TEXTSTYLE':
+    case 'TRANSPARENTCOLOR':
+    case 'ONLY':
+    case 'PUTHEADER':
+    case 'LIMITSCANLINES':
+    case 'FONT': window.location.hash = '#/sstv'; return;
     default: return;
   }
 }
