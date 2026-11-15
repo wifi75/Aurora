@@ -3165,12 +3165,12 @@ export const GUIDE_TESTUALI: readonly GuideSection[] = [
       ],
     ],
     tip: [
-      "Nelle macro dei contest il comando <EXEC:...> non fa niente: Aurora non avvia programmi esterni e lo dice con un avviso. Così un contest ricevuto da altri non può far partire niente sul tuo PC.",
-      "In contest macros the <EXEC:...> command does nothing: Aurora does not start external programs and says so with a notice. That way a contest received from others cannot start anything on your PC.",
-      "In den Contest-Makros tut der Befehl <EXEC:...> nichts: Aurora startet keine externen Programme und sagt das mit einem Hinweis. So kann ein von anderen erhaltener Contest nichts auf deinem PC starten.",
-      "Dans les macros des contests, la commande <EXEC:...> ne fait rien : Aurora ne lance pas de programmes externes et le signale. Ainsi un contest reçu d’autres ne peut rien lancer sur ton PC.",
-      "En las macros de los contests el comando <EXEC:...> no hace nada: Aurora no inicia programas externos y lo avisa. Así un contest recibido de otros no puede iniciar nada en tu PC.",
-      "Nas macros dos contests o comando <EXEC:...> não faz nada: o Aurora não inicia programas externos e avisa. Assim um contest recebido de outros não pode iniciar nada no teu PC.",
+      "Il comando <EXEC:...> delle macro non fa niente: Aurora non avvia programmi esterni e all'avvio lo toglie dai file delle macro (prima ne tiene una copia). La copia di sicurezza che facevano i vecchi file .bat la fa Aurora da sola: una al giorno in copie-automatiche, nella cartella dei dati, con impostazioni, log, macro e contest; restano le ultime 28.",
+      "The <EXEC:...> macro command does nothing: Aurora does not start external programs and at start removes it from the macro files (keeping a copy first). The backup the old .bat files made is done by Aurora itself: one a day in copie-automatiche, in the data folder, with settings, log, macros and contests; the last 28 are kept.",
+      "Der Makrobefehl <EXEC:...> tut nichts: Aurora startet keine externen Programme und entfernt ihn beim Start aus den Makrodateien (vorher wird eine Kopie gemacht). Die Sicherung der alten .bat-Dateien macht Aurora selbst: eine pro Tag in copie-automatiche im Datenordner, mit Einstellungen, Log, Makros und Contests; die letzten 28 bleiben.",
+      "La commande de macro <EXEC:...> ne fait rien : Aurora ne lance pas de programmes externes et au démarrage la retire des fichiers de macros (en gardant d’abord une copie). La sauvegarde des anciens fichiers .bat, Aurora la fait seule : une par jour dans copie-automatiche, dans le dossier des données, avec réglages, log, macros et contests ; les 28 dernières sont gardées.",
+      "El comando de macro <EXEC:...> no hace nada: Aurora no inicia programas externos y al arrancar lo quita de los archivos de macros (guardando antes una copia). La copia de seguridad de los antiguos archivos .bat la hace Aurora sola: una al día en copie-automatiche, en la carpeta de datos, con ajustes, log, macros y contests; se guardan las últimas 28.",
+      "O comando de macro <EXEC:...> não faz nada: o Aurora não inicia programas externos e ao arrancar retira-o dos ficheiros de macros (guardando antes uma cópia). A cópia de segurança dos antigos ficheiros .bat o Aurora faz sozinho: uma por dia em copie-automatiche, na pasta de dados, com definições, log, macros e contests; ficam as últimas 28.",
     ],
   },
 ];
