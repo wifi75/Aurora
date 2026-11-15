@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.273',
-    released: '2026-11-15T23:59:00Z',
+    released: '2026-11-15T21:53:39Z',
     kind: 'fixed',
     title: [
       'Installatore piu’ sicuro',

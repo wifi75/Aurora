@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Stato al 2026-11-15 (0.11.273 pubblicata 2026-11-15T21:53:39Z)
+
+Installatore: se la cartella scelta non si scrive (Program Files senza diritti di amministratore) propone `%LOCALAPPDATA%\Aurora`; se Aurora resta aperta durante l'aggiornamento chiede di chiuderla e Riprova. Nati dai rapporti Cloudflare del 2026-11-15 (`docs/report-cloudflare-2026-11-15.md`). Da provare dal vivo: PC senza diritti di amministratore e Aurora che non si chiude.
+
 ## Stato al 2026-11-15 (0.11.272 pubblicata 2026-11-15T20:32:28Z)
 
 - Menu Opzioni › Auto CQ nei modi testuali (Avvia, Ferma, Testo… = macro AutoCqText, Pausa… salvata in localStorage `aurora-digi-acq-delay`). RBN: spenta di base (Impostazioni › DX Cluster), elenco «Sentiti dalla rete RBN» sotto BIGScan con etichetta RBN; il proprietario non la vuole nel pannello DX Cluster.
