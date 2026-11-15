@@ -240,12 +240,179 @@ pub(crate) async fn digi_cat(State(state): State<AppState>, _: Authed, Peer(peer
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
     let cmd = body.cmd.trim().to_string();
-    if cmd.is_empty() || cmd.len() > 64 || !cmd.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
-        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("comando CAT vuoto, oltre 64 caratteri o con caratteri non ammessi".to_string()));
+    if cmd.is_empty() || cmd.len() > 256 || !cmd.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("comando CAT vuoto, oltre 256 caratteri o con caratteri non ammessi".to_string()));
     }
     let cat = state.cat.clone().ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "cat_unavailable"))?;
     blocking(move || cat.send_raw_cat(&cmd)).await?.map_err(|e| ApiError::new(StatusCode::CONFLICT, "cat_failed").with_message(e.to_string()))?;
     Ok(Json(json!({ "ok": true })))
+}
+
+/// I byte scritti in esadecimale (`FE FE 94`, `0xFE,0x94`, `FEFE94`): `None` se non lo sono o se sono piu' di 64.
+pub(crate) fn parse_hex(text: &str) -> Option<Vec<u8>> {
+    let clean: String = text.replace("0x", "").replace("0X", "").chars().filter(|c| !matches!(c, ' ' | ',' | ';' | '$' | '-')).collect();
+    if clean.is_empty() || clean.len() % 2 != 0 || clean.len() > 128 {
+        return None;
+    }
+    (0..clean.len()).step_by(2).map(|i| u8::from_str_radix(clean.get(i..i + 2)?, 16).ok()).collect()
+}
+
+#[derive(Deserialize)]
+pub(crate) struct WinKeyerSendBody {
+    /// Testo da mandare in CW (`<WKTEXT:...>`).
+    #[serde(default)]
+    text: Option<String>,
+    /// Byte di comando in esadecimale (`<WKHEX:...>`).
+    #[serde(default)]
+    hex: Option<String>,
+}
+
+/// Macro `<WKTEXT:testo>` e `<WKHEX:byte>`: testo o comandi al WinKeyer (si apre sulla porta delle impostazioni del CW).
+#[utoipa::path(post, path = "/api/v1/digi/winkeyer/send", responses((status = 200, description = "Mandato"), (status = 400, description = "Ne' testo ne' byte validi (bad_value)"), (status = 409, description = "Trasmissione in corso (busy)"), (status = 502, description = "WinKeyer non aperto (tx_failed)")))]
+pub(crate) async fn digi_winkeyer_send(State(state): State<AppState>, _: Authed, headers: HeaderMap, Json(body): Json<WinKeyerSendBody>) -> Result<Json<Value>, ApiError> {
+    let text = body.text.map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+    let hex = match body.hex.as_deref().map(str::trim).filter(|h| !h.is_empty()) {
+        Some(h) => Some(parse_hex(h).ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("byte esadecimali non validi".to_string()))?),
+        None => None,
+    };
+    if text.as_ref().is_some_and(|t| t.chars().count() > 500) || (text.is_none() && hex.is_none()) {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message("serve un testo (al massimo 500 caratteri) o dei byte".to_string()));
+    }
+    check_tx_allowed(&state, &headers)?;
+    let svc = service(&state)?;
+    blocking(move || -> Result<(), DigiError> {
+        if let Some(b) = hex {
+            svc.winkeyer_raw(&b)?;
+        }
+        if let Some(t) = text {
+            svc.winkeyer_text(&t)?;
+        }
+        Ok(())
+    })
+    .await?
+    .map_err(api_error)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct PlayBody {
+    /// Il file `.wav` della cartella dei testi delle macro (`<WAVE:nome>`).
+    #[serde(default)]
+    wave: Option<String>,
+    /// Le cifre DTMF (`<DTMF:...>`).
+    #[serde(default)]
+    dtmf: Option<String>,
+    /// Secondi di portante sulla frequenza di trasmissione (`<TUNE:s>`).
+    #[serde(default)]
+    tune_s: Option<f32>,
+    /// Una registrazione (`<STARTPLAY:nome>`): si cerca nella cartella delle registrazioni, poi in quella dei testi delle macro.
+    #[serde(default)]
+    play: Option<String>,
+}
+
+/// Un nome di file senza percorsi, con `.wav` in fondo se manca.
+fn wav_name(name: &str) -> Option<String> {
+    let safe = !name.is_empty() && name.len() <= 64 && !name.starts_with('.') && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ' '));
+    safe.then(|| if name.to_ascii_lowercase().ends_with(".wav") { name.to_string() } else { format!("{name}.wav") })
+}
+
+/// Macro `<WAVE:nome>`, `<DTMF:cifre>` e `<TUNE:s>`: un audio in trasmissione. Il file si cerca solo per nome nella cartella dei testi delle
+/// macro (al massimo 20 MB). Solo dal PC stesso.
+#[utoipa::path(post, path = "/api/v1/digi/play", responses((status = 200, description = "In trasmissione: stato `tx`"), (status = 400, description = "Niente da trasmettere, nome o file non valido (bad_value)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "File non trovato (not_found)"), (status = 409, description = "Trasmissione in corso o nessun trasmettitore (busy)")))]
+pub(crate) async fn digi_play(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<PlayBody>) -> Result<Json<Value>, ApiError> {
+    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if !local {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let bad = |m: &str| ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message(m.to_string());
+    enum Ask {
+        Wave(String),
+        Dtmf(String),
+        Tune(f32),
+    }
+    let recordings = state.digi.as_ref().map(|d| d.recordings_folder());
+    let text_folder = mode_digi::macro_files::text_folder();
+    let (wave_name, folders) = match (body.wave.as_deref().map(str::trim).filter(|n| !n.is_empty()), body.play.as_deref().map(str::trim).filter(|n| !n.is_empty())) {
+        (Some(n), _) => (Some(n), vec![text_folder.clone()]),
+        (None, Some(n)) => (Some(n), vec![recordings, text_folder.clone()]),
+        (None, None) => (None, Vec::new()),
+    };
+    let ask = if let Some(name) = wave_name {
+        Ask::Wave(wav_name(name).ok_or_else(|| bad("nome di file non valido"))?)
+    } else if let Some(d) = body.dtmf.as_deref().map(str::trim).filter(|d| !d.is_empty()) {
+        if d.len() > 64 || mode_digi::macro_audio::dtmf(d).is_empty() {
+            return Err(bad("cifre DTMF non valide"));
+        }
+        Ask::Dtmf(d.to_string())
+    } else if let Some(s) = body.tune_s.filter(|s| s.is_finite() && *s > 0.0) {
+        Ask::Tune(s.min(60.0))
+    } else {
+        return Err(bad("niente da trasmettere"));
+    };
+    check_tx_allowed(&state, &headers)?;
+    let svc = service(&state)?;
+    let status = blocking(move || -> Result<_, ApiError> {
+        let (wave, what) = match ask {
+            Ask::Wave(name) => {
+                let path = folders.into_iter().flatten().map(|f| f.join(&name)).find(|p| p.is_file()).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found"))?;
+                let bytes = match std::fs::metadata(&path) {
+                    Ok(m) if m.is_file() && m.len() <= 20_000_000 => std::fs::read(&path).map_err(|_| ApiError::new(StatusCode::NOT_FOUND, "not_found"))?,
+                    _ => return Err(ApiError::new(StatusCode::NOT_FOUND, "not_found")),
+                };
+                (mode_digi::macro_audio::read_wav(&bytes).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message(e))?, "WAVE")
+            }
+            Ask::Dtmf(d) => (mode_digi::macro_audio::dtmf(&d), "DTMF"),
+            Ask::Tune(s) => (mode_digi::macro_audio::tone(svc.tx_audio_hz(), s), "TUNE"),
+        };
+        svc.transmit_wave(wave, what).map_err(api_error)
+    })
+    .await??;
+    Ok(Json(json!({ "tx": status })))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct RecordBody {
+    /// `start`, `stop` o `replay`.
+    action: String,
+    /// Il nome del file (`start`; senza nome: data e ora).
+    #[serde(default)]
+    name: Option<String>,
+    /// Secondi da rileggere (`replay`, 1-60, di base 10).
+    #[serde(default)]
+    seconds: Option<f32>,
+}
+
+/// Macro `<STARTRECORD:nome>`, `<STOPRECORD>`, `<REPLAY:n>`: registra l'audio ricevuto in `recordings` (WAV a 16 bit) o fa ripassare nel
+/// ricevitore gli ultimi secondi. Solo dal PC stesso.
+#[utoipa::path(post, path = "/api/v1/digi/record", responses((status = 200, description = "`{file}` o `{samples}`"), (status = 400, description = "Azione o nome non validi (bad_value)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 404, description = "Non disponibile (digi_unavailable)")))]
+pub(crate) async fn digi_record(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(body): Json<RecordBody>) -> Result<Json<Value>, ApiError> {
+    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    if !local {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let bad = |m: &str| ApiError::new(StatusCode::BAD_REQUEST, "bad_value").with_message(m.to_string());
+    let action = body.action.trim().to_ascii_lowercase();
+    let name = match body.name.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
+        Some(n) => Some(wav_name(n).ok_or_else(|| bad("nome di file non valido"))?),
+        None => None,
+    };
+    if !matches!(action.as_str(), "start" | "stop" | "replay") {
+        return Err(bad("azione non valida: start, stop o replay"));
+    }
+    let svc = service(&state)?;
+    let out = blocking(move || -> Result<Value, DigiError> {
+        Ok(match action.as_str() {
+            "start" => {
+                let name = name.unwrap_or_else(|| format!("rx-{}.wav", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs())));
+                json!({ "file": svc.start_record(&name)?.display().to_string() })
+            }
+            "stop" => json!({ "file": svc.stop_record()?.map(|p| p.display().to_string()) }),
+            _ => json!({ "samples": svc.replay(body.seconds.filter(|s| s.is_finite()).unwrap_or(10.0)) }),
+        })
+    })
+    .await?
+    .map_err(api_error)?;
+    Ok(Json(out))
 }
 
 #[derive(Deserialize)]

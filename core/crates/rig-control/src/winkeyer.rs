@@ -423,6 +423,11 @@ impl WinKeyer {
         self.link.write(&cmd::CLEAR_BUFFER)
     }
 
+    /// Byte di comando scritti cosi' come sono (macro `<WKHEX:...>`).
+    pub fn write_raw(&mut self, bytes: &[u8]) -> Result<(), String> {
+        self.link.write(bytes)
+    }
+
     /// Tasto giu' o su (Tune).
     pub fn key(&mut self, down: bool) -> Result<(), String> {
         self.link.write(&cmd::key_immediate(down))

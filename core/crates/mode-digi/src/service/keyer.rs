@@ -115,6 +115,27 @@ impl DigiService {
         Ok(version)
     }
 
+    /// `<WKTEXT:testo>`: il testo va al WinKeyer (lo apre se serve), anche se il CW esce dall'audio.
+    pub fn winkeyer_text(&self, text: &str) -> Result<TxStatus, DigiError> {
+        if text.trim().is_empty() {
+            return Err(DigiError::Empty);
+        }
+        self.ensure_keyer()?;
+        self.keyer_session_with(text, false, false)
+    }
+
+    /// `<WKHEX:..>`: byte di comando mandati al WinKeyer cosi' come sono (lo apre se serve).
+    pub fn winkeyer_raw(&self, bytes: &[u8]) -> Result<(), DigiError> {
+        if bytes.is_empty() {
+            return Err(DigiError::Empty);
+        }
+        self.ensure_keyer()?;
+        match lock(&self.inner.keyer).as_mut() {
+            Some(k) => k.write_raw(bytes).map_err(DigiError::Tx),
+            None => Err(DigiError::Tx("WinKeyer non aperto".into())),
+        }
+    }
+
     /// Una trasmissione con il WinKeyer, o il testo accodato a quella in corso.
     pub(super) fn keyer_session(&self, text: &str, open: bool) -> Result<TxStatus, DigiError> {
         self.keyer_session_with(text, open, false)

@@ -720,6 +720,10 @@ struct Inner {
     extra: Mutex<Vec<ExtraRx>>,
     /// Da dove leggere la frequenza della radio (Hz, 0 = non nota).
     dial: Mutex<Option<DialSource>>,
+    /// La registrazione dell'audio ricevuto (`<STARTRECORD>`) e l'ultimo minuto per `<REPLAY>`.
+    recorder: Mutex<crate::recorder::Recorder>,
+    /// La cartella delle registrazioni (`recordings` nei dati).
+    rec_dir: std::path::PathBuf,
     /// Le pagine PSK · RTTY · CW aperte (finestra principale, staccata, telefono): lasciata l'ultima, l'ascolto si spegne.
     users: aurora_core::users::PageUsers,
 }
@@ -949,6 +953,8 @@ impl DigiService {
             notches: Mutex::new(Vec::new()),
             extra: Mutex::new(Vec::new()),
             dial: Mutex::new(None),
+            recorder: Mutex::new(crate::recorder::Recorder::default()),
+            rec_dir: data_dir.join("recordings"),
             users: aurora_core::users::PageUsers::new(aurora_core::users::PAGE_TTL),
         });
         let worker = Arc::clone(&inner);
@@ -1005,9 +1011,43 @@ impl DigiService {
         }
         // un campione non finito (TCI, driver) bloccherebbe per sempre i filtri dei ricevitori: vale zero, come nella cascata
         let copy: Vec<f32> = samples.iter().map(|&x| if x.is_finite() { x } else { 0.0 }).collect();
+        lock(&self.inner.recorder).push(rate, &copy);
         if let Err(TrySendError::Full(_)) = self.inner.queue.try_send(Msg::Audio(rate, copy)) {
             tracing::debug!("modi testuali: blocco audio perso");
         }
+    }
+
+    /// `<STARTRECORD:nome>`: comincia a registrare l'audio ricevuto in `recordings/nome.wav` (senza nome: data e ora).
+    pub fn start_record(&self, name: &str) -> Result<std::path::PathBuf, DigiError> {
+        let path = self.inner.rec_dir.join(name);
+        lock(&self.inner.recorder).start(path.clone()).map_err(DigiError::Tx)?;
+        tracing::info!("macro: registrazione in {}", path.display());
+        Ok(path)
+    }
+
+    /// `<STOPRECORD>`: chiude la registrazione e la salva.
+    pub fn stop_record(&self) -> Result<Option<std::path::PathBuf>, DigiError> {
+        lock(&self.inner.recorder).stop().map_err(DigiError::Tx)
+    }
+
+    /// `<REPLAY:n>`: gli ultimi n secondi ricevuti ripassano nel ricevitore (si rilegge un segnale perso).
+    pub fn replay(&self, seconds: f32) -> usize {
+        let (rate, samples) = lock(&self.inner.recorder).last(seconds);
+        if rate == 0 || samples.is_empty() {
+            return 0;
+        }
+        let n = samples.len();
+        for chunk in samples.chunks(rate as usize / 10 + 1) {
+            if self.inner.queue.send(Msg::Audio(rate, chunk.to_vec())).is_err() {
+                break;
+            }
+        }
+        n
+    }
+
+    /// La cartella delle registrazioni.
+    pub fn recordings_folder(&self) -> std::path::PathBuf {
+        self.inner.rec_dir.clone()
     }
 
     /// Da dove leggere la frequenza della radio: quando cambia (banda o sintonia) i notch si tolgono da soli.
@@ -1176,6 +1216,40 @@ impl DigiService {
             tracing::error!("modi testuali: controllo della trasmissione non avviato: {e}");
         }
         Ok(lock(&self.inner.tx).clone())
+    }
+
+    /// Trasmette un audio gia' pronto (12 kHz, mono): il file `.wav` di `<WAVE:nome>`, i toni di `<DTMF:...>`, la portante di `<TUNE>`.
+    /// Non si accoda: con una trasmissione in corso risponde `Busy`.
+    pub fn transmit_wave(&self, wave: Vec<f32>, what: &str) -> Result<TxStatus, DigiError> {
+        if wave.is_empty() {
+            return Err(DigiError::Empty);
+        }
+        let port = lock(&self.inner.port).clone().ok_or(DigiError::NoTransmitter)?;
+        if self.inner.tx_active.load(Ordering::SeqCst) || port.is_busy() {
+            return Err(DigiError::Busy);
+        }
+        let total = wave.len() as f32 / RATE;
+        self.inner.tx_active.store(true, Ordering::SeqCst);
+        self.inner.tx_abort.store(false, Ordering::SeqCst);
+        let _ = self.inner.queue.send(Msg::Reset);
+        if let Err(e) = port.start(wave) {
+            self.inner.tx_active.store(false, Ordering::SeqCst);
+            return Err(DigiError::Tx(e));
+        }
+        tracing::info!("macro: trasmissione audio ({what}) di {total:.1} s");
+        *lock(&self.inner.tx) = TxStatus { state: "sending".into(), progress: 0.0, elapsed_s: 0.0, total_s: total, message: None, open: false };
+        self.inner.tx_event();
+        let inner = Arc::clone(&self.inner);
+        let spawned = std::thread::Builder::new().name("aurora-digi-tx".into()).spawn(move || tx_monitor(&inner, &port, total));
+        if let Err(e) = spawned {
+            tracing::error!("modi testuali: controllo della trasmissione non avviato: {e}");
+        }
+        Ok(lock(&self.inner.tx).clone())
+    }
+
+    /// La frequenza audio di trasmissione adesso (per la portante di `<TUNE>`).
+    pub fn tx_audio_hz(&self) -> f32 {
+        self.settings().tx_freq()
     }
 
     /// Ferma la trasmissione in corso (audio e PTT).
