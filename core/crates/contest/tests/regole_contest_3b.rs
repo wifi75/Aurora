@@ -355,8 +355,8 @@ fn ipa() {
         c("DL3ABC", "40m", 4, "005 IPA"),    // 5; DL su 40 m
     ];
     let t = punteggio("IPA CW-SSB Contest", &log);
-    // punti 21; moltiplicatori 4; 84
-    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (21, 4, 84, None));
+    // banda per banda: 20 m punti 16 x 3 moltiplicatori = 48, 40 m 5 x 1 = 5; 53
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (21, 4, 53, None));
 }
 
 #[test]
@@ -367,10 +367,12 @@ fn r3a_cup_digi() {
         q("UA9ABC", "40m", "RTTY", 2, "001", "NS01"), // 1; NS01 su 40 m
         q("DL1ABC", "40m", "RTTY", 3, "002", "005"),  // 1; nessun moltiplicatore
         q("RA3ABD", "20m", "RTTY", 4, "003", "LF"),   // 20 m non ammessa
+        q("RA3ABC", "80m", "RTTY", 60, "004", "LF"),  // 13:00, altro turno: non e' un doppio, 5
+        q("RA3ABC", "80m", "RTTY", 61, "005", "LF"),  // doppio nello stesso turno
     ];
     let t = punteggio("R3A-CUP-DIGI", &log);
-    // punti 8; moltiplicatori 3; 24
-    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio, t.errore_script.clone()), (1, 8, 3, 24, None));
+    // punti 13; moltiplicatori 3; 39
+    assert_eq!((t.esclusi, t.doppi, t.punti, t.molt, t.punteggio, t.errore_script.clone()), (1, 1, 13, 3, 39, None));
 }
 
 #[test]

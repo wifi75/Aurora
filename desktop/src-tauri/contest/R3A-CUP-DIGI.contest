@@ -55,4 +55,6 @@ fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9'
 fn ultima(s) { let u = ""; for w in s.split(" ") { if w != "" { u = w.to_upper(); } } u }
 fn mosca(s) { let w = ultima(s); w.len() == 2 && !cifre(w) }
 fn punti(qso) { if mosca(qso.exch_sent) == mosca(qso.exch_rcvd) { 1 } else { 5 } }
+// tre turni, 17, 18 e 19 UTC: in un altro turno la stessa stazione si lavora di nuovo
+fn turno(qso) { qso.hour.sub_string(0, 2) }
 fn moltiplicatori(qso) { let w = ultima(qso.exch_rcvd); if w == "" || cifre(w) { [] } else { ["rda:" + w + "@" + qso.band] } }

@@ -47,9 +47,11 @@ m_iLogBarDispMode=1
 [Score]
 bands=80,40,20,15,10
 points=any=1
+band_score=1
 
 [Script]
-// stazioni IPARC (mandano IPA): 5 punti; moltiplicatori per banda: paesi con stazione IPARC, per gli USA gli stati
+// stazioni IPARC (mandano IPA): 5 punti; moltiplicatori per banda: paesi con stazione IPARC, per gli USA gli stati;
+// punteggio = somma, banda per banda, dei punti per i moltiplicatori della banda (band_score=1)
 fn parole(s) { let v = []; for w in s.split(" ") { if w != "" { v.push(w.to_upper()); } } v }
 fn cifre(s) { if s == "" { return false; } for ch in s { if ch < '0' || ch > '9' { return false; } } true }
 fn punti(qso) { if parole(qso.exch_rcvd).contains("IPA") { 5 } else { 1 } }
