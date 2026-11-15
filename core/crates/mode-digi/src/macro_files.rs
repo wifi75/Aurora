@@ -76,6 +76,37 @@ fn parse_color(v: &str, windows: bool) -> Option<u32> {
     Some(if windows { from_windows_color(n) } else { n }).filter(|c| *c <= 0xFF_FFFF)
 }
 
+/// Il testo di una macro senza i comandi `<EXEC:...>`: Aurora non avvia programmi esterni (i vecchi file `.bat` di copia di sicurezza
+/// li sostituisce la copia automatica all'avvio), quindi il comando si toglie dal file invece di restare li' ignorato.
+pub fn senza_exec(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(i) = rest.to_ascii_uppercase().find("<EXEC:") {
+        out.push_str(&rest[..i]);
+        match rest[i..].find('>') {
+            Some(j) => rest = &rest[i + j + 1..],
+            None => {
+                rest = "";
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Toglie `<EXEC:...>` da un elenco di macro; vero se ha cambiato qualcosa.
+pub fn togli_exec(list: &mut [DigiMacro]) -> bool {
+    let mut changed = false;
+    for m in list.iter_mut() {
+        let t = senza_exec(&m.text);
+        if t != m.text {
+            m.text = t;
+            changed = true;
+        }
+    }
+    changed
+}
+
 /// Legge un file di macro. Contano le voci numerate che hanno un nome, in ordine di numero; `nItems` non limita (file scritti a mano spesso
 /// lo sbagliano). Per lo stesso numero vale la prima riga.
 pub fn parse(text: &str) -> Vec<DigiMacro> {
@@ -178,6 +209,17 @@ mod tests {
 
     fn m(name: &str, label: &str, text: &str, color: Option<u32>) -> DigiMacro {
         DigiMacro { name: name.into(), label: label.into(), text: text.into(), color }
+    }
+
+    #[test]
+    fn exec_tolto_dal_testo() {
+        assert_eq!(senza_exec("CQ <exec:Backup.bat>DE IU3ABC<EXEC:x.bat>"), "CQ DE IU3ABC");
+        assert_eq!(senza_exec("niente"), "niente");
+        assert_eq!(senza_exec("A <EXEC:rotto"), "A ");
+        let mut l = vec![m("F1", "CQ", "<EXEC:Backup.bat>", None), m("F2", "x", "TU", None)];
+        assert!(togli_exec(&mut l));
+        assert_eq!(l[0].text, "");
+        assert!(!togli_exec(&mut l));
     }
 
     #[test]

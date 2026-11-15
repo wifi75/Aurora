@@ -842,6 +842,27 @@ fn load_or_migrate_macros(data_dir: &std::path::Path, raw_json: Option<&[u8]>, s
         };
         settings.macros = keep(common);
         settings.mode_macros = per_mode.into_iter().map(|(k, v)| (k, keep(v))).collect();
+        // i vecchi `<EXEC:Backup.bat>` (copia di sicurezza fatta da un programma esterno) si tolgono dai file: Aurora non li esegue e fa
+        // da sola la copia all'avvio. Prima di riscrivere si tiene una copia dei file com'erano
+        let mut changed = crate::macro_files::togli_exec(&mut settings.macros);
+        for l in settings.mode_macros.values_mut() {
+            changed |= crate::macro_files::togli_exec(l);
+        }
+        if changed {
+            let old = dir.join("prima-di-togliere-exec");
+            if !old.exists()
+                && std::fs::create_dir_all(&old).is_ok()
+                && let Ok(rd) = std::fs::read_dir(&dir)
+            {
+                for e in rd.flatten().filter(|e| e.path().extension().is_some_and(|x| x == crate::macro_files::EXTENSION)) {
+                    let _ = std::fs::copy(e.path(), old.join(e.file_name()));
+                }
+            }
+            match save_macro_files(data_dir, settings) {
+                Ok(()) => tracing::info!("macro: tolti i comandi EXEC dai file di {}", dir.display()),
+                Err(e) => tracing::warn!("macro: file senza EXEC non riscritti: {e}"),
+            }
+        }
         return;
     }
     let json_has_macros = raw_json
@@ -849,6 +870,10 @@ fn load_or_migrate_macros(data_dir: &std::path::Path, raw_json: Option<&[u8]>, s
         .and_then(|v| v.as_object().map(|o| o.contains_key("macros") || o.contains_key("mode_macros")))
         .unwrap_or(false);
     let json_path = data_dir.join("digi.json");
+    crate::macro_files::togli_exec(&mut settings.macros);
+    for l in settings.mode_macros.values_mut() {
+        crate::macro_files::togli_exec(l);
+    }
     if json_has_macros {
         let backup = data_dir.join(DIGI_JSON_BACKUP);
         if !backup.exists() {

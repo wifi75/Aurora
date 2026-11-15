@@ -375,6 +375,18 @@ pub struct MacroContest {
     pub color: Option<u32>,
 }
 
+/// Il testo senza `<EXEC:...>`: Aurora non avvia programmi esterni, il comando si toglie dalle macro dei contest importate.
+fn senza_exec(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(i) = rest.to_ascii_uppercase().find("<EXEC:") {
+        out.push_str(&rest[..i]);
+        rest = rest[i..].find('>').map_or("", |j| &rest[i + j + 1..]);
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Legge un file di macro (sezione `[Macros]`: `nItems`, `NameN`, `LabelN`, `TextN`, `BkColorN`).
 pub fn leggi_macro(testo: &str) -> Vec<MacroContest> {
     let kv = coppie(testo, "Macros");
@@ -384,7 +396,7 @@ pub fn leggi_macro(testo: &str) -> Vec<MacroContest> {
     for i in 0..n {
         let Some(name) = get(&format!("Name{i}")).filter(|s| !s.is_empty()) else { continue };
         let color = get(&format!("BkColor{i}")).and_then(|v| v.trim().parse::<u32>().ok()).map(|c| ((c & 0xff) << 16) | (c & 0xff00) | ((c >> 16) & 0xff));
-        out.push(MacroContest { name, label: get(&format!("Label{i}")).unwrap_or_default(), text: get(&format!("Text{i}")).unwrap_or_default(), color });
+        out.push(MacroContest { name, label: get(&format!("Label{i}")).unwrap_or_default(), text: senza_exec(&get(&format!("Text{i}")).unwrap_or_default()), color });
     }
     out
 }
