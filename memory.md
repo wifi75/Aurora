@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-15, versione 0.11.267 pubblicata (punteggio vero di 30 contest dei modi testuali, sezione [Script] in Rhai, importa ed esporta dei contest, 14 contest nuovi, EXEC ignorato, macro dei modi in file). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-15, versione 0.11.268 pubblicata (90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-13/14

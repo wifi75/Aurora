@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.268',
+    released: '2026-11-15T20:00:00Z',
+    kind: 'changed',
+    title: [
+      'Contest: 89 su 90 con il punteggio vero',
+      'Contests: 89 of 90 with real scoring',
+      'Contests: 89 von 90 mit echter Punktewertung',
+      'Contests : 89 sur 90 avec le vrai score',
+      'Concursos: 89 de 90 con la puntuación real',
+      'Concursos: 89 de 90 com a pontuação real',
+    ],
+    text: [
+      'Altri 60 contest hanno il punteggio dal regolamento (CQ WW DX, CQ WPX CW e SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA e altri): 89 dei 90 contest hanno le loro regole, con le fonti in docs/contest-regole.md. Tolti 59 contest non più organizzati. Nelle macro i comandi che Aurora non esegue (<EXEC:...>, <MACROS:...>) si saltano in silenzio, senza un avviso a ogni pressione del tasto.',
+      'Another 60 contests now score by the rules (CQ WW DX, CQ WPX CW and SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA and more): 89 of the 90 contests have their own rules, with the sources in docs/contest-regole.md. 59 contests that are no longer held were removed. In macros, commands Aurora does not run (<EXEC:...>, <MACROS:...>) are skipped silently, with no notice on every key press.',
+      'Weitere 60 Contests werten jetzt nach dem Regelwerk (CQ WW DX, CQ WPX CW und SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA und mehr): 89 der 90 Contests haben ihre eigenen Regeln, mit den Quellen in docs/contest-regole.md. 59 nicht mehr veranstaltete Contests wurden entfernt. In Makros werden Befehle, die Aurora nicht ausführt (<EXEC:...>, <MACROS:...>), still übersprungen, ohne Hinweis bei jedem Tastendruck.',
+      'Encore 60 contests comptent les points selon le règlement (CQ WW DX, CQ WPX CW et SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA et d’autres) : 89 des 90 contests ont leurs règles, avec les sources dans docs/contest-regole.md. 59 contests qui ne sont plus organisés ont été retirés. Dans les macros, les commandes qu’Aurora n’exécute pas (<EXEC:...>, <MACROS:...>) sont ignorées en silence, sans avertissement à chaque pression de touche.',
+      'Otros 60 concursos puntúan según el reglamento (CQ WW DX, CQ WPX CW y SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA y más): 89 de los 90 concursos tienen sus reglas, con las fuentes en docs/contest-regole.md. Se quitaron 59 concursos que ya no se organizan. En las macros, los comandos que Aurora no ejecuta (<EXEC:...>, <MACROS:...>) se omiten en silencio, sin aviso en cada pulsación.',
+      'Mais 60 concursos pontuam pelo regulamento (CQ WW DX, CQ WPX CW e SSB, CQ 160, ARRL DX, ARRL 10 m, Field Day, IARU HF, IOTA, WAEDC, All Asian, JIDX, RDXC, UBA, RSGB, RDA e outros): 89 dos 90 concursos têm as suas regras, com as fontes em docs/contest-regole.md. Foram retirados 59 concursos que já não se realizam. Nas macros, os comandos que o Aurora não executa (<EXEC:...>, <MACROS:...>) são ignorados em silêncio, sem aviso a cada toque.',
+    ],
+  },
+  {
     version: '0.11.267',
     released: '2026-11-15T17:33:24Z',
     kind: 'new',
@@ -846,27 +867,6 @@ export const NOVITA: readonly Novita[] = [
       'Les messages de HRDLOG.NET et d’autres lignes du journal des décisions de l’automatisation (continent exclu, Activer Tx rallumé, nouvel État) suivent maintenant la langue de l’interface.',
       'Los mensajes de HRDLOG.NET y otras líneas del registro de decisiones de la automatización (continente excluido, Activar Tx reactivado, estado nuevo) siguen ahora el idioma de la interfaz.',
       'As mensagens do HRDLOG.NET e outras linhas do registo de decisões da automação (continente excluído, Ativar Tx religado, estado novo) seguem agora a língua da interface.',
-    ],
-  },
-  {
-    version: '0.11.250',
-    released: '2026-11-13T19:09:28Z',
-    kind: 'new',
-    title: [
-      'Spot dal cluster telnet',
-      'Spots from the telnet cluster',
-      'Spots über den Telnet-Cluster',
-      'Spots depuis le cluster telnet',
-      'Spots desde el clúster telnet',
-      'Spots a partir do cluster telnet',
-    ],
-    text: [
-      'In Impostazioni › DX Cluster scegli da dove parte lo spot: il sito DXSummit oppure il cluster telnet collegato, che lo porta in tutta la rete dei cluster. Accanto a ogni server ci sono nome di accesso e password; lo spot conta come riuscito solo quando il cluster lo ripete.',
-      'In Settings › DX Cluster you choose where the spot leaves from: the DXSummit website or the connected telnet cluster, which carries it to the whole cluster network. Next to each server there are login name and password; the spot counts as done only when the cluster repeats it.',
-      'Unter Einstellungen › DX-Cluster wählst du, woher der Spot kommt: die Website DXSummit oder der verbundene Telnet-Cluster, der ihn ins ganze Cluster-Netz bringt. Neben jedem Server gibt es Anmeldename und Passwort; der Spot gilt erst als gesendet, wenn der Cluster ihn wiederholt.',
-      'Dans Réglages › DX Cluster tu choisis d’où part le spot : le site DXSummit ou le cluster telnet connecté, qui le porte dans tout le réseau des clusters. À côté de chaque serveur il y a nom de connexion et mot de passe ; le spot ne compte comme envoyé que quand le cluster le répète.',
-      'En Ajustes › DX Cluster eliges desde dónde sale el spot: la web de DXSummit o el clúster telnet conectado, que lo lleva a toda la red de clústeres. Junto a cada servidor hay nombre de acceso y contraseña; el spot cuenta como enviado solo cuando el clúster lo repite.',
-      'Em Definições › DX Cluster escolhes de onde sai o spot: o site DXSummit ou o cluster telnet ligado, que o leva a toda a rede de clusters. Ao lado de cada servidor há nome de acesso e palavra-passe; o spot só conta como enviado quando o cluster o repete.',
     ],
   },
 ];

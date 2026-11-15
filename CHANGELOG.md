@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.268 - 2026-11-15
+
+- Macro: i comandi che Aurora non esegue (`<EXEC:...>`, `<MACROS:...>` e gli altri) si saltano in silenzio, senza un avviso a ogni pressione del tasto.
+- Contest dei modi testuali: punteggio vero dai regolamenti anche per altri 60 contest (CQ WW DX, CQ WPX CW e SSB, CQ 160, ARRL DX CW e SSB, ARRL 10 m, ARRL Field Day, IARU HF, IOTA, WAEDC, ARI, All Asian, JIDX, RDXC, UBA, OK-OM, HA-DX, YO DX, RSGB, RDA e altri): ora 89 dei 90 contest hanno le regole del loro regolamento (resta generico solo «DX Expedition», che non e' un contest), con le fonti in `docs/contest-regole.md`.
+- Tolti 59 contest non piu' organizzati o senza un regolamento recente (ultima edizione prima del 2024, sito chiuso o contest sospeso); si riaggiungeranno se tornano.
+
 ## 0.11.267 - 2026-11-15
 
 - Contest dei modi testuali: punteggio vero dai regolamenti per 30 contest (CQ WW RTTY, CQ WPX RTTY, WAE, BARTG HF e Sprint, ARRL RTTY Roundup, RAEM, SARTG, Russian WW Digital/PSK/RTTY, Ukrainian DX DIGI, Open Ukraine RTTY, DL-DX, SP DX, OK DX, EA RTTY e PSK63, XE RTTY, Alessandro Volta, SCC, JARTS, TARA, Makrothen, YU DX, Poland BPSK63, ARR PSK63, UBA PSK63), ognuno con la sua sezione `[Score]` nel file `.contest` e le fonti in `docs/contest-regole.md`.
