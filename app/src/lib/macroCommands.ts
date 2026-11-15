@@ -251,6 +251,8 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('cw', "<WKTEXT:testo>", "manda il testo in CW con il WinKeyer", "sends the text in CW with the WinKeyer", "sendet den Text in CW mit dem WinKeyer", "envoie le texte en CW avec le WinKeyer", "envía el texto en CW con el WinKeyer", "envia o texto em CW com o WinKeyer"),
   c('cw', "<WKHEX:byte>", "manda al WinKeyer byte di comando in esadecimale", "sends command bytes in hex to the WinKeyer", "sendet Befehlsbytes in Hex an den WinKeyer", "envoie des octets de commande en hexadécimal au WinKeyer", "envía bytes de comando en hexadecimal al WinKeyer", "envia bytes de comando em hexadecimal ao WinKeyer"),
   c('cw', "<WKPOT>", "la velocità la decide il potenziometro del WinKeyer (<WKNOPOT>: la decide Aurora)", "the WinKeyer knob sets the speed (<WKNOPOT>: Aurora sets it)", "der WinKeyer-Drehknopf stellt die Geschwindigkeit ein (<WKNOPOT>: Aurora stellt sie ein)", "le bouton du WinKeyer règle la vitesse (<WKNOPOT> : Aurora la règle)", "el mando del WinKeyer fija la velocidad (<WKNOPOT>: la fija Aurora)", "o botão do WinKeyer define a velocidade (<WKNOPOT>: o Aurora define-a)"),
+  c('rotor', "<ROTORCMD:comando>", "comando del rotore alla GS-232: M o W con i gradi gira, S o A ferma; si fa con il rotore di Aurora", "GS-232 style rotator command: M or W with degrees turns, S or A stops; done with Aurora's rotator", "Rotor-Befehl im Stil von GS-232: M oder W mit Grad dreht, S oder A stoppt; erledigt mit dem Rotor von Aurora", "commande de rotor de type GS-232 : M ou W avec des degrés tourne, S ou A arrête ; exécutée avec le rotor d'Aurora", "comando de rotor estilo GS-232: M o W con grados gira, S o A detiene; se hace con el rotor de Aurora", "comando de rotor ao estilo GS-232: M ou W com graus roda, S ou A pára; feito com o rotor do Aurora"),
+  c('rotor', "<ROTORCMDHEX:byte>", "come <ROTORCMD> con il comando scritto in esadecimale", "like <ROTORCMD> with the command written in hex", "wie <ROTORCMD> mit dem Befehl in Hex geschrieben", "comme <ROTORCMD> avec la commande écrite en hexadécimal", "como <ROTORCMD> con el comando escrito en hexadecimal", "como <ROTORCMD> com o comando escrito em hexadecimal"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -675,6 +677,10 @@ EXAMPLE["<WKHEX:byte>"] = "<WKHEX:02 1E>";
 CATEGORY["<WKPOT>"] = 'keyer';
 EXAMPLE["<WKPOT>"] = "<WKPOT>";
 ALIASES["<WKPOT>"] = ["<WKNOPOT>"];
+CATEGORY["<ROTORCMD:comando>"] = 'rotor';
+EXAMPLE["<ROTORCMD:comando>"] = "<ROTORCMD:M180>";
+CATEGORY["<ROTORCMDHEX:byte>"] = 'rotor';
+EXAMPLE["<ROTORCMDHEX:byte>"] = "<ROTORCMDHEX:4D 31 38 30>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

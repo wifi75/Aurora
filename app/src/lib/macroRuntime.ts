@@ -300,6 +300,8 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'WKHEX': void digiWinKeyerSend({ hex: arg }).catch(fail(d, tag)); return;
     case 'WKPOT':
     case 'WKNOPOT': if (s.winkeyer) d.save({ winkeyer: { ...s.winkeyer, use_pot: tag === 'WKPOT' } }); return;
+    case 'ROTORSTOP': void rotatorStop().catch(fail(d, tag)); return;
+    case 'ROTORBAD': d.toast(d.t('digi.run.cmdFail', { tag: 'ROTORCMD', why: arg }), 'error'); return;
     default: return;
   }
 }

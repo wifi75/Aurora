@@ -327,6 +327,12 @@ describe('WinKeyer', () => {
   });
 });
 
+describe('rotore', () => {
+  it('comandi GS-232 in testo ed esadecimale', () => {
+    expect(cmdOf('<ROTORCMD:M180><ROTORCMD:S><ROTORCMDHEX:4D 30 39 30>')).toEqual([{ type: 'rotor', az: 180 }, { type: 'cmd', tag: 'ROTORSTOP', arg: '' }, { type: 'rotor', az: 90 }]);
+    expect(cmdOf('<ROTORCMD:XYZ>')).toEqual([{ type: 'cmd', tag: 'ROTORBAD', arg: 'XYZ' }]);
+  });
+});
 
 
 

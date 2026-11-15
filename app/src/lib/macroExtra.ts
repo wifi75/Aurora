@@ -378,6 +378,29 @@ function action8(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+/** Un comando del rotore come lo scriverebbe la sua porta (GS-232 e simili): direzione in gradi, `stop`, o `null` se non si capisce. */
+export function parseRotorCmd(text: string): number | 'stop' | null {
+  const t = text.trim().toUpperCase();
+  if (/^(S|A|;|STOP|AM1;?|SA;?)$/.test(t)) return 'stop';
+  const m = /^(?:M|W|P|AP1|AZ\s*=?)?\s*(\d{1,3})(?:[;\r\n ]|$)/.exec(t);
+  if (!m) return null;
+  const az = Number(m[1]);
+  return Number.isFinite(az) && az <= 450 ? az % 360 : null;
+}
+
+/** I byte esadecimali come testo (per `<ROTORCMDHEX>`). */
+export function hexToText(text: string): string {
+  const clean = text.replace(/0x/gi, '').replace(/[\s,;$-]/g, '');
+  return /^([0-9a-f]{2})+$/i.test(clean) ? (clean.match(/../g) ?? []).map((b) => String.fromCharCode(Number.parseInt(b, 16))).join('') : '';
+}
+
+function action9(tag: string, arg: string | undefined): MacroAction | null {
+  if (tag !== 'ROTORCMD' && tag !== 'ROTORCMDHEX') return null;
+  const text = tag === 'ROTORCMD' ? (arg ?? '') : hexToText(arg ?? '');
+  const r = parseRotorCmd(text);
+  if (r === 'stop') return cmd('ROTORSTOP');
+  return r === null ? cmd('ROTORBAD', arg) : { type: 'rotor', az: r };
+}
 
 
 
@@ -423,6 +446,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action6(tag, arg) ??
     action7(tag, arg) ??
     action8(tag, arg) ??
+    action9(tag, arg) ??
     null
   );
 }
