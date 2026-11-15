@@ -43,3 +43,16 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=my_cont:AS&cont:AS&band:160=3; my_cont:AS&band:160=9; my_cont:AS&cont:AS&band:80,10=2; my_cont:AS&band:80,10=6; my_cont:AS&cont:AS=1; my_cont:AS=3; band:160=3; band:80,10=2; any=1
+mult=dxcc/band/if:my_cont:AS; wpx/band/if:my_cont:EU,AF,NA,SA,OC
+
+[Script]
+// gli asiatici lavorano tutti tranne il proprio paese, gli altri solo l'Asia
+fn ammesso(qso) {
+    if qso.my_cont == "AS" {
+        if qso.dxcc == qso.my_dxcc { [false, "valid"] } else { true }
+    } else if qso.cont == "AS" { true } else { [false, "valid"] }
+}

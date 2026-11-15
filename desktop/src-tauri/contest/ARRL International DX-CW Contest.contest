@@ -43,3 +43,15 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=160,80,40,20,15,10
+points=any=3
+mult=exch/band/if:dxcc:K,VE; dxcc/band/except:K,VE
+
+[Script]
+// W/VE lavorano solo il DX (KH6 e KL7 compresi), il DX solo W/VE
+fn ammesso(qso) {
+    let wve = ["K", "VE"];
+    if (qso.my_dxcc in wve) != (qso.dxcc in wve) { true } else { [false, "valid"] }
+}

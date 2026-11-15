@@ -43,3 +43,15 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=my_dxcc:I,IT9,IS&cont:EU=1; my_dxcc:I,IT9,IS=3; dxcc:I,IT9,IS=10; same_dxcc=0; same_cont=1; any=3
+mult=dxcc/band/except:I,IT9,IS; exch/band/if:dxcc:I,IT9,IS
+
+[Script]
+// le stazioni italiane non si collegano fra loro
+fn ammesso(qso) {
+    let it = ["I", "IT9", "IS"];
+    if qso.my_dxcc in it && qso.dxcc in it { [false, "valid"] } else { true }
+}

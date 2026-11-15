@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=10
+points=mode:CW=4; any=2
+mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL7; dxcc/mode/except:K,VE,XE,KH6,KL7

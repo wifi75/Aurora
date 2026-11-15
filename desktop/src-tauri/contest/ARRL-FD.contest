@@ -43,3 +43,10 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+points=mode:SSB,USB,LSB,AM,FM,PHONE=1; any=2
+
+[Script]
+// moltiplicatore di potenza: 2 per chi resta entro 100 W (la classe piu' comune); oltre 100 W vale 1, QRP a batteria 5
+fn punteggio(t) { t.punti * 2 }
