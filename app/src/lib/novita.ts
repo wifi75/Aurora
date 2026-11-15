@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.273',
+    released: '2026-11-15T23:59:00Z',
+    kind: 'fixed',
+    title: [
+      'Installatore piu’ sicuro',
+      'Safer installer',
+      'Sichereres Installationsprogramm',
+      'Installateur plus sûr',
+      'Instalador más seguro',
+      'Instalador mais seguro',
+    ],
+    text: [
+      'Se la cartella scelta non si può scrivere (per esempio Program Files senza diritti di amministratore) l’installatore propone la cartella dell’utente invece di fermarsi a metà. Se Aurora resta aperta durante l’aggiornamento chiede di chiuderla e di riprovare.',
+      'If the chosen folder cannot be written (for example Program Files without administrator rights) the installer offers the user folder instead of stopping halfway. If Aurora stays open during the update it asks you to close it and retry.',
+      'Wenn der gewählte Ordner nicht beschreibbar ist (zum Beispiel Program Files ohne Administratorrechte), schlägt das Installationsprogramm den Benutzerordner vor, statt mittendrin abzubrechen. Bleibt Aurora während des Updates geöffnet, bittet es, Aurora zu schließen und es erneut zu versuchen.',
+      'Si le dossier choisi n’est pas accessible en écriture (par exemple Program Files sans droits d’administrateur), l’installateur propose le dossier de l’utilisateur au lieu de s’arrêter à mi-chemin. Si Aurora reste ouvert pendant la mise à jour, il demande de le fermer et de réessayer.',
+      'Si no se puede escribir en la carpeta elegida (por ejemplo Program Files sin derechos de administrador), el instalador propone la carpeta del usuario en lugar de detenerse a medias. Si Aurora sigue abierto durante la actualización, pide cerrarlo y volver a intentarlo.',
+      'Se não for possível escrever na pasta escolhida (por exemplo Program Files sem direitos de administrador), o instalador propõe a pasta do utilizador em vez de parar a meio. Se o Aurora ficar aberto durante a atualização, pede para o fechar e tentar novamente.',
+    ],
+  },
+  {
     version: '0.11.272',
     released: '2026-11-15T20:32:28Z',
     kind: 'new',
