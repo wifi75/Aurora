@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+
+[Score]
+bands=80,40,20,15,10
+points=dxcc:F,FG,FM,FY,FR,FO,FK,FP,FW,FJ,FS,FH&same_cont=1; dxcc:F,FG,FM,FY,FR,FO,FK,FP,FW,FJ,FS,FH=3
+mult=exch/band/if:dxcc:F,FG,FM,FY,FR,FO,FK,FP,FW,FJ,FS,FH; dxcc/band/if:my_dxcc:F&not_dxcc:F,FG,FM,FY,FR,FO,FK,FP,FW,FJ,FS,FH

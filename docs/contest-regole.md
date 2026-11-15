@@ -251,3 +251,66 @@ Approssimati:
 Tolti perche' non piu' organizzati (ultima edizione o regolamento prima del 2024, o contest sospeso): RememberSK, SA_Sprint, SSTV,
 Sumy, TARA Skirmish, TARA-Grid-Dip, TARA-Rumble, Taras 200, Triathlon DX, UBA Low Band Winter, UBA-Millcontest (BMA), UCC Party,
 UKRAINIAN DX CLASSIC RTTY, UN DIGI, UN DX, URDA Winter, Ukrainian RTTY Championship, VLADIMIR, YO International PSK31, ZHAS.
+
+
+## Gruppo 3B (letti il 2026-11-15)
+
+Prove in `core/crates/contest/tests/regole_contest_3b.rs`. Tolti perche' non piu' organizzati (ultima edizione o regolamento prima
+del 2024, oppure regolamento introvabile e sito chiuso): French BPSK, Georgia, HPC World Wide DX, Happy Birthday Rudolf, IAFA,
+International Bucuresti, Jakarta RTTY, Mongolian DX CW-SSB e RTTY, Nauryz DX, NDG, ON 10 Meter, PGA-DIGI, PSK-63 Marathon, PSKFEST,
+RTTYOPS WW DX.
+
+### French HF Championship (Coupe du REF)
+Fonte: <https://concours.r-e-f.org/contest/a-propos/> (REF, riassunto dei regolamenti 2025; i PDF non erano leggibili).
+- CW ultimo fine settimana pieno di gennaio, SSB di febbraio, sabato 06:00 - domenica 18:00 UTC; bande 80-10 m. Francesi RST +
+  dipartimento (F6REF 00, oltremare il prefisso), gli altri RST + numero.
+- Stranieri: solo i QSO con la Francia (anche oltremare), 1 punto stesso continente, 3 altro continente.
+- Moltiplicatori per banda: dipartimenti e oltremare; i francesi contano i paesi DXCC.
+- `[Score]`: `points=dxcc:<Francia e oltremare>&same_cont=1; dxcc:<...>=3`, `mult=exch/band/if:dxcc:<...>; dxcc/band/if:my_dxcc:F&not_dxcc:<...>`.
+
+### GACW WWSA CW DX Contest
+Fonte: <https://gacw.ar/wwsa/reglas-rules/> (GACW, revisione del 6 febbraio 2024).
+- Secondo fine settimana di giugno, sabato 15:00 - domenica 15:00 UTC; CW, 80-10 m. Scambio RST + zona CQ.
+- Punti: stesso paese 0, stesso continente 1, altro continente 3, Sud America da fuori 5.
+- Moltiplicatori per banda: zone CQ e paesi.
+- `[Score]`: `points=same_dxcc=0; other_cont&cont:SA=5; other_cont=3; same_cont=1`, `mult=cq/band; dxcc/band`.
+
+### HA-DX Contest
+Fonte: <https://ha-dx.com/en/contest-rules> (MRASZ, 2026).
+- Terzo fine settimana pieno di gennaio, sabato 12:00 - domenica 12:00 UTC; CW e SSB, 160-10 m. HA RS(T) + contea, gli altri RS(T) + numero.
+- Punti: stazione HA 10, stesso continente 2, altro continente 5.
+- Moltiplicatori per banda (non per modo): paesi DXCC/WAE esclusa HA e le 20 contee.
+- `[Score]`: `points=dxcc:HA=10; same_cont=2; other_cont=5`, `mult=dxcc/band/except:HA; exch/band/if:dxcc:HA`.
+
+### Helvetia Contest
+Fonte: <https://www.contestcalendar.com/contestdetails.php?ref=326> (WA7BNM); il PDF USKA 2026 non era leggibile.
+- Fine aprile, sabato 13:00 - domenica 12:59 UTC; CW, SSB, digitale, 160-10 m. HB RS(T) + cantone, gli altri RS(T) + numero.
+- Punti: stazione HB 10, stesso continente 1, altro continente 3.
+- Moltiplicatori per banda: cantoni e paesi DXCC.
+- `[Score]`: `points=dxcc:HB=10; same_cont=1; other_cont=3`, `mult=exch/band/if:dxcc:HB; dxcc/band/except:HB`.
+
+### Holyland DX Contest
+Fonte: <https://www.contestcalendar.com/contestdetails.php?ref=319> (WA7BNM); la pagina IARC <https://tools.iarc.org/wwhc/#/rules> non si legge senza browser.
+- Meta' aprile, sabato 21:00 - domenica 21:00 UTC; CW e SSB, 80-10 m. 4X RS(T) + area, gli altri RS(T) + numero.
+- Punti: stesso paese 1, stesso continente 2, altro continente 4; con una stazione 4X (o da 4X verso un altro continente) 8.
+- Moltiplicatori per banda: aree 4X e paesi DXCC.
+- `[Score]`: `points=dxcc:4X=8; my_dxcc:4X&other_cont=8; same_dxcc=1; same_cont=2; other_cont=4`, `mult=exch/band/if:dxcc:4X; dxcc/band`.
+
+### IARU Region 1 Field Day
+Fonte: <https://www.darc.de/der-club/referate/conteste/iaru-region-1-fieldday/rules> (DARC, 5 gennaio 2026).
+- CW primo fine settimana pieno di giugno, SSB di settembre; 160-10 m. Scambio RST + numero.
+- Punti (stazione portatile): fissa in Europa 2, fissa fuori 3, portatile (/P, /M, /MM, /AM) in Europa 4, fuori 6.
+- Moltiplicatori per banda: paesi DXCC/WAE.
+- `[Score]`: `points=call:P,M,MM,AM&cont:EU=4; call:P,M,MM,AM=6; cont:EU=2; any=3`, `mult=dxcc/band`.
+
+### IGRY WW RTTY Contest
+Fonte: <https://www.ig-ry.de/ig-ry-ww-contest> (IG-RY, edizione 2027).
+- Secondo fine settimana pieno di aprile, sabato 12:00 - domenica 18:00 UTC; RTTY 45 baud, 80-10 m. Scambio RST + anno di prima licenza.
+- Punti: 1 per QSO. Moltiplicatori: anni di licenza diversi, per banda.
+- `[Score]`: `points=any=1`, `mult=exch/band`.
+
+### Marconi Memorial Contest HF CW
+Fonte: <https://www.arifano.it/contest_marconi.html> (ARI Fano, 30a edizione, 2026).
+- Primo fine settimana di luglio, sabato 14:00 - domenica 13:59 UTC; CW, 160-10 m. Scambio RST + numero.
+- Punti: 1 per QSO. Moltiplicatori: paesi della lista CQ WW, per banda.
+- `[Score]`: `points=any=1`, `mult=dxcc/band`.
