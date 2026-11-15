@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.270 - 2026-11-15
+
+- Macro dei contest: `<PREVNRS>` ripete lo scambio mandato nell'ultimo QSO del log, `<QSOBEFORETIME>` e `<QSOBEFOREDATE>` dicono ora e data del QSO gia' fatto con quella stazione (dal log del contest attivo).
+- Regole dei contest completate: fattori di potenza dello Stew Perry, turni di UA2 QSO Party, Open Ukraine e R3A Cup, bonus UBA per i QSO con il Belgio, doppio notturno UK/EI, area 0 del SAC, punteggio banda per banda dell'IPA, moltiplicatore per 4 bande dell'Alessandro Volta, California QSO Party (tetto 58, QSO fra non californiani esclusi), potenza dell'ARRL Field Day.
+- Statistiche del contest: la griglia mostra anche i moltiplicatori per stazione e quelli calcolati dagli script.
+
 ## 0.11.269 - 2026-11-15
 
 - Copia di sicurezza automatica: alla prima apertura del giorno Aurora copia impostazioni, log dei QSO, macro e contest in `copie-automatiche` (cartella dei dati) e tiene le ultime 28; password e chiavi restano fuori. Prende il posto dei vecchi file `Backup.bat` lanciati dalle macro.

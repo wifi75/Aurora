@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.270',
+    released: '2026-11-15T22:00:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'Macro dei contest e regole completate',
+      'Contest macros and completed rules',
+      'Contest-Makros und vervollständigte Regeln',
+      'Macros des contests et règles complétées',
+      'Macros de concurso y reglas completadas',
+      'Macros de concurso e regras completas',
+    ],
+    text: [
+      'Macro dei contest: <PREVNRS> ripete lo scambio mandato nell’ultimo QSO del log; <QSOBEFORETIME> e <QSOBEFOREDATE> dicono ora e data del QSO già fatto con quella stazione (dal log del contest attivo). Regole completate: fattori di potenza dello Stew Perry, turni di UA2 QSO Party, Open Ukraine e R3A Cup, bonus UBA per i QSO con il Belgio, doppio notturno UK/EI, area 0 del SAC, punteggio banda per banda dell’IPA, moltiplicatore per 4 bande dell’Alessandro Volta, California QSO Party (tetto 58, QSO fra non californiani esclusi), potenza dell’ARRL Field Day. Statistiche del contest: la griglia mostra anche i moltiplicatori per stazione e quelli calcolati dagli script.',
+      'Contest macros: <PREVNRS> repeats the exchange sent in the last QSO of the log; <QSOBEFORETIME> and <QSOBEFOREDATE> give the time and date of the QSO already made with that station (from the active contest log). Completed rules: Stew Perry power factors, UA2 QSO Party, Open Ukraine and R3A Cup turns, UBA bonus for QSOs with Belgium, UK/EI double night, SAC area 0, per-band scoring of the IPA, 4-band multiplier of the Alessandro Volta, California QSO Party (cap of 58, QSOs between non-Californians excluded), ARRL Field Day power. Contest statistics: the grid also shows the per-station multipliers and those computed by scripts.',
+      'Contest-Makros: <PREVNRS> wiederholt den im letzten QSO des Logs gesendeten Austausch; <QSOBEFORETIME> und <QSOBEFOREDATE> nennen Uhrzeit und Datum des bereits gefahrenen QSO mit dieser Station (aus dem Log des aktiven Contests). Vervollständigte Regeln: Leistungsfaktoren des Stew Perry, Durchgänge von UA2 QSO Party, Open Ukraine und R3A Cup, UBA-Bonus für QSOs mit Belgien, doppelte Nacht UK/EI, Gebiet 0 des SAC, bandweise Wertung des IPA, Multiplikator für 4 Bänder beim Alessandro Volta, California QSO Party (Obergrenze 58, QSOs zwischen Nicht-Kaliforniern ausgeschlossen), Leistung beim ARRL Field Day. Contest-Statistik: Das Raster zeigt auch die Multiplikatoren je Station und die von Skripten berechneten.',
+      'Macros des contests : <PREVNRS> répète l’échange envoyé dans le dernier QSO du log ; <QSOBEFORETIME> et <QSOBEFOREDATE> donnent l’heure et la date du QSO déjà fait avec cette station (depuis le log du contest actif). Règles complétées : facteurs de puissance du Stew Perry, tours de l’UA2 QSO Party, de l’Open Ukraine et de la R3A Cup, bonus UBA pour les QSO avec la Belgique, double nuit UK/EI, zone 0 du SAC, score bande par bande de l’IPA, multiplicateur pour 4 bandes de l’Alessandro Volta, California QSO Party (plafond de 58, QSO entre non-Californiens exclus), puissance de l’ARRL Field Day. Statistiques du contest : la grille montre aussi les multiplicateurs par station et ceux calculés par les scripts.',
+      'Macros de concurso: <PREVNRS> repite el intercambio enviado en el último QSO del log; <QSOBEFORETIME> y <QSOBEFOREDATE> dan la hora y la fecha del QSO ya hecho con esa estación (del log del concurso activo). Reglas completadas: factores de potencia del Stew Perry, turnos de UA2 QSO Party, Open Ukraine y R3A Cup, bonus UBA para los QSO con Bélgica, doble noche UK/EI, zona 0 del SAC, puntuación banda por banda del IPA, multiplicador por 4 bandas del Alessandro Volta, California QSO Party (tope de 58, QSO entre no californianos excluidos), potencia del ARRL Field Day. Estadísticas del concurso: la cuadrícula muestra también los multiplicadores por estación y los calculados por los scripts.',
+      'Macros de concurso: <PREVNRS> repete a troca enviada no último QSO do log; <QSOBEFORETIME> e <QSOBEFOREDATE> dizem a hora e a data do QSO já feito com essa estação (do log do concurso ativo). Regras completas: fatores de potência do Stew Perry, turnos da UA2 QSO Party, Open Ukraine e R3A Cup, bónus UBA para os QSO com a Bélgica, dupla noite UK/EI, área 0 do SAC, pontuação banda a banda do IPA, multiplicador por 4 bandas do Alessandro Volta, California QSO Party (limite de 58, QSO entre não californianos excluídos), potência do ARRL Field Day. Estatísticas do concurso: a grelha mostra também os multiplicadores por estação e os calculados por scripts.',
+    ],
+  },
+  {
     version: '0.11.269',
     released: '2026-11-15T18:46:23Z',
     kind: 'new',
@@ -846,27 +868,6 @@ export const NOVITA: readonly Novita[] = [
       'CW : les stations rapides entre deux voisines se lisent de nouveau et le début de chaque station n’est plus perdu. RTTY : beaucoup moins de caractères étranges squelch coupé, un AFC qui s’accroche en moins d’une seconde et suit la dérive, moins de pertes quand l’AGC de la radio baisse le signal. Aurora ne lance plus de PowerShell caché, que certains antivirus signalaient.',
       'CW: las estaciones rápidas entre dos vecinas se vuelven a leer y el inicio de cada estación ya no se pierde. RTTY: muchos menos caracteres raros con el squelch apagado, un AFC que engancha en menos de un segundo y sigue la deriva, menos pérdidas cuando el AGC de la radio baja la señal. Aurora ya no inicia PowerShell oculto, que algunos antivirus señalaban.',
       'CW: as estações rápidas entre duas vizinhas voltam a ler-se e o início de cada estação já não se perde. RTTY: muito menos caracteres estranhos com o squelch desligado, um AFC que engata em menos de um segundo e segue a deriva, menos perdas quando o AGC do rádio baixa o sinal. A Aurora já não inicia PowerShell escondido, que alguns antivírus assinalavam.',
-    ],
-  },
-  {
-    version: '0.11.251',
-    released: '2026-11-13T23:07:29Z',
-    kind: 'new',
-    title: [
-      'Club Log con il token',
-      'Club Log with the token',
-      'Club Log mit dem Token',
-      'Club Log avec le jeton',
-      'Club Log con el token',
-      'Club Log com o token',
-    ],
-    text: [
-      'Per mandare i QSO a Club Log basta il token personale: in Club Log apri Settings › API, crea un token (comincia con cl_) e incollalo in Aurora. Niente email, password né chiave API; «Prova» controlla davvero il token senza inviare QSO.',
-      'To send QSOs to Club Log you only need your personal token: in Club Log open Settings › API, create a token (it starts with cl_) and paste it into Aurora. No email, password or API key; “Test” really checks the token without uploading QSOs.',
-      'Um QSOs an Club Log zu senden, reicht dein persönliches Token: in Club Log Settings › API öffnen, ein Token erstellen (beginnt mit cl_) und in Aurora einfügen. Keine E-Mail, kein Passwort, kein API-Schlüssel; „Testen“ prüft das Token wirklich, ohne QSOs zu senden.',
-      'Pour envoyer les QSO à Club Log il suffit de ton jeton personnel : dans Club Log ouvre Settings › API, crée un jeton (il commence par cl_) et colle-le dans Aurora. Ni e-mail, ni mot de passe, ni clé API ; « Tester » vérifie vraiment le jeton sans envoyer de QSO.',
-      'Para enviar los QSO a Club Log basta tu token personal: en Club Log abre Settings › API, crea un token (empieza por cl_) y pégalo en Aurora. Sin correo, contraseña ni clave API; «Probar» comprueba de verdad el token sin enviar QSO.',
-      'Para enviar os QSO para o Club Log basta o teu token pessoal: no Club Log abre Settings › API, cria um token (começa por cl_) e cola-o na Aurora. Sem email, palavra-passe nem chave API; «Testar» verifica mesmo o token sem enviar QSO.',
     ],
   },
 ];
