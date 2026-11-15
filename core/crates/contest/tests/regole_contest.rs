@@ -266,21 +266,6 @@ fn p(call: &str, band: &str, min: i64, rcvd: &str) -> QsoTesto {
 }
 
 #[test]
-fn dl_dx_rtty() {
-    let log = [
-        r("IK2XYZ", "20m", 0, "001"), // stesso paese 5; I su 20 m
-        r("DL1ABC", "20m", 1, "001"), // stazione DL 8; DL
-        r("UA3ABC", "20m", 2, "001"), // altro paese europeo 10; UA
-        r("W1AW", "20m", 3, "001"),   // fuori Europa 15; K e K1 (doppio moltiplicatore)
-        r("W2ABC", "20m", 4, "001"),  // 15; K2
-        r("JA1ABC", "40m", 5, "001"), // 15; JA e JA1 su 40 m
-    ];
-    let t = punteggio("DL DX RTTY CONTEST", &log, None);
-    // punti 5+8+10+15+15+15 = 68; moltiplicatori 1+1+1+2+1+2 = 8; 68 x 8 = 544
-    assert_eq!((t.punti, t.molt, t.punteggio), (68, 8, 544));
-}
-
-#[test]
 fn sp_dx_rtty() {
     let log = [
         r("SP5ABC", "20m", 0, "R"),   // stesso continente 5; SP e provincia R su 20 m; EU
@@ -348,19 +333,6 @@ fn alessandro_volta() {
     let t = punteggio("Alessandro Volta RTTY Contest", &log, None);
     // punti 3+20+40+54 = 117; moltiplicatori 4; QSO 4; 117 x 4 x 4 = 1872
     assert_eq!((t.qso, t.doppi, t.esclusi, t.punti, t.molt, t.punteggio), (4, 1, 1, 117, 4, 1872));
-}
-
-#[test]
-fn scc_rtty() {
-    let log = [
-        r("IK2XYZ", "20m", 0, "1990"), // stesso paese 1; anno 1990 su 20 m
-        r("DL1ABC", "20m", 1, "1990"), // stesso continente 2; niente di nuovo
-        r("W1AW", "20m", 2, "1975"),   // altro continente 3; 1975
-        r("DL1ABC", "40m", 3, "1990"), // 2; 1990 su 40 m
-    ];
-    let t = punteggio("SCC-RTTY-Championship Contest", &log, None);
-    // punti 8; moltiplicatori 3; 8 x 3 = 24
-    assert_eq!((t.punti, t.molt, t.punteggio), (8, 3, 24));
 }
 
 #[test]
@@ -496,32 +468,6 @@ fn ea_psk63() {
     let t = punteggio("EA PSK63 Contest", &log, None);
     // punti 4; moltiplicatori 4; 4 x 4 = 16
     assert_eq!((t.punti, t.molt, t.punteggio), (4, 4, 16));
-}
-
-#[test]
-fn poland_ww_bpsk63() {
-    let log = [
-        p("SP5ABC", "20m", 0, "R"),   // stesso continente 2; SP e provincia R
-        p("IK2XYZ", "20m", 1, "001"), // stesso paese 1; I
-        p("W1AW", "20m", 2, "001"),   // altro continente 3; K
-        p("SP5ABC", "40m", 3, "R"),   // 2; SP e R su 40 m
-    ];
-    let t = punteggio("Poland WW BPSK63 Contest", &log, None);
-    // punti 8; moltiplicatori 6; 8 x 6 = 48
-    assert_eq!((t.punti, t.molt, t.punteggio), (8, 6, 48));
-}
-
-#[test]
-fn arr_psk63() {
-    let log = [
-        p("CT1ARR", "20m", 0, "001"), // stazione speciale 10; CT e la stazione CT1ARR
-        p("CT1ABC", "20m", 1, "001"), // stazione portoghese 5; CT1ABC
-        p("DL1ABC", "20m", 2, "001"), // 1; DL
-        p("CT1ABC", "40m", 3, "002"), // 5; CT e CT1ABC su 40 m
-    ];
-    let t = punteggio("ARR PSK63 Contest", &log, None);
-    // punti 21; moltiplicatori 2+1+1+2 = 6; 21 x 6 = 126
-    assert_eq!((t.punti, t.molt, t.punteggio), (21, 6, 126));
 }
 
 #[test]

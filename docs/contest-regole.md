@@ -83,15 +83,6 @@ raggiungibile il giorno della lettura).
 
 ## Secondo gruppo (letti il 2026-11-15)
 
-### DL-DX RTTY Contest (DRCG)
-Fonte: il sito della DRCG (<http://drcg.de/>, indicato da <https://www.digitalrus.ru/>) non e' piu' raggiungibile; regole dal riassunto
-ARI <https://www.qsl.net/contest_ari/reg_dldx_rtty.html> (edizione 2005). Secondo <https://www.ig-ry.de/contest-cup> i contest DRCG di
-giugno e luglio sono stati sospesi per sempre: il file resta per chi rilegge i vecchi log.
-- RTTY, PSK31, PSK63, bande 80-10 m. Scambio RST + numero.
-- Punti: stesso paese 5, stazione DL 8, altro paese europeo 10, fuori Europa 15.
-- Moltiplicatori per banda: paesi DXCC e aree numeriche di W, VE, JA, VK (il primo QSO con questi paesi vale doppio).
-- `[Score]`: `points=same_dxcc=5; dxcc:DL=8; cont:EU=10; any=15`, `mult=dxcc/band; area:K,VE,JA,VK/band`.
-
 ### SP DX RTTY Contest (PK RVG)
 Fonte: il sito indicato da <https://www.digitalrus.ru/> (<http://www.pkrvg.org/zbior.html>) non e' raggiungibile; regole dal riassunto ARI
 <https://www.qsl.net/contest_ari/reg_spdxrtty.html>.
@@ -136,14 +127,6 @@ zona CQ -> zona CQ viene dal file `Points_AVOLTA.txt` dei dati di <https://www.d
 - Punteggio = punti x moltiplicatori x numero dei QSO.
 - `[Score]`: `valid=other_dxcc`, `points=other_cont&band:80,10=cqtab*2; any=cqtab`, `mult=dxcc/band/except:JA,VE,VK,K,ZL;
   area:JA,VE,VK,K,ZL/band`, `times_qso=1`.
-
-### SCC RTTY Championship
-Fonte: <https://s5cc.eu/arhiv/scc_rtty/rttyrules.htm> (Slovenia Contest Club).
-- Bande 80-10 m. Scambio RST + anno della prima licenza (quattro cifre).
-- Punti: stesso paese 1, stesso continente 2, aree diverse di W, VE, VK, ZL, ZS, JA, PY, province LU e oblast UA9/UA0 2 (non
-  distinto), altro continente 3.
-- Moltiplicatori per banda: gli anni diversi.
-- `[Score]`: `points=same_dxcc=1; same_cont=2; other_cont=3`, `mult=exch/band`.
 
 ### Russian «Radio» WW RTTY Contest
 Fonte: <http://www.radio.ru/cq/contest/rule-results/index2.shtml> (rivista «Radio»).
@@ -220,22 +203,6 @@ Fonte: <https://concursos.ure.es/en/eapsk63/bases/> (URE).
 - BPSK63, bande 80-10 m. Punti, scambio e moltiplicatori come l'EA RTTY.
 - `[Score]`: come l'EA RTTY.
 
-### Poland WW BPSK63 Contest (EPC SP)
-Fonte: la pagina indicata da <https://www.digitalrus.ru/> (<http://epc-sp.pl/>) non c'e' piu'; regole 2015-2016 riportate da
-<https://f6kss.wordpress.com/2016/10/>.
-- BPSK63, bande 80-10 m. Scambio: SP RST + provincia, gli altri RST + numero.
-- Punti: stesso paese 1, stesso continente 2, altro continente 3.
-- Moltiplicatori per banda: paesi DXCC e province polacche.
-- `[Score]`: `points=same_dxcc=1; same_cont=2; other_cont=3`, `mult=dxcc/band; exch/band/if:dxcc:SP`.
-
-### ARR PSK63 Contest
-Fonte: il sito <http://www.ct1arr.org/> non ha il regolamento; regole del bando 2012 riportate da
-<https://forum.bfra.bg/viewtopic.php?p=8802>.
-- BPSK63, bande 80-10 m. Scambio RST + numero.
-- Punti: CT1ARR, CQ3EPC, CS2EPC 10; stazioni portoghesi 5; le altre 1.
-- Moltiplicatori per banda: paesi DXCC e il numero delle stazioni portoghesi.
-- `[Score]`: `points=call:CT1ARR,CQ3EPC,CS2EPC=10; dxcc:CT,CT3,CU=5; any=1`, `mult=dxcc/band; call/band/if:dxcc:CT,CT3,CU`.
-
 ### UBA PSK63 Prefix Contest
 Fonte: <https://www.uba.be/en/hf/contest-rules/uba-psk63-prefix-contest> (UBA, edizione 2027).
 - BPSK63, bande 80-10 m. Scambio: ON RST + sezione UBA (tre lettere, XXX per chi non e' socio), gli altri RST + numero.
@@ -251,9 +218,7 @@ Fonte: <https://www.uba.be/en/hf/contest-rules/uba-psk63-prefix-contest> (UBA, e
 - Stati, province e oblast si prendono dallo scambio cosi' com'e' scritto: senza elenco dei domini non si controlla che esistano.
 - Alessandro Volta: i QSO nella stessa area di VK, VE, JA, ZL, W non sono esclusi (lo e' solo lo stesso paese) e manca il moltiplicatore
   per i paesi di un altro continente lavorati su 4 bande.
-- SCC RTTY: i 2 punti fra aree diverse di W, VE, VK, ZL, ZS, JA, PY, LU, UA9/UA0 non sono distinti (contano come stesso paese, 1).
 - Open Ukraine RTTY: i turni della parte bassa (160 e 80 m) non sono distinti.
 - UBA PSK63 Prefix: la sezione XXX dei non soci conta come moltiplicatore.
 - I moltiplicatori `call` (stazioni OK, stazioni portoghesi) non compaiono nella griglia della finestra delle statistiche.
-- DRCG WW RTTY e Aegean RTTY non hanno ancora la sezione `[Score]`: il regolamento non si trova (sito DRCG chiuso e contest sospesi,
-  nessuna pagina dell'Aegean DX Group raggiungibile).
+- Eliminati il 2026-11-15 perche' non piu' organizzati o senza regolamento: DRCG WW RTTY, DL-DX RTTY, Aegean RTTY, SCC RTTY Championship, Poland WW BPSK63, ARR PSK63 (si aggiungeranno se tornano).

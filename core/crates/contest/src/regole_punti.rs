@@ -73,7 +73,7 @@ pub enum TipoM {
     Area(Vec<String>),
     /// Lo scambio ricevuto (stato, provincia, oblast): dall'elenco dei domini, o l'ultima parola non numerica.
     Scambio,
-    /// Il nominativo stesso (ogni stazione di un paese e' un moltiplicatore: OK DX RTTY, ARR PSK63).
+    /// Il nominativo stesso (ogni stazione di un paese e' un moltiplicatore: OK DX RTTY).
     Nominativo,
 }
 
