@@ -1118,9 +1118,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         // comandi che la pagina dei modi testuali non sa fare: lo dice
         case 'tune': toast(t('digi.run.unknown', { tag: 'TUNE' }), 'info'); break;
         case 'bookmark': toast(t('digi.run.unknown', { tag: 'BOOKMARK' }), 'info'); break;
-        case 'macros': toast(t('digi.run.unknown', { tag: `MACROS:${a.file}` }), 'info'); break;
-        case 'exec': toast(t('digi.run.exec'), 'info'); break;
-        case 'unknown': toast(t('digi.run.unknown', { tag: a.tag }), 'info'); break;
+        // comandi delle macro che Aurora non esegue: si saltano senza avvisi a ogni macro (scelta del proprietario 2026-11-15)
+        case 'macros': break;
+        // EXEC ignorato in silenzio: Aurora non avvia programmi esterni (l'avviso a ogni macro disturbava, scelta del proprietario 2026-11-15)
+        case 'exec': break;
+        case 'unknown': break;
         // TX, RX e la pulizia della finestra di trasmissione li ordina planMacro: qui non arrivano
         case 'tx':
         case 'txe':
