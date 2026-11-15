@@ -360,3 +360,9 @@ html .digi-log-table--completa tbody tr.digi-log-cur td { background: #0b5e6e; c
 html .digi-log-table--completa tbody tr.digi-log-cur td:first-child { border-left-color: #22d3ee; }
 html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td { background: #a5f0fc; color: #000; border-bottom-color: #06b6d4; }
 html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td:first-child { border-left-color: #0891b2; }
+
+/* pausa dell'Auto CQ: finestrella stretta, campo e pulsanti in riga */
+.acq-delay { width: min(22rem, 92vw); display: flex; flex-direction: column; gap: 0.8rem; }
+.acq-delay-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; font-size: 0.9rem; }
+.acq-delay-row input { width: 5.5rem; text-align: right; }
+.acq-delay-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }

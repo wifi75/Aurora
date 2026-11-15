@@ -4504,6 +4504,14 @@ digi.mi.rx,RX,RX
 digi.mi.tx,TX,TX
 digi.mi.seekLeft,Seek left,Naar links zoeken
 digi.mi.seekRight,Seek right,Naar rechts zoeken
+digi.mi.autoCq,Auto CQ,Auto CQ
+digi.mi.autoCqStart,Start,Starten
+digi.mi.autoCqStop,Stop,Stoppen
+digi.mi.autoCqText,Text…,Tekst…
+digi.mi.autoCqDelay,Delay…,Pauze…
+digi.mi.autoCqDelayTitle,Auto CQ delay,Auto CQ-pauze
+digi.mi.autoCqDelaySec,Seconds between one call and the next,Seconden tussen de ene oproep en de volgende
+digi.mi.cancel,Cancel,Annuleren
 digi.mi.scan,Scan,Scan
 digi.mi.scanStart,Start scan,Scan starten
 digi.mi.scanStop,Stop scan,Scan stoppen

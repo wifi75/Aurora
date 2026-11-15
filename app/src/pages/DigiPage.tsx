@@ -76,6 +76,7 @@ const VIEWS_KEY = 'aurora.digi.viste';
 const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
+const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
 /** Il tratto di audio che si ascolta e si mostra (Hz). */
 const WF_MIN = 0;
 /** Il tratto di audio della cascata: di base 0-5 kHz (il massimo del motore), oppure 0-3,5 kHz dal menu Vista. */
@@ -277,7 +278,25 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // doppio Esc: l'Auto CQ resta acceso ma in pausa; riparte quando si ripreme (macro <AUTOCQ>)
   const [autoCqPaused, setAutoCqPaused] = useState(false);
   // la pausa fra due chiamate (<ACQDELAY:s>) e la chiamata data da <AUTOCQ>testo (se no AutoCqText o F2)
-  const [autoCqDelay, setAutoCqDelay] = useState(AUTOCQ_DELAY_S);
+  // la pausa scelta dal menu resta salvata (localStorage), come nei programmi di contest
+  const [autoCqDelay, setAutoCqDelayState] = useState(() => {
+    try {
+      const v = Number(browserStorage()?.getItem(ACQ_DELAY_KEY));
+      return Number.isFinite(v) && v >= 1 && v <= 600 ? v : AUTOCQ_DELAY_S;
+    } catch {
+      return AUTOCQ_DELAY_S;
+    }
+  });
+  const setAutoCqDelay = (sec: number) => {
+    const v = Math.max(1, Math.min(600, Math.round(sec)));
+    setAutoCqDelayState(v);
+    try {
+      browserStorage()?.setItem(ACQ_DELAY_KEY, String(v));
+    } catch {
+      // senza archivio vale fino alla chiusura
+    }
+  };
+  const [acqDelayOpen, setAcqDelayOpen] = useState(false);
   const autoCqScript = useRef<string | null>(null);
   const lastEsc = useRef(0);
   // <TXE>: l'attesa che cada il segnale ricevuto (Esc la annulla)
@@ -1669,6 +1688,16 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             { label: t('digi.mi.scanProps'), onSelect: () => openSettingsWindow('digiscan') },
           ],
         },
+        // Auto CQ come nei programmi di contest: avvia, ferma, testo della chiamata (macro AutoCqText) e pausa fra due chiamate
+        {
+          label: t('digi.mi.autoCq'),
+          items: [
+            { label: t('digi.mi.autoCqStart'), disabled: autoCq && !autoCqPaused, onSelect: () => { setAutoCqPaused(false); setAutoCq(true); } },
+            { label: t('digi.mi.autoCqStop'), disabled: !autoCq, onSelect: () => { setAutoCq(false); setAutoCqPaused(false); } },
+            { label: t('digi.mi.autoCqText'), onSelect: () => setEditing({ name: 'AutoCqText', scope: (s.mode_macros[s.mode] ?? []).some((m) => m.name === 'AutoCqText') ? 'mode' : 'all' }) },
+            { label: t('digi.mi.autoCqDelay'), onSelect: () => setAcqDelayOpen(true) },
+          ],
+        },
         'sep',
         {
           label: t('digi.mi.memory'),
@@ -2047,6 +2076,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         />
       ) : null}
 
+      {acqDelayOpen ? <AutoCqDelayDialog seconds={autoCqDelay} onSave={(v) => { setAutoCqDelay(v); setAcqDelayOpen(false); }} onClose={() => setAcqDelayOpen(false)} /> : null}
       {editing !== null && editedMacro ? (
         <MacroEditor key={editing.name} macro={editedMacro} modeName={MODE_NAMES[s.mode]} scope={editing.scope} onSave={saveMacro} onCancel={() => setEditing(null)} />
       ) : null}
@@ -2133,4 +2163,30 @@ function passbandWidth(s: DigiSettings): number {
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
   return 80;
+}
+
+/** Pausa dell'Auto CQ fra una chiamata e la successiva, in secondi (1-600). */
+function AutoCqDelayDialog({ seconds, onSave, onClose }: { seconds: number; onSave(v: number): void; onClose(): void }) {
+  const t = useT();
+  const [v, setV] = useState(String(seconds));
+  const n = Number(v);
+  const ok = Number.isFinite(n) && n >= 1 && n <= 600;
+  return (
+    <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('digi.mi.autoCqDelayTitle')} onKeyDown={(e) => (e.key === 'Escape' ? onClose() : undefined)} onClick={(e) => (e.target === e.currentTarget ? onClose() : undefined)}>
+      <form className="digi-dialog acq-delay" onSubmit={(e) => { e.preventDefault(); if (ok) onSave(n); }}>
+        <header className="cop-head">
+          <strong>{t('digi.mi.autoCqDelayTitle')}</strong>
+          <button type="button" className="digi-tool" onClick={onClose} aria-label={t('sat.set.close')}>✕</button>
+        </header>
+        <label className="acq-delay-row">
+          {t('digi.mi.autoCqDelaySec')}
+          <input type="number" min={1} max={600} value={v} autoFocus onChange={(e) => setV(e.target.value)} />
+        </label>
+        <div className="acq-delay-actions">
+          <button type="button" className="digi-tool" onClick={onClose}>{t('digi.mi.cancel')}</button>
+          <button type="submit" className="digi-tool" disabled={!ok}>OK</button>
+        </div>
+      </form>
+    </div>
+  );
 }
