@@ -407,19 +407,6 @@ fn sartg_new_year() {
 }
 
 #[test]
-fn tara_melee() {
-    let log = [
-        r("W1AW", "20m", 0, "CT"),    // 1; stato CT
-        r("W1AW", "40m", 1, "CT"),    // 1; CT gia' preso (una volta sola)
-        r("VE3ABC", "20m", 2, "ON"),  // 1; provincia ON
-        r("DL1ABC", "20m", 3, "001"), // 1; DXCC DL
-    ];
-    let t = punteggio("TARA Mêlée Contest", &log, None);
-    // punti 4; moltiplicatori 3; 4 x 3 = 12
-    assert_eq!((t.punti, t.molt, t.punteggio), (4, 3, 12));
-}
-
-#[test]
 fn makrothen() {
     let log = [
         q("W1AW", "20m", "RTTY", 0, "JN65", "FN31"),   // 6610 km

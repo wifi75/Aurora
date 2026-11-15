@@ -89,7 +89,6 @@ nuovi hanno un file `.contest` e una macro scritta da capo con l'ordine dei tast
 | Scandinavian Activity Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 10 comandi che Aurora non conosce |
 | SPDX RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | Stew Perry Topband Distance Challenge | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| TARA Mêlée Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 11 comandi che Aurora non conosce |
 | TRC DIGI Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | TRC DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | UA2 QSO Party | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |

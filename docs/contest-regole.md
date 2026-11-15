@@ -166,12 +166,6 @@ Fonte: <https://www.sartg.com/contest/nyrules.htm> (SARTG).
 - Moltiplicatori per banda: paesi DXCC tranne la Scandinavia, dove contano le aree numeriche (SM3 e SK3 sono la stessa).
 - `[Score]`: `bands=80,40`, `mult=dxcc/band/except:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0; area:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0/band`.
 
-### TARA RTTY Mêlée
-Fonte: <http://www.n2ty.org/seasons/tara_melee_rules.html> (TARA).
-- Bande 160-10 m, niente WARC. Scambio: W RST + stato, VE RST + provincia, gli altri RST + numero.
-- Punti: 1 per QSO, una volta per banda.
-- Moltiplicatori una volta sola: stati USA + DC, province e territori canadesi, paesi DXCC esclusi USA e Canada.
-- `[Score]`: `mult=exch/if:dxcc:K,VE; dxcc/except:K,VE`.
 
 ### Makrothen RTTY Contest
 Fonte: <https://www.pl259.org/makrothen/makrothen-rules/> (Makrothen).
@@ -221,7 +215,7 @@ Fonte: <https://www.uba.be/en/hf/contest-rules/uba-psk63-prefix-contest> (UBA, e
 - Open Ukraine RTTY: i turni della parte bassa (160 e 80 m) non sono distinti.
 - UBA PSK63 Prefix: la sezione XXX dei non soci conta come moltiplicatore.
 - I moltiplicatori `call` (stazioni OK, stazioni portoghesi) non compaiono nella griglia della finestra delle statistiche.
-- Eliminati il 2026-11-15 perche' non piu' organizzati o senza regolamento: DRCG WW RTTY, DL-DX RTTY, Aegean RTTY, SCC RTTY Championship, Poland WW BPSK63, ARR PSK63 (si aggiungeranno se tornano).
+- Eliminati il 2026-11-15 perche' non piu' organizzati o senza regolamento: DRCG WW RTTY, DL-DX RTTY, Aegean RTTY, SCC RTTY Championship, Poland WW BPSK63, ARR PSK63, TARA Mêlée (si aggiungeranno se tornano).
 ## Gruppo 3C
 
 Regolamenti letti il 2026-11-15. Prove in `core/crates/contest/tests/regole_contest_3c.rs`.
