@@ -216,6 +216,28 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('program', "<SENDEQSL>", "conferme in rete: Aurora manda ogni QSO salvato ai servizi scelti nelle Impostazioni (eQSL, LoTW, Club Log...), il comando lo ricorda", "online confirmations: Aurora sends every saved QSO to the services chosen in Settings (eQSL, LoTW, Club Log...), the command reminds you", "Online-Bestätigungen: Aurora sendet jedes gespeicherte QSO an die in den Einstellungen gewählten Dienste (eQSL, LoTW, Club Log...), der Befehl erinnert dich daran", "confirmations en ligne : Aurora envoie chaque QSO enregistré aux services choisis dans les Paramètres (eQSL, LoTW, Club Log...), la commande te le rappelle", "confirmaciones en línea: Aurora envía cada QSO guardado a los servicios elegidos en Ajustes (eQSL, LoTW, Club Log...), el comando te lo recuerda", "confirmações online: o Aurora envia cada QSO guardado para os serviços escolhidos nas Definições (eQSL, LoTW, Club Log...), o comando lembra-te disso"),
   c('program', "<SENDSPOT:commento>", "manda al DX cluster uno spot del corrispondente sulla frequenza del segnale", "sends a DX cluster spot of the other station on the signal frequency", "sendet einen DX-Cluster-Spot der Gegenstation auf der Signalfrequenz", "envoie un spot DX cluster de la station correspondante sur la fréquence du signal", "envía un spot de DX cluster de la estación corresponsal en la frecuencia de la señal", "envia um spot de DX cluster da estação correspondente na frequência do sinal"),
   c('program', "<QSOCMDDDE:comando>", "Aurora non usa il DDE: i QSO salvati arrivano già ai programmi di log collegati", "Aurora does not use DDE: saved QSOs already reach the connected logging programs", "Aurora nutzt kein DDE: gespeicherte QSOs erreichen die verbundenen Logprogramme bereits", "Aurora n'utilise pas DDE : les QSO enregistrés arrivent déjà aux programmes de log connectés", "Aurora no usa DDE: los QSO guardados ya llegan a los programas de log conectados", "O Aurora não usa DDE: os QSO guardados já chegam aos programas de log ligados"),
+  c('mode', "<LOCKMODE>", "blocca il modo: <MODE:...> non lo cambia più (<UNLOCKMODE> lo libera)", "locks the mode: <MODE:...> no longer changes it (<UNLOCKMODE> frees it)", "sperrt den Modus: <MODE:...> ändert ihn nicht mehr (<UNLOCKMODE> gibt ihn frei)", "verrouille le mode : <MODE:...> ne le change plus (<UNLOCKMODE> le libère)", "bloquea el modo: <MODE:...> ya no lo cambia (<UNLOCKMODE> lo libera)", "bloqueia o modo: <MODE:...> já não o muda (<UNLOCKMODE> liberta-o)"),
+  c('mode', "<LOCKRX>", "blocca la frequenza di ricezione: clic e macro non la spostano (<UNLOCKRX>, <LOCKRXTOGGLE>)", "locks the receive frequency: clicks and macros do not move it (<UNLOCKRX>, <LOCKRXTOGGLE>)", "sperrt die Empfangsfrequenz: Klicks und Makros verschieben sie nicht (<UNLOCKRX>, <LOCKRXTOGGLE>)", "verrouille la fréquence de réception : les clics et les macros ne la déplacent pas (<UNLOCKRX>, <LOCKRXTOGGLE>)", "bloquea la frecuencia de recepción: los clics y las macros no la mueven (<UNLOCKRX>, <LOCKRXTOGGLE>)", "bloqueia a frequência de receção: os cliques e as macros não a movem (<UNLOCKRX>, <LOCKRXTOGGLE>)"),
+  c('mode', "<MODEADD:modo>", "come <MODE:modo>", "like <MODE:mode>", "wie <MODE:mode>", "comme <MODE:mode>", "como <MODE:mode>", "como <MODE:mode>"),
+  c('mode', "<WORDMODE:ON>", "mentre scrivi la trasmissione parte a parole intere (OFF: lettera per lettera)", "while you type, the transmission goes out in whole words (OFF: letter by letter)", "während du tippst, wird die Aussendung in ganzen Wörtern gesendet (OFF: Buchstabe für Buchstabe)", "pendant que tu tapes, l'émission part par mots entiers (OFF : lettre par lettre)", "mientras escribes, la transmisión sale en palabras completas (OFF: letra a letra)", "enquanto escreves, a transmissão sai em palavras inteiras (OFF: letra a letra)"),
+  c('mode', "<CAPITALSONLY:ON>", "solo maiuscole nella finestra di trasmissione (OFF le toglie)", "capitals only in the transmit window (OFF turns it off)", "nur Großbuchstaben im Sendefenster (OFF schaltet es aus)", "majuscules uniquement dans la fenêtre d'émission (OFF le désactive)", "solo mayúsculas en la ventana de transmisión (OFF lo desactiva)", "só maiúsculas na janela de transmissão (OFF desativa)"),
+  c('mode', "<CWID>", "in RTTY e PSK aggiunge DE e il tuo nominativo in fondo (<CWID:testo> un altro testo)", "in RTTY and PSK adds DE and your callsign at the end (<CWID:text> another text)", "bei RTTY und PSK hängt es am Ende DE und dein Rufzeichen an (<CWID:text> anderer Text)", "en RTTY et PSK ajoute DE et ton indicatif à la fin (<CWID:text> un autre texte)", "en RTTY y PSK añade DE y tu indicativo al final (<CWID:text> otro texto)", "em RTTY e PSK acrescenta DE e o teu indicativo no fim (<CWID:text> outro texto)"),
+  c('mode', "<REVERSEPADDLE>", "scambia punto e linea del paddle del WinKeyer", "swaps dot and dash of the WinKeyer paddle", "vertauscht Punkt und Strich der WinKeyer-Paddle", "inverse le point et le trait de la manipulation WinKeyer", "intercambia punto y raya de la pala del WinKeyer", "troca ponto e traço da palheta do WinKeyer"),
+  c('mode', "<SNAPNOW>", "porta subito la ricezione sul segnale più vicino", "moves the receive onto the nearest signal now", "verschiebt den Empfang jetzt auf das nächstgelegene Signal", "déplace maintenant la réception sur le signal le plus proche", "mueve ahora la recepción a la señal más cercana", "move agora a receção para o sinal mais próximo"),
+  c('mode', "<INV>", "RTTY: inverte mark e space (<INVON>, <INVOFF>)", "RTTY: swaps mark and space (<INVON>, <INVOFF>)", "RTTY: vertauscht Mark und Space (<INVON>, <INVOFF>)", "RTTY : inverse mark et space (<INVON>, <INVOFF>)", "RTTY: intercambia mark y space (<INVON>, <INVOFF>)", "RTTY: troca mark e space (<INVON>, <INVOFF>)"),
+  c('mode', "<FILTER:PASS>", "filtro di ricezione: PASS passabanda stretto, NONE spento (anche i notch); NOTCH e NOISE accendono il passabanda", "receive filter: PASS narrow passband, NONE off (notches too); NOTCH and NOISE turn the passband on", "Empfangsfilter: PASS schmaler Durchlassbereich, NONE aus (auch Notches); NOTCH und NOISE schalten den Durchlassbereich ein", "filtre de réception : PASS bande passante étroite, NONE désactivé (notchs aussi) ; NOTCH et NOISE activent la bande passante", "filtro de recepción: PASS banda pasante estrecha, NONE desactivado (también los notch); NOTCH y NOISE activan la banda pasante", "filtro de receção: PASS banda passante estreita, NONE desligado (notches também); NOTCH e NOISE ligam a banda passante"),
+  c('mode', "<BROADCASTMODE:ON>", "ON: si resta in trasmissione anche se la macro ha <RX>, finché non premi RX; OFF torna normale", "ON: you stay in transmit even if the macro has <RX>, until you press RX; OFF goes back to normal", "ON: du bleibst im Senden, auch wenn das Makro <RX> enthält, bis du RX drückst; OFF kehrt zum Normalzustand zurück", "ON : tu restes en émission même si la macro contient <RX>, jusqu'à ce que tu appuies sur RX ; OFF revient à la normale", "ON: sigues en transmisión aunque la macro tenga <RX>, hasta que pulses RX; OFF vuelve a lo normal", "ON: ficas em transmissão mesmo que a macro tenha <RX>, até carregares em RX; OFF volta ao normal"),
+  c('mode', "<TOGGLECHANNEL>", "scambia la ricezione principale con la prima finestra RX in più", "swaps the main receive with the first extra RX window", "tauscht den Hauptempfang mit dem ersten zusätzlichen RX-Fenster", "échange la réception principale avec la première fenêtre RX supplémentaire", "intercambia la recepción principal con la primera ventana RX adicional", "troca a receção principal com a primeira janela RX adicional"),
+  c('program', "<ESCAPE>", "ferma subito la trasmissione", "stops the transmission at once", "stoppt die Aussendung sofort", "arrête l'émission immédiatement", "detiene la transmisión de inmediato", "pára a transmissão de imediato"),
+  c('program', "<PTT:ON>", "apre la trasmissione (OFF la chiude)", "opens the transmission (OFF closes it)", "öffnet die Aussendung (OFF schließt sie)", "ouvre l'émission (OFF la ferme)", "abre la transmisión (OFF la cierra)", "abre a transmissão (OFF fecha-a)"),
+  c('mode', "<SET BW:Hz>", "un parametro del modo: BW (filtro della CW o passabanda), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW); TONES e i sottomodi che Aurora non ha si saltano", "a mode parameter: BW (CW filter or passband), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW); TONES and submodes Aurora lacks are skipped", "ein Modusparameter: BW (CW-Filter oder Durchlassbereich), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW); TONES und Submodi, die Aurora nicht hat, werden übersprungen", "un paramètre du mode : BW (filtre CW ou bande passante), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW) ; TONES et les sous-modes qu'Aurora n'a pas sont ignorés", "un parámetro del modo: BW (filtro de CW o banda pasante), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW); TONES y los submodos que Aurora no tiene se omiten", "um parâmetro do modo: BW (filtro de CW ou banda passante), SHIFT, BAUD, WPM, SQUELCH, SUBMODE (BPSK31, PSK63, RTTY, CW); TONES e os submodos que o Aurora não tem são ignorados"),
+  c('mode', "<GET SN>", "scrive un valore del segnale: SN (S/N), OFFSET (frequenza audio), RATE (baud o WPM), MODE, IMD", "writes a signal value: SN (S/N), OFFSET (audio frequency), RATE (baud or WPM), MODE, IMD", "schreibt einen Signalwert: SN (S/N), OFFSET (Audiofrequenz), RATE (Baud oder WPM), MODE, IMD", "écrit une valeur du signal : SN (S/N), OFFSET (fréquence audio), RATE (baud ou WPM), MODE, IMD", "escribe un valor de la señal: SN (S/N), OFFSET (frecuencia de audio), RATE (baudios o WPM), MODE, IMD", "escreve um valor do sinal: SN (S/N), OFFSET (frequência de áudio), RATE (baud ou WPM), MODE, IMD"),
+  c('frequency', "<SPZOOM:n>", "cascata: 1 larghezza normale, 2 o più cascata larga", "waterfall: 1 normal width, 2 or more wide waterfall", "Wasserfall: 1 normale Breite, 2 oder mehr breiter Wasserfall", "cascade : 1 largeur normale, 2 ou plus cascade large", "cascada: 1 anchura normal, 2 o más cascada ancha", "cascata: 1 largura normal, 2 ou mais cascata larga"),
+  c('frequency', "<SPSHIFT:Hz>", "porta la ricezione su questa frequenza audio della cascata", "moves the receive to this audio frequency of the waterfall", "verschiebt den Empfang auf diese Audiofrequenz des Wasserfalls", "déplace la réception sur cette fréquence audio de la cascade", "mueve la recepción a esta frecuencia de audio de la cascada", "move a receção para esta frequência de áudio da cascata"),
+  c('frequency', "<AMPLITUDE:dB>", "livello di uscita: attenuazione in dB (0 = massimo)", "output level: attenuation in dB (0 = maximum)", "Ausgangspegel: Dämpfung in dB (0 = Maximum)", "niveau de sortie : atténuation en dB (0 = maximum)", "nivel de salida: atenuación en dB (0 = máximo)", "nível de saída: atenuação em dB (0 = máximo)"),
+  c('frequency', "<ZFQ>", "sposta la radio perché il segnale in ricezione cada a 1500 Hz", "moves the radio so the received signal falls at 1500 Hz", "verschiebt das Funkgerät so, dass das empfangene Signal bei 1500 Hz liegt", "déplace la radio pour que le signal reçu tombe à 1500 Hz", "mueve la radio para que la señal recibida caiga en 1500 Hz", "move o rádio para que o sinal recebido caia nos 1500 Hz"),
+  c('frequency', "<FQB:kHz>", "frequenza di trasmissione (VFO B, split) in kHz", "transmit frequency (VFO B, split) in kHz", "Sendefrequenz (VFO B, Split) in kHz", "fréquence d'émission (VFO B, split) en kHz", "frecuencia de transmisión (VFO B, split) en kHz", "frequência de transmissão (VFO B, split) em kHz"),
+  c('text', "<TEST>", "scrive TEST se c'è un contest attivo, se no niente", "writes TEST if a contest is active, otherwise nothing", "schreibt TEST, wenn ein Contest aktiv ist, sonst nichts", "écrit TEST si un concours est actif, sinon rien", "escribe TEST si hay un concurso activo, si no, nada", "escreve TEST se houver um concurso ativo, caso contrário nada"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -558,6 +580,56 @@ CATEGORY["<SENDSPOT:commento>"] = 'qso';
 EXAMPLE["<SENDSPOT:commento>"] = "<SENDSPOT:RTTY TNX QSO>";
 CATEGORY["<QSOCMDDDE:comando>"] = 'qso';
 EXAMPLE["<QSOCMDDDE:comando>"] = "<QSOCMDDDE:LOG>";
+CATEGORY["<LOCKMODE>"] = 'mode';
+EXAMPLE["<LOCKMODE>"] = "<LOCKMODE>";
+ALIASES["<LOCKMODE>"] = ["<UNLOCKMODE>"];
+CATEGORY["<LOCKRX>"] = 'mode';
+EXAMPLE["<LOCKRX>"] = "<LOCKRX>";
+ALIASES["<LOCKRX>"] = ["<UNLOCKRX>", "<LOCKRXTOGGLE>"];
+CATEGORY["<MODEADD:modo>"] = 'mode';
+EXAMPLE["<MODEADD:modo>"] = "<MODEADD:RTTY>";
+ALIASES["<MODEADD:modo>"] = ["<MODETNC:modo>"];
+CATEGORY["<WORDMODE:ON>"] = 'mode';
+EXAMPLE["<WORDMODE:ON>"] = "<WORDMODE:ON>";
+CATEGORY["<CAPITALSONLY:ON>"] = 'mode';
+EXAMPLE["<CAPITALSONLY:ON>"] = "<CAPITALSONLY:ON>";
+CATEGORY["<CWID>"] = 'mode';
+EXAMPLE["<CWID>"] = "73 <CWID><RX>";
+CATEGORY["<REVERSEPADDLE>"] = 'mode';
+EXAMPLE["<REVERSEPADDLE>"] = "<REVERSEPADDLE>";
+CATEGORY["<SNAPNOW>"] = 'mode';
+EXAMPLE["<SNAPNOW>"] = "<SNAPNOW>";
+CATEGORY["<INV>"] = 'mode';
+EXAMPLE["<INV>"] = "<INV>";
+ALIASES["<INV>"] = ["<INVON>", "<INVOFF>"];
+CATEGORY["<FILTER:PASS>"] = 'mode';
+EXAMPLE["<FILTER:PASS>"] = "<FILTER:PASS>";
+CATEGORY["<BROADCASTMODE:ON>"] = 'mode';
+EXAMPLE["<BROADCASTMODE:ON>"] = "<BROADCASTMODE:ON>";
+CATEGORY["<TOGGLECHANNEL>"] = 'mode';
+EXAMPLE["<TOGGLECHANNEL>"] = "<TOGGLECHANNEL>";
+CATEGORY["<ESCAPE>"] = 'txrx';
+EXAMPLE["<ESCAPE>"] = "<ESCAPE>";
+CATEGORY["<PTT:ON>"] = 'txrx';
+EXAMPLE["<PTT:ON>"] = "<PTT:ON>";
+CATEGORY["<SET BW:Hz>"] = 'mode';
+EXAMPLE["<SET BW:Hz>"] = "<SET BW:250>";
+ALIASES["<SET BW:Hz>"] = ["<SET TONES:n>", "<SET SUBMODE:n>"];
+CATEGORY["<GET SN>"] = 'mode';
+EXAMPLE["<GET SN>"] = "UR S/N <GET SN> dB";
+ALIASES["<GET SN>"] = ["<GET OFFSET>", "<GET RATE>"];
+CATEGORY["<SPZOOM:n>"] = 'freq';
+EXAMPLE["<SPZOOM:n>"] = "<SPZOOM:2>";
+CATEGORY["<SPSHIFT:Hz>"] = 'freq';
+EXAMPLE["<SPSHIFT:Hz>"] = "<SPSHIFT:1500>";
+CATEGORY["<AMPLITUDE:dB>"] = 'freq';
+EXAMPLE["<AMPLITUDE:dB>"] = "<AMPLITUDE:3>";
+CATEGORY["<ZFQ>"] = 'freq';
+EXAMPLE["<ZFQ>"] = "<ZFQ>";
+CATEGORY["<FQB:kHz>"] = 'freq';
+EXAMPLE["<FQB:kHz>"] = "<FQB:14085.5>";
+CATEGORY["<TEST>"] = 'txrx';
+EXAMPLE["<TEST>"] = "CQ <TEST> <MYCALL>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

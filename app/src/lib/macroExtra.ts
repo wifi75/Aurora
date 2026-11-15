@@ -273,6 +273,68 @@ function action5(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+function family6(tag: string, arg: string | undefined, c: MacroContext): string | null {
+  switch (tag) {
+    // la parola TEST nella chiamata di un contest: solo con un contest attivo
+    case 'TEST': return c.inContest ? 'TEST' : '';
+    // l'identificazione in CW alla fine: Aurora non mescola la CW negli altri modi, il nominativo va in coda al testo
+    case 'CWID': {
+      const id = arg === undefined || arg.trim().toUpperCase() === 'DEFAULT' ? `DE ${c.mycall.toUpperCase()}` : arg;
+      return c.modeName === 'CW' ? '' : ` ${id}`;
+    }
+    // RTTY: il motore manda da solo LTRS e FIGS dove servono (anche dopo ogni spazio)
+    case 'LETTERS':
+    case 'NUMBERS': return '';
+    default: return null;
+  }
+}
+
+/** I valori di `<GET x>`. */
+function getValue(what: string, c: MacroContext): string {
+  switch (what) {
+    case 'SN':
+    case 'SNR': return c.snr != null ? String(Math.round(c.snr)) : '?';
+    case 'OFFSET':
+    case 'AUDIOFQ': return c.rxHz != null ? String(Math.round(c.rxHz)) : '?';
+    case 'RATE':
+    case 'BAUDRATE':
+    case 'WPM': return c.rate ?? '?';
+    case 'MODE': return c.modeName;
+    case 'IMD': return c.imd != null ? String(Math.round(c.imd)) : '?';
+    default: return '?';
+  }
+}
+
+function action6(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'MODEADD':
+    case 'MODETNC': return arg === undefined ? null : { type: 'mode', mode: arg.trim().toUpperCase() };
+    case 'LOCKMODE':
+    case 'UNLOCKMODE':
+    case 'LOCKRX':
+    case 'UNLOCKRX':
+    case 'LOCKRXTOGGLE':
+    case 'MODEMACROS':
+    case 'WORDMODE':
+    case 'CAPITALSONLY':
+    case 'REVERSEPADDLE':
+    case 'SNAPNOW':
+    case 'INV':
+    case 'INVON':
+    case 'INVOFF':
+    case 'FILTER':
+    case 'BROADCASTMODE':
+    case 'TOGGLECHANNEL':
+    case 'ESCAPE':
+    case 'PTT':
+    case 'SPZOOM':
+    case 'SPSHIFT':
+    case 'AMPLITUDE':
+    case 'ZFQ':
+    case 'FQB': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -295,10 +357,12 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
 
 /** Il valore di un comando di testo in piu', o `null`. */
 export function extraText(tag: string, arg: string | undefined, c: MacroContext): string | null {
+  if (tag.startsWith('GET ')) return getValue(tag.slice(4).trim(), c);
   return (
     family1(tag, arg, c) ??
     family3(tag, c) ??
     family4(tag, c) ??
+    family6(tag, arg, c) ??
     null
   );
 }
@@ -308,12 +372,15 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
   if (tag === 'SAVESELTEXT') return cmd('SAVESELTEXT');
   if (tag === 'TIMER') return cmd('TIMER', arg);
   if (tag === 'STARTTIME' && arg !== undefined) return cmd('STARTTIME', arg);
+  // <SET BW:250>, <SET TONES:16>, <SET SUBMODE:MFSK32>: il parametro del modo
+  if (tag.startsWith('SET ')) return cmd('SET', `${tag.slice(4).trim()}:${arg ?? ''}`);
   if (tag === 'WKDIGNOREBEFORE') {
     const at = arg === undefined ? null : parseIgnoreBefore(arg);
     return at === null ? null : { type: 'ignoreBefore', at };
   }
   return (
     action5(tag, arg) ??
+    action6(tag, arg) ??
     null
   );
 }

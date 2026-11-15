@@ -221,6 +221,63 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       return;
     }
     case 'QSOCMDDDE': notInAurora(d, tag, 'DDE'); return;
+    case 'LOCKMODE': macroState.modeLocked = true; return;
+    case 'UNLOCKMODE': macroState.modeLocked = false; return;
+    case 'LOCKRX': macroState.rxLocked = true; return;
+    case 'UNLOCKRX': macroState.rxLocked = false; return;
+    case 'LOCKRXTOGGLE': macroState.rxLocked = !macroState.rxLocked; return;
+    case 'MODEMACROS': {
+      const m = arg.trim().toLowerCase().replace(/\.mc$/, '').replace(/^bpsk/, 'psk');
+      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw'].includes(m) ? m : null);
+      return;
+    }
+    case 'WORDMODE': macroState.wordMode = on(arg); txLiveOptions.wordMode = macroState.wordMode; return;
+    case 'CAPITALSONLY': d.setCapsOnly(on(arg)); return;
+    case 'REVERSEPADDLE': if (s.winkeyer) d.save({ winkeyer: { ...s.winkeyer, paddle_swap: !s.winkeyer.paddle_swap } }); return;
+    case 'SNAPNOW': d.pickFreq(d.rxHz(), true); return;
+    case 'INV': d.save({ rtty_reverse: !s.rtty_reverse }); return;
+    case 'INVON': d.save({ rtty_reverse: true }); return;
+    case 'INVOFF': d.save({ rtty_reverse: false }); return;
+    case 'FILTER': {
+      const f = arg.trim().toUpperCase();
+      if (f === 'NONE') d.save({ passband_on: false });
+      else d.save({ passband_on: true });
+      return;
+    }
+    case 'BROADCASTMODE': macroState.broadcast = on(arg); return;
+    case 'TOGGLECHANNEL': d.extras.swapFirst(); return;
+    case 'ESCAPE': void digiAbort(); return;
+    case 'PTT': {
+      if (on(arg)) void digiTxOpen(' ').catch(fail(d, tag));
+      else void digiTxClose().catch(fail(d, tag));
+      return;
+    }
+    case 'SET': {
+      const [what = '', value = ''] = arg.split(':');
+      const v = Number(value.replace(',', '.'));
+      const key = what.trim().toUpperCase();
+      const val = value.trim().toUpperCase();
+      if (key === 'BW' && Number.isFinite(v) && v > 0) {
+        if (s.mode === 'cw') d.save({ cw_bandwidth_hz: [50, 100, 150, 250, 500].reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a)) });
+        else d.save({ passband_on: true, passband_hz: Math.round(Math.min(1000, Math.max(20, v))) });
+      } else if (key === 'SHIFT' && v > 0) d.save({ rtty_shift_hz: v });
+      else if ((key === 'BAUD' || key === 'BAUDRATE') && v > 0 && s.mode === 'rtty') d.save({ rtty_baud: v });
+      else if ((key === 'WPM' || key === 'SPEED') && v > 0) d.save({ cw_wpm: Math.round(Math.min(60, Math.max(5, v))), cw_wpm_follow_rx: false });
+      else if (key === 'SQUELCH') d.save({ squelch_on: on(val) });
+      else if (key === 'SUBMODE' && !macroState.modeLocked) {
+        const m = val.replace(/^BPSK/, 'PSK');
+        const mode = m === 'PSK31' ? 'psk31' : m === 'PSK63' ? 'psk63' : m === 'RTTY' ? 'rtty' : m === 'CW' ? 'cw' : null;
+        if (mode) d.save({ mode });
+        else notInAurora(d, `SET SUBMODE:${val}`, val);
+      }
+      // TONES, FILTER e FONT di Hell e MFSK: modi che Aurora non ha, si saltano
+      return;
+    }
+    case 'SPZOOM': d.view('wideWaterfall', num !== null && num >= 2 ? 'show' : 'hide'); return;
+    case 'SPSHIFT': if (num !== null && !macroState.rxLocked) d.pickFreq(Math.max(200, Math.min(3500, num)), false); return;
+    case 'AMPLITUDE': if (num !== null) void putOutputLevel(Math.max(0, num)).catch(fail(d, tag)); return;
+    case 'ZFQ': zeroBeat(d, 1500); return;
+    case 'FQB': if (num !== null && num > 0 && d.dialHz() > 0) void postSplitDx(d.dialHz(), Math.round(num * 1000)).catch(fail(d, tag)); return;
     default: return;
   }
 }

@@ -298,6 +298,15 @@ describe('QSO e log', () => {
   });
 });
 
+describe('trasmissione, modo e demodulatore', () => {
+  it('SET, GET, TEST, CWID e MODEADD', () => {
+    expect(cmdOf('<SET BW:250><SET SUBMODE:MFSK32>')).toEqual([{ type: 'cmd', tag: 'SET', arg: 'BW:250' }, { type: 'cmd', tag: 'SET', arg: 'SUBMODE:MFSK32' }]);
+    expect(runMacro('S/N <GET SN> OFS <GET OFFSET> RATE <GET RATE>', { ...ctx, snr: 12.4, rxHz: 1500, rate: '31.25' }).text).toBe('S/N 12 OFS 1500 RATE 31.25');
+    expect(runMacro('CQ <TEST>', { ...ctx, inContest: true }).text).toBe('CQ TEST');
+    expect(runMacro('73<CWID>', ctx).text).toBe('73 DE IU3ABC');
+    expect(cmdOf('<MODEADD:rtty><LOCKMODE><INVON><PTT:OFF>')).toEqual([{ type: 'mode', mode: 'RTTY' }, { type: 'cmd', tag: 'LOCKMODE', arg: '' }, { type: 'cmd', tag: 'INVON', arg: '' }, { type: 'cmd', tag: 'PTT', arg: 'OFF' }]);
+  });
+});
 
 
 
