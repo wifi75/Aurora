@@ -336,6 +336,36 @@ function action6(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+/** I byte esadecimali scritti nella macro (`FE FE 94 E0`) nella forma che Hamlib manda cosi' com'e' (`\0xFE\0xFE...`). */
+export function hexToCat(text: string): string | null {
+  const clean = text.replace(/0x/gi, '').replace(/[\s,;$-]/g, '');
+  if (clean === '' || clean.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(clean)) return null;
+  return (clean.match(/../g) ?? []).map((b) => `\\0x${b.toUpperCase()}`).join('');
+}
+
+function action7(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'CATCMDHEX': {
+      const raw = hexToCat(arg ?? '');
+      return raw === null ? cmd('CATBAD', arg) : { type: 'cat', cmd: raw };
+    }
+    // CATCMDX accetta gia' le sequenze \0xNN di Hamlib; senza DDE CATCMDDDE manda il comando alla radio di Aurora
+    case 'CATCMDX':
+    case 'CATCMDDDE': return arg === undefined || arg.trim() === '' ? null : { type: 'cat', cmd: arg.trim() };
+    case 'CATWAIT':
+    case 'CATTRANSVERTER':
+    case 'CATENABLEVFOSYNC':
+    case 'CATDISABLEVFOSYNC':
+    case 'CATVFOSYNCSHIFT':
+    case 'CATVFOSYNCONCE':
+    case 'TOGGLECATPORT':
+    case 'TOGGLEPTTPORT':
+    case 'TOGGLESOUNDDEV':
+    case 'INPUTVOLUME':
+    case 'OUTPUTVOLUME': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -381,6 +411,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
   return (
     action5(tag, arg) ??
     action6(tag, arg) ??
+    action7(tag, arg) ??
     null
   );
 }

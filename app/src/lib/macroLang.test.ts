@@ -308,6 +308,13 @@ describe('trasmissione, modo e demodulatore', () => {
   });
 });
 
+describe('CAT', () => {
+  it('esadecimale, comandi grezzi e attese', () => {
+    expect(cmdOf('<CATCMDHEX:FE FE 94 E0 03 FD>')).toEqual([{ type: 'cat', cmd: '\\0xFE\\0xFE\\0x94\\0xE0\\0x03\\0xFD' }]);
+    expect(cmdOf('<CATCMDX:FA;><CATWAIT:200>')).toEqual([{ type: 'cat', cmd: 'FA;' }, { type: 'cmd', tag: 'CATWAIT', arg: '200' }]);
+    expect(cmdOf('<CATCMDHEX:ZZ>')).toEqual([{ type: 'cmd', tag: 'CATBAD', arg: 'ZZ' }]);
+  });
+});
 
 
 

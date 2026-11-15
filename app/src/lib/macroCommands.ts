@@ -238,6 +238,16 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('frequency', "<ZFQ>", "sposta la radio perché il segnale in ricezione cada a 1500 Hz", "moves the radio so the received signal falls at 1500 Hz", "verschiebt das Funkgerät so, dass das empfangene Signal bei 1500 Hz liegt", "déplace la radio pour que le signal reçu tombe à 1500 Hz", "mueve la radio para que la señal recibida caiga en 1500 Hz", "move o rádio para que o sinal recebido caia nos 1500 Hz"),
   c('frequency', "<FQB:kHz>", "frequenza di trasmissione (VFO B, split) in kHz", "transmit frequency (VFO B, split) in kHz", "Sendefrequenz (VFO B, Split) in kHz", "fréquence d'émission (VFO B, split) en kHz", "frecuencia de transmisión (VFO B, split) en kHz", "frequência de transmissão (VFO B, split) em kHz"),
   c('text', "<TEST>", "scrive TEST se c'è un contest attivo, se no niente", "writes TEST if a contest is active, otherwise nothing", "schreibt TEST, wenn ein Contest aktiv ist, sonst nichts", "écrit TEST si un concours est actif, sinon rien", "escribe TEST si hay un concurso activo, si no, nada", "escreve TEST se houver um concurso ativo, caso contrário nada"),
+  c('frequency', "<CATCMDHEX:byte>", "manda alla radio un comando CAT scritto in esadecimale (radio Icom e altre a byte)", "sends the radio a CAT command written in hex (Icom and other binary radios)", "sendet dem Funkgerät einen in Hex geschriebenen CAT-Befehl (Icom und andere Binär-Funkgeräte)", "envoie à la radio une commande CAT écrite en hexadécimal (Icom et autres radios binaires)", "envía a la radio un comando CAT escrito en hexadecimal (Icom y otras radios binarias)", "envia ao rádio um comando CAT escrito em hexadecimal (Icom e outros rádios binários)"),
+  c('frequency', "<CATCMDX:comando>", "come <CATCMD>: accetta anche i byte scritti \\0xNN", "like <CATCMD>: also accepts bytes written \\0xNN", "wie <CATCMD>: akzeptiert auch als \\0xNN geschriebene Bytes", "comme <CATCMD> : accepte aussi les octets écrits \\0xNN", "como <CATCMD>: acepta también bytes escritos \\0xNN", "como <CATCMD>: aceita também bytes escritos \\0xNN"),
+  c('frequency', "<CATWAIT:ms>", "aspetta questi millisecondi prima del comando CAT seguente", "waits these milliseconds before the next CAT command", "wartet diese Millisekunden vor dem nächsten CAT-Befehl", "attend ces millisecondes avant la commande CAT suivante", "espera estos milisegundos antes del siguiente comando CAT", "espera estes milissegundos antes do comando CAT seguinte"),
+  c('frequency', "<CATTRANSVERTER:MHz>", "spostamento del transverter: lo si regola nelle Impostazioni della radio, il comando apre l'avviso", "transverter offset: set it in the radio settings, the command shows a notice", "Transverter-Offset: stelle ihn in den Funkgeräte-Einstellungen ein, der Befehl zeigt einen Hinweis", "décalage du transverter : règle-le dans les paramètres de la radio, la commande affiche un avis", "desplazamiento del transverter: configúralo en los ajustes de la radio, el comando muestra un aviso", "desvio do transverter: define-o nas definições do rádio, o comando mostra um aviso"),
+  c('frequency', "<CATVFOSYNCONCE>", "sposta una volta la radio perché il segnale cada sul centro (1500 Hz o quello di <CATVFOSYNCSHIFT:Hz>)", "moves the radio once so the signal falls on the centre (1500 Hz or that of <CATVFOSYNCSHIFT:Hz>)", "verschiebt das Funkgerät einmal so, dass das Signal auf die Mitte fällt (1500 Hz oder die von <CATVFOSYNCSHIFT:Hz>)", "déplace une fois la radio pour que le signal tombe au centre (1500 Hz ou celui de <CATVFOSYNCSHIFT:Hz>)", "mueve la radio una vez para que la señal caiga en el centro (1500 Hz o el de <CATVFOSYNCSHIFT:Hz>)", "move o rádio uma vez para que o sinal caia no centro (1500 Hz ou o de <CATVFOSYNCSHIFT:Hz>)"),
+  c('frequency', "<CATENABLEVFOSYNC>", "sincronia della radio: a ogni macro il segnale torna al centro (<CATDISABLEVFOSYNC> la spegne)", "radio sync: at every macro the signal goes back to the centre (<CATDISABLEVFOSYNC> turns it off)", "Funkgeräte-Sync: bei jedem Makro kehrt das Signal in die Mitte zurück (<CATDISABLEVFOSYNC> schaltet es aus)", "synchro radio : à chaque macro le signal revient au centre (<CATDISABLEVFOSYNC> la désactive)", "sincronización de la radio: en cada macro la señal vuelve al centro (<CATDISABLEVFOSYNC> la desactiva)", "sincronização do rádio: a cada macro o sinal volta ao centro (<CATDISABLEVFOSYNC> desliga-a)"),
+  c('frequency', "<TOGGLECATPORT>", "collega o scollega la radio (CAT); anche <TOGGLEPTTPORT>, perché in Aurora il PTT passa dal CAT", "connects or disconnects the radio (CAT); <TOGGLEPTTPORT> too, since in Aurora PTT goes through CAT", "verbindet oder trennt das Funkgerät (CAT); auch <TOGGLEPTTPORT>, da in Aurora PTT über CAT läuft", "connecte ou déconnecte la radio (CAT) ; aussi <TOGGLEPTTPORT>, car dans Aurora le PTT passe par le CAT", "conecta o desconecta la radio (CAT); también <TOGGLEPTTPORT>, porque en Aurora el PTT pasa por CAT", "liga ou desliga o rádio (CAT); também <TOGGLEPTTPORT>, porque no Aurora o PTT passa pelo CAT"),
+  c('frequency', "<TOGGLESOUNDDEV>", "riapre l'ascolto della scheda audio (spegne e riaccende la ricezione)", "reopens listening on the sound card (stops and restarts receive)", "öffnet das Hören auf der Soundkarte neu (stoppt den Empfang und startet ihn neu)", "rouvre l'écoute sur la carte son (arrête et relance la réception)", "vuelve a abrir la escucha en la tarjeta de sonido (detiene y reinicia la recepción)", "reabre a escuta na placa de som (pára e reinicia a receção)"),
+  c('frequency', "<INPUTVOLUME:%>", "volume dell'ingresso audio in percento (senza numero apre le impostazioni audio)", "audio input volume in percent (without a number opens the audio settings)", "Lautstärke des Audioeingangs in Prozent (ohne Zahl öffnet die Audio-Einstellungen)", "volume d'entrée audio en pourcentage (sans nombre, ouvre les paramètres audio)", "volumen de entrada de audio en porcentaje (sin número abre los ajustes de audio)", "volume de entrada de áudio em percentagem (sem número abre as definições de áudio)"),
+  c('frequency', "<OUTPUTVOLUME:dB>", "attenuazione dell'uscita audio in dB (senza numero apre le impostazioni audio)", "audio output attenuation in dB (without a number opens the audio settings)", "Dämpfung des Audioausgangs in dB (ohne Zahl öffnet die Audio-Einstellungen)", "atténuation de la sortie audio en dB (sans nombre, ouvre les paramètres audio)", "atenuación de la salida de audio en dB (sin número abre los ajustes de audio)", "atenuação da saída de áudio em dB (sem número abre as definições de áudio)"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -630,6 +640,30 @@ CATEGORY["<FQB:kHz>"] = 'freq';
 EXAMPLE["<FQB:kHz>"] = "<FQB:14085.5>";
 CATEGORY["<TEST>"] = 'txrx';
 EXAMPLE["<TEST>"] = "CQ <TEST> <MYCALL>";
+CATEGORY["<CATCMDHEX:byte>"] = 'cat';
+EXAMPLE["<CATCMDHEX:byte>"] = "<CATCMDHEX:FE FE 94 E0 03 FD>";
+CATEGORY["<CATCMDX:comando>"] = 'cat';
+EXAMPLE["<CATCMDX:comando>"] = "<CATCMDX:FA00014070000;>";
+ALIASES["<CATCMDX:comando>"] = ["<CATCMDDDE:comando>"];
+CATEGORY["<CATWAIT:ms>"] = 'cat';
+EXAMPLE["<CATWAIT:ms>"] = "<CATCMD:AN1;><CATWAIT:200><CATCMD:AN2;>";
+CATEGORY["<CATTRANSVERTER:MHz>"] = 'cat';
+EXAMPLE["<CATTRANSVERTER:MHz>"] = "<CATTRANSVERTER:116>";
+CATEGORY["<CATVFOSYNCONCE>"] = 'cat';
+EXAMPLE["<CATVFOSYNCONCE>"] = "<CATVFOSYNCONCE>";
+ALIASES["<CATVFOSYNCONCE>"] = ["<CATVFOSYNCSHIFT:Hz>"];
+CATEGORY["<CATENABLEVFOSYNC>"] = 'cat';
+EXAMPLE["<CATENABLEVFOSYNC>"] = "<CATENABLEVFOSYNC>";
+ALIASES["<CATENABLEVFOSYNC>"] = ["<CATDISABLEVFOSYNC>"];
+CATEGORY["<TOGGLECATPORT>"] = 'cat';
+EXAMPLE["<TOGGLECATPORT>"] = "<TOGGLECATPORT>";
+ALIASES["<TOGGLECATPORT>"] = ["<TOGGLEPTTPORT>"];
+CATEGORY["<TOGGLESOUNDDEV>"] = 'cat';
+EXAMPLE["<TOGGLESOUNDDEV>"] = "<TOGGLESOUNDDEV>";
+CATEGORY["<INPUTVOLUME:%>"] = 'cat';
+EXAMPLE["<INPUTVOLUME:%>"] = "<INPUTVOLUME:60>";
+CATEGORY["<OUTPUTVOLUME:dB>"] = 'cat';
+EXAMPLE["<OUTPUTVOLUME:dB>"] = "<OUTPUTVOLUME:6>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

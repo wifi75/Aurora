@@ -278,6 +278,24 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'AMPLITUDE': if (num !== null) void putOutputLevel(Math.max(0, num)).catch(fail(d, tag)); return;
     case 'ZFQ': zeroBeat(d, 1500); return;
     case 'FQB': if (num !== null && num > 0 && d.dialHz() > 0) void postSplitDx(d.dialHz(), Math.round(num * 1000)).catch(fail(d, tag)); return;
+    case 'CATBAD': d.toast(d.t('digi.run.cmdFail', { tag: 'CATCMDHEX', why: arg }), 'error'); return;
+    case 'CATWAIT': {
+      const ms = Math.max(0, Math.min(10_000, num ?? 0));
+      macroState.catChain = macroState.catChain.then(() => new Promise((ok) => window.setTimeout(ok, ms)));
+      return;
+    }
+    case 'CATTRANSVERTER': d.openSettings('cat'); return;
+    case 'CATVFOSYNCSHIFT': if (num !== null && num > 100) macroState.vfoCenter = num; return;
+    case 'CATVFOSYNCONCE': zeroBeat(d, macroState.vfoCenter); return;
+    case 'CATENABLEVFOSYNC': macroState.vfoSync = true; zeroBeat(d, macroState.vfoCenter); return;
+    case 'CATDISABLEVFOSYNC': macroState.vfoSync = false; return;
+    case 'TOGGLECATPORT':
+    case 'TOGGLEPTTPORT':
+      void getCat().then((c) => (c.status.state === 'connected' ? disconnectCat() : connectCat())).catch(fail(d, tag));
+      return;
+    case 'TOGGLESOUNDDEV': d.view('restartRx', 'toggle'); return;
+    case 'INPUTVOLUME': if (num === null) d.openSettings('audio'); else void putInputLevel({ volume_pct: Math.max(0, Math.min(100, num)), auto: false }).catch(fail(d, tag)); return;
+    case 'OUTPUTVOLUME': if (num === null) d.openSettings('audio'); else void putOutputLevel(Math.max(0, num)).catch(fail(d, tag)); return;
     default: return;
   }
 }
