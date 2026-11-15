@@ -176,6 +176,15 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('text', "<QSOBEFOREBAND>", "banda del QSO già fatto con questo nominativo", "band of the earlier QSO with this callsign", "Band des früheren QSO mit diesem Rufzeichen", "bande du QSO précédent avec cet indicatif", "banda del QSO anterior con este indicativo", "banda do QSO anterior com este indicativo"),
   c('text', "<QSOBEFOREMODE>", "modo del QSO già fatto con questo nominativo", "mode of the earlier QSO with this callsign", "Modus des früheren QSO mit diesem Rufzeichen", "mode du QSO précédent avec cet indicatif", "modo del QSO anterior con este indicativo", "modo do QSO anterior com este indicativo"),
   c('text', "<ONQSOBEFORE:macro>", "se il nominativo è già stato lavorato esegue la macro indicata", "runs the given macro if the callsign was already worked", "startet das angegebene Makro, wenn das Rufzeichen schon gearbeitet wurde", "exécute la macro indiquée si l'indicatif a déjà été contacté", "ejecuta la macro indicada si el indicativo ya se trabajó", "executa a macro indicada se o indicativo já foi trabalhado"),
+  c('text', "<SELCALL>", "la parola selezionata nella finestra RX diventa il nominativo del QSO", "the word selected in the RX window becomes the QSO callsign", "das im RX-Fenster ausgewählte Wort wird zum Rufzeichen des QSO", "le mot sélectionné dans la fenêtre RX devient l'indicatif du QSO", "la palabra seleccionada en la ventana RX pasa a ser el indicativo del QSO", "a palavra selecionada na janela RX passa a ser o indicativo do QSO"),
+  c('text', "<SELNAME>", "il testo selezionato nella finestra RX diventa il nome", "the text selected in the RX window becomes the name", "der im RX-Fenster ausgewählte Text wird zum Namen", "le texte sélectionné dans la fenêtre RX devient le nom", "el texto seleccionado en la ventana RX pasa a ser el nombre", "o texto selecionado na janela RX passa a ser o nome"),
+  c('text', "<SELQTH>", "il testo selezionato nella finestra RX diventa il QTH", "the text selected in the RX window becomes the QTH", "der im RX-Fenster ausgewählte Text wird zum QTH", "le texte sélectionné dans la fenêtre RX devient le QTH", "el texto seleccionado en la ventana RX pasa a ser el QTH", "o texto selecionado na janela RX passa a ser o QTH"),
+  c('text', "<SELRSTS>", "la parola selezionata diventa il rapporto da mandare", "the selected word becomes the report to send", "das ausgewählte Wort wird zum Rapport, der gesendet wird", "le mot sélectionné devient le report à envoyer", "la palabra seleccionada pasa a ser el reporte que se envía", "a palavra selecionada passa a ser o relatório a enviar"),
+  c('text', "<SELRSTR>", "la parola selezionata diventa il rapporto ricevuto", "the selected word becomes the received report", "das ausgewählte Wort wird zum empfangenen Rapport", "le mot sélectionné devient le report reçu", "la palabra seleccionada pasa a ser el reporte recibido", "a palavra selecionada passa a ser o relatório recebido"),
+  c('text', "<SELNRS>", "la parola selezionata diventa lo scambio da mandare", "the selected word becomes the exchange to send", "das ausgewählte Wort wird zum Austausch, der gesendet wird", "le mot sélectionné devient l'échange à envoyer", "la palabra seleccionada pasa a ser el intercambio que se envía", "a palavra selecionada passa a ser a troca a enviar"),
+  c('text', "<SELNRR>", "la parola selezionata diventa lo scambio ricevuto", "the selected word becomes the received exchange", "das ausgewählte Wort wird zum empfangenen Austausch", "le mot sélectionné devient l'échange reçu", "la palabra seleccionada pasa a ser el intercambio recibido", "a palavra selecionada passa a ser a troca recebida"),
+  c('text', "<SELRXTEXT>", "scrive il testo selezionato nella finestra RX", "writes the text selected in the RX window", "schreibt den im RX-Fenster ausgewählten Text", "écrit le texte sélectionné dans la fenêtre RX", "escribe el texto seleccionado en la ventana RX", "escreve o texto selecionado na janela RX"),
+  c('text', "<SAVESELTEXT>", "copia negli appunti il testo selezionato nella finestra RX", "copies the text selected in the RX window to the clipboard", "kopiert den im RX-Fenster ausgewählten Text in die Zwischenablage", "copie dans le presse-papiers le texte sélectionné dans la fenêtre RX", "copia al portapapeles el texto seleccionado en la ventana RX", "copia para a área de transferência o texto selecionado na janela RX"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -432,6 +441,24 @@ CATEGORY["<QSOBEFOREMODE>"] = 'prev';
 EXAMPLE["<QSOBEFOREMODE>"] = "B4 <QSOBEFOREMODE>";
 CATEGORY["<ONQSOBEFORE:macro>"] = 'prev';
 EXAMPLE["<ONQSOBEFORE:macro>"] = "<ONQSOBEFORE:F9>";
+CATEGORY["<SELCALL>"] = 'select';
+EXAMPLE["<SELCALL>"] = "<SELCALL><CALL> de <MYCALL>";
+CATEGORY["<SELNAME>"] = 'select';
+EXAMPLE["<SELNAME>"] = "<SELNAME>TU <NAME>";
+CATEGORY["<SELQTH>"] = 'select';
+EXAMPLE["<SELQTH>"] = "<SELQTH>";
+CATEGORY["<SELRSTS>"] = 'select';
+EXAMPLE["<SELRSTS>"] = "<SELRSTS>";
+CATEGORY["<SELRSTR>"] = 'select';
+EXAMPLE["<SELRSTR>"] = "<SELRSTR>";
+CATEGORY["<SELNRS>"] = 'select';
+EXAMPLE["<SELNRS>"] = "<SELNRS>";
+CATEGORY["<SELNRR>"] = 'select';
+EXAMPLE["<SELNRR>"] = "<SELNRR>";
+CATEGORY["<SELRXTEXT>"] = 'select';
+EXAMPLE["<SELRXTEXT>"] = "I COPY: <SELRXTEXT>";
+CATEGORY["<SAVESELTEXT>"] = 'select';
+EXAMPLE["<SAVESELTEXT>"] = "<SAVESELTEXT>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

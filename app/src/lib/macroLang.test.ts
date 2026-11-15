@@ -252,6 +252,15 @@ describe('corrispondente e QSO precedente', () => {
   });
 });
 
+describe('testo selezionato', () => {
+  it('SEL... mettono la selezione nei campi e valgono subito', () => {
+    const r = runMacro('<SELCALL><CALL> <SELRXTEXT>', { ...ctx, selection: ' k1abc ' });
+    expect(r.text).toBe('K1ABC k1abc');
+    expect(r.actions).toEqual([{ type: 'setField', field: 'call', value: 'K1ABC' }]);
+    expect(cmdOf('<SELNAME>', { selection: 'Jean Paul' })).toEqual([{ type: 'setField', field: 'name', value: 'Jean Paul' }]);
+    expect(cmdOf('<SAVESELTEXT>')).toEqual([{ type: 'cmd', tag: 'SAVESELTEXT', arg: '' }]);
+  });
+});
 
 
 

@@ -149,6 +149,11 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
   const n = Number(arg.replace(',', '.'));
   const num = arg.trim() !== '' && Number.isFinite(n) ? n : null;
   switch (tag) {
+    case 'SAVESELTEXT': {
+      const sel = d.selection().trim();
+      if (sel !== '') void navigator.clipboard?.writeText(sel).then(() => d.toast(d.t('digi.run.copied'), 'ok'), fail(d, tag));
+      return;
+    }
     default: return;
   }
 }

@@ -115,6 +115,31 @@ function special1(tag: string, arg: string | undefined, r: MacroRun): boolean {
   return false;
 }
 
+type Field = 'call' | 'name' | 'qth' | 'rsts' | 'rstr' | 'nrs' | 'nrr' | 'notes';
+const SEL_FIELDS: Record<string, Field> = { SELCALL: 'call', SELNAME: 'name', SELQTH: 'qth', SELRSTS: 'rsts', SELRSTR: 'rstr', SELNRS: 'nrs', SELNRR: 'nrr' };
+
+/** Mette un valore in un campo del QSO: vale subito per il resto della macro e la pagina lo scrive nel log. */
+export function setField(r: MacroRun, field: Field, value: string): void {
+  const v = field === 'call' ? value.toUpperCase() : value;
+  r.ctx[field] = v;
+  r.act({ type: 'setField', field, value: v });
+}
+
+function special2(tag: string, r: MacroRun): boolean {
+  const field = SEL_FIELDS[tag];
+  if (field) {
+    const sel = (r.ctx.selection ?? '').trim();
+    // il nominativo e i rapporti sono una parola sola; nome e QTH tutta la selezione
+    const value = field === 'name' || field === 'qth' ? sel.replace(/\s+/g, ' ') : (sel.split(/\s+/)[0] ?? '');
+    if (value !== '') setField(r, field, value);
+    return true;
+  }
+  if (tag === 'SELRXTEXT') {
+    r.text((r.ctx.selection ?? '').trim());
+    return true;
+  }
+  return false;
+}
 
 
 
@@ -132,6 +157,7 @@ function special1(tag: string, arg: string | undefined, r: MacroRun): boolean {
 export function special(tag: string, arg: string | undefined, r: MacroRun): boolean {
   return (
     special1(tag, arg, r) ||
+    special2(tag, r) ||
     false
   );
 }
@@ -146,6 +172,7 @@ export function extraText(tag: string, arg: string | undefined, c: MacroContext)
 
 /** L'azione di un comando in piu', o `null`. */
 export function extraAction(tag: string, arg: string | undefined): MacroAction | null {
+  if (tag === 'SAVESELTEXT') return cmd('SAVESELTEXT');
   return (
     null
   );
