@@ -65,6 +65,32 @@ export function appendDigiNote(note: string): void {
   append(`${sep}[${note}]\n`);
 }
 
+/** Toglie dalla finestra di ricezione le righe che rispondono a `test` (macro `<BMERASE>`: le righe dei segni). */
+export function removeDigiLines(test: (line: string) => boolean): void {
+  let outText = '';
+  let outWeak = '';
+  let at = 0;
+  const lines = text.split('\n');
+  if (text.endsWith('\n')) lines.pop();
+  for (const line of lines) {
+    const len = line.length + 1;
+    if (!test(line)) {
+      outText += `${line}\n`;
+      outWeak += weak.slice(at, at + len).padEnd(len, '0');
+    }
+    at += len;
+  }
+  // l'ultima riga non aveva l'a capo
+  if (!text.endsWith('\n')) {
+    outText = outText.slice(0, -1);
+    outWeak = outWeak.slice(0, -1);
+  }
+  dropped += text.length - outText.length;
+  text = outText;
+  weak = outWeak;
+  notify();
+}
+
 /** L'eco della trasmissione e' aperta: i caratteri partiti via radio si aggiungono alla riga «» » corrente. */
 let echoOpen = false;
 

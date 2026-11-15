@@ -5,6 +5,22 @@
  */
 import { formatSerial } from './contestSerial';
 import { parseIgnoreBefore } from './logWindow';
+import { FILE_TAGS, beforeMs, extraAction, extraText, fileOf, formatTime, mainCall, special, type MacroRun } from './macroExtra';
+
+export { mainCall };
+
+/** Il QSO precedente (dal log del contest attivo o dal log): per `<PREVNAME>`, `<PREVQTH>`, `<LASTCALL>`... */
+export interface PrevQso {
+  call: string;
+  name?: string;
+  qth?: string;
+  rsts?: string;
+  rstr?: string;
+  nrs?: string;
+  nrr?: string;
+  /** Istante del QSO (ms UTC). */
+  ms?: number | null;
+}
 
 /** I dati con cui si riempiono i comandi di testo. */
 export interface MacroContext {
@@ -38,8 +54,31 @@ export interface MacroContext {
   /** Dal log del contest attivo: lo scambio mandato nell'ultimo QSO (`<PREVNRS>`) e il QSO precedente con questo nominativo
    *  (`<QSOBEFORETIME>`, `<QSOBEFOREDATE>`, ora e data UTC). Senza contest attivo restano vuoti. */
   contestPrev?: { lastSent: string; beforeMs: number | null; lastCall?: string; lastRst?: string } | null;
-  /** Il contenuto dei file chiesti con `<TEXTFILE:nome>`, gia' letti. */
+  /** Il contenuto dei file chiesti con `<TEXTFILE:nome>` (e `<FILE:>`, `<RANDOM:>`, `<INIFILE:>`, `<SCRIPT:>`), gia' letti. */
   files?: Record<string, string>;
+  /** Le macro dell'utente per nome in maiuscolo: `<F1>`, `<gm>`... dentro un'altra macro. */
+  macros?: ReadonlyMap<string, string>;
+  /** Il testo selezionato nella finestra di ricezione (`<SELCALL>`, `<SELRXTEXT>`...). */
+  selection?: string;
+  /** L'ultimo QSO del log (`<PREVNAME>`, `<PREVQTH>`, `<LASTCALL>`...). */
+  prevQso?: PrevQso | null;
+  /** Il QSO gia' fatto con questo nominativo sulla stessa banda e nello stesso modo (`<QSOBEFORE>`...). */
+  before?: { ms: number; band: string; mode: string } | null;
+  /** La lingua delle frasi automatiche (`<FORCELANGUAGE:xx>`, `<LANG_xx>`); vuota = dal nominativo. */
+  lang?: string;
+  /** Quando e' partita l'ultima trasmissione (`<TXTIME>`). */
+  txStart?: Date | null;
+  /** Frequenza audio di ricezione, S/N, IMD e velocita' del segnale (`<GET OFFSET>`, `<GET SN>`, `<GET RATE>`). */
+  rxHz?: number;
+  snr?: number | null;
+  imd?: number | null;
+  rate?: string;
+  /** Un contest e' attivo (`<TEST>`). */
+  inContest?: boolean;
+  /** Il nominativo preso dalla ricezione per `<GRABCALL>` (anche dentro una macro annidata). */
+  grabbed?: string;
+  /** Numeri a caso (`<RANDOM:file>`); di base `Math.random`. */
+  rand?: () => number;
 }
 
 export type MacroAction =
@@ -99,6 +138,10 @@ export type MacroAction =
   | { type: 'exec'; file: string }
   /** `<GRABCALL>`: il nominativo preso dal testo ricevuto va nel QSO (gia' cercato prima dell'esecuzione, vuoto se non c'era). */
   | { type: 'grabCall'; call: string }
+  /** Un comando eseguito dalla pagina (vedi `macroRuntime.ts`): nome e argomento. */
+  | { type: 'cmd'; tag: string; arg: string }
+  /** Un campo del QSO cambiato dalla macro (`<SELCALL>`, `<LASTCALL>`, `<INCNRR>`, `<CALL?>`...). */
+  | { type: 'setField'; field: 'call' | 'name' | 'qth' | 'rsts' | 'rstr' | 'nrs' | 'nrr' | 'notes'; value: string }
   /** Un comando che Aurora non conosce ancora: resta nell'elenco per dirlo all'utente. */
   | { type: 'unknown'; tag: string };
 
@@ -116,14 +159,6 @@ export interface MacroResult {
 const pad = (n: number, w = 2) => String(n).padStart(w, '0');
 const utcDate = (d: Date) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 const utcTime = (d: Date) => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-
-/** Il nominativo senza i suffissi (/P, /M...) e senza il prefisso di un altro paese. */
-export function mainCall(call: string): string {
-  const parts = call.toUpperCase().split('/').filter(Boolean);
-  if (parts.length <= 1) return parts[0] ?? '';
-  // si tiene la parte piu' lunga e con una cifra: quella e' il nominativo vero
-  return [...parts].sort((a, b) => Number(/\d/.test(b)) - Number(/\d/.test(a)) || b.length - a.length)[0] ?? '';
-}
 
 /** Saluto secondo l'ora: GM, GA, GE (breve) o la frase lunga. */
 function greeting(now: Date, long: boolean): string {
@@ -155,11 +190,13 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'NOTES': return c.notes;
     case 'NRR': return c.nrr;
     case 'NRS': return c.nrs;
-    case 'DATE': return utcDate(c.now);
-    case 'TIME': return utcTime(c.now);
-    case 'LOCALTIME': return `${pad(c.now.getHours())}:${pad(c.now.getMinutes())}`;
-    case 'STARTTIME': return utcTime(c.startTime ?? c.now);
-    case 'CTIME': return `${pad(c.now.getUTCHours())}${pad(c.now.getUTCMinutes())}`;
+    // con un formato (`<TIME:%H%M>`, `<DATE:%d/%m/%Y>`) data e ora si scrivono cosi'
+    case 'DATE': return arg ? formatTime(c.now, arg, true) : utcDate(c.now);
+    case 'TIME': return arg ? formatTime(c.now, arg, true) : utcTime(c.now);
+    case 'LOCALTIME': return arg ? formatTime(c.now, arg, false) : `${pad(c.now.getHours())}:${pad(c.now.getMinutes())}`;
+    // <STARTTIME:hhmm> senza `%` fissa l'inizio del QSO (azione)
+    case 'STARTTIME': return arg === undefined ? utcTime(c.startTime ?? c.now) : arg.includes('%') ? formatTime(c.startTime ?? c.now, arg, true) : null;
+    case 'CTIME': return arg ? formatTime(c.now, arg, true) : `${pad(c.now.getUTCHours())}${pad(c.now.getUTCMinutes())}`;
     case 'MYCALL': return c.mycall.toUpperCase();
     case 'MYMAINCALL': return mainCall(c.mycall);
     case 'MYNAME': return c.myname;
@@ -185,10 +222,17 @@ function textTag(tag: string, arg: string | undefined, c: MacroContext): string 
     case 'ANYQSOBEFOREMODE': return c.lastQso?.mode ?? '';
     // dal log del contest attivo
     case 'PREVNRS': return c.contestPrev?.lastSent ?? '';
-    case 'PREVCALL': return c.contestPrev?.lastCall ?? '';
-    case 'PREVRSTS': return c.contestPrev?.lastRst ?? '';
-    case 'QSOBEFORETIME': return c.contestPrev?.beforeMs != null ? utcTime(new Date(c.contestPrev.beforeMs)) : '';
-    case 'QSOBEFOREDATE': return c.contestPrev?.beforeMs != null ? utcDate(new Date(c.contestPrev.beforeMs)) : '';
+    // fuori dal contest: dal log
+    case 'PREVCALL': return c.contestPrev?.lastCall || (c.prevQso?.call ?? '').toUpperCase();
+    case 'PREVRSTS': return c.contestPrev?.lastRst || (c.prevQso?.rsts ?? '');
+    case 'QSOBEFORETIME': {
+      const ms = beforeMs(c);
+      return ms != null ? utcTime(new Date(ms)) : '';
+    }
+    case 'QSOBEFOREDATE': {
+      const ms = beforeMs(c);
+      return ms != null ? utcDate(new Date(ms)) : '';
+    }
     // il testo di un file della cartella dei testi delle macro
     case 'TEXTFILE': return arg === undefined ? null : (c.files?.[arg.trim()] ?? '');
     // l'IMD del segnale PSK ricevuto: Aurora non la misura, il comando non scrive niente. `<SP>` segue i comandi per la radio e non scrive niente
@@ -262,7 +306,8 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
     case 'STARTSCAN': return { type: 'scan', run: true };
     case 'STOPSCAN': return { type: 'scan', run: false };
     case 'MODESETTINGS': return { type: 'modeSettings' };
-    case 'IGNOREBEFORE': {
+    case 'IGNOREBEFORE':
+    case 'WKDIGNOREBEFORE': {
       const at = arg === undefined ? null : parseIgnoreBefore(arg);
       return at === null ? null : { type: 'ignoreBefore', at };
     }
@@ -314,29 +359,141 @@ function actionOf(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
-/** Un comando: lettere maiuscole, cifre e qualche segno, con un argomento dopo i due punti. Le parentesi `<[>` e `<]>` sono comandi di testo. */
-const TAG = /<(\[|\]|[A-Z][A-Z0-9_/+-]*)(?::([^<>]*))?>/g;
+/**
+ * Un comando: lettere, cifre e qualche segno, con un secondo nome dopo uno spazio (`<SET BW:250>`, `<GET SN>`, `<RXLOG START>`), un `?` in
+ * fondo (`<CALL?>`, `<F1?>`) e un argomento dopo i due punti. Le parentesi `<[>` e `<]>` sono comandi di testo.
+ */
+const TAG = /<(\[|\]|[A-Za-z][A-Za-z0-9_/+-]*(?: [A-Za-z0-9_]+)?)(\?)?(?::([^<>]*))?>/g;
 
-/** Esegue uno script: restituisce il testo e le azioni, nell'ordine in cui compaiono. */
+/** Al massimo 10 macro una dentro l'altra (come nell'originale): oltre ci si ferma con un avviso. */
+export const MAX_NESTING = 10;
+/** I campi che con `?` in fondo si chiedono se sono vuoti. */
+export const ASKABLE = ['CALL', 'RSTS', 'RSTR', 'NRS', 'NRR'] as const;
+
+/** Esegue uno script: restituisce il testo e le azioni, nell'ordine in cui compaiono. Le macro dell'utente nominate dentro (`<F1>`) si espandono. */
 export function runMacro(script: string, ctx: MacroContext): MacroResult {
   const actions: MacroAction[] = [];
   const steps: MacroStep[] = [];
-  let last = 0;
-  const text = script.replace(TAG, (whole: string, tag: string, arg: string | undefined, at: number) => {
-    if (at > last) steps.push({ text: script.slice(last, at) });
-    last = at + whole.length;
-    const value = textTag(tag, arg, ctx);
-    if (value !== null) {
-      steps.push({ text: value });
-      return value;
+  let hidden = false;
+  let stopped = false;
+  const c: MacroContext = { ...ctx };
+  const act = (a: MacroAction) => {
+    actions.push(a);
+    steps.push({ action: a });
+  };
+  const text = (t: string) => {
+    if (!hidden && t !== '') steps.push({ text: t });
+  };
+  const expand = (part: string, depth: number) => {
+    if (depth > MAX_NESTING) {
+      if (!stopped) act({ type: 'alarm', text: 'MACRO: max 10' });
+      stopped = true;
+      return;
     }
-    const action: MacroAction = actionOf(tag, arg) ?? { type: 'unknown', tag: arg === undefined ? tag : `${tag}:${arg}` };
-    actions.push(action);
-    steps.push({ action });
-    return '';
-  });
-  if (last < script.length) steps.push({ text: script.slice(last) });
-  return { text: tidyText(text), actions, steps };
+    const run: MacroRun = { ctx: c, text, act, expand: (s) => expand(s, depth + 1), setHidden: (h) => { hidden = h; } };
+    let last = 0;
+    for (const m of part.matchAll(TAG)) {
+      if (stopped) return;
+      const at = m.index ?? 0;
+      text(part.slice(last, at));
+      last = at + m[0].length;
+      const raw = m[1] ?? '';
+      const ask = m[2] === '?';
+      const arg = m[3];
+      const tag = raw.toUpperCase();
+      // una macro dell'utente: il suo testo si espande al suo posto; con `?` si apre per modificarla
+      const user = arg === undefined ? c.macros?.get(tag) : undefined;
+      if (user !== undefined) {
+        if (ask) act({ type: 'editMacro', name: raw });
+        else expand(user, depth + 1);
+        continue;
+      }
+      // il nome di un tasto senza macro: niente da eseguire (con `?` si apre per scriverla)
+      if (arg === undefined && /^(?:CTRL-|SHIFT-|CTRL-SHIFT-)?F(?:[1-9]|1[0-2])$/.test(tag)) {
+        if (ask) act({ type: 'editMacro', name: raw });
+        continue;
+      }
+      if (special(tag, arg, run)) continue;
+      // <GRABCALL> dentro una macro annidata: il nominativo gia' preso dalla pagina
+      if (tag === 'GRABCALL' && arg === undefined && c.grabbed) {
+        c.call = c.grabbed;
+        act({ type: 'grabCall', call: c.grabbed });
+        continue;
+      }
+      const value = textTag(tag, arg, c) ?? extraText(tag, arg, c);
+      if (value !== null) {
+        text(value);
+        continue;
+      }
+      const action = actionOf(tag, arg) ?? extraAction(tag, arg);
+      // un nome in minuscolo che non e' una macro ne' un comando resta testo (per esempio <br>)
+      if (action === null && raw !== tag) {
+        text(m[0]);
+        continue;
+      }
+      act(action ?? { type: 'unknown', tag: arg === undefined ? tag : `${tag}:${arg}` });
+    }
+    text(part.slice(last));
+  };
+  expand(script, 0);
+  const all = steps.map((st) => ('text' in st ? st.text : '')).join('');
+  return { text: tidyText(all), actions, steps };
+}
+
+/** Che cosa serve leggere prima di eseguire uno script (anche dentro le macro che nomina): file, log, contest, selezione, valori da chiedere. */
+export interface MacroNeeds {
+  files: string[];
+  log: boolean;
+  contest: boolean;
+  selection: boolean;
+  grab: boolean;
+  ask: (typeof ASKABLE)[number][];
+}
+
+export function macroNeeds(script: string, macros?: ReadonlyMap<string, string>): MacroNeeds {
+  const files = new Set<string>();
+  const ask = new Set<(typeof ASKABLE)[number]>();
+  const seen = new Set<string>();
+  let all = '';
+  const walk = (part: string, depth: number) => {
+    if (depth > MAX_NESTING) return;
+    all += part;
+    for (const m of part.matchAll(TAG)) {
+      const tag = (m[1] ?? '').toUpperCase();
+      const arg = m[3];
+      const user = arg === undefined ? macros?.get(tag) : undefined;
+      if (user !== undefined) {
+        if (!seen.has(tag)) {
+          seen.add(tag);
+          walk(user, depth + 1);
+        }
+        continue;
+      }
+      if (arg !== undefined && (FILE_TAGS as readonly string[]).includes(tag)) {
+        const f = fileOf(tag, arg);
+        if (f !== '') files.add(f);
+      }
+      if (m[2] === '?' && (ASKABLE as readonly string[]).includes(tag)) ask.add(tag as (typeof ASKABLE)[number]);
+      // ONQSOBEFORE:macro e i saluti con le macro gm/ga/ge/gn
+      const named = tag === 'ONQSOBEFORE' ? (arg ?? '').trim().toUpperCase() : null;
+      for (const n of named ? [named] : /^G[MAEN]$/.test(tag) ? ['GM', 'GA', 'GE', 'GN'] : []) {
+        const t = macros?.get(n);
+        if (t !== undefined && !seen.has(n)) {
+          seen.add(n);
+          walk(t, depth + 1);
+        }
+      }
+    }
+  };
+  walk(script, 0);
+  return {
+    files: [...files],
+    log: /<(?:ANYQSOBEFORE(?:DATE|BAND|MODE)|PREV[A-Z0-9]+|LASTCALL|QSOBEFORE[A-Z0-9]*|TIME1|ONQSOBEFORE:[^<>]*)>/i.test(all),
+    contest: /<(?:PREVNRS|PREVCALL|PREVRSTS|QSOBEFORE[A-Z0-9]*|TIME1|ONQSOBEFORE:[^<>]*|LASTCALL)>/i.test(all),
+    selection: /<(?:SEL[A-Z]+|SAVESELTEXT)>/i.test(all),
+    grab: /<GRABCALL>/i.test(all),
+    ask: [...ask],
+  };
 }
 
 /** Il testo senza spazi doppi, senza spazi in testa e in coda e senza spazi prima di un a capo. */

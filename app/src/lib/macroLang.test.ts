@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cssColor, effectiveMacros, keyNames, macroNameForKey, mainCall, runMacro, textColorFor, type MacroContext } from './macroLang';
+import { cssColor, effectiveMacros, keyNames, macroNameForKey, macroNeeds, mainCall, runMacro, textColorFor, type MacroContext } from './macroLang';
 
 const ctx: MacroContext = {
   mycall: 'iu3abc',
@@ -87,7 +87,7 @@ describe('runMacro: comandi di programma', () => {
   it('i comandi non ancora fatti restano nell\'elenco', () => {
     const r = runMacro('<TX>CQ<LETTERS><EXEC:Backup.bat>', ctx);
     expect(r.text).toBe('CQ');
-    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'unknown', tag: 'LETTERS' }, { type: 'exec', file: 'Backup.bat' }]);
+    expect(r.actions).toEqual([{ type: 'tx' }, { type: 'exec', file: 'Backup.bat' }]);
   });
 
   it('CATCMD manda la stringa alla radio; IMD e SP non scrivono niente', () => {
@@ -204,3 +204,41 @@ describe('EXEC', () => {
     expect(r.text).toBe('CQ');
   });
 });
+
+const cmdOf = (script: string, c: Partial<MacroContext> = {}) => runMacro(script, { ...ctx, ...c }).actions;
+
+describe('macro dentro una macro e ?', () => {
+  const macros = new Map([['F2', 'CQ <MYCALL>'], ['F3', '<F2> K'], ['LOOP', '<LOOP>'], ['GE', 'Buonasera']]);
+  it('espande le macro nominate, anche annidate', () => {
+    expect(runMacro('<F3> <TX>', { ...ctx, macros }).text).toBe('CQ IU3ABC K');
+  });
+  it('si ferma oltre 10 livelli con un avviso', () => {
+    const r = runMacro('<LOOP>', { ...ctx, macros });
+    expect(r.actions).toEqual([{ type: 'alarm', text: 'MACRO: max 10' }]);
+  });
+  it('il ? apre la macro; un tasto senza macro non fa niente; il minuscolo sconosciuto resta testo', () => {
+    expect(cmdOf('<F5?>')).toEqual([{ type: 'editMacro', name: 'F5' }]);
+    expect(runMacro('<F7>', ctx).actions).toEqual([]);
+    expect(runMacro('a<br>b', ctx).text).toBe('a<br>b');
+  });
+  it('macroNeeds trova file, campi da chiedere e GRABCALL anche nelle macro annidate', () => {
+    const n = macroNeeds('<F9> <CALL?>', new Map([['F9', '<TEXTFILE:a.txt><GRABCALL><INIFILE:b.ini,S,K>']]));
+    expect(n.files.sort()).toEqual(['a.txt', 'b.ini']);
+    expect(n.ask).toEqual(['CALL']);
+    expect(n.grab).toBe(true);
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+

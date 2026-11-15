@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiCat, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -44,7 +44,7 @@ import { DigiStatusBar, followRxPatch, followRxTarget, wpmStepPatch } from '../c
 import { useT } from '../i18n';
 import { ListenGate } from '../components/ListenGate';
 import { REMOTE_HOST } from '../lib/phone';
-import { appendDigiNote, clearDigiText, getDigiText, onDigi, onDigiText } from '../lib/digiBus';
+import { appendDigiNote, clearDigiText, getDigiText, onDigi, onDigiText, removeDigiLines } from '../lib/digiBus';
 import { DigiRxLive } from '../components/DigiRxText';
 import { nextHit } from '../lib/rxSearch';
 import { txeStep } from '../lib/txeWait';
@@ -55,7 +55,8 @@ import { createLatestSequencer, restartBox } from '../lib/macroRestart';
 import { TxMenu } from '../components/digi/TxMenu';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
-import { effectiveMacros, macroNameForKey, runMacro, type Macro, type MacroAction, type MacroContext } from '../lib/macroLang';
+import { effectiveMacros, macroNameForKey, macroNeeds, runMacro, type Macro, type MacroAction, type MacroContext, type PrevQso } from '../lib/macroLang';
+import { checkOnRx, macroState, mark, runCommand, sendCat, type MacroDeps } from '../lib/macroRuntime';
 import { planMacro, splitAutoCq } from '../lib/macroPlan';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { parseSpotSplit } from '../lib/spotSplit';
@@ -464,7 +465,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const wfLabels = useMemo(() => [...bandLabels, ...rbnLabels(rbnSpots, status?.dial_hz ?? 0)], [bandLabels, rbnSpots, status?.dial_hz]);
   const toggleRadar = () => (s.mode === 'cw' ? save({ band_cw: s.band_cw === false }) : save({ band_rtty: s.band_rtty === false }));
 
-  const macros = useMemo(() => withContestMacros(effectiveMacros(s.macros.map(toMacro), s.mode_macros[s.mode]?.map(toMacro), s.merge_macros[s.mode] !== false), textContest?.macros, textContest?.contest.merge_macros !== false), [s.macros, s.mode_macros, s.merge_macros, s.mode, textContest]);
+  // <MODEMACROS:modo>: le macro di un altro modo senza cambiare modo
+  const [macroMode, setMacroMode] = useState<string | null>(null);
+  const mm = macroMode ?? s.mode;
+  const macros = useMemo(() => withContestMacros(effectiveMacros(s.macros.map(toMacro), s.mode_macros[mm]?.map(toMacro), s.merge_macros[mm] !== false), textContest?.macros, textContest?.contest.merge_macros !== false), [s.macros, s.mode_macros, s.merge_macros, mm, textContest]);
 
   // lo spettro: la media delle righe recenti serve a Snap, Seek e Scan
   const avg = useRef(new RowAverager());
@@ -475,8 +479,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, []);
 
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
-  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest });
-  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest };
+  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown });
+  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown };
   // contest dei modi testuali: il numero o il dominio ricevuti dopo il nominativo del QSO vanno da soli nel numero ricevuto, se e' vuoto
   useEffect(() => {
     const c = textContest;
@@ -773,6 +777,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
 
   // ---- sintonia: clic sulla cascata (con Snap), Seek, Scan ----
   const pickFreq = (hz: number, viaClick: boolean, ctrl = false, snapIt = viaClick) => {
+    // <LOCKRX>: la ricezione resta dov'e'
+    if (viaClick && macroState.rxLocked) return;
     const l = live.current;
     // in RTTY la frequenza e' il centro fra i due toni: Snap cerca la coppia (un tono solo andrebbe sul mark o sullo space)
     const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
@@ -929,8 +935,110 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       band: dial > 0 ? (bandOf(dial) ?? '') : '',
       modeName: MODE_NAMES[l.snap.settings.mode],
       qsoNumber: l.serial,
+      macros: new Map([...l.macros.values()].filter((m) => m.text.trim() !== '').map((m) => [m.name.toUpperCase(), m.text] as const)),
+      lang: forcedLang.current,
+      txStart: txStartRef.current,
+      rxHz: l.rxHz,
+      snr: l.snap.rx.snr_db ?? null,
+      imd: l.snap.rx.imd_db ?? null,
+      rate: l.snap.settings.mode === 'cw' ? String(Math.round(l.snap.rx.wpm ?? l.snap.settings.cw_wpm)) : l.snap.settings.mode === 'rtty' ? String(l.snap.settings.rtty_baud) : l.snap.settings.mode === 'psk63' ? '62.5' : '31.25',
+      inContest: l.inContest || textContest !== null,
     };
   };
+
+  // ---- comandi delle macro eseguiti dalla pagina (macroRuntime) ----
+  const forcedLang = useRef('');
+  const txStartRef = useRef<Date | null>(null);
+  const [rxStyle, setRxStyle] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const el = rxBox.current;
+    if (!el) return;
+    for (const k of ['fontSize', 'fontFamily', 'color', 'fontWeight', 'fontStyle'] as const) el.style[k] = rxStyle[k] ?? '';
+  }, [rxStyle]);
+  const macroDeps = (): MacroDeps => ({
+    t: (key, vars) => t(key as Parameters<typeof t>[0], vars),
+    toast,
+    settings: () => live.current.snap.settings,
+    save,
+    rxHz: () => live.current.rxHz,
+    dialHz: () => live.current.status?.dial_hz ?? 0,
+    pickFreq: (hz, snapIt) => pickFreq(hz, false, false, snapIt),
+    setDial: (hz) => {
+      useStation.getState().patchStatus({ dial_hz: hz });
+      void postFrequency(hz).then(onChanged, onChanged);
+    },
+    clearRx: clearDigiText,
+    clearTx: clearTxWindow,
+    setTx: (text) => setTx(text),
+    selection: () => window.getSelection()?.toString() ?? '',
+    rxText: getDigiText,
+    appendRx: appendDigiNote,
+    removeRxLines: removeDigiLines,
+    setStart: (d) => setStartAt(d),
+    qsoCall: () => live.current.qso.call,
+    qsoGrid: () => live.current.qso.wwloc,
+    macroNames: () => [...live.current.macros.keys()],
+    runMacro: (name) => runEvent.current(name),
+    view: (name, how) => {
+      const keys: Record<string, keyof Views> = { CONTROLBAR: 'controlBar', LOGBAR: 'log', STATUSBAR: 'statusBar', TUNINGBAR: 'waterfall', WATERFALL: 'waterfall', SIGNALS: 'signals', wideWaterfall: 'wideWaterfall' };
+      const key = keys[name];
+      if (key) {
+        const cur = live.current.views[key] === true;
+        setView({ [key]: how === 'toggle' ? !cur : how === 'show' });
+        return true;
+      }
+      if (name === 'ROTOR') {
+        setRotorShown(how === 'toggle' ? !live.current.rotorShown : how === 'show');
+        return true;
+      }
+      if (name === 'CONTESTSTATS' || name === 'QSOSTATISTIC' || name === 'QSOMETER') {
+        setContestStats(how === 'toggle' ? (v) => !v : how === 'show');
+        return true;
+      }
+      if ((name === 'WORLDMAP' || name === 'DXCLUSTER') && how !== 'hide') {
+        window.location.hash = name === 'WORLDMAP' ? '#/mappa' : '#/mappa-dx';
+        return true;
+      }
+      if (name === 'restartRx') {
+        void digiRx('stop').then(() => digiRx('start')).then(onChanged, onChanged);
+        return true;
+      }
+      return false;
+    },
+    extras: {
+      add: () => addExtra(live.current.rxHz),
+      closeAll: () => {
+        for (const x of extras) clearExtraText(x.id);
+        setExtras([]);
+      },
+      swapFirst: () => {
+        const first = extras[0];
+        if (first) swapExtra(first.id);
+      },
+    },
+    setRxPaused: (p) => setRxPaused(p),
+    rxStyle: (patch) => setRxStyle((cur) => ({ ...cur, ...patch })),
+    setMacroMode: (m) => setMacroMode(m),
+    openSettings: (tab) => openSettingsWindow(tab),
+    setCapsOnly: (on) => setView({ capsOnly: on }),
+    invalidateLog: () => {
+      void client.invalidateQueries({ queryKey: ['log-qsos'] });
+      void client.invalidateQueries({ queryKey: ['contest'] });
+    },
+    ignoreBeforeErase: () => writeIgnoreBefore(browserStorage(), 'erase'),
+  });
+  const macroDepsRef = useRef(macroDeps);
+  macroDepsRef.current = macroDeps;
+  // <OnRX:testo,macro>: il testo nuovo della ricezione si confronta con le attese
+  useEffect(() => {
+    let seenLen = getDigiText().length;
+    return onDigiText(() => {
+      const text = getDigiText();
+      const added = text.length >= seenLen ? text.slice(seenLen) : text;
+      seenLen = text.length;
+      if (macroState.onRx.length > 0) checkOnRx(macroDepsRef.current(), added);
+    });
+  }, []);
 
   const saveQso = () => {
     const l = live.current;
@@ -1005,8 +1113,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     // <GRABCALL>: l'ultimo nominativo ricevuto va subito nel QSO, cosi' il <CALL> della stessa macro lo usa gia'; il comando resta nella
     // macro (con il nominativo trovato) per rimetterlo nel QSO al suo posto, anche dopo un <CLEARQSO>
     let script = autoBefore;
-    if (/<GRABCALL>/i.test(script)) {
-      const grabbed = grabCall(getDigiText(), live.current.status?.de_call ?? '');
+    let grabbed = '';
+    if (macroNeeds(script, context().macros).grab) {
+      grabbed = grabCall(getDigiText(), live.current.status?.de_call ?? '');
       if (grabbed !== '') live.current = { ...live.current, qso: { ...live.current.qso, call: grabbed } };
       script = script.replace(/<GRABCALL>/gi, `<GRABCALL:${grabbed}>`);
     }
@@ -1016,23 +1125,57 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       setAutoCq(true);
       if (script.trim() === '') return;
     }
-    const files = [...script.matchAll(/<TEXTFILE:([^<>]*)>/g)].map((m) => (m[1] ?? '').trim()).filter((n) => n !== '');
-    const wantsLast = /<ANYQSOBEFORE(?:DATE|BAND|MODE)>/.test(script);
-    // <PREVNRS>, <QSOBEFORETIME>, <QSOBEFOREDATE>: dal log del contest attivo (senza contest restano vuoti)
-    const wantsContest = /<(?:PREVNRS|PREVCALL|PREVRSTS|QSOBEFORETIME|QSOBEFOREDATE)>/.test(script);
-    if (files.length === 0 && !wantsLast && !wantsContest) {
-      run(script, {});
+    const needs = macroNeeds(script, context().macros);
+    // <CALL?>, <RSTS?>, <NRS?>...: i valori vuoti si chiedono prima di eseguire
+    for (const f of needs.ask) {
+      const l = live.current;
+      const cur = { CALL: l.qso.call, RSTS: l.saved.rsts, RSTR: l.saved.rstr, NRS: l.qso.nrs ?? '', NRR: l.qso.nrr ?? '' }[f];
+      if (cur.trim() !== '') continue;
+      const v = window.prompt(t('digi.run.ask', { field: f }), f === 'RSTS' ? '599' : f === 'NRS' ? '001' : '');
+      if (v === null) return;
+      const value = v.trim();
+      if (f === 'CALL') {
+        live.current = { ...l, qso: { ...l.qso, call: value.toUpperCase() } };
+        takeCall(value.toUpperCase());
+      } else if (f === 'RSTS' || f === 'RSTR') {
+        live.current = { ...l, saved: { ...l.saved, [f.toLowerCase()]: value } };
+        setSavedField({ [f.toLowerCase()]: value });
+      } else {
+        live.current = { ...l, qso: { ...l.qso, [f.toLowerCase()]: value } };
+        setQso((q) => ({ ...q, [f.toLowerCase()]: value }));
+      }
+    }
+    const selection = needs.selection ? (window.getSelection()?.toString() ?? '') : '';
+    if (needs.files.length === 0 && !needs.log && !needs.contest) {
+      run(script, { selection, grabbed });
       return;
     }
     const call = live.current.qso.call.trim().toUpperCase();
+    const dialNow = live.current.status?.dial_hz ?? 0;
+    const bandNow = dialNow > 0 ? (bandOf(dialNow) ?? '') : '';
+    const modeNow = MODE_NAMES[live.current.snap.settings.mode];
     void Promise.all([
-      Promise.all(files.map((n) => digiTextFile(n).then((text) => [n, text] as const, () => [n, ''] as const))),
-      wantsLast && call !== '' ? getLogQsos().then((r) => r.qsos, () => []) : Promise.resolve([]),
-      wantsContest ? getTextContestCheck(call || '-', (live.current.status?.dial_hz ?? 0) > 0 ? (bandOf(live.current.status?.dial_hz ?? 0) ?? '') : '', MODE_NAMES[live.current.snap.settings.mode]).then((r) => r, () => null) : Promise.resolve(null),
+      Promise.all(needs.files.map((n) => digiTextFile(n).then((text) => [n, text] as const, () => [n, ''] as const))),
+      needs.log ? getLogQsos().then((r) => r.qsos, () => []) : Promise.resolve([]),
+      needs.contest ? getTextContestCheck(call || '-', bandNow, modeNow).then((r) => r, () => null) : Promise.resolve(null),
     ]).then(([read, qsos, check]) => {
-      const mine = qsos.filter((q) => q.call.toUpperCase() === call).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))[0];
+      const byTime = [...qsos].sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
+      const mine = call !== '' ? byTime.filter((q) => q.call.toUpperCase() === call) : [];
+      const same = mine.find((q) => q.band === bandNow && q.mode.toUpperCase() === modeNow);
+      const msOf = (q: { date: string; time: string }) => Date.parse(`${q.date}T${q.time.length === 4 ? `${q.time.slice(0, 2)}:${q.time.slice(2)}` : q.time}Z`);
+      const last = byTime[0];
+      const exch = (c: string | undefined, k: 'NRS' | 'NRR') => new RegExp(`${k} (\\S+)`).exec(c ?? '')?.[1] ?? '';
+      const prevQso: PrevQso | null = last ? { call: last.call, name: last.name ?? '', qth: last.qth ?? '', rsts: last.rst_sent, rstr: last.rst_rcvd, nrs: exch(last.comment, 'NRS'), nrr: exch(last.comment, 'NRR'), ms: msOf(last) } : null;
       const contestPrev = check ? { lastSent: check.ultimo_mandato ?? '', beforeMs: call !== '' ? (check.precedente?.time_ms ?? null) : null, lastCall: check.ultimo?.call ?? '', lastRst: check.ultimo?.rst_sent ?? '' } : null;
-      run(script, { files: Object.fromEntries(read), lastQso: mine ? { date: mine.date, band: mine.band, mode: mine.mode } : null, contestPrev });
+      run(script, {
+        files: Object.fromEntries(read),
+        lastQso: mine[0] ? { date: mine[0].date, band: mine[0].band, mode: mine[0].mode } : null,
+        contestPrev,
+        prevQso,
+        before: same ? { ms: msOf(same), band: same.band, mode: same.mode } : null,
+        selection,
+        grabbed,
+      });
     });
   };
 
@@ -1040,13 +1183,14 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
    * Una macro nell'ordine dello script (vedi `planMacro`): i comandi subito, poi il testo prima di `<RX>` in trasmissione (o nella
    * casella), il testo dopo `<RX>` resta nella finestra, e a fine trasmissione il ritorno in ricezione e la pulizia.
    */
-  const run = (script: string, extra: Pick<MacroContext, 'files' | 'lastQso' | 'contestPrev'>) => {
+  const run = (script: string, extra: Pick<MacroContext, 'files' | 'lastQso' | 'contestPrev' | 'prevQso' | 'before' | 'selection' | 'grabbed'>) => {
     const l = live.current;
     const result = runMacro(script, { ...context(), ...extra });
     // in trasmissione anche se lo stato letto ogni secondo non lo dice ancora: una macro appena partita o testo ancora in coda.
     // Cosi' una macro premuta mentre trasmette butta subito il testo non partito e riparte da capo, invece di accodarsi.
     const busy = l.snap.tx.state === 'sending' || macroInflight.current > 0 || txLiveRef.current.txLive.progress.queued > 0;
     const plan = planMacro(result.steps, busy);
+    const deps = macroDeps();
     const apply = (a: MacroAction) => {
       switch (a.type) {
         case 'clearRx': clearDigiText(); break;
@@ -1059,6 +1203,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'grabCall': if (a.call !== '') takeCall(a.call); break;
         case 'fixStartTime': setStartAt(new Date()); break;
         case 'mode': {
+          if (macroState.modeLocked) {
+            toast(t('digi.run.modeLocked'), 'info');
+            break;
+          }
           const m = modeFromName(a.mode);
           if (m) save({ mode: m });
           else toast(t('digi.run.modeUnsupported', { mode: a.mode }), 'info');
@@ -1099,7 +1247,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           else save({ cw_wpm: next, cw_wpm_follow_rx: false });
           break;
         }
-        case 'audioFq': pickFreq(Math.max(200, Math.min(3500, a.relative ? l.rxHz + a.hz : a.hz)), false); break;
+        case 'audioFq': if (!macroState.rxLocked) pickFreq(Math.max(200, Math.min(3500, a.relative ? l.rxHz + a.hz : a.hz)), false); break;
         case 'cursor': if (a.target === 'TX') txBox.current?.focus(); break;
         case 'beep': beep(); break;
         case 'autoCq':
@@ -1115,9 +1263,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           }
           break;
         case 'acqDelay': setAutoCqDelay(a.seconds); break;
-        case 'jumpToTx': pickFreq(l.snap.settings.tx_freq_hz, false); break;
-        case 'align': pickFreq(Math.max(200, Math.round(l.rxHz / a.hz) * a.hz), false); break;
-        case 'seek': seek(a.direction); break;
+        case 'jumpToTx': if (!macroState.rxLocked) pickFreq(l.snap.settings.tx_freq_hz, false); break;
+        case 'align': if (!macroState.rxLocked) pickFreq(Math.max(200, Math.round(l.rxHz / a.hz) * a.hz), false); break;
+        case 'seek': if (!macroState.rxLocked) seek(a.direction); break;
         case 'toggle': toggleSetting(a.what, a.value); break;
         case 'scan': setScanning(a.run); break;
         case 'memory': memory(a.write, a.slot); break;
@@ -1126,14 +1274,31 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         case 'period': writePeriod(browserStorage(), a.minutes); break;
         case 'modeSettings':
         case 'threshold': setSettingsOpen(true); break;
-        case 'cat':
-          void digiCat(a.cmd).catch((e: unknown) => toast(t('digi.run.catFail', { why: e instanceof ApiError ? (e.message ?? e.code) : String(e) }), 'error'));
+        // i comandi CAT vanno in coda: <CATWAIT> li distanzia
+        case 'cat': sendCat(deps, a.cmd); break;
+        // la portante per accordare sulla frequenza di trasmissione (di base 10 s)
+        case 'tune':
+          void digiMacroPlay({ tune_s: a.seconds !== null && a.seconds > 0 ? a.seconds : 10 }).catch((e: unknown) => toast(t('digi.run.cmdFail', { tag: 'TUNE', why: e instanceof ApiError ? (e.message ?? e.code) : String(e) }), 'error'));
           break;
-        // comandi che la pagina dei modi testuali non sa fare: lo dice
-        case 'tune': toast(t('digi.run.unknown', { tag: 'TUNE' }), 'info'); break;
-        case 'bookmark': toast(t('digi.run.unknown', { tag: 'BOOKMARK' }), 'info'); break;
-        // comandi delle macro che Aurora non esegue: si saltano senza avvisi a ogni macro (scelta del proprietario 2026-11-15)
-        case 'macros': break;
+        case 'bookmark': mark(deps); break;
+        // <MACROS:file>: Aurora tiene le macro nelle impostazioni; si ricorda una volta dove importarle
+        case 'macros':
+          if (!macroState.told.has('MACROS')) {
+            macroState.told.add('MACROS');
+            toast(t('digi.run.notInAurora', { tag: 'MACROS', what: t('digi.mi.macrosDefault') }), 'info');
+          }
+          break;
+        case 'setField': {
+          const f = a.field;
+          if (f === 'call') takeCall(a.value);
+          else if (f === 'rsts' || f === 'rstr') setSavedField({ [f]: a.value });
+          else setQso((q) => ({ ...q, [f]: a.value }));
+          break;
+        }
+        case 'cmd':
+          if (a.tag === 'FORCELANGUAGE') forcedLang.current = a.arg;
+          runCommand(a.tag, a.arg, deps);
+          break;
         // EXEC ignorato in silenzio: Aurora non avvia programmi esterni (l'avviso a ogni macro disturbava, scelta del proprietario 2026-11-15)
         case 'exec': break;
         case 'unknown': break;
@@ -1153,6 +1318,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       }
     };
     plan.actions.forEach(apply);
+    // <CATENABLEVFOSYNC>: a ogni macro il segnale torna al centro
+    if (macroState.vfoSync) runCommand('CATVFOSYNCONCE', '', deps);
     if (plan.clearBox) clearTxWindow();
     const body = plan.text;
     // il testo dopo <RX>: resta nella finestra di trasmissione, dopo quello che parte
@@ -1167,7 +1334,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       // un comando <TX> da solo trasmette quello che c'e' nella casella (se non e' stata appena pulita); mai una trasmissione vuota
       const what = body !== '' ? body : toTx && !plan.clearBox ? l.tx : '';
       // senza <RX> finito il testo si resta in trasmissione (si continua a scrivere); <TXTOGGLE> mentre si trasmette chiude
-      const open = plan.tx !== 'stop' && !plan.rxAfter;
+      // <BROADCASTMODE:ON>: anche con <RX> si resta in trasmissione finche' non si preme RX
+      const open = plan.tx !== 'stop' && (!plan.rxAfter || macroState.broadcast);
       clearAfterTx.current = plan.clearAfter;
       const fire = () => {
         if (what.trim() === '') {
@@ -1239,7 +1407,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, []);
   const wasSendingEv = useRef(sending);
   useEffect(() => {
-    if (sending && !wasSendingEv.current) runEvent.current('OnTX');
+    if (sending && !wasSendingEv.current) {
+      txStartRef.current = new Date();
+      runEvent.current('OnTX');
+    }
     wasSendingEv.current = sending;
   }, [sending]);
 

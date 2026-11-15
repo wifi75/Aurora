@@ -39,6 +39,9 @@ export function planEdit(old: string, next: string, p: TxProgress): TxEdit | nul
   return { from, text: next.slice(from) };
 }
 
+/** Opzioni della scrittura in trasmissione cambiate dalle macro: `wordMode` (`<WORDMODE:ON>`) manda a parole intere. */
+export const txLiveOptions = { wordMode: false };
+
 /** Quanti caratteri contare per un testo arrivato dal motore (per punti di codice, come li conta lui). */
 export function charCount(text: string): number {
   return Array.from(text).length;
@@ -86,6 +89,11 @@ export function useDigiTxLive(box: string, setBox: (next: string | ((prev: strin
    * gia' partito o sta per partire (il motore lo rifiuta) la finestra torna com'era. */
   const edit = (next: string) => {
     const { box: old, progress: p } = live.current;
+    // <WORDMODE:ON>: mentre si scrive una parola resta nella finestra; parte con lo spazio (o l'a capo) che la chiude
+    if (txLiveOptions.wordMode && next.length > old.length && next.startsWith(old) && !/\s$/.test(next)) {
+      setBox(next);
+      return;
+    }
     const plan = planEdit(old, next, p);
     if (plan === null) {
       setBox(old);

@@ -2180,6 +2180,21 @@ export async function digiWinKeyerTest(): Promise<number> {
 }
 
 /** Apre la trasmissione (levetta RX/TX): resta in trasmissione finche' non si chiude; `text` e' il testo gia' scritto. */
+/** Macro `<WKTEXT:...>` e `<WKHEX:...>`: testo o byte di comando al WinKeyer. */
+export async function digiWinKeyerSend(body: { text?: string; hex?: string }): Promise<void> {
+  await request('/digi/winkeyer/send', jsonInit(body));
+}
+
+/** Macro `<WAVE:nome>`, `<DTMF:cifre>`, `<TUNE:s>`, `<STARTPLAY:nome>`: un audio in trasmissione. */
+export async function digiMacroPlay(body: { wave?: string; dtmf?: string; tune_s?: number; play?: string }): Promise<void> {
+  await request('/digi/play', jsonInit(body));
+}
+
+/** Macro `<STARTRECORD>`, `<STOPRECORD>`, `<REPLAY:n>`: registrazione dell'audio ricevuto e rilettura degli ultimi secondi. */
+export async function digiMacroRecord(body: { action: 'start' | 'stop' | 'replay'; name?: string; seconds?: number }): Promise<{ file?: string | null; samples?: number }> {
+  return (await (await request('/digi/record', jsonInit(body))).json()) as { file?: string | null; samples?: number };
+}
+
 export async function digiTxOpen(text: string): Promise<void> {
   await request('/digi/tx/open', jsonInit({ text }));
 }
