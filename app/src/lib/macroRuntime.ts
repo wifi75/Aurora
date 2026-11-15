@@ -296,6 +296,10 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'TOGGLESOUNDDEV': d.view('restartRx', 'toggle'); return;
     case 'INPUTVOLUME': if (num === null) d.openSettings('audio'); else void putInputLevel({ volume_pct: Math.max(0, Math.min(100, num)), auto: false }).catch(fail(d, tag)); return;
     case 'OUTPUTVOLUME': if (num === null) d.openSettings('audio'); else void putOutputLevel(Math.max(0, num)).catch(fail(d, tag)); return;
+    case 'WKTEXT': void digiWinKeyerSend({ text: arg }).catch(fail(d, tag)); return;
+    case 'WKHEX': void digiWinKeyerSend({ hex: arg }).catch(fail(d, tag)); return;
+    case 'WKPOT':
+    case 'WKNOPOT': if (s.winkeyer) d.save({ winkeyer: { ...s.winkeyer, use_pot: tag === 'WKPOT' } }); return;
     default: return;
   }
 }

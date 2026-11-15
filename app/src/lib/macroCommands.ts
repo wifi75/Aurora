@@ -248,6 +248,9 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('frequency', "<TOGGLESOUNDDEV>", "riapre l'ascolto della scheda audio (spegne e riaccende la ricezione)", "reopens listening on the sound card (stops and restarts receive)", "öffnet das Hören auf der Soundkarte neu (stoppt den Empfang und startet ihn neu)", "rouvre l'écoute sur la carte son (arrête et relance la réception)", "vuelve a abrir la escucha en la tarjeta de sonido (detiene y reinicia la recepción)", "reabre a escuta na placa de som (pára e reinicia a receção)"),
   c('frequency', "<INPUTVOLUME:%>", "volume dell'ingresso audio in percento (senza numero apre le impostazioni audio)", "audio input volume in percent (without a number opens the audio settings)", "Lautstärke des Audioeingangs in Prozent (ohne Zahl öffnet die Audio-Einstellungen)", "volume d'entrée audio en pourcentage (sans nombre, ouvre les paramètres audio)", "volumen de entrada de audio en porcentaje (sin número abre los ajustes de audio)", "volume de entrada de áudio em percentagem (sem número abre as definições de áudio)"),
   c('frequency', "<OUTPUTVOLUME:dB>", "attenuazione dell'uscita audio in dB (senza numero apre le impostazioni audio)", "audio output attenuation in dB (without a number opens the audio settings)", "Dämpfung des Audioausgangs in dB (ohne Zahl öffnet die Audio-Einstellungen)", "atténuation de la sortie audio en dB (sans nombre, ouvre les paramètres audio)", "atenuación de la salida de audio en dB (sin número abre los ajustes de audio)", "atenuação da saída de áudio em dB (sem número abre as definições de áudio)"),
+  c('cw', "<WKTEXT:testo>", "manda il testo in CW con il WinKeyer", "sends the text in CW with the WinKeyer", "sendet den Text in CW mit dem WinKeyer", "envoie le texte en CW avec le WinKeyer", "envía el texto en CW con el WinKeyer", "envia o texto em CW com o WinKeyer"),
+  c('cw', "<WKHEX:byte>", "manda al WinKeyer byte di comando in esadecimale", "sends command bytes in hex to the WinKeyer", "sendet Befehlsbytes in Hex an den WinKeyer", "envoie des octets de commande en hexadécimal au WinKeyer", "envía bytes de comando en hexadecimal al WinKeyer", "envia bytes de comando em hexadecimal ao WinKeyer"),
+  c('cw', "<WKPOT>", "la velocità la decide il potenziometro del WinKeyer (<WKNOPOT>: la decide Aurora)", "the WinKeyer knob sets the speed (<WKNOPOT>: Aurora sets it)", "der WinKeyer-Drehknopf stellt die Geschwindigkeit ein (<WKNOPOT>: Aurora stellt sie ein)", "le bouton du WinKeyer règle la vitesse (<WKNOPOT> : Aurora la règle)", "el mando del WinKeyer fija la velocidad (<WKNOPOT>: la fija Aurora)", "o botão do WinKeyer define a velocidade (<WKNOPOT>: o Aurora define-a)"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -664,6 +667,14 @@ CATEGORY["<INPUTVOLUME:%>"] = 'cat';
 EXAMPLE["<INPUTVOLUME:%>"] = "<INPUTVOLUME:60>";
 CATEGORY["<OUTPUTVOLUME:dB>"] = 'cat';
 EXAMPLE["<OUTPUTVOLUME:dB>"] = "<OUTPUTVOLUME:6>";
+CATEGORY["<WKTEXT:testo>"] = 'keyer';
+EXAMPLE["<WKTEXT:testo>"] = "<WKTEXT:CQ TEST>";
+ALIASES["<WKTEXT:testo>"] = ["<WK:testo>"];
+CATEGORY["<WKHEX:byte>"] = 'keyer';
+EXAMPLE["<WKHEX:byte>"] = "<WKHEX:02 1E>";
+CATEGORY["<WKPOT>"] = 'keyer';
+EXAMPLE["<WKPOT>"] = "<WKPOT>";
+ALIASES["<WKPOT>"] = ["<WKNOPOT>"];
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

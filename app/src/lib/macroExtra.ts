@@ -367,6 +367,16 @@ function action7(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+function action8(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'WKTEXT':
+    case 'WK': return arg === undefined || arg.trim() === '' ? null : cmd('WKTEXT', arg);
+    case 'WKHEX':
+    case 'WKPOT':
+    case 'WKNOPOT': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -412,6 +422,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action5(tag, arg) ??
     action6(tag, arg) ??
     action7(tag, arg) ??
+    action8(tag, arg) ??
     null
   );
 }

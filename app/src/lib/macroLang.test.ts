@@ -316,6 +316,16 @@ describe('CAT', () => {
   });
 });
 
+describe('WinKeyer', () => {
+  it('testo, byte e potenziometro', () => {
+    expect(cmdOf('<WKTEXT:CQ><WK:TEST><WKHEX:02 1E><WKNOPOT>')).toEqual([
+      { type: 'cmd', tag: 'WKTEXT', arg: 'CQ' },
+      { type: 'cmd', tag: 'WKTEXT', arg: 'TEST' },
+      { type: 'cmd', tag: 'WKHEX', arg: '02 1E' },
+      { type: 'cmd', tag: 'WKNOPOT', arg: '' },
+    ]);
+  });
+});
 
 
 
