@@ -556,9 +556,7 @@ Function AuroraDirLeave
   Delete "$INSTDIRurora-prova-scrittura.tmp"
   Return
   aurora_dir_no:
-  MessageBox MB_ICONEXCLAMATION|MB_YESNO "$(auroraDirNoWrite)$$
-$$
-$LOCALAPPDATA\${PRODUCTNAME}" IDNO aurora_dir_resta
+  MessageBox MB_ICONEXCLAMATION|MB_YESNO "$(auroraDirNoWrite)$\r$\n$\r$\n$LOCALAPPDATA\${PRODUCTNAME}" IDNO aurora_dir_resta
   StrCpy $INSTDIR "$LOCALAPPDATA\${PRODUCTNAME}"
   Return
   aurora_dir_resta:
