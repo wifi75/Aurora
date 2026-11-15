@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.269',
+    released: '2026-11-15T21:00:00Z',
+    kind: 'new',
+    title: [
+      'Copia di sicurezza automatica',
+      'Automatic backup',
+      'Automatische Sicherung',
+      'Sauvegarde automatique',
+      'Copia de seguridad automática',
+      'Cópia de segurança automática',
+    ],
+    text: [
+      'Alla prima apertura del giorno Aurora copia impostazioni, log dei QSO, macro e contest nella cartella copie-automatiche (nella cartella dei dati) e tiene le ultime 28; password e chiavi restano fuori. Prende il posto dei vecchi file Backup.bat lanciati dalle macro. I comandi <EXEC:...> si tolgono dai file delle macro all’avvio (prima se ne tiene una copia in macro/prima-di-togliere-exec) e dalle macro dei contest: Aurora non avvia programmi esterni.',
+      'On the first start of the day Aurora copies settings, QSO logs, macros and contests into the copie-automatiche folder (inside the data folder) and keeps the last 28; passwords and keys stay out. It replaces the old Backup.bat files launched from macros. <EXEC:...> commands are removed from the macro files at startup (a copy is kept first in macro/prima-di-togliere-exec) and from contest macros: Aurora does not launch external programs.',
+      'Beim ersten Start des Tages kopiert Aurora Einstellungen, QSO-Logs, Makros und Contests in den Ordner copie-automatiche (im Datenordner) und behält die letzten 28; Passwörter und Schlüssel bleiben außen vor. Das ersetzt die alten Backup.bat-Dateien, die von Makros gestartet wurden. Befehle <EXEC:...> werden beim Start aus den Makrodateien entfernt (vorher bleibt eine Kopie in macro/prima-di-togliere-exec) und aus den Contest-Makros: Aurora startet keine externen Programme.',
+      'Au premier démarrage de la journée, Aurora copie les réglages, les logs de QSO, les macros et les contests dans le dossier copie-automatiche (dans le dossier des données) et garde les 28 dernières ; mots de passe et clés restent à l’écart. Cela remplace les anciens fichiers Backup.bat lancés par les macros. Les commandes <EXEC:...> sont retirées des fichiers de macros au démarrage (une copie est gardée avant dans macro/prima-di-togliere-exec) et des macros des contests : Aurora ne lance pas de programmes externes.',
+      'En la primera apertura del día Aurora copia ajustes, logs de QSO, macros y concursos en la carpeta copie-automatiche (dentro de la carpeta de datos) y conserva las últimas 28; contraseñas y claves quedan fuera. Sustituye a los antiguos archivos Backup.bat lanzados desde las macros. Los comandos <EXEC:...> se quitan de los archivos de macros al iniciar (antes se guarda una copia en macro/prima-di-togliere-exec) y de las macros de los concursos: Aurora no lanza programas externos.',
+      'Na primeira abertura do dia o Aurora copia definições, logs de QSO, macros e concursos para a pasta copie-automatiche (dentro da pasta de dados) e guarda as últimas 28; palavras-passe e chaves ficam de fora. Substitui os antigos ficheiros Backup.bat lançados pelas macros. Os comandos <EXEC:...> são retirados dos ficheiros de macros ao arrancar (antes guarda-se uma cópia em macro/prima-di-togliere-exec) e das macros dos concursos: o Aurora não lança programas externos.',
+    ],
+  },
+  {
     version: '0.11.268',
     released: '2026-11-15T18:12:22Z',
     kind: 'changed',
@@ -846,27 +867,6 @@ export const NOVITA: readonly Novita[] = [
       'Pour envoyer les QSO à Club Log il suffit de ton jeton personnel : dans Club Log ouvre Settings › API, crée un jeton (il commence par cl_) et colle-le dans Aurora. Ni e-mail, ni mot de passe, ni clé API ; « Tester » vérifie vraiment le jeton sans envoyer de QSO.',
       'Para enviar los QSO a Club Log basta tu token personal: en Club Log abre Settings › API, crea un token (empieza por cl_) y pégalo en Aurora. Sin correo, contraseña ni clave API; «Probar» comprueba de verdad el token sin enviar QSO.',
       'Para enviar os QSO para o Club Log basta o teu token pessoal: no Club Log abre Settings › API, cria um token (começa por cl_) e cola-o na Aurora. Sem email, palavra-passe nem chave API; «Testar» verifica mesmo o token sem enviar QSO.',
-    ],
-  },
-  {
-    version: '0.11.251',
-    released: '2026-11-13T23:07:29Z',
-    kind: 'changed',
-    title: [
-      'HRDLog e automazioni nella tua lingua',
-      'HRDLog and automation in your language',
-      'HRDLog und Automatik in deiner Sprache',
-      'HRDLog et automatisation dans ta langue',
-      'HRDLog y automatización en tu idioma',
-      'HRDLog e automação na tua língua',
-    ],
-    text: [
-      'I messaggi di HRDLOG.NET e altre frasi del registro delle decisioni delle automazioni (continente escluso, Abilita Tx riacceso, stato nuovo) ora seguono la lingua dell’interfaccia.',
-      'HRDLOG.NET messages and more lines of the automation decision log (continent excluded, Enable Tx switched on again, new state) now follow the interface language.',
-      'Die Meldungen von HRDLOG.NET und weitere Zeilen des Entscheidungsprotokolls der Automatik (Kontinent ausgeschlossen, Tx aktivieren wieder an, neuer Staat) folgen jetzt der Sprache der Oberfläche.',
-      'Les messages de HRDLOG.NET et d’autres lignes du journal des décisions de l’automatisation (continent exclu, Activer Tx rallumé, nouvel État) suivent maintenant la langue de l’interface.',
-      'Los mensajes de HRDLOG.NET y otras líneas del registro de decisiones de la automatización (continente excluido, Activar Tx reactivado, estado nuevo) siguen ahora el idioma de la interfaz.',
-      'As mensagens do HRDLOG.NET e outras linhas do registo de decisões da automação (continente excluído, Ativar Tx religado, estado novo) seguem agora a língua da interface.',
     ],
   },
 ];

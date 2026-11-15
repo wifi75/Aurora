@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.269 - 2026-11-15
+
+- Copia di sicurezza automatica: alla prima apertura del giorno Aurora copia impostazioni, log dei QSO, macro e contest in `copie-automatiche` (cartella dei dati) e tiene le ultime 28; password e chiavi restano fuori. Prende il posto dei vecchi file `Backup.bat` lanciati dalle macro.
+- Macro: i comandi `<EXEC:...>` si tolgono dai file delle macro all'avvio (prima se ne tiene una copia in `macro/prima-di-togliere-exec`) e dalle macro dei contest: Aurora non avvia programmi esterni.
+
 ## 0.11.268 - 2026-11-15
 
 - Macro: i comandi che Aurora non esegue (`<EXEC:...>`, `<MACROS:...>` e gli altri) si saltano in silenzio, senza un avviso a ogni pressione del tasto.

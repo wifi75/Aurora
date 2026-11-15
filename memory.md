@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-15, versione 0.11.268 pubblicata (90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-15, versione 0.11.269 pubblicata (copia automatica giornaliera al posto dei Backup.bat, EXEC tolto dalle macro, 90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-13/14
