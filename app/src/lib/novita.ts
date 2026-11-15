@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.269',
-    released: '2026-11-15T21:00:00Z',
+    released: '2026-11-15T18:46:23Z',
     kind: 'new',
     title: [
       'Copia di sicurezza automatica',
