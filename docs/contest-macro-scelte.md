@@ -84,40 +84,27 @@ nuovi hanno un file `.contest` e una macro scritta da capo con l'ordine dei tast
 | RUSSIAN RADIO WW RTTY CONTEST | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 10 comandi che Aurora non conosce |
 | Russian WW MultiMode Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | Russian WW PSK Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
-| SA_Sprint Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | SARTG New Year RTTY Contest | unione | la struttura di Aurora con `<MYNAME> HNY` al posto di un nome scritto a mano nello scambio (numero, nome, auguri) |
 | SARTG WW RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | Scandinavian Activity Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 10 comandi che Aurora non conosce |
 | SPDX RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | Stew Perry Topband Distance Challenge | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| Sumy Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | TARA Mêlée Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 11 comandi che Aurora non conosce |
-| Taras 200 Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | TRC DIGI Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | TRC DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| Triathlon DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | UA2 QSO Party | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | UBA CW Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | UBA PSK63 Prefix Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | UBA Spring 80M CW Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| UCC Party | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | UK_EI DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| UKRAINIAN DX CLASSIC RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
 | Ukrainian DX Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 10 comandi che Aurora non conosce |
 | Ukrainian DX DIGI Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
-| Ukrainian RTTY Championship | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
-| UN DIGI Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
-| UN DX CONTEST | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| URDA Winter Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
 | Venezuelan Independence Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 9 comandi che Aurora non conosce |
-| VLADIMIR Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 7 comandi che Aurora non conosce |
 | WAEDC RTTY Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 10 comandi che Aurora non conosce |
 | YB DX Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | YB DX RTTY Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 | YO DX HF Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| YO International PSK31 Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova usa 10 comandi che Aurora non conosce |
 | YU-DX-HF Contest | Aurora | completa e con i tasti di contest di Aurora; la nuova non ha TU con salvataggio, QSO B4 e usa 9 comandi che Aurora non conosce |
-| ZHAS Contest | unione (contest nuovo) | contest nuovo: tasti in ordine (F1 CQ, F2 scambio, F3 TU) dalla nuova, scritti solo con comandi di Aurora; date e `[Score]` da fare |
 
 ## Varianti per modo non aggiunte
 
@@ -155,18 +142,10 @@ il suffisso si mette nello scambio, `m_sNrs`). File non aggiunti: 44.
 | Russian WW MultiMode Contest CW | non aggiunta |
 | Russian WW MultiMode Contest SSB | non aggiunta |
 | Russian WW PSK Contest (PSK) | non aggiunta |
-| SA_Sprint Contest SSB | non aggiunta |
 | Scandinavian Activity Contest SSB | non aggiunta |
-| Sumy Contest RTTY | non aggiunta |
-| Sumy Contest SSB | non aggiunta |
 | TRC DX Contest TRC | non aggiunta |
-| Triathlon DX Contest CW | non aggiunta |
-| Triathlon DX Contest SSB | non aggiunta |
 | UBA Spring 80M CW Contest CQ | non aggiunta |
 | UK_EI DX Contest SSB | non aggiunta |
-| UN DX CONTEST SSB | non aggiunta |
-| URDA Winter Contest DIGI | non aggiunta |
-| URDA Winter Contest SSB | non aggiunta |
 | Ukrainian DX Contest SSB | non aggiunta |
 | Venezuelan Independence Contest CW | non aggiunta |
 | Venezuelan Independence Contest SSB | non aggiunta |
