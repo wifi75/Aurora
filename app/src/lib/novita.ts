@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.271',
+    released: '2026-11-15T23:00:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'Tutti i comandi delle macro',
+      'All macro commands',
+      'Alle Makrobefehle',
+      'Toutes les commandes des macros',
+      'Todos los comandos de las macros',
+      'Todos os comandos das macros',
+    ],
+    text: [
+      'Tutti i comandi delle macro ora funzionano, divisi per famiglia, con la Guida aggiornata. Nuovo <GRABCALL>: l’ultimo nominativo ricevuto entra nel QSO e il <CALL> della stessa macro lo usa subito.',
+      'All macro commands now work, grouped by family, with the Guide updated. New <GRABCALL>: the last callsign received enters the QSO and the <CALL> of the same macro uses it right away.',
+      'Alle Makrobefehle funktionieren jetzt, nach Familien geordnet, mit aktualisierter Anleitung. Neu <GRABCALL>: Das zuletzt empfangene Rufzeichen kommt ins QSO und das <CALL> desselben Makros nutzt es sofort.',
+      'Toutes les commandes des macros fonctionnent maintenant, classées par famille, avec le Guide mis à jour. Nouveau <GRABCALL> : le dernier indicatif reçu entre dans le QSO et le <CALL> de la même macro l’utilise tout de suite.',
+      'Todos los comandos de las macros funcionan ahora, agrupados por familia, con la Guía actualizada. Nuevo <GRABCALL>: el último indicativo recibido entra en el QSO y el <CALL> de la misma macro lo usa enseguida.',
+      'Todos os comandos das macros funcionam agora, agrupados por família, com o Guia atualizado. Novo <GRABCALL>: o último indicativo recebido entra no QSO e o <CALL> da mesma macro usa-o logo.',
+    ],
+  },
+  {
     version: '0.11.270',
     released: '2026-11-15T19:02:36Z',
     kind: 'new',
@@ -847,27 +869,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora écoute toute la bande CW et RTTY et vous montre qui émet. À droite des fenêtres RX et TX apparaît la liste des stations lues avec certitude : une ligne par indicatif, chacune avec sa couleur, sans doublons ni lectures étranges, avec fréquence, vitesse et CQ. Un clic et vous êtes sur la station, un double clic met l’indicatif dans le QSO. Colonnes déplaçables, largeur réglable avec la poignée, bouton « Aurora BIGScan » en haut pour l’activer ou le désactiver. Sur 30 stations proches, il les reconnaît toutes.',
       'Aurora escucha toda la banda de CW y RTTY y te muestra quién transmite. A la derecha de las ventanas RX y TX aparece la lista de estaciones leídas con seguridad: una fila por indicativo, cada una con su color, sin duplicados ni lecturas raras, con frecuencia, velocidad y CQ. Un clic y estás en la estación, un doble clic pone el indicativo en el QSO. Columnas movibles, ancho regulable con el asa, botón «Aurora BIGScan» arriba para encenderlo o apagarlo. Con 30 estaciones cercanas las reconoce todas.',
       'A Aurora ouve toda a banda de CW e RTTY e mostra-te quem está a transmitir. À direita das janelas RX e TX aparece a lista das estações lidas com segurança: uma linha por indicativo, cada uma com a sua cor, sem duplicados nem leituras estranhas, com frequência, velocidade e CQ. Um clique e estás na estação, um duplo clique põe o indicativo no QSO. Colunas que se movem, largura ajustável com a pega, botão «Aurora BIGScan» em cima para o ligar ou desligar. Com 30 estações próximas reconhece-as todas.',
-    ],
-  },
-  {
-    version: '0.11.252',
-    released: '2026-11-14T09:57:44Z',
-    kind: 'changed',
-    title: [
-      'CW e RTTY più precisi, niente PowerShell',
-      'More accurate CW and RTTY, no PowerShell',
-      'Genaueres CW und RTTY, kein PowerShell',
-      'CW et RTTY plus précis, plus de PowerShell',
-      'CW y RTTY más precisos, sin PowerShell',
-      'CW e RTTY mais precisos, sem PowerShell',
-    ],
-    text: [
-      'CW: le stazioni veloci fra due vicine si leggono di nuovo e l’inizio di ogni stazione non si perde. RTTY: molti meno caratteri strani a squelch spento, AFC che aggancia in meno di un secondo e segue la deriva, meno perdite quando l’AGC della radio abbassa il segnale. Aurora non avvia più PowerShell nascosto, che alcuni antivirus segnalavano.',
-      'CW: fast stations between two neighbours are read again and the start of each station is no longer lost. RTTY: far fewer odd characters with the squelch off, an AFC that locks in under a second and follows drift, fewer losses when the radio AGC drops the signal. Aurora no longer starts hidden PowerShell, which some antivirus programs flagged.',
-      'CW: Schnelle Stationen zwischen zwei Nachbarn werden wieder gelesen und der Anfang jeder Station geht nicht mehr verloren. RTTY: viel weniger seltsame Zeichen bei ausgeschalteter Rauschsperre, eine AFC, die in unter einer Sekunde einrastet und der Drift folgt, weniger Verluste, wenn die AGC des Funkgeräts das Signal absenkt. Aurora startet kein verstecktes PowerShell mehr, das manche Virenscanner meldeten.',
-      'CW : les stations rapides entre deux voisines se lisent de nouveau et le début de chaque station n’est plus perdu. RTTY : beaucoup moins de caractères étranges squelch coupé, un AFC qui s’accroche en moins d’une seconde et suit la dérive, moins de pertes quand l’AGC de la radio baisse le signal. Aurora ne lance plus de PowerShell caché, que certains antivirus signalaient.',
-      'CW: las estaciones rápidas entre dos vecinas se vuelven a leer y el inicio de cada estación ya no se pierde. RTTY: muchos menos caracteres raros con el squelch apagado, un AFC que engancha en menos de un segundo y sigue la deriva, menos pérdidas cuando el AGC de la radio baja la señal. Aurora ya no inicia PowerShell oculto, que algunos antivirus señalaban.',
-      'CW: as estações rápidas entre duas vizinhas voltam a ler-se e o início de cada estação já não se perde. RTTY: muito menos caracteres estranhos com o squelch desligado, um AFC que engata em menos de um segundo e segue a deriva, menos perdas quando o AGC do rádio baixa o sinal. A Aurora já não inicia PowerShell escondido, que alguns antivírus assinalavam.',
     ],
   },
 ];

@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.271 - 2026-11-15
+
+- Macro: tutti i comandi delle macro funzionano, nessuno viene piu' saltato. Nuove famiglie: dati del corrispondente e del QSO precedente (ACALL, PREVNAME, PREVCALL, PREVRSTS, QSOBEFORE...), testo selezionato nella finestra RX (SELCALL, SELNAME...), frasi automatiche e saluti in sette lingue (INTQRZ, INTAGNNR, GM/GE/GN...), ora e data con il formato, QSO e log (INCNRR, CLEARNRR, SENDSPOT, WKD...), modo e ricevitore (LOCK, INV, FILTER, `<SET BW:250>`, TUNE...), CAT (CATCMDHEX, CATWAIT...), WinKeyer (WKTEXT, WKHEX), rotore (ROTORCMD), finestre e testo, audio (STARTRECORD, REPLAY, `<WAVE:...>`, DTMF), file e script (FILE, INIFILE, RANDOM, SCRIPT), SSTV (PIC, SSTVMODE), macro dentro una macro (`<F1>`, fino a 10 livelli) e il `?` che chiede il valore se manca.
+- `<GRABCALL>`: l'ultimo nominativo ricevuto nella finestra RX entra nel QSO e il `<CALL>` della stessa macro lo usa subito.
+- Guida delle macro: tutti i comandi divisi per famiglia, con spiegazione ed esempio in sette lingue; tabella completa in `docs/macro-comandi.md`.
+- Comandi che chiedono parti che Aurora non ha (packet, DDE, MFSK, Hell, KiwiSDR) fanno la cosa piu' vicina o avvisano una volta; EXEC ed EXT restano esclusi: Aurora non avvia programmi esterni.
+
 ## 0.11.270 - 2026-11-15
 
 - Macro dei contest: `<PREVNRS>` ripete lo scambio mandato nell'ultimo QSO del log, `<QSOBEFORETIME>` e `<QSOBEFOREDATE>` dicono ora e data del QSO gia' fatto con quella stazione (dal log del contest attivo).
