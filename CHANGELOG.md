@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Installatore: se la cartella scelta non si puo' scrivere (per esempio Program Files senza diritti di amministratore su un PC aziendale) propone la cartella dell'utente invece di fermarsi a meta'; se Aurora resta aperta durante l'aggiornamento chiede di chiuderla e di riprovare.
+
 ## 0.11.272 - 2026-11-15
 
 - Modi testuali: menu Opzioni › Auto CQ con Avvia, Ferma, Testo… (macro AutoCqText) e Pausa… (secondi fra due chiamate, salvati).

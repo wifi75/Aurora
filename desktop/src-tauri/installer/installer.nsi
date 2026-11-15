@@ -538,7 +538,32 @@ FunctionEnd
 
 ; 5. Choose install directory page
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfPassive
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE AuroraDirLeave
 !insertmacro MUI_PAGE_DIRECTORY
+
+; AURORA: la cartella scelta si prova a scrivere prima di installare. Su un PC aziendale senza diritti di amministratore
+; (rapporti del 2026-11-15) «C:\Program Files\Aurora» si creava ma i file no, e l'installazione si fermava a meta'.
+; Se non si puo' scrivere si propone la cartella dell'utente, che va sempre.
+Function AuroraDirLeave
+  ClearErrors
+  CreateDirectory "$INSTDIR"
+  FileOpen $0 "$INSTDIRurora-prova-scrittura.tmp" w
+  ${If} ${Errors}
+    Goto aurora_dir_no
+  ${EndIf}
+  FileWrite $0 "ok"
+  FileClose $0
+  Delete "$INSTDIRurora-prova-scrittura.tmp"
+  Return
+  aurora_dir_no:
+  MessageBox MB_ICONEXCLAMATION|MB_YESNO "$(auroraDirNoWrite)$$
+$$
+$LOCALAPPDATA\${PRODUCTNAME}" IDNO aurora_dir_resta
+  StrCpy $INSTDIR "$LOCALAPPDATA\${PRODUCTNAME}"
+  Return
+  aurora_dir_resta:
+  Abort
+FunctionEnd
 
 ; 6. Start menu shortcut page
 Var AppStartMenuFolder
@@ -664,6 +689,20 @@ LangString auroraReportSent ${LANG_SPANISH} "Informe anónimo enviado (sin nombr
 LangString auroraReportSent ${LANG_PORTUGUESE} "Relatório anónimo enviado (sem nome de utilizador, nome do PC nem caminhos pessoais). Desative-os no Aurora: Definições > Acesso e assistência > Assistência."
 LangString auroraReportSent ${LANG_DUTCH} "Anoniem rapport verstuurd (zonder gebruikersnaam, pc-naam of persoonlijke paden). Uitzetten in Aurora: Instellingen > Toegang en ondersteuning > Ondersteuning."
 ; AURORA: la schermata finale di un'installazione non riuscita (AuroraSpiega in hooks.nsh)
+LangString auroraDirNoWrite ${LANG_ITALIAN} "Non si può scrivere in questa cartella: serve l'amministratore, oppure la blocca un criterio del PC. Installo Aurora nella cartella dell'utente, che funziona sempre?"
+LangString auroraDirNoWrite ${LANG_ENGLISH} "This folder cannot be written: it needs an administrator, or a PC policy blocks it. Install Aurora in the user folder, which always works?"
+LangString auroraDirNoWrite ${LANG_GERMAN} "In diesen Ordner kann nicht geschrieben werden: Es braucht einen Administrator, oder eine Richtlinie des PCs sperrt ihn. Aurora im Benutzerordner installieren, der immer funktioniert?"
+LangString auroraDirNoWrite ${LANG_FRENCH} "Impossible d'écrire dans ce dossier : il faut un administrateur, ou une règle du PC le bloque. Installer Aurora dans le dossier de l'utilisateur, qui fonctionne toujours ?"
+LangString auroraDirNoWrite ${LANG_SPANISH} "No se puede escribir en esta carpeta: hace falta un administrador, o una directiva del PC la bloquea. ¿Instalo Aurora en la carpeta del usuario, que siempre funciona?"
+LangString auroraDirNoWrite ${LANG_PORTUGUESE} "Não é possível escrever nesta pasta: é preciso um administrador, ou uma regra do PC bloqueia-a. Instalo o Aurora na pasta do utilizador, que funciona sempre?"
+LangString auroraDirNoWrite ${LANG_DUTCH} "In deze map kan niet worden geschreven: er is een beheerder nodig, of een regel van de pc blokkeert hem. Aurora installeren in de gebruikersmap, die altijd werkt?"
+LangString auroraStillOpen ${LANG_ITALIAN} "Aurora è ancora aperta, oppure un altro programma tiene il suo file. Chiudi Aurora (anche dall'icona vicino all'orologio) e premi Riprova. Annulla prova lo stesso."
+LangString auroraStillOpen ${LANG_ENGLISH} "Aurora is still open, or another program holds its file. Close Aurora (also from the icon near the clock) and press Retry. Cancel tries anyway."
+LangString auroraStillOpen ${LANG_GERMAN} "Aurora ist noch offen, oder ein anderes Programm hält ihre Datei. Schließe Aurora (auch über das Symbol neben der Uhr) und drücke Wiederholen. Abbrechen versucht es trotzdem."
+LangString auroraStillOpen ${LANG_FRENCH} "Aurora est encore ouverte, ou un autre programme tient son fichier. Ferme Aurora (aussi depuis l'icône près de l'horloge) et appuie sur Réessayer. Annuler essaie quand même."
+LangString auroraStillOpen ${LANG_SPANISH} "Aurora sigue abierta, u otro programa tiene su archivo. Cierra Aurora (también desde el icono junto al reloj) y pulsa Reintentar. Cancelar lo intenta igualmente."
+LangString auroraStillOpen ${LANG_PORTUGUESE} "O Aurora ainda está aberto, ou outro programa tem o seu ficheiro. Fecha o Aurora (também pelo ícone junto ao relógio) e carrega em Repetir. Cancelar tenta na mesma."
+LangString auroraStillOpen ${LANG_DUTCH} "Aurora is nog open, of een ander programma houdt het bestand vast. Sluit Aurora (ook via het pictogram bij de klok) en druk op Opnieuw. Annuleren probeert het toch."
 LangString auroraFailTitle ${LANG_ITALIAN} "Aurora non è stata installata."
 LangString auroraFailTitle ${LANG_ENGLISH} "Aurora was not installed."
 LangString auroraFailTitle ${LANG_GERMAN} "Aurora wurde nicht installiert."

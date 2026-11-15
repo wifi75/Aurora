@@ -124,6 +124,17 @@
             StrCpy $R5 0
           ${Else}
             !insertmacro AuroraScrivi "AVVISO: non si lasciano chiudere dal Restart Manager ($0): si va avanti rinominando il programma vecchio"
+            ; con le finestre si chiede all'operatore di chiudere Aurora (rapporto del 2026-11-15: aggiornamento fermato con Aurora aperta)
+            ${IfNot} ${Silent}
+              MessageBox MB_ICONEXCLAMATION|MB_RETRYCANCEL|MB_SETFOREGROUND "$(auroraStillOpen)$$
+$$
+$6" IDCANCEL aurora_rm_avanti
+              !insertmacro AuroraScrivi "l'operatore chiede di riprovare dopo aver chiuso Aurora"
+              !insertmacro RestartManager_EndSession $R0
+              StrCpy $R6 0
+              Goto aurora_rm_giro
+              aurora_rm_avanti:
+            ${EndIf}
           ${EndIf}
         ${EndIf}
       ${EndIf}
