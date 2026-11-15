@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.272',
+    released: '2026-11-16T00:00:00Z',
+    kind: 'new',
+    title: [
+      'Menu Auto CQ nei modi testuali',
+      'Auto CQ menu in the text modes',
+      'Auto-CQ-Menü in den Textmodi',
+      'Menu Auto CQ dans les modes texte',
+      'Menú Auto CQ en los modos de texto',
+      'Menu Auto CQ nos modos de texto',
+    ],
+    text: [
+      'Nei modi testuali il menu Opzioni › Auto CQ ha Avvia, Ferma, Testo… (la macro AutoCqText) e Pausa… (i secondi fra due chiamate, salvati).',
+      'In the text modes the Options › Auto CQ menu has Start, Stop, Text… (the AutoCqText macro) and Pause… (the seconds between two calls, saved).',
+      'In den Textmodi hat das Menü Optionen › Auto CQ Start, Stopp, Text… (das Makro AutoCqText) und Pause… (die Sekunden zwischen zwei Anrufen, gespeichert).',
+      'Dans les modes texte, le menu Options › Auto CQ propose Démarrer, Arrêter, Texte… (la macro AutoCqText) et Pause… (les secondes entre deux appels, enregistrées).',
+      'En los modos de texto, el menú Opciones › Auto CQ tiene Iniciar, Detener, Texto… (la macro AutoCqText) y Pausa… (los segundos entre dos llamadas, guardados).',
+      'Nos modos de texto, o menu Opções › Auto CQ tem Iniciar, Parar, Texto… (a macro AutoCqText) e Pausa… (os segundos entre duas chamadas, guardados).',
+    ],
+  },
+  {
     version: '0.11.271',
     released: '2026-11-15T20:14:27Z',
     kind: 'new',
@@ -847,28 +868,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora BIGScan n’affiche par défaut que les stations qui lancent CQ (option pour celles qui répondent), reconnaît qui émet dans les échanges de contest, retire les stations inactives, se vide au changement de bande, a un interrupteur ON/OFF et un bouton Effacer ; étiquettes à la couleur de la station. Clic sur un spot RTTY ou PSK : Aurora passe au bon mode. Affichage « RADIO NON CONNECTÉE » bien lisible et page À propos en trois colonnes.',
       'Aurora BIGScan muestra por defecto solo quien llama CQ (con opción para quien responde), reconoce quién transmite en los intercambios de contest, quita las estaciones inactivas, se limpia al cambiar de banda, tiene un interruptor ON/OFF y el botón Limpiar; etiquetas del color de la estación. Clic en un spot RTTY o PSK: Aurora pasa al modo correcto. Pantalla «RADIO NO CONECTADA» bien legible y página Información en tres columnas.',
       'O Aurora BIGScan mostra por omissão só quem chama CQ (com opção para quem responde), reconhece quem transmite nas trocas de contest, retira as estações inativas, limpa-se ao mudar de banda, tem um interruptor ON/OFF e o botão Limpar; etiquetas da cor da estação. Clique num spot RTTY ou PSK: a Aurora passa ao modo certo. Ecrã «RÁDIO NÃO LIGADO» bem legível e página Informações em três colunas.',
-    ],
-  },
-  {
-    version: '0.11.252',
-    released: '2026-11-14T09:57:44Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Nuovo: Aurora BIGScan, tutta la banda CW e RTTY',
-      'New: Aurora BIGScan, the whole CW and RTTY band',
-      'Neu: Aurora BIGScan, das ganze CW- und RTTY-Band',
-      'Nouveau : Aurora BIGScan, toute la bande CW et RTTY',
-      'Nuevo: Aurora BIGScan, toda la banda de CW y RTTY',
-      'Novo: Aurora BIGScan, toda a banda de CW e RTTY',
-    ],
-    text: [
-      'Aurora ascolta tutta la banda CW e RTTY e ti mostra chi sta trasmettendo. A destra delle finestre RX e TX compare l’elenco delle stazioni lette con sicurezza: una riga per nominativo, ognuna con il suo colore, senza doppioni né letture strane, con frequenza, velocità e CQ. Un clic e sei sulla stazione, un doppio clic e il nominativo va nel QSO. Colonne spostabili, larghezza regolabile con la maniglia, pulsante «Aurora BIGScan» in alto per accenderlo o spegnerlo. Con 30 stazioni vicine le riconosce tutte.',
-      'Aurora listens to the whole CW and RTTY band and shows you who is on the air. To the right of the RX and TX windows you get the list of stations read reliably: one row per callsign, each with its own colour, no duplicates and no odd readings, with frequency, speed and CQ. One click and you are on the station, a double-click puts the callsign in the QSO. Movable columns, width set with the handle, the «Aurora BIGScan» button at the top turns it on and off. With 30 close stations it recognises them all.',
-      'Aurora hört das ganze CW- und RTTY-Band und zeigt dir, wer sendet. Rechts neben den Fenstern RX und TX erscheint die Liste der sicher gelesenen Stationen: eine Zeile pro Rufzeichen, jede in eigener Farbe, ohne Doppelte und ohne seltsame Lesungen, mit Frequenz, Geschwindigkeit und CQ. Ein Klick und du bist auf der Station, ein Doppelklick übernimmt das Rufzeichen ins QSO. Verschiebbare Spalten, Breite mit dem Griff, die Schaltfläche „Aurora BIGScan“ oben schaltet es ein und aus. Von 30 dicht liegenden Stationen erkennt es alle.',
-      'Aurora écoute toute la bande CW et RTTY et vous montre qui émet. À droite des fenêtres RX et TX apparaît la liste des stations lues avec certitude : une ligne par indicatif, chacune avec sa couleur, sans doublons ni lectures étranges, avec fréquence, vitesse et CQ. Un clic et vous êtes sur la station, un double clic met l’indicatif dans le QSO. Colonnes déplaçables, largeur réglable avec la poignée, bouton « Aurora BIGScan » en haut pour l’activer ou le désactiver. Sur 30 stations proches, il les reconnaît toutes.',
-      'Aurora escucha toda la banda de CW y RTTY y te muestra quién transmite. A la derecha de las ventanas RX y TX aparece la lista de estaciones leídas con seguridad: una fila por indicativo, cada una con su color, sin duplicados ni lecturas raras, con frecuencia, velocidad y CQ. Un clic y estás en la estación, un doble clic pone el indicativo en el QSO. Columnas movibles, ancho regulable con el asa, botón «Aurora BIGScan» arriba para encenderlo o apagarlo. Con 30 estaciones cercanas las reconoce todas.',
-      'A Aurora ouve toda a banda de CW e RTTY e mostra-te quem está a transmitir. À direita das janelas RX e TX aparece a lista das estações lidas com segurança: uma linha por indicativo, cada uma com a sua cor, sem duplicados nem leituras estranhas, com frequência, velocidade e CQ. Um clique e estás na estação, um duplo clique põe o indicativo no QSO. Colunas que se movem, largura ajustável com a pega, botão «Aurora BIGScan» em cima para o ligar ou desligar. Com 30 estações próximas reconhece-as todas.',
     ],
   },
 ];

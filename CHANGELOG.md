@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.272 - 2026-11-15
+
 - Modi testuali: menu Opzioni › Auto CQ con Avvia, Ferma, Testo… (macro AutoCqText) e Pausa… (secondi fra due chiamate, salvati).
 
 ## 0.11.271 - 2026-11-15

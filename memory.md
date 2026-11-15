@@ -1,6 +1,6 @@
 # Memoria di progetto
 
-Stato al 2026-11-15, versione 0.11.271 pubblicata (tutti i comandi delle macro integrati per famiglia, GRABCALL, Guida delle macro completa, macro PREVNRS e QSOBEFORETIME, regole dei contest completate, copia automatica giornaliera al posto dei Backup.bat, EXEC tolto dalle macro, 90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
+Stato al 2026-11-15, versione 0.11.272 pubblicata (menu Opzioni › Auto CQ, tutti i comandi delle macro integrati per famiglia, GRABCALL, Guida delle macro completa, macro PREVNRS e QSOBEFORETIME, regole dei contest completate, copia automatica giornaliera al posto dei Backup.bat, EXEC tolto dalle macro, 90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
 ## Decisioni del 2026-11-13/14
