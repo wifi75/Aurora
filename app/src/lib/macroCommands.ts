@@ -270,6 +270,13 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('program', "<ALERT:testo>", "avviso a schermo con un suono", "on-screen alert with a sound", "Meldung auf dem Bildschirm mit Ton", "alerte à l'écran avec un son", "alerta en pantalla con sonido", "alerta no ecrã com som"),
   c('program', "<PRINT:>", "stampa il testo della finestra RX", "prints the RX window text", "druckt den Text des RX-Fensters", "imprime le texte de la fenêtre RX", "imprime el texto de la ventana RX", "imprime o texto da janela RX"),
   c('program', "<ACTIVATE>", "porta la finestra di Aurora davanti", "brings the Aurora window to the front", "bringt das Aurora-Fenster in den Vordergrund", "met la fenêtre d'Aurora au premier plan", "trae la ventana de Aurora al frente", "traz a janela do Aurora para a frente"),
+  c('program', "<RXLOG START>", "comincia a tenere il testo ricevuto; <RXLOG STOP> lo salva in un file .txt", "starts keeping the received text; <RXLOG STOP> saves it in a .txt file", "beginnt, den empfangenen Text aufzuheben; <RXLOG STOP> speichert ihn in einer .txt-Datei", "commence à conserver le texte reçu ; <RXLOG STOP> l'enregistre dans un fichier .txt", "empieza a guardar el texto recibido; <RXLOG STOP> lo guarda en un archivo .txt", "começa a guardar o texto recebido; <RXLOG STOP> guarda-o num ficheiro .txt"),
+  c('program', "<STARTRECORD:nome>", "registra l'audio ricevuto in un file WAV della cartella recordings (senza nome: data e ora)", "records the received audio in a WAV file of the recordings folder (without a name: date and time)", "nimmt das empfangene Audio in einer WAV-Datei im Aufnahmeordner auf (ohne Namen: Datum und Uhrzeit)", "enregistre l'audio reçu dans un fichier WAV du dossier des enregistrements (sans nom : date et heure)", "graba el audio recibido en un archivo WAV de la carpeta de grabaciones (sin nombre: fecha y hora)", "grava o áudio recebido num ficheiro WAV da pasta das gravações (sem nome: data e hora)"),
+  c('program', "<STOPRECORD>", "ferma e salva la registrazione", "stops and saves the recording", "beendet und speichert die Aufnahme", "arrête et enregistre l'enregistrement", "detiene y guarda la grabación", "pára e guarda a gravação"),
+  c('program', "<STARTPLAY:nome>", "trasmette una registrazione (cartella recordings o dei testi delle macro); <STOPPLAY> la ferma", "transmits a recording (recordings or macro texts folder); <STOPPLAY> stops it", "sendet eine Aufnahme (Aufnahmeordner oder Ordner der Makrotexte); <STOPPLAY> stoppt sie", "émet un enregistrement (dossier des enregistrements ou des textes de macros) ; <STOPPLAY> l'arrête", "transmite una grabación (carpeta de grabaciones o de textos de macros); <STOPPLAY> la detiene", "transmite uma gravação (pasta das gravações ou dos textos das macros); <STOPPLAY> pára-a"),
+  c('program', "<REPLAY:n>", "fa ripassare nel ricevitore gli ultimi n secondi ricevuti (di base 10, al massimo 60)", "runs the last n received seconds through the receiver again (10 by default, 60 at most)", "lässt die letzten n empfangenen Sekunden noch einmal durch den Empfänger laufen (standardmäßig 10, höchstens 60)", "repasse dans le récepteur les n dernières secondes reçues (10 par défaut, 60 au maximum)", "vuelve a pasar por el receptor los últimos n segundos recibidos (10 por defecto, 60 como máximo)", "volta a passar pelo recetor os últimos n segundos recebidos (10 por predefinição, 60 no máximo)"),
+  c('program', "<WAVE:nome>", "trasmette il file .wav della cartella dei testi delle macro", "transmits the .wav file of the macro texts folder", "sendet die .wav-Datei aus dem Ordner der Makrotexte", "émet le fichier .wav du dossier des textes de macros", "transmite el archivo .wav de la carpeta de textos de macros", "transmite o ficheiro .wav da pasta dos textos das macros"),
+  c('program', "<DTMF:cifre>", "trasmette i toni DTMF (0-9, *, #, A-D; la virgola fa una pausa)", "transmits DTMF tones (0-9, *, #, A-D; a comma pauses)", "sendet DTMF-Töne (0-9, *, #, A-D; ein Komma macht eine Pause)", "émet des tonalités DTMF (0-9, *, #, A-D ; une virgule fait une pause)", "transmite tonos DTMF (0-9, *, #, A-D; una coma hace una pausa)", "transmite tons DTMF (0-9, *, #, A-D; uma vírgula faz uma pausa)"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -736,6 +743,23 @@ CATEGORY["<PRINT:>"] = 'windows';
 EXAMPLE["<PRINT:>"] = "<PRINT:>";
 CATEGORY["<ACTIVATE>"] = 'windows';
 EXAMPLE["<ACTIVATE>"] = "<ACTIVATE>";
+CATEGORY["<RXLOG START>"] = 'audio';
+EXAMPLE["<RXLOG START>"] = "<RXLOG START>";
+ALIASES["<RXLOG START>"] = ["<RXLOG STOP>"];
+CATEGORY["<STARTRECORD:nome>"] = 'audio';
+EXAMPLE["<STARTRECORD:nome>"] = "<STARTRECORD:qso>";
+ALIASES["<STARTRECORD:nome>"] = ["<STARTRECORD2:nome>"];
+CATEGORY["<STOPRECORD>"] = 'audio';
+EXAMPLE["<STOPRECORD>"] = "<STOPRECORD>";
+CATEGORY["<STARTPLAY:nome>"] = 'audio';
+EXAMPLE["<STARTPLAY:nome>"] = "<STARTPLAY:qso>";
+ALIASES["<STARTPLAY:nome>"] = ["<STOPPLAY>"];
+CATEGORY["<REPLAY:n>"] = 'audio';
+EXAMPLE["<REPLAY:n>"] = "<REPLAY:20>";
+CATEGORY["<WAVE:nome>"] = 'audio';
+EXAMPLE["<WAVE:nome>"] = "<WAVE:cq.wav>";
+CATEGORY["<DTMF:cifre>"] = 'audio';
+EXAMPLE["<DTMF:cifre>"] = "<DTMF:123#>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

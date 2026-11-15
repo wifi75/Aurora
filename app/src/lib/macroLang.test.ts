@@ -351,6 +351,17 @@ describe('finestre e testo', () => {
   });
 });
 
+describe('audio', () => {
+  it('registrazione, riproduzione, WAVE e DTMF', () => {
+    expect(cmdOf('<RXLOG START><STARTRECORD:qso><REPLAY:20><WAVE:cq.wav><DTMF:12#>')).toEqual([
+      { type: 'cmd', tag: 'RXLOG', arg: 'START' },
+      { type: 'cmd', tag: 'STARTRECORD', arg: 'qso' },
+      { type: 'cmd', tag: 'REPLAY', arg: '20' },
+      { type: 'cmd', tag: 'WAVE', arg: 'cq.wav' },
+      { type: 'cmd', tag: 'DTMF', arg: '12#' },
+    ]);
+  });
+});
 
 
 

@@ -439,6 +439,21 @@ function action10(tag: string, arg: string | undefined): MacroAction | null {
   }
 }
 
+function action11(tag: string, arg: string | undefined): MacroAction | null {
+  switch (tag) {
+    case 'RXLOG START':
+    case 'RXLOG STOP': return cmd('RXLOG', tag.slice(6));
+    case 'STARTRECORD':
+    case 'STARTRECORD2':
+    case 'STOPRECORD':
+    case 'STARTPLAY':
+    case 'STOPPLAY':
+    case 'REPLAY':
+    case 'WAVE':
+    case 'DTMF': return cmd(tag, arg);
+    default: return null;
+  }
+}
 
 
 
@@ -486,6 +501,7 @@ export function extraAction(tag: string, arg: string | undefined): MacroAction |
     action8(tag, arg) ??
     action9(tag, arg) ??
     action10(tag, arg) ??
+    action11(tag, arg) ??
     null
   );
 }

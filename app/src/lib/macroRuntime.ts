@@ -338,6 +338,31 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       return;
     }
     case 'ACTIVATE': window.focus(); return;
+    case 'RXLOG': {
+      if (arg.toUpperCase() === 'START') macroState.rxLog = { from: d.rxText().length };
+      else if (macroState.rxLog) {
+        const text = d.rxText().slice(macroState.rxLog.from);
+        macroState.rxLog = null;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+        a.download = `rx-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '')}.txt`;
+        a.click();
+        window.setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      }
+      return;
+    }
+    case 'STARTRECORD':
+    case 'STARTRECORD2':
+      void digiMacroRecord({ action: 'start', name: arg || undefined }).then((r) => d.toast(d.t('digi.run.recording', { file: r.file ?? '' }), 'info'), fail(d, tag));
+      return;
+    case 'STOPRECORD':
+      void digiMacroRecord({ action: 'stop' }).then((r) => (r.file ? d.toast(d.t('digi.run.recSaved', { file: r.file }), 'ok') : undefined), fail(d, tag));
+      return;
+    case 'REPLAY': void digiMacroRecord({ action: 'replay', seconds: num ?? 10 }).catch(fail(d, tag)); return;
+    case 'STARTPLAY': if (arg) void digiMacroPlay({ play: arg }).catch(fail(d, tag)); return;
+    case 'WAVE': if (arg) void digiMacroPlay({ wave: arg }).catch(fail(d, tag)); return;
+    case 'DTMF': if (arg) void digiMacroPlay({ dtmf: arg }).catch(fail(d, tag)); return;
+    case 'STOPPLAY': void digiAbort(); return;
     default: return;
   }
 }
