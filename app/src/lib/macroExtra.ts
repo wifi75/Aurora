@@ -141,6 +141,81 @@ function special2(tag: string, r: MacroRun): boolean {
   return false;
 }
 
+export const PHRASE_LANGS = ['it', 'en', 'de', 'fr', 'es', 'pt', 'nl'] as const;
+export type PhraseLang = (typeof PHRASE_LANGS)[number];
+/** Le frasi automatiche nelle lingue (solo lettere senza accenti: passano anche in RTTY). */
+const PHRASES: Record<string, readonly [string, string, string, string, string, string, string]> = {
+  INTDE: ['da', 'de', 'von', 'de', 'de', 'de', 'van'],
+  INTQSL: ['QSL, grazie', 'QSL, thanks', 'QSL, danke', 'QSL, merci', 'QSL, gracias', 'QSL, obrigado', 'QSL, bedankt'],
+  INTAGNNR: ['ripeti il numero, per favore', 'please repeat your number', 'bitte die Nummer wiederholen', 'repetez le numero SVP', 'repita el numero, por favor', 'repita o numero, por favor', 'herhaal het nummer a.u.b.'],
+  INTAGNCALL: ['ripeti il nominativo, per favore', 'please repeat your call', 'bitte das Rufzeichen wiederholen', 'repetez votre indicatif SVP', 'repita su indicativo, por favor', 'repita o indicativo, por favor', 'herhaal je roepnaam a.u.b.'],
+  INTQRZ: ['chi chiama?', 'who is calling?', 'wer ruft?', 'qui appelle?', 'quien llama?', 'quem chama?', 'wie roept er?'],
+  INTQB4: ['ci siamo gia collegati', 'we worked before', 'wir hatten schon ein QSO', 'nous avons deja fait QSO', 'ya hemos hecho QSO', 'ja fizemos QSO', 'we hebben al eerder een QSO gehad'],
+  INTQRL: ['la frequenza e libera?', 'is this frequency in use?', 'ist die Frequenz frei?', 'la frequence est-elle libre?', 'esta libre la frecuencia?', 'a frequencia esta livre?', 'is deze frequentie vrij?'],
+  INTCQ: ['chiamata generale', 'calling CQ', 'allgemeiner Anruf', 'appel general', 'llamada general', 'chamada geral', 'algemene oproep'],
+  INTE: ['e', 'and', 'und', 'et', 'y', 'e', 'en'],
+};
+const INT_GA: Record<PhraseLang, readonly [string, string, string]> = {
+  it: ['Buongiorno', 'Buon pomeriggio', 'Buonasera'],
+  en: ['Good morning', 'Good afternoon', 'Good evening'],
+  de: ['Guten Morgen', 'Guten Tag', 'Guten Abend'],
+  fr: ['Bonjour', 'Bon apres-midi', 'Bonsoir'],
+  es: ['Buenos dias', 'Buenas tardes', 'Buenas noches'],
+  pt: ['Bom dia', 'Boa tarde', 'Boa noite'],
+  nl: ['Goedemorgen', 'Goedemiddag', 'Goedenavond'],
+};
+
+/** La lingua del corrispondente dal prefisso del nominativo (inglese se non si sa). */
+export function langOfCall(call: string): PhraseLang {
+  const c = mainCall(call);
+  if (/^I[A-Z0-9]/.test(c) || /^HV|^T7|^9H/.test(c)) return 'it';
+  if (/^(D[A-R]|OE|HB0|DL)/.test(c) || /^HB9/.test(c)) return 'de';
+  if (/^(F|TM|TK|FY|FM|FG|FR|ON|HB9)/.test(c)) return /^ON/.test(c) ? 'nl' : 'fr';
+  if (/^(P[A-I])/.test(c)) return 'nl';
+  if (/^(E[A-H]|LU|L[O-W]|XE|CE|CX|HK|YV|OA|CO|CM|TI|HP|HC|CP|ZP|YS|YN|HR|HI|TG)/.test(c)) return 'es';
+  if (/^(P[P-Y]|ZV|ZW|ZX|ZY|ZZ|CT|CS|CR|CU|D2|D4|C9|S9|J5)/.test(c)) return 'pt';
+  return 'en';
+}
+
+/** La lingua delle frasi: quella imposta con FORCELANGUAGE o LANG_, se no quella del nominativo. */
+export function phraseLang(c: MacroContext): PhraseLang {
+  const forced = (c.lang ?? '').toLowerCase();
+  return (PHRASE_LANGS as readonly string[]).includes(forced) ? (forced as PhraseLang) : langOfCall(c.call);
+}
+
+/** Il momento della giornata (ora locale): 0 mattino, 1 pomeriggio, 2 sera, 3 notte. */
+export function daySlot(now: Date): 0 | 1 | 2 | 3 {
+  const h = now.getHours();
+  return h >= 4 && h < 12 ? 0 : h < 18 && h >= 12 ? 1 : h >= 18 && h < 22 ? 2 : 3;
+}
+
+function family3(tag: string, c: MacroContext): string | null {
+  const lang = phraseLang(c);
+  const row = PHRASES[tag];
+  if (row) return row[PHRASE_LANGS.indexOf(lang)] ?? row[1];
+  if (tag === 'INTGA') return INT_GA[lang][Math.min(2, daySlot(c.now))] ?? '';
+  return null;
+}
+
+function special3(tag: string, arg: string | undefined, r: MacroRun): boolean {
+  const c = r.ctx;
+  if (tag === 'GM' || tag === 'GE' || tag === 'GN') {
+    // il saluto del momento; se l'utente ha la macro gm, ga, ge o gn di quel momento si usa quella
+    const slot = daySlot(c.now);
+    const name = (['GM', 'GA', 'GE', 'GN'] as const)[slot];
+    const user = c.macros?.get(name);
+    if (user !== undefined && name !== tag) r.expand(user);
+    else r.text(name);
+    return true;
+  }
+  const lang = /^LANG_([A-Z]{2})$/.exec(tag)?.[1] ?? (tag === 'FORCELANGUAGE' || tag === 'LANGUAGE' ? (arg ?? '').trim().slice(0, 2).toUpperCase() : null);
+  if (lang !== null) {
+    c.lang = lang.toLowerCase();
+    if (tag !== 'LANGUAGE' || lang !== '') r.act(cmd('FORCELANGUAGE', lang.toLowerCase()));
+    return true;
+  }
+  return false;
+}
 
 
 
@@ -158,6 +233,7 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
   return (
     special1(tag, arg, r) ||
     special2(tag, r) ||
+    special3(tag, arg, r) ||
     false
   );
 }
@@ -166,6 +242,7 @@ export function special(tag: string, arg: string | undefined, r: MacroRun): bool
 export function extraText(tag: string, arg: string | undefined, c: MacroContext): string | null {
   return (
     family1(tag, arg, c) ??
+    family3(tag, c) ??
     null
   );
 }

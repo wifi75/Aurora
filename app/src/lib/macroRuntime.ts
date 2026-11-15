@@ -154,6 +154,8 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
       if (sel !== '') void navigator.clipboard?.writeText(sel).then(() => d.toast(d.t('digi.run.copied'), 'ok'), fail(d, tag));
       return;
     }
+    // la lingua resta per le macro seguenti (vedi DigiPage: `forcedLang`)
+    case 'FORCELANGUAGE': return;
     default: return;
   }
 }

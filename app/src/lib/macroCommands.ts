@@ -185,6 +185,19 @@ const RAW_COMMANDS: readonly RawCommand[] = [
   c('text', "<SELNRR>", "la parola selezionata diventa lo scambio ricevuto", "the selected word becomes the received exchange", "das ausgewählte Wort wird zum empfangenen Austausch", "le mot sélectionné devient l'échange reçu", "la palabra seleccionada pasa a ser el intercambio recibido", "a palavra selecionada passa a ser a troca recebida"),
   c('text', "<SELRXTEXT>", "scrive il testo selezionato nella finestra RX", "writes the text selected in the RX window", "schreibt den im RX-Fenster ausgewählten Text", "écrit le texte sélectionné dans la fenêtre RX", "escribe el texto seleccionado en la ventana RX", "escreve o texto selecionado na janela RX"),
   c('text', "<SAVESELTEXT>", "copia negli appunti il testo selezionato nella finestra RX", "copies the text selected in the RX window to the clipboard", "kopiert den im RX-Fenster ausgewählten Text in die Zwischenablage", "copie dans le presse-papiers le texte sélectionné dans la fenêtre RX", "copia al portapapeles el texto seleccionado en la ventana RX", "copia para a área de transferência o texto selecionado na janela RX"),
+  c('text', "<INTDE>", "«de» nella lingua del corrispondente (scelta dal prefisso)", "«de» in the other station's language (from the prefix)", "«de» in der Sprache der Gegenstation (aus dem Präfix)", "«de» dans la langue de la station correspondante (d'après le préfixe)", "«de» en el idioma de la estación corresponsal (según el prefijo)", "«de» na língua da estação correspondente (pelo prefixo)"),
+  c('text', "<INTQSL>", "«QSL, grazie» nella lingua del corrispondente", "«QSL, thanks» in the other station's language", "«QSL, danke» in der Sprache der Gegenstation", "«QSL, merci» dans la langue de la station correspondante", "«QSL, gracias» en el idioma de la estación corresponsal", "«QSL, obrigado» na língua da estação correspondente"),
+  c('text', "<INTAGNNR>", "«ripeti il numero» nella lingua del corrispondente", "«please repeat your number» in the other station's language", "«bitte wiederhole deine Nummer» in der Sprache der Gegenstation", "«merci de répéter ton numéro» dans la langue de la station correspondante", "«repite tu número, por favor» en el idioma de la estación corresponsal", "«repete o teu número, por favor» na língua da estação correspondente"),
+  c('text', "<INTAGNCALL>", "«ripeti il nominativo» nella lingua del corrispondente", "«please repeat your call» in the other station's language", "«bitte wiederhole dein Rufzeichen» in der Sprache der Gegenstation", "«merci de répéter ton indicatif» dans la langue de la station correspondante", "«repite tu indicativo, por favor» en el idioma de la estación corresponsal", "«repete o teu indicativo, por favor» na língua da estação correspondente"),
+  c('text', "<INTQRZ>", "«chi chiama?» nella lingua del corrispondente", "«who is calling?» in the other station's language", "«wer ruft?» in der Sprache der Gegenstation", "«qui appelle ?» dans la langue de la station correspondante", "«¿quién llama?» en el idioma de la estación corresponsal", "«quem chama?» na língua da estação correspondente"),
+  c('text', "<INTGA>", "buongiorno, buon pomeriggio o buonasera nella lingua del corrispondente", "good morning, afternoon or evening in the other station's language", "guten Morgen, guten Tag oder guten Abend in der Sprache der Gegenstation", "bonjour, bon après-midi ou bonsoir dans la langue de la station correspondante", "buenos días, buenas tardes o buenas noches en el idioma de la estación corresponsal", "bom dia, boa tarde ou boa noite na língua da estação correspondente"),
+  c('text', "<INTQB4>", "«ci siamo già collegati» nella lingua del corrispondente", "«we worked before» in the other station's language", "«wir haben schon gearbeitet» in der Sprache der Gegenstation", "«nous avons déjà fait un QSO» dans la langue de la station correspondante", "«ya hemos hecho QSO» en el idioma de la estación corresponsal", "«já fizemos QSO» na língua da estação correspondente"),
+  c('text', "<INTQRL>", "«la frequenza è libera?» nella lingua del corrispondente", "«is this frequency in use?» in the other station's language", "«ist diese Frequenz belegt?» in der Sprache der Gegenstation", "«cette fréquence est-elle occupée ?» dans la langue de la station correspondante", "«¿está en uso esta frecuencia?» en el idioma de la estación corresponsal", "«esta frequência está em uso?» na língua da estação correspondente"),
+  c('text', "<INTCQ>", "«chiamata generale» nella lingua del corrispondente", "«calling CQ» in the other station's language", "«CQ-Ruf» in der Sprache der Gegenstation", "«appel CQ» dans la langue de la station correspondante", "«llamando CQ» en el idioma de la estación corresponsal", "«a chamar CQ» na língua da estação correspondente"),
+  c('text', "<INTE>", "«e» nella lingua del corrispondente", "«and» in the other station's language", "«und» in der Sprache der Gegenstation", "«et» dans la langue de la station correspondante", "«y» en el idioma de la estación corresponsal", "«e» na língua da estação correspondente"),
+  c('text', "<GM>", "saluto secondo l'ora locale (GM, GA, GE o GN); se hai le macro gm, ga, ge o gn usa quelle", "greeting by local time (GM, GA, GE or GN); if you have the macros gm, ga, ge or gn it uses them", "Gruß nach Ortszeit (GM, GA, GE oder GN); wenn du die Makros gm, ga, ge oder gn hast, werden sie verwendet", "salutation selon l'heure locale (GM, GA, GE ou GN) ; si tu as les macros gm, ga, ge ou gn, elle les utilise", "saludo según la hora local (GM, GA, GE o GN); si tienes las macros gm, ga, ge o gn, las usa", "saudação pela hora local (GM, GA, GE ou GN); se tiveres as macros gm, ga, ge ou gn, usa-as"),
+  c('text', "<LANG_xx>", "le frasi INT di questa macro nella lingua xx (IT, EN, DE, FR, ES, PT, NL)", "the INT phrases of this macro in language xx (IT, EN, DE, FR, ES, PT, NL)", "die INT-Sätze dieses Makros in der Sprache xx (IT, EN, DE, FR, ES, PT, NL)", "les phrases INT de cette macro dans la langue xx (IT, EN, DE, FR, ES, PT, NL)", "las frases INT de esta macro en el idioma xx (IT, EN, DE, FR, ES, PT, NL)", "as frases INT desta macro na língua xx (IT, EN, DE, FR, ES, PT, NL)"),
+  c('text', "<FORCELANGUAGE:xx>", "le frasi INT restano nella lingua xx finché non la cambi (vuoto: di nuovo dal nominativo)", "the INT phrases stay in language xx until you change it (empty: from the callsign again)", "die INT-Sätze bleiben in der Sprache xx, bis du sie änderst (leer: wieder nach dem Rufzeichen)", "les phrases INT restent dans la langue xx jusqu'à ce que tu la changes (vide : de nouveau d'après l'indicatif)", "las frases INT se quedan en el idioma xx hasta que lo cambies (vacío: otra vez según el indicativo)", "as frases INT ficam na língua xx até a mudares (vazio: outra vez pelo indicativo)"),
   c('macros', "<F1>", "esegue un'altra macro (tasto o nome, come <Hello>) dentro questa, fino a 10 livelli", "runs another macro (key or name, like <Hello>) inside this one, up to 10 levels", "führt ein anderes Makro (Taste oder Name, wie <Hello>) innerhalb dieses Makros aus, bis zu 10 Ebenen", "exécute une autre macro (touche ou nom, comme <Hello>) à l'intérieur de celle-ci, jusqu'à 10 niveaux", "ejecuta otra macro (tecla o nombre, como <Hello>) dentro de esta, hasta 10 niveles", "executa outra macro (tecla ou nome, como <Hello>) dentro desta, até 10 níveis"),
   c('macros', "<CALL?>", "chiede il valore se è vuoto (anche <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "asks for the value if it is empty (also <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "fragt nach dem Wert, wenn er leer ist (auch <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "demande la valeur si elle est vide (aussi <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pide el valor si está vacío (también <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)", "pede o valor se estiver vazio (também <RSTS?>, <RSTR?>, <NRS?>, <NRR?>)"),
   c('macros', "<F1?>", "apre quella macro per modificarla", "opens that macro to edit it", "öffnet dieses Makro zum Bearbeiten", "ouvre cette macro pour la modifier", "abre esa macro para editarla", "abre essa macro para a editar"),
@@ -459,6 +472,33 @@ CATEGORY["<SELRXTEXT>"] = 'select';
 EXAMPLE["<SELRXTEXT>"] = "I COPY: <SELRXTEXT>";
 CATEGORY["<SAVESELTEXT>"] = 'select';
 EXAMPLE["<SAVESELTEXT>"] = "<SAVESELTEXT>";
+CATEGORY["<INTDE>"] = 'phrases';
+EXAMPLE["<INTDE>"] = "<CALL> <INTDE> <MYCALL>";
+CATEGORY["<INTQSL>"] = 'phrases';
+EXAMPLE["<INTQSL>"] = "<INTQSL> 73";
+CATEGORY["<INTAGNNR>"] = 'phrases';
+EXAMPLE["<INTAGNNR>"] = "<INTAGNNR>";
+CATEGORY["<INTAGNCALL>"] = 'phrases';
+EXAMPLE["<INTAGNCALL>"] = "<INTAGNCALL>";
+CATEGORY["<INTQRZ>"] = 'phrases';
+EXAMPLE["<INTQRZ>"] = "<INTQRZ> de <MYCALL>";
+CATEGORY["<INTGA>"] = 'phrases';
+EXAMPLE["<INTGA>"] = "<INTGA> <NAME>";
+CATEGORY["<INTQB4>"] = 'phrases';
+EXAMPLE["<INTQB4>"] = "<INTQB4>";
+CATEGORY["<INTQRL>"] = 'phrases';
+EXAMPLE["<INTQRL>"] = "<INTQRL>";
+CATEGORY["<INTCQ>"] = 'phrases';
+EXAMPLE["<INTCQ>"] = "CQ <INTCQ>";
+CATEGORY["<INTE>"] = 'phrases';
+EXAMPLE["<INTE>"] = "<NAME> <INTE> <QTH>";
+CATEGORY["<GM>"] = 'phrases';
+EXAMPLE["<GM>"] = "<GM> <NAME>";
+ALIASES["<GM>"] = ["<GE>", "<GN>"];
+CATEGORY["<LANG_xx>"] = 'phrases';
+EXAMPLE["<LANG_xx>"] = "<LANG_DE><INTQSL>";
+CATEGORY["<FORCELANGUAGE:xx>"] = 'phrases';
+EXAMPLE["<FORCELANGUAGE:xx>"] = "<FORCELANGUAGE:FR>";
 CATEGORY["<F1>"] = 'nested';
 EXAMPLE["<F1>"] = "<F2> <F3>";
 CATEGORY["<CALL?>"] = 'nested';

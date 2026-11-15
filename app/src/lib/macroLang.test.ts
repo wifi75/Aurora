@@ -262,6 +262,20 @@ describe('testo selezionato', () => {
   });
 });
 
+describe('frasi automatiche', () => {
+  it('nella lingua del prefisso o in quella imposta', () => {
+    expect(runMacro('<INTQSL> <INTDE>', { ...ctx, call: 'F5ABC' }).text).toBe('QSL, merci de');
+    expect(runMacro('<INTQSL>', ctx).text).toBe('QSL, danke');
+    expect(runMacro('<LANG_IT><INTQSL>', ctx).text).toBe('QSL, grazie');
+    expect(cmdOf('<FORCELANGUAGE:ES>')).toEqual([{ type: 'cmd', tag: 'FORCELANGUAGE', arg: 'es' }]);
+    expect(runMacro('<INTE>', { ...ctx, lang: 'nl' }).text).toBe('en');
+  });
+  it('GM/GE/GN usano la macro utente del momento', () => {
+    const evening = new Date(2026, 10, 10, 19, 0);
+    expect(runMacro('<GM>', { ...ctx, now: evening, macros: new Map([['GE', 'Buonasera']]) }).text).toBe('Buonasera');
+    expect(runMacro('<GN>', { ...ctx, now: evening }).text).toBe('GE');
+  });
+});
 
 
 
