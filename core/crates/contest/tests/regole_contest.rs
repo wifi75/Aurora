@@ -333,6 +333,16 @@ fn alessandro_volta() {
     let t = punteggio("Alessandro Volta RTTY Contest", &log, None);
     // punti 3+20+40+54 = 117; moltiplicatori 4; QSO 4; 117 x 4 x 4 = 1872
     assert_eq!((t.qso, t.doppi, t.esclusi, t.punti, t.molt, t.punteggio), (4, 1, 1, 117, 4, 1872));
+    // un paese di un altro continente su 4 bande: un moltiplicatore in piu'
+    let log = [
+        r("JA1ABC", "80m", 0, "001 25"), // 27 x2 = 54; JA1 su 80 m
+        r("JA1ABC", "40m", 1, "002 25"), // 27; JA1 su 40 m
+        r("JA1ABC", "20m", 2, "003 25"), // 27; JA1 su 20 m
+        r("JA1ABC", "15m", 3, "004 25"), // 27; JA1 su 15 m; JA su 4 bande
+    ];
+    let t = punteggio("Alessandro Volta RTTY Contest", &log, None);
+    // punti 135; moltiplicatori 4 + 1; QSO 4; 135 x 5 x 4 = 2700
+    assert_eq!((t.punti, t.molt, t.punteggio), (135, 4, 2700));
 }
 
 #[test]
@@ -356,10 +366,12 @@ fn open_ukraine_rtty() {
         r("UR5XYZ", "20m", 1, "PO002"), // 2
         r("UR4ABC", "80m", 2, "KV005"), // 2 + 10
         r("DL1ABC", "40m", 3, "ZZ001"), // 2 + 10
+        r("UR4ABC", "80m", 600, "KV006"), // 22:00, secondo turno della parte bassa: non e' un doppio, 2 + 10 (KV di nuovo)
+        r("UR4ABC", "80m", 601, "KV006"), // doppio nel secondo turno
     ];
     let t = punteggio("OPEN UKRAINE RTTY CHAMPIONSHIP", &log, None);
-    // niente moltiplicatori: 12+2+12+12 = 38
-    assert_eq!((t.punti, t.molt, t.punteggio), (38, 0, 38));
+    // punti 2 x 5 = 10; regioni nuove PO, KV, ZZ, KV del secondo turno = 4 x 10; 10 + 40 = 50
+    assert_eq!((t.doppi, t.punti, t.molt, t.punteggio), (1, 10, 4, 50));
 }
 
 #[test]
@@ -465,8 +477,9 @@ fn uba_psk63_prefix() {
         p("DL1ABC", "20m", 2, "001"), // 1; DL1
         p("UA3ABC", "20m", 3, "001"), // Russia: zero punti e nessun moltiplicatore (non ammesso)
         p("DL1ABC", "40m", 4, "002"), // 1; DL1 su 40 m
+        p("ON6ABC", "20m", 5, "XXX"), // non socio: 1; ON6, la sezione XXX non e' un moltiplicatore
     ];
     let t = punteggio("UBA PSK63 Prefix Contest", &log, None);
-    // punti 4; moltiplicatori 5; 4 x 5 = 20
-    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 4, 5, 20));
+    // punti 5; moltiplicatori 6; 5 x 6 = 30
+    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 5, 6, 30));
 }

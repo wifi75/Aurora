@@ -48,4 +48,4 @@ m_iLogBarDispMode=1
 bands=80,40,20,15,10
 valid=not_dxcc:UA,UA9,UA2,EU
 points=any=1
-mult=wpx/band; exch/band/if:dxcc:ON
+mult=wpx/band; exch/band/if:dxcc:ON/skip:XXX

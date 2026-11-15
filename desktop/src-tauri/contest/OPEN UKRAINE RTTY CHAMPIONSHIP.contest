@@ -47,4 +47,30 @@ m_iLogBarDispMode=1
 [Score]
 bands=160,80,40,20,15,10
 points=any=2
-mult=exch/band/add:10
+
+[Script]
+// parte bassa (160 e 80 m) in due turni, 20:00-21:59 e 22:00-23:59 UTC: in ogni turno la stessa stazione si lavora di nuovo e
+// ogni regione torna nuova; 2 punti per QSO piu' 10 per regione nuova su ogni banda (e turno), nessun moltiplicatore
+fn turno(qso) {
+    if qso.band != "160" && qso.band != "80" { return ""; }
+    if qso.hour >= "2200" { "2" } else { "1" }
+}
+fn regione(s) {
+    for w in s.to_upper().split(" ") {
+        let l = "";
+        let resto = false;
+        for ch in w {
+            if ch >= '0' && ch <= '9' { resto = true; } else if resto { l = ""; break; } else { l += ch; }
+        }
+        if l != "" && resto { return l; }
+    }
+    ""
+}
+fn moltiplicatori(qso) {
+    let r = regione(qso.exch_rcvd);
+    if r == "" { return []; }
+    let t = turno(qso);
+    if t != "" { r += "/" + t; }
+    ["reg:" + r + "@" + qso.band]
+}
+fn punteggio(t) { t.punti + 10 * t.molt }
