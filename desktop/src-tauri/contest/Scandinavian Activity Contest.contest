@@ -43,3 +43,13 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=80,40,20,15,10
+points=my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0&cont:EU=2; my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0=3; my_cont:EU=1; band:80,40=3; any=1
+mult=dxcc/band/if:my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0; area:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0/band/if:not_my_dxcc:SM,LA,OH,OZ,TF,OY,OX,JW,JX,OH0,OJ0
+[Script]
+// valgono solo i QSO fra una stazione scandinava e una che non lo e'
+fn ammesso(qso) {
+    let s = ["SM", "LA", "OH", "OZ", "TF", "OY", "OX", "JW", "JX", "OH0", "OJ0"];
+    if s.contains(qso.dxcc) != s.contains(qso.my_dxcc) { true } else { [false, "scandinavia"] }
+}

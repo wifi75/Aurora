@@ -43,3 +43,21 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=80,40,20
+points=mode:CW=2; any=3
+[Script]
+// 2 punti in CW, 3 in SSB, il triplo con le stazioni R2F (non per chi e' in UA2); 15 punti per ogni distretto RDA di Kaliningrad
+// nuovo su ogni banda (non moltiplica: si somma)
+fn punti(qso) {
+    let p = if qso.mode == "CW" { 2 } else { 3 };
+    if qso.callsign.starts_with("R2F") && qso.my_dxcc != "UA2" { p * 3 } else { p }
+}
+fn moltiplicatori(qso) {
+    if qso.dxcc != "UA2" { return []; }
+    for w in qso.exch_rcvd.to_upper().split(" ") {
+        if w.len() == 4 && w.starts_with("KA") { return ["rda:" + w + "@" + qso.band]; }
+    }
+    []
+}
+fn punteggio(t) { t.punti + 15 * t.molt }

@@ -43,3 +43,38 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=160
+points=any=1
+[Script]
+// 1 punto piu' 1 ogni 500 km interi fra i centri dei quadrati mandato e ricevuto (4 caratteri)
+fn centro(g) {
+    let g = g.to_upper();
+    if g.len() != 4 { return (); }
+    let a = "ABCDEFGHIJKLMNOPQR";
+    let d = "0123456789";
+    let lo = a.index_of(g[0]);
+    let la = a.index_of(g[1]);
+    let lo2 = d.index_of(g[2]);
+    let la2 = d.index_of(g[3]);
+    if lo < 0 || la < 0 || lo2 < 0 || la2 < 0 { return (); }
+    [(la * 10 + la2 - 90).to_float() + 0.5, (lo * 20 + lo2 * 2 - 180).to_float() + 1.0]
+}
+fn quadrato(s) {
+    for p in s.split(" ") {
+        let c = centro(p);
+        if c != () { return c; }
+    }
+    ()
+}
+fn punti(qso) {
+    let a = quadrato(qso.exch_sent);
+    let b = quadrato(qso.exch_rcvd);
+    if a == () || b == () { return 1; }
+    let r = PI() / 180.0;
+    let c = sin(a[0] * r) * sin(b[0] * r) + cos(a[0] * r) * cos(b[0] * r) * cos((a[1] - b[1]) * r);
+    if c > 1.0 { c = 1.0; }
+    if c < -1.0 { c = -1.0; }
+    let km = acos(c) * 6371.0;
+    1 + (km / 500.0).floor().to_int()
+}

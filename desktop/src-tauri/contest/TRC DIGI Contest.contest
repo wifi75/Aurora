@@ -43,3 +43,22 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=160,80,40,20,15,10
+valid=mode:RTTY
+points=same_cont=1; any=2
+[Script]
+// TRC: 10 punti con una stazione TRC (scambio con TRC), 1 fra due soci; paesi DXCC e paesi TRC per banda
+fn trc(s) { s.to_upper().contains("TRC") }
+fn punti(qso) {
+    let suo = trc(qso.exch_rcvd);
+    if suo && trc(qso.exch_sent) { 1 } else if suo { 10 } else if qso.cont != "" && qso.cont == qso.my_cont { 1 } else { 2 }
+}
+fn moltiplicatori(qso) {
+    let k = [];
+    if qso.dxcc != "" {
+        k.push("dxcc:" + qso.dxcc + "@" + qso.band);
+        if trc(qso.exch_rcvd) { k.push("trc:" + qso.dxcc + "@" + qso.band); }
+    }
+    k
+}

@@ -34,7 +34,7 @@ m_bAutoGrabNumber=1
 m_iGrabNumberType=0
 m_bAutoGrabTime=0
 m_bAutoGrabState=0
-m_sStateListFile=
+m_sStateListFile=dom/russian.dom
 m_iGrabDomainTo=1
 m_bSuggestCqZone=0
 m_bSuggestItuZone=0
@@ -43,3 +43,8 @@ m_bSuggestDxccPfx=0
 m_bDupeNoBand=0
 m_bDupeNoMode=0
 m_iLogBarDispMode=1
+[Score]
+bands=160,80,40,20,15,10
+points=same_dxcc=1; same_cont=3; other_cont=5
+points_band=160:2,80:2,40:2
+mult=dxcc/band/mode; exch/band/mode/if:dxcc:UA,UA9,UA2
