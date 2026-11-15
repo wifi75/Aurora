@@ -174,5 +174,6 @@ export const contestTestoStrings = {
   'ctest.mt.cont': ["Continenti", "Continents", "Kontinente", "Continents", "Continentes", "Continentes"],
   'ctest.mt.area': ["Aree numeriche", "Call areas", "Rufzeichengebiete", "Zones d'indicatif", "Áreas de indicativo", "Áreas de indicativo"],
   'ctest.mt.dom': ["Scambio (stati, province, oblast)", "Exchange (states, provinces, oblasts)", "Austausch (Staaten, Provinzen, Oblaste)", "Échange (États, provinces, oblasts)", "Intercambio (estados, provincias, óblasts)", "Troca (estados, províncias, oblasts)"],
+  'ctest.mt.call': ["Stazioni", "Stations", "Stationen", "Stations", "Estaciones", "Estações"],
   'qtc.menu': ["QTC…", "QTC…", "QTC …", "QTC…", "QTC…", "QTC…"],
 } as const;

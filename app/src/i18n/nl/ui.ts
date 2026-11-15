@@ -1228,6 +1228,7 @@ export const NL_UI: Record<string, string> = {
   "ctest.menu": "Contest",
   "ctest.missing": "{n} van {tot} ontbreken",
   "ctest.mt.area": "Prefixgebieden",
+  "ctest.mt.call": "Stations",
   "ctest.mt.cont": "Continenten",
   "ctest.mt.cq": "CQ-zones",
   "ctest.mt.dom": "Uitwisseling (staten, provincies, oblasten)",

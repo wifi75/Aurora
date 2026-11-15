@@ -38,8 +38,8 @@ export function scoreLine(t: ReturnType<typeof useT>, s: TextContestScore): stri
   return s.tipi.length ? t('ctest.scoreLine', { points: s.punti, mult: s.molt, score: s.punteggio }) : t('ctest.scoreNoMult', { score: s.punteggio });
 }
 
-type MultType = 'dxcc' | 'cq' | 'itu' | 'wpx' | 'cont' | 'area' | 'dom';
-const MULT_TYPES: MultType[] = ['cq', 'itu', 'dxcc', 'area', 'wpx', 'dom', 'cont'];
+type MultType = 'dxcc' | 'cq' | 'itu' | 'wpx' | 'cont' | 'area' | 'dom' | 'call';
+const MULT_TYPES: MultType[] = ['cq', 'itu', 'dxcc', 'area', 'wpx', 'dom', 'cont', 'call'];
 const multName = (t: ReturnType<typeof useT>, tipo: string) => (MULT_TYPES.includes(tipo as MultType) ? t(`ctest.mt.${tipo as MultType}`) : tipo);
 /** `dxcc:DL` -> `DL (Paesi DXCC)`. */
 const multLabel = (t: ReturnType<typeof useT>, m: string) => {
@@ -51,7 +51,9 @@ const multLabel = (t: ReturnType<typeof useT>, m: string) => {
 function MultGrid({ s }: { s: TextContestScore }) {
   const t = useT();
   const bands = s.bande.map((b) => b.band);
-  const types = MULT_TYPES.filter((m) => s.griglia.some((g) => g.tipo === m) || s.mancanti.some((x) => x.tipo === m));
+  // prima i tipi conosciuti, poi quelli dati dallo script del contest (`rda`, `state`...)
+  const known: string[] = MULT_TYPES.filter((m) => s.griglia.some((g) => g.tipo === m) || s.mancanti.some((x) => x.tipo === m));
+  const types = [...known, ...Array.from(new Set(s.griglia.map((g) => g.tipo))).filter((x) => !MULT_TYPES.includes(x as MultType))];
   if (!types.length) return null;
   return (
     <section className="ctest-grid">

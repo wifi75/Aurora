@@ -4819,6 +4819,7 @@ ctest.mt.wpx,WPX prefixes,WPX-prefixen
 ctest.mt.cont,Continents,Continenten
 ctest.mt.area,Call areas,Prefixgebieden
 ctest.mt.dom,"Exchange (states, provinces, oblasts)","Uitwisseling (staten, provincies, oblasten)"
+ctest.mt.call,Stations,Stations
 qtc.menu,QTC…,QTC…
 xrx.dragTip,Drag to move the window,Sleep om het venster te verplaatsen
 xrx.afcTip,"AFC of this RX window: it follows its station if it drifts. It is its own, separate from the AFC in the bottom bar (which is for the main reception).","AFC van dit RX-venster: volgt zijn station als het verloopt. Alleen van dit venster, los van de AFC in de onderste balk (die voor de hoofdontvangst geldt)."
