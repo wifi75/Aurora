@@ -47,7 +47,16 @@ m_iLogBarDispMode=1
 bands=160
 points=any=1
 [Script]
-// 1 punto piu' 1 ogni 500 km interi fra i centri dei quadrati mandato e ricevuto (4 caratteri)
+// 1 punto piu' 1 ogni 500 km interi fra i centri dei quadrati mandato e ricevuto (4 caratteri);
+// x2 con una stazione LP, x4 con una QRP (LP o QRP scritti nello scambio ricevuto); il totale x1,5 se si e' LP, x3 se QRP
+// (LP o QRP nello scambio mandato)
+fn potenza(s) {
+    for p in s.to_upper().split(" ") {
+        if p == "QRP" { return 2; }
+        if p == "LP" { return 1; }
+    }
+    0
+}
 fn centro(g) {
     let g = g.to_upper();
     if g.len() != 4 { return (); }
@@ -70,11 +79,16 @@ fn quadrato(s) {
 fn punti(qso) {
     let a = quadrato(qso.exch_sent);
     let b = quadrato(qso.exch_rcvd);
-    if a == () || b == () { return 1; }
+    let f = [1, 2, 4][potenza(qso.exch_rcvd)];
+    if a == () || b == () { return f; }
     let r = PI() / 180.0;
     let c = sin(a[0] * r) * sin(b[0] * r) + cos(a[0] * r) * cos(b[0] * r) * cos((a[1] - b[1]) * r);
     if c > 1.0 { c = 1.0; }
     if c < -1.0 { c = -1.0; }
     let km = acos(c) * 6371.0;
-    1 + (km / 500.0).floor().to_int()
+    (1 + (km / 500.0).floor().to_int()) * f
+}
+fn punteggio(t) {
+    let m = potenza(t.exch_sent);
+    if m == 2 { t.punti * 3 } else if m == 1 { (t.punti * 3 + 1) / 2 } else { t.punti }
 }

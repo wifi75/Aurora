@@ -46,5 +46,14 @@ m_iLogBarDispMode=1
 [Score]
 bands=80,40,20,15,10
 valid=not_dxcc:UA,UA9,UA2,EU
-points=dxcc:ON=10; dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO=3; any=1
-mult=exch/band/if:dxcc:ON; wpx/band/if:dxcc:ON; dxcc/band/if:dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO
+points=my_dxcc:ON&dxcc:ON=1; my_dxcc:ON&dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO,SV/A=2; my_dxcc:ON=3; dxcc:ON=10; dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO,SV/A=3; any=1
+mult=exch/band/if:dxcc:ON/skip:XXX; wpx/band/if:dxcc:ON&not_my_dxcc:ON; dxcc/band/if:dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,TK,YL,YO,SV/A&not_my_dxcc:ON; dxcc/band/if:my_dxcc:ON
+
+[Script]
+// stazioni fuori dal Belgio: bonus = punti dei QSO con il Belgio x la loro percentuale sui QSO validi (per difetto),
+// sommato ai punti prima dei moltiplicatori (esempio del regolamento: 50 QSO ON di 320, 500 punti -> 78)
+fn punteggio(t) {
+    if t.my_dxcc == "ON" || t.qso == 0 || !("ON" in t.paesi) { return t.punti * t.molt; }
+    let on = t.paesi["ON"];
+    (t.punti + on.punti * on.qso / t.qso) * t.molt
+}

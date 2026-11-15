@@ -61,3 +61,5 @@ fn moltiplicatori(qso) {
     []
 }
 fn punteggio(t) { t.punti + 15 * t.molt }
+// due turni, 14:00-15:59 e 16:00-17:59 UTC: nel secondo la stessa stazione si lavora di nuovo
+fn turno(qso) { if qso.hour < "1600" { "1" } else { "2" } }

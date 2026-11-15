@@ -24,7 +24,8 @@ fn dominio(file: &str) -> Dominio {
 
 /// Un piccolo database DXCC finto: (prefisso del nominativo, paese, continente, zona CQ, zona ITU), il primo che combacia.
 fn paese(call: &str) -> Option<InfoPaese> {
-    const T: [(&str, &str, &str, u8, u8); 26] = [
+    const T: [(&str, &str, &str, u8, u8); 27] = [
+        ("SY2", "SV/A", "EU", 20, 28),
         ("UA9", "UA9", "AS", 17, 30),
         ("UA2", "UA2", "EU", 15, 29),
         ("R2F", "UA2", "EU", 15, 29),
@@ -121,10 +122,12 @@ fn scandinavian_activity() {
         n("SK3XYZ", "20m", "CW", 1, "001"), // 1; SK3 e' la stessa area SM3
         n("LA1ABC", "40m", "CW", 2, "001"), // europeo: 1 anche su 40 m; LA1
         n("DL1ABC", "20m", "CW", 3, "001"), // non scandinavo: non ammesso
+        n("LA/G3XYZ", "20m", "CW", 4, "001"), // 1; senza cifra del prefisso: area LA0
+        n("SM150A", "20m", "CW", 5, "001"),   // 1; due cifre: conta la prima, SM1
     ];
     let t = punteggio("Scandinavian Activity Contest", &log, None);
-    // punti 3; moltiplicatori SM3, LA1 = 2; 3 x 2 = 6
-    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 3, 2, 6));
+    // punti 5; moltiplicatori SM3, LA1, LA0, SM1 = 4; 5 x 4 = 20
+    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 5, 4, 20));
 }
 
 #[test]
@@ -140,6 +143,18 @@ fn stew_perry() {
     let t = punteggio("Stew Perry Topband Distance Challenge", &log, None);
     // nessun moltiplicatore: 1+3+13+2 = 19
     assert_eq!((t.esclusi, t.punti, t.punteggio), (1, 19, 19));
+    // potenza: stazione LP x2, QRP x4; la propria LP x1,5
+    let s = |call: &str, min: i64, g: &str| q(call, "160m", "CW", min, "JN65 LP", g);
+    let log = [
+        s("IK2XYZ", 0, "JN55"),     // 1
+        s("G4ABC", 1, "IO91 LP"),   // 3 x 2 = 6
+        s("W1AW", 2, "FN42 QRP"),   // 13 x 4 = 52
+    ];
+    let t = punteggio("Stew Perry Topband Distance Challenge", &log, None);
+    // 59 x 1,5 = 88,5 -> 89
+    assert_eq!((t.punti, t.punteggio), (59, 89));
+    let qrp = [q("W1AW", "160m", "CW", 0, "JN65 QRP", "FN42")];
+    assert_eq!(punteggio("Stew Perry Topband Distance Challenge", &qrp, None).punteggio, 39);
 }
 
 #[test]
@@ -178,10 +193,12 @@ fn ua2_qso_party() {
         n("UA2FX", "40m", "SSB", 1, "KA03"),  // SSB: 3; distretto gia' preso su 40 m
         n("UA2FX", "20m", "CW", 2, "KA05"),   // 2; KA05 su 20 m, 15 punti
         n("DL1ABC", "80m", "SSB", 3, "005"),  // 3
+        n("R2FA", "40m", "CW", 240, "KA03"),  // 16:00, secondo turno: non e' un doppio, 6; KA03 gia' preso su 40 m
+        n("R2FA", "40m", "CW", 241, "KA03"),  // doppio nel secondo turno
     ];
     let t = punteggio("UA2 QSO Party", &log, None);
-    // punti 6+3+2+3 = 14; due distretti nuovi x 15 = 30; 14 + 30 = 44
-    assert_eq!((t.punti, t.molt, t.punteggio), (14, 2, 44));
+    // punti 6+3+2+3+6 = 20; due distretti nuovi x 15 = 30; 20 + 30 = 50
+    assert_eq!((t.doppi, t.punti, t.molt, t.punteggio), (1, 20, 2, 50));
 }
 
 #[test]
@@ -191,14 +208,21 @@ fn uba_dx() {
         n("DL1ABC", "20m", "CW", 1, "001"),     // paese UE: 3; DL
         n("W1AW", "20m", "CW", 2, "001"),       // 1
         n("UA3ABC", "20m", "CW", 3, "001"),     // Russia: non ammesso
-        n("OT4XYZ", "40m", "CW", 4, "005 XXX"), // Belgio: 10; XXX e OT4 su 40 m
+        n("OT4XYZ", "40m", "CW", 4, "005 XXX"), // Belgio: 10; OT4 su 40 m (XXX non e' un moltiplicatore)
+        n("SY2ABC", "20m", "CW", 5, "001"),     // Monte Athos, paese UE: 3; SV/A
     ];
     let t = punteggio("UBA CW contest", &log, None);
-    // punti 24; moltiplicatori ANT, ON4, DL, XXX, OT4 = 5; 24 x 5 = 120
-    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 24, 5, 120));
+    // punti 27; moltiplicatori ANT, ON4, DL, OT4, SV/A = 5; bonus: 20 punti ON x 2 QSO ON / 5 QSO = 8; (27 + 8) x 5 = 175
+    assert_eq!((t.esclusi, t.punti, t.molt, t.punteggio), (1, 27, 5, 175));
     let ssb = [n("ON4ABC", "80m", "SSB", 0, "001 ANT"), n("DL1ABC", "80m", "SSB", 1, "001")];
-    // 10 + 3 = 13; ANT, ON4, DL = 3; 39
-    assert_eq!(punteggio("UBA SSB Contest", &ssb, None).punteggio, 39);
+    // 10 + 3 = 13; bonus 10 x 1 / 2 = 5; ANT, ON4, DL = 3; 18 x 3 = 54
+    assert_eq!(punteggio("UBA SSB Contest", &ssb, None).punteggio, 54);
+    // stazione belga: ON 1, UE 2, altri 3; paesi DXCC (anche ON) e sezioni per banda, niente prefissi e niente bonus
+    let on = paese("ON4XYZ").unwrap_or_default();
+    let log = [n("ON4ABC", "20m", "CW", 0, "001 ANT"), n("DL1ABC", "20m", "CW", 1, "001"), n("W1AW", "20m", "CW", 2, "001")];
+    let (_, t) = valuta(&contest("UBA CW contest"), &log, Some(&on), &paese, None);
+    // punti 6; moltiplicatori ANT, ON, DL, K = 4; 24
+    assert_eq!((t.punti, t.molt, t.punteggio, t.errore_script.clone()), (6, 4, 24, None));
 }
 
 #[test]
@@ -234,6 +258,16 @@ fn uk_ei_dx() {
     let t = punteggio("UK_EI DX Contest", &log, None);
     // punti 12; moltiplicatori 5; 12 x 5 = 60
     assert_eq!((t.punti, t.molt, t.punteggio), (12, 5, 60));
+    // stazione UK: il doppio dalle 01:00 alle 04:59 UTC
+    let g = paese("G4XYZ").unwrap_or_default();
+    let log = [
+        n("DL1ABC", "80m", "CW", 780, "001"), // 01:00, Europa su 80 m: 4 x 2 = 8; DL su 80 m
+        n("W1AW", "20m", "CW", 810, "001"),   // 01:30, DX su 20 m: 4 x 2 = 8; K
+        n("DL1ABC", "20m", "CW", 1020, "002"), // 05:00, Europa su 20 m: 2; DL su 20 m
+    ];
+    let (_, t) = valuta(&contest("UK_EI DX Contest"), &log, Some(&g), &paese, None);
+    // punti 18; moltiplicatori 3; 54
+    assert_eq!((t.punti, t.molt, t.punteggio), (18, 3, 54));
 }
 
 #[test]
