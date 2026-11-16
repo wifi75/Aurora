@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.275',
-    released: '2026-11-16T12:00:00Z',
+    released: '2026-11-16T11:19:35Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.275',
-    released: '2026-11-16T12:00:00Z',
+    released: '2026-11-16T11:19:35Z',
     kind: 'fixed',
     title: [
       'Niente falsi crash all’aggiornamento',

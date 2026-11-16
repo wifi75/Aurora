@@ -2,11 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Su main dopo la 0.11.274 (non rilasciato)
+## Nella 0.11.275
 
 Finestrina «Aggiornamento in corso» della copia di aiuto e avviso «Aurora aggiornata» alla riapertura (`1d503ffa`, `update_window.rs`). Provata a vista con il test ignorato; non provata con un aggiornamento vero. Da mettere nelle Novita' alla prossima versione.
 
-## Stato al 2026-11-16 (0.11.274 pubblicata 2026-11-16T10:38:07Z)
+## Stato al 2026-11-16 (0.11.275 pubblicata 2026-11-16T11:19:35Z; 0.11.274 2026-11-16T10:38:07Z)
 
 Modo SSB nei modi testuali per log e contest in fonia (#74, `9348e234`, Guida `25e14d1c`). Issue aperte: #71 (PTT acceso e spento a fine QSO FT8: servono versione, impostazioni e registro dell'utente; meccanismo probabile: trasmissione pianificata e fermata da una decodifica tardiva, `engine-native/src/tx.rs` `collect_events`), #72 (IC-707 su macOS), #74 (contest, risposta da dare ora che la 0.11.274 e' uscita). Cartella locale pulita: solo `main`.
 
