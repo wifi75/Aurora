@@ -3832,6 +3832,7 @@ export const NL_UI: Record<string, string> = {
   "sat.map.add": "Een kaart toevoegen…",
   "sat.map.addHint": "Een equirectangulair beeld (360° × 180°), jpg, png, bmp of webp.",
   "sat.map.builtin": "Aurora-kaart",
+  "sat.map.drag": "Sleep om de kaart te verschuiven · dubbelklik om te centreren",
   "sat.map.pick": "Wereldkaart",
   "sat.map.title": "Kaart",
   "sat.moon": "Maan",

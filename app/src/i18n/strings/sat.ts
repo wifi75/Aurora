@@ -124,6 +124,7 @@ export const satStrings = {
   'sat.map.pick': ['Mappa del mondo', 'World map', 'Weltkarte', 'Carte du monde', 'Mapa del mundo', 'Mapa do mundo'],
   'sat.map.add': ['Aggiungi una mappa…', 'Add a map…', 'Karte hinzufügen …', 'Ajouter une carte…', 'Añadir un mapa…', 'Adicionar um mapa…'],
   'sat.map.addHint': ['Un’immagine equirettangolare (360° × 180°), jpg, png, bmp o webp.', 'An equirectangular image (360° × 180°), jpg, png, bmp or webp.', 'Ein äquirektangulares Bild (360° × 180°), jpg, png, bmp oder webp.', 'Une image équirectangulaire (360° × 180°), jpg, png, bmp ou webp.', 'Una imagen equirectangular (360° × 180°), jpg, png, bmp o webp.', 'Uma imagem equiretangular (360° × 180°), jpg, png, bmp ou webp.'],
+  'sat.map.drag': ['Trascina per spostare la mappa · doppio clic per centrarla', 'Drag to move the map · double-click to center it', 'Ziehen, um die Karte zu verschieben · Doppelklick zum Zentrieren', 'Faites glisser pour déplacer la carte · double-clic pour la centrer', 'Arrastra para mover el mapa · doble clic para centrarlo', 'Arraste para mover o mapa · duplo clique para centrá-lo'],
   'sat.map.builtin': ['Mappa di Aurora', 'Aurora map', 'Aurora-Karte', 'Carte d’Aurora', 'Mapa de Aurora', 'Mapa do Aurora'],
   'sat.sun': ['Sole', 'Sun', 'Sonne', 'Soleil', 'Sol', 'Sol'],
   'sat.moon': ['Luna', 'Moon', 'Mond', 'Lune', 'Luna', 'Lua'],

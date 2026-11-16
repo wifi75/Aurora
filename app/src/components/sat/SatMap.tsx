@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { geoEquirectangular, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import type { FeatureCollection } from 'geojson';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import type { SatPosition } from '../../api/client';
-import { footprintPolygon, nightAlpha, project, splitAtAntimeridian, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
+import { useT } from '../../i18n';
+import { footprintPolygon, nightAlpha, project, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
 
 interface Props {
   /** L'immagine della mappa del mondo (equirettangolare); senza, la mappa inclusa in Aurora (terre e confini di Natural Earth). */
@@ -59,10 +60,48 @@ function drawBuiltin(countries: FeatureCollection, w: number, h: number, dpr: nu
   return c;
 }
 
+const LON_KEY = 'aurora-sat-map-lon';
+/** Sotto questo spostamento (px) un gesto e' un clic e non un trascinamento. */
+const DRAG_PX = 4;
+
+function loadLon(): number {
+  try {
+    const v = Number(window.localStorage.getItem(LON_KEY));
+    return Number.isFinite(v) ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveLon(v: number): void {
+  try {
+    window.localStorage.setItem(LON_KEY, String(v));
+  } catch {
+    /* memoria del browser non disponibile */
+  }
+}
+
+/** Rende continue le longitudini di una linea (nessun salto di 360 gradi), cosi' attraversa il bordo senza spezzarsi. */
+function unwrap(pts: readonly LatLon[]): LatLon[] {
+  const out: LatLon[] = [];
+  let prev: number | null = null;
+  for (const p of pts) {
+    let lon = p[1];
+    if (prev !== null) {
+      while (lon - prev > 180) lon -= 360;
+      while (lon - prev < -180) lon += 360;
+    }
+    prev = lon;
+    out.push([p[0], lon]);
+  }
+  return out;
+}
+
 const PALETTE = { grid: 'rgba(255,255,255,0.16)', label: 'rgba(255,255,255,0.75)', past: 'rgba(255,255,255,0.55)', future: '#ffd84d', foot: '#3ddc84', sat: '#ffffff', sel: '#ffd84d' };
 
-/** La mappa dei satelliti: mondo con giorno e notte, Sole e Luna, la stazione, i satelliti con la loro impronta radio e la traccia del satellite scelto. */
+/** La mappa dei satelliti: mondo con giorno e notte, Sole e Luna, la stazione, i satelliti con la loro impronta radio e la traccia del satellite scelto. Si sposta in orizzontale trascinandola e gira senza bordi. */
 export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, onSelect }: Props) {
+  const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(900);
@@ -70,6 +109,11 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   const [countries, setCountries] = useState<FeatureCollection | null>(null);
   const base = useRef<{ w: number; dpr: number; canvas: HTMLCanvasElement } | null>(null);
   const hits = useRef<{ x: number; y: number; norad: number }[]>([]);
+  /** Spostamento della mappa in gradi di longitudine (positivo = la mappa va verso destra). */
+  const [lonOff, setLonOff] = useState(loadLon);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{ id: number; x0: number; lon0: number; moved: boolean } | null>(null);
+  const shiftPx = useRef(0);
 
   useEffect(() => {
     const el = wrap.current;
@@ -100,6 +144,32 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     img.src = mapUrl;
   }, [mapUrl]);
 
+  // la notte: un'immagine piccola ingrandita (il bordo e' morbido), ricalcolata solo quando si muove il Sole
+  const night = useMemo(() => {
+    const nw = 180;
+    const nh = 90;
+    const nc = document.createElement('canvas');
+    nc.width = nw;
+    nc.height = nh;
+    const nctx = nc.getContext('2d');
+    if (!nctx) return null;
+    const img = nctx.createImageData(nw, nh);
+    for (let y = 0; y < nh; y++) {
+      for (let x = 0; x < nw; x++) {
+        const lat = 90 - ((y + 0.5) / nh) * 180;
+        const lon = -180 + ((x + 0.5) / nw) * 360;
+        const a = nightAlpha(sunAltitudeDeg(lat, lon, sun.lat, sun.lon), 0.74);
+        const o = (y * nw + x) * 4;
+        img.data[o] = 4;
+        img.data[o + 1] = 10;
+        img.data[o + 2] = 38;
+        img.data[o + 3] = Math.round(a * 255);
+      }
+    }
+    nctx.putImageData(img, 0, 0);
+    return nc;
+  }, [sun.lat, sun.lon]);
+
   useEffect(() => {
     const c = canvas.current;
     const ctx = c?.getContext('2d');
@@ -112,11 +182,27 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     c.style.height = `${h}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // la mappa gira come un cilindro: tutto si disegna in copie affiancate spostate di `shift`
+    const shift = Math.round((((lonOff / 360) * w) % w + w) % w);
+    shiftPx.current = shift;
+    /** Esegue `fn` in ogni copia della mappa che tocca lo schermo, per un oggetto che occupa x da xmin a xmax. */
+    const eachCopy = (xmin: number, xmax: number, fn: () => void) => {
+      const k0 = Math.floor((-shift - xmax) / w) + 1;
+      const k1 = Math.ceil((w - shift - xmin) / w) - 1;
+      for (let k = k0; k <= k1; k++) {
+        ctx.save();
+        ctx.translate(shift + k * w, 0);
+        fn();
+        ctx.restore();
+      }
+    };
+
     // fondo: la mappa scelta, la mappa inclusa o (mentre si carica) un gradiente scuro
-    if (image) ctx.drawImage(image, 0, 0, w, h);
+    if (image) eachCopy(0, w, () => ctx.drawImage(image, 0, 0, w, h));
     else if (countries) {
       if (!base.current || base.current.w !== w || base.current.dpr !== dpr) base.current = { w, dpr, canvas: drawBuiltin(countries, w, h, dpr) };
-      ctx.drawImage(base.current.canvas, 0, 0, w, h);
+      const bc = base.current.canvas;
+      eachCopy(0, w, () => ctx.drawImage(bc, 0, 0, w, h));
     } else {
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, '#0b1a33');
@@ -125,46 +211,28 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
       ctx.fillRect(0, 0, w, h);
     }
 
-    // la notte: un'immagine piccola ingrandita, cosi' il bordo e' morbido
-    const nw = 180;
-    const nh = 90;
-    const night = document.createElement('canvas');
-    night.width = nw;
-    night.height = nh;
-    const nctx = night.getContext('2d');
-    if (nctx) {
-      const img = nctx.createImageData(nw, nh);
-      for (let y = 0; y < nh; y++) {
-        for (let x = 0; x < nw; x++) {
-          const lat = 90 - ((y + 0.5) / nh) * 180;
-          const lon = -180 + ((x + 0.5) / nw) * 360;
-          const a = nightAlpha(sunAltitudeDeg(lat, lon, sun.lat, sun.lon), 0.74);
-          const o = (y * nw + x) * 4;
-          img.data[o] = 4;
-          img.data[o + 1] = 10;
-          img.data[o + 2] = 38;
-          img.data[o + 3] = Math.round(a * 255);
-        }
-      }
-      nctx.putImageData(img, 0, 0);
+    // la notte
+    if (night) {
       ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(night, 0, 0, w, h);
+      eachCopy(0, w, () => ctx.drawImage(night, 0, 0, w, h));
     }
 
-    // griglia e scritte sui bordi
+    // griglia e scritte sui bordi: le longitudini girano con la mappa, le latitudini restano a sinistra
     ctx.strokeStyle = PALETTE.grid;
     ctx.fillStyle = PALETTE.label;
     ctx.lineWidth = 1;
     ctx.font = '11px system-ui, sans-serif';
-    for (let lon = -150; lon <= 150; lon += 30) {
-      const [x] = project(0, lon, w, h);
-      ctx.beginPath();
-      ctx.moveTo(x + 0.5, 0);
-      ctx.lineTo(x + 0.5, h);
-      ctx.stroke();
-      ctx.textAlign = 'center';
-      ctx.fillText(`${Math.abs(lon)}${lon < 0 ? 'W' : lon > 0 ? 'E' : ''}`, x, 12);
-    }
+    eachCopy(0, w, () => {
+      for (let lon = -180; lon <= 150; lon += 30) {
+        const [x] = project(0, lon, w, h);
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, h);
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.abs(lon)}${lon < 0 && lon > -180 ? 'W' : lon > 0 ? 'E' : ''}`, x, 12);
+      }
+    });
     for (let lat = -60; lat <= 60; lat += 30) {
       const [, y] = project(lat, 0, w, h);
       ctx.beginPath();
@@ -175,14 +243,30 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
       ctx.fillText(`${Math.abs(lat)}${lat < 0 ? 'S' : lat > 0 ? 'N' : ''}`, 4, y - 3);
     }
 
-    const line = (pts: readonly LatLon[]) => {
-      ctx.beginPath();
-      pts.forEach((p, i) => {
-        const [x, y] = project(p[0], p[1], w, h);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+    /** Una linea continua (longitudini srotolate) ripetuta in tutte le copie che la mostrano; con `fill` anche riempita. */
+    const drawLine = (pts: readonly LatLon[], fill: boolean) => {
+      if (pts.length < 2) return;
+      const u = unwrap(pts);
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (const p of u) {
+        const x = project(p[0], p[1], w, h)[0];
+        lo = Math.min(lo, x);
+        hi = Math.max(hi, x);
+      }
+      eachCopy(lo, hi, () => {
+        ctx.beginPath();
+        u.forEach((p, i) => {
+          const [x, y] = project(p[0], p[1], w, h);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        if (fill) {
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.stroke();
       });
-      ctx.stroke();
     };
 
     // la traccia a terra: il passato tratteggiato, il futuro pieno
@@ -191,12 +275,12 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 5]);
     ctx.strokeStyle = PALETTE.past;
-    for (const seg of splitAtAntimeridian(past)) line(seg);
+    drawLine(past, false);
     ctx.setLineDash([]);
     ctx.strokeStyle = PALETTE.future;
     ctx.shadowColor = 'rgba(255,216,77,0.7)';
     ctx.shadowBlur = 6;
-    for (const seg of splitAtAntimeridian(future)) line(seg);
+    drawLine(future, false);
     ctx.shadowBlur = 0;
 
     // satelliti: impronta radio, punto e nome
@@ -206,105 +290,146 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
       ctx.lineWidth = isSel ? 2 : 1.2;
       ctx.strokeStyle = PALETTE.foot;
       ctx.fillStyle = isSel ? 'rgba(61,220,132,0.12)' : 'rgba(61,220,132,0.05)';
-      const poly = footprintPolygon(p.lat_deg, p.lon_deg, p.footprint_km);
-      for (const seg of splitAtAntimeridian(poly)) {
-        line(seg);
-        if (seg.length === poly.length) {
-          ctx.beginPath();
-          seg.forEach((q, i) => {
-            const [x, y] = project(q[0], q[1], w, h);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
+      drawLine(footprintPolygon(p.lat_deg, p.lon_deg, p.footprint_km), true);
       const [x, y] = project(p.lat_deg, p.lon_deg, w, h);
       placed.push({ x, y, norad: p.norad });
-      ctx.fillStyle = isSel ? PALETTE.sel : PALETTE.sat;
-      ctx.shadowColor = isSel ? PALETTE.sel : '#9ad';
-      ctx.shadowBlur = isSel ? 12 : 6;
-      ctx.beginPath();
-      ctx.arc(x, y, isSel ? 5.5 : 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      if (isSel) {
-        ctx.strokeStyle = PALETTE.sel;
-        ctx.lineWidth = 1.5;
+      eachCopy(x - 20, x + 160, () => {
+        ctx.fillStyle = isSel ? PALETTE.sel : PALETTE.sat;
+        ctx.shadowColor = isSel ? PALETTE.sel : '#9ad';
+        ctx.shadowBlur = isSel ? 12 : 6;
         ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#fff';
-      ctx.font = `${isSel ? 'bold ' : ''}12px system-ui, sans-serif`;
-      ctx.textAlign = 'left';
-      ctx.shadowColor = '#000';
-      ctx.shadowBlur = 4;
-      ctx.fillText(p.name, x + 10, y - 8);
-      ctx.shadowBlur = 0;
+        ctx.arc(x, y, isSel ? 5.5 : 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        if (isSel) {
+          ctx.strokeStyle = PALETTE.sel;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#fff';
+        ctx.font = `${isSel ? 'bold ' : ''}12px system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(p.name, x + 10, y - 8);
+        ctx.shadowBlur = 0;
+      });
     }
     hits.current = placed;
 
     // la stazione
     if (observer) {
       const [x, y] = project(observer.lat, observer.lon, w, h);
-      ctx.strokeStyle = '#ff6b6b';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x - 7, y);
-      ctx.lineTo(x + 7, y);
-      ctx.moveTo(x, y - 7);
-      ctx.lineTo(x, y + 7);
-      ctx.stroke();
-      ctx.fillStyle = '#ffb3b3';
-      ctx.font = '12px system-ui, sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(stationLabel, x + 9, y + 15);
+      eachCopy(x - 10, x + 200, () => {
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 7, y);
+        ctx.lineTo(x + 7, y);
+        ctx.moveTo(x, y - 7);
+        ctx.lineTo(x, y + 7);
+        ctx.stroke();
+        ctx.fillStyle = '#ffb3b3';
+        ctx.font = '12px system-ui, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(stationLabel, x + 9, y + 15);
+      });
     }
 
     // il Sole e la Luna
     const [sx, sy] = project(sun.lat, sun.lon, w, h);
-    ctx.fillStyle = '#ffd84d';
-    ctx.shadowColor = '#ffb300';
-    ctx.shadowBlur = 16;
-    ctx.beginPath();
-    ctx.arc(sx, sy, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#ffd84d';
-    ctx.lineWidth = 1.5;
-    for (let k = 0; k < 12; k++) {
-      const a = (k / 12) * Math.PI * 2;
+    eachCopy(sx - 16, sx + 16, () => {
+      ctx.fillStyle = '#ffd84d';
+      ctx.shadowColor = '#ffb300';
+      ctx.shadowBlur = 16;
       ctx.beginPath();
-      ctx.moveTo(sx + Math.cos(a) * 11, sy + Math.sin(a) * 11);
-      ctx.lineTo(sx + Math.cos(a) * 15, sy + Math.sin(a) * 15);
-      ctx.stroke();
-    }
+      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffd84d';
+      ctx.lineWidth = 1.5;
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(sx + Math.cos(a) * 11, sy + Math.sin(a) * 11);
+        ctx.lineTo(sx + Math.cos(a) * 15, sy + Math.sin(a) * 15);
+        ctx.stroke();
+      }
+    });
     const [mx, my] = project(moon.lat, moon.lon, w, h);
-    ctx.fillStyle = '#d9d9d9';
-    ctx.shadowColor = '#fff';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.arc(mx, my, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  }, [width, image, countries, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, track, trackNowIndex]);
+    eachCopy(mx - 8, mx + 8, () => {
+      ctx.fillStyle = '#d9d9d9';
+      ctx.shadowColor = '#fff';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(mx, my, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }, [width, image, countries, night, lonOff, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, track, trackNowIndex]);
+
+  /** Il satellite sotto il punto (x, y) del canvas, tenendo conto dello spostamento e della ripetizione. */
+  const pick = (x: number, y: number): number | null => {
+    const w = width;
+    let best: { norad: number; d: number } | null = null;
+    for (const hit of hits.current) {
+      const xd = (hit.x + shiftPx.current) % w;
+      const d = Math.min(Math.hypot(xd - x, hit.y - y), Math.hypot(xd - w - x, hit.y - y));
+      if (d <= 16 && (!best || d < best.d)) best = { norad: hit.norad, d };
+    }
+    return best ? best.norad : null;
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLCanvasElement>, cancelled: boolean) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    drag.current = null;
+    setDragging(false);
+    if (d.moved) {
+      saveLon(lonOff);
+      return;
+    }
+    if (cancelled) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const norad = pick(e.clientX - r.left, e.clientY - r.top);
+    if (norad !== null) onSelect(norad);
+  };
 
   return (
-    <div className="sat-map" ref={wrap}>
+    <div className={dragging ? 'sat-map sat-map--drag' : 'sat-map'} ref={wrap}>
       <canvas
         ref={canvas}
-        onClick={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          const x = e.clientX - r.left;
-          const y = e.clientY - r.top;
-          let best: { norad: number; d: number } | null = null;
-          for (const h of hits.current) {
-            const d = Math.hypot(h.x - x, h.y - y);
-            if (d <= 16 && (!best || d < best.d)) best = { norad: h.norad, d };
+        title={t('sat.map.drag')}
+        onPointerDown={(e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          drag.current = { id: e.pointerId, x0: e.clientX, lon0: lonOff, moved: false };
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* il puntatore e' gia' finito */
           }
-          if (best) onSelect(best.norad);
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d || d.id !== e.pointerId) return;
+          const dx = e.clientX - d.x0;
+          if (!d.moved) {
+            if (Math.abs(dx) < DRAG_PX) return;
+            d.moved = true;
+            setDragging(true);
+          }
+          let v = (d.lon0 + (dx / width) * 360) % 360;
+          if (v > 180) v -= 360;
+          if (v <= -180) v += 360;
+          setLonOff(v);
+        }}
+        onPointerUp={(e) => endDrag(e, false)}
+        onPointerCancel={(e) => endDrag(e, true)}
+        onDoubleClick={() => {
+          setLonOff(0);
+          saveLon(0);
         }}
       />
     </div>
