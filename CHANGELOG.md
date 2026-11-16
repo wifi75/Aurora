@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.281 - 2026-11-16
+
+- Satelliti: avvisi all'AOS con anello e lampo sulla mappa, suoni a scelta (Campanella, Radar, Arpeggio), preavviso e LOS, per i satelliti spuntati o solo per quello scelto.
+- Satelliti: schede spostabili e ridimensionabili come in una dashboard (griglia a 12 colonne, angolo e maniglione di larghezza, «Blocca/Sblocca» e «Ripristina disposizione»); disposizione di partenza in ordine: cartina a sinistra con i due passaggi affiancati sotto, le schede principali piccole a destra.
+- Satelliti: la cartina si ridimensiona dall'angolo mantenendo le proporzioni; stella rossa con il nominativo al posto di «Stazione»; legenda Sole/Luna dentro la mappa; la scelta della mappa e «Aggiungi una mappa…» passano nelle Impostazioni.
+- Satelliti: la casella decide quali satelliti si vedono (nessuno spuntato = nessun satellite sulla mappa); spuntando se non c'e' una scelta il satellite diventa quello scelto; elenco con gli spuntati in cima, senza contorno azzurro.
+- Satelliti: testata compatta (ora, avvisi, aggiorna, impostazioni), schede e tabelle piu' piccole, tabelle dei passaggi come griglie spostabili.
+- Guida: pagina Satelliti riscritta (scelta dei satelliti, schede spostabili, avvisi all'AOS, stella con il nominativo, scelta della mappa nelle Impostazioni).
+
 ## 0.11.280 - 2026-11-16
 
 - PSK, RTTY e CW: la finestra RX non resta piu' una striscia (la proporzione RX/TX sta fra un quarto e quattro quinti, un valore salvato troppo piccolo viene ignorato, il doppio clic sulla linea di separazione la ripristina) e la finestra TX si vede come finestra, con etichetta «Trasmissione» e una linea in alto.

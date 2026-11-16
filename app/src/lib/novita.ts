@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.281',
+    released: '2026-11-16T23:00:00Z',
+    kind: 'new',
+    title: [
+      'Satelliti: avvisi all’AOS e schede spostabili',
+      'Satellites: AOS alerts and movable cards',
+      'Satelliten: Hinweise bei AOS und verschiebbare Felder',
+      'Satellites : alertes à l’AOS et fiches déplaçables',
+      'Satélites: avisos en el AOS y tarjetas movibles',
+      'Satélites: avisos no AOS e cartões movíveis',
+    ],
+    text: [
+      'La pagina Satelliti ti avvisa quando un satellite entra nell’area: sulla mappa compaiono un anello e un lampo e senti un suono a scelta («Campanella», «Radar» o «Arpeggio») all’AOS, al LOS e con un preavviso in minuti, per i satelliti spuntati o solo per quello scelto. Le schede si spostano e si ridimensionano come in una dashboard, con «Blocca la disposizione» e «Ripristina disposizione» nella testata; la cartina si ridimensiona dall’angolo mantenendo le proporzioni, ha la stella rossa con il tuo nominativo e la legenda Sole/Luna dentro la mappa, mentre la scelta della mappa è passata nelle Impostazioni. La casella decide quali satelliti si vedono (nessuno spuntato, solo la Terra) e gli spuntati stanno in cima all’elenco. Testata, schede e tabelle sono più compatte e le tabelle dei passaggi sono griglie spostabili.',
+      'The Satellites page now warns you when a satellite enters your area: a ring and a flash appear on the map and you hear a sound of your choice (“Chime”, “Radar” or “Arpeggio”) at AOS, at LOS and with an early warning in minutes, for the ticked satellites or only for the chosen one. The cards can be moved and resized like in a dashboard, with “Lock the layout” and “Restore layout” in the header; the map is resized from its corner keeping its proportions, shows a red star with your callsign and has the Sun/Moon legend inside it, while the map choice has moved to the Settings. The check box decides which satellites you see (none ticked, only the Earth) and the ticked ones are at the top of the list. The header, cards and tables are more compact, and the pass tables are movable grids.',
+      'Die Seite Satelliten warnt dich jetzt, wenn ein Satellit in dein Gebiet kommt: Auf der Karte erscheinen ein Ring und ein Blitz, und du hörst einen Ton nach Wahl („Glöckchen“, „Radar“ oder „Arpeggio“) bei AOS, bei LOS und mit einer Vorwarnung in Minuten, für die angehakten Satelliten oder nur für den gewählten. Die Felder lassen sich wie in einem Dashboard verschieben und in der Größe ändern, mit „Anordnung sperren“ und „Anordnung zurücksetzen“ in der Kopfzeile; die Karte ändert ihre Größe an der Ecke und behält ihr Seitenverhältnis, zeigt einen roten Stern mit deinem Rufzeichen und hat die Legende Sonne/Mond in der Karte, während die Kartenwahl in die Einstellungen gewandert ist. Das Kästchen entscheidet, welche Satelliten du siehst (keiner angehakt, nur die Erde), und die angehakten stehen oben in der Liste. Kopfzeile, Felder und Tabellen sind kompakter, und die Überflugtabellen sind verschiebbare Raster.',
+      'La page Satellites t’avertit maintenant quand un satellite entre dans ta zone : un anneau et un éclair apparaissent sur la carte et tu entends un son au choix (« Clochette », « Radar » ou « Arpège ») à l’AOS, au LOS et avec un préavis en minutes, pour les satellites cochés ou seulement pour le satellite choisi. Les fiches se déplacent et se redimensionnent comme dans un tableau de bord, avec « Verrouiller la disposition » et « Rétablir la disposition » dans l’en-tête ; la carte se redimensionne depuis son coin en gardant ses proportions, montre une étoile rouge avec ton indicatif et a la légende Soleil/Lune à l’intérieur, tandis que le choix de la carte est passé dans les Réglages. La case décide quels satellites tu vois (aucun coché, seulement la Terre) et les cochés sont en haut de la liste. L’en-tête, les fiches et les tableaux sont plus compacts, et les tableaux des passages sont des grilles déplaçables.',
+      'La página Satélites ahora te avisa cuando un satélite entra en tu zona: en el mapa aparecen un anillo y un destello y oyes un sonido a tu elección («Campanilla», «Radar» o «Arpegio») en el AOS, en el LOS y con un preaviso en minutos, para los satélites marcados o solo para el elegido. Las tarjetas se mueven y se redimensionan como en un panel de control, con «Bloquear la disposición» y «Restaurar disposición» en la cabecera; el mapa se redimensiona desde la esquina manteniendo sus proporciones, muestra una estrella roja con tu indicativo y lleva la leyenda Sol/Luna dentro, mientras que la elección del mapa ha pasado a los Ajustes. La casilla decide qué satélites ves (ninguno marcado, solo la Tierra) y los marcados van arriba en la lista. La cabecera, las tarjetas y las tablas son más compactas, y las tablas de pasos son cuadrículas movibles.',
+      'A página Satélites avisa-te agora quando um satélite entra na tua zona: no mapa aparecem um anel e um clarão e ouves um som à tua escolha («Sineta», «Radar» ou «Arpejo») no AOS, no LOS e com um pré-aviso em minutos, para os satélites marcados ou só para o escolhido. Os cartões movem-se e redimensionam-se como num painel, com «Bloquear a disposição» e «Repor disposição» no cabeçalho; o mapa redimensiona-se a partir do canto mantendo as proporções, mostra uma estrela vermelha com o teu indicativo e tem a legenda Sol/Lua lá dentro, enquanto a escolha do mapa passou para as Definições. A caixa decide quais os satélites que vês (nenhum marcado, só a Terra) e os marcados ficam no topo da lista. O cabeçalho, os cartões e as tabelas são mais compactos, e as tabelas das passagens são grelhas movíveis.',
+    ],
+  },
+  {
     version: '0.11.280',
     released: '2026-11-16T21:03:53Z',
     kind: 'changed',
@@ -846,28 +867,6 @@ export const NOVITA: readonly Novita[] = [
       'Le guide décrit la barre des macros sur une ligne et ne parle plus des lignes Ctrl et Maj ni de l’option qui les affichait.',
       'La guía describe la barra de macros en una fila y ya no habla de las filas Ctrl y Mayús ni de la opción que las mostraba.',
       'O guia descreve a barra das macros numa linha e já não fala das linhas Ctrl e Shift nem da opção que as mostrava.',
-    ],
-  },
-  {
-    version: '0.11.258',
-    released: '2026-11-14T19:20:08Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Punteggio e Cabrillo dei contest, BIGScan più rapido',
-      'Contest scoring and Cabrillo, faster BIGScan',
-      'Contest-Wertung und Cabrillo, schnelleres BIGScan',
-      'Score et Cabrillo des concours, BIGScan plus rapide',
-      'Puntuación y Cabrillo de los concursos, BIGScan más rápido',
-      'Pontuação e Cabrillo dos concursos, BIGScan mais rápido',
-    ],
-    text: [
-      'Il contest attivo dei modi testuali calcola dal vivo QSO, punti, moltiplicatori e punteggio (menu Contest e barra di stato), con le statistiche per banda ed «Esporta Cabrillo». Aurora BIGScan RTTY mostra le stazioni prima (ritardo medio da 9 a 6 s) e trova anche quelle deboli accanto alle forti.',
-      'The active text-mode contest computes QSOs, points, multipliers and score live (Contest menu and status bar), with statistics by band and “Export Cabrillo”. Aurora BIGScan RTTY shows stations sooner (median delay from 9 to 6 s) and also finds weak ones next to strong ones.',
-      'Der aktive Contest der Textmodi berechnet QSOs, Punkte, Multiplikatoren und Wertung live (Contest-Menü und Statusleiste), mit Statistik nach Bändern und „Cabrillo exportieren“. Aurora BIGScan RTTY zeigt Stationen früher (mittlere Verzögerung von 9 auf 6 s) und findet auch schwache neben starken.',
-      'Le concours actif des modes texte calcule en direct QSO, points, multiplicateurs et score (menu Contest et barre d’état), avec les statistiques par bande et « Exporter Cabrillo ». Aurora BIGScan RTTY montre les stations plus tôt (délai médian de 9 à 6 s) et trouve aussi les faibles à côté des fortes.',
-      'El concurso activo de los modos de texto calcula en vivo QSO, puntos, multiplicadores y puntuación (menú Contest y barra de estado), con estadísticas por banda y «Exportar Cabrillo». Aurora BIGScan RTTY muestra las estaciones antes (retardo mediano de 9 a 6 s) y encuentra también las débiles junto a las fuertes.',
-      'O concurso ativo dos modos de texto calcula ao vivo QSO, pontos, multiplicadores e pontuação (menu Contest e barra de estado), com estatísticas por banda e «Exportar Cabrillo». O Aurora BIGScan RTTY mostra as estações mais cedo (atraso mediano de 9 para 6 s) e encontra também as fracas ao lado das fortes.',
     ],
   },
 ];
