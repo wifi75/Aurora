@@ -678,7 +678,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   };
   const [rxFrac, setRxFrac] = useState<number>(() => {
     const n = readSize('aurora.digi.rxfrac', sizeMode);
-    return Number.isFinite(n) && n >= 0.1 && n <= 0.9 ? n : 0.55;
+    return Number.isFinite(n) && n >= 0.25 && n <= 0.8 ? n : 0.55;
   });
   // cambiando modo (RTTY, CW, PSK) si riprendono le misure di quel modo
   const firstSizeMode = useRef(sizeMode);
@@ -697,7 +697,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const winw = readSize('aurora.digi.winw', sizeMode);
     setWinW(ok(winw, 240) ? winw : null);
     const frac = readSize('aurora.digi.rxfrac', sizeMode);
-    setRxFrac(ok(frac, 0.1, 0.9) ? frac : 0.55);
+    setRxFrac(ok(frac, 0.25, 0.8) ? frac : 0.55);
     const wfw = readSize('aurora.digi.wfw', sizeMode);
     setWfWidth(ok(wfw, 240) ? wfw : null);
   }, [sizeMode]);
@@ -705,7 +705,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     e.preventDefault();
     const box = windowsRef.current?.getBoundingClientRect();
     if (!box) return;
-    const move = (m: PointerEvent) => setRxFrac(Math.min(0.9, Math.max(0.1, (m.clientY - box.top) / box.height)));
+    const move = (m: PointerEvent) => setRxFrac(Math.min(0.8, Math.max(0.25, (m.clientY - box.top) / box.height)));
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
@@ -2128,9 +2128,24 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             }}>
             <DigiRxLive box={rxBox} underlineSent={views.underlineSent} showSent={views.echoRx === true} paused={rxPaused} search={searchOpen ? search : ''} />
           </pre>
-          <div className="digi-split" role="separator" aria-orientation="horizontal" title={t('digi.split.tip')} onPointerDown={dragSplit} />
+          <div
+            className="digi-split"
+            role="separator"
+            aria-orientation="horizontal"
+            title={t('digi.split.tip')}
+            onPointerDown={dragSplit}
+            onDoubleClick={() => {
+              setRxFrac(0.55);
+              try {
+                clearSize('aurora.digi.rxfrac', sizeMode);
+              } catch {
+                // la proporzione vale comunque finche' la pagina e' aperta
+              }
+            }}
+          />
           <div
             className="digi-txwrap"
+            data-label={t('digi.tx.title')}
             style={{ flex: `${1 - rxFrac} 1 0` }}
             onContextMenu={(e) => {
               // tasto destro nella finestra di trasmissione: Pulisci tutto, Taglia, Copia, Incolla
