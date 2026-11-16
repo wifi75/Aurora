@@ -83,7 +83,7 @@ Legenda stato: **OK** = compatibile oggi con la configurazione indicata (fondata
 | CQRLOG | «Remote mode for wsjt» (da v1.9.1): legge decode e QSO dal flusso UDP binario | Colori (Highlight), Reply, Free text, Halt Tx | **OK** per la lettura; i comandi richiedono 13 e `AcceptUDPRequests` | Highlight (13); porta da allineare nelle impostazioni |
 | QLog | Ascolta 2237 il flusso WSJT-X; rilancia su una porta a scelta; notifiche JSON | non risulta | **OK** (non verificato dal vivo) | Multicast se 2237 e' occupata |
 | MacLoggerDX | UDP WSJT-X su 127.0.0.1:2237 (modificabile con `defaults write ... wsjtx_udp_port`); registra QSO Logged (5) o Logged ADIF (12); spot da CQ e decode | no (il doppio clic e' di WSJT-X) | **OK** su macOS | Il motore di Aurora gira su Windows: serve rete (broadcast/multicast) per un Mac separato |
-| Logger32 | «UDP BandMap» con registrazione automatica dei QSO da WSJT-X/JTDX (guida del 2018); porta non documentata | non risulta | **?** | Prova pratica |
+| Logger32 | «UDP BandMap» con registrazione automatica dei QSO da WSJT-X/JTDX; porta di fabbrica 2237 (manuale v4, cap. 15) | non risulta | **OK** sulla carta (non ancora provata dal vivo) | Prova pratica; mappa da aprire a mano; porta da allineare |
 | N3FJP (ACLog e altri) | Nessun UDP WSJT-X diretto: adattatori di terzi leggono UDP e parlano il suo TCP (127.0.0.1:1100) | no | **poco lavoro** con un adattatore (ascolta 2333) | Mandare il flusso/ADIF alla porta dell'adattatore |
 | RumLogNG | non trovata una fonte | ? | **?** | Verificare |
 | UCXLog | non trovata una fonte | ? | **?** | Verificare |
@@ -202,7 +202,16 @@ Fonti: https://www.aribusto.it/bblogger.htm, PDF https://www.aribusto.it/BBL/Wsj
 - **Mancano**: multicast/broadcast per un Mac separato.
 
 ### Logger32
-- Mostra i decode in una «UDP BandMap» e registra in automatico i QSO di WSJT-X/JTDX con l'opzione «Allow automatic QSO logging» (guida 3.50 del 2018). La porta non e' documentata. **(non verificato)**
+- **Protocollo**: come WSJT-X e JTDX, Aurora manda alla stessa destinazione Heartbeat, Status, un Decode per ogni messaggio e i QSO Logged. Non serve il «Logged ADIF»: il manuale dice che non e' necessario.
+- **Porta**: di fabbrica 127.0.0.1, porta 2237 (Impostazioni › Programmi collegati, «Server UDP primario», campo «Numero porta del server UDP»). Logger32 deve avere la stessa porta: clic destro su «UDP» › «Change WSJT/JTDX port #».
+- **Mappa**: la «UDP BandMap» si apre a mano, con Ctrl+J oppure clic destro su «UDP» nella barra di stato › «Open UDP BandMap». Il pannello UDP diventa blu quando il socket e' aperto. Il socket di registrazione e' distinto dalla mappa: i QSO si registrano anche a mappa chiusa, ma la mappa si vede solo se la si apre.
+- **Registrazione automatica**: nel menu Config della UDP BandMap, «Allow automatic WSJT/JTDX QSO logging».
+- **Visibilita' delle stazioni**: Config, 30 secondi o piu'. Per una prova togliere «Block callsigns worked before», altrimenti le stazioni gia' collegate non compaiono.
+- **Porte condivise**: JTAlert e GridTracker sulla stessa porta 2237 non possono coesistere (due programmi non ascoltano la stessa porta sullo stesso PC). Se servono entrambi: ripetitore RPTR di Logger32 (clic destro su RPTR › «Setup additional UDP ports» › «Enable sender A», porta 2238) e GridTracker su 2238.
+- **Diagnosi**: Config › «Show UDP message debug window». Se compaiono i Decode la mappa si riempie; se compaiono solo i QSO, la destinazione in Aurora riceve solo ADIF: per la mappa serve il flusso WSJT-X sul server UDP primario, l'ADIF non basta.
+- **Frequenza e modo**: «Allow WSJT/JTDX to set frequency/mode» (con la CAT di Logger32 chiusa). **(non verificato con Aurora)**
+- **Fonti**: manuale Logger32 v4, capitolo 15: https://www.g4ifb.com/Logger32_v4_User_Manual_DRAFT.pdf; guida FT8 ufficiale: https://www.lrg.lv/_faili/logger32/FT8_L32.pdf (versione 3.50 del 2018: usare Logger32 4.x recente).
+- **Guida in Aurora**: sezione «Logger32: mappa UDP e registrazione automatica» (Guida › Integrazioni log).
 
 ### N3FJP
 - Nessuna ricezione UDP di WSJT-X documentata. Esistono adattatori di terzi (ad esempio `wsjtx_to_n3fjp`): ascoltano UDP (default 127.0.0.1:2333) e parlano il TCP di N3FJP (127.0.0.1:1100).
@@ -364,6 +373,7 @@ Col motore proprio ogni QSO messo a log (evento `QsoLogged`, dopo la guardia ant
 - QLog, discussione sulla porta 2237: https://github.com/foldynl/QLog/discussions/1062
 - MacLoggerDX e WSJT-X: https://www.dogparksoftware.com/MacLoggerDX%20Help/mldxfc_wsjtx.html
 - Logger32, guida FT8 (PDF): https://www.lrg.lv/_faili/logger32/FT8_L32.pdf
+- Logger32, manuale v4 (capitolo 15, UDP): https://www.g4ifb.com/Logger32_v4_User_Manual_DRAFT.pdf
 - WaveLogGate: https://github.com/wavelog/WaveLogGate
 - Wavelog, integrazione WSJT-X: https://docs.wavelog.org/user-guide/integrations/wsjt-x/
 - Cloudlog, integrazione WSJT-X: https://github.com/magicbug/Cloudlog/wiki/WSJT-X-Integration
