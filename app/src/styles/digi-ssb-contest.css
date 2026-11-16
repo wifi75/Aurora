@@ -169,3 +169,18 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 .ssbc-prev caption { text-align: left; padding-bottom: 2px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .ssbc-prev th, .ssbc-prev td { padding: 1px 6px; text-align: left; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
 .ssbc-prev tr.is-worked td { font-weight: 600; }
+
+/* riga di inserimento piu' compatta: caratteri da 16 a 20 px (prima 22-28), campi bassi, etichette che non vengono tagliate */
+.ssbc-in { font: 700 clamp(16px, 1.3vw, 20px)/1.2 var(--font-data); height: 34px; padding: 1px 6px; }
+.ssbc-field { font-size: 0.62rem; letter-spacing: 0.02em; }
+.ssbc-field > :first-child:not(input) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ssbc-entry { padding: 5px 10px 6px; }
+/* nome e QTH piu' larghi (il QTH puo' essere «72015 Fasano»), i due RST stretti */
+.ssbc-field--name { flex: 2 1 9ch; min-width: 100px; }
+.ssbc-field--qth { flex: 3 1 12ch; min-width: 150px; }
+.ssbc-field--rst { flex: 0 1 4ch; min-width: 54px; }
+/* larghezze minime che sommate stanno nella colonna centrale: i cinque campi restano su un solo rigo */
+.ssbc-field--call { min-width: 108px; }
+.ssbc-field--name { min-width: 88px; }
+.ssbc-field--qth { min-width: 118px; }
+.ssbc-field--rst { min-width: 48px; }

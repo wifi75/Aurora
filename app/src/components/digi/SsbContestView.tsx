@@ -368,8 +368,8 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
                 </>
               ) : (
                 <>
-                  {field(t('ssbc.name'), <input className="ssbc-in" value={qso.name} maxLength={30} autoComplete="off" onChange={(e) => onQso({ name: e.target.value })} />, 'ssbc-field--nrr')}
-                  {field(t('ssbc.qth'), <input className="ssbc-in" value={qso.qth} maxLength={40} autoComplete="off" onChange={(e) => onQso({ qth: e.target.value })} />, 'ssbc-field--nrr')}
+                  {field(t('ssbc.name'), <input className="ssbc-in" value={qso.name} maxLength={30} autoComplete="off" onChange={(e) => onQso({ name: e.target.value })} />, 'ssbc-field--nrr ssbc-field--name')}
+                  {field(t('ssbc.qth'), <input className="ssbc-in" value={qso.qth} maxLength={40} autoComplete="off" onChange={(e) => onQso({ qth: e.target.value })} />, 'ssbc-field--nrr ssbc-field--qth')}
                   {field(t('ssbc.rsts'), <input className="ssbc-in" value={rsts} maxLength={4} inputMode="numeric" autoComplete="off" onChange={(e) => onRst({ rsts: e.target.value })} />, 'ssbc-field--rst')}
                   {field(t('ssbc.rstr'), <input className="ssbc-in" value={rstr} maxLength={4} inputMode="numeric" autoComplete="off" onChange={(e) => onRst({ rstr: e.target.value })} />, 'ssbc-field--rst')}
                 </>
