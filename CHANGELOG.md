@@ -2,8 +2,9 @@
 
 ## Non rilasciato
 
-- Rapporti: la chiusura di Aurora per l'aggiornamento (icona del vassoio tolta, `taskkill` che non la chiude) non manda piu' un falso pacchetto «crash».
+## 0.11.275 - 2026-11-16
 
+- Rapporti: la chiusura di Aurora per l'aggiornamento (icona del vassoio tolta, `taskkill` che non la chiude) non manda piu' un falso pacchetto «crash».
 - Aggiornamento: mentre Aurora e' chiusa per installare la versione nuova (dall'app o dall'agente nel tray) una finestrina sempre davanti dice cosa succede (chiusura, installazione, riapertura) con una barra che scorre; a fine aggiornamento un avviso di Windows conferma «Aurora aggiornata» con la versione.
 
 ## 0.11.274 - 2026-11-16
