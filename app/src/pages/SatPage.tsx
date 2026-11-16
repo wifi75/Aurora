@@ -1,9 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../components/Icon';
-import { useMemo, useRef, useState } from 'react';
-import { getSat, getSatPasses, getSatPassesAll, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, satUploadMap, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
+import { useMemo, useState } from 'react';
+import { getSat, getSatPasses, getSatPassesAll, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
 import { SatMap } from '../components/sat/SatMap';
 import { SatRadar } from '../components/sat/SatRadar';
+import { SatAlertsPanel } from '../components/sat/SatAlertsPanel';
+import { mergePasses, type AlertPass } from '../lib/satAlerts';
+import { useSatAlerts } from '../lib/useSatAlerts';
+import { useStatusPick } from '../state/station';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { useT } from '../i18n';
 import { compass, countdown, formatLat, formatLon, mhz, mmss, SAT_BUILTIN_MAP } from '../lib/satGeo';
@@ -70,10 +74,18 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [downDraft, setDownDraft] = useState<number | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
   const info: SatInfo | undefined = snap.catalog.find((c) => c.norad === s.selected);
   const tp = info?.transponders[s.transponder] ?? info?.transponders[0];
   const clock = clockOf(snap.sky.time_unix);
+  const myCall = (useStatusPick(['de_call'])?.de_call ?? '').trim().toUpperCase();
+
+  // avvisi: i passaggi di tutti i satelliti spuntati e, se serve, quelli del satellite scelto (anche se non e' spuntato)
+  const alertPasses = useMemo<AlertPass[]>(() => {
+    const all = passesAll.map((p) => ({ norad: p.norad, name: p.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg }));
+    const own = s.selected === null ? [] : passes.map((p) => ({ norad: s.selected as number, name: info?.name ?? now.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg }));
+    return mergePasses(all, own);
+  }, [passesAll, passes, s.selected, info?.name, now.name]);
+  const alerts = useSatAlerts({ passes: alertPasses, positions, tracked: s.tracked, selected: s.selected, minEl: s.min_el_deg, serverNow: now.time_unix });
 
   const save = (patch: Partial<SatSettings>) => {
     void putSat({ ...s, ...patch }).then((next) => {
@@ -107,82 +119,31 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
     ).finally(() => setBusy(false));
   };
 
-  const addMap = (file: File | undefined) => {
-    if (!file) return;
-    void satUploadMap(file.name, file).then(
-      () => {
-        save({ map: file.name });
-        onChanged();
-      },
-      () => toast(t('sat.map.addHint'), 'error'),
-    );
-  };
-
   const ageText = snap.tle.age_s === null ? null : countdown(snap.tle.age_s);
   const next = now.next_pass;
   const inPass = now.visible && next !== null && next.aos_unix <= now.time_unix;
 
   return (
     <>
-      <header className="sat-head">
-        <h1>{t('sat.title')}</h1>
-        <div className="sat-clock" aria-label="UTC">
-          <b>{clock.time}</b>
-          <span>
-            {clock.date} UTC
-          </span>
-        </div>
-        <div className="sat-tle">
-          <span className="sat-muted">{ageText ? t('sat.tle.age', { t: ageText }) : t('sat.tle.none')}</span>
-          <button type="button" className="glass icon-btn sat-icon-btn" disabled={busy} onClick={refreshTle} title={t('sat.tle.refresh')} aria-label={t('sat.tle.refresh')}>
-            <Icon name="refresh" />
-          </button>
-          <button type="button" className="glass icon-btn sat-icon-btn" onClick={() => openSettingsWindow('modesat')} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
-            <Icon name="gear" />
-          </button>
-        </div>
-      </header>
-
       {!snap.observer ? <p className="notice">{t('sat.noObserver')}</p> : null}
 
       <div className="sat-grid">
         <section className="sat-main">
-          <div className="sat-panel sat-mapwrap">
-            <SatMap
-              mapUrl={mapName ? satMapUrl(mapName) : null}
-              sun={{ lat: snap.sky.sun_lat_deg, lon: snap.sky.sun_lon_deg }}
-              moon={{ lat: snap.sky.moon_lat_deg, lon: snap.sky.moon_lon_deg }}
-              observer={snap.observer ? { lat: snap.observer.lat_deg, lon: snap.observer.lon_deg } : null}
-              stationLabel={t('sat.station')}
-              positions={positions}
-              selected={s.selected}
-              track={track}
-              trackNowIndex={TRACK_MINUTES}
-              onSelect={(norad) => save({ selected: norad, transponder: 0, down_hz: null })}
-            />
-            <div className="sat-maptools">
-              <label>
-                <span>{t('sat.map.pick')}</span>
-                <select value={mapName ?? SAT_BUILTIN_MAP} onChange={(e) => save({ map: e.target.value })}>
-                  <option value={SAT_BUILTIN_MAP}>{t('sat.map.builtin')}</option>
-                  {snap.maps.map((m) => (
-                    <option key={m} value={m}>
-                      {m.replace(/\.[a-z]+$/i, '')}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="glass sstv-btn" title={t('sat.map.addHint')} onClick={() => fileInput.current?.click()}>
-                {t('sat.map.add')}
-              </button>
-              <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.bmp,.webp" hidden onChange={(e) => addMap(e.target.files?.[0])} />
-              <span className="sat-legend">
-                <i className="sat-dot sat-dot--sun" /> {t('sat.sun')} <i className="sat-dot sat-dot--moon" /> {t('sat.moon')}
-              </span>
-            </div>
-          </div>
+          <SatMap
+            mapUrl={mapName ? satMapUrl(mapName) : null}
+            sun={{ lat: snap.sky.sun_lat_deg, lon: snap.sky.sun_lon_deg }}
+            moon={{ lat: snap.sky.moon_lat_deg, lon: snap.sky.moon_lon_deg }}
+            observer={snap.observer ? { lat: snap.observer.lat_deg, lon: snap.observer.lon_deg } : null}
+            stationLabel={myCall !== '' ? myCall : t('sat.station')}
+            positions={positions}
+            selected={s.selected}
+            track={track}
+            trackNowIndex={TRACK_MINUTES}
+            alerts={alerts.views}
+            onSelect={(norad) => save({ selected: norad, transponder: 0, down_hz: null })}
+          />
 
-          <div className="sat-panel">
+          <div className="sat-panel sat-passpanel">
             <div className="sat-passhead">
               <h2>{t('sat.pass.title')}{info ? ` · ${info.name}` : ''}</h2>
               <label>
@@ -201,34 +162,37 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
               </label>
             </div>
             {next ? (
-              <p className={`sat-next${inPass ? ' sat-next--now' : ''}`}>
-                <b>{inPass ? t('sat.pass.now') : t('sat.pass.next')}</b>{' '}
-                {inPass ? t('sat.pass.endsIn', { t: countdown(next.los_unix - now.time_unix) }) : t('sat.pass.in', { t: countdown(next.aos_unix - now.time_unix) })} · {t('sat.d.az')} {Math.round(next.aos_az_deg)}° → {Math.round(next.los_az_deg)}° · {t('sat.pass.max')} {Math.round(next.max_el_deg)}°
+              <p className={`sat-next sat-next--compact${inPass ? ' sat-next--now' : ''}`}>
+                <span>{inPass ? t('sat.pass.now') : t('sat.pass.next')}</span>{' '}
+                <b className="sat-count">{inPass ? t('sat.pass.endsIn', { t: countdown(next.los_unix - now.time_unix) }) : t('sat.pass.in', { t: countdown(next.aos_unix - now.time_unix) })}</b>
+                <span className="sat-next-rest"> · {Math.round(next.aos_az_deg)}° → {Math.round(next.los_az_deg)}° · {t('sat.pass.max')} {Math.round(next.max_el_deg)}°</span>
               </p>
             ) : null}
-            <div className="sat-table">
+            <div className="sat-table sat-table--pass">
               <table>
                 <thead>
                   <tr>
+                    <th>{t('sat.pass.date')}</th>
                     <th>{t('sat.pass.aos')}</th>
-                    <th>{t('sat.pass.max')}</th>
                     <th>{t('sat.pass.los')}</th>
                     <th>{t('sat.pass.dur')}</th>
+                    <th>{t('sat.pass.max')}</th>
                     <th>{t('sat.pass.az')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {passes.map((p) => (
                     <tr key={p.aos_unix} className={p.aos_unix <= now.time_unix && p.los_unix > now.time_unix ? 'on' : ''}>
+                      <td>{localDay(p.aos_unix)}</td>
                       <td>
-                        {localDay(p.aos_unix)} <b>{localTime(p.aos_unix)}</b>
-                      </td>
-                      <td>
-                        <b>{Math.round(p.max_el_deg)}°</b>
+                        <b>{localTime(p.aos_unix)}</b>
                       </td>
                       <td>{localTime(p.los_unix)}</td>
                       <td>{mmss(p.duration_s)}</td>
                       <td>
+                        <b>{Math.round(p.max_el_deg)}°</b>
+                      </td>
+                      <td className="sat-azcell" title={`${Math.round(p.aos_az_deg)}° ${compass(p.aos_az_deg)} → ${Math.round(p.los_az_deg)}° ${compass(p.los_az_deg)}`}>
                         {Math.round(p.aos_az_deg)}° {compass(p.aos_az_deg)} → {Math.round(p.los_az_deg)}° {compass(p.los_az_deg)}
                       </td>
                     </tr>
@@ -333,6 +297,22 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
         </section>
 
         <aside className="sat-side">
+          <header className="sat-head" aria-label={t('sat.title')}>
+            <h1 className="visually-hidden">{t('sat.title')}</h1>
+            <div className="sat-clock" aria-label="UTC" title={`${clock.date} UTC`}>
+              <b>{clock.time}</b>
+              <span>UTC</span>
+            </div>
+            <div className="sat-tle">
+              <SatAlertsPanel settings={alerts.settings} blocked={alerts.blocked} update={alerts.update} test={alerts.test} />
+              <button type="button" className="glass icon-btn sat-icon-btn" disabled={busy} onClick={refreshTle} title={`${t('sat.tle.refresh')} · ${ageText ? t('sat.tle.age', { t: ageText }) : t('sat.tle.none')}`} aria-label={t('sat.tle.refresh')}>
+                <Icon name="refresh" />
+              </button>
+              <button type="button" className="glass icon-btn sat-icon-btn" onClick={() => openSettingsWindow('modesat')} title={t('sat.set.title')} aria-label={t('sat.set.title')}>
+                <Icon name="gear" />
+              </button>
+            </div>
+          </header>
           <div className="sat-panel">
             <h2>{t('sat.list.title')}</h2>
             <input className="sat-search" placeholder={t('sat.list.search')} aria-label={t('sat.list.search')} value={search} onChange={(e) => setSearch(e.target.value)} />

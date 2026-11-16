@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import type { SatSettings, SatSnapshot } from '../../api/client';
+import { useRef, useState } from 'react';
+import { satUploadMap, type SatSettings, type SatSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
 import { countdown, SAT_BUILTIN_MAP } from '../../lib/satGeo';
+import { toast } from '../../lib/toast';
 
 /** Gli aggiornamenti automatici proposti, in ore (0 = solo a mano). */
 const HOURS = [0, 6, 12, 24, 48, 168];
@@ -23,6 +24,14 @@ interface Props {
 export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & { cat: Category }) {
   const t = useT();
   const s = snap.settings;
+  const fileInput = useRef<HTMLInputElement>(null);
+  const addMap = (file: File | undefined) => {
+    if (!file) return;
+    void satUploadMap(file.name, file).then(
+      () => onSave({ map: file.name }),
+      () => toast(t('sat.map.addHint'), 'error'),
+    );
+  };
   return (
     <>
       {cat === 'orbits' ? <OrbitsPane snap={snap} busy={busy} onSave={onSave} onRefresh={onRefresh} /> : null}
@@ -38,6 +47,12 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
               </option>
             ))}
           </select>
+          <div className="sat-row">
+            <button type="button" className="glass sstv-btn" title={t('sat.map.addHint')} onClick={() => fileInput.current?.click()}>
+              {t('sat.map.add')}
+            </button>
+            <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.bmp,.webp" hidden onChange={(e) => addMap(e.target.files?.[0])} />
+          </div>
           <p className="sat-muted sat-small">{t('sat.map.addHint')}</p>
         </fieldset>
       ) : null}

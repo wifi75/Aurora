@@ -1,11 +1,11 @@
 /* Pagina Satelliti: pannelli di vetro sul cielo notturno, mappa grande, orologio con bagliore, radar. */
-.sat-page { display: flex; flex-direction: column; gap: 0.9rem; padding: 0.6rem 0.8rem 2rem; }
-.sat-head { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
-.sat-head h1 { margin: 0; font-size: 1.6rem; letter-spacing: 0.02em; background: linear-gradient(100deg, #2cf5a4, #27d6f5 55%, #8e7bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.sat-clock { display: flex; flex-direction: column; align-items: flex-start; padding: 0.35rem 1rem; border-radius: 14px; background: linear-gradient(135deg, rgba(20, 60, 50, 0.7), rgba(15, 25, 55, 0.7)); border: 1px solid rgba(44, 245, 164, 0.4); box-shadow: 0 0 24px -6px rgba(44, 245, 164, 0.6); }
-.sat-clock b { font: 700 1.9rem/1.1 var(--font-data, ui-monospace, monospace); color: #46ffb0; text-shadow: 0 0 14px rgba(70, 255, 176, 0.7); letter-spacing: 0.04em; }
-.sat-clock span { font-size: 0.78rem; color: #9fd8c4; letter-spacing: 0.08em; }
-.sat-tle { display: flex; align-items: center; gap: 0.8rem; margin-left: auto; }
+.sat-page { display: flex; flex-direction: column; gap: 0.9rem; padding: 0.1rem 0.8rem 2rem; }
+.sat-head { display: flex; align-items: center; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap; }
+.sat-head h1 { margin: 0; font-size: 1.28rem; letter-spacing: 0.02em; background: linear-gradient(100deg, #2cf5a4, #27d6f5 55%, #8e7bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sat-clock { display: flex; flex-direction: row; align-items: baseline; gap: 0.5rem; margin-left: auto; padding: 0.2rem 0.8rem; border-radius: 11px; background: linear-gradient(135deg, rgba(20, 60, 50, 0.7), rgba(15, 25, 55, 0.7)); border: 1px solid rgba(44, 245, 164, 0.4); box-shadow: 0 0 24px -6px rgba(44, 245, 164, 0.6); }
+.sat-clock b { font: 700 1.52rem/1 var(--font-data, ui-monospace, monospace); color: #46ffb0; text-shadow: 0 0 14px rgba(70, 255, 176, 0.7); letter-spacing: 0.04em; }
+.sat-clock span { font-size: 0.62rem; color: #9fd8c4; letter-spacing: 0.08em; }
+.sat-tle { display: flex; align-items: center; gap: 0.4rem; }
 .sat-muted { color: var(--text-muted); }
 .sat-small { font-size: 0.8rem; margin: 0.4rem 0 0; }
 
@@ -45,37 +45,43 @@
 .sat-table td { padding: 0.32rem 0.5rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); white-space: nowrap; }
 .sat-table tr.on td { background: color-mix(in srgb, #3ddc84 18%, transparent); }
 
-.sat-search { width: 100%; box-sizing: border-box; margin-bottom: 0.5rem; }
+.sat-search { width: 100%; box-sizing: border-box; margin-bottom: 0.35rem; }
+.sat-side .sat-search { padding: 0.15rem 0.45rem; font-size: 0.8125rem; line-height: 1.3; }
 .sat-list { list-style: none; margin: 0; padding: 0; max-height: 14rem; overflow: auto; border-radius: 10px; }
-.sat-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.18rem 0.4rem; border-radius: 8px; }
+.sat-list li { display: flex; align-items: center; gap: 0.4rem; padding: 0.04rem 0.35rem; border-radius: 7px; font-size: 0.8125rem; line-height: 1.25; }
 .sat-list li.on { background: linear-gradient(90deg, rgba(142, 123, 255, 0.38), rgba(44, 245, 164, 0.16)); box-shadow: inset 0 0 0 1px #8e7bff; }
-.sat-list li button { flex: 1; text-align: left; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 0.2rem 0; }
+.sat-list li button { flex: 1; text-align: left; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 0.12rem 0; }
 .sat-list li small { color: var(--text-muted); font-weight: 400; }
-.sat-list input[type='checkbox'] { accent-color: #2cf5a4; }
+.sat-list input[type='checkbox'] { accent-color: #2cf5a4; width: 0.8rem; height: 0.8rem; margin: 0; }
 
-.sat-data { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 0.9rem; margin: 0; }
+.sat-data { display: grid; grid-template-columns: 1fr 1fr; gap: 0.12rem 0.6rem; margin: 0; }
 .sat-data div { display: flex; flex-direction: column; min-width: 0; }
-.sat-data dt { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.sat-data dd { margin: 0; font: 600 0.98rem var(--font-data, ui-monospace, monospace); }
-.sat-data--small dd { font-size: 0.88rem; }
+.sat-data dt { font-size: 0.625rem; line-height: 1.2; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sat-data dd { margin: 0; font: 600 0.875rem/1.2 var(--font-data, ui-monospace, monospace); }
+.sat-data--small dd { font-size: 0.8125rem; }
 .sat-data .sat-freqs, .sat-freqs { grid-template-columns: 1fr; margin-top: 0.4rem; }
 .sat-up { color: #46ffb0; }
 .sat-radarpanel { display: flex; justify-content: center; padding: 0.4rem; background: radial-gradient(circle at 50% 40%, rgba(40, 70, 130, 0.35), transparent 70%); }
 .sat-radar { display: block; }
 
-.sat-field { display: flex; flex-direction: column; gap: 0.25rem; margin: 0.5rem 0; font-size: 0.85rem; color: var(--text-muted); }
+.sat-field { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.3rem 0; font-size: 0.78rem; color: var(--text-muted); }
+.sat-side .sat-field select, .sat-side .sat-field input[type='number'] { font-size: 0.8125rem; padding: 0.15rem 0.4rem; }
+.sat-side .sat-panel { padding: 0.55rem 0.7rem; }
+.sat-side .sat-panel h2 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+.sat-side .sat-panel h3 { margin: 0.5rem 0 0.25rem; font-size: 0.68rem; }
+.sat-side .sat-muted { font-size: 0.78rem; }
 .sat-field input[type='range'] { width: 100%; accent-color: #2cf5a4; }
 .sat-field--check { flex-direction: row; align-items: center; gap: 0.5rem; }
-.sat-switch { display: flex; align-items: center; gap: 0.6rem; margin: 0.8rem 0 0.2rem; font-weight: 700; }
-.sat-switch input { width: 2.4rem; height: 1.3rem; accent-color: #2cf5a4; }
-.sat-status { margin: 0.2rem 0 0.4rem; font-size: 0.82rem; }
+.sat-switch { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0 0.15rem; font-size: 0.85rem; font-weight: 700; }
+.sat-switch input { width: 1.9rem; height: 1rem; accent-color: #2cf5a4; }
+.sat-status { margin: 0.15rem 0 0.3rem; font-size: 0.75rem; }
 .sat-status.ok { color: #46ffb0; }
 .sat-status.warn { color: #ffb86b; }
 
 @media (max-width: 62rem) { .sat-grid { grid-template-columns: minmax(0, 1fr); } .sat-tle { margin-left: 0; } }
 
 /* pulsanti tondi dell'intestazione (aggiorna le orbite, impostazioni) */
-.sat-icon-btn { width: 2.2rem; height: 2.2rem; padding: 0; display: grid; place-items: center; border-radius: 50%; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.sat-icon-btn { width: 1.76rem; height: 1.76rem; padding: 0; display: grid; place-items: center; border-radius: 50%; font-size: 0.88rem; line-height: 1; cursor: pointer; }
 .sat-icon-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* finestra delle impostazioni dei Satelliti */
@@ -102,3 +108,86 @@
 .sat-table tr.sat-row-pick { cursor: pointer; }
 .sat-table tr.sat-row-pick:hover td { background: color-mix(in srgb, var(--accent, #4aa3ff) 14%, transparent); }
 .sat-table tr.sat-row-pick.on:hover td { background: color-mix(in srgb, #3ddc84 28%, transparent); }
+
+/* avvisi all'AOS: pulsante con campanella, riquadro delle scelte, anelli e scritte sulla mappa */
+.sat-alerts { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+.sat-alerts-btn { display: inline-flex; align-items: center; gap: 0.3rem; height: 1.76rem; padding: 0 0.64rem; border-radius: 999px; font: inherit; font-size: 0.68rem; cursor: pointer; opacity: 0.75; }
+.sat-alerts-btn { color: var(--text); }
+.sat-alerts-btn.on { opacity: 1; }
+.sat-alerts-btn.on .icon { color: #e0a000; }
+.sat-alerts-pop { position: absolute; top: calc(100% + 0.4rem); right: 0; z-index: 30; width: min(21rem, calc(92vw / var(--ui-zoom, 1))); display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); color: var(--text); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55); font-size: 0.85rem; }
+.sat-alerts-row { display: flex; flex-direction: column; gap: 0.2rem; }
+.sat-alerts-row--check { flex-direction: row; align-items: center; gap: 0.5rem; }
+.sat-alerts-row--inline { flex-direction: row; align-items: center; gap: 0.5rem; }
+.sat-alerts-row--inline > span { flex: 1; }
+.sat-alerts-row input[type='range'] { width: 100%; accent-color: #2cf5a4; }
+.sat-alerts-row input[type='number'] { width: 4rem; }
+.sat-alerts-row select, .sat-alerts-row input[type='number'] { font: inherit; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 8px; padding: 0.2rem 0.4rem; min-width: 0; }
+.sat-alerts-row button { font-size: 0.8rem; padding: 0.2rem 0.6rem; }
+
+.sat-alert-layer { position: absolute; top: 0; left: 0; pointer-events: none; overflow: hidden; }
+.sat-ring circle { fill: none; transform-box: fill-box; transform-origin: center; }
+.sat-ring-base { stroke-width: 1.6; }
+.sat-ring-wave { stroke-width: 2; opacity: 0; }
+.sat-ring--pre .sat-ring-base { stroke: #ffb347; opacity: 0.85; }
+.sat-ring--pre .sat-ring-wave { stroke: #ffb347; animation: sat-ring-pulse 1.5s ease-out infinite; }
+.sat-ring--flash .sat-ring-base { stroke: #46ffb0; stroke-width: 2.4; filter: drop-shadow(0 0 5px #46ffb0); }
+.sat-ring--flash .sat-ring-wave { stroke: #46ffb0; stroke-width: 3; animation: sat-ring-burst 2s ease-out 3; }
+.sat-ring--flash .sat-ring-wave--late { animation-delay: 0.9s; }
+.sat-ring--live .sat-ring-base { stroke: #3ddc84; opacity: 0.55; }
+.sat-ring--fade .sat-ring-base { stroke: #3ddc84; animation: sat-ring-fade 4s ease-out forwards; }
+.sat-alert-label { fill: #fff; font: 600 12px system-ui, sans-serif; paint-order: stroke; stroke: rgba(0, 0, 0, 0.85); stroke-width: 3px; stroke-linejoin: round; }
+.sat-alert-label--flash { fill: #46ffb0; font-size: 13px; font-weight: 700; }
+@keyframes sat-ring-pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes sat-ring-burst { from { transform: scale(0.6); opacity: 0.95; } to { transform: scale(11); opacity: 0; } }
+@keyframes sat-ring-fade { from { opacity: 0.8; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sat-ring-wave, .sat-ring--fade .sat-ring-base { animation: none; }
+  .sat-ring--fade .sat-ring-base { opacity: 0.35; }
+  .sat-ring--pre .sat-ring-base { stroke-width: 2.6; }
+}
+.sat-tle > .sat-muted { font-size: 0.8rem; white-space: nowrap; }
+.sat-clock { white-space: nowrap; }
+.sat-head .sat-alerts-btn { min-height: 0; height: 1.8rem; }
+.sat-head button.icon-btn.sat-icon-btn { --icon-btn-size: 1.6rem; width: 1.6rem; height: 1.6rem; min-height: 0; }
+.sat-clock { padding-top: 0.1rem; padding-bottom: 0.1rem; }
+.sat-head .sat-alerts-btn { position: relative; justify-content: center; width: 2rem; min-width: 2rem; height: 2rem; padding: 0; border-radius: 50%; opacity: 1; }
+.sat-alerts-btn .icon { color: #e0a000; transition: filter 0.15s, color 0.15s; }
+.sat-alerts-btn:not(.on) .icon { opacity: 0.55; }
+.sat-alerts-btn:hover .icon, .sat-alerts-btn:focus-visible .icon { color: #ffc21a; filter: drop-shadow(0 0 5px rgba(255, 194, 26, 0.85)); }
+.sat-alerts-btn .sat-alerts-badge { position: absolute; top: 1px; right: 1px; color: #ff7a59; opacity: 1; background: var(--panel); border-radius: 50%; }
+
+/* testata a filo con la mappa; la mappa resta alla dimensione originale */
+/* il gruppo orologio, avvisi, aggiorna e impostazioni e' la prima riga della colonna destra, allineato a sinistra */
+.sat-page { margin-top: 0; padding-top: 4px; }
+.sat-side > .sat-head { flex-wrap: nowrap; justify-content: flex-start; gap: 0.4rem; min-height: 2rem; padding: 0; }
+.sat-side > .sat-head .sat-clock { margin-left: 0; }
+
+/* la mappa: riquadro ridimensionabile dall'angolo, senza altri bordi; la legenda sta dentro, in basso a sinistra */
+.sat-mapwrap { position: relative; padding: 0; overflow: hidden; max-width: 100%; }
+.sat-mapwrap--sizing { user-select: none; }
+.sat-map { border-radius: 15px; }
+.sat-map .sat-legend { position: absolute; left: 0.5rem; bottom: 0.5rem; margin: 0; z-index: 5; padding: 0.15rem 0.5rem; border-radius: 999px; background: rgba(8, 14, 30, 0.65); color: #e6eefc; font-size: 0.72rem; pointer-events: none; }
+.sat-map .sat-dot { width: 0.65rem; height: 0.65rem; }
+.sat-resize { position: absolute; right: 0; bottom: 0; z-index: 6; width: 1.3rem; height: 1.3rem; cursor: nwse-resize; touch-action: none; opacity: 0.55; transition: opacity 0.15s; background: linear-gradient(135deg, transparent 0 45%, #fff 45% 52%, transparent 52% 62%, #fff 62% 69%, transparent 69% 79%, #fff 79% 86%, transparent 86%); }
+.sat-resize:hover, .sat-mapwrap--sizing .sat-resize { opacity: 1; }
+.sat-map { aspect-ratio: 2 / 1; }
+
+/* scheda Passaggi: due terzi della larghezza, tabella compatta e scorrevole */
+@media (min-width: 62rem) { .sat-passpanel { width: 66.667%; } }
+.sat-passpanel .sat-passhead { gap: 0.6rem; flex-wrap: nowrap; }
+.sat-passpanel .sat-passhead h2 { margin: 0 auto 0 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sat-passpanel .sat-passhead label { gap: 0.3rem; font-size: 0.78rem; white-space: nowrap; }
+.sat-passpanel .sat-passhead input[type='number'], .sat-passpanel .sat-passhead select { padding: 0.1rem 0.35rem; font-size: 0.8125rem; }
+.sat-passpanel .sat-passhead input[type='number'] { width: 3rem; }
+.sat-next--compact { display: flex; align-items: baseline; gap: 0.35rem; margin: 0.4rem 0; padding: 0.25rem 0.6rem; border-radius: 9px; font-size: 0.8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sat-next--compact .sat-count { font-size: 1rem; font-weight: 800; }
+.sat-next--compact .sat-next-rest { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; }
+.sat-table--pass { max-height: calc(24px * 9 + 28px); overflow: auto; }
+.sat-table--pass table { font-size: 0.8125rem; table-layout: fixed; }
+.sat-table--pass th { position: sticky; top: 0; z-index: 1; padding: 0.2rem 0.4rem; height: 28px; background: var(--panel); text-align: right; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.sat-table--pass td { padding: 0 0.4rem; height: 24px; text-align: right; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.sat-table--pass th:first-child, .sat-table--pass td:first-child, .sat-table--pass th:last-child, .sat-table--pass td:last-child { text-align: left; }
+.sat-table--pass th:nth-child(1) { width: 12%; } .sat-table--pass th:nth-child(2), .sat-table--pass th:nth-child(3) { width: 15%; } .sat-table--pass th:nth-child(4) { width: 11%; } .sat-table--pass th:nth-child(5) { width: 11%; }
+.sat-table--pass tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.sat-table--pass tr.on td { background: color-mix(in srgb, #3ddc84 24%, transparent); font-weight: 700; }

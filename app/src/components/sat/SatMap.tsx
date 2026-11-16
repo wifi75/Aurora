@@ -5,7 +5,8 @@ import type { FeatureCollection } from 'geojson';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import type { SatPosition } from '../../api/client';
 import { useT } from '../../i18n';
-import { footprintPolygon, nightAlpha, project, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
+import { footprintPolygon, mmss, nightAlpha, project, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
+import type { AlertPhase, AlertView } from '../../lib/satAlerts';
 
 interface Props {
   /** L'immagine della mappa del mondo (equirettangolare); senza, la mappa inclusa in Aurora (terre e confini di Natural Earth). */
@@ -19,6 +20,8 @@ interface Props {
   /** La traccia a terra del satellite scelto: meta' passata, meta' futura. */
   track: readonly LatLon[];
   trackNowIndex: number;
+  /** Gli avvisi da disegnare (preavviso, lampo all'AOS, anello fisso, dissolvimento alla LOS). */
+  alerts?: readonly AlertView[];
   onSelect(norad: number): void;
 }
 
@@ -73,6 +76,30 @@ function loadLon(): number {
   }
 }
 
+const SIZE_KEY = 'aurora.sat.mapw';
+/** Larghezza minima della mappa ridimensionata (px). */
+const MIN_W = 322;
+
+/** La larghezza scelta trascinando l'angolo (null = tutta la larghezza disponibile, come in origine). */
+function loadSize(): number | null {
+  try {
+    const raw = window.localStorage.getItem(SIZE_KEY);
+    const v = raw === null ? NaN : Number(raw);
+    return Number.isFinite(v) && v >= MIN_W ? Math.round(v) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSize(v: number | null): void {
+  try {
+    if (v === null) window.localStorage.removeItem(SIZE_KEY);
+    else window.localStorage.setItem(SIZE_KEY, String(v));
+  } catch {
+    /* memoria del browser non disponibile */
+  }
+}
+
 function saveLon(v: number): void {
   try {
     window.localStorage.setItem(LON_KEY, String(v));
@@ -100,7 +127,7 @@ function unwrap(pts: readonly LatLon[]): LatLon[] {
 const PALETTE = { grid: 'rgba(255,255,255,0.16)', label: 'rgba(255,255,255,0.75)', past: 'rgba(255,255,255,0.55)', future: '#ffd84d', foot: '#3ddc84', sat: '#ffffff', sel: '#ffd84d' };
 
 /** La mappa dei satelliti: mondo con giorno e notte, Sole e Luna, la stazione, i satelliti con la loro impronta radio e la traccia del satellite scelto. Si sposta in orizzontale trascinandola e gira senza bordi. */
-export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, onSelect }: Props) {
+export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, alerts = [], onSelect }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -114,6 +141,11 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ id: number; x0: number; lon0: number; moved: boolean } | null>(null);
   const shiftPx = useRef(0);
+  const frame = useRef<HTMLDivElement>(null);
+  /** Larghezza scelta dall'utente (px, del riquadro intero); null = tutta la larghezza disponibile. */
+  const [userW, setUserW] = useState<number | null>(loadSize);
+  const [sizing, setSizing] = useState(false);
+  const size = useRef<{ id: number; x0: number; w0: number; max: number; w: number | null } | null>(null);
 
   useEffect(() => {
     const el = wrap.current;
@@ -322,19 +354,29 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
     // la stazione
     if (observer) {
       const [x, y] = project(observer.lat, observer.lon, w, h);
-      eachCopy(x - 10, x + 200, () => {
-        ctx.strokeStyle = '#ff6b6b';
-        ctx.lineWidth = 2;
+      eachCopy(x - 12, x + 200, () => {
+        // la stazione: una stella con un leggero contorno scuro per leggersi sulla mappa
         ctx.beginPath();
-        ctx.moveTo(x - 7, y);
-        ctx.lineTo(x + 7, y);
-        ctx.moveTo(x, y - 7);
-        ctx.lineTo(x, y + 7);
+        for (let k = 0; k < 10; k++) {
+          const r = k % 2 === 0 ? 10 : 4.2;
+          const a = -Math.PI / 2 + (k * Math.PI) / 5;
+          if (k === 0) ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+          else ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3.2;
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
         ctx.stroke();
-        ctx.fillStyle = '#ffb3b3';
-        ctx.font = '12px system-ui, sans-serif';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px system-ui, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(stationLabel, x + 9, y + 15);
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(stationLabel, x + 13, y + 16);
+        ctx.shadowBlur = 0;
       });
     }
 
@@ -398,6 +440,7 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   };
 
   return (
+    <div className={`sat-panel sat-mapwrap${sizing ? ' sat-mapwrap--sizing' : ''}`} ref={frame} style={userW === null ? undefined : { width: userW }}>
     <div className={dragging ? 'sat-map sat-map--drag' : 'sat-map'} ref={wrap}>
       <canvas
         ref={canvas}
@@ -432,6 +475,119 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
           saveLon(0);
         }}
       />
+      {alerts.length > 0 ? <AlertLayer width={width} lonOff={lonOff} observer={observer} positions={positions} alerts={alerts} /> : null}
+      <span className="sat-legend">
+        <i className="sat-dot sat-dot--sun" /> {t('sat.sun')} <i className="sat-dot sat-dot--moon" /> {t('sat.moon')}
+      </span>
+      <div
+        className="sat-resize"
+        role="separator"
+        aria-label={t('sat.map.resize')}
+        title={t('sat.map.resize')}
+        onPointerDown={(e) => {
+          const f = frame.current;
+          if (!f || (e.pointerType === 'mouse' && e.button !== 0)) return;
+          e.stopPropagation();
+          const parent = f.parentElement;
+          const max = Math.max(MIN_W, parent ? parent.clientWidth : f.offsetWidth);
+          size.current = { id: e.pointerId, x0: e.clientX, w0: f.getBoundingClientRect().width, max, w: null };
+          setSizing(true);
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* il puntatore e' gia' finito */
+          }
+        }}
+        onPointerMove={(e) => {
+          const z = size.current;
+          if (!z || z.id !== e.pointerId) return;
+          const w = Math.round(Math.max(MIN_W, Math.min(z.max, z.w0 + e.clientX - z.x0)));
+          z.w = w;
+          setUserW(w >= z.max ? null : w);
+        }}
+        onPointerUp={(e) => {
+          const z = size.current;
+          if (!z || z.id !== e.pointerId) return;
+          size.current = null;
+          setSizing(false);
+          if (z.w !== null) saveSize(z.w >= z.max ? null : z.w);
+        }}
+        onPointerCancel={() => {
+          size.current = null;
+          setSizing(false);
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          setUserW(null);
+          saveSize(null);
+        }}
+      />
     </div>
+    </div>
+  );
+}
+
+const PHASE_ORDER: Record<AlertPhase, number> = { flash: 0, pre: 1, live: 2, fade: 3 };
+
+interface LayerProps {
+  width: number;
+  lonOff: number;
+  observer: { lat: number; lon: number } | null;
+  positions: readonly SatPosition[];
+  alerts: readonly AlertView[];
+}
+
+/** Anelli e scritte degli avvisi sopra la mappa: un livello SVG che non prende i clic e gira con la mappa (copie affiancate come per il disegno). */
+function AlertLayer({ width: w, lonOff, observer, positions, alerts }: LayerProps) {
+  const t = useT();
+  const h = Math.round(w / 2);
+  const shift = Math.round((((lonOff / 360) * w) % w + w) % w);
+  /** Le posizioni x di un punto nella mappa spostata, con le copie che toccano lo schermo. */
+  const xs = (x: number): number[] => {
+    const base = (((x + shift) % w) + w) % w;
+    return [base - w, base, base + w].filter((v) => v > -80 && v < w + 80);
+  };
+  const labelOf = (a: AlertView): string | null => {
+    if (a.phase === 'pre') return a.secondsToAos > 0 ? t('sat.alert.pre', { name: a.name, t: mmss(a.secondsToAos) }) : t('sat.alert.soon', { name: a.name });
+    if (a.phase === 'fade') return t('sat.alert.los', { name: a.name });
+    return null;
+  };
+  const top = [...alerts].sort((a, b) => PHASE_ORDER[a.phase] - PHASE_ORDER[b.phase])[0];
+  const flashing = alerts.filter((a) => a.phase === 'flash');
+  const st = observer ? project(observer.lat, observer.lon, w, h) : null;
+  return (
+    <svg className="sat-alert-layer" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      {st && top
+        ? xs(st[0]).map((x) => (
+            <g key={`st-${x}-${top.phase}`} transform={`translate(${x} ${st[1]})`} className={`sat-ring sat-ring--${top.phase}`}>
+              <circle className="sat-ring-base" r="12" />
+              {top.phase === 'pre' || top.phase === 'flash' ? <circle className="sat-ring-wave" r="12" /> : null}
+              {top.phase === 'flash' ? <circle className="sat-ring-wave sat-ring-wave--late" r="12" /> : null}
+              {top.phase === 'flash' ? (
+                <text className="sat-alert-label sat-alert-label--flash" x="16" y="-14">
+                  {t('sat.alert.aos', { name: flashing.map((f) => f.name).join(', ') })}
+                </text>
+              ) : null}
+            </g>
+          ))
+        : null}
+      {alerts.map((a) => {
+        const p = positions.find((q) => q.norad === a.norad);
+        if (!p) return null;
+        const [px, py] = project(p.lat_deg, p.lon_deg, w, h);
+        const label = labelOf(a);
+        return xs(px).map((x) => (
+          <g key={`${a.norad}-${x}-${a.phase}`} transform={`translate(${x} ${py})`} className={`sat-ring sat-ring--${a.phase}`}>
+            <circle className="sat-ring-base" r="14" />
+            {a.phase === 'pre' || a.phase === 'flash' ? <circle className="sat-ring-wave" r="14" /> : null}
+            {label ? (
+              <text className="sat-alert-label" x="18" y="22">
+                {label}
+              </text>
+            ) : null}
+          </g>
+        ));
+      })}
+    </svg>
   );
 }

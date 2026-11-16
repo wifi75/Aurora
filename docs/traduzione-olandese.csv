@@ -4412,6 +4412,7 @@ sat.all.local,Start (local),Begin (lokaal)
 sat.all.in,In,Over
 sat.all.pick,Click to choose this satellite,Klik om deze satelliet te kiezen
 sat.pass.title,Passes,Passages
+sat.pass.date,Date,Datum
 sat.pass.aos,AOS,AOS
 sat.pass.max,Max el.,Max el.
 sat.pass.los,LOS,LOS
@@ -4454,6 +4455,7 @@ sat.map.add,Add a map…,Een kaart toevoegen…
 sat.map.addHint,"An equirectangular image (360° × 180°), jpg, png, bmp or webp.","Een equirectangulair beeld (360° × 180°), jpg, png, bmp of webp."
 sat.map.drag,Drag to move the map · double-click to center it,Sleep om de kaart te verschuiven · dubbelklik om te centreren
 sat.map.builtin,Aurora map,Aurora-kaart
+sat.map.resize,Drag the corner to resize the map · double-click for the original size,Sleep de hoek om de kaart te vergroten of verkleinen · dubbelklik voor de oorspronkelijke grootte
 sat.sun,Sun,Zon
 sat.moon,Moon,Maan
 sat.station,Station,Station
@@ -4462,6 +4464,26 @@ sat.info.verify,Check the frequencies on AMSAT: satellites change.,Controleer de
 sat.info.up,Uplink,Uplink
 sat.info.down,Downlink,Downlink
 sat.info.inverting,inverting,inverterend
+sat.alert.title,Alerts,Meldingen
+sat.alert.tip,Sound alerts when a satellite is about to enter your area or leaves it,Geluidsmeldingen wanneer een satelliet je gebied gaat binnenkomen of verlaat
+sat.alert.on,Alerts on (sounds and animations),Meldingen aan (geluiden en animaties)
+sat.alert.volume,Volume,Volume
+sat.alert.lead,"Early warning (minutes, 0 = none)","Voorwaarschuwing (minuten, 0 = geen)"
+sat.alert.only,Only the chosen satellite,Alleen de gekozen satelliet
+sat.alert.ev.pre,Early warning,Voorwaarschuwing
+sat.alert.ev.aos,AOS: enters the area,AOS: komt het gebied binnen
+sat.alert.ev.los,LOS: leaves the area,LOS: verlaat het gebied
+sat.alert.snd.off,No sound,Geen geluid
+sat.alert.snd.bell,Chime,Belletje
+sat.alert.snd.radar,Radar,Radar
+sat.alert.snd.arpeggio,Arpeggio,Arpeggio
+sat.alert.test,Test,Proberen
+sat.alert.unlock,Tap to enable sounds,Tik om geluiden te activeren
+sat.alert.hint,AOS is when the satellite rises above the minimum elevation and your station enters the green area where it can be seen.,AOS is het moment waarop de satelliet boven de minimale elevatie komt en je station het groene gebied binnenkomt waar hij te zien is.
+sat.alert.pre,{name} · AOS in {t},{name} · AOS over {t}
+sat.alert.soon,{name} · AOS imminent,{name} · AOS bijna
+sat.alert.aos,AOS · {name},AOS · {name}
+sat.alert.los,LOS · {name},LOS · {name}
 digi.tab.rotor,Rotator,Rotor
 cop.title,DX Cluster options,DX Cluster-opties
 cop.tip,"DX Cluster options: click, rotator, spot expiry and columns","DX Cluster-opties: klik, rotor, vervaltijd van spots en kolommen"
