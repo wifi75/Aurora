@@ -1,7 +1,7 @@
 # Aurora - istruzioni per chi sviluppa
 
 «Aurora — Multimode Ham Radio Station», stazione radioamatoriale multimodo (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK, RTTY, CW, SSTV, satelliti) per Windows e telefono: motore proprio (`core/crates/engine-native`), CAT, cascata, automazione dei QSO, controllo remoto.
-Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://github.com/wifi75/Aurora>; cartella di lavoro `D:\progetti\pc\Aurora`.
+Autore: Tiziano Cassone (IU3WJQ). Licenza GPL-3.0. Repository pubblico <https://github.com/wifi75/Aurora>; cartella di lavoro `%USERPROFILE%\Desktop\Progetti\Aurora`.
 `core/` Rust (Tokio, Axum) · `app/` React + TypeScript + Vite · `desktop/` Tauri 2 (workspace Cargo a parte) · `docs/` documentazione.
 
 ## Regole
