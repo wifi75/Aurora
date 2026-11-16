@@ -457,6 +457,8 @@ fn area(origine: &str, messaggio: &str) -> &'static str {
         "panic"
     } else if origine.starts_with("aurora_desktop::blocco") || m.starts_with("programma bloccato") {
         "blocco"
+    } else if origine.starts_with("aurora_desktop::avvio") || m.starts_with("avvio lento") {
+        "avvio"
     } else if origine.starts_with("remote_api::associazione") {
         "telefono"
     } else if origine.starts_with("tx_native") || m.contains("ptt") {
@@ -483,7 +485,7 @@ fn area(origine: &str, messaggio: &str) -> &'static str {
 /// Situazioni della stazione, non errori del programma, che servono a sapere su che macchine Aurora fatica: partono al massimo una volta
 /// per installazione e versione, qualunque numero portino. «Decodifica lenta» arrivava da ogni PC vecchio a ogni avvio (17 rapporti il
 /// 2026-11-11, tutti da portatili a 4 processori); sullo schermo l'operatore ha gia' l'avviso con la profondita' da abbassare.
-const UNA_PER_VERSIONE: [&str; 1] = ["engine_native::lento"];
+const UNA_PER_VERSIONE: [&str; 2] = ["engine_native::lento", "aurora_desktop::avvio"];
 
 /// L'avviso di `origine` e' gia' partito con questa `versione` da questa installazione: non si manda di nuovo.
 fn gia_segnalato(limiti: &Limiti, origine: &str, versione: &str) -> bool {
@@ -1569,6 +1571,7 @@ mod tests {
         assert!(da_segnalare(tracing::Level::WARN, "aurora_desktop::blocco"));
         assert_eq!(area("aurora_desktop::blocco", "blocco del programma finito dopo 31 s"), "blocco");
         assert_eq!(area("aurora_desktop_lib::crash", "programma bloccato (finestra) da oltre 20 s"), "blocco");
+        assert_eq!(area("aurora_desktop::avvio", "avvio lento: la finestra ha cominciato a rispondere dopo 42 s (avvio normale)"), "avvio");
     }
 
     #[test]

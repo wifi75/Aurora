@@ -193,12 +193,8 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
         None => handle.path().data_dir()?.join("Aurora"),
     };
     std::fs::create_dir_all(&data_dir)?;
-    // riaperta dalla copia di aiuto dopo un aggiornamento riuscito: un avviso di Windows lo conferma
-    let updated = data_dir.join(installer::UPDATED_MARK);
-    if updated.exists() {
-        let _ = std::fs::remove_file(&updated);
-        notify(&handle, agent::update_text("u_done"), &agent::update_text("u_done_body").replace("{v}", env!("CARGO_PKG_VERSION")));
-    }
+    // riaperta dalla copia di aiuto dopo un aggiornamento riuscito: il segno lo toglie `crash::spawn_watchdog` quando la finestra risponde
+    // (la finestrina dell'aggiornamento resta fino ad allora) e mostra l'avviso di Windows che lo conferma
     crash::init(&data_dir);
     init_logging(&data_dir);
     health::install_panic_hook();

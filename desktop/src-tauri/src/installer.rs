@@ -228,8 +228,19 @@ pub fn apply_update(args: &ApplyArgs) {
                 let _ = std::fs::write(PathBuf::from(base).join("Aurora").join(UPDATED_MARK), b"1");
             }
             reopen_aurora();
-            // la finestrina resta finche' la finestra di Aurora non ha avuto il tempo di comparire
-            std::thread::sleep(Duration::from_secs(4));
+            // la finestrina resta finche' la finestra di Aurora non risponde: Aurora toglie il segno al primo battito della finestra. La
+            // prima volta dopo un aggiornamento WebView2 e l'antivirus possono metterci anche un minuto: senza la finestrina lo schermo
+            // restava vuoto. Al massimo 120 s, poi si chiude comunque.
+            window.step(crate::agent::update_text("u_start"));
+            let mark = std::env::var_os("APPDATA").map(|b| PathBuf::from(b).join("Aurora").join(UPDATED_MARK));
+            if let Some(mark) = mark {
+                let waited = Instant::now();
+                std::thread::sleep(Duration::from_secs(3));
+                while mark.exists() && waited.elapsed() < Duration::from_secs(120) {
+                    std::thread::sleep(Duration::from_millis(500));
+                }
+                std::thread::sleep(Duration::from_millis(800));
+            }
         }
         AfterInstall::ReopenInstaller => {
             log_line("installazione non riuscita: si riapre l'installatore con le sue finestre");

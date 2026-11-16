@@ -213,6 +213,18 @@ impl Watch {
 }
 
 /// Fa battere runtime e finestra e avvia il guardiano in un thread suo.
+/// Toglie il segno «aggiornamento riuscito» (se c'e') e mostra l'avviso di Windows; `true` se c'era.
+fn take_update_mark(app: &tauri::AppHandle) -> bool {
+    let Some(dir) = dir().and_then(Path::parent) else { return false };
+    let mark = dir.join(crate::installer::UPDATED_MARK);
+    if !mark.exists() {
+        return false;
+    }
+    let _ = std::fs::remove_file(&mark);
+    crate::notify(app, crate::agent::update_text("u_done"), &crate::agent::update_text("u_done_body").replace("{v}", env!("CARGO_PKG_VERSION")));
+    true
+}
+
 pub fn spawn_watchdog(app: tauri::AppHandle) {
     // qui il log e' gia' pronto: l'esito della registrazione presso Windows Error Reporting resta scritto
     platform::register_wer();
@@ -269,9 +281,17 @@ pub fn spawn_watchdog(app: tauri::AppHandle) {
                 }
                 if !first_beat_seen {
                     first_beat_seen = true;
+                    // il segno lasciato dalla copia di aiuto dopo un aggiornamento riuscito: si toglie qui, a finestra pronta (la finestrina
+                    // «Aggiornamento di Aurora» lo aspetta per chiudersi) e un avviso di Windows conferma la versione nuova
+                    let after_update = take_update_mark(&app);
                     if now > HANG_AFTER.as_millis() as u64 {
                         let secs = now / 1000;
-                        let _ = std::thread::Builder::new().name("aurora-guardiano-log".into()).spawn(move || tracing::info!("avvio lento: la finestra ha cominciato a rispondere dopo {secs} s"));
+                        let after = if after_update { "primo avvio dopo un aggiornamento" } else { "avvio normale" };
+                        // un avvio lento dopo un aggiornamento e' quasi sempre WebView2 o l'antivirus che esaminano i file nuovi: il nome dell'antivirus
+                        // entra nel contesto del rapporto, cosi' si vede se gli avvii lenti si concentrano su uno
+                        let _ = std::thread::Builder::new()
+                            .name("aurora-guardiano-log".into())
+                            .spawn(move || tracing::warn!(target: "aurora_desktop::avvio", "avvio lento: la finestra ha cominciato a rispondere dopo {secs} s ({after})"));
                     }
                 }
                 if let Some(stale) = watch.check(now, &beats, HANG_AFTER.as_millis() as u64) {

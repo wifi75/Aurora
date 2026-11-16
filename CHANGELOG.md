@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Aggiornamento: la finestrina «Aggiornamento di Aurora» resta aperta fino a quando la finestra di Aurora risponde (la prima volta dopo un aggiornamento WebView2 e l'antivirus possono metterci anche un minuto), con «Avvio Aurora…»; l'avviso «Aurora aggiornata» compare a finestra pronta.
+- Rapporti: un avvio lento (oltre 20 s) manda un rapporto dell'area «avvio» con l'indicazione se e' il primo avvio dopo un aggiornamento, una volta per versione; nel contesto c'e' il nome dell'antivirus.
+
 ## 0.11.276 - 2026-11-16
 
 - Antivirus: i rapporti dicono quale antivirus e' installato; se dopo un aggiornamento o all'avvio mancano file del programma (quarantena dell'antivirus) parte un rapporto dell'area «antivirus», contato per antivirus sul servizio dei rapporti.
