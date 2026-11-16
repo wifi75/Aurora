@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.279',
-    released: '2026-11-16T21:00:00Z',
+    released: '2026-11-16T20:27:17Z',
     kind: 'new',
     title: [
       'Nome, QTH e locatore da soli da QRZ.com o HamQTH',
