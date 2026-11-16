@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.276',
-    released: '2026-11-16T12:00:00Z',
+    released: '2026-11-16T12:00:14Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.276',
-    released: '2026-11-16T12:00:00Z',
+    released: '2026-11-16T12:00:14Z',
     kind: 'new',
     title: [
       'Rotore: meno scatti e PSTRotator',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.276',
-    released: '2026-11-16T12:00:00Z',
+    released: '2026-11-16T12:00:14Z',
     kind: 'new',
     title: [
       'Antivirus nei rapporti',
