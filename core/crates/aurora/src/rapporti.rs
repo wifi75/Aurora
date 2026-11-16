@@ -1020,10 +1020,14 @@ fn stderr_vero(path: &Path, da: u64) -> bool {
     })
 }
 
-/// Righe di `stderr.log` che non indicano un crash: WebView2 alla chiusura e l'errore di PowerShell quando il riavvio dopo l'aggiornamento
-/// non trova il file (con le righe che lo accompagnano).
+/// Righe di `stderr.log` che non indicano un crash: WebView2 alla chiusura, l'errore di PowerShell quando il riavvio dopo l'aggiornamento
+/// non trova il file (con le righe che lo accompagnano), l'icona del vassoio tolta alla chiusura e `taskkill` che non riesce a chiudere
+/// Aurora durante l'aggiornamento (nella lingua del sistema: si riconosce dal nome del programma e dal PID). Senza queste, ogni
+/// aggiornamento mandava un pacchetto «crash» falso (rapporti del 2026-11-16).
 fn rumore_stderr(riga: &str) -> bool {
-    riga.contains("Failed to unregister class Chrome_WidgetWin")
+    riga.contains("Error removing system tray icon")
+        || (riga.contains("aurora-desktop.exe") && riga.contains("PID"))
+        || riga.contains("Failed to unregister class Chrome_WidgetWin")
         || riga.contains("window_impl.cc")
         || riga.starts_with("Start-Process")
         || riga.starts_with('+')
@@ -1387,6 +1391,12 @@ mod tests {
         let f = dir.join("stderr.log");
         let _ = std::fs::write(&f, "[1113/142415.207:ERROR:window_impl.cc:172] Failed to unregister class Chrome_WidgetWin_0. Error = 1412
 ");
+        assert!(!stderr_vero(&f, 0));
+        // la chiusura per l'aggiornamento: icona del vassoio e taskkill che non chiude Aurora (Windows in tedesco)
+        let _ = std::fs::write(
+            &f,
+            "Error removing system tray icon\nFEHLER: Der Prozess \"aurora-desktop.exe\" mit PID 9700 konnte nicht beendet werden.\nUrsache: Dieser Vorgang wird nicht unterst\u{fc}tzt.\n",
+        );
         assert!(!stderr_vero(&f, 0));
         let _ = std::fs::write(&f, "thread 'main' panicked at src/x.rs:1:1
 ");
