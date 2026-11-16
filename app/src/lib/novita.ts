@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.274',
+    released: '2026-11-16T12:00:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'SSB per i contest in fonia',
+      'SSB for phone contests',
+      'SSB für Phone-Contests',
+      'SSB pour les concours en phonie',
+      'SSB para los concursos en fonía',
+      'SSB para os concursos em fonia',
+    ],
+    text: [
+      'Nella pagina PSK/RTTY/CW il menu Modo ha SSB: Aurora non decodifica e non trasmette testo, parli tu al microfono. Nel riquadro «QSO in corso» scrivi nominativo, rapporto (di base 59) e, con un contest attivo, numero e scambio; i QSO contano come fonia (punti, statistiche e Cabrillo PH). La radio resta sulla frequenza e sul modo che scegli tu.',
+      'In the PSK/RTTY/CW page the Mode menu has SSB: Aurora does not decode or transmit text, you talk into the microphone. In the “Current QSO” panel you enter call, report (59 by default) and, with a contest active, number and exchange; the QSOs count as phone (points, statistics and Cabrillo PH). The radio stays on the frequency and mode you choose.',
+      'Auf der Seite PSK/RTTY/CW hat das Menü Modus jetzt SSB: Aurora dekodiert und sendet keinen Text, du sprichst ins Mikrofon. Im Feld „Laufendes QSO“ trägst du Rufzeichen, Rapport (standardmäßig 59) und bei aktivem Contest Nummer und Austausch ein; die QSOs zählen als Phone (Punkte, Statistik und Cabrillo PH). Das Funkgerät bleibt auf der Frequenz und dem Modus, die du wählst.',
+      'Dans la page PSK/RTTY/CW, le menu Mode propose SSB : Aurora ne décode ni n’émet de texte, vous parlez dans le micro. Dans le cadre « QSO en cours » vous saisissez l’indicatif, le report (59 par défaut) et, avec un concours actif, le numéro et l’échange ; les QSO comptent comme phonie (points, statistiques et Cabrillo PH). La radio reste sur la fréquence et le mode que vous choisissez.',
+      'En la página PSK/RTTY/CW el menú Modo tiene SSB: Aurora no decodifica ni transmite texto, hablas al micrófono. En el recuadro «QSO en curso» escribes indicativo, reporte (59 por defecto) y, con un concurso activo, número e intercambio; los QSO cuentan como fonía (puntos, estadísticas y Cabrillo PH). La radio se queda en la frecuencia y el modo que eliges.',
+      'Na página PSK/RTTY/CW o menu Modo tem SSB: o Aurora não descodifica nem transmite texto, fala ao microfone. No quadro «QSO em curso» escreve o indicativo, o relatório (59 por omissão) e, com um concurso ativo, o número e a troca; os QSO contam como fonia (pontos, estatísticas e Cabrillo PH). O rádio fica na frequência e no modo que escolher.',
+    ],
+  },
+  {
     version: '0.11.273',
     released: '2026-11-15T21:53:39Z',
     kind: 'fixed',
@@ -846,49 +868,6 @@ export const NOVITA: readonly Novita[] = [
       '<TX> sans <RX> reste en émission, <RX> et <RXANDCLEAR> reviennent en réception à la fin du texte (et <RXANDCLEAR> efface la fenêtre), <TXE> et <RXE> fonctionnent. <QSONR> est le vrai numéro de série à trois chiffres (champ Nr pour le corriger), <NRS> et <NRR> sont les échanges de contest et vont au journal. Barre au-dessus de la fenêtre RX avec les icônes Copier, Enregistrer et Effacer ; toutes les poignées d’Aurora ont le même dessin, bien visible aussi en thème clair.',
       '<TX> sin <RX> se queda transmitiendo, <RX> y <RXANDCLEAR> vuelven a recepción al terminar el texto (y <RXANDCLEAR> limpia la ventana), <TXE> y <RXE> funcionan. <QSONR> es el número de serie real de tres cifras (campo Nr para corregirlo), <NRS> y <NRR> son los intercambios del contest y van al log. Barra sobre la ventana RX con los iconos Copiar, Guardar y Limpiar; todas las asas de Aurora tienen el mismo diseño, bien visible también en el tema claro.',
       '<TX> sem <RX> fica a transmitir, <RX> e <RXANDCLEAR> voltam à receção no fim do texto (e <RXANDCLEAR> limpa a janela), <TXE> e <RXE> funcionam. <QSONR> é o número de série real de três algarismos (campo Nr para o corrigir), <NRS> e <NRR> são as trocas do contest e vão para o log. Barra por cima da janela RX com os ícones Copiar, Guardar e Limpar; todas as pegas da Aurora têm o mesmo desenho, bem visível também no tema claro.',
-    ],
-  },
-  {
-    version: '0.11.253',
-    released: '2026-11-14T11:28:30Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Nuovo: finestre RX in più e menu della cascata',
-      'New: extra RX windows and waterfall menu',
-      'Neu: zusätzliche RX-Fenster und Wasserfall-Menü',
-      'Nouveau : fenêtres RX en plus et menu de la cascade',
-      'Nuevo: ventanas RX adicionales y menú de la cascada',
-      'Novo: janelas RX a mais e menu da cascata',
-    ],
-    text: [
-      'Tasto destro sulla cascata: nominativi sì o no, cascata larga, notch nel punto o via tutti, nuova finestra RX nel punto, chiudi o scambia una finestra RX. Fino a 4 finestre RX in più, piccole, con la X: ognuna legge un’altra stazione della banda, con un indicatore numerato sulla cascata che si trascina. Ogni ricezione va a capo da sola dopo una pausa e i caratteri escono uno alla volta.',
-      'Right-click on the waterfall: callsigns on or off, wide waterfall, notch at that point or remove all, new RX window at that point, close or swap an RX window. Up to 4 extra RX windows, small, with an X: each reads another station in the band, with a numbered marker on the waterfall you can drag. Each reception starts a new line by itself after a pause and characters appear one at a time.',
-      'Rechtsklick auf den Wasserfall: Rufzeichen ein oder aus, breiter Wasserfall, Notch an dieser Stelle oder alle weg, neues RX-Fenster an dieser Stelle, RX-Fenster schließen oder tauschen. Bis zu 4 zusätzliche RX-Fenster, klein, mit X: jedes liest eine andere Station des Bands, mit einer nummerierten, verschiebbaren Markierung im Wasserfall. Jeder Empfang beginnt nach einer Pause eine neue Zeile, und die Zeichen erscheinen einzeln.',
-      'Clic droit sur la cascade : indicatifs oui ou non, cascade large, notch à cet endroit ou tous retirés, nouvelle fenêtre RX à cet endroit, fermer ou échanger une fenêtre RX. Jusqu’à 4 fenêtres RX en plus, petites, avec une croix : chacune lit une autre station de la bande, avec un repère numéroté déplaçable sur la cascade. Chaque réception passe à la ligne toute seule après une pause et les caractères arrivent un par un.',
-      'Clic derecho en la cascada: indicativos sí o no, cascada ancha, notch en ese punto o quitar todos, nueva ventana RX en ese punto, cerrar o intercambiar una ventana RX. Hasta 4 ventanas RX adicionales, pequeñas, con la X: cada una lee otra estación de la banda, con un indicador numerado en la cascada que se arrastra. Cada recepción salta de línea sola tras una pausa y los caracteres salen uno a uno.',
-      'Botão direito na cascata: indicativos sim ou não, cascata larga, notch nesse ponto ou retirar todos, nova janela RX nesse ponto, fechar ou trocar uma janela RX. Até 4 janelas RX a mais, pequenas, com o X: cada uma lê outra estação da banda, com um indicador numerado na cascata que se arrasta. Cada receção muda de linha sozinha após uma pausa e os caracteres saem um a um.',
-    ],
-  },
-  {
-    version: '0.11.253',
-    released: '2026-11-14T11:28:30Z',
-    kind: 'changed',
-    title: [
-      'Aurora BIGScan più preciso, RTTY più ordinato',
-      'More accurate Aurora BIGScan, tidier RTTY',
-      'Genaueres Aurora BIGScan, ordentlicheres RTTY',
-      'Aurora BIGScan plus précis, RTTY mieux rangé',
-      'Aurora BIGScan más preciso, RTTY más ordenado',
-      'Aurora BIGScan mais preciso, RTTY mais arrumado',
-    ],
-    text: [
-      'Aurora BIGScan mostra di base solo chi chiama CQ (con l’opzione per chi risponde), riconosce chi trasmette negli scambi di contest, toglie le stazioni non più attive, si ripulisce al cambio di banda, ha un interruttore ON/OFF e il pulsante Pulisci; le etichette hanno il colore della stazione. Clic su uno spot RTTY o PSK: Aurora passa al modo giusto. Display «RADIO NON COLLEGATA» ben leggibile e pagina Informazioni in tre colonne.',
-      'Aurora BIGScan shows by default only stations calling CQ (with an option for those answering), recognises who is transmitting in contest exchanges, removes stations no longer active, clears itself on band change, has an ON/OFF switch and a Clear button; labels take the station colour. Click on an RTTY or PSK spot: Aurora switches to the right mode. A clear “RADIO NOT CONNECTED” display and an About page in three columns.',
-      'Aurora BIGScan zeigt standardmäßig nur CQ-rufende Stationen (mit Option für Antwortende), erkennt den Sender in Contest-Austauschen, entfernt nicht mehr aktive Stationen, leert sich beim Bandwechsel, hat einen EIN/AUS-Schalter und „Leeren“; Etiketten in der Farbe der Station. Klick auf einen RTTY- oder PSK-Spot: Aurora wechselt in die richtige Betriebsart. Gut lesbares „FUNKGERÄT NICHT VERBUNDEN“ und Info-Seite in drei Spalten.',
-      'Aurora BIGScan n’affiche par défaut que les stations qui lancent CQ (option pour celles qui répondent), reconnaît qui émet dans les échanges de contest, retire les stations inactives, se vide au changement de bande, a un interrupteur ON/OFF et un bouton Effacer ; étiquettes à la couleur de la station. Clic sur un spot RTTY ou PSK : Aurora passe au bon mode. Affichage « RADIO NON CONNECTÉE » bien lisible et page À propos en trois colonnes.',
-      'Aurora BIGScan muestra por defecto solo quien llama CQ (con opción para quien responde), reconoce quién transmite en los intercambios de contest, quita las estaciones inactivas, se limpia al cambiar de banda, tiene un interruptor ON/OFF y el botón Limpiar; etiquetas del color de la estación. Clic en un spot RTTY o PSK: Aurora pasa al modo correcto. Pantalla «RADIO NO CONECTADA» bien legible y página Información en tres columnas.',
-      'O Aurora BIGScan mostra por omissão só quem chama CQ (com opção para quem responde), reconhece quem transmite nas trocas de contest, retira as estações inativas, limpa-se ao mudar de banda, tem um interruptor ON/OFF e o botão Limpar; etiquetas da cor da estação. Clique num spot RTTY ou PSK: a Aurora passa ao modo certo. Ecrã «RÁDIO NÃO LIGADO» bem legível e página Informações em três colunas.',
     ],
   },
 ];
