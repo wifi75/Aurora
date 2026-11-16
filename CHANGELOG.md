@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: la riga DXpedition gialla ha tutti i testi interni scuri e leggibili (prima paese, commenti e ora erano chiari sul giallo); paese e commenti delle altre righe nel colore pieno.
+
 ## 0.11.277 - 2026-11-16
 
 - Aggiornamento: la finestrina «Aggiornamento di Aurora» resta aperta fino a quando la finestra di Aurora risponde (la prima volta dopo un aggiornamento WebView2 e l'antivirus possono metterci anche un minuto), con «Avvio Aurora…»; l'avviso «Aurora aggiornata» compare a finestra pronta.
