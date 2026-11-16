@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.280 - 2026-11-16
+
 - PSK, RTTY e CW: la finestra RX non resta piu' una striscia (la proporzione RX/TX sta fra un quarto e quattro quinti, un valore salvato troppo piccolo viene ignorato, il doppio clic sulla linea di separazione la ripristina) e la finestra TX si vede come finestra, con etichetta «Trasmissione» e una linea in alto.
 - SSB: la riga «Inserisci QSO» e' piu' compatta (caratteri da 16 a 20 px, campi bassi, nome e QTH piu' larghi, cinque campi su un solo rigo) e le etichette sono corte e leggibili («RST inv.», «RST ric.», «Seriale inv.», «Seriale ric.») nelle sette lingue.
 

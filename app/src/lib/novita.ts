@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.280',
+    released: '2026-11-16T22:00:00Z',
+    kind: 'changed',
+    title: [
+      'Finestre RX e TX in PSK, RTTY e CW; riga SSB più compatta',
+      'RX and TX windows in PSK, RTTY and CW; more compact SSB row',
+      'RX- und TX-Fenster in PSK, RTTY und CW; kompaktere SSB-Zeile',
+      'Fenêtres RX et TX en PSK, RTTY et CW ; ligne SSB plus compacte',
+      'Ventanas RX y TX en PSK, RTTY y CW; fila SSB más compacta',
+      'Janelas RX e TX em PSK, RTTY e CW; linha SSB mais compacta',
+    ],
+    text: [
+      'La finestra di ricezione di PSK, RTTY e CW non resta più una striscia: la linea di separazione con la finestra «Trasmissione» si trascina (la ricezione non scende sotto un quarto) e il doppio clic la riporta alla proporzione di partenza; la finestra di trasmissione ha ora etichetta e cornice. La riga «Inserisci QSO» in SSB è più compatta, con campi bassi, nome e QTH più larghi ed etichette corte e leggibili.',
+      'The receive window of PSK, RTTY and CW no longer stays a thin strip: the dividing line with the “Transmit” window can be dragged (receive never goes below a quarter), and a double-click on it restores the starting proportion; the transmit window now has a label and a frame. The SSB “Enter QSO” row is more compact, with lower fields, wider name and QTH fields and short, readable labels.',
+      'Das Empfangsfenster von PSK, RTTY und CW bleibt nicht mehr ein schmaler Streifen: Die Trennlinie zum Fenster „Senden“ lässt sich ziehen (der Empfang geht nie unter ein Viertel), und ein Doppelklick darauf stellt das Ausgangsverhältnis wieder her; das Sendefenster hat jetzt eine Beschriftung und einen Rahmen. Die SSB-Zeile „QSO eingeben“ ist kompakter, mit niedrigeren Feldern, breiteren Feldern für Name und QTH und kurzen, lesbaren Beschriftungen.',
+      'La fenêtre de réception de PSK, RTTY et CW ne reste plus une simple bande : la ligne de séparation avec la fenêtre « Émission » se fait glisser (la réception ne descend jamais sous un quart), et un double clic dessus rétablit la proportion de départ ; la fenêtre d’émission a désormais une étiquette et un cadre. La ligne SSB « Saisir le QSO » est plus compacte, avec des champs plus bas, des champs nom et QTH plus larges et des libellés courts et lisibles.',
+      'La ventana de recepción de PSK, RTTY y CW ya no se queda como una tira: la línea de separación con la ventana «Transmisión» se arrastra (la recepción no baja de un cuarto), y un doble clic en ella restablece la proporción inicial; la ventana de transmisión tiene ahora etiqueta y marco. La fila SSB «Introducir QSO» es más compacta, con campos más bajos, los de nombre y QTH más anchos y etiquetas cortas y legibles.',
+      'A janela de receção de PSK, RTTY e CW deixou de ficar reduzida a uma tira: a linha de separação com a janela «Transmissão» arrasta-se (a receção não desce abaixo de um quarto), e um duplo clique nela repõe a proporção inicial; a janela de transmissão tem agora etiqueta e moldura. A linha SSB «Introduzir QSO» é mais compacta, com campos mais baixos, os de nome e QTH mais largos e etiquetas curtas e legíveis.',
+    ],
+  },
+  {
     version: '0.11.279',
     released: '2026-11-16T20:27:17Z',
     kind: 'new',
@@ -847,27 +868,6 @@ export const NOVITA: readonly Novita[] = [
       'Le concours actif des modes texte calcule en direct QSO, points, multiplicateurs et score (menu Contest et barre d’état), avec les statistiques par bande et « Exporter Cabrillo ». Aurora BIGScan RTTY montre les stations plus tôt (délai médian de 9 à 6 s) et trouve aussi les faibles à côté des fortes.',
       'El concurso activo de los modos de texto calcula en vivo QSO, puntos, multiplicadores y puntuación (menú Contest y barra de estado), con estadísticas por banda y «Exportar Cabrillo». Aurora BIGScan RTTY muestra las estaciones antes (retardo mediano de 9 a 6 s) y encuentra también las débiles junto a las fuertes.',
       'O concurso ativo dos modos de texto calcula ao vivo QSO, pontos, multiplicadores e pontuação (menu Contest e barra de estado), com estatísticas por banda e «Exportar Cabrillo». O Aurora BIGScan RTTY mostra as estações mais cedo (atraso mediano de 9 para 6 s) e encontra também as fracas ao lado das fortes.',
-    ],
-  },
-  {
-    version: '0.11.258',
-    released: '2026-11-14T19:20:08Z',
-    kind: 'fixed',
-    title: [
-      'Split sotto controllo e meno falsi allarmi',
-      'Split under control and fewer false alarms',
-      'Split unter Kontrolle und weniger Fehlalarme',
-      'Split sous contrôle et moins de fausses alertes',
-      'Split bajo control y menos falsas alarmas',
-      'Split sob controlo e menos falsos alarmes',
-    ],
-    text: [
-      'Aurora scrive nel registro ogni comando di split che manda e avvisa quando la radio va in split per conto di un altro programma o della radio stessa. Il Doppler dei satelliti muove la radio solo con la pagina Satelliti aperta e spegne lo split a fine passaggio. Niente più falsi rapporti di blocco con la finestra in secondo piano. La cattura dello scambio non prende più il proprio numero.',
-      'Aurora logs every split command it sends and warns when the radio goes into split because of another program or the radio itself. Satellite Doppler moves the radio only with the Satellites page open and turns split off at the end of the pass. No more false hang reports with the window in the background. Exchange capture no longer takes your own number.',
-      'Aurora protokolliert jeden gesendeten Split-Befehl und warnt, wenn das Funkgerät durch ein anderes Programm oder selbst in Split geht. Der Satelliten-Doppler steuert das Funkgerät nur bei geöffneter Satelliten-Seite und schaltet Split am Ende des Überflugs aus. Keine falschen Hänger-Berichte mehr bei Fenster im Hintergrund. Die Austausch-Erfassung nimmt nicht mehr die eigene Nummer.',
-      'Aurora note chaque commande de split qu’il envoie et avertit quand la radio passe en split à cause d’un autre programme ou d’elle-même. Le Doppler des satellites ne pilote la radio qu’avec la page Satellites ouverte et coupe le split en fin de passage. Plus de faux rapports de blocage avec la fenêtre en arrière-plan. La capture de l’échange ne prend plus ton propre numéro.',
-      'Aurora registra cada comando de split que envía y avisa cuando la radio entra en split por otro programa o por sí misma. El Doppler de los satélites mueve la radio solo con la página Satélites abierta y apaga el split al final del paso. Ya no hay falsos informes de bloqueo con la ventana en segundo plano. La captura del intercambio ya no toma tu propio número.',
-      'A Aurora regista cada comando de split que envia e avisa quando o rádio entra em split por outro programa ou por si próprio. O Doppler dos satélites move o rádio só com a página Satélites aberta e desliga o split no fim da passagem. Acabaram os falsos relatórios de bloqueio com a janela em segundo plano. A captura da troca já não apanha o teu próprio número.',
     ],
   },
 ];
