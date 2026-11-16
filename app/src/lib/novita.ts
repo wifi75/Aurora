@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.280',
-    released: '2026-11-16T22:00:00Z',
+    released: '2026-11-16T21:03:53Z',
     kind: 'changed',
     title: [
       'Finestre RX e TX in PSK, RTTY e CW; riga SSB più compatta',
