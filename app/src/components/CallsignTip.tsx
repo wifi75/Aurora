@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { getCallsign, type CallsignInfo } from '../api/client';
 import { flagCode } from '../lib/flags';
@@ -120,6 +120,46 @@ export function prefetchCallsigns(calls: readonly string[]): void {
   next();
 }
 
+/**
+ * Chiude un riquadro aperto quando `mouseleave` non basta: la tabella si aggiorna sotto il mouse, il mouse esce dalla finestra o si cambia
+ * finestra, si scorre, si preme Esc. Finche' e' aperto, ogni movimento fuori dall'ancora lo chiude (il riquadro non resta mai appeso).
+ */
+function useCloseTip(open: boolean, anchor: React.RefObject<HTMLElement | null>, close: () => void): void {
+  useEffect(() => {
+    if (!open) return;
+    const onMove = (ev: PointerEvent) => {
+      const el = anchor.current;
+      const t = ev.target;
+      if (el && t instanceof Node && !el.contains(t)) close();
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') close();
+    };
+    const onHidden = () => {
+      if (document.hidden) close();
+    };
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerdown', close, true);
+    window.addEventListener('blur', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('keydown', onKey, true);
+    document.addEventListener('mouseleave', close);
+    document.addEventListener('visibilitychange', onHidden);
+    // ultima rete: un riquadro non resta aperto piu' di mezzo minuto
+    const guard = setTimeout(close, 30_000);
+    return () => {
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerdown', close, true);
+      window.removeEventListener('blur', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('mouseleave', close);
+      document.removeEventListener('visibilitychange', onHidden);
+      clearTimeout(guard);
+    };
+  }, [open, anchor, close]);
+}
+
 /** Attesa prima della ricerca: passando veloci sulla tabella non parte niente. */
 export const TIP_DELAY_MS = 350;
 
@@ -138,6 +178,7 @@ function CallsignTipInner({ call, lotwDate, grid, children }: { call: string; lo
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const alive = useRef(true);
+  const anchor = useRef<HTMLSpanElement | null>(null);
   useEffect(
     () => () => {
       alive.current = false;
@@ -145,6 +186,11 @@ function CallsignTipInner({ call, lotwDate, grid, children }: { call: string; lo
     },
     [],
   );
+  const closeTip = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    setOpen(false);
+  }, []);
+  useCloseTip(open, anchor, closeTip);
   const enter = (e: React.MouseEvent<HTMLElement>) => {
     // dentro una riga dell'elenco il contenitore non ha una sua scatola (display: contents): si misura il primo figlio
     const box = getComputedStyle(e.currentTarget).display === 'contents' ? (e.currentTarget.firstElementChild ?? e.currentTarget) : e.currentTarget;
@@ -178,7 +224,7 @@ function CallsignTipInner({ call, lotwDate, grid, children }: { call: string; lo
     setOpen(false);
   };
   return (
-    <span className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
+    <span ref={anchor} className="calltip-anchor" onMouseEnter={enter} onMouseLeave={leave} onFocus={() => undefined}>
       {children}
       {/* nel corpo della pagina: dentro gli elenchi (cluster, Attivita' di banda) il riquadro finiva sotto le righe e si leggeva in filigrana */}
       {open ? createPortal(<TipBox call={call} info={info} lotwDate={lotwDate} grid={grid} pos={pos} />, document.body) : null}
@@ -285,12 +331,18 @@ export function DxQsl({ call }: { call: string }) {
 export function TextTip({ text, children }: { text: string; children: ReactNode }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const anchor = useRef<HTMLSpanElement | null>(null);
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
     },
     [],
   );
+  const closeTip = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    setPos(null);
+  }, []);
+  useCloseTip(pos !== null, anchor, closeTip);
   if (text.trim() === '') return <>{children}</>;
   const enter = (e: React.MouseEvent<HTMLElement>) => {
     // sempre, su tutta la cella: nelle tabelle la misura del testo tagliato non e' affidabile e il riquadro non compariva
@@ -304,7 +356,7 @@ export function TextTip({ text, children }: { text: string; children: ReactNode 
     setPos(null);
   };
   return (
-    <span className="texttip-anchor" onMouseEnter={enter} onMouseLeave={leave}>
+    <span ref={anchor} className="texttip-anchor" onMouseEnter={enter} onMouseLeave={leave}>
       {children}
       {pos
         ? createPortal(

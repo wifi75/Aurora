@@ -47,6 +47,37 @@ describe('CallsignTip', () => {
     expect(getCallsign).toHaveBeenCalledTimes(1);
   });
 
+  it('closes by itself when the pointer leaves without a mouseleave (window switch, scroll, Escape, pointer elsewhere)', async () => {
+    vi.mocked(getCallsign).mockResolvedValue(info);
+    render(
+      <div>
+        <CallsignTip call="IU3ABC">IU3ABC</CallsignTip>
+        <span>altrove</span>
+      </div>,
+    );
+    const open = async () => {
+      fireEvent.mouseEnter(screen.getByText('IU3ABC'));
+      await act(async () => {
+        vi.advanceTimersByTime(TIP_DELAY_MS + 10);
+      });
+      expect(screen.getByTestId('calltip')).toBeInTheDocument();
+    };
+    await open();
+    fireEvent.pointerMove(screen.getByText('altrove'));
+    expect(screen.queryByTestId('calltip')).toBeNull();
+    await open();
+    fireEvent(window, new Event('blur'));
+    expect(screen.queryByTestId('calltip')).toBeNull();
+    await open();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('calltip')).toBeNull();
+    await open();
+    await act(async () => {
+      vi.advanceTimersByTime(31_000);
+    });
+    expect(screen.queryByTestId('calltip')).toBeNull();
+  });
+
   it('passing quickly does not look anything up', async () => {
     render(<CallsignTip call="K1ABC">K1ABC</CallsignTip>);
     const anchor = screen.getByText('K1ABC');
