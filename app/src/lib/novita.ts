@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.277',
+    released: '2026-11-16T17:30:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'SSB a tre colonne con i contest',
+      'SSB in three columns with contests',
+      'SSB in drei Spalten mit Contests',
+      'SSB en trois colonnes avec les concours',
+      'SSB en tres columnas con concursos',
+      'SSB em três colunas com concursos',
+    ],
+    text: [
+      'Nella pagina PSK·RTTY·SSTV il modo SSB ha tre colonne: il log a sinistra, «Inserisci QSO» su un rigo solo al centro e il DX Cluster a destra. Con un contest scelto la riga mostra i seriali e il log segna DUPE e moltiplicatori; accanto alle macro ci sono i pulsanti delle bande scelte nelle Impostazioni. Cambia anche la barra delle macro: l’ingranaggio passa tra una riga e quattro, e il carattere dei pulsanti si sceglie a parte.',
+      'On the PSK·RTTY·SSTV page the SSB mode has three columns: the log on the left, “Enter QSO” on a single row in the middle and the DX Cluster on the right. With a contest chosen the row shows the serial numbers and the log marks DUPEs and multipliers; next to the macros are buttons for the bands chosen in Settings. The macro bar changes too: the gear switches between one and four rows, and the button font is chosen separately.',
+      'Auf der Seite PSK·RTTY·SSTV hat der Modus SSB drei Spalten: links das Log, in der Mitte „QSO eingeben“ in einer einzigen Zeile und rechts der DX-Cluster. Mit gewähltem Contest zeigt die Zeile die Seriennummern, und das Log markiert Doppel und Multiplikatoren; neben den Makros stehen Schaltflächen für die in den Einstellungen gewählten Bänder. Auch die Makroleiste ändert sich: Das Zahnrad schaltet zwischen einer und vier Zeilen um, und die Schrift der Tasten wird separat gewählt.',
+      'Sur la page PSK·RTTY·SSTV, le mode SSB a trois colonnes : le journal à gauche, « Saisir le QSO » sur une seule ligne au centre et le DX Cluster à droite. Avec un concours choisi, la ligne affiche les numéros de série et le journal marque les doublons et les multiplicateurs ; à côté des macros, des boutons donnent les bandes choisies dans les Réglages. La barre des macros change aussi : la roue passe d’une à quatre lignes, et la police des boutons se choisit à part.',
+      'En la página PSK·RTTY·SSTV, el modo SSB tiene tres columnas: el log a la izquierda, «Introducir QSO» en una sola fila en el centro y el DX Cluster a la derecha. Con un concurso elegido la fila muestra los números de serie y el log marca duplicados y multiplicadores; junto a las macros hay botones para las bandas elegidas en Ajustes. También cambia la barra de macros: el engranaje pasa de una a cuatro filas, y la letra de los botones se elige aparte.',
+      'Na página PSK·RTTY·SSTV, o modo SSB tem três colunas: o log à esquerda, «Introduzir QSO» numa só linha no centro e o DX Cluster à direita. Com um concurso escolhido a linha mostra os números de série e o log assinala duplicados e multiplicadores; ao lado das macros há botões para as bandas escolhidas nas Definições. A barra das macros também muda: a engrenagem passa de uma para quatro linhas, e a letra dos botões escolhe-se à parte.',
+    ],
+  },
+  {
     version: '0.11.276',
     released: '2026-11-16T12:00:14Z',
     kind: 'new',
@@ -846,28 +868,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec le BPF actif, la cascade s’assombrit hors du filtre et la bande qui passe a des bords jaunes avec l’inscription BPF. Infobulles sur chaque élément d’Aurora BIGScan ; sur l’indicatif de la cascade seulement le dernier échange. Guide des macros sur une ligne par commande ; poignée de la cascade au-dessus du bord, elle ne cache plus les fréquences.',
       'Con el BPF activo la cascada se oscurece fuera del filtro y la banda que pasa tiene bordes amarillos con la palabra BPF. Ayudas en cada elemento de Aurora BIGScan; en el indicativo de la cascada solo el último intercambio. Guía de macros con una línea por comando; el asa de la cascada sobre el borde, ya no tapa las frecuencias.',
       'Com o BPF ligado a cascata escurece fora do filtro e a banda que passa tem margens amarelas com a palavra BPF. Dicas em cada elemento do Aurora BIGScan; no indicativo da cascata só a última troca. Guia das macros com uma linha por comando; pega da cascata acima da margem, já não tapa as frequências.',
-    ],
-  },
-  {
-    version: '0.11.256',
-    released: '2026-11-14T17:17:31Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Guida alle macro, modo DXpedition e RBN',
-      'Macro guide, DXpedition mode and RBN',
-      'Makro-Anleitung, DXpedition-Modus und RBN',
-      'Guide des macros, mode DXpedition et RBN',
-      'Guía de macros, modo DXpedition y RBN',
-      'Guia das macros, modo DXpedition e RBN',
-    ],
-    text: [
-      'Tutte le macro verificate una per una: <RX>/<RXC> in mezzo al testo, <RXANDCLEAR> che pulisce davvero la finestra, <TXE> che aspetta la fine del segnale, macro evento OnStart/OnEnd/OnTX/OnCR; nel menu Aiuto la Guida alle macro con tutti i comandi per categoria. Modo DXpedition: Aurora BIGScan mostra dove ascolta la DX nel pile-up e «TX qui» ci porta la trasmissione. Spot della rete RBN sulla cascata, testo decodificato accanto a ogni stazione, tasto destro su una stazione per mandare lo spot.',
-      'All macros checked one by one: <RX>/<RXC> inside the text, <RXANDCLEAR> really clearing the window, <TXE> waiting for the signal to end, event macros OnStart/OnEnd/OnTX/OnCR; in the Help menu the Macro guide with every command by category. DXpedition mode: Aurora BIGScan shows where the DX listens in a pile-up and “TX here” moves your transmit there. RBN spots on the waterfall, decoded text next to each station, right-click a station to send the spot.',
-      'Alle Makros einzeln geprüft: <RX>/<RXC> mitten im Text, <RXANDCLEAR> leert das Fenster wirklich, <TXE> wartet auf das Signalende, Ereignis-Makros OnStart/OnEnd/OnTX/OnCR; im Hilfe-Menü die Makro-Anleitung mit allen Befehlen nach Kategorien. DXpedition-Modus: Aurora BIGScan zeigt, wo die DX im Pile-up hört, und „TX hier“ setzt dein Senden dorthin. RBN-Spots im Wasserfall, dekodierter Text neben jeder Station, Rechtsklick auf eine Station zum Spotten.',
-      'Toutes les macros vérifiées une par une : <RX>/<RXC> au milieu du texte, <RXANDCLEAR> qui vide vraiment la fenêtre, <TXE> qui attend la fin du signal, macros d’événement OnStart/OnEnd/OnTX/OnCR ; dans le menu Aide le Guide des macros avec toutes les commandes par catégorie. Mode DXpedition : Aurora BIGScan montre où écoute la DX dans le pile-up et « TX ici » y place ton émission. Spots du réseau RBN sur la cascade, texte décodé à côté de chaque station, clic droit sur une station pour envoyer le spot.',
-      'Todas las macros verificadas una a una: <RX>/<RXC> en medio del texto, <RXANDCLEAR> que limpia de verdad la ventana, <TXE> que espera a que acabe la señal, macros de evento OnStart/OnEnd/OnTX/OnCR; en el menú Ayuda la Guía de macros con todos los comandos por categoría. Modo DXpedition: Aurora BIGScan muestra dónde escucha la DX en el pile-up y «TX aquí» lleva allí tu transmisión. Spots de la red RBN en la cascada, texto decodificado junto a cada estación, clic derecho en una estación para enviar el spot.',
-      'Todas as macros verificadas uma a uma: <RX>/<RXC> a meio do texto, <RXANDCLEAR> que limpa mesmo a janela, <TXE> que espera o fim do sinal, macros de evento OnStart/OnEnd/OnTX/OnCR; no menu Ajuda o Guia das macros com todos os comandos por categoria. Modo DXpedition: o Aurora BIGScan mostra onde a DX escuta no pile-up e «TX aqui» leva para lá a tua transmissão. Spots da rede RBN na cascata, texto descodificado ao lado de cada estação, botão direito numa estação para enviar o spot.',
     ],
   },
 ];

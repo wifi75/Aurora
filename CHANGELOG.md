@@ -2,8 +2,16 @@
 
 ## Non rilasciato
 
+## 0.11.277 - 2026-11-16
+
 - Aggiornamento: la finestrina «Aggiornamento di Aurora» resta aperta fino a quando la finestra di Aurora risponde (la prima volta dopo un aggiornamento WebView2 e l'antivirus possono metterci anche un minuto), con «Avvio Aurora…»; l'avviso «Aurora aggiornata» compare a finestra pronta.
 - Rapporti: un avvio lento (oltre 20 s) manda un rapporto dell'area «avvio» con l'indicazione se e' il primo avvio dopo un aggiornamento, una volta per versione; nel contesto c'e' il nome dell'antivirus.
+- SSB: vista a tre colonne (log a sinistra, «Inserisci QSO» su un rigo al centro, DX Cluster a destra); colonne ridimensionabili con le maniglie (doppio clic le ripristina). Con un contest la riga mostra il seriale inviato (progressivo automatico) e ricevuto, il punteggio, i moltiplicatori e gli avvisi DUPE e nuovo moltiplicatore (#75); il log segna DUPE e moltiplicatori.
+- SSB: pulsanti di banda a destra delle macro (le bande scelte nelle Impostazioni); un clic porta la radio alla prima frequenza di fonia del piano IARU Regione 1.
+- Macro: ingranaggio della barra con Barra singola o Barra multipla (4 righe: F1-F12, Ctrl, Shift, Ctrl+Shift); «Carattere dei pulsanti macro…» con anteprima; Vista › Righe delle macro (1, 2, 3, 4, Automatico).
+- Menu: il menu Contest è sempre nella barra (tolta la voce da Vista); nei modi SSB le voci che servono solo ai modi digitali sono grigie con la spiegazione; la voce Log di Vista fa apparire e sparire il log anche in SSB.
+- Rotore: scheda più piccola, trascinabile e ridimensionabile; display accanto alla rosa dei venti; pallina di stato (rossa spento, verde acceso) con spiegazione; clic o trascinamento sulla rosa sposta il rotore; direzioni predefinite dietro il pulsante ≡; ingranaggio con gradi a mano, ±2/±10, DX corto e lungo, Park. Tolte le scritte «nessuna stazione DX» e «rotore non acceso».
+- Guida: nuova sezione Logger32 (mappa UDP: la UDP BandMap si apre con Ctrl+J, porta 2237, registrazione automatica, diagnosi) (#76).
 
 ## 0.11.276 - 2026-11-16
 
