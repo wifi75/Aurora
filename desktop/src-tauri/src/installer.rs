@@ -162,6 +162,7 @@ fn log_line(text: &str) {
 ///    (anche `aurora.exe`, il server senza finestra);
 /// 2. avvia l'installatore in silenzio (`/S /UPDATE`, senza `/R`) e ne aspetta la fine (al massimo [`INSTALLER_WAIT_MS`]: dopo, esce
 ///    senza riaprire niente);
+/// 2b. se e' andato bene aspetta qualche secondo e controlla che il programma e i file principali ci siano ancora ([`check_files_after_install`]);
 /// 3. se e' andato bene (codice 0) riapre Aurora, **una volta sola**; se non e' andato bene, o il programma non c'e' piu', riapre
 ///    l'installatore con le sue finestre; se Aurora e' gia' aperta non fa niente (vedi [`after_install`]);
 /// 4. se l'installatore non e' nemmeno partito, riapre Aurora com'era (i file non sono stati toccati).
@@ -216,6 +217,10 @@ pub fn apply_update(args: &ApplyArgs) {
         return;
     };
     log_line(&format!("installatore finito con codice {code:?}"));
+    // un antivirus esamina i file appena scritti e li toglie nei secondi dopo: si guarda se c'e' ancora tutto prima di riaprire Aurora
+    if matches!(code, None | Some(0)) {
+        check_files_after_install(args);
+    }
     match after_install(code, win::running(&["aurora-desktop.exe"]), args.exe.as_deref().is_some_and(std::path::Path::is_file)) {
         AfterInstall::Nothing => log_line("Aurora e' gia' aperta"),
         AfterInstall::ReopenAurora => {
@@ -232,6 +237,30 @@ pub fn apply_update(args: &ApplyArgs) {
                 log_line(&format!("installatore non riaperto: {e}"));
             }
         }
+    }
+}
+
+/// Dopo un'installazione riuscita aspetta qualche secondo e controlla che il programma e gli altri file principali ci siano ancora. Se
+/// manca qualcosa (di solito l'antivirus: Avast e altri mettono in quarantena i file appena scritti) lo scrive nel registro
+/// dell'aggiornamento e lascia in `%APPDATA%\Aurora` il segno `antivirus-sospetto.txt`, che Aurora manda come rapporto di area
+/// `antivirus` al prossimo avvio (vedi `aurora::antivirus`).
+#[cfg(windows)]
+fn check_files_after_install(args: &ApplyArgs) {
+    std::thread::sleep(aurora::antivirus::ATTESA_DOPO_INSTALLAZIONE);
+    let Some(exe) = args.exe.as_deref() else { return };
+    let Some(dir) = exe.parent() else { return };
+    let name = exe.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    let missing = aurora::antivirus::file_mancanti(dir, name, false);
+    if missing.is_empty() {
+        log_line("controllo dopo l'installazione: i file principali ci sono tutti");
+        return;
+    }
+    let antivirus = aurora::antivirus::nome();
+    log_line(&format!("ATTENZIONE: dopo l'installazione mancano {} (antivirus: {})", missing.join(", "), if antivirus.is_empty() { "non letto" } else { antivirus }));
+    if let Some(base) = std::env::var_os("APPDATA")
+        && let Err(e) = aurora::antivirus::scrivi_segno(&PathBuf::from(base).join("Aurora"), env!("CARGO_PKG_VERSION"), &missing)
+    {
+        log_line(&format!("segno dell'antivirus non scritto: {e}"));
     }
 }
 
