@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.281 (pubblicata 2026-11-16T22:33:26Z)
+
+Pagina Satelliti: avvisi all'AOS (, , suoni sintetizzati in , riquadro «Avvisi» in ; anello e lampo sulla mappa), schede spostabili e ridimensionabili su griglia a 12 colonne (, , ; angolo per larghezza e altezza, maniglione sul bordo destro per la larghezza,  versione 5), cartina ridimensionabile con rapporto 2/1 fisso (), stella con il nominativo, scelta della mappa nelle Impostazioni, la casella decide (), tabelle dei passaggi come griglie spostabili ( e ). **Provato a schermo** con eventi puntatore sintetici e un AOS simulato; **non provato**: i suoni (non si sentono dal codice), tema chiaro, tocco e tastiera, il tratteggio durante il trascinamento. **Da fare:** zoom automatico all'AOS (richiesto dal proprietario, non ancora scritto). **Aperti:** risposta a Pere (#76) e a Luc (#75), VirusTotal della 0.11.278-281, sito e portale con le novita' delle ultime versioni, e il difetto dello split che si riaccende da solo (indagine in corso: la radio e' condivisa sulla porta 4532; con lo split su «Nessuno» lo accende un altro programma collegato o la radio).
+
 ## Nella 0.11.280 (pubblicata 2026-11-16T21:03:53Z)
 
 PSK/RTTY/CW: proporzione RX/TX limitata fra 0,25 e 0,8 (`aurora.digi.rxfrac.<modo>`), doppio clic sulla linea `digi-split` per ripristinare, finestra TX con etichetta (`data-label` e `::before` in `digi-dark.css`). SSB: riga di inserimento compatta (`digi-ssb-contest.css`, classi `ssbc-field--name` e `--qth`), etichette corte (`ssbc.rsts`, `ssbc.rstr`, `ssbc.serialSent`, `ssbc.serialRcvd`). Il proprietario ha detto «no» alla pubblicazione immediata: la 0.11.280 si fa quando lo chiede. **Verificato a schermo** il ripristino della proporzione e la TX con etichetta; **non rivisto a schermo** l'ultima modifica delle etichette (solo tsc e test).

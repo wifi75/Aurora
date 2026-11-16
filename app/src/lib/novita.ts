@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.281',
-    released: '2026-11-16T23:00:00Z',
+    released: '2026-11-16T22:33:26Z',
     kind: 'new',
     title: [
       'Satelliti: avvisi all’AOS e schede spostabili',
