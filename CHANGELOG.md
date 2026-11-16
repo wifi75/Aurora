@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Modi testuali: modo SSB nel menu Modo per il log e i contest in fonia (#74). Niente decodifica ne' testo trasmesso (si parla al microfono, macro e Invio avvisano), RST di base 59, la radio non si sposta sul piano dei modi testuali; i QSO contano come fonia nei contest (Cabrillo PH). Guida aggiornata.
+
 ## 0.11.273 - 2026-11-15
 
 - Installatore: se la cartella scelta non si puo' scrivere (per esempio Program Files senza diritti di amministratore su un PC aziendale) propone la cartella dell'utente invece di fermarsi a meta'; se Aurora resta aperta durante l'aggiornamento chiede di chiuderla e di riprovare.

@@ -3,6 +3,10 @@
 Stato al 2026-11-15, versione 0.11.273 pubblicata (installatore che propone la cartella dell'utente se quella scelta non si scrive e chiede di chiudere Aurora rimasta aperta, menu Opzioni › Auto CQ, tutti i comandi delle macro integrati per famiglia, GRABCALL, Guida delle macro completa, macro PREVNRS e QSOBEFORETIME, regole dei contest completate, copia automatica giornaliera al posto dei Backup.bat, EXEC tolto dalle macro, 90 contest dei modi testuali tutti con il punteggio vero, tolti quelli non piu' organizzati, comandi macro non eseguiti saltati in silenzio). Per riprendere il lavoro leggi anche `docs/ripresa.md`, `docs/mancante.md` (cosa manca) e `CHANGELOG.md`.
 
 
+## Decisioni del 2026-11-16
+- **SSB nei modi testuali** (scelta del proprietario «solo log e contest»): `DigiMode::Ssb` senza ricevitore (`Demod::Off`) e senza testo trasmesso (`DigiError::NoTextMode`); niente voice keyer e niente cambio del modo della radio via CAT (come per gli altri modi testuali). Il punteggio dei contest riconosceva gia' SSB come fonia.
+- **Pulizia del 2026-11-16**: in locale solo `main`; cancellati tutti i rami di prova e `worktree-agent-*`, rimosse le copie `Aurora-fix-remoto` e `Aurora-rel256`. Il riferimento e' il repository su GitHub.
+
 ## Decisioni del 2026-11-13/14
 - **Club Log**: si usa l'API REST v1 col token personale del radioamatore (`cl_...`, Settings › API su clublog.org); niente piu' chiave dello sviluppatore. Il vecchio `realtime.php` resta per chi lo usa; se c'e' il token vale il token. Documentazione ufficiale: articoli «REST API» della knowledge base di Club Log (pagina «for LLMs» con tutti i dettagli).
 - **Spot**: a scelta da DXSummit o dal cluster telnet collegato (`spot_via`); lo spot via telnet conta solo quando il cluster lo ripete.
