@@ -21,7 +21,9 @@ import { ContestEditDialog, ContestListDialog, useSelectTextContest } from '../c
 import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useTextContestScore } from '../components/digi/ContestStatsDialog';
 import { QtcDialog, type QtcDir } from '../components/digi/QtcDialog';
 import { RxWordMenu, wordAtPoint, type WordAt, type WordTarget } from '../components/digi/RxWordMenu';
-import { isCallsign, useCallLookup } from '../components/digi/callLookup';
+import { filledFrom, isCallsign, useCallLookup } from '../components/digi/callLookup';
+import { knownCallsign } from '../components/CallsignTip';
+import { useCallsignAutofill } from '../lib/useCallsignAutofill';
 import { grabCall } from '../lib/grabCall';
 import { DigiWaterfall } from '../components/digi/DigiWaterfall';
 import { BandSignals } from '../components/digi/BandSignals';
@@ -251,6 +253,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const [wordMenu, setWordMenu] = useState<WordAt | null>(null);
   // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
   const takeCall = useCallLookup(setQso);
+  // il nominativo scritto a mano riempie da solo nome, QTH e locatore (se la ricerca e' configurata); nel contest SSB la riga non li ha
+  useCallsignAutofill(qso.call, { name: qso.name, qth: qso.qth, wwloc: qso.wwloc }, (patch) => setQso((q) => ({ ...q, ...patch })), !(ssbContest && textContest !== null));
   const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
   // il DX del QSO anche per il rotore staccato in una finestra a parte
   usePublishRotorDx(qso.call, qso.wwloc);
@@ -1093,6 +1097,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const dial = l.status?.dial_hz ?? 0;
     const at = l.startAt ?? new Date();
     const nrs = exchangeSent(l.qso.nrs || fixedNrsRef.current, l.serial);
+    // la riga del contest non ha Nome e QTH: se la ricerca del nominativo e' gia' in memoria, il QSO li porta lo stesso
+    const known = l.qso.name === '' || l.qso.qth === '' ? knownCallsign(call) : undefined;
+    const looked = known ? filledFrom(known) : null;
     void addLogQso({
       call,
       date: at.toISOString().slice(0, 10),
@@ -1104,8 +1111,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       rst_sent: l.saved.rsts,
       rst_rcvd: l.saved.rstr,
       grid: l.qso.wwloc,
-      name: l.qso.name,
-      qth: l.qso.qth,
+      name: l.qso.name || (looked?.name ?? ''),
+      qth: l.qso.qth || (looked?.qth ?? ''),
       // il log non ha campi per gli scambi del contest: vanno in coda alle note (e a parte per il log del contest)
       comment: commentWithExchange(l.qso.notes, nrs, l.qso.nrr ?? ''),
       exch_sent: nrs,

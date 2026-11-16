@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { getCallsign, type CallsignInfo } from '../../api/client';
+import type { CallsignInfo } from '../../api/client';
+import { lookupCallsign } from '../CallsignTip';
 import type { Qso } from './DigiLog';
 
 /** Una parola che puo' essere un nominativo: lettere, cifre e «/», almeno una cifra e una lettera (come nel log SSTV). */
@@ -34,8 +35,10 @@ export function useCallLookup(setQso: (f: (q: Qso) => Qso) => void): (call: stri
       if (call === '') return;
       setQso((q) => ({ ...q, call }));
       if (!isCallsign(call)) return;
-      void getCallsign(call)
+      // la stessa ricerca (e la stessa memoria) del nominativo scritto a mano e del riquadro sul nominativo
+      void lookupCallsign(call)
         .then((res) => {
+          if (!res) return;
           const found = filledFrom(res);
           setQso((q) => {
             if (q.call.trim().toUpperCase() !== call) return q;
