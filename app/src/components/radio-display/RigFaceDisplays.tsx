@@ -32,6 +32,8 @@ import { SevenSegment, digitsWidth } from "./SevenSegment";
 
 export const FACE_W = 960;
 export const FACE_H = 96;
+/** Larghezza del disegno FT-2000: ritagliata sul contenuto (l'ultimo elemento, la scritta PO/S a destra, finisce a 820), senza vuoto a destra. */
+export const FT_FACE_W = 832;
 
 /** I dati in piu' della radio che i pannelli disegnano (ognuno solo se la radio lo da'). */
 export interface FaceExtras {
@@ -124,7 +126,9 @@ function FaceHits({
   hits,
   onAction,
   waiting,
+  width = FACE_W,
 }: {
+  width?: number;
   hits: Hit[];
   onAction?: (item: CatExtraItem) => void;
   waiting?: CatExtraItem | null;
@@ -139,9 +143,9 @@ function FaceHits({
           type="button"
           className={`rd-face-hit${waiting === h.key ? " rd-face-hit--wait" : ""}`}
           style={{
-            left: `${(h.x / FACE_W) * 100}%`,
+            left: `${(h.x / width) * 100}%`,
             top: `${(h.y / FACE_H) * 100}%`,
-            width: `${(h.w / FACE_W) * 100}%`,
+            width: `${(h.w / width) * 100}%`,
             height: `${(h.h / FACE_H) * 100}%`,
           }}
           title={
@@ -396,9 +400,9 @@ export function Ft2000Display({
   const spyX = Math.min(570, 300 + digitsWidth(formatRadioFrequency(model.dialHz), { w: 26, h: 44, t: 4.6, gap: 7, skew: 0.08 }) + 6);
   const bHz = x.vfo_b_hz ?? 0;
   return (
-    <div className="rd-face">
+    <div className="rd-face rd-face--ft">
       <DisplayFrame
-        width={FACE_W}
+        width={FT_FACE_W}
         height={FACE_H}
         radius={10}
         inset={3}
@@ -615,7 +619,7 @@ export function Ft2000Display({
         />
 
       </DisplayFrame>
-      <FaceHits hits={hits} onAction={onAction} waiting={waiting} />
+      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={FT_FACE_W} />
     </div>
   );
 }

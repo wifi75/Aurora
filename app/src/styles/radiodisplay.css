@@ -735,7 +735,10 @@
   flex: 1 0 100%;
 }
 
+/* i pulsanti si allargano a riempire la riga: il blocco non lascia un vuoto a destra dell'ultima riga */
 .rd-duo .rd-slot--extras .rx-chip {
+  flex: 1 1 auto;
+  text-align: center;
   padding: 0 0.25rem;
   font-size: 0.62rem;
   line-height: 1.25;
@@ -877,7 +880,7 @@
   height: 5.625rem;
 }
 .rd-card--wide > svg,
-.rd-card--wide > .rd-face {
+.rd-card--wide > .rd-face.rd-face {
   display: block;
 }
 
@@ -1041,3 +1044,26 @@ html[data-theme='light'] .rd-zoom {
 .rd-split-btn--on:hover:not(:disabled) { filter: brightness(1.15); }
 .rd-split-btn:disabled:not(.rd-split-btn--on) { opacity: 1; }
 .rd-face-row .rd-face-slot { align-self: center; }
+
+/* FT-2000: il disegno e' largo 832 (non 960): niente vuoto a destra dopo il misuratore. Stessa scala degli altri (px per unita' del disegno):
+   40rem -> 34.667rem (anteprime e riga di base), 46.25rem -> 40.083rem (testata della Stazione). L'altezza resta quella del disegno. */
+.rd-face-slot--ft {
+  width: 34.667rem;
+}
+
+.live-top .rd-face-slot--ft {
+  width: 40.083rem;
+}
+
+/* anteprime nelle Impostazioni: la box prende l'altezza del disegno (prima 90 px fissi: strisce vuote sotto) */
+.rd-card--wide > .rd-face.rd-face {
+  height: auto;
+}
+
+.rd-card--wide > .rd-face--ft.rd-face--ft {
+  width: 34.667rem;
+}
+
+.rd-zoom .rd-zoom-lens .rd-face-slot--ft {
+  width: 100%;
+}
