@@ -76,30 +76,6 @@ function loadLon(): number {
   }
 }
 
-const SIZE_KEY = 'aurora.sat.mapw';
-/** Larghezza minima della mappa ridimensionata (px). */
-const MIN_W = 322;
-
-/** La larghezza scelta trascinando l'angolo (null = tutta la larghezza disponibile, come in origine). */
-function loadSize(): number | null {
-  try {
-    const raw = window.localStorage.getItem(SIZE_KEY);
-    const v = raw === null ? NaN : Number(raw);
-    return Number.isFinite(v) && v >= MIN_W ? Math.round(v) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSize(v: number | null): void {
-  try {
-    if (v === null) window.localStorage.removeItem(SIZE_KEY);
-    else window.localStorage.setItem(SIZE_KEY, String(v));
-  } catch {
-    /* memoria del browser non disponibile */
-  }
-}
-
 function saveLon(v: number): void {
   try {
     window.localStorage.setItem(LON_KEY, String(v));
@@ -141,11 +117,6 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ id: number; x0: number; lon0: number; moved: boolean } | null>(null);
   const shiftPx = useRef(0);
-  const frame = useRef<HTMLDivElement>(null);
-  /** Larghezza scelta dall'utente (px, del riquadro intero); null = tutta la larghezza disponibile. */
-  const [userW, setUserW] = useState<number | null>(loadSize);
-  const [sizing, setSizing] = useState(false);
-  const size = useRef<{ id: number; x0: number; w0: number; max: number; w: number | null } | null>(null);
 
   useEffect(() => {
     const el = wrap.current;
@@ -440,7 +411,6 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
   };
 
   return (
-    <div className={`sat-panel sat-mapwrap${sizing ? ' sat-mapwrap--sizing' : ''}`} ref={frame} style={userW === null ? undefined : { width: userW }}>
     <div className={dragging ? 'sat-map sat-map--drag' : 'sat-map'} ref={wrap}>
       <canvas
         ref={canvas}
@@ -479,50 +449,6 @@ export function SatMap({ mapUrl, sun, moon, observer, stationLabel, positions, s
       <span className="sat-legend">
         <i className="sat-dot sat-dot--sun" /> {t('sat.sun')} <i className="sat-dot sat-dot--moon" /> {t('sat.moon')}
       </span>
-      <div
-        className="sat-resize"
-        role="separator"
-        aria-label={t('sat.map.resize')}
-        title={t('sat.map.resize')}
-        onPointerDown={(e) => {
-          const f = frame.current;
-          if (!f || (e.pointerType === 'mouse' && e.button !== 0)) return;
-          e.stopPropagation();
-          const parent = f.parentElement;
-          const max = Math.max(MIN_W, parent ? parent.clientWidth : f.offsetWidth);
-          size.current = { id: e.pointerId, x0: e.clientX, w0: f.getBoundingClientRect().width, max, w: null };
-          setSizing(true);
-          try {
-            e.currentTarget.setPointerCapture(e.pointerId);
-          } catch {
-            /* il puntatore e' gia' finito */
-          }
-        }}
-        onPointerMove={(e) => {
-          const z = size.current;
-          if (!z || z.id !== e.pointerId) return;
-          const w = Math.round(Math.max(MIN_W, Math.min(z.max, z.w0 + e.clientX - z.x0)));
-          z.w = w;
-          setUserW(w >= z.max ? null : w);
-        }}
-        onPointerUp={(e) => {
-          const z = size.current;
-          if (!z || z.id !== e.pointerId) return;
-          size.current = null;
-          setSizing(false);
-          if (z.w !== null) saveSize(z.w >= z.max ? null : z.w);
-        }}
-        onPointerCancel={() => {
-          size.current = null;
-          setSizing(false);
-        }}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          setUserW(null);
-          saveSize(null);
-        }}
-      />
-    </div>
     </div>
   );
 }
