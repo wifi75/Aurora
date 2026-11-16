@@ -11,6 +11,7 @@ use std::{
 /// Il core ha finito di chiudersi (PTT spento, radio spenta se scelto, porte liberate): il programma aspetta questo prima di uscire.
 pub static CORE_STOPPED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+pub mod antivirus;
 pub mod audio_control;
 pub mod backup;
 pub mod band_hop;
@@ -3239,6 +3240,7 @@ pub async fn run(
             rapporti::Contesto {
                 versione: aurora_core::version::APP_VERSION.to_string(),
                 sistema: String::new(),
+                antivirus: String::new(),
                 motore: match config.engine { EngineKind::Native => "native", EngineKind::Sim => "sim" }.to_string(),
                 radio: if radio.rig_name.is_empty() && radio.model != 0 { format!("hamlib {}", radio.model) } else { radio.rig_name.clone() },
                 ptt: if matches!(config.engine, EngineKind::Native) { ptt_method_for(&config, &cat) } else { "jtdx".to_string() },

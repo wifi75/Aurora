@@ -57,6 +57,8 @@ const FILE_ID: &str = "rapporti-installazione.txt";
 const FILE_CODA: &str = "rapporti-coda.json";
 const FILE_LIMITI: &str = "rapporti-limiti.json";
 const FILE_CRASH_VISTO: &str = "rapporti-crash-visto.json";
+/// L'impronta dei file mancanti all'avvio gia' segnalati: lo stesso elenco non riparte a ogni avvio.
+const FILE_ANTIVIRUS_VISTO: &str = "rapporti-antivirus-visto.txt";
 
 // ---------------------------------------------------------------------------------------------------------------------------------
 // La pulizia dei dati personali
@@ -310,7 +312,7 @@ pub fn corpo_attivo(acceso: bool, installazione: &str, nominativo: &str) -> Opti
         return None;
     }
     let pc = pc();
-    let mut corpo = json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "sistema": sistema(), "cpu": pc.cpu, "core": pc.core, "ram_gb": pc.ram_gb });
+    let mut corpo = json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "sistema": sistema(), "antivirus": crate::antivirus::nome(), "cpu": pc.cpu, "core": pc.core, "ram_gb": pc.ram_gb });
     if let Some(persona) = codice_persona(nominativo) {
         corpo["persona"] = json!(persona);
     }
@@ -503,6 +505,8 @@ fn chiave(area: &str, origine: &str, messaggio: &str) -> String {
 pub struct Contesto {
     pub versione: String,
     pub sistema: String,
+    /// L'antivirus installato (dal Centro sicurezza di Windows), vuoto se non si legge: serve a capire quali antivirus tolgono file ad Aurora.
+    pub antivirus: String,
     pub motore: String,
     /// Il modello della radio, non il suo nome personalizzato.
     pub radio: String,
@@ -601,6 +605,7 @@ pub fn configurato() -> bool {
 impl Rapporti {
     /// Legge impostazioni, coda e limiti dalla cartella dati, guarda se c'e' un crash nuovo e avvia il thread che manda.
     pub fn avvia(data_dir: &Path) -> Arc<Rapporti> {
+        crate::antivirus::avvia_lettura();
         let impostazioni: Impostazioni = leggi_json(&data_dir.join(FILE_IMPOSTAZIONI)).unwrap_or_default();
         let id = std::fs::read_to_string(data_dir.join(FILE_ID)).ok().map(|s| s.trim().to_string()).filter(|s| s.len() == 36).unwrap_or_else(|| {
             let id = uuid();
@@ -647,6 +652,7 @@ impl Rapporti {
             c.versione = aurora_core::version::APP_VERSION.to_string();
         }
         c.sistema = sistema().to_string();
+        c.antivirus = crate::antivirus::nome_se_pronto();
         c.noti.extend(["USERNAME", "COMPUTERNAME", "USERDOMAIN"].iter().filter_map(|v| std::env::var(v).ok()));
         let noti = c.noti.clone();
         for campo in [&mut c.radio, &mut c.audio_in, &mut c.audio_out] {
@@ -686,8 +692,11 @@ impl Rapporti {
     }
 
     fn lavora(self: Arc<Self>) {
+        // il nome dell'antivirus si legge una volta, prima dei rapporti che lo portano
+        crate::antivirus::nome();
         // l'ultima installazione, una volta all'avvio: il rapporto va in coda e parte al primo giro
         self.segnala_installazione();
+        self.segnala_antivirus();
         loop {
             let eventi = {
                 let Ok(mut attesa) = IN_ATTESA.lock() else { return };
@@ -981,6 +990,7 @@ fn rapporto(id: &str, c: &Contesto, giorno: &str, g: &Gruppo) -> Value {
         "giorno": giorno,
         "versione": c.versione,
         "sistema": c.sistema,
+        "antivirus": c.antivirus,
         "pc": pc().descrizione(),
         "motore": c.motore,
         "radio": c.radio,
@@ -1378,6 +1388,49 @@ impl Rapporti {
             }
         }
         let _ = std::fs::write(&vista, &firma);
+    }
+}
+
+impl Rapporti {
+    /// Al primo giro dopo l'avvio, due casi in cui un antivirus ha tolto dei file ad Aurora (rapporti di area `antivirus`, con il nome
+    /// dell'antivirus nel contesto e nel messaggio): il segno lasciato dalla copia di aiuto dell'aggiornamento (si manda e si toglie) e i
+    /// file principali che mancano accanto al programma (una volta per elenco e versione). Con gli errori automatici spenti il segno si
+    /// toglie e non parte nulla.
+    fn segnala_antivirus(&self) {
+        let acceso = self.stato.lock().map(|s| s.impostazioni.auto_errors).unwrap_or(false) && configurato();
+        let mut messaggi: Vec<String> = Vec::new();
+        if let Some(segno) = crate::antivirus::leggi_segno_in(&self.dir) {
+            messaggi.push(crate::antivirus::messaggio_segno(&segno));
+        }
+        // un segno sconosciuto o troppo grande si toglie lo stesso: non deve restare per sempre
+        let _ = std::fs::remove_file(self.dir.join(crate::antivirus::SEGNO));
+        let mancanti = crate::antivirus::mancanti_all_avvio();
+        let vista = self.dir.join(FILE_ANTIVIRUS_VISTO);
+        if mancanti.is_empty() {
+            // a posto: se torna a mancare, riparte
+            let _ = std::fs::remove_file(&vista);
+        } else {
+            let firma = impronta(format!("{}|{}", aurora_core::version::APP_VERSION, mancanti.join("|")).as_bytes());
+            if !std::fs::read_to_string(&vista).is_ok_and(|v| v.trim() == firma) {
+                messaggi.push(crate::antivirus::messaggio_mancanti(&mancanti, crate::antivirus::nome()));
+                let _ = std::fs::write(&vista, &firma);
+            }
+        }
+        if !acceso || messaggi.is_empty() {
+            return;
+        }
+        let contesto = self.contesto();
+        let Ok(mut s) = self.stato.lock() else { return };
+        for m in messaggi {
+            let messaggio: String = pulisci(&m, &contesto.noti).chars().take(MAX_MESSAGGIO).collect();
+            let g = Gruppo { livello: "error", area: "antivirus", origine: "antivirus".into(), messaggio, conteggio: 1 };
+            let r = rapporto(&s.id, &contesto, &giorno(secondi()), &g);
+            s.coda.push(r);
+            if s.coda.len() > MAX_CODA {
+                s.coda.remove(0);
+            }
+        }
+        scrivi_json(&self.dir.join(FILE_CODA), &s.coda);
     }
 }
 

@@ -222,6 +222,7 @@ fn info_text(pack: &Pack, ctx: &Context, req: &SupportRequest, now: i64) -> Stri
     let _ = writeln!(s, "====================================\n");
     let _ = writeln!(s, "Aurora: {}", ctx.version);
     let _ = writeln!(s, "Windows: {}", windows_version());
+    let _ = writeln!(s, "Antivirus: {}", Some(crate::antivirus::nome()).filter(|n| !n.is_empty()).unwrap_or("—"));
     let _ = writeln!(s, "Lingua dell'interfaccia: {}", if req.lang.is_empty() { "—" } else { &req.lang });
     let _ = writeln!(s, "Lingua di Windows: {}", reg_value(r"HKCU\Control Panel\International", "LocaleName").unwrap_or_else(|| "—".into()));
     let _ = writeln!(s, "Ora locale: {} (UTC{:+}:{:02})", stamp(local), req.local_offset_min / 60, (req.local_offset_min % 60).abs());
