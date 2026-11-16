@@ -5,9 +5,7 @@ import { ApiError, getDxcc, getRotator, rotatorGoto, rotatorStop, type RotatorSt
 import { useT } from '../../i18n';
 import { detachedItems, useGroups } from '../../lib/detached';
 import { bearingDeg, gridCenter, type Point } from '../../lib/geo';
-import { REMOTE_HOST } from '../../lib/phone';
 import { azimuthOfPoint, longPath, unwrapAngle } from '../../lib/rotator';
-import { openInMain } from '../../lib/sdr';
 import { browserStorage } from '../../lib/theme';
 import { useStatusPick } from '../../state/station';
 import { DetachButton } from '../DetachButton';
@@ -27,6 +25,8 @@ interface Props {
   call: string;
   grid: string;
   place: RotorPlace;
+  /** Dove parte la scheda sopra la pagina se non ne ha mai avuto una salvata (coordinate della pagina). */
+  startAt?: { x: number; y: number };
 }
 
 /** Le chiavi dell'archivio di una scheda sopra la pagina: PSK/RTTY/CW e Stazione ricordano posto, misura e visibilita' ognuna per se'. */
@@ -36,8 +36,10 @@ function keysOf(place: Floating) {
 }
 /** La posizione di Park e' del rotore, non della pagina: una sola. */
 const PARK_KEY = 'aurora.digi.rotor.park';
+/** I preset di direzione (0, 45, 90...) stanno dietro il pulsante «Preset»: di base chiusi, la scelta resta salvata. */
+const PRESETS_KEY = 'aurora.digi.rotor.presets';
 const EVENT = 'aurora-rotor-card';
-const MIN_W = 240;
+const MIN_W = 110;
 const MAX_W = 760;
 
 interface Pos {
@@ -145,20 +147,32 @@ interface DialProps {
 
 /** La bussola: faccia nera, tacche fini, anello chiaro, lancetta arancio-gialla, mozzo metallico e la targhetta gialla con il bersaglio. */
 function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: DialProps) {
-  const now = useUnwrapped(status?.az);
+  const [ghost, setGhost] = useState<number | null>(null);
+  const last = useRef(0);
+  // con il rotore spento si vede comunque una lancetta tenue (sul punto scelto col mouse, altrimenti sul nord)
+  const real = useUnwrapped(status?.az);
+  const now = disabled ? (ghost ?? real ?? 0) : real;
   const target = status?.target ?? null;
   const pick = (e: ReactPointerEvent<SVGSVGElement>) => {
-    if (disabled) return;
     const box = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - (box.left + box.width / 2);
     const y = e.clientY - (box.top + box.height / 2);
     if (Math.hypot(x, y) < box.width * 0.07) return;
-    onPick(azimuthOfPoint(x, y));
+    const az = azimuthOfPoint(x, y);
+    // spento: nessun comando a vuoto, ma il puntatore tenue si sposta
+    if (disabled) setGhost(az);
+    else onPick(az);
+  };
+  const drag = (e: ReactPointerEvent<SVGSVGElement>) => {
+    // trascinando il comando parte al massimo ogni 120 ms (e una volta in piu' al rilascio)
+    if ((e.buttons & 1) === 0 || Date.now() - last.current < 120) return;
+    last.current = Date.now();
+    pick(e);
   };
   const ticks = Array.from({ length: 120 }, (_, i) => i * 3);
   const shownTarget = target ?? status?.az ?? null;
   return (
-    <svg className={`rotor-dial${disabled ? ' rotor-dial--off' : ''}`} viewBox="-120 -120 240 240" role="img" aria-label={label} onPointerDown={pick}>
+    <svg className={`rotor-dial${disabled ? ' rotor-dial--off' : ''}`} viewBox="-120 -120 240 240" role="img" aria-label={label} onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); last.current = Date.now(); pick(e); }} onPointerMove={drag} onPointerUp={pick}>
       <title>{title}</title>
       <defs>
         <linearGradient id="rotor-ring-grad" x1="0" y1="0" x2="1" y2="1">
@@ -202,7 +216,7 @@ function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: D
       {sp !== null ? <circle cx={polar(sp, R + 1).x} cy={polar(sp, R + 1).y} r={5.5} fill="#34d399" stroke="#161616" strokeWidth={1.5} /> : null}
       {target !== null ? <circle cx={polar(target, R - 20).x} cy={polar(target, R - 20).y} r={3.4} fill="#ffb41f" /> : null}
       {now !== null ? (
-        <g className="rotor-needle" style={{ transform: `rotate(${now}deg)` }}>
+        <g className={`rotor-needle${disabled ? ' rotor-needle--ghost' : ''}`} style={{ transform: `rotate(${now}deg)` }}>
           <path d="M0 -97 L3.4 -2 L1.7 24 L-1.7 24 L-3.4 -2 Z" fill="url(#rotor-needle-grad)" stroke="#6b5a00" strokeWidth={0.6} strokeLinejoin="round" />
         </g>
       ) : null}
@@ -227,7 +241,7 @@ function Dial({ status, sp, lp, zone, label, brand, title, disabled, onPick }: D
  * Nelle pagine PSK/RTTY/CW e nella Stazione sta sopra la pagina (si sposta e si ridimensiona) e si stacca in una finestra a parte con ⧉;
  * nella finestra a parte e nella pagina Rotore riempie il suo spazio.
  */
-export function RotorCard({ call, grid, place }: Props) {
+export function RotorCard({ call, grid, place, startAt }: Props) {
   const t = useT();
   const client = useQueryClient();
   const floating = place === 'digi' || place === 'station';
@@ -238,9 +252,20 @@ export function RotorCard({ call, grid, place }: Props) {
     remember(keys.closed, v ? '1' : '0');
   };
   const [typed, setTyped] = useState('');
+  const [presetsOpen, setPresetsOpen] = useState(() => {
+    try {
+      return browserStorage()?.getItem(PRESETS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const togglePresets = () => {
+    setPresetsOpen(!presetsOpen);
+    remember(PRESETS_KEY, presetsOpen ? '0' : '1');
+  };
   const [more, setMore] = useState(place === 'page');
   const card = useRef<HTMLElement>(null);
-  const [pos, setPos] = useState<Pos | null>(() => (floating ? readPos(keys.pos) : null));
+  const [pos, setPos] = useState<Pos | null>(() => (floating ? (readPos(keys.pos) ?? startAt ?? null) : null));
   const [width, setWidth] = useState<number | null>(() => {
     if (!floating) return null;
     const v = Number(browserStorage()?.getItem(keys.width));
@@ -300,7 +325,7 @@ export function RotorCard({ call, grid, place }: Props) {
   const problemText = problem instanceof ApiError && problem.code === 'not_connected' ? t('rot.err.notConnected') : problem instanceof ApiError && problem.detail ? problem.detail : problem ? t('rot.err.failed') : '';
   const az = status?.az ?? null;
   // tre cifre (quattro solo con il segno meno o oltre il 999): cosi' le cifre restano grandi
-  const lcdText = az === null ? '' : String(Math.round(az));
+  const lcdText = az === null ? '---' : String(Math.round(az));
   const lcd = lcdText.padStart(lcdText.length > 3 ? lcdText.length : 3, ' ');
   const nudge = (step: number) => go.mutate(Math.min(max, Math.max(min, Math.round(base) + step)));
   const typedNumber = Number(typed.replace(',', '.'));
@@ -308,6 +333,16 @@ export function RotorCard({ call, grid, place }: Props) {
   // il nome salvato e' «Azienda Modello» (per esempio «Yaesu GS-232B»): al centro della bussola va l'azienda
   const brand = (config?.model_name ?? '').trim().split(' ')[0] || t('digi.tab.rotor');
   const help = `${t('rot.clickHint')}${wide ? ` ${t('rot.wide', { min, max })}` : ''}`;
+  // la pallina: verde = collegato, rosso = spento o non collegato, ambra = collegamento in corso o errore (il testo del tooltip spiega lo stato)
+  const waiting = status?.state === 'connecting' || status?.state === 'error' || loadFailed;
+  const dotClass = connected ? (moving ? 'rotor-dot--on rotor-dot--moving' : 'rotor-dot--on') : waiting ? 'rotor-dot--warn' : 'rotor-dot--off';
+  const dotTip = connected
+    ? t('rot.dotOn', { az: status?.az === null || status?.az === undefined ? '—' : String(Math.round(status.az)), el: typeof status?.el === 'number' ? `, El ${Math.round(status.el)}°` : '' })
+    : loadFailed || status?.state === 'error'
+      ? t('rot.dotErr')
+      : status?.state === 'connecting'
+        ? t('rot.dotWait')
+        : t('rot.dotOff');
   const stateKey = loadFailed ? 'rot.state.error' : !status ? 'rot.state.off' : status.state === 'connected' ? (moving ? 'rot.state.moving' : 'rot.state.connected') : (`rot.state.${status.state}` as const);
 
   // se la finestra si rimpicciolisce e la scheda resta fuori, torna al suo posto
@@ -384,7 +419,6 @@ export function RotorCard({ call, grid, place }: Props) {
     else go.mutate(p);
   };
   const labelOf = (p: Preset) => (p === 'dx' ? 'DX' : p === 'park' ? 'Park' : String(p));
-  const isOff = !loadFailed && (!config?.enabled || status?.state === 'off');
 
   return (
     <section
@@ -394,66 +428,71 @@ export function RotorCard({ call, grid, place }: Props) {
       aria-label={t('digi.tab.rotor')}
     >
       <div className="rotor-bar" onPointerDown={floating ? startDrag : undefined} onDoubleClick={floating ? resetPlace : undefined} title={floating ? t('rot.move') : undefined}>
-        <span className={`rotor-dot${moving ? ' rotor-dot--moving' : connected ? ' rotor-dot--on' : status?.state === 'error' || loadFailed ? ' rotor-dot--err' : ''}`} aria-hidden="true" />
+        <span className={`rotor-dot ${dotClass}`} title={dotTip} />
         <strong>{t('digi.tab.rotor')}</strong>
-        <span className="rotor-state" role="status">
+        <span className="rotor-sr" role="status">
           {t(stateKey)}
         </span>
         <span className="rotor-bar-sp" />
+        {/* a destra, in due gruppi: [Preset] [ingranaggio] | [staccare] [riduci] [chiudi] (gli ultimi tre solo sopra la pagina) */}
+        <span className="rotor-bar-grp">
+          <button type="button" className={`rotor-bar-btn rotor-bar-btn--presets${presetsOpen ? ' on' : ''}`} aria-pressed={presetsOpen} onClick={togglePresets} title={t('rot.presetTip')} aria-label={t('rot.presetTip')}>
+            ≡
+          </button>
+          <button type="button" className={`rotor-bar-btn rotor-bar-btn--gear${more ? ' on' : ''}`} aria-expanded={more} onClick={() => setMore(!more)} title={t('rot.more')} aria-label={t('rot.more')}>
+            <Icon name="gear" size="1em" />
+          </button>
+        </span>
         {floating ? (
-          <>
+          <span className="rotor-bar-grp rotor-bar-grp--end">
             <DetachButton item="rotator" className="dock-detach rotor-detach" />
-            <button type="button" className="rotor-bar-btn" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={closed ? t('rot.open') : t('rot.close')}>
+            <button type="button" className="rotor-bar-btn rotor-bar-btn--fold" aria-expanded={!closed} onClick={() => setClosed(!closed)} title={closed ? t('rot.open') : t('rot.close')} aria-label={closed ? t('rot.open') : t('rot.close')}>
               {closed ? '▸' : '▾'}
             </button>
             <button type="button" className="rotor-bar-btn" onClick={() => setVisible(false)} title={t(place === 'station' ? 'rot.hideStation' : 'rot.hide')} aria-label={t(place === 'station' ? 'rot.hideStation' : 'rot.hide')}>
               ✕
             </button>
-          </>
+          </span>
         ) : null}
       </div>
       {closed ? null : (
         <>
-          <div className="rotor-dial-box">
-            <Dial status={status} sp={sp} lp={lp} zone={wide ? [min, max - 360] : null} label={t('digi.tab.rotor')} brand={brand} title={help} disabled={!connected} onPick={(a) => go.mutate(a)} />
-          </div>
-          <div className="rotor-lcd">
-            <button type="button" className="rotor-help" title={help} aria-label="?">
-              ?
-            </button>
-            <svg className="rotor-digits" viewBox={`0 0 ${12 + lcd.length * 39} 64`} role="img" aria-label={t('rot.heading')}>
-              <SevenSegment text={lcd} x={6} y={8} w={30} h={48} t={5.5} gap={9} skew={0.14} on="#3b2b00" offOpacity={0.09} />
-            </svg>
-            <div className="rotor-lcd-btns">
-              <button type="button" className="rotor-go" disabled={!connected || !typedOk} onClick={() => typedOk && go.mutate(typedNumber)} title={t('rot.degrees')}>
-                {t('rot.go')}
-              </button>
-              <button type="button" className="rotor-stop" disabled={!connected} onClick={() => stop.mutate()}>
-                {t('rot.stop')}
+          <div className="rotor-main">
+            <div className="rotor-dial-box">
+              <Dial status={status} sp={sp} lp={lp} zone={wide ? [min, max - 360] : null} label={t('digi.tab.rotor')} brand={brand} title={help} disabled={!connected} onPick={(a) => go.mutate(a)} />
+            </div>
+            <div className="rotor-side">
+              <div className="rotor-lcd">
+                <svg className="rotor-digits" viewBox={`0 0 ${12 + lcd.length * 39} 64`} role="img" aria-label={t('rot.heading')}>
+                  <SevenSegment text={lcd} x={6} y={8} w={30} h={48} t={5.5} gap={9} skew={0.14} on="#2a1d00" offOpacity={0.12} />
+                </svg>
+              </div>
+              <div className="rotor-lcd-btns">
+                <button type="button" className="rotor-go" disabled={!connected || !typedOk} onClick={() => typedOk && go.mutate(typedNumber)} title={t('rot.degrees')}>
+                  {t('rot.go')}
+                </button>
+                <button type="button" className="rotor-stop" disabled={!connected} onClick={() => stop.mutate()}>
+                  {t('rot.stop')}
+                </button>
+              </div>
+              <button type="button" className="rotor-help" title={help} aria-label="?">
+                ?
               </button>
             </div>
-            <button type="button" className={`rotor-gear${more ? ' rotor-gear--on' : ''}`} aria-expanded={more} onClick={() => setMore(!more)} title={t('rot.more')} aria-label={t('rot.more')}>
-              <Icon name="gear" size="1.2em" />
-              <Icon name="chevron-down" size="0.8em" className={`rotor-caret${more ? ' rotor-caret--up' : ''}`} />
-            </button>
           </div>
           {/* la stazione DX del QSO in corso: nominativo, locatore e le due direzioni (anche FT8, FT4, ... e PSK/RTTY/CW) */}
-          <div className="rotor-dx" title={t('rot.dx')}>
-            {sp !== null ? (
-              <>
-                <strong className="rotor-dx-call">{cleanCall || 'DX'}</strong>
-                {cleanGrid ? <span className="rotor-dx-grid">{cleanGrid}</span> : null}
-                <span className="rotor-dx-path rotor-dx-path--sp">
-                  {t('rot.sp')} {sp}°
-                </span>
-                <span className="rotor-dx-path rotor-dx-path--lp">
-                  {t('rot.lp')} {lp}°
-                </span>
-              </>
-            ) : (
-              <span className="rotor-dx-none">{!station?.de_grid ? t('rot.noMyGrid') : cleanCall ? `${cleanCall} · —` : t('rot.noDxAny')}</span>
-            )}
-          </div>
+          {sp !== null ? (
+            <div className="rotor-dx" title={t('rot.dx')}>
+              <strong className="rotor-dx-call">{cleanCall || 'DX'}</strong>
+              {cleanGrid ? <span className="rotor-dx-grid">{cleanGrid}</span> : null}
+              <span className="rotor-dx-path rotor-dx-path--sp">
+                {t('rot.sp')} {sp}°
+              </span>
+              <span className="rotor-dx-path rotor-dx-path--lp">
+                {t('rot.lp')} {lp}°
+              </span>
+            </div>
+          ) : null}
           {more ? (
             <div className="rotor-more">
               <div className="rotor-more-row">
@@ -506,41 +545,13 @@ export function RotorCard({ call, grid, place }: Props) {
               </div>
             </div>
           ) : null}
-          <div className="rotor-presets" role="group" aria-label={t('rot.steps')}>
+          {presetsOpen || !floating ? <div className="rotor-presets" role="group" aria-label={t('rot.steps')}>
             {presets(max, wide).map((p) => (
               <button key={String(p)} type="button" disabled={!connected || (p === 'dx' && sp === null)} onClick={() => press(p)} title={p === 'park' ? t('rot.parkGo', { az: parkAz }) : p === 'dx' && sp !== null ? `${t('rot.short')} ${sp}°` : undefined}>
                 {labelOf(p)}
               </button>
             ))}
-          </div>
-          {isOff ? (
-            <p className="rotor-note">
-              {t('rot.offText')}{' '}
-              {REMOTE_HOST ? null : (
-                <a
-                  href="#/impostazioni/rotator"
-                  onClick={(e) => {
-                    // dalla finestra a parte le Impostazioni si aprono nella finestra principale
-                    e.preventDefault();
-                    openInMain('#/impostazioni/rotator');
-                  }}
-                >
-                  {t('rot.openSettings')}
-                </a>
-              )}
-            </p>
-          ) : null}
-          {loadFailed ? (
-            <p className="rotor-note rotor-note--err" role="alert">
-              {t('rot.err.load')}
-              {snap.error instanceof ApiError && snap.error.detail ? ` ${snap.error.detail}` : ''}
-            </p>
-          ) : null}
-          {status?.state === 'error' && status.error ? (
-            <p className="rotor-note rotor-note--err" role="alert">
-              {status.error}
-            </p>
-          ) : null}
+          </div> : null}
           {problemText ? (
             <p className="rotor-note rotor-note--err" role="alert">
               {problemText}

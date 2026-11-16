@@ -49,7 +49,6 @@ export const rotatorStrings = {
     'El rotor no está activado. Elígelo y conéctalo en Ajustes › Estación › Rotor.',
     'O rotor não está ligado. Escolhe-o e liga-o em Definições › Estação › Rotor.',
   ],
-  'rot.openSettings': ['Impostazioni del rotore', 'Rotator settings', 'Rotor-Einstellungen', 'Paramètres du rotor', 'Ajustes del rotor', 'Definições do rotor'],
   'rot.err.notConnected': ['Il rotore non è collegato.', 'The rotator is not connected.', 'Der Rotor ist nicht verbunden.', 'Le rotor n’est pas connecté.', 'El rotor no está conectado.', 'O rotor não está ligado.'],
   'rot.err.load': [
     'Impossibile leggere lo stato del rotore.',
@@ -229,4 +228,10 @@ export const rotatorStrings = {
     'La tarjeta del rotor sobre la Estación, en todos los modos (FT8, FT4, JT65, Q65, ...): se mueve desde la barra de título, se redimensiona desde la esquina y ⧉ la lleva a una ventana aparte (segunda pantalla).',
     'O cartão do rotor por cima da Estação, em todos os modos (FT8, FT4, JT65, Q65, ...): move-se pela barra de título, redimensiona-se pelo canto e ⧉ leva-o para uma janela à parte (segundo ecrã).',
   ],
+  'rot.presetTip': ["Direzioni predefinite (0, 45, 90…): mostra o nascondi", "Direction presets (0, 45, 90…): show or hide", "Richtungs-Presets (0, 45, 90 …): ein- oder ausblenden", "Préréglages de direction (0, 45, 90…) : afficher ou masquer", "Preajustes de dirección (0, 45, 90…): mostrar u ocultar", "Predefinições de direção (0, 45, 90…): mostrar ou ocultar"],
+  'rot.dotOff': ["Rotore spento o non collegato: configuralo in Impostazioni > Rotore (ingranaggio)", "Rotor off or not connected: set it up in Settings > Rotator (gear)", "Rotor aus oder nicht verbunden: in den Einstellungen > Rotor einrichten (Zahnrad)", "Rotor éteint ou non connecté : configure-le dans Réglages > Rotor (engrenage)", "Rotor apagado o sin conexión: configúralo en Ajustes > Rotor (engranaje)", "Rotor desligado ou sem ligação: configura-o em Definições > Rotor (engrenagem)"],
+  'rot.dotOn': ["Rotore collegato: Az {az}°{el}", "Rotor connected: Az {az}°{el}", "Rotor verbunden: Az {az}°{el}", "Rotor connecté : Az {az}°{el}", "Rotor conectado: Az {az}°{el}", "Rotor ligado: Az {az}°{el}"],
+  'rot.dotWait': ["Collegamento al rotore in corso…", "Connecting to the rotor…", "Verbindung zum Rotor wird aufgebaut …", "Connexion au rotor en cours…", "Conectando con el rotor…", "A ligar ao rotor…"],
+  'rot.dotErr': ["Errore del rotore: controlla il collegamento e le impostazioni", "Rotor error: check the connection and the settings", "Rotorfehler: Verbindung und Einstellungen prüfen", "Erreur du rotor : vérifie la connexion et les réglages", "Error del rotor: revisa la conexión y los ajustes", "Erro do rotor: verifica a ligação e as definições"],
+  'rot.openSettings': ['Impostazioni del rotore', 'Rotator settings', 'Rotor-Einstellungen', 'Paramètres du rotor', 'Ajustes del rotor', 'Definições do rotor'],
 } as const;

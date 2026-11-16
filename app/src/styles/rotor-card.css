@@ -1,5 +1,5 @@
 /* la scheda del rotore (una sola per PSK/RTTY/CW, Stazione, finestra a parte e pagina Rotore): bussola nera, striscia gialla con le cifre, GO e STOP, griglia di pulsanti scuri. Le misure seguono la larghezza della scheda (cqw) */
-.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 19rem; max-width: calc(calc(100vw / var(--ui-zoom, 1)) - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
+.rotor-card { container-type: inline-size; position: fixed; right: 1rem; bottom: 3.2rem; width: 15rem; max-width: calc(calc(100vw / var(--ui-zoom, 1)) - 1rem); z-index: 1500; background: #252525; color: #e6e6e6; border: 1px solid #555; border-radius: 10px; overflow: hidden; box-shadow: 0 12px 34px rgba(0, 0, 0, 0.65); }
 /* il carattere segue la larghezza della scheda (cqw si misura sul contenitore, quindi sugli elementi dentro di lui): con la scheda piu' grande o piu' piccola testo e pulsanti si adattano e non escono dai riquadri */
 .rotor-card > * { font-size: max(9px, 4.4cqw); }
 .rotor-bar { display: flex; align-items: center; gap: 0.6em; padding: 0.4em 0.6em 0.4em 0.8em; background: #1c1c1c; border-bottom: 1px solid #444; cursor: grab; user-select: none; touch-action: none; font-size: 1.05em; }
@@ -66,3 +66,107 @@
 .rotor-card--page { width: min(100%, 16rem); }
 .rotor-card--window .rotor-bar, .rotor-card--page .rotor-bar { cursor: default; }
 .rotor-solo { box-sizing: border-box; height: 100%; padding: 0.5rem; overflow: auto; background: var(--bg); }
+
+/* la barra non va mai a capo e i pulsanti non si restringono: nella scheda piccola si accorcia il resto (titolo, stato, staccare), non i pulsanti */
+.rotor-bar { flex-wrap: nowrap; overflow: visible; min-width: 0; position: relative; z-index: 2; }
+.rotor-bar > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rotor-bar-btn, .rotor-bar .dock-detach-host { flex: none; }
+@container (max-width: 230px) {
+  .rotor-bar { gap: 0.3em; padding: 0.3em 0.4em; font-size: 0.95em; }
+  .rotor-state, .rotor-bar .dock-detach-host { display: none; }
+  .rotor-bar > strong { flex: 0 1 auto; font-size: 0.85em; }
+}
+@container (max-width: 175px) {
+  .rotor-bar > strong { display: none; }
+}
+
+/* scheda compatta: bussola piu' piccola a sinistra, cifre e GO/STOP a destra; ingranaggio e preset nella barra */
+.rotor-main { display: flex; align-items: center; gap: 0.5em; padding: 0.35em 0.5em 0; }
+.rotor-dial-box { flex: 0 0 54%; padding: 0; min-width: 0; }
+.rotor-lcd { flex: 1 1 0; min-width: 0; margin: 0; display: flex; flex-direction: column; align-items: stretch; gap: 0.3em; padding: 0.4em 0.4em 0.35em; }
+.rotor-digits { width: 100%; height: auto; }
+.rotor-lcd-btns { flex-direction: row; width: auto; margin: 0; }
+.rotor-help { top: 0.1em; left: 0.1em; width: 1.1em; height: 1.1em; font-size: 0.65em; }
+.rotor-bar-btn--gear, .rotor-bar-btn--presets { display: inline-flex; align-items: center; }
+.rotor-bar-btn.on { background: #e8a33a; color: #1a1205; }
+.rotor-presets { margin-top: 0.35em; }
+@container (max-width: 230px) {
+  .rotor-lcd-btns { flex-direction: column; }
+  .rotor-bar-btn--fold { display: none; }
+  .rotor-bar-btn { padding: 0 0.25em; }
+}
+@container (max-width: 230px) { .rotor-dial-box { flex-basis: 60%; } }
+
+/* ordine dall'alto: barra, display, bussola, comandi; solo 2-3 px fra le parti */
+.rotor-bar { padding: 0.25em 0.4em; }
+.rotor-main { flex-direction: column; align-items: stretch; gap: 3px; padding: 3px 4px 0; }
+.rotor-lcd { flex: none; flex-direction: row; align-items: center; gap: 0.4em; padding: 2px 6px; }
+.rotor-digits { flex: 1 1 0; width: auto; min-width: 0; max-height: 2.6em; }
+.rotor-lcd-btns { flex: 0 0 38%; flex-direction: row; }
+.rotor-dial-box { flex: none; width: 54%; align-self: center; }
+.rotor-dx { margin: 3px 4px 0; padding: 1px 6px; }
+.rotor-presets { margin: 3px 4px; padding: 3px; }
+.rotor-note { margin: 0 0.6em 3px; }
+.rotor-card { padding-bottom: 3px; }
+@container (max-width: 230px) { .rotor-dial-box { width: 62%; flex-basis: auto; } .rotor-lcd-btns { flex: 0 0 40%; flex-direction: column; } }
+.rotor-digits { flex: 0 1 auto; height: 2.6em; width: auto; max-width: 60%; max-height: none; }
+.rotor-lcd { justify-content: space-between; }
+
+@container (max-width: 175px) {
+  .rotor-bar { gap: 0.2em; padding: 0.25em 0.3em; }
+  .rotor-note:not(.rotor-note--err) { display: none; }
+  .rotor-dx { white-space: nowrap; overflow: hidden; flex-wrap: nowrap; font-size: 0.75em; }
+}
+
+/* riga unica: bussola a sinistra, a destra il display giallo compatto (largo quanto le cifre) con Vai/Ferma sotto, fuori dal giallo */
+.rotor-main { flex-direction: row; align-items: center; gap: 4px; padding: 3px 4px 0; }
+.rotor-dial-box { flex: 0 0 52%; width: auto; align-self: center; }
+.rotor-side { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rotor-lcd { display: block; flex: none; width: auto; max-width: 100%; margin: 0; padding: 3px 6px; background: #d4a900; border-radius: 4px; }
+.rotor-digits { display: block; width: 100%; max-width: 100%; height: auto; max-height: none; min-width: 3.6em; }
+.rotor-lcd-btns { flex: none; width: 100%; flex-direction: row; gap: 3px; margin: 0; }
+.rotor-go, .rotor-stop { flex: 1 1 0; font-size: 0.8em; padding: 0.15em 0.2em; }
+.rotor-go { color: #e6e6e6; background: #3a3a3a; border-color: #666; }
+.rotor-help { position: absolute; right: 0; top: -2px; left: auto; }
+@container (max-width: 230px) {
+  .rotor-dial-box { flex: 0 0 56%; width: auto; }
+  .rotor-lcd-btns { flex-direction: row; flex: none; }
+  .rotor-go, .rotor-stop { font-size: 0.75em; }
+  .rotor-digits { min-width: 0; }
+}
+
+/* display in alto, al bordo superiore della bussola; piu' piccolo di un terzo */
+.rotor-main { align-items: flex-start; }
+.rotor-dial-box { align-self: flex-start; margin: 0; padding: 0; }
+.rotor-dial { margin: 0; }
+.rotor-side { align-self: flex-start; margin: 0; padding: 0; justify-content: flex-start; }
+.rotor-lcd { align-self: center; margin: 0; width: 66%; padding: 2px 4px; }
+.rotor-digits { min-width: 0; }
+
+/* pallina di stato nella barra: rossa spento/non collegato, verde collegato, ambra in corso o errore */
+.rotor-dot { flex: none; width: max(9px, 0.9em); height: max(9px, 0.9em); cursor: help; }
+.rotor-dot--off { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.rotor-dot--warn { background: #f2a93b; box-shadow: 0 0 6px #f2a93b; }
+.rotor-dot--on { background: #34d399; box-shadow: 0 0 6px #34d399; }
+.rotor-dot--on.rotor-dot--moving { background: #34d399; }
+.rotor-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.rotor-needle--ghost { opacity: 0.4; filter: grayscale(1); }
+.rotor-dial { cursor: crosshair; touch-action: none; }
+.rotor-dial text, .rotor-dial .rotor-needle { pointer-events: none; }
+.rotor-dial--off { cursor: crosshair; opacity: 1; }
+
+/* barra ordinata: pallina + titolo a sinistra; a destra due gruppi di pulsanti tutti alti uguale, mai a capo e mai sopra il titolo */
+.rotor-bar { --b: 20px; gap: 4px; }
+.rotor-bar > strong { flex: 0 1 auto; min-width: 0; }
+.rotor-bar-sp { flex: 1 1 0; min-width: 0; }
+.rotor-bar-grp { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.rotor-bar-grp--end { padding-left: 4px; margin-left: 2px; border-left: 1px solid #555; }
+.rotor-bar .rotor-bar-btn, .rotor-bar .dock-detach { box-sizing: border-box; width: var(--b); height: var(--b); min-width: var(--b); padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; border-radius: 4px; }
+.rotor-bar .dock-detach svg { width: 12px; height: 12px; }
+.rotor-bar .dock-detach-host { display: inline-flex; flex: none; }
+@container (max-width: 230px) {
+  .rotor-bar .dock-detach-host { display: inline-flex; }
+  .rotor-bar-btn--fold { display: inline-flex; }
+}
+@container (max-width: 150px) { .rotor-bar-grp--end .dock-detach-host, .rotor-bar-btn--fold { display: none; } }

@@ -34,6 +34,8 @@ const expectedSp = () => bearingDeg(gridCenter('JN55') as Point, gridCenter('PM9
 
 beforeEach(() => {
   localStorage.clear();
+  // i preset di direzione sono chiusi di base: qui si aprono
+  localStorage.setItem('aurora.digi.rotor.presets', '1');
   location.hash = '#/';
   vi.mocked(getRotator).mockReset().mockResolvedValue(snapshot(status()));
   vi.mocked(rotatorGoto).mockReset().mockImplementation(async (az: number) => status({ target: az, moving: true }));
@@ -69,7 +71,7 @@ describe('RotorCard (la scheda del rotore condivisa)', () => {
     await waitFor(() => expect(rotatorGoto).toHaveBeenLastCalledWith(275));
   });
 
-  it('con il rotore spento i comandi sono disattivati e c’e’ il collegamento alle Impostazioni', async () => {
+  it('con il rotore spento i comandi sono disattivati (e nessun collegamento alle Impostazioni nel menu)', async () => {
     vi.mocked(getRotator).mockResolvedValue(snapshot(status({ state: 'off', connected: false, az: null }), false));
     card('page');
     expect(await screen.findByText('Spento')).toBeTruthy();
@@ -77,15 +79,15 @@ describe('RotorCard (la scheda del rotore condivisa)', () => {
     expect((screen.getByRole('button', { name: 'DX' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: '90' }) as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByRole('button', { name: '+2' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.getByRole('link', { name: 'Impostazioni del rotore' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Impostazioni del rotore' })).toBeNull();
   });
 
   it('se lo stato non si legge dice l’errore, non «spento»', async () => {
     vi.mocked(getRotator).mockRejectedValue(new Error('rete'));
     card('page');
-    expect(await screen.findByText(/Impossibile leggere lo stato del rotore/)).toBeTruthy();
+    expect(await screen.findByText('Errore')).toBeTruthy();
     expect(screen.queryByText('Spento')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Impostazioni del rotore' })).toBeNull();
+    expect(screen.queryByText(/Impossibile leggere lo stato del rotore/)).toBeNull();
   });
 
   it('l’errore di un GO sparisce dopo uno STOP riuscito', async () => {
@@ -106,11 +108,21 @@ describe('RotorCard (la scheda del rotore condivisa)', () => {
     expect(document.querySelector('.rotor-card')).toBeNull();
   });
 
-  it('senza DX lo dice, e senza il mio locatore chiede di scriverlo', async () => {
+  it('senza DX non c’e’ la riga del DX e nessun messaggio di stato vuoto', async () => {
     card('page', '', '');
-    expect(await screen.findByText('Nessuna stazione DX')).toBeTruthy();
-    useStation.setState({ status: { de_grid: null } } as never);
-    expect(await screen.findByText(/Manca il tuo locatore/)).toBeTruthy();
+    await screen.findByText('Collegato');
+    expect(document.querySelector('.rotor-dx')).toBeNull();
+    expect(screen.queryByText('Nessuna stazione DX')).toBeNull();
+  });
+
+  it('i preset stanno dietro il pulsante e di base sono chiusi', async () => {
+    localStorage.removeItem('aurora.digi.rotor.presets');
+    card('digi');
+    await screen.findByText('Collegato');
+    expect(screen.queryByRole('button', { name: '90' })).toBeNull();
+    fireEvent.click(document.querySelector('.rotor-bar-btn--presets') as HTMLElement);
+    expect(screen.getByRole('button', { name: '90' })).toBeTruthy();
+    expect(localStorage.getItem('aurora.digi.rotor.presets')).toBe('1');
   });
 
   it('sopra la pagina ha il pulsante per staccarla in una finestra a parte; nella finestra a parte no', async () => {
