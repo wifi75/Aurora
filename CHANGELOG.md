@@ -2,7 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.278 - 2026-11-16
+
 - DX Cluster: la riga DXpedition gialla ha tutti i testi interni scuri e leggibili (prima paese, commenti e ora erano chiari sul giallo); paese e commenti delle altre righe nel colore pieno.
+- Contest in SSB: il log del contest riparte da zero (solo i QSO della gara); doppi e moltiplicatori contano dentro la gara; «Mostra tutto il log» / «Solo il contest»; il log si aggiorna subito dopo ogni QSO.
+- Scheda «Statistiche» sempre visibile nella vista SSB, per contest: tabella per banda, moltiplicatori su totali, ritmo, tempo trascorso e rimanente, QSO per ora.
+- Impostazioni del contest: date di inizio e fine validate con proposte per CQ WW DX, CQ WPX e JIDX; numero da inviare con incremento automatico; suggerimenti (zona CQ, ITU, prefisso) e auto grab.
+- QSO precedenti per banda del nominativo digitato; riquadro «Prefisso lavorato / moltiplicatori».
+- JIDX CW e SSB: date, nome e modi validi corretti; lo scambio inviato resta da impostare.
 
 ## 0.11.277 - 2026-11-16
 

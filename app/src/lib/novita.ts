@@ -22,6 +22,28 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.278',
+    released: '2026-11-16T19:00:00Z',
+    kind: 'new',
+    featured: true,
+    title: [
+      'Contest in SSB: log da zero',
+      'Contests in SSB: a log from zero',
+      'Contests in SSB: Log bei null',
+      'Concours en SSB : journal à zéro',
+      'Contests en SSB: log desde cero',
+      'Contests em SSB: log do zero',
+    ],
+    text: [
+      'Il contest in SSB ha ora un log che riparte da zero: contano solo i QSO della gara, e doppi e moltiplicatori valgono dentro la gara. «Mostra tutto il log» e «Solo il contest» cambiano la vista, e il log si aggiorna subito dopo ogni QSO. La scheda «Statistiche» è sempre visibile nella vista SSB, con la tabella per banda, i moltiplicatori lavorati, il ritmo e il tempo che resta. Le impostazioni del contest propongono le date di CQ WW DX, CQ WPX e JIDX e fanno salire da sole il numero da inviare.',
+      'In SSB the contest now has a log that starts from zero: only the QSOs of the contest count, and dupes and multipliers count inside the contest. “Show the whole log” and “Contest only” change the view, and the log updates right after every QSO. The “Statistics” panel is always visible in the SSB view, with the table by band, the multipliers worked, the rate and the time left. The contest settings propose the dates for CQ WW DX, CQ WPX and JIDX and raise the number to send by themselves.',
+      'Im SSB-Modus hat der Contest jetzt ein Log, das bei null beginnt: Gezählt werden nur die QSOs des Contests, Doppel und Multiplikatoren gelten innerhalb des Contests. „Ganzes Log zeigen“ und „Nur der Contest“ wechseln die Ansicht, und das Log aktualisiert sich gleich nach jedem QSO. Der Bereich „Statistik“ ist in der SSB-Ansicht immer sichtbar, mit der Tabelle pro Band, den gearbeiteten Multiplikatoren, der Rate und der verbleibenden Zeit. Die Contest-Einstellungen schlagen die Daten für CQ WW DX, CQ WPX und JIDX vor und erhöhen die zu sendende Nummer selbst.',
+      'En SSB, le concours a maintenant un journal qui repart de zéro : ne comptent que les QSO du concours, et les doublons et multiplicateurs valent à l’intérieur du concours. « Afficher tout le journal » et « Seulement le contest » changent la vue, et le journal se met à jour juste après chaque QSO. Le panneau « Statistiques » est toujours visible en vue SSB, avec le tableau par bande, les multiplicateurs contactés, le rythme et le temps restant. Les réglages du concours proposent les dates de CQ WW DX, CQ WPX et JIDX et incrémentent seuls le numéro à envoyer.',
+      'En SSB el contest tiene ahora un log que empieza desde cero: solo cuentan los QSO del concurso, y los duplicados y multiplicadores valen dentro del concurso. «Mostrar todo el log» y «Solo el contest» cambian la vista, y el log se actualiza enseguida tras cada QSO. El panel «Estadísticas» está siempre visible en la vista SSB, con la tabla por banda, los multiplicadores trabajados, el ritmo y el tiempo que queda. Los ajustes del contest proponen las fechas de CQ WW DX, CQ WPX y JIDX y suben solos el número a enviar.',
+      'Em SSB o contest tem agora um log que começa do zero: contam só os QSO do concurso, e os duplicados e multiplicadores valem dentro do concurso. «Mostrar todo o log» e «Só o contest» mudam a vista, e o log atualiza-se logo a seguir a cada QSO. O painel «Estatísticas» está sempre visível na vista SSB, com a tabela por banda, os multiplicadores trabalhados, o ritmo e o tempo que resta. As definições do contest propõem as datas de CQ WW DX, CQ WPX e JIDX e fazem subir sozinhas o número a enviar.',
+    ],
+  },
+  {
     version: '0.11.277',
     released: '2026-11-16T17:27:01Z',
     kind: 'new',
@@ -847,27 +869,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans les modes texte Affichage › menu Contest : liste de 135 concours prêts (fichiers .contest modifiables, avec macros et domaines), un concours actif règle doublons, numéro de série, macros et capture de l’échange. Appuyer de nouveau sur une touche de macro pendant l’émission efface le texte pas encore parti et relance la macro depuis le début, sans couper le PTT et sans limite (avant, le second appui n’émettait rien). Chaque bouton montre sa touche dans le coin (F1, C-F1, S-F1...). Clic droit dans la fenêtre d’émission : Tout effacer, Couper, Copier, Coller.',
       'En los modos de texto Vista › menú Contest: lista de 135 concursos listos (archivos .contest editables, con macros y dominios), un concurso activo regula duplicados, número de serie, macros y captura del intercambio. Volver a pulsar una tecla de macro mientras se transmite borra el texto aún no enviado y la macro empieza de nuevo, sin soltar el PTT y sin límite (antes, la segunda pulsación no transmitía nada). Cada botón muestra su tecla en la esquina (F1, C-F1, S-F1...). Clic derecho en la ventana de transmisión: Borrar todo, Cortar, Copiar, Pegar.',
       'Nos modos de texto Ver › menu Contest: lista de 135 concursos prontos (ficheiros .contest editáveis, com macros e domínios), um concurso ativo regula duplicados, número de série, macros e captura da troca. Voltar a premir uma tecla de macro durante a transmissão apaga o texto ainda não enviado e a macro recomeça do início, sem largar o PTT e sem limite (antes, a segunda pressão não transmitia nada). Cada botão mostra a sua tecla no canto (F1, C-F1, S-F1...). Botão direito na janela de transmissão: Limpar tudo, Cortar, Copiar, Colar.',
-    ],
-  },
-  {
-    version: '0.11.257',
-    released: '2026-11-14T18:09:51Z',
-    kind: 'changed',
-    title: [
-      'Filtro BPF visibile, suggerimenti in BIGScan',
-      'Visible BPF filter, tooltips in BIGScan',
-      'Sichtbarer BPF-Filter, Tooltips in BIGScan',
-      'Filtre BPF visible, infobulles dans BIGScan',
-      'Filtro BPF visible, ayudas en BIGScan',
-      'Filtro BPF visível, dicas no BIGScan',
-    ],
-    text: [
-      'Con il BPF acceso la cascata si scurisce fuori dal filtro e la banda che passa ha i bordi gialli con la scritta BPF. Suggerimenti su ogni elemento di Aurora BIGScan; sul nominativo della cascata solo l’ultimo scambio. Guida alle macro con una riga per comando; maniglia della cascata sopra il bordo, così non copre le frequenze.',
-      'With BPF on, the waterfall darkens outside the filter and the passing band has yellow edges with the BPF label. Tooltips on every element of Aurora BIGScan; on the waterfall callsign only the last exchange. Macro guide with one line per command; the waterfall handle above the border so it no longer covers the frequencies.',
-      'Mit eingeschaltetem BPF wird der Wasserfall außerhalb des Filters dunkler, das Durchlassband hat gelbe Ränder mit der Aufschrift BPF. Tooltips auf jedem Element von Aurora BIGScan; am Rufzeichen im Wasserfall nur der letzte Austausch. Makro-Anleitung mit einer Zeile pro Befehl; Wasserfall-Griff über dem Rand, er verdeckt die Frequenzen nicht mehr.',
-      'Avec le BPF actif, la cascade s’assombrit hors du filtre et la bande qui passe a des bords jaunes avec l’inscription BPF. Infobulles sur chaque élément d’Aurora BIGScan ; sur l’indicatif de la cascade seulement le dernier échange. Guide des macros sur une ligne par commande ; poignée de la cascade au-dessus du bord, elle ne cache plus les fréquences.',
-      'Con el BPF activo la cascada se oscurece fuera del filtro y la banda que pasa tiene bordes amarillos con la palabra BPF. Ayudas en cada elemento de Aurora BIGScan; en el indicativo de la cascada solo el último intercambio. Guía de macros con una línea por comando; el asa de la cascada sobre el borde, ya no tapa las frecuencias.',
-      'Com o BPF ligado a cascata escurece fora do filtro e a banda que passa tem margens amarelas com a palavra BPF. Dicas em cada elemento do Aurora BIGScan; no indicativo da cascata só a última troca. Guia das macros com uma linha por comando; pega da cascata acima da margem, já não tapa as frequências.',
     ],
   },
 ];
