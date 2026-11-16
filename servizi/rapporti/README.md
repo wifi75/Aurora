@@ -56,6 +56,19 @@ Invoke-WebRequest "$u/v1/bundle/1A2B3C4D" -Headers @{ Authorization = "Bearer $t
 I rapporti singoli si vedono anche nella dashboard di Cloudflare (R2 → `aurora-rapporti`) o con
 `npx wrangler r2 object get aurora-rapporti/report/AAAA-MM-GG/<uuid>.json --remote`.
 
+## Antivirus (dalla 0.11.276)
+
+Quali antivirus hanno le installazioni e quali tolgono file di Aurora (dalla cartella `servizi/rapporti`):
+
+```powershell
+# installazioni per antivirus
+npx wrangler d1 execute aurora-rapporti --remote --command "SELECT antivirus, COUNT(*) n FROM installazioni WHERE antivirus IS NOT NULL GROUP BY antivirus ORDER BY n DESC"
+# file tolti dall'antivirus, per giorno e antivirus
+npx wrangler d1 execute aurora-rapporti --remote --command "SELECT giorno, antivirus, COUNT(*) installazioni, SUM(rapporti) rapporti, MAX(esempio) esempio FROM antivirus_errori GROUP BY giorno, antivirus ORDER BY giorno DESC"
+```
+
+Lo stesso conteggio e' nel campo `antivirus` di `/v1/summary`.
+
 ## Controllo del codice
 
 ```powershell

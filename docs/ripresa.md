@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Su main dopo la 0.11.275 (non rilasciato)
+
+Passaggi di tutti i satelliti, rotore (spostamento minimo, correzione azimut, PSTRotator solo invio), rilevamento dell'antivirus (nome nei rapporti, area `antivirus` per i file tolti; servizio su Cloudflare gia' aggiornato con migrazione 0003). **A ogni controllo dei rapporti** guardare anche gli antivirus: query in `servizi/rapporti/README.md` › Antivirus. Domanda di firma gratuita a SignPath Foundation inviata dal proprietario: quando accettano, adattare `windows.yml` (compilazione su GitHub e firma) e controllare che l'installatore mostri la privacy.
+
 ## Nella 0.11.275
 
 Finestrina «Aggiornamento in corso» della copia di aiuto e avviso «Aurora aggiornata» alla riapertura (`1d503ffa`, `update_window.rs`). Provata a vista con il test ignorato; non provata con un aggiornamento vero. Da mettere nelle Novita' alla prossima versione.
