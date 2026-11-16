@@ -47,7 +47,7 @@ Installatore: se la cartella scelta non si scrive (Program Files senza diritti d
 ## Stato al 2026-11-15 pomeriggio (0.11.263 pubblicata 2026-11-15T12:20:27Z)
 
 - WinKeyer (`rig-control/src/winkeyer.rs`, `mode-digi/src/service/keyer.rs`, Impostazioni › Stazione › WinKeyer, `docs/winkeyer.md`); sintonia SSTV a cursore ±200 Hz e istogramma dei livelli come nei programmi classici (`mode-sstv/src/decoder.rs`, `SstvTuning.tsx`, rotta `POST /sstv/rx/tune`); RTTY con decodifica di sequenza nel ricevitore singolo (spenta nei canali BigScan: perdeva UC0A); #67 #68 #69 #70, PR #65.
-- Spenti nel codice e da riprendere: catena CW completa `cw_chain.rs` da sola (piu' lettere inserite; ora usata solo come testo provvisorio del ricevitore CW veloce, `cw_hybrid.rs`, predefinito; BigScan ancora senza), catena RTTY `rtty_chain.rs`, stazioni nascoste in BigScan (ramo `prova-bigscan-nascoste-conferma`), primo carattere incerto per UC0A (ramo `prova-bigscan-sequenza-incerti`).
+- Spenti nel codice e da riprendere: catena CW completa `cw_chain.rs` da sola (piu' lettere inserite; ora usata solo come testo provvisorio del ricevitore CW veloce, `cw_hybrid.rs`, predefinito; BigScan ancora senza), catena RTTY `rtty_chain.rs`.
 - Disco C: pieno durante il lavoro: tolte le cartelle target e i worktree finiti (ora ~108 GB liberi). Tenere pulite le copie di lavoro degli aiutanti e `Aurora-fix-remoto/core/target-*`.
 
 ## Stato al 2026-11-15 (0.11.262 pubblicata 2026-11-15T10:16:01Z)
