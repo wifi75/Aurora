@@ -57,6 +57,10 @@ pub struct SatSettings {
     pub rotor_on: bool,
     /// Prima del passaggio il rotore va all'azimut da cui il satellite sorge.
     pub rotor_preposition: bool,
+    /// Il rotore non riceve un nuovo comando se lo spostamento rispetto all'ultimo e' minore di cosi' (gradi), in azimut ed elevazione.
+    pub rotor_min_move_deg: f64,
+    /// Correzione dell'azimut mandato al rotore (gradi): si somma, il risultato e' riportato in 0-360.
+    pub rotor_az_offset_deg: f64,
     /// Sotto questa elevazione non si corregge il Doppler e il rotore non segue.
     pub min_el_deg: f64,
     /// La mappa del mondo (nome del file in `maps`).
@@ -69,7 +73,7 @@ pub struct SatSettings {
 
 impl Default for SatSettings {
     fn default() -> Self {
-        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, min_el_deg: 0.0, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
+        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
     }
 }
 
@@ -77,6 +81,12 @@ impl SatSettings {
     fn validate(&self) -> Result<(), String> {
         if !self.min_el_deg.is_finite() || !(0.0..=60.0).contains(&self.min_el_deg) {
             return Err("elevazione minima fuori da 0-60 gradi".into());
+        }
+        if !self.rotor_min_move_deg.is_finite() || !(0.0..=45.0).contains(&self.rotor_min_move_deg) {
+            return Err("spostamento minimo del rotore fuori da 0-45 gradi".into());
+        }
+        if !self.rotor_az_offset_deg.is_finite() || !(-180.0..=180.0).contains(&self.rotor_az_offset_deg) {
+            return Err("correzione dell'azimut del rotore fuori da -180/+180 gradi".into());
         }
         if !self.tx_offset_hz.is_finite() || self.tx_offset_hz.abs() > 100_000.0 {
             return Err("correzione della salita oltre 100 kHz".into());
@@ -98,6 +108,15 @@ impl SatSettings {
         }
         Ok(())
     }
+}
+
+/// Il comando da mandare al rotore per puntare `az`/`el`: l'azimut con la correzione `az_offset` sommata e riportato in 0-360.
+/// Nessun comando (`None`) se rispetto all'ultimo (`last`, gia' con la correzione) lo spostamento e' minore di `min_move` gradi sia in azimut sia in elevazione.
+pub fn rotor_command(last: Option<(f64, f64)>, az: f64, el: f64, min_move: f64, az_offset: f64) -> Option<(f64, f64)> {
+    let az = (az + az_offset).rem_euclid(360.0);
+    let az = if az >= 360.0 { 0.0 } else { az };
+    let moved = last.is_none_or(|(a, e)| orbit::angle_diff_deg(a, az).abs() >= min_move || (e - el).abs() >= min_move);
+    moved.then_some((az, el))
 }
 
 /// Le frequenze da mandare alla radio (Hz) e di quanto sono state spostate dal Doppler.
@@ -692,8 +711,7 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
                 None
             };
             if let Some((az, el)) = target {
-                let moved = st.last_rotor.is_none_or(|(a, e)| orbit::angle_diff_deg(a, az).abs() >= 1.0 || (e - el).abs() >= 1.0);
-                if moved {
+                if let Some((az, el)) = rotor_command(st.last_rotor, az, el, settings.rotor_min_move_deg, settings.rotor_az_offset_deg) {
                     match rotor.point(az, el) {
                         Ok(()) => {
                             st.last_rotor = Some((az, el));
@@ -710,7 +728,8 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
         st.last_rotor = None;
     }
     if let Some((az, el)) = st.last_rotor {
-        now.rotor.az_deg = az;
+        // si mostra dove punta il satellite, senza la correzione dell'azimut
+        now.rotor.az_deg = (az - settings.rotor_az_offset_deg).rem_euclid(360.0);
         now.rotor.el_deg = el;
     }
     now.rotor.error = st.rotor_error.clone();
@@ -794,6 +813,45 @@ mod tests {
         let order: Vec<u64> = v.iter().map(|p| p.norad).collect();
         assert_eq!(order, vec![2, 1]);
         assert!(merge_passes(Vec::new(), 0.0).is_empty());
+    }
+
+    #[test]
+    fn il_rotore_non_si_muove_sotto_la_soglia() {
+        // primo comando: sempre
+        assert_eq!(rotor_command(None, 100.0, 20.0, 2.0, 0.0), Some((100.0, 20.0)));
+        // sotto soglia sia in azimut sia in elevazione: niente
+        assert_eq!(rotor_command(Some((100.0, 20.0)), 101.5, 21.5, 2.0, 0.0), None);
+        // un solo asse oltre la soglia basta
+        assert_eq!(rotor_command(Some((100.0, 20.0)), 102.0, 20.5, 2.0, 0.0), Some((102.0, 20.5)));
+        assert_eq!(rotor_command(Some((100.0, 20.0)), 100.5, 22.5, 2.0, 0.0), Some((100.5, 22.5)));
+        // il confronto passa dal nord: 359 -> 1 sono 2 gradi
+        assert_eq!(rotor_command(Some((359.0, 0.0)), 0.5, 0.0, 2.0, 0.0), None);
+        assert!(rotor_command(Some((359.0, 0.0)), 1.5, 0.0, 2.0, 0.0).is_some());
+        // soglia zero: ogni cambiamento (e anche lo stesso valore) parte
+        assert!(rotor_command(Some((100.0, 20.0)), 100.0, 20.0, 0.0, 0.0).is_some());
+    }
+
+    #[test]
+    fn la_correzione_dell_azimut_si_somma_e_si_normalizza() {
+        assert_eq!(rotor_command(None, 350.0, 10.0, 2.0, 15.0), Some((5.0, 10.0)));
+        assert_eq!(rotor_command(None, 10.0, 10.0, 2.0, -15.0), Some((355.0, 10.0)));
+        assert_eq!(rotor_command(None, 90.0, 10.0, 2.0, 0.0), Some((90.0, 10.0)));
+        assert_eq!(rotor_command(None, 180.0, 0.0, 2.0, 180.0), Some((0.0, 0.0)));
+        // la soglia confronta i comandi gia' corretti
+        assert_eq!(rotor_command(Some((5.0, 10.0)), 350.5, 10.0, 2.0, 15.0), None);
+    }
+
+    #[test]
+    fn le_impostazioni_del_rotore_si_controllano_e_hanno_i_valori_di_base() {
+        let d = SatSettings::default();
+        assert_eq!((d.rotor_min_move_deg, d.rotor_az_offset_deg), (2.0, 0.0));
+        let old: SatSettings = serde_json::from_str("{\"rotor_on\": true}").expect("vecchio file");
+        assert_eq!((old.rotor_min_move_deg, old.rotor_az_offset_deg), (2.0, 0.0));
+        assert!(SatSettings { rotor_min_move_deg: 50.0, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_min_move_deg: -1.0, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_az_offset_deg: 200.0, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_az_offset_deg: f64::NAN, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_az_offset_deg: -45.0, rotor_min_move_deg: 0.0, ..SatSettings::default() }.validate().is_ok());
     }
 
     #[test]

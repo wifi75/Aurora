@@ -2,13 +2,16 @@
 //! di Hamlib) come processo nascosto, oppure si collega a un `rotctld` gia' acceso (di base `127.0.0.1:4533`), e ci parla con il suo protocollo
 //! di testo su TCP.
 //!
+//! In alternativa **PSTRotator** (programma per Windows che pilota molti rotori): un secondo tipo di collegamento che gli manda i comandi
+//! in UDP (di base `127.0.0.1:12000`), vedi [`PstClient`]. Per ora solo l'invio: la posizione di PSTRotator resta sconosciuta.
+//!
 //! Comandi usati: `p` (posizione: due righe, azimut ed elevazione), `P az el` (vai a), `S` (ferma). Le risposte di errore sono `RPRT <codice>`.
 //! Tutto il lavoro con il rotore sta in un thread suo: le rotte e il motore non aspettano mai il rotore. La posizione si rilegge ogni secondo;
 //! se il collegamento cade si riprova da soli dopo qualche secondo.
 
 use std::{
     io::{BufRead, BufReader, Write},
-    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs},
+    net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream, ToSocketAddrs, UdpSocket},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{
@@ -27,6 +30,8 @@ use crate::{
 
 /// La porta TCP di base di `rotctld`.
 pub const DEFAULT_ROTCTLD_PORT: u16 = 4533;
+/// La porta UDP di base di PSTRotator.
+pub const DEFAULT_PST_PORT: u16 = 12000;
 /// Ogni quanto si rilegge la posizione.
 const POLL: Duration = Duration::from_secs(1);
 /// Attesa prima di riprovare dopo un collegamento non riuscito o caduto.
@@ -43,6 +48,8 @@ pub enum RotConnection {
     Launch,
     /// Aurora si collega a un `rotctld` gia' acceso (anche su un altro computer).
     Remote,
+    /// Aurora manda i comandi in UDP a PSTRotator (indirizzo in `host`, porta in `pst_port`).
+    Pst,
 }
 
 /// La configurazione del rotore (file `rotore.json` nella cartella dei dati).
@@ -64,6 +71,8 @@ pub struct RotatorConfig {
     pub host: String,
     /// Porta TCP del `rotctld` gia' acceso.
     pub tcp_port: u16,
+    /// Porta UDP di PSTRotator (di base 12000).
+    pub pst_port: u16,
     /// Il campo di rotazione del rotore in gradi: di base 0..360; alcuni rotori vanno oltre (0..450, -180..180, ...). Con piu' di 360 gradi
     /// la stessa direzione si raggiunge da due angoli e Aurora sceglie il piu' vicino, senza passare dal fine corsa.
     pub min_az: i32,
@@ -72,7 +81,7 @@ pub struct RotatorConfig {
 
 impl Default for RotatorConfig {
     fn default() -> RotatorConfig {
-        RotatorConfig { enabled: false, connection: RotConnection::Launch, model: 0, model_name: String::new(), port: String::new(), baud: 0, host: "127.0.0.1".into(), tcp_port: DEFAULT_ROTCTLD_PORT, min_az: 0, max_az: 360 }
+        RotatorConfig { enabled: false, connection: RotConnection::Launch, model: 0, model_name: String::new(), port: String::new(), baud: 0, host: "127.0.0.1".into(), tcp_port: DEFAULT_ROTCTLD_PORT, pst_port: DEFAULT_PST_PORT, min_az: 0, max_az: 360 }
     }
 }
 
@@ -116,13 +125,17 @@ impl RotatorConfig {
                     return Err(RotError::new("bad_baud", "velocita' della seriale non valida"));
                 }
             }
-            RotConnection::Remote => {
+            RotConnection::Remote | RotConnection::Pst => {
                 let host = self.host.trim();
                 let ok = !host.is_empty() && host.len() <= 253 && host.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':' | '[' | ']'));
                 if !ok {
-                    return Err(RotError::new("bad_host", "indirizzo del rotctld non valido"));
+                    return Err(RotError::new("bad_host", "indirizzo del rotore non valido"));
                 }
-                if self.tcp_port == 0 {
+                if self.connection == RotConnection::Pst {
+                    if self.pst_port == 0 {
+                        return Err(RotError::new("bad_pst_port", "porta di PSTRotator non valida"));
+                    }
+                } else if self.tcp_port == 0 {
                     return Err(RotError::new("bad_tcp_port", "porta del rotctld non valida"));
                 }
             }
@@ -269,6 +282,56 @@ impl RotctldClient {
     /// Chiude la sessione lasciando acceso il demone.
     pub fn quit(&mut self) {
         let _ = self.writer.write_all(b"q\n");
+    }
+}
+
+/// Il messaggio UDP di PSTRotator per l'azimut.
+pub fn pst_azimuth_message(az: f64) -> String {
+    format!("<PST><AZIMUTH>{az:.1}</AZIMUTH></PST>")
+}
+
+/// Il messaggio UDP di PSTRotator per l'elevazione.
+pub fn pst_elevation_message(el: f64) -> String {
+    format!("<PST><ELEVATION>{el:.1}</ELEVATION></PST>")
+}
+
+/// Il messaggio UDP di PSTRotator per fermare il rotore.
+pub const PST_STOP_MESSAGE: &str = "<PST><STOP>1</STOP></PST>";
+
+/// Il collegamento a PSTRotator: datagrammi UDP verso `host:porta` (di base `127.0.0.1:12000`), nessuna risposta aspettata.
+///
+/// PSTRotator risponderebbe alle domande `<PST>AZ?</PST>` e `<PST>EL?</PST>` sulla porta successiva (`AZ:123`, `EL:45`), ma la cosa non e' stata
+/// verificata con il programma vero: per questo qui c'e' solo l'invio e la posizione del rotore resta sconosciuta (l'interfaccia non la mostra).
+pub struct PstClient {
+    socket: UdpSocket,
+}
+
+impl PstClient {
+    pub fn connect(host: &str, port: u16) -> Result<PstClient, RigError> {
+        let addr = (host.trim(), port)
+            .to_socket_addrs()
+            .map_err(|e| RigError(format!("indirizzo {host}:{port} non trovato: {e}")))?
+            .next()
+            .ok_or_else(|| RigError(format!("indirizzo {host}:{port} non trovato")))?;
+        let local = if addr.is_ipv4() { "0.0.0.0:0" } else { "[::]:0" };
+        let socket = UdpSocket::bind(local).map_err(|e| RigError(format!("PSTRotator: socket UDP: {e}")))?;
+        socket.connect(addr).map_err(|e| RigError(format!("PSTRotator: {addr}: {e}")))?;
+        socket.set_write_timeout(Some(Duration::from_secs(2))).map_err(|e| RigError(e.to_string()))?;
+        Ok(PstClient { socket })
+    }
+
+    fn send(&self, message: &str) -> Result<(), RigError> {
+        self.socket.send(message.as_bytes()).map(|_| ()).map_err(|e| RigError(format!("PSTRotator: invio: {e}")))
+    }
+
+    /// Manda azimut ed elevazione (due datagrammi).
+    pub fn set_position(&self, az: f64, el: f64) -> Result<(), RigError> {
+        self.send(&pst_azimuth_message(az))?;
+        self.send(&pst_elevation_message(el))
+    }
+
+    pub fn stop(&self) -> Result<(), RigError> {
+        self.send(PST_STOP_MESSAGE)
     }
 }
 
@@ -550,9 +613,45 @@ impl RotatorService {
     }
 }
 
+/// Con chi si parla: `rotctld` (TCP) o PSTRotator (UDP).
+enum LinkClient {
+    Rotctld(RotctldClient),
+    Pst(PstClient),
+}
+
+impl LinkClient {
+    fn set_position(&mut self, az: f64, el: f64) -> Result<(), RigError> {
+        match self {
+            LinkClient::Rotctld(c) => c.set_position(az, el),
+            LinkClient::Pst(c) => c.set_position(az, el),
+        }
+    }
+
+    fn stop(&mut self) -> Result<(), RigError> {
+        match self {
+            LinkClient::Rotctld(c) => c.stop(),
+            LinkClient::Pst(c) => c.stop(),
+        }
+    }
+
+    /// La posizione letta; `None` con PSTRotator (la lettura non e' implementata).
+    fn position(&mut self) -> Result<Option<(f64, f64)>, RigError> {
+        match self {
+            LinkClient::Rotctld(c) => c.position().map(Some),
+            LinkClient::Pst(_) => Ok(None),
+        }
+    }
+
+    fn quit(&mut self) {
+        if let LinkClient::Rotctld(c) = self {
+            c.quit();
+        }
+    }
+}
+
 /// Il collegamento vivo: il client e, se l'ha lanciato Aurora, il processo.
 struct Link {
-    client: RotctldClient,
+    client: LinkClient,
     _process: Option<RotctldProcess>,
 }
 
@@ -571,12 +670,13 @@ fn connect(config: &RotatorConfig) -> Result<Link, RigError> {
                 .next()
                 .ok_or_else(|| RigError(format!("indirizzo {}:{} non trovato", config.host, config.tcp_port)))?;
             let client = RotctldClient::connect(addr, Duration::from_secs(2), Duration::from_secs(3))?;
-            Ok(Link { client, _process: None })
+            Ok(Link { client: LinkClient::Rotctld(client), _process: None })
         }
+        RotConnection::Pst => Ok(Link { client: LinkClient::Pst(PstClient::connect(&config.host, config.pst_port)?), _process: None }),
         RotConnection::Launch => {
             let exe = locate_rotctld().ok_or_else(|| RigError("rotctld non trovato accanto a rigctld (cartella di Hamlib)".into()))?;
             let (process, client) = RotctldProcess::start(&exe, config)?;
-            Ok(Link { client, _process: Some(process) })
+            Ok(Link { client: LinkClient::Rotctld(client), _process: Some(process) })
         }
     }
 }
@@ -650,7 +750,15 @@ fn run(shared: &Shared, rx: &mpsc::Receiver<Cmd>) {
         {
             last_poll = Instant::now();
             match l.client.position() {
-                Ok((az, el)) => {
+                Ok(None) => {
+                    // PSTRotator: la posizione non si legge, il rotore risulta collegato e fermo
+                    shared.update(|s| {
+                        s.state = RotState::Connected;
+                        s.connected = true;
+                        s.moving = false;
+                    });
+                }
+                Ok(Some((az, el))) => {
                     // oltre i 360 gradi di campo si tiene l'angolo vero (395 e' diverso da 35); altrimenti lo si riporta nel campo
                     let (min_az, max_az) = shared.config.lock().map(|c| (c.min_az, c.max_az)).unwrap_or((0, 360));
                     let wide = overlaps(min_az, max_az);
@@ -809,6 +917,64 @@ mod tests {
         assert_eq!(remote.validate().map_err(|e| e.code), Err("bad_host"));
         let remote = RotatorConfig { enabled: true, connection: RotConnection::Remote, tcp_port: 0, ..RotatorConfig::default() };
         assert_eq!(remote.validate().map_err(|e| e.code), Err("bad_tcp_port"));
+    }
+
+    #[test]
+    fn pst_messages_and_config() {
+        assert_eq!(pst_azimuth_message(123.0), "<PST><AZIMUTH>123.0</AZIMUTH></PST>");
+        assert_eq!(pst_elevation_message(45.0), "<PST><ELEVATION>45.0</ELEVATION></PST>");
+        assert_eq!(PST_STOP_MESSAGE, "<PST><STOP>1</STOP></PST>");
+        let pst = RotatorConfig { enabled: true, connection: RotConnection::Pst, ..RotatorConfig::default() };
+        assert!(pst.validate().is_ok(), "senza modello: non serve");
+        assert_eq!((pst.host.as_str(), pst.pst_port), ("127.0.0.1", 12000));
+        assert_eq!(RotatorConfig { pst_port: 0, ..pst.clone() }.validate().map_err(|e| e.code), Err("bad_pst_port"));
+        assert_eq!(RotatorConfig { host: "".into(), ..pst }.validate().map_err(|e| e.code), Err("bad_host"));
+        // un rotore.json vecchio, senza la porta di PSTRotator, si legge con il valore di base
+        let old: RotatorConfig = serde_json::from_str(r#"{"connection": "remote", "tcp_port": 4600}"#).expect("vecchio file");
+        assert_eq!((old.connection, old.pst_port), (RotConnection::Remote, 12000));
+        let pst: RotatorConfig = serde_json::from_str(r#"{"connection": "pst"}"#).expect("pst");
+        assert_eq!(pst.connection, RotConnection::Pst);
+    }
+
+    #[test]
+    fn the_pst_client_sends_udp_datagrams() {
+        let receiver = UdpSocket::bind("127.0.0.1:0").expect("socket");
+        receiver.set_read_timeout(Some(Duration::from_secs(2))).expect("timeout");
+        let port = receiver.local_addr().expect("indirizzo").port();
+        let client = PstClient::connect("127.0.0.1", port).expect("collegato");
+        let mut buf = [0u8; 256];
+        let mut next = || {
+            let n = receiver.recv(&mut buf).expect("datagramma");
+            String::from_utf8_lossy(&buf[..n]).into_owned()
+        };
+        client.set_position(123.4, 45.0).expect("vai");
+        assert_eq!(next(), "<PST><AZIMUTH>123.4</AZIMUTH></PST>");
+        assert_eq!(next(), "<PST><ELEVATION>45.0</ELEVATION></PST>");
+        client.stop().expect("ferma");
+        assert_eq!(next(), "<PST><STOP>1</STOP></PST>");
+    }
+
+    #[test]
+    fn the_service_turns_a_pst_rotator_with_unknown_position() {
+        let receiver = UdpSocket::bind("127.0.0.1:0").expect("socket");
+        receiver.set_read_timeout(Some(Duration::from_secs(2))).expect("timeout");
+        let port = receiver.local_addr().expect("indirizzo").port();
+        let service = RotatorService::open(&temp_file("pst"));
+        let config = RotatorConfig { enabled: true, connection: RotConnection::Pst, host: "127.0.0.1".into(), pst_port: port, ..RotatorConfig::default() };
+        service.apply_config(config).expect("salvata");
+        let s = wait_for(&service, |s| s.connected);
+        assert_eq!((s.state, s.az), (RotState::Connected, None));
+        service.goto(200.0, Some(30.0)).expect("vai");
+        let mut buf = [0u8; 256];
+        let n = receiver.recv(&mut buf).expect("azimut");
+        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><AZIMUTH>200.0</AZIMUTH></PST>");
+        let n = receiver.recv(&mut buf).expect("elevazione");
+        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><ELEVATION>30.0</ELEVATION></PST>");
+        let s = wait_for(&service, |s| !s.moving);
+        assert!(!s.moving && s.az.is_none());
+        service.stop().expect("ferma");
+        let n = receiver.recv(&mut buf).expect("stop");
+        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><STOP>1</STOP></PST>");
     }
 
     #[test]

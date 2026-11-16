@@ -486,6 +486,14 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
               <input type="checkbox" checked={s.rotor_preposition} onChange={(e) => save({ rotor_preposition: e.target.checked })} />
               <span>{t('sat.ctl.prepoint')}</span>
             </label>
+            <label className="sat-field">
+              <span>{t('sat.ctl.rotMinMove')}</span>
+              <input type="number" min={0} max={45} step={0.5} title={t('sat.ctl.rotMinMoveTip')} value={s.rotor_min_move_deg} onChange={(e) => save({ rotor_min_move_deg: Math.max(0, Math.min(45, Number(e.target.value) || 0)) })} />
+            </label>
+            <label className="sat-field">
+              <span>{t('sat.ctl.rotOffset')}</span>
+              <input type="number" min={-180} max={180} step={1} title={t('sat.ctl.rotOffsetTip')} value={s.rotor_az_offset_deg} onChange={(e) => save({ rotor_az_offset_deg: Math.max(-180, Math.min(180, Number(e.target.value) || 0)) })} />
+            </label>
             <p className={`sat-status ${now.rotor.ready ? 'ok' : 'warn'}`}>{now.rotor.ready ? t('sat.ctl.rotorReady') : t('sat.ctl.rotorNot')}</p>
             {s.rotor_on && now.rotor.ready ? (
               <p className="sat-muted">{t('sat.ctl.rotorTo', { az: Math.round(now.rotor.az_deg), el: Math.round(now.rotor.el_deg) })}</p>

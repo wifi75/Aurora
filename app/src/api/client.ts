@@ -1038,16 +1038,18 @@ export async function searchCat4om(values: { management?: string; address?: stri
   return (await (await request('/cat/cat4om/search', jsonInit(values))).json()) as Cat4omSearch;
 }
 
-/** Configurazione del rotore d'antenna (`rotore.json`): `launch` = Aurora lancia rotctld, `remote` = rotctld gia' acceso. */
+/** Configurazione del rotore d'antenna (`rotore.json`): `launch` = Aurora lancia rotctld, `remote` = rotctld gia' acceso, `pst` = comandi UDP a PSTRotator. */
 export interface RotatorConfig {
   enabled: boolean;
-  connection: 'launch' | 'remote';
+  connection: 'launch' | 'remote' | 'pst';
   model: number;
   model_name: string;
   port: string;
   baud: number;
   host: string;
   tcp_port: number;
+  /** Porta UDP di PSTRotator (di base 12000). */
+  pst_port: number;
   /** Il campo di rotazione in gradi (di base 0..360; i rotori da 450 gradi arrivano a 450). */
   min_az: number;
   max_az: number;
@@ -2249,6 +2251,10 @@ export interface SatSettings {
   doppler_on: boolean;
   rotor_on: boolean;
   rotor_preposition: boolean;
+  /** Il rotore non riceve un nuovo comando sotto questo spostamento (gradi). */
+  rotor_min_move_deg: number;
+  /** Correzione dell'azimut mandato al rotore (gradi). */
+  rotor_az_offset_deg: number;
   min_el_deg: number;
   map: string;
   /** I server da cui si scaricano i dati delle orbite. */

@@ -68,7 +68,7 @@ pub(crate) async fn rotator_get(State(state): State<AppState>, _: Authed) -> Res
 }
 
 /// Salva la configurazione e rifa' il collegamento.
-#[utoipa::path(put, path = "/api/v1/rotator", responses((status = 200, description = "Salvata: `{status, config}`"), (status = 400, description = "Valori non validi (bad_model, bad_port, bad_baud, bad_host, bad_tcp_port)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Scrittura non riuscita (write_failed)")))]
+#[utoipa::path(put, path = "/api/v1/rotator", responses((status = 200, description = "Salvata: `{status, config}`"), (status = 400, description = "Valori non validi (bad_model, bad_port, bad_baud, bad_host, bad_tcp_port, bad_pst_port)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Scrittura non riuscita (write_failed)")))]
 pub(crate) async fn rotator_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(config): Json<RotatorConfig>) -> Result<Json<Value>, RotApiError> {
     let rot = service(&state)?;
     require_local(peer, &headers)?;

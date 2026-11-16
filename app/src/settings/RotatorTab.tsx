@@ -22,6 +22,7 @@ export function RotatorTab() {
   const [customRange, setCustomRange] = useState(false);
   const config = draft ?? snap.data?.config ?? null;
   const launch = config?.connection === 'launch';
+  const pst = config?.connection === 'pst';
   const models = useQuery({ queryKey: ['rotator-models'], queryFn: getRotatorModels, retry: false, staleTime: Infinity, enabled: launch });
   const ports = useQuery({ queryKey: ['cat-ports'], queryFn: getCatPorts, retry: false, staleTime: 30_000, enabled: launch });
 
@@ -63,6 +64,7 @@ export function RotatorTab() {
             <select value={config.connection} onChange={(e) => set({ connection: e.target.value as RotatorConfig['connection'] })}>
               <option value="launch">{t('rot.set.launch')}</option>
               <option value="remote">{t('rot.set.remote')}</option>
+              <option value="pst">{t('rot.set.pst')}</option>
             </select>
           </Field>
           {launch ? (
@@ -131,12 +133,18 @@ export function RotatorTab() {
             </>
           ) : (
             <>
-              <Field label={t('rot.set.host')} hint={t('tip.rot.host')}>
+              <Field label={pst ? t('rot.set.pstHost') : t('rot.set.host')} hint={pst ? t('tip.rot.pstHost') : t('tip.rot.host')}>
                 <input type="text" value={config.host} spellCheck={false} autoComplete="off" placeholder="127.0.0.1" onChange={(e) => set({ host: e.target.value.trim() })} />
               </Field>
-              <Field label={t('rot.set.tcpPort')} hint={t('tip.rot.tcpPort')}>
-                <input type="number" min={1} max={65535} value={config.tcp_port} onChange={(e) => set({ tcp_port: Number(e.target.value) || 0 })} />
-              </Field>
+              {pst ? (
+                <Field label={t('rot.set.pstPort')} hint={t('tip.rot.pstPort')}>
+                  <input type="number" min={1} max={65535} value={config.pst_port} onChange={(e) => set({ pst_port: Number(e.target.value) || 0 })} />
+                </Field>
+              ) : (
+                <Field label={t('rot.set.tcpPort')} hint={t('tip.rot.tcpPort')}>
+                  <input type="number" min={1} max={65535} value={config.tcp_port} onChange={(e) => set({ tcp_port: Number(e.target.value) || 0 })} />
+                </Field>
+              )}
             </>
           )}
           <Field label={t('rot.set.range')} hint={t('tip.rot.range')}>
@@ -175,6 +183,7 @@ export function RotatorTab() {
           </Cell>
         </Cells>
         {launch ? <Message kind="muted">{models.isLoading ? t('rot.set.models.loading') : models.isError ? t('rot.set.models.failed') : t('rot.set.models.count', { n: modelList.length })}</Message> : null}
+        {pst ? <Message kind="muted">{t('rot.set.pstNote')}</Message> : null}
         {status.state === 'error' && status.error ? <Message kind="alert">{status.error}</Message> : null}
         {problem ? <Message kind="alert">{problem}</Message> : null}
         {note && !problem ? <Message>{note}</Message> : null}

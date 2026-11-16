@@ -3857,6 +3857,12 @@ rot.set.connection,Connection,Verbinding
 tip.rot.connection,"“Aurora starts rotctld”: Aurora runs the included Hamlib rotctld with model, port and speed. “rotctld already running”: connect to a rotctld started by another program or on another computer.","“Aurora start rotctld”: Aurora draait de meegeleverde Hamlib rotctld met model, poort en snelheid. “rotctld draait al”: verbind met een rotctld die door een ander programma of op een andere computer is gestart."
 rot.set.launch,Aurora starts rotctld,Aurora start rotctld
 rot.set.remote,rotctld already running,rotctld draait al
+rot.set.pst,PSTRotator (UDP),PSTRotator (UDP)
+rot.set.pstHost,PSTRotator address,Adres van PSTRotator
+tip.rot.pstHost,"The computer running PSTRotator: 127.0.0.1 if it is this one, otherwise its network address.","De computer waarop PSTRotator draait: 127.0.0.1 als het deze is, anders het netwerkadres ervan."
+rot.set.pstPort,UDP port,UDP-poort
+tip.rot.pstPort,The UDP port PSTRotator receives commands on: 12000 by default.,De UDP-poort waarop PSTRotator commando's ontvangt: standaard 12000.
+rot.set.pstNote,"With PSTRotator Aurora only sends commands (azimuth, elevation, stop): the rotator position is not read and is not shown here.","Bij PSTRotator stuurt Aurora alleen commando's (azimut, elevatie, stop): de rotorpositie wordt niet gelezen en hier niet getoond."
 rot.set.search,Search rotator,Rotor zoeken
 tip.rot.search,Type part of the name (for example “GS-232” or “Yaesu”) and pick the rotator from the results.,Typ een deel van de naam (bijvoorbeeld “GS-232” of “Yaesu”) en kies de rotor uit de resultaten.
 rot.set.model,Model,Model
@@ -4400,6 +4406,12 @@ sat.set.mapAuto,Automatic,Automatisch
 sat.set.day,every day,elke dag
 sat.set.hours,every {n} hours,elke {n} uur
 sat.set.days,every {n} days,elke {n} dagen
+sat.all.title,Upcoming passes of all ticked satellites,Komende passages van alle aangevinkte satellieten
+sat.all.sat,Satellite,Satelliet
+sat.all.utc,Start (UTC),Begin (UTC)
+sat.all.local,Start (local),Begin (lokaal)
+sat.all.in,In,Over
+sat.all.pick,Click to choose this satellite,Klik om deze satelliet te kiezen
 sat.pass.title,Passes,Passages
 sat.pass.aos,AOS,AOS
 sat.pass.max,Max el.,Max el.
@@ -4417,6 +4429,10 @@ sat.pass.endsIn,ends in {t},eindigt over {t}
 sat.ctl.title,Doppler and rotator,Doppler en rotor
 sat.ctl.doppler,Correct Doppler on the radio,Doppler corrigeren op de radio
 sat.ctl.rotor,The rotator follows the satellite,De rotor volgt de satelliet
+sat.ctl.rotMinMove,Rotator: move only beyond (°),Rotor: pas bewegen boven (°)
+sat.ctl.rotMinMoveTip,The rotator gets no new command if azimuth and elevation change by less than this many degrees from the last command: fewer jerks and less wear. Default 2.,De rotor krijgt geen nieuw commando als azimut en elevatie minder dan zoveel graden veranderen ten opzichte van het laatste commando: minder schokken en minder slijtage. Standaard 2.
+sat.ctl.rotOffset,Rotator: azimuth offset (°),Rotor: azimutcorrectie (°)
+sat.ctl.rotOffsetTip,"Degrees added to the azimuth sent to the rotator (-180 to 180), to compensate for a misaligned rotator or north. The result stays between 0 and 360.","Graden die bij het naar de rotor gestuurde azimut worden opgeteld (-180 tot 180), om een scheef gemonteerde rotor of noord te compenseren. Het resultaat blijft tussen 0 en 360."
 sat.ctl.prepoint,Before the pass go where it will rise,Voor de passage alvast naar de plek waar hij opkomt
 sat.ctl.transponder,Transponder,Transponder
 sat.ctl.noTransponder,No transponder is listed for this satellite: add it in satelliti-utente.json.,Voor deze satelliet is geen transponder vermeld: voeg er een toe in satelliti-utente.json.
