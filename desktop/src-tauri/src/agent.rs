@@ -304,6 +304,13 @@ fn tr_in(lang: usize, key: &str) -> &'static str {
         "p_downloading" => ["Scarico la versione nuova…", "Downloading the new version…", "Neue Version wird geladen…", "Je télécharge la nouvelle version…", "Descargando la versión nueva…", "A transferir a versão nova…"],
         "p_verifying" => ["Controllo la firma del pacchetto…", "Checking the package signature…", "Signatur des Pakets wird geprüft…", "Je vérifie la signature du paquet…", "Comprobando la firma del paquete…", "A verificar a assinatura do pacote…"],
         "p_ready" => ["Pacchetto pronto e firmato: avvio l'installazione…", "Package ready and signed: starting the installation…", "Paket bereit und signiert: Installation startet…", "Paquet prêt et signé : je lance l'installation…", "Paquete listo y firmado: iniciando la instalación…", "Pacote pronto e assinado: a iniciar a instalação…"],
+        "u_title" => ["Aggiornamento di Aurora", "Updating Aurora", "Aurora wird aktualisiert", "Mise à jour d'Aurora", "Actualizando Aurora", "A atualizar o Aurora"],
+        "u_close" => ["Chiudo Aurora…", "Closing Aurora…", "Aurora wird geschlossen…", "Fermeture d'Aurora…", "Cerrando Aurora…", "A fechar o Aurora…"],
+        "u_install" => ["Installo la versione nuova…", "Installing the new version…", "Die neue Version wird installiert…", "Installation de la nouvelle version…", "Instalando la nueva versión…", "A instalar a nova versão…"],
+        "u_reopen" => ["Riapro Aurora…", "Reopening Aurora…", "Aurora wird wieder geöffnet…", "Réouverture d'Aurora…", "Reabriendo Aurora…", "A reabrir o Aurora…"],
+        "u_note" => ["Non spegnere il PC: Aurora si riapre da sola fra poco.", "Don't turn off the PC: Aurora reopens by itself shortly.", "PC nicht ausschalten: Aurora öffnet sich gleich von selbst wieder.", "N'éteignez pas le PC : Aurora se rouvre toute seule dans un instant.", "No apagues el PC: Aurora se vuelve a abrir sola en breve.", "Não desligue o PC: o Aurora volta a abrir-se sozinho daqui a pouco."],
+        "u_done" => ["Aurora aggiornata", "Aurora updated", "Aurora aktualisiert", "Aurora mise à jour", "Aurora actualizado", "Aurora atualizado"],
+        "u_done_body" => ["Ora usi la versione {v}.", "You are now on version {v}.", "Du nutzt jetzt Version {v}.", "Vous utilisez maintenant la version {v}.", "Ahora usas la versión {v}.", "Agora usa a versão {v}."],
         "p_installing" => ["Aurora si chiude per installare l'aggiornamento e si riapre alla fine.", "Aurora closes to install the update and reopens when it is done.", "Aurora schließt sich, um das Update zu installieren, und öffnet sich danach wieder.", "Aurora se ferme pour installer la mise à jour et se rouvre à la fin.", "Aurora se cierra para instalar la actualización y se vuelve a abrir al terminar.", "O Aurora fecha-se para instalar a atualização e volta a abrir no fim."],
         "p_restart" => ["Aurora si sta riavviando…", "Aurora is restarting…", "Aurora startet neu…", "Aurora redémarre…", "Aurora se está reiniciando…", "O Aurora está a reiniciar…"],
         "p_failed" => ["Aggiornamento non riuscito.", "Update failed.", "Update fehlgeschlagen.", "Mise à jour impossible.", "La actualización ha fallado.", "A atualização falhou."],
@@ -314,6 +321,11 @@ fn tr_in(lang: usize, key: &str) -> &'static str {
 
 fn tr(key: &str) -> &'static str {
     tr_in(lang(), key)
+}
+
+/// I testi della finestrina e della notifica dell'aggiornamento (copia di aiuto e Aurora riaperta), nella lingua scelta.
+pub(crate) fn update_text(key: &str) -> &'static str {
+    tr(key)
 }
 
 /// Un testo con il suo valore (`{v}`).

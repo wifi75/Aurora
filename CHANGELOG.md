@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Aggiornamento: mentre Aurora e' chiusa per installare la versione nuova (dall'app o dall'agente nel tray) una finestrina sempre davanti dice cosa succede (chiusura, installazione, riapertura) con una barra che scorre; a fine aggiornamento un avviso di Windows conferma «Aurora aggiornata» con la versione.
+
 ## 0.11.274 - 2026-11-16
 
 - Modi testuali: modo SSB nel menu Modo per il log e i contest in fonia (#74). Niente decodifica ne' testo trasmesso (si parla al microfono, macro e Invio avvisano), RST di base 59, la radio non si sposta sul piano dei modi testuali; i QSO contano come fonia nei contest (Cabrillo PH). Guida aggiornata.

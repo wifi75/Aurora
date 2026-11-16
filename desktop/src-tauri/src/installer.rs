@@ -48,6 +48,10 @@ const INSTALLER_WAIT_MS: u32 = 20 * 60 * 1000;
 /// Quanto si aspetta che Aurora e l'agente nel tray si chiudano da soli prima di chiuderli (il core si ferma con calma, fino a 6 s).
 const CLOSE_WAIT_MS: u64 = 30_000;
 
+/// Il segno lasciato dalla copia di aiuto in `%APPDATA%\Aurora` quando l'installazione e' riuscita: Aurora riaperta lo trova, lo
+/// toglie e mostra la notifica «Aurora aggiornata».
+pub const UPDATED_MARK: &str = "aggiornamento-riuscito";
+
 /// L'argomento con cui Aurora avvia la propria copia di aiuto che applica l'aggiornamento (vedi [`apply_update`]).
 pub const APPLY_ARG: &str = "--applica-aggiornamento";
 
@@ -168,6 +172,12 @@ fn log_line(text: &str) {
 pub fn apply_update(args: &ApplyArgs) {
     use std::time::Instant;
     log_line(&format!("aggiornamento: installatore {}, Aurora {:?}, processo {}", args.installer.display(), args.exe, args.pid));
+    // finestrina sempre davanti per tutto il lavoro: senza, fra la chiusura e la riapertura lo schermo non diceva niente
+    let window = crate::update_window::UpdateWindow::show(
+        crate::agent::update_text("u_title"),
+        crate::agent::update_text("u_close"),
+        crate::agent::update_text("u_note"),
+    );
     let started = Instant::now();
     win::wait_process(args.pid, CLOSE_WAIT_MS as u32);
     while win::running(&["aurora-desktop.exe"]) && started.elapsed() < Duration::from_millis(CLOSE_WAIT_MS) {
@@ -178,9 +188,11 @@ pub fn apply_update(args: &ApplyArgs) {
         log_line(&format!("chiusi {killed} processi di Aurora rimasti aperti"));
     }
     std::thread::sleep(Duration::from_millis(500));
+    window.step(crate::agent::update_text("u_install"));
 
     let exe_dir = args.exe.as_deref().and_then(std::path::Path::parent).map(std::path::Path::to_path_buf);
     let reopen_aurora = || {
+        window.step(crate::agent::update_text("u_reopen"));
         if let Some(exe) = args.exe.as_deref().filter(|p| p.is_file())
             && let Err(e) = win::shell_start(exe, "", exe_dir.as_deref(), false)
         {
@@ -206,7 +218,14 @@ pub fn apply_update(args: &ApplyArgs) {
     log_line(&format!("installatore finito con codice {code:?}"));
     match after_install(code, win::running(&["aurora-desktop.exe"]), args.exe.as_deref().is_some_and(std::path::Path::is_file)) {
         AfterInstall::Nothing => log_line("Aurora e' gia' aperta"),
-        AfterInstall::ReopenAurora => reopen_aurora(),
+        AfterInstall::ReopenAurora => {
+            if let Some(base) = std::env::var_os("APPDATA") {
+                let _ = std::fs::write(PathBuf::from(base).join("Aurora").join(UPDATED_MARK), b"1");
+            }
+            reopen_aurora();
+            // la finestrina resta finche' la finestra di Aurora non ha avuto il tempo di comparire
+            std::thread::sleep(Duration::from_secs(4));
+        }
         AfterInstall::ReopenInstaller => {
             log_line("installazione non riuscita: si riapre l'installatore con le sue finestre");
             if let Err(e) = win::shell_start(&args.installer, "", None, false) {
