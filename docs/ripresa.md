@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Dopo la 0.11.279 (su `main`, non rilasciato, 2026-11-16)
+## Nella 0.11.280 (pubblicata 2026-11-16T21:03:53Z)
 
 PSK/RTTY/CW: proporzione RX/TX limitata fra 0,25 e 0,8 (`aurora.digi.rxfrac.<modo>`), doppio clic sulla linea `digi-split` per ripristinare, finestra TX con etichetta (`data-label` e `::before` in `digi-dark.css`). SSB: riga di inserimento compatta (`digi-ssb-contest.css`, classi `ssbc-field--name` e `--qth`), etichette corte (`ssbc.rsts`, `ssbc.rstr`, `ssbc.serialSent`, `ssbc.serialRcvd`). Il proprietario ha detto «no» alla pubblicazione immediata: la 0.11.280 si fa quando lo chiede. **Verificato a schermo** il ripristino della proporzione e la TX con etichetta; **non rivisto a schermo** l'ultima modifica delle etichette (solo tsc e test).
 
