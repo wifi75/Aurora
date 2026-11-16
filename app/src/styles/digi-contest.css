@@ -48,3 +48,6 @@ html[data-theme='light'] .ctest-table tbody tr:nth-child(even) { background: rgb
 .qtc-dialog .ctest-table td { user-select: text; }
 .qtc-dialog .ctest-table input:not([type='checkbox']) { font-family: var(--mono, monospace); text-transform: uppercase; }
 .qtc-dialog tr.qtc-bad input { border-color: var(--danger, #ef4444); }
+.ctest-hint, .ctest-warn { margin: 0; font-size: 0.8rem; color: var(--text); opacity: 0.85; }
+.ctest-warn { color: var(--danger); opacity: 1; }
+.ctest-propose { display: flex; flex-wrap: wrap; gap: 0.35rem; }

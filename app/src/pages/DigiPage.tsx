@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
-import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot } from '../api/client';
+import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
 import { bandPlanRows } from '../lib/bandplan';
@@ -16,7 +16,7 @@ import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, rea
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
 import { getActiveTextContest, getTextContestCheck, type TextContest } from '../api/contestTesto';
-import { contestWindow, grabExchange, startSerial, withContestMacros } from '../lib/textContest';
+import { categoryValid, contestWindow, contestWindowStatus, grabExchange, startSerial, withContestMacros } from '../lib/textContest';
 import { ContestEditDialog, ContestListDialog, useSelectTextContest } from '../components/digi/ContestListDialog';
 import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useTextContestScore } from '../components/digi/ContestStatsDialog';
 import { QtcDialog, type QtcDir } from '../components/digi/QtcDialog';
@@ -1064,6 +1064,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     invalidateLog: () => {
       void client.invalidateQueries({ queryKey: ['log-qsos'] });
       void client.invalidateQueries({ queryKey: ['contest'] });
+      void client.invalidateQueries({ queryKey: ['log4om'] });
     },
     ignoreBeforeErase: () => writeIgnoreBefore(browserStorage(), 'erase'),
   });
@@ -1117,6 +1118,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         setQso((q) => ({ ...q, nrs: '', nrr: '' }));
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
+        // il log di lato (Log4OM/Aurora) e la vista SSB lo rileggono subito, non dopo 10 s
+        void client.invalidateQueries({ queryKey: ['log4om'] });
         void client.invalidateQueries({ queryKey: [...TEXT_CONTEST_SCORE_KEY] });
         after?.();
       },
@@ -1804,7 +1807,59 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (ssbContest && (live.current.saved.rsts === '599' || live.current.saved.rstr === '599')) setSavedField({ rsts: live.current.saved.rsts === '599' ? '59' : live.current.saved.rsts, rstr: live.current.saved.rstr === '599' ? '59' : live.current.saved.rstr });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ssbContest]);
-  const logMarks: LogMarks | undefined = ssbContest && textContest ? { noBand: textContest.contest.dupe_no_band, noMode: textContest.contest.dupe_no_mode, recenti: textScore?.recenti ?? [] } : undefined;
+  // il log del contest parte da zero: contano i QSO nella finestra di date del contest (se c'e' ed e' valida), altrimenti quelli dopo l'attivazione,
+  // sempre della categoria giusta; doppi, moltiplicatori e numerazione si calcolano solo su questi
+  const sinceKey = textContest ? `aurora.ssb.contest.since.${textContest.contest.id}` : null;
+  const [since, setSince] = useState<number | null>(null);
+  useEffect(() => {
+    if (!sinceKey) {
+      setSince(null);
+      return;
+    }
+    let v = Number(browserStorage()?.getItem(sinceKey) ?? '');
+    if (!Number.isFinite(v) || v <= 0) {
+      v = Date.now();
+      try {
+        browserStorage()?.setItem(sinceKey, String(v));
+      } catch {
+        // l'attivazione vale comunque finche' la pagina e' aperta
+      }
+    }
+    setSince(v);
+  }, [sinceKey]);
+  // lo stato della finestra (prima, dentro, scaduta) si riguarda ogni mezzo minuto
+  const [winTick, setWinTick] = useState(0);
+  useEffect(() => {
+    if (!ssbContest) return;
+    const id = window.setInterval(() => setWinTick((n) => n + 1), 30_000);
+    return () => window.clearInterval(id);
+  }, [ssbContest]);
+  const winStatus = useMemo(() => (textContest ? contestWindowStatus(textContest.contest, Date.now()) : null), [textContest, winTick]);
+  /** La finestra di date c'e' e vale adesso: il log si filtra per date. Prima dell'inizio, scaduta o senza date si usa l'attivazione (e la vista lo avvisa). */
+  const windowUsable = winStatus !== null && winStatus.status === 'active';
+  const [logOnly, setLogOnlyState] = useState<boolean>(() => browserStorage()?.getItem('aurora.ssb.logonly') !== '0');
+  const toggleLogOnly = () => {
+    setLogOnlyState((v) => {
+      try {
+        browserStorage()?.setItem('aurora.ssb.logonly', v ? '0' : '1');
+      } catch {
+        // la scelta vale comunque finche' la pagina e' aperta
+      }
+      return !v;
+    });
+  };
+  const inContestSet = useMemo(() => {
+    const c = textContest?.contest;
+    if (!c) return () => false;
+    const w = windowUsable ? (winStatus?.window ?? null) : null;
+    return (q: Log4omQso) => {
+      const ms = Date.parse(`${q.date.replace(' ', 'T').slice(0, 19)}Z`);
+      if (!Number.isFinite(ms) || !categoryValid(c, q.mode)) return false;
+      if (w) return (w.from == null || ms >= w.from) && (w.to == null || ms <= w.to);
+      return since !== null && ms >= since;
+    };
+  }, [textContest, windowUsable, winStatus, since]);
+  const logMarks: LogMarks | undefined = ssbContest && textContest ? { noBand: textContest.contest.dupe_no_band, noMode: textContest.contest.dupe_no_mode, recenti: textScore?.recenti ?? [], inSet: inContestSet, only: logOnly, onToggle: toggleLogOnly } : undefined;
   /** Il log di lato (o, nel contest SSB, solo il Log o solo il DX Cluster). */
   const digiLog = (view?: 'log' | 'cluster') => (
     <DigiLog
@@ -1964,6 +2019,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           rsts={saved.rsts}
           rstr={saved.rstr}
           qsoNr={(textScore?.qso ?? 0) + (textScore?.doppi ?? 0) + 1}
+          contest={textContest ? textContest.contest : null}
+          inSet={inContestSet}
+          noBand={textContest ? textContest.contest.dupe_no_band : false}
+          noMode={textContest ? textContest.contest.dupe_no_mode : false}
+          windowNotice={textContest !== null && !windowUsable}
+          onEditWindow={() => (textContest ? setContestEdit(textContest.contest) : undefined)}
           nrsAuto={fixedNrsRef.current !== '' ? fixedNrsRef.current : formatSerial(qsoSerial)}
           onQso={(patch) => setQso({ ...qso, ...patch })}
           onRst={(patch) => setSavedField(patch)}

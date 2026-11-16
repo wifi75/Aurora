@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
-import { getTextContestCabrillo, getTextContestScore, type TextContestScore } from '../../api/contestTesto';
+import { getTextContestCabrillo, getTextContestScore, type TextContest, type TextContestScore } from '../../api/contestTesto';
+import { contestWindow } from '../../lib/textContest';
+import { multSummary } from '../../lib/contestEntry';
 import { saveText } from '../../lib/foxLog';
 import { toast } from '../../lib/toast';
 import '../../styles/digi-contest.css';
@@ -40,7 +42,9 @@ export function scoreLine(t: ReturnType<typeof useT>, s: TextContestScore): stri
 
 type MultType = 'dxcc' | 'cq' | 'itu' | 'wpx' | 'cont' | 'area' | 'dom' | 'call';
 const MULT_TYPES: MultType[] = ['cq', 'itu', 'dxcc', 'area', 'wpx', 'dom', 'cont', 'call'];
-export const multName = (t: ReturnType<typeof useT>, tipo: string) => (MULT_TYPES.includes(tipo as MultType) ? t(`ctest.mt.${tipo as MultType}`) : tipo);
+// il core chiama `dominio` il tipo dello scambio ricevuto (stati, province, prefetture)
+const normType = (tipo: string) => (tipo === 'dominio' ? 'dom' : tipo);
+export const multName = (t: ReturnType<typeof useT>, tipo: string) => (MULT_TYPES.includes(normType(tipo) as MultType) ? t(`ctest.mt.${normType(tipo) as MultType}`) : tipo);
 /** `dxcc:DL` -> `DL (Paesi DXCC)`. */
 export const multLabel = (t: ReturnType<typeof useT>, m: string) => {
   const i = m.indexOf(':');
@@ -96,13 +100,126 @@ function MultGrid({ s }: { s: TextContestScore }) {
   );
 }
 
+const HOUR = 3_600_000;
+/** `4 h 05` da una durata in ms. */
+const hm = (ms: number) => `${Math.floor(ms / HOUR)} h ${String(Math.floor((ms % HOUR) / 60_000)).padStart(2, '0')}`;
+
+/**
+ * La scheda delle statistiche del contest attivo, la stessa nel dialogo e nella vista SSB: tabella per banda con il totale, ritmo, ultimi
+ * moltiplicatori nuovi, avvisi e, se si danno la finestra del contest e gli orari dei QSO, avanzamento e QSO per ora (ultime 12 ore).
+ */
+export function ContestStatsCard({ s, contest, qsoTimes }: { s: TextContestScore; contest?: Pick<TextContest, 'start' | 'end'>; qsoTimes?: number[] }) {
+  const t = useT();
+  const sum = (k: 'cw' | 'phone' | 'digital') => s.bande.reduce((a, b) => a + b[k], 0);
+  // la tabella segue il contest: una colonna per tipo di moltiplicatore delle sue regole (zone, paesi, prefissi, province...) e le
+  // categorie CW / fonia / digitale solo se nel log ce n'e' piu' di una
+  const mults = multSummary(s);
+  const cats = (['cw', 'phone', 'digital'] as const).filter((k) => sum(k) > 0);
+  const showCats = cats.length > 1;
+  const now = Date.now();
+  const w = contest ? contestWindow(contest, now) : null;
+  const span = w && w.from != null && w.to != null && w.to > w.from ? { from: w.from, to: w.to } : null;
+  const progress = span ? Math.min(1, Math.max(0, (now - span.from) / (span.to - span.from))) : null;
+  const bars = qsoTimes
+    ? Array.from({ length: 12 }, (_, i) => {
+        const start = Math.floor(now / HOUR) * HOUR - (11 - i) * HOUR;
+        return qsoTimes.filter((ms) => ms >= start && ms < start + HOUR).length;
+      })
+    : null;
+  const top = bars ? Math.max(1, ...bars) : 1;
+  return (
+    <div className="ctest-card">
+      <div className="ctest-table-wrap">
+        <table className="ctest-table ctest-stats">
+          <thead>
+            <tr>
+              <th>{t('ctest.c.band')}</th>
+              <th>{t('ctest.c.qso')}</th>
+              <th>{t('ctest.c.dupes')}</th>
+              <th>{t('ctest.c.points')}</th>
+              {mults.map((m) => (
+                <th key={m.tipo}>{multName(t, m.tipo)}</th>
+              ))}
+              {mults.length > 0 ? <th>{t('ctest.c.mult')}</th> : null}
+              {showCats ? <th>CW</th> : null}
+              {showCats ? <th>{t('ctest.c.phone')}</th> : null}
+              {showCats ? <th>{t('ctest.c.digital')}</th> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {s.bande.map((b) => (
+              <tr key={b.band}>
+                <td>{b.band || '—'}</td>
+                <td>{b.qso}</td>
+                <td>{b.doppi}</td>
+                <td>{b.punti}</td>
+                {mults.map((m) => (
+                  <td key={m.tipo}>{m.perBand ? (m.perBand[b.band] ?? 0) : ''}</td>
+                ))}
+                {mults.length > 0 ? <td>{b.molt}</td> : null}
+                {showCats ? <td>{b.cw}</td> : null}
+                {showCats ? <td>{b.phone}</td> : null}
+                {showCats ? <td>{b.digital}</td> : null}
+              </tr>
+            ))}
+            <tr className="ctest-total">
+              <td>{t('ctest.c.total')}</td>
+              <td>{s.qso}</td>
+              <td>{s.doppi}</td>
+              <td>{s.punti}</td>
+              {mults.map((m) => (
+                <td key={m.tipo}>{m.total != null ? t('ssbc.multOf', { n: m.worked, tot: m.total }) : m.worked}</td>
+              ))}
+              {mults.length > 0 ? <td>{s.molt}</td> : null}
+              {showCats ? <td>{sum('cw')}</td> : null}
+              {showCats ? <td>{sum('phone')}</td> : null}
+              {showCats ? <td>{sum('digital')}</td> : null}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="ctest-score">{scoreLine(t, s)}</p>
+      <p className="ctest-rate">{t('ctest.rate', { r10: s.rate10, r60: s.rate60, avg: s.media_ora })}</p>
+      {s.errore_script && <p className="ctest-rate" role="alert">{t('ctest.scriptError', { msg: s.errore_script })}</p>}
+      {s.esclusi > 0 && <p className="ctest-rate">{t('ctest.excluded', { n: s.esclusi })}</p>}
+      {s.recenti.length > 0 && (
+        <p className="ctest-rate">
+          {t('ctest.recent')}: {s.recenti.map((r) => `${r.call} ${r.band}: ${r.nuovi.map((m) => multLabel(t, m)).join(', ')}`).join(' · ')}
+        </p>
+      )}
+      {span && progress !== null ? (
+        <div className="ctest-progress" aria-label={t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })}>
+          <div className="ctest-progress-bar">
+            <i style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+          <p className="ctest-rate">
+            {t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })} · {t('ssbc.remaining', { t: hm(Math.max(0, span.to - now)) })}
+          </p>
+        </div>
+      ) : null}
+      {bars ? (
+        <figure className="ctest-hours">
+          <figcaption className="ctest-rate">{t('ssbc.perHour')}</figcaption>
+          <svg viewBox="0 0 120 34" role="img" aria-label={t('ssbc.perHour')}>
+            {bars.map((n, i) => (
+              <rect key={i} x={i * 10 + 1} y={30 - (n / top) * 26} width={8} height={Math.max(n > 0 ? 1 : 0, (n / top) * 26)} rx={1} className={i === 11 ? 'now' : undefined}>
+                <title>{n}</title>
+              </rect>
+            ))}
+            <line x1={0} y1={30.5} x2={120} y2={30.5} />
+          </svg>
+        </figure>
+      ) : null}
+    </div>
+  );
+}
+
 /** La finestrella delle statistiche del contest attivo: per banda QSO, doppi, punti, moltiplicatori e categorie, poi il totale. */
 export function ContestStatsDialog({ name, onClose }: { name: string; onClose(): void }) {
   const t = useT();
   const exportCabrillo = useExportTextCabrillo();
   const q = useTextContestScore(true);
   const s = q.data;
-  const sum = (k: 'cw' | 'phone' | 'digital') => s?.bande.reduce((a, b) => a + b[k], 0) ?? 0;
   return (
     <div className="digi-modal" role="dialog" aria-modal="true" aria-label={t('ctest.statsTitle', { name })} onKeyDown={(e) => (e.key === 'Escape' ? onClose() : undefined)} onClick={(e) => (e.target === e.currentTarget ? onClose() : undefined)}>
       <div className="digi-dialog ctest-dialog">
@@ -115,55 +232,7 @@ export function ContestStatsDialog({ name, onClose }: { name: string; onClose():
           <p>{t('ctest.noQsos')}</p>
         ) : (
           <>
-            <div className="ctest-table-wrap">
-              <table className="ctest-table ctest-stats">
-                <thead>
-                  <tr>
-                    <th>{t('ctest.c.band')}</th>
-                    <th>{t('ctest.c.qso')}</th>
-                    <th>{t('ctest.c.dupes')}</th>
-                    <th>{t('ctest.c.points')}</th>
-                    <th>{t('ctest.c.mult')}</th>
-                    <th>CW</th>
-                    <th>{t('ctest.c.phone')}</th>
-                    <th>{t('ctest.c.digital')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {s.bande.map((b) => (
-                    <tr key={b.band}>
-                      <td>{b.band || '—'}</td>
-                      <td>{b.qso}</td>
-                      <td>{b.doppi}</td>
-                      <td>{b.punti}</td>
-                      <td>{b.molt}</td>
-                      <td>{b.cw}</td>
-                      <td>{b.phone}</td>
-                      <td>{b.digital}</td>
-                    </tr>
-                  ))}
-                  <tr className="ctest-total">
-                    <td>{t('ctest.c.total')}</td>
-                    <td>{s.qso}</td>
-                    <td>{s.doppi}</td>
-                    <td>{s.punti}</td>
-                    <td>{s.molt}</td>
-                    <td>{sum('cw')}</td>
-                    <td>{sum('phone')}</td>
-                    <td>{sum('digital')}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="ctest-score">{scoreLine(t, s)}</p>
-            <p className="ctest-rate">{t('ctest.rate', { r10: s.rate10, r60: s.rate60, avg: s.media_ora })}</p>
-            {s.errore_script && <p className="ctest-rate" role="alert">{t('ctest.scriptError', { msg: s.errore_script })}</p>}
-            {s.esclusi > 0 && <p className="ctest-rate">{t('ctest.excluded', { n: s.esclusi })}</p>}
-            {s.recenti.length > 0 && (
-              <p className="ctest-rate">
-                {t('ctest.recent')}: {s.recenti.map((r) => `${r.call} ${r.band}: ${r.nuovi.map((m) => multLabel(t, m)).join(', ')}`).join(' · ')}
-              </p>
-            )}
+            <ContestStatsCard s={s} />
             <MultGrid s={s} />
           </>
         )}

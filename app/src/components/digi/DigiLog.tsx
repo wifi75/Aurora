@@ -60,7 +60,15 @@ export interface LogMarks {
   noBand: boolean;
   noMode: boolean;
   recenti: TextContestScore['recenti'];
+  /** Il QSO e' del contest (finestra di date, categoria, dopo l'attivazione se il contest non ha date)? Doppi e moltiplicatori valgono solo per questi. */
+  inSet: (q: Log4omQso) => boolean;
+  /** Si vede solo il log del contest (di base) o tutto il log. */
+  only: boolean;
+  onToggle(): void;
 }
+
+/** Le colonne del log del contest: numero progressivo del contest, DUPE / Mult, ora, nominativo, banda, frequenza e i due rapporti. */
+const CONTEST_COLS: readonly LogCol[] = ['num', 'mark', 'utc', 'call', 'band', 'freq', 'rstS', 'rstR']
 
 /** Per ogni QSO (il piu' recente in testa) se e' un doppio: c'e' un QSO piu' vecchio con lo stesso nominativo (e banda, e modo). */
 export function dupeFlags(qsos: readonly Pick<Log4omQso, 'call' | 'band' | 'mode'>[], noBand: boolean, noMode: boolean): boolean[] {
@@ -178,7 +186,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     storageKey: GRID_KEY,
     columns: ALL_COLS,
     defaultEm: DEFAULT_EM,
-    hidden: ALL_COLS.filter((c) => (c === 'mark' ? !marks : !cols.includes(c))),
+    hidden: ALL_COLS.filter((c) => (marks ? !CONTEST_COLS.includes(c) : c === 'mark' || !cols.includes(c))),
     fitCells: (_c, i) => body.current?.querySelectorAll(`thead tr > :nth-child(${i + 1}), tbody tr:not(.digi-log-cur) > :nth-child(${i + 1})`) ?? [],
   });
   const [spotOpen, setSpotOpen] = useState(false);
@@ -242,14 +250,25 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const rows = useMemo(() => {
     // il numero del QSO e' la sua posizione nel log (l'ultimo = il totale), anche cercando un nominativo
     const qsos = log.data?.qsos ?? [];
-    const dupes = marks ? dupeFlags(qsos, marks.noBand, marks.noMode) : [];
-    const all = qsos.map((q, i) => {
+    // con un contest: i QSO del contest (finestra, categoria, attivazione) sono numerati 1, 2, 3... e solo fra loro si cercano doppi e moltiplicatori
+    const mine = marks ? qsos.map((q) => marks.inSet(q)) : [];
+    const subset = marks ? qsos.filter((_, i) => mine[i]) : [];
+    const dupesSub = marks ? dupeFlags(subset, marks.noBand, marks.noMode) : [];
+    let k = 0;
+    const all: { q: Log4omQso; nr: number; dupe: boolean; mult: string }[] = [];
+    qsos.forEach((q, i) => {
+      if (marks && !mine[i]) {
+        if (!marks.only) all.push({ q, nr: total - i, dupe: false, mult: '' });
+        return;
+      }
+      const j = k++;
       const nuovi = marks ? (marks.recenti.find((r) => r.call.toUpperCase() === q.call.toUpperCase() && r.band === q.band)?.nuovi ?? []) : [];
-      return { q, nr: total - i, dupe: dupes[i] === true, mult: nuovi.map((m) => m.slice(m.indexOf(':') + 1)).join(' ') };
+      all.push({ q, nr: marks ? subset.length - j : total - i, dupe: marks ? dupesSub[j] === true : false, mult: nuovi.map((m) => m.slice(m.indexOf(':') + 1)).join(' ') });
     });
     const f = filter.trim().toUpperCase();
     return (f === '' ? all : all.filter((x) => x.q.call.includes(f))).slice(0, 300);
   }, [log.data, filter, total, marks]);
+  const contestTotal = marks ? (log.data?.qsos ?? []).filter((q) => marks.inSet(q)).length : 0;
   const nextNum = total + 1;
   const now = new Date();
   const nowDate = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`;
@@ -392,6 +411,14 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             <ColumnsMenu cols={grid} />
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
           </div>
+          {view && marks ? (
+            <div className="digi-log-bar ssbc-logbar">
+              <span className="ssbc-logtotal">{t('ssbc.logTotal', { n: contestTotal })}</span>
+              <button type="button" className="digi-tool" aria-pressed={marks.only} title={t('ssbc.logToggleTip')} onClick={marks.onToggle}>
+                {marks.only ? t('ssbc.logAll') : t('ssbc.logOnly')}
+              </button>
+            </div>
+          ) : null}
           {view ? null : <div className="digi-log-bar">
             {contestOn ? (
               <>

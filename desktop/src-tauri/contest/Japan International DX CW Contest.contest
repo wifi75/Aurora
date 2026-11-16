@@ -1,13 +1,13 @@
 [Contest]
 m_sName=Japan International DX CW Contest
 m_sNotes=CW
-m_dtStart=20150411070001
-m_dtEnd=20150412130000
+m_dtStart=20260411070000
+m_dtEnd=20260412130000
 m_iWorkTime=0
 m_sNrs=
 n_bAutoIncNrs=0
 m_iValidContacts=0
-m_bValidCw=0
+m_bValidCw=1
 m_bValidPhone=0
 m_bValidDigital=0
 m_iPointsMyDxcc=0
@@ -36,7 +36,7 @@ m_bAutoGrabTime=0
 m_bAutoGrabState=0
 m_sStateListFile=
 m_iGrabDomainTo=1
-m_bSuggestCqZone=0
+m_bSuggestCqZone=1
 m_bSuggestItuZone=0
 m_bSuggestDomain=0
 m_bSuggestDxccPfx=0

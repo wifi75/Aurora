@@ -4,13 +4,14 @@ import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
 import { deleteTextContest, exportTextContest, importTextContest, getTextContest, getTextContests, newTextContest, saveTextContest, selectTextContest, type TextContest } from '../../api/contestTesto';
 import { askConfirm } from '../ConfirmHost';
+import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
 import '../../styles/digi-contest.css';
 
 const why = (e: unknown) => (e instanceof ContestError ? (e.detail ?? e.code) : String(e));
 
 /** Le chiavi delle richieste dei contest dei modi testuali (elenco e contest attivo), da rileggere dopo ogni modifica. */
-export const TEXT_CONTEST_KEYS = [['contest-testo'], ['contest-testo-attivo']] as const;
+export const TEXT_CONTEST_KEYS = [['contest-testo'], ['contest-testo-attivo'], ['contest-testo-punteggio']] as const;
 
 function useRefresh() {
   const client = useQueryClient();
@@ -233,8 +234,13 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
   const macroFiles = list?.macros ?? [];
   const domainFiles = list?.domini ?? [];
   const refresh = useRefresh();
-  const [c, setC] = useState<TextContest>(contest);
+  // un contest con una sola edizione conosciuta e date di un anno passato parte con le date dell'anno in corso (si salvano con OK)
+  const [proposed] = useState(() => (contest.id ? staleWindowProposal(contest, Date.now()) : null));
+  const [c, setC] = useState<TextContest>(() => (proposed ? { ...contest, start: proposed.start, end: proposed.end } : contest));
   const [busy, setBusy] = useState(false);
+  const datesCheck = checkContestDates(c.start, c.end);
+  const proposals = c.id ? windowProposals(c.name, new Date().getUTCFullYear()) : [];
+  const day = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
   const set = (p: Partial<TextContest>) => setC((x) => ({ ...x, ...p }));
   const num = (v: string) => (Number.isFinite(Number(v)) ? Math.trunc(Number(v)) : 0);
   const check = (k: keyof TextContest, label: string, tip?: string) => (
@@ -302,6 +308,21 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
               <span>{t('ctest.f.end')}</span>
               <input type="datetime-local" step={1} value={toLocalInput(c.end)} onChange={(e) => set({ end: fromLocalInput(e.target.value) })} />
             </label>
+            {datesCheck !== 'ok' ? (
+              <p className="ctest-warn" role="alert">
+                {t(datesCheck === 'order' ? 'ctest.err.order' : 'ctest.err.date')}
+              </p>
+            ) : null}
+            {proposed && c.start === proposed.start && c.end === proposed.end ? <p className="ctest-hint">{t('ctest.proposed', { year: new Date().getUTCFullYear() })}</p> : null}
+            {proposals.length > 0 ? (
+              <div className="ctest-propose">
+                {proposals.map((p) => (
+                  <button key={p.tag} type="button" className="glass sstv-btn" title={t('ctest.tip.propose')} onClick={() => set({ start: p.start, end: p.end })}>
+                    {t('ctest.propose', { what: `${p.tag ? `${p.tag} ` : ''}${day(p.start)} – ${day(p.end)}` })}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {int('work_time', t('ctest.f.workTime'), t('ctest.tip.workTime'))}
           </Group>
           <Group title={t('ctest.g.serial')}>
@@ -310,6 +331,7 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
               <input type="text" value={c.nrs} onChange={(e) => set({ nrs: e.target.value })} />
             </label>
             {check('auto_inc', t('ctest.f.autoInc'), t('ctest.tip.autoInc'))}
+            <p className="ctest-hint">{c.auto_inc ? t('ctest.nrsAuto', { n: String(startSerial(c.nrs)).padStart(3, '0') }) : c.nrs.trim() !== '' ? t('ctest.nrsFixed', { nrs: c.nrs.trim() }) : t('ctest.nrsFixedNone')}</p>
           </Group>
           <Group title={t('ctest.g.validity')}>
             {check('valid_cw', t('ctest.f.validCw'), t('ctest.tip.valid'))}
@@ -362,7 +384,17 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
           </Group>
           <Group title={t('ctest.g.grab')}>
             {check('grab_number', t('ctest.f.grabNumber'), t('ctest.tip.grabNumber'))}
-            {int('grab_number_type', t('ctest.f.grabNumberType'), stored)}
+            <label title={t('ctest.tip.grabType')}>
+              <span>{t('ctest.f.grabNumberType')}</span>
+              <select value={c.grab_number_type} onChange={(e) => set({ grab_number_type: num(e.target.value) })}>
+                {[-1, 0, 1, 2].map((n) => (
+                  <option key={n} value={n}>
+                    {t(n === -1 ? 'ctest.gt.none' : n === 0 ? 'ctest.gt.serial' : n === 1 ? 'ctest.gt.itu' : 'ctest.gt.cq')}
+                  </option>
+                ))}
+                {![-1, 0, 1, 2].includes(c.grab_number_type) ? <option value={c.grab_number_type}>{c.grab_number_type}</option> : null}
+              </select>
+            </label>
             {check('grab_time', t('ctest.f.grabTime'), stored)}
             {check('grab_state', t('ctest.f.grabState'), t('ctest.tip.grabState'))}
             <label title={t('ctest.tip.domain')}>
@@ -379,10 +411,10 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
             {int('grab_domain_to', t('ctest.f.grabDomainTo'), stored)}
           </Group>
           <Group title={t('ctest.g.suggest')}>
-            {check('suggest_cq_zone', t('ctest.f.sCq'), stored)}
-            {check('suggest_itu_zone', t('ctest.f.sItu'), stored)}
+            {check('suggest_cq_zone', t('ctest.f.sCq'), t('ctest.tip.suggest'))}
+            {check('suggest_itu_zone', t('ctest.f.sItu'), t('ctest.tip.suggest'))}
             {check('suggest_domain', t('ctest.f.sDomain'), stored)}
-            {check('suggest_dxcc_pfx', t('ctest.f.sDxcc'), stored)}
+            {check('suggest_dxcc_pfx', t('ctest.f.sDxcc'), t('ctest.tip.suggest'))}
           </Group>
           <Group title={t('ctest.g.dupes')}>
             {check('dupe_no_band', t('ctest.f.noBand'), t('ctest.tip.noBand'))}
@@ -392,7 +424,7 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
         </div>
         <footer>
           <span className="rtty-spacer" />
-          <button type="button" className="glass sstv-btn" disabled={busy || c.name.trim() === ''} onClick={() => void save()}>
+          <button type="button" className="glass sstv-btn" disabled={busy || c.name.trim() === '' || datesCheck !== 'ok'} onClick={() => void save()}>
             {t('confirm.ok')}
           </button>
           <button type="button" className="glass sstv-btn" onClick={onClose}>

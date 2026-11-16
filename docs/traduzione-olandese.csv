@@ -8021,3 +8021,35 @@ t.26lgpbks0ap,"A click on a button, or the keyboard key (F1…F12 on the first r
 t.u8ebunc1lm,"In the bottom-right corner of each button its key is shown, small: “F1”, “F2”… on the first row, “C-F1” (Ctrl), “S-F1” (Shift) and “CS-F1” (Ctrl+Shift) on the others. If you press a macro while another one (or the same one) is transmitting, the previous one stops and the new one starts again from the beginning, without dropping PTT: text already sent stays, text not yet sent is discarded. This applies at every press: the last one always wins, and only its “<RX>” and “<RXANDCLEAR>” commands decide when to go back to receive and clear the window. Esc stops everything.",
 t.pix6rkldgb,SSB in three columns with contests,SSB in drie kolommen met contests
 t.17r636poz9a,"On the PSK·RTTY·SSTV page the SSB mode has three columns: the log on the left, “Enter QSO” on a single row in the middle and the DX Cluster on the right. With a contest chosen the row shows the serial numbers and the log marks DUPEs and multipliers; next to the macros are buttons for the bands chosen in Settings. The macro bar changes too: the gear switches between one and four rows, and the button font is chosen separately. The card with the callsign information (name, country, azimuth) no longer stays stuck: it closes by itself when the mouse leaves the window, when you switch window, scroll or press Esc. The list rows with a light background (QSO in progress, my callsign in yellow or cyan) now have every cell in a readable dark colour instead of grey.","Op de pagina PSK·RTTY·SSTV heeft de modus SSB drie kolommen: links het log, in het midden “QSO invoeren” op één regel en rechts het DX Cluster. Met een gekozen contest toont de regel de serienummers en markeert het log dubbelen en multiplicatoren; naast de macro’s staan knoppen voor de banden die je in de Instellingen kiest. Ook de macrobalk verandert: het tandwiel wisselt tussen één en vier rijen, en het lettertype van de knoppen kies je apart. Het kaartje met de informatie over de roepnaam (naam, land, azimut) blijft niet meer hangen: het sluit zich vanzelf als de muis het venster verlaat, als je van venster wisselt, scrolt of op Esc drukt. De rijen in de lijst met een lichte achtergrond (QSO bezig, mijn roepnaam geel of cyaan) hebben nu alle cellen in een donkere, leesbare kleur in plaats van grijs."
+ssbc.logTotal,Total QSOs: {n},Totaal QSO’s: {n}
+ssbc.logAll,Show the whole log,Toon het hele log
+ssbc.logOnly,Contest only,Alleen de contest
+ssbc.logToggleTip,The contest log starts from zero: show only the contest QSOs or the whole log,Het contestlog begint bij nul: toon alleen de contest-QSO’s of het hele log
+ssbc.statsTitle,Statistics,Statistieken
+ssbc.elapsed,Elapsed: {t},Verstreken: {t}
+ssbc.remaining,Remaining: {t},Resterend: {t}
+ssbc.perHour,QSOs per hour (last 12 hours),QSO’s per uur (laatste 12 uur)
+ctest.err.date,Invalid date: use a day and time that exist.,Ongeldige datum: gebruik een dag en tijd die bestaan.
+ctest.err.order,The end must be after the start.,Het einde moet na het begin liggen.
+ctest.proposed,Dates proposed for {year}: press OK to save them.,Voorgestelde data voor {year}: druk op OK om ze op te slaan.
+ctest.propose,Suggest: {what},Voorstel: {what}
+ctest.tip.propose,"Sets the start and end of this year's edition (last full weekend of the contest month, 00:00:00 to 23:59:59 UTC). Check the rules before saving.","Zet begin en einde van de editie van dit jaar (laatste volledige weekend van de contestmaand, 00:00:00 tot 23:59:59 UTC). Controleer het reglement voor je opslaat."
+ctest.nrsAuto,Starts at number {n}; it goes up by one after every logged QSO.,Begint bij nummer {n}; het gaat na elke gelogde QSO met één omhoog.
+ctest.nrsFixed,Fixed exchange: {nrs} is always sent.,Vaste uitwisseling: er wordt altijd {nrs} verzonden.
+ctest.nrsFixedNone,No fixed exchange: the serial number is sent.,Geen vaste uitwisseling: het serienummer wordt verzonden.
+ctest.gt.none,None,Geen
+ctest.gt.serial,Serial,Serienummer
+ctest.gt.itu,ITU zone,ITU-zone
+ctest.gt.cq,CQ zone,CQ-zone
+ctest.tip.grabType,"What to pre-fill in the received exchange: the serial read from the received text, or the CQ or ITU zone of the typed callsign (SSB view).","Wat in de ontvangen uitwisseling wordt voorgevuld: het serienummer uit de ontvangen tekst, of de CQ- of ITU-zone van de ingetypte roepnaam (SSB-weergave)."
+ctest.tip.suggest,Shows the value under the callsign as you type it (from the prefix database); a click puts it in the received exchange.,Toont de waarde onder de roepnaam terwijl je typt (uit de prefixdatabase); een klik zet hem in de ontvangen uitwisseling.
+ssbc.windowOff,Contest window not set or expired: the log shows the QSOs since activation.,Contestvenster niet ingesteld of verlopen: het log toont de QSO’s sinds de activering.
+ssbc.windowSet,Set the dates,Data instellen
+ssbc.suggest,Suggestions,Suggesties
+ssbc.prevTitle,Previous QSOs with {call},Eerdere QSO’s met {call}
+ssbc.prevMode,Mode,Modus
+ssbc.prevTime,Time,Tijd
+ssbc.prevNr,NR,NR
+ssbc.callMult,Worked prefix / multipliers of {call},Gewerkt prefix / multipliers van {call}
+ssbc.cmNew,new,nieuw
+ssbc.cmWorked,already worked,al gewerkt

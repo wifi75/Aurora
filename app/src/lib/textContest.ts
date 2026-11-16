@@ -136,3 +136,113 @@ export function grabExchange(text: string, call: string, opts: { number: boolean
   }
   return null;
 }
+
+// ---------------------------------------------------------------- finestra del contest: controllo, stato e proposta dell'anno
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** Una data `aaaammgghhmmss` esiste davvero (niente 31 novembre o ora 25). */
+export function validContestDate(d: string): boolean {
+  const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(d.trim());
+  if (!m) return false;
+  const [y = 0, mo = 0, da = 0, h = 0, mi = 0, s = 0] = m.slice(1).map(Number);
+  const x = new Date(Date.UTC(y, mo - 1, da, h, mi, s));
+  return x.getUTCFullYear() === y && x.getUTCMonth() === mo - 1 && x.getUTCDate() === da && x.getUTCHours() === h && x.getUTCMinutes() === mi && x.getUTCSeconds() === s;
+}
+
+/** Controlla inizio e fine scritti nel dialogo: ognuno vuoto o valido; con tutti e due, la fine dopo l'inizio. */
+export function checkContestDates(start: string, end: string): 'ok' | 'date' | 'order' {
+  const s = start.trim();
+  const e = end.trim();
+  if ((s !== '' && !validContestDate(s)) || (e !== '' && !validContestDate(e))) return 'date';
+  if (s !== '' && e !== '') {
+    const a = contestDateMs(s);
+    const b = contestDateMs(e);
+    if (a == null || b == null || b <= a) return 'order';
+  }
+  return 'ok';
+}
+
+const fmtContestDate = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}${pad2(d.getUTCMonth() + 1)}${pad2(d.getUTCDate())}${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}`;
+};
+
+/**
+ * L'ultimo fine settimana completo del mese (`month` 0-11): dal sabato 00:00:00 alla domenica 23:59:59 UTC, con la domenica ancora
+ * dentro il mese (ottobre 2026: 24 e 25, non il 31 con la domenica a novembre).
+ */
+export function lastFullWeekend(year: number, month: number): { from: number; to: number } {
+  const lastDay = new Date(Date.UTC(year, month + 1, 0));
+  const sunday = lastDay.getUTCDate() - lastDay.getUTCDay();
+  return { from: Date.UTC(year, month, sunday - 1, 0, 0, 0), to: Date.UTC(year, month, sunday, 23, 59, 59) };
+}
+
+/**
+ * L'n-esimo fine settimana completo del mese (`month` 0-11, `n` da 1): i sabati con la domenica ancora nel mese; il sabato 1 con la
+ * domenica il 2 e' gia' il primo. Dalle `fromHour` del sabato alle `toHour` (`:59:59` se 23) della domenica, UTC.
+ */
+export function nthFullWeekend(year: number, month: number, n: number, fromHour = 0, toHour = 23): { from: number; to: number } {
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const saturdays: number[] = [];
+  for (let d = 1; d < days; d++) if (new Date(Date.UTC(year, month, d)).getUTCDay() === 6) saturdays.push(d);
+  const sat = saturdays[Math.min(n, saturdays.length) - 1] ?? 1;
+  const end = toHour >= 23 ? Date.UTC(year, month, sat + 1, 23, 59, 59) : Date.UTC(year, month, sat + 1, toHour, 0, 0);
+  return { from: Date.UTC(year, month, sat, fromHour, 0, 0), to: end };
+}
+
+export interface WindowProposal {
+  /** Edizione (`SSB`, `CW`) o vuoto se il contest ne ha una sola. */
+  tag: string;
+  start: string;
+  end: string;
+}
+
+/**
+ * Le finestre proposte per l'anno `year` ai contest ricorrenti con regola semplice, riconosciuti dal nome (CQ WW DX, CQ WW WPX, Japan International DX):
+ * ultimo fine settimana completo di ottobre (SSB) o novembre (CW) per il CQ WW DX, di marzo (SSB) o maggio (CW) per il WPX, secondo
+ * fine settimana completo di aprile (CW) o novembre (fonia) per il Japan International DX.
+ * Il nome senza modo (`CQ WW DX Contest`, che raccoglie CW e SSB) da' le due edizioni. Un contest che non si riconosce non ha proposte:
+ * l'utente imposta le date a mano. Le date dei file distribuiti non servono: sono di anni passati e in parte invertite fra CW e SSB.
+ */
+export function windowProposals(name: string, year: number): WindowProposal[] {
+  const n = name.toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  const make = (tag: string, month: number): WindowProposal => {
+    const w = lastFullWeekend(year, month);
+    return { tag, start: fmtContestDate(w.from), end: fmtContestDate(w.to) };
+  };
+  const dx = /^CQ WW DX(?: (SSB|CW))?(?: CONTEST)?$/.exec(n);
+  if (dx) return dx[1] === 'SSB' ? [make('SSB', 9)] : dx[1] === 'CW' ? [make('CW', 10)] : [make('SSB', 9), make('CW', 10)];
+  // Japan International DX: CW il 2o fine settimana completo di aprile, fonia di novembre, dal sabato 07:00 alla domenica 13:00 UTC
+  const jidx = /^JAPAN INTERNATIONAL DX (CW|SSB|PHONE)(?: CONTEST)?$/.exec(n);
+  if (jidx) {
+    const w = jidx[1] === 'CW' ? nthFullWeekend(year, 3, 2, 7, 13) : nthFullWeekend(year, 10, 2, 7, 13);
+    return [{ tag: jidx[1] === 'CW' ? 'CW' : 'SSB', start: fmtContestDate(w.from), end: fmtContestDate(w.to) }];
+  }
+  const wpx = /^CQ (?:WW )?WPX (SSB|CW)(?: CONTEST)?$/.exec(n);
+  if (wpx) return [wpx[1] === 'SSB' ? make('SSB', 2) : make('CW', 4)];
+  return [];
+}
+
+export type WindowStatus = 'none' | 'before' | 'active' | 'expired';
+
+/** Dove e' adesso rispetto alla finestra del contest: senza date `none`, altrimenti prima, dentro o dopo. */
+export function contestWindowStatus(c: Pick<TextContest, 'start' | 'end'>, nowMs: number): { status: WindowStatus; window: { from: number | null; to: number | null } | null } {
+  const w = contestWindow(c, nowMs);
+  if (!w) return { status: 'none', window: null };
+  if (w.from != null && nowMs < w.from) return { status: 'before', window: w };
+  if (w.to != null && nowMs > w.to) return { status: 'expired', window: w };
+  return { status: 'active', window: w };
+}
+
+/**
+ * Le date del file non sono dell'anno in corso (o mancano): per un contest con una sola edizione conosciuta si propongono nel
+ * dialogo. `null` se le date sono gia' di quest'anno, se il nome non e' riconosciuto o se ha piu' edizioni (si sceglie a mano).
+ */
+export function staleWindowProposal(c: Pick<TextContest, 'name' | 'start' | 'end'>, nowMs: number): WindowProposal | null {
+  const year = new Date(nowMs).getUTCFullYear();
+  const a = contestDateMs(c.start);
+  if (a != null && new Date(a).getUTCFullYear() === year) return null;
+  const p = windowProposals(c.name, year);
+  return p.length === 1 ? (p[0] ?? null) : null;
+}

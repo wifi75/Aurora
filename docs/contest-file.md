@@ -42,7 +42,7 @@ sconosciute si ignorano; quelle mancanti prendono il valore di base. I booleani 
 |---|---|---|
 | `m_sName` | nome del contest | elenco, barra di stato |
 | `m_sNotes` | note (modi, bande) | colonna Note |
-| `m_dtStart`, `m_dtEnd` | inizio e fine UTC, `aaaammgghhmmss` (vuoto = nessun limite) | finestra dei doppi; le date valgono ogni anno (si portano nell'anno corrente) |
+| `m_dtStart`, `m_dtEnd` | inizio e fine UTC, `aaaammgghhmmss` (vuoto = nessun limite) | finestra dei doppi e del log del contest; le date valgono ogni anno (si portano nell'anno corrente). Con la finestra non impostata o non in corso il log della vista SSB mostra i QSO dopo l'attivazione. Il dialogo controlla le date (fine dopo l'inizio) e per CQ WW DX, CQ WW WPX e Japan International DX propone quelle dell'anno in corso |
 | `m_iWorkTime` | ore di lavoro ammesse | solo promemoria |
 | `m_sNrs` | numero da mandare | con l'incremento: primo numero (001 se vuoto); senza: scambio fisso di `<NRS>` |
 | `n_bAutoIncNrs` | incremento automatico del numero | `<QSONR>`/`<NRS>` avanzano a ogni QSO salvato |
@@ -54,12 +54,12 @@ sconosciute si ignorano; quelle mancanti prendono il valore di base. I booleani 
 | `m_sMacrosFilename` | file di macro, relativo: `macros/<nome>.mc` | macro del contest sui tasti |
 | `m_bMergeMacros` | unisci alle macro del modo | acceso: restano le macro del modo sui tasti liberi |
 | `m_bAutoGrabNumber` | prendi il numero ricevuto | il numero dopo il nominativo va nel numero ricevuto, se vuoto |
-| `m_iGrabNumberType` | tipo di numero | conservato |
+| `m_iGrabNumberType` | tipo di numero: -1 nessuno, 0 seriale, 1 zona ITU, 2 zona CQ | vista SSB: con la casella «prendi il numero» la zona CQ o ITU del nominativo precompila lo scambio ricevuto (si puo' sovrascrivere) |
 | `m_bAutoGrabTime` | prendi l'ora | conservato |
 | `m_bAutoGrabState` | prendi il dominio | la parola che e' nell'elenco dei domini va nel numero ricevuto, se vuoto |
 | `m_sStateListFile` | elenco dei domini, relativo: `dom/<nome>.dom` | cattura del dominio |
 | `m_iGrabDomainTo` | campo del dominio | conservato (Aurora usa sempre il numero ricevuto) |
-| `m_bSuggestCqZone`, `m_bSuggestItuZone`, `m_bSuggestDomain`, `m_bSuggestDxccPfx` | suggerimenti | conservati |
+| `m_bSuggestCqZone`, `m_bSuggestItuZone`, `m_bSuggestDomain`, `m_bSuggestDxccPfx` | suggerimenti | vista SSB: zona CQ, zona ITU e prefisso DXCC compaiono sotto il nominativo (un clic li mette nello scambio ricevuto); il dominio e' conservato |
 | `m_bDupeNoBand` | doppio su qualsiasi banda | doppi di BIGScan |
 | `m_bDupeNoMode` | doppio in qualsiasi modo | doppi di BIGScan |
 | `m_iLogBarDispMode` | vista della barra del log | conservato |
