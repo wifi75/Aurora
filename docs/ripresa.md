@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.277 (in pubblicazione 2026-11-16)
+## Nella 0.11.277 (pubblicata 2026-11-16T17:27:01Z)
 
 Vista SSB della pagina PSK/RTTY/SSTV: tre colonne (Log, «Inserisci QSO» su un rigo, DX Cluster) con colonne ridimensionabili, senza cascata, testo RX/TX e barra in basso (`SsbContestView.tsx`, `digi-ssb-contest.css`); con un contest scelto dal menu Contest (sempre presente) la riga diventa N. QSO, Nominativo, Seriale inviato (progressivo), Seriale ricevuto, con punteggio, moltiplicatori e DUPE. Pulsanti di banda diretti (bande scelte nelle Impostazioni, prima frequenza di fonia IARU R1 in `lib/bandplan.ts`; i 6 m a 50,150 MHz sono una scelta da confermare). Barra delle macro con ingranaggio (Barra singola / multipla a 4 righe, carattere dei pulsanti in tempo reale), righe Ctrl/Shift/Ctrl+Shift, Vista › Righe delle macro; voci dei menu inibite per modo (`lib/menuModi.ts`). Rotore compatto, mobile, pallina di stato, clic sulla rosa. Display radio FT-2000 senza vuoto a destra. Guida Logger32 (#76, mappa UDP: si apre a mano con Ctrl+J, porta 2237). **Da provare dal vivo**: riga con contest attivo, clic sulla rosa del rotore, frequenza dei 6 m, tema chiaro, 1366 px. **Decisione** (#75): QSO sempre nel log generale con tag; il log del contest riparte da zero come vista filtrata per tag e data; Cabrillo con verifica da li' (vedi `docs/mancante.md`).
 
