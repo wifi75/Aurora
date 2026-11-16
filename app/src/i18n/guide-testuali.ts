@@ -227,6 +227,14 @@ export const GUIDE_TESTUALI: readonly GuideSection[] = [
         "PSK31, PSK63, RTTY, CW: o modo em uso tem o visto. Um clique muda-o e guarda-o. Escolher RTTY não abre «[[digi.rtty.title]]»: essa janela abre-se com um clique no nome do modo na barra de estado.",
       ],
       [
+        "SSB: è la fonia. Aurora non decodifica niente e non trasmette testo: parli tu al microfono, e la frequenza e il modo USB/LSB li scegli tu sulla radio. Serve per il log e per i contest in fonia: nel riquadro «[[digi.log.current]]» scrivi nominativo, rapporto (di base 59) e, con un contest attivo, numero e scambio. Se provi a trasmettere testo compare un avviso.",
+        "SSB: it is voice. Aurora decodes nothing and sends no text: you speak into the microphone, and you choose the frequency and the USB/LSB mode on the radio. It is for logging and for phone contests: in the “[[digi.log.current]]” box you write callsign, report (59 by default) and, with a contest active, number and exchange. If you try to send text, a warning appears.",
+        "SSB: das ist Sprechfunk. Aurora dekodiert nichts und sendet keinen Text: Du sprichst ins Mikrofon, und Frequenz und Modus USB/LSB wählst du am Funkgerät. Es dient dem Log und den Phone-Contests: Im Feld „[[digi.log.current]]“ schreibst du Rufzeichen, Rapport (standardmäßig 59) und, bei aktivem Contest, Nummer und Austausch. Wenn du versuchst, Text zu senden, erscheint ein Hinweis.",
+        "SSB : c’est la phonie. Aurora ne décode rien et n’envoie pas de texte : tu parles au micro, et la fréquence et le mode USB/LSB, tu les choisis sur la radio. Il sert au log et aux contests en phonie : dans le cadre « [[digi.log.current]] » tu écris l’indicatif, le report (59 par défaut) et, avec un contest actif, le numéro et l’échange. Si tu essaies d’envoyer du texte, un avertissement apparaît.",
+        "SSB: es la fonía. Aurora no decodifica nada y no envía texto: hablas tú al micrófono, y la frecuencia y el modo USB/LSB los eliges tú en la radio. Sirve para el log y para los contests en fonía: en el recuadro «[[digi.log.current]]» escribes indicativo, informe (59 por defecto) y, con un contest activo, número e intercambio. Si intentas enviar texto, aparece un aviso.",
+        "SSB: é a fonia. O Aurora não descodifica nada e não envia texto: falas tu ao microfone, e a frequência e o modo USB/LSB escolhes tu na rádio. Serve para o log e para os contests em fonia: na caixa «[[digi.log.current]]» escreves indicativo, relatório (59 por defeito) e, com um contest ativo, número e troca. Se tentares enviar texto, aparece um aviso.",
+      ],
+      [
         "[[nav.sstv]]: passa alla pagina SSTV (la pagina SSTV ha lo stesso elenco di modi in alto e riporta qui).",
         "[[nav.sstv]]: switches to the SSTV page (the SSTV page has the same list of modes at the top and brings you back here).",
         "[[nav.sstv]]: wechselt zur SSTV-Seite (die SSTV-Seite hat oben dieselbe Modusliste und führt hierher zurück).",
@@ -3125,6 +3133,14 @@ export const GUIDE_TESTUALI: readonly GuideSection[] = [
         "[[ctest.list]] ouvre la fenêtre avec les colonnes [[ctest.colActive]] (la flèche indique le contest actif), [[ctest.colName]] et [[ctest.colNotes]]. La première ligne est [[ctest.none]]. Boutons : [[ctest.edit]], [[ctest.delete]] (demande confirmation), [[ctest.add]], [[ctest.select]] (un double-clic fait la même chose) et [[ctest.close]].",
         "[[ctest.list]] abre la ventana con las columnas [[ctest.colActive]] (la flecha marca el activo), [[ctest.colName]] y [[ctest.colNotes]]. La primera fila es [[ctest.none]]. Botones: [[ctest.edit]], [[ctest.delete]] (pide confirmación), [[ctest.add]], [[ctest.select]] (un doble clic hace lo mismo) y [[ctest.close]].",
         "[[ctest.list]] abre a janela com as colunas [[ctest.colActive]] (a seta marca o ativo), [[ctest.colName]] e [[ctest.colNotes]]. A primeira linha é [[ctest.none]]. Botões: [[ctest.edit]], [[ctest.delete]] (pede confirmação), [[ctest.add]], [[ctest.select]] (um duplo clique faz o mesmo) e [[ctest.close]].",
+      ],
+      [
+        "I contest in fonia si fanno scegliendo SSB nel menu Modo: i QSO contano come fonia (punti, statistiche e Cabrillo con modo PH).",
+        "Phone contests are done by choosing SSB in the Mode menu: the QSOs count as phone (points, statistics and Cabrillo with mode PH).",
+        "Phone-Contests macht man, indem man im Menü Modus SSB wählt: Die QSOs zählen als Fonie (Punkte, Statistik und Cabrillo mit Modus PH).",
+        "Les contests en phonie se font en choisissant SSB dans le menu Mode : les QSO comptent comme phonie (points, statistiques et Cabrillo avec le mode PH).",
+        "Los contests en fonía se hacen eligiendo SSB en el menú Modo: los QSO cuentan como fonía (puntos, estadísticas y Cabrillo con modo PH).",
+        "Os contests em fonia fazem-se escolhendo SSB no menu Modo: os QSO contam como fonia (pontos, estatísticas e Cabrillo com modo PH).",
       ],
       [
         "[[ctest.editActive]] apre la finestra di modifica, divisa in gruppi: [[ctest.g.general]], [[ctest.g.serial]], [[ctest.g.validity]], [[ctest.g.points]], [[ctest.g.mult]], [[ctest.g.macros]], [[ctest.g.grab]], [[ctest.g.suggest]], [[ctest.g.dupes]]. Passando sopra un campo compare la spiegazione.",
