@@ -19,3 +19,7 @@ Ogni versione che aggiunge, modifica o corregge qualcosa si chiude con questi pa
 7. Nessun riferimento ad assistenti di scrittura del codice nei file, nei messaggi di commit, nelle note di release e nei nomi: `git log --all --format=%B | grep -iE 'cl[a]ude|anthr[o]pic|co-authored-by'` deve restare vuoto, come `git grep -iE 'cl[a]ude|anthr[o]pic'`.
 8. Nessun dato personale vero: `git grep -iE "jn55te|gmail"` deve restare vuoto; il nominativo IU3WJQ solo come firma d'autore.
 9. Il codice compila (`cargo check --workspace`, `npx tsc --noEmit`); le prove dal vivo con la radio le fa il proprietario.
+
+## Dopo la pubblicazione
+
+10. **Antivirus**: si carica `Aurora_X.Y.Z_x64-setup.exe` su <https://www.virustotal.com/> e si guardano i risultati. Per ogni antivirus che lo segnala si manda la segnalazione di falso positivo col suo modulo (Avast e AVG, che hanno lo stesso motore: <https://www.avast.com/false-positive-file-form.php>; Microsoft Defender: <https://www.microsoft.com/wdsi/filesubmission>; gli altri dal loro sito), con il link della release e del sorgente. Il badge «Virus free» del README si aggiorna con il link del controllo nuovo solo se i rilevamenti sono zero.
