@@ -2,9 +2,9 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Stato al 2026-11-16 (su main, non rilasciato)
+## Stato al 2026-11-16 (0.11.274 pubblicata 2026-11-16T10:38:07Z)
 
-Modo SSB nei modi testuali per log e contest in fonia (#74, `9348e234`, Guida `25e14d1c`). Issue aperte: #71 (PTT acceso e spento a fine QSO FT8: servono versione, impostazioni e registro dell'utente; meccanismo probabile: trasmissione pianificata e fermata da una decodifica tardiva, `engine-native/src/tx.rs` `collect_events`), #72 (IC-707 su macOS), #74 (contest, risposta da dare con la release). Test `novita.test.ts` rosso (41 voci su 40): da sistemare alla prossima versione. Cartella locale pulita: solo `main`.
+Modo SSB nei modi testuali per log e contest in fonia (#74, `9348e234`, Guida `25e14d1c`). Issue aperte: #71 (PTT acceso e spento a fine QSO FT8: servono versione, impostazioni e registro dell'utente; meccanismo probabile: trasmissione pianificata e fermata da una decodifica tardiva, `engine-native/src/tx.rs` `collect_events`), #72 (IC-707 su macOS), #74 (contest, risposta da dare ora che la 0.11.274 e' uscita). Cartella locale pulita: solo `main`.
 
 ## Stato al 2026-11-15 (0.11.273 pubblicata 2026-11-15T21:53:39Z)
 
