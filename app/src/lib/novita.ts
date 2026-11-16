@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.279',
+    released: '2026-11-16T21:00:00Z',
+    kind: 'new',
+    title: [
+      'Nome, QTH e locatore da soli da QRZ.com o HamQTH',
+      'Name, QTH and locator from QRZ.com or HamQTH by themselves',
+      'Name, QTH und Locator von selbst aus QRZ.com oder HamQTH',
+      'Nom, QTH et locator tout seuls depuis QRZ.com ou HamQTH',
+      'Nombre, QTH y locator solos desde QRZ.com o HamQTH',
+      'Nome, QTH e locator sozinhos a partir do QRZ.com ou HamQTH',
+    ],
+    text: [
+      'Se la ricerca su QRZ.com o HamQTH è configurata, nome, QTH e locatore del nominativo si compilano da soli nella riga SSB e nel pannello QSO di CW, RTTY e PSK. Il testo scritto a mano non viene mai sovrascritto; cambiando nominativo, i valori automatici vengono sostituiti o svuotati.',
+      'If the QRZ.com or HamQTH lookup is set up, the name, QTH and locator of the callsign fill in by themselves in the SSB entry row and in the QSO panel of CW, RTTY and PSK. Text you typed by hand is never overwritten; when you change callsign, the automatic values are replaced or cleared.',
+      'Ist die Suche bei QRZ.com oder HamQTH eingerichtet, werden Name, QTH und Locator des Rufzeichens in der SSB-Eingabezeile und im QSO-Feld von CW, RTTY und PSK von selbst eingetragen. Von Hand geschriebener Text wird nie überschrieben; wenn du das Rufzeichen änderst, werden die automatischen Werte ersetzt oder geleert.',
+      'Si la recherche sur QRZ.com ou HamQTH est configurée, le nom, le QTH et le locator de l’indicatif se remplissent seuls dans la ligne de saisie SSB et dans le panneau QSO de CW, RTTY et PSK. Le texte écrit à la main n’est jamais remplacé ; quand tu changes d’indicatif, les valeurs automatiques sont remplacées ou effacées.',
+      'Si la búsqueda en QRZ.com o HamQTH está configurada, el nombre, el QTH y el locator del indicativo se rellenan solos en la fila de introducción SSB y en el panel QSO de CW, RTTY y PSK. El texto escrito a mano nunca se sobrescribe; al cambiar de indicativo, los valores automáticos se sustituyen o se vacían.',
+      'Se a pesquisa no QRZ.com ou HamQTH estiver configurada, o nome, o QTH e o locator do indicativo preenchem-se sozinhos na linha de introdução SSB e no painel QSO de CW, RTTY e PSK. O texto escrito à mão nunca é substituído; ao mudar de indicativo, os valores automáticos são substituídos ou limpos.',
+    ],
+  },
+  {
     version: '0.11.278',
     released: '2026-11-16T18:32:24Z',
     kind: 'new',
@@ -847,28 +868,6 @@ export const NOVITA: readonly Novita[] = [
       'Aurora note chaque commande de split qu’il envoie et avertit quand la radio passe en split à cause d’un autre programme ou d’elle-même. Le Doppler des satellites ne pilote la radio qu’avec la page Satellites ouverte et coupe le split en fin de passage. Plus de faux rapports de blocage avec la fenêtre en arrière-plan. La capture de l’échange ne prend plus ton propre numéro.',
       'Aurora registra cada comando de split que envía y avisa cuando la radio entra en split por otro programa o por sí misma. El Doppler de los satélites mueve la radio solo con la página Satélites abierta y apaga el split al final del paso. Ya no hay falsos informes de bloqueo con la ventana en segundo plano. La captura del intercambio ya no toma tu propio número.',
       'A Aurora regista cada comando de split que envia e avisa quando o rádio entra em split por outro programa ou por si próprio. O Doppler dos satélites move o rádio só com a página Satélites aberta e desliga o split no fim da passagem. Acabaram os falsos relatórios de bloqueio com a janela em segundo plano. A captura da troca já não apanha o teu próprio número.',
-    ],
-  },
-  {
-    version: '0.11.257',
-    released: '2026-11-14T18:09:51Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Menu Contest con 135 contest, macro che ripartono da capo',
-      'Contest menu with 135 contests, macros that restart',
-      'Contest-Menü mit 135 Contests, Makros starten neu',
-      'Menu Contest avec 135 concours, macros qui repartent du début',
-      'Menú Contest con 135 concursos, macros que vuelven a empezar',
-      'Menu Contest com 135 concursos, macros que recomeçam',
-    ],
-    text: [
-      'Nei modi testuali Vista › Menu Contest: elenco di 135 contest pronti (file .contest modificabili, con macro e domini), un contest attivo che regola doppi, numero progressivo, macro e cattura dello scambio. Ripremendo un tasto macro mentre trasmette, il testo non ancora uscito si cancella e la macro riparte da capo, senza staccare il PTT e senza limiti (prima la seconda pressione non trasmetteva niente). Ogni pulsante mostra il suo tasto nell’angolo (F1, C-F1, S-F1...). Tasto destro nella finestra di trasmissione: Pulisci tutto, Taglia, Copia, Incolla.',
-      'In the text modes View › Contest menu: a list of 135 ready contests (editable .contest files with macros and domains), one active contest drives dupes, serial number, macros and exchange capture. Pressing a macro key again while transmitting erases the text not yet sent and restarts the macro from the beginning, without dropping PTT and with no limit (before, the second press sent nothing). Each button shows its key in the corner (F1, C-F1, S-F1...). Right-click in the transmit window: Clear all, Cut, Copy, Paste.',
-      'In den Textmodi Ansicht › Contest-Menü: Liste mit 135 fertigen Contests (bearbeitbare .contest-Dateien mit Makros und Domains), ein aktiver Contest steuert Doppel, laufende Nummer, Makros und Austausch-Erfassung. Wird eine Makrotaste während des Sendens erneut gedrückt, wird der noch nicht gesendete Text gelöscht und das Makro beginnt von vorn, ohne PTT-Unterbrechung und ohne Grenze (vorher sendete der zweite Druck nichts). Jede Taste zeigt ihre F-Taste in der Ecke (F1, C-F1, S-F1...). Rechtsklick im Sendefenster: Alles löschen, Ausschneiden, Kopieren, Einfügen.',
-      'Dans les modes texte Affichage › menu Contest : liste de 135 concours prêts (fichiers .contest modifiables, avec macros et domaines), un concours actif règle doublons, numéro de série, macros et capture de l’échange. Appuyer de nouveau sur une touche de macro pendant l’émission efface le texte pas encore parti et relance la macro depuis le début, sans couper le PTT et sans limite (avant, le second appui n’émettait rien). Chaque bouton montre sa touche dans le coin (F1, C-F1, S-F1...). Clic droit dans la fenêtre d’émission : Tout effacer, Couper, Copier, Coller.',
-      'En los modos de texto Vista › menú Contest: lista de 135 concursos listos (archivos .contest editables, con macros y dominios), un concurso activo regula duplicados, número de serie, macros y captura del intercambio. Volver a pulsar una tecla de macro mientras se transmite borra el texto aún no enviado y la macro empieza de nuevo, sin soltar el PTT y sin límite (antes, la segunda pulsación no transmitía nada). Cada botón muestra su tecla en la esquina (F1, C-F1, S-F1...). Clic derecho en la ventana de transmisión: Borrar todo, Cortar, Copiar, Pegar.',
-      'Nos modos de texto Ver › menu Contest: lista de 135 concursos prontos (ficheiros .contest editáveis, com macros e domínios), um concurso ativo regula duplicados, número de série, macros e captura da troca. Voltar a premir uma tecla de macro durante a transmissão apaga o texto ainda não enviado e a macro recomeça do início, sem largar o PTT e sem limite (antes, a segunda pressão não transmitia nada). Cada botão mostra a sua tecla no canto (F1, C-F1, S-F1...). Botão direito na janela de transmissão: Limpar tudo, Cortar, Copiar, Colar.',
     ],
   },
 ];

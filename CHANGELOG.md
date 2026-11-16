@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.279 - 2026-11-16
+
+- Nome, QTH e locatore del nominativo si compilano da soli da QRZ.com o HamQTH (se la ricerca e' configurata in Impostazioni › Servizi in linea) nella riga di inserimento SSB e nel pannello QSO di CW, RTTY e PSK; il testo scritto a mano non viene mai sovrascritto, cambiando nominativo i valori automatici vengono sostituiti o svuotati.
+- Guida Logger32: nella sezione «Se non va» una voce sul server UDP primario (una sola voce sulla porta 2237, niente doppioni in Integrazioni) e sul controllo «Block callsigns worked before» della mappa.
+
 ## 0.11.278 - 2026-11-16
 
 - DX Cluster: la riga DXpedition gialla ha tutti i testi interni scuri e leggibili (prima paese, commenti e ora erano chiari sul giallo); paese e commenti delle altre righe nel colore pieno.
