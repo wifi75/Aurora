@@ -5,6 +5,7 @@ Stato al 2026-11-16, versione 0.11.274 pubblicata (modo SSB nei modi testuali pe
 
 ## Decisioni del 2026-11-16
 - **SSB nei modi testuali** (scelta del proprietario «solo log e contest»): `DigiMode::Ssb` senza ricevitore (`Demod::Off`) e senza testo trasmesso (`DigiError::NoTextMode`); niente voice keyer e niente cambio del modo della radio via CAT (come per gli altri modi testuali). Il punteggio dei contest riconosceva gia' SSB come fonia.
+- **Finestrina dell'aggiornamento** (scelta del proprietario, soluzione 1 di 5 con notifica): la copia di aiuto `aurora-aggiorna-*.exe` apre una finestra Win32 disegnata a mano (`desktop/src-tauri/src/update_window.rs`, sempre davanti) con i passi chiusura/installazione/riapertura; a riapertura riuscita lascia `%APPDATA%\Aurora\aggiornamento-riuscito` e Aurora mostra l'avviso «Aurora aggiornata». Testi in `agent.rs` (`u_*`, 6 lingue). La finestra la mostra la versione gia' installata: si vede dall'aggiornamento successivo a quello che la porta. Prova a vista: `cargo test --lib update_window -- --ignored`.
 - **Pulizia del 2026-11-16**: in locale solo `main`; cancellati tutti i rami di prova e `worktree-agent-*`, rimosse le copie `Aurora-fix-remoto` e `Aurora-rel256`. Il riferimento e' il repository su GitHub.
 
 ## Decisioni del 2026-11-13/14
