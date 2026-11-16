@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.278 (in pubblicazione 2026-11-16)
+## Nella 0.11.278 (pubblicata 2026-11-16T18:32:24Z)
 
 Contest in SSB: il log del contest riparte da zero (solo QSO della gara, `inSet` in `DigiPage`, attivazione in `aurora.ssb.contest.since.<id>`, «Mostra tutto il log» / «Solo il contest»), doppi e moltiplicatori dentro la gara, scheda Statistiche per contest (`ContestStatsCard`), QSO precedenti per banda, suggerimento della zona CQ dal nominativo (`lib/contestEntry.ts`), date di inizio e fine validate con proposte per CQ WW DX, CQ WPX e JIDX (`windowProposals` in `lib/textContest.ts`), JIDX CW e SSB corretti (lo scambio inviato resta vuoto: lo imposta l'utente). Il log si aggiorna subito dopo ogni QSO (`invalidateQueries(['log4om'])`). DX Cluster: riga gialla delle DXpedition con testi scuri. **Provato a schermo** con il JIDX SSB: log da zero, numero QSO, suggerimento CQ, QSO precedenti. **Non provato:** segno DUPE dal vivo (il core scarta un QSO identico nello stesso minuto), statistiche con moltiplicatori, tema chiaro, 1366 px, Cabrillo. **Incidente:** per errore e' stato fatto `git checkout` di `DigiPage.tsx` con modifiche non committate; sono state rifatte dagli aiutanti (su file con modifiche non committate non si usano `git checkout`, `restore` ne' `stash`).
 
