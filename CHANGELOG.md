@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Antivirus: i rapporti dicono quale antivirus e' installato; se dopo un aggiornamento o all'avvio mancano file del programma (quarantena dell'antivirus) parte un rapporto dell'area «antivirus», contato per antivirus sul servizio dei rapporti.
+
 - Satelliti: elenco unico dei prossimi passaggi di tutti i satelliti spuntati (24 o 48 ore, il primo in alto, clic per sceglierlo).
 - Rotore: spostamento minimo (di base 2°) e correzione dell'azimut per i satelliti; nuovo collegamento a PSTRotator via UDP (solo invio dei comandi, la posizione non si legge).
 
