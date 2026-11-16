@@ -2343,6 +2343,16 @@ export async function getSatPasses(norad: number, hours: number, minEl: number):
   return ((await (await request(`/sat/passes?norad=${norad}&hours=${hours}&min_el=${minEl}`)).json()) as { passes: SatPass[] }).passes;
 }
 
+/** Un passaggio con il satellite a cui appartiene (elenco unico di tutti i satelliti spuntati). */
+export interface SatPassAll extends SatPass {
+  norad: number;
+  name: string;
+}
+
+export async function getSatPassesAll(hours: number, minEl: number): Promise<SatPassAll[]> {
+  return ((await (await request(`/sat/passes-all?hours=${hours}&min_el=${minEl}`)).json()) as { passes: SatPassAll[] }).passes;
+}
+
 export async function getSatTrack(norad: number, minutes: number): Promise<[number, number][]> {
   return ((await (await request(`/sat/track?norad=${norad}&minutes=${minutes}`)).json()) as { points: [number, number][] }).points;
 }

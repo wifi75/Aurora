@@ -84,6 +84,22 @@ pub(crate) async fn sat_passes(State(state): State<AppState>, _: Authed, Query(q
 }
 
 #[derive(Deserialize)]
+pub(crate) struct PassAllQuery {
+    #[serde(default)]
+    hours: Option<f64>,
+    #[serde(default)]
+    min_el: Option<f64>,
+}
+
+/// I prossimi passaggi di tutti i satelliti spuntati in un elenco solo, in ordine di inizio.
+#[utoipa::path(get, path = "/api/v1/sat/passes-all", responses((status = 200, description = "`{passes: [{norad, name, aos_unix, los_unix, max_el_deg, max_el_unix, aos_az_deg, los_az_deg, max_az_deg, duration_s}]}`")))]
+pub(crate) async fn sat_passes_all(State(state): State<AppState>, _: Authed, Query(q): Query<PassAllQuery>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let passes = blocking(move || svc.passes_all(q.hours.unwrap_or(24.0), q.min_el.unwrap_or(0.0))).await?;
+    Ok(Json(json!({ "passes": passes })))
+}
+
+#[derive(Deserialize)]
 pub(crate) struct TrackQuery {
     norad: u64,
     #[serde(default)]

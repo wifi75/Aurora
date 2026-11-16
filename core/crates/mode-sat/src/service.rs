@@ -313,6 +313,24 @@ impl SatService {
         }
     }
 
+    /// I prossimi passaggi di tutti i satelliti spuntati, in ordine di inizio, con elevazione massima almeno `min_max_el`.
+    pub fn passes_all(&self, hours: f64, min_max_el: f64) -> Vec<SatPass> {
+        let Some(o) = self.observer() else { return Vec::new() };
+        let t = now_unix();
+        let hours = hours.clamp(1.0, 72.0);
+        let per_sat = self
+            .settings()
+            .tracked
+            .iter()
+            .filter_map(|&n| {
+                let s = self.sat(n)?;
+                let list = orbit::passes(&s, &o, t, hours, min_max_el);
+                Some((n, s.name.clone(), list))
+            })
+            .collect();
+        merge_passes(per_sat, min_max_el)
+    }
+
     /// La traccia a terra di un satellite: da adesso, per `minutes` minuti.
     pub fn track(&self, norad: u64, minutes: f64) -> Vec<(f64, f64)> {
         self.sat(norad).map(|s| orbit::ground_track(&s, now_unix() - minutes * 30.0, minutes, 30.0)).unwrap_or_default()
@@ -389,6 +407,25 @@ pub struct SatDetails {
     pub revs_per_day: f64,
     pub period_min: f64,
     pub epoch_unix: f64,
+}
+
+/// Un passaggio con il satellite a cui appartiene (per l'elenco unico).
+#[derive(Clone, Debug, Serialize)]
+pub struct SatPass {
+    pub norad: u64,
+    pub name: String,
+    #[serde(flatten)]
+    pub pass: Pass,
+}
+
+/// Unisce i passaggi dei singoli satelliti in un elenco solo: tiene quelli con elevazione massima almeno `min_max_el`, in ordine di inizio.
+pub fn merge_passes(per_sat: Vec<(u64, String, Vec<Pass>)>, min_max_el: f64) -> Vec<SatPass> {
+    let mut out: Vec<SatPass> = per_sat
+        .into_iter()
+        .flat_map(|(norad, name, list)| list.into_iter().filter(move |p| p.max_el_deg >= min_max_el).map(move |pass| SatPass { norad, name: name.clone(), pass }))
+        .collect();
+    out.sort_by(|a, b| a.pass.aos_unix.total_cmp(&b.pass.aos_unix));
+    out
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -737,6 +774,26 @@ mod tests {
         assert!(SatSettings::default().validate().is_ok());
         assert!(SatSettings { min_el_deg: 90.0, ..SatSettings::default() }.validate().is_err());
         assert!(SatSettings { map: "../x.png".into(), ..SatSettings::default() }.validate().is_err());
+    }
+
+    fn pass_at(aos: f64, max_el: f64) -> Pass {
+        Pass { aos_unix: aos, los_unix: aos + 600.0, max_el_deg: max_el, max_el_unix: aos + 300.0, aos_az_deg: 10.0, los_az_deg: 200.0, max_az_deg: 100.0, duration_s: 600.0 }
+    }
+
+    #[test]
+    fn i_passaggi_di_tutti_si_ordinano_per_inizio() {
+        let v = merge_passes(vec![(1, "A".into(), vec![pass_at(300.0, 20.0), pass_at(900.0, 30.0)]), (2, "B".into(), vec![pass_at(100.0, 40.0), pass_at(500.0, 50.0)])], 0.0);
+        let order: Vec<(u64, f64)> = v.iter().map(|p| (p.norad, p.pass.aos_unix)).collect();
+        assert_eq!(order, vec![(2, 100.0), (1, 300.0), (2, 500.0), (1, 900.0)]);
+        assert_eq!(v[0].name, "B");
+    }
+
+    #[test]
+    fn i_passaggi_di_tutti_si_filtrano_per_elevazione() {
+        let v = merge_passes(vec![(1, "A".into(), vec![pass_at(300.0, 5.0), pass_at(900.0, 30.0)]), (2, "B".into(), vec![pass_at(100.0, 10.0)])], 10.0);
+        let order: Vec<u64> = v.iter().map(|p| p.norad).collect();
+        assert_eq!(order, vec![2, 1]);
+        assert!(merge_passes(Vec::new(), 0.0).is_empty());
     }
 
     #[test]

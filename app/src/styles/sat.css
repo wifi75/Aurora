@@ -98,3 +98,6 @@
 .sat-set-cats button.on { border-color: var(--border); background: rgba(44, 245, 164, 0.12); font-weight: 600; }
 .sat-set-pane { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
 @media (max-width: 40rem) { .sat-set-body { grid-template-columns: minmax(0, 1fr); } .sat-set-cats { flex-direction: row; flex-wrap: wrap; } }
+.sat-table tr.sat-row-pick { cursor: pointer; }
+.sat-table tr.sat-row-pick:hover td { background: color-mix(in srgb, var(--accent, #4aa3ff) 14%, transparent); }
+.sat-table tr.sat-row-pick.on:hover td { background: color-mix(in srgb, #3ddc84 28%, transparent); }

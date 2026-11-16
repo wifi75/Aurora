@@ -12,4 +12,4 @@ pub mod tle;
 
 pub use catalog::{SatInfo, Transponder};
 pub use orbit::{Look, Observer, Pass, Sat, maidenhead_to_latlon};
-pub use service::{DopplerPlan, Now, Position, SatRadio, SatRotator, SatService, SatSettings};
+pub use service::{DopplerPlan, Now, Position, SatPass, SatRadio, SatRotator, SatService, SatSettings};

@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '../components/Icon';
 import { useMemo, useRef, useState } from 'react';
-import { getSat, getSatPasses, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, satUploadMap, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
+import { getSat, getSatPasses, getSatPassesAll, getSatPositions, getSatTrack, putSat, satMapUrl, satRefreshTle, satUploadMap, type SatInfo, type SatSettings, type SatSnapshot } from '../api/client';
 import { SatMap } from '../components/sat/SatMap';
 import { SatRadar } from '../components/sat/SatRadar';
 import { openSettingsWindow } from '../lib/settingsWindow';
@@ -31,14 +31,17 @@ export function SatPage() {
   const selected = data?.settings.selected ?? null;
   const [hours, setHours] = useState(24);
   const [passMinEl, setPassMinEl] = useState(5);
+  const [allHours, setAllHours] = useState(24);
   const positions = useQuery({ queryKey: ['sat-positions'], queryFn: getSatPositions, retry: false, refetchInterval: 2000, enabled: !!data });
   const track = useQuery({ queryKey: ['sat-track', selected], queryFn: () => getSatTrack(selected ?? 0, TRACK_MINUTES), retry: false, refetchInterval: 60_000, enabled: selected !== null && !!data });
   const passes = useQuery({ queryKey: ['sat-passes', selected, hours, passMinEl], queryFn: () => getSatPasses(selected ?? 0, hours, passMinEl), retry: false, refetchInterval: 60_000, enabled: selected !== null && !!data?.observer });
 
+  const passesAll = useQuery({ queryKey: ['sat-passes-all', allHours, passMinEl, data?.settings.tracked.join(',')], queryFn: () => getSatPassesAll(allHours, passMinEl), retry: false, refetchInterval: 60_000, enabled: !!data?.observer });
+
   return (
     <div className="sat-page">
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
-      {data ? <SatBody snap={data} positions={positions.data ?? []} track={track.data ?? []} passes={passes.data ?? []} hours={hours} setHours={setHours} passMinEl={passMinEl} setPassMinEl={setPassMinEl} onChanged={() => void client.invalidateQueries({ queryKey: ['sat'] })} /> : null}
+      {data ? <SatBody snap={data} positions={positions.data ?? []} track={track.data ?? []} passes={passes.data ?? []} passesAll={passesAll.data ?? []} allHours={allHours} setAllHours={setAllHours} hours={hours} setHours={setHours} passMinEl={passMinEl} setPassMinEl={setPassMinEl} onChanged={() => void client.invalidateQueries({ queryKey: ['sat'] })} /> : null}
     </div>
   );
 }
@@ -48,6 +51,9 @@ interface BodyProps {
   positions: Awaited<ReturnType<typeof getSatPositions>>;
   track: [number, number][];
   passes: Awaited<ReturnType<typeof getSatPasses>>;
+  passesAll: Awaited<ReturnType<typeof getSatPassesAll>>;
+  allHours: number;
+  setAllHours(h: number): void;
   hours: number;
   setHours(h: number): void;
   passMinEl: number;
@@ -55,7 +61,7 @@ interface BodyProps {
   onChanged(): void;
 }
 
-function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, setPassMinEl, onChanged }: BodyProps) {
+function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHours, hours, setHours, passMinEl, setPassMinEl, onChanged }: BodyProps) {
   const t = useT();
   const client = useQueryClient();
   const s = snap.settings;
@@ -230,6 +236,66 @@ function SatBody({ snap, positions, track, passes, hours, setHours, passMinEl, s
                 </tbody>
               </table>
               {passes.length === 0 ? <p className="sat-muted">{t('sat.pass.empty')}</p> : null}
+            </div>
+          </div>
+
+          <div className="sat-panel">
+            <div className="sat-passhead">
+              <h2>{t('sat.all.title')}</h2>
+              <label>
+                <span>{t('sat.pass.hours')}</span>
+                <select value={allHours} onChange={(e) => setAllHours(Number(e.target.value))}>
+                  {[24, 48].map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="sat-muted">{t('sat.pass.minEl')}: {passMinEl}°</span>
+            </div>
+            <div className="sat-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t('sat.all.sat')}</th>
+                    <th>{t('sat.all.utc')}</th>
+                    <th>{t('sat.all.local')}</th>
+                    <th>{t('sat.all.in')}</th>
+                    <th>{t('sat.pass.dur')}</th>
+                    <th>{t('sat.pass.max')}</th>
+                    <th>{t('sat.pass.az')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {passesAll.map((p) => {
+                    const running = p.aos_unix <= now.time_unix && p.los_unix > now.time_unix;
+                    const utc = clockOf(p.aos_unix);
+                    return (
+                      <tr key={`${p.norad}-${p.aos_unix}`} className={`sat-row-pick${running ? ' on' : ''}`} onClick={() => save({ selected: p.norad, transponder: 0, down_hz: null })} title={t('sat.all.pick')}>
+                        <td>
+                          <b>{p.name}</b>
+                        </td>
+                        <td>
+                          {utc.date.slice(5)} {utc.time.slice(0, 5)}
+                        </td>
+                        <td>
+                          {localDay(p.aos_unix)} <b>{localTime(p.aos_unix)}</b>
+                        </td>
+                        <td>{running ? t('sat.pass.now') : countdown(p.aos_unix - now.time_unix)}</td>
+                        <td>{mmss(p.duration_s)}</td>
+                        <td>
+                          <b>{Math.round(p.max_el_deg)}°</b>
+                        </td>
+                        <td>
+                          {Math.round(p.aos_az_deg)}° {compass(p.aos_az_deg)} → {Math.round(p.los_az_deg)}° {compass(p.los_az_deg)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {passesAll.length === 0 ? <p className="sat-muted">{t('sat.pass.empty')}</p> : null}
             </div>
           </div>
 

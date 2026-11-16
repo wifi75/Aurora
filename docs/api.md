@@ -122,6 +122,7 @@ Quelli che fanno trasmettere richiedono la trasmissione aperta (`403 tx_disabled
 | `PUT /sat` | Salva `satelliti.json`: `{selected (NORAD), tracked [NORAD], transponder, down_hz (null = centro), tx_offset_hz, doppler_on, rotor_on, rotor_preposition, min_el_deg (0-60), map}`. Risponde come `GET`; `400 bad_value` |
 | `POST /sat/tle/refresh` | Scarica i TLE da CelesTrak (gruppi `amateur` e `stations`); `{count}`; `502 tle_failed`. Si scaricano da soli (ogni `tle_update_hours`, di base 24) solo mentre il servizio lavora (pagina aperta, Doppler o rotore accesi), non all'avvio |
 | `GET /sat/passes?norad=&hours=&min_el=` | I passaggi: `{passes: [{aos_unix, los_unix, max_el_deg, max_el_unix, aos_az_deg, los_az_deg, max_az_deg, duration_s}]}` |
+| `GET /sat/passes-all?hours=&min_el=` | I passaggi di tutti i satelliti spuntati in un elenco, per ora di inizio: `{passes: [{norad, name, aos_unix, ...}]}` |
 | `GET /sat/track?norad=&minutes=` | La traccia a terra, un punto ogni 30 s, meta' passata e meta' futura: `{points: [[lat, lon], ...]}` |
 | `GET /sat/positions` | I satelliti spuntati e quello scelto adesso: `{positions: [{norad, name, lat_deg, lon_deg, alt_km, az_deg, el_deg, footprint_km, visible}]}` |
 | `GET /sat/maps` · `GET /sat/maps/{name}` · `POST /sat/maps?name=` | Le mappe del mondo (immagini equirettangolari jpg, png, bmp, webp nella cartella `maps` dei dati, al massimo 20 MB); il caricamento solo dal PC stesso (`403 local_only`) |

@@ -184,6 +184,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/sat", get(crate::sat_api::sat_get).put(crate::sat_api::sat_put))
         .route("/api/v1/sat/tle/refresh", post(crate::sat_api::sat_refresh))
         .route("/api/v1/sat/passes", get(crate::sat_api::sat_passes))
+        .route("/api/v1/sat/passes-all", get(crate::sat_api::sat_passes_all))
         .route("/api/v1/sat/track", get(crate::sat_api::sat_track))
         .route("/api/v1/sat/positions", get(crate::sat_api::sat_positions))
         .route("/api/v1/sat/maps", get(crate::sat_api::sat_maps).post(crate::sat_api::sat_map_upload).layer(axum::extract::DefaultBodyLimit::max(21 * 1024 * 1024)))
