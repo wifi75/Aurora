@@ -4875,8 +4875,8 @@ qtc.menu,QTC…,QTC…
 ssbc.logMark,DUPE / Mult,DUPE / Mult
 ssbc.enter,Enter QSO,QSO invoeren
 ssbc.call,Callsign,Roepnaam
-ssbc.rsts,RST sent,RST verzonden
-ssbc.rstr,RST rcvd,RST ontvangen
+ssbc.rsts,RST sent,RST verz.
+ssbc.rstr,RST rcvd,RST ont.
 ssbc.dupe,DUPE: already worked,DUPE: al gewerkt
 ssbc.dupeAt,DUPE: already worked at {time} UTC on {band},DUPE: al gewerkt om {time} UTC op {band}
 ssbc.newMult,New multiplier: {mult},Nieuwe multiplier: {mult}
@@ -7963,8 +7963,8 @@ ssbc.name,Name,Naam
 ssbc.qth,QTH,QTH
 ssbc.gripTip,Drag to change the column widths (double-click: restore them),Sleep om de kolombreedte te wijzigen (dubbelklik: herstellen)
 ssbc.qsoNr,QSO no.,QSO-nr.
-ssbc.serialSent,Serial sent,Serienr. verzonden
-ssbc.serialRcvd,Serial rcvd,Serienr. ontvangen
+ssbc.serialSent,Serial sent,Serienr. verz.
+ssbc.serialRcvd,Serial rcvd,Serienr. ont.
 ssbc.enterHint,Enter = log it,Enter = loggen
 rot.presetTip,"Direction presets (0, 45, 90…): show or hide","Richtingpresets (0, 45, 90…): tonen of verbergen"
 rot.dotOff,Rotor off or not connected: set it up in Settings > Rotator (gear),Rotor uit of niet verbonden: stel het in via Instellingen > Rotor (tandwiel)

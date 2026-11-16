@@ -184,3 +184,7 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 .ssbc-field--name { min-width: 88px; }
 .ssbc-field--qth { min-width: 118px; }
 .ssbc-field--rst { min-width: 48px; }
+
+/* etichette dei campi leggibili: 0.7rem, testo breve, mai tagliate */
+.ssbc-field { font-size: 0.7rem; letter-spacing: 0.01em; }
+.ssbc-field > :first-child:not(input) { overflow: visible; text-overflow: clip; }
