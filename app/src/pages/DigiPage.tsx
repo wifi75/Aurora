@@ -73,7 +73,7 @@ import '../styles/digi-log-corta.css';
 import '../styles/digi-band.css';
 
 const VIEWS_KEY = 'aurora.digi.viste';
-const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
+const MODE_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB' };
 /** Secondi fra un CQ automatico e il successivo. */
 const AUTOCQ_DELAY_S = 8;
 const ACQ_DELAY_KEY = 'aurora-digi-acq-delay';
@@ -150,6 +150,10 @@ function modeFromName(name: string): DigiSettings['mode'] | null {
     case 'BPSK63': return 'psk63';
     case 'RTTY': return 'rtty';
     case 'CW': return 'cw';
+    case 'SSB':
+    case 'USB':
+    case 'LSB':
+    case 'PHONE': return 'ssb';
     default: return null;
   }
 }
@@ -707,9 +711,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const caps = useRef(false);
   caps.current = views.capsOnly;
 
-  // «Use default RST»: dopo ogni QSO (azzerato o salvato) i rapporti tornano 599
+  // «Use default RST»: dopo ogni QSO (azzerato o salvato) i rapporti tornano 599 (59 in fonia)
   const resetRst = () => {
-    if (views.defaultRst) setSavedField({ rsts: '599', rstr: '599' });
+    const rst = live.current.snap.settings.mode === 'ssb' ? '59' : '599';
+    if (views.defaultRst) setSavedField({ rsts: rst, rstr: rst });
   };
 
   // il testo parte e resta nella finestra di trasmissione, dove si vede a che punto e' arrivato (l'eco nella ricezione arriva dal motore)
@@ -732,7 +737,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         },
         (e: unknown) => {
           const code = e instanceof ApiError ? e.code : '';
-          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
           return false;
         },
       );
@@ -764,7 +769,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         },
         (e: unknown) => {
           const code = e instanceof ApiError ? e.code : '';
-          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+          setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
           return { ok: false, latest: macroSeq.current.isLatest(r.gen) };
         },
       );
@@ -789,7 +794,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       },
       (e: unknown) => {
         const code = e instanceof ApiError ? e.code : '';
-        setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : t('digi.tx.error'));
+        setProblem(code === 'tx_disabled' ? t('digi.tx.disabled') : code === 'busy' ? t('digi.tx.busy') : code === 'no_transmitter' ? t('digi.tx.notReady') : code === 'no_text_mode' ? t('digi.tx.ssb') : t('digi.tx.error'));
       },
     );
   };
@@ -1150,7 +1155,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       const l = live.current;
       const cur = { CALL: l.qso.call, RSTS: l.saved.rsts, RSTR: l.saved.rstr, NRS: l.qso.nrs ?? '', NRR: l.qso.nrr ?? '' }[f];
       if (cur.trim() !== '') continue;
-      const v = window.prompt(t('digi.run.ask', { field: f }), f === 'RSTS' ? '599' : f === 'NRS' ? '001' : '');
+      const v = window.prompt(t('digi.run.ask', { field: f }), f === 'RSTS' ? (l.snap.settings.mode === 'ssb' ? '59' : '599') : f === 'NRS' ? '001' : '');
       if (v === null) return;
       const value = v.trim();
       if (f === 'CALL') {
@@ -1823,17 +1828,19 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           />
         </div>
       ) : null}
-      {/* la radio si porta sulla frequenza scelta */}
-      <div className="digi-bandbar">
-        <FreqPicker
-          bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
-          dialHz={status?.dial_hz ?? 0}
-          mode={s.mode.toUpperCase()}
-          rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
-          locked={sending}
-          onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
-        />
-      </div>
+      {/* la radio si porta sulla frequenza scelta (non in SSB: il piano dei modi testuali non vale per la fonia) */}
+      {s.mode !== 'ssb' && (
+        <div className="digi-bandbar">
+          <FreqPicker
+            bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
+            dialHz={status?.dial_hz ?? 0}
+            mode={s.mode.toUpperCase()}
+            rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
+            locked={sending}
+            onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
+          />
+        </div>
+      )}
       {sending ? (
         <div className={`digi-txflag${views.flashTx ? ' digi-txflag--flash' : ''}`} role="status" aria-label="TX">
           TX
@@ -1934,7 +1941,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               progress={txLive.progress}
               sending={sending}
               label={t('digi.tx.title')}
-              placeholder={snap.tx.open ? t('digi.tx.openHint') : undefined}
+              placeholder={snap.tx.open ? t('digi.tx.openHint') : s.mode === 'ssb' ? t('digi.tx.ssb') : undefined}
               onText={txEdit}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx, true);
@@ -2162,6 +2169,7 @@ function passbandWidth(s: DigiSettings): number {
   if (s.mode === 'psk31') return 3 * 31.25;
   if (s.mode === 'psk63') return 3 * 62.5;
   if (s.mode === 'rtty') return s.rtty_shift_hz + 2 * s.rtty_baud;
+  if (s.mode === 'ssb') return 2400;
   return 80;
 }
 

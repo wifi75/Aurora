@@ -228,7 +228,7 @@ export function runCommand(tag: string, arg: string, d: MacroDeps): void {
     case 'LOCKRXTOGGLE': macroState.rxLocked = !macroState.rxLocked; return;
     case 'MODEMACROS': {
       const m = arg.trim().toLowerCase().replace(/\.mc$/, '').replace(/^bpsk/, 'psk');
-      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw'].includes(m) ? m : null);
+      d.setMacroMode(['psk31', 'psk63', 'rtty', 'cw', 'ssb'].includes(m) ? m : null);
       return;
     }
     case 'WORDMODE': macroState.wordMode = on(arg); txLiveOptions.wordMode = macroState.wordMode; return;

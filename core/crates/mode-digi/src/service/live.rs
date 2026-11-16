@@ -60,6 +60,7 @@ impl DigiService {
     /// Apre la trasmissione (levetta): si resta in trasmissione finche' non si chiude con [`DigiService::tx_close`]; `text` (anche
     /// vuoto) e' il testo gia' scritto. Con una trasmissione in corso la rende aperta e ci accoda il testo.
     pub fn tx_open(&self, text: &str) -> Result<TxStatus, DigiError> {
+        self.text_mode_or_err()?;
         if self.keyer_selected() {
             return self.keyer_session(text, true);
         }
@@ -124,6 +125,7 @@ impl DigiService {
         if text.trim().is_empty() {
             return Err(DigiError::Empty);
         }
+        self.text_mode_or_err()?;
         if self.keyer_selected() {
             return self.keyer_restart(text, open);
         }
@@ -591,5 +593,14 @@ mod tests {
         assert!(port.halted.load(Ordering::SeqCst));
         assert_eq!(svc.tx_unsend(1), 0);
         assert!(svc.tx_type("X").is_err());
+    }
+
+    #[test]
+    fn in_ssb_non_parte_nessun_testo() {
+        let (svc, port, _events, _dir) = service(DigiMode::Ssb);
+        assert_eq!(svc.transmit("CQ TEST").unwrap_err(), DigiError::NoTextMode);
+        assert_eq!(svc.tx_open("").unwrap_err(), DigiError::NoTextMode);
+        assert_eq!(svc.transmit_restart("CQ", false).unwrap_err(), DigiError::NoTextMode);
+        assert!(lock(&port.wave).is_empty(), "nessun audio verso la radio");
     }
 }

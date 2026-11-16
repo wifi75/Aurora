@@ -1728,6 +1728,7 @@ export const NL_UI: Record<string, string> = {
   "digi.title": "PSK en RTTY",
   "digi.tx.aborted": "Gestopt",
   "digi.tx.busy": "Zendt al.",
+  "digi.tx.ssb": "In SSB zendt Aurora geen tekst: spreek in de microfoon. Hier vul je roepnaam, rapport en uitwisseling in en sla je het QSO op.",
   "digi.tx.disabled": "Zenden is uitgeschakeld in de toegangsinstellingen.",
   "digi.tx.done": "Verzonden",
   "digi.tx.error": "Zending onderbroken",

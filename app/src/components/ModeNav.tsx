@@ -189,6 +189,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
     if (transmitting || route.name === 'digi' || route.name === 'sstv') return;
     void (async () => {
       const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
+      // in SSB la radio resta dov'e': il piano delle frequenze dei modi testuali non vale per la fonia
+      if (digi.settings.mode === 'ssb') return;
       await retuneForText(client, TEXT_MODES[digi.settings.mode] ?? 'PSK31');
     })().catch(() => toast(t('mode.retuneFail', { mode: 'PSK' }), 'error'));
   };

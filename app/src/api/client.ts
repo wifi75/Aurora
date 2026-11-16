@@ -1930,7 +1930,8 @@ export interface RttyProfile {
 }
 
 export interface DigiSettings {
-  mode: 'psk31' | 'psk63' | 'rtty' | 'cw';
+  /** `ssb`: fonia, senza decodifica ne' testo trasmesso (log e contest). */
+  mode: 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb';
   /** Velocita' della CW in parole al minuto. */
   cw_wpm: number;
   /** CW: la velocita' di trasmissione segue quella misurata in ricezione (interruttore «TX = RX»). */

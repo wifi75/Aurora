@@ -29,7 +29,7 @@ const box = (title: string, children: ReactNode) => (
   </Group>
 );
 
-const DIGI_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
+const DIGI_NAMES: Record<DigiSettings['mode'], string> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', ssb: 'SSB' };
 
 /** Le impostazioni di PSK, RTTY e CW lette dal motore, con il salvataggio di una modifica (subito, come nella pagina). */
 function useDigiSettings() {

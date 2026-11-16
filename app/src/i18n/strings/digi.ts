@@ -176,6 +176,14 @@ export const digiStrings = {
     'La transmisión no está lista: hace falta el motor propio de Aurora con la tarjeta de sonido y la radio conectadas.',
     'A transmissão não está pronta: é preciso o motor próprio do Aurora com a placa de som e o rádio ligados.',
   ],
+  'digi.tx.ssb': [
+    'In SSB Aurora non trasmette testo: parla al microfono. Qui scrivi nominativo, rapporto e scambio, e salvi il QSO.',
+    'In SSB Aurora does not transmit text: talk into the microphone. Here you enter call, report and exchange, and save the QSO.',
+    'In SSB sendet Aurora keinen Text: Sprich ins Mikrofon. Hier trägst du Rufzeichen, Rapport und Austausch ein und speicherst das QSO.',
+    'En SSB, Aurora n’émet pas de texte : parlez dans le micro. Ici vous saisissez l’indicatif, le report et l’échange, et enregistrez le QSO.',
+    'En SSB Aurora no transmite texto: habla al micrófono. Aquí escribes indicativo, reporte e intercambio, y guardas el QSO.',
+    'Em SSB o Aurora não transmite texto: fale ao microfone. Aqui escreve o indicativo, o relatório e a troca, e guarda o QSO.',
+  ],
   'digi.tx.busy': ['Sta già trasmettendo.', 'Already transmitting.', 'Es wird bereits gesendet.', 'Émission déjà en cours.', 'Ya está transmitiendo.', 'Já está a transmitir.'],
   'digi.tx.openHint': [
     'Trasmissione aperta: quello che scrivi parte subito. RX/TX o Pausa per tornare in ricezione a fine testo, Esc per fermare.',

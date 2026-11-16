@@ -169,6 +169,7 @@ pub fn default_passband(mode: crate::DigiMode, shift_hz: f32, rtty_baud: f32) ->
         crate::DigiMode::Psk63 => 3.0 * 62.5,
         crate::DigiMode::Rtty => shift_hz + 2.0 * rtty_baud,
         crate::DigiMode::Cw => 80.0,
+        crate::DigiMode::Ssb => 2400.0,
     }
 }
 

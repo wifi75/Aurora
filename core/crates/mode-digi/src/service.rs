@@ -108,10 +108,12 @@ pub enum DigiMode {
     Psk63,
     Rtty,
     Cw,
+    /// Fonia: niente decodifica e niente testo trasmesso; serve al log e ai contest (parla l'operatore al microfono).
+    Ssb,
 }
 
 impl DigiMode {
-    pub const ALL: [DigiMode; 4] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw];
+    pub const ALL: [DigiMode; 5] = [DigiMode::Psk31, DigiMode::Psk63, DigiMode::Rtty, DigiMode::Cw, DigiMode::Ssb];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -119,6 +121,7 @@ impl DigiMode {
             DigiMode::Psk63 => "psk63",
             DigiMode::Rtty => "rtty",
             DigiMode::Cw => "cw",
+            DigiMode::Ssb => "ssb",
         }
     }
 
@@ -128,6 +131,7 @@ impl DigiMode {
             DigiMode::Psk63 => "PSK63",
             DigiMode::Rtty => "RTTY",
             DigiMode::Cw => "CW",
+            DigiMode::Ssb => "SSB",
         }
     }
 
@@ -139,8 +143,13 @@ impl DigiMode {
         match self {
             DigiMode::Psk31 => Some(PskMode::Psk31),
             DigiMode::Psk63 => Some(PskMode::Psk63),
-            DigiMode::Rtty | DigiMode::Cw => None,
+            DigiMode::Rtty | DigiMode::Cw | DigiMode::Ssb => None,
         }
+    }
+
+    /// Il modo ha un ricevitore e un trasmettitore di testo (in SSB parla l'operatore).
+    pub fn is_text(self) -> bool {
+        self != DigiMode::Ssb
     }
 }
 
@@ -161,6 +170,8 @@ pub enum DigiError {
     Busy,
     NoTransmitter,
     Empty,
+    /// In SSB non si trasmette testo.
+    NoTextMode,
     Io(String),
     Tx(String),
 }
@@ -173,6 +184,7 @@ impl std::fmt::Display for DigiError {
             DigiError::Busy => write!(f, "trasmissione gia' in corso"),
             DigiError::NoTransmitter => write!(f, "nessuna catena di trasmissione"),
             DigiError::Empty => write!(f, "testo vuoto"),
+            DigiError::NoTextMode => write!(f, "in SSB non si trasmette testo: parla al microfono"),
             DigiError::Io(e) | DigiError::Tx(e) => write!(f, "{e}"),
         }
     }
@@ -188,6 +200,7 @@ impl DigiError {
             DigiError::Busy => "busy",
             DigiError::NoTransmitter => "no_transmitter",
             DigiError::Empty => "empty_text",
+            DigiError::NoTextMode => "no_text_mode",
             DigiError::Io(_) => "io",
             DigiError::Tx(_) => "tx_failed",
         }
@@ -584,6 +597,7 @@ impl DigiSettings {
             DigiMode::Psk63 => 30.0,
             DigiMode::Rtty => self.rtty_shift_hz / 2.0,
             DigiMode::Cw => 50.0,
+            DigiMode::Ssb => 0.0,
         }
     }
 
@@ -1183,6 +1197,7 @@ impl DigiService {
         if text.trim().is_empty() {
             return Err(DigiError::Empty);
         }
+        self.text_mode_or_err()?;
         if self.keyer_selected() {
             return self.keyer_session(text, false);
         }
@@ -1245,6 +1260,11 @@ impl DigiService {
             tracing::error!("modi testuali: controllo della trasmissione non avviato: {e}");
         }
         Ok(lock(&self.inner.tx).clone())
+    }
+
+    /// `NoTextMode` se il modo scelto non trasmette testo (SSB).
+    pub(crate) fn text_mode_or_err(&self) -> Result<(), DigiError> {
+        if self.settings().mode.is_text() { Ok(()) } else { Err(DigiError::NoTextMode) }
     }
 
     /// La frequenza audio di trasmissione adesso (per la portante di `<TUNE>`).
@@ -1318,10 +1338,15 @@ enum Demod {
     Cw(Box<CwDemodulator>),
     /// Il ricevitore veloce e il testo provvisorio cambiato nell'ultimo blocco, da mandare alla finestra.
     CwFast(Box<CwHybrid>, Option<String>),
+    /// SSB: nessuna decodifica, solo la frequenza scelta.
+    Off(f32),
 }
 
 impl Demod {
     fn new(s: &DigiSettings, lsb: bool) -> Demod {
+        if !s.mode.is_text() {
+            return Demod::Off(s.rx_freq_hz);
+        }
         if s.mode == DigiMode::Cw {
             let mut d = CwDemodulator::new(s.rx_freq_hz, s.cw_wpm);
             d.set_bandwidth(s.cw_bandwidth_hz);
@@ -1364,6 +1389,7 @@ impl Demod {
             Demod::Rtty(d) => d.frequency(),
             Demod::Cw(d) => d.frequency(),
             Demod::CwFast(h, _) => h.fine().frequency(),
+            Demod::Off(hz) => *hz,
         }
     }
 
@@ -1374,6 +1400,7 @@ impl Demod {
             Demod::Psk(d) => d.snr_db(),
             Demod::Cw(d) => Some(d.snr_db()),
             Demod::CwFast(h, _) => Some(h.fine().snr_db()),
+            Demod::Off(_) => None,
         }
     }
 
@@ -1383,7 +1410,7 @@ impl Demod {
             Demod::Psk(d) => (d.imd_db(), Some(d.metric()), None),
             Demod::Cw(d) => (None, None, Some(d.wpm())),
             Demod::CwFast(h, _) => (None, None, Some(h.fine().wpm())),
-            Demod::Rtty(_) => (None, None, None),
+            Demod::Rtty(_) | Demod::Off(_) => (None, None, None),
         }
     }
 
@@ -1394,6 +1421,7 @@ impl Demod {
             Demod::Rtty(d) => d.steer(hz),
             Demod::Cw(d) => d.steer(hz),
             Demod::CwFast(h, _) => h.steer(hz),
+            Demod::Off(f) => *f = hz,
         }
     }
 
@@ -1405,6 +1433,7 @@ impl Demod {
             Demod::Rtty(d) => (Some(d.snr_db()), (11.0, 6.0)),
             Demod::Cw(d) => (Some(d.snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
             Demod::CwFast(h, _) => (Some(h.fine().snr_db()), (cw::SQUELCH_DEFAULT_DB, cw::SQUELCH_DEFAULT_DB - 5.0)),
+            Demod::Off(_) => (None, (0.0, 0.0)),
         }
     }
 
@@ -1415,6 +1444,7 @@ impl Demod {
             Demod::Rtty(d) => d.signal(),
             Demod::Cw(d) => d.signal(),
             Demod::CwFast(h, _) => h.fine().signal(),
+            Demod::Off(_) => (-90.0, false),
         }
     }
 
@@ -1444,6 +1474,7 @@ impl Demod {
                 }
                 (out.fixed.iter().map(|s| char::from(s.ch)).collect(), Vec::new())
             }
+            Demod::Off(_) => (String::new(), Vec::new()),
         }
     }
 }
@@ -1683,6 +1714,13 @@ mod tests {
         assert_eq!(DigiMode::from_id("rtty"), Some(DigiMode::Rtty));
         assert_eq!(DigiMode::from_id("cw"), Some(DigiMode::Cw));
         assert_eq!(DigiMode::from_id("olivia"), None);
+        assert_eq!(DigiMode::from_id("SSB"), Some(DigiMode::Ssb));
+        assert!(!DigiMode::Ssb.is_text() && DigiMode::Cw.is_text());
+        let s = DigiSettings { mode: DigiMode::Ssb, rx_freq_hz: 1200.0, ..DigiSettings::default() };
+        let mut d = Demod::new(&s, false);
+        assert!(matches!(d, Demod::Off(_)));
+        assert_eq!(d.process(&[0.1; 1200]).0, "", "in SSB non si decodifica niente");
+        assert!((d.frequency() - 1200.0).abs() < f32::EPSILON);
     }
 
     #[test]
