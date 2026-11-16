@@ -153,6 +153,14 @@ Aurora is free and will stay free. If you find it useful and want to help its de
 
 A heartfelt thank you to everyone who has already donated: your support matters. Supporters who wish so are thanked in [SOSTENITORI.md](SOSTENITORI.md).
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org) (application submitted; until it is approved the Windows installer is not Authenticode-signed). Updates installed from inside Aurora are always verified with Aurora's own minisign key.
+
+- Committers and reviewers: [Tiziano Cassone (wifi75)](https://github.com/wifi75)
+- Approvers: [Tiziano Cassone (wifi75)](https://github.com/wifi75)
+- Privacy policy: [docs/privacy.md](docs/privacy.md) (in Italian). Aurora sends anonymous error reports and a daily activity signal to its own service on Cloudflare; both can be turned off in Settings › Access and support. Nothing else is sent unless the user enables a service (log upload, cluster, spots).
+
 ## License
 
 Aurora is free software, released under the **GNU General Public License version 3** (`GPL-3.0-only`: the own engine contains algorithms from JTDX and WSJT-X, released under GPL 3): full text in [`LICENSE`](LICENSE). Copyright (C) 2026 Tiziano Cassone (IU3WJQ). Third-party libraries and their notices are in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) and [`docs/licenze-terze-parti.md`](docs/licenze-terze-parti.md) (documentation in Italian).

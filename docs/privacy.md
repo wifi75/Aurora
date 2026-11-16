@@ -56,7 +56,7 @@ Impostazioni → Assistenza → «Rapporti degli errori».
   Errori uguali si raggruppano: al massimo un invio per errore ogni ora e 20 al giorno; senza rete aspettano in una coda sul PC.
 
 **Cosa contengono**: versione di Aurora e di Windows, motore, modello della radio, metodo di PTT, backend del CAT, nome della
-scheda audio, area del problema (CAT, PTT, audio, decodifica, UDP, servizi, associazione del telefono…), il messaggio d'errore ripulito, quante volte è
+scheda audio, nome dell'antivirus installato (letto da Sicurezza di Windows, dalla 0.11.276; serve a capire quali antivirus bloccano Aurora), area del problema (CAT, PTT, audio, decodifica, UDP, servizi, associazione del telefono…), il messaggio d'errore ripulito, quante volte è
 successo, il giorno e un identificativo casuale dell'installazione. Il pacchetto dopo un crash aggiunge il log del programma
 ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash. L'inizio del rapporto di testo del crash, già ripulito allo stesso modo, si salva anche nell'indice del servizio, per leggerlo senza aprire il pacchetto.
 
@@ -148,3 +148,7 @@ l'identificativo in Impostazioni → Assistenza si conta come un'installazione n
 
 «Prepara il pacchetto per l'assistenza» crea uno zip sul Desktop e non lo manda a nessuno: lo mandi tu, a chi vuoi. Quel
 pacchetto contiene nominativo, locatore e messaggi ricevuti (ma nessuna password).
+
+**File tolti dall'antivirus** (dalla 0.11.276): se dopo un aggiornamento o all'avvio mancano file del programma (per esempio
+`rigctld.exe` di Hamlib), Aurora manda un rapporto dell'area «antivirus» con i nomi dei file mancanti (senza percorsi), la versione e il
+nome dell'antivirus. Si spegne con gli errori automatici.
