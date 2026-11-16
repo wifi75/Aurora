@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Satelliti: elenco unico dei prossimi passaggi di tutti i satelliti spuntati (24 o 48 ore, il primo in alto, clic per sceglierlo).
+- Rotore: spostamento minimo (di base 2°) e correzione dell'azimut per i satelliti; nuovo collegamento a PSTRotator via UDP (solo invio dei comandi, la posizione non si legge).
+
 ## 0.11.275 - 2026-11-16
 
 - Rapporti: la chiusura di Aurora per l'aggiornamento (icona del vassoio tolta, `taskkill` che non la chiude) non manda piu' un falso pacchetto «crash».
