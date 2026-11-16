@@ -88,3 +88,16 @@ Dal 2026-11-07 i pacchetti hanno anche `riassunto` (l'inizio del file del crash,
 dall'indice senza scaricare lo zip. Su un database gia' creato: `ALTER TABLE pacchetti ADD COLUMN riassunto TEXT`.
 
 Il secondo comando riempie l'elenco con le installazioni gia' viste negli ultimi 90 giorni (il conteggio e' partito il 2026-11-04).
+
+## Antivirus (dal 2026-11-16, Aurora 0.11.276)
+
+Aurora manda il nome dell'antivirus del PC (letto dal Centro sicurezza di Windows) con ogni rapporto, con i pacchetti e con il segnale
+giornaliero `/v1/attivo`: la colonna `installazioni.antivirus` dice quali antivirus hanno le installazioni attive. Gli errori dell'area
+`antivirus` (file di Aurora tolti dall'antivirus dopo un aggiornamento, o mancanti all'avvio) si contano anche nella tabella
+`antivirus_errori`. `GET /v1/summary` restituisce `antivirus`: per ogni prodotto, quante installazioni hanno segnalato file tolti, quanti
+rapporti e quante installazioni attive lo usano (un PC con due prodotti conta per entrambi). Sul database gia' creato, PRIMA del deploy:
+
+```powershell
+npx wrangler d1 execute aurora-rapporti --remote --file=migrations/0003_antivirus.sql
+npx wrangler deploy
+```

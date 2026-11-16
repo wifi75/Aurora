@@ -55,7 +55,9 @@ CREATE TABLE IF NOT EXISTS installazioni (
   -- il computer (dalla 0.11.220): modello del processore, processori logici, memoria in GB; null per i client vecchi
   cpu TEXT,
   core INTEGER,
-  ram_gb INTEGER
+  ram_gb INTEGER,
+  -- l'antivirus (dalla 0.11.276): nome dei prodotti registrati in Windows, uniti da «, »; null per i client vecchi o se non si legge
+  antivirus TEXT
 );
 -- Conteggi di ogni giorno (per versione e sistema, senza identificativi), salvati prima che la pulizia tolga le righe di `attivi`.
 CREATE TABLE IF NOT EXISTS storico (
@@ -99,3 +101,17 @@ CREATE TABLE IF NOT EXISTS messaggi_visti (
 -- Database gia' creati prima della colonna persona (0.11.214):
 -- ALTER TABLE attivi ADD COLUMN persona TEXT;
 -- ALTER TABLE installazioni ADD COLUMN persona TEXT;
+
+-- Errori dell'area `antivirus` (file di Aurora tolti dall'antivirus, dalla 0.11.276): una riga per giorno, antivirus e installazione.
+CREATE TABLE IF NOT EXISTS antivirus_errori (
+  giorno TEXT NOT NULL,
+  antivirus TEXT NOT NULL,
+  installazione TEXT NOT NULL,
+  versione TEXT NOT NULL DEFAULT '',
+  rapporti INTEGER NOT NULL DEFAULT 0,
+  -- l'ultimo messaggio intero (quali file mancavano)
+  esempio TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (giorno, antivirus, installazione)
+);
+CREATE INDEX IF NOT EXISTS antivirus_errori_giorno ON antivirus_errori (giorno);
+-- Database gia' creati prima della 0.11.276: migrations/0003_antivirus.sql (va eseguita PRIMA del deploy del Worker che la usa).

@@ -3,13 +3,13 @@
  *
  * - POST /v1/report  rapporto breve JSON (livello 2), al massimo 32 KB
  * - POST /v1/bundle  pacchetto zip senza dati personali (livello 1 e scheda Assistenza), al massimo 10 MB
- * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema, computer (processore, core, memoria) e, facoltativo, il codice della persona
+ * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema, antivirus, computer (processore, core, memoria) e, facoltativo, il codice della persona
  *   (SHA-256 del nominativo fatto sul PC, salvato solo dopo un HMAC con PERSONA_SEGRETO); una riga al giorno
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
  * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
  * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
- * - GET  /v1/summary errori piu' frequenti per versione (protetto da ADMIN_TOKEN, un segreto di Wrangler)
+ * - GET  /v1/summary errori piu' frequenti per versione e, in `antivirus`, per antivirus: errori dell'area `antivirus` e installazioni attive (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
  *
  * L'indirizzo IP del mittente si usa solo come chiave del limite di richieste: non si registra e non si salva da nessuna parte.
@@ -32,8 +32,10 @@ interface Env {
 
 const MAX_REPORT = 32 * 1024;
 const MAX_BUNDLE = 10 * 1024 * 1024;
+/** Il nome che si da' a chi non ha mandato l'antivirus (client vecchio o nome non letto). */
+const NON_LETTO = '(non letto)';
 /** I campi di un rapporto che si tengono; tutto il resto si scarta. */
-const CAMPI = ['schema', 'id', 'installazione', 'giorno', 'versione', 'sistema', 'pc', 'motore', 'radio', 'ptt', 'cat', 'audio_in', 'audio_out', 'area', 'livello', 'origine', 'messaggio', 'conteggio'] as const;
+const CAMPI = ['schema', 'id', 'installazione', 'giorno', 'versione', 'sistema', 'antivirus', 'pc', 'motore', 'radio', 'ptt', 'cat', 'audio_in', 'audio_out', 'area', 'livello', 'origine', 'messaggio', 'conteggio'] as const;
 
 function risposta(status: number, corpo: unknown): Response {
   return new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -122,6 +124,15 @@ async function report(req: Request, env: Env): Promise<Response> {
   // il computer dell'ultimo esempio (processore, core, memoria: dalla 0.11.220), vuoto per i client vecchi
   const pc = corto(dati.pc, 120);
   const ultimo = new Date().toISOString().slice(0, 19) + 'Z';
+  // gli errori dell'area `antivirus` (file tolti dall'antivirus) si contano anche per antivirus e installazione (dalla 0.11.276)
+  if (area === 'antivirus' && /^[0-9a-f-]{36}$/.test(installazione)) {
+    await env.INDICE.prepare(
+      `INSERT INTO antivirus_errori (giorno, antivirus, installazione, versione, rapporti, esempio) VALUES (?1, ?2, ?3, ?4, 1, ?5)
+       ON CONFLICT (giorno, antivirus, installazione) DO UPDATE SET rapporti = rapporti + 1, versione = ?4, esempio = ?5`,
+    )
+      .bind(giorno, corto(dati.antivirus, 120) || NON_LETTO, installazione, versione, esempio)
+      .run();
+  }
   await env.INDICE.prepare(
     `INSERT INTO errori (giorno, versione, area, messaggio, conteggio, rapporti, installazioni, esempio, sistema, ultimo, pc) VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?8, ?9, ?10)
      ON CONFLICT (giorno, versione, area, messaggio) DO UPDATE SET conteggio = conteggio + ?5, rapporti = rapporti + 1,
@@ -171,7 +182,41 @@ async function summary(url: URL, env: Env): Promise<Response> {
   const q = env.INDICE.prepare(sql);
   const { results } = await (versione ? q.bind(dal, versione) : q.bind(dal)).all();
   const pacchetti = await env.INDICE.prepare('SELECT codice, giorno, versione, motivo, byte, riassunto FROM pacchetti WHERE giorno >= ?1 ORDER BY giorno DESC LIMIT 100').bind(dal).all();
-  return risposta(200, { dal, errori: results, pacchetti: pacchetti.results });
+  return risposta(200, { dal, errori: results, pacchetti: pacchetti.results, antivirus: await riepilogoAntivirus(dal, env) });
+}
+
+/** «Avast Free Antivirus, Windows Defender» -> i prodotti, uno per uno (senza doppioni); vuoto o non letto -> NON_LETTO. */
+function prodotti(antivirus: string | null): string[] {
+  const elenco = (antivirus ?? '').split(',').map((p) => p.trim()).filter((p) => p && p !== NON_LETTO);
+  return elenco.length ? [...new Set(elenco)] : [NON_LETTO];
+}
+
+/**
+ * Per ogni antivirus (un PC con due prodotti conta per entrambi): in quanti PC l'area `antivirus` ha segnalato file tolti, con quanti
+ * rapporti, e quante installazioni attive dal giorno `dal` lo hanno. Il confronto dei due numeri dice quale antivirus da' piu' problemi.
+ */
+async function riepilogoAntivirus(dal: string, env: Env): Promise<unknown> {
+  const errori = await env.INDICE.prepare('SELECT antivirus, installazione, rapporti FROM antivirus_errori WHERE giorno >= ?1 LIMIT 5000').bind(dal).all<{ antivirus: string; installazione: string; rapporti: number }>();
+  const perErrore = new Map<string, { installazioni: Set<string>; rapporti: number }>();
+  for (const r of errori.results) {
+    for (const p of prodotti(r.antivirus)) {
+      const voce = perErrore.get(p) ?? { installazioni: new Set<string>(), rapporti: 0 };
+      voce.installazioni.add(r.installazione);
+      voce.rapporti += r.rapporti;
+      perErrore.set(p, voce);
+    }
+  }
+  const attive = await env.INDICE.prepare('SELECT antivirus, COUNT(*) AS n FROM installazioni WHERE ultima >= ?1 GROUP BY antivirus').bind(dal).all<{ antivirus: string | null; n: number }>();
+  const perAttive = new Map<string, number>();
+  for (const r of attive.results) for (const p of prodotti(r.antivirus)) perAttive.set(p, (perAttive.get(p) ?? 0) + r.n);
+  const righe = [...new Set([...perErrore.keys(), ...perAttive.keys()])].map((antivirus) => ({
+    antivirus,
+    errori_installazioni: perErrore.get(antivirus)?.installazioni.size ?? 0,
+    errori_rapporti: perErrore.get(antivirus)?.rapporti ?? 0,
+    installazioni_attive: perAttive.get(antivirus) ?? 0,
+  }));
+  righe.sort((a, b) => b.errori_installazioni - a.errori_installazioni || b.installazioni_attive - a.installazioni_attive);
+  return righe;
 }
 
 async function scaricaPacchetto(codice: string, env: Env): Promise<Response> {
@@ -200,6 +245,7 @@ async function pulizia(env: Env): Promise<void> {
     env.INDICE.prepare('INSERT INTO storico (giorno, versione, sistema, attivi) SELECT giorno, versione, sistema, COUNT(*) FROM attivi WHERE giorno < ?1 GROUP BY giorno, versione, sistema ON CONFLICT (giorno, versione, sistema) DO UPDATE SET attivi = excluded.attivi').bind(limite),
     env.INDICE.prepare('DELETE FROM errori WHERE giorno < ?1').bind(limite),
     env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite),
+    env.INDICE.prepare('DELETE FROM antivirus_errori WHERE giorno < ?1').bind(limite),
     env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite),
   ]);
   // l'elenco `installazioni` (totale di sempre) non si cancella mai
@@ -240,8 +286,10 @@ async function attivo(req: Request, env: Env): Promise<Response> {
   const numero = (v: unknown, max: number) => (typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= max ? v : null);
   const core = numero(dati.core, 1024);
   const ram = numero(dati.ram_gb, 65536);
-  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese, persona, cpu, core, ram_gb) VALUES (?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese, persona = COALESCE(excluded.persona, installazioni.persona), cpu = COALESCE(excluded.cpu, installazioni.cpu), core = COALESCE(excluded.core, installazioni.core), ram_gb = COALESCE(excluded.ram_gb, installazioni.ram_gb)')
-    .bind(id, oggi(), paese, chi, cpu, core, ram)
+  // l'antivirus (dalla 0.11.276): il nome dei prodotti registrati in Windows; null per i client vecchi o se non si legge (resta quello di prima)
+  const antivirus = corto(dati.antivirus, 120) || null;
+  await env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese, persona, cpu, core, ram_gb, antivirus) VALUES (?1, ?2, ?2, ?3, ?4, ?5, ?6, ?7, ?8) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese, persona = COALESCE(excluded.persona, installazioni.persona), cpu = COALESCE(excluded.cpu, installazioni.cpu), core = COALESCE(excluded.core, installazioni.core), ram_gb = COALESCE(excluded.ram_gb, installazioni.ram_gb), antivirus = COALESCE(excluded.antivirus, installazioni.antivirus)')
+    .bind(id, oggi(), paese, chi, cpu, core, ram, antivirus)
     .run();
   return risposta(200, { ok: true });
 }
