@@ -7842,3 +7842,19 @@ html[data-theme='light'] .freq-picker-menu.glass {
   color: #a3001b !important;
   font-weight: 800;
 }
+
+/* DX Cluster: la riga DXpedition (giallo pieno) ha tutte le celle e tutti i testi interni in colore scuro, anche i secondari (paese, commenti, ora);
+   le altre righe hanno paese e commenti nel colore pieno del testo, non attenuati */
+.cluster-table .cluster-row--dxped td,
+.cluster-table .cluster-row--dxped td *,
+.cluster-row--dxped td * {
+  color: var(--dxped-ink, #141400) !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+.cluster-table td .cluster-country,
+.cluster-table td .cluster-comment,
+.cluster-table td .cl-c--de {
+  color: var(--text);
+  opacity: 1;
+}
