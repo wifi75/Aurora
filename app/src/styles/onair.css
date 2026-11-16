@@ -7823,3 +7823,22 @@ html[data-theme='light'] .freq-picker-menu.glass {
 .freq-picker-menu .freq-picker-list button { min-height: 1.4rem; padding: 0 0.4rem; gap: 0.25rem; font-size: 0.78rem; border-radius: 0.35rem; }
 .freq-picker-menu .freq-picker-dot,
 .freq-picker-menu .freq-picker-list button.is-main::before { width: 0.4rem; height: 0.4rem; }
+
+/* righe con sfondo chiaro (QSO in corso, mio nominativo giallo o ciano): tutte le celle in colore scuro leggibile, niente grigi */
+.decode-list .decode-row[class*='decode-row--pin-'] *:not(.badge),
+.decode-list .decode-row--me-yellow *:not(.badge),
+.decode-list .decode-row--me-cyan *:not(.badge) {
+  color: #14110a !important;
+  opacity: 1;
+  text-shadow: none !important;
+}
+.decode-list .decode-row--me-yellow,
+.decode-list .decode-row--me-cyan {
+  color: #000 !important;
+}
+.decode-list .decode-row--tx[class*='decode-row--pin-'] .c-snr,
+.decode-list .decode-row--tx.decode-row--me-yellow .c-snr,
+.decode-list .decode-row--tx.decode-row--me-cyan .c-snr {
+  color: #a3001b !important;
+  font-weight: 800;
+}
