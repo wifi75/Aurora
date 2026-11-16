@@ -5,6 +5,7 @@ import { browserStorage } from '../../lib/theme';
 import { ClusterPanel } from '../ClusterPanel';
 import { SpotDialog } from './SpotDialog';
 import { getLog4om, type ClusterSpot, type Log4omQso } from '../../api/client';
+import type { TextContestScore } from '../../api/contestTesto';
 import { ClusterOptionsDialog } from './ClusterOptionsDialog';
 import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
@@ -48,12 +49,39 @@ interface Props {
   /** Larghezza del log in px e come cambiarla (barra di trascinamento sul bordo sinistro). */
   width: number;
   onWidth(px: number): void;
+  /** Vista fissa (contest SSB a tre colonne): solo il Log o solo il DX Cluster, senza linguette, senza riga del QSO in corso e senza barra in fondo. */
+  view?: 'log' | 'cluster';
+  /** Con un contest: la colonna DUPE / Mult nel log (doppi dal log stesso, moltiplicatori nuovi dalle statistiche del contest). */
+  marks?: LogMarks;
 }
 
-export type LogCol = 'num' | 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'name' | 'qth' | 'country' | 'grid' | 'rstS' | 'rstR';
-const ALL_COLS: readonly LogCol[] = ['num', 'mode', 'band', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'country', 'grid', 'rstS', 'rstR'];
+/** Come segnare doppi e moltiplicatori nelle righe del log. `noBand`/`noMode` come `dupe_no_band`/`dupe_no_mode` del contest. */
+export interface LogMarks {
+  noBand: boolean;
+  noMode: boolean;
+  recenti: TextContestScore['recenti'];
+}
+
+/** Per ogni QSO (il piu' recente in testa) se e' un doppio: c'e' un QSO piu' vecchio con lo stesso nominativo (e banda, e modo). */
+export function dupeFlags(qsos: readonly Pick<Log4omQso, 'call' | 'band' | 'mode'>[], noBand: boolean, noMode: boolean): boolean[] {
+  const seen = new Set<string>();
+  const out: boolean[] = new Array<boolean>(qsos.length).fill(false);
+  for (let i = qsos.length - 1; i >= 0; i--) {
+    const q = qsos[i];
+    if (!q) continue;
+    const key = `${q.call.toUpperCase()}|${noBand ? '' : q.band}|${noMode ? '' : q.mode.toUpperCase()}`;
+    out[i] = seen.has(key);
+    seen.add(key);
+  }
+  return out;
+}
+
+export type LogCol = 'num' | 'mark' | 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'name' | 'qth' | 'country' | 'grid' | 'rstS' | 'rstR';
+const ALL_COLS: readonly LogCol[] = ['num', 'mark', 'mode', 'band', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'country', 'grid', 'rstS', 'rstR'];
 /** Le colonne del log: numero, modo, frequenza, data, UTC, nominativo, nome, QTH e i due rapporti. */
 const DEFAULT_COLS: readonly LogCol[] = ['num', 'mode', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'rstS', 'rstR'];
+/** Le colonne che si scelgono con la matita: «mark» c'e' solo con un contest. */
+const PICK_COLS: readonly LogCol[] = ALL_COLS.filter((c) => c !== 'mark');
 const COLS_KEY = 'aurora.digi.logcols2';
 /** Quanti QSO si leggono dal log (il massimo che il core da': i piu' recenti). */
 const LOG_ROWS = 500;
@@ -72,7 +100,7 @@ function savedCols(): LogCol[] {
 }
 
 /** Larghezza di partenza di ogni colonna, in em: cresce da sola con la dimensione del carattere. */
-const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5 };
+const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mark: 7, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5 };
 /** Ordine e larghezze delle colonne (si spostano e si allargano trascinando i titoli, come nel DX Cluster). */
 export const GRID_KEY = 'aurora.digi.log.grid';
 /** Dove stavano le sole larghezze prima delle colonne spostabili: si riprendono una volta. */
@@ -96,7 +124,7 @@ const khz = (hz: number) => (hz > 0 ? String(Math.round(hz / 1000)) : '');
 const dmy = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}` : d);
 
 const COL_LABEL = {
-  num: 'digi.log.num', mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
+  num: 'digi.log.num', mark: 'ssbc.logMark', mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
   call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr',
 } as const;
 
@@ -113,9 +141,10 @@ function rstClass(v: string): string {
   return r >= 59 ? 'rst-good' : r >= 45 ? 'rst-mid' : 'rst-low';
 }
 
-function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
+function cell(q: Log4omQso, nr: number, c: LogCol, mark: React.ReactNode = null): React.ReactNode {
   switch (c) {
     case 'num': return nr;
+    case 'mark': return mark;
     case 'mode': return q.mode === '' ? '' : <span className="digi-mode-badge" style={{ background: modeColor(q.mode) }}>{q.mode}</span>;
     case 'band': return q.band;
     case 'freq': return khz(q.freq_hz ?? 0);
@@ -135,7 +164,7 @@ function cell(q: Log4omQso, nr: number, c: LogCol): React.ReactNode {
  * Il log di lato: la riga azzurra del QSO in corso (si scrive sul posto) e sotto i QSO del log, il piu' recente in testa.
  * Nell'altra linguetta c'e' il DX Cluster, con il QSO in corso in un riquadro sotto.
  */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, serial, onSerial, contestOn, width, onWidth }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, serial, onSerial, contestOn, width, onWidth, view, marks }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
@@ -149,15 +178,17 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     storageKey: GRID_KEY,
     columns: ALL_COLS,
     defaultEm: DEFAULT_EM,
-    hidden: ALL_COLS.filter((c) => !cols.includes(c)),
+    hidden: ALL_COLS.filter((c) => (c === 'mark' ? !marks : !cols.includes(c))),
     fitCells: (_c, i) => body.current?.querySelectorAll(`thead tr > :nth-child(${i + 1}), tbody tr:not(.digi-log-cur) > :nth-child(${i + 1})`) ?? [],
   });
   const [spotOpen, setSpotOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [clusterOptions, setClusterOptions] = useClusterOptions();
   // linguette: DX Cluster o Log (la scelta resta ricordata)
-  const [tab, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
+  const [tabState, setTabState] = useState<'cluster' | 'log'>(() => (browserStorage()?.getItem('aurora.digi.tab') === 'log' ? 'log' : 'cluster'));
+  const tab = view ?? tabState;
   const setTab = (next: 'cluster' | 'log') => {
+    if (view) return;
     setTabState(next);
     try {
       browserStorage()?.setItem('aurora.digi.tab', next);
@@ -210,10 +241,15 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const total = log.data?.total ?? 0;
   const rows = useMemo(() => {
     // il numero del QSO e' la sua posizione nel log (l'ultimo = il totale), anche cercando un nominativo
-    const all = (log.data?.qsos ?? []).map((q, i) => ({ q, nr: total - i }));
+    const qsos = log.data?.qsos ?? [];
+    const dupes = marks ? dupeFlags(qsos, marks.noBand, marks.noMode) : [];
+    const all = qsos.map((q, i) => {
+      const nuovi = marks ? (marks.recenti.find((r) => r.call.toUpperCase() === q.call.toUpperCase() && r.band === q.band)?.nuovi ?? []) : [];
+      return { q, nr: total - i, dupe: dupes[i] === true, mult: nuovi.map((m) => m.slice(m.indexOf(':') + 1)).join(' ') };
+    });
     const f = filter.trim().toUpperCase();
     return (f === '' ? all : all.filter((x) => x.q.call.includes(f))).slice(0, 300);
-  }, [log.data, filter, total]);
+  }, [log.data, filter, total, marks]);
   const nextNum = total + 1;
   const now = new Date();
   const nowDate = `${String(now.getUTCDate()).padStart(2, '0')}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${now.getUTCFullYear()}`;
@@ -231,6 +267,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const current = (c: LogCol): React.ReactNode => {
     switch (c) {
       case 'num': return nextNum;
+      case 'mark': return '';
       case 'mode': return modeName;
       case 'band': return '';
       case 'freq': return khz(dialHz > 0 ? dialHz + Math.round(audioHz) : 0);
@@ -248,7 +285,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
 
   return (
     <aside className="digi-log" aria-label={t('digi.log.title')}>
-      <div
+      {view ? null : <div
         className="digi-log-grip"
         role="separator"
         aria-orientation="vertical"
@@ -265,14 +302,18 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
           window.addEventListener('pointermove', move);
           window.addEventListener('pointerup', up);
         }}
-      />
+      />}
       <div className="digi-log-tabs" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === 'cluster'} className={tab === 'cluster' ? 'on' : ''} onClick={() => setTab('cluster')}>
-          {t('digi.tab.cluster')}
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
-          {t('digi.log.title')}
-        </button>
+        {view !== 'log' ? (
+          <button type="button" role="tab" aria-selected={tab === 'cluster'} className={tab === 'cluster' ? 'on' : ''} onClick={() => setTab('cluster')}>
+            {t('digi.tab.cluster')}
+          </button>
+        ) : null}
+        {view !== 'cluster' ? (
+          <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
+            {t('digi.log.title')}
+          </button>
+        ) : null}
         {tab === 'cluster' ? (
           <span className="digi-log-tabtools">
             <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
@@ -292,7 +333,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
               </button>
               {picking ? (
                 <div className="digi-colpop" role="dialog" aria-label={t('digi.log.cols')}>
-                  {ALL_COLS.map((c) => (
+                  {PICK_COLS.map((c) => (
                     <label key={c}>
                       <input type="checkbox" checked={cols.includes(c)} onChange={() => toggleCol(c)} /> {t(COL_LABEL[c])}
                     </label>
@@ -332,15 +373,17 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
                 </tr>
               </thead>
               <tbody>
-                <tr className="digi-log-cur">
-                  {grid.visible.map((c) => (
-                    <td key={c}>{current(c)}</td>
-                  ))}
-                </tr>
-                {rows.map(({ q, nr }) => (
-                  <tr key={nr} style={{ '--b': bandColor(q.band) } as React.CSSProperties}>
+                {view ? null : (
+                  <tr className="digi-log-cur">
                     {grid.visible.map((c) => (
-                      <td key={c}>{cell(q, nr, c)}</td>
+                      <td key={c}>{current(c)}</td>
+                    ))}
+                  </tr>
+                )}
+                {rows.map(({ q, nr, dupe, mult }) => (
+                  <tr key={nr} className={dupe ? 'digi-log-dupe' : undefined} style={{ '--b': bandColor(q.band) } as React.CSSProperties}>
+                    {grid.visible.map((c) => (
+                      <td key={c}>{cell(q, nr, c, dupe ? <b className="digi-mark-dupe">DUPE</b> : mult !== '' ? <b className="digi-mark-mult">× {mult}</b> : null)}</td>
                     ))}
                   </tr>
                 ))}
@@ -349,7 +392,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             <ColumnsMenu cols={grid} />
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
           </div>
-          <div className="digi-log-bar">
+          {view ? null : <div className="digi-log-bar">
             {contestOn ? (
               <>
             <label className="digi-log-ex" title={t('digi.log.serialTip')}>
@@ -375,7 +418,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             <button type="button" className="digi-tool digi-tool--red" title={t('digi.log.clear')} aria-label={t('digi.log.clear')} onClick={onClear}>
               ✕
             </button>
-          </div>
+          </div>}
         </>
       )}
       {optionsOpen ? <ClusterOptionsDialog options={clusterOptions} onChange={setClusterOptions} onClose={() => setOptionsOpen(false)} /> : null}

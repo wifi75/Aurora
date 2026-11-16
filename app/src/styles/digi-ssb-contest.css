@@ -1,0 +1,147 @@
+/* Contest in SSB: tre colonne a tutta altezza (Log · inserimento QSO, punteggio e moltiplicatori · DX Cluster) */
+.ssbc { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.ssbc-cols { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 6px minmax(0, 1.7fr) 6px minmax(0, 1fr); gap: 2px; align-items: stretch; }
+.ssbc-col { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.ssbc-col > .digi-log { flex: 1 1 0; min-height: 0; }
+.ssbc-col .digi-log-grip { display: none; }
+.ssbc-col--center { gap: 8px; overflow-y: auto; }
+
+.ssbc-entry, .ssbc-score, .ssbc-mults { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); padding: 8px 12px; }
+.ssbc h3 { margin: 0 0 6px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text); }
+.ssbc-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.ssbc-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 0.7rem; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ssbc-field--call { flex: 3 1 11ch; }
+.ssbc-field--rst { flex: 1 1 4.5ch; }
+.ssbc-field--nr { flex: 1.3 1 5.5ch; }
+.ssbc-field--nrr { flex: 2 1 7ch; }
+.ssbc-in { width: 100%; min-width: 0; box-sizing: border-box; font: 700 clamp(22px, 1.9vw, 28px)/1.2 var(--font-data); padding: 4px 8px; color: var(--text); background: var(--bg); border: 2px solid var(--border); border-radius: 8px; text-transform: uppercase; }
+.ssbc-in:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.ssbc-in--call { letter-spacing: 0.04em; }
+.ssbc-reg { flex: 0 0 auto; align-self: flex-end; font: 800 clamp(20px, 1.7vw, 26px)/1.2 var(--font-ui); padding: 6px 18px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap; }
+.ssbc-reg:hover { filter: brightness(1.1); }
+.ssbc-reg:active { transform: translateY(1px); }
+
+.ssbc-alertbox { min-height: 2.4rem; margin-top: 6px; }
+.ssbc-alert { margin: 0; padding: 4px 10px; border-radius: 8px; font-size: 1.25rem; font-weight: 800; }
+.ssbc-alert--dupe { background: var(--danger); color: #fff; letter-spacing: 0.03em; }
+.ssbc-alert--warn { background: var(--warn); color: var(--rare-ink); }
+.ssbc-alert--mult { background: var(--dxcc-worked); color: var(--dxcc-worked-ink); }
+.ssbc-alert--ok { background: transparent; border: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 1rem; }
+
+.ssbc-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ssbc-tiles > div { display: flex; flex-direction: column; align-items: center; padding: 4px 6px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
+.ssbc-tiles span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text); }
+.ssbc-tiles b { font: 800 clamp(26px, 2.6vw, 38px)/1.15 var(--font-data); font-variant-numeric: tabular-nums; }
+.ssbc-tiles-total { border-color: var(--accent) !important; }
+.ssbc-tiles-total b { color: var(--accent); }
+.ssbc-muted { margin: 4px 0 0; font-size: 0.82rem; color: var(--text); }
+
+.ssbc-mults { flex: 1 1 auto; min-height: 8rem; overflow: auto; }
+.ssbc-mult h4 { margin: 8px 0 4px; font-size: 0.9rem; }
+.ssbc-mult h4 span { margin-left: 6px; color: var(--accent); font-family: var(--font-data); }
+.ssbc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ssbc-chip { min-width: 2.2em; text-align: center; padding: 1px 6px; border-radius: 6px; font: 600 0.85rem var(--font-data); color: var(--text); background: var(--bg); border: 1px solid var(--border); opacity: 0.6; }
+.ssbc-chip.on { opacity: 1; background: var(--dxcc-worked); border-color: var(--dxcc-worked); color: var(--dxcc-worked-ink); }
+.ssbc-chip.new { box-shadow: 0 0 0 2px var(--accent); }
+.ssbc-chip.pend { opacity: 1; background: var(--dxcc-unconfirmed); border-color: var(--dxcc-unconfirmed); color: var(--dxcc-unconfirmed-ink); animation: ssbc-pulse 1s ease-in-out infinite alternate; }
+@keyframes ssbc-pulse { to { filter: brightness(1.35); } }
+.ssbc-mult-wrap { max-height: 12rem; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.ssbc-mult-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.ssbc-mult-table th, .ssbc-mult-table td { padding: 2px 8px; text-align: center; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+.ssbc-mult-table th { position: sticky; top: 0; background: var(--panel-raised); color: var(--text); }
+.ssbc-mult-table th:first-child, .ssbc-mult-table td:first-child { text-align: left; font-weight: 700; }
+.ssbc-mult-table tr.is-new td { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* colonna DUPE / Mult nel log */
+.digi-mark-dupe { padding: 0 6px; border-radius: 5px; background: var(--danger); color: #fff; font-size: 0.9em; letter-spacing: 0.04em; }
+.digi-mark-mult { color: var(--dxcc-worked); }
+tr.digi-log-dupe td { color: var(--text); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+tr.digi-log-dupe td:has(.digi-mark-dupe) { text-decoration: none; }
+.digi-page > .ssbc { flex: 1 1 auto; min-height: 0; }
+.ssbc-field--rst { min-width: 84px; }
+.ssbc-field--nr { min-width: 110px; }
+
+.ssbc-field--call { flex: 3 1 12ch; min-width: 150px; }
+.ssbc-field--nrr { min-width: 120px; }
+.ssbc-field--qsonr { flex: 0 1 7ch; min-width: 92px; }
+.ssbc-field--qsonr .ssbc-in { color: var(--accent); background: transparent; }
+.ssbc-field--nr { flex: 1 1 7ch; min-width: 110px; }
+.ssbc-field--nrr { flex: 2 1 8ch; min-width: 120px; }
+.ssbc-hint { margin: 4px 0 0; font-size: 0.72rem; color: var(--text); }
+
+/* compatto: niente altezze minime e riempimenti in eccesso */
+.ssbc-entry, .ssbc-score, .ssbc-mults { padding: 5px 10px; }
+.ssbc .ssbc-entry h3 { margin: 0 0 3px; }
+.ssbc-alertbox { min-height: 0; margin-top: 4px; }
+.ssbc-alertbox:empty { display: none; }
+.ssbc-mults { flex: 0 1 auto; min-height: 0; }
+.ssbc-col--center { gap: 6px; }
+.ssbc-hint { margin: 0; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.ssbc-muted { margin: 2px 0 0; }
+.ssbc-alert--ok { color: var(--text); }
+/* testi chiari sul fondo scuro del log e del cluster (il tema chiaro resta com'e') */
+html:not([data-theme='light']) .ssbc .digi-log, html:not([data-theme='light']) .ssbc .digi-log td, html:not([data-theme='light']) .ssbc .digi-log th,
+html:not([data-theme='light']) .ssbc .digi-log-tabs > button, html:not([data-theme='light']) .ssbc .digi-log-empty,
+html:not([data-theme='light']) .ssbc .digi-log-cluster, html:not([data-theme='light']) .ssbc .digi-log-cluster * { color: #f4f7ff; }
+html:not([data-theme='light']) .ssbc .digi-log td:first-child { color: #dbe6ff; }
+html:not([data-theme='light']) .ssbc tr.digi-log-dupe td { color: #cbd5ee; }
+html:not([data-theme='light']) .ssbc .digi-mark-dupe { color: #fff; }
+html:not([data-theme='light']) .ssbc .digi-mark-mult { color: #5ee08a; }
+.ssbc-contest-name { color: var(--accent); letter-spacing: 0; text-transform: none; }
+
+/* blocco bande a destra della barra delle macro: riquadro come le altre barre, tessere a pillola, due righe se sono tante */
+.ssbc-bands { flex: 1 1 14rem; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(3.7rem, 1fr)); grid-auto-rows: minmax(2.2rem, 1fr); gap: 6px; align-content: stretch; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
+.ssbc-band { display: flex; align-items: baseline; justify-content: center; gap: 2px; border: 1px solid var(--border); border-radius: 10px; background: linear-gradient(var(--panel-raised), var(--panel)); color: var(--text); cursor: pointer; font-family: var(--font-ui); padding: 0 6px; transition: border-color 0.12s, box-shadow 0.12s, background 0.12s; }
+.ssbc-band b { font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; align-self: center; }
+.ssbc-band small { font-size: 0.7rem; opacity: 0.85; align-self: center; }
+.ssbc-band:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ssbc-band.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
+.ssbc-band:disabled { opacity: 0.5; cursor: not-allowed; }
+.ssbc-bands-none { grid-column: 1 / -1; margin: 0; align-self: center; font-size: 0.85rem; color: var(--text); }
+.ssbc-bands-none a { color: var(--accent); }
+
+/* Inserisci QSO: compatto, con aria fra titolo e campi */
+.ssbc .ssbc-entry h3 { margin: 0 0 9px; }
+.ssbc-entry { padding: 6px 10px 8px; }
+.ssbc-row { gap: 6px; }
+.ssbc-in { padding: 1px 8px; line-height: 1.35; height: 42px; }
+.ssbc-field { gap: 1px; }
+
+/* tessere di banda: contorno sottile, la banda attiva piena con l'accento, hover luminoso, altezza uniforme */
+.ssbc-bands { grid-template-columns: repeat(auto-fill, minmax(3.9rem, 1fr)); grid-auto-rows: 2.6rem; align-content: center; gap: 8px; }
+.ssbc-band { flex-direction: column; justify-content: center; align-items: center; gap: 0; border: 1.5px solid color-mix(in srgb, var(--text) 28%, transparent); border-radius: 14px; background: transparent; padding: 0; line-height: 1; }
+.ssbc-band b { font-size: 1.5rem; font-weight: 700; align-self: auto; line-height: 1; }
+.ssbc-band small { font-size: 0.62rem; letter-spacing: 0.08em; align-self: auto; opacity: 0.8; }
+.ssbc-band:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 16%, transparent); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent); }
+.ssbc-band.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 65%, transparent); }
+/* campi piu' stretti, per stare tutti su una riga anche con la colonna centrale di poco piu' di 500 px */
+.ssbc-field--call { min-width: 120px; }
+.ssbc-field--nrr { min-width: 90px; }
+.ssbc-field--rst { min-width: 64px; }
+.ssbc-field--nr { min-width: 90px; }
+.ssbc-field--qsonr { min-width: 80px; }
+
+/* riga in alto: macro + blocco bande occupano tutta la larghezza; le macro cedono spazio alle bande (mai meno di 16rem) */
+.digi-topline--ssb { align-items: stretch; }
+.digi-topline--ssb .digi-macrowrap { flex: 0 1 auto; min-width: 360px; max-width: calc(100% - 17rem); overflow: visible; }
+.digi-topline--ssb .digi-macrowrap .digi-bar-keys { overflow: hidden; }
+.digi-topline--ssb .digi-macrogrip { right: -9px; width: 12px; z-index: 5; }
+.digi-topline--ssb .ssbc-bands { flex: 1 1 16rem; min-width: 16rem; }
+.ssbc-field--call { min-width: 104px; }
+.ssbc-field--nrr { min-width: 76px; }
+.ssbc-field--rst { min-width: 58px; }
+.ssbc-row { gap: 5px; }
+.ssbc-in { padding: 1px 6px; }
+
+/* bande: pulsanti piccoli e liberi (niente cornice), in alto, a destra delle macro */
+.digi-topline--ssb .ssbc-bands { align-self: flex-start; border: 0; background: transparent; padding: 0; margin: 0; border-radius: 0; grid-template-columns: repeat(auto-fill, 2.9rem); grid-auto-rows: 1.8rem; gap: 5px; align-content: start; justify-content: start; }
+.ssbc-band { flex-direction: row; align-items: baseline; justify-content: center; gap: 1px; border-radius: 999px; border-width: 1px; padding: 0 4px; }
+.ssbc-band b { font-size: 0.95rem; font-weight: 700; align-self: center; }
+.ssbc-band small { font-size: 0.6rem; align-self: center; margin-top: 2px; }
+
+/* pulsanti banda: colori forti in ogni stato (normale, hover, attivo, attivo+hover, fuoco), anche contro le regole generali dei pulsanti */
+html:root:root:root .ssbc-band.ssbc-band { background: transparent !important; border-color: color-mix(in srgb, var(--text) 30%, transparent) !important; color: var(--text) !important; }
+html:root:root:root .ssbc-band.ssbc-band:is(:hover, :focus-visible):not(:disabled) { background: color-mix(in srgb, var(--accent) 22%, var(--panel-raised)) !important; border-color: var(--accent) !important; color: var(--text) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+html:root:root:root .ssbc-band.ssbc-band.on { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+html:root:root:root .ssbc-band.ssbc-band.on:is(:hover, :focus-visible):not(:disabled) { background: color-mix(in srgb, var(--accent) 82%, #fff) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: none; }

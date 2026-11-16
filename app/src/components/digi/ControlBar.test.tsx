@@ -22,7 +22,7 @@ describe('ControlBar: clic tenuto per spostare', () => {
   const setup = () => {
     const onRun = vi.fn();
     const onMove = vi.fn();
-    const r = render(<ControlBar macros={macros} extended onToggleExtended={() => {}} onRun={onRun} onEdit={() => {}} onMove={onMove} />);
+    const r = render(<ControlBar macros={macros} extended onSetExtended={() => {}} onRun={onRun} onEdit={() => {}} onMove={onMove} />);
     const key = (n: string) => r.container.querySelector<HTMLElement>(`[data-macro="${n}"]`)!;
     return { onRun, onMove, key };
   };

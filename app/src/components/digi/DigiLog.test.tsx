@@ -7,7 +7,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   getLog4om: vi.fn(),
 }));
 import { getLog4om } from '../../api/client';
-import { DigiLog, GRID_KEY, OLD_WIDTHS_KEY, migrateWidths } from './DigiLog';
+import { DigiLog, GRID_KEY, OLD_WIDTHS_KEY, dupeFlags, migrateWidths } from './DigiLog';
 
 const props = {
   qso: { call: '', name: '', qth: '', wwloc: '', notes: '' },
@@ -59,5 +59,20 @@ describe('DigiLog', () => {
     expect(screen.getAllByRole('columnheader').map((th) => th.dataset.col)).toEqual(['call', 'num', 'mode', 'freq', 'date', 'utc', 'name', 'qth', 'rstS', 'rstR']);
     expect(call.closest('tr')?.firstElementChild).toBe(call.closest('td'));
     expect(screen.getByRole('table')).toHaveClass('mv-grid');
+  });
+});
+
+describe('dupeFlags', () => {
+  const log = [
+    { call: 'IU3ABC', band: '20m', mode: 'SSB' },
+    { call: 'DL1XYZ', band: '20m', mode: 'SSB' },
+    { call: 'IU3ABC', band: '40m', mode: 'SSB' },
+    { call: 'IU3ABC', band: '20m', mode: 'SSB' },
+  ];
+  it('il QSO piu recente e un doppio se ce ne e uno piu vecchio con stesso nominativo e banda', () => {
+    expect(dupeFlags(log, false, false)).toEqual([true, false, false, false]);
+  });
+  it('senza banda nel controllo conta anche l altra banda', () => {
+    expect(dupeFlags(log, true, false)).toEqual([true, false, true, false]);
   });
 });

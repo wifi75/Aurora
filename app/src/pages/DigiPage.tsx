@@ -9,8 +9,10 @@ import { bandPlanRows } from '../lib/bandplan';
 import { useBandFilter, visibleBands } from '../lib/bandFilter';
 import { RotorCard, useRotorCardVisible } from '../components/rotor/RotorCard';
 import { usePublishRotorDx } from '../lib/rotorDx';
-import { DigiLog, type Qso } from '../components/digi/DigiLog';
-import { commentWithExchange, contestNextSerial, exchangeSent, readSerial, writeSerial } from '../lib/contestSerial';
+import { DigiLog, type LogMarks, type Qso } from '../components/digi/DigiLog';
+import { applyAvailability } from '../lib/menuModi';
+import { SsbContestView } from '../components/digi/SsbContestView';
+import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, readSerial, writeSerial } from '../lib/contestSerial';
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
 import { getActiveTextContest, getTextContestCheck, type TextContest } from '../api/contestTesto';
@@ -113,8 +115,6 @@ interface Views {
   rbn?: boolean;
   /** Aurora BIGScan: anche chi risponde (dopo DE o TU), non solo chi chiama CQ. */
   radarAnswering: boolean;
-  /** Il menu «Contest» (elenco dei contest dei modi testuali) nella barra dei menu. */
-  contestMenu?: boolean;
 }
 
 const DEFAULT_VIEWS: Views = { controlBar: true, extended: true, log: true, waterfall: true, statusBar: true, underlineSent: true, capsOnly: false, slashedZero: true, flashTx: true, hairlines: false, defaultRst: true, wideWaterfall: true, signals: true, wfCalls: true, radarAnswering: false };
@@ -233,6 +233,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   /** La finestra dei QTC del WAE (mandare o ricevere), con il contest attivo che li prevede. */
   const [qtcOpen, setQtcOpen] = useState<QtcDir | null>(null);
   const textScore = useTextContestScore(!!textContest).data;
+  /** SSB: la pagina cambia disposizione (Log, inserimento del QSO, DX Cluster) e non mostra RX/TX, cascata e modi digitali; con un contest attivo compaiono anche Nr, punteggio, DUPE e moltiplicatori. */
+  const ssbContest = snap.settings.mode === 'ssb';
   const exportCabrillo = useExportTextCabrillo();
   const [contestEdit, setContestEdit] = useState<TextContest | null>(null);
   const selectTextContest = useSelectTextContest();
@@ -258,6 +260,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const v = readSize('aurora.digi.macrow', sizeMode);
     return Number.isFinite(v) && v >= 360 ? v : null;
   });
+  // le righe di macro mostrate (menu Vista › Righe delle macro), ricordate per modo; 0 = di base (tutte e 4), 1-4 a scelta, 5 = automatico (solo le righe con macro)
+  const [macroRows, setMacroRowsState] = useState<number>(() => {
+    const v = readSize('aurora.digi.macrorows', sizeMode);
+    return Number.isFinite(v) && v >= 1 && v <= 5 ? v : 0;
+  });
+  const setMacroRows = (n: number) => {
+    setMacroRowsState(n);
+    try {
+      if (n === 0) clearSize('aurora.digi.macrorows', sizeMode);
+      else writeSize('aurora.digi.macrorows', sizeMode, n);
+    } catch {
+      // la scelta vale comunque finche' la pagina e' aperta
+    }
+  };
   // i dati che non cambiano da un QSO all'altro (nome, QTH, RST): gli stessi di Impostazioni › Stazione › Dati personali
   const [saved, setSavedField] = usePersonal();
   const [startAt, setStartAt] = useState<Date | null>(null);
@@ -1064,7 +1080,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     });
   }, []);
 
-  const saveQso = () => {
+  const saveQso = () => saveQsoThen();
+  /** Registra il QSO; `after` gira solo a QSO salvato (la vista del contest SSB azzera i campi). */
+  const saveQsoThen = (after?: () => void, failed?: () => void) => {
     const l = live.current;
     const call = l.qso.call.trim().toUpperCase();
     if (call === '') {
@@ -1100,8 +1118,12 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
         void client.invalidateQueries({ queryKey: [...TEXT_CONTEST_SCORE_KEY] });
+        after?.();
       },
-      () => toast(t('digi.tx.error'), 'error'),
+      () => {
+        toast(t('digi.tx.error'), 'error');
+        failed?.();
+      },
     );
   };
 
@@ -1725,7 +1747,6 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.band.wfWords'), checked: views.wfWords !== false, onSelect: () => setView({ wfWords: views.wfWords === false }) },
         ...(radarMode ? [{ label: t('rbn.show'), checked: views.rbn !== false, onSelect: () => setView({ rbn: views.rbn === false }) }] : []),
         { label: t('digi.mi.statusBar'), checked: views.statusBar, onSelect: () => setView({ statusBar: !views.statusBar }) },
-        { label: t('ctest.viewMenu'), title: t('ctest.viewMenuTip'), checked: views.contestMenu === true, onSelect: () => setView({ contestMenu: views.contestMenu !== true }) },
         'sep' as const,
         { label: t('digi.mi.echoRx'), checked: views.echoRx === true, onSelect: () => setView({ echoRx: !(views.echoRx === true) }) },
         { label: t('digi.mi.underlineSent'), checked: views.underlineSent, onSelect: () => setView({ underlineSent: !views.underlineSent }) },
@@ -1735,10 +1756,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.hairlines'), checked: views.hairlines, onSelect: () => setView({ hairlines: !views.hairlines }) },
         { label: t('digi.mi.wideWaterfall'), checked: views.wideWaterfall, onSelect: () => setView({ wideWaterfall: !views.wideWaterfall }) },
         { label: t('digi.mi.anticlick'), title: t('digi.mi.anticlickTip'), checked: s.wf_anticlick, onSelect: () => save({ wf_anticlick: !s.wf_anticlick }) },
+        {
+          label: t('digi.mi.macroRows'),
+          items: [
+            ...[1, 2, 3, 4].map((n) => ({ label: String(n), checked: macroRows === n || (macroRows === 0 && n === 4), onSelect: () => { setMacroRows(n); setView({ extended: n > 1 }); } })),
+            { label: t('digi.mi.macroRowsAuto'), title: t('digi.mi.macroRowsAutoTip'), checked: macroRows === 5, onSelect: () => { setMacroRows(5); setView({ extended: true }); } },
+          ],
+        },
         { label: t('digi.mi.defaultRst'), checked: views.defaultRst, onSelect: () => setView({ defaultRst: !views.defaultRst }) },
       ],
     },
-    ...(views.contestMenu === true ? [contestMenu()] : []),
+    contestMenu(),
     {
       label: t('digi.menu.configure'),
       items: [
@@ -1770,19 +1798,68 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     .join(' · ');
   const modeData = s.mode === 'rtty' ? `${Math.round(s.rtty_baud)} bd, ${Math.round(s.rtty_shift_hz)} Hz` : s.mode === 'cw' ? `${Math.round(s.cw_wpm)} WPM` : s.mode === 'psk63' ? '63 bd' : '31 bd';
 
+  // la colonna DUPE / Mult del log nel contest SSB: doppi dal log, moltiplicatori nuovi dalle statistiche del contest
+  // entrando in SSB i rapporti di partenza sono 59 (non 599 dei modi digitali)
+  useEffect(() => {
+    if (ssbContest && (live.current.saved.rsts === '599' || live.current.saved.rstr === '599')) setSavedField({ rsts: live.current.saved.rsts === '599' ? '59' : live.current.saved.rsts, rstr: live.current.saved.rstr === '599' ? '59' : live.current.saved.rstr });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ssbContest]);
+  const logMarks: LogMarks | undefined = ssbContest && textContest ? { noBand: textContest.contest.dupe_no_band, noMode: textContest.contest.dupe_no_mode, recenti: textScore?.recenti ?? [] } : undefined;
+  /** Il log di lato (o, nel contest SSB, solo il Log o solo il DX Cluster). */
+  const digiLog = (view?: 'log' | 'cluster') => (
+    <DigiLog
+      view={view}
+      marks={view === 'log' ? logMarks : undefined}
+      width={logW}
+      onWidth={(px) => {
+        const w = Math.round(Math.min(Math.max(px, 300), Math.max(320, window.innerWidth - 320)));
+        setLogW(w);
+        try {
+          writeSize('aurora.digi.logw', sizeMode, w);
+        } catch {
+          // la larghezza vale comunque finche' la pagina e' aperta
+        }
+      }}
+      qso={qso}
+      rsts={saved.rsts}
+      rstr={saved.rstr}
+      modeName={MODE_NAMES[s.mode]}
+      dialHz={status?.dial_hz ?? 0}
+      audioHz={rxHz}
+      onSpot={tuneToSpot}
+      onQso={(patch) => setQso({ ...qso, ...patch })}
+      onRst={(patch) => setSavedField(patch)}
+      onSave={saveQso}
+      serial={qsoSerial}
+      onSerial={setSerial}
+      contestOn={inContest || textContest !== null}
+      onClear={() => {
+        setQso(EMPTY_QSO);
+        setStartAt(null);
+        resetRst();
+      }}
+    />
+  );
+
   return (
     <>
-      <MenuBar menus={menus} />
+      <MenuBar menus={applyAvailability(menus, s.mode, t as never, t('digi.mi.onlyDigital'))} />
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
 
       {/* macro a sinistra (colonne fisse e piu' corte), a fianco il selettore di banda con le frequenze del piano IARU */}
-      <div className="digi-topline">
+      <div className={`digi-topline${ssbContest ? ' digi-topline--ssb' : ''}`}>
       {views.controlBar ? (
         <div className={`digi-macrowrap${macroW ? ' digi-macrowrap--sized' : ''}`} style={macroW ? { width: macroW } : undefined} ref={macroBox}>
           <ControlBar
             macros={macros}
-            extended={views.extended}
-            onToggleExtended={() => setView({ extended: !views.extended })}
+            extended={views.extended && macroRows !== 1}
+            onSetExtended={(multi) => {
+              // «Barra multipla» si apre subito a 4 righe; «Barra singola» ne mostra una
+              setView({ extended: multi });
+              if (multi) setMacroRows(4);
+              else if (macroRows !== 1) setMacroRows(0);
+            }}
+            rows={macroRows === 5 ? 'auto' : macroRows > 0 ? macroRows : 4}
             onRun={(m) => execute(m.text)}
             onMove={moveMacro}
             autoCq={autoCq ? (autoCqPaused ? 'paused' : 'on') : 'off'}
@@ -1829,6 +1906,40 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         </div>
       ) : null}
       {/* la radio si porta sulla frequenza scelta (non in SSB: il piano dei modi testuali non vale per la fonia) */}
+      {/* contest in SSB: a destra delle macro un blocchetto per banda (le bande scelte nelle Impostazioni, hook useBandFilter), un clic porta la radio all'inizio del tratto fonia */}
+      {ssbContest ? (
+        <div className="ssbc-bands" role="group">
+          {(() => {
+            const rows = visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null).flatMap((b) => {
+              const row = bandPlanRows('SSB').find((r) => r.band === b);
+              return row ? [row] : [];
+            });
+            if (rows.length === 0)
+              return (
+                <p className="ssbc-bands-none">
+                  {t('ssbc.noBands')}{' '}
+                  <a href="#/impostazioni" onClick={(e) => { e.preventDefault(); openSettingsWindow('station'); }}>
+                    {t('ssbc.noBandsLink')}
+                  </a>
+                </p>
+              );
+            return rows.map((row) => (
+              <button
+                key={row.band}
+                type="button"
+                className={`ssbc-band${status && status.dial_hz > 0 && bandOf(status.dial_hz) === row.band ? ' on' : ''}`}
+                aria-pressed={!!(status && status.dial_hz > 0 && bandOf(status.dial_hz) === row.band)}
+                disabled={sending}
+                title={`${row.band} · ${(row.hz / 1e6).toFixed(3).replace('.', ',')} MHz`}
+                onClick={() => void postFrequency(row.hz).then(onChanged, onChanged)}
+              >
+                <b>{row.band.replace(/m$/, '')}</b>
+                <small>m</small>
+              </button>
+            ));
+          })()}
+        </div>
+      ) : null}
       {s.mode !== 'ssb' && (
         <div className="digi-bandbar">
           <FreqPicker
@@ -1847,7 +1958,38 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         </div>
       ) : null}
       </div>
-
+      {ssbContest ? (
+        <SsbContestView
+          qso={qso}
+          rsts={saved.rsts}
+          rstr={saved.rstr}
+          qsoNr={(textScore?.qso ?? 0) + (textScore?.doppi ?? 0) + 1}
+          nrsAuto={fixedNrsRef.current !== '' ? fixedNrsRef.current : formatSerial(qsoSerial)}
+          onQso={(patch) => setQso({ ...qso, ...patch })}
+          onRst={(patch) => setSavedField(patch)}
+          onRegister={() => {
+            if (qso.call.trim() === '') return saveQso();
+            // campi azzerati subito e RST a 59 (il fuoco torna sul nominativo, lo fa la vista); se il log non lo salva si rimettono
+            const prev = { qso, startAt, rsts: saved.rsts, rstr: saved.rstr };
+            saveQsoThen(() => undefined, () => {
+              setQso(prev.qso);
+              setStartAt(prev.startAt);
+              setSavedField({ rsts: prev.rsts, rstr: prev.rstr });
+            });
+            setQso(EMPTY_QSO);
+            setStartAt(null);
+            setSavedField({ rsts: '59', rstr: '59' });
+          }}
+          band={status && status.dial_hz > 0 ? (bandOf(status.dial_hz) ?? '') : ''}
+          modeName={MODE_NAMES[s.mode]}
+          contestName={textContest ? textContest.contest.name : null}
+          score={textScore}
+          showLog={views.log}
+          log={digiLog('log')}
+          cluster={digiLog('cluster')}
+          rotor={(at) => (rotorShown ? <RotorCard call={qso.call} grid={qso.wwloc} place="digi" startAt={at} /> : null)}
+        />
+      ) : (
       <div className={`digi-main${views.log ? '' : ' digi-main--nolog'}`} style={views.log ? { gridTemplateColumns: `minmax(0, 1fr) ${logW}px` } : undefined}>
         <div className="digi-leftcol">
         {/* Radar: a destra delle finestre RX e TX, alto quanto loro; la cascata sotto resta larga */}
@@ -1991,43 +2133,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}
         <div className="digi-rightcol">
         <RotorCard call={qso.call} grid={qso.wwloc} place="digi" />
-        {views.log ? (
-          <DigiLog
-            width={logW}
-            onWidth={(px) => {
-              const w = Math.round(Math.min(Math.max(px, 300), Math.max(320, window.innerWidth - 320)));
-              setLogW(w);
-              try {
-                writeSize('aurora.digi.logw', sizeMode, w);
-              } catch {
-                // la larghezza vale comunque finche' la pagina e' aperta
-              }
-            }}
-            qso={qso}
-            rsts={saved.rsts}
-            rstr={saved.rstr}
-            modeName={MODE_NAMES[s.mode]}
-            dialHz={status?.dial_hz ?? 0}
-            audioHz={rxHz}
-            onSpot={tuneToSpot}
-            onQso={(patch) => setQso({ ...qso, ...patch })}
-            onRst={(patch) => setSavedField(patch)}
-            onSave={saveQso}
-            serial={qsoSerial}
-            onSerial={setSerial}
-            contestOn={inContest || textContest !== null}
-            onClear={() => {
-              setQso(EMPTY_QSO);
-              setStartAt(null);
-              resetRst();
-            }}
-          />
-        ) : null}
+        {views.log ? digiLog() : null}
         </div>
       </div>
+      )}
 
 
-      {views.statusBar ? (
+      {views.statusBar && !ssbContest ? (
         <DigiStatusBar
           transmitting={sending}
           flashTx={views.flashTx}

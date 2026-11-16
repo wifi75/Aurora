@@ -19,7 +19,10 @@
 }
 .digi-menubar { padding: 3px 8px; gap: 2px; overflow: visible; }
 .digi-menu > button { color: var(--text); border-radius: 8px; padding: 3px 11px; border: 1px solid transparent; }
-.digi-menu > button:hover, .digi-menu > button.on { background: #8e7bff33; border-color: #8e7bff66; }
+.digi-menu > button { transition: background-color .12s ease, border-color .12s ease; }
+.digi-menu > button:hover, .digi-menu > button.on { background: #8e7bff55; border-color: #b4a6ff; color: #fff; }
+.digi-menu > button:focus-visible { outline: 2px solid #b4a6ff; outline-offset: -2px; }
+.digi-menu-list { margin-top: 3px; }
 .digi-menu-list { background: #121e36; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 30px #000a; padding: 5px; }
 .digi-menu-list li button { color: var(--text); border-radius: 7px; }
 .digi-menu-list li button:hover:not(:disabled) { background: #8e7bff40; color: #fff; }
@@ -116,7 +119,7 @@ html[data-theme='light'] .digi-classica .digi-bar-keys {
 html[data-theme='light'] .digi-topline .digi-bandbar { background: none; box-shadow: none; }
 html[data-theme='light'] .digi-menu-list { background: #ffffff; box-shadow: 0 10px 26px rgb(20 40 90 / 0.2); }
 html[data-theme='light'] .digi-menu-list li button:hover:not(:disabled) { color: #000; background: #dfe7ff; }
-html[data-theme='light'] .digi-menu > button:hover, html[data-theme='light'] .digi-menu > button.on { background: #e5e9ff; }
+html[data-theme='light'] .digi-menu > button:hover, html[data-theme='light'] .digi-menu > button.on { background: #d3dbff; border-color: #4b36c9; color: #000; }
 html[data-theme='light'] .digi-classica .digi-key { background: #eef2fa; border-color: var(--border); color: #000; }
 html[data-theme='light'] .digi-classica .digi-key--blank { background: #f6f8fd; border-color: #dde4f3; }
 html[data-theme='light'] .digi-rxwin, html[data-theme='light'] .digi-txwin { color: #0b1322; }

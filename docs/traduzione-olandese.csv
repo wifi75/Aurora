@@ -3845,7 +3845,6 @@ rot.degrees,Degrees,Graden
 rot.steps,Steps,Stappen
 rot.clickHint,Click on the rose to send the antenna in that direction,Klik op de roos om de antenne in die richting te sturen
 rot.offText,The rotator is not on. Choose and connect it in Settings › Station › Rotator.,De rotor staat niet aan. Kies en verbind hem in Instellingen › Station › Rotor.
-rot.openSettings,Rotator settings,Rotorinstellingen
 rot.err.notConnected,The rotator is not connected.,De rotor is niet verbonden.
 rot.err.load,Could not read the rotator status.,De rotorstatus kon niet worden gelezen.
 rot.err.failed,Command failed.,Opdracht mislukt.
@@ -4453,6 +4452,7 @@ sat.map.title,Map,Kaart
 sat.map.pick,World map,Wereldkaart
 sat.map.add,Add a map…,Een kaart toevoegen…
 sat.map.addHint,"An equirectangular image (360° × 180°), jpg, png, bmp or webp.","Een equirectangulair beeld (360° × 180°), jpg, png, bmp of webp."
+sat.map.drag,Drag to move the map · double-click to center it,Sleep om de kaart te verschuiven · dubbelklik om te centreren
 sat.map.builtin,Aurora map,Aurora-kaart
 sat.sun,Sun,Zon
 sat.moon,Moon,Maan
@@ -4698,8 +4698,6 @@ mguide.catd.keyer,Text and commands to the WinKeyer set in the CW settings.,Teks
 mguide.catd.packet,"Aurora has no packet: TALK goes through the DX cluster, the others show a notice.","Aurora heeft geen packet: TALK loopt via de DX cluster, de andere tonen een melding."
 mguide.catd.nested,A macro can run others (up to 10 levels) and ask for missing values.,Een macro kan andere uitvoeren (tot 10 niveaus) en om ontbrekende waarden vragen.
 mguide.catd.events,Macros that run by themselves when something happens.,Macro’s die vanzelf starten als er iets gebeurt.
-ctest.viewMenu,Contest menu,Contestmenu
-ctest.viewMenuTip,"Shows the Contest menu in the bar, with the list of text-mode contests","Toont in de balk het Contestmenu, met de lijst van de contests van de tekstmodi"
 ctest.menu,Contest,Contest
 ctest.list,List of contests…,Lijst van contests…
 ctest.editActive,Edit active contest…,Actieve contest bewerken…
@@ -4874,6 +4872,27 @@ ctest.mt.area,Call areas,Prefixgebieden
 ctest.mt.dom,"Exchange (states, provinces, oblasts)","Uitwisseling (staten, provincies, oblasten)"
 ctest.mt.call,Stations,Stations
 qtc.menu,QTC…,QTC…
+ssbc.logMark,DUPE / Mult,DUPE / Mult
+ssbc.enter,Enter QSO,QSO invoeren
+ssbc.call,Callsign,Roepnaam
+ssbc.rsts,RST sent,RST verzonden
+ssbc.rstr,RST rcvd,RST ontvangen
+ssbc.dupe,DUPE: already worked,DUPE: al gewerkt
+ssbc.dupeAt,DUPE: already worked at {time} UTC on {band},DUPE: al gewerkt om {time} UTC op {band}
+ssbc.newMult,New multiplier: {mult},Nieuwe multiplier: {mult}
+ssbc.newCall,New callsign · {n} points,Nieuwe roepnaam · {n} punten
+ssbc.notBand,Band not valid for the contest,Band niet geldig voor de contest
+ssbc.notValid,Not allowed by the contest rules,Niet toegestaan volgens de contestregels
+ssbc.qso,QSOs,QSO’s
+ssbc.points,Points,Punten
+ssbc.mult,Mult,Mult
+ssbc.total,Total,Totaal
+ssbc.rate,{r60} QSO/h · last 10 min: {r10}/h,{r60} QSO/u · laatste 10 min: {r10}/u
+ssbc.waiting,Waiting for the first QSOs of the contest,Wachten op de eerste QSO’s van de contest
+ssbc.mults,Multipliers,Multipliers
+ssbc.multsEmpty,No multiplier worked yet,Nog geen multiplier gewerkt
+ssbc.multOf,{n} of {tot},{n} van {tot}
+ssbc.missing,Missing: {list},Ontbreken: {list}
 xrx.dragTip,Drag to move the window,Sleep om het venster te verplaatsen
 xrx.afcTip,"AFC of this RX window: it follows its station if it drifts. It is its own, separate from the AFC in the bottom bar (which is for the main reception).","AFC van dit RX-venster: volgt zijn station als het verloopt. Alleen van dit venster, los van de AFC in de onderste balk (die voor de hoofdontvangst geldt)."
 xrx.close,Close this RX window,Dit RX-venster sluiten
@@ -6808,7 +6827,7 @@ t.1zodsfb8ol,In Aurora’s program for Windows the right button does not open th
 t.25zuygqeklr,"Undo, Redo, Cut, Copy, Paste, Delete and Select all: the system items, which always work.","Ongedaan maken, Opnieuw, Knippen, Kopiëren, Plakken, Verwijderen en Alles selecteren: de systeemitems, die altijd werken."
 t.272vbpbmb35,"“Clear all” (Clear all, Alles löschen…, in Aurora’s language): at the bottom, only in boxes that can be edited, it empties the box you clicked on and also updates the page. Useful to empty a search field or a callsign in one go.","“Alles wissen” (Clear all, Alles löschen…, in de taal van Aurora): onderaan, alleen in vakken die je kunt bewerken, maakt het het vak leeg waarop je klikte en werkt ook de pagina bij. Handig om in één keer een zoekveld of een roepletters te legen."
 t.mc68o27nij,The [[ctest.menu]] menu: list of contests,Het menu [[ctest.menu]]: lijst van contests
-t.1scu8164h95,"From [[digi.menu.view]] › [[ctest.viewMenu]] the [[ctest.menu]] menu appears in the bar. Each contest is a .contest file in the contest folder of Aurora’s data, with its macros (contest/macros) and the lists of provinces, states and zones (contest/dom). On first start Aurora copies 90 ready-made contests, never touching the files you changed. Only one contest is active at a time.","Via [[digi.menu.view]] › [[ctest.viewMenu]] verschijnt het menu [[ctest.menu]] in de balk. Elke contest is een .contest-bestand in de map contest van de gegevens van Aurora, met zijn macro’s (contest/macros) en de lijsten van provincies, staten en zones (contest/dom). Bij de eerste start kopieert Aurora 90 kant-en-klare contests, zonder ooit de bestanden aan te raken die je hebt aangepast. Er is steeds maar één contest actief."
+t.1kx2aaacao8,"The [[ctest.menu]] menu is always in the bar. Each contest is a .contest file in the contest folder of Aurora’s data, with its macros (contest/macros) and the lists of provinces, states and zones (contest/dom). On first start Aurora copies 90 ready-made contests, never touching the files you changed. Only one contest is active at a time.","Het menu [[ctest.menu]] staat altijd in de balk.menu]] in de balk. Elke contest is een .contest-bestand in de map contest van de gegevens van Aurora, met zijn macro’s (contest/macros) en de lijsten van provincies, staten en zones (contest/dom). Bij de eerste start kopieert Aurora 90 kant-en-klare contests, zonder ooit de bestanden aan te raken die je hebt aangepast. Er is steeds maar één contest actief."
 t.1vve1bfk5f4,"Exchange capture never looks at the “» …” lines of the transmitted text: with the transmit echo on, our own number after the other station’s callsign does not end up in the received number.",Het overnemen van de uitwisseling kijkt nooit naar de regels «» …» van de verzonden tekst: met de zendecho aan komt ons eigen nummer na de roepnaam van het tegenstation niet in het ontvangen nummer terecht.
 t.cy7o3g6rny,"[[ctest.list]] opens the window with the columns [[ctest.colActive]] (the arrow marks the active one), [[ctest.colName]] and [[ctest.colNotes]]. The first row is [[ctest.none]]. Buttons: [[ctest.edit]], [[ctest.delete]] (asks for confirmation), [[ctest.add]], [[ctest.select]] (a double click does the same) and [[ctest.close]].","[[ctest.list]] opent het venster met de kolommen [[ctest.colActive]] (de pijl markeert de actieve), [[ctest.colName]] en [[ctest.colNotes]]. De eerste rij is [[ctest.none]]. Knoppen: [[ctest.edit]], [[ctest.delete]] (vraagt om bevestiging), [[ctest.add]], [[ctest.select]] (een dubbelklik doet hetzelfde) en [[ctest.close]]."
 t.dseh7um64v,"Phone contests are done by choosing SSB in the Mode menu: the QSOs count as phone (points, statistics and Cabrillo with mode PH).","Phone-contests doe je door SSB te kiezen in het menu Modus: de QSO’s tellen als spraak (punten, statistieken en Cabrillo met modus PH)."
@@ -7956,3 +7975,49 @@ t.1ltexjmlf2l,"the text Auto CQ repeats (if missing, that of F2)","de tekst die 
 t.1epqhlm1ww,"alert on received text: Aurora has no such alert, the macro does not run","melding bij ontvangen tekst: Aurora heeft zo’n melding niet, de macro wordt niet uitgevoerd"
 t.1v11owa6bds,has no matching event in Aurora: the macro does not run,heeft geen overeenkomstige gebeurtenis in Aurora: de macro wordt niet uitgevoerd
 t.177p19t303g,"has no matching event in Aurora: you can open it with <EDITMACRO:Hello> to edit it, but it does not run by itself","heeft geen overeenkomstige gebeurtenis in Aurora: je kunt hem openen met <EDITMACRO:Hello> om hem te bewerken, maar hij start niet vanzelf"
+ssbc.name,Name,Naam
+ssbc.qth,QTH,QTH
+ssbc.gripTip,Drag to change the column widths (double-click: restore them),Sleep om de kolombreedte te wijzigen (dubbelklik: herstellen)
+ssbc.qsoNr,QSO no.,QSO-nr.
+ssbc.serialSent,Serial sent,Serienr. verzonden
+ssbc.serialRcvd,Serial rcvd,Serienr. ontvangen
+ssbc.enterHint,Enter = log it,Enter = loggen
+rot.presetTip,"Direction presets (0, 45, 90…): show or hide","Richtingpresets (0, 45, 90…): tonen of verbergen"
+rot.dotOff,Rotor off or not connected: set it up in Settings > Rotator (gear),Rotor uit of niet verbonden: stel het in via Instellingen > Rotor (tandwiel)
+rot.dotOn,Rotor connected: Az {az}°{el},Rotor verbonden: Az {az}°{el}
+rot.dotWait,Connecting to the rotor…,Verbinding met de rotor wordt gemaakt…
+rot.dotErr,Rotor error: check the connection and the settings,Rotorfout: controleer de verbinding en de instellingen
+rot.openSettings,Rotator settings,Rotorinstellingen
+digi.mi.macroRows,Macro rows,Macro-rijen
+digi.mi.macroRowsAuto,Automatic,Automatisch
+digi.mi.macroRowsAutoTip,Only the rows that have at least one macro (choose 1-4 to show the others),Alleen rijen met minstens één macro (kies 1-4 om de andere te tonen)
+ssbc.noBands,No band chosen in the Settings.,Geen band gekozen in de Instellingen.
+ssbc.noBandsLink,Open the settings,Instellingen openen
+digi.mi.onlyDigital,Available only in the digital modes,Alleen beschikbaar in de digitale modi
+digi.bar.single,Single bar,Enkele balk
+digi.bar.extended,Extended bar,Uitgebreide balk
+digi.bar.gear,"Macro bar: rows, font and relief","Macrobalk: rijen, lettertype en reliëf"
+digi.bar.font,Macro button font…,Lettertype van de macroknoppen…
+digi.bar.fontTitle,Font,Lettertype
+digi.bar.fontFamily,Font:,Lettertype:
+digi.bar.fontStyle,Style:,Stijl:
+digi.bar.fontSize,Size:,Grootte:
+digi.bar.fontSample,Sample,Voorbeeld
+digi.bar.styleNormal,Regular,Normaal
+digi.bar.styleItalic,Italic,Cursief
+digi.bar.styleBold,Bold,Vet
+digi.bar.styleBoldItalic,Bold italic,Vet cursief
+digi.bar.fontDefault,Default,Standaard
+t.18ulis2elr6,Logger32: UDP BandMap and automatic logging,Logger32: UDP-bandmap en automatisch loggen
+t.1qad7hwsv41,"Aurora talks to Logger32 like WSJT-X and JTDX: it sends the same destination Heartbeat, Status, one Decode for each message and the logged QSOs. By default the destination is 127.0.0.1, port 2237 (“[[ens.g.udp]]” in [[nav.settings]] › [[sw.fam.log]] › [[sw.pg.reporting]]). “Logged ADIF” is not needed: Logger32 does not require it.","Aurora praat met Logger32 zoals WSJT-X en JTDX: naar dezelfde bestemming stuurt het Heartbeat, Status, één Decode per bericht en de gelogde QSO’s. Standaard is de bestemming 127.0.0.1, poort 2237 (“[[ens.g.udp]]” in [[nav.settings]] › [[sw.fam.log]] › [[sw.pg.reporting]]). “Logged ADIF” is niet nodig: Logger32 vraagt er niet om."
+t.1wrlq0mhxqj,"The official Logger32 FT8 guide dates from 2018 (version 3.50): use a recent Logger32 4.x, because the menus may have changed.","De officiële FT8-handleiding van Logger32 dateert van 2018 (versie 3.50): gebruik een recente Logger32 4.x, want de menu’s kunnen veranderd zijn."
+t.21f35vil0te,"Open the UDP BandMap in Logger32: press Ctrl+J, or right-click the “UDP” panel in the status bar and choose “Open UDP BandMap”. When the UDP panel turns blue, the socket is open. QSO logging works even with the map closed; you see the map only if you open it.","Open de UDP BandMap in Logger32: druk op Ctrl+J, of klik met de rechtermuisknop op het paneel “UDP” in de statusbalk en kies “Open UDP BandMap”. Wordt het UDP-paneel blauw, dan staat de socket open. Het loggen van QSO’s werkt ook met de kaart dicht; de kaart zie je alleen als je hem opent."
+t.1jljwcspqpm,"In the UDP BandMap, open the Config menu and turn on “Allow automatic WSJT/JTDX QSO logging” (automatic logging of QSOs from WSJT-X/JTDX).",Zet in het menu Config van de UDP BandMap “Allow automatic WSJT/JTDX QSO logging” aan (automatisch loggen van QSO’s uit WSJT-X/JTDX).
+t.6xol75gi2,"The Logger32 port must be the same as Aurora’s. Right-click “UDP” in Logger32 › “Change WSJT/JTDX port #”: by default 2237, like Aurora’s port (“[[ens.k.UDPServerPort]]”).","De poort van Logger32 moet dezelfde zijn als die van Aurora. Klik met de rechtermuisknop op “UDP” in Logger32 › “Change WSJT/JTDX port #”: standaard 2237, zoals de poort van Aurora (“[[ens.k.UDPServerPort]]”)."
+t.1wdvph425mi,"In Logger32, Config: station visibility must last 30 seconds or more. For a test, untick “Block callsigns worked before”, otherwise stations already worked do not appear.","In Logger32, Config: de zichtbaarheid van stations moet 30 seconden of langer zijn. Voor een test haal je het vinkje bij “Block callsigns worked before” weg, anders verschijnen stations waarmee je al hebt gewerkt niet."
+t.1lqal3sf1o3,"Close JTAlert and GridTracker if they use the same port 2237: two programs cannot listen on the same port on the same PC. If you need both, use the RPTR relay of Logger32: right-click RPTR › “Setup additional UDP ports” › “Enable sender A”, port 2238, and give GridTracker that port.","Sluit JTAlert en GridTracker als ze dezelfde poort 2237 gebruiken: twee programma’s kunnen op dezelfde pc niet naar dezelfde poort luisteren. Heb je beide nodig, gebruik dan de RPTR-repeater van Logger32: klik met de rechtermuisknop op RPTR › “Setup additional UDP ports” › “Enable sender A”, poort 2238, en geef GridTracker die poort."
+t.1gvjpqi085c,"Diagnosis: in Logger32, Config › “Show UDP message debug window”. If Decodes appear, the map fills up. If only QSOs appear, Aurora sends only ADIF to that destination: the map needs the WSJT-X stream on the primary UDP server, ADIF is not enough. Check in [[nav.settings]] › [[sw.fam.log]] › [[sw.pg.reporting]].","Diagnose: in Logger32, Config › “Show UDP message debug window”. Verschijnen er Decodes, dan vult de kaart zich. Verschijnen alleen QSO’s, dan stuurt Aurora naar die bestemming alleen ADIF: de kaart heeft het WSJT-X-verkeer op de primaire UDP-server nodig, ADIF is niet genoeg. Controleer dit in [[nav.settings]] › [[sw.fam.log]] › [[sw.pg.reporting]]."
+t.ju2c8e2uky,"To let Logger32 follow Aurora’s frequency and mode: “Allow WSJT/JTDX to set frequency/mode”, with Logger32’s CAT closed. This is not yet verified with Aurora: if it does not work well, leave radio control to Aurora only.","Wil je dat Logger32 frequentie en modus van Aurora volgt: “Allow WSJT/JTDX to set frequency/mode”, met de CAT van Logger32 gesloten. Dit is nog niet met Aurora getest: werkt het niet goed, laat de bediening van de radio dan alleen aan Aurora."
+t.1xybilmpeta,The “UDP” panel does not turn blue: open the UDP BandMap (Ctrl+J) and check the port.,Het paneel “UDP” wordt niet blauw: open de UDP BandMap (Ctrl+J) en controleer de poort.
+t.1n1fmy0w2g8,The map stays empty: see step 6 (UDP debug).,De kaart blijft leeg: zie stap 6 (UDP-debug).
+t.1guxa7gkt47,QSOs are not logged: check that the Logger32 port is Aurora’s and that “Allow automatic WSJT/JTDX QSO logging” is on.,De QSO’s worden niet gelogd: controleer of de poort van Logger32 dezelfde is als die van Aurora en of “Allow automatic WSJT/JTDX QSO logging” aan staat.

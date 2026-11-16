@@ -11,7 +11,7 @@ import type { FrequencyEntry } from '../api/client';
  * 3735, 7165, 14230, 21340, 28680. Regione 2 col piano ARRL, Regione 3 col piano IARU R3; dal 6 m in su il piano ARI.
  * Regione: `ALL` valida ovunque, `R1`, `R2` o `R3` solo li' (come nella tabella dei modi dell'FT8).
  */
-export type TextMode = 'PSK31' | 'PSK63' | 'RTTY' | 'SSTV' | 'CW';
+export type TextMode = 'PSK31' | 'PSK63' | 'RTTY' | 'SSTV' | 'CW' | 'SSB';
 
 type Row = readonly [band: string, hz: number, region: 'ALL' | 'R1' | 'R2' | 'R3', preferred: boolean];
 
@@ -113,7 +113,21 @@ const CW: readonly Row[] = [
   ['1.2cm', 24_048_200_000, 'ALL', true],
 ];
 
-const PLAN: Record<TextMode, readonly Row[]> = { PSK31: PSK, PSK63: PSK, RTTY, SSTV, CW };
+// SSB (fonia): l'inizio del tratto fonia del piano IARU Regione 1 per ogni banda HF (frequenza della manopola; in 160, 80 e 40 m si usa la LSB,
+// dai 20 m in su la USB); sui 6 m la frequenza di chiamata SSB del piano ARI. Nel contest in SSB un clic sulla banda porta la radio qui.
+const SSB: readonly Row[] = [
+  ['160m', 1_843_000, 'ALL', true],
+  ['80m', 3_600_000, 'ALL', true],
+  ['40m', 7_060_000, 'ALL', true],
+  ['20m', 14_125_000, 'ALL', true],
+  ['17m', 18_111_000, 'ALL', true],
+  ['15m', 21_151_000, 'ALL', true],
+  ['12m', 24_931_000, 'ALL', true],
+  ['10m', 28_300_000, 'ALL', true],
+  ['6m', 50_150_000, 'ALL', true],
+];
+
+const PLAN: Record<TextMode, readonly Row[]> = { PSK31: PSK, PSK63: PSK, RTTY, SSTV, CW, SSB };
 
 /** Le righe del piano di banda di un modo, nella forma della tabella delle frequenze (cosi' le mostra lo stesso selettore dell'FT8). */
 export function bandPlanRows(mode: TextMode): FrequencyEntry[] {

@@ -40,9 +40,9 @@ export function scoreLine(t: ReturnType<typeof useT>, s: TextContestScore): stri
 
 type MultType = 'dxcc' | 'cq' | 'itu' | 'wpx' | 'cont' | 'area' | 'dom' | 'call';
 const MULT_TYPES: MultType[] = ['cq', 'itu', 'dxcc', 'area', 'wpx', 'dom', 'cont', 'call'];
-const multName = (t: ReturnType<typeof useT>, tipo: string) => (MULT_TYPES.includes(tipo as MultType) ? t(`ctest.mt.${tipo as MultType}`) : tipo);
+export const multName = (t: ReturnType<typeof useT>, tipo: string) => (MULT_TYPES.includes(tipo as MultType) ? t(`ctest.mt.${tipo as MultType}`) : tipo);
 /** `dxcc:DL` -> `DL (Paesi DXCC)`. */
-const multLabel = (t: ReturnType<typeof useT>, m: string) => {
+export const multLabel = (t: ReturnType<typeof useT>, m: string) => {
   const i = m.indexOf(':');
   return i < 0 ? m : `${m.slice(i + 1)} (${multName(t, m.slice(0, i))})`;
 };

@@ -99,11 +99,11 @@ html[data-bozza] input[type='submit'] {
 }
 
 /* al passaggio del mouse lo sfondo di ogni pulsante cambia in modo ben visibile (senza ombre); i tasti del display della radio no: hanno i colori dello stato (TUNER, BUSY, ATT) e il loro bordo bianco */
-html[data-bozza] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.rd-face-hit):not(.rd-pwr-btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):not(.decode-row--pin):not(.decode-row--me-yellow):not(.decode-row--me-cyan):not(.decode-row--hl-bg):hover:not(:disabled) {
+html[data-bozza] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.digi-menu > button):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.rd-face-hit):not(.rd-pwr-btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):not(.decode-row--pin):not(.decode-row--me-yellow):not(.decode-row--me-cyan):not(.decode-row--hl-bg):hover:not(:disabled) {
   background: #1d3157 !important;
   border-color: #4b6bb0 !important;
 }
-html[data-bozza][data-theme='light'] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.rd-face-hit):not(.rd-pwr-btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):not(.decode-row--pin):not(.decode-row--me-yellow):not(.decode-row--me-cyan):not(.decode-row--hl-bg):hover:not(:disabled) {
+html[data-bozza][data-theme='light'] :is(button, a.glass, .chip, [role='tab']):not(.app-nav a):not(.digi-menu > button):not(.md-chip):not(.rx-chip--btn):not(.fp-chip):not(.rd-face-hit):not(.rd-pwr-btn):not(.glass--on):not([aria-pressed='true']):not([aria-selected='true']):not(.decode-row--pin):not(.decode-row--me-yellow):not(.decode-row--me-cyan):not(.decode-row--hl-bg):hover:not(:disabled) {
   background: #dfe8f6 !important;
   border-color: #3f5a8e !important;
 }
@@ -162,7 +162,7 @@ html[data-bozza][data-theme='light'] .dock-panel {
 html[data-bozza] .band-bar .glass--on,
 html[data-bozza] .cmd-chips .chip.glass--on,
 html[data-bozza] .mode-switch-btn.glass--on,
-html[data-bozza] .glass--on:not(.app-nav a),
+html[data-bozza] .glass--on:not(.app-nav a):not(.digi-menu > button),
 html[data-bozza] .alert-switch button[aria-pressed='true'] {
   background: #0e2f24 !important;
   border-color: #2cf5a4 !important;
@@ -173,7 +173,7 @@ html[data-bozza] .cmd-chips .chip.glass--on::before { background: #2cf5a4; box-s
 html[data-bozza][data-theme='light'] .band-bar .glass--on,
 html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on,
 html[data-bozza][data-theme='light'] .mode-switch-btn.glass--on,
-html[data-bozza][data-theme='light'] .glass--on:not(.app-nav a),
+html[data-bozza][data-theme='light'] .glass--on:not(.app-nav a):not(.digi-menu > button),
 html[data-bozza][data-theme='light'] .alert-switch button[aria-pressed='true'] {
   background: #d3f1e3 !important;
   border-color: #0b7f4a !important;
@@ -183,7 +183,7 @@ html[data-bozza][data-theme='light'] .cmd-chips .chip.glass--on::before { backgr
 /* il pulsante acceso resta com'e' al passaggio del mouse, solo un po' piu' vivo */
 html[data-bozza] .band-bar .glass--on:hover,
 html[data-bozza] .cmd-chips .chip.glass--on:hover,
-html[data-bozza] .glass--on:not(.app-nav a):hover { filter: brightness(1.15); }
+html[data-bozza] .glass--on:not(.app-nav a):not(.digi-menu > button):hover { filter: brightness(1.15); }
 
 /* menu in alto: al passaggio del mouse lo sfondo della pillola si vede bene (le voci non attive) */
 html[data-bozza] .app-nav a:not(.glass--on):not([aria-current='page']):hover {

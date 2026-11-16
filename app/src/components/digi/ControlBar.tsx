@@ -1,14 +1,25 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { PopupMenu } from '../PopupMenu';
+import { macroVars } from './MacroFontDialog';
+import { browserStorage } from '../../lib/theme';
+import { MacroFontDialog, type MacroLook, readLook, LOOK_KEY } from './MacroFontDialog';
+import '../../styles/digi-macro-style.css';
 import { useT } from '../../i18n';
 import { cssColor, MACRO_ROWS, type Macro } from '../../lib/macroLang';
 
 
+const ROW_LABELS = ['', 'Ctrl', 'Shift', 'Ctrl+Shift'] as const;
+
 interface Props {
   macros: ReadonlyMap<string, Macro>;
-  /** Tutte e 4 le righe sempre in vista. */
+  /** Barra estesa (le righe scelte con `rows`) o compatta (una riga: quella dei modificatori tenuti premuti). */
   extended: boolean;
+  /** Barra multipla (`true`: le righe scelte, di base 4) o singola (`false`: una riga). */
+  onSetExtended(multi: boolean): void;
+  /** Tutte e 4 le righe sempre in vista. */
+  /** Quante righe di macro mostrare: un numero da 1 a 4, oppure `auto` (solo le righe che hanno almeno una macro). */
+  rows?: number | 'auto';
   disabled?: boolean;
-  onToggleExtended(): void;
   onRun(macro: Macro): void;
   /** Clic destro: si modifica la macro di quel tasto (esista o no). */
   onEdit(name: string): void;
@@ -49,12 +60,44 @@ export function shortKey(name: string): string {
 const isAutoCqMacro = (text: string) => /<\s*(AUTOCQ|ACQ)\s*>/i.test(text);
 
 
+/** I tasti Ctrl e Shift tenuti premuti: a barra compatta mostrano la riga corrispondente. */
+function useHeldModifiers(): { ctrl: boolean; shift: boolean } {
+  const [held, setHeld] = useState({ ctrl: false, shift: false });
+  useEffect(() => {
+    const update = (e: KeyboardEvent) => setHeld((h) => (h.ctrl === e.ctrlKey && h.shift === e.shiftKey ? h : { ctrl: e.ctrlKey, shift: e.shiftKey }));
+    const clear = () => setHeld({ ctrl: false, shift: false });
+    window.addEventListener('keydown', update);
+    window.addEventListener('keyup', update);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('keydown', update);
+      window.removeEventListener('keyup', update);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
+  return held;
+}
+
 /**
  * La barra dei comandi: 12 tasti per riga a gruppi di 4 (F1-F4 · F5-F8 · F9-F12), 4 righe (nessun modificatore,
  * Ctrl, Shift, Ctrl+Shift). Ogni pulsante ha etichetta e colore; clic o tasto eseguono la macro, clic destro la modificano.
  */
-export function ControlBar({ macros, extended, disabled = false, onToggleExtended, onRun, onEdit, autoCq = 'off', onMove }: Props) {
+export function ControlBar({ macros, extended, onSetExtended, rows: rowsWanted = 4, disabled = false, onRun, onEdit, autoCq = 'off', onMove }: Props) {
   const t = useT();
+  // l'ingranaggio apre un piccolo menu: barra singola o multipla, carattere dei pulsanti e rilievo 3D (le ultime due scelte restano salvate)
+  const [gearAt, setGearAt] = useState<{ x: number; y: number } | null>(null);
+  const [look, setLookState] = useState<MacroLook>(readLook);
+  const [fontOpen, setFontOpen] = useState(false);
+  // mentre il dialogo del carattere e' aperto i pulsanti mostrano subito la scelta in corso
+  const [live, setLive] = useState<MacroLook | null>(null);
+  const setLook = (next: MacroLook) => {
+    setLookState(next);
+    try {
+      browserStorage()?.setItem(LOOK_KEY, JSON.stringify(next));
+    } catch {
+      // la scelta vale comunque finche' la pagina e' aperta
+    }
+  };
   // clic tenuto: dopo HOLD_MS il tasto si accende (bordo) e si puo' trascinare su un altro; un clic breve esegue come sempre
   const hold = useRef<{ name: string; x: number; y: number; timer: number | null } | null>(null);
   const [armed, setArmed] = useState<string | null>(null);
@@ -71,13 +114,16 @@ export function ControlBar({ macros, extended, disabled = false, onToggleExtende
     const el = typeof document.elementFromPoint === 'function' ? document.elementFromPoint(x, y) : null;
     return el?.closest<HTMLElement>('[data-macro]')?.dataset.macro ?? null;
   };
-  // le 4 righe di macro restano tutte visibili; solo la prima ha i tasti F1-F12, le altre si usano col clic (proprietario, 2026-11-14)
-  void extended;
-  void onToggleExtended;
-  const rows = [0, 1, 2, 3];
+  // solo la prima riga ha i tasti F1-F12, le altre si usano col clic; le righe mostrate si scelgono dal menu Vista (o `auto`: solo quelle con macro)
+  const filled = (r: number) => Array.from({ length: 12 }, (_, i) => macros.get(`${MACRO_ROWS[r]}F${i + 1}`)).some((m) => m && (m.label.trim() !== '' || m.text.trim() !== ''));
+  const held = useHeldModifiers();
+  const current = held.ctrl && held.shift ? 3 : held.ctrl ? 1 : held.shift ? 2 : 0;
+  const all = [0, 1, 2, 3];
+  const shownRows = rowsWanted === 'auto' ? (all.filter(filled).length > 0 ? all.filter(filled) : [0]) : all.slice(0, Math.min(4, Math.max(1, Math.round(rowsWanted))));
+  const rows = extended ? shownRows : [current];
 
   return (
-    <div ref={toolbar} className={`digi-bar-keys${armed ? ' digi-bar-keys--dragging' : ''}`} role="toolbar" aria-label={t('digi.bar.title')}>
+    <div ref={toolbar} className={`digi-bar-keys${armed ? ' digi-bar-keys--dragging' : ''}`} style={macroVars(live ?? look)} role="toolbar" aria-label={t('digi.bar.title')}>
       <div className="digi-keys">
         {rows.map((r) => (
           <div key={r} className="digi-keyrow">
@@ -168,9 +214,33 @@ ${t('digi.bar.moveHint')}` : ''}`}
                 </button>
               );
             })}
+            <span className="digi-keyrow-tail">
+              <span className="digi-keyrow-label">{ROW_LABELS[r]}</span>
+            {r === rows[0] ? (
+                <button type="button" className="digi-gear" aria-haspopup="menu" aria-expanded={gearAt !== null} title={t('digi.bar.gear')} aria-label={t('digi.bar.gear')} onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setGearAt(gearAt ? null : { x: r.right - 210, y: r.bottom + 2 }); }}>
+                ⚙
+              </button>
+            ) : null}
+            </span>
           </div>
         ))}
       </div>
+      <PopupMenu at={gearAt} onClose={() => setGearAt(null)} className="call-menu digi-st-menu" width={220} height={150} label={t('digi.bar.gear')}>
+        <button type="button" role="menuitemradio" aria-checked={!extended} onClick={() => { onSetExtended(false); setGearAt(null); }}>
+          <span className="digi-st-menu-check" aria-hidden="true">{!extended ? '✓' : ''}</span>
+          {t('digi.bar.single')}
+        </button>
+        <button type="button" role="menuitemradio" aria-checked={extended} onClick={() => { onSetExtended(true); setGearAt(null); }}>
+          <span className="digi-st-menu-check" aria-hidden="true">{extended ? '✓' : ''}</span>
+          {t('digi.bar.extended')}
+        </button>
+        <hr />
+        <button type="button" role="menuitem" onClick={() => { setGearAt(null); setFontOpen(true); }}>
+          <span className="digi-st-menu-check" aria-hidden="true" />
+          {t('digi.bar.font')}
+        </button>
+      </PopupMenu>
+      {fontOpen ? <MacroFontDialog value={look} onPreview={setLive} onApply={(v) => { setLook(v); setLive(null); setFontOpen(false); }} onClose={() => { setLive(null); setFontOpen(false); }} /> : null}
     </div>
   );
 }
