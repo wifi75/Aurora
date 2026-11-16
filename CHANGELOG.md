@@ -12,6 +12,8 @@
 - Menu: il menu Contest è sempre nella barra (tolta la voce da Vista); nei modi SSB le voci che servono solo ai modi digitali sono grigie con la spiegazione; la voce Log di Vista fa apparire e sparire il log anche in SSB.
 - Rotore: scheda più piccola, trascinabile e ridimensionabile; display accanto alla rosa dei venti; pallina di stato (rossa spento, verde acceso) con spiegazione; clic o trascinamento sulla rosa sposta il rotore; direzioni predefinite dietro il pulsante ≡; ingranaggio con gradi a mano, ±2/±10, DX corto e lungo, Park. Tolte le scritte «nessuna stazione DX» e «rotore non acceso».
 - Guida: nuova sezione Logger32 (mappa UDP: la UDP BandMap si apre con Ctrl+J, porta 2237, registrazione automatica, diagnosi) (#76).
+- Nominativo: il riquadro con nome, paese e azimut non resta piu' appeso; si chiude da solo se il mouse esce dalla finestra, si cambia finestra, si scorre o si preme Esc.
+- Elenchi: le righe con sfondo chiaro (QSO in corso, mio nominativo giallo o ciano) hanno tutte le celle in colore scuro leggibile al posto dei grigi.
 
 ## 0.11.276 - 2026-11-16
 
