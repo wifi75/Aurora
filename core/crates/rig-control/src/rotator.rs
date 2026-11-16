@@ -285,14 +285,14 @@ impl RotctldClient {
     }
 }
 
-/// Il messaggio UDP di PSTRotator per l'azimut.
+/// Il messaggio UDP di PSTRotator per l'azimut. Gradi interi, come negli esempi del protocollo di PSTRotator.
 pub fn pst_azimuth_message(az: f64) -> String {
-    format!("<PST><AZIMUTH>{az:.1}</AZIMUTH></PST>")
+    format!("<PST><AZIMUTH>{}</AZIMUTH></PST>", az.round() as i64)
 }
 
 /// Il messaggio UDP di PSTRotator per l'elevazione.
 pub fn pst_elevation_message(el: f64) -> String {
-    format!("<PST><ELEVATION>{el:.1}</ELEVATION></PST>")
+    format!("<PST><ELEVATION>{}</ELEVATION></PST>", el.round() as i64)
 }
 
 /// Il messaggio UDP di PSTRotator per fermare il rotore.
@@ -921,8 +921,8 @@ mod tests {
 
     #[test]
     fn pst_messages_and_config() {
-        assert_eq!(pst_azimuth_message(123.0), "<PST><AZIMUTH>123.0</AZIMUTH></PST>");
-        assert_eq!(pst_elevation_message(45.0), "<PST><ELEVATION>45.0</ELEVATION></PST>");
+        assert_eq!(pst_azimuth_message(123.0), "<PST><AZIMUTH>123</AZIMUTH></PST>");
+        assert_eq!(pst_elevation_message(45.0), "<PST><ELEVATION>45</ELEVATION></PST>");
         assert_eq!(PST_STOP_MESSAGE, "<PST><STOP>1</STOP></PST>");
         let pst = RotatorConfig { enabled: true, connection: RotConnection::Pst, ..RotatorConfig::default() };
         assert!(pst.validate().is_ok(), "senza modello: non serve");
@@ -948,8 +948,8 @@ mod tests {
             String::from_utf8_lossy(&buf[..n]).into_owned()
         };
         client.set_position(123.4, 45.0).expect("vai");
-        assert_eq!(next(), "<PST><AZIMUTH>123.4</AZIMUTH></PST>");
-        assert_eq!(next(), "<PST><ELEVATION>45.0</ELEVATION></PST>");
+        assert_eq!(next(), "<PST><AZIMUTH>123</AZIMUTH></PST>");
+        assert_eq!(next(), "<PST><ELEVATION>45</ELEVATION></PST>");
         client.stop().expect("ferma");
         assert_eq!(next(), "<PST><STOP>1</STOP></PST>");
     }
@@ -967,9 +967,9 @@ mod tests {
         service.goto(200.0, Some(30.0)).expect("vai");
         let mut buf = [0u8; 256];
         let n = receiver.recv(&mut buf).expect("azimut");
-        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><AZIMUTH>200.0</AZIMUTH></PST>");
+        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><AZIMUTH>200</AZIMUTH></PST>");
         let n = receiver.recv(&mut buf).expect("elevazione");
-        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><ELEVATION>30.0</ELEVATION></PST>");
+        assert_eq!(String::from_utf8_lossy(&buf[..n]), "<PST><ELEVATION>30</ELEVATION></PST>");
         let s = wait_for(&service, |s| !s.moving);
         assert!(!s.moving && s.az.is_none());
         service.stop().expect("ferma");
