@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.286 (da pubblicare, 2026-11-17)
+## Nella 0.11.286 (pubblicata 2026-11-17T18:32:12Z)
 Log del contest con le colonne Scambio inv./ric. (`exch_sent`/`exch_rcvd` nel log interno, migrazione 6 di `logbook`; `DigiLog.tsx`, colonne `exS`/`exR`), finestre della vista SSB con bordo viola e barra sfumata (`digi-ssb-contest.css`), ricerca delle radio senza il limite di 12 e in ordine di numero (`CatTab.tsx`), protezione del VFO con Hamlib (`extras.rs` per la lettura del VFO B, `spawn_start_on_main_frequency` in `aurora/src/lib.rs` all'avvio: NON provata su una IC-756PRO vera, segnalazione di un amico del proprietario; se si ripete servono pacchetto di assistenza e impostazioni), avviso del nominativo (il motore lo legge solo all'avvio: `diag.callsign.restart`), niente avvisi mentre la guida del primo avvio e' aperta (`lib/firstRunOpen.ts`), km centrati in Attivita' di banda. Segnalazioni aperte: #71 (PTT acceso e spento a fine QSO FT8, attende i dati dell'autore), #72, #75 (RX/TX in CW, attende finestra e pacchetto 3B07DEE5). Dizionario olandese riallineato con `scripts/export-nl.mjs` e `scripts/importa-nl.mjs` (prove verdi); il CAT con radio spenta scrive l'avviso al primo tentativo e poi ogni 30.
 
 ## Nella 0.11.285 (pubblicata 2026-11-17T15:07:36Z, stesso contenuto della 0.11.284 con numero nuovo) e nella 0.11.284 (pubblicata 2026-11-17T14:49:25Z)

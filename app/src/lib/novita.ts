@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.286',
-    released: '2026-11-17T20:00:00Z',
+    released: '2026-11-17T18:32:12Z',
     kind: 'new',
     title: [
       'Log del contest con lo scambio',
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.286',
-    released: '2026-11-17T20:00:00Z',
+    released: '2026-11-17T18:32:12Z',
     kind: 'changed',
     title: [
       'Vista SSB con le finestre del contest',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.286',
-    released: '2026-11-17T20:00:00Z',
+    released: '2026-11-17T18:32:12Z',
     kind: 'fixed',
     title: [
       'Ricerca della radio: tutte le Icom',
@@ -87,7 +87,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.286',
-    released: '2026-11-17T20:00:00Z',
+    released: '2026-11-17T18:32:12Z',
     kind: 'fixed',
     title: [
       'Radio Icom: niente VFO B dopo il riavvio',
@@ -108,7 +108,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.286',
-    released: '2026-11-17T20:00:00Z',
+    released: '2026-11-17T18:32:12Z',
     kind: 'fixed',
     title: [
       'Primo avvio e Attività di banda',
