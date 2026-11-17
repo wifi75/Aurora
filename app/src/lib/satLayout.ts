@@ -8,15 +8,15 @@ export const SAT_LAYOUT_VERSION = 5;
 export const SAT_WIDGET_IDS = ['map', 'list', 'data', 'pass', 'ctl', 'all', 'info'] as const;
 export type SatWidgetId = (typeof SAT_WIDGET_IDS)[number];
 
-/** Dimensioni minime (colonne x righe) di ogni scheda; la cartina ha le proporzioni fisse 2/1. L'altezza vera segue il contenuto. */
+/** Dimensioni minime (colonne x righe) di ogni scheda, le piu' piccole che il contenuto sopporta (oltre scorre dentro la scheda); la cartina ha le proporzioni fisse 2/1. L'altezza vera segue il contenuto. */
 export const SAT_MINS: Record<SatWidgetId, Pick<DashSpec, 'minW' | 'minH'>> = {
-  map: { minW: 4, minH: 4 },
-  list: { minW: 3, minH: 5 },
-  data: { minW: 3, minH: 4 },
-  pass: { minW: 4, minH: 4 },
-  ctl: { minW: 3, minH: 6 },
-  all: { minW: 4, minH: 4 },
-  info: { minW: 3, minH: 3 },
+  map: { minW: 3, minH: 3 },
+  list: { minW: 2, minH: 3 },
+  data: { minW: 2, minH: 3 },
+  pass: { minW: 3, minH: 3 },
+  ctl: { minW: 2, minH: 3 },
+  all: { minW: 3, minH: 3 },
+  info: { minW: 2, minH: 2 },
 };
 
 /** Larghezza massima (colonne) delle schede con poco contenuto: non si allargano oltre, nemmeno col riempimento a destra. */
@@ -28,13 +28,13 @@ export const SAT_MAX_ROWS: Record<SatWidgetId, number> = { map: 40, list: 10, da
 /** Disposizione di partenza: a sinistra la cartina (8 colonne) e sotto i due passaggi affiancati (4 + 4); a destra, in 4 colonne, dati, elenco, Doppler e rotore, informazioni. Le altezze vere seguono il contenuto. */
 export function defaultLayout(): DashItem[] {
   return [
-    { id: 'map', x: 0, y: 0, w: 8, h: 4 },
-    { id: 'data', x: 8, y: 0, w: 4, h: 4 },
-    { id: 'list', x: 8, y: 5, w: 4, h: 5 },
-    { id: 'ctl', x: 8, y: 11, w: 4, h: 6 },
-    { id: 'info', x: 8, y: 20, w: 4, h: 3 },
-    { id: 'pass', x: 0, y: 14, w: 4, h: 4 },
-    { id: 'all', x: 4, y: 14, w: 4, h: 4 },
+    { id: 'map', x: 0, y: 0, w: 8, h: 3 },
+    { id: 'data', x: 8, y: 0, w: 4, h: 3 },
+    { id: 'list', x: 8, y: 5, w: 4, h: 3 },
+    { id: 'ctl', x: 8, y: 11, w: 4, h: 3 },
+    { id: 'info', x: 8, y: 20, w: 4, h: 2 },
+    { id: 'pass', x: 0, y: 14, w: 4, h: 3 },
+    { id: 'all', x: 4, y: 14, w: 4, h: 3 },
   ];
 }
 

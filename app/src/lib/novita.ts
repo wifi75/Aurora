@@ -24,6 +24,27 @@ export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.282',
     released: '2026-11-17T12:00:00Z',
+    kind: 'changed',
+    title: [
+      'Satelliti: schede più strette e più basse; DX Cluster più leggibile',
+      'Satellites: narrower and shorter cards; more readable DX Cluster',
+      'Satelliten: schmalere und niedrigere Felder; besser lesbarer DX-Cluster',
+      'Satellites : fiches plus étroites et plus basses ; DX Cluster plus lisible',
+      'Satélites: tarjetas más estrechas y más bajas; DX Cluster más legible',
+      'Satélites: cartões mais estreitos e mais baixos; DX Cluster mais legível',
+    ],
+    text: [
+      'Nella pagina Satelliti le schede si possono ridurre molto di più, fino a 2 colonne e 2-3 righe: il contenuto scorre dentro la scheda. Nel DX Cluster con il tema chiaro le etichette UP e QSX sono più leggibili, con testo bianco su marrone scuro.',
+      'On the Satellites page the cards can be made much smaller, down to 2 columns and 2-3 rows: the content scrolls inside the card. In the DX Cluster with the light theme the UP and QSX labels are more readable, with white text on dark brown.',
+      'Auf der Seite Satelliten lassen sich die Felder viel stärker verkleinern, bis auf 2 Spalten und 2-3 Zeilen: Der Inhalt scrollt im Feld. Im DX-Cluster mit hellem Design sind die Beschriftungen UP und QSX besser lesbar, mit weißem Text auf dunklem Braun.',
+      'Dans la page Satellites les fiches peuvent être réduites bien plus, jusqu’à 2 colonnes et 2-3 lignes : le contenu défile à l’intérieur. Dans le DX Cluster avec le thème clair, les étiquettes UP et QSX sont plus lisibles, avec du texte blanc sur du marron foncé.',
+      'En la página Satélites las tarjetas se pueden reducir mucho más, hasta 2 columnas y 2-3 filas: el contenido se desplaza dentro. En el DX Cluster con el tema claro las etiquetas UP y QSX son más legibles, con texto blanco sobre marrón oscuro.',
+      'Na página Satélites os cartões podem ser reduzidos muito mais, até 2 colunas e 2-3 linhas: o conteúdo desloca-se lá dentro. No DX Cluster com o tema claro as etiquetas UP e QSX são mais legíveis, com texto branco sobre castanho escuro.',
+    ],
+  },
+  {
+    version: '0.11.282',
+    released: '2026-11-17T12:00:00Z',
     kind: 'fixed',
     title: [
       'PTT che non si spegne: tentativi, avviso e protezione',
@@ -844,28 +865,6 @@ export const NOVITA: readonly Novita[] = [
       'RTTY : le texte commence au premier caractère fiable, donc beaucoup moins de bruit imprimé entre les émissions (erreurs dans les silences de 10,6 à 3,0 %). Aurora BIGScan RTTY examine la bande toutes les demi-secondes, reconnaît shift et vitesse de chaque station et respecte la limite de charge. CW : espaces entre lettres et mots mieux reconnus, surtout avec un manipulateur droit (erreurs presque divisées par deux), et plus d’indicatifs lus correctement.',
       'RTTY: el texto empieza en el primer carácter fiable, así se imprime mucho menos ruido entre transmisiones (errores en los silencios de 10,6 a 3,0 %). Aurora BIGScan RTTY revisa la banda cada medio segundo, reconoce desplazamiento y velocidad de cada estación y respeta el límite de carga. CW: pausas entre letras y palabras mejor reconocidas, sobre todo con manipulador manual (errores casi a la mitad), y más indicativos leídos correctamente.',
       'RTTY: o texto começa no primeiro carácter fiável, por isso imprime-se muito menos ruído entre transmissões (erros nos silêncios de 10,6 para 3,0 %). O Aurora BIGScan RTTY examina a banda a cada meio segundo, reconhece desvio e velocidade de cada estação e respeita o limite de carga. CW: pausas entre letras e palavras melhor reconhecidas, sobretudo com manipulador manual (erros quase para metade), e mais indicativos lidos corretamente.',
-    ],
-  },
-  {
-    version: '0.11.260',
-    released: '2026-11-14T23:01:32Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Frequenza in tempo reale e macro spostabili',
-      'Real-time frequency and movable macros',
-      'Frequenz in Echtzeit und verschiebbare Makros',
-      'Fréquence en temps réel et macros déplaçables',
-      'Frecuencia en tiempo real y macros movibles',
-      'Frequência em tempo real e macros móveis',
-    ],
-    text: [
-      'Girando il VFO della radio la frequenza in Aurora segue subito (con Hamlib: lettura veloce ogni 160 ms mentre si sintonizza), anche su porta seriale. Le macro della barra si spostano tenendo premuto un pulsante e trascinandolo: il bordo si accende, i tasti si scambiano e il tasto F segue la posizione; con Annulla si torna indietro. La barra ha di nuovo 4 righe: la prima con F1-F12, le altre col clic.',
-      'Turning the radio VFO, the frequency in Aurora follows at once (with Hamlib: fast read every 160 ms while tuning), on serial ports too. Macro bar buttons move by pressing and holding then dragging: the border lights up, the keys swap and the F key follows the position; Undo goes back. The bar has 4 rows again: the first with F1-F12, the others by click.',
-      'Beim Drehen am VFO folgt die Frequenz in Aurora sofort (mit Hamlib: schnelles Lesen alle 160 ms beim Abstimmen), auch an seriellen Ports. Makrotasten lassen sich durch Gedrückthalten und Ziehen verschieben: der Rand leuchtet, die Tasten tauschen und die F-Taste folgt der Position; Rückgängig stellt zurück. Die Leiste hat wieder 4 Zeilen: die erste mit F1-F12, die anderen per Klick.',
-      'En tournant le VFO de la radio, la fréquence dans Aurora suit aussitôt (avec Hamlib : lecture rapide toutes les 160 ms pendant l’accord), même sur port série. Les boutons de macros se déplacent en restant appuyé puis en glissant : le bord s’allume, les touches s’échangent et la touche F suit la position ; Annuler revient en arrière. La barre a de nouveau 4 lignes : la première avec F1-F12, les autres au clic.',
-      'Al girar el VFO de la radio, la frecuencia en Aurora sigue al instante (con Hamlib: lectura rápida cada 160 ms mientras se sintoniza), también por puerto serie. Los botones de macros se mueven manteniendo pulsado y arrastrando: el borde se ilumina, las teclas se intercambian y la tecla F sigue la posición; Deshacer vuelve atrás. La barra vuelve a tener 4 filas: la primera con F1-F12, las demás con clic.',
-      'Ao rodar o VFO do rádio, a frequência na Aurora acompanha logo (com Hamlib: leitura rápida a cada 160 ms enquanto se sintoniza), também por porta série. Os botões das macros movem-se mantendo premido e arrastando: o bordo acende-se, as teclas trocam e a tecla F segue a posição; Anular volta atrás. A barra volta a ter 4 linhas: a primeira com F1-F12, as outras com clique.',
     ],
   },
 ];

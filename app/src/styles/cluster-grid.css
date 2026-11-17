@@ -69,6 +69,13 @@
   background: var(--warn);
 }
 
+:root[data-theme='light'] .cluster .cluster-split:not(.cluster-split--off) {
+  /* tema chiaro: testo bianco su marrone scuro (contrasto oltre 7:1), leggibile anche sulle righe gialle degli spot rari */
+  color: #fff;
+  background: #7a4100;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.55);
+}
+
 .cluster .cluster-split--off {
   color: var(--text);
   background: transparent;
