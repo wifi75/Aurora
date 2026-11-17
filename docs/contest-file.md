@@ -17,6 +17,10 @@ sovrascrivere niente; poi i file sono dell'utente: quelli cancellati non tornano
 Il codice sta in `core/crates/contest/src/elenco.rs`, le rotte in `core/crates/remote-api/src/contest_testo_api.rs`
 (`/api/v1/contest-testo`), l'interfaccia in `app/src/components/digi/ContestListDialog.tsx` e `app/src/lib/textContest.ts`.
 
+## Contest a cartella
+
+I contest nuovi stanno in una cartella (`contest/<nome>/` nel repository e nell'installatore, `<dati>/contest/<nome>/` per l'utente) e valgono al posto del `.contest` con lo stesso nome: il formato, la regola dei nomi uguali, le date delle edizioni e il controllo automatico sono in `docs/contest-formato.md`. Aurora li converte in un contest come quelli di questo file, quindi tutto quello che segue (punteggio, Cabrillo, macro, domini) vale uguale.
+
 ## Importa ed esporta
 
 «Importa contest…» ed «Esporta contest…» della finestra dell'elenco usano un pacchetto `.zip` (codice in

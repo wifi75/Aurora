@@ -6,8 +6,8 @@
 ; bands: solo i 10 metri; un QSO su un'altra banda e' «non ammesso» (nessun punto, nessun moltiplicatore, non fa doppio).
 ; points: CW 4 punti, ogni altro modo ammesso (fonia) 2 punti; vince la prima regola vera.
 ; mult, primo pezzo: scambio ricevuto (stato USA/DC, provincia canadese, stato messicano) solo per le stazioni
-;   dei paesi K, VE, XE, KH6, KL7 (Hawaii e Alaska sono stati USA); conta una volta per modo.
-; mult, secondo pezzo: paese DXCC, esclusi K, VE, XE, KH6, KL7 (gia' contati come stati); una volta per modo.
+;   dei paesi K, VE, XE, KH6, KL (Hawaii e Alaska sono stati USA; nel database dei paesi l'Alaska ha il prefisso KL, non KL7); conta una volta per modo.
+; mult, secondo pezzo: paese DXCC, esclusi K, VE, XE, KH6, KL (gia' contati come stati); una volta per modo.
 bands=10
 points=mode:CW=4; any=2
-mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL7; dxcc/mode/except:K,VE,XE,KH6,KL7
+mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL; dxcc/mode/except:K,VE,XE,KH6,KL

@@ -1,6 +1,7 @@
 //! I contest di Aurora (pagina «Contest», `docs/piano-contest.md`).
 //!
 //! - [`regole`]: i file TOML di `core/crates/contest/regole` (uno per contest), letti e controllati;
+//! - [`cartelle`]: i contest a cartella (`contest/<nome>/`: `contest.toml`, regole, dati, macro, prove), date delle edizioni, due radici;
 //! - [`calendario`]: le date del contest dalla regola del file;
 //! - [`geo`]: locatori, distanze, prefissi WPX;
 //! - [`liste`]: sezioni ARRL/RAC, stati USA, province canadesi e olandesi per controllare lo scambio ricevuto;
@@ -17,6 +18,7 @@
 //! La sequenza dei messaggi di contest sta nel motore (`qso-native::contest`): qui si sceglie quale usare.
 
 pub mod calendario;
+pub mod cartelle;
 pub mod elenco;
 pub mod export;
 pub mod geo;

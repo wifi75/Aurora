@@ -66,6 +66,10 @@ pub fn detect(places: &Places) -> Values {
         if let Some(contest) = cty.parent().and_then(Path::parent).map(|r| r.join("contest")).filter(|d| d.is_dir()) {
             v.insert("AURORA_CONTEST_DEFAULTS".into(), text(&contest));
         }
+        // i contest a cartella (`contest/<nome>/`, sola lettura) stanno nella risorsa `contest-cartelle`
+        if let Some(cartelle) = cty.parent().and_then(Path::parent).map(|r| r.join("contest-cartelle")).filter(|d| d.is_dir()) {
+            v.insert("AURORA_CONTEST_FOLDERS".into(), text(&cartelle));
+        }
     }
     if let Some(db) = places.documents.as_deref().and_then(find_log4om) {
         v.insert("AURORA_LOG4OM_DB".into(), text(&db));

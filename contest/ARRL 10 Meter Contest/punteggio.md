@@ -1,13 +1,15 @@
 # ARRL 10 Meter Contest - spiegazione del punteggio
 
-Confronto riga per riga fra `punteggio.regole`, la sezione `[Score]` di `desktop/src-tauri/contest/ARRL 10 meter Contest.contest` (le tre righe sono identiche) e il regolamento 2026 (versione 2.0).
+Confronto riga per riga fra `punteggio.regole`, la sezione `[Score]` di `desktop/src-tauri/contest/ARRL 10 meter Contest.contest` (identica tranne `KL`, vedi sotto) e il regolamento 2026 (versione 2.0).
 
 | Riga | Cosa fa | Regolamento |
 |---|---|---|
 | `bands=10` | ammette solo i 10 m | 2.3 |
 | `points=mode:CW=4; any=2` | CW 4 punti, fonia 2 | 5.1.1, 5.1.2 |
-| `mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL7` | stato o provincia dallo scambio, per modo, solo per quei paesi | 5.2.2, 5.2.2.1, 5.2.1 |
-| `dxcc/mode/except:K,VE,XE,KH6,KL7` | paese DXCC per modo, tolti K, VE, XE, KH6, KL7 | 5.2.3, 5.2.1 |
+| `mult=exch/mode/if:dxcc:K,VE,XE,KH6,KL` | stato o provincia dallo scambio, per modo, solo per quei paesi | 5.2.2, 5.2.2.1, 5.2.1 |
+| `dxcc/mode/except:K,VE,XE,KH6,KL` | paese DXCC per modo, tolti K, VE, XE, KH6, KL (Alaska) | 5.2.3, 5.2.1 |
+
+**KL e non KL7.** Nel vecchio `.contest` la lista era `KH6,KL7`, ma nel database dei paesi (`cty.dat`) l'Alaska ha il prefisso principale `KL`: con `KL7` un QSO con l'Alaska non contava come stato (AK) e contava invece come paese DXCC `KL`. Lo ha trovato il controllo automatico (`core/crates/contest/tests/cartelle_repository.rs`, QSO 11 di `prove.toml`). Nelle regole vale il prefisso del database, non quello del nominativo.
 
 Punteggio = punti dei QSO x numero totale dei moltiplicatori (somma di quelli CW e di quelli in fonia), come l'esempio del regolamento (6330 x (83+57) = 886 200).
 

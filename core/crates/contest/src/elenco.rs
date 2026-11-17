@@ -581,9 +581,14 @@ pub fn testo_da_byte(b: &[u8]) -> String {
 // ---------------------------------------------------------------- l'elenco su disco
 
 /// L'elenco dei contest dei modi testuali nella cartella `<dati>/contest`.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ElencoContest {
     dir: PathBuf,
+    /// La cartella dei contest a cartella inclusi nell'installatore (sola lettura), se c'e' (`crate::cartelle`).
+    pub(crate) incluse: std::sync::Mutex<Option<PathBuf>>,
+    /// La cartella dei `.contest` distribuiti con Aurora: serve a sapere se un `.contest` dell'utente e' la copia intatta.
+    pub(crate) predefiniti: std::sync::Mutex<Option<PathBuf>>,
+    pub(crate) cache: std::sync::Mutex<Option<crate::cartelle::CacheCartelle>>,
 }
 
 /// Il contest attivo con le sue macro e il suo elenco dei domini, per la pagina dei modi testuali.
@@ -600,7 +605,7 @@ impl ElencoContest {
     pub fn new(dir: &Path) -> ElencoContest {
         let _ = std::fs::create_dir_all(dir.join("macros"));
         let _ = std::fs::create_dir_all(dir.join("dom"));
-        ElencoContest { dir: dir.to_path_buf() }
+        ElencoContest { dir: dir.to_path_buf(), incluse: std::sync::Mutex::new(None), predefiniti: std::sync::Mutex::new(None), cache: std::sync::Mutex::new(None) }
     }
 
     pub fn dir(&self) -> &Path {
@@ -610,6 +615,9 @@ impl ElencoContest {
     /// Copia i contest predefiniti (cartella delle risorse di Aurora: `*.contest`, `macros/`, `dom/`) la prima volta: nessun file
     /// dell'utente si sovrascrive e, una volta fatto, quelli cancellati non tornano. Restituisce quanti file sono stati copiati.
     pub fn copia_predefiniti(&self, da: &Path) -> usize {
+        if let Ok(mut g) = self.predefiniti.lock() {
+            *g = Some(da.to_path_buf());
+        }
         let segno = self.dir.join(FILE_PREDEFINITI);
         if segno.exists() || !da.is_dir() {
             return 0;
@@ -646,15 +654,20 @@ impl ElencoContest {
         n
     }
 
-    fn file(&self, id: &str) -> Result<PathBuf, String> {
+    pub(crate) fn file(&self, id: &str) -> Result<PathBuf, String> {
         if id.trim().is_empty() || id.contains(['/', '\\', ':']) || id.contains("..") {
             return Err("identificativo non valido".into());
         }
         Ok(self.dir.join(format!("{id}.{ESTENSIONE}")))
     }
 
-    /// Tutti i contest, in ordine di nome.
+    /// Tutti i contest, in ordine di nome: i `.contest` e le cartelle (`crate::cartelle`; una cartella sostituisce il `.contest` omonimo).
     pub fn elenco(&self) -> Vec<ContestTesto> {
+        self.voci().into_iter().map(|v| v.contest).collect()
+    }
+
+    /// I soli file `.contest` della cartella dei dati, in ordine di nome.
+    pub(crate) fn elenco_file(&self) -> Vec<ContestTesto> {
         let mut out: Vec<ContestTesto> = std::fs::read_dir(&self.dir)
             .map(|rd| {
                 rd.flatten()
@@ -673,18 +686,22 @@ impl ElencoContest {
     }
 
     pub fn leggi(&self, id: &str) -> Option<ContestTesto> {
-        let b = std::fs::read(self.file(id).ok()?).ok()?;
-        Some(ContestTesto::da_testo(id, &testo_da_byte(&b)))
+        self.voce(id).map(|v| v.contest)
     }
 
     /// Salva un contest: con `id` vuoto e' nuovo (il nome del file viene dal nome, senza sovrascriverne un altro). Restituisce l'id.
     pub fn salva(&self, mut c: ContestTesto) -> Result<String, String> {
         c.controlla()?;
+        if !c.id.trim().is_empty()
+            && let Some(crate::cartelle::Risolto::Cartella(f)) = self.risolvi(&c.id)
+        {
+            return Err(f.rifiuto_modifica().into());
+        }
         if c.id.trim().is_empty() {
             let base = id_da_nome(&c.name);
             let mut id = base.clone();
             let mut k = 2;
-            while self.file(&id)?.exists() {
+            while self.file(&id)?.exists() || self.cartella(&id).is_some() {
                 id = format!("{base} ({k})");
                 k += 1;
             }
@@ -696,6 +713,9 @@ impl ElencoContest {
 
     /// Cancella un contest (le sue macro restano: possono servire ad altri). Se era attivo, nessun contest resta attivo.
     pub fn elimina(&self, id: &str) -> Result<(), String> {
+        if let Some(crate::cartelle::Risolto::Cartella(f)) = self.risolvi(id) {
+            return Err(f.rifiuto_modifica().into());
+        }
         std::fs::remove_file(self.file(id)?).map_err(|e| e.to_string())?;
         if self.attivo_id().as_deref() == Some(id) {
             self.seleziona(None)?;
@@ -705,18 +725,21 @@ impl ElencoContest {
 
     pub fn attivo_id(&self) -> Option<String> {
         let id = std::fs::read_to_string(self.dir.join(FILE_ATTIVO)).ok()?.trim().to_string();
-        (!id.is_empty() && self.file(&id).is_ok_and(|p| p.exists())).then_some(id)
+        if id.is_empty() {
+            return None;
+        }
+        self.voce(&id).map(|v| v.contest.id)
     }
 
     /// Sceglie il contest attivo (`None` = «Nessun contest»).
     pub fn seleziona(&self, id: Option<&str>) -> Result<(), String> {
         let id = id.map(str::trim).filter(|s| !s.is_empty());
-        if let Some(id) = id
-            && !self.file(id)?.exists()
-        {
-            return Err("contest sconosciuto".into());
-        }
-        std::fs::write(self.dir.join(FILE_ATTIVO), id.unwrap_or("")).map_err(|e| e.to_string())
+        // si scrive l'identificativo trovato (quello della cartella se un `.contest` e' sostituito da lei)
+        let trovato = match id {
+            Some(id) => Some(self.voce(id).ok_or_else(|| "contest sconosciuto".to_string())?.contest.id),
+            None => None,
+        };
+        std::fs::write(self.dir.join(FILE_ATTIVO), trovato.unwrap_or_default()).map_err(|e| e.to_string())
     }
 
     fn leggi_relativo(&self, rel: &str) -> Option<String> {
@@ -728,7 +751,11 @@ impl ElencoContest {
 
     /// Il contest attivo con le sue macro e i domini.
     pub fn attivo(&self) -> Option<Attivo> {
-        let c = self.leggi(&self.attivo_id()?)?;
+        let v = self.voce(&self.attivo_id()?)?;
+        if let Some(f) = &v.cartella {
+            return Some(Attivo { start_ms: data_ms(&v.contest.start), end_ms: data_ms(&v.contest.end), macros: f.macro_del_contest(), domain: f.dominio_del_contest(), contest: v.contest });
+        }
+        let c = v.contest;
         let macros = self.leggi_relativo(&c.macros).map(|t| leggi_macro(&t)).unwrap_or_default();
         let domain = self.leggi_relativo(&c.domain_file).map(|t| leggi_dominio(&t));
         Some(Attivo { start_ms: data_ms(&c.start), end_ms: data_ms(&c.end), contest: c, macros, domain })

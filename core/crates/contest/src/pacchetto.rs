@@ -122,7 +122,11 @@ impl ElencoContest {
 
     /// Il pacchetto `.zip` di un contest con le sue macro e il suo elenco dei domini.
     pub fn esporta(&self, id: &str) -> Result<Vec<u8>, String> {
-        let c = self.leggi(id).ok_or_else(|| "contest sconosciuto".to_string())?;
+        // un contest a cartella: il `.contest` convertito con le sue macro e il suo elenco dei domini
+        let (c, da_cartella) = match self.file_del_pacchetto(id) {
+            Some((c, file)) => (c, file),
+            None => (self.leggi(id).ok_or_else(|| "contest sconosciuto".to_string())?, Vec::new()),
+        };
         let mut z = zip::ZipWriter::new(Cursor::new(Vec::new()));
         let o = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         let mut metti = |nome: &str, b: &[u8]| -> Result<(), String> {
@@ -130,7 +134,10 @@ impl ElencoContest {
             z.write_all(b).map_err(|e| e.to_string())
         };
         metti(&format!("{}.contest", c.id), c.in_testo().as_bytes())?;
-        for rel in [&c.macros, &c.domain_file] {
+        for (rel, b) in &da_cartella {
+            metti(rel, b)?;
+        }
+        for rel in [&c.macros, &c.domain_file].into_iter().filter(|_| da_cartella.is_empty()) {
             let rel = rel.trim().replace('\\', "/");
             if rel.is_empty() || !percorso_relativo_ok(&rel) {
                 continue;

@@ -121,6 +121,9 @@ pub struct Config {
     pub cty_path: Option<PathBuf>,
     /// La cartella dei contest dei modi testuali distribuiti con Aurora (`*.contest`, `macros/`, `dom/`), copiati la prima volta.
     pub contest_defaults: Option<PathBuf>,
+    /// La cartella dei contest a cartella inclusi nell'installatore (`contest/<nome>/`, sola lettura): `AURORA_CONTEST_FOLDERS`.
+    /// Quelli dell'utente stanno in `<dati>/contest/<nome>/` e sostituiscono i pari nome.
+    pub contest_folders: Option<PathBuf>,
     /// Log ADIF dei QSO gia' fatti, per segnalare nuovi DXCC, zone e griglie.
     pub worked_adif: Option<PathBuf>,
     /// Salvaguardie dell'automazione dei QSO: si impostano solo qui, sul PC.
@@ -208,6 +211,7 @@ impl Config {
             replay_on_connect: false,
             cty_path: None,
             contest_defaults: None,
+            contest_folders: None,
             worked_adif: None,
             auto_limits: Limits::default(),
             export_udp: Vec::new(),
@@ -311,6 +315,7 @@ impl Config {
             replay_on_connect,
             cty_path: get("AURORA_CTY_PATH").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             contest_defaults: get("AURORA_CONTEST_DEFAULTS").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
+            contest_folders: get("AURORA_CONTEST_FOLDERS").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             worked_adif: get("AURORA_WORKED_ADIF").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
             auto_limits,
             log4om_db: get("AURORA_LOG4OM_DB").filter(|p| !p.trim().is_empty()).map(PathBuf::from),
@@ -2637,6 +2642,8 @@ pub async fn run(
         }), aurora_core::version::APP_VERSION)
     };
     contest_service.spawn(&bus);
+    // i contest a cartella inclusi nell'installatore (sola lettura): quelli dell'utente li sostituiscono per nome
+    contest_service.elenco().imposta_cartelle_incluse(config.contest_folders.clone());
     // i contest dei modi testuali distribuiti con Aurora: copiati la prima volta, senza toccare i file dell'utente
     if let Some(da) = &config.contest_defaults {
         let n = contest_service.elenco().copia_predefiniti(da);

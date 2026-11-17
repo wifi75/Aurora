@@ -63,7 +63,7 @@ nome = "stato"
 etichetta_it = "Stato o provincia"
 etichetta_en = "State or province"
 tipo = "testo"
-quando = "dxcc:K,VE,XE,KH6,KL7"   # stazioni W, VE, XE (anche Alaska e Hawaii)
+quando = "dxcc:K,VE,XE,KH6,KL"   # stazioni W, VE, XE (anche Alaska e Hawaii)
 elenco = "dati/stati.dom"
 nota = "DC manda DC. KH6 e KL7 mandano lo stato (HI, AK)."
 
@@ -72,7 +72,7 @@ nome = "numero"
 etichetta_it = "Numero progressivo"
 etichetta_en = "Serial number"
 tipo = "numero"
-quando = "not_dxcc:K,VE,XE,KH6,KL7"   # le stazioni DX
+quando = "not_dxcc:K,VE,XE,KH6,KL"   # le stazioni DX
 nota = "Le stazioni DX mandano un numero progressivo."
 
 [[scambio.ricevuto]]
@@ -99,14 +99,14 @@ nome = "stato"
 etichetta_it = "Stato o provincia"
 etichetta_en = "State or province"
 tipo = "testo"
-quando = "my_dxcc:K,VE,XE,KH6,KL7"
+quando = "my_dxcc:K,VE,XE,KH6,KL"
 
 [[scambio.inviato]]
 nome = "numero"
 etichetta_it = "Numero progressivo"
 etichetta_en = "Serial number"
 tipo = "numero"
-quando = "not_my_dxcc:K,VE,XE,KH6,KL7"
+quando = "not_my_dxcc:K,VE,XE,KH6,KL"
 progressivo = true
 
 [doppi]
@@ -152,7 +152,7 @@ tipo = "moltiplicatori"
 titolo = { it = "Paesi DXCC", en = "DXCC entities" }
 ordine = 2
 moltiplicatore = "dxcc"
-escludi = ["K", "VE", "XE", "KH6", "KL7"]
+escludi = ["K", "VE", "XE", "KH6", "KL"]
 per_banda = false
 per_modo = true
 
