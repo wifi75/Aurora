@@ -14,6 +14,7 @@ Aurora (© 2026 Tiziano Cassone, IU3WJQ) e' software libero: si puo' ridistribui
 | [React](https://react.dev), [TanStack Query](https://tanstack.com/query), [Zustand](https://github.com/pmndrs/zustand), [Zod](https://zod.dev) | MIT | l'interfaccia |
 | [Leaflet](https://leafletjs.com) 1.9 | BSD-2-Clause, © Vladimir Agafonkin, © Leaflet contributors | la mappa |
 | [topojson-client](https://github.com/topojson/topojson-client) e [world-atlas](https://github.com/topojson/world-atlas) | ISC (i dati di world-atlas derivano da [Natural Earth](https://www.naturalearthdata.com), dominio pubblico) | i confini della mappa disegnata dal programma |
+| [NASA Earth Observatory](https://earthobservatory.nasa.gov): Blue Marble Next Generation e Black Marble | immagini della NASA ad uso libero con citazione della fonte (dettagli in `docs/mappe.md`) | la mappa «Terra» della pagina Satelliti (foto di giorno e luci delle citta' di notte) |
 | [flag-icons](https://github.com/lipis/flag-icons) | MIT | le bandiere dei paesi |
 | [IBM Plex Sans](https://github.com/IBM/plex) e [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (pacchetti `@fontsource`) | SIL Open Font License 1.1 | i caratteri dell'interfaccia (© IBM Corp.; © The JetBrains Mono Project Authors) |
 

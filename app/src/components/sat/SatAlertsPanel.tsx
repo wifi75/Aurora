@@ -3,6 +3,7 @@ import { useT } from '../../i18n';
 import type { Key } from '../../i18n';
 import { ALERT_SOUNDS, type AlertKind, type SatAlertSettings, type SoundChoice } from '../../lib/satAlerts';
 import { armAudio } from '../../lib/satAlertSound';
+import { ZOOM_MODES, type ZoomMode } from '../../lib/satView';
 import { Icon } from '../Icon';
 
 interface Props {
@@ -76,6 +77,16 @@ export function SatAlertsPanel({ settings, blocked, update, test }: Props) {
           <label className="sat-alerts-row sat-alerts-row--check">
             <input type="checkbox" checked={settings.onlySelected} onChange={(e) => update({ onlySelected: e.target.checked })} />
             <span>{t('sat.alert.only')}</span>
+          </label>
+          <label className="sat-alerts-row sat-alerts-row--inline">
+            <span>{t('sat.alert.zoom')}</span>
+            <select value={settings.zoom} onChange={(e) => update({ zoom: e.target.value as ZoomMode })}>
+              {ZOOM_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {t(`sat.alert.zoom.${m}` as Key)}
+                </option>
+              ))}
+            </select>
           </label>
           {EVENTS.map((ev) => (
             <div className="sat-alerts-row sat-alerts-row--inline" key={ev.kind}>

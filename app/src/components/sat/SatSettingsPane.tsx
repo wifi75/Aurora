@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { satUploadMap, type SatSettings, type SatSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
-import { countdown, SAT_BUILTIN_MAP } from '../../lib/satGeo';
+import { countdown } from '../../lib/satGeo';
+import { loadBorders, PREFERRED_MAP, resolveMap, saveBorders, SAT_SIMPLE_MAP, SAT_TERRA_MAP, selectValue } from '../../lib/satMapChoice';
 import { toast } from '../../lib/toast';
 
 /** Gli aggiornamenti automatici proposti, in ore (0 = solo a mano). */
@@ -25,6 +26,8 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
   const t = useT();
   const s = snap.settings;
   const fileInput = useRef<HTMLInputElement>(null);
+  const [borders, setBorders] = useState(loadBorders);
+  const terraOn = resolveMap(s.map, snap.maps, PREFERRED_MAP).kind === 'terra';
   const addMap = (file: File | undefined) => {
     if (!file) return;
     void satUploadMap(file.name, file).then(
@@ -38,9 +41,10 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
       {cat === 'map' ? (
         <fieldset>
           <legend>{t('sat.map.pick')}</legend>
-          <select value={s.map === SAT_BUILTIN_MAP || snap.maps.includes(s.map) ? s.map : ''} onChange={(e) => onSave({ map: e.target.value })}>
+          <select value={selectValue(s.map, snap.maps)} onChange={(e) => onSave({ map: e.target.value })}>
             <option value="">{t('sat.set.mapAuto')}</option>
-            <option value={SAT_BUILTIN_MAP}>{t('sat.map.builtin')}</option>
+            <option value={SAT_TERRA_MAP}>{t('sat.map.terra')}</option>
+            <option value={SAT_SIMPLE_MAP}>{t('sat.map.builtin')}</option>
             {snap.maps.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -54,6 +58,19 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
             <input ref={fileInput} type="file" accept=".jpg,.jpeg,.png,.bmp,.webp" hidden onChange={(e) => addMap(e.target.files?.[0])} />
           </div>
           <p className="sat-muted sat-small">{t('sat.map.addHint')}</p>
+          <label className="sat-check">
+            <input
+              type="checkbox"
+              checked={borders}
+              disabled={!terraOn}
+              onChange={(e) => {
+                setBorders(e.target.checked);
+                saveBorders(e.target.checked);
+              }}
+            />
+            <span>{t('sat.map.borders')}</span>
+          </label>
+          <p className="sat-muted sat-small">{t('sat.map.terraHint')}</p>
         </fieldset>
       ) : null}
       {cat === 'radio' ? (

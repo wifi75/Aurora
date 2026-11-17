@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Satelliti: zoom automatico della mappa quando un satellite entra nell'area (AOS) con ritorno alla vista intera alla LOS; modo a scelta nel riquadro «Avvisi» (Spento, Area del satellite, Stazione e satellite, Segui il satellite); zoom a mano con rotella, pizzico e pulsanti «+», «−» e «Vista intera», trascinamento anche in verticale.
+- Satelliti: nuova mappa di base «Terra (satellite NASA)» (foto di giorno, luci delle citta' di notte con crepuscolo morbido; «Mappa semplice (vettoriale)» resta a scelta, confini degli Stati sulla foto a richiesta) e selettore «Zoom su un paese…» sulla mappa, con tutti i paesi nella lingua dell'interfaccia e «il mio paese» in testa.
+
 ## 0.11.282 - 2026-11-17
 
 - PTT che non si spegne: scala di tentativi (subito, 0,2, 0,5, 1, 2 s, poi ogni 5 s) con altre vie dal terzo tentativo (secondo `T 0`, riapertura del CAT, RTS/DTR); banner fisso con suono finche' il PTT non e' spento; se la radio o il profilo cambiano con il PTT acceso il comando non arriva alla radio sbagliata e, dopo l'ultimo tentativo, resta un avviso persistente di PTT abbandonato.

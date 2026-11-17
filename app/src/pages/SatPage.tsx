@@ -14,12 +14,12 @@ import { clearSatellites, groupListing, normalizeSatSelection, pickSatellite, se
 import { useStatusPick } from '../state/station';
 import { openSettingsWindow } from '../lib/settingsWindow';
 import { useT } from '../i18n';
-import { compass, countdown, formatLat, formatLon, mhz, mmss, SAT_BUILTIN_MAP } from '../lib/satGeo';
+import { compass, countdown, formatLat, formatLon, mhz, mmss } from '../lib/satGeo';
+import { loadBorders, PREFERRED_MAP, resolveMap } from '../lib/satMapChoice';
 import { toast } from '../lib/toast';
 import '../styles/sat.css';
 
 const TRACK_MINUTES = 100;
-const PREFERRED_MAP = 'Contour HiRes';
 
 const clockOf = (unix: number) => {
   const d = new Date(unix * 1000);
@@ -201,12 +201,9 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
     return { ticked: g.ticked.filter(ok), rest: g.rest.filter(ok), anyTicked: g.ticked.length > 0 };
   }, [snap.listing, s.tracked, search]);
 
-  // la mappa: quella scelta, altrimenti «Contour HiRes» se c'e', altrimenti la mappa inclusa in Aurora (null)
-  const mapName = useMemo(() => {
-    if (s.map === SAT_BUILTIN_MAP) return null;
-    if (s.map && snap.maps.includes(s.map)) return s.map;
-    return snap.maps.find((m) => m.startsWith(PREFERRED_MAP)) ?? null;
-  }, [s.map, snap.maps]);
+  // la mappa: quella scelta (Terra, semplice o un'immagine dell'utente); senza scelta «Contour HiRes» se c'e', altrimenti la Terra
+  const mapChoice = useMemo(() => resolveMap(s.map, snap.maps, PREFERRED_MAP), [s.map, snap.maps]);
+  const [borders] = useState(loadBorders);
 
   const downValue = downDraft ?? s.down_hz ?? (tp ? (tp.down_low_hz + tp.down_high_hz) / 2 : 0);
 
@@ -260,7 +257,9 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
       maxW: SAT_MAX_COLS.map,
       children: (
           <SatMap
-            mapUrl={mapName ? satMapUrl(mapName) : null}
+            mapUrl={mapChoice.kind === 'file' ? satMapUrl(mapChoice.name) : null}
+            terra={mapChoice.kind === 'terra'}
+            borders={borders}
             sun={{ lat: snap.sky.sun_lat_deg, lon: snap.sky.sun_lon_deg }}
             moon={{ lat: snap.sky.moon_lat_deg, lon: snap.sky.moon_lon_deg }}
             observer={snap.observer ? { lat: snap.observer.lat_deg, lon: snap.observer.lon_deg } : null}
@@ -270,6 +269,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
             track={track}
             trackNowIndex={TRACK_MINUTES}
             alerts={alerts.views}
+            zoomMode={alerts.settings.zoom}
             onSelect={(norad) => pick(norad)}
           />
       ),

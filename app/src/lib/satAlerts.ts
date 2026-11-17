@@ -9,6 +9,8 @@
  * riconosce dal satellite e dalla fine (con una tolleranza), mai dall'inizio.
  */
 
+import { DEFAULT_ZOOM_MODE, ZOOM_MODES, type ZoomMode } from './satView';
+
 export type AlertSound = 'bell' | 'radar' | 'arpeggio';
 export type SoundChoice = AlertSound | 'off';
 export type AlertKind = 'pre' | 'aos' | 'los';
@@ -25,9 +27,11 @@ export interface SatAlertSettings {
   soundPre: SoundChoice;
   soundAos: SoundChoice;
   soundLos: SoundChoice;
+  /** Zoom automatico della mappa quando un satellite e' in vista (valori vecchi senza il campo: quello di base). */
+  zoom: ZoomMode;
 }
 
-export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell' };
+export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell', zoom: DEFAULT_ZOOM_MODE };
 
 export const ALERT_SOUNDS: readonly AlertSound[] = ['bell', 'radar', 'arpeggio'];
 export const ALERT_STORAGE_KEY = 'aurora.sat.alerts';
@@ -237,6 +241,7 @@ export function sanitizeAlertSettings(raw: unknown): SatAlertSettings {
     soundPre: choice(r.soundPre, d.soundPre),
     soundAos: choice(r.soundAos, d.soundAos),
     soundLos: choice(r.soundLos, d.soundLos),
+    zoom: typeof r.zoom === 'string' && (ZOOM_MODES as readonly string[]).includes(r.zoom) ? (r.zoom as ZoomMode) : d.zoom,
   };
 }
 

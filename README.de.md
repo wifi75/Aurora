@@ -163,3 +163,5 @@ Aurora ist freie Software und steht unter der **GNU General Public License Versi
 Wenn du Code oder Tabellen von Aurora in einem eigenen Projekt verwendest, bitte ich dich freundlich, mir das über ein Issue auf GitHub mitzuteilen und den Autor zu nennen: Tiziano Cassone IU3WJQ.
 
 Wer Aurora weitergibt, auch verändert, muss dies unter derselben Lizenz tun und den Quellcode zur Verfügung stellen. Die in der Oberfläche enthaltenen Bibliotheken Dritter (`leaflet` für die Karte, Lizenz BSD-2-Clause, `world-atlas` und `topojson-client`, Lizenz ISC; die Hintergrundkacheln der Karte stammen von Esri und National Geographic, mit ihrer Quellenangabe auf der Karte, und die übrigen in `app/package.json` und `core/Cargo.toml` aufgeführten Abhängigkeiten) behalten ihre eigenen Lizenzen.
+
+Erdkarten: NASA Earth Observatory (Blue Marble Next Generation, Black Marble), NASA-Bilder, frei nutzbar mit Quellenangabe. Siehe [`docs/mappe.md`](docs/mappe.md) (auf Italienisch).

@@ -229,6 +229,14 @@ describe('impostazioni nel browser', () => {
     expect(loadAlertSettings(store('{non json'))).toEqual(DEFAULT_ALERT_SETTINGS);
     expect(sanitizeAlertSettings({ volume: 900, leadMin: -4, soundPre: 'fischio', enabled: 'si' })).toEqual({ ...DEFAULT_ALERT_SETTINGS, volume: 100, leadMin: 0 });
   });
+
+  it('lo zoom automatico: senza il campo (salvataggi vecchi) o con un valore sbagliato vale quello di base, altrimenti si conserva', () => {
+    expect(DEFAULT_ALERT_SETTINGS.zoom).toBe('both');
+    expect(sanitizeAlertSettings({ volume: 30 }).zoom).toBe('both');
+    expect(sanitizeAlertSettings({ zoom: 'enorme' }).zoom).toBe('both');
+    expect(sanitizeAlertSettings({ zoom: 'follow' }).zoom).toBe('follow');
+    expect(sanitizeAlertSettings({ zoom: 'off' }).zoom).toBe('off');
+  });
 });
 
 describe('suoni', () => {
