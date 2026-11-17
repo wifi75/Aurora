@@ -15,6 +15,7 @@
 - Contest a cartella: Aurora legge le cartelle `contest/<nome>/` (`contest.toml`, regole del punteggio, regolamento, elenchi, macro, prove) e le usa come i `.contest`, senza cambiare punteggio, riga di inserimento e Cabrillo. Le date dell'edizione si calcolano dalla regola (ARRL 10 metri: 12-13 dicembre 2026), le cartelle incluse sono nell'installatore in sola lettura e quelle dell'utente (`contest` nei dati) le sostituiscono per nome; le API dei contest aggiungono `origine`, `schede`, `scambio` e `regolamento` e la copia nella propria cartella. Un controllo automatico verifica le cartelle e le loro prove: ha trovato che nelle regole di ARRL 10 l'Alaska era `KL7` invece di `KL` (il prefisso del database dei paesi)
 - Cambio modo: l'avviso «la radio non si e' spostata su una frequenza» dice il modo vero (CW, RTTY...) e non sempre «PSK», e aggiunge il motivo che manda il CAT.
 - Satelliti in tema chiaro: l'orologio e' una pastiglia scura con le cifre verdi, leggibile.
+- Pagina dei modi testuali in tema chiaro: la barra sopra la finestra di ricezione (copia, salva, svuota, pausa, cerca) e' chiara e si legge, non piu' scura.
 
 ## 0.11.283 - 2026-11-17
 

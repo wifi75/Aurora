@@ -198,6 +198,11 @@ html[data-theme='light'] .digi-classica .digi-cmd-list button:focus-visible { ou
   opacity: 0.75;
   font-variant-numeric: tabular-nums;
 }
+/* tema chiaro: la barra sopra la finestra RX prende i colori chiari del pannello (prima restava scura con i pulsantini illeggibili) */
+html[data-theme='light'] .digi-rxbar { background: var(--panel-raised, #f3f6fc); border-bottom-color: var(--border, #b9c6df); color: var(--text, #0b1322); }
+html[data-theme='light'] .digi-rxbar-btn:hover { background: rgba(25, 35, 70, 0.08); }
+html[data-theme='light'] .digi-rxbar-btn[aria-pressed='true'] { background: rgba(27, 110, 243, 0.14); }
+html[data-theme='light'] .digi-rxbar-search { background: var(--panel, #fff); border-color: var(--border, #b9c6df); color: var(--text, #0b1322); }
 /* parole cercate nella finestra RX */
 .digi-rxwin mark.digi-hit {
   background: rgba(255, 200, 0, 0.35);
