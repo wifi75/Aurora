@@ -355,7 +355,14 @@ impl RigctldClient {
     /// Il VFO in uso («VFOA», «VFOB», «Main»...).
     pub fn vfo(&self) -> Result<String, RigError> {
         let r = self.ask_raw("v", 1)?;
-        Ok(r[0].trim().to_string())
+        let name = r[0].trim();
+        // un nome di VFO e' fatto di sole lettere (VFOA, VFOB, Main, Sub, currVFO...): una riga con numeri e' una risposta rimasta in coda da un
+        // altro comando (con una Icom lenta una lettura scaduta lascia la sua risposta nel flusso, e la `v` seguente leggeva «0.133333»);
+        // se la si prendesse per un VFO, la protezione del VFO manderebbe `V 0.133333` alla radio
+        if !is_vfo_name(name) {
+            return Err(RigError(format!("rigctld: risposta inattesa a «v»: {name}")));
+        }
+        Ok(name.to_string())
     }
 
     /// Frequenza e modo di un altro VFO senza cambiarlo, con la risposta estesa (`+\get_vfo_info VFOB`): si legge fino a «RPRT».
@@ -705,6 +712,11 @@ pub fn rigctl_beside(rigctld: &Path) -> Option<PathBuf> {
         let n = p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_ascii_lowercase();
         n.starts_with("rigctl") && !n.starts_with("rigctld") && !n.starts_with("rigctlcom") && p.is_file()
     })
+}
+
+/// Il testo e' un nome di VFO di Hamlib (solo lettere: «VFOA», «Main», «currVFO»...).
+pub fn is_vfo_name(text: &str) -> bool {
+    !text.is_empty() && text.len() <= 12 && text.chars().all(|c| c.is_ascii_alphabetic())
 }
 
 #[cfg(test)]

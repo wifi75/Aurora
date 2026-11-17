@@ -227,6 +227,13 @@ impl FakeRigctld {
         self.state.vfo_info_switches.store(on, Ordering::SeqCst);
     }
 
+    /// Il testo che la radio finta risponde a `v` (anche una riga che non e' un VFO, come una risposta rimasta in coda).
+    pub fn set_vfo_text(&self, text: &str) {
+        if let Ok(mut v) = self.state.vfo.lock() {
+            *v = text.to_string();
+        }
+    }
+
     pub fn vfo(&self) -> String {
         self.state.vfo.lock().map(|v| v.clone()).unwrap_or_default()
     }

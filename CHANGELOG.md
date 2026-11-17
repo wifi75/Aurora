@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Hamlib: il VFO letto dalla radio si accetta solo se e' un nome di VFO (VFOA, VFOB, Main...); prima una risposta rimasta in coda da una lettura scaduta (con l'IC-756PRO, «0.133333») veniva presa per un VFO e la protezione del VFO mandava `V 0.133333` alla radio.
+
 ## 0.11.286 - 2026-11-17
 
 - Radio spenta: il tentativo di collegamento al CAT che fallisce si scrive nel registro al primo tentativo e poi ogni 30 (circa 5 minuti), non piu' a ogni tentativo ogni 10 secondi (quasi 5.000 avvisi al giorno per PC riempivano i rapporti).

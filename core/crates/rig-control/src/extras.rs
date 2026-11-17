@@ -560,6 +560,19 @@ mod tests {
     }
 
     #[test]
+    fn a_reply_that_is_not_a_vfo_name_is_never_sent_back_to_the_radio() {
+        let (fake, client, _poll) = setup();
+        // una risposta rimasta in coda («0.133333», il livello di una lettura scaduta) al posto del nome del VFO
+        fake.set_vfo_text("0.133333");
+        assert!(client.vfo().is_err(), "una riga con numeri non e' un VFO");
+        fake.set_vfo_info_switches(true);
+        fake.clear_commands();
+        let mut out = RigExtras::default();
+        read_item(&client, Item::VfoB, &mut out).expect("vfo b");
+        assert!(!fake.commands().iter().any(|c| c.starts_with("V ")), "{:?}", fake.commands());
+    }
+
+    #[test]
     fn rit_and_xit_are_cleared_only_when_not_zero() {
         let (fake, client, mut poll) = setup();
         fake.set_offset(false, 150);
