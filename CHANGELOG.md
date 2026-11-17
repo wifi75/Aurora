@@ -4,6 +4,8 @@
 
 ## 0.11.286 - 2026-11-17
 
+- Radio spenta: il tentativo di collegamento al CAT che fallisce si scrive nel registro al primo tentativo e poi ogni 30 (circa 5 minuti), non piu' a ogni tentativo ogni 10 secondi (quasi 5.000 avvisi al giorno per PC riempivano i rapporti).
+- Olandese: dizionario aggiornato (voci nuove e voci uscite dalle Novita'); le due prove sull'olandese tornano verdi.
 - Primo avvio: se il nominativo e' gia' salvato ma il motore acceso non lo ha ancora (si legge solo all'avvio), l'avviso dice di chiudere e riaprire Aurora invece di dire che il nominativo manca.
 - Avvio con Hamlib: Aurora guarda su quale VFO sta la radio prima e dopo aver riportato frequenza e modo dell'ultima volta; se e' cambiato da solo (IC-756PRO: dopo il riavvio la radio andava sul VFO B) la rimette dov'era e lo scrive nel registro.
 - Attivita' di banda: i km sono centrati nell'altezza della riga, alla stessa altezza del paese (stavano piu' in alto).

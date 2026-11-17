@@ -815,13 +815,21 @@ impl Inner {
     fn run(&self) {
         // se la radio (o il programma che la condivide, es. Log4OM) non c'e' ancora, si riprova da soli ogni `reconnect_step`
         // finche' non risponde o finche' non si preme Scollega
+        let mut tries = 0u32;
         while let Err(e) = self.open() {
             if self.stop.load(Ordering::SeqCst) {
                 return;
             }
             let wait = self.timing.reconnect_step;
-            // nel registro il motivo intero (le righe di rigctld): a schermo resta il messaggio breve
-            tracing::warn!("CAT: collegamento con rigctld non riuscito: {}", e.0);
+            tries += 1;
+            // nel registro il motivo intero (le righe di rigctld): a schermo resta il messaggio breve. Con la radio spenta si riprova per ore
+            // ogni 10 s: l'avviso si scrive al primo tentativo e poi ogni 30 (circa 5 minuti), gli altri solo a livello di debug; prima erano
+            // quasi 5.000 al giorno per PC e riempivano i rapporti
+            if tries == 1 || tries % 30 == 0 {
+                tracing::warn!("CAT: collegamento con rigctld non riuscito (tentativo {tries}): {}", e.0);
+            } else {
+                tracing::debug!("CAT: collegamento con rigctld non riuscito (tentativo {tries}): {}", e.0);
+            }
             self.update(|s| {
                 s.state = LinkState::Error;
                 s.message = format!("{} Nuovo tentativo tra {} s.", friendly_error(&e.0), wait.as_secs_f32().ceil());
