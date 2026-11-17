@@ -2,6 +2,14 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Dopo la 0.11.283 (su main, da rilasciare come 0.11.284)
+
+- Mappa dei Satelliti (`components/sat/SatMap.tsx`, `lib/satView.ts`): un solo disegno per fotogramma da `requestAnimationFrame` (la vista sta in `viewRef`, lo stato React si aggiorna al massimo 8 volte al secondo), qualita' bassa in movimento e rifinitura a riposo, rotella ancorata al cursore (`wheelZoomFactor`), zoom interpolato in scala logaritmica, contatore dei tempi con `localStorage['aurora.sat.perf']='1'`. Non misurato: serve la prova del proprietario con il contatore.
+- Hamlib (`rig-control/src/hamlib_rig.rs`): `split_mode_unsupported`, un solo info se la radio non sa scrivere il modo nel VFO di trasmissione ne' copiare A=B (`-1`, `-4`, `-11`); gli errori veri restano warn.
+- Installatore (`desktop/src-tauri/installer/hooks.nsh`, `installer.nsi`): `AuroraPulisciVecchie`, rinomino in `hamlib.vecchia` se `hamlib` non si toglie, `AuroraFile` con riprova nella copia. Provato solo in un installatore isolato (sei scenari, un difetto trovato e corretto); non provati l'installatore vero, la disinstallazione, il modo con le finestre e un antivirus reale.
+- Rapporti Cloudflare letti il 2026-11-17: `docs/report-cloudflare-2026-11-17.md`. Issue: #75 (Luc, UBA: serve la casella «club / sezione» nella riga di inserimento), #71 e #72 in attesa dei dati degli utenti.
+- Prossimo passo: pubblicare la 0.11.284 se il proprietario conferma, poi campi di scambio dei contest (#75), PC lenti, seconda fonte spot, portale web.
+
 ## Nella 0.11.283 (pubblicata 2026-11-17T10:23:29Z)
 
 - Satelliti: mappa Terra NASA (`app/public/maps/terra-giorno.jpg` e `terra-notte.jpg`, fonti in `docs/mappe.md`), scelte `:terra` e `:aurora` (`lib/satMapChoice.ts`), notte con le luci mascherata dal terminatore; zoom (`lib/satView.ts`: `MapView`, `fitView`, `fitBox`) automatico all'AOS con 4 modi (`zoom` in `lib/satAlerts.ts`), manuale (rotella, pizzico, pulsanti) e per paese (`lib/satCountries.ts`, `lib/countryCodes.ts`). Non provato: pizzico su touch, memoria sul telefono (due bitmap 8192), suoni AOS.
