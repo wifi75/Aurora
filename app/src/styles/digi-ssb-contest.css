@@ -201,3 +201,26 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 .ssbc-logbar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .ssbc-logbar .digi-tool { width: auto; min-width: 0; padding: 0 0.7rem; white-space: nowrap; font-size: 0.78rem; }
 
+/* pulsanti diretti dei modi del contest (CW, SSB...): sotto le bande, solo se il contest ha piu' modi */
+.ssbc-modes { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.digi-bandbar .ssbc-modes { margin-top: 6px; }
+.ssbc-mode { padding: 0.25rem 0.9rem; border: 1px solid var(--border); border-radius: 999px; background: var(--panel-raised); color: var(--text); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.04em; cursor: pointer; }
+.ssbc-mode:hover:not(:disabled) { border-color: var(--accent); }
+.ssbc-mode.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink, #fff); }
+.ssbc-mode:disabled { opacity: 0.55; cursor: default; }
+
+/* con un contest la scheda delle macro e' alta quanto le sue righe (una sola riga = scheda bassa): niente scheda vuota che si allunga fino in fondo ai blocchetti delle bande */
+.digi-topline--contest { align-items: flex-start; }
+.digi-topline--contest .digi-macrowrap, .digi-topline--contest .digi-bar-keys { align-self: flex-start; height: auto; }
+
+
+/* contest con piu' modi: bande e pulsanti dei modi sulla stessa riga, divisi da un separatore */
+.ssbc-bands:has(.ssbc-modes) { display: flex; flex-wrap: wrap; align-items: center; align-content: center; }
+.ssbc-bands:has(.ssbc-modes) .ssbc-band { flex: 0 0 3.9rem; height: 2.6rem; }
+.ssbc-bands .ssbc-modes { grid-column: auto; margin: 0 0 0 4px; padding-left: 12px; border-left: 2px solid var(--border); align-self: stretch; align-items: center; flex-wrap: nowrap; }
+
+/* maniglione della larghezza delle macro, nel contest: piu' piccolo (il bordo e' sottile) */
+html:root:root .digi-topline--contest .digi-macrogrip { --grip-thick: 3px; --grip-len: 18px; width: 8px; right: -6px; }
+
+/* bande e pulsanti dei modi nel contest in CW/RTTY/PSK: senza riquadro, come in SSB */
+.digi-topline--contest .ssbc-bands { border: 0; background: transparent; padding: 0; margin: 0; border-radius: 0; box-shadow: none; }

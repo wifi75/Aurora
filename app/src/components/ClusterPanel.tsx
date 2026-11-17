@@ -2,10 +2,11 @@ import { toast } from '../lib/toast';
 import { setPendingSpot, textModeOfSpot } from '../lib/spotMode';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, memo } from 'react';
+import { createPortal } from 'react-dom';
 import { ApiError, deleteSplitDx, getClusterSpots, getDxcc, getDxped, getSplitDx, getStationInfo, postFrequency, postMode, postSplitDx, rotatorGoto, type ClusterSpot, type SplitDx } from '../api/client';
 import { bearingDeg, gridCenter, type Point } from '../lib/geo';
 import { normalizeAz } from '../lib/rotator';
-import { CLUSTER_COLUMNS, type ClusterColumn, type ClusterOptions } from '../lib/clusterOptions';
+import { CLUSTER_COLUMNS, useClusterOptions, type ClusterColumn, type ClusterOptions } from '../lib/clusterOptions';
 import { CLUSTER_COL_EM, CLUSTER_COLS_KEY } from '../lib/clusterColumns';
 import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from './MovableColumns';
 import { dxpedState, today } from './DxpedPanel';
@@ -13,7 +14,7 @@ import { inkFor, useDxpedColor } from '../lib/dxpedColor';
 import { useT, type Key } from '../i18n';
 import { MultiPick } from './MultiPick';
 import { SpotDialog } from './digi/SpotDialog';
-import { ClusterOptionsDialog } from './digi/ClusterOptionsDialog';
+import { ClusterOptionsDialog, ClusterOptionsFields } from './digi/ClusterOptionsDialog';
 import { Icon } from './Icon';
 import { filterSpots, spotAge, toList, type SpotFilters } from '../lib/cluster';
 import { formatKhz, formatKhzWhole } from '../lib/format';
@@ -94,8 +95,146 @@ export function formatMhz(hz: number): string {
  */
 export type SpotHandler = (spot: ClusterSpot, splitDx: boolean) => Promise<void>;
 
+/** I dati per «Spot DX» nella vista contest (il DX in corso e la radio). */
+export interface ClusterContest {
+  call: string;
+  dialHz: number;
+  audioHz: number;
+  modeName: string;
+}
+
+/** Quanti filtri sono accesi (la ricerca per nominativo si vede da se': non conta). */
+export function activeFilters(f: SpotFilters): number {
+  return (f.bands.length > 0 ? 1 : 0) + (f.modes.length > 0 ? 1 : 0) + ((f.spotters ?? []).length > 0 ? 1 : 0) + (f.newOnly === true ? 1 : 0);
+}
+
+/** I quattro filtri del cluster (banda, modo, chi manda lo spot, solo nuovi): nella barra o, nella vista contest, nel pannello dell'ingranaggio. */
+function FilterPickers({ filters, change }: { filters: SpotFilters; change(next: SpotFilters): void }) {
+  const t = useT();
+  return (
+    <>
+      <MultiPick
+        label={t('cluster.filter.band')}
+        allLabel={t('cluster.filter.bandAll')}
+        options={[{ value: 'now', label: t('cluster.filter.bandNow') }, ...BAND_NAMES.map((b) => ({ value: b, label: b }))]}
+        selected={filters.bands}
+        onChange={(bands) => change({ ...filters, bands })}
+      />
+      <MultiPick
+        label={t('cluster.filter.mode')}
+        allLabel={t('cluster.filter.modeAll')}
+        options={MODES.map((m) => ({ value: m, label: m === 'DIGI' ? 'Digi' : m }))}
+        selected={filters.modes}
+        onChange={(modes) => change({ ...filters, modes })}
+      />
+      {/* chi manda lo spot: il proprio continente o quelli scelti (Luc ON7KEC: gli spot degli europei dicono cosa si sente qui) */}
+      <MultiPick
+        label={t('cluster.filter.spotter')}
+        allLabel={t('cluster.filter.spotterAll')}
+        options={[{ value: 'mine', label: t('cluster.filter.spotterMine') }, ...['EU', 'NA', 'SA', 'AS', 'AF', 'OC'].map((c) => ({ value: c, label: t(`cont.${c}` as Key) }))]}
+        selected={filters.spotters ?? []}
+        onChange={(spotters) => change({ ...filters, spotters })}
+      />
+      <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
+        {t('cluster.filter.newOnly')}
+      </button>
+    </>
+  );
+}
+
+/**
+ * La riga in alto del cluster nella vista contest: la ricerca per nominativo (occupa tutto lo spazio libero e si restringe), «Spot DX» e
+ * l'ingranaggio. L'ingranaggio apre un solo pannello con due sezioni, «Filtri» in alto e «Opzioni del cluster» sotto (le stesse del dialogo delle altre pagine); un segno dice quanti filtri sono accesi.
+ */
+function ClusterContestHead({ contest, filters, setSearch, change, linked, total }: { contest: ClusterContest; filters: SpotFilters; setSearch(search: string): void; change(next: SpotFilters): void; linked: number; total: number }) {
+  const t = useT();
+  const [clusterOptions, setClusterOptions] = useClusterOptions();
+  const [spotOpen, setSpotOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const gear = useRef<HTMLButtonElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+  const active = activeFilters(filters);
+  useEffect(() => {
+    if (!open) return;
+    // i menu a tendina dei filtri stanno fuori dal pannello (portale): un clic dentro di loro non lo chiude
+    const away = (e: Event) => {
+      const el = e.target as HTMLElement | null;
+      if (gear.current?.contains(el) || pop.current?.contains(el) || el?.closest?.('.mpick-menu')) return;
+      setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  const tip = active > 0 ? `${t('cluster.pop.tip')} - ${t('cluster.pop.active', { n: active })}` : t('cluster.pop.tip');
+  return (
+    <div className="cluster-ctwhead">
+      <input type="search" className="cluster-ctwsearch" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setSearch(e.target.value)} />
+      <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
+        {t('ctl.spot')}
+      </button>
+      <button
+        ref={gear}
+        type="button"
+        className={`digi-tool icon-btn icon-btn--sm cluster-gear${active > 0 ? ' cluster-gear--on' : ''}`}
+        title={tip}
+        aria-label={tip}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={(e) => {
+          // il pannello e' fisso rispetto alla finestra: cosi' non lo taglia il bordo della scheda
+          const r = e.currentTarget.getBoundingClientRect();
+          setPos({ top: r.bottom + 4, right: Math.max(4, window.innerWidth - r.right) });
+          setOpen(!open);
+        }}
+      >
+        <Icon name="gear" />
+        {active > 0 ? <span className="cluster-gear-badge" data-testid="cluster-gear-badge">{active}</span> : null}
+      </button>
+      {open
+        ? createPortal(
+            <div className="cluster-pop" role="dialog" aria-label={t('cluster.pop.filters')} ref={pop} style={{ top: pos.top, right: pos.right }}>
+              <div className="cluster-pop-title">{t('cluster.pop.servers')}</div>
+              <p className={`cluster-pop-link${linked === 0 ? ' cluster-pop-link--down' : ''}`} role="status">
+                {linked > 0 ? t('cluster.pop.serversOn', { n: linked, m: total }) : t('cluster.pop.serversOff')}
+              </p>
+              <hr className="cluster-pop-sep" />
+              <div className="cluster-pop-title">{t('cluster.pop.filters')}</div>
+              <div className="cluster-pop-filters" title={t('tip.cluster.filters')}>
+                <FilterPickers filters={filters} change={change} />
+              </div>
+              <hr className="cluster-pop-sep" />
+              <div className="cluster-pop-title">{t('cluster.pop.options')}</div>
+              <div className="cluster-pop-opts">
+                <ClusterOptionsFields
+                  options={clusterOptions}
+                  onChange={setClusterOptions}
+                  section={(title, children) => (
+                    <div key={title} className="cluster-pop-sec">
+                      <div className="cluster-pop-sub">{title}</div>
+                      {children}
+                    </div>
+                  )}
+                />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
+      {spotOpen ? <SpotDialog call={contest.call} dialHz={contest.dialHz} audioHz={contest.audioHz} modeName={contest.modeName} onClose={() => setSpotOpen(false)} /> : null}
+    </div>
+  );
+}
+
 /** Gli spot dei DX Cluster collegati, i piu' recenti per primi; un clic porta la radio sulla banda dello spot. */
-function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?: ClusterOptions } = {}) {
+function ClusterPanelInner({ onSpot, options, contest }: { onSpot?: SpotHandler; options?: ClusterOptions; contest?: ClusterContest } = {}) {
   const t = useT();
   const queryClient = useQueryClient();
   // Split DX (Impostazioni > DX Cluster): il clic che sintonizza uno spot con «UP 5», «QSX ...» mette la radio in split
@@ -362,36 +501,19 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
 
   return (
     <div className="cluster" style={{ '--dxped-bg': dxpedColor, '--dxped-ink': inkFor(dxpedColor) } as CSSProperties}>
-      <div className="cluster-bar" title={t('tip.cluster.filters')}>
-        <MultiPick
-          label={t('cluster.filter.band')}
-          allLabel={t('cluster.filter.bandAll')}
-          options={[{ value: 'now', label: t('cluster.filter.bandNow') }, ...BAND_NAMES.map((b) => ({ value: b, label: b }))]}
-          selected={filters.bands}
-          onChange={(bands) => change({ ...filters, bands })}
-        />
-        <MultiPick
-          label={t('cluster.filter.mode')}
-          allLabel={t('cluster.filter.modeAll')}
-          options={MODES.map((m) => ({ value: m, label: m === 'DIGI' ? 'Digi' : m }))}
-          selected={filters.modes}
-          onChange={(modes) => change({ ...filters, modes })}
-        />
-        {/* chi manda lo spot: il proprio continente o quelli scelti (Luc ON7KEC: gli spot degli europei dicono cosa si sente qui) */}
-        <MultiPick
-          label={t('cluster.filter.spotter')}
-          allLabel={t('cluster.filter.spotterAll')}
-          options={[{ value: 'mine', label: t('cluster.filter.spotterMine') }, ...['EU', 'NA', 'SA', 'AS', 'AF', 'OC'].map((c) => ({ value: c, label: t(`cont.${c}` as Key) }))]}
-          selected={filters.spotters ?? []}
-          onChange={(spotters) => change({ ...filters, spotters })}
-        />
-        <button type="button" className={`glass chip${filters.newOnly ? ' glass--on' : ''}`} aria-pressed={filters.newOnly === true} title={t('tip.cluster.newOnly')} onClick={() => change({ ...filters, newOnly: !filters.newOnly })}>
-          {t('cluster.filter.newOnly')}
-        </button>
-        <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
-        <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
-          {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
-        </span>
+      {contest ? <ClusterContestHead contest={contest} filters={filters} setSearch={(search) => setFilters({ ...filters, search })} change={change} linked={linked} total={servers.length} /> : null}
+      <div className={`cluster-bar${contest ? ' cluster-bar--ctw' : ''}`} title={contest ? undefined : t('tip.cluster.filters')}>
+        {contest ? null : (
+          <>
+            <FilterPickers filters={filters} change={change} />
+            <input type="search" title={t('tip.ui.search')} aria-label={t('cluster.filter.search')} placeholder={t('cluster.filter.search')} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
+          </>
+        )}
+        {contest ? null : (
+          <span className={`cluster-link muted${linked === 0 ? ' cluster-link--down' : ''}`}>
+            {linked > 0 ? t('cluster.linked', { n: linked, m: servers.length }) : t('cluster.nobody')}
+          </span>
+        )}
       </div>
       {splitDx.data?.active ? (
         <div className="cluster-splitdx" role="status" title={t('tip.cluster.splitDxActive', { rx: formatMhz(splitDx.data.rx_hz), tx: formatMhz(splitDx.data.tx_hz) })}>

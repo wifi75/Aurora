@@ -106,3 +106,49 @@
    finivano in certe disposizioni dei pannelli) */
 .dock-panel--cluster .dock-grip { display: flex; align-items: center; }
 .dock-panel--cluster .dock-grip .dock-grip-extra--right { position: static; left: auto; right: auto; top: auto; bottom: auto; margin-left: auto; padding: 0 0.4rem; justify-content: flex-end; }
+
+/* DX Cluster della vista contest: in alto una riga sola con la ricerca (prende lo spazio libero e si restringe), «Spot DX» e l'ingranaggio;
+   i filtri stanno nel pannello dell'ingranaggio, che sta fuori dalla scheda (portale) e quindi non si taglia */
+.cluster-ctwhead { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 4px; }
+.cluster-ctwhead > * { flex: none; }
+.cluster-ctwhead > .cluster-ctwsearch { flex: 1 1 0; min-width: 0; width: 100%; min-height: 1.6rem; padding: 0 0.4rem; box-sizing: border-box; font-size: 0.72rem; background: var(--glass-lo); border: var(--border-width, 1px) solid var(--glass-edge, var(--border)); border-radius: 0.4rem; color: var(--text); }
+.cluster-bar--ctw { justify-content: flex-end; }
+.cluster-bar--ctw:not(:has(*)) { display: none; }
+.cluster-gear { position: relative; }
+.cluster-gear--on { border-color: var(--accent); color: var(--accent); }
+.cluster-gear-badge { position: absolute; top: -5px; right: -5px; min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; border-radius: 7px; background: var(--accent); color: var(--bg); font-size: 0.6rem; font-weight: 700; line-height: 14px; text-align: center; pointer-events: none; }
+.cluster-pop { position: fixed; z-index: 1000; display: flex; flex-direction: column; gap: 8px; width: max-content; max-width: min(22rem, calc(100vw - 8px)); padding: 10px 12px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); box-shadow: 0 8px 24px rgb(0 0 0 / 0.35); }
+.cluster-pop-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted, var(--text)); }
+.cluster-pop-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cluster-pop-sep { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--border); }
+.cluster-pop { max-height: calc(100vh - 16px); overflow-y: auto; }
+.cluster-pop-opts { display: flex; flex-direction: column; gap: 8px; }
+.cluster-pop-sec { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cluster-pop-sub { font-size: 0.72rem; font-weight: 600; color: var(--text); opacity: 0.85; }
+.cluster-pop-opts .cop-radio, .cluster-pop-opts .cop-row { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
+.cluster-pop-opts .cop-row { justify-content: space-between; }
+.cluster-pop-opts .cop-hint { margin: 0; font-size: 0.7rem; opacity: 0.75; }
+.cluster-pop-opts .cop-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); gap: 2px 8px; }
+html[data-theme='light'] .cluster-pop { box-shadow: 0 8px 24px rgb(15 23 42 / 0.18); }
+
+/* l'etichetta «UP 5» si legge sempre, anche sulle righe colorate (spot rari, nuovi): testo chiaro su fondo scuro */
+.cluster .cluster-split:not(.cluster-split--off) { color: #fff !important; background: #6b3a00 !important; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.6); }
+.cluster-pop-link { margin: 0; font-size: 0.78rem; line-height: 1.35; max-width: 20rem; }
+.cluster-pop-link--down { color: var(--danger, #c0392b); }
+
+/* «Spot DX» nel cluster del contest: piu' basso, con un fondo colorato che si vede anche nel tema scuro */
+.cluster-ctwhead > .sstv-btn { min-height: 1.6rem; height: 1.6rem; padding: 0 0.8rem; font-size: 0.78rem; font-weight: 700; line-height: 1; color: #fff; background: linear-gradient(135deg, #1f8fd0, #5b45d6); border: 1px solid #6a55e0; border-radius: 0.4rem; }
+.cluster-ctwhead > .sstv-btn:hover:not(:disabled) { filter: brightness(1.12); border-color: #8e7bff; }
+
+/* ricerca nominativo del cluster del contest: piu' corta (non prende piu' tutto lo spazio libero) */
+.cluster-ctwhead > .cluster-ctwsearch { flex: 0 1 9rem; width: 9rem; }
+/* ordine della riga: «Spot DX» tutto a sinistra, poi la ricerca del nominativo, poi l'ingranaggio */
+.cluster-ctwhead > .sstv-btn { order: -1; }
+
+/* «Spot DX»: bordo intero e fondo colorato sicuro (batte gli stili «glass» del tema); la riga ha un po' di margine perche' il bordo non venga tagliato */
+.cluster-ctwhead { padding: 2px; }
+html:root:root .cluster-ctwhead > .sstv-btn { box-sizing: border-box; height: 1.75rem; min-height: 1.75rem; padding: 0 0.9rem; border: 2px solid #6a55e0 !important; border-radius: 0.5rem; color: #fff !important; background: linear-gradient(135deg, #1f8fd0, #5b45d6) !important; box-shadow: none; text-shadow: 0 1px 1px rgb(0 0 0 / 0.3); }
+
+/* «Spot DX» al passaggio del mouse: resta leggibile (testo bianco su fondo colorato) in tema chiaro e scuro */
+html:root:root .cluster-ctwhead > .sstv-btn:hover:not(:disabled),
+html:root:root .cluster-ctwhead > .sstv-btn:focus-visible { color: #fff !important; background: linear-gradient(135deg, #2aa0e6, #6d58ea) !important; border-color: #8e7bff !important; filter: none; }

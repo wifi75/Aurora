@@ -23,3 +23,19 @@ Richiesta del proprietario (2026-11-17): le impostazioni di un contest non devon
 - Le **regole di punteggio** (punti per QSO, moltiplicatori, doppi per banda o per modo) NON sono impostazioni dell'utente per i contest in cartella: sono nelle regole del contest. Si vedono, in sola lettura, nella scheda del regolamento. Solo per un contest creato dall'utente (non incluso) resta la finestra completa, con le voci avanzate.
 
 **Soluzione scelta (proprietario, 2026-11-17): una sola finestra, voci non pertinenti inibite.** Non si ricostruisce una pagina per ogni contest: `ContestEditDialog.tsx` resta una finestra sola con tutte le voci, e per ogni contest quelle che non gli servono diventano **grigie e non modificabili** (`disabled`, tooltip «Non previsto da questo contest»; per i modi e le bande non ammessi la casella resta spenta). Una voce e' abilitata solo se il contest la dichiara o le sue regole la usano: la condizione per ogni voce e' una funzione pura `voceAttiva(contest, voce)` (con test) che legge la dichiarazione della cartella (`contest.toml`) e, per i `.contest` vecchi, le regole `[Score]` e le chiavi storiche. Le voci avanzate (regole di punteggio, contatori) restano modificabili solo per i contest dell'utente; per quelli inclusi sono in sola lettura. Se un contest non dichiara una voce, e' grigia: non serve cambiare il disegno della finestra per aggiungere un contest.
+
+## Disposizione standard in SSB (scelta del proprietario, 2026-11-17)
+
+Griglia di 12 colonne, righe da 30 px, spazio di 6 px tra le schede. Posizione di partenza (colonna x, riga y, larghezza x altezza), in `defaultSsbLayout` di `app/src/lib/contestLayout.ts`:
+
+| Scheda | x, y | misura |
+| --- | --- | --- |
+| Log del contest | 0, 0 | 3 x 13 |
+| Inserisci QSO | 3, 0 | 4 x automatica (segue il contenuto) |
+| Paesi DXCC | 3, 5 | 4 x 8 |
+| DX Cluster | 7, 0 | 3 x 9 |
+| Statistiche | 7, 9 | 3 x 10 |
+| Punteggio e ritmo | 10, 0 | 2 x 9 |
+| Moltiplicatori dello scambio | 0, 13 | 7 x 6 (uno sopra l'altro se piu' d'uno) |
+
+Chi ha gia' spostato le schede tiene la sua disposizione; «Ripristina disposizione» riporta questa.

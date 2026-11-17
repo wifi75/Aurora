@@ -14,7 +14,7 @@ export const CONTEST_LAYOUT_VERSION = 1;
 export type ContestView = 'ssb' | 'text';
 
 export const CONTEST_BASE_IDS = ['entry', 'log', 'cluster', 'rate', 'stats'] as const;
-export const CONTEST_TEXT_IDS = ['rx', 'tx', 'wf'] as const;
+export const CONTEST_TEXT_IDS = ['rx', 'tx', 'wf', 'radar'] as const;
 const STATIC_IDS: readonly string[] = [...CONTEST_BASE_IDS, ...CONTEST_TEXT_IDS];
 
 export const multCardId = (tipo: string) => `mult:${tipo}`;
@@ -26,7 +26,7 @@ export const contestLayoutKey = (contestId: string, view: ContestView) => `auror
 
 /** Misure minime (colonne x righe): molto piccole, cosi' ognuno puo' stringere le schede a suo gusto (anche in pagine piccole); il contenuto scorre dentro la scheda. */
 export const CONTEST_MINS: Record<string, Pick<DashSpec, 'minW' | 'minH'>> = {
-  entry: { minW: 2, minH: 5 },
+  entry: { minW: 2, minH: 2 },
   log: { minW: 2, minH: 3 },
   cluster: { minW: 2, minH: 3 },
   rate: { minW: 2, minH: 3 },
@@ -34,6 +34,7 @@ export const CONTEST_MINS: Record<string, Pick<DashSpec, 'minW' | 'minH'>> = {
   rx: { minW: 2, minH: 2 },
   tx: { minW: 2, minH: 2 },
   wf: { minW: 2, minH: 3 },
+  radar: { minW: 2, minH: 3 },
   mult: { minW: 2, minH: 3 },
 };
 
@@ -61,6 +62,8 @@ export function contestCardIds(view: ContestView, mults: readonly MultCardInfo[]
 }
 
 const item = (id: string, x: number, y: number, w: number, h: number): DashItem => ({ id, x, y, w, h, userH: true });
+/** L'inserimento QSO: l'altezza segue il contenuto (si allunga da sola se compaiono avvisi), salvo che l'utente non la scelga con l'angolo. */
+const autoItem = (id: string, x: number, y: number, w: number, h: number): DashItem => ({ id, x, y, w, h });
 
 /**
  * La disposizione di partenza. Vista `ssb`: a sinistra inserimento (5 colonne) e log, al centro DX Cluster e statistiche, a destra il ritmo; sotto,
@@ -68,33 +71,54 @@ const item = (id: string, x: number, y: number, w: number, h: number): DashItem 
  * il resto scende sotto.
  */
 export function defaultContestLayout(view: ContestView, mults: readonly MultCardInfo[]): DashItem[] {
-  const out: DashItem[] =
-    view === 'ssb'
-      ? [item('entry', 0, 0, 5, 9), item('log', 0, 9, 5, 9), item('cluster', 5, 0, 4, 9), item('rate', 9, 0, 3, 9), item('stats', 5, 9, 7, 9)]
-      : [
-          item('rx', 0, 0, 6, 6),
-          item('tx', 0, 6, 6, 4),
-          item('wf', 6, 0, 6, 10),
-          item('entry', 0, 10, 5, 9),
-          item('cluster', 5, 10, 4, 9),
-          item('rate', 9, 10, 3, 9),
-          item('log', 0, 19, 5, 9),
-          item('stats', 5, 19, 7, 9),
-        ];
-  const top = Math.max(...out.map((i) => i.y + i.h));
-  let x = 0;
-  let y = top;
-  let rowH = 0;
+  return view === 'ssb' ? defaultSsbLayout(mults) : defaultTextLayout(mults);
+}
+
+/**
+ * Disposizione di partenza dei contest in CW, RTTY e PSK (la configurazione standard scelta dal proprietario, spazio tra le schede di 6 px): quattro
+ * colonne da 3. Log a sinistra; ricezione sopra trasmissione; inserimento QSO, Paesi DXCC, statistiche e ritmo; Aurora BIGScan sopra il DX Cluster;
+ * sotto il log e la ricezione la cascata e poi i moltiplicatori dello scambio.
+ */
+function defaultTextLayout(mults: readonly MultCardInfo[]): DashItem[] {
+  const out: DashItem[] = [
+    item('log', 0, 0, 3, 14),
+    item('rx', 3, 0, 3, 11),
+    item('tx', 3, 11, 3, 3),
+    autoItem('entry', 6, 0, 3, 3),
+    item('stats', 6, 10, 3, 9),
+    item('rate', 6, 19, 3, 5),
+    item('radar', 9, 0, 3, 9),
+    item('cluster', 9, 9, 3, 15),
+    item('wf', 0, 14, 6, 3),
+  ];
+  let y = 17;
   for (const m of mults) {
-    const h = m.tipo === 'dxcc' || (m.total ?? 0) > MULT_BIG ? 13 : 9;
-    if (x + 6 > DASH_COLS) {
-      x = 0;
-      y += rowH;
-      rowH = 0;
+    if (m.tipo === 'dxcc') {
+      out.push(item(multCardId(m.tipo), 6, 3, 3, 7));
+      continue;
     }
-    out.push(item(multCardId(m.tipo), x, y, 6, h));
-    rowH = Math.max(rowH, h);
-    x += 6;
+    out.push(item(multCardId(m.tipo), 0, y, 6, 7));
+    y += 7;
+  }
+  return out;
+}
+
+/**
+ * Disposizione di partenza di tutti i contest in SSB (la configurazione standard scelta dal proprietario, spazio tra le schede di 6 px): a sinistra il log
+ * (3 colonne), poi inserimento QSO sopra i Paesi DXCC (4 colonne), il DX Cluster sopra le statistiche (3 colonne), a destra il ritmo (2 colonne);
+ * in fondo, a tutta la larghezza di log e inserimento, i moltiplicatori dello scambio (uno sopra l'altro se sono piu' d'uno).
+ */
+function defaultSsbLayout(mults: readonly MultCardInfo[]): DashItem[] {
+  const out: DashItem[] = [item('log', 0, 0, 3, 13), autoItem('entry', 3, 0, 4, 5), item('cluster', 7, 0, 3, 9), item('rate', 10, 0, 2, 9), item('stats', 7, 9, 3, 10)];
+  let y = 13;
+  for (const m of mults) {
+    if (m.tipo === 'dxcc') {
+      out.push(item(multCardId(m.tipo), 3, 5, 4, 8));
+      continue;
+    }
+    const h = (m.total ?? 0) > MULT_BIG ? 7 : 6;
+    out.push(item(multCardId(m.tipo), 0, y, 7, h));
+    y += h;
   }
   return out;
 }

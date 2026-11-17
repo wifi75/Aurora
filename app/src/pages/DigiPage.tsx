@@ -18,6 +18,7 @@ import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, rea
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
 import { getActiveTextContest, getTextContestCheck, type TextContest } from '../api/contestTesto';
+import { bandeAmmesse, modiDichiarati } from '../lib/contestVoci';
 import { categoryValid, contestWindow, contestWindowStatus, grabExchange, startSerial, withContestMacros } from '../lib/textContest';
 import { ContestEditDialog, ContestListDialog, useSelectTextContest } from '../components/digi/ContestListDialog';
 import { ContestStatsDialog, TEXT_CONTEST_SCORE_KEY, useExportTextCabrillo, useTextContestScore } from '../components/digi/ContestStatsDialog';
@@ -253,6 +254,20 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const textScore = useTextContestScore(!!textContest).data;
   /** SSB: la pagina cambia disposizione (Log, inserimento del QSO, DX Cluster) e non mostra RX/TX, cascata e modi digitali; con un contest attivo compaiono anche Nr, punteggio, DUPE e moltiplicatori. */
   const ssbContest = snap.settings.mode === 'ssb';
+  // il tratto di banda a cui porta un blocchetto: fonia in SSB, il piano IARU del modo negli altri (CW, RTTY, PSK)
+  const contestPlan = snap.settings.mode === 'ssb' ? 'SSB' : snap.settings.mode === 'cw' ? 'CW' : snap.settings.mode === 'rtty' ? 'RTTY' : snap.settings.mode === 'psk63' ? 'PSK63' : 'PSK31';
+  const contestModeIds = (textContest ? modiDichiarati(textContest.contest) : []).map((k) => (k === 'cw' ? 'cw' : k === 'phone' ? 'ssb' : 'rtty'));
+  // si disegna al momento del render (usa `save` e `sending`, definiti piu' sotto)
+  const contestModeButtons = () =>
+    contestModeIds.length > 1 ? (
+      <div className="ssbc-modes" role="group" aria-label={t('digi.menu.mode')}>
+        {contestModeIds.map((id) => (
+          <button key={id} type="button" className={`ssbc-mode${snap.settings.mode === id ? ' on' : ''}`} aria-pressed={snap.settings.mode === id} disabled={sending} onClick={() => save({ mode: id as DigiSettings['mode'] })}>
+            {id.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    ) : null;
   /** Con un contest attivo la pagina (SSB, CW, RTTY, PSK) e' a schede spostabili: inserimento, log, DX Cluster, punteggio, moltiplicatori e, nei modi testuali, ricezione, trasmissione e cascata. Senza contest resta quella di sempre. */
   const contestSheets = textContest !== null;
   const exportCabrillo = useExportTextCabrillo();
@@ -1790,6 +1805,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         { label: t('digi.mi.log'), checked: views.log, onSelect: () => setView({ log: !views.log }) },
         { label: t('digi.mi.rotor'), checked: rotorShown, onSelect: () => setRotorShown(!rotorShown) },
         { label: t('digi.mi.waterfall'), checked: views.waterfall, onSelect: () => setView({ waterfall: !views.waterfall }) },
+        ...(radarMode ? [{ label: t('radar.mi'), checked: radarOn, onSelect: toggleRadar }] : []),
         { label: t('digi.band.view'), checked: views.signals, onSelect: () => setView({ signals: !views.signals }) },
         { label: t('digi.band.wfCalls'), checked: views.wfCalls, onSelect: () => setView({ wfCalls: !views.wfCalls }) },
         { label: t('digi.band.wfWords'), checked: views.wfWords !== false, onSelect: () => setView({ wfWords: views.wfWords === false }) },
@@ -2093,7 +2109,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
 
       {/* macro a sinistra (colonne fisse e piu' corte), a fianco il selettore di banda con le frequenze del piano IARU */}
-      <div className={`digi-topline${ssbContest ? ' digi-topline--ssb' : ''}`}>
+      <div className={`digi-topline${ssbContest ? ' digi-topline--ssb' : ''}${ssbContest || textContest !== null ? ' digi-topline--contest' : ''}`}>
       {views.controlBar ? (
         <div className={`digi-macrowrap${macroW ? ' digi-macrowrap--sized' : ''}`} style={macroW ? { width: macroW } : undefined} ref={macroBox}>
           <ControlBar
@@ -2151,15 +2167,21 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           />
         </div>
       ) : null}
+      {/* con un contest che ha PIU' modi (per esempio CW e SSB) i pulsanti diretti dei modi stanno sotto le bande; con un modo solo non compaiono */}
       {/* la radio si porta sulla frequenza scelta (non in SSB: il piano dei modi testuali non vale per la fonia) */}
       {/* contest in SSB: a destra delle macro un blocchetto per banda (le bande scelte nelle Impostazioni, hook useBandFilter), un clic porta la radio all'inizio del tratto fonia */}
-      {ssbContest ? (
+      {ssbContest || textContest !== null ? (
         <div className="ssbc-bands" role="group">
           {(() => {
-            const rows = visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null).flatMap((b) => {
-              const row = bandPlanRows('SSB').find((r) => r.band === b);
-              return row ? [row] : [];
+            // le bande del contest (dalle sue impostazioni: `[bande]` della cartella o `bands=` delle regole) e quelle scelte nelle Impostazioni della stazione:
+            // si mostrano le scelte che il contest ammette; se non ce n'e' nessuna, quelle del contest
+            const ammesse = textContest ? (bandeAmmesse(textContest.contest) ?? []).map((b) => b.replace(/m$/, '')) : [];
+            const inContest = (band: string) => ammesse.length === 0 || ammesse.includes(band.replace(/m$/, ''));
+            const scelte = visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null).flatMap((b) => {
+              const row = bandPlanRows(contestPlan).find((r) => r.band === b);
+              return row && inContest(row.band) ? [row] : [];
             });
+            const rows = scelte.length > 0 || ammesse.length === 0 ? scelte : bandPlanRows(contestPlan).filter((r) => inContest(r.band));
             if (rows.length === 0)
               return (
                 <p className="ssbc-bands-none">
@@ -2187,9 +2209,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               </button>
             ));
           })()}
+          {contestModeButtons()}
         </div>
       ) : null}
-      {s.mode !== 'ssb' && (
+      {s.mode !== 'ssb' && textContest === null && (
         <div className="digi-bandbar">
           <FreqPicker
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
@@ -2239,6 +2262,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           tx={ssbContest ? undefined : txPart}
           // la cascata e' una scheda come le altre e segue la scelta del menu Vista (in SSB non c'e')
           waterfall={ssbContest || !views.waterfall ? undefined : waterfallFor}
+          bigscan={radarMode && radarOn ? (<RadarList on={radarOn} onToggle={toggleRadar} answering={views.radarAnswering} onAnswering={(v) => setView({ radarAnswering: v })} stations={radar} showWpm={s.mode === 'cw'} showSnr={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} modeName={s.mode === 'cw' ? 'CW' : 'RTTY'} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} qsoCall={qso.call} onPileupTx={(hz) => save({ tx_follow_rx: false, tx_freq_hz: Math.max(200, Math.min(3500, Math.round(hz))) })} />) : undefined}
           rotor={(at) => (rotorShown ? <RotorCard call={qso.call} grid={qso.wwloc} place="digi" startAt={at} /> : null)}
         />
       ) : ssbContest ? (

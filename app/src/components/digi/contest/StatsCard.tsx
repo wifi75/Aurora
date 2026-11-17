@@ -16,10 +16,9 @@ export function StatsCard({ score: s }: { score: TextContestScore }) {
   return (
     <div className="ctw-stats">
       <div className="ctw-score" aria-label={t('ctw.score')}>
-        <span>{t('ctw.score')}</span>
+        <span className="ctw-scoreline">{scoreLine(t, s)}</span>
         <b>{s.punteggio.toLocaleString()}</b>
       </div>
-      <p className="ctw-scoreline">{scoreLine(t, s)}</p>
       <table className="ctw-table">
         <thead>
           <tr>

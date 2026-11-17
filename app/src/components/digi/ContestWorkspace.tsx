@@ -53,6 +53,8 @@ export interface ContestWorkspaceProps {
   tx?: ReactNode;
   /** La cascata alta quanto la scheda (`px` pixel). */
   waterfall?: (heightPx: number) => ReactNode;
+  /** Aurora BIGScan (tutte le stazioni della banda in CW e RTTY): c'e' solo se e' acceso. */
+  bigscan?: ReactNode;
   /** La scheda del rotore (finestra mobile): parte nel punto dato. */
   rotor: (startAt: { x: number; y: number }) => ReactNode;
 }
@@ -67,7 +69,7 @@ export function ContestWorkspace(props: ContestWorkspaceProps) {
   return <Workspace key={`${props.contest.id}:${props.view}`} {...props} />;
 }
 
-function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSet, noBand, noMode, windowNotice, onEditWindow, onQso, onRst, onRegister, band, saveError = null, onDismissSaveError, modeName, showLog, log, cluster, rx, tx, waterfall, rotor }: ContestWorkspaceProps) {
+function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSet, noBand, noMode, windowNotice, onEditWindow, onQso, onRst, onRegister, band, saveError = null, onDismissSaveError, modeName, showLog, log, cluster, rx, tx, waterfall, bigscan, rotor }: ContestWorkspaceProps) {
   const t = useT();
   const narrow = useNarrow();
   const box = useRef<HTMLDivElement>(null);
@@ -105,14 +107,14 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
 
   const mk = (id: string, title: ReactNode, children: ReactNode): DashWidget => {
     const m = minsOf(id);
-    return { id, title, minW: m.minW, minH: m.minH, maxRows: 200, autoHeight: false, className: `ctw-card ctw-card--${isMultCard(id) ? 'mult' : id}`, children };
+    return { id, title, minW: m.minW, minH: m.minH, maxRows: 200, autoHeight: id === 'entry', className: `ctw-card ctw-card--${isMultCard(id) ? 'mult' : id}`, children };
   };
   const widgets: DashWidget[] = [
     mk(
       'entry',
       <>
         {t('ssbc.enter')}
-        <b className="ssbc-contest-name"> · {contest.name}</b>
+        <b className="ssbc-contest-name">{contest.name}</b>
       </>,
       <EntryCard
         bare
@@ -137,11 +139,13 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
     mk('cluster', t('ctw.card.cluster'), <ClusterCard cluster={cluster} />),
     mk('rate', t('ctw.card.rate'), <RateCard score={score} contest={contest} qsoTimes={qsoTimes} />),
     ...(score ? [mk('stats', t('ssbc.statsTitle'), <StatsCard score={score} />)] : []),
+    // ricezione, trasmissione e cascata solo nei modi del testo (CW, RTTY, PSK): in SSB non c'e' testo da ricevere ne' da inviare
     ...(view === 'text'
       ? [
           ...(rx ? [mk('rx', t('ctw.card.rx'), <RxTextCard>{rx}</RxTextCard>)] : []),
           ...(tx ? [mk('tx', t('ctw.card.tx'), <TxTextCard>{tx}</TxTextCard>)] : []),
           ...(waterfall ? [mk('wf', t('ctw.card.wf'), <WaterfallCard render={waterfall} />)] : []),
+          ...(bigscan ? [mk('radar', t('radar.title'), <div className="ctw-bigscan">{bigscan}</div>)] : []),
         ]
       : []),
     ...(score ? mults.map((m) => mk(multCardId(m.tipo), <MultsTitle score={score} tipo={m.tipo} />, <MultsCard score={score} tipo={m.tipo} pending={entry.pending} />)) : []),
@@ -153,9 +157,6 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
 
   return (
     <div className="ssbc ssbc--ws" ref={box}>
-      <div className="ctw-bar" role="toolbar" aria-label={t('ctw.bar')}>
-        <strong className="ssbc-contest-name">{contest.name}</strong>
-      </div>
       {narrow || !slot
         ? null
         : createPortal(
@@ -169,7 +170,7 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
             </>,
             slot,
           )}
-      <DashGrid
+      <DashGrid gap={6}
         widgets={widgets}
         layout={layout}
         onLayout={onLayout}

@@ -2173,3 +2173,8 @@
 }
 .files-missing-actions .files-missing-restore { background: color-mix(in srgb, var(--warn, #d98a00) 30%, transparent); }
 .files-missing-actions button:disabled { opacity: 0.6; cursor: default; }
+.freq-tab th, .freq-tab td { vertical-align: middle; }
+.freq-tab th:nth-child(5), .freq-tab td:nth-child(5), .freq-tab th:nth-child(6), .freq-tab td:nth-child(6) { text-align: center; width: 4.5rem; }
+.freq-tab td:nth-child(5) input[type="checkbox"] { margin: 0; vertical-align: middle; }
+.freq-tab td:nth-child(6) .freq-del { display: inline-flex; align-items: center; justify-content: center; }
+.freq-wrap { overflow-x: auto; }

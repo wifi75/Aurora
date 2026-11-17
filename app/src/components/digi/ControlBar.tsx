@@ -239,8 +239,7 @@ ${t('digi.bar.moveHint')}` : ''}`}
           {t('digi.bar.extended')}
         </button>
         <hr />
-        <button type="button" role="menuitem" onClick={() => { setGearAt(null); setFontOpen(true); }}>
-          <span className="digi-st-menu-check" aria-hidden="true" />
+        <button type="button" role="menuitem" className="digi-st-menu-flush" onClick={() => { setGearAt(null); setFontOpen(true); }}>
           {t('digi.bar.font')}
         </button>
       </PopupMenu>

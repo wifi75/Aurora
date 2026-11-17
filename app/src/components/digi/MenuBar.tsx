@@ -59,6 +59,8 @@ export function MenuBar({ menus }: { menus: MenuDef[] }) {
           {open === i ? <MenuList items={m.items} onDone={() => setOpen(null)} /> : null}
         </div>
       ))}
+      {/* al centro, dopo il menu Aiuto: il titolo che la vista a schede vuole mostrare (il nome del contest) */}
+      <span id={MENU_TITLE_ID} className="digi-menubar-title" />
       {/* a destra: i pulsanti della vista a schede del contest (blocca e ripristina la disposizione) si agganciano qui */}
       <span id={MENU_SLOT_ID} className="digi-menubar-slot" />
     </div>
@@ -67,6 +69,8 @@ export function MenuBar({ menus }: { menus: MenuDef[] }) {
 
 /** Il posto, all'estremo destro della barra dei menu, dove la vista a schede mette i suoi pulsanti. */
 export const MENU_SLOT_ID = 'digi-menubar-slot';
+/** Il posto, al centro della barra dei menu (dopo «Aiuto»), per il titolo della vista (il nome del contest). */
+export const MENU_TITLE_ID = 'digi-menubar-title';
 
 export function MenuList({ items, onDone }: { items: MenuItem[]; onDone(): void }) {
   const [sub, setSub] = useState<number | null>(null);

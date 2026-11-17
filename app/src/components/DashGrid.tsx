@@ -45,6 +45,8 @@ interface Props {
   widthLabel: string;
   /** Classe del riquadro di ogni scheda (di base quella dei Satelliti). */
   panelClass?: string;
+  /** Spazio tra le schede in pixel (di base 10, come i Satelliti). */
+  gap?: number;
 }
 
 interface Gesture {
@@ -68,7 +70,8 @@ const GripDots = () => (
 );
 
 /** Griglia di schede spostabili (dalla barra del titolo) e ridimensionabili (dall'angolo) che resta sempre ordinata e piena. */
-export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWidths, moveLabel, resizeLabel, widthLabel, panelClass = 'sat-panel' }: Props) {
+export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWidths, moveLabel, resizeLabel, widthLabel, panelClass = 'sat-panel', gap: gapProp }: Props) {
+  const gap = gapProp ?? DASH_GAP;
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [gesture, setGesture] = useState<Gesture | null>(null);
@@ -116,13 +119,13 @@ export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWid
         content += grows ? sum(Array.from(k.children)) + (parseFloat(c.marginTop) || 0) + (parseFloat(c.marginBottom) || 0) : sum([k]);
       }
       const chrome = card.offsetHeight - body.offsetHeight;
-      next[id] = Math.max(1, Math.ceil((chrome + content + DASH_GAP) / (DASH_ROW + DASH_GAP)));
+      next[id] = Math.max(1, Math.ceil((chrome + content + gap) / (DASH_ROW + gap)));
     }
     const same = Object.keys(next).length === Object.keys(auto).length && Object.keys(next).every((k) => next[k] === auto[k]);
     if (!same) setAuto(next);
   });
 
-  const colPx = width > 0 ? (width - (DASH_COLS - 1) * DASH_GAP) / DASH_COLS : 0;
+  const colPx = width > 0 ? (width - (DASH_COLS - 1) * gap) / DASH_COLS : 0;
   const ids = widgets.map((w) => w.id).join(',');
 
   const specs = useMemo<DashSpecs>(() => {
@@ -134,7 +137,7 @@ export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWid
         minH: w.minH,
         maxW: w.maxW,
         rows: ratio || w.autoHeight === false ? undefined : Math.min(w.maxRows, auto[w.id] ?? 0) || undefined,
-        hOf: ratio ? (cols: number) => Math.max(w.minH, Math.ceil(((cols * colPx + (cols - 1) * DASH_GAP) / ratio + DASH_GAP) / (DASH_ROW + DASH_GAP) - 0.001)) : undefined,
+        hOf: ratio ? (cols: number) => Math.max(w.minH, Math.ceil(((cols * colPx + (cols - 1) * gap) / ratio + gap) / (DASH_ROW + gap) - 0.001)) : undefined,
       };
     }
     return out;
@@ -146,10 +149,10 @@ export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWid
   const shown = gesture ? gesture.preview : settled;
 
   const rect = (it: DashItem) => ({
-    left: it.x * (colPx + DASH_GAP),
-    top: it.y * (DASH_ROW + DASH_GAP),
-    width: it.w * colPx + (it.w - 1) * DASH_GAP,
-    height: it.h * DASH_ROW + (it.h - 1) * DASH_GAP,
+    left: it.x * (colPx + gap),
+    top: it.y * (DASH_ROW + gap),
+    width: it.w * colPx + (it.w - 1) * gap,
+    height: it.h * DASH_ROW + (it.h - 1) * gap,
   });
 
   /** Salva le posizioni; l'altezza si salva solo per la scheda che l'utente ha ridimensionato dall'angolo, per le altre resta quella di prima (o automatica). */
@@ -193,17 +196,17 @@ export function DashGrid({ widgets, layout, onLayout, locked, narrow, defaultWid
       if (Math.hypot(dx, dy) < MOVE_PX) return;
       g.started = true;
     }
-    const cw = colPx + DASH_GAP;
-    const rh = DASH_ROW + DASH_GAP;
+    const cw = colPx + gap;
+    const rh = DASH_ROW + gap;
     if (g.kind === 'move') {
       g.preview = moveItem(settled, g.id, Math.round((g.base.left + dx) / cw), Math.round((g.base.top + dy) / rh), specs);
     } else if (g.kind === 'width') {
-      g.preview = resizeWidth(settled, g.id, snapCells(g.base.width + dx, colPx, DASH_GAP), specs);
+      g.preview = resizeWidth(settled, g.id, snapCells(g.base.width + dx, colPx, gap), specs);
     } else {
       const ratio = widgets.find((w) => w.id === g.id)?.ratio;
       const wPx = ratio ? g.base.width + (ratio * (dx * ratio + dy)) / (ratio * ratio + 1) : g.base.width + dx;
       const hPx = g.base.height + dy;
-      g.preview = resizeItem(settled, g.id, snapCells(wPx, colPx, DASH_GAP), snapCells(hPx, DASH_ROW, DASH_GAP), specs);
+      g.preview = resizeItem(settled, g.id, snapCells(wPx, colPx, gap), snapCells(hPx, DASH_ROW, gap), specs);
     }
     g.dx = dx;
     g.dy = dy;

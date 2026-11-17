@@ -46,3 +46,6 @@ html:root:root[data-theme='light'] .digi-classica .digi-key:not(.digi-key--blank
 html:root:root[data-theme='light'] .digi-classica .digi-key:not(.digi-key--blank):not([style*='background']) { background: #cfd9ee; }
 html:root:root[data-theme='light'] .digi-classica .digi-key--blank { background: rgba(207, 217, 238, 0.35); border: 1px dashed #7d8cb2; box-shadow: none; }
 html:root:root[data-theme='light'] .digi-classica .digi-key:hover:not(:disabled) { filter: brightness(0.95); border-color: #5b4fe0; box-shadow: inset 0 0 0 1px #5b4fe0, 0 2px 5px rgba(60, 50, 180, 0.3); }
+
+/* tasti macro piu' alti di 6 punti (26 -> 32): il numero del tasto funzione non tocca piu' il testo */
+html:root:root .digi-classica .digi-key { height: 32px; }

@@ -366,3 +366,4 @@ html[data-theme='light'] .digi-log-table--completa tbody tr.digi-log-cur td:firs
 .acq-delay-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; font-size: 0.9rem; }
 .acq-delay-row input { width: 5.5rem; text-align: right; }
 .acq-delay-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+.digi-st-menu .digi-st-menu-flush { padding-left: 0.5rem; }

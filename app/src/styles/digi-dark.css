@@ -219,3 +219,4 @@ html[data-theme='light'] .digi-rxbar-search { background: var(--panel, #fff); bo
 .digi-txwrap::before { content: attr(data-label); position: absolute; top: 4px; right: 12px; z-index: 1; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #b4a6ff; pointer-events: none; }
 html[data-theme='light'] .digi-txwrap { background: rgb(20 40 90 / 0.04); }
 html[data-theme='light'] .digi-txwrap::before { color: #4b36c9; }
+.digi-log-tabtools--left { margin-left: 0; padding-left: 2px; }

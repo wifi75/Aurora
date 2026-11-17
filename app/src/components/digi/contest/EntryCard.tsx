@@ -4,6 +4,7 @@ import { multLabel, multName } from '../ContestStatsDialog';
 import type { Qso } from '../DigiLog';
 import { SaveFailAlert } from '../SaveFailAlert';
 import { EXTRA_MAX, cleanExtra, extraLabelKey } from '../../../lib/contestSection';
+import { windowNoticeInfo } from '../../../lib/textContest';
 import type { ContestEntryState } from './useContestEntry';
 
 export interface EntryCardProps {
@@ -43,6 +44,8 @@ export function EntryCard({ entry, qso, rsts, rstr, nrsAuto, qsoNr, contestName,
   const callRef = useRef<HTMLInputElement>(null);
   const form = useRef<HTMLDivElement>(null);
   const { typed, known, c, showExtra, extraNow, suggestions, prevRows, callMults } = entry;
+  // tre avvisi diversi: contest non ancora iniziato, scaduto, date non impostate
+  const notice = entry.contest ? windowNoticeInfo(entry.contest, Date.now()) : null;
   useEffect(() => callRef.current?.focus(), []);
 
   const register = () => {
@@ -106,13 +109,13 @@ export function EntryCard({ entry, qso, rsts, rstr, nrsAuto, qsoNr, contestName,
       {bare ? null : (
         <h3>
           {t('ssbc.enter')}
-          {contestName ? <b className="ssbc-contest-name"> · {contestName}</b> : null} <span className="ssbc-hint">· {t('ssbc.enterHint')}</span>
+          <span className="ssbc-hint">· {t('ssbc.enterHint')}</span>
         </h3>
       )}
-      <p className={`ssbc-bandnow${band === '' ? ' ssbc-bandnow--none' : ''}`}>{t('digi.log.bandNow', { band: band === '' ? '—' : band.replace(/^(\d+)m$/, '$1 m') })}</p>
+      {bare ? null : <p className={`ssbc-bandnow${band === '' ? ' ssbc-bandnow--none' : ''}`}>{t('digi.log.bandNow', { band: band === '' ? '—' : band.replace(/^(\d+)m$/, '$1 m') })}</p>}
       {contestOn && windowNotice ? (
         <p className="ssbc-notice" role="status">
-          {t('ssbc.windowOff')}{' '}
+          {notice ? t(notice.key, { when: notice.when }) : t('ssbc.windowOff')}{' '}
           <button type="button" className="ssbc-link" onClick={onEditWindow}>
             {t('ssbc.windowSet')}
           </button>

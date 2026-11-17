@@ -117,3 +117,8 @@ html[data-theme='light'] .radar-pileup-text { color: #b45309; }
 /* Pulisci di BIGScan: solo l'icona del cestino */
 .radar-clear--icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 22px; padding: 0; }
 .radar-answer--on { color: #0b2a20; background: #3ddc97; border-color: #3ddc97; }
+
+/* intestazione del BIGScan su una riga sola (interruttore, conteggio, legenda, scambio, cestino): la legenda si restringe, i pulsanti no */
+.radar-head { flex-wrap: nowrap; }
+.radar-head > * { flex: none; }
+.radar-head > .radar-legend { flex: 0 1 auto; min-width: 0; overflow: hidden; }

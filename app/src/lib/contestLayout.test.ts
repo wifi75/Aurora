@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { normalize, overlaps, type DashItem, type DashSpecs } from './dashGrid';
 import {
   CONTEST_LAYOUT_VERSION,
-  MULT_BIG,
   contestCardIds,
   contestDefaultWidths,
   contestLayoutKey,
@@ -36,7 +35,7 @@ describe('disposizione di partenza del contest', () => {
       expect(i.w).toBeGreaterThanOrEqual(m.minW);
       expect(i.h).toBeGreaterThanOrEqual(m.minH);
       expect(i.x + i.w).toBeLessThanOrEqual(12);
-      expect(i.userH).toBe(true);
+      expect(i.userH === true).toBe(i.id !== 'entry');
     }
     expect(noOverlap(d)).toBe(true);
     // la compattazione non sposta nulla: la partenza e' gia' sistemata
@@ -47,11 +46,11 @@ describe('disposizione di partenza del contest', () => {
     const d = defaultContestLayout('ssb', mults);
     const a = d.find((i) => i.id === multCardId('dom'));
     const b = d.find((i) => i.id === multCardId('dxcc'));
-    expect(a?.w).toBe(6);
-    expect(a?.h).toBeGreaterThanOrEqual(8);
-    expect(340).toBeGreaterThan(MULT_BIG);
-    expect(b?.h).toBeGreaterThan(a?.h ?? 0);
-    expect(d.find((i) => i.id === 'entry')?.w).toBeGreaterThanOrEqual(5);
+    expect(a?.w).toBe(7);
+    expect(a?.h).toBeGreaterThanOrEqual(6);
+    expect(b).toMatchObject({ x: 3, y: 5, w: 4, h: 8 });
+    expect(d.find((i) => i.id === 'entry')).toMatchObject({ x: 3, y: 0, w: 4 });
+    expect(d.find((i) => i.id === 'log')).toMatchObject({ x: 0, y: 0, w: 3, h: 13 });
     expect(d.find((i) => i.id === 'stats')?.h).toBeGreaterThanOrEqual(8);
   });
 
@@ -62,14 +61,14 @@ describe('disposizione di partenza del contest', () => {
 
   it('i Paesi DXCC (elenco aperto, senza totale) partono alti come gli elenchi lunghi', () => {
     const d = defaultContestLayout('ssb', [{ tipo: 'dxcc', total: null }]);
-    expect(d.find((i) => i.id === 'mult:dxcc')?.h).toBeGreaterThan(9);
+    expect(d.find((i) => i.id === 'mult:dxcc')?.h).toBeGreaterThanOrEqual(8);
   });
 
-  it('piu tipi di moltiplicatore vanno a due a due sotto, senza urtarsi', () => {
+  it('più tipi di moltiplicatore vanno uno sopra l altro sotto, senza urtarsi', () => {
     const many: MultCardInfo[] = ['a', 'b', 'c', 'd', 'e'].map((tipo) => ({ tipo, total: 30 }));
     const d = defaultContestLayout('ssb', many);
     expect(noOverlap(d)).toBe(true);
-    expect(d.filter((i) => i.id.startsWith('mult:')).map((i) => i.x)).toEqual([0, 6, 0, 6, 0]);
+    expect(d.filter((i) => i.id.startsWith('mult:')).map((i) => i.x)).toEqual([0, 0, 0, 0, 0]);
     expect(Object.keys(contestDefaultWidths('ssb', many))).toHaveLength(d.length);
   });
 
@@ -103,7 +102,9 @@ describe('salvataggio per contest e per vista', () => {
   it('senza nulla di salvato vale la partenza, sbloccata', () => {
     const l = loadContestLayout('arrl10', 'ssb', mults);
     expect(l.locked).toBe(false);
-    expect(l.items).toEqual(defaultContestLayout('ssb', mults));
+    // le stesse schede nelle stesse posizioni (l'ordine dell'elenco non conta)
+    const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
+    expect([...l.items].sort(byId)).toEqual([...defaultContestLayout('ssb', mults)].sort(byId));
   });
 
   it('salva e rilegge posizione, misura e blocco; un altro contest o un altra vista non li vedono', () => {
@@ -112,7 +113,7 @@ describe('salvataggio per contest e per vista', () => {
     const back = loadContestLayout('arrl10', 'ssb', mults);
     expect(back.locked).toBe(true);
     expect(back.items.find((i) => i.id === 'log')).toMatchObject({ x: 7, w: 5, h: 12 });
-    expect(loadContestLayout('cqww', 'ssb', mults).items.find((i) => i.id === 'log')).toMatchObject({ x: 0, w: 5 });
+    expect(loadContestLayout('cqww', 'ssb', mults).items.find((i) => i.id === 'log')).toMatchObject({ x: 0, w: 3 });
     expect(loadContestLayout('arrl10', 'text', mults).locked).toBe(false);
   });
 

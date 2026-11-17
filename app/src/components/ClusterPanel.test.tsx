@@ -357,3 +357,52 @@ describe('ClusterPanel', () => {
     expect(screen.getByText('JA1ABC').closest('tr')?.children).toHaveLength(5);
   });
 });
+
+describe('ClusterPanel nella vista contest', () => {
+  const contest = { call: 'IU3ABC', dialHz: 14_074_000, audioHz: 1500, modeName: 'SSB' };
+  const two = () => vi.mocked(getClusterSpots).mockResolvedValue({ config: config(true), servers: [], spots: [spot(2, 'JA1ABC', '20m', 'FT8', 'Japan'), spot(1, 'K1ABC', '40m', 'CW', 'United States')] });
+  const showContest = () =>
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ClusterPanel contest={contest} />
+      </QueryClientProvider>,
+    );
+
+  it('non mostra i filtri nella barra e non ha la linguetta DX Cluster; la ricerca c\'e\'', async () => {
+    two();
+    showContest();
+    await screen.findByText('K1ABC');
+    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Banda' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Solo nuovi' })).toBeNull();
+    expect(screen.getByRole('searchbox', { name: 'Cerca nominativo' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Spot DX' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Cerca nominativo' }), { target: { value: 'JA1' } });
+    expect(screen.queryByText('K1ABC')).toBeNull();
+  });
+
+  it('i filtri stanno nell\'ingranaggio, si applicano, si segnano sull\'ingranaggio e il pannello si chiude con Esc o fuori', async () => {
+    two();
+    showContest();
+    await screen.findByText('K1ABC');
+    expect(screen.queryByTestId('cluster-gear-badge')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Filtri e opzioni del DX Cluster/ }));
+    // un solo pannello con le due sezioni: filtri in alto, opzioni del cluster sotto
+    expect(screen.getByText('Opzioni del cluster')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /doppio clic/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Banda' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'La mia banda' }));
+    expect(screen.queryByText('K1ABC')).toBeNull();
+    expect(screen.getByText('JA1ABC')).toBeInTheDocument();
+    expect(screen.getByTestId('cluster-gear-badge')).toHaveTextContent('1');
+    // la stessa memoria di sempre
+    expect(JSON.parse(localStorage.getItem('aurora-cluster-filters') ?? '{}').bands).toEqual(['now']);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Filtri' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Filtri e opzioni del DX Cluster/ }));
+    expect(screen.getByRole('dialog', { name: 'Filtri' })).toBeInTheDocument();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('dialog', { name: 'Filtri' })).toBeNull();
+  });
+});

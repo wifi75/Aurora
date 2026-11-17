@@ -100,9 +100,12 @@ const COLS_KEY = 'aurora.digi.logcols2';
 /** Quanti QSO si leggono dal log (il massimo che il core da': i piu' recenti). */
 const LOG_ROWS = 500;
 
-function savedCols(): LogCol[] {
+/** Le colonne scelte per il log del contest: scelta a parte, con il suo punto di partenza. */
+const CONTEST_COLS_KEY = 'aurora.digi.contestlogcols';
+
+function savedCols(key: string = COLS_KEY, base: readonly LogCol[] = DEFAULT_COLS): LogCol[] {
   try {
-    const raw = JSON.parse(browserStorage()?.getItem(COLS_KEY) ?? 'null') as unknown;
+    const raw = JSON.parse(browserStorage()?.getItem(key) ?? 'null') as unknown;
     if (Array.isArray(raw)) {
       const ok = ALL_COLS.filter((c) => raw.includes(c));
       if (ok.length > 0) return ok;
@@ -110,7 +113,7 @@ function savedCols(): LogCol[] {
   } catch {
     // senza archivio restano le colonne di base
   }
-  return [...DEFAULT_COLS];
+  return [...base];
 }
 
 /** Larghezza di partenza di ogni colonna, in em: cresce da sola con la dimensione del carattere. */
@@ -181,7 +184,10 @@ function cell(q: Log4omQso, nr: number, c: LogCol, mark: React.ReactNode = null)
 export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, saveError = null, onDismissSaveError, onClear, serial, onSerial, contestOn, width, onWidth, view, marks }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
-  const [cols, setCols] = useState<LogCol[]>(savedCols);
+  const [plainCols, setPlainCols] = useState<LogCol[]>(() => savedCols());
+  const [contestCols, setContestCols] = useState<LogCol[]>(() => savedCols(CONTEST_COLS_KEY, CONTEST_COLS.filter((c) => c !== 'mark')));
+  // con un contest la matita agisce sulle colonne del contest (scelta a parte), altrimenti su quelle del log di sempre
+  const cols = marks ? contestCols : plainCols;
   const [picking, setPicking] = useState(false);
   const body = useRef<HTMLDivElement>(null);
   // prima di leggere la disposizione: le larghezze di una volta passano nella chiave nuova
@@ -192,7 +198,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
     storageKey: GRID_KEY,
     columns: ALL_COLS,
     defaultEm: DEFAULT_EM,
-    hidden: ALL_COLS.filter((c) => (marks ? !CONTEST_COLS.includes(c) : c === 'mark' || !cols.includes(c))),
+    hidden: ALL_COLS.filter((c) => (marks ? c !== 'mark' && !cols.includes(c) : c === 'mark' || !cols.includes(c))),
     fitCells: (_c, i) => body.current?.querySelectorAll(`thead tr > :nth-child(${i + 1}), tbody tr:not(.digi-log-cur) > :nth-child(${i + 1})`) ?? [],
   });
   const [spotOpen, setSpotOpen] = useState(false);
@@ -210,6 +216,8 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
       // la scelta vale comunque finche' la pagina e' aperta
     }
   };
+  // nella vista contest «Spot DX» e l'ingranaggio stanno dentro il pannello del cluster (oggetto stabile: il pannello non si ridisegna a vuoto)
+  const clusterContest = useMemo(() => (view === 'cluster' ? { call: qso.call, dialHz, audioHz, modeName } : undefined), [view, qso.call, dialHz, audioHz, modeName]);
   const pop = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!picking) return;
@@ -242,9 +250,9 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
   const toggleCol = (c: LogCol) => {
     const next = cols.includes(c) ? cols.filter((x) => x !== c) : ALL_COLS.filter((x) => x === c || cols.includes(x));
     if (next.length === 0) return;
-    setCols(next);
+    (marks ? setContestCols : setPlainCols)(next);
     try {
-      browserStorage()?.setItem(COLS_KEY, JSON.stringify(next));
+      browserStorage()?.setItem(marks ? CONTEST_COLS_KEY : COLS_KEY, JSON.stringify(next));
     } catch {
       // la scelta vale comunque finche' la pagina e' aperta
     }
@@ -328,17 +336,26 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
           window.addEventListener('pointerup', up);
         }}
       />}
-      <div className="digi-log-tabs" role="tablist">
+      {/* nella scheda DX Cluster della vista contest niente linguetta: il titolo c'e' gia' e i comandi stanno nel pannello del cluster */}
+      {view === 'cluster' ? null : <div className="digi-log-tabs" role="tablist">
+        {view === 'log' && marks ? (
+          <span className="ssbc-logbar ssbc-logbar--top">
+            <span className="ssbc-logtotal">{t('ssbc.logTotal', { n: contestTotal })}</span>
+            <button type="button" className="digi-tool" aria-pressed={marks.only} title={t('ssbc.logToggleTip')} onClick={marks.onToggle}>
+              {marks.only ? t('ssbc.logAll') : t('ssbc.logOnly')}
+            </button>
+          </span>
+        ) : null}
         {view !== 'log' ? (
           <button type="button" role="tab" aria-selected={tab === 'cluster'} className={tab === 'cluster' ? 'on' : ''} onClick={() => setTab('cluster')}>
             {t('digi.tab.cluster')}
           </button>
         ) : null}
-        {view !== 'cluster' ? (
+        {view === 'log' ? null : (
           <button type="button" role="tab" aria-selected={tab === 'log'} className={tab === 'log' ? 'on' : ''} onClick={() => setTab('log')}>
             {t('digi.log.title')}
           </button>
-        ) : null}
+        )}
         {tab === 'cluster' ? (
           <span className="digi-log-tabtools">
             <button type="button" className="sstv-btn glass" title={t('digi.spot.tip')} onClick={() => setSpotOpen(true)}>
@@ -350,7 +367,7 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
           </span>
         ) : null}
         {tab === 'log' ? (
-          <span className="digi-log-tabtools">
+          <span className={`digi-log-tabtools${view === 'log' ? ' digi-log-tabtools--left' : ''}`}>
             <input className="digi-log-search" placeholder={t('digi.log.search')} aria-label={t('digi.log.search')} value={filter} onChange={(e) => setFilter(e.target.value)} />
             <span className="digi-colwrap" ref={pop}>
               <button type="button" className="digi-tool" title={t('digi.log.cols')} aria-label={t('digi.log.cols')} aria-expanded={picking} onClick={() => setPicking(!picking)}>
@@ -375,12 +392,12 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             </span>
           </span>
         ) : null}
-      </div>
+      </div>}
 
       {tab === 'cluster' ? (
         <>
           <div className="digi-log-cluster">
-            <ClusterPanel onSpot={onSpot} options={clusterOptions} />
+            <ClusterPanel onSpot={onSpot} options={clusterOptions} contest={clusterContest} />
           </div>
         </>
       ) : (
@@ -417,14 +434,6 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
             <ColumnsMenu cols={grid} />
             {rows.length === 0 ? <p className="digi-log-empty">{t('digi.log.empty')}</p> : null}
           </div>
-          {view && marks ? (
-            <div className="digi-log-bar ssbc-logbar">
-              <span className="ssbc-logtotal">{t('ssbc.logTotal', { n: contestTotal })}</span>
-              <button type="button" className="digi-tool" aria-pressed={marks.only} title={t('ssbc.logToggleTip')} onClick={marks.onToggle}>
-                {marks.only ? t('ssbc.logAll') : t('ssbc.logOnly')}
-              </button>
-            </div>
-          ) : null}
           {view || !saveError ? null : <SaveFailAlert msg={saveError} compact />}
           {view ? null : <div className="digi-log-bar" onKeyDown={(e) => (e.key === 'Escape' && saveError ? onDismissSaveError?.() : undefined)}>
             {contestOn ? (

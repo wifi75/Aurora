@@ -188,9 +188,6 @@ export function RadarList({ on = true, onToggle, width, height, onHeightDrag, on
             {on ? 'ON' : 'OFF'}
           </button>
         ) : null}
-        <strong>
-          {t('radar.title')} {modeName}
-        </strong>
         {on ? <small>{t('radar.count', { n: stations.length })}</small> : null}
         {on ? (
           <span className="radar-legend" title={[source, ...LEGEND[gara ? 'contest' : 'log'].map((k) => { const m = logMark(k, gara); return `${m.label}: ${t(m.tip)}`; })].join('\n')}>
