@@ -60,6 +60,8 @@ scheda audio, nome dell'antivirus installato (letto da Sicurezza di Windows, dal
 successo, il giorno e un identificativo casuale dell'installazione. Il pacchetto dopo un crash aggiunge il log del programma
 ripulito (senza le righe di decodifica e di QSO) e i rapporti di testo del crash. L'inizio del rapporto di testo del crash, già ripulito allo stesso modo, si salva anche nell'indice del servizio, per leggerlo senza aprire il pacchetto.
 
+**Il pacchetto di assistenza** (dalla 0.11.287, con «Manda il pacchetto a chi sviluppa Aurora») aggiunge, nella cartella `diagnostica`, i comandi mandati alla radio e le sue risposte (frequenze, modi, stato), le impostazioni e lo stato della radio (modello, porta, velocità, PTT), il processore, i core e la memoria del PC, i nomi dei dispositivi audio in uso, le variabili `AURORA_*` (i segreti sono nascosti), la dimensione della finestra, lo schermo, il tema, la lingua, la scheda grafica e gli ultimi errori della pagina, e un riassunto del registro. Prima dell'invio si tolgono nominativi, locatori, percorsi con il nome utente, indirizzi IP, email e codici; del contenuto salvato nel browser si dicono solo i nomi e la dimensione. Non partono mai il log dei QSO, `ALL.TXT`, i minidump né i file di configurazione.
+
 **Associazione del telefono non riuscita** (dalla 0.11.123): se un codice scade senza che il telefono si associ, il rapporto dice solo il
 *tipo* di indirizzo messo nel QR (per esempio «192.168, rete di casa» o «adattatore virtuale»), il tipo di adattatore (Wi-Fi, cavo,
 virtuale), quanti indirizzi ha il PC, se la rete di Windows è Pubblica o Privata, se il firewall ha la regola per Aurora, se il
