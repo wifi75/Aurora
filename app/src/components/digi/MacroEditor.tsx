@@ -3,6 +3,8 @@ import { useLang, useT } from '../../i18n';
 import { pick } from '../../i18n/core';
 import { commandsOf, type CommandGroup } from '../../lib/macroCommands';
 import { EVENT_MACROS, keyNames, cssColor, type Macro } from '../../lib/macroLang';
+import { browserStorage } from '../../lib/theme';
+import { currentTheme, readMacroColorsNow, saveMacroColor, themeColor } from '../../lib/macroThemeColors';
 import { MacroGuide } from './MacroGuide';
 
 import type { MacroScope } from '../../lib/digiMacroEdit';
@@ -29,7 +31,9 @@ export function MacroEditor({ macro, modeName, scope, onSave, onCancel }: Props)
   const [name, setName] = useState(macro.name);
   const [label, setLabel] = useState(macro.label);
   const [text, setText] = useState(macro.text);
-  const [color, setColor] = useState<number | null>(macro.color);
+  // il colore e' uno per tema: qui si vede e si sceglie quello del tema in uso
+  const theme = currentTheme();
+  const [color, setColor] = useState<number | null>(() => themeColor(readMacroColorsNow(), theme, macro.name, macro.color));
   const [group, setGroup] = useState<CommandGroup | ''>('');
   const [picked, setPicked] = useState('');
   const [where, setWhere] = useState<MacroScope>(scope);
@@ -123,7 +127,11 @@ export function MacroEditor({ macro, modeName, scope, onSave, onCancel }: Props)
           <button type="button" className="glass sstv-btn" onClick={onCancel}>
             {t('digi.edit.cancel')}
           </button>
-          <button type="button" className="glass sstv-btn sstv-btn--primary" onClick={() => onSave({ name, label, text, color }, where)}>
+          <button type="button" className="glass sstv-btn sstv-btn--primary" onClick={() => {
+              // la scelta del colore vale solo per il tema in uso; nel file della macro resta il colore di partenza
+              saveMacroColor(browserStorage(), theme, name, color);
+              onSave({ name, label, text, color: macro.color }, where);
+            }}>
             {t('digi.edit.ok')}
           </button>
         </footer>

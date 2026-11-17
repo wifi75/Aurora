@@ -6,6 +6,7 @@ import { MacroFontDialog, type MacroLook, readLook, LOOK_KEY } from './MacroFont
 import '../../styles/digi-macro-style.css';
 import { useT } from '../../i18n';
 import { cssColor, MACRO_ROWS, type Macro } from '../../lib/macroLang';
+import { readMacroColorsNow, themeColor, useThemeName } from '../../lib/macroThemeColors';
 
 
 const ROW_LABELS = ['', 'Ctrl', 'Shift', 'Ctrl+Shift'] as const;
@@ -116,6 +117,8 @@ export function ControlBar({ macros, extended, onSetExtended, rows: rowsWanted =
   };
   // solo la prima riga ha i tasti F1-F12, le altre si usano col clic; le righe mostrate si scelgono dal menu Vista (o `auto`: solo quelle con macro)
   const filled = (r: number) => Array.from({ length: 12 }, (_, i) => macros.get(`${MACRO_ROWS[r]}F${i + 1}`)).some((m) => m && (m.label.trim() !== '' || m.text.trim() !== ''));
+  const theme = useThemeName();
+  const themeColors = readMacroColorsNow();
   const held = useHeldModifiers();
   const current = held.ctrl && held.shift ? 3 : held.ctrl ? 1 : held.shift ? 2 : 0;
   const all = [0, 1, 2, 3];
@@ -131,6 +134,7 @@ export function ControlBar({ macros, extended, onSetExtended, rows: rowsWanted =
               const name = `${MACRO_ROWS[r]}F${i + 1}`;
               const macro = macros.get(name);
               const blank = !macro || (macro.label.trim() === '' && macro.text.trim() === '');
+              const keyColor = themeColor(themeColors, theme, name, macro?.color ?? null);
               const acq = !blank && autoCq !== 'off' && isAutoCqMacro(macro?.text ?? '') ? ` digi-key--acq-${autoCq}` : '';
               return (
                 <button
@@ -140,11 +144,11 @@ export function ControlBar({ macros, extended, onSetExtended, rows: rowsWanted =
                   className={`digi-key${armed === name ? ' digi-key--armed' : ''}${over === name && armed !== name ? ' digi-key--drop' : ''}${blank ? ' digi-key--blank' : ''}${i % 4 === 0 && i > 0 ? ' digi-key--gap' : ''}${acq}`}
                   aria-pressed={acq ? true : undefined}
                   style={
-                    !blank && macro?.color != null
+                    !blank && keyColor != null
                       ? {
-                          // il colore della macro tinge lo sfondo e il bordo; il testo e' bianco col tema scuro e nero col chiaro
-                          background: `color-mix(in srgb, ${cssColor(macro.color)} 26%, var(--key-base))`,
-                          borderColor: `color-mix(in srgb, ${cssColor(macro.color)} 70%, transparent)`,
+                          // il colore della macro (uno per tema) tinge lo sfondo e il bordo; il testo e' bianco col tema scuro e nero col chiaro
+                          background: `color-mix(in srgb, ${cssColor(keyColor)} 26%, var(--key-base))`,
+                          borderColor: `color-mix(in srgb, ${cssColor(keyColor)} 70%, transparent)`,
                         }
                       : undefined
                   }
