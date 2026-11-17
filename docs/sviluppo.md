@@ -9,6 +9,7 @@ Dettagli che servono solo quando si lavora su quella parte. Le regole sempre val
 
 ## Struttura
 - `core/` workspace Rust (Tokio, Axum): `aurora` (avvio e collegamenti), `remote-api` (API e WebSocket), `qso-engine` (cervello delle automazioni), `engine-native` (motore proprio), `engine-jtdx`, `rig-control` (CAT), `audio-spectrum`, `input-level`, `decode-history`, `online-info`, `logbook`, `reporting`, `updater`, `clock-sync`, `ft8` e altri.
+- Diagnostica del pacchetto di assistenza: `core/crates/aurora/src/diagnostica.rs` (file sotto `diagnostica/`), `core/crates/rig-control/src/trace.rs` (traccia dei comandi alla radio), `app/src/lib/uiDiagnostics.ts` (ambiente dell'interfaccia); guida completa in `docs/pacchetto-assistenza.md`.
 - `app/` interfaccia React + TypeScript + Vite (cascata WebGPU/WebGL2, mappa Leaflet, telefono a schede).
 - `desktop/` programma Windows (Tauri 2, workspace Cargo a parte): vassoio, finestra, avvio automatico, aggiornamento firmato, installatore NSIS (`desktop/src-tauri/installer`).
 - `docs/` specifiche, piani, rapporti, analisi.
