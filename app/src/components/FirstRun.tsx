@@ -7,6 +7,7 @@ import { useLang, useT } from '../i18n';
 import { LANGS, LANG_NAMES, type Lang } from '../i18n/core';
 import { browserStorage } from '../lib/theme';
 import { coreText } from '../lib/coreText';
+import { useFirstRunOpen } from '../lib/firstRunOpen';
 
 const DONE_KEY = 'aurora-first-run-done';
 const CALL_RE = /^[A-Z0-9]{1,3}[0-9][A-Z0-9]{0,4}(\/[A-Z0-9]{1,4})?$/;
@@ -59,11 +60,15 @@ export function FirstRun() {
     };
   }, [done]);
 
-  if (done || !engine.data || (engine.data.values.MyCall ?? '').trim() !== '') return null;
   const checked = (update.data?.checked_at_ms ?? 0) > 0 || update.isError || waitOver;
-  if (!checked) return null;
   const newer = update.data?.available;
-  if (newer && !update.data?.quiet && readSeenVersion() !== newer.version) return null;
+  const shown = !(done || !engine.data || (engine.data.values.MyCall ?? '').trim() !== '' || !checked || (newer && !update.data?.quiet && readSeenVersion() !== newer.version));
+  // finche' la guida e' aperta gli avvisi della stazione (nominativo mancante compreso) non compaiono
+  useEffect(() => {
+    useFirstRunOpen.setState({ open: shown });
+    return () => useFirstRunOpen.setState({ open: false });
+  }, [shown]);
+  if (!shown) return null;
 
   const finish = () => {
     try {

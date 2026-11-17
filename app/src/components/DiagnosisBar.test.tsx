@@ -7,6 +7,7 @@ vi.mock('../api/client', () => ({ getClock: vi.fn(), getEngineSettings: vi.fn(),
 import { getClock, getEngineSettings, putEngineSettings } from '../api/client';
 import { resetSlowPcClosed } from '../lib/diagnosis';
 import { useStation } from '../state/station';
+import { useFirstRunOpen } from '../lib/firstRunOpen';
 import { DiagnosisBar, startup } from './DiagnosisBar';
 
 // nelle prove gli avvisi compaiono subito: l'attesa dell'avvio ha la sua prova
@@ -65,6 +66,15 @@ describe('DiagnosisBar', () => {
     render(<DiagnosisBar />);
     expect(await screen.findByText(/manca il tuo nominativo/)).toBeInTheDocument();
     expect(screen.getByText(/L’ingresso audio è saturo/)).toBeInTheDocument();
+  });
+
+  it('shows no warning while the first-run guide is open (the callsign is still being typed)', async () => {
+    station('');
+    useFirstRunOpen.setState({ open: true });
+    render(<DiagnosisBar />);
+    expect(screen.queryByText(/manca il tuo nominativo/)).toBeNull();
+    useFirstRunOpen.setState({ open: false });
+    expect(await screen.findByText(/manca il tuo nominativo/)).toBeInTheDocument();
   });
 
   it('on a slow PC at Deep offers Normal and writes DecodeDepth only when pressed', async () => {

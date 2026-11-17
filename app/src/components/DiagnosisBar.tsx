@@ -10,6 +10,7 @@ import { publishHealthIssues } from '../lib/healthIssues';
 import { closeSlowPc, diagnose, slowPcClosedDepths, type Issue } from '../lib/diagnosis';
 import { periodSecs } from '../lib/period';
 import { useStation } from '../state/station';
+import { useFirstRunOpen } from '../lib/firstRunOpen';
 import { useTuning } from './radio-display/RadioExtras';
 
 function messageKey(issue: Issue): Key {
@@ -74,7 +75,9 @@ export function DiagnosisBar() {
     cat: cat.data ? { connected: cat.data.status.state === 'connected', at: cat.dataUpdatedAt } : null,
   });
   const keyOf = (issue: Issue) => `${issue.id}-${String(issue.vars.state ?? issue.vars.at ?? '')}`;
-  const starting = now - APP_START < startup.graceMs;
+  // con la guida del primo avvio aperta nessun avviso: si sta ancora compilando (nominativo, audio, radio)
+  const firstRun = useFirstRunOpen((s) => s.open);
+  const starting = firstRun || now - APP_START < startup.graceMs;
   // il livello dell'ingresso debole o muto si dice solo se dura: all'apertura la radio si sta accendendo e la banda puo' essere
   // semplicemente vuota; prima l'avviso compariva subito a ogni avvio
   const audioSince = useRef(new Map<string, number>());
