@@ -48,6 +48,8 @@ pub struct FakeState {
     delay_ms: AtomicU64,
     /// Codice `RPRT` con cui `X` (modo del VFO di trasmissione) risponde (0 = accettato).
     x_fail_code: AtomicI32,
+    /// Modi che `M` rifiuta con `RPRT -1` (la radio non ha quel modo: `PKTUSB` sulle Icom senza modo dati).
+    refused_modes: Mutex<Vec<String>>,
     /// `G CPY` (copia A=B) accettato; altrimenti `RPRT -1` come le radio senza `vfo_op CPY`.
     cpy_ok: AtomicBool,
 }
@@ -80,6 +82,7 @@ impl FakeRigctld {
             vfo_info_switches: AtomicBool::new(false),
             delay_ms: AtomicU64::new(0),
             x_fail_code: AtomicI32::new(0),
+            refused_modes: Mutex::new(Vec::new()),
             cpy_ok: AtomicBool::new(false),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
@@ -122,6 +125,20 @@ impl FakeRigctld {
     }
 
     pub fn set_mode(&self, mode: &str) {
+        if let Ok(mut m) = self.state.mode.lock() {
+            *m = mode.to_string();
+        }
+    }
+
+    /// La radio finta rifiuta questo modo (`RPRT -1`).
+    pub fn refuse_mode(&self, mode: &str) {
+        if let Ok(mut r) = self.state.refused_modes.lock() {
+            r.push(mode.to_string());
+        }
+    }
+
+    /// Cambia il modo della radio finta come se lo avesse girato l'operatore (senza passare da un comando).
+    pub fn set_mode_by_hand(&self, mode: &str) {
         if let Ok(mut m) = self.state.mode.lock() {
             *m = mode.to_string();
         }
@@ -316,10 +333,14 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     Err(_) => "RPRT -1\n".into(),
                 },
                 "M" => {
-                    if let Ok(mut m) = state.mode.lock() {
-                        *m = arg.to_string();
+                    if state.refused_modes.lock().is_ok_and(|r| r.iter().any(|x| x == arg)) {
+                        "RPRT -1\n".into()
+                    } else {
+                        if let Ok(mut m) = state.mode.lock() {
+                            *m = arg.to_string();
+                        }
+                        "RPRT 0\n".into()
                     }
-                    "RPRT 0\n".into()
                 }
                 "T" => {
                     if arg == "0" && state.fail_ptt_off.load(Ordering::SeqCst) {

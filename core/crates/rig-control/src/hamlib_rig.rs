@@ -446,6 +446,12 @@ impl Inner {
             Err(e) if wanted == "PKTUSB" => {
                 tracing::warn!("modo dati {wanted} non supportato dalla radio: si usa USB ({e})");
                 self.pktusb_fallback.store(true, Ordering::SeqCst);
+                // se la radio e' gia' in USB non si riscrive: una Icom senza modo dati in Hamlib (IC-756PRO) puo' essere su USB-D, che Hamlib
+                // legge come «USB»: scrivere USB la toglierebbe dal modo dati scelto sulla radio
+                if current.as_deref().is_some_and(|c| mode_satisfies("USB", c)) {
+                    tracing::info!("la radio e' gia' in USB: il modo non si riscrive (se e' su USB-D resta cosi')");
+                    return Some("USB".to_string());
+                }
                 match link.client().set_mode("USB", 0) {
                     Ok(()) => {
                         self.update(|s| s.mode = Some("USB".to_string()));
@@ -2189,6 +2195,34 @@ mod tests {
         wait_until("altre letture", || rig.inner.split_checks.load(Ordering::SeqCst) >= checks + 2 * SPLIT_CHECK_EVERY);
         let s = rig.status();
         assert_eq!((s.split, s.split_external_ms), (Some(true), 0));
+    }
+
+    #[test]
+    fn a_radio_without_data_mode_is_not_taken_out_of_usb_when_it_is_already_in_usb() {
+        // Icom senza modo dati in Hamlib (IC-756PRO): `M PKTUSB` e' rifiutato; la radio puo' essere su USB-D, che Hamlib legge «USB»
+        let fake = FakeRigctld::start(14_074_000);
+        fake.refuse_mode("PKTUSB");
+        fake.set_mode_by_hand("USB");
+        fake.clear_commands();
+        let rig = start(&fake, RigConfig { cat_mode: CatMode::Data, ..RigConfig::default() });
+        wait_until("collegata", || rig.status().state == LinkState::Connected);
+        let writes: Vec<String> = fake.commands().into_iter().filter(|c| c.starts_with("M ")).collect();
+        assert_eq!(writes, ["M PKTUSB 0"], "dopo il rifiuto non si scrive USB: {writes:?}");
+        assert_eq!(fake.mode(), "USB");
+    }
+
+    #[test]
+    fn a_radio_without_data_mode_that_is_not_in_usb_is_still_put_in_usb() {
+        // la TS-480 restava in LSB sulle bande basse: li' il ripiego su USB serve ancora
+        let fake = FakeRigctld::start(7_074_000);
+        fake.refuse_mode("PKTUSB");
+        fake.set_mode_by_hand("LSB");
+        fake.clear_commands();
+        let rig = start(&fake, RigConfig { cat_mode: CatMode::Data, ..RigConfig::default() });
+        wait_until("collegata", || rig.status().state == LinkState::Connected);
+        let writes: Vec<String> = fake.commands().into_iter().filter(|c| c.starts_with("M ")).collect();
+        assert_eq!(writes, ["M PKTUSB 0", "M USB 0"], "{writes:?}");
+        assert_eq!(fake.mode(), "USB");
     }
 
     #[test]
