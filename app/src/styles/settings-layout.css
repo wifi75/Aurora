@@ -2130,3 +2130,46 @@
   .about--cols .about-col--facts .about-fact p { font-size: 0.82rem; line-height: 1.45; }
   .about--cols .about-links { justify-content: flex-start; }
 }
+
+/* L'antivirus ha tolto dei file ad Aurora: barra fissa in alto, ben visibile in chiaro e in scuro */
+.files-missing {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  z-index: 100150;
+  box-sizing: border-box;
+  width: min(44rem, calc(calc(100vw / var(--ui-zoom, 1)) - 1.5rem));
+  padding: 0.8rem 1rem;
+  transform: translateX(-50%);
+  border: 2px solid var(--warn, #d98a00);
+  border-radius: 0.7rem;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 0.4);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.files-missing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--warn, #d98a00) 16%, transparent);
+  pointer-events: none;
+}
+.files-missing p { position: relative; margin: 0 0 0.6rem; font-weight: 600; word-break: break-word; }
+.files-missing p.files-missing-fail { font-weight: 400; color: var(--danger, #c0392b); }
+.files-missing-actions { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.files-missing-link { color: var(--accent); font-weight: 600; }
+.files-missing-actions button {
+  padding: 0.35rem 0.85rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--warn, #d98a00);
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+.files-missing-actions .files-missing-restore { background: color-mix(in srgb, var(--warn, #d98a00) 30%, transparent); }
+.files-missing-actions button:disabled { opacity: 0.6; cursor: default; }

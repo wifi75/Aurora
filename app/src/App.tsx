@@ -47,6 +47,7 @@ import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
 import { PttAbandonedNotice, PttStuckBanner } from './components/PttStuckBanner';
+import { FilesMissingBanner } from './components/FilesMissingBanner';
 import { ReportsNotice } from './components/ReportsNotice';
 import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
@@ -272,6 +273,7 @@ export function App() {
       <ConfirmHost />
       {session.data && !REMOTE ? <CrashPrompt /> : null}
       {session.data && !REMOTE ? <ReportsNotice /> : null}
+      {session.data && !REMOTE ? <FilesMissingBanner /> : null}
       {session.data && !REMOTE ? <FirstRun /> : null}
       {session.data ? <LogPrompt /> : null}
       {/* i messaggi del proprietario (auguri, avvisi): sempre accesi, solo sul PC */}

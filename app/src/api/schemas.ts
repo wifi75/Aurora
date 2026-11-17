@@ -10,6 +10,13 @@ export const HealthSchema = z.object({
 });
 export type Health = z.infer<typeof HealthSchema>;
 
+/** I file di Aurora che l'antivirus ha tolto (`GET /health/files`, controllo all'avvio) e il nome dell'antivirus (vuoto se non si conosce). */
+export const FilesCheckSchema = z.object({
+  missing: z.array(z.string()).default([]),
+  antivirus: z.string().default(''),
+});
+export type FilesCheck = z.infer<typeof FilesCheckSchema>;
+
 /** Strumenti letti dal CAT della radio: ognuno e' assente se la radio non lo da'. */
 export const RadioMetersSchema = z.object({
   /** S-meter in punti S, 0-9. */

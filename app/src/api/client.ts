@@ -1,7 +1,7 @@
 import { AutomationCountriesSchema, AutomationStateSchema, type AutomationRules, type AutomationState } from './automation';
 import { historyParams, type HistoryFilter } from '../lib/history';
 import type { Wishlist } from '../lib/wishlist';
-import { DigiSignalSchema, EngineSettingsSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type DigiSignal, type EngineSettings, type FoxLogEntry, type WavelogStation, type Health, type SpotResult, type WantedAlert } from './schemas';
+import { DigiSignalSchema, EngineSettingsSchema, FilesCheckSchema, HealthSchema, SpotResultSchema, UploadTestSchema, WavelogStationsSchema, type DigiSignal, type EngineSettings, type FoxLogEntry, type WavelogStation, type FilesCheck, type Health, type SpotResult, type WantedAlert } from './schemas';
 import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { parseControlValues, useControlValues } from '../state/controlValues';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
@@ -2394,6 +2394,11 @@ export interface HealthResources {
   period_ms: number | null;
   last_decode_at: number | null;
   history: ResourceSample[];
+}
+
+/** I file di Aurora tolti dall'antivirus, secondo il controllo all'avvio (solo il PC li mostra). */
+export async function getFilesCheck(): Promise<FilesCheck> {
+  return FilesCheckSchema.parse(await (await request('/health/files')).json());
 }
 
 export async function getHealthResources(): Promise<HealthResources> {

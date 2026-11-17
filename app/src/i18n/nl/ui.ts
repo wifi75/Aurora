@@ -5446,4 +5446,9 @@ export const NL_UI: Record<string, string> = {
   "ssbc.callMult": "Gewerkt prefix / multipliers van {call}",
   "ssbc.cmNew": "nieuw",
   "ssbc.cmWorked": "al gewerkt",
+  "files.missing.text": "De antivirus heeft bestanden van Aurora verwijderd: {files}. Sommige functies werken niet totdat je ze terugzet.",
+  "files.missing.textNamed": "De antivirus ({av}) heeft bestanden van Aurora verwijderd: {files}. Sommige functies werken niet totdat je ze terugzet.",
+  "files.missing.guide": "Wat te doen",
+  "files.missing.dismiss": "Begrepen",
+  "files.missing.restoreFail": "Hamlib herstellen is niet gelukt. Controleer de internetverbinding en probeer het opnieuw, of volg de Handleiding.",
 };
