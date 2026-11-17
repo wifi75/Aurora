@@ -1,6 +1,7 @@
 /** Schede spostabili della vista contest (SSB, CW, RTTY, PSK). [it, en, de, fr, es, pt] */
 export const contestSchedeStrings = {
   'ctw.bar': ['Schede del contest', 'Contest cards', 'Contest-Karten', 'Fiches du contest', 'Tarjetas del contest', 'Cartões do contest'],
+  'ssbc.cardLog': ['Log', 'Log', 'Log', 'Journal', 'Log', 'Log'],
   'ctw.card.log': ['Log del contest', 'Contest log', 'Contest-Log', 'Log du contest', 'Log del contest', 'Log do contest'],
   'ctw.card.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
   'ctw.card.rate': ['Punteggio e ritmo', 'Score and rate', 'Punkte und Rate', 'Score et cadence', 'Puntuación y ritmo', 'Pontuação e ritmo'],

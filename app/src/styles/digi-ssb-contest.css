@@ -224,3 +224,13 @@ html:root:root .digi-topline--contest .digi-macrogrip { --grip-thick: 3px; --gri
 
 /* bande e pulsanti dei modi nel contest in CW/RTTY/PSK: senza riquadro, come in SSB */
 .digi-topline--contest .ssbc-bands { border: 0; background: transparent; padding: 0; margin: 0; border-radius: 0; box-shadow: none; }
+
+/* finestre della vista SSB: lo stesso aspetto delle schede del contest e della pagina FT8 (bordo viola, barra del titolo sfumata) */
+.ssbc-panel, .ssbc-cols .ssbc-entry, .ssbc-cols .ssbc-score, .ssbc-cols .ssbc-mults, .ssbc-cols .ssbc-stats { border: 1px solid color-mix(in srgb, #8e7bff 60%, transparent); border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px color-mix(in srgb, #8e7bff 12%, transparent), 0 0 14px color-mix(in srgb, #8e7bff 10%, transparent); overflow: hidden; }
+html[data-theme='light'] .ssbc-panel, html[data-theme='light'] .ssbc-cols .ssbc-entry, html[data-theme='light'] .ssbc-cols .ssbc-score, html[data-theme='light'] .ssbc-cols .ssbc-mults, html[data-theme='light'] .ssbc-cols .ssbc-stats { border-color: #6a55e0; box-shadow: none; }
+.ssbc-bar, .ssbc-cols .ssbc-entry > h3, .ssbc-cols .ssbc-mults > h3, .ssbc-cols .ssbc-stats > h3 { margin: -5px -10px 6px; padding: 4px 10px; min-height: 1.6rem; box-sizing: border-box; display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: #1d2a44; border-bottom: 1px solid #afa9ec; background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); }
+html:not([data-theme='light']) .ssbc-bar, html:not([data-theme='light']) .ssbc-cols .ssbc-entry > h3, html:not([data-theme='light']) .ssbc-cols .ssbc-mults > h3, html:not([data-theme='light']) .ssbc-cols .ssbc-stats > h3 { color: #e6ecf8; border-bottom-color: #3a2c6e; background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); }
+.ssbc-panel > .ssbc-bar { margin: 0 0 6px; flex: none; }
+/* log e DX Cluster dentro la finestra: niente secondo riquadro */
+.ssbc-panel > .digi-log, .ssbc-panel .cluster { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.ssbc-panel > .digi-log, .ssbc-panel > .cluster { padding-left: 8px; padding-right: 8px; }

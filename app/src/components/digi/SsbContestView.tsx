@@ -227,7 +227,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
   return (
     <div className="ssbc">
       <div className="ssbc-cols" ref={colsBox} style={showLog ? (shown ? { gridTemplateColumns: `${shown.left}px 6px minmax(0, 1fr) 6px ${shown.right}px` } : undefined) : { gridTemplateColumns: `minmax(0, 1fr) 6px ${shown?.right ?? 420}px` }}>
-        {showLog ? <div className="ssbc-col ssbc-col--log">{log}</div> : null}
+        {showLog ? <div className="ssbc-col ssbc-col--log ssbc-panel"><div className="ssbc-bar">{t(contestOn ? 'ctw.card.log' : 'ssbc.cardLog')}</div>{log}</div> : null}
         {showLog ? <div className="digi-radargrip" role="separator" aria-orientation="vertical" title={t('ssbc.gripTip')} onPointerDown={dragGrip('left')} onDoubleClick={resetCols} /> : null}
         <div className="ssbc-col ssbc-col--center">
           <EntryCard
@@ -289,7 +289,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
           </div> : null}
         </div>
         <div className="digi-radargrip" role="separator" aria-orientation="vertical" title={t('ssbc.gripTip')} onPointerDown={dragGrip('right')} onDoubleClick={resetCols} />
-        <div className="ssbc-col ssbc-col--cluster">{cluster}</div>
+        <div className="ssbc-col ssbc-col--cluster ssbc-panel"><div className="ssbc-bar">{t('ctw.card.cluster')}</div>{cluster}</div>
       </div>
       {rotorAt ? rotor(rotorAt) : null}
     </div>

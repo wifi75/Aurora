@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Vista SSB (log, Inserisci QSO, DX Cluster): le finestre hanno lo stesso aspetto di quelle del contest e della pagina FT8, con il bordo viola e la barra del titolo sfumata.
+
 - «Spot DX» in tema chiaro: al passaggio del mouse il testo resta scuro e leggibile (quello colorato del contest resta bianco su fondo colorato).
 
 ## 0.11.285 - 2026-11-17
