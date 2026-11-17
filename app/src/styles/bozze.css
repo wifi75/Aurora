@@ -1537,3 +1537,9 @@ html[data-theme='light'] .mguide-chip, html[data-theme='light'] .mguide-full { b
   .mguide-line { grid-template-columns: 1fr; gap: 0.15rem; }
   .mguide-chip { justify-self: start; max-width: 100%; }
 }
+
+/* Comandi nella finestra a se': il bordo inferiore dei pulsanti si vedeva tagliato dal riquadro (altezza fissa nella griglia). La finestra ha gia' la sua
+   barra del titolo: via il filetto sopra e meno spazio sopra la riga dei pulsanti, per guadagnare altezza */
+.bands-with-cmds.cmds-only .bands-cmds-grip { display: none !important; }
+.bands-with-cmds.cmds-only .bands-cmds { margin-top: 0 !important; }
+.bands-with-cmds.cmds-only .cmd-buttons { margin-top: 4px !important; padding-bottom: 2px; }
