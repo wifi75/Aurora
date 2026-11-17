@@ -1768,6 +1768,10 @@ cluster.filter.newOnly,New only,Alleen nieuwe
 tip.cluster.spot,Send a spot to the DX Cluster (DXSummit) with the current DX and the radio frequency.,Stuur een spot naar de DX Cluster (DXSummit) met de huidige DX en de zenderfrequentie.
 tip.cluster.newOnly,"Show only the spots that are new for your wish list (country, grid, band).","Toon alleen de spots die nieuw zijn voor je verlanglijst (land, locator, band)."
 cluster.filter.search,Search callsign,Roepnaam zoeken
+cluster.pop.tip,DX Cluster filters and options,Filters en opties van de DX-cluster
+cluster.pop.active,Active filters: {n},Actieve filters: {n}
+cluster.pop.filters,Filters,Filters
+cluster.pop.options,Cluster options,Clusteropties
 tip.cluster.filters,View filters only: spots stay in memory. “My band” shows only the band Aurora is on right now.,Alleen weergavefilters: spots blijven in het geheugen. “Mijn band” toont alleen de band waarop Aurora nu staat.
 cluster.col.time,UTC,UTC
 cluster.col.freq,Freq,Freq
@@ -8063,7 +8067,9 @@ ctest.gt.itu,ITU zone,ITU-zone
 ctest.gt.cq,CQ zone,CQ-zone
 ctest.tip.grabType,"What to pre-fill in the received exchange: the serial read from the received text, or the CQ or ITU zone of the typed callsign (SSB view).","Wat in de ontvangen uitwisseling wordt voorgevuld: het serienummer uit de ontvangen tekst, of de CQ- of ITU-zone van de ingetypte roepnaam (SSB-weergave)."
 ctest.tip.suggest,Shows the value under the callsign as you type it (from the prefix database); a click puts it in the received exchange.,Toont de waarde onder de roepnaam terwijl je typt (uit de prefixdatabase); een klik zet hem in de ontvangen uitwisseling.
-ssbc.windowOff,Contest window not set or expired: the log shows the QSOs since activation.,Contestvenster niet ingesteld of verlopen: het log toont de QSO’s sinds de activering.
+ssbc.windowOff,Contest window not set: the log shows the QSOs since activation.,Contestvenster niet ingesteld: het log toont de QSO’s sinds de activering.
+ssbc.windowBefore,The contest starts on {when} UTC: until then the log shows the QSOs since activation.,De contest begint op {when} UTC: tot die tijd toont het log de QSO’s sinds de activering.
+ssbc.windowExpired,Contest window expired: the log shows the QSOs since activation.,Contestvenster verlopen: het log toont de QSO’s sinds de activering.
 ssbc.windowSet,Set the dates,Data instellen
 ssbc.suggest,Suggestions,Suggesties
 ssbc.prevTitle,Previous QSOs with {call},Eerdere QSO’s met {call}
@@ -8155,9 +8161,12 @@ ctest.tip.mySect,"Sent after the number (for example 001 ACC) in the contests wh
 t.u276jdcbxj,"In contests that ask for a third element after the number (a club or section, a state or province), a separate box with its own name appears on the entry row after “[[ssbc.serialRcvd]]” (“[[ssbc.exLabel.generic]]”; for UBA “Club (UBA section)”, for ARRL “State / province”). It shows only when the contest rules ask for it and the callsign you typed has to give it (in the UBA only Belgian stations; DX stations give just RST and number). Write it in capitals and move on with Tab or Enter: the QSO is saved as the number followed by the section, for example “003 ACC”. If your own station has to send it too, write it in the contest settings, in the field “[[ctest.f.mySect]]”: it is sent after your number (for example “001 ACC”).","In contests die na het nummer een derde element vragen (een club of sectie, een staat of provincie) verschijnt in de invoerregel na “[[ssbc.serialRcvd]]” een apart vak met een eigen naam (“[[ssbc.exLabel.generic]]”; bij de UBA “Club (UBA-sectie)”, bij de ARRL “Staat / provincie”). Het verschijnt alleen als de contestregels erom vragen en de ingetypte roepnaam het moet geven (bij de UBA alleen Belgische stations; DX-stations geven alleen RST en nummer). Schrijf het in hoofdletters en ga verder met Tab of Enter: de QSO wordt opgeslagen met het nummer gevolgd door de sectie, bijvoorbeeld “003 ACC”. Moet ook je eigen station het sturen, schrijf het dan in de contestinstellingen, in het veld “[[ctest.f.mySect]]”: het wordt na je nummer verstuurd (bijvoorbeeld “001 ACC”)."
 ctest.off,Not used by this contest,Niet voorzien door deze contest
 ctest.g.rules,Rules,Reglement
-ctest.ro.text,"Bundled contest: the scoring rules and counters are read-only. To change them, copy it to your own folder.",Meegeleverde contest: de puntenregels en tellers zijn alleen-lezen. Kopieer hem naar je eigen map om ze te wijzigen.
+ctest.ro.text,"Bundled contest: the scoring rules stay read-only. Dates, working hours, starting number, section and macros are yours and are saved separately. To change the rules, copy it to your own folder.","Meegeleverde contest: de puntenregels blijven alleen-lezen. Data, werkuren, startnummer, sectie en macro’s zijn van jou en worden apart opgeslagen. Kopieer hem naar je eigen map om de regels te wijzigen."
 ctest.ro.copy,Copy to my folder,Kopieer naar mijn map
 ctest.ro.copyTip,Copies the contest folder into your data (contest/): the copy replaces the bundled one and is edited in its files.,Kopieert de contestmap naar je gegevens (contest/): de kopie vervangt de meegeleverde en wordt in haar bestanden bewerkt.
+ctest.ro.reset,Restore the contest values,Contestwaarden herstellen
+ctest.ro.resetTip,"Removes your changes (dates, hours, number, macros) and goes back to the bundled contest values.","Verwijdert je wijzigingen (data, uren, nummer, macro’s) en keert terug naar de waarden van de meegeleverde contest."
+ctest.reset.done,Contest values restored,Contestwaarden hersteld
 ctest.copied,Copied to your folder: {name}. Open it again with Edit to change it.,Gekopieerd naar je map: {name}. Open hem opnieuw met Bewerken om hem te wijzigen.
 ctest.readonly,"Bundled contest, it cannot be edited ({why}). Use “Copy to my folder” to get an editable copy.","Meegeleverde contest, niet te bewerken ({why}). Gebruik “Kopieer naar mijn map” voor een bewerkbare kopie."
 t.29ewnt4619m,"The items the open contest does not use are greyed out and cannot be changed (hover over one to read “Not used by this contest”): for example in the ARRL 10-Meter Contest only CW and phone, the 10 m band and the exchange with state or province stay active, while RTTY, PSK, the other bands and the CQ and ITU zone hints are off. Bundled contests have read-only scoring rules and counters, with the rules shown at the top: [[ctest.ro.copy]] makes a copy you can edit.","De items die de geopende contest niet gebruikt zijn grijs en niet te wijzigen (houd de muis erboven om “Niet voorzien door deze contest” te lezen): in de ARRL 10-Meter Contest blijven bijvoorbeeld alleen CW en fonie, de 10 m-band en de uitwisseling met staat of provincie actief, terwijl RTTY, PSK, de andere banden en de suggesties voor CQ- en ITU-zones uit staan. Meegeleverde contests hebben alleen-lezen puntenregels en tellers, met het reglement bovenaan: [[ctest.ro.copy]] maakt een kopie die je kunt bewerken."
