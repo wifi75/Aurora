@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- «Spot DX» in tema chiaro: al passaggio del mouse il testo resta scuro e leggibile (quello colorato del contest resta bianco su fondo colorato).
+
 ## 0.11.285 - 2026-11-17
 
 - Stesso contenuto della 0.11.284 con un numero di versione nuovo: le copie installate con una delle compilazioni di prova della 0.11.284 non si aggiornavano da sole (stesso numero), cosi' l'aggiornamento automatico le porta alla compilazione pubblicata.
