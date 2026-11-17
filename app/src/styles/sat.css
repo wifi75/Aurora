@@ -74,6 +74,11 @@
 .sat-status { margin: 0.15rem 0 0.3rem; font-size: 0.75rem; }
 .sat-status.ok { color: #46ffb0; }
 .sat-status.warn { color: #ffb86b; }
+/* tema chiaro: i colori pastello del tema scuro non si leggono sul fondo chiaro, si usano le varianti scure (contrasto sopra 5:1) */
+:root[data-theme='light'] .sat-status.ok,
+:root[data-theme='light'] .sat-up { color: #0b6e48; }
+:root[data-theme='light'] .sat-status.warn { color: #9a4700; }
+:root[data-theme='light'] .sat-clock b { color: #0b6e48; text-shadow: none; }
 
 @media (max-width: 62rem) { .sat-tle { margin-left: 0; } }
 
