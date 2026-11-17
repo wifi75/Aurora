@@ -49,9 +49,9 @@ export interface PreviousQso {
   qso: { mode: string; time_ms: number; nr: string } | null;
 }
 
-/** Lo scambio ricevuto scritto in coda al commento del QSO (`NRS 001 NRR 015`). */
+/** Lo scambio ricevuto scritto in coda al commento del QSO (`NRS 001 NRR 015`, o con la sezione `NRR 003 ACC`). */
 export function exchangeRcvdOf(comment: string | undefined): string {
-  return /NRR (\S+)/.exec(comment ?? '')?.[1] ?? '';
+  return /NRR (.+)$/.exec(comment ?? '')?.[1]?.trim() ?? '';
 }
 
 /**

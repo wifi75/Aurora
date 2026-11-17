@@ -187,6 +187,8 @@ export interface TextContestCheck {
   doppio: boolean;
   punti: number;
   nuovi: string[];
+  /** Lo scambio di questo nominativo ha un terzo elemento dopo il numero (sezione, club, stato)? Calcolato dal core con le regole del punteggio (assente con un core vecchio). */
+  exch_atteso?: boolean;
   /** L'ultimo QSO del contest con lo stesso nominativo (assente con un core vecchio). */
   precedente?: { time_ms: number; band: string; mode: string; exch_rcvd: string; exch_sent: string } | null;
   /** Lo scambio mandato nell'ultimo QSO del log del contest (`<PREVNRS>`). */

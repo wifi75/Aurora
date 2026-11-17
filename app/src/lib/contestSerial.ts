@@ -52,8 +52,9 @@ export function contestNextSerial(log: readonly { n: number; exch_sent: string }
   let last: { n: number; exch_sent: string } | null = null;
   for (const q of log) if (/\d/.test(q.exch_sent) && (!last || q.n > last.n)) last = q;
   if (!last) return 1;
-  const nums = last.exch_sent.match(/\d+/g) ?? [];
-  // lo scambio puo' avere anche il rapporto davanti (`599 015`): il numero e' l'ultimo gruppo di cifre
+  // lo scambio puo' avere il rapporto davanti (`599 015`) e la sezione dietro (`001 VE3`): il numero e' l'ultima parola di sole cifre
+  const words = last.exch_sent.split(/\s+/).filter((w) => /^\d+$/.test(w));
+  const nums = words.length > 0 ? words : (last.exch_sent.match(/\d+/g) ?? []);
   const n = Number(nums[nums.length - 1]);
   return Number.isInteger(n) && n >= 0 ? n + 1 : 1;
 }

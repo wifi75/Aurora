@@ -22,6 +22,8 @@ export interface Qso {
   /** Scambio da mandare (contest; vuoto = il numero progressivo) e ricevuto. */
   nrs?: string;
   nrr?: string;
+  /** Il terzo elemento dello scambio ricevuto (sezione, club, stato), solo nei contest che lo chiedono: si registra come `${nrr} ${extra}`. */
+  extra?: string;
   /** Il paese del nominativo (da cty.dat, con la ricerca): solo da vedere, il log lo ricava da se'. */
   country?: string;
 }

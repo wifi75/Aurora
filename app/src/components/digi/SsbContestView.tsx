@@ -8,6 +8,7 @@ import type { Qso } from './DigiLog';
 import { getDxcc, getLog4om, getLogQsos, type Log4omQso } from '../../api/client';
 import { autoExchange, callMultipliers, contestSuggestions, previousQsos, HF_BANDS } from '../../lib/contestEntry';
 import { qsoTimeMs } from '../../lib/logWindow';
+import { EXTRA_MAX, cleanExtra, extraLabelKey } from '../../lib/contestSection';
 import '../../styles/digi-ssb-contest.css';
 
 interface Props {
@@ -243,6 +244,19 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
   const raw = call === typed && typed.length >= 3 ? check.data : undefined;
   const c = raw ? { ...raw, doppio: mine !== undefined, precedente: mine ? { time_ms: Date.parse(`${mine.date.replace(' ', 'T').slice(0, 19)}Z`), band: mine.band, mode: mine.mode, exch_rcvd: '', exch_sent: '' } : null } : undefined;
   const pending = new Set(c?.nuovi ?? []);
+  // la casella del terzo elemento dello scambio (sezione, club, stato) compare solo se il core dice che questo nominativo la da' (stesse regole
+  // del punteggio); la risposta si ricorda per il nominativo, cosi' non sparisce mentre si scrive il numero e la richiesta si rifa'
+  const [exchFor, setExchFor] = useState<{ call: string; want: boolean }>({ call: '', want: false });
+  const exchAtteso = raw ? raw.exch_atteso === true : null;
+  useEffect(() => {
+    if (exchAtteso !== null) setExchFor({ call: typed, want: exchAtteso });
+  }, [exchAtteso, typed]);
+  const showExtra = contestOn && exchFor.call === call && exchFor.want;
+  const extraNow = qso.extra ?? '';
+  useEffect(() => {
+    // senza la casella il valore scritto non vale piu' (altro nominativo)
+    if (!showExtra && extraNow !== '') onQsoRef.current({ extra: '' });
+  }, [showExtra, extraNow]);
 
   // paese e zone del nominativo (database dei prefissi): suggerimenti, scambio ricevuto precompilato, moltiplicatori che porta
   const known = contestOn && call === typed && typed.length >= 3;
@@ -365,6 +379,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
                 <>
                   {field(t('ssbc.serialSent'), <input className="ssbc-in" data-skip="1" tabIndex={-1} value={qso.nrs || nrsAuto} maxLength={12} autoComplete="off" onChange={(e) => onQso({ nrs: e.target.value.toUpperCase() })} />, 'ssbc-field--nr')}
                   {field(t('ssbc.serialRcvd'), <input className="ssbc-in" value={qso.nrr ?? ''} maxLength={12} autoComplete="off" onChange={(e) => onQso({ nrr: e.target.value.toUpperCase() })} />, 'ssbc-field--nrr')}
+                  {showExtra ? field(t(extraLabelKey(contestName)), <input className="ssbc-in" value={extraNow} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => onQso({ extra: cleanExtra(e.target.value) })} />, 'ssbc-field--nrr ssbc-field--extra') : null}
                 </>
               ) : (
                 <>

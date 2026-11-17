@@ -6,6 +6,8 @@ import { deleteTextContest, exportTextContest, importTextContest, getTextContest
 import { askConfirm } from '../ConfirmHost';
 import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
+import { EXTRA_MAX, cleanExtra, hasExchMultiplier, readSection, writeSection } from '../../lib/contestSection';
+import { browserStorage } from '../../lib/theme';
 import '../../styles/digi-contest.css';
 
 const why = (e: unknown) => (e instanceof ContestError ? (e.detail ?? e.code) : String(e));
@@ -238,6 +240,8 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
   const [proposed] = useState(() => (contest.id ? staleWindowProposal(contest, Date.now()) : null));
   const [c, setC] = useState<TextContest>(() => (proposed ? { ...contest, start: proposed.start, end: proposed.end } : contest));
   const [busy, setBusy] = useState(false);
+  // la propria sezione / stato / club di questo contest (preferenze del browser, per contest): serve ai contest con un moltiplicatore `exch`
+  const [mySect, setMySect] = useState(() => readSection(browserStorage(), contest.id));
   const datesCheck = checkContestDates(c.start, c.end);
   const proposals = c.id ? windowProposals(c.name, new Date().getUTCFullYear()) : [];
   const day = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
@@ -273,6 +277,7 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
     setBusy(true);
     try {
       const r = await saveTextContest(c);
+      if (c.id && hasExchMultiplier(c.score)) writeSection(browserStorage(), r.id, mySect);
       toast(t('ctest.saved'), 'info');
       refresh();
       onSaved(r.id);
@@ -330,6 +335,12 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
               <span>{t('ctest.f.nrs')}</span>
               <input type="text" value={c.nrs} onChange={(e) => set({ nrs: e.target.value })} />
             </label>
+            {c.id && hasExchMultiplier(c.score) ? (
+              <label title={t('ctest.tip.mySect')}>
+                <span>{t('ctest.f.mySect')}</span>
+                <input type="text" value={mySect} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => setMySect(cleanExtra(e.target.value))} />
+              </label>
+            ) : null}
             {check('auto_inc', t('ctest.f.autoInc'), t('ctest.tip.autoInc'))}
             <p className="ctest-hint">{c.auto_inc ? t('ctest.nrsAuto', { n: String(startSerial(c.nrs)).padStart(3, '0') }) : c.nrs.trim() !== '' ? t('ctest.nrsFixed', { nrs: c.nrs.trim() }) : t('ctest.nrsFixedNone')}</p>
           </Group>

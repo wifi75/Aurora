@@ -188,3 +188,6 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 /* etichette dei campi leggibili: 0.7rem, testo breve, mai tagliate */
 .ssbc-field { font-size: 0.7rem; letter-spacing: 0.01em; }
 .ssbc-field > :first-child:not(input) { overflow: visible; text-overflow: clip; }
+
+/* terzo elemento dello scambio (sezione, club, stato): una casella piu' stretta del numero */
+.ssbc-field--extra { flex: 1 1 8ch; min-width: 100px; }

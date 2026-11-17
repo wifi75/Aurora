@@ -12,6 +12,7 @@ import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type LogMarks, type Qso } from '../components/digi/DigiLog';
 import { applyAvailability } from '../lib/menuModi';
 import { SsbContestView } from '../components/digi/SsbContestView';
+import { composeReceived, composeSent, readSection } from '../lib/contestSection';
 import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, readSerial, writeSerial } from '../lib/contestSerial';
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
 import { useContestLog } from '../lib/useContestLog';
@@ -230,6 +231,19 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // senza incremento automatico <NRS> manda lo scambio fisso del contest (zona, provincia)
   const fixedNrsRef = useRef('');
   fixedNrsRef.current = textContest && !textContest.contest.auto_inc ? textContest.contest.nrs.trim() : '';
+  // la propria sezione / stato / club (per contest, impostata nelle impostazioni del contest) si manda dopo il numero solo se alla propria
+  // stazione tocca per le regole del contest: lo dice il core con la stessa domanda dei nominativi (`exch_atteso`) fatta sul proprio nominativo
+  const myCallNow = status?.de_call ?? '';
+  const ownExchQ = useQuery({
+    queryKey: ['contest-exch-own', textContest?.contest.id ?? '', myCallNow],
+    queryFn: () => getTextContestCheck(myCallNow, '', ''),
+    enabled: textContest !== null && myCallNow.trim().length >= 3,
+    retry: false,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const sentSectionRef = useRef({ id: null as string | null, applies: false });
+  sentSectionRef.current = { id: textContest?.contest.id ?? null, applies: textContest !== null && ownExchQ.data?.exch_atteso === true };
   const [contestList, setContestList] = useState(false);
   const [contestStats, setContestStats] = useState(false);
   /** La finestra dei QTC del WAE (mandare o ricevere), con il contest attivo che li prevede. */
@@ -1096,7 +1110,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     }
     const dial = l.status?.dial_hz ?? 0;
     const at = l.startAt ?? new Date();
-    const nrs = exchangeSent(l.qso.nrs || fixedNrsRef.current, l.serial);
+    const sect = sentSectionRef.current;
+    const nrs = composeSent(exchangeSent(l.qso.nrs || fixedNrsRef.current, l.serial), readSection(browserStorage(), sect.id), sect.applies && sect.id !== null);
+    const rcvd = composeReceived(l.qso.nrr, l.qso.extra);
     // la riga del contest non ha Nome e QTH: se la ricerca del nominativo e' gia' in memoria, il QSO li porta lo stesso
     const known = l.qso.name === '' || l.qso.qth === '' ? knownCallsign(call) : undefined;
     const looked = known ? filledFrom(known) : null;
@@ -1114,15 +1130,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       name: l.qso.name || (looked?.name ?? ''),
       qth: l.qso.qth || (looked?.qth ?? ''),
       // il log non ha campi per gli scambi del contest: vanno in coda alle note (e a parte per il log del contest)
-      comment: commentWithExchange(l.qso.notes, nrs, l.qso.nrr ?? ''),
+      comment: commentWithExchange(l.qso.notes, nrs, rcvd),
       exch_sent: nrs,
-      exch_rcvd: l.qso.nrr ?? '',
+      exch_rcvd: rcvd,
     }, l.inContest).then(
       () => {
         // il QSO e' a log: il numero progressivo avanza (in gara lo da' il log del contest) e gli scambi si azzerano
         if (l.inContest) void client.invalidateQueries({ queryKey: ['contest'] });
         else setSerialState((n) => writeSerial(browserStorage(), n + 1));
-        setQso((q) => ({ ...q, nrs: '', nrr: '' }));
+        setQso((q) => ({ ...q, nrs: '', nrr: '', extra: '' }));
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
         // il log di lato (Log4OM/Aurora) e la vista SSB lo rileggono subito, non dopo 10 s
