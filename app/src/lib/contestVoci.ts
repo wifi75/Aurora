@@ -30,6 +30,12 @@ export const BANDE = ['160', '80', '40', '20', '15', '10'] as const;
 
 export type CategoriaModo = 'cw' | 'phone' | 'digital';
 
+/**
+ * Le voci PERSONALI: dati dell'utente e non regole. In un contest in cartella sono le sole modificabili e il core le salva come
+ * «sovrascritture» (`sovrascritture/<id>.json`), senza toccare la cartella; `mySect` resta una preferenza di questo computer.
+ */
+export const VOCI_PERSONALI: readonly Voce[] = ['start', 'end', 'work_time', 'nrs', 'auto_inc', 'mySect', 'macros'];
+
 /** Un contest e' in cartella (regole e contatori in sola lettura)? */
 export const inCartella = (c: Pick<TextContest, 'origine'>): boolean => c.origine === 'cartella';
 
@@ -116,6 +122,20 @@ export function modiAmmessi(c: TextContest): Set<CategoriaModo> {
   return accese.size === 0 ? tutte : accese;
 }
 
+/**
+ * I modi che il contest DICHIARA esplicitamente (cartella: `[modi] ammessi`; vecchio file: le validita' accese e i modi nominati dalle regole), senza il «tutti»
+ * di quando non e' scritto niente. Servono per mostrare i pulsanti diretti dei modi solo dove il contest ne ha piu' di uno.
+ */
+export function modiDichiarati(c: TextContest): CategoriaModo[] {
+  if (inCartella(c) && c.dichiarazione) return [...new Set(c.dichiarazione.modi.ammessi.map(categoriaModo))];
+  const accese = new Set<CategoriaModo>();
+  if (c.valid_cw) accese.add('cw');
+  if (c.valid_phone) accese.add('phone');
+  if (c.valid_digital) accese.add('digital');
+  for (const m of leggiScore(c.score).modi) accese.add(m);
+  return [...accese];
+}
+
 /** I tipi di moltiplicatore del contest: dalle regole `[Score]` o, senza, dalle chiavi storiche (1 DXCC, 2 WPX, 3 zona CQ, 4 zona ITU, 5 dominio). */
 export function tipiMoltiplicatore(c: TextContest): Set<string> {
   const r = leggiScore(c.score);
@@ -188,6 +208,7 @@ export function voceAttiva(c: TextContest, voce: Voce): boolean {
     case 'qtc':
       return c.qtc > 0;
     case 'macros':
+      return true; // la macro si sceglie sempre: e' una voce personale
     case 'merge_macros':
       return cartella ? c.macros !== '' : true;
     case 'grab_number':
@@ -219,9 +240,9 @@ export function voceAttiva(c: TextContest, voce: Voce): boolean {
   }
 }
 
-/** La voce si puo' cambiare? In un contest in cartella le regole e i contatori sono in sola lettura (resta la propria sezione, che e' una preferenza di questo computer). */
+/** La voce si puo' cambiare? In un contest in cartella le regole, il nome, le bande e i contatori sono in sola lettura: si cambiano solo le voci personali (`VOCI_PERSONALI`). */
 export function voceModificabile(c: TextContest, voce: Voce): boolean {
-  return inCartella(c) ? voce === 'mySect' : true;
+  return inCartella(c) ? VOCI_PERSONALI.includes(voce) : true;
 }
 
 // ---------------------------------------------------------------- il regolamento

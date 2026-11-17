@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
-import { copyTextContest, deleteTextContest, exportTextContest, importTextContest, getTextContest, getTextContests, newTextContest, saveTextContest, selectTextContest, type TextContest } from '../../api/contestTesto';
+import { copyTextContest, deleteTextContest, exportTextContest, resetTextContest, importTextContest, getTextContest, getTextContests, newTextContest, saveTextContest, selectTextContest, type TextContest } from '../../api/contestTesto';
 import { askConfirm } from '../ConfirmHost';
 import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
@@ -14,7 +14,7 @@ import '../../styles/digi-contest.css';
 const why = (e: unknown) => (e instanceof ContestError ? (e.detail ?? e.code) : String(e));
 
 /** Le chiavi delle richieste dei contest dei modi testuali (elenco e contest attivo), da rileggere dopo ogni modifica. */
-export const TEXT_CONTEST_KEYS = [['contest-testo'], ['contest-testo-attivo'], ['contest-testo-punteggio']] as const;
+export const TEXT_CONTEST_KEYS = [['contest-testo'], ['contest-testo-attivo'], ['contest-testo-punteggio'], ['contest-testo-voce']] as const;
 
 function useRefresh() {
   const client = useQueryClient();
@@ -309,10 +309,14 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
   const save = async () => {
     setBusy(true);
     try {
-      // la propria sezione e' una preferenza di questo computer: vale anche per i contest in cartella, che non si salvano
+      // contest in cartella: al core vanno solo le voci personali (date, ore, numero, macro), che salva a parte senza toccare la cartella;
+      // la propria sezione e' una preferenza di questo computer. La finestra del contest e le sue date si rileggono subito (refresh).
       if (readonly) {
         if (voceAttiva(view, 'mySect')) writeSection(browserStorage(), c.id, mySect);
+        const personal = { id: c.id, start: c.start, end: c.end, work_time: c.work_time, nrs: c.nrs, auto_inc: c.auto_inc, macros: c.macros };
+        await saveTextContest(personal as unknown as TextContest);
         toast(t('ctest.saved'), 'info');
+        refresh();
         onSaved(c.id);
         return;
       }
@@ -344,6 +348,20 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
       setBusy(false);
     }
   };
+  // «Ripristina i valori del contest»: toglie le modifiche personali di un contest in cartella
+  const reset = async () => {
+    setBusy(true);
+    try {
+      await resetTextContest(c.id);
+      toast(t('ctest.reset.done'), 'info');
+      refresh();
+      onSaved(c.id);
+    } catch (e) {
+      toast(t('ctest.error', { why: why(e) }), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
   const files = (list: readonly string[], current: string) => (current && !list.includes(current) ? [current, ...list] : list);
   const stored = t('ctest.tip.stored');
   return (
@@ -355,6 +373,11 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
         {readonly ? (
           <div className="ctest-readonly" role="note">
             <span>{t('ctest.ro.text')}</span>
+            {contest.sovrascritta ? (
+              <button type="button" className="glass sstv-btn" disabled={busy} title={t('ctest.ro.resetTip')} onClick={() => void reset()}>
+                {t('ctest.ro.reset')}
+              </button>
+            ) : null}
             <button type="button" className="glass sstv-btn" disabled={busy} title={t('ctest.ro.copyTip')} onClick={() => void copy()}>
               {t('ctest.ro.copy')}
             </button>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newTextContest, type TextContest } from '../api/contestTesto';
 import { autoExchange, callMultipliers, contestSuggestions, exchangeRcvdOf, multSummary, previousQsos } from './contestEntry';
-import { checkContestDates, contestWindowStatus, lastFullWeekend, staleWindowProposal, validContestDate, windowProposals } from './textContest';
+import { checkContestDates, contestWindowStatus, lastFullWeekend, staleWindowProposal, validContestDate, windowNoticeInfo, windowProposals } from './textContest';
 
 const c = (p: Partial<TextContest> = {}): TextContest => ({ ...newTextContest(), name: 'Prova', ...p });
 const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -88,6 +88,15 @@ describe('stato della finestra', () => {
 
   it('il file del CQ WW DX con data del 2016 e scaduto a novembre 2026', () => {
     expect(contestWindowStatus(c({ start: '20161028072401', end: '20161028235959' }), Date.UTC(2026, 10, 16)).status).toBe('expired');
+  });
+});
+
+describe('avviso della finestra', () => {
+  it('tre testi diversi: non ancora iniziato (con la data), scaduto, non impostato', () => {
+    const k = c({ start: '20261212000000', end: '20261213235959' });
+    expect(windowNoticeInfo(k, Date.UTC(2026, 10, 17))).toEqual({ key: 'ssbc.windowBefore', when: '2026-12-12 00:00' });
+    expect(windowNoticeInfo(k, Date.UTC(2026, 11, 20)).key).toBe('ssbc.windowExpired');
+    expect(windowNoticeInfo(c(), Date.UTC(2026, 10, 17)).key).toBe('ssbc.windowOff');
   });
 });
 

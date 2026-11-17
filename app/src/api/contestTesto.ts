@@ -60,6 +60,8 @@ export interface TextContest {
   origine?: 'cartella' | 'file';
   /** Lo scambio dichiarato (vuoto per i vecchi file). */
   scambio?: { ricevuto: ExchangeField[]; inviato: ExchangeField[] };
+  /** Le modifiche personali gia' applicate a un contest in cartella (date, ore, numero, macro; `null` o assente = valori della cartella). */
+  sovrascritta?: { start?: string; end?: string; work_time?: number; nrs?: string; auto_inc?: boolean; macros?: string } | null;
   /** La dichiarazione del contest in cartella (solo da `/voce/{id}`; `null` per i file). */
   dichiarazione?: ContestDeclaration | null;
   /** Il regolamento in markdown semplice (solo da `/voce/{id}`; `null` per i file). */
@@ -153,7 +155,10 @@ export interface ActiveTextContest {
 export const getTextContests = () => call<TextContestList>('');
 export const getActiveTextContest = () => call<ActiveTextContest | null>('/attivo');
 export const getTextContest = (id: string) => call<TextContest>(`/voce/${encodeURIComponent(id)}`);
-export const saveTextContest = (c: TextContest) => (c.id ? call<{ ok: boolean; id: string }>(`/voce/${encodeURIComponent(c.id)}`, json('PUT', c)) : call<{ ok: boolean; id: string }>('/voce', json('POST', c)));
+/** Salva un contest. Per un contest in cartella il core tiene solo le voci personali (date, ore, numero, macro) e risponde con il contest aggiornato. */
+export const saveTextContest = (c: TextContest) => (c.id ? call<{ ok?: boolean; id: string }>(`/voce/${encodeURIComponent(c.id)}`, json('PUT', c)) : call<{ ok?: boolean; id: string }>('/voce', json('POST', c)));
+/** «Ripristina i valori del contest»: toglie le modifiche personali di un contest in cartella e risponde con il contest com'e' nella cartella. */
+export const resetTextContest = (id: string) => call<TextContest>(`/voce/${encodeURIComponent(id)}/sovrascrittura`, { method: 'DELETE' });
 /** «Copia nella mia cartella»: copia un contest incluso nei dati dell'utente, dove si modifica (e sostituisce quello incluso). */
 export const copyTextContest = (id: string) => call<{ ok: boolean; id: string }>(`/voce/${encodeURIComponent(id)}/copia`, { method: 'POST' });
 export const deleteTextContest = (id: string) => call<{ ok: boolean }>(`/voce/${encodeURIComponent(id)}`, { method: 'DELETE' });

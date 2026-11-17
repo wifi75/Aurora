@@ -235,6 +235,14 @@ export function contestWindowStatus(c: Pick<TextContest, 'start' | 'end'>, nowMs
   return { status: 'active', window: w };
 }
 
+/** Quale avviso mostrare quando la finestra del contest non vale adesso: non ancora iniziato (con l'inizio in UTC), scaduta, non impostata. */
+export function windowNoticeInfo(c: Pick<TextContest, 'start' | 'end'>, nowMs: number): { key: 'ssbc.windowBefore' | 'ssbc.windowExpired' | 'ssbc.windowOff'; when: string } {
+  const { status, window } = contestWindowStatus(c, nowMs);
+  if (status === 'before' && window?.from != null) return { key: 'ssbc.windowBefore', when: new Date(window.from).toISOString().slice(0, 16).replace('T', ' ') };
+  if (status === 'expired') return { key: 'ssbc.windowExpired', when: '' };
+  return { key: 'ssbc.windowOff', when: '' };
+}
+
 /**
  * Le date del file non sono dell'anno in corso (o mancano): per un contest con una sola edizione conosciuta si propongono nel
  * dialogo. `null` se le date sono gia' di quest'anno, se il nome non e' riconosciuto o se ha piu' edizioni (si sceglie a mano).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newTextContest, type ContestDeclaration, type ExchangeField, type TextContest } from '../api/contestTesto';
-import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, modiAmmessi, moltiplicatoriPerBanda, pezziInline, voceAttiva, voceModificabile, type Voce } from './contestVoci';
+import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, modiAmmessi, moltiplicatoriPerBanda, pezziInline, voceAttiva, voceModificabile, VOCI_PERSONALI, type Voce } from './contestVoci';
 
 const campo = (nome: string, tipo: string, extra: Partial<ExchangeField> = {}): ExchangeField => ({ nome, tipo, ...extra });
 const dich = (p: Partial<ContestDeclaration>): ContestDeclaration => ({
@@ -114,9 +114,13 @@ describe('voceAttiva: ARRL 10 metri in cartella', () => {
   it('date, ore massime e macro dichiarate', () => {
     for (const v of ['start', 'end', 'work_time', 'macros', 'merge_macros', 'name', 'notes'] as const) expect(voceAttiva(arrl10, v), v).toBe(true);
   });
-  it('in cartella si cambia solo la propria sezione', () => {
-    expect(voceModificabile(arrl10, 'mySect')).toBe(true);
-    for (const v of ['valid_cw', 'name', 'macros', 'dupe_no_mode', 'band:10'] as const) expect(voceModificabile(arrl10, v), v).toBe(false);
+  it('in cartella si cambiano solo le voci personali: date, ore, numero, incremento, sezione e macro', () => {
+    for (const v of ['start', 'end', 'work_time', 'nrs', 'auto_inc', 'mySect', 'macros'] as const) expect(voceModificabile(arrl10, v), v).toBe(true);
+    expect([...VOCI_PERSONALI].sort()).toEqual(['auto_inc', 'macros', 'mySect', 'nrs', 'start', 'end', 'work_time'].sort());
+  });
+  it('in cartella le regole, il nome, i modi, le bande e i contatori restano in sola lettura', () => {
+    for (const v of VOCI) if (!(VOCI_PERSONALI as readonly string[]).includes(v)) expect(voceModificabile(arrl10, v), v).toBe(false);
+    for (const v of ['valid_cw', 'name', 'merge_macros', 'dupe_no_mode', 'band:10', 'points_dx', 'multipliers', 'qtc'] as const) expect(voceModificabile(arrl10, v), v).toBe(false);
   });
 });
 

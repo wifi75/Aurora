@@ -103,7 +103,7 @@ export function useContestEntry({ qso, contest, inSet, noBand, noMode, band, mod
     : [];
   const callMults = known && score && c ? callMultipliers(score.tipi, info, c.nuovi, score.griglia, band) : [];
 
-  return { call, typed, known, c, pending, showExtra, extraNow, suggestions, prevRows, callMults, logQ };
+  return { contest, call, typed, known, c, pending, showExtra, extraNow, suggestions, prevRows, callMults, logQ };
 }
 
 export type ContestEntryState = ReturnType<typeof useContestEntry>;

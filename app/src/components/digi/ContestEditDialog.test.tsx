@@ -9,8 +9,9 @@ vi.mock('../../api/contestTesto', async (importOriginal) => ({
   getTextContest: vi.fn(() => Promise.reject(new Error('non chiesto'))),
   saveTextContest: vi.fn(() => Promise.resolve({ ok: true, id: 'x' })),
   copyTextContest: vi.fn(() => Promise.resolve({ ok: true, id: 'ARRL 10 Meter Contest' })),
+  resetTextContest: vi.fn(() => Promise.resolve({})),
 }));
-import { copyTextContest, getTextContest, newTextContest, saveTextContest, type TextContest } from '../../api/contestTesto';
+import { copyTextContest, getTextContest, newTextContest, resetTextContest, saveTextContest, type TextContest } from '../../api/contestTesto';
 import { ContestEditDialog } from './ContestListDialog';
 
 const OFF = /Non previsto da questo contest|Not used by this contest/;
@@ -48,6 +49,7 @@ const tipOf = (el: HTMLElement) => el.closest('label')?.getAttribute('title') ??
 beforeEach(() => {
   vi.mocked(saveTextContest).mockClear();
   vi.mocked(copyTextContest).mockClear();
+  vi.mocked(resetTextContest).mockClear();
   vi.mocked(getTextContest).mockClear();
 });
 
@@ -103,14 +105,49 @@ describe('finestra delle impostazioni: voci non previste', () => {
     expect(onSaved).toHaveBeenCalledWith('ARRL 10 Meter Contest');
   });
 
-  it('OK in un contest in cartella non manda niente al core', async () => {
+  it('OK in un contest in cartella manda al core solo le voci personali', async () => {
     const onSaved = vi.fn();
     show(arrl10, onSaved);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     });
-    expect(saveTextContest).not.toHaveBeenCalled();
-    expect(onSaved).toHaveBeenCalled();
+    expect(saveTextContest).toHaveBeenCalledTimes(1);
+    const body = vi.mocked(saveTextContest).mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual(['auto_inc', 'end', 'id', 'macros', 'nrs', 'start', 'work_time']);
+    expect(onSaved).toHaveBeenCalledWith('ARRL 10 Meter Contest');
+  });
+
+  it('in un contest in cartella le date e le ore si cambiano e si salvano', async () => {
+    const conDate: TextContest = { ...arrl10, start: '20261212000000', end: '20261213235959', work_time: 36, dichiarazione: { ...arrl10.dichiarazione!, edizione: { mese: 12, durata_ore: 48, ore_massime: 36, pausa_minima_min: null, invio_log_giorni: null, date: null } } };
+    show(conDate);
+    const inizio = screen.getByLabelText(/^Inizio|^Start/);
+    expect(inizio).toBeEnabled();
+    fireEvent.change(inizio, { target: { value: '2026-12-19T00:00:00' } });
+    fireEvent.change(screen.getByLabelText(/^Fine|^End/), { target: { value: '2026-12-20T23:59:59' } });
+    const ore = screen.getByLabelText(/Ore di lavoro|Working hours/);
+    expect(ore).toBeEnabled();
+    fireEvent.change(ore, { target: { value: '24' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    });
+    const body = vi.mocked(saveTextContest).mock.calls[0]?.[0] as unknown as Record<string, unknown>;
+    expect(body.start).toBe('20261219000000');
+    expect(body.work_time).toBe(24);
+    // nome e regole restano bloccati
+    expect(screen.getByLabelText(/^Nome|^Name/)).toBeDisabled();
+  });
+
+  it('Ripristina i valori del contest compare solo con modifiche personali e chiama il core', async () => {
+    const { unmount } = show(arrl10);
+    expect(screen.queryByRole('button', { name: /Ripristina i valori del contest|Restore the contest values/ })).toBeNull();
+    unmount();
+    const onSaved = vi.fn();
+    show({ ...arrl10, sovrascritta: { work_time: 5 } }, onSaved);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Ripristina i valori del contest|Restore the contest values/ }));
+    });
+    expect(resetTextContest).toHaveBeenCalledWith('ARRL 10 Meter Contest');
+    expect(onSaved).toHaveBeenCalledWith('ARRL 10 Meter Contest');
   });
 
   it('se il core risponde contest_readonly la finestra resta aperta', async () => {

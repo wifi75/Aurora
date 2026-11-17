@@ -89,6 +89,24 @@ ARRL 10 dichiara: moltiplicatori degli stati USA, DC, province canadesi e stati 
 - **Copia nella mia cartella**: `POST /api/v1/contest-testo/voce/{id}/copia` copia la cartella inclusa nei dati dell'utente (si rifiuta se esiste gia' una cartella con quel nome); da li' si modifica a mano e vale al posto di quella inclusa.
 - Le cartelle si rileggono dal disco al massimo ogni 3 secondi (la riga di inserimento chiede il contest a ogni tasto); la copia le rilegge subito.
 
+## Modifiche personali di un contest in cartella (sovrascritture)
+
+Date, ore di lavoro e simili sono dati dell'utente e non regole: si cambiano anche in un contest incluso, senza toccare la cartella (che resta aggiornabile con le versioni). Il core le tiene in **`<dati>/contest/sovrascritture/<id>.json`** (`<id>` = nome della cartella; la sottocartella e' riservata, non e' un contest) con **solo** questi campi, tutti facoltativi (assente = valore della cartella):
+
+| Campo | Significato |
+|---|---|
+| `start`, `end` | inizio e fine dell'edizione, `aaaammgghhmmss` UTC (vanno in coppia); valgono al posto delle date calcolate da `[edizione]` |
+| `work_time` | ore di lavoro, 0-48 (0 = nessun limite) |
+| `nrs`, `auto_inc` | numero di partenza (al massimo 64 caratteri) e incremento automatico |
+| `macros` | file di macro scelto (`macros/<nome>.mc`, fra quelli della cartella o dell'utente; vuoto = nessuna macro) |
+
+`ContestCartella::in_contesto` produce i valori della cartella; l'elenco (`voce`/`voci`, `ElencoContest::voce_di_cartella`) ci applica sopra la sovrascrittura, quindi elenco, contest attivo (`start_ms`/`end_ms`, macro scelta) e rotte vedono le date nuove. Si tengono solo i valori **diversi** da quelli della cartella: un corpo uguale ai valori della cartella non lascia nessun file. La mia sezione / stato / club resta nelle preferenze del browser (`aurora.digi.contestsect.<id>`).
+
+- `PUT /api/v1/contest-testo/voce/{id}` per un contest in cartella ACCETTA il contest ma legge e salva solo i campi sopra: nome, regole, bande, modi... nel corpo si ignorano senza errore; risponde 200 con il contest aggiornato (come `GET`, con `sovrascritta` = i campi tenuti o `null`). Valori non validi (date, ore fuori da 0-48, macro sconosciuta, fine prima dell'inizio) danno 400 `bad_contest` e non cambiano niente.
+- `DELETE /api/v1/contest-testo/voce/{id}/sovrascrittura` («Ripristina i valori del contest») toglie il file e risponde col contest come nella cartella (400 se non e' un contest a cartella, 404 se sconosciuto).
+- Il core non scrive mai nella cartella inclusa. Vale anche per le cartelle dell'utente (la sovrascrittura non le modifica).
+- App: nella finestra di modifica di un contest in cartella sono modificabili solo le voci personali (`VOCI_PERSONALI` in `contestVoci.ts`: Inizio, Fine, Ore di lavoro, Numero di partenza, incremento automatico, La mia sezione, Macro); il pulsante «Ripristina i valori del contest» compare se c'e' una sovrascritta.
+
 ## Convivenza con i vecchi `.contest` e regola dei nomi uguali
 
 Il nome del contest (`[contest] nome`, senza badare alle maiuscole: `ARRL 10 meter Contest` = `ARRL 10 Meter Contest`) e' la chiave. Nell'elenco:
@@ -97,13 +115,13 @@ Il nome del contest (`[contest] nome`, senza badare alle maiuscole: `ARRL 10 met
 2. una cartella **inclusa** vale al posto del `.contest` solo se questo e' la **copia intatta** di quello distribuito (stesso contenuto del file in `desktop/src-tauri/contest`, cartella dei predefiniti); se l'utente lo ha **personalizzato** (o non si puo' dire, per esempio nei test senza predefiniti) il suo `.contest` resta e la cartella non compare;
 3. il `.contest` sostituito **resta nel file dell'utente** ma non si vede due volte; l'identificativo vecchio (anche con altre maiuscole) porta alla cartella, quindi un contest gia' attivo resta attivo.
 
-Un contest a cartella non si modifica ne' si cancella dall'elenco (`PUT` e `DELETE` rispondono 409 `contest_readonly`: «contest incluso: copialo nella tua cartella per modificarlo»); un nuovo `.contest` con lo stesso nome di una cartella prende un identificativo diverso (`<nome> (2)`). L'importa/esporta `.zip` resta com'e': il pacchetto di un contest a cartella contiene il `.contest` convertito, le macro e l'elenco dei domini.
+Un contest a cartella non si cancella dall'elenco (`DELETE` risponde 409 `contest_readonly`: «contest incluso: copialo nella tua cartella per modificarlo») e le sue regole non si modificano; i dati personali si salvano a parte (vedi «Modifiche personali» sotto); un nuovo `.contest` con lo stesso nome di una cartella prende un identificativo diverso (`<nome> (2)`). L'importa/esporta `.zip` resta com'e': il pacchetto di un contest a cartella contiene il `.contest` convertito, le macro e l'elenco dei domini.
 
 I `.contest` distribuiti non sono toccati (cambiarne il contenuto li farebbe sembrare personalizzati a chi ne ha la copia intatta); quello di ARRL 10 resta com'era e ha ancora `KL7` al posto di `KL` (vedi sotto).
 
 ## API
 
-`GET /api/v1/contest-testo` (ogni voce), `/attivo` e `/voce/{id}` aggiungono: `origine` (`cartella` o `file`), `schede` (l'elenco dichiarato, `[]` per i `.contest`), `scambio` (`{ricevuto, inviato}`, vuoto per i `.contest`); `/voce/{id}` anche `regolamento` (markdown per le cartelle, `null` per i file) e `dichiarazione` (`bande`, `modi` con `ammessi` e `limite`, `categorie`, `doppi`, `edizione` con le date dell'edizione calcolate, `cabrillo`; `null` per i file): l'app decide con questi dati e con `[Score]` quali voci delle impostazioni sono attive (`app/src/lib/contestVoci.ts`, `voceAttiva`). Nuova: `POST /api/v1/contest-testo/voce/{id}/copia` (200 con l'id; 400 se non e' una cartella, 404 se sconosciuto, 409 `contest_copy` se non si puo' copiare).
+`GET /api/v1/contest-testo` (ogni voce), `/attivo` e `/voce/{id}` aggiungono: `origine` (`cartella` o `file`), `sovrascritta` (le modifiche personali di un contest in cartella o `null`), `schede` (l'elenco dichiarato, `[]` per i `.contest`), `scambio` (`{ricevuto, inviato}`, vuoto per i `.contest`); `/voce/{id}` anche `regolamento` (markdown per le cartelle, `null` per i file) e `dichiarazione` (`bande`, `modi` con `ammessi` e `limite`, `categorie`, `doppi`, `edizione` con le date dell'edizione calcolate, `cabrillo`; `null` per i file): l'app decide con questi dati e con `[Score]` quali voci delle impostazioni sono attive (`app/src/lib/contestVoci.ts`, `voceAttiva`). Nuova: `POST /api/v1/contest-testo/voce/{id}/copia` (200 con l'id; 400 se non e' una cartella, 404 se sconosciuto, 409 `contest_copy` se non si puo' copiare).
 
 ## Controllo automatico
 
