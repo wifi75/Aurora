@@ -50,7 +50,8 @@ export const MULT_BIG = 80;
 
 /** Le schede dei moltiplicatori di un punteggio: un tipo ciascuna, nell'ordine dei tipi del contest. */
 export function multCardsOf(s: { tipi: readonly string[]; griglia: readonly { tipo: string }[]; mancanti: readonly { tipo: string; totali: number }[] }): MultCardInfo[] {
-  const types = [...s.tipi, ...s.griglia.map((g) => g.tipo), ...s.mancanti.map((m) => m.tipo)].filter((x, i, all) => all.indexOf(x) === i);
+  // `tipi` chiama «dominio» il moltiplicatore sullo scambio che la griglia e l'elenco dei mancanti chiamano «dom»: stessa scheda, non due
+  const types = [...s.tipi.map((x) => (x === 'dominio' ? 'dom' : x)), ...s.griglia.map((g) => g.tipo), ...s.mancanti.map((m) => m.tipo)].filter((x, i, all) => all.indexOf(x) === i);
   return types.map((tipo) => ({ tipo, total: s.mancanti.find((m) => m.tipo === tipo)?.totali ?? null }));
 }
 

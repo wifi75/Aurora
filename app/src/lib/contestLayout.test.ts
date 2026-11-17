@@ -81,6 +81,14 @@ describe('disposizione di partenza del contest', () => {
       { tipo: 'cq', total: null },
     ]);
   });
+
+  it('il moltiplicatore sullo scambio e una scheda sola anche se i tipi lo chiamano «dominio» e l elenco dei mancanti «dom»', () => {
+    const s = { tipi: ['dominio', 'dxcc'], griglia: [], mancanti: [{ tipo: 'dom', totali: 97 }] };
+    expect(multCardsOf(s)).toEqual([
+      { tipo: 'dom', total: 97 },
+      { tipo: 'dxcc', total: null },
+    ]);
+  });
 });
 
 describe('salvataggio per contest e per vista', () => {
