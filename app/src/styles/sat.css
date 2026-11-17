@@ -78,7 +78,10 @@
 :root[data-theme='light'] .sat-status.ok,
 :root[data-theme='light'] .sat-up { color: #0b6e48; }
 :root[data-theme='light'] .sat-status.warn { color: #9a4700; }
-:root[data-theme='light'] .sat-clock b { color: #0b6e48; text-shadow: none; }
+/* l'orologio e' una pastiglia scura anche nel tema chiaro (il fondo e' quasi trasparente: si rende pieno) con cifre verde chiaro */
+:root[data-theme='light'] .sat-clock { background: linear-gradient(135deg, #123b31, #101c3d); border-color: rgba(44, 245, 164, 0.55); }
+:root[data-theme='light'] .sat-clock b { color: #46ffb0; text-shadow: 0 0 10px rgba(70, 255, 176, 0.5); }
+:root[data-theme='light'] .sat-clock span { color: #b8ead9; }
 
 @media (max-width: 62rem) { .sat-tle { margin-left: 0; } }
 
