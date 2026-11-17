@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -74,5 +74,20 @@ describe('dupeFlags', () => {
   });
   it('senza banda nel controllo conta anche l altra banda', () => {
     expect(dupeFlags(log, true, false)).toEqual([true, false, true, false]);
+  });
+
+  it('la barra del log classica mostra l’avviso del salvataggio rifiutato e Esc lo toglie', () => {
+    vi.mocked(getLog4om).mockResolvedValue({ total: 0, qsos: [] });
+    localStorage.setItem('aurora.digi.tab', 'log');
+    let dismissed = 0;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <DigiLog {...props} saveError="QSO non salvato: banda" onDismissSaveError={() => (dismissed += 1)} />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('QSO non salvato');
+    fireEvent.keyDown(screen.getByRole('button', { name: /Salva|Save/i }), { key: 'Escape' });
+    expect(dismissed).toBe(1);
   });
 });

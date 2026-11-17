@@ -11,6 +11,7 @@ import { useClusterOptions } from '../../lib/clusterOptions';
 import { bandColor } from '../../lib/mapColors';
 import { useT } from '../../i18n';
 import { formatSerial } from '../../lib/contestSerial';
+import { SaveFailAlert } from './SaveFailAlert';
 import { ColumnsMenu, MovableColGroup, MovableTh, useMovableColumns } from '../MovableColumns';
 
 export interface Qso {
@@ -42,6 +43,9 @@ interface Props {
   onQso(patch: Partial<Qso>): void;
   onRst(patch: { rsts?: string; rstr?: string }): void;
   onSave(): void;
+  /** Perche' l'ultimo salvataggio e' stato rifiutato (avviso nella barra) e come toglierlo (Esc). */
+  saveError?: string | null;
+  onDismissSaveError?(): void;
   onClear(): void;
   /** Il numero progressivo del contest (<QSONR>) e come correggerlo. */
   serial: number;
@@ -174,7 +178,7 @@ function cell(q: Log4omQso, nr: number, c: LogCol, mark: React.ReactNode = null)
  * Il log di lato: la riga azzurra del QSO in corso (si scrive sul posto) e sotto i QSO del log, il piu' recente in testa.
  * Nell'altra linguetta c'e' il DX Cluster, con il QSO in corso in un riquadro sotto.
  */
-export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, onClear, serial, onSerial, contestOn, width, onWidth, view, marks }: Props) {
+export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, onQso, onRst, onSave, saveError = null, onDismissSaveError, onClear, serial, onSerial, contestOn, width, onWidth, view, marks }: Props) {
   const t = useT();
   const [filter, setFilter] = useState('');
   const [cols, setCols] = useState<LogCol[]>(savedCols);
@@ -421,7 +425,8 @@ export function DigiLog({ qso, rsts, rstr, modeName, dialHz, audioHz, onSpot, on
               </button>
             </div>
           ) : null}
-          {view ? null : <div className="digi-log-bar">
+          {view || !saveError ? null : <SaveFailAlert msg={saveError} compact />}
+          {view ? null : <div className="digi-log-bar" onKeyDown={(e) => (e.key === 'Escape' && saveError ? onDismissSaveError?.() : undefined)}>
             {contestOn ? (
               <>
             <label className="digi-log-ex" title={t('digi.log.serialTip')}>

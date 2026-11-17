@@ -4266,6 +4266,11 @@ digi.run.nested,Too many macros inside each other: 10 at most,Te veel macro's in
 digi.run.unknown,Command not available yet: {tag},Opdracht nog niet beschikbaar: {tag}
 digi.run.modeUnsupported,Mode not available yet: {mode},Modus nog niet beschikbaar: {mode}
 digi.run.baudUnsupported,Speed not available in this mode: {baud},Snelheid niet beschikbaar in deze modus: {baud}
+digi.log.saveNoBand,QSO not saved: the band is unknown (no frequency from the radio). Pick the band with the band buttons.,QSO niet opgeslagen: de band is onbekend (geen frequentie van de radio). Kies de band met de bandknoppen.
+digi.log.saveBadField,QSO not saved: check the “{field}” field.,QSO niet opgeslagen: controleer het veld “{field}”.
+digi.log.saveLocalOnly,QSO not saved: logging is only possible from the home network.,QSO niet opgeslagen: loggen kan alleen vanaf het thuisnetwerk.
+digi.log.saveFail,QSO not saved: {msg},QSO niet opgeslagen: {msg}
+digi.log.bandNow,Band: {band},Band: {band}
 digi.run.saved,QSO saved to the log: {call},QSO opgeslagen in het logboek: {call}
 digi.run.noCall,The other station’s callsign is missing.,De roepnaam van het andere station ontbreekt.
 digi.run.autoCqOn,Automatic CQ on: repeats every {s} seconds,Automatische CQ aan: herhaalt elke {s} seconden

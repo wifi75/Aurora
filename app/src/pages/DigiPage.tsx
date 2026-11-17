@@ -60,6 +60,7 @@ import { createLatestSequencer, restartBox } from '../lib/macroRestart';
 import { TxMenu } from '../components/digi/TxMenu';
 import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
+import { logBand, saveErrorText } from '../lib/logSaveError';
 import { effectiveMacros, macroNameForKey, macroNeeds, runMacro, type Macro, type MacroAction, type MacroContext, type PrevQso } from '../lib/macroLang';
 import { checkOnRx, macroState, mark, runCommand, sendCat, type MacroDeps } from '../lib/macroRuntime';
 import { planMacro, splitAutoCq } from '../lib/macroPlan';
@@ -295,6 +296,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // i dati che non cambiano da un QSO all'altro (nome, QTH, RST): gli stessi di Impostazioni › Stazione › Dati personali
   const [saved, setSavedField] = usePersonal();
   const [startAt, setStartAt] = useState<Date | null>(null);
+  // la banda scelta a mano con i pulsanti delle bande: serve a registrare il QSO quando la radio non da la frequenza (niente CAT)
+  const [manualBand, setManualBand] = useState('');
+  // il motivo per cui l'ultimo salvataggio e' stato rifiutato, col nominativo a cui si riferisce (sparisce se il nominativo cambia)
+  const [saveError, setSaveError] = useState<{ msg: string; call: string } | null>(null);
   const [views, setViews] = useState<Views>(() => ({ ...DEFAULT_VIEWS, ...readJson<Partial<Views>>(VIEWS_KEY, {}) }));
   const [scanProps, setScanProps] = useState<ScanProps>(() => readScan(browserStorage()));
   // la scansione si regola anche dalle Impostazioni (finestra a parte): qui si segue la modifica
@@ -536,8 +541,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   }, []);
 
   // l'ultimo stato, per i comandi dei tasti, la scansione e il CQ automatico (che non devono usare valori vecchi)
-  const live = useRef({ snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown });
-  live.current = { snap, tx, qso, saved, startAt, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown };
+  const live = useRef({ snap, tx, qso, saved, startAt, manualBand, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown });
+  live.current = { snap, tx, qso, saved, startAt, manualBand, status, macros, scanProps, rxHz, serial: qsoSerial, inContest, views, rotorShown };
   // contest dei modi testuali: il numero o il dominio ricevuti dopo il nominativo del QSO vanno da soli nel numero ricevuto, se e' vuoto
   useEffect(() => {
     const c = textContest;
@@ -1099,6 +1104,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     });
   }, []);
 
+  // cambiando nominativo l'avviso del salvataggio rifiutato non vale piu'
+  useEffect(() => {
+    if (saveError && qso.call.trim().toUpperCase() !== saveError.call) setSaveError(null);
+  }, [qso.call, saveError]);
+  // con la frequenza della radio nota la banda scelta a mano non serve piu' (e non deve restare per quando il CAT si perde)
+  const dialKnown = (status?.dial_hz ?? 0) > 0;
+  useEffect(() => {
+    if (dialKnown) setManualBand('');
+  }, [dialKnown]);
   const saveQso = () => saveQsoThen();
   /** Registra il QSO; `after` gira solo a QSO salvato (la vista del contest SSB azzera i campi). */
   const saveQsoThen = (after?: () => void, failed?: () => void) => {
@@ -1108,6 +1122,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       toast(t('digi.run.noCall'), 'error');
       return;
     }
+    setSaveError(null);
     const dial = l.status?.dial_hz ?? 0;
     const at = l.startAt ?? new Date();
     const sect = sentSectionRef.current;
@@ -1120,7 +1135,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       call,
       date: at.toISOString().slice(0, 10),
       time: at.toISOString().slice(11, 16),
-      band: dial > 0 ? (bandOf(dial) ?? '') : '',
+      band: logBand(dial, l.manualBand),
       // la frequenza vera del segnale (radio + tono di ricezione, in USB), non solo la radio
       freq_hz: dial > 0 ? dial + Math.round(l.rxHz) : 0,
       mode: MODE_NAMES[l.snap.settings.mode],
@@ -1139,6 +1154,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         if (l.inContest) void client.invalidateQueries({ queryKey: ['contest'] });
         else setSerialState((n) => writeSerial(browserStorage(), n + 1));
         setQso((q) => ({ ...q, nrs: '', nrr: '', extra: '' }));
+        setSaveError(null);
         toast(t('digi.run.saved', { call }), 'ok');
         void client.invalidateQueries({ queryKey: ['log-qsos'] });
         // il log di lato (Log4OM/Aurora) e la vista SSB lo rileggono subito, non dopo 10 s
@@ -1146,8 +1162,11 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         void client.invalidateQueries({ queryKey: [...TEXT_CONTEST_SCORE_KEY] });
         after?.();
       },
-      () => {
-        toast(t('digi.tx.error'), 'error');
+      (e: unknown) => {
+        // il motivo resta in vista accanto al nominativo (barra del log o riga del contest), oltre al messaggio che passa
+        const msg = saveErrorText(e, t);
+        setSaveError({ msg, call });
+        toast(msg, 'error');
         failed?.();
       },
     );
@@ -1908,6 +1927,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       onQso={(patch) => setQso({ ...qso, ...patch })}
       onRst={(patch) => setSavedField(patch)}
       onSave={saveQso}
+      saveError={saveError?.msg ?? null}
+      onDismissSaveError={() => setSaveError(null)}
       serial={qsoSerial}
       onSerial={setSerial}
       contestOn={inContest || textContest !== null}
@@ -2009,7 +2030,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
                 aria-pressed={!!(status && status.dial_hz > 0 && bandOf(status.dial_hz) === row.band)}
                 disabled={sending}
                 title={`${row.band} · ${(row.hz / 1e6).toFixed(3).replace('.', ',')} MHz`}
-                onClick={() => void postFrequency(row.hz).then(onChanged, onChanged)}
+                onClick={() => {
+                  setManualBand(row.band);
+                  void postFrequency(row.hz).then(onChanged, onChanged);
+                }}
               >
                 <b>{row.band.replace(/m$/, '')}</b>
                 <small>m</small>
@@ -2026,7 +2050,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             mode={s.mode.toUpperCase()}
             rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
             locked={sending}
-            onPick={(hz) => void postFrequency(hz).then(onChanged, onChanged)}
+            onPick={(hz) => {
+              setManualBand(bandOf(hz) ?? '');
+              void postFrequency(hz).then(onChanged, onChanged);
+            }}
           />
         </div>
       )}
@@ -2064,7 +2091,9 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             setStartAt(null);
             setSavedField({ rsts: '59', rstr: '59' });
           }}
-          band={status && status.dial_hz > 0 ? (bandOf(status.dial_hz) ?? '') : ''}
+          band={logBand(status?.dial_hz ?? 0, manualBand)}
+          saveError={saveError?.msg ?? null}
+          onDismissSaveError={() => setSaveError(null)}
           modeName={MODE_NAMES[s.mode]}
           contestName={textContest ? textContest.contest.name : null}
           score={textScore}

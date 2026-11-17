@@ -24,9 +24,10 @@ const GENERIC_LABEL = /Sezione \/ stato \/ club|Section \/ state \/ club/;
 const base = { doppio: false, ammesso: true, motivo: null, punti: 1, nuovi: [] as string[] };
 let registered: string[] = [];
 
-function Harness({ contestName = 'UBA CW CONTEST' }: { contestName?: string }) {
+function Harness({ contestName = 'UBA CW CONTEST', band = '10m', failed = '' }: { contestName?: string; band?: string; failed?: string }) {
   const [qso, setQso] = useState<Qso>({ call: '', name: '', qth: '', wwloc: '', notes: '' });
   const [client] = useState(() => new QueryClient());
+  const [saveError, setSaveError] = useState<string | null>(null);
   return (
     <QueryClientProvider client={client}>
       <SsbContestView
@@ -45,9 +46,12 @@ function Harness({ contestName = 'UBA CW CONTEST' }: { contestName?: string }) {
         onRst={() => undefined}
         onRegister={() => {
           registered.push(`${qso.call}|${composeReceived(qso.nrr, qso.extra)}`);
+          if (failed !== '') setSaveError(failed);
           setQso({ call: '', name: '', qth: '', wwloc: '', notes: '' });
         }}
-        band="10m"
+        band={band}
+        saveError={saveError}
+        onDismissSaveError={() => setSaveError(null)}
         modeName="CW"
         contestName={contestName}
         score={undefined}
@@ -137,5 +141,26 @@ describe('riga di inserimento: terzo elemento dello scambio', () => {
     write(nrr, '012');
     fireEvent.keyDown(nrr, { key: 'Enter' });
     expect(registered).toEqual(['SV1BJW|012']);
+  });
+});
+
+describe('riga di inserimento: salvataggio rifiutato e banda in uso', () => {
+  it('mostra la banda con cui si registra, e un trattino se non è nota', () => {
+    const { unmount } = render(<Harness band="10m" />);
+    expect(screen.getByText(/Banda: 10 m|Band: 10 m/)).toBeTruthy();
+    unmount();
+    render(<Harness band="" />);
+    expect(screen.getByText(/Banda: \u2014|Band: \u2014/)).toBeTruthy();
+  });
+
+  it('dopo un salvataggio rifiutato l’avviso resta in vista (ruolo alert) e Esc lo toglie', async () => {
+    render(<Harness failed="QSO non salvato: la banda non e' nota" band="" />);
+    const call = screen.getByLabelText(/Nominativo|Callsign/i);
+    write(call, 'IU3ABC');
+    // Invio nell'ultimo campo (lo scambio ricevuto) registra
+    fireEvent.keyDown(screen.getByLabelText(/Seriale ric|Serial rcvd/i), { key: 'Enter' });
+    expect((await screen.findByRole('alert')).textContent).toContain('QSO non salvato');
+    fireEvent.keyDown(screen.getByLabelText(/Nominativo|Callsign/i), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 });

@@ -9,6 +9,7 @@ import { getDxcc, getLog4om, getLogQsos, type Log4omQso } from '../../api/client
 import { autoExchange, callMultipliers, contestSuggestions, previousQsos, HF_BANDS } from '../../lib/contestEntry';
 import { qsoTimeMs } from '../../lib/logWindow';
 import { EXTRA_MAX, cleanExtra, extraLabelKey } from '../../lib/contestSection';
+import { SaveFailAlert } from './SaveFailAlert';
 import '../../styles/digi-ssb-contest.css';
 
 interface Props {
@@ -34,7 +35,11 @@ interface Props {
   onRst(patch: { rsts?: string; rstr?: string }): void;
   /** Registra il QSO (e azzera i campi, RST a 59). */
   onRegister(): void;
+  /** La banda con cui si registra (dalla radio o scelta a mano; vuota = sconosciuta). */
   band: string;
+  /** Perche' l'ultimo salvataggio e' stato rifiutato: l'avviso resta finche' non si cambia nominativo, si salva o si preme Esc. */
+  saveError?: string | null;
+  onDismissSaveError?(): void;
   modeName: string;
   /** Il contest attivo (`null` = nessuno: la vista e' un log normale, senza Nr, punteggio e moltiplicatori). */
   contestName: string | null;
@@ -145,7 +150,7 @@ function Mults({ s, pending, t }: { s: TextContestScore; pending: Set<string>; t
  * Il contest in SSB: tre colonne a tutta altezza (Log, inserimento del QSO con punteggio e moltiplicatori, DX Cluster) al posto delle
  * finestre RX/TX, della cascata e della barra dei modi digitali.
  */
-export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegister, qsoNr, contest, inSet, noBand, noMode, windowNotice, onEditWindow, band, modeName, contestName, score, showLog, log, cluster, rotor }: Props) {
+export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegister, qsoNr, contest, inSet, noBand, noMode, windowNotice, onEditWindow, band, saveError = null, onDismissSaveError, modeName, contestName, score, showLog, log, cluster, rotor }: Props) {
   const t = useT();
   const contestOn = contestName !== null;
   const callRef = useRef<HTMLInputElement>(null);
@@ -303,6 +308,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
     callRef.current?.focus();
   };
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key === 'Escape' && saveError) onDismissSaveError?.();
     if (e.key !== 'Enter') return;
     e.preventDefault();
     const fields = Array.from(form.current?.querySelectorAll<HTMLInputElement>('input:not([readonly]):not([data-skip])') ?? []);
@@ -364,6 +370,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
               {t('ssbc.enter')}
               {contestName ? <b className="ssbc-contest-name"> · {contestName}</b> : null} <span className="ssbc-hint">· {t('ssbc.enterHint')}</span>
             </h3>
+            <p className={`ssbc-bandnow${band === '' ? ' ssbc-bandnow--none' : ''}`}>{t('digi.log.bandNow', { band: band === '' ? '—' : band.replace(/^(\d+)m$/, '$1 m') })}</p>
             {contestOn && windowNotice ? (
               <p className="ssbc-notice" role="status">
                 {t('ssbc.windowOff')}{' '}
@@ -401,7 +408,7 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
               </p>
             ) : null}
             <div className="ssbc-alertbox" aria-live="polite">
-              {alert}
+              {saveError ? <SaveFailAlert msg={saveError} /> : alert}
             </div>
             {callMults.length > 0 ? (
               <div className="ssbc-callmult" aria-label={t('ssbc.callMult', { call: typed })}>

@@ -191,3 +191,8 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 
 /* terzo elemento dello scambio (sezione, club, stato): una casella piu' stretta del numero */
 .ssbc-field--extra { flex: 1 1 8ch; min-width: 100px; }
+
+/* banda con cui si registra, e avviso del salvataggio rifiutato nella barra del log classica */
+.ssbc-bandnow { margin: 0 0 4px; font-size: 0.85rem; font-weight: 700; color: var(--text); }
+.ssbc-bandnow--none { color: var(--danger); }
+.ssbc-alert--compact { font-size: 0.85rem; font-weight: 700; margin: 4px 6px; }
