@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- PTT acceso e spento a fine QSO (#71): quando l'ultimo messaggio del DX (il suo 73) viene decodificato dopo l'inizio del periodo e il QSO risulta finito, la trasmissione gia' partita (di solito l'RR73) si lascia finire, invece di fermarla dopo un secondo; non ne parte nessun'altra. Come WSJT-X: la fine automatica del QSO (`cease_auto_Tx_after_QSO`, `0x14025d290` in `wsjtx.exe`) spegne solo l'invio automatico con `auto_tx_mode(false)`; l'interruzione immediata (`on_stopTxButton_clicked` → `requestTxStop` → `stopTx`) e' solo di «Halt Tx». Halt e le altre cause (watchdog, DX che risponde a un altro) fermano subito come prima.
+- Pacchetto di assistenza: dell'interfaccia si dicono anche i valori numerici del layout salvato (larghezza e proporzione delle finestre, colonne), le misure dei riquadri della pagina aperta e l'ultima pagina di lavoro (il pacchetto parte spesso dalle Impostazioni).
+
 ## 0.11.288 - 2026-11-17
 
 - Icom piu' vecchie con Hamlib (IC-756PRO): la radio non restava sul VFO A dopo il riavvio perche' Aurora, con «Leggi anche gli altri dati» acceso, leggeva il VFO B con `get_vfo_info` e Hamlib, che con queste radio non sa dire su quale VFO sta (`v`: funzione non disponibile), passava al VFO B e non tornava indietro (la prima lettura, 183 ms di traffico sulla seriale, era l'unico comando di Aurora che toccava il VFO: lo ha mostrato la traccia del pacchetto di assistenza). Ora il VFO B non si legge piu' con `get_vfo_info` quando la radio non dice su che VFO e'; resta la frequenza dello split dove c'e'.

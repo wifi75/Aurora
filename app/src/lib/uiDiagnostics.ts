@@ -51,9 +51,56 @@ export function recentErrors(): readonly PageError[] {
   return errors;
 }
 
+/** L'ultima pagina aperta che non fosse le Impostazioni (il pacchetto parte spesso da li', ma il guaio e' nella pagina di prima). */
+let lastWorkPage = '';
+
+/** Le scelte di layout salvate nel browser di cui si dice anche il valore: sono numeri e nomi di colonne, mai nominativi o locatori. */
+const LAYOUT_KEYS = /^(aurora\.digi\.(winw|rxfrac|wfh2|macrow|macrorows|radarw|bandh|logw|ssbcols|tab|viste)(\.|$)|aurora-layout$|aurora-finestra-rx$|aurora\.contest\.layout\.|aurora\.rxw\.cols$)/;
+
+function savedLayout(): Record<string, string> {
+  const out: Record<string, string> = {};
+  try {
+    const store = window.localStorage;
+    for (let i = 0; i < store.length && Object.keys(out).length < 60; i++) {
+      const key = store.key(i);
+      if (key !== null && LAYOUT_KEYS.test(key)) out[key] = (store.getItem(key) ?? '').slice(0, 300);
+    }
+  } catch {
+    // senza archivio del browser
+  }
+  return out;
+}
+
+/** Misure (larghezza e altezza, in px) dei riquadri principali della pagina aperta: dicono se uno e' stretto o schiacciato. */
+const PANELS = ['.digi-windows', '.digi-rxwin', '.digi-txwrap', '.digi-split', '.digi-log', '.digi-macros', '.decode-list', '.app-shell', '.ssbc', '.ssbc-cols', '.ctw-panel'];
+
+function panelSizes(): Record<string, [number, number, number]> {
+  const out: Record<string, [number, number, number]> = {};
+  try {
+    for (const sel of PANELS) {
+      const els = document.querySelectorAll(sel);
+      const first = els.item(0);
+      if (!first) continue;
+      const r = first.getBoundingClientRect();
+      // larghezza, altezza e quanti ce ne sono con quel nome
+      out[sel] = [Math.round(r.width), Math.round(r.height), els.length];
+    }
+  } catch {
+    // le misure sono un di piu'
+  }
+  return out;
+}
+
 /** Il nome della pagina aperta, senza i parametri (potrebbero contenere codici). */
 function route(): string {
   return (window.location.hash || '#/').split('?')[0] ?? '#/';
+}
+
+function noteWorkPage(): void {
+  const here = route();
+  if (!here.startsWith('#/impostazioni') && here !== '#/') lastWorkPage = here;
+  // la pagina di partenza (#/) e' l'FT8: si ricorda quando e' l'ultima in cui si e' stati
+  else if (here === '#/') lastWorkPage = here;
 }
 
 function storageInfo(): { keys: number; bytes: number; aurora: Record<string, number> } {
@@ -91,6 +138,7 @@ function gpu(): string | null {
 
 /** Cio' che la pagina sa del proprio ambiente. */
 export function collectSnapshot(): Record<string, unknown> {
+  noteWorkPage();
   const nav = navigator as Navigator & { deviceMemory?: number };
   const doc = document.documentElement;
   return {
@@ -99,6 +147,9 @@ export function collectSnapshot(): Record<string, unknown> {
     versione_interfaccia: typeof __AURORA_UI_VERSION__ === 'string' ? __AURORA_UI_VERSION__ : '?',
     programma_di_aurora: '__TAURI_INTERNALS__' in window || '__TAURI__' in window,
     pagina: route(),
+    ultima_pagina_di_lavoro: lastWorkPage || route(),
+    riquadri_della_pagina: panelSizes(),
+    layout_salvato: savedLayout(),
     lingua: doc.lang,
     tema: doc.dataset.theme ?? null,
     finestra: {
@@ -186,6 +237,7 @@ export function installUiDiagnostics(): void {
     resizeTimer = window.setTimeout(() => void sendUiSnapshot(), 8000);
   });
   window.addEventListener('hashchange', () => {
+    noteWorkPage();
     // al massimo una volta al minuto per i cambi di pagina
     if (Date.now() - lastSent > 60_000) void sendUiSnapshot();
   });

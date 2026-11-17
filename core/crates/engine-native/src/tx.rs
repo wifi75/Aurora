@@ -321,6 +321,8 @@ pub struct TxDriver<P: TxPort + ?Sized> {
     /// L'ultima trasmissione consegnata alla catena (testo inviato, se e' testo libero, periodo, inizio): serve a rimodularla a un'altra frequenza
     /// quando la barra Tx si sposta durante la trasmissione (JTDX con `TxQSYAllowed`: il tono cambia subito).
     on_air_tx: Option<(String, bool, Parity, u64)>,
+    /// L'ora (secondi Unix) a cui e' finita la decodifica che `after_slot` sta elaborando: dice se la trasmissione del periodo era gia' cominciata.
+    decode_now_s: f64,
     /// Il prossimo `plan` sostituisce il messaggio gia' in onda anche se la sequenza non lo segna come ritrasmissione (doppio clic su un'altra stazione mentre si trasmette).
     swap_on_air: bool,
     /// Wait and Call scattato: fino a quando (secondi UTC) si continua a chiamare il DX se non risponde.
@@ -390,7 +392,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let auto_tx = controls.switch_on("auto_tx");
         let rrr_user = opts.use_rrr;
         let rx_published = controls.rx_df.load(Ordering::Relaxed);
-        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), cur_band: String::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), not_foxes: VecDeque::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None, contest_limits: None, contest_warned: None };
+        let mut driver = TxDriver { tx_qsy_allowed: controls.sequence().is_none_or(|s| s.tx_qsy_allowed), seq, opts, port, controls, recent: VecDeque::new(), queue: VecDeque::new(), queue_gate: None, my_call: call.to_string(), rrr_user, logged: Vec::new(), cur_band: String::new(), free_text: None, prepared: None, hashes: CallHashes::default(), mode, last_planned: None, auto_tx, cq_by_user: false, notes: Vec::new(), rx_published, free_tx: None, heard: VecDeque::new(), free_for: None, free_moved_at: 0, clear_dx_due: None, hound_r_count: 0, hound_calling_hz: None, last_dial_hz: 0, on_air_tx: None, decode_now_s: 0.0, swap_on_air: false, wait_call_until: None, exchanges: VecDeque::new(), hound_manual: None, hound_auto_for: None, foxes: Vec::new(), not_foxes: VecDeque::new(), fox: crate::fox::Fox::new(call, grid), fox_logged: 0, fox_last_tx: Vec::new(), fox_log: VecDeque::new(), fox_guard: None, contest_limits: None, contest_warned: None };
         driver.seq.set_rx_freq(rx_published);
         if let Some(setup) = driver.controls.contest() {
             driver.seq.set_contest(Some(contest_seq(&setup)));
@@ -477,6 +479,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     }
 
     /// Ferma la catena e dimentica le trasmissioni annunciate e non ancora partite.
+    /// La fine automatica del QSO (`QsoFinished`, `SingleQso`) e' arrivata dopo l'inizio del periodo in cui la trasmissione era gia' pianificata?
+    /// Capita quando l'ultimo messaggio del DX (il suo 73) e' decodificato un secondo dopo l'inizio del periodo nuovo: JTDX lo ha gia' decodificato
+    /// prima (passate anticipate), Aurora lo decodifica a fine periodo. In quel caso la trasmissione in onda si lascia finire.
+    fn let_started_tx_finish(&self, reason: StopReason) -> bool {
+        matches!(reason, StopReason::QsoFinished | StopReason::SingleQso)
+            && self.on_air_tx.as_ref().is_some_and(|(_, _, _, start_ms)| (self.decode_now_s * 1000.0) as u64 >= *start_ms)
+    }
+
     fn halt_tx(&mut self) {
         self.port.halt();
         self.notes.clear();
@@ -1216,6 +1226,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     /// se serve, prepara (o sostituisce) la trasmissione del periodo che comincia ora. Restituisce i QSO conclusi e le righe di registro.
     pub fn after_slot(&mut self, slot_start_ms: u64, decoded: &[(String, i32, u32)], now_s: f64, dial_hz: u64, band: &str) -> (Vec<QsoRecord>, Vec<String>) {
         let mut log = Vec::new();
+        self.decode_now_s = now_s;
         self.last_dial_hz = dial_hz;
         self.note_band(band);
         // WSPR e FST4W: niente QSO, i messaggi ricevuti non vanno alla sequenza (in WSJT-X i controlli del QSO spariscono, `WSPR_config`)
@@ -1351,7 +1362,14 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
                 QEvent::Stopped(reason) => {
                     log.push(format!("trasmissione automatica ferma: {reason:?}"));
                     if !matches!(reason, StopReason::Halt) {
-                        self.halt_tx();
+                        if self.let_started_tx_finish(reason) {
+                            // l'ultimo messaggio del DX e' stato decodificato dopo l'inizio del periodo e la nostra trasmissione era gia' partita: si
+                            // lascia finire (nessun'altra partira': Abilita Tx e' spento). Fermarla subito faceva scattare il PTT e lo spegneva
+                            // dopo un secondo senza trasmettere niente (segnalazione #71, 2026-11-17)
+                            log.push("la trasmissione di questo periodo era gia' partita: si lascia finire".to_string());
+                        } else {
+                            self.halt_tx();
+                        }
                         self.last_planned = None;
                     }
                 }
@@ -3311,6 +3329,28 @@ mod tests {
     }
 
     /// Con la registrazione automatica (di fabbrica, come il `JTDX.ini` del proprietario) a fine QSO la trasmissione si ferma (`autoStopTx`).
+    #[test]
+    fn a_transmission_that_already_started_is_let_finish_when_the_qso_ends_by_a_late_decode() {
+        let mut b = Bench::new();
+        let start_ms = 1_800_000_000_000u64;
+        b.d.on_air_tx = Some(("DC7MA CT1BXX RR73".to_string(), false, Parity::Even, start_ms));
+        // il 73 del DX e' decodificato 0,75 s dopo l'inizio del periodo: la trasmissione era gia' partita
+        b.d.decode_now_s = start_ms as f64 / 1000.0 + 0.75;
+        assert!(b.d.let_started_tx_finish(StopReason::QsoFinished));
+        assert!(b.d.let_started_tx_finish(StopReason::SingleQso));
+        // l'operatore (Halt) e le altre cause fermano subito come prima
+        assert!(!b.d.let_started_tx_finish(StopReason::Halt));
+        assert!(!b.d.let_started_tx_finish(StopReason::Watchdog));
+        assert!(!b.d.let_started_tx_finish(StopReason::ReplyOther));
+        // prima dell'inizio del periodo la trasmissione e' solo pianificata: si annulla
+        b.d.decode_now_s = start_ms as f64 / 1000.0 - 0.4;
+        assert!(!b.d.let_started_tx_finish(StopReason::QsoFinished));
+        // senza trasmissione in onda non c'e' niente da lasciar finire
+        b.d.decode_now_s = start_ms as f64 / 1000.0 + 0.75;
+        b.d.on_air_tx = None;
+        assert!(!b.d.let_started_tx_finish(StopReason::QsoFinished));
+    }
+
     #[test]
     fn with_autolog_the_transmission_stops_at_the_end_of_the_qso() {
         let mut b = Bench::new();

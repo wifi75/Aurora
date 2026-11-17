@@ -22,6 +22,26 @@ describe('uiDiagnostics', () => {
     expect(snapshotText()).not.toContain('IU3ABC');
   });
 
+  it('says the value of the layout choices (numbers) but never the content of the other saved values, and remembers the last work page', () => {
+    window.localStorage.setItem('aurora.digi.winw.cw', '1100');
+    window.localStorage.setItem('aurora.digi.rxfrac.cw', '0.5');
+    window.localStorage.setItem('aurora.digi.campi', 'IU3ABC IN80');
+    // la pagina di lavoro si ricorda a ogni raccolta (e a ogni cambio di pagina, quando la raccolta e' installata)
+    window.location.hash = '#/digi/cw';
+    collectSnapshot();
+    window.location.hash = '#/impostazioni';
+    const snap = collectSnapshot() as Record<string, any>;
+    expect(snap.layout_salvato['aurora.digi.winw.cw']).toBe('1100');
+    expect(snap.layout_salvato['aurora.digi.rxfrac.cw']).toBe('0.5');
+    expect(snap.layout_salvato['aurora.digi.campi']).toBeUndefined();
+    expect(snapshotText()).not.toContain('IU3ABC');
+    // il pacchetto parte dalle Impostazioni, ma si sa in che pagina si lavorava
+    expect(snap.pagina).toBe('#/impostazioni');
+    expect(snap.ultima_pagina_di_lavoro).toBe('#/digi/cw');
+    expect(typeof snap.riquadri_della_pagina).toBe('object');
+    window.location.hash = '';
+  });
+
   it('keeps the route without its parameters (they may carry codes)', () => {
     window.location.hash = '#/impostazioni?code=ABC123';
     expect((collectSnapshot() as Record<string, unknown>).pagina).toBe('#/impostazioni');
