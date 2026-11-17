@@ -77,11 +77,45 @@ export function panView(view: MapView, dx: number, dy: number, w: number, h: num
   return clampView({ zoom: view.zoom, centerLat: view.centerLat + dy / ky, centerLon: view.centerLon - dx / kx });
 }
 
-/** Interpolazione fra due viste: zoom geometrico (la velocita' di ingrandimento resta uniforme), latitudine lineare, longitudine sul cammino piu' corto. */
+/**
+ * Interpolazione fra due viste con parametro `t` da 0 a 1. Lo zoom e' interpolato in scala logaritmica (la velocita' di ingrandimento resta uniforme
+ * anche nei salti grandi: da 1 a 8 a meta' vale circa 2,83). Il centro (latitudine e longitudine, sul cammino piu' corto) usa un parametro corretto
+ * in funzione dello zoom (1/zoom lineare): il punto di arrivo si avvicina al centro dello schermo sempre nello stesso senso e non esce mai dal riquadro
+ * piu' di quanto non fosse all'inizio (con lo stesso `t` per zoom e centro, in un grande ingrandimento l'arrivo uscirebbe di scena).
+ * A zoom uguale il centro e' lineare in `t`.
+ */
 export function lerpView(a: MapView, b: MapView, t: number): MapView {
-  const zoom = Math.exp(Math.log(a.zoom) + (Math.log(b.zoom) - Math.log(a.zoom)) * t);
+  const la = Math.log(a.zoom);
+  const lb = Math.log(b.zoom);
+  const zoom = Math.exp(la + (lb - la) * t);
+  let u = t;
+  if (Math.abs(lb - la) > 1e-3) {
+    const ia = 1 / a.zoom;
+    const ib = 1 / b.zoom;
+    u = t <= 0 ? 0 : t >= 1 ? 1 : (1 / zoom - ia) / (ib - ia);
+  }
   const dLon = wrapLon(b.centerLon - a.centerLon);
-  return { zoom, centerLat: a.centerLat + (b.centerLat - a.centerLat) * t, centerLon: wrapLon(a.centerLon + dLon * t) };
+  return { zoom, centerLat: a.centerLat + (b.centerLat - a.centerLat) * u, centerLon: wrapLon(a.centerLon + dLon * u) };
+}
+
+/** Una tacca standard della rotella del mouse (pixel di `deltaY` in modalita' pixel) cambia lo zoom di circa il 12%. */
+export const WHEEL_NOTCH_PX = 100;
+export const WHEEL_NOTCH_ZOOM = 1.12;
+/** Pixel equivalenti di una riga e di una pagina quando il browser da' `deltaMode` 1 o 2 (una tacca = 3 righe). */
+const WHEEL_LINE_PX = WHEEL_NOTCH_PX / 3;
+const WHEEL_PAGE_PX = 400;
+/** Un solo evento non cambia lo zoom di piu' di circa 3 tacche (mouse con accelerazione). */
+const WHEEL_MAX_PX = 3 * WHEEL_NOTCH_PX;
+const WHEEL_K = Math.log(WHEEL_NOTCH_ZOOM) / WHEEL_NOTCH_PX;
+
+/**
+ * Il fattore di zoom di un evento della rotella: `exp(-deltaY * k)`, quindi continuo e reversibile. Vale per la rotella a tacche (deltaY 100 = -12%, verso il basso
+ * rimpicciolisce) e per il touchpad (deltaMode 0 con deltaY piccoli e continui); `deltaMode` 1 (righe) e 2 (pagine) si riportano ai pixel.
+ */
+export function wheelZoomFactor(deltaY: number, deltaMode = 0): number {
+  if (!Number.isFinite(deltaY) || deltaY === 0) return 1;
+  const px = deltaMode === 1 ? deltaY * WHEEL_LINE_PX : deltaMode === 2 ? deltaY * WHEEL_PAGE_PX : deltaY;
+  return Math.exp(-clampNum(px, -WHEEL_MAX_PX, WHEEL_MAX_PX) * WHEEL_K);
 }
 
 /** Due viste cosi' vicine da essere indistinguibili sullo schermo. */

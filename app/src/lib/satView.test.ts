@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FULL_VIEW, ZOOM_MAX, autoView, clampView, fitBox, fitView, footprintPoints, lerpView, panView, projectView, projectViewRaw, unprojectView, viewsClose, wrapLon, zoomAt, type MapView } from './satView';
+import { FULL_VIEW, ZOOM_MAX, autoView, clampView, fitBox, fitView, footprintPoints, lerpView, panView, projectView, projectViewRaw, unprojectView, viewsClose, wheelZoomFactor, wrapLon, zoomAt, type MapView } from './satView';
 
 const W = 900;
 const H = 450;
@@ -277,5 +277,121 @@ describe('fitBox', () => {
       [46, 20],
     ];
     expect(fitView(pts)).toEqual(fitBox({ south: 40, north: 46, west: 10, spanLon: 10 }));
+  });
+});
+
+describe('lerpView logaritmico', () => {
+  const a: MapView = { zoom: 1, centerLat: 0, centerLon: 0 };
+  const b: MapView = { zoom: 8, centerLat: 40, centerLon: 120 };
+
+  it('a meta lo zoom da 1 a 8 vale circa 2,83 e non 4,5', () => {
+    const m = lerpView(a, b, 0.5);
+    expect(m.zoom).toBeCloseTo(Math.sqrt(8), 6);
+    expect(m.zoom).toBeCloseTo(2.83, 2);
+  });
+
+  it('il fattore di zoom per unita di t e costante', () => {
+    const z = (t: number) => lerpView(a, b, t).zoom;
+    expect(z(0.5) / z(0.25)).toBeCloseTo(z(0.75) / z(0.5), 6);
+  });
+
+  it('il centro arriva a destinazione e la longitudine prende il cammino piu corto', () => {
+    const e = lerpView(a, b, 1);
+    expect(e.centerLat).toBeCloseTo(40);
+    expect(e.centerLon).toBeCloseTo(120);
+    const w = lerpView({ zoom: 1, centerLat: 0, centerLon: 170 }, { zoom: 8, centerLat: 0, centerLon: -170 }, 0.3);
+    // da 170 a -170 si passa per 180 (20 gradi), mai per 0
+    expect(Math.abs(wrapLon(w.centerLon - 170))).toBeLessThan(20.001);
+    expect(Math.abs(w.centerLon)).toBeGreaterThan(169);
+  });
+
+  it('nell ingrandimento il punto di arrivo non esce dallo schermo piu di quanto non fosse all inizio e si avvicina al centro', () => {
+    const dest: MapView = { zoom: 8, centerLat: 30, centerLon: 160 };
+    const start: MapView = { zoom: 1, centerLat: 0, centerLon: 0 };
+    const off = (t: number) => {
+      const [x, y] = projectView(dest.centerLat, dest.centerLon, W, H, lerpView(start, dest, t));
+      return Math.hypot(x - W / 2, (y - H / 2) * 2);
+    };
+    let prev = off(0);
+    for (let i = 1; i <= 20; i++) {
+      const o = off(i / 20);
+      expect(o).toBeLessThanOrEqual(prev + 1e-6);
+      prev = o;
+    }
+    expect(off(1)).toBeCloseTo(0, 6);
+  });
+
+  it('a zoom uguale il centro e lineare in t', () => {
+    const m = lerpView({ zoom: 3, centerLat: 0, centerLon: 0 }, { zoom: 3, centerLat: 20, centerLon: 40 }, 0.25);
+    expect(m.centerLat).toBeCloseTo(5);
+    expect(m.centerLon).toBeCloseTo(10);
+  });
+});
+
+describe('zoomAt: punto fermo', () => {
+  it('tiene fermo il punto sotto il cursore in vari punti del canvas', () => {
+    const v: MapView = { zoom: 2.5, centerLat: 15, centerLon: -30 };
+    for (const [x, y] of [[0, 0], [W, H], [450, 225], [100, 400], [800, 30]] as const) {
+      for (const f of [1.12, 1 / 1.12, 1.6, 0.7]) {
+        const [lat, lon] = unprojectView(x, y, W, H, v);
+        const z = zoomAt(v, f, x, y, W, H);
+        const maxLat = 90 - 90 / z.zoom;
+        const [px, py] = projectView(lat, lon, W, H, z);
+        // la longitudine resta sempre ferma; la latitudine, salvo quando il limite del centro la sposta
+        expect(px).toBeCloseTo(x, 4);
+        if (Math.abs(z.centerLat) < maxLat - 1e-9) expect(py).toBeCloseTo(y, 4);
+      }
+    }
+  });
+
+  it('vicino ai bordi (poli) il clamp tiene la mappa dentro il canvas e la longitudine ferma', () => {
+    const v: MapView = { zoom: 2, centerLat: 44, centerLon: 170 };
+    // cursore in alto: zoomando indietro il centro vorrebbe salire oltre il limite
+    const [lat, lon] = unprojectView(300, 5, W, H, v);
+    const z = zoomAt(v, 0.6, 300, 5, W, H);
+    expect(z.zoom).toBeCloseTo(1.2, 6);
+    expect(z.centerLat).toBeLessThanOrEqual(90 - 90 / z.zoom + 1e-9);
+    expect(projectView(lat, lon, W, H, z)[0]).toBeCloseTo(300, 4);
+    // al limite dello zoom (8) il fattore non cambia nulla ma la vista resta valida
+    const m = zoomAt({ zoom: 8, centerLat: 80, centerLon: 179 }, 2, 450, 10, W, H);
+    expect(m.zoom).toBe(ZOOM_MAX);
+    expect(m.centerLat).toBeLessThanOrEqual(90 - 90 / 8 + 1e-9);
+    expect(m.centerLon).toBeGreaterThanOrEqual(-180);
+    expect(m.centerLon).toBeLessThan(180);
+  });
+
+  it('attraversa l antimeridiano senza saltare', () => {
+    const v: MapView = { zoom: 4, centerLat: 0, centerLon: 179 };
+    const [lat, lon] = unprojectView(700, 200, W, H, v);
+    const z = zoomAt(v, 1.5, 700, 200, W, H);
+    expect(projectView(lat, lon, W, H, z)[0]).toBeCloseTo(700, 4);
+  });
+});
+
+describe('wheelZoomFactor', () => {
+  it('una tacca standard (100) cambia lo zoom di circa il 12%', () => {
+    expect(wheelZoomFactor(-100)).toBeCloseTo(1.12, 6);
+    expect(wheelZoomFactor(100)).toBeCloseTo(1 / 1.12, 6);
+  });
+
+  it('e continuo e reversibile (touchpad con deltaY piccoli)', () => {
+    let f = 1;
+    for (let i = 0; i < 10; i++) f *= wheelZoomFactor(-10);
+    expect(f).toBeCloseTo(wheelZoomFactor(-100), 9);
+    expect(wheelZoomFactor(-7) * wheelZoomFactor(7)).toBeCloseTo(1, 12);
+    expect(wheelZoomFactor(-3)).toBeGreaterThan(1);
+    expect(wheelZoomFactor(-3)).toBeLessThan(1.01);
+  });
+
+  it('righe e pagine si riportano ai pixel: 3 righe = una tacca', () => {
+    expect(wheelZoomFactor(-3, 1)).toBeCloseTo(wheelZoomFactor(-100, 0), 6);
+    expect(wheelZoomFactor(-1, 2)).toBeGreaterThan(wheelZoomFactor(-1, 1));
+  });
+
+  it('zero, NaN e valori enormi', () => {
+    expect(wheelZoomFactor(0)).toBe(1);
+    expect(wheelZoomFactor(Number.NaN)).toBe(1);
+    // un solo evento vale al massimo circa 3 tacche
+    expect(wheelZoomFactor(-100000)).toBeCloseTo(Math.pow(1.12, 3), 6);
   });
 });

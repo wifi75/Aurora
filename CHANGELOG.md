@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti: la mappa si muove e si ingrandisce in modo fluido: il disegno non passa piu' dallo stato di React (un solo ridisegno per fotogramma, qualita' ridotta in movimento e rifinitura a riposo, solo la parte visibile della foto), rotella piu' pronta (circa 12% a tacca, punto sotto il cursore fermo), zoom logaritmico anche nelle animazioni, trascinamento senza ritardo; strumentazione dei tempi con `localStorage['aurora.sat.perf']='1'` o `window.__satMapPerf = true`.
 - Hamlib: se la radio non scrive il modo nel VFO di trasmissione ne' sa copiare A=B (`RPRT -1`, `-4`), Aurora lo ricorda per la sessione e non ritenta a ogni cambio di banda: una sola riga di informazione al posto degli avvisi «copia A=B non riuscita» nei rapporti; gli errori veri (porta, timeout) restano avvisi.
 - Installatore: se la cartella `hamlib` vecchia non si riesce a togliere dopo i 4 tentativi (antivirus che scansiona i file, PC lento) la si rinomina in `hamlib.vecchia` (poi `hamlib.vecchia2`...`9`), con un avviso nel registro, e l'installazione continua con la `hamlib` nuova pulita invece di fermarsi; le `hamlib.vecchia*` si tolgono a ogni installazione e nella disinstallazione; i file delle risorse che non si scrivono si riprovano fino a 3 volte con 2 s di pausa.
 
