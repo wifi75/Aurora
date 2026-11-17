@@ -1,0 +1,14 @@
+; ARRL International DX-CW Contest - regole del punteggio.
+; Sintassi della sezione [Score] di un file .contest (docs/contest-file.md), senza l'intestazione di sezione.
+; Commenti: righe che iniziano per «;» (il «#» NON e' un commento per il motore).
+; Spiegazioni lunghe in punteggio.md; chi e' ammesso (W/VE solo con DX e viceversa) sta in punteggio.rhai.
+;
+; bands: 160, 80, 40, 20, 15, 10 m, niente WARC (regola 2.1). Con lo script ammesso() la stessa lista e' ripetuta li', perche' lo script sostituisce bands=.
+; points: ogni QSO valido 3 punti, fra continenti diversi o no (regola 5.1).
+; mult, primo pezzo: stato o provincia dello scambio ricevuto, per banda, solo per le stazioni K e VE: lo contano i DX (5.2.3).
+; mult, secondo pezzo: entita' DXCC per banda, esclusi K e VE: la contano i W/VE (5.2.2). Hawaii (KH6) e Alaska (nel database dei
+;   paesi il prefisso e' KL, non KL7) sono entita' DXCC e non stati (5.2.3.1).
+; Una sola riga serve a tutte e due i punti di vista: per un W/VE i QSO sono con DX (vale il paese), per un DX sono con K e VE (vale lo stato).
+bands=160,80,40,20,15,10
+points=any=3
+mult=exch/band/if:dxcc:K,VE; dxcc/band/except:K,VE

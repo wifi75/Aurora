@@ -1,0 +1,161 @@
+# ARRL International DX-CW Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-17 sul PDF «ARRL International DX Contest Rules, Version 2.0» (categorie 04 gen 2024).
+
+[contest]
+id = "arrl-dx-cw"
+nome = "ARRL International DX-CW Contest"
+alias = ["ARRL International DX Contest"]   # nome interno del vecchio file CW: la cartella lo sostituisce
+organizzatore = "ARRL"
+sito = "https://www.arrl.org/arrl-dx"
+regolamento_url = "https://contests.arrl.org/ContestRules/DX-Rules.pdf"
+cabrillo_contest = "ARRL-DX-CW"
+note = "Solo CW, sei bande da 160 a 10 metri (niente WARC). I W/VE lavorano solo i DX e i DX solo i W/VE."
+
+[edizione]
+# La regola delle date come dati: terzo fine settimana pieno di febbraio, da sabato 00:00 a domenica 23:59 UTC (regolamento, «Contest Period»).
+mese = 2
+fine_settimana_pieno = 3
+giorno_inizio = "sabato"
+ora_inizio = "00:00"              # UTC
+durata_ore = 48
+invio_log_giorni = 7              # entro le 23:59 UTC del settimo giorno dopo la fine (LGDL, regola 8.1)
+# Nessun limite di ore operabili (regola 1.1): niente ore_massime.
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-02-21T00:00:00Z"
+fine = "2026-02-22T23:59:59Z"
+fonte = "calendario ARRL 2025-2026 (https://www.arrl.org/files/file/Contest%20Calendar/ARRL%20Contests%20Calendar%202025-2026.pdf), voce «21-22 International DX - CW»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-20T00:00:00Z"
+fine = "2027-02-21T23:59:59Z"
+fonte = "calendario ARRL 2026-2027 (https://www.arrl.org/contest-calendar), voce «20-21 International DX - CW»"
+confermata = true
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]   # nel motore: l'elenco sta in punteggio.rhai (ammesso) perche' lo script sostituisce bands=
+
+[modi]
+ammessi = ["cw"]                # i QSO contano solo in CW (regola 2.4)
+
+# Scambio. W/VE mandano rapporto + stato o provincia; i DX (compresi KH6, KL7, CY9, CY0) rapporto + potenza (regole 4.2.1, 4.2.2).
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "dxcc:K,VE"              # stazioni W e VE
+elenco = "dati/stati.dom"
+nota = "DC manda DC. Per il Canada ci sono sia NF sia LB."
+
+[[scambio.ricevuto]]
+nome = "potenza"
+etichetta_it = "Potenza"
+etichetta_en = "Power"
+tipo = "testo"
+quando = "not_dxcc:K,VE"          # stazioni DX (anche KH6, KL7, CY9, CY0)
+valori = ["KW"]
+nota = "Numero (watt) o abbreviazione; gli esempi del regolamento sono 500 e KW. Il motore accetta qualsiasi testo."
+
+# Scambio inviato: dipende dal paese della stazione propria.
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "my_dxcc:K,VE"
+elenco = "dati/stati.dom"
+
+[[scambio.inviato]]
+nome = "potenza"
+etichetta_it = "Potenza"
+etichetta_en = "Power"
+tipo = "testo"
+quando = "not_my_dxcc:K,VE"
+nota = "Per esempio 100 o KW."
+
+[doppi]
+per = "banda"                     # una volta per banda (regola 2.2); i doppi si tolgono senza penalita' (LGCK.1)
+nota = "In fonia USB e LSB sono lo stesso modo: la chiave non guarda il modo."
+
+[categorie]
+operatore = ["SO", "SOU", "SOSB", "SOUSB", "MS", "M2", "MM"]   # Single Operator, Unlimited (con spotting), Single Band, Multi-Operator
+potenza = ["QRP", "LOW", "HIGH"]  # 5 W, 100 W, 1500 W o il limite della licenza
+sovrapposizioni = ["Limited Antennas"]
+altre = ["Checklog"]
+
+[categorie.ms]
+potenza = ["LOW", "HIGH"]         # MS: niente QRP; al massimo 10 cambi di banda per ora d'orologio (6.1)
+
+[categorie.m2]
+potenza = ["HIGH"]                # due trasmettitori, 6 cambi di banda per ora per ciascuno; il log indica il trasmettitore (ELOG.5)
+
+[categorie.mm]
+potenza = ["HIGH"]                # un segnale per banda, nessun limite di cambi
+
+[cabrillo]
+# Intestazione del log Cabrillo 3.0. Il PDF non scrive i valori: CONTEST e CATEGORY-* sono quelli della specifica Cabrillo, da ricontrollare sulla pagina ARRL.
+contest = "ARRL-DX-CW"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION"]
+operators_obbligatorio_se = "MULTI-OP"   # ELOG.4
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["QRP", "LOW", "HIGH"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+invio = "solo online: https://contest-log-submission.arrl.org (i moduli cartacei del regolamento sono per chi non puo' inviare il log)"
+
+# Schede (pannelli) che si aprono con il contest. Catalogo dei tipi: docs/contest-formato.md, sezione «Schede».
+# «quando» (facoltativo): la scheda vale solo se la condizione sulla stazione propria e' vera.
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC entities by band" }
+ordine = 1
+quando = "my_dxcc:K,VE"           # i W/VE contano le entita' DXCC (5.2.2)
+moltiplicatore = "dxcc"
+escludi = ["K", "VE"]
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati e province per banda", en = "States and provinces by band" }
+ordine = 2
+quando = "not_my_dxcc:K,VE"       # i DX contano stati USA, DC, province e territori canadesi (5.2.3)
+moltiplicatore = "stato"
+dominio = "dati/stati.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

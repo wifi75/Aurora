@@ -1,6 +1,6 @@
 # Il formato a cartella dei contest
 
-Proposta: ogni contest ha una **cartella** in `contest/` (radice del repository, accanto a `core/`, `app/`, `desktop/`). Una correzione si fa in un solo punto e Aurora legge i file. Primo contest migrato: `contest/ARRL 10 Meter Contest/`. **Stato:** il lettore c'e' (`core/crates/contest/src/cartelle.rs`): Aurora legge le cartelle e le usa come i `.contest`; le schede dichiarate sono lette e tenute ma l'interfaccia non le usa ancora (vedi «Da fare nel motore»).
+Proposta: ogni contest ha una **cartella** in `contest/` (radice del repository, accanto a `core/`, `app/`, `desktop/`). Una correzione si fa in un solo punto e Aurora legge i file. Contest gia' migrati (elenco): `contest/ARRL 10 Meter Contest/`, `contest/ARRL International DX-CW Contest/`, `contest/ARRL International DX-SSB Contest/`. **Stato:** il lettore c'e' (`core/crates/contest/src/cartelle.rs`): Aurora legge le cartelle e le usa come i `.contest`; le schede dichiarate sono lette e tenute ma l'interfaccia non le usa ancora (vedi «Da fare nel motore»).
 
 ```
 contest/<Nome del contest>/
@@ -44,9 +44,13 @@ contest/<Nome del contest>/
 
 `[prova]` (nominativo e locatore propri di fantasia, data), un `[[qso]]` per QSO con `banda`, `modo`, `freq_khz`, `ora_utc`, `nominativo`, `rst_inviato`, `scambio_inviato`, `rst_ricevuto`, `scambio_ricevuto` e `atteso = { ammesso, doppio, punti, moltiplicatori = ["valore@modo"], motivo }`; `[atteso]` con i totali (`qso_ammessi`, `doppi`, `non_ammessi`, `punti`, moltiplicatori, `punteggio`). `[[prova_futura]]` raccoglie i casi che il motore non sa ancora riconoscere: non entrano nei totali.
 
+**Piu' punti di vista** (`[[altra_stazione]]`): quando il punteggio dipende dal paese della stazione propria (ARRL DX: un W/VE conta i paesi, un DX conta gli stati) `[prova]` e i `[[qso]]` valgono per la prima stazione e ogni `[[altra_stazione]]` ne aggiunge un'altra con `nominativo_proprio`, `locatore_proprio`, i suoi `[[altra_stazione.qso]]` e i suoi totali `[altra_stazione.atteso]` (stesso formato di `[atteso]`; il giorno e' quello di `[prova]`). Il controllo automatico valuta ogni punto di vista a parte, col suo paese. Nei QSO attesi `moltiplicatori` e' `valore@modo` anche per i moltiplicatori per banda: il controllo non distingue la banda (i totali contano ogni valore nuovo di ogni banda).
+
 ## Schede
 
 Le schede sono i pannelli che si aprono con il contest e cambiano da contest a contest. Si dichiarano con `[[scheda]]`, ognuna con `tipo`, `titolo` (`{ it, en }`) e `ordine`. Se `contest.toml` non ne ha, Aurora le **deriva dalle regole**: una scheda `moltiplicatori` per ogni tipo di `mult=` (come fa oggi `SsbContestView.tsx` con la griglia `score.griglia` e `score.mancanti`), la scheda `statistiche` di base e il punteggio. Perche' le schede dichiarate non sono obbligatorie.
+
+Ogni scheda puo' avere `quando` (proposta, tenuto come parametro): condizione sulla stazione propria (`my_dxcc:K,VE`, `not_my_dxcc:K,VE`) che dice quando la scheda vale (ARRL DX: paesi DXCC per i W/VE, stati e province per i DX).
 
 Catalogo dei tipi generici (proposta):
 
@@ -99,7 +103,7 @@ I `.contest` distribuiti non sono toccati (cambiarne il contenuto li farebbe sem
 
 ## API
 
-`GET /api/v1/contest-testo` (ogni voce), `/attivo` e `/voce/{id}` aggiungono: `origine` (`cartella` o `file`), `schede` (l'elenco dichiarato, `[]` per i `.contest`), `scambio` (`{ricevuto, inviato}`, vuoto per i `.contest`); `/voce/{id}` anche `regolamento` (markdown per le cartelle, `null` per i file). Nuova: `POST /api/v1/contest-testo/voce/{id}/copia` (200 con l'id; 400 se non e' una cartella, 404 se sconosciuto, 409 `contest_copy` se non si puo' copiare).
+`GET /api/v1/contest-testo` (ogni voce), `/attivo` e `/voce/{id}` aggiungono: `origine` (`cartella` o `file`), `schede` (l'elenco dichiarato, `[]` per i `.contest`), `scambio` (`{ricevuto, inviato}`, vuoto per i `.contest`); `/voce/{id}` anche `regolamento` (markdown per le cartelle, `null` per i file) e `dichiarazione` (`bande`, `modi` con `ammessi` e `limite`, `categorie`, `doppi`, `edizione` con le date dell'edizione calcolate, `cabrillo`; `null` per i file): l'app decide con questi dati e con `[Score]` quali voci delle impostazioni sono attive (`app/src/lib/contestVoci.ts`, `voceAttiva`). Nuova: `POST /api/v1/contest-testo/voce/{id}/copia` (200 con l'id; 400 se non e' una cartella, 404 se sconosciuto, 409 `contest_copy` se non si puo' copiare).
 
 ## Controllo automatico
 

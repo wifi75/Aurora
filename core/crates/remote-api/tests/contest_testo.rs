@@ -63,6 +63,16 @@ async fn la_voce_porta_il_regolamento_solo_se_e_una_cartella() {
     assert_eq!(v["name"], ARRL);
     assert!(v["score"].as_str().unwrap().contains("bands=10"));
     assert_eq!(v["valid_cw"], true);
+    // la dichiarazione per le impostazioni: bande, modi, doppi, categorie, edizione e Cabrillo
+    let dic = &v["dichiarazione"];
+    assert_eq!(dic["bande"], json!(["28 MHz"]));
+    assert_eq!(dic["modi"]["ammessi"], json!(["cw", "ssb"]));
+    assert_eq!(dic["modi"]["limite"][0]["frequenza_massima_khz"], 28300);
+    assert_eq!(dic["doppi"]["per"], "modo");
+    assert!(dic["categorie"]["potenza"].as_array().unwrap().len() == 3);
+    assert_eq!(dic["edizione"]["durata_ore"], 48);
+    assert_eq!(dic["edizione"]["date"]["inizio"].as_str().unwrap().len(), 14);
+    assert!(dic["cabrillo"]["obbligatori"].as_array().unwrap().iter().any(|x| x == "CALLSIGN"));
     // un file
     call(&app, req(Method::POST, "/api/v1/contest-testo/voce").cookie(&cookie).json(&json!({ "name": "Vecchio" }).to_string())).await;
     let v = body_json(call(&app, req(Method::GET, "/api/v1/contest-testo/voce/Vecchio").cookie(&cookie)).await).await;

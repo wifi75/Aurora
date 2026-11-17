@@ -1,0 +1,78 @@
+[Macros]
+nItems=13
+
+Name0=F1
+Label0=AutoCQ
+Text0=<AUTOCQ><ACQDELAY:seconds>
+
+Name1=F7
+Label1=CallMyCall
+Text1=<TX> <CALL> <CALL> de <MYCALL> <MYCALL> <RXANDCLEAR>
+
+Name2=F9
+Label2=QSO B4
+Text2=<TX>  <CALL> de  <MYCALL> QSO B4  ON  <QSOBEFORETIME> <RXANDCLEAR>
+
+
+Name3=F10
+Label3=AGAIN
+Text3=<TX>AGN AGN k..<RXANDCLEAR>
+
+
+Name4=F2
+Label4=QRZ?
+Text4=<TX><WAVE:QRZ.wav> <RXANDCLEAR>
+
+
+Name5=F3
+Label5=H/M
+Text5=<TX><WAVE:59-50.wav> <RXANDCLEAR>
+
+Name6=F4
+Label6=AGAIN NR
+Text6=<TX><WAVE:ZoneQuery.wav> <RXANDCLEAR>
+
+Name7=F5
+Label7=CFM QSO
+Text7=<TX><WAVE:59-50.wav> Thanks<SAVEQSO> <RXANDCLEAR><CR><LF><AUTOCQ><ACQDELAY:seconds><CR><LF>
+
+
+Name8=F8
+Label8=MY NR AG
+Text8=<TX><WAVE:59-50-again.wav> <RXANDCLEAR>
+
+
+Name9=F6
+Label9=Prev Nr
+Text9=<TX>  <PREVNRS>  <PREVNRS> <PREVNRS> <PREVNRS><RXANDCLEAR>
+
+
+Name10=F11
+Label10=MY Call x3
+Text10=<TX><WAVE:MyCall3.wav> <RXANDCLEAR>
+
+
+Name11=F12
+Label11=MyCall x1
+Text11=<TX><WAVE:MyCall1.wav> <RXANDCLEAR>
+
+
+Name12=AutoCqText
+Label12=AutoCQ
+Text12=<TX><WAVE:CQ-Contest.wav> <RXANDCLEAR>
+
+
+
+BkColor0=5748297
+BkColor1=8454143
+BkColor2=8421376
+BkColor3=65535
+BkColor4=2377947
+BkColor5=8421376
+BkColor6=255
+BkColor7=65535
+BkColor8=4210816
+BkColor9=4227327
+BkColor10=32896
+BkColor11=16744703
+BkColor12=255

@@ -94,13 +94,22 @@ fn le_prove_danno_il_punteggio_atteso() {
         let proprio = prove.get("prova").cloned().unwrap_or(toml::Value::Table(Default::default()));
         let giorno = testo(&proprio, "data");
         assert_eq!(giorno.len(), 10, "{nome}: prova.data mancante");
-        let mio = paese_di(&db, &testo(&proprio, "nominativo_proprio"));
+        // i punti di vista: la stazione propria di `[prova]` e quelle di `[[altra_stazione]]` (stesso giorno, altri QSO e altri totali),
+        // perche' in certi contest il punteggio dipende dal paese di chi lo calcola (ARRL DX: W/VE o DX)
+        let mut viste: Vec<(String, String, Vec<toml::Value>, toml::Value)> = vec![(nome.clone(), testo(&proprio, "nominativo_proprio"), prove.get("qso").and_then(toml::Value::as_array).cloned().unwrap_or_default(), prove.get("atteso").cloned().unwrap_or(toml::Value::Table(Default::default())))];
+        for (i, a) in prove.get("altra_stazione").and_then(toml::Value::as_array).cloned().unwrap_or_default().iter().enumerate() {
+            let chiamata = testo(a, "nominativo_proprio");
+            assert!(!chiamata.is_empty(), "{nome}: altra_stazione {} senza nominativo_proprio", i + 1);
+            viste.push((format!("{nome} (stazione {chiamata})"), chiamata, a.get("qso").and_then(toml::Value::as_array).cloned().unwrap_or_default(), a.get("atteso").cloned().unwrap_or(toml::Value::Table(Default::default()))));
+        }
+        for (nome, chiamata_propria, qso_vista, atteso_vista) in viste {
+        let mio = paese_di(&db, &chiamata_propria);
         // il contest come lo vede il motore, all'ora della prova (a mezzogiorno del giorno scelto)
         let ora = istante(&giorno, "1200");
         let contesto = c.in_contesto(ora);
         let mut qsos = Vec::new();
         let mut attesi = Vec::new();
-        for q in prove.get("qso").and_then(toml::Value::as_array).cloned().unwrap_or_default() {
+        for q in qso_vista {
             let banda = testo(&q, "banda");
             let hhmm = testo(&q, "ora_utc");
             qsos.push(QsoTesto {
@@ -137,7 +146,7 @@ fn le_prove_danno_il_punteggio_atteso() {
             assert_eq!(trovati, molt, "moltiplicatori: {caso}");
         }
         // totali
-        let t = prove.get("atteso").cloned().unwrap_or(toml::Value::Table(Default::default()));
+        let t = atteso_vista;
         let intero = |k: &str| t.get(k).and_then(toml::Value::as_integer);
         let controlla = |k: &str, trovato: i64| {
             if let Some(atteso) = intero(k) {
@@ -160,6 +169,31 @@ fn le_prove_danno_il_punteggio_atteso() {
             }
         }
         provate += 1;
+        }
     }
     assert!(provate > 0, "nessuna prova eseguita");
+}
+
+/// Le cartelle ARRL DX hanno la prova da due punti di vista (stazione W e stazione DX): il punteggio dipende da chi lo calcola.
+#[test]
+fn arrl_dx_hanno_due_punti_di_vista() {
+    let mut viste = 0;
+    for d in cartelle() {
+        let nome = d.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+        if !nome.starts_with("ARRL International DX-") {
+            continue;
+        }
+        let c = carica(&d, Origine::Inclusa).unwrap_or_else(|e| panic!("{nome}: {e}"));
+        let prove: toml::Value = toml::from_str(&c.prove.clone().unwrap_or_default()).unwrap_or_else(|e| panic!("{nome}: prove.toml: {e}"));
+        let altre = prove.get("altra_stazione").and_then(toml::Value::as_array).map_or(0, Vec::len);
+        assert!(altre >= 1, "{nome}: manca [[altra_stazione]]");
+        // le due stazioni stanno in paesi diversi: una K/VE e una DX
+        let db = database();
+        let w = paese_di(&db, &testo(prove.get("prova").unwrap_or(&toml::Value::Boolean(false)), "nominativo_proprio")).map(|p| p.dxcc).unwrap_or_default();
+        let dx = prove.get("altra_stazione").and_then(toml::Value::as_array).and_then(|a| a.first()).and_then(|a| paese_di(&db, &testo(a, "nominativo_proprio"))).map(|p| p.dxcc).unwrap_or_default();
+        assert!(w == "K" || w == "VE", "{nome}: la prova principale deve essere di una stazione W/VE ({w})");
+        assert!(dx != "K" && dx != "VE" && !dx.is_empty(), "{nome}: l'altra stazione deve essere DX ({dx})");
+        viste += 1;
+    }
+    assert!(viste >= 2, "attese le cartelle ARRL DX-CW e DX-SSB");
 }

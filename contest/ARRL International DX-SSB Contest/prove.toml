@@ -1,0 +1,366 @@
+# ARRL International DX-SSB Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (ARRL International DX Contest Rules, v2.0).
+# Il controllo automatico (docs/contest-formato.md) legge i QSO, applica punteggio.regole e punteggio.rhai e confronta con [atteso].
+# Due punti di vista, perche' il punteggio dipende dalla stazione propria: [prova] e' una stazione W (Stati Uniti), [[altra_stazione]] una stazione DX (Italia).
+# Nominativi di fantasia. Tutti i QSO sono del giorno 2027-03-06 (edizione 2027).
+# Moltiplicatori: valore@modo (il moltiplicatore e' per banda, ma il controllo confronta solo valore e modo). Ogni QSO vale 3 punti; punteggio = punti x moltiplicatori (uno per banda).
+
+[prova]
+nominativo_proprio = "K1ABC"
+locatore_proprio = "FN31pr"
+data = "2027-03-06"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0007"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "KW"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "W con DX: 3 punti; Germania nuova su 20 m" }
+
+[[qso]]
+n = 2
+banda = 40
+modo = "SSB"
+freq_khz = 7150
+ora_utc = "0014"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "KW"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "stessa stazione su un'altra banda non e' doppio; Germania nuova su 40 m" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0021"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA@SSB"], motivo = "Giappone nuovo su 20 m" }
+
+[[qso]]
+n = 4
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0028"
+nominativo = "KH6ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "500"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["KH6@SSB"], motivo = "KH6 e' DX (regola 2.3) e conta come entita' DXCC (5.2.3.1), non come stato" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0035"
+nominativo = "KL7ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["KL@SSB"], motivo = "KL7 e' DX e conta come entita' DXCC (nel database dei paesi il prefisso e' KL)" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0042"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "KW"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stesso nominativo e stessa banda del QSO 1; zero punti, nessun moltiplicatore" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0049"
+nominativo = "VE3XYZ"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "ON"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "un W/VE non puo' lavorare un VE (regola 2.3): non ammesso" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "SSB"
+freq_khz = 7150
+ora_utc = "0056"
+nominativo = "K2XYZ"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "NY"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "un W non puo' lavorare un W: non ammesso" }
+
+[[qso]]
+n = 9
+banda = 30
+modo = "SSB"
+freq_khz = 10110
+ora_utc = "0103"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "KW"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: il contest ammette solo 160-10 m (regola 2.1)" }
+
+[[qso]]
+n = 10
+banda = 160
+modo = "SSB"
+freq_khz = 1850
+ora_utc = "0110"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "KW"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA@SSB"], motivo = "Giappone nuovo su 160 m (moltiplicatore per banda)" }
+
+[[qso]]
+n = 11
+banda = 80
+modo = "SSB"
+freq_khz = 3780
+ora_utc = "0117"
+nominativo = "CY9ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["CY9@SSB"], motivo = "St. Paul e' DX (CY9) e vale come entita' DXCC" }
+
+[[qso]]
+n = 12
+banda = 10
+modo = "SSB"
+freq_khz = 28400
+ora_utc = "0124"
+nominativo = "EA8ABC"
+rst_inviato = "59"
+scambio_inviato = "CT"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["EA8@SSB"], motivo = "Isole Canarie: entita' EA8 distinta dalla Spagna" }
+
+# Totali attesi per la stazione W (conteggio a mano):
+#   QSO ammessi: 1, 2, 3, 4, 5, 10, 11, 12 = 8; doppi 1 (n. 6); non ammessi 3 (n. 7, 8, 9)
+#   punti: 8 x 3 = 24
+#   moltiplicatori (entita' DXCC per banda): DL@20, DL@40, JA@20, KH6@15, KL@20, JA@160, CY9@80, EA8@10 = 8
+#   punteggio = 24 x 8 = 192
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 3
+punti = 24
+moltiplicatori = 8
+punteggio = 192
+
+# ---- Punto di vista di una stazione DX (Italia): scambio inviato = rapporto + potenza; moltiplicatori = stati e province per banda.
+[[altra_stazione]]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0007"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["CT@SSB"], motivo = "DX con W: 3 punti; stato CT nuovo su 20 m" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 40
+modo = "SSB"
+freq_khz = 7150
+ora_utc = "0014"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["CT@SSB"], motivo = "stessa stazione su un'altra banda non e' doppio; CT nuovo su 40 m" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0021"
+nominativo = "VE3XYZ"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "ON"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["ON@SSB"], motivo = "provincia ON nuova su 20 m" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0028"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stesso nominativo e stessa banda del QSO 1" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0035"
+nominativo = "W6XYZ"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "CA"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["CA@SSB"], motivo = "California nuova su 20 m" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0042"
+nominativo = "KH6ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "un DX non puo' lavorare un DX, KH6 compreso (regola 2.3): non ammesso" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0049"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "100"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "un DX non puo' lavorare un DX: non ammesso" }
+
+[[altra_stazione.qso]]
+n = 8
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0056"
+nominativo = "VO1ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "NF"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["NF@SSB"], motivo = "Terranova (VO1): provincia NF" }
+
+[[altra_stazione.qso]]
+n = 9
+banda = 15
+modo = "SSB"
+freq_khz = 21300
+ora_utc = "0103"
+nominativo = "VO2ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "LB"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["LB@SSB"], motivo = "Labrador (VO2) si conta a parte da NF (regola 5.2.3)" }
+
+[[altra_stazione.qso]]
+n = 10
+banda = 30
+modo = "SSB"
+freq_khz = 10110
+ora_utc = "0110"
+nominativo = "W6XYZ"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "CA"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m e' una banda WARC: non ammesso (regola 2.1)" }
+
+[[altra_stazione.qso]]
+n = 11
+banda = 10
+modo = "SSB"
+freq_khz = 28400
+ora_utc = "0117"
+nominativo = "VE3XYZ"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "ON"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["ON@SSB"], motivo = "ON e' nuova su 10 m: i moltiplicatori contano una volta per banda" }
+
+[[altra_stazione.qso]]
+n = 12
+banda = 80
+modo = "SSB"
+freq_khz = 3780
+ora_utc = "0124"
+nominativo = "K3ABC"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "DC"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DC@SSB"], motivo = "DC conta come stato" }
+
+[[altra_stazione.qso]]
+n = 13
+banda = 20
+modo = "SSB"
+freq_khz = 14250
+ora_utc = "0131"
+nominativo = "K2XYZ"
+rst_inviato = "59"
+scambio_inviato = "100"
+rst_ricevuto = "59"
+scambio_ricevuto = "NY"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["NY@SSB"], motivo = "New York nuovo su 20 m" }
+
+# Totali attesi per la stazione DX (conteggio a mano):
+#   QSO ammessi: 1, 2, 3, 5, 8, 9, 11, 12, 13 = 9; doppi 1 (n. 4); non ammessi 3 (n. 6, 7, 10)
+#   punti: 9 x 3 = 27
+#   moltiplicatori (stati e province per banda): CT@20, CT@40, ON@20, CA@20, NF@15, LB@15, ON@10, DC@80, NY@20 = 9
+#   punteggio = 27 x 9 = 243
+[altra_stazione.atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 3
+punti = 27
+moltiplicatori = 9
+punteggio = 243

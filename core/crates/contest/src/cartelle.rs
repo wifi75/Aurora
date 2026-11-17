@@ -50,6 +50,8 @@ pub struct Meta {
     pub regolamento_url: String,
     pub cabrillo_contest: String,
     pub note: String,
+    /// Altri nomi con cui il contest compare nei vecchi file `.contest` (per sostituirli: `ElencoContest::sostituito_da`).
+    pub alias: Vec<String>,
 }
 
 /// Una data di edizione scritta nel file (`[[edizione.date]]`): vale al posto del calcolo.
@@ -562,6 +564,24 @@ impl ContestCartella {
         self.dominio_principale().map(|(_, t)| leggi_dominio(t))
     }
 
+    /// La parte della dichiarazione che serve all'app per sapere quali voci delle impostazioni valgono per questo contest: bande, modi
+    /// (con i limiti), categorie, doppi, l'edizione di `ora_ms` (calcolata dalla regola o dal calendario) e l'intestazione del Cabrillo.
+    pub fn dichiarazione(&self, ora_ms: i64) -> serde_json::Value {
+        use serde_json::json;
+        let edizione = self.edizione.as_ref().map(|e| {
+            let date = e.edizione_per(ora_ms).map(|d| json!({ "anno": d.anno, "inizio": data_compatta(d.inizio_ms), "fine": data_compatta(d.fine_ms), "confermata": d.confermata }));
+            json!({ "mese": e.mese, "durata_ore": e.durata_ore, "ore_massime": e.ore_massime, "pausa_minima_min": e.pausa_minima_min, "invio_log_giorni": e.invio_log_giorni, "date": date })
+        });
+        json!({
+            "bande": self.bande.ammesse,
+            "modi": { "ammessi": self.modi.ammessi, "limite": self.modi.limite },
+            "categorie": self.categorie,
+            "doppi": self.doppi,
+            "edizione": edizione,
+            "cabrillo": self.cabrillo,
+        })
+    }
+
     /// Il messaggio quando si prova a modificare o cancellare il contest dall'elenco.
     pub fn rifiuto_modifica(&self) -> &'static str {
         match self.origine {
@@ -602,6 +622,7 @@ impl Voce {
         m.insert("scambio".into(), json!(self.cartella.as_ref().map(|c| c.scambio.clone()).unwrap_or_default()));
         if con_regolamento {
             m.insert("regolamento".into(), self.cartella.as_ref().map_or(serde_json::Value::Null, |c| json!(c.regolamento)));
+            m.insert("dichiarazione".into(), self.cartella.as_ref().map_or(serde_json::Value::Null, |c| c.dichiarazione(ora_ms())));
         }
         m
     }
@@ -721,7 +742,7 @@ impl ElencoContest {
     /// Il `.contest` sostituito resta nel suo file ma non compare piu' nell'elenco.
     pub fn sostituito_da(&self, c: &ContestTesto) -> Option<Arc<ContestCartella>> {
         let nome = normalizza(&c.name);
-        let f = self.scansione().cartelle.iter().find(|f| normalizza(&f.meta.nome) == nome).cloned()?;
+        let f = self.scansione().cartelle.iter().find(|f| normalizza(&f.meta.nome) == nome || f.meta.alias.iter().any(|a| normalizza(a) == nome)).cloned()?;
         match f.origine {
             Origine::Utente => Some(f),
             Origine::Inclusa => self.e_predefinito_intatto(c).then_some(f),
