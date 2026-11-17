@@ -2237,8 +2237,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           cluster={digiLog('cluster')}
           rx={ssbContest ? undefined : rxPart}
           tx={ssbContest ? undefined : txPart}
-          // con un contest niente cascata (come in SSB): lo spazio e' per le schede del contest
-          waterfall={undefined}
+          // la cascata e' una scheda come le altre e segue la scelta del menu Vista (in SSB non c'e')
+          waterfall={ssbContest || !views.waterfall ? undefined : waterfallFor}
           rotor={(at) => (rotorShown ? <RotorCard call={qso.call} grid={qso.wwloc} place="digi" startAt={at} /> : null)}
         />
       ) : ssbContest ? (
@@ -2322,8 +2322,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       )}
 
 
-      {/* con un contest niente barra di stato in basso, come in SSB: la vista e' fatta di schede */}
-      {views.statusBar && !ssbContest && textContest === null ? (
+      {/* la barra di stato in basso (RX/TX, Sq, AFC...) segue la scelta del menu Vista; in SSB non c'e' */}
+      {views.statusBar && !ssbContest ? (
         <DigiStatusBar
           transmitting={sending}
           flashTx={views.flashTx}
@@ -2358,7 +2358,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           modes={snap.modes.map((m) => ({ id: m.id, name: m.name }))}
           modeId={s.mode}
           onPickMode={(id) => save({ mode: id as DigiSettings['mode'] })}
-          contestName={null}
+          contestName={textContest ? (textScore ? `${textContest.contest.name} · ${textScore.qso} QSO · ${textScore.punteggio}` : textContest.contest.name) : null}
           onContestClick={() => setContestList(true)}
           onToggleTx={() => {
             // il tasto RX/TX della barra in basso premuto mentre si trasmette ferma subito la trasmissione (come Esc); da fermi la apre

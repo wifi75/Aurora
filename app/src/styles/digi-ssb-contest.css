@@ -196,3 +196,8 @@ html:root:root:root .ssbc-band.ssbc-band:focus:not(:focus-visible) { outline: no
 .ssbc-bandnow { margin: 0 0 4px; font-size: 0.85rem; font-weight: 700; color: var(--text); }
 .ssbc-bandnow--none { color: var(--danger); }
 .ssbc-alert--compact { font-size: 0.85rem; font-weight: 700; margin: 4px 6px; }
+
+/* il pulsante «Mostra tutto il log» / «Solo il contest» e' un pulsante di testo: largo quanto serve, su una riga (prima ereditava i 26 px di un'icona e andava a capo) */
+.ssbc-logbar { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.ssbc-logbar .digi-tool { width: auto; min-width: 0; padding: 0 0.7rem; white-space: nowrap; font-size: 0.78rem; }
+
