@@ -73,8 +73,8 @@ export interface LogMarks {
   onToggle(): void;
 }
 
-/** Le colonne del log del contest: numero progressivo del contest, DUPE / Mult, ora, nominativo, banda, frequenza e i due rapporti. */
-const CONTEST_COLS: readonly LogCol[] = ['num', 'mark', 'utc', 'call', 'band', 'freq', 'rstS', 'rstR']
+/** Le colonne del log del contest: numero progressivo del contest, DUPE / Mult, ora, nominativo, banda, frequenza, i due rapporti e lo scambio inviato e ricevuto (seriale, stato o sezione). */
+const CONTEST_COLS: readonly LogCol[] = ['num', 'mark', 'utc', 'call', 'band', 'freq', 'rstS', 'rstR', 'exS', 'exR']
 
 /** Per ogni QSO (il piu' recente in testa) se e' un doppio: c'e' un QSO piu' vecchio con lo stesso nominativo (e banda, e modo). */
 export function dupeFlags(qsos: readonly Pick<Log4omQso, 'call' | 'band' | 'mode'>[], noBand: boolean, noMode: boolean): boolean[] {
@@ -90,8 +90,8 @@ export function dupeFlags(qsos: readonly Pick<Log4omQso, 'call' | 'band' | 'mode
   return out;
 }
 
-export type LogCol = 'num' | 'mark' | 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'name' | 'qth' | 'country' | 'grid' | 'rstS' | 'rstR';
-const ALL_COLS: readonly LogCol[] = ['num', 'mark', 'mode', 'band', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'country', 'grid', 'rstS', 'rstR'];
+export type LogCol = 'num' | 'mark' | 'mode' | 'band' | 'freq' | 'date' | 'utc' | 'call' | 'name' | 'qth' | 'country' | 'grid' | 'rstS' | 'rstR' | 'exS' | 'exR';
+const ALL_COLS: readonly LogCol[] = ['num', 'mark', 'mode', 'band', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'country', 'grid', 'rstS', 'rstR', 'exS', 'exR'];
 /** Le colonne del log: numero, modo, frequenza, data, UTC, nominativo, nome, QTH e i due rapporti. */
 const DEFAULT_COLS: readonly LogCol[] = ['num', 'mode', 'freq', 'date', 'utc', 'call', 'name', 'qth', 'rstS', 'rstR'];
 /** Le colonne che si scelgono con la matita: «mark» c'e' solo con un contest. */
@@ -117,7 +117,7 @@ function savedCols(key: string = COLS_KEY, base: readonly LogCol[] = DEFAULT_COL
 }
 
 /** Larghezza di partenza di ogni colonna, in em: cresce da sola con la dimensione del carattere. */
-const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mark: 7, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5 };
+const DEFAULT_EM: Record<LogCol, number> = { num: 4.2, mark: 7, mode: 4.6, band: 3.6, freq: 8.2, date: 7.6, utc: 6.4, call: 8.6, name: 13, qth: 12, country: 12, grid: 5.6, rstS: 5, rstR: 5, exS: 8, exR: 9 };
 /** Ordine e larghezze delle colonne (si spostano e si allargano trascinando i titoli, come nel DX Cluster). */
 export const GRID_KEY = 'aurora.digi.log.grid';
 /** Dove stavano le sole larghezze prima delle colonne spostabili: si riprendono una volta. */
@@ -142,7 +142,7 @@ const dmy = (d: string) => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? `${d.slice(8, 10)}/$
 
 const COL_LABEL = {
   num: 'digi.log.num', mark: 'ssbc.logMark', mode: 'digi.log.mode', band: 'digi.log.band', freq: 'digi.log.freq', date: 'digi.log.date', utc: 'digi.log.utc',
-  call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr',
+  call: 'digi.log.call', name: 'digi.log.name', qth: 'digi.log.qth', country: 'digi.log.country', grid: 'digi.log.grid', rstS: 'digi.log.rsts', rstR: 'digi.log.rstr', exS: 'digi.log.exs', exR: 'digi.log.exr',
 } as const;
 
 /** Il colore del modo nell'etichetta. */
@@ -174,6 +174,8 @@ function cell(q: Log4omQso, nr: number, c: LogCol, mark: React.ReactNode = null)
     case 'grid': return q.grid;
     case 'rstS': return <span className={rstClass(q.rst_sent)}>{q.rst_sent}</span>;
     case 'rstR': return <span className={rstClass(q.rst_rcvd)}>{q.rst_rcvd}</span>;
+    case 'exS': return q.exch_sent ?? '';
+    case 'exR': return q.exch_rcvd ?? '';
   }
 }
 

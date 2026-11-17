@@ -96,7 +96,7 @@ fn reopening_keeps_data() {
 #[test]
 fn migration_sets_user_version_4() {
     let lb = Logbook::open_in_memory().unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 5);
+    assert_eq!(lb.schema_version().unwrap(), 6);
 }
 
 fn station() -> logbook::adif::Station {
@@ -210,7 +210,7 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
         .unwrap();
     }
     let lb = Logbook::open(&path).unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 5);
+    assert_eq!(lb.schema_version().unwrap(), 6);
     let all = lb.all_qsos().unwrap();
     assert_eq!((all.len(), all[0].time_on.as_str(), all[0].date_off.as_str(), all[0].confirmed), (1, "123015", "20261024", None));
     drop(lb);
@@ -371,4 +371,17 @@ fn archive_and_reset_keeps_the_old_log_and_starts_empty() {
     assert_eq!(lb.count().unwrap(), 1);
     drop((lb, old));
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn the_contest_exchange_is_saved_and_shown_in_the_recent_view() {
+    let lb = Logbook::open_in_memory().unwrap();
+    lb.add(&QsoRecord { exch_sent: "007".into(), exch_rcvd: "022 SD".into(), ..qso("WA1AQ", "10m", "CW") }).unwrap();
+    lb.add(&qso("K1ABC", "10m", "CW")).unwrap();
+    let view = lb.recent_view(10, &|_| String::new()).unwrap();
+    let with: Vec<_> = view.qsos.iter().filter(|q| q.call == "WA1AQ").collect();
+    assert_eq!((with[0].exch_sent.as_str(), with[0].exch_rcvd.as_str()), ("007", "022 SD"));
+    // un QSO senza scambio resta con i campi vuoti
+    let without: Vec<_> = view.qsos.iter().filter(|q| q.call == "K1ABC").collect();
+    assert_eq!((without[0].exch_sent.as_str(), without[0].exch_rcvd.as_str()), ("", ""));
 }

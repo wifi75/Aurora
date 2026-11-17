@@ -257,6 +257,14 @@ impl Logbook {
                  PRAGMA user_version = 5;",
             )?;
         }
+        if version < 6 {
+            // sesta versione: lo scambio del contest (inviato e ricevuto), per vederlo nel log del contest e per l'ADIF
+            conn.execute_batch(
+                "ALTER TABLE qso ADD COLUMN exch_sent TEXT NOT NULL DEFAULT '';
+                 ALTER TABLE qso ADD COLUMN exch_rcvd TEXT NOT NULL DEFAULT '';
+                 PRAGMA user_version = 6;",
+            )?;
+        }
         Ok(Logbook { conn: Mutex::new(conn), path: None })
     }
 
@@ -275,8 +283,8 @@ impl Logbook {
         let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
         let conn = self.conn()?;
         conn.execute(
-            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth, comment)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth, comment, exch_sent, exch_rcvd)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
             params![
                 q.call.to_uppercase(),
                 q.grid,
@@ -293,7 +301,9 @@ impl Logbook {
                 q.state.trim().to_uppercase(),
                 q.name.trim(),
                 q.qth.trim(),
-                q.comment.trim()
+                q.comment.trim(),
+                q.exch_sent.trim(),
+                q.exch_rcvd.trim()
             ],
         )?;
         Ok(conn.last_insert_rowid())
@@ -314,22 +324,23 @@ impl Logbook {
         let total = self.count()?;
         let conn = self.conn()?;
         let mut stmt = conn.prepare(
-            "SELECT call, grid, band, mode, rst_sent, rst_rcvd, date, time_on, freq_hz, name, qth, id FROM qso ORDER BY date DESC, time_on DESC, id DESC LIMIT ?1",
+            "SELECT call, grid, band, mode, rst_sent, rst_rcvd, date, time_on, freq_hz, name, qth, id, exch_sent, exch_rcvd FROM qso ORDER BY date DESC, time_on DESC, id DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |r| {
             let (call, grid, band, mode, sent, rcvd, date, time): (String, String, String, String, String, String, String, String) =
                 (r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?);
             let (freq, name, qth, id): (i64, String, String, i64) = (r.get(8)?, r.get(9)?, r.get(10)?, r.get(11)?);
-            Ok((call, grid, band, mode, sent, rcvd, date, time, freq.max(0) as u64, name, qth, id))
+            let (exch_sent, exch_rcvd): (String, String) = (r.get(12)?, r.get(13)?);
+            Ok((call, grid, band, mode, sent, rcvd, date, time, freq.max(0) as u64, name, qth, id, exch_sent, exch_rcvd))
         })?;
         let mut qsos = Vec::new();
         for row in rows {
-            let (call, grid, band, mode, rst_sent, rst_rcvd, date, time, freq_hz, name, qth, id) = row?;
+            let (call, grid, band, mode, rst_sent, rst_rcvd, date, time, freq_hz, name, qth, id, exch_sent, exch_rcvd) = row?;
             // «2026-11-01 08:15:00Z» come nel log di Log4OM2
             let d = if date.len() >= 8 { format!("{}-{}-{}", &date[0..4], &date[4..6], &date[6..8]) } else { date.clone() };
             let t = if time.len() >= 4 { format!("{}:{}:{}", &time[0..2], &time[2..4], if time.len() >= 6 { &time[4..6] } else { "00" }) } else { "00:00:00".to_string() };
             let country = country_of(&call);
-            qsos.push(log4om::Log4omQso { date: format!("{d} {t}Z"), call, band: band.to_lowercase(), mode: mode.to_uppercase(), rst_sent, rst_rcvd, country, grid, freq_hz, name, qth, id: Some(id) });
+            qsos.push(log4om::Log4omQso { date: format!("{d} {t}Z"), call, band: band.to_lowercase(), mode: mode.to_uppercase(), rst_sent, rst_rcvd, country, grid, freq_hz, name, qth, id: Some(id), exch_sent, exch_rcvd });
         }
         Ok(log4om::Log4omView { total, qsos })
     }

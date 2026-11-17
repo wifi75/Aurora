@@ -1192,6 +1192,9 @@ export interface Log4omQso {
   qth?: string;
   /** Il numero del QSO nel log interno di Aurora, per correggerlo; assente nel log di Log4OM2 (sola lettura). */
   id?: number;
+  /** Lo scambio del contest inviato e ricevuto (seriale, stato o sezione); assente fuori da un contest. */
+  exch_sent?: string;
+  exch_rcvd?: string;
 }
 
 export interface Log4omView {

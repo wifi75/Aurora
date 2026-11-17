@@ -155,6 +155,8 @@ export const digiMenuStrings = {
   'digi.wf.resize': ['Trascina per cambiare l’altezza della cascata', 'Drag to change the waterfall height', 'Ziehen, um die Höhe des Wasserfalls zu ändern', 'Tire pour changer la hauteur de la cascade', 'Arrastra para cambiar la altura de la cascada', 'Arrasta para mudar a altura da cascata'],
   'digi.wf.resizeW': ['Trascina per cambiare la larghezza della cascata (doppio clic: tutta la larghezza)', 'Drag to change the waterfall width (double-click: full width)', 'Ziehen, um die Breite des Wasserfalls zu ändern (Doppelklick: volle Breite)', 'Tire pour changer la largeur de la cascade (double-clic : toute la largeur)', 'Arrastra para cambiar el ancho de la cascada (doble clic: todo el ancho)', 'Arrasta para mudar a largura da cascata (duplo clique: toda a largura)'],
   'digi.log.num': ['QSO', 'QSO', 'QSO', 'QSO', 'QSO', 'QSO'],
+  'digi.log.exs': ['Scambio inv.', 'Exch. sent', 'Austausch ges.', 'Échange env.', 'Intercambio env.', 'Troca env.'],
+  'digi.log.exr': ['Scambio ric.', 'Exch. rcvd', 'Austausch erh.', 'Échange reçu', 'Intercambio rec.', 'Troca rec.'],
   'digi.log.rsts': ['RST inv.', 'RST sent', 'RST ges.', 'RST env.', 'RST env.', 'RST env.'],
   'digi.log.rstr': ['RST ric.', 'RST rcvd', 'RST emp.', 'RST reçu', 'RST rec.', 'RST rec.'],
   'digi.cw.wpm': ['Velocità CW: {wpm} WPM', 'CW speed: {wpm} WPM', 'CW-Tempo: {wpm} WPM', 'Vitesse CW : {wpm} WPM', 'Velocidad CW: {wpm} WPM', 'Velocidade CW: {wpm} WPM'],
