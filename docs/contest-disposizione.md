@@ -1,0 +1,25 @@
+# Disposizione delle schede del contest
+
+Richieste del proprietario (2026-11-17), da rispettare nella vista contest di tutti i modi testuali (SSB, CW, RTTY, PSK):
+
+1. **Stesso sistema delle schede dei Satelliti.** Le schede si spostano e si ridimensionano come nella pagina Satelliti (griglia a 12 colonne, `app/src/lib/dashGrid.ts`, `app/src/components/sat/DashGrid.tsx`, angolo e maniglione di larghezza), con il pulsante che **blocca la disposizione**, il pulsante **«Ripristina disposizione»** e la disposizione **salvata**: ognuno la organizza come vuole e Aurora se la ricorda (una disposizione per contest, chiave `aurora.contest.layout.<id>`, con versione dello schema come `satLayout.ts`).
+2. **Le schede si aprono gia' della misura giusta.** Mai una scheda «piccolina con un rigo»: la disposizione di partenza da' a ogni scheda lo spazio che le serve per far vedere i dati senza scorrere (quadrata o rettangolare secondo il contenuto). Ognuno poi la cambia, ma la partenza deve essere comoda. Le misure di partenza stanno nel contest (`[[scheda]]` di `contest.toml`: `colonne`, `righe`, `x`, `y`) con valori di base per tipo di scheda.
+3. **Schede dei moltiplicatori fatte bene:** compatte e leggibili, con i dati dentro e non una pila di scritte. Una scheda per tipo di moltiplicatore dichiarato (per esempio «Stati e province» e «Paesi DXCC»), in forma di **griglia di caselle**: una casella per valore (sigla), con i **punti delle bande** lavorate (colori delle bande come nel grafico QSO per ora) e il valore ancora da lavorare in tono spento; moltiplicatore nuovo evidenziato; conteggio «lavorati / totali» nel titolo; carattere piccolo ma leggibile; se i valori sono molti la griglia scorre dentro la scheda. Con la distinzione per modo (CW/Fonia) quando il contest la prevede.
+4. **Statistiche fatte bene:** una tabella vera (Banda, QSO, Doppi, Punti, Media, Moltiplicatori; riga Totale) e il punteggio finale in evidenza; il ritmo (ultimi 10/50/100 QSO) nella scheda del ritmo, non mescolato in un testo.
+5. **Tutte le schede dello stesso contest convivono nella stessa griglia:** Inserimento QSO, Log, DX Cluster, Check Call, Check Mult, moltiplicatori, Statistiche, Ritmo, QSO per ora, ecc. (catalogo in `docs/contest-schede.md`), nell'ordine e con le misure dichiarate dal contest, con una disposizione di partenza sensata.
+
+Il codice delle schede dei Satelliti e' il modello: `DashGrid.tsx` (componente), `dashGrid.ts` (logica pura: compattazione, spostamento, ridimensionamento), `satLayout.ts` (salvataggio e versione), pulsanti «Blocca/Sblocca» e «Ripristina disposizione» in `SatPage.tsx`.
+
+## Impostazioni del contest: solo quello che serve a quel contest
+
+Richiesta del proprietario (2026-11-17): le impostazioni di un contest non devono essere generiche. Per un contest come l'ARRL 10 metri non si mostrano voci di RTTY, di CW (se si e' in SSB) o di altri modi e bande che non c'entrano. Le voci si ricavano da come e' fatto il contest, cioe' dalla sua cartella (`contest.toml`: `[bande]`, `[modi]`, `[scambio]`, `[categorie]`, `[edizione]`, `[cabrillo]`) e dalle sue regole, e si mostrano solo quelle che servono:
+
+- **Modi e bande**: solo quelli ammessi dal contest (ARRL 10 metri: CW e SSB, 10 m); la scelta del modo in uso, non un elenco di tutti i modi di Aurora.
+- **Il mio scambio**: solo i campi dichiarati per l'invio (stato o provincia, sezione, club, zona, potenza, numero progressivo e dove parte) con le loro etichette, e solo se il contest li chiede (come «La mia sezione / stato / club» di oggi, che compare solo con un moltiplicatore sullo scambio).
+- **Categoria dell'operatore**: solo le categorie del contest (operatore singolo, multi, potenza QRP/bassa/alta, Mixed/CW/Fonia...) e quelle che servono per l'intestazione del Cabrillo.
+- **Date dell'edizione**: calcolate dalla regola `[edizione]`; la finestra la si cambia solo se l'utente vuole un'altra edizione.
+- **Macro**: quelle del contest e del modo in uso.
+- **Intestazione del Cabrillo**: i campi obbligatori di quel contest (nominativo, nome, indirizzo, categoria...), non tutti i campi possibili.
+- Le **regole di punteggio** (punti per QSO, moltiplicatori, doppi per banda o per modo) NON sono impostazioni dell'utente per i contest in cartella: sono nelle regole del contest. Si vedono, in sola lettura, nella scheda del regolamento. Solo per un contest creato dall'utente (non incluso) resta la finestra completa, con le voci avanzate.
+
+La finestra oggi (`ContestEditDialog.tsx`) e' una sola per tutti, con molte voci generiche (RTTY, CW, bande, contatori dei punti...): va sostituita da una finestra che si costruisce dalla dichiarazione del contest e mostra solo le voci pertinenti, con il resto sotto «Avanzate» solo per i contest dell'utente.
