@@ -86,6 +86,17 @@ describe('CatTab', () => {
     expect(screen.getByRole('button', { name: 'Collega' })).toBeDisabled();
   });
 
+  it('lists every radio of a brand when searching by brand (no cut at 12 results)', async () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({ id: 3000 + i, manufacturer: 'Icom', model: i === 27 ? 'IC-756PRO' : `IC-${700 + i}`, status: 'Stable' }));
+    vi.mocked(getCatModels).mockResolvedValue([...models, ...many]);
+    render(<CatTab />);
+    await screen.findByText('Non collegata');
+    await screen.findByText('43 modelli');
+    fireEvent.change(screen.getByLabelText('Cerca (marca o modello)'), { target: { value: 'icom' } });
+    expect(screen.getByRole('button', { name: 'Icom IC-756PRO' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Icom IC-/ }).length).toBe(41);
+  });
+
   it('picks a radio from the searchable list and applies the settings', async () => {
     render(<CatTab />);
     await screen.findByText('Non collegata');

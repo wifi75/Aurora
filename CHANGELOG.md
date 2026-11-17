@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Impostazioni › Radio: cercando una marca (per esempio «icom») la tendina elenca tutte le radio di quella marca, non solo le prime 12 (prima l'IC-756PRO e molte altre restavano nascoste).
 - Primo avvio: finche' la guida («Chi sei», audio, radio) e' aperta non compaiono gli avvisi della stazione, in particolare «Nel motore manca il tuo nominativo» mentre lo si sta scrivendo.
 - Vista SSB (log, Inserisci QSO, DX Cluster): le finestre hanno lo stesso aspetto di quelle del contest e della pagina FT8, con il bordo viola e la barra del titolo sfumata.
 

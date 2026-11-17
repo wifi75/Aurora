@@ -528,7 +528,7 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               {/* i risultati sotto la casella: il menu «Radio» accanto puo' finire fuori dallo schermo e la ricerca sembrava non fare niente */}
               {search.trim() !== '' ? (
                 <ul className="cat-search-results">
-                  {shown.slice(0, 12).map((m) => (
+                  {shown.map((m) => (
                     <li key={m.id}>
                       <button
                         type="button"
