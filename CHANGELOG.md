@@ -2,9 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.283 - 2026-11-17
+
 - DX Cluster: nuovo filtro «Digi» nel Modo che raccoglie tutti i modi digitali (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65...); gli spot che dicono solo «digi» o «digital» hanno il modo DIGI invece di restare senza modo, cosi' il filtro li trova e non spariscono scegliendo un modo.
 - Satelliti: zoom automatico della mappa quando un satellite entra nell'area (AOS) con ritorno alla vista intera alla LOS; modo a scelta nel riquadro «Avvisi» (Spento, Area del satellite, Stazione e satellite, Segui il satellite); zoom a mano con rotella, pizzico e pulsanti «+», «−» e «Vista intera», trascinamento anche in verticale.
 - Satelliti: nuova mappa di base «Terra (satellite NASA)» (foto di giorno, luci delle citta' di notte con crepuscolo morbido; «Mappa semplice (vettoriale)» resta a scelta, confini degli Stati sulla foto a richiesta) e selettore «Zoom su un paese…» sulla mappa, con tutti i paesi nella lingua dell'interfaccia e «il mio paese» in testa.
+- Macro: il colore dei tasti si sceglie per tema (chiaro e scuro indipendenti); nel tema chiaro i tasti hanno colore pieno e bordo visibile, come nello scuro.
+- Satelliti in tema chiaro: messaggi di stato (radio non collegata, in vista) e orologio leggibili.
 
 ## 0.11.282 - 2026-11-17
 
