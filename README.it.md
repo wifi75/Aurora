@@ -33,7 +33,7 @@
 > ### Scarica Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--x86__64.AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--amd64.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Download](https://img.shields.io/badge/Download-Aurora--macOS.dmg-000000?logo=apple&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> La versione 0.11.283 è stata analizzata con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender: nessun antivirus la segnala ([risultato](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
+> La versione 0.11.284 è stata analizzata con [VirusTotal](https://www.virustotal.com) (circa 70 antivirus) e Windows Defender: nessun antivirus la segnala ([risultato](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
 >
 > **[Installatore per Windows (ultima versione)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Pagina dell'ultima release](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -49,7 +49,7 @@ Progettazione e sviluppo: Tiziano Cassone (IU3WJQ)
 
 ## Stato
 
-Versione 0.11.283: motore proprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW (e SSB per il log e i contest in fonia), SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
+Versione 0.11.284: motore proprio multimodo (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W e WSPR) con ricezione e trasmissione, CAT per tutte le radio e display della radio, più le pagine PSK31/PSK63, RTTY, CW (e SSB per il log e i contest in fonia), SSTV e Satelliti. La trasmissione con la radio vera va ancora provata dal proprietario.
 
 - **Stazione**: elenco dei messaggi come in JTDX (paese con bandiera, distanza, righe colorate per tipo, nominativo chiamato e chiamate verso di te in evidenza), cascata WebGPU/WebGL2 con le barre Rx/Tx trascinabili, Tx1–Tx6 con la fase del QSO, barra di bande e modo (FT8/FT4) con cambio dalla pagina.
 - **Coda dei chiamanti**: tasto destro su una stazione che chiama la mette in coda (sigla «IN CODA» con il posto) e a QSO registrato Aurora risponde alla prima; l'interruttore «Risp. a tutti» accoda da solo chi ti chiama; «Canc DX» ferma subito la trasmissione. Solo motore proprio.

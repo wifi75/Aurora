@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.284 - 2026-11-17
+
 - Contest: con un contest attivo la pagina dei modi testuali (SSB, CW, RTTY, PSK) e' a schede spostabili e ridimensionabili come i Satelliti (angolo e maniglione di larghezza, «Blocca la disposizione» e «Ripristina disposizione», disposizione salvata per contest e per vista): Inserimento QSO, Log, DX Cluster, Punteggio e ritmo, Statistiche (tabella con media e riga del totale), una scheda per tipo di moltiplicatore a griglia di caselle con i punti colorati delle bande e, in CW, RTTY e PSK, ricezione, trasmissione e cascata; le schede si aprono gia' della misura giusta. In CW prima non c'era nessuna vista del contest.
 - Contest, impostazioni: la finestra e' una sola ma per ogni contest le voci che non gli servono sono grigie e non modificabili («Non previsto da questo contest»): modi (CW, fonia, digitali), bande, moltiplicatori per banda, zone CQ/ITU, scambio, QTC, doppi si ricavano da come e' fatto il contest (dichiarazione della cartella `contest.toml` o regole `[Score]` dei vecchi `.contest`, funzione `voceAttiva`). Per i contest in cartella regole e contatori sono in sola lettura, con il regolamento in un riquadro e il pulsante «Copia nella mia cartella»; `GET /api/v1/contest-testo/voce/{id}` porta anche `dichiarazione` (bande, modi con limiti, categorie, doppi, edizione calcolata, Cabrillo).
 - Contest a cartella: ARRL International DX-CW e DX-SSB migrati in `contest/` (regole 2.0 lette sul PDF ARRL, date 2026 e 2027 dal calendario, prove da due punti di vista, stazione W/VE e stazione DX); rispetto ai vecchi `.contest` ora i QSO contano solo nel modo del fine settimana, le bande WARC non sono ammesse, il doppio e' per banda e i territori KH6 e KL contano come paesi DXCC.
@@ -11,6 +13,8 @@
 - Hamlib: se la radio non scrive il modo nel VFO di trasmissione ne' sa copiare A=B (`RPRT -1`, `-4`), Aurora lo ricorda per la sessione e non ritenta a ogni cambio di banda: una sola riga di informazione al posto degli avvisi «copia A=B non riuscita» nei rapporti; gli errori veri (porta, timeout) restano avvisi.
 - Installatore: se la cartella `hamlib` vecchia non si riesce a togliere dopo i 4 tentativi (antivirus che scansiona i file, PC lento) la si rinomina in `hamlib.vecchia` (poi `hamlib.vecchia2`...`9`), con un avviso nel registro, e l'installazione continua con la `hamlib` nuova pulita invece di fermarsi; le `hamlib.vecchia*` si tolgono a ogni installazione e nella disinstallazione; i file delle risorse che non si scrivono si riprovano fino a 3 volte con 2 s di pausa.
 - Contest a cartella: Aurora legge le cartelle `contest/<nome>/` (`contest.toml`, regole del punteggio, regolamento, elenchi, macro, prove) e le usa come i `.contest`, senza cambiare punteggio, riga di inserimento e Cabrillo. Le date dell'edizione si calcolano dalla regola (ARRL 10 metri: 12-13 dicembre 2026), le cartelle incluse sono nell'installatore in sola lettura e quelle dell'utente (`contest` nei dati) le sostituiscono per nome; le API dei contest aggiungono `origine`, `schede`, `scambio` e `regolamento` e la copia nella propria cartella. Un controllo automatico verifica le cartelle e le loro prove: ha trovato che nelle regole di ARRL 10 l'Alaska era `KL7` invece di `KL` (il prefisso del database dei paesi)
+- Cambio modo: l'avviso «la radio non si e' spostata su una frequenza» dice il modo vero (CW, RTTY...) e non sempre «PSK», e aggiunge il motivo che manda il CAT.
+- Satelliti in tema chiaro: l'orologio e' una pastiglia scura con le cifre verdi, leggibile.
 
 ## 0.11.283 - 2026-11-17
 

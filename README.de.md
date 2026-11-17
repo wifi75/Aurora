@@ -33,7 +33,7 @@
 > ### Aurora herunterladen
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--x86__64.AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--amd64.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Download](https://img.shields.io/badge/Download-Aurora--macOS.dmg-000000?logo=apple&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Version 0.11.283 wurde mit [VirusTotal](https://www.virustotal.com) (rund 70 Virenscanner) und Windows Defender geprüft: kein Virenscanner meldet etwas ([Ergebnis](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
+> Version 0.11.284 wurde mit [VirusTotal](https://www.virustotal.com) (rund 70 Virenscanner) und Windows Defender geprüft: kein Virenscanner meldet etwas ([Ergebnis](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
 >
 > **[Windows-Installer (neueste Version)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Seite der neuesten Version](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -49,7 +49,7 @@ Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
 ## Stand
 
-Version 0.11.283: eigene Multimode-Engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W und WSPR) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW (und SSB für Log und Phone-Contests), SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
+Version 0.11.284: eigene Multimode-Engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W und WSPR) mit Empfang und Senden, CAT für alle Funkgeräte und Anzeige des Funkgeräts, dazu Seiten für PSK31/PSK63, RTTY, CW (und SSB für Log und Phone-Contests), SSTV und Satelliten. Das Senden mit einem echten Funkgerät muss der Eigentümer noch testen.
 
 - **Station**: Nachrichtenliste wie in JTDX (Land mit Flagge, Entfernung, nach Typ gefärbte Zeilen, gerufenes Rufzeichen und Anrufe an dich hervorgehoben), WebGPU/WebGL2-Wasserfall mit verschiebbaren Rx/Tx-Balken, Tx1–Tx6 mit der QSO-Phase, Band- und Modusleiste (FT8/FT4) mit Umschaltung direkt auf der Seite.
 - **Anruferwarteschlange**: Rechtsklick auf eine rufende Station reiht sie ein (Kennzeichnung «IN CODA» mit Platz); nach dem geloggten QSO antwortet Aurora dem Ersten in der Schlange; der Schalter «Risp. a tutti» reiht automatisch jeden ein, der dich ruft; «Canc DX» stoppt das Senden sofort. Nur mit der eigenen Engine.

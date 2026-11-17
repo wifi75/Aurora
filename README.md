@@ -33,7 +33,7 @@
 > ### Download Aurora
 > [![Download](https://img.shields.io/badge/Download-Aurora--Setup.exe-1E90FF?logo=windows&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--x86__64.AppImage-FCC624?logo=linux&logoColor=black)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-x86_64.AppImage) [![Download](https://img.shields.io/badge/Download-Aurora--Linux--amd64.deb-A81D33?logo=debian&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Linux-amd64.deb) [![Download](https://img.shields.io/badge/Download-Aurora--macOS.dmg-000000?logo=apple&logoColor=white)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg) [![latest](https://img.shields.io/github/v/release/wifi75/Aurora?label=latest)](https://github.com/wifi75/Aurora/releases/latest)
 >
-> Version 0.11.283 was checked with [VirusTotal](https://www.virustotal.com) (about 70 antivirus engines) and Windows Defender: no antivirus flags it ([report](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
+> Version 0.11.284 was checked with [VirusTotal](https://www.virustotal.com) (about 70 antivirus engines) and Windows Defender: no antivirus flags it ([report](https://www.virustotal.com/gui/file/863f1515768af8a8d025c28edd7cf228e744abaa07862b547093f40dab6a3c17)).
 >
 > **[Windows installer (latest version)](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-Setup.exe)** · [Latest release page](https://github.com/wifi75/Aurora/releases/latest)
 >
@@ -49,7 +49,7 @@ Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.283: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W and WSPR) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW (and SSB for logging and phone contests), SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.284: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W and WSPR) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW (and SSB for logging and phone contests), SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.
