@@ -44,6 +44,8 @@ pub struct FakeState {
     vfo: Mutex<String>,
     /// `get_vfo_info` passa al VFO chiesto e non torna indietro (come certe Icom con Hamlib).
     vfo_info_switches: AtomicBool,
+    /// `v` risponde `RPRT -11` (la radio non dice su quale VFO e': IC-756PRO con Hamlib).
+    vfo_read_unavailable: AtomicBool,
     /// Ritardo di ogni risposta in ms (una seriale lenta).
     delay_ms: AtomicU64,
     /// Codice `RPRT` con cui `X` (modo del VFO di trasmissione) risponde (0 = accettato).
@@ -80,6 +82,7 @@ impl FakeRigctld {
             offsets: Mutex::new([0, 0]),
             vfo: Mutex::new("VFOA".into()),
             vfo_info_switches: AtomicBool::new(false),
+            vfo_read_unavailable: AtomicBool::new(false),
             delay_ms: AtomicU64::new(0),
             x_fail_code: AtomicI32::new(0),
             refused_modes: Mutex::new(Vec::new()),
@@ -240,6 +243,11 @@ impl FakeRigctld {
     }
 
     /// La radio finta lascia il VFO letto da `get_vfo_info` come VFO in uso.
+    /// La radio finta non sa dire su quale VFO e' (`v` -> `RPRT -11`).
+    pub fn set_vfo_read_unavailable(&self, on: bool) {
+        self.state.vfo_read_unavailable.store(on, Ordering::SeqCst);
+    }
+
     pub fn set_vfo_info_switches(&self, on: bool) {
         self.state.vfo_info_switches.store(on, Ordering::SeqCst);
     }
@@ -417,6 +425,7 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     Err(_) => "RPRT -1
 ".into(),
                 },
+                "v" if state.vfo_read_unavailable.load(Ordering::SeqCst) => "RPRT -11\n".into(),
                 "v" => format!("{}
 ", state.vfo.lock().map(|v| v.clone()).unwrap_or_default()),
                 "V" => {

@@ -186,18 +186,27 @@ fn read_item(client: &RigctldClient, item: Item, out: &mut RigExtras) -> Result<
         Item::Xit => out.xit_hz = Some(client.offset(true)?),
         Item::Vfo => out.vfo = Some(client.vfo()?),
         Item::VfoB => {
-            // `get_vfo_info` manca su molte Yaesu (FT-2000): allora la frequenza e il modo del VFO di trasmissione in split
-            // alcune radio (le Icom piu' vecchie come l'IC-756PRO) per leggere l'altro VFO passano a quel VFO e Hamlib non sempre
-            // torna indietro: la radio restava sul VFO B senza che nessuno l'avesse chiesto. Si guarda dove sta prima e dopo la lettura
-            // e, se e' cambiato, la si riporta li'.
-            let before = client.vfo().ok();
-            let read = client.vfo_info("VFOB");
-            if let Some(was) = before.as_deref()
-                && client.vfo().ok().as_deref().is_some_and(|now| now != was)
-                && let Err(e) = client.set_vfo(was)
-            {
-                tracing::warn!("la lettura del VFO B ha lasciato la radio su un altro VFO e non l'ho riportata su {was}: {}", e.0);
-            }
+            // Hamlib legge l'altro VFO passando a quel VFO e poi tornando indietro, e per tornare deve sapere su quale VFO era (`v`).
+            // Le Icom piu' vecchie (IC-756PRO) rispondono «funzione non disponibile» a `v`: Hamlib non sa dove tornare e la radio resta sul
+            // VFO B senza che nessuno l'abbia chiesto (pacchetto di assistenza del 2026-11-17: la prima lettura del VFO B, 183 ms di
+            // traffico sulla seriale, era l'unico comando di Aurora che toccava il VFO). Senza `v` quindi il VFO B non si legge con
+            // `get_vfo_info`: resta, dove c'e', la frequenza dello split (`get_vfo_info` manca anche su molte Yaesu, FT-2000).
+            let before = client.vfo();
+            let read = match &before {
+                Ok(was) => {
+                    let read = client.vfo_info("VFOB");
+                    // dove la radio dice su che VFO sta: se dopo la lettura e' cambiato, la si riporta li'
+                    if client.vfo().ok().as_deref().is_some_and(|now| now != was.as_str())
+                        && let Err(e) = client.set_vfo(was)
+                    {
+                        tracing::warn!("la lettura del VFO B ha lasciato la radio su un altro VFO e non l'ho riportata su {was}: {}", e.0);
+                    }
+                    read
+                }
+                // lo stesso errore di `v` (di solito -11): la voce si segna come non disponibile e non si ritenta
+                // (il testo finisce con quello di `v`: da li' `is_unsupported` legge il codice)
+                Err(e) => Err(RigError(format!("VFO B non letto, la radio non dice su quale VFO e' e Hamlib non saprebbe tornare indietro; {}", e.0))),
+            };
             let (hz, mode) = match read {
                 Ok(v) => v,
                 Err(e) => match client.split_frequency() {
@@ -568,8 +577,39 @@ mod tests {
         fake.set_vfo_info_switches(true);
         fake.clear_commands();
         let mut out = RigExtras::default();
+        // con una risposta che non e' un VFO non si sa dove tornare: il VFO B non si legge e non parte nessun `V`
+        assert!(read_item(&client, Item::VfoB, &mut out).is_err());
+        assert!(!fake.commands().iter().any(|c| c.starts_with("V ") || c.contains("get_vfo_info")), "{:?}", fake.commands());
+    }
+
+    #[test]
+    fn the_vfo_b_is_not_read_by_moving_a_radio_that_cannot_tell_which_vfo_it_is_on() {
+        // IC-756PRO con Hamlib: `v` -> «funzione non disponibile», e `get_vfo_info VFOB` la lascia sul VFO B (pacchetto del 2026-11-17)
+        let (fake, client, mut poll) = setup();
+        fake.set_vfo_read_unavailable(true);
+        fake.set_vfo_info_switches(true);
+        fake.clear_commands();
+        let mut out = RigExtras::default();
+        let err = read_item(&client, Item::VfoB, &mut out).expect_err("senza `v` il VFO B non si legge");
+        assert!(crate::meters::is_unsupported(&err), "va segnato come non disponibile: {err}");
+        assert!(!fake.commands().iter().any(|c| c.contains("get_vfo_info")), "non deve toccare il VFO: {:?}", fake.commands());
+        assert_eq!(fake.vfo(), "VFOA");
+        // nel giro delle letture la voce si salta per sempre dopo il primo rifiuto
+        fake.clear_commands();
+        for _ in 0..40 {
+            poll.read(&client, 4);
+        }
+        assert!(!fake.commands().iter().any(|c| c.contains("get_vfo_info")), "{:?}", fake.commands());
+        assert_eq!(fake.vfo(), "VFOA");
+    }
+
+    #[test]
+    fn the_vfo_b_is_still_read_on_a_radio_that_tells_its_vfo() {
+        let (fake, client, _poll) = setup();
+        let mut out = RigExtras::default();
         read_item(&client, Item::VfoB, &mut out).expect("vfo b");
-        assert!(!fake.commands().iter().any(|c| c.starts_with("V ")), "{:?}", fake.commands());
+        assert!(fake.commands().iter().any(|c| c.contains("get_vfo_info VFOB")));
+        assert!(out.vfo_b_hz.is_some());
     }
 
     #[test]

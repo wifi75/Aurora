@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Icom piu' vecchie con Hamlib (IC-756PRO): la radio non restava sul VFO A dopo il riavvio perche' Aurora, con «Leggi anche gli altri dati» acceso, leggeva il VFO B con `get_vfo_info` e Hamlib, che con queste radio non sa dire su quale VFO sta (`v`: funzione non disponibile), passava al VFO B e non tornava indietro (la prima lettura, 183 ms di traffico sulla seriale, era l'unico comando di Aurora che toccava il VFO: lo ha mostrato la traccia del pacchetto di assistenza). Ora il VFO B non si legge piu' con `get_vfo_info` quando la radio non dice su che VFO e'; resta la frequenza dello split dove c'e'.
+
 ## 0.11.287 - 2026-11-17
 
 - Radio senza modo dati in Hamlib (Icom IC-756PRO e famiglia 756): con «Modo scritto nella radio» su «Dati» Hamlib rifiuta il modo dati e Aurora ripiegava scrivendo USB, togliendo la radio da USB-D (che Hamlib legge come «USB»). Ora, se la radio e' gia' in USB, il modo non si riscrive e l'USB-D scelto sulla radio resta; se e' in un altro modo (per esempio LSB) il ripiego su USB serve ancora.
