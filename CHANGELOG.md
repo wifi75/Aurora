@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.282 - 2026-11-17
+
 - PTT che non si spegne: scala di tentativi (subito, 0,2, 0,5, 1, 2 s, poi ogni 5 s) con altre vie dal terzo tentativo (secondo `T 0`, riapertura del CAT, RTS/DTR); banner fisso con suono finche' il PTT non e' spento; se la radio o il profilo cambiano con il PTT acceso il comando non arriva alla radio sbagliata e, dopo l'ultimo tentativo, resta un avviso persistente di PTT abbandonato.
 - Logger32 e programmi collegati via UDP: lo Status dice «decoding» solo mentre il decoder lavora (come WSJT-X), cosi' la mappa si ridisegna a fine tornata; la spia «canale occupato» del display radio segue lo stesso stato.
 - Antivirus: se mancano file di Aurora (`dist\index.html`, Hamlib, `cty.dat`) una barra lo dice con il nome dell'antivirus, l'elenco dei file, «Ripristina Hamlib» e il link alla Guida; nuova sezione della Guida sull'esclusione delle cartelle in Windows Defender; nuovo endpoint `GET /api/v1/health/files`.

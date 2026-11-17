@@ -693,6 +693,14 @@ export const GUIDE_LOG: readonly GuideSection[] = [
         'O mapa fica vazio: vê o passo 6 (depuração UDP).',
       ],
       [
+        'La mappa resta vuota anche se i Decode arrivano: aggiorna Aurora alla 0.11.282 o più recente. Lo stato «decodifica in corso» ora cambia a ogni tornata, come in WSJT-X, e la mappa si ridisegna a fine tornata.',
+        'The map stays empty even though Decodes arrive: update Aurora to 0.11.282 or newer. The “decoding” status now changes on every period, like in WSJT-X, and the map redraws at the end of each period.',
+        'Die Karte bleibt leer, obwohl Decodes ankommen: Aktualisiere Aurora auf 0.11.282 oder neuer. Der Status „Dekodierung läuft“ wechselt jetzt in jedem Durchgang, wie bei WSJT-X, und die Karte zeichnet am Ende jedes Durchgangs neu.',
+        'La carte reste vide même si les Decode arrivent : mets Aurora à jour en 0.11.282 ou plus récent. L’état « décodage en cours » change maintenant à chaque période, comme dans WSJT-X, et la carte se redessine à la fin de chaque période.',
+        'El mapa queda vacío aunque lleguen los Decode: actualiza Aurora a la 0.11.282 o posterior. El estado «decodificando» ahora cambia en cada periodo, como en WSJT-X, y el mapa se redibuja al final de cada periodo.',
+        'O mapa fica vazio mesmo que cheguem os Decode: atualiza a Aurora para a 0.11.282 ou posterior. O estado «a descodificar» muda agora a cada período, como no WSJT-X, e o mapa redesenha-se no fim de cada período.',
+      ],
+      [
         'I QSO non si registrano: controlla che la porta di Logger32 sia quella di Aurora e che «Allow automatic WSJT/JTDX QSO logging» sia attivo.',
         'QSOs are not logged: check that the Logger32 port is Aurora’s and that “Allow automatic WSJT/JTDX QSO logging” is on.',
         'Die QSOs werden nicht geloggt: Prüfe, ob der Port von Logger32 dem von Aurora entspricht und „Allow automatic WSJT/JTDX QSO logging“ aktiv ist.',
