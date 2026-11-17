@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.284 (pubblicata 2026-11-17T14:49:25Z)
+## Nella 0.11.285 (pubblicata 2026-11-17T15:07:36Z, stesso contenuto della 0.11.284 con numero nuovo) e nella 0.11.284 (pubblicata 2026-11-17T14:49:25Z)
 
 - Mappa dei Satelliti (`components/sat/SatMap.tsx`, `lib/satView.ts`): un solo disegno per fotogramma da `requestAnimationFrame` (la vista sta in `viewRef`, lo stato React si aggiorna al massimo 8 volte al secondo), qualita' bassa in movimento e rifinitura a riposo, rotella ancorata al cursore (`wheelZoomFactor`), zoom interpolato in scala logaritmica, contatore dei tempi con `localStorage['aurora.sat.perf']='1'`. Non misurato: serve la prova del proprietario con il contatore.
 - Hamlib (`rig-control/src/hamlib_rig.rs`): `split_mode_unsupported`, un solo info se la radio non sa scrivere il modo nel VFO di trasmissione ne' copiare A=B (`-1`, `-4`, `-11`); gli errori veri restano warn.

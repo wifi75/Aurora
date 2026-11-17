@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.285',
-    released: '2026-11-17T16:30:00Z',
+    released: '2026-11-17T15:07:36Z',
     kind: 'changed',
     title: [
       'Aggiornamento alla versione pubblicata',
