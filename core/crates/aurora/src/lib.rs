@@ -14,6 +14,7 @@ pub static CORE_STOPPED: std::sync::atomic::AtomicBool = std::sync::atomic::Atom
 pub mod antivirus;
 pub mod audio_control;
 pub mod backup;
+pub mod diagnostica;
 pub mod band_hop;
 pub mod history;
 pub mod last_dial;
@@ -3370,6 +3371,14 @@ pub async fn run(
         let state = state.clone();
         let config = config.clone();
         let cat = Arc::clone(&cat);
+        // la diagnostica del pacchetto di assistenza: comandi alla radio, impostazioni e stato, ambiente, interfaccia
+        {
+            let state = state.clone();
+            let config = config.clone();
+            let cat = Arc::clone(&cat);
+            let avvio = std::time::Instant::now();
+            rapporti.imposta_diagnostica(Arc::new(move || diagnostica::raccogli(&state, &config, &cat, avvio)));
+        }
         rapporti.imposta_contesto(Arc::new(move || {
             let radio = cat.config();
             let audio = state.audio.as_ref().map(|a| a.devices());

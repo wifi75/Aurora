@@ -677,6 +677,23 @@ impl AppState {
     }
 }
 
+/// Gli ultimi dati sull'ambiente dell'interfaccia (dimensione della finestra, schermo, tema, errori della pagina...), mandati dalla pagina
+/// stessa: uno per origine («pc» o «telefono»). Servono al pacchetto di assistenza; non contengono dati personali (la pagina li ripulisce).
+static UI_SNAPSHOTS: std::sync::Mutex<Vec<(String, String)>> = std::sync::Mutex::new(Vec::new());
+
+/// Salva i dati dell'interfaccia di un'origine (al massimo 16 KB di JSON); sostituiscono i precedenti della stessa origine.
+pub fn set_ui_snapshot(origin: &str, json_text: String) {
+    if let Ok(mut all) = UI_SNAPSHOTS.lock() {
+        all.retain(|(o, _)| o != origin);
+        all.push((origin.to_string(), json_text));
+    }
+}
+
+/// I dati dell'interfaccia ricevuti, per origine.
+pub fn ui_snapshots() -> Vec<(String, String)> {
+    UI_SNAPSHOTS.lock().map(|a| a.clone()).unwrap_or_default()
+}
+
 pub fn build_router(state: AppState) -> Router {
     routes::router(state)
 }

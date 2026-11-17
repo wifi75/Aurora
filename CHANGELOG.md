@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Pacchetto di assistenza completo (schema 2): oltre al registro porta, sotto `diagnostica/`, la traccia dei comandi mandati alla radio con le risposte e i tempi (`cat-comandi.log`), le impostazioni e lo stato della radio con il VFO (`radio.json`), il PC, l'audio e il motore (`ambiente.json`), l'ambiente dell'interfaccia con gli ultimi errori della pagina (`interfaccia-*.json`) e un riassunto del registro con gli avvisi che si ripetono, i riavvii e i tempi di decodifica (`problemi.txt`). Niente dati personali. Vedi `docs/pacchetto-assistenza.md`.
+
 - Hamlib: il VFO letto dalla radio si accetta solo se e' un nome di VFO (VFOA, VFOB, Main...); prima una risposta rimasta in coda da una lettura scaduta (con l'IC-756PRO, «0.133333») veniva presa per un VFO e la protezione del VFO mandava `V 0.133333` alla radio.
 
 ## 0.11.286 - 2026-11-17

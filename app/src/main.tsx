@@ -20,6 +20,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { watchFreshUi } from './lib/freshUi';
+import { installUiDiagnostics } from './lib/uiDiagnostics';
 import { readScale, startUiScale, useUiScale } from './lib/uiScale';
 import { applyAppearance, readAppearance, startAppearance } from './lib/appearance';
 import { applyTheme, browserStorage, readThemeChoice, resolveTheme } from './lib/theme';
@@ -34,6 +35,9 @@ document.documentElement.dataset.bozza = 'a';
 // tema e aspetto (carattere, colore del testo, alto contrasto) subito, prima del primo disegno
 applyTheme(document.documentElement, resolveTheme(readThemeChoice(browserStorage())));
 startAppearance();
+
+// l'ambiente dell'interfaccia e gli errori della pagina, per il pacchetto di assistenza
+installUiDiagnostics();
 
 const queryClient = new QueryClient();
 

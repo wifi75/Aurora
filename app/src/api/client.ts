@@ -6,6 +6,7 @@ import { parseEngineTx, useEngineTx } from '../state/engineTx';
 import { parseControlValues, useControlValues } from '../state/controlValues';
 import { dxccQueryString, type DxccMatrix, type DxccQuery } from '../lib/dxccCard';
 import { inOrder } from '../lib/listenWhileOpen';
+import { sendUiSnapshot } from '../lib/uiDiagnostics';
 
 const BASE = '/api/v1';
 
@@ -1627,6 +1628,8 @@ export async function dismissCrashReport(): Promise<void> {
 
 /** Manda a chi sviluppa Aurora il pacchetto senza dati personali; il codice breve si dice a chi aiuta. */
 export async function sendSupportBundle(): Promise<{ ok: boolean; code: string }> {
+  // prima i dati aggiornati dell'interfaccia (finestra, schermo, errori della pagina): finiscono nel pacchetto
+  await sendUiSnapshot(2500);
   return (await (await request('/reports/bundle/send', { method: 'POST' })).json()) as { ok: boolean; code: string };
 }
 

@@ -208,9 +208,13 @@ impl RigctldClient {
                     if client.ask_raw("\\chk_vfo", 1).is_ok_and(|r| r.first().is_some_and(|l| l.trim().ends_with('1'))) {
                         client.vfo_mode.store(true, std::sync::atomic::Ordering::Relaxed);
                     }
+                    crate::trace::note(&format!("collegato a rigctld su {addr} (modo VFO di rigctld: {})", client.vfo_mode.load(std::sync::atomic::Ordering::Relaxed)), true);
                     return Ok(client);
                 }
-                Err(e) if Instant::now() >= deadline => return Err(RigError(format!("rigctld non risponde su {addr}: {e}"))),
+                Err(e) if Instant::now() >= deadline => {
+                    crate::trace::note(&format!("rigctld non risponde su {addr}: {e}"), false);
+                    return Err(RigError(format!("rigctld non risponde su {addr}: {e}")));
+                }
                 Err(_) => std::thread::sleep(Duration::from_millis(100)),
             }
         }
@@ -230,7 +234,19 @@ impl RigctldClient {
         self.ask_raw(command, lines)
     }
 
+    /// Un comando a `rigctld`, annotato nella traccia del pacchetto di assistenza (comando, risposta, tempo impiegato).
     fn ask_raw(&self, command: &str, lines: usize) -> Result<Vec<String>, RigError> {
+        let started = Instant::now();
+        let result = self.ask_raw_inner(command, lines);
+        match &result {
+            Ok(out) if out.is_empty() => crate::trace::command(command, "RPRT 0", started.elapsed().as_millis(), true),
+            Ok(out) => crate::trace::command(command, &out.join(" | "), started.elapsed().as_millis(), true),
+            Err(e) => crate::trace::command(command, &e.0, started.elapsed().as_millis(), false),
+        }
+        result
+    }
+
+    fn ask_raw_inner(&self, command: &str, lines: usize) -> Result<Vec<String>, RigError> {
         self.yield_to_urgent();
         let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
         let (reader, writer) = &mut *io;
@@ -367,6 +383,17 @@ impl RigctldClient {
 
     /// Frequenza e modo di un altro VFO senza cambiarlo, con la risposta estesa (`+\get_vfo_info VFOB`): si legge fino a «RPRT».
     pub fn vfo_info(&self, vfo: &str) -> Result<(u64, String), RigError> {
+        let started = Instant::now();
+        let result = self.vfo_info_inner(vfo);
+        let command = format!("+\\get_vfo_info {vfo}");
+        match &result {
+            Ok((hz, mode)) => crate::trace::command(&command, &format!("Freq: {hz} Mode: {mode}"), started.elapsed().as_millis(), true),
+            Err(e) => crate::trace::command(&command, &e.0, started.elapsed().as_millis(), false),
+        }
+        result
+    }
+
+    fn vfo_info_inner(&self, vfo: &str) -> Result<(u64, String), RigError> {
         check_token(vfo, "VFO")?;
         let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
         let (reader, writer) = &mut *io;
@@ -623,6 +650,7 @@ impl Rigctld {
 
 impl Drop for Rigctld {
     fn drop(&mut self) {
+        crate::trace::note("rigctld chiuso da Aurora (si manda quit e si ferma il processo)", false);
         self.client.quit();
         if let Ok(child) = self.child.get_mut() {
             let _ = child.kill();

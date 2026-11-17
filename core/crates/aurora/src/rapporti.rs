@@ -527,6 +527,10 @@ pub struct Contesto {
 
 pub type FonteContesto = Arc<dyn Fn() -> Contesto + Send + Sync>;
 
+/// I file di diagnostica che il programma sa preparare (nome, testo): comandi mandati alla radio, stato e impostazioni della radio, ambiente
+/// del PC e dell'interfaccia. Finiscono nel pacchetto di assistenza sotto `diagnostica/`, ripuliti come il resto.
+pub type FonteDiagnostica = Arc<dyn Fn() -> Vec<(String, String)> + Send + Sync>;
+
 /// Accesi di fabbrica (scelta del proprietario): la domanda dopo un crash e gli errori anonimi; al primo avvio l'interfaccia lo dice
 /// una volta e si spengono in Impostazioni > Assistenza.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -595,6 +599,7 @@ pub struct Rapporti {
     dir: PathBuf,
     stato: Mutex<Stato>,
     contesto: Mutex<Option<FonteContesto>>,
+    diagnostica: Mutex<Option<FonteDiagnostica>>,
     /// Un invio alla volta (la coda e il pacchetto del crash).
     invio: Mutex<()>,
 }
@@ -633,11 +638,19 @@ impl Rapporti {
             dir: data_dir.to_path_buf(),
             stato: Mutex::new(Stato { impostazioni, id, limiti, coda, gruppi: HashMap::new(), crash_pendente }),
             contesto: Mutex::new(None),
+            diagnostica: Mutex::new(None),
             invio: Mutex::new(()),
         });
         let lavoro = Arc::clone(&rapporti);
         let _ = std::thread::Builder::new().name("rapporti".into()).spawn(move || lavoro.lavora());
         rapporti
+    }
+
+    /// Da dove prendere i file di diagnostica del pacchetto di assistenza (si chiama quando si prepara il pacchetto).
+    pub fn imposta_diagnostica(&self, fonte: FonteDiagnostica) {
+        if let Ok(mut d) = self.diagnostica.lock() {
+            *d = Some(fonte);
+        }
     }
 
     /// Da dove prendere radio, PTT, audio e i valori personali da togliere (si chiama a ogni rapporto: le scelte possono cambiare).
@@ -859,15 +872,31 @@ impl Rapporti {
         if let Ok(dati) = crate::support::read_tail(&self.dir.join("logs").join("aurora.log"), MAX_LOG.min(MAX_PACCHETTO.saturating_sub(usati))) {
             let testo = String::from_utf8_lossy(&dati);
             let righe: Vec<String> = testo.lines().filter_map(|r| riga_di_log(r, &noti)).collect();
+            file.push(("diagnostica/problemi.txt".into(), riassunto_log(&righe).into_bytes()));
             file.push(("logs/aurora.log".into(), (righe.join("\n") + "\n").into_bytes()));
         }
+        // la diagnostica: comandi alla radio, impostazioni, ambiente. La fonte si chiama senza tenere il lucchetto (legge radio e audio)
+        let mut diagnostica_nomi: Vec<String> = Vec::new();
+        if let Some(fonte) = self.diagnostica.lock().ok().and_then(|d| d.clone()) {
+            for (nome, testo) in fonte() {
+                let pulito = pulisci(&testo, &noti);
+                if usati + pulito.len() as u64 > MAX_PACCHETTO {
+                    continue;
+                }
+                usati += pulito.len() as u64;
+                let nome = format!("diagnostica/{nome}");
+                diagnostica_nomi.push(nome.clone());
+                file.push((nome, pulito.into_bytes()));
+            }
+        }
         let info = json!({
-            "schema": 1,
+            "schema": 2,
             "installazione": id,
             "giorno": giorno(secondi()),
+            "diagnostica": diagnostica_nomi,
             "contesto": contesto,
             "minidump_lasciati_sul_pc": dump_lasciati,
-            "nota": "Pacchetto senza dati personali: nominativi, locatori, percorsi con il nome utente, IP, email e codici sono tolti; i minidump, la configurazione, il log dei QSO e ALL.TXT restano sul PC.",
+            "nota": "Pacchetto senza dati personali: nominativi, locatori, percorsi con il nome utente, IP, email e codici sono tolti; i minidump, il log dei QSO e ALL.TXT restano sul PC. In diagnostica/ ci sono i comandi mandati alla radio, le impostazioni della radio, lo stato e l'ambiente.",
         });
         file.insert(0, ("info.json".into(), serde_json::to_vec_pretty(&info).unwrap_or_default()));
         file
@@ -1007,6 +1036,82 @@ fn rapporto(id: &str, c: &Contesto, giorno: &str, g: &Gruppo) -> Value {
         "messaggio": g.messaggio,
         "conteggio": g.conteggio,
     })
+}
+
+/// Il registro del pacchetto, riassunto: gli avvisi e gli errori che si ripetono (con quante volte, da quando e fino a quando), i riavvii di
+/// Aurora e quanto ha impiegato la decodifica. Cosi' chi legge il pacchetto vede subito cosa non va senza scorrere migliaia di righe.
+/// `righe` sono righe di registro gia' ripulite («2026-11-17T16:55:20.092928Z  WARN origine: messaggio»).
+fn riassunto_log(righe: &[String]) -> String {
+    use std::collections::BTreeMap;
+    struct Voce {
+        livello: &'static str,
+        origine: String,
+        messaggio: String,
+        conta: u32,
+        prima: String,
+        ultima: String,
+    }
+    // l'ora (hh:mm:ss) di una riga, se c'e'
+    let ora = |r: &str| r.get(11..19).filter(|o| o.as_bytes().get(2) == Some(&b':')).unwrap_or("?").to_string();
+    // il messaggio senza numeri, cosi' «tentativo 3» e «tentativo 30» sono la stessa cosa
+    let senza_numeri = |m: &str| {
+        let mut out = String::with_capacity(m.len());
+        let mut in_num = false;
+        for c in m.chars() {
+            if c.is_ascii_digit() {
+                if !in_num {
+                    out.push('#');
+                }
+                in_num = true;
+            } else {
+                in_num = false;
+                out.push(c);
+            }
+        }
+        out
+    };
+    let mut voci: BTreeMap<String, Voce> = BTreeMap::new();
+    let mut avvii: Vec<String> = Vec::new();
+    let mut decodifica_ms: Vec<u64> = Vec::new();
+    let mut lente = 0u32;
+    for riga in righe {
+        let livello = if riga.contains(" ERROR ") { "ERRORE" } else if riga.contains(" WARN ") { "AVVISO" } else { "" };
+        if riga.contains("in ascolto su http") {
+            avvii.push(ora(riga));
+        }
+        // «motore proprio (FT8): 22 messaggi nel periodo 1794934710000 in 11437 ms»
+        if riga.contains("motore proprio (") && riga.contains("messaggi nel periodo") && let Some(ms) = riga.rsplit(" in ").next().and_then(|c| c.trim().strip_suffix(" ms")).and_then(|n| n.trim().parse::<u64>().ok()) {
+            decodifica_ms.push(ms);
+        }
+        if livello.is_empty() {
+            continue;
+        }
+        let dopo = riga.split_once(if livello == "ERRORE" { " ERROR " } else { " WARN " }).map(|(_, d)| d).unwrap_or(riga);
+        let (origine, messaggio) = dopo.split_once(": ").unwrap_or(("", dopo));
+        if messaggio.contains("decodifica lenta") {
+            lente += 1;
+        }
+        let chiave = format!("{livello}|{origine}|{}", senza_numeri(messaggio));
+        let voce = voci.entry(chiave).or_insert_with(|| Voce { livello, origine: origine.to_string(), messaggio: messaggio.chars().take(180).collect(), conta: 0, prima: ora(riga), ultima: String::new() });
+        voce.conta += 1;
+        voce.ultima = ora(riga);
+    }
+    let mut out = String::new();
+    out.push_str("Riassunto del registro (ore UTC)\n");
+    out.push_str(&format!("Righe lette: {}\n", righe.len()));
+    out.push_str(&format!("Avvii di Aurora: {}{}\n", avvii.len(), if avvii.is_empty() { String::new() } else { format!(" (alle {})", avvii.join(", ")) }));
+    if !decodifica_ms.is_empty() {
+        let totale: u64 = decodifica_ms.iter().sum();
+        let massimo = decodifica_ms.iter().copied().max().unwrap_or(0);
+        out.push_str(&format!("Decodifiche: {} periodi, media {} ms, massimo {} ms; avvisi «decodifica lenta»: {lente}\n", decodifica_ms.len(), totale / decodifica_ms.len() as u64, massimo));
+    }
+    let mut ordine: Vec<&Voce> = voci.values().collect();
+    ordine.sort_by(|a, b| b.conta.cmp(&a.conta).then_with(|| a.prima.cmp(&b.prima)));
+    out.push_str(&format!("\nAvvisi ed errori diversi: {}\n", ordine.len()));
+    for v in ordine.into_iter().take(40) {
+        out.push_str(&format!("  {:>5} x  {} - {}  {}  {}: {}\n", v.conta, v.prima, v.ultima, v.livello, v.origine, v.messaggio));
+    }
+    out
 }
 
 /// Una riga del log per il pacchetto del crash: ripulita; quelle che non sono avvisi o errori e parlano di nominativi o locatori
@@ -1588,6 +1693,7 @@ mod tests {
             dir: dir.to_path_buf(),
             stato: Mutex::new(Stato { impostazioni: Impostazioni::default(), id: uuid(), limiti, coda: Vec::new(), gruppi: HashMap::new(), crash_pendente: None }),
             contesto: Mutex::new(None),
+            diagnostica: Mutex::new(None),
             invio: Mutex::new(()),
         }
     }
@@ -1763,6 +1869,54 @@ antivirus: Windows Defender (acceso, aggiornato)
         let testo = String::from_utf8_lossy(&dati);
         assert!(testo.contains("esito: riuscita") && !testo.contains("192.168"), "{testo}");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn il_pacchetto_porta_la_diagnostica_ripulita() {
+        let dir = std::env::temp_dir().join(format!("aurora-diag-{}", uuid()));
+        let _ = std::fs::create_dir_all(&dir);
+        let r = rapporti_di_prova(&dir, Limiti::default());
+        // senza fonte il pacchetto e' quello di prima (info.json di schema 2, nessun file di diagnostica)
+        let senza = r.pacchetto_crash();
+        assert!(!senza.iter().any(|(n, _)| n.starts_with("diagnostica/")));
+        r.imposta_diagnostica(Arc::new(|| {
+            vec![
+                ("cat-comandi.log".to_string(), format!("12:00:00.000    5 ms  v  ->  VFOA\n{}", r"C:\Users\Mario Rossi\AppData\radio.json")),
+                ("radio.json".to_string(), "{\"vfo\": \"VFOB\"}".to_string()),
+            ]
+        }));
+        let file = r.pacchetto_crash();
+        let nomi: Vec<&str> = file.iter().map(|(n, _)| n.as_str()).collect();
+        assert!(nomi.contains(&"diagnostica/cat-comandi.log") && nomi.contains(&"diagnostica/radio.json"), "{nomi:?}");
+        let (_, dati) = file.iter().find(|(n, _)| n == "diagnostica/cat-comandi.log").cloned().unwrap_or_default();
+        let testo = String::from_utf8_lossy(&dati);
+        assert!(testo.contains("v  ->  VFOA") && !testo.contains("Mario Rossi"), "{testo}");
+        // l'indice del pacchetto dice cosa contiene
+        let (_, info) = file.iter().find(|(n, _)| n == "info.json").cloned().unwrap_or_default();
+        let info: serde_json::Value = serde_json::from_slice(&info).unwrap_or_default();
+        assert_eq!(info["schema"], 2);
+        assert_eq!(info["diagnostica"].as_array().map_or(0, Vec::len), 2);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn il_riassunto_del_registro_conta_i_problemi_che_si_ripetono() {
+        let mut righe: Vec<String> = Vec::new();
+        righe.push("2026-11-17T16:55:21.495063Z  INFO aurora_desktop_lib: Aurora 0.11.286 in ascolto su http://0.0.0.0:8787".into());
+        for i in 1..=30 {
+            righe.push(format!("2026-11-17T17:{:02}:00.000000Z  WARN rig_control::hamlib_rig: CAT: collegamento non riuscito (tentativo {i}): la radio non risponde", i % 60));
+        }
+        righe.push("2026-11-17T17:40:00.000000Z ERROR aurora: qualcosa di grave".into());
+        righe.push("2026-11-17T17:41:00.000000Z  INFO engine_native: motore proprio (FT8): 22 messaggi nel periodo 1794934710000 in 11437 ms".into());
+        righe.push("2026-11-17T17:42:00.000000Z  INFO engine_native: motore proprio (FT8): 20 messaggi nel periodo 1794934725000 in 4000 ms".into());
+        righe.push("2026-11-17T17:43:00.000000Z  INFO aurora_desktop_lib: Aurora 0.11.286 in ascolto su http://0.0.0.0:8787".into());
+        let r = riassunto_log(&righe);
+        // i 30 tentativi, con numeri diversi, sono un solo problema contato 30 volte
+        assert!(r.contains("   30 x") && r.contains("AVVISO  rig_control::hamlib_rig: CAT: collegamento non riuscito"), "{r}");
+        assert!(r.contains("Avvisi ed errori diversi: 2"), "{r}");
+        assert!(r.contains("Avvii di Aurora: 2 (alle 16:55:21, 17:43:00)"), "{r}");
+        assert!(r.contains("2 periodi, media 7718 ms, massimo 11437 ms"), "{r}");
+        assert!(r.contains("ERRORE  aurora: qualcosa di grave"), "{r}");
     }
 
     #[test]

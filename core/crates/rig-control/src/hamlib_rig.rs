@@ -1494,6 +1494,7 @@ impl HamlibRig {
     }
 
     pub fn shutdown(&self) {
+        crate::trace::note("chiusura del collegamento con la radio (spegnimento di Aurora o scollegamento)", false);
         self.inner.stop.store(true, Ordering::SeqCst);
         if let Some(handle) = self.thread.lock().ok().and_then(|mut h| h.take()) {
             let _ = handle.join();
