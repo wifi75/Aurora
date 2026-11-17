@@ -48,10 +48,24 @@
   Sleep 500
 !macroend
 
+; Toglie le cartelle hamlib.vecchia, hamlib.vecchia2 ... hamlib.vecchia9 lasciate da un'installazione in cui hamlib non si poteva togliere.
+; Una sola prova per cartella, nessun errore e nessun avviso se sono ancora bloccate. Usa $3.
+!macro AuroraPulisciVecchie
+  RMDir /r "$INSTDIR\hamlib.vecchia"
+  StrCpy $3 2
+  aurora_vecchie_giro:
+  RMDir /r "$INSTDIR\hamlib.vecchia$3"
+  IntOp $3 $3 + 1
+  IntCmp $3 9 aurora_vecchie_giro aurora_vecchie_giro 0
+!macroend
+
 ; Hamlib incluso (cartella "hamlib" accanto al programma): si toglie la cartella vecchia, cosi' un aggiornamento non lascia file di versioni
 ; precedenti. Se un rigctld di Aurora rimasto vivo tiene bloccata la DLL ("libhamlib-4.dll"), solo allora lo si ferma (solo quello di questa
-; cartella con PowerShell, prima ancora con taskkill sul rigctld che tiene caricata libhamlib-4.dll) e si riprova; al massimo quattro volte.
+; cartella con PowerShell, prima ancora con taskkill sul rigctld che tiene caricata libhamlib-4.dll) e si riprova; al massimo quattro volte. Se alla fine non si toglie, si rinomina in hamlib.vecchia (poi hamlib.vecchia2...9) e si va avanti.
 !macro AuroraCleanHamlib registra
+  Push $3
+  ; i residui di un'installazione precedente (hamlib.vecchia*): si provano a togliere, senza insistere e senza avvisi
+  !insertmacro AuroraPulisciVecchie
   RMDir /r "$INSTDIR\hamlib"
   IfFileExists "$INSTDIR\hamlib\*.*" 0 aurora_hamlib_done
   StrCpy $2 0
@@ -72,9 +86,70 @@
   aurora_hamlib_done:
   !if ${registra} == 1
     ${If} ${FileExists} "$INSTDIR\hamlib\*.*"
-      !insertmacro AuroraScrivi "AVVISO: cartella hamlib vecchia non tolta dopo 4 tentativi (file bloccati da un programma o dall'antivirus)"
+      ; non si e' riusciti a toglierla: si sposta da parte (Rename di solito riesce anche con un antivirus che scansiona i file) e la
+      ; cartella hamlib nuova si crea pulita dalla copia; la vecchia si toglie al prossimo avvio dell'installatore o alla disinstallazione
+      StrCpy $3 ""
+      aurora_hamlib_nome:
+      ${If} ${FileExists} "$INSTDIR\hamlib.vecchia$3"
+        ${If} $3 == ""
+          StrCpy $3 2
+        ${Else}
+          IntOp $3 $3 + 1
+        ${EndIf}
+        Goto aurora_hamlib_nome
+      ${EndIf}
+      ${If} $3 > 9
+        !insertmacro AuroraScrivi "AVVISO: cartella hamlib vecchia non tolta dopo 4 tentativi e non spostata (nomi hamlib.vecchia gia' tutti presi): file bloccati da un programma o dall'antivirus"
+      ${Else}
+        ClearErrors
+        Rename "$INSTDIR\hamlib" "$INSTDIR\hamlib.vecchia$3"
+        ${If} ${Errors}
+          ClearErrors
+          !insertmacro AuroraScrivi "AVVISO: cartella hamlib vecchia non tolta dopo 4 tentativi e non spostata in hamlib.vecchia$3 (file bloccati da un programma o dall'antivirus)"
+        ${Else}
+          !insertmacro AuroraScrivi "AVVISO: cartella hamlib vecchia spostata in hamlib.vecchia$3: non si poteva togliere"
+        ${EndIf}
+      ${EndIf}
     ${EndIf}
   !endif
+  Pop $3
+!macroend
+
+; Copia di un file con riprova: un file che non si scrive (antivirus che lo scansiona, PC lento) si riprova fino a 3 volte con 2 s di pausa
+; fra le prove. Se alla fine non si scrive resta accesa la segnalazione d'errore di NSIS, come con un File semplice (la guarda l'installatore
+; dopo la copia); se era gia' accesa per un file precedente, resta accesa. Con le finestre, un File che fallisce chiede da solo
+; Interrompi/Riprova/Ignora e la riprova qui non scatta. Usa $R6 e $R7.
+!define AURORA_FILE_N 0
+!macro AuroraFile oname origine
+  ; un numero diverso per ogni copia, cosi' le etichette sono uniche
+  !define /math AURORA_FILE_T ${AURORA_FILE_N} + 1
+  !undef AURORA_FILE_N
+  !define AURORA_FILE_N ${AURORA_FILE_T}
+  !undef AURORA_FILE_T
+  StrCpy $R7 0
+  IfErrors 0 aurora_file_${AURORA_FILE_N}_a
+    StrCpy $R7 1
+  aurora_file_${AURORA_FILE_N}_a:
+  StrCpy $R6 0
+  aurora_file_${AURORA_FILE_N}_giro:
+  ClearErrors
+  File /a "/oname=${oname}" "${origine}"
+  ; IfErrors azzera la segnalazione (la legge e la spegne): per questo la si riaccende a mano alla fine
+  IfErrors 0 aurora_file_${AURORA_FILE_N}_riuscito
+    IntOp $R6 $R6 + 1
+    IntCmp $R6 3 0 0 aurora_file_${AURORA_FILE_N}_fallito
+    !insertmacro AuroraScrivi "AVVISO: file non scritto, riprovo: ${oname}"
+    Sleep 2000
+    Goto aurora_file_${AURORA_FILE_N}_giro
+  aurora_file_${AURORA_FILE_N}_fallito:
+  ; non si e' scritto dopo tutte le prove: la segnalazione resta accesa
+  SetErrors
+  Goto aurora_file_${AURORA_FILE_N}_ok
+  aurora_file_${AURORA_FILE_N}_riuscito:
+  ; scritto: se era accesa prima (file precedente) si rimette accesa, altrimenti resta spenta
+  IntCmp $R7 0 aurora_file_${AURORA_FILE_N}_ok
+    SetErrors
+  aurora_file_${AURORA_FILE_N}_ok:
 !macroend
 
 !macro NSIS_HOOK_PREINSTALL

@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Hamlib: se la radio non scrive il modo nel VFO di trasmissione ne' sa copiare A=B (`RPRT -1`, `-4`), Aurora lo ricorda per la sessione e non ritenta a ogni cambio di banda: una sola riga di informazione al posto degli avvisi «copia A=B non riuscita» nei rapporti; gli errori veri (porta, timeout) restano avvisi.
+- Installatore: se la cartella `hamlib` vecchia non si riesce a togliere dopo i 4 tentativi (antivirus che scansiona i file, PC lento) la si rinomina in `hamlib.vecchia` (poi `hamlib.vecchia2`...`9`), con un avviso nel registro, e l'installazione continua con la `hamlib` nuova pulita invece di fermarsi; le `hamlib.vecchia*` si tolgono a ogni installazione e nella disinstallazione; i file delle risorse che non si scrivono si riprovano fino a 3 volte con 2 s di pausa.
+
 ## 0.11.283 - 2026-11-17
 
 - DX Cluster: nuovo filtro «Digi» nel Modo che raccoglie tutti i modi digitali (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65...); gli spot che dicono solo «digi» o «digital» hanno il modo DIGI invece di restare senza modo, cosi' il filtro li trova e non spariscono scegliendo un modo.

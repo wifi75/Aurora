@@ -1003,17 +1003,17 @@ Section Install
   ; Copy main executable
   File "${MAINBINARYSRCPATH}"
 
-  ; Copy resources
+  ; Copy resources (AURORA: con riprova, vedi AuroraFile in hooks.nsh)
   {{#each resources_dirs}}
     CreateDirectory "$INSTDIR\\{{this}}"
   {{/each}}
   {{#each resources}}
-    File /a "/oname={{this.[1]}}" "{{no-escape @key}}"
+    !insertmacro AuroraFile "{{this.[1]}}" "{{no-escape @key}}"
   {{/each}}
 
   ; Copy external binaries
   {{#each binaries}}
-    File /a "/oname={{this}}" "{{no-escape @key}}"
+    !insertmacro AuroraFile "{{this}}" "{{no-escape @key}}"
   {{/each}}
 
   ; AURORA: i file non scritti (bloccati da un programma o dall'antivirus) nel registro
