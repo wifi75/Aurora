@@ -49,7 +49,7 @@ Design and development: Tiziano Cassone (IU3WJQ)
 
 ## Status
 
-Version 0.11.287: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W and WSPR) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW (and SSB for logging and phone contests), SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
+Version 0.11.288: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q65, MSK144, FST4, FST4W and WSPR) with receive and transmit, CAT for all radios and a radio display, plus pages for PSK31/PSK63, RTTY, CW (and SSB for logging and phone contests), SSTV and Satellites. Transmitting with a real radio still has to be tested by the owner.
 
 - **Station**: message list as in JTDX (country with flag, distance, rows coloured by type, called callsign and calls directed at you highlighted), WebGPU/WebGL2 waterfall with draggable Rx/Tx bars, Tx1–Tx6 with the QSO phase, band and mode bar (FT8/FT4) with switching from the page.
 - **Caller queue**: right-click on a calling station to queue it (an «IN CODA» tag with its position); once the QSO is logged Aurora answers the first in line; the «Risp. a tutti» switch queues whoever calls you automatically; «Canc DX» stops transmission immediately. Own engine only.
@@ -58,6 +58,7 @@ Version 0.11.287: own multimode engine (FT8, FT4, JT65 A/B/C, JT9, JT4 A–G, Q6
 - **Macros and rotator**: the macro bar has a gear button, Ctrl/Shift rows and a choice of button font; the rotator is smaller and movable, and a click on the compass rose steers it.
 - **Contest log**: the log of the contest shows the exchange sent and received (serial, state or section) in two columns chosen with the pencil; the first-run guide no longer shows station warnings while you are still filling it in.
 - **Support package**: the package Aurora sends to whoever develops it now carries the commands sent to the radio with the answers, the radio settings and status, the PC, the audio, the window, the latest page errors and a summary of the log (always without personal data); on Icom radios without a data mode in Hamlib (IC-756PRO) Aurora no longer takes the radio out of USB-D.
+- **Icom IC-756PRO**: with Hamlib the radio no longer ends up on VFO B after restarting Aurora (the VFO B is not read any more when the radio does not say which VFO it is on).
 - **Logger32**: the Guide explains the UDP map (port 2237), how to open it and how to diagnose it.
 - **WSPR and FST4W**: beacon with power, «Tx Pct» and optional upload of the spots to WSPRnet, off by default. Everything is in Settings › Modes › WSPR · FST4W; the decode options of WSJT-X are in Settings › Modes › FT8 · FT4 › Decoding (and in the JT65 · JT9 · FST4 and VHF · EME pages).
 - **JTDX-style controls**: AutoSeq, 1 QSO, Risp B4, Bypassa, Salta Tx1, Periodo Tx, AutoTX, Abilita Tx, Tx/Rx Split, Tx/Rx frequencies with copy, Canc DX; double-clicking a message sets the DX, chooses the message to start with and turns Abilita Tx on, so Aurora calls it in the right period (option «Double click: answer the station» in Settings › Modes › FT8 · FT4 › Messages and filters; with it off a double click only selects). AutoTX: turning it on also turns Abilita Tx on, and when a QSO ends the CQ starts again by itself only if it is on.

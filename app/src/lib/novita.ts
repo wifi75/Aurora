@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.288',
+    released: '2026-11-17T22:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Icom più vecchie: la radio resta sul VFO A',
+      'Older Icom radios: the radio stays on VFO A',
+      'Ältere Icom-Geräte: das Gerät bleibt auf VFO A',
+      'Icom plus anciennes : la radio reste sur le VFO A',
+      'Icom más antiguas: la radio se queda en el VFO A',
+      'Icom mais antigos: o rádio fica no VFO A',
+    ],
+    text: [
+      'Con certe Icom e Hamlib (IC-756PRO) la radio finiva sul VFO B dopo il riavvio di Aurora: con «Leggi anche gli altri dati» acceso Aurora leggeva il VFO B e Hamlib, che con queste radio non sa dire su quale VFO sta, passava al VFO B e non tornava indietro. Ora il VFO B non si legge più se la radio non dice su che VFO è: la radio non viene più spostata. Il traffico con la radio lo ha mostrato il nuovo pacchetto di assistenza.',
+      'With some Icom radios and Hamlib (IC-756PRO) the radio ended up on VFO B after restarting Aurora: with “Also read the other radio data” on, Aurora read VFO B and Hamlib, which cannot tell which VFO these radios are on, switched to VFO B and did not switch back. Now VFO B is no longer read when the radio does not say which VFO it is on: the radio is no longer moved. The new support package showed the traffic with the radio.',
+      'Bei manchen Icom-Geräten mit Hamlib (IC-756PRO) stand das Gerät nach dem Neustart von Aurora auf VFO B: Bei eingeschaltetem „Auch die übrigen Funkgerätedaten lesen“ las Aurora VFO B, und Hamlib, das bei diesen Geräten nicht sagen kann, auf welchem VFO sie stehen, wechselte zu VFO B und nicht zurück. Jetzt wird VFO B nicht mehr gelesen, wenn das Gerät nicht sagt, auf welchem VFO es steht: das Gerät wird nicht mehr verstellt. Der Verkehr mit dem Gerät wurde im neuen Supportpaket sichtbar.',
+      'Avec certaines Icom et Hamlib (IC-756PRO), la radio se retrouvait sur le VFO B après le redémarrage d’Aurora : avec « Lire aussi les autres données du poste » activé, Aurora lisait le VFO B et Hamlib, qui ne sait pas dire sur quel VFO se trouvent ces radios, passait au VFO B sans revenir. Maintenant le VFO B n’est plus lu quand la radio ne dit pas sur quel VFO elle est : la radio n’est plus déplacée. Les échanges avec la radio ont été montrés par le nouveau paquet d’assistance.',
+      'Con algunas Icom y Hamlib (IC-756PRO) la radio acababa en el VFO B tras reiniciar Aurora: con «Leer también los demás datos de la radio» activado, Aurora leía el VFO B y Hamlib, que con estas radios no sabe decir en qué VFO están, pasaba al VFO B y no volvía. Ahora el VFO B ya no se lee si la radio no dice en qué VFO está: la radio ya no se mueve. El tráfico con la radio lo mostró el nuevo paquete de asistencia.',
+      'Com alguns rádios Icom e Hamlib (IC-756PRO) o rádio ficava no VFO B depois de reiniciar a Aurora: com «Ler também os outros dados do rádio» ligado, a Aurora lia o VFO B e o Hamlib, que com estes rádios não sabe dizer em que VFO estão, passava ao VFO B e não voltava. Agora o VFO B já não é lido se o rádio não diz em que VFO está: o rádio já não é movido. O tráfego com o rádio foi mostrado pelo novo pacote de assistência.',
+    ],
+  },
+  {
     version: '0.11.287',
     released: '2026-11-17T19:45:26Z',
     kind: 'new',
