@@ -44,6 +44,18 @@ pub fn avvia_lettura() {
     });
 }
 
+/// All'avvio: in un thread calcola i file principali che mancano e il nome dell'antivirus, e li consegna all'avviso fisso della pagina
+/// (`/api/v1/health/files`). Registra anche il ricalcolo, per quando «Ripristina Hamlib» rimette i file.
+pub fn avvia_controllo_file() {
+    remote_api::files_check::set_recompute(mancanti_all_avvio);
+    let _ = std::thread::Builder::new().name("files-check".into()).spawn(|| {
+        let mancanti = mancanti_all_avvio();
+        // il nome serve solo se manca qualcosa: la lettura dal registro non si fa per niente
+        let antivirus = if mancanti.is_empty() { "" } else { nome() };
+        remote_api::files_check::set(mancanti, antivirus);
+    });
+}
+
 #[cfg(windows)]
 fn leggi_nome() -> String {
     let mut command = std::process::Command::new("reg");

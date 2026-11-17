@@ -608,6 +608,7 @@ impl Rapporti {
     /// Legge impostazioni, coda e limiti dalla cartella dati, guarda se c'e' un crash nuovo e avvia il thread che manda.
     pub fn avvia(data_dir: &Path) -> Arc<Rapporti> {
         crate::antivirus::avvia_lettura();
+        crate::antivirus::avvia_controllo_file();
         let impostazioni: Impostazioni = leggi_json(&data_dir.join(FILE_IMPOSTAZIONI)).unwrap_or_default();
         let id = std::fs::read_to_string(data_dir.join(FILE_ID)).ok().map(|s| s.trim().to_string()).filter(|s| s.len() == 36).unwrap_or_else(|| {
             let id = uuid();

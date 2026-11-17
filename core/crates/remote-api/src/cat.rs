@@ -114,7 +114,10 @@ pub(crate) async fn cat_hamlib_restore(State(state): State<AppState>, _: Authed,
     }
     let done = blocking(move || rig_control::hamlib_restore::restore().map(|_| cat.snapshot())).await?;
     match done {
-        Ok(snapshot) => Ok(Json(json!(snapshot))),
+        Ok(snapshot) => {
+            crate::files_check::refresh();
+            Ok(Json(json!(snapshot)))
+        }
         Err(message) => Err(CatApiError { status: StatusCode::BAD_GATEWAY, code: "restore_failed", message }),
     }
 }

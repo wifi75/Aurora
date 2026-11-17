@@ -7,6 +7,7 @@ mod digi_api;
 mod sat_api;
 mod sstv_api;
 pub mod engine_settings;
+pub mod files_check;
 mod frames;
 pub mod lan;
 pub mod log_prompt;
