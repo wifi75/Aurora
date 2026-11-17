@@ -1,4 +1,7 @@
-import { DASH_COLS, type DashItem, type DashSpec } from './dashGrid';
+import type { DashItem, DashSpec } from './dashGrid';
+import { loadDashLayout, parseDashLayout, saveDashLayout, serializeDashLayout, type DashLayoutRules, type StoredLayout } from './dashLayout';
+
+export type { StoredLayout } from './dashLayout';
 
 /** Memoria della disposizione delle schede della pagina Satelliti. */
 export const SAT_LAYOUT_KEY = 'aurora.sat.layout';
@@ -38,61 +41,24 @@ export function defaultLayout(): DashItem[] {
   ];
 }
 
-export interface StoredLayout {
-  items: DashItem[];
-  locked: boolean;
-}
-
-const isInt = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n);
+const RULES: DashLayoutRules = {
+  version: SAT_LAYOUT_VERSION,
+  accepts: (id) => (SAT_WIDGET_IDS as readonly string[]).includes(id),
+  mins: (id) => SAT_MINS[id as SatWidgetId],
+  maxCols: (id) => SAT_MAX_COLS[id as SatWidgetId] ?? 12,
+  exact: SAT_WIDGET_IDS,
+};
 
 /** Legge e controlla la disposizione salvata; null se manca, e' corrotta, di un'altra versione o non ha tutte e sole le schede note. */
-export function parseLayout(raw: string | null): StoredLayout | null {
-  if (!raw) return null;
-  try {
-    const data: unknown = JSON.parse(raw);
-    if (typeof data !== 'object' || data === null) return null;
-    const rec = data as Record<string, unknown>;
-    if (rec.v !== SAT_LAYOUT_VERSION || !Array.isArray(rec.items) || rec.items.length !== SAT_WIDGET_IDS.length) return null;
-    const seen = new Set<string>();
-    const items: DashItem[] = [];
-    for (const row of rec.items as unknown[]) {
-      if (typeof row !== 'object' || row === null) return null;
-      const r = row as Record<string, unknown>;
-      const id = r.id;
-      if (typeof id !== 'string' || !(SAT_WIDGET_IDS as readonly string[]).includes(id) || seen.has(id)) return null;
-      const { x, y, w, h } = r;
-      // `h` e' facoltativa: senza, l'altezza segue il contenuto
-      if (!isInt(x) || !isInt(y) || !isInt(w) || (h !== undefined && !isInt(h))) return null;
-      const min = SAT_MINS[id as SatWidgetId];
-      if (x < 0 || y < 0 || w < min.minW || w > (SAT_MAX_COLS[id as SatWidgetId] ?? DASH_COLS) || (h !== undefined && h < min.minH) || x + w > DASH_COLS || y > 10_000 || (h !== undefined && h > 10_000)) return null;
-      seen.add(id);
-      items.push(h === undefined ? { id, x, y, w, h: min.minH } : { id, x, y, w, h, userH: true });
-    }
-    return { items, locked: rec.locked === true };
-  } catch {
-    return null;
-  }
-}
+export const parseLayout = (raw: string | null): StoredLayout | null => parseDashLayout(raw, RULES);
 
-export function serializeLayout(l: StoredLayout): string {
-  return JSON.stringify({ v: SAT_LAYOUT_VERSION, locked: l.locked, items: l.items.map((i) => (i.userH ? { id: i.id, x: i.x, y: i.y, w: i.w, h: i.h } : { id: i.id, x: i.x, y: i.y, w: i.w })) });
-}
+export const serializeLayout = (l: StoredLayout): string => serializeDashLayout(l, RULES);
 
 /** La disposizione salvata nel browser, o quella di partenza. */
 export function loadLayout(): StoredLayout {
-  try {
-    const found = parseLayout(window.localStorage.getItem(SAT_LAYOUT_KEY));
-    if (found) return found;
-  } catch {
-    /* memoria del browser non disponibile */
-  }
-  return { items: defaultLayout(), locked: false };
+  return loadDashLayout(SAT_LAYOUT_KEY, RULES) ?? { items: defaultLayout(), locked: false };
 }
 
 export function saveLayout(l: StoredLayout): void {
-  try {
-    window.localStorage.setItem(SAT_LAYOUT_KEY, serializeLayout(l));
-  } catch {
-    /* memoria del browser non disponibile */
-  }
+  saveDashLayout(SAT_LAYOUT_KEY, l, RULES);
 }

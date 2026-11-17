@@ -1,0 +1,50 @@
+/* Schede spostabili e ridimensionabili (griglia a 12 colonne, righe di 30 px, spazi di 10 px): Satelliti e contest */
+.dash { position: relative; width: 100%; min-width: 0; }
+.dash-item { position: absolute; box-sizing: border-box; transition: left 150ms ease, top 150ms ease, width 150ms ease, height 150ms ease; }
+.dash-item--drag { z-index: 40; transition: none; opacity: 0.93; filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.55)); cursor: grabbing; }
+.dash--busy { user-select: none; -webkit-user-select: none; }
+.dash-ph { position: absolute; box-sizing: border-box; border-radius: 16px; border: 2px dashed var(--accent, #2cf5a4); background: color-mix(in srgb, var(--accent, #2cf5a4) 12%, transparent); transition: left 150ms ease, top 150ms ease, width 150ms ease, height 150ms ease; pointer-events: none; }
+.dash-card { position: relative; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; padding: 0.45rem 0.7rem 0.55rem; }
+.dash-bar { display: flex; align-items: center; gap: 0.5rem; flex: none; min-height: 1.5rem; margin: 0 0 0.35rem; touch-action: none; }
+.dash-bar--grab { cursor: grab; }
+.dash-item--drag .dash-bar { cursor: grabbing; }
+.dash-title, .dash .sat-panel h2.dash-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: 0.9rem; letter-spacing: 0.03em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-actions { display: flex; align-items: center; gap: 0.6rem; flex: none; }
+.dash-actions label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+.dash-actions select, .dash-actions input[type='number'] { font: inherit; font-size: 0.8125rem; color: var(--text); background: var(--panel-raised); border: 1px solid var(--border); border-radius: 9px; padding: 0.1rem 0.35rem; min-width: 0; }
+.dash-actions input[type='number'] { width: 3rem; }
+.dash-grip { flex: none; width: 10px; height: 16px; color: var(--text-muted); opacity: 0; transition: opacity 150ms ease; }
+.dash-card:hover .dash-grip, .dash-bar:focus-visible .dash-grip, .dash-item--drag .dash-grip { opacity: 0.85; }
+.dash-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
+.dash-body > .sat-table { flex: 1 1 0; min-height: 3rem; }
+.dash-body > .sat-muted { flex: none; }
+
+/* la cartina non ha barra: sta tutta nel riquadro, si afferra dalla maniglia in alto al centro */
+.dash-card--bare .dash-body { overflow: hidden; display: block; flex: 1 1 auto; }
+.dash-pill { position: absolute; top: 4px; left: 50%; z-index: 7; display: grid; place-items: center; width: 3.4rem; height: 1.15rem; margin-left: -1.7rem; border-radius: 999px; background: rgba(8, 14, 30, 0.6); color: #e6eefc; cursor: grab; touch-action: none; opacity: 0; transition: opacity 150ms ease; }
+.dash-pill .dash-grip { opacity: 1; color: inherit; transform: rotate(90deg); }
+.dash-card--bare:hover .dash-pill, .dash-item--drag .dash-pill, .dash-pill:focus-visible { opacity: 1; }
+.dash-item--drag .dash-pill { cursor: grabbing; }
+
+/* maniglia d'angolo, in basso a destra */
+.dash-resize { position: absolute; right: 0; bottom: 0; z-index: 8; width: 1.2rem; height: 1.2rem; cursor: nwse-resize; touch-action: none; opacity: 0.4; color: var(--text-muted); transition: opacity 150ms ease, color 150ms ease; background: linear-gradient(135deg, transparent 0 45%, currentColor 45% 52%, transparent 52% 62%, currentColor 62% 69%, transparent 69% 79%, currentColor 79% 86%, transparent 86%); }
+.dash-card--bare .dash-resize { color: #fff; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)); }
+.dash-card:hover .dash-resize, .dash-resize:hover, .dash--busy .dash-resize { opacity: 0.95; }
+.dash-resize:hover { color: var(--text); }
+.dash-card--bare .dash-resize:hover { color: #fff; }
+
+/* finestra stretta: schede in colonna a larghezza piena, senza spostamenti */
+.dash--stack { display: flex; flex-direction: column; gap: 10px; }
+.dash--stack .dash-item { position: static; width: 100%; transition: none; }
+.dash--stack .dash-card { height: auto; }
+.dash--stack .dash-body { overflow: visible; }
+.dash--stack .dash-body > .sat-table { flex: none; max-height: 22rem; }
+.dash--stack .sat-list { flex: none; max-height: 14rem; }
+.dash--stack .dash-card--bare .dash-body { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-item, .dash-ph, .dash-grip, .dash-pill, .dash-resize { transition: none; }
+}
+
+.dash-bar { margin: 0 0 8px; }
+.dash-card--center .dash-title { text-align: center; }

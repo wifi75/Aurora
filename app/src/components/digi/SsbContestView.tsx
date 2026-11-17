@@ -1,15 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react';
 import { browserStorage } from '../../lib/theme';
 import { useT } from '../../i18n';
-import { getTextContestCheck, type TextContest, type TextContestScore } from '../../api/contestTesto';
-import { ContestStatsCard, multLabel, multName } from './ContestStatsDialog';
+import type { TextContest, TextContestScore } from '../../api/contestTesto';
+import { ContestStatsCard, multName } from './ContestStatsDialog';
 import type { Qso } from './DigiLog';
-import { getDxcc, getLog4om, getLogQsos, type Log4omQso } from '../../api/client';
-import { autoExchange, callMultipliers, contestSuggestions, previousQsos, HF_BANDS } from '../../lib/contestEntry';
-import { qsoTimeMs } from '../../lib/logWindow';
-import { EXTRA_MAX, cleanExtra, extraLabelKey } from '../../lib/contestSection';
-import { SaveFailAlert } from './SaveFailAlert';
+import type { Log4omQso } from '../../api/client';
+import { EntryCard } from './contest/EntryCard';
+import { useContestEntry } from './contest/useContestEntry';
 import '../../styles/digi-ssb-contest.css';
 
 interface Props {
@@ -153,8 +150,6 @@ function Mults({ s, pending, t }: { s: TextContestScore; pending: Set<string>; t
 export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegister, qsoNr, contest, inSet, noBand, noMode, windowNotice, onEditWindow, band, saveError = null, onDismissSaveError, modeName, contestName, score, showLog, log, cluster, rotor }: Props) {
   const t = useT();
   const contestOn = contestName !== null;
-  const callRef = useRef<HTMLInputElement>(null);
-  const form = useRef<HTMLDivElement>(null);
   const colsBox = useRef<HTMLDivElement>(null);
   const entry = useRef<HTMLElement>(null);
   // dove parte la finestra del rotore: sotto il riquadro dell'inserimento (coordinate della pagina, senza lo zoom)
@@ -226,138 +221,8 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
     setCols(null);
     writeCols(null);
   };
-  // il nominativo si controlla un attimo dopo l'ultimo tasto
-  const call = qso.call.trim().toUpperCase();
-  const [typed, setTyped] = useState('');
-  useEffect(() => {
-    const id = window.setTimeout(() => setTyped(call), 220);
-    return () => window.clearTimeout(id);
-  }, [call]);
-  const nrr = (qso.nrr ?? '').trim();
-  const check = useQuery({
-    queryKey: ['ssb-contest-check', typed, band, nrr],
-    queryFn: () => getTextContestCheck(typed, band, modeName, nrr),
-    enabled: contestOn && typed.length >= 3 && call === typed && band !== '',
-    retry: false,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnWindowFocus: false,
-  });
-  // lo stesso log del pannello Log (stessa chiave, quindi la stessa lettura): il doppio si cerca solo nei QSO del contest
-  const logQ = useQuery({ queryKey: ['log4om', 500], queryFn: () => getLog4om(500), retry: false, refetchInterval: 10_000 });
-  const mine = (logQ.data?.qsos ?? []).find((q) => inSet(q) && q.call.toUpperCase() === call && (noBand || q.band === band) && (noMode || q.mode.toUpperCase() === modeName.toUpperCase()));
-  const raw = call === typed && typed.length >= 3 ? check.data : undefined;
-  const c = raw ? { ...raw, doppio: mine !== undefined, precedente: mine ? { time_ms: Date.parse(`${mine.date.replace(' ', 'T').slice(0, 19)}Z`), band: mine.band, mode: mine.mode, exch_rcvd: '', exch_sent: '' } : null } : undefined;
-  const pending = new Set(c?.nuovi ?? []);
-  // la casella del terzo elemento dello scambio (sezione, club, stato) compare solo se il core dice che questo nominativo la da' (stesse regole
-  // del punteggio); la risposta si ricorda per il nominativo, cosi' non sparisce mentre si scrive il numero e la richiesta si rifa'
-  const [exchFor, setExchFor] = useState<{ call: string; want: boolean }>({ call: '', want: false });
-  const exchAtteso = raw ? raw.exch_atteso === true : null;
-  useEffect(() => {
-    if (exchAtteso !== null) setExchFor({ call: typed, want: exchAtteso });
-  }, [exchAtteso, typed]);
-  const showExtra = contestOn && exchFor.call === call && exchFor.want;
-  const extraNow = qso.extra ?? '';
-  useEffect(() => {
-    // senza la casella il valore scritto non vale piu' (altro nominativo)
-    if (!showExtra && extraNow !== '') onQsoRef.current({ extra: '' });
-  }, [showExtra, extraNow]);
-
-  // paese e zone del nominativo (database dei prefissi): suggerimenti, scambio ricevuto precompilato, moltiplicatori che porta
-  const known = contestOn && call === typed && typed.length >= 3;
-  const dxccQ = useQuery({ queryKey: ['ssb-dxcc', typed], queryFn: () => getDxcc(typed), enabled: known, retry: false, staleTime: 300_000, refetchOnWindowFocus: false });
-  const info = known ? dxccQ.data : undefined;
-  const suggestions = contest ? contestSuggestions(contest, info) : [];
-  const auto = contest ? autoExchange(contest, info) : null;
-  // lo scambio ricevuto si precompila solo se e' vuoto o e' ancora quello messo da qui: quello scritto a mano non si tocca
-  const autoRef = useRef('');
-  const nrrRef = useRef(nrr);
-  nrrRef.current = nrr;
-  const onQsoRef = useRef(onQso);
-  onQsoRef.current = onQso;
-  const dxccDone = dxccQ.isSuccess || dxccQ.isError;
-  useEffect(() => {
-    if (!contestOn) return;
-    const cur = nrrRef.current;
-    if (call.length < 3) {
-      if (autoRef.current !== '' && cur === autoRef.current) onQsoRef.current({ nrr: '' });
-      autoRef.current = '';
-      return;
-    }
-    if (call !== typed || !dxccDone || (cur !== '' && cur !== autoRef.current)) return;
-    if (auto !== null) {
-      if (cur !== auto) onQsoRef.current({ nrr: auto });
-      autoRef.current = auto;
-    } else {
-      if (cur !== '') onQsoRef.current({ nrr: '' });
-      autoRef.current = '';
-    }
-  }, [contestOn, call, typed, auto, dxccDone]);
-
-  // QSO precedenti con il nominativo, una riga per banda: dal log (con gli scambi nel commento), solo quelli del contest in corso
-  const logAll = useQuery({ queryKey: ['log-qsos-contest', logQ.data?.total ?? 0], queryFn: getLogQsos, enabled: known, retry: false, staleTime: 5_000, refetchOnWindowFocus: false });
-  const prevRows = known
-    ? previousQsos(logAll.data?.qsos ?? [], typed, (q) => inSet({ ...q, date: `${new Date(qsoTimeMs(q)).toISOString().slice(0, 19).replace('T', ' ')}Z` }), HF_BANDS)
-    : [];
-  const callMults = known && score && c ? callMultipliers(score.tipi, info, c.nuovi, score.griglia, band) : [];
-
-  useEffect(() => callRef.current?.focus(), []);
-
-  const register = () => {
-    onRegister();
-    callRef.current?.focus();
-  };
-  const onKey = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === 'Escape' && saveError) onDismissSaveError?.();
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    const fields = Array.from(form.current?.querySelectorAll<HTMLInputElement>('input:not([readonly]):not([data-skip])') ?? []);
-    const i = fields.indexOf(e.target as HTMLInputElement);
-    // Invio nell'ultimo campo registra; negli altri passa al successivo
-    if (i < 0 || i >= fields.length - 1) register();
-    else {
-      fields[i + 1]?.focus();
-      fields[i + 1]?.select();
-    }
-  };
-
-  let alert: ReactNode = null;
-  if (c) {
-    if (c.doppio) {
-      const p = c.precedente;
-      const at = p ? new Date(p.time_ms).toISOString().slice(11, 16) : '';
-      alert = (
-        <p className="ssbc-alert ssbc-alert--dupe" role="alert">
-          {p ? t('ssbc.dupeAt', { time: at, band: p.band }) : t('ssbc.dupe')}
-        </p>
-      );
-    } else if (!c.ammesso) {
-      alert = (
-        <p className="ssbc-alert ssbc-alert--warn" role="alert">
-          {c.motivo === 'band' ? t('ssbc.notBand') : t('ssbc.notValid')}
-        </p>
-      );
-    } else if (c.nuovi.length > 0) {
-      alert = (
-        <p className="ssbc-alert ssbc-alert--mult" role="status">
-          {t('ssbc.newMult', { mult: c.nuovi.map((m) => multLabel(t, m)).join(', ') })}
-        </p>
-      );
-    } else {
-      alert = (
-        <p className="ssbc-alert ssbc-alert--ok" role="status">
-          {t('ssbc.newCall', { n: c.punti })}
-        </p>
-      );
-    }
-  }
-
-  const field = (label: string, input: ReactNode, cls: string) => (
-    <label className={`ssbc-field ${cls}`}>
-      <span>{label}</span>
-      {input}
-    </label>
-  );
+  const entryState = useContestEntry({ qso, contest, inSet, noBand, noMode, band, modeName, contestName, score, onQso });
+  const { pending, logQ } = entryState;
 
   return (
     <div className="ssbc">
@@ -365,85 +230,24 @@ export function SsbContestView({ qso, rsts, rstr, nrsAuto, onQso, onRst, onRegis
         {showLog ? <div className="ssbc-col ssbc-col--log">{log}</div> : null}
         {showLog ? <div className="digi-radargrip" role="separator" aria-orientation="vertical" title={t('ssbc.gripTip')} onPointerDown={dragGrip('left')} onDoubleClick={resetCols} /> : null}
         <div className="ssbc-col ssbc-col--center">
-          <section className="ssbc-entry" ref={entry} aria-label={t('ssbc.enter')}>
-            <h3>
-              {t('ssbc.enter')}
-              {contestName ? <b className="ssbc-contest-name"> · {contestName}</b> : null} <span className="ssbc-hint">· {t('ssbc.enterHint')}</span>
-            </h3>
-            <p className={`ssbc-bandnow${band === '' ? ' ssbc-bandnow--none' : ''}`}>{t('digi.log.bandNow', { band: band === '' ? '—' : band.replace(/^(\d+)m$/, '$1 m') })}</p>
-            {contestOn && windowNotice ? (
-              <p className="ssbc-notice" role="status">
-                {t('ssbc.windowOff')}{' '}
-                <button type="button" className="ssbc-link" onClick={onEditWindow}>
-                  {t('ssbc.windowSet')}
-                </button>
-              </p>
-            ) : null}
-            <div className="ssbc-row" ref={form} onKeyDown={onKey}>
-              {contestOn ? field(t('ssbc.qsoNr'), <input className="ssbc-in" value={String(qsoNr).padStart(3, '0')} readOnly tabIndex={-1} />, 'ssbc-field--qsonr') : null}
-              {field(t('ssbc.call'), <input ref={callRef} className="ssbc-in ssbc-in--call" value={qso.call} maxLength={16} autoComplete="off" spellCheck={false} onChange={(e) => onQso({ call: e.target.value.toUpperCase() })} />, 'ssbc-field--call')}
-              {contestOn ? (
-                <>
-                  {field(t('ssbc.serialSent'), <input className="ssbc-in" data-skip="1" tabIndex={-1} value={qso.nrs || nrsAuto} maxLength={12} autoComplete="off" onChange={(e) => onQso({ nrs: e.target.value.toUpperCase() })} />, 'ssbc-field--nr')}
-                  {field(t('ssbc.serialRcvd'), <input className="ssbc-in" value={qso.nrr ?? ''} maxLength={12} autoComplete="off" onChange={(e) => onQso({ nrr: e.target.value.toUpperCase() })} />, 'ssbc-field--nrr')}
-                  {showExtra ? field(t(extraLabelKey(contestName)), <input className="ssbc-in" value={extraNow} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => onQso({ extra: cleanExtra(e.target.value) })} />, 'ssbc-field--nrr ssbc-field--extra') : null}
-                </>
-              ) : (
-                <>
-                  {field(t('ssbc.name'), <input className="ssbc-in" value={qso.name} maxLength={30} autoComplete="off" onChange={(e) => onQso({ name: e.target.value })} />, 'ssbc-field--nrr ssbc-field--name')}
-                  {field(t('ssbc.qth'), <input className="ssbc-in" value={qso.qth} maxLength={40} autoComplete="off" onChange={(e) => onQso({ qth: e.target.value })} />, 'ssbc-field--nrr ssbc-field--qth')}
-                  {field(t('ssbc.rsts'), <input className="ssbc-in" value={rsts} maxLength={4} inputMode="numeric" autoComplete="off" onChange={(e) => onRst({ rsts: e.target.value })} />, 'ssbc-field--rst')}
-                  {field(t('ssbc.rstr'), <input className="ssbc-in" value={rstr} maxLength={4} inputMode="numeric" autoComplete="off" onChange={(e) => onRst({ rstr: e.target.value })} />, 'ssbc-field--rst')}
-                </>
-              )}
-            </div>
-            {suggestions.length > 0 ? (
-              <p className="ssbc-suggest">
-                <span>{t('ssbc.suggest')}:</span>
-                {suggestions.map((x) => (
-                  <button key={x.kind} type="button" tabIndex={-1} className="ssbc-chip on" onClick={() => onQso({ nrr: x.value })}>
-                    {t(x.kind === 'cq' ? 'ctest.f.sCq' : x.kind === 'itu' ? 'ctest.f.sItu' : 'ctest.f.sDxcc')} {x.value}
-                  </button>
-                ))}
-              </p>
-            ) : null}
-            <div className="ssbc-alertbox" aria-live="polite">
-              {saveError ? <SaveFailAlert msg={saveError} /> : alert}
-            </div>
-            {callMults.length > 0 ? (
-              <div className="ssbc-callmult" aria-label={t('ssbc.callMult', { call: typed })}>
-                <span>{t('ssbc.callMult', { call: typed })}</span>
-                {callMults.map((m) => (
-                  <b key={`${m.tipo}:${m.value}`} className={m.fresh ? 'is-new' : undefined}>
-                    {multName(t, m.tipo)} {m.value}: {m.fresh ? t('ssbc.cmNew') : t('ssbc.cmWorked')}
-                  </b>
-                ))}
-              </div>
-            ) : null}
-            {known ? (
-              <table className="ssbc-prev" aria-label={t('ssbc.prevTitle', { call: typed })}>
-                <caption>{t('ssbc.prevTitle', { call: typed })}</caption>
-                <thead>
-                  <tr>
-                    <th>{t('ctest.c.band')}</th>
-                    <th>{t('ssbc.prevMode')}</th>
-                    <th>{t('ssbc.prevTime')}</th>
-                    <th>{t('ssbc.prevNr')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prevRows.map((r) => (
-                    <tr key={r.band} className={r.qso ? 'is-worked' : undefined}>
-                      <td>{r.band.replace('m', '')}</td>
-                      <td>{r.qso?.mode ?? '-'}</td>
-                      <td title={r.qso ? new Date(r.qso.time_ms).toISOString().slice(0, 16).replace('T', ' ') : undefined}>{r.qso ? new Date(r.qso.time_ms).toISOString().slice(11, 16) : '-'}</td>
-                      <td>{r.qso ? r.qso.nr || '-' : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : null}
-          </section>
+          <EntryCard
+            entry={entryState}
+            qso={qso}
+            rsts={rsts}
+            rstr={rstr}
+            nrsAuto={nrsAuto}
+            qsoNr={qsoNr}
+            contestName={contestName}
+            windowNotice={windowNotice}
+            onEditWindow={onEditWindow}
+            onQso={onQso}
+            onRst={onRst}
+            onRegister={onRegister}
+            band={band}
+            saveError={saveError}
+            onDismissSaveError={onDismissSaveError}
+            sectionRef={entry}
+          />
           {contestOn ? <div className="ssbc-lower-main">
           <section className="ssbc-score" aria-label={t('ssbc.points')}>
             {score && score.qso + score.doppi > 0 ? (

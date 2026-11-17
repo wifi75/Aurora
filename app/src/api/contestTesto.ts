@@ -28,8 +28,42 @@ export interface BandMult {
   weight: number;
 }
 
+/** Un campo dello scambio dichiarato da un contest in cartella (`[[scambio.ricevuto]]`, `[[scambio.inviato]]`). */
+export interface ExchangeField {
+  nome: string;
+  etichetta_it?: string;
+  etichetta_en?: string;
+  /** `rst`, `numero` o `testo`. */
+  tipo: string;
+  quando?: string;
+  elenco?: string;
+  progressivo?: boolean;
+  motore?: boolean;
+}
+
+/** La parte della dichiarazione di un contest in cartella (`contest.toml`) che serve alle impostazioni (`dichiarazione` di `/voce/{id}`). */
+export interface ContestDeclaration {
+  /** Le bande ammesse come scritte nel file (`28 MHz`); vuoto = tutte. */
+  bande: string[];
+  modi: { ammessi: string[]; limite: { modo: string; frequenza_massima_khz?: number | null; frequenza_minima_khz?: number | null; nota?: string }[] };
+  categorie: Record<string, unknown>;
+  /** `modo`, `banda`, `banda+modo`, `sempre` (vuoto = banda e modo). */
+  doppi: { per: string; nota?: string };
+  /** Le date dell'edizione calcolate (`aaaammgghhmmss`) e i limiti d'orario; `null` senza `[edizione]`. */
+  edizione: { mese: number; durata_ore: number; ore_massime: number | null; pausa_minima_min: number | null; invio_log_giorni: number | null; date: { anno: number; inizio: string; fine: string; confermata: boolean } | null } | null;
+  cabrillo: Record<string, unknown>;
+}
+
 /** Un contest dei modi testuali, come nel file `.contest` (`docs/contest-file.md`). */
 export interface TextContest {
+  /** `cartella` (contest incluso o dell'utente in una cartella, regole in sola lettura) o `file` (vecchio `.contest`). */
+  origine?: 'cartella' | 'file';
+  /** Lo scambio dichiarato (vuoto per i vecchi file). */
+  scambio?: { ricevuto: ExchangeField[]; inviato: ExchangeField[] };
+  /** La dichiarazione del contest in cartella (solo da `/voce/{id}`; `null` per i file). */
+  dichiarazione?: ContestDeclaration | null;
+  /** Il regolamento in markdown semplice (solo da `/voce/{id}`; `null` per i file). */
+  regolamento?: string | null;
   id: string;
   name: string;
   notes: string;
@@ -120,6 +154,8 @@ export const getTextContests = () => call<TextContestList>('');
 export const getActiveTextContest = () => call<ActiveTextContest | null>('/attivo');
 export const getTextContest = (id: string) => call<TextContest>(`/voce/${encodeURIComponent(id)}`);
 export const saveTextContest = (c: TextContest) => (c.id ? call<{ ok: boolean; id: string }>(`/voce/${encodeURIComponent(c.id)}`, json('PUT', c)) : call<{ ok: boolean; id: string }>('/voce', json('POST', c)));
+/** «Copia nella mia cartella»: copia un contest incluso nei dati dell'utente, dove si modifica (e sostituisce quello incluso). */
+export const copyTextContest = (id: string) => call<{ ok: boolean; id: string }>(`/voce/${encodeURIComponent(id)}/copia`, { method: 'POST' });
 export const deleteTextContest = (id: string) => call<{ ok: boolean }>(`/voce/${encodeURIComponent(id)}`, { method: 'DELETE' });
 /** Importa un contest: pacchetto `.zip` (`.contest` con `macros/` e `dom/`) o `.contest` da solo; il core lo controlla e lo aggiunge. */
 export const importTextContest = async (file: File) =>

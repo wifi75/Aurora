@@ -2,11 +2,12 @@ import { useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
-import { deleteTextContest, exportTextContest, importTextContest, getTextContest, getTextContests, newTextContest, saveTextContest, selectTextContest, type TextContest } from '../../api/contestTesto';
+import { copyTextContest, deleteTextContest, exportTextContest, importTextContest, getTextContest, getTextContests, newTextContest, saveTextContest, selectTextContest, type TextContest } from '../../api/contestTesto';
 import { askConfirm } from '../ConfirmHost';
 import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
-import { EXTRA_MAX, cleanExtra, hasExchMultiplier, readSection, writeSection } from '../../lib/contestSection';
+import { EXTRA_MAX, cleanExtra, readSection, writeSection } from '../../lib/contestSection';
+import { blocchiRegolamento, inCartella, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
 import { browserStorage } from '../../lib/theme';
 import '../../styles/digi-contest.css';
 
@@ -237,33 +238,44 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
   const domainFiles = list?.domini ?? [];
   const refresh = useRefresh();
   // un contest con una sola edizione conosciuta e date di un anno passato parte con le date dell'anno in corso (si salvano con OK)
-  const [proposed] = useState(() => (contest.id ? staleWindowProposal(contest, Date.now()) : null));
+  // (non per i contest in cartella: le date dell'edizione le calcola il core dalla regola)
+  const readonly = inCartella(contest);
+  const [proposed] = useState(() => (contest.id && !readonly ? staleWindowProposal(contest, Date.now()) : null));
   const [c, setC] = useState<TextContest>(() => (proposed ? { ...contest, start: proposed.start, end: proposed.end } : contest));
   const [busy, setBusy] = useState(false);
   // la propria sezione / stato / club di questo contest (preferenze del browser, per contest): serve ai contest con un moltiplicatore `exch`
   const [mySect, setMySect] = useState(() => readSection(browserStorage(), contest.id));
   const datesCheck = checkContestDates(c.start, c.end);
-  const proposals = c.id ? windowProposals(c.name, new Date().getUTCFullYear()) : [];
+  const proposals = c.id && !readonly ? windowProposals(c.name, new Date().getUTCFullYear()) : [];
+  // dichiarazione, scambio e regolamento di un contest in cartella: se non sono arrivati con il contest (il contest attivo non li porta) si chiedono al core
+  const full = useQuery({ queryKey: ['contest-testo-voce', contest.id], queryFn: () => getTextContest(contest.id), enabled: readonly && contest.dichiarazione === undefined, retry: false }).data;
+  // il contest com'e' dichiarato: serve a decidere quali voci valgono. Le validita' per modo e il QTC restano quelli del contest aperto, cosi' una casella spenta si puo' riaccendere
+  const view: TextContest = { ...c, origine: contest.origine, scambio: contest.scambio ?? full?.scambio, dichiarazione: contest.dichiarazione ?? full?.dichiarazione, valid_cw: contest.valid_cw, valid_phone: contest.valid_phone, valid_digital: contest.valid_digital, qtc: contest.qtc };
+  const regolamento = contest.regolamento ?? full?.regolamento ?? null;
+  const off = (v: Voce) => !voceAttiva(view, v);
+  const lock = (v: Voce) => off(v) || !voceModificabile(view, v);
+  const tipOf = (v: Voce, tip?: string) => (off(v) ? t('ctest.off') : tip);
+  const cls = (v: Voce, base = '') => [base, off(v) ? 'ctest-off' : ''].filter(Boolean).join(' ') || undefined;
   const day = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
   const set = (p: Partial<TextContest>) => setC((x) => ({ ...x, ...p }));
   const num = (v: string) => (Number.isFinite(Number(v)) ? Math.trunc(Number(v)) : 0);
   const check = (k: keyof TextContest, label: string, tip?: string) => (
-    <label className="ctest-check" title={tip}>
-      <input type="checkbox" checked={c[k] === true} onChange={(e) => set({ [k]: e.target.checked } as Partial<TextContest>)} />
+    <label className={cls(k as Voce, 'ctest-check')} title={tipOf(k as Voce, tip)}>
+      <input type="checkbox" checked={c[k] === true} disabled={lock(k as Voce)} onChange={(e) => set({ [k]: e.target.checked } as Partial<TextContest>)} />
       <span>{label}</span>
     </label>
   );
   const int = (k: keyof TextContest, label: string, tip?: string) => (
-    <label title={tip}>
+    <label className={cls(k as Voce)} title={tipOf(k as Voce, tip)}>
       <span>{label}</span>
-      <input type="number" value={Number(c[k])} onChange={(e) => set({ [k]: num(e.target.value) } as Partial<TextContest>)} />
+      <input type="number" value={Number(c[k])} disabled={lock(k as Voce)} onChange={(e) => set({ [k]: num(e.target.value) } as Partial<TextContest>)} />
     </label>
   );
   // i tipi di moltiplicatore: 0 nessuno, 1 paese DXCC, 2 prefisso WPX, 3 zona CQ, 4 zona ITU, 5 dominio (un valore sconosciuto resta)
   const multSelect = (k: 'multipliers' | 'multipliers_option', label: string) => (
-    <label title={t('ctest.tip.mult')}>
+    <label className={cls(k)} title={tipOf(k, t('ctest.tip.mult'))}>
       <span>{label}</span>
-      <select value={c[k]} onChange={(e) => set({ [k]: num(e.target.value) } as Partial<TextContest>)}>
+      <select value={c[k]} disabled={lock(k)} onChange={(e) => set({ [k]: num(e.target.value) } as Partial<TextContest>)}>
         {[0, 1, 2, 3, 4, 5].map((n) => (
           <option key={n} value={n}>
             {t(`ctest.m.${n}` as 'ctest.m.0')}
@@ -276,9 +288,33 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
   const save = async () => {
     setBusy(true);
     try {
-      const r = await saveTextContest(c);
-      if (c.id && hasExchMultiplier(c.score)) writeSection(browserStorage(), r.id, mySect);
+      // la propria sezione e' una preferenza di questo computer: vale anche per i contest in cartella, che non si salvano
+      if (readonly) {
+        if (voceAttiva(view, 'mySect')) writeSection(browserStorage(), c.id, mySect);
+        toast(t('ctest.saved'), 'info');
+        onSaved(c.id);
+        return;
+      }
+      // al core vanno solo i campi del file: origine, scambio, dichiarazione e regolamento sono del contest in cartella
+      const body: Record<string, unknown> = { ...c };
+      for (const k of ['origine', 'scambio', 'dichiarazione', 'regolamento', 'schede']) delete body[k];
+      const r = await saveTextContest(body as unknown as TextContest);
+      if (c.id && voceAttiva(view, 'mySect')) writeSection(browserStorage(), r.id, mySect);
       toast(t('ctest.saved'), 'info');
+      refresh();
+      onSaved(r.id);
+    } catch (e) {
+      toast(e instanceof ContestError && e.code === 'contest_readonly' ? t('ctest.readonly', { why: e.detail ?? e.code }) : t('ctest.error', { why: why(e) }), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+  // «Copia nella mia cartella»: la copia sostituisce quella inclusa e si modifica nei suoi file
+  const copy = async () => {
+    setBusy(true);
+    try {
+      const r = await copyTextContest(c.id);
+      toast(t('ctest.copied', { name: r.id }), 'ok');
       refresh();
       onSaved(r.id);
     } catch (e) {
@@ -295,23 +331,50 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
         <header>
           <strong>{c.id ? t('ctest.editTitle', { name: contest.name }) : t('ctest.newTitle')}</strong>
         </header>
+        {readonly ? (
+          <div className="ctest-readonly" role="note">
+            <span>{t('ctest.ro.text')}</span>
+            <button type="button" className="glass sstv-btn" disabled={busy} title={t('ctest.ro.copyTip')} onClick={() => void copy()}>
+              {t('ctest.ro.copy')}
+            </button>
+          </div>
+        ) : null}
         <div className="ctest-groups">
+          {readonly && regolamento && regolamento.trim() !== '' ? (
+            <Group title={t('ctest.g.rules')}>
+              <div className="ctest-rules" data-testid="ctest-rules">
+                {blocchiRegolamento(regolamento).map((b, i) =>
+                  b.tipo === 'titolo' ? (
+                    <strong key={i}>{b.testo}</strong>
+                  ) : b.tipo === 'elenco' ? (
+                    <ul key={i}>
+                      {b.voci.map((v, j) => (
+                        <li key={j}>{v}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p key={i}>{b.testo}</p>
+                  ),
+                )}
+              </div>
+            </Group>
+          ) : null}
           <Group title={t('ctest.g.general')}>
-            <label>
+            <label className={cls('name')} title={tipOf('name')}>
               <span>{t('ctest.f.name')}</span>
-              <input type="text" value={c.name} onChange={(e) => set({ name: e.target.value })} autoFocus />
+              <input type="text" value={c.name} disabled={lock('name')} onChange={(e) => set({ name: e.target.value })} autoFocus={!readonly} />
             </label>
-            <label>
+            <label className={cls('notes')} title={tipOf('notes')}>
               <span>{t('ctest.f.notes')}</span>
-              <input type="text" value={c.notes} onChange={(e) => set({ notes: e.target.value })} />
+              <input type="text" value={c.notes} disabled={lock('notes')} onChange={(e) => set({ notes: e.target.value })} />
             </label>
-            <label title={t('ctest.tip.dates')}>
+            <label className={cls('start')} title={tipOf('start', t('ctest.tip.dates'))}>
               <span>{t('ctest.f.start')}</span>
-              <input type="datetime-local" step={1} value={toLocalInput(c.start)} onChange={(e) => set({ start: fromLocalInput(e.target.value) })} />
+              <input type="datetime-local" step={1} value={toLocalInput(c.start)} disabled={lock('start')} onChange={(e) => set({ start: fromLocalInput(e.target.value) })} />
             </label>
-            <label title={t('ctest.tip.dates')}>
+            <label className={cls('end')} title={tipOf('end', t('ctest.tip.dates'))}>
               <span>{t('ctest.f.end')}</span>
-              <input type="datetime-local" step={1} value={toLocalInput(c.end)} onChange={(e) => set({ end: fromLocalInput(e.target.value) })} />
+              <input type="datetime-local" step={1} value={toLocalInput(c.end)} disabled={lock('end')} onChange={(e) => set({ end: fromLocalInput(e.target.value) })} />
             </label>
             {datesCheck !== 'ok' ? (
               <p className="ctest-warn" role="alert">
@@ -331,16 +394,14 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
             {int('work_time', t('ctest.f.workTime'), t('ctest.tip.workTime'))}
           </Group>
           <Group title={t('ctest.g.serial')}>
-            <label title={t('ctest.tip.nrs')}>
+            <label className={cls('nrs')} title={tipOf('nrs', t('ctest.tip.nrs'))}>
               <span>{t('ctest.f.nrs')}</span>
-              <input type="text" value={c.nrs} onChange={(e) => set({ nrs: e.target.value })} />
+              <input type="text" value={c.nrs} disabled={lock('nrs')} onChange={(e) => set({ nrs: e.target.value })} />
             </label>
-            {c.id && hasExchMultiplier(c.score) ? (
-              <label title={t('ctest.tip.mySect')}>
-                <span>{t('ctest.f.mySect')}</span>
-                <input type="text" value={mySect} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => setMySect(cleanExtra(e.target.value))} />
-              </label>
-            ) : null}
+            <label className={cls('mySect')} title={tipOf('mySect', t('ctest.tip.mySect'))}>
+              <span>{t('ctest.f.mySect')}</span>
+              <input type="text" value={mySect} disabled={lock('mySect')} maxLength={EXTRA_MAX} autoComplete="off" spellCheck={false} onChange={(e) => setMySect(cleanExtra(e.target.value))} />
+            </label>
             {check('auto_inc', t('ctest.f.autoInc'), t('ctest.tip.autoInc'))}
             <p className="ctest-hint">{c.auto_inc ? t('ctest.nrsAuto', { n: String(startSerial(c.nrs)).padStart(3, '0') }) : c.nrs.trim() !== '' ? t('ctest.nrsFixed', { nrs: c.nrs.trim() }) : t('ctest.nrsFixedNone')}</p>
           </Group>
@@ -359,9 +420,9 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
             {multSelect('multipliers', t('ctest.f.multipliers'))}
             {multSelect('multipliers_option', t('ctest.f.multOption'))}
             {check('band_mult', t('ctest.f.bandMult'), t('ctest.tip.bandMult'))}
-            <label title={t('ctest.tip.qtc')}>
+            <label className={cls('qtc')} title={tipOf('qtc', t('ctest.tip.qtc'))}>
               <span>{t('ctest.f.qtc')}</span>
-              <select value={c.qtc} onChange={(e) => set({ qtc: num(e.target.value) })}>
+              <select value={c.qtc} disabled={lock('qtc')} onChange={(e) => set({ qtc: num(e.target.value) })}>
                 <option value={0}>{t('ctest.qtc0')}</option>
                 <option value={1}>{t('ctest.qtc1')}</option>
                 <option value={2}>{t('ctest.qtc2')}</option>
@@ -369,20 +430,20 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
             </label>
             <div className="ctest-bands">
               {c.bands.map((b, i) => (
-                <div key={b.band} className="ctest-band" title={t('ctest.tip.bandMult')}>
+                <div key={b.band} className={cls(`band:${b.band}`, 'ctest-band')} title={tipOf(`band:${b.band}`, t('ctest.tip.bandMult'))}>
                   <label className="ctest-check">
-                    <input type="checkbox" checked={b.on} onChange={(e) => set({ bands: c.bands.map((x, j) => (j === i ? { ...x, on: e.target.checked } : x)) })} />
+                    <input type="checkbox" checked={b.on} disabled={lock(`band:${b.band}`)} onChange={(e) => set({ bands: c.bands.map((x, j) => (j === i ? { ...x, on: e.target.checked } : x)) })} />
                     <span>{t('ctest.f.band', { band: b.band })}</span>
                   </label>
-                  <input type="number" aria-label={`${t('ctest.f.weight')} ${b.band}`} value={b.weight} onChange={(e) => set({ bands: c.bands.map((x, j) => (j === i ? { ...x, weight: num(e.target.value) } : x)) })} />
+                  <input type="number" aria-label={`${t('ctest.f.weight')} ${b.band}`} value={b.weight} disabled={lock(`band:${b.band}`)} onChange={(e) => set({ bands: c.bands.map((x, j) => (j === i ? { ...x, weight: num(e.target.value) } : x)) })} />
                 </div>
               ))}
             </div>
           </Group>
           <Group title={t('ctest.g.macros')}>
-            <label title={t('ctest.tip.macros')}>
+            <label className={cls('macros')} title={tipOf('macros', t('ctest.tip.macros'))}>
               <span>{t('ctest.f.macros')}</span>
-              <select value={c.macros} onChange={(e) => set({ macros: e.target.value })}>
+              <select value={c.macros} disabled={lock('macros')} onChange={(e) => set({ macros: e.target.value })}>
                 <option value="">{t('ctest.f.macrosNone')}</option>
                 {files(macroFiles, c.macros).map((f) => (
                   <option key={f} value={f}>
@@ -395,9 +456,9 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
           </Group>
           <Group title={t('ctest.g.grab')}>
             {check('grab_number', t('ctest.f.grabNumber'), t('ctest.tip.grabNumber'))}
-            <label title={t('ctest.tip.grabType')}>
+            <label className={cls('grab_number_type')} title={tipOf('grab_number_type', t('ctest.tip.grabType'))}>
               <span>{t('ctest.f.grabNumberType')}</span>
-              <select value={c.grab_number_type} onChange={(e) => set({ grab_number_type: num(e.target.value) })}>
+              <select value={c.grab_number_type} disabled={lock('grab_number_type')} onChange={(e) => set({ grab_number_type: num(e.target.value) })}>
                 {[-1, 0, 1, 2].map((n) => (
                   <option key={n} value={n}>
                     {t(n === -1 ? 'ctest.gt.none' : n === 0 ? 'ctest.gt.serial' : n === 1 ? 'ctest.gt.itu' : 'ctest.gt.cq')}
@@ -408,9 +469,9 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
             </label>
             {check('grab_time', t('ctest.f.grabTime'), stored)}
             {check('grab_state', t('ctest.f.grabState'), t('ctest.tip.grabState'))}
-            <label title={t('ctest.tip.domain')}>
+            <label className={cls('domain_file')} title={tipOf('domain_file', t('ctest.tip.domain'))}>
               <span>{t('ctest.f.domain')}</span>
-              <select value={c.domain_file} onChange={(e) => set({ domain_file: e.target.value })}>
+              <select value={c.domain_file} disabled={lock('domain_file')} onChange={(e) => set({ domain_file: e.target.value })}>
                 <option value="">{t('ctest.f.macrosNone')}</option>
                 {files(domainFiles, c.domain_file).map((f) => (
                   <option key={f} value={f}>

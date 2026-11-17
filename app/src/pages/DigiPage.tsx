@@ -12,6 +12,7 @@ import { usePublishRotorDx } from '../lib/rotorDx';
 import { DigiLog, type LogMarks, type Qso } from '../components/digi/DigiLog';
 import { applyAvailability } from '../lib/menuModi';
 import { SsbContestView } from '../components/digi/SsbContestView';
+import { ContestWorkspace } from '../components/digi/ContestWorkspace';
 import { composeReceived, composeSent, readSection } from '../lib/contestSection';
 import { commentWithExchange, contestNextSerial, exchangeSent, formatSerial, readSerial, writeSerial } from '../lib/contestSerial';
 import { writeIgnoreBefore, writePeriod } from '../lib/logWindow';
@@ -252,6 +253,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   const textScore = useTextContestScore(!!textContest).data;
   /** SSB: la pagina cambia disposizione (Log, inserimento del QSO, DX Cluster) e non mostra RX/TX, cascata e modi digitali; con un contest attivo compaiono anche Nr, punteggio, DUPE e moltiplicatori. */
   const ssbContest = snap.settings.mode === 'ssb';
+  /** Con un contest attivo la pagina (SSB, CW, RTTY, PSK) e' a schede spostabili: inserimento, log, DX Cluster, punteggio, moltiplicatori e, nei modi testuali, ricezione, trasmissione e cascata. Senza contest resta quella di sempre. */
+  const contestSheets = textContest !== null;
   const exportCabrillo = useExportTextCabrillo();
   const [contestEdit, setContestEdit] = useState<TextContest | null>(null);
   const selectTextContest = useSelectTextContest();
@@ -269,7 +272,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // il nominativo preso dalla ricezione va nel QSO in corso e si cercano nome, QTH, locatore e paese
   const takeCall = useCallLookup(setQso);
   // il nominativo scritto a mano riempie da solo nome, QTH e locatore (se la ricerca e' configurata); nel contest SSB la riga non li ha
-  useCallsignAutofill(qso.call, { name: qso.name, qth: qso.qth, wwloc: qso.wwloc }, (patch) => setQso((q) => ({ ...q, ...patch })), !(ssbContest && textContest !== null));
+  useCallsignAutofill(qso.call, { name: qso.name, qth: qso.qth, wwloc: qso.wwloc }, (patch) => setQso((q) => ({ ...q, ...patch })), !contestSheets);
   const [rotorShown, setRotorShown] = useRotorCardVisible('digi');
   // il DX del QSO anche per il rotore staccato in una finestra a parte
   usePublishRotorDx(qso.call, qso.wwloc);
@@ -1849,6 +1852,13 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     if (ssbContest && (live.current.saved.rsts === '599' || live.current.saved.rstr === '599')) setSavedField({ rsts: live.current.saved.rsts === '599' ? '59' : live.current.saved.rsts, rstr: live.current.saved.rstr === '599' ? '59' : live.current.saved.rstr });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ssbContest]);
+  // in un contest con CW e fonia (ARRL 10) passando a CW il rapporto di partenza torna 599: la riga del contest non mostra il campo RST
+  useEffect(() => {
+    if (!contestSheets || ssbContest) return;
+    const sv = live.current.saved;
+    if (sv.rsts === '59' || sv.rstr === '59') setSavedField({ rsts: sv.rsts === '59' ? '599' : sv.rsts, rstr: sv.rstr === '59' ? '599' : sv.rstr });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contestSheets, ssbContest]);
   // il log del contest parte da zero: contano i QSO nella finestra di date del contest (se c'e' ed e' valida), altrimenti quelli dopo l'attivazione,
   // sempre della categoria giusta; doppi, moltiplicatori e numerazione si calcolano solo su questi
   const sinceKey = textContest ? `aurora.ssb.contest.since.${textContest.contest.id}` : null;
@@ -1872,10 +1882,10 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   // lo stato della finestra (prima, dentro, scaduta) si riguarda ogni mezzo minuto
   const [winTick, setWinTick] = useState(0);
   useEffect(() => {
-    if (!ssbContest) return;
+    if (!contestSheets) return;
     const id = window.setInterval(() => setWinTick((n) => n + 1), 30_000);
     return () => window.clearInterval(id);
-  }, [ssbContest]);
+  }, [contestSheets]);
   const winStatus = useMemo(() => (textContest ? contestWindowStatus(textContest.contest, Date.now()) : null), [textContest, winTick]);
   /** La finestra di date c'e' e vale adesso: il log si filtra per date. Prima dell'inizio, scaduta o senza date si usa l'attivazione (e la vista lo avvisa). */
   const windowUsable = winStatus !== null && winStatus.status === 'active';
@@ -1901,7 +1911,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       return since !== null && ms >= since;
     };
   }, [textContest, windowUsable, winStatus, since]);
-  const logMarks: LogMarks | undefined = ssbContest && textContest ? { noBand: textContest.contest.dupe_no_band, noMode: textContest.contest.dupe_no_mode, recenti: textScore?.recenti ?? [], inSet: inContestSet, only: logOnly, onToggle: toggleLogOnly } : undefined;
+  const logMarks: LogMarks | undefined = textContest ? { noBand: textContest.contest.dupe_no_band, noMode: textContest.contest.dupe_no_mode, recenti: textScore?.recenti ?? [], inSet: inContestSet, only: logOnly, onToggle: toggleLogOnly } : undefined;
   /** Il log di lato (o, nel contest SSB, solo il Log o solo il DX Cluster). */
   const digiLog = (view?: 'log' | 'cluster') => (
     <DigiLog
@@ -1937,6 +1947,143 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         setStartAt(null);
         resetRst();
       }}
+    />
+  );
+
+  /** «Registra» della riga del contest (SSB, CW, RTTY, PSK): campi azzerati subito e rapporti di partenza (59 in SSB, 599 negli altri modi); se il log non salva si rimettono. */
+  const registerContestQso = () => {
+    if (qso.call.trim() === '') return saveQso();
+    const prev = { qso, startAt, rsts: saved.rsts, rstr: saved.rstr };
+    saveQsoThen(() => undefined, () => {
+      setQso(prev.qso);
+      setStartAt(prev.startAt);
+      setSavedField({ rsts: prev.rsts, rstr: prev.rstr });
+    });
+    setQso(EMPTY_QSO);
+    setStartAt(null);
+    const rst = ssbContest ? '59' : '599';
+    setSavedField({ rsts: rst, rstr: rst });
+  };
+  // i tre pezzi della pagina dei modi testuali (ricezione, trasmissione, cascata): stessi elementi nella pagina di sempre e nelle schede del contest
+  const rxPart = (
+    <>
+    {/* barra sopra la finestra RX: posto per i pulsantini */}
+    <div className="digi-rxbar" role="toolbar" aria-label={t('digi.rx.title')}>
+      <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.copy')} aria-label={t('digi.rxbar.copy')} onClick={() => void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined)}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4V4h11v1" /></svg>
+      </button>
+      <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.save')} aria-label={t('digi.rxbar.save')} onClick={saveRxText}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+      </button>
+      <button type="button" className="digi-rxbar-btn" title={t('digi.mi.clearRx')} aria-label={t('digi.mi.clearRx')} onClick={() => clearDigiText()}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+        </svg>
+      </button>
+      <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.pause')} aria-label={t('digi.rxbar.pause')} aria-pressed={rxPaused} onClick={() => setRxPaused((v) => !v)}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg>
+      </button>
+      <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.search')} aria-label={t('digi.rxbar.search')} aria-pressed={searchOpen} onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /></svg>
+      </button>
+      {searchOpen ? (
+        <>
+          <input
+            ref={searchBox}
+            type="search"
+            className="digi-rxbar-search"
+            value={search}
+            placeholder={t('digi.rxbar.searchHint')}
+            aria-label={t('digi.rxbar.searchHint')}
+            title={t('digi.rxbar.searchTip')}
+            spellCheck={false}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              // i tasti restano alla casella: Esc chiude la ricerca e non ferma la trasmissione
+              e.stopPropagation();
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                jumpHit(e.shiftKey);
+              } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeSearch();
+              }
+            }}
+          />
+          {search.trim() !== '' ? <span className="digi-rxbar-count" aria-live="polite">{hit.count === 0 ? '0' : `${hit.at >= 0 ? hit.at + 1 : '-'}/${hit.count}`}</span> : null}
+        </>
+      ) : null}
+    </div>
+    <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
+      onContextMenu={(e) => {
+        // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
+        e.preventDefault();
+        const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+        setWordMenu({ word, x: e.clientX, y: e.clientY });
+      }}
+      onDoubleClick={(e) => {
+        // doppio clic su un nominativo: nel QSO in corso (non salvato) con la ricerca
+        const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
+        if (word && isCallsign(word)) {
+          takeCall(word);
+          runEventSoon('OnClickAny');
+        }
+      }}>
+      <DigiRxLive box={rxBox} underlineSent={views.underlineSent} showSent={views.echoRx === true} paused={rxPaused} search={searchOpen ? search : ''} />
+    </pre>
+    </>
+  );
+  const txPart = (
+    <div
+      className="digi-txwrap"
+      data-label={t('digi.tx.title')}
+      style={{ flex: `${1 - rxFrac} 1 0` }}
+      onContextMenu={(e) => {
+        // tasto destro nella finestra di trasmissione: Pulisci tutto, Taglia, Copia, Incolla
+        e.preventDefault();
+        setTxMenu({ x: e.clientX, y: e.clientY });
+      }}
+    >
+      {txMenu ? <TxMenu at={txMenu} box={txBox.current} text={tx} onText={txEdit} onClearAll={clearTxWindow} onClose={() => setTxMenu(null)} /> : null}
+      {txSent !== '' ? (
+        <div ref={txSentBox} className={`digi-txhist${views.slashedZero ? ' digi-zero' : ''}`} aria-label={t('digi.tx.sentTitle')} title={t('digi.tx.sentTitle')}>
+          {txSent}
+        </div>
+      ) : null}
+      <DigiTxBox
+        boxRef={txBox}
+        className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
+        value={tx}
+        progress={txLive.progress}
+        sending={sending}
+        label={t('digi.tx.title')}
+        placeholder={snap.tx.open ? t('digi.tx.openHint') : s.mode === 'ssb' ? t('digi.tx.ssb') : undefined}
+        onText={txEdit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx, true);
+          else if (e.key === 'Enter' && !e.shiftKey && !e.altKey) runEventSoon('OnCR');
+        }}
+      />
+      {!snap.can_transmit ? <p className="notice">{t('digi.tx.notReady')}</p> : null}
+      {problem ? (
+        <p className="notice sstv-bad" role="alert">
+          {problem}
+        </p>
+      ) : null}
+    </div>
+  );
+  /** La cascata; con `cardHeight` (dentro una scheda) prende quell'altezza e niente maniglie di misura: la misura la da' la scheda. */
+  const waterfallFor = (cardHeight?: number) => (
+    <DigiWaterfall height={cardHeight ?? wfHeight} onHeight={cardHeight === undefined ? changeWfHeight : undefined} widthPx={cardHeight === undefined ? wfWidth : null} onWidth={cardHeight === undefined ? changeWfWidth : undefined} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
+      extraRx={extras}
+      onExtraMove={(id, hz, commit) => {
+        const next = extras.map((x) => (x.id === id ? { ...x, freq_hz: hz } : x));
+        if (commit) {
+          clearExtraText(id);
+          setExtras(next);
+        } else client.setQueryData(['digi-extra-rx'], next);
+      }}
+      onMenu={(hz, x, y) => setWfMenu({ x, y, hz })}
     />
   );
 
@@ -2063,40 +2210,58 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         </div>
       ) : null}
       </div>
-      {ssbContest ? (
+      {textContest !== null ? (
+        <ContestWorkspace
+          view={ssbContest ? 'ssb' : 'text'}
+          contest={textContest.contest}
+          score={textScore}
+          qso={qso}
+          rsts={saved.rsts}
+          rstr={saved.rstr}
+          qsoNr={(textScore?.qso ?? 0) + (textScore?.doppi ?? 0) + 1}
+          inSet={inContestSet}
+          noBand={textContest.contest.dupe_no_band}
+          noMode={textContest.contest.dupe_no_mode}
+          windowNotice={!windowUsable}
+          onEditWindow={() => setContestEdit(textContest.contest)}
+          nrsAuto={fixedNrsRef.current !== '' ? fixedNrsRef.current : formatSerial(qsoSerial)}
+          onQso={(patch) => setQso({ ...qso, ...patch })}
+          onRst={(patch) => setSavedField(patch)}
+          onRegister={registerContestQso}
+          band={logBand(status?.dial_hz ?? 0, manualBand)}
+          saveError={saveError?.msg ?? null}
+          onDismissSaveError={() => setSaveError(null)}
+          modeName={MODE_NAMES[s.mode]}
+          showLog={views.log}
+          log={digiLog('log')}
+          cluster={digiLog('cluster')}
+          rx={ssbContest ? undefined : rxPart}
+          tx={ssbContest ? undefined : txPart}
+          waterfall={ssbContest || !views.waterfall ? undefined : waterfallFor}
+          rotor={(at) => (rotorShown ? <RotorCard call={qso.call} grid={qso.wwloc} place="digi" startAt={at} /> : null)}
+        />
+      ) : ssbContest ? (
         <SsbContestView
           qso={qso}
           rsts={saved.rsts}
           rstr={saved.rstr}
           qsoNr={(textScore?.qso ?? 0) + (textScore?.doppi ?? 0) + 1}
-          contest={textContest ? textContest.contest : null}
+          contest={null}
           inSet={inContestSet}
-          noBand={textContest ? textContest.contest.dupe_no_band : false}
-          noMode={textContest ? textContest.contest.dupe_no_mode : false}
-          windowNotice={textContest !== null && !windowUsable}
-          onEditWindow={() => (textContest ? setContestEdit(textContest.contest) : undefined)}
+          noBand={false}
+          noMode={false}
+          windowNotice={false}
+          onEditWindow={() => undefined}
           nrsAuto={fixedNrsRef.current !== '' ? fixedNrsRef.current : formatSerial(qsoSerial)}
           onQso={(patch) => setQso({ ...qso, ...patch })}
           onRst={(patch) => setSavedField(patch)}
-          onRegister={() => {
-            if (qso.call.trim() === '') return saveQso();
-            // campi azzerati subito e RST a 59 (il fuoco torna sul nominativo, lo fa la vista); se il log non lo salva si rimettono
-            const prev = { qso, startAt, rsts: saved.rsts, rstr: saved.rstr };
-            saveQsoThen(() => undefined, () => {
-              setQso(prev.qso);
-              setStartAt(prev.startAt);
-              setSavedField({ rsts: prev.rsts, rstr: prev.rstr });
-            });
-            setQso(EMPTY_QSO);
-            setStartAt(null);
-            setSavedField({ rsts: '59', rstr: '59' });
-          }}
+          onRegister={registerContestQso}
           band={logBand(status?.dial_hz ?? 0, manualBand)}
           saveError={saveError?.msg ?? null}
           onDismissSaveError={() => setSaveError(null)}
           modeName={MODE_NAMES[s.mode]}
-          contestName={textContest ? textContest.contest.name : null}
-          score={textScore}
+          contestName={null}
+          score={undefined}
           showLog={views.log}
           log={digiLog('log')}
           cluster={digiLog('cluster')}
@@ -2109,70 +2274,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <div className={`digi-winrow${radarMode && radarOn ? ' digi-winrow--radar' : ''}`}>
         <div className="digi-windows" ref={windowsRef} style={winW !== null && !(radarMode && radarOn) ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
-          {/* barra sopra la finestra RX: posto per i pulsantini */}
-          <div className="digi-rxbar" role="toolbar" aria-label={t('digi.rx.title')}>
-            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.copy')} aria-label={t('digi.rxbar.copy')} onClick={() => void navigator.clipboard?.writeText(getDigiText()).catch(() => undefined)}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 9h11v11H9zM5 15H4V4h11v1" /></svg>
-            </button>
-            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.save')} aria-label={t('digi.rxbar.save')} onClick={saveRxText}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
-            </button>
-            <button type="button" className="digi-rxbar-btn" title={t('digi.mi.clearRx')} aria-label={t('digi.mi.clearRx')} onClick={() => clearDigiText()}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
-              </svg>
-            </button>
-            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.pause')} aria-label={t('digi.rxbar.pause')} aria-pressed={rxPaused} onClick={() => setRxPaused((v) => !v)}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg>
-            </button>
-            <button type="button" className="digi-rxbar-btn" title={t('digi.rxbar.search')} aria-label={t('digi.rxbar.search')} aria-pressed={searchOpen} onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /></svg>
-            </button>
-            {searchOpen ? (
-              <>
-                <input
-                  ref={searchBox}
-                  type="search"
-                  className="digi-rxbar-search"
-                  value={search}
-                  placeholder={t('digi.rxbar.searchHint')}
-                  aria-label={t('digi.rxbar.searchHint')}
-                  title={t('digi.rxbar.searchTip')}
-                  spellCheck={false}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    // i tasti restano alla casella: Esc chiude la ricerca e non ferma la trasmissione
-                    e.stopPropagation();
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      jumpHit(e.shiftKey);
-                    } else if (e.key === 'Escape') {
-                      e.preventDefault();
-                      closeSearch();
-                    }
-                  }}
-                />
-                {search.trim() !== '' ? <span className="digi-rxbar-count" aria-live="polite">{hit.count === 0 ? '0' : `${hit.at >= 0 ? hit.at + 1 : '-'}/${hit.count}`}</span> : null}
-              </>
-            ) : null}
-          </div>
-          <pre className={`digi-rxwin${views.slashedZero ? ' digi-zero' : ''}`} style={{ flex: `${rxFrac} 1 0` }} ref={rxBox} aria-live="off" aria-label={t('digi.rx.title')}
-            onContextMenu={(e) => {
-              // il nostro menu al posto di quello del sistema: sulle parole anche le voci del log, fuori solo Copia e Cancella tutto
-              e.preventDefault();
-              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
-              setWordMenu({ word, x: e.clientX, y: e.clientY });
-            }}
-            onDoubleClick={(e) => {
-              // doppio clic su un nominativo: nel QSO in corso (non salvato) con la ricerca
-              const word = rxBox.current ? wordAtPoint(e.clientX, e.clientY, rxBox.current) : null;
-              if (word && isCallsign(word)) {
-                takeCall(word);
-                runEventSoon('OnClickAny');
-              }
-            }}>
-            <DigiRxLive box={rxBox} underlineSent={views.underlineSent} showSent={views.echoRx === true} paused={rxPaused} search={searchOpen ? search : ''} />
-          </pre>
+          {rxPart}
           <div
             className="digi-split"
             role="separator"
@@ -2188,43 +2290,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
               }
             }}
           />
-          <div
-            className="digi-txwrap"
-            data-label={t('digi.tx.title')}
-            style={{ flex: `${1 - rxFrac} 1 0` }}
-            onContextMenu={(e) => {
-              // tasto destro nella finestra di trasmissione: Pulisci tutto, Taglia, Copia, Incolla
-              e.preventDefault();
-              setTxMenu({ x: e.clientX, y: e.clientY });
-            }}
-          >
-            {txMenu ? <TxMenu at={txMenu} box={txBox.current} text={tx} onText={txEdit} onClearAll={clearTxWindow} onClose={() => setTxMenu(null)} /> : null}
-            {txSent !== '' ? (
-              <div ref={txSentBox} className={`digi-txhist${views.slashedZero ? ' digi-zero' : ''}`} aria-label={t('digi.tx.sentTitle')} title={t('digi.tx.sentTitle')}>
-                {txSent}
-              </div>
-            ) : null}
-            <DigiTxBox
-              boxRef={txBox}
-              className={`digi-txwin${views.slashedZero ? ' digi-zero' : ''}${views.capsOnly ? ' digi-caps' : ''}`}
-              value={tx}
-              progress={txLive.progress}
-              sending={sending}
-              label={t('digi.tx.title')}
-              placeholder={snap.tx.open ? t('digi.tx.openHint') : s.mode === 'ssb' ? t('digi.tx.ssb') : undefined}
-              onText={txEdit}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !sending) send(tx, true);
-                else if (e.key === 'Enter' && !e.shiftKey && !e.altKey) runEventSoon('OnCR');
-              }}
-            />
-            {!snap.can_transmit ? <p className="notice">{t('digi.tx.notReady')}</p> : null}
-            {problem ? (
-              <p className="notice sstv-bad" role="alert">
-                {problem}
-              </p>
-            ) : null}
-          </div>
+          {txPart}
         </div>
         {radarMode && radarOn ? (
           <div className="digi-radargrip" role="separator" aria-orientation="vertical" title={t('radar.resize')} onPointerDown={dragRadarW} onDoubleClick={() => {
@@ -2244,19 +2310,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
           <BandSignals signals={band} showWpm={s.mode === 'cw'} dialHz={status?.dial_hz ?? 0} rxHz={rxHz} emptyText={isPsk ? t('digi.band.emptyPsk') : t('digi.band.empty')} validation={s.band_validation ?? 'normal'} onValidation={(v) => save({ band_validation: v })} onTune={(hz) => pickFreq(hz, false)} onCall={takeCall} />
         ) : null}
         {radarMode && views.rbn !== false ? <RbnList spots={rbnSpots} dialHz={status?.dial_hz ?? 0} onTune={(hz) => pickFreq(hz, false)} /> : null}
-        {views.waterfall ? (
-          <DigiWaterfall height={wfHeight} onHeight={changeWfHeight} widthPx={wfWidth} onWidth={changeWfWidth} minHz={WF_MIN} maxHz={views.wideWaterfall ? WF_MAX_WIDE : WF_MAX_NARROW} rxHz={rxHz} txHz={lock ? s.tx_freq_hz : null} dialHz={status?.dial_hz ?? 0} bandwidthHz={s.mode === 'rtty' ? s.rtty_shift_hz : s.mode === 'cw' ? s.cw_bandwidth_hz : 0} passbandHz={s.passband_on === true ? passbandWidth(s) : 0} split={lock} hairlines={views.hairlines} transmitting={sending} onRow={onRow} onPick={(hz, ctrl, commit = true) => pickFreq(hz, true, ctrl, commit)} labels={views.wfCalls ? wfLabels : []} showWords={views.wfWords !== false} notches={notches} onNotches={setNotches}
-            extraRx={extras}
-            onExtraMove={(id, hz, commit) => {
-              const next = extras.map((x) => (x.id === id ? { ...x, freq_hz: hz } : x));
-              if (commit) {
-                clearExtraText(id);
-                setExtras(next);
-              } else client.setQueryData(['digi-extra-rx'], next);
-            }}
-            onMenu={(hz, x, y) => setWfMenu({ x, y, hz })}
-          />
-        ) : null}
+        {views.waterfall ? waterfallFor() : null}
         </div>
         {/* rotore e log nella stessa colonna di destra: prima la scheda del rotore prendeva la colonna del log e lo spingeva sotto, fuori vista */}
         <div className="digi-rightcol">

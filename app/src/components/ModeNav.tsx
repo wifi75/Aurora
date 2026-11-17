@@ -2,7 +2,7 @@ import { Icon } from './Icon';
 import { HealthLight } from './HealthLight';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { deleteSplitDx, getDigi, getFrequencies, postMode } from '../api/client';
+import { deleteSplitDx, getDigi, getFrequencies, postMode, ApiError } from '../api/client';
 import { toast } from '../lib/toast';
 import type { TextMode } from '../lib/bandplan';
 import { useT } from '../i18n';
@@ -154,8 +154,10 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   // il pulsante del gruppo accende subito il modo; se il comando fallisce torna com'era
   const onModePage = MODE_ROUTES.includes(route.name);
   /** La radio resta dov'era: se il modo non ha frequenze sulla banda di adesso va alla prima banda dove esiste; un errore si dice, non toglie il modo. */
+  /** L'avviso di una radio che non si e' spostata: il testo del core (CAT) in coda, cosi' si capisce perche'. */
+  const retuneText = (e: unknown, name: string) => t('mode.retuneFail', { mode: name }) + (e instanceof ApiError && e.detail ? ` (${e.detail})` : '');
   const retune = (run: () => Promise<number | null>, name: string) => {
-    void run().catch(() => toast(t('mode.retuneFail', { mode: name }), 'error'));
+    void run().catch((e: unknown) => toast(retuneText(e, name), 'error'));
   };
   const pickGroup = (target: ModeGroup) => {
     if (transmitting) return;
@@ -187,12 +189,16 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
   const enterText = () => {
     if (transmitting || route.name === 'digi' || route.name === 'sstv') return;
+    // il nome del modo nell'avviso e' quello vero (CW, RTTY...), non sempre «PSK»
+    let name = 'PSK';
     void (async () => {
       const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
       // in SSB la radio resta dov'e': il piano delle frequenze dei modi testuali non vale per la fonia
       if (digi.settings.mode === 'ssb') return;
-      await retuneForText(client, TEXT_MODES[digi.settings.mode] ?? 'PSK31');
-    })().catch(() => toast(t('mode.retuneFail', { mode: 'PSK' }), 'error'));
+      const text = TEXT_MODES[digi.settings.mode] ?? 'PSK31';
+      name = text;
+      await retuneForText(client, text);
+    })().catch((e: unknown) => toast(retuneText(e, name), 'error'));
   };
   const pill = (target: ModeGroup, label: string) => (
     <a

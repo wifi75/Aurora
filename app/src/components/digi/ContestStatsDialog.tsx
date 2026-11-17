@@ -104,6 +104,51 @@ const HOUR = 3_600_000;
 /** `4 h 05` da una durata in ms. */
 const hm = (ms: number) => `${Math.floor(ms / HOUR)} h ${String(Math.floor((ms % HOUR) / 60_000)).padStart(2, '0')}`;
 
+/** L'avanzamento del contest: barra, tempo trascorso e rimanente (niente se il contest non ha una finestra di date). */
+export function ContestProgress({ contest }: { contest?: Pick<TextContest, 'start' | 'end'> }) {
+  const t = useT();
+  const now = Date.now();
+  const w = contest ? contestWindow(contest, now) : null;
+  const span = w && w.from != null && w.to != null && w.to > w.from ? { from: w.from, to: w.to } : null;
+  if (!span) return null;
+  const progress = Math.min(1, Math.max(0, (now - span.from) / (span.to - span.from)));
+  return (
+    <div className="ctest-progress" aria-label={t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })}>
+      <div className="ctest-progress-bar">
+        <i style={{ width: `${Math.round(progress * 100)}%` }} />
+      </div>
+      <p className="ctest-rate">
+        {t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })} · {t('ssbc.remaining', { t: hm(Math.max(0, span.to - now)) })}
+      </p>
+    </div>
+  );
+}
+
+/** I QSO per ora delle ultime 12 ore (istogramma). */
+export function ContestHours({ qsoTimes }: { qsoTimes?: number[] }) {
+  const t = useT();
+  if (!qsoTimes) return null;
+  const now = Date.now();
+  const bars = Array.from({ length: 12 }, (_, i) => {
+    const start = Math.floor(now / HOUR) * HOUR - (11 - i) * HOUR;
+    return qsoTimes.filter((ms) => ms >= start && ms < start + HOUR).length;
+  });
+  const top = Math.max(1, ...bars);
+  return (
+    <figure className="ctest-hours">
+      <figcaption className="ctest-rate">{t('ssbc.perHour')}</figcaption>
+      <svg viewBox="0 0 120 34" role="img" aria-label={t('ssbc.perHour')}>
+        {bars.map((n, i) => (
+          <rect key={i} x={i * 10 + 1} y={30 - (n / top) * 26} width={8} height={Math.max(n > 0 ? 1 : 0, (n / top) * 26)} rx={1} className={i === 11 ? 'now' : undefined}>
+            <title>{n}</title>
+          </rect>
+        ))}
+        <line x1={0} y1={30.5} x2={120} y2={30.5} />
+      </svg>
+    </figure>
+  );
+}
+
 /**
  * La scheda delle statistiche del contest attivo, la stessa nel dialogo e nella vista SSB: tabella per banda con il totale, ritmo, ultimi
  * moltiplicatori nuovi, avvisi e, se si danno la finestra del contest e gli orari dei QSO, avanzamento e QSO per ora (ultime 12 ore).
@@ -116,17 +161,6 @@ export function ContestStatsCard({ s, contest, qsoTimes }: { s: TextContestScore
   const mults = multSummary(s);
   const cats = (['cw', 'phone', 'digital'] as const).filter((k) => sum(k) > 0);
   const showCats = cats.length > 1;
-  const now = Date.now();
-  const w = contest ? contestWindow(contest, now) : null;
-  const span = w && w.from != null && w.to != null && w.to > w.from ? { from: w.from, to: w.to } : null;
-  const progress = span ? Math.min(1, Math.max(0, (now - span.from) / (span.to - span.from))) : null;
-  const bars = qsoTimes
-    ? Array.from({ length: 12 }, (_, i) => {
-        const start = Math.floor(now / HOUR) * HOUR - (11 - i) * HOUR;
-        return qsoTimes.filter((ms) => ms >= start && ms < start + HOUR).length;
-      })
-    : null;
-  const top = bars ? Math.max(1, ...bars) : 1;
   return (
     <div className="ctest-card">
       <div className="ctest-table-wrap">
@@ -187,29 +221,8 @@ export function ContestStatsCard({ s, contest, qsoTimes }: { s: TextContestScore
           {t('ctest.recent')}: {s.recenti.map((r) => `${r.call} ${r.band}: ${r.nuovi.map((m) => multLabel(t, m)).join(', ')}`).join(' · ')}
         </p>
       )}
-      {span && progress !== null ? (
-        <div className="ctest-progress" aria-label={t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })}>
-          <div className="ctest-progress-bar">
-            <i style={{ width: `${Math.round(progress * 100)}%` }} />
-          </div>
-          <p className="ctest-rate">
-            {t('ssbc.elapsed', { t: hm(Math.max(0, now - span.from)) })} · {t('ssbc.remaining', { t: hm(Math.max(0, span.to - now)) })}
-          </p>
-        </div>
-      ) : null}
-      {bars ? (
-        <figure className="ctest-hours">
-          <figcaption className="ctest-rate">{t('ssbc.perHour')}</figcaption>
-          <svg viewBox="0 0 120 34" role="img" aria-label={t('ssbc.perHour')}>
-            {bars.map((n, i) => (
-              <rect key={i} x={i * 10 + 1} y={30 - (n / top) * 26} width={8} height={Math.max(n > 0 ? 1 : 0, (n / top) * 26)} rx={1} className={i === 11 ? 'now' : undefined}>
-                <title>{n}</title>
-              </rect>
-            ))}
-            <line x1={0} y1={30.5} x2={120} y2={30.5} />
-          </svg>
-        </figure>
-      ) : null}
+      <ContestProgress contest={contest} />
+      <ContestHours qsoTimes={qsoTimes} />
     </div>
   );
 }

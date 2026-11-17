@@ -1,0 +1,69 @@
+/* Vista del contest a schede spostabili (griglia di dash.css): barra in alto, schede, caselle dei moltiplicatori, tabella delle statistiche */
+.ssbc--ws { overflow-x: hidden; overflow-y: auto; gap: 6px; }
+.ctw-bar { display: flex; align-items: center; gap: 0.5rem; flex: none; padding: 0 2px; }
+.ctw-bar strong { margin-right: auto; font-size: 0.95rem; }
+.ctw-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0.7rem; font-size: 0.8rem; border-radius: 999px; cursor: pointer; color: var(--text); }
+.ctw-btn.on { border-color: var(--accent); color: var(--accent); }
+
+/* riquadro di ogni scheda: lo stesso aspetto dei riquadri della vista SSB */
+.ctw-panel { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--text); box-shadow: none; }
+.dash .ctw-panel.dash-card { padding: 6px 10px 8px; }
+.dash .ctw-panel .dash-bar { margin: 0 0 4px; min-height: 1.4rem; }
+.dash .ctw-panel .dash-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text); }
+.dash .ctw-panel .dash-title .ssbc-contest-name { text-transform: none; letter-spacing: 0; }
+.ctw-count { margin-left: 6px; color: var(--accent); font-family: var(--font-data); text-transform: none; letter-spacing: 0; }
+
+/* l'inserimento dentro la scheda: niente riquadro proprio */
+.ssbc .ssbc-entry.ssbc-entry--card { border: 0; background: transparent; padding: 0; border-radius: 0; }
+.ctw-card--entry .dash-body { overflow-y: auto; }
+
+/* Log e DX Cluster: il pannello riempie la scheda */
+.ctw-fill { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.ctw-fill > .digi-log { flex: 1 1 0; min-height: 0; width: auto; max-width: none; border: 0; background: transparent; }
+.ctw-fill .digi-log-grip { display: none; }
+
+/* moltiplicatori: caselle compatte con i punti delle bande lavorate; il valore da lavorare e' in tono spento */
+.ctw-mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr)); gap: 4px; align-content: start; padding: 2px 0; }
+.ctw-mcell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 2.1rem; padding: 2px 2px 3px; box-sizing: border-box; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 600 0.72rem/1.1 var(--font-data); opacity: 0.5; }
+.ctw-mcell b { font-weight: 700; }
+.ctw-mcell.on { opacity: 1; background: color-mix(in srgb, var(--dxcc-worked) 20%, var(--bg)); border-color: var(--dxcc-worked); }
+.ctw-mcell.new { box-shadow: 0 0 0 2px var(--accent); }
+.ctw-mcell.pend { opacity: 1; background: color-mix(in srgb, var(--dxcc-unconfirmed) 45%, var(--bg)); border-color: var(--dxcc-unconfirmed); animation: ssbc-pulse 1s ease-in-out infinite alternate; }
+.ctw-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; min-height: 7px; margin-top: 2px; font-style: normal; }
+.ctw-dots u { display: block; width: 6px; height: 6px; border-radius: 50%; text-decoration: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45); }
+
+/* statistiche: punteggio grande e tabella vera con la riga del totale in evidenza */
+.ctw-stats { display: flex; flex-direction: column; gap: 4px; }
+.ctw-score { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 2px; }
+.ctw-score span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ctw-score b { font: 800 clamp(26px, 2.4vw, 36px)/1.1 var(--font-data); color: var(--accent); font-variant-numeric: tabular-nums; }
+.ctw-scoreline { margin: 0; font-size: 0.78rem; }
+.ctw-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.ctw-table th, .ctw-table td { padding: 2px 6px; text-align: right; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.ctw-table thead th { position: sticky; top: 0; background: var(--panel-raised); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.ctw-table thead th:first-child, .ctw-table tbody th, .ctw-table tfoot th { text-align: left; }
+.ctw-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.ctw-table tfoot th, .ctw-table tfoot td { font-weight: 800; border-top: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* punteggio e ritmo */
+.ctw-rate { display: flex; flex-direction: column; gap: 6px; }
+.ctw-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ctw-tiles b { font-size: clamp(20px, 1.8vw, 28px); }
+.ctw-ratetable caption { text-align: left; padding-bottom: 2px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.ctw-ratetable th { font-weight: 600; }
+
+/* modi testuali: ricezione, trasmissione e cascata dentro le schede (stessi elementi della pagina di sempre) */
+.ctw-win { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; border: 0; min-width: 0; }
+.ctw-win .digi-rxwin, .ctw-win .digi-txwrap { flex: 1 1 0 !important; min-height: 0; max-height: none; }
+.ctw-card--rx .dash-body, .ctw-card--tx .dash-body, .ctw-card--wf .dash-body { overflow: hidden; }
+.ctw-wfhost { flex: 1 1 0; min-height: 0; overflow: hidden; }
+.ctw-wfhost > .digi-wf { width: 100%; max-width: none; }
+
+/* finestra stretta: le schede si impilano e l'altezza non e' piu' quella della griglia, quindi i pannelli che riempivano la scheda hanno un'altezza loro */
+.dash--stack .ctw-fill { flex: none; height: 22rem; }
+.dash--stack .ctw-win { flex: none; height: 14rem; }
+.dash--stack .ctw-wfhost { flex: none; height: 12rem; }
+.dash--stack .ctw-mgrid { max-height: 20rem; overflow: auto; }
+
+/* la griglia ha un'altezza sua (le schede sono in posizione assoluta): nella colonna della pagina non deve restringersi, scorre la vista */
+.ssbc--ws > .dash { flex: none; }

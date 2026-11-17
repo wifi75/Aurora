@@ -6,7 +6,8 @@ import { getSat, getSatPasses, getSatPassesAll, getSatPositions, getSatTrack, pu
 import { SatMap } from '../components/sat/SatMap';
 import { SatRadar } from '../components/sat/SatRadar';
 import { SatAlertsPanel } from '../components/sat/SatAlertsPanel';
-import { DashGrid, type DashWidget } from '../components/sat/DashGrid';
+import { DashGrid, type DashWidget } from '../components/DashGrid';
+import { useNarrow } from '../lib/useNarrow';
 import { SAT_MAX_COLS, SAT_MAX_ROWS, SAT_MINS, defaultLayout, loadLayout, saveLayout, type StoredLayout } from '../lib/satLayout';
 import { mergePasses, type AlertPass } from '../lib/satAlerts';
 import { useSatAlerts } from '../lib/useSatAlerts';
@@ -28,21 +29,6 @@ const clockOf = (unix: number) => {
 };
 
 const localTime = (unix: number) => new Date(unix * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-/** Sotto questa larghezza della finestra le schede si impilano in una colonna. */
-const NARROW_QUERY = '(max-width: 900px)';
-
-function useNarrow(): boolean {
-  const [narrow, setNarrow] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia(NARROW_QUERY).matches);
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia(NARROW_QUERY);
-    const on = () => setNarrow(mq.matches);
-    mq.addEventListener('change', on);
-    on();
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return narrow;
-}
 
 const localDay = (unix: number) => new Date(unix * 1000).toLocaleDateString([], { day: '2-digit', month: '2-digit' });
 
