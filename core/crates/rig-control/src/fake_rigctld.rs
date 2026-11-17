@@ -42,6 +42,8 @@ pub struct FakeState {
     /// RIT e XIT in Hz.
     offsets: Mutex<[i32; 2]>,
     vfo: Mutex<String>,
+    /// `get_vfo_info` passa al VFO chiesto e non torna indietro (come certe Icom con Hamlib).
+    vfo_info_switches: AtomicBool,
     /// Ritardo di ogni risposta in ms (una seriale lenta).
     delay_ms: AtomicU64,
     /// Codice `RPRT` con cui `X` (modo del VFO di trasmissione) risponde (0 = accettato).
@@ -75,6 +77,7 @@ impl FakeRigctld {
             refused: Mutex::new(Vec::new()),
             offsets: Mutex::new([0, 0]),
             vfo: Mutex::new("VFOA".into()),
+            vfo_info_switches: AtomicBool::new(false),
             delay_ms: AtomicU64::new(0),
             x_fail_code: AtomicI32::new(0),
             cpy_ok: AtomicBool::new(false),
@@ -217,6 +220,11 @@ impl FakeRigctld {
 
     pub fn offset(&self, xit: bool) -> i32 {
         self.state.offsets.lock().map_or(0, |o| o[usize::from(xit)])
+    }
+
+    /// La radio finta lascia il VFO letto da `get_vfo_info` come VFO in uso.
+    pub fn set_vfo_info_switches(&self, on: bool) {
+        self.state.vfo_info_switches.store(on, Ordering::SeqCst);
     }
 
     pub fn vfo(&self) -> String {
@@ -389,6 +397,18 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     }
                     "RPRT 0
 ".into()
+                }
+                "+\\get_vfo_info" => {
+                    if state.vfo_info_switches.load(Ordering::SeqCst)
+                        && let Ok(mut v) = state.vfo.lock()
+                    {
+                        *v = arg.to_string();
+                    }
+                    format!(
+                        "get_vfo_info: {arg}\nVFO: {arg}\nFreq: {}\nMode: {}\nWidth: 2400\nRPRT 0\n",
+                        state.freq.load(Ordering::SeqCst),
+                        state.mode.lock().map(|m| m.clone()).unwrap_or_default()
+                    )
                 }
                 "\\power2mW" => match (state.full_power_mw.load(Ordering::SeqCst), arg.parse::<f64>()) {
                     (0, _) | (_, Err(_)) => "RPRT -11\n".into(),

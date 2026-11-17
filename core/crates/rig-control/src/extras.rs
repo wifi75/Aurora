@@ -187,7 +187,18 @@ fn read_item(client: &RigctldClient, item: Item, out: &mut RigExtras) -> Result<
         Item::Vfo => out.vfo = Some(client.vfo()?),
         Item::VfoB => {
             // `get_vfo_info` manca su molte Yaesu (FT-2000): allora la frequenza e il modo del VFO di trasmissione in split
-            let (hz, mode) = match client.vfo_info("VFOB") {
+            // alcune radio (le Icom piu' vecchie come l'IC-756PRO) per leggere l'altro VFO passano a quel VFO e Hamlib non sempre
+            // torna indietro: la radio restava sul VFO B senza che nessuno l'avesse chiesto. Si guarda dove sta prima e dopo la lettura
+            // e, se e' cambiato, la si riporta li'.
+            let before = client.vfo().ok();
+            let read = client.vfo_info("VFOB");
+            if let Some(was) = before.as_deref()
+                && client.vfo().ok().as_deref().is_some_and(|now| now != was)
+                && let Err(e) = client.set_vfo(was)
+            {
+                tracing::warn!("la lettura del VFO B ha lasciato la radio su un altro VFO e non l'ho riportata su {was}: {}", e.0);
+            }
+            let (hz, mode) = match read {
                 Ok(v) => v,
                 Err(e) => match client.split_frequency() {
                     Ok(hz) if hz > 0 => (hz, client.split_mode().unwrap_or_default()),
@@ -534,6 +545,18 @@ mod tests {
         assert_eq!(poll.cache.vfo.as_deref(), Some("VFOB"));
         poll.apply(&client, ExtraItem::Vfo).expect("vfo");
         assert_eq!(fake.vfo(), "VFOA");
+    }
+
+    #[test]
+    fn reading_the_vfo_b_gives_the_radio_back_on_the_vfo_it_was() {
+        let (fake, client, _poll) = setup();
+        // come certe Icom con Hamlib: leggere il VFO B lascia la radio sul VFO B
+        fake.set_vfo_info_switches(true);
+        assert_eq!(fake.vfo(), "VFOA");
+        let mut out = RigExtras::default();
+        read_item(&client, Item::VfoB, &mut out).expect("vfo b");
+        assert_eq!(fake.vfo(), "VFOA", "la radio deve tornare sul VFO A");
+        assert!(out.vfo_b_hz.is_some());
     }
 
     #[test]
