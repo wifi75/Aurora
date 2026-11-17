@@ -24,7 +24,10 @@ use std::time::{Duration, Instant};
 pub const MAX_BYTE: u64 = crate::pacchetto::MAX_BYTE;
 pub const MAX_FILE: usize = 64;
 /// Sottocartelle dei dati dell'utente che non sono contest.
-const RISERVATE: [&str; 3] = ["macros", "dom", "regole"];
+const RISERVATE: [&str; 4] = ["macros", "dom", "regole", CARTELLA_SOVRASCRITTURE];
+
+/// La sottocartella dei dati dell'utente con le modifiche personali ai contest in cartella: `sovrascritture/<id>.json`.
+pub const CARTELLA_SOVRASCRITTURE: &str = "sovrascritture";
 /// Ogni quanto si rilegge il disco (le cartelle cambiano di rado, la riga di inserimento chiede il contest a ogni tasto).
 const VALIDITA_CACHE: Duration = Duration::from_secs(3);
 const GIORNO_MS: i64 = 86_400_000;
@@ -605,6 +608,8 @@ pub struct Scansione {
 pub struct Voce {
     pub contest: ContestTesto,
     pub cartella: Option<Arc<ContestCartella>>,
+    /// Le modifiche personali dell'utente gia' applicate a `contest` (solo contest in cartella che ne hanno).
+    pub sovrascritta: Option<Sovrascrittura>,
 }
 
 impl Voce {
@@ -618,6 +623,7 @@ impl Voce {
         use serde_json::json;
         let mut m = serde_json::Map::new();
         m.insert("origine".into(), json!(self.origine()));
+        m.insert("sovrascritta".into(), json!(self.sovrascritta));
         m.insert("schede".into(), json!(self.cartella.as_ref().map(|c| c.schede.clone()).unwrap_or_default()));
         m.insert("scambio".into(), json!(self.cartella.as_ref().map(|c| c.scambio.clone()).unwrap_or_default()));
         if con_regolamento {
@@ -625,6 +631,58 @@ impl Voce {
             m.insert("dichiarazione".into(), self.cartella.as_ref().map_or(serde_json::Value::Null, |c| c.dichiarazione(ora_ms())));
         }
         m
+    }
+}
+
+/// Le modifiche personali a un contest in cartella: solo dati dell'utente, mai regole. Stanno in `<dati>/contest/sovrascritture/<id>.json`
+/// e si applicano sopra i valori della cartella (che resta com'e', aggiornabile con le versioni). Un campo assente vale quello della cartella.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Sovrascrittura {
+    /// Inizio e fine dell'edizione, `aaaammgghhmmss` UTC (vanno in coppia).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    /// Ore di lavoro (0-48, 0 = nessun limite).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub work_time: Option<i32>,
+    /// Il numero di partenza e l'incremento automatico.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nrs: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_inc: Option<bool>,
+    /// Il file di macro scelto (`macros/<nome>.mc`; vuoto = nessuna macro).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub macros: Option<String>,
+}
+
+impl Sovrascrittura {
+    /// Nessun campo: non c'e' niente da tenere.
+    pub fn vuota(&self) -> bool {
+        *self == Sovrascrittura::default()
+    }
+
+    /// Mette le modifiche sopra i valori della cartella.
+    pub fn applica(&self, c: &mut ContestTesto) {
+        if let Some(v) = &self.start {
+            c.start = v.clone();
+        }
+        if let Some(v) = &self.end {
+            c.end = v.clone();
+        }
+        if let Some(v) = self.work_time {
+            c.work_time = v;
+        }
+        if let Some(v) = &self.nrs {
+            c.nrs = v.clone();
+        }
+        if let Some(v) = self.auto_inc {
+            c.auto_inc = v;
+        }
+        if let Some(v) = &self.macros {
+            c.macros = v.clone();
+        }
     }
 }
 
@@ -766,22 +824,126 @@ impl ElencoContest {
         self.cartella(id).map(Risolto::Cartella)
     }
 
+    /// Il file delle modifiche personali di un contest in cartella.
+    fn file_sovrascrittura(&self, id: &str) -> Result<PathBuf, String> {
+        if id.trim().is_empty() || id.contains(['/', '\\', ':']) || id.contains("..") {
+            return Err("identificativo non valido".into());
+        }
+        Ok(self.dir().join(CARTELLA_SOVRASCRITTURE).join(format!("{id}.json")))
+    }
+
+    /// Le modifiche personali salvate per un contest in cartella (`None` se non ce ne sono o il file non si legge).
+    pub fn sovrascrittura(&self, id: &str) -> Option<Sovrascrittura> {
+        let b = std::fs::read(self.file_sovrascrittura(id).ok()?).ok()?;
+        serde_json::from_slice::<Sovrascrittura>(&b).ok().filter(|s| !s.vuota())
+    }
+
+    /// La voce di una cartella con le modifiche personali applicate (le date calcolate dalla regola valgono solo senza le sue).
+    fn voce_di_cartella(&self, f: Arc<ContestCartella>, ora: i64) -> Voce {
+        let mut contest = f.in_contesto(ora);
+        let sovrascritta = self.sovrascrittura(&f.id);
+        if let Some(s) = &sovrascritta {
+            s.applica(&mut contest);
+        }
+        Voce { contest, cartella: Some(f), sovrascritta }
+    }
+
+    /// Salva le modifiche personali di un contest in cartella: dal corpo si leggono SOLO `start`, `end`, `work_time`, `nrs`, `auto_inc` e
+    /// `macros`; il resto (regole, nome, bande, modi...) si ignora senza errore. Si tengono solo i valori diversi da quelli della cartella,
+    /// cosi' un aggiornamento della cartella arriva ancora. Non scrive mai nella cartella. Restituisce la voce aggiornata.
+    pub fn salva_sovrascrittura(&self, id: &str, corpo: &serde_json::Value) -> Result<Voce, String> {
+        let Some(Risolto::Cartella(f)) = self.risolvi(id) else { return Err("non e' un contest a cartella".into()) };
+        let chiesta: Sovrascrittura = serde_json::from_value(corpo.clone()).map_err(|e| format!("valori non validi: {e}"))?;
+        let base = f.in_contesto(ora_ms());
+        let mut s = Sovrascrittura::default();
+        // date: in coppia; una data vuota vale «come la cartella»
+        let inizio = chiesta.start.as_deref().map_or("", str::trim);
+        let fine = chiesta.end.as_deref().map_or("", str::trim);
+        if !crate::elenco::data_valida(inizio) || !crate::elenco::data_valida(fine) {
+            return Err("data non valida (aaaammgghhmmss)".into());
+        }
+        if let (Some(a), Some(b)) = (crate::elenco::data_ms(inizio), crate::elenco::data_ms(fine))
+            && b < a
+        {
+            return Err("la fine viene prima dell'inizio".into());
+        }
+        if !inizio.is_empty() && !fine.is_empty() && (inizio != base.start || fine != base.end) {
+            s.start = Some(inizio.to_string());
+            s.end = Some(fine.to_string());
+        }
+        if let Some(h) = chiesta.work_time {
+            if !(0..=48).contains(&h) {
+                return Err("ore di lavoro: da 0 a 48".into());
+            }
+            if h != base.work_time {
+                s.work_time = Some(h);
+            }
+        }
+        if let Some(n) = chiesta.nrs.as_deref().map(str::trim) {
+            if n.chars().count() > 64 || n.chars().any(char::is_control) {
+                return Err("numero di partenza non valido".into());
+            }
+            if n != base.nrs {
+                s.nrs = Some(n.to_string());
+            }
+        }
+        if let Some(a) = chiesta.auto_inc
+            && a != base.auto_inc
+        {
+            s.auto_inc = Some(a);
+        }
+        if let Some(m) = chiesta.macros.as_deref().map(|m| m.trim().replace('\\', "/")) {
+            if !m.is_empty() {
+                let nota = f.macros.keys().any(|k| k.eq_ignore_ascii_case(&m)) || (m.starts_with("macros/") && percorso_relativo_ok(&m) && self.dir().join(&m).is_file());
+                if !nota {
+                    return Err(format!("file di macro sconosciuto: {m}"));
+                }
+            }
+            if m != base.macros {
+                s.macros = Some(m);
+            }
+        }
+        let file = self.file_sovrascrittura(&f.id)?;
+        if s.vuota() {
+            let _ = std::fs::remove_file(&file);
+        } else {
+            if let Some(d) = file.parent() {
+                std::fs::create_dir_all(d).map_err(|e| e.to_string())?;
+            }
+            let testo = serde_json::to_string_pretty(&s).map_err(|e| e.to_string())?;
+            std::fs::write(&file, testo).map_err(|e| e.to_string())?;
+        }
+        self.voce(&f.id).ok_or_else(|| "contest sconosciuto".to_string())
+    }
+
+    /// «Ripristina i valori del contest»: toglie le modifiche personali. Restituisce la voce com'e' nella cartella.
+    pub fn ripristina_sovrascrittura(&self, id: &str) -> Result<Voce, String> {
+        let Some(Risolto::Cartella(f)) = self.risolvi(id) else { return Err("non e' un contest a cartella".into()) };
+        let file = self.file_sovrascrittura(&f.id)?;
+        match std::fs::remove_file(&file) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.to_string()),
+        }
+        self.voce(&f.id).ok_or_else(|| "contest sconosciuto".to_string())
+    }
+
     /// Una voce dell'elenco per identificativo (anche quello di un `.contest` sostituito da una cartella).
     pub fn voce(&self, id: &str) -> Option<Voce> {
         Some(match self.risolvi(id)? {
-            Risolto::File(contest) => Voce { contest: *contest, cartella: None },
-            Risolto::Cartella(f) => Voce { contest: f.in_contesto(ora_ms()), cartella: Some(f) },
+            Risolto::File(contest) => Voce { contest: *contest, cartella: None, sovrascritta: None },
+            Risolto::Cartella(f) => self.voce_di_cartella(f, ora_ms()),
         })
     }
 
     /// Tutti i contest, in ordine di nome: i `.contest` non sostituiti e le cartelle.
     pub fn voci(&self) -> Vec<Voce> {
         let ora = ora_ms();
-        let mut out: Vec<Voce> = self.elenco_file().into_iter().filter(|c| self.sostituito_da(c).is_none()).map(|contest| Voce { contest, cartella: None }).collect();
+        let mut out: Vec<Voce> = self.elenco_file().into_iter().filter(|c| self.sostituito_da(c).is_none()).map(|contest| Voce { contest, cartella: None, sovrascritta: None }).collect();
         // un `.contest` personalizzato vale piu' della cartella inclusa con lo stesso nome (non di quella dell'utente)
         let personalizzati: Vec<String> = out.iter().map(|v| normalizza(&v.contest.name)).collect();
         let visibili = self.scansione().cartelle.iter().filter(|f| f.origine == Origine::Utente || !personalizzati.contains(&normalizza(&f.meta.nome))).cloned().collect::<Vec<_>>();
-        out.extend(visibili.into_iter().map(|f| Voce { contest: f.in_contesto(ora), cartella: Some(f) }));
+        out.extend(visibili.into_iter().map(|f| self.voce_di_cartella(f, ora)));
         out.sort_by_key(|v| v.contest.name.to_lowercase());
         out
     }
@@ -1112,6 +1274,108 @@ mod tests {
         assert!(e.scansione().errori.iter().any(|x| x.contains("Contest di prova")));
         assert_eq!(e.scansione().cartelle.iter().map(|c| c.origine).collect::<Vec<_>>(), vec![Origine::Inclusa]);
         assert_eq!(e.voci()[0].origine(), "file");
+        let _ = std::fs::remove_dir_all(&base);
+    }
+    /// Elenco ricorsivo di file e contenuti: per verificare che il core non scriva nella cartella inclusa.
+    fn istantanea(d: &Path) -> Vec<(String, Vec<u8>)> {
+        let mut out = Vec::new();
+        let mut da_fare = vec![d.to_path_buf()];
+        while let Some(x) = da_fare.pop() {
+            for e in std::fs::read_dir(&x).into_iter().flatten().flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    da_fare.push(p);
+                } else {
+                    out.push((p.display().to_string(), std::fs::read(&p).unwrap_or_default()));
+                }
+            }
+        }
+        out.sort();
+        out
+    }
+
+    #[test]
+    fn le_modifiche_personali_di_un_contest_incluso() {
+        let base = cartella_di_prova("sovrascritture");
+        let inclusa = base.join("incluse");
+        let dati = base.join("dati");
+        prova_valida(&inclusa.join("Contest di prova"));
+        // un altro contest in cartella, che non deve essere toccato
+        let mut altro = TOML_MINIMO.replace("\"prova\"", "\"altro\"").replace("Contest di prova", "Altro contest");
+        altro = altro.replace("note = \"CW\"", "note = \"SSB\"");
+        scrivi(&inclusa.join("Altro contest"), "contest.toml", &altro);
+        scrivi(&inclusa.join("Altro contest"), "punteggio.regole", "bands=20
+points=any=3
+mult=exch
+");
+        scrivi(&inclusa.join("Altro contest"), "dati/x.dom", "AA = AA
+");
+        let e = ElencoContest::new(&dati);
+        e.imposta_cartelle_incluse(Some(inclusa.clone()));
+        let prima = istantanea(&inclusa);
+        let originale = e.voce("Contest di prova").map(|v| v.contest).unwrap_or_default();
+        let altro_prima = e.voce("Altro contest").map(|v| v.contest).unwrap_or_default();
+        assert!(!originale.start.is_empty());
+
+        // le date, le ore e il numero si salvano; le regole e il nome nel corpo si ignorano senza errore
+        let corpo = serde_json::json!({ "name": "Rubato", "score": "mult=pippo", "valid_cw": false, "start": "20300101000000", "end": "20300102235959", "work_time": 8, "nrs": "7", "auto_inc": false });
+        let v = e.salva_sovrascrittura("Contest di prova", &corpo).unwrap_or_else(|x| panic!("{x}"));
+        assert_eq!((v.contest.start.as_str(), v.contest.end.as_str(), v.contest.work_time, v.contest.nrs.as_str(), v.contest.auto_inc), ("20300101000000", "20300102235959", 8, "7", false));
+        assert_eq!(v.contest.name, originale.name, "il nome non cambia");
+        assert_eq!(v.contest.score, originale.score, "le regole non cambiano");
+        assert!(v.contest.valid_cw);
+        assert!(dati.join("sovrascritture/Contest di prova.json").is_file());
+        // riletto da zero (altra istanza sullo stesso disco) e nell'elenco
+        let e2 = ElencoContest::new(&dati);
+        e2.imposta_cartelle_incluse(Some(inclusa.clone()));
+        let riletto = e2.voce("Contest di prova").map(|v| v.contest).unwrap_or_default();
+        assert_eq!((riletto.start.as_str(), riletto.work_time), ("20300101000000", 8));
+        assert_eq!(e2.voci().iter().find(|v| v.contest.id == "Contest di prova").map(|v| v.contest.end.clone()), Some("20300102235959".to_string()));
+        assert_eq!(e2.attivo().map(|a| a.start_ms), None, "nessun contest attivo scelto");
+        // la sottocartella delle modifiche non e' un contest
+        assert!(e2.scansione().errori.is_empty());
+        assert_eq!(e2.voci().len(), 2);
+        // un altro contest in cartella non e' toccato; la cartella inclusa nemmeno
+        assert_eq!(e.voce("Altro contest").map(|v| v.contest), Some(altro_prima));
+        assert_eq!(istantanea(&inclusa), prima, "il core non scrive nella cartella inclusa");
+
+        // valori non validi
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "work_time": 49 })).is_err());
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "work_time": -1 })).is_err());
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "start": "2030", "end": "20300102235959" })).is_err());
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "start": "20300102000000", "end": "20300101000000" })).is_err());
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "macros": "macros/non-esiste.mc" })).is_err());
+        assert!(e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "macros": "../x.mc" })).is_err());
+        assert!(e.salva_sovrascrittura("Sconosciuto", &serde_json::json!({})).is_err());
+        // dopo gli errori il salvato di prima e' ancora li'
+        assert_eq!(e.voce("Contest di prova").map(|v| v.contest.work_time), Some(8));
+
+        // una macro dell'utente: si sceglie e il contest attivo la usa; vuota = nessuna macro
+        scrivi(&dati, "macros/mia.mc", "[Macros]
+nItems=2
+Name0=F1
+Text0=CQ
+Name1=F2
+Text1=73
+");
+        let v = e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "start": "20300101000000", "end": "20300102235959", "work_time": 8, "nrs": "7", "auto_inc": false, "macros": "macros/mia.mc" })).unwrap_or_else(|x| panic!("{x}"));
+        assert_eq!(v.contest.macros, "macros/mia.mc");
+        assert!(e.seleziona(Some("Contest di prova")).is_ok());
+        assert_eq!(e.attivo().map(|a| a.macros.len()), Some(2));
+        let v = e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "start": "20300101000000", "end": "20300102235959", "work_time": 8, "nrs": "7", "auto_inc": false, "macros": "" })).unwrap_or_else(|x| panic!("{x}"));
+        assert_eq!(v.contest.macros, "");
+        assert_eq!(e.attivo().map(|a| a.macros.len()), Some(0));
+
+        // un corpo uguale ai valori della cartella non lascia niente; ripristina toglie tutto
+        let v = e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "start": originale.start, "end": originale.end, "work_time": originale.work_time, "nrs": originale.nrs, "auto_inc": originale.auto_inc, "macros": originale.macros })).unwrap_or_else(|x| panic!("{x}"));
+        assert!(v.sovrascritta.is_none() && !dati.join("sovrascritture/Contest di prova.json").exists());
+        assert_eq!(v.contest, originale);
+        e.salva_sovrascrittura("Contest di prova", &serde_json::json!({ "work_time": 3 })).unwrap_or_else(|x| panic!("{x}"));
+        assert_eq!(e.voce("Contest di prova").map(|v| v.contest.work_time), Some(3));
+        let v = e.ripristina_sovrascrittura("Contest di prova").unwrap_or_else(|x| panic!("{x}"));
+        assert_eq!(v.contest, originale);
+        assert!(e.ripristina_sovrascrittura("Contest di prova").is_ok(), "ripristinare due volte non e' un errore");
+        assert_eq!(istantanea(&inclusa), prima);
         let _ = std::fs::remove_dir_all(&base);
     }
 }

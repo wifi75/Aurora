@@ -753,7 +753,20 @@ impl ElencoContest {
     pub fn attivo(&self) -> Option<Attivo> {
         let v = self.voce(&self.attivo_id()?)?;
         if let Some(f) = &v.cartella {
-            return Some(Attivo { start_ms: data_ms(&v.contest.start), end_ms: data_ms(&v.contest.end), macros: f.macro_del_contest(), domain: f.dominio_del_contest(), contest: v.contest });
+            // la macro scelta dall'utente (sovrascrittura) vale al posto di quella della cartella; vuota = nessuna macro
+            let macros = match v.sovrascritta.as_ref().and_then(|s| s.macros.as_deref()) {
+                Some("") => Vec::new(),
+                Some(m) => f
+                    .macros
+                    .iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case(m))
+                    .map(|(_, t)| t.clone())
+                    .or_else(|| self.leggi_relativo(m))
+                    .map(|t| leggi_macro(&t))
+                    .unwrap_or_else(|| f.macro_del_contest()),
+                None => f.macro_del_contest(),
+            };
+            return Some(Attivo { start_ms: data_ms(&v.contest.start), end_ms: data_ms(&v.contest.end), macros, domain: f.dominio_del_contest(), contest: v.contest });
         }
         let c = v.contest;
         let macros = self.leggi_relativo(&c.macros).map(|t| leggi_macro(&t)).unwrap_or_default();

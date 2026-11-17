@@ -58,11 +58,16 @@ pub(crate) async fn attivo(State(state): State<AppState>, _: Authed) -> Result<J
 pub(crate) async fn leggi(State(state): State<AppState>, _: Authed, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
     let s = service(&state)?;
     let voce = s.elenco().voce(&id).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "contest_unknown"))?;
+    Ok(Json(voce_json(&voce)))
+}
+
+/// Il contest come lo vede l'app: i campi del `.contest` piu' quelli di `campi_api` (con regolamento e dichiarazione).
+fn voce_json(voce: &contest::cartelle::Voce) -> Value {
     let mut v = json!(voce.contest);
     if let Some(o) = v.as_object_mut() {
         o.extend(voce.campi_api(true));
     }
-    Ok(Json(v))
+    v
 }
 
 /// Un contest a cartella non si modifica ne' si cancella dall'elenco: errore chiaro (409 `contest_readonly`).
@@ -80,12 +85,31 @@ fn salva_in(state: &AppState, c: ContestTesto) -> Result<Json<Value>, ApiError> 
     Ok(Json(json!({ "ok": true, "id": id })))
 }
 
-/// Salva un contest esistente.
-#[utoipa::path(put, path = "/api/v1/contest-testo/voce/{id}", responses((status = 200, description = "Salvato"), (status = 400, description = "Valori non validi (bad_contest)")))]
-pub(crate) async fn salva(State(state): State<AppState>, _: Authed, Path(id): Path<String>, Json(mut c): Json<ContestTesto>) -> Result<Json<Value>, ApiError> {
-    controlla_modificabile(&state, &id)?;
+/// Salva un contest esistente. Per un contest in cartella (incluso o dell'utente) si salvano solo le modifiche personali (`start`, `end`,
+/// `work_time`, `nrs`, `auto_inc`, `macros`, in `<dati>/contest/sovrascritture/<id>.json`): gli altri campi del corpo si ignorano senza
+/// errore e la risposta e' il contest aggiornato (come `GET`).
+#[utoipa::path(put, path = "/api/v1/contest-testo/voce/{id}", responses((status = 200, description = "Salvato (per un contest in cartella: il contest aggiornato)"), (status = 400, description = "Valori non validi (bad_contest)")))]
+pub(crate) async fn salva(State(state): State<AppState>, _: Authed, Path(id): Path<String>, Json(corpo): Json<Value>) -> Result<Json<Value>, ApiError> {
+    let s = service(&state)?;
+    if let Some(f) = s.elenco().voce(&id).and_then(|v| v.cartella) {
+        let voce = s.elenco().salva_sovrascrittura(&f.id, &corpo).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "bad_contest").with_message(e))?;
+        return Ok(Json(voce_json(&voce)));
+    }
+    let mut c: ContestTesto = serde_json::from_value(corpo).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "bad_contest").with_message(e.to_string()))?;
     c.id = id;
     salva_in(&state, c)
+}
+
+/// «Ripristina i valori del contest»: toglie le modifiche personali di un contest in cartella e risponde con il contest com'e' nella cartella.
+#[utoipa::path(delete, path = "/api/v1/contest-testo/voce/{id}/sovrascrittura", responses((status = 200, description = "Ripristinato: il contest come nella cartella"), (status = 400, description = "Non e' un contest a cartella (bad_contest)"), (status = 404, description = "Sconosciuto (contest_unknown)")))]
+pub(crate) async fn ripristina(State(state): State<AppState>, _: Authed, Path(id): Path<String>) -> Result<Json<Value>, ApiError> {
+    let s = service(&state)?;
+    let voce = s.elenco().voce(&id).ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "contest_unknown"))?;
+    let Some(f) = voce.cartella else {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_contest").with_message("non e' un contest a cartella: non ha modifiche personali"));
+    };
+    let voce = s.elenco().ripristina_sovrascrittura(&f.id).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, "bad_contest").with_message(e))?;
+    Ok(Json(voce_json(&voce)))
 }
 
 /// Aggiunge un contest nuovo (il nome del file viene dal nome del contest).

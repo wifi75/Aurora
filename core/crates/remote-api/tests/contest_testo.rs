@@ -100,20 +100,65 @@ async fn il_contest_attivo_viene_dalla_cartella_con_macro_e_domini() {
 }
 
 #[tokio::test]
-async fn un_contest_incluso_non_si_modifica_ne_si_cancella() {
+async fn un_contest_incluso_non_si_cancella_e_si_modificano_solo_i_dati_personali() {
     let (s, d) = stato("rifiuti");
     let cookie = cookie_for(&s);
     let app = router(&s);
     let uri = format!("/api/v1/contest-testo/voce/{}", ARRL.replace(' ', "%20"));
     let corrente = body_json(call(&app, req(Method::GET, &uri).cookie(&cookie)).await).await;
-    let r = call(&app, req(Method::PUT, &uri).cookie(&cookie).json(&corrente.to_string())).await;
+    // la cancellazione dall'elenco resta rifiutata
+    let r = call(&app, req(Method::DELETE, &uri).cookie(&cookie)).await;
     status_is(&r, StatusCode::CONFLICT);
     let e = body_json(r).await;
     assert_eq!(e["error"], "contest_readonly");
     assert!(e["message"].as_str().unwrap().contains("copialo nella tua cartella"), "{e}");
-    let r = call(&app, req(Method::DELETE, &uri).cookie(&cookie)).await;
-    status_is(&r, StatusCode::CONFLICT);
-    assert_eq!(body_json(r).await["error"], "contest_readonly");
+    // il salvataggio accetta solo date, ore, numero e macro: nome e regole del corpo si ignorano senza errore
+    let mut corpo = corrente.clone();
+    corpo["name"] = json!("Altro nome");
+    corpo["score"] = json!("mult=pippo");
+    corpo["start"] = json!("20301201000000");
+    corpo["end"] = json!("20301202235959");
+    corpo["work_time"] = json!(12);
+    let r = call(&app, req(Method::PUT, &uri).cookie(&cookie).json(&corpo.to_string())).await;
+    status_is(&r, StatusCode::OK);
+    let v = body_json(r).await;
+    assert_eq!((v["start"].as_str(), v["end"].as_str(), v["work_time"].as_i64()), (Some("20301201000000"), Some("20301202235959"), Some(12)));
+    assert_eq!(v["name"], ARRL);
+    assert_eq!(v["score"], corrente["score"]);
+    assert_eq!(v["sovrascritta"]["work_time"], 12);
+    assert!(d.join("contest").join("sovrascritture").join(format!("{ARRL}.json")).is_file());
+    // la rilettura, l'elenco e il contest attivo vedono le nuove date
+    let v = body_json(call(&app, req(Method::GET, &uri).cookie(&cookie)).await).await;
+    assert_eq!(v["start"], "20301201000000");
+    let lista = body_json(call(&app, req(Method::GET, "/api/v1/contest-testo").cookie(&cookie)).await).await;
+    assert_eq!(lista["contest"].as_array().unwrap().iter().find(|c| c["id"] == ARRL).unwrap()["end"], "20301202235959");
+    call(&app, req(Method::POST, "/api/v1/contest-testo/seleziona").cookie(&cookie).json(&json!({ "id": ARRL }).to_string())).await;
+    let a = body_json(call(&app, req(Method::GET, "/api/v1/contest-testo/attivo").cookie(&cookie)).await).await;
+    assert_eq!(a["contest"]["start"], "20301201000000");
+    // valori non validi: 400 e il salvato resta
+    for brutto in [json!({ "work_time": 99 }), json!({ "start": "x", "end": "y" }), json!({ "macros": "macros/nessuna.mc" })] {
+        let r = call(&app, req(Method::PUT, &uri).cookie(&cookie).json(&brutto.to_string())).await;
+        status_is(&r, StatusCode::BAD_REQUEST);
+        assert_eq!(body_json(r).await["error"], "bad_contest");
+    }
+    assert_eq!(body_json(call(&app, req(Method::GET, &uri).cookie(&cookie)).await).await["work_time"], 12);
+    // «Ripristina i valori del contest»
+    let ripristina = format!("{uri}/sovrascrittura");
+    let r = call(&app, req(Method::DELETE, &ripristina).cookie(&cookie)).await;
+    status_is(&r, StatusCode::OK);
+    let v = body_json(r).await;
+    assert_eq!(v["start"], corrente["start"]);
+    assert_eq!(v["work_time"], corrente["work_time"]);
+    assert!(v["sovrascritta"].is_null());
+    assert!(!d.join("contest").join("sovrascritture").join(format!("{ARRL}.json")).exists());
+    // un vecchio file non ha modifiche personali da ripristinare, uno sconosciuto neppure
+    call(&app, req(Method::POST, "/api/v1/contest-testo/voce").cookie(&cookie).json(&json!({ "name": "Vecchio" }).to_string())).await;
+    status_is(&call(&app, req(Method::DELETE, "/api/v1/contest-testo/voce/Vecchio/sovrascrittura").cookie(&cookie)).await, StatusCode::BAD_REQUEST);
+    status_is(&call(&app, req(Method::DELETE, "/api/v1/contest-testo/voce/Nessuno/sovrascrittura").cookie(&cookie)).await, StatusCode::NOT_FOUND);
+    // un vecchio file si salva come prima
+    let mut vecchio = body_json(call(&app, req(Method::GET, "/api/v1/contest-testo/voce/Vecchio").cookie(&cookie)).await).await;
+    vecchio["notes"] = json!("RTTY");
+    status_is(&call(&app, req(Method::PUT, "/api/v1/contest-testo/voce/Vecchio").cookie(&cookie).json(&vecchio.to_string())).await, StatusCode::OK);
     let _ = std::fs::remove_dir_all(&d);
 }
 
