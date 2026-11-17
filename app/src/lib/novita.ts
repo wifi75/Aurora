@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.285',
+    released: '2026-11-17T16:30:00Z',
+    kind: 'changed',
+    title: [
+      'Aggiornamento alla versione pubblicata',
+      'Update to the published build',
+      'Update auf den veröffentlichten Build',
+      'Mise à jour vers la version publiée',
+      'Actualización a la compilación publicada',
+      'Atualização para a compilação publicada',
+    ],
+    text: [
+      'La 0.11.285 ha lo stesso contenuto della 0.11.284: serve solo perché le copie installate da una compilazione di prova della 0.11.284 non si aggiornavano da sole (stesso numero di versione).',
+      '0.11.285 has the same content as 0.11.284: it only exists because copies installed from a test build of 0.11.284 did not update by themselves (same version number).',
+      '0.11.285 hat denselben Inhalt wie 0.11.284: sie ist nur nötig, weil Kopien aus einem Testbuild von 0.11.284 sich nicht von selbst aktualisierten (gleiche Versionsnummer).',
+      '0.11.285 a le même contenu que 0.11.284 : elle n’existe que parce que les copies installées depuis une version de test de 0.11.284 ne se mettaient pas à jour toutes seules (même numéro de version).',
+      'La 0.11.285 tiene el mismo contenido que la 0.11.284: solo existe porque las copias instaladas desde una compilación de prueba de la 0.11.284 no se actualizaban solas (mismo número de versión).',
+      'A 0.11.285 tem o mesmo conteúdo da 0.11.284: só existe porque as cópias instaladas de uma compilação de teste da 0.11.284 não se atualizavam sozinhas (mesmo número de versão).',
+    ],
+  },
+  {
     version: '0.11.284',
     released: '2026-11-17T14:49:25Z',
     kind: 'new',
@@ -850,27 +871,6 @@ export const NOVITA: readonly Novita[] = [
       'SSTV, page « Composer et émettre » : aperçu à gauche et quatre onglets à droite (Photo, Retouches, Calques, Modèles), sans faire défiler la page. En CW « TX = RX » est maintenant un interrupteur : activé, la vitesse d’émission suit celle de la station reçue ; les touches − et + le désactivent. Une erreur au début de la séquence du CW rapide est aussi corrigée.',
       'SSTV, página «Componer y transmitir»: vista previa a la izquierda y cuatro pestañas a la derecha (Foto, Retoques, Capas, Modelos), sin desplazar la página. En CW «TX = RX» es ahora un interruptor: encendido, la velocidad de transmisión sigue la de la estación recibida; las teclas − y + lo apagan. También se corrige un error al inicio de la secuencia del CW rápido.',
       'SSTV, página «Compor e transmitir»: pré-visualização à esquerda e quatro separadores à direita (Foto, Retoques, Camadas, Modelos), sem deslocar a página. Em CW «TX = RX» é agora um interruptor: ligado, a velocidade de transmissão segue a da estação recebida; as teclas − e + desligam-no. Foi também corrigido um erro no início da sequência do CW rápido.',
-    ],
-  },
-  {
-    version: '0.11.265',
-    released: '2026-11-15T14:00:59Z',
-    kind: 'fixed',
-    title: [
-      'Browser e telefono non toccano più le impostazioni del PC',
-      'Browser and phone no longer touch the PC settings',
-      'Browser und Telefon ändern die Einstellungen des PCs nicht mehr',
-      'Navigateur et téléphone ne touchent plus aux réglages du PC',
-      'Navegador y teléfono ya no tocan los ajustes del PC',
-      'Navegador e telemóvel já não mexem nas definições do PC',
-    ],
-    text: [
-      'Un browser o un telefono collegati ad Aurora non riscrivono più le impostazioni e i filtri del PC all’apertura e non accendono da soli la ricezione SSTV o dei modi testuali (c’è il tasto «Ascolta»); il PC principale si riconosce da com’è collegato, non dalla larghezza della finestra. Il comando banda con «mode» cambia davvero il modo del motore (prima la radio andava sulla frequenza FT8 ma il motore restava in FT4). L’intestazione ora dice «by IU3WJQ».',
-      'A browser or phone connected to Aurora no longer rewrites the PC’s settings and filters when opened and no longer turns on SSTV or text-mode reception by itself (there is a “Listen” button); the main PC is recognised by how it is connected, not by the window width. The band command with “mode” really changes the engine mode (before, the radio went to the FT8 frequency but the engine stayed in FT4). The header now says “by IU3WJQ”.',
-      'Ein mit Aurora verbundener Browser oder ein Telefon überschreiben beim Öffnen nicht mehr die Einstellungen und Filter des PCs und schalten den SSTV- oder Textmodus-Empfang nicht mehr von selbst ein (es gibt die Taste „Zuhören“); der Haupt-PC wird daran erkannt, wie er verbunden ist, nicht an der Fensterbreite. Der Bandbefehl mit „mode“ ändert wirklich den Modus des Motors (früher ging das Funkgerät auf die FT8-Frequenz, der Motor blieb aber in FT4). Die Kopfzeile lautet jetzt „by IU3WJQ“.',
-      'Un navigateur ou un téléphone connectés à Aurora ne réécrivent plus les réglages et les filtres du PC à l’ouverture et n’activent plus tout seuls la réception SSTV ou des modes texte (il y a la touche « Écouter ») ; le PC principal se reconnaît à la façon dont il est connecté, pas à la largeur de la fenêtre. La commande de bande avec « mode » change vraiment le mode du moteur (avant, la radio allait sur la fréquence FT8 mais le moteur restait en FT4). L’en-tête indique maintenant « by IU3WJQ ».',
-      'Un navegador o un teléfono conectados a Aurora ya no reescriben los ajustes y los filtros del PC al abrirse y ya no encienden solos la recepción SSTV o de los modos de texto (hay la tecla «Escuchar»); el PC principal se reconoce por cómo está conectado, no por el ancho de la ventana. El comando de banda con «mode» cambia de verdad el modo del motor (antes la radio iba a la frecuencia FT8 pero el motor se quedaba en FT4). La cabecera ahora dice «by IU3WJQ».',
-      'Um navegador ou um telemóvel ligados ao Aurora já não reescrevem as definições e os filtros do PC ao abrir e já não ligam sozinhos a receção SSTV ou dos modos de texto (há o botão «Ouvir»); o PC principal reconhece-se pela forma como está ligado, não pela largura da janela. O comando de banda com «mode» muda mesmo o modo do motor (antes o rádio ia para a frequência FT8 mas o motor ficava em FT4). O cabeçalho passa a dizer «by IU3WJQ».',
     ],
   },
 ];

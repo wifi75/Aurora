@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.285 - 2026-11-17
+
+- Stesso contenuto della 0.11.284 con un numero di versione nuovo: le copie installate con una delle compilazioni di prova della 0.11.284 non si aggiornavano da sole (stesso numero), cosi' l'aggiornamento automatico le porta alla compilazione pubblicata.
+
+
 ## 0.11.284 - 2026-11-17
 
 - Contest, impaginazione standard: in SSB (log, Inserisci QSO e Paesi DXCC, DX Cluster e Statistiche, Punteggio e ritmo, moltiplicatori in fondo) e in CW/RTTY/PSK (log, Ricezione sopra Trasmissione, Inserisci QSO, Paesi DXCC, Statistiche, Punteggio e ritmo, Aurora BIGScan sopra il DX Cluster, Cascata e moltiplicatori) la disposizione di partenza e' quella scelta dal proprietario; spazio tra le schede di 6 px, barre del titolo e bordi come le finestre della pagina FT8, «Inserisci QSO» alto quanto il contenuto con il nome del contest a destra.
