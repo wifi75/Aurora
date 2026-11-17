@@ -9,7 +9,7 @@ Il dettaglio, con priorità e note, sta in `docs/mancante.md`; i lavori presi da
 - [x] #71, PTT acceso e spento a fine QSO: la trasmissione gia' partita si lascia finire; verificato su WSJT-X con Ghidra (`cease_auto_Tx_after_QSO`).
 - [x] Pulsanti di Comandi senza bordo inferiore tagliato (CSS in `bozze.css`; **non misurato sullo schermo dell'utente**).
 - [ ] #71: aspettare la conferma dell'autore con la 0.11.289. #75 (Luc): aspettare il pacchetto nuovo (la finestra RX/TX in CW). #72: aspettare il pacchetto.
-- [ ] Riscrivere/ripulire: i 12 commit con la email personale e il trailer sono stati riscritti il 2026-11-17; «claude» puo' restare nei collaboratori di GitHub per la cache (se resta oltre 24 ore: supporto GitHub). La regola «Proteggi main» (ruleset 27269671) va rimessa su Active dal proprietario.
+- [ ] Storia ripulita il 2026-11-17 (12 commit riscritti: autore e messaggi). Un collaboratore indesiderato puo' restare nell'elenco dei collaboratori di GitHub per la cache (se resta oltre 24 ore: supporto GitHub). La regola «Proteggi main» (ruleset 27269671) e' ancora disabilitata: va rimessa su Active dal proprietario.
 - [ ] Badge dei test del README (Rust/UI) da riallineare ai numeri veri a ogni versione; due prove di `engine-native` falliscono sotto carico nella corsa completa.
 - [ ] Modo dati USB-D per la famiglia 756: Hamlib non lo ha; servirebbe un comando CI-V diretto (da provare su una radio vera).
 
