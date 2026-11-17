@@ -169,6 +169,11 @@ fn now_ms() -> u64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
 }
 
+/// L'errore di Hamlib dice «la radio non ha questa funzione» (-1 parametro non valido, -4 non implementata, -11 non disponibile)?
+fn hamlib_unsupported(error: &RigError) -> bool {
+    matches!(crate::hamlib::error_code(error), Some(-1 | -4 | -11))
+}
+
 fn unsupported(message: &str) -> bool {
     message.contains("non implementata") || message.contains("non disponibile")
 }
@@ -184,6 +189,9 @@ struct Inner {
     /// La radio non ha accettato il modo dati `PKTUSB` (radio senza modo dati, come la TS-480): da qui in poi si
     /// scrive `USB`, senza riprovare il modo dati a ogni cambio di banda.
     pktusb_fallback: AtomicBool,
+    /// La radio non scrive il modo nel VFO di trasmissione (`X`) ne' sa copiare A=B (`G CPY`): il modo di trasmissione segue quello di
+    /// ricezione. Si scopre una volta per sessione della radio e da li' non si riprova (ne' `X` ne' la copia).
+    split_mode_unsupported: AtomicBool,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -1000,14 +1008,32 @@ impl Inner {
         let Some((mode, passband)) = chosen.map(|m| (m.to_string(), 0)).or(current.map(|m| (m, passband))) else {
             return;
         };
+        // radio senza `X` e senza copia A=B (scoperto prima): il modo di trasmissione segue quello di ricezione, niente da riprovare
+        if self.split_mode_unsupported.load(Ordering::SeqCst) {
+            return;
+        }
         self.split_command(&format!("X {mode} {passband}"), "modo del VFO di trasmissione");
         if let Err(e) = link.client().set_split_mode(&mode, passband) {
-            // radio o modello di Hamlib senza `X`: si copia il VFO di ricezione in quello di trasmissione (A=B, modo compreso); la frequenza
-            // di trasmissione si riscrive subito dopo da chi chiama
-            tracing::warn!("modo {mode} non scritto nel VFO di trasmissione ({}): copia A=B", friendly_error(&e.0));
+            // `X` non supportato da radio o modello: non e' un guasto, solo un ripiego; un errore vero (porta, timeout) resta un avviso
+            let x_unsupported = hamlib_unsupported(&e);
+            if !x_unsupported {
+                // radio o modello di Hamlib senza `X`: si copia il VFO di ricezione in quello di trasmissione (A=B, modo compreso); la
+                // frequenza di trasmissione si riscrive subito dopo da chi chiama
+                tracing::warn!("modo {mode} non scritto nel VFO di trasmissione ({}): copia A=B", friendly_error(&e.0));
+            }
             self.split_command("G CPY", "copia A=B, ripiego del modo del VFO di trasmissione");
-            if let Err(e) = link.client().vfo_op("CPY") {
-                tracing::warn!("copia A=B non riuscita: {}", friendly_error(&e.0));
+            if let Err(c) = link.client().vfo_op("CPY") {
+                if x_unsupported && hamlib_unsupported(&c) {
+                    // ne' `X` ne' la copia: una sola riga di informazione, poi la radio non si interroga piu' su questo
+                    if !self.split_mode_unsupported.swap(true, Ordering::SeqCst) {
+                        tracing::info!("la radio non supporta la copia A=B: il modo di trasmissione segue quello di ricezione");
+                    }
+                } else {
+                    if x_unsupported {
+                        tracing::warn!("modo {mode} non scritto nel VFO di trasmissione ({}): copia A=B", friendly_error(&e.0));
+                    }
+                    tracing::warn!("copia A=B non riuscita: {}", friendly_error(&c.0));
+                }
             }
         }
     }
@@ -1040,6 +1066,7 @@ impl HamlibRig {
         let inner = Arc::new(Inner {
             powered_on: AtomicBool::new(false),
             pktusb_fallback: AtomicBool::new(false),
+            split_mode_unsupported: AtomicBool::new(false),
             config,
             connector,
             timing,
@@ -1988,6 +2015,58 @@ mod tests {
             assert_eq!(seq(&fake), ["X USB 0".to_string(), format!("I {}", split_tx_dial_hz(dial, 1000)), "S 1 VFOB".to_string()]);
             assert!(!seq(&fake).iter().any(|c| c.contains("LSB")));
         }
+    }
+
+    fn split_mode_commands(fake: &FakeRigctld) -> Vec<String> {
+        fake.commands().into_iter().filter(|c| c.starts_with("X ") || c == "G CPY").collect()
+    }
+
+    #[test]
+    fn a_radio_without_x_and_without_the_a_equals_b_copy_is_asked_only_once() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.fail_split_mode_with(-1);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split anche senza modo di trasmissione");
+        assert_eq!(split_mode_commands(&fake), ["X PKTUSB 2400", "G CPY"]);
+        assert!(rig.inner.split_mode_unsupported.load(Ordering::SeqCst));
+        // al cambio banda successivo ne' `X` ne' la copia si ritentano; lo split funziona lo stesso
+        rig.set_frequency(7_074_000).expect("QSY");
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split prima del PTT");
+        assert!(split_mode_commands(&fake).is_empty(), "{:?}", fake.commands());
+        assert!(fake.split());
+    }
+
+    #[test]
+    fn a_radio_that_copies_a_to_b_keeps_the_same_commands_and_the_same_order() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.fail_split_mode_with(-4);
+        fake.accept_vfo_copy(true);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        for dial in [14_074_000, 7_074_000] {
+            rig.set_frequency(dial).expect("QSY");
+            fake.clear_commands();
+            rig.set_tx_audio_frequency(2200).expect("split");
+            let seq: Vec<String> = fake.commands().into_iter().filter(|c| c.starts_with("X ") || c == "G CPY" || c.starts_with("I ") || c.starts_with("S 1")).collect();
+            assert_eq!(seq, ["X PKTUSB 2400".to_string(), "G CPY".to_string(), format!("I {}", split_tx_dial_hz(dial, 2200)), "S 1 VFOB".to_string()]);
+        }
+        assert!(!rig.inner.split_mode_unsupported.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn a_real_link_error_on_the_tx_mode_is_not_remembered_as_unsupported() {
+        // -6: errore di ingresso/uscita della porta seriale: resta un avviso e al prossimo cambio si riprova
+        let fake = FakeRigctld::start(14_074_000);
+        fake.fail_split_mode_with(-6);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split");
+        assert!(!rig.inner.split_mode_unsupported.load(Ordering::SeqCst));
+        rig.set_frequency(7_074_000).expect("QSY");
+        fake.clear_commands();
+        rig.set_tx_audio_frequency(2200).expect("split prima del PTT");
+        assert_eq!(split_mode_commands(&fake), ["X PKTUSB 2400", "G CPY"]);
     }
 
     fn split_commands(fake: &FakeRigctld) -> Vec<String> {

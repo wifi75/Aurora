@@ -44,6 +44,10 @@ pub struct FakeState {
     vfo: Mutex<String>,
     /// Ritardo di ogni risposta in ms (una seriale lenta).
     delay_ms: AtomicU64,
+    /// Codice `RPRT` con cui `X` (modo del VFO di trasmissione) risponde (0 = accettato).
+    x_fail_code: AtomicI32,
+    /// `G CPY` (copia A=B) accettato; altrimenti `RPRT -1` come le radio senza `vfo_op CPY`.
+    cpy_ok: AtomicBool,
 }
 
 pub struct FakeRigctld {
@@ -72,6 +76,8 @@ impl FakeRigctld {
             offsets: Mutex::new([0, 0]),
             vfo: Mutex::new("VFOA".into()),
             delay_ms: AtomicU64::new(0),
+            x_fail_code: AtomicI32::new(0),
+            cpy_ok: AtomicBool::new(false),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -143,6 +149,16 @@ impl FakeRigctld {
     /// Risponde `RPRT code` a ogni comando (-5 = timeout della radio, -9 = comando rifiutato); 0 toglie il guasto.
     pub fn fail_with(&self, code: i32) {
         self.state.fail_code.store(code, Ordering::SeqCst);
+    }
+
+    /// `X` (modo del VFO di trasmissione) risponde `RPRT code`; 0 lo accetta.
+    pub fn fail_split_mode_with(&self, code: i32) {
+        self.state.x_fail_code.store(code, Ordering::SeqCst);
+    }
+
+    /// `G CPY` (copia A=B) accettato (`true`) o rifiutato con `RPRT -1` (`false`, predefinito).
+    pub fn accept_vfo_copy(&self, on: bool) {
+        self.state.cpy_ok.store(on, Ordering::SeqCst);
     }
 
     pub fn fail_ptt_off(&self, on: bool) {
@@ -302,7 +318,8 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     state.split.store(arg == "1", Ordering::SeqCst);
                     "RPRT 0\n".into()
                 }
-                "I" | "X" => "RPRT 0\n".into(),
+                "X" => format!("RPRT {}\n", state.x_fail_code.load(Ordering::SeqCst)),
+                "I" => "RPRT 0\n".into(),
                 "l" => {
                     let value = state.levels.lock().ok().and_then(|l| l.iter().find(|(n, _)| n == arg).map(|(_, v)| v.clone()));
                     value.map_or_else(|| "RPRT -11\n".to_string(), |v| format!("{v}\n"))
@@ -330,6 +347,10 @@ fn serve(stream: TcpStream, state: &FakeState) {
                         }
                         "RPRT 0
 ".into()
+                    } else if arg == "CPY" {
+                        if state.cpy_ok.load(Ordering::SeqCst) { "RPRT 0
+".into() } else { "RPRT -1
+".into() }
                     } else {
                         "RPRT -11
 ".into()
