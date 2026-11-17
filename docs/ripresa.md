@@ -2,6 +2,13 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.283 (pubblicata 2026-11-17T10:23:29Z)
+
+- Satelliti: mappa Terra NASA (`app/public/maps/terra-giorno.jpg` e `terra-notte.jpg`, fonti in `docs/mappe.md`), scelte `:terra` e `:aurora` (`lib/satMapChoice.ts`), notte con le luci mascherata dal terminatore; zoom (`lib/satView.ts`: `MapView`, `fitView`, `fitBox`) automatico all'AOS con 4 modi (`zoom` in `lib/satAlerts.ts`), manuale (rotella, pizzico, pulsanti) e per paese (`lib/satCountries.ts`, `lib/countryCodes.ts`). Non provato: pizzico su touch, memoria sul telefono (due bitmap 8192), suoni AOS.
+- DX Cluster: filtro «Digi» (`isDigitalMode` in `lib/cluster.ts`) e modo `DIGI` per gli spot che dicono solo digitale (`guess_mode` in `dx-cluster/src/spot.rs`). Gli spot WSPR del cluster web del proprietario non passano dai telnet collegati: servirebbe una seconda fonte web (da valutare).
+- Macro: colori per tema (`lib/macroThemeColors.ts`, `aurora.digi.macrocolors`), tasti in tema chiaro con colore pieno e bordo (`digi-macro-style.css`).
+- Prossimo passo: portale web, segnalazione a Microsoft dei file Hamlib (account bloccato), seconda fonte spot, campi di scambio dei contest (#75), VirusTotal della 0.11.283.
+
 ## Nella 0.11.282 (pubblicata 2026-11-17T08:50:15Z)
 
 - PTT non spento: `core/crates/tx-native/src/ptt_release.rs` (scala di tentativi), `TxError::PttStuck`, `ptt_stuck` e `TxAlertKind::PttAbandoned` nello stato, `PttStuckBanner.tsx`; `CatPtt`/`AutoPtt` memorizzano il target e rifiutano il comando se la radio e' cambiata. Aperti in `docs/mancante.md`: thread di spegnimento separato.

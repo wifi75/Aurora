@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.283',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T10:23:29Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.283',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T10:23:29Z',
     kind: 'changed',
     title: [
       'DX Cluster: filtro Digi',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.283',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T10:23:29Z',
     kind: 'changed',
     title: [
       'Macro: colori per tema e tema chiaro',
@@ -87,7 +87,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.283',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T10:23:29Z',
     kind: 'fixed',
     title: [
       'Satelliti in tema chiaro più leggibili',
