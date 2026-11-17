@@ -1,0 +1,183 @@
+# ARRL 10 Meter Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento.
+# Stazione propria: IU3ABC (Italia = DX, manda il numero progressivo). Nominativi di fantasia.
+# Il controllo automatico (docs/contest-formato.md) legge i QSO, applica punteggio.regole e confronta con [atteso].
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2026-12-12"
+
+# Colonne: banda (m), modo, freq_khz, ora_utc (hhmm), nominativo, rst_inviato, scambio_inviato, rst_ricevuto, scambio_ricevuto.
+# atteso: ammesso (true/false), doppio, punti, moltiplicatori nuovi (valore@modo), motivo.
+
+[[qso]]
+n = 1
+banda = 10
+modo = "CW"
+freq_khz = 28025
+ora_utc = "0001"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["CT@CW"], motivo = "CW 4 punti; stato CT nuovo in CW" }
+
+[[qso]]
+n = 2
+banda = 10
+modo = "SSB"
+freq_khz = 28450
+ora_utc = "0003"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["CT@SSB"], motivo = "stessa stazione in un altro modo non e' doppio; fonia 2 punti; CT nuovo in SSB" }
+
+[[qso]]
+n = 3
+banda = 10
+modo = "CW"
+freq_khz = 28030
+ora_utc = "0010"
+nominativo = "VE3XYZ"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "ON"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["ON@CW"], motivo = "provincia ON nuova in CW" }
+
+[[qso]]
+n = 4
+banda = 10
+modo = "CW"
+freq_khz = 28030
+ora_utc = "0015"
+nominativo = "XE1ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "CMX"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["CMX@CW"], motivo = "stato messicano (Citta' del Messico) nuovo in CW; il paese XE non e' moltiplicatore DXCC" }
+
+[[qso]]
+n = 5
+banda = 10
+modo = "SSB"
+freq_khz = 28480
+ora_utc = "0020"
+nominativo = "KH6ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "HI"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["HI@SSB"], motivo = "KH6 conta come stato USA (HI), non come paese DXCC" }
+
+[[qso]]
+n = 6
+banda = 10
+modo = "CW"
+freq_khz = 28035
+ora_utc = "0025"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "1234"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["DL@CW"], motivo = "DX con numero progressivo; paese Germania nuovo in CW" }
+
+[[qso]]
+n = 7
+banda = 10
+modo = "SSB"
+freq_khz = 28500
+ora_utc = "0030"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "0042"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["JA@SSB"], motivo = "DX in fonia; paese Giappone nuovo in SSB" }
+
+[[qso]]
+n = 8
+banda = 10
+modo = "CW"
+freq_khz = 28030
+ora_utc = "0040"
+nominativo = "VE3XYZ"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "ON"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stesso nominativo e stesso modo del QSO 3; zero punti, nessun moltiplicatore" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "CW"
+freq_khz = 14025
+ora_utc = "0050"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "CT"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "banda: il contest ammette solo i 10 m" }
+
+[[qso]]
+n = 10
+banda = 10
+modo = "SSB"
+freq_khz = 28400
+ora_utc = "0100"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "010"
+rst_ricevuto = "59"
+scambio_ricevuto = "0077"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "stessa stazione di prima ma in fonia: non e' doppio; Germania nuova in SSB" }
+
+[[qso]]
+n = 11
+banda = 10
+modo = "CW"
+freq_khz = 28040
+ora_utc = "0110"
+nominativo = "KL7ABC"
+rst_inviato = "599"
+scambio_inviato = "011"
+rst_ricevuto = "599"
+scambio_ricevuto = "AK"
+atteso = { ammesso = true, doppio = false, punti = 4, moltiplicatori = ["AK@CW"], motivo = "KL7 conta come stato USA (AK)" }
+
+# Totali attesi (conteggio a mano):
+#   punti: 4+2+4+4+2+4+2+0+0+2+4 = 28
+#   moltiplicatori CW: CT, ON, CMX, DL, AK = 5; SSB: CT, HI, JA, DL = 4; totale 9
+#   punteggio = 28 x 9 = 252
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 28
+moltiplicatori_cw = 5
+moltiplicatori_ssb = 4
+moltiplicatori = 9
+punteggio = 252
+
+# Caso che il motore attuale NON sa ancora riconoscere (non entra nei totali sopra): QSO CW oltre 28300 kHz.
+# Il regolamento lo vuole non ammesso (6.2); oggi `bands=10` lo lascia ammesso. Resta qui come prova per il lavoro futuro.
+[[prova_futura]]
+n = 12
+banda = 10
+modo = "CW"
+freq_khz = 28350
+ora_utc = "0120"
+nominativo = "K2XYZ"
+rst_inviato = "599"
+scambio_inviato = "012"
+rst_ricevuto = "599"
+scambio_ricevuto = "NY"
+atteso = { ammesso = false, punti = 0, motivo = "CW a 28350 kHz: i QSO CW stanno sotto 28300 kHz (regola 6.2)" }

@@ -1,0 +1,171 @@
+# ARRL 10-Meter Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-17 sul PDF ARRL «10 Meter Rules v 2.0 - 2026».
+
+[contest]
+id = "arrl-10"
+nome = "ARRL 10 Meter Contest"
+organizzatore = "ARRL"
+sito = "https://www.arrl.org/10-meter"
+regolamento_url = "https://www.arrl.org/files/file/Contest%20Rules%20PDFs/2026/10%20Meter%20Rules%20v%202_0%20-%202026.pdf"
+cabrillo_contest = "ARRL-10"
+note = "CW e SSB, solo 10 metri. Una volta per modo."
+
+[edizione]
+# La regola delle date come dati (il regolamento rimanda al calendario ARRL).
+mese = 12
+fine_settimana_pieno = 2          # secondo fine settimana pieno del mese
+giorno_inizio = "sabato"
+ora_inizio = "00:00"              # UTC
+durata_ore = 48                   # da sabato 00:00 a domenica 23:59 UTC
+ore_massime = 36                  # ore operabili su 48
+pausa_minima_min = 30             # ogni pausa dura almeno 30 minuti
+invio_log_giorni = 7              # dopo la fine, entro le 23:59 UTC
+
+# Date calcolate (promemoria). Il regolamento non le scrive: valgono quelle del calendario ARRL.
+[[edizione.date]]
+anno = 2026
+inizio = "2026-12-12T00:00:00Z"
+fine = "2026-12-13T23:59:59Z"
+fonte = "calendario ARRL 2026-2027 (https://www.arrl.org/contest-calendar), voce «12-13 [10 Meter]»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-12-11T00:00:00Z"
+fine = "2027-12-12T23:59:59Z"
+fonte = "calcolata dalla regola «secondo fine settimana pieno di dicembre»"
+confermata = false
+nota = "da confermare sul calendario ARRL"
+
+[bande]
+ammesse = ["28 MHz"]              # nel motore: bands=10
+
+[modi]
+ammessi = ["cw", "ssb"]
+
+[[modi.limite]]
+modo = "cw"
+frequenza_massima_khz = 28300     # i QSO CW stanno sotto 28300 kHz (regola 6.2)
+nota = "un QSO CW a 28300 kHz o piu' non e' valido"
+
+# Scambio: per ogni campo nome, etichetta_it, etichetta_en, tipo (rst | numero | testo) e quando
+# (condizione scritta come quelle di punteggio.regole, sul paese del nominativo).
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59", cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "dxcc:K,VE,XE,KH6,KL7"   # stazioni W, VE, XE (anche Alaska e Hawaii)
+elenco = "dati/stati.dom"
+nota = "DC manda DC. KH6 e KL7 mandano lo stato (HI, AK)."
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_dxcc:K,VE,XE,KH6,KL7"   # le stazioni DX
+nota = "Le stazioni DX mandano un numero progressivo."
+
+[[scambio.ricevuto]]
+nome = "regione_itu"
+etichetta_it = "Regione ITU"
+etichetta_en = "ITU region"
+tipo = "numero"
+quando = "mobile marittimo (nominativo /MM)"
+valori = ["1", "2", "3"]
+motore = false                    # non coperto dal motore attuale: vedi «Da fare nel motore»
+
+# Scambio inviato: i campi che valgono per il paese della stazione propria (Italia = DX: rapporto + numero progressivo;
+# una stazione W/VE/XE manda rapporto + stato o provincia).
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59", cw = "599" }
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "my_dxcc:K,VE,XE,KH6,KL7"
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero progressivo"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:K,VE,XE,KH6,KL7"
+progressivo = true
+
+[doppi]
+per = "modo"                      # stessa stazione una volta per modo: CW e SSB sono QSO diversi
+nota = "Un doppio si toglie senza penalita' (LGCK.1)."
+
+[categorie]
+operatore = ["SO", "SOU", "MS"]   # Single Operator, Single Operator Unlimited (con spotting), Multi-Operator Single Transmitter
+potenza = ["QRP", "LOW", "HIGH"]  # 5 W, 100 W, 1500 W o il limite della licenza
+modo = ["MIXED", "CW", "PHONE"]   # SO e SOU tutti e tre; MS solo MIXED
+sovrapposizioni = ["Limited Antennas"]
+altre = ["Youth (25 anni o meno)", "Checklog"]
+
+[categorie.ms]
+potenza = ["LOW", "HIGH"]         # MS: niente QRP
+modo = ["MIXED"]
+
+[cabrillo]
+# Intestazione del log Cabrillo 3.0. Le chiavi obbligatorie e i valori sono da ricontrollare sulla pagina Cabrillo di ARRL.
+contest = "ARRL-10"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-BAND", "CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL"]
+operators_obbligatorio_se = "MULTI-OP"   # ELOG.4
+category_band = "10M"
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_power = ["QRP", "LOW", "HIGH"]
+category_mode = ["CW", "SSB", "MIXED"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+invio = "solo online: https://contest-log-submission.arrl.org (niente log cartacei)"
+
+# Schede (pannelli) che si aprono con il contest. Cataloghi dei tipi: docs/contest-formato.md, sezione «Schede».
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati, province e stati messicani", en = "States, provinces and Mexican states" }
+ordine = 1
+moltiplicatore = "stato"          # il valore dello scambio ricevuto: US + DC, province e territori canadesi, stati messicani
+dominio = "dati/stati.dom"
+per_banda = false
+per_modo = true
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC", en = "DXCC entities" }
+ordine = 2
+moltiplicatore = "dxcc"
+escludi = ["K", "VE", "XE", "KH6", "KL7"]
+per_banda = false
+per_modo = true
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "scambio", "moltiplicatori"]
+nota = "scambio = stati, province e regioni ITU lavorati"
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori_per_modo", "punteggio_finale"]
