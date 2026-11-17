@@ -1420,6 +1420,15 @@ fn spawn_start_on_main_frequency(state: AppState, data_dir: std::path::PathBuf) 
             // la frequenza e il modo esatti dell'ultima volta (qualunque pagina: FT8, modi testuali, SSTV...): la radio torna li', non sulla
             // frequenza FT8 principale della banda (richiesta del proprietario 2026-11-14)
             if let Some(last) = &last_dial {
+                // il VFO prima di scrivere frequenza e modo: con certe Icom (IC-756PRO) la radio si trovava sul VFO B dopo il riavvio
+                let hamlib_rig = state.cat.clone().and_then(|c| c.hamlib().ok());
+                let vfo_before = match &hamlib_rig {
+                    Some(h) => {
+                        let h = Arc::clone(h);
+                        tokio::task::spawn_blocking(move || h.current_vfo()).await.ok().flatten()
+                    }
+                    None => None,
+                };
                 let (freq, mode) = last.restore_plan(hz, radio_mode_of(&state).as_deref());
                 if let Some(main) = freq {
                     let rig = Arc::clone(&rig);
@@ -1436,6 +1445,22 @@ fn spawn_start_on_main_frequency(state: AppState, data_dir: std::path::PathBuf) 
                     match tokio::task::spawn_blocking(move || hamlib.set_radio_mode(&wanted)).await {
                         Ok(Ok(())) => tracing::info!("avvio: radio riportata nel modo {mode}"),
                         other => tracing::warn!("avvio: modo della radio non impostato: {other:?}"),
+                    }
+                }
+                // dopo le scritture: se il VFO e' cambiato da solo la radio torna dov'era (e il registro lo dice, per capire quale comando lo sposta)
+                if let (Some(h), Some(before)) = (hamlib_rig, vfo_before) {
+                    let wanted = before.clone();
+                    let after = tokio::task::spawn_blocking(move || {
+                        let now = h.current_vfo();
+                        if now.as_deref().is_some_and(|n| n != wanted) { (now, Some(h.select_vfo(&wanted))) } else { (now, None) }
+                    })
+                    .await
+                    .ok();
+                    match after {
+                        Some((Some(now), Some(Ok(())))) => tracing::info!("avvio: la radio era passata dal VFO {before} al VFO {now}: rimessa sul VFO {before}"),
+                        Some((now, Some(Err(e)))) => tracing::warn!("avvio: la radio e' passata dal VFO {before} a {now:?} e non l'ho riportata: {}", e.0),
+                        Some((Some(now), None)) => tracing::info!("avvio: VFO della radio {now}"),
+                        _ => {}
                     }
                 }
                 break;

@@ -1327,6 +1327,21 @@ impl HamlibRig {
         Ok(())
     }
 
+    /// Il VFO in uso secondo Hamlib («VFOA», «VFOB»...), se la radio lo dice (le Icom piu' vecchie no: Hamlib se lo ricorda da solo).
+    pub fn current_vfo(&self) -> Option<String> {
+        let link = self.inner.connected_link().ok()?;
+        link.client().urgent(|c| c.vfo()).ok().filter(|v| !v.is_empty())
+    }
+
+    /// Rimette la radio sul VFO dato (`V VFOA`).
+    pub fn select_vfo(&self, vfo: &str) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        self.inner.epoch.fetch_add(1, Ordering::SeqCst);
+        link.client().urgent(|c| c.set_vfo(vfo)).map_err(|e| RigError(friendly_error(&e.0)))?;
+        self.inner.queue_quick_reads();
+        Ok(())
+    }
+
     /// La radio sta trasmettendo (PTT acceso da noi o dal motore).
     pub fn transmitting(&self) -> bool {
         self.inner.transmitting()

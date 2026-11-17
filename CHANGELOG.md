@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Avvio con Hamlib: Aurora guarda su quale VFO sta la radio prima e dopo aver riportato frequenza e modo dell'ultima volta; se e' cambiato da solo (IC-756PRO: dopo il riavvio la radio andava sul VFO B) la rimette dov'era e lo scrive nel registro.
 - Attivita' di banda: i km sono centrati nell'altezza della riga, alla stessa altezza del paese (stavano piu' in alto).
 - Radio con Hamlib (Icom come l'IC-756PRO): leggere il VFO B per il display esteso non lascia piu' la radio sul VFO B; se la lettura ha cambiato il VFO, Aurora la riporta dov'era. Non provato su una radio vera: se dopo un riavvio la radio va ancora sul VFO B, servono il pacchetto di assistenza e le impostazioni.
 - Log del contest: due colonne nuove, «Scambio inv.» e «Scambio ric.» (seriale, stato o sezione), accese di base e scelte con la matita. Lo scambio ora si salva anche nel log interno (nuove colonne, i QSO gia' registrati restano com'erano e non lo mostrano). Segnalazione #75.
