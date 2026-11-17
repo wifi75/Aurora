@@ -12,6 +12,16 @@ export interface SpotFilters {
   newOnly?: boolean;
 }
 
+/** I modi digitali: quelli che il filtro «Digi» raccoglie tutti insieme. */
+const DIGITAL_MODES = new Set(['FT8', 'FT4', 'MSK144', 'JT65', 'JT9', 'JT4', 'Q65', 'FST4', 'FST4W', 'WSPR', 'JS8', 'RTTY', 'PSK', 'OLIVIA', 'MFSK', 'CONTESTIA', 'HELL', 'VARA', 'PACTOR', 'ARDOP', 'FREEDV', 'SSTV', 'DIGI']);
+
+/** Il modo (maiuscolo, come lo da' il core) e' digitale? I PSK31, PSK63... contano come PSK. */
+export function isDigitalMode(mode: string | null | undefined): boolean {
+  if (!mode) return false;
+  const m = mode.toUpperCase();
+  return DIGITAL_MODES.has(m) || m.startsWith('PSK');
+}
+
 /** Gli spot che passano i filtri della vista (l'ordine non cambia). */
 export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters, currentBand: string | null, ownContinent?: string | null): ClusterSpot[] {
   const search = filters.search.trim().toUpperCase();
@@ -21,8 +31,8 @@ export function filterSpots(spots: readonly ClusterSpot[], filters: SpotFilters,
       const mine = filters.bands.includes('now') && s.band === currentBand;
       if (!mine && !(s.band !== null && filters.bands.includes(s.band))) return false;
     }
-    // «PSK» comprende PSK31, PSK63 e gli altri PSK
-    if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.some((m) => m === s.mode || (m === 'PSK' && s.mode?.startsWith('PSK'))))) return false;
+    // «PSK» comprende PSK31, PSK63 e gli altri PSK; «DIGI» tutti i modi digitali (FT8, WSPR, JS8, RTTY... e il generico DIGI)
+    if (filters.modes.length > 0 && !(s.mode !== null && filters.modes.some((m) => m === s.mode || (m === 'PSK' && s.mode?.startsWith('PSK')) || (m === 'DIGI' && isDigitalMode(s.mode))))) return false;
     if (search !== '' && !s.dx_call.includes(search)) return false;
     // spot di chi sta sui continenti scelti; senza continente noto (core vecchio, nominativo strano) lo spot resta
     if (wanted.size > 0 && s.spotter_continent && !wanted.has(s.spotter_continent)) return false;

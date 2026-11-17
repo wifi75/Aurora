@@ -89,3 +89,17 @@ describe('spotter continent filter', () => {
     expect(filterSpots(all, { bands: [], modes: [], search: '' }, null, 'EU')).toHaveLength(4);
   });
 });
+
+describe('filtro Digi', () => {
+  const mk = (id: number, mode: string | null) => ({ id, dx_call: `K${id}ABC`, band: '20m', mode }) as unknown as import('../api/client').ClusterSpot;
+  const all = [mk(1, 'FT8'), mk(2, 'WSPR'), mk(3, 'DIGI'), mk(4, 'RTTY'), mk(5, 'PSK31'), mk(6, 'SSB'), mk(7, 'CW'), mk(8, null), mk(9, 'JS8')];
+  it('raccoglie tutti i modi digitali, anche il generico', () => {
+    expect(filterSpots(all, { bands: [], modes: ['DIGI'], search: '' }, null).map((s) => s.id)).toEqual([1, 2, 3, 4, 5, 9]);
+  });
+  it('si somma agli altri modi scelti', () => {
+    expect(filterSpots(all, { bands: [], modes: ['DIGI', 'CW'], search: '' }, null).map((s) => s.id)).toEqual([1, 2, 3, 4, 5, 7, 9]);
+  });
+  it('senza scelta passa tutto (Tutti)', () => {
+    expect(filterSpots(all, { bands: [], modes: [], search: '' }, null)).toHaveLength(9);
+  });
+});

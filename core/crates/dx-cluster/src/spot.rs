@@ -83,8 +83,8 @@ const MODES: &[&str] = &[
 ];
 
 /// Il modo dal commento (`FT8 -10 dB`, `CW 22 wpm`, `VarAC VARA`...); mancando, dalla frequenza di lavoro di un modo digitale (FT8, FT4,
-/// JS8, WSPR, PSK31) e poi dal band plan (tratto solo CW o solo fonia). Un commento che parla di digitale senza dire quale non prende il
-/// modo dal band plan (`VarAC ... Digi` a 7105 non e' SSB).
+/// JS8, WSPR, PSK31) e poi dal band plan (tratto solo CW o solo fonia). Un commento che parla di digitale senza dire quale e' il modo
+/// generico `DIGI` e non prende il modo dal band plan (`... Digi mode` a 7105 non e' SSB).
 pub fn guess_mode(comment: &str, khz: f64) -> Option<String> {
     let upper = comment.to_uppercase();
     let words: Vec<&str> = upper.split(|c: char| !c.is_ascii_alphanumeric()).collect();
@@ -106,7 +106,11 @@ pub fn guess_mode(comment: &str, khz: f64) -> Option<String> {
     if let Some((mode, _, _)) = nearest {
         return Some(mode.to_string());
     }
-    if words.iter().any(|w| matches!(*w, "DIGI" | "DIGITAL" | "DATA" | "RTTY" | "BEACON" | "BCN" | "NCDXF")) {
+    // un commento che dice solo «digitale» (senza dire quale) e' il modo generico DIGI, cosi' il filtro «Digi» lo trova
+    if words.iter().any(|w| matches!(*w, "DIGI" | "DIGITAL" | "DATA")) {
+        return Some("DIGI".to_string());
+    }
+    if words.iter().any(|w| matches!(*w, "RTTY" | "BEACON" | "BCN" | "NCDXF")) {
         return None;
     }
     PLAN_KHZ.iter().find(|(lo, hi, _)| khz >= *lo && khz < *hi).map(|(_, _, mode)| (*mode).to_string())
@@ -223,7 +227,9 @@ mod tests {
         assert_eq!(mode("DX de AA1AA: 28200.0 K1ABC 1200Z"), None);
         // il commento vince sul band plan, e un «Digi» senza modo non diventa SSB
         assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH (VarAC VARA Digi Freq) 1200Z").as_deref(), Some("VARA"));
-        assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH Digi mode 1200Z"), None);
+        assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH Digi mode 1200Z").as_deref(), Some("DIGI"));
+        assert_eq!(mode("DX de AA1AA: 7105.0 DF7JC Digital 1200Z").as_deref(), Some("DIGI"));
+        assert_eq!(mode("DX de AA1AA: 14100.0 DK0WCY NCDXF beacon 1200Z"), None);
         assert_eq!(mode("DX de AA1AA: 14230.0 K1ABC SSTV 1200Z").as_deref(), Some("SSTV"));
     }
 

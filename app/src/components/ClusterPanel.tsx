@@ -31,7 +31,7 @@ import { useWishlist } from '../state/wishlist';
 import '../styles/cluster-grid.css';
 
 const KEY = 'aurora-cluster-filters';
-const MODES = ['FT8', 'FT4', 'CW', 'SSB', 'FM', 'RTTY', 'PSK', 'JS8', 'VARA', 'SSTV', 'JT65', 'Q65', 'MSK144', 'WSPR'] as const;
+const MODES = ['DIGI', 'FT8', 'FT4', 'CW', 'SSB', 'FM', 'RTTY', 'PSK', 'JS8', 'VARA', 'SSTV', 'JT65', 'Q65', 'MSK144', 'WSPR'] as const;
 
 /** Il titolo di ogni colonna e, per alcune, la spiegazione. */
 const COL_LABEL: Record<ClusterColumn, Key> = { de: 'cluster.col.by', freq: 'cluster.col.freq', dx: 'cluster.col.call', country: 'cluster.col.country', mode: 'cluster.col.mode', comment: 'cluster.col.comment', time: 'cluster.col.time' };
@@ -373,7 +373,7 @@ function ClusterPanelInner({ onSpot, options }: { onSpot?: SpotHandler; options?
         <MultiPick
           label={t('cluster.filter.mode')}
           allLabel={t('cluster.filter.modeAll')}
-          options={MODES.map((m) => ({ value: m, label: m }))}
+          options={MODES.map((m) => ({ value: m, label: m === 'DIGI' ? 'Digi' : m }))}
           selected={filters.modes}
           onChange={(modes) => change({ ...filters, modes })}
         />
