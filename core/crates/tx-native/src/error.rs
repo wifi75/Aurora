@@ -22,6 +22,8 @@ pub enum TxError {
     InvalidConfig(String),
     Audio(String),
     Ptt(String),
+    /// Il PTT non e' confermato spento (radio che non risponde): nessuna trasmissione finche' non lo e'. Il testo e' la causa.
+    PttStuck(String),
     Thread(String),
 }
 
@@ -39,6 +41,7 @@ impl fmt::Display for TxError {
             TxError::InvalidConfig(e) => write!(f, "impostazioni di trasmissione non valide: {e}"),
             TxError::Audio(e) => write!(f, "uscita audio: {e}"),
             TxError::Ptt(e) => write!(f, "PTT: {e}"),
+            TxError::PttStuck(e) => write!(f, "PTT non confermato spento, trasmissione bloccata: {e}"),
             TxError::Thread(e) => write!(f, "thread di trasmissione non avviato: {e}"),
         }
     }

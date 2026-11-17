@@ -3,6 +3,7 @@
 //! - [`audio`]: uscita audio (`AudioSink`, `CpalSink`), elenco dei dispositivi;
 //! - [`resample`] e [`level`]: dai 12 kHz dell'onda alla frequenza del dispositivo, attenuazione in decimi di dB, rampe;
 //! - [`ptt`]: il comando di trasmissione (`Ptt`: rigctld, OmniRig, nessuno per il VOX) e la guardia che lo spegne sempre;
+//! - [`ptt_release`]: lo spegnimento del PTT con i tentativi progressivi e lo stato «PTT non spento»;
 //! - [`watchdog`]: controllo a tempo vero che spegne un PTT rimasto acceso;
 //! - [`slot`] e [`scheduler`]: periodi UTC di FT8/FT4 e pianificatore (`Transmitter`) con `halt` e stato osservabile;
 //! - [`clock`] e [`testing`]: orologio iniettabile e doppioni per le prove.
@@ -14,6 +15,7 @@ pub mod clock;
 pub mod error;
 pub mod level;
 pub mod ptt;
+pub mod ptt_release;
 pub mod ptt_serial;
 pub mod resample;
 pub mod scheduler;
@@ -27,8 +29,9 @@ pub use audio::{
 };
 pub use clock::{Clock, ManualClock, SystemClock};
 pub use error::TxError;
-pub use ptt::{HamlibPtt, InhibitLeases, InhibitSnapshot, NoPtt, OmniRigPtt, Ptt, PttGuard, TxInterlock, MAX_TRACKED_HOLDS};
-pub use ptt_serial::{Line, SerialLinePtt};
+pub use ptt::{AbandonHook, HamlibPtt, InhibitLeases, InhibitSnapshot, NoPtt, OmniRigPtt, Ptt, PttGuard, TxInterlock, MAX_TRACKED_HOLDS};
+pub use ptt_release::{ReleaseTiming, ReleaseTracker, StuckHook, StuckInfo};
+pub use ptt_serial::{Line, SerialLinePtt, target_of as serial_target};
 pub use scheduler::{Transmitter, TxConfig, TxOutcome, TxPlan, TxRequest, TxState};
 pub use slot::{Mode, Parity};
 pub use tci_sink::{TciSink, TciTxSource, TCI_OUTPUT_NAME, TCI_RATE};

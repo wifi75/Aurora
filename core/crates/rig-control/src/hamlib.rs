@@ -394,6 +394,19 @@ impl RigctldClient {
         Ok(r[0] != "0")
     }
 
+    /// Come [`RigctldClient::ptt`] ma con un'attesa breve: all'apertura una radio muta non deve ritardare il `T 0` che segue.
+    pub fn ptt_within(&self, wait: std::time::Duration) -> Result<bool, RigError> {
+        let previous = self.io.lock().ok().and_then(|io| io.1.read_timeout().ok().flatten());
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(Some(wait));
+        }
+        let result = self.ptt();
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(previous);
+        }
+        result
+    }
+
     /// Accende o spegne la radio (`\set_powerstat 1/0` di rigctld, come «Accendi»/«Spegni» di JTDX). Non tutte le radio lo permettono.
     pub fn set_powerstat(&self, on: bool) -> Result<(), RigError> {
         // Hamlib, per accendere, manda il comando e aspetta qualche secondo che la radio si svegli: con l'attesa normale (mezzo secondo)

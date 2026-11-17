@@ -52,15 +52,32 @@ pub struct RecordingPtt {
     on: AtomicBool,
     pub fail_on: AtomicBool,
     pub fail_off: AtomicBool,
+    /// Cosa dice `Ptt::target` (le prove sulle catene ricostruite).
+    pub target: Mutex<Option<String>>,
+    /// L'altra via per spegnere (`Ptt::recover_off`) riesce.
+    pub recover_ok: AtomicBool,
 }
 
 impl RecordingPtt {
     pub fn new(recorder: Arc<Recorder>) -> RecordingPtt {
-        RecordingPtt { recorder, on: AtomicBool::new(false), fail_on: AtomicBool::new(false), fail_off: AtomicBool::new(false) }
+        RecordingPtt { recorder, on: AtomicBool::new(false), fail_on: AtomicBool::new(false), fail_off: AtomicBool::new(false), target: Mutex::new(None), recover_ok: AtomicBool::new(false) }
     }
 }
 
 impl Ptt for RecordingPtt {
+    fn target(&self) -> Option<String> {
+        lock(&self.target).clone()
+    }
+
+    fn recover_off(&self) -> Result<(), TxError> {
+        if self.recover_ok.load(Ordering::SeqCst) {
+            self.on.store(false, Ordering::SeqCst);
+            Ok(())
+        } else {
+            Err(TxError::Ptt("nessuna via".into()))
+        }
+    }
+
     fn set(&self, on: bool) -> Result<(), TxError> {
         let fail = if on { &self.fail_on } else { &self.fail_off };
         if fail.load(Ordering::SeqCst) {

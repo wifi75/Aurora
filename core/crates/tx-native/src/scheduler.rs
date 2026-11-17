@@ -22,7 +22,8 @@ use crate::{
     level::{MAX_ATTENUATION_TENTHS, attenuation_to_gain, cut_head, prepare_samples},
     lock,
     resample::StreamResampler,
-    ptt::{Ptt, PttGuard, not_released_text, release_ptt},
+    ptt::{Ptt, PttGuard},
+    ptt_release::{ReleaseTiming, ReleaseTracker, StuckHook, StuckInfo, not_released_text},
     slot::{Mode, Parity, choose_slot},
     watchdog::Watchdog,
 };
@@ -160,6 +161,8 @@ struct Inner {
     changed: Condvar,
     halt: Arc<AtomicBool>,
     watchdog: Watchdog,
+    /// Lo spegnimento del PTT: scala dei tentativi e stato «non spento» (unico per tutti i livelli).
+    tracker: Arc<ReleaseTracker>,
     listener: Mutex<Option<Listener>>,
     worker: Mutex<Option<JoinHandle<()>>>,
     /// Un'onda che sostituisce quella in attesa o in corso (ritrasmissione, `m_restart` di JTDX): il thread la prende al primo passo.
@@ -242,7 +245,8 @@ impl Transmitter {
                 s.stop();
             }
         });
-        let watchdog = Watchdog::start(Arc::clone(&ptt), on_trip, Duration::from_millis(250))?;
+        let tracker = ReleaseTracker::new();
+        let watchdog = Watchdog::start(Arc::clone(&ptt), Arc::clone(&tracker), on_trip)?;
         let inner = Inner {
             clock,
             ptt,
@@ -253,12 +257,18 @@ impl Transmitter {
             changed: Condvar::new(),
             halt,
             watchdog,
+            tracker,
             listener: Mutex::new(None),
             worker: Mutex::new(None),
             replacement: Mutex::new(None),
             stream: Mutex::new(None),
             stream_rate: AtomicU32::new(0),
         };
+        // la catena ricostruita con un PTT rimasto acceso (blocco esterno che non si e' riusciti a spegnere): parte «non spenta», con la scala
+        if inner.ptt.is_on() {
+            inner.tracker.adopt("PTT della trasmissione precedente non spento");
+            inner.watchdog.arm(Instant::now());
+        }
         Ok(Transmitter { inner: Arc::new(inner) })
     }
 
@@ -294,6 +304,33 @@ impl Transmitter {
         self.inner.watchdog.trips()
     }
 
+    /// Chi viene avvisato quando il PTT non si spegne (`Some`) e quando torna spento (`None`).
+    pub fn set_stuck_hook(&self, hook: Option<StuckHook>) {
+        self.inner.tracker.set_hook(hook);
+    }
+
+    /// I tempi dei tentativi di spegnimento (le prove li accorciano).
+    pub fn set_release_timing(&self, timing: ReleaseTiming) {
+        self.inner.tracker.set_timing(timing);
+    }
+
+    /// Il PTT non e' confermato spento: da quando, quanti tentativi, perche'. Finche' c'e', nessuna trasmissione parte.
+    pub fn ptt_stuck(&self) -> Option<StuckInfo> {
+        self.inner.tracker.info()
+    }
+
+    fn ensure_ptt_released(&self) -> Result<(), TxError> {
+        // il PTT risulta spento (per esempio dal blocco esterno) ma il tracker non lo sa: lo stato «non spento» cade
+        if self.inner.tracker.is_stuck() && !self.inner.ptt.is_on() {
+            self.inner.tracker.confirm_off();
+            self.inner.watchdog.disarm();
+        }
+        match self.inner.tracker.info() {
+            Some(info) => Err(TxError::PttStuck(info.reason)),
+            None => Ok(()),
+        }
+    }
+
     /// Il PTT che il pianificatore crede acceso.
     pub fn ptt_is_on(&self) -> bool {
         self.inner.ptt.is_on()
@@ -315,6 +352,15 @@ impl Transmitter {
 
     /// STOP TX: ferma subito l'audio (con una discesa di pochi ms) e fa spegnere il PTT. Non aspetta: vedi [`Transmitter::wait_idle`].
     pub fn halt(&self) {
+        // con il PTT non spento STOP TX (e il pulsante «Riprova a spegnere») fa un tentativo subito, senza aspettare i 5 s del controllo
+        if self.inner.tracker.is_stuck() {
+            if self.inner.ptt.is_on() {
+                self.inner.watchdog.kick();
+            } else {
+                self.inner.tracker.confirm_off();
+                self.inner.watchdog.disarm();
+            }
+        }
         self.inner.halt.store(true, Ordering::SeqCst);
         self.inner.clock.wake();
         if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
@@ -354,6 +400,7 @@ impl Transmitter {
     /// Trasmissione libera, subito e fuori dai periodi FT8/FT4 (SSTV): l'onda a 12 kHz puo' durare fino a `max_len`. Stesse regole di
     /// `schedule` per il permesso, il livello, il PTT, il controllo a tempo e `halt`.
     pub fn start_now(&self, wave: Vec<f32>, max_len: Duration) -> Result<TxPlan, TxError> {
+        self.ensure_ptt_released()?;
         if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
             return Err(TxError::Busy);
         }
@@ -410,6 +457,7 @@ impl Transmitter {
     /// il PTT e `halt`; il controllo a tempo si rinnova a ogni passo, e se non arriva niente per 10 s (chi alimenta il flusso si e' bloccato)
     /// o si superano 20 minuti la trasmissione si chiude con errore. Serve un'uscita che sappia accodare (`AudioSink::append`).
     pub fn start_stream(&self, first: Vec<f32>) -> Result<TxPlan, TxError> {
+        self.ensure_ptt_released()?;
         if matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
             return Err(TxError::Busy);
         }
@@ -490,6 +538,7 @@ impl Transmitter {
 
     /// Accetta una trasmissione e la fa partire al momento giusto, in un thread proprio.
     pub fn schedule(&self, request: TxRequest) -> Result<TxPlan, TxError> {
+        self.ensure_ptt_released()?;
         let inner = &self.inner;
         // dopo un `halt` il thread ha bisogno di qualche millisecondo per fermarsi: chi riparte subito (ritrasmissione, nuovo doppio clic) lo aspetta
         if self.inner.halt.load(Ordering::SeqCst) && matches!(self.state(), TxState::Waiting | TxState::Transmitting) {
@@ -571,7 +620,9 @@ impl Drop for Transmitter {
         }
         // ultima rete: se per qualche motivo il PTT e' ancora acceso, si spegne qui
         if self.inner.ptt.is_on() {
-            let _ = release_ptt(&*self.inner.ptt);
+            // un solo tentativo veloce: chi applica le impostazioni non aspetta la scala (3,7 s con la radio muta); se non basta il resto
+            // lo fa il controllo a tempo della catena nuova, che adotta il PTT rimasto acceso (`ReleaseTracker::adopt`)
+            let _ = self.inner.ptt.set(false);
         }
     }
 }
@@ -607,16 +658,24 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
         lock(&inner.sink).stop();
     }
     let mut outcome = outcome;
+    // il PTT che non si spegne ha il suo avviso fisso e il suo riepilogo nel registro: qui niente avviso «ptt_failed» in piu'
+    let mut stuck = false;
     if inner.ptt.is_on() {
-        match release_ptt(&*inner.ptt) {
+        // se la guardia ha gia' fatto la scala dei tentativi non si rifa': il controllo a tempo continua da solo
+        let released = if inner.tracker.is_stuck() { Err(inner.tracker.last_error().unwrap_or_else(|| TxError::Ptt("nessun tentativo".into()))) } else { inner.tracker.release(&*inner.ptt) };
+        match released {
             Ok(()) => inner.watchdog.disarm(),
             Err(e) => {
-                tracing::error!("PTT ancora acceso a fine trasmissione: {e}");
+                stuck = true;
+                // l'audio e' fermo in ogni caso: niente modulazione verso la scheda mentre il PTT e' incerto
+                lock(&inner.sink).stop();
                 inner.watchdog.retry_soon();
                 outcome = TxOutcome::Failed(not_released_text(&e));
             }
         }
     } else {
+        // spento (anche da un'altra via, come il blocco esterno): niente piu' stato «non spento»
+        inner.tracker.confirm_off();
         inner.watchdog.disarm();
     }
     match &outcome {
@@ -628,13 +687,19 @@ fn run_job(inner: &Arc<Inner>, job: &Job) {
             let lower = why.to_lowercase();
             if lower.contains("radio non collegata") || lower.contains("nessuna radio collegata") {
                 aurora_core::notice::notice("no_cat", "");
-            } else if lower.contains("ptt") {
+            } else if lower.contains("ptt") && !stuck {
                 // il PTT non e' partito (o non si e' spento): lo schermo dice perche', invece di lasciarlo solo nel log
                 aurora_core::notice::notice("ptt_failed", why.clone());
             }
         }
     }
     inner.finish(outcome);
+}
+
+/// Come la guardia del PTT ferma l'audio se cade con il PTT ancora acceso.
+fn stop_audio(inner: &Inner) -> Box<dyn Fn() + Send + Sync> {
+    let sink = Arc::clone(&inner.sink);
+    Box::new(move || lock(&sink).stop())
 }
 
 /// La trasmissione a flusso: ogni pezzo arrivato si ricampiona (con la memoria fra i pezzi: niente salti) e si accoda all'uscita; il
@@ -659,7 +724,7 @@ fn execute_stream(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
         return Ok(TxOutcome::Halted);
     }
     inner.watchdog.arm(deadline(Duration::ZERO));
-    let mut guard = PttGuard::engage(Arc::clone(&inner.ptt))?;
+    let mut guard = PttGuard::engage(Arc::clone(&inner.ptt), Arc::clone(&inner.tracker))?.with_stop_audio(stop_audio(inner));
     if !wait_until(inner, job.audio_at, true, &mut || Ok(()))? {
         guard.release()?;
         return Ok(TxOutcome::Halted);
@@ -765,7 +830,7 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
     }
     // la scadenza si arma prima di accendere: se il comando si blocca, il controllo a tempo scatta lo stesso
     inner.watchdog.arm(Instant::now() + job.lead + audio_len + job.tail + job.grace + playback_slack(audio_len));
-    let mut guard = PttGuard::engage(Arc::clone(&inner.ptt))?;
+    let mut guard = PttGuard::engage(Arc::clone(&inner.ptt), Arc::clone(&inner.tracker))?.with_stop_audio(stop_audio(inner));
 
     if !wait_until(inner, job.audio_at, true, &mut || take_replacement(&mut samples).map(|_| ()))? {
         guard.release()?;
@@ -882,6 +947,7 @@ mod tests {
         ptt: Arc<RecordingPtt>,
         sink: Arc<SinkState>,
         tx: Transmitter,
+        interlock: Option<Arc<crate::ptt::TxInterlock>>,
     }
 
     /// Un banco di prova: orologio manuale mezzo secondo prima del periodo pari, PTT e dispositivo finti.
@@ -892,11 +958,31 @@ mod tests {
         let ptt = Arc::new(RecordingPtt::new(Arc::clone(&rec)));
         let (sink, state) = RecordingSink::new(Arc::clone(&rec), Arc::clone(&dyn_clock), RATE);
         let tx = Transmitter::new(dyn_clock, ptt.clone(), wrap(sink), config).expect("trasmettitore");
-        Bench { clock, rec, ptt, sink: state, tx }
+        Bench { clock, rec, ptt, sink: state, tx, interlock: None }
     }
 
     fn bench(config: TxConfig) -> Bench {
-        bench_with(config, |s| Box::new(s))
+        let b = bench_with(config, |s| Box::new(s));
+        b.tx.set_release_timing(ReleaseTiming::fast());
+        b
+    }
+
+    /// Come `bench`, ma con il PTT dietro il blocco esterno (`TxInterlock`), che e' la strada vera in Aurora.
+    fn bench_locked(config: TxConfig) -> Bench {
+        let clock = Arc::new(ManualClock::new(base() - ms(500)));
+        let dyn_clock: Arc<dyn Clock> = clock.clone();
+        let rec = Recorder::new(Arc::clone(&dyn_clock));
+        let ptt = Arc::new(RecordingPtt::new(Arc::clone(&rec)));
+        let (sink, state) = RecordingSink::new(Arc::clone(&rec), Arc::clone(&dyn_clock), RATE);
+        let interlock = Arc::new(crate::ptt::TxInterlock::new());
+        interlock.attach(ptt.clone());
+        let tx = Transmitter::new(dyn_clock, interlock.clone(), Box::new(sink), config).expect("trasmettitore");
+        tx.set_release_timing(ReleaseTiming::fast());
+        Bench { clock, rec, ptt, sink: state, tx, interlock: Some(interlock) }
+    }
+
+    fn ptt_ons(b: &Bench) -> usize {
+        b.rec.events().iter().filter(|(_, k)| *k == TxEventKind::PttOn).count()
     }
 
     impl Bench {
@@ -1222,6 +1308,164 @@ mod tests {
             std::thread::sleep(ms(10));
         }
         assert!(!b.ptt.is_on());
+    }
+
+    #[test]
+    fn behind_the_interlock_a_ptt_that_will_not_turn_off_is_retried_too() {
+        let b = bench_locked(config());
+        b.ptt.fail_off.store(true, SeqCst);
+        b.tx.schedule(request(0.2)).expect("pianificata");
+        b.run_to(base() + ms(900));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(b.tx.ptt_stuck().is_some(), "PTT non spento, e il blocco esterno lo dice");
+        assert!(b.ptt.is_on());
+        b.ptt.fail_off.store(false, SeqCst);
+        let limit = Instant::now() + Duration::from_secs(3);
+        while (b.ptt.is_on() || b.tx.ptt_stuck().is_some()) && Instant::now() < limit {
+            std::thread::sleep(ms(10));
+        }
+        assert!(!b.ptt.is_on(), "il controllo a tempo ha rispento il PTT dietro il blocco esterno");
+        assert!(b.tx.ptt_stuck().is_none());
+    }
+
+    #[test]
+    fn dropping_the_transmitter_with_a_mute_radio_does_not_wait_for_the_ladder() {
+        // tempi veri: la scala intera sarebbe di 3,7 s
+        let b = bench_with(config(), |s| Box::new(s));
+        b.ptt.fail_off.store(true, SeqCst);
+        b.tx.schedule(request(0.2)).expect("pianificata");
+        b.run_to(base() + ms(900));
+        assert!(b.tx.wait_idle(Duration::from_secs(8)));
+        assert!(b.ptt.is_on());
+        let t = Instant::now();
+        drop(b.tx);
+        assert!(t.elapsed() < ms(300), "il Drop ha aspettato {:?}", t.elapsed());
+    }
+
+    #[test]
+    fn a_stuck_ptt_blocks_every_new_transmission_until_it_is_confirmed_off() {
+        let b = bench_locked(config());
+        let told = Arc::new(Mutex::new(Vec::<bool>::new()));
+        let seen = Arc::clone(&told);
+        b.tx.set_stuck_hook(Some(Arc::new(move |info| lock(&seen).push(info.is_some()))));
+        b.ptt.fail_off.store(true, SeqCst);
+        b.tx.schedule(request(0.2)).expect("pianificata");
+        b.run_to(base() + ms(900));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(matches!(b.tx.last_outcome(), Some(TxOutcome::Failed(why)) if why.contains("PTT non spento")));
+        let info = b.tx.ptt_stuck().expect("PTT non spento");
+        assert!(info.attempts >= 5, "{info:?}");
+        assert_eq!(ptt_ons(&b), 1);
+        // niente rientro in trasmissione, ne' libera ne' a periodo, ne' a flusso: il PTT non riceve altri comandi di accensione
+        assert!(matches!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }), Err(TxError::PttStuck(_))));
+        assert!(matches!(b.tx.start_now(tone(1.0), Duration::from_secs(5)), Err(TxError::PttStuck(_))));
+        assert!(matches!(b.tx.start_stream(tone(1.0)), Err(TxError::PttStuck(_))));
+        assert_eq!(ptt_ons(&b), 1, "nessuna nuova accensione");
+        // l'avviso e' stato dato (almeno una volta) e non e' ancora stato tolto
+        assert!(lock(&told).first().copied().unwrap_or(false));
+        assert_eq!(lock(&told).last(), Some(&true));
+        // la radio risponde di nuovo: il controllo spegne, l'avviso si toglie e si puo' trasmettere
+        b.ptt.fail_off.store(false, SeqCst);
+        let limit = Instant::now() + Duration::from_secs(3);
+        while b.tx.ptt_stuck().is_some() && Instant::now() < limit {
+            std::thread::sleep(ms(10));
+        }
+        assert!(b.tx.ptt_stuck().is_none());
+        assert!(!b.ptt.is_on());
+        assert_eq!(lock(&told).last(), Some(&false), "avviso tolto");
+        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).is_ok());
+    }
+
+    /// Il PTT rimasto acceso, poi spento da un'altra via (un TxInhibit UDP passa dall'interblocco): il tracker non lo sa.
+    fn stuck_then_off_behind_the_trackers_back() -> (Bench, Arc<Mutex<Vec<bool>>>) {
+        let b = bench_locked(config());
+        // niente tentativi del controllo a tempo di mezzo: i tentativi lunghi sarebbero ogni 60 s (prima di ogni trasmissione, senza gare)
+        b.tx.set_release_timing(ReleaseTiming { long_step: Duration::from_secs(60), ..ReleaseTiming::fast() });
+        let told = Arc::new(Mutex::new(Vec::<bool>::new()));
+        let seen = Arc::clone(&told);
+        b.tx.set_stuck_hook(Some(Arc::new(move |info| lock(&seen).push(info.is_some()))));
+        b.ptt.fail_off.store(true, SeqCst);
+        b.tx.schedule(request(0.2)).expect("pianificata");
+        b.run_to(base() + ms(900));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(b.tx.ptt_stuck().is_some());
+        b.ptt.fail_off.store(false, SeqCst);
+        let il = b.interlock.as_ref().expect("interblocco");
+        il.command("AMP", 60_000, "prova");
+        assert!(!b.ptt.is_on(), "l'interblocco ha spento il PTT");
+        assert!(!crate::ptt::Ptt::is_on(&**il));
+        (b, told)
+    }
+
+    #[test]
+    fn a_ptt_turned_off_by_the_interlock_lifts_the_block_at_the_next_request() {
+        let (b, told) = stuck_then_off_behind_the_trackers_back();
+        assert!(b.tx.ptt_stuck().is_some(), "il tracker non lo sa ancora");
+        assert!(b.tx.schedule(TxRequest { wave: tone(1.0), mode: Mode::Ft8, parity: Parity::Odd }).is_ok(), "non resta bloccata per sempre");
+        assert!(b.tx.ptt_stuck().is_none());
+        assert_eq!(lock(&told).last(), Some(&false), "avviso tolto");
+    }
+
+    #[test]
+    fn stop_tx_lifts_the_block_when_the_ptt_is_already_off() {
+        let (b, told) = stuck_then_off_behind_the_trackers_back();
+        b.tx.halt();
+        assert!(b.tx.ptt_stuck().is_none());
+        assert_eq!(lock(&told).last(), Some(&false));
+    }
+
+    #[test]
+    fn a_rebuilt_chain_with_a_stuck_ptt_leaves_no_orphan_alert_and_no_forgotten_ptt() {
+        use crate::ptt::{Ptt, TxInterlock};
+        let clock = Arc::new(ManualClock::new(base() - ms(500)));
+        let dyn_clock: Arc<dyn Clock> = clock.clone();
+        let rec = Recorder::new(Arc::clone(&dyn_clock));
+        let old_ptt = Arc::new(RecordingPtt::new(Arc::clone(&rec)));
+        let interlock = Arc::new(TxInterlock::new());
+        interlock.attach(old_ptt.clone());
+        interlock.set(true).expect("acceso");
+        old_ptt.fail_off.store(true, SeqCst);
+        // le impostazioni cambiano: la catena si ricostruisce con un PTT nuovo mentre il vecchio non si spegne
+        let new_ptt = Arc::new(RecordingPtt::new(Arc::clone(&rec)));
+        interlock.attach(new_ptt.clone());
+        assert!(interlock.has_orphan() && interlock.is_on(), "il PTT vecchio non si dimentica");
+        let (sink, _state) = RecordingSink::new(Arc::clone(&rec), Arc::clone(&dyn_clock), RATE);
+        let tx = Transmitter::new(dyn_clock, interlock.clone(), Box::new(sink), config()).expect("trasmettitore");
+        tx.set_release_timing(ReleaseTiming::fast());
+        let told = Arc::new(Mutex::new(Vec::<bool>::new()));
+        let seen = Arc::clone(&told);
+        tx.set_stuck_hook(Some(Arc::new(move |info| lock(&seen).push(info.is_some()))));
+        assert!(tx.ptt_stuck().is_some(), "la nuova catena parte con il blocco");
+        assert_eq!(lock(&told).as_slice(), [true], "e dice l'avviso subito");
+        assert!(matches!(tx.start_now(tone(1.0), Duration::from_secs(5)), Err(TxError::PttStuck(_))));
+        // la radio risponde: il controllo a tempo spegne il PTT vecchio e l'avviso si toglie
+        old_ptt.fail_off.store(false, SeqCst);
+        let limit = Instant::now() + Duration::from_secs(3);
+        while tx.ptt_stuck().is_some() && Instant::now() < limit {
+            std::thread::sleep(ms(10));
+        }
+        assert!(tx.ptt_stuck().is_none());
+        assert!(!old_ptt.is_on() && !interlock.has_orphan());
+        assert_eq!(lock(&told).last(), Some(&false));
+    }
+
+    #[test]
+    fn stop_tx_asks_for_an_immediate_attempt_while_the_ptt_is_stuck() {
+        let b = bench_locked(config());
+        // i tentativi lunghi sarebbero ogni 30 s: se STOP TX non ne chiedesse uno subito il test scadrebbe
+        b.tx.set_release_timing(ReleaseTiming { long_step: Duration::from_secs(30), ..ReleaseTiming::fast() });
+        b.ptt.fail_off.store(true, SeqCst);
+        b.tx.schedule(request(0.2)).expect("pianificata");
+        b.run_to(base() + ms(900));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        assert!(b.tx.ptt_stuck().is_some());
+        b.ptt.fail_off.store(false, SeqCst);
+        b.tx.halt();
+        let limit = Instant::now() + Duration::from_secs(3);
+        while b.tx.ptt_stuck().is_some() && Instant::now() < limit {
+            std::thread::sleep(ms(10));
+        }
+        assert!(b.tx.ptt_stuck().is_none(), "STOP TX ha fatto un tentativo subito");
     }
 
     #[test]

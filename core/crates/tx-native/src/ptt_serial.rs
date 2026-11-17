@@ -82,6 +82,13 @@ pub struct SerialLinePtt {
     #[cfg_attr(not(windows), allow(dead_code))]
     line: Line,
     on: AtomicBool,
+    /// `serial:` e il nome della porta come lo vuole Windows (vedi `Ptt::target`).
+    target: String,
+}
+
+/// Il `target` di un PTT su quella porta, o `None` se il nome non e' valido.
+pub fn target_of(port: &str) -> Option<String> {
+    device_path(port).ok().map(|p| format!("serial:{p}"))
 }
 
 impl SerialLinePtt {
@@ -91,7 +98,7 @@ impl SerialLinePtt {
         let path = device_path(port)?;
         let port = sys::Port::open(&path)?;
         port.set(line, false)?;
-        Ok(SerialLinePtt { port, line, on: AtomicBool::new(false) })
+        Ok(SerialLinePtt { port, line, on: AtomicBool::new(false), target: format!("serial:{path}") })
     }
 
     #[cfg(not(windows))]
@@ -101,6 +108,10 @@ impl SerialLinePtt {
 }
 
 impl Ptt for SerialLinePtt {
+    fn target(&self) -> Option<String> {
+        Some(self.target.clone())
+    }
+
     #[cfg(windows)]
     fn set(&self, on: bool) -> Result<(), TxError> {
         self.port.set(self.line, on)?;

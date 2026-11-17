@@ -193,6 +193,12 @@ struct Inner {
     ptt_blocked_until: Mutex<Option<Instant>>,
     quick: Mutex<Vec<Instant>>,
     ptt_readable: AtomicBool,
+    /// Il primo collegamento di questa sessione e' gia' avvenuto (per dire «all'avvio» o «dopo la riconnessione» nel registro).
+    opened_once: AtomicBool,
+    /// Qualcuno (lo spegnimento del PTT che non riesce) chiede di riaprire il CAT: lo fa il thread del collegamento, mai chi chiama.
+    reconnect_wanted: AtomicBool,
+    /// Quando e' stata chiesta l'ultima riapertura: non piu' di una ogni 10 s.
+    reconnect_asked_at: Mutex<Option<Instant>>,
     /// Trasmissione comandata fuori dal CAT (PTT su RTS/DTR di un'altra porta): la dice il motore, cosi' i misuratori passano subito a
     /// potenza/ROS/ALC invece di aspettare la lettura del PTT dalla radio (ogni `poll_secs`), che non sempre vede quel PTT.
     external_tx: AtomicBool,
@@ -466,9 +472,23 @@ impl Inner {
             tracing::info!("radio collegata con «Accendi» (auto_power_on di Hamlib)");
         }
         // alcune radio trasmettono all'apertura della porta: PTT spento subito, errori ignorati (un VOX non ha PTT da spegnere)
-        if let Err(e) = link.client().set_ptt(false) {
-            tracing::debug!("PTT spento dopo l'apertura: {e}");
+        // se la radio e' in trasmissione (per un guasto, o per un PTT rimasto acceso) lo si dice nel registro; la lettura non c'e' con tutte le radio
+        let found_on = self.ptt_readable.load(Ordering::SeqCst) && link.client().ptt_within(Duration::from_millis(500)).unwrap_or(false);
+        match link.client().set_ptt(false) {
+            Ok(()) => {
+                if found_on {
+                    if self.opened_once.load(Ordering::SeqCst) {
+                        tracing::info!("PTT trovato acceso dopo la riconnessione: spento");
+                    } else {
+                        tracing::info!("PTT trovato acceso all'avvio: spento");
+                    }
+                }
+                // il PTT e' spento davvero: lo stato non resta «acceso» dopo un guasto (il controllo della trasmissione se ne accorge)
+                self.update(|s| s.ptt = false);
+            }
+            Err(e) => tracing::debug!("PTT spento dopo l'apertura: {e}"),
         }
+        self.opened_once.store(true, Ordering::SeqCst);
         if !link.alive() {
             return Err(RigError(format!("rigctld terminato: {}", link.note())));
         }
@@ -804,6 +824,14 @@ impl Inner {
         }
         let mut failures = 0u32;
         while self.wait_next() {
+            // riapertura chiesta dallo spegnimento del PTT che non riesce: la fa questo thread, con T 0 appena la radio risponde (`open`)
+            if self.reconnect_wanted.swap(false, Ordering::SeqCst) {
+                failures = 0;
+                if !self.reconnect("PTT non spento: riapertura del collegamento") {
+                    return;
+                }
+                continue;
+            }
             let dead = self.link().is_some_and(|l| !l.alive());
             let outcome = if dead { Err(RigError(format!("rigctld terminato: {}", self.link().map(|l| l.note()).unwrap_or_default()))) } else { self.poll_once() };
             match outcome {
@@ -1035,6 +1063,9 @@ impl HamlibRig {
             ptt_blocked_until: Mutex::new(None),
             quick: Mutex::new(Vec::new()),
             ptt_readable: AtomicBool::new(true),
+            opened_once: AtomicBool::new(false),
+            reconnect_wanted: AtomicBool::new(false),
+            reconnect_asked_at: Mutex::new(None),
             external_tx: AtomicBool::new(false),
             tx_audio_hz: AtomicU32::new(0),
             rx_dial: AtomicU64::new(0),
@@ -1089,7 +1120,7 @@ impl HamlibRig {
         }
     }
 
-    /// PTT acceso o spento. Acceso: solo a radio collegata e passata l'attesa dopo il collegamento. Spento: 2 tentativi, e se falliscono lo stato
+    /// PTT acceso o spento. Acceso: solo a radio collegata e passata l'attesa dopo il collegamento. Spento: un tentativo (i successivi li fa chi spegne), e se fallisce lo stato
     /// resta «acceso» (e l'errore si vede). Con il metodo VOX non si manda nessun comando.
     pub fn set_ptt(&self, on: bool) -> Result<(), RigError> {
         let inner = &self.inner;
@@ -1109,13 +1140,40 @@ impl HamlibRig {
             }
             link.client().set_ptt(true).map_err(|e| RigError(friendly_error(&e.0)))?;
         } else {
-            inner.ptt_off(&link, 2).map_err(|e| RigError(format!("PTT non spento: {}", friendly_error(&e.0))))?;
+            // un solo tentativo: la scala dei tentativi e' di chi spegne (`tx_native::ptt_release`), che non deve moltiplicarla
+            inner.ptt_off(&link, 1).map_err(|e| RigError(format!("PTT non spento: {}", friendly_error(&e.0))))?;
             self.emulate_end(&link);
         }
         inner.update(|s| s.ptt = on);
         std::thread::sleep(inner.timing.ptt_pause);
         inner.queue_quick_reads();
         Ok(())
+    }
+
+    /// Un'altra via per spegnere il PTT quando `T 0` non passa: riprova sul collegamento in uso e, se fallisce, chiede al thread del collegamento di
+    /// riaprirlo (la riapertura manda `T 0` per prima cosa). Non apre mai un secondo collegamento da chi chiama. Una riapertura ogni 10 s al massimo.
+    pub fn force_ptt_off(&self) -> Result<(), RigError> {
+        let inner = &self.inner;
+        if inner.config.ptt == PttMethod::Vox {
+            return Ok(());
+        }
+        let direct = match inner.link() {
+            Some(link) => inner.ptt_off(&link, 1),
+            None => Err(RigError("radio non collegata".into())),
+        };
+        let Err(e) = direct else {
+            inner.update(|s| s.ptt = false);
+            return Ok(());
+        };
+        // senza collegamento il thread sta gia' riaprendo da solo
+        if inner.link().is_some() {
+            let mut asked = inner.reconnect_asked_at.lock().map_err(|_| RigError("stato interno non disponibile".into()))?;
+            if asked.is_none_or(|t| t.elapsed() >= Duration::from_secs(10)) {
+                *asked = Some(Instant::now());
+                inner.reconnect_wanted.store(true, Ordering::SeqCst);
+            }
+        }
+        Err(RigError(friendly_error(&e.0)))
     }
 
     /// Split simulato: la radio resta in simplex e durante la trasmissione si sposta sulla frequenza di trasmissione.
@@ -1611,8 +1669,8 @@ mod tests {
     fn it_turns_the_ptt_off_first_and_reads_the_radio() {
         let fake = FakeRigctld::start(14_074_000);
         let rig = start(&fake, RigConfig::default());
-        // la prima domanda e' solo `\chk_vfo` (modalita' VFO del demone); il primo comando alla radio e' lo spegnimento del PTT
-        let commands: Vec<String> = fake.commands().into_iter().filter(|c| c != "\\chk_vfo").collect();
+        // la prima domanda e' solo `\chk_vfo` (modalita' VFO del demone); il primo comando alla radio e' lo spegnimento del PTT (la lettura `t` che lo precede dice solo se era rimasto acceso)
+        let commands: Vec<String> = fake.commands().into_iter().filter(|c| c != "\\chk_vfo" && c != "t").collect();
         assert_eq!(commands.first().map(String::as_str), Some("T 0"), "il PTT si spegne subito dopo l'apertura: {commands:?}");
         let s = rig.status();
         assert_eq!((s.frequency_hz, s.mode.as_deref(), s.ptt), (Some(14_074_000), Some("PKTUSB"), false));
@@ -1688,6 +1746,45 @@ mod tests {
         fake.fail_ptt_off(false);
         rig.shutdown();
         assert!(!fake.ptt(), "alla chiusura il PTT si spegne");
+    }
+
+    #[test]
+    fn a_ptt_left_on_is_turned_off_at_the_start() {
+        let fake = FakeRigctld::start(14_074_000);
+        fake.set_ptt(true);
+        let rig = start(&fake, RigConfig::default());
+        assert!(!fake.ptt(), "il PTT trovato acceso all'avvio si spegne");
+        assert!(!rig.status().ptt);
+    }
+
+    #[test]
+    fn force_ptt_off_sends_one_more_t0_and_clears_the_state() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("PTT");
+        fake.fail_ptt_off(true);
+        fake.clear_commands();
+        assert!(rig.set_ptt(false).is_err());
+        let sent = fake.commands().iter().filter(|c| *c == "T 0").count();
+        assert_eq!(sent, 1, "set_ptt(false) e' un solo tentativo: i successivi sono di chi spegne");
+        assert!(rig.status().ptt);
+        fake.fail_ptt_off(false);
+        rig.force_ptt_off().expect("T 0");
+        assert!(!fake.ptt() && !rig.status().ptt);
+    }
+
+    #[test]
+    fn force_ptt_off_reopens_the_cat_and_the_reopening_turns_the_ptt_off() {
+        let fake = FakeRigctld::start(14_074_000);
+        let rig = start(&fake, RigConfig::default());
+        std::thread::sleep(Duration::from_millis(300));
+        rig.set_ptt(true).expect("PTT");
+        fake.fail_ptt_off(true);
+        assert!(rig.force_ptt_off().is_err(), "T 0 non passa");
+        // la radio torna a rispondere mentre il collegamento si riapre: all'apertura il primo comando e' `T 0`
+        fake.fail_ptt_off(false);
+        wait_until("PTT spento dalla riapertura", || !fake.ptt() && !rig.status().ptt);
     }
 
     #[test]

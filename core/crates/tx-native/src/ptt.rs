@@ -13,13 +13,23 @@ use std::{
 
 use rig_control::hamlib::RigctldClient;
 
-use crate::error::TxError;
+use crate::{error::TxError, ptt_release::{ReleaseTracker, not_released_text}};
 
 /// Un comando di trasmissione. `set` puo' bloccare per qualche istante (porta seriale, OmniRig): chi lo usa lo chiama da un thread dedicato.
 pub trait Ptt: Send + Sync {
     fn set(&self, on: bool) -> Result<(), TxError>;
     /// Lo stato che Aurora crede di aver impostato (acceso se l'ultimo `set(true)` e' riuscito e non c'e' stato un `set(false)` riuscito).
     fn is_on(&self) -> bool;
+    /// Un'altra via per spegnere il PTT quando il comando normale non riesce (riapertura del CAT, linea RTS/DTR della porta del PTT). Si chiama
+    /// dal terzo tentativo fallito di [`crate::ptt_release::ReleaseTracker`]; `Ok` = la radio e' stata spenta. Di base nessuna via.
+    fn recover_off(&self) -> Result<(), TxError> {
+        Err(TxError::Ptt("nessuna altra via per spegnere il PTT".into()))
+    }
+    /// A cosa comanda questo PTT (la porta seriale, la radio di OmniRig, il CAT con il suo profilo): serve a capire se una catena
+    /// ricostruita parla ancora con la stessa radio. `None` = non si sa (VOX).
+    fn target(&self) -> Option<String> {
+        None
+    }
 }
 
 /// Nessun comando: la radio va in trasmissione col VOX, appena arriva l'audio.
@@ -73,6 +83,7 @@ impl Ptt for HamlibPtt {
 /// (`rig_control::omnirig::set_ptt`). Solo Windows. La radio comandata e' quella scelta in Impostazioni › Radio.
 pub struct OmniRigPtt {
     on: AtomicBool,
+    rig: u8,
 }
 
 impl OmniRigPtt {
@@ -81,7 +92,7 @@ impl OmniRigPtt {
         if !(1..=2).contains(&rig) {
             return Err(TxError::Ptt(format!("radio OmniRig non valida: {rig}")));
         }
-        Ok(OmniRigPtt { on: AtomicBool::new(false) })
+        Ok(OmniRigPtt { on: AtomicBool::new(false), rig })
     }
 
     /// Apre l'oggetto OmniRig in anticipo, cosi' il primo PTT non paga la creazione.
@@ -91,6 +102,10 @@ impl OmniRigPtt {
 }
 
 impl Ptt for OmniRigPtt {
+    fn target(&self) -> Option<String> {
+        Some(format!("omnirig:{}", self.rig))
+    }
+
     fn set(&self, on: bool) -> Result<(), TxError> {
         rig_control::omnirig::set_ptt(on).map_err(|e| TxError::Ptt(e.0))?;
         self.on.store(on, Ordering::SeqCst);
@@ -101,43 +116,19 @@ impl Ptt for OmniRigPtt {
         self.on.load(Ordering::SeqCst)
     }
 }
-/// Spegne il PTT con qualche tentativo (la porta seriale o OmniRig possono essere occupate per un istante).
-pub fn release_ptt(ptt: &dyn Ptt) -> Result<(), TxError> {
-    let mut last = TxError::Ptt("nessun tentativo".into());
-    for attempt in 0..3 {
-        match ptt.set(false) {
-            Ok(()) => return Ok(()),
-            Err(e) => {
-                tracing::warn!("PTT: spegnimento fallito (tentativo {}): {e}", attempt + 1);
-                last = e;
-                std::thread::sleep(Duration::from_millis(20));
-            }
-        }
-    }
-    Err(last)
-}
-
-/// Il testo di «PTT non spento» con la causa una volta sola: l'errore del CAT porta gia' «PTT non spento: » davanti e `TxError::Ptt`
-/// aggiunge «PTT: », e sullo schermo e nel registro usciva «PTT non spento: PTT: PTT non spento: …».
-pub fn not_released_text(e: &TxError) -> String {
-    let cause = match e {
-        TxError::Ptt(c) => c.clone(),
-        other => other.to_string(),
-    };
-    let cause = cause.strip_prefix("PTT non spento: ").unwrap_or(&cause);
-    format!("PTT non spento: {cause}")
-}
-
 /// Tiene acceso il PTT finche' vive: cadendo (anche per un panico) lo spegne.
 pub struct PttGuard {
     ptt: Arc<dyn Ptt>,
+    tracker: Arc<ReleaseTracker>,
     armed: bool,
+    /// Ferma l'audio: si chiama prima di ogni spegnimento fatto cadendo, cosi' la scala dei tentativi non va con l'audio ancora in onda.
+    stop_audio: Option<Box<dyn Fn() + Send + Sync>>,
 }
 
 impl PttGuard {
     /// Accende il PTT. Se il comando fallisce si prova comunque a spegnere (la risposta potrebbe essersi persa a radio gia' in trasmissione).
-    pub fn engage(ptt: Arc<dyn Ptt>) -> Result<PttGuard, TxError> {
-        let mut guard = PttGuard { ptt, armed: true };
+    pub fn engage(ptt: Arc<dyn Ptt>, tracker: Arc<ReleaseTracker>) -> Result<PttGuard, TxError> {
+        let mut guard = PttGuard { ptt, tracker, armed: true, stop_audio: None };
         match guard.ptt.set(true) {
             Ok(()) => Ok(guard),
             Err(e) => {
@@ -147,9 +138,15 @@ impl PttGuard {
         }
     }
 
-    /// Spegne il PTT. Se non ci riesce resta armato: lo riprovera' `Drop`.
+    /// Dice alla guardia come fermare l'audio quando cade con il PTT ancora acceso (errore o panico dopo l'avvio dell'audio).
+    pub fn with_stop_audio(mut self, stop: Box<dyn Fn() + Send + Sync>) -> PttGuard {
+        self.stop_audio = Some(stop);
+        self
+    }
+
+    /// Spegne il PTT con la scala dei tentativi. Se non ci riesce resta armato: lo riprovera' `Drop`, poi il controllo a tempo.
     pub fn release(&mut self) -> Result<(), TxError> {
-        release_ptt(&*self.ptt)?;
+        self.tracker.release(&*self.ptt)?;
         self.armed = false;
         Ok(())
     }
@@ -157,10 +154,17 @@ impl PttGuard {
 
 impl Drop for PttGuard {
     fn drop(&mut self) {
-        if self.armed
-            && let Err(e) = release_ptt(&*self.ptt)
-        {
-            tracing::error!("{}", not_released_text(&e));
+        if !self.armed {
+            return;
+        }
+        if let Some(stop) = &self.stop_audio {
+            stop();
+        }
+        // un solo tentativo: se la scala e' gia' fallita, il resto lo fa il controllo a tempo, senza altre righe nel registro
+        if self.tracker.is_stuck() {
+            let _ = self.tracker.retry_once(&*self.ptt);
+        } else if let Err(e) = self.tracker.release(&*self.ptt) {
+            tracing::debug!("{}", not_released_text(&e));
         }
     }
 }
@@ -277,7 +281,23 @@ struct InterlockState {
     requested: bool,
     /// Il PTT davvero acceso sulla radio.
     keyed: bool,
+    /// Il PTT di una catena di trasmissione ricostruita che non si e' riusciti a spegnere: si continua a provarci, e nel frattempo non si accende altro.
+    orphan: Option<Arc<dyn Ptt>>,
+    /// Da quando l'orfano non si spegne.
+    orphan_since: Option<Instant>,
+    /// Dopo quanto un orfano che non si spegne si abbandona.
+    orphan_max: Duration,
+    /// Quanti orfani sono stati abbandonati (per le prove).
+    abandoned: u32,
+    /// Chi viene avvisato dell'abbandono (l'avviso persistente nello stato della stazione).
+    abandon_hook: Option<AbandonHook>,
 }
+
+/// Chiamata quando un PTT rimasto acceso viene abbandonato; riceve il motivo.
+pub type AbandonHook = Arc<dyn Fn(String) + Send + Sync>;
+
+/// Un PTT rimasto acceso di una catena ricostruita si abbandona dopo questo tempo: la sua porta (cavo USB tolto) o il suo CAT non tornano.
+const ORPHAN_MAX: Duration = Duration::from_secs(60);
 
 /// Il PTT con il blocco esterno (TxInhibit via UDP): sta tra il pianificatore e il PTT vero. Con una prenotazione attiva il PTT non si accende
 /// (e se e' acceso si spegne subito); alla scadenza o al rilascio dell'ultima, se la trasmissione lo chiede ancora, si riaccende. Come
@@ -294,25 +314,125 @@ impl Default for TxInterlock {
 
 impl TxInterlock {
     pub fn new() -> TxInterlock {
-        TxInterlock { state: std::sync::Mutex::new(InterlockState { leases: InhibitLeases::default(), inner: None, requested: false, keyed: false }) }
+        TxInterlock { state: std::sync::Mutex::new(InterlockState { leases: InhibitLeases::default(), inner: None, requested: false, keyed: false, orphan: None, orphan_since: None, orphan_max: ORPHAN_MAX, abandoned: 0, abandon_hook: None }) }
     }
 
-    /// Il PTT vero (cambia quando si ricostruisce la catena di trasmissione). Quello di prima, se acceso, si spegne.
+    /// Il PTT vero (cambia quando si ricostruisce la catena di trasmissione). Quello di prima, se acceso, si spegne; se non si spegne resta da
+    /// parte (`orphan`) e si continua a provare, ma non per sempre: vedi [`TxInterlock::judge_orphan`].
     pub fn attach(&self, inner: Arc<dyn Ptt>) {
         let mut s = crate::lock(&self.state);
+        Self::retry_orphan(&mut s);
+        if s.orphan.is_some() {
+            // seconda ricostruzione con un orfano ancora acceso: non si accumulano
+            Self::abandon(&mut s, "seconda ricostruzione della catena con il PTT ancora acceso");
+        }
         if let Some(old) = s.inner.take()
             && s.keyed
-            && let Err(e) = release_ptt(&*old)
+            && let Err(e) = old.set(false)
         {
+            // non si dimentica: si tiene da parte, `is_on` resta vero e la nuova catena parte «non spenta» e riprova
             tracing::error!("PTT precedente non spento: {e}");
+            s.orphan = Some(old);
+            s.orphan_since = Some(Instant::now());
         }
         s.inner = Some(inner);
         s.requested = false;
         s.keyed = false;
+        Self::judge_orphan(&mut s);
+    }
+
+    /// Prima di riaprire la stessa porta seriale (la COM e' esclusiva): il PTT corrente e l'orfano che comandano `target` si spengono per
+    /// l'ultima volta e si lasciano cadere, cosi' la porta si libera (chiudere la maniglia abbassa le linee).
+    pub fn release_target(&self, target: &str) {
+        let mut s = crate::lock(&self.state);
+        if let Some(o) = s.orphan.clone()
+            && o.target().as_deref() == Some(target)
+        {
+            let _ = o.set(false);
+            s.orphan = None;
+            s.orphan_since = None;
+        }
+        if let Some(i) = s.inner.clone()
+            && i.target().as_deref() == Some(target)
+        {
+            if let Err(e) = i.set(false) {
+                tracing::warn!("PTT su {target}: ultimo spegnimento non riuscito prima di riaprire la porta: {e}");
+            }
+            s.inner = None;
+            s.keyed = false;
+            s.requested = false;
+        }
+    }
+
+    /// Chi avvisare quando un orfano si abbandona (si imposta a ogni ricostruzione della catena).
+    pub fn set_abandon_hook(&self, hook: Option<AbandonHook>) {
+        crate::lock(&self.state).abandon_hook = hook;
+    }
+
+    /// Quanti orfani sono stati abbandonati.
+    pub fn abandoned(&self) -> u32 {
+        crate::lock(&self.state).abandoned
+    }
+
+    /// Cambia il tempo massimo dell'orfano (le prove lo accorciano).
+    pub fn set_orphan_max(&self, max: Duration) {
+        crate::lock(&self.state).orphan_max = max;
+    }
+
+    /// L'orfano non si recupera piu': si lascia andare (la chiusura del PTT abbassa comunque la linea se la maniglia e' valida), si dice nel
+    /// registro e all'interfaccia, e la catena nuova e' libera.
+    fn abandon(s: &mut InterlockState, why: &str) {
+        let waited = s.orphan_since.map_or(0, |t| t.elapsed().as_secs());
+        let Some(orphan) = s.orphan.take() else { return };
+        s.orphan_since = None;
+        // ultima possibilita': un'altra via (riapertura del CAT, linea della porta). Se riesce il PTT e' spento: nessun avviso
+        if orphan.recover_off().is_ok() {
+            tracing::info!("PTT precedente spento con un'altra via prima di abbandonarlo");
+            return;
+        }
+        s.abandoned += 1;
+        tracing::error!("PTT precedente abbandonato: radio non raggiungibile dopo {waited} s ({why})");
+        if let Some(hook) = &s.abandon_hook {
+            hook(why.to_string());
+        }
+    }
+
+    /// Un orfano si abbandona se: (a) la catena nuova comanda altro (un'altra radio, un'altra porta, il VOX senza CAT) oppure (b) e' passato il
+    /// tempo massimo. Il caso di una seconda ricostruzione sta in `attach`.
+    fn judge_orphan(s: &mut InterlockState) {
+        let Some(o) = s.orphan.clone() else { return };
+        let new_target = s.inner.as_ref().and_then(|i| i.target());
+        if o.target() != new_target {
+            Self::abandon(s, "la catena nuova comanda un'altra radio");
+        } else if s.orphan_since.is_some_and(|t| t.elapsed() >= s.orphan_max) {
+            Self::abandon(s, "tempo massimo scaduto");
+        }
+    }
+
+    /// Un tentativo sul PTT rimasto acceso della catena di prima.
+    fn retry_orphan(s: &mut InterlockState) {
+        let Some(o) = s.orphan.clone() else { return };
+        if o.set(false).is_ok() {
+            tracing::info!("PTT precedente spento");
+            s.orphan = None;
+            s.orphan_since = None;
+            return;
+        }
+        Self::judge_orphan(s);
+    }
+
+    /// C'e' un PTT della catena di prima ancora da spegnere.
+    pub fn has_orphan(&self) -> bool {
+        crate::lock(&self.state).orphan.is_some()
     }
 
     /// Porta la radio allo stato voluto: acceso solo se chiesto e senza blocchi.
     fn apply(s: &mut InterlockState) -> Result<(), TxError> {
+        Self::retry_orphan(s);
+        // il PTT della catena di prima e' ancora acceso: nessuna accensione e nessuna conferma di «spento» finche' non lo e' davvero
+        if s.orphan.is_some() {
+            return Err(TxError::Ptt("PTT precedente non spento".into()));
+        }
         let want = s.requested && !s.leases.is_inhibited();
         if want == s.keyed {
             return Ok(());
@@ -322,7 +442,8 @@ impl TxInterlock {
             inner.set(true)?;
             s.keyed = true;
         } else {
-            release_ptt(&*inner)?;
+            // un solo tentativo: la scala dei tentativi e' di chi comanda l'interblocco (vedi `ptt_release`)
+            inner.set(false)?;
             s.keyed = false;
         }
         Ok(())
@@ -396,8 +517,38 @@ impl Ptt for TxInterlock {
         Self::apply(&mut s)
     }
 
+    fn target(&self) -> Option<String> {
+        crate::lock(&self.state).inner.as_ref().and_then(|i| i.target())
+    }
+
+    /// Acceso se chiesto o se la radio risulta ancora in trasmissione: dopo uno spegnimento fallito `requested` e' gia' falso ma il PTT
+    /// no, e chi controlla (controllo a tempo, guardia) deve vederlo.
     fn is_on(&self) -> bool {
-        crate::lock(&self.state).requested
+        let s = crate::lock(&self.state);
+        s.requested || s.keyed || s.orphan.is_some()
+    }
+
+    fn recover_off(&self) -> Result<(), TxError> {
+        let (inner, orphan) = {
+            let s = crate::lock(&self.state);
+            (s.inner.clone(), s.orphan.clone())
+        };
+        if let Some(o) = orphan
+            && o.recover_off().is_ok()
+        {
+            crate::lock(&self.state).orphan = None;
+        }
+        let Some(inner) = inner else { return Err(TxError::Ptt("nessun PTT collegato".into())) };
+        if crate::lock(&self.state).keyed {
+            inner.recover_off()?;
+        }
+        let mut s = crate::lock(&self.state);
+        s.keyed = false;
+        s.requested = false;
+        if s.orphan.is_some() {
+            return Err(TxError::Ptt("PTT precedente non spento".into()));
+        }
+        Ok(())
     }
 }
 
@@ -407,6 +558,126 @@ mod interlock_tests {
 
     fn ms(n: u64) -> Duration {
         Duration::from_millis(n)
+    }
+
+    fn rec_ptt(target: Option<&str>) -> Arc<crate::testing::RecordingPtt> {
+        let rec = crate::testing::Recorder::new(Arc::new(crate::clock::ManualClock::new(Duration::ZERO)));
+        let p = Arc::new(crate::testing::RecordingPtt::new(rec));
+        *crate::lock(&p.target) = target.map(str::to_string);
+        p
+    }
+
+    /// Un interblocco con un PTT acceso che non si spegne, poi sostituito da `next`: da' l'orfano.
+    fn with_orphan(old_target: Option<&str>, next: &Arc<crate::testing::RecordingPtt>) -> (TxInterlock, Arc<crate::testing::RecordingPtt>) {
+        let old = rec_ptt(old_target);
+        let lock = TxInterlock::new();
+        lock.attach(old.clone());
+        lock.set(true).expect("acceso");
+        old.fail_off.store(true, std::sync::atomic::Ordering::SeqCst);
+        lock.attach(next.clone());
+        (lock, old)
+    }
+
+    #[test]
+    fn an_orphan_of_another_radio_is_abandoned_at_once_and_transmitting_is_possible_again() {
+        let next = rec_ptt(Some("serial:COM9"));
+        let (lock, _old) = with_orphan(Some("serial:COM3"), &next);
+        assert!(!lock.has_orphan() && !lock.is_on());
+        assert_eq!(lock.abandoned(), 1);
+        lock.set(true).expect("la nuova radio trasmette");
+        assert!(next.is_on());
+    }
+
+    #[test]
+    fn an_orphan_of_the_same_radio_is_kept_then_abandoned_after_the_maximum_time() {
+        let next = rec_ptt(Some("serial:COM3"));
+        let (lock, old) = with_orphan(Some("serial:COM3"), &next);
+        lock.set_orphan_max(Duration::from_millis(60));
+        assert!(lock.has_orphan() && lock.is_on());
+        assert!(lock.set(true).is_err(), "nessuna accensione con un orfano acceso");
+        std::thread::sleep(Duration::from_millis(80));
+        lock.set(false).expect("l'orfano scaduto cade e il resto va");
+        assert!(!lock.has_orphan() && !lock.is_on());
+        assert_eq!(lock.abandoned(), 1);
+        assert!(old.is_on(), "il vecchio PTT non e' stato spento: l'avviso lo dice");
+    }
+
+    #[test]
+    fn an_orphan_that_the_other_way_turns_off_is_dropped_without_the_warning() {
+        let next = rec_ptt(Some("serial:COM9"));
+        let old = rec_ptt(Some("serial:COM3"));
+        let lock = TxInterlock::new();
+        let told = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let seen = Arc::clone(&told);
+        lock.set_abandon_hook(Some(Arc::new(move |why| seen.lock().expect("avvisi").push(why))));
+        lock.attach(old.clone());
+        lock.set(true).expect("acceso");
+        old.fail_off.store(true, std::sync::atomic::Ordering::SeqCst);
+        old.recover_ok.store(true, std::sync::atomic::Ordering::SeqCst);
+        lock.attach(next);
+        assert!(!lock.has_orphan() && !old.is_on());
+        assert_eq!(lock.abandoned(), 0);
+        assert!(told.lock().expect("avvisi").is_empty());
+    }
+
+    #[test]
+    fn a_changed_radio_profile_makes_an_orphan_and_the_abandon_tells_it() {
+        // il PTT della radio A rifiuta lo spegnimento (la guardia `radio cambiata` di CatPtt), la catena si ricostruisce sulla radio B
+        let a = rec_ptt(Some("cat:Hamlib:1:COM3"));
+        let b = rec_ptt(Some("cat:Hamlib:2:COM4"));
+        let lock = TxInterlock::new();
+        let told = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+        let seen = Arc::clone(&told);
+        lock.set_abandon_hook(Some(Arc::new(move |why| seen.lock().expect("avvisi").push(why))));
+        lock.attach(a.clone());
+        lock.set(true).expect("acceso");
+        a.fail_off.store(true, std::sync::atomic::Ordering::SeqCst);
+        lock.attach(b.clone());
+        assert_eq!(told.lock().expect("avvisi").len(), 1, "un solo avviso");
+        assert!(!lock.has_orphan());
+        lock.set(true).expect("la radio B trasmette");
+        assert!(b.is_on());
+    }
+
+    #[test]
+    fn a_cat_orphan_with_a_vox_chain_is_abandoned() {
+        let vox = rec_ptt(None);
+        let (lock, _old) = with_orphan(Some("cat:Hamlib:1:COM3"), &vox);
+        assert!(!lock.has_orphan());
+        assert_eq!(lock.abandoned(), 1);
+    }
+
+    #[test]
+    fn an_orphan_that_turns_off_by_itself_goes_away_without_the_abandon_notice() {
+        let next = rec_ptt(Some("serial:COM3"));
+        let (lock, old) = with_orphan(Some("serial:COM3"), &next);
+        assert!(lock.has_orphan());
+        old.fail_off.store(false, std::sync::atomic::Ordering::SeqCst);
+        lock.set(false).expect("spento");
+        assert!(!lock.has_orphan() && !old.is_on());
+        assert_eq!(lock.abandoned(), 0);
+    }
+
+    #[test]
+    fn two_attaches_in_a_row_do_not_stack_orphans() {
+        let next = rec_ptt(Some("serial:COM3"));
+        let (lock, _old) = with_orphan(Some("serial:COM3"), &next);
+        assert!(lock.has_orphan());
+        lock.attach(rec_ptt(Some("serial:COM3")));
+        assert!(!lock.has_orphan(), "al secondo attach l'orfano ancora acceso si abbandona");
+        assert_eq!(lock.abandoned(), 1);
+    }
+
+    #[test]
+    fn the_same_port_is_released_before_it_is_reopened() {
+        let old = rec_ptt(Some("serial:COM3"));
+        let lock = TxInterlock::new();
+        lock.attach(old.clone());
+        lock.set(true).expect("acceso");
+        lock.release_target("serial:COM3");
+        assert!(!old.is_on(), "ultimo spegnimento");
+        assert!(!lock.is_on());
+        assert_eq!(Arc::strong_count(&old), 1, "il PTT vecchio e' lasciato cadere: la porta si libera");
     }
 
     #[test]
@@ -491,6 +762,12 @@ mod interlock_tests {
 mod tests {
     use super::*;
 
+    fn fast_tracker() -> Arc<ReleaseTracker> {
+        let t = ReleaseTracker::new();
+        t.set_timing(ReleaseTiming::fast());
+        t
+    }
+
     #[test]
     fn not_released_text_says_the_cause_once() {
         let from_cat = TxError::Ptt("PTT non spento: Errore sulla porta seriale".into());
@@ -498,6 +775,7 @@ mod tests {
         assert_eq!(not_released_text(&TxError::Ptt("OmniRig non risponde".into())), "PTT non spento: OmniRig non risponde");
         assert_eq!(not_released_text(&TxError::Busy), format!("PTT non spento: {}", TxError::Busy));
     }
+    use crate::ptt_release::ReleaseTiming;
     use std::{
         io::{BufRead, Write},
         net::{SocketAddr, TcpListener},
@@ -553,7 +831,7 @@ mod tests {
         let (addr, seen) = fake_server(|_| "RPRT 0\n");
         let ptt: Arc<dyn Ptt> = Arc::new(HamlibPtt::new(client(addr)));
         {
-            let _guard = PttGuard::engage(Arc::clone(&ptt)).expect("acceso");
+            let _guard = PttGuard::engage(Arc::clone(&ptt), fast_tracker()).expect("acceso");
             assert!(ptt.is_on());
         }
         assert!(!ptt.is_on());
@@ -566,7 +844,7 @@ mod tests {
         let ptt: Arc<dyn Ptt> = Arc::new(HamlibPtt::new(client(addr)));
         let inner = Arc::clone(&ptt);
         let result = std::thread::spawn(move || {
-            let _guard = PttGuard::engage(inner).expect("acceso");
+            let _guard = PttGuard::engage(inner, fast_tracker()).expect("acceso");
             panic!("prova");
         })
         .join();
@@ -579,23 +857,49 @@ mod tests {
     fn a_refused_t1_is_an_error_and_an_off_is_still_sent() {
         let (addr, seen) = fake_server(|cmd| if cmd == "T 1" { "RPRT -9\n" } else { "RPRT 0\n" });
         let ptt: Arc<dyn Ptt> = Arc::new(HamlibPtt::new(client(addr)));
-        let err = PttGuard::engage(Arc::clone(&ptt)).err().expect("doveva fallire");
+        let err = PttGuard::engage(Arc::clone(&ptt), fast_tracker()).err().expect("doveva fallire");
         assert!(matches!(err, TxError::Ptt(_)), "{err}");
         assert!(!ptt.is_on());
         assert_eq!(seen.try_iter().collect::<Vec<_>>(), ["T 1", "T 0"]);
     }
 
     #[test]
-    fn a_failing_off_is_retried_and_leaves_the_state_on() {
+    fn a_guard_that_falls_stops_the_audio_before_the_first_off() {
+        use std::sync::atomic::AtomicBool;
+        type Order = Arc<std::sync::Mutex<Vec<&'static str>>>;
+        struct Spy(Order, AtomicBool);
+        impl Ptt for Spy {
+            fn set(&self, on: bool) -> Result<(), TxError> {
+                self.0.lock().expect("ordine").push(if on { "on" } else { "off" });
+                self.1.store(on, std::sync::atomic::Ordering::SeqCst);
+                Ok(())
+            }
+            fn is_on(&self) -> bool {
+                self.1.load(std::sync::atomic::Ordering::SeqCst)
+            }
+        }
+        let order: Order = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let ptt: Arc<dyn Ptt> = Arc::new(Spy(Arc::clone(&order), AtomicBool::new(false)));
+        let stop_order = Arc::clone(&order);
+        {
+            // l'uscita da `execute` con un errore lascia cadere la guardia con il PTT acceso
+            let _guard = PttGuard::engage(ptt, fast_tracker()).expect("acceso").with_stop_audio(Box::new(move || stop_order.lock().expect("ordine").push("stop")));
+        }
+        assert_eq!(*order.lock().expect("ordine"), ["on", "stop", "off"]);
+    }
+
+    #[test]
+    fn a_failing_off_climbs_the_ladder_and_leaves_the_state_on() {
         let (addr, seen) = fake_server(|cmd| if cmd == "T 0" { "RPRT -5\n" } else { "RPRT 0\n" });
         let ptt = HamlibPtt::new(client(addr));
         ptt.set(true).expect("T 1");
-        let mut guard = PttGuard { ptt: Arc::new(ptt), armed: true };
+        let mut guard = PttGuard { ptt: Arc::new(ptt), tracker: fast_tracker(), armed: true, stop_audio: None };
         assert!(guard.release().is_err());
         assert!(guard.ptt.is_on(), "lo stato deve restare acceso: lo spegnimento e' fallito");
         assert!(guard.armed);
         let sent: Vec<String> = seen.try_iter().collect();
-        assert_eq!(sent.iter().filter(|c| *c == "T 0").count(), 3, "{sent:?}");
+        assert_eq!(sent.iter().filter(|c| *c == "T 0").count(), 5, "un tentativo per gradino della scala: {sent:?}");
+        assert!(guard.tracker.is_stuck());
         guard.armed = false; // niente tentativi in piu' alla chiusura della prova
     }
 

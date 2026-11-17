@@ -126,6 +126,11 @@ impl FakeRigctld {
         self.state.ptt.load(Ordering::SeqCst)
     }
 
+    /// Il PTT acceso o spento sulla radio da fuori (rimasto acceso da una trasmissione interrotta).
+    pub fn set_ptt(&self, on: bool) {
+        self.state.ptt.store(on, Ordering::SeqCst);
+    }
+
     pub fn split(&self) -> bool {
         self.state.split.load(Ordering::SeqCst)
     }

@@ -77,6 +77,12 @@ pub enum TxAlertKind {
     FoxDetected,
     /// Hound spento da solo: il DX risponde con messaggi standard o si e' scelto un altro DX (`detail` = il DX).
     HoundOff,
+    /// Il PTT non risulta spento e la radio potrebbe essere in trasmissione (CAT caduto, cavo staccato): la trasmissione resta bloccata finche'
+    /// non e' confermato spento (`detail` = il motivo, `value` = i tentativi fatti, `limit` = i secondi trascorsi).
+    PttStuck,
+    /// Il PTT di una radio che non c'e' piu' (cavo tolto, profilo cambiato) non e' stato confermato spento e Aurora ha smesso di provarci: la
+    /// radio va controllata a mano (`detail` = il motivo). Resta nello stato finche' non si chiude o non si conferma uno spegnimento.
+    PttAbandoned,
 }
 
 /// Un avviso di sicurezza della trasmissione, da mostrare finche' resta nello stato.

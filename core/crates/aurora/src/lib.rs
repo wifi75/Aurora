@@ -1727,6 +1727,9 @@ impl engine_native::TxPort for EngineTxPort {
 /// (CAT, oppure DTR/RTS sulla porta indicata). Se la radio non e' collegata la trasmissione non parte.
 struct CatPtt {
     cat: Arc<rig_control::cat::CatService>,
+    /// La radio per cui e' stata costruita la catena (`cat_target` alla costruzione): se il profilo cambia, i comandi di questa catena non
+    /// devono arrivare alla radio nuova (e la vecchia, ancora in trasmissione, diventa un orfano con il suo avviso).
+    target: String,
     controls: Arc<engine_native::NativeControls>,
     free_tx: FreeTx,
     on: std::sync::atomic::AtomicBool,
@@ -1734,6 +1737,7 @@ struct CatPtt {
 
 impl tx_native::Ptt for CatPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        radio_guard(&self.target, &cat_target(&self.cat))?;
         if on {
             cat_tx_split(&self.cat, &self.controls, &self.free_tx);
         }
@@ -1745,6 +1749,59 @@ impl tx_native::Ptt for CatPtt {
     fn is_on(&self) -> bool {
         self.on.load(std::sync::atomic::Ordering::SeqCst)
     }
+
+    fn recover_off(&self) -> Result<(), tx_native::TxError> {
+        radio_guard(&self.target, &cat_target(&self.cat))?;
+        cat_recover_off(&self.cat)?;
+        self.on.store(false, std::sync::atomic::Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn target(&self) -> Option<String> {
+        Some(self.target.clone())
+    }
+}
+
+/// Il profilo della radio e' cambiato dopo la costruzione della catena: niente comandi alla radio nuova a nome di quella vecchia.
+fn radio_guard(stored: &str, live: &str) -> Result<(), tx_native::TxError> {
+    if stored == live { Ok(()) } else { Err(tx_native::TxError::Ptt("radio cambiata".into())) }
+}
+
+/// A cosa comanda il PTT dal CAT: il sistema di controllo e la radio scelta (per capire se una catena ricostruita parla con la stessa radio).
+fn cat_target(cat: &rig_control::cat::CatService) -> String {
+    let c = cat.config();
+    format!("cat:{:?}:{}:{}", c.backend, c.model, c.port)
+}
+
+/// Le altre vie per spegnere il PTT quando `T 0` non passa (solo con Hamlib): un altro `T 0` e, se fallisce, la riapertura del CAT (la fa il
+/// thread del collegamento, che manda `T 0` appena la radio risponde); poi, con PTT su RTS o DTR, la linea della porta si abbassa aprendola
+/// (la porta tenuta da rigctld risulta occupata: si ignora).
+fn cat_recover_off(cat: &rig_control::cat::CatService) -> Result<(), tx_native::TxError> {
+    if cat.backend() != rig_control::cat_config::Backend::Hamlib {
+        return Err(tx_native::TxError::Ptt("nessuna altra via per spegnere il PTT con questo CAT".into()));
+    }
+    let config = cat.config();
+    let why = match cat.hamlib() {
+        Ok(rig) => match rig.force_ptt_off() {
+            Ok(()) => return Ok(()),
+            Err(e) => e.to_string(),
+        },
+        Err(e) => e.to_string(),
+    };
+    let line = match config.ptt {
+        rig_control::cat_config::PttMethod::Rts => Some(tx_native::Line::Rts),
+        rig_control::cat_config::PttMethod::Dtr => Some(tx_native::Line::Dtr),
+        _ => None,
+    };
+    if let Some(line) = line {
+        let port = if config.ptt_port.is_empty() { config.port.clone() } else { config.ptt_port.clone() };
+        match tx_native::SerialLinePtt::open(&port, line) {
+            // la porta e' stata aperta e la linea abbassata; chiudendola resta bassa
+            Ok(_lowered) => return Ok(()),
+            Err(e) => tracing::debug!("PTT: linea {port} non abbassata: {e}"),
+        }
+    }
+    Err(tx_native::TxError::Ptt(why))
 }
 
 /// Prima del PTT: lo split per la trasmissione che parte. Del motore: la frequenza audio dell'onda al CAT ([`cat_tx_audio`]). Libera (modi
@@ -1823,6 +1880,10 @@ impl tx_native::Ptt for OmniRigSplitPtt {
     fn is_on(&self) -> bool {
         self.inner.is_on()
     }
+
+    fn target(&self) -> Option<String> {
+        self.inner.target()
+    }
 }
 
 /// Il PTT dalla radio collegata: `trx` con TCI, `TX1;` / `TX0;` con FT-991(A) Link, `setPtt` con Cat4OM, `T 1` / `T 0` di rigctld con Hamlib.
@@ -1844,11 +1905,17 @@ fn cat_ptt(cat: &rig_control::cat::CatService, on: bool) -> Result<(), tx_native
 /// (senza riavviare Aurora). Con Hamlib e una radio scelta il PTT passa da rigctld; con «VOX» o senza radio nessun comando.
 struct AutoPtt {
     cat: Arc<rig_control::cat::CatService>,
+    /// La radio con cui e' stato acceso il PTT (la radio puo' essere scelta dopo l'avvio: conta quella dell'accensione).
+    keyed_on: std::sync::Mutex<Option<String>>,
     on: std::sync::atomic::AtomicBool,
 }
 
 impl tx_native::Ptt for AutoPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        let live = cat_target(&self.cat);
+        if !on && let Some(stored) = self.keyed_on.lock().ok().and_then(|k| k.clone()) {
+            radio_guard(&stored, &live)?;
+        }
         let radio = self.cat.config();
         let by_rig = radio.ptt != rig_control::cat_config::PttMethod::Vox
             && match radio.backend {
@@ -1862,12 +1929,31 @@ impl tx_native::Ptt for AutoPtt {
             tracing::warn!("trasmissione con il VOX: nessuna radio Hamlib con PTT scelta in Impostazioni › Stazione › Radio");
             aurora_core::notice::notice("no_radio", "");
         }
+        if let Ok(mut k) = self.keyed_on.lock() {
+            *k = if on { Some(live) } else { None };
+        }
         self.on.store(on, std::sync::atomic::Ordering::SeqCst);
         Ok(())
     }
 
     fn is_on(&self) -> bool {
         self.on.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn recover_off(&self) -> Result<(), tx_native::TxError> {
+        if let Some(stored) = self.keyed_on.lock().ok().and_then(|k| k.clone()) {
+            radio_guard(&stored, &cat_target(&self.cat))?;
+        }
+        cat_recover_off(&self.cat)?;
+        self.on.store(false, std::sync::atomic::Ordering::SeqCst);
+        if let Ok(mut k) = self.keyed_on.lock() {
+            *k = None;
+        }
+        Ok(())
+    }
+
+    fn target(&self) -> Option<String> {
+        self.keyed_on.lock().ok().and_then(|k| k.clone()).or_else(|| Some(cat_target(&self.cat)))
     }
 }
 
@@ -2018,17 +2104,27 @@ fn ptt_method_for(config: &Config, cat: &rig_control::cat::CatService) -> String
 fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, controls: &Arc<engine_native::NativeControls>, free_tx: &FreeTx, interlock: &Arc<tx_native::TxInterlock>, sink: Box<dyn tx_native::AudioSink>) -> Option<Arc<tx_native::Transmitter>> {
     let port = config.ptt_port.clone().unwrap_or_default();
     let method = ptt_method_for(config, cat);
+    // il PTT di una radio che non c'e' piu' e' stato abbandonato: avviso persistente nello stato della stazione (chiude con un clic, o alla
+    // prossima trasmissione conclusa con il PTT spento)
+    let abandoned_alerts = Arc::clone(controls);
+    interlock.set_abandon_hook(Some(Arc::new(move |why| {
+        abandoned_alerts.raise_alert(aurora_core::TxAlert { kind: aurora_core::TxAlertKind::PttAbandoned, detail: why, value: None, limit: None }, None);
+    })));
     // lo split della radio vale solo con il PTT dal CAT (con un PTT su seriale o VOX la radio non riceve la frequenza di trasmissione)
     if method == "cat" || method == "omnirig" {
         let probe_cat = Arc::clone(cat);
         controls.set_split_probe(Arc::new(move || cat_split_active(&probe_cat)));
     }
     let ptt: Arc<dyn tx_native::Ptt> = match method.as_str() {
-        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx), on: std::sync::atomic::AtomicBool::new(false) }),
+        "cat" => Arc::new(CatPtt { cat: Arc::clone(cat), target: cat_target(cat), controls: Arc::clone(controls), free_tx: Arc::clone(free_tx), on: std::sync::atomic::AtomicBool::new(false) }),
         // nessun PTT da JTDX e nessuna radio ancora scelta all'avvio: si decide a ogni trasmissione
-        "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), on: std::sync::atomic::AtomicBool::new(false) }),
+        "vox" if config.ptt_method == "vox" => Arc::new(AutoPtt { cat: Arc::clone(cat), keyed_on: std::sync::Mutex::new(None), on: std::sync::atomic::AtomicBool::new(false) }),
         "rts" | "dtr" => {
             let line = if method == "rts" { tx_native::Line::Rts } else { tx_native::Line::Dtr };
+            // la COM e' esclusiva: se la tiene ancora il PTT della catena di prima (o il suo orfano) si spegne per l'ultima volta e si lascia cadere
+            if let Some(target) = tx_native::serial_target(&port) {
+                interlock.release_target(&target);
+            }
             match tx_native::SerialLinePtt::open(&port, line) {
                 Ok(ptt) => Arc::new(ptt),
                 // la porta la tiene un altro programma: e' la configurazione della stazione, si dice a schermo quale (non un rapporto d'errore)
@@ -2074,9 +2170,24 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
                     Err(e) => tracing::warn!("Tx delay non applicato: {e}"),
                 }
             }));
+            // il PTT che non si spegne: avviso fisso nello stato della stazione (finche' non e' spento davvero), che l'interfaccia mostra in rosso
+            let alerts = Arc::clone(controls);
+            // una catena ricostruita non lascia un avviso della precedente: se il PTT e' ancora bloccato lo ridice subito il nuovo trasmettitore
+            alerts.clear_alert(aurora_core::TxAlertKind::PttStuck);
+            transmitter.set_stuck_hook(Some(Arc::new(move |info| match info {
+                Some(i) => alerts.raise_alert(
+                    aurora_core::TxAlert { kind: aurora_core::TxAlertKind::PttStuck, detail: i.reason, value: Some(i.attempts as f32), limit: Some(i.secs as f32) },
+                    None,
+                ),
+                None => alerts.clear_alert(aurora_core::TxAlertKind::PttStuck),
+            })));
             let flag = Arc::clone(controls);
             transmitter.set_listener(Some(Arc::new(move |state| {
                 flag.transmitting.store(state == tx_native::TxState::Transmitting, std::sync::atomic::Ordering::Relaxed);
+                // una trasmissione conclusa con il PTT spento: l'avviso della radio abbandonata ha fatto il suo tempo
+                if state == tx_native::TxState::Idle {
+                    flag.clear_alert(aurora_core::TxAlertKind::PttAbandoned);
+                }
             })));
             tracing::info!("trasmissione pronta: PTT {}{}", method, config.ptt_port.as_deref().filter(|_| method == "rts" || method == "dtr").map(|p| format!(" su {p}")).unwrap_or_default());
             Some(transmitter)
@@ -3525,4 +3636,16 @@ mod tests {
 #[cfg(not(windows))]
 fn port_owner(_port: u16) -> Option<String> {
     None
+}
+
+#[cfg(test)]
+mod ptt_radio_guard_tests {
+    use super::radio_guard;
+
+    #[test]
+    fn a_changed_radio_profile_refuses_the_commands_of_the_old_chain() {
+        assert!(radio_guard("cat:Hamlib:1:COM3", "cat:Hamlib:1:COM3").is_ok());
+        let e = radio_guard("cat:Hamlib:1:COM3", "cat:Hamlib:2:COM4").expect_err("radio cambiata");
+        assert!(e.to_string().contains("radio cambiata"), "{e}");
+    }
 }
