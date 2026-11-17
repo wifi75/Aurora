@@ -1,0 +1,19 @@
+/** Schede spostabili della vista contest (SSB, CW, RTTY, PSK). [it, en, de, fr, es, pt] */
+export const contestSchedeStrings = {
+  'ctw.bar': ['Schede del contest', 'Contest cards', 'Contest-Karten', 'Fiches du contest', 'Tarjetas del contest', 'Cartões do contest'],
+  'ctw.card.log': ['Log del contest', 'Contest log', 'Contest-Log', 'Log du contest', 'Log del contest', 'Log do contest'],
+  'ctw.card.cluster': ['DX Cluster', 'DX Cluster', 'DX-Cluster', 'DX Cluster', 'DX Cluster', 'DX Cluster'],
+  'ctw.card.rate': ['Punteggio e ritmo', 'Score and rate', 'Punkte und Rate', 'Score et cadence', 'Puntuación y ritmo', 'Pontuação e ritmo'],
+  'ctw.card.rx': ['Ricezione', 'Receive', 'Empfang', 'Réception', 'Recepción', 'Receção'],
+  'ctw.card.tx': ['Trasmissione', 'Transmit', 'Senden', 'Émission', 'Transmisión', 'Transmissão'],
+  'ctw.card.wf': ['Cascata', 'Waterfall', 'Wasserfall', 'Cascade', 'Cascada', 'Cascata'],
+  'ctw.multTip': ['{value}: lavorato su {bands}', '{value}: worked on {bands}', '{value}: gearbeitet auf {bands}', '{value} : contacté sur {bands}', '{value}: trabajado en {bands}', '{value}: trabalhado em {bands}'],
+  'ctw.multTipOnce': ['{value}: lavorato', '{value}: worked', '{value}: gearbeitet', '{value} : contacté', '{value}: trabajado', '{value}: trabalhado'],
+  'ctw.multTipNo': ['{value}: ancora da lavorare', '{value}: not worked yet', '{value}: noch nicht gearbeitet', '{value} : pas encore contacté', '{value}: aún sin trabajar', '{value}: ainda por trabalhar'],
+  'ctw.score': ['Punteggio', 'Score', 'Punktestand', 'Score', 'Puntuación', 'Pontuação'],
+  'ctw.c.avg': ['Media', 'Avg', 'Schnitt', 'Moy.', 'Media', 'Média'],
+  'ctw.rateTitle': ['Ritmo (QSO all’ora)', 'Rate (QSOs per hour)', 'Rate (QSOs pro Stunde)', 'Cadence (QSO par heure)', 'Ritmo (QSO por hora)', 'Ritmo (QSO por hora)'],
+  'ctw.rate10': ['Ultimi 10 minuti', 'Last 10 minutes', 'Letzte 10 Minuten', '10 dernières minutes', 'Últimos 10 minutos', 'Últimos 10 minutos'],
+  'ctw.rate60': ['Ultima ora', 'Last hour', 'Letzte Stunde', 'Dernière heure', 'Última hora', 'Última hora'],
+  'ctw.rateAvg': ['Media del contest', 'Contest average', 'Durchschnitt im Contest', 'Moyenne du contest', 'Media del contest', 'Média do contest'],
+} as const;

@@ -235,3 +235,18 @@ Domande da chiarire:
 4. **Super check «N+1»**: confermare la regola di somiglianza (un carattere in piu', in meno o diverso).
 5. **Cambi Banda con due radio**: cosa fa «Qsy OK» (conferma che l'operatore ha cambiato banda sulla radio dei moltiplicatori, oppure comanda la radio?).
 6. Quali schede appartengono a tutti i contest HF e quali sono per contest (per decidere le schede di base che Aurora apre senza `[[scheda]]`).
+
+## 6. Vista a schede spostabili: cosa c'e' e cosa manca (2026-11-17)
+
+Con un contest attivo la pagina dei modi testuali (SSB, CW, RTTY, PSK) usa `ContestWorkspace.tsx`: griglia a 12 colonne come i Satelliti (`components/DashGrid.tsx`, `lib/dashGrid.ts`), disposizione salvata per contest e per vista in `aurora.contest.layout.<id>.ssb` o `.text` (`lib/contestLayout.ts`, versione dello schema 1, scritta con l'altezza di ogni scheda), blocco e «Ripristina disposizione». Senza contest la pagina e' quella di prima (SSB con `SsbContestView`, gli altri modi con le finestre RX/TX).
+
+Schede presenti: Inserimento QSO (`EntryCard`), Log e DX Cluster (`DigiLog` con `view`), Punteggio e ritmo (`RateCard`), Statistiche (`StatsCard`, tabella con colonna Media), una scheda per tipo di moltiplicatore (`MultsCard`, griglia di caselle con i punti delle bande); nella vista testo anche Ricezione, Trasmissione e Cascata (gli stessi elementi della pagina senza contest). Il rotore resta la finestrella mobile di sempre.
+
+Limiti noti, dove il core non da' ancora il dato (non inventati nell'interfaccia):
+
+- **Moltiplicatori per modo** (CW/Fonia, per esempio ARRL 10): `griglia` ha solo tipo, valore e bande; il modo sta nella chiave interna del core (`#CW`/`#SSB`) e non esce. La scheda mostra un valore come lavorato se lo e' in uno dei due modi. Serve in `CellaMolt` un campo `modi` (come `bande`) e il parametro `per_modo` della scheda.
+- **Ritmo sugli ultimi 10, 50 e 100 QSO** e punti all'ora, riga «1 moltiplicatore vale»: non ci sono nel core (`Punteggio` ha `rate10`, `rate60`, `media_ora`); la scheda del ritmo mostra solo quelli.
+- **QSO per ora per banda**: il grafico e' ancora quello a barre semplici delle ultime 12 ore (senza i colori delle bande); i colori delle bande ci sono solo nei punti dei moltiplicatori (`lib/contestBandColors.ts`).
+- **Schede dichiarate dal contest** (`[[scheda]]` di `contest.toml`: `colonne`, `righe`, `x`, `y`): la disposizione di partenza e' quella di `contestLayout.ts` per tutti i contest; le misure del contest non sono ancora lette (il lettore e' dell'altro lavoro).
+- **Check Call, Check Mult, QSY rapidi, Spot Alert, Super Check, matrice dei paesi**: non sono ancora schede (vedi sopra).
+- **Modi testuali**: i pannelli dei segnali di banda e del radar CW/RTTY (`BandSignals`, `RadarList`, `RbnList`) non hanno una scheda: con un contest attivo non compaiono.
