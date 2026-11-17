@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Attivita' di banda: i km sono centrati nell'altezza della riga, alla stessa altezza del paese (stavano piu' in alto).
 - Radio con Hamlib (Icom come l'IC-756PRO): leggere il VFO B per il display esteso non lascia piu' la radio sul VFO B; se la lettura ha cambiato il VFO, Aurora la riporta dov'era. Non provato su una radio vera: se dopo un riavvio la radio va ancora sul VFO B, servono il pacchetto di assistenza e le impostazioni.
 - Log del contest: due colonne nuove, «Scambio inv.» e «Scambio ric.» (seriale, stato o sezione), accese di base e scelte con la matita. Lo scambio ora si salva anche nel log interno (nuove colonne, i QSO gia' registrati restano com'erano e non lo mostrano). Segnalazione #75.
 - Impostazioni › Radio: cercando una marca (per esempio «icom») la tendina elenca tutte le radio di quella marca, non solo le prime 12 (prima l'IC-756PRO e molte altre restavano nascoste).

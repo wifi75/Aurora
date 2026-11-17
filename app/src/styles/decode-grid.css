@@ -127,8 +127,10 @@
   text-align: left;
 }
 
+/* i km: il testo al centro dell'altezza della riga, come il paese (prima stava in alto nella cella e non era allineato) */
 .decode-list.decode-list--cols .decode-row .dl-cell .decode-where .w-km:not(:empty) {
-  display: inline !important;
+  display: flex !important;
+  align-items: center;
 }
 
 .decode-list.decode-list--cols .dl-cell--tag {
