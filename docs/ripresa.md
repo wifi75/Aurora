@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.287 (da pubblicare, 2026-11-17)
+## Nella 0.11.287 (pubblicata 2026-11-17T19:45:26Z)
 Pacchetto di assistenza completo (`core/crates/aurora/src/diagnostica.rs`, `rig-control/src/trace.rs`, `app/src/lib/uiDiagnostics.ts`, rotta `POST /api/v1/diagnostics/ui-snapshot`, `docs/pacchetto-assistenza.md`): **dal prossimo pacchetto del PC dell'amico con IC-756PRO (VFO B e USB-D dopo il riavvio) si legge `diagnostica/cat-comandi.log`**: cercare i comandi `V`, `S`, `F`, `M`, `X` attorno a «# collegato a rigctld» e «# chiusura». Hamlib 4.7.2 non ha i modi dati per la famiglia 756 (`rigctl -m 3027 -u`): Aurora non vede USB-D (lo mostra «USB»); il ripiego su USB non si scrive piu' se la radio e' gia' in USB (`set_cat_mode`). VFO: `RigctldClient::vfo` accetta solo nomi di sole lettere (`is_vfo_name`). Da fare ancora: pacchetti vecchi sul servizio (R2 `aurora-rapporti` e D1 `pacchetti`) da cancellare tenendo quelli del PC dell'amico (installazione 60cef8a8) e di Luc (#75, 3B07DEE5); riscrivere i 12 commit pubblicati con autore `unknown <email personale>` e trailer (serve la regola del ramo main sospesa; vedi la memoria `aurora-trailer-da-togliere-dopo-release-0-11-286`).
 
 ## Nella 0.11.286 (pubblicata 2026-11-17T18:32:12Z)

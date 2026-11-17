@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.287',
-    released: '2026-11-17T21:00:00Z',
+    released: '2026-11-17T19:45:26Z',
     kind: 'new',
     title: [
       'Pacchetto di assistenza completo',
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.287',
-    released: '2026-11-17T21:00:00Z',
+    released: '2026-11-17T19:45:26Z',
     kind: 'fixed',
     title: [
       'Icom senza modo dati: l’USB-D resta',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.287',
-    released: '2026-11-17T21:00:00Z',
+    released: '2026-11-17T19:45:26Z',
     kind: 'fixed',
     title: [
       'Protezione del VFO più sicura',
