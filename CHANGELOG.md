@@ -2,8 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.289 - 2026-11-17
+
 - PTT acceso e spento a fine QSO (#71): quando l'ultimo messaggio del DX (il suo 73) viene decodificato dopo l'inizio del periodo e il QSO risulta finito, la trasmissione gia' partita (di solito l'RR73) si lascia finire, invece di fermarla dopo un secondo; non ne parte nessun'altra. Come WSJT-X: la fine automatica del QSO (`cease_auto_Tx_after_QSO`, `0x14025d290` in `wsjtx.exe`) spegne solo l'invio automatico con `auto_tx_mode(false)`; l'interruzione immediata (`on_stopTxButton_clicked` → `requestTxStop` → `stopTx`) e' solo di «Halt Tx». Halt e le altre cause (watchdog, DX che risponde a un altro) fermano subito come prima.
 - Pacchetto di assistenza: dell'interfaccia si dicono anche i valori numerici del layout salvato (larghezza e proporzione delle finestre, colonne), le misure dei riquadri della pagina aperta e l'ultima pagina di lavoro (il pacchetto parte spesso dalle Impostazioni).
+- Comandi (finestra a se'): piu' altezza per i pulsanti (tolto il filetto sopra la riga, meno spazio sopra i pulsanti) cosi' il bordo inferiore di «Log QSO», «Canc DX» e degli altri non si taglia.
 
 ## 0.11.288 - 2026-11-17
 
