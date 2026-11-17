@@ -49,6 +49,9 @@ export function alertText(a: TxAlert, t: ReturnType<typeof useT>): string {
     // #69: senza lo split della radio sotto 1500 Hz la radio non sposta la frequenza di trasmissione (avviso di WSJT-X)
     return parts.includes('no_radio_split') ? `${head}. ${t('tx.alert.houndNoRadioSplit')}` : head;
   }
+  // il PTT non spento ha il suo avviso rosso fisso (PttStuckBanner): qui solo il motivo in breve, se mai arrivasse in questa lista
+  if (a.kind === 'ptt_abandoned') return t('tx.pttAbandoned.title');
+  if (a.kind === 'ptt_stuck') return t('tx.pttStuck.short', { reason: a.detail ?? '' });
   if (a.kind === 'inhibited') return t('tx.alert.inhibited', { holder: a.detail || '—' });
   return t('tx.alert.unrepresentable', { text: a.detail ?? '' });
 }
@@ -224,9 +227,9 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
             {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi */}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}
-          {status.tx_alerts && status.tx_alerts.length > 0 ? (
+          {status.tx_alerts && status.tx_alerts.some((a) => a.kind !== 'ptt_stuck' && a.kind !== 'ptt_abandoned') ? (
             <div className="tx-alerts" role="alert">
-              {status.tx_alerts.map((a) => (
+              {status.tx_alerts.filter((a) => a.kind !== 'ptt_stuck' && a.kind !== 'ptt_abandoned').map((a) => (
                 <p key={a.kind} className="tx-alert" title={t('tip.tx.alert')}>
                   {alertText(a, t)}
                 </p>

@@ -29,7 +29,7 @@ export const RadioMetersSchema = z.object({
 export type RadioMeters = z.infer<typeof RadioMetersSchema>;
 
 export const TxAlertSchema = z.object({
-  kind: z.enum(['unrepresentable', 'high_swr', 'inhibited', 'hound_on', 'fox_detected', 'hound_off']),
+  kind: z.enum(['unrepresentable', 'high_swr', 'inhibited', 'hound_on', 'fox_detected', 'hound_off', 'ptt_stuck', 'ptt_abandoned']),
   detail: z.string().optional(),
   value: z.number().optional(),
   limit: z.number().optional(),

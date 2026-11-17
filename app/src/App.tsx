@@ -46,6 +46,7 @@ import { ExportPage } from './pages/ExportPage';
 import { News } from './pages/News';
 import { Wiki } from './pages/Wiki';
 import { Toaster } from './components/Toaster';
+import { PttAbandonedNotice, PttStuckBanner } from './components/PttStuckBanner';
 import { ReportsNotice } from './components/ReportsNotice';
 import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
@@ -280,6 +281,9 @@ export function App() {
     {settingsOpen ? <SettingsWindow embedded initialTab={route.name === 'settings' ? route.tab : undefined} onClose={() => { location.hash = beforeSettings.current; }} /> : null}
     {/* i messaggi brevi fuori da `.app-shell`: con le Impostazioni aperte (pagina sotto inert) si devono poter chiudere */}
     <Toaster />
+    {/* il PTT che non si spegne (radio scollegata): avviso rosso fisso su ogni pagina, con le Impostazioni aperte compreso */}
+    {session.data ? <PttStuckBanner /> : null}
+    {session.data ? <PttAbandonedNotice /> : null}
     {session.data ? <SplitExternalWatcher /> : null}
     {/* fuori dalla pagina principale, dopo le Impostazioni: quando sono aperte la pagina sotto e' disattivata (inert) e la locandina
         dell'aggiornamento, che stava li' dentro, restava nascosta e non cliccabile */}

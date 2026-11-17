@@ -7858,3 +7858,35 @@ html[data-theme='light'] .freq-picker-menu.glass {
   color: var(--text);
   opacity: 1;
 }
+
+/* PTT non spento: avviso rosso fisso, sopra tutto (la radio potrebbe essere in trasmissione) */
+.ptt-stuck {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100200;
+  box-sizing: border-box;
+  width: min(40rem, calc(calc(100vw / var(--ui-zoom, 1)) - 1.5rem));
+  padding: 0.8rem 1rem;
+  color: #fff;
+  background: #b0001e;
+  border: 2px solid #ff8a8a;
+  border-radius: 0.7rem;
+  box-shadow: 0 0.8rem 2.4rem rgb(0 0 0 / 0.55);
+}
+.ptt-stuck-title { margin: 0 0 0.3rem; font-size: 1rem; font-weight: 700; line-height: 1.35; }
+.ptt-stuck-detail { margin: 0 0 0.6rem; font-size: 0.82rem; line-height: 1.4; opacity: 0.92; }
+.ptt-stuck-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ptt-stuck-actions button {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: #b0001e;
+  background: #fff;
+  border: 0;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+.ptt-stuck-actions button:disabled { opacity: 0.6; cursor: default; }
+.ptt-stuck-actions .ptt-stuck-ignore { color: #fff; background: transparent; border: 1px solid #ffb3b3; }
