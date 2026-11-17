@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.288 (da pubblicare, 2026-11-17)
+## Nella 0.11.288 (pubblicata 2026-11-17T20:27:45Z)
 VFO B (IC-756PRO sul VFO B dopo il riavvio): dal pacchetto E3099A60 dell'amico (versione 0.11.287, `diagnostica/cat-comandi.log`) risulta che `v` risponde «funzione non disponibile (-11)» e che l'unico comando di Aurora che tocca il VFO e' `get_vfo_info VFOB` (prima voce di `ITEMS` in `extras.rs`, 183 ms di traffico): Hamlib passa al VFO B e non sa dove tornare. Ora `Item::VfoB` non usa `get_vfo_info` se `v` fallisce (resta la frequenza dello split). **Da verificare con l'amico**: installare la 0.11.288, riavviare con la radio su VFO A e mandare un pacchetto. Pacchetti sul servizio: tenuti solo quelli dell'amico (CA93C2A7, 95BC62CD, 2E27F421, E3099A60), gli altri cancellati il 2026-11-17.
 
 ## Nella 0.11.287 (pubblicata 2026-11-17T19:45:26Z)

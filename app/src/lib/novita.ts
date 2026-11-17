@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.288',
-    released: '2026-11-17T22:00:00Z',
+    released: '2026-11-17T20:27:45Z',
     kind: 'fixed',
     title: [
       'Icom più vecchie: la radio resta sul VFO A',
