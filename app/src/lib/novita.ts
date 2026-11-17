@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.289',
-    released: '2026-11-17T23:00:00Z',
+    released: '2026-11-17T22:24:46Z',
     kind: 'fixed',
     title: [
       'PTT acceso e spento a fine QSO',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.289',
-    released: '2026-11-17T23:00:00Z',
+    released: '2026-11-17T22:24:46Z',
     kind: 'fixed',
     title: [
       'Comandi: pulsanti con il bordo intero',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.289',
-    released: '2026-11-17T23:00:00Z',
+    released: '2026-11-17T22:24:46Z',
     kind: 'changed',
     title: [
       'Pacchetto di assistenza: il layout',

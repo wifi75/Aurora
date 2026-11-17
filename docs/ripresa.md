@@ -2,7 +2,7 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Nella 0.11.289 (da pubblicare, 2026-11-17)
+## Nella 0.11.289 (pubblicata 2026-11-17T22:24:46Z)
 **#71 (PTT acceso e spento a fine QSO)**: dal registro dell'autore (zip allegato) la fine QSO per decodifica tardiva (1,6 s dopo l'inizio del periodo) fermava la trasmissione appena partita (`QEvent::Stopped(QsoFinished|SingleQso)` -> `halt_tx` in `engine-native/src/tx.rs`). Correzione: `let_started_tx_finish` lascia finire la trasmissione gia' in onda (`decode_now_s` >= inizio del periodo). Verificato su **WSJT-X** (`C:\WSJT\wsjtx\bin\wsjtx.exe`, Ghidra 12.1.4, REA): `MainWindow::cease_auto_Tx_after_QSO` `0x14025d290` chiama solo `auto_tx_mode(false)`; solo «Halt Tx» (`on_stopTxButton_clicked` `0x140262290` -> `requestTxStop` `0x1401f4ae0`) interrompe con `stopTx`. In Ghidra servono `ghidra.startup_timeout_ms` alto (1500000) per `wsjtx.exe` (21 MB). Due prove di `engine-native` (`a_band_change_halts_tx...`, `switching_between_ft8_and_ft4...`) falliscono nella corsa completa sotto carico, anche senza questa modifica: da solo passano. Comandi: CSS in fondo a `bozze.css` (filetto tolto, meno margine); non misurato sullo schermo dell'utente. Diagnostica: `layout_salvato`, `riquadri_della_pagina`, `ultima_pagina_di_lavoro` in `uiDiagnostics.ts`.
 
 ## Nella 0.11.288 (pubblicata 2026-11-17T20:27:45Z)
