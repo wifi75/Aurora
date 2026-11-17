@@ -4731,7 +4731,7 @@ html[data-theme='light'] .update-strip--error { color: #a3161b; }
   margin: 0.35rem 0 0;
   padding: 0;
   list-style: none;
-  max-height: 14rem;
+  max-height: min(24rem, 55vh);
   overflow-y: auto;
 }
 

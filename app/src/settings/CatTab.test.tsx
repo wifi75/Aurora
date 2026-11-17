@@ -94,7 +94,10 @@ describe('CatTab', () => {
     await screen.findByText('43 modelli');
     fireEvent.change(screen.getByLabelText('Cerca (marca o modello)'), { target: { value: 'icom' } });
     expect(screen.getByRole('button', { name: 'Icom IC-756PRO' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /^Icom IC-/ }).length).toBe(41);
+    const names = screen.getAllByRole('button', { name: /^Icom IC-/ }).map((b) => b.textContent);
+    expect(names.length).toBe(41);
+    // ordine per numero, non per codice di Hamlib
+    expect(names.indexOf('Icom IC-702')).toBeLessThan(names.indexOf('Icom IC-710'));
   });
 
   it('picks a radio from the searchable list and applies the settings', async () => {

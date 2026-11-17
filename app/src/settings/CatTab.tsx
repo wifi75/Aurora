@@ -361,7 +361,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
 
   const modelList = useMemo(() => models.data ?? [], [models.data]);
   const shown = useMemo(() => {
-    const found = filterModels(modelList, search).slice(0, 300);
+    // in ordine di marca e di numero (IC-703, IC-705, IC-706, IC-7000...), non per codice di Hamlib: cercando una marca la radio si trova scorrendo
+    const found = filterModels(modelList, search).sort((a, b) => modelLabel(a).localeCompare(modelLabel(b), undefined, { numeric: true, sensitivity: 'base' }));
     const current = config ? modelList.find((m) => m.id === config.model) : undefined;
     return current && !found.some((m) => m.id === current.id) ? [current, ...found] : found;
   }, [modelList, search, config]);
