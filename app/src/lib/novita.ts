@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.282',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T08:50:15Z',
     kind: 'changed',
     title: [
       'Satelliti: schede più strette e più basse; DX Cluster più leggibile',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.282',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T08:50:15Z',
     kind: 'fixed',
     title: [
       'PTT che non si spegne: tentativi, avviso e protezione',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.282',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T08:50:15Z',
     kind: 'fixed',
     title: [
       'Logger32 e programmi collegati: la mappa si aggiorna',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.282',
-    released: '2026-11-17T12:00:00Z',
+    released: '2026-11-17T08:50:15Z',
     kind: 'new',
     title: [
       'L’antivirus ha tolto dei file ad Aurora: avviso e guida',

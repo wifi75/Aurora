@@ -2,12 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
-## Dopo la 0.11.281 (commit su main, da rilasciare come 0.11.282)
+## Nella 0.11.282 (pubblicata 2026-11-17T08:50:15Z)
 
 - PTT non spento: `core/crates/tx-native/src/ptt_release.rs` (scala di tentativi), `TxError::PttStuck`, `ptt_stuck` e `TxAlertKind::PttAbandoned` nello stato, `PttStuckBanner.tsx`; `CatPtt`/`AutoPtt` memorizzano il target e rifiutano il comando se la radio e' cambiata. Aperti in `docs/mancante.md`: thread di spegnimento separato.
 - Status UDP: `NativeControls::decoding_guard()` (`engine-native/src/rig.rs`), Status immediato a ogni cambio; ipotesi per la #76 (mappa di Logger32 vuota), da far provare a Pere (la risposta la pubblica il proprietario).
 - Antivirus: `remote-api/src/files_check.rs`, `GET /api/v1/health/files`, `FilesMissingBanner.tsx`, sezione `faq-antivirus` in `guide-faq.ts`. Barra non vista a schermo, non provata con un antivirus vero.
-- Prossimo passo: preparare la 0.11.282 seguendo TASK.md (versione, Novita', Guida, nl, installatore firmato, tag, release, ora vera). Restano: zoom automatico AOS, risposte a Pere (#76) e Luc (#75), VirusTotal.
+- Anche: schede Satelliti con minimi piu' bassi (`SAT_MINS` in `lib/satLayout.ts`), etichette `.cluster-split` leggibili in tema chiaro. Prossimo passo: risposte a Pere (#76, bozza pronta: va detto che la correzione e' nella 0.11.282) e a Luc (#75), VirusTotal, zoom automatico AOS. Restano: zoom automatico AOS, risposte a Pere (#76) e Luc (#75), VirusTotal.
 
 ## Nella 0.11.281 (pubblicata 2026-11-16T22:33:26Z)
 
