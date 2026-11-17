@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { MENU_SLOT_ID } from './MenuBar';
 import type { TextContest, TextContestScore } from '../../api/contestTesto';
 import type { Log4omQso } from '../../api/client';
 import { useT } from '../../i18n';
@@ -69,6 +71,9 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
   const t = useT();
   const narrow = useNarrow();
   const box = useRef<HTMLDivElement>(null);
+  // il segnaposto nella barra dei menu (c'e' solo quando la pagina ha la barra): i pulsanti della disposizione vanno li'
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => setSlot(document.getElementById(MENU_SLOT_ID)), []);
   const mults = useMemo(() => (score ? multCardsOf(score) : []), [score]);
   const [stored, setStored] = useState<StoredLayout>(() => loadContestLayout(contest.id, view, mults));
   // le schede dei moltiplicatori arrivano col punteggio: quelle senza posizione salvata prendono quella di partenza
@@ -150,19 +155,20 @@ function Workspace({ view, contest, score, qso, rsts, rstr, nrsAuto, qsoNr, inSe
     <div className="ssbc ssbc--ws" ref={box}>
       <div className="ctw-bar" role="toolbar" aria-label={t('ctw.bar')}>
         <strong className="ssbc-contest-name">{contest.name}</strong>
-        {narrow ? null : (
-          <>
-            <button type="button" className={`glass ctw-btn${stored.locked ? ' on' : ''}`} aria-pressed={stored.locked} onClick={toggleLock}>
-              <Icon name={stored.locked ? 'lock' : 'unlock'} />
-              {stored.locked ? t('sat.dash.unlock') : t('sat.dash.lock')}
-            </button>
-            <button type="button" className="glass ctw-btn" onClick={reset}>
-              <Icon name="layout" />
-              {t('sat.dash.reset')}
-            </button>
-          </>
-        )}
       </div>
+      {narrow || !slot
+        ? null
+        : createPortal(
+            <>
+              <button type="button" className={`digi-menubar-icon${stored.locked ? ' on' : ''}`} aria-pressed={stored.locked} title={stored.locked ? t('sat.dash.unlock') : t('sat.dash.lock')} aria-label={stored.locked ? t('sat.dash.unlock') : t('sat.dash.lock')} onClick={toggleLock}>
+                <Icon name={stored.locked ? 'lock' : 'unlock'} />
+              </button>
+              <button type="button" className="digi-menubar-icon" title={t('sat.dash.reset')} aria-label={t('sat.dash.reset')} onClick={reset}>
+                <Icon name="layout" />
+              </button>
+            </>,
+            slot,
+          )}
       <DashGrid
         widgets={widgets}
         layout={layout}

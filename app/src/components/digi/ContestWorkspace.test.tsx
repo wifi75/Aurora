@@ -62,6 +62,8 @@ function Harness({ id = 'arrl10', view = 'ssb', withScore = true, text = false }
   const [client] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={client}>
+      {/* il segnaposto nella barra dei menu della pagina: li' vanno i pulsanti della disposizione */}
+      <span id="digi-menubar-slot" />
       <ContestWorkspace
         view={view}
         contest={{ ...contest, id }}

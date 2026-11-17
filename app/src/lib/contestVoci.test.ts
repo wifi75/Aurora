@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newTextContest, type ContestDeclaration, type ExchangeField, type TextContest } from '../api/contestTesto';
-import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, modiAmmessi, moltiplicatoriPerBanda, voceAttiva, voceModificabile, type Voce } from './contestVoci';
+import { BANDE, VOCI, bandaDi, bandeAmmesse, blocchiRegolamento, leggiScore, modiAmmessi, moltiplicatoriPerBanda, pezziInline, voceAttiva, voceModificabile, type Voce } from './contestVoci';
 
 const campo = (nome: string, tipo: string, extra: Partial<ExchangeField> = {}): ExchangeField => ({ nome, tipo, ...extra });
 const dich = (p: Partial<ContestDeclaration>): ContestDeclaration => ({
@@ -232,5 +232,23 @@ describe('regolamento in markdown semplice', () => {
       { tipo: 'elenco', voci: ['numerato'] },
     ]);
     expect(blocchiRegolamento(null)).toEqual([]);
+  });
+});
+
+describe('pezziInline', () => {
+  it('rende grassetto, codice e link web, e lascia il resto com e', () => {
+    const p = pezziInline('**Fonte:** regole <https://www.arrl.org/x.pdf> e `a=usa` e [sito](https://arrl.org) fine');
+    expect(p.map((x) => x.tipo)).toEqual(['grassetto', 'testo', 'link', 'testo', 'codice', 'testo', 'link', 'testo']);
+    expect(p[0]).toEqual({ tipo: 'grassetto', testo: 'Fonte:' });
+    expect(p[2]).toEqual({ tipo: 'link', testo: 'https://www.arrl.org/x.pdf', url: 'https://www.arrl.org/x.pdf' });
+    expect(p[4]).toEqual({ tipo: 'codice', testo: 'a=usa' });
+    expect(p[6]).toEqual({ tipo: 'link', testo: 'sito', url: 'https://arrl.org' });
+  });
+  it('non fa link di schemi diversi da http e https', () => {
+    const p = pezziInline('[x](javascript:alert(1)) <file:///c:/x> [y](ftp://a/b)');
+    expect(p.every((x) => x.tipo !== 'link')).toBe(true);
+  });
+  it('una riga senza segni e un solo pezzo di testo', () => {
+    expect(pezziInline('solo testo')).toEqual([{ tipo: 'testo', testo: 'solo testo' }]);
   });
 });

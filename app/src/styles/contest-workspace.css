@@ -67,3 +67,19 @@
 
 /* la griglia ha un'altezza sua (le schede sono in posizione assoluta): nella colonna della pagina non deve restringersi, scorre la vista */
 .ssbc--ws > .dash { flex: none; }
+
+/* i pulsanti della disposizione stanno all'estremo destro della barra dei menu, solo icone */
+.digi-menubar-slot { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.digi-menubar-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.digi-menubar-icon:hover { border-color: var(--border, #2a3550); background: color-mix(in srgb, var(--text, #888) 10%, transparent); }
+.digi-menubar-icon.on { border-color: var(--accent, #4a8cff); background: color-mix(in srgb, var(--accent, #4a8cff) 18%, transparent); color: var(--accent, #4a8cff); }
+.digi-menubar-icon svg { width: 16px; height: 16px; }
+/* nelle schede il titolo c'e' gia': l'etichetta «TRASMISSIONE» dentro la finestra non serve (compariva due volte) */
+.ctw-card .digi-txwrap::before { content: none; }
+
+/* schede strette: la tabella delle statistiche si adatta alla larghezza (carattere piu' piccolo, colonne vicine, niente barra orizzontale) */
+.ctw-card--stats table, .ctw-card--stats .ctest-table { width: 100%; table-layout: auto; font-size: clamp(0.62rem, 0.9vw, 0.8rem); }
+.ctw-card--stats th, .ctw-card--stats td { padding: 2px 4px; white-space: nowrap; }
+.ctw-card--stats .ctest-table-wrap { max-height: none; overflow-x: auto; }
+.ctw-card--entry .ssbc-row { flex-wrap: wrap; }
+

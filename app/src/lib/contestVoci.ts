@@ -259,3 +259,26 @@ export function blocchiRegolamento(md: string | null | undefined): BloccoRegolam
   chiudi();
   return out;
 }
+
+/** Un pezzo di testo di una riga del regolamento. */
+export type PezzoInline = { tipo: 'testo' | 'grassetto' | 'codice'; testo: string } | { tipo: 'link'; testo: string; url: string };
+
+const SOLO_WEB = /^https?:\/\/[^\s<>"']+$/i;
+
+/** Divide una riga di markdown semplice in testo, **grassetto**, `codice` e link (`[testo](url)` e `<url>`); i link valgono solo se sono http o https. */
+export function pezziInline(riga: string): PezzoInline[] {
+  const out: PezzoInline[] = [];
+  const re = /\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|<(https?:\/\/[^\s>]+)>/g;
+  let da = 0;
+  for (let m = re.exec(riga); m !== null; m = re.exec(riga)) {
+    if (m.index > da) out.push({ tipo: 'testo', testo: riga.slice(da, m.index) });
+    if (m[1] !== undefined) out.push({ tipo: 'grassetto', testo: m[1] });
+    else if (m[2] !== undefined) out.push({ tipo: 'codice', testo: m[2] });
+    else if (m[3] !== undefined && m[4] !== undefined && SOLO_WEB.test(m[4])) out.push({ tipo: 'link', testo: m[3], url: m[4] });
+    else if (m[5] !== undefined && SOLO_WEB.test(m[5])) out.push({ tipo: 'link', testo: m[5], url: m[5] });
+    else out.push({ tipo: 'testo', testo: m[0] });
+    da = m.index + m[0].length;
+  }
+  if (da < riga.length) out.push({ tipo: 'testo', testo: riga.slice(da) });
+  return out;
+}

@@ -24,17 +24,17 @@ export const multCardTipo = (id: string) => id.slice('mult:'.length);
 /** Chiave di memoria della disposizione di un contest in una vista. */
 export const contestLayoutKey = (contestId: string, view: ContestView) => `aurora.contest.layout.${contestId}.${view}`;
 
-/** Misure minime (colonne x righe): le piu' piccole che il contenuto sopporta; sotto, la scheda non si stringe. */
+/** Misure minime (colonne x righe): molto piccole, cosi' ognuno puo' stringere le schede a suo gusto (anche in pagine piccole); il contenuto scorre dentro la scheda. */
 export const CONTEST_MINS: Record<string, Pick<DashSpec, 'minW' | 'minH'>> = {
-  entry: { minW: 4, minH: 7 },
-  log: { minW: 3, minH: 4 },
-  cluster: { minW: 3, minH: 4 },
-  rate: { minW: 2, minH: 5 },
-  stats: { minW: 4, minH: 6 },
-  rx: { minW: 3, minH: 3 },
-  tx: { minW: 3, minH: 3 },
-  wf: { minW: 4, minH: 4 },
-  mult: { minW: 3, minH: 4 },
+  entry: { minW: 2, minH: 5 },
+  log: { minW: 2, minH: 3 },
+  cluster: { minW: 2, minH: 3 },
+  rate: { minW: 2, minH: 3 },
+  stats: { minW: 2, minH: 3 },
+  rx: { minW: 2, minH: 2 },
+  tx: { minW: 2, minH: 2 },
+  wf: { minW: 2, minH: 3 },
+  mult: { minW: 2, minH: 3 },
 };
 
 export const minsOf = (id: string): Pick<DashSpec, 'minW' | 'minH'> => CONTEST_MINS[isMultCard(id) ? 'mult' : id] ?? { minW: 2, minH: 3 };

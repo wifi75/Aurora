@@ -7,7 +7,7 @@ import { askConfirm } from '../ConfirmHost';
 import { checkContestDates, staleWindowProposal, startSerial, windowProposals } from '../../lib/textContest';
 import { toast } from '../../lib/toast';
 import { EXTRA_MAX, cleanExtra, readSection, writeSection } from '../../lib/contestSection';
-import { blocchiRegolamento, inCartella, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
+import { blocchiRegolamento, inCartella, pezziInline, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
 import { browserStorage } from '../../lib/theme';
 import '../../styles/digi-contest.css';
 
@@ -231,6 +231,27 @@ export function fromLocalInput(v: string): string {
 }
 
 /** La finestra di modifica di un contest (nuovo se senza id): tutti i campi del file, in gruppi, con le spiegazioni. */
+/** Una riga del regolamento con grassetto, codice e link (solo web) resi, senza HTML libero. */
+function Inline({ testo }: { testo: string }) {
+  return (
+    <>
+      {pezziInline(testo).map((p, i) =>
+        p.tipo === 'grassetto' ? (
+          <b key={i}>{p.testo}</b>
+        ) : p.tipo === 'codice' ? (
+          <code key={i}>{p.testo}</code>
+        ) : p.tipo === 'link' ? (
+          <a key={i} href={p.url} target="_blank" rel="noopener noreferrer">
+            {p.testo}
+          </a>
+        ) : (
+          <span key={i}>{p.testo}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 export function ContestEditDialog({ contest, onClose, onSaved }: { contest: TextContest; onClose(): void; onSaved(id: string): void }) {
   const t = useT();
   const list = useQuery({ queryKey: ['contest-testo'], queryFn: getTextContests, retry: false }).data;
@@ -345,15 +366,21 @@ export function ContestEditDialog({ contest, onClose, onSaved }: { contest: Text
               <div className="ctest-rules" data-testid="ctest-rules">
                 {blocchiRegolamento(regolamento).map((b, i) =>
                   b.tipo === 'titolo' ? (
-                    <strong key={i}>{b.testo}</strong>
+                    <strong key={i}>
+                      <Inline testo={b.testo} />
+                    </strong>
                   ) : b.tipo === 'elenco' ? (
                     <ul key={i}>
                       {b.voci.map((v, j) => (
-                        <li key={j}>{v}</li>
+                        <li key={j}>
+                          <Inline testo={v} />
+                        </li>
                       ))}
                     </ul>
                   ) : (
-                    <p key={i}>{b.testo}</p>
+                    <p key={i}>
+                      <Inline testo={b.testo} />
+                    </p>
                   ),
                 )}
               </div>

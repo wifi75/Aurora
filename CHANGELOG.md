@@ -16,6 +16,7 @@
 - Cambio modo: l'avviso «la radio non si e' spostata su una frequenza» dice il modo vero (CW, RTTY...) e non sempre «PSK», e aggiunge il motivo che manda il CAT.
 - Satelliti in tema chiaro: l'orologio e' una pastiglia scura con le cifre verdi, leggibile.
 - Pagina dei modi testuali in tema chiaro: la barra sopra la finestra di ricezione (copia, salva, svuota, pausa, cerca) e' chiara e si legge, non piu' scura.
+- Vista contest: «Blocca la disposizione» e «Ripristina disposizione» sono due icone all'estremo destro della barra dei menu; schede molto piu' strette (minimo 2 colonne); niente cascata ne' barra di stato in basso con un contest; l'etichetta «TRASMISSIONE» non compare piu' due volte; il regolamento nelle impostazioni rende grassetto, codice e link.
 
 ## 0.11.283 - 2026-11-17
 

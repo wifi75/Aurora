@@ -59,3 +59,6 @@ html[data-theme='light'] .ctest-table tbody tr:nth-child(even) { background: rgb
 .ctest-rules { display: flex; flex-direction: column; gap: 0.35rem; max-height: 14rem; overflow-y: auto; font-size: 0.82rem; }
 .ctest-rules p, .ctest-rules ul { margin: 0; }
 .ctest-rules ul { padding-left: 1.1rem; }
+.ctest-rules { overflow-x: hidden; overflow-wrap: anywhere; }
+.ctest-rules code { font-size: 0.78rem; padding: 0 0.2em; border-radius: 3px; background: color-mix(in srgb, var(--text, #888) 12%, transparent); }
+.ctest-rules a { color: var(--accent, #1b6ef3); text-decoration: underline; }
