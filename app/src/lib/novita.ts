@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'changed',
     title: [
       'Contest: impaginazione standard più ordinata',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'new',
     title: [
       'Aurora BIGScan nei contest in CW e RTTY',
@@ -87,7 +87,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'changed',
     title: [
       'Contest: DX Cluster e log più ordinati',
@@ -108,7 +108,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'changed',
     title: [
       'Contest inclusi personalizzabili, statistiche più chiare',
@@ -129,7 +129,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'new',
     title: [
       'Contest in cartelle e impostazioni su misura',
@@ -150,7 +150,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'fixed',
     title: [
       'QSO non salvato: ora lo dice',
@@ -171,7 +171,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'fixed',
     title: [
       'Mappa dei Satelliti fluida',
@@ -192,7 +192,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.284',
-    released: '2026-11-17T18:00:00Z',
+    released: '2026-11-17T14:49:25Z',
     kind: 'fixed',
     title: [
       'Installatore e Hamlib più robusti',
