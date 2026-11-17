@@ -13,7 +13,9 @@ import { useStation } from '../state/station';
 import { useFirstRunOpen } from '../lib/firstRunOpen';
 import { useTuning } from './radio-display/RadioExtras';
 
-function messageKey(issue: Issue): Key {
+function messageKey(issue: Issue, callSaved = false): Key {
+  // nominativo gia' scritto nelle impostazioni ma il motore acceso lo legge solo all'avvio
+  if (issue.id === 'callsign' && callSaved) return 'diag.callsign.restart' as Key;
   if (issue.id === 'slow_pc' && issue.vars.next) return issue.vars.depth === '3' ? 'diag.slow_pc.deep' : 'diag.slow_pc.normal';
   // contest: il motivo riconosciuto si dice nella lingua scelta; uno sconosciuto con il testo del motore
   if (issue.id === 'contest') return (issue.vars.reason ? `diag.contest.${issue.vars.reason}` : 'diag.contest') as Key;
@@ -38,7 +40,10 @@ export function DiagnosisBar() {
   const clock = useQuery({ queryKey: ['clock'], queryFn: getClock, retry: false, refetchInterval: 60_000 });
   // la profondita' di decodifica serve solo quando il motore dice che il PC e' lento
   const client = useQueryClient();
-  const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, enabled: !!notices.slow_pc });
+  // serve anche quando il motore dice di non avere il nominativo: se e' gia' salvato nelle impostazioni basta riavviare Aurora
+  const callMissing = (status?.de_call ?? 'x').trim() === '';
+  const engine = useQuery({ queryKey: ['engine-settings'], queryFn: getEngineSettings, retry: false, enabled: !!notices.slow_pc || callMissing });
+  const callSaved = (engine.data?.values.MyCall ?? '').trim() !== '';
   // lo stato del CAT serve solo con l'avviso della porta occupata: appena la radio si collega l'avviso sparisce
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, enabled: !!notices.port_busy, refetchInterval: notices.port_busy ? 5000 : false });
   const [depthBusy, setDepthBusy] = useState(false);
@@ -129,7 +134,7 @@ export function DiagnosisBar() {
             </button>
           ) : (
             <span className="diag-text">
-              {t(messageKey(issue), typeof issue.vars.detail === 'string' ? { ...issue.vars, detail: coreText(issue.vars.detail, t) } : issue.vars)}
+              {t(messageKey(issue, callSaved), typeof issue.vars.detail === 'string' ? { ...issue.vars, detail: coreText(issue.vars.detail, t) } : issue.vars)}
               {issue.id === 'slow_pc' && depthError !== null ? <span className="diag-error">{t('diag.slow_pc.failed', { message: depthError })}</span> : null}
             </span>
           )}

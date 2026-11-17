@@ -68,6 +68,15 @@ describe('DiagnosisBar', () => {
     expect(screen.getByText(/L’ingresso audio è saturo/)).toBeInTheDocument();
   });
 
+  it('says to restart Aurora when the callsign is already saved but the running engine does not have it', async () => {
+    station('');
+    vi.mocked(getEngineSettings).mockResolvedValue({ values: { MyCall: 'IU3ABC' } } as never);
+    render(<DiagnosisBar />);
+    expect(await screen.findByText(/chiudi e riapri Aurora/)).toBeInTheDocument();
+    expect(screen.queryByText(/manca il tuo nominativo/)).toBeNull();
+    vi.mocked(getEngineSettings).mockReset();
+  });
+
   it('shows no warning while the first-run guide is open (the callsign is still being typed)', async () => {
     station('');
     useFirstRunOpen.setState({ open: true });

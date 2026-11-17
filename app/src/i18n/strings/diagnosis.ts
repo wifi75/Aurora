@@ -30,6 +30,14 @@ export const diagnosisStrings = {
     'El reloj del PC está desviado {ms} ms respecto a la hora de red: se pierden los mensajes débiles. Sincronízalo.',
     'O relógio do PC está desviado {ms} ms da hora da rede: perdem-se as mensagens fracas. Sincroniza-o.',
   ],
+  'diag.callsign.restart': [
+    'Il tuo nominativo è salvato, ma il motore lo legge solo all’avvio: chiudi e riapri Aurora per applicarlo.',
+    'Your callsign is saved, but the engine reads it only at start: close and reopen Aurora to apply it.',
+    'Dein Rufzeichen ist gespeichert, aber der Motor liest es nur beim Start: schließe Aurora und öffne es neu, um es anzuwenden.',
+    'Ton indicatif est enregistré, mais le moteur ne le lit qu’au démarrage : ferme et rouvre Aurora pour l’appliquer.',
+    'Tu indicativo está guardado, pero el motor lo lee solo al arrancar: cierra y vuelve a abrir Aurora para aplicarlo.',
+    'O teu indicativo está guardado, mas o motor só o lê ao arrancar: fecha e volta a abrir a Aurora para o aplicar.',
+  ],
   'diag.callsign': [
     'Nel motore manca il tuo nominativo: senza, Aurora non sa quali messaggi sono per te. Impostalo nelle impostazioni del motore.',
     'Your callsign is missing in the engine: without it Aurora cannot tell which messages are for you. Set it in the engine settings.',
