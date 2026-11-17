@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.286 - 2026-11-17
+
 - Primo avvio: se il nominativo e' gia' salvato ma il motore acceso non lo ha ancora (si legge solo all'avvio), l'avviso dice di chiudere e riaprire Aurora invece di dire che il nominativo manca.
 - Avvio con Hamlib: Aurora guarda su quale VFO sta la radio prima e dopo aver riportato frequenza e modo dell'ultima volta; se e' cambiato da solo (IC-756PRO: dopo il riavvio la radio andava sul VFO B) la rimette dov'era e lo scrive nel registro.
 - Attivita' di banda: i km sono centrati nell'altezza della riga, alla stessa altezza del paese (stavano piu' in alto).
@@ -10,7 +12,6 @@
 - Impostazioni › Radio: cercando una marca (per esempio «icom») la tendina elenca tutte le radio di quella marca, non solo le prime 12 (prima l'IC-756PRO e molte altre restavano nascoste).
 - Primo avvio: finche' la guida («Chi sei», audio, radio) e' aperta non compaiono gli avvisi della stazione, in particolare «Nel motore manca il tuo nominativo» mentre lo si sta scrivendo.
 - Vista SSB (log, Inserisci QSO, DX Cluster): le finestre hanno lo stesso aspetto di quelle del contest e della pagina FT8, con il bordo viola e la barra del titolo sfumata.
-
 - «Spot DX» in tema chiaro: al passaggio del mouse il testo resta scuro e leggibile (quello colorato del contest resta bianco su fondo colorato).
 
 ## 0.11.285 - 2026-11-17
