@@ -187,10 +187,17 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
             let mut fox_ticks: u32 = 0;
             let mut last_dial = u64::MAX;
             let mut since_publish: u32 = u32::MAX;
+            let mut last_decoding = false;
             loop {
                 tick.tick().await;
                 let dial_now = live.dial_hz.load(Ordering::Relaxed);
                 since_publish = since_publish.saturating_add(1);
+                let decoding_now = live.controls.is_decoding();
+                if decoding_now != last_decoding {
+                    // l'inizio e la fine della decodifica partono subito, senza aspettare il quarto di secondo
+                    last_decoding = decoding_now;
+                    since_publish = u32::MAX;
+                }
                 if dial_now == last_dial && since_publish < 5 {
                     continue;
                 }
@@ -213,7 +220,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     // lo segue, come il `rptSpinBox` di WSJT-X che cambia a ogni stazione scelta
                     report: view.report.map(|r| format!("{r:+03}")),
                     tx_message: selected_text,
-                    decoding: live.controls.is_monitoring(),
+                    decoding: live.controls.is_decoding(),
                     de_call: live.de_call.clone(),
                     de_grid: live.controls.grid_or(&live.de_grid),
                     rx_df: Some(live.controls.rx_df.load(Ordering::Relaxed)),
@@ -711,6 +718,8 @@ pub fn start_with_save(
                 let started = Instant::now();
                 // PC lento: finche' questo valore vive i servizi di contorno (cluster, PSK Reporter, LoTW...) aspettano (`aurora_core::idle`)
                 let busy = aurora_core::idle::busy();
+                // lo Status UDP dice «decoding» solo mentre il decoder lavora (come `decodeBusy` di WSJT-X)
+                let _decoding = live.as_ref().map(|l| l.controls.decoding_guard());
                 // «Modo SWL», «Filtro» e Hound cambiano come si cerca (solo FT8)
                 let mut options = live.as_ref().map_or_else(|| ft8_options.clone(), |l| period_options(&ft8_options, &l.controls, &l.de_call, slot.start_unix_ms));
                 // un PC lento non deve restare indietro: dopo 11 s non si comincia un'altra passata (il periodo FT8 dura 15 s)

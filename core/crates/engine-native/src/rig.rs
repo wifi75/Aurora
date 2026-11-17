@@ -349,6 +349,9 @@ pub struct NativeControls {
     pub tx_audio_planned: AtomicU32,
     /// Monitora: con ascolto spento non si decodifica (e lo stato dice che non si sta decodificando). Di base acceso.
     pub monitor: AtomicBool,
+    /// Il decoder sta lavorando su un periodo (il `m_decoderBusy` di WSJT-X): e' il campo «decoding» dello Status UDP, che i programmi collegati
+    /// (Logger32, GridTracker) usano per sapere che la tornata di messaggi e' finita e ridisegnare la mappa.
+    pub decoding: AtomicBool,
     /// Frequenza audio di ricezione, in Hz.
     pub rx_df: AtomicU32,
     /// Frequenza audio di trasmissione, in Hz. Con «Tx/Rx Split» spento segue la ricezione (e viceversa); con Split acceso sono indipendenti.
@@ -447,7 +450,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), decoding: AtomicBool::new(false), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
     }
 }
 
@@ -569,6 +572,17 @@ impl NativeControls {
     /// Il locatore da mostrare: quello della sessione se c'e', altrimenti `configured`.
     pub fn grid_or(&self, configured: &str) -> String {
         self.session_grid.lock().ok().and_then(|g| g.clone()).unwrap_or_else(|| configured.to_string())
+    }
+
+    /// Vero mentre il decoder lavora su un periodo.
+    pub fn is_decoding(&self) -> bool {
+        self.decoding.load(Ordering::Relaxed)
+    }
+
+    /// Segna il decoder occupato finche' la guardia vive.
+    pub fn decoding_guard(&self) -> DecodingGuard<'_> {
+        self.decoding.store(true, Ordering::Relaxed);
+        DecodingGuard(&self.decoding)
     }
 
     pub fn is_monitoring(&self) -> bool {
@@ -1380,6 +1394,17 @@ impl Rig for NativeRig {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_decoder_is_busy_only_while_the_guard_lives() {
+        let c = NativeControls::default();
+        assert!(!c.is_decoding());
+        {
+            let _guard = c.decoding_guard();
+            assert!(c.is_decoding());
+        }
+        assert!(!c.is_decoding());
+    }
+
     use super::*;
 
     /// Con lo split della radio il tono si sposta di XIT = (tx/500)*500 - 1500 come `setXIT` di WSJT-X, in tutti i modi: il VFO si sposta dello
@@ -1761,5 +1786,14 @@ mod tests {
         assert!(controls.switch_on("swl") && !controls.switch_on("msk_sh"));
         assert!(!msk144_short());
         assert!(!controls.set_value("msk144_period", 20));
+    }
+}
+
+/// Alla fine (anche per un panico) il decoder risulta libero.
+pub struct DecodingGuard<'a>(&'a AtomicBool);
+
+impl Drop for DecodingGuard<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Relaxed);
     }
 }
