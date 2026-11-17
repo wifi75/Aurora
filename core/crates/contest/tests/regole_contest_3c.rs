@@ -343,3 +343,58 @@ fn yo_dx_hf() {
     // punti 23; moltiplicatori 6; 23 x 6 = 138
     assert_eq!((t.punti, t.molt, t.punteggio), (23, 6, 138));
 }
+
+/// Il terzo elemento dello scambio (sezione, club, stato) lo chiedono le regole `exch` e solo per le stazioni che soddisfano il loro `if:`.
+fn atteso(nome: &str, call: &str, mia: &str) -> bool {
+    use contest::punti_testo::scambio_atteso;
+    let q = QsoTesto { call: call.into(), band: "20m".into(), mode: "CW".into(), ..Default::default() };
+    scambio_atteso(&contest(nome), &q, call, paese(call).as_ref(), paese(mia).as_ref())
+}
+
+#[test]
+fn scambio_atteso_uba_arrl_e_senza_exch() {
+    // UBA (`exch/if:dxcc:ON`): sezione solo dalle stazioni belghe, i DX danno RST e numero
+    assert!(atteso("UBA CW contest", "ON4ABC", "IU3ABC"));
+    assert!(atteso("UBA CW contest", "OT4XYZ", "IU3ABC"));
+    assert!(!atteso("UBA CW contest", "DL1ABC", "IU3ABC"));
+    assert!(!atteso("UBA CW contest", "W1AW", "ON4XYZ"));
+    // la propria stazione: un'utente belga manda la sezione, uno italiano solo il numero
+    assert!(atteso("UBA CW contest", "ON4XYZ", "ON4XYZ"));
+    assert!(!atteso("UBA CW contest", "IU3ABC", "IU3ABC"));
+    // ARRL 10 metri (`exch/mode/if:dxcc:K,VE,...`): stato o provincia dagli USA e dal Canada, non dai DX
+    assert!(atteso("ARRL 10 meter Contest", "W1AW", "IU3ABC"));
+    assert!(!atteso("ARRL 10 meter Contest", "DL1ABC", "IU3ABC"));
+    assert!(!atteso("ARRL 10 meter Contest", "IU3ABC", "IU3ABC"));
+    // un contest senza moltiplicatore `exch` non lo chiede mai
+    let senza = ContestTesto { score: "points=any=1\nmult=dxcc".into(), ..ContestTesto::default() };
+    let q = QsoTesto { call: "ON4ABC".into(), ..Default::default() };
+    assert!(!contest::punti_testo::scambio_atteso(&senza, &q, "ON4ABC", paese("ON4ABC").as_ref(), None));
+    // le vecchie chiavi (`m_iMultipliers=5`, senza [Score]) non cambiano: lo scambio e' un campo solo
+    let vecchio = ContestTesto { multipliers: 5, ..ContestTesto::default() };
+    assert!(!contest::punti_testo::scambio_atteso(&vecchio, &q, "ON4ABC", paese("ON4ABC").as_ref(), None));
+}
+
+#[test]
+fn cabrillo_uba_con_club_e_senza() {
+    use contest::punti_testo::cabrillo;
+    let c = contest("UBA CW contest");
+    let ora = |hhmm: &str, freq: u64, call: &str, sent: &str, rcvd: &str| QsoTesto {
+        call: call.into(),
+        band: "10m".into(),
+        mode: "CW".into(),
+        freq_hz: freq,
+        time_ms: data_ms(&format!("20230225{hhmm}00")).unwrap_or(0),
+        rst_sent: "599".into(),
+        rst_rcvd: "599".into(),
+        exch_sent: sent.into(),
+        exch_rcvd: rcvd.into(),
+    };
+    // lo scambio e' quello che compone l'app: numero e club separati da uno spazio (`003 ACC`); il rapporto lo mette il Cabrillo
+    let log = [ora("1302", 28_010_000, "OP4K", "001 ACC", "003 ACC"), ora("1311", 28_023_000, "SV1BJW", "002 ACC", "012")];
+    let on = paese("ON9TT").unwrap_or_default();
+    let (v, t) = valuta(&c, &log, Some(&on), &paese, None);
+    let f = cabrillo(&c, "on9tt", &v, &t, "0.11.0", &[]);
+    let righe: Vec<String> = f.lines().filter(|r| r.starts_with("QSO:")).map(|r| r.split_whitespace().collect::<Vec<_>>().join(" ")).collect();
+    assert_eq!(righe[0], "QSO: 28010 CW 2023-02-25 1302 ON9TT 599 001 ACC OP4K 599 003 ACC");
+    assert_eq!(righe[1], "QSO: 28023 CW 2023-02-25 1311 ON9TT 599 002 ACC SV1BJW 599 012");
+}

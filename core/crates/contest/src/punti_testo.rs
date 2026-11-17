@@ -533,6 +533,18 @@ fn nome_cabrillo(nome: &str) -> String {
     nome.split_whitespace().collect::<Vec<_>>().join("-").to_ascii_uppercase()
 }
 
+/// Il nominativo (con il suo paese `info`, e il paese della stazione `mio`) deve dare un terzo elemento dello scambio, oltre al
+/// numero (sezione, club, stato)? Solo con le regole della `[Score]` e un moltiplicatore `exch` che lo riguarda; le vecchie chiavi
+/// del file (`m_iMultipliers`) no, il loro scambio e' un campo solo. Con `info` della propria stazione dice se tocca a lei mandarlo.
+pub fn scambio_atteso(c: &ContestTesto, q: &QsoTesto, call: &str, info: Option<&InfoPaese>, mio: Option<&InfoPaese>) -> bool {
+    use crate::regole_punti::{Ctx, RegoleScore};
+    if c.score.trim().is_empty() {
+        return false;
+    }
+    let Ok(r) = RegoleScore::da_testo(&c.score) else { return false };
+    crate::regole_punti::scambio_atteso(&r, &Ctx { q, call, info, mio })
+}
+
 /// Il file Cabrillo 3.0 del contest dei modi testuali. I doppi restano nel file (li toglie chi controlla i log).
 /// Con i QTC (contest WAE) le righe `QTC:` seguono quelle `QSO:`.
 pub fn cabrillo(c: &ContestTesto, call: &str, log: &[Valutato], tot: &Punteggio, versione: &str, qtc: &[crate::qtc::Qtc]) -> String {

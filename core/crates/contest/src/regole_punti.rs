@@ -397,6 +397,14 @@ pub fn ammesso(r: &RegoleScore, x: &Ctx) -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Lo scambio ricevuto da questa stazione porta un elemento in piu' dopo il numero (sezione, club, stato, provincia)? Vero se le regole
+/// hanno un moltiplicatore `exch` che vale per lei: senza `if:` per tutti, altrimenti quando la condizione e' vera (e il suo paese non
+/// e' fra gli `except:`). La stessa condizione dice se tocca anche alla propria stazione mandarlo, passandola come `x.info`.
+pub fn scambio_atteso(r: &RegoleScore, x: &Ctx) -> bool {
+    let dx = x.info.map_or("", |i| i.dxcc.as_str());
+    r.molt.iter().any(|d| matches!(d.tipo, TipoM::Scambio) && d.se.as_ref().is_none_or(|c| c.vera(x)) && !in_lista(&d.eccetto, dx))
+}
+
 /// I punti di un QSO ammesso: la prima regola vera per il fattore della banda, piu' i bonus.
 pub fn punti(r: &RegoleScore, x: &Ctx) -> i64 {
     let base = r

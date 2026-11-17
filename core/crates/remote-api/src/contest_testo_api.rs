@@ -172,7 +172,7 @@ pub(crate) struct AmmessoQuery {
 #[utoipa::path(get, path = "/api/v1/contest-testo/ammesso", responses((status = 200, description = "Valore del nominativo"), (status = 409, description = "Nessun contest attivo (contest_off)")))]
 pub(crate) async fn ammesso(State(state): State<AppState>, _: Authed, Query(q): Query<AmmessoQuery>) -> Result<Json<Value>, ApiError> {
     let prova = contest::punti_testo::QsoTesto { call: q.call.trim().to_ascii_uppercase(), band: q.band, mode: q.mode, exch_rcvd: q.exch, ..Default::default() };
-    let (_, valutati, _, _, _) = valuta_attivo(&state, Some(prova)).await?;
+    let (contest, valutati, _, mia, _) = valuta_attivo(&state, Some(prova)).await?;
     let v = valutati.last().ok_or_else(|| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "contest_eval"))?;
     // l'ultimo QSO del contest con lo stesso nominativo (per le macro `<PREVNRS>`, `<QSOBEFORETIME>`...): ora, banda, modo e scambi
     let precedente = valutati[..valutati.len() - 1]
@@ -185,7 +185,10 @@ pub(crate) async fn ammesso(State(state): State<AppState>, _: Authed, Query(q): 
     let ultimo_mandato = ultimo_qso.map(|p| p.qso.exch_sent.clone());
     // nominativo e rapporto mandato dell'ultimo QSO del log (`<PREVCALL>`, `<PREVRSTS>`)
     let ultimo = ultimo_qso.map(|p| json!({ "call": p.qso.call, "rst_sent": p.qso.rst_sent }));
-    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi, "precedente": precedente, "ultimo_mandato": ultimo_mandato, "ultimo": ultimo })))
+    // lo scambio ricevuto da questo nominativo ha un terzo elemento (sezione, club, stato)? Con le regole del punteggio, qui sta l'unica verita'
+    let info = info_paese(&state, &v.qso.call);
+    let exch_atteso = contest::punti_testo::scambio_atteso(&contest, &v.qso, &v.qso.call, info.as_ref(), info_paese(&state, &mia).as_ref());
+    Ok(Json(json!({ "ammesso": v.escluso.is_none(), "exch_atteso": exch_atteso, "motivo": v.escluso, "doppio": v.doppio, "punti": v.punti, "nuovi": v.nuovi, "precedente": precedente, "ultimo_mandato": ultimo_mandato, "ultimo": ultimo })))
 }
 
 /// Il punteggio del contest attivo dei modi testuali: QSO, doppi, punti, moltiplicatori, punteggio e righe per banda.
