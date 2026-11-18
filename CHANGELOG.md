@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Falsi messaggi dal rumore (radio spenta): i messaggi dei contest tipo RTTY Roundup dubbi (deboli, DT fuori misura) si scartano se nessuno dei due nominativi e' conosciuto, e quelli con due nominativi nascosti insieme (`<...> <...>`) sempre; prima l'elenco vuoto lasciava passare tutto e a radio spenta comparivano righe e falsi avvisi «DXCC nuovo». Tolti dalla scelta i display Icom doppio ricevitore, Icom blu e LED essenziale (chi li aveva passa a IC-7610 o LED).
+
 ## 0.11.294 - 2026-11-18
 
 - Display a pannello unico (FT-2000, IC-7610, Icom doppio, Icom blu, LED essenziale): tolti tutti gli indicatori, i riquadri e i pulsanti che non corrispondono a un dato o a una funzione vera (ANT, ATT, IPO, preamplificatore, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, VFO, banda passante, barre decorative di ALC e ROS). Restano le frequenze del VFO A e, se la radio la da', del VFO B, il modo, gli stati RX/TX, l'S-meter in ricezione, la potenza e il ROS in trasmissione come lettura, e il tasto TUNE; i disegni sono piu' corti. Lo stile «Icom blu con banda passante» si chiama «Icom blu».

@@ -804,6 +804,20 @@ fn chkfalse8(c: &MessageCheck, text: &str, my_call: &str, book: Option<&CallBook
         }
     }
 
+    // Aurora, non in JTDX: due nominativi nascosti insieme non sono un messaggio trasmettibile (rumore che passa il CRC)
+    if text.matches("<...>").count() >= 2 {
+        return true;
+    }
+    // Aurora, non in JTDX: un messaggio dei contest tipo RTTY Roundup (i3 = 3) arrivato qui (e' dubbio: debole, DT fuori misura) si tiene solo se uno dei due
+    // nominativi e' conosciuto; con l'elenco vuoto o assente JTDX lascia passare tutto e a radio spenta arrivavano falsi «DXCC nuovo»
+    if c.i3 == 3 {
+        let (a, b) = if words[0] == "TU;" { (words.get(1), words.get(2)) } else { (words.first(), words.get(1)) };
+        let known = book.is_some_and(|k| [a, b].iter().flatten().any(|w| k.contains(bare(w))));
+        if !known {
+            return true;
+        }
+    }
+
     // --- RTTY Roundup: TU; call call ...
     if c.i3 == 3 && words[0] == "TU;" && words.len() >= 3 && flscall(words[1], words[2]) {
         return true;
@@ -1048,6 +1062,19 @@ mod tests {
         assert!(reject_message(&c, "", None));
         let ok = check("CQ K1ABC FN42", 1, 0, 1);
         assert!(!reject_message(&ok, "", None));
+    }
+
+    #[test]
+    fn i_falsi_dei_contest_a_radio_spenta_si_scartano_ma_quelli_con_nominativi_conosciuti_restano() {
+        // i due messaggi visti a radio spenta: debole, nessun nominativo conosciuto
+        assert!(reject_message(&check("TU; S7DBM CR4CQM R 549 3643", 3, 0, 0), "", None));
+        assert!(reject_message(&check("<...> <...> R 541887 RR46NJ", 3, 0, 0), "", None));
+        // con un elenco che li conosce, il messaggio dubbio resta
+        let book = CallBook::new(["S7DBM".to_string()]);
+        assert!(!reject_message(&check("TU; S7DBM CR4CQM R 549 3643", 3, 0, 0), "", Some(&book)));
+        // un messaggio sicuro (qualita' alta, SNR buono) non e' toccato
+        let strong = MessageCheck { text: "TU; K1ABC W9XYZ R 579 3643", i3: 3, n3: 0, ap_type: 0, qual: 0.8, snr: -5.0, dt_s: 0.2 };
+        assert!(!reject_message(&strong, "", None));
     }
 
     #[test]
