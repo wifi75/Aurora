@@ -1418,6 +1418,10 @@ fn spawn_start_on_main_frequency(state: AppState, data_dir: std::path::PathBuf) 
             if state.is_transmitting() {
                 break;
             }
+            // «All'avvio riporta la radio...» spento: Aurora non sposta la radio, la lascia dov'e' (si ricorda comunque dove sta, piu' sotto)
+            if !state.cat.as_ref().map(|c| c.config().restore_on_start).unwrap_or(true) {
+                break;
+            }
             // la frequenza e il modo esatti dell'ultima volta (qualunque pagina: FT8, modi testuali, SSTV...): la radio torna li', non sulla
             // frequenza FT8 principale della banda (richiesta del proprietario 2026-11-14)
             if let Some(last) = &last_dial {

@@ -132,6 +132,9 @@ pub struct RigConfig {
     pub power_on: bool,
     /// «Spegni» di JTDX (`RigPower_off`): spegne la radio via CAT (`\set_powerstat 0`) alla chiusura di Aurora (non al cambio di radio).
     pub power_off: bool,
+    /// «All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta»: acceso di base (come ha voluto il proprietario il 2026-11-14);
+    /// spento, Aurora non sposta la radio all'avvio e legge soltanto dov'e'.
+    pub restore_on_start: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
     /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
@@ -183,6 +186,7 @@ impl Default for RigConfig {
             share_port: DEFAULT_SHARE_PORT,
             power_on: false,
             power_off: false,
+            restore_on_start: true,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),

@@ -782,6 +782,8 @@ export interface CatConfig {
   /** «Accendi» e «Spegni» di JTDX: la radio si accende via CAT al primo collegamento e si spegne alla chiusura di Aurora. */
   power_on?: boolean;
   power_off?: boolean;
+  /** All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta (acceso di base). */
+  restore_on_start?: boolean;
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;
