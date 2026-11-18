@@ -76,13 +76,6 @@ function Bars({ model, cls }: { model: DisplayModel; cls: string }) {
   );
 }
 
-/** Lettura in trasmissione (potenza e ROS) per i display che hanno la lancetta al posto delle barre. */
-function TxReading({ model }: { model: DisplayModel }) {
-  const m = model.meters;
-  if (!model.transmitting || (m?.power_w == null && m?.swr == null)) return null;
-  return <span className="md-soft md-txread">{m?.power_w != null ? `PO ${Math.round(m.power_w)} W` : ''}{m?.power_w != null && m?.swr != null ? '  ' : ''}{m?.swr != null ? `SWR ${m.swr.toFixed(1)}` : ''}</span>;
-}
-
 /** S-meter a lancetta come sulle Icom. */
 function Needle({ model, height = 54, dim = false }: { model: DisplayModel; height?: number; dim?: boolean }) {
   const f = sFraction(model.meters) ?? 0;
@@ -118,75 +111,6 @@ function NoRadio({ model, noRadio }: { model: DisplayModel; noRadio: string }) {
 }
 
 /* ---------- Estesi (640 x 90) ---------- */
-
-/** E1 · Icom doppio ricevitore (stile IC-7610). */
-export function IcDualDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
-  const s = useShown(data);
-  return (
-    <Frame cls="md-e md-icdual" ariaLabel={ariaLabel}>
-      <div className="md-half">
-        <div>
-          <div className="md-row"><span className="md-tag md-tag--on">MAIN</span><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
-          <span className="md-freq">{freq(model.dialHz)}</span>
-          <TxReading model={model} />
-        </div>
-        <Needle model={model} />
-      </div>
-      <div className="md-half md-half--sub">
-        {s.vfoB ? (
-          <div>
-            <div className="md-row"><span className="md-tag">SUB</span><span>{s.x.vfo_b_mode ?? ''}</span></div>
-            <span className="md-freq md-freq--sub">{freq(s.x.vfo_b_hz ?? 0)}</span>
-          </div>
-        ) : <span />}
-        <div className="md-row md-wrap md-col md-chips-side"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
-      </div>
-      <NoRadio model={model} noRadio={noRadio} />
-    </Frame>
-  );
-}
-
-/** E2 · Icom blu. */
-export function IcBlueDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
-  const s = useShown(data);
-  return (
-    <Frame cls="md-e md-icblue" ariaLabel={ariaLabel}>
-      <div>
-        <div className="md-row"><span className="md-tag md-tag--on">VFO A</span><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
-        <span className="md-freq">{freq(model.dialHz)}</span>
-      </div>
-      <div className="md-mid">
-        {s.vfoB ? (
-          <>
-            <div className="md-row"><span className="md-tag">VFO B</span><span>{s.x.vfo_b_mode ?? ''}</span></div>
-            <span className="md-freq md-freq--sub">{freq(s.x.vfo_b_hz ?? 0)}</span>
-          </>
-        ) : null}
-        <div className="md-row"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
-      </div>
-      <Bars model={model} cls="md-bars--blue" />
-      <NoRadio model={model} noRadio={noRadio} />
-    </Frame>
-  );
-}
-
-/** E3 · LED essenziale (stile K4): in alto modo, TX e TUNE, sotto la frequenza con gli strumenti in linea, a destra il VFO B. */
-export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
-  const s = useShown(data);
-  return (
-    <Frame cls="md-e md-ledline" ariaLabel={ariaLabel}>
-      <div className="md-led-left">
-        <div className="md-row md-amber md-led-chips"><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
-        <div className="md-led-line">
-          <span className="md-freq md-mono">{formatRadioFrequency(model.dialHz)}</span>
-          <Bars model={model} cls="md-bars--led md-led-bars" />
-        </div>
-      </div>
-      {s.vfoB ? <div className="md-right"><span className="md-soft">VFO B</span><span className="md-freq md-freq--sub md-mono">{formatRadioFrequency(s.x.vfo_b_hz ?? 0)}</span></div> : <span />}
-      <NoRadio model={model} noRadio={noRadio} />
-    </Frame>
-  );
-}
 
 /* ---------- Quasi quadrati (330 x 140) ---------- */
 

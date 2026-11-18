@@ -4,17 +4,19 @@ import type { RadioMeters } from '../api/schemas';
 import { browserStorage } from './theme';
 
 /** Gli stili del display della radio, nell'ordine in cui si propongono nelle Impostazioni. */
-export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610', 'icdual', 'icblue', 'ledline'] as const;
+export const RADIO_DISPLAY_STYLES = ['fluorescent', 'analog', 'color', 'amber', 'led', 'ft2000', 'ic7610'] as const;
 /** I tre stili quasi quadrati non si propongono piu' (uscivano dallo schermo, richiesta del proprietario): restano nel tipo solo per riconoscere una scelta salvata, che passa a uno stile lungo. */
+/** Stili tolti dalla scelta (richiesta del proprietario): chi li aveva salvati passa allo stile indicato. */
+const RETIRED_STYLES: Record<string, (typeof RADIO_DISPLAY_STYLES)[number]> = { icdual: 'ic7610', icblue: 'ic7610', ledline: 'led' };
 const SQUARE_STYLES = ['icblueq', 'icblackq', 'yaesuq'] as const;
 export type RadioDisplayStyle = (typeof RADIO_DISPLAY_STYLES)[number] | (typeof SQUARE_STYLES)[number];
 
 /** Lo stile lungo che prende il posto di uno quasi quadrato scelto in passato. */
-const SQUARE_REPLACEMENT: Record<(typeof SQUARE_STYLES)[number], (typeof RADIO_DISPLAY_STYLES)[number]> = { icblueq: 'icblue', icblackq: 'ic7610', yaesuq: 'ft2000' };
+const SQUARE_REPLACEMENT: Record<(typeof SQUARE_STYLES)[number], (typeof RADIO_DISPLAY_STYLES)[number]> = { icblueq: 'ic7610', icblackq: 'ic7610', yaesuq: 'ft2000' };
 
 /** Stili a pannello unico (un solo schermo largo con i due VFO e gli indicatori): in testata prendono il posto dei due blocchi. */
-export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' | 'icdual' | 'icblue' | 'ledline' {
-  return style === 'ft2000' || style === 'ic7610' || style === 'icdual' || style === 'icblue' || style === 'ledline';
+export function isFaceStyle(style: RadioDisplayStyle): style is 'ft2000' | 'ic7610' {
+  return style === 'ft2000' || style === 'ic7610';
 }
 
 /** Stili quasi quadrati (330 x 140): stanno nell'angolo della testata, al posto delle icone, che diventano piccole. */
@@ -73,7 +75,7 @@ export function readRadioDisplay(storage: ReadableStorage): RadioDisplayPref {
     if (!raw) return { ...DEFAULT_RADIO_DISPLAY };
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return {
-      style: isRadioDisplayStyle(parsed.style) ? replaceSquare(parsed.style) : DEFAULT_RADIO_DISPLAY.style,
+      style: typeof parsed.style === 'string' && parsed.style in RETIRED_STYLES ? RETIRED_STYLES[parsed.style] as RadioDisplayStyle : isRadioDisplayStyle(parsed.style) ? replaceSquare(parsed.style) : DEFAULT_RADIO_DISPLAY.style,
       hidden: parsed.hidden === true,
       layout: parsed.layout === 'pair' || parsed.layout === 'single' ? parsed.layout : DEFAULT_RADIO_DISPLAY.layout,
     };

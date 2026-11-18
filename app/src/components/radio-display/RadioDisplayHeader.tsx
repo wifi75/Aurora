@@ -9,7 +9,7 @@ import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
 import { useMeterBallistics } from '../../lib/meterBallistics';
 import { displayModel, isFaceStyle, radioAnswering, isSquareStyle, useNarrowScreen, useRadioDisplay, type DisplayModel, type RadioDisplayStyle } from '../../lib/radioDisplay';
-import { IcBlackSquare, IcBlueDisplay, IcBlueSquare, IcDualDisplay, LedLineDisplay, YaesuSquare } from './ModernDisplays';
+import { IcBlackSquare, IcBlueSquare, YaesuSquare } from './ModernDisplays';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
 import { CompactRadioDisplay } from './CompactRadioDisplay';
@@ -100,10 +100,6 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const withBox = (display: ReactNode) => <div className="rd-face-row">{display}</div>;
 
   if (isSquareStyle(pref.style)) return <ModernHeader model={model} style={pref.style} solo={solo} />;
-  if (pref.style === 'icdual' || pref.style === 'icblue' || pref.style === 'ledline') {
-    return withBox(solo ? <ModernHeader model={model} style={pref.style} solo /> : <Detachable><ModernHeader model={model} style={pref.style} /></Detachable>);
-  }
-
   if (isFaceStyle(pref.style)) {
     return withBox(solo ? <FaceHeader model={model} style={pref.style} /> : (
       <Zoom off={inSplit}>
@@ -124,18 +120,6 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
     </div>
   );
   return withBox(solo ? duo : <Zoom off={inSplit}>{duo}</Zoom>);
-}
-
-/** Il pulsantino discreto per portare il display su un altro schermo, nell'angolo in alto a destra (si vede passandoci sopra). */
-function Detachable({ children }: { children: ReactNode }) {
-  return (
-    <div className="rd-detachable">
-      {children}
-      <span className="rd-detach-corner">
-        <DetachButton item="display" className="dock-detach" />
-      </span>
-    </div>
-  );
 }
 
 const OPEN_MS = 250;
@@ -216,10 +200,7 @@ function ModernHeader({ model, style, solo = false }: { model: DisplayModel; sty
     return () => document.body.classList.remove('rd-square');
   }, [square, solo]);
   const view =
-    style === 'icdual' ? <IcDualDisplay {...props} />
-    : style === 'icblue' ? <IcBlueDisplay {...props} />
-    : style === 'ledline' ? <LedLineDisplay {...props} />
-    : style === 'icblueq' ? <IcBlueSquare {...props} />
+    style === 'icblueq' ? <IcBlueSquare {...props} />
     : style === 'icblackq' ? <IcBlackSquare {...props} />
     : <YaesuSquare {...props} />;
   // il riquadro PWR + SPLIT sta a sinistra del display, fuori dal suo angolo (dove si vede il pulsantino di stacco)
