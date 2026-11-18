@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.296 - 2026-11-18
+
+- Scheda dei VFO piccola e a destra del display: VFOA e VFOB uno sotto l'altro, TUNE un pulsantino (prima una barra larga quanto la scheda). Non vale per FT-2000 e IC-7610, che hanno i VFO nel disegno.
+
 ## 0.11.295 - 2026-11-18
 
 - Falsi messaggi dal rumore (radio spenta): i messaggi dei contest tipo RTTY Roundup dubbi (deboli, DT fuori misura) si scartano se nessuno dei due nominativi e' conosciuto, e quelli con due nominativi nascosti insieme (`<...> <...>`) sempre; prima l'elenco vuoto lasciava passare tutto e a radio spenta comparivano righe e falsi avvisi «DXCC nuovo». Tolti dalla scelta i display Icom doppio ricevitore, Icom blu e LED essenziale (chi li aveva passa a IC-7610 o LED).
