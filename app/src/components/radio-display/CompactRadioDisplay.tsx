@@ -9,13 +9,14 @@ import { useCatExtras, useTuning } from './RadioExtras';
  */
 export function CompactRadioDisplay({ model }: { model: DisplayModel }) {
   const t = useT();
-  const { rig, waiting, click } = useCatExtras();
+  const { cat, rig, waiting, click } = useCatExtras();
   const tuning = useTuning();
   const main = mainMeter(model);
   const readouts = meterReadouts(model.meters);
   const power = readouts.find((r) => r.key === 'PO')?.text ?? '—';
   const swr = readouts.find((r) => r.key === 'SWR')?.text ?? '—';
-  const hasTuner = rig?.extras?.tuner != null;
+  // come sotto il display grande: la radio dice di avere l'accordatore, oppure non si leggono i dati in piu' e non si sa
+  const hasTuner = rig?.extras?.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
   const freq = hasFrequency(model.dialHz) ? formatRadioFrequency(model.dialHz) : '--.---.--';
   return (
     <div className={`rd-compact${model.transmitting ? ' rd-compact--tx' : ''}`} role="group" aria-label={t('rd.compactLabel')}>

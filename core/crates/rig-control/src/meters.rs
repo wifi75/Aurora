@@ -54,7 +54,10 @@ impl Level {
 }
 
 /// I livelli di trasmissione, nell'ordine in cui si leggono (i piu' utili per primi).
-pub const TX_LEVELS: [Level; 5] = [Level::Swr, Level::Alc, Level::Comp, Level::Id, Level::Vdd];
+/// I livelli che si leggono in trasmissione, oltre alla potenza: solo il ROS (serve a fermare la trasmissione se e' troppo alto). ALC, compressione,
+/// corrente e tensione non si chiedono piu': su molte radio (Kenwood TS-850 e simili) ogni lettura fa cambiare alla radio il selettore del suo
+/// misuratore, con il «clic» del relais (segnalazione #77).
+pub const TX_LEVELS: [Level; 1] = [Level::Swr];
 
 /// `STRENGTH` di Hamlib (dB rispetto a S9) in punti S e dB oltre S9: S9 = 0 dB, 6 dB per punto S sotto S9, S0 a -54 dB.
 pub fn strength_to_s(db: f32) -> (f32, f32) {

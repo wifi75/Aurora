@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getCat } from '../../api/client';
 import { SetupCta } from '../SetupCta';
 import { RigSwitch } from './RigSwitch';
-import { PwrSplitBox } from './PwrSplitBox';
 import { useTuning } from './RadioExtras';
 
 /**
@@ -98,12 +97,7 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   }
 
   // il riquadro PWR + SPLIT sta accanto al display, uguale in ogni stile (fuori dalla lente e dal pulsantino di stacco)
-  const withBox = (display: ReactNode) => (
-    <div className="rd-face-row">
-      {display}
-      <PwrSplitBox />
-    </div>
-  );
+  const withBox = (display: ReactNode) => <div className="rd-face-row">{display}</div>;
 
   if (isSquareStyle(pref.style)) return <ModernHeader model={model} style={pref.style} solo={solo} />;
   if (pref.style === 'icdual' || pref.style === 'icblue' || pref.style === 'ledline') {
@@ -230,11 +224,10 @@ function ModernHeader({ model, style, solo = false }: { model: DisplayModel; sty
     : <YaesuSquare {...props} />;
   // il riquadro PWR + SPLIT sta a sinistra del display, fuori dal suo angolo (dove si vede il pulsantino di stacco)
   // il quasi quadrato va sulla pagina (non dentro la riga dei comandi, che fa da contenitore e lo spostava sotto la testata)
-  if (square && solo) return <div className="rd-square-preview"><PwrSplitBox />{view}</div>;
+  if (square && solo) return <div className="rd-square-preview">{view}</div>;
   if (square)
     return createPortal(
       <div className="rd-square-slot rd-detachable">
-        <PwrSplitBox />
         {view}
         <span className="rd-detach-corner">
           <DetachButton item="display" className="dock-detach" />

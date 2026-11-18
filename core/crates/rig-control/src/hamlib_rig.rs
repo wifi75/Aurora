@@ -2480,11 +2480,14 @@ mod tests {
             last = rig.meters().expect("misuratori");
             std::thread::sleep(Duration::from_millis(210));
         }
-        assert_eq!((last.power_w, last.swr, last.alc, last.comp_db, last.vdd_v), (Some(20.5), Some(1.5), Some(0.3), Some(6.0), Some(13.8)));
+        // in trasmissione solo potenza e ROS: ALC, compressione, corrente e tensione non si chiedono (cambierebbero il selettore del misuratore)
+        assert_eq!((last.power_w, last.swr, last.alc, last.comp_db, last.vdd_v), (Some(20.5), Some(1.5), None, None, None));
         assert_eq!((last.id_a, last.s_points), (None, None));
         let asked = level_commands(&fake);
         assert!(!asked.iter().any(|c| c == "l STRENGTH"), "in trasmissione niente STRENGTH: {asked:?}");
-        assert_eq!(fake.count("l ID_METER"), 1, "ID non supportato: una sola richiesta");
+        for unwanted in ["l ALC", "l COMP_METER", "l ID_METER", "l VD_METER"] {
+            assert_eq!(fake.count(unwanted), 0, "{unwanted} non si chiede piu' in trasmissione: {asked:?}");
+        }
         // di nuovo in ricezione: i dati di trasmissione spariscono e torna lo S-meter
         rig.set_ptt(false).expect("PTT spento");
         std::thread::sleep(Duration::from_millis(260));

@@ -150,51 +150,17 @@ describe('RadioDisplayHeader', () => {
     expect(container.textContent).toContain('BW 3.0k');
   });
 
-  // il riquadro PWR + SPLIT e' uno solo, uguale in ogni stile, accanto al display e mai nel pulsantino di stacco
-  const showStyle = async (style: (typeof RADIO_DISPLAY_STYLES)[number], power: boolean) => {
-    const cat = { config: { backend: 'omnirig', model: 0 }, status: { state: 'connected', rig: { split: true, extras: power ? { power_set: 1 } : {} } } };
+  // sotto il display restano solo il secondo VFO (se la radio lo da') e il tasto TUNE: niente riquadro PWR + SPLIT ne' fila di indicatori
+  it.each(RADIO_DISPLAY_STYLES)('shows no PWR + SPLIT box and only the TUNE button in the %s style', async (style) => {
+    const cat = { config: { backend: 'omnirig', model: 0 }, status: { state: 'connected', rig: { split: true, extras: { tuner: true, preamp_db: 10, agc: 2, power_set: 1 } } } };
     vi.mocked(getCat).mockResolvedValue(cat as never);
     act(() => useStation.setState({ status }));
     act(() => useRadioDisplay.getState().set({ style }));
-    const view = render(<RadioDisplayHeader />, { wrapper });
-    await waitFor(() => expect(document.querySelector('.rd-pwrsplit')).not.toBeNull());
-    return view;
-  };
-
-  const checkBox = async (style: (typeof RADIO_DISPLAY_STYLES)[number], power: boolean) => {
-    await showStyle(style, power);
-    // il riquadro compare subito; il valore e lo SPLIT acceso arrivano con lo stato della radio
-    await waitFor(() => expect(document.querySelector('.rd-split-btn--on')).not.toBeNull());
-    const boxes = document.querySelectorAll('.rd-pwrsplit');
-    expect(boxes).toHaveLength(1);
-    const box = boxes[0] as HTMLElement;
-    // dall'alto: PWR, valore («—» senza potenza), - e +, SPLIT acceso
-    expect(Array.from(box.children).map((c) => c.className.split(' ')[0])).toEqual(['rd-pwrsplit-lbl', 'rd-pwrsplit-val', 'rd-pwrsplit-btns', 'rd-split-btn']);
-    expect(box.querySelector('.rd-pwrsplit-lbl')?.textContent).toBe('PWR');
-    expect(box.querySelector('.rd-pwrsplit-val')?.textContent).toBe(power ? '100%' : '—');
-    expect(box.querySelectorAll('.rd-pwrsplit-btn')).toHaveLength(2);
-    // un solo tasto SPLIT in tutto il display, niente PWR doppio ne' colonna a parte, il pulsantino di stacco fuori dal riquadro
-    expect(document.querySelectorAll('.rd-split-btn')).toHaveLength(1);
-    expect(document.querySelector('.rd-side')).toBeNull();
-    expect(Array.from(document.querySelectorAll('.rx-chip')).some((c) => c.textContent?.includes('PWR'))).toBe(false);
-    expect(box.closest('.rd-detach-corner')).toBeNull();
-    expect(box.querySelector('.rd-detach-corner, .dock-detach')).toBeNull();
-  };
-
-  it.each(RADIO_DISPLAY_STYLES)('shows one PWR + SPLIT box in the %s style', (style) => checkBox(style, true));
-  it.each(RADIO_DISPLAY_STYLES)('shows the same PWR + SPLIT box with a dash instead of the power in the %s style', (style) => checkBox(style, false));
-
-  it('keeps the PWR + SPLIT box narrower and not taller than the smallest display next to it (CSS)', async () => {
-    // il foglio di stile si legge dal disco (nei test i CSS importati sono vuoti); si parte dalla cartella dell'app
-    const fs = (await import('node:fs')) as { readFileSync: (p: string, enc: string) => string };
-    const css = fs.readFileSync('src/styles/radiodisplay.css', 'utf8');
-    const rule = /\.rd-pwrsplit \{([^}]*)\}/.exec(css)?.[1] ?? '';
-    const rem = (prop: string) => Number(new RegExp(`(?:^|[\\s;])${prop}:\\s*([0-9.]+)rem`).exec(rule)?.[1]);
-    // i display piu' bassi (pannelli, estesi e due blocchi) sono alti 5,625rem
-    expect(rem('height')).toBeGreaterThan(0);
-    expect(rem('height')).toBeLessThanOrEqual(5.625);
-    expect(rem('width')).toBeGreaterThan(0);
-    expect(rem('width')).toBeLessThanOrEqual(4.4);
-    expect(rule).not.toContain('min-height');
+    render(<RadioDisplayHeader />, { wrapper });
+    await waitFor(() => expect(document.querySelector('.rd-face-row, .rd-duo, .rd-header')).not.toBeNull());
+    expect(document.querySelector('.rd-pwrsplit')).toBeNull();
+    expect(document.querySelector('.rd-split-btn')).toBeNull();
+    const chips = Array.from(document.querySelectorAll('.rx-chip')).map((c) => c.textContent);
+    expect(chips.every((c) => c === 'TUNE')).toBe(true);
   });
 });
