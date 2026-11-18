@@ -16,6 +16,8 @@ import {
 } from '../lib/appearance';
 import { browserStorage, chooseTheme, readThemeChoice, resolveTheme, THEME_EVENT, type ThemeChoice } from '../lib/theme';
 import { useUiScale } from '../lib/uiScale';
+import { useBoard } from '../lib/boardLayout';
+import { useBottom, useEditLayout } from '../lib/bottomLayout';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
 
 /** Dimensioni del testo offerte qui: dal 90% al 140% a passi di 5. */
@@ -35,6 +37,7 @@ export function AppearanceTab() {
   const [a, setA] = useState<Appearance>(() => readAppearance());
   const [choice, setChoice] = useState<ThemeChoice>(() => readThemeChoice(browserStorage()));
   const scale = useUiScale((s) => s.scale);
+  const editLayout = useEditLayout((s) => s.on);
 
   // le scelte fatte in un'altra finestra (o dall'interruttore della testata) si vedono anche qui
   useEffect(() => {
@@ -102,6 +105,26 @@ export function AppearanceTab() {
           </Cell>
           <Field label={t('ap.contrast')} hint={t('tip.ap.contrast')} wide>
             <input type="checkbox" checked={a.contrast === 'high'} onChange={(e) => update({ contrast: e.target.checked ? 'high' : 'normal' })} />
+          </Field>
+        </Cells>
+      </Group>
+
+      <Group title={t('ap.board')}>
+        <Cells>
+          <Field label={t('ap.boardEdit')} hint={t('tip.ap.boardEdit')} wide>
+            <input type="checkbox" checked={editLayout} onChange={(e) => useEditLayout.getState().set(e.target.checked)} />
+          </Field>
+          <Field label={t('ap.boardReset')} hint={t('tip.ap.boardReset')} wide>
+            <button
+              type="button"
+              className="glass chip"
+              onClick={() => {
+                useBoard.getState().reset();
+                useBottom.getState().reset();
+              }}
+            >
+              {t('ap.boardResetBtn')}
+            </button>
           </Field>
         </Cells>
       </Group>

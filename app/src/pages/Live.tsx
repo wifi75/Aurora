@@ -18,7 +18,7 @@ import { detachedItems, useGroups } from '../lib/detached';
 import { useBoard, type BoardId } from '../lib/boardLayout';
 import { BandsOpen } from '../components/BandsOpen';
 import type { ItemId } from '../lib/detached';
-import { EDIT_LAYOUT } from '../lib/bottomLayout';
+import { useEditLayout } from '../lib/bottomLayout';
 import { FrequencyMarkers } from '../components/FrequencyMarkers';
 import { FrequencyRuler } from '../components/FrequencyRuler';
 import { Log4omPanel, LogHeader } from '../components/Log4omPanel';
@@ -91,6 +91,7 @@ const RX_ON_KEY = 'aurora-finestra-rx';
 
 export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
   const t = useT();
+  const EDIT_LAYOUT = useEditLayout((s) => s.on);
   // pannello Log a linguette «Log | Mappa»: la scelta si ricorda; con «Log» la mappa non esiste proprio (niente timer, niente disegno)
   // la finestra RX sta sempre in alto, sotto il log o la mappa; accesa di fabbrica come «Rx Frequency» di WSJT-X (segnalazione #42): si spegne
   // dal pulsante RX e la scelta si ricorda

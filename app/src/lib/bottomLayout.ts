@@ -8,10 +8,36 @@ import { browserStorage } from './theme';
 export type BottomKey = 'waterfall' | 'tx' | 'qso';
 
 /**
- * FASE DI PROGETTO: finche' e' `true` la riga in basso si sposta (barra del titolo), si allarga (divisori) e si alza (bordo alto). Quando la
- * disposizione e' scelta si mette `false`: restano le misure salvate come fisse e i comandi di regolazione spariscono.
+ * Disposizione modificabile: con la scelta accesa (Impostazioni › Aspetto › «Finestre della pagina FT8») le finestre della pagina si spostano
+ * (barra del titolo), si ridimensionano (angolo) e la riga in basso si allarga (divisori) e si alza (bordo alto). Spenta di fabbrica: restano le
+ * misure salvate come fisse e i comandi di regolazione spariscono. La scelta resta su questo dispositivo.
  */
-export const EDIT_LAYOUT = false;
+const EDIT_KEY = 'aurora-edit-layout';
+
+function readEdit(): boolean {
+  try {
+    return browserStorage()?.getItem(EDIT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+interface EditState {
+  on: boolean;
+  set(on: boolean): void;
+}
+
+export const useEditLayout = create<EditState>((set) => ({
+  on: readEdit(),
+  set(on) {
+    try {
+      browserStorage()?.setItem(EDIT_KEY, on ? '1' : '0');
+    } catch {
+      // senza archivio la scelta vale finche' resta aperta la finestra
+    }
+    set({ on });
+  },
+}));
 
 export interface BottomLayout {
   heightPx: number;

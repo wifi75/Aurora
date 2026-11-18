@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { useT } from '../i18n';
-import { BOTTOM_MAX_HEIGHT, BOTTOM_MIN_HEIGHT, EDIT_LAYOUT, useBottom, type BottomKey } from '../lib/bottomLayout';
+import { BOTTOM_MAX_HEIGHT, BOTTOM_MIN_HEIGHT, useBottom, useEditLayout, type BottomKey } from '../lib/bottomLayout';
 
 export interface BottomPanel {
   title: string;
@@ -14,6 +14,7 @@ export interface BottomPanel {
  * larghezza dai divisori fra le finestre e l'ordine trascinando la barra del titolo. La disposizione si salva da sola.
  */
 export function BottomRow({ panels, hidden }: { panels: Record<BottomKey, BottomPanel>; hidden: readonly BottomKey[] }) {
+  const EDIT_LAYOUT = useEditLayout((s) => s.on);
   const t = useT();
   const layout = useBottom((s) => s.layout);
   const row = useRef<HTMLDivElement | null>(null);
