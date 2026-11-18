@@ -1099,3 +1099,23 @@ html[data-theme='light'] .rd-compact { background: #ffffff; border-color: #6d5bf
 .rd-compact-tune:hover:not(:disabled) { background: #8e7bff; }
 .rd-compact-tune--on { background: #c62828; border-color: #ff8a80; }
 .rd-compact-tune:disabled { opacity: 0.5; cursor: default; }
+
+/* Scheda dei VFO e di TUNE, piccola e a destra del display (richiesta del proprietario, 2026-11-18): VFOA e VFOB uno sotto l'altro, TUNE un
+   pulsantino; niente piu' barra TUNE larga quanto la scheda */
+.rd-duo .rd-slot--extras,
+.rd-duo--single .rd-slot--extras { width: auto; flex: 0 0 auto; margin-left: auto; }
+.rd-duo .rd-slot--extras .rx-extras {
+  flex-flow: column nowrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.6rem;
+  height: 100%;
+}
+.rx-vfos { display: grid; gap: 0.1rem; }
+.rd-duo .rd-slot--extras .rx-vfob { flex: 0 0 auto; gap: 0.35rem; }
+.rd-duo .rx-vfob-tag { min-width: 2.6rem; padding: 0 0.25rem; font-size: 0.58rem; text-align: center; }
+.rd-duo .rx-vfob-freq, .rd-duo--single .rx-vfob-freq { font-size: 0.8rem; letter-spacing: 0.04em; }
+.rd-duo .rx-vfob--a .rx-vfob-freq { opacity: 0.75; }
+.rd-duo .rd-slot--extras .rx-chips { align-self: flex-end; }
+.rd-duo .rd-slot--extras .rx-chip { flex: 0 0 auto; padding: 0 0.5rem; font-size: 0.58rem; }

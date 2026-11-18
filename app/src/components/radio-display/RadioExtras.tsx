@@ -5,6 +5,8 @@ import { useT } from '../../i18n';
 import { coreText } from '../../lib/coreText';
 import { toast } from '../../lib/toast';
 import { formatVfo } from '../../lib/radioExtras';
+import { displayModel } from '../../lib/radioDisplay';
+import { useStation } from '../../state/station';
 
 /** Cosa fa il clic su ogni indicatore (suggerimento ed etichetta per gli screen reader). */
 const ACTION_TIP = {
@@ -90,6 +92,7 @@ export function RadioExtras({ hidePwr = false }: { hidePwr?: boolean } = {}) {
   const { cat, rig, waiting, click } = useCatExtras();
   const tuning = useTuning();
   const x = rig?.extras ?? {};
+  const dialHz = displayModel(useStation((s) => s.status)).dialHz;
   void hidePwr;
   const vfoB = x.vfo_b_hz ? `${formatVfo(x.vfo_b_hz)}${x.vfo_b_mode ? ` ${x.vfo_b_mode}` : ''}` : null;
   // TUNE: la radio dice di avere l'accordatore, oppure non si leggono i dati in piu' e non si sa (se non lo ha, il clic spiega perche')
@@ -98,9 +101,17 @@ export function RadioExtras({ hidePwr = false }: { hidePwr?: boolean } = {}) {
   return (
     <div className="rx-extras" aria-label={t('rx.grp')}>
       {vfoB ? (
-        <div className="rx-vfob" title={t('tip.rx.vfoB')}>
-          <span className="rx-vfob-tag">B</span>
-          <span className="rx-vfob-freq">{vfoB}</span>
+        <div className="rx-vfos" title={t('tip.rx.vfoB')}>
+          {dialHz > 0 ? (
+            <div className="rx-vfob rx-vfob--a">
+              <span className="rx-vfob-tag">VFOA</span>
+              <span className="rx-vfob-freq">{formatVfo(dialHz)}</span>
+            </div>
+          ) : null}
+          <div className="rx-vfob">
+            <span className="rx-vfob-tag">VFOB</span>
+            <span className="rx-vfob-freq">{vfoB}</span>
+          </div>
         </div>
       ) : null}
       {showTune ? (
