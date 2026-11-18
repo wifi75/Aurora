@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.295',
-    released: '2026-11-18T16:00:00Z',
+    released: '2026-11-18T15:44:00Z',
     kind: 'fixed',
     title: [
       'Meno messaggi falsi a radio spenta, tre display in meno',

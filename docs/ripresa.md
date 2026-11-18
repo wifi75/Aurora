@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.295 (pubblicata 2026-11-18T15:44:00Z)
+
+- `ft8/src/filters.rs` (`reject_message`, dentro `chkfalse8`): messaggi con due `<...>` scartati; messaggi i3 = 3 (RTTY Roundup) arrivati al controllo dei dubbi scartati se nessuno dei due nominativi e' nell'elenco (con elenco vuoto JTDX lascia passare tutto). Filtro NOSTRO, non di JTDX: da confrontare con REA; in un contest vero un messaggio debole di una stazione non ancora conosciuta puo' essere perso. Non provato con radio spenta dal vivo.
+- Tolti i display `icdual`, `icblue`, `ledline` (migrazione in `radioDisplay.ts`: `RETIRED_STYLES` -> ic7610, ic7610, led; `icblueq` -> ic7610).
+- Segnalazioni aperte: #78 (Luc, IC-7300: S-meter vuoto dopo l'ultimo aggiornamento; chiesto pacchetto e stile del display; causa non nota, i display ridisegnati in 0.11.293/294 possibili), #73 (Toly), #77 (Pere). Spot: con «Invia gli spot da: DXSummit» lo spot non entra nella rete telnet (spiegato al proprietario).
+
 ## Nella 0.11.294 (pubblicata 2026-11-18T12:56:40Z)
 
 - Pannelli e display a blocco unico (FT-2000, IC-7610, Icom doppio, Icom blu, LED essenziale) senza indicatori finti: restano frequenze dei VFO, modo, RX/TX, S-meter in RX, potenza e ROS in TX, TUNE; disegni piu' corti; stile «Icom blu con banda passante» ora «Icom blu» (migrazione in `radioDisplay.ts`). Non provato con radio vera.
