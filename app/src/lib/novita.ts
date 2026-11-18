@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.293',
-    released: '2026-11-18T13:00:00Z',
+    released: '2026-11-18T12:13:38Z',
     kind: 'changed',
     title: [
       "Display della radio più semplice",

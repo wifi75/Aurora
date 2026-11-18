@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.293 (pubblicata 2026-11-18T12:13:38Z)
+
+- Display della radio: `RadioExtras.tsx` mostra solo VFO B e TUNE (TUNE se la radio dice di avere l'accordatore o se i dati extra non si leggono); tolti `PwrSplitBox`, `SplitButton`, `RadioExtrasGroup` (le caselle `rx.*`). `CompactRadioDisplay.tsx` usa la stessa regola per TUNE. I pannelli FT-2000 e IC-7610 (`RigFaceDisplays.tsx`) hanno ancora gli indicatori disegnati: restano spenti senza i dati extra; se danno fastidio vanno svuotati.
+- `core/crates/rig-control/src/meters.rs`: `TX_LEVELS = [Swr]`; in trasmissione si leggono solo potenza e ROS (il ROS ferma la trasmissione se troppo alto). Su Kenwood HF come il TS-850S ogni lettura di ALC/COMP fa cambiare il selettore del misuratore della radio (clic del relais), segnalazione #77 di Pere (Hamlib, 0.11.292). Da provare con quella radio.
+- Prossimo passo: risposta di Pere (#77); risposta di Toly (#73: casella di avvio, versione 0.11.292); schede del contest mancanti.
+
 ## Nella 0.11.292 (pubblicata 2026-11-18T10:24:05Z)
 
 - `RigConfig.restore_on_start` (`rig-control/src/cat_config.rs`, true di base): se falso `spawn_start_on_main_frequency` (`aurora/src/lib.rs`) non sposta la radio all'avvio. `restore_on_exit` (true di base): `CatService::remember_original` ricorda frequenza e modo che la radio aveva quando Aurora l'ha trovata e `restore_original_if_chosen` (chiamato da `CatService::shutdown`) li rimette alla chiusura, solo con Hamlib e solo se la radio non trasmette. Caselle in `CatTab.tsx` (`cat.restoreStart`, `cat.restoreExit` in `radioextras.ts`).
