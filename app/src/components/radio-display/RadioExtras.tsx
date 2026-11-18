@@ -157,14 +157,11 @@ export function RadioExtras({ hidePwr = false }: { hidePwr?: boolean } = {}) {
   const supply = prefs.supply && m && tx ? [m.vdd_v != null ? `VD ${m.vdd_v.toFixed(1)} V` : null, m.id_a != null ? `ID ${m.id_a.toFixed(1)} A` : null, m.comp_db != null ? `COMP ${Math.round(m.comp_db)} dB` : null].filter((v): v is string => v !== null) : [];
   const vfoB = prefs.vfoB && x.vfo_b_hz ? `${formatVfo(x.vfo_b_hz)}${x.vfo_b_mode ? ` ${x.vfo_b_mode}` : ''}` : null;
 
-  // le voci sono accese ma la radio non manda i dati in piu': lo si dice, invece di non mostrare niente
-  const extrasOff = cat.data !== undefined && cat.data.config.read_extras !== true && (prefs.vfoB || prefs.frontEnd || prefs.agc || prefs.noise || prefs.gains || prefs.ritXit || prefs.tuner || prefs.vfo);
-  if (!vfoB && meters.length === 0 && supply.length === 0 && chips.length === 0 && gains.length === 0 && !extrasOff) return null;
+  // i dati in piu' della radio non si leggono (casella spenta nelle Impostazioni): il display non mostra niente, ne' una scritta ne' uno spazio
+  // vuoto (richiesta del proprietario: anche il display piccolo restava lungo con la scritta «dati estesi spenti» al centro)
+  if (!vfoB && meters.length === 0 && supply.length === 0 && chips.length === 0 && gains.length === 0) return null;
   return (
     <div className="rx-extras" aria-label={t('rx.grp')}>
-      {extrasOff && !vfoB && chips.length === 0 && gains.length === 0 ? (
-        <div className="rx-line" title={t('rx.off.tip')}>{t('rx.off')}</div>
-      ) : null}
       {vfoB ? (
         <div className="rx-vfob" title={t('tip.rx.vfoB')}>
           <span className="rx-vfob-tag">B</span>

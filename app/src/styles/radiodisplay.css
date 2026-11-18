@@ -1067,3 +1067,8 @@ html[data-theme='light'] .rd-zoom {
 .rd-zoom .rd-zoom-lens .rd-face-slot--ft {
   width: 100%;
 }
+
+/* display compatto: senza dati in piu' da mostrare (casella «Leggi anche gli altri dati della radio» spenta, o niente da dire) il secondo blocco sparisce
+   e il display resta corto: la meta' libera non occupa piu' spazio nella testata */
+.rd-duo .rd-slot--extras:empty { display: none; }
+.rd-duo:has(.rd-slot--extras:empty) { width: auto; }
