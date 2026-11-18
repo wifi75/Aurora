@@ -135,6 +135,9 @@ pub struct RigConfig {
     /// «All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta»: acceso di base (come ha voluto il proprietario il 2026-11-14);
     /// spento, Aurora non sposta la radio all'avvio e legge soltanto dov'e'.
     pub restore_on_start: bool,
+    /// «Alla chiusura riporta la radio com'era prima di aprire Aurora»: acceso di base; alla chiusura la radio torna sulla frequenza e nel modo
+    /// che aveva quando Aurora l'ha trovata (solo con Hamlib).
+    pub restore_on_exit: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
     /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
@@ -187,6 +190,7 @@ impl Default for RigConfig {
             power_on: false,
             power_off: false,
             restore_on_start: true,
+            restore_on_exit: true,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),

@@ -198,6 +198,8 @@ pub struct CatService {
     crash: Mutex<Crash>,
     /// Collegamento chiesto dall'utente non ancora riuscito: al primo «collegata» si accende `auto_connect` (una volta sola).
     offer_pending: AtomicBool,
+    /// La frequenza e il modo che la radio aveva quando Aurora l'ha trovata (prima di spostarla): alla chiusura si rimettono, se la casella e' accesa.
+    original: Mutex<Option<(u64, Option<String>)>>,
 }
 
 /// Lo split che vale per OmniRig: quello scelto se il sistema di controllo e' OmniRig, altrimenti nessuno (cosi' il distacco di un altro CAT
@@ -223,6 +225,7 @@ impl CatService {
             store,
             parts,
             current: Mutex::new(None),
+            original: Mutex::new(None),
             omni: Arc::new(Mutex::new((LinkState::Disconnected, String::new()))),
             omni_check: Arc::new(Mutex::new((None, false))),
             tci: Mutex::new(None),
@@ -722,8 +725,43 @@ impl CatService {
         }
     }
 
-    /// Chiusura del programma: il PTT si spegne, con «Spegni» la radio si spegne, e la radio si libera.
+    /// Si ricorda dov'era la radio quando Aurora l'ha trovata: solo la prima volta (poi Aurora la sposta).
+    pub fn remember_original(&self, hz: u64, mode: Option<String>) {
+        if hz == 0 {
+            return;
+        }
+        if let Ok(mut original) = self.original.lock()
+            && original.is_none()
+        {
+            *original = Some((hz, mode));
+        }
+    }
+
+    /// «Alla chiusura riporta la radio com'era prima di aprire Aurora» (Hamlib): frequenza e modo di prima, se non sta trasmettendo.
+    fn restore_original_if_chosen(&self) {
+        if !self.config().restore_on_exit {
+            return;
+        }
+        let Some((hz, mode)) = self.original.lock().ok().and_then(|o| o.clone()) else { return };
+        let Some(rig) = self.current() else { return };
+        if rig.transmitting() || rig.status().state != LinkState::Connected {
+            return;
+        }
+        match rig.set_frequency(hz) {
+            Ok(()) => tracing::info!("chiusura: radio riportata sulla frequenza di prima, {hz} Hz"),
+            Err(e) => tracing::warn!("chiusura: frequenza di prima non impostata: {e}"),
+        }
+        if let Some(mode) = mode {
+            match rig.set_radio_mode(&mode) {
+                Ok(()) => tracing::info!("chiusura: radio riportata nel modo di prima, {mode}"),
+                Err(e) => tracing::warn!("chiusura: modo di prima non impostato: {e}"),
+            }
+        }
+    }
+
+    /// Chiusura del programma: la radio torna com'era (se scelto), il PTT si spegne, con «Spegni» la radio si spegne, e la radio si libera.
     pub fn shutdown(&self) {
+        self.restore_original_if_chosen();
         if let Some(rig) = self.current() {
             rig.power_off_if_chosen();
         }

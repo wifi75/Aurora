@@ -1418,6 +1418,10 @@ fn spawn_start_on_main_frequency(state: AppState, data_dir: std::path::PathBuf) 
             if state.is_transmitting() {
                 break;
             }
+            // dov'era la radio quando Aurora l'ha trovata: alla chiusura puo' tornarci
+            if let Some(cat) = &state.cat {
+                cat.remember_original(hz, radio_mode_of(&state));
+            }
             // «All'avvio riporta la radio...» spento: Aurora non sposta la radio, la lascia dov'e' (si ricorda comunque dove sta, piu' sotto)
             if !state.cat.as_ref().map(|c| c.config().restore_on_start).unwrap_or(true) {
                 break;

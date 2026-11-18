@@ -784,6 +784,8 @@ export interface CatConfig {
   power_off?: boolean;
   /** All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta (acceso di base). */
   restore_on_start?: boolean;
+  /** Alla chiusura riporta la radio com'era prima di aprire Aurora (acceso di base, Hamlib). */
+  restore_on_exit?: boolean;
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;

@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.292 - 2026-11-18
+
+- Radio all'avvio e alla chiusura: due caselle nuove in Impostazioni › Stazione › Radio, accese di fabbrica. «All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta» (spenta, Aurora non sposta la radio all'avvio; segnalazione #73: la radio messa sui 1296 MHz tornava sui 2 metri) e «Alla chiusura riporta la radio com'era prima di aprire Aurora» (solo Hamlib, solo se la radio non trasmette).
+
 ## 0.11.291 - 2026-11-18
 
 - Livelli audio di Windows, correzione della 0.11.290: dopo la prima trasmissione Aurora tornava a scrivere il volume di uscita della scheda (il motore richiama il livello prima di ogni trasmissione e il codice lo scambiava per una mossa del cursore). Ora il volume di Windows si scrive soltanto quando muovi tu il cursore Pwr (o c'e' un livello ricordato per la banda, se hai acceso la memoria per banda); le chiamate di routine non lo toccano.

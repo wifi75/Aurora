@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.292',
+    released: '2026-11-18T12:00:00Z',
+    kind: 'new',
+    title: [
+      "La radio all'avvio e alla chiusura",
+      'The radio at start and on exit',
+      'Das Funkgerät beim Start und beim Beenden',
+      "La radio au démarrage et à la fermeture",
+      'La radio al arrancar y al cerrar',
+      'O rádio no arranque e ao fechar',
+    ],
+    text: [
+      "In Impostazioni › Stazione › Radio ci sono due caselle nuove, accese di fabbrica. «All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta»: spenta, Aurora non sposta la radio all'avvio, e chi cambia banda sulla radio prima di aprire Aurora la ritrova com'era. «Alla chiusura riporta la radio com'era prima di aprire Aurora»: solo con Hamlib e se la radio non trasmette.",
+      'In Settings › Station › Radio there are two new boxes, on by default. “At start, put the radio back on the last frequency and mode”: off, Aurora does not move the radio at start, and if you change band on the radio before opening Aurora you find it as it was. “On exit, put the radio back as it was before opening Aurora”: only with Hamlib and if the radio is not transmitting.',
+      'In Einstellungen › Station › Funkgerät gibt es zwei neue Kästchen, standardmäßig an. „Beim Start das Funkgerät auf die letzte Frequenz und Betriebsart zurückstellen“: aus, verstellt Aurora das Gerät beim Start nicht, und wer vor dem Öffnen von Aurora am Gerät das Band wechselt, findet es unverändert vor. „Beim Beenden das Funkgerät so zurückstellen, wie es vor dem Öffnen von Aurora war“: nur mit Hamlib und wenn das Gerät nicht sendet.',
+      'Dans Réglages › Station › Radio il y a deux nouvelles cases, activées d’usine. « Au démarrage, remettre la radio sur la dernière fréquence et le dernier mode » : désactivée, Aurora ne déplace pas la radio au démarrage, et qui change de bande sur la radio avant d’ouvrir Aurora la retrouve comme elle était. « À la fermeture, remettre la radio comme elle était avant d’ouvrir Aurora » : seulement avec Hamlib et si la radio n’émet pas.',
+      'En Ajustes › Estación › Radio hay dos casillas nuevas, encendidas de fábrica. «Al arrancar, devolver la radio a la última frecuencia y modo»: apagada, Aurora no mueve la radio al arrancar, y quien cambia de banda en la radio antes de abrir Aurora la encuentra como estaba. «Al cerrar, devolver la radio a como estaba antes de abrir Aurora»: solo con Hamlib y si la radio no transmite.',
+      'Em Definições › Estação › Rádio há duas caixas novas, ligadas de fábrica. «No arranque, repor o rádio na última frequência e modo»: desligada, a Aurora não mexe no rádio no arranque, e quem muda de banda no rádio antes de abrir a Aurora encontra-o como estava. «Ao fechar, repor o rádio como estava antes de abrir a Aurora»: só com Hamlib e se o rádio não estiver a transmitir.',
+    ],
+  },
+  {
     version: '0.11.291',
     released: '2026-11-18T09:48:48Z',
     kind: 'fixed',
@@ -843,28 +864,6 @@ export const NOVITA: readonly Novita[] = [
       'En SSB, le concours a maintenant un journal qui repart de zéro : ne comptent que les QSO du concours, et les doublons et multiplicateurs valent à l’intérieur du concours. « Afficher tout le journal » et « Seulement le contest » changent la vue, et le journal se met à jour juste après chaque QSO. Le panneau « Statistiques » est toujours visible en vue SSB, avec le tableau par bande, les multiplicateurs contactés, le rythme et le temps restant. Les réglages du concours proposent les dates de CQ WW DX, CQ WPX et JIDX et incrémentent seuls le numéro à envoyer.',
       'En SSB el contest tiene ahora un log que empieza desde cero: solo cuentan los QSO del concurso, y los duplicados y multiplicadores valen dentro del concurso. «Mostrar todo el log» y «Solo el contest» cambian la vista, y el log se actualiza enseguida tras cada QSO. El panel «Estadísticas» está siempre visible en la vista SSB, con la tabla por banda, los multiplicadores trabajados, el ritmo y el tiempo que queda. Los ajustes del contest proponen las fechas de CQ WW DX, CQ WPX y JIDX y suben solos el número a enviar.',
       'Em SSB o contest tem agora um log que começa do zero: contam só os QSO do concurso, e os duplicados e multiplicadores valem dentro do concurso. «Mostrar todo o log» e «Só o contest» mudam a vista, e o log atualiza-se logo a seguir a cada QSO. O painel «Estatísticas» está sempre visível na vista SSB, com a tabela por banda, os multiplicadores trabalhados, o ritmo e o tempo que resta. As definições do contest propõem as datas de CQ WW DX, CQ WPX e JIDX e fazem subir sozinhas o número a enviar.',
-    ],
-  },
-  {
-    version: '0.11.277',
-    released: '2026-11-16T17:27:01Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'SSB a tre colonne con i contest',
-      'SSB in three columns with contests',
-      'SSB in drei Spalten mit Contests',
-      'SSB en trois colonnes avec les concours',
-      'SSB en tres columnas con concursos',
-      'SSB em três colunas com concursos',
-    ],
-    text: [
-      'Nella pagina PSK·RTTY·SSTV il modo SSB ha tre colonne: il log a sinistra, «Inserisci QSO» su un rigo solo al centro e il DX Cluster a destra. Con un contest scelto la riga mostra i seriali e il log segna DUPE e moltiplicatori; accanto alle macro ci sono i pulsanti delle bande scelte nelle Impostazioni. Cambia anche la barra delle macro: l’ingranaggio passa tra una riga e quattro, e il carattere dei pulsanti si sceglie a parte. Il riquadro con le informazioni del nominativo (nome, paese, azimut) non resta più appeso: si chiude da solo se il mouse esce dalla finestra, si cambia finestra, si scorre o si preme Esc. Le righe dell’elenco con sfondo chiaro (QSO in corso, mio nominativo giallo o ciano) hanno tutte le celle in colore scuro leggibile al posto dei grigi.',
-      'On the PSK·RTTY·SSTV page the SSB mode has three columns: the log on the left, “Enter QSO” on a single row in the middle and the DX Cluster on the right. With a contest chosen the row shows the serial numbers and the log marks DUPEs and multipliers; next to the macros are buttons for the bands chosen in Settings. The macro bar changes too: the gear switches between one and four rows, and the button font is chosen separately. The card with the callsign information (name, country, azimuth) no longer stays stuck: it closes by itself when the mouse leaves the window, when you switch window, scroll or press Esc. The list rows with a light background (QSO in progress, my callsign in yellow or cyan) now have every cell in a readable dark colour instead of grey.',
-      'Auf der Seite PSK·RTTY·SSTV hat der Modus SSB drei Spalten: links das Log, in der Mitte „QSO eingeben“ in einer einzigen Zeile und rechts der DX-Cluster. Mit gewähltem Contest zeigt die Zeile die Seriennummern, und das Log markiert Doppel und Multiplikatoren; neben den Makros stehen Schaltflächen für die in den Einstellungen gewählten Bänder. Auch die Makroleiste ändert sich: Das Zahnrad schaltet zwischen einer und vier Zeilen um, und die Schrift der Tasten wird separat gewählt. Das Feld mit den Informationen zum Rufzeichen (Name, Land, Azimut) bleibt nicht mehr hängen: Es schließt sich von selbst, wenn die Maus das Fenster verlässt, man das Fenster wechselt, scrollt oder Esc drückt. Die Zeilen der Liste mit hellem Hintergrund (QSO in Arbeit, mein Rufzeichen gelb oder cyan) haben jetzt alle Zellen in einer gut lesbaren dunklen Farbe statt Grau.',
-      'Sur la page PSK·RTTY·SSTV, le mode SSB a trois colonnes : le journal à gauche, « Saisir le QSO » sur une seule ligne au centre et le DX Cluster à droite. Avec un concours choisi, la ligne affiche les numéros de série et le journal marque les doublons et les multiplicateurs ; à côté des macros, des boutons donnent les bandes choisies dans les Réglages. La barre des macros change aussi : la roue passe d’une à quatre lignes, et la police des boutons se choisit à part. La fiche avec les informations de l’indicatif (nom, pays, azimut) ne reste plus coincée : elle se ferme d’elle-même quand la souris quitte la fenêtre, quand on change de fenêtre, quand on fait défiler la page ou quand on appuie sur Échap. Les lignes de la liste à fond clair (QSO en cours, mon indicatif en jaune ou cyan) ont maintenant toutes leurs cellules dans une couleur foncée lisible au lieu du gris.',
-      'En la página PSK·RTTY·SSTV, el modo SSB tiene tres columnas: el log a la izquierda, «Introducir QSO» en una sola fila en el centro y el DX Cluster a la derecha. Con un concurso elegido la fila muestra los números de serie y el log marca duplicados y multiplicadores; junto a las macros hay botones para las bandas elegidas en Ajustes. También cambia la barra de macros: el engranaje pasa de una a cuatro filas, y la letra de los botones se elige aparte. El recuadro con la información del indicativo (nombre, país, acimut) ya no se queda pegado: se cierra solo cuando el ratón sale de la ventana, cuando se cambia de ventana, al desplazarse o al pulsar Esc. Las filas de la lista con fondo claro (QSO en curso, mi indicativo en amarillo o cian) tienen ahora todas las celdas en un color oscuro legible en lugar de gris.',
-      'Na página PSK·RTTY·SSTV, o modo SSB tem três colunas: o log à esquerda, «Introduzir QSO» numa só linha no centro e o DX Cluster à direita. Com um concurso escolhido a linha mostra os números de série e o log assinala duplicados e multiplicadores; ao lado das macros há botões para as bandas escolhidas nas Definições. A barra das macros também muda: a engrenagem passa de uma para quatro linhas, e a letra dos botões escolhe-se à parte. A caixa com as informações do indicativo (nome, país, azimute) já não fica presa: fecha-se sozinha quando o rato sai da janela, quando se muda de janela, quando se desloca a página ou quando se carrega em Esc. As linhas da lista com fundo claro (QSO em curso, o meu indicativo a amarelo ou ciano) têm agora todas as células numa cor escura legível em vez de cinzento.',
     ],
   },
 ];
