@@ -1,6 +1,6 @@
 import { RadioDisplay } from '../components/radio-display/RadioDisplay';
 import { useT, type Key } from '../i18n';
-import { DEMO_MODEL, displaySize, isFaceStyle, isSquareStyle, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useRadioDisplay } from '../lib/radioDisplay';
+import { DEMO_MODEL, displaySize, isFaceStyle, isSquareStyle, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useNarrowScreen, useRadioDisplay } from '../lib/radioDisplay';
 import { Check, Help } from './common';
 
 /** Scelta dello stile del display della radio, con un'anteprima (dati di prova) per ognuno, e l'opzione per nasconderlo. */
@@ -12,14 +12,16 @@ export function RadioDisplayPicker() {
   const t = useT();
   const pref = useRadioDisplay((s) => s.pref);
   const set = useRadioDisplay.getState().set;
+  const narrow = useNarrowScreen();
   return (
     <>
       <h3 className="set-sub">{t('rd.title')}</h3>
       <Help>{t('rd.intro')}</Help>
-      <div className="rd-picker" role="radiogroup" aria-label={t('rd.title')}>
+      {narrow ? <p className="set-warn" role="status">{t('rd.narrow')}</p> : null}
+      <div className="rd-picker" role="radiogroup" aria-label={t('rd.title')} aria-disabled={narrow || undefined} style={narrow ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
         {RADIO_DISPLAY_STYLES.map((style) => (
           <label key={style} className={`rd-card${pref.style === style ? ' rd-card--on' : ''}${pref.hidden ? ' rd-card--off' : ''}${isFaceStyle(style) ? ' rd-card--wide' : ''}`}>
-            <input type="radio" name="radio-display-style" aria-label={t(`rd.style.${style}` as Key)} value={style} checked={pref.style === style} onChange={() => set({ style })} />
+            <input type="radio" name="radio-display-style" aria-label={t(`rd.style.${style}` as Key)} value={style} checked={pref.style === style} disabled={narrow} onChange={() => set({ style })} />
             <span className="rd-card-name">{t(`rd.style.${style}` as Key)} <small className="rd-size">{t('rd.size', displaySize(style))}{isSquareStyle(style) ? ` · ${t('rd.square')}` : ''}</small></span>
             <RadioDisplay model={DEMO_MODEL} style={style} size="full" />
           </label>

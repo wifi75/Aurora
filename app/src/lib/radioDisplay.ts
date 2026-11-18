@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { create } from 'zustand';
 import type { RadioMeters } from '../api/schemas';
 import { browserStorage } from './theme';
@@ -24,6 +25,19 @@ export function isSquareStyle(style: RadioDisplayStyle): style is 'icblueq' | 'i
 /** Le misure in testata, in punti: estesi 640 x 70, quasi quadrati 330 x 140. */
 export function displaySize(style: RadioDisplayStyle): { w: number; h: number } {
   return isSquareStyle(style) ? { w: 330, h: 130 } : { w: 640, h: 90 };
+}
+
+/** Sotto questa larghezza dello schermo (punti del dispositivo, prima della scala dell'interfaccia) il display grande in testata non entra. */
+export const NARROW_SCREEN_PX = 1500;
+
+function subscribeResize(onChange: () => void): () => void {
+  window.addEventListener('resize', onChange);
+  return () => window.removeEventListener('resize', onChange);
+}
+
+/** Vero su uno schermo stretto: il display e' quello compatto e gli altri stili non si possono scegliere. */
+export function useNarrowScreen(): boolean {
+  return useSyncExternalStore(subscribeResize, () => typeof window !== 'undefined' && window.innerWidth < NARROW_SCREEN_PX, () => false);
 }
 
 export interface RadioDisplayPref {

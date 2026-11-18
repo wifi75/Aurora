@@ -1345,3 +1345,10 @@ body.rd-radio-off .rd-square-slot::after, body.rd-radio-off .rd-square-preview::
 .freq-picker-btn .mode-switch-caret { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; margin-left: 4px; border-radius: 5px; font-size: 10px; line-height: 1; opacity: 1; color: #ffffff; background: #6d5bf0; }
 .mode-switch-btn:hover .mode-switch-caret,
 .freq-picker-btn:hover .mode-switch-caret { background: #8e7bff; }
+
+/* Il selettore del modo (FT8) ha lo stesso aspetto del selettore di banda e frequenza: stesso fondo, stesso bordo viola, stesso carattere */
+html:root:root .band-row .mode-switch-btn { background: #1b2540 !important; border: 1px solid #8e7bff !important; color: #ffffff !important; box-shadow: none !important; }
+html:root:root[data-theme='light'] .band-row .mode-switch-btn { background: #ffffff !important; border-color: #6d5bf0 !important; color: #0f172a !important; }
+html:root:root .band-row .mode-switch-btn:hover:not(:disabled) { background: #26335a !important; }
+html:root:root[data-theme='light'] .band-row .mode-switch-btn:hover:not(:disabled) { background: #f1eeff !important; }
+html:root:root .band-row .mode-switch-btn { height: 28px !important; min-height: 28px !important; padding-top: 0 !important; padding-bottom: 0 !important; }

@@ -139,7 +139,15 @@ export function GridBoard({ cells, onChange, render, locked = false, free = fals
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
-    return () => ro.disconnect();
+    // anche il contenitore: se cambia lo spazio disponibile (il display in testata che si carica, la finestra che si alza o si abbassa, la scala
+    // dell'interfaccia) le righe si rimisurano; prima restava lo spazio di prima e in fondo rimaneva una striscia vuota
+    if (el.parentElement) ro.observe(el.parentElement);
+    // all'apertura lo spazio sopra cambia ancora (display, caratteri, scala dell'interfaccia): si rimisura qualche volta dopo l'avvio
+    const later = [60, 400, 1500].map((ms) => window.setTimeout(fit, ms));
+    return () => {
+      later.forEach((id) => window.clearTimeout(id));
+      ro.disconnect();
+    };
   }, []);
   const colW = (width - GAP * (COLS + 1)) / COLS;
   // altezza di una riga: la finestra divisa in ROWS righe (mai meno di 14 px, oltre si scorre)

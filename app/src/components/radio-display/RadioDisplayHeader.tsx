@@ -8,10 +8,11 @@ import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
 import { useT } from '../../i18n';
 import { usePhone } from '../../lib/phone';
 import { useMeterBallistics } from '../../lib/meterBallistics';
-import { displayModel, isFaceStyle, radioAnswering, isSquareStyle, useRadioDisplay, type DisplayModel, type RadioDisplayStyle } from '../../lib/radioDisplay';
+import { displayModel, isFaceStyle, radioAnswering, isSquareStyle, useNarrowScreen, useRadioDisplay, type DisplayModel, type RadioDisplayStyle } from '../../lib/radioDisplay';
 import { IcBlackSquare, IcBlueDisplay, IcBlueSquare, IcDualDisplay, LedLineDisplay, YaesuSquare } from './ModernDisplays';
 import { useStation } from '../../state/station';
 import { RadioDisplay } from './RadioDisplay';
+import { CompactRadioDisplay } from './CompactRadioDisplay';
 import { useQuery } from '@tanstack/react-query';
 import { getCat } from '../../api/client';
 import { SetupCta } from '../SetupCta';
@@ -40,6 +41,7 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const t = useT();
   const detached = useGroups().some((g) => g.open && g.items.includes('display'));
   const phone = usePhone();
+  const narrow = useNarrowScreen();
   const pref = useRadioDisplay((s) => s.pref);
   const status = useStation((s) => s.status);
   const raw = displayModel(status);
@@ -80,6 +82,9 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   if (!phone && cat.data && !configured && (state === 'disconnected' || state === 'error')) {
     return <SetupCta className="setup-cta--radio" href="#/impostazioni/radio" title="cta.radio.none" action="cta.radio.go" />;
   }
+
+  // schermo stretto: il display grande non entra in testata, resta una riga con frequenza, potenza, ROS e TUNE (scelta forzata)
+  if (narrow && !solo && !phone) return <CompactRadioDisplay model={model} />;
 
   if (phone) {
     return (

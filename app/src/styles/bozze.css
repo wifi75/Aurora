@@ -1543,3 +1543,25 @@ html[data-theme='light'] .mguide-chip, html[data-theme='light'] .mguide-full { b
 .bands-with-cmds.cmds-only .bands-cmds-grip { display: none !important; }
 .bands-with-cmds.cmds-only .bands-cmds { margin-top: 0 !important; }
 .bands-with-cmds.cmds-only .cmd-buttons { margin-top: 4px !important; padding-bottom: 2px; }
+
+/* Comandi: i pulsanti non si schiacciano (prima «Tune» restava largo come il solo puntino e non si leggeva) e vanno a capo se manca spazio; il contenuto
+   parte alla stessa distanza dal bordo di «Bande aperte» */
+.bands-with-cmds .cmd-buttons { flex-wrap: wrap !important; gap: 4px 6px !important; }
+.bands-with-cmds .cmd-buttons button,
+.bands-with-cmds .cmd-buttons.cmd-buttons--dense button { flex: 0 0 auto !important; min-width: auto !important; overflow: visible !important; text-overflow: clip !important; white-space: nowrap; }
+.dock-panel--cmds .tx-panel.tx-commands { padding-left: 6px !important; }
+.dock-panel--cmds .tx-commands .cmd-big { padding-left: 0 !important; }
+
+/* Comandi: i pulsanti in una griglia a sei colonne, piu' vicini e della stessa altezza: prima riga «Hold Tx Freq» (quattro colonne) e «Tune» (due),
+   seconda riga «Tx/Rx Split», «Log QSO» e «Canc DX» (due colonne ciascuno); ogni pulsante riempie la sua cella */
+.bands-with-cmds .tx-commands .cmd-buttons,
+.dock-panel--cmds .cmd-buttons { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px !important; flex-wrap: nowrap !important; }
+.dock-panel--cmds .cmd-buttons > button,
+.dock-panel--cmds .cmd-buttons > button.cmd-hold,
+.dock-panel--cmds .cmd-buttons .tx-quick > button { grid-column: span 2; width: 100% !important; min-width: 0 !important; flex: none !important; justify-content: center; padding: 0 4px !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap; }
+.dock-panel--cmds .cmd-buttons > button.cmd-hold { grid-column: span 4; }
+.dock-panel--cmds .cmd-buttons .tx-quick,
+.dock-panel--cmds .cmd-buttons .tx-quick--inline { display: contents !important; }
+
+/* un po' d'aria tra la barra dei comandi in alto e le finestre sotto: la griglia si accorcia di altrettanto (le righe si rimisurano), le finestre non scendono ne' si tagliano */
+.live .live-board { margin-top: 8px; }

@@ -1072,3 +1072,16 @@ html[data-theme='light'] .rd-zoom {
    e il display resta corto: la meta' libera non occupa piu' spazio nella testata */
 .rd-duo .rd-slot--extras:empty { display: none; }
 .rd-duo:has(.rd-slot--extras:empty) { width: auto; }
+
+/* display compatto (schermi stretti): una riga con frequenza, lettura principale, potenza, ROS e TUNE */
+.rd-compact { display: inline-flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 10px; border: 1px solid #8e7bff; border-radius: 8px; background: color-mix(in srgb, var(--panel, #0b1322) 85%, #8e7bff); color: var(--text); white-space: nowrap; }
+html[data-theme='light'] .rd-compact { background: #ffffff; border-color: #6d5bf0; }
+.rd-compact--tx { border-color: #ff5252; box-shadow: 0 0 0 1px #ff5252; }
+.rd-compact-freq { font-size: 21px; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.rd-compact-mode { font-size: 11px; font-weight: 700; opacity: 0.8; }
+.rd-compact-read { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rd-compact-read small { font-size: 10px; opacity: 0.7; margin-right: 2px; }
+.rd-compact-tune { height: 24px; padding: 0 10px; border-radius: 6px; border: 1px solid #8e7bff; background: #6d5bf0; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; cursor: pointer; }
+.rd-compact-tune:hover:not(:disabled) { background: #8e7bff; }
+.rd-compact-tune--on { background: #c62828; border-color: #ff8a80; }
+.rd-compact-tune:disabled { opacity: 0.5; cursor: default; }
