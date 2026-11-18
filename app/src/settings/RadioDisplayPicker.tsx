@@ -1,3 +1,4 @@
+import { CompactRadioDisplay } from '../components/radio-display/CompactRadioDisplay';
 import { RadioDisplay } from '../components/radio-display/RadioDisplay';
 import { useT, type Key } from '../i18n';
 import { DEMO_MODEL, displaySize, isFaceStyle, isSquareStyle, RADIO_DISPLAY_LAYOUTS, RADIO_DISPLAY_STYLES, useNarrowScreen, useRadioDisplay } from '../lib/radioDisplay';
@@ -18,6 +19,8 @@ export function RadioDisplayPicker() {
       <h3 className="set-sub">{t('rd.title')}</h3>
       <Help>{t('rd.intro')}</Help>
       {narrow ? <p className="set-warn" role="status">{t('rd.narrow')}</p> : null}
+      {/* anteprima del display compatto con i dati di prova (la radio vera lo riempie con i suoi) */}
+      {narrow ? <div className="rd-compact-preview"><CompactRadioDisplay model={DEMO_MODEL} /></div> : null}
       <div className="rd-picker" role="radiogroup" aria-label={t('rd.title')} aria-disabled={narrow || undefined} style={narrow ? { opacity: 0.5, pointerEvents: 'none' } : undefined}>
         {RADIO_DISPLAY_STYLES.map((style) => (
           <label key={style} className={`rd-card${pref.style === style ? ' rd-card--on' : ''}${pref.hidden ? ' rd-card--off' : ''}${isFaceStyle(style) ? ' rd-card--wide' : ''}`}>

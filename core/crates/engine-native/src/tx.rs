@@ -41,6 +41,11 @@ pub trait TxPort: Send + Sync {
     }
     /// Attenuazione dell'uscita audio (cursore Pwr), in decimi di dB, da usare per le prossime trasmissioni.
     fn set_attenuation(&self, _tenths: u32) {}
+    /// Il livello e' cambiato davvero (l'utente ha mosso il cursore Pwr, o c'e' un livello ricordato per la banda): chi scrive il volume di Windows lo fa
+    /// solo da qui. Le chiamate di `set_attenuation` prima di ogni trasmissione sono di routine e non toccano i livelli di Windows.
+    fn level_changed(&self, tenths: u32) {
+        self.set_attenuation(tenths);
+    }
     /// Trasmette subito, senza aspettare l'inizio di un periodo («Tune» di WSJT-X parte appena premuto). Chi non sa farlo passa da `schedule`.
     fn start_now(&self, request: TxRequest) -> Result<(), String> {
         self.schedule(request)

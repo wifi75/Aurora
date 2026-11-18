@@ -1732,7 +1732,13 @@ impl engine_native::TxPort for WindowsVolumePort {
             }
             return;
         }
-        // da qui in poi la mossa e' dell'utente: da ora Aurora scrive il volume di Windows
+        // chiamata di routine (prima di ogni trasmissione): riscrive solo se l'utente ha gia' mosso il cursore in questa sessione
+        self.apply(tenths);
+    }
+
+    fn level_changed(&self, tenths: u32) {
+        // il livello e' cambiato davvero: da ora Aurora scrive il volume di Windows
+        self.inner.set_attenuation(0);
         self.user_set.store(true, std::sync::atomic::Ordering::Relaxed);
         self.apply(tenths);
     }
@@ -1775,6 +1781,10 @@ impl engine_native::TxPort for EngineTxPort {
 
     fn set_attenuation(&self, tenths: u32) {
         self.inner.set_attenuation(tenths);
+    }
+
+    fn level_changed(&self, tenths: u32) {
+        self.inner.level_changed(tenths);
     }
 
     fn start_now(&self, request: tx_native::TxRequest) -> Result<(), String> {
