@@ -17,9 +17,10 @@ const MAX = 1.6;
  */
 export function autoScale(width: number): number {
   if (!Number.isFinite(width) || width <= 0) return 1;
-  if (width < 1100) return 0.6;
-  if (width < 1300) return 0.7;
-  if (width < 1500) return 0.8;
+  if (width < 1100) return 0.65;
+  if (width < 1250) return 0.75;
+  if (width < 1400) return 0.8;
+  if (width < 1500) return 0.85;
   if (width < 1700) return 0.9;
   return 1;
 }
