@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.294 (pubblicata 2026-11-18T12:56:40Z)
+
+- Pannelli e display a blocco unico (FT-2000, IC-7610, Icom doppio, Icom blu, LED essenziale) senza indicatori finti: restano frequenze dei VFO, modo, RX/TX, S-meter in RX, potenza e ROS in TX, TUNE; disegni piu' corti; stile «Icom blu con banda passante» ora «Icom blu» (migrazione in `radioDisplay.ts`). Non provato con radio vera.
+- Prossimo passo: risposte di Pere (#77) e Toly (#73); schede del contest mancanti.
+
 ## Nella 0.11.293 (pubblicata 2026-11-18T12:13:38Z)
 
 - Display della radio: `RadioExtras.tsx` mostra solo VFO B e TUNE (TUNE se la radio dice di avere l'accordatore o se i dati extra non si leggono); tolti `PwrSplitBox`, `SplitButton`, `RadioExtrasGroup` (le caselle `rx.*`). `CompactRadioDisplay.tsx` usa la stessa regola per TUNE. I pannelli FT-2000 e IC-7610 (`RigFaceDisplays.tsx`) hanno ancora gli indicatori disegnati: restano spenti senza i dati extra; se danno fastidio vanno svuotati.
