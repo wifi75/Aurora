@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.296',
-    released: '2026-11-18T17:00:00Z',
+    released: '2026-11-18T17:17:56Z',
     kind: 'changed',
     title: [
       'Scheda dei VFO piccola accanto al display',

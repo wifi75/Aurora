@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.296 (pubblicata 2026-11-18T17:17:56Z)
+
+- `RadioExtras.tsx`: scheda dei VFO con VFOA (frequenza dal display, `displayModel`) e VFOB uno sotto l'altro e TUNE pulsantino; CSS in coda a `radiodisplay.css` (`.rx-vfos`, `.rd-duo .rd-slot--extras` largo quanto serve, a destra). FT-2000 e IC-7610 non la usano. Visto solo in anteprima con dati di prova.
+- Prossimo passo: risposte di Luc (#78), Pere (#77), IZ0008SWL (#79), Hernan (#72); prova del filtro dei falsi messaggi a radio spenta.
+
 ## Nella 0.11.295 (pubblicata 2026-11-18T15:44:00Z)
 
 - `ft8/src/filters.rs` (`reject_message`, dentro `chkfalse8`): messaggi con due `<...>` scartati; messaggi i3 = 3 (RTTY Roundup) arrivati al controllo dei dubbi scartati se nessuno dei due nominativi e' nell'elenco (con elenco vuoto JTDX lascia passare tutto). Filtro NOSTRO, non di JTDX: da confrontare con REA; in un contest vero un messaggio debole di una stazione non ancora conosciuta puo' essere perso. Non provato con radio spenta dal vivo.
