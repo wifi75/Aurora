@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.297 - 2026-11-18
+
 - Guida: tolti dall'elenco degli stili del display i tre stili non piu' selezionabili (Icom doppio ricevitore, Icom blu, LED essenziale), che comparivano come chiavi non risolte; tolte anche le loro voci dal dizionario olandese.
 
 ## 0.11.296 - 2026-11-18

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.297',
+    released: '2026-11-18T18:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Guida dei display corretta',
+      'Display help corrected',
+      'Hilfe zu den Displays korrigiert',
+      'Aide des affichages corrigée',
+      'Ayuda de las pantallas corregida',
+      'Ajuda dos ecrãs corrigida',
+    ],
+    text: [
+      'Nella Guida, la pagina del display della radio elencava ancora tre stili che non si possono più scegliere (Icom doppio ricevitore, Icom blu, LED essenziale) e li mostrava come testo non risolto. Ora l’elenco è giusto, in tutte le lingue.',
+      'In the Help, the radio display page still listed three styles that can no longer be chosen (Icom dual receiver, Icom blue, Essential LED) and showed them as unresolved text. The list is now correct, in all languages.',
+      'In der Hilfe listete die Seite zum Funkgeräte-Display noch drei nicht mehr wählbare Stile (Icom Doppelempfänger, Icom blau, Schlichte LED) und zeigte sie als nicht aufgelösten Text. Die Liste stimmt jetzt, in allen Sprachen.',
+      'Dans l’aide, la page de l’affichage du poste énumérait encore trois styles qu’on ne peut plus choisir (Icom double récepteur, Icom bleu, LED essentiel) et les montrait comme texte non résolu. La liste est maintenant juste, dans toutes les langues.',
+      'En la ayuda, la página de la pantalla de la radio aún listaba tres estilos que ya no se pueden elegir (Icom doble receptor, Icom azul, LED esencial) y los mostraba como texto sin resolver. Ahora la lista es correcta, en todos los idiomas.',
+      'Na ajuda, a página do ecrã do rádio ainda listava três estilos que já não se podem escolher (Icom duplo recetor, Icom azul, LED essencial) e mostrava-os como texto por resolver. Agora a lista está certa, em todas as línguas.',
+    ],
+  },
+  {
     version: '0.11.296',
     released: '2026-11-18T17:17:56Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'L’état envoyé en UDP dit maintenant « décodage en cours » seulement pendant que le décodeur travaille, comme WSJT-X, si bien que des cartes comme la UDP BandMap de Logger32 se redessinent à la fin de chaque période. Le voyant « canal occupé » de l’afficheur radio ne s’allume lui aussi que pendant le décodage.',
       'El estado enviado por UDP ahora dice «decodificando» solo mientras el decodificador trabaja, como WSJT-X, así que mapas como la UDP BandMap de Logger32 se redibujan al final de cada periodo. El piloto «canal ocupado» de la pantalla de la radio también se enciende ahora solo durante la decodificación.',
       'O estado enviado por UDP diz agora «a descodificar» só enquanto o descodificador trabalha, como o WSJT-X, por isso mapas como a UDP BandMap do Logger32 redesenham-se no fim de cada período. A luz «canal ocupado» do ecrã do rádio também só se acende agora durante a descodificação.',
-    ],
-  },
-  {
-    version: '0.11.282',
-    released: '2026-11-17T08:50:15Z',
-    kind: 'new',
-    title: [
-      'L’antivirus ha tolto dei file ad Aurora: avviso e guida',
-      'The antivirus removed files from Aurora: alert and guide',
-      'Das Antivirenprogramm hat Dateien von Aurora entfernt: Hinweis und Anleitung',
-      'L’antivirus a retiré des fichiers à Aurora : alerte et guide',
-      'El antivirus ha quitado archivos a Aurora: aviso y guía',
-      'O antivírus removeu ficheiros da Aurora: aviso e guia',
-    ],
-    text: [
-      'Una barra dice quali file mancano (il programma Hamlib, le DLL, cty.dat, l’interfaccia) con il nome dell’antivirus, e offre «Ripristina Hamlib» e il link alla Guida. Nella Guida c’è una nuova sezione su come escludere le cartelle di Aurora in Windows Defender.',
-      'A bar tells you which files are missing (the Hamlib program, the DLLs, cty.dat, the interface) with the name of the antivirus, and offers “Restore Hamlib” and the link to the Guide. The Guide has a new section on how to exclude the Aurora folders in Windows Defender.',
-      'Eine Leiste nennt die fehlenden Dateien (das Hamlib-Programm, die DLLs, cty.dat, die Oberfläche) mit dem Namen des Antivirenprogramms und bietet „Hamlib wiederherstellen“ und den Link zur Anleitung. In der Anleitung gibt es einen neuen Abschnitt dazu, wie man die Aurora-Ordner in Windows Defender ausschließt.',
-      'Une barre indique quels fichiers manquent (le programme Hamlib, les DLL, cty.dat, l’interface) avec le nom de l’antivirus, et propose « Restaurer Hamlib » et le lien vers le Guide. Le Guide a une nouvelle section sur la façon d’exclure les dossiers d’Aurora dans Windows Defender.',
-      'Una barra dice qué archivos faltan (el programa Hamlib, las DLL, cty.dat, la interfaz) con el nombre del antivirus, y ofrece «Restaurar Hamlib» y el enlace a la Guía. La Guía tiene una sección nueva sobre cómo excluir las carpetas de Aurora en Windows Defender.',
-      'Uma barra diz quais os ficheiros que faltam (o programa Hamlib, as DLL, cty.dat, a interface) com o nome do antivírus, e oferece «Restaurar o Hamlib» e a ligação ao Guia. O Guia tem uma nova secção sobre como excluir as pastas da Aurora no Windows Defender.',
     ],
   },
 ];
