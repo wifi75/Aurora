@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.292 (pubblicata 2026-11-18T10:24:05Z)
+
+- `RigConfig.restore_on_start` (`rig-control/src/cat_config.rs`, true di base): se falso `spawn_start_on_main_frequency` (`aurora/src/lib.rs`) non sposta la radio all'avvio. `restore_on_exit` (true di base): `CatService::remember_original` ricorda frequenza e modo che la radio aveva quando Aurora l'ha trovata e `restore_original_if_chosen` (chiamato da `CatService::shutdown`) li rimette alla chiusura, solo con Hamlib e solo se la radio non trasmette. Caselle in `CatTab.tsx` (`cat.restoreStart`, `cat.restoreExit` in `radioextras.ts`).
+- Perche': Toly (#73, TS-790) metteva la radio sui 1296 MHz, avviava Aurora e la frequenza tornava ai 2 metri (avvio voluto dal proprietario il 2026-11-14); richiesta del proprietario di avere anche il ritorno alla chiusura. Da provare con una radio vera: ordine di chiusura (il ripristino avviene prima di liberare la porta) e radio spenta.
+
 ## Nella 0.11.291 (pubblicata 2026-11-18T09:48:48Z)
 
 - Livelli audio di Windows: nella 0.11.290 le chiamate di `set_attenuation` che il motore fa prima di ogni trasmissione (`engine-native/src/tx.rs`) passavano da `WindowsVolumePort::set_attenuation` e la scambiavano per una mossa dell'utente; dopo la prima trasmissione Aurora riscriveva il volume di uscita. Ora il gancio del cursore (`set_attenuation_hook` in `engine-native/src/lib.rs`) chiama `TxPort::level_changed` e solo quello imposta `user_set`; `set_attenuation` di routine non scrive finche' l'utente non ha mosso il cursore. All'avvio il cursore prende il volume letto da Windows. Da provare con una scheda audio vera (MixW che trovava i livelli a 100 dopo Aurora). Se persiste, chiedere all'amico versione, se il livello e' di registrazione o di riproduzione, e se ha toccato AUTO.

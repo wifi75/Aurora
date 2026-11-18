@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.292',
-    released: '2026-11-18T12:00:00Z',
+    released: '2026-11-18T10:24:05Z',
     kind: 'new',
     title: [
       "La radio all'avvio e alla chiusura",
