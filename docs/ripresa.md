@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Da fare (olandese)
+
+- `npx vitest run src/i18n` ha 2 prove che falliscono da prima di oggi: una voce olandese di Guida senza testo base (`t.12gffgz315`, elenco passaggi dei satelliti) e circa 13 voci dell'interfaccia senza traduzione olandese (si usa l'inglese). Si risolve con `node scripts/export-nl.mjs` e `node scripts/importa-nl.mjs` (foglio `docs/traduzione-olandese.csv`).
+- Prossimo passo (display): il proprietario vuole il display piu' basso (circa 72 px), frequenza principale piu' piccola e in alto, sotto «VFOB» piccolo con la seconda frequenza, niente scheda a destra; mostrato come disegno, in attesa del suo via.
+
 ## Nella 0.11.296 (pubblicata 2026-11-18T17:17:56Z)
 
 - `RadioExtras.tsx`: scheda dei VFO con VFOA (frequenza dal display, `displayModel`) e VFOB uno sotto l'altro e TUNE pulsantino; CSS in coda a `radiodisplay.css` (`.rx-vfos`, `.rd-duo .rd-slot--extras` largo quanto serve, a destra). FT-2000 e IC-7610 non la usano. Visto solo in anteprima con dati di prova.

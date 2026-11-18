@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Guida: tolti dall'elenco degli stili del display i tre stili non piu' selezionabili (Icom doppio ricevitore, Icom blu, LED essenziale), che comparivano come chiavi non risolte; tolte anche le loro voci dal dizionario olandese.
+
 ## 0.11.296 - 2026-11-18
 
 - Scheda dei VFO piccola e a destra del display: VFOA e VFOB uno sotto l'altro, TUNE un pulsantino (prima una barra larga quanto la scheda). Non vale per FT-2000 e IC-7610, che hanno i VFO nel disegno.
