@@ -83,7 +83,6 @@ export function FreqPicker({ dialHz, mode, onPick, locked = false, bands: shown,
       >
         {current ? <span className="freq-picker-btn-band">{current}</span> : null}
         <span className="freq-picker-btn-mhz">{dialHz > 0 ? mhz(dialHz) : '—'}</span>
-        <span className="freq-picker-btn-unit">MHz</span>
         <span className="mode-switch-caret" aria-hidden="true">
           ▾
         </span>

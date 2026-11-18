@@ -1332,3 +1332,16 @@ body.rd-radio-off .rd-square-slot::after, body.rd-radio-off .rd-square-preview::
 .app-footer .bar-utc { margin-right: 0.4rem; }
 .toast-action { flex: none; margin-left: 8px; padding: 2px 10px; border: 1px solid currentColor; border-radius: 6px; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
 .toast-action:hover { background: color-mix(in srgb, currentColor 15%, transparent); }
+
+/* Pagina FT8, riga di modo e banda: il selettore del modo (FT8) e quello di banda e frequenza hanno la stessa altezza e lo stesso carattere dei tasti
+   accanto (Monitora, Hound, SWL...); niente «MHz» nel selettore di banda (si capisce) e la freccetta e' un piccolo riquadro ben visibile,
+   cosi' si capisce che e' un menu a tendina. */
+.band-row .mode-switch-btn,
+.band-row .freq-picker-btn { height: 28px; min-height: 28px; padding: 0 6px 0 9px; gap: 6px; font-size: 12px; font-weight: 600; line-height: 1; }
+.band-row .freq-picker-btn { min-width: 0; padding-left: 6px; }
+.band-row .freq-picker-btn .freq-picker-btn-band { font-size: 11px; padding: 2px 6px; min-width: 0; }
+.band-row .freq-picker-btn .freq-picker-btn-mhz { font-size: 13px; min-width: 3.6rem; }
+.mode-switch-btn .mode-switch-caret,
+.freq-picker-btn .mode-switch-caret { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; margin-left: 4px; border-radius: 5px; font-size: 10px; line-height: 1; opacity: 1; color: #ffffff; background: #6d5bf0; }
+.mode-switch-btn:hover .mode-switch-caret,
+.freq-picker-btn:hover .mode-switch-caret { background: #8e7bff; }
