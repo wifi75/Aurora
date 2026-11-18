@@ -138,7 +138,7 @@ describe('RadioDisplayHeader', () => {
     act(() => useRadioDisplay.getState().set({ style: 'ft2000' }));
     const { container } = render(<RadioDisplayHeader />, { wrapper });
     // un solo frontalino (le altre svg sono le icone della testata, come il menu per spostare il display)
-    expect(container.querySelectorAll('svg[viewBox="0 0 832 96"]')).toHaveLength(1);
+    expect(container.querySelectorAll('svg[viewBox="0 0 672 96"]')).toHaveLength(1);
     expect(container.querySelector('.rx-extras')).toBeNull();
     expect(container.textContent).toContain('VFO-A');
   });
@@ -147,7 +147,7 @@ describe('RadioDisplayHeader', () => {
     const { container } = render(<RadioDisplay model={DEMO_MODEL} style="ic7610" />);
     expect(container.textContent).toContain('MAIN');
     expect(container.textContent).toContain('21.076.50');
-    expect(container.textContent).toContain('BW 3.0k');
+    expect(container.textContent).not.toContain('BW');
   });
 
   // sotto il display restano solo il secondo VFO (se la radio lo da') e il tasto TUNE: niente riquadro PWR + SPLIT ne' fila di indicatori

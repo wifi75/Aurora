@@ -184,3 +184,4 @@ body.rd-square .live .live-top > .live-left {
 body.rd-square .live .live-top {
   min-height: 5.6rem;
 }
+.md-txread { display: block; font-size: 0.6rem; font-variant-numeric: tabular-nums; }

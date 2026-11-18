@@ -1,7 +1,6 @@
 import '../../styles/modern-displays.css';
 import type { ReactNode } from 'react';
 import type { CatExtraItem } from '../../api/client';
-import { agcName, useRadioExtras } from '../../lib/radioExtras';
 import {
   formatRadioFrequency,
   hasFrequency,
@@ -18,8 +17,8 @@ import { useT } from '../../i18n';
 
 /**
  * Sei display «moderni»: tre estesi (640 x 90, nella riga dei comandi) e tre quasi quadrati (330 x 130, nell'angolo della testata
- * al posto delle icone). Ogni indicatore compare solo se la radio lo da' (il dato c'e') e se e' spuntato in
- * Impostazioni › Stazione › Radio > «Display esteso: cosa mostrare»; con il clic (solo in testata) comanda la radio.
+ * al posto delle icone). Mostrano solo dati e funzioni che esistono davvero: frequenza (VFO A e, se la radio lo da', VFO B), modo, TX,
+ * S-meter in ricezione, potenza e ROS in trasmissione, e il tasto TUNE (con il clic, solo in testata, accorda).
  */
 
 export interface ModernProps {
@@ -32,7 +31,6 @@ export interface ModernProps {
 }
 
 const pct = (f: number | null) => `${Math.round(Math.min(1, Math.max(0, f ?? 0)) * 100)}%`;
-const bw = (hz: number | null) => (hz ? `BW ${(hz / 1000).toFixed(1)}k` : null);
 
 /** Un indicatore: pulsante che comanda la radio in testata, scritta nelle anteprime. */
 function Chip({ item, on, children, onAction, waiting, cls = '' }: { item?: CatExtraItem; on?: boolean; children: ReactNode; onAction?: (i: CatExtraItem) => void; waiting?: CatExtraItem | null; cls?: string }) {
@@ -48,71 +46,41 @@ function Chip({ item, on, children, onAction, waiting, cls = '' }: { item?: CatE
   return <span className={className}>{children}</span>;
 }
 
-/** Cosa si puo' mostrare, dai dati della radio e dalle scelte dell'operatore. */
+/** Cosa si puo' mostrare, dai dati della radio. */
 function useShown(data: FaceExtras | null | undefined) {
-  const prefs = useRadioExtras((s) => s.prefs);
   const x = data?.extras ?? {};
   return {
     x,
-    preamp: prefs.frontEnd && x.preamp_db != null,
-    att: prefs.frontEnd && x.att_db != null,
-    agc: prefs.agc && x.agc != null,
-    nb: prefs.noise && x.nb != null,
-    nr: prefs.noise && x.nr != null,
-    notch: prefs.noise && x.notch != null,
-    tuner: prefs.tuner && x.tuner != null,
-    vfoB: prefs.vfoB && x.vfo_b_hz != null && x.vfo_b_hz > 0,
-    meters: prefs.meters,
-    rit: prefs.ritXit && x.rit_hz != null,
-    passband: data?.passbandHz ?? null,
-    split: data?.split ?? null,
+    vfoB: x.vfo_b_hz != null && x.vfo_b_hz > 0,
   };
 }
 
-/** Le funzioni accese/spente come tasti, nell'ordine delle radio. */
-function FunctionChips({ data, onAction, waiting }: { data?: FaceExtras | null; onAction?: (i: CatExtraItem) => void; waiting?: CatExtraItem | null }) {
-  const s = useShown(data);
-  const { x } = s;
-  return (
-    <>
-      {s.preamp ? <Chip item="preamp" on={(x.preamp_db ?? 0) > 0} onAction={onAction} waiting={waiting}>{(x.preamp_db ?? 0) > 0 ? `P.AMP ${x.preamp_db}` : 'P.AMP OFF'}</Chip> : null}
-      {s.att ? <Chip item="att" on={(x.att_db ?? 0) > 0} onAction={onAction} waiting={waiting}>{(x.att_db ?? 0) > 0 ? `ATT ${x.att_db}` : 'ATT OFF'}</Chip> : null}
-      {s.agc ? <Chip item="agc" on onAction={onAction} waiting={waiting}>AGC {agcName(x.agc ?? 0)}</Chip> : null}
-      {s.nb ? <Chip item="nb" on={x.nb === true} onAction={onAction} waiting={waiting}>NB</Chip> : null}
-      {s.nr ? <Chip item="nr" on={x.nr === true} onAction={onAction} waiting={waiting}>NR</Chip> : null}
-      {s.notch ? <Chip item="notch" on={x.notch === true} onAction={onAction} waiting={waiting}>NOTCH</Chip> : null}
-      {s.tuner ? <Chip item="atu" on={x.tuner === true} onAction={onAction} waiting={waiting}>TUNER</Chip> : null}
-    </>
-  );
+/** L'unico tasto che resta: TUNE (acceso quando la radio sta accordando). */
+function TuneChip({ data, onAction, waiting }: { data?: FaceExtras | null; onAction?: (i: CatExtraItem) => void; waiting?: CatExtraItem | null }) {
+  return <Chip item="tune" on={data?.extras.tuner === true} onAction={onAction} waiting={waiting}>TUNE</Chip>;
 }
 
-/** Banda passante del filtro come sulle Icom: un trapezio con la larghezza. */
-function Passband({ hz, height = 40 }: { hz: number | null; height?: number }) {
-  if (!hz) return null;
-  const w = Math.max(30, Math.min(100, (hz / 3600) * 100));
-  const left = 60 - w / 2;
-  return (
-    <svg className="md-pb" viewBox="0 0 120 44" height={height} aria-hidden="true">
-      <line x1="2" y1="42" x2="118" y2="42" stroke="#6f92d8" />
-      <path d={`M${left} 42 L${left + 10} 8 L${left + w - 10} 8 L${left + w} 42`} fill="#1e4fb0" fillOpacity=".55" stroke="#fff" strokeWidth="1.6" />
-      <text x="3" y="9" fontSize="9" fill="#cfe0ff">{bw(hz)}</text>
-    </svg>
-  );
-}
-
-/** Barre S, Po, SWR (solo quelle che hanno un valore). */
+/** Barre: S in ricezione; in trasmissione la potenza (Po) e il ROS (solo quelle che hanno un valore). */
 function Bars({ model, cls }: { model: DisplayModel; cls: string }) {
   const m = model.meters;
   const s = sFraction(m);
   const po = powerFraction(m);
   const swr = swrFraction(m);
+  const tx = model.transmitting;
   return (
     <div className={`md-bars ${cls}`}>
-      {s != null ? <><span>S</span><span className="md-bar"><i style={{ width: pct(s) }} className={s > 0.6 ? 'md-bar--over' : ''} /></span><b>{sLabel(m)}</b></> : null}
-      {po != null ? <><span>Po</span><span className="md-bar"><i style={{ width: pct(po) }} /></span><b>{m?.power_w != null ? `${Math.round(m.power_w)}W` : ''}</b></> : null}
-      {swr != null ? <><span>SWR</span><span className="md-bar md-bar--swr"><i style={{ width: pct(swr) }} /></span><b>{m?.swr != null ? m.swr.toFixed(1) : ''}</b></> : null}
+      {!tx && s != null ? <><span>S</span><span className="md-bar"><i style={{ width: pct(s) }} className={s > 0.6 ? 'md-bar--over' : ''} /></span><b>{sLabel(m)}</b></> : null}
+      {tx && po != null ? <><span>Po</span><span className="md-bar"><i style={{ width: pct(po) }} /></span><b>{m?.power_w != null ? `${Math.round(m.power_w)}W` : ''}</b></> : null}
+      {tx && swr != null ? <><span>SWR</span><span className="md-bar md-bar--swr"><i style={{ width: pct(swr) }} /></span><b>{m?.swr != null ? m.swr.toFixed(1) : ''}</b></> : null}
     </div>
   );
+}
+
+/** Lettura in trasmissione (potenza e ROS) per i display che hanno la lancetta al posto delle barre. */
+function TxReading({ model }: { model: DisplayModel }) {
+  const m = model.meters;
+  if (!model.transmitting || (m?.power_w == null && m?.swr == null)) return null;
+  return <span className="md-soft md-txread">{m?.power_w != null ? `PO ${Math.round(m.power_w)} W` : ''}{m?.power_w != null && m?.swr != null ? '  ' : ''}{m?.swr != null ? `SWR ${m.swr.toFixed(1)}` : ''}</span>;
 }
 
 /** S-meter a lancetta come sulle Icom. */
@@ -158,10 +126,11 @@ export function IcDualDisplay({ model, noRadio, ariaLabel, data, onAction, waiti
     <Frame cls="md-e md-icdual" ariaLabel={ariaLabel}>
       <div className="md-half">
         <div>
-          <div className="md-row"><span className="md-tag md-tag--on">MAIN</span><span>{model.mode || '—'}</span>{bw(s.passband) ? <span className="md-soft">{bw(s.passband)}</span> : null}{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
+          <div className="md-row"><span className="md-tag md-tag--on">MAIN</span><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
           <span className="md-freq">{freq(model.dialHz)}</span>
+          <TxReading model={model} />
         </div>
-        {s.meters ? <Needle model={model} /> : null}
+        <Needle model={model} />
       </div>
       <div className="md-half md-half--sub">
         {s.vfoB ? (
@@ -169,45 +138,48 @@ export function IcDualDisplay({ model, noRadio, ariaLabel, data, onAction, waiti
             <div className="md-row"><span className="md-tag">SUB</span><span>{s.x.vfo_b_mode ?? ''}</span></div>
             <span className="md-freq md-freq--sub">{freq(s.x.vfo_b_hz ?? 0)}</span>
           </div>
-        ) : (
-          <div className="md-row md-wrap"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
-        )}
-        {s.vfoB ? <div className="md-row md-wrap md-col md-chips-side"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div> : null}
+        ) : <span />}
+        <div className="md-row md-wrap md-col md-chips-side"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
       </div>
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>
   );
 }
 
-/** E2 · Icom blu con banda passante. */
+/** E2 · Icom blu. */
 export function IcBlueDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
     <Frame cls="md-e md-icblue" ariaLabel={ariaLabel}>
       <div>
-        <div className="md-row"><span className="md-tag md-tag--on">{s.x.vfo ? s.x.vfo.replace('VFO', 'VFO ') : 'VFO A'}</span><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}{s.split ? <span className="md-tag">SPLIT</span> : null}</div>
+        <div className="md-row"><span className="md-tag md-tag--on">VFO A</span><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
         <span className="md-freq">{freq(model.dialHz)}</span>
       </div>
       <div className="md-mid">
-        <Passband hz={s.passband} height={34} />
-        <div className="md-row md-wrap"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+        {s.vfoB ? (
+          <>
+            <div className="md-row"><span className="md-tag">VFO B</span><span>{s.x.vfo_b_mode ?? ''}</span></div>
+            <span className="md-freq md-freq--sub">{freq(s.x.vfo_b_hz ?? 0)}</span>
+          </>
+        ) : null}
+        <div className="md-row"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
       </div>
-      {s.meters ? <Bars model={model} cls="md-bars--blue" /> : <span />}
+      <Bars model={model} cls="md-bars--blue" />
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>
   );
 }
 
-/** E3 · LED essenziale (stile K4): tasti in alto, sotto la frequenza con gli strumenti in linea, a destra il VFO B. */
+/** E3 · LED essenziale (stile K4): in alto modo, TX e TUNE, sotto la frequenza con gli strumenti in linea, a destra il VFO B. */
 export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
     <Frame cls="md-e md-ledline" ariaLabel={ariaLabel}>
       <div className="md-led-left">
-        <div className="md-row md-amber md-led-chips"><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+        <div className="md-row md-amber md-led-chips"><span>{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
         <div className="md-led-line">
           <span className="md-freq md-mono">{formatRadioFrequency(model.dialHz)}</span>
-          {s.meters ? <Bars model={model} cls="md-bars--led md-led-bars" /> : null}
+          <Bars model={model} cls="md-bars--led md-led-bars" />
         </div>
       </div>
       {s.vfoB ? <div className="md-right"><span className="md-soft">VFO B</span><span className="md-freq md-freq--sub md-mono">{formatRadioFrequency(s.x.vfo_b_hz ?? 0)}</span></div> : <span />}
@@ -218,18 +190,17 @@ export function LedLineDisplay({ model, noRadio, ariaLabel, data, onAction, wait
 
 /* ---------- Quasi quadrati (330 x 140) ---------- */
 
-/** Q1 · Icom blu: tasti su una riga, frequenza con la banda passante a fianco, strumenti sotto (sta in 330 x 130). */
+/** Q1 · Icom blu: modo e TX su una riga, frequenza grande, strumenti sotto (sta in 330 x 130). */
 export function IcBlueSquare({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
   const s = useShown(data);
   return (
     <Frame cls="md-q md-icblue md-q1" ariaLabel={ariaLabel}>
-      <div className="md-row md-q1-chips"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
-      <div className="md-row"><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}{s.split ? <span className="md-tag">SPLIT</span> : null}{s.vfoB ? <span className="md-soft md-push">B {freq(s.x.vfo_b_hz ?? 0)}</span> : null}</div>
+      <div className="md-row md-q1-chips"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
+      <div className="md-row"><span className="md-tag md-tag--on">{model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}{s.vfoB ? <span className="md-soft md-push">B {freq(s.x.vfo_b_hz ?? 0)}</span> : null}</div>
       <div className="md-q1-main">
         <span className="md-freq md-freq--big">{freq(model.dialHz)}</span>
-        <Passband hz={s.passband} height={28} />
       </div>
-      {s.meters ? <Bars model={model} cls="md-bars--blue md-q1-bars" /> : null}
+      <Bars model={model} cls="md-bars--blue md-q1-bars" />
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>
   );
@@ -237,13 +208,12 @@ export function IcBlueSquare({ model, noRadio, ariaLabel, data, onAction, waitin
 
 /** Q2 · Icom nero con lancetta (stile IC-7300). */
 export function IcBlackSquare({ model, noRadio, ariaLabel, data, onAction, waiting }: ModernProps) {
-  const s = useShown(data);
   return (
     <Frame cls="md-q md-icblack" ariaLabel={ariaLabel}>
-      <div className="md-keys"><FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+      <div className="md-keys"><TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
       <div className="md-body">
-        <div className="md-row">{bw(s.passband) ? <span className="md-tag">{bw(s.passband)}</span> : null}{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}{s.split ? <span className="md-tag">SPLIT</span> : null}</div>
-        {s.meters ? <Needle model={model} height={56} /> : <span />}
+        <div className="md-row">{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}</div>
+        <Needle model={model} height={56} />
         <div className="md-row md-base"><span className="md-tag md-tag--on">{model.mode || '—'}</span><span className="md-freq">{freq(model.dialHz)}</span></div>
       </div>
       <NoRadio model={model} noRadio={noRadio} />
@@ -256,9 +226,9 @@ export function YaesuSquare({ model, noRadio, ariaLabel, data, onAction, waiting
   const s = useShown(data);
   return (
     <Frame cls="md-q md-yaesu" ariaLabel={ariaLabel}>
-      <div className="md-row md-wrap"><span className="md-amber">MAIN · {model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<FunctionChips data={data} onAction={onAction} waiting={waiting} /></div>
+      <div className="md-row md-wrap"><span className="md-amber">MAIN · {model.mode || '—'}</span>{model.transmitting ? <span className="md-tag md-tag--tx">TX</span> : null}<TuneChip data={data} onAction={onAction} waiting={waiting} /></div>
       <div className="md-row md-base"><span className="md-freq md-freq--big md-mono">{formatRadioFrequency(model.dialHz)}</span>{s.vfoB ? <span className="md-freq md-freq--sub md-mono md-blue md-push">{formatRadioFrequency(s.x.vfo_b_hz ?? 0)}</span> : null}</div>
-      {s.meters ? <Bars model={model} cls="md-bars--yaesu" /> : <span />}
+      <Bars model={model} cls="md-bars--yaesu" />
       <NoRadio model={model} noRadio={noRadio} />
     </Frame>
   );

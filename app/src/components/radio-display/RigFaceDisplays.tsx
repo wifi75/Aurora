@@ -1,6 +1,5 @@
 import type { CatExtraItem, RigExtras } from "../../api/client";
 import { useT } from "../../i18n";
-import { agcName } from "../../lib/radioExtras";
 import {
   formatRadioFrequency,
   hasFrequency,
@@ -8,7 +7,6 @@ import {
   meterReadouts,
   S_TICKS,
   S9_FRACTION,
-  swrFraction,
   type DisplayModel,
 } from "../../lib/radioDisplay";
 import { actionTip } from "./RadioExtras";
@@ -25,46 +23,36 @@ import {
 import { SevenSegment, digitsWidth } from "./SevenSegment";
 
 /**
- * Display a pannello unico ispirati a due radio vere: un solo schermo largo con VFO A, VFO B, strumenti e indicatori.
- * Il disegno e' un SVG di misura fissa (960x96, come la testata: 40rem x 4rem); gli indicatori che si possono cambiare
- * dalla radio hanno sopra un pulsante trasparente nella stessa posizione.
+ * Display a pannello unico ispirati a due radio vere: un solo schermo largo con VFO A, VFO B e gli strumenti. Restano solo dati e funzioni
+ * che esistono davvero: frequenza (VFO A e, se la radio lo da', VFO B), modo, stati RX/TX/DEC, S-meter in ricezione e potenza in
+ * trasmissione (con il ROS), e il tasto TUNE, l'unico con sopra un pulsante trasparente (in testata).
+ * Il disegno e' un SVG alto 96; la larghezza dipende dallo stile (FT-2000 e IC-7610 hanno la loro, ritagliata sul contenuto).
  */
 
-export const FACE_W = 960;
 export const FACE_H = 96;
-/** Larghezza del disegno FT-2000: ritagliata sul contenuto (l'ultimo elemento, la scritta PO/S a destra, finisce a 820), senza vuoto a destra. */
-export const FT_FACE_W = 832;
+/** Larghezza del disegno FT-2000, ritagliata sul contenuto (l'ultimo elemento, la lettura PO/S a destra, finisce a 660). */
+export const FT_FACE_W = 672;
+/** Larghezza del disegno IC-7610 (due pannelli VFO affiancati, senza colonna di tasti). */
+export const IC_FACE_W = 684;
 
 /** I dati in piu' della radio che i pannelli disegnano (ognuno solo se la radio lo da'). */
 export interface FaceExtras {
   extras: RigExtras;
-  passbandHz: number | null;
-  split: boolean | null;
 }
 
 /** Dati di prova per le anteprime nelle Impostazioni. */
 export const DEMO_FACE_EXTRAS: FaceExtras = {
   extras: {
-    preamp_db: 0,
-    att_db: 0,
-    agc: 2,
-    nb: true,
-    nr: false,
-    notch: false,
     tuner: false,
-    rit_hz: 0,
-    vfo: "VFOA",
     vfo_b_hz: 21_076_500,
     vfo_b_mode: "USB",
   },
-  passbandHz: 3000,
-  split: false,
 };
 
-const NO_EXTRAS: FaceExtras = { extras: {}, passbandHz: null, split: null };
+const NO_EXTRAS: FaceExtras = { extras: {} };
 
+/** Un pulsante trasparente sopra il disegno: l'unico che resta e' TUNE. */
 interface Hit {
-  key: CatExtraItem;
   x: number;
   y: number;
   w: number;
@@ -77,58 +65,19 @@ interface FaceProps {
   noRadio: string;
   ariaLabel: string;
   data?: FaceExtras | null;
-  /** Con il clic: gli indicatori diventano pulsanti (in testata); senza, il disegno e' solo un'immagine (anteprime). */
+  /** Con il clic: TUNE diventa un pulsante (in testata); senza, il disegno e' solo un'immagine (anteprime). */
   onAction?: (item: CatExtraItem) => void;
   waiting?: CatExtraItem | null;
 }
 
-const khz = (hz: number) => `${(hz / 1000).toFixed(1)}k`;
-const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)}`;
-
-/** Come il tasto TUNER della radio: pressione breve accende o spegne l'accordatore, tenuto premuto 1 s avvia l'accordatura. */
-const HOLD_MS = 1000;
-/** Lo stato della pressione legato al pulsante (il display si ridisegna piu' volte al secondo mentre lo si tiene premuto). */
-const presses = new WeakMap<
-  Element,
-  { timer: ReturnType<typeof setTimeout>; fired: boolean }
->();
-function holdToTune(onAction: (item: CatExtraItem) => void) {
-  return {
-    onPointerDown: (e: { currentTarget: Element }) => {
-      const el = e.currentTarget;
-      const press = {
-        fired: false,
-        timer: setTimeout(() => {
-          press.fired = true;
-          onAction("tune");
-        }, HOLD_MS),
-      };
-      presses.set(el, press);
-    },
-    onPointerUp: (e: { currentTarget: Element }) => {
-      const press = presses.get(e.currentTarget);
-      presses.delete(e.currentTarget);
-      if (!press) return;
-      clearTimeout(press.timer);
-      if (!press.fired) onAction("atu");
-    },
-    onPointerLeave: (e: { currentTarget: Element }) => {
-      const press = presses.get(e.currentTarget);
-      presses.delete(e.currentTarget);
-      if (press) clearTimeout(press.timer);
-    },
-    onContextMenu: (e: { preventDefault(): void }) => e.preventDefault(),
-  };
-}
-
-/** Pulsanti trasparenti sopra il disegno, nelle posizioni degli indicatori (in percentuale del disegno). */
+/** Pulsante trasparente di TUNE sopra il disegno, nella posizione dell'indicatore (in percentuale del disegno). */
 function FaceHits({
   hits,
   onAction,
   waiting,
-  width = FACE_W,
+  width,
 }: {
-  width?: number;
+  width: number;
   hits: Hit[];
   onAction?: (item: CatExtraItem) => void;
   waiting?: CatExtraItem | null;
@@ -139,26 +88,20 @@ function FaceHits({
     <>
       {hits.map((h) => (
         <button
-          key={`${h.key}-${h.x}`}
+          key={`tune-${h.x}`}
           type="button"
-          className={`rd-face-hit${waiting === h.key ? " rd-face-hit--wait" : ""}`}
+          className={`rd-face-hit${waiting === "tune" ? " rd-face-hit--wait" : ""}`}
           style={{
             left: `${(h.x / width) * 100}%`,
             top: `${(h.y / FACE_H) * 100}%`,
             width: `${(h.w / width) * 100}%`,
             height: `${(h.h / FACE_H) * 100}%`,
           }}
-          title={
-            h.key === "atu"
-              ? `${t(actionTip("atu"))} ${t("rx.act.tuneHold")}`
-              : t(actionTip(h.key))
-          }
-          aria-label={`${h.text}: ${t(actionTip(h.key))}`}
-          aria-busy={waiting === h.key}
+          title={t(actionTip("tune"))}
+          aria-label={`${h.text}: ${t(actionTip("tune"))}`}
+          aria-busy={waiting === "tune"}
           disabled={waiting != null}
-          {...(h.key === "atu"
-            ? holdToTune(onAction)
-            : { onClick: () => onAction(h.key) })}
+          onClick={() => onAction("tune")}
         />
       ))}
     </>
@@ -221,51 +164,13 @@ function FtSpy({
   );
 }
 
-/** Barre PO e SWR del pannello FT-2000: 20 segmenti, scala sopra (0-50-100 W, o 200 W se la radio supera i 100) e sotto (1-1.5-2-3-∞). */
-function FtMeters({ powerW, swr, powerText, swrText }: { powerW: number | null; swr: number | null; powerText: string | null; swrText: string | null }) {
-  const X = 278;
-  const W = 140;
-  const N = 20;
-  const full = powerW != null && powerW > 100 ? 200 : 100;
-  const poLit = powerW == null ? 0 : Math.round(Math.max(0, Math.min(1, powerW / full)) * N);
-  const swrLit = Math.round((swrFraction({ swr: swr ?? undefined } as never) ?? 0) * N);
-  const segW = (W - (N - 1) * 1.5) / N;
-  const bar = (y: number, lit: number, color: (i: number) => string) =>
-    Array.from({ length: N }, (_, i) => (
-      <rect key={i} x={X + i * (segW + 1.5)} y={y} width={segW} height={7} rx={1} fill={i < lit ? color(i) : FT.dim} />
-    ));
-  const swrColor = (i: number) => (i < 7 ? "#47d13a" : i < 12 ? FT.amber : FT.red);
-  const label = (x: number, y: number, text: string) => (
-    <text x={x} y={y} fontSize={7} fill={FT.ink} opacity={0.75} textAnchor="middle" fontFamily={FONT_UI}>
-      {text}
-    </text>
-  );
-  return (
-    <g aria-hidden="true">
-      {label(X, 63, "0")}
-      {label(X + W / 2, 63, String(full / 2))}
-      {label(X + W, 63, String(full))}
-      <text x={252} y={72} fontSize={9} fontWeight={700} fill={FT.cyan} fontFamily={FONT_UI}>
-        PO
-      </text>
-      {bar(65, poLit, () => FT.cyan)}
-      <text x={X + W + 6} y={72} fontSize={10} fontWeight={700} fill={FT.cyan} fontFamily={FONT_UI}>
-        {powerText ?? "—"}
-      </text>
-      <text x={252} y={84} fontSize={9} fontWeight={700} fill={FT.amber} fontFamily={FONT_UI}>
-        SWR
-      </text>
-      {bar(77, swrLit, swrColor)}
-      <text x={X + W + 6} y={84} fontSize={10} fontWeight={700} fill={FT.amber} fontFamily={FONT_UI}>
-        {swrText ?? "—"}
-      </text>
-      {label(X, 93, "1")}
-      {label(X + W * 0.25, 93, "1.5")}
-      {label(X + W * 0.5, 93, "2")}
-      {label(X + W * 0.75, 93, "3")}
-      {label(X + W, 93, "∞")}
-    </g>
-  );
+/** Il testo della lettura principale: S in ricezione, PO in trasmissione (con il ROS se la radio lo da'). */
+function mainReading(model: DisplayModel, main: ReturnType<typeof mainMeter>): string {
+  const base = main.label ? (main.kind === "S" ? main.label : `PO ${main.label}`) : "";
+  const swr = model.transmitting
+    ? meterReadouts(model.meters).find((r) => r.key === "SWR")?.text
+    : undefined;
+  return swr ? `${base}${base ? "  " : ""}SWR ${swr}` : base;
 }
 
 export function Ft2000Display({
@@ -276,129 +181,18 @@ export function Ft2000Display({
   onAction,
   waiting,
 }: FaceProps) {
-  const { extras: x, passbandHz } = data ?? NO_EXTRAS;
+  const { extras: x } = data ?? NO_EXTRAS;
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
   const main = mainMeter(model);
-  const readouts = meterReadouts(model.meters).filter(
-    (r) => r.key === "PO" || r.key === "SWR",
-  );
-  const hits: Hit[] = [];
 
-  const boxes: Array<{
-    label: string;
-    value: string | null;
-    key?: CatExtraItem;
-  }> = [
-    { label: "ANT", value: null },
-    {
-      label: "ATT",
-      value:
-        x.att_db == null
-          ? null
-          : x.att_db > 0
-            ? `${Math.round(x.att_db)}dB`
-            : "OFF",
-      key: "att",
-    },
-    { label: "FLT", value: passbandHz ? khz(passbandHz) : null },
-    {
-      label: "IPO",
-      value:
-        x.preamp_db == null
-          ? null
-          : x.preamp_db > 0
-            ? `P${Math.round(x.preamp_db)}`
-            : "ON",
-      key: "preamp",
-    },
-    { label: "R.FLT", value: null },
-    { label: "AGC", value: x.agc == null ? null : agcName(x.agc), key: "agc" },
-  ];
-  boxes.forEach((b, i) => {
-    if (b.key && b.value !== null)
-      hits.push({
-        key: b.key,
-        x: 12 + i * 38,
-        y: 9,
-        w: 36,
-        h: 34,
-        text: `${b.label} ${b.value}`,
-      });
-  });
-
-  const spies: Array<{
-    text: string;
-    color: string;
-    on: boolean;
-    key?: CatExtraItem;
-    known: boolean;
-  }> = [
-    {
-      text: "PROC",
-      color: FT.red,
-      on: model.transmitting && (model.meters?.comp_db ?? 0) > 0,
-      known: true,
-    },
-    {
-      text: "TUNER",
-      color: FT.cyan,
-      on: x.tuner === true,
-      key: "atu",
-      known: x.tuner != null,
-    },
-    { text: "BUSY", color: FT.yellow, on: link.busy, known: true },
-    {
-      text: "NB",
-      color: FT.yellow,
-      on: x.nb === true,
-      key: "nb",
-      known: x.nb != null,
-    },
-    {
-      text: "NR",
-      color: FT.yellow,
-      on: x.nr === true,
-      key: "nr",
-      known: x.nr != null,
-    },
-    {
-      text: "NOTCH",
-      color: FT.yellow,
-      on: x.notch === true,
-      key: "notch",
-      known: x.notch != null,
-    },
-  ];
-  spies.forEach((s, i) => {
-    if (s.key && s.known)
-      hits.push({
-        key: s.key,
-        x: 12 + i * 38,
-        y: 49,
-        w: 36,
-        h: 15,
-        text: s.text,
-      });
-  });
-
-  const rit = x.rit_hz;
-  if (rit != null)
-    hits.push({
-      key: "rit",
-      x: 480,
-      y: 60,
-      w: 110,
-      h: 28,
-      text: `CLAR ${signed(rit)}`,
-    });
-  const vfoTag = x.vfo ?? null;
-  if (vfoTag)
-    hits.push({ key: "vfo", x: 246, y: 8, w: 48, h: 16, text: vfoTag });
-
-  // RX e TX in alto, subito dopo l'ultima cifra della frequenza principale (e mai sopra il VFO B)
-  const spyX = Math.min(570, 300 + digitsWidth(formatRadioFrequency(model.dialHz), { w: 26, h: 44, t: 4.6, gap: 7, skew: 0.08 }) + 6);
+  // la frequenza ha un posto fisso (8 cifre piene); RX, TX, BUSY e TUNE le stanno subito dopo, il VFO B e l'S-meter a destra
+  const freqStyle = { w: 30, h: 54, t: 5.4, gap: 7, skew: 0.08 };
+  const FREQ_X = 72;
+  const spyX = FREQ_X + Math.min(317, digitsWidth(formatRadioFrequency(model.dialHz), freqStyle)) + 8;
+  const R0 = 448;
   const bHz = x.vfo_b_hz ?? 0;
+  const hits: Hit[] = [{ x: spyX - 2, y: 67, w: 40, h: 17, text: "TUNE" }];
   return (
     <div className="rd-face rd-face--ft">
       <DisplayFrame
@@ -409,149 +203,30 @@ export function Ft2000Display({
         screen="#020405"
         ariaLabel={ariaLabel}
       >
-        {/* riquadri con etichetta e valore */}
-        {boxes.map((b, i) => (
-          <g key={b.label} aria-hidden="true">
-            <SpyTip text={b.label} />
-            <rect
-              x={12 + i * 38}
-              y={9}
-              width={36}
-              height={34}
-              rx={2}
-              fill="#04121a"
-              stroke={FT.box}
-              strokeWidth={1}
-            />
-            <text
-              x={30 + i * 38}
-              y={21}
-              textAnchor="middle"
-              fontSize={8.5}
-              fontWeight={600}
-              fontFamily={FONT_UI}
-              fill={FT.ink}
-              opacity={b.value === null ? 0.75 : 1}
-            >
-              {b.label}
-            </text>
-            <text
-              x={30 + i * 38}
-              y={37}
-              textAnchor="middle"
-              fontSize={10}
-              fontWeight={700}
-              fontFamily={FONT_UI}
-              fill={b.value === null ? FT.dim : FT.amber}
-            >
-              {b.value ?? "—"}
-            </text>
-          </g>
-        ))}
-        {spies.map((s, i) => (
-          <FtSpy
-            key={s.text}
-            x={12 + i * 38}
-            y={50}
-            text={s.text}
-            color={s.color}
-            on={s.on}
-          />
-        ))}
-        <FtSpy x={spyX} y={12} text="RX" color="#47d13a" on={link.rx && known} />
-        <FtSpy x={spyX} y={30} text="TX" color={FT.red} on={link.tx} />
-        {/* PO e SWR: due barre a segmenti con la scala graduata, come lo strumento della radio, e il valore a fianco */}
-        <FtMeters
-          powerW={model.meters?.power_w ?? null}
-          swr={model.meters?.swr ?? null}
-          powerText={readouts.find((r) => r.key === "PO")?.text ?? null}
-          swrText={readouts.find((r) => r.key === "SWR")?.text ?? null}
-        />
-
         {/* VFO A */}
-        <Label
-          x={250}
-          y={20}
-          text="VFO-A"
-          fill={FT.cyan}
-          size={9}
-          weight={700}
-        />
-        <Label
-          x={250}
-          y={36}
-          text={model.mode || ""}
-          fill={FT.amber}
-          size={10}
-          weight={700}
-        />
+        <Label x={14} y={40} text="VFO-A" fill={FT.cyan} size={10} weight={700} />
+        <Label x={14} y={58} text={model.mode || ""} fill={FT.amber} size={12} weight={700} />
         <SevenSegment
           text={formatRadioFrequency(model.dialHz)}
-          x={300}
-          y={9}
-          w={26}
-          h={44}
-          t={4.6}
-          gap={7}
-          skew={0.08}
+          x={FREQ_X}
+          y={21}
+          {...freqStyle}
           on={FT.cyan}
           glow={FT.glow}
           offOpacity={0.1}
         />
-        {/* la scala di sintonia - ... + sotto la frequenza non serviva (scelta del proprietario): resta solo l'avviso senza radio */}
-        {/* radio spenta: nessuna scritta sopra gli strumenti (si accavallava a PO e SWR); il pannello spento e grigio basta, come quello vero */}
-        <g aria-hidden="true" opacity={rit == null ? 0.35 : 1}>
-          <rect
-            x={480}
-            y={60}
-            width={110}
-            height={28}
-            rx={2}
-            fill="none"
-            stroke={FT.box}
-          />
-          <text
-            x={485}
-            y={70}
-            fontSize={8}
-            fontWeight={700}
-            fill={FT.ink}
-            fontFamily={FONT_UI}
-          >
-            RX
-          </text>
-          <text
-            x={585}
-            y={70}
-            textAnchor="end"
-            fontSize={8}
-            fontWeight={700}
-            fill={FT.ink}
-            fontFamily={FONT_UI}
-          >
-            CLAR
-          </text>
-        </g>
-        <Label
-          x={535}
-          y={84}
-          text={
-            rit == null
-              ? "-.---"
-              : `${rit < 0 ? "-" : ""}${(Math.abs(rit) / 1000).toFixed(3)}`
-          }
-          fill={rit == null ? FT.dim : FT.cyan}
-          size={13}
-          weight={700}
-          anchor="middle"
-        />
+        {/* stati: RX, TX, BUSY (decodifica) e il tasto TUNE */}
+        <FtSpy x={spyX} y={15} text="RX" color="#47d13a" on={link.rx && known} />
+        <FtSpy x={spyX} y={33} text="TX" color={FT.red} on={link.tx} />
+        <FtSpy x={spyX} y={51} text="BUSY" color={FT.yellow} on={link.busy} />
+        <FtSpy x={spyX} y={69} text="TUNE" color={FT.cyan} on={x.tuner === true} />
 
-        {/* S-meter a barra con la scala */}
+        {/* S-meter a barra con la scala (in trasmissione la potenza), con la lettura sotto */}
         {S_TICKS.map((tk) => (
           <Label
             key={tk.label}
-            x={612 + tk.fraction * 196}
-            y={16}
+            x={R0 + 4 + tk.fraction * 196}
+            y={20}
             text={tk.label}
             fill={tk.fraction > S9_FRACTION ? FT.red : FT.ink}
             size={8}
@@ -560,8 +235,8 @@ export function Ft2000Display({
           />
         ))}
         <SegBar
-          x={608}
-          y={20}
+          x={R0}
+          y={24}
           count={40}
           segW={3.6}
           segH={9}
@@ -570,44 +245,15 @@ export function Ft2000Display({
           color={(i) => (i >= 40 * S9_FRACTION ? FT.red : FT.cyan)}
           off="#0e2630"
         />
-        <Label
-          x={820}
-          y={46}
-          text={
-            main.label
-              ? main.kind === "S"
-                ? main.label
-                : `PO ${main.label}`
-              : ""
-          }
-          fill={FT.amber}
-          size={10}
-          weight={700}
-          anchor="end"
-        />
 
-        {/* VFO B */}
-        <Label
-          x={610}
-          y={46}
-          text="VFO-B"
-          fill={FT.cyan}
-          size={9}
-          weight={700}
-          opacity={bHz ? 1 : 0.4}
-        />
-        <Label
-          x={660}
-          y={46}
-          text={x.vfo_b_mode ?? ""}
-          fill={FT.amber}
-          size={9}
-          weight={700}
-        />
+        {/* VFO B, solo se la radio lo da' */}
+        <Label x={R0 + 2} y={50} text="VFO-B" fill={FT.cyan} size={9} weight={700} opacity={bHz ? 1 : 0.4} />
+        <Label x={R0 + 52} y={50} text={x.vfo_b_mode ?? ""} fill={FT.amber} size={9} weight={700} />
+        <Label x={R0 + 212} y={50} text={mainReading(model, main)} fill={FT.amber} size={10} weight={700} anchor="end" />
         <SevenSegment
           text={formatRadioFrequency(bHz)}
-          x={612}
-          y={54}
+          x={R0 + 4}
+          y={58}
           w={15}
           h={28}
           t={3}
@@ -617,7 +263,6 @@ export function Ft2000Display({
           glow={bHz ? FT.glow : undefined}
           offOpacity={0.1}
         />
-
       </DisplayFrame>
       <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={FT_FACE_W} />
     </div>
@@ -780,281 +425,97 @@ export function Ic7610Display({
   onAction,
   waiting,
 }: FaceProps) {
-  const { extras: x, passbandHz, split } = data ?? NO_EXTRAS;
+  const { extras: x } = data ?? NO_EXTRAS;
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
   const main = mainMeter(model);
-  const hits: Hit[] = [];
-  const comp = model.meters?.comp_db;
 
-  const buttons: Array<{
-    label: string;
-    value: string | null;
-    key?: CatExtraItem;
-  }> = [
-    { label: "ANT", value: null },
-    {
-      label: "P.AMP",
-      value:
-        x.preamp_db == null
-          ? null
-          : x.preamp_db > 0
-            ? `${Math.round(x.preamp_db)}dB`
-            : "OFF",
-      key: "preamp",
-    },
-    {
-      label: "ATT",
-      value:
-        x.att_db == null
-          ? null
-          : x.att_db > 0
-            ? `${Math.round(x.att_db)}dB`
-            : "OFF",
-      key: "att",
-    },
-    { label: "IP+", value: null },
-    { label: "AGC", value: x.agc == null ? null : agcName(x.agc), key: "agc" },
-    { label: "VOX", value: null },
-    {
-      label: "COMP",
-      value:
-        model.transmitting && comp != null ? `${Math.round(comp)}dB` : null,
-    },
-  ];
-  const pos = (i: number) => ({
-    x: 10 + (i % 2) * 57,
-    y: 8 + Math.floor(i / 2) * 21,
-  });
-  buttons.forEach((b, i) => {
-    if (b.key && b.value !== null)
-      hits.push({
-        key: b.key,
-        ...pos(i),
-        w: 54,
-        h: 18,
-        text: `${b.label} ${b.value}`,
-      });
-  });
-
-  const noise: Array<{
-    text: string;
-    on: boolean | null | undefined;
-    key: CatExtraItem;
-  }> = [
-    { text: "NB", on: x.nb, key: "nb" },
-    { text: "NR", on: x.nr, key: "nr" },
-    { text: "NOTCH", on: x.notch, key: "notch" },
-    { text: "ATU", on: x.tuner, key: "atu" },
-  ];
-  noise.forEach((n, i) => {
-    if (n.on != null)
-      hits.push({
-        key: n.key,
-        x: 300 + i * 40,
-        y: 7,
-        w: 38,
-        h: 15,
-        text: n.text,
-      });
-  });
-  if (x.vfo) hits.push({ key: "vfo", x: 132, y: 7, w: 36, h: 15, text: x.vfo });
-
+  const MAIN_X = 8;
+  const MAIN_W = 408;
+  const SUB_X = 424;
+  const SUB_W = 252;
   const bHz = x.vfo_b_hz ?? 0;
-  const panel = (x0: number, sub: boolean) => {
-    const freq = sub ? bHz : model.dialHz;
-    const mode = sub ? (x.vfo_b_mode ?? "") : model.mode;
-    const has = sub ? bHz > 0 : known;
-    return (
-      <g key={sub ? "sub" : "main"}>
-        <rect
-          x={x0}
-          y={6}
-          width={408}
-          height={84}
-          rx={3}
-          fill={IC.panel}
-          stroke={IC.edge}
-        />
-        <IcTag
-          x={x0 + 4}
-          y={8}
-          w={32}
-          text={sub ? "SUB" : "MAIN"}
-          fill={!sub && link.tx ? IC.red : IC.blue}
-          fg="#02060c"
-          on={has}
-        />
-        <Label
-          x={x0 + 44}
-          y={18}
-          text="ANT1"
-          fill={IC.dim}
-          size={8.5}
-          weight={600}
-        />
-        <Label
-          x={x0 + 76}
-          y={18}
-          text={`BW ${!sub && passbandHz ? khz(passbandHz) : "—"}`}
-          fill={!sub && passbandHz ? IC.label : IC.dim}
-          size={8.5}
-          weight={600}
-        />
-        <Label
-          x={x0 + 130}
-          y={18}
-          text="SFT —"
-          fill={IC.dim}
-          size={8.5}
-          weight={600}
-        />
-        <IcTag
-          x={x0 + 4}
-          y={30}
-          w={40}
-          text={mode || "—"}
-          fill={IC.blue}
-          fg="#02060c"
-          on={has && mode !== ""}
-        />
-        {has ? (
-          <Label
-            x={x0 + 52}
-            y={66}
-            text={formatRadioFrequency(freq)}
-            fill={IC.white}
-            size={sub ? 30 : 34}
-            weight={700}
-          />
-        ) : (
-          <>
-            <Label
-              x={x0 + 52}
-              y={62}
-              text={formatRadioFrequency(0)}
-              fill={IC.dim}
-              size={30}
-              weight={700}
-            />
+  const hits: Hit[] = [{ x: MAIN_X + 148, y: 7, w: 40, h: 15, text: "TUNE" }];
 
-          </>
-        )}
-        <IcArc
-          cx={x0 + 340}
-          cy={86}
-          r={44}
-          fraction={sub ? null : main.fraction}
-          lit={sub ? false : known}
-          label={!sub && main.kind === "PO" ? "Po" : "S"}
-        />
-      </g>
-    );
-  };
-
+  const subHas = bHz > 0;
+  const subMode = x.vfo_b_mode ?? "";
+  const reading = mainReading(model, main);
   return (
-    <div className="rd-face">
+    <div className="rd-face rd-face--ic">
       <DisplayFrame
-        width={FACE_W}
+        width={IC_FACE_W}
         height={FACE_H}
         radius={10}
         inset={3}
         screen="#000000"
         ariaLabel={ariaLabel}
       >
-        {buttons.map((b, i) => {
-          const p = pos(i);
-          return (
-            <g key={b.label} aria-hidden="true">
-            <SpyTip text={b.label} />
-              <rect
-                x={p.x}
-                y={p.y}
-                width={54}
-                height={18}
-                rx={2}
-                fill="#141c28"
-                stroke="#33445a"
-              />
-              <text
-                x={p.x + 4}
-                y={p.y + 12}
-                fontSize={8}
-                fontWeight={700}
-                fontFamily={FONT_UI}
-                fill={IC.label}
-                opacity={b.value === null ? 0.75 : 1}
-              >
-                {b.label}
-              </text>
-              <text
-                x={p.x + 50}
-                y={p.y + 12}
-                textAnchor="end"
-                fontSize={8}
-                fontWeight={700}
-                fontFamily={FONT_UI}
-                fill={b.value === null ? IC.dim : IC.val}
-              >
-                {b.value ?? "—"}
-              </text>
-            </g>
-          );
-        })}
+        {/* VFO A (MAIN): stati RX/TX/BUSY, TUNE, modo, frequenza e S-meter ad arco (in trasmissione la potenza) */}
+        <rect x={MAIN_X} y={6} width={MAIN_W} height={84} rx={3} fill={IC.panel} stroke={IC.edge} />
         <IcTag
-          x={67}
-          y={71}
-          w={54}
-          text="TX"
-          fill={IC.red}
-          fg="#ffffff"
-          on={link.tx}
+          x={MAIN_X + 4}
+          y={8}
+          w={32}
+          text="MAIN"
+          fill={link.tx ? IC.red : IC.blue}
+          fg="#02060c"
+          on={known}
         />
-        {panel(128, false)}
-        {panel(544, true)}
-        {noise.map((n, i) => (
-          <IcTag
-            key={n.text}
-            x={300 + i * 40}
-            y={8}
-            w={38}
-            text={n.text}
-            fill={IC.green}
-            fg="#02140a"
-            on={n.on === true}
-          />
-        ))}
-        {main.label ? (
-          <Label
-            x={530}
-            y={18}
-            text={main.kind === "S" ? main.label : `PO ${main.label}`}
-            fill={IC.label}
-            size={9}
-            weight={700}
-            anchor="end"
-          />
+        <IcTag x={MAIN_X + 40} y={8} w={28} text="RX" fill={IC.green} fg="#02140a" on={link.rx && known} />
+        <IcTag x={MAIN_X + 72} y={8} w={28} text="TX" fill={IC.red} fg="#ffffff" on={link.tx} />
+        <IcTag x={MAIN_X + 104} y={8} w={40} text="BUSY" fill={IC.blue} fg="#02060c" on={link.busy} />
+        <IcTag x={MAIN_X + 148} y={8} w={40} text="TUNE" fill={IC.green} fg="#02140a" on={x.tuner === true} />
+        <IcTag
+          x={MAIN_X + 4}
+          y={30}
+          w={40}
+          text={model.mode || "—"}
+          fill={IC.blue}
+          fg="#02060c"
+          on={known && model.mode !== ""}
+        />
+        <Label
+          x={MAIN_X + 52}
+          y={known ? 66 : 62}
+          text={formatRadioFrequency(known ? model.dialHz : 0)}
+          fill={known ? IC.white : IC.dim}
+          size={known ? 34 : 30}
+          weight={700}
+        />
+        <IcArc
+          cx={MAIN_X + 340}
+          cy={86}
+          r={44}
+          fraction={main.fraction}
+          lit={known}
+          label={main.kind === "PO" ? "Po" : "S"}
+        />
+        {reading ? (
+          <Label x={MAIN_X + 402} y={18} text={reading} fill={IC.label} size={9} weight={700} anchor="end" />
         ) : null}
+
+        {/* VFO B (SUB): solo frequenza e modo, se la radio li da' */}
+        <rect x={SUB_X} y={6} width={SUB_W} height={84} rx={3} fill={IC.panel} stroke={IC.edge} />
+        <IcTag x={SUB_X + 4} y={8} w={32} text="SUB" fill={IC.blue} fg="#02060c" on={subHas} />
         <IcTag
-          x={132}
-          y={50}
+          x={SUB_X + 4}
+          y={30}
           w={40}
-          text="DUAL-W"
-          fill={IC.green}
-          fg="#02140a"
-          on={false}
+          text={subMode || "—"}
+          fill={IC.blue}
+          fg="#02060c"
+          on={subHas && subMode !== ""}
         />
-        <IcTag
-          x={132}
-          y={68}
-          w={40}
-          text="SPLIT"
-          fill={IC.green}
-          fg="#02140a"
-          on={split === true}
+        <Label
+          x={SUB_X + 52}
+          y={subHas ? 66 : 62}
+          text={formatRadioFrequency(subHas ? bHz : 0)}
+          fill={subHas ? IC.white : IC.dim}
+          size={30}
+          weight={700}
         />
       </DisplayFrame>
-      <FaceHits hits={hits} onAction={onAction} waiting={waiting} />
+      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={IC_FACE_W} />
     </div>
   );
 }

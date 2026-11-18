@@ -9,7 +9,7 @@ export const setupCtaStrings = {
   'rd.size': ['{w} × {h} punti', '{w} × {h} points', '{w} × {h} Punkte', '{w} × {h} points', '{w} × {h} puntos', '{w} × {h} pontos'],
   'rd.square': ['al posto delle icone', 'replaces the icons', 'ersetzt die Symbole', 'à la place des icônes', 'en lugar de los iconos', 'no lugar dos ícones'],
   'rd.style.icdual': ['Icom doppio ricevitore', 'Icom dual receiver', 'Icom Doppelempfänger', 'Icom double récepteur', 'Icom doble receptor', 'Icom recetor duplo'],
-  'rd.style.icblue': ['Icom blu con banda passante', 'Icom blue with passband', 'Icom blau mit Durchlassbereich', 'Icom bleu avec bande passante', 'Icom azul con banda de paso', 'Icom azul com banda passante'],
+  'rd.style.icblue': ['Icom blu', 'Icom blue', 'Icom blau', 'Icom bleu', 'Icom azul', 'Icom azul'],
   'rd.style.ledline': ['LED essenziale', 'Essential LED', 'Schlichte LED', 'LED essentiel', 'LED esencial', 'LED essencial'],
   'rd.style.icblueq': ['Icom blu (quasi quadrato)', 'Icom blue (near square)', 'Icom blau (fast quadratisch)', 'Icom bleu (presque carré)', 'Icom azul (casi cuadrado)', 'Icom azul (quase quadrado)'],
   'rd.style.icblackq': ['Icom nero con lancetta (quasi quadrato)', 'Icom black with needle (near square)', 'Icom schwarz mit Zeiger (fast quadratisch)', 'Icom noir à aiguille (presque carré)', 'Icom negro con aguja (casi cuadrado)', 'Icom preto com ponteiro (quase quadrado)'],

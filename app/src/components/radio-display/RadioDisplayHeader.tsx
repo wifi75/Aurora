@@ -198,16 +198,16 @@ function Zoom({ children, off = false }: { children: ReactNode; off?: boolean })
 function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | 'ic7610' }) {
   const t = useT();
   const { rig, waiting, click } = useCatExtras();
-  const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
+  const data = { extras: rig?.extras ?? {} };
   const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
-  return <div className={`rd-header rd-face-slot${style === 'ft2000' ? ' rd-face-slot--ft' : ''}`}>{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
+  return <div className={`rd-header rd-face-slot rd-face-slot--${style === 'ft2000' ? 'ft' : 'ic'}`}>{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
 }
 
 /** I display moderni in testata: gli estesi nella riga dei comandi, i quasi quadrati fissi nell'angolo (le icone diventano piccole). */
 function ModernHeader({ model, style, solo = false }: { model: DisplayModel; style: RadioDisplayStyle; solo?: boolean }) {
   const t = useT();
   const { rig, waiting, click } = useCatExtras();
-  const data = { extras: rig?.extras ?? {}, passbandHz: rig?.passband_hz ?? null, split: rig?.split ?? null };
+  const data = { extras: rig?.extras ?? {} };
   const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
   const square = isSquareStyle(style);
   useEffect(() => {

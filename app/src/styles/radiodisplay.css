@@ -1045,14 +1045,23 @@ html[data-theme='light'] .rd-zoom {
 .rd-split-btn:disabled:not(.rd-split-btn--on) { opacity: 1; }
 .rd-face-row .rd-face-slot { align-self: center; }
 
-/* FT-2000: il disegno e' largo 832 (non 960): niente vuoto a destra dopo il misuratore. Stessa scala degli altri (px per unita' del disegno):
-   40rem -> 34.667rem (anteprime e riga di base), 46.25rem -> 40.083rem (testata della Stazione). L'altezza resta quella del disegno. */
+/* FT-2000: il disegno e' largo 672 (non 960): niente vuoto a destra. Stessa scala degli altri (px per unita' del disegno):
+   40rem -> 28rem (anteprime e riga di base), 46.25rem -> 32.375rem (testata della Stazione). L'altezza resta quella del disegno. */
 .rd-face-slot--ft {
-  width: 34.667rem;
+  width: 28rem;
 }
 
 .live-top .rd-face-slot--ft {
-  width: 40.083rem;
+  width: 32.375rem;
+}
+
+/* IC-7610: disegno largo 684, stessa scala (40rem : 960 = x : larghezza) */
+.rd-face-slot--ic {
+  width: 28.5rem;
+}
+
+.live-top .rd-face-slot--ic {
+  width: 32.953rem;
 }
 
 /* anteprime nelle Impostazioni: la box prende l'altezza del disegno (prima 90 px fissi: strisce vuote sotto) */
@@ -1061,10 +1070,15 @@ html[data-theme='light'] .rd-zoom {
 }
 
 .rd-card--wide > .rd-face--ft.rd-face--ft {
-  width: 34.667rem;
+  width: 28rem;
 }
 
-.rd-zoom .rd-zoom-lens .rd-face-slot--ft {
+.rd-card--wide > .rd-face--ic.rd-face--ic {
+  width: 28.5rem;
+}
+
+.rd-zoom .rd-zoom-lens .rd-face-slot--ft,
+.rd-zoom .rd-zoom-lens .rd-face-slot--ic {
   width: 100%;
 }
 
