@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+- Livelli audio di Windows: Aurora non li cambia piu' da sola. All'avvio e prima di ogni trasmissione il volume di uscita della scheda non viene piu' riscritto con il valore salvato del cursore Pwr: il cursore prende il livello che Windows ha gia' (lo legge soltanto) e Aurora scrive il volume solo dopo che hai mosso tu il cursore. Cosi' un altro programma (MixW, WSJT-X) trova la scheda come l'aveva lasciata. Il livello di registrazione si cambia soltanto con il cursore o con AUTO, spento di fabbrica.
+- Schermi stretti (1280 x 800, 1366 x 768): la dimensione dell'interfaccia si adatta da sola alla larghezza (da 65% a 100%) e arriva fino al 60% con Ctrl -, con il pulsante «Adatta» in Impostazioni › Aspetto; la griglia della pagina FT8 rimisura l'altezza (niente striscia vuota in fondo); Comandi con i pulsanti in griglia e allineati; selettore del modo uguale a quello di banda, senza «MHz» e con la freccetta visibile; con lo schermo stretto il display della radio e' compatto (frequenza, potenza, ROS, TUNE) e gli altri stili non si scelgono; tolti i tre display quasi quadrati; il display compatto non mostra piu' la scritta dei dati estesi spenti.
+- Impostazioni › Aspetto › «Finestre della pagina FT8»: casella per spostare e ridimensionare le finestre e pulsante «Ripristina»; l'indirizzo con `?vista=desktop` forza la pagina a finestre anche con il browser che simula un dispositivo a tocco.
+
 ## 0.11.289 - 2026-11-17
 
 - PTT acceso e spento a fine QSO (#71): quando l'ultimo messaggio del DX (il suo 73) viene decodificato dopo l'inizio del periodo e il QSO risulta finito, la trasmissione gia' partita (di solito l'RR73) si lascia finire, invece di fermarla dopo un secondo; non ne parte nessun'altra. Come WSJT-X: la fine automatica del QSO (`cease_auto_Tx_after_QSO`, `0x14025d290` in `wsjtx.exe`) spegne solo l'invio automatico con `auto_tx_mode(false)`; l'interruzione immediata (`on_stopTxButton_clicked` → `requestTxStop` → `stopTx`) e' solo di «Halt Tx». Halt e le altre cause (watchdog, DX che risponde a un altro) fermano subito come prima.

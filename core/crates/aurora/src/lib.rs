@@ -1660,10 +1660,30 @@ struct WindowsVolumePort {
     /// Il livello del cursore (quello vero, anche dopo il ripristino dei livelli salvati): si riapplica prima di ogni trasmissione, perche' il
     /// volume di Windows puo' cambiare per conto suo (all'avvio il cursore diceva 100 % e la scheda era al 50 %).
     controls: Arc<engine_native::NativeControls>,
+    /// Vero da quando l'utente muove il cursore Pwr: solo allora Aurora scrive il volume di Windows. Prima lo legge soltanto, cosi' non cambia i livelli
+    /// che altri programmi (MixW, WSJT-X...) trovano alla scheda audio (segnalazione di un amico del proprietario, 2026-11-18). Condiviso da tutte le porte.
+    user_set: Arc<std::sync::atomic::AtomicBool>,
+    /// La prima chiamata di `set_attenuation` e' quella dell'avvio del motore (il valore salvato): non e' una mossa dell'utente.
+    started: std::sync::atomic::AtomicBool,
 }
 
 impl WindowsVolumePort {
+    /// Il cursore Pwr (decimi di dB di attenuazione) che corrisponde al volume di Windows di adesso; `None` se la scheda non si legge.
+    fn windows_tenths(&self) -> Option<u32> {
+        let name = (self.output)()?;
+        if audio_control::is_network_output(&name) {
+            return None;
+        }
+        let out = audio_spectrum::OutputEndpoint::find(&name).ok()?;
+        let volume = out.volume().ok()?;
+        Some(((1.0 - volume.clamp(0.0, 1.0)) * 450.0).round() as u32)
+    }
+
     fn apply(&self, tenths: u32) {
+        // il volume di Windows si scrive solo dopo che l'utente ha mosso il cursore
+        if !self.user_set.load(std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
         let volume = 1.0 - (tenths.min(450) as f32 / 450.0);
         let Some(name) = (self.output)() else { return };
         // «TCI (alla radio)» e «Cat4OM (audio in rete)» non sono schede di Windows: la potenza la regola la SDR (PWR − / + del display) o la radio. Prima ogni trasmissione
@@ -1705,6 +1725,15 @@ impl engine_native::TxPort for WindowsVolumePort {
 
     fn set_attenuation(&self, tenths: u32) {
         self.inner.set_attenuation(0);
+        if !self.started.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            // avvio: il cursore Pwr prende il livello che Windows ha adesso (lo legge soltanto) e non scrive niente
+            if let Some(now) = self.windows_tenths() {
+                self.controls.attenuation.store(now.min(450), std::sync::atomic::Ordering::Relaxed);
+            }
+            return;
+        }
+        // da qui in poi la mossa e' dell'utente: da ora Aurora scrive il volume di Windows
+        self.user_set.store(true, std::sync::atomic::Ordering::Relaxed);
         self.apply(tenths);
     }
 
@@ -3085,10 +3114,11 @@ pub async fn run(
                         if cfg!(windows) {
                             let output: Arc<dyn Fn() -> Option<String> + Send + Sync> = Arc::new(move || manager.output_name());
                             // l'SSTV trasmette con la stessa catena: prima di partire riallinea il volume di Windows al cursore Pwr
-                            let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls) });
+                            let user_set = Arc::new(std::sync::atomic::AtomicBool::new(false));
+                            let volume = Arc::new(WindowsVolumePort { inner: Arc::clone(&inner), output: Arc::clone(&output), controls: Arc::clone(&native_controls), user_set: Arc::clone(&user_set), started: std::sync::atomic::AtomicBool::new(true) });
                             sstv.set_tx_port(Arc::new(SstvTx { transmitter: Arc::clone(&transmitter), volume: Some(Arc::clone(&volume)), free_tx: Arc::clone(&free_tx) }));
                             digi.set_tx_port(Arc::new(DigiTx { transmitter, volume: Some(volume), free_tx: Arc::clone(&free_tx) }));
-                            let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls) };
+                            let port = WindowsVolumePort { inner, output, controls: Arc::clone(&native_controls), user_set, started: std::sync::atomic::AtomicBool::new(false) };
                             Arc::new(EngineTxPort { inner: Arc::new(port), free_tx }) as Arc<dyn engine_native::TxPort>
                         } else {
                             drop(manager);
