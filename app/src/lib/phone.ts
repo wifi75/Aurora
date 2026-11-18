@@ -47,11 +47,13 @@ export function isRemoteHost(win: { location: { hostname: string } }): boolean {
 
 export type StationView = 'phone' | 'tablet' | 'desktop';
 
-/** La vista chiesta dall'indirizzo (`?vista=telefono` o `?vista=tablet`), usata dalle anteprime dal vivo delle Impostazioni. */
+/** La vista chiesta dall'indirizzo (`?vista=telefono`, `?vista=tablet` o `?vista=desktop`), usata dalle anteprime dal vivo delle Impostazioni. */
 export function forcedView(search: string): StationView | null {
   const v = new URLSearchParams(search).get('vista');
   if (v === 'telefono') return 'phone';
   if (v === 'tablet') return 'tablet';
+  // `?vista=desktop`: la pagina a finestre anche se il browser simula un dispositivo a tocco (prove di risoluzione con gli strumenti del browser)
+  if (v === 'desktop') return 'desktop';
   return null;
 }
 
