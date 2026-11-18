@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.295',
+    released: '2026-11-18T16:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Meno messaggi falsi a radio spenta, tre display in meno',
+      'Fewer false messages with the radio off, three displays fewer',
+      'Weniger falsche Meldungen bei ausgeschaltetem Funkgerät, drei Displays weniger',
+      'Moins de faux messages avec le poste éteint, trois affichages en moins',
+      'Menos mensajes falsos con la radio apagada, tres pantallas menos',
+      'Menos mensagens falsas com o rádio desligado, três ecrãs a menos',
+    ],
+    text: [
+      'Con la radio spenta il rumore poteva dare messaggi inventati (per esempio «TU; … R 549 3643» o con due nominativi nascosti) e perfino un falso avviso «DXCC nuovo». Ora i messaggi dei contest tipo RTTY Roundup dubbi (deboli, fuori tempo) si scartano se nessuno dei due nominativi è conosciuto, e quelli con due nominativi nascosti insieme sempre. Tolti dalla scelta i display Icom doppio ricevitore, Icom blu e LED essenziale: chi li aveva passa a IC-7610 (LED classico per l’ultimo).',
+      'With the radio off, noise could produce invented messages (for example “TU; … R 549 3643” or with two hidden callsigns) and even a false “New DXCC” alert. Now doubtful RTTY Roundup-type contest messages (weak, off-time) are dropped if neither callsign is known, and messages with two hidden callsigns together always. The Icom dual receiver, Icom blue and Essential LED displays were removed from the choice: whoever had them moves to IC-7610 (classic LED for the last one).',
+      'Bei ausgeschaltetem Funkgerät konnte Rauschen erfundene Meldungen ergeben (zum Beispiel „TU; … R 549 3643“ oder mit zwei versteckten Rufzeichen) und sogar eine falsche Meldung „Neues DXCC“. Jetzt werden zweifelhafte Contest-Meldungen im Stil von RTTY Roundup (schwach, zeitlich daneben) verworfen, wenn keines der beiden Rufzeichen bekannt ist, und Meldungen mit zwei versteckten Rufzeichen immer. Die Displays Icom Doppelempfänger, Icom blau und Schlichte LED wurden aus der Auswahl entfernt: Wer sie hatte, wechselt zu IC-7610 (klassische LED beim letzten).',
+      'Avec le poste éteint, le bruit pouvait produire des messages inventés (par exemple « TU; … R 549 3643 » ou avec deux indicatifs cachés) et même une fausse alerte « Nouveau DXCC ». Maintenant les messages douteux de contest de type RTTY Roundup (faibles, hors temps) sont écartés si aucun des deux indicatifs n’est connu, et ceux avec deux indicatifs cachés toujours. Les affichages Icom double récepteur, Icom bleu et LED essentiel ont été retirés du choix : ceux qui les avaient passent à IC-7610 (LED classique pour le dernier).',
+      'Con la radio apagada, el ruido podía dar mensajes inventados (por ejemplo «TU; … R 549 3643» o con dos indicativos ocultos) e incluso un falso aviso «DXCC nuevo». Ahora los mensajes dudosos de concurso tipo RTTY Roundup (débiles, fuera de tiempo) se descartan si ninguno de los dos indicativos es conocido, y los que tienen dos indicativos ocultos siempre. Se quitaron de la elección las pantallas Icom doble receptor, Icom azul y LED esencial: quien las tenía pasa a IC-7610 (LED clásico para la última).',
+      'Com o rádio desligado, o ruído podia dar mensagens inventadas (por exemplo «TU; … R 549 3643» ou com dois indicativos ocultos) e até um falso aviso «DXCC novo». Agora as mensagens duvidosas de concurso tipo RTTY Roundup (fracas, fora de tempo) são descartadas se nenhum dos dois indicativos for conhecido, e as que têm dois indicativos ocultos sempre. Foram retirados da escolha os ecrãs Icom duplo recetor, Icom azul e LED essencial: quem os tinha passa a IC-7610 (LED clássico para o último).',
+    ],
+  },
+  {
     version: '0.11.294',
     released: '2026-11-18T12:56:40Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'La page Satellites t’avertit maintenant quand un satellite entre dans ta zone : un anneau et un éclair apparaissent sur la carte et tu entends un son au choix (« Clochette », « Radar » ou « Arpège ») à l’AOS, au LOS et avec un préavis en minutes, pour les satellites cochés ou seulement pour le satellite choisi. Les fiches se déplacent et se redimensionnent comme dans un tableau de bord, avec « Verrouiller la disposition » et « Rétablir la disposition » dans l’en-tête ; la carte se redimensionne depuis son coin en gardant ses proportions, montre une étoile rouge avec ton indicatif et a la légende Soleil/Lune à l’intérieur, tandis que le choix de la carte est passé dans les Réglages. La case décide quels satellites tu vois (aucun coché, seulement la Terre) et les cochés sont en haut de la liste. L’en-tête, les fiches et les tableaux sont plus compacts, et les tableaux des passages sont des grilles déplaçables.',
       'La página Satélites ahora te avisa cuando un satélite entra en tu zona: en el mapa aparecen un anillo y un destello y oyes un sonido a tu elección («Campanilla», «Radar» o «Arpegio») en el AOS, en el LOS y con un preaviso en minutos, para los satélites marcados o solo para el elegido. Las tarjetas se mueven y se redimensionan como en un panel de control, con «Bloquear la disposición» y «Restaurar disposición» en la cabecera; el mapa se redimensiona desde la esquina manteniendo sus proporciones, muestra una estrella roja con tu indicativo y lleva la leyenda Sol/Luna dentro, mientras que la elección del mapa ha pasado a los Ajustes. La casilla decide qué satélites ves (ninguno marcado, solo la Tierra) y los marcados van arriba en la lista. La cabecera, las tarjetas y las tablas son más compactas, y las tablas de pasos son cuadrículas movibles.',
       'A página Satélites avisa-te agora quando um satélite entra na tua zona: no mapa aparecem um anel e um clarão e ouves um som à tua escolha («Sineta», «Radar» ou «Arpejo») no AOS, no LOS e com um pré-aviso em minutos, para os satélites marcados ou só para o escolhido. Os cartões movem-se e redimensionam-se como num painel, com «Bloquear a disposição» e «Repor disposição» no cabeçalho; o mapa redimensiona-se a partir do canto mantendo as proporções, mostra uma estrela vermelha com o teu indicativo e tem a legenda Sol/Lua lá dentro, enquanto a escolha do mapa passou para as Definições. A caixa decide quais os satélites que vês (nenhum marcado, só a Terra) e os marcados ficam no topo da lista. O cabeçalho, os cartões e as tabelas são mais compactos, e as tabelas das passagens são grelhas movíveis.',
-    ],
-  },
-  {
-    version: '0.11.280',
-    released: '2026-11-16T21:03:53Z',
-    kind: 'changed',
-    title: [
-      'Finestre RX e TX in PSK, RTTY e CW; riga SSB più compatta',
-      'RX and TX windows in PSK, RTTY and CW; more compact SSB row',
-      'RX- und TX-Fenster in PSK, RTTY und CW; kompaktere SSB-Zeile',
-      'Fenêtres RX et TX en PSK, RTTY et CW ; ligne SSB plus compacte',
-      'Ventanas RX y TX en PSK, RTTY y CW; fila SSB más compacta',
-      'Janelas RX e TX em PSK, RTTY e CW; linha SSB mais compacta',
-    ],
-    text: [
-      'La finestra di ricezione di PSK, RTTY e CW non resta più una striscia: la linea di separazione con la finestra «Trasmissione» si trascina (la ricezione non scende sotto un quarto) e il doppio clic la riporta alla proporzione di partenza; la finestra di trasmissione ha ora etichetta e cornice. La riga «Inserisci QSO» in SSB è più compatta, con campi bassi, nome e QTH più larghi ed etichette corte e leggibili.',
-      'The receive window of PSK, RTTY and CW no longer stays a thin strip: the dividing line with the “Transmit” window can be dragged (receive never goes below a quarter), and a double-click on it restores the starting proportion; the transmit window now has a label and a frame. The SSB “Enter QSO” row is more compact, with lower fields, wider name and QTH fields and short, readable labels.',
-      'Das Empfangsfenster von PSK, RTTY und CW bleibt nicht mehr ein schmaler Streifen: Die Trennlinie zum Fenster „Senden“ lässt sich ziehen (der Empfang geht nie unter ein Viertel), und ein Doppelklick darauf stellt das Ausgangsverhältnis wieder her; das Sendefenster hat jetzt eine Beschriftung und einen Rahmen. Die SSB-Zeile „QSO eingeben“ ist kompakter, mit niedrigeren Feldern, breiteren Feldern für Name und QTH und kurzen, lesbaren Beschriftungen.',
-      'La fenêtre de réception de PSK, RTTY et CW ne reste plus une simple bande : la ligne de séparation avec la fenêtre « Émission » se fait glisser (la réception ne descend jamais sous un quart), et un double clic dessus rétablit la proportion de départ ; la fenêtre d’émission a désormais une étiquette et un cadre. La ligne SSB « Saisir le QSO » est plus compacte, avec des champs plus bas, des champs nom et QTH plus larges et des libellés courts et lisibles.',
-      'La ventana de recepción de PSK, RTTY y CW ya no se queda como una tira: la línea de separación con la ventana «Transmisión» se arrastra (la recepción no baja de un cuarto), y un doble clic en ella restablece la proporción inicial; la ventana de transmisión tiene ahora etiqueta y marco. La fila SSB «Introducir QSO» es más compacta, con campos más bajos, los de nombre y QTH más anchos y etiquetas cortas y legibles.',
-      'A janela de receção de PSK, RTTY e CW deixou de ficar reduzida a uma tira: a linha de separação com a janela «Transmissão» arrasta-se (a receção não desce abaixo de um quarto), e um duplo clique nela repõe a proporção inicial; a janela de transmissão tem agora etiqueta e moldura. A linha SSB «Introduzir QSO» é mais compacta, com campos mais baixos, os de nome e QTH mais largos e etiquetas curtas e legíveis.',
     ],
   },
 ];
