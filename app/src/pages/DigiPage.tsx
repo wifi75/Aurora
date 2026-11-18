@@ -2297,7 +2297,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         <div className="digi-leftcol">
         {/* Radar: a destra delle finestre RX e TX, alto quanto loro; la cascata sotto resta larga */}
         <div className={`digi-winrow${radarMode && radarOn ? ' digi-winrow--radar' : ''}`}>
-        <div className="digi-windows" ref={windowsRef} style={winW !== null && !(radarMode && radarOn) ? { width: winW, maxWidth: '100%', alignSelf: 'flex-start' } : undefined}>
+        <div className="digi-windows" ref={windowsRef} style={winW !== null && !(radarMode && radarOn) ? { width: winW, maxWidth: '100%' } : undefined}>
           <div className="digi-wingrip" role="separator" aria-orientation="vertical" title={t('digi.winw.tip')} onPointerDown={dragWinW} onDoubleClick={resetWinW} />
           {rxPart}
           <div

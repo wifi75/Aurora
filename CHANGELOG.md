@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+## 0.11.290 - 2026-11-18
+
+- Pagina CW, RTTY e PSK: con Aurora BIGScan spento la finestra di ricezione e trasmissione non si riduce piu' a una striscia (aveva un allineamento che le toglieva l'altezza); segnalazione #75.
 - Livelli audio di Windows: Aurora non li cambia piu' da sola. All'avvio e prima di ogni trasmissione il volume di uscita della scheda non viene piu' riscritto con il valore salvato del cursore Pwr: il cursore prende il livello che Windows ha gia' (lo legge soltanto) e Aurora scrive il volume solo dopo che hai mosso tu il cursore. Cosi' un altro programma (MixW, WSJT-X) trova la scheda come l'aveva lasciata. Il livello di registrazione si cambia soltanto con il cursore o con AUTO, spento di fabbrica.
 - Schermi stretti (1280 x 800, 1366 x 768): la dimensione dell'interfaccia si adatta da sola alla larghezza (da 65% a 100%) e arriva fino al 60% con Ctrl -, con il pulsante «Adatta» in Impostazioni › Aspetto; la griglia della pagina FT8 rimisura l'altezza (niente striscia vuota in fondo); Comandi con i pulsanti in griglia e allineati; selettore del modo uguale a quello di banda, senza «MHz» e con la freccetta visibile; con lo schermo stretto il display della radio e' compatto (frequenza, potenza, ROS, TUNE) e gli altri stili non si scelgono; tolti i tre display quasi quadrati; il display compatto non mostra piu' la scritta dei dati estesi spenti.
 - Impostazioni › Aspetto › «Finestre della pagina FT8»: casella per spostare e ridimensionare le finestre e pulsante «Ripristina»; l'indirizzo con `?vista=desktop` forza la pagina a finestre anche con il browser che simula un dispositivo a tocco.
