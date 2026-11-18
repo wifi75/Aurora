@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.291',
+    released: '2026-11-18T10:30:00Z',
+    kind: 'fixed',
+    title: [
+      'Livelli audio di Windows: correzione',
+      'Windows audio levels: fix',
+      'Windows-Audiopegel: Korrektur',
+      'Niveaux audio de Windows : correction',
+      'Niveles de audio de Windows: corrección',
+      'Níveis de áudio do Windows: correção',
+    ],
+    text: [
+      'Dopo la prima trasmissione Aurora tornava a scrivere il volume di uscita della scheda audio. Ora lo scrive solo quando muovi tu il cursore Pwr: le altre volte lo legge soltanto, e MixW, WSJT-X e gli altri programmi trovano i livelli come li avevano lasciati.',
+      'After the first transmission Aurora went back to writing the output volume of the sound card. Now it writes it only when you move the Pwr slider yourself: otherwise it only reads it, and MixW, WSJT-X and the other programs find the levels as they left them.',
+      'Nach der ersten Sendung schrieb Aurora wieder die Ausgangslautstärke der Soundkarte. Jetzt schreibt es sie nur, wenn du selbst den Pwr-Regler bewegst: sonst liest es sie nur, und MixW, WSJT-X und die anderen Programme finden die Pegel, wie sie sie verlassen haben.',
+      'Après la première émission, Aurora recommençait à écrire le volume de sortie de la carte son. Maintenant il ne l’écrit que lorsque tu déplaces toi-même le curseur Pwr : sinon il le lit seulement, et MixW, WSJT-X et les autres programmes retrouvent les niveaux comme ils les avaient laissés.',
+      'Tras la primera transmisión Aurora volvía a escribir el volumen de salida de la tarjeta de sonido. Ahora solo lo escribe cuando mueves tú el cursor Pwr: si no, solo lo lee, y MixW, WSJT-X y los demás programas encuentran los niveles como los dejaron.',
+      'Depois da primeira transmissão o Aurora voltava a escrever o volume de saída da placa de som. Agora só o escreve quando moves tu o cursor Pwr: caso contrário só o lê, e o MixW, o WSJT-X e os outros programas encontram os níveis como os deixaram.',
+    ],
+  },
+  {
     version: '0.11.290',
     released: '2026-11-18T08:48:40Z',
     kind: 'changed',
@@ -844,28 +865,6 @@ export const NOVITA: readonly Novita[] = [
       'Sur la page PSK·RTTY·SSTV, le mode SSB a trois colonnes : le journal à gauche, « Saisir le QSO » sur une seule ligne au centre et le DX Cluster à droite. Avec un concours choisi, la ligne affiche les numéros de série et le journal marque les doublons et les multiplicateurs ; à côté des macros, des boutons donnent les bandes choisies dans les Réglages. La barre des macros change aussi : la roue passe d’une à quatre lignes, et la police des boutons se choisit à part. La fiche avec les informations de l’indicatif (nom, pays, azimut) ne reste plus coincée : elle se ferme d’elle-même quand la souris quitte la fenêtre, quand on change de fenêtre, quand on fait défiler la page ou quand on appuie sur Échap. Les lignes de la liste à fond clair (QSO en cours, mon indicatif en jaune ou cyan) ont maintenant toutes leurs cellules dans une couleur foncée lisible au lieu du gris.',
       'En la página PSK·RTTY·SSTV, el modo SSB tiene tres columnas: el log a la izquierda, «Introducir QSO» en una sola fila en el centro y el DX Cluster a la derecha. Con un concurso elegido la fila muestra los números de serie y el log marca duplicados y multiplicadores; junto a las macros hay botones para las bandas elegidas en Ajustes. También cambia la barra de macros: el engranaje pasa de una a cuatro filas, y la letra de los botones se elige aparte. El recuadro con la información del indicativo (nombre, país, acimut) ya no se queda pegado: se cierra solo cuando el ratón sale de la ventana, cuando se cambia de ventana, al desplazarse o al pulsar Esc. Las filas de la lista con fondo claro (QSO en curso, mi indicativo en amarillo o cian) tienen ahora todas las celdas en un color oscuro legible en lugar de gris.',
       'Na página PSK·RTTY·SSTV, o modo SSB tem três colunas: o log à esquerda, «Introduzir QSO» numa só linha no centro e o DX Cluster à direita. Com um concurso escolhido a linha mostra os números de série e o log assinala duplicados e multiplicadores; ao lado das macros há botões para as bandas escolhidas nas Definições. A barra das macros também muda: a engrenagem passa de uma para quatro linhas, e a letra dos botões escolhe-se à parte. A caixa com as informações do indicativo (nome, país, azimute) já não fica presa: fecha-se sozinha quando o rato sai da janela, quando se muda de janela, quando se desloca a página ou quando se carrega em Esc. As linhas da lista com fundo claro (QSO em curso, o meu indicativo a amarelo ou ciano) têm agora todas as células numa cor escura legível em vez de cinzento.',
-    ],
-  },
-  {
-    version: '0.11.276',
-    released: '2026-11-16T12:00:14Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Tutti i prossimi passaggi in un elenco',
-      'All upcoming passes in one list',
-      'Alle nächsten Überflüge in einer Liste',
-      'Tous les prochains passages dans une liste',
-      'Todos los próximos pasos en una lista',
-      'Todas as próximas passagens numa lista',
-    ],
-    text: [
-      'Nella pagina Satelliti un elenco unico mostra i prossimi passaggi di tutti i satelliti spuntati, nelle prossime 24 o 48 ore, con il primo in alto. Per ognuno vedi l’inizio in UTC e nell’ora locale, tra quanto arriva, la durata, l’elevazione massima e l’azimut. Un clic sulla riga sceglie quel satellite.',
-      'On the Satellites page a single list shows the upcoming passes of all ticked satellites over the next 24 or 48 hours, with the first one at the top. For each you see the start in UTC and in local time, how soon it arrives, the duration, the maximum elevation and the azimuth. A click on the row chooses that satellite.',
-      'Auf der Satellitenseite zeigt eine einzige Liste die nächsten Überflüge aller angehakten Satelliten in den kommenden 24 oder 48 Stunden, der erste oben. Zu jedem siehst du den Start in UTC und in Ortszeit, wann er kommt, die Dauer, die maximale Elevation und den Azimut. Ein Klick auf die Zeile wählt diesen Satelliten.',
-      'Dans la page Satellites, une liste unique montre les prochains passages de tous les satellites cochés, dans les 24 ou 48 prochaines heures, le premier en haut. Pour chacun tu vois le début en UTC et en heure locale, dans combien de temps il arrive, la durée, l’élévation maximale et l’azimut. Un clic sur la ligne choisit ce satellite.',
-      'En la página Satélites una lista única muestra los próximos pasos de todos los satélites marcados, en las próximas 24 o 48 horas, con el primero arriba. De cada uno ves el inicio en UTC y en hora local, en cuánto llega, la duración, la elevación máxima y el acimut. Un clic en la fila elige ese satélite.',
-      'Na página Satélites uma lista única mostra as próximas passagens de todos os satélites marcados, nas próximas 24 ou 48 horas, com a primeira no topo. De cada uma vês o início em UTC e na hora local, daqui a quanto chega, a duração, a elevação máxima e o azimute. Um clique na linha escolhe esse satélite.',
     ],
   },
 ];

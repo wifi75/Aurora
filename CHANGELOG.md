@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.291 - 2026-11-18
+
+- Livelli audio di Windows, correzione della 0.11.290: dopo la prima trasmissione Aurora tornava a scrivere il volume di uscita della scheda (il motore richiama il livello prima di ogni trasmissione e il codice lo scambiava per una mossa del cursore). Ora il volume di Windows si scrive soltanto quando muovi tu il cursore Pwr (o c'e' un livello ricordato per la banda, se hai acceso la memoria per banda); le chiamate di routine non lo toccano.
+
 ## 0.11.290 - 2026-11-18
 
 - Pagina CW, RTTY e PSK: con Aurora BIGScan spento la finestra di ricezione e trasmissione non si riduce piu' a una striscia (aveva un allineamento che le toglieva l'altezza); segnalazione #75.
