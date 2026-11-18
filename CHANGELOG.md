@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.293 - 2026-11-18
+
+- Display della radio piu' semplice: sotto il display restano solo la frequenza del secondo VFO (se la radio la da') e il tasto TUNE; tolti il riquadro PWR + SPLIT, la fila di indicatori (preamplificatore, ATT, AGC, NB/NR, guadagni, RIT/XIT, alimentazione) e le caselle di Impostazioni › Stazione › Radio che sceglievano cosa mostrare. In trasmissione Aurora legge dalla radio solo potenza e ROS (prima anche ALC, compressione, corrente e tensione): su molte radio, per esempio il Kenwood TS-850S, ogni lettura faceva cambiare alla radio il selettore del suo misuratore, con il «clic» del relais (segnalazione #77).
+
 ## 0.11.292 - 2026-11-18
 
 - Radio all'avvio e alla chiusura: due caselle nuove in Impostazioni › Stazione › Radio, accese di fabbrica. «All'avvio riporta la radio all'ultima frequenza e al modo dell'ultima volta» (spenta, Aurora non sposta la radio all'avvio; segnalazione #73: la radio messa sui 1296 MHz tornava sui 2 metri) e «Alla chiusura riporta la radio com'era prima di aprire Aurora» (solo Hamlib, solo se la radio non trasmette).

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.293',
+    released: '2026-11-18T13:00:00Z',
+    kind: 'changed',
+    title: [
+      "Display della radio più semplice",
+      'A simpler radio display',
+      'Einfachere Funkgeräteanzeige',
+      "Afficheur de la radio plus simple",
+      'Display de la radio más sencillo',
+      'Visor do rádio mais simples',
+    ],
+    text: [
+      "Sotto il display della radio restano solo la frequenza del secondo VFO (se la radio la dà) e il tasto TUNE: sono stati tolti il riquadro PWR + SPLIT, gli indicatori (preamplificatore, ATT, AGC, NB/NR/notch, guadagni, RIT/XIT, VFO, alimentazione, ALC, compressione) e le caselle di Impostazioni › Stazione › Radio che sceglievano quali mostrare. In trasmissione Aurora legge dalla radio solo potenza e ROS: su molte radio, per esempio il Kenwood TS-850, ogni altra lettura faceva cambiare alla radio il selettore del misuratore con il «clic» del relè.",
+      'Under the radio display only the second VFO frequency (if the radio gives it) and the TUNE button remain: the PWR + SPLIT box, the indicators (preamp, ATT, AGC, NB/NR/notch, gains, RIT/XIT, VFO, supply, ALC, compression) and the Settings › Station › Radio boxes that chose which to show are gone. While transmitting Aurora reads only power and SWR from the radio: on many radios, for example the Kenwood TS-850, every other reading made the radio switch its meter selector with a relay “click”.',
+      'Unter der Funkgeräteanzeige bleiben nur die Frequenz des zweiten VFO (wenn das Gerät sie liefert) und die TUNE-Taste: Das Feld PWR + SPLIT, die Anzeigen (Vorverstärker, ATT, AGC, NB/NR/Notch, Verstärkungen, RIT/XIT, VFO, Versorgung, ALC, Kompression) und die Kästchen unter Einstellungen › Station › Funkgerät, die ihre Auswahl bestimmten, sind entfallen. Beim Senden liest Aurora vom Gerät nur Leistung und SWR: Bei vielen Geräten, zum Beispiel dem Kenwood TS-850, ließ jede andere Abfrage das Gerät den Messwahlschalter mit einem Relais-„Klick“ umschalten.',
+      'Sous l’afficheur de la radio il ne reste que la fréquence du deuxième VFO (si la radio la donne) et le bouton TUNE : le cadre PWR + SPLIT, les indicateurs (préampli, ATT, AGC, NB/NR/notch, gains, RIT/XIT, VFO, alimentation, ALC, compression) et les cases de Réglages › Station › Radio qui choisissaient quoi afficher ont disparu. En émission Aurora ne lit sur la radio que la puissance et le ROS : sur beaucoup de radios, par exemple le Kenwood TS-850, toute autre lecture faisait changer à la radio le sélecteur de son instrument avec le « clic » du relais.',
+      'Bajo el display de la radio solo quedan la frecuencia del segundo VFO (si la radio la da) y el botón TUNE: se han quitado el recuadro PWR + SPLIT, los indicadores (preamplificador, ATT, AGC, NB/NR/notch, ganancias, RIT/XIT, VFO, alimentación, ALC, compresión) y las casillas de Ajustes › Estación › Radio que elegían cuáles mostrar. En transmisión Aurora lee de la radio solo potencia y ROE: en muchas radios, por ejemplo la Kenwood TS-850, cualquier otra lectura hacía que la radio cambiara el selector de su medidor con el «clic» del relé.',
+      'Por baixo do visor do rádio só ficam a frequência do segundo VFO (se o rádio a der) e o botão TUNE: foram retirados o quadro PWR + SPLIT, os indicadores (pré-amplificador, ATT, AGC, NB/NR/notch, ganhos, RIT/XIT, VFO, alimentação, ALC, compressão) e as caixas de Definições › Estação › Rádio que escolhiam quais mostrar. Na transmissão a Aurora lê do rádio só a potência e a ROE: em muitos rádios, por exemplo o Kenwood TS-850, qualquer outra leitura fazia o rádio mudar o seletor do seu medidor com o «clique» do relé.',
+    ],
+  },
+  {
     version: '0.11.292',
     released: '2026-11-18T10:24:05Z',
     kind: 'new',
@@ -842,28 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Si la recherche sur QRZ.com ou HamQTH est configurée, le nom, le QTH et le locator de l’indicatif se remplissent seuls dans la ligne de saisie SSB et dans le panneau QSO de CW, RTTY et PSK. Le texte écrit à la main n’est jamais remplacé ; quand tu changes d’indicatif, les valeurs automatiques sont remplacées ou effacées.',
       'Si la búsqueda en QRZ.com o HamQTH está configurada, el nombre, el QTH y el locator del indicativo se rellenan solos en la fila de introducción SSB y en el panel QSO de CW, RTTY y PSK. El texto escrito a mano nunca se sobrescribe; al cambiar de indicativo, los valores automáticos se sustituyen o se vacían.',
       'Se a pesquisa no QRZ.com ou HamQTH estiver configurada, o nome, o QTH e o locator do indicativo preenchem-se sozinhos na linha de introdução SSB e no painel QSO de CW, RTTY e PSK. O texto escrito à mão nunca é substituído; ao mudar de indicativo, os valores automáticos são substituídos ou limpos.',
-    ],
-  },
-  {
-    version: '0.11.278',
-    released: '2026-11-16T18:32:24Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Contest in SSB: log da zero',
-      'Contests in SSB: a log from zero',
-      'Contests in SSB: Log bei null',
-      'Concours en SSB : journal à zéro',
-      'Contests en SSB: log desde cero',
-      'Contests em SSB: log do zero',
-    ],
-    text: [
-      'Il contest in SSB ha ora un log che riparte da zero: contano solo i QSO della gara, e doppi e moltiplicatori valgono dentro la gara. «Mostra tutto il log» e «Solo il contest» cambiano la vista, e il log si aggiorna subito dopo ogni QSO. La scheda «Statistiche» è sempre visibile nella vista SSB, con la tabella per banda, i moltiplicatori lavorati, il ritmo e il tempo che resta. Le impostazioni del contest propongono le date di CQ WW DX, CQ WPX e JIDX e fanno salire da sole il numero da inviare.',
-      'In SSB the contest now has a log that starts from zero: only the QSOs of the contest count, and dupes and multipliers count inside the contest. “Show the whole log” and “Contest only” change the view, and the log updates right after every QSO. The “Statistics” panel is always visible in the SSB view, with the table by band, the multipliers worked, the rate and the time left. The contest settings propose the dates for CQ WW DX, CQ WPX and JIDX and raise the number to send by themselves.',
-      'Im SSB-Modus hat der Contest jetzt ein Log, das bei null beginnt: Gezählt werden nur die QSOs des Contests, Doppel und Multiplikatoren gelten innerhalb des Contests. „Ganzes Log zeigen“ und „Nur der Contest“ wechseln die Ansicht, und das Log aktualisiert sich gleich nach jedem QSO. Der Bereich „Statistik“ ist in der SSB-Ansicht immer sichtbar, mit der Tabelle pro Band, den gearbeiteten Multiplikatoren, der Rate und der verbleibenden Zeit. Die Contest-Einstellungen schlagen die Daten für CQ WW DX, CQ WPX und JIDX vor und erhöhen die zu sendende Nummer selbst.',
-      'En SSB, le concours a maintenant un journal qui repart de zéro : ne comptent que les QSO du concours, et les doublons et multiplicateurs valent à l’intérieur du concours. « Afficher tout le journal » et « Seulement le contest » changent la vue, et le journal se met à jour juste après chaque QSO. Le panneau « Statistiques » est toujours visible en vue SSB, avec le tableau par bande, les multiplicateurs contactés, le rythme et le temps restant. Les réglages du concours proposent les dates de CQ WW DX, CQ WPX et JIDX et incrémentent seuls le numéro à envoyer.',
-      'En SSB el contest tiene ahora un log que empieza desde cero: solo cuentan los QSO del concurso, y los duplicados y multiplicadores valen dentro del concurso. «Mostrar todo el log» y «Solo el contest» cambian la vista, y el log se actualiza enseguida tras cada QSO. El panel «Estadísticas» está siempre visible en la vista SSB, con la tabla por banda, los multiplicadores trabajados, el ritmo y el tiempo que queda. Los ajustes del contest proponen las fechas de CQ WW DX, CQ WPX y JIDX y suben solos el número a enviar.',
-      'Em SSB o contest tem agora um log que começa do zero: contam só os QSO do concurso, e os duplicados e multiplicadores valem dentro do concurso. «Mostrar todo o log» e «Só o contest» mudam a vista, e o log atualiza-se logo a seguir a cada QSO. O painel «Estatísticas» está sempre visível na vista SSB, com a tabela por banda, os multiplicadores trabalhados, o ritmo e o tempo que resta. As definições do contest propõem as datas de CQ WW DX, CQ WPX e JIDX e fazem subir sozinhas o número a enviar.',
     ],
   },
 ];
