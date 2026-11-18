@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.291 (pubblicata 2026-11-18T09:48:48Z)
+
+- Livelli audio di Windows: nella 0.11.290 le chiamate di `set_attenuation` che il motore fa prima di ogni trasmissione (`engine-native/src/tx.rs`) passavano da `WindowsVolumePort::set_attenuation` e la scambiavano per una mossa dell'utente; dopo la prima trasmissione Aurora riscriveva il volume di uscita. Ora il gancio del cursore (`set_attenuation_hook` in `engine-native/src/lib.rs`) chiama `TxPort::level_changed` e solo quello imposta `user_set`; `set_attenuation` di routine non scrive finche' l'utente non ha mosso il cursore. All'avvio il cursore prende il volume letto da Windows. Da provare con una scheda audio vera (MixW che trovava i livelli a 100 dopo Aurora). Se persiste, chiedere all'amico versione, se il livello e' di registrazione o di riproduzione, e se ha toccato AUTO.
+
 ## Nella 0.11.290 (pubblicata 2026-11-18T08:48:40Z)
 
 - Schermi stretti (1280 x 800): `lib/uiScale.ts` sceglie la dimensione dell'interfaccia dalla larghezza (`autoScale`: 65-100%, pulsante «Adatta»), `GridBoard.tsx` rimisura l'altezza (osserva anche il contenitore e rimisura dopo l'avvio), `RadioDisplayHeader.tsx` usa `CompactRadioDisplay.tsx` sotto i 1500 punti (`useNarrowScreen` in `lib/radioDisplay.ts`: frequenza, S/PO, potenza, ROS, TUNE; stili scelti solo su schermo largo); tolti dal selettore i tre display quasi quadrati (migrati a `icblue`, `ic7610`, `ft2000`); Comandi a griglia (`bozze.css`); `FreqPicker` senza «MHz».

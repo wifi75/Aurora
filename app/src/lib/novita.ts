@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.291',
-    released: '2026-11-18T10:30:00Z',
+    released: '2026-11-18T09:48:48Z',
     kind: 'fixed',
     title: [
       'Livelli audio di Windows: correzione',
