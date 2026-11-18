@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.294',
+    released: '2026-11-18T14:00:00Z',
+    kind: 'changed',
+    title: [
+      'Display della radio senza indicatori finti',
+      'Radio display without fake indicators',
+      'Funkgeräte-Display ohne Schein-Anzeigen',
+      'Affichage du poste sans faux indicateurs',
+      'Pantalla de la radio sin indicadores falsos',
+      'Ecrã do rádio sem indicadores falsos',
+    ],
+    text: [
+      'I display a pannello unico (FT-2000, IC-7610, Icom doppio, Icom blu, LED essenziale) mostrano solo cio’ che esiste davvero: le frequenze del VFO A e del VFO B (se la radio la da’), il modo, RX/TX, l’S-meter in ricezione, potenza e ROS in trasmissione e il tasto TUNE. Tolti ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, banda passante e le barre decorative; i disegni sono piu’ corti.',
+      'The single-panel displays (FT-2000, IC-7610, Icom dual, Icom blue, Essential LED) now show only what really exists: the frequencies of VFO A and VFO B (if the radio gives it), the mode, RX/TX, the S-meter when receiving, power and SWR when transmitting, and the TUNE button. ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, passband and the decorative bars are gone; the drawings are shorter.',
+      'Die Einzelpanel-Displays (FT-2000, IC-7610, Icom doppelt, Icom blau, Schlichte LED) zeigen nur noch, was wirklich existiert: die Frequenzen von VFO A und VFO B (wenn das Funkgerät sie liefert), die Betriebsart, RX/TX, das S-Meter beim Empfang, Leistung und SWR beim Senden und die Taste TUNE. ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, Durchlassbereich und die dekorativen Balken sind weg; die Darstellungen sind kürzer.',
+      'Les affichages à panneau unique (FT-2000, IC-7610, Icom double, Icom bleu, LED essentiel) ne montrent plus que ce qui existe vraiment : les fréquences du VFO A et du VFO B (si le poste la donne), le mode, RX/TX, le S-mètre en réception, la puissance et le ROS en émission et la touche TUNE. ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, bande passante et les barres décoratives ont disparu ; les dessins sont plus courts.',
+      'Las pantallas de panel único (FT-2000, IC-7610, Icom doble, Icom azul, LED esencial) muestran solo lo que existe de verdad: las frecuencias del VFO A y del VFO B (si la radio la da), el modo, RX/TX, el S-meter en recepción, potencia y ROE en transmisión y el botón TUNE. Se quitaron ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, banda de paso y las barras decorativas; los dibujos son más cortos.',
+      'Os ecrãs de painel único (FT-2000, IC-7610, Icom duplo, Icom azul, LED essencial) mostram só o que existe de verdade: as frequências do VFO A e do VFO B (se o rádio a der), o modo, RX/TX, o S-meter na receção, potência e ROE na transmissão e o botão TUNE. Foram retirados ANT, ATT, IPO, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, banda passante e as barras decorativas; os desenhos são mais curtos.',
+    ],
+  },
+  {
     version: '0.11.293',
     released: '2026-11-18T12:13:38Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'La fenêtre de réception de PSK, RTTY et CW ne reste plus une simple bande : la ligne de séparation avec la fenêtre « Émission » se fait glisser (la réception ne descend jamais sous un quart), et un double clic dessus rétablit la proportion de départ ; la fenêtre d’émission a désormais une étiquette et un cadre. La ligne SSB « Saisir le QSO » est plus compacte, avec des champs plus bas, des champs nom et QTH plus larges et des libellés courts et lisibles.',
       'La ventana de recepción de PSK, RTTY y CW ya no se queda como una tira: la línea de separación con la ventana «Transmisión» se arrastra (la recepción no baja de un cuarto), y un doble clic en ella restablece la proporción inicial; la ventana de transmisión tiene ahora etiqueta y marco. La fila SSB «Introducir QSO» es más compacta, con campos más bajos, los de nombre y QTH más anchos y etiquetas cortas y legibles.',
       'A janela de receção de PSK, RTTY e CW deixou de ficar reduzida a uma tira: a linha de separação com a janela «Transmissão» arrasta-se (a receção não desce abaixo de um quarto), e um duplo clique nela repõe a proporção inicial; a janela de transmissão tem agora etiqueta e moldura. A linha SSB «Introduzir QSO» é mais compacta, com campos mais baixos, os de nome e QTH mais largos e etiquetas curtas e legíveis.',
-    ],
-  },
-  {
-    version: '0.11.279',
-    released: '2026-11-16T20:27:17Z',
-    kind: 'new',
-    title: [
-      'Nome, QTH e locatore da soli da QRZ.com o HamQTH',
-      'Name, QTH and locator from QRZ.com or HamQTH by themselves',
-      'Name, QTH und Locator von selbst aus QRZ.com oder HamQTH',
-      'Nom, QTH et locator tout seuls depuis QRZ.com ou HamQTH',
-      'Nombre, QTH y locator solos desde QRZ.com o HamQTH',
-      'Nome, QTH e locator sozinhos a partir do QRZ.com ou HamQTH',
-    ],
-    text: [
-      'Se la ricerca su QRZ.com o HamQTH è configurata, nome, QTH e locatore del nominativo si compilano da soli nella riga SSB e nel pannello QSO di CW, RTTY e PSK. Il testo scritto a mano non viene mai sovrascritto; cambiando nominativo, i valori automatici vengono sostituiti o svuotati.',
-      'If the QRZ.com or HamQTH lookup is set up, the name, QTH and locator of the callsign fill in by themselves in the SSB entry row and in the QSO panel of CW, RTTY and PSK. Text you typed by hand is never overwritten; when you change callsign, the automatic values are replaced or cleared.',
-      'Ist die Suche bei QRZ.com oder HamQTH eingerichtet, werden Name, QTH und Locator des Rufzeichens in der SSB-Eingabezeile und im QSO-Feld von CW, RTTY und PSK von selbst eingetragen. Von Hand geschriebener Text wird nie überschrieben; wenn du das Rufzeichen änderst, werden die automatischen Werte ersetzt oder geleert.',
-      'Si la recherche sur QRZ.com ou HamQTH est configurée, le nom, le QTH et le locator de l’indicatif se remplissent seuls dans la ligne de saisie SSB et dans le panneau QSO de CW, RTTY et PSK. Le texte écrit à la main n’est jamais remplacé ; quand tu changes d’indicatif, les valeurs automatiques sont remplacées ou effacées.',
-      'Si la búsqueda en QRZ.com o HamQTH está configurada, el nombre, el QTH y el locator del indicativo se rellenan solos en la fila de introducción SSB y en el panel QSO de CW, RTTY y PSK. El texto escrito a mano nunca se sobrescribe; al cambiar de indicativo, los valores automáticos se sustituyen o se vacían.',
-      'Se a pesquisa no QRZ.com ou HamQTH estiver configurada, o nome, o QTH e o locator do indicativo preenchem-se sozinhos na linha de introdução SSB e no painel QSO de CW, RTTY e PSK. O texto escrito à mão nunca é substituído; ao mudar de indicativo, os valores automáticos são substituídos ou limpos.',
     ],
   },
 ];

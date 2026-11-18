@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.294 - 2026-11-18
+
+- Display a pannello unico (FT-2000, IC-7610, Icom doppio, Icom blu, LED essenziale): tolti tutti gli indicatori, i riquadri e i pulsanti che non corrispondono a un dato o a una funzione vera (ANT, ATT, IPO, preamplificatore, AGC, NB, NR, NOTCH, RIT/XIT, SPLIT, VFO, banda passante, barre decorative di ALC e ROS). Restano le frequenze del VFO A e, se la radio la da', del VFO B, il modo, gli stati RX/TX, l'S-meter in ricezione, la potenza e il ROS in trasmissione come lettura, e il tasto TUNE; i disegni sono piu' corti. Lo stile «Icom blu con banda passante» si chiama «Icom blu».
+
 ## 0.11.293 - 2026-11-18
 
 - Display della radio piu' semplice: sotto il display restano solo la frequenza del secondo VFO (se la radio la da') e il tasto TUNE; tolti il riquadro PWR + SPLIT, la fila di indicatori (preamplificatore, ATT, AGC, NB/NR, guadagni, RIT/XIT, alimentazione) e le caselle di Impostazioni › Stazione › Radio che sceglievano cosa mostrare. In trasmissione Aurora legge dalla radio solo potenza e ROS (prima anche ALC, compressione, corrente e tensione): su molte radio, per esempio il Kenwood TS-850S, ogni lettura faceva cambiare alla radio il selettore del suo misuratore, con il «clic» del relais (segnalazione #77).
