@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.297 (pubblicata 2026-11-18T18:30:25Z)
+
+- Solo la Guida (`guide-station.ts`): tolti i riferimenti agli stili `icdual`, `icblue`, `ledline`; dizionario olandese senza le loro voci. Display piu' basso con VFOB sotto la frequenza: ancora da fare, in attesa del via del proprietario (vedi «Da fare (olandese)» qui sotto).
+
 ## Da fare (olandese)
 
 - `npx vitest run src/i18n` ha 2 prove che falliscono da prima di oggi: una voce olandese di Guida senza testo base (`t.12gffgz315`, elenco passaggi dei satelliti) e circa 13 voci dell'interfaccia senza traduzione olandese (si usa l'inglese). Si risolve con `node scripts/export-nl.mjs` e `node scripts/importa-nl.mjs` (foglio `docs/traduzione-olandese.csv`).
