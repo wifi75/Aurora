@@ -1,6 +1,14 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-17)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-18)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
+
+## Nella 0.11.290 (pubblicata 2026-11-18T08:48:40Z)
+
+- Schermi stretti (1280 x 800): `lib/uiScale.ts` sceglie la dimensione dell'interfaccia dalla larghezza (`autoScale`: 65-100%, pulsante «Adatta»), `GridBoard.tsx` rimisura l'altezza (osserva anche il contenitore e rimisura dopo l'avvio), `RadioDisplayHeader.tsx` usa `CompactRadioDisplay.tsx` sotto i 1500 punti (`useNarrowScreen` in `lib/radioDisplay.ts`: frequenza, S/PO, potenza, ROS, TUNE; stili scelti solo su schermo largo); tolti dal selettore i tre display quasi quadrati (migrati a `icblue`, `ic7610`, `ft2000`); Comandi a griglia (`bozze.css`); `FreqPicker` senza «MHz».
+- Livelli audio di Windows (`core/crates/aurora/src/lib.rs`, `WindowsVolumePort`): il volume di uscita si scrive solo dopo che l'utente ha mosso il cursore Pwr (`user_set`); all'avvio il cursore prende il livello letto da Windows. Il livello di ingresso cambia solo con il cursore o con AUTO (spento di fabbrica). Da provare con una scheda vera: segnalazione di un amico del proprietario (MixW trovava i livelli cambiati).
+- Finestre della pagina FT8 spostabili (`useEditLayout`, Impostazioni › Aspetto); `?vista=desktop` per le prove con il browser che simula il tocco.
+- #75 (Luc): con BIGScan spento la finestra RX/TX diventava una striscia per un `alignSelf: 'flex-start'` dentro la riga `digi-winrow`; tolto in `DigiPage.tsx`.
+- Prossimo passo: far provare la 0.11.290 sul PC a 1280 x 800; schede del contest mancanti (QSO per ora a colori, ritmo 10/50/100, Check Mult, Spot Alert).
 
 ## Nella 0.11.289 (pubblicata 2026-11-17T22:24:46Z)
 **#71 (PTT acceso e spento a fine QSO)**: dal registro dell'autore (zip allegato) la fine QSO per decodifica tardiva (1,6 s dopo l'inizio del periodo) fermava la trasmissione appena partita (`QEvent::Stopped(QsoFinished|SingleQso)` -> `halt_tx` in `engine-native/src/tx.rs`). Correzione: `let_started_tx_finish` lascia finire la trasmissione gia' in onda (`decode_now_s` >= inizio del periodo). Verificato su **WSJT-X** (`C:\WSJT\wsjtx\bin\wsjtx.exe`, Ghidra 12.1.4, REA): `MainWindow::cease_auto_Tx_after_QSO` `0x14025d290` chiama solo `auto_tx_mode(false)`; solo «Halt Tx» (`on_stopTxButton_clicked` `0x140262290` -> `requestTxStop` `0x1401f4ae0`) interrompe con `stopTx`. In Ghidra servono `ghidra.startup_timeout_ms` alto (1500000) per `wsjtx.exe` (21 MB). Due prove di `engine-native` (`a_band_change_halts_tx...`, `switching_between_ft8_and_ft4...`) falliscono nella corsa completa sotto carico, anche senza questa modifica: da solo passano. Comandi: CSS in fondo a `bozze.css` (filetto tolto, meno margine); non misurato sullo schermo dell'utente. Diagnostica: `layout_salvato`, `riquadri_della_pagina`, `ultima_pagina_di_lavoro` in `uiDiagnostics.ts`.

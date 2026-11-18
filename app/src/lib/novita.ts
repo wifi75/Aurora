@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.290',
-    released: '2026-11-18T09:00:00Z',
+    released: '2026-11-18T08:48:40Z',
     kind: 'changed',
     title: [
       'Schermi stretti: interfaccia che si adatta',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.290',
-    released: '2026-11-18T09:00:00Z',
+    released: '2026-11-18T08:48:40Z',
     kind: 'fixed',
     title: [
       'Aurora non cambia più i livelli audio di Windows',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.290',
-    released: '2026-11-18T09:00:00Z',
+    released: '2026-11-18T08:48:40Z',
     kind: 'new',
     title: [
       'Finestre della pagina FT8 da spostare',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.290',
-    released: '2026-11-18T09:00:00Z',
+    released: '2026-11-18T08:48:40Z',
     kind: 'fixed',
     title: [
       'Pagina CW, RTTY e PSK: finestra non più ridotta a una striscia',
