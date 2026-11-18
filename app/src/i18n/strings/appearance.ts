@@ -59,6 +59,9 @@ export const appearanceStrings = {
     'El tamaño de la fuente del log. Las columnas se adaptan solas: ningún texto queda cortado.',
     'O tamanho da letra do log. As colunas adaptam-se sozinhas: nenhum texto fica cortado.',
   ],
+  'ap.fit': ['Adatta allo schermo', 'Fit to the screen', 'An den Bildschirm anpassen', "Adapter à l'écran", 'Ajustar a la pantalla', 'Ajustar ao ecrã'],
+  'tip.ap.fit': ['Sceglie da solo la dimensione giusta per la larghezza del tuo schermo: più piccola sui portatili con schermi stretti, così niente esce dai bordi. Poi puoi cambiarla a mano.', 'Picks the right size for the width of your screen by itself: smaller on laptops with narrow screens, so nothing runs off the edges. You can still change it by hand.', 'Wählt selbst die passende Größe für die Breite deines Bildschirms: kleiner bei schmalen Laptop-Bildschirmen, damit nichts über den Rand geht. Danach kannst du sie von Hand ändern.', "Choisit tout seul la bonne taille pour la largeur de ton écran : plus petite sur les portables à écran étroit, pour que rien ne dépasse. Tu peux ensuite la changer à la main.", 'Elige por sí sola el tamaño adecuado para el ancho de tu pantalla: más pequeño en portátiles con pantallas estrechas, para que nada se salga. Después puedes cambiarlo a mano.', 'Escolhe sozinho o tamanho certo para a largura do teu ecrã: mais pequeno nos portáteis com ecrãs estreitos, para que nada saia das margens. Depois podes mudá-lo à mão.'],
+  'ap.fitBtn': ['Adatta', 'Fit', 'Anpassen', 'Adapter', 'Ajustar', 'Ajustar'],
   'ap.size': ['Dimensione del testo', 'Text size', 'Textgröße', 'Taille du texte', 'Tamaño del texto', 'Tamanho do texto'],
   'tip.ap.size': [
     'Ingrandisce tutta l’interfaccia. Anche con Ctrl +, Ctrl − e Ctrl 0. Resta su questo dispositivo.',

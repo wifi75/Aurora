@@ -19,7 +19,7 @@ import { useUiScale } from '../lib/uiScale';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
 
 /** Dimensioni del testo offerte qui: dal 90% al 140% a passi di 5. */
-const SIZES = [0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4] as const;
+const SIZES = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4] as const;
 
 /** Le superfici su cui sta il testo, per tema e contrasto (gli stessi valori di tokens.css e appearance.css): si controlla la peggiore. */
 const SURFACES: Record<'dark' | 'light', Record<Appearance['contrast'], readonly string[]>> = {
@@ -74,7 +74,7 @@ export function AppearanceTab() {
   const reset = () => {
     setA({ ...DEFAULT_APPEARANCE });
     saveAppearance({ ...DEFAULT_APPEARANCE });
-    useUiScale.getState().set(1);
+    useUiScale.getState().fit();
     pickTheme('dark');
   };
 
@@ -149,6 +149,11 @@ export function AppearanceTab() {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label={t('ap.fit')} hint={t('tip.ap.fit')}>
+            <button type="button" className="glass chip" onClick={() => useUiScale.getState().fit()}>
+              {t('ap.fitBtn')}
+            </button>
           </Field>
           <Cell label={t('ap.color')} hint={t('tip.ap.color')} wide>
             <span className="ap-swatches">

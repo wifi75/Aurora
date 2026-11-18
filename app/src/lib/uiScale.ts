@@ -6,21 +6,46 @@ import { browserStorage } from './theme';
  * cascata crescono insieme e niente si sovrappone. Si sceglie in Impostazioni > Generali o con Ctrl +, Ctrl - e Ctrl 0 (come nei browser).
  * Resta su questo dispositivo: il telefono e il PC hanno schermi diversi.
  */
-export const UI_SCALES = [0.9, 1, 1.1, 1.25, 1.4, 1.6] as const;
+export const UI_SCALES = [0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.4, 1.6] as const;
 const KEY = 'aurora-ui-scale';
-const MIN = 0.9;
+const MIN = 0.6;
 const MAX = 1.6;
+
+/**
+ * La dimensione adatta alla larghezza dello schermo: le pagine sono pensate per circa 1800 punti. Su un portatile da 1366 punti (o con la scala di
+ * Windows al 125%, che li riduce a circa 1100) tutto uscirebbe dai bordi: si parte piu' piccoli, e chi vuole cambia con Ctrl + e Ctrl -.
+ */
+export function autoScale(width: number): number {
+  if (!Number.isFinite(width) || width <= 0) return 1;
+  if (width < 1100) return 0.6;
+  if (width < 1300) return 0.7;
+  if (width < 1500) return 0.8;
+  if (width < 1700) return 0.9;
+  return 1;
+}
+
+/** L'utente ha scelto una dimensione (se no vale quella automatica, che segue lo schermo). */
+export function hasChosenScale(): boolean {
+  try {
+    return browserStorage()?.getItem(KEY) != null;
+  } catch {
+    return false;
+  }
+}
 
 function clamp(v: number): number {
   return Math.min(MAX, Math.max(MIN, Math.round(v * 100) / 100));
 }
 
 export function readScale(): number {
+  const auto = clamp(autoScale(typeof window === 'undefined' ? 0 : window.innerWidth));
   try {
-    const v = Number(browserStorage()?.getItem(KEY));
-    return Number.isFinite(v) && v > 0 ? clamp(v) : 1;
+    const raw = browserStorage()?.getItem(KEY);
+    if (raw == null) return auto;
+    const v = Number(raw);
+    return Number.isFinite(v) && v > 0 ? clamp(v) : auto;
   } catch {
-    return 1;
+    return auto;
   }
 }
 
@@ -34,6 +59,8 @@ interface ScaleState {
   scale: number;
   set(scale: number): void;
   step(dir: 1 | -1): void;
+  /** Torna alla dimensione adatta allo schermo (cancella la scelta fatta). */
+  fit(): void;
 }
 
 export const useUiScale = create<ScaleState>((set, get) => ({
@@ -52,6 +79,16 @@ export const useUiScale = create<ScaleState>((set, get) => ({
     const now = get().scale;
     const next = dir > 0 ? UI_SCALES.find((s) => s > now + 0.001) : [...UI_SCALES].reverse().find((s) => s < now - 0.001);
     if (next !== undefined) get().set(next);
+  },
+  fit() {
+    try {
+      browserStorage()?.removeItem(KEY);
+    } catch {
+      // senza archivio la dimensione automatica vale comunque
+    }
+    const next = clamp(autoScale(window.innerWidth));
+    apply(next);
+    set({ scale: next });
   },
 }));
 
