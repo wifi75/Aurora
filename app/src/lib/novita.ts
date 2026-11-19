@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.304',
+    released: '2026-11-19T22:00:00Z',
+    kind: 'changed',
+    title: [
+      'Spot dal cluster IU3WJQ-7, con passaggio al successivo',
+      'Spots from the IU3WJQ-7 cluster, falling back to the next',
+      'Spots vom Cluster IU3WJQ-7, mit Wechsel zum nächsten',
+      'Spots depuis le cluster IU3WJQ-7, avec passage au suivant',
+      'Spots desde el clúster IU3WJQ-7, con paso al siguiente',
+      'Spots do cluster IU3WJQ-7, com passagem ao seguinte',
+    ],
+    text: [
+      'Di base il primo cluster dell’elenco è «IU3WJQ-7» (cluster.iu3wjq.com:8000) e gli spot partono dal cluster telnet, proprio da quello. Se non è collegato o non ripete lo spot (al massimo 8 secondi), lo spot passa subito al cluster collegato successivo dell’elenco, e così via. Chi ha già salvato le sue scelte le ritrova; se il cluster è già nell’elenco viene messo in cima. Il cluster chiede nome utente e password: finché non li scrivi, gli spot passano ai successivi.',
+      'By default the first cluster in the list is “IU3WJQ-7” (cluster.iu3wjq.com:8000) and spots go out through the telnet cluster, from that very one. If it is not connected or does not repeat the spot (8 seconds at most), the spot immediately goes to the next connected cluster in the list, and so on. Whoever already saved their choices keeps them; if the cluster is already in the list it is moved to the top. The cluster asks for a user name and password: until you write them, spots go to the following ones.',
+      'Standardmäßig ist der erste Cluster der Liste „IU3WJQ-7“ (cluster.iu3wjq.com:8000) und Spots gehen über den Telnet-Cluster hinaus, genau von diesem. Ist er nicht verbunden oder wiederholt er den Spot nicht (höchstens 8 Sekunden), geht der Spot sofort zum nächsten verbundenen Cluster der Liste, und so weiter. Wer seine Auswahl schon gespeichert hat, behält sie; steht der Cluster schon in der Liste, wird er nach oben gesetzt. Der Cluster verlangt Benutzername und Passwort: Solange du sie nicht einträgst, gehen Spots an die folgenden.',
+      'Par défaut le premier cluster de la liste est « IU3WJQ-7 » (cluster.iu3wjq.com:8000) et les spots partent par le cluster telnet, de celui-là même. S’il n’est pas connecté ou ne répète pas le spot (8 secondes au plus), le spot passe tout de suite au cluster connecté suivant de la liste, et ainsi de suite. Qui a déjà enregistré ses choix les garde ; si le cluster est déjà dans la liste, il est mis en tête. Le cluster demande un nom d’utilisateur et un mot de passe : tant que tu ne les écris pas, les spots passent aux suivants.',
+      'De fábrica el primer clúster de la lista es «IU3WJQ-7» (cluster.iu3wjq.com:8000) y los spots salen por el clúster telnet, justo por ese. Si no está conectado o no repite el spot (8 segundos como máximo), el spot pasa enseguida al siguiente clúster conectado de la lista, y así sucesivamente. Quien ya guardó sus elecciones las conserva; si el clúster ya está en la lista se pone el primero. El clúster pide nombre de usuario y contraseña: mientras no los escribas, los spots pasan a los siguientes.',
+      'De fábrica o primeiro cluster da lista é «IU3WJQ-7» (cluster.iu3wjq.com:8000) e os spots saem pelo cluster telnet, desse mesmo. Se não está ligado ou não repete o spot (8 segundos no máximo), o spot passa logo ao cluster ligado seguinte da lista, e assim por diante. Quem já guardou as suas escolhas mantém-nas; se o cluster já está na lista é posto em primeiro. O cluster pede nome de utilizador e palavra-passe: enquanto não os escreveres, os spots passam aos seguintes.',
+    ],
+  },
+  {
     version: '0.11.303',
     released: '2026-11-19T19:22:50Z',
     kind: 'fixed',
@@ -841,28 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Si l’ancien dossier hamlib ne peut pas être supprimé, il est déplacé dans hamlib.vecchia et l’installation continue ; la copie des fichiers bloqués est retentée. Les radios qui ne savent pas copier A=B ne remplissent plus les rapports d’erreurs. L’avertissement du changement de mode indique le vrai mode et la raison.',
       'Si la carpeta hamlib antigua no se puede quitar, se mueve a hamlib.vecchia y la instalación continúa; la copia de los archivos bloqueados se reintenta. Las radios que no saben copiar A=B ya no llenan los informes de errores. El aviso del cambio de modo dice el modo real y el motivo.',
       'Se a pasta hamlib antiga não se consegue remover, é movida para hamlib.vecchia e a instalação continua; a cópia dos ficheiros bloqueados é repetida. Os rádios que não sabem copiar A=B já não enchem os relatórios de erros. O aviso da mudança de modo diz o modo verdadeiro e o motivo.',
-    ],
-  },
-  {
-    version: '0.11.283',
-    released: '2026-11-17T10:23:29Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Satelliti: mappa della Terra NASA, zoom automatico e zoom sui paesi',
-      'Satellites: NASA Earth map, automatic zoom and zoom on countries',
-      'Satelliten: NASA-Erdkarte, automatischer Zoom und Zoom auf Länder',
-      'Satellites : carte de la Terre NASA, zoom automatique et zoom sur les pays',
-      'Satélites: mapa de la Tierra de la NASA, zoom automático y zoom en países',
-      'Satélites: mapa da Terra da NASA, zoom automático e zoom nos países',
-    ],
-    text: [
-      'Nella pagina Satelliti la mappa può mostrare la Terra come la vede la NASA: la foto Blue Marble di giorno e le luci delle città di notte. Quando un satellite entra nell’area (AOS) la mappa ingrandisce da sola, con quattro modi a scelta nel riquadro «Avvisi» (Spento, Area del satellite, Stazione e satellite, Segui il satellite), e torna alla vista intera alla LOS. Puoi ingrandire anche a mano con la rotella e i pulsanti, oppure scegliere «Zoom su un paese…» dall’elenco con tutti i paesi. La mappa semplice vettoriale resta disponibile.',
-      'On the Satellites page the map can show the Earth as NASA sees it: the Blue Marble photo by day and the city lights at night. When a satellite enters the area (AOS) the map zooms in by itself, with four modes to choose from in the “Alerts” box (Off, Satellite area, Station and satellite, Follow the satellite), and goes back to the full view at LOS. You can also zoom by hand with the wheel and the buttons, or pick “Zoom on a country…” from the list with all countries. The simple vector map is still available.',
-      'Auf der Seite Satelliten kann die Karte die Erde so zeigen, wie die NASA sie sieht: das Blue-Marble-Foto am Tag und die Lichter der Städte in der Nacht. Wenn ein Satellit in das Gebiet eintritt (AOS), zoomt die Karte von selbst, mit vier wählbaren Modi im Feld „Hinweise“ (Aus, Gebiet des Satelliten, Station und Satellit, Satelliten folgen), und kehrt bei LOS zur ganzen Ansicht zurück. Du kannst auch von Hand mit dem Rad und den Tasten zoomen oder „Zoom auf ein Land…“ aus der Liste mit allen Ländern wählen. Die einfache Vektorkarte bleibt verfügbar.',
-      'Dans la page Satellites la carte peut montrer la Terre comme la voit la NASA : la photo Blue Marble de jour et les lumières des villes la nuit. Quand un satellite entre dans la zone (AOS), la carte zoome toute seule, avec quatre modes au choix dans l’encadré « Alertes » (Désactivé, Zone du satellite, Station et satellite, Suivre le satellite), et revient à la vue entière à la LOS. Tu peux aussi zoomer à la main avec la molette et les boutons, ou choisir « Zoom sur un pays… » dans la liste de tous les pays. La carte simple vectorielle reste disponible.',
-      'En la página Satélites el mapa puede mostrar la Tierra como la ve la NASA: la foto Blue Marble de día y las luces de las ciudades de noche. Cuando un satélite entra en el área (AOS) el mapa se acerca solo, con cuatro modos a elegir en el recuadro «Avisos» (Apagado, Área del satélite, Estación y satélite, Seguir el satélite), y vuelve a la vista completa en la LOS. También puedes hacer zoom a mano con la rueda y los botones, o elegir «Zoom en un país…» de la lista con todos los países. El mapa simple vectorial sigue disponible.',
-      'Na página Satélites o mapa pode mostrar a Terra como a vê a NASA: a foto Blue Marble de dia e as luzes das cidades à noite. Quando um satélite entra na área (AOS) o mapa aproxima sozinho, com quatro modos à escolha no quadro «Avisos» (Desligado, Área do satélite, Estação e satélite, Seguir o satélite), e volta à vista inteira na LOS. Também podes ampliar à mão com a roda e os botões, ou escolher «Zoom num país…» na lista com todos os países. O mapa simples vetorial continua disponível.',
     ],
   },
 ];
