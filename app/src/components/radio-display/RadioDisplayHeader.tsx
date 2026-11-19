@@ -58,6 +58,8 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
     // la scritta grande al centro di ogni display spento, nella lingua scelta (la usa il CSS con `content: var(--rd-off-text)`): testo vero,
     // non piu' un'immagine generata (issue #55: se l'immagine non si generava restava solo un riquadro nero)
     document.body.style.setProperty('--rd-off-text', JSON.stringify(t('rd.off')));
+    // quanti caratteri ha la scritta: il CSS ne ricava la misura perche' ci stia sempre tutta nella larghezza del display, in ogni lingua
+    document.body.style.setProperty('--rd-off-chars', String(Math.max(8, t('rd.off').length)));
     return () => document.body.classList.remove('rd-radio-off');
   }, [radioOff, t]);
   if (pref.hidden) return null;

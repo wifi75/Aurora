@@ -49,7 +49,7 @@ function swrFraction(swr: number): number {
 }
 
 /** Display piccolo (testata e telefono): frequenza con il VFO B sotto, RX/TX piccoli, misuratore uniforme; in trasmissione potenza e ROS in due barre. */
-export function MiniDisplay({ model, noRadio, ariaLabel, style, vfoB = null }: StyleProps & { style: RadioDisplayStyle; vfoB?: string | null }) {
+export function MiniDisplay({ model, ariaLabel, style, vfoB = null }: StyleProps & { style: RadioDisplayStyle; vfoB?: string | null }) {
   const p = PALETTES[style];
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
@@ -72,7 +72,6 @@ export function MiniDisplay({ model, noRadio, ariaLabel, style, vfoB = null }: S
       {/* TUNE e' un pulsante vero sopra il disegno (vedi RadioDisplayHeader), tra la frequenza e RX, sulla riga della barra in basso */}
       <Chip x={MX} y={5.5} w={24} h={11} text="RX" bg={p.rx} fg={p.rxInk} fontSize={9} rx={3} dim={!link.rx} />
       <Chip x={MX + 28} y={5.5} w={24} h={11} text="TX" bg={p.tx} fg={p.txInk} fontSize={9} rx={3} dim={!link.tx} />
-      {known ? null : <Label x={MX + 58} y={14.5} text={noRadio} fill={p.ink} size={9} weight={600} />}
       {sending ? (
         <>
           {/* in trasmissione il misuratore diventa quello della potenza e sotto c'e' la barra del ROS, ognuna con il suo testo alla stessa altezza */}

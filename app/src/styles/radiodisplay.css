@@ -1140,3 +1140,13 @@ html[data-theme='light'] .rd-compact { background: #ffffff; border-color: #6d5bf
 .rd-tune--wait { opacity: 0.6; }
 .rd-tune:disabled { cursor: default; }
 .rd-tune--in { position: absolute; left: 41.8%; top: 63.5%; }
+
+/* Radio spenta: la scritta si adatta SEMPRE alla larghezza del display. La misura e' larghezza del display / (numero di caratteri x 1,1), cosi'
+   «RADIO NON COLLEGATA» (e le sue traduzioni, piu' lunghe) ci sta tutta senza tagliarsi; `--rd-off-chars` lo scrive RadioDisplayHeader. Si usa
+   la larghezza nota di ogni disposizione perche' sul display non si puo' mettere `container-type` (issue #55 e #60) */
+body.rd-radio-off .rd-header::after {
+  font-size: min(clamp(14px, 1.4vw, 28px), calc(var(--rd-off-w, 20rem) * 0.94 / (var(--rd-off-chars, 19) * 1.1)));
+}
+.rd-duo--single { --rd-off-w: 19.125rem; }
+.rd-duo--pair { --rd-off-w: 38rem; }
+.rd-face-slot { --rd-off-w: 40rem; }

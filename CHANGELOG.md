@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Radio non collegata: la scritta al centro del display si adatta sempre alla larghezza del display e al numero di caratteri della lingua (prima «RADIO NON COLLEGATA» si tagliava in «RADIO NON COL»); tolta dal disegno compatto la scritta piccola che spuntava sotto.
+
 ## 0.11.302 - 2026-11-19
 
 - Display compatto della testata ridisegnato: piu' basso (52 punti, senza stiramento), senza spazio vuoto a destra con la disposizione unica; TUNE e' un pulsantino come RX e TX dentro il display, tra la frequenza e RX, sulla riga della barra in basso, giallo quando l'accordatore lavora; misuratore a 10 tacche uguali, largo come la colonna; in trasmissione il misuratore diventa quello della potenza e sotto c'e' la barra del ROS, ognuna con il suo testo (PWR e SWR) alla stessa altezza; in ricezione niente PWR e SWR. Con i due blocchi affiancati resta la scheda a destra. Visto in anteprima, non con una radio vera.
