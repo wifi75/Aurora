@@ -416,7 +416,9 @@ impl ClusterService {
             let senders = lock(&self.senders);
             let status = lock(&self.status);
             let connected = |k: &str| status.get(k).is_some_and(|s| s.state == "connected");
-            let chosen = if config.spot_server.is_empty() {
+            // il cluster scelto per gli spot non e' piu' nell'elenco (tolto o rinominato con un altro indirizzo): vale come «il primo collegato»
+            let listed = config.servers.iter().any(|s| s.key() == config.spot_server);
+            let chosen = if config.spot_server.is_empty() || !listed {
                 senders.keys().find(|k| connected(k)).cloned()
             } else if senders.contains_key(&config.spot_server) && connected(&config.spot_server) {
                 Some(config.spot_server.clone())
@@ -424,7 +426,7 @@ impl ClusterService {
                 None
             };
             let key = chosen.ok_or_else(|| {
-                if config.spot_server.is_empty() { "nessun cluster telnet collegato".to_string() } else { format!("il cluster {} non e' collegato", config.spot_server) }
+                if config.spot_server.is_empty() || !listed { "nessun cluster telnet collegato".to_string() } else { format!("il cluster {} non e' collegato", config.spot_server) }
             })?;
             let name = config.servers.iter().find(|s| s.key() == key).map_or_else(|| key.clone(), |s| s.name.clone());
             let sender = senders.get(&key).cloned().ok_or_else(|| "nessun cluster telnet collegato".to_string())?;
