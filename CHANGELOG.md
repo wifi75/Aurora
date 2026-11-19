@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Ingresso audio: la scelta del dispositivo e la lettura dei suoi formati ora girano in un thread nuovo, con COM pulito; su alcuni PC (Windows 11, Realtek «Mixage stereo») l'ingresso non si apriva con «impossibile modificare il modo thread» (0x80010106). Non provato con quel PC.
+
 ## 0.11.297 - 2026-11-18
 
 - Guida: tolti dall'elenco degli stili del display i tre stili non piu' selezionabili (Icom doppio ricevitore, Icom blu, LED essenziale), che comparivano come chiavi non risolte; tolte anche le loro voci dal dizionario olandese.

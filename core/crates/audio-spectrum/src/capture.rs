@@ -256,6 +256,29 @@ pub fn run_capture(
     run_capture_tapped(device_hint, rows, events, None)
 }
 
+/// Sceglie l'ingresso e ne legge i formati utilizzabili (da eseguire in un thread proprio, vedi [`run_capture_with`]).
+fn prepare_input(device_hint: Option<&str>) -> Result<(cpal::Device, String, Vec<InputAttempt>), CaptureError> {
+    let host = cpal::default_host();
+    let device = match device_hint.filter(|h| !is_default_name(h)) {
+        None => host.default_input_device(),
+        Some(hint) => host.input_devices().ok().and_then(|it| {
+            let mut devices: Vec<cpal::Device> = it.collect();
+            let names: Vec<String> = devices.iter().map(device_name).collect();
+            position_by_id(&devices, hint).or_else(|| match_device_name(&names, hint)).map(|i| devices.swap_remove(i))
+        }),
+    };
+    let Some(device) = device else {
+        return Err(CaptureError::NoDevice { wanted: device_hint.map(str::to_string), available: list_input_devices() });
+    };
+    let name = device_name(&device);
+    let (plan, default_error) = input_plan(&device);
+    if plan.is_empty() {
+        let why = default_error.unwrap_or_else(|| "nessun formato utilizzabile (uno o due canali, 44,1 o 48 kHz)".into());
+        return Err(CaptureError::Config(format!("{name}: {why}")));
+    }
+    Ok((device, name, plan))
+}
+
 /// Come [`run_capture`], e in piu' manda ogni blocco di audio a `tap` (per il decoder proprio).
 pub fn run_capture_tapped(
     device_hint: Option<&str>,
@@ -278,25 +301,15 @@ pub fn run_capture_with(
     events: broadcast::Sender<Event>,
     tap: Option<mpsc::Sender<AudioChunk>>,
 ) -> Result<CaptureHandle, CaptureError> {
-    let host = cpal::default_host();
-    let device = match device_hint.filter(|h| !is_default_name(h)) {
-        None => host.default_input_device(),
-        Some(hint) => host.input_devices().ok().and_then(|it| {
-            let mut devices: Vec<cpal::Device> = it.collect();
-            let names: Vec<String> = devices.iter().map(device_name).collect();
-            position_by_id(&devices, hint).or_else(|| match_device_name(&names, hint)).map(|i| devices.swap_remove(i))
-        }),
-    };
-    let Some(device) = device else {
-        return Err(CaptureError::NoDevice { wanted: device_hint.map(str::to_string), available: list_input_devices() });
-    };
-    let name = device_name(&device);
+    // la scelta del dispositivo e la lettura dei suoi formati si fanno in un thread nuovo, con COM pulito: sul thread di chi chiama (un thread del
+    // pool, o uno che ha gia' iniziato COM in un altro modo) WASAPI poteva rispondere «impossibile modificare il modo thread» (0x80010106) e l'ingresso
+    // non si apriva (rapporto del 2026-11-19, Windows 11, Realtek «Mixage stereo»)
+    let hint = device_hint.map(str::to_string);
+    let prepared = std::thread::spawn(move || prepare_input(hint.as_deref()))
+        .join()
+        .map_err(|_| CaptureError::Config("la lettura del dispositivo audio si e' interrotta".into()))??;
+    let (device, name, plan) = prepared;
     let name_for_handle = name.clone();
-    let (plan, default_error) = input_plan(&device);
-    if plan.is_empty() {
-        let why = default_error.unwrap_or_else(|| "nessun formato utilizzabile (uno o due canali, 44,1 o 48 kHz)".into());
-        return Err(CaptureError::Config(format!("{name}: {why}")));
-    }
 
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = Arc::clone(&stop);
