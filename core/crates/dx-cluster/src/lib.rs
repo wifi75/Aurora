@@ -119,8 +119,8 @@ impl Default for Config {
             servers: vec![
                 server(AURORA_CLUSTER_NAME, AURORA_CLUSTER_HOST, AURORA_CLUSTER_PORT),
                 server("HamQTH", "hamqth.com", 7300),
-                server("N2KI New York", "dxc.n2ki.com", 7300),
                 server("Hamcloud", "dx.hamnet.network", 7300),
+                server("VE7CC", "ve7cc.net", 23),
             ],
             login_commands: Vec::new(),
             max_spots: 500,
@@ -947,7 +947,8 @@ mod tests {
         assert_eq!(c.spot_server, "cluster.iu3wjq.com:8000");
         assert_eq!(c.servers[0].key(), "cluster.iu3wjq.com:8000");
         assert_eq!(c.servers[0].name, "IU3WJQ-7");
-        assert!(c.servers.len() >= 2, "ci sono altri cluster a cui passare");
+        let keys: Vec<String> = c.servers.iter().map(ServerCfg::key).collect();
+        assert_eq!(keys, ["cluster.iu3wjq.com:8000", "hamqth.com:7300", "dx.hamnet.network:7300", "ve7cc.net:23"], "i quattro server di serie");
         assert!(c.validate().is_ok());
     }
 

@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: i quattro server di serie sono IU3WJQ-7 (`cluster.iu3wjq.com:8000`), HamQTH, Hamcloud e VE7CC (`ve7cc.net:23`); N2KI New York non e' piu' tra quelli di serie (resta nel catalogo). Chi ha gia' salvato la sua lista la ritrova.
+
 ## 0.11.304 - 2026-11-19
 
 - TUNE: un clic avvia l'accordatura automatica e il tasto resta acceso (giallo) finche' non lo spegni a mano con un altro clic (in tutti i display; se la radio dice che l'accordatore e' inserito, il tasto e' acceso anche senza il tuo clic).
