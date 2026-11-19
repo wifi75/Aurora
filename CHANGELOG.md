@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Impostazioni › Aspetto: «Riporta tutte le finestre alla disposizione iniziale» (prima «Ripristina», che rimetteva a posto solo la pagina FT8 e non sempre). Chiede conferma, toglie tutte le disposizioni salvate (finestre di FT8, VHF, PSK, Satelliti, contest, cascata e riquadri in basso, colonne delle tabelle, finestre staccate; anche dal server delle preferenze) e ricarica la pagina: l'interfaccia riparte come dopo la prima installazione. Tema, lingua, nome e filtri restano. Non provato dal vivo.
+
 - Ingresso audio: la scelta del dispositivo e la lettura dei suoi formati ora girano in un thread nuovo, con COM pulito; su alcuni PC (Windows 11, Realtek «Mixage stereo») l'ingresso non si apriva con «impossibile modificare il modo thread» (0x80010106). Non provato con quel PC.
 
 ## 0.11.297 - 2026-11-18

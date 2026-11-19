@@ -16,8 +16,9 @@ import {
 } from '../lib/appearance';
 import { browserStorage, chooseTheme, readThemeChoice, resolveTheme, THEME_EVENT, type ThemeChoice } from '../lib/theme';
 import { useUiScale } from '../lib/uiScale';
-import { useBoard } from '../lib/boardLayout';
-import { useBottom, useEditLayout } from '../lib/bottomLayout';
+import { useEditLayout } from '../lib/bottomLayout';
+import { clearLayouts } from '../lib/resetLayouts';
+import { toast } from '../lib/toast';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
 
 /** Dimensioni del testo offerte qui: dal 90% al 140% a passi di 5. */
@@ -119,8 +120,11 @@ export function AppearanceTab() {
               type="button"
               className="glass chip"
               onClick={() => {
-                useBoard.getState().reset();
-                useBottom.getState().reset();
+                if (!window.confirm(t('ap.boardResetAsk'))) return;
+                // si tolgono tutte le disposizioni salvate (anche dal server delle preferenze) e si ricarica: ogni pagina riparte da quella iniziale
+                clearLayouts(window.localStorage);
+                toast(t('ap.boardResetDone'), 'ok');
+                window.setTimeout(() => window.location.reload(), 1600);
               }}
             >
               {t('ap.boardResetBtn')}
