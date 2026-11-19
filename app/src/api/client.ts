@@ -786,6 +786,9 @@ export interface CatConfig {
   restore_on_start?: boolean;
   /** Alla chiusura riporta la radio com'era prima di aprire Aurora (acceso di base, Hamlib). */
   restore_on_exit?: boolean;
+  /** In trasmissione legge la potenza e/o il ROS (accesi di base): spegnerne uno riduce le richieste alla radio (clic dei misuratori). */
+  read_tx_power?: boolean;
+  read_tx_swr?: boolean;
   /** Condivide `rigctld` con altri programmi (solo su 127.0.0.1) sulla porta fissa `share_port`. */
   share_enabled: boolean;
   share_port: number;

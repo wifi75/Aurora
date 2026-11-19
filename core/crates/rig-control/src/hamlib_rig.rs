@@ -957,10 +957,12 @@ impl Inner {
         let client = link.client();
         let mut steps: Vec<Step> = Vec::new();
         if tx {
-            if poll.memory.supported(Level::PowerWatts) || poll.memory.supported(Level::PowerFraction) {
+            if self.config.read_tx_power && (poll.memory.supported(Level::PowerWatts) || poll.memory.supported(Level::PowerFraction)) {
                 steps.push(Step::Power);
             }
-            steps.extend(TX_LEVELS.iter().filter(|l| poll.memory.supported(**l)).map(|l| Step::Level(*l)));
+            if self.config.read_tx_swr {
+                steps.extend(TX_LEVELS.iter().filter(|l| poll.memory.supported(**l)).map(|l| Step::Level(*l)));
+            }
         } else if poll.memory.supported(Level::Strength) {
             steps.push(Step::Level(Level::Strength));
         }

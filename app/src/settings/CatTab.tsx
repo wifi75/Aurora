@@ -781,6 +781,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           <Check label={t('cat.extras')} hint={t('tip.cat.extras')} checked={config.read_extras === true} onChange={(v) => { set({ read_extras: v }); saveNow.mutate({ read_extras: v }); }} />
           <Check label={t('cat.restoreStart')} hint={t('tip.cat.restoreStart')} checked={config.restore_on_start !== false} onChange={(v) => { set({ restore_on_start: v }); saveNow.mutate({ restore_on_start: v }); }} />
           <Check label={t('cat.restoreExit')} hint={t('tip.cat.restoreExit')} checked={config.restore_on_exit !== false} onChange={(v) => { set({ restore_on_exit: v }); saveNow.mutate({ restore_on_exit: v }); }} />
+          <Check label={t('cat.txPower')} hint={t('tip.cat.txPower')} checked={config.read_tx_power !== false} onChange={(v) => { set({ read_tx_power: v }); saveNow.mutate({ read_tx_power: v }); }} />
+          <Check label={t('cat.txSwr')} hint={t('tip.cat.txSwr')} checked={config.read_tx_swr !== false} onChange={(v) => { set({ read_tx_swr: v }); saveNow.mutate({ read_tx_swr: v }); }} />
           {/* «Accendi» e «Spegni» di JTDX: con Hamlib, con TCI (`start;`/`stop;`) e con FT-991(A) Link (`PS1;`/`PS0;`); con OmniRig JTDX le spegne */}
           {hamlib || config.backend === 'tci' || config.backend === 'ft991link' ? (
             <>

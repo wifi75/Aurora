@@ -138,6 +138,11 @@ pub struct RigConfig {
     /// «Alla chiusura riporta la radio com'era prima di aprire Aurora»: acceso di base; alla chiusura la radio torna sulla frequenza e nel modo
     /// che aveva quando Aurora l'ha trovata (solo con Hamlib).
     pub restore_on_exit: bool,
+    /// «In trasmissione leggi la potenza»: acceso di base. Su alcune radio (Kenwood TS-850 e simili) ogni lettura di un misuratore diverso fa cambiare
+    /// alla radio il selettore del suo strumento, con il «clic» del relais (segnalazione #77): spegnendone una si legge una cosa sola.
+    pub read_tx_power: bool,
+    /// «In trasmissione leggi il ROS»: acceso di base. Spento, la protezione che ferma la trasmissione con ROS alto non ha il dato e non scatta.
+    pub read_tx_swr: bool,
     /// Indirizzo `host:porta` del server TCI (con il backend TCI); vuoto = quello di base, `127.0.0.1:40001`.
     pub tci_address: String,
     /// Il ricevitore della SDR comandato via TCI: 0 = RX1, 1 = RX2 («TCI Client RX1» / «TCI Client RX2» di WSJT-X).
@@ -191,6 +196,8 @@ impl Default for RigConfig {
             power_off: false,
             restore_on_start: true,
             restore_on_exit: true,
+            read_tx_power: true,
+            read_tx_swr: true,
             tci_address: crate::tci::DEFAULT_TCI_ADDRESS.to_string(),
             tci_receiver: 0,
             ft991_address: crate::ft991link::DEFAULT_FT991_ADDRESS.to_string(),
