@@ -7,6 +7,7 @@ import {
   meterReadouts,
   S_TICKS,
   S9_FRACTION,
+  sIsEstimated,
   type DisplayModel,
 } from "../../lib/radioDisplay";
 import { actionTip } from "./RadioExtras";
@@ -30,8 +31,9 @@ import { SevenSegment, digitsWidth } from "./SevenSegment";
  */
 
 export const FACE_H = 96;
-/** Larghezza del disegno FT-2000, ritagliata sul contenuto (l'ultimo elemento, la lettura PO/S a destra, finisce a 660). */
-export const FT_FACE_W = 672;
+/** Misure del disegno FT-2000 compatto (2026-11-19): frequenza, stati, S-meter/potenza e VFO B senza spazi vuoti. */
+export const FT_FACE_W = 504;
+export const FT_FACE_H = 66;
 /** Larghezza del disegno IC-7610 (due pannelli VFO affiancati, senza colonna di tasti). */
 export const IC_FACE_W = 684;
 
@@ -76,8 +78,10 @@ function FaceHits({
   onAction,
   waiting,
   width,
+  height = FACE_H,
 }: {
   width: number;
+  height?: number;
   hits: Hit[];
   onAction?: (item: CatExtraItem) => void;
   waiting?: CatExtraItem | null;
@@ -93,9 +97,9 @@ function FaceHits({
           className={`rd-face-hit${waiting === "tune" ? " rd-face-hit--wait" : ""}`}
           style={{
             left: `${(h.x / width) * 100}%`,
-            top: `${(h.y / FACE_H) * 100}%`,
+            top: `${(h.y / height) * 100}%`,
             width: `${(h.w / width) * 100}%`,
-            height: `${(h.h / FACE_H) * 100}%`,
+            height: `${(h.h / height) * 100}%`,
           }}
           title={t(actionTip("tune"))}
           aria-label={`${h.text}: ${t(actionTip("tune"))}`}
@@ -164,7 +168,7 @@ function FtSpy({
   );
 }
 
-/** Il testo della lettura principale: S in ricezione, PO in trasmissione (con il ROS se la radio lo da'). */
+/** Il testo della lettura principale: S in ricezione, PO in trasmissione (con il ROS se la radio lo da'). Lo usa il pannello IC-7610. */
 function mainReading(model: DisplayModel, main: ReturnType<typeof mainMeter>): string {
   const base = main.label ? (main.kind === "S" ? main.label : `PO ${main.label}`) : "";
   const swr = model.transmitting
@@ -185,86 +189,106 @@ export function Ft2000Display({
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
   const main = mainMeter(model);
+  const sending = known && link.tx;
+  const swrNow = typeof model.meters?.swr === "number" ? model.meters.swr : null;
+  const swrColor = swrNow !== null && swrNow >= 3 ? FT.red : swrNow !== null && swrNow >= 2 ? FT.amber : "#5be08a";
 
-  // la frequenza ha un posto fisso (8 cifre piene); RX, TX, BUSY e TUNE le stanno subito dopo, il VFO B e l'S-meter a destra
-  const freqStyle = { w: 30, h: 54, t: 5.4, gap: 7, skew: 0.08 };
-  const FREQ_X = 72;
-  const spyX = FREQ_X + Math.min(317, digitsWidth(formatRadioFrequency(model.dialHz), freqStyle)) + 8;
-  const R0 = 448;
+  // VFO A: l'etichetta sta sopra la frequenza, che occupa 8 cifre piene; RX, TX, BUSY e TUNE le stanno subito accanto; a destra l'S-meter
+  // (in trasmissione la potenza, con sotto la barra del ROS) e il VFO B. Niente scritta del modo ne' lettura numerica dell'S-meter.
+  const freqStyle = { w: 22, h: 44, t: 4.4, gap: 5, skew: 0.08 };
+  const FREQ_X = 8;
+  const FREQ_Y = 15;
+  const spyX = FREQ_X + digitsWidth("000.000.00", freqStyle) + 6;
+  const R0 = spyX + 34 + 10;
   const bHz = x.vfo_b_hz ?? 0;
-  const hits: Hit[] = [{ x: spyX - 2, y: 67, w: 40, h: 17, text: "TUNE" }];
+  const hits: Hit[] = [{ x: spyX - 1, y: 47, w: 36, h: 14, text: "TUNE" }];
   return (
     <div className="rd-face rd-face--ft">
       <DisplayFrame
         width={FT_FACE_W}
-        height={FACE_H}
-        radius={10}
+        height={FT_FACE_H}
+        radius={9}
         inset={3}
         screen="#020405"
         ariaLabel={ariaLabel}
       >
         {/* VFO A */}
-        <Label x={14} y={40} text="VFO-A" fill={FT.cyan} size={10} weight={700} />
-        <Label x={14} y={58} text={model.mode || ""} fill={FT.amber} size={12} weight={700} />
+        <Label x={FREQ_X + 1} y={12} text="VFO-A" fill={FT.cyan} size={9} weight={700} />
         <SevenSegment
           text={formatRadioFrequency(model.dialHz)}
           x={FREQ_X}
-          y={21}
+          y={FREQ_Y}
           {...freqStyle}
           on={FT.cyan}
           glow={FT.glow}
           offOpacity={0.1}
         />
         {/* stati: RX, TX, BUSY (decodifica) e il tasto TUNE */}
-        <FtSpy x={spyX} y={15} text="RX" color="#47d13a" on={link.rx && known} />
-        <FtSpy x={spyX} y={33} text="TX" color={FT.red} on={link.tx} />
-        <FtSpy x={spyX} y={51} text="BUSY" color={FT.yellow} on={link.busy} />
-        <FtSpy x={spyX} y={69} text="TUNE" color={FT.cyan} on={x.tuner === true} />
+        <FtSpy x={spyX} y={6} text="RX" color="#47d13a" on={link.rx && known} />
+        <FtSpy x={spyX} y={20} text="TX" color={FT.red} on={link.tx} />
+        <FtSpy x={spyX} y={34} text="BUSY" color={FT.yellow} on={link.busy} />
+        <FtSpy x={spyX} y={48} text="TUNE" color={FT.cyan} on={x.tuner === true} />
 
-        {/* S-meter a barra con la scala (in trasmissione la potenza), con la lettura sotto */}
-        {S_TICKS.map((tk) => (
-          <Label
-            key={tk.label}
-            x={R0 + 4 + tk.fraction * 196}
-            y={20}
-            text={tk.label}
-            fill={tk.fraction > S9_FRACTION ? FT.red : FT.ink}
-            size={8}
-            weight={600}
-            anchor="middle"
-          />
-        ))}
+        {/* in ricezione l'S-meter con la scala; in trasmissione diventa il misuratore della potenza, e sotto compare la barra del ROS */}
+        {sending
+          ? null
+          : S_TICKS.map((tk) => (
+              <Label
+                key={tk.label}
+                x={R0 + 4 + tk.fraction * 196}
+                y={11}
+                text={tk.label}
+                fill={tk.fraction > S9_FRACTION ? FT.red : FT.ink}
+                size={7.5}
+                weight={600}
+                anchor="middle"
+              />
+            ))}
         <SegBar
           x={R0}
-          y={24}
+          y={14}
           count={40}
           segW={3.6}
-          segH={9}
+          segH={8}
           step={5}
           lit={main.fraction === null ? 0 : Math.round(main.fraction * 40)}
-          color={(i) => (i >= 40 * S9_FRACTION ? FT.red : FT.cyan)}
+          color={(i) => (sending ? FT.amber : i >= 40 * S9_FRACTION ? FT.red : FT.cyan)}
           off="#0e2630"
         />
+        {/* S-meter stimato dall'audio (la radio non da' il vero): una tilde davanti alla barra, senza la lettura numerica */}
+        {!sending && sIsEstimated(model.meters) ? <Label x={R0 - 8} y={21} text="~" fill={FT.amber} size={11} weight={700} /> : null}
+        {sending ? (
+          <SegBar
+            x={R0}
+            y={25}
+            count={40}
+            segW={3.6}
+            segH={5}
+            step={5}
+            lit={swrNow === null ? 0 : Math.round(Math.min(1, Math.max(0, (swrNow - 1) / 2)) * 40)}
+            color={() => swrColor}
+            off="#0e2630"
+          />
+        ) : null}
 
-        {/* VFO B, solo se la radio lo da' */}
-        <Label x={R0 + 2} y={50} text="VFO-B" fill={FT.cyan} size={9} weight={700} opacity={bHz ? 1 : 0.4} />
-        <Label x={R0 + 52} y={50} text={x.vfo_b_mode ?? ""} fill={FT.amber} size={9} weight={700} />
-        <Label x={R0 + 212} y={50} text={mainReading(model, main)} fill={FT.amber} size={10} weight={700} anchor="end" />
+        {/* VFO B: l'etichetta e il modo stanno a sinistra della seconda frequenza */}
+        <Label x={R0} y={46} text="VFO-B" fill={FT.cyan} size={9} weight={700} opacity={bHz ? 1 : 0.4} />
+        <Label x={R0} y={57} text={x.vfo_b_mode ?? ""} fill={FT.amber} size={9} weight={700} />
         <SevenSegment
           text={formatRadioFrequency(bHz)}
-          x={R0 + 4}
-          y={58}
-          w={15}
-          h={28}
+          x={R0 + 42}
+          y={33}
+          w={14}
+          h={26}
           t={3}
-          gap={5}
+          gap={4.5}
           skew={0.08}
           on={FT.cyan}
           glow={bHz ? FT.glow : undefined}
           offOpacity={0.1}
         />
       </DisplayFrame>
-      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={FT_FACE_W} />
+      <FaceHits hits={hits} onAction={onAction} waiting={waiting} width={FT_FACE_W} height={FT_FACE_H} />
     </div>
   );
 }

@@ -2,9 +2,11 @@
 
 ## Non rilasciato
 
-- DX Cluster: il primo cluster dell'elenco (IU3WJQ-7) se cade si riprova ogni 5-10 secondi (prima fino a 2 minuti, come gli altri): appena torna disponibile gli spot tornano a lui, perche' ogni spot sceglie di nuovo il primo collegato.
+## 0.11.305 - 2026-11-19
 
+- DX Cluster: il primo cluster dell'elenco (IU3WJQ-7) se cade si riprova ogni 5-10 secondi (prima fino a 2 minuti, come gli altri): appena torna disponibile gli spot tornano a lui, perche' ogni spot sceglie di nuovo il primo collegato.
 - DX Cluster: i quattro server di serie sono IU3WJQ-7 (`cluster.iu3wjq.com:8000`), HamQTH, Hamcloud e VE7CC (`ve7cc.net:23`); N2KI New York non e' piu' tra quelli di serie (resta nel catalogo). Chi ha gia' salvato la sua lista la ritrova.
+- Display esteso (FT-2000) piu' compatto, 504 x 66 invece di 672 x 96: tolta la scritta del modo (FT8) e la lettura numerica dell'S-meter, «VFO-A» sopra la frequenza principale, «VFO-B» e il modo a sinistra della seconda frequenza, spazi vuoti tolti; in trasmissione l'S-meter diventa il misuratore della potenza e sotto compare la barra del ROS; TUNE a scatto (resta acceso finche' non lo spegni) anche qui; tilde davanti alla barra se l'S-meter e' stimato dall'audio.
 
 ## 0.11.304 - 2026-11-19
 

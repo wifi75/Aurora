@@ -3,7 +3,7 @@ import { DetachButton } from '../DetachButton';
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { formatVfo } from '../../lib/radioExtras';
-import { RadioExtras, useCatExtras, TuneChip } from './RadioExtras';
+import { RadioExtras, useCatExtras, useTuneButton, TuneChip } from './RadioExtras';
 import { describeDisplay } from './describe';
 import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
 import { useT } from '../../i18n';
@@ -191,8 +191,10 @@ function Zoom({ children, off = false }: { children: ReactNode; off?: boolean })
 function FaceHeader({ model, style }: { model: DisplayModel; style: 'ft2000' | 'ic7610' }) {
   const t = useT();
   const { rig, waiting, click } = useCatExtras();
-  const data = { extras: rig?.extras ?? {} };
-  const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void click(item) };
+  const tune = useTuneButton();
+  // TUNE a scatto: acceso dopo il clic (e se la radio dice che l'accordatore e' inserito) finche' non lo si spegne a mano
+  const data = { extras: { ...(rig?.extras ?? {}), tuner: tune.lit } };
+  const props = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t), data, waiting, onAction: (item: Parameters<typeof click>[0]) => void (item === 'tune' ? tune.press() : click(item)) };
   return <div className={`rd-header rd-face-slot rd-face-slot--${style === 'ft2000' ? 'ft' : 'ic'}`}>{style === 'ft2000' ? <Ft2000Display {...props} /> : <Ic7610Display {...props} />}</div>;
 }
 

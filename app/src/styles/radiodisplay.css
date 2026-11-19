@@ -1150,3 +1150,11 @@ body.rd-radio-off .rd-header::after {
 .rd-duo--single { --rd-off-w: 19.125rem; }
 .rd-duo--pair { --rd-off-w: 38rem; }
 .rd-face-slot { --rd-off-w: 40rem; }
+
+/* FT-2000 compatto (2026-11-19): il disegno e' 504 x 66, senza spazi vuoti; la box ha le sue proporzioni e la testata lo mostra a misura 1:1 */
+.rd-face-slot--ft,
+.live-top .rd-face-slot--ft { height: auto; aspect-ratio: 504 / 66; }
+.rd-face-slot--ft { width: 28rem; }
+.live-top .rd-face-slot--ft { width: 31.5rem; }
+.live-top:has(> .rd-zoom-host .rd-face-slot--ft),
+.live-top:has(> .rd-face-slot--ft) { min-height: 0; }

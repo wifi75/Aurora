@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.305',
+    released: '2026-11-19T23:00:00Z',
+    kind: 'changed',
+    title: [
+      'Display esteso più compatto e quattro cluster di serie',
+      'More compact extended display and four default clusters',
+      'Kompakteres erweitertes Display und vier Standard-Cluster',
+      'Affichage étendu plus compact et quatre clusters par défaut',
+      'Pantalla extendida más compacta y cuatro clústeres de fábrica',
+      'Ecrã alargado mais compacto e quatro clusters de fábrica',
+    ],
+    text: [
+      'Il display esteso (FT-2000) è più piccolo e senza spazi vuoti: niente scritta del modo né lettura numerica dell’S-meter, «VFO-A» sopra la frequenza principale, «VFO-B» a sinistra della seconda; in trasmissione l’S-meter diventa il misuratore della potenza e sotto compare la barra del ROS; TUNE resta acceso finché non lo spegni. I quattro cluster di serie sono IU3WJQ-7, HamQTH, Hamcloud e VE7CC; se IU3WJQ-7 cade lo si riprova ogni pochi secondi e gli spot tornano a lui appena è disponibile.',
+      'The extended (FT-2000) display is smaller and has no empty spaces: no mode text and no numeric S-meter reading, “VFO-A” above the main frequency, “VFO-B” to the left of the second one; while transmitting the S-meter becomes the power meter and the SWR bar appears below; TUNE stays on until you switch it off. The four default clusters are IU3WJQ-7, HamQTH, Hamcloud and VE7CC; if IU3WJQ-7 drops it is retried every few seconds and spots go back to it as soon as it is available.',
+      'Das erweiterte Display (FT-2000) ist kleiner und ohne leere Flächen: keine Betriebsartanzeige und keine Zahlenanzeige des S-Meters, „VFO-A“ über der Hauptfrequenz, „VFO-B“ links von der zweiten; beim Senden wird das S-Meter zum Leistungsinstrument und darunter erscheint der SWR-Balken; TUNE bleibt an, bis du es ausschaltest. Die vier Standard-Cluster sind IU3WJQ-7, HamQTH, Hamcloud und VE7CC; fällt IU3WJQ-7 aus, wird er alle paar Sekunden neu versucht und Spots gehen wieder an ihn, sobald er verfügbar ist.',
+      'L’affichage étendu (FT-2000) est plus petit et sans espaces vides : plus d’indication du mode ni de lecture numérique du S-mètre, « VFO-A » au-dessus de la fréquence principale, « VFO-B » à gauche de la seconde ; en émission le S-mètre devient l’instrument de puissance et dessous apparaît la barre du ROS ; TUNE reste allumé jusqu’à ce que tu l’éteignes. Les quatre clusters par défaut sont IU3WJQ-7, HamQTH, Hamcloud et VE7CC ; si IU3WJQ-7 tombe, il est retenté toutes les quelques secondes et les spots lui reviennent dès qu’il est disponible.',
+      'La pantalla extendida (FT-2000) es más pequeña y sin espacios vacíos: sin indicación del modo ni lectura numérica del S-meter, «VFO-A» sobre la frecuencia principal, «VFO-B» a la izquierda de la segunda; al transmitir el S-meter pasa a ser el medidor de potencia y debajo aparece la barra del ROE; TUNE queda encendido hasta que lo apagues. Los cuatro clústeres de fábrica son IU3WJQ-7, HamQTH, Hamcloud y VE7CC; si IU3WJQ-7 cae, se reintenta cada pocos segundos y los spots vuelven a él en cuanto esté disponible.',
+      'O ecrã alargado (FT-2000) é mais pequeno e sem espaços vazios: sem indicação do modo nem leitura numérica do S-meter, «VFO-A» por cima da frequência principal, «VFO-B» à esquerda da segunda; ao transmitir o S-meter passa a ser o medidor de potência e por baixo aparece a barra do ROE; o TUNE fica aceso até o desligares. Os quatro clusters de fábrica são IU3WJQ-7, HamQTH, Hamcloud e VE7CC; se o IU3WJQ-7 cai, é retentado de poucos em poucos segundos e os spots voltam a ele assim que estiver disponível.',
+    ],
+  },
+  {
     version: '0.11.304',
     released: '2026-11-19T20:00:19Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Le zoom et le glissement ont été refaits (un seul dessin par image, qualité basse en mouvement, molette ancrée au curseur), avec un compteur de millisecondes par image qui s’active avec « aurora.sat.perf ». L’horloge est lisible en thème clair.',
       'El zoom y el arrastre se han rehecho (un solo dibujo por fotograma, calidad baja en movimiento, rueda anclada al cursor), con un contador de milisegundos por fotograma que se activa con «aurora.sat.perf». El reloj es legible en tema claro.',
       'O zoom e o arrastar foram refeitos (um só desenho por fotograma, qualidade baixa em movimento, roda ancorada ao cursor), com um contador de milissegundos por fotograma que se liga com «aurora.sat.perf». O relógio é legível no tema claro.',
-    ],
-  },
-  {
-    version: '0.11.284',
-    released: '2026-11-17T14:49:25Z',
-    kind: 'fixed',
-    title: [
-      'Installatore e Hamlib più robusti',
-      'More robust installer and Hamlib',
-      'Robusterer Installer und Hamlib',
-      'Installateur et Hamlib plus robustes',
-      'Instalador y Hamlib más robustos',
-      'Instalador e Hamlib mais robustos',
-    ],
-    text: [
-      'Se la cartella hamlib vecchia non si toglie viene spostata in hamlib.vecchia e l’installazione continua; la copia dei file bloccati si riprova. Le radio che non sanno copiare A=B non riempiono più i rapporti di errori. L’avviso del cambio modo dice il modo vero e il motivo.',
-      'If the old hamlib folder cannot be removed it is moved to hamlib.vecchia and the installation goes on; copying locked files is retried. Radios that cannot copy A=B no longer fill the reports with errors. The mode-change warning states the real mode and the reason.',
-      'Lässt sich der alte Ordner hamlib nicht entfernen, wird er nach hamlib.vecchia verschoben und die Installation läuft weiter; das Kopieren gesperrter Dateien wird erneut versucht. Funkgeräte, die A=B nicht kopieren können, füllen die Berichte nicht mehr mit Fehlern. Die Warnung beim Moduswechsel nennt den echten Modus und den Grund.',
-      'Si l’ancien dossier hamlib ne peut pas être supprimé, il est déplacé dans hamlib.vecchia et l’installation continue ; la copie des fichiers bloqués est retentée. Les radios qui ne savent pas copier A=B ne remplissent plus les rapports d’erreurs. L’avertissement du changement de mode indique le vrai mode et la raison.',
-      'Si la carpeta hamlib antigua no se puede quitar, se mueve a hamlib.vecchia y la instalación continúa; la copia de los archivos bloqueados se reintenta. Las radios que no saben copiar A=B ya no llenan los informes de errores. El aviso del cambio de modo dice el modo real y el motivo.',
-      'Se a pasta hamlib antiga não se consegue remover, é movida para hamlib.vecchia e a instalação continua; a cópia dos ficheiros bloqueados é repetida. Os rádios que não sabem copiar A=B já não enchem os relatórios de erros. O aviso da mudança de modo diz o modo verdadeiro e o motivo.',
     ],
   },
 ];
