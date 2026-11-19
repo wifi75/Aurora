@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.298',
+    released: '2026-11-19T12:00:00Z',
+    kind: 'new',
+    title: [
+      'Tutte le finestre alla disposizione iniziale',
+      'All windows back to the starting layout',
+      'Alle Fenster auf die Ausgangsanordnung',
+      'Toutes les fenêtres à la disposition de départ',
+      'Todas las ventanas a la disposición inicial',
+      'Todas as janelas na disposição inicial',
+    ],
+    text: [
+      'In Impostazioni › Aspetto c’è il pulsante «Riporta tutte le finestre alla disposizione iniziale»: chiede conferma, toglie tutte le disposizioni salvate (FT8, VHF, PSK, Satelliti, contest, cascata e riquadri in basso, colonne delle tabelle, finestre staccate) e ricarica la pagina, così l’interfaccia riparte come dopo la prima installazione. Tema, lingua, nome e filtri restano. Il vecchio «Ripristina» rimetteva a posto solo la pagina FT8. In più, su alcuni PC con Windows 11 l’ingresso audio non si apriva (errore «modo thread»): la scelta del dispositivo ora gira in un thread pulito.',
+      'In Settings › Appearance there is the button “Put all windows back in the starting layout”: it asks to confirm, removes all saved layouts (FT8, VHF, PSK, Satellites, contests, waterfall and bottom panels, table columns, detached windows) and reloads the page, so the interface starts again as right after the first installation. Theme, language, name and filters stay. The old “Restore” only fixed the FT8 page. Also, on some Windows 11 PCs the audio input did not open (“thread mode” error): the device choice now runs in a clean thread.',
+      'In Einstellungen › Aussehen gibt es die Schaltfläche „Alle Fenster auf die Ausgangsanordnung zurücksetzen“: Sie fragt nach, entfernt alle gespeicherten Anordnungen (FT8, VHF, PSK, Satelliten, Contests, Wasserfall und untere Felder, Tabellenspalten, abgelöste Fenster) und lädt die Seite neu, sodass die Oberfläche wieder wie direkt nach der Erstinstallation startet. Design, Sprache, Name und Filter bleiben. Das alte „Zurücksetzen“ stellte nur die FT8-Seite wieder her. Außerdem öffnete sich auf manchen Windows-11-PCs der Audioeingang nicht (Fehler „Thread-Modus“): Die Geräteauswahl läuft jetzt in einem sauberen Thread.',
+      'Dans Réglages › Apparence se trouve le bouton « Remettre toutes les fenêtres dans la disposition de départ » : il demande confirmation, supprime toutes les dispositions enregistrées (FT8, VHF, PSK, Satellites, contests, cascade et cadres du bas, colonnes des tableaux, fenêtres détachées) et recharge la page, pour que l’interface reparte comme juste après la première installation. Thème, langue, nom et filtres restent. L’ancien « Rétablir » ne remettait en ordre que la page FT8. De plus, sur certains PC Windows 11 l’entrée audio ne s’ouvrait pas (erreur « mode de thread ») : le choix du périphérique tourne maintenant dans un thread propre.',
+      'En Ajustes › Aspecto está el botón «Devolver todas las ventanas a la disposición inicial»: pide confirmación, quita todas las disposiciones guardadas (FT8, VHF, PSK, Satélites, concursos, cascada y cuadros de abajo, columnas de las tablas, ventanas separadas) y recarga la página, así la interfaz arranca como justo después de la primera instalación. Tema, idioma, nombre y filtros quedan. El antiguo «Restablecer» solo arreglaba la página FT8. Además, en algunos PC con Windows 11 la entrada de audio no se abría (error «modo de hilo»): la elección del dispositivo ahora corre en un hilo limpio.',
+      'Em Definições › Aspeto está o botão «Repor todas as janelas na disposição inicial»: pede confirmação, remove todas as disposições guardadas (FT8, VHF, PSK, Satélites, concursos, cascata e quadros de baixo, colunas das tabelas, janelas destacadas) e recarrega a página, para que a interface arranque como logo depois da primeira instalação. Tema, idioma, nome e filtros ficam. O antigo «Repor» só arranjava a página FT8. Além disso, em alguns PC com Windows 11 a entrada de áudio não abria (erro «modo de thread»): a escolha do dispositivo corre agora num thread limpo.',
+    ],
+  },
+  {
     version: '0.11.297',
     released: '2026-11-18T18:30:25Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Si la radio ne relâche pas le PTT, Aurora ne s’arrête pas au premier essai : il réessaie à intervalles croissants par d’autres voies (une seconde commande de coupure, la réouverture du CAT, les lignes RTS et DTR) et affiche une bannière fixe, avec un son qui se répète, jusqu’à ce que le PTT soit confirmé coupé. Si tu changes de radio ou de profil avec le PTT allumé, Aurora n’envoie plus la commande à la mauvaise radio : il t’avertit que la radio précédente pourrait encore être en émission, pour que tu la vérifies à la main.',
       'Si la radio no suelta el PTT, Aurora no se queda en el primer intento: reintenta a intervalos crecientes por otras vías (un segundo comando de apagado, la reapertura del CAT, las líneas RTS y DTR) y muestra un banner fijo, con un sonido que se repite, hasta que el PTT se confirme apagado. Si cambias de radio o de perfil con el PTT encendido, Aurora ya no manda el comando a la radio equivocada: te avisa de que la radio anterior podría seguir transmitiendo, para que la revises a mano.',
       'Se o rádio não larga o PTT, a Aurora não se fica pela primeira tentativa: tenta de novo a intervalos crescentes por outras vias (um segundo comando de desligar, a reabertura do CAT, as linhas RTS e DTR) e mostra um banner fixo, com um som que se repete, até o PTT estar confirmado desligado. Se mudares de rádio ou de perfil com o PTT ligado, a Aurora já não manda o comando ao rádio errado: avisa-te de que o rádio anterior pode ainda estar a transmitir, para o verificares à mão.',
-    ],
-  },
-  {
-    version: '0.11.282',
-    released: '2026-11-17T08:50:15Z',
-    kind: 'fixed',
-    title: [
-      'Logger32 e programmi collegati: la mappa si aggiorna',
-      'Logger32 and connected programs: the map updates',
-      'Logger32 und verbundene Programme: Die Karte aktualisiert sich',
-      'Logger32 et programmes connectés : la carte se met à jour',
-      'Logger32 y programas conectados: el mapa se actualiza',
-      'Logger32 e programas ligados: o mapa atualiza-se',
-    ],
-    text: [
-      'Lo stato mandato via UDP ora dice «decodifica in corso» solo mentre il decoder lavora, come WSJT-X, così mappe come la UDP BandMap di Logger32 si ridisegnano a fine tornata. Anche la spia «canale occupato» del display radio ora si accende solo durante la decodifica.',
-      'The status sent over UDP now says “decoding” only while the decoder is working, like WSJT-X, so maps such as the UDP BandMap of Logger32 redraw at the end of each period. The “busy channel” light of the radio display now also comes on only during decoding.',
-      'Der per UDP gesendete Status meldet jetzt „Dekodierung läuft“ nur noch, solange der Decoder arbeitet, wie bei WSJT-X, sodass Karten wie die UDP-BandMap von Logger32 am Ende jedes Durchgangs neu zeichnen. Auch die Anzeige „Kanal belegt“ des Funkdisplays leuchtet jetzt nur noch während der Dekodierung.',
-      'L’état envoyé en UDP dit maintenant « décodage en cours » seulement pendant que le décodeur travaille, comme WSJT-X, si bien que des cartes comme la UDP BandMap de Logger32 se redessinent à la fin de chaque période. Le voyant « canal occupé » de l’afficheur radio ne s’allume lui aussi que pendant le décodage.',
-      'El estado enviado por UDP ahora dice «decodificando» solo mientras el decodificador trabaja, como WSJT-X, así que mapas como la UDP BandMap de Logger32 se redibujan al final de cada periodo. El piloto «canal ocupado» de la pantalla de la radio también se enciende ahora solo durante la decodificación.',
-      'O estado enviado por UDP diz agora «a descodificar» só enquanto o descodificador trabalha, como o WSJT-X, por isso mapas como a UDP BandMap do Logger32 redesenham-se no fim de cada período. A luz «canal ocupado» do ecrã do rádio também só se acende agora durante a descodificação.',
     ],
   },
 ];
