@@ -666,7 +666,13 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
 }
 
 /// Il cluster chiede la password: si manda quella salvata; se non c'e', ci si ferma con un errore che dice cosa fare.
+/// La password come la vuole il cluster: senza spazi ai bordi (copiata da una pagina se ne porta dietro, e il cluster risponde «Sorry»).
+fn password_to_send(password: &str) -> &str {
+    password.trim()
+}
+
 async fn send_password(writer: &mut tokio::net::tcp::OwnedWriteHalf, password: &str) -> Result<(), String> {
+    let password = password_to_send(password);
     if password.is_empty() {
         return Err("il cluster chiede una password: scrivila nelle impostazioni del DX Cluster".into());
     }
@@ -699,6 +705,15 @@ mod tests {
 
     fn local(port: u16) -> ServerCfg {
         ServerCfg { name: "Prova".into(), host: "127.0.0.1".into(), port, enabled: true, ..ServerCfg::default() }
+    }
+
+    #[test]
+    fn a_password_copied_with_spaces_around_it_is_sent_without_them() {
+        assert_eq!(password_to_send("  segreta  "), "segreta");
+        assert_eq!(password_to_send("	segreta
+"), "segreta");
+        assert_eq!(password_to_send("se gre ta"), "se gre ta", "gli spazi dentro restano");
+        assert_eq!(password_to_send("   "), "", "solo spazi = nessuna password");
     }
 
     #[tokio::test]

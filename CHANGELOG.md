@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: la password si manda senza gli spazi ai bordi (copiata da una pagina se ne porta dietro; il cluster rispondeva «Sorry» e chiudeva, e lo spot dava 502).
+
 ## 0.11.300 - 2026-11-19
 
 - Automazioni: Wait and Pounce non risponde piu' ai CQ delle stazioni escluse dal filtro (continente, paese, novita'...), come gia' valeva per chi chiama te; il registro dice quanti CQ ha escluso (segnalazione #81).
