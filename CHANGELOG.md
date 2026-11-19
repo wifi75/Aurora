@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.303 - 2026-11-19
+
 - Radio non collegata: la scritta al centro del display si adatta sempre alla larghezza del display e al numero di caratteri della lingua (prima «RADIO NON COLLEGATA» si tagliava in «RADIO NON COL»); tolta dal disegno compatto la scritta piccola che spuntava sotto.
 
 ## 0.11.302 - 2026-11-19

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.303',
+    released: '2026-11-19T21:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Scritta «radio non collegata» sempre leggibile',
+      '“Radio not connected” text always readable',
+      'Hinweis „Funkgerät nicht verbunden“ immer lesbar',
+      'Texte « radio non connectée » toujours lisible',
+      'Texto «radio no conectada» siempre legible',
+      'Texto «rádio não ligado» sempre legível',
+    ],
+    text: [
+      'Con la radio spenta o non collegata la scritta al centro del display si adatta sempre alla larghezza del display e alla lunghezza del testo nella lingua scelta: prima «RADIO NON COLLEGATA» si tagliava in «RADIO NON COL» e non si leggeva. Nel disegno compatto è sparita anche la scritta piccola che spuntava sotto.',
+      'With the radio off or not connected, the text in the middle of the display now always fits the display width and the length of the text in the chosen language: before, “RADIO NOT CONNECTED” was cut and could not be read. In the compact drawing the small text that peeked out below is gone too.',
+      'Bei ausgeschaltetem oder nicht verbundenem Funkgerät passt sich der Text in der Mitte des Displays jetzt immer der Breite des Displays und der Textlänge in der gewählten Sprache an: Vorher wurde „FUNKGERÄT NICHT VERBUNDEN“ abgeschnitten und war nicht lesbar. In der kompakten Darstellung ist auch der kleine Text verschwunden, der darunter hervorschaute.',
+      'Avec le poste éteint ou non connecté, le texte au centre de l’affichage s’adapte maintenant toujours à la largeur de l’affichage et à la longueur du texte dans la langue choisie : avant, « RADIO NON CONNECTÉE » était coupé et illisible. Dans le dessin compact, le petit texte qui dépassait dessous a aussi disparu.',
+      'Con la radio apagada o no conectada, el texto del centro de la pantalla se adapta ahora siempre al ancho de la pantalla y a la longitud del texto en el idioma elegido: antes «RADIO NO CONECTADA» se cortaba y no se leía. En el dibujo compacto también ha desaparecido el texto pequeño que asomaba debajo.',
+      'Com o rádio desligado ou não ligado, o texto ao centro do ecrã adapta-se agora sempre à largura do ecrã e ao comprimento do texto na língua escolhida: antes «RÁDIO NÃO LIGADO» era cortado e não se lia. No desenho compacto desapareceu também o texto pequeno que aparecia por baixo.',
+    ],
+  },
+  {
     version: '0.11.302',
     released: '2026-11-19T18:00:19Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans la page Satellites la carte peut montrer la Terre comme la voit la NASA : la photo Blue Marble de jour et les lumières des villes la nuit. Quand un satellite entre dans la zone (AOS), la carte zoome toute seule, avec quatre modes au choix dans l’encadré « Alertes » (Désactivé, Zone du satellite, Station et satellite, Suivre le satellite), et revient à la vue entière à la LOS. Tu peux aussi zoomer à la main avec la molette et les boutons, ou choisir « Zoom sur un pays… » dans la liste de tous les pays. La carte simple vectorielle reste disponible.',
       'En la página Satélites el mapa puede mostrar la Tierra como la ve la NASA: la foto Blue Marble de día y las luces de las ciudades de noche. Cuando un satélite entra en el área (AOS) el mapa se acerca solo, con cuatro modos a elegir en el recuadro «Avisos» (Apagado, Área del satélite, Estación y satélite, Seguir el satélite), y vuelve a la vista completa en la LOS. También puedes hacer zoom a mano con la rueda y los botones, o elegir «Zoom en un país…» de la lista con todos los países. El mapa simple vectorial sigue disponible.',
       'Na página Satélites o mapa pode mostrar a Terra como a vê a NASA: a foto Blue Marble de dia e as luzes das cidades à noite. Quando um satélite entra na área (AOS) o mapa aproxima sozinho, com quatro modos à escolha no quadro «Avisos» (Desligado, Área do satélite, Estação e satélite, Seguir o satélite), e volta à vista inteira na LOS. Também podes ampliar à mão com a roda e os botões, ou escolher «Zoom num país…» na lista com todos os países. O mapa simples vetorial continua disponível.',
-    ],
-  },
-  {
-    version: '0.11.283',
-    released: '2026-11-17T10:23:29Z',
-    kind: 'changed',
-    title: [
-      'DX Cluster: filtro Digi',
-      'DX Cluster: Digi filter',
-      'DX-Cluster: Digi-Filter',
-      'DX Cluster : filtre Digi',
-      'DX Cluster: filtro Digi',
-      'DX Cluster: filtro Digi',
-    ],
-    text: [
-      'Nel DX Cluster il filtro del Modo ha una nuova voce «Digi» che raccoglie tutti i modi digitali insieme (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Gli spot che dicono solo «digi» o «digital» hanno ora il modo DIGI invece di restare senza modo, così il filtro li trova e non spariscono scegliendo un modo.',
-      'In the DX Cluster the Mode filter has a new “Digi” item that gathers all digital modes together (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Spots that say only “digi” or “digital” now have the DIGI mode instead of staying without a mode, so the filter finds them and they do not disappear when you pick a mode.',
-      'Im DX-Cluster hat der Modus-Filter einen neuen Eintrag „Digi“, der alle digitalen Modi zusammenfasst (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Spots, die nur „digi“ oder „digital“ sagen, haben jetzt den Modus DIGI statt ohne Modus zu bleiben, sodass der Filter sie findet und sie bei der Wahl eines Modus nicht verschwinden.',
-      'Dans le DX Cluster le filtre du Mode a une nouvelle entrée « Digi » qui regroupe tous les modes numériques (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Les spots qui disent seulement « digi » ou « digital » ont maintenant le mode DIGI au lieu de rester sans mode, si bien que le filtre les trouve et qu’ils ne disparaissent pas en choisissant un mode.',
-      'En el DX Cluster el filtro del Modo tiene una nueva opción «Digi» que reúne todos los modos digitales (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Los spots que dicen solo «digi» o «digital» tienen ahora el modo DIGI en lugar de quedarse sin modo, así que el filtro los encuentra y no desaparecen al elegir un modo.',
-      'No DX Cluster o filtro do Modo tem uma nova opção «Digi» que reúne todos os modos digitais (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Os spots que dizem só «digi» ou «digital» têm agora o modo DIGI em vez de ficarem sem modo, por isso o filtro encontra-os e eles não desaparecem ao escolher um modo.',
     ],
   },
 ];
