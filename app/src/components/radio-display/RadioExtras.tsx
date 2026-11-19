@@ -56,13 +56,14 @@ export function useCatExtras() {
   const cat = useQuery({ queryKey: ['cat'], queryFn: getCat, retry: false, refetchInterval: 3000 });
   const queryClient = useQueryClient();
   const [waiting, setWaiting] = useState<CatExtraItem | null>(null);
-  const click = async (item: CatExtraItem) => {
-    if (waiting !== null) return;
+  const click = async (item: CatExtraItem): Promise<boolean> => {
+    if (waiting !== null) return false;
     setWaiting(item);
     try {
       await postCatExtra(item);
       // l'accordatore della radio trasmette da solo: TX acceso sul display mentre accorda
       if (item === 'tune' && cat.data?.config.backend !== 'tci') markTuning();
+      return true;
     } catch (e) {
       const code = e instanceof ApiError ? e.code : '';
       const detail = e instanceof ApiError && e.detail ? coreText(e.detail, t) : undefined;
@@ -70,12 +71,45 @@ export function useCatExtras() {
       else if (code === 'transmitting') toast(t('rx.err.tx'), 'error');
       else if (code === 'unsupported') toast(detail ?? t('rx.err.unsupported'), 'error');
       else toast(detail ?? t('rx.err.generic'), 'error');
+      return false;
     } finally {
       setWaiting(null);
       await queryClient.invalidateQueries({ queryKey: ['cat'] });
     }
   };
   return { cat, rig: cat.data?.status.rig, waiting, click };
+}
+
+/** TUNE acceso a scatto: un clic avvia l'accordatura automatica e il tasto resta acceso (giallo) finche' non lo si spegne a mano con un altro clic. */
+const tuneLatch = { on: false, subs: new Set<() => void>() };
+function setTuneLatch(on: boolean) {
+  tuneLatch.on = on;
+  tuneLatch.subs.forEach((f) => f());
+}
+
+/** Lo stato del tasto TUNE e il suo clic, uguali in ogni display. Acceso se l'hai acceso tu o se la radio dice che l'accordatore e' inserito. */
+export function useTuneButton() {
+  const { cat, rig, waiting, click } = useCatExtras();
+  const latched = useSyncExternalStore(
+    (f) => {
+      tuneLatch.subs.add(f);
+      return () => tuneLatch.subs.delete(f);
+    },
+    () => tuneLatch.on,
+  );
+  const x = rig?.extras ?? {};
+  const lit = latched || x.tuner === true;
+  const press = async () => {
+    if (lit) {
+      // spento a mano: si prova a disinserire l'accordatore della radio; il tasto si spegne comunque (la radio puo' non accettarlo da CAT)
+      await click('atu');
+      setTuneLatch(false);
+      return;
+    }
+    if (await click('tune')) setTuneLatch(true);
+  };
+  const show = x.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
+  return { lit, press, waiting, show };
 }
 
 /** Suggerimento del clic su un indicatore. */
@@ -86,20 +120,18 @@ export function actionTip(item: CatExtraItem) {
 /** Il tasto TUNE da solo, per il display compatto: dentro il display, tra la frequenza e RX; giallo quando l'accordatore lavora. `null` se la radio non lo ha. */
 export function TuneChip({ className = '' }: { className?: string }) {
   const t = useT();
-  const { cat, rig, waiting, click } = useCatExtras();
-  const tuning = useTuning();
-  const x = rig?.extras ?? {};
-  const showTune = x.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
-  if (!showTune) return null;
+  const { lit, press, waiting, show } = useTuneButton();
+  if (!show) return null;
   return (
     <button
       type="button"
-      className={`rd-tune${tuning ? ' rd-tune--on' : ''}${waiting === 'tune' ? ' rd-tune--wait' : ''} ${className}`.trim()}
+      className={`rd-tune${lit ? ' rd-tune--on' : ''}${waiting === 'tune' ? ' rd-tune--wait' : ''} ${className}`.trim()}
       title={t(ACTION_TIP.tune)}
       aria-label={`TUNE: ${t(ACTION_TIP.tune)}`}
+      aria-pressed={lit}
       aria-busy={waiting === 'tune'}
       disabled={waiting !== null}
-      onClick={() => void click('tune')}
+      onClick={() => void press()}
     >
       TUNE
     </button>
@@ -112,8 +144,8 @@ export function TuneChip({ className = '' }: { className?: string }) {
  */
 export function RadioExtras({ hidePwr = false, hideVfos = false }: { hidePwr?: boolean; hideVfos?: boolean } = {}) {
   const t = useT();
-  const { cat, rig, waiting, click } = useCatExtras();
-  const tuning = useTuning();
+  const { cat, rig, waiting } = useCatExtras();
+  const tune = useTuneButton();
   const x = rig?.extras ?? {};
   const dialHz = displayModel(useStation((s) => s.status)).dialHz;
   void hidePwr;
@@ -141,12 +173,13 @@ export function RadioExtras({ hidePwr = false, hideVfos = false }: { hidePwr?: b
         <div className="rx-chips">
           <button
             type="button"
-            className={`rx-chip rx-chip--btn${tuning ? ' rx-chip--on' : ''}${waiting === 'tune' ? ' rx-chip--wait' : ''}`}
+            className={`rx-chip rx-chip--btn${tune.lit ? ' rx-chip--on' : ''}${waiting === 'tune' ? ' rx-chip--wait' : ''}`}
             title={t(ACTION_TIP.tune)}
             aria-label={`TUNE: ${t(ACTION_TIP.tune)}`}
+            aria-pressed={tune.lit}
             aria-busy={waiting === 'tune'}
             disabled={waiting !== null}
-            onClick={() => void click('tune')}
+            onClick={() => void tune.press()}
           >
             TUNE
           </button>

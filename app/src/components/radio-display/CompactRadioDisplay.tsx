@@ -1,6 +1,6 @@
 import { useT } from '../../i18n';
 import { formatRadioFrequency, hasFrequency, mainMeter, meterReadouts, type DisplayModel } from '../../lib/radioDisplay';
-import { useCatExtras, useTuning } from './RadioExtras';
+import { useCatExtras, useTuneButton } from './RadioExtras';
 
 /**
  * Il display compatto per gli schermi stretti (sotto 1500 punti): niente display grande, che in testata non entrerebbe, ma una riga sola con
@@ -9,8 +9,8 @@ import { useCatExtras, useTuning } from './RadioExtras';
  */
 export function CompactRadioDisplay({ model }: { model: DisplayModel }) {
   const t = useT();
-  const { cat, rig, waiting, click } = useCatExtras();
-  const tuning = useTuning();
+  const { cat, rig, waiting } = useCatExtras();
+  const tune = useTuneButton();
   const main = mainMeter(model);
   const readouts = meterReadouts(model.meters);
   const power = readouts.find((r) => r.key === 'PO')?.text ?? '—';
@@ -36,12 +36,12 @@ export function CompactRadioDisplay({ model }: { model: DisplayModel }) {
       {hasTuner ? (
         <button
           type="button"
-          className={`rd-compact-tune${tuning ? ' rd-compact-tune--on' : ''}`}
+          className={`rd-compact-tune${tune.lit ? ' rd-compact-tune--on' : ''}`}
           title={t('rx.act.tune')}
           aria-label={t('rx.act.tune')}
-          aria-pressed={tuning}
+          aria-pressed={tune.lit}
           disabled={waiting !== null}
-          onClick={() => void click('tune')}
+          onClick={() => void tune.press()}
         >
           TUNE
         </button>

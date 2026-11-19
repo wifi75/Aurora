@@ -61,7 +61,8 @@ describe('RadioDisplay', () => {
       const { container, unmount } = render(<RadioDisplay model={UNKNOWN} style={style} size={size} />);
       expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'Radio non risponde');
       // i pannelli FT-2000 e IC-7610 non scrivono piu' la frase sopra gli strumenti: a radio spenta c'e' la scritta grande al centro (CSS)
-      if (style !== 'ft2000' && style !== 'ic7610') expect(container.textContent).toContain('Radio non risponde');
+      // il disegno piccolo non ripete la frase (la scritta grande a radio spenta e' CSS, a misura del display)
+      if (style !== 'ft2000' && style !== 'ic7610' && size === 'full') expect(container.textContent).toContain('Radio non risponde');
       unmount();
     }
   });

@@ -979,10 +979,10 @@
   display: none;
 }
 
-/* display centrato fra barra del menu e pannelli: la barra ora e' 6 px sopra la riga (prima 12) e i pannelli 3 px sotto,
+/* display centrato fra barra del menu e pannelli (2026-11-19: spostato di 5 px in basso, lo spazio sotto era piu' grande di quello sopra, per il margine sotto la riga): la barra ora e' 6 px sopra la riga (prima 12) e i pannelli 3 px sotto,
    quindi il centro sta 1.5 px sopra la meta' della riga */
 .live-top > :last-child {
-  top: calc(50% - 1.5px);
+  top: calc(50% + 3.5px);
 }
 
 /* display FT-2000 / IC-7610 nella Stazione: 10 px piu' alto (64 -> 74 px), in proporzione (il disegno e' 10:1, quindi 640 -> 740 px) */
@@ -997,7 +997,7 @@
 /* display centrato: stesso spazio fra barra e display e fra display e pannelli (barra 6 px sopra la riga, pannelli 3.2 px sotto) */
 .live-top:has(> .rd-zoom-host .rd-face-slot) > :last-child,
 .live-top:has(> .rd-face-slot) > :last-child {
-  top: calc(50% - 1.4px);
+  top: calc(50% + 3.6px);
 }
 
 /* pagina a blocchi (live-board): i pannelli partono 6 px dentro il riquadro dei blocchi, cioe' 9.2 px sotto la riga (non 3.2):

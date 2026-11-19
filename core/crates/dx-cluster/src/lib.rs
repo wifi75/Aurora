@@ -61,6 +61,11 @@ pub const AURORA_CLUSTER_PORT: u16 = 8000;
 
 /// Se nell'elenco c'e' il cluster di Aurora lo porta in cima (e lo chiama «IU3WJQ-7» se aveva il nome «IU3WJQ»): l'ordine dell'elenco e' quello
 /// con cui gli spot passano al cluster successivo. Gli altri nomi e le altre scelte non si toccano.
+/// Prima di rimpiazzare un file di impostazioni con quello di fabbrica ne tiene una copia (`dx-cluster.json.bak`): le credenziali non si perdono mai.
+fn backup_cluster_file(path: &Path) {
+    let _ = std::fs::copy(path, path.with_extension("json.bak"));
+}
+
 fn aurora_cluster_first(config: &mut Config) {
     let key = format!("{AURORA_CLUSTER_HOST}:{AURORA_CLUSTER_PORT}");
     if let Some(i) = config.servers.iter().position(|s| s.key() == key) {
@@ -153,6 +158,33 @@ pub fn valid_command(text: &str) -> bool {
 }
 
 impl Config {
+    /// Ripara cio' che non va in impostazioni lette da un file, tenendo tutto il resto: nome utente e password dei cluster che l'utente ha
+    /// configurato restano memorizzati anche se un altro valore del file non e' piu' valido (prima bastava un campo sbagliato e si tornava
+    /// alle impostazioni di fabbrica, perdendo ogni credenziale).
+    pub fn repaired(mut self) -> Config {
+        if !self.callsign.is_empty() && !valid_callsign(&self.callsign) {
+            self.callsign.clear();
+        }
+        self.servers.retain(|s| valid_host(&s.host) && s.port != 0);
+        self.servers.truncate(MAX_SERVERS);
+        for s in &mut self.servers {
+            if s.name.trim().is_empty() || s.name.len() > 40 || s.name.chars().any(char::is_control) {
+                s.name = s.host.clone();
+            }
+            if !s.username.is_empty() && !valid_callsign(&s.username) {
+                s.username.clear();
+            }
+            if s.password.len() > 64 || s.password.chars().any(|c| !c.is_ascii() || c.is_ascii_control()) {
+                s.password.clear();
+            }
+        }
+        self.login_commands.retain(|c| valid_command(c));
+        self.login_commands.truncate(MAX_COMMANDS);
+        self.max_spots = self.max_spots.clamp(MIN_SPOTS, MAX_SPOTS);
+        self.max_age_min = self.max_age_min.clamp(MIN_AGE_MIN, MAX_AGE_MIN);
+        self
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if !self.callsign.is_empty() && !valid_callsign(&self.callsign) {
             return Err("callsign: non e' un nominativo valido".into());
@@ -318,11 +350,29 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 impl ClusterService {
     /// Legge la configurazione salvata; se manca o e' rovinata parte dai valori predefiniti. Non si collega a nulla.
     pub fn open(path: &Path) -> Arc<ClusterService> {
-        let mut config = std::fs::read_to_string(path)
-            .ok()
-            .and_then(|text| serde_json::from_str::<Config>(&text).ok())
-            .filter(|c| c.validate().is_ok())
-            .unwrap_or_default();
+        let text = std::fs::read_to_string(path).ok();
+        let parsed = text.as_deref().and_then(|t| serde_json::from_str::<Config>(t).ok());
+        let mut config = match parsed {
+            Some(c) => {
+                let fixed = c.clone().repaired();
+                if fixed != c {
+                    tracing::warn!("impostazioni del DX Cluster riparate: un valore non era valido, le credenziali dei cluster restano");
+                    backup_cluster_file(path);
+                }
+                fixed
+            }
+            None => {
+                if text.is_some() {
+                    tracing::warn!("impostazioni del DX Cluster illeggibili: copia di sicurezza accanto al file, si riparte da quelle di fabbrica");
+                    backup_cluster_file(path);
+                }
+                Config::default()
+            }
+        };
+        if config.validate().is_err() {
+            backup_cluster_file(path);
+            config = Config::default();
+        }
         aurora_cluster_first(&mut config);
         Arc::new(ClusterService {
             path: path.to_path_buf(),
@@ -899,6 +949,33 @@ mod tests {
         assert_eq!(c.servers[0].name, "IU3WJQ-7");
         assert!(c.servers.len() >= 2, "ci sono altri cluster a cui passare");
         assert!(c.validate().is_ok());
+    }
+
+    /// Un valore sbagliato nel file non cancella le credenziali degli altri cluster.
+    #[test]
+    fn a_bad_value_in_the_file_does_not_wipe_the_saved_credentials() {
+        let server = |name: &str, host: &str, user: &str, pass: &str| ServerCfg { name: name.into(), host: host.into(), port: 7300, enabled: true, username: user.into(), password: pass.into(), ..ServerCfg::default() };
+        let c = Config {
+            callsign: "non un nominativo!".into(),
+            servers: vec![server("Mio", "a.b", "IU3ABC-2", "segreta"), server("Altro", "c.d", "not a call", "x
+y")],
+            max_spots: 9_999_999,
+            ..Config::default()
+        };
+        assert!(c.validate().is_err());
+        let fixed = c.repaired();
+        assert!(fixed.validate().is_ok());
+        assert_eq!((fixed.servers[0].username.as_str(), fixed.servers[0].password.as_str()), ("IU3ABC-2", "segreta"), "credenziali valide intatte");
+        assert!(fixed.servers[1].username.is_empty() && fixed.servers[1].password.is_empty());
+        // da file: la copia di sicurezza resta accanto
+        let path = temp("repair");
+        let bad = serde_json::json!({ "enabled": true, "callsign": "", "servers": [{ "name": "Mio", "host": "a.b", "port": 7300, "enabled": true, "username": "IU3ABC", "password": "segreta" }], "login_commands": ["dx 14074 K1ABC"], "max_spots": 500, "max_age_min": 60 });
+        std::fs::write(&path, bad.to_string()).unwrap();
+        let svc = ClusterService::open(&path);
+        let cfg = svc.config();
+        assert!(cfg.servers.iter().any(|s| s.name == "Mio" && s.password == "segreta"), "la password e' ancora li'");
+        assert!(cfg.login_commands.is_empty(), "il comando non valido e' tolto");
+        assert!(path.with_extension("json.bak").exists());
     }
 
     #[test]

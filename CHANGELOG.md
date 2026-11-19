@@ -4,6 +4,9 @@
 
 ## 0.11.304 - 2026-11-19
 
+- TUNE: un clic avvia l'accordatura automatica e il tasto resta acceso (giallo) finche' non lo spegni a mano con un altro clic (in tutti i display; se la radio dice che l'accordatore e' inserito, il tasto e' acceso anche senza il tuo clic).
+- DX Cluster: nome utente e password dei cluster restano memorizzati: un valore non valido nel file non riporta piu' alle impostazioni di fabbrica, si ripara quel valore e si tiene il resto, e prima di rimpiazzare il file se ne fa una copia (`dx-cluster.json.bak`).
+- Testata: lo spazio sotto il display e' uguale a quello sopra (spostato di 5 px in basso).
 - DX Cluster: di base (installazioni nuove o senza queste scelte salvate) il primo cluster e' «IU3WJQ-7» (`cluster.iu3wjq.com:8000`; se c'e' gia' nell'elenco, anche dei vecchi file, viene messo in cima e chiamato cosi') e gli spot partono dal cluster telnet, proprio da quello; se non e' collegato o non ripete lo spot (8 s) lo spot passa subito al cluster collegato successivo dell'elenco. Chi ha gia' salvato le sue scelte le ritrova. Il cluster chiede nome utente e password: finche' non li scrivi si passa ai successivi.
 
 ## 0.11.303 - 2026-11-19
