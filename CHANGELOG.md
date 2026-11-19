@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Automazioni: Wait and Pounce non risponde piu' ai CQ delle stazioni escluse dal filtro (continente, paese, novita'...), come gia' valeva per chi chiama te; il registro dice quanti CQ ha escluso (segnalazione #81).
+
 - Invia spot dal cluster telnet: se il cluster scelto per gli spot non e' piu' nell'elenco (tolto o aggiunto di nuovo con un altro indirizzo), lo spot parte dal primo cluster collegato invece di fallire con «non e' collegato».
 
 - Invia spot: se lo spot non parte la finestra mostra il motivo vero (per esempio «il cluster ... non e' collegato») invece del solo codice «502 spot_failed».

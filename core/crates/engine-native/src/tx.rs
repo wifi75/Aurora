@@ -1578,6 +1578,25 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let grid = self.seq.station().grid.clone();
         let logged: Vec<String> = self.logged.iter().filter(|(_, b)| self.contest_limits.is_none() || *b == self.cur_band).map(|(c, _)| c.clone()).collect();
         let skip = |c: &str| logged.iter().any(|l| l.eq_ignore_ascii_case(c));
+        // con le Automazioni accese in modo reale i CQ delle stazioni escluse (continente, paese, novita'...) non si scelgono: prima il filtro valeva solo per
+        // chi chiama me, e Wait and Pounce rispondeva anche a un continente escluso (segnalazione #81)
+        let filter = self.controls.active_caller_filter();
+        let mut excluded = 0usize;
+        let eligible: Vec<(String, i32, u32)> = decoded
+            .iter()
+            .filter(|(text, _, _)| {
+                let Some(filter) = &filter else { return true };
+                let qso_native::message::Message::Cq { call, .. } = qso_native::message::parse(&text.replace(['<', '>'], "")) else { return true };
+                let refused = filter(&call, text).is_some();
+                excluded += usize::from(refused);
+                !refused
+            })
+            .cloned()
+            .collect();
+        if excluded > 0 {
+            log.push(format!("Wait and Pounce: {excluded} CQ esclusi dalle Automazioni"));
+        }
+        let decoded = eligible.as_slice();
         let Some(i) = crate::features::pounce_pick(policy, decoded, &grid, &skip) else { return false };
         let Some((text, snr, freq)) = decoded.get(i).cloned() else { return false };
         match self.seq.reply_to_with(slot, &QDecoded::new(&text, snr, freq), true) {
@@ -2341,6 +2360,31 @@ mod tests {
         controls.wait_features.store(false, Ordering::Relaxed);
         controls.set_switch("pounce", true);
         let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert!(!d.seq.is_enabled(), "{log:?}");
+    }
+
+    /// Con le Automazioni accese in modo reale Wait and Pounce non risponde ai CQ delle stazioni escluse dal filtro (segnalazione #81).
+    #[test]
+    fn wait_and_pounce_skips_cqs_of_stations_excluded_by_the_automations() {
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
+        controls.set_switch("pounce", true);
+        controls.pounce_policy.store(crate::features::PouncePolicy::MaxSignal.code(), Ordering::Relaxed);
+        controls.automation_live.store(true, Ordering::Relaxed);
+        // esclusi i nominativi che cominciano per DL (come un continente escluso)
+        controls.set_caller_filter(Some(Arc::new(|call: &str, _text: &str| if call.starts_with("DL") { Some("continente escluso".to_string()) } else { None })));
+        let decoded = vec![("CQ DL1AAA JO62".to_string(), 10, 900), ("CQ K1ABC FN42".to_string(), -3, 1200)];
+        let (_, log) = d.after_slot(SLOT_MS, &decoded, BASE + 14.2, 14_074_000, "20m");
+        assert_eq!(d.seq.dx(), Some("K1ABC"), "{log:?}");
+        assert!(log.iter().any(|l| l.contains("1 CQ esclusi")), "{log:?}");
+        // se restano solo CQ esclusi non si risponde a nessuno
+        let (mut d, _port, controls) = driver();
+        controls.wait_features.store(true, Ordering::Relaxed);
+        controls.set_switch("pounce", true);
+        controls.automation_live.store(true, Ordering::Relaxed);
+        controls.set_caller_filter(Some(Arc::new(|_: &str, _: &str| Some("escluso".to_string()))));
+        let only = vec![("CQ DL1AAA JO62".to_string(), 10, 900)];
+        let (_, log) = d.after_slot(SLOT_MS, &only, BASE + 14.2, 14_074_000, "20m");
         assert!(!d.seq.is_enabled(), "{log:?}");
     }
 
