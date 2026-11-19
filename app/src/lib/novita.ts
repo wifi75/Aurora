@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.303',
-    released: '2026-11-19T21:00:00Z',
+    released: '2026-11-19T19:22:50Z',
     kind: 'fixed',
     title: [
       'Scritta «radio non collegata» sempre leggibile',

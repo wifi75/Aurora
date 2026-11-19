@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.303 (pubblicata 2026-11-19T19:22:50Z)
+
+- Radio spenta: la scritta grande (`body.rd-radio-off .rd-header::after`) ha la misura `min(clamp(14px, 1.4vw, 28px), --rd-off-w * 0,94 / (--rd-off-chars * 1,1))`; `--rd-off-chars` lo scrive `RadioDisplayHeader.tsx`, `--rd-off-w` e' la larghezza nota di ogni disposizione (`.rd-duo--single` 19,125 rem, `.rd-duo--pair` 38 rem, `.rd-face-slot` 40 rem). Niente `container-type` sul display (issue #55 e #60). Tolta dal disegno compatto la scritta piccola `noRadio`. Provata in anteprima con il tedesco (25 caratteri).
+- Aperte: #77 (Pere: il clic resta con la potenza spenta; con il ROS spento «non collegato» e niente trasmissione: aspetto il pacchetto di assistenza; causa non trovata nel codice), #81 (Luc: prova di Wait and Pounce), #80, #78, #72.
+
 ## Nella 0.11.302 (pubblicata 2026-11-19T18:00:19Z)
 
 - Display compatto ridisegnato: `radio-display/MiniDisplay.tsx` (viewBox 306 x 52, barre di 10 tacche uguali, in TX barra potenza e barra ROS con `PWR`/`SWR` alla stessa altezza), `RadioExtras.tsx` (`TuneChip`), `RadioDisplayHeader.tsx` (disposizione `single`: TUNE sopra il disegno, nessuna scheda a destra; `pair` conserva la scheda), CSS in coda a `radiodisplay.css` (`.rd-tune`, `.rd-duo--single` alto 3,25 rem, slot 19,125 rem, TUNE a `left: 41.8%`, `top: 63.5%`). Visto in anteprima, non con una radio vera. Le 12 prove di `RadioDisplay.test.tsx` che falliscono erano gia' rotte prima e non sono state rifatte.
