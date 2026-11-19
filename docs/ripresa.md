@@ -2,6 +2,14 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.304 (pubblicata 2026-11-19T20:00:19Z)
+
+- DX Cluster (`dx-cluster/src/lib.rs`): di base primo cluster «IU3WJQ-7» (`cluster.iu3wjq.com:8000`) e `spot_via` telnet con `spot_server` su di lui (`AURORA_CLUSTER_*`); `aurora_cluster_first` lo porta in cima anche nei file gia' salvati e rinomina «IU3WJQ» in «IU3WJQ-7»; `send_spot` prova in ordine il cluster scelto e poi gli altri collegati (8 s ciascuno, spot doppio possibile se un cluster accetta senza ripetere); `Config::repaired` ripara i valori non validi tenendo utente e password, con copia `dx-cluster.json.bak` prima di rimpiazzare il file. 38 prove verdi.
+- TUNE (`radio-display/RadioExtras.tsx`, `useTuneButton`): un clic avvia `tune` e il tasto resta acceso (giallo) finche' un altro clic lo spegne (prova `atu`, poi si spegne comunque); acceso anche se la radio dice `tuner = true`. Usato dal display compatto, dalla scheda e dal display stretto. Non provato con una radio vera.
+- Testata: display spostato di 5 px in basso (`.live-top > :last-child`), stimato da uno screenshot: da controllare a occhio.
+- Ambiente: il disco C: era pieno (core\target\debug pesava circa 133 GB, ora cancellata); `cargo test`/`check` rigenerano la cache. La compilazione dell'installatore fallisce se il disco e' pieno.
+- Aperte: #77 (pacchetto di assistenza di Pere), #81, #80, #78, #72.
+
 ## Nella 0.11.303 (pubblicata 2026-11-19T19:22:50Z)
 
 - Radio spenta: la scritta grande (`body.rd-radio-off .rd-header::after`) ha la misura `min(clamp(14px, 1.4vw, 28px), --rd-off-w * 0,94 / (--rd-off-chars * 1,1))`; `--rd-off-chars` lo scrive `RadioDisplayHeader.tsx`, `--rd-off-w` e' la larghezza nota di ogni disposizione (`.rd-duo--single` 19,125 rem, `.rd-duo--pair` 38 rem, `.rd-face-slot` 40 rem). Niente `container-type` sul display (issue #55 e #60). Tolta dal disegno compatto la scritta piccola `noRadio`. Provata in anteprima con il tedesco (25 caratteri).
