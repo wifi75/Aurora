@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.301',
-    released: '2026-11-19T19:00:00Z',
+    released: '2026-11-19T17:27:22Z',
     kind: 'changed',
     title: [
       'Display compatto con VFO B, PWR e SWR; password del cluster',

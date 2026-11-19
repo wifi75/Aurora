@@ -2,6 +2,13 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.301 (pubblicata 2026-11-19T17:27:22Z)
+
+- Display compatto (`radio-display/MiniDisplay.tsx`): frequenza principale piu' bassa con il VFO B in piccolo sotto (altra sessione), RX/TX piu' piccoli, misuratore ridotto (`scale(0.78 0.55)`), «PWR» e «SWR» sotto (valori in trasmissione, trattino in ricezione), niente scritta del modo. `RadioExtras.tsx`: la scheda di destra non ripete le frequenze, resta TUNE. Visto in anteprima, non con una radio vera.
+- `RigConfig.read_tx_power` e `read_tx_swr` (`rig-control/src/cat_config.rs`, true di base): in trasmissione `hamlib_rig.rs` legge solo cio' che e' acceso (clic dei misuratori del TS-850, #77); caselle in Impostazioni › Radio (CAT), Guida in `guide-station.ts`. Il ROS spento disattiva la protezione. Non provato con un TS-850.
+- DX Cluster: la password si manda senza spazi ai bordi (altra sessione).
+- Da fare: scrivere a Pere (#77) quale casella provare; #72 (IC-820H e IC-707), #80 (macro FLDigi), #78 (chiudere dopo qualche giorno); il pacchetto di crash con «event handler is re-entrant» (tao 0.37.2) di un FTDX-101MP.
+
 ## Nella 0.11.300 (pubblicata 2026-11-19T17:12:15Z)
 
 - DX Cluster: `dx-cluster/src/lib.rs` (`send_spot`: se `spot_server` non e' nell'elenco si usa il primo collegato; la sessione tiene `last_said` e `refused` e riporta cosa ha scritto il cluster alla chiusura); `settings/ClusterTab.tsx` (`LedLight` segue lo stato vero del collegamento, non solo la prova); caselle utente e password piu' larghe (`settings-layout.css`); `SpotDialog.tsx` mostra `ApiError.detail`. Causa del caso del proprietario: il server era stato riaggiunto con un altro indirizzo (`cluster.iu3wjq.com:8000` al posto di `dxregia.iu3wjq.com:8000`) e `spot_server` puntava ancora al vecchio.
