@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.302 (pubblicata 2026-11-19T18:00:19Z)
+
+- Display compatto ridisegnato: `radio-display/MiniDisplay.tsx` (viewBox 306 x 52, barre di 10 tacche uguali, in TX barra potenza e barra ROS con `PWR`/`SWR` alla stessa altezza), `RadioExtras.tsx` (`TuneChip`), `RadioDisplayHeader.tsx` (disposizione `single`: TUNE sopra il disegno, nessuna scheda a destra; `pair` conserva la scheda), CSS in coda a `radiodisplay.css` (`.rd-tune`, `.rd-duo--single` alto 3,25 rem, slot 19,125 rem, TUNE a `left: 41.8%`, `top: 63.5%`). Visto in anteprima, non con una radio vera. Le 12 prove di `RadioDisplay.test.tsx` che falliscono erano gia' rotte prima e non sono state rifatte.
+- Da fare: seguire #77 (Pere), #72, #80, #78; pacchetto di crash con panic di tao 0.37.2; prove del display e del filtro dei falsi messaggi con radio vera.
+
 ## Nella 0.11.301 (pubblicata 2026-11-19T17:27:22Z)
 
 - Display compatto (`radio-display/MiniDisplay.tsx`): frequenza principale piu' bassa con il VFO B in piccolo sotto (altra sessione), RX/TX piu' piccoli, misuratore ridotto (`scale(0.78 0.55)`), «PWR» e «SWR» sotto (valori in trasmissione, trattino in ricezione), niente scritta del modo. `RadioExtras.tsx`: la scheda di destra non ripete le frequenze, resta TUNE. Visto in anteprima, non con una radio vera.

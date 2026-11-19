@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.302',
-    released: '2026-11-19T20:00:00Z',
+    released: '2026-11-19T18:00:19Z',
     kind: 'changed',
     title: [
       'Display compatto ridisegnato: TUNE dentro, barre di potenza e ROS',
