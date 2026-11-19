@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: se il cluster risponde «Sorry» dopo l'accesso e chiude (nominativo o password rifiutati), lo stato dice «il cluster ha rifiutato il nominativo o la password» invece di «connessione chiusa dal server».
+
 ## 0.11.299 - 2026-11-19
 
 - Impostazioni: scrivendo una password (per esempio quella del cluster telnet) con una pausa tra i tasti, Aurora salvava la password a meta' e la casella si svuotava mostrando «Password salvata» mentre si scriveva. Ora con il cursore in una casella password il salvataggio automatico aspetta, e salva appena si esce dalla casella. Vale per tutte le schede di Impostazioni.

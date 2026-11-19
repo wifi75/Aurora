@@ -583,6 +583,8 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
     let mut buf = [0u8; 4096];
     let mut logged_in = false;
     let mut password_sent = false;
+    // il cluster ha scritto «Sorry» (DXSpider e simili) dopo l'accesso: poi chiude, e il motivo e' nominativo o password sbagliati
+    let mut refused = false;
     let login = if server.username.trim().is_empty() { callsign.to_string() } else { server.username.trim().to_uppercase() };
     let mut keepalive = tokio::time::interval(KEEPALIVE);
     keepalive.tick().await;
@@ -592,6 +594,9 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
             read = reader.read(&mut buf) => {
                 let n = read.map_err(|e| format!("lettura: {e}"))?;
                 if n == 0 {
+                    if refused {
+                        return Err("il cluster ha rifiutato il nominativo o la password: controlla il nome utente e la password nelle impostazioni del DX Cluster".into());
+                    }
                     return Ok(());
                 }
                 // PC lento: gli spot arrivati durante la decodifica si leggono appena finisce (al massimo 30 s dopo); nel frattempo il
@@ -606,6 +611,9 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                         b'\n' => {
                             let text = String::from_utf8_lossy(&line).into_owned();
                             line.clear();
+                            if logged_in && text.trim().to_ascii_lowercase().starts_with("sorry") {
+                                refused = true;
+                            }
                             if let Some(parsed) = spot::parse_spot(&text) {
                                 logged_in = true;
                                 svc.push_spot(server, parsed);
