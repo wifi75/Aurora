@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.301',
+    released: '2026-11-19T19:00:00Z',
+    kind: 'changed',
+    title: [
+      'Display compatto con VFO B, PWR e SWR; password del cluster',
+      'Compact display with VFO B, PWR and SWR; cluster password',
+      'Kompaktes Display mit VFO B, PWR und SWR; Cluster-Passwort',
+      'Affichage compact avec VFO B, PWR et ROS ; mot de passe du cluster',
+      'Pantalla compacta con VFO B, PWR y ROE; contraseña del clúster',
+      'Ecrã compacto com VFO B, PWR e ROE; palavra-passe do cluster',
+    ],
+    text: [
+      'Il display della testata ha la frequenza principale più bassa con sotto il VFO B in piccolo, RX e TX più piccoli, il misuratore ridotto e sotto «PWR» e «SWR» (in trasmissione i valori); non c’è più la scritta del modo. La scheda di destra non ripete le frequenze e resta con TUNE. Nelle Impostazioni › Radio (CAT) due caselle, «In trasmissione leggi la potenza» e «In trasmissione leggi il ROS»: su alcune radio (Kenwood TS-850) ogni lettura fa cambiare il selettore del misuratore con un «clic», e spegnendone una il clic sparisce. DX Cluster: la password si manda senza gli spazi ai bordi (copiata da una pagina li porta con sé, e il cluster rifiutava l’accesso).',
+      'The header display has a lower main frequency with VFO B small below it, smaller RX and TX, a reduced meter and “PWR” and “SWR” underneath (values while transmitting); the mode text is gone. The right card no longer repeats the frequencies and keeps TUNE. In Settings › Radio (CAT) there are two boxes, “While transmitting, read the power” and “While transmitting, read the SWR”: on some radios (Kenwood TS-850) each reading makes the meter selector change with a “click”, and turning one off removes it. DX Cluster: the password is sent without the spaces at the edges (copied from a page it carries them, and the cluster refused the login).',
+      'Das Kopf-Display hat eine niedrigere Hauptfrequenz mit dem VFO B klein darunter, kleinere RX und TX, ein verkleinertes Instrument und darunter „PWR“ und „SWR“ (beim Senden die Werte); die Betriebsartanzeige ist weg. Die rechte Karte wiederholt die Frequenzen nicht mehr und behält TUNE. In Einstellungen › Funkgerät (CAT) gibt es zwei Kästchen, „Beim Senden die Leistung lesen“ und „Beim Senden das SWR lesen“: Bei manchen Funkgeräten (Kenwood TS-850) lässt jede Messung den Instrumentenwahlschalter mit einem „Klick“ umschalten, und das Ausschalten eines Kästchens beseitigt ihn. DX-Cluster: Das Passwort wird ohne Leerzeichen an den Rändern gesendet (von einer Seite kopiert, bringt es sie mit, und der Cluster verweigerte den Zugang).',
+      'L’affichage d’en-tête a la fréquence principale plus basse avec le VFO B en petit dessous, RX et TX plus petits, l’instrument réduit et dessous « PWR » et « ROS » (les valeurs en émission) ; l’indication du mode a disparu. La carte de droite ne répète plus les fréquences et garde TUNE. Dans Réglages › Radio (CAT), deux cases, « En émission, lire la puissance » et « En émission, lire le ROS » : sur certains postes (Kenwood TS-850) chaque lecture fait changer le sélecteur de l’instrument avec un « clic », et décocher une case le supprime. DX Cluster : le mot de passe est envoyé sans les espaces aux bords (copié depuis une page il les porte, et le cluster refusait l’accès).',
+      'La pantalla de la cabecera tiene la frecuencia principal más baja con el VFO B pequeño debajo, RX y TX más pequeños, el medidor reducido y debajo «PWR» y «ROE» (los valores al transmitir); ya no está la indicación del modo. La tarjeta de la derecha ya no repite las frecuencias y conserva TUNE. En Ajustes › Radio (CAT) hay dos casillas, «En transmisión, leer la potencia» y «En transmisión, leer el ROE»: en algunas radios (Kenwood TS-850) cada lectura hace cambiar el selector del medidor con un «clic», y desactivar una lo quita. DX Cluster: la contraseña se envía sin los espacios de los bordes (copiada de una página los lleva, y el clúster rechazaba el acceso).',
+      'O ecrã do cabeçalho tem a frequência principal mais baixa com o VFO B pequeno por baixo, RX e TX mais pequenos, o medidor reduzido e por baixo «PWR» e «ROE» (os valores ao transmitir); já não há a indicação do modo. O cartão da direita já não repete as frequências e fica com TUNE. Em Definições › Rádio (CAT) há duas caixas, «Em transmissão, ler a potência» e «Em transmissão, ler o ROE»: em alguns rádios (Kenwood TS-850) cada leitura faz mudar o seletor do medidor com um «clique», e desligar uma retira-o. DX Cluster: a palavra-passe é enviada sem os espaços das margens (copiada de uma página leva-os, e o cluster recusava o acesso).',
+    ],
+  },
+  {
     version: '0.11.300',
     released: '2026-11-19T17:12:15Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'La couleur des boutons de macro se choisit séparément pour le thème clair et pour le thème sombre. Dans le thème clair, les boutons ont maintenant une couleur pleine et une bordure visible, comme dans le sombre.',
       'El color de los botones de macro se elige por separado para el tema claro y para el oscuro. En el tema claro los botones tienen ahora color pleno y borde visible, como en el oscuro.',
       'A cor dos botões de macro escolhe-se em separado para o tema claro e para o escuro. No tema claro os botões têm agora cor cheia e borda visível, como no escuro.',
-    ],
-  },
-  {
-    version: '0.11.283',
-    released: '2026-11-17T10:23:29Z',
-    kind: 'fixed',
-    title: [
-      'Satelliti in tema chiaro più leggibili',
-      'Satellites more readable in light theme',
-      'Satelliten im hellen Design besser lesbar',
-      'Satellites plus lisibles en thème clair',
-      'Satélites más legibles en tema claro',
-      'Satélites mais legíveis em tema claro',
-    ],
-    text: [
-      'Nella pagina Satelliti con il tema chiaro i messaggi di stato (radio non collegata, satellite in vista) e l’orologio ora si leggono bene.',
-      'On the Satellites page with the light theme the status messages (radio not connected, satellite in view) and the clock are now easy to read.',
-      'Auf der Seite Satelliten sind mit dem hellen Design die Statusmeldungen (Funkgerät nicht verbunden, Satellit in Sicht) und die Uhr jetzt gut lesbar.',
-      'Dans la page Satellites avec le thème clair, les messages d’état (radio non connectée, satellite en vue) et l’horloge se lisent maintenant bien.',
-      'En la página Satélites con el tema claro los mensajes de estado (radio no conectada, satélite a la vista) y el reloj ahora se leen bien.',
-      'Na página Satélites com o tema claro as mensagens de estado (rádio não ligado, satélite à vista) e o relógio leem-se agora bem.',
     ],
   },
 ];
