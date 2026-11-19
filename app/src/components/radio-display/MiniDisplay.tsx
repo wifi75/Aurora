@@ -108,18 +108,27 @@ export function MiniDisplay({ model, noRadio, ariaLabel, style, vfoB = null }: S
       ) : (
         <SevenSegment text={formatRadioFrequency(model.dialHz)} x={11} y={13} w={13} h={26} t={2.8} gap={3.5} skew={p.skew} on={p.digits} glow={p.glow} offOpacity={0.14} />
       )}
-      <Chip x={MX} y={8} w={28} h={14} text="RX" bg={p.rx} fg={p.rxInk} fontSize={10} rx={3} dim={!link.rx} />
-      <Chip x={MX + 32} y={8} w={28} h={14} text="TX" bg={p.tx} fg={p.txInk} fontSize={10} rx={3} dim={!link.tx} />
-      {/* in trasmissione al posto del modo si legge il ROS (ambra da 2, rosso da 3) */}
-      {known && link.tx && typeof model.meters?.swr === 'number' ? (
-        <Label x={MX + 64} y={19} text={`SWR ${model.meters.swr.toFixed(1)}`} fill={model.meters.swr >= 3 ? '#ff4a3a' : model.meters.swr >= 2 ? '#ffb020' : p.ink} size={11} weight={700} />
-      ) : known ? (
-        <Label x={MX + 70} y={19} text={model.mode || '—'} fill={p.ink} size={12} weight={600} />
-      ) : (
-        <Label x={MX + 66} y={19} text={noRadio} fill={p.ink} size={10} weight={600} />
-      )}
-      {main.label ? <Label x={312} y={20} text={main.kind === 'S' || typeof model.meters?.swr === 'number' ? main.label : `PO ${main.label}`} fill={p.ink} size={12} weight={600} anchor="end" /> : null}
-      <MiniMeter kind={p.meter} p={p} fraction={main.fraction} />
+      {/* a destra tre righe: pulsanti RX/TX piccoli con il modo e l'S-meter, il misuratore ridotto, e sotto potenza e ROS (in trasmissione) */}
+      <Chip x={MX} y={5} w={24} h={12} text="RX" bg={p.rx} fg={p.rxInk} fontSize={9} rx={3} dim={!link.rx} />
+      <Chip x={MX + 28} y={5} w={24} h={12} text="TX" bg={p.tx} fg={p.txInk} fontSize={9} rx={3} dim={!link.tx} />
+      {/* il modo (FT8...) non si scrive piu' sul display: lo dice gia' la barra del modo; resta solo il messaggio a radio spenta */}
+      {known ? null : <Label x={MX + 58} y={15} text={noRadio} fill={p.ink} size={9} weight={600} />}
+      {main.label && (main.kind === 'S' || typeof model.meters?.swr === 'number') ? <Label x={312} y={15} text={main.label} fill={p.ink} size={11} weight={600} anchor="end" /> : null}
+      <g transform={`translate(${MX} 21) scale(0.78 0.55) translate(${-MX} -27)`}>
+        <MiniMeter kind={p.meter} p={p} fraction={main.fraction} />
+      </g>
+      {(() => {
+        const sending = known && link.tx;
+        const watts = typeof model.meters?.power_w === 'number' ? model.meters.power_w : null;
+        const swr = typeof model.meters?.swr === 'number' ? model.meters.swr : null;
+        const swrColor = swr !== null && swr >= 3 ? '#ff4a3a' : swr !== null && swr >= 2 ? '#ffb020' : p.ink;
+        return (
+          <>
+            <Label x={MX} y={47} text={`PWR ${sending && watts !== null ? `${Math.round(watts)} W` : '–'}`} fill={p.ink} size={10} weight={700} opacity={sending && watts !== null ? 1 : 0.4} />
+            <Label x={MX + 78} y={47} text={`SWR ${sending && swr !== null ? swr.toFixed(1) : '–'}`} fill={swrColor} size={10} weight={700} opacity={sending && swr !== null ? 1 : 0.4} />
+          </>
+        );
+      })()}
     </DisplayFrame>
   );
 }

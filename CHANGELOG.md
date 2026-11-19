@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Display compatto della testata: RX e TX piu' piccoli e il misuratore ridotto; sotto, a destra, «PWR» e «SWR» (in trasmissione i valori, in ricezione un trattino); la scritta del modo (FT8) non c'e' piu' sul display.
+
 - Impostazioni › Radio (CAT): due caselle nuove, accese di fabbrica, «In trasmissione leggi la potenza» e «In trasmissione leggi il ROS». Su alcune radio (Kenwood TS-850) ogni lettura di un misuratore diverso fa cambiare alla radio il selettore, con un «clic» in trasmissione: spegnendone una si legge una cosa sola (segnalazione #77). Il display non cambia. Spegnere il ROS disattiva la protezione che ferma la trasmissione con ROS alto. Non provato con un TS-850.
 
 - Display della radio compatto (testata): la frequenza principale e' piu' bassa e sotto c'e' il VFO B in piccolo con il suo modo; la scheda di destra non ripete piu' le due frequenze e resta con TUNE.
