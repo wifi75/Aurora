@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.300',
+    released: '2026-11-19T14:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Spot, DX Cluster e Wait and Pounce corretti',
+      'Spots, DX Cluster and Wait and Pounce fixed',
+      'Spots, DX-Cluster und Wait and Pounce korrigiert',
+      'Spots, DX Cluster et Wait and Pounce corrigés',
+      'Spots, DX Cluster y Wait and Pounce corregidos',
+      'Spots, DX Cluster e Wait and Pounce corrigidos',
+    ],
+    text: [
+      'Invia spot: se lo spot non parte la finestra mostra il motivo vero e, se il cluster scelto per gli spot non è più nell’elenco, lo spot parte dal primo cluster collegato. DX Cluster: il LED di ogni server segue lo stato vero del collegamento (non più verde sopra e rosso sotto), le caselle utente e password sono più larghe e, se il cluster rifiuta l’accesso o chiude, lo stato dice cosa ha scritto. Automazioni: Wait and Pounce non risponde più ai CQ delle stazioni escluse dal filtro (continente, paese, novità).',
+      'Send spot: when the spot does not go out the window shows the real reason, and if the cluster chosen for spots is no longer in the list, the spot goes out from the first connected cluster. DX Cluster: the LED of each server follows the real state of the connection (no longer green above and red below), the user and password boxes are wider and, if the cluster refuses the login or closes, the status says what it wrote. Automations: Wait and Pounce no longer answers the CQs of stations excluded by the filter (continent, country, new ones).',
+      'Spot senden: Wenn der Spot nicht ausgeht, zeigt das Fenster den echten Grund, und wenn der für Spots gewählte Cluster nicht mehr in der Liste ist, geht der Spot vom ersten verbundenen Cluster aus. DX-Cluster: Die LED jedes Servers folgt dem echten Verbindungszustand (nicht mehr oben grün und unten rot), die Felder für Benutzer und Passwort sind breiter und, wenn der Cluster den Zugang verweigert oder schließt, zeigt der Status, was er geschrieben hat. Automatisierungen: Wait and Pounce antwortet nicht mehr auf CQ von durch den Filter ausgeschlossenen Stationen (Kontinent, Land, Neuheiten).',
+      'Envoyer un spot : si le spot ne part pas, la fenêtre montre la vraie raison, et si le cluster choisi pour les spots n’est plus dans la liste, le spot part du premier cluster connecté. DX Cluster : la LED de chaque serveur suit l’état réel de la connexion (plus de vert en haut et rouge en bas), les cases utilisateur et mot de passe sont plus larges et, si le cluster refuse l’accès ou ferme, l’état dit ce qu’il a écrit. Automatisations : Wait and Pounce ne répond plus aux CQ des stations exclues par le filtre (continent, pays, nouveautés).',
+      'Enviar spot: si el spot no sale, la ventana muestra el motivo real, y si el clúster elegido para los spots ya no está en la lista, el spot sale del primer clúster conectado. DX Cluster: el LED de cada servidor sigue el estado real de la conexión (ya no verde arriba y rojo abajo), las casillas de usuario y contraseña son más anchas y, si el clúster rechaza el acceso o cierra, el estado dice lo que escribió. Automatizaciones: Wait and Pounce ya no responde a los CQ de las estaciones excluidas por el filtro (continente, país, novedades).',
+      'Enviar spot: se o spot não sai, a janela mostra o motivo real, e se o cluster escolhido para os spots já não está na lista, o spot sai do primeiro cluster ligado. DX Cluster: o LED de cada servidor segue o estado real da ligação (já não verde em cima e vermelho em baixo), as caixas de utilizador e palavra-passe são mais largas e, se o cluster recusa o acesso ou fecha, o estado diz o que escreveu. Automatizações: o Wait and Pounce já não responde aos CQ das estações excluídas pelo filtro (continente, país, novidades).',
+    ],
+  },
+  {
     version: '0.11.299',
     released: '2026-11-19T12:05:16Z',
     kind: 'fixed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans la page Satellites avec le thème clair, les messages d’état (radio non connectée, satellite en vue) et l’horloge se lisent maintenant bien.',
       'En la página Satélites con el tema claro los mensajes de estado (radio no conectada, satélite a la vista) y el reloj ahora se leen bien.',
       'Na página Satélites com o tema claro as mensagens de estado (rádio não ligado, satélite à vista) e o relógio leem-se agora bem.',
-    ],
-  },
-  {
-    version: '0.11.282',
-    released: '2026-11-17T08:50:15Z',
-    kind: 'changed',
-    title: [
-      'Satelliti: schede più strette e più basse; DX Cluster più leggibile',
-      'Satellites: narrower and shorter cards; more readable DX Cluster',
-      'Satelliten: schmalere und niedrigere Felder; besser lesbarer DX-Cluster',
-      'Satellites : fiches plus étroites et plus basses ; DX Cluster plus lisible',
-      'Satélites: tarjetas más estrechas y más bajas; DX Cluster más legible',
-      'Satélites: cartões mais estreitos e mais baixos; DX Cluster mais legível',
-    ],
-    text: [
-      'Nella pagina Satelliti le schede si possono ridurre molto di più, fino a 2 colonne e 2-3 righe: il contenuto scorre dentro la scheda. Nel DX Cluster con il tema chiaro le etichette UP e QSX sono più leggibili, con testo bianco su marrone scuro.',
-      'On the Satellites page the cards can be made much smaller, down to 2 columns and 2-3 rows: the content scrolls inside the card. In the DX Cluster with the light theme the UP and QSX labels are more readable, with white text on dark brown.',
-      'Auf der Seite Satelliten lassen sich die Felder viel stärker verkleinern, bis auf 2 Spalten und 2-3 Zeilen: Der Inhalt scrollt im Feld. Im DX-Cluster mit hellem Design sind die Beschriftungen UP und QSX besser lesbar, mit weißem Text auf dunklem Braun.',
-      'Dans la page Satellites les fiches peuvent être réduites bien plus, jusqu’à 2 colonnes et 2-3 lignes : le contenu défile à l’intérieur. Dans le DX Cluster avec le thème clair, les étiquettes UP et QSX sont plus lisibles, avec du texte blanc sur du marron foncé.',
-      'En la página Satélites las tarjetas se pueden reducir mucho más, hasta 2 columnas y 2-3 filas: el contenido se desplaza dentro. En el DX Cluster con el tema claro las etiquetas UP y QSX son más legibles, con texto blanco sobre marrón oscuro.',
-      'Na página Satélites os cartões podem ser reduzidos muito mais, até 2 colunas e 2-3 linhas: o conteúdo desloca-se lá dentro. No DX Cluster com o tema claro as etiquetas UP e QSX são mais legíveis, com texto branco sobre castanho escuro.',
     ],
   },
 ];

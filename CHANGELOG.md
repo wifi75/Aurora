@@ -2,14 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.300 - 2026-11-19
+
 - Automazioni: Wait and Pounce non risponde piu' ai CQ delle stazioni escluse dal filtro (continente, paese, novita'...), come gia' valeva per chi chiama te; il registro dice quanti CQ ha escluso (segnalazione #81).
-
 - Invia spot dal cluster telnet: se il cluster scelto per gli spot non e' piu' nell'elenco (tolto o aggiunto di nuovo con un altro indirizzo), lo spot parte dal primo cluster collegato invece di fallire con «non e' collegato».
-
 - Invia spot: se lo spot non parte la finestra mostra il motivo vero (per esempio «il cluster ... non e' collegato») invece del solo codice «502 spot_failed».
-
 - DX Cluster (Impostazioni): il LED di ogni server segue lo stato vero del collegamento (prima era verde per la sola prova di raggiungibilita' mentre «Stato dei collegamenti» diceva «non collegato»); le caselle nome utente e password sono piu' larghe; se il cluster chiude dopo l'accesso, lo stato riporta l'ultima cosa che ha scritto.
-
 - DX Cluster: se il cluster risponde «Sorry» dopo l'accesso e chiude (nominativo o password rifiutati), lo stato dice «il cluster ha rifiutato il nominativo o la password» invece di «connessione chiusa dal server».
 
 ## 0.11.299 - 2026-11-19
