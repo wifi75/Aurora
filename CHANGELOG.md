@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Impostazioni: scrivendo una password (per esempio quella del cluster telnet) con una pausa tra i tasti, Aurora salvava la password a meta' e la casella si svuotava mostrando «Password salvata» mentre si scriveva. Ora con il cursore in una casella password il salvataggio automatico aspetta, e salva appena si esce dalla casella. Vale per tutte le schede di Impostazioni.
+
 ## 0.11.298 - 2026-11-19
 
 - Impostazioni › Aspetto: «Riporta tutte le finestre alla disposizione iniziale» (prima «Ripristina», che rimetteva a posto solo la pagina FT8 e non sempre). Chiede conferma, toglie tutte le disposizioni salvate (finestre di FT8, VHF, PSK, Satelliti, contest, cascata e riquadri in basso, colonne delle tabelle, finestre staccate; anche dal server delle preferenze) e ricarica la pagina: l'interfaccia riparte come dopo la prima installazione. Tema, lingua, nome e filtri restano. Non provato dal vivo.

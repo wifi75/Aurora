@@ -13,7 +13,18 @@ export function useAutosave<T>(value: T | null, pending: boolean, save: (v: T) =
 
   useEffect(() => {
     if (key === '' || value === null) return;
-    const timer = setTimeout(() => save(value), delayMs);
+    // con il cursore in una casella password non si salva: la pausa tra due tasti puo' superare il ritardo e si salverebbe una password a meta' (e la
+    // casella si svuotava mostrando «Password salvata» mentre si scriveva). Si riprova alla prossima pausa e si salva appena si esce dalla casella
+    let timer: ReturnType<typeof setTimeout>;
+    const attempt = () => {
+      const active = typeof document !== 'undefined' ? document.activeElement : null;
+      if (active instanceof HTMLInputElement && active.type === 'password') {
+        timer = setTimeout(attempt, delayMs);
+        return;
+      }
+      save(value);
+    };
+    timer = setTimeout(attempt, delayMs);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
