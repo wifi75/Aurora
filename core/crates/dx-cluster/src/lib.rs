@@ -54,6 +54,24 @@ impl ServerCfg {
     }
 }
 
+/// Il cluster di Aurora (nodo IU3WJQ-7): di base e' il primo dell'elenco e da li' partono gli spot.
+pub const AURORA_CLUSTER_NAME: &str = "IU3WJQ-7";
+pub const AURORA_CLUSTER_HOST: &str = "cluster.iu3wjq.com";
+pub const AURORA_CLUSTER_PORT: u16 = 8000;
+
+/// Se nell'elenco c'e' il cluster di Aurora lo porta in cima (e lo chiama «IU3WJQ-7» se aveva il nome «IU3WJQ»): l'ordine dell'elenco e' quello
+/// con cui gli spot passano al cluster successivo. Gli altri nomi e le altre scelte non si toccano.
+fn aurora_cluster_first(config: &mut Config) {
+    let key = format!("{AURORA_CLUSTER_HOST}:{AURORA_CLUSTER_PORT}");
+    if let Some(i) = config.servers.iter().position(|s| s.key() == key) {
+        let mut server = config.servers.remove(i);
+        if server.name == "IU3WJQ" {
+            server.name = AURORA_CLUSTER_NAME.to_string();
+        }
+        config.servers.insert(0, server);
+    }
+}
+
 /// Da dove partono gli spot del pulsante «Spot DX».
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -94,7 +112,7 @@ impl Default for Config {
             callsign: String::new(),
             // il cluster di Aurora per primo (da li' partono gli spot di base); se non risponde gli spot passano al successivo collegato
             servers: vec![
-                server("IU3WJQ", "cluster.iu3wjq.com", 8000),
+                server(AURORA_CLUSTER_NAME, AURORA_CLUSTER_HOST, AURORA_CLUSTER_PORT),
                 server("HamQTH", "hamqth.com", 7300),
                 server("N2KI New York", "dxc.n2ki.com", 7300),
                 server("Hamcloud", "dx.hamnet.network", 7300),
@@ -103,7 +121,7 @@ impl Default for Config {
             max_spots: 500,
             max_age_min: 60,
             spot_via: SpotVia::Telnet,
-            spot_server: "cluster.iu3wjq.com:8000".into(),
+            spot_server: format!("{AURORA_CLUSTER_HOST}:{AURORA_CLUSTER_PORT}"),
         }
     }
 }
@@ -300,11 +318,12 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 impl ClusterService {
     /// Legge la configurazione salvata; se manca o e' rovinata parte dai valori predefiniti. Non si collega a nulla.
     pub fn open(path: &Path) -> Arc<ClusterService> {
-        let config = std::fs::read_to_string(path)
+        let mut config = std::fs::read_to_string(path)
             .ok()
             .and_then(|text| serde_json::from_str::<Config>(&text).ok())
             .filter(|c| c.validate().is_ok())
             .unwrap_or_default();
+        aurora_cluster_first(&mut config);
         Arc::new(ClusterService {
             path: path.to_path_buf(),
             config: Mutex::new(config),
@@ -877,8 +896,25 @@ mod tests {
         assert_eq!(c.spot_via, SpotVia::Telnet);
         assert_eq!(c.spot_server, "cluster.iu3wjq.com:8000");
         assert_eq!(c.servers[0].key(), "cluster.iu3wjq.com:8000");
+        assert_eq!(c.servers[0].name, "IU3WJQ-7");
         assert!(c.servers.len() >= 2, "ci sono altri cluster a cui passare");
         assert!(c.validate().is_ok());
+    }
+
+    #[test]
+    fn the_aurora_cluster_is_moved_to_the_top_of_an_existing_list_and_renamed() {
+        let server = |name: &str, host: &str, port: u16| ServerCfg { name: name.into(), host: host.into(), port, enabled: true, ..ServerCfg::default() };
+        let mut c = Config { servers: vec![server("HamQTH", "hamqth.com", 7300), server("IU3WJQ", "cluster.iu3wjq.com", 8000), server("Altro", "a.b", 7300)], ..Config::default() };
+        aurora_cluster_first(&mut c);
+        let names: Vec<&str> = c.servers.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["IU3WJQ-7", "HamQTH", "Altro"]);
+        // un nome scelto dall'utente non si cambia, senza il cluster l'elenco resta com'e'
+        let mut c = Config { servers: vec![server("HamQTH", "hamqth.com", 7300), server("Mio", "cluster.iu3wjq.com", 8000)], ..Config::default() };
+        aurora_cluster_first(&mut c);
+        assert_eq!((c.servers[0].name.as_str(), c.servers[1].name.as_str()), ("Mio", "HamQTH"));
+        let mut c = Config { servers: vec![server("HamQTH", "hamqth.com", 7300)], ..Config::default() };
+        aurora_cluster_first(&mut c);
+        assert_eq!(c.servers.len(), 1);
     }
 
     /// Il cluster scelto per gli spot non ripete lo spot: si passa subito al successivo collegato.

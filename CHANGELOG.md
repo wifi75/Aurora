@@ -2,7 +2,7 @@
 
 ## Non rilasciato
 
-- DX Cluster: di base (installazioni nuove o senza queste scelte salvate) il primo cluster e' `cluster.iu3wjq.com:8000` e gli spot partono dal cluster telnet, proprio da quello; se non e' collegato o non ripete lo spot (8 s) lo spot passa subito al cluster collegato successivo dell'elenco. Chi ha gia' salvato le sue scelte le ritrova. Il cluster chiede nome utente e password: finche' non li scrivi si passa ai successivi.
+- DX Cluster: di base (installazioni nuove o senza queste scelte salvate) il primo cluster e' «IU3WJQ-7» (`cluster.iu3wjq.com:8000`; se c'e' gia' nell'elenco, anche dei vecchi file, viene messo in cima e chiamato cosi') e gli spot partono dal cluster telnet, proprio da quello; se non e' collegato o non ripete lo spot (8 s) lo spot passa subito al cluster collegato successivo dell'elenco. Chi ha gia' salvato le sue scelte le ritrova. Il cluster chiede nome utente e password: finche' non li scrivi si passa ai successivi.
 
 ## 0.11.303 - 2026-11-19
 
