@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: il primo cluster dell'elenco (IU3WJQ-7) se cade si riprova ogni 5-10 secondi (prima fino a 2 minuti, come gli altri): appena torna disponibile gli spot tornano a lui, perche' ogni spot sceglie di nuovo il primo collegato.
+
 - DX Cluster: i quattro server di serie sono IU3WJQ-7 (`cluster.iu3wjq.com:8000`), HamQTH, Hamcloud e VE7CC (`ve7cc.net:23`); N2KI New York non e' piu' tra quelli di serie (resta nel catalogo). Chi ha gia' salvato la sua lista la ritrova.
 
 ## 0.11.304 - 2026-11-19

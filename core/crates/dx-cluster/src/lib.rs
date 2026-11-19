@@ -636,10 +636,17 @@ impl ClusterService {
     }
 }
 
+/// Attesa massima fra due tentativi di riconnessione del primo cluster dell'elenco (secondi).
+const PRIMARY_RETRY_MAX_SECS: u64 = 10;
+
 /// Tiene un server collegato: se cade riprova con attese sempre piu' lunghe (da 5 s a 2 minuti).
 async fn run_server(svc: Arc<ClusterService>, server: ServerCfg, callsign: String, commands: Vec<String>) {
     let key = server.key();
     let mut wait = 5u64;
+    // il primo cluster dell'elenco e' quello da cui partono gli spot: se cade lo si riprova ogni pochi secondi (gli altri fino a 2 minuti),
+    // cosi' appena torna disponibile gli spot tornano a lui
+    let is_primary = svc.config().servers.first().is_some_and(|s| s.key() == key);
+    let max_wait = if is_primary { PRIMARY_RETRY_MAX_SECS } else { 120 };
     loop {
         svc.set_status(&server, "connecting", None);
         let (tx, rx) = mpsc::unbounded_channel();
@@ -657,7 +664,7 @@ async fn run_server(svc: Arc<ClusterService>, server: ServerCfg, callsign: Strin
             wait = 5;
         }
         tokio::time::sleep(Duration::from_secs(wait)).await;
-        wait = (wait * 2).min(120);
+        wait = (wait * 2).min(max_wait);
     }
 }
 
