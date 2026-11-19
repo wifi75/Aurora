@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { getEngineSettings, postSpotDxsummit } from '../../api/client';
+import { ApiError, getEngineSettings, postSpotDxsummit } from '../../api/client';
 import { useT } from '../../i18n';
 import { spotFreqKhz } from '../../lib/spotPrefill';
 import { toast } from '../../lib/toast';
@@ -47,7 +47,7 @@ export function SpotDialog({ call, dialHz, audioHz, modeName, lsb = false, khzDe
       })
       .catch((e: unknown) => {
         setBusy(false);
-        setProblem(e instanceof Error && e.message ? e.message : t('digi.spot.fail'));
+        setProblem(e instanceof ApiError && e.detail ? e.detail : e instanceof Error && e.message ? e.message : t('digi.spot.fail'));
       });
   };
 

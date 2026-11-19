@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Invia spot: se lo spot non parte la finestra mostra il motivo vero (per esempio «il cluster ... non e' collegato») invece del solo codice «502 spot_failed».
+
 - DX Cluster (Impostazioni): il LED di ogni server segue lo stato vero del collegamento (prima era verde per la sola prova di raggiungibilita' mentre «Stato dei collegamenti» diceva «non collegato»); le caselle nome utente e password sono piu' larghe; se il cluster chiude dopo l'accesso, lo stato riporta l'ultima cosa che ha scritto.
 
 - DX Cluster: se il cluster risponde «Sorry» dopo l'accesso e chiude (nominativo o password rifiutati), lo stato dice «il cluster ha rifiutato il nominativo o la password» invece di «connessione chiusa dal server».
