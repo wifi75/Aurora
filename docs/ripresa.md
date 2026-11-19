@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.300 (pubblicata 2026-11-19T17:12:15Z)
+
+- DX Cluster: `dx-cluster/src/lib.rs` (`send_spot`: se `spot_server` non e' nell'elenco si usa il primo collegato; la sessione tiene `last_said` e `refused` e riporta cosa ha scritto il cluster alla chiusura); `settings/ClusterTab.tsx` (`LedLight` segue lo stato vero del collegamento, non solo la prova); caselle utente e password piu' larghe (`settings-layout.css`); `SpotDialog.tsx` mostra `ApiError.detail`. Causa del caso del proprietario: il server era stato riaggiunto con un altro indirizzo (`cluster.iu3wjq.com:8000` al posto di `dxregia.iu3wjq.com:8000`) e `spot_server` puntava ancora al vecchio.
+- `engine-native/src/tx.rs` (`wait_and_pounce`): i CQ delle stazioni escluse dal filtro delle Automazioni non si scelgono; prova `wait_and_pounce_skips_cqs_of_stations_excluded_by_the_automations`. Segnalazione #81 (Luc): da avvisarlo che e' in versione; non provato in aria.
+- Da fare: #77 (Pere, TS-850S: clic in trasmissione, decidere se leggere solo potenza o solo ROS), #72 (IC-820H in modo satellite, in attesa del pacchetto), #80 (macro FLDigi, richiesta), #78 (IC-7300, aperta qualche giorno).
+
 ## Nella 0.11.299 (pubblicata 2026-11-19T12:05:16Z)
 
 - `settings/useAutosave.ts`: il salvataggio automatico non parte finche' il cursore e' in una casella `input[type=password]` (riprova a ogni pausa e salva appena si esce). Causa: la pausa di 600 ms tra due tasti salvava la password a meta', `setDraft(null)` svuotava la casella e compariva il segnaposto «Password salvata». Vale per tutte le schede con `useAutosave` (cluster, CAT, ecc.). Prova: `settings/useAutosave.test.tsx`. Non provato a mano.

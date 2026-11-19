@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.300',
-    released: '2026-11-19T14:00:00Z',
+    released: '2026-11-19T17:12:15Z',
     kind: 'fixed',
     title: [
       'Spot, DX Cluster e Wait and Pounce corretti',
