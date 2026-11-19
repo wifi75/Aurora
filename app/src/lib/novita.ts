@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.299',
+    released: '2026-11-19T13:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Password scritte senza che si salvino a metà',
+      'Passwords no longer saved halfway while typing',
+      'Passwörter werden beim Tippen nicht mehr halb gespeichert',
+      'Mots de passe plus enregistrés à moitié pendant la saisie',
+      'Contraseñas que ya no se guardan a medias al escribir',
+      'Palavras-passe que já não se guardam a meio ao escrever',
+    ],
+    text: [
+      'Scrivendo una password nelle Impostazioni (per esempio quella del cluster telnet) con una pausa tra i tasti, Aurora la salvava a metà e la casella si svuotava mostrando «Password salvata» mentre scrivevi. Ora, con il cursore in una casella password, il salvataggio automatico aspetta e salva appena esci dalla casella. Vale per tutte le schede delle Impostazioni.',
+      'When typing a password in Settings (for example the telnet cluster one) with a pause between keys, Aurora saved it halfway and the box emptied, showing “Password saved” while you were typing. Now, with the cursor in a password box, the automatic save waits and saves as soon as you leave the box. It applies to all Settings tabs.',
+      'Beim Eingeben eines Passworts in den Einstellungen (zum Beispiel das des Telnet-Clusters) mit einer Pause zwischen den Tasten speicherte Aurora es halb und das Feld leerte sich und zeigte „Passwort gespeichert“, während du noch tipptest. Jetzt wartet das automatische Speichern, solange der Cursor in einem Passwortfeld steht, und speichert, sobald du das Feld verlässt. Gilt für alle Einstellungsseiten.',
+      'En saisissant un mot de passe dans les Réglages (par exemple celui du cluster telnet) avec une pause entre les touches, Aurora l’enregistrait à moitié et la case se vidait en affichant « Mot de passe enregistré » pendant la saisie. Maintenant, avec le curseur dans une case mot de passe, l’enregistrement automatique attend et enregistre dès que tu quittes la case. Valable pour tous les onglets des Réglages.',
+      'Al escribir una contraseña en Ajustes (por ejemplo la del clúster telnet) con una pausa entre teclas, Aurora la guardaba a medias y la casilla se vaciaba mostrando «Contraseña guardada» mientras escribías. Ahora, con el cursor en una casilla de contraseña, el guardado automático espera y guarda en cuanto sales de la casilla. Vale para todas las pestañas de Ajustes.',
+      'Ao escrever uma palavra-passe nas Definições (por exemplo a do cluster telnet) com uma pausa entre as teclas, o Aurora guardava-a a meio e a caixa esvaziava-se a mostrar «Palavra-passe guardada» enquanto escrevias. Agora, com o cursor numa caixa de palavra-passe, o guardado automático espera e guarda assim que sais da caixa. Vale para todos os separadores das Definições.',
+    ],
+  },
+  {
     version: '0.11.298',
     released: '2026-11-19T10:38:46Z',
     kind: 'new',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans la page Satellites les fiches peuvent être réduites bien plus, jusqu’à 2 colonnes et 2-3 lignes : le contenu défile à l’intérieur. Dans le DX Cluster avec le thème clair, les étiquettes UP et QSX sont plus lisibles, avec du texte blanc sur du marron foncé.',
       'En la página Satélites las tarjetas se pueden reducir mucho más, hasta 2 columnas y 2-3 filas: el contenido se desplaza dentro. En el DX Cluster con el tema claro las etiquetas UP y QSX son más legibles, con texto blanco sobre marrón oscuro.',
       'Na página Satélites os cartões podem ser reduzidos muito mais, até 2 colunas e 2-3 linhas: o conteúdo desloca-se lá dentro. No DX Cluster com o tema claro as etiquetas UP e QSX são mais legíveis, com texto branco sobre castanho escuro.',
-    ],
-  },
-  {
-    version: '0.11.282',
-    released: '2026-11-17T08:50:15Z',
-    kind: 'fixed',
-    title: [
-      'PTT che non si spegne: tentativi, avviso e protezione',
-      'PTT that does not switch off: retries, alert and protection',
-      'PTT, das sich nicht ausschaltet: Wiederholungen, Hinweis und Schutz',
-      'PTT qui ne se coupe pas : tentatives, alerte et protection',
-      'PTT que no se apaga: reintentos, aviso y protección',
-      'PTT que não se desliga: tentativas, aviso e proteção',
-    ],
-    text: [
-      'Se la radio non rilascia il PTT, Aurora non si ferma al primo tentativo: riprova a intervalli crescenti con altre vie (un secondo comando di spegnimento, la riapertura del CAT, le linee RTS e DTR) e mostra un banner fisso, con un suono che si ripete, finché il PTT non risulta spento. Se cambi radio o profilo con il PTT acceso, Aurora non manda più il comando alla radio sbagliata: ti avvisa che la radio precedente potrebbe essere ancora in trasmissione, così la controlli a mano.',
-      'If the radio does not release the PTT, Aurora does not stop at the first attempt: it retries at growing intervals by other ways (a second switch-off command, reopening the CAT, the RTS and DTR lines) and shows a fixed banner, with a sound that repeats, until the PTT is confirmed off. If you change radio or profile while the PTT is on, Aurora no longer sends the command to the wrong radio: it warns you that the previous radio may still be transmitting, so you can check it by hand.',
-      'Gibt das Funkgerät das PTT nicht frei, bleibt Aurora nicht beim ersten Versuch stehen: Es versucht es in wachsenden Abständen auf anderen Wegen erneut (ein zweiter Ausschaltbefehl, das Neuöffnen des CAT, die Leitungen RTS und DTR) und zeigt einen festen Banner mit einem sich wiederholenden Ton, bis das PTT als aus bestätigt ist. Wechselst du Funkgerät oder Profil bei eingeschaltetem PTT, schickt Aurora den Befehl nicht mehr an das falsche Funkgerät: Es warnt dich, dass das vorherige Funkgerät noch senden könnte, damit du es von Hand prüfst.',
-      'Si la radio ne relâche pas le PTT, Aurora ne s’arrête pas au premier essai : il réessaie à intervalles croissants par d’autres voies (une seconde commande de coupure, la réouverture du CAT, les lignes RTS et DTR) et affiche une bannière fixe, avec un son qui se répète, jusqu’à ce que le PTT soit confirmé coupé. Si tu changes de radio ou de profil avec le PTT allumé, Aurora n’envoie plus la commande à la mauvaise radio : il t’avertit que la radio précédente pourrait encore être en émission, pour que tu la vérifies à la main.',
-      'Si la radio no suelta el PTT, Aurora no se queda en el primer intento: reintenta a intervalos crecientes por otras vías (un segundo comando de apagado, la reapertura del CAT, las líneas RTS y DTR) y muestra un banner fijo, con un sonido que se repite, hasta que el PTT se confirme apagado. Si cambias de radio o de perfil con el PTT encendido, Aurora ya no manda el comando a la radio equivocada: te avisa de que la radio anterior podría seguir transmitiendo, para que la revises a mano.',
-      'Se o rádio não larga o PTT, a Aurora não se fica pela primeira tentativa: tenta de novo a intervalos crescentes por outras vias (um segundo comando de desligar, a reabertura do CAT, as linhas RTS e DTR) e mostra um banner fixo, com um som que se repete, até o PTT estar confirmado desligado. Se mudares de rádio ou de perfil com o PTT ligado, a Aurora já não manda o comando ao rádio errado: avisa-te de que o rádio anterior pode ainda estar a transmitir, para o verificares à mão.',
     ],
   },
 ];

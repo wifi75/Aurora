@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.299 - 2026-11-19
+
 - Impostazioni: scrivendo una password (per esempio quella del cluster telnet) con una pausa tra i tasti, Aurora salvava la password a meta' e la casella si svuotava mostrando «Password salvata» mentre si scriveva. Ora con il cursore in una casella password il salvataggio automatico aspetta, e salva appena si esce dalla casella. Vale per tutte le schede di Impostazioni.
 
 ## 0.11.298 - 2026-11-19
