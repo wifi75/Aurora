@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.298 (pubblicata 2026-11-19T10:38:46Z)
+
+- `lib/resetLayouts.ts` (`isLayoutKey`, `clearLayouts`): il pulsante di Impostazioni › Aspetto (`ap.boardResetBtn`) toglie dal browser tutte le disposizioni salvate (voci `aurora-board`, `aurora-bottom`, `aurora-finestre`, `aurora-layout`..., `aurora.*.cols`, larghezze e altezze, `aurora.sat.layout`, `aurora.xrx.*`) e ricarica; il `removeItem` si propaga al server delle preferenze (`syncSettings`). Il vecchio «Ripristina» azzerava solo `useBoard` e `useBottom`. Non provato dal vivo. Se compare una nuova voce di disposizione va aggiunta a `resetLayouts.ts`.
+- `audio-spectrum/src/capture.rs` (`prepare_input`): scelta del dispositivo e lettura dei formati in un thread nuovo (errore COM 0x80010106 «modo thread» su Windows 11, Realtek «Mixage stereo»). Ipotesi dal messaggio di errore, non provata su quel PC.
+- Dalla segnalazione #77 (Pere, TS-850S): il clic c'e' solo in trasmissione, quando si leggono due cose (potenza e ROS); da decidere quale tenere. Dalla #81 (Luc): il modo AUTO sceglie anche stazioni che non chiamano, e il filtro dei chiamanti non vale li'; da verificare e correggere. Da fare: invio ai moduli degli antivirus dei falsi positivi (Defender ha tolto file di Aurora a 5 installazioni della 0.11.292), importazione delle macro FLDigi (#80, richiesta).
+
 ## Nella 0.11.297 (pubblicata 2026-11-18T18:30:25Z)
 
 - Solo la Guida (`guide-station.ts`): tolti i riferimenti agli stili `icdual`, `icblue`, `ledline`; dizionario olandese senza le loro voci. Display piu' basso con VFOB sotto la frequenza: ancora da fare, in attesa del via del proprietario (vedi «Da fare (olandese)» qui sotto).

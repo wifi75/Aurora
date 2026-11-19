@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.298',
-    released: '2026-11-19T12:00:00Z',
+    released: '2026-11-19T10:38:46Z',
     kind: 'new',
     title: [
       'Tutte le finestre alla disposizione iniziale',
