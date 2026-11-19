@@ -87,14 +87,14 @@ export function actionTip(item: CatExtraItem) {
  * Sotto il display resta poco: la frequenza del secondo VFO (se la radio la da') e il tasto TUNE. Preamplificatore, ATT, AGC, NB/NR, guadagni, RIT/XIT, VFO,
  * alimentazione, ALC e compressione non si mostrano piu' (scelta del proprietario, 2026-11-18): meno richieste alla radio e niente «clic» dei misuratori.
  */
-export function RadioExtras({ hidePwr = false }: { hidePwr?: boolean } = {}) {
+export function RadioExtras({ hidePwr = false, hideVfos = false }: { hidePwr?: boolean; hideVfos?: boolean } = {}) {
   const t = useT();
   const { cat, rig, waiting, click } = useCatExtras();
   const tuning = useTuning();
   const x = rig?.extras ?? {};
   const dialHz = displayModel(useStation((s) => s.status)).dialHz;
   void hidePwr;
-  const vfoB = x.vfo_b_hz ? `${formatVfo(x.vfo_b_hz)}${x.vfo_b_mode ? ` ${x.vfo_b_mode}` : ''}` : null;
+  const vfoB = !hideVfos && x.vfo_b_hz ? `${formatVfo(x.vfo_b_hz)}${x.vfo_b_mode ? ` ${x.vfo_b_mode}` : ''}` : null;
   // TUNE: la radio dice di avere l'accordatore, oppure non si leggono i dati in piu' e non si sa (se non lo ha, il clic spiega perche')
   const showTune = x.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
   if (!vfoB && !showTune) return null;

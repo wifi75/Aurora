@@ -17,13 +17,15 @@ interface Props {
   size?: 'mini' | 'full';
   /** Dati in piu' della radio per gli stili a pannello unico; senza, quelli di prova (anteprime). */
   face?: FaceExtras;
+  /** Frequenza e modo del VFO B, gia' scritti: si leggono in piccolo sotto la frequenza (solo versione compatta). */
+  vfoB?: string | null;
 }
 
 /** Il display della radio in SVG: si ridisegna con `viewBox` fisso e riempie la larghezza che trova. */
-export function RadioDisplay({ model, style, size = 'full', face = DEMO_FACE_EXTRAS }: Props) {
+export function RadioDisplay({ model, style, size = 'full', face = DEMO_FACE_EXTRAS, vfoB = null }: Props) {
   const t = useT();
   const common = { model, noRadio: t('rd.noRadio'), ariaLabel: describeDisplay(model, t) };
-  if (size === 'mini') return <MiniDisplay {...common} style={style} />;
+  if (size === 'mini') return <MiniDisplay {...common} style={style} vfoB={vfoB} />;
   switch (style) {
     case 'fluorescent':
       return <FluorescentDisplay {...common} />;

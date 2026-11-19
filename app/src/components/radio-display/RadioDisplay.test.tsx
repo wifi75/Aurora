@@ -72,6 +72,13 @@ describe('RadioDisplay', () => {
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('Frequency 21.074.00 MHz');
   });
 
+  it('writes the second VFO small under the main frequency in the compact display, only when it is known', () => {
+    const { container, rerender } = render(<RadioDisplay model={DEMO_MODEL} style="fluorescent" size="mini" vfoB="14.084.30 USB" />);
+    expect([...container.querySelectorAll('text')].some((n) => (n.textContent ?? '').includes('VFOB 14.084.30 USB'))).toBe(true);
+    rerender(<RadioDisplay model={DEMO_MODEL} style="fluorescent" size="mini" />);
+    expect([...container.querySelectorAll('text')].some((n) => (n.textContent ?? '').startsWith('VFOB'))).toBe(false);
+  });
+
   it('lights TX instead of RX while transmitting', () => {
     const { container } = render(<RadioDisplay model={{ ...DEMO_MODEL, transmitting: true }} style="fluorescent" size="mini" />);
     expect(screen.getByRole('img').getAttribute('aria-label')).toContain('trasmissione');

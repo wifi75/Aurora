@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Display della radio compatto (testata): la frequenza principale e' piu' bassa e sotto c'e' il VFO B in piccolo con il suo modo; la scheda di destra non ripete piu' le due frequenze e resta con TUNE.
+
 - DX Cluster: la password si manda senza gli spazi ai bordi (copiata da una pagina se ne porta dietro; il cluster rispondeva «Sorry» e chiudeva, e lo spot dava 502).
 
 ## 0.11.300 - 2026-11-19

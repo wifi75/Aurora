@@ -2,6 +2,7 @@ import { useGroups } from '../../lib/detached';
 import { DetachButton } from '../DetachButton';
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { formatVfo } from '../../lib/radioExtras';
 import { RadioExtras, useCatExtras } from './RadioExtras';
 import { describeDisplay } from './describe';
 import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
@@ -109,13 +110,15 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   }
 
   // due blocchi uguali affiancati, oppure un blocco unico a doppio VFO (VFO A grande a sinistra, VFO B e indicatori a destra)
+  const vfoBHz = cat.data?.status.rig?.extras?.vfo_b_hz;
+  const vfoBText = !radioOff && vfoBHz ? `${formatVfo(vfoBHz)}${cat.data?.status.rig?.extras?.vfo_b_mode ? ` ${cat.data.status.rig.extras.vfo_b_mode}` : ''}` : null;
   const duo = (
     <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
       <div className="rd-slot rd-trigger rd-trigger--static">
-        <RadioDisplay model={model} style={pref.style} size="mini" />
+        <RadioDisplay model={model} style={pref.style} size="mini" vfoB={vfoBText} />
       </div>
       <div className="rd-slot rd-slot--extras">
-        <RadioExtras hidePwr />
+        <RadioExtras hidePwr hideVfos />
       </div>
     </div>
   );
