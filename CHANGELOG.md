@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- DX Cluster: di base (installazioni nuove o senza queste scelte salvate) il primo cluster e' `cluster.iu3wjq.com:8000` e gli spot partono dal cluster telnet, proprio da quello; se non e' collegato o non ripete lo spot (8 s) lo spot passa subito al cluster collegato successivo dell'elenco. Chi ha gia' salvato le sue scelte le ritrova. Il cluster chiede nome utente e password: finche' non li scrivi si passa ai successivi.
+
 ## 0.11.303 - 2026-11-19
 
 - Radio non collegata: la scritta al centro del display si adatta sempre alla larghezza del display e al numero di caratteri della lingua (prima «RADIO NON COLLEGATA» si tagliava in «RADIO NON COL»); tolta dal disegno compatto la scritta piccola che spuntava sotto.

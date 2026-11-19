@@ -59,9 +59,9 @@ impl ServerCfg {
 #[serde(rename_all = "lowercase")]
 pub enum SpotVia {
     /// Il sito DXSummit (come JTDX): lo spot resta su DXSummit e non entra nella rete dei cluster.
-    #[default]
     Dxsummit,
-    /// Il cluster telnet collegato (comando `DX`): lo spot entra nella rete dei cluster.
+    /// Il cluster telnet collegato (comando `DX`): lo spot entra nella rete dei cluster. Di base (scelta del proprietario, 2026-11-19).
+    #[default]
     Telnet,
 }
 
@@ -92,12 +92,18 @@ impl Default for Config {
         Config {
             enabled: true,
             callsign: String::new(),
-            servers: vec![server("HamQTH", "hamqth.com", 7300), server("N2KI New York", "dxc.n2ki.com", 7300), server("Hamcloud", "dx.hamnet.network", 7300)],
+            // il cluster di Aurora per primo (da li' partono gli spot di base); se non risponde gli spot passano al successivo collegato
+            servers: vec![
+                server("IU3WJQ", "cluster.iu3wjq.com", 8000),
+                server("HamQTH", "hamqth.com", 7300),
+                server("N2KI New York", "dxc.n2ki.com", 7300),
+                server("Hamcloud", "dx.hamnet.network", 7300),
+            ],
             login_commands: Vec::new(),
             max_spots: 500,
             max_age_min: 60,
-            spot_via: SpotVia::Dxsummit,
-            spot_server: String::new(),
+            spot_via: SpotVia::Telnet,
+            spot_server: "cluster.iu3wjq.com:8000".into(),
         }
     }
 }
@@ -412,39 +418,53 @@ impl ClusterService {
         }
         let comment: String = comment.chars().filter(|c| c.is_ascii() && !c.is_ascii_control()).take(30).collect();
         let config = self.config();
-        let (key, name, sender) = {
+        // i cluster da provare, nell'ordine: prima quello scelto per gli spot (se e' nell'elenco e collegato), poi gli altri collegati nell'ordine
+        // dell'elenco. Se il primo non risponde si passa subito al successivo
+        let candidates: Vec<(String, String, mpsc::UnboundedSender<String>)> = {
             let senders = lock(&self.senders);
             let status = lock(&self.status);
             let connected = |k: &str| status.get(k).is_some_and(|s| s.state == "connected");
-            // il cluster scelto per gli spot non e' piu' nell'elenco (tolto o rinominato con un altro indirizzo): vale come «il primo collegato»
-            let listed = config.servers.iter().any(|s| s.key() == config.spot_server);
-            let chosen = if config.spot_server.is_empty() || !listed {
-                senders.keys().find(|k| connected(k)).cloned()
-            } else if senders.contains_key(&config.spot_server) && connected(&config.spot_server) {
-                Some(config.spot_server.clone())
-            } else {
-                None
-            };
-            let key = chosen.ok_or_else(|| {
-                if config.spot_server.is_empty() || !listed { "nessun cluster telnet collegato".to_string() } else { format!("il cluster {} non e' collegato", config.spot_server) }
-            })?;
-            let name = config.servers.iter().find(|s| s.key() == key).map_or_else(|| key.clone(), |s| s.name.clone());
-            let sender = senders.get(&key).cloned().ok_or_else(|| "nessun cluster telnet collegato".to_string())?;
-            (key, name, sender)
+            let mut keys: Vec<String> = Vec::new();
+            if !config.spot_server.is_empty() && config.servers.iter().any(|s| s.key() == config.spot_server) && connected(&config.spot_server) {
+                keys.push(config.spot_server.clone());
+            }
+            for s in &config.servers {
+                let k = s.key();
+                if !keys.contains(&k) && connected(&k) {
+                    keys.push(k);
+                }
+            }
+            keys.into_iter()
+                .filter_map(|k| {
+                    let name = config.servers.iter().find(|s| s.key() == k).map_or_else(|| k.clone(), |s| s.name.clone());
+                    senders.get(&k).cloned().map(|sender| (k, name, sender))
+                })
+                .collect()
         };
-        let (tx, rx) = oneshot::channel();
-        lock(&self.waiting).push((key.clone(), dx.clone(), tx));
+        if candidates.is_empty() {
+            let listed = config.servers.iter().any(|s| s.key() == config.spot_server);
+            return Err(if config.spot_server.is_empty() || !listed { "nessun cluster telnet collegato".to_string() } else { format!("il cluster {} non e' collegato", config.spot_server) });
+        }
+        // con piu' cluster ogni tentativo aspetta poco, cosi' il passaggio al successivo e' subito
+        let each = if candidates.len() > 1 { wait.min(Duration::from_secs(8)) } else { wait };
         let command = format!("DX {freq_khz:.1} {dx} {comment}").trim_end().to_string();
-        if sender.send(command).is_err() {
-            lock(&self.waiting).retain(|(k, d, _)| !(k == &key && d == &dx));
-            return Err(format!("il cluster {name} non e' collegato"));
+        let mut last_error = String::new();
+        for (key, name, sender) in candidates {
+            let (tx, rx) = oneshot::channel();
+            lock(&self.waiting).push((key.clone(), dx.clone(), tx));
+            if sender.send(command.clone()).is_err() {
+                lock(&self.waiting).retain(|(k, d, _)| !(k == &key && d == &dx));
+                last_error = format!("il cluster {name} non e' collegato");
+                continue;
+            }
+            let echoed = tokio::time::timeout(each, rx).await;
+            lock(&self.waiting).retain(|(_, _, s)| !s.is_closed());
+            match echoed {
+                Ok(Ok(())) => return Ok(name),
+                _ => last_error = format!("il cluster {name} non ha ripetuto lo spot: forse vuole l'accesso con password (Impostazioni › DX Cluster)"),
+            }
         }
-        let echoed = tokio::time::timeout(wait, rx).await;
-        lock(&self.waiting).retain(|(_, _, s)| !s.is_closed());
-        match echoed {
-            Ok(Ok(())) => Ok(name),
-            _ => Err(format!("il cluster {name} non ha ripetuto lo spot: forse vuole l'accesso con password (Impostazioni › DX Cluster)")),
-        }
+        Err(last_error)
     }
 
     /// Il nostro spot e' tornato indietro da un cluster: chi lo aspettava viene avvisato.
@@ -851,6 +871,67 @@ mod tests {
         assert_eq!(command.trim(), "sh/dx 5");
     }
 
+    #[test]
+    fn by_default_the_aurora_cluster_comes_first_and_spots_go_out_by_telnet_from_it() {
+        let c = Config::default();
+        assert_eq!(c.spot_via, SpotVia::Telnet);
+        assert_eq!(c.spot_server, "cluster.iu3wjq.com:8000");
+        assert_eq!(c.servers[0].key(), "cluster.iu3wjq.com:8000");
+        assert!(c.servers.len() >= 2, "ci sono altri cluster a cui passare");
+        assert!(c.validate().is_ok());
+    }
+
+    /// Il cluster scelto per gli spot non ripete lo spot: si passa subito al successivo collegato.
+    #[tokio::test]
+    async fn a_spot_falls_back_to_the_next_connected_cluster_when_the_first_does_not_repeat_it() {
+        let first_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let second_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let (p1, p2) = (first_listener.local_addr().unwrap().port(), second_listener.local_addr().unwrap().port());
+        // il primo accetta l'accesso ma non ripete mai lo spot
+        let first = tokio::spawn(async move {
+            let (stream, _) = first_listener.accept().await.unwrap();
+            let (read, mut write) = stream.into_split();
+            let mut reader = BufReader::new(read);
+            write.write_all(b"login: ").await.unwrap();
+            let mut login = String::new();
+            reader.read_line(&mut login).await.unwrap();
+            let mut got = String::new();
+            reader.read_line(&mut got).await.unwrap();
+            got
+        });
+        // il secondo ripete lo spot
+        let second = tokio::spawn(async move {
+            let (stream, _) = second_listener.accept().await.unwrap();
+            let (read, mut write) = stream.into_split();
+            let mut reader = BufReader::new(read);
+            write.write_all(b"login: ").await.unwrap();
+            let mut login = String::new();
+            reader.read_line(&mut login).await.unwrap();
+            let mut got = String::new();
+            reader.read_line(&mut got).await.unwrap();
+            write.write_all(b"DX de IU3ABC:   14083.2  IZ7XYZ       FT8                      1713Z
+").await.unwrap();
+            got
+        });
+        let svc = ClusterService::open(&temp("fallback"));
+        let mut a = local(p1);
+        a.name = "Primo".into();
+        let mut b = local(p2);
+        b.name = "Secondo".into();
+        let c = Config { enabled: true, callsign: "IU3ABC".into(), servers: vec![a.clone(), b], spot_via: SpotVia::Telnet, spot_server: a.key(), ..Config::default() };
+        svc.set_config(c).unwrap();
+        let mut waited = 0;
+        while svc.statuses().iter().filter(|s| s.state == "connected").count() < 2 && waited < 50 {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            waited += 1;
+        }
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        let done = svc.send_spot("iz7xyz", 14083.2, "FT8", Duration::from_millis(600)).await;
+        assert_eq!(done.as_deref(), Ok("Secondo"), "passa al successivo");
+        assert_eq!(first.await.unwrap().trim(), "DX 14083.2 IZ7XYZ FT8");
+        assert_eq!(second.await.unwrap().trim(), "DX 14083.2 IZ7XYZ FT8");
+    }
+
     #[tokio::test]
     async fn logs_in_with_name_and_password_and_a_spot_counts_only_when_the_cluster_repeats_it() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -911,7 +992,7 @@ mod tests {
         assert!(c.validate().is_err());
         let old = r#"{"enabled":true,"callsign":"","servers":[{"name":"A","host":"a.b","port":7300,"enabled":true}],"login_commands":[],"max_spots":500,"max_age_min":60}"#;
         let parsed: Config = serde_json::from_str(old).unwrap();
-        assert_eq!(parsed.spot_via, SpotVia::Dxsummit);
+        assert_eq!(parsed.spot_via, SpotVia::Telnet, "di base gli spot partono dal cluster telnet");
         assert!(parsed.servers[0].password.is_empty());
     }
 
