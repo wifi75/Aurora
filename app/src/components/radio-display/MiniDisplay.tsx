@@ -1,4 +1,4 @@
-import { formatRadioFrequency, hasFrequency, litCount, mainMeter, S9_FRACTION, type RadioDisplayStyle } from '../../lib/radioDisplay';
+import { formatRadioFrequency, hasFrequency, litCount, mainMeter, type RadioDisplayStyle } from '../../lib/radioDisplay';
 import { Chip, DisplayFrame, Label, linkState, SegBar, type StyleProps } from './instruments';
 import { SevenSegment } from './SevenSegment';
 
@@ -36,69 +36,30 @@ const PALETTES: Record<RadioDisplayStyle, Palette> = {
   led: { screen: '#0b0505', digits: '#ff3a22', glow: '#ff2a10', ink: '#ff7a5a', rx: '#3fd13a', rxInk: '#032200', tx: '#ff3a22', txInk: '#2a0500', meter: 'led', lo: '#3fd13a', hi: '#ff3a22', off: '#3a1410', skew: 0.1 },
 };
 
-const MX = 160;
-const MW = 150;
+/** Colonna di destra: RX/TX, misuratore a 10 tacche uguali (largo quanto la colonna) e, in trasmissione, la barra SWR sotto quella della potenza. */
+const MX = 168;
+const BAR_STEP = 8.2;
+const BAR_SEG = 6.4;
+const BAR_COUNT = 10;
+const TEXT_X = 252;
 
-function MiniMeter({ kind, p, fraction }: { kind: MeterKind; p: Palette; fraction: number | null }) {
-  switch (kind) {
-    case 'dots': {
-      const n = 19;
-      const lit = litCount(fraction, n);
-      return (
-        <g aria-hidden="true">
-          {Array.from({ length: n }, (_, i) => (
-            <rect key={i} x={MX + i * 8} y={i <= n * S9_FRACTION ? 28 : 31} width={5} height={i <= n * S9_FRACTION ? 14 : 11} fill={i < lit && i > n * S9_FRACTION ? p.hi : p.lo} opacity={i < lit ? 1 : 0.13} />
-          ))}
-        </g>
-      );
-    }
-    case 'ruler': {
-      // scala lineare con la lancetta rossa: tacche ogni S, la lancetta e' una riga inclinata
-      const x = fraction === null ? null : MX + fraction * MW;
-      return (
-        <g aria-hidden="true">
-          <rect x={MX} y={41} width={MW} height={1.4} fill={p.lo} opacity={fraction === null ? 0.3 : 0.9} />
-          <rect x={MX + MW * S9_FRACTION} y={39.5} width={MW * (1 - S9_FRACTION)} height={3} fill={p.hi} opacity={fraction === null ? 0.3 : 1} />
-          {Array.from({ length: 16 }, (_, i) => (
-            <rect key={i} x={MX + (i / 15) * (MW - 1)} y={i % 2 ? 36 : 33} width={1} height={i % 2 ? 6 : 9} fill={i / 15 > S9_FRACTION ? p.hi : p.lo} opacity={fraction === null ? 0.3 : 0.9} />
-          ))}
-          {x !== null ? <line x1={x - 6} y1={44} x2={x + 3} y2={27} stroke="#e8231c" strokeWidth={2} strokeLinecap="round" /> : null}
-        </g>
-      );
-    }
-    case 'bar': {
-      const n = 28;
-      const lit = litCount(fraction, n);
-      return <SegBar x={MX} y={30} count={n} segW={4} segH={11} step={MW / n} lit={lit} color={(i) => (i >= n * S9_FRACTION ? p.hi : p.lo)} off={p.off} />;
-    }
-    case 'ramp': {
-      const n = 18;
-      const lit = litCount(fraction, n);
-      return (
-        <g aria-hidden="true">
-          {Array.from({ length: n }, (_, i) => {
-            const h = 4 + (i / (n - 1)) * 13;
-            return <rect key={i} x={MX + i * (MW / n)} y={43 - h} width={5} height={h} fill={i >= n * S9_FRACTION && i < lit ? p.hi : p.lo} opacity={i < lit ? 1 : 0.16} />;
-          })}
-        </g>
-      );
-    }
-    default: {
-      const n = 15;
-      const lit = litCount(fraction, n);
-      return <SegBar x={MX} y={30} count={n} segW={7} segH={11} step={MW / n} lit={lit} color={(i) => (i < n * 0.55 ? p.lo : i < n * 0.85 ? '#ffd23a' : p.hi)} off={p.off} offOpacity={1} rx={1} />;
-    }
-  }
+/** Il ROS da 1 a 3 sulla barra: 1,0 vuota, 3,0 piena. */
+function swrFraction(swr: number): number {
+  return Math.min(1, Math.max(0, (swr - 1) / 2));
 }
 
-/** Display piccolo: circa 6:1, adatto alla testata (altezza di una riga di pulsanti) e al telefono. */
+/** Display piccolo (testata e telefono): frequenza con il VFO B sotto, RX/TX piccoli, misuratore uniforme; in trasmissione potenza e ROS in due barre. */
 export function MiniDisplay({ model, noRadio, ariaLabel, style, vfoB = null }: StyleProps & { style: RadioDisplayStyle; vfoB?: string | null }) {
   const p = PALETTES[style];
   const known = hasFrequency(model.dialHz);
   const link = linkState(model);
   const main = mainMeter(model);
+  const sending = known && link.tx;
+  const swr = typeof model.meters?.swr === 'number' ? model.meters.swr : null;
+  const swrColor = swr !== null && swr >= 3 ? '#ff4a3a' : swr !== null && swr >= 2 ? '#ffb020' : '#5be08a';
+  const off = p.off;
   return (
-    <DisplayFrame width={320} height={52} radius={8} inset={3} stretch screen={p.screen} ariaLabel={ariaLabel}>
+    <DisplayFrame width={306} height={52} radius={8} inset={3} stretch screen={p.screen} ariaLabel={ariaLabel}>
       {/* con il VFO B noto la frequenza principale e' piu' bassa e sotto resta una riga piccola con il VFO B */}
       {vfoB ? (
         <>
@@ -108,27 +69,24 @@ export function MiniDisplay({ model, noRadio, ariaLabel, style, vfoB = null }: S
       ) : (
         <SevenSegment text={formatRadioFrequency(model.dialHz)} x={11} y={13} w={13} h={26} t={2.8} gap={3.5} skew={p.skew} on={p.digits} glow={p.glow} offOpacity={0.14} />
       )}
-      {/* a destra tre righe: pulsanti RX/TX piccoli con il modo e l'S-meter, il misuratore ridotto, e sotto potenza e ROS (in trasmissione) */}
-      <Chip x={MX} y={5} w={24} h={12} text="RX" bg={p.rx} fg={p.rxInk} fontSize={9} rx={3} dim={!link.rx} />
-      <Chip x={MX + 28} y={5} w={24} h={12} text="TX" bg={p.tx} fg={p.txInk} fontSize={9} rx={3} dim={!link.tx} />
-      {/* il modo (FT8...) non si scrive piu' sul display: lo dice gia' la barra del modo; resta solo il messaggio a radio spenta */}
-      {known ? null : <Label x={MX + 58} y={15} text={noRadio} fill={p.ink} size={9} weight={600} />}
-      {main.label && (main.kind === 'S' || typeof model.meters?.swr === 'number') ? <Label x={312} y={15} text={main.label} fill={p.ink} size={11} weight={600} anchor="end" /> : null}
-      <g transform={`translate(${MX} 21) scale(0.78 0.55) translate(${-MX} -27)`}>
-        <MiniMeter kind={p.meter} p={p} fraction={main.fraction} />
-      </g>
-      {(() => {
-        const sending = known && link.tx;
-        const watts = typeof model.meters?.power_w === 'number' ? model.meters.power_w : null;
-        const swr = typeof model.meters?.swr === 'number' ? model.meters.swr : null;
-        const swrColor = swr !== null && swr >= 3 ? '#ff4a3a' : swr !== null && swr >= 2 ? '#ffb020' : p.ink;
-        return (
-          <>
-            <Label x={MX} y={47} text={`PWR ${sending && watts !== null ? `${Math.round(watts)} W` : '–'}`} fill={p.ink} size={10} weight={700} opacity={sending && watts !== null ? 1 : 0.4} />
-            <Label x={MX + 78} y={47} text={`SWR ${sending && swr !== null ? swr.toFixed(1) : '–'}`} fill={swrColor} size={10} weight={700} opacity={sending && swr !== null ? 1 : 0.4} />
-          </>
-        );
-      })()}
+      {/* TUNE e' un pulsante vero sopra il disegno (vedi RadioDisplayHeader), tra la frequenza e RX, sulla riga della barra in basso */}
+      <Chip x={MX} y={5.5} w={24} h={11} text="RX" bg={p.rx} fg={p.rxInk} fontSize={9} rx={3} dim={!link.rx} />
+      <Chip x={MX + 28} y={5.5} w={24} h={11} text="TX" bg={p.tx} fg={p.txInk} fontSize={9} rx={3} dim={!link.tx} />
+      {known ? null : <Label x={MX + 58} y={14.5} text={noRadio} fill={p.ink} size={9} weight={600} />}
+      {sending ? (
+        <>
+          {/* in trasmissione il misuratore diventa quello della potenza e sotto c'e' la barra del ROS, ognuna con il suo testo alla stessa altezza */}
+          <SegBar x={MX} y={22} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={litCount(main.fraction, BAR_COUNT)} color={() => '#ff9a3a'} off={off} offOpacity={0.18} />
+          <Label x={TEXT_X} y={28.5} text={`PWR ${typeof model.meters?.power_w === 'number' ? `${Math.round(model.meters.power_w)} W` : '–'}`} fill="#ff9a3a" size={10} weight={700} />
+          <SegBar x={MX} y={36} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={swr === null ? 0 : litCount(swrFraction(swr), BAR_COUNT)} color={() => swrColor} off={off} offOpacity={0.18} />
+          <Label x={TEXT_X} y={42.5} text={`SWR ${swr === null ? '–' : swr.toFixed(1)}`} fill={swrColor} size={10} weight={700} />
+        </>
+      ) : (
+        <>
+          <SegBar x={MX} y={22} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={litCount(main.fraction, BAR_COUNT)} color={() => p.digits} off={off} offOpacity={0.18} />
+          {main.label && main.kind === 'S' ? <Label x={MX} y={42.5} text={main.label} fill={p.ink} size={10} weight={600} /> : null}
+        </>
+      )}
     </DisplayFrame>
   );
 }

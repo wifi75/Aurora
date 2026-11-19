@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.302 - 2026-11-19
+
+- Display compatto della testata ridisegnato: piu' basso (52 punti, senza stiramento), senza spazio vuoto a destra con la disposizione unica; TUNE e' un pulsantino come RX e TX dentro il display, tra la frequenza e RX, sulla riga della barra in basso, giallo quando l'accordatore lavora; misuratore a 10 tacche uguali, largo come la colonna; in trasmissione il misuratore diventa quello della potenza e sotto c'e' la barra del ROS, ognuna con il suo testo (PWR e SWR) alla stessa altezza; in ricezione niente PWR e SWR. Con i due blocchi affiancati resta la scheda a destra. Visto in anteprima, non con una radio vera.
+
 ## 0.11.301 - 2026-11-19
 
 - Display compatto della testata: RX e TX piu' piccoli e il misuratore ridotto; sotto, a destra, «PWR» e «SWR» (in trasmissione i valori, in ricezione un trattino); la scritta del modo (FT8) non c'e' piu' sul display.

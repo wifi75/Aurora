@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.302',
+    released: '2026-11-19T20:00:00Z',
+    kind: 'changed',
+    title: [
+      'Display compatto ridisegnato: TUNE dentro, barre di potenza e ROS',
+      'Compact display redesigned: TUNE inside, power and SWR bars',
+      'Kompaktes Display neu gestaltet: TUNE innen, Leistungs- und SWR-Balken',
+      'Affichage compact redessiné : TUNE à l’intérieur, barres de puissance et de ROS',
+      'Pantalla compacta rediseñada: TUNE dentro, barras de potencia y ROE',
+      'Ecrã compacto redesenhado: TUNE dentro, barras de potência e ROE',
+    ],
+    text: [
+      'Il display della testata è più basso e senza spazio vuoto a destra. TUNE è un pulsantino come RX e TX dentro il display, tra la frequenza e RX, e diventa giallo quando l’accordatore lavora. Il misuratore ha 10 tacche uguali; in trasmissione diventa il misuratore della potenza e sotto compare la barra del ROS, ognuna con il suo testo (PWR e SWR) alla stessa altezza; in ricezione PWR e SWR non si vedono. Con i due blocchi affiancati resta la scheda a destra.',
+      'The header display is lower and has no empty space on the right. TUNE is a small button like RX and TX inside the display, between the frequency and RX, and turns yellow when the tuner works. The meter has 10 equal segments; while transmitting it becomes the power meter and the SWR bar appears below, each with its own text (PWR and SWR) at the same height; while receiving PWR and SWR are not shown. With the two blocks side by side the right card stays.',
+      'Das Kopf-Display ist niedriger und hat rechts keinen leeren Platz mehr. TUNE ist eine kleine Taste wie RX und TX im Display, zwischen der Frequenz und RX, und wird gelb, wenn der Tuner arbeitet. Das Instrument hat 10 gleiche Segmente; beim Senden wird es zum Leistungsinstrument und darunter erscheint der SWR-Balken, jeweils mit eigenem Text (PWR und SWR) auf gleicher Höhe; beim Empfang sind PWR und SWR nicht zu sehen. Bei zwei nebeneinanderliegenden Blöcken bleibt die rechte Karte.',
+      'L’affichage d’en-tête est plus bas et sans espace vide à droite. TUNE est un petit bouton comme RX et TX dans l’affichage, entre la fréquence et RX, et devient jaune quand l’accordeur travaille. L’instrument a 10 segments égaux ; en émission il devient l’instrument de puissance et dessous apparaît la barre du ROS, chacune avec son texte (PWR et ROS) à la même hauteur ; en réception PWR et ROS ne s’affichent pas. Avec les deux blocs côte à côte la carte de droite reste.',
+      'La pantalla de la cabecera es más baja y sin espacio vacío a la derecha. TUNE es un botoncito como RX y TX dentro de la pantalla, entre la frecuencia y RX, y se pone amarillo cuando el acoplador trabaja. El medidor tiene 10 segmentos iguales; al transmitir pasa a ser el medidor de potencia y debajo aparece la barra del ROE, cada una con su texto (PWR y ROE) a la misma altura; al recibir no se ven PWR y ROE. Con los dos bloques juntos se mantiene la tarjeta de la derecha.',
+      'O ecrã do cabeçalho é mais baixo e sem espaço vazio à direita. O TUNE é um botãozinho como o RX e o TX dentro do ecrã, entre a frequência e o RX, e fica amarelo quando o acoplador trabalha. O medidor tem 10 segmentos iguais; ao transmitir passa a ser o medidor de potência e por baixo aparece a barra do ROE, cada uma com o seu texto (PWR e ROE) à mesma altura; ao receber não se veem PWR e ROE. Com os dois blocos lado a lado o cartão da direita mantém-se.',
+    ],
+  },
+  {
     version: '0.11.301',
     released: '2026-11-19T17:27:22Z',
     kind: 'changed',
@@ -842,27 +863,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans le DX Cluster le filtre du Mode a une nouvelle entrée « Digi » qui regroupe tous les modes numériques (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Les spots qui disent seulement « digi » ou « digital » ont maintenant le mode DIGI au lieu de rester sans mode, si bien que le filtre les trouve et qu’ils ne disparaissent pas en choisissant un mode.',
       'En el DX Cluster el filtro del Modo tiene una nueva opción «Digi» que reúne todos los modos digitales (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Los spots que dicen solo «digi» o «digital» tienen ahora el modo DIGI en lugar de quedarse sin modo, así que el filtro los encuentra y no desaparecen al elegir un modo.',
       'No DX Cluster o filtro do Modo tem uma nova opção «Digi» que reúne todos os modos digitais (FT8, FT4, WSPR, JS8, RTTY, PSK, JT65, Q65…). Os spots que dizem só «digi» ou «digital» têm agora o modo DIGI em vez de ficarem sem modo, por isso o filtro encontra-os e eles não desaparecem ao escolher um modo.',
-    ],
-  },
-  {
-    version: '0.11.283',
-    released: '2026-11-17T10:23:29Z',
-    kind: 'changed',
-    title: [
-      'Macro: colori per tema e tema chiaro',
-      'Macros: colors per theme and light theme',
-      'Makros: Farben je Design und helles Design',
-      'Macros : couleurs par thème et thème clair',
-      'Macros: colores por tema y tema claro',
-      'Macros: cores por tema e tema claro',
-    ],
-    text: [
-      'Il colore dei tasti delle macro si sceglie separatamente per il tema chiaro e per quello scuro. Nel tema chiaro i tasti hanno ora colore pieno e bordo visibile, come nello scuro.',
-      'The color of the macro buttons is chosen separately for the light and the dark theme. In the light theme the buttons now have a solid color and a visible border, as in the dark one.',
-      'Die Farbe der Makro-Tasten wird getrennt für das helle und das dunkle Design gewählt. Im hellen Design haben die Tasten jetzt eine volle Farbe und einen sichtbaren Rand, wie im dunklen.',
-      'La couleur des boutons de macro se choisit séparément pour le thème clair et pour le thème sombre. Dans le thème clair, les boutons ont maintenant une couleur pleine et une bordure visible, comme dans le sombre.',
-      'El color de los botones de macro se elige por separado para el tema claro y para el oscuro. En el tema claro los botones tienen ahora color pleno y borde visible, como en el oscuro.',
-      'A cor dos botões de macro escolhe-se em separado para o tema claro e para o escuro. No tema claro os botões têm agora cor cheia e borda visível, como no escuro.',
     ],
   },
 ];

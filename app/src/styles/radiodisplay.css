@@ -1119,3 +1119,24 @@ html[data-theme='light'] .rd-compact { background: #ffffff; border-color: #6d5bf
 .rd-duo .rx-vfob--a .rx-vfob-freq { opacity: 0.75; }
 .rd-duo .rd-slot--extras .rx-chips { align-self: flex-end; }
 .rd-duo .rd-slot--extras .rx-chip { flex: 0 0 auto; padding: 0 0.5rem; font-size: 0.58rem; }
+
+/* Display compatto a disposizione unica (richiesta del proprietario, 2026-11-19): il disegno e' 320 x 52 e il riquadro ha le stesse proporzioni
+   (niente stiramento), TUNE e' un pulsante sul disegno tra la frequenza e RX, sulla riga della barra in basso, e a destra non resta spazio vuoto */
+.rd-duo--single { height: 3.25rem; width: auto; }
+.rd-duo--single .rd-slot { width: 19.125rem; }
+.rd-slot--mini { position: relative; }
+.rd-tune {
+  margin: 0;
+  padding: 0 6px;
+  font: 600 9px/11px var(--font-data, monospace);
+  color: #8fa0b8;
+  background: #26323f;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.rd-tune:hover:not(:disabled), .rd-tune:focus-visible { color: #e8eefc; }
+.rd-tune--on { color: #2a2200; background: #ffd23a; }
+.rd-tune--wait { opacity: 0.6; }
+.rd-tune:disabled { cursor: default; }
+.rd-tune--in { position: absolute; left: 41.8%; top: 63.5%; }

@@ -3,7 +3,7 @@ import { DetachButton } from '../DetachButton';
 import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { formatVfo } from '../../lib/radioExtras';
-import { RadioExtras, useCatExtras } from './RadioExtras';
+import { RadioExtras, useCatExtras, TuneChip } from './RadioExtras';
 import { describeDisplay } from './describe';
 import { Ft2000Display, Ic7610Display } from './RigFaceDisplays';
 import { useT } from '../../i18n';
@@ -114,12 +114,16 @@ function RadioDisplayHeaderInner({ solo = false }: { solo?: boolean } = {}) {
   const vfoBText = !radioOff && vfoBHz ? `${formatVfo(vfoBHz)}${cat.data?.status.rig?.extras?.vfo_b_mode ? ` ${cat.data.status.rig.extras.vfo_b_mode}` : ''}` : null;
   const duo = (
     <div className={`rd-header rd-duo rd-duo--${pref.layout}`}>
-      <div className="rd-slot rd-trigger rd-trigger--static">
+      <div className="rd-slot rd-trigger rd-trigger--static rd-slot--mini">
         <RadioDisplay model={model} style={pref.style} size="mini" vfoB={vfoBText} />
+        {/* disposizione unica: TUNE sta dentro il display e a destra non resta spazio vuoto; con i due blocchi affiancati resta la scheda */}
+        {pref.layout === 'single' ? <TuneChip className="rd-tune--in" /> : null}
       </div>
-      <div className="rd-slot rd-slot--extras">
-        <RadioExtras hidePwr hideVfos />
-      </div>
+      {pref.layout === 'single' ? null : (
+        <div className="rd-slot rd-slot--extras">
+          <RadioExtras hidePwr hideVfos />
+        </div>
+      )}
     </div>
   );
   return withBox(solo ? duo : <Zoom off={inSplit}>{duo}</Zoom>);

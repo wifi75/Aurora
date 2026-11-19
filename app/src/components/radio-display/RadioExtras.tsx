@@ -83,6 +83,29 @@ export function actionTip(item: CatExtraItem) {
   return ACTION_TIP[item];
 }
 
+/** Il tasto TUNE da solo, per il display compatto: dentro il display, tra la frequenza e RX; giallo quando l'accordatore lavora. `null` se la radio non lo ha. */
+export function TuneChip({ className = '' }: { className?: string }) {
+  const t = useT();
+  const { cat, rig, waiting, click } = useCatExtras();
+  const tuning = useTuning();
+  const x = rig?.extras ?? {};
+  const showTune = x.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
+  if (!showTune) return null;
+  return (
+    <button
+      type="button"
+      className={`rd-tune${tuning ? ' rd-tune--on' : ''}${waiting === 'tune' ? ' rd-tune--wait' : ''} ${className}`.trim()}
+      title={t(ACTION_TIP.tune)}
+      aria-label={`TUNE: ${t(ACTION_TIP.tune)}`}
+      aria-busy={waiting === 'tune'}
+      disabled={waiting !== null}
+      onClick={() => void click('tune')}
+    >
+      TUNE
+    </button>
+  );
+}
+
 /**
  * Sotto il display resta poco: la frequenza del secondo VFO (se la radio la da') e il tasto TUNE. Preamplificatore, ATT, AGC, NB/NR, guadagni, RIT/XIT, VFO,
  * alimentazione, ALC e compressione non si mostrano piu' (scelta del proprietario, 2026-11-18): meno richieste alla radio e niente «clic» dei misuratori.
