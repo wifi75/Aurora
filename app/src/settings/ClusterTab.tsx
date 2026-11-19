@@ -70,7 +70,14 @@ function errorText(error: unknown, t: T): string {
 /** Esito del test di collegamento di un server. */
 type Led = { state: 'testing' } | { state: 'ok'; ms: number; banner: string | null } | { state: 'fail'; detail: string };
 
-function LedLight({ led, t }: { led: Led | undefined; t: T }) {
+function LedLight({ led, t, real }: { led: Led | undefined; t: T; real?: { state: string; detail?: string | null; spots: number } }) {
+  // lo stato vero del collegamento (quello che mostra «Stato dei collegamenti») vince sulla prova di raggiungibilita': un cluster che risponde
+  // ma chiude l'accesso non puo' avere il LED verde sopra e rosso sotto
+  if (real && (real.state === 'error' || real.state === 'connected')) {
+    const ok = real.state === 'connected';
+    const text = t(`cluster.state.${real.state}` as 'cluster.state.error', { n: real.spots, detail: real.detail ?? '' });
+    return <span className={`led led--${ok ? 'ok' : 'fail'}`} role="img" aria-label={text} title={text} />;
+  }
   const state = led?.state ?? 'testing';
   const text = !led || led.state === 'testing' ? t('cluster.led.testing') : led.state === 'ok' ? t('cluster.led.ok', { ms: led.ms }) : t('cluster.led.fail', { detail: led.detail });
   const banner = led?.state === 'ok' && led.banner ? ` — ${led.banner}` : '';
@@ -173,7 +180,7 @@ export function ClusterTab() {
         <div className="sx-list" title={t('tip.cluster.server')}>
           {shown.servers.map((s, i) => (
             <div className="sx-field cluster-server" key={`${s.host}:${s.port}`}>
-              <LedLight led={leds[`${s.host}:${s.port}`]} t={t} />
+              <LedLight led={leds[`${s.host}:${s.port}`]} t={t} real={s.enabled ? state.data?.servers.find((x) => x.key === `${s.host}:${s.port}`) : undefined} />
               <span className="sx-label">
                 <strong>{s.name}</strong> <span className="data muted">{s.host}:{s.port}</span>
               </span>

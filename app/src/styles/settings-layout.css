@@ -2178,3 +2178,7 @@
 .freq-tab td:nth-child(5) input[type="checkbox"] { margin: 0; vertical-align: middle; }
 .freq-tab td:nth-child(6) .freq-del { display: inline-flex; align-items: center; justify-content: center; }
 .freq-wrap { overflow-x: auto; }
+
+/* DX Cluster: nome utente e password dei server piu' larghi (la password salvata e quelle lunghe si leggevano a meta') */
+.settings-layout .sx-field .cluster-access input[type='text'] { width: 11rem; max-width: 100%; }
+.settings-layout .sx-field .cluster-access input[type='password'] { width: 20rem; max-width: 100%; }

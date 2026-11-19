@@ -585,6 +585,8 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
     let mut password_sent = false;
     // il cluster ha scritto «Sorry» (DXSpider e simili) dopo l'accesso: poi chiude, e il motivo e' nominativo o password sbagliati
     let mut refused = false;
+    // l'ultima riga scritta dal cluster: se chiude, si mostra cosi' l'utente vede cosa ha detto (per esempio il motivo del rifiuto)
+    let mut last_said = String::new();
     let login = if server.username.trim().is_empty() { callsign.to_string() } else { server.username.trim().to_uppercase() };
     let mut keepalive = tokio::time::interval(KEEPALIVE);
     keepalive.tick().await;
@@ -596,6 +598,9 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                 if n == 0 {
                     if refused {
                         return Err("il cluster ha rifiutato il nominativo o la password: controlla il nome utente e la password nelle impostazioni del DX Cluster".into());
+                    }
+                    if logged_in && !last_said.is_empty() {
+                        return Err(format!("connessione chiusa dal server dopo «{last_said}»"));
                     }
                     return Ok(());
                 }
@@ -613,6 +618,9 @@ async fn session(svc: &Arc<ClusterService>, server: &ServerCfg, callsign: &str, 
                             line.clear();
                             if logged_in && text.trim().to_ascii_lowercase().starts_with("sorry") {
                                 refused = true;
+                            }
+                            if logged_in && !text.trim().is_empty() && spot::parse_spot(&text).is_none() {
+                                last_said = text.trim().chars().take(80).collect();
                             }
                             if let Some(parsed) = spot::parse_spot(&text) {
                                 logged_in = true;
