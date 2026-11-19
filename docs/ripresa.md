@@ -2,6 +2,10 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.299 (pubblicata 2026-11-19T12:05:16Z)
+
+- `settings/useAutosave.ts`: il salvataggio automatico non parte finche' il cursore e' in una casella `input[type=password]` (riprova a ogni pausa e salva appena si esce). Causa: la pausa di 600 ms tra due tasti salvava la password a meta', `setDraft(null)` svuotava la casella e compariva il segnaposto «Password salvata». Vale per tutte le schede con `useAutosave` (cluster, CAT, ecc.). Prova: `settings/useAutosave.test.tsx`. Non provato a mano.
+
 ## Nella 0.11.298 (pubblicata 2026-11-19T10:38:46Z)
 
 - `lib/resetLayouts.ts` (`isLayoutKey`, `clearLayouts`): il pulsante di Impostazioni › Aspetto (`ap.boardResetBtn`) toglie dal browser tutte le disposizioni salvate (voci `aurora-board`, `aurora-bottom`, `aurora-finestre`, `aurora-layout`..., `aurora.*.cols`, larghezze e altezze, `aurora.sat.layout`, `aurora.xrx.*`) e ricarica; il `removeItem` si propaga al server delle preferenze (`syncSettings`). Il vecchio «Ripristina» azzerava solo `useBoard` e `useBottom`. Non provato dal vivo. Se compare una nuova voce di disposizione va aggiunta a `resetLayouts.ts`.

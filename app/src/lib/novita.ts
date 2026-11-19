@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.299',
-    released: '2026-11-19T13:00:00Z',
+    released: '2026-11-19T12:05:16Z',
     kind: 'fixed',
     title: [
       'Password scritte senza che si salvino a metà',
