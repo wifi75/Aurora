@@ -247,7 +247,7 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
             });
             // niente programma residente: l'avvio con Windows e' spento, salvo `AURORA_AUTOSTART=1`
             apply_autostart_choice(&handle, values.get("AURORA_AUTOSTART").map(String::as_str) == Some("1"));
-            open_window(&handle, &page, true)?;
+            open_main_with_retry(&handle, &page)?;
             // l'agente nel tray (acceso di fabbrica; `AURORA_AGENTE=0` lo spegne): parte con Windows e, se non c'e', si avvia adesso
             agent_on_start(values.get("AURORA_AGENTE").map(String::as_str) != Some("0") && agent::prefs().enabled);
             // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'
@@ -308,6 +308,33 @@ fn show_main(app: &AppHandle) {
 /// Il titolo della finestra principale: nome completo, versione e autore.
 fn main_title() -> String {
     format!("Aurora — Multimode Ham Radio Station {} By IU3WJQ - Tiziano Cassone", env!("CARGO_PKG_VERSION"))
+}
+
+/// La finestra principale con qualche tentativo: su alcune installazioni (Windows 11 Insider, WebView2 di prova) la creazione di WebView2 fallisce
+/// ogni tanto con 0x80070578 «l'identificatore della finestra non e' valido» e il programma si chiudeva con un panic (rapporti del 3, 5 e 19/11).
+/// Quasi sempre riesce al secondo o terzo tentativo, dopo un attimo.
+fn open_main_with_retry(app: &AppHandle, url: &str) -> Result<(), Box<dyn Error>> {
+    let mut last = None;
+    for attempt in 1..=4u32 {
+        match open_window(app, url, true) {
+            Ok(()) => {
+                if attempt > 1 {
+                    tracing::warn!("finestra principale aperta al tentativo {attempt}");
+                }
+                return Ok(());
+            }
+            Err(e) => {
+                tracing::warn!("finestra principale non aperta (tentativo {attempt} di 4): {e}");
+                // un residuo della finestra fallita non deve bloccare il tentativo dopo
+                if let Some(old) = app.get_webview_window("main") {
+                    let _ = old.destroy();
+                }
+                last = Some(e);
+                std::thread::sleep(std::time::Duration::from_millis(700 * u64::from(attempt)));
+            }
+        }
+    }
+    Err(last.unwrap_or_else(|| "finestra principale non aperta".into()))
 }
 
 fn open_window(app: &AppHandle, url: &str, visible: bool) -> Result<(), Box<dyn Error>> {
