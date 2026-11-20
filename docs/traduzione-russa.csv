@@ -1676,6 +1676,8 @@ cat.omnirig.missing,"OmniRig is not installed on this PC, so with this choice Au
 cat.restore,Restore Hamlib,Восстановить Hamlib
 cat.restore.busy,Downloading Hamlib…,Загрузка Hamlib…
 cat.restore.done,"Hamlib restored (official version, checksum verified). You can now connect the radio.","Hamlib восстановлен (официальная версия, контрольная сумма проверена). Теперь можно подключить радио."
+cat.external,Use a rigctld that is already running,Использовать уже запущенный rigctld
+tip.cat.external,"For those who already run their own Hamlib (the one used by oplog, WSJT-X or others): it picks the “NET rigctl” model, writes 127.0.0.1:4532 in the port (unless a network address is already there) and turns “Share with other programs” off. Aurora does not open the radio’s COM port: it talks to your rigctld. Then press Apply and Connect.","Для тех, у кого уже запущен собственный Hamlib (тот же, что у oplog, WSJT-X и других): выбирает модель «NET rigctl», записывает 127.0.0.1:4532 в порт (если там ещё нет сетевого адреса) и отключает «Делиться с другими программами». Aurora не открывает COM-порт радио: она работает с вашим rigctld. Затем нажмите «Применить» и «Подключить»."
 cat.connect,Connect,Подключить
 cat.disconnect,Disconnect,Отключить
 tip.cat.connect,Connects the radio with the applied settings. On opening the PTT is switched off and transmitting is refused for 5 seconds.,"Подключает радио с применёнными настройками. При открытии PTT выключается, передача запрещена на 5 секунд."
@@ -4782,6 +4784,20 @@ cop.columns,Columns to show,Столбцы для показа
 cluster.rotor.noGrid,The rotator does not know where you are: your locator is missing.,"Ротор не знает, где вы: не указан ваш локатор."
 cluster.rotor.noPos,I do not know where {call} is: no locator or country.,"Не знаю, где {call}: нет локатора или страны."
 cluster.rotor.going,Rotator towards {call}: {az}°,Ротор на {call}: {az}°
+digi.mi.macrosFldigi,Import fldigi macros…,Импорт макросов fldigi…
+fldigi.title,Import fldigi macros,Импорт макросов fldigi
+fldigi.found,The file has {n} macros. fldigi tags are translated into Aurora’s where the meaning is the same.,"В файле {n} макросов. Теги fldigi переводятся в теги Aurora там, где значение совпадает."
+fldigi.untranslated,These fldigi tags have no equivalent in Aurora and stay in the text: {tags}. Fix them by hand after the import.,"У этих тегов fldigi нет эквивалента в Aurora, они остаются в тексте: {tags}. Исправьте их вручную после импорта."
+fldigi.where,Where to put them,Куда поместить
+fldigi.where.all,For all modes (common macros),Для всех режимов (общие макросы)
+fldigi.where.mode,Only for the mode in use ({mode}),Только для текущего режима ({mode})
+fldigi.how,How,Как
+fldigi.how.add,"Add: only the keys in the file change, the others stay","Добавить: меняются только клавиши из файла, остальные остаются"
+fldigi.how.replace,Replace: the chosen group becomes only the one in the file,"Заменить: выбранная группа станет только тем, что в файле"
+fldigi.import,Import,Импортировать
+fldigi.notFile,This is not an fldigi macro file (the first line must be “//fldigi macro definition file”).,Это не файл макросов fldigi (первая строка должна быть «//fldigi macro definition file»).
+fldigi.empty,The file has no macros with a text or a label.,В файле нет макросов с текстом или названием.
+fldigi.done,Imported {n} fldigi macros.,Импортировано макросов fldigi: {n}.
 digi.menu.file,File,Файл
 digi.menu.edit,Edit,Правка
 digi.menu.mode,Mode,Режим

@@ -216,6 +216,22 @@ export const catStrings = {
     'Hamlib restaurado (versión oficial, huella comprobada). Ya puedes conectar la radio.',
     'Hamlib restaurado (versão oficial, impressão digital verificada). Já podes ligar o rádio.',
   ],
+  'cat.external': [
+    'Usa un rigctld già acceso',
+    'Use a rigctld that is already running',
+    'Ein bereits laufendes rigctld verwenden',
+    'Utiliser un rigctld déjà lancé',
+    'Usar un rigctld ya iniciado',
+    'Usar um rigctld já iniciado',
+  ],
+  'tip.cat.external': [
+    'Per chi ha già un suo Hamlib acceso (lo stesso di oplog, WSJT-X o altri): sceglie il modello «NET rigctl», scrive l’indirizzo 127.0.0.1:4532 nella porta (se non ce n’è già uno di rete) e spegne «Condividi con altri programmi». Aurora non apre la porta COM della radio: parla con il tuo rigctld. Poi premi Applica e Collega.',
+    'For those who already run their own Hamlib (the one used by oplog, WSJT-X or others): it picks the “NET rigctl” model, writes 127.0.0.1:4532 in the port (unless a network address is already there) and turns “Share with other programs” off. Aurora does not open the radio’s COM port: it talks to your rigctld. Then press Apply and Connect.',
+    'Für alle, die schon ihr eigenes Hamlib laufen haben (dasselbe wie oplog, WSJT-X oder andere): wählt das Modell „NET rigctl“, schreibt 127.0.0.1:4532 in den Port (falls dort noch keine Netzwerkadresse steht) und schaltet „Mit anderen Programmen teilen“ aus. Aurora öffnet den COM-Port des Funkgeräts nicht: es spricht mit deinem rigctld. Danach Anwenden und Verbinden drücken.',
+    'Pour ceux qui ont déjà leur propre Hamlib lancé (le même que oplog, WSJT-X ou d’autres) : choisit le modèle « NET rigctl », écrit 127.0.0.1:4532 dans le port (s’il n’y a pas déjà une adresse réseau) et désactive « Partager avec d’autres programmes ». Aurora n’ouvre pas le port COM de la radio : elle parle à votre rigctld. Ensuite appuyez sur Appliquer et Connecter.',
+    'Para quien ya tiene su propio Hamlib iniciado (el mismo de oplog, WSJT-X u otros): elige el modelo «NET rigctl», escribe 127.0.0.1:4532 en el puerto (si no hay ya una dirección de red) y apaga «Compartir con otros programas». Aurora no abre el puerto COM de la radio: habla con tu rigctld. Luego pulsa Aplicar y Conectar.',
+    'Para quem já tem o seu próprio Hamlib iniciado (o mesmo do oplog, WSJT-X ou outros): escolhe o modelo «NET rigctl», escreve 127.0.0.1:4532 na porta (se ainda não houver um endereço de rede) e desliga «Partilhar com outros programas». O Aurora não abre a porta COM do rádio: fala com o teu rigctld. Depois carrega em Aplicar e Ligar.',
+  ],
   'cat.connect': ['Collega', 'Connect', 'Verbinden', 'Connecter', 'Conectar', 'Ligar'],
   'cat.disconnect': ['Scollega', 'Disconnect', 'Trennen', 'Déconnecter', 'Desconectar', 'Desligar'],
   'tip.cat.connect': [

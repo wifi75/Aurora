@@ -1352,3 +1352,11 @@ html:root:root[data-theme='light'] .band-row .mode-switch-btn { background: #fff
 html:root:root .band-row .mode-switch-btn:hover:not(:disabled) { background: #26335a !important; }
 html:root:root[data-theme='light'] .band-row .mode-switch-btn:hover:not(:disabled) { background: #f1eeff !important; }
 html:root:root .band-row .mode-switch-btn { height: 28px !important; min-height: 28px !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+
+/* «Importa le macro di fldigi»: finestra con le scelte dove e come */
+.fldigi-card { max-width: 30rem; }
+.fldigi-title { margin: 0 0 0.6rem; font-size: 1rem; }
+.fldigi-warn { color: #fbbf24; }
+.fldigi-opts { margin: 0 0 0.8rem; padding: 0.4rem 0.6rem; border: 1px solid color-mix(in srgb, var(--border) 80%, transparent); border-radius: 6px; display: grid; gap: 0.3rem; font-size: 0.85rem; }
+.fldigi-opts legend { padding: 0 0.3rem; font-size: 0.78rem; opacity: 0.8; }
+.fldigi-opts label { display: flex; gap: 0.4rem; align-items: baseline; cursor: pointer; }

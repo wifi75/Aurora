@@ -1676,6 +1676,8 @@ cat.omnirig.missing,"OmniRig is not installed on this PC, so with this choice Au
 cat.restore,Restore Hamlib,Hamlib herstellen
 cat.restore.busy,Downloading Hamlib…,Hamlib downloaden…
 cat.restore.done,"Hamlib restored (official version, checksum verified). You can now connect the radio.","Hamlib hersteld (officiële versie, checksum gecontroleerd). Je kunt nu de zender verbinden."
+cat.external,Use a rigctld that is already running,Een al draaiende rigctld gebruiken
+tip.cat.external,"For those who already run their own Hamlib (the one used by oplog, WSJT-X or others): it picks the “NET rigctl” model, writes 127.0.0.1:4532 in the port (unless a network address is already there) and turns “Share with other programs” off. Aurora does not open the radio’s COM port: it talks to your rigctld. Then press Apply and Connect.","Voor wie al een eigen Hamlib draait (dezelfde als oplog, WSJT-X of andere): kiest het model “NET rigctl”, schrijft 127.0.0.1:4532 in de poort (tenzij er al een netwerkadres staat) en zet “Delen met andere programma’s” uit. Aurora opent de COM-poort van de radio niet: het praat met jouw rigctld. Druk daarna op Toepassen en Verbinden."
 cat.connect,Connect,Verbinden
 cat.disconnect,Disconnect,Verbinding verbreken
 tip.cat.connect,Connects the radio with the applied settings. On opening the PTT is switched off and transmitting is refused for 5 seconds.,Verbindt de zender met de toegepaste instellingen. Bij het openen wordt de PTT uitgeschakeld en wordt zenden 5 seconden geweigerd.
@@ -4782,6 +4784,20 @@ cop.columns,Columns to show,Te tonen kolommen
 cluster.rotor.noGrid,The rotator does not know where you are: your locator is missing.,De rotor weet niet waar je bent: je locator ontbreekt.
 cluster.rotor.noPos,I do not know where {call} is: no locator or country.,Ik weet niet waar {call} zit: geen locator of land.
 cluster.rotor.going,Rotator towards {call}: {az}°,Rotor naar {call}: {az}°
+digi.mi.macrosFldigi,Import fldigi macros…,Fldigi-macro’s importeren…
+fldigi.title,Import fldigi macros,Fldigi-macro’s importeren
+fldigi.found,The file has {n} macros. fldigi tags are translated into Aurora’s where the meaning is the same.,Het bestand bevat {n} macro’s. Fldigi-tags worden vertaald naar die van Aurora waar de betekenis hetzelfde is.
+fldigi.untranslated,These fldigi tags have no equivalent in Aurora and stay in the text: {tags}. Fix them by hand after the import.,Deze fldigi-tags hebben geen equivalent in Aurora en blijven in de tekst staan: {tags}. Pas ze na het importeren met de hand aan.
+fldigi.where,Where to put them,Waar plaatsen
+fldigi.where.all,For all modes (common macros),Voor alle modi (gemeenschappelijke macro’s)
+fldigi.where.mode,Only for the mode in use ({mode}),Alleen voor de gebruikte modus ({mode})
+fldigi.how,How,Hoe
+fldigi.how.add,"Add: only the keys in the file change, the others stay","Toevoegen: alleen de toetsen uit het bestand veranderen, de rest blijft"
+fldigi.how.replace,Replace: the chosen group becomes only the one in the file,Vervangen: de gekozen groep wordt alleen wat in het bestand staat
+fldigi.import,Import,Importeren
+fldigi.notFile,This is not an fldigi macro file (the first line must be “//fldigi macro definition file”).,Dit is geen fldigi-macrobestand (de eerste regel moet “//fldigi macro definition file” zijn).
+fldigi.empty,The file has no macros with a text or a label.,Het bestand bevat geen macro’s met tekst of label.
+fldigi.done,Imported {n} fldigi macros.,{n} fldigi-macro’s geïmporteerd.
 digi.menu.file,File,Bestand
 digi.menu.edit,Edit,Bewerken
 digi.menu.mode,Mode,Modus

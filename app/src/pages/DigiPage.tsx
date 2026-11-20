@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bearingDeg } from '../lib/geo';
 import { gridToLatLon } from '../lib/maidenhead';
+import { FldigiImportDialog } from '../components/FldigiImportDialog';
+import { applyImport, buildImport, parseFldigiFile, type ImportReport } from '../lib/fldigiMacros';
 import { addLogQso, rotatorGoto, ApiError, digiAbort, digiMacroPlay, digiTextFile, getLogQsos, digiRx, digiRxPage, postFrequency, digiTransmit, digiTransmitRestart, digiTxClose, digiTxOpen, getDigi, getExtraRx, putExtraRx, type ExtraRx, getDigiNotches, importMacros, putDigi, putDigiNotches, type ClusterSpot, type DigiNotch, type DigiMacro, type DigiSettings, type DigiSnapshot, type Log4omQso } from '../api/client';
 import { ControlBar } from '../components/digi/ControlBar';
 import { FreqPicker } from '../components/FreqPicker';
@@ -1616,6 +1618,36 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     );
   };
 
+  // «Importa le macro di fldigi…»: si sceglie il file `.mdf`, si legge e si chiede dove metterle (niente cambia finche' non si conferma)
+  const fldigiFile = useRef<HTMLInputElement | null>(null);
+  const [fldigi, setFldigi] = useState<ImportReport | null>(null);
+  const readFldigi = (file: File | undefined) => {
+    if (!file) return;
+    void file.text().then(
+      (content) => {
+        const parsed = parseFldigiFile(content);
+        if (!parsed) {
+          toast(t('fldigi.notFile'), 'error');
+          return;
+        }
+        const report = buildImport(parsed);
+        if (report.macros.length === 0) {
+          toast(t('fldigi.empty'), 'info');
+          return;
+        }
+        setFldigi(report);
+      },
+      () => toast(t('fldigi.notFile'), 'error'),
+    );
+  };
+  const confirmFldigi = (where: 'all' | 'mode', how: 'add' | 'replace') => {
+    if (!fldigi) return;
+    const before = { macros: s.macros, mode_macros: s.mode_macros };
+    save(applyImport(s, fldigi.macros, where, how));
+    toastAction(t('fldigi.done', { n: String(fldigi.macros.length) }), t('digi.bar.undo'), () => save(before));
+    setFldigi(null);
+  };
+
   // la finestra di ricezione in un file di testo (cartella dei download)
   const saveRxText = () => {
     const url = URL.createObjectURL(new Blob([getDigiText().replace(/\r?\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' }));
@@ -1694,6 +1726,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       items: [
         { label: t('digi.mi.macrosMerge'), checked: s.merge_macros[s.mode] !== false, onSelect: () => save({ merge_macros: { ...s.merge_macros, [s.mode]: s.merge_macros[s.mode] === false } }) },
         'sep',
+        { label: t('digi.mi.macrosFldigi'), onSelect: () => fldigiFile.current?.click() },
         { label: t('digi.mi.macrosReset'), onSelect: resetMacros },
       ],
     },
@@ -2111,6 +2144,17 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   return (
     <>
       <MenuBar menus={applyAvailability(menus, s.mode, t as never, t('digi.mi.onlyDigital'))} />
+      <input
+        ref={fldigiFile}
+        type="file"
+        hidden
+        accept=".mdf,.txt,text/plain"
+        onChange={(e) => {
+          readFldigi(e.target.files?.[0]);
+          e.target.value = '';
+        }}
+      />
+      {fldigi ? <FldigiImportDialog report={fldigi} modeLabel={s.mode.toUpperCase()} onConfirm={confirmFldigi} onCancel={() => setFldigi(null)} /> : null}
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
 
       {/* macro a sinistra (colonne fisse e piu' corte), a fianco il selettore di banda con le frequenze del piano IARU */}
