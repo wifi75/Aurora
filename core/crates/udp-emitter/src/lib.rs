@@ -439,6 +439,7 @@ impl Session {
             | Event::Fox(_)
             | Event::Notice { .. }
             | Event::Sstv(_)
+            | Event::Wefax(_)
             | Event::Digi(_)
             | Event::WsprCycle(_) => Vec::new(),
             // «Cancella» della finestra di banda (0) o di tutte e due (2): come `decodes_cleared` di WSJT-X si manda il Clear e si dimenticano i

@@ -1,0 +1,16 @@
+[package]
+name = "mode-wefax"
+description = "WEFAX di Aurora: ricezione delle cartine meteo (IOC 576 e 288), algoritmi ripresi da fldigi 4.2.13 di W1HKJ e Remi Chateauneu (GPL 3), a sua volta derivato da HAMFAX di Christof Schmitt"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+aurora-core = { path = "../aurora-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+png = "0.18.1"
+base64 = "0.22.1"

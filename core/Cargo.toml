@@ -37,3 +37,7 @@ opt-level = 2
 # l'RTTY nelle prove elabora minuti di audio (e la prova con fldigi come arbitro): anche in debug va ottimizzato
 [profile.dev.package.mode-digi]
 opt-level = 2
+
+# il WEFAX nelle prove elabora minuti di audio: anche in debug va ottimizzato
+[profile.dev.package.mode-wefax]
+opt-level = 2

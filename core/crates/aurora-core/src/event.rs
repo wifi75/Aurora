@@ -321,6 +321,8 @@ pub enum Event {
     Notice { id: String, detail: String },
     /// SSTV (crate `mode-sstv`): righe dell'immagine in arrivo, immagine finita, stato della ricezione e della trasmissione.
     Sstv(SstvEvent),
+    /// WEFAX (crate `mode-wefax`): righe della cartina in arrivo, immagine finita, stato della ricezione.
+    Wefax(WefaxEvent),
     /// Un avvenimento dei modi testuali (PSK31/PSK63, RTTY).
     Digi(DigiEvent),
     /// Un periodo WSPR o FST4W ricevuto dal vivo e decodificato (anche senza messaggi): serve solo all'invio facoltativo a WSPRnet, la pagina
@@ -404,6 +406,43 @@ pub struct SstvEvent {
     /// L'istogramma dei livelli degli ultimi secondi (`rx_hist`): 256 cassetti da 6,25 Hz, 1900 Hz = 128, valori 0-40.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hist: Option<Vec<u8>>,
+}
+
+/// Un avvenimento del WEFAX. `kind`: `rx_start` (cartina che comincia: `ioc`, `lpm`, `width`, `message` = come e' partita), `rx_rows`
+/// (righe nuove da `first_row`, `rows` righe, `gray` in base64, un byte per pixel, 0 nero e 255 bianco; se l'immagine viene riallineata
+/// arrivano di nuovo tutte da 0), `rx_done` (cartina salvata `image_id`, `message` = perche' e' finita), `rx_lost` (immagine scartata,
+/// `message` = motivo), `rx_status` (ascolto, `state` apt/phasing/image, livello, correlazione in `sync`).
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct WefaxEvent {
+    pub kind: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ioc: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lpm: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_row: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rows: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gray: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sync: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level_db: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listening: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub complete: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 /// Un avvenimento dei modi testuali. `kind`: `rx_text` (caratteri nuovi in `text`), `rx_status` (ascolto, livello, modo, frequenza),

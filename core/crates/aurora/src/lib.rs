@@ -2320,6 +2320,14 @@ pub async fn run(
             let _ = events.send(Event::Sstv(ev));
         }));
     }
+    // WEFAX (crate mode-wefax): solo ricezione, stesso schema dell'SSTV
+    let wefax = Arc::new(mode_wefax::WefaxService::open(&config.data_dir));
+    {
+        let events = bus.events();
+        wefax.set_emitter(Arc::new(move |ev| {
+            let _ = events.send(Event::Wefax(ev));
+        }));
+    }
     // modi testuali (crate mode-digi): stesso schema dell'SSTV, ascolto acceso solo a richiesta
     let digi = Arc::new(mode_digi::DigiService::open(&config.data_dir));
     {
@@ -2997,6 +3005,7 @@ pub async fn run(
         .with_cat(Arc::clone(&cat))
         .with_rotator(Arc::clone(&rotator))
         .with_sstv(Arc::clone(&sstv))
+        .with_wefax(Arc::clone(&wefax))
         .with_digi(Arc::clone(&digi))
         .with_sat(Arc::clone(&sat))
         .with_automation(automation);
@@ -3009,10 +3018,12 @@ pub async fn run(
     let (to_engine, native_rx) = audio_spectrum::queue::channel(audio_spectrum::queue::DEFAULT_MAX_SECS);
     {
         let sstv = Arc::clone(&sstv);
+        let wefax = Arc::clone(&wefax);
         let digi = Arc::clone(&digi);
         let spawned = std::thread::Builder::new().name("aurora-audio-tap".into()).spawn(move || {
             while let Ok(chunk) = captured.recv() {
                 sstv.feed(chunk.rate, &chunk.samples);
+                wefax.feed(chunk.rate, &chunk.samples);
                 digi.feed(chunk.rate, &chunk.samples);
                 if to_engine.send(chunk).is_err() {
                     break;

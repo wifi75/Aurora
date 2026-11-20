@@ -6,6 +6,7 @@ mod rotator_api;
 mod digi_api;
 mod sat_api;
 mod sstv_api;
+mod wefax_api;
 pub mod engine_settings;
 pub mod files_check;
 mod frames;
@@ -187,6 +188,8 @@ pub struct AppState {
     pub rotator: Option<Arc<rig_control::rotator::RotatorService>>,
     /// SSTV: ricezione, trasmissione e archivio delle immagini.
     pub sstv: Option<Arc<mode_sstv::SstvService>>,
+    /// WEFAX: ricezione delle cartine meteo.
+    pub wefax: Option<Arc<mode_wefax::WefaxService>>,
     /// I modi testuali (PSK31/PSK63, RTTY).
     pub digi: Option<Arc<mode_digi::DigiService>>,
     /// I satelliti: tracking, Doppler e rotore.
@@ -325,7 +328,7 @@ impl AppState {
             }
         });
         let (shutdown, _) = watch::channel(false);
-        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, log_edited: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, lotw: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
+        AppState { bus, auth, logbook, policy, secure_cookie, automation: None, station_info: Arc::new(serde_json::json!({})), rig: None, cat: None, rotator: None, sstv: None, wefax: None, digi: None, sat: None, stats: None, log4om: None, worked_map: None, dxcc_matrix: None, log_station: None, log_changed: None, log_deleted: None, log_edited: None, manual_dial: None, save_dialog: None, open_dialog: None, log4om_db: None, crash_folder: None, support_bundle: None, settings_backup: None, settings_restore: None, error_reports: None, last_bundle: Arc::default(), save_open: Arc::default(), wishlist: None, input_level: None, history: None, lotw: None, online: None, updates: None, update_installer: None, engine_settings: None, audio: None, clock: None, cluster: None, qmap: None, log_prompt: Arc::new(log_prompt::LogPrompt::new()), pair_watch: Arc::new(pair_watch::PairWatch::new()), dxcc: None, ui_settings: None, band_filters: Arc::default(), rules_saver: None, frequencies: Arc::default(), schedule: Arc::default(), settings_saver: None, open_access: Arc::default(), open_access_file: None, local_trust: false, native_status: Arc::default(), lan: Arc::default(), shared, shutdown: Arc::new(shutdown), contest: None }
     }
 
     /// Registra la funzione che racconta lo stato del motore proprio (per `GET /api/v1/engine/native`).
@@ -592,6 +595,11 @@ impl AppState {
     /// Il servizio CAT. Se la radio e' collegata dalla scheda Radio dopo l'avvio, i comandi (cambio banda...) la usano comunque.
     pub fn with_sstv(mut self, sstv: Arc<mode_sstv::SstvService>) -> AppState {
         self.sstv = Some(sstv);
+        self
+    }
+
+    pub fn with_wefax(mut self, wefax: Arc<mode_wefax::WefaxService>) -> AppState {
+        self.wefax = Some(wefax);
         self
     }
 
