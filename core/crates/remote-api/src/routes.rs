@@ -1027,6 +1027,10 @@ async fn change_band(State(state): State<AppState>, _: Authed, Json(body): Json<
 struct FrequencyBody {
     /// Frequenza di dial in Hz.
     hz: u64,
+    /// Solo ascolto (la pagina WEFAX: stazioni meteo in onde corte, fuori dalle bande dei radioamatori): si accetta qualunque frequenza HF
+    /// da 1,6 a 30 MHz. La radio non trasmette li': e' una scelta della sola ricezione.
+    #[serde(default)]
+    receive_only: bool,
 }
 
 /// Porta la radio su una frequenza esatta (per esempio quella di uno spot), solo dentro le bande dei radioamatori.
@@ -1037,7 +1041,8 @@ async fn change_frequency(State(state): State<AppState>, _: Authed, Json(body): 
     if rig.is_none() && state.manual_dial.is_none() {
         return Err(ApiError::new(StatusCode::SERVICE_UNAVAILABLE, "rig_unavailable"));
     }
-    if rig_control::bands::amateur_band(body.hz).is_none() {
+    let allowed = if body.receive_only { (1_600_000..=30_000_000).contains(&body.hz) } else { rig_control::bands::amateur_band(body.hz).is_some() };
+    if !allowed {
         return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_frequency"));
     }
     if state.current_status().is_some_and(|s| s.transmitting) {

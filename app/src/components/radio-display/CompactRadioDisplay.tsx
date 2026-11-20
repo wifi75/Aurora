@@ -7,7 +7,7 @@ import { useCatExtras, useTuneButton } from './RadioExtras';
  * la frequenza della radio, la lettura principale (S-meter in ricezione, potenza in trasmissione), la potenza e il ROS, e il tasto TUNE
  * dell'accordatore della radio (solo se la radio ce l'ha). Sostituisce lo stile scelto: la scelta resta salvata e torna su uno schermo largo.
  */
-export function CompactRadioDisplay({ model }: { model: DisplayModel }) {
+export function CompactRadioDisplay({ model, noTune = false }: { model: DisplayModel; /** Senza il tasto TUNE (pagine di sola ricezione, come il WEFAX: mai trasmettere). */ noTune?: boolean }) {
   const t = useT();
   const { cat, rig, waiting } = useCatExtras();
   const tune = useTuneButton();
@@ -16,7 +16,7 @@ export function CompactRadioDisplay({ model }: { model: DisplayModel }) {
   const power = readouts.find((r) => r.key === 'PO')?.text ?? '—';
   const swr = readouts.find((r) => r.key === 'SWR')?.text ?? '—';
   // come sotto il display grande: la radio dice di avere l'accordatore, oppure non si leggono i dati in piu' e non si sa
-  const hasTuner = rig?.extras?.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none');
+  const hasTuner = !noTune && (rig?.extras?.tuner != null || (cat.data !== undefined && cat.data.config.read_extras !== true && cat.data.config.backend !== 'none'));
   const freq = hasFrequency(model.dialHz) ? formatRadioFrequency(model.dialHz) : '--.---.--';
   return (
     <div className={`rd-compact${model.transmitting ? ' rd-compact--tx' : ''}`} role="group" aria-label={t('rd.compactLabel')}>

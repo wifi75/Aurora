@@ -199,8 +199,9 @@ export async function postBand(band: string): Promise<{ dial_hz?: number }> {
 }
 
 /** Porta la radio su una frequenza esatta (Hz), come per uno spot del cluster. */
-export async function postFrequency(hz: number): Promise<{ dial_hz?: number }> {
-  return (await (await request('/commands/frequency', jsonInit({ hz }))).json()) as { dial_hz?: number };
+/** Porta la radio su una frequenza. `receiveOnly`: solo ascolto (stazioni meteo WEFAX, fuori dalle bande dei radioamatori, da 1,6 a 30 MHz). */
+export async function postFrequency(hz: number, receiveOnly = false): Promise<{ dial_hz?: number }> {
+  return (await (await request('/commands/frequency', jsonInit(receiveOnly ? { hz, receive_only: true } : { hz }))).json()) as { dial_hz?: number };
 }
 
 export async function postMode(mode: string): Promise<void> {

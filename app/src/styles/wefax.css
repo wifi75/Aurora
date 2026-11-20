@@ -98,3 +98,16 @@
   .wefax-page .sstv-head { flex-wrap: wrap; }
   .wefax-mini { margin-left: 0; width: 100%; }
 }
+
+/* tutto su una riga: modo, frequenze (carattere piccolo), zoom, display e cascata; sotto 1250 px si va a capo invece di tagliare */
+.wefax-freq { font-size: 0.78rem; padding-block: 0.25rem; width: 11rem; max-width: 11rem; flex-basis: 11rem; }
+.wefax-freq option, .wefax-freq optgroup { font-size: 0.8rem; }
+.wefax-page .sstv-modesel { font-size: 0.82rem; }
+.wefax-toolbar-slot { display: flex; align-items: center; min-width: 0; flex: 0 1 auto; }
+.wefax-toolbar-slot .wefax-toolbar { flex-wrap: nowrap; gap: 0.35rem; }
+.wefax-toolbar-slot .wefax-toolbar .sstv-btn { padding: 0.15rem 0.5rem; font-size: 0.8rem; min-width: 1.8rem; }
+.wefax-toolbar-slot .wefax-zoom { min-width: 2.8rem; font-size: 0.85rem; }
+.wefax-toolbar-slot .wefax-follow { margin-left: 0.2rem; font-size: 0.78rem; white-space: nowrap; }
+.wefax-toolbar-slot .sstv-views button { padding: 0.15rem 0.55rem; font-size: 0.8rem; }
+.wefax-page .sstv-head { flex-wrap: wrap; row-gap: 0.3rem; }
+@media (min-width: 1250px) { .wefax-page .sstv-head { flex-wrap: nowrap; } }

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { getWefaxCurrentBlob } from '../../api/client';
 import { useT } from '../../i18n';
 import { decodeGrayRows, fitScale, followScrollTop, stepZoom } from '../../lib/wefax';
@@ -16,6 +17,11 @@ type ZoomMode = 'fit' | number;
  * (si disattiva). Il riquadro occupa al massimo l'altezza dello schermo; la ricezione vive nel motore e riprende al rientro.
  */
 export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: { snapRows: number; listening: boolean; receiving: boolean; onSaved: () => void; onChanged: () => void }) {
+  // lo spazio sulla riga in alto della pagina dove vanno i comandi dello zoom (se la pagina lo offre)
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setSlot(document.getElementById('wefax-toolbar-slot'));
+  }, []);
   const t = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -125,9 +131,9 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   }, [shownRows, scale, follow, receiving]);
 
   const pixelated = scale >= 1;
-  return (
-    <div className="wefax-viewer">
-      <div className="wefax-toolbar" role="toolbar" aria-label={t('wefax.view.label')}>
+  // i comandi dello zoom stanno sulla riga in alto della pagina (nello spazio `wefax-toolbar-slot`), se c'e'; altrimenti sopra il visore
+  const toolbar = (
+    <div className="wefax-toolbar" role="toolbar" aria-label={t('wefax.view.label')}>
         <button type="button" className="glass sstv-btn" onClick={() => setZoom(stepZoom(scale, -1))} title={t('wefax.view.zoomOut')} aria-label={t('wefax.view.zoomOut')}>
           −
         </button>
@@ -155,6 +161,10 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
           </span>
         ) : null}
       </div>
+  );
+  return (
+    <div className="wefax-viewer">
+      {slot ? createPortal(toolbar, slot) : toolbar}
       <div className="wefax-box" ref={box} data-testid="wefax-box">
         <div className="wefax-sheet" style={{ width: Math.round(size.w * scale), height: Math.max(1, Math.round(shownRows * scale)) }}>
           <canvas

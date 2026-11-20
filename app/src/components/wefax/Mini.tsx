@@ -14,7 +14,7 @@ export function WefaxMini() {
   const model = displayModel(status);
   return (
     <div className="wefax-mini">
-      <CompactRadioDisplay model={model} />
+      <CompactRadioDisplay model={model} noTune />
       <div className="wefax-mini-wf" aria-label="Waterfall">
         <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
       </div>

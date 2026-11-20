@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.310 - 2026-11-20
+
+- Aggiornamenti: all'avvio, se c'e' una versione nuova, si apre direttamente la locandina con tutte le novita' (tolta la finestrella «Vuoi aggiornare?» della 0.11.309).
+- Barra in alto: sul PC un solo ingranaggio, che apre direttamente le Impostazioni (dove stanno anche Guida e Novita'); nella 0.11.309 ce n'erano due. Il telefono non cambia.
+- WEFAX: modo, frequenze (carattere piu' piccolo), zoom, display e cascata stanno su una sola riga; sotto 1250 px vanno a capo.
+- WEFAX: le frequenze delle stazioni meteo (fuori dalle bande dei radioamatori, da 1,6 a 30 MHz) ora si impostano davvero sulla radio (il comando `commands/frequency` accetta `receive_only`); nella pagina WEFAX non c'e' piu' il tasto TUNE: si riceve soltanto, non si trasmette mai.
+
 ## 0.11.309 - 2026-11-20
 
 - Satelliti: nuova pagina «Inseguimento e rotore» con cursori e caselle (anticipo di base 60 s invece di 150, tolleranza, parcheggio facoltativo dopo il passaggio); con radio come l'IC-820H niente piu' raffica di comandi di split e modo; ripiego sperimentale a due VFO (spento di base); scelta dei modi di ricezione e trasmissione. Non provato con radio e rotore veri.

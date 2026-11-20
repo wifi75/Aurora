@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.310',
+    released: '2026-11-20T10:30:00Z',
+    kind: 'fixed',
+    title: [
+      'Locandina diretta all’avvio e un solo ingranaggio',
+      'Poster shown straight at startup and a single gear',
+      'Plakat direkt beim Start und nur ein Zahnrad',
+      'Affiche directe au démarrage et un seul engrenage',
+      'Cartel directo al arrancar y un solo engranaje',
+      'Cartaz direto ao iniciar e uma só roda dentada',
+    ],
+    text: [
+      'All’avvio, se c’è una versione nuova, si apre direttamente la locandina con tutte le novità (tolta la finestrella «Vuoi aggiornare?» della 0.11.309). Sul PC c’è un solo ingranaggio in alto, che apre direttamente le Impostazioni (Guida e Novità sono lì dentro): nella 0.11.309 ce n’erano due. Il telefono non cambia.',
+      'At startup, if there is a new version, the poster with all the news opens straight away (the small “Do you want to update?” window of 0.11.309 is gone). On the PC there is a single gear at the top, which opens Settings directly (Guide and News are in there): in 0.11.309 there were two. The phone does not change.',
+      'Beim Start öffnet sich bei einer neuen Version sofort das Plakat mit allen Neuigkeiten (das kleine Fenster „Möchten Sie aktualisieren?“ der 0.11.309 ist weg). Am PC gibt es oben nur noch ein Zahnrad, das direkt die Einstellungen öffnet (Anleitung und Neuigkeiten sind darin): in der 0.11.309 waren es zwei. Das Telefon ändert sich nicht.',
+      'Au démarrage, s’il y a une nouvelle version, l’affiche avec toutes les nouveautés s’ouvre directement (la petite fenêtre « Voulez-vous mettre à jour ? » de la 0.11.309 a disparu). Sur le PC il n’y a plus qu’un engrenage en haut, qui ouvre directement les Réglages (Guide et Nouveautés y sont) : dans la 0.11.309 il y en avait deux. Le téléphone ne change pas.',
+      'Al arrancar, si hay una versión nueva, se abre directamente el cartel con todas las novedades (se quitó la ventanita «¿Quieres actualizar?» de la 0.11.309). En el PC hay un solo engranaje arriba, que abre directamente los Ajustes (Guía y Novedades están dentro): en la 0.11.309 había dos. El teléfono no cambia.',
+      'Ao iniciar, se houver uma versão nova, abre-se logo o cartaz com todas as novidades (a janelinha «Quer atualizar?» da 0.11.309 saiu). No PC há uma só roda dentada no topo, que abre diretamente as Definições (Guia e Novidades estão lá dentro): na 0.11.309 havia duas. O telefone não muda.',
+    ],
+  },
+  {
     version: '0.11.309',
     released: '2026-11-20T09:35:42Z',
     kind: 'new',
@@ -819,28 +840,6 @@ export const NOVITA: readonly Novita[] = [
       '0.11.285 a le même contenu que 0.11.284 : elle n’existe que parce que les copies installées depuis une version de test de 0.11.284 ne se mettaient pas à jour toutes seules (même numéro de version).',
       'La 0.11.285 tiene el mismo contenido que la 0.11.284: solo existe porque las copias instaladas desde una compilación de prueba de la 0.11.284 no se actualizaban solas (mismo número de versión).',
       'A 0.11.285 tem o mesmo conteúdo da 0.11.284: só existe porque as cópias instaladas de uma compilação de teste da 0.11.284 não se atualizavam sozinhas (mesmo número de versão).',
-    ],
-  },
-  {
-    version: '0.11.284',
-    released: '2026-11-17T14:49:25Z',
-    kind: 'new',
-    featured: true,
-    title: [
-      'Contest a schede spostabili, anche in CW',
-      'Contest with movable cards, in CW too',
-      'Contest mit verschiebbaren Karten, auch in CW',
-      'Contest à cartes déplaçables, aussi en CW',
-      'Contest con tarjetas movibles, también en CW',
-      'Contest com cartões móveis, também em CW',
-    ],
-    text: [
-      'Con un contest attivo la pagina dei modi testuali (SSB, CW, RTTY, PSK) ha schede che si spostano e si ridimensionano come nei Satelliti, con «Blocca la disposizione» e «Ripristina disposizione»; la disposizione è salvata per ogni contest. Le schede dei moltiplicatori sono a caselle con i punti colorati per banda, le statistiche sono in tabella e ci sono il punteggio e il ritmo.',
-      'With a contest active, the text-modes page (SSB, CW, RTTY, PSK) has cards that you can move and resize as on the Satellites page, with “Lock the layout” and “Restore layout”; the layout is saved for each contest. The multiplier cards are grids of boxes with the points coloured by band, the statistics are in a table, and there are the score and the rate.',
-      'Bei einem aktiven Contest hat die Seite der Textmodi (SSB, CW, RTTY, PSK) Karten, die sich wie bei den Satelliten verschieben und in der Größe ändern lassen, mit „Anordnung sperren“ und „Anordnung zurücksetzen“; die Anordnung wird für jeden Contest gespeichert. Die Multiplikator-Karten bestehen aus Kästchen mit nach Band gefärbten Punkten, die Statistiken stehen in einer Tabelle, und es gibt Punktestand und Rate.',
-      'Avec un contest actif, la page des modes texte (SSB, CW, RTTY, PSK) a des cartes qui se déplacent et se redimensionnent comme dans les Satellites, avec « Verrouiller la disposition » et « Rétablir la disposition » ; la disposition est enregistrée pour chaque contest. Les cartes des multiplicateurs sont des grilles de cases avec les points colorés par bande, les statistiques sont dans un tableau, et il y a le score et le rythme.',
-      'Con un contest activo la página de los modos de texto (SSB, CW, RTTY, PSK) tiene tarjetas que se mueven y se redimensionan como en Satélites, con «Bloquear la disposición» y «Restablecer la disposición»; la disposición se guarda para cada contest. Las tarjetas de los multiplicadores son cuadrículas de casillas con los puntos coloreados por banda, las estadísticas están en una tabla y hay puntuación y ritmo.',
-      'Com um contest ativo a página dos modos de texto (SSB, CW, RTTY, PSK) tem cartões que se movem e se redimensionam como nos Satélites, com «Bloquear a disposição» e «Repor a disposição»; a disposição fica guardada para cada contest. Os cartões dos multiplicadores são grelhas de caixas com os pontos coloridos por banda, as estatísticas estão numa tabela e há a pontuação e o ritmo.',
     ],
   },
 ];

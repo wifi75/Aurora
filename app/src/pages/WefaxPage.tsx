@@ -103,7 +103,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
             const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
             if (p) {
               setChosen(p.id);
-              void postFrequency(p.dialHz).catch(() => undefined);
+              void postFrequency(p.dialHz, true).catch(() => undefined);
             }
           }}
         >
@@ -120,6 +120,8 @@ function WefaxBody({ solo }: { solo: boolean }) {
             </optgroup>
           ))}
         </select>
+        {/* i comandi dello zoom del visore arrivano qui (stessa riga) */}
+        <div id="wefax-toolbar-slot" className="wefax-toolbar-slot" />
         <WefaxMini />
         {solo ? null : <DetachButton item="wefax" />}
       </header>
