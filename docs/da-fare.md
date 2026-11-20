@@ -38,7 +38,9 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Contest: `.dom` JIDX (servono i dati veri), schede mancanti, altri contest in cartella; ricontrollare le date delle regole nuove
 - [x] Satelliti: preavviso rotore, suoni, schede (0.11.308; spazi vuoti da guardare a schermo)
 - [ ] Stazione stretta (0.11.308): guardarla a schermo con radio e dati veri
-- [ ] Satelliti: il rotore non parcheggia a fine passaggio (decidere)
+- [x] Satelliti: parcheggio del rotore a fine passaggio fatto (0.11.309, opzionale: resta, parcheggio, prossimo passaggio)
+- [x] Satelliti: intervallo e soglia dell'uplink configurabili (Impostazioni dei satelliti, solo col ripiego a due VFO, sperimentale)
+- [ ] IC-820H con SAT acceso: nel pacchetto 7A547090 (AO-7) la lettura `f` del VFO principale salta tra 145,95 e 445,95 MHz e Aurora la prende per cambi di banda (azzera la TX); `F` sul VFO secondario accettato (RPRT 0) ma una volta rifiutato (-9) e il ripiego si spegne; attende il test a mano di Vladimir
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
 - [x] Panic `tao`: prima correzione sulla chiusura (0.11.308)
