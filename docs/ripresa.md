@@ -4,6 +4,14 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## In preparazione (0.11.312, gia' su `main`, NON pubblicata)
+
+- `Live.tsx`: la conferma di chiamata (`CallUnseenDialog`) non scatta piu' sul doppio clic delle liste dei decode (`onReply(id, true)`); resta per «CQ e novita'», DXpedition e avvisi di nuovi DX. L'interruttore sta in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo (non in «Registrazione e comportamento»: F1DSZ era stato indirizzato male).
+- `modeRetune.ts`: `rememberDialBeforeReceiveOnly` + `retuneTo`: uscendo dal WEFAX (frequenze fuori banda) la radio torna alla banda di prima; `lastPage.ts`/`ModeNav.tsx`: il gruppo PSK·RTTY·SSTV riapre l'ultima pagina del gruppo (`lastTextPage`).
+- Russo nell'installatore (`installer.nsi`: 17 `LangString ... ${LANG_RUSSIAN}`, pagina dei dati con `$LANGUAGE = 1049`, `tauri.conf.json` «Russian») e nelle cartoline del tray (`agent.rs`: `tr_ru`, `tr_for`; il russo NON e' una settima voce fissa delle tabelle: `lang_index("ru")` resta 1). Non provato con l'installatore vero.
+- Pulsanti dei temi scuri illeggibili al passaggio del mouse: controllo in corso (agente), file `pulsanti-tema-scuro.css`.
+- Poi: 0.11.313 con l'etichetta dei satelliti nella barra in alto (#82).
+
 ## Nella 0.11.311 (pubblicata 2026-11-20T10:34:08Z)
 
 - Russo come ottava lingua: dizionario `app/src/i18n/ru/`, foglio `docs/traduzione-russa.csv`, script `export-ru.mjs`/`importa-ru.mjs` (8.311 voci: interfaccia, Guida, ultime 10 Novita', macro). Traduzione AI da far rivedere (Vladimir). NON nell'installatore Windows ne' nelle schede dell'agente nel tray (restano in inglese). `lang` della pagina impostato all'avvio.

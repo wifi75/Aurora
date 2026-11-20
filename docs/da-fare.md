@@ -22,7 +22,9 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] #81 Luc: prova Wait and Pounce
 - [ ] #80 HB9TZU: quali comandi FLDigi mancano
 - [ ] #82 ct1bxx: etichetta nella barra in alto in OGNI pagina, solo satelliti seguiti, 5 min prima (regolabile), suono, conto alla rovescia, chiusura a mano: risposta data, DA FARE (0.11.313)
-- [ ] F1DSZ: risposta inviata dal proprietario; correggere la conferma di chiamata (non sulle righe visibili delle liste) nella 0.11.312
+- [x] F1DSZ: risposta inviata; conferma di chiamata corretta su `main` (esce nella 0.11.312); gli ho dato un percorso sbagliato: l'interruttore e' in Modi › FT8 · FT4 › Messaggi e filtri › Schermo
+- [ ] 0.11.312: aspetta il controllo dei pulsanti dei temi scuri, poi compilare e pubblicare insieme
+- [ ] Russo: far rivedere a Vladimir; provare l'installatore in russo e le cartoline del tray (non provati)
 - [ ] #74 Luc: risposta sui contest, poi importare gli altri contest come gli ARRL
 
 ## Prove con la radio (le fai tu)
