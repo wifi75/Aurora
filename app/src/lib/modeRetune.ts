@@ -65,18 +65,45 @@ async function regionOf(client: QueryClient): Promise<IaruRegion> {
 
 /** La frequenza della radio (in una banda radioamatoriale) prima di una pagina di sola ricezione fuori banda (WEFAX): ci si torna uscendone. */
 let beforeReceiveOnly = 0;
+const BEFORE_KEY = 'aurora.modenav.beforeReceiveOnly';
+
+function savedBefore(): number {
+  if (beforeReceiveOnly > 0) return beforeReceiveOnly;
+  try {
+    return Number(browserStorage()?.getItem(BEFORE_KEY) ?? '') || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function clearBefore(): void {
+  beforeReceiveOnly = 0;
+  try {
+    browserStorage()?.removeItem(BEFORE_KEY);
+  } catch {
+    // senza archivio resta la sola memoria
+  }
+}
 
 /** Da chiamare prima di spostare la radio su una frequenza fuori dalle bande radioamatoriali (stazioni meteo del WEFAX). */
 export function rememberDialBeforeReceiveOnly(hz: number): void {
-  if (hz > 0 && bandOf(hz)) beforeReceiveOnly = hz;
+  if (hz <= 0 || !bandOf(hz)) return;
+  beforeReceiveOnly = hz;
+  try {
+    browserStorage()?.setItem(BEFORE_KEY, String(hz));
+  } catch {
+    // senza archivio resta la sola memoria (si perde se la pagina si ricarica o e' in una finestra a parte)
+  }
 }
 
 /** Porta la radio sulla frequenza giusta per le righe date; restituisce la frequenza scelta o `null` se non si e' mossa. */
 async function retuneTo(client: QueryClient, rows: readonly FrequencyEntry[]): Promise<number | null> {
   const current = useStation.getState().status?.dial_hz ?? 0;
   // la radio e' fuori dalle bande (WEFAX): si torna alla banda di prima, sulla sua frequenza del modo (o sulla frequenza di prima se e' gia' una del modo)
-  const back = !bandOf(current) && beforeReceiveOnly > 0 ? beforeReceiveOnly : 0;
-  if (back > 0) beforeReceiveOnly = 0;
+  // se la memoria si e' persa (pagina ricaricata, finestra a parte) si usa l'ultima frequenza del gruppo FT8: mai la banda piu' bassa (1,810 MHz)
+  const before = savedBefore() || lastDial('ft8');
+  const back = !bandOf(current) && before > 0 ? before : 0;
+  if (back > 0) clearBefore();
   const now = back > 0 ? back : current;
   const region = await regionOf(client);
   const hz = back > 0 ? (targetDial(rows, region, now) ?? now) : targetDial(rows, region, now);
