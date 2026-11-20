@@ -1,5 +1,33 @@
 /** Rotore d'antenna: pagina Rotore e scheda Rotore delle Impostazioni. [it, en, de, fr, es, pt] */
 export const rotatorStrings = {
+  'rot.set.grp.home': ['Mostra in home', 'Show on the home pages', 'Auf den Startseiten anzeigen', 'Afficher sur les pages d’accueil', 'Mostrar en las páginas de inicio', 'Mostrar nas páginas iniciais'],
+  'rot.set.home.hint': [
+    'Il rotore non ha più il pulsante nella barra in alto: scegli qui dove mostrare la sua scheda. La pagina completa si apre dal pulsante qui sotto.',
+    'The rotator no longer has a button in the top bar: choose here where to show its card. The full page opens from the button below.',
+    'Der Rotor hat keine Schaltfläche mehr in der oberen Leiste: wähle hier, wo seine Karte erscheint. Die vollständige Seite öffnet sich über die Schaltfläche unten.',
+    'Le rotor n’a plus de bouton dans la barre du haut : choisis ici où afficher sa carte. La page complète s’ouvre avec le bouton ci-dessous.',
+    'El rotor ya no tiene botón en la barra superior: elige aquí dónde mostrar su tarjeta. La página completa se abre con el botón de abajo.',
+    'O rotor já não tem botão na barra superior: escolhe aqui onde mostrar o seu cartão. A página completa abre-se com o botão abaixo.',
+  ],
+  'rot.set.home.ft8': ['Nella pagina FT8 (pannello Stazione)', 'On the FT8 page (Station panel)', 'Auf der FT8-Seite (Stationsfeld)', 'Sur la page FT8 (panneau Station)', 'En la página FT8 (panel Estación)', 'Na página FT8 (painel Estação)'],
+  'rot.set.home.digi': ['Nella pagina PSK · RTTY · CW', 'On the PSK · RTTY · CW page', 'Auf der PSK · RTTY · CW-Seite', 'Sur la page PSK · RTTY · CW', 'En la página PSK · RTTY · CW', 'Na página PSK · RTTY · CW'],
+  'tip.rot.homeFt8': [
+    'Mostra la scheda del rotore sopra la Stazione, nella pagina FT8, FT4 e degli altri modi digitali.',
+    'Shows the rotator card above the Station on the FT8, FT4 and other digital pages.',
+    'Zeigt die Rotorkarte über der Station auf den Seiten FT8, FT4 und anderen digitalen Betriebsarten.',
+    'Affiche la carte du rotor au-dessus de la Station, sur les pages FT8, FT4 et autres modes numériques.',
+    'Muestra la tarjeta del rotor sobre la Estación, en las páginas FT8, FT4 y otros modos digitales.',
+    'Mostra o cartão do rotor sobre a Estação, nas páginas FT8, FT4 e outros modos digitais.',
+  ],
+  'tip.rot.homeDigi': [
+    'Mostra la scheda del rotore nella pagina PSK · RTTY · CW, accanto al QSO.',
+    'Shows the rotator card on the PSK · RTTY · CW page, next to the QSO.',
+    'Zeigt die Rotorkarte auf der PSK · RTTY · CW-Seite neben dem QSO.',
+    'Affiche la carte du rotor sur la page PSK · RTTY · CW, à côté du QSO.',
+    'Muestra la tarjeta del rotor en la página PSK · RTTY · CW, junto al QSO.',
+    'Mostra o cartão do rotor na página PSK · RTTY · CW, junto ao QSO.',
+  ],
+  'rot.set.openPage': ['Apri la pagina del rotore', 'Open the rotator page', 'Rotor-Seite öffnen', 'Ouvrir la page du rotor', 'Abrir la página del rotor', 'Abrir a página do rotor'],
   'nav.rotator': ['Rotore', 'Rotator', 'Rotor', 'Rotor', 'Rotor', 'Rotor'],
   'tip.nav.rotator': [
     'Gira l’antenna: verso la stazione DX, per la via lunga o dove clicchi sulla rosa',

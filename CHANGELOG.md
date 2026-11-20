@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.315 - 2026-11-20
+
+- Rotore: tolto il pulsante «Rotore» dalla barra in alto (serve solo a chi ha un rotore). In Impostazioni › Rotore, nuovo gruppo «Mostra in home»: due caselle per mostrare la scheda del rotore nella pagina FT8 (pannello Stazione) e/o nella pagina PSK · RTTY · CW, e il pulsante «Apri la pagina del rotore» per la pagina completa.
+
 ## 0.11.314 - 2026-11-20
 
 - Satelliti: l'etichetta del satellite in arrivo (e il suono in ogni pagina) e' ora un'opzione, spenta di fabbrica: Impostazioni › Modi › Satelliti › Inseguimento e rotore › Avvisi, e dalla campanella della pagina Satelliti. Spenta, avvisa solo la pagina Satelliti come prima.

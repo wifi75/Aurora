@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.315',
+    released: '2026-11-20T14:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Rotore fuori dalla barra: si sceglie in Impostazioni dove mostrarlo',
+      'Rotator out of the top bar: choose in Settings where to show it',
+      'Rotor nicht mehr in der oberen Leiste: in den Einstellungen wählen, wo er erscheint',
+      'Rotor hors de la barre du haut : on choisit dans les Réglages où l’afficher',
+      'Rotor fuera de la barra superior: se elige en Ajustes dónde mostrarlo',
+      'Rotor fora da barra superior: escolhe-se nas Definições onde o mostrar',
+    ],
+    text: [
+      'Il pulsante «Rotore» non sta più nella barra in alto, perché serve solo a chi ha un rotore. In Impostazioni › Rotore c’è il nuovo gruppo «Mostra in home»: due caselle per mostrare la scheda del rotore nella pagina FT8 (pannello Stazione) e/o nella pagina PSK · RTTY · CW, e il pulsante «Apri la pagina del rotore» per la pagina completa.',
+      'The “Rotator” button is no longer in the top bar, because it is only useful if you have a rotator. In Settings › Rotator there is a new “Show on the home pages” group: two checkboxes to show the rotator card on the FT8 page (Station panel) and/or on the PSK · RTTY · CW page, and the “Open the rotator page” button for the full page.',
+      'Die Schaltfläche „Rotor“ steht nicht mehr in der oberen Leiste, weil sie nur mit einem Rotor nützlich ist. Unter Einstellungen › Rotor gibt es die neue Gruppe „Auf den Startseiten anzeigen“: zwei Kontrollkästchen, um die Rotorkarte auf der FT8-Seite (Stationsfeld) und/oder der PSK · RTTY · CW-Seite zu zeigen, und die Schaltfläche „Rotor-Seite öffnen“ für die vollständige Seite.',
+      'Le bouton « Rotor » n’est plus dans la barre du haut, car il ne sert qu’avec un rotor. Dans Réglages › Rotor, nouveau groupe « Afficher sur les pages d’accueil » : deux cases pour afficher la carte du rotor sur la page FT8 (panneau Station) et/ou sur la page PSK · RTTY · CW, et le bouton « Ouvrir la page du rotor » pour la page complète.',
+      'El botón «Rotor» ya no está en la barra superior, porque solo sirve con un rotor. En Ajustes › Rotor hay un nuevo grupo «Mostrar en las páginas de inicio»: dos casillas para mostrar la tarjeta del rotor en la página FT8 (panel Estación) y/o en la página PSK · RTTY · CW, y el botón «Abrir la página del rotor» para la página completa.',
+      'O botão «Rotor» já não está na barra superior, porque só serve com um rotor. Em Definições › Rotor há um novo grupo «Mostrar nas páginas iniciais»: duas caixas para mostrar o cartão do rotor na página FT8 (painel Estação) e/ou na página PSK · RTTY · CW, e o botão «Abrir a página do rotor» para a página completa.',
+    ],
+  },
+  {
     version: '0.11.314',
     released: '2026-11-20T12:43:43Z',
     kind: 'fixed',
@@ -820,26 +841,5 @@ export const NOVITA: readonly Novita[] = [
       'O log do contest tem duas colunas novas, «Troca env.» e «Troca rec.» (número de série, estado ou secção), ligadas por defeito e escolhidas com o lápis. A troca passa a ser guardada também no log interno; os QSO já registados ficam como estavam.',
     ],
     featured: true,
-  },
-  {
-    version: '0.11.286',
-    released: '2026-11-17T18:32:12Z',
-    kind: 'changed',
-    title: [
-      'Vista SSB con le finestre del contest',
-      'SSB view with the contest windows',
-      'SSB-Ansicht mit den Contest-Fenstern',
-      'Vue SSB avec les fenêtres du contest',
-      'Vista SSB con las ventanas del contest',
-      'Vista SSB com as janelas do contest',
-    ],
-    text: [
-      'Log, «Inserisci QSO» e DX Cluster della vista SSB hanno lo stesso aspetto delle schede del contest e della pagina FT8: bordo viola e barra del titolo sfumata.',
-      'Log, “Enter QSO” and DX Cluster in the SSB view now look like the contest cards and the FT8 page: purple border and a gradient title bar.',
-      'Log, „QSO eingeben“ und DX-Cluster der SSB-Ansicht sehen jetzt aus wie die Contest-Karten und die FT8-Seite: violetter Rand und Titelleiste mit Farbverlauf.',
-      'Le journal, « Saisir le QSO » et le DX Cluster de la vue SSB ont maintenant l’aspect des fiches du contest et de la page FT8 : bordure violette et barre de titre dégradée.',
-      'El log, «Introducir QSO» y el DX Cluster de la vista SSB tienen ahora el aspecto de las tarjetas del contest y de la página FT8: borde violeta y barra de título degradada.',
-      'O log, «Introduzir QSO» e o DX Cluster da vista SSB têm agora o aspeto dos cartões do contest e da página FT8: borda violeta e barra de título em gradiente.',
-    ],
   },
 ];

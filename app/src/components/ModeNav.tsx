@@ -259,7 +259,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('export', '#/esporta', t('nav.log'))}
         {common('dxmap', '#/mappa-dx', t('nav.dxmap'))}
         {common('propagation', '#/propagazione', t('nav.propagation'))}
-        {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
         {/* spia di salute della stazione, subito prima dell'ingranaggio */}
         <HealthLight />
         {/* sul PC un solo ingranaggio, che apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}

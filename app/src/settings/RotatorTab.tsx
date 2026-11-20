@@ -5,6 +5,7 @@ import { useT } from '../i18n';
 import { BAUDS, filterModels, modelLabel } from '../lib/cat';
 import { Check } from './common';
 import { Actions, Cell, Cells, Field, Group, Message, Page } from './layout';
+import { useRotorCardVisible } from '../components/rotor/RotorCard';
 
 /** Scheda Rotore: come si raggiunge rotctld (lanciato da Aurora o gia' acceso), modello, porta e velocita'. */
 /** I campi di rotazione piu' comuni: un giro, 450 gradi (i rotori con la sovrapposizione), da -180 a 180 (centro a sud) e altri. */
@@ -14,6 +15,9 @@ export function RotatorTab() {
   const t = useT();
   const client = useQueryClient();
   const snap = useQuery({ queryKey: ['rotator'], queryFn: getRotator, retry: false, refetchInterval: 1500 });
+  // dove mostrare la scheda del rotore (la pagina Rotore non sta piu' nella barra in alto)
+  const [onStation, setOnStation] = useRotorCardVisible('station');
+  const [onDigi, setOnDigi] = useRotorCardVisible('digi');
   const [draft, setDraft] = useState<RotatorConfig | null>(null);
   const [search, setSearch] = useState('');
   const [note, setNote] = useState('');
@@ -56,6 +60,18 @@ export function RotatorTab() {
 
   return (
     <Page>
+      <Group title={t('rot.set.grp.home')} span={2}>
+        <p className="notice">{t('rot.set.home.hint')}</p>
+        <Cells min={17}>
+          <Check label={t('rot.set.home.ft8')} hint={t('tip.rot.homeFt8')} checked={onStation} onChange={setOnStation} />
+          <Check label={t('rot.set.home.digi')} hint={t('tip.rot.homeDigi')} checked={onDigi} onChange={setOnDigi} />
+        </Cells>
+        <p>
+          <a className="glass chip" href="#/rotore">
+            {t('rot.set.openPage')}
+          </a>
+        </p>
+      </Group>
       <Group title={t('rot.set.grp.link')} span={2}>
         {launch && !status.rotctld_found ? <Message kind="alert">{t('rot.set.missing')}</Message> : null}
         <Cells min={17}>
