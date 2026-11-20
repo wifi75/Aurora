@@ -108,6 +108,8 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
   }, [notice, refetch]);
   // aperta a mano: si mostra anche se rimandata o se non c'e' niente di nuovo (allora dice che Aurora e' aggiornata)
   const [forced, setForced] = useState(false);
+  // la domanda piccola «Vuoi aggiornare?» dell'avvio
+  const [ask, setAsk] = useState(false);
   useEffect(() => {
     const open = () => {
       setForced(true);
@@ -124,18 +126,18 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
   const quiet = update.data?.quiet;
   useEffect(() => {
     if (!releaseVersion || Date.now() - born.current > STARTUP_MS || quiet || phase === 'installing' || snoozedToday()) return;
-    setForced(true);
+    setAsk(true);
   }, [releaseVersion, quiet, phase]);
   if (!release && forced) return <UpToDate current={update.data?.current ?? ''} onClose={() => setForced(false)} />;
   // la locandina non si apre mai da sola (comparire durante un QSO o un contest e' un disturbo): avvisano la cartolina del tray e la
   // barretta in testata, e la locandina si apre solo quando l'operatore la chiede (clic sulla barretta o dal menu)
-  if (!forced) return null;
+  if (!forced && !ask) return null;
   // aggiornamento chiesto dal tray: niente locandina, fa tutto la cartolina del tray
   if (!forced && update.data?.quiet) return null;
   // con l'aggiornamento scaricato in anticipo la barretta in testata (e la cartolina del tray) mostrano tutto: la locandina si apre solo
   // quando la si chiede (clic sulla barretta). Prima compariva da sola mentre si aggiornava dal tray e si chiudeva dopo pochi secondi
   if (!forced && update.data?.stage?.phase === 'installing') return null;
-  if (!release || (seen === release.version && !forced)) return null;
+  if (!release || (seen === release.version && !forced && !ask)) return null;
 
   const later = () => {
     try {
@@ -158,6 +160,32 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
       setFailure(t('upd.installFailed', { message: error instanceof ApiError ? (error.detail ?? error.code) : '—' }));
     }
   };
+  // piccola finestra quadrata al centro: «Vuoi aggiornare?» Si (installa, mostrando l'avanzamento nella locandina) o X (piu' tardi)
+  if (ask && !forced) {
+    const yes = () => {
+      setAsk(false);
+      if (update.data?.can_install) {
+        setForced(true);
+        void install();
+      } else if (release.url) {
+        window.open(release.url, '_blank', 'noopener,noreferrer');
+      }
+    };
+    return (
+      <div className="first-run upd-poster" role="dialog" aria-modal="true" aria-labelledby="upd-ask-title">
+        <div className="upd-ask">
+          <button type="button" className="upd-ask__x" aria-label={t('upd.ask.close')} title={t('upd.ask.close')} onClick={() => { setAsk(false); later(); }}>
+            ×
+          </button>
+          <p className="upd-ask__ver">Aurora {release.version}</p>
+          <p id="upd-ask-title" className="upd-ask__q">{t('upd.ask.title')}</p>
+          <button type="button" className="first-run__next" onClick={yes}>
+            {t('upd.ask.yes')}
+          </button>
+        </div>
+      </div>
+    );
+  }
   // l'installazione parte SOLO quando l'operatore preme «Installa»: mai da sola (in contest o durante un DX chiudere Aurora sarebbe un danno)
   const when = release.published_at ? new Date(release.published_at).toLocaleString(localeOf(lang), { dateStyle: 'short', timeStyle: 'short' }) : '';
   const lines = noteLines(notesForLang(release.notes || release.name || '', lang));
