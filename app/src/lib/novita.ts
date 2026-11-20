@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.306',
-    released: '2026-11-20T09:00:00Z',
+    released: '2026-11-20T06:09:57Z',
     kind: 'fixed',
     title: [
       'Satelliti: il Doppler non si ferma se la radio rifiuta lo split',

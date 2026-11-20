@@ -2,6 +2,11 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.306 (pubblicata 2026-11-20T06:09:57Z)
+
+- Satelliti (`mode-sat/src/service.rs`, `LoopState.split_failed`/`tx_failed`): se la radio rifiuta lo split (IC-820H con Hamlib, `S 1 VFOB` -> -11) non si riprova ogni secondo e il Doppler della ricezione va avanti; la frequenza di trasmissione si prova una volta. Non provato con un'IC-820H; non si sa se Hamlib sa impostare la frequenza di trasmissione di quella radio.
+- Issue: chiuse #77 (Pere: il clic era la lettura del ROS, ROS spento e potenza accesa) e #78; aperte #72 (Vladimir RN8M: provare la 0.11.306 con il Doppler e mandare un nuovo pacchetto), #81 (Luc), #80, #82 (avviso dei satelliti su tutte le pagine: oggi `useSatAlerts` esiste solo in `SatPage`).
+
 ## Nella 0.11.305 (pubblicata 2026-11-20T05:40:47Z)
 
 - Display esteso FT-2000 (`radio-display/RigFaceDisplays.tsx`, `Ft2000Display`): disegno 504 x 66 (`FT_FACE_W`, `FT_FACE_H`), VFO-A sopra la frequenza, VFO-B e modo a sinistra della seconda, in TX il misuratore diventa potenza (ambra) con la barra ROS sotto, tilde se l'S-meter e' stimato; CSS in coda a `radiodisplay.css` (`.rd-face-slot--ft` con `aspect-ratio`). `FaceHeader` usa `useTuneButton` (TUNE a scatto). Visto in anteprima, non con una radio vera.
