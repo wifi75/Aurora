@@ -2,6 +2,7 @@ import { useFox } from './fox';
 import { noteTrPeriod, periodSecs } from '../lib/period';
 import { emitDigi } from '../lib/digiBus';
 import { emitSstv } from '../lib/sstvBus';
+import { emitWefax } from '../lib/wefaxBus';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { AudioLevel, AuroraEvent, DecodedMessage, StationStatus, UpdateNotice, WantedAlert } from '../api/schemas';
@@ -328,6 +329,9 @@ export const useStation = create<StationState>((set) => ({
       case 'sstv':
         // fuori dallo stato della Stazione: le righe dell'immagine vanno solo a chi le disegna
         emitSstv(event);
+        break;
+      case 'wefax':
+        emitWefax(event);
         break;
       case 'digi':
         // come l'SSTV: il testo va solo a chi lo mostra

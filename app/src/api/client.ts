@@ -2417,3 +2417,104 @@ export async function getFilesCheck(): Promise<FilesCheck> {
 export async function getHealthResources(): Promise<HealthResources> {
   return (await (await request('/health/resources')).json()) as HealthResources;
 }
+
+// --- WEFAX (crate mode-wefax) ---
+
+export interface WefaxSettings {
+  ioc: number;
+  lpm_576: number;
+  lpm_288: number;
+  filter: string;
+  manual: boolean;
+  auto_lpm: boolean;
+  auto_center: boolean;
+  auto_save: boolean;
+  auto_receive: boolean;
+  center_hz: number;
+  shift_hz: number;
+  slant_ppm: number;
+  max_rows: number;
+  correlation: number;
+  folder: string;
+}
+
+export interface WefaxRxStatus {
+  listening: boolean;
+  receiving: boolean;
+  /** `apt`, `phasing` o `image`. */
+  state: string;
+  ioc: number;
+  lpm: number;
+  width: number;
+  rows: number;
+  sync: number;
+  level_db: number;
+  last_image: string | null;
+  source?: string | null;
+}
+
+export interface WefaxIocInfo {
+  ioc: number;
+  width: number;
+  apt_start_hz: number;
+  default_lpm: number;
+}
+
+export interface WefaxSnapshot {
+  rx: WefaxRxStatus;
+  settings: WefaxSettings;
+  folder: string;
+  iocs: WefaxIocInfo[];
+  lpm_values: number[];
+  filters: string[];
+}
+
+export interface WefaxImageEntry {
+  id: string;
+  file: string;
+  ioc: number;
+  lpm: number;
+  width: number;
+  height: number;
+  time_ms: number;
+  correlation?: number;
+  reason?: string;
+  source?: string;
+  complete: boolean;
+}
+
+export async function getWefax(): Promise<WefaxSnapshot> {
+  return (await (await request('/wefax')).json()) as WefaxSnapshot;
+}
+
+export async function putWefax(settings: WefaxSettings): Promise<WefaxSnapshot> {
+  return (await (await request('/wefax', { ...jsonInit(settings), method: 'PUT' })).json()) as WefaxSnapshot;
+}
+
+// i comandi dell'ascolto WEFAX arrivano al core nell'ordine in cui sono partiti
+const wefaxRxQueue = inOrder();
+
+export async function wefaxRx(action: 'start' | 'stop' | 'force' | 'finish' | 'cancel'): Promise<void> {
+  await wefaxRxQueue(() => request(`/wefax/rx/${action}`, { method: 'POST' }));
+}
+
+/** Battito (`hold`) e uscita (`release`) della pagina `id`, come per l'SSTV. */
+export async function wefaxRxPage(action: 'hold' | 'release', id: string): Promise<void> {
+  await wefaxRxQueue(() => request(`/wefax/rx/${action}?id=${encodeURIComponent(id)}`, { method: 'POST', keepalive: true }));
+}
+
+export async function getWefaxCurrentBlob(): Promise<Blob> {
+  return (await request('/wefax/rx/current')).blob();
+}
+
+export async function getWefaxImages(): Promise<WefaxImageEntry[]> {
+  return ((await (await request('/wefax/images')).json()) as { images: WefaxImageEntry[] }).images;
+}
+
+export async function deleteWefaxImage(id: string): Promise<void> {
+  await request(`/wefax/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function wefaxImageUrl(id: string): string {
+  return `${BASE}/wefax/images/${encodeURIComponent(id)}`;
+}

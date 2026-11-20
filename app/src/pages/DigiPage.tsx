@@ -1718,6 +1718,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
         })),
         'sep' as const,
         { label: t('nav.sstv'), onSelect: () => { window.location.hash = '#/sstv'; } },
+        { label: t('nav.wefax'), onSelect: () => { window.location.hash = '#/wefax'; } },
         // RTTY: spostamento e velocita' Baudot scelti dal menu (e nelle Impostazioni del modo)
         ...(s.mode === 'rtty'
           ? [

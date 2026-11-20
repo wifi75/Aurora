@@ -28,7 +28,7 @@ function usePeriodClock(mode: string | undefined): { elapsed: number; total: num
  */
 export function Footer({ page }: { page?: string } = {}) {
   // decodifiche, avanzamento del periodo e watchdog sono cose dell'FT8: nelle pagine degli altri modi non servono
-  const otherMode = page === 'sstv' || page === 'digi' || page === 'sat';
+  const otherMode = page === 'sstv' || page === 'wefax' || page === 'digi' || page === 'sat';
   const t = useT();
   const { data, isError } = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
   const status = useStatusPick(['mode', 'transmitting']);

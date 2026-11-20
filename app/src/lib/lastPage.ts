@@ -8,10 +8,10 @@ import type { Route } from './route';
 const PAGE_KEY = 'aurora-last-page';
 const TAB_KEY = 'aurora-settings-tab';
 // tutte le pagine dei modi (PSK·RTTY·CW, SSTV, Satelliti, Fox, Contest...) e quelle comuni: riaprendo Aurora si torna li'
-const RESTORABLE = new Set(['#/statistiche', '#/mappa-dx', '#/storico', '#/propagazione', '#/impostazioni', '#/guida', '#/novita', '#/testo', '#/sstv', '#/satelliti', '#/fox', '#/contest', '#/qmap', '#/rotore', '#/esporta']);
+const RESTORABLE = new Set(['#/statistiche', '#/mappa-dx', '#/storico', '#/propagazione', '#/impostazioni', '#/guida', '#/novita', '#/testo', '#/sstv', '#/wefax', '#/satelliti', '#/fox', '#/contest', '#/qmap', '#/rotore', '#/esporta']);
 
 /** Le pagine che accendono il motore (ascolto dei modi testuali, SSTV): un client remoto non ci riparte da solo. */
-export const ENGINE_PAGES = new Set(['#/testo', '#/sstv']);
+export const ENGINE_PAGES = new Set(['#/testo', '#/sstv', '#/wefax']);
 
 type Store = Pick<Storage, 'getItem' | 'setItem'> | null;
 
@@ -49,6 +49,7 @@ const HASH_OF: Record<string, string> = {
   dxmap: '#/mappa-dx',
   digi: '#/testo',
   sstv: '#/sstv',
+  wefax: '#/wefax',
   sat: '#/satelliti',
   fox: '#/fox',
   contest: '#/contest',

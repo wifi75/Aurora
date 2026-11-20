@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { name: 'sat' } | { name: 'digi' } | { name: 'fox' } | { name: 'contest' } | { name: 'qmap' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'rotator' } | { name: 'sstv' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
+export type Route = { name: 'sat' } | { name: 'digi' } | { name: 'fox' } | { name: 'contest' } | { name: 'qmap' } | { name: 'live' } | { name: 'pair'; code: string; alt?: string } | { name: 'settings'; tab?: string } | { name: 'stats' } | { name: 'map' } | { name: 'dxmap' } | { name: 'history' } | { name: 'propagation' } | { name: 'rotator' } | { name: 'sstv' } | { name: 'wefax' } | { name: 'guide' } | { name: 'news' } | { name: 'ownerMessages' } | { name: 'export' } | { name: 'window'; id: string };
 
 /** Pagine: Live, associazione, impostazioni, automazioni, statistiche, guida, novita' ed esportazione del log (`#/esporta`). Il link del QR e' `#/pair/<codice>`; `#/impostazioni/<pagina>` apre una pagina precisa dell'albero (anche con i nomi delle vecchie schede). */
 export function parseRoute(hash: string): Route {
@@ -25,6 +25,7 @@ export function parseRoute(hash: string): Route {
   if (hash === '#/propagazione') return { name: 'propagation' };
   if (hash === '#/rotore') return { name: 'rotator' };
   if (hash === '#/sstv') return { name: 'sstv' };
+  if (hash === '#/wefax') return { name: 'wefax' };
   if (hash === '#/testo') return { name: 'digi' };
   if (hash === '#/satelliti') return { name: 'sat' };
   // `#/guida/<sezione>`: la Guida aperta su una sezione (per esempio dalla scheda SDR delle Impostazioni)

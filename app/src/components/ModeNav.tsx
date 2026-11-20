@@ -188,7 +188,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
   const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
   /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
   const enterText = () => {
-    if (transmitting || route.name === 'digi' || route.name === 'sstv') return;
+    if (transmitting || route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax')) return;
     // il nome del modo nell'avviso e' quello vero (CW, RTTY...), non sempre «PSK»
     let name = 'PSK';
     void (async () => {
@@ -233,7 +233,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {pill('ft8', 'FT8')}
         {pill('vhf', 'VHF')}
         {/* PSK, RTTY, CW e SSTV stanno insieme: il modo si sceglie dal menu «Modo» della loro pagina */}
-        <a {...current(route.name === 'digi' || route.name === 'sstv')} data-mode="psk" href={route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')} onClick={enterText}>
+        <a {...current(route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax'))} data-mode="psk" href={route.name === 'wefax' ? '#/wefax' : route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')} onClick={enterText}>
           {t('nav.textModes')}
         </a>
         <a {...current(route.name === 'sat')} data-mode="sat" href="#/satelliti" title={t('tip.nav.sat')}>
@@ -242,7 +242,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       </span>
       <span className="nav-pages">
         {/* le pagine del modo scelto */}
-        {route.name === 'sstv' || route.name === 'digi' || route.name === 'sat' ? null : (
+        {(route.name === 'sstv' || route.name === 'wefax') || route.name === 'digi' || route.name === 'sat' ? null : (
           <>
             {group === 'ft8' ? page('fox', '#/fox', t('nav.fox'), t('tip.nav.fox')) : null}
             {page('contest', '#/contest', t('nav.contest'), t('tip.nav.contest'))}
@@ -251,7 +251,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
           </>
         )}
         {/* le pagine di tutti i modi, divise da quelle del modo come nel prototipo */}
-        {route.name === 'sstv' || route.name === 'digi' || route.name === 'sat' ? null : <span className="nav-sep" aria-hidden="true" />}
+        {(route.name === 'sstv' || route.name === 'wefax') || route.name === 'digi' || route.name === 'sat' ? null : <span className="nav-sep" aria-hidden="true" />}
         {common('export', '#/esporta', t('nav.log'))}
         {common('dxmap', '#/mappa-dx', t('nav.dxmap'))}
         {common('propagation', '#/propagazione', t('nav.propagation'))}

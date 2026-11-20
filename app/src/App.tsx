@@ -38,6 +38,7 @@ import { PropagationPage } from './pages/PropagationPage';
 import { RotatorPage } from './pages/RotatorPage';
 import { StationRotor } from './components/rotor/StationRotor';
 import { SstvPage } from './pages/SstvPage';
+import { WefaxPage } from './pages/WefaxPage';
 import { DigiPage } from './pages/DigiPage';
 import { SatPage } from './pages/SatPage';
 import { Pair } from './pages/Pair';
@@ -203,6 +204,8 @@ export function App() {
     content = <RotatorPage />;
   } else if (route.name === 'sstv') {
     content = <SstvPage />;
+  } else if (route.name === 'wefax') {
+    content = <WefaxPage />;
   } else if (route.name === 'digi') {
     content = <DigiPage />;
   } else if (route.name === 'sat') {
