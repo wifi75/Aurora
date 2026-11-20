@@ -215,11 +215,11 @@ fn lang() -> usize {
     lang_index(&lang_code())
 }
 
-/// Il codice della lingua da usare (`it`, `en`, `de`, `fr`, `es`, `pt`, `nl`): quella scelta in Aurora, poi quella del sistema, poi `en`.
+/// Il codice della lingua da usare (`it`, `en`, `de`, `fr`, `es`, `pt`, `nl`, `ru`): quella scelta in Aurora, poi quella del sistema, poi `en`.
 pub(crate) fn lang_code() -> String {
     let chosen = ui_lang_code();
     let code = if chosen.is_empty() { system_lang() } else { chosen };
-    if ["it", "en", "de", "fr", "es", "pt", "nl"].contains(&code.as_str()) { code } else { "en".to_string() }
+    if ["it", "en", "de", "fr", "es", "pt", "nl", "ru"].contains(&code.as_str()) { code } else { "en".to_string() }
 }
 
 /// La lingua del sistema in due lettere (`it-IT` → `it`); vuota se non si sa.
@@ -320,8 +320,77 @@ fn tr_in(lang: usize, key: &str) -> &'static str {
     row[lang.min(5)]
 }
 
+
+/// I testi dell'agente in russo (il russo non e' tra le sei lingue fisse delle tabelle sopra: `tr` lo cerca qui prima). Vuoto = nessun testo russo.
+fn tr_ru(key: &str) -> &'static str {
+    match key {
+        "open" => "Открыть Aurora",
+        "check" => "Проверить обновления",
+        "quit" => "Выйти из агента",
+        "err_tx" => "Aurora передаёт: повторите по окончании передачи.",
+        "err_local" => "Обновление запускается только на ПК, где работает Aurora.",
+        "err_noinstall" => "Эта Aurora не умеет устанавливать обновления сама.",
+        "err_status" => "Aurora ответила {v}",
+        "err_noresp" => "Aurora не отвечает.",
+        "k_update" => "Обновление",
+        "upd_ready" => "Aurora {v} готова",
+        "upd_now" => "Обновить сейчас",
+        "k_updates" => "Обновления",
+        "uptodate" => "Aurora обновлена ({v})",
+        "uptodate_t" => "У вас уже последняя версия.",
+        "fail" => "Проверка не удалась",
+        "fail_t" => "GitHub сейчас не отвечает. Повторите через несколько минут: Aurora всё равно проверяет сама.",
+        "open_btn" => "Открыть",
+        "k_prop" => "Прохождение",
+        "storm" => "Геомагнитная буря (K {v})",
+        "storm_t" => "КВ-диапазоны возмущены: лучше низкие диапазоны и сильные сигналы.",
+        "ten" => "Открыты 12 и 10 метров",
+        "ten_t" => "Сегодняшние условия дают хорошие высокие диапазоны днём.",
+        "dxped" => "Завтра стартует {v}",
+        "k_daily" => "Итоги",
+        "daily" => "Вчера: {v} QSO",
+        "daily_t" => "{v} разных стран. Хорошего DX и сегодня!",
+        "close" => "Закрыть",
+        "retry" => "Повторить",
+        "start" => "Запуск…",
+        "s1" => "Загрузка",
+        "s2" => "Проверка",
+        "s3" => "Установка",
+        "s4" => "Перезапуск",
+        "left" => "осталось {v} с",
+        "p_opening" => "Открываю Aurora…",
+        "p_preparing" => "Готовлю загрузку…",
+        "p_downloading" => "Загружаю новую версию…",
+        "p_verifying" => "Проверяю подпись пакета…",
+        "p_ready" => "Пакет готов и подписан: запускаю установку…",
+        "u_title" => "Обновление Aurora",
+        "u_close" => "Закрываю Aurora…",
+        "u_install" => "Устанавливаю новую версию…",
+        "u_reopen" => "Снова открываю Aurora…",
+        "u_note" => "Не выключайте ПК: Aurora скоро откроется сама.",
+        "u_start" => "Запуск Aurora… в первый раз после обновления это может занять до минуты.",
+        "u_done" => "Aurora обновлена",
+        "u_done_body" => "Теперь у вас версия {v}.",
+        "p_installing" => "Aurora закроется для установки обновления и откроется снова по окончании.",
+        "p_restart" => "Aurora перезапускается…",
+        "p_failed" => "Обновление не удалось.",
+        _ => "",
+    }
+}
+
+/// Come `tr_in`, ma con il russo se e' la lingua scelta.
+fn tr_for(lang: usize, key: &str) -> &'static str {
+    if lang_code() == "ru" {
+        let ru = tr_ru(key);
+        if !ru.is_empty() {
+            return ru;
+        }
+    }
+    tr_in(lang, key)
+}
+
 fn tr(key: &str) -> &'static str {
-    tr_in(lang(), key)
+    tr_for(lang(), key)
 }
 
 /// I testi della finestrina e della notifica dell'aggiornamento (copia di aiuto e Aurora riaperta), nella lingua scelta.
@@ -912,16 +981,16 @@ fn percent(s: &str) -> String {
 fn card_texts() -> serde_json::Value {
     let l = lang();
     serde_json::json!({
-        "steps": [tr_in(l, "s1"), tr_in(l, "s2"), tr_in(l, "s3"), tr_in(l, "s4")],
-        "left": tr_in(l, "left"),
-        "opening": tr_in(l, "p_opening"),
-        "preparing": tr_in(l, "p_preparing"),
-        "downloading": tr_in(l, "p_downloading"),
-        "verifying": tr_in(l, "p_verifying"),
-        "ready": tr_in(l, "p_ready"),
-        "installing": tr_in(l, "p_installing"),
-        "restart": tr_in(l, "p_restart"),
-        "failed": tr_in(l, "p_failed"),
+        "steps": [tr_for(l, "s1"), tr_for(l, "s2"), tr_for(l, "s3"), tr_for(l, "s4")],
+        "left": tr_for(l, "left"),
+        "opening": tr_for(l, "p_opening"),
+        "preparing": tr_for(l, "p_preparing"),
+        "downloading": tr_for(l, "p_downloading"),
+        "verifying": tr_for(l, "p_verifying"),
+        "ready": tr_for(l, "p_ready"),
+        "installing": tr_for(l, "p_installing"),
+        "restart": tr_for(l, "p_restart"),
+        "failed": tr_for(l, "p_failed"),
     })
 }
 
@@ -1094,6 +1163,7 @@ mod tests {
         assert_eq!(lang_index("pt"), 5);
         // una lingua che i testi dell'agente non hanno (l'olandese, o nessuna scelta) vale l'inglese
         assert_eq!(lang_index("nl"), 1);
+        assert_eq!(lang_index("ru"), 1, "il russo non e' nelle sei lingue fisse: i testi li prende da tr_ru");
         assert_eq!(lang_index(""), 1);
         assert_eq!(lang_index("klingon"), 1);
         assert_eq!(tr_in(1, "open"), "Open Aurora");
