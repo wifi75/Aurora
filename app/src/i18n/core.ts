@@ -1,14 +1,15 @@
 import { NL_TEXTS } from './nl/texts';
+import { RU_TEXTS } from './ru/texts';
 
 /** Le sei lingue delle tabelle di testi; l'ordine e' quello delle colonne di ogni tabella. */
 export const TABLE_LANGS = ['it', 'en', 'de', 'fr', 'es', 'pt'] as const;
 export type TableLang = (typeof TABLE_LANGS)[number];
 
 /**
- * Le lingue che l'utente puo' scegliere: le sei delle tabelle + l'olandese, che sta in un dizionario a parte (`i18n/nl/`)
- * e, dove manca una voce, ricade sull'inglese.
+ * Le lingue che l'utente puo' scegliere: le sei delle tabelle + l'olandese e il russo, che stanno in dizionari a parte
+ * (`i18n/nl/`, `i18n/ru/`) e, dove manca una voce, ricadono sull'inglese.
  */
-export const LANGS = [...TABLE_LANGS, 'nl'] as const;
+export const LANGS = [...TABLE_LANGS, 'nl', 'ru'] as const;
 export type Lang = (typeof LANGS)[number];
 
 export const LANG_NAMES: Record<Lang, string> = {
@@ -19,10 +20,11 @@ export const LANG_NAMES: Record<Lang, string> = {
   es: 'Español',
   pt: 'Português',
   nl: 'Nederlands',
+  ru: 'Русский',
 };
 
 /** Impostazione regionale per date e numeri (`toLocaleString`, `Intl`). */
-export const LOCALES: Record<Lang, string> = { it: 'it', en: 'en', de: 'de', fr: 'fr', es: 'es', pt: 'pt', nl: 'nl-NL' };
+export const LOCALES: Record<Lang, string> = { it: 'it', en: 'en', de: 'de', fr: 'fr', es: 'es', pt: 'pt', nl: 'nl-NL', ru: 'ru-RU' };
 
 export function localeOf(lang: string): string {
   return isLang(lang) ? LOCALES[lang] : lang;
@@ -62,7 +64,7 @@ export function fill(text: string, vars?: Record<string, string | number>): stri
 
 /**
  * Chiave stabile di un testo senza nome (Guida, Novita'): `t.` + impronta (cyrb53) del testo inglese.
- * Se l'inglese cambia, la chiave cambia: l'olandese ricade sull'inglese finche' non viene riesportato e rivisto.
+ * Se l'inglese cambia, la chiave cambia: l'olandese e il russo ricadono sull'inglese finche' non viene riesportato e rivisto.
  */
 export function textKey(entry: Entry): string {
   let h1 = 0xdeadbeef;
@@ -78,8 +80,9 @@ export function textKey(entry: Entry): string {
   return `t.${(4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36)}`;
 }
 
-/** Il testo nella lingua scelta; in olandese quello del dizionario a parte, o l'inglese se manca. */
+/** Il testo nella lingua scelta; in olandese e in russo quello del dizionario a parte, o l'inglese se manca. */
 export function pick(entry: Entry, lang: Lang): string {
   if (lang === 'nl') return NL_TEXTS[textKey(entry)] ?? entry[1];
+  if (lang === 'ru') return RU_TEXTS[textKey(entry)] ?? entry[1];
   return entry[TABLE_LANGS.indexOf(lang)] ?? entry[0];
 }

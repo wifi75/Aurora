@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.311',
+    released: '2026-11-20T12:00:00Z',
+    kind: 'new',
+    title: [
+      'Aurora parla anche russo',
+      'Aurora now speaks Russian',
+      'Aurora spricht jetzt auch Russisch',
+      'Aurora parle aussi russe',
+      'Aurora ahora habla también ruso',
+      'A Aurora agora fala também russo',
+    ],
+    text: [
+      'Il russo è l’ottava lingua: interfaccia, Guida, ultime Novità e macro sono tradotti (le Novità più vecchie restano in inglese). È una prima versione fatta con l’AI, da far rivedere a un radioamatore madrelingua: segnala le frasi che suonano strane. Nella locandina dell’aggiornamento c’è ora il bollino «NUOVA APP» tradotto, e il display del WEFAX mostra solo frequenza, modo (USB o LSB) e segnale, con la sola cascata.',
+      'Russian is the eighth language: interface, Guide, latest News and macros are translated (older News stay in English). It is a first version made with AI, to be reviewed by a native-speaking radio amateur: please report phrases that sound odd. The update poster now has the translated “NEW APP” badge, and the WEFAX display shows only frequency, mode (USB or LSB) and signal, with a single waterfall.',
+      'Russisch ist die achte Sprache: Oberfläche, Anleitung, letzte Neuigkeiten und Makros sind übersetzt (ältere Neuigkeiten bleiben auf Englisch). Es ist eine erste, mit KI erstellte Fassung, die ein muttersprachlicher Funkamateur prüfen sollte: meldet seltsam klingende Sätze. Auf dem Update-Plakat gibt es jetzt das übersetzte „NEUE APP“-Abzeichen, und die WEFAX-Anzeige zeigt nur Frequenz, Betriebsart (USB oder LSB) und Signal, mit einem einzigen Wasserfall.',
+      'Le russe est la huitième langue : interface, Guide, dernières Nouveautés et macros sont traduits (les anciennes Nouveautés restent en anglais). C’est une première version faite avec l’IA, à faire relire par un radioamateur russophone : signalez les phrases qui sonnent bizarrement. L’affiche de mise à jour porte maintenant l’étoile « NOUVELLE APP » traduite, et l’affichage du WEFAX ne montre que la fréquence, le mode (USB ou LSB) et le signal, avec une seule cascade.',
+      'El ruso es el octavo idioma: interfaz, Guía, últimas Novedades y macros están traducidos (las Novedades más antiguas siguen en inglés). Es una primera versión hecha con IA, para que la revise un radioaficionado nativo: avisa de las frases que suenen raras. El cartel de actualización lleva ahora la estrella «NUEVA APP» traducida, y la pantalla del WEFAX solo muestra frecuencia, modo (USB o LSB) y señal, con una sola cascada.',
+      'O russo é o oitavo idioma: interface, Guia, últimas Novidades e macros estão traduzidos (as Novidades mais antigas ficam em inglês). É uma primeira versão feita com IA, para ser revista por um radioamador nativo: avise-nos das frases que soem estranhas. O cartaz de atualização tem agora a estrela «NOVA APP» traduzida, e o ecrã do WEFAX mostra apenas frequência, modo (USB ou LSB) e sinal, com uma única cascata.',
+    ],
+  },
+  {
     version: '0.11.310',
     released: '2026-11-20T09:50:38Z',
     kind: 'fixed',
@@ -819,27 +840,6 @@ export const NOVITA: readonly Novita[] = [
       'Tant que l’assistant du premier démarrage est ouvert, aucun avertissement de la station n’apparaît ; si l’indicatif est déjà enregistré mais que le moteur ne l’a pas encore, l’avertissement dit de fermer et rouvrir Aurora. Dans l’Activité de bande, les km sont centrés dans la ligne et « Spots DX » est lisible en thème clair.',
       'Mientras la guía del primer arranque está abierta no aparecen avisos de la estación; si el indicativo ya está guardado pero el motor aún no lo tiene, el aviso dice que cierres y vuelvas a abrir Aurora. En Actividad de banda los km están centrados en la fila y «Spots DX» se lee en el tema claro.',
       'Enquanto o assistente do primeiro arranque está aberto não aparecem avisos da estação; se o indicativo já está guardado mas o motor ainda não o tem, o aviso diz para fechar e reabrir a Aurora. Na Atividade de banda os km estão centrados na linha e «Spots DX» lê-se no tema claro.',
-    ],
-  },
-  {
-    version: '0.11.285',
-    released: '2026-11-17T15:07:36Z',
-    kind: 'changed',
-    title: [
-      'Aggiornamento alla versione pubblicata',
-      'Update to the published build',
-      'Update auf den veröffentlichten Build',
-      'Mise à jour vers la version publiée',
-      'Actualización a la compilación publicada',
-      'Atualização para a compilação publicada',
-    ],
-    text: [
-      'La 0.11.285 ha lo stesso contenuto della 0.11.284: serve solo perché le copie installate da una compilazione di prova della 0.11.284 non si aggiornavano da sole (stesso numero di versione).',
-      '0.11.285 has the same content as 0.11.284: it only exists because copies installed from a test build of 0.11.284 did not update by themselves (same version number).',
-      '0.11.285 hat denselben Inhalt wie 0.11.284: sie ist nur nötig, weil Kopien aus einem Testbuild von 0.11.284 sich nicht von selbst aktualisierten (gleiche Versionsnummer).',
-      '0.11.285 a le même contenu que 0.11.284 : elle n’existe que parce que les copies installées depuis une version de test de 0.11.284 ne se mettaient pas à jour toutes seules (même numéro de version).',
-      'La 0.11.285 tiene el mismo contenido que la 0.11.284: solo existe porque las copias instaladas desde una compilación de prueba de la 0.11.284 no se actualizaban solas (mismo número de versión).',
-      'A 0.11.285 tem o mesmo conteúdo da 0.11.284: só existe porque as cópias instaladas de uma compilação de teste da 0.11.284 não se atualizavam sozinhas (mesmo número de versão).',
     ],
   },
 ];

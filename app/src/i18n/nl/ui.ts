@@ -5467,6 +5467,7 @@ export const NL_UI: Record<string, string> = {
   "upd.poster.allNews": "Al het nieuws",
   "upd.poster.auto": "Update installeren over {seconds} s…",
   "upd.poster.available": "Er is een nieuwe versie beschikbaar",
+  "upd.poster.badge": "NIEUWE APP",
   "upd.poster.cancel": "Annuleren",
   "upd.poster.current": "Je hebt {current} · nieuwe uitgebracht {when}",
   "upd.poster.firstRun": "Installeer eerst de nieuwste versie: Aurora start bijgewerkt opnieuw op en begeleidt je daarna bij de eerste configuratie.",

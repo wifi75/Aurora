@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.311 - 2026-11-20
+
+- Lingue: **russo** come ottava lingua (interfaccia, Guida, ultime 10 Novita' e descrizioni delle macro; le Novita' piu' vecchie restano in inglese). Traduzione fatta con l'AI, prima versione da far rivedere a un radioamatore madrelingua. Dizionario a parte (`app/src/i18n/ru/`), foglio `docs/traduzione-russa.csv` e script `export-ru.mjs` / `importa-ru.mjs`.
+- Testi lunghi: il russo e' piu' lungo del 20-35%: nuovo `lingue-lunghe.css` (a capo, `min-width: 0`, ellissi con suggerimento) controllato a 1280, 1024 e 900 px nelle pagine principali.
+- Locandina dell'aggiornamento: bollino a stella «NUOVA APP» (tradotto in ogni lingua).
+- WEFAX: display di sola ricezione (frequenza, modo USB/LSB, led del segnale), cascata unica senza spettro, maniglia e ora, larghezze fisse nella riga in alto (niente allargamenti e restringimenti).
+
 ## 0.11.310 - 2026-11-20
 
 - Aggiornamenti: all'avvio, se c'e' una versione nuova, si apre direttamente la locandina con tutte le novita' (tolta la finestrella «Vuoi aggiornare?» della 0.11.309).

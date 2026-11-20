@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { fill, pick, type Lang } from './core';
 import { useLang } from './lang';
 import { NL_UI } from './nl/ui';
+import { RU_UI } from './ru/ui';
 import { appStrings } from './strings/app';
 import { audioStrings } from './strings/audio';
 import { accessStrings } from './strings/access';
@@ -87,11 +88,13 @@ export const STRINGS = { ...appStrings, ...commandStrings, ...stationStrings, ..
 
 export type Key = keyof typeof STRINGS;
 
-/** Il testo di una chiave nella lingua scelta; in olandese quello del dizionario `nl/ui.ts`, o l'inglese se manca. */
+/** Il testo di una chiave nella lingua scelta; in olandese e in russo quello dei dizionari `nl/ui.ts` e `ru/ui.ts`, o l'inglese se manca. */
 export function textOf(lang: Lang, key: Key): string | undefined {
   const entry = STRINGS[key];
   if (!entry) return undefined;
-  return lang === 'nl' ? (NL_UI[key] ?? entry[1]) : pick(entry, lang);
+  if (lang === 'nl') return NL_UI[key] ?? entry[1];
+  if (lang === 'ru') return RU_UI[key] ?? entry[1];
+  return pick(entry, lang);
 }
 
 /**

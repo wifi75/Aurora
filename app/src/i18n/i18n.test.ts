@@ -7,6 +7,8 @@ import { MACRO_COMMANDS, MACRO_EVENTS } from '../lib/macroCommands';
 import { STRINGS, keyForSystem, textOf, translate, type Key } from './index';
 import { NL_TEXTS } from './nl/texts';
 import { NL_UI } from './nl/ui';
+import { RU_TEXTS } from './ru/texts';
+import { RU_UI } from './ru/ui';
 
 function memory(initial: Record<string, string> = {}) {
   const data = { ...initial };
@@ -17,17 +19,19 @@ const broken = { getItem: () => { throw new Error('no'); }, setItem: () => { thr
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
 
 describe('languages', () => {
-  it('are the six of the tables plus Dutch, Italian first', () => {
+  it('are the six of the tables plus Dutch and Russian, Italian first', () => {
     expect(TABLE_LANGS).toEqual(['it', 'en', 'de', 'fr', 'es', 'pt']);
-    expect(LANGS).toEqual(['it', 'en', 'de', 'fr', 'es', 'pt', 'nl']);
+    expect(LANGS).toEqual(['it', 'en', 'de', 'fr', 'es', 'pt', 'nl', 'ru']);
     expect(LANG_NAMES.nl).toBe('Nederlands');
+    expect(LANG_NAMES.ru).toBe('Русский');
     expect(DEFAULT_LANG).toBe('it');
     for (const l of LANGS) expect(LANG_NAMES[l]).toBeTruthy();
   });
 
   it('recognises only supported codes', () => {
     expect(isLang('de')).toBe(true);
-    expect(isLang('ru')).toBe(false);
+    expect(isLang('ru')).toBe(true);
+    expect(isLang('ja')).toBe(false);
     expect(isLang(7)).toBe(false);
     expect(isLang('nl')).toBe(true);
   });
@@ -37,15 +41,19 @@ describe('languages', () => {
     expect(langFromLocale('nl-BE')).toBe('nl');
     expect(langFromLocale('NL_nl')).toBe('nl');
     expect(langFromLocale('de-AT')).toBe('de');
-    expect(langFromLocale('ru-RU')).toBeNull();
+    expect(langFromLocale('ru-RU')).toBe('ru');
+    expect(langFromLocale('RU')).toBe('ru');
+    expect(langFromLocale('ja-JP')).toBeNull();
     expect(langFromLocale(undefined)).toBeNull();
-    expect(detectLang(['ru-RU', 'nl-BE', 'en'])).toBe('nl');
+    expect(detectLang(['ru-RU', 'nl-BE', 'en'])).toBe('ru');
+    expect(detectLang(['ja-JP', 'nl-BE', 'en'])).toBe('nl');
     expect(detectLang(['ja'])).toBeNull();
     expect(detectLang(null)).toBeNull();
   });
 
   it('formats dates and numbers for Dutch with nl-NL and leaves the other languages as they were', () => {
     expect(localeOf('nl')).toBe('nl-NL');
+    expect(localeOf('ru')).toBe('ru-RU');
     expect(localeOf('en')).toBe('en');
     expect(localeOf('xx')).toBe('xx');
     expect(new Date(Date.UTC(2026, 10, 4, 12)).toLocaleDateString(localeOf('nl'), { month: 'long', timeZone: 'UTC' })).toBe('november');
@@ -114,12 +122,13 @@ describe('texts that name Windows', () => {
         expect(textOf(lang, key), `${key} ${lang}`).not.toMatch(/Windows/);
       }
       expect(textOf('nl', key), `${key} nl`).not.toMatch(/Windows/);
+      expect(textOf('ru', key), `${key} ru`).not.toMatch(/Windows/);
     }
   });
 
   it('no text shown on the Audio page outside Windows names it', () => {
     for (const key of ['aud.vol.in', 'aud.vol.out', 'tip.aud.vol.in', 'tip.aud.vol.out', 'aud.vol.off', 'tip.aud.input', 'ens.audio.help'] as Key[]) {
-      for (const lang of [...TABLE_LANGS, 'nl'] as const) expect(translate(lang, key, undefined, true), `${key} ${lang}`).not.toMatch(/Windows/);
+      for (const lang of [...TABLE_LANGS, 'nl', 'ru'] as const) expect(translate(lang, key, undefined, true), `${key} ${lang}`).not.toMatch(/Windows/);
     }
   });
 });
@@ -204,10 +213,56 @@ describe('Dutch (separate dictionary, English fallback)', () => {
   });
 });
 
+describe('Russian (separate dictionary, English fallback; empty until the translation is imported)', () => {
+  const placeholdersAndMarks = (text: string) => [...text.matchAll(/{w+}|[[[w.]+]]/g)].map((m) => m[0]).sort().join('|');
+  const anon: Entry[] = [
+    ...GUIDE.flatMap((c) => [c.title, ...c.sections.flatMap((s) => [s.title, s.text, s.tip, ...(s.steps ?? []), ...(s.fix ?? [])].filter((e): e is Entry => !!e))]),
+    ...NOVITA.flatMap((n) => [n.title, n.text]),
+    ...MACRO_COMMANDS.flatMap((c) => (c.long ? [c.desc, c.long] : [c.desc])),
+    ...MACRO_EVENTS.map((e) => e.desc),
+  ];
+
+  it('has no orphan keys: every Russian key exists in the base tables', () => {
+    for (const key of Object.keys(RU_UI)) expect(key in STRINGS, `chiave russa senza testo base: ${key}`).toBe(true);
+    const known = new Set(anon.map(textKey));
+    for (const key of Object.keys(RU_TEXTS)) expect(known.has(key), `voce russa di Guida/Novita' senza testo base: ${key}`).toBe(true);
+  });
+
+  it('keeps placeholders and [[key]] markers of the English text', () => {
+    for (const [key, text] of Object.entries(RU_UI)) expect(placeholdersAndMarks(text), key).toBe(placeholdersAndMarks((STRINGS[key as Key] as Entry)[1]));
+    for (const entry of anon) {
+      const ru = RU_TEXTS[textKey(entry)];
+      if (ru !== undefined) expect(placeholdersAndMarks(ru), entry[1]).toBe(placeholdersAndMarks(entry[1]));
+    }
+  });
+
+  it('falls back to English for every missing Russian text', () => {
+    const key = 'nav.station' as Key;
+    const saved = RU_UI[key];
+    delete RU_UI[key];
+    try {
+      expect(translate('ru', key)).toBe(pick(STRINGS[key] as Entry, 'en'));
+      expect(textOf('ru', key)).toBe((STRINGS[key] as Entry)[1]);
+    } finally {
+      if (saved !== undefined) RU_UI[key] = saved;
+    }
+    const unknown: Entry = ['Solo italiano', 'English only', 'a', 'b', 'c', 'd'];
+    expect(pick(unknown, 'ru')).toBe(RU_TEXTS[textKey(unknown)] ?? 'English only');
+  });
+
+  // DA RIATTIVARE A TRADUZIONE FINITA (dopo `node scripts/importa-ru.mjs`): il russo e' completo per tutta l'interfaccia.
+  // Le Novita' vecchie restano in inglese di proposito (si traducono solo le ultime 10), quindi qui non si controllano.
+  it('is complete for the whole interface', () => {
+    expect(Object.keys(RU_UI).length).toBe(Object.keys(STRINGS).length);
+  });
+});
+
 describe('first launch language', () => {
   it('follows the system language, Dutch included, only while no language was chosen', () => {
     expect(firstLaunchLang(memory(), ['nl-BE', 'en'])).toBe('nl');
     expect(firstLaunchLang(memory({ 'aurora-lang': 'de' }), ['nl-NL'])).toBeNull();
+    expect(firstLaunchLang(memory(), ['ru-RU', 'en'])).toBe('ru');
+    expect(firstLaunchLang(memory({ 'aurora-lang': 'de' }), ['ru-RU'])).toBeNull();
     expect(firstLaunchLang(memory(), ['ja-JP'])).toBeNull();
     expect(firstLaunchLang(broken, ['nl'])).toBeNull();
     expect(firstLaunchLang(null, ['nl'])).toBe('nl');

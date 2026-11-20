@@ -56,7 +56,7 @@ export function openUpdatePoster(): void {
 
 
 /** Le note della release in punti brevi: una riga per frase (al massimo sei), senza i segni del Markdown. */
-const NOTE_LANG_NAMES: Record<string, string> = { it: 'Italiano', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', nl: 'Nederlands' };
+const NOTE_LANG_NAMES: Record<string, string> = { it: 'Italiano', de: 'Deutsch', fr: 'Français', es: 'Español', pt: 'Português', nl: 'Nederlands', ru: 'Русский' };
 
 /** La parte delle note nella lingua `lang`: il blocco `<details>` della lingua, altrimenti l'inglese in cima (senza «Download:»). */
 export function notesForLang(notes: string, lang: string): string {
@@ -168,6 +168,10 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
       <div className="first-run__card upd-poster__card">
         <div className="upd-poster__art">
           <span className="upd-poster__ribbon" aria-hidden="true">{t('upd.poster.ribbon')}</span>
+          {/* il bollino a stella «NUOVA APP», sempre presente e tradotto in ogni lingua */}
+          <span className="upd-poster__badge" aria-hidden="true">
+            <span>{t('upd.poster.badge')}</span>
+          </span>
           <svg viewBox="0 0 560 150" preserveAspectRatio="none" aria-hidden="true">
             <g fill="none" stroke="#fff" strokeOpacity=".35" strokeWidth="1.5">
               <path d="M0 110 Q140 40 280 90 T560 60" />

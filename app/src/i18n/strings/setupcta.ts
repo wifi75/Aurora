@@ -18,6 +18,7 @@ export const setupCtaStrings = {
   'upd.poster.available': ['È disponibile una nuova versione', 'A new version is available', 'Eine neue Version ist verfügbar', 'Une nouvelle version est disponible', 'Hay una versión nueva disponible', 'Há uma nova versão disponível'],
   'upd.poster.auto': ['Installo l’aggiornamento tra {seconds} s…', 'Installing the update in {seconds} s…', 'Update wird in {seconds} s installiert…', 'Installation de la mise à jour dans {seconds} s…', 'Instalo la actualización en {seconds} s…', 'A instalar a atualização em {seconds} s…'],
   'upd.poster.cancel': ['Annulla', 'Cancel', 'Abbrechen', 'Annuler', 'Cancelar', 'Cancelar'],
+  'upd.poster.badge': ['NUOVA APP', 'NEW APP', 'NEUE APP', 'NOUVELLE APP', 'NUEVA APP', 'NOVA APP'],
   'upd.poster.ribbon': ['NUOVA VERSIONE', 'NEW VERSION', 'NEUE VERSION', 'NOUVELLE VERSION', 'NUEVA VERSIÓN', 'NOVA VERSÃO'],
   'upd.poster.news': ['Novità', 'What’s new', 'Neuigkeiten', 'Nouveautés', 'Novedades', 'Novidades'],
   'upd.poster.current': ['Hai la {current} · nuova pubblicata il {when}', 'You have {current} · new one released {when}', 'Du hast {current} · neue veröffentlicht am {when}', 'Tu as la {current} · nouvelle publiée le {when}', 'Tienes la {current} · nueva publicada el {when}', 'Tens a {current} · nova publicada a {when}'],

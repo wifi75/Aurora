@@ -28,7 +28,7 @@ export function saveLang(storage: WritableStorage, lang: Lang): void {
 const FIRST_RUN_DONE_KEY = 'aurora-first-run-done';
 
 /**
- * Primo avvio (nessuna lingua scelta ne' salvata): quella del sistema o del browser, se Aurora la conosce (`nl-BE` e `nl-NL` -> olandese).
+ * Primo avvio (nessuna lingua scelta ne' salvata): quella del sistema o del browser, se Aurora la conosce (`nl-BE` e `nl-NL` -> olandese, `ru-RU` -> russo).
  * Un'installazione che ha gia' fatto il primo avvio senza mai scegliere la lingua resta sull'italiano di sempre: non si cambia da sola.
  */
 export function firstLaunchLang(storage: ReadableStorage, tags: readonly string[] | null | undefined): Lang | null {
@@ -63,3 +63,6 @@ export const useLang = create<LangState>((set) => ({
     set({ lang });
   },
 }));
+
+// all'avvio l'attributo `lang` della pagina segue la lingua salvata (prima restava «it» fino al primo cambio di lingua)
+if (typeof document !== 'undefined') document.documentElement.lang = useLang.getState().lang;

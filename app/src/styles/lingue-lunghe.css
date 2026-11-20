@@ -1,0 +1,33 @@
+/* Lingue con parole lunghe (russo +20-35%): niente testo tagliato o fuori dal riquadro sul PC.
+   Regole generiche, valide per ogni lingua; sul telefono (<= 40rem) non cambia nulla. */
+@media (min-width: 40.01rem) {
+  /* log vuoto: messaggio e pulsanti vanno a capo invece di essere tagliati */
+  :root .log4om-table .log4om-empty td { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+  /* Novita': il titolo della riga va a capo invece di finire in puntini */
+  :root .news-row .news-title { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  :root .news-row summary { align-items: start; }
+
+  /* titolo delle schede di Satelliti e Contest: a capo (al massimo due righe) invece di puntini senza spiegazione */
+  :root .dash-title, :root .dash .sat-panel h2.dash-title { white-space: normal; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.15; max-height: 2.3em; }
+
+  /* quadranti di propagazione: la didascalia sta nella colonna */
+  :root .prop-gauges .gauge figcaption { min-width: 0; max-width: 100%; font-size: 0.7rem; letter-spacing: 0.05em; overflow-wrap: anywhere; text-align: center; }
+
+  /* tabelle compatte delle Impostazioni: l'intestazione va a capo */
+  :root .sx-table--compact th { overflow-wrap: anywhere; }
+
+  /* guida passo per passo: parole lunghe (percorsi, nomi di menu) non escono dall'elenco */
+  :root .guide-steps li { min-width: 0; overflow-wrap: anywhere; }
+
+  /* pannello DXCC del Log: la didascalia («Banda - Nominativo») va a capo invece di finire in puntini */
+  :root .dxcc-caption { white-space: normal; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.15; }
+
+  /* riquadro «Aperture di banda»: le colonne Giorno/Notte restano di 118 px se c'e' posto, ma si stringono nei riquadri stretti invece di uscire */
+  :root .bands-open .prop-matrix-head, :root .bands-open .prop-matrix-row { grid-template-columns: 64px repeat(2, minmax(0, 118px)) !important; }
+
+  :root .bands-open .prop-tile { width: 100% !important; max-width: 118px; box-sizing: border-box; }
+
+  /* riquadro «Aperture di banda»: l'etichetta dell'apertura non esce dal suo riquadro */
+  :root .bands-open .prop-tile b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
