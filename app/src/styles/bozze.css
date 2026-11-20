@@ -308,9 +308,11 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 /* spettro piu' alto (almeno 60 px in piu') e ridimensionabile con il divisore fra cascata e spettro */
 .waterfall--bar .wf-spectrum { min-height: 36px; }
 .waterfall--bar .wf-main { min-height: 64px; }
-.wf-splitter { flex: 0 0 7px; position: relative; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--border) 60%, transparent); }
-.wf-splitter::after { content: ''; position: absolute; left: 50%; top: 1px; width: 80px; height: 5px; margin-left: -40px; border-radius: 3px; background: color-mix(in srgb, var(--text) 70%, transparent); }
-.wf-splitter:hover::after { background: #8e7bff; }
+.wf-splitter { flex: 0 0 14px; position: relative; cursor: ns-resize; touch-action: none; background: color-mix(in srgb, var(--border) 60%, transparent); }
+.wf-splitter::after { content: ''; position: absolute; left: 50%; top: 4px; width: 110px; height: 6px; margin-left: -55px; border-radius: 3px; background: color-mix(in srgb, var(--text) 70%, transparent); }
+.wf-splitter:hover::after, .wf-splitter:active::after { background: #8e7bff; }
+.wf-splitter::before { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+.wf-splitter:hover { background: color-mix(in srgb, #8e7bff 28%, transparent); }
 /* la riga in basso un po' piu' alta, per dare spazio allo spettro */
 .live-bottom { height: clamp(18rem, calc(37vh / var(--ui-zoom, 1)), 26rem); }
 
@@ -607,7 +609,7 @@ html[data-bozza] .qso-grid .chip[data-ctl='enable_tx'].glass--on .chip-led, html
 
 /* lo spettro sotto la cascata c'e' sempre: la cascata cede spazio (mai sotto 40 px) e lo spettro tiene almeno 36 px, poi prende il resto */
 .waterfall--bar .wf-spectrum { flex: 1 0 36px !important; min-height: 36px !important; display: block !important; }
-.waterfall--bar .wf-splitter { flex: 0 0 7px; }
+.waterfall--bar .wf-splitter { flex: 0 0 14px; }
 
 /* DX Cluster: le colonne Freq, DX e Paese (bandiera e nome) spostate di 30 px a sinistra */
 .cluster-table th:nth-child(2), .cluster-table td:nth-child(2),
