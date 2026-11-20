@@ -2,6 +2,11 @@
 
 ## Non rilasciato
 
+## 0.11.317 - 2026-11-20
+
+- FT8: con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx ora trasmette il CQ; prima Abilita Tx si spegneva da solo e non partiva niente (segnalazione #86, FT-710). Il CQ automatico a QSO finito resta solo con AutoTX acceso.
+- Guida aggiornata: ingranaggio unico con Guida e Novita' nelle Impostazioni, rotore fuori dalla barra e «Mostra in home», etichetta dei satelliti opzionale, pallini e prova della trasmissione, differenza fra «Doppio clic: rispondi alla stazione» e la conferma di chiamata, WEFAX, cascata.
+
 ## 0.11.316 - 2026-11-20
 
 - Diagnosi della trasmissione: a ogni trasmissione Aurora scrive nel registro il picco dell'audio mandato alla radio e lo stato del PTT letto dalla radio, e avvisa se l'audio e' praticamente muto o se la radio dice di essere in ricezione mentre Aurora trasmette (difetto segnalato dagli utenti di WSJT-X 3.3: PTT che scatta senza RF).

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.317',
+    released: '2026-11-20T16:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Il CQ parte anche con AutoTX spento, Guida aggiornata',
+      'CQ goes out even with AutoTX off, Guide updated',
+      'Das CQ geht auch bei ausgeschaltetem AutoTX raus, Hilfe aktualisiert',
+      'Le CQ part même avec AutoTX éteint, Guide mise à jour',
+      'El CQ sale aunque AutoTX esté apagado, Guía actualizada',
+      'O CQ sai mesmo com o AutoTX desligado, Guia atualizado',
+    ],
+    text: [
+      'Con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx ora trasmette il CQ: prima Abilita Tx si spegneva da solo e non partiva niente. Il CQ automatico a QSO finito resta solo con AutoTX acceso. La Guida è aggiornata a tutte le novità recenti: ingranaggio unico, rotore fuori dalla barra con «Mostra in home», etichetta dei satelliti opzionale, pallini e prova della trasmissione.',
+      'With AutoTX off, choosing message 6 (CQ) and turning on Enable Tx now transmits the CQ: before, Enable Tx switched itself off and nothing went out. The automatic CQ after a finished QSO stays only with AutoTX on. The Guide is updated with all the recent changes: single gear, rotator out of the top bar with “Show on the home pages”, optional satellite label, dots and test of the transmission.',
+      'Bei ausgeschaltetem AutoTX sendet das Wählen von Nachricht 6 (CQ) und das Einschalten von Abilita Tx jetzt das CQ: vorher schaltete sich Enable Tx von selbst aus und nichts ging raus. Das automatische CQ nach einem beendeten QSO bleibt nur mit AutoTX an. Die Hilfe ist auf alle neuen Änderungen aktualisiert: ein einziges Zahnrad, Rotor nicht mehr in der oberen Leiste mit „Auf den Startseiten anzeigen“, optionaler Satelliten-Hinweis, Punkte und Test der Aussendung.',
+      'Avec AutoTX éteint, choisir le message 6 (CQ) et activer Activer Tx émet maintenant le CQ : avant, Activer Tx s’éteignait tout seul et rien ne partait. Le CQ automatique après un QSO terminé reste seulement avec AutoTX allumé. Le Guide est mis à jour avec toutes les nouveautés récentes : un seul engrenage, rotor hors de la barre du haut avec « Afficher sur les pages d’accueil », étiquette des satellites optionnelle, voyants et test de l’émission.',
+      'Con AutoTX apagado, elegir el mensaje 6 (CQ) y activar Habilitar Tx ahora transmite el CQ: antes Habilitar Tx se apagaba solo y no salía nada. El CQ automático tras un QSO terminado queda solo con AutoTX encendido. La Guía está actualizada con todas las novedades recientes: un solo engranaje, rotor fuera de la barra superior con «Mostrar en las páginas de inicio», etiqueta de satélites opcional, indicadores y prueba de la transmisión.',
+      'Com o AutoTX desligado, escolher a mensagem 6 (CQ) e ligar Ativar Tx agora transmite o CQ: antes o Ativar Tx desligava-se sozinho e não saía nada. O CQ automático depois de um QSO terminado fica só com o AutoTX ligado. O Guia está atualizado com todas as novidades recentes: uma única roda dentada, rotor fora da barra superior com «Mostrar nas páginas iniciais», etiqueta dos satélites opcional, indicadores e teste da transmissão.',
+    ],
+  },
+  {
     version: '0.11.316',
     released: '2026-11-20T13:10:20Z',
     kind: 'new',
@@ -818,27 +839,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec certaines Icom (IC-756PRO et la famille 756), Hamlib n’a pas de mode données : avec « Mode écrit dans la radio » sur « Données », Aurora se rabattait sur l’écriture de USB et sortait la radio de l’USB-D. Maintenant, si la radio est déjà en USB, le mode n’est pas réécrit et l’USB-D choisi sur la radio reste. Le mode données de ces radios se choisit sur la radio : Aurora ne le voit pas et affiche « USB ».',
       'Con algunas Icom (IC-756PRO y la familia 756) Hamlib no tiene modo de datos: con «Modo escrito en la radio» en «Datos» Aurora recurría a escribir USB y sacaba la radio de USB-D. Ahora, si la radio ya está en USB, el modo no se reescribe y el USB-D elegido en la radio se queda. El modo de datos de estas radios se elige en la radio: Aurora no lo ve y muestra «USB».',
       'Com alguns rádios Icom (IC-756PRO e a família 756) o Hamlib não tem modo de dados: com «Modo escrito no rádio» em «Dados» a Aurora recorria a escrever USB e tirava o rádio de USB-D. Agora, se o rádio já está em USB, o modo não é reescrito e o USB-D escolhido no rádio fica. O modo de dados destes rádios escolhe-se no rádio: a Aurora não o vê e mostra «USB».',
-    ],
-  },
-  {
-    version: '0.11.287',
-    released: '2026-11-17T19:45:26Z',
-    kind: 'fixed',
-    title: [
-      'Protezione del VFO più sicura',
-      'Safer VFO protection',
-      'Sicherere VFO-Schutz',
-      'Protection du VFO plus sûre',
-      'Protección del VFO más segura',
-      'Proteção do VFO mais segura',
-    ],
-    text: [
-      'La protezione che rimette la radio sul VFO giusto accetta ora solo un vero nome di VFO (VFOA, VFOB...): prima una risposta rimasta in coda da un altro comando (con l’IC-756PRO, un numero) poteva essere presa per un VFO e rimandata alla radio. Il collegamento con la radio annota ora ogni comando nel pacchetto di assistenza, per trovare cosa sposta la radio sul VFO B.',
-      'The protection that puts the radio back on the right VFO now accepts only a real VFO name (VFOA, VFOB...): before, an answer left in the queue by another command (with the IC-756PRO, a number) could be taken for a VFO and sent back to the radio. The connection to the radio now notes every command in the support package, to find what moves the radio to VFO B.',
-      'Der Schutz, der das Gerät auf den richtigen VFO zurückstellt, akzeptiert jetzt nur einen echten VFO-Namen (VFOA, VFOB...): bisher konnte eine von einem anderen Befehl in der Warteschlange gebliebene Antwort (beim IC-756PRO eine Zahl) für einen VFO gehalten und an das Gerät zurückgeschickt werden. Die Verbindung zum Gerät vermerkt jetzt jeden Befehl im Supportpaket, um zu finden, was das Gerät auf VFO B setzt.',
-      'La protection qui remet la radio sur le bon VFO n’accepte plus qu’un vrai nom de VFO (VFOA, VFOB...) : avant, une réponse restée en file par une autre commande (avec l’IC-756PRO, un nombre) pouvait être prise pour un VFO et renvoyée à la radio. La liaison avec la radio note maintenant chaque commande dans le paquet d’assistance, pour trouver ce qui met la radio sur le VFO B.',
-      'La protección que devuelve la radio al VFO correcto acepta ahora solo un nombre de VFO real (VFOA, VFOB...): antes una respuesta que otro comando había dejado en la cola (con el IC-756PRO, un número) podía tomarse por un VFO y reenviarse a la radio. La conexión con la radio anota ahora cada comando en el paquete de asistencia, para encontrar qué pone la radio en el VFO B.',
-      'A proteção que volta a pôr o rádio no VFO certo aceita agora só um nome de VFO verdadeiro (VFOA, VFOB...): antes uma resposta deixada na fila por outro comando (com o IC-756PRO, um número) podia ser tomada por um VFO e reenviada ao rádio. A ligação ao rádio anota agora cada comando no pacote de assistência, para encontrar o que põe o rádio no VFO B.',
     ],
   },
 ];
