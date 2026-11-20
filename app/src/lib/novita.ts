@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.308',
-    released: '2026-11-20T15:00:00Z',
+    released: '2026-11-20T07:44:01Z',
     kind: 'new',
     title: [
       'Satelliti: preavviso del rotore. Contest: Cabrillo più preciso',

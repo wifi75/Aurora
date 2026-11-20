@@ -23,8 +23,10 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Poi
 - [ ] WEFAX: ogni 6 mesi rileggere l'elenco NOAA (rfax.pdf) e gli orari DWD e aggiornare `app/src/lib/wefaxStations.ts`
-- [ ] Contest: schede mancanti, Cabrillo dal log, altri contest in cartella
-- [ ] Satelliti: preavviso rotore, suoni, schede con spazi vuoti
+- [x] Contest: Cabrillo dal log, finestra scaduta, date (0.11.308)
+- [ ] Contest: `.dom` JIDX (servono i dati veri), schede mancanti, altri contest in cartella; ricontrollare le date delle regole nuove
+- [x] Satelliti: preavviso rotore, suoni, schede (0.11.308; spazi vuoti da guardare a schermo)
+- [ ] Satelliti: il rotore non parcheggia a fine passaggio (decidere)
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
 - [ ] Panic `tao`: indagato, correzione da fare (lib.rs CloseRequested, finestre, cartolina agent.rs)

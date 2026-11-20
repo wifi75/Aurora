@@ -2,6 +2,13 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.308 (pubblicata 2026-11-20T07:44:01Z)
+
+- Satelliti: preavviso del rotore (`lib/satAlerts.ts`, evento `rotor`, minuti impostabili 0-30, suono suo), ascolto del suono alla scelta, CSS delle schede «Doppler e rotore» e «Informazioni» senza spazi vuoti (non verificato a schermo). Il rotore non parcheggia (decisione da prendere).
+- Contest: Cabrillo con nomi ufficiali (JIDX-CW, CQ-WW-RTTY, ARRL-DX-CW...) e `avvisi` dopo il salvataggio; `da` (attivazione) accettato da punteggio, Cabrillo, controllo e QTC quando la finestra e' scaduta; regole di date per CQ WW RTTY, CQ WPX RTTY, ARRL DX CW/SSB, ARRL 10 m (da ricontrollare sui regolamenti). `.dom` JIDX NON fatto: servono i dati veri.
+- Stazione del PC adattabile (`styles/stazione-adattabile.css`, solo sopra la soglia del telefono); telefono invariato. Provata solo con un server finto.
+- `desktop/src-tauri/src/lib.rs`: la posizione non si legge piu' dentro CloseRequested (mitigazione del panic tao re-entrant, senza backtrace).
+
 ## Nella 0.11.307 (pubblicata 2026-11-20T07:21:50Z)
 
 - WEFAX: crate `core/crates/mode-wefax` (ricezione ripresa da fldigi 4.2.13 di W1HKJ e Remi Chateauneu, GPL-3.0; 14 prove con segnale sintetico), rotte `/api/v1/wefax`, evento `wefax`, pagina `#/wefax` (visore adattabile, 1:1, zoom, cronologia), menu delle frequenze per banda e frequenza (`app/src/lib/wefaxStations.ts`, fonte NOAA/NWS marzo 2025 e DWD; la radio va sulla portante, assegnata - 1,9 kHz), finestra staccata. NON provato con segnali veri; 240 LPM solo in modo manuale.
