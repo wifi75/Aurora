@@ -28,7 +28,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
 - [ ] Panic `tao` (crash FTDX-101MP)
-- [ ] Olandese: 2 prove e ~13 voci
+- [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
 - [ ] Antivirus: invio dei file per i falsi positivi (tuo)
 
 ## Scartato
