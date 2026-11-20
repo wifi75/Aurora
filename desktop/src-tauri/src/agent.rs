@@ -694,6 +694,8 @@ fn get_json(url: &str) -> Option<serde_json::Value> {
 
 /// Il controllo: versione nuova (sempre, scelta del proprietario) e messaggi dell'autore. `asked`: dal menu, mostra anche «aggiornata».
 fn check(app: &AppHandle, asked: bool) {
+    // la cartolina della versione nuova non si dimentica: compare a ogni avvio del tray (primo controllo riuscito) e poi ogni 6 ore finche' Aurora non e' aggiornata
+    static LAST_SHOWN: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
     if CHECKING.swap(true, Ordering::SeqCst) {
         return;
     }
@@ -702,7 +704,10 @@ fn check(app: &AppHandle, asked: bool) {
     let mut shown = false;
     if let Some(release) = get_json(REPO_API) {
         let tag = release.get("tag_name").and_then(|v| v.as_str()).unwrap_or("").trim_start_matches('v').to_string();
-        if !tag.is_empty() && updater::is_newer(&tag, VERSION) && (asked || (!open && !seen.versions.contains(&tag))) {
+        if !tag.is_empty() && updater::is_newer(&tag, VERSION) && (asked || (!open && (!seen.versions.contains(&tag) || LAST_SHOWN.lock().map(|l| l.is_none_or(|at| at.elapsed() >= Duration::from_secs(6 * 3600))).unwrap_or(true)))) {
+            if let Ok(mut l) = LAST_SHOWN.lock() {
+                *l = Some(std::time::Instant::now());
+            }
             // le note nella lingua di Aurora o del PC (inglese se manca): prima arrivava sempre l'inglese in cima
             let notes = updater::notes_for_lang(release.get("body").and_then(|v| v.as_str()).unwrap_or(""), &lang_code());
             let summary: String = notes

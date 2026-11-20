@@ -47,12 +47,16 @@ pub fn spawn_checker(service: Arc<UpdateService>, events: broadcast::Sender<Even
     tokio::spawn(async move {
         tokio::time::sleep(first_delay).await;
         let mut last = std::time::Instant::now() - Duration::from_secs(10 * 24 * 3600);
+        let mut first = true;
         loop {
             let config = service.config();
             if config.enabled && last.elapsed() >= Duration::from_secs(u64::from(config.interval_hours) * 3600) {
                 last = std::time::Instant::now();
-                // PC lento: il controllo (e lo scaricamento in anticipo) parte fuori dalla decodifica, al massimo 30 s dopo
-                aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
+                // il primo controllo parte subito (chi apre Aurora deve vedere l'avviso senza attese); i successivi aspettano la decodifica, al massimo 30 s
+                if !first {
+                    aurora_core::idle::wait_free(aurora_core::idle::MAX_WAIT).await;
+                }
+                first = false;
                 let (service, events, phone_url, installer) = (Arc::clone(&service), events.clone(), Arc::clone(&phone_url), installer.clone());
                 // la rete puo' essere lenta: fuori dal thread asincrono
                 let _ = tokio::task::spawn_blocking(move || {
