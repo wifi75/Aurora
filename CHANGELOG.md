@@ -2,6 +2,13 @@
 
 ## Non rilasciato
 
+## 0.11.313 - 2026-11-20
+
+- WEFAX: la frequenza scelta nel menu si ricorda e entrando nella pagina la radio ci torna; uscendo la radio torna alla banda di prima anche se la pagina e' stata ricaricata o il WEFAX era in una finestra a parte (la memoria ora e' nell'archivio del browser); se manca, si usa l'ultima frequenza FT8, mai 1,810 MHz.
+- WEFAX: menu delle frequenze ancora piu' lungo (19 rem) e con carattere piu' piccolo, il nome della stazione si legge intero.
+- Locandina di aggiornamento: tolta la striscia «NUOVA VERSIONE» sul lato destro; la stella «NUOVA APP» passa al suo posto.
+- Cascata: divisore tra cascata e spettro piu' alto (14 px), maniglia piu' grande e area di presa piu' ampia, per ridimensionare con il mouse.
+
 ## 0.11.312 - 2026-11-20
 
 - Conferma di chiamata: non compare piu' sul doppio clic delle righe delle liste dei decode (la stazione si vede sullo schermo); resta per le stazioni di «CQ e novita'» e delle DXpedition. Nuova casella, spenta di fabbrica, per chiederla anche sul doppio clic delle liste. Le caselle stanno in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo.

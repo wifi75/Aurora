@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.313',
+    released: '2026-11-20T14:00:00Z',
+    kind: 'fixed',
+    title: [
+      'WEFAX ricorda la frequenza, cascata più facile da ridimensionare',
+      'WEFAX remembers its frequency, easier waterfall resizing',
+      'WEFAX merkt sich die Frequenz, Wasserfall leichter in der Größe änderbar',
+      'Le WEFAX se souvient de la fréquence, cascade plus facile à redimensionner',
+      'El WEFAX recuerda la frecuencia, cascada más fácil de redimensionar',
+      'O WEFAX lembra a frequência, cascata mais fácil de redimensionar',
+    ],
+    text: [
+      'Il WEFAX ricorda l’ultima frequenza scelta e la radio ci torna quando riapri la pagina; uscendo, la radio torna alla banda di prima, anche dopo un ricaricamento, e non finisce più su 1,810 MHz. Il menu delle frequenze è più lungo e con carattere più piccolo, così il nome della stazione si legge intero. Il divisore tra cascata e spettro è più alto e la maniglia più grande, così si afferra e si ridimensiona con il mouse. Nella locandina di aggiornamento la striscia laterale è tolta e la stella «NUOVA APP» passa a destra.',
+      'WEFAX remembers the last frequency you chose and the radio goes back to it when you reopen the page; on leaving, the radio returns to the band it was on, even after a reload, and no longer ends up on 1.810 MHz. The frequency menu is longer and has a smaller font, so the station name reads in full. The divider between waterfall and spectrum is taller and the handle bigger, so you can grab and resize it with the mouse. In the update poster the side ribbon is gone and the “NEW APP” star moves to its place.',
+      'WEFAX merkt sich die zuletzt gewählte Frequenz, und das Funkgerät kehrt beim erneuten Öffnen der Seite dorthin zurück; beim Verlassen geht das Funkgerät in das Band von vorher zurück, auch nach einem Neuladen, und landet nicht mehr auf 1,810 MHz. Das Frequenzmenü ist länger und hat eine kleinere Schrift, sodass der Stationsname vollständig lesbar ist. Die Trennleiste zwischen Wasserfall und Spektrum ist höher und der Griff größer, sodass man sie mit der Maus greifen und die Größe ändern kann. Im Update-Plakat entfällt das seitliche Band, und der Stern „NEUE APP“ rückt an dessen Stelle.',
+      'Le WEFAX se souvient de la dernière fréquence choisie et la radio y revient quand tu rouvres la page ; en quittant, la radio revient sur la bande d’avant, même après un rechargement, et ne finit plus sur 1,810 MHz. Le menu des fréquences est plus long et avec une police plus petite, le nom de la station se lit en entier. Le séparateur entre cascade et spectre est plus haut et la poignée plus grande, on peut l’attraper et le redimensionner à la souris. Sur l’affiche de mise à jour, le ruban latéral disparaît et l’étoile « NOUVELLE APP » prend sa place.',
+      'El WEFAX recuerda la última frecuencia elegida y la radio vuelve a ella al reabrir la página; al salir, la radio vuelve a la banda de antes, incluso tras recargar, y ya no acaba en 1,810 MHz. El menú de frecuencias es más largo y con letra más pequeña, así el nombre de la estación se lee entero. El divisor entre cascada y espectro es más alto y el asa más grande, así se agarra y se redimensiona con el ratón. En el cartel de actualización desaparece la cinta lateral y la estrella «NUEVA APP» ocupa su lugar.',
+      'O WEFAX lembra a última frequência escolhida e o rádio volta a ela ao reabrir a página; ao sair, o rádio volta à banda de antes, mesmo após recarregar, e já não acaba em 1,810 MHz. O menu de frequências é mais longo e com letra mais pequena, para o nome da estação se ler inteiro. O divisor entre cascata e espetro é mais alto e a pega maior, para se agarrar e redimensionar com o rato. No cartaz de atualização desaparece a faixa lateral e a estrela «NOVA APP» ocupa o seu lugar.',
+    ],
+  },
+  {
     version: '0.11.312',
     released: '2026-11-20T12:02:41Z',
     kind: 'fixed',
@@ -819,27 +840,6 @@ export const NOVITA: readonly Novita[] = [
       'En cherchant une marque (par exemple « icom »), la liste montre maintenant toutes les radios de cette marque, dans l’ordre numérique, et non plus seulement les 12 premières : l’IC-756PRO et beaucoup d’autres étaient cachées.',
       'Al buscar una marca (por ejemplo «icom») la lista muestra ahora todas las radios de esa marca, en orden numérico, y no solo las 12 primeras: el IC-756PRO y muchas otras quedaban ocultas.',
       'Ao pesquisar uma marca (por exemplo «icom») a lista mostra agora todos os rádios dessa marca, por ordem numérica, e não só os 12 primeiros: o IC-756PRO e muitos outros ficavam escondidos.',
-    ],
-  },
-  {
-    version: '0.11.286',
-    released: '2026-11-17T18:32:12Z',
-    kind: 'fixed',
-    title: [
-      'Radio Icom: niente VFO B dopo il riavvio',
-      'Icom radios: no VFO B after a restart',
-      'Icom-Geräte: kein VFO B nach dem Neustart',
-      'Radios Icom : plus de VFO B après le redémarrage',
-      'Radios Icom: sin VFO B tras reiniciar',
-      'Rádios Icom: sem VFO B depois de reiniciar',
-    ],
-    text: [
-      'Con Hamlib e certe Icom (IC-756PRO) la radio poteva trovarsi sul VFO B dopo aver chiuso e riaperto Aurora. Ora, leggendo il VFO B o riportando frequenza e modo all’avvio, Aurora guarda su quale VFO sta la radio e la rimette dov’era; il registro lo annota. Non provato su una radio vera: se succede ancora, manda il pacchetto di assistenza.',
-      'With Hamlib and some Icom radios (IC-756PRO) the radio could end up on VFO B after closing and reopening Aurora. Now, when reading VFO B or restoring frequency and mode at start, Aurora checks which VFO the radio is on and puts it back; the log notes it. Not tested on a real radio: if it still happens, send the support package.',
-      'Mit Hamlib und manchen Icom-Geräten (IC-756PRO) konnte das Gerät nach dem Schließen und Öffnen von Aurora auf VFO B stehen. Jetzt prüft Aurora beim Lesen von VFO B oder beim Wiederherstellen von Frequenz und Betriebsart am Start, auf welchem VFO das Gerät steht, und stellt es zurück; das Protokoll vermerkt es. Nicht an einem echten Gerät getestet: tritt es weiter auf, sende das Supportpaket.',
-      'Avec Hamlib et certaines Icom (IC-756PRO), la radio pouvait se retrouver sur le VFO B après la fermeture et la réouverture d’Aurora. Maintenant, en lisant le VFO B ou en remettant fréquence et mode au démarrage, Aurora vérifie sur quel VFO se trouve la radio et la remet là où elle était ; le journal le note. Non testé sur une vraie radio : si cela se reproduit, envoie le paquet d’assistance.',
-      'Con Hamlib y algunas Icom (IC-756PRO) la radio podía quedar en el VFO B tras cerrar y reabrir Aurora. Ahora, al leer el VFO B o al devolver frecuencia y modo al arrancar, Aurora comprueba en qué VFO está la radio y la devuelve a donde estaba; el registro lo anota. No probado con una radio real: si sigue pasando, envía el paquete de asistencia.',
-      'Com Hamlib e alguns rádios Icom (IC-756PRO) o rádio podia ficar no VFO B depois de fechar e reabrir a Aurora. Agora, ao ler o VFO B ou ao repor frequência e modo no arranque, a Aurora verifica em que VFO está o rádio e volta a pô-lo onde estava; o registo anota-o. Não testado num rádio real: se continuar a acontecer, envia o pacote de assistência.',
     ],
   },
 ];
