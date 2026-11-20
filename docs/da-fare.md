@@ -4,7 +4,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Adesso
 - [x] WEFAX: pagina nell'interfaccia fatta
-- [ ] WEFAX: guardarla a schermo e provarla con un segnale vero (frequenze meteo, Guida e finestra staccata da aggiungere)
+- [x] WEFAX: menu delle frequenze, finestra staccata e Guida fatti (0.11.307)
+- [ ] WEFAX: guardarla a schermo e provarla con un segnale vero
 - [x] Pubblicata la 0.11.307 (TUNE, SSTV 20 m, avvisi, WEFAX, olandese)
 - [ ] Avvisi di aggiornamento: provarli dal vivo (finestrella «Vuoi aggiornare?», cartolina del tray)
 - [ ] Finestrella di aggiornamento nativa prima dell'apertura di Aurora (solo se la vuoi)
@@ -26,10 +27,12 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [x] Contest: Cabrillo dal log, finestra scaduta, date (0.11.308)
 - [ ] Contest: `.dom` JIDX (servono i dati veri), schede mancanti, altri contest in cartella; ricontrollare le date delle regole nuove
 - [x] Satelliti: preavviso rotore, suoni, schede (0.11.308; spazi vuoti da guardare a schermo)
+- [ ] Stazione stretta (0.11.308): guardarla a schermo con radio e dati veri
 - [ ] Satelliti: il rotore non parcheggia a fine passaggio (decidere)
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
-- [ ] Panic `tao`: indagato, correzione da fare (lib.rs CloseRequested, finestre, cartolina agent.rs)
+- [x] Panic `tao`: prima correzione sulla chiusura (0.11.308)
+- [ ] Panic `tao`: restano finestre e cartolina del tray; serve il backtrace dell'utente
 - [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
 - [ ] Antivirus: invio dei file per i falsi positivi (tuo)
 

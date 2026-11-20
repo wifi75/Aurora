@@ -43,7 +43,7 @@
 >
 > 🍎 **[macOS (vom Autor nicht getestet, ohne Support): Aurora-macOS.dmg für Apple Silicon und Intel](https://github.com/wifi75/Aurora/releases/latest/download/Aurora-macOS.dmg)** — nicht von Apple signiert: beim ersten Start Rechtsklick › Öffnen (oder `xattr -cr /Applications/Aurora.app`). Für CAT Hamlib mit `brew install hamlib` installieren. Updates werden wie unter Windows in der App installiert („Installieren und neu starten“): Aurora in Programme lassen, nicht aus dem .dmg öffnen; beim ersten Start nach einem Update kann macOS erneut nachfragen, weil Aurora nicht von Apple signiert ist.
 
-Eine neuartige Multimode-Amateurfunkstation (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK31/PSK63, RTTY, CW, SSTV und Satelliten): eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden; Aurora ist Gehirn, Motor und Bildschirm.
+Eine neuartige Multimode-Amateurfunkstation (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, FST4, FST4W, WSPR, PSK31/PSK63, RTTY, CW, SSTV, WEFAX (Wetterkarten, nur Empfang) und Satelliten): eindrucksvolle Oberfläche, QSO-Automatisierung und Fernsteuerung per Smartphone. Sie hat eine eigene Engine zum Dekodieren und Senden; Aurora ist Gehirn, Motor und Bildschirm.
 
 Konzept und Entwicklung: Tiziano Cassone (IU3WJQ)
 
