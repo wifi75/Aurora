@@ -247,7 +247,12 @@ fn start(app: &mut tauri::App) -> Result<(), Box<dyn Error>> {
             });
             // niente programma residente: l'avvio con Windows e' spento, salvo `AURORA_AUTOSTART=1`
             apply_autostart_choice(&handle, values.get("AURORA_AUTOSTART").map(String::as_str) == Some("1"));
-            open_main_with_retry(&handle, &page)?;
+            // se la finestra non si apre nemmeno dopo i tentativi: un messaggio che dice cosa fare e si esce, senza il panic di Tauri
+            if let Err(e) = open_main_with_retry(&handle, &page) {
+                tracing::error!("finestra principale non aperta: {e}");
+                webview_check::window_failed(&e.to_string());
+                std::process::exit(1);
+            }
             // l'agente nel tray (acceso di fabbrica; `AURORA_AGENTE=0` lo spegne): parte con Windows e, se non c'e', si avvia adesso
             agent_on_start(values.get("AURORA_AGENTE").map(String::as_str) != Some("0") && agent::prefs().enabled);
             // Monitora (l'ascolto) parte acceso: `AURORA_MONITOR_ON_START=0` lo lascia com'e'

@@ -66,6 +66,85 @@ pub fn ensure() -> bool {
     true
 }
 
+/// La finestra principale non si e' aperta nemmeno dopo i tentativi (WebView2 e' registrato ma la sua creazione fallisce, per esempio con
+/// 0x80070578 «identificatore della finestra non valido», rapporti del 3, 5 e 19/11 e panic della 0.11.300 a due secondi dall'avvio): prima
+/// Tauri si fermava con un panic senza dire niente. Ora un messaggio spiega cosa provare (riavviare Windows, aggiornare o reinstallare WebView2)
+/// e, con «Sì», Aurora reinstalla WebView2 e si riapre da sola; con «No» si chiude. Il chiamante esce subito dopo.
+#[cfg(windows)]
+pub fn window_failed(error: &str) {
+    eprintln!("finestra principale non aperta: {error}");
+    let lang = crate::agent::ui_lang();
+    let (title, text) = failed_texts(lang);
+    let text = text.replace("{error}", error);
+    if ask_yes_no(title, &text)
+        && let Err(e) = install_and_restart()
+    {
+        eprintln!("{e}");
+        crate::links::open_in_browser(DOWNLOAD_URL);
+    }
+}
+
+#[cfg(not(windows))]
+pub fn window_failed(error: &str) {
+    eprintln!("finestra principale non aperta: {error}");
+}
+
+/// Titolo e testo del messaggio «la finestra non si apre» nelle sei lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt).
+#[cfg(windows)]
+fn failed_texts(lang: usize) -> (&'static str, &'static str) {
+    const ALL: [(&str, &str); 6] = [
+        (
+            "Aurora: la finestra non si apre",
+            "Aurora non riesce ad aprire la sua finestra. Windows ha risposto: {error}
+
+Di solito basta riavviare Windows. Se non basta, spesso il problema è Microsoft Edge WebView2 (il componente con cui Aurora disegna la finestra): aggiornare Windows o reinstallare WebView2 lo risolve.
+
+Vuoi che Aurora reinstalli WebView2 adesso e si riapra da sola? Con «No» Aurora si chiude.",
+        ),
+        (
+            "Aurora: the window does not open",
+            "Aurora cannot open its window. Windows answered: {error}
+
+Restarting Windows is usually enough. If it is not, the problem is often Microsoft Edge WebView2 (the component Aurora uses to draw its window): updating Windows or reinstalling WebView2 fixes it.
+
+Should Aurora reinstall WebView2 now and reopen by itself? With \"No\" Aurora closes.",
+        ),
+        (
+            "Aurora: das Fenster öffnet sich nicht",
+            "Aurora kann sein Fenster nicht öffnen. Windows hat geantwortet: {error}
+
+Meist genügt ein Neustart von Windows. Wenn nicht, liegt es oft an Microsoft Edge WebView2 (der Komponente, mit der Aurora das Fenster zeichnet): Windows aktualisieren oder WebView2 neu installieren behebt es.
+
+Soll Aurora WebView2 jetzt neu installieren und sich selbst wieder öffnen? Mit „Nein“ schließt sich Aurora.",
+        ),
+        (
+            "Aurora : la fenêtre ne s'ouvre pas",
+            "Aurora ne peut pas ouvrir sa fenêtre. Windows a répondu : {error}
+
+Redémarrer Windows suffit en général. Sinon, le problème vient souvent de Microsoft Edge WebView2 (le composant avec lequel Aurora dessine sa fenêtre) : mettre Windows à jour ou réinstaller WebView2 le résout.
+
+Aurora doit-elle réinstaller WebView2 maintenant et se rouvrir toute seule ? Avec « Non », Aurora se ferme.",
+        ),
+        (
+            "Aurora: la ventana no se abre",
+            "Aurora no puede abrir su ventana. Windows respondió: {error}
+
+Normalmente basta con reiniciar Windows. Si no, el problema suele ser Microsoft Edge WebView2 (el componente con el que Aurora dibuja su ventana): actualizar Windows o reinstalar WebView2 lo resuelve.
+
+¿Quieres que Aurora reinstale WebView2 ahora y se vuelva a abrir sola? Con «No» Aurora se cierra.",
+        ),
+        (
+            "Aurora: a janela não abre",
+            "O Aurora não consegue abrir a sua janela. O Windows respondeu: {error}
+
+Normalmente basta reiniciar o Windows. Se não bastar, o problema costuma ser o Microsoft Edge WebView2 (o componente com que o Aurora desenha a janela): atualizar o Windows ou reinstalar o WebView2 resolve.
+
+Queres que o Aurora reinstale o WebView2 agora e volte a abrir sozinho? Com «Não» o Aurora fecha.",
+        ),
+    ];
+    ALL[lang.min(ALL.len() - 1)]
+}
+
 /// Titolo e testo del messaggio nelle sei lingue di Aurora (0 it, 1 en, 2 de, 3 fr, 4 es, 5 pt).
 #[cfg(windows)]
 fn texts(lang: usize) -> (&'static str, &'static str) {
@@ -120,5 +199,14 @@ mod tests {
             assert!(title.contains("WebView2") && text.contains("WebView2"));
         }
         assert_eq!(texts(99), texts(5));
+    }
+
+    #[test]
+    fn the_window_failed_message_has_six_languages_and_the_error_placeholder() {
+        for lang in 0..6 {
+            let (title, text) = super::failed_texts(lang);
+            assert!(!title.is_empty() && text.contains("{error}") && text.contains("WebView2"));
+        }
+        assert_eq!(super::failed_texts(99), super::failed_texts(5));
     }
 }

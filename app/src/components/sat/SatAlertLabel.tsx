@@ -21,7 +21,11 @@ export function SatAlertLabel() {
   const t = useT();
   const { label } = useSatLabel();
   if (!label) return null;
-  const text = t(label.phase === 'soon' ? 'sat.label.soon' : 'sat.label.now', { sat: label.name, time: mmss(label.seconds) });
+  // il nome si accorcia con i puntini se e' lungo (RS-44 & BREEZE-KM R/B), il conto alla rovescia resta sempre intero
+  const SAT = '';
+  const text = t(label.phase === 'soon' ? 'sat.label.soon' : 'sat.label.now', { sat: SAT, time: mmss(label.seconds) });
+  const [before, after = ''] = text.split(SAT);
+  const plain = text.replace(SAT, label.name);
   // il clic sceglie quel satellite nella pagina Satelliti (spuntato e selezionato) e la apre
   const open = () => {
     void getSat()
@@ -42,7 +46,11 @@ export function SatAlertLabel() {
           <path d="M4 20a8 8 0 0 0 8-8" />
           <path d="M4 15a3 3 0 0 0 3-3" />
         </svg>
-        <span className="sat-label-text">{text}</span>
+        <span className="sat-label-text" title={plain}>
+          {before}
+          <span className="sat-label-name">{label.name}</span>
+          {after}
+        </span>
       </span>
       <span className="sat-label-close" role="button" tabIndex={0} title={t('sat.label.close')} aria-label={t('sat.label.close')} onClick={close} onKeyDown={activate(close)}>
         ✕

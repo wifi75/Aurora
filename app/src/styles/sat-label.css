@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 0.4em;
-  width: 21em;
+  width: auto;
   min-width: 12em;
   max-width: 100%;
   padding: 0.25em 0.4em 0.25em 0.7em;
@@ -35,9 +35,16 @@
 .sat-label-text {
   flex: 1 1 auto;
   min-width: 0;
+  white-space: nowrap;
+  font-weight: 600;
+}
+/* il nome, se e' lungo, si accorcia con i puntini: il resto della scritta (il conto alla rovescia) resta sempre visibile */
+.sat-label-name {
+  display: inline-block;
+  max-width: 11em;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 600;
+  vertical-align: bottom;
 }
 .sat-label-close {
   flex: none;
