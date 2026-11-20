@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.319',
-    released: '2026-11-20T18:00:00Z',
+    released: '2026-11-20T15:05:18Z',
     kind: 'fixed',
     title: [
       'Etichetta dei satelliti con il conto alla rovescia sempre visibile, messaggio se la finestra non si apre',
