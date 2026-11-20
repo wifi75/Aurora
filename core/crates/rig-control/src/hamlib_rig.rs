@@ -199,6 +199,9 @@ struct Inner {
     session: AtomicU64,
     /// La coppia di VFO che ha funzionato per la trasmissione dei satelliti: 0 ancora non nota, 1 = Sub/Main, 2 = VFOB/VFOA.
     sat_vfo_pair: AtomicU8,
+    /// Quale banda sta su «Main» e quale su «Sub» (`MAIN_SUB_*`), letta una volta per connessione: sulle radio a due bande (IC-820H) i due VFO
+    /// sono le bande 144 e 430 MHz, e una frequenza scritta nella banda sbagliata viene «ripiegata» (437,79 -> 137,79 MHz).
+    sat_band_map: AtomicU8,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -256,6 +259,40 @@ const MAX_AUDIO_HZ: u32 = 6000;
 
 /// Frequenza accettabile per la radio: niente zero (un valore perso) e niente oltre i 300 GHz (un overflow). Dalle note di WSJT-X 3.2:
 /// «Invalid frequencies [...] are rejected rather than becoming zero or overflowing».
+/// `sat_band_map`: non ancora letta.
+const MAIN_SUB_UNKNOWN: u8 = 0;
+/// «Main» e' sulla banda bassa (VHF, sotto 300 MHz) e «Sub» su quella alta (UHF).
+const MAIN_VHF_SUB_UHF: u8 = 1;
+/// «Main» e' sulla banda alta e «Sub» su quella bassa.
+const MAIN_UHF_SUB_VHF: u8 = 2;
+/// Le due bande non si distinguono (stessa banda, o non si sono potute leggere): si usa la coppia di sempre, «Sub» in trasmissione e «Main» in ricezione.
+const MAIN_SUB_SAME: u8 = 3;
+
+/// La frequenza e' sulla banda alta (UHF e oltre)?
+fn is_uhf(hz: u64) -> bool {
+    hz >= 300_000_000
+}
+
+/// La mappa delle bande dalle frequenze lette su «Main» e su «Sub».
+fn band_map_of(main_hz: u64, sub_hz: u64) -> u8 {
+    match (is_uhf(main_hz), is_uhf(sub_hz)) {
+        (false, true) => MAIN_VHF_SUB_UHF,
+        (true, false) => MAIN_UHF_SUB_VHF,
+        _ => MAIN_SUB_SAME,
+    }
+}
+
+/// Su quale VFO scrivere la trasmissione e a quale tornare per la ricezione, data la mappa delle bande e la frequenza di trasmissione: la
+/// trasmissione va sul VFO della sua banda, la ricezione sull'altro (segnalazione #83: IC-820H con ricezione 437 MHz e trasmissione 145 MHz, la
+/// coppia fissa scriveva ogni frequenza nella banda sbagliata). Senza una mappa chiara resta la coppia di sempre.
+fn uplink_vfos(map: u8, tx_hz: u64) -> (&'static str, &'static str) {
+    match map {
+        MAIN_VHF_SUB_UHF => if is_uhf(tx_hz) { ("Sub", "Main") } else { ("Main", "Sub") },
+        MAIN_UHF_SUB_VHF => if is_uhf(tx_hz) { ("Main", "Sub") } else { ("Sub", "Main") },
+        _ => ("Sub", "Main"),
+    }
+}
+
 pub fn valid_dial_hz(hz: u64) -> bool {
     hz > 0 && hz <= 300_000_000_000
 }
@@ -569,6 +606,7 @@ impl Inner {
         // radio ricollegata (o riavviata): i comandi rifiutati si riprovano una volta
         self.split_unsupported.store(false, Ordering::SeqCst);
         self.sat_vfo_pair.store(0, Ordering::SeqCst);
+        self.sat_band_map.store(MAIN_SUB_UNKNOWN, Ordering::SeqCst);
         self.session.fetch_add(1, Ordering::SeqCst);
         // la potenza scelta l'ultima volta con + e − (la radio puo' ripartire con la sua, es. 99%)
         crate::extras::restore_power(link.client());
@@ -1116,6 +1154,7 @@ impl HamlibRig {
             split_unsupported: AtomicBool::new(false),
             session: AtomicU64::new(0),
             sat_vfo_pair: AtomicU8::new(0),
+            sat_band_map: AtomicU8::new(MAIN_SUB_UNKNOWN),
             config,
             connector,
             timing,
@@ -1518,6 +1557,26 @@ impl HamlibRig {
                 if known != 0 && known != id {
                     continue;
                 }
+                // Main/Sub: se le due bande sono diverse la trasmissione va sul VFO della sua banda (vedi `uplink_vfos`)
+                let (tx_vfo, rx_vfo) = if id == 1 {
+                    let mut map = inner.sat_band_map.load(Ordering::SeqCst);
+                    if map == MAIN_SUB_UNKNOWN {
+                        let read = |vfo: &str| c.set_vfo(vfo).and_then(|()| c.frequency());
+                        map = match (read("Main"), read("Sub")) {
+                            (Ok(main), Ok(sub)) => band_map_of(main, sub),
+                            _ => MAIN_SUB_SAME,
+                        };
+                        inner.sat_band_map.store(map, Ordering::SeqCst);
+                        tracing::info!("satelliti: bande dei VFO della radio: {}", match map {
+                            MAIN_VHF_SUB_UHF => "Main = VHF, Sub = UHF",
+                            MAIN_UHF_SUB_VHF => "Main = UHF, Sub = VHF",
+                            _ => "uguali o non leggibili (coppia di sempre)",
+                        });
+                    }
+                    uplink_vfos(map, hz)
+                } else {
+                    (tx_vfo, rx_vfo)
+                };
                 match c.set_vfo(tx_vfo) {
                     Ok(()) => {
                         inner.sat_vfo_pair.store(id, Ordering::SeqCst);
@@ -2755,13 +2814,29 @@ mod tests {
         assert_eq!(writes(&fake), ["F 435626135", "F 435626092", "F 435626049"]);
     }
 
+    /// Segnalazione #83 (IC-820H, ISS: ricezione 437 MHz, trasmissione 145 MHz): la trasmissione va sul VFO della sua banda.
+    #[test]
+    fn the_uplink_goes_to_the_vfo_of_its_own_band() {
+        // Main = 144, Sub = 430: trasmissione VHF su Main, ricezione UHF su Sub
+        assert_eq!(uplink_vfos(band_map_of(137_790_000, 445_990_000), 145_990_000), ("Main", "Sub"));
+        // trasmissione UHF con le stesse bande: va su Sub
+        assert_eq!(uplink_vfos(band_map_of(137_790_000, 445_990_000), 435_000_000), ("Sub", "Main"));
+        // Main = 430, Sub = 144 (bande scambiate dalla radio): il contrario
+        assert_eq!(uplink_vfos(band_map_of(445_990_000, 137_790_000), 145_990_000), ("Sub", "Main"));
+        assert_eq!(uplink_vfos(band_map_of(445_990_000, 137_790_000), 435_000_000), ("Main", "Sub"));
+        // stessa banda o mappa sconosciuta: la coppia di sempre
+        assert_eq!(uplink_vfos(band_map_of(435_600_000, 435_600_000), 145_990_000), ("Sub", "Main"));
+        assert_eq!(uplink_vfos(MAIN_SUB_UNKNOWN, 145_990_000), ("Sub", "Main"));
+    }
+
     #[test]
     fn two_vfo_uplink_writes_the_second_vfo_and_goes_back() {
         let fake = FakeRigctld::start(435_600_000);
         let rig = start(&fake, RigConfig::default());
         fake.clear_commands();
         assert_eq!(rig.set_uplink_via_vfo(145_900_000, Some("LSB")).expect("uplink"), true);
-        assert_eq!(writes(&fake), ["V Sub", "F 145900000", "M LSB 0", "V Main"]);
+        // la prima volta si leggono le bande dei due VFO (V Main, V Sub) per scegliere dove scrivere
+        assert_eq!(writes(&fake), ["V Main", "V Sub", "V Sub", "F 145900000", "M LSB 0", "V Main"]);
         // senza modo nuovo: niente M
         fake.clear_commands();
         rig.set_uplink_via_vfo(145_900_300, None).expect("uplink");
@@ -2775,7 +2850,7 @@ mod tests {
         let rig = start(&fake, RigConfig::default());
         fake.clear_commands();
         rig.set_uplink_via_vfo(145_900_000, None).expect("uplink");
-        assert_eq!(writes(&fake), ["V Sub", "V VFOB", "F 145900000", "V VFOA"]);
+        assert_eq!(writes(&fake), ["V Main", "V Sub", "V Sub", "V VFOB", "F 145900000", "V VFOA"]);
         fake.clear_commands();
         rig.set_uplink_via_vfo(145_900_100, None).expect("uplink");
         assert_eq!(writes(&fake), ["V VFOB", "F 145900100", "V VFOA"]);
