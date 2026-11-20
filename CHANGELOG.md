@@ -2,6 +2,19 @@
 
 ## Non rilasciato
 
+## 0.11.309 - 2026-11-20
+
+- Satelliti: nuova pagina «Inseguimento e rotore» con cursori e caselle (anticipo di base 60 s invece di 150, tolleranza, parcheggio facoltativo dopo il passaggio); con radio come l'IC-820H niente piu' raffica di comandi di split e modo; ripiego sperimentale a due VFO (spento di base); scelta dei modi di ricezione e trasmissione. Non provato con radio e rotore veri.
+- Log: salvataggio ADIF automatico con interruttore (spento di base) e cartella a scelta, in Impostazioni › Log, cluster e servizi › File; il file `aurora_log.adi` nella cartella dei dati si scrive gia' a ogni QSO.
+- Conferma prima di chiamare una stazione che non risulta nell'elenco dei decode recenti (interruttore acceso di base).
+- Radio: protezione del trasmettitore dal ROS nella scheda Radio, di base 2,0 (prima 2,5), regolabile da 1,0 a 4,0 a passi di 0,1.
+- Ora: la correzione automatica dell'orologio e' accesa di base (chi l'aveva spenta la trova accesa una volta sola) e riprova quando torna la rete; per cambiare l'ora di Windows serve avviare Aurora come amministratore.
+- WEFAX: selettore piu' corto, display della radio e piccola cascata sulla stessa riga, comandi piu' compatti, voce WEFAX nel menu Modo di PSK·RTTY·CW.
+- Guida e Novita' dentro le Impostazioni: l'ingranaggio apre direttamente le Impostazioni sul PC (il telefono non cambia); pagina Informazioni con i collegamenti in griglia; avviso dell'orologio leggibile con il mouse sopra.
+- Bande aperte: tornano la bandierina e il nome del paese delle stazioni piu' lontane che ti ascoltano (il flusso in tempo reale di PSK Reporter non da' il paese: si ricava dal nominativo con cty.dat).
+- Il messaggio che va in onda (Tx1..Tx6, testo e frequenza) si scrive nel registro, cosi' i pacchetti di assistenza mostrano chi si e' chiamato e quando.
+- Crash all'avvio su Windows Insider: la finestra principale si riprova fino a 4 volte se WebView2 fallisce con 0x80070578 (non provato su Insider).
+
 ## 0.11.308 - 2026-11-20
 
 - Satelliti: preavviso del rotore (minuti prima del passaggio, impostabile da 0 a 30, di base 5) con un suono suo e la scritta «il rotore si sposta verso N°» nella scheda «Doppler e rotore»; il rotore si muove da solo 150 s prima del passaggio e non parcheggia. Il suono si ascolta appena lo scegli. Le schede «Doppler e rotore» e «Informazioni» non hanno piu' spazi vuoti (CSS, non verificato a schermo).
