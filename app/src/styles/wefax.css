@@ -120,3 +120,17 @@
 .wefax-rx-leds i { display: block; width: 5px; height: 100%; border-radius: 1px; background: color-mix(in srgb, var(--text-muted, #889) 28%, transparent); }
 .wefax-rx-leds i.on { background: var(--ok, #3ddc84); }
 .wefax-rx-leds i.on.over { background: var(--warn, #ffb020); }
+
+/* niente allargamenti e restringimenti in automatico: ogni elemento della riga ha una larghezza fissa e le cifre sono tutte uguali */
+.wefax-mini { flex: 0 0 auto; }
+.wefax-rx { flex: 0 0 auto; }
+.wefax-rx-freq { min-width: 8.6ch; text-align: right; font-variant-numeric: tabular-nums; }
+.wefax-rx-mode { min-width: 2.7rem; text-align: center; box-sizing: border-box; }
+.wefax-rx-leds { flex: 0 0 auto; width: 96px; }
+.wefax-rx-leds i { flex: 0 0 5px; }
+.wefax-mini-wf { flex: 0 0 15rem; width: 15rem; }
+@media (max-width: 1200px) { .wefax-mini-wf { flex-basis: 10rem; width: 10rem; } }
+.wefax-freq { flex: 0 0 11rem; }
+.wefax-toolbar-slot { flex: 0 0 auto; }
+.wefax-toolbar-slot .wefax-zoom { min-width: 3.2rem; text-align: center; font-variant-numeric: tabular-nums; }
+.wefax-toolbar-slot .sstv-note { display: none; }

@@ -40,7 +40,7 @@ export function WefaxMini() {
         </span>
       </div>
       <div className="wefax-mini-wf" aria-label="Waterfall">
-        <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} />
+        <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} bare />
       </div>
     </div>
   );

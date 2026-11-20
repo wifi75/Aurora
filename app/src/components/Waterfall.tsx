@@ -19,6 +19,8 @@ interface Props {
   spectrumPx?: number;
   /** La banda in uso (20m...): si scrive accanto all'ora sulla cascata. */
   band?: string;
+  /** Solo la cascata, senza spettro sotto, maniglia, ora, banda e regolatori (la piccola cascata della pagina WEFAX). */
+  bare?: boolean;
 }
 
 /** Quota massima dell'altezza per lo spettro (%). */
@@ -30,7 +32,7 @@ type Phase = 'loading' | 'ready' | 'unsupported';
  * La cascata e lo spettro del Wide Graph di JTDX: le righe del core (canali da 0,732 Hz) diventano pixel con le opzioni
  * delle Impostazioni → Cascata (Bins/Pixel, Start, N Avg, Scale, Flatten, tavolozza, Gain, Zero, spettro Current/Cumulative).
  */
-export function Waterfall({ register, mode, spectrumPx, band }: Props) {
+export function Waterfall({ register, mode, spectrumPx, band, bare = false }: Props) {
   const t = useT();
   const [phase, setPhase] = useState<Phase>('loading');
   const [kind, setKind] = useState('');
@@ -44,7 +46,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   const spanHz = useSpectrumSpan((s) => s.spanHz);
   const range = visibleRange(prefs.startHz, spanHz);
   // come `if(m_h2 > m_h - 30)` di JTDX: la cascata non sparisce mai del tutto
-  const specPercent = Math.min(prefs.spectrumPercent, MAX_SPECTRUM_SHARE);
+  const specPercent = bare ? 0 : Math.min(prefs.spectrumPercent, MAX_SPECTRUM_SHARE);
 
   // le opzioni correnti per il ricevitore delle righe, che vive per tutta la vita del renderer
   // in trasmissione dalla radio non arriva audio: la cascata si ferma invece di scorrere nera (UN7MBV, 2026-11-10)
@@ -80,7 +82,7 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
     const ctx = stamps.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, w, h);
-    if (!live.current.prefs.timeStamp) return;
+    if (bare || !live.current.prefs.timeStamp) return;
     const rpp = rowsPerPixel(main.height);
     ctx.font = `${Math.round(11 * dpr)}px 'IBM Plex Sans', system-ui, sans-serif`;
     ctx.textBaseline = 'top';
@@ -279,9 +281,9 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
   };
 
   // la barra dei comandi sopra la cascata (non sul telefono, dove lo spazio e' poco)
-  const bar = !spectrumPx;
+  const bar = !spectrumPx && !bare;
   return (
-    <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}${prefs.spectrumPercent === 0 ? ' waterfall--nospec' : ''}`} data-backend={kind} data-phase={phase}>
+    <div ref={boxRef} className={`waterfall${bar ? ' waterfall--bar' : ''}${prefs.spectrumPercent === 0 || bare ? ' waterfall--nospec' : ''}${bare ? ' waterfall--bare' : ''}`} data-backend={kind} data-phase={phase}>
       <canvas key={attempt.key} ref={canvasRef} className="wf-main" style={{ flex: spectrumPx || specPercent === 0 ? '1 1 0px' : bar ? `0 1 ${prefs.mainPx}px` : `${100 - specPercent} 1 0px` }} role="img" aria-label={t('wf.aria')} title={t('tip.panel.waterfall')} />
       {bar && specPercent > 0 ? (
         <div
@@ -301,10 +303,12 @@ export function Waterfall({ register, mode, spectrumPx, band }: Props) {
       />
       <canvas ref={stampsRef} className="wf-stamps" aria-hidden="true" />
       {phase === 'unsupported' && <p className="waterfall-note">{t('wf.unsupported')}</p>}
-      <div className="wf-controls">
-        {quick('gain')}
-        {quick('zero')}
-      </div>
+      {bare ? null : (
+        <div className="wf-controls">
+          {quick('gain')}
+          {quick('zero')}
+        </div>
+      )}
     </div>
   );
 }
