@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.306',
+    released: '2026-11-20T09:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Satelliti: il Doppler non si ferma se la radio rifiuta lo split',
+      'Satellites: Doppler no longer stops if the radio refuses split',
+      'Satelliten: Doppler stoppt nicht mehr, wenn das Funkgerät Split ablehnt',
+      'Satellites : le Doppler ne s’arrête plus si le poste refuse le split',
+      'Satélites: el Doppler ya no se detiene si la radio rechaza el split',
+      'Satélites: o Doppler já não pára se o rádio recusa o split',
+    ],
+    text: [
+      'Con una radio che non accetta il comando di split da CAT (per esempio l’IC-820H con Hamlib: «funzione non disponibile») la pagina Satelliti si bloccava e riprovava ogni secondo, senza muovere né la ricezione né la trasmissione. Ora lo split si prova una volta e, se la radio lo rifiuta, non si ripete: il Doppler della ricezione va avanti, la frequenza di trasmissione si prova una volta e l’errore resta scritto nello stato. Non provato con un’IC-820H.',
+      'With a radio that does not accept the split command over CAT (for example the IC-820H with Hamlib: “function not available”) the Satellites page stalled and retried every second, moving neither receive nor transmit. Now split is tried once and, if the radio refuses it, it is not repeated: the receive Doppler goes on, the transmit frequency is tried once and the error stays written in the status. Not tried with an IC-820H.',
+      'Bei einem Funkgerät, das den Split-Befehl per CAT nicht annimmt (zum Beispiel der IC-820H mit Hamlib: „Funktion nicht verfügbar“), blieb die Satellitenseite hängen und versuchte es jede Sekunde neu, ohne Empfang oder Senden zu bewegen. Jetzt wird Split einmal versucht und, wenn das Funkgerät ihn ablehnt, nicht wiederholt: Der Empfangs-Doppler läuft weiter, die Sendefrequenz wird einmal versucht und der Fehler bleibt im Status stehen. Nicht mit einem IC-820H erprobt.',
+      'Avec un poste qui n’accepte pas la commande de split par CAT (par exemple l’IC-820H avec Hamlib : « fonction non disponible »), la page Satellites se bloquait et réessayait chaque seconde, sans bouger ni la réception ni l’émission. Maintenant le split est essayé une fois et, si le poste le refuse, il n’est pas répété : le Doppler de réception continue, la fréquence d’émission est essayée une fois et l’erreur reste écrite dans l’état. Non essayé avec un IC-820H.',
+      'Con una radio que no acepta el comando de split por CAT (por ejemplo el IC-820H con Hamlib: «función no disponible») la página Satélites se bloqueaba y reintentaba cada segundo, sin mover ni la recepción ni la transmisión. Ahora el split se prueba una vez y, si la radio lo rechaza, no se repite: el Doppler de recepción sigue, la frecuencia de transmisión se prueba una vez y el error queda escrito en el estado. No probado con un IC-820H.',
+      'Com um rádio que não aceita o comando de split por CAT (por exemplo o IC-820H com Hamlib: «função não disponível») a página Satélites bloqueava e tentava de novo a cada segundo, sem mover nem a receção nem a transmissão. Agora o split é tentado uma vez e, se o rádio o recusa, não se repete: o Doppler de receção continua, a frequência de transmissão é tentada uma vez e o erro fica escrito no estado. Não testado com um IC-820H.',
+    ],
+  },
+  {
     version: '0.11.305',
     released: '2026-11-20T05:40:47Z',
     kind: 'changed',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Si le log refuse un QSO (en général parce que la bande est inconnue), un avertissement clair apparaît et la bande se choisit avec les boutons de bande.',
       'Si el log rechaza un QSO (normalmente porque la banda es desconocida) aparece un aviso claro y la banda se elige con los botones de banda.',
       'Se o log recusa um QSO (normalmente porque a banda é desconhecida) aparece um aviso claro e a banda escolhe-se com os botões das bandas.',
-    ],
-  },
-  {
-    version: '0.11.284',
-    released: '2026-11-17T14:49:25Z',
-    kind: 'fixed',
-    title: [
-      'Mappa dei Satelliti fluida',
-      'Smooth Satellites map',
-      'Flüssige Satellitenkarte',
-      'Carte des Satellites fluide',
-      'Mapa de Satélites fluido',
-      'Mapa dos Satélites fluido',
-    ],
-    text: [
-      'Zoom e trascinamento sono rifatti (un solo disegno per fotogramma, qualità bassa in movimento, rotella ancorata al cursore), con un contatore dei millisecondi per fotogramma che si accende con «aurora.sat.perf». L’orologio è leggibile in tema chiaro.',
-      'Zoom and dragging have been redone (a single drawing per frame, low quality while moving, wheel anchored to the cursor), with a counter of milliseconds per frame that is turned on with “aurora.sat.perf”. The clock is readable in the light theme.',
-      'Zoom und Ziehen wurden neu gemacht (nur eine Zeichnung pro Bild, niedrige Qualität in Bewegung, Rad am Mauszeiger verankert), mit einem Zähler der Millisekunden pro Bild, der mit „aurora.sat.perf“ eingeschaltet wird. Die Uhr ist im hellen Design lesbar.',
-      'Le zoom et le glissement ont été refaits (un seul dessin par image, qualité basse en mouvement, molette ancrée au curseur), avec un compteur de millisecondes par image qui s’active avec « aurora.sat.perf ». L’horloge est lisible en thème clair.',
-      'El zoom y el arrastre se han rehecho (un solo dibujo por fotograma, calidad baja en movimiento, rueda anclada al cursor), con un contador de milisegundos por fotograma que se activa con «aurora.sat.perf». El reloj es legible en tema claro.',
-      'O zoom e o arrastar foram refeitos (um só desenho por fotograma, qualidade baixa em movimento, roda ancorada ao cursor), com um contador de milissegundos por fotograma que se liga com «aurora.sat.perf». O relógio é legível no tema claro.',
     ],
   },
 ];

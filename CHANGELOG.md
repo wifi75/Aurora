@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.306 - 2026-11-20
+
 - Satelliti: se la radio non accetta lo split (per esempio l'IC-820H con Hamlib: «funzione non disponibile»), Aurora non lo riprova piu' ogni secondo (5000 tentativi in un'ora) e il Doppler della ricezione va avanti lo stesso; la frequenza di trasmissione si prova senza ripetere se fallisce, e l'errore resta scritto nello stato (segnalazione #72). Non provato con un'IC-820H.
 
 ## 0.11.305 - 2026-11-19
