@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Satelliti: **etichetta «satellite in arrivo»** nella barra in alto, visibile da ogni pagina (FT8, PSK · RTTY · SSTV, WEFAX, Stazione, Impostazioni...). Per i satelliti seguiti compare con il preavviso degli avvisi (di base 5 minuti) con il conto alla rovescia fino al sorgere, poi il tempo che manca al tramonto, e sparisce da sola 60 secondi dopo il sorgere; la ✕ la chiude per quel passaggio, un clic apre la pagina Satelliti. Il suono di preavviso ora arriva anche da altre pagine e dagli altri modi (con avvisi sonori spenti, niente). Gli avvisi girano in un solo motore alla radice dell'app, senza doppi suoni con la pagina Satelliti. Solo sul PC (issue #82).
+
 ## 0.11.311 - 2026-11-20
 
 - Lingue: **russo** come ottava lingua (interfaccia, Guida, ultime 10 Novita' e descrizioni delle macro; le Novita' piu' vecchie restano in inglese). Traduzione fatta con l'AI, prima versione da far rivedere a un radioamatore madrelingua. Dizionario a parte (`app/src/i18n/ru/`), foglio `docs/traduzione-russa.csv` e script `export-ru.mjs` / `importa-ru.mjs`.

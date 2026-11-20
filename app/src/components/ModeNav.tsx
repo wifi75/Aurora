@@ -1,5 +1,6 @@
 import { Icon } from './Icon';
 import { HealthLight } from './HealthLight';
+import { SatAlertLabel } from './sat/SatAlertLabel';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteSplitDx, getDigi, getFrequencies, postMode, ApiError } from '../api/client';
@@ -258,6 +259,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('propagation', '#/propagazione', t('nav.propagation'))}
         {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
         {/* spia di salute della stazione, subito prima dell'ingranaggio */}
+        {/* satellite seguito che sta per sorgere: solo sul PC, appeso sotto la barra */}
+        {remote ? null : <SatAlertLabel />}
         <HealthLight />
         {/* sul PC un solo ingranaggio, che apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}
         {remote ? null : (

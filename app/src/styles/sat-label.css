@@ -1,0 +1,61 @@
+/* Etichetta «satellite in arrivo»: appesa sotto la barra in alto, a destra; colori propri uguali in ogni tema (testo scuro su ambra chiaro),
+   nessun hover che scurisce, larghezza fissa, cifre a larghezza fissa, mai a capo. */
+.sat-label {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: var(--space-4, 1rem);
+  z-index: 1001;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  width: 24em;
+  max-width: calc(100vw - 2rem);
+  padding: 0.25em 0.4em 0.25em 0.7em;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: #1c1400;
+  background: #ffe08a;
+  border: 1px solid #a87400;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+}
+.sat-label-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  cursor: pointer;
+  color: inherit;
+}
+.sat-label-icon { flex: none; }
+.sat-label-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+.sat-label-close {
+  flex: none;
+  width: 1.6em;
+  height: 1.6em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1c1400;
+  background: #f4c84a;
+  border: 1px solid #a87400;
+  border-radius: 50%;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.sat-label-main:focus-visible, .sat-label-close:focus-visible { outline: 2px solid #1c1400; outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) {
+  .sat-label[data-phase='soon'] { animation: sat-label-in 0.25s ease-out; }
+}
+@keyframes sat-label-in { from { opacity: 0; } to { opacity: 1; } }

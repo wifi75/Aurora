@@ -53,6 +53,7 @@ import { ReportsNotice } from './components/ReportsNotice';
 import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
 import { UpdatePoster } from './components/UpdatePoster';
+import { SatAlertEngine } from './components/sat/SatAlertEngine';
 import { OwnerMessages } from './components/OwnerMessages';
 import { OwnerMessagesTab } from './settings/OwnerMessagesTab';
 import { CrashPrompt } from './settings/ReportsBox';
@@ -293,6 +294,8 @@ export function App() {
     {/* fuori dalla pagina principale, dopo le Impostazioni: quando sono aperte la pagina sotto e' disattivata (inert) e la locandina
         dell'aggiornamento, che stava li' dentro, restava nascosta e non cliccabile */}
     {session.data && !REMOTE ? <UpdatePoster /> : null}
+    {/* avvisi dei satelliti da ogni pagina (suono di preavviso ed etichetta in alto): un solo motore, solo qui */}
+    {session.data && !REMOTE ? <SatAlertEngine /> : null}
     </>
   );
 }

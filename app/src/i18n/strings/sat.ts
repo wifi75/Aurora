@@ -559,4 +559,8 @@ export const satStrings = {
     'o si se desplaza más de (Hz)',
     'ou se se deslocar mais de (Hz)',
   ],
+  'sat.label.soon': ['{sat} tra {time}', '{sat} in {time}', '{sat} in {time}', '{sat} dans {time}', '{sat} en {time}', '{sat} em {time}'],
+  'sat.label.now': ['{sat} in vista · LOS tra {time}', '{sat} in view · LOS in {time}', '{sat} in Sicht · LOS in {time}', '{sat} en vue · LOS dans {time}', '{sat} a la vista · LOS en {time}', '{sat} à vista · LOS em {time}'],
+  'sat.label.close': ['Chiudi l’avviso', 'Close the notice', 'Hinweis schließen', 'Fermer l’avis', 'Cerrar el aviso', 'Fechar o aviso'],
+  'sat.label.open': ['Apri la pagina Satelliti', 'Open the Satellites page', 'Satellitenseite öffnen', 'Ouvrir la page Satellites', 'Abrir la página Satélites', 'Abrir a página Satélites'],
 } as const;

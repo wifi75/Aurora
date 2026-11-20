@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SatPosition } from '../api/client';
-import { alertViews, applyMarks, dueAlerts, loadAlertSettings, remember, rotorNotice, saveAlertSettings, type AlertKind, type AlertMark, type AlertPass, type AlertRecord, type AlertView, type LiveSat, type RotorNotice, type SatAlertSettings, type SoundChoice } from './satAlerts';
+import { alertViews, applyMarks, dueAlerts, ALERT_STORAGE_KEY, loadAlertSettings, remember, rotorNotice, saveAlertSettings, type AlertKind, type AlertMark, type AlertPass, type AlertRecord, type AlertView, type LiveSat, type RotorNotice, type SatAlertSettings, type SoundChoice } from './satAlerts';
 import { audioBlocked, playAlert, previewAlert } from './satAlertSound';
+import { claimSound } from './satAlertDedupe';
 
 interface Args {
   passes: readonly AlertPass[];
@@ -16,6 +17,8 @@ interface Args {
 }
 
 const TICK_MS = 500;
+/** Le impostazioni cambiate in una pagina arrivano agli altri motori della stessa finestra con questo evento. */
+export const ALERT_SETTINGS_EVENT = 'aurora:sat-alert-settings';
 
 const soundFor = (s: SatAlertSettings, kind: AlertKind): SoundChoice => (kind === 'pre' ? s.soundPre : kind === 'aos' ? s.soundAos : kind === 'los' ? s.soundLos : s.soundRotor);
 
@@ -51,7 +54,8 @@ export function useSatAlerts(args: Args) {
       const events = dueAlerts({ ...common, prevNow: st.prevNow, prevLive: st.prevLive });
       for (const ev of events) {
         const choice = soundFor(s, ev.kind);
-        playAlert(ev.kind, choice, s.volume);
+        // un solo suono per avviso anche con due motori (radice dell'app e pagina Satelliti)
+        if (claimSound(ev, now)) playAlert(ev.kind, choice, s.volume);
       }
       st.log = remember(st.log, events, now);
       st.marks = applyMarks(st.marks, events, now);
@@ -72,13 +76,33 @@ export function useSatAlerts(args: Args) {
     return () => window.clearInterval(id);
   }, []);
 
-  const update = useCallback((patch: Partial<SatAlertSettings>) => {
-    setSettings((cur) => {
-      const next = { ...cur, ...patch };
-      saveAlertSettings(next);
-      return next;
-    });
+  // impostazioni cambiate da un altro motore (stessa finestra) o da un'altra finestra (evento `storage`)
+  useEffect(() => {
+    const reload = () => {
+      const next = loadAlertSettings();
+      if (JSON.stringify(next) !== JSON.stringify(settingsRef.current)) setSettings(next);
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === ALERT_STORAGE_KEY) reload();
+    };
+    window.addEventListener(ALERT_SETTINGS_EVENT, reload);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(ALERT_SETTINGS_EVENT, reload);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
+
+  const update = useCallback((patch: Partial<SatAlertSettings>) => {
+    const next = { ...settingsRef.current, ...patch };
+    settingsRef.current = next;
+    saveAlertSettings(next);
+    setSettings(next);
+    window.dispatchEvent(new Event(ALERT_SETTINGS_EVENT));
+  }, []);
+
+  /** L'ora UTC del core (secondi), interpolata. */
+  const clockNow = useCallback(() => clock.current.base + (Date.now() - clock.current.at) / 1000, []);
 
   /** Ascolta il suono scelto per l'evento, o `choice` se lo si sta ancora scegliendo. */
   const test = useCallback((kind: AlertKind, choice?: SoundChoice) => {
@@ -86,5 +110,5 @@ export function useSatAlerts(args: Args) {
     previewAlert(kind, choice ?? soundFor(s, kind), s.volume);
   }, []);
 
-  return { settings, update, views, blocked, test, rotor };
+  return { settings, update, views, blocked, test, rotor, clockNow };
 }
