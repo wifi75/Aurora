@@ -3,6 +3,11 @@
 Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancante.md`.
 
 ## Adesso
+- [x] 0.11.309 pubblicata (satelliti, ADIF automatico, conferma di chiamata, ROS 2,0, ora automatica)
+- [ ] Russo come ottava lingua (interfaccia, Guida, Novita'), con prova dei testi lunghi per non uscire dallo schermo
+- [ ] #83 Vladimir: pubblicare la risposta in russo (pronta) e chiedere la prova a mano V Sub/V Main
+- [ ] Rispondere a Pascal (F4LHL): ROS 2,0 nella scheda Radio, aurora_log.adi gia' scritto a ogni QSO, cartella ADIF a scelta, ALC (pacchetto)
+- [ ] Caso XX9BB: serve il pacchetto con la nuova riga «in onda» al prossimo caso
 - [x] WEFAX: pagina nell'interfaccia fatta
 - [x] WEFAX: menu delle frequenze, finestra staccata e Guida fatti (0.11.307)
 - [ ] WEFAX: guardarla a schermo e provarla con un segnale vero

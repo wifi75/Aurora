@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.309',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T09:35:42Z',
     kind: 'new',
     title: [
       'Satelliti, ADIF automatico, conferma di chiamata, ROS e ora',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.309',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T09:35:42Z',
     kind: 'fixed',
     title: [
       'Correzioni: bandierine, Impostazioni, avvio su Windows Insider, registro',

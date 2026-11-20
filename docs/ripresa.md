@@ -18,6 +18,14 @@ Satelliti senza split da CAT (issue #83, IC-820H di Vladimir) e rotore.
 - NON provato: nessuna radio vera. Non si sa se su un'IC-820H `V VFOB` selezioni la banda secondaria (potrebbe cambiare solo il VFO B della banda corrente: inutile per i 2 m) ne' se `V Sub` sia accettata; il rotore (prima, durante, parcheggio, prossimo passaggio) non e' provato con un rotore vero. Valori scelti da me senza dato: intervallo 10 s e soglia 300 Hz del ripiego, ritardo di 10 s, finestra di 12 h per `next`, tolleranza massima 10 gradi nell'interfaccia (il core accetta fino a 45 per i vecchi file), laterali dei non invertenti uguali (USB).
 - Da decidere: tenere il ripiego a due VFO se la prova di Vladimir dice che `V VFOB` non cambia banda; accendere `SATMODE` anche con lo split vero (oggi no).
 
+## Nella 0.11.309 (pubblicata 2026-11-20T09:35:42Z)
+
+- Pagina «Inseguimento e rotore» dei satelliti (`SatTrackingPane.tsx`): anticipo di fabbrica 60 s (prima 150), tolleranza, parcheggio opzionale; spam di split e modo tolto sull'IC-820H; ripiego sperimentale a due VFO (spento); modi di ricezione e trasmissione. NON provato con radio e rotore veri.
+- ADIF automatico con interruttore (spento) e cartella; conferma prima di chiamare una stazione non vista (`seenStation.ts`, `CallUnseenDialog.tsx`); ROS 2,0 (1,0-4,0) nella scheda Radio; ora automatica accesa di fabbrica (migrazione una tantum con `clock.v2`).
+- Bandierine di Bande aperte: il paese si ricava dal nominativo in `GET /online/psk`; il messaggio in onda (Tx1..Tx6) si scrive nel registro; finestra principale riprovata 4 volte se WebView2 fallisce (0x80070578).
+- Caso XX9BB (pacchetto 977AED7F): 10 trasmissioni ogni 30 s dalle 09:00:13, fermate a mano alle 09:05; il registro non diceva come era partita la chiamata (ora si scrive il messaggio in onda). Origine NON accertata.
+- Prossimo: russo come ottava lingua (dizionario `app/src/i18n/ru/`, foglio `docs/traduzione-russa.csv`), controllo dei testi che escono dallo schermo.
+
 ## Nella 0.11.308 (pubblicata 2026-11-20T07:44:01Z)
 
 - Satelliti: preavviso del rotore (`lib/satAlerts.ts`, evento `rotor`, minuti impostabili 0-30, suono suo), ascolto del suono alla scelta, CSS delle schede «Doppler e rotore» e «Informazioni» senza spazi vuoti (non verificato a schermo). Il rotore non parcheggia (decisione da prendere).
