@@ -263,10 +263,3 @@
 
 /* primo avvio con una versione vecchia: la frase che dice di aggiornare prima di configurare */
 .upd-poster__first { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent, #2cf5a4) 16%, transparent); font-weight: 600; line-height: 1.4; }
-
-/* «Vuoi aggiornare?»: finestrella quadrata al centro, discreta, con la X in alto */
-.upd-ask { position: relative; display: grid; gap: 0.8rem; justify-items: center; align-content: center; width: 15rem; height: 15rem; padding: 1.2rem; border-radius: 0.9rem; background: var(--panel, #121a2b); color: var(--fg, #e8eefc); border: 1px solid var(--line, rgba(255, 255, 255, 0.18)); box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.45); text-align: center; }
-.upd-ask__x { position: absolute; top: 0.35rem; right: 0.5rem; border: 0; background: transparent; color: inherit; font-size: 1.6rem; line-height: 1; cursor: pointer; opacity: 0.7; }
-.upd-ask__x:hover { opacity: 1; }
-.upd-ask__ver { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.upd-ask__q { margin: 0; font-size: 1rem; }

@@ -258,18 +258,22 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
         {/* spia di salute della stazione, subito prima dell'ingranaggio */}
         <HealthLight />
-        {/* sul PC l'ingranaggio apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}
+        {/* sul PC un solo ingranaggio, che apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}
         {remote ? null : (
-          <a
+          <button
+            type="button"
             className={`glass nav-more-btn${MORE_ROUTES.includes(route.name) ? ' glass--on' : ''}`}
-            href={settingsHref}
             aria-label={t('nav.settings')}
             title={t('nav.settings')}
+            onClick={() => {
+              location.hash = settingsHref;
+            }}
           >
             <Icon name="gear" size="1.15em" />
-          </a>
+          </button>
         )}
-        <span className="nav-more" ref={box} hidden={!remote}>
+        {remote ? (
+        <span className="nav-more" ref={box}>
           <button
             type="button"
             className={`glass nav-more-btn${MORE_ROUTES.includes(route.name) ? ' glass--on' : ''}`}
@@ -299,6 +303,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
             </span>
           ) : null}
         </span>
+        ) : null}
       </span>
     </>
   );

@@ -3811,9 +3811,6 @@ upd.poster.upToDate,Aurora is up to date: you have the latest version,Aurora is 
 upd.poster.installed,Released on {when},Uitgebracht op {when}
 upd.poster.allNews,All news,Al het nieuws
 upd.poster.ok,Close,Sluiten
-upd.ask.title,Do you want to update Aurora?,Wil je Aurora bijwerken?
-upd.ask.yes,Yes,Ja
-upd.ask.close,Close (later),Sluiten (later)
 upd.poster.available,A new version is available,Er is een nieuwe versie beschikbaar
 upd.poster.auto,Installing the update in {seconds} s…,Update installeren over {seconds} s…
 upd.poster.cancel,Cancel,Annuleren
