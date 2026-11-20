@@ -268,6 +268,9 @@ const MAIN_UHF_SUB_VHF: u8 = 2;
 /// Le due bande non si distinguono (stessa banda, o non si sono potute leggere): si usa la coppia di sempre, «Sub» in trasmissione e «Main» in ricezione.
 const MAIN_SUB_SAME: u8 = 3;
 
+/// Il modello Hamlib dell'IC-820H: a due bande (144 e 430 MHz), con «Main» sulla 144 e «Sub» sulla 430 di fabbrica.
+const IC_820H_MODEL: u32 = 3032;
+
 /// La frequenza e' sulla banda alta (UHF e oltre)?
 fn is_uhf(hz: u64) -> bool {
     hz >= 300_000_000
@@ -1561,11 +1564,23 @@ impl HamlibRig {
                 let (tx_vfo, rx_vfo) = if id == 1 {
                     let mut map = inner.sat_band_map.load(Ordering::SeqCst);
                     if map == MAIN_SUB_UNKNOWN {
-                        let read = |vfo: &str| c.set_vfo(vfo).and_then(|()| c.frequency());
-                        map = match (read("Main"), read("Sub")) {
+                        // dopo ogni cambio di VFO si aspetta un attimo: Hamlib tiene in memoria l'ultima frequenza letta e, a lettura troppo vicina,
+                        // restituiva la stessa su Main e su Sub (pacchetto di Vladimir, 0.11.318 e 0.11.319: «uguali o non leggibili»)
+                        let read = |vfo: &str| -> Result<u64, RigError> {
+                            c.set_vfo(vfo)?;
+                            std::thread::sleep(Duration::from_millis(700));
+                            c.frequency()
+                        };
+                        let (main, sub) = (read("Main"), read("Sub"));
+                        tracing::info!("satelliti: lettura delle bande dei VFO: Main = {:?} Hz, Sub = {:?} Hz", main.as_ref().ok(), sub.as_ref().ok());
+                        map = match (main, sub) {
                             (Ok(main), Ok(sub)) => band_map_of(main, sub),
                             _ => MAIN_SUB_SAME,
                         };
+                        // lettura senza risposta chiara: sull'IC-820H (modello 3032) Main e' la banda 144 e Sub la 430, come esce di fabbrica
+                        if map == MAIN_SUB_SAME && inner.config.model == IC_820H_MODEL {
+                            map = MAIN_VHF_SUB_UHF;
+                        }
                         inner.sat_band_map.store(map, Ordering::SeqCst);
                         tracing::info!("satelliti: bande dei VFO della radio: {}", match map {
                             MAIN_VHF_SUB_UHF => "Main = VHF, Sub = UHF",
@@ -2841,6 +2856,21 @@ mod tests {
         fake.clear_commands();
         rig.set_uplink_via_vfo(145_900_300, None).expect("uplink");
         assert_eq!(writes(&fake), ["V Sub", "F 145900300", "V Main"]);
+    }
+
+    /// IC-820H (modello 3032): se la lettura delle bande non da' una risposta chiara (Hamlib restituisce la stessa frequenza su Main e su Sub)
+    /// vale la disposizione di fabbrica, Main = 144 MHz e Sub = 430 MHz: la trasmissione VHF va su Main e si torna a Sub per la ricezione UHF.
+    #[test]
+    fn the_ic_820h_defaults_to_main_144_and_sub_430_when_the_bands_cannot_be_told_apart() {
+        let fake = FakeRigctld::start(435_600_000);
+        let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
+        fake.clear_commands();
+        assert_eq!(rig.set_uplink_via_vfo(145_900_000, None).expect("uplink"), true);
+        assert_eq!(writes(&fake), ["V Main", "V Sub", "V Main", "F 145900000", "V Sub"]);
+        // la volta dopo non si rilegge: si scrive subito sul VFO giusto
+        fake.clear_commands();
+        rig.set_uplink_via_vfo(145_900_100, None).expect("uplink");
+        assert_eq!(writes(&fake), ["V Main", "F 145900100", "V Sub"]);
     }
 
     #[test]
