@@ -7,7 +7,6 @@ import { useLang, useT } from '../i18n';
 import { localeOf, pick } from '../i18n/core';
 import { NOVITA } from '../lib/novita';
 import { browserStorage } from '../lib/theme';
-import { InstallProgress } from './InstallProgress';
 
 const SEEN_KEY = 'aurora-update-poster-seen';
 const OPEN_EVENT = 'aurora-update-poster-open';
@@ -197,7 +196,6 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
             </>
           ) : null}
           <p className="upd-poster__ver">{t('upd.poster.current', { current: update.data?.current ?? '…', when })}</p>
-          <InstallProgress active={installing} />
           {failure ? (
             <p className="first-run__error" role="alert">
               {failure}
