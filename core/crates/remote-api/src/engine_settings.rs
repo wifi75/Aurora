@@ -106,6 +106,9 @@ pub const EXTRA_KEYS: &[&str] = &[
     "UDP2Resend",
     // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
     "SWRLimit",
+    // salvataggio ADIF automatico: interruttore (spento di fabbrica) e cartella dove scrivere una copia di `aurora_log.adi` a ogni QSO (voci di Aurora)
+    "AdifAutoSave",
+    "AdifFolder",
     // ritardo tra PTT e audio (voce di Aurora, «Tx delay» di WSJT-X: `TxDelay`, 0-0,5 s, di fabbrica 0,2)
     "TxDelay",
     // «Tieni i file salvati per N giorni» della scheda Audio (voce di Aurora: periodi salvati e `ALL.TXT`, 0 = per sempre; vedi `engine_native::cleanup`)
@@ -371,7 +374,7 @@ pub fn support(key: &str) -> Support {
         "SeqAnswerCQCount" | "SeqAnswerCQCounterValue" | "SeqAnswerInCallCount" | "SeqAnswerInCallCounterValue" | "SeqSentRReportCount" | "SeqSentRReportCounterValue"
         | "SeqSentRR7373Count" | "SeqSentRR7373CounterValue" | "SeqHaltTxReplyOther" | "StrictDirectionalCQ" | "CallPriorityCQ" | "MaxDistance" => Support::Live(Apply::Now),
         // scheda Generali: periodo di monitoraggio Tx (watchdog), cambi di frequenza Tx durante la trasmissione, filtro del log, non monitorare all'avvio
-        "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "TxDelay" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
+        "TxWatchdogTimer" | "TxQSYAllowed" | "SWRLimit" | "AdifAutoSave" | "AdifFolder" | "TxDelay" | "callsignLogFiltering" | "gridLogFiltering" | "timeFromLogFiltering" => Support::Live(Apply::Now),
         "MonitorOFF" => Support::Live(Apply::Restart),
         // funzioni di WSJT-X 3.x: momento di avvio della decodifica FT8, full duplex, Wait features, verifica del Fox, Band Hopping
         "SlowPcMode" | "FT8DecoderStart" | "FullDuplex" | "WaitFeaturesEnabled" | "PouncePolicy" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "OTPUrl" | "BandHopping" | "BandHopList" => Support::Live(Apply::Now),
@@ -538,6 +541,10 @@ pub struct Reports {
     pub tx_qsy_allowed: bool,
     /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (`SWRLimit`, voce di Aurora; 200 = 2,0; 0 = controllo spento).
     pub swr_limit_centi: u32,
+    /// «Salvataggio ADIF automatico» (`AdifAutoSave`, voce di Aurora, spento di fabbrica): a ogni QSO una copia in `AdifFolder`.
+    pub adif_auto_save: bool,
+    /// Cartella di destinazione della copia (`AdifFolder`; vuota = nessuna).
+    pub adif_folder: String,
     /// Ritardo tra PTT e inizio dell'audio, in ms (`TxDelay`, voce di Aurora; «Tx delay» di WSJT-X, 0-500, di fabbrica 200).
     pub tx_delay_ms: u32,
     /// Il filtro del log della scheda Generali.
@@ -766,6 +773,9 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("UDP2Resend", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.0"),
+        // salvataggio ADIF automatico: spento di fabbrica, nessuna cartella
+        ("AdifAutoSave", "false"),
+        ("AdifFolder", ""),
         // ritardo tra PTT e audio: come WSJT-X (`TxDelay`, 0,2 s)
         ("TxDelay", "0.2"),
         // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese (in Aurora spente),
@@ -903,6 +913,28 @@ pub fn parse_tx_delay(value: &str) -> Option<u32> {
     (0.0..=500.0).contains(&ms).then_some(ms as u32)
 }
 
+/// La cartella del salvataggio ADIF automatico: percorso assoluto, senza `..`, di una cartella che c'e' o che si puo' creare (il primo
+/// antenato esistente e' una cartella). Un file al suo posto e' rifiutato.
+pub fn check_adif_folder(value: &str) -> Result<(), &'static str> {
+    let path = std::path::Path::new(value.trim());
+    if value.chars().count() > 260 || value.chars().any(|c| c.is_control() || matches!(c, '<' | '>' | '"' | '|' | '?' | '*')) {
+        return Err("percorso non valido");
+    }
+    if !path.is_absolute() {
+        return Err("serve il percorso completo della cartella");
+    }
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        return Err("il percorso non puo' contenere «..»");
+    }
+    if path.is_file() {
+        return Err("e' un file, serve una cartella");
+    }
+    match path.ancestors().find(|a| a.exists()) {
+        Some(a) if a.is_dir() => Ok(()),
+        _ => Err("la cartella non esiste e non si puo' creare"),
+    }
+}
+
 pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if !is_stored(key) {
         return Err(SettingsError::NotAvailable(key.to_string()));
@@ -914,7 +946,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     if value.is_empty()
         && matches!(
             key,
-            "MyCall" | "MyGrid" | "BandHopList" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
+            "MyCall" | "MyGrid" | "BandHopList" | "AdifFolder" | "UDPServer" | "UDP2Server" | "TCPServer" | "EQSLUser" | "EQSLNick" | "timeFromLogFiltering" | "SoundInName" | "SoundOutName" | "SaveDir" | "WavelogUrl" | "WavelogStation" | "ClublogEmail" | "ClublogCall"
                 | "LoTWTqsl" | "LoTWLocation" | "QRZLogCall" | "HrdlogCall" | "QRZUser" | "HamQTHUser"
         )
     {
@@ -923,6 +955,9 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     // la soglia del ROS non e' di JTDX: numero con il punto o la virgola
     if key == "SWRLimit" {
         return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,0 a 10".into()));
+    }
+    if key == "AdifFolder" {
+        return check_adif_folder(value).map_err(|m| SettingsError::BadValue(format!("AdifFolder: {m}")));
     }
     if key == "TxDelay" {
         return parse_tx_delay(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("TxDelay: da 0 a 0,5 secondi".into()));
@@ -971,7 +1006,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" | "AdifAutoSave" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "SlowPcMode" => if matches!(value, "auto" | "always" | "never") { Some(Ok(())) } else { bad("auto, always o never") },
@@ -1066,6 +1101,8 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         band_hopping: truthy(values.get("BandHopping")),
         band_hop_list: get("BandHopList").to_string(),
         decode: interpret_decode(values),
+        adif_auto_save: truthy(values.get("AdifAutoSave")),
+        adif_folder: get("AdifFolder").trim().to_string(),
         swr_limit_centi: values.get("SWRLimit").and_then(|v| parse_swr_limit(v)).unwrap_or(DEFAULT_SWR_LIMIT_CENTI),
         tx_delay_ms: values.get("TxDelay").and_then(|v| parse_tx_delay(v)).unwrap_or(DEFAULT_TX_DELAY_MS),
         log_filter: engine_jtdx::worked::LogFilter {
@@ -1808,6 +1845,28 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert!(validate("OTPUrl", "https://otp.example.org").is_ok());
         assert!(validate("BandHopList", "FT8 20m, 14090").is_ok());
         assert!(validate("BandHopList", "").is_ok());
+    }
+
+    #[test]
+    fn the_adif_auto_save_is_off_by_default_and_the_folder_is_checked() {
+        let r = interpret(&defaults());
+        assert!(!r.adif_auto_save && r.adif_folder.is_empty(), "spento e senza cartella di fabbrica");
+        assert!(matches!(support("AdifAutoSave"), Support::Live(Apply::Now)) && matches!(support("AdifFolder"), Support::Live(Apply::Now)));
+        let tmp = std::env::temp_dir();
+        let ok = tmp.join("aurora-adif-nuova").to_string_lossy().to_string();
+        assert!(validate("AdifFolder", &ok).is_ok(), "cartella creabile");
+        assert!(validate("AdifFolder", &tmp.to_string_lossy()).is_ok(), "cartella esistente");
+        assert!(validate("AdifFolder", "").is_ok(), "vuota = spenta");
+        assert!(validate("AdifFolder", "relativa/cartella").is_err(), "serve il percorso assoluto");
+        let up = format!("{}/../x", tmp.to_string_lossy());
+        assert!(validate("AdifFolder", &up).is_err(), "niente ..");
+        let file = tmp.join(format!("aurora-adif-file-{}.txt", std::process::id()));
+        std::fs::write(&file, b"x").expect("file di prova");
+        assert!(validate("AdifFolder", &file.to_string_lossy()).is_err(), "un file non e' una cartella");
+        std::fs::remove_file(&file).ok();
+        assert!(validate("AdifAutoSave", "true").is_ok() && validate("AdifAutoSave", "si").is_err());
+        let on = interpret(&map(&[("AdifAutoSave", "true"), ("AdifFolder", &ok)]));
+        assert!(on.adif_auto_save && on.adif_folder == ok);
     }
 
     #[test]

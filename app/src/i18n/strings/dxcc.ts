@@ -120,6 +120,32 @@ export const dxccStrings = {
   'dxcc.countries.empty': ['Nessun paese in questo modo.', 'No country in this mode.', 'Kein Land in diesem Modus.', 'Aucun pays dans ce mode.', 'Ningún país en este modo.', 'Nenhum país neste modo.'],
   'dxcc.countries.shown': ['{n} paesi', '{n} countries', '{n} Länder', '{n} pays', '{n} países', '{n} países'],
 
+  'adifauto.title': ['Salvataggio ADIF automatico', 'Automatic ADIF saving', 'Automatisches ADIF-Speichern', 'Sauvegarde ADIF automatique', 'Guardado ADIF automático', 'Gravação ADIF automática'],
+  'adifauto.dataFile': [
+    'Aurora scrive sempre ogni QSO nel file %APPDATA%\\Aurora\\aurora_log.adi (cartella dei dati). Qui puoi chiedere una copia in più in un\'altra cartella.',
+    'Aurora always writes every QSO to the file %APPDATA%\\Aurora\\aurora_log.adi (data folder). Here you can ask for an extra copy in another folder.',
+    'Aurora schreibt jedes QSO immer in die Datei %APPDATA%\\Aurora\\aurora_log.adi (Datenordner). Hier kannst du eine zusätzliche Kopie in einem anderen Ordner anfordern.',
+    'Aurora écrit toujours chaque QSO dans le fichier %APPDATA%\\Aurora\\aurora_log.adi (dossier des données). Ici tu peux demander une copie en plus dans un autre dossier.',
+    'Aurora escribe siempre cada QSO en el archivo %APPDATA%\\Aurora\\aurora_log.adi (carpeta de datos). Aquí puedes pedir una copia más en otra carpeta.',
+    'A Aurora escreve sempre cada QSO no ficheiro %APPDATA%\\Aurora\\aurora_log.adi (pasta de dados). Aqui podes pedir uma cópia a mais noutra pasta.',
+  ],
+  'adifauto.result': ['File della copia: {path}', 'Copy file: {path}', 'Kopierte Datei: {path}', 'Fichier de la copie : {path}', 'Archivo de la copia: {path}', 'Ficheiro da cópia: {path}'],
+  'adifauto.pick': [
+    'Scegli una cartella: con la casella accesa ma senza cartella non viene scritta nessuna copia.',
+    'Choose a folder: with the box on but no folder, no copy is written.',
+    'Wähle einen Ordner: Bei eingeschaltetem Kästchen ohne Ordner wird keine Kopie geschrieben.',
+    'Choisis un dossier : avec la case cochée mais sans dossier, aucune copie n\'est écrite.',
+    'Elige una carpeta: con la casilla encendida pero sin carpeta no se escribe ninguna copia.',
+    'Escolhe uma pasta: com a caixa ligada mas sem pasta, não é escrita nenhuma cópia.',
+  ],
+  'adifauto.help': [
+    'La cartella si scrive per intero (per esempio D:\\Log). Se non esiste Aurora la crea; se non riesce a scrivere il QSO si registra lo stesso. Vale subito, senza riavviare.',
+    'Type the full folder path (for example D:\\Log). If it does not exist Aurora creates it; if writing fails the QSO is still logged. It applies at once, without restarting.',
+    'Gib den vollständigen Ordnerpfad ein (zum Beispiel D:\\Log). Fehlt er, legt Aurora ihn an; schlägt das Schreiben fehl, wird das QSO trotzdem geloggt. Gilt sofort, ohne Neustart.',
+    'Écris le chemin complet du dossier (par exemple D:\\Log). S\'il n\'existe pas, Aurora le crée ; si l\'écriture échoue, le QSO est quand même enregistré. Valable tout de suite, sans redémarrer.',
+    'Escribe la ruta completa de la carpeta (por ejemplo D:\\Log). Si no existe, Aurora la crea; si no puede escribir, el QSO se registra igualmente. Vale al instante, sin reiniciar.',
+    'Escreve o caminho completo da pasta (por exemplo D:\\Log). Se não existir, a Aurora cria-a; se não conseguir escrever, o QSO fica registado na mesma. Vale logo, sem reiniciar.',
+  ],
   'logio.title': ['Log interno di Aurora', 'Aurora’s own log', 'Auroras eigenes Log', 'Log interne d’Aurora', 'Log interno de Aurora', 'Log interno da Aurora'],
   'logio.intro': [
     'Il log interno conserva ogni QSO registrato da Aurora. Puoi scaricarlo come file ADIF o aggiungerci il tuo storico senza doppioni.',

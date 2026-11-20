@@ -200,6 +200,10 @@ async fn send(target: &Target, socket: Option<&UdpSocket>, record: &str) -> Resu
             socket.send_to(record.as_bytes(), addr).await.map(|_| ()).map_err(|e| format!("{addr}: {e}"))
         }
         Target::File(path) => {
+            // la cartella scelta dall'utente puo' mancare: si crea (se non riesce, l'errore resta di questo solo destinatario)
+            if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty() && !d.exists()) {
+                tokio::fs::create_dir_all(dir).await.map_err(|e| format!("{}: {e}", dir.display()))?;
+            }
             let is_new = !path.exists();
             let mut file = tokio::fs::OpenOptions::new()
                 .create(true)

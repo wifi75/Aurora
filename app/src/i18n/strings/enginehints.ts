@@ -149,6 +149,22 @@ export const engineHintStrings = {
     'Tiempo mínimo entre la activación del PTT y el inicio del audio, como «Tx delay» de WSJT-X: de 0 a 0,5 s (de serie 0,2). Súbelo si la radio o el CAT son lentos y se pierde el inicio de los mensajes.',
     'Tempo mínimo entre ligar o PTT e o início do áudio, como «Tx delay» do WSJT-X: de 0 a 0,5 s (de origem 0,2). Aumenta-o se o rádio ou o CAT forem lentos e o início das mensagens se perder.',
   ],
+  'jxh.AdifAutoSave': [
+    'Spento di fabbrica. Acceso, a ogni QSO registrato Aurora scrive un record anche nel file aurora_log.adi della cartella scelta qui sotto (una copia in più: il file nella cartella dei dati resta com\'è).',
+    'Off by default. When on, at every QSO logged Aurora also writes a record to the aurora_log.adi file in the folder chosen below (an extra copy: the file in the data folder stays as it is).',
+    'Standardmäßig aus. Eingeschaltet schreibt Aurora bei jedem geloggten QSO einen Eintrag auch in die Datei aurora_log.adi im unten gewählten Ordner (eine zusätzliche Kopie: die Datei im Datenordner bleibt unverändert).',
+    'Éteint par défaut. Allumé, à chaque QSO enregistré Aurora écrit aussi un enregistrement dans le fichier aurora_log.adi du dossier choisi ci-dessous (une copie en plus : le fichier du dossier des données reste tel quel).',
+    'Apagado de serie. Encendido, en cada QSO registrado Aurora escribe también un registro en el archivo aurora_log.adi de la carpeta elegida abajo (una copia más: el archivo de la carpeta de datos queda como está).',
+    'Desligado de origem. Ligado, em cada QSO registado a Aurora escreve também um registo no ficheiro aurora_log.adi da pasta escolhida abaixo (uma cópia a mais: o ficheiro da pasta de dados fica como está).',
+  ],
+  'jxh.AdifFolder': [
+    'Percorso completo di una cartella (esistente o che Aurora crea da sola). Vale solo con «Salvataggio ADIF automatico» acceso; si applica subito, senza riavviare.',
+    'Full path of a folder (existing, or created by Aurora itself). It only counts when “Automatic ADIF saving” is on; it applies at once, without restarting.',
+    'Vollständiger Pfad eines Ordners (vorhanden oder von Aurora selbst angelegt). Gilt nur bei eingeschaltetem „Automatisches ADIF-Speichern“; wirkt sofort, ohne Neustart.',
+    'Chemin complet d\'un dossier (existant, ou créé par Aurora). Ne compte que si « Sauvegarde ADIF automatique » est allumée ; s\'applique tout de suite, sans redémarrer.',
+    'Ruta completa de una carpeta (existente, o que Aurora crea sola). Solo vale con «Guardado ADIF automático» encendido; se aplica al instante, sin reiniciar.',
+    'Caminho completo de uma pasta (existente, ou criada pela própria Aurora). Só vale com «Gravação ADIF automática» ligada; aplica-se logo, sem reiniciar.',
+  ],
   'jxh.SWRLimit': [
     'Sicurezza: se in trasmissione la radio legge un ROS piu\' alto di questo valore, Aurora ferma subito la trasmissione e ti avvisa (di fabbrica 2,5). Serve il CAT Hamlib con la lettura del ROS. 0 = controllo spento.',
     'Safety: if the radio reads an SWR higher than this while transmitting, Aurora stops transmitting at once and warns you (default 2.5). Needs Hamlib CAT with SWR reading. 0 = check off.',

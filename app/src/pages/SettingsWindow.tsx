@@ -24,6 +24,8 @@ import { AudioTab, ReportsTab } from '../settings/InfoTabs';
 import { LogServicesTab } from '../settings/LogServicesTab';
 import { MacrosTab } from '../settings/MacrosTab';
 import { LogTransfer } from '../components/LogTransfer';
+import { Page } from '../settings/layout';
+import { AdifAutoSaveGroup } from '../settings/AdifAutoSave';
 import { saveErrorOf, useSettings, type SaveError } from '../settings/NativeSettings';
 import { NotificationsTab } from '../settings/NotificationsTab';
 import { OnlineTab } from '../settings/OnlineTab';
@@ -98,11 +100,19 @@ const RENDER: Readonly<Record<string, () => ReactNode>> = {
   satorbits: () => <SatSettingsPage cat="orbits" />,
   satmap: () => <SatSettingsPage cat="map" />,
   satradio: () => <SatSettingsPage cat="radio" />,
+  sattrack: () => <SatSettingsPage cat="tracking" />,
   contest: () => <ContestSettingsPage group="ft8" />,
   contestvhf: () => <ContestSettingsPage group="vhf" />,
   // Log, cluster e servizi
   logbooks: () => <LogServicesTab />,
-  files: () => <LogTransfer />,
+  files: () => (
+    <>
+      <Page>
+        <AdifAutoSaveGroup />
+      </Page>
+      <LogTransfer />
+    </>
+  ),
   reporting: () => <ReportsTab />,
   cluster: () => <ClusterTab />,
   online: () => <OnlineTab />,

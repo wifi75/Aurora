@@ -485,6 +485,13 @@ fn live_targets(base: &[Target], reports: &remote_api::engine_settings::Reports)
         }
     }
     out.extend(base.iter().filter(|t| !matches!(t, Target::UdpAdif(_) | Target::N1mmXml(_))).cloned());
+    // salvataggio ADIF automatico: copia in piu' nella cartella scelta, solo con la casella accesa e una cartella (il file della cartella dei dati resta)
+    if reports.adif_auto_save && !reports.adif_folder.is_empty() {
+        let copy = Target::File(PathBuf::from(&reports.adif_folder).join(OWN_LOG_FILE));
+        if !out.contains(&copy) {
+            out.push(copy);
+        }
+    }
     out
 }
 
@@ -2065,8 +2072,28 @@ impl mode_sat::SatRadio for SatRadioAdapter {
     }
 
     fn set_rx_hz(&self, hz: u64) -> Result<(), String> {
-        use rig_control::Rig;
-        self.cat.hamlib().map_err(|e| e.0)?.set_frequency(hz).map_err(|e| e.0)
+        // solo `F`: la correzione ogni secondo non deve riscrivere il modo ne' toccare lo split come un cambio di banda
+        self.cat.hamlib().map_err(|e| e.0)?.set_tracking_frequency(hz).map_err(|e| e.0)
+    }
+
+    fn link_id(&self) -> u64 {
+        self.cat.hamlib().map_or(0, |h| h.session_id())
+    }
+
+    fn set_rx_mode(&self, mode: &str) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_tracking_mode(mode).map_err(|e| e.0)
+    }
+
+    fn set_tx_mode(&self, mode: &str) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_tracking_tx_mode(mode).map_err(|e| e.0)
+    }
+
+    fn set_tx_via_vfo(&self, hz: u64, mode: Option<&str>) -> Result<bool, String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_uplink_via_vfo(hz, mode).map_err(|e| e.0)
+    }
+
+    fn enable_satmode(&self) -> Result<(), String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_satmode(true).map_err(|e| e.0)
     }
 
     fn set_tx_hz(&self, hz: u64) -> Result<(), String> {
@@ -3677,6 +3704,24 @@ mod tests {
         assert_eq!(got.len(), 3);
         assert!(got.contains(&Target::N1mmXml("127.0.0.1:12060".parse().expect("indirizzo"))));
         assert!(got.contains(&own_file), "il file di Aurora c'e' sempre");
+    }
+
+    #[test]
+    fn the_adif_auto_save_adds_one_copy_only_when_on_and_with_a_folder() {
+        use remote_api::engine_settings::Reports;
+        let (targets, _) = export_targets(&config_for(EngineKind::Native));
+        let own_file = Target::File(PathBuf::from("dati").join("aurora_log.adi"));
+        let folder = std::env::temp_dir().join("aurora-copia");
+        let folder_text = folder.to_string_lossy().to_string();
+        assert_eq!(live_targets(&targets, &Reports::default()), vec![own_file.clone()], "spento di fabbrica");
+        let no_folder = Reports { adif_auto_save: true, ..Reports::default() };
+        assert_eq!(live_targets(&targets, &no_folder), vec![own_file.clone()], "acceso senza cartella: nessuna copia");
+        let off = Reports { adif_folder: folder_text.clone(), ..Reports::default() };
+        assert_eq!(live_targets(&targets, &off), vec![own_file.clone()], "cartella ma casella spenta: nessuna copia");
+        let on = Reports { adif_auto_save: true, adif_folder: folder_text, ..Reports::default() };
+        assert_eq!(live_targets(&targets, &on), vec![own_file.clone(), Target::File(folder.join("aurora_log.adi"))], "una copia in piu'");
+        let same = Reports { adif_auto_save: true, adif_folder: "dati".into(), ..Reports::default() };
+        assert_eq!(live_targets(&targets, &same), vec![own_file], "stessa cartella dei dati: nessun doppione");
     }
 
     #[test]
