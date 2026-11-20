@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, downloadUpdate, getUpdate, installUpdate, type UpdateStage } from '../api/client';
 import { useT } from '../i18n';
+import { REMOTE_HOST } from '../lib/phone';
 import { browserStorage } from '../lib/theme';
+import { getUpdateWhenIdle, isStationIdle } from '../lib/updateIdle';
 import { useStation } from '../state/station';
 import { InstallProgress } from './InstallProgress';
 
@@ -48,6 +50,7 @@ export function UpdateBar() {
   const [installing, setInstalling] = useState(false);
   const [failure, setFailure] = useState('');
   const [open, setOpen] = useState(false);
+  const status = useStation((s) => s.status);
   const box = useRef<HTMLDivElement | null>(null);
   const install = async () => {
     setInstalling(true);
@@ -76,6 +79,36 @@ export function UpdateBar() {
   }, [notice, refetch]);
   // l'evento del core arriva subito; il controllo della pagina dopo, con tutti i dettagli
   const release = update.data?.available ?? (notice ? { version: notice.version, tag: notice.tag, name: '', url: notice.url } : null);
+  // «Aggiorna da solo quando Aurora e' ferma» (spento di base, solo sul PC principale): a pacchetto pronto e verificato, se non si trasmette,
+  // non c'e' un QSO e nessuno tocca nulla da dieci minuti, si installa da sola. Un tentativo per versione: se fallisce resta il pulsante.
+  const lastInput = useRef(Date.now());
+  const tried = useRef('');
+  const ready = update.data?.stage?.phase === 'ready' && update.data.can_install === true ? update.data.stage.version : '';
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  useEffect(() => {
+    if (REMOTE_HOST) return;
+    const touch = () => {
+      lastInput.current = Date.now();
+    };
+    const events = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
+    for (const e of events) window.addEventListener(e, touch, { passive: true });
+    return () => {
+      for (const e of events) window.removeEventListener(e, touch);
+    };
+  }, []);
+  useEffect(() => {
+    if (REMOTE_HOST || ready === '') return;
+    const id = window.setInterval(() => {
+      if (tried.current === ready || !getUpdateWhenIdle()) return;
+      if (!isStationIdle(statusRef.current, Date.now() - lastInput.current)) return;
+      tried.current = ready;
+      void install();
+    }, 30_000);
+    return () => window.clearInterval(id);
+    // install usa solo setter e la richiesta: non serve rilanciare l'intervallo a ogni giro
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
   // il pannello si chiude con Esc o con un clic fuori
   useEffect(() => {
     if (!open) return;

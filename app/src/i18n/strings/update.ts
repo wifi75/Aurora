@@ -15,6 +15,22 @@ export const updateStrings = {
   'upd.available': ['È uscita la versione {version}.', 'Version {version} is out.', 'Version {version} ist erschienen.', 'La version {version} est sortie.', 'Ha salido la versión {version}.', 'Saiu a versão {version}.'],
   'upd.lastCheck': ['Ultimo controllo', 'Last check', 'Letzte Prüfung', 'Dernier contrôle', 'Última comprobación', 'Última verificação'],
   'upd.never': ['mai', 'never', 'nie', 'jamais', 'nunca', 'nunca'],
+  'upd.whenIdle': [
+    'Aggiorna da solo quando Aurora è ferma',
+    'Update by itself when Aurora is idle',
+    'Von selbst aktualisieren, wenn Aurora ruht',
+    'Mettre à jour automatiquement quand Aurora est inactive',
+    'Actualizar solo cuando Aurora está parada',
+    'Atualizar sozinho quando o Aurora está parado',
+  ],
+  'tip.upd.whenIdle': [
+    'Spento di base. Acceso, a pacchetto già scaricato e verificato Aurora si aggiorna e si riavvia da sola, ma solo se non trasmette, la trasmissione non è abilitata, non c’è un QSO aperto né stazioni in coda e da 10 minuti non tocchi mouse o tastiera. Vale solo su questo PC. Altrimenti si installa premendo «Installa».',
+    'Off by default. When on, once the package is downloaded and verified Aurora updates and restarts by itself, but only if it is not transmitting, transmission is not enabled, no QSO is open, no stations are queued and you have not touched the mouse or keyboard for 10 minutes. Only on this PC. Otherwise you install by pressing “Install”.',
+    'Standardmäßig aus. Eingeschaltet aktualisiert und startet sich Aurora nach dem Herunterladen und Prüfen des Pakets selbst neu, aber nur, wenn nicht gesendet wird, das Senden nicht freigegeben ist, kein QSO offen ist, keine Stationen in der Warteschlange stehen und seit 10 Minuten weder Maus noch Tastatur benutzt wurden. Gilt nur für diesen PC. Sonst installierst du mit „Installieren“.',
+    'Désactivé par défaut. Activé, une fois le paquet téléchargé et vérifié, Aurora se met à jour et redémarre toute seule, mais seulement si elle n’émet pas, que l’émission n’est pas autorisée, qu’aucun QSO n’est ouvert, qu’aucune station n’est en file et que vous n’avez pas touché la souris ou le clavier depuis 10 minutes. Seulement sur ce PC. Sinon on installe avec « Installer ».',
+    'Apagado de base. Encendido, con el paquete ya descargado y verificado Aurora se actualiza y se reinicia sola, pero solo si no transmite, la transmisión no está habilitada, no hay un QSO abierto ni estaciones en cola y llevas 10 minutos sin tocar el ratón ni el teclado. Solo en este PC. Si no, se instala pulsando «Instalar».',
+    'Desligado de base. Ligado, com o pacote já descarregado e verificado o Aurora atualiza-se e reinicia-se sozinho, mas só se não estiver a transmitir, a transmissão não estiver ativada, não houver um QSO aberto nem estações em fila e há 10 minutos não tocares no rato nem no teclado. Só neste PC. Caso contrário instala-se com «Instalar».',
+  ],
   'upd.enabled': ['Controlla le nuove versioni', 'Check for new versions', 'Auf neue Versionen prüfen', 'Chercher les nouvelles versions', 'Buscar versiones nuevas', 'Procurar versões novas'],
   'upd.repo': ['Repository (proprietario/nome)', 'Repository (owner/name)', 'Repository (Besitzer/Name)', 'Dépôt (propriétaire/nom)', 'Repositorio (propietario/nombre)', 'Repositório (proprietário/nome)'],
   'tip.upd.repo': [

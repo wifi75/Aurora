@@ -4,6 +4,8 @@ import { InstallProgress } from '../components/InstallProgress';
 import { openUpdatePoster, UpdatePoster } from '../components/UpdatePoster';
 import { ApiError, checkUpdate, getUpdate, installUpdate, putUpdate, type UpdateConfigInput } from '../api/client';
 import { useT } from '../i18n';
+import { REMOTE_HOST } from '../lib/phone';
+import { getUpdateWhenIdle, setUpdateWhenIdle } from '../lib/updateIdle';
 import { Check, Help } from './common';
 import { Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
@@ -41,6 +43,8 @@ export function UpdatesTab() {
   const [note, setNote] = useState('');
   const [installing, setInstalling] = useState(false);
   const [installFailure, setInstallFailure] = useState('');
+  // «Aggiorna da solo quando Aurora e' ferma»: preferenza di questo PC, spenta di base; la mette in pratica la barretta in testata
+  const [whenIdle, setWhenIdle] = useState(getUpdateWhenIdle);
   const install = async () => {
     setInstalling(true);
     setInstallFailure('');
@@ -163,6 +167,17 @@ export function UpdatesTab() {
             <input type="number" className="jx-text upd-hours-input" min={1} max={168} value={shown.hours} disabled={!shown.enabled} onChange={(e) => set({ hours: e.target.value })} />
           </label>
         </div>
+        {REMOTE_HOST ? null : (
+          <Check
+            label={t('upd.whenIdle')}
+            hint={t('tip.upd.whenIdle')}
+            checked={whenIdle}
+            onChange={(v) => {
+              setWhenIdle(v);
+              setUpdateWhenIdle(v);
+            }}
+          />
+        )}
         {!parsed ? <Message kind="alert">{t('upd.invalid')}</Message> : null}
         {note ? <Message>{note}</Message> : null}
       </Group>

@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+- Impostazioni radio, Hamlib: pulsante «Usa un rigctld gia' acceso» (modello «NET rigctl», indirizzo 127.0.0.1:4532 se non ce n'e' gia' uno di rete, condivisione spenta) per chi ha il suo Hamlib avviato per primo (segnalazione #87).
+- PSK e RTTY: menu File «Importa le macro di fldigi…». Legge il file di macro di fldigi, traduce i tag con lo stesso significato (i altri restano nel testo e vengono elencati), mette le macro sui tasti F1-F12 e sulle file Ctrl, Maiusc, Ctrl+Maiusc; si sceglie se per tutti i modi o solo per quello in uso e se aggiungere (cambiano solo i tasti del file) o sostituire il gruppo. Annullabile.
+- Aggiornamenti: casella «Aggiorna da solo quando Aurora e' ferma» (spenta di base, solo sul PC principale): a pacchetto pronto installa da sola solo se non si trasmette, la trasmissione non e' abilitata, non c'e' un QSO ne' stazioni in coda e da 10 minuti non si tocca mouse o tastiera.
+
 ## 0.11.320 - 2026-11-20
 
 - Satelliti, IC-820H: la lettura delle bande dei due VFO (Main/Sub) aspetta 700 ms dopo ogni cambio di VFO (Hamlib restituiva la stessa frequenza su tutti e due e Aurora ricadeva sulla coppia fissa: pacchetti di Vladimir, 0.11.318 e 0.11.319), scrive nel registro le due frequenze lette e, se la lettura non e' chiara sul modello 3032, usa la disposizione di fabbrica (Main = 144 MHz, Sub = 430 MHz). Provato con la radio finta, non con la radio vera.

@@ -2090,6 +2090,8 @@ upd.uptodate,Aurora is up to date.,Aurora обновлена до последн
 upd.available,Version {version} is out.,Вышла версия {version}.
 upd.lastCheck,Last check,Последняя проверка
 upd.never,never,никогда
+upd.whenIdle,Update by itself when Aurora is idle,"Обновляться самой, когда Aurora простаивает"
+tip.upd.whenIdle,"Off by default. When on, once the package is downloaded and verified Aurora updates and restarts by itself, but only if it is not transmitting, transmission is not enabled, no QSO is open, no stations are queued and you have not touched the mouse or keyboard for 10 minutes. Only on this PC. Otherwise you install by pressing “Install”.","По умолчанию выключено. Если включено, после загрузки и проверки пакета Aurora сама обновится и перезапустится, но только если не идёт передача, передача не разрешена, нет открытого QSO, нет станций в очереди и 10 минут не использовались мышь и клавиатура. Только на этом ПК. Иначе установка кнопкой «Установить»."
 upd.enabled,Check for new versions,Проверять новые версии
 upd.repo,Repository (owner/name),Репозиторий (владелец/название)
 tip.upd.repo,"The GitHub repository where releases come out, for example wifi75/Aurora.","Репозиторий GitHub, где публикуются релизы, например wifi75/Aurora."
