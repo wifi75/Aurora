@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWefax, getWefaxImages, wefaxRx, wefaxRxPage } from '../api/client';
+import { getWefax, getWefaxImages, postFrequency, wefaxRx, wefaxRxPage } from '../api/client';
 import { ListenGate } from '../components/ListenGate';
 import { History } from '../components/wefax/History';
 import { Controls } from '../components/wefax/Controls';
@@ -9,6 +9,8 @@ import { useT } from '../i18n';
 import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
+import { formatKhz, presetAt, wefaxGroups } from '../lib/wefaxStations';
+import { useStation } from '../state/station';
 import '../styles/sstv.css';
 import '../styles/wefax.css';
 
@@ -47,6 +49,10 @@ export function WefaxPage() {
   const rx = data?.rx;
   const badge = rx?.receiving ? 'receiving' : rx?.listening ? 'listening' : 'off';
 
+  const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
+  const current = presetAt(dialHz);
+  const groups = wefaxGroups();
+
   return (
     <div className="sstv-page wefax-page">
       <header className="sstv-head">
@@ -74,7 +80,30 @@ export function WefaxPage() {
             {t(`wefax.state.${badge}`)}
           </span>
         ) : null}
-        {/* nessun piano di banda: le frequenze meteo (portante meno 1,9 kHz in USB) si scelgono dalla radio */}
+        {/* le stazioni meteo per banda e poi per frequenza: la radio va sulla portante (frequenza assegnata meno 1,9 kHz, in USB) */}
+        <select
+          className="sstv-modesel wefax-freq"
+          value={current?.id ?? ''}
+          aria-label={t('wefax.freq.label')}
+          title={t('wefax.freq.tip')}
+          onChange={(e) => {
+            const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
+            if (p) void postFrequency(p.dialHz).catch(() => undefined);
+          }}
+        >
+          <option value="" disabled>
+            {t('wefax.freq.choose')}
+          </option>
+          {groups.map((g) => (
+            <optgroup key={g.band} label={t('wefax.freq.band', { mhz: String(g.band) })}>
+              {g.presets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {`${formatKhz(p.khz)} kHz · ${p.call} ${p.place}`}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
       </header>
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
 

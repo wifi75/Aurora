@@ -22,6 +22,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Spot dal tuo cluster con passaggio al server successivo
 
 ## Poi
+- [ ] WEFAX: ogni 6 mesi rileggere l'elenco NOAA (rfax.pdf) e gli orari DWD e aggiornare `app/src/lib/wefaxStations.ts`
 - [ ] Contest: schede mancanti, Cabrillo dal log, altri contest in cartella
 - [ ] Satelliti: preavviso rotore, suoni, schede con spazi vuoti
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile

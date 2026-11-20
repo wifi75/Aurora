@@ -88,4 +88,15 @@ export const wefaxStrings = {
   'wefax.hist.confirm': ['Cancellare questa cartina? Non si può annullare.', 'Delete this chart? This cannot be undone.', 'Diese Karte löschen? Das lässt sich nicht rückgängig machen.', 'Supprimer cette carte ? Action irréversible.', '¿Borrar este mapa? No se puede deshacer.', 'Apagar esta carta? Não se pode anular.'],
   'wefax.hist.close': ['Chiudi', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar'],
   'wefax.hist.partial': ['Parziale', 'Partial', 'Teilweise', 'Partielle', 'Parcial', 'Parcial'],
+  'wefax.freq.label': ['Stazione e frequenza', 'Station and frequency', 'Station und Frequenz', 'Station et fréquence', 'Estación y frecuencia', 'Estação e frequência'],
+  'wefax.freq.choose': ['Scegli una frequenza…', 'Choose a frequency…', 'Frequenz wählen…', 'Choisir une fréquence…', 'Elegir una frecuencia…', 'Escolher uma frequência…'],
+  'wefax.freq.band': ['{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz'],
+  'wefax.freq.tip': [
+    'La radio va sulla frequenza della stazione (in USB, 1,9 kHz sotto la frequenza assegnata). Elenco del National Weather Service (marzo 2025) e del Deutscher Wetterdienst: orari e frequenze cambiano.',
+    'The radio goes to the station frequency (USB, 1.9 kHz below the assigned frequency). List from the National Weather Service (March 2025) and the Deutscher Wetterdienst: schedules and frequencies change.',
+    'Das Funkgerät geht auf die Frequenz der Station (USB, 1,9 kHz unter der zugewiesenen Frequenz). Liste des National Weather Service (März 2025) und des Deutschen Wetterdienstes: Zeiten und Frequenzen ändern sich.',
+    'La radio se règle sur la fréquence de la station (USB, 1,9 kHz sous la fréquence assignée). Liste du National Weather Service (mars 2025) et du Deutscher Wetterdienst : horaires et fréquences changent.',
+    'La radio va a la frecuencia de la estación (USB, 1,9 kHz por debajo de la frecuencia asignada). Lista del National Weather Service (marzo de 2025) y del Deutscher Wetterdienst: los horarios y las frecuencias cambian.',
+    'O rádio vai para a frequência da estação (USB, 1,9 kHz abaixo da frequência atribuída). Lista do National Weather Service (março de 2025) e do Deutscher Wetterdienst: os horários e as frequências mudam.',
+  ],
 } as const;
