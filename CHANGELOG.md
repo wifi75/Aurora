@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+## 0.11.318 - 2026-11-20
+
+- Satelliti, radio a due bande (IC-820H): con il ripiego «Trasmissione con due VFO» Aurora legge una volta per connessione quale banda sta su «Main» e quale su «Sub», e scrive la trasmissione sul VFO della sua banda e la ricezione sull'altro. Prima la coppia era fissa e, con ricezione 437 MHz e trasmissione 145 MHz, ogni frequenza finiva nella banda sbagliata e la radio la «ripiegava» (437,79 diventava 137,79 MHz). Provato solo con la radio finta e con il registro di Vladimir (#83), non con la radio vera.
+
 ## 0.11.317 - 2026-11-20
 
 - FT8: con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx ora trasmette il CQ; prima Abilita Tx si spegneva da solo e non partiva niente (segnalazione #86, FT-710). Il CQ automatico a QSO finito resta solo con AutoTX acceso.

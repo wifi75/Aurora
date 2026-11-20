@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.318',
+    released: '2026-11-20T17:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Satelliti con radio a due bande: la trasmissione va sulla banda giusta',
+      'Satellites with dual-band radios: the transmit frequency goes to the right band',
+      'Satelliten mit Zweiband-Funkgeräten: die Sendefrequenz geht ins richtige Band',
+      'Satellites avec radios bi-bandes : la fréquence d’émission va sur la bonne bande',
+      'Satélites con radios de dos bandas: la transmisión va a la banda correcta',
+      'Satélites com rádios de duas bandas: a transmissão vai para a banda certa',
+    ],
+    text: [
+      'Con radio a due bande come l’IC-820H, e il ripiego «Trasmissione con due VFO» acceso, Aurora ora capisce quale banda sta su Main e quale su Sub, e scrive la trasmissione sul VFO della sua banda e la ricezione sull’altro. Prima la coppia era fissa: con ricezione a 437 MHz e trasmissione a 145 MHz ogni frequenza finiva nella banda sbagliata e la radio la ripiegava (437,79 diventava 137,79 MHz). Provato con la radio finta e con il registro di un utente, non ancora con la radio vera.',
+      'With dual-band radios such as the IC-820H, and the “Transmit with two VFOs” fallback on, Aurora now works out which band is on Main and which on Sub, and writes the transmit frequency to the VFO of its band and the receive frequency to the other. Before, the pair was fixed: with receive at 437 MHz and transmit at 145 MHz every frequency ended up in the wrong band and the radio folded it (437.79 became 137.79 MHz). Tested with the simulated radio and a user’s log, not yet with a real radio.',
+      'Bei Zweiband-Funkgeräten wie dem IC-820H und eingeschaltetem Ausweichmodus „Senden mit zwei VFOs“ erkennt Aurora jetzt, welches Band auf Main und welches auf Sub liegt, und schreibt die Sendefrequenz auf das VFO ihres Bandes und die Empfangsfrequenz auf das andere. Vorher war das Paar fest: bei Empfang auf 437 MHz und Senden auf 145 MHz landete jede Frequenz im falschen Band und das Funkgerät faltete sie um (437,79 wurde zu 137,79 MHz). Mit simuliertem Funkgerät und dem Protokoll eines Nutzers getestet, noch nicht mit einem echten Funkgerät.',
+      'Avec des radios bi-bandes comme l’IC-820H, et le repli « Émission avec deux VFO » activé, Aurora repère maintenant quelle bande est sur Main et laquelle sur Sub, et écrit la fréquence d’émission sur le VFO de sa bande et celle de réception sur l’autre. Avant, la paire était fixe : avec réception à 437 MHz et émission à 145 MHz, chaque fréquence tombait dans la mauvaise bande et la radio la repliait (437,79 devenait 137,79 MHz). Testé avec la radio simulée et le journal d’un utilisateur, pas encore avec une vraie radio.',
+      'Con radios de dos bandas como la IC-820H, y el modo alternativo «Transmisión con dos VFO» activado, Aurora ahora averigua qué banda está en Main y cuál en Sub, y escribe la frecuencia de transmisión en el VFO de su banda y la de recepción en el otro. Antes el par era fijo: con recepción a 437 MHz y transmisión a 145 MHz cada frecuencia acababa en la banda equivocada y la radio la plegaba (437,79 pasaba a 137,79 MHz). Probado con la radio simulada y con el registro de un usuario, aún no con una radio real.',
+      'Com rádios de duas bandas como o IC-820H, e o modo alternativo «Transmissão com dois VFO» ligado, o Aurora agora descobre qual banda está em Main e qual em Sub, e escreve a frequência de transmissão no VFO da sua banda e a de receção no outro. Antes o par era fixo: com receção a 437 MHz e transmissão a 145 MHz cada frequência acabava na banda errada e o rádio dobrava-a (437,79 passava a 137,79 MHz). Testado com o rádio simulado e com o registo de um utilizador, ainda não com um rádio real.',
+    ],
+  },
+  {
     version: '0.11.317',
     released: '2026-11-20T14:14:59Z',
     kind: 'fixed',
@@ -819,26 +840,5 @@ export const NOVITA: readonly Novita[] = [
       'O pacote que a Aurora envia a quem a desenvolve leva agora tudo o que é preciso para perceber um problema: os comandos enviados ao rádio com as respostas e os tempos, as definições e o estado do rádio, o PC, o áudio, a janela e os últimos erros da página, e um resumo do registo com os avisos que se repetem. Sem dados pessoais.',
     ],
     featured: true,
-  },
-  {
-    version: '0.11.287',
-    released: '2026-11-17T19:45:26Z',
-    kind: 'fixed',
-    title: [
-      'Icom senza modo dati: l’USB-D resta',
-      'Icom without data mode: USB-D stays',
-      'Icom ohne Datenmodus: USB-D bleibt',
-      'Icom sans mode données : l’USB-D reste',
-      'Icom sin modo de datos: el USB-D se queda',
-      'Icom sem modo de dados: o USB-D fica',
-    ],
-    text: [
-      'Con certe Icom (IC-756PRO e famiglia 756) Hamlib non ha il modo dati: con «Modo scritto nella radio» su «Dati» Aurora ripiegava scrivendo USB e toglieva la radio da USB-D. Ora, se la radio è già in USB, il modo non si riscrive e l’USB-D scelto sulla radio resta. Il modo dati di queste radio si sceglie sulla radio: Aurora non lo vede e mostra «USB».',
-      'With some Icom radios (IC-756PRO and the 756 family) Hamlib has no data mode: with “Mode written to the radio” set to “Data” Aurora fell back to writing USB and took the radio out of USB-D. Now, if the radio is already in USB, the mode is not rewritten and the USB-D chosen on the radio stays. The data mode of these radios is chosen on the radio: Aurora cannot see it and shows “USB”.',
-      'Bei manchen Icom-Geräten (IC-756PRO und die 756-Familie) hat Hamlib keinen Datenmodus: mit „In das Gerät geschriebene Betriebsart“ auf „Daten“ schrieb Aurora ersatzweise USB und nahm das Gerät aus USB-D. Ist das Gerät jetzt schon in USB, wird die Betriebsart nicht neu geschrieben und das am Gerät gewählte USB-D bleibt. Der Datenmodus dieser Geräte wird am Gerät gewählt: Aurora sieht ihn nicht und zeigt „USB“.',
-      'Avec certaines Icom (IC-756PRO et la famille 756), Hamlib n’a pas de mode données : avec « Mode écrit dans la radio » sur « Données », Aurora se rabattait sur l’écriture de USB et sortait la radio de l’USB-D. Maintenant, si la radio est déjà en USB, le mode n’est pas réécrit et l’USB-D choisi sur la radio reste. Le mode données de ces radios se choisit sur la radio : Aurora ne le voit pas et affiche « USB ».',
-      'Con algunas Icom (IC-756PRO y la familia 756) Hamlib no tiene modo de datos: con «Modo escrito en la radio» en «Datos» Aurora recurría a escribir USB y sacaba la radio de USB-D. Ahora, si la radio ya está en USB, el modo no se reescribe y el USB-D elegido en la radio se queda. El modo de datos de estas radios se elige en la radio: Aurora no lo ve y muestra «USB».',
-      'Com alguns rádios Icom (IC-756PRO e a família 756) o Hamlib não tem modo de dados: com «Modo escrito no rádio» em «Dados» a Aurora recorria a escrever USB e tirava o rádio de USB-D. Agora, se o rádio já está em USB, o modo não é reescrito e o USB-D escolhido no rádio fica. O modo de dados destes rádios escolhe-se no rádio: a Aurora não o vê e mostra «USB».',
-    ],
   },
 ];
