@@ -54,6 +54,10 @@ pub struct FakeState {
     refused_modes: Mutex<Vec<String>>,
     /// `G CPY` (copia A=B) accettato; altrimenti `RPRT -1` come le radio senza `vfo_op CPY`.
     cpy_ok: AtomicBool,
+    /// Codice `RPRT` con cui `S` (split) risponde (0 = accettato): -11 come l'IC-820H.
+    s_fail_code: AtomicI32,
+    /// I nomi di VFO che `V` rifiuta con `RPRT -11` (`Sub`, `Main`...).
+    refused_vfos: Mutex<Vec<String>>,
 }
 
 pub struct FakeRigctld {
@@ -87,6 +91,8 @@ impl FakeRigctld {
             x_fail_code: AtomicI32::new(0),
             refused_modes: Mutex::new(Vec::new()),
             cpy_ok: AtomicBool::new(false),
+            s_fail_code: AtomicI32::new(0),
+            refused_vfos: Mutex::new(Vec::new()),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -111,6 +117,18 @@ impl FakeRigctld {
 
     pub fn commands(&self) -> Vec<String> {
         self.state.log.lock().map(|l| l.clone()).unwrap_or_default()
+    }
+
+    /// `S` risponde con questo codice (per esempio -11: la radio non ha lo split da CAT).
+    pub fn fail_split_with(&self, code: i32) {
+        self.state.s_fail_code.store(code, Ordering::SeqCst);
+    }
+
+    /// `V` rifiuta questo nome di VFO con `RPRT -11`.
+    pub fn refuse_vfo(&self, name: &str) {
+        if let Ok(mut r) = self.state.refused_vfos.lock() {
+            r.push(name.to_string());
+        }
     }
 
     pub fn clear_commands(&self) {
@@ -358,6 +376,10 @@ fn serve(stream: TcpStream, state: &FakeState) {
                         "RPRT 0\n".into()
                     }
                 }
+                "S" if state.s_fail_code.load(Ordering::SeqCst) != 0 => format!("RPRT {}
+", state.s_fail_code.load(Ordering::SeqCst)),
+                "V" if state.refused_vfos.lock().is_ok_and(|r| r.iter().any(|x| x == arg)) => "RPRT -11
+".into(),
                 "S" => {
                     state.split.store(arg == "1", Ordering::SeqCst);
                     "RPRT 0\n".into()

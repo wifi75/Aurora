@@ -31,6 +31,27 @@ pub trait SatRadio: Send + Sync {
     /// La frequenza di trasmissione (VFO di split), in Hz.
     fn set_tx_hz(&self, hz: u64) -> Result<(), String>;
     fn set_split(&self, on: bool) -> Result<(), String>;
+    /// Un numero che cambia quando la radio si ricollega o cambia: la memoria dei comandi rifiutati si azzera.
+    fn link_id(&self) -> u64 {
+        0
+    }
+    /// Il modo di ricezione (nomi di Hamlib: USB, LSB, FM, CW).
+    fn set_rx_mode(&self, _mode: &str) -> Result<(), String> {
+        Err("non supportato".into())
+    }
+    /// Il modo del VFO di trasmissione (con lo split vero).
+    fn set_tx_mode(&self, _mode: &str) -> Result<(), String> {
+        Err("non supportato".into())
+    }
+    /// Ripiego per le radio senza split da CAT: si passa al VFO secondario, si scrivono frequenza (e modo, se dato), si torna al VFO di
+    /// ricezione. `Ok(false)` = non adesso (la radio sta trasmettendo), si riprova. Il primo errore spegne il ripiego.
+    fn set_tx_via_vfo(&self, _hz: u64, _mode: Option<&str>) -> Result<bool, String> {
+        Err("non supportato".into())
+    }
+    /// Accende il modo satellite della radio (Hamlib `SATMODE`), se lo ha.
+    fn enable_satmode(&self) -> Result<(), String> {
+        Err("non supportato".into())
+    }
 }
 
 /// Il rotore: azimut ed elevazione.
@@ -63,6 +84,28 @@ pub struct SatSettings {
     pub rotor_az_offset_deg: f64,
     /// Sotto questa elevazione non si corregge il Doppler e il rotore non segue.
     pub min_el_deg: f64,
+    /// Ripiego «due VFO» per le radio senza split da CAT (sperimentale, spento di fabbrica).
+    pub uplink_two_vfo: bool,
+    /// Il ripiego aggiorna la trasmissione al massimo ogni tanti secondi (2-120)...
+    pub uplink_interval_s: u32,
+    /// ...o appena lo scostamento supera tanti Hz (20-5000), ma mai piu' di una volta ogni 2 s.
+    pub uplink_threshold_hz: u32,
+    /// Modo di ricezione: «Auto» (dal transponder), «USB», «LSB», «FM» o «CW».
+    pub rx_mode: String,
+    /// Modo di trasmissione: «Auto» (dal transponder: invertente = laterale opposta), «USB», «LSB», «FM» o «CW».
+    pub tx_mode: String,
+    /// Rotore, PRIMA: va al punto di sorgere tanti secondi prima del passaggio (0-600; 0 = solo all'AOS). Serve `rotor_preposition`.
+    pub rotor_lead_s: u32,
+    /// Rotore, DURANTE: inizia a seguire quando l'elevazione supera tanti gradi (0-30).
+    pub rotor_start_el_deg: f64,
+    /// Rotore, DURANTE: un comando al massimo ogni tanti secondi (1-10).
+    pub rotor_interval_s: u32,
+    /// Rotore, DOPO il LOS: `stay` (resta dov'e'), `park` (posizione fissa) o `next` (punto di sorgere del prossimo passaggio).
+    pub rotor_after: String,
+    pub rotor_park_az_deg: f64,
+    pub rotor_park_el_deg: f64,
+    /// Rotore, DOPO: il comando parte tanti secondi dopo il LOS (0-300).
+    pub rotor_after_delay_s: u32,
     /// La mappa del mondo (nome del file in `maps`).
     pub map: String,
     /// I server da cui si scaricano i dati delle orbite (indirizzi http/https con TLE a tre righe).
@@ -73,7 +116,7 @@ pub struct SatSettings {
 
 impl Default for SatSettings {
     fn default() -> Self {
-        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
+        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, uplink_two_vfo: false, uplink_interval_s: 10, uplink_threshold_hz: 300, rx_mode: "Auto".into(), tx_mode: "Auto".into(), rotor_lead_s: 60, rotor_start_el_deg: 0.0, rotor_interval_s: 2, rotor_after: "stay".into(), rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_after_delay_s: 10, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
     }
 }
 
@@ -90,6 +133,35 @@ impl SatSettings {
         }
         if !self.tx_offset_hz.is_finite() || self.tx_offset_hz.abs() > 100_000.0 {
             return Err("correzione della salita oltre 100 kHz".into());
+        }
+        if !(2..=120).contains(&self.uplink_interval_s) {
+            return Err("intervallo del ripiego a due VFO fuori da 2-120 secondi".into());
+        }
+        if !(20..=5000).contains(&self.uplink_threshold_hz) {
+            return Err("soglia del ripiego a due VFO fuori da 20-5000 Hz".into());
+        }
+        for m in [&self.rx_mode, &self.tx_mode] {
+            if !["Auto", "USB", "LSB", "FM", "CW"].iter().any(|ok| ok.eq_ignore_ascii_case(m)) {
+                return Err("modo non valido (Auto, USB, LSB, FM, CW)".into());
+            }
+        }
+        if self.rotor_lead_s > 600 {
+            return Err("anticipo del rotore oltre 600 secondi".into());
+        }
+        if !self.rotor_start_el_deg.is_finite() || !(0.0..=30.0).contains(&self.rotor_start_el_deg) {
+            return Err("elevazione di partenza del rotore fuori da 0-30 gradi".into());
+        }
+        if !(1..=10).contains(&self.rotor_interval_s) {
+            return Err("aggiornamento del rotore fuori da 1-10 secondi".into());
+        }
+        if !["stay", "park", "next"].contains(&self.rotor_after.as_str()) {
+            return Err("scelta del rotore a fine passaggio non valida".into());
+        }
+        if !self.rotor_park_az_deg.is_finite() || !(0.0..=360.0).contains(&self.rotor_park_az_deg) || !self.rotor_park_el_deg.is_finite() || !(0.0..=90.0).contains(&self.rotor_park_el_deg) {
+            return Err("posizione di parcheggio fuori da azimut 0-360 ed elevazione 0-90".into());
+        }
+        if self.rotor_after_delay_s > 300 {
+            return Err("ritardo del rotore dopo il LOS oltre 300 secondi".into());
         }
         if self.tracked.len() > 200 {
             return Err("troppi satelliti spuntati".into());
@@ -539,6 +611,26 @@ struct LoopState {
     last_rotor: Option<(f64, f64)>,
     prepointed_for: Option<f64>,
     rotor_was_on: bool,
+    /// Il momento dell'ultimo comando di inseguimento al rotore (secondi unix).
+    last_rotor_cmd_t: f64,
+    /// Il satellite visibile e seguito nel secondo precedente: quando smette e' il LOS.
+    rotor_tracking: bool,
+    rotor_norad: Option<u64>,
+    /// Il LOS e' avvenuto a questo momento e il comando di fine passaggio non e' ancora partito.
+    los_at: Option<f64>,
+    /// Memoria della radio.
+    link_id: Option<u64>,
+    last_rx_mode: Option<String>,
+    last_tx_mode: Option<String>,
+    rx_mode_failed: bool,
+    tx_mode_failed: bool,
+    uplink_last: Option<(u64, f64)>,
+    /// Il ripiego a due VFO e' stato rifiutato: spento da solo.
+    vfo_failed: bool,
+    satmode_tried: bool,
+    two_vfo_prev: bool,
+    /// Il ripiego si e' spento da solo: va tolta la spunta nelle impostazioni salvate.
+    disable_two_vfo: bool,
     pass_cache: Option<(u64, f64, Option<Pass>)>,
     path_cache: Vec<(f64, f64)>,
     radio_error: Option<String>,
@@ -583,6 +675,238 @@ fn tracking_loop(inner: &Arc<Inner>) {
             });
         }
         std::thread::sleep(Duration::from_secs(1).saturating_sub(started.elapsed()).max(Duration::from_millis(100)));
+    }
+}
+
+impl LoopState {
+    /// Ricomincia un passaggio: frequenze e modi si riscrivono una volta.
+    fn reset_pass(&mut self) {
+        self.last_rx = None;
+        self.last_tx = None;
+        self.split_on = false;
+        self.last_rx_mode = None;
+        self.last_tx_mode = None;
+        self.uplink_last = None;
+    }
+
+    /// La radio e' un'altra o si e' ricollegata: i comandi rifiutati si riprovano (una volta).
+    fn reset_failures(&mut self) {
+        self.split_failed = false;
+        self.tx_failed = false;
+        self.rx_mode_failed = false;
+        self.tx_mode_failed = false;
+        self.vfo_failed = false;
+        self.satmode_tried = false;
+    }
+}
+
+/// I modi da usare: la scelta dell'operatore o, con «Auto», quelli del transponder.
+pub fn sat_modes(tp: &Transponder, rx_choice: &str, tx_choice: &str) -> (String, String) {
+    let (arx, atx) = tp.auto_modes();
+    let pick = |choice: &str, auto: String| if choice.trim().is_empty() || choice.eq_ignore_ascii_case("auto") { auto } else { choice.trim().to_ascii_uppercase() };
+    (pick(rx_choice, arx), pick(tx_choice, atx))
+}
+
+/// Il ripiego a due VFO scrive la trasmissione la prima volta, poi al massimo ogni `interval_s` secondi (se e' cambiata di almeno 5 Hz) o
+/// appena e' cambiata di `threshold_hz` (ma non piu' di una volta ogni 2 s): ogni cambio di VFO puo' far gracchiare la radio.
+pub fn uplink_due(last: Option<(u64, f64)>, hz: u64, t: f64, interval_s: u32, threshold_hz: u32) -> bool {
+    let Some((last_hz, last_t)) = last else { return true };
+    let (diff, dt) = (last_hz.abs_diff(hz), t - last_t);
+    (dt >= f64::from(interval_s) && diff >= 5) || (dt >= 2.0 && diff >= u64::from(threshold_hz))
+}
+
+/// La parte radio di un secondo di inseguimento: split o ripiego a due VFO, frequenze, modi. `true` se la ricezione ha funzionato.
+fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: &DopplerPlan, tp: &Transponder, t: f64) -> bool {
+    let id = radio.link_id();
+    if st.link_id != Some(id) {
+        if st.link_id.is_some() {
+            st.reset_failures();
+            st.reset_pass();
+        }
+        st.link_id = Some(id);
+    }
+    if s.uplink_two_vfo && !st.two_vfo_prev {
+        // riacceso dall'operatore: si riprova
+        st.vfo_failed = false;
+        st.satmode_tried = false;
+    }
+    st.two_vfo_prev = s.uplink_two_vfo;
+    let two_vfo = s.uplink_two_vfo && !st.vfo_failed;
+    let mut ok = true;
+    // radio con VFO separati: split acceso una volta; per le frequenze uguali (APRS) non serve
+    let wants_split = (plan.up_nominal_hz - plan.down_nominal_hz).abs() > 1_000.0;
+    if wants_split && !two_vfo && !st.split_on && !st.split_failed {
+        match radio.set_split(true) {
+            Ok(()) => st.split_on = true,
+            Err(e) => {
+                // si segna una volta (IC-820H: 5000 tentativi in un'ora, segnalazione #72): la ricezione col Doppler va avanti
+                tracing::warn!("satelliti: la radio non accetta lo split ({e}): il Doppler segue solo la ricezione");
+                st.split_failed = true;
+                st.radio_error = Some(format!("split: {e}. Per trasmettere prova «Trasmissione con due VFO» nelle impostazioni dei satelliti"));
+            }
+        }
+    }
+    let (rx_mode, tx_mode) = sat_modes(tp, &s.rx_mode, &s.tx_mode);
+    if st.last_rx_mode.as_deref() != Some(rx_mode.as_str()) && !st.rx_mode_failed {
+        match radio.set_rx_mode(&rx_mode) {
+            Ok(()) => st.last_rx_mode = Some(rx_mode.clone()),
+            Err(e) => {
+                tracing::warn!("satelliti: la radio non accetta il modo di ricezione {rx_mode} ({e}): non si riprova");
+                st.rx_mode_failed = true;
+                st.radio_error = Some(format!("modo {rx_mode}: {e}"));
+            }
+        }
+    }
+    let rx = plan.rx_hz.round() as u64;
+    if st.last_rx.is_none_or(|last| last.abs_diff(rx) >= 5) {
+        match radio.set_rx_hz(rx) {
+            Ok(()) => st.last_rx = Some(rx),
+            Err(e) => {
+                st.radio_error = Some(format!("ricezione: {e}"));
+                ok = false;
+            }
+        }
+    }
+    let txf = plan.tx_hz.round() as u64;
+    if ok && wants_split && two_vfo {
+        if !st.satmode_tried {
+            st.satmode_tried = true;
+            if let Err(e) = radio.enable_satmode() {
+                tracing::info!("satelliti: modo satellite della radio non acceso da CAT ({e}): se serve si accende a mano");
+            }
+        }
+        if uplink_due(st.uplink_last, txf, t, s.uplink_interval_s, s.uplink_threshold_hz) {
+            let mode = (st.last_tx_mode.as_deref() != Some(tx_mode.as_str()) && !st.tx_mode_failed).then_some(tx_mode.as_str());
+            match radio.set_tx_via_vfo(txf, mode) {
+                Ok(true) => {
+                    st.uplink_last = Some((txf, t));
+                    if mode.is_some() {
+                        st.last_tx_mode = Some(tx_mode.clone());
+                    }
+                }
+                Ok(false) => {}
+                Err(e) => {
+                    tracing::warn!("satelliti: la radio non accetta il ripiego a due VFO ({e}): spento");
+                    st.vfo_failed = true;
+                    st.disable_two_vfo = true;
+                    st.radio_error = Some(format!("due VFO: {e}. Il ripiego si e' spento da solo: la trasmissione resta da impostare a mano"));
+                }
+            }
+        }
+    } else if ok && wants_split && !st.tx_failed && st.last_tx.is_none_or(|last| last.abs_diff(txf) >= 5) {
+        match radio.set_tx_hz(txf) {
+            Ok(()) => {
+                st.last_tx = Some(txf);
+                if st.last_tx_mode.as_deref() != Some(tx_mode.as_str()) && !st.tx_mode_failed {
+                    match radio.set_tx_mode(&tx_mode) {
+                        Ok(()) => st.last_tx_mode = Some(tx_mode.clone()),
+                        Err(e) => {
+                            tracing::warn!("satelliti: la radio non accetta il modo di trasmissione {tx_mode} ({e}): non si riprova");
+                            st.tx_mode_failed = true;
+                            st.radio_error = Some(format!("modo di trasmissione {tx_mode}: {e}"));
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!("satelliti: la radio non accetta la frequenza di trasmissione ({e}): non si riprova");
+                st.tx_failed = true;
+                st.radio_error = Some(format!("trasmissione: {e}"));
+            }
+        }
+    }
+    if ok && !(st.split_failed || st.tx_failed || st.vfo_failed || st.rx_mode_failed || st.tx_mode_failed) {
+        st.radio_error = None;
+    }
+    ok
+}
+
+/// Cio' che serve al rotore per decidere.
+struct RotorView {
+    norad: u64,
+    visible: bool,
+    az: f64,
+    el: f64,
+    next_pass: Option<Pass>,
+}
+
+/// L'azimut di sorgere del primo passaggio nelle prossime 12 ore fra i satelliti seguiti.
+fn next_rise_az(inner: &Inner, s: &SatSettings, obs: &Observer, t: f64) -> Option<f64> {
+    let mut ids = s.tracked.clone();
+    if let Some(sel) = s.selected && !ids.contains(&sel) {
+        ids.push(sel);
+    }
+    let sats = lock(&inner.sats).clone();
+    let mut best: Option<Pass> = None;
+    for n in ids {
+        let Some(sat) = sats.iter().find(|x| x.norad == n) else { continue };
+        if let Some(p) = orbit::passes(sat, obs, t, 12.0, s.min_el_deg.max(0.0)).into_iter().find(|p| p.aos_unix > t)
+            && best.is_none_or(|b| p.aos_unix < b.aos_unix)
+        {
+            best = Some(p);
+        }
+    }
+    best.map(|p| p.aos_az_deg)
+}
+
+/// Il rotore in un secondo: PRIMA (va al punto di sorgere `rotor_lead_s` secondi prima), DURANTE (segue ogni `rotor_interval_s` secondi se
+/// si sposta oltre la tolleranza) e DOPO il LOS (resta, parcheggia o va al prossimo punto di sorgere; un solo comando, annullato se riparte
+/// un passaggio).
+fn drive_rotor(rotor: &dyn SatRotator, st: &mut LoopState, s: &SatSettings, t: f64, v: &RotorView, next_rise: &dyn Fn() -> Option<f64>) {
+    fn send(rotor: &dyn SatRotator, st: &mut LoopState, t: f64, az: f64, el: f64) {
+        match rotor.point(az, el) {
+            Ok(()) => {
+                st.last_rotor = Some((az, el));
+                st.last_rotor_cmd_t = t;
+                st.rotor_error = None;
+            }
+            Err(e) => st.rotor_error = Some(e),
+        }
+    }
+    if st.rotor_norad != Some(v.norad) {
+        // un altro satellite: non e' un LOS
+        st.rotor_norad = Some(v.norad);
+        st.rotor_tracking = false;
+        st.los_at = None;
+    }
+    if v.visible {
+        // un passaggio e' in corso: il comando di fine passaggio atteso si annulla
+        st.los_at = None;
+        if v.el >= s.rotor_start_el_deg {
+            st.rotor_tracking = true;
+            if t - st.last_rotor_cmd_t >= f64::from(s.rotor_interval_s)
+                && let Some((az, el)) = rotor_command(st.last_rotor, v.az, v.el.clamp(0.0, 90.0), s.rotor_min_move_deg, s.rotor_az_offset_deg)
+            {
+                send(rotor, st, t, az, el);
+            }
+        }
+        return;
+    }
+    if st.rotor_tracking {
+        st.rotor_tracking = false;
+        st.los_at = Some(t);
+    }
+    let lead = f64::from(s.rotor_lead_s);
+    if s.rotor_preposition && s.rotor_lead_s > 0 && let Some(p) = v.next_pass.filter(|p| p.aos_unix > t && p.aos_unix - t <= lead) && st.prepointed_for != Some(p.aos_unix) {
+        // poco prima del passaggio ci si mette dove il satellite sorgera': parte un nuovo passaggio, il comando di fine passaggio si annulla
+        st.prepointed_for = Some(p.aos_unix);
+        st.los_at = None;
+        if let Some((az, el)) = rotor_command(st.last_rotor, p.aos_az_deg, 0.0, s.rotor_min_move_deg, s.rotor_az_offset_deg) {
+            send(rotor, st, t, az, el);
+        }
+        return;
+    }
+    if let Some(at) = st.los_at && t - at >= f64::from(s.rotor_after_delay_s) {
+        st.los_at = None;
+        match s.rotor_after.as_str() {
+            "park" => send(rotor, st, t, s.rotor_park_az_deg.rem_euclid(360.0), s.rotor_park_el_deg.clamp(0.0, 90.0)),
+            "next" => {
+                if let Some(az) = next_rise() && let Some((az, el)) = rotor_command(st.last_rotor, az, 0.0, s.rotor_min_move_deg, s.rotor_az_offset_deg) {
+                    send(rotor, st, t, az, el);
+                }
+            }
+            _ => {}
+        }
     }
 }
 
@@ -649,47 +973,15 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     // (proprietario, 2026-11-14)
     let page_open = lock(&inner.seen).is_some_and(|t| t.elapsed() < PAGE_GONE);
     if settings.doppler_on && page_open && now.visible && let (Some(radio), Some(plan), Some(tp)) = (&radio, &now.plan, &transponder) && radio.ready() {
-        let mut ok = true;
-        // radio con VFO separati: split acceso una volta; per le frequenze uguali (APRS) non serve
-        let wants_split = (plan.up_nominal_hz - plan.down_nominal_hz).abs() > 1_000.0;
-        if wants_split && !st.split_on && !st.split_failed {
-            match radio.set_split(true) {
-                Ok(()) => st.split_on = true,
-                Err(e) => {
-                    // prima l'errore fermava anche la ricezione e si riprovava ogni secondo (IC-820H: 5000 tentativi in un'ora, segnalazione #72): ora si
-                    // segna una volta, la ricezione col Doppler va avanti e la frequenza di trasmissione si prova lo stesso
-                    tracing::warn!("satelliti: la radio non accetta lo split ({e}): il Doppler segue solo dove la radio lo permette");
-                    st.split_failed = true;
-                    st.radio_error = Some(format!("split: {e}"));
-                }
+        now.radio_active = drive_radio(radio.as_ref(), st, &settings, plan, tp, t);
+        if st.disable_two_vfo {
+            st.disable_two_vfo = false;
+            let mut saved = lock(&inner.settings);
+            saved.uplink_two_vfo = false;
+            if let Ok(json) = serde_json::to_vec_pretty(&*saved) {
+                let _ = std::fs::write(inner.dir.join("satelliti.json"), json);
             }
         }
-        let rx = plan.rx_hz.round() as u64;
-        if ok && st.last_rx.is_none_or(|last| last.abs_diff(rx) >= 5) {
-            match radio.set_rx_hz(rx) {
-                Ok(()) => st.last_rx = Some(rx),
-                Err(e) => {
-                    st.radio_error = Some(format!("ricezione: {e}"));
-                    ok = false;
-                }
-            }
-        }
-        let txf = plan.tx_hz.round() as u64;
-        if ok && wants_split && !st.tx_failed && st.last_tx.is_none_or(|last| last.abs_diff(txf) >= 5) {
-            match radio.set_tx_hz(txf) {
-                Ok(()) => st.last_tx = Some(txf),
-                Err(e) => {
-                    tracing::warn!("satelliti: la radio non accetta la frequenza di trasmissione ({e}): non si riprova");
-                    st.tx_failed = true;
-                    st.radio_error = Some(format!("trasmissione: {e}"));
-                }
-            }
-        }
-        if ok && !st.split_failed && !st.tx_failed {
-            st.radio_error = None;
-        }
-        now.radio_active = ok;
-        let _ = tp;
     } else {
         // lo split acceso per il Doppler si toglie quando il Doppler si spegne, il satellite tramonta o si lascia la pagina
         if st.split_on
@@ -699,43 +991,28 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
         {
             tracing::warn!("satelliti: split non spento alla fine del Doppler: {e}");
         }
-        st.last_rx = None;
-        st.last_tx = None;
-        st.split_on = false;
-        st.split_failed = false;
-        st.tx_failed = false;
-        st.radio_error = None;
+        st.reset_pass();
+        // i comandi che la radio ha rifiutato si dimenticano solo se la radio non c'e' piu': tra un passaggio e l'altro la memoria resta
+        if radio.as_ref().is_none_or(|r| !r.ready()) {
+            st.reset_failures();
+            st.radio_error = None;
+        }
     }
     now.radio.error = st.radio_error.clone();
 
     // ---- il rotore segue il satellite ----
     if settings.rotor_on {
         if let Some(rotor) = rotor.as_ref().filter(|r| r.ready()) {
-            let target = if now.visible {
-                Some((look.az_deg, look.el_deg.clamp(0.0, 90.0)))
-            } else if settings.rotor_preposition && let Some(p) = now.next_pass.filter(|p| p.aos_unix - t < 150.0 && p.aos_unix > t) && st.prepointed_for != Some(p.aos_unix) {
-                // poco prima del passaggio ci si mette dove il satellite sorgera'
-                st.prepointed_for = Some(p.aos_unix);
-                Some((p.aos_az_deg, 0.0))
-            } else {
-                None
-            };
-            if let Some((az, el)) = target {
-                if let Some((az, el)) = rotor_command(st.last_rotor, az, el, settings.rotor_min_move_deg, settings.rotor_az_offset_deg) {
-                    match rotor.point(az, el) {
-                        Ok(()) => {
-                            st.last_rotor = Some((az, el));
-                            st.rotor_error = None;
-                        }
-                        Err(e) => st.rotor_error = Some(e),
-                    }
-                }
-            }
+            let view = RotorView { norad, visible: now.visible, az: look.az_deg, el: look.el_deg, next_pass: now.next_pass };
+            let next_rise = || next_rise_az(inner, &settings, &obs, t);
+            drive_rotor(rotor.as_ref(), st, &settings, t, &view, &next_rise);
         }
         st.rotor_was_on = true;
     } else if st.rotor_was_on {
         st.rotor_was_on = false;
         st.last_rotor = None;
+        st.rotor_tracking = false;
+        st.los_at = None;
     }
     if let Some((az, el)) = st.last_rotor {
         // si mostra dove punta il satellite, senza la correzione dell'azimut
@@ -869,5 +1146,285 @@ mod tests {
         assert_eq!(content_type("Contour HiRes.JPG"), Some("image/jpeg"));
         assert_eq!(content_type("a.bmp"), Some("image/bmp"));
         assert_eq!(content_type("a.txt"), None);
+    }
+
+    // ---- radio e rotore finti ----
+
+    #[derive(Default)]
+    struct FakeRadio {
+        log: Mutex<Vec<String>>,
+        split_err: bool,
+        vfo_err: bool,
+    }
+
+    impl FakeRadio {
+        fn count(&self, head: &str) -> usize {
+            lock(&self.log).iter().filter(|c| c.starts_with(head)).count()
+        }
+    }
+
+    impl SatRadio for FakeRadio {
+        fn ready(&self) -> bool {
+            true
+        }
+        fn set_rx_hz(&self, hz: u64) -> Result<(), String> {
+            lock(&self.log).push(format!("rx {hz}"));
+            Ok(())
+        }
+        fn set_tx_hz(&self, hz: u64) -> Result<(), String> {
+            lock(&self.log).push(format!("tx {hz}"));
+            Ok(())
+        }
+        fn set_split(&self, on: bool) -> Result<(), String> {
+            lock(&self.log).push(format!("split {on}"));
+            if self.split_err { Err("S: funzione non disponibile (-11)".into()) } else { Ok(()) }
+        }
+        fn set_rx_mode(&self, mode: &str) -> Result<(), String> {
+            lock(&self.log).push(format!("rxmode {mode}"));
+            Ok(())
+        }
+        fn set_tx_mode(&self, mode: &str) -> Result<(), String> {
+            lock(&self.log).push(format!("txmode {mode}"));
+            Ok(())
+        }
+        fn set_tx_via_vfo(&self, hz: u64, mode: Option<&str>) -> Result<bool, String> {
+            lock(&self.log).push(format!("vfo {hz} {}", mode.unwrap_or("-")));
+            if self.vfo_err { Err("V: funzione non disponibile (-11)".into()) } else { Ok(true) }
+        }
+        fn enable_satmode(&self) -> Result<(), String> {
+            lock(&self.log).push("satmode".into());
+            Err("U: funzione non disponibile (-11)".into())
+        }
+    }
+
+    fn plan_at(rate: f64) -> DopplerPlan {
+        doppler_plan(&look_with_rate(rate), &rs44(), 435.625e6, 0.0)
+    }
+
+    #[test]
+    fn lo_split_rifiutato_si_prova_una_volta_sola_e_il_doppler_va_avanti() {
+        let radio = FakeRadio { split_err: true, ..FakeRadio::default() };
+        let mut st = LoopState::default();
+        let s = SatSettings::default();
+        for i in 0..6 {
+            assert!(drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i)), &rs44(), f64::from(i)));
+        }
+        assert_eq!(radio.count("split"), 1);
+        assert_eq!(radio.count("rx "), 6);
+        assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("due VFO")));
+    }
+
+    #[test]
+    fn il_modo_non_si_ripete_ogni_secondo() {
+        let radio = FakeRadio::default();
+        let mut st = LoopState::default();
+        let s = SatSettings::default();
+        for i in 0..6 {
+            drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i)), &rs44(), f64::from(i));
+        }
+        assert_eq!(radio.count("rxmode USB"), 1);
+        assert_eq!(radio.count("txmode LSB"), 1);
+        // un'altra scelta dell'operatore: un solo comando nuovo
+        let s = SatSettings { rx_mode: "LSB".into(), ..SatSettings::default() };
+        drive_radio(&radio, &mut st, &s, &plan_at(1.0), &rs44(), 10.0);
+        drive_radio(&radio, &mut st, &s, &plan_at(2.0), &rs44(), 11.0);
+        assert_eq!(radio.count("rxmode LSB"), 1);
+    }
+
+    #[test]
+    fn il_ripiego_a_due_vfo_non_tocca_lo_split_e_scrive_la_trasmissione_a_intervalli() {
+        let radio = FakeRadio::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { uplink_two_vfo: true, ..SatSettings::default() };
+        // a t=0 primo giro: frequenza e modo (LSB, transponder invertente); satmode provato una volta
+        drive_radio(&radio, &mut st, &s, &plan_at(-5.0), &rs44(), 0.0);
+        assert_eq!(radio.count("split"), 0);
+        assert_eq!(radio.count("satmode"), 1);
+        assert_eq!(radio.count("vfo "), 1);
+        assert!(lock(&radio.log).iter().any(|c| c.ends_with(" LSB") && c.starts_with("vfo ")));
+        // i secondi dopo, con poca differenza, niente
+        for i in 1..9 {
+            drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + 0.01 * f64::from(i)), &rs44(), f64::from(i));
+        }
+        assert_eq!(radio.count("vfo "), 1);
+        // passati 10 s e spostata di almeno 5 Hz: una scrittura, senza modo
+        drive_radio(&radio, &mut st, &s, &plan_at(-4.8), &rs44(), 10.5);
+        assert_eq!(radio.count("vfo "), 2);
+        assert!(lock(&radio.log).last().is_some_and(|c| c.ends_with(" -")));
+        // un salto grande prima dell'intervallo: dopo 2 s si scrive
+        drive_radio(&radio, &mut st, &s, &plan_at(2.0), &rs44(), 11.0);
+        assert_eq!(radio.count("vfo "), 2);
+        drive_radio(&radio, &mut st, &s, &plan_at(2.0), &rs44(), 12.6);
+        assert_eq!(radio.count("vfo "), 3);
+        assert_eq!(radio.count("satmode"), 1);
+    }
+
+    #[test]
+    fn il_ripiego_si_spegne_da_solo_al_primo_rifiuto() {
+        let radio = FakeRadio { vfo_err: true, ..FakeRadio::default() };
+        let mut st = LoopState::default();
+        let s = SatSettings { uplink_two_vfo: true, ..SatSettings::default() };
+        for i in 0..8 {
+            assert!(drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i)), &rs44(), f64::from(i) * 5.0));
+        }
+        assert_eq!(radio.count("vfo "), 1);
+        assert!(st.vfo_failed && st.disable_two_vfo);
+        assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("due VFO") && e.contains("spento")));
+        // la ricezione col Doppler e' continuata
+        assert_eq!(radio.count("rx "), 8);
+    }
+
+    #[test]
+    fn i_modi_automatici_e_la_scelta_dell_operatore() {
+        assert_eq!(sat_modes(&rs44(), "Auto", "Auto"), ("USB".to_string(), "LSB".to_string()));
+        assert_eq!(sat_modes(&rs44(), "usb", "CW"), ("USB".to_string(), "CW".to_string()));
+        assert!(SatSettings { rx_mode: "AM".into(), ..SatSettings::default() }.validate().is_err());
+    }
+
+    #[test]
+    fn un_vecchio_file_delle_impostazioni_ha_i_valori_di_fabbrica_nuovi() {
+        let old: SatSettings = serde_json::from_str("{\"doppler_on\": true, \"rotor_on\": true}").expect("vecchio file");
+        assert!(!old.uplink_two_vfo);
+        assert_eq!((old.uplink_interval_s, old.uplink_threshold_hz), (10, 300));
+        assert_eq!((old.rotor_lead_s, old.rotor_interval_s, old.rotor_after_delay_s), (60, 2, 10));
+        assert_eq!((old.rotor_after.as_str(), old.rotor_start_el_deg), ("stay", 0.0));
+        assert!(old.validate().is_ok());
+        assert!(SatSettings { rotor_lead_s: 601, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_interval_s: 0, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_after: "boh".into(), ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_park_el_deg: 91.0, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_after_delay_s: 301, ..SatSettings::default() }.validate().is_err());
+        assert!(SatSettings { rotor_start_el_deg: 31.0, ..SatSettings::default() }.validate().is_err());
+    }
+
+    #[derive(Default)]
+    struct FakeRotor {
+        points: Mutex<Vec<(f64, f64)>>,
+    }
+
+    impl SatRotator for FakeRotor {
+        fn ready(&self) -> bool {
+            true
+        }
+        fn point(&self, az: f64, el: f64) -> Result<(), String> {
+            lock(&self.points).push((az, el));
+            Ok(())
+        }
+        fn stop(&self) {}
+    }
+
+    fn view(visible: bool, az: f64, el: f64, aos: Option<f64>) -> RotorView {
+        RotorView { norad: 25544, visible, az, el, next_pass: aos.map(|a| pass_at(a, 40.0)) }
+    }
+
+    fn no_next() -> Option<f64> {
+        None
+    }
+
+    #[test]
+    fn il_rotore_parte_solo_nei_secondi_di_anticipo_scelti() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_lead_s: 60, ..SatSettings::default() };
+        // a 100 s dal sorgere: fermo
+        drive_rotor(&rotor, &mut st, &s, 1000.0, &view(false, 0.0, -10.0, Some(1100.0)), &no_next);
+        assert!(lock(&rotor.points).is_empty());
+        // a 50 s: un comando verso l'azimut di sorgere (10 gradi), elevazione 0; poi non si ripete
+        drive_rotor(&rotor, &mut st, &s, 1050.0, &view(false, 0.0, -10.0, Some(1100.0)), &no_next);
+        drive_rotor(&rotor, &mut st, &s, 1051.0, &view(false, 0.0, -10.0, Some(1100.0)), &no_next);
+        assert_eq!(*lock(&rotor.points), vec![(10.0, 0.0)]);
+        // anticipo 0: solo all'AOS
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_lead_s: 0, ..SatSettings::default() };
+        drive_rotor(&rotor, &mut st, &s, 1099.0, &view(false, 0.0, -10.0, Some(1100.0)), &no_next);
+        assert!(lock(&rotor.points).is_empty());
+    }
+
+    #[test]
+    fn durante_il_passaggio_un_comando_ogni_intervallo_e_solo_oltre_la_tolleranza() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_interval_s: 2, rotor_min_move_deg: 2.0, rotor_start_el_deg: 5.0, ..SatSettings::default() };
+        // sotto l'elevazione di partenza non segue
+        drive_rotor(&rotor, &mut st, &s, 0.0, &view(true, 100.0, 3.0, None), &no_next);
+        assert!(lock(&rotor.points).is_empty());
+        // ogni secondo il satellite si sposta di 1,5 gradi: con intervallo 2 s e tolleranza 2 gradi un comando ogni 2 s
+        for i in 1..=6 {
+            drive_rotor(&rotor, &mut st, &s, f64::from(i), &view(true, 100.0 + 1.5 * f64::from(i), 20.0, None), &no_next);
+        }
+        let n = lock(&rotor.points).len();
+        assert_eq!(n, 3, "{:?}", lock(&rotor.points));
+        // fermo: niente di nuovo
+        drive_rotor(&rotor, &mut st, &s, 20.0, &view(true, 109.0, 20.0, None), &no_next);
+        drive_rotor(&rotor, &mut st, &s, 21.0, &view(true, 109.0, 20.0, None), &no_next);
+        assert_eq!(lock(&rotor.points).len(), n);
+    }
+
+    fn pass_then_los(rotor: &FakeRotor, st: &mut LoopState, s: &SatSettings) {
+        drive_rotor(rotor, st, s, 100.0, &view(true, 100.0, 30.0, None), &no_next);
+        drive_rotor(rotor, st, s, 101.0, &view(true, 110.0, 25.0, None), &no_next);
+        // LOS a t=102
+        drive_rotor(rotor, st, s, 102.0, &view(false, 120.0, -1.0, None), &no_next);
+    }
+
+    #[test]
+    fn dopo_il_los_resta_fermo_se_non_si_sceglie_il_parcheggio() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_after: "stay".into(), rotor_after_delay_s: 10, ..SatSettings::default() };
+        pass_then_los(&rotor, &mut st, &s);
+        let n = lock(&rotor.points).len();
+        for t in [105.0, 112.0, 130.0] {
+            drive_rotor(&rotor, &mut st, &s, t, &view(false, 120.0, -5.0, None), &no_next);
+        }
+        assert_eq!(lock(&rotor.points).len(), n);
+    }
+
+    #[test]
+    fn il_parcheggio_parte_una_volta_dopo_il_ritardo() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_after: "park".into(), rotor_after_delay_s: 10, rotor_park_az_deg: 350.0, rotor_park_el_deg: 15.0, rotor_az_offset_deg: 20.0, ..SatSettings::default() };
+        pass_then_los(&rotor, &mut st, &s);
+        let n = lock(&rotor.points).len();
+        drive_rotor(&rotor, &mut st, &s, 105.0, &view(false, 120.0, -5.0, None), &no_next);
+        assert_eq!(lock(&rotor.points).len(), n, "prima del ritardo niente");
+        for t in [112.0, 113.0, 140.0] {
+            drive_rotor(&rotor, &mut st, &s, t, &view(false, 120.0, -5.0, None), &no_next);
+        }
+        // un solo comando, nella posizione scelta e senza la correzione dell'azimut
+        assert_eq!(lock(&rotor.points).len(), n + 1);
+        assert_eq!(lock(&rotor.points).last().copied(), Some((350.0, 15.0)));
+    }
+
+    #[test]
+    fn il_parcheggio_si_annulla_se_parte_un_nuovo_passaggio() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_after: "park".into(), rotor_after_delay_s: 10, rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_lead_s: 60, ..SatSettings::default() };
+        pass_then_los(&rotor, &mut st, &s);
+        // prima del ritardo parte la preparazione del passaggio seguente (a 50 s dal sorgere): niente parcheggio
+        drive_rotor(&rotor, &mut st, &s, 106.0, &view(false, 120.0, -5.0, Some(156.0)), &no_next);
+        let pts = lock(&rotor.points).clone();
+        assert_eq!(pts.last().copied(), Some((10.0, 0.0)));
+        for t in [115.0, 130.0] {
+            drive_rotor(&rotor, &mut st, &s, t, &view(false, 120.0, -5.0, Some(156.0)), &no_next);
+        }
+        assert_eq!(*lock(&rotor.points), pts, "nessun parcheggio dopo");
+    }
+
+    #[test]
+    fn dopo_il_los_va_al_prossimo_punto_di_sorgere_se_c_e() {
+        let rotor = FakeRotor::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { rotor_after: "next".into(), rotor_after_delay_s: 5, ..SatSettings::default() };
+        pass_then_los(&rotor, &mut st, &s);
+        let n = lock(&rotor.points).len();
+        let next = || Some(215.0);
+        drive_rotor(&rotor, &mut st, &s, 107.0, &view(false, 120.0, -5.0, None), &next);
+        drive_rotor(&rotor, &mut st, &s, 108.0, &view(false, 120.0, -5.0, None), &next);
+        assert_eq!(lock(&rotor.points).len(), n + 1);
+        assert_eq!(lock(&rotor.points).last().copied(), Some((215.0, 0.0)));
     }
 }

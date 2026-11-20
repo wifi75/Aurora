@@ -2269,6 +2269,23 @@ export interface SatSettings {
   /** Correzione dell'azimut mandato al rotore (gradi). */
   rotor_az_offset_deg: number;
   min_el_deg: number;
+  /** Ripiego «due VFO» per le radio senza split da CAT: sperimentale, spento di fabbrica. */
+  uplink_two_vfo: boolean;
+  uplink_interval_s: number;
+  uplink_threshold_hz: number;
+  /** Modo di ricezione e di trasmissione: Auto, USB, LSB, FM o CW. */
+  rx_mode: string;
+  tx_mode: string;
+  /** Rotore, prima: secondi di anticipo sul sorgere (0 = solo all'AOS). */
+  rotor_lead_s: number;
+  /** Rotore, durante: elevazione da cui inizia a seguire, secondi tra due comandi. */
+  rotor_start_el_deg: number;
+  rotor_interval_s: number;
+  /** Rotore, dopo il LOS: `stay`, `park` o `next`; posizione di parcheggio e ritardo in secondi. */
+  rotor_after: 'stay' | 'park' | 'next';
+  rotor_park_az_deg: number;
+  rotor_park_el_deg: number;
+  rotor_after_delay_s: number;
   map: string;
   /** I server da cui si scaricano i dati delle orbite. */
   tle_sources: string[];

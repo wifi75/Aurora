@@ -281,3 +281,16 @@
 /* niente vuoti: i due blocchi di «Doppler e rotore» hanno la stessa altezza (gli stati stanno in fondo), la tabella di «Informazioni» prende solo l'altezza delle righe */
 .sat-block > .sat-status:last-child { margin-top: auto; }
 .dash-body > .sat-table.sat-table--info { flex: 0 0 auto; }
+
+/* Impostazioni > Satelliti > Inseguimento e rotore: ogni valore ha un cursore e una casella collegati */
+.sat-trk-block { display: flex; flex-direction: column; gap: 0.7rem; }
+.sat-trk-field { display: flex; flex-direction: column; gap: 0.25rem; padding-bottom: 0.55rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.sat-trk-field:last-child { border-bottom: 0; padding-bottom: 0; }
+.sat-trk-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
+.sat-trk-label { font-weight: 600; }
+.sat-trk-num { display: inline-flex; align-items: center; gap: 0.35rem; }
+.sat-trk-num input { width: 5.2rem; }
+.sat-trk-range { width: 100%; }
+.sat-trk-ex { font-style: italic; }
+.sat-trk-summary { padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; background: rgba(44, 245, 164, 0.07); display: flex; flex-direction: column; gap: 0.3rem; }
+.sat-trk-summary p { margin: 0; }

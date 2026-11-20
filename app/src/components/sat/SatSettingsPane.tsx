@@ -4,11 +4,14 @@ import { useT } from '../../i18n';
 import { countdown } from '../../lib/satGeo';
 import { loadBorders, PREFERRED_MAP, resolveMap, saveBorders, SAT_SIMPLE_MAP, SAT_TERRA_MAP, selectValue } from '../../lib/satMapChoice';
 import { toast } from '../../lib/toast';
+import { SatTrackingPane } from './SatTrackingPane';
+
+const MODES = ['Auto', 'USB', 'LSB', 'FM', 'CW'];
 
 /** Gli aggiornamenti automatici proposti, in ore (0 = solo a mano). */
 const HOURS = [0, 6, 12, 24, 48, 168];
 
-export type SatCategory = 'orbits' | 'map' | 'radio';
+export type SatCategory = 'orbits' | 'map' | 'radio' | 'tracking';
 type Category = SatCategory;
 
 interface Props {
@@ -37,6 +40,7 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
   };
   return (
     <>
+      {cat === 'tracking' ? <SatTrackingPane snap={snap} onSave={onSave} /> : null}
       {cat === 'orbits' ? <OrbitsPane snap={snap} busy={busy} onSave={onSave} onRefresh={onRefresh} /> : null}
       {cat === 'map' ? (
         <fieldset>
@@ -91,6 +95,44 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
           <label className="sat-row">
             <span>{t('sat.ctl.minEl')}</span>
             <input type="number" min={0} max={60} value={s.min_el_deg} onChange={(e) => onSave({ min_el_deg: Math.max(0, Math.min(60, Number(e.target.value) || 0)) })} />
+          </label>
+          <p className="sat-muted sat-small">{t('sat.trk.seeTab')}</p>
+        </fieldset>
+      ) : null}
+      {cat === 'radio' ? (
+        <fieldset>
+          <legend>{t('sat.mode.title')}</legend>
+          <p className="sat-muted sat-small">{t('sat.mode.hint')}</p>
+          {(['rx_mode', 'tx_mode'] as const).map((k) => (
+            <label key={k} className="sat-row">
+              <span>{t(k === 'rx_mode' ? 'sat.mode.rx' : 'sat.mode.tx')}</span>
+              <select value={s[k]} onChange={(e) => onSave({ [k]: e.target.value })}>
+                {MODES.map((m) => (
+                  <option key={m} value={m}>
+                    {m === 'Auto' ? t('sat.mode.auto') : m}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
+      {cat === 'radio' ? (
+        <fieldset>
+          <legend>{t('sat.uplink.title')}</legend>
+          <label className="sat-check">
+            <input type="checkbox" checked={s.uplink_two_vfo} onChange={(e) => onSave({ uplink_two_vfo: e.target.checked })} />
+            <span>{t('sat.uplink.on')}</span>
+          </label>
+          <p className="notice sat-small">{t('sat.uplink.warn')}</p>
+          <p className="sat-muted sat-small">{t('sat.uplink.hint')}</p>
+          <label className="sat-row">
+            <span>{t('sat.uplink.interval')}</span>
+            <input type="number" min={2} max={120} step={1} disabled={!s.uplink_two_vfo} value={s.uplink_interval_s} onChange={(e) => onSave({ uplink_interval_s: Math.max(2, Math.min(120, Math.round(Number(e.target.value) || 10))) })} />
+          </label>
+          <label className="sat-row">
+            <span>{t('sat.uplink.threshold')}</span>
+            <input type="number" min={20} max={5000} step={10} disabled={!s.uplink_two_vfo} value={s.uplink_threshold_hz} onChange={(e) => onSave({ uplink_threshold_hz: Math.max(20, Math.min(5000, Math.round(Number(e.target.value) || 300))) })} />
           </label>
         </fieldset>
       ) : null}

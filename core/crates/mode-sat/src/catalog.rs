@@ -21,9 +21,27 @@ pub struct Transponder {
     /// Tono CTCSS da mandare (Hz), per i ripetitori FM che lo chiedono.
     #[serde(default)]
     pub tone_hz: Option<f64>,
+    /// Il modo con cui si trasmette verso il satellite («USB», «LSB», «FM», «CW»). Se manca lo ricava [`Transponder::auto_modes`] dal tipo di
+    /// transponder (invertente: modo opposto a quello di ricezione).
+    #[serde(default)]
+    pub tx_mode: Option<String>,
 }
 
 impl Transponder {
+    /// I modi di ricezione e di trasmissione da usare di base (nomi di Hamlib). Il modo di ricezione e' il primo del campo `mode` («USB/CW» -> USB);
+    /// in trasmissione, se `tx_mode` non c'e', un transponder invertente usa la banda laterale opposta (RS-44: ricezione USB, trasmissione LSB) e uno
+    /// non invertente la stessa. FM e CW restano uguali.
+    pub fn auto_modes(&self) -> (String, String) {
+        let first = self.mode.split(['/', ' ']).next().unwrap_or("").to_ascii_uppercase();
+        let (rx, tx) = match first.as_str() {
+            "FM" => ("FM", "FM"),
+            "CW" => ("CW", "CW"),
+            "LSB" => ("LSB", if self.inverting { "USB" } else { "LSB" }),
+            _ => ("USB", if self.inverting { "LSB" } else { "USB" }),
+        };
+        (rx.to_string(), self.tx_mode.clone().filter(|m| !m.trim().is_empty()).map_or_else(|| tx.to_string(), |m| m.trim().to_ascii_uppercase()))
+    }
+
     pub fn down_center_hz(&self) -> f64 {
         (self.down_low_hz + self.down_high_hz) / 2.0
     }
@@ -71,7 +89,7 @@ pub struct SatInfo {
 const MHZ: f64 = 1e6;
 
 fn tp(name: &str, mode: &str, up: (f64, f64), down: (f64, f64), inverting: bool, tone: Option<f64>) -> Transponder {
-    Transponder { name: name.into(), mode: mode.into(), up_low_hz: up.0 * MHZ, up_high_hz: up.1 * MHZ, down_low_hz: down.0 * MHZ, down_high_hz: down.1 * MHZ, inverting, tone_hz: tone }
+    Transponder { name: name.into(), mode: mode.into(), up_low_hz: up.0 * MHZ, up_high_hz: up.1 * MHZ, down_low_hz: down.0 * MHZ, down_high_hz: down.1 * MHZ, inverting, tone_hz: tone, tx_mode: None }
 }
 
 /// I satelliti di base.
@@ -160,9 +178,28 @@ mod tests {
 
     #[test]
     fn il_non_invertente_segue_nello_stesso_verso() {
-        let t = Transponder { name: "t".into(), mode: "USB".into(), up_low_hz: 100.0, up_high_hz: 200.0, down_low_hz: 1000.0, down_high_hz: 1100.0, inverting: false, tone_hz: None };
+        let t = Transponder { name: "t".into(), mode: "USB".into(), up_low_hz: 100.0, up_high_hz: 200.0, down_low_hz: 1000.0, down_high_hz: 1100.0, inverting: false, tone_hz: None, tx_mode: None };
         assert!((t.up_for_down(1000.0) - 100.0).abs() < 1e-9);
         assert!((t.up_for_down(1100.0) - 200.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn i_modi_si_ricavano_dal_tipo_di_transponder() {
+        assert_eq!(rs44().auto_modes(), ("USB".to_string(), "LSB".to_string()));
+        let iss = default_catalog().into_iter().find(|s| s.norad == 25544).expect("ISS");
+        assert_eq!(iss.transponders[0].auto_modes(), ("FM".to_string(), "FM".to_string()));
+        let mut t = rs44();
+        t.inverting = false;
+        assert_eq!(t.auto_modes().1, "USB");
+        t.tx_mode = Some("cw".into());
+        assert_eq!(t.auto_modes().1, "CW");
+    }
+
+    #[test]
+    fn un_vecchio_file_senza_tx_mode_si_legge() {
+        let old = r#"{"name":"x","mode":"USB","up_low_hz":1.0,"up_high_hz":2.0,"down_low_hz":3.0,"down_high_hz":4.0,"inverting":true}"#;
+        let t: Transponder = serde_json::from_str(old).expect("vecchio file");
+        assert_eq!(t.tx_mode, None);
     }
 
     #[test]

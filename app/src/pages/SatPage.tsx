@@ -532,6 +532,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
               )}
               {s.doppler_on ? (
                 now.plan && now.visible ? (
+                  <>
                   <dl className="sat-data sat-data--small sat-freqs">
                     <div>
                       <dt>{t('sat.ctl.rx')}</dt>
@@ -558,6 +559,8 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
                       <dd className={now.radio_active ? 'sat-up' : 'sat-muted'}>{now.radio_active ? t('sat.ctl.active') : (now.radio.error ?? '')}</dd>
                     </div>
                   </dl>
+                  {now.radio_active && now.radio.error ? <p className="sat-status warn">{now.radio.error}</p> : null}
+                  </>
                 ) : (
                   <p className="sat-muted">{t('sat.ctl.waiting', { el: s.min_el_deg })}</p>
                 )
@@ -589,6 +592,9 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
               {alerts.rotor ? <p className="sat-status warn">{alerts.rotor.az === null ? t('sat.ctl.rotorSoonNoAz', { name: alerts.rotor.name, t: mmss(alerts.rotor.secondsToAos) }) : t('sat.ctl.rotorSoon', { name: alerts.rotor.name, az: Math.round(alerts.rotor.az), t: mmss(alerts.rotor.secondsToAos) })}</p> : null}
               <p className={`sat-status ${now.rotor.ready ? 'ok' : 'warn'}`}>{now.rotor.ready ? t('sat.ctl.rotorReady') : t('sat.ctl.rotorNot')}</p>
               {now.rotor.error ? <p className="sat-status warn">{now.rotor.error}</p> : null}
+              <button type="button" className="glass sstv-btn" onClick={() => openSettingsWindow('sattrack')}>
+                {t('sw.pg.tracking')}
+              </button>
             </section>
           </div>
         </>

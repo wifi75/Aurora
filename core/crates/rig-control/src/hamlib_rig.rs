@@ -10,7 +10,7 @@
 
 use std::{
     sync::{
-        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, Ordering},
         Arc, Mutex,
     },
     thread::JoinHandle,
@@ -192,6 +192,13 @@ struct Inner {
     /// La radio non scrive il modo nel VFO di trasmissione (`X`) ne' sa copiare A=B (`G CPY`): il modo di trasmissione segue quello di
     /// ricezione. Si scopre una volta per sessione della radio e da li' non si riprova (ne' `X` ne' la copia).
     split_mode_unsupported: AtomicBool,
+    /// La radio ha risposto «non implementata/non disponibile» a `S` (split): da qui in poi non lo si riprova, ne' per spegnerlo (IC-820H con
+    /// Hamlib: `S 0 VFOA` a ogni cambio di frequenza, 457 avvisi in un'ora). Si azzera alla riconnessione.
+    split_unsupported: AtomicBool,
+    /// Quante volte la radio si e' collegata: serve ai satelliti per sapere che la memoria dei comandi rifiutati e' da azzerare.
+    session: AtomicU64,
+    /// La coppia di VFO che ha funzionato per la trasmissione dei satelliti: 0 ancora non nota, 1 = Sub/Main, 2 = VFOB/VFOA.
+    sat_vfo_pair: AtomicU8,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -327,6 +334,25 @@ impl Inner {
         tracing::info!("split: {what} ({reason})");
         if let Ok(mut at) = self.split_cmd_at.lock() {
             *at = Some(Instant::now());
+        }
+    }
+
+    /// Spegne lo split sul VFO di ricezione, ma solo se la radio sa farlo: dopo il primo «non disponibile» (-4, -11) non lo si riprova piu'
+    /// (un solo avviso). `Ok(false)` = non mandato o rifiutato come non disponibile.
+    fn try_split_off(&self, link: &Link, rx_vfo: &str, reason: &str) -> Result<bool, RigError> {
+        if self.split_unsupported.load(Ordering::SeqCst) {
+            return Ok(false);
+        }
+        self.split_command(&format!("S 0 {rx_vfo}"), reason);
+        match link.client().set_split(false, rx_vfo) {
+            Ok(()) => Ok(true),
+            Err(e) if matches!(crate::hamlib::error_code(&e), Some(-4 | -11)) => {
+                if !self.split_unsupported.swap(true, Ordering::SeqCst) {
+                    tracing::warn!("la radio non ha lo split da CAT ({}): non si riprova a spegnerlo", friendly_error(&e.0));
+                }
+                Ok(false)
+            }
+            Err(e) => Err(e),
         }
     }
 
@@ -540,6 +566,10 @@ impl Inner {
         if let Ok(mut extras) = self.extras.lock() {
             *extras = crate::extras::ExtrasPoll::default();
         }
+        // radio ricollegata (o riavviata): i comandi rifiutati si riprovano una volta
+        self.split_unsupported.store(false, Ordering::SeqCst);
+        self.sat_vfo_pair.store(0, Ordering::SeqCst);
+        self.session.fetch_add(1, Ordering::SeqCst);
         // la potenza scelta l'ultima volta con + e − (la radio puo' ripartire con la sua, es. 99%)
         crate::extras::restore_power(link.client());
         if let Ok(mut slot) = self.link.lock() {
@@ -565,9 +595,9 @@ impl Inner {
             && let Ok(link) = self.connected_link()
         {
             let rx_vfo = if self.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
-            self.split_command(&format!("S 0 {rx_vfo}"), "split DX spento mentre la radio era scollegata");
-            match link.client().set_split(false, rx_vfo) {
-                Ok(()) => self.update(|s| s.split = Some(false)),
+            match self.try_split_off(&link, rx_vfo, "split DX spento mentre la radio era scollegata") {
+                Ok(true) => self.update(|s| s.split = Some(false)),
+                Ok(false) => {}
                 Err(e) => tracing::warn!("split non spento dopo la riconnessione: {}", friendly_error(&e.0)),
             }
         }
@@ -1083,6 +1113,9 @@ impl HamlibRig {
             powered_on: AtomicBool::new(false),
             pktusb_fallback: AtomicBool::new(false),
             split_mode_unsupported: AtomicBool::new(false),
+            split_unsupported: AtomicBool::new(false),
+            session: AtomicU64::new(0),
+            sat_vfo_pair: AtomicU8::new(0),
             config,
             connector,
             timing,
@@ -1279,8 +1312,7 @@ impl HamlibRig {
         }
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
-        inner.split_command(&format!("S 0 {rx_vfo}"), "split di FT8 tolto prima di una trasmissione libera");
-        link.client().set_split(false, rx_vfo).map_err(|e| RigError(friendly_error(&e.0)))?;
+        inner.try_split_off(&link, rx_vfo, "split di FT8 tolto prima di una trasmissione libera").map_err(|e| RigError(friendly_error(&e.0)))?;
         inner.xit_split.store(false, Ordering::SeqCst);
         inner.update(|s| s.split = Some(false));
         Ok(())
@@ -1410,6 +1442,97 @@ impl HamlibRig {
         link.client().set_split(on, tx_vfo).map_err(|e| RigError(friendly_error(&e.0)))?;
         self.inner.update(|s| s.split = Some(on));
         Ok(())
+    }
+
+    /// Un numero che cambia a ogni collegamento della radio (la memoria dei comandi rifiutati dei satelliti si azzera).
+    pub fn session_id(&self) -> u64 {
+        (Arc::as_ptr(&self.inner) as usize as u64).wrapping_mul(31).wrapping_add(self.inner.session.load(Ordering::SeqCst))
+    }
+
+    /// La ricezione dei satelliti (Doppler): solo `F`, una volta al secondo. Niente controllo dell'arrivo, niente modo riscritto, niente
+    /// spegnimento dello split, a differenza di `set_frequency` che e' pensata per un cambio di banda.
+    pub fn set_tracking_frequency(&self, hz: u64) -> Result<(), RigError> {
+        let inner = &self.inner;
+        if !valid_dial_hz(hz) {
+            return Err(RigError(format!("frequenza non valida: {hz} Hz")));
+        }
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: cambio di frequenza rifiutato".into()));
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        link.client().set_frequency(hz).map_err(|e| RigError(friendly_error(&e.0)))?;
+        inner.rx_dial.store(hz, Ordering::SeqCst);
+        inner.update(|s| s.frequency_hz = Some(hz));
+        Ok(())
+    }
+
+    /// Il modo di ricezione dei satelliti («USB», «LSB», «FM», «CW»), scritto una volta quando cambia.
+    pub fn set_tracking_mode(&self, mode: &str) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        if self.inner.transmitting() {
+            return Err(RigError("la radio sta trasmettendo: modo non cambiato".into()));
+        }
+        self.inner.epoch.fetch_add(1, Ordering::SeqCst);
+        link.client().set_mode(mode, 0).map_err(|e| RigError(friendly_error(&e.0)))?;
+        self.inner.update(|s| s.mode = Some(mode.to_string()));
+        Ok(())
+    }
+
+    /// Il modo del VFO di trasmissione con lo split vero (`X`).
+    pub fn set_tracking_tx_mode(&self, mode: &str) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        self.inner.split_command(&format!("X {mode} 0"), "satelliti");
+        link.client().set_split_mode(mode, 0).map_err(|e| RigError(friendly_error(&e.0)))
+    }
+
+    /// Accende o spegne il modo satellite della radio (`U SATMODE`), se Hamlib lo ha per quel modello.
+    pub fn set_satmode(&self, on: bool) -> Result<(), RigError> {
+        let link = self.inner.connected_link()?;
+        link.client().set_func("SATMODE", on).map_err(|e| RigError(friendly_error(&e.0)))
+    }
+
+    /// Ripiego per le radio senza split da CAT (sperimentale): la trasmissione dei satelliti sul VFO secondario. Si passa al VFO di
+    /// trasmissione, si scrivono frequenza (e modo), si torna al VFO di ricezione, tutto in un blocco che le letture periodiche non
+    /// interrompono. Prima `V Sub`/`V Main`, se la radio le rifiuta `V VFOB`/`V VFOA`; la coppia che funziona si ricorda fino alla
+    /// riconnessione. `Ok(false)` = la radio sta trasmettendo, non si tocca niente. Qualunque rifiuto e' un errore (il chiamante spegne il
+    /// ripiego) e il ritorno al VFO di ricezione si tenta sempre.
+    pub fn set_uplink_via_vfo(&self, hz: u64, mode: Option<&str>) -> Result<bool, RigError> {
+        let inner = &self.inner;
+        if !valid_dial_hz(hz) {
+            return Err(RigError(format!("frequenza di trasmissione non valida: {hz} Hz")));
+        }
+        let link = inner.connected_link()?;
+        if inner.transmitting() {
+            return Ok(false);
+        }
+        let reversed = inner.vfo_reversed.load(Ordering::SeqCst);
+        let ab: (&str, &str) = if reversed { ("VFOA", "VFOB") } else { ("VFOB", "VFOA") };
+        let pairs: [(u8, &str, &str); 2] = [(1, "Sub", "Main"), (2, ab.0, ab.1)];
+        let known = inner.sat_vfo_pair.load(Ordering::SeqCst);
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        inner.split_command(&format!("V, F {hz}"), "satelliti: trasmissione sul VFO secondario");
+        let out = link.client().urgent(|c| {
+            let mut last = RigError("nessun VFO provato".into());
+            for (id, tx_vfo, rx_vfo) in pairs {
+                if known != 0 && known != id {
+                    continue;
+                }
+                match c.set_vfo(tx_vfo) {
+                    Ok(()) => {
+                        inner.sat_vfo_pair.store(id, Ordering::SeqCst);
+                        let wrote = c.set_frequency(hz).and_then(|()| mode.map_or(Ok(()), |m| c.set_mode(m, 0)));
+                        let back = c.set_vfo(rx_vfo);
+                        return wrote.and(back).map(|()| true);
+                    }
+                    Err(e) if crate::meters::is_unsupported(&e) => last = e,
+                    Err(e) => return Err(e),
+                }
+            }
+            Err(RigError(format!("la radio non accetta il cambio di VFO ({})", last.0)))
+        });
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        out.map_err(|e| RigError(friendly_error(&e.0)))
     }
 
     /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): la ricezione va su `rx_hz` come un cambio di frequenza
@@ -1579,12 +1702,12 @@ impl Rig for HamlibRig {
         let dx_split = inner.dx_split.swap(false, Ordering::SeqCst);
         if inner.config.split == SplitMode::Rig || dx_split {
             let rx_vfo = if inner.vfo_reversed.load(Ordering::SeqCst) { "VFOB" } else { "VFOA" };
-            inner.split_command(&format!("S 0 {rx_vfo}"), "cambio di frequenza");
-            match link.client().set_split(false, rx_vfo) {
-                Ok(()) => {
+            match inner.try_split_off(&link, rx_vfo, "cambio di frequenza") {
+                Ok(true) => {
                     inner.xit_split.store(false, Ordering::SeqCst);
                     inner.update(|s| s.split = Some(false));
                 }
+                Ok(false) => {}
                 Err(e) => tracing::warn!("split non spento dopo il cambio di frequenza: {e}"),
             }
         }
@@ -2601,5 +2724,81 @@ mod tests {
         wait_until("riconnessione dopo la morte del demone", || rig.status().state == LinkState::Reconnecting);
         assert_eq!(rig.wait_settled(Duration::from_secs(20)).state, LinkState::Connected);
         assert!(rig.frequency().is_ok());
+    }
+
+    /// I comandi che cambiano frequenza, modo, VFO o split (senza le letture periodiche).
+    fn writes(fake: &FakeRigctld) -> Vec<String> {
+        fake.commands().into_iter().filter(|c| ["V ", "F ", "M ", "S ", "X ", "I "].iter().any(|h| c.starts_with(h))).collect()
+    }
+
+    #[test]
+    fn a_refused_split_off_is_not_sent_again() {
+        // IC-820H: `S 0 VFOA` rifiutato con -11 a ogni cambio di frequenza (457 avvisi in un'ora)
+        let fake = FakeRigctld::start(14_074_000);
+        fake.fail_split_with(-11);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        for hz in [7_074_000, 7_075_000, 7_076_000] {
+            rig.set_frequency(hz).expect("QSY");
+        }
+        let s_cmds = writes(&fake).into_iter().filter(|c| c.starts_with("S ")).count();
+        assert_eq!(s_cmds, 1, "{:?}", writes(&fake));
+    }
+
+    #[test]
+    fn tracking_frequency_sends_only_the_frequency() {
+        let fake = FakeRigctld::start(435_600_000);
+        let rig = start(&fake, RigConfig { split: SplitMode::Rig, ..RigConfig::default() });
+        fake.clear_commands();
+        for hz in [435_626_135, 435_626_092, 435_626_049] {
+            rig.set_tracking_frequency(hz).expect("Doppler");
+        }
+        assert_eq!(writes(&fake), ["F 435626135", "F 435626092", "F 435626049"]);
+    }
+
+    #[test]
+    fn two_vfo_uplink_writes_the_second_vfo_and_goes_back() {
+        let fake = FakeRigctld::start(435_600_000);
+        let rig = start(&fake, RigConfig::default());
+        fake.clear_commands();
+        assert_eq!(rig.set_uplink_via_vfo(145_900_000, Some("LSB")).expect("uplink"), true);
+        assert_eq!(writes(&fake), ["V Sub", "F 145900000", "M LSB 0", "V Main"]);
+        // senza modo nuovo: niente M
+        fake.clear_commands();
+        rig.set_uplink_via_vfo(145_900_300, None).expect("uplink");
+        assert_eq!(writes(&fake), ["V Sub", "F 145900300", "V Main"]);
+    }
+
+    #[test]
+    fn two_vfo_uplink_falls_back_to_vfob_and_remembers_it() {
+        let fake = FakeRigctld::start(435_600_000);
+        fake.refuse_vfo("Sub");
+        let rig = start(&fake, RigConfig::default());
+        fake.clear_commands();
+        rig.set_uplink_via_vfo(145_900_000, None).expect("uplink");
+        assert_eq!(writes(&fake), ["V Sub", "V VFOB", "F 145900000", "V VFOA"]);
+        fake.clear_commands();
+        rig.set_uplink_via_vfo(145_900_100, None).expect("uplink");
+        assert_eq!(writes(&fake), ["V VFOB", "F 145900100", "V VFOA"]);
+    }
+
+    #[test]
+    fn two_vfo_uplink_fails_cleanly_when_no_vfo_is_accepted() {
+        let fake = FakeRigctld::start(435_600_000);
+        fake.refuse_vfo("Sub");
+        fake.refuse_vfo("VFOB");
+        let rig = start(&fake, RigConfig::default());
+        fake.clear_commands();
+        assert!(rig.set_uplink_via_vfo(145_900_000, Some("LSB")).is_err());
+        assert!(writes(&fake).iter().all(|c| c.starts_with("V ")), "{:?}", writes(&fake));
+    }
+
+    #[test]
+    fn two_vfo_uplink_never_switches_while_transmitting() {
+        let fake = FakeRigctld::start(435_600_000);
+        let rig = start(&fake, RigConfig::default());
+        rig.inner.external_tx.store(true, Ordering::SeqCst);
+        fake.clear_commands();
+        assert_eq!(rig.set_uplink_via_vfo(145_900_000, None).expect("in trasmissione"), false);
+        assert!(writes(&fake).is_empty());
     }
 }

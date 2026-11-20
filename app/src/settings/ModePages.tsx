@@ -247,7 +247,8 @@ export function DigiClusterPage() {
 export function SatSettingsPage({ cat }: { cat: SatCategory }) {
   const t = useT();
   const client = useQueryClient();
-  const query = useQuery({ queryKey: ['sat'], queryFn: getSat, retry: false });
+  // nella pagina dell'inseguimento l'anteprima del prossimo passaggio si aggiorna da sola
+  const query = useQuery({ queryKey: ['sat'], queryFn: getSat, retry: false, refetchInterval: cat === 'tracking' ? 5000 : false });
   const [busy, setBusy] = useState(false);
   if (query.isError) return <p className="notice">{t('set.loadError')}</p>;
   const snap = query.data;
@@ -269,7 +270,7 @@ export function SatSettingsPage({ cat }: { cat: SatCategory }) {
   };
   return (
     <Page>
-      <Group title={cat === 'orbits' ? t('sw.pg.orbits') : cat === 'map' ? t('sat.set.catMap') : t('sw.pg.doppler')} span={3}>
+      <Group title={cat === 'orbits' ? t('sw.pg.orbits') : cat === 'map' ? t('sat.set.catMap') : cat === 'tracking' ? t('sw.pg.tracking') : t('sw.pg.doppler')} span={3}>
         <div className="sw-fields">
           <SatSettingsPane cat={cat} snap={snap} busy={busy} onSave={save} onRefresh={refresh} />
         </div>
