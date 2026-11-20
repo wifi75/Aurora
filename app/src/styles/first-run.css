@@ -251,9 +251,6 @@
 .net-check__tip { margin: 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; }
 /* nastrino «Nuova versione» in diagonale nell'angolo in alto a destra */
 .upd-poster__art { overflow: hidden; }
-.upd-poster__ribbon { position: absolute; top: 1.55rem; right: -3.4rem; z-index: 2; width: 13rem; padding: 0.35rem 0; transform: rotate(45deg); background: linear-gradient(90deg, #ff7a18, #ffb800); color: #2a1200; text-align: center; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; box-shadow: 0 2px 8px rgba(0,0,0,.35); animation: upd-ribbon-in .5s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes upd-ribbon-in { from { opacity: 0; transform: rotate(45deg) translateY(-1rem); } }
-@media (prefers-reduced-motion: reduce) { .upd-poster__ribbon { animation: none; } }
 /* installazione automatica: rotellina, conto alla rovescia e «Annulla» */
 .upd-poster__auto { display: flex; align-items: center; gap: 0.6rem; margin: 0.8rem 0 0; color: var(--text); font-weight: 600; }
 .upd-poster__spin { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent); border-top-color: var(--accent); animation: upd-spin .8s linear infinite; }
@@ -265,8 +262,8 @@
 .upd-poster__first { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent, #2cf5a4) 16%, transparent); font-weight: 600; line-height: 1.4; }
 
 /* bollino a stella «NUOVA APP» nella locandina (tradotto), angolo in alto a sinistra */
-.upd-poster__badge { position: absolute; left: 1rem; top: 0.7rem; z-index: 2; width: 5.6rem; height: 5.6rem; display: grid; place-items: center; transform: rotate(-12deg); background: #f26a1b; clip-path: polygon(50.0% 0.0%, 58.9% 11.0%, 71.7% 5.0%, 74.9% 18.7%, 89.1% 18.8%, 86.0% 32.6%, 98.7% 38.9%, 90.0% 50.0%, 98.7% 61.1%, 86.0% 67.4%, 89.1% 81.2%, 74.9% 81.3%, 71.7% 95.0%, 58.9% 89.0%, 50.0% 100.0%, 41.1% 89.0%, 28.3% 95.0%, 25.1% 81.3%, 10.9% 81.2%, 14.0% 67.4%, 1.3% 61.1%, 10.0% 50.0%, 1.3% 38.9%, 14.0% 32.6%, 10.9% 18.8%, 25.1% 18.7%, 28.3% 5.0%, 41.1% 11.0%); filter: drop-shadow(0 3px 6px rgba(0,0,0,.35)); animation: upd-badge-in .5s ease-out both; }
+.upd-poster__badge { position: absolute; right: 1rem; top: 0.7rem; z-index: 2; width: 5.6rem; height: 5.6rem; display: grid; place-items: center; transform: rotate(12deg); background: #f26a1b; clip-path: polygon(50.0% 0.0%, 58.9% 11.0%, 71.7% 5.0%, 74.9% 18.7%, 89.1% 18.8%, 86.0% 32.6%, 98.7% 38.9%, 90.0% 50.0%, 98.7% 61.1%, 86.0% 67.4%, 89.1% 81.2%, 74.9% 81.3%, 71.7% 95.0%, 58.9% 89.0%, 50.0% 100.0%, 41.1% 89.0%, 28.3% 95.0%, 25.1% 81.3%, 10.9% 81.2%, 14.0% 67.4%, 1.3% 61.1%, 10.0% 50.0%, 1.3% 38.9%, 14.0% 32.6%, 10.9% 18.8%, 25.1% 18.7%, 28.3% 5.0%, 41.1% 11.0%); filter: drop-shadow(0 3px 6px rgba(0,0,0,.35)); animation: upd-badge-in .5s ease-out both; }
 .upd-poster__badge::before { content: ''; position: absolute; inset: 0.28rem; background: linear-gradient(160deg, #ffe066, #ffc21a); clip-path: polygon(50.0% 0.0%, 58.9% 11.0%, 71.7% 5.0%, 74.9% 18.7%, 89.1% 18.8%, 86.0% 32.6%, 98.7% 38.9%, 90.0% 50.0%, 98.7% 61.1%, 86.0% 67.4%, 89.1% 81.2%, 74.9% 81.3%, 71.7% 95.0%, 58.9% 89.0%, 50.0% 100.0%, 41.1% 89.0%, 28.3% 95.0%, 25.1% 81.3%, 10.9% 81.2%, 14.0% 67.4%, 1.3% 61.1%, 10.0% 50.0%, 1.3% 38.9%, 14.0% 32.6%, 10.9% 18.8%, 25.1% 18.7%, 28.3% 5.0%, 41.1% 11.0%); }
 .upd-poster__badge span { position: relative; z-index: 1; max-width: 3.6rem; text-align: center; color: #3a2000; font-weight: 800; font-size: 0.78rem; line-height: 1.05; letter-spacing: 0.02em; text-transform: uppercase; overflow-wrap: anywhere; }
-@keyframes upd-badge-in { from { opacity: 0; transform: rotate(-12deg) scale(.4); } }
+@keyframes upd-badge-in { from { opacity: 0; transform: rotate(12deg) scale(.4); } }
 @media (prefers-reduced-motion: reduce) { .upd-poster__badge { animation: none; } }

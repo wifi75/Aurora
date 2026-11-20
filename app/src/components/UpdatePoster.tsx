@@ -167,7 +167,6 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
     <div className="first-run upd-poster" role="dialog" aria-modal="true" aria-labelledby="upd-poster-title">
       <div className="first-run__card upd-poster__card">
         <div className="upd-poster__art">
-          <span className="upd-poster__ribbon" aria-hidden="true">{t('upd.poster.ribbon')}</span>
           {/* il bollino a stella «NUOVA APP», sempre presente e tradotto in ogni lingua */}
           <span className="upd-poster__badge" aria-hidden="true">
             <span>{t('upd.poster.badge')}</span>
