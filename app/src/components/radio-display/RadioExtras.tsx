@@ -100,7 +100,8 @@ export function useTuneButton() {
   const x = rig?.extras ?? {};
   const lit = latched || x.tuner === true;
   const press = async () => {
-    if (lit) {
+    // si decide dal tasto acceso da te, non da cio' che dice la radio: con l'accordatore gia' inserito il clic deve comunque accordare
+    if (latched) {
       // spento a mano: si prova a disinserire l'accordatore della radio; il tasto si spegne comunque (la radio puo' non accettarlo da CAT)
       await click('atu');
       setTuneLatch(false);
