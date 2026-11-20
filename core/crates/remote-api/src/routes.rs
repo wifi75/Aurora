@@ -1134,7 +1134,23 @@ async fn online_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, 
 #[utoipa::path(get, path = "/api/v1/online/psk", responses((status = 200, description = "`enabled` e `psk` (`fetched_ms`, `callsign`, `reports`, `error`)"), (status = 404, description = "Non disponibile (online_unavailable)")))]
 async fn online_psk(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
     let service = online_service(&state)?;
-    Ok(Json(json!({ "enabled": service.settings().psk, "psk": service.psk() })))
+    let mut psk = json!(service.psk());
+    // il flusso in tempo reale di PSK Reporter non dice il paese della stazione che ti ha ricevuto: si ricava dal nominativo (cty.dat), cosi' le
+    // bandierine e il nome del paese tornano dove li mostra l'interfaccia (Bande aperte, Mappa, Propagazione)
+    if let (Some(lookup), Some(reports)) = (state.dxcc.as_ref(), psk.get_mut("reports").and_then(Value::as_array_mut)) {
+        let mut cache: std::collections::HashMap<String, Option<String>> = std::collections::HashMap::new();
+        for r in reports.iter_mut() {
+            if r.get("country").is_some_and(|c| c.as_str().is_some_and(|s| !s.is_empty())) {
+                continue;
+            }
+            let Some(call) = r.get("receiver").and_then(Value::as_str).map(str::to_string) else { continue };
+            let country = cache.entry(call.clone()).or_insert_with(|| lookup(&call).and_then(|v| v.get("country").and_then(Value::as_str).map(str::to_string))).clone();
+            if let (Some(country), Some(obj)) = (country, r.as_object_mut()) {
+                obj.insert("country".into(), Value::String(country));
+            }
+        }
+    }
+    Ok(Json(json!({ "enabled": service.settings().psk, "psk": psk })))
 }
 
 /// Le condizioni di propagazione da hamqsl.com (se acceso).
