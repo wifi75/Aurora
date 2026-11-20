@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.313',
-    released: '2026-11-20T14:00:00Z',
+    released: '2026-11-20T12:28:56Z',
     kind: 'fixed',
     title: [
       'WEFAX ricorda la frequenza, cascata più facile da ridimensionare',

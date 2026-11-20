@@ -4,6 +4,13 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.313 (pubblicata 2026-11-20T12:28:56Z)
+
+- WEFAX (`WefaxPage.tsx`): l'ultima frequenza scelta nel menu si salva (`aurora.wefax.lastPreset`) e entrando nella pagina la radio ci torna. `modeRetune.ts`: la banda di prima si salva anche in `aurora.modenav.beforeReceiveOnly` e, se manca, si usa `lastDial('ft8')` (mai la banda piu' bassa, 1,810 MHz). Resta un caso da correggere: frequenze WEFAX dentro una banda radioamatoriale (es. 3 855 kHz) portano alla frequenza FT8 di quella banda e non a quella di prima.
+- Menu frequenze WEFAX 19 rem, carattere 0,66 rem (testo piu' lungo misurato 252 px su 304). Locandina di aggiornamento senza la striscia «NUOVA VERSIONE», stella «NUOVA APP» a destra. Divisore cascata/spettro 14 px con maniglia 110x6 px (`bozze.css`). Non verificati a schermo.
+- Proposta del proprietario, approvata (2026-11-20): togliere dalla locandina l'avanzamento del download (`InstallProgress` in `UpdatePoster.tsx`), restano i pulsanti; l'avanzamento sta nella schermata scura. Simulare prima in anteprima con risposta finta.
+- Pacchetto `7A547090` (IC-820H, AO-7/RS-44): la lettura `f` del VFO principale salta tra 145,95 e 445,95 MHz e Aurora la scambia per cambi di banda; `F` sul VFO secondario accettato, una volta rifiutato (-9) e il ripiego a due VFO si spegne. Attende il test a mano di Vladimir.
+
 ## Nella 0.11.312 (pubblicata 2026-11-20T12:02:41Z)
 
 - `Live.tsx`: la conferma di chiamata (`CallUnseenDialog`) non scatta piu' sul doppio clic delle liste dei decode (`onReply(id, true)`); resta per «CQ e novita'», DXpedition e avvisi di nuovi DX. L'interruttore sta in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo (non in «Registrazione e comportamento»: F1DSZ era stato indirizzato male).

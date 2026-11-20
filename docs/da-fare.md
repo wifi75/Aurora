@@ -3,6 +3,8 @@
 Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancante.md`.
 
 ## Adesso
+- [x] 0.11.313 pubblicata (WEFAX ricorda la frequenza e la banda di prima, menu 19 rem, locandina senza striscia, divisore cascata): da guardare a schermo
+- [ ] Locandina di aggiornamento senza l'avanzamento del download (approvato): simulare in anteprima, poi 0.11.314
 - [x] 0.11.311 pubblicata con il russo (da far rivedere a Vladimir; manca nell'installatore e nelle schede del tray)
 - [x] 0.11.310 pubblicata (locandina diretta, un ingranaggio, WEFAX su una riga e senza TUNE)
 - [x] 0.11.309 pubblicata (satelliti, ADIF automatico, conferma di chiamata, ROS 2,0, ora automatica)
