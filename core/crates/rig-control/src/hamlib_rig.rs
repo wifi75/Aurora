@@ -2858,6 +2858,28 @@ mod tests {
         assert_eq!(writes(&fake), ["V Sub", "F 145900300", "V Main"]);
     }
 
+    /// Radio a due bande come l'IC-820H (pacchetti di Vladimir, #83): ricezione UHF 437,79 e trasmissione VHF 145,99 con Main = 144 e Sub = 430. Con la
+    /// coppia fissa ogni frequenza finiva nella banda sbagliata e la radio la ripiegava di 300 MHz (437,79 -> 137,79 su Main); ora, dopo il primo giro,
+    /// Main tiene la trasmissione, Sub tiene la ricezione e le scritture della ricezione successive vanno su Sub.
+    #[test]
+    fn a_dual_band_radio_ends_up_with_rx_on_its_uhf_vfo_and_tx_on_its_vhf_vfo() {
+        let fake = FakeRigctld::start(435_600_000);
+        fake.enable_dual_bands(145_000_000, 435_000_000);
+        let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
+        // la ricezione scritta sul VFO in uso (Main, banda 144): la radio la ripiega, come nel pacchetto
+        let _ = rig.set_frequency(437_790_000);
+        assert_eq!(fake.band_frequencies()[0], 137_790_000, "la radio ripiega 437,79 -> 137,79 su Main");
+        assert_eq!(rig.set_uplink_via_vfo(145_990_000, None).expect("uplink"), true);
+        assert_eq!(fake.band_frequencies(), [145_990_000, 435_000_000], "la trasmissione sta su Main (144), Sub (430) e' intatto");
+        // dopo il giro il VFO in uso e' Sub: la ricezione successiva (Doppler) finisce nella banda giusta
+        rig.set_frequency(437_790_000).expect("ricezione");
+        assert_eq!(fake.band_frequencies(), [145_990_000, 437_790_000], "ricezione 437,79 su Sub, trasmissione 145,99 su Main");
+        // il giro dopo (10 s) aggiorna solo la trasmissione e rimette il VFO di ricezione
+        rig.set_uplink_via_vfo(145_990_300, None).expect("uplink");
+        rig.set_frequency(437_790_100).expect("ricezione");
+        assert_eq!(fake.band_frequencies(), [145_990_300, 437_790_100]);
+    }
+
     /// IC-820H (modello 3032): se la lettura delle bande non da' una risposta chiara (Hamlib restituisce la stessa frequenza su Main e su Sub)
     /// vale la disposizione di fabbrica, Main = 144 MHz e Sub = 430 MHz: la trasmissione VHF va su Main e si torna a Sub per la ricezione UHF.
     #[test]

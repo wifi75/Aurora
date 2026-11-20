@@ -5,7 +5,7 @@ use std::{
     io::{BufRead, BufReader, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     sync::{
-        atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicI32, AtomicU8, AtomicU64, Ordering},
         Arc, Mutex,
     },
     time::Duration,
@@ -42,6 +42,11 @@ pub struct FakeState {
     /// RIT e XIT in Hz.
     offsets: Mutex<[i32; 2]>,
     vfo: Mutex<String>,
+    /// Radio a due bande come l'IC-820H (`enable_dual_bands`): Main = banda 136-174 MHz, Sub = banda 430-450 MHz; una frequenza scritta nella banda
+    /// sbagliata viene ripiegata di 300 MHz (437,79 -> 137,79, 145,99 -> 445,99) e `f` legge il VFO in uso.
+    dual_bands: AtomicBool,
+    band_freqs: Mutex<[u64; 2]>,
+    current_band: AtomicU8,
     /// `get_vfo_info` passa al VFO chiesto e non torna indietro (come certe Icom con Hamlib).
     vfo_info_switches: AtomicBool,
     /// `v` risponde `RPRT -11` (la radio non dice su quale VFO e': IC-756PRO con Hamlib).
@@ -85,6 +90,9 @@ impl FakeRigctld {
             refused: Mutex::new(Vec::new()),
             offsets: Mutex::new([0, 0]),
             vfo: Mutex::new("VFOA".into()),
+            dual_bands: AtomicBool::new(false),
+            band_freqs: Mutex::new([145_000_000, 435_000_000]),
+            current_band: AtomicU8::new(0),
             vfo_info_switches: AtomicBool::new(false),
             vfo_read_unavailable: AtomicBool::new(false),
             delay_ms: AtomicU64::new(0),
@@ -129,6 +137,20 @@ impl FakeRigctld {
         if let Ok(mut r) = self.state.refused_vfos.lock() {
             r.push(name.to_string());
         }
+    }
+
+    /// La finta radio diventa a due bande (IC-820H): Main = 144 MHz, Sub = 430 MHz, con le frequenze di partenza date.
+    pub fn enable_dual_bands(&self, main_hz: u64, sub_hz: u64) {
+        self.state.dual_bands.store(true, Ordering::SeqCst);
+        if let Ok(mut b) = self.state.band_freqs.lock() {
+            *b = [main_hz, sub_hz];
+        }
+        self.state.current_band.store(0, Ordering::SeqCst);
+    }
+
+    /// Le frequenze di Main e di Sub della radio a due bande.
+    pub fn band_frequencies(&self) -> [u64; 2] {
+        self.state.band_freqs.lock().map(|b| *b).unwrap_or([0, 0])
     }
 
     pub fn clear_commands(&self) {
@@ -342,10 +364,32 @@ fn serve(stream: TcpStream, state: &FakeState) {
             format!("RPRT {fail}\n")
         } else {
             match head {
+                "f" if state.dual_bands.load(Ordering::SeqCst) => {
+                    let band = usize::from(state.current_band.load(Ordering::SeqCst));
+                    format!("{}\n", state.band_freqs.lock().map(|b| b[band]).unwrap_or(0))
+                }
                 "f" => format!("{}\n", state.freq.load(Ordering::SeqCst)),
                 "m" => format!("{}\n2400\n", state.mode.lock().map(|m| m.clone()).unwrap_or_default()),
                 "t" => format!("{}\n", u8::from(state.ptt.load(Ordering::SeqCst))),
                 "s" => format!("{}\nVFOB\n", u8::from(state.split.load(Ordering::SeqCst))),
+                "F" if state.dual_bands.load(Ordering::SeqCst) => match arg.parse::<u64>() {
+                    Ok(hz) => {
+                        let band = state.current_band.load(Ordering::SeqCst);
+                        // la banda sbagliata non esiste: la radio ripiega la frequenza di 300 MHz
+                        let folded = if band == 0 && hz >= 300_000_000 {
+                            hz - 300_000_000
+                        } else if band == 1 && hz < 300_000_000 {
+                            hz + 300_000_000
+                        } else {
+                            hz
+                        };
+                        if let Ok(mut b) = state.band_freqs.lock() {
+                            b[usize::from(band)] = folded;
+                        }
+                        "RPRT 0\n".into()
+                    }
+                    Err(_) => "RPRT -1\n".into(),
+                },
                 "F" => match arg.parse::<u64>() {
                     Ok(hz) => {
                         state.freq.store(hz, Ordering::SeqCst);
@@ -453,6 +497,11 @@ fn serve(stream: TcpStream, state: &FakeState) {
                 "V" => {
                     if let Ok(mut v) = state.vfo.lock() {
                         *v = arg.to_string();
+                    }
+                    match arg {
+                        "Main" => state.current_band.store(0, Ordering::SeqCst),
+                        "Sub" => state.current_band.store(1, Ordering::SeqCst),
+                        _ => {}
                     }
                     "RPRT 0
 ".into()
