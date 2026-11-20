@@ -422,6 +422,10 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       if (!fromList && call && needsCallConfirm(usePrefs.getState().prefs.confirmUnseenCall, useStation.getState().decodes, call)) {
         if (!(await askCallUnseen(call, target?.country))) return;
       }
+      // doppio clic su una riga delle liste: conferma solo se l'operatore l'ha voluta (opzione spenta di fabbrica)
+      if (fromList && call && usePrefs.getState().prefs.confirmListCall) {
+        if (!(await askCallUnseen(call, target?.country, 'list'))) return;
+      }
       if (call) useStation.getState().setPendingDx(call);
       await attempt(
         async () => {

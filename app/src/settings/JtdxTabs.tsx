@@ -253,6 +253,7 @@ export function ScreenExtras() {
       <Check label={t('gen.clearOnChange')} hint={t('tip.gen.clearOnChange')} checked={prefs.clearOnChange} onChange={(v) => set({ clearOnChange: v })} />
       <Check label={t('gen.dblReply')} hint={t('tip.gen.dblReply')} checked={prefs.doubleClickReply} onChange={(v) => set({ doubleClickReply: v })} />
       <Check label={t('gen.confirmUnseen')} hint={t('tip.gen.confirmUnseen')} checked={prefs.confirmUnseenCall} onChange={(v) => set({ confirmUnseenCall: v })} />
+      <Check label={t('gen.confirmList')} hint={t('tip.gen.confirmList')} checked={prefs.confirmListCall} onChange={(v) => set({ confirmListCall: v })} />
       <Check label={t('pref.cmdTune')} hint={t('tip.pref.cmdTune')} checked={prefs.cmdTune} onChange={(v) => set({ cmdTune: v })} />
       <Check label={t('pref.cmdLogQso')} hint={t('tip.pref.cmdLogQso')} checked={prefs.cmdLogQso} onChange={(v) => set({ cmdLogQso: v })} />
       <Field label={t('gen.log4omCount')} hint={t('tip.gen.log4omCount')}>

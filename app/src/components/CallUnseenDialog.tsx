@@ -4,7 +4,7 @@ import { useT } from '../i18n';
 import { callConfirmText } from '../lib/seenStation';
 
 /** «Vuoi chiamare XX9BB (Macao)?»: risolve `true` con Chiama o Invio, `false` con Annulla, Esc o clic fuori. */
-export function askCallUnseen(call: string, country?: string | null): Promise<boolean> {
+export function askCallUnseen(call: string, country?: string | null, variant: 'unseen' | 'list' = 'unseen'): Promise<boolean> {
   return new Promise((resolve) => {
     const host = document.createElement('div');
     document.body.appendChild(host);
@@ -17,11 +17,11 @@ export function askCallUnseen(call: string, country?: string | null): Promise<bo
       host.remove();
       resolve(ok);
     };
-    root.render(<CallUnseenDialog call={call} country={country} onAnswer={answer} />);
+    root.render(<CallUnseenDialog call={call} country={country} variant={variant} onAnswer={answer} />);
   });
 }
 
-function CallUnseenDialog({ call, country, onAnswer }: { call: string; country?: string | null; onAnswer(ok: boolean): void }) {
+function CallUnseenDialog({ call, country, variant, onAnswer }: { call: string; country?: string | null; variant: 'unseen' | 'list'; onAnswer(ok: boolean): void }) {
   const t = useT();
   const ok = useRef<HTMLButtonElement | null>(null);
   const cancel = useRef<HTMLButtonElement | null>(null);
@@ -42,7 +42,7 @@ function CallUnseenDialog({ call, country, onAnswer }: { call: string; country?:
     <div className="confirm-overlay" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onAnswer(false)}>
       <div className="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="callunseen-text">
         <p id="callunseen-text" className="confirm-text">
-          {callConfirmText(t('callUnseen.text'), call, country)}
+          {callConfirmText(t(variant === 'list' ? 'callList.text' : 'callUnseen.text'), call, country)}
         </p>
         <div className="confirm-actions">
           <button ref={cancel} type="button" className="confirm-btn" onClick={() => onAnswer(false)}>
