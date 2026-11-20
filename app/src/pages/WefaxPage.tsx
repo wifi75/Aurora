@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWefax, getWefaxImages, postFrequency, wefaxRx, wefaxRxPage } from '../api/client';
+import { getWefax, getWefaxImages, postFrequency, putWefax, wefaxRx, wefaxRxPage } from '../api/client';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
 import { ListenGate } from '../components/ListenGate';
@@ -14,7 +14,7 @@ import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
 import { rememberDialBeforeReceiveOnly } from '../lib/modeRetune';
-import { formatKhz, presetAt, wefaxGroups } from '../lib/wefaxStations';
+import { formatKhz, presetAt, wefaxGroups, type WefaxPreset } from '../lib/wefaxStations';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 import '../styles/sstv.css';
@@ -87,6 +87,16 @@ function WefaxBody({ solo }: { solo: boolean }) {
   const current = presetAt(dialHz);
   const groups = wefaxGroups();
 
+  // scegliendo una stazione si impostano anche IOC e righe al minuto di quella stazione: il ricevitore non riconosce l'IOC da solo
+  // (con IOC sbagliato l'immagine ha la larghezza e il tono di avvio sbagliati) e le righe al minuto di partenza sono quelle dell'IOC
+  const applyTransmission = (p: WefaxPreset) => {
+    const s = snap.data?.settings;
+    if (!s) return;
+    const key = p.ioc === 288 ? 'lpm_288' : 'lpm_576';
+    if (s.ioc === p.ioc && s[key] === p.lpm) return;
+    void putWefax({ ...s, ioc: p.ioc, [key]: p.lpm }).then(() => snap.refetch(), () => undefined);
+  };
+
   // entrando nella pagina la radio torna sulla frequenza WEFAX dell'ultima volta (la banda di prima si ricorda per l'uscita)
   const restored = useRef(false);
   useEffect(() => {
@@ -140,6 +150,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
               // la frequenza di adesso (se e' in una banda radioamatoriale) si ricorda: lasciando il WEFAX la radio torna li'
               rememberDialBeforeReceiveOnly(dialHz);
               void postFrequency(p.dialHz, true).catch(() => undefined);
+              applyTransmission(p);
             }
           }}
         >

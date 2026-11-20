@@ -26,3 +26,12 @@ describe('stazioni WEFAX', () => {
     expect(formatKhz(13882.5)).toBe('13 882,5');
   });
 });
+
+describe('IOC e righe al minuto', () => {
+  it('ogni frequenza porta i valori della stazione (NOAA: 120 righe al minuto, IOC 576)', () => {
+    for (const p of wefaxPresets()) {
+      expect(p.ioc).toBe(576);
+      expect(p.lpm).toBe(120);
+    }
+  });
+});

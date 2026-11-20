@@ -14,6 +14,9 @@ export interface WefaxStation {
   place: string;
   /** Frequenze assegnate, in kHz. */
   khz: readonly number[];
+  /** IOC e righe al minuto della stazione (colonna «RPM/IOC» del documento NOAA: 120/576 per tutte quelle dell'elenco; DWD: stessi valori). */
+  ioc?: number;
+  lpm?: number;
 }
 
 export const WEFAX_STATIONS: readonly WefaxStation[] = [
@@ -46,14 +49,21 @@ export interface WefaxPreset {
   dialHz: number;
   /** Banda: la parte intera dei MHz (4 = «4 MHz», da 4,0 a 4,99). */
   band: number;
+  /** IOC e righe al minuto da impostare al ricevitore scegliendo questa frequenza. */
+  ioc: number;
+  lpm: number;
 }
+
+/** Valori di tutte le stazioni dell'elenco (NOAA, edizione del 7 marzo 2025). */
+export const WEFAX_DEFAULT_IOC = 576;
+export const WEFAX_DEFAULT_LPM = 120;
 
 /** Tutte le frequenze, ordinate per banda e poi per frequenza. */
 export function wefaxPresets(): WefaxPreset[] {
   const out: WefaxPreset[] = [];
   for (const s of WEFAX_STATIONS) {
     for (const khz of s.khz) {
-      out.push({ id: `${s.call}-${khz}`, call: s.call, place: s.place, khz, dialHz: Math.round(khz * 1000) - WEFAX_CARRIER_OFFSET_HZ, band: Math.floor(khz / 1000) });
+      out.push({ id: `${s.call}-${khz}`, call: s.call, place: s.place, khz, dialHz: Math.round(khz * 1000) - WEFAX_CARRIER_OFFSET_HZ, band: Math.floor(khz / 1000), ioc: s.ioc ?? WEFAX_DEFAULT_IOC, lpm: s.lpm ?? WEFAX_DEFAULT_LPM });
     }
   }
   return out.sort((a, b) => a.khz - b.khz || a.call.localeCompare(b.call));
