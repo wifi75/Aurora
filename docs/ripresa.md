@@ -4,6 +4,12 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.315 (pubblicata 2026-11-20T12:54:27Z)
+
+- Rotore fuori dalla barra in alto (`ModeNav.tsx`). `RotatorTab.tsx`: gruppo «Mostra in home» con due caselle (`useRotorCardVisible('station')` e `('digi')`) e il pulsante «Apri la pagina del rotore» (`#/rotore`). Non visto a schermo.
+- Prossimo lavoro approvato: diagnosi della trasmissione (pallini nella scheda Trasmissione e «Prova senza trasmettere»), piano in `docs/piano-diagnosi-trasmissione.md`.
+- #83 Vladimir: il test a mano con `rigctl` (Aurora chiusa, COM3 libero) non cambia niente sul display; risposto in russo con la richiesta della riga esatta di `rigctl` e delle risposte a `f` e `m`.
+
 ## Nella 0.11.314 (pubblicata 2026-11-20T12:43:43Z)
 
 - Etichetta dei satelliti opzionale (`barLabel` in `SatAlertSettings`, spenta di fabbrica; `lib/satBarLabel.ts`, `useBarLabel`): casella in Impostazioni › Modi › Satelliti › Inseguimento e rotore › Avvisi e nella campanella; senza, `SatAlertEngine` non e' montato (niente suono in ogni pagina). Etichetta in mezzo alla barra (`margin-inline: auto`, `ModeNav.tsx`), clic = sceglie il satellite (`getSat`/`putSat`, `pickSatellite`) e apre `#/satelliti`. Non vista a schermo con un satellite vero.

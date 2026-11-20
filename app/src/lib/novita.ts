@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.315',
-    released: '2026-11-20T14:00:00Z',
+    released: '2026-11-20T12:54:27Z',
     kind: 'fixed',
     title: [
       'Rotore fuori dalla barra: si sceglie in Impostazioni dove mostrarlo',
