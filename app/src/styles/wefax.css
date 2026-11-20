@@ -134,3 +134,7 @@
 .wefax-toolbar-slot { flex: 0 0 auto; }
 .wefax-toolbar-slot .wefax-zoom { min-width: 3.2rem; text-align: center; font-variant-numeric: tabular-nums; }
 .wefax-toolbar-slot .sstv-note { display: none; }
+
+/* menu delle frequenze: carattere ancora piu' piccolo e piu' lungo, cosi' il testo non si taglia */
+.wefax-freq { font-size: 0.7rem; width: 14.5rem; max-width: 14.5rem; flex: 0 0 14.5rem; }
+.wefax-freq option, .wefax-freq optgroup { font-size: 0.72rem; }

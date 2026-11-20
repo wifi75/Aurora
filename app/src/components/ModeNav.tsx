@@ -8,6 +8,7 @@ import type { TextMode } from '../lib/bandplan';
 import { useT } from '../i18n';
 import type { Route } from '../lib/route';
 import { browserStorage } from '../lib/theme';
+import { lastTextPage } from '../lib/lastPage';
 import { useStation } from '../state/station';
 import { rememberDial, retuneForMode, retuneForText } from '../lib/modeRetune';
 import { modeBase } from '../lib/period';
@@ -233,7 +234,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {pill('ft8', 'FT8')}
         {pill('vhf', 'VHF')}
         {/* PSK, RTTY, CW e SSTV stanno insieme: il modo si sceglie dal menu «Modo» della loro pagina */}
-        <a {...current(route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax'))} data-mode="psk" href={route.name === 'wefax' ? '#/wefax' : route.name === 'sstv' ? '#/sstv' : '#/testo'} title={t('tip.nav.digi')} onClick={enterText}>
+        <a {...current(route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax'))} data-mode="psk" href={route.name === 'wefax' ? '#/wefax' : route.name === 'sstv' ? '#/sstv' : route.name === 'digi' ? '#/testo' : lastTextPage(browserStorage())} title={t('tip.nav.digi')} onClick={enterText}>
           {t('nav.textModes')}
         </a>
         <a {...current(route.name === 'sat')} data-mode="sat" href="#/satelliti" title={t('tip.nav.sat')}>

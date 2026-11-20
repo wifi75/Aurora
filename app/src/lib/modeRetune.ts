@@ -63,10 +63,23 @@ async function regionOf(client: QueryClient): Promise<IaruRegion> {
   }
 }
 
+/** La frequenza della radio (in una banda radioamatoriale) prima di una pagina di sola ricezione fuori banda (WEFAX): ci si torna uscendone. */
+let beforeReceiveOnly = 0;
+
+/** Da chiamare prima di spostare la radio su una frequenza fuori dalle bande radioamatoriali (stazioni meteo del WEFAX). */
+export function rememberDialBeforeReceiveOnly(hz: number): void {
+  if (hz > 0 && bandOf(hz)) beforeReceiveOnly = hz;
+}
+
 /** Porta la radio sulla frequenza giusta per le righe date; restituisce la frequenza scelta o `null` se non si e' mossa. */
 async function retuneTo(client: QueryClient, rows: readonly FrequencyEntry[]): Promise<number | null> {
-  const now = useStation.getState().status?.dial_hz ?? 0;
-  const hz = targetDial(rows, await regionOf(client), now);
+  const current = useStation.getState().status?.dial_hz ?? 0;
+  // la radio e' fuori dalle bande (WEFAX): si torna alla banda di prima, sulla sua frequenza del modo (o sulla frequenza di prima se e' gia' una del modo)
+  const back = !bandOf(current) && beforeReceiveOnly > 0 ? beforeReceiveOnly : 0;
+  if (back > 0) beforeReceiveOnly = 0;
+  const now = back > 0 ? back : current;
+  const region = await regionOf(client);
+  const hz = back > 0 ? (targetDial(rows, region, now) ?? now) : targetDial(rows, region, now);
   if (hz === null) return null;
   await postFrequency(hz);
   return hz;

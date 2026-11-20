@@ -7,6 +7,9 @@ import type { Route } from './route';
 
 const PAGE_KEY = 'aurora-last-page';
 const TAB_KEY = 'aurora-settings-tab';
+const TEXT_KEY = 'aurora-last-text-page';
+/** Le pagine del gruppo «PSK · RTTY · SSTV · WEFAX»: cliccando il gruppo si riapre l'ultima usata. */
+const TEXT_PAGES = new Set(['#/testo', '#/sstv', '#/wefax']);
 // tutte le pagine dei modi (PSK·RTTY·CW, SSTV, Satelliti, Fox, Contest...) e quelle comuni: riaprendo Aurora si torna li'
 const RESTORABLE = new Set(['#/statistiche', '#/mappa-dx', '#/storico', '#/propagazione', '#/impostazioni', '#/guida', '#/novita', '#/testo', '#/sstv', '#/wefax', '#/satelliti', '#/fox', '#/contest', '#/qmap', '#/rotore', '#/esporta']);
 
@@ -68,6 +71,7 @@ export function rememberRoute(storage: Store, route: Route): void {
   const hash = HASH_OF[route.name];
   if (hash === undefined) return;
   write(storage, PAGE_KEY, hash);
+  if (TEXT_PAGES.has(hash)) write(storage, TEXT_KEY, hash);
   if (route.name === 'settings' && route.tab) write(storage, TAB_KEY, route.tab);
 }
 
@@ -77,4 +81,10 @@ export function rememberTab(storage: Store, tab: string): void {
 
 export function rememberedTab(storage: Store): string | undefined {
   return read(storage, TAB_KEY) ?? undefined;
+}
+
+/** La pagina del gruppo PSK · RTTY · SSTV · WEFAX lasciata per ultima (di base PSK·RTTY·CW); il modo dentro la pagina lo ricorda la pagina stessa. */
+export function lastTextPage(storage: Store): string {
+  const saved = read(storage, TEXT_KEY);
+  return saved !== null && TEXT_PAGES.has(saved) ? saved : '#/testo';
 }

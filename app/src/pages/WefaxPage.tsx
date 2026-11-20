@@ -13,6 +13,7 @@ import { useT } from '../i18n';
 import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
+import { rememberDialBeforeReceiveOnly } from '../lib/modeRetune';
 import { formatKhz, presetAt, wefaxGroups } from '../lib/wefaxStations';
 import { useStation } from '../state/station';
 import '../styles/sstv.css';
@@ -103,6 +104,8 @@ function WefaxBody({ solo }: { solo: boolean }) {
             const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
             if (p) {
               setChosen(p.id);
+              // la frequenza di adesso (se e' in una banda radioamatoriale) si ricorda: lasciando il WEFAX la radio torna li'
+              rememberDialBeforeReceiveOnly(dialHz);
               void postFrequency(p.dialHz, true).catch(() => undefined);
             }
           }}

@@ -343,7 +343,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
         const pills = tagPills ? <ActivityTagPills /> : null;
         // con la finestra RX accesa (nel pannello Log) le mie trasmissioni e i messaggi a me stanno solo li': niente doppioni qui
         const rxShown = rxOn && !soloPanel && prefs.rxExclusive;
-        const list = <DecodeList decodes={afterMark(rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog), bandMark)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={onReply} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} columnsKey={BAND_COLS_KEY} allColumns />;
+        const list = <DecodeList decodes={afterMark(rxShown ? activity.filter((d) => !isCallToMe(d.text, deCall) && !fromDx(d.text, status?.dx_call)) : withOwnTx(activity, txLog), bandMark)} myGrid={status?.de_grid} myCall={status?.de_call} dxCall={status?.dx_call} dxGrid={status?.dx_grid} onReply={(id) => void onReply(id, true)} onQueue={onQueue} emptyText={tagFilterOn ? t('bfl.empty') : undefined} newestAtBottom={prefs.bandBottom} columnsKey={BAND_COLS_KEY} allColumns />;
         return pills ? <div className="activity-with-pills">{pills}{list}</div> : list;
       }
     }
@@ -413,12 +413,13 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
 
   const client = useQueryClient();
   const onReply = useCallback(
-    async (id: number) => {
+    // `fromList`: doppio clic su una riga delle liste dei decode (la stazione si vede sullo schermo): nessuna conferma
+    async (id: number, fromList = false) => {
       const target = useStation.getState().decodes.find((d) => d.id === id);
       // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che il motore la riporti
       const call = target ? callOf(target.text) : null;
       // una stazione che non e' tra i decode recenti si chiama solo dopo conferma (clic o doppio clic accidentale)
-      if (call && needsCallConfirm(usePrefs.getState().prefs.confirmUnseenCall, useStation.getState().decodes, call)) {
+      if (!fromList && call && needsCallConfirm(usePrefs.getState().prefs.confirmUnseenCall, useStation.getState().decodes, call)) {
         if (!(await askCallUnseen(call, target?.country))) return;
       }
       if (call) useStation.getState().setPendingDx(call);
@@ -480,7 +481,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           </div>
         }
         decodes={withOwnTx(activity, txLog)}
-        onReply={(id) => void onReply(id)}
+        onReply={(id) => void onReply(id, true)}
         onQueue={(id) => void onQueue(id)}
         pickBand={(band) => void pickBand(band)}
         pickMode={(mode) => void pickMode(mode)}
@@ -506,7 +507,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           myCall={status?.de_call}
           dxCall={status?.dx_call}
           dxGrid={status?.dx_grid}
-          onReply={onReply}
+          onReply={(id) => void onReply(id, true)}
           onQueue={onQueue}
           emptyText={t('rxw.empty')}
           newestAtBottom={prefs.rxBottom}
