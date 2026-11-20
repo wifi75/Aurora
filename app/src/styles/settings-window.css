@@ -404,8 +404,11 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .sw-fam:hover,.sw-l2:hover,.sw-l3:hover{background-color:color-mix(in srgb,var(--fam,#8e7bff) 12%,transparent)}
 .sw-fam:focus-visible,.sw-l2:focus-visible,.sw-l3:focus-visible{outline:2px solid var(--fam,#8e7bff);outline-offset:-2px}
 .sw-tree-gap{flex:1 0 12px}
-.sw-fam--info{--fam:#4a5a78;color:#a7b6cf}
-.sw-fam--info.sw-on{--fam:#8e7bff;color:#dbe4f3;background:color-mix(in srgb,#8e7bff 14%,transparent);box-shadow:inset 0 0 0 1px #8e7bff}
+.sw-fam--info{--fam:#8e7bff;color:#a7b6cf}
+/* Guida e Novita' hanno il loro colore, come le famiglie sopra: verde e oro */
+.sw-fam--guide{--fam:#34d399}
+.sw-fam--news{--fam:#fbbf24}
+.sw-fam--info.sw-on{color:#dbe4f3;background:color-mix(in srgb,var(--fam) 14%,transparent);box-shadow:inset 0 0 0 1px var(--fam)}
 .sw-ver{margin-left:auto;font-size:11px;color:#6f81a1}
 .sw-content{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0}
 .sw-crumbs{display:flex;align-items:center;gap:12px;padding:12px 20px 0 18px}

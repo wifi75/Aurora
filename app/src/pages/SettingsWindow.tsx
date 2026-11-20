@@ -452,7 +452,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           <button
             type="button"
             id={`swtab-${GUIDE_ID}`}
-            className={`sw-fam sw-fam--info${pageDef.id === GUIDE_ID ? ' sw-on' : ''}`}
+            className={`sw-fam sw-fam--info sw-fam--guide${pageDef.id === GUIDE_ID ? ' sw-on' : ''}`}
             aria-current={pageDef.id === GUIDE_ID ? 'page' : undefined}
             onClick={() => go(GUIDE_ID)}
           >
@@ -462,7 +462,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           <button
             type="button"
             id={`swtab-${NEWS_ID}`}
-            className={`sw-fam sw-fam--info${pageDef.id === NEWS_ID ? ' sw-on' : ''}`}
+            className={`sw-fam sw-fam--info sw-fam--news${pageDef.id === NEWS_ID ? ' sw-on' : ''}`}
             aria-current={pageDef.id === NEWS_ID ? 'page' : undefined}
             onClick={() => go(NEWS_ID)}
           >
