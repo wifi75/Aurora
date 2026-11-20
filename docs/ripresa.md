@@ -4,6 +4,12 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.314 (pubblicata 2026-11-20T12:43:43Z)
+
+- Etichetta dei satelliti opzionale (`barLabel` in `SatAlertSettings`, spenta di fabbrica; `lib/satBarLabel.ts`, `useBarLabel`): casella in Impostazioni › Modi › Satelliti › Inseguimento e rotore › Avvisi e nella campanella; senza, `SatAlertEngine` non e' montato (niente suono in ogni pagina). Etichetta in mezzo alla barra (`margin-inline: auto`, `ModeNav.tsx`), clic = sceglie il satellite (`getSat`/`putSat`, `pickSatellite`) e apre `#/satelliti`. Non vista a schermo con un satellite vero.
+- `UpdatePoster.tsx`: tolta `InstallProgress` (avanzamento nella schermata scura). Visto in anteprima con dati finti (pagina di prova poi tolta).
+- Il «doppio clic che non funziona» segnalato dal proprietario era la casella «Doppio clic: rispondi alla stazione» tolta per errore: nessun difetto. Le caselle `gen.dblReply` e `gen.confirmUnseen` sono vicine e simili: valutare nomi piu' distinti.
+
 ## Nella 0.11.313 (pubblicata 2026-11-20T12:28:56Z)
 
 - WEFAX (`WefaxPage.tsx`): l'ultima frequenza scelta nel menu si salva (`aurora.wefax.lastPreset`) e entrando nella pagina la radio ci torna. `modeRetune.ts`: la banda di prima si salva anche in `aurora.modenav.beforeReceiveOnly` e, se manca, si usa `lastDial('ft8')` (mai la banda piu' bassa, 1,810 MHz). Resta un caso da correggere: frequenze WEFAX dentro una banda radioamatoriale (es. 3 855 kHz) portano alla frequenza FT8 di quella banda e non a quella di prima.

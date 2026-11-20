@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.314',
-    released: '2026-11-20T13:00:00Z',
+    released: '2026-11-20T12:43:43Z',
     kind: 'fixed',
     title: [
       'Etichetta dei satelliti opzionale e al suo posto, locandina più semplice',
