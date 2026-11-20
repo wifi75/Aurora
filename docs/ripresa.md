@@ -4,6 +4,13 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.311 (pubblicata 2026-11-20T10:34:08Z)
+
+- Russo come ottava lingua: dizionario `app/src/i18n/ru/`, foglio `docs/traduzione-russa.csv`, script `export-ru.mjs`/`importa-ru.mjs` (8.311 voci: interfaccia, Guida, ultime 10 Novita', macro). Traduzione AI da far rivedere (Vladimir). NON nell'installatore Windows ne' nelle schede dell'agente nel tray (restano in inglese). `lang` della pagina impostato all'avvio.
+- Testi lunghi: `app/src/styles/lingue-lunghe.css` (9 punti corretti a 1280/1024/900 px); «Средне» al posto di «Удовлетворительно».
+- Locandina: bollino a stella «NUOVA APP» tradotto. WEFAX: display di sola ricezione (frequenza, USB/LSB, led), cascata unica `bare`, larghezze fisse.
+- Prossimo: 0.11.312 (conferma di chiamata solo per stazioni non nelle liste: segnalazione di F1DSZ), 0.11.313 (etichetta satelliti nella barra in alto, #82).
+
 ## Nella 0.11.310 (pubblicata 2026-11-20T09:50:38Z)
 
 - Correzioni alla 0.11.309: all'avvio con una versione nuova si apre direttamente la locandina (tolta la finestrella «Vuoi aggiornare?»); sul PC un solo ingranaggio (`ModeNav.tsx`) che apre le Impostazioni; Guida e Novita' dentro le Impostazioni.

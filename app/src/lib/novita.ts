@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.311',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T10:34:08Z',
     kind: 'new',
     title: [
       'Aurora parla anche russo',

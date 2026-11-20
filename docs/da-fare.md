@@ -3,9 +3,9 @@
 Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancante.md`.
 
 ## Adesso
+- [x] 0.11.311 pubblicata con il russo (da far rivedere a Vladimir; manca nell'installatore e nelle schede del tray)
 - [x] 0.11.310 pubblicata (locandina diretta, un ingranaggio, WEFAX su una riga e senza TUNE)
 - [x] 0.11.309 pubblicata (satelliti, ADIF automatico, conferma di chiamata, ROS 2,0, ora automatica)
-- [ ] Russo come ottava lingua (interfaccia, Guida, Novita'), con prova dei testi lunghi per non uscire dallo schermo
 - [ ] #83 Vladimir: pubblicare la risposta in russo (pronta) e chiedere la prova a mano V Sub/V Main
 - [ ] Rispondere a Pascal (F4LHL): ROS 2,0 nella scheda Radio, aurora_log.adi gia' scritto a ogni QSO, cartella ADIF a scelta, ALC (pacchetto)
 - [ ] Caso XX9BB: serve il pacchetto con la nuova riga «in onda» al prossimo caso
@@ -21,7 +21,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] #72 Hernan (IC-707 senza CAT, macOS): attende il suo pacchetto di assistenza
 - [ ] #81 Luc: prova Wait and Pounce
 - [ ] #80 HB9TZU: quali comandi FLDigi mancano
-- [ ] #82 ct1bxx: avviso satelliti su tutte le pagine (da progettare)
+- [ ] #82 ct1bxx: etichetta nella barra in alto in OGNI pagina, solo satelliti seguiti, 5 min prima (regolabile), suono, conto alla rovescia, chiusura a mano: risposta data, DA FARE (0.11.313)
+- [ ] F1DSZ: risposta inviata dal proprietario; correggere la conferma di chiamata (non sulle righe visibili delle liste) nella 0.11.312
 - [ ] #74 Luc: risposta sui contest, poi importare gli altri contest come gli ARRL
 
 ## Prove con la radio (le fai tu)
