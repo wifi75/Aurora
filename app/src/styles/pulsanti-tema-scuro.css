@@ -1,0 +1,311 @@
+/*
+ * Pulsanti nei temi scuri: il passaggio del mouse non deve mai rendere il testo illeggibile.
+ *
+ * Il difetto: bozze.css ha una regola generale che, al passaggio del mouse, porta OGNI pulsante (button, a.glass, .chip, [role='tab'])
+ * su uno sfondo blu scuro (#1d3157, e #16253f per .glass) con `!important`. I pulsanti pieni di colore (ciano, verde, ambra, rosso, viola)
+ * hanno pero' il testo SCURO («inchiostro»): sul blu scuro il testo scompare (contrasto 1.1-1.5 a 1). Lo stesso per i pulsanti chiari
+ * delle finestre chiare (salute stazione, avvisi, diagnosi) e per quelli trasparenti con testo scuro sul display giallo del rotore.
+ * La regola per i pulsanti con il suo stile di passaggio (es. `.update-icon:hover`) non basta: perde contro `!important`.
+ *
+ * La correzione: un @layer. Tra due dichiarazioni `!important` vince il livello PIU' VECCHIO e quello senza livello e' il piu' debole,
+ * quindi le regole qui sotto battono la regola generale a prescindere dalla specificita' (e dall'ordine dei file), senza toccare gli
+ * altri CSS. Ogni pulsante tiene la sua tavolozza: sfondo piu' chiaro dello stato normale (il suo colore mescolato al bianco) con lo
+ * stesso testo scuro (contrasto >= 4.5:1), o sfondo chiaro un poco piu' scuro per le finestre chiare.
+ *
+ * Solo temi scuri: `:root:not([data-theme='light'])` (il tema si imposta con data-theme='dark' | 'light'; senza attributo vale lo scuro,
+ * come nella media query prefers-color-scheme). Il tema chiaro non cambia. Caricato per ultimo, dopo lingue-lunghe.css.
+ */
+@layer aurora-pulsanti-tema-scuro {
+  /* ---- Pulsanti pieni di colore con testo scuro: lo sfondo si schiarisce, il testo resta scuro ---- */
+
+  /* testata: icona «nuova versione» (ciano) */
+  :root:not([data-theme='light']) .update-icon:hover:not(:disabled) {
+    background: #66e4d8 !important;
+    border-color: #0f8f83 !important;
+    color: #04201c !important;
+  }
+
+  /* striscia di aggiornamento (solo programma Windows): «versione», «Installa e riavvia», «Riprova». Arancio chiaro; da pronta, verde fluo */
+  :root:not([data-theme='light']) .update-strip .update-strip-ver:is(:hover, :focus-visible),
+  :root:not([data-theme='light']) .update-strip .update-strip-btn:is(:hover, :focus-visible) {
+    background: #ffc266 !important;
+    border-color: #ffc266 !important;
+    color: #2a1800 !important;
+  }
+  :root:not([data-theme='light']) .update-strip--ready .update-strip-ver:is(:hover, :focus-visible) {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #062a00 !important;
+  }
+  :root:not([data-theme='light']) .update-strip--ready .update-strip-btn:is(:hover, :focus-visible) {
+    background: #b6ff9e !important;
+    border-color: #062a00 !important;
+    color: #062a00 !important;
+  }
+
+  /* guida del primo avvio e locandina dell'aggiornamento: «Avanti», «Installa e riavvia» */
+  :root:not([data-theme='light']) .first-run__next:hover:not(:disabled) {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04201d !important;
+  }
+
+  /* pagina di associazione del telefono: «Collega» */
+  :root:not([data-theme='light']) button.primary:hover:not(:disabled) {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04201d !important;
+  }
+
+  /* dialoghi di conferma (Si / OK, nuovo log, chiamata mai vista) */
+  :root:not([data-theme='light']) .confirm-btn--ok:hover:not(:disabled) {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04131a !important;
+  }
+
+  /* STOP TX (acceso: rosso con testo scuro) */
+  :root:not([data-theme='light']) .stop-btn:not(.stop-btn--idle):hover:not(:disabled) {
+    background: color-mix(in srgb, #ff5d5d 78%, #fff) !important;
+    border-color: #ff5d5d !important;
+    color: #1a0505 !important;
+  }
+
+  /* STOP TX a riposo (contorno rosso, testo rosso): al passaggio resta rosso su un fondo rossiccio scuro, non rosso su blu (4.3:1) */
+  :root:not([data-theme='light']) .stop-btn.stop-btn--idle:not(.foxc--neon *):hover:not(:disabled) {
+    background: color-mix(in srgb, #ff5d5d 16%, #0b0f14) !important;
+    border-color: #ff5d5d !important;
+    color: #ff8a8a !important;
+  }
+
+  /* mini-pulsanti acquisiti delle schede (Filtro, Registro, Mappa: acceso = colore con testo scuro) e «Elimina» dell'esportazione */
+  :root:not([data-theme='light']) .dock-mini.dock-mini--on:not(.dock-mini--rx):hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 80%, #fff) !important;
+    border-color: var(--accent) !important;
+    color: #04201c !important;
+  }
+  :root:not([data-theme='light']) .export-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, #ff5d5d 16%, #0b0f14) !important;
+    border-color: #ff5d5d !important;
+    color: #ff8a8a !important;
+  }
+
+  /* avvisi del Fox/Hound e dell'agente (messaggi dell'autore, feste): il pulsante principale */
+  :root:not([data-theme='light']) .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #2cf5a4 78%, #fff) !important;
+    border-color: #2cf5a4 !important;
+    color: #04342c !important;
+  }
+  :root:not([data-theme='light']) .agent-card--festa .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #f5c542 78%, #fff) !important;
+    border-color: #f5c542 !important;
+    color: #3a2600 !important;
+  }
+  :root:not([data-theme='light']) .agent-card--t-natale .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #e8c063 78%, #fff) !important;
+    border-color: #e8c063 !important;
+    color: #3a0b14 !important;
+  }
+  :root:not([data-theme='light']) .agent-card--t-anno .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #ffd76a 78%, #fff) !important;
+    border-color: #ffd76a !important;
+    color: #2a1a00 !important;
+  }
+  :root:not([data-theme='light']) .agent-card--t-pasqua .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #9ee6b0 78%, #fff) !important;
+    border-color: #9ee6b0 !important;
+    color: #0f2e19 !important;
+  }
+  :root:not([data-theme='light']) .agent-card--t-servizio .agent-card-btn--main:hover:not(:disabled) {
+    background: color-mix(in srgb, #f5a524 78%, #fff) !important;
+    border-color: #f5a524 !important;
+    color: #2a1800 !important;
+  }
+
+  /* interruttore AUTO della riga RX (verde = in onda, ambra = prova) */
+  :root:not([data-theme='light']) .auto-switch--live:hover:not(:disabled) {
+    background: color-mix(in srgb, #2cf5a4 78%, #fff) !important;
+    border-color: #2cf5a4 !important;
+    color: #04201c !important;
+  }
+  :root:not([data-theme='light']) .auto-switch--dry:hover:not(:disabled) {
+    background: color-mix(in srgb, #ffb340 78%, #fff) !important;
+    border-color: #ffb340 !important;
+    color: #2b1700 !important;
+  }
+
+  /* filtri per etichetta (BFL) acceso */
+  :root:not([data-theme='light']) .bfl-pill--on:hover:not(:disabled) {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04201c !important;
+  }
+
+  /* interruttore del radar (verde) */
+  :root:not([data-theme='light']) .radar-switch--on:hover:not(:disabled) {
+    background: color-mix(in srgb, #2cf5a4 78%, #fff) !important;
+    border-color: #2cf5a4 !important;
+    color: #062217 !important;
+  }
+
+  /* display radio: SPLIT acceso (verde) e spento (testo spento su fondo nero: resta leggibile, senza diventare blu) */
+  :root:not([data-theme='light']) .rd-split-btn--on:hover:not(:disabled) {
+    background: color-mix(in srgb, #3fe07a 78%, #fff) !important;
+    border-color: #3fe07a !important;
+    color: #02140a !important;
+  }
+  :root:not([data-theme='light']) .rd-split-btn:not(.rd-split-btn--on):hover:not(:disabled) {
+    background: #16222a !important;
+    border-color: #4a6572 !important;
+    color: #9ab0ba !important;
+  }
+
+  /* scheda del rotore: pulsante «altro» e «preset» accesi (ambra) */
+  :root:not([data-theme='light']) .rotor-bar-btn.on:hover:not(:disabled) {
+    background: color-mix(in srgb, #e8a33a 78%, #fff) !important;
+    border-color: #e8a33a !important;
+    color: #1a1205 !important;
+  }
+
+  /* pagina Fox: pulsante di azione (ciano o neon) e scelte accese (viola) */
+  :root:not([data-theme='light']) .foxc-btn--accent:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 80%, #fff) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent-ink) !important;
+  }
+  :root:not([data-theme='light']) .foxc--neon .foxc-btn--accent:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--nx-cyan) 80%, #fff) !important;
+    border-color: var(--nx-cyan) !important;
+    color: #061815 !important;
+  }
+  :root:not([data-theme='light']) .foxc-seg button.on:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--mode-ft8) 80%, #fff) !important;
+    border-color: transparent !important;
+    color: var(--mode-ft8-ink) !important;
+  }
+  :root:not([data-theme='light']) .foxc--neon .foxc-seg button.on:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--nx-violet) 80%, #fff) !important;
+    border-color: var(--nx-violet) !important;
+    color: #12052a !important;
+  }
+
+  /* Impostazioni > Cascata: «Compatto» / «Veloce» (quello scelto e' ciano con testo scuro) */
+  :root:not([data-theme='light']) .wfs-style[aria-pressed='true']:is(:hover, :focus-visible):not(:disabled) {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04201d !important;
+  }
+
+  /* Impostazioni > Informazioni: il primo collegamento (sito) e' ciano con testo scuro */
+  :root:not([data-theme='light']) .about-link:first-child:hover {
+    background: color-mix(in srgb, #3fd6c8 80%, #fff) !important;
+    border-color: #3fd6c8 !important;
+    color: #04201d !important;
+  }
+
+  /* messaggi dell'autore (Impostazioni): la lingua scelta era bianca su ciano (--on-accent non esiste); ora testo scuro, anche al passaggio */
+  :root:not([data-theme='light']) .own-preview-langs .own-chip--on,
+  :root:not([data-theme='light']) .own-preview-langs .own-chip--on:is(:hover, :focus-visible) {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent-ink, #04201d) !important;
+  }
+  :root:not([data-theme='light']) .own-preview-langs .own-chip--on:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 80%, #fff) !important;
+  }
+
+  /* ---- Finestre chiare nel tema scuro (testo scuro su sfondo bianco): il passaggio del mouse resta chiaro ---- */
+
+  /* salute della stazione: «Chiudi», «Piu' tardi» e la × */
+  :root:not([data-theme='light']) .hl-btn:not(.hl-btn--primary):hover:not(:disabled) {
+    background: #e5e7eb !important;
+    border-color: #9aa3b2 !important;
+    color: #111827 !important;
+  }
+  :root:not([data-theme='light']) .hl-btn--primary:hover:not(:disabled) {
+    background: #15803d !important;
+    border-color: #15803d !important;
+    color: #ffffff !important;
+  }
+  :root:not([data-theme='light']) .hl-x:hover:not(:disabled) {
+    background: #e5e7eb !important;
+    border-color: transparent !important;
+    color: #111827 !important;
+  }
+
+  /* pannello «nuova versione» della testata: «Note e download», «Piu' tardi» */
+  :root:not([data-theme='light']) .update-pop .glass:hover:not(:disabled) {
+    background: #ffffff !important;
+    border-color: #0f8f83 !important;
+    color: #04201c !important;
+  }
+
+  /* barra del DX cercato */
+  :root:not([data-theme='light']) .wanted-bar .glass:hover:not(:disabled) {
+    background: #ffffff !important;
+    border-color: #b88a00 !important;
+    color: #1a1400 !important;
+  }
+
+  /* diagnosi della stazione: pulsanti e collegamenti dentro le schede bianche */
+  :root:not([data-theme='light']) .diag-item button:hover:not(:disabled),
+  :root:not([data-theme='light']) .diag-item a:hover {
+    background: #e8ecf3 !important;
+    border-color: #9aa3b2 !important;
+    color: #111827 !important;
+  }
+
+  /* trasmissione bloccata (PTT): pulsanti bianchi con testo rosso */
+  :root:not([data-theme='light']) .ptt-stuck-actions button:hover:not(:disabled) {
+    background: #ffe9ec !important;
+    border-color: #b0001e !important;
+    color: #b0001e !important;
+  }
+
+  /* fila CQ in basso: le schede hanno il passaggio chiaro con testo scuro */
+  :root:not([data-theme='light']) .cq-strip .cq-chip.cq-chip--a:hover {
+    background: #ece7ff !important;
+    border-color: #b9aaff !important;
+    color: #0b1220 !important;
+  }
+  :root:not([data-theme='light']) .cq-strip .cq-chip.cq-chip--b:hover {
+    background: #dcf8ee !important;
+    border-color: #8fdcc1 !important;
+    color: #0b1220 !important;
+  }
+
+  /* ---- Piccoli testi spenti, che al passaggio diventavano poco leggibili ---- */
+
+  /* scheda del rotore: «?» e ingranaggio hanno inchiostro scuro pensato per il display giallo; sul fondo scuro della scheda si schiarisce */
+  :root:not([data-theme='light']) .rotor-side .rotor-help {
+    color: #d4a900 !important;
+    border-color: #d4a900 !important;
+  }
+  :root:not([data-theme='light']) .rotor-side .rotor-help:hover:not(:disabled) {
+    background: rgb(212 169 0 / 0.22) !important;
+    border-color: #f0cc3a !important;
+    color: #f0cc3a !important;
+  }
+
+  /* Impostazioni, albero a sinistra: la versione (grigia) e la freccia viola restano leggibili sul blu del passaggio */
+  :root:not([data-theme='light']) .sw-fam:hover .sw-ver,
+  :root:not([data-theme='light']) .sw-fam:hover .sw-chev {
+    color: #c9d4e6 !important;
+  }
+  :root:not([data-theme='light']) .sw-l2--sub.sw-open:hover .sw-chev {
+    color: #c9bfff !important;
+  }
+
+  /* Impostazioni: i collegamenti-pulsante («Elenco bande...») hanno testo ciano: al focus/passaggio lo sfondo resta quasi trasparente */
+  :root:not([data-theme='light']) .sw-panel .sw-linkbtn:is(:hover, :focus-visible):not(:disabled) {
+    background: rgb(63 214 200 / 0.14) !important;
+    background-image: none !important;
+    color: var(--accent) !important;
+  }
+
+  /* riga modo/banda: la freccia bianca nel riquadro viola restava 3.3:1 al passaggio (viola chiaro); resta del viola di riposo */
+  :root:not([data-theme='light']) .mode-switch-btn:hover .mode-switch-caret,
+  :root:not([data-theme='light']) .freq-picker-btn:hover .mode-switch-caret {
+    background: #6d5bf0 !important;
+  }
+}
