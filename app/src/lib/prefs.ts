@@ -18,6 +18,8 @@ export interface Prefs {
   rxExclusive: boolean;
   /** Il doppio clic su un messaggio risponde a quella stazione (come nel motore); spento seleziona soltanto. */
   doubleClickReply: boolean;
+  /** Prima di chiamare una stazione che non compare tra i decode degli ultimi 15 minuti si chiede conferma. */
+  confirmUnseenCall: boolean;
   /** Il tasto Esc ferma la trasmissione e spegne AutoTX e Abilita Tx. */
   escStop: boolean;
   /** Al cambio di banda o di modo si svuota l'attivita' di banda: i messaggi dell'altra banda non servono piu'. */
@@ -56,7 +58,7 @@ type ReadableStorage = Pick<Storage, 'getItem'> | null;
 type WritableStorage = Pick<Storage, 'setItem'> | null;
 
 export function defaultPrefs(): Prefs {
-  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: true, cmdLogQso: true, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
+  return { distanceUnit: 'km', showCountry: true, showFlag: true, showDistance: true, showDt: true, showAge: false, bandBottom: false, rxBottom: false, rxExclusive: false, doubleClickReply: true, confirmUnseenCall: true, escStop: true, clearOnChange: true, log4omCount: 20, dxpedDays: 15, insertBlank: true, gapStyle: 'bold', showTx: true, showAzimuth: false, cmdTune: true, cmdLogQso: true, showQmap: false, contestOrder: 'valore', contestOnlyCq: false, supportEmail: '', sstvSmooth: false };
 }
 
 export function readPrefs(storage: ReadableStorage): Prefs {
@@ -66,7 +68,7 @@ export function readPrefs(storage: ReadableStorage): Prefs {
     if (!raw) return prefs;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (parsed.distanceUnit === 'km' || parsed.distanceUnit === 'mi') prefs.distanceUnit = parsed.distanceUnit;
-    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
+    for (const key of ['showCountry', 'showFlag', 'showDistance', 'showDt', 'showAge', 'bandBottom', 'rxBottom', 'rxExclusive', 'doubleClickReply', 'confirmUnseenCall', 'escStop', 'clearOnChange', 'insertBlank', 'showTx', 'showAzimuth', 'cmdTune', 'cmdLogQso', 'showQmap', 'contestOnlyCq', 'sstvSmooth'] as const) {
       if (typeof parsed[key] === 'boolean') prefs[key] = parsed[key];
     }
     // «Tune» e «Log QSO» nei Comandi: prima erano nascosti di base e nessuno li trovava (proprietario, 2026-11-13). Le preferenze salvate

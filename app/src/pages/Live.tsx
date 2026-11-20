@@ -32,6 +32,8 @@ import { PhoneTabs } from '../components/PhoneTabs';
 import { RadioDisplayHeader } from '../components/radio-display/RadioDisplayHeader';
 import { TxCommands } from '../components/TxCommands';
 import { RxControls } from '../components/RxControls';
+import { askCallUnseen } from '../components/CallUnseenDialog';
+import { needsCallConfirm } from '../lib/seenStation';
 import { NewDxAlert } from '../components/NewDxAlert';
 import { StatusBar } from '../components/StatusBar';
 import { SpotMarkers } from '../components/SpotMarkers';
@@ -415,6 +417,10 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
       const target = useStation.getState().decodes.find((d) => d.id === id);
       // la stazione chiamata compare subito nel blocco DX e nella barra, senza aspettare che il motore la riporti
       const call = target ? callOf(target.text) : null;
+      // una stazione che non e' tra i decode recenti si chiama solo dopo conferma (clic o doppio clic accidentale)
+      if (call && needsCallConfirm(usePrefs.getState().prefs.confirmUnseenCall, useStation.getState().decodes, call)) {
+        if (!(await askCallUnseen(call, target?.country))) return;
+      }
       if (call) useStation.getState().setPendingDx(call);
       await attempt(
         async () => {
