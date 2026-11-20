@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.319 - 2026-11-20
+
 - Satelliti: l'etichetta del satellite in arrivo accorcia con i puntini un nome lungo (per esempio «RS-44 & BREEZE-KM R/B») e il conto alla rovescia resta sempre visibile (segnalazione #82).
 - Avvio: se la finestra principale non si apre nemmeno dopo i quattro tentativi (WebView2 registrato ma la sua creazione fallisce, per esempio 0x80070578), Aurora mostra un messaggio nelle sei lingue che dice cosa fare (riavviare Windows, aggiornare o reinstallare WebView2) e offre di reinstallare WebView2; con «No» si chiude. Prima Tauri si fermava con un panic senza dire niente (rapporto della 0.11.300). Olandese e russo ricadono sull'inglese.
 

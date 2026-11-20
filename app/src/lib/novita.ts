@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.319',
+    released: '2026-11-20T18:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Etichetta dei satelliti con il conto alla rovescia sempre visibile, messaggio se la finestra non si apre',
+      'Satellite label with the countdown always visible, a message if the window does not open',
+      'Satelliten-Hinweis mit stets sichtbarem Countdown, Meldung wenn sich das Fenster nicht öffnet',
+      'Étiquette des satellites avec le compte à rebours toujours visible, message si la fenêtre ne s’ouvre pas',
+      'Etiqueta de satélites con la cuenta atrás siempre visible, mensaje si la ventana no se abre',
+      'Etiqueta dos satélites com a contagem decrescente sempre visível, mensagem se a janela não abrir',
+    ],
+    text: [
+      'L’etichetta del satellite in arrivo accorcia con i puntini un nome lungo (per esempio «RS-44 & BREEZE-KM R/B») e il conto alla rovescia resta sempre visibile. Se la finestra di Aurora non si apre nemmeno dopo quattro tentativi (WebView2 che non riesce a crearla), Aurora ora lo dice con un messaggio che spiega cosa fare (riavviare Windows, aggiornare o reinstallare WebView2) e offre di reinstallare WebView2, invece di chiudersi con un errore senza spiegazioni.',
+      'The incoming-satellite label now shortens a long name with dots (for example “RS-44 & BREEZE-KM R/B”) and the countdown always stays visible. If the Aurora window does not open even after four attempts (WebView2 failing to create it), Aurora now says so with a message that explains what to do (restart Windows, update or reinstall WebView2) and offers to reinstall WebView2, instead of closing with an unexplained error.',
+      'Der Hinweis auf den nahenden Satelliten kürzt einen langen Namen jetzt mit Punkten ab (zum Beispiel „RS-44 & BREEZE-KM R/B“), und der Countdown bleibt immer sichtbar. Wenn sich das Aurora-Fenster auch nach vier Versuchen nicht öffnet (WebView2 kann es nicht erzeugen), sagt Aurora das jetzt mit einer Meldung, die erklärt, was zu tun ist (Windows neu starten, WebView2 aktualisieren oder neu installieren), und bietet an, WebView2 neu zu installieren, statt sich ohne Erklärung mit einem Fehler zu schließen.',
+      'L’étiquette du satellite en approche raccourcit maintenant un nom long avec des points (par exemple « RS-44 & BREEZE-KM R/B ») et le compte à rebours reste toujours visible. Si la fenêtre d’Aurora ne s’ouvre pas même après quatre essais (WebView2 n’arrive pas à la créer), Aurora le dit maintenant par un message qui explique quoi faire (redémarrer Windows, mettre à jour ou réinstaller WebView2) et propose de réinstaller WebView2, au lieu de se fermer avec une erreur sans explication.',
+      'La etiqueta del satélite que llega acorta con puntos un nombre largo (por ejemplo «RS-44 & BREEZE-KM R/B») y la cuenta atrás siempre queda visible. Si la ventana de Aurora no se abre ni siquiera tras cuatro intentos (WebView2 no logra crearla), Aurora ahora lo dice con un mensaje que explica qué hacer (reiniciar Windows, actualizar o reinstalar WebView2) y ofrece reinstalar WebView2, en lugar de cerrarse con un error sin explicación.',
+      'A etiqueta do satélite a chegar encurta com pontos um nome longo (por exemplo «RS-44 & BREEZE-KM R/B») e a contagem decrescente fica sempre visível. Se a janela do Aurora não abrir nem depois de quatro tentativas (o WebView2 não a consegue criar), o Aurora agora diz isso com uma mensagem que explica o que fazer (reiniciar o Windows, atualizar ou reinstalar o WebView2) e oferece-se para reinstalar o WebView2, em vez de fechar com um erro sem explicação.',
+    ],
+  },
+  {
     version: '0.11.318',
     released: '2026-11-20T14:29:42Z',
     kind: 'fixed',
@@ -818,27 +839,5 @@ export const NOVITA: readonly Novita[] = [
       'Con algunas Icom y Hamlib (IC-756PRO) la radio acababa en el VFO B tras reiniciar Aurora: con «Leer también los demás datos de la radio» activado, Aurora leía el VFO B y Hamlib, que con estas radios no sabe decir en qué VFO están, pasaba al VFO B y no volvía. Ahora el VFO B ya no se lee si la radio no dice en qué VFO está: la radio ya no se mueve. El tráfico con la radio lo mostró el nuevo paquete de asistencia.',
       'Com alguns rádios Icom e Hamlib (IC-756PRO) o rádio ficava no VFO B depois de reiniciar a Aurora: com «Ler também os outros dados do rádio» ligado, a Aurora lia o VFO B e o Hamlib, que com estes rádios não sabe dizer em que VFO estão, passava ao VFO B e não voltava. Agora o VFO B já não é lido se o rádio não diz em que VFO está: o rádio já não é movido. O tráfego com o rádio foi mostrado pelo novo pacote de assistência.',
     ],
-  },
-  {
-    version: '0.11.287',
-    released: '2026-11-17T19:45:26Z',
-    kind: 'new',
-    title: [
-      'Pacchetto di assistenza completo',
-      'Complete support package',
-      'Vollständiges Supportpaket',
-      'Paquet d’assistance complet',
-      'Paquete de asistencia completo',
-      'Pacote de assistência completo',
-    ],
-    text: [
-      'Il pacchetto che Aurora manda a chi la sviluppa ora porta tutto quello che serve a capire un guaio: i comandi mandati alla radio con le risposte e i tempi, le impostazioni e lo stato della radio, il PC, l’audio, la finestra e gli ultimi errori della pagina, e un riassunto del registro con gli avvisi che si ripetono. Senza dati personali.',
-      'The package Aurora sends to whoever develops it now carries everything needed to understand a problem: the commands sent to the radio with the answers and timings, the radio settings and status, the PC, the audio, the window and the latest page errors, and a summary of the log with the warnings that repeat. No personal data.',
-      'Das Paket, das Aurora an die Entwicklung schickt, enthält jetzt alles, was zum Verstehen eines Problems nötig ist: die an das Funkgerät gesendeten Befehle mit Antworten und Zeiten, Einstellungen und Status des Funkgeräts, PC, Audio, Fenster und die letzten Seitenfehler sowie eine Zusammenfassung des Logs mit den sich wiederholenden Warnungen. Ohne persönliche Daten.',
-      'Le paquet qu’Aurora envoie à qui la développe contient maintenant tout ce qu’il faut pour comprendre un problème : les commandes envoyées à la radio avec les réponses et les durées, les réglages et l’état de la radio, le PC, l’audio, la fenêtre et les dernières erreurs de la page, et un résumé du journal avec les avertissements qui se répètent. Sans données personnelles.',
-      'El paquete que Aurora envía a quien la desarrolla lleva ahora todo lo necesario para entender un problema: los comandos enviados a la radio con las respuestas y los tiempos, los ajustes y el estado de la radio, el PC, el audio, la ventana y los últimos errores de la página, y un resumen del registro con los avisos que se repiten. Sin datos personales.',
-      'O pacote que a Aurora envia a quem a desenvolve leva agora tudo o que é preciso para perceber um problema: os comandos enviados ao rádio com as respostas e os tempos, as definições e o estado do rádio, o PC, o áudio, a janela e os últimos erros da página, e um resumo do registo com os avisos que se repetem. Sem dados pessoais.',
-    ],
-    featured: true,
   },
 ];
