@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Satelliti: se la radio non accetta lo split (per esempio l'IC-820H con Hamlib: «funzione non disponibile»), Aurora non lo riprova piu' ogni secondo (5000 tentativi in un'ora) e il Doppler della ricezione va avanti lo stesso; la frequenza di trasmissione si prova senza ripetere se fallisce, e l'errore resta scritto nello stato (segnalazione #72). Non provato con un'IC-820H.
+
 ## 0.11.305 - 2026-11-19
 
 - DX Cluster: il primo cluster dell'elenco (IU3WJQ-7) se cade si riprova ogni 5-10 secondi (prima fino a 2 minuti, come gli altri): appena torna disponibile gli spot tornano a lui, perche' ogni spot sceglie di nuovo il primo collegato.

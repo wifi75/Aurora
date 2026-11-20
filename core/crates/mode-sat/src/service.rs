@@ -532,6 +532,10 @@ struct LoopState {
     last_rx: Option<u64>,
     last_tx: Option<u64>,
     split_on: bool,
+    /// La radio non accetta il comando di split (Hamlib: «funzione non disponibile»): non lo si riprova ogni secondo e il Doppler della ricezione va avanti lo stesso.
+    split_failed: bool,
+    /// La radio non accetta la frequenza di trasmissione: non la si riprova ogni secondo.
+    tx_failed: bool,
     last_rotor: Option<(f64, f64)>,
     prepointed_for: Option<f64>,
     rotor_was_on: bool,
@@ -648,12 +652,15 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
         let mut ok = true;
         // radio con VFO separati: split acceso una volta; per le frequenze uguali (APRS) non serve
         let wants_split = (plan.up_nominal_hz - plan.down_nominal_hz).abs() > 1_000.0;
-        if wants_split && !st.split_on {
+        if wants_split && !st.split_on && !st.split_failed {
             match radio.set_split(true) {
                 Ok(()) => st.split_on = true,
                 Err(e) => {
+                    // prima l'errore fermava anche la ricezione e si riprovava ogni secondo (IC-820H: 5000 tentativi in un'ora, segnalazione #72): ora si
+                    // segna una volta, la ricezione col Doppler va avanti e la frequenza di trasmissione si prova lo stesso
+                    tracing::warn!("satelliti: la radio non accetta lo split ({e}): il Doppler segue solo dove la radio lo permette");
+                    st.split_failed = true;
                     st.radio_error = Some(format!("split: {e}"));
-                    ok = false;
                 }
             }
         }
@@ -668,16 +675,17 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
             }
         }
         let txf = plan.tx_hz.round() as u64;
-        if ok && wants_split && st.last_tx.is_none_or(|last| last.abs_diff(txf) >= 5) {
+        if ok && wants_split && !st.tx_failed && st.last_tx.is_none_or(|last| last.abs_diff(txf) >= 5) {
             match radio.set_tx_hz(txf) {
                 Ok(()) => st.last_tx = Some(txf),
                 Err(e) => {
+                    tracing::warn!("satelliti: la radio non accetta la frequenza di trasmissione ({e}): non si riprova");
+                    st.tx_failed = true;
                     st.radio_error = Some(format!("trasmissione: {e}"));
-                    ok = false;
                 }
             }
         }
-        if ok {
+        if ok && !st.split_failed && !st.tx_failed {
             st.radio_error = None;
         }
         now.radio_active = ok;
@@ -694,6 +702,8 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
         st.last_rx = None;
         st.last_tx = None;
         st.split_on = false;
+        st.split_failed = false;
+        st.tx_failed = false;
         st.radio_error = None;
     }
     now.radio.error = st.radio_error.clone();
