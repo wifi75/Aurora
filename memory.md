@@ -257,6 +257,7 @@ Stato al 2026-11-20, versione 0.11.321 pubblicata alle 18:03:31 UTC (IC-820H: tr
 
 ## Linux (2026-11-05)
 - Pwr: su Windows e' il volume della scheda (`WindowsVolumePort`); su Linux quel comando non c'e', quindi il trasmettitore resta senza quel livello e Pwr attenua il segnale generato come JTDX (prima su Linux si trasmetteva sempre al massimo).
+- **Lvl TX (prima Pwr), 2026-11-20**: ora di fabbrica attenua il segnale generato anche su Windows e Aurora non scrive il volume di Windows; la casella «Lvl TX = volume di Windows» (controllo numerico `tx_level_windows`, `rig.rs`, salvato in `SavedControls.tx_level_windows`) riporta il comportamento di prima. `WindowsVolumePort::route` legge `engine_native::tx_level_windows()` a ogni trasmissione. File dei controlli senza il campo: attenuazione a 0 dB e livelli per banda azzerati (erano volumi di Windows). Motivo: Pascal F4LHL, ALC dell'Icom al massimo con volume di Windows a 50 %. Nomi scelti dal proprietario: Lvl TX, TX Lvl, TX-Pegel, Niv TX (fr, es, pt), TX-niv.
 - Niente installatore degli aggiornamenti su Linux (`update_installer` solo con `cfg!(windows)`): l'avviso porta alla release con AppImage e `.deb`. Aggiornamento AppImage a un clic in `TODO.md`.
 - `GET /health` ha `os` (`windows`, `linux`): l'interfaccia lo usa per non proporre OmniRig fuori da Windows.
 

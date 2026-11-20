@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Cursore Pwr rinominato «Lvl TX» (it), «TX Lvl» (en), «TX-Pegel» (de), «Niv TX» (fr, es, pt), «TX-niv» (nl): e' il livello audio di uscita verso la radio, non i watt. Di fabbrica attenua il segnale generato, come WSJT-X e JTDX, e Aurora non scrive mai il volume di Windows (segnalazione di Pascal F4LHL: con il volume di Windows a 50 % l'ALC dell'Icom andava al massimo e il segnale si distorceva). Nuova casella in Impostazioni > Audio, sotto il cursore dell'uscita, «Lvl TX = volume di Windows» (solo su Windows, spenta di fabbrica) per chi si trova bene con il comportamento di prima. Un file dei controlli scritto prima riparte da 0 dB di attenuazione e senza livelli per banda, cosi' l'uscita resta quella di prima. Suggerimento sul cursore: ALC a zero o appena visibile = livello giusto, ALC alto = abbassa Lvl TX, i watt si regolano con RF Power sulla radio. Guida e testi in sette lingue; le cinque frasi della Guida riscritte non hanno ancora la traduzione olandese (ricadono sull'inglese).
+
 ## 0.11.321 - 2026-11-20
 
 - Impostazioni radio, Hamlib: pulsante «Usa un rigctld gia' acceso» (modello «NET rigctl», indirizzo 127.0.0.1:4532 se non ce n'e' gia' uno di rete, condivisione spenta) per chi ha il suo Hamlib avviato per primo (segnalazione #87).
