@@ -18,6 +18,8 @@ import { ReceiveView } from '../components/sstv/ReceiveView';
 import { SstvTuning } from '../components/sstv/SstvTuning';
 import { useT } from '../i18n';
 import { useGroups } from '../lib/detached';
+import { retuneForSstv } from '../lib/modeRetune';
+import { toast } from '../lib/toast';
 import { REMOTE_HOST } from '../lib/phone';
 import { ListenGate } from '../components/ListenGate';
 import { openSettingsWindow } from '../lib/settingsWindow';
@@ -26,8 +28,16 @@ import '../styles/sstv.css';
 
 /** La pagina SSTV: ricezione o compositore nell'area principale, sotto le cronologie delle ricevute e delle trasmesse. */
 export function SstvPage({ solo = false }: { solo?: boolean } = {}) {
+  const t = useT();
   const groups = useGroups();
   const elsewhere = groups.some((g) => g.open && g.items.includes('sstv'));
+  // entrando nella pagina SSTV la radio va sui 20 m (14,230 MHz), la banda principale dell'SSTV; non in una finestra a parte ne' dal telefono
+  const wasElsewhere = useRef(false);
+  useEffect(() => {
+    if (solo || REMOTE_HOST || elsewhere || wasElsewhere.current) return;
+    wasElsewhere.current = true;
+    void retuneForSstv().catch(() => toast(t('mode.retuneFail', { mode: 'SSTV' }), 'error'));
+  }, [solo, elsewhere, t]);
   if (elsewhere && !solo) return <DetachedNote item="sstv" />;
   return <SstvBody solo={solo} />;
 }

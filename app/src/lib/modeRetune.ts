@@ -87,3 +87,14 @@ export async function retuneForMode(client: QueryClient, mode: string): Promise<
 export async function retuneForText(client: QueryClient, mode: TextMode): Promise<number | null> {
   return retuneTo(client, bandPlanRows(mode));
 }
+
+/** Frequenza di chiamata SSTV dei 20 m (manopola in USB): la banda principale dell'SSTV, dove si va entrando nella pagina. */
+export const SSTV_MAIN_HZ = 14_230_000;
+
+/** Entrando nella pagina SSTV da un'altra pagina la radio va sui 20 m (14,230 MHz); non si muove se e' gia' li' o se non c'e' una radio. */
+export async function retuneForSstv(): Promise<number | null> {
+  const now = useStation.getState().status?.dial_hz ?? 0;
+  if (now <= 0 || Math.abs(now - SSTV_MAIN_HZ) < 1000) return null;
+  await postFrequency(SSTV_MAIN_HZ);
+  return SSTV_MAIN_HZ;
+}
