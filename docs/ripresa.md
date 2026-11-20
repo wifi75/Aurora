@@ -4,6 +4,11 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.318 (pubblicata 2026-11-20T14:29:42Z)
+
+- #83 (Vladimir, IC-820H, pacchetto `1C4290E3`): nel registro `F 437790670` diventa `f` = `137790670` e `F 145993111` sul «Sub» mostra 445,99: su questa radio Main e Sub sono le due **bande** (144 e 430 MHz) e una frequenza scritta nella banda sbagliata viene «ripiegata» di 300 MHz. `rig-control/src/hamlib_rig.rs`: `set_uplink_via_vfo` legge una volta per connessione la banda di Main e Sub (`sat_band_map`, azzerata alla riconnessione) e con `uplink_vfos` scrive la trasmissione sul VFO della sua banda e torna a quello dell'altra per la ricezione; con bande uguali o non leggibili resta la coppia Sub/Main di sempre. Provato con la radio finta e con il registro, NON con la radio vera: attende il test di Vladimir (ripiego a due VFO acceso, ISS o RS-44).
+- #86 chiusa (M8GVC: il CQ ora parte con AutoTX spento).
+
 ## Nella 0.11.317 (pubblicata 2026-11-20T14:14:59Z)
 
 - #86 (M8GVC, FT-710): con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx spegneva Abilita Tx e non partiva niente. Causa: `TxDriver::plan` (`engine-native/src/tx.rs`) scambiava quel CQ per un CQ automatico a QSO finito (`cq_by_user` era vero solo con il comando `CallCq`). Correzione: `TxCommand::Enable(true)` con `ntx() == 6` e `SelectTx(6)` con Abilita Tx acceso impostano `cq_by_user`. Prova `enable_tx_with_the_cq_message_selected_transmits_even_with_auto_tx_off` (fallisce senza la correzione). Il CQ automatico a QSO finito resta solo con AutoTX.

@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.318',
-    released: '2026-11-20T17:00:00Z',
+    released: '2026-11-20T14:29:42Z',
     kind: 'fixed',
     title: [
       'Satelliti con radio a due bande: la trasmissione va sulla banda giusta',

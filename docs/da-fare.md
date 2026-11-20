@@ -4,6 +4,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Adesso
 - [x] 0.11.315 pubblicata (rotore fuori dalla barra, «Mostra in home» nelle Impostazioni): da guardare a schermo
+- [x] 0.11.318 pubblicata (IC-820H: trasmissione sul VFO della sua banda): attendo il test di Vladimir con ISS o RS-44 e la sua risposta su quale banda sta su Main
+- [x] #86 M8GVC chiusa: il CQ parte con AutoTX spento
 - [x] 0.11.317 pubblicata (CQ con AutoTX spento #86, Guida aggiornata): risposta data a M8GVC, da provare
 - [ ] #83 IC-820H con SAT acceso: la radio scambia da sola principale e secondario, Aurora legge 145 e 435 MHz a turno (212 «cambi di banda»): serve il test di Vladimir; poi decidere come leggere solo il VFO giusto
 - [ ] #85 Luc: risposta data (watchdog di trasmissione), attendo i suoi minuti
