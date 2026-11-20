@@ -2,6 +2,14 @@
 
 ## Non rilasciato
 
+## 0.11.307 - 2026-11-20
+
+- WEFAX: nuova pagina per ricevere le cartine meteo e isobariche in HF (facsimile meteo): visore che si adatta alla larghezza, 1:1 con scorrimento, zoom e segui l'immagine; comandi (Parti subito, Chiudi e salva, Scarta, IOC 576/288, 60/90/120/240 righe al minuto, filtro, modo manuale, correzione dell'inclinazione); cronologia con miniature e PNG; menu a tendina delle stazioni (NWS marzo 2025, DWD) per banda e frequenza, con la radio sulla portante in USB; pagina staccabile in una finestra per il secondo schermo. Solo ricezione, non provata con segnali reali.
+- SSTV: entrando nella pagina la radio va sui 20 m (14,230 MHz).
+- TUNE: un clic avvia sempre l'accordatura automatica e il tasto resta acceso (giallo) finche' non lo spegni con un altro clic.
+- Aggiornamenti: all'avvio compare la finestrella «Vuoi aggiornare?» (Si, oppure X per rimandare al giorno dopo); l'icona in testata torna ogni giorno; il tray ripropone la cartolina a ogni avvio e ogni 6 ore finche' Aurora non e' aggiornata.
+- Olandese: traduzione completa (202 voci).
+
 ## 0.11.306 - 2026-11-20
 
 - Satelliti: se la radio non accetta lo split (per esempio l'IC-820H con Hamlib: «funzione non disponibile»), Aurora non lo riprova piu' ogni secondo (5000 tentativi in un'ora) e il Doppler della ricezione va avanti lo stesso; la frequenza di trasmissione si prova senza ripetere se fallisce, e l'errore resta scritto nello stato (segnalazione #72). Non provato con un'IC-820H.
