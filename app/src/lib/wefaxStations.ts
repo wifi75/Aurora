@@ -1,7 +1,7 @@
 /**
  * Le stazioni che trasmettono cartine meteo in WEFAX (fax meteo, isobariche), con le frequenze assegnate in kHz.
  * Fonti: «Worldwide Marine Radiofacsimile Broadcast Schedules» del National Weather Service (NOAA), edizione del 7 marzo 2025
- * (https://weather.gov/marine/media/rfax.pdf), e per la Germania gli orari del Deutscher Wetterdienst (DDH3 3855, DDK3 7880, DDK6 13882,5 kHz,
+ * (https://weather.gov/media/marine/rfax.pdf), e per la Germania gli orari del Deutscher Wetterdienst (DDH3 3855, DDK3 7880, DDK6 13882,5 kHz,
  * https://www.dwd.de/EN/specialusers/shipping/broadcast_en/broadcast_node.html). Messe fuori di proposito: stazioni cessate (Canada 2019,
  * Wellington 2023), con dati del 1997-2014 o segnate con asterisco senza conferma (Pevek, Atene, Murmansk, Bangkok, Sydney NS, Guangzhou).
  * Le frequenze sono quelle ASSEGNATE: la portante, e quindi la frequenza della radio in USB, e' 1,9 kHz sotto.
