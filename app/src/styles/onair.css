@@ -792,6 +792,23 @@
   opacity: 0.8;
 }
 
+/* con il mouse sopra (o la tastiera) il pulsante dell'orologio resta leggibile: stesso testo scuro su giallo, appena piu' acceso */
+.pill--warn:hover,
+.pill--warn:focus-visible,
+.pill--warn:active,
+button.pill--warn:hover:not(:disabled) {
+  color: #3a2c00;
+  background: #ffe27a;
+  border-color: #b88f00;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #ffd23f 45%, transparent);
+}
+
+.pill--warn:hover .muted,
+.pill--warn:focus-visible .muted {
+  color: #3a2c00;
+  opacity: 0.9;
+}
+
 /* finestra DX Cluster */
 .cluster {
   display: flex;

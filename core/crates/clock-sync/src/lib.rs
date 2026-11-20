@@ -49,7 +49,8 @@ impl Default for Config {
             // FT8 tollera bene qualche decimo di secondo: sotto il mezzo secondo l'avviso spaventava senza motivo (l'orologio di Windows
             // deriva di centinaia di ms tra una sincronizzazione e l'altra)
             warn_ms: 500,
-            auto_correct: false,
+            // l'ora si tiene giusta da sola (se Windows lo permette): all'avvio, ogni 15 minuti e appena torna la rete dopo un periodo senza internet
+            auto_correct: true,
             correct_at_start: true,
         }
     }
@@ -217,6 +218,17 @@ impl ClockService {
                 c
             })
             .unwrap_or_default();
+        // una volta sola: chi aveva salvato la correzione automatica spenta (era di fabbrica) passa alla nuova scelta di fabbrica, accesa; da li' in poi
+        // vale quello che decide l'utente
+        let mut config = config;
+        let migrated = path.with_extension("v2");
+        if !migrated.exists() {
+            config.auto_correct = true;
+            if path.exists() {
+                let _ = std::fs::write(path, serde_json::to_string_pretty(&config).unwrap_or_default());
+            }
+            let _ = std::fs::write(&migrated, b"1");
+        }
         let last_good = std::fs::read_to_string(path.with_extension("good")).ok().and_then(|t| t.trim().parse::<u64>().ok());
         Arc::new(ClockService { path: path.to_path_buf(), config: Mutex::new(config), last: Mutex::new(None), last_good: Mutex::new(last_good), query, setter, wake: Notify::new() })
     }

@@ -5,6 +5,7 @@ import { EngineValues } from './EngineValues';
 import { Group, Cells, Page } from './layout';
 import { InfoTab, Row } from './common';
 import { useIsNative } from './NativeSettings';
+import { SwrProtectionGroup } from './JtdxTabs';
 
 /** Scheda Radio: un'unica scheda con tutto il collegamento (modello, porta, PTT, split, lettura, profili, prova, condivisione, OmniRig). */
 export function RadioTab({ part = 'all' }: { part?: 'all' | 'link' | 'profiles' } = {}) {
@@ -20,6 +21,7 @@ export function RadioTab({ part = 'all' }: { part?: 'all' | 'link' | 'profiles' 
   return (
     <Page>
       <CatGroups part={part} />
+      {native ? <SwrProtectionGroup /> : null}
       <Group title={t('rd.title')} span={3}>
         <RadioDisplayPicker />
       </Group>

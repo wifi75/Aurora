@@ -53,7 +53,7 @@ fn an_swr_of_3_read_from_the_radio_while_transmitting_stops_the_tx() {
     controls.set_halt_now(Arc::new(move || {
         h.fetch_add(1, Ordering::Relaxed);
     }));
-    assert_eq!(controls.swr_limit(), Some(2.5), "soglia di fabbrica");
+    assert_eq!(controls.swr_limit(), Some(2.0), "soglia di fabbrica");
 
     // il ciclo degli strumenti di Aurora: la catena dice che trasmette, il CAT legge i livelli di trasmissione
     controls.transmitting.store(true, Ordering::Relaxed);
@@ -72,7 +72,7 @@ fn an_swr_of_3_read_from_the_radio_while_transmitting_stops_the_tx() {
     assert_eq!(seen, Some(3.0));
     assert!(halts.load(Ordering::Relaxed) >= 1, "la trasmissione si ferma");
     let alert = controls.tx_alerts().into_iter().find(|a| a.kind == aurora_core::TxAlertKind::HighSwr).expect("avviso del ROS");
-    assert_eq!((alert.value, alert.limit), (Some(3.0), Some(2.5)));
+    assert_eq!((alert.value, alert.limit), (Some(3.0), Some(2.0)));
     assert_eq!(controls.published_meters().and_then(|m| m.power_w), Some(50.0), "la potenza resta visibile");
     rig.shutdown();
 }

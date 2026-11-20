@@ -354,6 +354,21 @@ export function NativeGeneral() {
   );
 }
 
+/** Protezione del trasmettitore dal ROS alto (scheda Radio): la Tx si ferma subito se il ROS letto dalla radio supera il limite (0 = controllo spento). */
+export function SwrProtectionGroup() {
+  const t = useT();
+  const { settings, draft } = useDoc();
+  if (settings.isError || !settings.data) return null;
+  return (
+    <Group title={t('radio.swr.title')}>
+      <Cells min={18}>
+        <SettingField row={{ key: 'SWRLimit', kind: 'num', min: 1, max: 4, step: 0.1 }} label={t('gen2.swr')} doc={settings.data} draft={draft} />
+      </Cells>
+      <Message kind="muted">{t('radio.swr.hint')}</Message>
+    </Group>
+  );
+}
+
 /** Le opzioni di trasmissione del motore (prima in Generali): monitoraggio Tx, ROS, WSJT-X 3, Band Hopping nella Sequenza; la verifica del Fox (`part="fox"`) in Modi › Contest · Fox/Hound. */
 export function NativeTxOptions({ part = 'all' }: { part?: 'all' | 'nofox' | 'fox' } = {}) {
   const t = useT();
@@ -387,7 +402,6 @@ export function NativeTxOptions({ part = 'all' }: { part?: 'all' | 'nofox' | 'fo
         <Cells min={13}>
           {field('TxQSYAllowed', 'bool', 'gen2.qsy')}
           {field('TxWatchdogTimer', 'num', 'gen2.watchdog', { min: 0, max: 99 })}
-          {field('SWRLimit', 'num', 'gen2.swr', { min: 0, max: 10, step: 0.1 })}
           {field('TxDelay', 'num', 'gen2.txDelay', { min: 0, max: 0.5, step: 0.1 })}
         </Cells>
       </Group>

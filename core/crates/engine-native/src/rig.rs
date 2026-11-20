@@ -436,7 +436,7 @@ const ULTRAFOX_LABEL_KEEP_MS: u64 = 120_000;
 pub const DEFAULT_PTT_LEAD_MS: u32 = 200;
 
 /// Soglia di fabbrica del ROS (WSJT-X: «SWR > 2.5», `stopForHighSWR`), in centesimi.
-pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 250;
+pub const DEFAULT_SWR_LIMIT_HUNDREDTHS: u32 = 200;
 /// Per quanto resta visibile l'avviso di un messaggio non rappresentabile o di un ROS alto.
 pub const TX_ALERT_KEEP: std::time::Duration = std::time::Duration::from_secs(120);
 
@@ -1714,13 +1714,13 @@ mod tests {
         controls.set_meters(high());
         assert_eq!(halted.load(Ordering::Relaxed), 0);
         controls.transmitting.store(true, Ordering::Relaxed);
-        controls.set_meters(Some(rig_control::meters::Meters { swr: Some(2.5), ..Default::default() }));
-        assert_eq!(halted.load(Ordering::Relaxed), 0, "2,5 non supera 2,5");
+        controls.set_meters(Some(rig_control::meters::Meters { swr: Some(2.0), ..Default::default() }));
+        assert_eq!(halted.load(Ordering::Relaxed), 0, "2,0 non supera 2,0");
         controls.set_meters(high());
         assert_eq!(halted.load(Ordering::Relaxed), 1);
         let alerts = controls.tx_alerts();
         assert_eq!(alerts.len(), 1);
-        assert_eq!((alerts[0].kind, alerts[0].value, alerts[0].limit), (aurora_core::TxAlertKind::HighSwr, Some(3.0), Some(2.5)));
+        assert_eq!((alerts[0].kind, alerts[0].value, alerts[0].limit), (aurora_core::TxAlertKind::HighSwr, Some(3.0), Some(2.0)));
         // soglia piu' alta: 3,0 passa; controllo spento: nemmeno 9
         controls.set_swr_limit(3.5);
         controls.set_meters(high());

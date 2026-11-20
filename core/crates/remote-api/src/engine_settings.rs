@@ -536,7 +536,7 @@ pub struct Reports {
     pub watchdog_min: u32,
     /// «Consenti cambi di frequenza Tx durante la trasmissione» (`TxQSYAllowed`).
     pub tx_qsy_allowed: bool,
-    /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (`SWRLimit`, voce di Aurora; 250 = 2,5 come WSJT-X; 0 = controllo spento).
+    /// Soglia del ROS oltre la quale la trasmissione si ferma, in centesimi (`SWRLimit`, voce di Aurora; 200 = 2,0; 0 = controllo spento).
     pub swr_limit_centi: u32,
     /// Ritardo tra PTT e inizio dell'audio, in ms (`TxDelay`, voce di Aurora; «Tx delay» di WSJT-X, 0-500, di fabbrica 200).
     pub tx_delay_ms: u32,
@@ -765,7 +765,7 @@ pub fn defaults() -> BTreeMap<String, String> {
         // «Rimanda i QSO persi» per il server secondario: acceso di base (un log chiuso non perde piu' i QSO)
         ("UDP2Resend", "true"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
-        ("SWRLimit", "2.5"),
+        ("SWRLimit", "2.0"),
         // ritardo tra PTT e audio: come WSJT-X (`TxDelay`, 0,2 s)
         ("TxDelay", "0.2"),
         // valori di fabbrica di WSJT-X 3.3: decodifica «normale» (`m_ft8DecoderStart {3}`, 14,11 s), full duplex spento, Wait features accese (in Aurora spente),
@@ -878,7 +878,7 @@ fn addr_default() -> SocketAddr {
 
 /// Controlla un valore di una voce che il motore proprio tiene (tipo, intervallo e forma dell'indirizzo).
 /// Soglia del ROS di fabbrica in centesimi (WSJT-X: «SWR > 2.5», `stopForHighSWR`).
-pub const DEFAULT_SWR_LIMIT_CENTI: u32 = 250;
+pub const DEFAULT_SWR_LIMIT_CENTI: u32 = 200;
 
 /// La soglia del ROS scritta nelle impostazioni (accetta anche la virgola), in centesimi: 0 = spento, altrimenti da 1,1 a 10.
 pub fn parse_swr_limit(value: &str) -> Option<u32> {
@@ -887,7 +887,7 @@ pub fn parse_swr_limit(value: &str) -> Option<u32> {
         return None;
     }
     let centi = (v * 100.0).round();
-    (centi == 0.0 || (110.0..=1000.0).contains(&centi)).then_some(centi as u32)
+    (centi == 0.0 || (100.0..=1000.0).contains(&centi)).then_some(centi as u32)
 }
 
 /// Ritardo tra PTT e audio di fabbrica, in ms (WSJT-X: `TxDelay` 0,2 s).
@@ -922,7 +922,7 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
     }
     // la soglia del ROS non e' di JTDX: numero con il punto o la virgola
     if key == "SWRLimit" {
-        return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,1 a 10".into()));
+        return parse_swr_limit(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("SWRLimit: 0 (spento) oppure un ROS da 1,0 a 10".into()));
     }
     if key == "TxDelay" {
         return parse_tx_delay(value).map(|_| ()).ok_or_else(|| SettingsError::BadValue("TxDelay: da 0 a 0,5 secondi".into()));
@@ -1812,7 +1812,7 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
 
     #[test]
     fn the_swr_limit_is_a_live_setting_with_the_wsjtx_default() {
-        assert_eq!(interpret(&defaults()).swr_limit_centi, 250);
+        assert_eq!(interpret(&defaults()).swr_limit_centi, 200);
         assert_eq!(interpret(&map(&[("SWRLimit", "3,0")])).swr_limit_centi, 300);
         assert_eq!(interpret(&map(&[("SWRLimit", "0")])).swr_limit_centi, 0);
         assert_eq!(interpret(&defaults()).tx_delay_ms, 200);
@@ -1820,10 +1820,10 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert_eq!(interpret(&map(&[("TxDelay", "0.9")])).tx_delay_ms, 200, "fuori dall'intervallo di WSJT-X: vale quello di fabbrica");
         assert!(validate("TxDelay", "0.5").is_ok() && validate("TxDelay", "0").is_ok());
         assert!(validate("TxDelay", "0.6").is_err() && validate("TxDelay", "-0.1").is_err());
-        for ok in ["0", "1.1", "2.5", "10"] {
+        for ok in ["0", "1.0", "1.1", "2.0", "2.5", "4", "10"] {
             assert!(validate("SWRLimit", ok).is_ok(), "{ok}");
         }
-        for bad in ["1", "10.5", "-2", "alto", ""] {
+        for bad in ["0.9", "10.5", "-2", "alto", ""] {
             assert!(validate("SWRLimit", bad).is_err(), "{bad}");
         }
     }
