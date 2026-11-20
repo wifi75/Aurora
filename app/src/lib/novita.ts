@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.312',
+    released: '2026-11-20T12:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Satellite in arrivo nella barra, meno finestre e pulsanti leggibili',
+      'Incoming-satellite label in the top bar, fewer pop-ups and readable buttons',
+      'Satellit-Hinweis in der oberen Leiste, weniger Fenster und lesbare Schaltflächen',
+      'Étiquette du satellite dans la barre du haut, moins de fenêtres et boutons lisibles',
+      'Etiqueta del satélite en la barra superior, menos ventanas y botones legibles',
+      'Etiqueta do satélite na barra superior, menos janelas e botões legíveis',
+    ],
+    text: [
+      'Una etichetta nella barra in alto, visibile da ogni pagina, avvisa 5 minuti prima del sorgere dei satelliti che segui, con conto alla rovescia e suono (si chiude con la ✕). La conferma «Vuoi chiamare…?» non compare più sul doppio clic delle righe delle liste (resta per «CQ e novità» e le DXpedition; le caselle sono in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo). Uscendo dal WEFAX la radio torna alla banda di prima, non su 1,810 MHz. Il gruppo «PSK · RTTY · SSTV» riapre l’ultima pagina usata. Nei temi scuri i pulsanti non diventano più illeggibili al passaggio del mouse. Il russo c’è anche nell’installatore di Windows e nelle cartoline del tray.',
+      'A label in the top bar, visible from every page, warns you 5 minutes before the satellites you follow rise, with a countdown and a sound (close it with the ✕). The “Do you want to call…?” confirmation no longer appears on a double click on the list rows (it stays for “CQ and news” and DXpeditions; the checkboxes are in Settings › Modes › FT8 · FT4 › Messages and filters › Display). Leaving WEFAX, the radio goes back to the band it was on, not to 1.810 MHz. The “PSK · RTTY · SSTV” group reopens the last page used. In dark themes the buttons no longer become unreadable under the mouse. Russian is now also in the Windows installer and in the tray cards.',
+      'Ein Hinweis in der oberen Leiste, von jeder Seite sichtbar, warnt 5 Minuten vor dem Aufgang der Satelliten, die du verfolgst, mit Countdown und Ton (mit dem ✕ schließen). Die Rückfrage „Möchtest du … anrufen?“ erscheint beim Doppelklick auf Listenzeilen nicht mehr (sie bleibt für „CQ und Neues“ und DXpeditionen; die Kontrollkästchen sind unter Einstellungen › Betriebsarten › FT8 · FT4 › Meldungen und Filter › Anzeige). Beim Verlassen von WEFAX kehrt das Funkgerät in das Band von vorher zurück, nicht auf 1,810 MHz. Die Gruppe „PSK · RTTY · SSTV“ öffnet wieder die zuletzt benutzte Seite. In dunklen Themen werden Schaltflächen unter der Maus nicht mehr unlesbar. Russisch gibt es jetzt auch im Windows-Installer und in den Tray-Karten.',
+      'Une étiquette dans la barre du haut, visible de toutes les pages, prévient 5 minutes avant le lever des satellites que tu suis, avec compte à rebours et son (se ferme avec la ✕). La confirmation « Veux-tu appeler… ? » n’apparaît plus au double clic sur les lignes des listes (elle reste pour « CQ et nouveautés » et les DXpéditions ; les cases sont dans Réglages › Modes › FT8 · FT4 › Messages et filtres › Affichage). En quittant le WEFAX, la radio revient sur la bande d’avant, pas sur 1,810 MHz. Le groupe « PSK · RTTY · SSTV » rouvre la dernière page utilisée. Dans les thèmes sombres, les boutons ne deviennent plus illisibles sous la souris. Le russe est aussi dans l’installateur Windows et dans les cartes du tray.',
+      'Una etiqueta en la barra superior, visible desde cualquier página, avisa 5 minutos antes de que salgan los satélites que sigues, con cuenta atrás y sonido (se cierra con la ✕). La confirmación «¿Quieres llamar a…?» ya no aparece al hacer doble clic en las filas de las listas (se mantiene para «CQ y novedades» y las DXpediciones; las casillas están en Ajustes › Modos › FT8 · FT4 › Mensajes y filtros › Pantalla). Al salir del WEFAX, la radio vuelve a la banda de antes, no a 1,810 MHz. El grupo «PSK · RTTY · SSTV» reabre la última página usada. En los temas oscuros los botones ya no se vuelven ilegibles al pasar el ratón. El ruso está también en el instalador de Windows y en las tarjetas del tray.',
+      'Uma etiqueta na barra superior, visível em qualquer página, avisa 5 minutos antes de os satélites que segues nascerem, com contagem decrescente e som (fecha-se com o ✕). A confirmação «Quer chamar…?» já não aparece no duplo clique nas linhas das listas (mantém-se para «CQ e novidades» e as DXpedições; as caixas estão em Definições › Modos › FT8 · FT4 › Mensagens e filtros › Ecrã). Ao sair do WEFAX, o rádio volta à banda de antes, não aos 1,810 MHz. O grupo «PSK · RTTY · SSTV» reabre a última página usada. Nos temas escuros os botões já não ficam ilegíveis sob o rato. O russo está também no instalador do Windows e nos cartões do tray.',
+    ],
+  },
+  {
     version: '0.11.311',
     released: '2026-11-20T10:34:08Z',
     kind: 'new',
@@ -819,27 +840,6 @@ export const NOVITA: readonly Novita[] = [
       'Avec Hamlib et certaines Icom (IC-756PRO), la radio pouvait se retrouver sur le VFO B après la fermeture et la réouverture d’Aurora. Maintenant, en lisant le VFO B ou en remettant fréquence et mode au démarrage, Aurora vérifie sur quel VFO se trouve la radio et la remet là où elle était ; le journal le note. Non testé sur une vraie radio : si cela se reproduit, envoie le paquet d’assistance.',
       'Con Hamlib y algunas Icom (IC-756PRO) la radio podía quedar en el VFO B tras cerrar y reabrir Aurora. Ahora, al leer el VFO B o al devolver frecuencia y modo al arrancar, Aurora comprueba en qué VFO está la radio y la devuelve a donde estaba; el registro lo anota. No probado con una radio real: si sigue pasando, envía el paquete de asistencia.',
       'Com Hamlib e alguns rádios Icom (IC-756PRO) o rádio podia ficar no VFO B depois de fechar e reabrir a Aurora. Agora, ao ler o VFO B ou ao repor frequência e modo no arranque, a Aurora verifica em que VFO está o rádio e volta a pô-lo onde estava; o registo anota-o. Não testado num rádio real: se continuar a acontecer, envia o pacote de assistência.',
-    ],
-  },
-  {
-    version: '0.11.286',
-    released: '2026-11-17T18:32:12Z',
-    kind: 'fixed',
-    title: [
-      'Primo avvio e Attività di banda',
-      'First start and Band activity',
-      'Erststart und Bandaktivität',
-      'Premier démarrage et Activité de bande',
-      'Primer arranque y Actividad de banda',
-      'Primeiro arranque e Atividade de banda',
-    ],
-    text: [
-      'Finché la guida del primo avvio è aperta non compaiono gli avvisi della stazione; se il nominativo è già salvato ma il motore non lo ha ancora, l’avviso dice di chiudere e riaprire Aurora. In Attività di banda i km sono centrati nella riga e «Spot DX» è leggibile in tema chiaro.',
-      'While the first-run guide is open no station warnings appear; if the callsign is already saved but the engine does not have it yet, the warning says to close and reopen Aurora. In Band activity the km are centred in the row and “DX spots” is readable in the light theme.',
-      'Solange die Erststart-Anleitung offen ist, erscheinen keine Stationswarnungen; ist das Rufzeichen gespeichert, der Motor hat es aber noch nicht, sagt die Warnung, Aurora zu schließen und neu zu öffnen. In der Bandaktivität sind die km in der Zeile zentriert und „DX-Spots“ ist im hellen Thema lesbar.',
-      'Tant que l’assistant du premier démarrage est ouvert, aucun avertissement de la station n’apparaît ; si l’indicatif est déjà enregistré mais que le moteur ne l’a pas encore, l’avertissement dit de fermer et rouvrir Aurora. Dans l’Activité de bande, les km sont centrés dans la ligne et « Spots DX » est lisible en thème clair.',
-      'Mientras la guía del primer arranque está abierta no aparecen avisos de la estación; si el indicativo ya está guardado pero el motor aún no lo tiene, el aviso dice que cierres y vuelvas a abrir Aurora. En Actividad de banda los km están centrados en la fila y «Spots DX» se lee en el tema claro.',
-      'Enquanto o assistente do primeiro arranque está aberto não aparecem avisos da estação; se o indicativo já está guardado mas o motor ainda não o tem, o aviso diz para fechar e reabrir a Aurora. Na Atividade de banda os km estão centrados na linha e «Spots DX» lê-se no tema claro.',
     ],
   },
 ];

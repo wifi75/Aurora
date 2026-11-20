@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.312 - 2026-11-20
+
+- Conferma di chiamata: non compare piu' sul doppio clic delle righe delle liste dei decode (la stazione si vede sullo schermo); resta per le stazioni di «CQ e novita'» e delle DXpedition. Nuova casella, spenta di fabbrica, per chiederla anche sul doppio clic delle liste. Le caselle stanno in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo.
+- WEFAX: uscendo dalla pagina la radio torna alla frequenza di base della banda in cui era prima (non piu' su 1,810 MHz); menu delle frequenze piu' lungo e con carattere piu' piccolo.
+- Il gruppo «PSK · RTTY · SSTV» riapre l'ultima pagina usata del gruppo (PSK, RTTY, CW, SSTV o WEFAX).
+- Russo anche nell'installatore di Windows (17 testi e la pagina dei dati che escono dal PC) e nelle cartoline dell'agente nel tray (non provato con l'installatore vero).
+- Temi scuri: i pulsanti che diventavano illeggibili al passaggio del mouse (sfondo blu scuro con testo scuro) hanno ora uno sfondo chiaro leggibile (nuovo `pulsanti-tema-scuro.css`, a livello `@layer`); non verificato a schermo pulsante per pulsante.
+- Impostazioni: Guida e Novita' con il loro colore (verde e oro).
+
 - Satelliti: **etichetta «satellite in arrivo»** nella barra in alto, visibile da ogni pagina (FT8, PSK · RTTY · SSTV, WEFAX, Stazione, Impostazioni...). Per i satelliti seguiti compare con il preavviso degli avvisi (di base 5 minuti) con il conto alla rovescia fino al sorgere, poi il tempo che manca al tramonto, e sparisce da sola 60 secondi dopo il sorgere; la ✕ la chiude per quel passaggio, un clic apre la pagina Satelliti. Il suono di preavviso ora arriva anche da altre pagine e dagli altri modi (con avvisi sonori spenti, niente). Gli avvisi girano in un solo motore alla radice dell'app, senza doppi suoni con la pagina Satelliti. Solo sul PC (issue #82).
 
 ## 0.11.311 - 2026-11-20
