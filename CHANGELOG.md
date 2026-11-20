@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.320 - 2026-11-20
+
 - Satelliti, IC-820H: la lettura delle bande dei due VFO (Main/Sub) aspetta 700 ms dopo ogni cambio di VFO (Hamlib restituiva la stessa frequenza su tutti e due e Aurora ricadeva sulla coppia fissa: pacchetti di Vladimir, 0.11.318 e 0.11.319), scrive nel registro le due frequenze lette e, se la lettura non e' chiara sul modello 3032, usa la disposizione di fabbrica (Main = 144 MHz, Sub = 430 MHz). Provato con la radio finta, non con la radio vera.
 
 - Licenze: l'installatore porta ora in cartella anche `THIRD-PARTY-NOTICES.md` (crediti e licenze del codice derivato e delle librerie), accanto alla licenza GPL-3.0 che l'installatore gia' mostra; l'intestazione del crate `qso-native` dice che deriva da JTDX e WSJT-X.

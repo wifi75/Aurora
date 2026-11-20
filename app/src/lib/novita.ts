@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.320',
+    released: '2026-11-20T19:00:00Z',
+    kind: 'fixed',
+    title: [
+      'IC-820H: la trasmissione dei satelliti sulla banda giusta, licenze con il programma',
+      'IC-820H: satellite transmit on the right band, licences shipped with the program',
+      'IC-820H: Satelliten-Senden im richtigen Band, Lizenzen mit dem Programm',
+      'IC-820H : émission des satellites sur la bonne bande, licences avec le programme',
+      'IC-820H: transmisión de satélites en la banda correcta, licencias con el programa',
+      'IC-820H: transmissão dos satélites na banda certa, licenças com o programa',
+    ],
+    text: [
+      'Sull’IC-820H, con il ripiego «Trasmissione con due VFO» acceso, Aurora ora legge le bande dei due VFO aspettando un attimo dopo ogni cambio (Hamlib restituiva la stessa frequenza su tutti e due e Aurora ricadeva sulla coppia fissa), scrive nel registro le frequenze lette e, se la lettura resta poco chiara, usa la disposizione di fabbrica (Main = 144 MHz, Sub = 430 MHz): così la trasmissione va sul VFO della sua banda e la ricezione sull’altro. Provato con la radio finta e con i pacchetti di un utente, non ancora con la radio vera. Inoltre l’installatore porta ora in cartella anche l’elenco dei crediti e delle licenze (THIRD-PARTY-NOTICES.md).',
+      'On the IC-820H, with the “Transmit with two VFOs” fallback on, Aurora now reads the bands of the two VFOs waiting a moment after each switch (Hamlib returned the same frequency on both and Aurora fell back to the fixed pair), writes the frequencies read to the log and, if the reading stays unclear, uses the factory arrangement (Main = 144 MHz, Sub = 430 MHz): so the transmit frequency goes to the VFO of its band and the receive frequency to the other. Tested with the simulated radio and a user’s packages, not yet with a real radio. The installer also now puts the list of credits and licences (THIRD-PARTY-NOTICES.md) in the program folder.',
+      'Beim IC-820H liest Aurora mit eingeschaltetem Ausweichmodus „Senden mit zwei VFOs“ jetzt die Bänder der beiden VFOs und wartet nach jedem Wechsel einen Moment (Hamlib lieferte auf beiden dieselbe Frequenz, und Aurora fiel auf das feste Paar zurück), schreibt die gelesenen Frequenzen ins Protokoll und nutzt, wenn die Lesung unklar bleibt, die Werksanordnung (Main = 144 MHz, Sub = 430 MHz): so geht die Sendefrequenz auf das VFO ihres Bandes und die Empfangsfrequenz auf das andere. Mit simuliertem Funkgerät und den Paketen eines Nutzers getestet, noch nicht mit einem echten Funkgerät. Außerdem legt der Installer jetzt die Liste der Danksagungen und Lizenzen (THIRD-PARTY-NOTICES.md) in den Programmordner.',
+      'Sur l’IC-820H, avec le repli « Émission avec deux VFO » activé, Aurora lit maintenant les bandes des deux VFO en attendant un instant après chaque changement (Hamlib renvoyait la même fréquence sur les deux et Aurora retombait sur la paire fixe), écrit les fréquences lues dans le journal et, si la lecture reste peu claire, utilise la disposition d’usine (Main = 144 MHz, Sub = 430 MHz) : ainsi la fréquence d’émission va sur le VFO de sa bande et celle de réception sur l’autre. Testé avec la radio simulée et les paquets d’un utilisateur, pas encore avec une vraie radio. L’installateur place aussi maintenant la liste des crédits et des licences (THIRD-PARTY-NOTICES.md) dans le dossier du programme.',
+      'En la IC-820H, con el modo alternativo «Transmisión con dos VFO» activado, Aurora ahora lee las bandas de los dos VFO esperando un momento tras cada cambio (Hamlib devolvía la misma frecuencia en los dos y Aurora volvía al par fijo), escribe las frecuencias leídas en el registro y, si la lectura sigue poco clara, usa la disposición de fábrica (Main = 144 MHz, Sub = 430 MHz): así la frecuencia de transmisión va al VFO de su banda y la de recepción al otro. Probado con la radio simulada y con los paquetes de un usuario, aún no con una radio real. El instalador también incluye ahora la lista de créditos y licencias (THIRD-PARTY-NOTICES.md) en la carpeta del programa.',
+      'No IC-820H, com o modo alternativo «Transmissão com dois VFO» ligado, o Aurora agora lê as bandas dos dois VFO esperando um momento depois de cada troca (o Hamlib devolvia a mesma frequência nos dois e o Aurora voltava ao par fixo), escreve as frequências lidas no registo e, se a leitura continuar pouco clara, usa a disposição de fábrica (Main = 144 MHz, Sub = 430 MHz): assim a frequência de transmissão vai para o VFO da sua banda e a de receção para o outro. Testado com o rádio simulado e com os pacotes de um utilizador, ainda não com um rádio real. O instalador também inclui agora a lista de créditos e licenças (THIRD-PARTY-NOTICES.md) na pasta do programa.',
+    ],
+  },
+  {
     version: '0.11.319',
     released: '2026-11-20T15:05:18Z',
     kind: 'fixed',
@@ -817,27 +838,6 @@ export const NOVITA: readonly Novita[] = [
       'Le paquet d’assistance indique maintenant aussi les valeurs numériques de la disposition enregistrée (largeur et proportion des fenêtres, colonnes), les dimensions des cadres de la page ouverte et la dernière page de travail : on comprend mieux pourquoi une fenêtre paraît étroite ou écrasée.',
       'El paquete de asistencia indica ahora también los valores numéricos del diseño guardado (anchura y proporción de las ventanas, columnas), las medidas de los marcos de la página abierta y la última página de trabajo: se entiende mejor por qué una ventana parece estrecha o aplastada.',
       'O pacote de assistência indica agora também os valores numéricos do layout guardado (largura e proporção das janelas, colunas), as medidas das molduras da página aberta e a última página de trabalho: percebe-se melhor porque é que uma janela parece estreita ou esmagada.',
-    ],
-  },
-  {
-    version: '0.11.288',
-    released: '2026-11-17T20:27:45Z',
-    kind: 'fixed',
-    title: [
-      'Icom più vecchie: la radio resta sul VFO A',
-      'Older Icom radios: the radio stays on VFO A',
-      'Ältere Icom-Geräte: das Gerät bleibt auf VFO A',
-      'Icom plus anciennes : la radio reste sur le VFO A',
-      'Icom más antiguas: la radio se queda en el VFO A',
-      'Icom mais antigos: o rádio fica no VFO A',
-    ],
-    text: [
-      'Con certe Icom e Hamlib (IC-756PRO) la radio finiva sul VFO B dopo il riavvio di Aurora: con «Leggi anche gli altri dati» acceso Aurora leggeva il VFO B e Hamlib, che con queste radio non sa dire su quale VFO sta, passava al VFO B e non tornava indietro. Ora il VFO B non si legge più se la radio non dice su che VFO è: la radio non viene più spostata. Il traffico con la radio lo ha mostrato il nuovo pacchetto di assistenza.',
-      'With some Icom radios and Hamlib (IC-756PRO) the radio ended up on VFO B after restarting Aurora: with “Also read the other radio data” on, Aurora read VFO B and Hamlib, which cannot tell which VFO these radios are on, switched to VFO B and did not switch back. Now VFO B is no longer read when the radio does not say which VFO it is on: the radio is no longer moved. The new support package showed the traffic with the radio.',
-      'Bei manchen Icom-Geräten mit Hamlib (IC-756PRO) stand das Gerät nach dem Neustart von Aurora auf VFO B: Bei eingeschaltetem „Auch die übrigen Funkgerätedaten lesen“ las Aurora VFO B, und Hamlib, das bei diesen Geräten nicht sagen kann, auf welchem VFO sie stehen, wechselte zu VFO B und nicht zurück. Jetzt wird VFO B nicht mehr gelesen, wenn das Gerät nicht sagt, auf welchem VFO es steht: das Gerät wird nicht mehr verstellt. Der Verkehr mit dem Gerät wurde im neuen Supportpaket sichtbar.',
-      'Avec certaines Icom et Hamlib (IC-756PRO), la radio se retrouvait sur le VFO B après le redémarrage d’Aurora : avec « Lire aussi les autres données du poste » activé, Aurora lisait le VFO B et Hamlib, qui ne sait pas dire sur quel VFO se trouvent ces radios, passait au VFO B sans revenir. Maintenant le VFO B n’est plus lu quand la radio ne dit pas sur quel VFO elle est : la radio n’est plus déplacée. Les échanges avec la radio ont été montrés par le nouveau paquet d’assistance.',
-      'Con algunas Icom y Hamlib (IC-756PRO) la radio acababa en el VFO B tras reiniciar Aurora: con «Leer también los demás datos de la radio» activado, Aurora leía el VFO B y Hamlib, que con estas radios no sabe decir en qué VFO están, pasaba al VFO B y no volvía. Ahora el VFO B ya no se lee si la radio no dice en qué VFO está: la radio ya no se mueve. El tráfico con la radio lo mostró el nuevo paquete de asistencia.',
-      'Com alguns rádios Icom e Hamlib (IC-756PRO) o rádio ficava no VFO B depois de reiniciar a Aurora: com «Ler também os outros dados do rádio» ligado, a Aurora lia o VFO B e o Hamlib, que com estes rádios não sabe dizer em que VFO estão, passava ao VFO B e não voltava. Agora o VFO B já não é lido se o rádio não diz em que VFO está: o rádio já não é movido. O tráfego com o rádio foi mostrado pelo novo pacote de assistência.',
     ],
   },
 ];
