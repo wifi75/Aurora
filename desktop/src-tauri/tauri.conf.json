@@ -30,7 +30,8 @@
       "cty": "cty",
       "contest": "contest",
       "../../contest": "contest-cartelle",
-      "demo-sstv": "demo-sstv"
+      "demo-sstv": "demo-sstv",
+      "../../THIRD-PARTY-NOTICES.md": "THIRD-PARTY-NOTICES.md"
     },
     "publisher": "Tiziano Cassone (IU3WJQ)",
     "copyright": "© 2026 Tiziano Cassone (IU3WJQ) — GNU GPL 3.0",

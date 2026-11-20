@@ -1,4 +1,5 @@
-//! Sequenza automatica dei QSO nativa di Aurora.
+//! Sequenza automatica dei QSO nativa di Aurora. Regole di risposta, di chiusura e sequenza dei messaggi derivano, tradotte in Rust e con
+//! modifiche, da JTDX e da WSJT-X (GPL 3): vedi `THIRD-PARTY-NOTICES.md` e `docs/logiche-jtdx.md`.
 //!
 //! Crate **puro**: nessun audio, nessun orologio di sistema, nessun I/O. Contiene solo stato e
 //! decisioni, cosi' che ogni regola si possa provare con una sequenza di messaggi decodificati.

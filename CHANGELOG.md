@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Licenze: l'installatore porta ora in cartella anche `THIRD-PARTY-NOTICES.md` (crediti e licenze del codice derivato e delle librerie), accanto alla licenza GPL-3.0 che l'installatore gia' mostra; l'intestazione del crate `qso-native` dice che deriva da JTDX e WSJT-X.
+
 ## 0.11.319 - 2026-11-20
 
 - Satelliti: l'etichetta del satellite in arrivo accorcia con i puntini un nome lungo (per esempio «RS-44 & BREEZE-KM R/B») e il conto alla rovescia resta sempre visibile (segnalazione #82).
