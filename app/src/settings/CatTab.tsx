@@ -28,7 +28,7 @@ import {
 } from '../api/client';
 import { useT, type Key, type T } from '../i18n';
 import { coreText } from '../lib/coreText';
-import { BAUDS, applyCandidate, catIssue, filterModels, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
+import { BAUDS, applyCandidate, catIssue, filterModels, isSerialPort, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
 import { icomBaudWarning, presetApplied, presetFor, type RigPreset } from '../lib/rigPresets';
 import { Check, Help, Row } from './common';
 import { TxCheck } from './TxCheck';
@@ -580,6 +580,27 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
               onChange={(e) => set({ port: e.target.value.trim() })}
             />
           </Field>
+        ) : null}
+        {config.backend === 'hamlib' ? (
+          <Cell>
+            <button
+              type="button"
+              className="glass chip cat-external"
+              title={t('tip.cat.external')}
+              onClick={() => {
+                // il modello 2 di Hamlib e' «NET rigctl»: Aurora non apre la COM, parla con un rigctld gia' acceso (di chi vuole il suo Hamlib per primo)
+                const net = modelList.find((m) => m.id === 2);
+                set({
+                  model: 2,
+                  rig_name: net ? modelLabel(net) : 'NET rigctl',
+                  port: config.port !== '' && !isSerialPort(config.port) ? config.port : '127.0.0.1:4532',
+                  share_enabled: false,
+                });
+              }}
+            >
+              {t('cat.external')}
+            </button>
+          </Cell>
         ) : null}
         {fields.port && fields.baud ? (
           <Field label={t('cat.baud')} className="cat-w-s" hint={t('tip.cat.baud')}>

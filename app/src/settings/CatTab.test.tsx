@@ -47,6 +47,7 @@ const connected: CatSnapshot = {
 
 const models = [
   { id: 1, manufacturer: 'Hamlib', model: 'Dummy', status: 'Stable' },
+  { id: 2, manufacturer: 'Hamlib', model: 'NET rigctl', status: 'Stable' },
   { id: 1029, manufacturer: 'Yaesu', model: 'FT-2000', status: 'Stable' },
   { id: 3073, manufacturer: 'Icom', model: 'IC-7300', status: 'Stable' },
 ];
@@ -91,7 +92,7 @@ describe('CatTab', () => {
     vi.mocked(getCatModels).mockResolvedValue([...models, ...many]);
     render(<CatTab />);
     await screen.findByText('Non collegata');
-    await screen.findByText('43 modelli');
+    await screen.findByText('44 modelli');
     fireEvent.change(screen.getByLabelText('Cerca (marca o modello)'), { target: { value: 'icom' } });
     expect(screen.getByRole('button', { name: 'Icom IC-756PRO' })).toBeInTheDocument();
     const names = screen.getAllByRole('button', { name: /^Icom IC-/ }).map((b) => b.textContent);
@@ -103,7 +104,7 @@ describe('CatTab', () => {
   it('picks a radio from the searchable list and applies the settings', async () => {
     render(<CatTab />);
     await screen.findByText('Non collegata');
-    await screen.findByText('3 modelli');
+    await screen.findByText('4 modelli');
     fireEvent.change(screen.getByLabelText('Cerca (marca o modello)'), { target: { value: 'yaesu 2000' } });
     const rig = screen.getByLabelText('Radio');
     expect(within(rig).getAllByRole('option').map((o) => o.textContent)).toEqual(['— scegli la radio —', 'Yaesu FT-2000']);
@@ -117,6 +118,28 @@ describe('CatTab', () => {
     await waitFor(() => expect(putCat).toHaveBeenCalled());
     expect(vi.mocked(putCat).mock.calls[0]![0]).toMatchObject({ backend: 'hamlib', model: 1029, rig_name: 'Yaesu FT-2000', port: 'COM3', baud: 38400, stop_bits: 2, handshake: 'hardware', ptt: 'cat', split: 'none' });
     expect(await screen.findByText('Impostazioni salvate.')).toBeInTheDocument();
+  });
+
+  it('uses a rigctld that is already running: NET rigctl, the local address, sharing off', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...idle, config: { ...DEFAULT_CAT, model: 3073, port: 'COM3', share_enabled: true } });
+    render(<CatTab />);
+    await screen.findByText('Non collegata');
+    await screen.findByText('4 modelli');
+    fireEvent.click(screen.getByRole('button', { name: 'Usa un rigctld già acceso' }));
+    expect(await screen.findByText('Modifiche non ancora applicate.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Applica' }));
+    await waitFor(() => expect(putCat).toHaveBeenCalled());
+    expect(vi.mocked(putCat).mock.calls[0]![0]).toMatchObject({ backend: 'hamlib', model: 2, port: '127.0.0.1:4532', share_enabled: false });
+  });
+
+  it('keeps the network address already written when using a rigctld that is already running', async () => {
+    vi.mocked(getCat).mockResolvedValue({ ...idle, config: { ...DEFAULT_CAT, model: 3073, port: '192.168.1.5:4533' } });
+    render(<CatTab />);
+    await screen.findByText('Non collegata');
+    fireEvent.click(screen.getByRole('button', { name: 'Usa un rigctld già acceso' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Applica' }));
+    await waitFor(() => expect(putCat).toHaveBeenCalled());
+    expect(vi.mocked(putCat).mock.calls[0]![0]).toMatchObject({ model: 2, port: '192.168.1.5:4533' });
   });
 
   it('applies pending changes and then connects when Connect is pressed', async () => {
@@ -177,7 +200,7 @@ describe('CatTab', () => {
     });
     render(<CatTab />);
     await screen.findByText('Non collegata');
-    await screen.findByText('3 modelli');
+    await screen.findByText('4 modelli');
     fireEvent.click(screen.getByRole('button', { name: 'Rileva la mia radio' }));
     expect(await screen.findByText('Yaesu FT-2000', { exact: false })).toBeInTheDocument();
     expect(screen.getByText('(fiducia 90%)')).toBeInTheDocument();
@@ -317,7 +340,7 @@ describe('CatTab', () => {
     vi.mocked(getCat).mockResolvedValue({ ...idle, config: { ...DEFAULT_CAT, model: 3073, rig_name: 'Icom IC-7300', port: 'COM4' } });
     render(<CatTab />);
     await screen.findByText('Non collegata');
-    await screen.findByText('3 modelli');
+    await screen.findByText('4 modelli');
     expect(screen.queryByLabelText(/Porta del PTT/)).toBeNull();
     expect(screen.getByLabelText('Indirizzo CI-V (Icom)')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Metodo del PTT'), { target: { value: 'rts' } });
