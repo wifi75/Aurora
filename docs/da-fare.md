@@ -4,6 +4,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Adesso
 - [x] 0.11.315 pubblicata (rotore fuori dalla barra, «Mostra in home» nelle Impostazioni): da guardare a schermo
+- [ ] 0.11.319 da pubblicare: etichetta dei satelliti col conto alla rovescia sempre visibile (#82) e messaggio se la finestra non si apre (WebView2); poi chiudere #82
+- [ ] Messaggio di WebView2 in olandese e russo (ora ricade su un'altra lingua): controllare come `agent::ui_lang()` sceglie la lingua
 - [x] 0.11.318 pubblicata (IC-820H: trasmissione sul VFO della sua banda): attendo il test di Vladimir con ISS o RS-44 e la sua risposta su quale banda sta su Main
 - [x] #86 M8GVC chiusa: il CQ parte con AutoTX spento
 - [x] 0.11.317 pubblicata (CQ con AutoTX spento #86, Guida aggiornata): risposta data a M8GVC, da provare

@@ -4,6 +4,12 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## In preparazione (0.11.319, gia' su `main`, NON pubblicata)
+
+- Etichetta dei satelliti (`SatAlertLabel.tsx`, `sat-label.css`): il nome sta in `.sat-label-name` (max 11 em, puntini) e il testo `{sat} tra {time}` e' diviso con un segnaposto, cosi' il conto alla rovescia non si taglia mai (#82, ct1bxx). Prove passate, non vista a schermo.
+- `desktop/src-tauri/src/webview_check.rs`: `window_failed` + `failed_texts` (sei lingue) e in `lib.rs` `start` esce con `std::process::exit(1)` dopo il messaggio se `open_main_with_retry` fallisce (prima il `?` faceva il panic di Tauri «Failed to setup app»). La lingua dei messaggi di Windows viene da `agent::ui_lang()` (0-5): olandese e russo ricadono su un'altra lingua; da controllare come si sceglie. Non provato con un WebView2 rotto.
+- Aperti: #83 Vladimir (attende il suo test con la 0.11.318 e la risposta su quale banda e' sul display principale), #85 Luc (minuti del watchdog), #81 Luc, #80, #72; #82 da chiudere dopo la 0.11.319.
+
 ## Nella 0.11.318 (pubblicata 2026-11-20T14:29:42Z)
 
 - #83 (Vladimir, IC-820H, pacchetto `1C4290E3`): nel registro `F 437790670` diventa `f` = `137790670` e `F 145993111` sul «Sub» mostra 445,99: su questa radio Main e Sub sono le due **bande** (144 e 430 MHz) e una frequenza scritta nella banda sbagliata viene «ripiegata» di 300 MHz. `rig-control/src/hamlib_rig.rs`: `set_uplink_via_vfo` legge una volta per connessione la banda di Main e Sub (`sat_band_map`, azzerata alla riconnessione) e con `uplink_vfos` scrive la trasmissione sul VFO della sua banda e torna a quello dell'altra per la ricezione; con bande uguali o non leggibili resta la coppia Sub/Main di sempre. Provato con la radio finta e con il registro, NON con la radio vera: attende il test di Vladimir (ripiego a due VFO acceso, ISS o RS-44).

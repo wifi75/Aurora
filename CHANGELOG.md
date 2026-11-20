@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- Satelliti: l'etichetta del satellite in arrivo accorcia con i puntini un nome lungo (per esempio «RS-44 & BREEZE-KM R/B») e il conto alla rovescia resta sempre visibile (segnalazione #82).
+- Avvio: se la finestra principale non si apre nemmeno dopo i quattro tentativi (WebView2 registrato ma la sua creazione fallisce, per esempio 0x80070578), Aurora mostra un messaggio nelle sei lingue che dice cosa fare (riavviare Windows, aggiornare o reinstallare WebView2) e offre di reinstallare WebView2; con «No» si chiude. Prima Tauri si fermava con un panic senza dire niente (rapporto della 0.11.300). Olandese e russo ricadono sull'inglese.
+
 ## 0.11.318 - 2026-11-20
 
 - Satelliti, radio a due bande (IC-820H): con il ripiego «Trasmissione con due VFO» Aurora legge una volta per connessione quale banda sta su «Main» e quale su «Sub», e scrive la trasmissione sul VFO della sua banda e la ricezione sull'altro. Prima la coppia era fissa e, con ricezione 437 MHz e trasmissione 145 MHz, ogni frequenza finiva nella banda sbagliata e la radio la «ripiegava» (437,79 diventava 137,79 MHz). Provato solo con la radio finta e con il registro di Vladimir (#83), non con la radio vera.
