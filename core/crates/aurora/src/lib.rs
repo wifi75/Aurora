@@ -1666,9 +1666,9 @@ fn positive(get: &impl Fn(&str) -> Option<String>, name: &str, default: u32) -> 
     }
 }
 
-/// Il cursore Pwr come volume di Windows dell'uscita audio che va alla radio (scelta del proprietario): un'attenuazione del segnale
-/// generato, come in JTDX, poteva solo abbassare, e con il volume di Windows basso il cursore al massimo non bastava. Il segnale digitale
-/// resta pieno (0 dB) e il livello lo da' il volume della scheda.
+/// Il cursore «Lvl TX» (prima «Pwr»). Di fabbrica attenua il segnale generato, come WSJT-X e JTDX, e Aurora non scrive mai il volume di Windows
+/// (segnalazione di Pascal F4LHL, 2026-11-20: con il volume a 50 % l'ALC dell'Icom andava al massimo). Se l'utente sceglie «volume di Windows»
+/// (`engine_native::tx_level_windows`), il segnale resta pieno (0 dB) e il livello lo da' il volume della scheda, come nelle versioni precedenti.
 struct WindowsVolumePort {
     inner: Arc<dyn engine_native::TxPort>,
     output: Arc<dyn Fn() -> Option<String> + Send + Sync>,
@@ -1692,6 +1692,17 @@ impl WindowsVolumePort {
         let out = audio_spectrum::OutputEndpoint::find(&name).ok()?;
         let volume = out.volume().ok()?;
         Some(((1.0 - volume.clamp(0.0, 1.0)) * 450.0).round() as u32)
+    }
+
+    /// Porta il livello al trasmettitore: con «volume di Windows» il segnale resta pieno e si scrive il volume della scheda, altrimenti il segnale si
+    /// attenua e il volume di Windows non si tocca. Vale la scelta di adesso: il cambio vale dalla trasmissione dopo.
+    fn route(&self, tenths: u32) {
+        if engine_native::tx_level_windows() {
+            self.inner.set_attenuation(0);
+            self.apply(tenths);
+        } else {
+            self.inner.set_attenuation(tenths);
+        }
     }
 
     fn apply(&self, tenths: u32) {
@@ -1726,7 +1737,7 @@ impl WindowsVolumePort {
 
 impl engine_native::TxPort for WindowsVolumePort {
     fn schedule(&self, request: tx_native::TxRequest) -> Result<(), String> {
-        self.apply(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        self.route(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         self.inner.schedule(request)
     }
 
@@ -1739,27 +1750,26 @@ impl engine_native::TxPort for WindowsVolumePort {
     }
 
     fn set_attenuation(&self, tenths: u32) {
-        self.inner.set_attenuation(0);
-        if !self.started.swap(true, std::sync::atomic::Ordering::SeqCst) {
-            // avvio: il cursore Pwr prende il livello che Windows ha adesso (lo legge soltanto) e non scrive niente
+        if !self.started.swap(true, std::sync::atomic::Ordering::SeqCst) && engine_native::tx_level_windows() {
+            // avvio con «volume di Windows»: il cursore prende il livello che Windows ha adesso (lo legge soltanto) e non scrive niente
+            self.inner.set_attenuation(0);
             if let Some(now) = self.windows_tenths() {
                 self.controls.attenuation.store(now.min(450), std::sync::atomic::Ordering::Relaxed);
             }
             return;
         }
-        // chiamata di routine (prima di ogni trasmissione): riscrive solo se l'utente ha gia' mosso il cursore in questa sessione
-        self.apply(tenths);
+        // chiamata di routine (prima di ogni trasmissione): con «volume di Windows» riscrive solo se l'utente ha gia' mosso il cursore in questa sessione
+        self.route(tenths);
     }
 
     fn level_changed(&self, tenths: u32) {
-        // il livello e' cambiato davvero: da ora Aurora scrive il volume di Windows
-        self.inner.set_attenuation(0);
+        // il livello e' cambiato davvero: con «volume di Windows» da ora Aurora scrive il volume della scheda
         self.user_set.store(true, std::sync::atomic::Ordering::Relaxed);
-        self.apply(tenths);
+        self.route(tenths);
     }
 
     fn start_now(&self, request: tx_native::TxRequest) -> Result<(), String> {
-        self.apply(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+        self.route(self.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         self.inner.start_now(request)
     }
 }
@@ -2115,7 +2125,7 @@ struct DigiTx {
 impl mode_digi::DigiTxPort for DigiTx {
     fn start(&self, wave: Vec<f32>) -> Result<(), String> {
         if let Some(v) = &self.volume {
-            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+            v.route(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
         // un testo lungo in PSK31 dura qualche minuto: lo stesso tetto dell'SSTV
         start_as(&self.free_tx, true, || self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string()))
@@ -2136,7 +2146,7 @@ impl mode_digi::DigiTxPort for DigiTx {
 
     fn start_stream(&self, first: Vec<f32>) -> Result<(), String> {
         if let Some(v) = &self.volume {
-            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+            v.route(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
         start_as(&self.free_tx, true, || self.transmitter.start_stream(first).map(|_| ()).map_err(|e| e.to_string()))
     }
@@ -2164,7 +2174,7 @@ struct SstvTx {
 impl mode_sstv::SstvTxPort for SstvTx {
     fn start(&self, wave: Vec<f32>) -> Result<(), String> {
         if let Some(v) = &self.volume {
-            v.apply(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
+            v.route(v.controls.attenuation.load(std::sync::atomic::Ordering::Relaxed));
         }
         // le immagini piu' lunghe (PD 290, Scottie DX) durano meno di 5 minuti
         start_as(&self.free_tx, true, || self.transmitter.start_now(wave, std::time::Duration::from_secs(330)).map(|_| ()).map_err(|e| e.to_string()))
@@ -3174,7 +3184,7 @@ pub async fn run(
                         m.output_closed();
                     }
                     let manager = Arc::clone(m);
-                    // su Windows Pwr e' il volume della scheda; altrove quel comando non c'e' e il cursore attenua il segnale, come JTDX
+                    // su Windows «Lvl TX» e' il volume della scheda solo se l'utente lo sceglie, di fabbrica attenua il segnale come JTDX; altrove quel comando non c'e' e attenua sempre
                     // (senza, su Linux si trasmetteva sempre al massimo)
                     transmitter.map(|transmitter| {
                         let inner = Arc::clone(&transmitter) as Arc<dyn engine_native::TxPort>;

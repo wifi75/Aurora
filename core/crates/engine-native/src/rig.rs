@@ -86,6 +86,10 @@ pub struct SavedControls {
     pub wspr_pct: Option<u8>,
     #[serde(default)]
     pub wspr_type1: Option<bool>,
+    /// «Lvl TX» come volume di Windows dell'uscita (vero) o come attenuazione del segnale generato, come WSJT-X e JTDX (falso, di fabbrica).
+    /// Nei file scritti prima manca: vale il valore di fabbrica.
+    #[serde(default)]
+    pub tx_level_windows: Option<bool>,
 }
 
 fn default_fst4_period() -> u32 {
@@ -112,6 +116,14 @@ pub const MSK144_DEFAULT_PERIODS: [u32; 3] = [30, 15, 30];
 static MSK144_PERIODS: [AtomicU32; 3] = [AtomicU32::new(30), AtomicU32::new(15), AtomicU32::new(30)];
 /// MSK144: «Sh», i messaggi brevi (`m_bShMsgs` di WSJT-X, di fabbrica spento): in ricezione `bshmsg` di `mskrtd`, in trasmissione Tx3-Tx5 brevi.
 static MSK144_SHORT: AtomicBool = AtomicBool::new(false);
+
+/// «Lvl TX» come volume di Windows (vero) o come attenuazione del segnale generato (falso, di fabbrica: Aurora non scrive il volume di Windows).
+static TX_LEVEL_WINDOWS: AtomicBool = AtomicBool::new(false);
+
+/// Il cursore «Lvl TX» comanda il volume di Windows dell'uscita? Si legge a ogni trasmissione: il cambio vale subito.
+pub fn tx_level_windows() -> bool {
+    TX_LEVEL_WINDOWS.load(Ordering::Relaxed)
+}
 
 /// «Sh» acceso per MSK144.
 pub fn msk144_short() -> bool {
@@ -661,6 +673,7 @@ impl NativeControls {
             wspr_dbm: Some(crate::wspr::power_dbm()),
             wspr_pct: Some(crate::wspr::tx_pct()),
             wspr_type1: Some(crate::wspr::prefer_type1()),
+            tx_level_windows: Some(tx_level_windows()),
         }
     }
 
@@ -689,7 +702,13 @@ impl NativeControls {
             (_, true) => Mode::Ft4,
             _ => Mode::Ft8,
         });
-        self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
+        // un file scritto prima dell'opzione «Lvl TX» ricordava il volume di Windows (in dB di attenuazione): con l'attenuazione del segnale, di fabbrica,
+        // si riparte da 0 dB, cosi' l'uscita resta quella di prima (il volume di Windows e' ancora dove l'utente l'ha messo)
+        if saved.tx_level_windows.is_some() {
+            self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
+        } else {
+            self.attenuation.store(0, Ordering::Relaxed);
+        }
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
         JT65_SUBMODE.store(saved.jt65_sub.min(2), Ordering::Relaxed);
         set_q65(saved.q65_period, saved.q65_sub);
@@ -707,13 +726,17 @@ impl NativeControls {
         if let Some(on) = saved.wspr_type1 {
             crate::wspr::set_prefer_type1(on);
         }
+        if let Some(on) = saved.tx_level_windows {
+            TX_LEVEL_WINDOWS.store(on, Ordering::Relaxed);
+        }
         for (slot, period) in MSK144_PERIODS.iter().zip(saved.msk144_periods) {
             if qso_native::slot::MSK144_PERIODS_S.contains(&period) {
                 slot.store(period, Ordering::Relaxed);
             }
         }
         if let Ok(mut memory) = self.levels.lock() {
-            memory.levels = saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect();
+            // i livelli per banda di un file vecchio erano volumi di Windows: non valgono come attenuazione del segnale
+            memory.levels = if saved.tx_level_windows.is_some() { saved.levels.iter().map(|(k, v)| (k.clone(), (*v).min(450))).collect() } else { Default::default() };
         }
     }
 
@@ -910,6 +933,11 @@ impl NativeControls {
                 crate::wspr::set_prefer_type1(value == 1);
                 true
             }
+            // «Lvl TX»: 1 volume di Windows, 0 attenuazione del segnale (di fabbrica)
+            "tx_level_windows" if value <= 1 => {
+                TX_LEVEL_WINDOWS.store(value == 1, Ordering::Relaxed);
+                true
+            }
             _ => false,
         }
     }
@@ -934,6 +962,7 @@ impl NativeControls {
             ("wspr_dbm".to_string(), u32::from(crate::wspr::power_dbm())),
             ("wspr_pct".to_string(), u32::from(crate::wspr::tx_pct())),
             ("wspr_type1".to_string(), u32::from(crate::wspr::prefer_type1())),
+            ("tx_level_windows".to_string(), u32::from(tx_level_windows())),
         ]
     }
 
@@ -1600,6 +1629,23 @@ mod tests {
         b.restore(&old);
         assert!(b.switch_on("filter"), "un file nuovo lo ripristina");
         assert!(b.saved().filter_wired);
+    }
+
+    /// Un file scritto prima dell'opzione «Lvl TX» ricordava il volume di Windows (come attenuazione): con l'attenuazione del segnale, di fabbrica,
+    /// si riparte da 0 dB e senza livelli per banda, cosi' l'uscita resta quella di prima; un file nuovo conserva il livello.
+    #[test]
+    fn a_file_from_before_the_tx_level_option_restarts_at_zero_attenuation() {
+        let mut old = SavedControls { version: SavedControls::VERSION, rx_df: 1500, tx_df: 1500, attenuation: 225, ..SavedControls::default() };
+        old.levels.insert("20mFT8".into(), 150);
+        let (_, a) = rig();
+        a.restore(&old);
+        assert_eq!(a.attenuation.load(Ordering::Relaxed), 0);
+        assert!(a.saved().levels.is_empty());
+        old.tx_level_windows = Some(tx_level_windows());
+        let (_, b) = rig();
+        b.restore(&old);
+        assert_eq!(b.attenuation.load(Ordering::Relaxed), 225);
+        assert_eq!(b.saved().levels.get("20mFT8"), Some(&150));
     }
 
     /// Hound acceso come WSJT-X: Tx sotto 1000 Hz spostata sopra, Split acceso, avviso con la frequenza; con la Tx gia' sopra resta dov'e'.
