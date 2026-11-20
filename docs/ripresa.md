@@ -4,6 +4,13 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.317 (pubblicata 2026-11-20T14:14:59Z)
+
+- #86 (M8GVC, FT-710): con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx spegneva Abilita Tx e non partiva niente. Causa: `TxDriver::plan` (`engine-native/src/tx.rs`) scambiava quel CQ per un CQ automatico a QSO finito (`cq_by_user` era vero solo con il comando `CallCq`). Correzione: `TxCommand::Enable(true)` con `ntx() == 6` e `SelectTx(6)` con Abilita Tx acceso impostano `cq_by_user`. Prova `enable_tx_with_the_cq_message_selected_transmits_even_with_auto_tx_off` (fallisce senza la correzione). Il CQ automatico a QSO finito resta solo con AutoTX.
+- #85 (Luc, «auto stopping»): e' il watchdog di trasmissione (`TxWatchdogTimer`, 6 minuti di base, campo «Periodo di monitoraggio Tx» in Impostazioni › Modi › FT8 · FT4): non e' un difetto; spiegato e chiesto dopo quanti minuti si ferma.
+- #83 (Vladimir, FO-29, pacchetto `0898B75C`): il ripiego a due VFO era spento (nessun `V Sub` nel log); in piu' con il SAT acceso la lettura `f` passa a turno da 145 a 435 MHz e Aurora conta 212 «cambi di banda» (azzerano Tx e messaggi). Sembra che la radio scambi da sola principale e secondario: non corretto, servono i suoi test.
+- Guida aggiornata alla 0.11.316 (ingranaggio unico, rotore fuori dalla barra, etichetta dei satelliti opzionale, pallini e prova, conferma di chiamata, WEFAX, cascata).
+
 ## Nella 0.11.316 (pubblicata 2026-11-20T13:10:20Z)
 
 - Diagnosi della trasmissione (piano in `docs/piano-diagnosi-trasmissione.md`): `tx-native` ha `TxReport` (picco audio, PTT letto dalla radio con `Ptt::read_state` su Hamlib, hook `set_report_hook`) e scrive «trasmissione: audio picco … PTT …» in `aurora.log`; `aurora-core` ha `StationStatus.tx_chain` (`TxChain`), pubblicato da `engine-native` (`NativeControls::set_tx_chain`) e riempito in `aurora/src/lib.rs` (modo radio dal CAT).

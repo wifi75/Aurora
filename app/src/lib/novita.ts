@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.317',
-    released: '2026-11-20T16:00:00Z',
+    released: '2026-11-20T14:14:59Z',
     kind: 'fixed',
     title: [
       'Il CQ parte anche con AutoTX spento, Guida aggiornata',
