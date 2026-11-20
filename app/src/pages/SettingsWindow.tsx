@@ -8,8 +8,10 @@ import { useT, type Key } from '../i18n';
 import { SettingsSearch } from '../settings/SettingsSearch';
 import { usePrefs } from '../lib/prefs';
 import { SETTINGS_TAB_EVENT } from '../lib/settingsWindow';
-import { allPages, INFO_ID, isKnownNode, resolveNode, SETTINGS_TREE, type FamilyId } from '../lib/settingsTree';
+import { allPages, GUIDE_ID, INFO_ID, NEWS_ID, isKnownNode, resolveNode, SETTINGS_TREE, type FamilyId } from '../lib/settingsTree';
 import { AboutTab } from '../settings/AboutTab';
+import { News } from './News';
+import { Wiki } from './Wiki';
 import { AccessTab } from '../settings/AccessTab';
 import { AutomationTab, AUTOMATION_DRAFT } from '../settings/AutomationTab';
 import { ClockTab } from '../settings/ClockTab';
@@ -119,12 +121,16 @@ const RENDER: Readonly<Record<string, () => ReactNode>> = {
   updates: () => <GeneralWindowTab part="updates" />,
   support: () => <SupportTab />,
   [INFO_ID]: () => <AboutTab />,
+  [GUIDE_ID]: () => <Wiki />,
+  [NEWS_ID]: () => <News />,
 };
 
 /** Tutte le pagine, nell'ordine dell'albero e con Informazioni in fondo: servono alla ricerca. */
 export const SETTINGS_PAGES: readonly PageDef[] = [
   ...allPages().map(({ page }) => ({ id: page.id, label: page.label, render: RENDER[page.id] ?? (() => null) })),
   { id: INFO_ID, label: 'sw.tab.info', render: RENDER[INFO_ID] ?? (() => null) },
+  { id: GUIDE_ID, label: 'nav.wiki', render: RENDER[GUIDE_ID] ?? (() => null) },
+  { id: NEWS_ID, label: 'nav.news', render: RENDER[NEWS_ID] ?? (() => null) },
 ];
 
 /** Chiude la finestra: dal programma per Windows serve l'indirizzo speciale, `window.close()` da solo non basta. */
@@ -431,6 +437,27 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
             <span className="sw-bar" aria-hidden="true" />
             {t('sw.tab.info')}
             {version ? <span className="sw-ver data">{version}</span> : null}
+          </button>
+          {/* Guida e Novita' sotto Informazioni: stanno nelle Impostazioni, non piu' nel menu dell'ingranaggio */}
+          <button
+            type="button"
+            id={`swtab-${GUIDE_ID}`}
+            className={`sw-fam sw-fam--info${pageDef.id === GUIDE_ID ? ' sw-on' : ''}`}
+            aria-current={pageDef.id === GUIDE_ID ? 'page' : undefined}
+            onClick={() => go(GUIDE_ID)}
+          >
+            <span className="sw-bar" aria-hidden="true" />
+            {t('nav.wiki')}
+          </button>
+          <button
+            type="button"
+            id={`swtab-${NEWS_ID}`}
+            className={`sw-fam sw-fam--info${pageDef.id === NEWS_ID ? ' sw-on' : ''}`}
+            aria-current={pageDef.id === NEWS_ID ? 'page' : undefined}
+            onClick={() => go(NEWS_ID)}
+          >
+            <span className="sw-bar" aria-hidden="true" />
+            {t('nav.news')}
           </button>
         </nav>
         <div className="sw-content">

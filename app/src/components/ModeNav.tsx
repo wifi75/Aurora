@@ -258,7 +258,18 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
         {/* spia di salute della stazione, subito prima dell'ingranaggio */}
         <HealthLight />
-        <span className="nav-more" ref={box}>
+        {/* sul PC l'ingranaggio apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}
+        {remote ? null : (
+          <a
+            className={`glass nav-more-btn${MORE_ROUTES.includes(route.name) ? ' glass--on' : ''}`}
+            href={settingsHref}
+            aria-label={t('nav.settings')}
+            title={t('nav.settings')}
+          >
+            <Icon name="gear" size="1.15em" />
+          </a>
+        )}
+        <span className="nav-more" ref={box} hidden={!remote}>
           <button
             type="button"
             className={`glass nav-more-btn${MORE_ROUTES.includes(route.name) ? ' glass--on' : ''}`}

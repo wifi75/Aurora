@@ -13,7 +13,7 @@ vi.mock('../api/client', async (importOriginal) => {
     getDigi: vi.fn(() => Promise.reject(new Error('offline'))),
   };
 });
-import { allPages, INFO_ID } from '../lib/settingsTree';
+import { allPages, GUIDE_ID, INFO_ID, NEWS_ID } from '../lib/settingsTree';
 import { SETTINGS_PAGES, SettingsWindow } from './SettingsWindow';
 
 function render(ui: ReactElement) {
@@ -29,7 +29,7 @@ beforeEach(() => {
 describe('SettingsWindow', () => {
   it('ogni pagina dell albero ha il suo contenuto, piu Informazioni', () => {
     const ids = SETTINGS_PAGES.map((p) => p.id);
-    expect(ids).toEqual([...allPages().map((p) => p.page.id), INFO_ID]);
+    expect(ids).toEqual([...allPages().map((p) => p.page.id), INFO_ID, GUIDE_ID, NEWS_ID]);
     for (const p of SETTINGS_PAGES) expect(p.render).toBeTypeOf('function');
   });
 

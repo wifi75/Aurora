@@ -31,6 +31,9 @@ export interface TreeFamily {
 
 /** La pagina Informazioni, staccata in fondo all'albero: e' anche quella che si vede aprendo senza una scheda richiesta. */
 export const INFO_ID = 'info';
+/** Guida e Novita' stanno in fondo all'albero, sotto Informazioni (non nel menu dell'ingranaggio). */
+export const GUIDE_ID = 'guide';
+export const NEWS_ID = 'news';
 
 const page = (id: string, label: Key): TreePage => ({ kind: 'page', id, label });
 const sub = (id: string, label: Key, pages: readonly TreePage[]): TreeSub => ({ kind: 'sub', id, label, pages });
@@ -130,6 +133,8 @@ export interface NodePath {
 }
 
 const INFO_PATH: NodePath = { family: null, sub: null, page: INFO_ID };
+const GUIDE_PATH: NodePath = { family: null, sub: null, page: GUIDE_ID };
+const NEWS_PATH: NodePath = { family: null, sub: null, page: NEWS_ID };
 
 /** Tutte le pagine dell'albero, ognuna con la sua famiglia e la sua sottofamiglia. */
 export function allPages(): Array<{ page: TreePage; family: TreeFamily; sub: TreeSub | null }> {
@@ -151,6 +156,8 @@ export function resolveNode(id: string | null | undefined): NodePath {
   if (!id) return INFO_PATH;
   const want = LEGACY_IDS[id] ?? id;
   if (want === INFO_ID) return INFO_PATH;
+  if (want === GUIDE_ID) return GUIDE_PATH;
+  if (want === NEWS_ID) return NEWS_PATH;
   for (const family of SETTINGS_TREE) {
     if (family.id === want) {
       const first = family.items[0];
@@ -174,7 +181,7 @@ export function resolveNode(id: string | null | undefined): NodePath {
 export function isKnownNode(id: string | null | undefined): boolean {
   if (!id) return false;
   const want = LEGACY_IDS[id] ?? id;
-  return want === INFO_ID || resolveNode(id).page !== INFO_ID;
+  return want === INFO_ID || want === GUIDE_ID || want === NEWS_ID || resolveNode(id).page !== INFO_ID;
 }
 
 /**
