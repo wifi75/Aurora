@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.312',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T12:02:41Z',
     kind: 'fixed',
     title: [
       'Satellite in arrivo nella barra, meno finestre e pulsanti leggibili',

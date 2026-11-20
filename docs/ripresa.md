@@ -4,7 +4,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
-## In preparazione (0.11.312, gia' su `main`, NON pubblicata)
+## Nella 0.11.312 (pubblicata 2026-11-20T12:02:41Z)
 
 - `Live.tsx`: la conferma di chiamata (`CallUnseenDialog`) non scatta piu' sul doppio clic delle liste dei decode (`onReply(id, true)`); resta per «CQ e novita'», DXpedition e avvisi di nuovi DX. L'interruttore sta in Impostazioni › Modi › FT8 · FT4 › Messaggi e filtri › Schermo (non in «Registrazione e comportamento»: F1DSZ era stato indirizzato male).
 - `modeRetune.ts`: `rememberDialBeforeReceiveOnly` + `retuneTo`: uscendo dal WEFAX (frequenze fuori banda) la radio torna alla banda di prima; `lastPage.ts`/`ModeNav.tsx`: il gruppo PSK·RTTY·SSTV riapre l'ultima pagina del gruppo (`lastTextPage`).
