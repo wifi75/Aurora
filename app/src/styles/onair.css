@@ -7913,3 +7913,8 @@ html[data-theme='light'] .freq-picker-menu.glass {
 .tx-chain-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
 .tx-chain-dot[data-state='ok'] { background: #34d399; }
 .tx-chain-dot[data-state='bad'] { background: #f87171; box-shadow: 0 0 6px rgb(248 113 113 / 0.7); }
+
+/* «Prova senza trasmettere» nelle Impostazioni › Radio */
+.txcheck-list { list-style: none; margin: 0.4rem 0 0; padding: 0; display: grid; gap: 0.3rem; }
+.txcheck-item { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.85rem; }
+.txcheck-item .tx-chain-dot { flex: none; transform: translateY(-1px); }

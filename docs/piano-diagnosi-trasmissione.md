@@ -25,9 +25,9 @@ Ogni trasmissione lascia un esito leggibile passo per passo; se un passo fallisc
 Nessuna trasmissione di prova (portante), nessuna modifica alle logiche di QSO (`docs/logiche-jtdx.md`). Il confronto con la «preparazione del modo radio» di WSJT-X 3.3.0-beta6 si fa con REA, non a intuito.
 
 ## Stato
-- [ ] 1 registro per trasmissione e `trasmissioni.log`
-- [ ] 2 controlli dopo ogni passo
-- [ ] 3 pallini nella scheda Trasmissione
-- [ ] 4 «Prova senza trasmettere»
+- [x] 1 registro per trasmissione: riga «trasmissione: audio picco … PTT …» in `aurora.log` (finisce nel pacchetto di assistenza, niente file a parte) e rapporto `TxReport` (`tx-native/src/scheduler.rs`)
+- [x] 2 controlli: PTT letto dalla radio all'inizio dell'audio (`Ptt::read_state`, Hamlib), picco audio, modo radio letto dal CAT; avvisi nel registro (parziale: il confronto del modo con quello richiesto e' solo «modo che non porta il digitale»)
+- [x] 3 pallini nella scheda Trasmissione (`TxChainDots.tsx`, `lib/txChain.ts`, stato `tx_chain`)
+- [x] 4 «Prova senza trasmettere» in Impostazioni › Radio (`settings/TxCheck.tsx`, `lib/txCheck.ts`): solo lettura, mai PTT ne' audio
 - [ ] 5 watchdog del PTT verificato
-- [ ] 6 prove con il finto rigctld
+- [x] 6 prove: rapporto in `scheduler.rs`, `txChain.test.ts`, `txCheck.test.ts`; prove con il finto `rigctld` e PTT che non si legge: ancora da scrivere

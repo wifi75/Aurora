@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.316 - 2026-11-20
+
+- Diagnosi della trasmissione: a ogni trasmissione Aurora scrive nel registro il picco dell'audio mandato alla radio e lo stato del PTT letto dalla radio, e avvisa se l'audio e' praticamente muto o se la radio dice di essere in ricezione mentre Aurora trasmette (difetto segnalato dagli utenti di WSJT-X 3.3: PTT che scatta senza RF).
+- Scheda Trasmissione: tre pallini (modo radio, audio, PTT), verdi, rossi o grigi, con la causa nel suggerimento.
+- Impostazioni › Radio: «Prova senza trasmettere», che guarda CAT, modo radio, PTT, uscita audio e livello Pwr senza dare il PTT e senza mandare audio.
+
 ## 0.11.315 - 2026-11-20
 
 - Rotore: tolto il pulsante «Rotore» dalla barra in alto (serve solo a chi ha un rotore). In Impostazioni › Rotore, nuovo gruppo «Mostra in home»: due caselle per mostrare la scheda del rotore nella pagina FT8 (pannello Stazione) e/o nella pagina PSK · RTTY · CW, e il pulsante «Apri la pagina del rotore» per la pagina completa.

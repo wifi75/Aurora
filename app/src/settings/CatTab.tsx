@@ -31,6 +31,7 @@ import { coreText } from '../lib/coreText';
 import { BAUDS, applyCandidate, catIssue, filterModels, modelForCandidate, modelLabel, sameCat, visibleFields } from '../lib/cat';
 import { icomBaudWarning, presetApplied, presetFor, type RigPreset } from '../lib/rigPresets';
 import { Check, Help, Row } from './common';
+import { TxCheck } from './TxCheck';
 import { Actions, Cell, Cells, Field, Group, Message, Notes, Page } from './layout';
 import { useAutosave } from './useAutosave';
 import { selectSettingsTab } from '../lib/settingsWindow';
@@ -748,6 +749,8 @@ export function CatGroups({ part = 'all' }: { part?: 'all' | 'link' | 'profiles'
           </Cells>
         </Group>
       ) : null}
+
+      <TxCheck />
 
       <Group title={t('cat.grp.split')}>
         <Cells min={14}>
