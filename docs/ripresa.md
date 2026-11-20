@@ -4,6 +4,11 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Servizio dei rapporti (Cloudflare), 2026-11-20 sera
+- Messaggio dell'autore `aggiorna-0.11.319` (solo inglese, 115 caratteri: la cartolina del tray e' larga 390 px e mostra circa 3 righe, il resto e' tagliato; stile `aggiorna`, `prima_di` 0.11.319, valido fino al 2026-11-27) scritto direttamente in D1 (tabella `messaggi`): il segreto `ADMIN_TOKEN` non e' sul PC.
+- Contatore dei clic: rotta `GET /v1/vai/<id>?a=<indirizzo>` del Worker (`servizi/rapporti/src/index.ts`, `destinazioneSicura`: solo https e solo `github.com/wifi75/Aurora` o `aurora.iu3wjq.com`), tabella `messaggi_clic` (migrazione `0004_clic.sql`, gia' applicata e Worker gia' pubblicato con `wrangler deploy`; il commit del repo e' locale, non pushato). Il pulsante del messaggio passa da li' e rimanda a `releases/latest`. Lettura: `SELECT * FROM messaggi_clic` e `messaggi_visti`. Il file locale del Worker non e' ancora su GitHub.
+- Misura dell'effetto (alle 17:29 UTC): 0 cartoline mostrate, 20 installazioni su 158 sulla 0.11.319+, 73 scaricamenti del setup 0.11.319.
+
 ## Nella 0.11.319 (pubblicata 2026-11-20T15:05:18Z)
 
 - Etichetta dei satelliti (`SatAlertLabel.tsx`, `sat-label.css`): il nome sta in `.sat-label-name` (max 11 em, puntini) e il testo `{sat} tra {time}` e' diviso con un segnaposto, cosi' il conto alla rovescia non si taglia mai (#82, ct1bxx). Prove passate, non vista a schermo.

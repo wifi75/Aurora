@@ -91,6 +91,14 @@ CREATE TABLE IF NOT EXISTS messaggi (
 CREATE INDEX IF NOT EXISTS messaggi_dal ON messaggi (dal, al);
 
 -- Chi ha visto un messaggio (dal 2026-11-07, 0.11.182): una riga per messaggio e installazione (codice anonimo), per contarli.
+-- I clic sul pulsante di un messaggio (via /v1/vai/<id>): solo il conto per giorno.
+CREATE TABLE IF NOT EXISTS messaggi_clic (
+  messaggio TEXT NOT NULL,
+  giorno TEXT NOT NULL,
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (messaggio, giorno)
+);
+
 CREATE TABLE IF NOT EXISTS messaggi_visti (
   messaggio TEXT NOT NULL,
   installazione TEXT NOT NULL,

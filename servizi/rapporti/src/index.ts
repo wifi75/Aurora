@@ -6,6 +6,7 @@
  * - POST /v1/attivo  «sono attiva oggi»: codice casuale dell'installazione, versione, sistema, antivirus, computer (processore, core, memoria) e, facoltativo, il codice della persona
  *   (SHA-256 del nominativo fatto sul PC, salvato solo dopo un HMAC con PERSONA_SEGRETO); una riga al giorno
  * - GET  /v1/messaggi  messaggi del proprietario da mostrare ora (pubblico; ?v=versione); scritti da /admin/messaggi con ADMIN_TOKEN
+ * - GET  /v1/vai/<id>?a=<indirizzo>  conta il clic sul pulsante del messaggio <id> (solo il conto per giorno) e rimanda all'indirizzo (solo GitHub di Aurora e il sito)
  * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
  * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
@@ -36,6 +37,21 @@ const MAX_BUNDLE = 10 * 1024 * 1024;
 const NON_LETTO = '(non letto)';
 /** I campi di un rapporto che si tengono; tutto il resto si scarta. */
 const CAMPI = ['schema', 'id', 'installazione', 'giorno', 'versione', 'sistema', 'antivirus', 'pc', 'motore', 'radio', 'ptt', 'cat', 'audio_in', 'audio_out', 'area', 'livello', 'origine', 'messaggio', 'conteggio'] as const;
+
+/** L'indirizzo a cui rimandare un clic: https, e solo la pagina di Aurora su GitHub o il sito ufficiale; altrimenti `null`. */
+export function destinazioneSicura(valore: string | null): string | null {
+  if (!valore || valore.length > 300) return null;
+  let u: URL;
+  try {
+    u = new URL(valore);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'https:' || u.username !== '' || u.password !== '') return null;
+  const github = u.hostname === 'github.com' && (u.pathname === '/wifi75/Aurora' || u.pathname.startsWith('/wifi75/Aurora/'));
+  const sito = u.hostname === 'aurora.iu3wjq.com';
+  return github || sito ? u.href : null;
+}
 
 function risposta(status: number, corpo: unknown): Response {
   return new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
@@ -341,6 +357,21 @@ export default {
         r.headers.set('Access-Control-Allow-Origin', '*');
         r.headers.set('Cache-Control', 'public, max-age=300');
         return r;
+      }
+      // il pulsante di un messaggio passa di qui: si conta il clic (messaggio e giorno, niente altro: nessun IP, nessun codice) e si rimanda
+      // all'indirizzo, che puo' essere solo la pagina di Aurora su GitHub o il sito (niente rimandi aperti verso altri siti)
+      const vai = /^\/v1\/vai\/([0-9A-Za-z._-]{1,40})$/.exec(url.pathname);
+      if (vai && req.method === 'GET') {
+        const dest = destinazioneSicura(url.searchParams.get('a'));
+        if (!dest) return risposta(400, { error: 'destinazione' });
+        try {
+          await env.INDICE.prepare('INSERT INTO messaggi_clic (messaggio, giorno, n) VALUES (?1, ?2, 1) ON CONFLICT (messaggio, giorno) DO UPDATE SET n = n + 1')
+            .bind(vai[1], new Date().toISOString().slice(0, 10))
+            .run();
+        } catch {
+          // il conteggio non deve impedire di arrivare alla pagina
+        }
+        return new Response(null, { status: 302, headers: { Location: dest, 'Cache-Control': 'no-store' } });
       }
       // «ho mostrato la cartolina del messaggio X»: da Aurora (pagina locale, quindi con la domanda preventiva del browser) e dall'agente;
       // solo il codice anonimo dell'installazione, una riga per messaggio, per contare quanti l'hanno visto
