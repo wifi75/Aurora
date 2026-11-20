@@ -32,7 +32,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
 - [x] Panic `tao`: prima correzione sulla chiusura (0.11.308)
-- [ ] Panic `tao`: restano finestre e cartolina del tray; serve il backtrace dell'utente
+- [x] Panic `tao` verificato sul pacchetto vero (F014CB6C, FTDX-101MP): i due panic sono di Aurora 0.11.179 (7/11) e 0.11.212 (9/11), nessuno nelle versioni dopo; niente altro da fare salvo nuove segnalazioni
 - [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
 - [ ] Antivirus: invio dei file per i falsi positivi (tuo)
 

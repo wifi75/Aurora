@@ -2,6 +2,8 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+- Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
+
 ## Nella 0.11.308 (pubblicata 2026-11-20T07:44:01Z)
 
 - Satelliti: preavviso del rotore (`lib/satAlerts.ts`, evento `rotor`, minuti impostabili 0-30, suono suo), ascolto del suono alla scelta, CSS delle schede «Doppler e rotore» e «Informazioni» senza spazi vuoti (non verificato a schermo). Il rotore non parcheggia (decisione da prendere).
