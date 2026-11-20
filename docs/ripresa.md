@@ -2,6 +2,14 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.307 (pubblicata 2026-11-20T07:21:50Z)
+
+- WEFAX: crate `core/crates/mode-wefax` (ricezione ripresa da fldigi 4.2.13 di W1HKJ e Remi Chateauneu, GPL-3.0; 14 prove con segnale sintetico), rotte `/api/v1/wefax`, evento `wefax`, pagina `#/wefax` (visore adattabile, 1:1, zoom, cronologia), menu delle frequenze per banda e frequenza (`app/src/lib/wefaxStations.ts`, fonte NOAA/NWS marzo 2025 e DWD; la radio va sulla portante, assegnata - 1,9 kHz), finestra staccata. NON provato con segnali veri; 240 LPM solo in modo manuale.
+- SSTV: entrando nella pagina la radio va sui 20 m (14,230 MHz). TUNE: un clic avvia sempre l'accordatura (prima, con l'accordatore gia' inserito, la spegneva) e resta acceso finche' non lo spegni.
+- Aggiornamenti: primo controllo del core subito, finestrella «Vuoi aggiornare?» (Si/X) all'avvio, icona in testata ogni giorno, cartolina del tray a ogni avvio e ogni 6 ore. Non provato dal vivo.
+- Olandese completo (202 + 17 voci). Elenco breve delle cose da fare: `docs/da-fare.md`.
+- Indagine panic `tao` re-entrant (senza il backtrace): sospetti in `desktop/src-tauri/src/lib.rs` (CloseRequested sincrono, creazione/chiusura finestre dentro il gestore) e `agent.rs` (cartolina costruita in `run_on_main_thread`); correzione ancora da fare.
+
 ## Nella 0.11.306 (pubblicata 2026-11-20T06:09:57Z)
 
 - Satelliti (`mode-sat/src/service.rs`, `LoopState.split_failed`/`tx_failed`): se la radio rifiuta lo split (IC-820H con Hamlib, `S 1 VFOB` -> -11) non si riprova ogni secondo e il Doppler della ricezione va avanti; la frequenza di trasmissione si prova una volta. Non provato con un'IC-820H; non si sa se Hamlib sa impostare la frequenza di trasmissione di quella radio.

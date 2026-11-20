@@ -5,7 +5,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 ## Adesso
 - [x] WEFAX: pagina nell'interfaccia fatta
 - [ ] WEFAX: guardarla a schermo e provarla con un segnale vero (frequenze meteo, Guida e finestra staccata da aggiungere)
-- [ ] Pubblicare la prossima versione (TUNE corretto, SSTV sui 20 m, avvisi di aggiornamento, WEFAX)
+- [x] Pubblicata la 0.11.307 (TUNE, SSTV 20 m, avvisi, WEFAX, olandese)
 - [ ] Avvisi di aggiornamento: provarli dal vivo (finestrella «Vuoi aggiornare?», cartolina del tray)
 - [ ] Finestrella di aggiornamento nativa prima dell'apertura di Aurora (solo se la vuoi)
 
@@ -27,7 +27,7 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Satelliti: preavviso rotore, suoni, schede con spazi vuoti
 - [ ] Cascata: riconoscimento modo, BIGScan regolabile
 - [ ] Modi in grigio: Olivia/Contestia (alta), MT63, Hell, WEFAX fatto, Packet
-- [ ] Panic `tao` (crash FTDX-101MP)
+- [ ] Panic `tao`: indagato, correzione da fare (lib.rs CloseRequested, finestre, cartolina agent.rs)
 - [x] Olandese completato (da rileggere: «Instellingen › Weergave», «Opdrachten»)
 - [ ] Antivirus: invio dei file per i falsi positivi (tuo)
 

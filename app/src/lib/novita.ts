@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.307',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T07:21:50Z',
     kind: 'new',
     title: [
       'WEFAX: ricevi le cartine meteo e isobariche in HF',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.307',
-    released: '2026-11-20T12:00:00Z',
+    released: '2026-11-20T07:21:50Z',
     kind: 'fixed',
     title: [
       'TUNE sempre acceso, SSTV sui 20 m, avvisi di aggiornamento più presenti',
