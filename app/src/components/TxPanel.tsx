@@ -10,6 +10,7 @@ import { useStation } from '../state/station';
 import { InputLevel } from './InputLevel';
 import { OutputLevel } from './OutputLevel';
 import { QsoSwitches } from './QsoSwitches';
+import { TxChainDots } from './TxChainDots';
 import { replyErrorMessage } from '../lib/replyError';
 import { activeTx, nextTx, txMessages } from '../lib/txMessages';
 
@@ -224,6 +225,7 @@ export function TxPanel({ txAllowed, status: statusProp, decodes = [], part = 'a
                 {status.super_hound ? 'Super Hound' : 'Hound'}
               </span>
             ) : null}
+            <TxChainDots />
             {/* Tx/Rx Split, Log QSO e Canc DX stanno nei Comandi */}
           </div>
           {/* gli avvisi di sicurezza della trasmissione: restano finche' il motore li tiene nello stato */}

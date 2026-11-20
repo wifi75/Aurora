@@ -68,6 +68,11 @@ export const StationStatusSchema = z.object({
   fox_verification: z.object({ call: z.string(), verified: z.boolean() }).nullable().optional(),
   /** Hound: in questi minuti si riceve un Fox UltraFOX/SuperFox (etichetta «Super Hound»). */
   super_hound: z.boolean().optional(),
+  /** Com'e' andata l'ultima trasmissione: picco audio, PTT letto dalla radio, modo radio (i pallini della scheda Trasmissione). */
+  tx_chain: z
+    .object({ peak_dbfs: z.number().nullable().optional(), ptt_read: z.boolean().nullable().optional(), audio_muted: z.boolean().optional(), radio_mode: z.string().nullable().optional() })
+    .nullable()
+    .optional(),
 });
 export type StationStatus = z.infer<typeof StationStatusSchema>;
 

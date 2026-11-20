@@ -7907,3 +7907,9 @@ html[data-theme='light'] .freq-picker-menu.glass {
 }
 .ptt-stuck-actions button:disabled { opacity: 0.6; cursor: default; }
 .ptt-stuck-actions .ptt-stuck-ignore { color: #fff; background: transparent; border: 1px solid #ffb3b3; }
+
+/* i tre pallini della catena di trasmissione (modo radio, audio, PTT) nella scheda Trasmissione */
+.tx-chain { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+.tx-chain-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.tx-chain-dot[data-state='ok'] { background: #34d399; }
+.tx-chain-dot[data-state='bad'] { background: #f87171; box-shadow: 0 0 6px rgb(248 113 113 / 0.7); }
