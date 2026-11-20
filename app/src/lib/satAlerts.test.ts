@@ -10,6 +10,7 @@ import {
   loadAlertSettings,
   mergePasses,
   remember,
+  rotorNotice,
   sanitizeAlertSettings,
   saveAlertSettings,
   type AlertInput,
@@ -274,5 +275,38 @@ describe('suoni', () => {
     expect(started).toBe(0);
     expect(playAlert('aos', 'radar', 60, ctx('running'))).toBe(true);
     expect(started).toBe(3);
+  });
+});
+
+describe('preavviso del rotore', () => {
+  const rp = pass({ aos_az_deg: 123 });
+  it('non avvisa con il rotore spento o senza preavviso', () => {
+    expect(kinds(base({ passes: [rp], now: T0 + 400, rotorOn: false }))).not.toContain('rotor');
+    expect(kinds(base({ passes: [rp], now: T0 + 400, rotorOn: true, settings: settings({ rotorLeadMin: 0 }) }))).not.toContain('rotor');
+  });
+  it('avvisa una volta sola, dentro il preavviso, con l’azimut di sorgere', () => {
+    const input = base({ passes: [rp], now: T0 + 400, rotorOn: true, settings: settings({ rotorLeadMin: 5 }) });
+    const ev = dueAlerts(input).filter((e) => e.kind === 'rotor');
+    expect(ev).toHaveLength(1);
+    expect(ev[0]?.az).toBe(123);
+    expect(ev[0]?.secondsToAos).toBe(200);
+    const log = remember([], ev, input.now);
+    expect(dueAlerts({ ...input, now: input.now + 1, log }).filter((e) => e.kind === 'rotor')).toEqual([]);
+  });
+  it('non avvisa prima della finestra e non per satelliti non seguiti', () => {
+    expect(kinds(base({ passes: [rp], now: T0 + 100, rotorOn: true, settings: settings({ rotorLeadMin: 5 }) }))).not.toContain('rotor');
+    expect(kinds(base({ passes: [rp], now: T0 + 400, rotorOn: true, tracked: [], selected: null }))).not.toContain('rotor');
+  });
+  it('la scritta fissa segue il primo passaggio in finestra', () => {
+    const n = rotorNotice({ passes: [rp], now: T0 + 400, settings: settings(), selected: ISS, tracked: [ISS], minEl: 5, rotorOn: true });
+    expect(n).toEqual({ norad: ISS, name: 'ISS', az: 123, secondsToAos: 200 });
+    expect(rotorNotice({ passes: [rp], now: T0 + 700, settings: settings(), selected: ISS, tracked: [ISS], minEl: 5, rotorOn: true })).toBeNull();
+    expect(rotorNotice({ passes: [rp], now: T0 + 400, settings: settings(), selected: ISS, tracked: [ISS], minEl: 5, rotorOn: false })).toBeNull();
+  });
+  it('il suono del rotore e le impostazioni nuove si leggono con valori di base', () => {
+    expect(alertSoundDef('bell', 'rotor').tones.length).toBe(alertSoundDef('bell', 'pre').tones.length);
+    const s = sanitizeAlertSettings({ rotorLeadMin: 99, soundRotor: 'xx' });
+    expect(s.rotorLeadMin).toBe(30);
+    expect(s.soundRotor).toBe(DEFAULT_ALERT_SETTINGS.soundRotor);
   });
 });

@@ -156,11 +156,11 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
 
   // avvisi: i passaggi di tutti i satelliti spuntati e, se serve, quelli del satellite scelto (anche se non e' spuntato)
   const alertPasses = useMemo<AlertPass[]>(() => {
-    const all = passesAll.map((p) => ({ norad: p.norad, name: p.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg }));
-    const own = sel === null ? [] : passes.map((p) => ({ norad: sel, name: info?.name ?? now.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg }));
+    const all = passesAll.map((p) => ({ norad: p.norad, name: p.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg, aos_az_deg: p.aos_az_deg }));
+    const own = sel === null ? [] : passes.map((p) => ({ norad: sel, name: info?.name ?? now.name, aos_unix: p.aos_unix, los_unix: p.los_unix, max_el_deg: p.max_el_deg, aos_az_deg: p.aos_az_deg }));
     return mergePasses(all, own);
   }, [passesAll, passes, sel, info?.name, now.name]);
-  const alerts = useSatAlerts({ passes: alertPasses, positions: shownPositions, tracked: s.tracked, selected: sel, minEl: s.min_el_deg, serverNow: now.time_unix });
+  const alerts = useSatAlerts({ passes: alertPasses, positions: shownPositions, tracked: s.tracked, selected: sel, minEl: s.min_el_deg, serverNow: now.time_unix, rotorOn: s.rotor_on });
 
   const save = (patch: Partial<SatSettings>) => {
     void putSat({ ...s, ...patch }).then((next) => {
@@ -442,7 +442,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
       children: info ? (
         <>
     <p className="sat-muted">{info.notes}</p>
-    <div className="sat-table">
+    <div className="sat-table sat-table--info">
       <table>
         <thead>
           <tr>
@@ -586,6 +586,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
                 <input type="number" min={0} max={60} value={s.min_el_deg} onChange={(e) => save({ min_el_deg: Math.max(0, Math.min(60, Number(e.target.value) || 0)) })} />
               </label>
               {s.rotor_on && now.rotor.ready ? <p className="sat-muted">{t('sat.ctl.rotorTo', { az: Math.round(now.rotor.az_deg), el: Math.round(now.rotor.el_deg) })}</p> : null}
+              {alerts.rotor ? <p className="sat-status warn">{alerts.rotor.az === null ? t('sat.ctl.rotorSoonNoAz', { name: alerts.rotor.name, t: mmss(alerts.rotor.secondsToAos) }) : t('sat.ctl.rotorSoon', { name: alerts.rotor.name, az: Math.round(alerts.rotor.az), t: mmss(alerts.rotor.secondsToAos) })}</p> : null}
               <p className={`sat-status ${now.rotor.ready ? 'ok' : 'warn'}`}>{now.rotor.ready ? t('sat.ctl.rotorReady') : t('sat.ctl.rotorNot')}</p>
               {now.rotor.error ? <p className="sat-status warn">{now.rotor.error}</p> : null}
             </section>

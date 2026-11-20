@@ -38,7 +38,7 @@ export const PRE_VOLUME = 0.4;
 
 /** Il suono `sound` per l'evento `kind`, come descrizione di note per `scheduleSound`. */
 export function alertSoundDef(sound: AlertSound, kind: AlertKind): SoundDef {
-  const notes = kind === 'los' ? DOWN[sound] : kind === 'pre' ? UP[sound].slice(0, 2) : UP[sound];
+  const notes = kind === 'los' ? DOWN[sound] : kind === 'pre' || kind === 'rotor' ? UP[sound].slice(0, 2) : UP[sound];
   const tones: Tone[] = [];
   for (const n of notes) {
     if (sound === 'bell') {
@@ -53,7 +53,7 @@ export function alertSoundDef(sound: AlertSound, kind: AlertKind): SoundDef {
   return { id: `sat-alert-${sound}-${kind}`, category: 'bells', name: NAMES[sound], wave: 'sine', tones };
 }
 
-const volumeOf = (kind: AlertKind, volume: number): number => (Math.max(0, Math.min(100, volume)) / 100) * (kind === 'pre' ? PRE_VOLUME : 1);
+const volumeOf = (kind: AlertKind, volume: number): number => (Math.max(0, Math.min(100, volume)) / 100) * (kind === 'pre' || kind === 'rotor' ? PRE_VOLUME : 1);
 
 /** Suona l'avviso. Non suona se il suono e' spento, il volume e' zero, manca WebAudio o il contesto e' ancora bloccato (lo sblocca il primo gesto dell'utente). */
 export function playAlert(kind: AlertKind, choice: SoundChoice, volume: number, ctx: AudioContext | null = audioContext()): boolean {

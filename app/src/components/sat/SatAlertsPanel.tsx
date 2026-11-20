@@ -10,13 +10,14 @@ interface Props {
   settings: SatAlertSettings;
   blocked: boolean;
   update(patch: Partial<SatAlertSettings>): void;
-  test(kind: AlertKind): void;
+  test(kind: AlertKind, choice?: SoundChoice): void;
 }
 
-const EVENTS: { kind: AlertKind; field: 'soundPre' | 'soundAos' | 'soundLos'; label: Key }[] = [
+const EVENTS: { kind: AlertKind; field: 'soundPre' | 'soundAos' | 'soundLos' | 'soundRotor'; label: Key }[] = [
   { kind: 'pre', field: 'soundPre', label: 'sat.alert.ev.pre' },
   { kind: 'aos', field: 'soundAos', label: 'sat.alert.ev.aos' },
   { kind: 'los', field: 'soundLos', label: 'sat.alert.ev.los' },
+  { kind: 'rotor', field: 'soundRotor', label: 'sat.alert.ev.rotor' },
 ];
 
 /** Il pulsante «Avvisi» (campanella) della pagina Satelliti, con il riquadro delle scelte e il pulsante «Prova» per ogni suono. */
@@ -74,6 +75,10 @@ export function SatAlertsPanel({ settings, blocked, update, test }: Props) {
             <span>{t('sat.alert.lead')}</span>
             <input type="number" min={0} max={30} value={settings.leadMin} onChange={(e) => update({ leadMin: Math.max(0, Math.min(30, Math.round(Number(e.target.value) || 0))) })} />
           </label>
+          <label className="sat-alerts-row sat-alerts-row--inline" title={t('sat.alert.rotorLeadTip')}>
+            <span>{t('sat.alert.rotorLead')}</span>
+            <input type="number" min={0} max={30} value={settings.rotorLeadMin} onChange={(e) => update({ rotorLeadMin: Math.max(0, Math.min(30, Math.round(Number(e.target.value) || 0))) })} />
+          </label>
           <label className="sat-alerts-row sat-alerts-row--check">
             <input type="checkbox" checked={settings.onlySelected} onChange={(e) => update({ onlySelected: e.target.checked })} />
             <span>{t('sat.alert.only')}</span>
@@ -91,7 +96,11 @@ export function SatAlertsPanel({ settings, blocked, update, test }: Props) {
           {EVENTS.map((ev) => (
             <div className="sat-alerts-row sat-alerts-row--inline" key={ev.kind}>
               <span>{t(ev.label)}</span>
-              <select aria-label={t(ev.label)} value={settings[ev.field]} onChange={(e) => update({ [ev.field]: e.target.value as SoundChoice })}>
+              <select aria-label={t(ev.label)} value={settings[ev.field]} onChange={(e) => {
+                  const c = e.target.value as SoundChoice;
+                  update({ [ev.field]: c });
+                  test(ev.kind, c);
+                }}>
                 <option value="off">{t('sat.alert.snd.off')}</option>
                 {ALERT_SOUNDS.map((s) => (
                   <option key={s} value={s}>

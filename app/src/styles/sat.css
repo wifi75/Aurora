@@ -207,7 +207,7 @@
 .sat-list li.sat-list-head { display: block; padding: 0.15rem 0.35rem 0.05rem; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
 
 /* Doppler e rotore: radar centrato e due blocchi separati, con etichette e campi su due colonne */
-.sat-ctl-blocks { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 12px; align-items: start; }
+.sat-ctl-blocks { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 12px; align-items: stretch; }
 .sat-block { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--panel-raised) 55%, transparent); }
 .sat-block .sat-switch { margin: 0 0 0.15rem; font-size: 0.85rem; }
 .sat-block .sat-field { display: grid; grid-template-columns: minmax(0, 1fr) 5rem; align-items: center; gap: 0.2rem 0.6rem; margin: 0; font-size: 0.78rem; color: var(--text); }
@@ -277,3 +277,7 @@
 .dash .sat-panel.dash-card { padding: 12px; }
 .dash .sat-panel.dash-card--bare { padding: 0; }
 .dash .sat-panel h3 { text-align: center; margin: 10px 0 4px; }
+
+/* niente vuoti: i due blocchi di «Doppler e rotore» hanno la stessa altezza (gli stati stanno in fondo), la tabella di «Informazioni» prende solo l'altezza delle righe */
+.sat-block > .sat-status:last-child { margin-top: auto; }
+.dash-body > .sat-table.sat-table--info { flex: 0 0 auto; }

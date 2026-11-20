@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SatPosition } from '../api/client';
-import { alertViews, applyMarks, dueAlerts, loadAlertSettings, remember, saveAlertSettings, type AlertKind, type AlertMark, type AlertPass, type AlertRecord, type AlertView, type LiveSat, type SatAlertSettings } from './satAlerts';
+import { alertViews, applyMarks, dueAlerts, loadAlertSettings, remember, rotorNotice, saveAlertSettings, type AlertKind, type AlertMark, type AlertPass, type AlertRecord, type AlertView, type LiveSat, type RotorNotice, type SatAlertSettings, type SoundChoice } from './satAlerts';
 import { audioBlocked, playAlert, previewAlert } from './satAlertSound';
 
 interface Args {
@@ -11,9 +11,13 @@ interface Args {
   minEl: number;
   /** L'ora UTC del core (secondi) all'ultimo aggiornamento della pagina. */
   serverNow: number;
+  /** Rotore acceso nelle impostazioni dei satelliti (per l'avviso di spostamento). */
+  rotorOn: boolean;
 }
 
 const TICK_MS = 500;
+
+const soundFor = (s: SatAlertSettings, kind: AlertKind): SoundChoice => (kind === 'pre' ? s.soundPre : kind === 'aos' ? s.soundAos : kind === 'los' ? s.soundLos : s.soundRotor);
 
 /**
  * Gli avvisi della pagina Satelliti: tiene le impostazioni (salvate nel browser), controlla due volte al secondo se c'e' un
@@ -24,6 +28,7 @@ export function useSatAlerts(args: Args) {
   const [settings, setSettings] = useState<SatAlertSettings>(() => loadAlertSettings());
   const [views, setViews] = useState<AlertView[]>([]);
   const [blocked, setBlocked] = useState(false);
+  const [rotor, setRotor] = useState<RotorNotice | null>(null);
   const latest = useRef(args);
   latest.current = args;
   const settingsRef = useRef(settings);
@@ -42,10 +47,10 @@ export function useSatAlerts(args: Args) {
       const st = state.current;
       const now = clock.current.base + (Date.now() - clock.current.at) / 1000;
       const live = new Map<number, LiveSat>(a.positions.map((p) => [p.norad, { visible: p.visible, name: p.name }]));
-      const common = { passes: a.passes, now, settings: s, selected: a.selected, tracked: a.tracked, live, minEl: a.minEl, log: st.log };
+      const common = { passes: a.passes, now, settings: s, selected: a.selected, tracked: a.tracked, live, minEl: a.minEl, log: st.log, rotorOn: a.rotorOn };
       const events = dueAlerts({ ...common, prevNow: st.prevNow, prevLive: st.prevLive });
       for (const ev of events) {
-        const choice = ev.kind === 'pre' ? s.soundPre : ev.kind === 'aos' ? s.soundAos : s.soundLos;
+        const choice = soundFor(s, ev.kind);
         playAlert(ev.kind, choice, s.volume);
       }
       st.log = remember(st.log, events, now);
@@ -58,6 +63,8 @@ export function useSatAlerts(args: Args) {
         st.shown = key;
         setViews(next);
       }
+      const rn = rotorNotice(common);
+      setRotor((cur) => (cur && rn && cur.norad === rn.norad && cur.az === rn.az && Math.round(cur.secondsToAos) === Math.round(rn.secondsToAos) ? cur : rn));
       setBlocked(s.enabled && audioBlocked());
     };
     tick();
@@ -73,10 +80,11 @@ export function useSatAlerts(args: Args) {
     });
   }, []);
 
-  const test = useCallback((kind: AlertKind) => {
+  /** Ascolta il suono scelto per l'evento, o `choice` se lo si sta ancora scegliendo. */
+  const test = useCallback((kind: AlertKind, choice?: SoundChoice) => {
     const s = settingsRef.current;
-    previewAlert(kind, kind === 'pre' ? s.soundPre : kind === 'aos' ? s.soundAos : s.soundLos, s.volume);
+    previewAlert(kind, choice ?? soundFor(s, kind), s.volume);
   }, []);
 
-  return { settings, update, views, blocked, test };
+  return { settings, update, views, blocked, test, rotor };
 }

@@ -13,7 +13,7 @@ import { DEFAULT_ZOOM_MODE, ZOOM_MODES, type ZoomMode } from './satView';
 
 export type AlertSound = 'bell' | 'radar' | 'arpeggio';
 export type SoundChoice = AlertSound | 'off';
-export type AlertKind = 'pre' | 'aos' | 'los';
+export type AlertKind = 'pre' | 'aos' | 'los' | 'rotor';
 
 export interface SatAlertSettings {
   /** Interruttore generale: spento, niente suoni e niente animazioni. */
@@ -27,11 +27,14 @@ export interface SatAlertSettings {
   soundPre: SoundChoice;
   soundAos: SoundChoice;
   soundLos: SoundChoice;
+  /** Minuti di preavviso prima che il rotore si sposti verso il punto di sorgere; 0 = nessuno. Vale solo con il rotore acceso. */
+  rotorLeadMin: number;
+  soundRotor: SoundChoice;
   /** Zoom automatico della mappa quando un satellite e' in vista (valori vecchi senza il campo: quello di base). */
   zoom: ZoomMode;
 }
 
-export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell', zoom: DEFAULT_ZOOM_MODE };
+export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell', rotorLeadMin: 5, soundRotor: 'arpeggio', zoom: DEFAULT_ZOOM_MODE };
 
 export const ALERT_SOUNDS: readonly AlertSound[] = ['bell', 'radar', 'arpeggio'];
 export const ALERT_STORAGE_KEY = 'aurora.sat.alerts';
@@ -50,6 +53,8 @@ export interface AlertPass {
   aos_unix: number;
   los_unix: number;
   max_el_deg: number;
+  /** Azimut del punto di sorgere (per l'avviso del rotore). */
+  aos_az_deg?: number;
 }
 
 /** Un avviso gia' emesso: tipo, satellite e fine del passaggio a cui si riferiva. */
@@ -63,6 +68,8 @@ export interface AlertEvent extends AlertRecord {
   name: string;
   /** Solo per il preavviso: secondi all'inizio previsto. */
   secondsToAos?: number;
+  /** Solo per l'avviso del rotore: azimut verso cui dovra' spostarsi. */
+  az?: number;
 }
 
 export interface LiveSat {
@@ -101,6 +108,8 @@ export interface AlertInput {
   /** Elevazione minima impostata: i passaggi che non la raggiungono non danno avvisi. */
   minEl: number;
   log: readonly AlertRecord[];
+  /** Rotore acceso: serve per l'avviso di spostamento. */
+  rotorOn?: boolean;
 }
 
 const sameSet = (a: AlertRecord, kind: AlertKind, norad: number, los: number) => a.kind === kind && a.norad === norad && Math.abs(a.los - los) <= MATCH_S;
@@ -123,7 +132,7 @@ function coveringPass(passes: readonly AlertPass[], norad: number, now: number, 
 
 /** Gli avvisi da fare adesso, senza ripetere quelli gia' nel registro e senza recuperare quelli persi in una pausa lunga. */
 export function dueAlerts(input: AlertInput): AlertEvent[] {
-  const { passes, now, prevNow, settings, selected, tracked, live, prevLive, minEl, log } = input;
+  const { passes, now, prevNow, settings, selected, tracked, live, prevLive, minEl, log, rotorOn } = input;
   if (!settings.enabled) return [];
   const out: AlertEvent[] = [];
   const seen: AlertRecord[] = [...log];
@@ -143,6 +152,16 @@ export function dueAlerts(input: AlertInput): AlertEvent[] {
     }
   }
 
+  // preavviso del rotore: prima che si sposti verso il punto di sorgere
+  if (rotorOn && settings.rotorLeadMin > 0) {
+    for (const p of passes) {
+      if (!isWatched(p.norad, settings, selected, tracked)) continue;
+      if (p.max_el_deg < minEl || p.aos_unix <= now) continue;
+      if (now < p.aos_unix - settings.rotorLeadMin * 60) continue;
+      push({ kind: 'rotor', norad: p.norad, name: p.name, los: p.los_unix, secondsToAos: p.aos_unix - now, az: p.aos_az_deg });
+    }
+  }
+
   // AOS e LOS: dal cambio di «visibile» fra due controlli ravvicinati
   const fresh = prevNow !== null && now >= prevNow && now - prevNow <= STALE_S;
   if (fresh) {
@@ -157,6 +176,27 @@ export function dueAlerts(input: AlertInput): AlertEvent[] {
     }
   }
   return out;
+}
+
+/** La scritta del rotore: il prossimo passaggio verso cui il rotore sta per spostarsi, dal momento del preavviso fino all'AOS. */
+export interface RotorNotice {
+  norad: number;
+  name: string;
+  az: number | null;
+  secondsToAos: number;
+}
+
+export function rotorNotice(input: Pick<AlertInput, 'passes' | 'now' | 'settings' | 'selected' | 'tracked' | 'minEl' | 'rotorOn'>): RotorNotice | null {
+  const { passes, now, settings, selected, tracked, minEl, rotorOn } = input;
+  if (!rotorOn || !settings.enabled || settings.rotorLeadMin <= 0) return null;
+  let best: AlertPass | null = null;
+  for (const p of passes) {
+    if (!isWatched(p.norad, settings, selected, tracked)) continue;
+    if (p.max_el_deg < minEl || p.aos_unix <= now) continue;
+    if (now < p.aos_unix - settings.rotorLeadMin * 60) continue;
+    if (!best || p.aos_unix < best.aos_unix) best = p;
+  }
+  return best ? { norad: best.norad, name: best.name, az: best.aos_az_deg ?? null, secondsToAos: Math.max(0, best.aos_unix - now) } : null;
 }
 
 /** Aggiunge gli avvisi fatti al registro e toglie quelli di passaggi finiti da piu' di un'ora. */
@@ -241,6 +281,8 @@ export function sanitizeAlertSettings(raw: unknown): SatAlertSettings {
     soundPre: choice(r.soundPre, d.soundPre),
     soundAos: choice(r.soundAos, d.soundAos),
     soundLos: choice(r.soundLos, d.soundLos),
+    rotorLeadMin: clamp(r.rotorLeadMin, 0, 30, d.rotorLeadMin),
+    soundRotor: choice(r.soundRotor, d.soundRotor),
     zoom: typeof r.zoom === 'string' && (ZOOM_MODES as readonly string[]).includes(r.zoom) ? (r.zoom as ZoomMode) : d.zoom,
   };
 }
