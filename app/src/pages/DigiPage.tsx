@@ -69,6 +69,7 @@ import { planMacro, splitAutoCq } from '../lib/macroPlan';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { parseSpotSplit } from '../lib/spotSplit';
 import { browserStorage } from '../lib/theme';
+import { setContestSince } from '../lib/contestSince';
 import { clearSize, readSize, writeSize } from '../lib/modeSizes';
 
 /** Altezza minima del pannello BIGScan (px) con la maniglia del bordo inferiore. */
@@ -1883,6 +1884,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   useEffect(() => {
     if (!sinceKey) {
       setSince(null);
+      setContestSince(null);
       return;
     }
     let v = Number(browserStorage()?.getItem(sinceKey) ?? '');
@@ -1895,6 +1897,8 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
       }
     }
     setSince(v);
+    setContestSince(v);
+    void client.invalidateQueries({ queryKey: [...TEXT_CONTEST_SCORE_KEY] });
   }, [sinceKey]);
   // lo stato della finestra (prima, dentro, scaduta) si riguarda ogni mezzo minuto
   const [winTick, setWinTick] = useState(0);

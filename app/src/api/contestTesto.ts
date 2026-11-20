@@ -1,4 +1,5 @@
 /** Le chiamate dei contest dei modi testuali (`/api/v1/contest-testo`, vedi `core/crates/remote-api/src/contest_testo_api.rs`). */
+import { sinceParam } from '../lib/contestSince';
 import { ContestError } from './contest';
 
 const BASE = '/api/v1/contest-testo';
@@ -238,10 +239,15 @@ export interface TextContestCheck {
   ultimo?: { call: string; rst_sent: string } | null;
 }
 export const getTextContestCheck = (call_: string, band: string, mode: string, exch = '') =>
-  call<TextContestCheck>(`/ammesso?${new URLSearchParams({ call: call_, band, mode, exch }).toString()}`);
+  call<TextContestCheck>(`/ammesso?${new URLSearchParams({ call: call_, band, mode, exch }).toString()}${sinceParam(false)}`);
 
-export const getTextContestScore = () => call<TextContestScore>('/punteggio');
-export const getTextContestCabrillo = () => call<{ testo: string; nome: string; qso: number }>('/cabrillo');
+export const getTextContestScore = () => call<TextContestScore>(`/punteggio${sinceParam(true)}`);
+/** Un punto da controllare nel Cabrillo: `empty`, `exch_sent`, `exch_rcvd`, `outside`, `dupes`, con quanti QSO riguarda. */
+export interface CabrilloWarning {
+  codice: 'empty' | 'exch_sent' | 'exch_rcvd' | 'outside' | 'dupes';
+  quanti: number;
+}
+export const getTextContestCabrillo = () => call<{ testo: string; nome: string; qso: number; avvisi?: CabrilloWarning[] }>(`/cabrillo${sinceParam(true)}`);
 /** Un QTC mandato o ricevuto (vedi `core/crates/contest/src/qtc.rs`). */
 export interface Qtc {
   inviato: boolean;
@@ -287,7 +293,7 @@ export interface QtcState {
   stazione: QtcStation | null;
 }
 
-export const getQtc = (station: string) => call<QtcState>(`/qtc?call=${encodeURIComponent(station)}`);
+export const getQtc = (station: string) => call<QtcState>(`/qtc?call=${encodeURIComponent(station)}${sinceParam(false)}`);
 export const saveQtc = (qtc: Qtc[]) => call<{ ok: boolean; totale: number }>('/qtc', json('POST', { qtc }));
 export const selectTextContest =(id: string | null) => call<{ ok: boolean; attivo: string | null }>('/seleziona', json('POST', { id }));
 

@@ -201,7 +201,9 @@ export interface WindowProposal {
 /**
  * Le finestre proposte per l'anno `year` ai contest ricorrenti con regola semplice, riconosciuti dal nome (CQ WW DX, CQ WW WPX, Japan International DX):
  * ultimo fine settimana completo di ottobre (SSB) o novembre (CW) per il CQ WW DX, di marzo (SSB) o maggio (CW) per il WPX, secondo
- * fine settimana completo di aprile (CW) o novembre (fonia) per il Japan International DX.
+ * fine settimana completo di aprile (CW) o novembre (fonia) per il Japan International DX; poi CQ WW RTTY DX (ultimo di settembre),
+ * CQ WPX RTTY (2o di febbraio), ARRL DX (CW 3o di febbraio, fonia 1o di marzo), ARRL 10 Meter (2o di dicembre). Il Roundup (1o
+ * di gennaio, ma nelle annate con il 1o-2o gennaio come fine settimana si e' giocato l'8-9) non ha regola: regole dei regolamenti pubblici, da ricontrollare a ogni anno nuovo.
  * Il nome senza modo (`CQ WW DX Contest`, che raccoglie CW e SSB) da' le due edizioni. Un contest che non si riconosce non ha proposte:
  * l'utente imposta le date a mano. Le date dei file distribuiti non servono: sono di anni passati e in parte invertite fra CW e SSB.
  */
@@ -221,6 +223,16 @@ export function windowProposals(name: string, year: number): WindowProposal[] {
   }
   const wpx = /^CQ (?:WW )?WPX (SSB|CW)(?: CONTEST)?$/.exec(n);
   if (wpx) return [wpx[1] === 'SSB' ? make('SSB', 2) : make('CW', 4)];
+  // gli altri contest con una regola fissa: n-esimo fine settimana completo del mese, dalle 00:00 del sabato alle 23:59:59 della domenica UTC
+  const nth = (month: number, k: number): WindowProposal[] => {
+    const w = nthFullWeekend(year, month, k, 0, 23);
+    return [{ tag: '', start: fmtContestDate(w.from), end: fmtContestDate(w.to) }];
+  };
+  if (/^CQ WW RTTY DX(?: CONTEST)?$/.test(n)) return [make('', 8)]; // ultimo fine settimana completo di settembre
+  if (/^CQ (?:WW )?WPX RTTY(?: CONTEST)?$/.test(n)) return nth(1, 2); // 2o di febbraio
+  if (/^ARRL INTERNATIONAL DX CW(?: CONTEST)?$/.test(n)) return nth(1, 3); // 3o di febbraio
+  if (/^ARRL INTERNATIONAL DX (?:SSB|PHONE)(?: CONTEST)?$/.test(n)) return nth(2, 1); // 1o di marzo
+  if (/^ARRL 10 METER(?: CONTEST)?$/.test(n)) return nth(11, 2); // 2o di dicembre
   return [];
 }
 

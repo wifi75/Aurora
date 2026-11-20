@@ -115,6 +115,21 @@ pub fn qso_del_contest(c: &ContestTesto, qsos: &[QsoTesto], ora_ms: i64) -> Vec<
     v
 }
 
+/// Come `qso_del_contest`, ma con l'attivazione del contest scelta dall'utente (`da`, ms UTC): la finestra di date conta solo se
+/// vale adesso (come nella vista del log); prima dell'inizio, dopo la fine o senza date contano i QSO dall'attivazione, della
+/// categoria giusta. Senza attivazione (`None`) vale la finestra spostata nell'anno, come prima.
+pub fn qso_del_contest_da(c: &ContestTesto, qsos: &[QsoTesto], ora_ms: i64, da: Option<i64>) -> Vec<QsoTesto> {
+    let attiva = matches!(finestra(c, ora_ms), Some((a, b)) if a.is_none_or(|x| ora_ms >= x) && b.is_none_or(|x| ora_ms <= x));
+    match da {
+        Some(da) if !attiva => {
+            let mut v: Vec<QsoTesto> = qsos.iter().filter(|q| categoria_valida(c, &q.mode) && q.time_ms >= da).cloned().collect();
+            v.sort_by_key(|q| q.time_ms);
+            v
+        }
+        _ => qso_del_contest(c, qsos, ora_ms),
+    }
+}
+
 /// Il tipo di moltiplicatore (`m_iMultipliers`, `m_iMultipliersOption`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -528,9 +543,63 @@ fn scambio(rst: &str, ex: &str) -> String {
     if s.is_empty() { crate::export::MANCA.to_string() } else { s }
 }
 
-/// Il nome del contest per la riga `CONTEST:` (maiuscole, spazi in trattini).
-fn nome_cabrillo(nome: &str) -> String {
-    nome.split_whitespace().collect::<Vec<_>>().join("-").to_ascii_uppercase()
+/// Il nome del contest per la riga `CONTEST:`: l'identificativo ufficiale del Cabrillo se il contest e' conosciuto (`JIDX-CW`,
+/// `JIDX-PHONE`, `CQ-WPX-SSB`...; il CQ WW DX raccoglie CW e fonia, si sceglie dal modo dei QSO), altrimenti il nome in maiuscole
+/// con gli spazi in trattini.
+fn nome_cabrillo(nome: &str, modo: &str) -> String {
+    let n = nome.to_ascii_uppercase().split(|c: char| !c.is_ascii_alphanumeric()).filter(|p| !p.is_empty()).collect::<Vec<_>>().join(" ");
+    let noto = match n.as_str() {
+        "JAPAN INTERNATIONAL DX CW CONTEST" => Some("JIDX-CW"),
+        "JAPAN INTERNATIONAL DX SSB CONTEST" | "JAPAN INTERNATIONAL DX PHONE CONTEST" => Some("JIDX-PHONE"),
+        "CQ WW WPX CW CONTEST" => Some("CQ-WPX-CW"),
+        "CQ WW WPX SSB CONTEST" => Some("CQ-WPX-SSB"),
+        "CQ WPX RTTY CONTEST" => Some("CQ-WPX-RTTY"),
+        "CQ WW RTTY DX" => Some("CQ-WW-RTTY"),
+        "ARRL INTERNATIONAL DX CW CONTEST" => Some("ARRL-DX-CW"),
+        "ARRL INTERNATIONAL DX SSB CONTEST" => Some("ARRL-DX-SSB"),
+        "ARRL 10 METER CONTEST" => Some("ARRL-10"),
+        "CQ WW DX CONTEST" => match modo {
+            "CW" => Some("CQ-WW-CW"),
+            "SSB" => Some("CQ-WW-SSB"),
+            _ => None,
+        },
+        _ => None,
+    };
+    noto.map_or_else(|| nome.split_whitespace().collect::<Vec<_>>().join("-").to_ascii_uppercase(), str::to_string)
+}
+
+/// Un punto da controllare prima di mandare il Cabrillo.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AvvisoCabrillo {
+    /// `empty` (nessun QSO), `exch_sent` (scambio inviato vuoto), `exch_rcvd` (scambio ricevuto vuoto), `outside` (QSO fuori dalla
+    /// finestra di date del contest), `dupes` (doppi lasciati nel file).
+    pub codice: &'static str,
+    /// Quanti QSO riguarda.
+    pub quanti: usize,
+}
+
+/// Controlla il log che diventa Cabrillo: niente QSO, scambi vuoti (la riga avrebbe `-`), QSO fuori dalla finestra di date del
+/// contest (possibile con l'attivazione al posto della finestra), doppi. Vuoto = niente da segnalare.
+pub fn verifica_cabrillo(c: &ContestTesto, log: &[Valutato], ora_ms: i64) -> Vec<AvvisoCabrillo> {
+    let mut v = Vec::new();
+    if log.is_empty() {
+        v.push(AvvisoCabrillo { codice: "empty", quanti: 0 });
+        return v;
+    }
+    let conta = |f: &dyn Fn(&Valutato) -> bool| log.iter().filter(|x| f(x)).count();
+    let senza_inviato = conta(&|x| scambio(&x.qso.rst_sent, &x.qso.exch_sent) == crate::export::MANCA);
+    let senza_ricevuto = conta(&|x| scambio(&x.qso.rst_rcvd, &x.qso.exch_rcvd) == crate::export::MANCA);
+    let fuori = match finestra(c, ora_ms) {
+        Some((a, b)) => conta(&|x| a.is_some_and(|a| x.qso.time_ms < a) || b.is_some_and(|b| x.qso.time_ms > b)),
+        None => 0,
+    };
+    let doppi = conta(&|x| x.doppio);
+    for (codice, quanti) in [("exch_sent", senza_inviato), ("exch_rcvd", senza_ricevuto), ("outside", fuori), ("dupes", doppi)] {
+        if quanti > 0 {
+            v.push(AvvisoCabrillo { codice, quanti });
+        }
+    }
+    v
 }
 
 /// Il nominativo (con il suo paese `info`, e il paese della stazione `mio`) deve dare un terzo elemento dello scambio, oltre al
@@ -556,7 +625,7 @@ pub fn cabrillo(c: &ContestTesto, call: &str, log: &[Valutato], tot: &Punteggio,
     };
     let call = call.trim().to_ascii_uppercase();
     riga("START-OF-LOG", "3.0");
-    riga("CONTEST", &nome_cabrillo(&c.name));
+    riga("CONTEST", &nome_cabrillo(&c.name, categoria_modo(log)));
     riga("CALLSIGN", &call);
     riga("CATEGORY-OPERATOR", "SINGLE-OP");
     riga("CATEGORY-BAND", "ALL");
@@ -730,5 +799,58 @@ mod tests {
         let f = cabrillo(&c, "iu3abc", &v, &t, "0.11.0", &[q]);
         assert!(f.ends_with("QTC:  7000 RY 2026-11-14 1201 K1ABC         1/1   IU3ABC        1200 DL1ABC        015\r\nEND-OF-LOG:\r\n"), "{f}");
         assert_eq!(modo_cabrillo("USB"), "PH");
+    }
+
+    #[test]
+    fn attivazione_al_posto_della_finestra() {
+        // finestra del 14 novembre 11:00-13:00, ma adesso e' il 20 novembre: scaduta, contano i QSO dall'attivazione
+        let c = ContestTesto { start: "20201114110000".into(), end: "20201114130000".into(), valid_cw: true, valid_digital: false, ..ContestTesto::default() };
+        let ora = data_ms("20261120100000").unwrap_or(0);
+        let mut vecchio = q("DL1ABC", "20m", "CW", 0, "");
+        vecchio.time_ms = data_ms("20261114113000").unwrap_or(0);
+        let mut nuovo = q("DL2ABC", "20m", "CW", 0, "");
+        nuovo.time_ms = data_ms("20261120093000").unwrap_or(0);
+        let log = [vecchio.clone(), nuovo.clone()];
+        let da = data_ms("20261120090000");
+        // senza attivazione vale la finestra spostata nell'anno (qui solo il QSO del 14 novembre)
+        let senza = qso_del_contest_da(&c, &log, ora, None);
+        assert_eq!(senza.len(), 1);
+        assert_eq!(senza[0].call, "DL1ABC");
+        let v = qso_del_contest_da(&c, &log, ora, da);
+        assert_eq!(v.len(), 1);
+        assert_eq!(v[0].call, "DL2ABC");
+        // dentro la finestra l'attivazione non conta: valgono le date
+        let dentro = data_ms("20261114120000").unwrap_or(0);
+        let v = qso_del_contest_da(&c, &log, dentro, data_ms("20261114125000"));
+        assert_eq!(v.len(), 1);
+        assert_eq!(v[0].call, "DL1ABC");
+    }
+
+    #[test]
+    fn nomi_cabrillo_ufficiali() {
+        assert_eq!(nome_cabrillo("Japan International DX CW Contest", "CW"), "JIDX-CW");
+        assert_eq!(nome_cabrillo("Japan International DX SSB Contest", "SSB"), "JIDX-PHONE");
+        assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "CW"), "CQ-WW-CW");
+        assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "SSB"), "CQ-WW-SSB");
+        assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "MIXED"), "CQ-WW-DX-CONTEST");
+        assert_eq!(nome_cabrillo("CQ WW WPX CW Contest", "CW"), "CQ-WPX-CW");
+        assert_eq!(nome_cabrillo("Mio Contest", "CW"), "MIO-CONTEST");
+    }
+
+    #[test]
+    fn verifica_del_cabrillo() {
+        let c = ContestTesto { start: "20261114110000".into(), end: "20261114130000".into(), valid_cw: true, valid_digital: false, ..ContestTesto::default() };
+        let ora = data_ms("20261114125900").unwrap_or(0);
+        assert_eq!(verifica_cabrillo(&c, &[], ora), vec![AvvisoCabrillo { codice: "empty", quanti: 0 }]);
+        let mut a = q("DL1ABC", "20m", "CW", 0, "015");
+        a.rst_sent.clear();
+        a.exch_sent.clear();
+        let mut b = q("DL2ABC", "20m", "CW", 1, "016");
+        b.time_ms = data_ms("20261114140000").unwrap_or(0);
+        let (v, _) = valuta(&c, &[a, b], None, &paese, None);
+        let w = verifica_cabrillo(&c, &v, ora);
+        assert_eq!(w, vec![AvvisoCabrillo { codice: "exch_sent", quanti: 1 }, AvvisoCabrillo { codice: "outside", quanti: 1 }]);
+        let (v, _) = valuta(&c, &[q("DL1ABC", "20m", "CW", 0, "015")], None, &paese, None);
+        assert!(verifica_cabrillo(&c, &v, ora).is_empty());
     }
 }

@@ -28,6 +28,12 @@ export function useExportTextCabrillo() {
       }
       saveText(r.nome, r.testo);
       toast(t('ctest.cabrilloSaved', { name: r.nome, n: r.qso }), 'ok');
+      // i doppi restano nel file per scelta: si segnalano solo scambi vuoti e QSO fuori dalle date del contest
+      const what = (r.avvisi ?? [])
+        .map((a) => (a.codice === 'exch_sent' ? t('ctest.cabrilloW.exch_sent', { n: a.quanti }) : a.codice === 'exch_rcvd' ? t('ctest.cabrilloW.exch_rcvd', { n: a.quanti }) : a.codice === 'outside' ? t('ctest.cabrilloW.outside', { n: a.quanti }) : ''))
+        .filter((x) => x !== '')
+        .join('; ');
+      if (what) toast(t('ctest.cabrilloWarn', { what }), 'info');
     } catch (e) {
       toast(t('ctest.error', { why: e instanceof ContestError ? (e.detail ?? e.code) : String(e) }), 'error');
     }

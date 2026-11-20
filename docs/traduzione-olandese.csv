@@ -4612,6 +4612,11 @@ sat.alert.zoom.follow,Follow the satellite,Volg de satelliet
 sat.alert.ev.pre,Early warning,Voorwaarschuwing
 sat.alert.ev.aos,AOS: enters the area,AOS: komt het gebied binnen
 sat.alert.ev.los,LOS: leaves the area,LOS: verlaat het gebied
+sat.alert.ev.rotor,Rotator: moves to the rising point,Rotor: draait naar het opkomstpunt
+sat.alert.rotorLead,"Rotator warning (minutes, 0 = none)","Waarschuwing voor de rotor (minuten, 0 = geen)"
+sat.alert.rotorLeadTip,Only with the rotator on. The rotator starts moving by itself about 2.5 minutes before the pass: a longer warning gives you time to clear the antenna.,"Alleen met de rotor aan. De rotor begint zelf ongeveer 2,5 minuut voor de overpass te draaien: met een langere waarschuwing heb je tijd om de antenne vrij te maken."
+sat.ctl.rotorSoon,{name}: rotator moving to {az}° (AOS in {t}),{name}: rotor draait naar {az}° (AOS over {t})
+sat.ctl.rotorSoonNoAz,{name}: rotator about to move (AOS in {t}),{name}: rotor gaat zo draaien (AOS over {t})
 sat.alert.snd.off,No sound,Geen geluid
 sat.alert.snd.bell,Chime,Belletje
 sat.alert.snd.radar,Radar,Radar
@@ -4979,6 +4984,10 @@ ctest.stats,Statistics…,Statistieken…
 ctest.cabrillo,Export Cabrillo…,Cabrillo exporteren…
 ctest.cabrilloSaved,Cabrillo saved: {name} ({n} QSOs),Cabrillo opgeslagen: {name} ({n} QSO's)
 ctest.cabrilloEmpty,No contest QSOs to export,Geen contest-QSO's om te exporteren
+ctest.cabrilloWarn,Check before sending the Cabrillo: {what},Controleer vóór het versturen van de Cabrillo: {what}
+ctest.cabrilloW.exch_sent,{n} QSOs without a sent exchange,{n} QSO's zonder verzonden uitwisseling
+ctest.cabrilloW.exch_rcvd,{n} QSOs without a received exchange,{n} QSO's zonder ontvangen uitwisseling
+ctest.cabrilloW.outside,{n} QSOs outside the contest dates,{n} QSO's buiten de contestdata
 ctest.statsTitle,Statistics: {name},Statistieken: {name}
 ctest.c.band,Band,Band
 ctest.c.qso,QSOs,QSO's

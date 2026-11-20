@@ -37,9 +37,8 @@ describe('proposte per i contest ricorrenti', () => {
   });
 
   it('non inventa quello che non conosce', () => {
-    expect(windowProposals('CQ WW RTTY DX', 2026)).toEqual([]);
     expect(windowProposals('CQ WW 160 meter contest', 2026)).toEqual([]);
-    expect(windowProposals('CQ WPX RTTY Contest', 2026)).toEqual([]);
+    expect(windowProposals('WAEDC RTTY Contest', 2026)).toEqual([]);
     expect(windowProposals('Contest della mia sezione', 2026)).toEqual([]);
   });
 
@@ -49,6 +48,21 @@ describe('proposte per i contest ricorrenti', () => {
     expect(staleWindowProposal(c({ name: 'CQ WW WPX CW Contest', start: '20260530000000', end: '20260531235959' }), now)).toBeNull();
     expect(staleWindowProposal(c({ name: 'CQ WW DX Contest', start: '20161028072401', end: '20161028235959' }), now)).toBeNull();
     expect(staleWindowProposal(c({ name: 'Altro', start: '20150101000000', end: '20150102000000' }), now)).toBeNull();
+  });
+});
+
+describe('proposte RTTY e ARRL', () => {
+  const p = (n: string, y: number) => windowProposals(n, y).map((x) => [x.start, x.end]);
+  it('2026', () => {
+    expect(p('CQ WW RTTY DX', 2026)).toEqual([['20260926000000', '20260927235959']]);
+    expect(p('CQ WPX RTTY Contest', 2026)).toEqual([['20260214000000', '20260215235959']]);
+    expect(p('ARRL International DX-CW Contest', 2026)).toEqual([['20260221000000', '20260222235959']]);
+    expect(p('ARRL International DX-SSB Contest', 2026)).toEqual([['20260307000000', '20260308235959']]);
+    expect(p('ARRL 10 meter Contest', 2026)).toEqual([['20261212000000', '20261213235959']]);
+  });
+  it('2027', () => {
+    expect(p('CQ WW RTTY DX', 2027)).toEqual([['20270925000000', '20270926235959']]);
+    expect(p('ARRL RTTY ROUNDUP', 2027)).toEqual([]);
   });
 });
 
