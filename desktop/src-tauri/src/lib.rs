@@ -101,7 +101,12 @@ pub fn run() {
             match event {
             // come una normale applicazione: la X chiude la finestra e con lei tutto (il core si ferma all'uscita)
             WindowEvent::CloseRequested { .. } => {
-                remember_window(window);
+                // la posizione non si legge ne' si scrive dentro il gestore degli eventi (is_maximized, outer_position... spediscono messaggi alla
+                // finestra: tao va in panic «event handler is re-entrant»): la principale la salva l'uscita, le altre un thread a parte
+                if window.label() != "main" {
+                    let window = window.clone();
+                    let _ = std::thread::Builder::new().name("aurora-posizione".into()).spawn(move || remember_window(&window));
+                }
                 // chiudendo la finestra principale si chiude tutta Aurora, anche le finestre a parte sul secondo schermo: prima restavano
                 // aperte e Aurora non usciva (segnalato dal proprietario, 2026-11-10). L'uscita salva la posizione di ognuna (RunEvent::Exit)
                 if window.label() == "main" {
