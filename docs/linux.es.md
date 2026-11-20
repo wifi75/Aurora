@@ -155,7 +155,7 @@ libayatana-appindicator3-dev librsvg2-dev libxdo-dev libasound2-dev libudev-dev 
 - PTT directo en las líneas RTS/DTR del puerto serie: por ahora solo en Windows.
 - Control del volumen de grabación (deslizador y AUTO del nivel de audio): usa el mezclador del sistema.
 - Actualización automática desde el programa.
-- Control **Pwr**: en Windows ajusta el volumen de la tarjeta de sonido; en Linux baja la señal generada (como JTDX). Ajusta una vez el volumen de salida en el mezclador del sistema.
+- Control **Niv TX** (antes Pwr): baja la señal generada (como WSJT-X y JTDX), siempre en Linux; en Windows es igual de fábrica y solo ajusta el volumen de la tarjeta de sonido con la casilla «Niv TX = volumen de Windows». Ajusta una vez el volumen de salida en el mezclador del sistema.
 - TQSL para LoTW: indica su ruta a mano en los ajustes.
 
 ## Dónde están los datos

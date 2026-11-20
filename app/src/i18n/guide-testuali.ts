@@ -2456,12 +2456,12 @@ export const GUIDE_TESTUALI: readonly GuideSection[] = [
       ],
     ],
     tip: [
-      "Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Pwr e ferma l’automazione FT8 prima di trasmettere. Se non parte, il motivo è scritto: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» o «[[sstv.tx.notReady]]».",
-      "An SSTV transmission lasts from half a minute to almost five: keep Pwr low and stop the FT8 automation before transmitting. If it does not start, the reason is written: “[[sstv.tx.busy]]”, “[[sstv.tx.disabled]]” or “[[sstv.tx.notReady]]”.",
-      "Eine SSTV-Sendung dauert von einer halben Minute bis fast fünf: Halte die Pwr niedrig und stoppe die FT8-Automatik, bevor du sendest. Startet es nicht, steht der Grund da: „[[sstv.tx.busy]]“, „[[sstv.tx.disabled]]“ oder „[[sstv.tx.notReady]]“.",
-      "Une émission SSTV dure de une demi-minute à presque cinq : garde la Pwr basse et arrête l’automatisation FT8 avant d’émettre. Si elle ne démarre pas, la raison est écrite : « [[sstv.tx.busy]] », « [[sstv.tx.disabled]] » ou « [[sstv.tx.notReady]] ».",
-      "Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Pwr y detén la automatización FT8 antes de transmitir. Si no arranca, el motivo está escrito: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» o «[[sstv.tx.notReady]]».",
-      "Uma transmissão SSTV dura de meio minuto a quase cinco: mantém baixo o Pwr e pára a automação FT8 antes de transmitir. Se não arrancar, o motivo está escrito: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» ou «[[sstv.tx.notReady]]».",
+      "Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Lvl TX e ferma l’automazione FT8 prima di trasmettere. Se non parte, il motivo è scritto: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» o «[[sstv.tx.notReady]]».",
+      "An SSTV transmission lasts from half a minute to almost five: keep TX Lvl low and stop the FT8 automation before transmitting. If it does not start, the reason is written: “[[sstv.tx.busy]]”, “[[sstv.tx.disabled]]” or “[[sstv.tx.notReady]]”.",
+      "Eine SSTV-Sendung dauert von einer halben Minute bis fast fünf: Halte die TX-Pegel niedrig und stoppe die FT8-Automatik, bevor du sendest. Startet es nicht, steht der Grund da: „[[sstv.tx.busy]]“, „[[sstv.tx.disabled]]“ oder „[[sstv.tx.notReady]]“.",
+      "Une émission SSTV dure de une demi-minute à presque cinq : garde la Niv TX basse et arrête l’automatisation FT8 avant d’émettre. Si elle ne démarre pas, la raison est écrite : « [[sstv.tx.busy]] », « [[sstv.tx.disabled]] » ou « [[sstv.tx.notReady]] ».",
+      "Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Niv TX y detén la automatización FT8 antes de transmitir. Si no arranca, el motivo está escrito: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» o «[[sstv.tx.notReady]]».",
+      "Uma transmissão SSTV dura de meio minuto a quase cinco: mantém baixo o Niv TX e pára a automação FT8 antes de transmitir. Se não arrancar, o motivo está escrito: «[[sstv.tx.busy]]», «[[sstv.tx.disabled]]» ou «[[sstv.tx.notReady]]».",
     ],
     fix: [
       [

@@ -553,12 +553,12 @@ export const GUIDE_TESTO: readonly GuideSection[] = [
       ],
     ],
     tip: [
-      'Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Pwr e ferma l’automazione FT8 prima di trasmettere. Se il campo di un numero è fuori limite compare l’avviso e «[[sw.save]]» non salva finché non lo correggi.',
-      'An SSTV transmission lasts from half a minute to almost five: keep Pwr low and stop the FT8 automation before transmitting. If a number field is out of range the notice appears and “[[sw.save]]” does not save until you fix it.',
-      'Eine SSTV-Sendung dauert von einer halben bis fast fünf Minuten: Pwr niedrig halten und die FT8-Automatik vor dem Senden stoppen. Liegt ein Zahlenfeld außerhalb, erscheint der Hinweis und „[[sw.save]]“ speichert nicht, bis du es korrigierst.',
-      'Une émission SSTV dure d’une demi-minute à presque cinq : garde le Pwr bas et arrête l’automatisme FT8 avant d’émettre. Si un champ numérique est hors limites, l’avis apparaît et « [[sw.save]] » n’enregistre pas tant que tu ne l’as pas corrigé.',
-      'Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Pwr y detén la automatización FT8 antes de transmitir. Si un campo numérico está fuera de límites aparece el aviso y «[[sw.save]]» no guarda hasta que lo corrijas.',
-      'Uma transmissão SSTV dura de meio minuto a quase cinco: mantém o Pwr baixo e para a automação FT8 antes de transmitir. Se um campo numérico estiver fora dos limites aparece o aviso e «[[sw.save]]» não guarda até o corrigires.',
+      'Una trasmissione SSTV dura da mezzo minuto a quasi cinque: tieni basso il Lvl TX e ferma l’automazione FT8 prima di trasmettere. Se il campo di un numero è fuori limite compare l’avviso e «[[sw.save]]» non salva finché non lo correggi.',
+      'An SSTV transmission lasts from half a minute to almost five: keep TX Lvl low and stop the FT8 automation before transmitting. If a number field is out of range the notice appears and “[[sw.save]]” does not save until you fix it.',
+      'Eine SSTV-Sendung dauert von einer halben bis fast fünf Minuten: TX-Pegel niedrig halten und die FT8-Automatik vor dem Senden stoppen. Liegt ein Zahlenfeld außerhalb, erscheint der Hinweis und „[[sw.save]]“ speichert nicht, bis du es korrigierst.',
+      'Une émission SSTV dure d’une demi-minute à presque cinq : garde le Niv TX bas et arrête l’automatisme FT8 avant d’émettre. Si un champ numérique est hors limites, l’avis apparaît et « [[sw.save]] » n’enregistre pas tant que tu ne l’as pas corrigé.',
+      'Una transmisión SSTV dura de medio minuto a casi cinco: mantén bajo el Niv TX y detén la automatización FT8 antes de transmitir. Si un campo numérico está fuera de límites aparece el aviso y «[[sw.save]]» no guarda hasta que lo corrijas.',
+      'Uma transmissão SSTV dura de meio minuto a quase cinco: mantém o Niv TX baixo e para a automação FT8 antes de transmitir. Se um campo numérico estiver fora dos limites aparece o aviso e «[[sw.save]]» não guarda até o corrigires.',
     ],
   },
   {

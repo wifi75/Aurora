@@ -72,7 +72,7 @@ export const systemStrings = {
     'A entrada e a saída escolhem-se aqui e mantêm-se ao reiniciar. O nível de entrada regula-se no misturador de áudio do sistema.',
   ],
   'aud.vol.in.sys': ['Volume di registrazione (sistema)', 'Recording volume (system)', 'Aufnahmelautstärke (System)', 'Volume d’enregistrement (système)', 'Volumen de grabación (sistema)', 'Volume de gravação (sistema)'],
-  'aud.vol.out.sys': ['Livello di trasmissione (Pwr)', 'Transmit level (Pwr)', 'Sendepegel (Pwr)', 'Niveau d’émission (Pwr)', 'Nivel de transmisión (Pwr)', 'Nível de transmissão (Pwr)'],
+  'aud.vol.out.sys': ['Livello di trasmissione (Lvl TX)', 'Transmit level (TX Lvl)', 'Sendepegel (TX-Pegel)', 'Niveau d’émission (Niv TX)', 'Nivel de transmisión (Niv TX)', 'Nível de transmissão (Niv TX)'],
   'tip.aud.vol.in.sys': [
     'Il volume di registrazione di questo ingresso nel sistema: lo stesso che si vede nel mixer audio del sistema.',
     'The recording volume of this input in the system, the same as in the system audio mixer.',
@@ -82,12 +82,12 @@ export const systemStrings = {
     'O volume de gravação desta entrada no sistema, o mesmo do misturador de áudio do sistema.',
   ],
   'tip.aud.vol.out.sys': [
-    'Il livello Pwr della trasmissione (lo stesso cursore del pannello Trasmissione): abbassa il segnale che Aurora genera. Il volume dell’uscita si regola una volta nel mixer audio del sistema.',
-    'The transmit Pwr level (the same slider as in the Transmit panel): it lowers the signal Aurora generates. The output volume is set once in the system audio mixer.',
-    'Der Sendepegel Pwr (derselbe Regler wie im Feld Senden): Er senkt das von Aurora erzeugte Signal. Die Lautstärke des Ausgangs wird einmal im Audiomixer des Systems eingestellt.',
-    'Le niveau Pwr d’émission (le même curseur que dans le panneau Émission) : il baisse le signal qu’Aurora génère. Le volume de la sortie se règle une fois dans le mélangeur audio du système.',
-    'El nivel Pwr de transmisión (el mismo control del panel Transmisión): baja la señal que genera Aurora. El volumen de la salida se ajusta una vez en el mezclador de audio del sistema.',
-    'O nível Pwr de transmissão (o mesmo controlo do painel Transmissão): baixa o sinal que a Aurora gera. O volume da saída regula-se uma vez no misturador de áudio do sistema.',
+    'Il livello Lvl TX della trasmissione (lo stesso cursore del pannello Trasmissione): abbassa il segnale che Aurora genera. Il volume dell’uscita si regola una volta nel mixer audio del sistema.',
+    'The transmit TX Lvl level (the same slider as in the Transmit panel): it lowers the signal Aurora generates. The output volume is set once in the system audio mixer.',
+    'Der Sendepegel TX-Pegel (derselbe Regler wie im Feld Senden): Er senkt das von Aurora erzeugte Signal. Die Lautstärke des Ausgangs wird einmal im Audiomixer des Systems eingestellt.',
+    'Le niveau Niv TX d’émission (le même curseur que dans le panneau Émission) : il baisse le signal qu’Aurora génère. Le volume de la sortie se règle une fois dans le mélangeur audio du système.',
+    'El nivel Niv TX de transmisión (el mismo control del panel Transmisión): baja la señal que genera Aurora. El volumen de la salida se ajusta una vez en el mezclador de audio del sistema.',
+    'O nível Niv TX de transmissão (o mesmo controlo do painel Transmissão): baixa o sinal que a Aurora gera. O volume da saída regula-se uma vez no misturador de áudio do sistema.',
   ],
   'aud.vol.off.sys': [
     'Il volume di questo dispositivo si regola dal mixer audio del sistema.',

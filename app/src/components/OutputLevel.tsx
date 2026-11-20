@@ -13,7 +13,7 @@ interface Props {
   horizontal?: boolean;
 }
 
-/** Il cursore "Pwr" del motore: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
+/** Il cursore «Lvl TX» (prima «Pwr») del motore: livello audio di uscita. Si invia al rilascio, non a ogni passo. */
 export function OutputLevel({ horizontal = false }: Props) {
   const t = useT();
   const client = useQueryClient();
@@ -27,7 +27,7 @@ export function OutputLevel({ horizontal = false }: Props) {
     if (level.data && !dragging.current) setPct(levelPercent(level.data.attenuation_db));
   }, [level.data]);
 
-  if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>Pwr –</p>;
+  if (level.isError) return <p className="muted out-level-off" title={t('out.unavailable')}>{t('out.short')} –</p>;
   if (pct === null) return null;
 
   const commit = async (value: number) => {
@@ -42,7 +42,7 @@ export function OutputLevel({ horizontal = false }: Props) {
 
   return (
     <div className="out-level" title={t('tip.out')}>
-      <span className="out-level-title">Pwr</span>
+      <span className="out-level-title">{t('out.short')}</span>
       {/* come in JTDX (attenuazione = (450 - valore) / 10 dB, verificato nel programma): in alto 0 dB (potenza massima), in basso 45 dB (minima) */}
       <VerticalSlider
         horizontal={horizontal}

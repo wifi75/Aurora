@@ -310,12 +310,12 @@ export const engineHintStrings = {
     'A placa de som por onde chega o sinal do rádio. Normalmente escolhe-se em Definições › Estação › Áudio.',
   ],
   'jxh.SoundOutName': [
-    'La scheda audio che manda il segnale alla radio per trasmettere. Il suo volume di Windows è il cursore Pwr.',
-    'The sound card that sends the signal to the radio to transmit. Its Windows volume is the Pwr slider.',
-    'Die Soundkarte, die zum Senden das Signal ans Funkgerät schickt. Ihre Windows-Lautstärke ist der Pwr-Regler.',
-    'La carte son qui envoie le signal à la radio pour émettre. Son volume Windows est le curseur Pwr.',
-    'La tarjeta de sonido que envía la señal a la radio para transmitir. Su volumen de Windows es el cursor Pwr.',
-    'A placa de som que envia o sinal ao rádio para transmitir. O volume dela no Windows é o cursor Pwr.',
+    'La scheda audio che manda il segnale alla radio per trasmettere. Il suo volume di Windows è il cursore Lvl TX.',
+    'The sound card that sends the signal to the radio to transmit. Its Windows volume is the TX Lvl slider.',
+    'Die Soundkarte, die zum Senden das Signal ans Funkgerät schickt. Ihre Windows-Lautstärke ist der TX-Pegel-Regler.',
+    'La carte son qui envoie le signal à la radio pour émettre. Son volume Windows est le curseur Niv TX.',
+    'La tarjeta de sonido que envía la señal a la radio para transmitir. Su volumen de Windows es el cursor Niv TX.',
+    'A placa de som que envia o sinal ao rádio para transmitir. O volume dela no Windows é o cursor Niv TX.',
   ],
   'jxh.AudioInputChannel': [
     'Quale canale della scheda usare in ingresso: Mono, Sinistro o Destro. Cambialo se la radio usa un solo canale e la cascata è vuota.',
