@@ -1,0 +1,59 @@
+/* Stazione del PC che si adatta alla larghezza della finestra: niente taglio a destra, niente scorrimento di lato.
+   Le media query contano i pixel della finestra, non quelli dopo lo zoom di «Dimensione del testo» (a 1,6 una finestra di 1280 punti
+   ne offre solo 800): per questo le righe della testata e la barra della cascata vanno sempre a capo da sole, qualunque sia la larghezza.
+   Tutto vale solo sopra la soglia del telefono (40rem; sotto la Stazione e' a schede e non si tocca) e dentro la pagina a finestre. */
+@media (min-width: 40.01rem) {
+  /* testata: modo e frequenza e interruttori di ricezione, se non entrano nella riga, vanno a capo invece di uscire sotto il display */
+  .live .live-top > .live-left {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .live .live-top > .live-left > .live-left-row {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .live .live-top > .live-left > .live-left-line {
+    flex: 1 1 16rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .live .live-top > .live-left > .live-left-line .rx-row,
+  .live .live-top > .live-left > .live-left-line .cmd-chips,
+  .live .live-top > .live-left > .live-left-line .rx-extras {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .live .live-top > .live-left > .live-left-line .rx-extras {
+    justify-content: flex-start;
+    white-space: normal;
+    overflow: hidden;
+  }
+
+  /* barra della cascata: a capo invece di scorrere di lato (le voci restano tutte visibili) */
+  .live-board .wf-toolbar {
+    flex-wrap: wrap;
+    overflow-x: hidden;
+  }
+
+  /* titolo dei blocchi: i pulsanti a destra vanno a capo sotto il titolo invece di uscire dal riquadro */
+  .live-board .grid-panel > .dock-grip {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .live-board .grid-panel > .dock-grip h2 {
+    min-width: 0;
+  }
+
+  /* dentro i blocchi niente larghezze che spingono fuori: il contenuto si restringe con il riquadro */
+  .live-board .grid-panel .dock-body > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

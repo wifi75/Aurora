@@ -15,6 +15,7 @@ import './styles/news.css';
 import './styles/bozze.css';
 import './styles/appearance.css';
 import './styles/maniglie.css';
+import './styles/stazione-adattabile.css';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
