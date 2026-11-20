@@ -5,7 +5,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 ## Adesso
 - [x] 0.11.315 pubblicata (rotore fuori dalla barra, «Mostra in home» nelle Impostazioni): da guardare a schermo
 - [ ] Controllo licenze fatto il 2026-11-20 (sola lettura): crediti, `LICENSE`, licenze di Hamlib e attribuzioni delle mappe a posto; corretto `qso-native` (intestazione) e `THIRD-PARTY-NOTICES.md` nelle risorse dell'installatore (esce con la prossima versione); da verificare a mano: condizioni d'uso dei dati (cty.dat, OpenStreetMap)
-- [ ] Messaggio `aggiorna-0.11.319`: guardare `messaggi_visti`, `messaggi_clic` e le installazioni su 0.11.319+ (verso le 19-20 UTC) per vedere quanti si allineano
+- [x] 0.11.320 pubblicata (IC-820H sulla banda giusta, licenze nell'installatore) e messaggio `aggiorna-0.11.320` mandato per l'ultima volta (poi niente piu' messaggi di aggiornamento)
+- [ ] Messaggio `aggiorna-0.11.320`/`aggiorna-0.11.319`: guardare `messaggi_visti`, `messaggi_clic` e le installazioni su 0.11.319+ (verso le 19-20 UTC) per vedere quanti si allineano
 - [ ] Casella «Aggiorna da solo quando Aurora e' ferma» (da preparare, solo commit: scelta da fare, spenta o accesa di fabbrica)
 - [x] 0.11.319 pubblicata (etichetta dei satelliti col conto alla rovescia sempre visibile, messaggio se la finestra non si apre per WebView2): chiudere #82 quando ct1bxx conferma
 - [ ] Messaggio di WebView2 in olandese e russo (ora ricade su un'altra lingua): controllare come `agent::ui_lang()` sceglie la lingua

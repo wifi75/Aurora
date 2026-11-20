@@ -4,8 +4,11 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
-## In preparazione (dopo la 0.11.319, su `main`, NON pubblicata)
+## Nella 0.11.320 (pubblicata 2026-11-20T18:03:31Z)
 - IC-820H (#83): il pacchetto SO-50 di Vladimir (0.11.319, ripiego a due VFO acceso) mostra ancora `F rx` su Main e `V Sub` + `F tx` su Sub: `aurora.log` dice «bande dei VFO: uguali o non leggibili» sia alle 14:49 sia alle 16:52. Causa probabile: Hamlib risponde alla stessa frequenza a due `f` ravvicinate (cache). `hamlib_rig.rs`: la sonda attende 700 ms dopo ogni `V`, scrive le due frequenze lette (`satelliti: lettura delle bande dei VFO: Main = .. Sub = ..`) e per il modello 3032 ripiega su Main = 144, Sub = 430 (come nella foto di Vladimir: sinistra 137.790 USB = 144, destra 437.790 FM = 430). Prova `the_ic_820h_defaults_to_main_144_and_sub_430_when_the_bands_cannot_be_told_apart`. Non provato con la radio vera.
+
+## Messaggio di aggiornamento (Cloudflare)
+- `aggiorna-0.11.320` (inglese, 115 caratteri, `prima_di` 0.11.320, valido 7 giorni dal 2026-11-20T18:03Z) pubblicato come ultimo: il proprietario ha detto di mandarlo ancora una volta con la 0.11.320 e poi di NON mandarne piu' senza una sua richiesta. `aggiorna-0.11.319` e' stato fatto scadere subito.
 
 ## Servizio dei rapporti (Cloudflare), 2026-11-20 sera
 - Messaggio dell'autore `aggiorna-0.11.319` (solo inglese, 115 caratteri: la cartolina del tray e' larga 390 px e mostra circa 3 righe, il resto e' tagliato; stile `aggiorna`, `prima_di` 0.11.319, valido fino al 2026-11-27) scritto direttamente in D1 (tabella `messaggi`): il segreto `ADMIN_TOKEN` non e' sul PC.

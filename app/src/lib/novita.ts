@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.320',
-    released: '2026-11-20T19:00:00Z',
+    released: '2026-11-20T18:03:31Z',
     kind: 'fixed',
     title: [
       'IC-820H: la trasmissione dei satelliti sulla banda giusta, licenze con il programma',
