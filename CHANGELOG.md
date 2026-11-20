@@ -2,6 +2,15 @@
 
 ## Non rilasciato
 
+## 0.11.308 - 2026-11-20
+
+- Satelliti: preavviso del rotore (minuti prima del passaggio, impostabile da 0 a 30, di base 5) con un suono suo e la scritta «il rotore si sposta verso N°» nella scheda «Doppler e rotore»; il rotore si muove da solo 150 s prima del passaggio e non parcheggia. Il suono si ascolta appena lo scegli. Le schede «Doppler e rotore» e «Informazioni» non hanno piu' spazi vuoti (CSS, non verificato a schermo).
+- Contest: il Cabrillo usa i nomi ufficiali dei contest (per esempio JIDX-CW, CQ-WW-RTTY, ARRL-DX-CW) e dopo il salvataggio avvisa di QSO senza scambio, fuori dalle date o assenti.
+- Contest: con la finestra delle date scaduta o non ancora iniziata, punteggio, doppi e Cabrillo contano i QSO dal momento dell'attivazione, come il log mostrato.
+- Contest: nuove regole di proposta delle date (CQ WW RTTY, CQ WPX RTTY, ARRL DX CW e SSB, ARRL 10 m).
+- Stazione del PC: si adatta alle finestre strette (testata, barra della cascata e titoli dei blocchi vanno a capo invece di tagliarsi a destra); il telefono non cambia.
+- Correzione contro il panic «event handler is re-entrant» alla chiusura di una finestra: la posizione della finestra non si legge piu' dentro il gestore della chiusura (mitigazione, non provata: chi lo vede mandi il pacchetto di assistenza).
+
 ## 0.11.307 - 2026-11-20
 
 - WEFAX: nuova pagina per ricevere le cartine meteo e isobariche in HF (facsimile meteo): visore che si adatta alla larghezza, 1:1 con scorrimento, zoom e segui l'immagine; comandi (Parti subito, Chiudi e salva, Scarta, IOC 576/288, 60/90/120/240 righe al minuto, filtro, modo manuale, correzione dell'inclinazione); cronologia con miniature e PNG; menu a tendina delle stazioni (NWS marzo 2025, DWD) per banda e frequenza, con la radio sulla portante in USB; pagina staccabile in una finestra per il secondo schermo. Solo ricezione, non provata con segnali reali.

@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.308',
+    released: '2026-11-20T15:00:00Z',
+    kind: 'new',
+    title: [
+      'Satelliti: preavviso del rotore. Contest: Cabrillo più preciso',
+      'Satellites: rotator warning. Contest: more accurate Cabrillo',
+      'Satelliten: Rotor-Vorwarnung. Contest: genaueres Cabrillo',
+      'Satellites : préavis du rotor. Concours : Cabrillo plus précis',
+      'Satélites: preaviso del rotor. Concursos: Cabrillo más preciso',
+      'Satélites: pré-aviso do rotor. Concursos: Cabrillo mais preciso',
+    ],
+    text: [
+      'Satelliti: puoi impostare il preavviso del rotore (0-30 minuti, di base 5) con un suono suo e la scritta «il rotore si sposta verso N°» nella scheda «Doppler e rotore»; il suono scelto si ascolta subito. Contest: il Cabrillo usa i nomi ufficiali (per esempio JIDX-CW, CQ-WW-RTTY), dopo il salvataggio avvisa di QSO senza scambio, fuori dalle date o assenti, e con la finestra delle date scaduta i conti partono dall’attivazione; nuove date proposte per RTTY, ARRL DX e 10 m. La Stazione del PC si adatta alle finestre strette. Corretto il possibile panic «event handler is re-entrant» alla chiusura di una finestra (non provato: se lo vedi, manda il pacchetto di assistenza).',
+      'Satellites: you can set the rotator warning (0-30 minutes, 5 by default) with its own sound and the message “the rotator is moving to N°” in the “Doppler and rotator” card; the chosen sound plays as soon as you pick it. Contest: the Cabrillo uses the official names (for example JIDX-CW, CQ-WW-RTTY), after saving it warns about QSOs without an exchange, outside the dates or missing, and with an expired date window the counts start from activation; new proposed dates for RTTY, ARRL DX and 10 m. The PC Station adapts to narrow windows. Fixed the possible “event handler is re-entrant” panic when closing a window (not proven: if you see it, send the support package).',
+      'Satelliten: Du kannst die Rotor-Vorwarnung (0-30 Minuten, standardmäßig 5) mit eigenem Ton und der Meldung „der Rotor dreht auf N°“ auf der Karte „Doppler und Rotor“ einstellen; der gewählte Ton ist sofort zu hören. Contest: Das Cabrillo verwendet die offiziellen Namen (zum Beispiel JIDX-CW, CQ-WW-RTTY), warnt nach dem Speichern vor QSOs ohne Austausch, außerhalb der Zeiten oder fehlenden, und bei abgelaufenem Zeitfenster zählt ab der Aktivierung; neue vorgeschlagene Zeiten für RTTY, ARRL DX und 10 m. Die Station am PC passt sich schmalen Fenstern an. Der mögliche Panic „event handler is re-entrant“ beim Schließen eines Fensters wurde behoben (nicht bewiesen: Wenn du ihn siehst, sende das Support-Paket).',
+      'Satellites : tu peux régler le préavis du rotor (0-30 minutes, 5 par défaut) avec son propre son et le message « le rotor se déplace vers N° » dans la fiche « Doppler et rotor » ; le son choisi s’entend tout de suite. Concours : le Cabrillo utilise les noms officiels (par exemple JIDX-CW, CQ-WW-RTTY), après l’enregistrement il signale les QSO sans échange, hors des dates ou absents, et avec la fenêtre des dates expirée les comptes partent de l’activation ; nouvelles dates proposées pour RTTY, ARRL DX et 10 m. La Station du PC s’adapte aux fenêtres étroites. Correction du possible panic « event handler is re-entrant » à la fermeture d’une fenêtre (non prouvé : si tu le vois, envoie le paquet d’assistance).',
+      'Satélites: puedes ajustar el preaviso del rotor (0-30 minutos, 5 de base) con su propio sonido y el mensaje «el rotor se mueve hacia N°» en la ficha «Doppler y rotor»; el sonido elegido se oye enseguida. Concursos: el Cabrillo usa los nombres oficiales (por ejemplo JIDX-CW, CQ-WW-RTTY), tras guardar avisa de QSO sin intercambio, fuera de las fechas o ausentes, y con la ventana de fechas caducada las cuentas empiezan desde la activación; nuevas fechas propuestas para RTTY, ARRL DX y 10 m. La Estación del PC se adapta a las ventanas estrechas. Corregido el posible panic «event handler is re-entrant» al cerrar una ventana (no probado: si lo ves, envía el paquete de asistencia).',
+      'Satélites: podes definir o pré-aviso do rotor (0-30 minutos, 5 de origem) com som próprio e a mensagem «o rotor move-se para N°» no cartão «Doppler e rotor»; o som escolhido ouve-se logo. Concursos: o Cabrillo usa os nomes oficiais (por exemplo JIDX-CW, CQ-WW-RTTY), depois de guardar avisa de QSO sem troca, fora das datas ou ausentes, e com a janela das datas expirada as contas partem da ativação; novas datas propostas para RTTY, ARRL DX e 10 m. A Estação do PC adapta-se às janelas estreitas. Corrigido o possível panic «event handler is re-entrant» ao fechar uma janela (não provado: se o vires, envia o pacote de assistência).',
+    ],
+  },
+  {
     version: '0.11.307',
     released: '2026-11-20T07:21:50Z',
     kind: 'new',
@@ -841,27 +862,6 @@ export const NOVITA: readonly Novita[] = [
       'Dans le DX Cluster du contest, « Spot DX » est à gauche avec le fond coloré, puis « Chercher un indicatif » et l’engrenage ; l’état des serveurs (« Aurora reçoit les spots de N serveurs sur M ») est dans le panneau de l’engrenage. Pas de barres de défilement dans le cluster et le journal (on défile avec la molette). Dans le journal : total des QSO, « Afficher tout le journal », recherche et crayon sur la même ligne ; le crayon choisit les colonnes du journal du contest (choix à part) ; bandes du contest et de Réglages › Aspect et alertes › Bandes dans la barre, avec les boutons de mode (CW/SSB) à côté des bandes dans les contests à plusieurs modes.',
       'En el DX Cluster del contest «Spot DX» está a la izquierda con el fondo coloreado, luego «Buscar indicativo» y el engranaje; el estado de los servidores («Aurora recibe spots de N de M servidores») está en el panel del engranaje. Sin barras de desplazamiento en el cluster y el log (se desplaza con la rueda). En el log: total de QSO, «Mostrar todo el log», búsqueda y lápiz en la misma fila; el lápiz elige las columnas del log del contest (elección aparte); bandas desde el contest y desde Ajustes › Aspecto y avisos › Bandas en la barra, con los botones del modo (CW/SSB) junto a las bandas en los contests con varios modos.',
       'No DX Cluster do contest «Spot DX» fica à esquerda com o fundo colorido, depois «Procurar indicativo» e a engrenagem; o estado dos servidores («O Aurora recebe spots de N de M servidores») está no painel da engrenagem. Sem barras de deslocamento no cluster e no log (desloca-se com a roda). No log: total de QSO, «Mostrar todo o log», pesquisa e lápis na mesma linha; o lápis escolhe as colunas do log do contest (escolha à parte); bandas do contest e de Definições › Aspeto e avisos › Bandas na barra, com os botões do modo (CW/SSB) junto às bandas nos contests com vários modos.',
-    ],
-  },
-  {
-    version: '0.11.284',
-    released: '2026-11-17T14:49:25Z',
-    kind: 'changed',
-    title: [
-      'Contest inclusi personalizzabili, statistiche più chiare',
-      'Customisable bundled contests, clearer statistics',
-      'Anpassbare mitgelieferte Contests, übersichtlichere Statistik',
-      'Contests inclus personnalisables, statistiques plus claires',
-      'Contests incluidos personalizables, estadísticas más claras',
-      'Contests incluídos personalizáveis, estatísticas mais claras',
-    ],
-    text: [
-      'Anche per un contest incluso si cambiano e si salvano date dell’edizione, ore di lavoro, numero di partenza, incremento automatico e macro; «Ripristina i valori del contest» torna a quelli della cartella. Nella scheda Statistiche è tolta la scritta «Punteggio» doppia e la riga «Punteggio: N punti × M moltiplicatori» sta accanto al numero grande. I tasti delle macro sono più alti di 6 punti.',
-      'For a bundled contest too you can change and save the dates of the edition, working hours, starting number, auto-increment and macros; “Restore the contest values” goes back to those in the folder. In the Statistics card the doubled “Score” label is gone and the line “Score: N points × M multipliers” sits next to the big number. The macro keys are 6 points taller.',
-      'Auch bei einem mitgelieferten Contest lassen sich Termine der Ausgabe, Arbeitszeit, Startnummer, automatisches Hochzählen und Makros ändern und speichern; „Contest-Werte wiederherstellen“ kehrt zu den Werten aus dem Ordner zurück. In der Karte Statistik ist die doppelte Beschriftung „Punktestand“ entfernt, und die Zeile „Punktestand: N Punkte × M Multiplikatoren“ steht neben der großen Zahl. Die Makro-Tasten sind 6 Punkt höher.',
-      'Pour un contest inclus aussi, on peut modifier et enregistrer les dates de l’édition, les heures de travail, le numéro de départ, l’incrément automatique et les macros ; « Rétablir les valeurs du contest » revient à celles du dossier. Dans la fiche Statistiques, le mot « Score » en double a disparu et la ligne « Score : N points × M multiplicateurs » est à côté du grand nombre. Les touches des macros sont plus hautes de 6 points.',
-      'También para un contest incluido se cambian y se guardan las fechas de la edición, las horas de trabajo, el número de partida, el incremento automático y las macros; «Restaurar los valores del contest» vuelve a los de la carpeta. En la tarjeta Estadísticas se quita el rótulo «Puntuación» duplicado y la línea «Puntuación: N puntos × M multiplicadores» está junto al número grande. Las teclas de las macros son 6 puntos más altas.',
-      'Também para um contest incluído se mudam e guardam as datas da edição, as horas de trabalho, o número de partida, o incremento automático e as macros; «Repor os valores do contest» volta aos da pasta. No cartão Estatísticas foi retirada a legenda «Pontuação» duplicada e a linha «Pontuação: N pontos × M multiplicadores» fica junto ao número grande. As teclas das macros são 6 pontos mais altas.',
     ],
   },
 ];
