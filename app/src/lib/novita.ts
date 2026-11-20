@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.316',
+    released: '2026-11-20T15:00:00Z',
+    kind: 'new',
+    title: [
+      'Diagnosi della trasmissione: pallini e prova senza trasmettere',
+      'Transmission diagnosis: dots and a test without transmitting',
+      'Sendediagnose: Punkte und ein Test ohne zu senden',
+      'Diagnostic de l’émission : voyants et test sans émettre',
+      'Diagnóstico de la transmisión: indicadores y prueba sin transmitir',
+      'Diagnóstico da transmissão: indicadores e teste sem transmitir',
+    ],
+    text: [
+      'Se il PTT scatta ma non esce RF (un difetto molto segnalato dagli utenti di WSJT-X 3.3), ora si vede dove si rompe la catena. A ogni trasmissione Aurora scrive nel registro il picco dell’audio e lo stato del PTT letto dalla radio, e avvisa se l’audio è muto o se la radio dice di essere in ricezione. Nella scheda Trasmissione ci sono tre pallini (modo radio, audio, PTT) con la causa nel suggerimento. In Impostazioni › Radio c’è «Prova senza trasmettere»: guarda CAT, modo radio, PTT, uscita audio e livello Pwr senza dare il PTT e senza mandare audio.',
+      'If the PTT keys but no RF comes out (a defect widely reported by WSJT-X 3.3 users), you can now see where the chain breaks. On every transmission Aurora writes the audio peak and the PTT state read from the radio to the log, and warns if the audio is silent or the radio says it is receiving. The Transmit card has three dots (radio mode, audio, PTT) with the cause in the tooltip. In Settings › Radio there is “Test without transmitting”: it checks CAT, radio mode, PTT, audio output and Pwr level without keying the PTT and without sending audio.',
+      'Wenn das PTT schaltet, aber keine HF herauskommt (ein bei WSJT-X-3.3-Nutzern oft gemeldeter Fehler), sieht man jetzt, wo die Kette bricht. Bei jeder Aussendung schreibt Aurora den Audio-Spitzenwert und den vom Funkgerät gelesenen PTT-Zustand ins Protokoll und warnt, wenn das Audio stumm ist oder das Funkgerät Empfang meldet. In der Sendekarte gibt es drei Punkte (Betriebsart, Audio, PTT) mit der Ursache im Hinweis. Unter Einstellungen › Funkgerät gibt es „Test ohne zu senden“: er prüft CAT, Betriebsart, PTT, Audioausgang und Pwr-Pegel, ohne das PTT zu geben und ohne Audio zu senden.',
+      'Si le PTT se déclenche sans RF (un défaut très signalé par les utilisateurs de WSJT-X 3.3), on voit maintenant où la chaîne casse. À chaque émission, Aurora écrit dans le journal le pic audio et l’état du PTT lu sur la radio, et avertit si l’audio est muet ou si la radio indique la réception. La carte Émission a trois voyants (mode radio, audio, PTT) avec la cause dans l’info-bulle. Dans Réglages › Radio, « Test sans émettre » vérifie CAT, mode, PTT, sortie audio et niveau Pwr sans déclencher le PTT et sans envoyer d’audio.',
+      'Si el PTT se activa pero no sale RF (un fallo muy comentado por usuarios de WSJT-X 3.3), ahora se ve dónde se rompe la cadena. En cada transmisión Aurora escribe en el registro el pico del audio y el estado del PTT leído de la radio, y avisa si el audio está mudo o si la radio dice estar en recepción. La tarjeta Transmisión tiene tres indicadores (modo, audio, PTT) con la causa en la ayuda emergente. En Ajustes › Radio está «Prueba sin transmitir»: revisa CAT, modo, PTT, salida de audio y nivel Pwr sin activar el PTT y sin enviar audio.',
+      'Se o PTT aciona mas não sai RF (um defeito muito relatado por utilizadores do WSJT-X 3.3), agora vê-se onde a cadeia falha. A cada transmissão o Aurora escreve no registo o pico do áudio e o estado do PTT lido do rádio, e avisa se o áudio está mudo ou se o rádio diz estar em receção. O cartão Transmissão tem três indicadores (modo, áudio, PTT) com a causa na dica. Em Definições › Rádio há «Teste sem transmitir»: verifica CAT, modo, PTT, saída de áudio e nível Pwr sem acionar o PTT e sem enviar áudio.',
+    ],
+  },
+  {
     version: '0.11.315',
     released: '2026-11-20T12:54:27Z',
     kind: 'fixed',
@@ -819,27 +840,5 @@ export const NOVITA: readonly Novita[] = [
       'La protección que devuelve la radio al VFO correcto acepta ahora solo un nombre de VFO real (VFOA, VFOB...): antes una respuesta que otro comando había dejado en la cola (con el IC-756PRO, un número) podía tomarse por un VFO y reenviarse a la radio. La conexión con la radio anota ahora cada comando en el paquete de asistencia, para encontrar qué pone la radio en el VFO B.',
       'A proteção que volta a pôr o rádio no VFO certo aceita agora só um nome de VFO verdadeiro (VFOA, VFOB...): antes uma resposta deixada na fila por outro comando (com o IC-756PRO, um número) podia ser tomada por um VFO e reenviada ao rádio. A ligação ao rádio anota agora cada comando no pacote de assistência, para encontrar o que põe o rádio no VFO B.',
     ],
-  },
-  {
-    version: '0.11.286',
-    released: '2026-11-17T18:32:12Z',
-    kind: 'new',
-    title: [
-      'Log del contest con lo scambio',
-      'Contest log with the exchange',
-      'Contest-Log mit dem Austausch',
-      'Journal de contest avec l’échange',
-      'Log del contest con el intercambio',
-      'Log do contest com a troca',
-    ],
-    text: [
-      'Il log del contest ha due colonne nuove, «Scambio inv.» e «Scambio ric.» (seriale, stato o sezione), accese di base e scelte con la matita. Lo scambio ora si salva anche nel log interno; i QSO già registrati restano com’erano.',
-      'The contest log has two new columns, “Exch. sent” and “Exch. rcvd” (serial, state or section), on by default and chosen with the pencil. The exchange is now also saved in the internal log; QSOs already logged stay as they were.',
-      'Das Contest-Log hat zwei neue Spalten, „Austausch ges.“ und „Austausch erh.“ (Seriennummer, Staat oder Sektion), standardmäßig an und mit dem Stift wählbar. Der Austausch wird jetzt auch im internen Log gespeichert; bereits geloggte QSOs bleiben wie sie waren.',
-      'Le journal du contest a deux nouvelles colonnes, « Échange env. » et « Échange reçu » (numéro de série, État ou section), activées par défaut et choisies avec le crayon. L’échange est maintenant aussi enregistré dans le journal interne ; les QSO déjà enregistrés restent tels quels.',
-      'El log del contest tiene dos columnas nuevas, «Intercambio env.» e «Intercambio rec.» (número de serie, estado o sección), activadas de base y elegidas con el lápiz. El intercambio ahora también se guarda en el log interno; los QSO ya registrados quedan como estaban.',
-      'O log do contest tem duas colunas novas, «Troca env.» e «Troca rec.» (número de série, estado ou secção), ligadas por defeito e escolhidas com o lápis. A troca passa a ser guardada também no log interno; os QSO já registados ficam como estavam.',
-    ],
-    featured: true,
   },
 ];
