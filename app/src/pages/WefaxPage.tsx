@@ -6,6 +6,7 @@ import { DetachedNote } from '../components/DetachedNote';
 import { ListenGate } from '../components/ListenGate';
 import { useGroups } from '../lib/detached';
 import { History } from '../components/wefax/History';
+import { WefaxMini } from '../components/wefax/Mini';
 import { Controls } from '../components/wefax/Controls';
 import { Viewer } from '../components/wefax/Viewer';
 import { useT } from '../i18n';
@@ -60,6 +61,8 @@ function WefaxBody({ solo }: { solo: boolean }) {
   const badge = rx?.receiving ? 'receiving' : rx?.listening ? 'listening' : 'off';
 
   const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
+  // la scelta resta visibile anche se la radio non ha ancora (o non puo') cambiare frequenza
+  const [chosen, setChosen] = useState('');
   const current = presetAt(dialHz);
   const groups = wefaxGroups();
 
@@ -93,12 +96,15 @@ function WefaxBody({ solo }: { solo: boolean }) {
         {/* le stazioni meteo per banda e poi per frequenza: la radio va sulla portante (frequenza assegnata meno 1,9 kHz, in USB) */}
         <select
           className="sstv-modesel wefax-freq"
-          value={current?.id ?? ''}
+          value={current?.id ?? chosen}
           aria-label={t('wefax.freq.label')}
           title={t('wefax.freq.tip')}
           onChange={(e) => {
             const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
-            if (p) void postFrequency(p.dialHz).catch(() => undefined);
+            if (p) {
+              setChosen(p.id);
+              void postFrequency(p.dialHz).catch(() => undefined);
+            }
           }}
         >
           <option value="" disabled>
@@ -114,6 +120,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
             </optgroup>
           ))}
         </select>
+        <WefaxMini />
         {solo ? null : <DetachButton item="wefax" />}
       </header>
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}

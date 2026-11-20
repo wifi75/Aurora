@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WefaxSnapshot } from '../api/client';
 
 vi.mock('../api/client', () => ({
+  getCat: vi.fn(() => Promise.resolve({ config: {}, status: {} })),
+  getControls: vi.fn(() => Promise.resolve({})),
+  postFrequency: vi.fn(() => Promise.resolve()),
+  postRxFrequency: vi.fn(() => Promise.resolve()),
+  postTxFrequency: vi.fn(() => Promise.resolve()),
+  postCatExtra: vi.fn(() => Promise.resolve()),
   getWefax: vi.fn(),
   getWefaxImages: vi.fn(() => Promise.resolve([])),
   getWefaxCurrentBlob: vi.fn(() => Promise.reject(new Error('none'))),

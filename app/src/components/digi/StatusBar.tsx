@@ -333,6 +333,19 @@ export function DigiStatusBar(p: Props) {
               <span className="digi-st-menu-check" />
               {t('nav.sstv')}
             </button>
+            {/* anche WEFAX (cartine meteo) ha la sua pagina */}
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={false}
+              onClick={() => {
+                setModeMenu(null);
+                window.location.hash = '#/wefax';
+              }}
+            >
+              <span className="digi-st-menu-check" />
+              {t('nav.wefax')}
+            </button>
             <hr className="digi-st-menu-sep" />
             <button
               type="button"
