@@ -15,9 +15,29 @@ import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
 import { rememberDialBeforeReceiveOnly } from '../lib/modeRetune';
 import { formatKhz, presetAt, wefaxGroups } from '../lib/wefaxStations';
+import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 import '../styles/sstv.css';
 import '../styles/wefax.css';
+
+const LAST_KEY = 'aurora.wefax.lastPreset';
+
+/** L'ultima frequenza WEFAX scelta nel menu (vuota se non ce n'e' una). */
+function lastWefaxId(): string {
+  try {
+    return browserStorage()?.getItem(LAST_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function saveWefaxId(id: string): void {
+  try {
+    browserStorage()?.setItem(LAST_KEY, id);
+  } catch {
+    // senza archivio la scelta non si ricorda tra una apertura e l'altra
+  }
+}
 
 /** La pagina WEFAX: ricezione delle cartine meteo (visore adattabile allo schermo, comandi, cronologia). Solo ricezione. */
 export function WefaxPage({ solo = false }: { solo?: boolean } = {}) {
@@ -63,9 +83,21 @@ function WefaxBody({ solo }: { solo: boolean }) {
 
   const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
   // la scelta resta visibile anche se la radio non ha ancora (o non puo') cambiare frequenza
-  const [chosen, setChosen] = useState('');
+  const [chosen, setChosen] = useState(() => lastWefaxId());
   const current = presetAt(dialHz);
   const groups = wefaxGroups();
+
+  // entrando nella pagina la radio torna sulla frequenza WEFAX dell'ultima volta (la banda di prima si ricorda per l'uscita)
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || dialHz <= 0) return;
+    restored.current = true;
+    const last = groups.flatMap((g) => g.presets).find((x) => x.id === lastWefaxId());
+    if (!last || last.dialHz === dialHz) return;
+    rememberDialBeforeReceiveOnly(dialHz);
+    void postFrequency(last.dialHz, true).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialHz]);
 
   return (
     <div className={`sstv-page wefax-page${solo ? ' sstv-page--solo' : ''}`}>
@@ -104,6 +136,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
             const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
             if (p) {
               setChosen(p.id);
+              saveWefaxId(p.id);
               // la frequenza di adesso (se e' in una banda radioamatoriale) si ricorda: lasciando il WEFAX la radio torna li'
               rememberDialBeforeReceiveOnly(dialHz);
               void postFrequency(p.dialHz, true).catch(() => undefined);
