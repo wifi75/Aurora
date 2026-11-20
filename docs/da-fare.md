@@ -11,7 +11,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - [ ] Finestrella di aggiornamento nativa prima dell'apertura di Aurora (solo se la vuoi)
 
 ## Utenti in attesa
-- [ ] #72 Vladimir: prova 0.11.306 con IC-820H e nuovo pacchetto
+- [ ] #83 Vladimir (IC-820H, ex #72): con la 0.11.306 il Doppler della ricezione va, ma la trasmissione (uplink) no; il modo non cambia (RX USB, TX LSB, a mano) e il SUB non si accende. Pacchetto B8024BF8 da leggere
+- [ ] #72 Hernan (IC-707 senza CAT, macOS): attende il suo pacchetto di assistenza
 - [ ] #81 Luc: prova Wait and Pounce
 - [ ] #80 HB9TZU: quali comandi FLDigi mancano
 - [ ] #82 ct1bxx: avviso satelliti su tutte le pagine (da progettare)
