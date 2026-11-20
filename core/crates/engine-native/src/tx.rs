@@ -1785,6 +1785,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         match self.encode(&text, freq, n == 0) {
             Ok((wave, sent)) => {
+                // il messaggio che va in onda si scrive nel registro (nei pacchetti di assistenza si vede cosa e a chi si e' trasmesso e da quando)
+                if !already {
+                    log.push(format!("in onda Tx{n}: «{sent}» a {freq} Hz"));
+                }
                 let mode = tx_mode(self.mode);
                 let keep = (sent.clone(), n == 0, parity, slot.start_ms(self.mode));
                 let request = TxRequest { wave, mode, parity };
