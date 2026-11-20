@@ -4,6 +4,10 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Giro del 2026-11-20 sera (sola lettura, nessun difetto nuovo)
+- Pacchetti letti: `7CF56D20`, `0FC727FE`, `5E66C6CC`, `BB6E5ECC` (tutti dell'installazione IC-820H di Vladimir, #83: i `split non spento` ripetuti sono di versioni <= 0.11.308, dalla 0.11.309 non ce ne sono; con 0.11.320 la lettura delle bande dei VFO funziona e dice Main = VHF, Sub = UHF) e `B93DEDB3` (0.11.304, TCI, ExpertSDR: quattro «blocchi del runtime» di 95-725 s tra le 08:26 e le 08:34 UTC con il PSK Reporter che si vede chiudere il collegamento subito dopo; la finestra batteva, nessuna ripetizione sulla 0.11.319 dello stesso PC; causa non dimostrata, forse sospensione del PC o rete: non toccato).
+- Errori Cloudflare: solo rumore noto (rigctld che non risponde, avvisi dell'installatore, decodifica lenta su Pentium E5400, audio non trovato). Issue: nessun commento nuovo.
+
 ## Nella 0.11.321 (pubblicata 2026-11-20T20:13:32Z)
 - Pulsante «Usa un rigctld gia' acceso» (#87), importazione macro fldigi nel menu File di PSK/RTTY (#80), casella «Aggiorna da solo quando Aurora e' ferma» (spenta di base). Da provare: la finestra di importazione e la casella non sono state viste a schermo. Risposte da dare a schildgnom (#80) e Luc (#87) con la versione pubblicata.
 
