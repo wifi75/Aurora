@@ -4,6 +4,9 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.321 (pubblicata 2026-11-20T20:13:32Z)
+- Pulsante «Usa un rigctld gia' acceso» (#87), importazione macro fldigi nel menu File di PSK/RTTY (#80), casella «Aggiorna da solo quando Aurora e' ferma» (spenta di base). Da provare: la finestra di importazione e la casella non sono state viste a schermo. Risposte da dare a schildgnom (#80) e Luc (#87) con la versione pubblicata.
+
 ## Nella 0.11.320 (pubblicata 2026-11-20T18:03:31Z)
 - IC-820H (#83): il pacchetto SO-50 di Vladimir (0.11.319, ripiego a due VFO acceso) mostra ancora `F rx` su Main e `V Sub` + `F tx` su Sub: `aurora.log` dice «bande dei VFO: uguali o non leggibili» sia alle 14:49 sia alle 16:52. Causa probabile: Hamlib risponde alla stessa frequenza a due `f` ravvicinate (cache). `hamlib_rig.rs`: la sonda attende 700 ms dopo ogni `V`, scrive le due frequenze lette (`satelliti: lettura delle bande dei VFO: Main = .. Sub = ..`) e per il modello 3032 ripiega su Main = 144, Sub = 430 (come nella foto di Vladimir: sinistra 137.790 USB = 144, destra 437.790 FM = 430). Prova `the_ic_820h_defaults_to_main_144_and_sub_430_when_the_bands_cannot_be_told_apart`. Non provato con la radio vera.
 

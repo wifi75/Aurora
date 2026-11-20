@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.321',
-    released: '2026-11-20T21:00:00Z',
+    released: '2026-11-20T20:13:32Z',
     kind: 'new',
     title: [
       'Radio: «Usa un rigctld già acceso»',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.321',
-    released: '2026-11-20T21:00:00Z',
+    released: '2026-11-20T20:13:32Z',
     kind: 'new',
     title: [
       'PSK e RTTY: importa le macro di fldigi',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.321',
-    released: '2026-11-20T21:00:00Z',
+    released: '2026-11-20T20:13:32Z',
     kind: 'new',
     title: [
       'Aggiornamenti: «Aggiorna da solo quando Aurora è ferma»',
