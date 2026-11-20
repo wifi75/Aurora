@@ -816,6 +816,11 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             }
             TxCommand::Enable(on) => {
                 self.seq.set_enabled(on);
+                // l'operatore accende Abilita Tx con il messaggio 6 (CQ) scelto: il CQ lo ha chiesto lui, anche con AutoTX spento
+                // (segnalazione #86: «Enable TX» si spegneva da solo e non partiva niente)
+                if on && self.seq.ntx() == 6 {
+                    self.cq_by_user = true;
+                }
                 // nel modo Fox la trasmissione la decide la Fox a ogni periodo pari: la sequenza normale non parte (senza un DX si
                 // spegnerebbe subito e «Abilita Tx» tornerebbe spento al primo clic)
                 if on && self.controls.switch_on("fox") {
@@ -868,6 +873,10 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
             },
             TxCommand::SelectTx(n) => {
                 self.free_text = None;
+                // con Abilita Tx gia' acceso, scegliere il CQ e' una richiesta dell'operatore (vedi `Enable`)
+                if n == 6 && self.seq.is_enabled() {
+                    self.cq_by_user = true;
+                }
                 if let Err(e) = self.seq.select_tx(n) {
                     log.push(format!("Tx{n} non selezionabile: {e:?}"));
                 }
@@ -2925,6 +2934,19 @@ mod tests {
         assert!(!d.opts.use_rrr, "in FT8 vale la scelta dell'operatore (RR73)");
         d.set_mode(Mode::Jt9);
         assert!(d.opts.use_rrr);
+    }
+
+    /// Segnalazione #86 (FT-710): con AutoTX spento, scegliere il messaggio 6 (CQ) e accendere Abilita Tx deve trasmettere il CQ; prima la
+    /// sequenza lo scambiava per un CQ automatico a QSO finito, spegneva Abilita Tx e non partiva niente.
+    #[test]
+    fn enable_tx_with_the_cq_message_selected_transmits_even_with_auto_tx_off() {
+        let (mut d, port, _) = driver();
+        d.auto_tx = false;
+        d.handle(TxCommand::Option(OptionChange::TxEven(true)), 1.0);
+        d.handle(TxCommand::Enable(true), 1.0);
+        d.after_slot(SLOT_MS + 15_000, &[], BASE + 29.3, 14_074_000, "20m");
+        assert!(!port.requests.lock().expect("richieste").is_empty(), "il CQ chiesto dall'operatore parte");
+        assert!(d.seq.is_enabled(), "Abilita Tx resta acceso");
     }
 
     /// Modo Hound: la trasmissione di un CQ non e' permessa («Transmission of CQ message is not allowed in the Hound mode»).
