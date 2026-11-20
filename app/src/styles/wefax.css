@@ -136,5 +136,5 @@
 .wefax-toolbar-slot .sstv-note { display: none; }
 
 /* menu delle frequenze: carattere ancora piu' piccolo e piu' lungo, cosi' il testo non si taglia */
-.wefax-freq { font-size: 0.7rem; width: 14.5rem; max-width: 14.5rem; flex: 0 0 14.5rem; }
-.wefax-freq option, .wefax-freq optgroup { font-size: 0.72rem; }
+.wefax-freq { font-size: 0.66rem; width: 19rem; max-width: 19rem; flex: 0 0 19rem; }
+.wefax-freq option, .wefax-freq optgroup { font-size: 0.68rem; }
