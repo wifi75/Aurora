@@ -50,6 +50,23 @@ pub struct StationStatus {
     /// Hound: in questi minuti si riceve un Fox UltraFOX/SuperFox (l'etichetta diventa «Super Hound», come in WSJT-X).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub super_hound: bool,
+    /// Com'e' andata l'ultima trasmissione passo per passo (i pallini della scheda Trasmissione).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tx_chain: Option<TxChain>,
+}
+
+/// La catena dell'ultima trasmissione: audio mandato al dispositivo e stato di trasmissione letto dalla radio.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct TxChain {
+    /// Il picco dell'audio in dBFS (assente se l'onda era muta).
+    pub peak_dbfs: Option<f32>,
+    /// `true` se la radio ha detto di essere in trasmissione, `false` se in ricezione, assente se non si puo' leggere.
+    pub ptt_read: Option<bool>,
+    /// L'audio era praticamente muto.
+    pub audio_muted: bool,
+    /// Il modo radio letto dopo il cambio (USB, USB-D...), se si e' letto.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub radio_mode: Option<String>,
 }
 
 /// L'esito della verifica del Fox: nominativo e se il server ha detto «VERIFIED» (altrimenti «INVALID»).

@@ -142,12 +142,48 @@ pub enum TxOutcome {
     Failed(String),
 }
 
+/// Com'e' andata l'ultima trasmissione, passo per passo: serve alla diagnosi («PTT scattato ma niente RF»).
+#[derive(Debug, Clone, PartialEq)]
+pub struct TxReport {
+    /// Il picco (0-1) dell'onda mandata al dispositivo, dopo livello e rampe.
+    pub peak: f32,
+    /// L'attenuazione applicata dall'onda, in decimi di dB (0 se il livello lo applica il dispositivo).
+    pub attenuation_tenths: u32,
+    /// La frequenza di campionamento dell'uscita audio.
+    pub rate: u32,
+    /// A cosa comanda il PTT (porta, OmniRig...), se lo dice.
+    pub ptt_target: Option<String>,
+    /// Lo stato di trasmissione letto dalla radio all'inizio dell'audio: `Some(false)` = la radio dice «ricezione» mentre Aurora trasmette.
+    pub ptt_readback: Option<bool>,
+}
+
+impl TxReport {
+    /// Il picco in dBFS (meno infinito se l'onda e' muta).
+    pub fn peak_dbfs(&self) -> f32 {
+        if self.peak <= 0.0 { f32::NEG_INFINITY } else { 20.0 * self.peak.log10() }
+    }
+
+    /// I problemi che si leggono dal rapporto, in parole: vuoto se tutto torna.
+    pub fn problems(&self) -> Vec<&'static str> {
+        let mut out = Vec::new();
+        if self.peak < 0.001 {
+            out.push("audio praticamente muto verso la radio (livello Pwr o volume di Windows a zero?)");
+        }
+        if self.ptt_readback == Some(false) {
+            out.push("la radio dice di essere in ricezione mentre Aurora trasmette: il PTT non e' stato accettato");
+        }
+        out
+    }
+}
+
 struct Status {
     state: TxState,
     outcome: Option<TxOutcome>,
 }
 
 type Listener = Arc<dyn Fn(TxState) + Send + Sync>;
+/// Chi viene avvisato col rapporto di ogni trasmissione che parte.
+pub type ReportHook = Arc<dyn Fn(&TxReport) + Send + Sync>;
 type SharedSink = Arc<Mutex<Box<dyn AudioSink>>>;
 
 struct Inner {
@@ -171,6 +207,9 @@ struct Inner {
     stream: Mutex<Option<StreamFeed>>,
     /// Trasmissione a flusso: frequenza dell'uscita, per contare in campioni a 12 kHz quelli gia' suonati.
     stream_rate: AtomicU32,
+    /// Il rapporto dell'ultima trasmissione.
+    report: Mutex<Option<TxReport>>,
+    report_hook: Mutex<Option<ReportHook>>,
 }
 
 /// I pezzi di una trasmissione a flusso in attesa del thread di trasmissione.
@@ -263,6 +302,8 @@ impl Transmitter {
             replacement: Mutex::new(None),
             stream: Mutex::new(None),
             stream_rate: AtomicU32::new(0),
+            report: Mutex::new(None),
+            report_hook: Mutex::new(None),
         };
         // la catena ricostruita con un PTT rimasto acceso (blocco esterno che non si e' riusciti a spegnere): parte «non spenta», con la scala
         if inner.ptt.is_on() {
@@ -293,6 +334,16 @@ impl Transmitter {
 
     pub fn state(&self) -> TxState {
         lock(&self.inner.status).state
+    }
+
+    /// Il rapporto passo per passo dell'ultima trasmissione (picco audio, PTT letto dalla radio).
+    pub fn last_report(&self) -> Option<TxReport> {
+        lock(&self.inner.report).clone()
+    }
+
+    /// Chi riceve il rapporto di ogni trasmissione, appena a PTT acceso parte l'audio (l'interfaccia mostra i pallini della catena).
+    pub fn set_report_hook(&self, hook: Option<ReportHook>) {
+        *lock(&self.inner.report_hook) = hook;
     }
 
     pub fn last_outcome(&self) -> Option<TxOutcome> {
@@ -836,6 +887,34 @@ fn execute(inner: &Inner, job: &Job) -> Result<TxOutcome, TxError> {
         guard.release()?;
         return Ok(TxOutcome::Halted);
     }
+    // diagnosi: a PTT acceso e prima dell'audio si chiede alla radio se e' davvero in trasmissione; picco e livello dell'onda finiscono nel rapporto
+    let report = TxReport {
+        peak: samples.iter().fold(0.0f32, |m, v| m.max(v.abs())),
+        attenuation_tenths: attenuation,
+        rate,
+        ptt_target: inner.ptt.target(),
+        ptt_readback: inner.ptt.read_state(),
+    };
+    let problems = report.problems();
+    tracing::info!(
+        "trasmissione: audio picco {:.1} dBFS a {} Hz, PTT {}{}",
+        report.peak_dbfs(),
+        report.rate,
+        match report.ptt_readback {
+            Some(true) => "letto dalla radio: acceso",
+            Some(false) => "letto dalla radio: SPENTO",
+            None => "non leggibile dalla radio",
+        },
+        report.ptt_target.as_deref().map(|t| format!(" ({t})")).unwrap_or_default()
+    );
+    for p in &problems {
+        tracing::warn!("trasmissione: {p}");
+    }
+    let hook = lock(&inner.report_hook).clone();
+    if let Some(h) = hook {
+        h(&report);
+    }
+    *lock(&inner.report) = Some(report);
     // Avvio (anche tardivo): si parte dal punto dell'onda che a quest'ora sarebbe gia' arrivato (`Modulator`: `m_ic = (mstr - 500) * 48`)
     let play = |samples: &[f32]| -> Result<Option<Duration>, TxError> {
         // i passi di attesa sono da 10 ms: un avvio con meno di 20 ms di scarto e' in orario e non taglia niente
@@ -1113,6 +1192,32 @@ mod tests {
         let mut bad = config();
         bad.ptt_lead = Duration::from_secs(5);
         assert!(matches!(b.tx.set_config(bad), Err(TxError::InvalidConfig(_))));
+    }
+
+    #[test]
+    fn the_report_of_a_transmission_has_the_audio_peak_and_no_problems() {
+        let b = bench(config());
+        assert!(b.tx.last_report().is_none());
+        b.tx.schedule(request(1.0)).expect("pianificata");
+        b.run_to(base() + ms(1700));
+        assert!(b.tx.wait_idle(Duration::from_secs(2)));
+        let r = b.tx.last_report().expect("rapporto");
+        // onda a 0,9 attenuata di 10 dB: picco circa 0,28
+        assert!(r.peak > 0.2 && r.peak < 0.35, "picco {}", r.peak);
+        assert_eq!(r.attenuation_tenths, 100);
+        assert_eq!(r.rate, RATE);
+        assert_eq!(r.ptt_readback, None, "il PTT finto non si legge");
+        assert!(r.problems().is_empty(), "problemi: {:?}", r.problems());
+    }
+
+    #[test]
+    fn a_report_flags_a_silent_wave_and_a_radio_that_says_it_is_receiving() {
+        let r = TxReport { peak: 0.0, attenuation_tenths: 0, rate: RATE, ptt_target: None, ptt_readback: Some(false) };
+        assert_eq!(r.problems().len(), 2);
+        assert_eq!(r.peak_dbfs(), f32::NEG_INFINITY);
+        let ok = TxReport { peak: 0.5, attenuation_tenths: 0, rate: RATE, ptt_target: None, ptt_readback: Some(true) };
+        assert!(ok.problems().is_empty());
+        assert!((ok.peak_dbfs() + 6.02).abs() < 0.05);
     }
 
     #[test]

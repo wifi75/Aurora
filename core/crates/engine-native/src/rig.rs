@@ -398,6 +398,8 @@ pub struct NativeControls {
     swr_limit: AtomicU32,
     /// Gli avvisi di sicurezza della trasmissione e fino a quando valgono (`None` = finche' non si tolgono).
     alerts: Mutex<Vec<(aurora_core::TxAlert, Option<std::time::Instant>)>>,
+    /// La catena dell'ultima trasmissione (audio, PTT letto dalla radio, modo radio): i pallini della scheda Trasmissione.
+    tx_chain: Mutex<Option<aurora_core::TxChain>>,
     /// Momento di avvio della decodifica FT8 (`DecoderStart::code`): lo legge il motore a ogni blocco.
     decoder_start: AtomicU8,
     /// «Full duplex» (WSJT-X `actionFull_Duplex_Mode`, di fabbrica spento): il periodo in cui si trasmette si decodifica lo stesso.
@@ -450,7 +452,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), decoding: AtomicBool::new(false), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), decoding: AtomicBool::new(false), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), tx_chain: Mutex::new(None), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
     }
 }
 
@@ -1000,6 +1002,17 @@ impl NativeControls {
         if let Ok(mut all) = self.alerts.lock() {
             all.retain(|(a, _)| a.kind != kind);
         }
+    }
+
+    /// Il rapporto dell'ultima trasmissione, per lo stato della stazione.
+    pub fn set_tx_chain(&self, chain: aurora_core::TxChain) {
+        if let Ok(mut c) = self.tx_chain.lock() {
+            *c = Some(chain);
+        }
+    }
+
+    pub fn tx_chain(&self) -> Option<aurora_core::TxChain> {
+        self.tx_chain.lock().ok().and_then(|c| c.clone())
     }
 
     /// Gli avvisi ancora validi, per lo stato della stazione.

@@ -2286,6 +2286,17 @@ fn build_transmitter(config: &Config, cat: &Arc<rig_control::cat::CatService>, c
                 ),
                 None => alerts.clear_alert(aurora_core::TxAlertKind::PttStuck),
             })));
+            // il rapporto di ogni trasmissione (picco audio, PTT letto dalla radio, modo radio) va nello stato della stazione: i pallini dell'interfaccia
+            let chain = Arc::clone(controls);
+            let chain_cat = Arc::clone(cat);
+            transmitter.set_report_hook(Some(Arc::new(move |r: &tx_native::TxReport| {
+                chain.set_tx_chain(aurora_core::TxChain {
+                    peak_dbfs: (r.peak > 0.0).then(|| r.peak_dbfs()),
+                    ptt_read: r.ptt_readback,
+                    audio_muted: r.peak < 0.001,
+                    radio_mode: chain_cat.status().rig.and_then(|s| s.mode),
+                });
+            })));
             let flag = Arc::clone(controls);
             transmitter.set_listener(Some(Arc::new(move |state| {
                 flag.transmitting.store(state == tx_native::TxState::Transmitting, std::sync::atomic::Ordering::Relaxed);

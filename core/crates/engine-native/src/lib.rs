@@ -241,6 +241,7 @@ pub fn publish_status(events: broadcast::Sender<Event>, live: LiveConfig) {
                     meters: live.controls.published_meters(),
                     queue: view.queue.clone(),
                     tx_alerts: live.controls.tx_alerts(),
+                    tx_chain: live.controls.tx_chain(),
                     fox_verification: live.controls.fox_verification(),
                     super_hound: live.controls.switch_on("hound") && live.controls.ultrafox_recent(now_unix_ms()),
                     ..StationStatus::default()

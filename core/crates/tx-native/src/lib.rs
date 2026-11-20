@@ -32,7 +32,7 @@ pub use error::TxError;
 pub use ptt::{AbandonHook, HamlibPtt, InhibitLeases, InhibitSnapshot, NoPtt, OmniRigPtt, Ptt, PttGuard, TxInterlock, MAX_TRACKED_HOLDS};
 pub use ptt_release::{ReleaseTiming, ReleaseTracker, StuckHook, StuckInfo};
 pub use ptt_serial::{Line, SerialLinePtt, target_of as serial_target};
-pub use scheduler::{Transmitter, TxConfig, TxOutcome, TxPlan, TxRequest, TxState};
+pub use scheduler::{Transmitter, TxConfig, ReportHook, TxOutcome, TxPlan, TxReport, TxRequest, TxState};
 pub use slot::{Mode, Parity};
 pub use tci_sink::{TciSink, TciTxSource, TCI_OUTPUT_NAME, TCI_RATE};
 

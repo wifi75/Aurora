@@ -30,6 +30,11 @@ pub trait Ptt: Send + Sync {
     fn target(&self) -> Option<String> {
         None
     }
+    /// Cosa dice la radio: `Some(true)` se risulta in trasmissione, `Some(false)` se in ricezione, `None` se non si puo' leggere (VOX, OmniRig,
+    /// radio che non risponde al comando). Serve alla diagnosi della trasmissione: un PTT accettato ma ignorato dalla radio si vede da qui.
+    fn read_state(&self) -> Option<bool> {
+        None
+    }
 }
 
 /// Nessun comando: la radio va in trasmissione col VOX, appena arriva l'audio.
@@ -76,6 +81,10 @@ impl Ptt for HamlibPtt {
 
     fn is_on(&self) -> bool {
         self.on.load(Ordering::SeqCst)
+    }
+
+    fn read_state(&self) -> Option<bool> {
+        self.client.ptt_within(Duration::from_millis(300)).ok()
     }
 }
 
