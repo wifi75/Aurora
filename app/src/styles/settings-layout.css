@@ -2128,7 +2128,10 @@
   .about--cols .about-col--facts .about-facts { grid-template-columns: minmax(0, 1fr); gap: 0.6rem; }
   .about--cols .about-col--facts .about-fact { padding: 0.65rem 0.9rem; }
   .about--cols .about-col--facts .about-fact p { font-size: 0.82rem; line-height: 1.45; }
-  .about--cols .about-links { justify-content: flex-start; }
+  /* i cinque collegamenti in una griglia a due colonne, tutti larghi uguale (il primo su tutta la riga): niente righe spezzate con vuoti a destra */
+  .about--cols .about-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; justify-content: stretch; }
+  .about--cols .about-links .about-link { display: flex; align-items: center; justify-content: center; text-align: center; min-width: 0; padding-inline: 0.6rem; }
+  .about--cols .about-links .about-link:first-child { grid-column: 1 / -1; }
 }
 
 /* L'antivirus ha tolto dei file ad Aurora: barra fissa in alto, ben visibile in chiaro e in scuro */
