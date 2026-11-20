@@ -3,6 +3,7 @@
 Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancante.md`.
 
 ## Adesso
+- [x] 0.11.310 pubblicata (locandina diretta, un ingranaggio, WEFAX su una riga e senza TUNE)
 - [x] 0.11.309 pubblicata (satelliti, ADIF automatico, conferma di chiamata, ROS 2,0, ora automatica)
 - [ ] Russo come ottava lingua (interfaccia, Guida, Novita'), con prova dei testi lunghi per non uscire dallo schermo
 - [ ] #83 Vladimir: pubblicare la risposta in russo (pronta) e chiedere la prova a mano V Sub/V Main

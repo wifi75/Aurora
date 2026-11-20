@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.310',
-    released: '2026-11-20T10:30:00Z',
+    released: '2026-11-20T09:50:38Z',
     kind: 'fixed',
     title: [
       'Locandina diretta all’avvio e un solo ingranaggio',

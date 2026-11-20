@@ -4,6 +4,12 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.310 (pubblicata 2026-11-20T09:50:38Z)
+
+- Correzioni alla 0.11.309: all'avvio con una versione nuova si apre direttamente la locandina (tolta la finestrella «Vuoi aggiornare?»); sul PC un solo ingranaggio (`ModeNav.tsx`) che apre le Impostazioni; Guida e Novita' dentro le Impostazioni.
+- WEFAX: tutto su una riga (i comandi dello zoom passano nello spazio `wefax-toolbar-slot` della testata con un portale), menu delle frequenze con carattere piu' piccolo; `commands/frequency` accetta `receive_only` (HF 1,6-30 MHz, fuori dalle bande radioamatoriali) e la pagina lo usa; niente TUNE nel WEFAX (`CompactRadioDisplay noTune`): solo ricezione.
+- Russo: struttura preparata (`app/src/i18n/ru/`, `scripts/export-ru.mjs`, `importa-ru.mjs`, foglio `docs/traduzione-russa.csv`), tenuta nello stash `russo-infrastruttura`; traduzioni a lotti nello scratchpad; NON ancora nel repository.
+
 ## Nella 0.11.309 (in lavorazione, non ancora pubblicata)
 
 Satelliti senza split da CAT (issue #83, IC-820H di Vladimir) e rotore.
