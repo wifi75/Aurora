@@ -38,7 +38,7 @@ export function DetachButton({ item, className = 'detach-btn' }: { item: ItemId;
     detach(item, into, box && box.width > 50 && box.height > 50 ? { w: Math.round(box.width), h: Math.round(box.height) } : undefined);
     // una pagina intera staccata: la finestra principale torna alla Stazione (il rotore solo dalla sua pagina: la scheda sopra la Stazione
     // o sopra PSK/RTTY/CW si stacca e la pagina resta quella)
-    if (item === 'map' || item === 'propagation' || item === 'sstv' || (item === 'rotator' && location.hash.startsWith('#/rotore'))) location.hash = '#/';
+    if (item === 'map' || item === 'propagation' || item === 'sstv' || item === 'wefax' || (item === 'rotator' && location.hash.startsWith('#/rotore'))) location.hash = '#/';
   };
   return (
     <span className="dock-detach-host" ref={host} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>

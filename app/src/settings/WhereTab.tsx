@@ -7,7 +7,7 @@ import { useRotorCardVisible } from '../components/rotor/RotorCard';
 import { useState } from 'react';
 import { Actions, Group } from './layout';
 
-const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'dxmap', 'propagation', 'display', 'rotator', 'sstv'];
+const ITEMS: readonly ItemId[] = [...ALL_PANELS, 'dxmap', 'propagation', 'display', 'rotator', 'sstv', 'wefax'];
 
 /**
  * Dove sta ogni elemento (Impostazioni › Finestre): nella finestra principale, in una finestra a parte (nuova o accanto a un'altra) o
@@ -33,7 +33,7 @@ export function WhereGroups() {
       if (rotorOnStation === want) setRotorOnStation(!want);
       return;
     }
-    if (item === 'map' || item === 'dxmap' || item === 'bands' || item === 'propagation' || item === 'display' || item === 'sstv') return;
+    if (item === 'map' || item === 'dxmap' || item === 'bands' || item === 'propagation' || item === 'display' || item === 'sstv' || item === 'wefax') return;
     if (hidden.includes(item) !== want) {
       const next = toggleHidden(layout, item);
       saveLayout(browserStorage(), next);

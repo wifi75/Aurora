@@ -1,7 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getWefax, getWefaxImages, postFrequency, wefaxRx, wefaxRxPage } from '../api/client';
+import { DetachButton } from '../components/DetachButton';
+import { DetachedNote } from '../components/DetachedNote';
 import { ListenGate } from '../components/ListenGate';
+import { useGroups } from '../lib/detached';
 import { History } from '../components/wefax/History';
 import { Controls } from '../components/wefax/Controls';
 import { Viewer } from '../components/wefax/Viewer';
@@ -15,7 +18,14 @@ import '../styles/sstv.css';
 import '../styles/wefax.css';
 
 /** La pagina WEFAX: ricezione delle cartine meteo (visore adattabile allo schermo, comandi, cronologia). Solo ricezione. */
-export function WefaxPage() {
+export function WefaxPage({ solo = false }: { solo?: boolean } = {}) {
+  const groups = useGroups();
+  const elsewhere = groups.some((g) => g.open && g.items.includes('wefax'));
+  if (elsewhere && !solo) return <DetachedNote item="wefax" />;
+  return <WefaxBody solo={solo} />;
+}
+
+function WefaxBody({ solo }: { solo: boolean }) {
   const t = useT();
   const client = useQueryClient();
   const snap = useQuery({ queryKey: ['wefax'], queryFn: getWefax, retry: false, refetchInterval: 1000 });
@@ -54,7 +64,7 @@ export function WefaxPage() {
   const groups = wefaxGroups();
 
   return (
-    <div className="sstv-page wefax-page">
+    <div className={`sstv-page wefax-page${solo ? ' sstv-page--solo' : ''}`}>
       <header className="sstv-head">
         {/* il modo si cambia da qui: un modo testuale o l'SSTV aprono la loro pagina */}
         <select
@@ -104,6 +114,7 @@ export function WefaxPage() {
             </optgroup>
           ))}
         </select>
+        {solo ? null : <DetachButton item="wefax" />}
       </header>
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
 
