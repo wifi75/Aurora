@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.305',
-    released: '2026-11-19T23:00:00Z',
+    released: '2026-11-20T05:40:47Z',
     kind: 'changed',
     title: [
       'Display esteso più compatto e quattro cluster di serie',

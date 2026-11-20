@@ -2,6 +2,12 @@
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
+## Nella 0.11.305 (pubblicata 2026-11-20T05:40:47Z)
+
+- Display esteso FT-2000 (`radio-display/RigFaceDisplays.tsx`, `Ft2000Display`): disegno 504 x 66 (`FT_FACE_W`, `FT_FACE_H`), VFO-A sopra la frequenza, VFO-B e modo a sinistra della seconda, in TX il misuratore diventa potenza (ambra) con la barra ROS sotto, tilde se l'S-meter e' stimato; CSS in coda a `radiodisplay.css` (`.rd-face-slot--ft` con `aspect-ratio`). `FaceHeader` usa `useTuneButton` (TUNE a scatto). Visto in anteprima, non con una radio vera.
+- DX Cluster: server di serie IU3WJQ-7, HamQTH, Hamcloud, VE7CC (N2KI solo nel catalogo); il primo dell'elenco si riprova ogni 5-10 s (`PRIMARY_RETRY_MAX_SECS`).
+- Aperte: #77 (Pere), #81, #80, #78, #72; da provare dal vivo display, TUNE, spot dal cluster e passaggio al successivo.
+
 ## Nella 0.11.304 (pubblicata 2026-11-19T20:00:19Z)
 
 - DX Cluster (`dx-cluster/src/lib.rs`): di base primo cluster «IU3WJQ-7» (`cluster.iu3wjq.com:8000`) e `spot_via` telnet con `spot_server` su di lui (`AURORA_CLUSTER_*`); `aurora_cluster_first` lo porta in cima anche nei file gia' salvati e rinomina «IU3WJQ» in «IU3WJQ-7»; `send_spot` prova in ordine il cluster scelto e poi gli altri collegati (8 s ciascuno, spot doppio possibile se un cluster accetta senza ripetere); `Config::repaired` ripara i valori non validi tenendo utente e password, con copia `dx-cluster.json.bak` prima di rimpiazzare il file. 38 prove verdi.
