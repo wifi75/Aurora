@@ -7,13 +7,16 @@ import { useStation } from '../state/station';
 import { InstallProgress } from './InstallProgress';
 
 const KEY = 'aurora-update-dismissed';
+const DAY_KEY = 'aurora-update-dismissed-day';
 
 /** Le fasi in cui il core sta lavorando: la barretta si rilegge spesso. */
 const BUSY = new Set(['downloading', 'verifying', 'installing']);
 
 function dismissedVersion(): string {
   try {
-    return browserStorage()?.getItem(KEY) ?? '';
+    // «Piu' tardi» nasconde l'icona solo fino a domani: chi non aggiorna la rivede a ogni giorno di uso
+    const store = browserStorage();
+    return store?.getItem(DAY_KEY) === new Date().toISOString().slice(0, 10) ? (store.getItem(KEY) ?? '') : '';
   } catch {
     return '';
   }
@@ -134,6 +137,7 @@ export function UpdateBar() {
         onClick={() => {
           try {
             browserStorage()?.setItem(KEY, release.version);
+            browserStorage()?.setItem(DAY_KEY, new Date().toISOString().slice(0, 10));
           } catch {
             // senza archivio la barra torna alla prossima apertura
           }

@@ -1,6 +1,6 @@
 import '../styles/first-run.css';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStation } from '../state/station';
 import { ApiError, getUpdate, installUpdate } from '../api/client';
 import { useLang, useT } from '../i18n';
@@ -11,6 +11,22 @@ import { InstallProgress } from './InstallProgress';
 
 const SEEN_KEY = 'aurora-update-poster-seen';
 const OPEN_EVENT = 'aurora-update-poster-open';
+const DAY_KEY = 'aurora-update-poster-day';
+/** All'avvio di Aurora la locandina si apre da sola, ma solo nei primi due minuti (poi un QSO o un contest non si disturbano). */
+const STARTUP_MS = 120_000;
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** «Piu' tardi» vale fino a domani: all'avvio dopo, se Aurora non e' ancora aggiornata, la locandina torna. */
+function snoozedToday(): boolean {
+  try {
+    return browserStorage()?.getItem(DAY_KEY) === today();
+  } catch {
+    return false;
+  }
+}
 
 /** «Piu' tardi» premuto: la guida del primo avvio, che aspettava la locandina, puo' partire. */
 export const LATER_EVENT = 'aurora-update-later';
@@ -101,6 +117,15 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
     return () => window.removeEventListener(OPEN_EVENT, open);
   }, [refetch]);
   const release = update.data?.available ?? (notice ? { version: notice.version, tag: notice.tag, name: '', notes: '', url: notice.url, published_at: '', prerelease: false } : null);
+  // appena Aurora si apre, se c'e' una versione nuova (e non e' stata rimandata oggi) la locandina compare al centro, una volta sola
+  const born = useRef(Date.now());
+  const releaseVersion = release?.version;
+  const phase = update.data?.stage?.phase;
+  const quiet = update.data?.quiet;
+  useEffect(() => {
+    if (!releaseVersion || Date.now() - born.current > STARTUP_MS || quiet || phase === 'installing' || snoozedToday()) return;
+    setForced(true);
+  }, [releaseVersion, quiet, phase]);
   if (!release && forced) return <UpToDate current={update.data?.current ?? ''} onClose={() => setForced(false)} />;
   // la locandina non si apre mai da sola (comparire durante un QSO o un contest e' un disturbo): avvisano la cartolina del tray e la
   // barretta in testata, e la locandina si apre solo quando l'operatore la chiede (clic sulla barretta o dal menu)
@@ -115,6 +140,7 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
   const later = () => {
     try {
       browserStorage()?.setItem(SEEN_KEY, release.version);
+      browserStorage()?.setItem(DAY_KEY, today());
     } catch {
       // senza archivio la locandina torna alla prossima apertura
     }
