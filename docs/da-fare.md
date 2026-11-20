@@ -4,7 +4,8 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Adesso
 - [x] 0.11.315 pubblicata (rotore fuori dalla barra, «Mostra in home» nelle Impostazioni): da guardare a schermo
-- [ ] Diagnosi della trasmissione: registro per trasmissione, controlli, pallini nella scheda Trasmissione, «Prova senza trasmettere» (`docs/piano-diagnosi-trasmissione.md`)
+- [x] 0.11.316 pubblicata: diagnosi della trasmissione (pallini, «Prova senza trasmettere», registro): da guardare a schermo e con una radio vera
+- [ ] Diagnosi della trasmissione, resta: prove con il finto rigctld, confronto del modo con quello richiesto (`docs/piano-diagnosi-trasmissione.md`)
 - [x] 0.11.314 pubblicata (etichetta satelliti opzionale e al centro della barra, locandina senza barra del download): da guardare a schermo
 - [x] 0.11.313 pubblicata (WEFAX ricorda la frequenza e la banda di prima, menu 19 rem, locandina senza striscia, divisore cascata): da guardare a schermo
 - [x] Locandina di aggiornamento senza l'avanzamento del download (0.11.314)

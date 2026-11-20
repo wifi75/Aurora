@@ -4,6 +4,12 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+## Nella 0.11.316 (pubblicata 2026-11-20T13:10:20Z)
+
+- Diagnosi della trasmissione (piano in `docs/piano-diagnosi-trasmissione.md`): `tx-native` ha `TxReport` (picco audio, PTT letto dalla radio con `Ptt::read_state` su Hamlib, hook `set_report_hook`) e scrive «trasmissione: audio picco … PTT …» in `aurora.log`; `aurora-core` ha `StationStatus.tx_chain` (`TxChain`), pubblicato da `engine-native` (`NativeControls::set_tx_chain`) e riempito in `aurora/src/lib.rs` (modo radio dal CAT).
+- Interfaccia: `TxChainDots.tsx` (tre pallini nella scheda Trasmissione, `lib/txChain.ts`) e `settings/TxCheck.tsx` («Prova senza trasmettere» in Impostazioni › Radio, `lib/txCheck.ts`): solo lettura, mai PTT ne' audio. Non visti a schermo ne' con una radio vera.
+- Da fare: prove con il finto `rigctld` (radio che rifiuta il modo, PTT non leggibile), confronto del modo letto con quello richiesto (ora solo «modo che non porta il digitale»), eventuale riga in `diagnostica/` del pacchetto.
+
 ## Nella 0.11.315 (pubblicata 2026-11-20T12:54:27Z)
 
 - Rotore fuori dalla barra in alto (`ModeNav.tsx`). `RotatorTab.tsx`: gruppo «Mostra in home» con due caselle (`useRotorCardVisible('station')` e `('digi')`) e il pulsante «Apri la pagina del rotore» (`#/rotore`). Non visto a schermo.

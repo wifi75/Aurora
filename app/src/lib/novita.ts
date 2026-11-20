@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.316',
-    released: '2026-11-20T15:00:00Z',
+    released: '2026-11-20T13:10:20Z',
     kind: 'new',
     title: [
       'Diagnosi della trasmissione: pallini e prova senza trasmettere',
