@@ -32,9 +32,11 @@ export interface SatAlertSettings {
   soundRotor: SoundChoice;
   /** Zoom automatico della mappa quando un satellite e' in vista (valori vecchi senza il campo: quello di base). */
   zoom: ZoomMode;
+  /** Etichetta nella barra in alto e suono del preavviso in ogni pagina (spenta di fabbrica; senza, avvisa solo la pagina Satelliti). */
+  barLabel: boolean;
 }
 
-export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell', rotorLeadMin: 5, soundRotor: 'arpeggio', zoom: DEFAULT_ZOOM_MODE };
+export const DEFAULT_ALERT_SETTINGS: SatAlertSettings = { enabled: true, volume: 60, leadMin: 5, onlySelected: false, soundPre: 'bell', soundAos: 'radar', soundLos: 'bell', rotorLeadMin: 5, soundRotor: 'arpeggio', zoom: DEFAULT_ZOOM_MODE, barLabel: false };
 
 export const ALERT_SOUNDS: readonly AlertSound[] = ['bell', 'radar', 'arpeggio'];
 export const ALERT_STORAGE_KEY = 'aurora.sat.alerts';
@@ -284,6 +286,7 @@ export function sanitizeAlertSettings(raw: unknown): SatAlertSettings {
     rotorLeadMin: clamp(r.rotorLeadMin, 0, 30, d.rotorLeadMin),
     soundRotor: choice(r.soundRotor, d.soundRotor),
     zoom: typeof r.zoom === 'string' && (ZOOM_MODES as readonly string[]).includes(r.zoom) ? (r.zoom as ZoomMode) : d.zoom,
+    barLabel: typeof r.barLabel === 'boolean' ? r.barLabel : d.barLabel,
   };
 }
 

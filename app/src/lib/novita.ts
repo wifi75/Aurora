@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.314',
+    released: '2026-11-20T13:00:00Z',
+    kind: 'fixed',
+    title: [
+      'Etichetta dei satelliti opzionale e al suo posto, locandina più semplice',
+      'Satellite label optional and in its place, simpler update poster',
+      'Satelliten-Hinweis optional und am richtigen Platz, schlichteres Update-Plakat',
+      'Étiquette des satellites optionnelle et à sa place, affiche de mise à jour plus simple',
+      'Etiqueta de satélites opcional y en su sitio, cartel de actualización más simple',
+      'Etiqueta dos satélites opcional e no seu lugar, cartaz de atualização mais simples',
+    ],
+    text: [
+      'L’etichetta del satellite in arrivo, con il suono in ogni pagina, ora è un’opzione spenta di fabbrica: si accende in Impostazioni › Modi › Satelliti (Avvisi) o dalla campanella della pagina Satelliti. Sta nello spazio libero in mezzo alla barra in alto, non più sopra il display, e un clic sceglie quel satellite e apre la pagina Satelliti. La locandina di aggiornamento non mostra più la barra del download: bastano i pulsanti, l’avanzamento è nella schermata scura.',
+      'The incoming-satellite label, with the sound on every page, is now an option, off by default: turn it on in Settings › Modes › Satellites (Alerts) or from the bell on the Satellites page. It sits in the free space in the middle of the top bar, no longer over the display, and a click chooses that satellite and opens the Satellites page. The update poster no longer shows the download bar: the buttons are enough, progress is on the dark screen.',
+      'Der Hinweis auf den nahenden Satelliten, mit Ton auf jeder Seite, ist jetzt eine Option und standardmäßig aus: einschalten unter Einstellungen › Betriebsarten › Satelliten (Hinweise) oder über die Glocke auf der Satellitenseite. Er sitzt im freien Platz in der Mitte der oberen Leiste, nicht mehr über dem Display, und ein Klick wählt diesen Satelliten und öffnet die Satellitenseite. Das Update-Plakat zeigt den Download-Balken nicht mehr: die Schaltflächen genügen, der Fortschritt steht auf dem dunklen Bildschirm.',
+      'L’étiquette du satellite en approche, avec le son sur chaque page, est maintenant une option désactivée par défaut : à activer dans Réglages › Modes › Satellites (Alertes) ou par la cloche de la page Satellites. Elle se place dans l’espace libre au milieu de la barre du haut, plus sur l’affichage, et un clic choisit ce satellite et ouvre la page Satellites. L’affiche de mise à jour n’affiche plus la barre de téléchargement : les boutons suffisent, la progression est sur l’écran sombre.',
+      'La etiqueta del satélite que llega, con el sonido en cada página, es ahora una opción desactivada de fábrica: se activa en Ajustes › Modos › Satélites (Avisos) o desde la campana de la página Satélites. Está en el espacio libre del centro de la barra superior, ya no sobre la pantalla, y un clic elige ese satélite y abre la página Satélites. El cartel de actualización ya no muestra la barra de descarga: bastan los botones, el progreso está en la pantalla oscura.',
+      'A etiqueta do satélite a chegar, com o som em todas as páginas, é agora uma opção desativada de fábrica: ativa-se em Definições › Modos › Satélites (Avisos) ou no sino da página Satélites. Fica no espaço livre ao meio da barra superior, já não sobre o ecrã, e um clique escolhe esse satélite e abre a página Satélites. O cartaz de atualização já não mostra a barra de transferência: bastam os botões, o progresso está no ecrã escuro.',
+    ],
+  },
+  {
     version: '0.11.313',
     released: '2026-11-20T12:28:56Z',
     kind: 'fixed',
@@ -819,27 +840,6 @@ export const NOVITA: readonly Novita[] = [
       'Le journal, « Saisir le QSO » et le DX Cluster de la vue SSB ont maintenant l’aspect des fiches du contest et de la page FT8 : bordure violette et barre de titre dégradée.',
       'El log, «Introducir QSO» y el DX Cluster de la vista SSB tienen ahora el aspecto de las tarjetas del contest y de la página FT8: borde violeta y barra de título degradada.',
       'O log, «Introduzir QSO» e o DX Cluster da vista SSB têm agora o aspeto dos cartões do contest e da página FT8: borda violeta e barra de título em gradiente.',
-    ],
-  },
-  {
-    version: '0.11.286',
-    released: '2026-11-17T18:32:12Z',
-    kind: 'fixed',
-    title: [
-      'Ricerca della radio: tutte le Icom',
-      'Radio search: every Icom',
-      'Funkgerätesuche: alle Icom',
-      'Recherche de la radio : toutes les Icom',
-      'Búsqueda de la radio: todas las Icom',
-      'Pesquisa do rádio: todas as Icom',
-    ],
-    text: [
-      'Cercando una marca (per esempio «icom») la tendina elenca tutte le radio di quella marca, in ordine di numero, e non più solo le prime 12: l’IC-756PRO e molte altre restavano nascoste.',
-      'Searching for a brand (for example “icom”) now lists every radio of that brand, in numeric order, not only the first 12: the IC-756PRO and many others were hidden.',
-      'Bei der Suche nach einer Marke (zum Beispiel „icom“) werden jetzt alle Geräte dieser Marke in Zahlenreihenfolge gezeigt, nicht mehr nur die ersten 12: IC-756PRO und viele andere waren verborgen.',
-      'En cherchant une marque (par exemple « icom »), la liste montre maintenant toutes les radios de cette marque, dans l’ordre numérique, et non plus seulement les 12 premières : l’IC-756PRO et beaucoup d’autres étaient cachées.',
-      'Al buscar una marca (por ejemplo «icom») la lista muestra ahora todas las radios de esa marca, en orden numérico, y no solo las 12 primeras: el IC-756PRO y muchas otras quedaban ocultas.',
-      'Ao pesquisar uma marca (por exemplo «icom») a lista mostra agora todos os rádios dessa marca, por ordem numérica, e não só os 12 primeiros: o IC-756PRO e muitos outros ficavam escondidos.',
     ],
   },
 ];

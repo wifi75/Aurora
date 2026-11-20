@@ -1,7 +1,9 @@
 import type { KeyboardEvent } from 'react';
 import '../../styles/sat-label.css';
 import { useT } from '../../i18n';
+import { getSat, putSat } from '../../api/client';
 import { mmss } from '../../lib/satGeo';
+import { pickSatellite } from '../../lib/satSelection';
 import { satLabelStore, useSatLabel } from '../../lib/satLabel';
 
 const activate = (fn: () => void) => (e: KeyboardEvent) => {
@@ -12,16 +14,22 @@ const activate = (fn: () => void) => (e: KeyboardEvent) => {
 };
 
 /**
- * L'etichetta «satellite in arrivo» della barra in alto: nome, conto alla rovescia, ✕ per chiuderla. Un clic porta alla pagina
- * Satelliti. Sta appesa sotto la barra (posizione assoluta), cosi' quando compare e sparisce niente si sposta.
+ * L'etichetta «satellite in arrivo» della barra in alto: nome, conto alla rovescia, ✕ per chiuderla. Un clic sceglie quel satellite e porta
+ * alla pagina Satelliti. Sta dentro la barra, tra Rotore e la spia di salute.
  */
 export function SatAlertLabel() {
   const t = useT();
   const { label } = useSatLabel();
   if (!label) return null;
   const text = t(label.phase === 'soon' ? 'sat.label.soon' : 'sat.label.now', { sat: label.name, time: mmss(label.seconds) });
+  // il clic sceglie quel satellite nella pagina Satelliti (spuntato e selezionato) e la apre
   const open = () => {
-    location.hash = '#/satelliti';
+    void getSat()
+      .then((snap) => putSat({ ...snap.settings, ...pickSatellite(snap.settings, label.norad), transponder: 0, down_hz: null }))
+      .catch(() => undefined)
+      .finally(() => {
+        location.hash = '#/satelliti';
+      });
   };
   const close = () => satLabelStore.dismiss({ norad: label.norad, los: label.los });
   return (

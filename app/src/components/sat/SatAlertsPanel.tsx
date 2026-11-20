@@ -79,6 +79,10 @@ export function SatAlertsPanel({ settings, blocked, update, test }: Props) {
             <span>{t('sat.alert.rotorLead')}</span>
             <input type="number" min={0} max={30} value={settings.rotorLeadMin} onChange={(e) => update({ rotorLeadMin: Math.max(0, Math.min(30, Math.round(Number(e.target.value) || 0))) })} />
           </label>
+          <label className="sat-alerts-row sat-alerts-row--check" title={t('sat.alert.bar.tip')}>
+            <input type="checkbox" checked={settings.barLabel} onChange={(e) => update({ barLabel: e.target.checked })} />
+            <span>{t('sat.alert.bar')}</span>
+          </label>
           <label className="sat-alerts-row sat-alerts-row--check">
             <input type="checkbox" checked={settings.onlySelected} onChange={(e) => update({ onlySelected: e.target.checked })} />
             <span>{t('sat.alert.only')}</span>

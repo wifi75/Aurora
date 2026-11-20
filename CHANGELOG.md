@@ -2,6 +2,12 @@
 
 ## Non rilasciato
 
+## 0.11.314 - 2026-11-20
+
+- Satelliti: l'etichetta del satellite in arrivo (e il suono in ogni pagina) e' ora un'opzione, spenta di fabbrica: Impostazioni › Modi › Satelliti › Inseguimento e rotore › Avvisi, e dalla campanella della pagina Satelliti. Spenta, avvisa solo la pagina Satelliti come prima.
+- Satelliti: l'etichetta sta nello spazio libero in mezzo alla barra in alto (non piu' sopra il display) e un clic sceglie quel satellite e apre la pagina Satelliti.
+- Locandina di aggiornamento: tolta la barra dell'avanzamento del download (resta nella schermata scura dell'installazione), bastano i pulsanti.
+
 ## 0.11.313 - 2026-11-20
 
 - WEFAX: la frequenza scelta nel menu si ricorda e entrando nella pagina la radio ci torna; uscendo la radio torna alla banda di prima anche se la pagina e' stata ricaricata o il WEFAX era in una finestra a parte (la memoria ora e' nell'archivio del browser); se manca, si usa l'ultima frequenza FT8, mai 1,810 MHz.

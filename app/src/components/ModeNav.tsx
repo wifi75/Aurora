@@ -242,6 +242,8 @@ export function ModeNav({ route, showQmap, remote }: Props) {
           {t('nav.sat')}
         </a>
       </span>
+      {/* satellite seguito che sta per sorgere (opzione): solo sul PC, nello spazio libero in mezzo alla barra */}
+      {remote ? null : <SatAlertLabel />}
       <span className="nav-pages">
         {/* le pagine del modo scelto */}
         {(route.name === 'sstv' || route.name === 'wefax') || route.name === 'digi' || route.name === 'sat' ? null : (
@@ -259,8 +261,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
         {common('propagation', '#/propagazione', t('nav.propagation'))}
         {common('rotator', '#/rotore', t('nav.rotator'), t('tip.nav.rotator'))}
         {/* spia di salute della stazione, subito prima dell'ingranaggio */}
-        {/* satellite seguito che sta per sorgere: solo sul PC, appeso sotto la barra */}
-        {remote ? null : <SatAlertLabel />}
         <HealthLight />
         {/* sul PC un solo ingranaggio, che apre direttamente le Impostazioni (Guida e Novita' stanno li', sotto Informazioni); dal telefono resta il menu */}
         {remote ? null : (

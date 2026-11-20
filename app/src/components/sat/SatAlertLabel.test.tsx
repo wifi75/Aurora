@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { satLabelStore } from '../../lib/satLabel';
 import { SatAlertLabel } from './SatAlertLabel';
@@ -34,10 +34,10 @@ describe('SatAlertLabel', () => {
     expect(satLabelStore.get().dismissed).toEqual([{ norad: 25544, los: T0 }]);
   });
 
-  it('il clic sull etichetta apre la pagina Satelliti', () => {
+  it('il clic sull etichetta sceglie il satellite e apre la pagina Satelliti (anche se il core non risponde)', async () => {
     render(<SatAlertLabel />);
     act(() => satLabelStore.setLabel({ norad: 25544, los: T0, name: 'ISS', phase: 'soon', seconds: 60 }));
     fireEvent.click(screen.getByRole('link'));
-    expect(location.hash).toBe('#/satelliti');
+    await waitFor(() => expect(location.hash).toBe('#/satelliti'));
   });
 });

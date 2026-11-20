@@ -5,6 +5,7 @@ import { countdown } from '../../lib/satGeo';
 import { loadBorders, PREFERRED_MAP, resolveMap, saveBorders, SAT_SIMPLE_MAP, SAT_TERRA_MAP, selectValue } from '../../lib/satMapChoice';
 import { toast } from '../../lib/toast';
 import { SatTrackingPane } from './SatTrackingPane';
+import { useBarLabel } from '../../lib/satBarLabel';
 
 const MODES = ['Auto', 'USB', 'LSB', 'FM', 'CW'];
 
@@ -29,6 +30,7 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
   const t = useT();
   const s = snap.settings;
   const fileInput = useRef<HTMLInputElement>(null);
+  const [barLabel, setBarLabel] = useBarLabel();
   const [borders, setBorders] = useState(loadBorders);
   const terraOn = resolveMap(s.map, snap.maps, PREFERRED_MAP).kind === 'terra';
   const addMap = (file: File | undefined) => {
@@ -40,6 +42,16 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
   };
   return (
     <>
+      {cat === 'tracking' ? (
+        <fieldset>
+          <legend>{t('sat.alert.title')}</legend>
+          <label className="sat-check" title={t('sat.alert.bar.tip')}>
+            <input type="checkbox" checked={barLabel} onChange={(e) => setBarLabel(e.target.checked)} />
+            <span>{t('sat.alert.bar')}</span>
+          </label>
+          <p className="sat-muted sat-small">{t('sat.alert.bar.tip')}</p>
+        </fieldset>
+      ) : null}
       {cat === 'tracking' ? <SatTrackingPane snap={snap} onSave={onSave} /> : null}
       {cat === 'orbits' ? <OrbitsPane snap={snap} busy={busy} onSave={onSave} onRefresh={onRefresh} /> : null}
       {cat === 'map' ? (

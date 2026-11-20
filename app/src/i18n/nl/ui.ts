@@ -3894,6 +3894,8 @@ export const NL_UI: Record<string, string> = {
   "rxw.tip": "Alleen berichten dicht bij je RX-frequentie (±50 Hz) en die aan jou gericht zijn. Voor de hele band gebruik je Bandactiviteit.",
   "rxw.title": "RX-venster",
   "sat.alert.aos": "AOS · {name}",
+  "sat.alert.bar": "Label en geluid van de naderende satelliet op elke pagina",
+  "sat.alert.bar.tip": "Standaard uit. Wanneer ingeschakeld verschijnt de gevolgde satelliet die gaat opkomen in de vrije ruimte van de bovenbalk, met aftelling en geluid; een klik kiest hem en opent de satellietpagina. Uitgeschakeld blijven de waarschuwingen alleen op de satellietpagina.",
   "sat.alert.ev.aos": "AOS: komt het gebied binnen",
   "sat.alert.ev.los": "LOS: verlaat het gebied",
   "sat.alert.ev.pre": "Voorwaarschuwing",

@@ -1,16 +1,16 @@
-/* Etichetta «satellite in arrivo»: appesa sotto la barra in alto, a destra; colori propri uguali in ogni tema (testo scuro su ambra chiaro),
+/* Etichetta «satellite in arrivo»: dentro la barra in alto, nello spazio libero in mezzo (mai sopra il display); colori propri uguali in ogni tema (testo scuro su ambra chiaro),
    nessun hover che scurisce, larghezza fissa, cifre a larghezza fissa, mai a capo. */
 .sat-label {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: var(--space-4, 1rem);
-  z-index: 1001;
+  position: relative;
+  flex: 0 1 auto;
+  margin-inline: auto;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 0.4em;
-  width: 24em;
-  max-width: calc(100vw - 2rem);
+  width: 21em;
+  min-width: 12em;
+  max-width: 100%;
   padding: 0.25em 0.4em 0.25em 0.7em;
   font-size: 0.85rem;
   line-height: 1.3;

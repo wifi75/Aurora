@@ -54,6 +54,7 @@ import { LogPrompt } from './components/LogPrompt';
 import { FirstRun } from './components/FirstRun';
 import { UpdatePoster } from './components/UpdatePoster';
 import { SatAlertEngine } from './components/sat/SatAlertEngine';
+import { useBarLabel } from './lib/satBarLabel';
 import { OwnerMessages } from './components/OwnerMessages';
 import { OwnerMessagesTab } from './settings/OwnerMessagesTab';
 import { CrashPrompt } from './settings/ReportsBox';
@@ -107,6 +108,7 @@ export function App() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
   // finche' il dispositivo non e' associato si riprova: se dal PC si accende l'accesso senza codice, il telefono entra da solo
+  const [barLabelOn] = useBarLabel();
   const session = useQuery({ queryKey: ['session'], queryFn: checkSession, retry: false, refetchInterval: (q) => (q.state.data === false ? 3000 : false) });
   // appena entra si ricarica la pagina: cosi' prende dal server le impostazioni di Aurora (bande, macro, filtri, tema, lingua)
   const wasUnpaired = useRef(false);
@@ -295,7 +297,7 @@ export function App() {
         dell'aggiornamento, che stava li' dentro, restava nascosta e non cliccabile */}
     {session.data && !REMOTE ? <UpdatePoster /> : null}
     {/* avvisi dei satelliti da ogni pagina (suono di preavviso ed etichetta in alto): un solo motore, solo qui */}
-    {session.data && !REMOTE ? <SatAlertEngine /> : null}
+    {session.data && !REMOTE && barLabelOn ? <SatAlertEngine /> : null}
     </>
   );
 }
