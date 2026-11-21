@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- WEFAX, inclinazione automatica: si raddrizzano anche le cartine che iniziano con un'ampia intestazione bianca o hanno una griglia regolare di meridiani. La stima ora prosegue fino alla riga 3000 (prima si fermava alla 400) e cerca prima una stima grossolana su righe vicine, poi quella precisa, cosi' il passo della griglia non la confonde.
 - WEFAX, visore: durante la ricezione la parte alta della cartina non diventa piu' bianca. Ogni volta che il foglio cresceva (ogni 512 righe) React riscriveva l'altezza del canvas e il browser lo svuotava, cancellando le righe gia' ricevute (restavano solo le nuove); ora la misura del canvas si imposta solo a mano e il disegno resta.
 
 ## 0.11.327 - 2026-11-21
