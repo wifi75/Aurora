@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.323',
-    released: '2026-11-21T10:00:00Z',
+    released: '2026-11-21T09:30:55Z',
     kind: 'changed',
     title: [
       'WEFAX: pagina più ordinata, elenco stazioni e cartine a destra',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.323',
-    released: '2026-11-21T10:00:00Z',
+    released: '2026-11-21T09:30:55Z',
     kind: 'new',
     title: [
       'WEFAX: inclinazione automatica della cartina',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.323',
-    released: '2026-11-21T10:00:00Z',
+    released: '2026-11-21T09:30:55Z',
     kind: 'fixed',
     title: [
       'Satelliti, IC-820H: ritenta il ripiego a due VFO',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.323',
-    released: '2026-11-21T10:00:00Z',
+    released: '2026-11-21T09:30:55Z',
     kind: 'new',
     title: [
       'Statistiche d’uso più precise',
