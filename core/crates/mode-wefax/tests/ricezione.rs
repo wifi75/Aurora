@@ -1111,3 +1111,53 @@ fn l_afc_corregge_di_piu_sul_tono_d_inizio_e_sulla_fasatura_prima_dell_immagine(
     // l'AFC e' arrivato sul tono d'inizio e sulla fasatura (passi da 25 Hz al massimo): dentro l'immagine finisce il lavoro con piu' cautela
     assert!(all_inizio > 45.0 && all_inizio < 66.0, "all'inizio dell'immagine {all_inizio}");
 }
+
+/// Due trasmissioni attaccate: la stazione chiude la prima con il tono di fine e comincia subito la seconda (tono d'inizio, fasatura, immagine),
+/// senza silenzio in mezzo. Si toglie il silenzio finale della prima e quello iniziale della seconda.
+fn due_cartine_di_seguito(ioc_b: u32, lpm_b: u32, w_b: usize) -> (Vec<f32>, Vec<u8>, Vec<u8>, usize, usize) {
+    due_cartine_con_pausa(ioc_b, lpm_b, w_b, 0)
+}
+
+/// Come sopra con `pausa_s` secondi di silenzio tra la fine della prima e l'inizio della seconda.
+fn due_cartine_con_pausa(ioc_b: u32, lpm_b: u32, w_b: usize, pausa_s: usize) -> (Vec<f32>, Vec<u8>, Vec<u8>, usize, usize) {
+    let (w_a, h) = (1809usize, 80usize);
+    let img_a = immagine(w_a, h);
+    let img_b = cartina(w_b, h);
+    let a = genera(&Segnale { rumore: 0.03, ..Segnale::standard(576, 120) }, &img_a, w_a, h);
+    let b = genera(&Segnale { rumore: 0.03, ..Segnale::standard(ioc_b, lpm_b) }, &img_b, w_b, h);
+    let coda = 2 * RATE as usize; // il silenzio finale che `genera` aggiunge alla prima
+    let mut audio = a[..a.len() - coda].to_vec();
+    audio.extend(std::iter::repeat_n(0.0, pausa_s * RATE as usize));
+    audio.extend_from_slice(&b[RATE as usize..]);
+    (audio, img_a, img_b, w_a, h)
+}
+
+#[test]
+fn con_il_tono_di_fine_e_subito_un_altra_cartina_escono_due_immagini_giuste() {
+    let (audio, img_a, img_b, w_a, h) = due_cartine_di_seguito(576, 120, 1809);
+    for (nome, cfg) in [("senza squelch", cfg(576, 120)), ("con squelch", cfg_squelch())] {
+        let e = ricevi(cfg, &audio, 1024);
+        eprintln!("{nome}: {} immagini, avviate {}, scartate {:?}", e.fatte.len(), e.avviate, e.scartate);
+        assert_eq!(e.fatte.len(), 2, "{nome}: immagini {}, scartate {:?}", e.fatte.len(), e.scartate);
+        let (c1, _, d1) = confronta(&e.fatte[0], &img_a, w_a, h, 6);
+        let (c2, _, d2) = confronta(&e.fatte[1], &img_b, 1809, h, 6);
+        eprintln!("{nome}: prima correlazione {c1:.4} (scarto {d1}), seconda {c2:.4} (scarto {d2}), motivi {} / {}", e.fatte[0].reason, e.fatte[1].reason);
+        assert!(c1 > 0.95 && d1.abs() <= 3, "{nome}: prima {c1} scarto {d1}");
+        assert!(c2 > 0.95 && d2.abs() <= 3, "{nome}: seconda {c2} scarto {d2}");
+        assert_eq!(e.fatte[0].reason, "apt_stop", "{nome}: la prima si chiude dal tono di fine");
+    }
+}
+
+#[test]
+fn con_il_tono_di_fine_e_subito_una_cartina_con_l_altro_ioc_esce_la_seconda_giusta() {
+    let w_b = width_of(288) as usize;
+    let (audio, _img_a, img_b, _w_a, h) = due_cartine_di_seguito(288, 60, w_b);
+    // righe al minuto di ciascun IOC come nelle impostazioni vere: 120 per il 576, 60 per il 288
+    let e = ricevi(DecoderConfig { ioc: 576, lpm_576: 120, lpm_288: 60, ..DecoderConfig::default() }, &audio, 1024);
+    eprintln!("IOC diverso: {} immagini, cambi IOC {:?}, scartate {:?}", e.fatte.len(), e.ioc_cambiati, e.scartate);
+    assert_eq!(e.fatte.len(), 2, "immagini {}, scartate {:?}", e.fatte.len(), e.scartate);
+    assert_eq!(e.fatte[1].ioc, 288);
+    let (c2, _, d2) = confronta(&e.fatte[1], &img_b, w_b, h, 6);
+    eprintln!("IOC diverso: seconda correlazione {c2:.4} (scarto {d2})");
+    assert!(c2 > 0.95 && d2.abs() <= 3, "seconda {c2} scarto {d2}");
+}

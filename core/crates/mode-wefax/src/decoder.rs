@@ -28,6 +28,9 @@ const SQL_CLOSE_BLOCKS: u32 = (3 * RATE as usize / METER_BLOCK) as u32;
 /// Quota minima di potenza dei grigi di mezzo secondo su un tono d'inizio perche' conti come tono (un tono puro vale 1).
 const TONE_SHARE_MIN: f64 = 0.3;
 const SQL_REARM_BLOCKS: u32 = 6;
+/// Quanto dopo la fine di un'immagine si ignora lo strascico del tono di fine (campioni: 20 s, piu' del tono di fine di 5 s e di un
+/// eventuale silenzio nero).
+const AFTER_END_HOLD: u32 = 20 * SR as u32;
 /// Deviazione minima dei grigi demodulati in una misura perche' il segnale conti come immagine: il tono fisso che le stazioni mandano
 /// prima di trasmettere (nero a 1500 Hz) e' segnale presente ma non fa partire niente.
 const SQL_MIN_SPREAD: f32 = 12.0;
@@ -359,6 +362,10 @@ pub struct Decoder {
     sql_closed: u32,
     /// Lo squelch puo' far partire un'immagine (dopo un'immagine serve prima che il segnale sparisca).
     sql_armed: bool,
+    /// Campioni dalla fine dell'ultima immagine (saturato). Per `AFTER_END_HOLD` campioni il tono di fine e il suo strascico (che la
+    /// correlazione scambia per immagine e l'AFC per un tono nero o bianco) non fanno partire la fasatura ne' spostare la sottoportante:
+    /// la trasmissione che comincia subito dopo, magari con l'altro IOC, deve poter essere riconosciuta dal suo tono d'inizio.
+    since_end: u32,
     /// Somme dei grigi demodulati della misura in corso (per la deviazione).
     spread_sum: f64,
     spread_sq: f64,
@@ -468,6 +475,7 @@ impl Decoder {
             sql_open: 0,
             sql_closed: 0,
             sql_armed: true,
+            since_end: u32::MAX,
             spread_sum: 0.0,
             spread_sq: 0.0,
             spread_n: 0,
@@ -688,7 +696,7 @@ impl Decoder {
                 self.on_level(level, spread);
             }
             if let Some(&f) = freq.get(i)
-                && let Some(err) = self.afc.push(f, self.cfg.shift_hz, self.state != Fs::Image)
+                && let Some(err) = self.afc.push(f, self.cfg.shift_hz, self.state != Fs::Image && !self.after_end())
             {
                 self.on_afc(err);
             }
@@ -756,7 +764,12 @@ impl Decoder {
 
     // ---------------------------------------------------------------- un campione
 
+    fn after_end(&self) -> bool {
+        self.since_end < AFTER_END_HOLD
+    }
+
     fn step(&mut self, x: i32) {
+        self.since_end = self.since_end.saturating_add(1);
         self.sig_refresh();
         self.current_value = x;
         self.correlation_update(x as u8);
@@ -871,7 +884,7 @@ impl Decoder {
             return;
         }
         match (self.sig_state, self.state) {
-            (Fs::Image, Fs::AptStart) => self.skip_apt_rx(),
+            (Fs::Image, Fs::AptStart) if !self.after_end() => self.skip_apt_rx(),
             (Fs::AptStop, Fs::Image) => {
                 let code = self.stop_code;
                 self.save_automatic(code);
@@ -1401,6 +1414,10 @@ impl Decoder {
             }
         }
         self.end_rx();
+        // chiusa dal tono di fine: da qui lo strascico del tono non conta (con gli altri motivi, per esempio la fasatura mancata, no)
+        if matches!(extra, "ok" | "ok2" | "stop") {
+            self.since_end = 0;
+        }
     }
 
     // ---------------------------------------------------------------- correlazione tra righe

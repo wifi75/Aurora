@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, dopo una cartina finita con il tono di fine, una trasmissione con l'altro IOC che comincia subito (576 poi 288 o al contrario) si riconosce dal tono d'inizio e si riceve: lo strascico del tono di fine non fa piu' partire la fasatura a vuoto ne' spostare la sottoportante.
+
 - WEFAX, «Ruota a sinistra» e «Ruota a destra» nella cartina aperta in grande dalla cronologia: ogni clic gira la cartina di 90 gradi e la salva subito al posto dell'originale (senza conferma), utile per quelle trasmesse di lato; la miniatura si aggiorna.
 
 - WEFAX, barra in alto piu' compatta e leggibile: indicatore della frequenza della radio all'inizio, poi il menu del modo e quello delle stazioni; stato della ricezione come una sigla «RX» che lampeggia; ogni stazione mostra solo il nominativo della sua frequenza (a Pinneberg DDH3 sui 3855, DDK3 sui 7880 e DDK6 sui 13882,5 kHz) e la frequenza scelta e' in giallo; frecce ▲ ▼ piccole accanto al menu; testo leggibile nei temi chiaro e scuro; scheda «Ricezione» senza niente che sporga a destra.
