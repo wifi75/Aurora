@@ -837,6 +837,7 @@ fn wire_reporting(store: &Arc<remote_api::engine_settings::EngineSettingsStore>,
         loop {
             match completed.recv().await {
                 Ok(Event::QsoCompleted(mut q)) => {
+                    rapporti::nota_uso(2);
                     let r = store.reports();
                     let distance = match qso_native::history::grid_distance_km(&r.grid, &q.grid) {
                         0 => String::new(),
@@ -2007,6 +2008,9 @@ struct AutoPtt {
 
 impl tx_native::Ptt for AutoPtt {
     fn set(&self, on: bool) -> Result<(), tx_native::TxError> {
+        if on {
+            rapporti::nota_uso(2);
+        }
         let live = cat_target(&self.cat);
         if !on && let Some(stored) = self.keyed_on.lock().ok().and_then(|k| k.clone()) {
             radio_guard(&stored, &live)?;

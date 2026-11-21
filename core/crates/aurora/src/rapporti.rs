@@ -16,10 +16,10 @@ use std::{
     io::Write as _,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU8, Ordering},
         Arc, Condvar, Mutex, OnceLock,
     },
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize};
@@ -317,6 +317,32 @@ pub fn corpo_attivo(acceso: bool, installazione: &str, nominativo: &str) -> Opti
         corpo["persona"] = json!(persona);
     }
     Some(corpo.to_string())
+}
+
+/// Ogni quanto parte il battito del programma aperto.
+const OGNI_BATTITO: Duration = Duration::from_secs(40 * 60);
+/// Dopo un invio fallito si riprova prima, senza aspettare altri 40 minuti.
+const RIPROVA_BATTITO: Duration = Duration::from_secs(5 * 60);
+
+/// Il livello d'uso piu' alto visto dall'ultimo battito: 0 aperto e fermo, 1 ha ricevuto o decodificato, 2 ha trasmesso o fatto un QSO.
+static USO: AtomicU8 = AtomicU8::new(0);
+
+/// Dice che il programma sta ricevendo (1) o trasmettendo (2): tiene il massimo fino al prossimo battito. Costa un'operazione atomica.
+pub fn nota_uso(livello: u8) {
+    USO.fetch_max(livello.min(2), Ordering::Relaxed);
+}
+
+/// Il corpo del battito, o `None` se l'utente ha spento il conteggio: codice casuale, versione e livello d'uso (0-2). Mai nominativi.
+pub fn corpo_battito(acceso: bool, installazione: &str, uso: u8) -> Option<String> {
+    if !acceso {
+        return None;
+    }
+    Some(json!({ "installazione": installazione, "versione": aurora_core::version::APP_VERSION, "uso": uso.min(2) }).to_string())
+}
+
+/// E' ora del battito: al primo giro dopo l'avvio (nessun invio prima) o quando e' passato l'intervallo.
+pub fn battito_dovuto(dall_ultimo: Option<Duration>, intervallo: Duration) -> bool {
+    dall_ultimo.is_none_or(|t| t >= intervallo)
 }
 
 fn e_ipv4(p: &str) -> bool {
@@ -707,12 +733,45 @@ impl Rapporti {
         }
     }
 
+    /// «Sono aperta»: ogni circa 40 minuti mentre il programma e' aperto, se acceso. Best effort: un errore non ferma nulla e, se l'invio
+    /// fallisce, si riprova fra pochi minuti senza perdere il livello d'uso.
+    fn segnala_battito(&self, ultimo: &mut Option<Instant>) {
+        if !battito_dovuto(ultimo.map(|t| t.elapsed()), OGNI_BATTITO) {
+            return;
+        }
+        let (acceso, id) = match self.stato.lock() {
+            Ok(s) => (s.impostazioni.count_active, s.id.clone()),
+            Err(_) => return,
+        };
+        if !acceso || !configurato() {
+            return;
+        }
+        let uso = USO.swap(0, Ordering::Relaxed);
+        let Some(corpo) = corpo_battito(acceso, &id, uso) else { return };
+        let inviato = agente(TIMEOUT)
+            .post(&format!("{INDIRIZZO}/v1/battito"))
+            .header("X-Aurora-Key", CHIAVE_INGRESSO)
+            .header("Content-Type", "application/json")
+            .header("User-Agent", "Aurora-rapporti")
+            .send(corpo.as_str())
+            .is_ok_and(|r| r.status().is_success());
+        let adesso = Instant::now();
+        if inviato {
+            *ultimo = Some(adesso);
+        } else {
+            nota_uso(uso);
+            // il prossimo tentativo fra RIPROVA_BATTITO
+            *ultimo = Some(adesso.checked_sub(OGNI_BATTITO - RIPROVA_BATTITO).unwrap_or(adesso));
+        }
+    }
+
     fn lavora(self: Arc<Self>) {
         // il nome dell'antivirus si legge una volta, prima dei rapporti che lo portano
         crate::antivirus::nome();
         // l'ultima installazione, una volta all'avvio: il rapporto va in coda e parte al primo giro
         self.segnala_installazione();
         self.segnala_antivirus();
+        let mut ultimo_battito: Option<Instant> = None;
         loop {
             let eventi = {
                 let Ok(mut attesa) = IN_ATTESA.lock() else { return };
@@ -725,6 +784,7 @@ impl Rapporti {
                 std::mem::take(&mut *attesa)
             };
             self.segnala_attivo();
+            self.segnala_battito(&mut ultimo_battito);
             let acceso = self.stato.lock().map(|s| s.impostazioni.auto_errors).unwrap_or(false);
             if !acceso {
                 continue;
@@ -1613,6 +1673,42 @@ mod tests {
         assert_eq!(super::codice_persona("iu3abc/p").as_deref(), Some(a.as_str()));
         assert_eq!(super::codice_persona("EA/IU3ABC").as_deref(), Some(a.as_str()));
         assert_ne!(super::codice_persona("IU3ABD").as_deref(), Some(a.as_str()));
+    }
+
+    #[test]
+    fn il_battito_e_anonimo_nei_limiti_e_spento_non_parte() {
+        let id = "00000000-0000-4000-8000-000000000000";
+        let corpo = super::corpo_battito(true, id, 1).unwrap_or_default();
+        let v: serde_json::Value = serde_json::from_str(&corpo).unwrap_or_default();
+        assert_eq!(v["installazione"], id);
+        assert_eq!(v["uso"], 1);
+        assert!(v["versione"].as_str().is_some_and(|s| !s.is_empty()));
+        assert_eq!(v.as_object().map(|o| o.len()), Some(3), "{v}");
+        let alto: serde_json::Value = serde_json::from_str(&super::corpo_battito(true, id, 9).unwrap_or_default()).unwrap_or_default();
+        assert_eq!(alto["uso"], 2);
+        assert_eq!(super::corpo_battito(false, id, 2), None);
+    }
+
+    #[test]
+    fn il_battito_parte_all_avvio_e_ogni_quaranta_minuti() {
+        use std::time::Duration;
+        let ogni = super::OGNI_BATTITO;
+        assert_eq!(ogni, Duration::from_secs(2400));
+        assert!(super::battito_dovuto(None, ogni));
+        assert!(!super::battito_dovuto(Some(Duration::from_secs(60)), ogni));
+        assert!(!super::battito_dovuto(Some(ogni - Duration::from_secs(1)), ogni));
+        assert!(super::battito_dovuto(Some(ogni), ogni));
+    }
+
+    #[test]
+    fn il_livello_d_uso_tiene_il_massimo() {
+        super::USO.store(0, super::Ordering::Relaxed);
+        super::nota_uso(1);
+        super::nota_uso(0);
+        assert_eq!(super::USO.load(super::Ordering::Relaxed), 1);
+        super::nota_uso(7);
+        assert_eq!(super::USO.swap(0, super::Ordering::Relaxed), 2);
+        assert_eq!(super::USO.load(super::Ordering::Relaxed), 0);
     }
 
     #[test]

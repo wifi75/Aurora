@@ -57,7 +57,10 @@ fn spawn_recorder_every(store: Arc<HistoryStore>, mut events: broadcast::Receive
                         dial_hz = s.dial_hz;
                         mode = s.mode;
                     }
-                    Ok(Event::Decode(d)) => pending.push(entry_for(&d, dial_hz, &mode, now_ms())),
+                    Ok(Event::Decode(d)) => {
+                        crate::rapporti::nota_uso(1);
+                        pending.push(entry_for(&d, dial_hz, &mode, now_ms()));
+                    }
                     Ok(_) => {}
                     Err(broadcast::error::RecvError::Lagged(n)) => lag.lost(n),
                     Err(broadcast::error::RecvError::Closed) => {
