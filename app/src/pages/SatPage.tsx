@@ -560,6 +560,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
                     </div>
                   </dl>
                   {now.radio_active && now.radio.error ? <p className="sat-status warn">{now.radio.error}</p> : null}
+                  {now.radio.note ? <p className="sat-status">{now.radio.note}</p> : null}
                   </>
                 ) : (
                   <p className="sat-muted">{t('sat.ctl.waiting', { el: s.min_el_deg })}</p>

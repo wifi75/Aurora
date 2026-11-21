@@ -138,13 +138,18 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
           </label>
           <p className="notice sat-small">{t('sat.uplink.warn')}</p>
           <p className="sat-muted sat-small">{t('sat.uplink.hint')}</p>
+          <label className="sat-check">
+            <input type="checkbox" checked={s.uplink_civ_ic820h ?? false} onChange={(e) => onSave({ uplink_civ_ic820h: e.target.checked })} />
+            <span>{t('sat.uplink.civ')}</span>
+          </label>
+          <p className="sat-muted sat-small">{t('sat.uplink.civHint')}</p>
           <label className="sat-row">
             <span>{t('sat.uplink.interval')}</span>
-            <input type="number" min={2} max={120} step={1} disabled={!s.uplink_two_vfo} value={s.uplink_interval_s} onChange={(e) => onSave({ uplink_interval_s: Math.max(2, Math.min(120, Math.round(Number(e.target.value) || 10))) })} />
+            <input type="number" min={2} max={120} step={1} disabled={!s.uplink_two_vfo && !s.uplink_civ_ic820h} value={s.uplink_interval_s} onChange={(e) => onSave({ uplink_interval_s: Math.max(2, Math.min(120, Math.round(Number(e.target.value) || 10))) })} />
           </label>
           <label className="sat-row">
             <span>{t('sat.uplink.threshold')}</span>
-            <input type="number" min={20} max={5000} step={10} disabled={!s.uplink_two_vfo} value={s.uplink_threshold_hz} onChange={(e) => onSave({ uplink_threshold_hz: Math.max(20, Math.min(5000, Math.round(Number(e.target.value) || 300))) })} />
+            <input type="number" min={20} max={5000} step={10} disabled={!s.uplink_two_vfo && !s.uplink_civ_ic820h} value={s.uplink_threshold_hz} onChange={(e) => onSave({ uplink_threshold_hz: Math.max(20, Math.min(5000, Math.round(Number(e.target.value) || 300))) })} />
           </label>
         </fieldset>
       ) : null}

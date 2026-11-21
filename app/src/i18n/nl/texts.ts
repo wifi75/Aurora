@@ -2485,6 +2485,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.ta1s9otowr": "De DXCC-kaart",
   "t.tcinq12ddr": "Gebruik de Foxmodus alleen als je echt de expeditie bent en je dat aankondigt: op een gewone band veroorzaakt hij storing.",
   "t.tdt8zms2dg": "[[sw.pg.radio]]: [[cat.grp.link]]",
+  "t.thwpwnu8ge": "Bij de IC-820H is er ook het vakje “[[sat.uplink.civ]]” (standaard uit, in plaats van “[[sat.uplink.on]]”): eerst doet het zelf een test zonder frequenties te schrijven, schakelt naar de andere band en terug met controlemetingen; mislukt de test, dan schrijft het nooit iets en volgt de Doppler alleen de ontvangst. Het resultaat, met de gelezen frequenties, verschijnt op de pagina [[nav.sat]] en in het ondersteuningspakket.",
   "t.tijxj7nv9c": "“[[dxs.colors]]” · “[[dxs.resetColors]]” (knop rechtsboven, uit zolang je geen kleur hebt veranderd): verwijdert alle gekozen kleuren en zet de kaart terug op de kleuren van het lichte of donkere thema; banden, rijen en weergave blijven.",
   "t.tjjcon5pbl": "band van de laatste QSO met deze roepnaam",
   "t.tk3kme0bef": "Druk aan het eind op “[[contest.export]]”: Cabrillo 3.0, EDI of ADIF zoals de regels vragen, gecontroleerd vóór het verzenden, met de link naar de pagina van de organisator. Daarna zet “[[contest.end]]” alles terug naar de vorige instellingen.",

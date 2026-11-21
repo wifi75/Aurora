@@ -2272,6 +2272,8 @@ export interface SatSettings {
   min_el_deg: number;
   /** Ripiego «due VFO» per le radio senza split da CAT: sperimentale, spento di fabbrica. */
   uplink_two_vfo: boolean;
+  /** IC-820H: trasmissione con comandi CI-V diretti dopo una prova automatica (sperimentale, spento di fabbrica). */
+  uplink_civ_ic820h?: boolean;
   uplink_interval_s: number;
   uplink_threshold_hz: number;
   /** Modo di ricezione e di trasmissione: Auto, USB, LSB, FM o CW. */
@@ -2333,7 +2335,7 @@ export interface SatNow {
   look: SatLook | null;
   visible: boolean;
   plan: SatPlan | null;
-  radio: { ready: boolean; error: string | null };
+  radio: { ready: boolean; error: string | null; note?: string | null };
   radio_active: boolean;
   rotor: { ready: boolean; active: boolean; az_deg: number; el_deg: number; error: string | null };
   next_pass: SatPass | null;
