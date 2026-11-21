@@ -931,14 +931,14 @@ export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, obse
         // la stazione: una stella con un leggero contorno scuro per leggersi sulla mappa
         ctx.beginPath();
         for (let k = 0; k < 10; k++) {
-          const r = k % 2 === 0 ? 10 : 4.2;
+          const r = k % 2 === 0 ? 7 : 3;
           const a = -Math.PI / 2 + (k * Math.PI) / 5;
           if (k === 0) ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
           else ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
         }
         ctx.closePath();
         ctx.lineJoin = 'round';
-        ctx.lineWidth = 3.2;
+        ctx.lineWidth = 2.4;
         ctx.strokeStyle = 'rgba(0,0,0,0.6)';
         ctx.stroke();
         ctx.fillStyle = '#ff6b6b';
@@ -948,7 +948,7 @@ export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, obse
         ctx.textAlign = 'left';
         ctx.shadowColor = '#000';
         ctx.shadowBlur = 4;
-        ctx.fillText(stationLabel, x + 13, y + 16);
+        ctx.fillText(stationLabel, x + 10, y + 14);
         ctx.shadowBlur = 0;
       });
     }
