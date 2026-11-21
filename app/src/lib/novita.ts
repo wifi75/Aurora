@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'new',
     title: [
       'Ricevi i QSO da altri log',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'new',
     title: [
       'WEFAX: audio di ogni ricezione registrato in automatico',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'changed',
     title: [
       'WEFAX: cartina in arrivo a tutta larghezza e visore grande con strumenti',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'fixed',
     title: [
       'WEFAX: inclinazione automatica più robusta e cartina intera durante la ricezione',
@@ -107,7 +107,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'new',
     title: [
       'Contest: elenco con linguette per modo',
@@ -128,7 +128,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'changed',
     title: [
       'WEFAX e SSTV: nel menu del modo c’è anche SSB',
@@ -149,7 +149,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.327',
-    released: '2026-11-21T17:30:00Z',
+    released: '2026-11-21T18:09:56Z',
     kind: 'new',
     title: [
       'Satelliti, IC-820H: trasmissione con comandi CI-V diretti (sperimentale)',
