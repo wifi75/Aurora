@@ -75,15 +75,15 @@ export function MiniDisplay({ model, ariaLabel, style, vfoB = null }: StyleProps
       {sending ? (
         <>
           {/* in trasmissione il misuratore diventa quello della potenza e sotto c'e' la barra del ROS, ognuna con il suo testo alla stessa altezza */}
-          <SegBar x={MX} y={22} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={litCount(main.fraction, BAR_COUNT)} color={() => '#ff9a3a'} off={off} offOpacity={0.18} />
-          <Label x={TEXT_X} y={28.5} text={`PWR ${typeof model.meters?.power_w === 'number' ? `${Math.round(model.meters.power_w)} W` : '–'}`} fill="#ff9a3a" size={10} weight={700} />
+          <SegBar x={MX} y={22} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={litCount(main.fraction, BAR_COUNT)} color={() => '#ff3b2f'} off={off} offOpacity={0.18} />
+          <Label x={TEXT_X} y={28.5} text={`PWR ${typeof model.meters?.power_w === 'number' ? `${Math.round(model.meters.power_w)} W` : '–'}`} fill="#ff3b2f" size={10} weight={700} />
           <SegBar x={MX} y={36} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={swr === null ? 0 : litCount(swrFraction(swr), BAR_COUNT)} color={() => swrColor} off={off} offOpacity={0.18} />
           <Label x={TEXT_X} y={42.5} text={`SWR ${swr === null ? '–' : swr.toFixed(1)}`} fill={swrColor} size={10} weight={700} />
         </>
       ) : (
         <>
           <SegBar x={MX} y={22} count={BAR_COUNT} segW={BAR_SEG} segH={6} step={BAR_STEP} lit={litCount(main.fraction, BAR_COUNT)} color={() => p.digits} off={off} offOpacity={0.18} />
-          {main.label && main.kind === 'S' ? <Label x={MX} y={42.5} text={main.label} fill={p.ink} size={10} weight={600} /> : null}
+          {main.label && main.kind === 'S' ? <Label x={TEXT_X} y={28.5} text={main.label} fill={p.ink} size={10} weight={600} /> : null}
         </>
       )}
     </DisplayFrame>
