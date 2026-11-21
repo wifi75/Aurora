@@ -542,3 +542,148 @@ fn il_rumore_senza_cartina_non_produce_immagini() {
     assert!(e.fatte.is_empty());
     assert_eq!(e.avviate, 0);
 }
+
+// ---------------------------------------------------------------- inclinazione automatica
+
+/// Cartina di prova con strutture verticali nette (linee di varia larghezza e grigio, a tratti), fasce orizzontali e riquadri: nessuna
+/// pendenza propria, cosi' ogni inclinazione dell'immagine ricevuta viene dall'errore di orologio.
+fn cartina(w: usize, h: usize) -> Vec<u8> {
+    let mut rng = Rng(777);
+    let mut next = move || {
+        rng.0 = rng.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        (rng.0 >> 33) as usize
+    };
+    let mut v = vec![215u8; w * h];
+    // linee verticali a tratti
+    for _ in 0..40 {
+        let (x0, lw, grigio) = (next() % (w - 12), 2 + next() % 7, 20 + (next() % 120) as u8);
+        let (y0, len) = (next() % h, 30 + next() % h);
+        for y in y0..(y0 + len).min(h) {
+            for x in x0..x0 + lw {
+                v[y * w + x] = grigio;
+            }
+        }
+    }
+    // riquadri
+    for _ in 0..10 {
+        let (x0, bw, grigio) = (next() % (w - 120), 20 + next() % 100, 90 + (next() % 100) as u8);
+        let (y0, bh) = (next() % h, 10 + next() % 60);
+        for y in y0..(y0 + bh).min(h) {
+            for x in x0..x0 + bw {
+                v[y * w + x] = grigio;
+            }
+        }
+    }
+    // fasce orizzontali sottili
+    for k in 0..(h / 40) {
+        let y = k * 40 + 7;
+        for x in 0..w {
+            v[y * w + x] = v[y * w + x].saturating_sub(60);
+        }
+    }
+    v
+}
+
+/// Riceve in modo manuale (senza fasatura che misurerebbe l'orologio) e confronta con l'originale: la riga di partenza e la colonna si
+/// cercano sulle prime righe, poi la correlazione e' su tutte le righe.
+fn ricevi_cartina(ppm: f64, auto_slant: bool, img: &[u8], w: usize, h: usize) -> f64 {
+    let s = Segnale { apt: false, ppm, ..Segnale::standard(576, 120) };
+    let audio = genera(&s, img, w, h);
+    let mut c = cfg(576, 120);
+    c.manual = true;
+    c.auto_center = false;
+    c.auto_slant = auto_slant;
+    let mut d = Decoder::new(c);
+    for chunk in audio.chunks(1024) {
+        d.push(chunk);
+    }
+    let rx = d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done) } else { None });
+    let rx = rx.expect("immagine non chiusa");
+    assert_eq!(rx.image.width as usize, w);
+    let rows = rx.image.height as usize;
+    // riga di partenza (un secondo di silenzio iniziale = 2 righe in testa) e colonna: profilo delle righe 4..20
+    let mut best = (-2.0f64, 0usize, 0usize);
+    for off in 0..=4usize {
+        for dc in (0..w).step_by(2) {
+            let (mut a, mut b) = (Vec::new(), Vec::new());
+            for r in 4..20usize {
+                for x in (0..w).step_by(3) {
+                    a.push(rx.image.data[(off + r) * w + (x + dc) % w]);
+                    b.push(img[r * w + x]);
+                }
+            }
+            let c = pearson(&a, &b);
+            if c > best.0 {
+                best = (c, off, dc);
+            }
+        }
+    }
+    let (_, off, dc) = best;
+    let n = (rows - off).min(h) - 6;
+    let (mut a, mut b) = (Vec::new(), Vec::new());
+    for r in 4..n {
+        for x in 0..w {
+            a.push(rx.image.data[(off + r) * w + (x + dc) % w]);
+            b.push(img[r * w + x]);
+        }
+    }
+    pearson(&a, &b)
+}
+
+#[test]
+fn l_inclinazione_automatica_raddrizza_la_cartina_con_orologio_sbagliato() {
+    let (w, h) = (1809usize, 260usize);
+    let img = cartina(w, h);
+    let mut senza_media = 0.0;
+    for ppm in [1500.0, -1500.0, 300.0] {
+        let senza = ricevi_cartina(ppm, false, &img, w, h);
+        let con = ricevi_cartina(ppm, true, &img, w, h);
+        eprintln!("cartina {ppm:+} ppm: correlazione senza {senza:.4}, con inclinazione automatica {con:.4}");
+        // misurato: 0,932 (+1500), 0,934 (-1500), 0,944 (+300); senza errore 0,9475; senza correzione 0,08-0,17
+        assert!(con > 0.92, "{ppm} ppm: correlazione con auto_slant {con}");
+        assert!(con > senza + 0.1, "{ppm} ppm: con {con}, senza {senza}");
+        senza_media += senza;
+    }
+    assert!(senza_media / 3.0 < 0.7, "senza correzione la cartina doveva uscire inclinata");
+}
+
+#[test]
+fn l_inclinazione_automatica_non_peggiora_una_cartina_senza_errore() {
+    let (w, h) = (1809usize, 260usize);
+    let img = cartina(w, h);
+    let senza = ricevi_cartina(0.0, false, &img, w, h);
+    let con = ricevi_cartina(0.0, true, &img, w, h);
+    eprintln!("cartina senza errore: correlazione senza {senza:.4}, con {con:.4}");
+    assert!(senza > 0.9);
+    assert!(con > senza - 0.005, "con {con}, senza {senza}");
+}
+
+#[test]
+fn l_inclinazione_automatica_non_muove_niente_su_immagini_uniformi_o_rumore() {
+    let (w, h) = (1809usize, 140usize);
+    // uniforme: nessuna struttura da seguire
+    let uniforme = vec![128u8; w * h];
+    let mut rng = Rng(99);
+    let rumore: Vec<u8> = (0..w * h).map(|_| (128.0 + 60.0 * rng.gauss()).clamp(0.0, 255.0) as u8).collect();
+    for (nome, img) in [("uniforme", &uniforme), ("rumore", &rumore)] {
+        let s = Segnale { apt: false, ppm: 1000.0, ..Segnale::standard(576, 120) };
+        let audio = genera(&s, img, w, h);
+        let ricevi_con = |auto: bool| {
+            let mut c = cfg(576, 120);
+            c.manual = true;
+            c.auto_center = false;
+            c.auto_slant = auto;
+            let mut d = Decoder::new(c);
+            for chunk in audio.chunks(1024) {
+                d.push(chunk);
+            }
+            let lpm = d.lpm();
+            let done = d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done) } else { None });
+            (lpm, done.map(|d| d.image.data))
+        };
+        let (lpm_off, dati_off) = ricevi_con(false);
+        let (lpm_on, dati_on) = ricevi_con(true);
+        assert_eq!(lpm_off, lpm_on, "{nome}: il periodo di riga non doveva cambiare");
+        assert_eq!(dati_off, dati_on, "{nome}: i pixel non dovevano cambiare");
+    }
+}

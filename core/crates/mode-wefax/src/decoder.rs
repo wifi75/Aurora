@@ -52,6 +52,22 @@ const PHASING_LATENCY: i64 = 19;
 /// Un'immagine che parte dopo la fasatura si annuncia all'interfaccia solo con queste righe complete: le immagini di poche righe (le righe
 /// di fasatura che la ricezione riprende ogni 4 righe) restano nascoste.
 const ANNOUNCE_ROWS: u32 = 8;
+/// Inclinazione automatica: ogni quante righe si misura, fino a quale riga, distanza tra le righe confrontate, soglie.
+const SLANT_EVERY: usize = 40;
+const SLANT_LAST_ROW: usize = 400;
+const SLANT_GAP: usize = 16;
+/// Correzione massima accumulata (ppm).
+const SLANT_MAX_PPM: f64 = 5000.0;
+/// Sotto questa deriva (pixel per riga) non si corregge.
+const SLANT_DEADBAND_PX: f64 = 0.03;
+/// Deviazione minima dei grigi di una riga perche' conti (le righe quasi uniformi non hanno strutture da seguire).
+const SLANT_MIN_STD: f32 = 12.0;
+/// Correlazione minima del picco, e quanto deve superare il secondo picco (fuori da 4 pixel dal primo).
+const SLANT_MIN_NCC: f32 = 0.5;
+const SLANT_PEAK_RATIO: f32 = 0.9;
+/// Coppie di righe valide minime e dispersione massima (pixel per riga) delle misure.
+const SLANT_MIN_PAIRS: usize = 5;
+const SLANT_MAX_SPREAD_PX: f64 = 0.3;
 /// Righe della fasatura che servono per dare l'allineamento.
 const PHASING_LINES: i32 = 4;
 
@@ -81,6 +97,9 @@ pub struct DecoderConfig {
     pub auto_lpm: bool,
     /// Ogni 10 righe (dalla 30 alla 500) si ricentra l'immagine sulla fascia scura piu' larga.
     pub auto_center: bool,
+    /// Ogni 40 righe (dalla 40 alla 400) si misura l'inclinazione sul contenuto delle righe gia' ricevute e si corregge il periodo di riga
+    /// (e le righe gia' scritte), sopra la fasatura e la correzione a mano.
+    pub auto_slant: bool,
     pub center_hz: f32,
     pub shift_hz: f32,
     /// Correzione a mano del periodo di riga in parti per milione (positivo: righe piu' lunghe), sopra quella automatica.
@@ -110,6 +129,7 @@ impl Default for DecoderConfig {
             manual: false,
             auto_lpm: true,
             auto_center: true,
+            auto_slant: true,
             center_hz: 1900.0,
             shift_hz: 800.0,
             slant_ppm: 0.0,
@@ -252,6 +272,15 @@ pub struct Decoder {
     measured_len: Option<f64>,
     lpm_img: f64,
     smpl_per_lin: f64,
+    /// Correzione dell'inclinazione trovata dal contenuto dell'immagine (ppm), sopra la fasatura e la correzione a mano.
+    auto_ppm: f64,
+    /// Posizione di riga (frazionaria) al campione `slant_base_sample`: cambiando il periodo la posizione resta continua.
+    slant_base_row: f64,
+    slant_base_sample: i64,
+    /// Riga dell'ultima misura dell'inclinazione.
+    last_slant_row: usize,
+    /// Posizione di riga (relativa alla prima) dell'ultima correzione.
+    last_slant_pos: f64,
     img_sample: i64,
     last_col: i32,
     last_row: i64,
@@ -331,6 +360,11 @@ impl Decoder {
             measured_len: None,
             lpm_img: 0.0,
             smpl_per_lin: 1.0,
+            auto_ppm: 0.0,
+            slant_base_row: 0.0,
+            slant_base_sample: 0,
+            last_slant_row: 0,
+            last_slant_pos: 0.0,
             img_sample: 0,
             last_col: 0,
             last_row: 0,
@@ -605,7 +639,7 @@ impl Decoder {
     }
 
     fn set_line_len(&mut self, base: f64) {
-        self.smpl_per_lin = base * (1.0 + f64::from(self.cfg.slant_ppm) * 1e-6);
+        self.smpl_per_lin = base * (1.0 + (f64::from(self.cfg.slant_ppm) + self.auto_ppm) * 1e-6);
         self.lpm_img = 60.0 * f64::from(SR) / self.smpl_per_lin;
     }
 
@@ -781,6 +815,7 @@ impl Decoder {
 
     fn skip_phasing_to_image(&mut self) {
         self.state = Fs::Image;
+        self.auto_ppm = 0.0;
         self.lpm_set();
     }
 
@@ -790,7 +825,7 @@ impl Decoder {
         if self.image.is_some() {
             return;
         }
-        let row_origin = (self.img_sample as f64 / self.smpl_per_lin) as i64;
+        let row_origin = self.row_pos() as i64;
         let source = if self.cfg.manual { Source::Manual } else { self.pending_source };
         self.pending_source = source;
         self.image = Some(Img { data: vec![255; INITIAL_ROWS * self.width], rows_alloc: INITIAL_ROWS, rows_written: 0, row_origin, emitted: 0, resend: false, announced: false, source });
@@ -816,7 +851,7 @@ impl Decoder {
     /// Un campione dell'immagine: i campioni della stessa colonna si mediano in un pixel. `true` se si e' raggiunto il massimo di righe.
     fn decode_image(&mut self, x: i32) -> bool {
         self.ensure_image();
-        let row_dbl = self.img_sample as f64 / self.smpl_per_lin;
+        let row_dbl = self.row_pos();
         let row = row_dbl as i64;
         let col = (self.width as f64 * (row_dbl - row as f64)) as i32;
         if col == self.last_col {
@@ -878,6 +913,130 @@ impl Decoder {
                 self.shift_image(-new_center);
             }
         }
+        // la riga in scrittura e' `rn - 1`: le righe complete sono quelle prima
+        if self.cfg.auto_slant
+            && rn as usize > SLANT_EVERY
+            && rn as usize % SLANT_EVERY == 1
+            && rn as usize <= SLANT_LAST_ROW + 1
+            && rn as usize - 1 != self.last_slant_row
+        {
+            self.update_slant(rn as usize - 1);
+        }
+    }
+
+    /// Posizione di riga (frazionaria) del campione in corso, continua anche se il periodo di riga cambia a immagine iniziata.
+    fn row_pos(&self) -> f64 {
+        self.slant_base_row + (self.img_sample - self.slant_base_sample) as f64 / self.smpl_per_lin
+    }
+
+    /// Misura l'inclinazione sulle righe tra l'ultima misura e `end` (escluse) e, se e' netta, corregge il periodo di riga per le righe
+    /// che seguono e raddrizza quelle gia' scritte. Le righe prima dell'ultima misura sono gia' dritte: si spostano tutte insieme.
+    fn update_slant(&mut self, end: usize) {
+        let from = self.last_slant_row;
+        self.last_slant_row = end;
+        let Some(drift) = self.estimate_slant(from, end) else { return };
+        if drift.abs() < SLANT_DEADBAND_PX {
+            return;
+        }
+        let w = self.width as f64;
+        let old = self.auto_ppm;
+        let new = (old + drift / w * 1e6).clamp(-SLANT_MAX_PPM, SLANT_MAX_PPM);
+        if (new - old).abs() < 1e-9 {
+            return;
+        }
+        let applied = (new - old) * 1e-6 * w;
+        // il periodo cambia senza salti di posizione
+        let now = self.row_pos();
+        self.slant_base_row = now;
+        self.slant_base_sample = self.img_sample;
+        let base = self.smpl_per_lin / (1.0 + (f64::from(self.cfg.slant_ppm) + old) * 1e-6);
+        self.auto_ppm = new;
+        self.set_line_len(base);
+        // Le righe scritte: un pixel al tempo `tau` (riga + colonna / larghezza) deve andare a destra di (adesso - max(tau, ultima misura)) *
+        // deriva, cosi' le righe gia' scritte combaciano con quelle nuove (il periodo sbagliato inclina e anche stira la riga).
+        let wi = self.width;
+        let shift = self.shift;
+        let Some(img) = self.image.as_mut() else { return };
+        let (t_now, t_prev) = (now - img.row_origin as f64, self.last_slant_pos);
+        let rows = ((t_now.floor().max(0.0)) as usize + 1).min(img.rows_alloc);
+        let sh_at = |r: usize, c: usize| -> f64 {
+            let col = (c as i64 - i64::from(shift)).rem_euclid(wi as i64) as f64;
+            (t_now - (r as f64 + col / wi as f64).max(t_prev)) * applied
+        };
+        for r in 0..rows {
+            let old: Vec<u8> = img.data[r * wi..(r + 1) * wi].to_vec();
+            let row = &mut img.data[r * wi..(r + 1) * wi];
+            for (c, px) in row.iter_mut().enumerate() {
+                // sorgente: dove il pixel era prima dello spostamento (due passi per tener conto della variazione lungo la riga)
+                let mut src = c as f64 - sh_at(r, c);
+                src = c as f64 - sh_at(r, src.rem_euclid(wi as f64) as usize);
+                let i0 = src.floor();
+                let f = (src - i0) as f32;
+                let i0 = (i0 as i64).rem_euclid(wi as i64) as usize;
+                let (v0, v1) = (f32::from(old[i0]), f32::from(old[(i0 + 1) % wi]));
+                *px = (v0 * (1.0 - f) + v1 * f).round() as u8;
+            }
+        }
+        img.resend = true;
+        self.last_slant_pos = t_now;
+    }
+
+    /// Deriva orizzontale in pixel per riga (positivo: le strutture vanno a destra scendendo) dalle righe `from..to`: mediana degli
+    /// spostamenti che rendono massima la correlazione tra righe distanti `SLANT_GAP`. `None` se le righe non hanno strutture nette.
+    fn estimate_slant(&self, from: usize, to: usize) -> Option<f64> {
+        let img = self.image.as_ref()?;
+        let w = self.width;
+        if to <= from + SLANT_GAP + SLANT_MIN_PAIRS || to * w > img.data.len() {
+            return None;
+        }
+        let max_s = (SLANT_GAP as f64 * SLANT_MAX_PPM * 1e-6 * w as f64).ceil() as i64 + 3;
+        // righe senza media e normalizzate; `None` se quasi uniformi
+        let rows: Vec<Option<Vec<f32>>> = (from..to)
+            .map(|r| {
+                let src = &img.data[r * w..(r + 1) * w];
+                let mean = src.iter().map(|&v| f32::from(v)).sum::<f32>() / w as f32;
+                let var = src.iter().map(|&v| (f32::from(v) - mean).powi(2)).sum::<f32>() / w as f32;
+                let std = var.sqrt();
+                (std >= SLANT_MIN_STD).then(|| src.iter().map(|&v| (f32::from(v) - mean) / (std * (w as f32).sqrt())).collect())
+            })
+            .collect();
+        let mut shifts: Vec<f64> = Vec::new();
+        for i in 0..rows.len().saturating_sub(SLANT_GAP) {
+            let (Some(a), Some(b)) = (&rows[i], &rows[i + SLANT_GAP]) else { continue };
+            let mut ncc = Vec::with_capacity(2 * max_s as usize + 1);
+            for s in -max_s..=max_s {
+                // a[c] contro b[(c + s) % w]
+                let k = s.rem_euclid(w as i64) as usize;
+                let head = w - k;
+                let sum: f32 = a[..head].iter().zip(&b[k..]).map(|(x, y)| x * y).sum::<f32>() + a[head..].iter().zip(&b[..k]).map(|(x, y)| x * y).sum::<f32>();
+                ncc.push(sum);
+            }
+            let Some((bi, &best)) = ncc.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1)) else { continue };
+            if best < SLANT_MIN_NCC {
+                continue;
+            }
+            let second = ncc.iter().enumerate().filter(|(j, _)| j.abs_diff(bi) > 4).map(|(_, &v)| v).fold(f32::MIN, f32::max);
+            if second > SLANT_PEAK_RATIO * best {
+                continue;
+            }
+            // interpolazione parabolica del picco
+            let frac = if bi > 0 && bi + 1 < ncc.len() {
+                let (l, c, r) = (f64::from(ncc[bi - 1]), f64::from(ncc[bi]), f64::from(ncc[bi + 1]));
+                let den = l - 2.0 * c + r;
+                if den.abs() > 1e-12 { (0.5 * (l - r) / den).clamp(-0.5, 0.5) } else { 0.0 }
+            } else {
+                0.0
+            };
+            shifts.push((bi as f64 - max_s as f64 + frac) / SLANT_GAP as f64);
+        }
+        if shifts.len() < SLANT_MIN_PAIRS {
+            return None;
+        }
+        shifts.sort_by(f64::total_cmp);
+        let median = shifts[shifts.len() / 2];
+        let mut dev: Vec<f64> = shifts.iter().map(|v| (v - median).abs()).collect();
+        dev.sort_by(f64::total_cmp);
+        (dev[dev.len() / 2] <= SLANT_MAX_SPREAD_PX).then_some(median)
     }
 
     /// Dove sta il centro della fascia scura piu' larga (60 colonne) sulle ultime 10 righe complete: stima del margine, come fldigi.
@@ -934,7 +1093,7 @@ impl Decoder {
     }
 
     fn complete_rows(&self, img: &Img) -> u32 {
-        let cur = (self.img_sample as f64 / self.smpl_per_lin) as i64 - img.row_origin;
+        let cur = self.row_pos() as i64 - img.row_origin;
         (cur.max(0) as usize).min(img.rows_written) as u32
     }
 
@@ -965,6 +1124,10 @@ impl Decoder {
     // ---------------------------------------------------------------- fine dell'immagine
 
     fn reset_counters(&mut self) {
+        self.slant_base_row = 0.0;
+        self.slant_base_sample = 0;
+        self.last_slant_row = 0;
+        self.last_slant_pos = 0.0;
         self.last_col = 0;
         self.last_row = 0;
         self.fax_pix_num = 0;
@@ -975,6 +1138,7 @@ impl Decoder {
 
     fn end_rx(&mut self) {
         self.image = None;
+        self.auto_ppm = 0.0;
         // lo squelch riparte solo dopo che il segnale e' sparito (il tono di stop o la portante dopo l'immagine non ne aprono un'altra)
         self.sql_armed = false;
         self.sql_open = 0;

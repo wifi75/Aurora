@@ -45,6 +45,8 @@ pub struct WefaxSettings {
     pub auto_lpm: bool,
     /// Ricentra l'immagine da sola nelle prime 500 righe.
     pub auto_center: bool,
+    /// Misura l'inclinazione dal contenuto delle prime 400 righe e la corregge da sola (anche quelle gia' ricevute).
+    pub auto_slant: bool,
     /// Salva da sola ogni cartina ricevuta.
     pub auto_save: bool,
     /// Ascolto acceso all'avvio di Aurora.
@@ -80,6 +82,7 @@ impl Default for WefaxSettings {
             manual: false,
             auto_lpm: true,
             auto_center: true,
+            auto_slant: d.auto_slant,
             auto_save: true,
             auto_receive: false,
             center_hz: d.center_hz,
@@ -134,6 +137,7 @@ impl WefaxSettings {
             manual: self.manual,
             auto_lpm: self.auto_lpm,
             auto_center: self.auto_center,
+            auto_slant: self.auto_slant,
             center_hz: self.center_hz,
             shift_hz: self.shift_hz,
             slant_ppm: self.slant_ppm,
