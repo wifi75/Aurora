@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Satelliti, IC-820H con il Sub spento (#83): se `V Sub` e' rifiutato dalla radio (-9) Aurora non scrive piu' la frequenza di trasmissione sul «Main», che in quel caso e' la banda di ricezione: prima la ricezione 435,63 veniva sovrascritta con 145,96 e la radio restava su 145,96. Ora dice «il Sub della radio e' spento: accendilo per trasmettere sul secondo VFO» e la ricezione resta dov'e'; il Doppler segue la ricezione.
+
 - Satelliti, ripiego a due VFO (IC-820H, #83): dopo aver scritto la frequenza di trasmissione, Aurora la rilegge dal VFO di trasmissione e scrive nel registro quanto ha scritto, riletto e lo scarto, cosi' un pacchetto di assistenza dice se la radio ha accettato il comando anche quando il suo display non si muove.
 
 - WEFAX come in SeaTTY: sopra il visore lo spettro dell'audio con le righe del nero (1500 Hz) e del bianco (2300 Hz) e la riga del centro, e sotto la cascata con il righello in Hz; un clic porta li' il centro. In testata due interruttori: AFC (acceso di base, verde) segue da solo una sintonia sbagliata fino a 150 Hz, anche sul tono fisso che le stazioni mandano prima della cartina; SQL con la soglia (spento di base, 30 = circa 6 dB sopra il rumore) fa partire l'immagine quando c'e' un segnale che cambia e la chiude dopo 3 secondi senza segnale. Le impostazioni vecchie si leggono.

@@ -63,6 +63,8 @@ pub struct FakeState {
     s_fail_code: AtomicI32,
     /// I nomi di VFO che `V` rifiuta con `RPRT -11` (`Sub`, `Main`...).
     refused_vfos: Mutex<Vec<String>>,
+    /// VFO che la radio rifiuta con «comando rifiutato» (-9), come il Sub spento dell'IC-820H.
+    rejected_vfos: Mutex<Vec<String>>,
 }
 
 pub struct FakeRigctld {
@@ -101,6 +103,7 @@ impl FakeRigctld {
             cpy_ok: AtomicBool::new(false),
             s_fail_code: AtomicI32::new(0),
             refused_vfos: Mutex::new(Vec::new()),
+            rejected_vfos: Mutex::new(Vec::new()),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -133,6 +136,13 @@ impl FakeRigctld {
     }
 
     /// `V` rifiuta questo nome di VFO con `RPRT -11`.
+    /// Il VFO `name` risponde `RPRT -9` (comando rifiutato dalla radio: il Sub di un IC-820H con il Sub spento).
+    pub fn reject_vfo(&self, name: &str) {
+        if let Ok(mut r) = self.state.rejected_vfos.lock() {
+            r.push(name.to_string());
+        }
+    }
+
     pub fn refuse_vfo(&self, name: &str) {
         if let Ok(mut r) = self.state.refused_vfos.lock() {
             r.push(name.to_string());
@@ -422,6 +432,8 @@ fn serve(stream: TcpStream, state: &FakeState) {
                 }
                 "S" if state.s_fail_code.load(Ordering::SeqCst) != 0 => format!("RPRT {}
 ", state.s_fail_code.load(Ordering::SeqCst)),
+                "V" if state.rejected_vfos.lock().is_ok_and(|r| r.iter().any(|x| x == arg)) => "RPRT -9
+".into(),
                 "V" if state.refused_vfos.lock().is_ok_and(|r| r.iter().any(|x| x == arg)) => "RPRT -11
 ".into(),
                 "S" => {

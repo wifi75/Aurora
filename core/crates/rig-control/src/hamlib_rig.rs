@@ -1572,6 +1572,14 @@ impl HamlibRig {
                             c.frequency()
                         };
                         let (main, sub) = (read("Main"), read("Sub"));
+                        // `V Sub` rifiutato dalla radio (-9): il Sub e' spento, c'e' una banda sola e il «Main» e' quella di ricezione. Scrivere
+                        // adesso la trasmissione la metterebbe sopra la ricezione (pacchetto di Vladimir, 2026-11-21): non si scrive niente
+                        if let Err(e) = &sub
+                            && crate::hamlib::error_code(e) == Some(-9)
+                        {
+                            tracing::warn!("satelliti: il Sub della radio non risponde ({}): trasmissione non scritta, la ricezione resta dov'e'", friendly_error(&e.0));
+                            return Err(RigError("il Sub della radio e' spento: accendilo per trasmettere sul secondo VFO".into()));
+                        }
                         tracing::info!("satelliti: lettura delle bande dei VFO: Main = {:?} Hz, Sub = {:?} Hz", main.as_ref().ok(), sub.as_ref().ok());
                         map = match (main, sub) {
                             (Ok(main), Ok(sub)) => band_map_of(main, sub),
@@ -2914,6 +2922,25 @@ mod tests {
         fake.clear_commands();
         rig.set_uplink_via_vfo(145_900_100, None).expect("uplink");
         assert_eq!(writes(&fake), ["V VFOB", "F 145900100", "V VFOA"]);
+    }
+
+    /// IC-820H con il Sub spento (pacchetto di Vladimir del 2026-11-21, #83): `V Sub` risponde `RPRT -9` (comando rifiutato dalla radio) e sul
+    /// «Main» c'e' la banda di ricezione (435,63). Prima, con la lettura delle bande fallita, valeva la disposizione di fabbrica (Main = 144) e
+    /// la trasmissione 145,96 veniva scritta sul Main, cioe' sopra la ricezione: la radio restava su 145,96 e Aurora perdeva il segnale.
+    #[test]
+    fn with_the_sub_off_the_uplink_is_not_written_over_the_receive_frequency() {
+        let fake = FakeRigctld::start(435_633_000);
+        fake.reject_vfo("Sub");
+        let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
+        fake.clear_commands();
+        let err = rig.set_uplink_via_vfo(145_962_153, Some("LSB")).expect_err("senza il Sub non si trasmette sul secondo VFO");
+        assert!(err.0.contains("Sub"), "{}", err.0);
+        assert!(!writes(&fake).iter().any(|c| c.starts_with("F ") || c.starts_with("M ")), "{:?}", writes(&fake));
+        assert_eq!(fake.frequency(), 435_633_000, "la frequenza di ricezione e' intatta");
+        // il rifiuto non si ripete a ogni giro di 10 s sulla radio: la seconda volta non si tocca niente
+        fake.clear_commands();
+        assert!(rig.set_uplink_via_vfo(145_962_200, None).is_err());
+        assert!(!writes(&fake).iter().any(|c| c.starts_with("F ")), "{:?}", writes(&fake));
     }
 
     #[test]
