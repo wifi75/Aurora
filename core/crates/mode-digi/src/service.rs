@@ -1363,8 +1363,12 @@ impl Demod {
             Some(mode) => {
                 let mut d = PskDemodulator::new(mode, s.rx_freq_hz);
                 d.set_afc(s.afc_on);
-                // lo squelch del PSK guarda la metrica di qualita' della fase di fldigi (0-100), non il livello
-                d.set_squelch(s.squelch_on.then_some(s.psk_squelch));
+                // con l'AFC acceso la ricezione si aggancia da sola alla portante entro il limite dell'AFC (oltre un quarto di baud l'AFC
+                // della fase non la ritrova, prova `psk_finestra_e_lista`)
+                d.set_acquire(Some(s.afc_limit()));
+                // lo squelch del PSK guarda la metrica di qualita' della fase di fldigi (0-100), non il livello; spento vale la soglia di
+                // base come la lista «Segnali» (senza, nelle pause e nel rumore si scrive spazzatura); 0 lo apre del tutto
+                d.set_squelch(Some(if s.squelch_on { s.psk_squelch } else { psk::SQUELCH_DEFAULT }));
                 Demod::Psk(Box::new(d))
             }
             None => {
@@ -1411,6 +1415,14 @@ impl Demod {
             Demod::Cw(d) => (None, None, Some(d.wpm())),
             Demod::CwFast(h, _) => (None, None, Some(h.fine().wpm())),
             Demod::Rtty(_) | Demod::Off(_) => (None, None, None),
+        }
+    }
+
+    /// PSK: la portante a cui il ricevitore si e' agganciato da solo (una volta), da dire ai limiti dell'AFC.
+    fn take_acquired(&mut self) -> Option<f32> {
+        match self {
+            Demod::Psk(d) => d.take_acquired(),
+            _ => None,
         }
     }
 
@@ -1537,6 +1549,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 let (band_audio, rx_audio) = filters.process(&audio);
                 inner.band.feed(band_audio);
                 let (text, weak) = demod.process(rx_audio);
+                if let Some(hz) = demod.take_acquired() {
+                    guard.retune(hz);
+                }
                 if cur.afc_on {
                     let (level, th) = demod.presence();
                     if let Some(hz) = guard.step(demod.frequency(), level, th, demod.signal().1) {
@@ -1555,6 +1570,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, settings: DigiSettings) {
                 for (x, d, g) in extras.iter_mut() {
                     let (text, weak) = d.process(band_audio);
                     // l'AFC di ogni finestra e' suo: si muove solo se acceso su quella finestra
+                    if let Some(hz) = d.take_acquired() {
+                        g.retune(hz);
+                    }
                     if x.afc {
                         let (level, th) = d.presence();
                         if let Some(hz) = g.step(d.frequency(), level, th, d.signal().1) {

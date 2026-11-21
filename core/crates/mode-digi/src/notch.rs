@@ -275,6 +275,19 @@ impl AfcGuard {
         if lo > hi { self.base } else { f.clamp(lo, hi) }
     }
 
+    /// Il ricevitore si e' agganciato da solo a una portante in `f` (PSK, `PskDemodulator::take_acquired`): diventa l'ultima frequenza
+    /// buona, cosi' senza segnale non si torna indietro.
+    pub fn retune(&mut self, f: f32) {
+        // una stazione che deriva oltre il limite: il limite si sposta con lei (resta dentro il passabanda)
+        if (f - self.base).abs() > self.limit {
+            self.base = f - self.limit.copysign(f - self.base);
+        }
+        let g = self.allowed(f);
+        if !self.in_notch(g) {
+            self.last_good = g;
+        }
+    }
+
     /// Dopo un blocco: `f` e' la frequenza a cui l'AFC del ricevitore e' arrivato, `level` la misura del segnale (qualita' o S/N) con le soglie
     /// d'isteresi `(accendi, spegni)` e `open` lo squelch. Risponde la frequenza su cui riportare il ricevitore se va corretta.
     pub fn step(&mut self, f: f32, level: Option<f32>, (on, off): (f32, f32), open: bool) -> Option<f32> {

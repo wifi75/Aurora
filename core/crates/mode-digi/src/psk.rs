@@ -215,6 +215,155 @@ fn decay_avg(avg: f32, input: f32, weight: f32) -> f32 {
     avg + (input - avg) / weight
 }
 
+/// Aggancio alla portante. La differenziale del PSK insegue la frequenza solo entro circa un quarto della velocita' di simbolo (8 Hz in
+/// PSK31, 16 in PSK63): piu' in la' la fase gira di oltre 90 gradi a simbolo, i bit escono a caso e l'AFC va dalla parte sbagliata o
+/// si ferma al limite. Il segnale PSK al quadrato perde la modulazione (le fasi 0 e 180 gradi diventano la stessa) e lascia una riga
+/// netta al doppio della portante: l'audio intorno alla frequenza scelta si porta in banda base (500 campioni al secondo, ±120 Hz), si
+/// eleva al quadrato e il suo spettro medio (FFT di 512 punti, un secondo, a ogni mezzo secondo) dice dove sono le portanti, con
+/// precisione sotto l'hertz e senza che una stazione vicina sposti la stima (le righe di due stazioni a 40 Hz stanno a 80 Hz).
+const ACQ_RATE: usize = 500;
+const ACQ_N: usize = 512;
+const ACQ_HOP: usize = 256;
+/// La riga sopra la mediana dello spettro al quadrato perche' valga come portante (12 dB).
+const ACQ_LINE: f32 = 12.0;
+/// Spettri da aspettare dopo un aggancio prima di un altro (un secondo e mezzo).
+const ACQ_HOLD: u32 = 3;
+/// La stazione agganciata non sentita da tanto si dimentica (spettri, 4 s): poi si riaggancia la portante piu' vicina all'ascolto.
+const ACQ_FORGET: u32 = 8;
+/// Spettri di fila in cui una portante nuova deve vedersi prima di agganciarla (un secondo e mezzo: il rumore non fa righe ferme).
+const ACQ_CONFIRM: u32 = 3;
+/// Con la stazione agganciata l'ascolto non se ne allontana piu' di tanto (Hz): la riga al quadrato e' piu' precisa dell'AFC della fase
+/// quando una stazione vicina o il rumore lo tirano.
+const ACQ_TRIM_HZ: f32 = 1.5;
+/// Coefficienti del filtro di banda base (finestra di Blackman, taglio 120 Hz a 12 kHz).
+const ACQ_TAPS: usize = 193;
+
+struct Acquire {
+    fft: std::sync::Arc<dyn rustfft::Fft<f32>>,
+    window: Vec<f32>,
+    taps: Vec<f32>,
+    ring: Vec<(f32, f32)>,
+    pos: usize,
+    count: usize,
+    phase: f64,
+    centre: f32,
+    /// Banda base al quadrato, 500 campioni al secondo.
+    sq: Vec<(f32, f32)>,
+    avg: Vec<f32>,
+    frames: u32,
+    hold: u32,
+    /// La portante della stazione scelta (Hz audio) e da quanti spettri non si vede.
+    station: Option<f32>,
+    missing: u32,
+    /// La portante candidata e in quanti spettri di fila si e' vista.
+    cand: Option<(f32, u32)>,
+    /// L'ultima stazione agganciata (dopo una pausa lunga si riprende la portante piu' vicina a lei).
+    prev: Option<f32>,
+}
+
+impl Acquire {
+    fn new(centre: f32) -> Self {
+        let fc = 120.0 / f64::from(RATE);
+        let m = (ACQ_TAPS - 1) as f64;
+        let mut taps: Vec<f32> = (0..ACQ_TAPS)
+            .map(|i| {
+                let x = i as f64 - m / 2.0;
+                let sinc = if x == 0.0 { 2.0 * fc } else { (2.0 * PI * fc * x).sin() / (PI * x) };
+                let w = 0.42 - 0.5 * (2.0 * PI * i as f64 / m).cos() + 0.08 * (4.0 * PI * i as f64 / m).cos();
+                (sinc * w) as f32
+            })
+            .collect();
+        let sum: f32 = taps.iter().sum();
+        taps.iter_mut().for_each(|t| *t /= sum);
+        Acquire {
+            fft: rustfft::FftPlanner::new().plan_fft_forward(ACQ_N),
+            window: (0..ACQ_N).map(|i| (0.5 - 0.5 * (2.0 * PI * i as f64 / ACQ_N as f64).cos()) as f32).collect(),
+            taps,
+            ring: vec![(0.0, 0.0); ACQ_TAPS],
+            pos: 0,
+            count: 0,
+            phase: 0.0,
+            centre,
+            sq: Vec::with_capacity(2 * ACQ_N),
+            avg: vec![0.0; ACQ_N],
+            frames: 0,
+            hold: 0,
+            station: None,
+            missing: 0,
+            cand: None,
+            prev: None,
+        }
+    }
+
+    /// Audio nuovo: in banda base intorno a `centre`, decimato e al quadrato.
+    fn feed(&mut self, samples: &[f32]) {
+        let step = 2.0 * PI * f64::from(self.centre) / f64::from(RATE);
+        let decim = RATE as usize / ACQ_RATE;
+        let n = self.ring.len();
+        for &s in samples {
+            let (sin, cos) = self.phase.sin_cos();
+            self.ring[self.pos] = (s * cos as f32, -s * sin as f32);
+            self.pos = (self.pos + 1) % n;
+            self.phase = (self.phase + step) % (2.0 * PI);
+            self.count += 1;
+            if self.count < decim {
+                continue;
+            }
+            self.count = 0;
+            let (mut i, mut q) = (0.0_f32, 0.0_f32);
+            for (k, &c) in self.taps.iter().enumerate() {
+                let (a, b) = self.ring[(self.pos + k) % n];
+                i += c * a;
+                q += c * b;
+            }
+            self.sq.push((i * i - q * q, 2.0 * i * q));
+        }
+    }
+
+    /// Uno spettro del segnale al quadrato: le portanti (Hz audio) entro `centre ± limit`. Le inversioni del PSK fanno anche due righe
+    /// a ±mezzo baud dalla portante (l'inviluppo al quadrato batte alla velocita' di simbolo), 6 dB sotto quella vera: una riga con
+    /// una piu' forte a mezzo baud non e' una portante.
+    fn lines(&mut self, limit: f32, baud: f32) -> Vec<f32> {
+        let mut a: Vec<rustfft::num_complex::Complex32> =
+            self.sq[..ACQ_N].iter().zip(&self.window).map(|(&(i, q), w)| rustfft::num_complex::Complex32::new(i * w, q * w)).collect();
+        self.fft.process(&mut a);
+        self.frames = self.frames.saturating_add(1);
+        let k = (1.0 / self.frames as f32).max(0.3);
+        for (d, x) in self.avg.iter_mut().zip(&a) {
+            *d += k * (x.norm_sqr() - *d);
+        }
+        let res = ACQ_RATE as f32 / ACQ_N as f32;
+        let mut sorted = self.avg.clone();
+        sorted.sort_by(f32::total_cmp);
+        let floor = sorted[sorted.len() / 2].max(1e-30);
+        let thr = floor * 10f32.powf(ACQ_LINE / 10.0);
+        // la riga j dello spettro (con segno) sta al doppio dello scostamento della portante
+        let reach = (2.0 * (limit + baud / 2.0) / res).ceil() as isize + 3;
+        let n = ACQ_N as isize;
+        let at = |j: isize| self.avg[j.rem_euclid(n) as usize];
+        let mut out = Vec::new();
+        for j in -reach..=reach {
+            let v = at(j);
+            if v < thr || v < at(j - 1) || v < at(j + 1) || v < at(j - 2) || v < at(j + 2) {
+                continue;
+            }
+            // interpolazione parabolica sul massimo
+            let (l, r) = (at(j - 1), at(j + 1));
+            let den = l - 2.0 * v + r;
+            let d = if den.abs() > 1e-30 { (0.5 * (l - r) / den).clamp(-0.5, 0.5) } else { 0.0 };
+            out.push(((j as f32 + d) * res / 2.0, v));
+        }
+        let tol = 2.0 * res;
+        out.iter()
+            .filter(|&&(f, v)| {
+                // non a mezzo baud da una riga piu' forte (inversioni) ne' a meno di un quarto di baud (code della finestra)
+                f.abs() <= limit + baud / 2.0 && !out.iter().any(|&(g, w)| w > v && (((g - f).abs() - baud / 2.0).abs() < tol || (g - f).abs() < baud / 4.0))
+            })
+            .map(|&(f, _)| self.centre + f)
+            .collect()
+    }
+}
+
 /// Ricevitore: si alimenta con l'audio a 12 kHz e restituisce i caratteri man mano che si decodificano.
 pub struct PskDemodulator {
     mode: PskMode,
@@ -273,6 +422,11 @@ pub struct PskDemodulator {
     confidences: Vec<u8>,
     /// P4: noise blanker davanti al mixer (le scariche diventano buchi invece di simboli sbagliati).
     blanker: Option<crate::blanker::NoiseBlanker>,
+    /// Aggancio alla portante entro tanti Hz dalla frequenza scelta (con l'AFC acceso); `None` = spento.
+    acquire_limit: Option<f32>,
+    acquire: Option<Box<Acquire>>,
+    /// L'ultimo aggancio non ancora letto da [`PskDemodulator::take_acquired`].
+    acquired: Option<f32>,
 }
 
 impl PskDemodulator {
@@ -330,6 +484,85 @@ impl PskDemodulator {
             p_local: 0.0,
             confidences: Vec::new(),
             blanker: Some(crate::blanker::NoiseBlanker::without_delay()),
+            acquire_limit: None,
+            acquire: None,
+            acquired: None,
+        }
+    }
+
+    /// Aggancio alla portante del segnale PSK piu' forte entro `limit` Hz dalla frequenza scelta, quando l'ascolto ne e' lontano piu'
+    /// di quanto l'AFC sappia recuperare (vale solo con l'AFC acceso); `None` lo spegne.
+    pub fn set_acquire(&mut self, limit: Option<f32>) {
+        self.acquire_limit = limit.filter(|l| l.is_finite() && *l > 0.0);
+        if self.acquire_limit.is_none() {
+            self.acquire = None;
+        }
+    }
+
+    /// La frequenza dell'ultimo aggancio, una volta sola (chi tiene i limiti dell'AFC, `notch::AfcGuard::retune`, deve saperlo).
+    pub fn take_acquired(&mut self) -> Option<f32> {
+        self.acquired.take()
+    }
+
+    /// Lo spettro dell'aggancio sull'audio nuovo. La stazione scelta e' la portante piu' vicina alla frequenza scelta (entro il limite);
+    /// poi si segue solo lei (pochi Hz per spettro: la deriva), mai la vicina. Se l'ascolto se ne allontana oltre un quinto della velocita'
+    /// di simbolo (bandierina non centrata, AFC trascinato dalla vicina o dal rumore) torna sulla stazione; nelle pause resta dov'e'.
+    fn run_acquire(&mut self, samples: &[f32]) {
+        let Some(limit) = self.acquire_limit.filter(|_| self.afc) else {
+            return;
+        };
+        let base = self.base_hz;
+        let acq = self.acquire.get_or_insert_with(|| Box::new(Acquire::new(base)));
+        acq.feed(samples);
+        let follow = (0.15 * self.baud).max(3.0);
+        while acq.sq.len() >= ACQ_N {
+            let lines = acq.lines(limit, self.baud);
+            acq.sq.drain(..ACQ_HOP);
+            acq.hold = acq.hold.saturating_sub(1);
+            let near = |f: f32| lines.iter().copied().min_by(|a, b| (a - f).abs().total_cmp(&(b - f).abs()));
+            // la stazione agganciata si segue anche oltre il limite (deriva), di pochi Hz per spettro
+            if let Some(st) = acq.station {
+                match near(st).filter(|f| (f - st).abs() < follow) {
+                    Some(f) => {
+                        acq.station = Some(f);
+                        acq.missing = 0;
+                    }
+                    None => {
+                        acq.missing += 1;
+                        if acq.missing > ACQ_FORGET {
+                            acq.prev = acq.station;
+                            acq.station = None;
+                        }
+                    }
+                }
+            }
+            // la stazione scelta e' la portante piu' vicina alla frequenza scelta entro il limite, se resta ferma per qualche spettro;
+            // finche' quella agganciata si sente non si cambia (niente salti alla vicina)
+            let target = acq.prev.unwrap_or(base);
+            acq.cand = match (near(target).filter(|f| (f - base).abs() <= limit + 1.0), acq.cand) {
+                (Some(f), Some((c, n))) if (f - c).abs() < follow => Some((f, n + 1)),
+                (Some(f), _) => Some((f, 1)),
+                (None, _) => None,
+            };
+            if let Some((f, _)) = acq.cand.filter(|&(_, n)| n >= ACQ_CONFIRM) {
+                if acq.station.is_none() {
+                    acq.station = Some(f);
+                    acq.missing = 0;
+                }
+            }
+            let Some(st) = acq.station else {
+                continue;
+            };
+            // lontano: salto sulla stazione; vicino ma fuori di piu' di 1,5 Hz (AFC tirato dalla vicina o dal rumore): correzione
+            let d = (st - self.freq_hz).abs();
+            if (acq.hold == 0 && d > 0.2 * self.baud) || (d > ACQ_TRIM_HZ && d <= 0.2 * self.baud) {
+                if d > 0.2 * self.baud {
+                    acq.hold = ACQ_HOLD;
+                }
+                self.freq_hz = st;
+                self.step = 2.0 * PI * f64::from(st) / f64::from(RATE);
+                self.acquired = Some(st);
+            }
         }
     }
 
@@ -360,6 +593,9 @@ impl PskDemodulator {
     pub fn set_frequency(&mut self, freq_hz: f32) {
         self.base_hz = freq_hz;
         self.tune(freq_hz);
+        // l'aggancio riparte dalla frequenza nuova
+        self.acquire = None;
+        self.acquired = None;
     }
 
     fn tune(&mut self, freq_hz: f32) {
@@ -426,6 +662,7 @@ impl PskDemodulator {
     pub fn process(&mut self, samples: &[f32]) -> Vec<u8> {
         let mut out = Vec::new();
         self.confidences.clear();
+        self.run_acquire(samples);
         let len1 = self.ring1.len();
         for &s in samples {
             let s = match self.blanker.as_mut() {
