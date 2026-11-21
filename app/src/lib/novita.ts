@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.325',
-    released: '2026-11-21T15:30:00Z',
+    released: '2026-11-21T13:26:50Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.325',
-    released: '2026-11-21T15:30:00Z',
+    released: '2026-11-21T13:26:50Z',
     kind: 'fixed',
     title: [
       'PSK31 e PSK63: ricezione pulita e AFC che non salta',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.325',
-    released: '2026-11-21T15:30:00Z',
+    released: '2026-11-21T13:26:50Z',
     kind: 'changed',
     title: [
       'WEFAX: rotazione, barra compatta, ricezione più sicura',
@@ -87,7 +87,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.325',
-    released: '2026-11-21T15:30:00Z',
+    released: '2026-11-21T13:26:50Z',
     kind: 'changed',
     title: [
       'Display della radio: lettura S e potenza in rosso',
