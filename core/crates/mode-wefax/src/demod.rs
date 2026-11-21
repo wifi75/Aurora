@@ -113,8 +113,20 @@ impl FmDemod {
         }
     }
 
+    /// Sposta la sottoportante senza toccare il filtro (serve all'AFC: nessun buco nel segnale demodulato).
+    pub fn set_center(&mut self, center_hz: f32) {
+        self.phase_step = TAU * f64::from(center_hz) / f64::from(RATE);
+    }
+
     /// Un valore 0..255 (0 nero, 255 bianco) per ogni campione d'ingresso.
     pub fn process(&mut self, audio: &[f32], out: &mut Vec<u8>) {
+        self.process_freq(audio, out, None);
+    }
+
+    /// Come [`FmDemod::process`] e in piu', se richiesto, la frequenza istantanea in Hz rispetto alla sottoportante, senza i limiti del
+    /// nero e del bianco (NaN senza segnale): serve all'AFC.
+    pub fn process_freq(&mut self, audio: &[f32], out: &mut Vec<u8>, mut freq: Option<&mut Vec<f32>>) {
+        let hz_per_rad = f64::from(RATE) / TAU;
         for &a in audio {
             let a = if a.is_finite() { f64::from(a) } else { 0.0 };
             let (sin, cos) = self.phase.sin_cos();
@@ -134,12 +146,19 @@ impl FmDemod {
             }
             let (pi, pq) = self.prev;
             let value = if zi.hypot(zq) <= CLIP && pi.hypot(pq) <= CLIP {
+                if let Some(f) = freq.as_deref_mut() {
+                    f.push(f32::NAN);
+                }
                 255
             } else {
                 // arg(conj(prev) * curr)
                 let re = pi * zi + pq * zq;
                 let im = pi * zq - pq * zi;
-                let v = (255.0 * (0.5 - self.deviation_ratio * im.atan2(re))).round();
+                let angle = im.atan2(re);
+                if let Some(f) = freq.as_deref_mut() {
+                    f.push((-angle * hz_per_rad) as f32);
+                }
+                let v = (255.0 * (0.5 - self.deviation_ratio * angle)).round();
                 v.clamp(0.0, 255.0) as u8
             };
             self.prev = (zi, zq);

@@ -6,7 +6,10 @@
 //!   consecutive, che in fldigi lavora insieme a quelle;
 //! - la posizione dei pixel si ricava dalla riga e dalla colonna del campione (in fldigi da un contatore progressivo con un fattore
 //!   di inclinazione), cosi' l'inclinazione si corregge con il periodo di riga misurato sulla fasatura, senza buchi nell'immagine;
-//! - l'AFC di fldigi (anch'esso sul waterfall) non c'e': la sottoportante si sceglie nelle impostazioni;
+//! - l'AFC non usa il waterfall come fldigi ma l'istogramma della frequenza istantanea (vedi [`crate::meter::Afc`]): sposta la
+//!   sottoportante del demodulatore di quanto serve, senza cambiare quella scelta nelle impostazioni;
+//! - lo squelch (SQL) fa partire l'immagine quando il segnale supera la soglia e cambia (un tono fisso no) e la chiude dopo 3 secondi
+//!   sotto la soglia;
 //! - sul tono APT stop si tolgono dall'immagine le righe del tono (fldigi lo lascia).
 
 use serde::{Deserialize, Serialize};
@@ -14,7 +17,24 @@ use serde::{Deserialize, Serialize};
 use crate::{
     GrayImage,
     demod::{Filter, FmDemod, RATE},
+    meter::{AFC_MAX_HZ, Afc, METER_BLOCK, SignalMeter},
 };
+
+/// Misure di livello di fila sopra la soglia, con un segnale che cambia, per far partire l'immagine con lo squelch (circa mezzo secondo).
+const SQL_OPEN_BLOCKS: u32 = 6;
+/// Misure di fila sotto la soglia che chiudono l'immagine (circa 3 secondi).
+const SQL_CLOSE_BLOCKS: u32 = (3 * RATE as usize / METER_BLOCK) as u32;
+/// Misure di fila sotto la soglia che riarmano lo squelch dopo un'immagine (mezzo secondo).
+const SQL_REARM_BLOCKS: u32 = 6;
+/// Deviazione minima dei grigi demodulati in una misura perche' il segnale conti come immagine: il tono fisso che le stazioni mandano
+/// prima di trasmettere (nero a 1500 Hz) e' segnale presente ma non fa partire niente.
+const SQL_MIN_SPREAD: f32 = 12.0;
+/// Sotto questo livello l'AFC non corregge (solo rumore).
+const AFC_MIN_LEVEL: f32 = 10.0;
+/// Sotto quale errore l'AFC non si muove (Hz).
+const AFC_DEADBAND_HZ: f32 = 3.0;
+/// Quota dell'errore corretta a ogni misura (una al secondo).
+const AFC_GAIN: f32 = 0.7;
 
 const SR: i32 = RATE as i32;
 const BYTES_PER_PIXEL: i64 = 3;
@@ -72,6 +92,12 @@ pub struct DecoderConfig {
     pub correlation_rows: u32,
     /// Sotto questo numero di pixel ricevuti l'immagine non si tiene (150000 byte, 50000 pixel, in fldigi).
     pub min_pixels: u32,
+    /// Correzione automatica della sintonia (sposta la sottoportante del demodulatore sul segnale vero).
+    pub afc: bool,
+    /// Squelch: l'immagine parte quando il livello del segnale supera `squelch_level` e si chiude quando resta sotto per 3 secondi.
+    pub squelch: bool,
+    /// Soglia dello squelch (0..100, 20 dB = 100).
+    pub squelch_level: f32,
 }
 
 impl Default for DecoderConfig {
@@ -91,6 +117,9 @@ impl Default for DecoderConfig {
             correlation: 0.05,
             correlation_rows: 15,
             min_pixels: 50_000,
+            afc: true,
+            squelch: false,
+            squelch_level: 30.0,
         }
     }
 }
@@ -127,6 +156,8 @@ pub enum Source {
     Manual,
     /// Comando di partire subito.
     Forced,
+    /// Partita dallo squelch: segnale sopra la soglia (riga non allineata).
+    Squelch,
 }
 
 impl Source {
@@ -136,6 +167,7 @@ impl Source {
             Source::NoPhasing => "no_phasing",
             Source::Manual => "manual",
             Source::Forced => "forced",
+            Source::Squelch => "squelch",
         }
     }
 }
@@ -243,6 +275,21 @@ pub struct Decoder {
     stop_code: &'static str,
     sig_cnt: u32,
     sig_state: Fs,
+
+    // squelch e AFC
+    meter: SignalMeter,
+    afc: Afc,
+    freq_buf: Vec<f32>,
+    /// Correzione dell'AFC sopra la sottoportante delle impostazioni (Hz).
+    afc_hz: f32,
+    sql_open: u32,
+    sql_closed: u32,
+    /// Lo squelch puo' far partire un'immagine (dopo un'immagine serve prima che il segnale sparisca).
+    sql_armed: bool,
+    /// Somme dei grigi demodulati della misura in corso (per la deviazione).
+    spread_sum: f64,
+    spread_sq: f64,
+    spread_n: u32,
 }
 
 fn near(a: i32, b: i32, margin: i32) -> bool {
@@ -304,6 +351,16 @@ impl Decoder {
             stop_code: "",
             sig_cnt: 0,
             sig_state: Fs::Idle,
+            meter: SignalMeter::new(cfg.center_hz, cfg.shift_hz),
+            afc: Afc::default(),
+            freq_buf: Vec::new(),
+            afc_hz: 0.0,
+            sql_open: 0,
+            sql_closed: 0,
+            sql_armed: true,
+            spread_sum: 0.0,
+            spread_sq: 0.0,
+            spread_n: 0,
             cfg,
         };
         d.lpm_set();
@@ -317,12 +374,21 @@ impl Decoder {
     /// Cambia le impostazioni: se cambia l'IOC o il modo di avvio l'immagine in corso si butta.
     pub fn set_config(&mut self, cfg: DecoderConfig) {
         let restart = cfg.ioc != self.cfg.ioc || cfg.manual != self.cfg.manual;
-        let demod_changed = cfg.filter != self.cfg.filter || cfg.center_hz != self.cfg.center_hz || cfg.shift_hz != self.cfg.shift_hz;
+        let tuning_changed = cfg.center_hz != self.cfg.center_hz || cfg.shift_hz != self.cfg.shift_hz;
+        let demod_changed = cfg.filter != self.cfg.filter || tuning_changed;
+        // sottoportante cambiata a mano o AFC spento: la correzione ricomincia da zero
+        if tuning_changed || !cfg.afc {
+            self.afc_hz = 0.0;
+            self.afc.reset();
+        }
         self.cfg = cfg;
         self.width = self.cfg.width() as usize;
         if demod_changed {
-            self.demod = FmDemod::new(self.cfg.filter, self.cfg.center_hz, self.cfg.shift_hz);
+            self.demod = FmDemod::new(self.cfg.filter, self.rx_center(), self.cfg.shift_hz);
+        } else {
+            self.demod.set_center(self.rx_center());
         }
+        self.meter.set_band(self.rx_center(), self.cfg.shift_hz);
         if restart {
             self.cancel();
             self.measured_len = None;
@@ -355,6 +421,21 @@ impl Decoder {
 
     pub fn lpm(&self) -> f32 {
         self.lpm_img as f32
+    }
+
+    /// Livello del segnale per lo squelch (0..100: 0 solo rumore, 100 almeno 20 dB sopra il rumore).
+    pub fn signal_level(&self) -> f32 {
+        self.meter.level()
+    }
+
+    /// Correzione dell'AFC in Hz sopra la sottoportante delle impostazioni.
+    pub fn afc_hz(&self) -> f32 {
+        self.afc_hz
+    }
+
+    /// Sottoportante su cui si riceve: quella delle impostazioni piu' la correzione dell'AFC.
+    fn rx_center(&self) -> f32 {
+        self.cfg.center_hz + self.afc_hz
     }
 
     /// L'immagine in arrivo: larghezza, righe complete e i loro pixel.
@@ -411,14 +492,33 @@ impl Decoder {
             return self.take_events();
         }
         let mut buf = std::mem::take(&mut self.demod_buf);
+        let mut freq = std::mem::take(&mut self.freq_buf);
         buf.clear();
-        self.demod.process(audio, &mut buf);
+        freq.clear();
+        self.demod.process_freq(audio, &mut buf, self.cfg.afc.then_some(&mut freq));
         let power = audio.iter().filter(|v| v.is_finite()).map(|&v| v * v).sum::<f32>() / audio.len() as f32;
         self.level = 0.8 * self.level + 0.2 * power.sqrt();
-        for &v in &buf {
+        for (i, &v) in buf.iter().enumerate() {
+            let g = f64::from(v);
+            self.spread_sum += g;
+            self.spread_sq += g * g;
+            self.spread_n += 1;
+            if let Some(level) = self.meter.push(audio[i]) {
+                let n = f64::from(self.spread_n.max(1));
+                let mean = self.spread_sum / n;
+                let spread = (self.spread_sq / n - mean * mean).max(0.0).sqrt() as f32;
+                (self.spread_sum, self.spread_sq, self.spread_n) = (0.0, 0.0, 0);
+                self.on_level(level, spread);
+            }
+            if let Some(&f) = freq.get(i)
+                && let Some(err) = self.afc.push(f, self.cfg.shift_hz)
+            {
+                self.on_afc(err);
+            }
             self.step(i32::from(v));
         }
         self.demod_buf = buf;
+        self.freq_buf = freq;
         self.flush_rows();
         let st = self.rx_state();
         if self.reported != Some(st) {
@@ -426,6 +526,50 @@ impl Decoder {
             self.events.push(DecoderEvent::State(st));
         }
         std::mem::take(&mut self.events)
+    }
+
+    // ---------------------------------------------------------------- squelch e AFC
+
+    /// Una misura nuova del livello (ogni 1024 campioni) con la deviazione dei grigi demodulati: con lo squelch acceso fa partire o chiude
+    /// l'immagine. Un tono fisso (deviazione bassa) tiene aperto lo squelch ma non fa partire un'immagine.
+    fn on_level(&mut self, level: f32, spread: f32) {
+        if !self.cfg.squelch || self.cfg.manual {
+            return;
+        }
+        if level >= self.cfg.squelch_level {
+            self.sql_open = if spread >= SQL_MIN_SPREAD { self.sql_open + 1 } else { 0 };
+            self.sql_closed = 0;
+        } else {
+            self.sql_closed += 1;
+            self.sql_open = 0;
+            if self.sql_closed >= SQL_REARM_BLOCKS {
+                self.sql_armed = true;
+            }
+        }
+        // anche in attesa della fasatura senza righe di fasatura viste (una portante fissa puo' portare li')
+        let waiting = self.state == Fs::AptStart || (self.state == Fs::Phasing && self.phase_lines == 0);
+        if self.image.is_none() && waiting && self.sql_armed && self.sql_open >= SQL_OPEN_BLOCKS {
+            // come «parti subito», ma l'immagine si annuncia solo con qualche riga: se e' un tono APT start la ricezione la chiude
+            // da sola e passa alla fasatura
+            self.sql_armed = false;
+            self.pending_source = Source::Squelch;
+            self.skip_apt_rx();
+            self.skip_phasing_to_image();
+            self.reset_counters();
+        } else if self.image.is_some() && self.sql_closed >= SQL_CLOSE_BLOCKS {
+            self.flush_rows();
+            self.save_automatic("squelch");
+        }
+    }
+
+    /// Errore di sintonia misurato dall'AFC: la sottoportante del demodulatore lo segue (solo con un segnale vero).
+    fn on_afc(&mut self, err_hz: f32) {
+        if !self.cfg.afc || self.meter.level() < AFC_MIN_LEVEL || err_hz.abs() < AFC_DEADBAND_HZ {
+            return;
+        }
+        self.afc_hz = (self.afc_hz + AFC_GAIN * err_hz).clamp(-AFC_MAX_HZ, AFC_MAX_HZ);
+        self.demod.set_center(self.rx_center());
+        self.meter.set_band(self.rx_center(), self.cfg.shift_hz);
     }
 
     // ---------------------------------------------------------------- un campione
@@ -831,6 +975,9 @@ impl Decoder {
 
     fn end_rx(&mut self) {
         self.image = None;
+        // lo squelch riparte solo dopo che il segnale e' sparito (il tono di stop o la portante dopo l'immagine non ne aprono un'altra)
+        self.sql_armed = false;
+        self.sql_open = 0;
         self.state = if self.cfg.manual { Fs::Image } else { Fs::AptStart };
         self.reset_counters();
     }
@@ -1012,6 +1159,7 @@ fn reason_of(extra: &str) -> &'static str {
         "max" => "max_rows",
         "manual" => "manual",
         "nocorr" => "no_signal",
+        "squelch" => "squelch",
         s if s.starts_with("garbage") => "garbage",
         _ => "stop",
     }

@@ -61,6 +61,12 @@ pub struct WefaxSettings {
     pub correlation: f32,
     /// Cartella delle cartine (vuota: `wefax` nella cartella dei dati).
     pub folder: String,
+    /// AFC: la sottoportante di ricezione segue il segnale se la radio e' sintonizzata un po' fuori.
+    pub afc: bool,
+    /// Squelch (SQL): l'immagine parte quando il segnale supera `squelch_level` e si chiude quando sparisce per 3 secondi.
+    pub squelch: bool,
+    /// Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore).
+    pub squelch_level: f32,
 }
 
 impl Default for WefaxSettings {
@@ -82,6 +88,9 @@ impl Default for WefaxSettings {
             max_rows: d.max_rows,
             correlation: d.correlation,
             folder: String::new(),
+            afc: d.afc,
+            squelch: d.squelch,
+            squelch_level: d.squelch_level,
         }
     }
 }
@@ -110,6 +119,9 @@ impl WefaxSettings {
         if !self.correlation.is_finite() || !(0.01..=0.5).contains(&self.correlation) {
             return bad("soglia di correlazione tra 0,01 e 0,5");
         }
+        if !self.squelch_level.is_finite() || !(0.0..=100.0).contains(&self.squelch_level) {
+            return bad("soglia dello squelch tra 0 e 100");
+        }
         Ok(())
     }
 
@@ -127,6 +139,9 @@ impl WefaxSettings {
             slant_ppm: self.slant_ppm,
             max_rows: self.max_rows,
             correlation: self.correlation,
+            afc: self.afc,
+            squelch: self.squelch,
+            squelch_level: self.squelch_level,
             ..DecoderConfig::default()
         }
     }
@@ -147,6 +162,10 @@ pub struct RxStatus {
     /// Correlazione media tra righe (0..1).
     pub sync: f32,
     pub level_db: f32,
+    /// Livello del segnale per lo squelch (0..100).
+    pub signal: f32,
+    /// Correzione dell'AFC (Hz sopra la sottoportante delle impostazioni).
+    pub afc_hz: f32,
     /// L'ultima immagine salvata.
     pub last_image: Option<String>,
     /// Come e' partita l'immagine in corso o l'ultima: `phasing`, `no_phasing`, `manual`, `forced`.
@@ -456,6 +475,8 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
             {
                 let mut st = lock(&inner.rx);
                 st.level_db = decoder.level_db();
+                st.signal = decoder.signal_level();
+                st.afc_hz = decoder.afc_hz();
                 st.receiving = decoder.is_receiving();
                 st.sync = decoder.correlation();
                 st.state = decoder.rx_state().into();
@@ -568,5 +589,18 @@ mod tests {
         assert_eq!(again.settings(), s);
         assert_eq!(again.snapshot().rx.width, 904);
         let _ = std::fs::remove_dir_all(&data);
+    }
+
+    #[test]
+    fn le_impostazioni_vecchie_senza_afc_ne_squelch_si_leggono() {
+        let old = r#"{"ioc":576,"lpm_576":120,"lpm_288":60,"filter":"narrow","manual":false,"center_hz":1900.0,"shift_hz":800.0}"#;
+        let s: WefaxSettings = serde_json::from_str(old).expect("impostazioni vecchie");
+        assert!(s.afc);
+        assert!(!s.squelch);
+        assert_eq!(s.squelch_level, 30.0);
+        assert!(s.validate().is_ok());
+        let mut bad = s.clone();
+        bad.squelch_level = 120.0;
+        assert!(bad.validate().is_err());
     }
 }
