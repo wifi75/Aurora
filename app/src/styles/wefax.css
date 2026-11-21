@@ -88,6 +88,8 @@
 .wefax-page .sstv-head { flex-wrap: nowrap; gap: 0.6rem; min-width: 0; }
 .wefax-page .sstv-head h1 { flex: 0 0 auto; }
 .wefax-freq { width: 12.5rem; max-width: 12.5rem; min-width: 0; text-overflow: ellipsis; flex: 0 1 12.5rem; }
+.wefax-step { display: inline-flex; gap: 0.25rem; flex: 0 0 auto; }
+.wefax-step-btn { min-height: 34px; min-width: 2rem; padding: 0 0.45rem; font-size: 0.7rem; line-height: 1; }
 .wefax-mini { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; min-width: 0; flex: 0 1 auto; }
 .wefax-mini .rd-compact { flex: 0 1 auto; min-width: 0; }
 .wefax-mini-wf { position: relative; flex: 0 0 auto; width: 15rem; height: 2.6rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #05070d; }

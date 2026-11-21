@@ -125,6 +125,8 @@ export const wefaxStrings = {
   'wefax.hist.confirm': ['Cancellare questa cartina? Non si può annullare.', 'Delete this chart? This cannot be undone.', 'Diese Karte löschen? Das lässt sich nicht rückgängig machen.', 'Supprimer cette carte ? Action irréversible.', '¿Borrar este mapa? No se puede deshacer.', 'Apagar esta carta? Não se pode anular.'],
   'wefax.hist.close': ['Chiudi', 'Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar'],
   'wefax.hist.partial': ['Parziale', 'Partial', 'Teilweise', 'Partielle', 'Parcial', 'Parcial'],
+  'wefax.freq.up': ['Frequenza più alta dell’elenco', 'Next higher frequency in the list', 'Nächsthöhere Frequenz der Liste', 'Fréquence supérieure de la liste', 'Frecuencia superior de la lista', 'Frequência mais alta da lista'],
+  'wefax.freq.down': ['Frequenza più bassa dell’elenco', 'Next lower frequency in the list', 'Nächstniedrigere Frequenz der Liste', 'Fréquence inférieure de la liste', 'Frecuencia inferior de la lista', 'Frequência mais baixa da lista'],
   'wefax.freq.label': ['Stazione e frequenza', 'Station and frequency', 'Station und Frequenz', 'Station et fréquence', 'Estación y frecuencia', 'Estação e frequência'],
   'wefax.freq.choose': ['Scegli una frequenza…', 'Choose a frequency…', 'Frequenz wählen…', 'Choisir une fréquence…', 'Elegir una frecuencia…', 'Escolher uma frequência…'],
   'wefax.freq.band': ['{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz', '{mhz} MHz'],

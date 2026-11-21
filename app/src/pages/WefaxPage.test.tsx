@@ -19,7 +19,7 @@ vi.mock('../api/client', () => ({
   deleteWefaxImage: vi.fn(() => Promise.resolve()),
   wefaxImageUrl: vi.fn((id: string) => `/api/v1/wefax/images/${id}`),
 }));
-import { getWefax, getWefaxImages, putWefax, wefaxRx } from '../api/client';
+import { getWefax, getWefaxImages, postFrequency, putWefax, wefaxRx } from '../api/client';
 import { WefaxPage } from './WefaxPage';
 
 const SNAP: WefaxSnapshot = {
@@ -70,6 +70,23 @@ describe('WefaxPage AFC e SQL', () => {
     expect(putWefax).toHaveBeenCalledWith(expect.objectContaining({ squelch: true, afc: true }));
     fireEvent.click(afc);
     expect(putWefax).toHaveBeenCalledWith(expect.objectContaining({ afc: false }));
+    unmount();
+  });
+});
+
+describe('WefaxPage frecce delle frequenze', () => {
+  it('le frecce passano alla frequenza piu alta e piu bassa dell elenco e la radio ci va (portante 1,9 kHz sotto)', async () => {
+    window.localStorage.setItem('aurora.wefax.lastPreset', 'DDH3 · DDK3 · DDK6-3855');
+    const { unmount } = page();
+    const up = await screen.findByRole('button', { name: 'Frequenza più alta dell’elenco' });
+    const down = screen.getByRole('button', { name: 'Frequenza più bassa dell’elenco' });
+    vi.mocked(postFrequency).mockClear();
+    fireEvent.click(up);
+    // l'elenco ordinato per frequenza: dopo 3855 kHz viene 4228 kHz (CBV)
+    expect(vi.mocked(postFrequency).mock.calls[0]).toEqual([4_228_000 - 1_900, true]);
+    vi.mocked(postFrequency).mockClear();
+    fireEvent.click(down);
+    expect(vi.mocked(postFrequency).mock.calls[0]?.[0]).toBeLessThan(4_228_000 - 1_900);
     unmount();
   });
 });

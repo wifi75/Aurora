@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX: due frecce (su e giu') accanto al selettore delle frequenze per passare alla frequenza piu' alta o piu' bassa dell'elenco senza aprire il menu; la radio ci va, si impostano IOC e righe al minuto della stazione e la scelta si ricorda.
+
 ## 0.11.322 - 2026-11-21
 
 - Satelliti, IC-820H con il Sub spento (#83): se `V Sub` e' rifiutato dalla radio (-9) Aurora non scrive piu' la frequenza di trasmissione sul «Main», che in quel caso e' la banda di ricezione: prima la ricezione 435,63 veniva sovrascritta con 145,96 e la radio restava su 145,96. Ora dice «il Sub della radio e' spento: accendilo per trasmettere sul secondo VFO» e la ricezione resta dov'e'; il Doppler segue la ricezione.

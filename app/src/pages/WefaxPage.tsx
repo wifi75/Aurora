@@ -99,6 +99,25 @@ function WefaxBody({ solo }: { solo: boolean }) {
     void putWefax({ ...s, ioc: p.ioc, [key]: p.lpm }).then(() => snap.refetch(), () => undefined);
   };
 
+  // una stazione scelta (dal menu o con le frecce): la radio ci va, la scelta si ricorda e si impostano IOC e righe al minuto
+  const selectPreset = (p: WefaxPreset) => {
+    setChosen(p.id);
+    saveWefaxId(p.id);
+    // la frequenza di adesso (se e' in una banda radioamatoriale) si ricorda: lasciando il WEFAX la radio torna li'
+    rememberDialBeforeReceiveOnly(dialHz);
+    void postFrequency(p.dialHz, true).catch(() => undefined);
+    applyTransmission(p);
+  };
+  // le frecce passano alla frequenza piu' alta o piu' bassa dell'elenco (ordinato per frequenza): cambio rapido senza aprire il menu
+  const ordered = [...groups.flatMap((g) => g.presets)].sort((a, b) => a.khz - b.khz || a.call.localeCompare(b.call));
+  const nowId = current?.id ?? chosen;
+  const nowIdx = ordered.findIndex((x) => x.id === nowId);
+  const step = (d: 1 | -1) => {
+    const base = nowIdx >= 0 ? nowIdx : d === 1 ? -1 : ordered.length;
+    const p = ordered[base + d];
+    if (p) selectPreset(p);
+  };
+
   // entrando nella pagina la radio torna sulla frequenza WEFAX dell'ultima volta (la banda di prima si ricorda per l'uscita)
   const restored = useRef(false);
   useEffect(() => {
@@ -146,14 +165,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
           title={t('wefax.freq.tip')}
           onChange={(e) => {
             const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
-            if (p) {
-              setChosen(p.id);
-              saveWefaxId(p.id);
-              // la frequenza di adesso (se e' in una banda radioamatoriale) si ricorda: lasciando il WEFAX la radio torna li'
-              rememberDialBeforeReceiveOnly(dialHz);
-              void postFrequency(p.dialHz, true).catch(() => undefined);
-              applyTransmission(p);
-            }
+            if (p) selectPreset(p);
           }}
         >
           <option value="" disabled>
@@ -169,6 +181,14 @@ function WefaxBody({ solo }: { solo: boolean }) {
             </optgroup>
           ))}
         </select>
+        <span className="wefax-step" role="group" aria-label={t('wefax.freq.label')}>
+          <button type="button" className="glass wefax-step-btn" title={t('wefax.freq.up')} aria-label={t('wefax.freq.up')} disabled={nowIdx >= 0 && nowIdx >= ordered.length - 1} onClick={() => step(1)}>
+            ▲
+          </button>
+          <button type="button" className="glass wefax-step-btn" title={t('wefax.freq.down')} aria-label={t('wefax.freq.down')} disabled={nowIdx === 0} onClick={() => step(-1)}>
+            ▼
+          </button>
+        </span>
         {/* i comandi dello zoom del visore arrivano qui (stessa riga) */}
         <div id="wefax-toolbar-slot" className="wefax-toolbar-slot" />
         {data ? <AfcSql snap={data} onChanged={refresh} /> : null}
