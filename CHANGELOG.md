@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, pagina rifatta a schede (stile RTT) e centrata: cartina in arrivo in alto, spettro e cascata a sinistra in basso (senza scala in Hz, a filo del bordo), cartine ricevute a destra in miniature quadrate con frecce per scorrere, scheda «Ricezione» fino al bordo basso; niente barra di scorrimento nell'immagine vuota.
+
 - WEFAX: tolti i pulsanti «Adatta» e «1:1»: la cartina si vede sempre a pixel reali (100 %), e i pulsanti − e + restano per cambiare la scala; la pagina ha una larghezza massima (visore e fascia in basso non si allargano oltre 68 rem) con i comandi accanto.
 
 - WEFAX, cartine ricevute a griglia: 6 miniature per riga e 2 righe visibili (si scorre se sono di piu'), con i tre pulsantini (apri, scarica, cancella) in alto a destra sopra ogni miniatura e la data corta in basso a sinistra; un clic sulla miniatura la apre in grande.

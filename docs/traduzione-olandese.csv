@@ -4320,6 +4320,11 @@ wefax.hist.title,Received charts,Ontvangen kaarten
 wefax.hist.empty,No charts received yet,Nog geen kaarten ontvangen
 wefax.hist.open,Open,Openen
 wefax.hist.download,Download PNG,PNG downloaden
+wefax.card.view,Incoming chart,Kaart in ontvangst
+wefax.card.scope,Spectrum and waterfall,Spectrum en waterval
+wefax.card.rx,Reception,Ontvangst
+wefax.hist.prev,Charts to the left,Kaarten naar links
+wefax.hist.next,Charts to the right,Kaarten naar rechts
 wefax.hist.delete,Delete,Verwijderen
 wefax.hist.confirm,Delete this chart? This cannot be undone.,Deze kaart verwijderen? Dit kan niet ongedaan worden gemaakt.
 wefax.hist.close,Close,Sluiten

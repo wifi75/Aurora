@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getWefax, getWefaxImages, postFrequency, putWefax, wefaxRx, wefaxRxPage } from '../api/client';
 import { DetachButton } from '../components/DetachButton';
 import { DetachedNote } from '../components/DetachedNote';
@@ -43,6 +43,16 @@ function saveWefaxId(id: string): void {
 }
 
 /** La pagina WEFAX: ricezione delle cartine meteo (visore adattabile allo schermo, comandi, cronologia). Solo ricezione. */
+/** Una scheda con titolo, bordo e sfondo come quelle delle altre pagine (modi testuali, Satelliti). */
+function Card({ title, className = '', children }: { title: string; className?: string; children: ReactNode }) {
+  return (
+    <section className={`wefax-card ${className}`}>
+      <h2 className="wefax-card-title">{title}</h2>
+      <div className="wefax-card-body">{children}</div>
+    </section>
+  );
+}
+
 export function WefaxPage({ solo = false }: { solo?: boolean } = {}) {
   const groups = useGroups();
   const elsewhere = groups.some((g) => g.open && g.items.includes('wefax'));
@@ -84,6 +94,29 @@ function WefaxBody({ solo }: { solo: boolean }) {
   const rx = data?.rx;
   const badge = rx?.receiving ? 'receiving' : rx?.listening ? 'listening' : 'off';
 
+  // il corpo della pagina prende tutta l'altezza che resta nella finestra (sotto la testata della pagina e sopra il pie' di pagina dell'app): niente
+  // scorrimento della pagina e niente fasce tagliate in fondo, con qualunque dimensione di finestra e scala del testo
+  const bodyBox = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = bodyBox.current;
+      if (!el) return;
+      const zoomText = getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom').trim();
+      const zoom = Number.parseFloat(zoomText) > 0 ? Number.parseFloat(zoomText) : 1;
+      const footer = document.querySelector('footer');
+      const footerH = footer ? footer.getBoundingClientRect().height : 0;
+      const top = el.getBoundingClientRect().top;
+      const free = (window.innerHeight - footerH - top) / zoom - 8;
+      el.style.height = `${Math.max(300, Math.floor(free))}px`;
+    };
+    fit();
+    const id = window.setTimeout(fit, 400);
+    window.addEventListener('resize', fit);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener('resize', fit);
+    };
+  });
   const dialHz = useStation((x) => x.status?.dial_hz ?? 0);
   // la scelta resta visibile anche se la radio non ha ancora (o non puo') cambiare frequenza
   const [chosen, setChosen] = useState(() => lastWefaxId());
@@ -178,13 +211,15 @@ function WefaxBody({ solo }: { solo: boolean }) {
 
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
       {data ? (
-        <div className="wefax-body">
+        <div className="wefax-body" ref={bodyBox}>
           <div className="wefax-main">
             {/* in alto: la cartina in arrivo */}
-            <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
+            <Card title={t('wefax.card.view')} className="wefax-card--view">
+              <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
+            </Card>
             {/* sotto, diviso in due alla stessa altezza: a sinistra spettro e cascata, a destra le cartine ricevute (miniature intere, un clic le apre in grande, pulsanti piccoli per scaricare e cancellare) */}
             <div className="wefax-band">
-              <div className="wefax-band-scope">
+              <Card title={t('wefax.card.scope')} className="wefax-band-scope">
                 <WefaxScope
                   centerHz={data.settings.center_hz}
                   shiftHz={data.settings.shift_hz}
@@ -193,7 +228,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
                     if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
                   }}
                 />
-              </div>
+              </Card>
               <div className="wefax-band-hist">
                 <History images={images.data ?? []} onChanged={refreshImages} />
               </div>
@@ -201,7 +236,9 @@ function WefaxBody({ solo }: { solo: boolean }) {
           </div>
           {/* a destra: i comandi */}
           <div className="wefax-right">
-            <Controls snap={data} onChanged={refresh} onListen={onListen} />
+            <Card title={t('wefax.card.rx')} className="wefax-card--rx">
+              <Controls snap={data} onChanged={refresh} onListen={onListen} />
+            </Card>
           </div>
         </div>
       ) : null}

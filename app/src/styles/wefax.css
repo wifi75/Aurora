@@ -305,3 +305,52 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 .wefax-body { grid-template-columns: minmax(0, 68rem) minmax(190px, 230px); justify-content: start; }
 @media (max-width: 1100px) { .wefax-body { grid-template-columns: minmax(0, 1fr) minmax(180px, 220px); } }
 @media (max-width: 900px) { .wefax-body { grid-template-columns: minmax(0, 1fr); } }
+
+/* cartine ricevute: miniature QUADRATE in una riga che scorre, con i pulsanti ‹ › a sinistra e a destra (si leggono meno cartine insieme, ma intere e senza allungamenti) */
+.wefax-band-hist .wefax-thumbs-wrap { display: flex; align-items: stretch; gap: 0.25rem; flex: 1 1 0; min-height: 0; }
+.wefax-band-hist .wefax-thumbs-arrow { flex: 0 0 1.3rem; width: 1.3rem; padding: 0; font-size: 1.1rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+.wefax-band-hist .wefax-thumbs-arrow:disabled { opacity: 0.35; }
+.wefax-band-hist .wefax-thumbs { display: flex; flex-direction: row; grid-template-columns: none; grid-auto-rows: auto; flex: 1 1 0; min-width: 0; min-height: 0; gap: 0.4rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; align-items: stretch; }
+.wefax-band-hist .wefax-thumb { flex: 0 0 auto; height: 100%; width: auto; aspect-ratio: 1 / 1; scroll-snap-align: start; }
+
+/* le schede come nelle altre pagine (modi testuali, Satelliti): titolo, bordo viola tenue, sfondo sfumato, angoli grandi e ombra */
+.wefax-card, .wefax-band-hist .wefax-history { border: 1px solid color-mix(in srgb, var(--border) 70%, #8e7bff 30%); background: linear-gradient(160deg, color-mix(in srgb, var(--panel) 92%, #1a2c55 8%), color-mix(in srgb, var(--panel) 96%, #0a1730 4%)); border-radius: 14px; box-shadow: 0 8px 22px -14px rgba(0, 0, 0, 0.7); box-sizing: border-box; }
+.wefax-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0.3rem 0.5rem 0.5rem; }
+.wefax-card-title { margin: 0 0 0.25rem; flex: none; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.03em; color: var(--text-muted); line-height: 1.2; }
+.wefax-card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.wefax-card--view { flex: 1 1 0; }
+.wefax-card--view .wefax-card-body > .wefax-viewer { flex: 1 1 0; min-height: 0; }
+.wefax-card--view .wefax-box { border: 0; background: #1b2230; border-radius: 10px; }
+.wefax-band-scope.wefax-card .wefax-card-body { padding: 0; }
+.wefax-band-scope .wefax-scope { flex: 1 1 auto; border: 0; border-radius: 8px; }
+.wefax-band { height: 10.4rem; }
+.wefax-band-hist .wefax-history { padding: 0.3rem 0.5rem 0.5rem; }
+.wefax-card--rx { padding: 0.3rem 0.4rem 0.4rem; }
+.wefax-card--rx .wefax-side { border: 0; background: transparent; box-shadow: none; padding: 0; }
+
+/* frecce per scorrere le miniature: due pulsanti rotondi che galleggiano sopra i bordi della riga (non tolgono spazio), spariscono quando non c'e' altro da vedere da quel lato */
+.wefax-band-hist .wefax-thumbs-wrap { position: relative; }
+.wefax-band-hist .wefax-thumbs-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 3; flex: none; width: 1.7rem; height: 1.7rem; min-width: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--text, #e6edf7); border: 1px solid color-mix(in srgb, var(--border) 50%, #8e7bff 50%); background: color-mix(in srgb, var(--panel, #10151f) 92%, #000 8%); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55); transition: background 0.12s, opacity 0.12s, transform 0.12s; }
+.wefax-band-hist .wefax-thumbs-arrow--prev { left: 0.2rem; }
+.wefax-band-hist .wefax-thumbs-arrow--next { right: 0.2rem; }
+.wefax-band-hist .wefax-thumbs-arrow:hover:not(:disabled) { background: color-mix(in srgb, #8e7bff 55%, var(--panel, #10151f)); transform: translateY(-50%) scale(1.08); }
+.wefax-band-hist .wefax-thumbs-arrow:focus-visible { outline: 2px solid #8e7bff; outline-offset: 1px; }
+.wefax-band-hist .wefax-thumbs-arrow:disabled { opacity: 0; pointer-events: none; }
+
+/* niente barra di scorrimento sotto le miniature: bastano le frecce (e la rotella/dito) */
+.wefax-band-hist .wefax-thumbs { scrollbar-width: none; -ms-overflow-style: none; }
+.wefax-band-hist .wefax-thumbs::-webkit-scrollbar { display: none; height: 0; }
+
+/* tutto centrato nello schermo: testata e corpo hanno la stessa larghezza massima (68rem + colonna comandi) e stanno al centro */
+.wefax-page:not(.sstv-page--solo) { max-width: 82rem; width: 100%; margin-left: auto; margin-right: auto; }
+.wefax-body { grid-template-columns: minmax(0, 1fr) minmax(190px, 230px); justify-content: stretch; }
+/* la scheda «Ricezione» arriva in basso fino al bordo della cascata e delle cartine */
+.wefax-right { display: flex; flex-direction: column; height: 100%; min-height: 0; max-height: 100%; overflow: hidden; }
+.wefax-right > .wefax-card--rx { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.wefax-right > .wefax-card--rx > .wefax-card-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+/* spettro e cascata riempiono tutta la scheda fino al bordo: lo spettro prende lo spazio che resta, la cascata ha altezza fissa e non si schiaccia */
+.wefax-band-scope.wefax-card .wefax-card-body { display: flex; flex-direction: column; min-height: 0; }
+.wefax-band-scope .wefax-scope { flex: 1 1 auto; min-height: 0; height: auto; }
+.wefax-band-scope .wefax-scope .digi-wf { flex: 0 0 44px; height: 44px !important; }
+.wefax-band-scope .wefax-scope .digi-wf-flow { height: 100%; }

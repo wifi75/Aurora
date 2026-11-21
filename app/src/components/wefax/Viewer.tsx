@@ -164,7 +164,8 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
     <div className="wefax-viewer">
       {slot ? createPortal(toolbar, slot) : toolbar}
       <div className="wefax-box" ref={box} data-testid="wefax-box">
-        <div className="wefax-sheet" style={{ width: Math.round(size.w * scale), height: Math.max(1, Math.round(shownRows * scale)) }}>
+        {/* senza righe il foglio non ha dimensioni: niente linea bianca in alto e niente barre di scorrimento a vuoto */}
+        <div className="wefax-sheet" style={{ width: shownRows === 0 ? 0 : Math.round(size.w * scale), height: shownRows === 0 ? 0 : Math.max(1, Math.round(shownRows * scale)) }}>
           <canvas
             ref={canvas}
             width={size.w}

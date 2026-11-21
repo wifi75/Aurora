@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteWefaxImage, wefaxImageUrl, type WefaxImageEntry } from '../../api/client';
 import { useT } from '../../i18n';
 import { askConfirm } from '../ConfirmHost';
@@ -21,6 +21,26 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
   const t = useT();
   const [open, setOpen] = useState<WefaxImageEntry | null>(null);
   const sorted = [...images].sort((a, b) => b.time_ms - a.time_ms);
+  // le miniature sono quadrate in una riga sola che scorre: due pulsanti ‹ › portano a sinistra e a destra di una pagina alla volta
+  const strip = useRef<HTMLUListElement | null>(null);
+  const [edge, setEdge] = useState({ left: false, right: false });
+  const measure = useCallback(() => {
+    const el = strip.current;
+    if (!el) return;
+    setEdge({ left: el.scrollLeft > 2, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+  }, []);
+  useEffect(() => {
+    measure();
+    const el = strip.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure, sorted.length]);
+  const slide = (dir: -1 | 1) => {
+    const el = strip.current;
+    if (el) el.scrollBy({ left: dir * Math.max(80, el.clientWidth * 0.85), behavior: 'smooth' });
+  };
 
   const remove = async (img: WefaxImageEntry) => {
     if (!(await askConfirm(t('wefax.hist.confirm')))) return;
@@ -36,7 +56,13 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
         <span className="sstv-count">{sorted.length}</span>
       </div>
       {sorted.length === 0 ? <p className="sstv-hint">{t('wefax.hist.empty')}</p> : null}
-      <ul className="wefax-thumbs">
+      <div className="wefax-thumbs-wrap">
+      <button type="button" className="wefax-thumbs-arrow wefax-thumbs-arrow--prev" onClick={() => slide(-1)} disabled={!edge.left} title={t('wefax.hist.prev')} aria-label={t('wefax.hist.prev')}>
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <ul className="wefax-thumbs" ref={strip} onScroll={measure}>
         {sorted.map((img) => (
           <li key={img.id} className="wefax-thumb" title={when(img.time_ms)}>
             {/* la cartina intera; un clic la apre in grande */}
@@ -61,6 +87,12 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
           </li>
         ))}
       </ul>
+      <button type="button" className="wefax-thumbs-arrow wefax-thumbs-arrow--next" onClick={() => slide(1)} disabled={!edge.right} title={t('wefax.hist.next')} aria-label={t('wefax.hist.next')}>
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      </div>
       {open ? <Lightbox entry={open} onClose={() => setOpen(null)} onDelete={() => void remove(open)} /> : null}
     </section>
   );

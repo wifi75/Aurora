@@ -141,13 +141,13 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
     const c = flow.current;
     if (!c) return;
     c.width = width;
-    c.height = height - SCALE_H;
+    c.height = height - (hideScale ? 0 : SCALE_H);
     const ctx = c.getContext('2d');
     if (ctx) {
       ctx.fillStyle = '#000040';
       ctx.fillRect(0, 0, c.width, c.height);
     }
-  }, [width, height]);
+  }, [width, height, hideScale]);
 
   useEffect(
     () =>

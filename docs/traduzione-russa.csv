@@ -4320,6 +4320,11 @@ wefax.hist.title,Received charts,Принятые карты
 wefax.hist.empty,No charts received yet,Карт пока не принято
 wefax.hist.open,Open,Открыть
 wefax.hist.download,Download PNG,Скачать PNG
+wefax.card.view,Incoming chart,Принимаемая карта
+wefax.card.scope,Spectrum and waterfall,Спектр и водопад
+wefax.card.rx,Reception,Приём
+wefax.hist.prev,Charts to the left,Карты левее
+wefax.hist.next,Charts to the right,Карты правее
 wefax.hist.delete,Delete,Удалить
 wefax.hist.confirm,Delete this chart? This cannot be undone.,Удалить эту карту? Это нельзя отменить.
 wefax.hist.close,Close,Закрыть

@@ -141,8 +141,8 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
       </div>
       <p className="sstv-hint">{t('wefax.rx.forceHint')}</p>
 
-      {/* le impostazioni stanno chiuse: la scheda resta piccola e le cartine ricevute hanno piu' spazio */}
-      <details className="wefax-set-details">
+      {/* le impostazioni sono visibili ma compatte; con un clic sul titolo si chiudono e la scheda diventa ancora piu' piccola */}
+      <details className="wefax-set-details" open>
       <summary>{t('wefax.set.title')}</summary>
       <fieldset className="wefax-set">
         <div className="wefax-grid">

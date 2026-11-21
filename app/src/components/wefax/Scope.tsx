@@ -9,7 +9,7 @@ import '../../styles/digi.css';
 export const SCOPE_MIN_HZ = 1000;
 export const SCOPE_MAX_HZ = 3000;
 /** La cascata colorata e' bassa (la scala in Hz e' nascosta e si somma ai 22 px che la scala occuperebbe): conta di piu' la curva che si muove. */
-const WATERFALL_H = 36 + 22;
+const WATERFALL_H = 44;
 
 /** Colori dal tema (lo spettro segue il chiaro e lo scuro dell'app). */
 function themeColor(el: Element, name: string, fallback: string): string {
