@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.322',
-    released: '2026-11-21T09:00:00Z',
+    released: '2026-11-21T08:08:07Z',
     kind: 'new',
     title: [
       'WEFAX: spettro dell’audio, AFC e SQL',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.322',
-    released: '2026-11-21T09:00:00Z',
+    released: '2026-11-21T08:08:07Z',
     kind: 'changed',
     title: [
       'WEFAX: la stazione imposta anche IOC e righe al minuto',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.322',
-    released: '2026-11-21T09:00:00Z',
+    released: '2026-11-21T08:08:07Z',
     kind: 'fixed',
     title: [
       'Satelliti, IC-820H con il Sub spento: la ricezione non si perde più',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.322',
-    released: '2026-11-21T09:00:00Z',
+    released: '2026-11-21T08:08:07Z',
     kind: 'changed',
     title: [
       'Satelliti, IC-820H: la frequenza di trasmissione si rilegge e finisce nel registro',
