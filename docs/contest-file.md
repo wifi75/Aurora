@@ -161,7 +161,7 @@ con un parametro; quelle che mancano lasciano la parte di `[Score]`:
 | Funzione | Restituisce | Sostituisce |
 |---|---|---|
 | `punti(qso)` | intero | i punti del QSO (regole `points`, `points_band`, `bonus`) |
-| `moltiplicatori(qso)` | elenco di chiavi, `["dxcc:" + qso.dxcc + "@" + qso.band]` (la parte dopo `@` e' la banda della griglia) | i moltiplicatori di `mult`: ogni chiave nuova conta 1 |
+| `moltiplicatori(qso)` | elenco di chiavi, `["dxcc:" + qso.dxcc + "@" + qso.band]` (la parte dopo `@` e' la banda della griglia) | i moltiplicatori di `mult`: ogni chiave nuova conta 1, quella con la banda il peso di `mult_band` per quella banda (WAE: 80 m x4) |
 | `ammesso(qso)` | `true`, `false` o `[false, "motivo"]` | `bands` e `valid` |
 | `punteggio(totali)` | intero | il punteggio finale |
 | `turno(qso)` | testo | niente: il turno entra nella chiave dei doppi, la stessa stazione in un altro turno non e' un doppio (`"1"`, `"2"`) |

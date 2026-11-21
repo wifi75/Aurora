@@ -241,7 +241,7 @@ Regolamenti letti il 2026-11-15. Prove in `core/crates/contest/tests/regole_cont
 
 Approssimati:
 - RDXC e Ukrainian DX: i paesi WAE non sono distinti dal DXCC; le stazioni /MM e RI1FJ/RI1AN non sono riconosciute.
-- WAEDC CW-SSB: l'elenco WAE non e' distinto dal DXCC.
+- WAEDC CW-SSB: l'elenco WAE non e' distinto dal DXCC (lo e' nelle cartelle `contest/WAE DX Contest CW` e `RTTY`, che pero' non sostituiscono i vecchi file).
 
 Tolti perche' non piu' organizzati (ultima edizione o regolamento prima del 2024, o contest sospeso): RememberSK, SA_Sprint, SSTV,
 Sumy, TARA Skirmish, TARA-Grid-Dip, TARA-Rumble, Taras 200, Triathlon DX, UBA Low Band Winter, UBA-Millcontest (BMA), UCC Party,

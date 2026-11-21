@@ -63,7 +63,7 @@ nome = "dipartimento"
 etichetta_it = "Dipartimento"
 etichetta_en = "Department"
 tipo = "testo"
-quando = "dxcc:F,TK"
+quando = "dxcc:F,TK,FG,FH,FJ,FK,FM,FO,FP,FR,FS,FW,FY"
 nota = "Numero del dipartimento (01-95, Corsica 2A o 2B), 00 per F6REF; l'oltremare manda il prefisso (FM, FR...)."
 
 [[scambio.ricevuto]]
@@ -71,7 +71,7 @@ nome = "numero"
 etichetta_it = "Numero"
 etichetta_en = "Serial number"
 tipo = "numero"
-quando = "not_dxcc:F,TK"
+quando = "not_dxcc:F,TK,FG,FH,FJ,FK,FM,FO,FP,FR,FS,FW,FY"
 nota = "Stranieri e /MM: numero da 001 (000 se lo straniero manda un gruppo di altro formato)."
 
 [[scambio.inviato]]
@@ -87,7 +87,7 @@ nome = "numero"
 etichetta_it = "Numero"
 etichetta_en = "Serial number"
 tipo = "numero"
-quando = "not_my_dxcc:F,TK"
+quando = "not_my_dxcc:F,TK,FG,FH,FJ,FK,FM,FO,FP,FR,FS,FW,FY"
 progressivo = true
 nota = "Gli stranieri mandano il numero da 001; i francesi mandano il dipartimento (si scrive in «Numero di partenza» e si spegne l'incremento)."
 
@@ -130,7 +130,7 @@ ordine = 2
 moltiplicatore = "dxcc"
 per_banda = true
 per_modo = false
-quando = "my_dxcc:F,TK"
+quando = "my_dxcc:F,TK,FG,FH,FJ,FK,FM,FO,FP,FR,FS,FW,FY"
 
 [[scheda]]
 tipo = "statistiche"
