@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Aggiornamenti, controllo di Aurora: se l'API di GitHub risponde con un errore (limite di 60 richieste all'ora per indirizzo, rete aziendale, filtri, 5xx) Aurora prova la pagina «latest», che non ha quel limite, e ne legge il numero della versione dal reindirizzamento, cosi' la cartolina «Aurora X e' pronta» compare lo stesso (senza le note); il motivo dell'errore va nel registro dell'agente (`aurora-agente.log`). Prima compariva «Controllo non riuscito» per qualunque errore.
+
 ## 0.11.328 - 2026-11-21
 
 - IC-820H, trasmissione dei satelliti con trame CI-V dirette (#83): le trame ora passano da `rigctld` con `W` e il numero esatto di byte da leggere (eco piu' risposta, e senza eco la sola risposta); con `w` Hamlib non aveva un terminatore per le Icom e andava in timeout, e la prova di sicurezza falliva gia' alla prima lettura. Nel pacchetto di assistenza (`radio.json` > `ic820h_civ`) il metodo usato e i byte inviati e ricevuti di ogni passo.

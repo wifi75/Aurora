@@ -761,6 +761,43 @@ fn get_json(url: &str) -> Option<serde_json::Value> {
     response.body_mut().read_json::<serde_json::Value>().ok()
 }
 
+/// L'ultima release: prima l'API di GitHub (con le note); se risponde con un errore (limite di richieste per indirizzo, 60 all'ora senza
+/// accesso e spesso condiviso in una rete aziendale, filtri di rete, 5xx) si prova la pagina «latest», che non ha quel limite, e se ne legge
+/// il numero dal reindirizzamento. Senza note: la cartolina mostra comunque «Aurora X e' pronta». Il motivo dell'errore va nel registro.
+fn latest_release() -> Option<serde_json::Value> {
+    match agent().get(REPO_API).header("User-Agent", "Aurora-agente").header("Accept", "application/json").call() {
+        Ok(mut response) => match response.body_mut().read_json::<serde_json::Value>() {
+            Ok(v) => return Some(v),
+            Err(e) => agent_log(&format!("controllo degli aggiornamenti: risposta dell'API illeggibile: {e}")),
+        },
+        Err(e) => agent_log(&format!("controllo degli aggiornamenti: l'API di GitHub risponde con un errore: {e}")),
+    }
+    let tag = latest_tag_from_redirect()?;
+    agent_log(&format!("controllo degli aggiornamenti: numero letto dalla pagina latest ({tag})"));
+    Some(serde_json::json!({ "tag_name": tag, "body": "" }))
+}
+
+/// Il numero dell'ultima release dal reindirizzamento di `releases/latest` (`.../releases/tag/v0.11.328`).
+fn latest_tag_from_redirect() -> Option<String> {
+    let a: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(Duration::from_secs(15)))
+        .max_redirects(0)
+        .max_redirects_will_error(false)
+        .http_status_as_error(false)
+        .build()
+        .into();
+    let response = a.get("https://github.com/wifi75/Aurora/releases/latest").header("User-Agent", "Aurora-agente").call().ok()?;
+    let location = response.headers().get("location")?.to_str().ok()?.to_string();
+    tag_from_location(&location)
+}
+
+/// «https://github.com/wifi75/Aurora/releases/tag/v0.11.328» -> «v0.11.328» (solo caratteri da numero di versione).
+fn tag_from_location(location: &str) -> Option<String> {
+    let rest = location.split("/releases/tag/").nth(1)?;
+    let tag: String = rest.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-' || *c == '_').collect();
+    (tag.trim_start_matches('v').chars().next().is_some_and(|c| c.is_ascii_digit())).then_some(tag)
+}
+
 /// Il controllo: versione nuova (sempre, scelta del proprietario) e messaggi dell'autore. `asked`: dal menu, mostra anche «aggiornata».
 fn check(app: &AppHandle, asked: bool) {
     // la cartolina della versione nuova non si dimentica: compare a ogni avvio del tray (primo controllo riuscito) e poi ogni 6 ore finche' Aurora non e' aggiornata
@@ -771,7 +808,7 @@ fn check(app: &AppHandle, asked: bool) {
     let mut seen = load_seen();
     let open = aurora_open();
     let mut shown = false;
-    if let Some(release) = get_json(REPO_API) {
+    if let Some(release) = latest_release() {
         let tag = release.get("tag_name").and_then(|v| v.as_str()).unwrap_or("").trim_start_matches('v').to_string();
         if !tag.is_empty() && updater::is_newer(&tag, VERSION) && (asked || (!open && (!seen.versions.contains(&tag) || LAST_SHOWN.lock().map(|l| l.is_none_or(|at| at.elapsed() >= Duration::from_secs(6 * 3600))).unwrap_or(true)))) {
             if let Ok(mut l) = LAST_SHOWN.lock() {
@@ -1146,6 +1183,15 @@ n.forEach(function(f,i){var at=s+i*.085,g=x.createGain(),v=x.createOscillator();
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn il_numero_della_release_si_legge_dal_reindirizzamento() {
+        assert_eq!(super::tag_from_location("https://github.com/wifi75/Aurora/releases/tag/v0.11.328").as_deref(), Some("v0.11.328"));
+        assert_eq!(super::tag_from_location("/wifi75/Aurora/releases/tag/v1.2.3?x=1").as_deref(), Some("v1.2.3"));
+        assert_eq!(super::tag_from_location("https://github.com/wifi75/Aurora/releases"), None);
+        assert_eq!(super::tag_from_location("https://github.com/wifi75/Aurora/releases/tag/"), None);
+        assert_eq!(super::tag_from_location("https://github.com/wifi75/Aurora/releases/tag/latest"), None);
+    }
+
     use super::*;
 
     #[test]
