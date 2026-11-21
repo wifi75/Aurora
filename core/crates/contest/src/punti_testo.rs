@@ -43,6 +43,8 @@ pub struct InfoPaese {
     pub itu: u8,
     /// Il prefisso dell'entita' solo WAE (`IT9`, `GM/s`, `TA1`...) se il nominativo ne fa parte; vuoto altrimenti. `dxcc` resta il paese DXCC.
     pub wae: String,
+    /// Il continente dell'entita' WAE (IG9 e' in Africa, l'Italia in Europa); vuoto senza entita' WAE.
+    pub wae_cont: String,
 }
 
 /// Gli scambi scritti in coda al commento dalla pagina dei modi testuali: `note NRS 001 NRR 015` -> (`001`, `015`).

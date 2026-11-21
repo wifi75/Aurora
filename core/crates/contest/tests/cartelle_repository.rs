@@ -26,7 +26,7 @@ fn database() -> DxccDb {
 fn paese_di(db: &DxccDb, call: &str) -> Option<InfoPaese> {
     let l = db.lookup(call)?;
     let e = db.entity(l.entity);
-    Some(InfoPaese { dxcc: e.prefix.clone(), continente: e.continent.clone(), cq: l.cq_zone, itu: l.itu_zone, wae: l.wae.map(|w| db.entity(w).prefix.clone()).unwrap_or_default() })
+    Some(InfoPaese { dxcc: e.prefix.clone(), continente: e.continent.clone(), cq: l.cq_zone, itu: l.itu_zone, wae: l.wae.map(|w| db.entity(w).prefix.clone()).unwrap_or_default(), wae_cont: l.wae.map(|w| db.entity(w).continent.clone()).unwrap_or_default() })
 }
 
 #[test]

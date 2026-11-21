@@ -150,17 +150,43 @@ rst_ricevuto = "599"
 scambio_ricevuto = "14 DX"
 atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del CQ WW RTTY" }
 
-# Totali (a mano): ammessi 1-6 e 8-10 = 9; doppi 1 (n. 7); non ammessi 1 (n. 11)
-#   punti: 2+1+2+3+3+3+3+3+3 = 23
-#   moltiplicatori: 14 DL 15 I IT9 5 K CT (20 m) + 5 K CT (40 m) + 4 VE ON 1 NWT KL (20 m) = 8 + 3 + 6 = 17
-#   punteggio = 23 x 17 = 391
+[[qso]]
+n = 12
+banda = 20
+modo = "RTTY"
+freq_khz = 14089
+ora_utc = "0055"
+nominativo = "IG9ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "33 DX"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["33@RTTY", "IG9@RTTY"], motivo = "Africa italiana (WAE) e' in Africa: 3 punti" }
+
+[[qso]]
+n = 13
+banda = 20
+modo = "RTTY"
+freq_khz = 14090
+ora_utc = "0100"
+nominativo = "TA1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "20 DX"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["20@RTTY", "TA1@RTTY"], motivo = "Turchia europea (WAE) e' in Europa: 2 punti" }
+
+# Totali (a mano): ammessi 1-6, 8-10, 12, 13 = 11; doppi 1 (n. 7); non ammessi 1 (n. 11)
+#   punti: 2+1+2+3+3+3+3+3+3+3+2 = 28
+#   moltiplicatori: 14 DL 15 I IT9 5 K CT (20 m) + 5 K CT (40 m) + 4 VE ON 1 NWT KL (20 m) + 33 IG9 20 TA1 (20 m) = 8 + 3 + 6 + 4 = 21
+#   punteggio = 28 x 21 = 588
 [atteso]
-qso_ammessi = 9
+qso_ammessi = 11
 doppi = 1
 non_ammessi = 1
-punti = 23
-moltiplicatori = 17
-punteggio = 391
+punti = 28
+moltiplicatori = 21
+punteggio = 588
 
 [[altra_stazione]]
 nominativo_proprio = "K1ABC"

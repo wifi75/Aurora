@@ -78,6 +78,7 @@ impl QsoScript<'_> {
         m.insert("dxcc".into(), s(&i.dxcc));
         m.insert("cont".into(), s(&i.continente));
         m.insert("wae".into(), s(&i.wae));
+        m.insert("wae_cont".into(), s(&i.wae_cont));
         m.insert("cq".into(), Dynamic::from_int(INT::from(i.cq)));
         m.insert("itu".into(), Dynamic::from_int(INT::from(i.itu)));
         m.insert("wpx".into(), s(&self.wpx));
@@ -85,6 +86,7 @@ impl QsoScript<'_> {
         m.insert("my_dxcc".into(), s(&mi.dxcc));
         m.insert("my_cont".into(), s(&mi.continente));
         m.insert("my_wae".into(), s(&mi.wae));
+        m.insert("my_wae_cont".into(), s(&mi.wae_cont));
         m.insert("my_cq".into(), Dynamic::from_int(INT::from(mi.cq)));
         m.insert("my_itu".into(), Dynamic::from_int(INT::from(mi.itu)));
         m

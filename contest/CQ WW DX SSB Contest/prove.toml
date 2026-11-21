@@ -163,17 +163,30 @@ rst_ricevuto = "59"
 scambio_ricevuto = "01"
 atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["1@SSB", "KL@SSB"], motivo = "Alaska e' un altro paese del Nord America: 2 punti" }
 
-# Totali (a mano): ammessi 1,2,4,5,6,7,8,9,11,12 = 10; doppi 1 (n. 3); non ammessi 1 (n. 10)
-#   punti: 3+3+0+2+2+3+3+3+3+2 = 24
-#   moltiplicatori: 14@20 DL@20 14@40 DL@40 3@20 K@20 4@20 VE@20 6@20 XE@20 25@15 JA@15 15@20 I@20 IT9@20 11@20 PY@20 1@20 KL@20 = 19
-#   punteggio = 24 x 19 = 456
+[[qso]]
+n = 13
+banda = 15
+modo = "SSB"
+freq_khz = 21310
+ora_utc = "0100"
+nominativo = "DL1ABC/MM"
+rst_inviato = "59"
+scambio_inviato = "05"
+rst_ricevuto = "59"
+scambio_ricevuto = "14"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["14@SSB"], motivo = "mobile marittimo: solo la zona; nessun paese, continente sconosciuto = 3 punti (da verificare)" }
+
+# Totali (a mano): ammessi 1,2,4,5,6,7,8,9,11,12,13 = 11; doppi 1 (n. 3); non ammessi 1 (n. 10)
+#   punti: 3+3+0+2+2+3+3+3+3+2+3 = 27
+#   moltiplicatori: 14@20 DL@20 14@40 DL@40 3@20 K@20 4@20 VE@20 6@20 XE@20 25@15 JA@15 15@20 I@20 IT9@20 11@20 PY@20 1@20 KL@20 14@15 = 20
+#   punteggio = 27 x 20 = 540
 [atteso]
-qso_ammessi = 10
+qso_ammessi = 11
 doppi = 1
 non_ammessi = 1
-punti = 24
-moltiplicatori = 19
-punteggio = 456
+punti = 27
+moltiplicatori = 20
+punteggio = 540
 
 [[altra_stazione]]
 nominativo_proprio = "IU3ABC"
@@ -244,11 +257,37 @@ rst_ricevuto = "59"
 scambio_ricevuto = "04"
 atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["4@SSB", "VE@SSB"], motivo = "l'eccezione dei 2 punti vale solo fra stazioni del Nord America" }
 
-# Totali (a mano): 5 QSO, punti 1+0+1+3+3 = 8, moltiplicatori 14 DL 15 I IT9 5 K 4 VE = 9, punteggio 8 x 9 = 72
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14330
+ora_utc = "0125"
+nominativo = "IG9ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "33"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["33@SSB", "IG9@SSB"], motivo = "Africa italiana (WAE) e' in Africa: altro continente, 3 punti" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14340
+ora_utc = "0130"
+nominativo = "TA1ABC"
+rst_inviato = "59"
+scambio_inviato = "15"
+rst_ricevuto = "59"
+scambio_ricevuto = "20"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["20@SSB", "TA1@SSB"], motivo = "Turchia europea (WAE) e' in Europa: stesso continente, 1 punto" }
+
+# Totali (a mano): 7 QSO, punti 1+0+1+3+3+3+1 = 12, moltiplicatori 14 DL 15 I IT9 5 K 4 VE 33 IG9 20 TA1 = 13, punteggio 12 x 13 = 156
 [altra_stazione.atteso]
-qso_ammessi = 5
+qso_ammessi = 7
 doppi = 0
 non_ammessi = 0
-punti = 8
-moltiplicatori = 9
-punteggio = 72
+punti = 12
+moltiplicatori = 13
+punteggio = 156

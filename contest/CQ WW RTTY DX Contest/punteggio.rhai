@@ -3,12 +3,16 @@
 
 fn paese(qso) { if qso.wae != "" { qso.wae } else { qso.dxcc } }
 fn mio_paese(qso) { if qso.my_wae != "" { qso.my_wae } else { qso.my_dxcc } }
+// Il continente dell'entita' WAE vale al posto di quello del paese DXCC (IG9 e' in Africa, TA1 in Europa).
+fn cont(qso) { if qso.wae_cont != "" { qso.wae_cont } else { qso.cont } }
+fn mio_cont(qso) { if qso.my_wae_cont != "" { qso.my_wae_cont } else { qso.my_cont } }
 
 // Stesso paese 1, stesso continente 2, altro continente 3 (nessuna eccezione per il Nord America).
 fn punti(qso) {
     let p = paese(qso);
     if p != "" && p == mio_paese(qso) { return 1; }
-    if qso.cont != "" && qso.cont == qso.my_cont { return 2; }
+    let c = cont(qso);
+    if c != "" && c == mio_cont(qso) { return 2; }
     3
 }
 
