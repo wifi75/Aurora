@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti: sulla mappa i satelliti hanno la stessa icona (corpo con due pannelli solari) al posto del puntino e la ISS la sua sagoma con il traliccio e i pannelli; il satellite scelto ha il cerchio intorno.
 - Satelliti: la stella della stazione sulla mappa e' piu' piccola (raggio da 10 a 7 punti, contorno piu' sottile).
 - Satelliti: lo zoom automatico all'entrata nell'area di acquisizione si ferma a 3x (prima fino a 6x in «Entrambi» e 8x in «Area»); all'uscita la mappa torna intera come prima. A mano si ingrandisce ancora fino a 8x.
 - Tema scuro: il testo e' bianco ovunque (colore principale `#ffffff`, secondario e etichette quasi bianchi), comprese le etichette di SSTV/WEFAX, le impostazioni, la pagina Fox, il righello e i riquadri della trasmissione. Il tema chiaro non cambia.

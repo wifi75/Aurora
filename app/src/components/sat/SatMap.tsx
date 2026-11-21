@@ -49,6 +49,36 @@ function loadWorld(): Promise<FeatureCollection> {
  * La mappa inclusa disegnata una volta per ogni larghezza e risoluzione: mare scuro, terre e confini (proiezione equirettangolare come le mappe in immagine).
  * `dpr` e' il rapporto fra i pixel del disegno e le unita' logiche (pixel dello schermo per la risoluzione, con lo zoom anche di piu'); `line` e' lo spessore dei confini in unita' logiche.
  */
+const ISS_NORAD = 25544;
+
+/** Il satellite: un corpo quadrato con due pannelli solari (stessa icona per tutti, colore = quello gia' impostato nel contesto). */
+function drawSatIcon(ctx: CanvasRenderingContext2D, x: number, y: number, s: number): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillRect(-3.2, -3.2, 6.4, 6.4);
+  ctx.globalAlpha = 0.8;
+  ctx.fillRect(-11, -2.6, 6.4, 5.2);
+  ctx.fillRect(4.6, -2.6, 6.4, 5.2);
+  ctx.restore();
+}
+
+/** La Stazione Spaziale: traliccio con quattro coppie di pannelli solari e il modulo centrale. */
+function drawIssIcon(ctx: CanvasRenderingContext2D, x: number, y: number, s: number): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillRect(-15, -0.7, 30, 1.4);
+  ctx.fillRect(-3, -2.4, 6, 4.8);
+  ctx.fillRect(-0.9, -6, 1.8, 12);
+  ctx.globalAlpha = 0.85;
+  for (const px of [-14.5, -8.8, 4.4, 10.1]) {
+    ctx.fillRect(px, -9, 4.4, 7.5);
+    ctx.fillRect(px, 1.5, 4.4, 7.5);
+  }
+  ctx.restore();
+}
+
 function drawBuiltin(countries: FeatureCollection, w: number, h: number, dpr: number, line: number, bordersOnly = false): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = Math.round(w * dpr);
@@ -902,15 +932,14 @@ export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, obse
         ctx.fillStyle = isSel ? PALETTE.sel : PALETTE.sat;
         ctx.shadowColor = isSel ? PALETTE.sel : '#9ad';
         ctx.shadowBlur = glow(isSel ? 12 : 6);
-        ctx.beginPath();
-        ctx.arc(x, y, isSel ? 5.5 : 4, 0, Math.PI * 2);
-        ctx.fill();
+        if (p.norad === ISS_NORAD) drawIssIcon(ctx, x, y, isSel ? 0.7 : 0.62);
+        else drawSatIcon(ctx, x, y, isSel ? 0.58 : 0.5);
         ctx.shadowBlur = 0;
         if (isSel) {
           ctx.strokeStyle = PALETTE.sel;
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.arc(x, y, p.norad === ISS_NORAD ? 14 : 10, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.fillStyle = '#fff';
