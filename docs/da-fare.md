@@ -69,3 +69,4 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 - VARA: a pagamento, non si integra
 - [ ] Ricevere i QSO registrati in un altro log (messaggio «QSO Logged» di WSJT-X o ADIF su UDP) e aggiungerli al log di Aurora senza rimandarli fuori (richiesta di Luc, #88; in attesa della sua risposta su quale programma usa).
 - [ ] Contest da aggiungere come gli ARRL, in ordine di Luc (#88): ARRL CW/RTTY, CQ WW CW/RTTY (prossimo fine settimana: CQ WW CW, senza promessa), UBA, REF CW, EU DX, WAE RTTY/CW. Log da cui ricevere i QSO: Log4OM, HRD Logbook, OpsLog, N1MM+ (chiesta a Luc la porta UDP/ADIF).
+- [ ] Due radio collegate insieme (richiesta di Vladimir, #83): IC-820H per i satelliti su una porta COM e TS-570S per le onde corte su un'altra; oggi Aurora ne usa una per volta e si cambia con i profili (Impostazioni > Radio CAT).
