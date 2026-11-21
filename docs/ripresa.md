@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-21)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-22)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
@@ -15,6 +15,8 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 - Dopo la 0.11.323, da fare (compiti in `dist-release/brief-wefax-1.md` e `brief-wefax-2.md`, fuori dal repository): IOC automatico dal tono d'inizio, inclinazione ricordata tra le cartine, contatore dei blocchi audio persi, AFC con due limiti, correzione dell'inclinazione sulla cartina in corso con misura a due clic, riga della soglia SQL, decodifica da file WAV. Dati d'uso: Worker `aurora-rapporti` con `/v1/battito` e `/v1/utilizzo` pubblicato il 2026-11-21 (migrazione 0005 eseguita), pagina «Applicazione» nel portale Analytics, segnale ogni 40 minuti dalla 0.11.323: i numeri compaiono man mano che si aggiorna.
 
 ## In preparazione (su main, NON pubblicata)
+
+- Satelliti, mappa (2026-11-22, tutto in commit locali non pubblicati; il proprietario ha detto «non pubblicare» per ora, la prossima sarebbe la 0.11.329): tre Terre NASA a 8192x4096 (`:terra` con rilievo e fondali, di base e scelta da «Automatica»; `:terra-rilievo`; `:terra-base`; file in `app/public/maps/`, fonti in `docs/mappe.md`; `PREFERRED_MAP` ora vuoto, non si preferisce piu' «Contour HiRes»); di notte la Terra di giorno resta sotto un velo (alfa 0,68) con le luci a schermo (`screen`); copie ridotte della foto preparate subito dopo il caricamento (`SatMap.tsx`); icona unica dei satelliti e sagoma della ISS (NORAD 25544) al posto del puntino; stella della stazione di raggio 7; zoom automatico massimo 3x (`AUTO_ZOOM_MAX` in `satView.ts`); tema scuro con testo bianco (`tokens.css`, `digi-dark.css` e altri). Il proprietario usava un file suo («Coloured HiRes.jpg») che e' la vera causa della sgranatura che lamentava: la Terra NASA e' nitida. Prima di pubblicare: Novita' e Guida (non fatte: l'agente e' stato fermato prima di toccare file), versione, README, nl/ru, controllo a schermo del menu mappa e delle icone con dati orbitali veri, prova dello zoom a 8x. Rischio da provare sul telefono: la foto da 8192 e' gia' pesante, nessuna versione HD (12288) e' stata tenuta.
 
 - Controllo aggiornamenti (`desktop/src-tauri/src/agent.rs`): `latest_release()` prova l'API di GitHub e, se risponde con un errore (limite di 60 richieste all'ora per indirizzo, rete aziendale, filtri, 5xx), la pagina `releases/latest` leggendo il numero dal reindirizzamento (`tag_from_location`, prova inclusa); il motivo va in `%TEMP%urora-agente.log`. Da decidere: la cartolina «Aurora X e' pronta» mostra le prime righe delle note e le taglia a meta' frase (riassunto = solo la frase in grassetto di ogni novita').
 
