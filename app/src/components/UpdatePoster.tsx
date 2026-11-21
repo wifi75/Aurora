@@ -121,6 +121,14 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
   const releaseVersion = release?.version;
   const phase = update.data?.stage?.phase;
   const quiet = update.data?.quiet;
+  // se l'installazione si ferma con un errore la locandina (nascosta durante l'installazione) ricompare con il messaggio
+  const stageError = update.data?.stage?.error;
+  useEffect(() => {
+    if (installing && phase === 'error') {
+      setInstalling(false);
+      setFailure(t('upd.installFailed', { message: stageError ?? '—' }));
+    }
+  }, [installing, phase, stageError, t]);
   useEffect(() => {
     if (!releaseVersion || Date.now() - born.current > STARTUP_MS || quiet || phase === 'installing' || snoozedToday()) return;
     // all'avvio, con una versione nuova, si apre direttamente la locandina con tutte le novita' (come quando la si chiede a mano)
@@ -136,6 +144,9 @@ export function UpdatePoster(_props: { onlyWhenAsked?: boolean } = {}) {
   // quando la si chiede (clic sulla barretta). Prima compariva da sola mentre si aggiornava dal tray e si chiudeva dopo pochi secondi
   if (!forced && update.data?.stage?.phase === 'installing') return null;
   if (!release || (seen === release.version && !forced)) return null;
+  // premuto «Installa e riavvia»: da qui in poi mostra l'avanzamento la finestra dell'aggiornamento (sempre davanti, dice «Chiudo Aurora…»); la locandina
+  // resta solo se l'avvio e' fallito (col messaggio d'errore), altrimenti le due finestre si sovrapponevano
+  if (installing && failure === '') return null;
 
   const later = () => {
     try {

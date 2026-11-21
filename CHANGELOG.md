@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Aggiornamento: premendo «Installa e riavvia» la locandina delle novita' si chiude subito e resta solo la finestra dell'aggiornamento (prima restavano aperte tutte e due, una sopra l'altra, con il testo delle novita' che si vedeva attraverso); se l'installazione non parte la locandina torna con il messaggio d'errore.
+
 ## 0.11.323 - 2026-11-21
 
 - WEFAX: inclinazione automatica dal contenuto dell'immagine (impostazione «Inclinazione automatica», accesa di base). Ogni 40 righe, fino alla 400, il ricevitore confronta righe distanti 16 con la correlazione incrociata (spostamento fino a 5000 ppm, picco a sotto-pixel, solo righe con contrasto e picco netto), prende la mediana come deriva per riga e corregge il periodo di riga (somma alla correzione a mano e alla fasatura, massimo 5000 ppm); le righe gia' ricevute si raddrizzano e si ristirano. Con una cartina sintetica a +1500, -1500 e +300 ppm la correlazione con l'originale passa da 0,08-0,17 a 0,93-0,94 (0,9475 senza errore), senza errore non cambia niente e su immagini uniformi o rumore non si muove nulla. Provato solo con segnale sintetico.
