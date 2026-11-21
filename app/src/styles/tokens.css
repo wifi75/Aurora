@@ -5,8 +5,9 @@
   --panel: #131b28;
   --panel-raised: #1b2536;
   --border: #3d4d69;
-  --text: #e6edf8;
-  --text-muted: #a3b3ca;
+  /* tema scuro: testo bianco ovunque; il testo secondario quasi bianco (resta una gerarchia minima con il peso e la dimensione) */
+  --text: #ffffff;
+  --text-muted: #e1e8f5;
 
   /* Accenti: ciano = stato e regole AUTO, ambra = eventi rari, rosso = solo STOP TX */
   --accent: #3fd6c8;

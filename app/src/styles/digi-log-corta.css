@@ -97,7 +97,7 @@ html[data-theme='light'] .digi-colpop-btn:hover, html[data-theme='light'] .digi-
 
 /* aspetto «colore per banda»: tabella scura, barra colorata della banda a sinistra, modo come etichetta, rapporti verdi/ambra/rossi */
 .digi-log-table--completa { flex: 1 1 0; min-height: 0; overflow: auto; background: #0f1629; }
-.digi-log-table--completa th { position: sticky; top: 0; z-index: 1; background: #172040; color: #9db0da; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.82em; font-weight: 600; border: 0; border-bottom: 1px solid #26345f; padding: 0.4em 0.6em; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.digi-log-table--completa th { position: sticky; top: 0; z-index: 1; background: #172040; color: #e1e8f5; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.82em; font-weight: 600; border: 0; border-bottom: 1px solid #26345f; padding: 0.4em 0.6em; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .digi-log-table--completa td { background: transparent; color: #d7e3ff; padding: 0.3em 0.6em; border: 0; border-bottom: 1px solid #1b2748; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .digi-log-table--completa td:first-child { border-left: 0.4em solid var(--b, #1b2748); color: #8ea2cf; }
 .digi-log-table--completa td b { color: #fff; font-weight: 700; }

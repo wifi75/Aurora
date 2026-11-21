@@ -167,7 +167,7 @@
 /* ===== Aspetto «Neon UltraFOX» (bozza 3, scelta del proprietario): viola e ciano su fondo scuro, sempre, anche col tema chiaro ===== */
 .foxc--neon {
   --text: #efe8ff;
-  --text-muted: #a99be0;
+  --text-muted: #d9d2ff;
   --nx-cyan: #41f0e0;
   --nx-violet: #b06bff;
   --nx-pink: #ff5fd2;

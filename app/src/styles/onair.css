@@ -2087,7 +2087,7 @@ button.pill--warn:hover:not(:disabled) {
 }
 
 :root:not([data-theme='light']) .tx-panel .tx-list li .tx-step {
-  color: #b6c3db;
+  color: #e1e8f5;
 }
 
 :root:not([data-theme='light']) .tx-panel .tx-list li .tx-n {
@@ -2122,7 +2122,7 @@ button.pill--warn:hover:not(:disabled) {
 }
 
 :root:not([data-theme='light']) .tx-block .cmd-title {
-  color: #9db0d0;
+  color: #ffffff;
 }
 
 /* Testo nitido nei pannelli: il vetro sfocato (backdrop-filter) con fondo trasparente fa disegnare il testo in scala di grigi,

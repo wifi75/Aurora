@@ -394,7 +394,7 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 .sw-fam,.sw-l2,.sw-l3{display:flex;align-items:center;gap:9px;width:100%;box-sizing:border-box;text-align:left;border:0;background:transparent;color:inherit;font-family:inherit;cursor:pointer;transition:background-color .16s ease,color .16s ease}
 .sw-fam{padding:9px 10px;border-radius:8px;font-size:13px;font-weight:600;color:#dbe4f3}
 .sw-bar{flex:none;width:4px;height:18px;border-radius:2px;background:var(--fam,#4a5a78)}
-.sw-chev{margin-left:auto;color:#6f81a1;font-size:12px;line-height:1}
+.sw-chev{margin-left:auto;color:var(--text-muted);font-size:12px;line-height:1}
 .sw-fam-wrap.sw-open>.sw-fam{background:color-mix(in srgb,var(--fam) 10%,transparent)}
 .sw-fam-wrap.sw-open>.sw-fam .sw-chev,.sw-l2--sub.sw-open .sw-chev{color:var(--fam)}
 .sw-l2{padding:7px 10px 7px 26px;border-radius:7px;font-size:12.5px;font-weight:500;color:#c3cfe3}

@@ -211,7 +211,7 @@ html[data-theme='light'] .sstv-modesel { background: #ffffff; color: #0b1322; bo
 .sstv-thumb { border: 1.5px solid #3f5290; background: #1a2848; }
 .sstv-thumb:hover, .sstv-thumb:focus-visible { border-color: #8e7bff; box-shadow: 0 6px 18px rgba(142, 123, 255, 0.35); }
 .sstv-slider input, .sstv-page input[type='range'], .sstv-page input[type='checkbox'] { accent-color: #8e7bff; }
-.sstv-readouts dt { color: #9db0da; }
+.sstv-readouts dt { color: var(--text-muted); }
 
 html[data-theme='light'] .sstv-side, html[data-theme='light'] .sstv-history, html[data-theme='light'] .sstv-more, html[data-theme='light'] .sstv-composer .sstv-panel, html[data-theme='light'] .sstv-composer .sstv-toolbar { background: #ffffff; border: 1px solid #9fb0d4; box-shadow: 0 1px 3px rgba(25, 35, 70, 0.12); }
 html[data-theme='light'] .sstv-screen { background: #000; border: 1px solid #9fb0d4; }
@@ -282,8 +282,8 @@ html[data-theme='light'] .sstv-tune-hist { background: #f7f9fc; border-color: #c
 html[data-theme='light'] .sstv-tune-hint--ok { color: #1c8a4a; }
 
 .sstv-log { align-self: start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem 0.4rem; align-items: end; min-width: 0; padding: 0.45rem 0.6rem 0.55rem; border: 1px solid #2f4279; border-radius: 12px; background: linear-gradient(180deg, #121e36, #0f192d); }
-.sstv-log-title { grid-column: 1 / -1; color: #9db0da; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-.sstv-log-f { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; color: #9db0da; font-size: 0.7rem; font-weight: 600; }
+.sstv-log-title { grid-column: 1 / -1; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.sstv-log-f { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; }
 .sstv-log-f span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sstv-log-f input { box-sizing: border-box; width: 100%; min-width: 0; height: 1.65rem; padding: 0 0.4rem; background: #0a1324; color: #fff; border: 1.5px solid #3f5290; border-radius: 7px; font: inherit; font-size: 0.8rem; font-weight: 500; }
 .sstv-log-call input { font-family: var(--font-data); text-transform: uppercase; }
@@ -317,16 +317,16 @@ html[data-theme='light'] .sstv-log-f input { background: #ffffff; color: #0b1322
 .sstv-rxbar .sstv-views { padding: 0.12rem; }
 .sstv-rxbar .sstv-views button { padding: 0.12rem 0.7rem; font-size: 0.8rem; }
 .sstv-rxbar .sstv-views button:disabled { opacity: 0.45; cursor: not-allowed; }
-.sstv-rxbar .sstv-slider { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: #9db0da; white-space: nowrap; }
+.sstv-rxbar .sstv-slider { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
 .sstv-rxbar .sstv-slider input { width: 6rem; }
 .sstv-rxbar .sstv-note { margin-left: auto; font-size: 0.82rem; }
-.sstv-readouts .sstv-source { margin: 0; font-family: inherit; font-size: 0.74rem; color: #9db0da; }
+.sstv-readouts .sstv-source { margin: 0; font-family: inherit; font-size: 0.74rem; color: var(--text-muted); }
 .sstv-fskid-text { color: #ffe066; font-family: var(--font-data); letter-spacing: 0.03em; }
 html[data-theme='light'] .sstv-fskid-text { color: #7a4f00; }
 html[data-theme='light'] .sstv-readouts .sstv-source, html[data-theme='light'] .sstv-rxbar .sstv-slider { color: #46556f; }
 
 /* ===== log: riga di stato della ricerca del nominativo, locatore accanto alle note ===== */
-.sstv-log-info { grid-column: 1 / -1; margin: 0; color: #9db0da; font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sstv-log-info { grid-column: 1 / -1; margin: 0; color: var(--text-muted); font-size: 0.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 html[data-theme='light'] .sstv-log-info { color: #46556f; }
 .sstv-log .sstv-log-note { grid-column: auto; }
 @media (max-width: 1179px) {
