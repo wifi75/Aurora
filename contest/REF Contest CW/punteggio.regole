@@ -1,0 +1,9 @@
+; REF Contest CW - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento del 13/5/2026.
+; Punti, ammissione e moltiplicatori li da' punteggio.rhai (dipartimento dallo scambio, oltremare, /MM, francesi e stranieri).
+;
+; bands: 80, 40, 20, 15, 10 m (il 160 m e' una sotto-parte con regolamento a parte, non qui).
+; points (usata solo se lo script manca o fallisce): punti degli stranieri, 1 stesso continente, 3 altro continente.
+; mult (ripiego): l'ultima parola non numerica dello scambio (solo i prefissi d'oltremare) per banda.
+bands=80,40,20,15,10
+points=same_cont=1; any=3
+mult=exch/band

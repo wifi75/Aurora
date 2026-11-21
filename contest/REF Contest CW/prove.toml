@@ -1,0 +1,282 @@
+# REF Contest CW - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento del 13/5/2026
+# (https://concours.r-e-f.org/reglements/actuels/reg_cdfhf_fr_20260513.pdf).
+# Due punti di vista: [prova] e' una stazione italiana (straniera), [[altra_stazione]] una stazione francese della metropoli.
+# Nominativi di fantasia (F6REF e' la stazione ufficiale del REF, citata dal regolamento). Moltiplicatori: valore@modo.
+# Giorno: la domenica 2027 (sabato 06:00 - domenica 18:00 UTC).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-01-31"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "0005"
+nominativo = "F5ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "69"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["69@CW"], motivo = "francese dello stesso continente: 1 punto; dipartimento 69 nuovo su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "0010"
+nominativo = "F5ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "69"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14028
+ora_utc = "0015"
+nominativo = "F6REF"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "00"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["00@CW"], motivo = "F6REF manda 00, moltiplicatore a parte" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14029
+ora_utc = "0020"
+nominativo = "TK5ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "2A"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["2A@CW"], motivo = "Corsica: dipartimento 2A" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "0025"
+nominativo = "FM5ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "FM"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["FM@CW"], motivo = "Martinica, oltremare in Nord America: 3 punti, prefisso FM moltiplicatore" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "CW"
+freq_khz = 14031
+ora_utc = "0030"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "gli stranieri lavorano solo i francesi" }
+
+[[qso]]
+n = 7
+banda = 40
+modo = "CW"
+freq_khz = 7032
+ora_utc = "0035"
+nominativo = "F5ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "69"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["69@CW"], motivo = "stessa stazione su un'altra banda: dipartimento nuovo su 40 m" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "CW"
+freq_khz = 7033
+ora_utc = "0040"
+nominativo = "F8ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "75"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["75@CW"], motivo = "dipartimento 75" }
+
+[[qso]]
+n = 9
+banda = 15
+modo = "CW"
+freq_khz = 21034
+ora_utc = "0045"
+nominativo = "FR5ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "FR"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["FR@CW"], motivo = "Riunione, oltremare in Africa: 3 punti" }
+
+[[qso]]
+n = 10
+banda = 30
+modo = "CW"
+freq_khz = 10125
+ora_utc = "0050"
+nominativo = "F5XYZ"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "13"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1,3,4,5,7,8,9 = 7; doppi 1 (n. 2); non ammessi 2 (n. 6 straniero, n. 10 30 m)
+#   punti: 1+1+1+3+1+1+3 = 11
+#   moltiplicatori: 69@20 00@20 2A@20 FM@20 69@40 75@40 FR@15 = 7
+#   punteggio = 11 x 7 = 77
+[atteso]
+qso_ammessi = 7
+doppi = 1
+non_ammessi = 2
+punti = 11
+moltiplicatori = 7
+punteggio = 77
+
+[[altra_stazione]]
+nominativo_proprio = "F4ABC"
+locatore_proprio = "JN03aa"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "CW"
+freq_khz = 14026
+ora_utc = "0105"
+nominativo = "F5ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "69"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["69@CW"], motivo = "francese con francese dello stesso continente: 6 punti" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "CW"
+freq_khz = 14027
+ora_utc = "0110"
+nominativo = "FM5ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "FM"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["FM@CW"], motivo = "francese con l'oltremare di un altro continente: 15 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "CW"
+freq_khz = 14028
+ora_utc = "0115"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@CW"], motivo = "francese con straniero dello stesso continente: 1 punto, paese DXCC moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "CW"
+freq_khz = 14029
+ora_utc = "0120"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["K@CW"], motivo = "straniero di un altro continente: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "CW"
+freq_khz = 14030
+ora_utc = "0125"
+nominativo = "TK5ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "2B"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["2B@CW"], motivo = "Corsica 2B: francese dello stesso continente" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "CW"
+freq_khz = 14031
+ora_utc = "0130"
+nominativo = "DL1ABC/MM"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = [], motivo = "mobile marittimo: 3 punti, nessun moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 40
+modo = "CW"
+freq_khz = 7032
+ora_utc = "0135"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@CW"], motivo = "Italia nuova su 40 m" }
+
+[[altra_stazione.qso]]
+n = 8
+banda = 40
+modo = "CW"
+freq_khz = 7033
+ora_utc = "0140"
+nominativo = "F6REF"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "00"
+atteso = { ammesso = true, doppio = false, punti = 6, moltiplicatori = ["00@CW"], motivo = "F6REF su 40 m" }
+
+[[altra_stazione.qso]]
+n = 9
+banda = 20
+modo = "CW"
+freq_khz = 14034
+ora_utc = "0145"
+nominativo = "FR5ABC"
+rst_inviato = "599"
+scambio_inviato = "31"
+rst_ricevuto = "599"
+scambio_ricevuto = "FR"
+atteso = { ammesso = true, doppio = false, punti = 15, moltiplicatori = ["FR@CW"], motivo = "Riunione (Africa): 15 punti" }
+
+# Totali (a mano): 9 QSO; punti 6+15+1+2+6+3+1+6+15 = 55; moltiplicatori 69 FM I K 2B (20 m), I 00 (40 m), FR (20 m) = 8; 55 x 8 = 440
+[altra_stazione.atteso]
+qso_ammessi = 9
+doppi = 0
+non_ammessi = 0
+punti = 55
+moltiplicatori = 8
+punteggio = 440

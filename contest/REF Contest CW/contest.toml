@@ -1,0 +1,146 @@
+# REF Contest CW (Championnat de France HF, «Coupe du REF», parte telegrafia) - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21: https://concours.r-e-f.org/reglements/actuels/reg_cdfhf_fr_20260513.pdf (regolamento del 13/5/2026) e
+# https://concours.r-e-f.org/reglements/actuels/regles_communes_HF_fr_20251209.pdf (regole comuni ai concorsi HF del REF, 9/12/2025).
+
+[contest]
+id = "ref-cw"
+nome = "REF Contest CW"
+organizzatore = "REF (Réseau des Émetteurs Français)"
+sito = "https://concours.r-e-f.org"
+regolamento_url = "https://concours.r-e-f.org/reglements/index.php"
+cabrillo_contest = "REF-CW"
+note = "Solo CW, 80-10 m, 36 ore. Scambio: RST + dipartimento (francesi, F6REF 00, oltremare il prefisso) o RST + numero. Gli stranieri lavorano solo i francesi. Moltiplicatori per banda: dipartimenti, 00, prefissi d'oltremare (i francesi anche i paesi DXCC)."
+
+[edizione]
+# Ultimo fine settimana pieno di gennaio, sabato 06:00 - domenica 18:00 UTC (36 ore). Il formato conta solo l'ennesimo fine settimana
+# pieno: 4 esiste in ogni anno, ma gennaio ne ha cinque nel 2027 e nel 2028; le date vere sono scritte sotto e valgono al posto del calcolo.
+mese = 1
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "06:00"
+durata_ore = 36
+ore_massime = 28                  # solo i francesi singolo operatore (regola del riposo), pause di almeno un'ora
+pausa_minima_min = 60
+invio_log_giorni = 8              # entro otto giorni dalla fine, a mezzanotte ora francese
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-01-24T06:00:00Z"
+fine = "2026-01-25T17:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di gennaio (edizione passata)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-01-30T06:00:00Z"
+fine = "2027-01-31T17:59:59Z"
+fonte = "calcolata dal regolamento del 13/5/2026: ultimo fine settimana pieno di gennaio"
+confermata = false
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-01-29T06:00:00Z"
+fine = "2028-01-30T17:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di gennaio"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "dipartimento"
+etichetta_it = "Dipartimento"
+etichetta_en = "Department"
+tipo = "testo"
+quando = "dxcc:F,TK"
+nota = "Numero del dipartimento (01-95, Corsica 2A o 2B), 00 per F6REF; l'oltremare manda il prefisso (FM, FR...)."
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_dxcc:F,TK"
+nota = "Stranieri e /MM: numero da 001 (000 se lo straniero manda un gruppo di altro formato)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:F,TK"
+progressivo = true
+nota = "Gli stranieri mandano il numero da 001; i francesi mandano il dipartimento (si scrive in «Numero di partenza» e si spegne l'incremento)."
+
+[doppi]
+per = "banda"                     # regole comuni, 2.G: una sola volta per banda
+
+[categorie]
+operatore = ["SO", "MS", "MM", "SWL"]   # francesi: mono-operatore (riposo, 28 ore), multi-operatore un trasmettitore (10 minuti), multi-multi
+potenza = ["QRP", "LOW", "HIGH"]  # classe A 5 W, B 100 W, C oltre 100 W
+sovrapposizioni = ["YOUTH"]       # francesi di 25 anni o meno, CATEGORY-OVERLAY
+altre = ["stranieri: mono e multi insieme, solo per classe di potenza"]
+
+[categorie.mm]
+potenza = ["HIGH"]
+
+[cabrillo]
+contest = "REF-CW"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["CW"]
+category_transmitter = ["ONE", "UNLIMITED"]
+category_overlay = ["YOUTH"]
+invio = "caricamento sulla pagina della commissione dei concorsi (https://concours.r-e-f.org) entro otto giorni"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Dipartimenti e oltremare per banda", en = "Departments and overseas by band" }
+ordine = 1
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC per banda", en = "DXCC countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+quando = "my_dxcc:F,TK"
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]
