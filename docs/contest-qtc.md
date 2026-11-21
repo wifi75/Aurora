@@ -71,6 +71,7 @@ Il modo pratico, in RTTY:
 
 ## In Aurora
 
+- I contest in cartella `WAE DX Contest CW` e `WAE DX Contest RTTY` (`contest/`) lo dicono con `[contest] qtc` (1 e 2) e contano i paesi dell'elenco WAE (IT9, GM/s, TA1...) a parte, con i pesi delle bande anche per i moltiplicatori dello script; i vecchi file WAEDC restano (hanno lo stesso nome per CW/SSB e RTTY).
 - Il file `.contest` dice se il contest ha i QTC con la chiave `m_iQtc` (0 nessuno, 1 come in CW e SSB: dalle stazioni non europee alle
   europee, 2 come in RTTY: in entrambe le direzioni fra continenti diversi). Senza la chiave, un contest con «WAE» nel nome usa 2 se e'
   RTTY e 1 altrimenti.
