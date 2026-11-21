@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Contest in cartella (`contest/`, con regolamento riassunto, fonti e prove automatiche): **CQ WW DX CW** (28-29 novembre 2026) e **CQ WW DX SSB**, **CQ WW RTTY DX**, **ARRL RTTY Roundup**, scritti dai regolamenti ufficiali letti il 2026-11-21. CQ WW: 0 punti nello stesso paese (ma zona e paese valgono), 2 fra paesi diversi del Nord America, 1 nello stesso continente, 3 fra continenti; zone CQ dallo scambio ricevuto (se manca, dal database dei paesi) e paesi DXCC + WAE (IT9, GM/s, TA1, 4U1V, JW/b, IG9) per banda; /MM solo zona. CQ WW RTTY: 1/2/3 punti, zone, paesi e QTH dei W/VE (48 stati + DC e 14 aree canadesi con le sigle del regolamento) per banda. Roundup: solo RTTY, 1 punto, stati, province e paesi DXCC una volta sola. Cabrillo con il nome ufficiale (`CQ-WW-CW`, `CQ-WW-SSB`, `CQ-WW-RTTY`, `ARRL-RTTY`) preso dalla cartella; il campo `zona_cq` dello scambio propone la zona del nominativo. Il database dei paesi tiene anche l'entita' WAE del nominativo (`wae_prefix`, per gli script dei contest); per gli altri contest i nominativi WAE restano nel paese DXCC.
+
 ## 0.11.324 - 2026-11-21
 
 - Display radio compatto: in ricezione la lettura dell'S-meter (per esempio S9+6) sta alla fine della barra, nello stesso punto dove in trasmissione c'e' la potenza; in trasmissione la barra della potenza e il testo PWR sono rossi.

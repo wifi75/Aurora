@@ -167,7 +167,7 @@ con un parametro; quelle che mancano lasciano la parte di `[Score]`:
 | `turno(qso)` | testo | niente: il turno entra nella chiave dei doppi, la stessa stazione in un altro turno non e' un doppio (`"1"`, `"2"`) |
 
 Campi di `qso`: `callsign`, `band` (`20`), `mode`, `time` (ms UTC), `hour` (`hhmm`), `rst_sent`, `rst_rcvd`, `exch_sent`, `exch_rcvd`,
-`dxcc`, `cont`, `cq`, `itu`, `wpx` (paese, continente e zone dal database DXCC, prefisso WPX) e della propria stazione `my_dxcc`,
+`dxcc`, `cont`, `cq`, `itu`, `wpx`, `wae` (paese, continente e zone dal database DXCC, prefisso WPX, entita' WAE come `IT9` o vuoto) e della propria stazione `my_dxcc`, `my_wae`,
 `my_cont`, `my_cq`, `my_itu`. Campi di `totali`: `qso`, `doppi`, `esclusi`, `punti`, `qtc`, `molt`, `exch_sent` (lo scambio mandato nel
 primo QSO), `my_dxcc`, `my_cont` e `paesi`, i QSO validi per paese (`t.paesi["ON"]` con `qso`, `punti`, `cont` e `bande`, il numero
 delle bande dove il paese e' stato lavorato). Funzione in piu': `coords(scambio)` -> `[latitudine, longitudine]` in gradi con il segno (`57N85E`), `()` se mancano.

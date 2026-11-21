@@ -1,6 +1,6 @@
 # Il formato a cartella dei contest
 
-Proposta: ogni contest ha una **cartella** in `contest/` (radice del repository, accanto a `core/`, `app/`, `desktop/`). Una correzione si fa in un solo punto e Aurora legge i file. Contest gia' migrati (elenco): `contest/ARRL 10 Meter Contest/`, `contest/ARRL International DX-CW Contest/`, `contest/ARRL International DX-SSB Contest/`. **Stato:** il lettore c'e' (`core/crates/contest/src/cartelle.rs`): Aurora legge le cartelle e le usa come i `.contest`; le schede dichiarate sono lette e tenute ma l'interfaccia non le usa ancora (vedi «Da fare nel motore»).
+Proposta: ogni contest ha una **cartella** in `contest/` (radice del repository, accanto a `core/`, `app/`, `desktop/`). Una correzione si fa in un solo punto e Aurora legge i file. Contest gia' migrati (elenco): `contest/ARRL 10 Meter Contest/`, `contest/ARRL International DX-CW Contest/`, `contest/ARRL International DX-SSB Contest/`, `contest/CQ WW DX CW Contest/`, `contest/CQ WW DX SSB Contest/`, `contest/CQ WW RTTY DX Contest/`, `contest/ARRL RTTY Roundup/`. **Stato:** il lettore c'e' (`core/crates/contest/src/cartelle.rs`): Aurora legge le cartelle e le usa come i `.contest`; le schede dichiarate sono lette e tenute ma l'interfaccia non le usa ancora (vedi «Da fare nel motore»).
 
 ```
 contest/<Nome del contest>/
@@ -28,13 +28,13 @@ contest/<Nome del contest>/
 |---|---|
 | `[contest] id` | identificativo corto, minuscolo, con trattini |
 | `nome`, `organizzatore`, `sito`, `regolamento_url`, `note` | nome, organizzatore, pagina e regolamento ufficiali, nota per l'elenco |
-| `cabrillo_contest` | valore di `CONTEST:` nell'intestazione Cabrillo (`ARRL-10`) |
+| `cabrillo_contest` | valore di `CONTEST:` nell'intestazione Cabrillo (`ARRL-10`); passa nel contest convertito e vale al posto del nome |
 | `[edizione]` `mese`, `fine_settimana_pieno`, `giorno_inizio`, `ora_inizio`, `durata_ore` | la regola delle date come dati: ennesimo fine settimana pieno del mese, giorno e ora UTC d'inizio, durata |
 | `ore_massime`, `pausa_minima_min`, `invio_log_giorni` | ore operabili, pausa minima, giorni per inviare il log |
 | `[[edizione.date]]` `anno`, `inizio`, `fine`, `fonte`, `confermata`, `nota` | date calcolate o lette dal calendario; `confermata = false` = da confermare |
 | `[bande] ammesse` | bande ammesse (`28 MHz`); il motore le legge da `bands=` |
 | `[modi] ammessi`, `[[modi.limite]]` | modi e limiti di frequenza per modo (`frequenza_massima_khz`) |
-| `[[scambio.ricevuto]]`, `[[scambio.inviato]]` | campi dello scambio: `nome`, `etichetta_it`, `etichetta_en`, `tipo` (`rst`, `numero`, `testo`), `quando` (condizione come in `punteggio.regole`, sul paese del nominativo; `any` = sempre; `my_dxcc:` / `not_my_dxcc:` per la stazione propria), `predefinito` (per modo), `elenco` (file `.dom`), `valori`, `progressivo` (numero che avanza), `motore = false` (campo non ancora gestito) |
+| `[[scambio.ricevuto]]`, `[[scambio.inviato]]` | campi dello scambio: `nome`, `etichetta_it`, `etichetta_en`, `tipo` (`rst`, `numero`, `testo`, `zona_cq`: la zona CQ, proposta dal nominativo), `quando` (condizione come in `punteggio.regole`, sul paese del nominativo; `any` = sempre; `my_dxcc:` / `not_my_dxcc:` per la stazione propria), `predefinito` (per modo), `elenco` (file `.dom`), `valori`, `progressivo` (numero che avanza), `motore = false` (campo non ancora gestito) |
 | `[doppi] per` | `"modo"`, `"banda"`, `"banda+modo"`, `"sempre"`: su cosa si fa il doppio |
 | `[categorie]` | `operatore`, `potenza`, `modo`, `sovrapposizioni`, `altre`; sotto-tabelle per le categorie con vincoli (`[categorie.ms]`) |
 | `[cabrillo]` | `contest`, `obbligatori`, `facoltativi`, valori ammessi per `category_*`, `invio` |
