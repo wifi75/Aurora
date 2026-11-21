@@ -20,6 +20,7 @@ use logbook::{
 };
 use tokio::{io::AsyncWriteExt, net::UdpSocket, sync::broadcast::error::RecvError};
 
+pub mod inbound;
 pub mod waiting;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

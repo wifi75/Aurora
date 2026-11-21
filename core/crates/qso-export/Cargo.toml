@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 aurora-core = { path = "../aurora-core" }
 logbook = { path = "../logbook" }
+udp-bridge = { path = "../udp-bridge" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "macros", "time"] }
