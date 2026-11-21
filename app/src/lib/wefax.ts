@@ -49,3 +49,12 @@ export function decodeGrayRows(b64: string, width: number): { rgba: Uint8Clamped
   grayIntoRgba(gray.subarray(0, rows * width), rgba, width, 0);
   return { rgba, rows };
 }
+
+/** Il punto dell'immagine (colonna, riga in pixel dell'immagine, frazionari) sotto un clic: `rect` e' il riquadro dell'immagine a schermo, `width` e
+ *  `height` le sue misure vere in pixel. `null` se il riquadro non ha misure. */
+export function pointInImage(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }, width: number, height: number): { x: number; y: number } | null {
+  if (!(rect.width > 0) || !(rect.height > 0) || !(width > 0) || !(height > 0)) return null;
+  const x = ((clientX - rect.left) / rect.width) * width;
+  const y = ((clientY - rect.top) / rect.height) * height;
+  return { x: Math.min(width, Math.max(0, x)), y: Math.min(height, Math.max(0, y)) };
+}

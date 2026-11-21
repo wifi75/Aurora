@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { getWefaxCurrentBlob } from '../../api/client';
+import { getWefaxCurrentBlob, postWefaxSlant, type WefaxSlantPoints } from '../../api/client';
 import { useT } from '../../i18n';
 import { decodeGrayRows, fitScale, followScrollTop, stepZoom } from '../../lib/wefax';
 import { onWefax } from '../../lib/wefaxBus';
+import { SlantOverlay } from './SlantOverlay';
 
 /** Le righe del canvas si allargano a blocchi di questa misura: cambiare l'altezza del canvas lo svuota, quindi si fa di rado. */
 const CHUNK_ROWS = 512;
@@ -34,6 +35,9 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   const [follow, setFollow] = useState(true);
   const [avail, setAvail] = useState(0);
   const [note, setNote] = useState<'saved' | 'lost' | null>(null);
+  // misura dell'inclinazione a due clic (solo con una cartina in arrivo) e il suo esito
+  const [measuring, setMeasuring] = useState(false);
+  const [slantNote, setSlantNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   // la larghezza disponibile segue il riquadro (finestra ridimensionata, secondo schermo, telefono)
   useLayoutEffect(() => {
@@ -126,6 +130,25 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   );
 
   const shownRows = Math.max(rows, receiving ? snapRows : 0);
+  // la cartina e' finita: la misura non ha piu' niente da correggere in corso
+  useEffect(() => {
+    if (!receiving) setMeasuring(false);
+  }, [receiving]);
+  useEffect(() => {
+    if (!slantNote) return;
+    const id = window.setTimeout(() => setSlantNote(null), 8000);
+    return () => window.clearTimeout(id);
+  }, [slantNote]);
+  const measure = (p: WefaxSlantPoints) => {
+    setMeasuring(false);
+    postWefaxSlant({ points: p }).then(
+      (r) => {
+        setSlantNote({ ok: true, text: t('wefax.slant.done', { ppm: String(Math.round(r.ppm)) }) });
+        onChanged();
+      },
+      () => setSlantNote({ ok: false, text: t('wefax.slant.error') }),
+    );
+  };
   const scale = zoom === 'fit' ? fitScale(avail, size.w) : zoom;
   const pct = Math.round(scale * 100);
 
@@ -148,6 +171,9 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
         </output>
         <button type="button" className="glass sstv-btn" onClick={() => setZoom(stepZoom(scale, 1))} title={t('wefax.view.zoomIn')} aria-label={t('wefax.view.zoomIn')}>
           +
+        </button>
+        <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={!receiving || shownRows < 30} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
+          {t('wefax.slant.measure')}
         </button>
         <label className="sstv-check wefax-follow">
           <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
@@ -174,7 +200,13 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
             style={{ width: Math.round(size.w * scale), height: Math.round(size.h * scale) }}
             aria-label={t('wefax.view.label')}
           />
+          {measuring && shownRows > 0 ? <SlantOverlay width={size.w} height={shownRows} onMeasure={measure} onCancel={() => setMeasuring(false)} /> : null}
         </div>
+        {slantNote ? (
+          <p className={`wefax-slant-note${slantNote.ok ? '' : ' wefax-slant-note--bad'}`} role="status">
+            {slantNote.text}
+          </p>
+        ) : null}
         {shownRows === 0 ? <p className="wefax-msg">{listening ? t('wefax.rx.waiting') : t('wefax.rx.offHint')}</p> : null}
       </div>
     </div>

@@ -15,6 +15,7 @@ pub mod image_io;
 pub mod meter;
 pub mod resample;
 pub mod service;
+pub mod slant;
 pub mod store;
 
 pub use decoder::{Decoder, DecoderConfig, DecoderEvent, Done, Source, width_of};

@@ -408,6 +408,46 @@ impl WefaxService {
         Ok(())
     }
 
+    /// Somma `ppm` alla correzione a mano dell'inclinazione (limitata a +-20000) e la applica subito: all'immagine in corso (righe nuove e
+    /// gia' scritte) e alle prossime. Restituisce la correzione a mano totale.
+    pub fn adjust_slant(&self, ppm: f32) -> Result<f32, WefaxError> {
+        if !ppm.is_finite() {
+            return Err(WefaxError::BadSettings("correzione non valida".into()));
+        }
+        let mut s = self.settings();
+        s.slant_ppm = (s.slant_ppm + ppm).clamp(-crate::slant::MAX_PPM, crate::slant::MAX_PPM);
+        let total = s.slant_ppm;
+        self.apply_settings(s)?;
+        Ok(total)
+    }
+
+    /// La voce di una cartina salvata.
+    pub fn image_entry(&self, id: &str) -> Option<ImageEntry> {
+        lock(&self.inner.store).entry(id)
+    }
+
+    /// Larghezza dell'immagine in corso (o dell'ultima finita).
+    pub fn current_width(&self) -> Option<u32> {
+        lock(&self.inner.current).as_ref().map(|i| i.width).filter(|w| *w > 0).or_else(|| Some(lock(&self.inner.rx).width).filter(|w| *w > 0))
+    }
+
+    /// Raddrizza una cartina salvata di `ppm` (stesso verso di `slant_ppm`), con le righe a `ref_row` ferme. Come nuova versione (nuova voce
+    /// in cima alla cronologia) o, con `replace`, al posto dell'originale. Restituisce la voce scritta.
+    pub fn straighten_image(&self, id: &str, ppm: f32, ref_row: Option<f64>, replace: bool) -> Result<ImageEntry, WefaxError> {
+        if !ppm.is_finite() || ppm.abs() > crate::slant::MAX_PPM {
+            return Err(WefaxError::BadSettings("inclinazione oltre 20000 ppm".into()));
+        }
+        let mut store = lock(&self.inner.store);
+        let entry = store.entry(id).ok_or(WefaxError::NotFound)?;
+        let img = crate::image_io::decode_png(&store.png(id)?)?;
+        let out = crate::slant::straighten(&img, ppm, ref_row.unwrap_or(f64::from(img.height) / 2.0));
+        if replace {
+            return store.replace(id, &out);
+        }
+        let extra = EntryExtra { ioc: entry.ioc, lpm: entry.lpm, correlation: entry.correlation, reason: entry.reason, source: entry.source, complete: entry.complete };
+        store.add(&out, extra)
+    }
+
     /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o impostazioni del sistema).
     pub fn reset_learned(&self) {
         let _ = self.inner.queue.send(Msg::ResetLearned);
@@ -797,5 +837,39 @@ mod tests {
         let mut ok = s.clone();
         ok.afc_range_hz = 400.0;
         assert!(ok.validate().is_ok());
+    }
+
+    #[test]
+    fn la_correzione_a_mano_si_somma_si_limita_e_raddrizza_le_cartine_salvate() {
+        let data = temp("inclinazione");
+        let svc = WefaxService::open(&data);
+        assert_eq!(svc.adjust_slant(120.0).expect("somma"), 120.0);
+        assert_eq!(svc.adjust_slant(-20.0).expect("somma"), 100.0);
+        assert_eq!(svc.settings().slant_ppm, 100.0);
+        assert_eq!(svc.adjust_slant(50_000.0).expect("somma"), 20_000.0);
+        assert!(svc.adjust_slant(f32::NAN).is_err());
+        // cartina salvata con una linea inclinata di 0,5 px per riga: come nuova versione l'originale resta, con `replace` si sostituisce
+        let (w, h) = (400u32, 300u32);
+        let mut img = GrayImage { width: w, height: h, data: vec![230; (w * h) as usize] };
+        for r in 0..h as usize {
+            let x = 50 + (0.5 * r as f64) as usize;
+            img.data[r * w as usize + x] = 20;
+        }
+        let entry = lock(&svc.inner.store).add(&img, EntryExtra { ioc: 576, lpm: 120.0, complete: true, ..EntryExtra::default() }).expect("salva");
+        let ppm = 0.5 / f64::from(w) * 1e6;
+        let nuova = svc.straighten_image(&entry.id, ppm as f32, Some(0.0), false).expect("nuova versione");
+        assert_ne!(nuova.id, entry.id);
+        assert_eq!(svc.images().len(), 2);
+        let png = crate::image_io::decode_png(&svc.image_png(&nuova.id).expect("png")).expect("lettura");
+        let scura = |r: usize| (0..w as usize).min_by_key(|&c| png.data[r * w as usize + c]).unwrap_or(0) as i64;
+        assert!((scura(10) - scura(280)).abs() <= 2, "{} contro {}", scura(10), scura(280));
+        // l'originale e' rimasto storto
+        let orig = crate::image_io::decode_png(&svc.image_png(&entry.id).expect("png")).expect("lettura");
+        assert_eq!(orig, img);
+        let sost = svc.straighten_image(&entry.id, ppm as f32, Some(0.0), true).expect("sostituita");
+        assert_eq!(sost.id, entry.id);
+        assert_eq!(svc.images().len(), 2);
+        assert!(svc.straighten_image("non-esiste", 10.0, None, false).is_err());
+        let _ = std::fs::remove_dir_all(&data);
     }
 }

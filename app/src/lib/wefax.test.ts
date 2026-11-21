@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeGrayRows, fitScale, followScrollTop, grayIntoRgba, stepZoom } from './wefax';
+import { decodeGrayRows, fitScale, followScrollTop, grayIntoRgba, pointInImage, stepZoom } from './wefax';
 
 describe('wefax helpers', () => {
   it('fits the picture to the available width without upscaling too much', () => {
@@ -40,5 +40,12 @@ describe('wefax helpers', () => {
     expect(rgba.length).toBe(2 * 3 * 4);
     expect([...rgba.slice(4, 8)]).toEqual([128, 128, 128, 255]);
     expect([...rgba.slice(20, 24)]).toEqual([3, 3, 3, 255]);
+  });
+
+  it('maps a click to image pixels, clamped to the picture', () => {
+    const rect = { left: 100, top: 50, width: 900, height: 500 };
+    expect(pointInImage(550, 300, rect, 1800, 1000)).toEqual({ x: 900, y: 500 });
+    expect(pointInImage(0, 9999, rect, 1800, 1000)).toEqual({ x: 0, y: 1000 });
+    expect(pointInImage(10, 10, { ...rect, width: 0 }, 1800, 1000)).toBeNull();
   });
 });

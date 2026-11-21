@@ -9,7 +9,7 @@ use axum::{
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
 };
-use mode_wefax::{WefaxError, WefaxService, WefaxSettings};
+use mode_wefax::{WefaxError, WefaxService, WefaxSettings, slant::SlantPoints};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -170,4 +170,56 @@ pub(crate) async fn wefax_image_delete(State(state): State<AppState>, _: Authed,
     let svc = service(&state)?;
     blocking(move || svc.delete_image(&id)).await?.map_err(api_error)?;
     Ok(Json(json!({ "ok": true })))
+}
+
+/// Correzione a mano dell'inclinazione.
+#[derive(Deserialize)]
+pub(crate) struct SlantBody {
+    /// Correzione da sommare, in ppm (positivo: righe piu' lunghe, come `slant_ppm`).
+    #[serde(default)]
+    ppm: Option<f32>,
+    /// Oppure due punti sull'immagine (colonna `x`, riga `y`, in pixel) ai capi di una linea che dovrebbe essere verticale: da li' si ricava il ppm.
+    #[serde(default)]
+    points: Option<SlantPoints>,
+    /// La cartina salvata da raddrizzare. Senza, la correzione vale per l'immagine in corso e le prossime (si somma a `slant_ppm`).
+    #[serde(default)]
+    id: Option<String>,
+    /// Con `id`: sostituisce la cartina salvata invece di scriverne una nuova versione.
+    #[serde(default)]
+    replace: bool,
+}
+
+/// Corregge l'inclinazione con `ppm` o con la misura a due punti. Senza `id`: si somma a `slant_ppm` e vale subito sull'immagine in corso
+/// (righe nuove e gia' scritte) e sulle prossime. Con `id`: raddrizza quella cartina salvata (nuova versione, o `replace`) e non tocca le
+/// impostazioni. Risponde `{ppm, slant_ppm, image}` (`slant_ppm` e `image` solo nel caso che li riguarda).
+#[utoipa::path(post, path = "/api/v1/wefax/slant", responses((status = 200, description = "`{ppm, slant_ppm?, image?}`"), (status = 400, description = "Misura non valida (bad_settings)"), (status = 404, description = "Cartina non trovata (not_found)")))]
+pub(crate) async fn wefax_slant(State(state): State<AppState>, _: Authed, Json(body): Json<SlantBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let bad = |m: &str| ApiError::new(StatusCode::BAD_REQUEST, "bad_settings").with_message(m.to_string());
+    blocking(move || -> Result<Value, ApiError> {
+        // la larghezza dell'immagine da misurare: quella salvata, o quella in corso
+        let (ppm, ref_row) = match (body.ppm, body.points) {
+            (Some(p), None) => (p, None),
+            (None, Some(pts)) => {
+                let width = match &body.id {
+                    Some(id) => svc.image_entry(id).map(|e| e.width).ok_or_else(|| api_error(WefaxError::NotFound))?,
+                    None => svc.current_width().ok_or_else(|| bad("nessuna immagine da misurare"))?,
+                };
+                (mode_wefax::slant::ppm_from_points(width, &pts).map_err(api_error)?, Some(pts.top_row()))
+            }
+            _ => return Err(bad("serve `ppm` oppure `points`")),
+        };
+        match body.id {
+            Some(id) => {
+                let entry = svc.straighten_image(&id, ppm, ref_row, body.replace).map_err(api_error)?;
+                Ok(json!({ "ppm": ppm, "image": entry }))
+            }
+            None => {
+                let total = svc.adjust_slant(ppm).map_err(api_error)?;
+                Ok(json!({ "ppm": ppm, "slant_ppm": total }))
+            }
+        }
+    })
+    .await?
+    .map(Json)
 }

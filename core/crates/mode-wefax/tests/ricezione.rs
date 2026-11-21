@@ -590,16 +590,32 @@ fn cartina(w: usize, h: usize) -> Vec<u8> {
 /// Riceve in modo manuale (senza fasatura che misurerebbe l'orologio) e confronta con l'originale: la riga di partenza e la colonna si
 /// cercano sulle prime righe, poi la correlazione e' su tutte le righe.
 fn ricevi_cartina(ppm: f64, auto_slant: bool, img: &[u8], w: usize, h: usize) -> f64 {
+    ricevi_cartina_corretta(ppm, auto_slant, None, img, w, h)
+}
+
+/// Come `ricevi_cartina`, e con `correzione = (righe, ppm)` a quel punto della ricezione cambia la correzione a mano senza interrompere
+/// l'immagine (come i pulsanti dell'interfaccia): le righe gia' scritte si devono raddrizzare e le nuove nascere dritte.
+fn ricevi_cartina_corretta(ppm: f64, auto_slant: bool, correzione: Option<(u32, f32)>, img: &[u8], w: usize, h: usize) -> f64 {
     let s = Segnale { apt: false, ppm, ..Segnale::standard(576, 120) };
     let audio = genera(&s, img, w, h);
     let mut c = cfg(576, 120);
     c.manual = true;
     c.auto_center = false;
     c.auto_slant = auto_slant;
-    let mut d = Decoder::new(c);
+    let mut d = Decoder::new(c.clone());
+    let mut correzione = correzione;
     for chunk in audio.chunks(1024) {
         d.push(chunk);
+        if let Some((righe, v)) = correzione
+            && d.current().is_some_and(|(_, rows, _)| rows >= righe)
+        {
+            let mut nuova = c.clone();
+            nuova.slant_ppm = v;
+            d.set_config(nuova);
+            correzione = None;
+        }
     }
+    assert!(correzione.is_none(), "la correzione non e' mai partita");
     let rx = d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done) } else { None });
     let rx = rx.expect("immagine non chiusa");
     assert_eq!(rx.image.width as usize, w);
@@ -648,6 +664,20 @@ fn l_inclinazione_automatica_raddrizza_la_cartina_con_orologio_sbagliato() {
         senza_media += senza;
     }
     assert!(senza_media / 3.0 < 0.7, "senza correzione la cartina doveva uscire inclinata");
+}
+
+#[test]
+fn la_correzione_a_mano_a_immagine_in_corso_raddrizza_le_righe_scritte_e_le_nuove() {
+    let (w, h) = (1809usize, 260usize);
+    let img = cartina(w, h);
+    for ppm in [1500.0f32, -1200.0] {
+        let senza = ricevi_cartina_corretta(f64::from(ppm), false, None, &img, w, h);
+        // a meta' immagine si dice quanto era sbagliato l'orologio: tutta l'immagine, anche quanto gia' scritto, deve venire dritta
+        let con = ricevi_cartina_corretta(f64::from(ppm), false, Some((120, ppm)), &img, w, h);
+        eprintln!("cartina {ppm:+} ppm: senza correzione {senza:.4}, con la correzione a mano alla riga 120 {con:.4}");
+        assert!(senza < 0.7, "{ppm} ppm: senza correzione doveva essere storta ({senza})");
+        assert!(con > 0.9, "{ppm} ppm: con la correzione a mano a immagine in corso {con}");
+    }
 }
 
 #[test]

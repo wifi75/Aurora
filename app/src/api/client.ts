@@ -2541,6 +2541,31 @@ export async function wefaxRxPage(action: 'hold' | 'release', id: string): Promi
   await wefaxRxQueue(() => request(`/wefax/rx/${action}?id=${encodeURIComponent(id)}`, { method: 'POST', keepalive: true }));
 }
 
+/** Due punti cliccati sull'immagine (colonna `x`, riga `y`, pixel dell'immagine) ai capi di una linea che dovrebbe essere verticale. */
+export interface WefaxSlantPoints {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface WefaxSlantResult {
+  /** La correzione applicata (ppm, positivo: righe piu' lunghe). */
+  ppm: number;
+  /** Correzione a mano totale dopo la somma (solo senza `id`). */
+  slant_ppm?: number;
+  /** La cartina salvata raddrizzata (solo con `id`). */
+  image?: WefaxImageEntry;
+}
+
+/**
+ * Corregge l'inclinazione con `ppm` o con due punti. Senza `id` vale subito sulla cartina in corso (righe nuove e gia' scritte) e sulle
+ * prossime; con `id` raddrizza quella cartina salvata, come nuova copia o (`replace`) al posto dell'originale.
+ */
+export async function postWefaxSlant(body: { ppm?: number; points?: WefaxSlantPoints; id?: string; replace?: boolean }): Promise<WefaxSlantResult> {
+  return (await (await request('/wefax/slant', jsonInit(body))).json()) as WefaxSlantResult;
+}
+
 export async function getWefaxCurrentBlob(): Promise<Blob> {
   return (await request('/wefax/rx/current')).blob();
 }

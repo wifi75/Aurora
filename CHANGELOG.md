@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, correzione dell'inclinazione sulla cartina in corso: i pulsanti dell'inclinazione (`slant_ppm`) valgono subito anche sull'immagine in ricezione (il periodo di riga cambia per le righe nuove e le righe gia' scritte si raddrizzano con la stessa funzione dell'inclinazione automatica, senza interrompere ne' ricominciare l'immagine). Nuovo pulsante «Misura inclinazione» sul visore: due clic ai capi di una linea che dovrebbe essere verticale, dal numero di righe e dallo spostamento si ricava il ppm (`POST /api/v1/wefax/slant` con `ppm` o `points`) e si somma alla correzione a mano. Lo stesso pulsante nella cartina aperta in grande dalla cronologia raddrizza quella salvata (`id`): come nuova copia o, con la spunta e dopo conferma, al posto dell'originale. Guida e testi nelle otto lingue.
+
 - WEFAX, pagina rifatta a schede (stile RTT) e centrata: cartina in arrivo in alto, spettro e cascata a sinistra in basso (senza scala in Hz, a filo del bordo), cartine ricevute a destra in miniature quadrate con frecce per scorrere, scheda «Ricezione» fino al bordo basso; niente barra di scorrimento nell'immagine vuota.
 
 - WEFAX: tolti i pulsanti «Adatta» e «1:1»: la cartina si vede sempre a pixel reali (100 %), e i pulsanti − e + restano per cambiare la scala; la pagina ha una larghezza massima (visore e fascia in basso non si allargano oltre 68 rem) con i comandi accanto.

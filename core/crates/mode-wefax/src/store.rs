@@ -134,6 +134,22 @@ impl ImageStore {
         Ok(entry)
     }
 
+    /// La voce di un'immagine.
+    pub fn entry(&self, id: &str) -> Option<ImageEntry> {
+        self.entries.iter().find(|e| e.id == id && safe_id(id)).cloned()
+    }
+
+    /// Sostituisce il PNG di un'immagine con un'altra della stessa misura (la voce resta com'e', stessa data).
+    pub fn replace(&mut self, id: &str, img: &GrayImage) -> Result<ImageEntry, WefaxError> {
+        let png = encode_png(img)?;
+        let entry = self.entries.iter_mut().find(|e| e.id == id && safe_id(id)).ok_or(WefaxError::NotFound)?;
+        std::fs::write(self.dir.join(&entry.file), png).map_err(|e| WefaxError::Io(e.to_string()))?;
+        (entry.width, entry.height) = (img.width, img.height);
+        let out = entry.clone();
+        self.save_index()?;
+        Ok(out)
+    }
+
     pub fn png(&self, id: &str) -> Result<Vec<u8>, WefaxError> {
         let entry = self.entries.iter().find(|e| e.id == id && safe_id(id)).ok_or(WefaxError::NotFound)?;
         std::fs::read(self.dir.join(&entry.file)).map_err(|_| WefaxError::NotFound)

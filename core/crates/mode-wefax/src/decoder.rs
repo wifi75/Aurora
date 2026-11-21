@@ -492,6 +492,8 @@ impl Decoder {
         let restart = cfg.ioc != self.cfg.ioc || cfg.manual != self.cfg.manual;
         let tuning_changed = cfg.center_hz != self.cfg.center_hz || cfg.shift_hz != self.cfg.shift_hz;
         let demod_changed = cfg.filter != self.cfg.filter || tuning_changed;
+        // correzione a mano cambiata con un'immagine in corso: vale subito (per le righe nuove col periodo, per quelle scritte raddrizzandole)
+        let slant_delta = f64::from(cfg.slant_ppm) - f64::from(self.cfg.slant_ppm);
         // sottoportante cambiata a mano o AFC spento: la correzione ricomincia da zero
         if tuning_changed || !cfg.afc {
             self.afc_hz = 0.0;
@@ -513,6 +515,10 @@ impl Decoder {
         // il periodo di riga puo' cambiare a immagine in corso (correzione a mano): la posizione di riga resta continua
         self.rebase();
         self.lpm_set();
+        if !restart && slant_delta != 0.0 && self.image.is_some() {
+            let applied = slant_delta * 1e-6 * self.width as f64;
+            self.straighten_written(applied, self.slant_base_row);
+        }
     }
 
     /// Errore di orologio ricordato dalle immagini precedenti (ppm): si aggiunge al periodo nominale delle immagini senza fasatura (manuale,
@@ -1131,8 +1137,14 @@ impl Decoder {
         let base = self.smpl_per_lin / (1.0 + (self.fixed_ppm() + old) * 1e-6);
         self.auto_ppm = new;
         self.set_line_len(base);
-        // Le righe scritte: un pixel al tempo `tau` (riga + colonna / larghezza) deve andare a destra di (adesso - max(tau, ultima misura)) *
-        // deriva, cosi' le righe gia' scritte combaciano con quelle nuove (il periodo sbagliato inclina e anche stira la riga).
+        self.straighten_written(applied, now);
+    }
+
+    /// Raddrizza le righe gia' scritte di una correzione di `applied` pixel per riga decisa all'istante di riga `now` (rispetto alla prima):
+    /// un pixel al tempo `tau` (riga + colonna / larghezza) deve andare a destra di (adesso - max(tau, ultima correzione)) * `applied`, cosi'
+    /// le righe gia' scritte combaciano con quelle nuove (il periodo sbagliato inclina e anche stira la riga). Serve alla stima automatica e
+    /// alla correzione a mano a immagine in corso.
+    fn straighten_written(&mut self, applied: f64, now: f64) {
         let wi = self.width;
         let shift = self.shift;
         let Some(img) = self.image.as_mut() else { return };

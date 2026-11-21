@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { deleteWefaxImage, wefaxImageUrl, type WefaxImageEntry } from '../../api/client';
+import { deleteWefaxImage, postWefaxSlant, wefaxImageUrl, type WefaxImageEntry, type WefaxSlantPoints } from '../../api/client';
 import { useT } from '../../i18n';
 import { askConfirm } from '../ConfirmHost';
+import { SlantOverlay } from './SlantOverlay';
 
 function when(ms: number): string {
   const d = new Date(ms);
@@ -93,15 +94,51 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
         </svg>
       </button>
       </div>
-      {open ? <Lightbox entry={open} onClose={() => setOpen(null)} onDelete={() => void remove(open)} /> : null}
+      {open ? (
+        <Lightbox
+          entry={open}
+          onClose={() => setOpen(null)}
+          onDelete={() => void remove(open)}
+          onFixed={(e) => {
+            // raddrizzata: la nuova copia (o la stessa cartina sostituita) si vede subito, con l'elenco aggiornato
+            setOpen(e);
+            onChanged();
+          }}
+        />
+      ) : null}
     </section>
   );
 }
 
 /** La cartina aperta: adattata alla larghezza della finestra oppure a pixel reali (si scorre nel riquadro). */
-function Lightbox({ entry, onClose, onDelete }: { entry: WefaxImageEntry; onClose: () => void; onDelete: () => void }) {
+function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxImageEntry; onClose: () => void; onDelete: () => void; onFixed: (e: WefaxImageEntry) => void }) {
   const t = useT();
   const [actual, setActual] = useState(false);
+  // misura dell'inclinazione a due clic sulla cartina salvata: si raddrizza e si salva come nuova copia (o si sostituisce, dopo conferma)
+  const [measuring, setMeasuring] = useState(false);
+  const [replace, setReplace] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  // una cartina sostituita ha lo stesso indirizzo: il numero fa ricaricare l'immagine
+  const [version, setVersion] = useState(0);
+  const src = `${wefaxImageUrl(entry.id)}${version > 0 ? `?v=${version}` : ''}`;
+  const measure = async (p: WefaxSlantPoints) => {
+    setMeasuring(false);
+    if (replace && !(await askConfirm(t('wefax.slant.replaceAsk')))) return;
+    setBusy(true);
+    try {
+      const r = await postWefaxSlant({ points: p, id: entry.id, replace });
+      setNote({ ok: true, text: t(replace ? 'wefax.slant.replaced' : 'wefax.slant.copied', { ppm: String(Math.round(r.ppm)) }) });
+      if (r.image) {
+        setVersion((v) => v + 1);
+        onFixed(r.image);
+      }
+    } catch {
+      setNote({ ok: false, text: t('wefax.slant.error') });
+    } finally {
+      setBusy(false);
+    }
+  };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -113,8 +150,16 @@ function Lightbox({ entry, onClose, onDelete }: { entry: WefaxImageEntry; onClos
     <div className="sstv-lightbox wefax-lightbox" role="dialog" aria-modal="true" aria-label={when(entry.time_ms)} onClick={onClose}>
       <figure onClick={(e) => e.stopPropagation()}>
         <div className={`wefax-lb-scroll${actual ? ' wefax-lb-scroll--actual' : ''}`}>
-          <img src={wefaxImageUrl(entry.id)} alt="" width={entry.width} height={entry.height} className={actual ? 'wefax-lb-img wefax-lb-img--actual' : 'wefax-lb-img'} />
+          <div className="wefax-lb-sheet">
+            <img src={src} alt="" width={entry.width} height={entry.height} className={actual ? 'wefax-lb-img wefax-lb-img--actual' : 'wefax-lb-img'} />
+            {measuring ? <SlantOverlay width={entry.width} height={entry.height} onMeasure={(p) => void measure(p)} onCancel={() => setMeasuring(false)} /> : null}
+          </div>
         </div>
+        {note ? (
+          <p className={`wefax-slant-note${note.ok ? '' : ' wefax-slant-note--bad'}`} role="status">
+            {note.text}
+          </p>
+        ) : null}
         <figcaption>
           <span>
             <b>{when(entry.time_ms)}</b> · IOC {entry.ioc} · {entry.width}×{entry.height}
@@ -128,7 +173,14 @@ function Lightbox({ entry, onClose, onDelete }: { entry: WefaxImageEntry; onClos
                 {t('wefax.view.actual')}
               </button>
             </span>
-            <a className="glass sstv-btn sstv-btn--primary" href={wefaxImageUrl(entry.id)} download={entry.file}>
+            <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={busy} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
+              {t('wefax.slant.measure')}
+            </button>
+            <label className="sstv-check" title={t('wefax.slant.replaceTip')}>
+              <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+              {t('wefax.slant.replace')}
+            </label>
+            <a className="glass sstv-btn sstv-btn--primary" href={src} download={entry.file}>
               {t('wefax.hist.download')}
             </a>
             <button type="button" className="glass sstv-btn sstv-btn--danger" onClick={onDelete}>
