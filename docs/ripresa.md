@@ -1,4 +1,4 @@
-# Ripresa del lavoro (ultimo aggiornamento: 2026-11-18)
+# Ripresa del lavoro (ultimo aggiornamento: 2026-11-21)
 
 Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto e' Aurora** e **cosa fare per primo**. Va aggiornato a ogni passaggio di sessione.
 
