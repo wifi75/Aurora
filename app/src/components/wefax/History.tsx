@@ -32,8 +32,10 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
       <ul className="wefax-thumbs">
         {sorted.map((img) => (
           <li key={img.id} className="wefax-thumb">
-            {/* i pulsantini stanno sopra la miniatura: apri, scarica, cancella */}
-            <span className="wefax-thumb-tools">
+            {/* in testa la data e i pulsantini (apri, scarica, cancella), sotto la miniatura */}
+            <span className="wefax-thumb-head">
+              <b className="wefax-thumb-date">{when(img.time_ms)}</b>
+              <span className="wefax-thumb-tools">
               <button type="button" className="glass sstv-btn wefax-thumb-icon" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
                 ⤢
               </button>
@@ -43,15 +45,12 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
               <button type="button" className="glass sstv-btn sstv-btn--danger wefax-thumb-icon" onClick={() => void remove(img)} title={t('wefax.hist.delete')} aria-label={t('wefax.hist.delete')}>
                 ✕
               </button>
+              </span>
             </span>
             <button type="button" className="wefax-thumb-open" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
               <img src={wefaxImageUrl(img.id)} alt="" loading="lazy" />
               {!img.complete ? <span className="sstv-thumb-tag">{t('wefax.hist.partial')}</span> : null}
             </button>
-            {/* solo la data */}
-            <span className="wefax-thumb-meta">
-              <b>{when(img.time_ms)}</b>
-            </span>
           </li>
         ))}
       </ul>

@@ -253,3 +253,23 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 
 .wefax-box { height: calc(100vh / var(--ui-zoom, 1) - 19.5rem); }
 .wefax-band-scope .wefax-scope .wefax-scope-spec { height: 38px !important; }
+
+/* ritocchi del 2026-11-21: scheda di ricezione piccola, spettro che conta di piu' della cascata colorata, cartine ricevute con la data e i pulsantini in testa */
+.wefax-body { grid-template-columns: minmax(0, 1fr) minmax(150px, 190px); gap: 0.5rem; }
+.wefax-right .wefax-side .sstv-hint { display: none; }
+.wefax-set-details > summary { cursor: pointer; font-weight: 700; font-size: 0.72rem; padding: 0.2rem 0.1rem; list-style: none; }
+.wefax-set-details > summary::-webkit-details-marker { display: none; }
+.wefax-set-details > summary::before { content: '▸ '; }
+.wefax-set-details[open] > summary::before { content: '▾ '; }
+.wefax-set-details .wefax-set { border: 0; padding: 0.2rem 0 0; }
+.wefax-band { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); height: 9.2rem; }
+.wefax-band-scope .wefax-scope { display: flex; flex-direction: column; height: 100%; margin: 0; }
+.wefax-band-scope .wefax-scope .wefax-scope-spec { flex: 1 1 auto; height: auto !important; min-height: 3rem; }
+.wefax-band-scope .wefax-scope .digi-wf { flex: 0 0 auto; }
+.wefax-band-hist .wefax-thumbs { align-items: flex-start; gap: 0.45rem; }
+.wefax-band-hist .wefax-thumb { flex: 0 0 8.6rem; width: 8.6rem; gap: 0.1rem; border-radius: 8px; }
+.wefax-band-hist .wefax-thumb-head { display: flex; align-items: center; justify-content: space-between; gap: 0.2rem; padding: 0.1rem 0.25rem 0; }
+.wefax-band-hist .wefax-thumb-date { font-size: 0.58rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wefax-band-hist .wefax-thumb-head .wefax-thumb-tools { display: flex; gap: 0.1rem; padding: 0; position: static; flex: 0 0 auto; }
+.wefax-band-hist .wefax-thumb-open img { height: 5.8rem; width: 100%; object-fit: contain; background: #fff; }
+.wefax-band-hist .wefax-thumb-meta { display: none; }

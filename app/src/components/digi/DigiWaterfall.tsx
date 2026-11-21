@@ -52,6 +52,8 @@ interface Props {
   onMenu?(hz: number, x: number, y: number): void;
   /** I segni del modo DXpedition (di base si'; la pagina WEFAX li spegne). */
   pileup?: boolean;
+  /** Nasconde la scala in Hz sopra la cascata (la pagina WEFAX non ne ha bisogno): l'altezza `height` resta quella totale, compresa la scala. */
+  hideScale?: boolean;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
@@ -67,7 +69,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu, pileup = true }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu, pileup = true, hideScale = false }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -254,7 +256,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
           }}
         />
       ) : null}
-      <canvas ref={scale} className="digi-wf-scale" />
+      <canvas ref={scale} className="digi-wf-scale" style={hideScale ? { display: 'none' } : undefined} />
       <canvas
         ref={flow}
         className="digi-wf-flow"

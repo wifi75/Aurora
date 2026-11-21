@@ -116,8 +116,9 @@ async function start() {
   // ricaricando la pagina (F5, «Ricarica») si resta dove si era: solo l'apertura di Aurora riparte dalla Stazione
   const reload = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)?.type === 'reload';
   const keep = reload || ['#/finestra/', '#/associa', '#/pair', '#/messaggi-autore'].some((h) => location.hash.startsWith(h));
-  // un client remoto non riparte (nemmeno ricaricando) da una pagina che accende il motore: l'ascolto si avvia solo con «Ascolta»
-  if (!keep || (REMOTE_HOST && ENGINE_PAGES.has(location.hash))) history.replaceState(null, '', '#/');
+  // un client remoto non apre da solo una pagina che accende il motore (WEFAX, SSTV, modi testuali) quando si apre Aurora da capo; ricaricando la pagina
+  // (F5) invece ci resta: l'ascolto parte comunque solo con «Ascolta», perche' quelle pagine sul client remoto chiedono prima il consenso
+  if (!keep || (REMOTE_HOST && !reload && ENGINE_PAGES.has(location.hash))) history.replaceState(null, '', '#/');
   // i moduli che leggono le preferenze all'avvio si caricano solo ora
   const { App } = await import('./App');
   const { Splash } = await import('./components/Splash');

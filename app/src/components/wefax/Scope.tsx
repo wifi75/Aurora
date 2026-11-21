@@ -8,8 +8,8 @@ import '../../styles/digi.css';
 /** Il tratto dell'audio mostrato (Hz): il fax (1500-2300 Hz) sta nel mezzo. */
 export const SCOPE_MIN_HZ = 1000;
 export const SCOPE_MAX_HZ = 3000;
-const SPECTRUM_H = 34;
-const WATERFALL_H = 56;
+/** La cascata colorata e' bassa (la scala in Hz e' nascosta e si somma ai 22 px che la scala occuperebbe): conta di piu' la curva che si muove. */
+const WATERFALL_H = 36 + 22;
 
 /** Colori dal tema (lo spettro segue il chiaro e lo scuro dell'app). */
 function themeColor(el: Element, name: string, fallback: string): string {
@@ -105,7 +105,6 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
       <canvas
         ref={canvas}
         className="wefax-scope-spec"
-        style={{ height: SPECTRUM_H }}
         role="img"
         aria-label={t('wefax.scope.aria')}
         title={t('wefax.scope.tip')}
@@ -120,6 +119,7 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
         transmitting={false}
         height={WATERFALL_H}
         pileup={false}
+        hideScale
         onPick={(hz, _shift, commit) => {
           if (commit) onCenter(Math.round(Math.min(3000, Math.max(1000, hz))));
         }}

@@ -141,8 +141,10 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
       </div>
       <p className="sstv-hint">{t('wefax.rx.forceHint')}</p>
 
+      {/* le impostazioni stanno chiuse: la scheda resta piccola e le cartine ricevute hanno piu' spazio */}
+      <details className="wefax-set-details">
+      <summary>{t('wefax.set.title')}</summary>
       <fieldset className="wefax-set">
-        <legend>{t('wefax.set.title')}</legend>
         <div className="wefax-grid">
           <label className="sstv-field">
             {t('wefax.set.ioc')}
@@ -229,6 +231,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           </span>
         </div>
       </fieldset>
+      </details>
     </aside>
   );
 }

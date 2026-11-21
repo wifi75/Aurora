@@ -2,6 +2,10 @@
 
 ## Non rilasciato
 
+- WEFAX: scheda dei comandi di ricezione piu' stretta con le impostazioni chiuse sotto «Impostazioni di ricezione» (si aprono con un clic); spettro piu' alto e cascata colorata piu' bassa, senza la scala in Hz; cartine ricevute con la data e i pulsantini (apri, scarica, cancella) in testa a ogni miniatura e la miniatura piu' grande; fascia in basso piu' larga per le cartine.
+- Pagine bianche in Chrome: se l'interfaccia non parte compare scritto l'errore del browser (`diag.js`) e la traduzione automatica di Chrome, che puo' rompere la pagina, e' disattivata.
+- Ricaricando la pagina (F5) da un browser su un altro computer si resta su WEFAX (o SSTV, modi testuali) invece di tornare a FT8; l'ascolto parte comunque solo con «Ascolta».
+
 - WEFAX, ricezione piu' precisa: l'IOC si riconosce dal tono d'inizio (300 Hz: 576, 675 Hz: 288) prima della fasatura, senza toccare l'impostazione («IOC dal tono di avvio», accesa di base); l'errore di orologio della scheda audio misurato dall'inclinazione automatica si ricorda tra una cartina e l'altra (ppm appreso, in sola lettura, con «Azzera» e azzerato se cambia la frequenza di campionamento) e le immagini senza fasatura partono gia' dritte; i blocchi audio persi si contano e si mostrano con il consiglio di chiudere i programmi pesanti (coda del ricevitore piu' grande); l'AFC ha due limiti (passo massimo 25 Hz, limite globale «Limite AFC» 20-400 Hz), conta di piu' sul tono d'inizio e sulla fasatura ed e' piu' cauto dentro l'immagine, dove un solo picco non e' piu' preso per un tono fisso. Provato solo con il segnale sintetico.
 
 - WEFAX, disposizione definitiva: la cartina in arrivo in alto; sotto, divisa a meta', a sinistra spettro e cascata e a destra le cartine ricevute alla stessa altezza (con tre pulsantini sopra ogni miniatura: apri, scarica, cancella, e sotto solo la data); a destra i comandi, piu' piccoli.
