@@ -8,6 +8,7 @@ import { useGroups } from '../lib/detached';
 import { History } from '../components/wefax/History';
 import { WefaxMini } from '../components/wefax/Mini';
 import { Controls } from '../components/wefax/Controls';
+import { FreqPicker } from '../components/wefax/FreqPicker';
 import { AfcSql } from '../components/wefax/AfcSql';
 import { WefaxScope } from '../components/wefax/Scope';
 import { Viewer } from '../components/wefax/Viewer';
@@ -16,7 +17,7 @@ import { gotoTextMode } from '../lib/digiGoto';
 import { useListenWhileOpen } from '../lib/listenWhileOpen';
 import { REMOTE_HOST } from '../lib/phone';
 import { rememberDialBeforeReceiveOnly } from '../lib/modeRetune';
-import { formatKhz, presetAt, wefaxGroups, type WefaxPreset } from '../lib/wefaxStations';
+import { presetAt, wefaxGroups, type WefaxPreset } from '../lib/wefaxStations';
 import { browserStorage } from '../lib/theme';
 import { useStation } from '../state/station';
 import '../styles/sstv.css';
@@ -158,29 +159,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
           </span>
         ) : null}
         {/* le stazioni meteo per banda e poi per frequenza: la radio va sulla portante (frequenza assegnata meno 1,9 kHz, in USB) */}
-        <select
-          className="sstv-modesel wefax-freq"
-          value={current?.id ?? chosen}
-          aria-label={t('wefax.freq.label')}
-          title={t('wefax.freq.tip')}
-          onChange={(e) => {
-            const p = groups.flatMap((g) => g.presets).find((x) => x.id === e.target.value);
-            if (p) selectPreset(p);
-          }}
-        >
-          <option value="" disabled>
-            {t('wefax.freq.choose')}
-          </option>
-          {groups.map((g) => (
-            <optgroup key={g.band} label={t('wefax.freq.band', { mhz: String(g.band) })}>
-              {g.presets.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {`${formatKhz(p.khz)} kHz · ${p.call} ${p.place}`}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <FreqPicker groups={groups} value={current?.id ?? chosen} onSelect={selectPreset} />
         <span className="wefax-step" role="group" aria-label={t('wefax.freq.label')}>
           <button type="button" className="glass wefax-step-btn" title={t('wefax.freq.up')} aria-label={t('wefax.freq.up')} disabled={nowIdx >= 0 && nowIdx >= ordered.length - 1} onClick={() => step(1)}>
             ▲

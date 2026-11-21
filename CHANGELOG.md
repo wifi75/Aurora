@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- WEFAX: l'elenco delle stazioni si apre da solo sull'ultima frequenza impostata, la evidenzia e la porta al centro (prima il menu del sistema la lasciava in fondo); frecce, Invio, Esc e un clic fuori funzionano come in un menu. Le miniature delle cartine ricevute mostrano la cartina intera (non piu' un ritaglio ingrandito) e le barre di scorrimento della pagina sono sottili e nei colori del tema.
+- Informativa privacy (`docs/privacy.md`) e README: dalla 0.11.323 il segnale delle installazioni aperte si ripete circa ogni 40 minuti con un livello d'uso (0 ferma, 1 ricevuto, 2 trasmesso o QSO), sempre senza nominativi e senza indirizzi.
+
 - Conteggio delle installazioni attive: oltre al segnale giornaliero, ogni circa 40 minuti mentre Aurora e' aperta parte un «battito» anonimo (codice casuale gia' in uso, versione e livello d'uso: 0 aperta e ferma, 1 riceve o decodifica, 2 trasmette o ha fatto un QSO; mai nominativi ne' IP), solo con l'interruttore «conta le installazioni attive» acceso. Il servizio dei rapporti ha `POST /v1/battito` (tabella `battiti`, migrazione `0005_battiti.sql`, un battito ogni 5 minuti al massimo per installazione) e `GET /v1/utilizzo` per il portale Analytics (protetto): aperte e usate per giorno, versione e paese, online nell'ultima ora. Il testo dell'interruttore lo dice nelle otto lingue.
 
 - WEFAX: le cartine ricevute non occupano piu' una riga larga in fondo alla pagina: stanno in una colonna stretta accanto al visore (miniature una sotto l'altra, con apri, scarica e cancella; scorre da sola), e il riquadro del visore e' piu' basso, cosi' la pagina entra nello schermo con lo spettro e la cascata sopra. Sotto i 1100 pixel la colonna torna sotto il visore.
