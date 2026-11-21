@@ -14,6 +14,8 @@ export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 8;
 /** Lo zoom fisso del modo «Segui il satellite». */
 export const FOLLOW_ZOOM = 3;
+/** Lo zoom massimo di quello automatico all'entrata nell'area di acquisizione (a mano resta fino a ZOOM_MAX). */
+export const AUTO_ZOOM_MAX = 3;
 
 export interface MapView {
   /** Da 1 (mondo intero) a 8. */
@@ -199,8 +201,8 @@ export function autoView(mode: ZoomMode, sat: SatSpot, observer: { lat: number; 
         [observer.lat, observer.lon],
         [sat.lat, sat.lon],
       ],
-      { margin: 0.35, minSpanDeg: 10, maxZoom: 6 },
+      { margin: 0.35, minSpanDeg: 10, maxZoom: AUTO_ZOOM_MAX },
     );
   }
-  return fitView(footprintPoints(sat.lat, sat.lon, sat.footprintKm), { margin: 0.08 });
+  return fitView(footprintPoints(sat.lat, sat.lon, sat.footprintKm), { margin: 0.08, maxZoom: AUTO_ZOOM_MAX });
 }

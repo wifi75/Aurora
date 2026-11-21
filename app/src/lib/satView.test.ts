@@ -133,6 +133,13 @@ describe('autoView', () => {
     if (v) expect(allInside([[me.lat, me.lon], [50, 20]], v)).toBe(true);
   });
 
+  it('lo zoom automatico non supera 3x, nemmeno con satellite e stazione vicini',()=>{
+    const v = autoView('both', { lat: 45, lon: 12, footprintKm: 300 }, { lat: 45.1, lon: 12.1 });
+    const w = autoView('area', { lat: 45, lon: 12, footprintKm: 300 }, me);
+    expect(v?.zoom).toBeLessThanOrEqual(3);
+    expect(w?.zoom).toBeLessThanOrEqual(3);
+  });
+
   it('area del satellite e stazione e satellite senza stazione: l impronta', () => {
     const a = autoView('area', sat, me);
     const b = autoView('both', sat, null);

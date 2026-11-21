@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti: lo zoom automatico all'entrata nell'area di acquisizione si ferma a 3x (prima fino a 6x in «Entrambi» e 8x in «Area»); all'uscita la mappa torna intera come prima. A mano si ingrandisce ancora fino a 8x.
 - Tema scuro: il testo e' bianco ovunque (colore principale `#ffffff`, secondario e etichette quasi bianchi), comprese le etichette di SSTV/WEFAX, le impostazioni, la pagina Fox, il righello e i riquadri della trasmissione. Il tema chiaro non cambia.
 - Aggiornamenti, controllo di Aurora: se l'API di GitHub risponde con un errore (limite di 60 richieste all'ora per indirizzo, rete aziendale, filtri, 5xx) Aurora prova la pagina «latest», che non ha quel limite, e ne legge il numero della versione dal reindirizzamento, cosi' la cartolina «Aurora X e' pronta» compare lo stesso (senza le note); il motivo dell'errore va nel registro dell'agente (`aurora-agente.log`). Prima compariva «Controllo non riuscito» per qualunque errore.
 
