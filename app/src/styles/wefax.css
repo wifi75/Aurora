@@ -141,7 +141,7 @@
 .wefax-freq { font-size: 0.66rem; width: 19rem; max-width: 19rem; flex: 0 0 19rem; }
 .wefax-freq option, .wefax-freq optgroup { font-size: 0.68rem; }
 
-/* spettro e cascata sopra il visore (come SeaTTY): curva sottile, righe rosse su nero e bianco, riga del centro; il visore si accorcia
+/* spettro e cascata sopra il visore: curva sottile, righe rosse su nero e bianco, riga del centro; il visore si accorcia
    di quanto occupano */
 .wefax-scope { display: flex; flex-direction: column; gap: 0; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .wefax-scope-spec { display: block; width: 100%; cursor: crosshair; border-bottom: 1px solid var(--border); }

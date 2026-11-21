@@ -832,12 +832,12 @@ export const NOVITA: readonly Novita[] = [
       'Níveis de áudio do Windows: correção',
     ],
     text: [
-      'Dopo la prima trasmissione Aurora tornava a scrivere il volume di uscita della scheda audio. Ora lo scrive solo quando muovi tu il cursore Pwr: le altre volte lo legge soltanto, e MixW, WSJT-X e gli altri programmi trovano i livelli come li avevano lasciati.',
-      'After the first transmission Aurora went back to writing the output volume of the sound card. Now it writes it only when you move the Pwr slider yourself: otherwise it only reads it, and MixW, WSJT-X and the other programs find the levels as they left them.',
-      'Nach der ersten Sendung schrieb Aurora wieder die Ausgangslautstärke der Soundkarte. Jetzt schreibt es sie nur, wenn du selbst den Pwr-Regler bewegst: sonst liest es sie nur, und MixW, WSJT-X und die anderen Programme finden die Pegel, wie sie sie verlassen haben.',
-      'Après la première émission, Aurora recommençait à écrire le volume de sortie de la carte son. Maintenant il ne l’écrit que lorsque tu déplaces toi-même le curseur Pwr : sinon il le lit seulement, et MixW, WSJT-X et les autres programmes retrouvent les niveaux comme ils les avaient laissés.',
-      'Tras la primera transmisión Aurora volvía a escribir el volumen de salida de la tarjeta de sonido. Ahora solo lo escribe cuando mueves tú el cursor Pwr: si no, solo lo lee, y MixW, WSJT-X y los demás programas encuentran los niveles como los dejaron.',
-      'Depois da primeira transmissão o Aurora voltava a escrever o volume de saída da placa de som. Agora só o escreve quando moves tu o cursor Pwr: caso contrário só o lê, e o MixW, o WSJT-X e os outros programas encontram os níveis como os deixaram.',
+      'Dopo la prima trasmissione Aurora tornava a scrivere il volume di uscita della scheda audio. Ora lo scrive solo quando muovi tu il cursore Pwr: le altre volte lo legge soltanto, e WSJT-X e gli altri programmi trovano i livelli come li avevano lasciati.',
+      'After the first transmission Aurora went back to writing the output volume of the sound card. Now it writes it only when you move the Pwr slider yourself: otherwise it only reads it, and WSJT-X and the other programs find the levels as they left them.',
+      'Nach der ersten Sendung schrieb Aurora wieder die Ausgangslautstärke der Soundkarte. Jetzt schreibt es sie nur, wenn du selbst den Pwr-Regler bewegst: sonst liest es sie nur, und WSJT-X und die anderen Programme finden die Pegel, wie sie sie verlassen haben.',
+      'Après la première émission, Aurora recommençait à écrire le volume de sortie de la carte son. Maintenant il ne l’écrit que lorsque tu déplaces toi-même le curseur Pwr : sinon il le lit seulement, et WSJT-X et les autres programmes retrouvent les niveaux comme ils les avaient laissés.',
+      'Tras la primera transmisión Aurora volvía a escribir el volumen de salida de la tarjeta de sonido. Ahora solo lo escribe cuando mueves tú el cursor Pwr: si no, solo lo lee, y WSJT-X y los demás programas encuentran los niveles como los dejaron.',
+      'Depois da primeira transmissão o Aurora voltava a escrever o volume de saída da placa de som. Agora só o escreve quando moves tu o cursor Pwr: caso contrário só o lê, e o WSJT-X e os outros programas encontram os níveis como os deixaram.',
     ],
   },
   {

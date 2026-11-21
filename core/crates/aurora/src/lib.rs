@@ -1676,7 +1676,7 @@ struct WindowsVolumePort {
     /// volume di Windows puo' cambiare per conto suo (all'avvio il cursore diceva 100 % e la scheda era al 50 %).
     controls: Arc<engine_native::NativeControls>,
     /// Vero da quando l'utente muove il cursore Pwr: solo allora Aurora scrive il volume di Windows. Prima lo legge soltanto, cosi' non cambia i livelli
-    /// che altri programmi (MixW, WSJT-X...) trovano alla scheda audio (segnalazione di un amico del proprietario, 2026-11-18). Condiviso da tutte le porte.
+    /// che altri programmi (WSJT-X...) trovano alla scheda audio (segnalazione di un amico del proprietario, 2026-11-18). Condiviso da tutte le porte.
     user_set: Arc<std::sync::atomic::AtomicBool>,
     /// La prima chiamata di `set_attenuation` e' quella dell'avvio del motore (il valore salvato): non e' una mossa dell'utente.
     started: std::sync::atomic::AtomicBool,

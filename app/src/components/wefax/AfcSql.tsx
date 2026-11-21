@@ -3,7 +3,7 @@ import { putWefax, type WefaxSettings, type WefaxSnapshot } from '../../api/clie
 import { useT } from '../../i18n';
 
 /**
- * I due interruttori della testata, come in SeaTTY: AFC (verde se acceso: la ricezione segue il segnale se la radio e' un po' fuori) e
+ * I due interruttori della testata: AFC (verde se acceso: la ricezione segue il segnale se la radio e' un po' fuori) e
  * SQL con la soglia (l'immagine parte quando c'e' il segnale e si chiude quando sparisce).
  */
 export function AfcSql({ snap, onChanged }: { snap: WefaxSnapshot; onChanged: () => void }) {

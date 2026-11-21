@@ -5,7 +5,7 @@ import { registerSpectrum } from '../../lib/spectrumFeed';
 import { DigiWaterfall } from '../digi/DigiWaterfall';
 import '../../styles/digi.css';
 
-/** Il tratto dell'audio mostrato (Hz): come il righello di SeaTTY, il fax (1500-2300 Hz) sta nel mezzo. */
+/** Il tratto dell'audio mostrato (Hz): il fax (1500-2300 Hz) sta nel mezzo. */
 export const SCOPE_MIN_HZ = 1000;
 export const SCOPE_MAX_HZ = 3000;
 const SPECTRUM_H = 34;
@@ -18,7 +18,7 @@ function themeColor(el: Element, name: string, fallback: string): string {
 }
 
 /**
- * Spettro e cascata della pagina WEFAX, come in SeaTTY: in alto la curva dell'audio con due righe rosse sul nero e sul bianco (centro
+ * Spettro e cascata della pagina WEFAX: in alto la curva dell'audio con due righe rosse sul nero e sul bianco (centro
  * ± escursione/2, spostati dall'AFC) e una riga scura sul centro; sotto la cascata con il righello in Hz e la coppia di segni. Un clic
  * su spettro o cascata porta il centro li'.
  */
