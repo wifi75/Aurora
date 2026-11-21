@@ -123,6 +123,11 @@ Sicily:                   15:  28:  EU:   37.50:   -14.00:    -1.0:  *IT9:
     assert_eq!(name_of(&db, "IW0HBY/9").as_deref(), Some("Italy"));
     assert_eq!(name_of(&db, "IU3ABC").as_deref(), Some("Italy"));
     assert_eq!((db.len(), db.dxcc_count()), (2, 1));
+    // l'entita' WAE resta leggibile per i contest che la contano (CQ WW)
+    let wae_of = |call: &str| db.lookup(call).and_then(|l| l.wae).map(|w| db.entity(w).prefix.clone());
+    assert_eq!(wae_of("IT9XYZ").as_deref(), Some("IT9"));
+    assert_eq!(wae_of("IW0HBY/9").as_deref(), Some("IT9"));
+    assert_eq!(wae_of("IU3ABC"), None);
 }
 
 /// I suffissi operativi di WSJT-X non diventano prefissi di paese.

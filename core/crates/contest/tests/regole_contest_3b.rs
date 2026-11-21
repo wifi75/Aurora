@@ -49,7 +49,7 @@ fn paese(call: &str) -> Option<InfoPaese> {
         ("VK", "VK", "OC", 30, 59),
         ("PY", "PY", "SA", 11, 15),
     ];
-    T.iter().find(|t| call.starts_with(t.0)).map(|t| InfoPaese { dxcc: t.1.into(), continente: t.2.into(), cq: t.3, itu: t.4 })
+    T.iter().find(|t| call.starts_with(t.0)).map(|t| InfoPaese { dxcc: t.1.into(), continente: t.2.into(), cq: t.3, itu: t.4, ..InfoPaese::default() })
 }
 
 fn mio() -> InfoPaese {

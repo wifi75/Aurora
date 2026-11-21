@@ -77,12 +77,14 @@ impl QsoScript<'_> {
         let i = self.info.cloned().unwrap_or_default();
         m.insert("dxcc".into(), s(&i.dxcc));
         m.insert("cont".into(), s(&i.continente));
+        m.insert("wae".into(), s(&i.wae));
         m.insert("cq".into(), Dynamic::from_int(INT::from(i.cq)));
         m.insert("itu".into(), Dynamic::from_int(INT::from(i.itu)));
         m.insert("wpx".into(), s(&self.wpx));
         let mi = self.mio.cloned().unwrap_or_default();
         m.insert("my_dxcc".into(), s(&mi.dxcc));
         m.insert("my_cont".into(), s(&mi.continente));
+        m.insert("my_wae".into(), s(&mi.wae));
         m.insert("my_cq".into(), Dynamic::from_int(INT::from(mi.cq)));
         m.insert("my_itu".into(), Dynamic::from_int(INT::from(mi.itu)));
         m
@@ -248,7 +250,7 @@ mod tests {
             "#,
         );
         let Ok(sc) = sc else { panic!("non compila") };
-        let i = InfoPaese { dxcc: "DL".into(), continente: "EU".into(), cq: 14, itu: 28 };
+        let i = InfoPaese { dxcc: "DL".into(), continente: "EU".into(), cq: 14, itu: 28, ..InfoPaese::default() };
         let q = qso("DL1ABC", "002");
         assert_eq!(sc.punti(&x(&q, Some(&i))), Ok(Some(1)));
         assert_eq!(sc.moltiplicatori(&x(&q, Some(&i))), Ok(Some(vec!["DXCC:DL@20".to_string()])));

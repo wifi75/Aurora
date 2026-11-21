@@ -20,6 +20,9 @@ pub struct Lookup {
     pub entity: usize,
     pub cq_zone: u8,
     pub itu_zone: u8,
+    /// L'entita' solo WAE del nominativo (Sicilia per IT9ABC), quando `entity` e' il paese DXCC genitore: serve ai contest che contano anche
+    /// i paesi della lista WAE (CQ WW).
+    pub wae: Option<usize>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -166,7 +169,7 @@ impl DxccDb {
             if key.is_empty() {
                 continue;
             }
-            let lookup = Lookup { entity: target, cq_zone, itu_zone };
+            let lookup = Lookup { entity: target, cq_zone, itu_zone, wae: parent.map(|_| index) };
             if exact {
                 if parent.is_some() {
                     self.exact.entry(key).or_insert(lookup);
@@ -186,7 +189,7 @@ impl DxccDb {
         let main = self.entities[index].prefix.to_uppercase();
         if !main.is_empty() {
             self.longest_prefix = self.longest_prefix.max(main.len());
-            self.prefixes.entry(main).or_insert(Lookup { entity: target, cq_zone: cq, itu_zone: itu });
+            self.prefixes.entry(main).or_insert(Lookup { entity: target, cq_zone: cq, itu_zone: itu, wae: parent.map(|_| index) });
         }
     }
 

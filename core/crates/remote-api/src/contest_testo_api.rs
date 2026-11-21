@@ -184,7 +184,7 @@ fn info_paese(state: &AppState, call: &str) -> Option<contest::punti_testo::Info
     let v = state.dxcc.as_ref()?(call)?;
     let s = |k: &str| v.get(k).and_then(Value::as_str).unwrap_or("").to_string();
     let n = |k: &str| v.get(k).and_then(Value::as_u64).and_then(|x| u8::try_from(x).ok()).unwrap_or(0);
-    Some(contest::punti_testo::InfoPaese { dxcc: s("prefix"), continente: s("continent"), cq: n("cq_zone"), itu: n("itu_zone") })
+    Some(contest::punti_testo::InfoPaese { dxcc: s("prefix"), continente: s("continent"), cq: n("cq_zone"), itu: n("itu_zone"), wae: s("wae_prefix") })
 }
 
 /// Il contest attivo valutato sui QSO del log: contest, QSO valutati, totali (con i QTC), nominativo della stazione e QTC dell'edizione.

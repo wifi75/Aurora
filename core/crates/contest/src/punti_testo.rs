@@ -41,6 +41,8 @@ pub struct InfoPaese {
     pub continente: String,
     pub cq: u8,
     pub itu: u8,
+    /// Il prefisso dell'entita' solo WAE (`IT9`, `GM/s`, `TA1`...) se il nominativo ne fa parte; vuoto altrimenti. `dxcc` resta il paese DXCC.
+    pub wae: String,
 }
 
 /// Gli scambi scritti in coda al commento dalla pagina dei modi testuali: `note NRS 001 NRR 015` -> (`001`, `015`).
@@ -680,7 +682,7 @@ mod tests {
             "W" | "K" => ("K", "NA", 5, 8),
             _ => return None,
         };
-        Some(InfoPaese { dxcc: dxcc.into(), continente: cont.into(), cq, itu })
+        Some(InfoPaese { dxcc: dxcc.into(), continente: cont.into(), cq, itu, ..InfoPaese::default() })
     }
 
     fn mio() -> InfoPaese {
