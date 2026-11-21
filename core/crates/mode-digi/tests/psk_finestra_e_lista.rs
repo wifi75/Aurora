@@ -282,9 +282,14 @@ fn finestra_pulita_con_la_bandierina_fuori_e_nel_rumore() {
 /// a `near` Hz, `near_db` dB piu' forte, sempre in trasmissione. S/N 0 dB in 2,5 kHz. Restituisce la frequenza ascoltata ogni blocco
 /// (meno la portante del momento), i salti (passi oltre 2 Hz fra due blocchi) e l'errore alla fine di ogni testo.
 fn tenuta(mode: PskMode, off: f32, drift: f64, near: f32, near_db: f32) -> (Vec<f32>, usize, Vec<f32>) {
+    tenuta_con_pausa(mode, off, drift, near, near_db, 2)
+}
+
+/// Come [`tenuta`], con pause di `pausa_s` secondi fra i testi.
+fn tenuta_con_pausa(mode: PskMode, off: f32, drift: f64, near: f32, near_db: f32, pausa_s: usize) -> (Vec<f32>, usize, Vec<f32>) {
     let f0 = 1000.0 + off;
     let wave = modulate(TESTO.as_bytes(), f0, mode, AMP);
-    let pausa = 2 * RATE;
+    let pausa = pausa_s * RATE;
     let testa = RATE;
     let mut a = vec![0.0_f32; testa + 3 * (wave.len() + pausa)];
     let mut ends = Vec::new();
@@ -306,7 +311,7 @@ fn tenuta(mode: PskMode, off: f32, drift: f64, near: f32, near_db: f32) -> (Vec<
     let mut a = a;
     if near != 0.0 {
         let txt = b"QRZ DE K1ABC K1ABC K1ABC QRZ QRZ QRZ DE K1ABC K1ABC K1ABC QRZ QRZ QRZ DE K1ABC K1ABC ";
-        let other = modulate(txt.repeat(4).as_slice(), f0 + near, mode, AMP * 10f32.powf(near_db / 20.0));
+        let other = modulate(txt.repeat(4 + pausa_s).as_slice(), f0 + near, mode, AMP * 10f32.powf(near_db / 20.0));
         for (x, w) in a.iter_mut().zip(&other) {
             *x += w;
         }
@@ -361,5 +366,26 @@ fn l_afc_resta_sulla_stazione_scelta_con_una_vicina_piu_forte() {
             assert!(jumps <= 1, "{} {off} {near}: salti {jumps}", mode.name());
             assert!(errs.iter().all(|e| e.abs() < 2.0), "{} {off} {near}: {errs:?}", mode.name());
         }
+    }
+}
+
+#[test]
+#[ignore]
+fn tabella_tenuta_casi_veri() {
+    // la bandierina 20 Hz sopra la stazione e l'altra 60 Hz sopra (la schermata di ON6AT): la meta' fra le due e' a 10 Hz dalla bandierina
+    for (mode, off, near, db) in [(PskMode::Psk63, -20.0, 60.0, 0.0), (PskMode::Psk63, -20.0, 60.0, 3.0), (PskMode::Psk31, -10.0, 40.0, 0.0), (PskMode::Psk31, -10.0, 40.0, 3.0)] {
+        let (track, jumps, errs) = tenuta(mode, off, 4.0, near, db);
+        let every: Vec<String> = track.iter().step_by(25).map(|e| format!("{e:+.1}")).collect();
+        println!("{} fuori {off:+} vicino {near:+} ({db:+} dB): salti {jumps}, errori {errs:.1?}\n   {}", mode.name(), every.join(" "));
+    }
+}
+
+#[test]
+fn nella_pausa_lunga_l_afc_non_passa_alla_vicina() {
+    // la stazione scelta tace 25 s (il mio turno), la vicina 40 Hz piu' in la' trasmette sempre, poi la scelta riprende
+    for (mode, off, near) in [(PskMode::Psk63, 15.0, -40.0), (PskMode::Psk31, -8.0, 40.0)] {
+        let (_, jumps, errs) = tenuta_con_pausa(mode, off, 0.0, near, 3.0, 25);
+        // un salto per l'aggancio, al piu' uno di correzione quando la stazione riprende
+        assert!(jumps <= 2 && errs.iter().all(|e| e.abs() < 2.0), "{} {off} {near}: salti {jumps}, {errs:?}", mode.name());
     }
 }

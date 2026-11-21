@@ -228,8 +228,6 @@ const ACQ_HOP: usize = 256;
 const ACQ_LINE: f32 = 12.0;
 /// Spettri da aspettare dopo un aggancio prima di un altro (un secondo e mezzo).
 const ACQ_HOLD: u32 = 3;
-/// La stazione agganciata non sentita da tanto si dimentica (spettri, 4 s): poi si riaggancia la portante piu' vicina all'ascolto.
-const ACQ_FORGET: u32 = 8;
 /// Spettri di fila in cui una portante nuova deve vedersi prima di agganciarla (un secondo e mezzo: il rumore non fa righe ferme).
 const ACQ_CONFIRM: u32 = 3;
 /// Con la stazione agganciata l'ascolto non se ne allontana piu' di tanto (Hz): la riga al quadrato e' piu' precisa dell'AFC della fase
@@ -252,13 +250,10 @@ struct Acquire {
     avg: Vec<f32>,
     frames: u32,
     hold: u32,
-    /// La portante della stazione scelta (Hz audio) e da quanti spettri non si vede.
+    /// La portante della stazione scelta (Hz audio): resta fino a una frequenza scelta nuova.
     station: Option<f32>,
-    missing: u32,
     /// La portante candidata e in quanti spettri di fila si e' vista.
     cand: Option<(f32, u32)>,
-    /// L'ultima stazione agganciata (dopo una pausa lunga si riprende la portante piu' vicina a lei).
-    prev: Option<f32>,
 }
 
 impl Acquire {
@@ -289,9 +284,7 @@ impl Acquire {
             frames: 0,
             hold: 0,
             station: None,
-            missing: 0,
             cand: None,
-            prev: None,
         }
     }
 
@@ -521,34 +514,19 @@ impl PskDemodulator {
             acq.hold = acq.hold.saturating_sub(1);
             let near = |f: f32| lines.iter().copied().min_by(|a, b| (a - f).abs().total_cmp(&(b - f).abs()));
             // la stazione agganciata si segue anche oltre il limite (deriva), di pochi Hz per spettro
-            if let Some(st) = acq.station {
-                match near(st).filter(|f| (f - st).abs() < follow) {
-                    Some(f) => {
-                        acq.station = Some(f);
-                        acq.missing = 0;
-                    }
-                    None => {
-                        acq.missing += 1;
-                        if acq.missing > ACQ_FORGET {
-                            acq.prev = acq.station;
-                            acq.station = None;
-                        }
-                    }
-                }
+            // in silenzio (l'altro sta trasmettendo, anche per minuti) la stazione resta quella: l'ascolto non va sulla vicina
+            if let Some(f) = acq.station.and_then(|st| near(st).filter(|f| (f - st).abs() < follow)) {
+                acq.station = Some(f);
             }
             // la stazione scelta e' la portante piu' vicina alla frequenza scelta entro il limite, se resta ferma per qualche spettro;
             // finche' quella agganciata si sente non si cambia (niente salti alla vicina)
-            let target = acq.prev.unwrap_or(base);
-            acq.cand = match (near(target).filter(|f| (f - base).abs() <= limit + 1.0), acq.cand) {
+            acq.cand = match (near(base).filter(|f| (f - base).abs() <= limit + 1.0), acq.cand) {
                 (Some(f), Some((c, n))) if (f - c).abs() < follow => Some((f, n + 1)),
                 (Some(f), _) => Some((f, 1)),
                 (None, _) => None,
             };
-            if let Some((f, _)) = acq.cand.filter(|&(_, n)| n >= ACQ_CONFIRM) {
-                if acq.station.is_none() {
-                    acq.station = Some(f);
-                    acq.missing = 0;
-                }
+            if let Some((f, _)) = acq.cand.filter(|&(_, n)| n >= ACQ_CONFIRM && acq.station.is_none()) {
+                acq.station = Some(f);
             }
             let Some(st) = acq.station else {
                 continue;
