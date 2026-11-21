@@ -119,7 +119,7 @@ pub struct CampoScambio {
     pub nome: String,
     pub etichetta_it: String,
     pub etichetta_en: String,
-    /// `rst`, `numero` o `testo`.
+    /// `rst`, `numero`, `testo`, `zona_cq` (proposta nello scambio) o `zona_itu` (solo suggerita).
     pub tipo: String,
     /// Condizione come in `punteggio.regole` (`any` = sempre).
     pub quando: String,
@@ -554,6 +554,9 @@ impl ContestCartella {
         c.grab_number = numero_ricevuto || zona_cq;
         c.grab_number_type = if zona_cq { 2 } else if numero_ricevuto { 0 } else { -1 };
         c.suggest_cq_zone = zona_cq;
+        // zona ITU (`zona_itu`): solo suggerita sotto il nominativo, non messa nello scambio (il motore non guarda `quando`: nell'EUDX
+        // le stazioni UE mandano la regione e una zona proposta d'ufficio prenderebbe il suo posto)
+        c.suggest_itu_zone = self.scambio.ricevuto.iter().any(|x| x.tipo == "zona_itu");
         c.log_bar_mode = 1;
         c.qtc = i32::from(self.meta.qtc.min(2));
         if let Some((nome, _)) = self.macro_principale() {
@@ -1148,6 +1151,26 @@ mod tests {
         assert_eq!(c.controlla(), Ok(()));
         assert_eq!(f.macro_del_contest().len(), 1);
         assert_eq!(f.dominio_del_contest().map(|d| d.entries.len()), Some(2));
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn zone_dello_scambio_e_qtc() {
+        let base = cartella_di_prova("zone");
+        let carica_con = |nome: &str, tipo: &str, qtc: &str| {
+            let d = base.join(nome);
+            prova_valida(&d);
+            let t = TOML_MINIMO.replace("tipo = \"numero\"\nelenco", &format!("tipo = \"{tipo}\"\nelenco")).replace("note = \"CW\"", &format!("note = \"CW\"{qtc}"));
+            scrivi(&d, "contest.toml", &t);
+            carica(&d, Origine::Utente).map(|f| f.in_contesto(utc(2026, 2, 1, 0, 0)))
+        };
+        // zona CQ: proposta nello scambio e suggerita; zona ITU: solo suggerita
+        let c = carica_con("cq", "zona_cq", "").unwrap_or_else(|e| panic!("{e}"));
+        assert!(c.grab_number && c.grab_number_type == 2 && c.suggest_cq_zone && !c.suggest_itu_zone && c.qtc == 0);
+        let c = carica_con("itu", "zona_itu", "\nqtc = 2").unwrap_or_else(|e| panic!("{e}"));
+        assert!(!c.grab_number && c.suggest_itu_zone && !c.suggest_cq_zone);
+        assert_eq!(c.qtc, 2);
+        assert!(carica_con("qtc-brutto", "numero", "\nqtc = 3").is_err_and(|e| e.contains("qtc")));
         let _ = std::fs::remove_dir_all(&base);
     }
 

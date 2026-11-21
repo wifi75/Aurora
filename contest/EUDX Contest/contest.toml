@@ -43,11 +43,19 @@ predefinito = { cw = "599", ssb = "59" }
 
 [[scambio.ricevuto]]
 nome = "regione"
-etichetta_it = "Regione UE o zona ITU"
-etichetta_en = "EU region or ITU zone"
+etichetta_it = "Regione UE"
+etichetta_en = "EU region"
 tipo = "testo"
 quando = "any"
-nota = "Le stazioni dell'UE mandano la regione (due lettere e due cifre, IT03, DE16: elenco nella sezione 7 del regolamento), le altre la zona ITU."
+nota = "Le stazioni dell'UE mandano la regione (due lettere e due cifre, IT03, DE16: elenco nella sezione 7 del regolamento)."
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona ITU"
+etichetta_en = "ITU zone"
+tipo = "zona_itu"
+quando = "any"
+nota = "Le stazioni fuori dall'UE mandano la zona ITU: Aurora la suggerisce sotto il nominativo ma non la scrive da sola (alle stazioni UE si chiede la regione)."
 
 [[scambio.inviato]]
 nome = "rst"

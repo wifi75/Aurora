@@ -34,7 +34,7 @@ export interface ExchangeField {
   nome: string;
   etichetta_it?: string;
   etichetta_en?: string;
-  /** `rst`, `numero`, `testo` o `zona_cq` (zona CQ proposta dal nominativo). */
+  /** `rst`, `numero`, `testo`, `zona_cq` (zona CQ proposta dal nominativo) o `zona_itu` (zona ITU solo suggerita). */
   tipo: string;
   quando?: string;
   elenco?: string;
