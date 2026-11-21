@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Satelliti, IC-820H (#83): nuova casella «IC-820H: scrivi la trasmissione con comandi CI-V diretti (sperimentale)», spenta di fabbrica. Solo per il modello Hamlib 3032: prima una prova automatica senza scrivere frequenze (lettura `03`, `07 D1`, lettura, `07 D0`, lettura; anche con le selezioni invertite del modo satellite); se riesce, la trasmissione si scrive sull'altra banda (`07 D1`, controllo della banda, `05`, rilettura entro 10 Hz, `07 D0`, rilettura della ricezione) al massimo ogni 5 s e mai in trasmissione. Prova o scrittura fallite: nessuna scrittura fino alla riconnessione, il Doppler segue solo la ricezione. Esito con frequenze lette e risposte grezze nella pagina dei satelliti e in `radio.json` del pacchetto di assistenza (`ic820h_civ`). Provato solo con la radio finta.
+
 - Pagine WEFAX e SSTV: nel menu del modo c'e' anche SSB (come nella pagina dei modi testuali).
 
 - Elenco dei contest: linguette per modo (Tutti, SSB, CW, RTTY, PSK, Digitali, Altri) col numero dei contest; un contest con piu' modi compare in ognuna delle sue linguette, la ricerca vale dentro quella scelta. I modi si ricavano dal testo delle Note (poi dal nome), con `contestModes`.
