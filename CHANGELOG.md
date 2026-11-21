@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- IC-820H, trasmissione dei satelliti con trame CI-V dirette (#83): le trame ora passano da `rigctld` con `W` e il numero esatto di byte da leggere (eco piu' risposta, e senza eco la sola risposta); con `w` Hamlib non aveva un terminatore per le Icom e andava in timeout, e la prova di sicurezza falliva gia' alla prima lettura. Nel pacchetto di assistenza (`radio.json` > `ic820h_civ`) il metodo usato e i byte inviati e ricevuti di ogni passo.
+- IC-820H, trasmissione sul secondo VFO: con Main e Sub letti tutti e due sulla banda alta la trasmissione VHF veniva scritta sopra la ricezione e data per riuscita (riletta 300 MHz piu' in alto). Ora le bande si deducono dalla lettura di Main, prima di scrivere si rilegge il VFO di trasmissione e una rilettura in un'altra banda e' un errore.
+
 ## 0.11.327 - 2026-11-21
 
 - Ricevi i QSO da altri log (#88): Aurora ascolta su una porta UDP (di base 12062, solo 127.0.0.1; «Ascolta anche sulla rete di casa» per 0.0.0.0) i QSO che Log4OM, OpsLog, N1MM+ o HRD Logbook inoltrano in uscita e li aggiunge al suo log. Riconosce da sola il record ADIF (uno o piu' record, con o senza intestazione), l'XML `contactinfo`/`contactreplace` di N1MM e i messaggi QSO Logged (5) e Logged ADIF (12) di WSJT-X. Lo stesso QSO gia' presente (nominativo, banda e modo, inizio entro 5 minuti) non si aggiunge due volte: si completano solo i campi vuoti. I QSO ricevuti non ripartono verso i destinatari UDP, il file ADIF, il TCP, LoTW, QRZ o ClubLog (niente cicli). Nel log la colonna nuova `source` dice da quale programma arrivano. Voce in Impostazioni > Programmi collegati, spenta di base, con lo stato «In ascolto sulla porta N, ricevuti X QSO, Y gia' presenti, Z scartati»; porta occupata o porta di invio di Aurora mostrate come errore, il resto continua.

@@ -383,6 +383,12 @@ fn uplink_vfos(map: u8, tx_hz: u64) -> (&'static str, &'static str) {
     }
 }
 
+/// La trasmissione riletta dopo la scrittura e' quella scritta: stessa banda (niente ripiego di 300 MHz) e scarto entro 1 MHz (Hamlib puo'
+/// restituire la lettura di poco prima, ma non una frequenza di un'altra parte della banda).
+fn uplink_readback_ok(written: u64, read: u64) -> bool {
+    is_uhf(written) == is_uhf(read) && written.abs_diff(read) <= 1_000_000
+}
+
 pub fn valid_dial_hz(hz: u64) -> bool {
     hz > 0 && hz <= 300_000_000_000
 }
@@ -1672,13 +1678,19 @@ impl HamlibRig {
                             return Err(RigError("il Sub della radio e' spento: accendilo per trasmettere sul secondo VFO".into()));
                         }
                         tracing::info!("satelliti: lettura delle bande dei VFO: Main = {:?} Hz, Sub = {:?} Hz", main.as_ref().ok(), sub.as_ref().ok());
+                        let main_hz = main.as_ref().ok().copied();
                         map = match (main, sub) {
                             (Ok(main), Ok(sub)) => band_map_of(main, sub),
                             _ => MAIN_SUB_SAME,
                         };
-                        // lettura senza risposta chiara: sull'IC-820H (modello 3032) Main e' la banda 144 e Sub la 430, come esce di fabbrica
+                        // lettura senza risposta chiara sull'IC-820H (modello 3032): vale la banda letta su Main (pacchetto 3EFC9CF8: Main = 435,63,
+                        // Sub = 445,20, prima si supponeva Main = VHF e la trasmissione 145,96 finiva sopra la ricezione, riletta 445,96); senza
+                        // nessuna lettura, la disposizione di fabbrica (Main = 144, Sub = 430). Il controllo prima della scrittura fa il resto.
                         if map == MAIN_SUB_SAME && inner.config.model == IC_820H_MODEL {
-                            map = MAIN_VHF_SUB_UHF;
+                            map = match main_hz {
+                                Some(hz) if is_uhf(hz) => MAIN_UHF_SUB_VHF,
+                                _ => MAIN_VHF_SUB_UHF,
+                            };
                         }
                         inner.sat_band_map.store(map, Ordering::SeqCst);
                         tracing::info!("satelliti: bande dei VFO della radio: {}", match map {
@@ -1694,17 +1706,41 @@ impl HamlibRig {
                 match c.set_vfo(tx_vfo) {
                     Ok(()) => {
                         inner.sat_vfo_pair.store(id, Ordering::SeqCst);
-                        let wrote = c.set_frequency(hz).and_then(|()| mode.map_or(Ok(()), |m| c.set_mode(m, 0)));
-                        // la frequenza si rilegge dal VFO di trasmissione prima di tornare a quello di ricezione e il risultato va nel registro:
-                        // se la radio accetta il comando ma il suo display non si muove (IC-820H, #83) il pacchetto dice cosa ha risposto davvero
-                        if wrote.is_ok() {
+                        // IC-820H: prima di scrivere si legge il VFO di trasmissione; se non e' nella banda della trasmissione (e' quello della
+                        // ricezione, o Hamlib non ha cambiato banda) non si scrive niente
+                        if id == 1 && inner.config.model == IC_820H_MODEL {
+                            std::thread::sleep(Duration::from_millis(700));
                             match c.frequency() {
-                                Ok(read) => tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, riletta {read} Hz (scarto {} Hz)", read.abs_diff(hz)),
-                                Err(e) => tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, rilettura non riuscita: {}", e.0),
+                                Ok(here) if is_uhf(here) == is_uhf(hz) => {}
+                                here => {
+                                    let _ = c.set_vfo(rx_vfo);
+                                    let read = here.map_or_else(|e| format!("errore: {}", e.0), |f| format!("{f} Hz"));
+                                    tracing::warn!("satelliti: il VFO {tx_vfo} legge {read}, non la banda della trasmissione {hz} Hz: niente scritto");
+                                    return Err(RigError(format!("il VFO {tx_vfo} della radio legge {read}, non la banda della trasmissione: niente scritto")));
+                                }
                             }
                         }
+                        let wrote = c.set_frequency(hz).and_then(|()| mode.map_or(Ok(()), |m| c.set_mode(m, 0)));
+                        // la frequenza si rilegge dal VFO di trasmissione prima di tornare a quello di ricezione: se la radio l'ha ripiegata in
+                        // un'altra banda o non l'ha presa (IC-820H, #83: scritta 145,96 sulla banda di ricezione, riletta 445,96) non e' riuscita
+                        let checked = match (&wrote, c.frequency()) {
+                            (Ok(()), Ok(read)) => {
+                                tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, riletta {read} Hz (scarto {} Hz)", read.abs_diff(hz));
+                                if uplink_readback_ok(hz, read) {
+                                    Ok(())
+                                } else {
+                                    tracing::warn!("satelliti: la trasmissione non e' arrivata sul VFO {tx_vfo} (riletta {read} Hz invece di {hz} Hz)");
+                                    Err(RigError(format!("la trasmissione {hz} Hz non e' arrivata sul VFO {tx_vfo}: la radio rilegge {read} Hz")))
+                                }
+                            }
+                            (Ok(()), Err(e)) => {
+                                tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, rilettura non riuscita: {}", e.0);
+                                Ok(())
+                            }
+                            (Err(_), _) => Ok(()),
+                        };
                         let back = c.set_vfo(rx_vfo);
-                        return wrote.and(back).map(|()| true);
+                        return wrote.and(checked).and(back).map(|()| true);
                     }
                     Err(e) if crate::meters::is_unsupported(&e) => last = e,
                     Err(e) => return Err(e),
@@ -3100,19 +3136,36 @@ mod tests {
         assert_eq!(fake.band_frequencies(), [145_990_300, 437_790_100]);
     }
 
-    /// IC-820H (modello 3032): se la lettura delle bande non da' una risposta chiara (Hamlib restituisce la stessa frequenza su Main e su Sub)
-    /// vale la disposizione di fabbrica, Main = 144 MHz e Sub = 430 MHz: la trasmissione VHF va su Main e si torna a Sub per la ricezione UHF.
+    /// IC-820H (modello 3032), pacchetto 3EFC9CF8 (#83): Main e Sub leggono tutte e due la banda alta (Main = 435,63 = ricezione). Prima si
+    /// supponeva la disposizione di fabbrica (Main = VHF) e la trasmissione 145,96 veniva scritta sopra la ricezione e data per riuscita
+    /// (riletta 445,96). Ora vale la banda letta su Main (UHF, quindi la trasmissione VHF andrebbe su Sub) e prima di scrivere si rilegge il
+    /// VFO di trasmissione: legge la banda alta, quindi niente scritto.
     #[test]
-    fn the_ic_820h_defaults_to_main_144_and_sub_430_when_the_bands_cannot_be_told_apart() {
-        let fake = FakeRigctld::start(435_600_000);
+    fn the_ic_820h_never_writes_the_uplink_over_the_receive_band_when_both_vfos_read_uhf() {
+        let fake = FakeRigctld::start(435_633_438);
         let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
         fake.clear_commands();
-        assert_eq!(rig.set_uplink_via_vfo(145_900_000, None).expect("uplink"), true);
-        assert_eq!(writes(&fake), ["V Main", "V Sub", "V Main", "F 145900000", "V Sub"]);
-        // la volta dopo non si rilegge: si scrive subito sul VFO giusto
-        fake.clear_commands();
-        rig.set_uplink_via_vfo(145_900_100, None).expect("uplink");
-        assert_eq!(writes(&fake), ["V Main", "F 145900100", "V Sub"]);
+        let err = rig.set_uplink_via_vfo(145_962_174, None).expect_err("nessuna banda VHF sulla radio");
+        assert!(err.0.contains("niente scritto"), "{}", err.0);
+        assert!(!writes(&fake).iter().any(|c| c.starts_with("F ")), "{:?}", writes(&fake));
+        assert_eq!(fake.frequency(), 435_633_438, "la ricezione e' intatta");
+        assert_eq!(rig.inner.sat_band_map.load(Ordering::SeqCst), MAIN_UHF_SUB_VHF, "etichette dalle frequenze lette: Main = UHF");
+    }
+
+    /// La trasmissione ripiegata in un'altra banda (scritta 145,96, riletta 445,96: e' finita sul VFO della banda alta) non e' riuscita.
+    #[test]
+    fn an_uplink_read_back_in_another_band_is_an_error() {
+        let fake = FakeRigctld::start(435_600_000);
+        fake.enable_dual_bands(145_000_000, 435_000_000);
+        let rig = start(&fake, RigConfig::default());
+        // mappa sbagliata: Main creduto UHF, la trasmissione VHF va su Sub (banda alta) e la radio la ripiega
+        rig.inner.sat_band_map.store(MAIN_UHF_SUB_VHF, Ordering::SeqCst);
+        let err = rig.set_uplink_via_vfo(145_962_174, None).expect_err("riletta 445,96");
+        assert!(err.0.contains("non e' arrivata"), "{}", err.0);
+        assert_eq!(fake.band_frequencies()[1], 445_962_174);
+        assert!(uplink_readback_ok(145_962_174, 145_962_180));
+        assert!(!uplink_readback_ok(145_962_174, 445_962_174));
+        assert!(!uplink_readback_ok(145_962_174, 147_000_000));
     }
 
     #[test]
