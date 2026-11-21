@@ -273,3 +273,30 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 .wefax-band-hist .wefax-thumb-head .wefax-thumb-tools { display: flex; gap: 0.1rem; padding: 0; position: static; flex: 0 0 auto; }
 .wefax-band-hist .wefax-thumb-open img { height: 5.8rem; width: 100%; object-fit: contain; background: #fff; }
 .wefax-band-hist .wefax-thumb-meta { display: none; }
+
+/* altezza della pagina = quella che resta nella finestra (la imposta WefaxPage): il visore prende lo spazio libero, la fascia in basso e' fissa */
+.wefax-body { align-items: stretch; grid-template-rows: minmax(0, 1fr); min-height: 0; }
+.wefax-main { height: 100%; min-height: 0; }
+.wefax-main > .wefax-viewer { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.wefax-main .wefax-box { flex: 1 1 0; height: auto; min-height: 6rem; }
+.wefax-right { max-height: 100%; overflow-y: auto; }
+.wefax-body { grid-template-columns: minmax(0, 1fr) minmax(190px, 230px); }
+@media (max-width: 900px) {
+  .wefax-body { height: auto !important; }
+  .wefax-main { height: auto; }
+  .wefax-main .wefax-box { height: 55vh; flex: none; }
+}
+
+/* cartine ricevute, proposta C scelta dal proprietario: griglia di 6 per riga con 2 righe visibili (si scorre se ce ne sono di piu'); pulsantini piccoli sopra la
+   miniatura in alto a destra (apri, scarica, cancella), data in basso a sinistra */
+.wefax-band { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); }
+.wefax-band-hist .wefax-history { display: flex; flex-direction: column; }
+.wefax-band-hist .wefax-thumbs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: calc((100% - 0.4rem) / 2); gap: 0.4rem; flex: 1 1 0; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 0; align-items: stretch; }
+.wefax-band-hist .wefax-thumb { position: relative; display: block; width: auto; flex: none; min-width: 0; min-height: 0; border: 1px solid #c9d0e2; border-radius: 6px; background: #fff; overflow: hidden; }
+.wefax-band-hist .wefax-thumb-open { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: #fff; cursor: zoom-in; }
+.wefax-band-hist .wefax-thumb-open img { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; object-fit: contain; background: #fff; }
+.wefax-band-hist .wefax-thumb-tools { position: absolute; top: 2px; right: 2px; display: flex; gap: 2px; padding: 0; z-index: 2; }
+.wefax-band-hist .wefax-thumb-icon { width: 1.15rem; min-width: 1.15rem; height: 1.05rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; line-height: 1; border-radius: 4px; background: color-mix(in srgb, var(--panel, #10151f) 88%, transparent); }
+.wefax-band-hist .wefax-thumb-date { position: absolute; left: 2px; bottom: 2px; z-index: 2; font-size: 0.56rem; line-height: 1.2; padding: 0 0.25rem; border-radius: 3px; background: color-mix(in srgb, var(--panel, #10151f) 88%, transparent); color: var(--text, #e6edf7); white-space: nowrap; }
+.wefax-band-hist .sstv-thumb-tag { top: auto; bottom: 14px; left: 2px; font-size: 0.5rem; padding: 0 0.2rem; }
+.wefax-band-hist .wefax-thumb-head, .wefax-band-hist .wefax-thumb-meta { display: none; }
