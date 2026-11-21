@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Elenco dei contest: linguette per modo (Tutti, SSB, CW, RTTY, PSK, Digitali, Altri) col numero dei contest; un contest con piu' modi compare in ognuna delle sue linguette, la ricerca vale dentro quella scelta. I modi si ricavano dal testo delle Note (poi dal nome), con `contestModes`.
+
 ## 0.11.326 - 2026-11-21
 
 - WEFAX, barra in alto: i comandi non hanno piu' altezza fissa (le scritte e le frecce non si tagliano), sono un po' piu' grandi (22 px, carattere 11 px) e centrati sulla riga.
