@@ -2110,6 +2110,20 @@ impl mode_sat::SatRadio for SatRadioAdapter {
         self.cat.hamlib().map_err(|e| e.0)?.set_satmode(true).map_err(|e| e.0)
     }
 
+    fn set_tx_via_civ(&self, hz: u64) -> Result<bool, String> {
+        self.cat.hamlib().map_err(|e| e.0)?.set_uplink_via_civ(hz).map_err(|e| e.0)
+    }
+
+    fn uplink_note(&self) -> Option<String> {
+        let r = self.cat.hamlib().ok()?.civ_uplink_report()?;
+        let mhz = |hz: Option<u64>| hz.map_or_else(|| "-".to_string(), |hz| format!("{:.6}", hz as f64 / 1e6));
+        Some(match r.stato.as_str() {
+            "riuscita" => format!("CI-V IC-820H: prova riuscita (ricezione {} MHz, banda secondaria {} MHz, ultima trasmissione {} MHz)", mhz(r.ricezione_hz), mhz(r.banda_secondaria_hz), mhz(r.ultima_trasmissione_hz)),
+            "non provata" => "CI-V IC-820H: prova al primo aggiornamento della trasmissione".to_string(),
+            stato => format!("CI-V IC-820H: {stato} ({})", r.dettaglio),
+        })
+    }
+
     fn set_tx_hz(&self, hz: u64) -> Result<(), String> {
         self.cat.hamlib().map_err(|e| e.0)?.set_split_frequency(hz).map_err(|e| e.0)
     }

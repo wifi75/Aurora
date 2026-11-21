@@ -62,6 +62,8 @@ pub fn radio(cat: &rig_control::cat::CatService) -> Value {
         "hamlib": versione_hamlib(),
         "configurazione": config,
         "stato": stato_json,
+        // IC-820H: esito della prova CI-V dei satelliti con le frequenze lette e le risposte grezze della radio
+        "ic820h_civ": cat.hamlib().ok().and_then(|h| h.civ_uplink_report()).map(|r| serde_json::to_value(r).unwrap_or(Value::Null)),
     })
 }
 

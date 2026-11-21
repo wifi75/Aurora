@@ -48,6 +48,15 @@ pub trait SatRadio: Send + Sync {
     fn set_tx_via_vfo(&self, _hz: u64, _mode: Option<&str>) -> Result<bool, String> {
         Err("non supportato".into())
     }
+    /// IC-820H: la trasmissione scritta sulla banda secondaria con trame CI-V dirette, dopo una prova di sicurezza automatica. `Ok(false)` =
+    /// non adesso (in trasmissione o troppo presto), si riprova. Un errore spegne il ripiego fino alla riconnessione o a una nuova spunta.
+    fn set_tx_via_civ(&self, _hz: u64) -> Result<bool, String> {
+        Err("non supportato".into())
+    }
+    /// Una riga sullo stato della trasmissione con trame CI-V dirette (esito della prova), per la pagina dei satelliti.
+    fn uplink_note(&self) -> Option<String> {
+        None
+    }
     /// Accende il modo satellite della radio (Hamlib `SATMODE`), se lo ha.
     fn enable_satmode(&self) -> Result<(), String> {
         Err("non supportato".into())
@@ -86,6 +95,9 @@ pub struct SatSettings {
     pub min_el_deg: f64,
     /// Ripiego «due VFO» per le radio senza split da CAT (sperimentale, spento di fabbrica).
     pub uplink_two_vfo: bool,
+    /// IC-820H: trasmissione scritta con comandi CI-V diretti dopo una prova automatica (sperimentale, spento di fabbrica). Se acceso
+    /// prende il posto del ripiego a due VFO.
+    pub uplink_civ_ic820h: bool,
     /// Il ripiego aggiorna la trasmissione al massimo ogni tanti secondi (2-120)...
     pub uplink_interval_s: u32,
     /// ...o appena lo scostamento supera tanti Hz (20-5000), ma mai piu' di una volta ogni 2 s.
@@ -116,7 +128,7 @@ pub struct SatSettings {
 
 impl Default for SatSettings {
     fn default() -> Self {
-        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, uplink_two_vfo: false, uplink_interval_s: 10, uplink_threshold_hz: 300, rx_mode: "Auto".into(), tx_mode: "Auto".into(), rotor_lead_s: 60, rotor_start_el_deg: 0.0, rotor_interval_s: 2, rotor_after: "stay".into(), rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_after_delay_s: 10, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
+        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, uplink_two_vfo: false, uplink_civ_ic820h: false, uplink_interval_s: 10, uplink_threshold_hz: 300, rx_mode: "Auto".into(), tx_mode: "Auto".into(), rotor_lead_s: 60, rotor_start_el_deg: 0.0, rotor_interval_s: 2, rotor_after: "stay".into(), rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_after_delay_s: 10, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
     }
 }
 
@@ -217,6 +229,8 @@ pub struct HardwareState {
     pub ready: bool,
     /// L'ultimo errore, se il comando e' fallito.
     pub error: Option<String>,
+    /// Una nota sullo stato (esito della prova CI-V dell'IC-820H).
+    pub note: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -630,6 +644,9 @@ struct LoopState {
     vfo_retry_at: f64,
     satmode_tried: bool,
     two_vfo_prev: bool,
+    /// La trasmissione con trame CI-V dirette e' fallita: ferma fino alla riconnessione o a una nuova spunta (nessun nuovo tentativo da solo).
+    civ_failed: bool,
+    civ_prev: bool,
     pass_cache: Option<(u64, f64, Option<Pass>)>,
     path_cache: Vec<(f64, f64)>,
     radio_error: Option<String>,
@@ -695,6 +712,7 @@ impl LoopState {
         self.rx_mode_failed = false;
         self.tx_mode_failed = false;
         self.vfo_failed = false;
+        self.civ_failed = false;
         self.satmode_tried = false;
     }
 }
@@ -737,11 +755,17 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
     if st.vfo_failed && t >= st.vfo_retry_at {
         st.vfo_failed = false;
     }
-    let two_vfo = s.uplink_two_vfo && !st.vfo_failed;
+    if s.uplink_civ_ic820h && !st.civ_prev {
+        st.civ_failed = false;
+    }
+    st.civ_prev = s.uplink_civ_ic820h;
+    // la trasmissione CI-V dell'IC-820H prende il posto del ripiego a due VFO; fallita, il Doppler segue solo la ricezione
+    let civ = s.uplink_civ_ic820h;
+    let two_vfo = !civ && s.uplink_two_vfo && !st.vfo_failed;
     let mut ok = true;
     // radio con VFO separati: split acceso una volta; per le frequenze uguali (APRS) non serve
     let wants_split = (plan.up_nominal_hz - plan.down_nominal_hz).abs() > 1_000.0;
-    if wants_split && !two_vfo && !st.split_on && !st.split_failed {
+    if wants_split && !two_vfo && !civ && !st.split_on && !st.split_failed {
         match radio.set_split(true) {
             Ok(()) => st.split_on = true,
             Err(e) => {
@@ -774,7 +798,19 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
         }
     }
     let txf = plan.tx_hz.round() as u64;
-    if ok && wants_split && two_vfo {
+    if civ {
+        if ok && wants_split && !st.civ_failed && uplink_due(st.uplink_last, txf, t, s.uplink_interval_s, s.uplink_threshold_hz) {
+            match radio.set_tx_via_civ(txf) {
+                Ok(true) => st.uplink_last = Some((txf, t)),
+                Ok(false) => {}
+                Err(e) => {
+                    tracing::warn!("satelliti: trasmissione CI-V dell'IC-820H non disponibile ({e}): il Doppler segue solo la ricezione");
+                    st.civ_failed = true;
+                    st.radio_error = Some(format!("CI-V IC-820H: {e}. La trasmissione resta da impostare a mano"));
+                }
+            }
+        }
+    } else if ok && wants_split && two_vfo {
         if !st.satmode_tried {
             st.satmode_tried = true;
             if let Err(e) = radio.enable_satmode() {
@@ -821,7 +857,7 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
             }
         }
     }
-    if ok && !(st.split_failed || st.tx_failed || st.vfo_failed || st.rx_mode_failed || st.tx_mode_failed) {
+    if ok && !(st.split_failed || st.tx_failed || st.vfo_failed || (civ && st.civ_failed) || st.rx_mode_failed || st.tx_mode_failed) {
         st.radio_error = None;
     }
     ok
@@ -921,7 +957,7 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     let t = now_unix();
     let radio = lock(&inner.radio).clone();
     let rotor = lock(&inner.rotor).clone();
-    let mut now = Now { time_unix: t, radio: HardwareState { ready: radio.as_ref().is_some_and(|r| r.ready()), error: st.radio_error.clone() }, ..Now::default() };
+    let mut now = Now { time_unix: t, radio: HardwareState { ready: radio.as_ref().is_some_and(|r| r.ready()), error: st.radio_error.clone(), note: radio.as_ref().filter(|_| settings.uplink_civ_ic820h).and_then(|r| r.uplink_note()) }, ..Now::default() };
     now.rotor = RotorState { ready: rotor.as_ref().is_some_and(|r| r.ready()), active: settings.rotor_on, error: st.rotor_error.clone(), ..RotorState::default() };
     let Some(norad) = settings.selected else {
         *lock(&inner.now) = now;
@@ -1153,6 +1189,7 @@ mod tests {
         log: Mutex<Vec<String>>,
         split_err: bool,
         vfo_err: bool,
+        civ_err: bool,
     }
 
     impl FakeRadio {
@@ -1188,6 +1225,10 @@ mod tests {
         fn set_tx_via_vfo(&self, hz: u64, mode: Option<&str>) -> Result<bool, String> {
             lock(&self.log).push(format!("vfo {hz} {}", mode.unwrap_or("-")));
             if self.vfo_err { Err("V: funzione non disponibile (-11)".into()) } else { Ok(true) }
+        }
+        fn set_tx_via_civ(&self, hz: u64) -> Result<bool, String> {
+            lock(&self.log).push(format!("civ {hz}"));
+            if self.civ_err { Err("prova CI-V fallita: 07 D1 e 07 D0 non cambiano banda".into()) } else { Ok(true) }
         }
         fn enable_satmode(&self) -> Result<(), String> {
             lock(&self.log).push("satmode".into());
@@ -1291,6 +1332,38 @@ mod tests {
         assert!(!st.vfo_failed);
         assert!(st.radio_error.is_none());
         assert!(s.uplink_two_vfo);
+    }
+
+    #[test]
+    fn la_trasmissione_ci_v_prende_il_posto_dello_split_e_dei_due_vfo() {
+        let radio = FakeRadio::default();
+        let mut st = LoopState::default();
+        let s = SatSettings { uplink_civ_ic820h: true, uplink_two_vfo: true, ..SatSettings::default() };
+        drive_radio(&radio, &mut st, &s, &plan_at(-5.0), &rs44(), 0.0);
+        assert_eq!(radio.count("civ "), 1);
+        assert_eq!(radio.count("vfo "), 0);
+        assert_eq!(radio.count("split"), 0);
+        assert_eq!(radio.count("tx "), 0);
+        assert!(st.radio_error.is_none());
+    }
+
+    #[test]
+    fn la_trasmissione_ci_v_fallita_non_si_riprova_da_sola_e_la_ricezione_va_avanti() {
+        let radio = FakeRadio { civ_err: true, ..FakeRadio::default() };
+        let mut st = LoopState::default();
+        let mut s = SatSettings { uplink_civ_ic820h: true, ..SatSettings::default() };
+        for i in 0..200 {
+            assert!(drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i) * 0.01), &rs44(), f64::from(i)));
+        }
+        assert_eq!(radio.count("civ "), 1, "un solo tentativo, anche dopo minuti");
+        assert_eq!(radio.count("rx "), 200);
+        assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("CI-V")));
+        // spenta e riaccesa dall'operatore: si riprova una volta
+        s.uplink_civ_ic820h = false;
+        drive_radio(&radio, &mut st, &s, &plan_at(-3.0), &rs44(), 300.0);
+        s.uplink_civ_ic820h = true;
+        drive_radio(&radio, &mut st, &s, &plan_at(-2.0), &rs44(), 301.0);
+        assert_eq!(radio.count("civ "), 2);
     }
 
     #[test]
