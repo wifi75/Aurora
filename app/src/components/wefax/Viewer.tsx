@@ -29,7 +29,8 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   const started = useRef(false);
   const [size, setSize] = useState({ w: 1809, h: CHUNK_ROWS });
   const [rows, setRows] = useState(0);
-  const [zoom, setZoom] = useState<ZoomMode>('fit');
+  // la cartina si vede uno a uno (pixel reali); i pulsanti − e + cambiano la scala, niente «Adatta»
+  const [zoom, setZoom] = useState<ZoomMode>(1);
   const [follow, setFollow] = useState(true);
   const [avail, setAvail] = useState(0);
   const [note, setNote] = useState<'saved' | 'lost' | null>(null);
@@ -148,14 +149,6 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
         <button type="button" className="glass sstv-btn" onClick={() => setZoom(stepZoom(scale, 1))} title={t('wefax.view.zoomIn')} aria-label={t('wefax.view.zoomIn')}>
           +
         </button>
-        <span className="sstv-views" role="group" aria-label={t('wefax.view.label')}>
-          <button type="button" className={zoom === 'fit' ? 'on' : ''} aria-pressed={zoom === 'fit'} onClick={() => setZoom('fit')} title={t('wefax.view.fitHint')}>
-            {t('wefax.view.fit')}
-          </button>
-          <button type="button" className={zoom === 1 ? 'on' : ''} aria-pressed={zoom === 1} onClick={() => setZoom(1)} title={t('wefax.view.actualHint')}>
-            {t('wefax.view.actual')}
-          </button>
-        </span>
         <label className="sstv-check wefax-follow">
           <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
           {t('wefax.view.follow')}

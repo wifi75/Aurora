@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX: tolti i pulsanti «Adatta» e «1:1»: la cartina si vede sempre a pixel reali (100 %), e i pulsanti − e + restano per cambiare la scala; la pagina ha una larghezza massima (visore e fascia in basso non si allargano oltre 68 rem) con i comandi accanto.
+
 - WEFAX, cartine ricevute a griglia: 6 miniature per riga e 2 righe visibili (si scorre se sono di piu'), con i tre pulsantini (apri, scarica, cancella) in alto a destra sopra ogni miniatura e la data corta in basso a sinistra; un clic sulla miniatura la apre in grande.
 
 - WEFAX: scheda dei comandi di ricezione piu' stretta con le impostazioni chiuse sotto «Impostazioni di ricezione» (si aprono con un clic); spettro piu' alto e cascata colorata piu' bassa, senza la scala in Hz; cartine ricevute con la data e i pulsantini (apri, scarica, cancella) in testa a ogni miniatura e la miniatura piu' grande; fascia in basso piu' larga per le cartine.

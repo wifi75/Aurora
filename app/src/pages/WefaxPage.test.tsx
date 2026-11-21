@@ -97,8 +97,10 @@ describe('WefaxPage', () => {
     await screen.findByText(/In attesa di una cartina/);
     expect(screen.getByRole('button', { name: 'Ingrandisci' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Riduci' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Adatta' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: '1:1' })).toHaveAttribute('aria-pressed', 'false');
+    // niente «Adatta» e niente «1:1»: la cartina si vede sempre a pixel reali (100 %)
+    expect(screen.queryByRole('button', { name: 'Adatta' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '1:1' })).toBeNull();
+    expect(screen.getByText('100 %')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Segui l’immagine in arrivo' })).toBeChecked();
     expect(screen.getByRole('button', { name: 'Ferma ascolto' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Chiudi e salva' })).toBeDisabled();
@@ -107,17 +109,12 @@ describe('WefaxPage', () => {
     unmount();
   });
 
-  it('switches between fit and real pixels', async () => {
+  it('parte a pixel reali e i pulsanti − e + cambiano la scala', async () => {
     const { unmount } = page();
     await screen.findByText(/In attesa di una cartina/);
-    fireEvent.click(screen.getByRole('button', { name: '1:1' }));
-    expect(screen.getByRole('button', { name: '1:1' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Adatta' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByText('100 %')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Ingrandisci' }));
     expect(screen.getByText('150 %')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Adatta' }));
-    expect(screen.getByRole('button', { name: 'Adatta' })).toHaveAttribute('aria-pressed', 'true');
     unmount();
   });
 

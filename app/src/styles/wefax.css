@@ -300,3 +300,8 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 .wefax-band-hist .wefax-thumb-date { position: absolute; left: 2px; bottom: 2px; z-index: 2; font-size: 0.56rem; line-height: 1.2; padding: 0 0.25rem; border-radius: 3px; background: color-mix(in srgb, var(--panel, #10151f) 88%, transparent); color: var(--text, #e6edf7); white-space: nowrap; }
 .wefax-band-hist .sstv-thumb-tag { top: auto; bottom: 14px; left: 2px; font-size: 0.5rem; padding: 0 0.2rem; }
 .wefax-band-hist .wefax-thumb-head, .wefax-band-hist .wefax-thumb-meta { display: none; }
+
+/* la pagina non si allarga oltre un certo punto: il visore e la fascia in basso hanno una larghezza massima e i comandi gli stanno accanto */
+.wefax-body { grid-template-columns: minmax(0, 68rem) minmax(190px, 230px); justify-content: start; }
+@media (max-width: 1100px) { .wefax-body { grid-template-columns: minmax(0, 1fr) minmax(180px, 220px); } }
+@media (max-width: 900px) { .wefax-body { grid-template-columns: minmax(0, 1fr); } }
