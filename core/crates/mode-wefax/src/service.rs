@@ -33,6 +33,8 @@ pub const LPM_VALUES: [u32; 4] = [240, 120, 90, 60];
 pub struct WefaxSettings {
     /// 576 (cartine standard, 1809 colonne) o 288 (904 colonne).
     pub ioc: u32,
+    /// L'IOC si riconosce dal tono d'inizio (300 Hz: 576, 675 Hz: 288) e vince su `ioc` per quella ricezione.
+    pub auto_ioc: bool,
     /// Righe al minuto di partenza con IOC 576 (240, 120, 90, 60); con la fasatura si riconoscono da sole.
     pub lpm_576: u32,
     /// Righe al minuto di partenza con IOC 288.
@@ -76,6 +78,7 @@ impl Default for WefaxSettings {
         let d = DecoderConfig::default();
         WefaxSettings {
             ioc: d.ioc,
+            auto_ioc: d.auto_ioc,
             lpm_576: d.lpm_576,
             lpm_288: d.lpm_288,
             filter: d.filter,
@@ -131,6 +134,7 @@ impl WefaxSettings {
     fn decoder(&self) -> DecoderConfig {
         DecoderConfig {
             ioc: self.ioc,
+            auto_ioc: self.auto_ioc,
             lpm_576: self.lpm_576,
             lpm_288: self.lpm_288,
             filter: self.filter,
@@ -485,6 +489,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 st.sync = decoder.correlation();
                 st.state = decoder.rx_state().into();
                 st.lpm = decoder.lpm();
+                // l'IOC riconosciuto dal tono d'inizio (l'impostazione resta com'e')
+                st.ioc = decoder.config().ioc;
+                st.width = decoder.config().width();
             }
             inner.rx_status_event();
         }
@@ -545,6 +552,16 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
             lock(&inner.rx).receiving = false;
             inner.emit(WefaxEvent { kind: "rx_lost".into(), message: Some(reason), ..WefaxEvent::default() });
         }
+        DecoderEvent::IocDetected { from, ioc, lpm, width } => {
+            {
+                let mut st = lock(&inner.rx);
+                st.ioc = ioc;
+                st.lpm = lpm;
+                st.width = width;
+            }
+            tracing::info!("WEFAX: tono d'inizio dell'IOC {ioc}, si passa da {from} a {ioc} ({width} colonne)");
+            inner.emit(WefaxEvent { kind: "ioc_auto".into(), ioc: Some(ioc), lpm: Some(lpm), width: Some(width), message: Some(format!("{from}")), ..WefaxEvent::default() });
+        }
         DecoderEvent::State(state) => {
             lock(&inner.rx).state = state.into();
             inner.rx_status_event();
@@ -600,6 +617,7 @@ mod tests {
         let old = r#"{"ioc":576,"lpm_576":120,"lpm_288":60,"filter":"narrow","manual":false,"center_hz":1900.0,"shift_hz":800.0}"#;
         let s: WefaxSettings = serde_json::from_str(old).expect("impostazioni vecchie");
         assert!(s.afc);
+        assert!(s.auto_ioc);
         assert!(!s.squelch);
         assert_eq!(s.squelch_level, 30.0);
         assert!(s.validate().is_ok());

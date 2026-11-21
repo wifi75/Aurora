@@ -78,6 +78,11 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
           onChanged();
           return;
         }
+        if (ev.kind === 'ioc_auto') {
+          // il tono d'inizio era dell'altro IOC: l'IOC e le colonne della lettura cambiano
+          onChanged();
+          return;
+        }
         if (ev.kind === 'rx_lost') {
           setNote('lost');
           onChanged();

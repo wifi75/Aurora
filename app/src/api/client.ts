@@ -2446,6 +2446,8 @@ export interface WefaxSettings {
   manual: boolean;
   auto_lpm: boolean;
   auto_center: boolean;
+  /** IOC riconosciuto dal tono d'inizio (300 Hz: 576, 675 Hz: 288). Assente con un motore vecchio (si intende acceso). */
+  auto_ioc?: boolean;
   /** Inclinazione corretta da sola dal contenuto delle prime 400 righe. Assente con un motore vecchio (si intende accesa). */
   auto_slant?: boolean;
   auto_save: boolean;

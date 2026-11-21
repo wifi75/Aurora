@@ -175,6 +175,10 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           <input type="checkbox" checked={settings.manual} onChange={(e) => save({ manual: e.target.checked })} />
           {t('wefax.set.manual')}
         </label>
+        <label className="sstv-check" title={t('wefax.set.autoIocTip')}>
+          <input type="checkbox" checked={settings.auto_ioc ?? true} onChange={(e) => save({ auto_ioc: e.target.checked })} />
+          {t('wefax.set.autoIoc')}
+        </label>
         <label className="sstv-check">
           <input type="checkbox" checked={settings.auto_lpm} onChange={(e) => save({ auto_lpm: e.target.checked })} />
           {t('wefax.set.autoLpm')}

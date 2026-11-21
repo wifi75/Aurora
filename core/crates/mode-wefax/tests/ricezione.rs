@@ -110,11 +110,13 @@ struct Esito {
     /// Righe mandate con gli eventi `Rows`, in ordine: (first, count).
     righe: Vec<(u32, u32)>,
     avviate: usize,
+    /// Cambi di IOC dal tono d'inizio: (da, a).
+    ioc_cambiati: Vec<(u32, u32)>,
 }
 
 fn ricevi(cfg: DecoderConfig, audio: &[f32], chunk: usize) -> Esito {
     let mut d = Decoder::new(cfg);
-    let mut e = Esito { fatte: Vec::new(), scartate: Vec::new(), righe: Vec::new(), avviate: 0 };
+    let mut e = Esito { fatte: Vec::new(), scartate: Vec::new(), righe: Vec::new(), avviate: 0, ioc_cambiati: Vec::new() };
     let gestisci = |evs: Vec<DecoderEvent>, e: &mut Esito| {
         for ev in evs {
             match ev {
@@ -122,6 +124,7 @@ fn ricevi(cfg: DecoderConfig, audio: &[f32], chunk: usize) -> Esito {
                 DecoderEvent::Rows { first, count } => e.righe.push((first, count)),
                 DecoderEvent::Finished(done) => e.fatte.push(done),
                 DecoderEvent::Discarded { reason } => e.scartate.push(reason),
+                DecoderEvent::IocDetected { from, ioc, .. } => e.ioc_cambiati.push((from, ioc)),
                 DecoderEvent::State(_) => {}
             }
         }
@@ -686,4 +689,127 @@ fn l_inclinazione_automatica_non_muove_niente_su_immagini_uniformi_o_rumore() {
         assert_eq!(lpm_off, lpm_on, "{nome}: il periodo di riga non doveva cambiare");
         assert_eq!(dati_off, dati_on, "{nome}: i pixel non dovevano cambiare");
     }
+}
+
+// ---------------------------------------------------------------- IOC automatico
+
+/// Un'immagine di `ioc_tx` ricevuta con l'IOC impostato a `ioc_rx` (le righe al minuto di partenza sono quelle di `lpm`, uguali per i due).
+fn ricevi_con_ioc_sbagliato(ioc_tx: u32, ioc_rx: u32, lpm: u32, auto_ioc: bool) -> (Esito, Vec<u8>, usize, usize) {
+    let w = width_of(ioc_tx) as usize;
+    let h = 100;
+    let img = immagine(w, h);
+    let s = Segnale { rumore: 0.03, ..Segnale::standard(ioc_tx, lpm) };
+    let audio = genera(&s, &img, w, h);
+    let c = DecoderConfig { auto_ioc, ..cfg(ioc_rx, lpm) };
+    (ricevi(c, &audio, 1024), img, w, h)
+}
+
+#[test]
+fn l_ioc_si_riconosce_dal_tono_d_inizio_in_tutti_e_due_i_versi() {
+    for (ioc_tx, ioc_rx, lpm) in [(288u32, 576u32, 60u32), (576, 288, 120)] {
+        let (e, img, w, h) = ricevi_con_ioc_sbagliato(ioc_tx, ioc_rx, lpm, true);
+        assert_eq!(e.ioc_cambiati, vec![(ioc_rx, ioc_tx)], "IOC cambiato una volta sola");
+        assert_eq!(e.fatte.len(), 1, "scartate: {:?}", e.scartate);
+        let rx = &e.fatte[0];
+        assert_eq!(rx.ioc, ioc_tx);
+        assert_eq!(rx.image.width as usize, w);
+        assert_eq!(e.avviate, 1);
+        let (c, off, dc) = confronta(rx, &img, w, h, 6);
+        eprintln!("IOC {ioc_tx} ricevuto con {ioc_rx} e riconoscimento acceso: correlazione {c:.4}, {off} righe in testa, scarto {dc} colonne");
+        assert!(c > 0.97, "correlazione {c}");
+        assert!(dc.abs() <= 3);
+        // senza il riconoscimento l'immagine, se esce, non ha la larghezza giusta
+        let (e, _, w, _) = ricevi_con_ioc_sbagliato(ioc_tx, ioc_rx, lpm, false);
+        assert!(e.ioc_cambiati.is_empty());
+        for rx in &e.fatte {
+            assert_ne!(rx.image.width as usize, w, "con il riconoscimento spento l'IOC resta quello impostato");
+            assert_eq!(rx.ioc, ioc_rx);
+        }
+        eprintln!("IOC {ioc_tx} ricevuto con {ioc_rx} e riconoscimento spento: {} immagini (larghezza {})", e.fatte.len(), e.fatte.first().map_or(0, |r| r.image.width));
+    }
+}
+
+#[test]
+fn l_ioc_non_cambia_in_modo_manuale_ne_senza_tono_d_inizio() {
+    // senza tono d'inizio ne' fasatura (modo manuale): l'IOC resta quello impostato
+    let (w, h) = (width_of(288) as usize, 60);
+    let img = immagine(w, h);
+    let s = Segnale { apt: false, ..Segnale::standard(288, 60) };
+    let audio = genera(&s, &img, w, h);
+    let mut c = cfg(576, 60);
+    c.manual = true;
+    let mut d = Decoder::new(c);
+    for chunk in audio.chunks(1024) {
+        for ev in d.push(chunk) {
+            assert!(!matches!(ev, DecoderEvent::IocDetected { .. }));
+        }
+    }
+    assert_eq!(d.config().ioc, 576);
+    // con il tono dell'altro IOC ma in modo manuale (il tono e' solo segnale) niente cambia
+    let mut c = cfg(576, 60);
+    c.manual = true;
+    let mut d = Decoder::new(c);
+    for chunk in genera(&Segnale::standard(288, 60), &img, w, h).chunks(1024) {
+        d.push(chunk);
+    }
+    assert_eq!(d.config().ioc, 576);
+    // il rumore e il tono giusto non cambiano niente
+    let (e, ..) = ricevi_con_ioc_sbagliato(576, 576, 120, true);
+    assert!(e.ioc_cambiati.is_empty());
+    assert_eq!(e.fatte.len(), 1);
+}
+
+#[test]
+fn l_ioc_non_cambia_durante_un_immagine_e_resta_se_si_cambiano_altre_impostazioni() {
+    // un'immagine IOC 288 gia' in corso: il tono dell'altro IOC a meta' (il segnale di un'altra stazione) non fa cambiare IOC
+    let (w, h) = (width_of(288) as usize, 100);
+    let img = immagine(w, h);
+    let audio = genera(&Segnale { rumore: 0.03, ..Segnale::standard(288, 60) }, &img, w, h);
+    let mut d = Decoder::new(DecoderConfig { auto_ioc: true, ..cfg(288, 60) });
+    // 5 s di silenzio+tono, 30 righe di fasatura (30 s): dopo 45 s si e' nell'immagine
+    let meta = 45 * RATE as usize;
+    for chunk in audio[..meta].chunks(1024) {
+        d.push(chunk);
+    }
+    assert!(d.is_receiving() || d.rx_state() == "image");
+    let tono_altro = tono_fisso_onda_quadra(300.0, 4);
+    for chunk in tono_altro.chunks(1024) {
+        for ev in d.push(chunk) {
+            assert!(!matches!(ev, DecoderEvent::IocDetected { .. }), "IOC cambiato dentro l'immagine");
+        }
+    }
+    assert_eq!(d.config().ioc, 288);
+    // dopo un riconoscimento un cambio di altre impostazioni non butta l'immagine ne' riporta l'IOC alle impostazioni
+    let (w, h) = (width_of(288) as usize, 100);
+    let img = immagine(w, h);
+    let audio = genera(&Segnale { rumore: 0.03, ..Segnale::standard(288, 60) }, &img, w, h);
+    let mut d = Decoder::new(cfg(576, 60));
+    for chunk in audio[..45 * RATE as usize].chunks(1024) {
+        d.push(chunk);
+    }
+    assert_eq!(d.config().ioc, 288);
+    assert_eq!(d.rx_state(), "image");
+    let mut altre = cfg(576, 60);
+    altre.afc = false;
+    d.set_config(altre);
+    assert_eq!(d.config().ioc, 288, "l'IOC riconosciuto resta");
+    assert_eq!(d.rx_state(), "image", "l'immagine in corso non si butta");
+    // se invece si sceglie un altro IOC nelle impostazioni, vale quello
+    d.set_config(cfg(288, 60));
+    assert_eq!(d.config().ioc, 288);
+    d.set_config(cfg(576, 60));
+    assert_eq!(d.config().ioc, 576);
+}
+
+/// Onda quadra nero-bianco alla frequenza `hz` (come il tono d'inizio).
+fn tono_fisso_onda_quadra(hz: f64, secondi: usize) -> Vec<f32> {
+    let rate = f64::from(RATE);
+    let mut phase = 0.0f64;
+    (0..RATE as usize * secondi)
+        .map(|i| {
+            let alto = ((2.0 * hz * i as f64 / rate) as u64) % 2 == 0;
+            phase += TAU * (1500.0 + if alto { 800.0 } else { 0.0 }) / rate;
+            (0.5 * phase.sin()) as f32
+        })
+        .collect()
 }

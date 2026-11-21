@@ -5609,6 +5609,8 @@ export const NL_UI: Record<string, string> = {
   "wefax.scope.aria": "WEFAX-audiospectrum",
   "wefax.scope.tip": "Spectrum: de rode lijnen zijn zwart (1500 Hz) en wit (2300 Hz), de donkere het midden. Het signaal hoort op de rode lijnen te vallen; een klik zet het midden daar.",
   "wefax.set.autoCenter": "Beeld automatisch centreren",
+  "wefax.set.autoIoc": "IOC uit de starttoon",
+  "wefax.set.autoIocTip": "De starttoon verraadt de IOC: 300 Hz voor 576, 675 Hz voor 288. Hoort hij bij de andere IOC, dan schakelt Aurora vóór de fasering over op die IOC (en dus de breedte en de begin-regels per minuut), zonder de gekozen instelling aan te passen. Doet niets in handmatige modus of als het beeld al begonnen is.",
   "wefax.set.autoLpm": "Regels per minuut uit de fasering",
   "wefax.set.autoSave": "Elke kaart automatisch opslaan",
   "wefax.set.autoSlant": "Automatische scheefstand",

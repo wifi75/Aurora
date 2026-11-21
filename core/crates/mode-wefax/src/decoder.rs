@@ -25,6 +25,8 @@ const SQL_OPEN_BLOCKS: u32 = 6;
 /// Misure di fila sotto la soglia che chiudono l'immagine (circa 3 secondi).
 const SQL_CLOSE_BLOCKS: u32 = (3 * RATE as usize / METER_BLOCK) as u32;
 /// Misure di fila sotto la soglia che riarmano lo squelch dopo un'immagine (mezzo secondo).
+/// Quota minima di potenza dei grigi di mezzo secondo su un tono d'inizio perche' conti come tono (un tono puro vale 1).
+const TONE_SHARE_MIN: f64 = 0.3;
 const SQL_REARM_BLOCKS: u32 = 6;
 /// Deviazione minima dei grigi demodulati in una misura perche' il segnale conti come immagine: il tono fisso che le stazioni mandano
 /// prima di trasmettere (nero a 1500 Hz) e' segnale presente ma non fa partire niente.
@@ -86,6 +88,9 @@ pub enum Fs {
 pub struct DecoderConfig {
     /// 576 o 288.
     pub ioc: u32,
+    /// L'IOC si riconosce dal tono d'inizio (300 Hz con IOC 576, 675 Hz con IOC 288): se e' quello dell'altro IOC, larghezza e righe al
+    /// minuto di partenza cambiano prima della fasatura. Non agisce nel modo manuale ne' a immagine cominciata.
+    pub auto_ioc: bool,
     /// Righe al minuto di partenza con IOC 576 (60, 90, 120, 240).
     pub lpm_576: u32,
     /// Righe al minuto di partenza con IOC 288.
@@ -123,6 +128,7 @@ impl Default for DecoderConfig {
     fn default() -> Self {
         DecoderConfig {
             ioc: 576,
+            auto_ioc: true,
             lpm_576: 120,
             lpm_288: 60,
             filter: Filter::Narrow,
@@ -209,6 +215,8 @@ pub struct Done {
 
 #[derive(Clone, Debug)]
 pub enum DecoderEvent {
+    /// Il tono d'inizio era quello dell'altro IOC: da qui si riceve con `ioc` (larghezza e righe al minuto di partenza nuove).
+    IocDetected { from: u32, ioc: u32, lpm: f32, width: u32 },
     /// L'immagine comincia.
     Started { ioc: u32, lpm: f32, width: u32, source: Source },
     /// Righe nuove complete da `first` (`count` righe); si legge con [`Decoder::current`].
@@ -238,6 +246,8 @@ struct Img {
 
 pub struct Decoder {
     cfg: DecoderConfig,
+    /// L'IOC scelto nelle impostazioni: `cfg.ioc` puo' esserne diverso dopo un riconoscimento dal tono d'inizio.
+    base_ioc: u32,
     demod: FmDemod,
     demod_buf: Vec<u8>,
     width: usize,
@@ -254,6 +264,9 @@ pub struct Decoder {
     cr1_freq: i32,
     cr2_freq: i32,
     cr3_freq: i32,
+    /// Finestra (mezzo secondo) dei grigi demodulati in attesa del tono d'inizio, e se le ultime tre contenevano il tono dell'altro IOC.
+    apt_win: Vec<u8>,
+    alt_hit: [bool; 3],
 
     // fasatura
     phase_high: bool,
@@ -325,6 +338,31 @@ fn near(a: i32, b: i32, margin: i32) -> bool {
     (a - b).abs() < margin
 }
 
+/// Quota della potenza di una finestra di grigi (senza la media) che sta in una riga a `hz` (entro 6 Hz): vicina a 1 per un tono puro, quasi
+/// 0 per rumore o immagine. 0 se la finestra e' quasi piatta (deviazione sotto 6 livelli).
+fn tone_share(win: &[u8], hz: f64) -> f64 {
+    let n = win.len() as f64;
+    let mean = win.iter().map(|&v| f64::from(v)).sum::<f64>() / n;
+    let energy: f64 = win.iter().map(|&v| (f64::from(v) - mean).powi(2)).sum();
+    if energy / n < 36.0 {
+        return 0.0;
+    }
+    let mut best = 0.0f64;
+    for k in -2..=2 {
+        let w = std::f64::consts::TAU * (hz + 3.0 * f64::from(k)) / f64::from(RATE);
+        let coeff = 2.0 * w.cos();
+        let (mut s1, mut s2) = (0.0f64, 0.0f64);
+        for &v in win {
+            let s0 = (f64::from(v) - mean) + coeff * s1 - s2;
+            s2 = s1;
+            s1 = s0;
+        }
+        let power = s1 * s1 + s2 * s2 - coeff * s1 * s2;
+        best = best.max(2.0 * power / (n * energy));
+    }
+    best
+}
+
 fn lpm_to_samples(lpm: u32) -> i64 {
     i64::from(SR) * 60 / i64::from(lpm.max(1))
 }
@@ -333,6 +371,7 @@ impl Decoder {
     pub fn new(cfg: DecoderConfig) -> Decoder {
         let width = cfg.width() as usize;
         let mut d = Decoder {
+            base_ioc: cfg.ioc,
             demod: FmDemod::new(cfg.filter, cfg.center_hz, cfg.shift_hz),
             demod_buf: Vec::new(),
             width,
@@ -347,6 +386,8 @@ impl Decoder {
             cr1_freq: 0,
             cr2_freq: 0,
             cr3_freq: 0,
+            apt_win: Vec::new(),
+            alt_hit: [false; 3],
             phase_high: false,
             curr_phase_len: 0,
             curr_phase_high: 0,
@@ -406,7 +447,13 @@ impl Decoder {
     }
 
     /// Cambia le impostazioni: se cambia l'IOC o il modo di avvio l'immagine in corso si butta.
-    pub fn set_config(&mut self, cfg: DecoderConfig) {
+    pub fn set_config(&mut self, mut cfg: DecoderConfig) {
+        // l'IOC riconosciuto dal tono d'inizio resta (e l'immagine in corso con lui) finche' nelle impostazioni non cambia l'IOC
+        let ioc_chosen = cfg.ioc != self.base_ioc;
+        self.base_ioc = cfg.ioc;
+        if cfg.auto_ioc && !ioc_chosen {
+            cfg.ioc = self.cfg.ioc;
+        }
         let restart = cfg.ioc != self.cfg.ioc || cfg.manual != self.cfg.manual;
         let tuning_changed = cfg.center_hz != self.cfg.center_hz || cfg.shift_hz != self.cfg.shift_hz;
         let demod_changed = cfg.filter != self.cfg.filter || tuning_changed;
@@ -487,6 +534,8 @@ impl Decoder {
         self.end_rx();
         self.apt_count = 0;
         self.apt_trans = 0;
+        self.apt_win.clear();
+        self.alt_hit = [false; 3];
     }
 
     /// Eventi in sospeso (per esempio lo scarto di `cancel`).
@@ -654,8 +703,22 @@ impl Decoder {
             self.apt_high = false;
         }
         self.apt_count += 1;
+        // il tono d'inizio dell'altro IOC (con il filtro stretto i 675 Hz non superano le soglie fisse del conteggio): si tiene la finestra
+        // e si misura quanta potenza cade su quel tono
+        if self.cfg.auto_ioc && self.state == Fs::AptStart && self.image.is_none() {
+            self.apt_win.push(x.clamp(0, 255) as u8);
+        } else if !self.apt_win.is_empty() {
+            self.apt_win.clear();
+            self.alt_hit = [false; 3];
+        }
         if self.apt_count < SR / 2 {
             return;
+        }
+        if !self.apt_win.is_empty() {
+            let other = f64::from(if self.cfg.apt_start_hz() == 300 { 675 } else { 300 });
+            let share = tone_share(&self.apt_win, other);
+            self.alt_hit = [share >= TONE_SHARE_MIN, self.alt_hit[0], self.alt_hit[1]];
+            self.apt_win.clear();
         }
         self.cr3_freq = self.cr2_freq;
         self.cr2_freq = self.cr1_freq;
@@ -668,6 +731,12 @@ impl Decoder {
 
         if self.state == Fs::AptStart {
             if near(c0, start, 8) && near(c1, start, 8) {
+                self.skip_apt_rx();
+                return;
+            }
+            // il tono d'inizio dell'altro IOC: si cambia IOC prima che cominci la fasatura (mai a immagine cominciata)
+            if self.cfg.auto_ioc && self.image.is_none() && self.alt_hit.iter().all(|&h| h) {
+                self.switch_ioc();
                 self.skip_apt_rx();
                 return;
             }
@@ -710,6 +779,21 @@ impl Decoder {
             }
             _ => {}
         }
+    }
+
+    /// Passa all'altro IOC (576 / 288) in attesa della fasatura: larghezza e righe al minuto di partenza seguono. Resta anche dopo
+    /// l'immagine (la trasmissione dopo si riconosce da sola dal suo tono d'inizio); le impostazioni salvate non cambiano.
+    fn switch_ioc(&mut self) {
+        let from = self.cfg.ioc;
+        self.cfg.ioc = if from == 288 { 576 } else { 288 };
+        self.width = self.cfg.width() as usize;
+        self.measured_len = None;
+        self.corr_buf.clear();
+        self.alt_hit = [false; 3];
+        self.lpm_set();
+        let (ioc, width) = (self.cfg.ioc, self.cfg.width());
+        let lpm = 60.0 * f64::from(SR) / self.smpl_per_lin;
+        self.events.push(DecoderEvent::IocDetected { from, ioc, lpm: lpm as f32, width });
     }
 
     /// Esce dall'attesa del tono di partenza e aspetta la fasatura.
