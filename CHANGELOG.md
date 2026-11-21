@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX: le cartine ricevute non occupano piu' una riga larga in fondo alla pagina: stanno in una colonna stretta accanto al visore (miniature una sotto l'altra, con apri, scarica e cancella; scorre da sola), e il riquadro del visore e' piu' basso, cosi' la pagina entra nello schermo con lo spettro e la cascata sopra. Sotto i 1100 pixel la colonna torna sotto il visore.
+
 - Satelliti, ripiego a due VFO (IC-820H, #83): se la radio rifiuta il ripiego (per esempio con il Sub spento) non resta spento per sempre e la spunta «Trasmissione con due VFO» non si toglie piu' da sola dalle impostazioni: dopo un minuto si riprova da solo, cosi' la trasmissione torna a seguire il Doppler appena il Sub e' di nuovo acceso (pacchetto di Vladimir con AO-7, 2026-11-21: il ripiego era rimasto spento dalle 07:34 e la trasmissione non si muoveva).
 
 - WEFAX: due frecce (su e giu') accanto al selettore delle frequenze per passare alla frequenza piu' alta o piu' bassa dell'elenco senza aprire il menu; la radio ci va, si impostano IOC e righe al minuto della stazione e la scelta si ricorda.
