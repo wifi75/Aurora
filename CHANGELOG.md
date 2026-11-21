@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, soglia dello squelch nello spettro: con SQL acceso, a destra dello spettro compare una barra col livello del segnale (0-100) e una riga rossa tratteggiata all'altezza della soglia. La curva dello spettro e il livello dello squelch non hanno una scala comune (la curva si adatta al segnale, il livello e' un rapporto in banda contro il rumore ai lati), quindi la soglia sta sulla barra del livello e non sulla curva; il livello si aggiorna una volta al secondo (viene dallo stato). Guida e testi nelle otto lingue.
+
 - WEFAX, correzione dell'inclinazione sulla cartina in corso: i pulsanti dell'inclinazione (`slant_ppm`) valgono subito anche sull'immagine in ricezione (il periodo di riga cambia per le righe nuove e le righe gia' scritte si raddrizzano con la stessa funzione dell'inclinazione automatica, senza interrompere ne' ricominciare l'immagine). Nuovo pulsante «Misura inclinazione» sul visore: due clic ai capi di una linea che dovrebbe essere verticale, dal numero di righe e dallo spostamento si ricava il ppm (`POST /api/v1/wefax/slant` con `ppm` o `points`) e si somma alla correzione a mano. Lo stesso pulsante nella cartina aperta in grande dalla cronologia raddrizza quella salvata (`id`): come nuova copia o, con la spunta e dopo conferma, al posto dell'originale. Guida e testi nelle otto lingue.
 
 - WEFAX, pagina rifatta a schede (stile RTT) e centrata: cartina in arrivo in alto, spettro e cascata a sinistra in basso (senza scala in Hz, a filo del bordo), cartine ricevute a destra in miniature quadrate con frecce per scorrere, scheda «Ricezione» fino al bordo basso; niente barra di scorrimento nell'immagine vuota.

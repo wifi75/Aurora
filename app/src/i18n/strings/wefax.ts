@@ -275,4 +275,12 @@ export const wefaxStrings = {
     '¿Reemplazar el mapa por el enderezado? Se perderá el original.',
     'Substituir a carta pela endireitada? O original perde-se.',
   ],
+  'wefax.scope.sqlTip': [
+    'Con SQL acceso, la barra a destra è il livello del segnale (0-100) e la riga rossa tratteggiata la soglia: l’immagine parte quando la barra supera la riga. La barra ha una scala sua, diversa da quella della curva.',
+    'With SQL on, the bar on the right is the signal level (0-100) and the dashed red line is the threshold: the picture starts when the bar rises above the line. The bar has its own scale, different from the curve’s.',
+    'Bei eingeschaltetem SQL zeigt der Balken rechts den Signalpegel (0-100) und die rote gestrichelte Linie die Schwelle: Das Bild startet, wenn der Balken über die Linie steigt. Der Balken hat eine eigene Skala, anders als die Kurve.',
+    'Avec SQL activé, la barre à droite est le niveau du signal (0-100) et la ligne rouge en pointillés le seuil : l’image démarre quand la barre dépasse la ligne. La barre a sa propre échelle, différente de celle de la courbe.',
+    'Con SQL encendido, la barra de la derecha es el nivel de la señal (0-100) y la línea roja discontinua el umbral: la imagen empieza cuando la barra supera la línea. La barra tiene su propia escala, distinta de la de la curva.',
+    'Com o SQL ligado, a barra à direita é o nível do sinal (0-100) e a linha vermelha tracejada o limiar: a imagem começa quando a barra passa a linha. A barra tem uma escala própria, diferente da da curva.',
+  ],
 } as const;

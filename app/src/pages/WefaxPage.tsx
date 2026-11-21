@@ -224,6 +224,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
                   centerHz={data.settings.center_hz}
                   shiftHz={data.settings.shift_hz}
                   afcHz={data.settings.afc ? (data.rx.afc_hz ?? 0) : 0}
+                  squelch={data.settings.squelch ? { level: data.rx.signal ?? 0, threshold: data.settings.squelch_level } : undefined}
                   onCenter={(hz) => {
                     if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
                   }}

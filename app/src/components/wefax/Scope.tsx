@@ -11,6 +11,21 @@ export const SCOPE_MAX_HZ = 3000;
 /** La cascata colorata e' bassa (la scala in Hz e' nascosta e si somma ai 22 px che la scala occuperebbe): conta di piu' la curva che si muove. */
 const WATERFALL_H = 44;
 
+/** Larghezza (px dello schermo) della barra del livello a destra dello spettro. */
+export const SQL_BAR_PX = 12;
+
+/** Lo squelch da mostrare: soglia e livello del segnale, nella stessa scala 0..100 (rapporto in banda contro il rumore ai lati). */
+export interface SqlMark {
+  level: number;
+  threshold: number;
+}
+
+/** Altezza (px, dall'alto) a cui sta il valore 0..100 in una barra alta `h` con un margine di `pad` sopra e sotto. */
+export function sqlBarY(value: number, h: number, pad: number): number {
+  const v = Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
+  return h - pad - (v / 100) * (h - 2 * pad);
+}
+
 /** Colori dal tema (lo spettro segue il chiaro e lo scuro dell'app). */
 function themeColor(el: Element, name: string, fallback: string): string {
   const v = getComputedStyle(el).getPropertyValue(name).trim();
@@ -22,7 +37,7 @@ function themeColor(el: Element, name: string, fallback: string): string {
  * ± escursione/2, spostati dall'AFC) e una riga scura sul centro; sotto la cascata con il righello in Hz e la coppia di segni. Un clic
  * su spettro o cascata porta il centro li'.
  */
-export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: number; shiftHz: number; afcHz: number; onCenter(hz: number): void }) {
+export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter, squelch }: { centerHz: number; shiftHz: number; afcHz: number; onCenter(hz: number): void; squelch?: SqlMark }) {
   const t = useT();
   const canvas = useRef<HTMLCanvasElement>(null);
   const avg = useRef(new RowAverager());
@@ -30,8 +45,8 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
   const rx = centerHz + afcHz;
   // il campo dei valori mostrato dalla curva (come la cascata, che esalta le differenze): fondo e picco si seguono con una media lenta
   const range = useRef<{ lo: number; hi: number } | null>(null);
-  const marks = useRef({ rx, shiftHz });
-  marks.current = { rx, shiftHz };
+  const marks = useRef<{ rx: number; shiftHz: number; sql?: SqlMark }>({ rx, shiftHz });
+  marks.current = { rx, shiftHz, sql: squelch };
 
   const draw = () => {
     const c = canvas.current;
@@ -79,6 +94,32 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ef4444';
     for (const hz of [centre - shift / 2, centre + shift / 2]) ctx.fillRect(Math.round(xOf(hz)) - dpr, 0, 2 * dpr, h);
+    // SQL acceso: a destra una barra col livello del segnale e, sopra, la riga rossa tratteggiata della soglia. La curva dello spettro ha una scala
+    // sua (si adatta al segnale, in valori dello spettro), il livello dello squelch e' un rapporto in banda contro il rumore: le due cose non
+    // hanno una scala comune, quindi la soglia sta sulla barra del livello e non sulla curva.
+    const sql = marks.current.sql;
+    if (sql) {
+      const bw = Math.round(SQL_BAR_PX * dpr);
+      const x0 = w - bw;
+      const pad = 2 * dpr;
+      ctx.fillStyle = themeColor(c, '--panel-raised', '#10151f');
+      ctx.fillRect(x0, 0, bw, h);
+      ctx.fillStyle = sql.level >= sql.threshold ? '#22c55e' : '#3b82f6';
+      const top = sqlBarY(sql.level, h, pad);
+      ctx.fillRect(x0 + 2 * dpr, top, bw - 4 * dpr, Math.max(0, h - pad - top));
+      ctx.strokeStyle = themeColor(c, '--border', '#3a4560');
+      ctx.lineWidth = dpr;
+      ctx.strokeRect(x0 + dpr / 2, dpr / 2, bw - dpr, h - dpr);
+      const y = Math.round(sqlBarY(sql.threshold, h, pad));
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = Math.max(1, Math.round(1.5 * dpr));
+      ctx.setLineDash([4 * dpr, 3 * dpr]);
+      ctx.beginPath();
+      ctx.moveTo(x0 - 4 * dpr, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   };
 
   useEffect(
@@ -92,7 +133,7 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
     [],
   );
   // i segni si spostano subito, anche senza righe nuove
-  useEffect(draw, [rx, shiftHz]);
+  useEffect(draw, [rx, shiftHz, squelch?.level, squelch?.threshold, squelch !== undefined]);
 
   const pick = (clientX: number, el: HTMLElement) => {
     const b = el.getBoundingClientRect();
@@ -107,7 +148,7 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
         className="wefax-scope-spec"
         role="img"
         aria-label={t('wefax.scope.aria')}
-        title={t('wefax.scope.tip')}
+        title={squelch ? `${t('wefax.scope.tip')} ${t('wefax.scope.sqlTip')}` : t('wefax.scope.tip')}
         onClick={(e) => pick(e.clientX, e.currentTarget)}
       />
       <DigiWaterfall

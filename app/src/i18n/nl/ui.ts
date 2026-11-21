@@ -5614,6 +5614,7 @@ export const NL_UI: Record<string, string> = {
   "wefax.rx.stop": "Luisteren stoppen",
   "wefax.rx.waiting": "Wachten op een kaart: Aurora start zelf op de starttoon (APT) en de fasering.",
   "wefax.scope.aria": "WEFAX-audiospectrum",
+  "wefax.scope.sqlTip": "Met SQL aan is de balk rechts het signaalniveau (0-100) en de rode stippellijn de drempel: het beeld start wanneer de balk boven de lijn komt. De balk heeft een eigen schaal, anders dan die van de curve.",
   "wefax.scope.tip": "Spectrum: de rode lijnen zijn zwart (1500 Hz) en wit (2300 Hz), de donkere het midden. Het signaal hoort op de rode lijnen te vallen; een klik zet het midden daar.",
   "wefax.set.afcRange": "AFC-grens (Hz)",
   "wefax.set.autoCenter": "Beeld automatisch centreren",
