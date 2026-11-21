@@ -516,6 +516,7 @@ export function Live({ soloPanel }: { soloPanel?: PanelId } = {}) {
           emptyText={t('rxw.empty')}
           newestAtBottom={prefs.rxBottom}
           columnsKey={RXW_COLS_KEY}
+          noDistance
         />
       </div>
     );

@@ -195,6 +195,8 @@ interface Props {
   columnsKey?: string;
   /** A griglia anche le colonne della frequenza audio e dell'etichetta (novita', in coda, FOX): Attivita' di banda. */
   allColumns?: boolean;
+  /** Senza distanza e azimut (la Finestra RX: poco spazio, servono i messaggi). */
+  noDistance?: boolean;
 }
 
 /** Le colonne dell'elenco a griglia (Finestra RX), nell'ordine di partenza. */
@@ -249,7 +251,7 @@ function AgeCell({ time, shownAt }: { time: number; shownAt: number }) {
     </span>
   );
 }
-export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey, allColumns = false }: Props) {
+export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, dxGrid, emptyText, tapReply = false, forceFlag = false, newestAtBottom = false, columnsKey, allColumns = false, noDistance = false }: Props) {
   const [firstPaint, setFirstPaint] = useState(true);
   useEffect(() => {
     const id = window.setTimeout(() => setFirstPaint(false), 60);
@@ -599,8 +601,8 @@ export function DecodeList({ decodes, onReply, onQueue, myGrid, myCall, dxCall, 
         // riga di una Fox: paese e bandiera sono quelli della Fox (il nominativo tra < >), come per il mittente delle altre righe
         const country = own ? (countryOfCall.get(target) ?? null) : (d.country ?? (foxCall ? (countryOfCall.get(foxCall) ?? null) : null));
         const theirs = own ? (targetGrid ? gridCenter(targetGrid) : null) : null;
-        const km = prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
-        const azimuth = prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
+        const km = !noDistance && prefs.showDistance && mine ? (own ? (theirs ? distanceKm(mine, theirs) : null) : distanceOf(mine, d.text)) : null;
+        const azimuth = !noDistance && prefs.showAzimuth && mine ? (own ? (theirs ? Math.round(bearingDeg(mine, theirs)) % 360 : null) : bearingOf(mine, d.text)) : null;
         const code = prefs.showFlag ? flagCode(country) : null;
         const gap = prefs.insertBlank && previousTime !== null && previousTime !== d.time_ms;
         previousTime = d.time_ms;
