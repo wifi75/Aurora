@@ -23,6 +23,6 @@ Le immagini della NASA Earth Observatory si possono usare liberamente, citando l
 
 ## Come si usano nel programma
 
-- Impostazioni › Modi › Satelliti › Mappa: «Terra (satellite NASA)» (predefinita se non si e' scelto nulla e non c'e' una mappa «Contour HiRes»), «Mappa semplice (vettoriale)» e le immagini aggiunte dall'utente. I nomi riservati salvati nell'impostazione `map` sono `:terra` e `:aurora` (la vecchia mappa vettoriale, quindi chi l'aveva scelta la tiene); il core li tratta come un nome qualsiasi, senza modifiche.
+- Impostazioni › Modi › Satelliti › Mappa: «Terra (satellite NASA)» (predefinita: la sceglie «Automatica», e quindi anche chi non ha scelto nulla; non si preferisce piu' una mappa «Contour HiRes»), «Terra (NASA, con rilievo)», «Terra (NASA, solo colori)», «Mappa semplice (vettoriale)» e le immagini aggiunte dall'utente. I nomi riservati salvati nell'impostazione `map` sono `:terra` e `:aurora` (la vecchia mappa vettoriale, quindi chi l'aveva scelta la tiene); il core li tratta come un nome qualsiasi, senza modifiche.
 - La notte e' la foto delle luci mascherata dall'altezza del Sole (`nightAlpha`), con il crepuscolo come passaggio morbido; con la mappa semplice o una dell'utente resta il velo blu.
 - «Confini degli Stati sulla foto» (spento di base, preferenza del browser) disegna i confini sottili di Natural Earth sopra la Terra.
