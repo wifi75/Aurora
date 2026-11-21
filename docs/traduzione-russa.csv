@@ -846,7 +846,7 @@ auto.modeDry,Dry run,Пробный запуск
 auto.turnOn,Turn on,Включить
 auto.turnOff,Turn off,Выключить
 auto.liveOnPc,Live mode is enabled from the PC.,Режим в эфире включается с ПК.
-auto.txClosed, Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0., Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0.
+auto.txClosed," Transmission is closed now: Aurora was started with AURORA_ALLOW_TX=0."," Передача сейчас закрыта: Aurora запущена с AURORA_ALLOW_TX=0."
 auto.limits,"Limits set on the PC: {cycles} replies in a row without a QSO, {perDay} per day, switched off after {dead} s with no device connected. Today: {today} replies.","Ограничения, заданные на ПК: {cycles} ответов подряд без QSO, {perDay} в сутки, выключение через {dead} с при отсутствии устройства. Сегодня ответов: {today}."
 auto.rules,Rules,Правила
 auto.replyTo,Reply to CQ calls with,Отвечать на вызовы CQ
@@ -4511,7 +4511,7 @@ digi.f.notes,Notes,Примечания
 digi.saved,Saved,Сохранено
 digi.psk.squelch,Squelch threshold: quality {q},Порог шумоподавителя: качество {q}
 digi.psk.qualityNow,Current quality: {q},Текущее качество: {q}
-digi.psk.squelchHint,"In PSK the squelch looks at the phase quality (0-100, as in fldigi), not at the level: it works the same with loud or quiet audio. On noise alone the quality stays below 10; 15 (the default) lets signals through down to about -10 dB S/N.","В PSK шумоподавитель смотрит на качество фазы (0-100, как в fldigi), а не на уровень: работает одинаково при громком и тихом звуке. Только на шуме качество остаётся ниже 10; 15 (по умолчанию) пропускает сигналы примерно до -10 dB S/N."
+digi.psk.squelchHint,"In PSK the squelch looks at the phase quality (0-100, as in fldigi), not at the level: it works the same with loud or quiet audio. On noise alone the quality stays below 10; 15 (the default) lets signals through down to about -10 dB S/N. With the Squelch switch off, PSK still uses 15 (like the signal list), so pauses and plain noise print no garbage; to open it fully set the threshold to 0.","В PSK шумоподавитель смотрит на качество фазы (0-100, как в fldigi), а не на уровень: работает одинаково при громком и тихом звуке. Только на шуме качество остаётся ниже 10; 15 (по умолчанию) пропускает сигналы примерно до -10 dB S/N. При выключенном переключателе шумоподавителя в PSK всё равно действует 15 (как в списке сигналов), чтобы в паузах и на одном шуме не печатался мусор; чтобы открыть его полностью, поставьте порог 0."
 digi.cw.squelchSnr,Squelch threshold: S/N {db} dB,Порог шумоподавителя: S/N {db} dB
 digi.cw.squelchSnrHint,"In CW the squelch looks at the signal-to-noise ratio measured on the spectrum around the tone, in 3 kHz like WSJT-X and averaged over time (CW keyed half of the time reads about 3 dB lower). On noise alone it sits around -25 dB; below -16 dB nothing is printed even with the squelch off.","В CW шумоподавитель смотрит на отношение сигнал/шум, измеренное в спектре вокруг тона в полосе 3 kHz, как в WSJT-X, усреднённое по времени (CW, манипулируемый половину времени, показывает примерно на 3 dB меньше). Только на шуме оно около -25 dB; ниже -16 dB ничего не выводится, даже при выключенном шумоподавителе."
 digi.cw.bandwidth,CW filter bandwidth,Полоса фильтра CW
@@ -4798,7 +4798,7 @@ sat.trk.seeTab,"What the rotator does before, during and after the pass is set i
 sat.trk.summary,"With these choices: {before}, {during}, {after}.","При этих настройках: {before}, {during}, {after}."
 sat.trk.sumBefore,the rotator goes to the rise point {n} s earlier,ротор переходит к точке восхода на {n} с раньше
 sat.trk.sumBeforeOff,the rotator does not move before the rise,ротор не двигается до восхода
-sat.trk.sumStart, (from {e}° elevation), (начиная с угла места {e}°)
+sat.trk.sumStart," (from {e}° elevation)"," (начиная с угла места {e}°)"
 sat.trk.sumDuring,follows the satellite{start} every {i} s if it moves by more than {d}°,"следует за спутником{start} каждые {i} с, если тот сдвинулся больше чем на {d}°"
 sat.trk.sumStay,at the end of the pass it stays put,в конце пролёта остаётся на месте
 sat.trk.sumPark,{n} s after LOS it goes to {az}°/{el}°,через {n} с после LOS переходит на {az}°/{el}°
