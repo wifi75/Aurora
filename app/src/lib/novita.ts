@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.328',
-    released: '2026-11-21T19:30:00Z',
+    released: '2026-11-21T20:06:23Z',
     kind: 'fixed',
     title: [
       'Satelliti, IC-820H: risposte della radio e trasmissione corrette',
