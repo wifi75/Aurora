@@ -41,24 +41,77 @@ fn png(bytes: Vec<u8>) -> Response {
     ([(header::CONTENT_TYPE, "image/png"), (header::CACHE_CONTROL, "no-store")], bytes).into_response()
 }
 
+/// La richiesta arriva dal PC dove gira Aurora (loopback, non da un proxy).
+fn is_local(peer: Option<std::net::SocketAddr>, headers: &HeaderMap) -> bool {
+    peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(headers)
+}
+
+/// Lo stato con `local`: l'interfaccia e' sul PC dove gira Aurora (le cartelle si aprono solo da li').
+fn snapshot_json(svc: &WefaxService, local: bool) -> Value {
+    let mut v = json!(svc.snapshot());
+    if let Some(o) = v.as_object_mut() {
+        o.insert("local".into(), Value::Bool(local));
+    }
+    v
+}
+
 /// Stato della ricezione, impostazioni, IOC e valori ammessi.
-#[utoipa::path(get, path = "/api/v1/wefax", responses((status = 200, description = "`{rx, settings, folder, iocs, lpm_values, filters}`"), (status = 404, description = "Non disponibile (wefax_unavailable)")))]
-pub(crate) async fn wefax_get(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+#[utoipa::path(get, path = "/api/v1/wefax", responses((status = 200, description = "`{rx, settings, folder, audio_folder, local, iocs, lpm_values, filters}`"), (status = 404, description = "Non disponibile (wefax_unavailable)")))]
+pub(crate) async fn wefax_get(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap) -> Result<Json<Value>, ApiError> {
     let svc = service(&state)?;
-    Ok(Json(json!(svc.snapshot())))
+    Ok(Json(snapshot_json(&svc, is_local(peer, &headers))))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct FolderQuery {
+    /// `images` (cartine) o `audio` (registrazioni).
+    which: String,
+}
+
+/// Apre in Esplora file la cartella delle cartine (`which=images`) o delle registrazioni (`which=audio`), creandola se manca. Solo dal PC.
+#[utoipa::path(post, path = "/api/v1/wefax/folder/open", params(("which" = String, Query, description = "images o audio")), responses((status = 200, description = "{ok, path}"), (status = 400, description = "Cartella sconosciuta (bad_settings)"), (status = 403, description = "Solo dal PC (local_only)"), (status = 500, description = "Cartella non aperta (open_failed)")))]
+pub(crate) async fn wefax_folder_open(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Query(q): Query<FolderQuery>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    if !is_local(peer, &headers) {
+        return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
+    }
+    let (images, audio) = svc.folders();
+    let dir = match q.which.as_str() {
+        "images" => images,
+        "audio" => audio,
+        _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_settings").with_message("`which` deve essere images o audio".to_string())),
+    };
+    let shown = dir.display().to_string();
+    match blocking(move || crate::routes::open_folder_in_explorer(&dir)).await? {
+        Ok(()) => Ok(Json(json!({ "ok": true, "path": shown }))),
+        Err(e) => {
+            tracing::warn!("WEFAX: cartella {shown} non aperta: {e}");
+            Err(ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "open_failed"))
+        }
+    }
+}
+
+/// La registrazione WAV di una cartina (PCM 16 bit mono a 12000 Hz), da scaricare.
+#[utoipa::path(get, path = "/api/v1/wefax/images/{id}/audio", responses((status = 200, description = "WAV"), (status = 404, description = "Nessuna registrazione (not_found)")))]
+pub(crate) async fn wefax_image_audio(State(state): State<AppState>, _: Authed, Path(id): Path<String>) -> Result<Response, ApiError> {
+    let svc = service(&state)?;
+    let name = svc.image_entry(&id).and_then(|e| e.audio).filter(|n| n.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))).unwrap_or_else(|| "wefax.wav".into());
+    let bytes = blocking(move || svc.image_audio(&id)).await?.map_err(api_error)?;
+    let disposition = format!("attachment; filename=\"{name}\"");
+    Ok(([(header::CONTENT_TYPE, "audio/wav".to_string()), (header::CACHE_CONTROL, "no-store".to_string()), (header::CONTENT_DISPOSITION, disposition)], bytes).into_response())
 }
 
 /// Salva le impostazioni (la cartella delle cartine solo dal PC).
 #[utoipa::path(put, path = "/api/v1/wefax", responses((status = 200, description = "Salvate: come `GET`"), (status = 400, description = "Valori non validi (bad_settings)"), (status = 403, description = "Cartella cambiata da fuori dal PC (local_only)")))]
 pub(crate) async fn wefax_put(State(state): State<AppState>, _: Authed, Peer(peer): Peer, headers: HeaderMap, Json(settings): Json<WefaxSettings>) -> Result<Json<Value>, ApiError> {
     let svc = service(&state)?;
-    let local = peer.is_some_and(|p| p.ip().is_loopback()) && !is_proxied(&headers);
+    let local = is_local(peer, &headers);
     if !local && settings.folder != svc.settings().folder {
         return Err(ApiError::new(StatusCode::FORBIDDEN, "local_only"));
     }
     let s = Arc::clone(&svc);
     blocking(move || s.apply_settings(settings)).await?.map_err(api_error)?;
-    Ok(Json(json!(svc.snapshot())))
+    Ok(Json(snapshot_json(&svc, local)))
 }
 
 /// Accende l'ascolto (una copia dell'audio d'ingresso va al ricevitore WEFAX).
