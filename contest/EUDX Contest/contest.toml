@@ -1,0 +1,114 @@
+# EUDX Contest (European Union DX Contest) - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 su https://www.eudx-contest.com/rules/ («6th International EUDX-Contest», edizione 2027).
+
+[contest]
+id = "eudx"
+nome = "EUDX Contest"
+alias = []
+organizzatore = "EUDXCC (European DX Contest Club)"
+sito = "https://www.eudx-contest.com"
+regolamento_url = "https://www.eudx-contest.com/rules/"
+cabrillo_contest = "EUDXC"
+note = "CW e SSB (anche misto), 160-10 m senza WARC, 24 ore. Scambio: RST + regione UE (IT03) o RST + zona ITU. Moltiplicatori per banda: regioni UE e paesi DXCC/WAE."
+
+[edizione]
+# Primo fine settimana pieno di febbraio, sabato 12:00 - domenica 12:00 UTC (24 ore).
+mese = 2
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "12:00"
+durata_ore = 24
+invio_log_giorni = 7              # 2027: entro il 14 febbraio 12:00 UTC
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-02-06T12:00:00Z"
+fine = "2027-02-07T11:59:59Z"
+fonte = "https://www.eudx-contest.com/rules/ (letto il 2026-11-21): «February 6-7», log entro il 2027-02-14 12:00"
+confermata = true
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw", "ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "regione"
+etichetta_it = "Regione UE o zona ITU"
+etichetta_en = "EU region or ITU zone"
+tipo = "testo"
+quando = "any"
+nota = "Le stazioni dell'UE mandano la regione (due lettere e due cifre, IT03, DE16: elenco nella sezione 7 del regolamento), le altre la zona ITU."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599", ssb = "59" }
+
+[[scambio.inviato]]
+nome = "regione"
+etichetta_it = "Regione UE o zona ITU"
+etichetta_en = "EU region or ITU zone"
+tipo = "testo"
+quando = "any"
+nota = "La propria regione (UE) o zona ITU; si scrive in «Numero di partenza» senza incremento."
+
+[doppi]
+per = "banda+modo"                # stessa stazione, stessa banda e stesso modo: 0 punti
+
+[categorie]
+operatore = ["SOAB", "SOSB", "MOST", "MM", "MULTI-DISTRIBUTED"]
+potenza = ["HIGH", "LOW", "QRP"]  # LP fino a 100 W, QRP fino a 5 W (QRP solo nel misto)
+modo = ["MIXED", "CW", "SSB"]     # singolo operatore tutte le bande: misto, CW o SSB; monobanda e multi solo misto
+
+[cabrillo]
+contest = "EUDXC"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["MIXED", "CW", "SSB"]
+category_transmitter = ["ONE", "UNLIMITED", "DISTRIBUTED"]
+invio = "Cabrillo 3.0 entro sette giorni (pagina del regolamento)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Regioni UE per banda", en = "EU regions by band" }
+ordine = 1
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda", "modo"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

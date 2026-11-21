@@ -1,0 +1,9 @@
+; EUDX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento della 6a edizione (2027).
+; Punti e moltiplicatori li da' punteggio.rhai (stati UE con l'oltremare, regioni dallo scambio, paesi WAE).
+;
+; bands: 160, 80, 40, 20, 15, 10 m, senza WARC.
+; points (ripiego se lo script manca o fallisce): stesso paese 2, stesso continente 3, altro continente 5 (senza i 10 punti UE).
+; mult (ripiego): paesi DXCC per banda.
+bands=160,80,40,20,15,10
+points=same_dxcc=2; same_cont=3; any=5
+mult=dxcc/band
