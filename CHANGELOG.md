@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.328 - 2026-11-21
+
 - IC-820H, trasmissione dei satelliti con trame CI-V dirette (#83): le trame ora passano da `rigctld` con `W` e il numero esatto di byte da leggere (eco piu' risposta, e senza eco la sola risposta); con `w` Hamlib non aveva un terminatore per le Icom e andava in timeout, e la prova di sicurezza falliva gia' alla prima lettura. Nel pacchetto di assistenza (`radio.json` > `ic820h_civ`) il metodo usato e i byte inviati e ricevuti di ogni passo.
 - IC-820H, trasmissione sul secondo VFO: con Main e Sub letti tutti e due sulla banda alta la trasmissione VHF veniva scritta sopra la ricezione e data per riuscita (riletta 300 MHz piu' in alto). Ora le bande si deducono dalla lettura di Main, prima di scrivere si rilegge il VFO di trasmissione e una rilettura in un'altra banda e' un errore.
 
