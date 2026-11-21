@@ -1,6 +1,57 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, postWefaxFile, putWefax, stopWefaxFile, WEFAX_FILE_MAX_BYTES, wefaxRx, type WefaxSettings, type WefaxSnapshot } from '../../api/client';
+import { ApiError, openWefaxFolder, postWefaxFile, putWefax, stopWefaxFile, WEFAX_FILE_MAX_BYTES, wefaxRx, type WefaxSettings, type WefaxSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
+import '../../styles/wefax-audio.css';
+
+/** MB del WAV di una cartina: 12000 campioni al secondo a 16 bit (1,44 MB al minuto) per le righe massime, piu' toni e pre-roll (circa 30 s). */
+function wefaxAudioMb(maxRows: number, lpm: number): number {
+  const minutes = maxRows / Math.max(1, lpm) + 0.5;
+  return Math.max(1, Math.round(minutes * 60 * 12000 * 2 / 1e6));
+}
+
+/** Registrazione dell'audio delle cartine e cartelle: i pulsanti aprono Esplora file solo sul PC dove gira Aurora, altrove si mostra il percorso. */
+function Recording({ snap, lpm, save }: { snap: WefaxSnapshot; lpm: number; save: (patch: Partial<WefaxSettings>) => void }) {
+  const t = useT();
+  const { settings } = snap;
+  const [error, setError] = useState<string | null>(null);
+  const local = snap.local === true;
+  const audioFolder = snap.audio_folder ?? '';
+  const open = (which: 'images' | 'audio') => {
+    setError(null);
+    openWefaxFolder(which).catch((e: unknown) => setError(e instanceof ApiError && e.code === 'local_only' ? t('wefax.folder.remote') : t('wefax.folder.failed')));
+  };
+  return (
+    <div className="wefax-rec">
+      <label className="sstv-check" title={t('wefax.rec.tip')}>
+        <input type="checkbox" checked={settings.record_audio ?? true} onChange={(e) => save({ record_audio: e.target.checked })} />
+        {t('wefax.rec.on')}
+        {snap.rx.recording ? <span className="wefax-rec-dot" role="status" aria-label={t('wefax.rec.now')} title={t('wefax.rec.now')} /> : null}
+      </label>
+      <NumberField label={t('wefax.rec.keep')} value={settings.audio_keep_days ?? 7} min={0} max={3650} onCommit={(v) => save({ audio_keep_days: Math.round(v) })} />
+      <span className="sstv-hint">{t('wefax.rec.size', { mb: String(wefaxAudioMb(settings.max_rows, lpm)) })}</span>
+      <span className="wefax-rec-folders">
+        <button type="button" className="glass sstv-btn" disabled={!local} onClick={() => open('images')}>
+          {t('wefax.folder.images')}
+        </button>
+        <button type="button" className="glass sstv-btn" disabled={!local || !audioFolder} onClick={() => open('audio')}>
+          {t('wefax.folder.audio')}
+        </button>
+      </span>
+      {!local ? (
+        <span className="wefax-rec-remote">
+          <span className="sstv-hint">{t('wefax.folder.remote')}</span>
+          <input readOnly className="wefax-rec-path" value={snap.folder} aria-label={t('wefax.folder.images')} onFocus={(e) => e.target.select()} />
+          {audioFolder ? <input readOnly className="wefax-rec-path" value={audioFolder} aria-label={t('wefax.folder.audio')} onFocus={(e) => e.target.select()} /> : null}
+        </span>
+      ) : null}
+      {error ? (
+        <span className="wefax-file-error" role="alert">
+          {error}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 const SLANT_STEPS = [-10, -1, 1, 10] as const;
 
@@ -263,6 +314,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           <input type="checkbox" checked={settings.auto_save} onChange={(e) => save({ auto_save: e.target.checked })} />
           {t('wefax.set.autoSave')}
         </label>
+        <Recording snap={snap} lpm={lpm} save={save} />
         <label className="sstv-check" title={t('wefax.set.autoSlantTip')}>
           <input type="checkbox" checked={settings.auto_slant ?? true} onChange={(e) => save({ auto_slant: e.target.checked })} />
           {t('wefax.set.autoSlant')}

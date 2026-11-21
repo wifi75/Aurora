@@ -1,0 +1,44 @@
+/* WEFAX: registrazione dell'audio delle cartine e pulsanti delle cartelle (scheda «Ricezione»). */
+.wefax-rec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border);
+}
+
+.wefax-rec-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-left: 0.4rem;
+  border-radius: 50%;
+  background: #d33;
+  vertical-align: middle;
+}
+
+.wefax-rec-folders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.wefax-rec-remote {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.wefax-rec-path {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+}

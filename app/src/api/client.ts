@@ -2470,6 +2470,10 @@ export interface WefaxSettings {
   squelch: boolean;
   /** Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore). */
   squelch_level: number;
+  /** Registra l'audio di ogni cartina in un WAV (cartella `audio`). Assente con un motore vecchio. */
+  record_audio?: boolean;
+  /** Giorni per cui si tengono le registrazioni (0: per sempre). */
+  audio_keep_days?: number;
 }
 
 export interface WefaxRxStatus {
@@ -2493,6 +2497,8 @@ export interface WefaxRxStatus {
   decoding_file?: boolean;
   /** Avanzamento della decodifica del file (0..100). */
   file_percent?: number;
+  /** L'audio della cartina in arrivo si sta registrando. */
+  recording?: boolean;
   last_image: string | null;
   source?: string | null;
 }
@@ -2508,6 +2514,10 @@ export interface WefaxSnapshot {
   rx: WefaxRxStatus;
   settings: WefaxSettings;
   folder: string;
+  /** Cartella delle registrazioni WAV. Assente con un motore vecchio. */
+  audio_folder?: string;
+  /** L'interfaccia e' sul PC dove gira Aurora (le cartelle si aprono solo da li'). */
+  local?: boolean;
   iocs: WefaxIocInfo[];
   lpm_values: number[];
   filters: string[];
@@ -2525,6 +2535,20 @@ export interface WefaxImageEntry {
   reason?: string;
   source?: string;
   complete: boolean;
+  /** La registrazione WAV della cartina c'e' (`getWefaxImageAudio`). */
+  has_audio?: boolean;
+  /** Nome del file WAV. */
+  audio?: string;
+}
+
+/** Apre in Esplora file la cartella delle cartine o delle registrazioni (solo sul PC dove gira Aurora: altrimenti 403 `local_only`). */
+export async function openWefaxFolder(which: 'images' | 'audio'): Promise<void> {
+  await request(`/wefax/folder/open?which=${which}`, { method: 'POST' });
+}
+
+/** La registrazione WAV di una cartina (404 se non c'e'). */
+export async function getWefaxImageAudio(id: string): Promise<Blob> {
+  return (await request(`/wefax/images/${encodeURIComponent(id)}/audio`)).blob();
 }
 
 export async function getWefax(): Promise<WefaxSnapshot> {
