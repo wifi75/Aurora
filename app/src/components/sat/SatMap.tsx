@@ -819,6 +819,18 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'relief', borders
       pc.day.clear();
       pc.nightBase.clear();
       pc.nightMasked.clear();
+      // le copie ridotte si preparano subito (una per volta, fra un fotogramma e l'altro): se si costruissero durante lo zoom con la rotella,
+      // il primo movimento disegnerebbe dalla foto intera in qualita' bassa e la mappa apparirebbe sgranata
+      const cur = pc.photos;
+      if (cur) {
+        PHOTO_LEVELS.forEach((lv, i) => {
+          window.setTimeout(() => {
+            if (photoCache.current.photos !== cur) return;
+            photoAt(pc.day, cur.day, lv);
+            if (lv <= NIGHT_MAX_LEVEL) photoAt(pc.nightBase, cur.night, lv);
+          }, 60 * (i + 1));
+        });
+      }
     }
     pc.sunKey = `${Math.round(sun.lat * 10)},${Math.round(sun.lon * 10)}`;
     const wanted = photoLevel(w * dpr * z);
