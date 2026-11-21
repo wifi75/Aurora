@@ -62,7 +62,7 @@ import { RttySettingsDialog } from '../components/digi/RttySettingsDialog';
 import { useDigiTxLive } from '../lib/digiTxLive';
 import { createLatestSequencer, restartBox } from '../lib/macroRestart';
 import { TxMenu } from '../components/digi/TxMenu';
-import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from '../lib/digiSpectrum';
+import { RowAverager, seekSignal, snapToPair, snapToPeak, snapToPsk, type SpectrumRow } from '../lib/digiSpectrum';
 import { bandOf } from '../lib/format';
 import { logBand, saveErrorText } from '../lib/logSaveError';
 import { effectiveMacros, macroNameForKey, macroNeeds, runMacro, type Macro, type MacroAction, type MacroContext, type PrevQso } from '../lib/macroLang';
@@ -866,11 +866,15 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
     const l = live.current;
     // in RTTY la frequenza e' il centro fra i due toni: Snap cerca la coppia (un tono solo andrebbe sul mark o sullo space)
     const rttyShift = l.snap.settings.mode === 'rtty' ? l.snap.settings.rtty_shift_hz : 0;
+    // in PSK la portante e' al centro del segnale: la riga piu' forte e' una delle due a mezzo baud, fuori di quanto l'AFC recupera
+    const pskHalf = l.snap.settings.mode === 'psk31' ? 20 : l.snap.settings.mode === 'psk63' ? 40 : 0;
     const snapped =
       snapIt && l.snap.settings.snap_on && avg.current.ready && lastRow.current
         ? rttyShift > 0
           ? snapToPair(avg.current.values(), lastRow.current, hz, rttyShift)
-          : snapToPeak(avg.current.values(), lastRow.current, hz)
+          : pskHalf > 0
+            ? snapToPsk(avg.current.values(), lastRow.current, hz, pskHalf)
+            : snapToPeak(avg.current.values(), lastRow.current, hz)
         : hz;
     const f = Math.max(200, Math.min(3500, snapped));
     // in split (Lock) la ricezione resta ferma e il clic sposta la trasmissione; con Ctrl si sposta invece la ricezione

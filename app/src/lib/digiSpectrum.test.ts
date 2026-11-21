@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RowAverager, seekSignal, snapToPair, snapToPeak, type SpectrumRow } from './digiSpectrum';
+import { RowAverager, seekSignal, snapToPair, snapToPeak, snapToPsk, type SpectrumRow } from './digiSpectrum';
 
 /** Una riga 0-4000 Hz con 1000 bin (4 Hz l'uno), rumore basso e dei picchi larghi 20 Hz. */
 function row(peaksHz: number[]): SpectrumRow {
@@ -28,6 +28,31 @@ describe('snapToPeak', () => {
   it('senza segnale entro la finestra resta dove si e\' cliccato', () => {
     const r = row([2500]);
     expect(snapToPeak(averaged(r), r, 1000)).toBe(1000);
+  });
+});
+
+/** Un PSK31 in pausa (inversioni): due righe a ±16 Hz dalla portante, piu' forte quella sopra (sbilanciamento del trasmettitore). */
+function pskRow(carrierHz: number): SpectrumRow {
+  const bins = new Uint8Array(1000);
+  for (let i = 0; i < bins.length; i++) bins[i] = 20 + ((i * 7) % 5);
+  for (const [hz, top] of [[carrierHz - 16, 180], [carrierHz + 16, 200]] as const) {
+    const c = Math.round(hz / 4);
+    for (let d = -2; d <= 2; d++) bins[c + d] = Math.max(bins[c + d] ?? 0, top - Math.abs(d) * 40);
+  }
+  return { bins, fMinHz: 0, fMaxHz: 4000 };
+}
+
+describe('snapToPsk', () => {
+  it('va sulla portante, non sulla riga più forte a mezzo baud', () => {
+    const r = pskRow(1500);
+    expect(Math.abs(snapToPeak(averaged(r), r, 1505) - 1500)).toBeGreaterThan(10);
+    expect(Math.abs(snapToPsk(averaged(r), r, 1505, 20) - 1500)).toBeLessThan(4);
+    expect(Math.abs(snapToPsk(averaged(r), r, 1530, 20) - 1500)).toBeLessThan(4);
+  });
+
+  it('senza segnale resta dove si è cliccato', () => {
+    const r = pskRow(2500);
+    expect(snapToPsk(averaged(r), r, 1000, 20)).toBe(1000);
   });
 });
 

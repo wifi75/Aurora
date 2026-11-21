@@ -66,6 +66,47 @@ export function snapToPeak(avg: Float32Array, row: SpectrumRow, hz: number, wind
 }
 
 /**
+ * Snap per il PSK: la portante sta al centro del segnale, non sulla riga piu' forte. Le inversioni mettono due righe a ±mezzo baud
+ * (±16 Hz in PSK31, ±31 in PSK63) e `snapToPeak` andrebbe su una delle due, fuori di quanto l'AFC del PSK sa recuperare. Qui si cerca la
+ * finestra larga quanto un segnale (`halfHz` per parte) con piu' energia sopra il fondo entro `windowHz` dal clic, e se ne prende il
+ * baricentro (lo spettro del PSK e' simmetrico intorno alla portante). Senza niente di netto resta `hz`.
+ */
+export function snapToPsk(avg: Float32Array, row: SpectrumRow, hz: number, halfHz: number, windowHz = 40): number {
+  if (avg.length === 0) return hz;
+  const w = binHz(row);
+  const hw = Math.max(1, Math.round(halfHz / w));
+  const idx = (f: number) => Math.round((f - row.fMinHz) / w - 0.5);
+  const from = Math.max(hw, idx(hz - windowHz));
+  const to = Math.min(avg.length - 1 - hw, idx(hz + windowHz));
+  if (to < from) return hz;
+  // il fondo: la mediana di una zona larga intorno al clic
+  const zone: number[] = [];
+  for (let i = Math.max(0, from - 4 * hw); i <= Math.min(avg.length - 1, to + 4 * hw); i++) zone.push(avg[i] ?? 0);
+  zone.sort((a, b) => a - b);
+  const floor = zone[Math.floor(zone.length / 2)] ?? 0;
+  const excess = (i: number) => Math.max(0, (avg[i] ?? 0) - floor);
+  let best = -1;
+  let bestE = 0;
+  let peak = 0;
+  for (let k = from; k <= to; k++) {
+    let e = 0;
+    for (let j = k - hw; j <= k + hw; j++) e += excess(j);
+    if (e > bestE) {
+      bestE = e;
+      best = k;
+    }
+  }
+  if (best < 0) return hz;
+  for (let j = best - hw; j <= best + hw; j++) peak = Math.max(peak, excess(j));
+  // un segnale vero sta bene sopra il fondo
+  if (peak < 12) return hz;
+  let num = 0;
+  for (let j = best - hw; j <= best + hw; j++) num += excess(j) * j;
+  const centre = num / bestE;
+  return Math.round((row.fMinHz + (centre + 0.5) * w) * 10) / 10;
+}
+
+/**
  * Snap per l'RTTY: il centro fra i due toni (la frequenza di Aurora, come in fldigi). Si cerca la coppia di picchi lontani `shiftHz`
  * con il piu' debole dei due piu' forte possibile, entro `shiftHz/2 + 40` Hz dal clic; trovata, il centro e' esattamente a meta' fra i due
  * picchi (ognuno rifinito sui bin vicini). Se si vede un tono solo vale questa regola: il tono sotto
