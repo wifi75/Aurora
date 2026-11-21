@@ -77,6 +77,8 @@ pub struct ContestTesto {
     pub score: String,
     /// Lo script dei casi speciali, testo Rhai della sezione `[Script]` (l'ultima del file, `crate::script`); vuoto = nessuno.
     pub script: String,
+    /// Il valore ufficiale di `CONTEST:` nel Cabrillo (`CQ-WW-CW`), dalla dichiarazione dei contest a cartella; vuoto = dedotto dal nome.
+    pub cabrillo_contest: String,
 }
 
 impl Default for ContestTesto {
@@ -119,6 +121,7 @@ impl Default for ContestTesto {
             qtc: 0,
             score: String::new(),
             script: String::new(),
+            cabrillo_contest: String::new(),
         }
     }
 }

@@ -512,7 +512,7 @@ impl ContestCartella {
     /// Lo stesso contest come lo e' un `.contest`: il motore del punteggio, la riga di inserimento, il Cabrillo e le API lo usano senza
     /// sapere che viene da una cartella. `ora_ms` sceglie l'edizione per `start` e `end`.
     pub fn in_contesto(&self, ora_ms: i64) -> ContestTesto {
-        let mut c = ContestTesto { id: self.id.clone(), name: self.meta.nome.clone(), notes: self.meta.note.clone(), score: self.punteggio_regole.clone(), script: self.punteggio_rhai.clone(), ..ContestTesto::default() };
+        let mut c = ContestTesto { id: self.id.clone(), name: self.meta.nome.clone(), notes: self.meta.note.clone(), score: self.punteggio_regole.clone(), script: self.punteggio_rhai.clone(), cabrillo_contest: self.meta.cabrillo_contest.trim().to_string(), ..ContestTesto::default() };
         if let Some(d) = self.edizione_per(ora_ms) {
             c.start = data_compatta(d.inizio_ms);
             c.end = data_compatta(d.fine_ms);
@@ -542,9 +542,12 @@ impl ContestCartella {
         c.dupe_no_mode = senza_modo;
         // scambio inviato: un numero che avanza a ogni QSO
         c.auto_inc = self.scambio.inviato.iter().any(|x| x.progressivo);
+        // numero ricevuto: un progressivo (`numero`) o la zona CQ (`zona_cq`, proposta dal nominativo come nei vecchi file del CQ WW)
         let numero_ricevuto = self.scambio.ricevuto.iter().any(|x| x.tipo == "numero");
-        c.grab_number = numero_ricevuto;
-        c.grab_number_type = if numero_ricevuto { 0 } else { -1 };
+        let zona_cq = self.scambio.ricevuto.iter().any(|x| x.tipo == "zona_cq");
+        c.grab_number = numero_ricevuto || zona_cq;
+        c.grab_number_type = if zona_cq { 2 } else if numero_ricevuto { 0 } else { -1 };
+        c.suggest_cq_zone = zona_cq;
         c.log_bar_mode = 1;
         if let Some((nome, _)) = self.macro_principale() {
             c.macros = nome.to_string();

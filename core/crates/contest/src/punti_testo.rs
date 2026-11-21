@@ -554,7 +554,8 @@ fn nome_cabrillo(nome: &str, modo: &str) -> String {
         "CQ WW WPX CW CONTEST" => Some("CQ-WPX-CW"),
         "CQ WW WPX SSB CONTEST" => Some("CQ-WPX-SSB"),
         "CQ WPX RTTY CONTEST" => Some("CQ-WPX-RTTY"),
-        "CQ WW RTTY DX" => Some("CQ-WW-RTTY"),
+        "CQ WW RTTY DX" | "CQ WW RTTY DX CONTEST" => Some("CQ-WW-RTTY"),
+        "ARRL RTTY ROUNDUP" => Some("ARRL-RTTY"),
         "ARRL INTERNATIONAL DX CW CONTEST" => Some("ARRL-DX-CW"),
         "ARRL INTERNATIONAL DX SSB CONTEST" => Some("ARRL-DX-SSB"),
         "ARRL 10 METER CONTEST" => Some("ARRL-10"),
@@ -625,7 +626,8 @@ pub fn cabrillo(c: &ContestTesto, call: &str, log: &[Valutato], tot: &Punteggio,
     };
     let call = call.trim().to_ascii_uppercase();
     riga("START-OF-LOG", "3.0");
-    riga("CONTEST", &nome_cabrillo(&c.name, categoria_modo(log)));
+    let contest = if c.cabrillo_contest.trim().is_empty() { nome_cabrillo(&c.name, categoria_modo(log)) } else { c.cabrillo_contest.trim().to_ascii_uppercase() };
+    riga("CONTEST", &contest);
     riga("CALLSIGN", &call);
     riga("CATEGORY-OPERATOR", "SINGLE-OP");
     riga("CATEGORY-BAND", "ALL");
@@ -799,6 +801,9 @@ mod tests {
         let f = cabrillo(&c, "iu3abc", &v, &t, "0.11.0", &[q]);
         assert!(f.ends_with("QTC:  7000 RY 2026-11-14 1201 K1ABC         1/1   IU3ABC        1200 DL1ABC        015\r\nEND-OF-LOG:\r\n"), "{f}");
         assert_eq!(modo_cabrillo("USB"), "PH");
+        // il valore dichiarato dalla cartella vale al posto del nome
+        let c2 = ContestTesto { cabrillo_contest: "cq-ww-cw".into(), ..c.clone() };
+        assert!(cabrillo(&c2, "iu3abc", &v, &t, "0.11.0", &[]).contains("CONTEST: CQ-WW-CW\r\n"));
     }
 
     #[test]
@@ -833,6 +838,8 @@ mod tests {
         assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "CW"), "CQ-WW-CW");
         assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "SSB"), "CQ-WW-SSB");
         assert_eq!(nome_cabrillo("CQ WW DX CONTEST", "MIXED"), "CQ-WW-DX-CONTEST");
+        assert_eq!(nome_cabrillo("CQ WW RTTY DX Contest", "RTTY"), "CQ-WW-RTTY");
+        assert_eq!(nome_cabrillo("ARRL RTTY ROUNDUP", "RTTY"), "ARRL-RTTY");
         assert_eq!(nome_cabrillo("CQ WW WPX CW Contest", "CW"), "CQ-WPX-CW");
         assert_eq!(nome_cabrillo("Mio Contest", "CW"), "MIO-CONTEST");
     }
