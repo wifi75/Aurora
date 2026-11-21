@@ -8,6 +8,8 @@ import { useGroups } from '../lib/detached';
 import { History } from '../components/wefax/History';
 import { WefaxMini } from '../components/wefax/Mini';
 import { Controls } from '../components/wefax/Controls';
+import { AfcSql } from '../components/wefax/AfcSql';
+import { WefaxScope } from '../components/wefax/Scope';
 import { Viewer } from '../components/wefax/Viewer';
 import { useT } from '../i18n';
 import { gotoTextMode } from '../lib/digiGoto';
@@ -169,6 +171,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
         </select>
         {/* i comandi dello zoom del visore arrivano qui (stessa riga) */}
         <div id="wefax-toolbar-slot" className="wefax-toolbar-slot" />
+        {data ? <AfcSql snap={data} onChanged={refresh} /> : null}
         <WefaxMini />
         {solo ? null : <DetachButton item="wefax" />}
       </header>
@@ -178,6 +181,14 @@ function WefaxBody({ solo }: { solo: boolean }) {
       {data ? (
         <div className="wefax-body">
           <div className="wefax-main">
+            <WefaxScope
+              centerHz={data.settings.center_hz}
+              shiftHz={data.settings.shift_hz}
+              afcHz={data.settings.afc ? (data.rx.afc_hz ?? 0) : 0}
+              onCenter={(hz) => {
+                if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
+              }}
+            />
             <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
           </div>
           <Controls snap={data} onChanged={refresh} onListen={onListen} />

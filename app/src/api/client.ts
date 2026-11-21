@@ -2454,6 +2454,12 @@ export interface WefaxSettings {
   max_rows: number;
   correlation: number;
   folder: string;
+  /** AFC: la sottoportante di ricezione segue il segnale. */
+  afc: boolean;
+  /** Squelch: l'immagine parte col segnale sopra `squelch_level` e si chiude dopo 3 s sotto. */
+  squelch: boolean;
+  /** Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore). */
+  squelch_level: number;
 }
 
 export interface WefaxRxStatus {
@@ -2467,6 +2473,10 @@ export interface WefaxRxStatus {
   rows: number;
   sync: number;
   level_db: number;
+  /** Livello del segnale per lo squelch (0..100). */
+  signal?: number;
+  /** Correzione dell'AFC (Hz sopra `center_hz`). */
+  afc_hz?: number;
   last_image: string | null;
   source?: string | null;
 }

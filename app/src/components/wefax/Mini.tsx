@@ -1,10 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCat } from '../../api/client';
-import { bandOf } from '../../lib/format';
 import { displayModel, formatRadioFrequency, hasFrequency, mainMeter } from '../../lib/radioDisplay';
-import { registerSpectrum } from '../../lib/spectrumFeed';
 import { useStation } from '../../state/station';
-import { Waterfall } from '../Waterfall';
 
 const LEDS = 14;
 /** Dal segmento 10 in su si e' oltre S9. */
@@ -18,7 +15,8 @@ export function radioModeLabel(mode: string | null | undefined): string {
 
 /**
  * Il display per la sola ricezione (pagina WEFAX): frequenza, modo della radio (USB o LSB) e il segnale con la barra di led dell'S-meter.
- * Nient'altro: niente potenza, ROS, TX o TUNE (qui non si trasmette mai). Accanto, una piccola cascata per vedere il segnale.
+ * Nient'altro: niente potenza, ROS, TX o TUNE (qui non si trasmette mai). Spettro e cascata stanno sopra il visore
+ * (`WefaxScope`).
  */
 export function WefaxMini() {
   const status = useStation((s) => s.status);
@@ -38,9 +36,6 @@ export function WefaxMini() {
             <i key={i} className={i < lit ? (i >= S9_LED ? 'on over' : 'on') : ''} />
           ))}
         </span>
-      </div>
-      <div className="wefax-mini-wf" aria-label="Waterfall">
-        <Waterfall register={registerSpectrum} mode={status?.mode} band={status ? (bandOf(status.dial_hz) ?? undefined) : undefined} bare />
       </div>
     </div>
   );

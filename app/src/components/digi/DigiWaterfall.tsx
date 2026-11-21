@@ -50,6 +50,8 @@ interface Props {
   onExtraMove?(id: number, hz: number, commit: boolean): void;
   /** Tasto destro sulla cascata: la frequenza sotto il mouse e il punto dello schermo (per il menu). */
   onMenu?(hz: number, x: number, y: number): void;
+  /** I segni del modo DXpedition (di base si'; la pagina WEFAX li spegne). */
+  pileup?: boolean;
 }
 
 /** 0..255 -> colore: blu scuro, azzurro, verde, giallo, rosso. */
@@ -65,7 +67,7 @@ const PALETTE = Array.from({ length: 256 }, (_, i) => paletteColor(i));
 const SCALE_H = 22;
 
 /** La cascata della pagina dei modi testuali: scala in Hz in alto, righe che scorrono, bandierine e clic per sintonizzare. */
-export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu }: Props) {
+export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandHz = 0, split = false, hairlines = false, dialHz = 0, transmitting, height = 150, onRow, onPick, onHeight, widthPx = null, onWidth, labels = [], showWords = true, notches = [], onNotches, extraRx = [], onExtraMove, onMenu, pileup = true }: Props) {
   const t = useT();
   const wrap = useRef<HTMLDivElement>(null);
   const flow = useRef<HTMLCanvasElement>(null);
@@ -355,7 +357,7 @@ export function DigiWaterfall({ minHz, maxHz, rxHz, txHz, bandwidthHz, passbandH
       {flag(rxShown)}
       {hairlines && rxShown >= minHz && rxShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--rx" style={{ left: xOf(rxShown) }} aria-hidden="true" /> : null}
       {hairlines && split && txShown >= minHz && txShown <= maxHz ? <span className="digi-wf-hair digi-wf-hair--tx" style={{ left: xOf(txShown) }} aria-hidden="true" /> : null}
-      <PileupMarks minHz={minHz} maxHz={maxHz} top={SCALE_H} xOf={xOf} />
+      {pileup ? <PileupMarks minHz={minHz} maxHz={maxHz} top={SCALE_H} xOf={xOf} /> : null}
       {pair(rxShown, 'rx', t('digi.wf.rxTip'))}
       {pair(txShown, 'tx', t('digi.wf.txTip'))}
       {/* i nominativi di tutta la banda appena sotto la scala, sopra la traccia (la riga nuova della cascata e' in cima); due vicini si alternano in altezza */}
