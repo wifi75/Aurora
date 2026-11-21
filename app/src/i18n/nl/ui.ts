@@ -1707,7 +1707,7 @@ export const NL_UI: Record<string, string> = {
   "digi.notch.tip": "Notch op {hz} Hz, {width} Hz breed. Sleep om te verplaatsen, sleep een rand om te verbreden, rechtsklik om te verwijderen.",
   "digi.psk.qualityNow": "Huidige kwaliteit: {q}",
   "digi.psk.squelch": "Squelchdrempel: kwaliteit {q}",
-  "digi.psk.squelchHint": "In PSK kijkt de squelch naar de fasekwaliteit (0-100, zoals in fldigi), niet naar het niveau: hij werkt hetzelfde met luide of zachte audio. Bij alleen ruis blijft de kwaliteit onder 10; 15 (de standaard) laat signalen door tot ongeveer -10 dB S/R. Met de Squelch-schakelaar uit geldt in PSK toch 15 (zoals de signalenlijst), zodat er in pauzes en bij alleen ruis geen rommel verschijnt; zet de drempel op 0 om hem helemaal te openen.",
+  "digi.psk.squelchHint": "In PSK kijkt de squelch naar de fasekwaliteit (0-100, zoals in fldigi), niet naar het niveau: hij werkt hetzelfde met luide of zachte audio. Bij alleen ruis blijft de kwaliteit onder 10; 15 (de standaard) laat signalen door tot ongeveer -10 dB S/R. Met de Squelch-schakelaar uit geldt in PSK toch 15 (zoals de signalenlijst), zodat er in pauzes en bij alleen ruis geen rommel verschijnt; om hem helemaal te openen: zet de Squelch aan en de drempel op 0.",
   "digi.rtty.baud": "Snelheid (baud)",
   "digi.rtty.charset": "Tekenset",
   "digi.rtty.cs.cyrillic": "Cyrillisch (MTK-2)",
