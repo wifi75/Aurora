@@ -68,8 +68,12 @@ const PHASING_LATENCY: i64 = 19;
 const ANNOUNCE_ROWS: u32 = 8;
 /// Inclinazione automatica: ogni quante righe si misura, fino a quale riga, distanza tra le righe confrontate, soglie.
 const SLANT_EVERY: usize = 40;
-const SLANT_LAST_ROW: usize = 400;
+const SLANT_LAST_ROW: usize = 3000;
 const SLANT_GAP: usize = 16;
+/// Distanza tra le righe della stima grossolana (su 4 righe, 5000 ppm su 1809 pixel sono 36 pixel: meno di mezzo passo delle griglie
+/// di meridiani consuete) e semiampiezza (pixel) della ricerca fine intorno a essa.
+const SLANT_COARSE_GAP: usize = 4;
+const SLANT_FINE_RANGE_PX: i64 = 12;
 /// Correzione massima accumulata (ppm).
 const SLANT_MAX_PPM: f64 = 5000.0;
 /// Sotto questa deriva (pixel per riga) non si corregge.
@@ -1189,13 +1193,24 @@ impl Decoder {
 
     /// Deriva orizzontale in pixel per riga (positivo: le strutture vanno a destra scendendo) dalle righe `from..to`: mediana degli
     /// spostamenti che rendono massima la correlazione tra righe distanti `SLANT_GAP`. `None` se le righe non hanno strutture nette.
+    /// Due passi: prima righe vicine (`SLANT_COARSE_GAP`) su tutto l'intervallo di spostamenti, che con poche righe di distanza resta
+    /// piu' stretto del passo di una griglia regolare (meridiani) e non la scambia con un'altra maglia; poi righe distanti `SLANT_GAP`,
+    /// cercando solo vicino alla stima grossolana, per la precisione.
     fn estimate_slant(&self, from: usize, to: usize) -> Option<f64> {
+        let w = self.width as f64;
+        let max_c = (SLANT_COARSE_GAP as f64 * SLANT_MAX_PPM * 1e-6 * w).ceil() as i64 + 3;
+        let coarse = self.estimate_slant_gap(from, to, SLANT_COARSE_GAP, -max_c, max_c)?;
+        let c = (coarse * SLANT_GAP as f64).round() as i64;
+        self.estimate_slant_gap(from, to, SLANT_GAP, c - SLANT_FINE_RANGE_PX, c + SLANT_FINE_RANGE_PX)
+    }
+
+    /// Mediana della deriva (pixel per riga) tra righe distanti `gap`, cercando gli spostamenti `lo..=hi` (pixel su `gap` righe).
+    fn estimate_slant_gap(&self, from: usize, to: usize, gap: usize, lo: i64, hi: i64) -> Option<f64> {
         let img = self.image.as_ref()?;
         let w = self.width;
-        if to <= from + SLANT_GAP + SLANT_MIN_PAIRS || to * w > img.data.len() {
+        if to <= from + gap + SLANT_MIN_PAIRS || to * w > img.data.len() || hi < lo {
             return None;
         }
-        let max_s = (SLANT_GAP as f64 * SLANT_MAX_PPM * 1e-6 * w as f64).ceil() as i64 + 3;
         // righe senza media e normalizzate; `None` se quasi uniformi
         let rows: Vec<Option<Vec<f32>>> = (from..to)
             .map(|r| {
@@ -1207,10 +1222,10 @@ impl Decoder {
             })
             .collect();
         let mut shifts: Vec<f64> = Vec::new();
-        for i in 0..rows.len().saturating_sub(SLANT_GAP) {
-            let (Some(a), Some(b)) = (&rows[i], &rows[i + SLANT_GAP]) else { continue };
-            let mut ncc = Vec::with_capacity(2 * max_s as usize + 1);
-            for s in -max_s..=max_s {
+        for i in 0..rows.len().saturating_sub(gap) {
+            let (Some(a), Some(b)) = (&rows[i], &rows[i + gap]) else { continue };
+            let mut ncc = Vec::with_capacity((hi - lo + 1) as usize);
+            for s in lo..=hi {
                 // a[c] contro b[(c + s) % w]
                 let k = s.rem_euclid(w as i64) as usize;
                 let head = w - k;
@@ -1233,7 +1248,11 @@ impl Decoder {
             } else {
                 0.0
             };
-            shifts.push((bi as f64 - max_s as f64 + frac) / SLANT_GAP as f64);
+            // un picco sul bordo dell'intervallo non e' un massimo vero
+            if bi == 0 || bi + 1 == ncc.len() {
+                continue;
+            }
+            shifts.push((bi as f64 + lo as f64 + frac) / gap as f64);
         }
         if shifts.len() < SLANT_MIN_PAIRS {
             return None;

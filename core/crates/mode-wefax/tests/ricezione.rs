@@ -1161,3 +1161,163 @@ fn con_il_tono_di_fine_e_subito_una_cartina_con_l_altro_ioc_esce_la_seconda_gius
     eprintln!("IOC diverso: seconda correlazione {c2:.4} (scarto {d2})");
     assert!(c2 > 0.95 && d2.abs() <= 3, "seconda {c2} scarto {d2}");
 }
+
+// ---------------------------------------------------------------- inclinazione con intestazione bianca
+
+/// Righe di intestazione quasi bianca in testa alla cartina con intestazione.
+const INTESTAZIONE: usize = 250;
+
+/// Cartina meteo con `INTESTAZIONE` righe quasi bianche (due righe di "testo" e due linee orizzontali nere), poi griglia di meridiani e
+/// paralleli e una costa.
+fn cartina_con_intestazione(w: usize, h: usize) -> Vec<u8> {
+    let mut rng = Rng(4242);
+    let mut next = move || {
+        rng.0 = rng.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        (rng.0 >> 33) as usize
+    };
+    let mut v = vec![228u8; w * h];
+    // testo: lettere come blocchetti scuri su due righe di scritta
+    for &(y0, x_start) in &[(60usize, 300usize), (110, 500)] {
+        let mut x = x_start;
+        for _ in 0..30 {
+            let (lw, lh) = (6 + next() % 8, 8 + next() % 6);
+            for y in y0..y0 + lh {
+                for xx in x..x + lw {
+                    if next() % 3 != 0 {
+                        v[y * w + xx] = 40;
+                    }
+                }
+            }
+            x += lw + 4 + next() % 6;
+        }
+    }
+    for y in [200usize, 204] {
+        for x in 0..w {
+            v[y * w + x] = 10;
+        }
+    }
+    // griglia
+    for y in INTESTAZIONE..h {
+        for x in 0..w {
+            if x % 113 < 4 || (y - INTESTAZIONE) % 60 < 2 {
+                v[y * w + x] = 30;
+            }
+        }
+        // costa: curva lenta, spessa 5 pixel
+        let xc = (w as f64 * (0.45 + 0.2 * ((y as f64) * 0.013).sin())) as usize;
+        for x in xc..xc + 5 {
+            v[y * w + x] = 20;
+        }
+    }
+    v
+}
+
+/// Spostamento lineare (in pixel, la riga ricevuta prosegue nella successiva: una correzione a immagine in corso puo' spostare l'inizio della
+/// riga) intorno a `base` con cui le righe `r0..r1` ricevute combaciano meglio con le stesse dell'originale.
+fn spostamento_migliore(rx: &[u8], img: &[u8], w: usize, base: usize, r0: usize, r1: usize) -> i64 {
+    let mut best = (-2.0f64, 0i64);
+    for k in -(w as i64 / 2)..(w as i64 / 2) {
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        for r in (r0..r1).step_by(3) {
+            for x in (0..w).step_by(3) {
+                a.push(rx[(base as i64 + (r * w + x) as i64 + k) as usize]);
+                b.push(img[r * w + x]);
+            }
+        }
+        let c = pearson(&a, &b);
+        if c > best.0 {
+            best = (c, k);
+        }
+    }
+    best.1
+}
+
+/// Riceve la cartina con intestazione con il decoder dato: correlazione della parte disegnata con l'originale e scarto in colonne tra
+/// l'inizio e la fine della parte disegnata (0 se le linee verticali sono dritte).
+fn ricevi_intestazione(d: &mut Decoder, ppm: f64, img: &[u8], w: usize, h: usize) -> (f64, i64) {
+    let s = Segnale { apt: false, ppm, ..Segnale::standard(576, 120) };
+    let audio = genera(&s, img, w, h);
+    for chunk in audio.chunks(1024) {
+        d.push(chunk);
+    }
+    let rx = d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done) } else { None }).expect("immagine non chiusa");
+    let data = &rx.image.data;
+    let rows = rx.image.height as usize;
+    // riga di partenza (circa): le due linee nere a 200 e 204
+    let off = (1..=4usize)
+        .max_by_key(|&o| {
+            let m = |r: usize| data[(o + r) * w..(o + r + 1) * w].iter().map(|&v| 255 - u32::from(v)).sum::<u32>();
+            m(200) + m(204)
+        })
+        .unwrap_or(1);
+    let fine = (rows - off).min(h) - 6;
+    let k_inizio = spostamento_migliore(data, img, w, off * w, INTESTAZIONE + 5, INTESTAZIONE + 45);
+    let k_fine = spostamento_migliore(data, img, w, off * w, fine - 40, fine);
+    let (mut a, mut b) = (Vec::new(), Vec::new());
+    for r in INTESTAZIONE..fine {
+        for x in 0..w {
+            a.push(data[((off * w + r * w + x) as i64 + k_inizio) as usize]);
+            b.push(img[r * w + x]);
+        }
+    }
+    (pearson(&a, &b), k_fine - k_inizio)
+}
+
+#[test]
+fn l_inclinazione_automatica_raddrizza_una_cartina_che_inizia_con_un_intestazione_bianca() {
+    let (w, h) = (1809usize, 560usize);
+    let img = cartina_con_intestazione(w, h);
+    // misurato: senza errore 0,956; con errore senza correzione automatica la parte disegnata scorre di ~0,55 colonne per riga ogni 300 ppm
+    let mut d = decoder_manuale();
+    let (dritta, _) = ricevi_intestazione(&mut d, 0.0, &img, w, h);
+    assert!(dritta > 0.94, "senza errore {dritta}");
+    for ppm in [300.0, -300.0, 800.0, -800.0, 1500.0, -1500.0] {
+        let mut c = cfg(576, 120);
+        c.manual = true;
+        c.auto_center = false;
+        c.auto_slant = false;
+        let (senza, scarto_senza) = ricevi_intestazione(&mut Decoder::new(c), ppm, &img, w, h);
+        let mut d = decoder_manuale();
+        let (corr, scarto) = ricevi_intestazione(&mut d, ppm, &img, w, h);
+        let appreso = f64::from(d.learned_ppm());
+        eprintln!(
+            "intestazione bianca, {ppm:+} ppm: senza correzione {senza:.4} (scarto {scarto_senza}), con {corr:.4} (scarto {scarto} colonne), appreso {appreso:.0}"
+        );
+        assert!(corr > dritta - 0.02, "{ppm} ppm: correlazione {corr}");
+        assert!(scarto.abs() <= 2, "{ppm} ppm: scarto {scarto} colonne");
+        assert!((appreso - ppm).abs() < 0.05 * ppm.abs() + 20.0, "{ppm} ppm: appreso {appreso}");
+    }
+}
+
+#[test]
+fn l_inclinazione_automatica_e_stabile_su_una_cartina_lunga_e_non_insegue_il_rumore() {
+    // cartina lunga con l'intestazione e rumore sul segnale: dopo la prima stima le correzioni successive restano piccole e non oscillano
+    let (w, h) = (1809usize, 1000usize);
+    let img = cartina_con_intestazione(w, h);
+    for ppm in [800.0, -1500.0] {
+        let s = Segnale { apt: false, ppm, rumore: 0.15, ..Segnale::standard(576, 120) };
+        let audio = genera(&s, &img, w, h);
+        let mut d = decoder_manuale();
+        let mut lpm_visti: Vec<f64> = Vec::new();
+        let mut ultima = 0u32;
+        for chunk in audio.chunks(1024) {
+            d.push(chunk);
+            if let Some((_, rows, _)) = d.current()
+                && rows >= ultima + 40
+            {
+                ultima = rows;
+                lpm_visti.push(f64::from(d.lpm()));
+            }
+        }
+        d.finish();
+        // periodo di riga in ppm rispetto al nominale (120 righe al minuto), dalla riga 320 (dopo la prima stima) in poi
+        let ppm_visti: Vec<f64> = lpm_visti.iter().skip(8).map(|&l| (120.0 / l - 1.0) * 1e6).collect();
+        let salto = ppm_visti.windows(2).map(|c| (c[1] - c[0]).abs()).fold(0.0, f64::max);
+        let appreso = f64::from(d.learned_ppm());
+        eprintln!("cartina lunga {ppm:+} ppm con rumore: periodo stimato {:.0}..{:.0} ppm, salto massimo {salto:.1} ppm, appreso {appreso:.0}",
+            ppm_visti.iter().copied().fold(f64::MAX, f64::min), ppm_visti.iter().copied().fold(f64::MIN, f64::max));
+        assert!(salto < 40.0, "{ppm} ppm: salto tra stime successive {salto}");
+        assert!(ppm_visti.iter().all(|v| (v - ppm).abs() < 60.0), "{ppm} ppm: stime {ppm_visti:?}");
+        assert!((appreso - ppm).abs() < 0.05 * ppm.abs() + 20.0, "{ppm} ppm: appreso {appreso}");
+    }
+}
