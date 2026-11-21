@@ -4277,6 +4277,7 @@ wefax.note.saved,Chart saved to the history,Kaart opgeslagen in de geschiedenis
 wefax.note.lost,Signal lost: picture discarded,Signaal verloren: beeld verworpen
 wefax.view.label,Chart viewer,Kaartweergave
 wefax.view.fit,Fit,Passend
+wefax.view.fitWidth,Fit to width,Aan de breedte aanpassen
 wefax.view.fitHint,"Fits the picture to the available width, no horizontal scrolling","Past het beeld aan de beschikbare breedte aan, zonder horizontaal scrollen"
 wefax.view.actual,1:1,1:1
 wefax.view.actualHint,"Real pixels: one picture pixel is one screen pixel, scroll inside the box","Echte pixels: één beeldpixel is één schermpixel, scroll binnen het vak"

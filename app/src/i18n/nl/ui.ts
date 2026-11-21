@@ -5696,6 +5696,7 @@ export const NL_UI: Record<string, string> = {
   "wefax.view.empty": "Geen kaart binnen",
   "wefax.view.fit": "Passend",
   "wefax.view.fitHint": "Past het beeld aan de beschikbare breedte aan, zonder horizontaal scrollen",
+  "wefax.view.fitWidth": "Aan de breedte aanpassen",
   "wefax.view.follow": "Het binnenkomende beeld volgen",
   "wefax.view.label": "Kaartweergave",
   "wefax.view.zoomIn": "Inzoomen",

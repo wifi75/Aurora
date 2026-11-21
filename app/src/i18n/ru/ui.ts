@@ -5696,6 +5696,7 @@ export const RU_UI: Record<string, string> = {
   "wefax.view.empty": "Карта не поступает",
   "wefax.view.fit": "По ширине",
   "wefax.view.fitHint": "Подгоняет изображение по доступной ширине, без горизонтальной прокрутки",
+  "wefax.view.fitWidth": "По ширине",
   "wefax.view.follow": "Следить за поступающим изображением",
   "wefax.view.label": "Просмотр карт",
   "wefax.view.zoomIn": "Увеличить",

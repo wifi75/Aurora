@@ -4277,6 +4277,7 @@ wefax.note.saved,Chart saved to the history,Карта сохранена в и�
 wefax.note.lost,Signal lost: picture discarded,Сигнал потерян: изображение отброшено
 wefax.view.label,Chart viewer,Просмотр карт
 wefax.view.fit,Fit,По ширине
+wefax.view.fitWidth,Fit to width,По ширине
 wefax.view.fitHint,"Fits the picture to the available width, no horizontal scrolling","Подгоняет изображение по доступной ширине, без горизонтальной прокрутки"
 wefax.view.actual,1:1,1:1
 wefax.view.actualHint,"Real pixels: one picture pixel is one screen pixel, scroll inside the box","Реальные пиксели: один пиксель изображения равен одному пикселю экрана, прокрутка внутри области"

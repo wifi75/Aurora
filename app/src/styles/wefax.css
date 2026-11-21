@@ -471,3 +471,6 @@ html[data-theme='light'] .wefax-page .sstv-head .wefax-step .wefax-step-btn { co
 .wefax-page .sstv-head .wefax-step .wefax-step-btn { width: 22px; min-width: 22px; height: 22px; min-height: 22px; font-size: 0.6rem; line-height: 1; }
 .wefax-page .sstv-head .wefax-zoom { font-size: 0.72rem; line-height: 1.25; }
 .wefax-page .sstv-head .wefax-sql-level input, .wefax-page .sstv-head input[type='number'] { font-size: 0.7rem; line-height: 1.2; min-height: 18px; }
+
+/* visore adattato alla larghezza: mai la barra orizzontale (il foglio e' largo quanto il riquadro) */
+.wefax-box--fit { overflow-x: hidden; }

@@ -30,8 +30,9 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
   const started = useRef(false);
   const [size, setSize] = useState({ w: 1809, h: CHUNK_ROWS });
   const [rows, setRows] = useState(0);
-  // la cartina si vede uno a uno (pixel reali); i pulsanti − e + cambiano la scala, niente «Adatta»
-  const [zoom, setZoom] = useState<ZoomMode>(1);
+  // la cartina parte adattata alla larghezza del riquadro (nessuna barra orizzontale) e segue il ridimensionamento; i pulsanti − e +
+  // passano a una scala numerica dalla scala di adesso, «Adatta» torna all'adattamento
+  const [zoom, setZoom] = useState<ZoomMode>('fit');
   const [follow, setFollow] = useState(true);
   const [avail, setAvail] = useState(0);
   const [note, setNote] = useState<'saved' | 'lost' | null>(null);
@@ -175,6 +176,9 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
         <button type="button" className="glass sstv-btn" onClick={() => setZoom(stepZoom(scale, 1))} title={t('wefax.view.zoomIn')} aria-label={t('wefax.view.zoomIn')}>
           +
         </button>
+        <button type="button" className={`glass sstv-btn${zoom === 'fit' ? ' sstv-btn--primary' : ''}`} aria-pressed={zoom === 'fit'} onClick={() => setZoom('fit')} title={t('wefax.view.fitWidth')} aria-label={t('wefax.view.fitWidth')}>
+          {t('wefax.view.fit')}
+        </button>
         <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={(!receiving && !lastId) || shownRows < 30} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
           {t('wefax.slant.measure')}
         </button>
@@ -192,7 +196,7 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
   return (
     <div className="wefax-viewer">
       {slot ? createPortal(toolbar, slot) : toolbar}
-      <div className="wefax-box" ref={box} data-testid="wefax-box">
+      <div className={`wefax-box${zoom === 'fit' ? ' wefax-box--fit' : ''}`} ref={box} data-testid="wefax-box">
         {/* senza righe il foglio non ha dimensioni: niente linea bianca in alto e niente barre di scorrimento a vuoto */}
         <div className="wefax-sheet" style={{ width: shownRows === 0 ? 0 : Math.round(size.w * scale), height: shownRows === 0 ? 0 : Math.max(1, Math.round(shownRows * scale)) }}>
           <canvas
