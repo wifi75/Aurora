@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getLogInStatus } from '../api/logIn';
 import type { EngineSettings } from '../api/schemas';
 import { useT, type Key } from '../i18n';
 import { Cells, Field, Group, Help, Message } from './layout';
@@ -180,6 +182,26 @@ export function IntegrationsPanel({ doc, draft }: { doc: EngineSettings; draft: 
           })
         : null}
       {invalid ? <Message kind="muted">{t('int.err.wait')}</Message> : null}
+      {doc.values.LogInEnabled === 'true' ? <LogInStatusLine /> : null}
     </Group>
+  );
+}
+
+/** «Ricevi i QSO da altri log»: in ascolto o perche' no, con i contatori (si rilegge ogni 3 s mentre la scheda e' aperta). */
+function LogInStatusLine() {
+  const t = useT();
+  const status = useQuery({ queryKey: ['log-in-status'], queryFn: getLogInStatus, refetchInterval: 3000, retry: false });
+  const s = status.data;
+  if (!s?.available || !s.enabled) return null;
+  if (s.error) {
+    const text = s.error === 'busy' ? t('int.in.busy', { port: s.port }) : s.error === 'own' ? t('int.in.own', { port: s.port }) : t('int.in.error', { port: s.port, error: s.error });
+    return <Message kind="alert">{text}</Message>;
+  }
+  if (!s.listening) return null;
+  return (
+    <Message kind="note">
+      {t('int.in.listening', { port: s.port, received: s.received, dupes: s.duplicates, discarded: s.discarded })}
+      {s.last ? ` ${t('int.in.last', { last: s.last })}` : ''}
+    </Message>
   );
 }

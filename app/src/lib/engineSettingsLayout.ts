@@ -140,6 +140,14 @@ export const LINK_GROUPS: readonly SettingGroup[] = [
     ],
   },
   {
+    title: 'ens.g.logIn',
+    rows: [
+      { key: 'LogInEnabled', kind: 'bool' },
+      { key: 'LogInPort', kind: 'num', min: 1024, max: 65535 },
+      { key: 'LogInLan', kind: 'bool' },
+    ],
+  },
+  {
     title: 'ens.g.tcp',
     upload: { service: 'tcp', help: 'ens.tcp.help', tip: 'tip.test.tcp', auto: false },
     rows: [
