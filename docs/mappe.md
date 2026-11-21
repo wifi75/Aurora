@@ -14,7 +14,7 @@ Le dimensioni di Black Marble sono quelle della pagina NASA (verificate); quelle
 
 ## Come sono state ridotte
 
-Le foto del giorno a 12288 x 6144 px (la notte a 8192 x 4096; rapporto 2:1, quello della mappa del programma) con filtro Lanczos e salvate in JPEG. L'interfaccia le decodifica una volta sola e le tiene anche ridotte a 4096, 2048 e 1024 px di larghezza (ottenute per dimezzamenti) per disegnare alla risoluzione che serve allo zoom.
+Tutte le foto a 8192 x 4096 px (rapporto 2:1, quello della mappa del programma) con filtro Lanczos e salvate in JPEG. L'interfaccia le decodifica una volta sola e le tiene anche ridotte a 4096, 2048 e 1024 px di larghezza (ottenute per dimezzamenti) per disegnare alla risoluzione che serve allo zoom.
 
 ## Licenza e credito
 

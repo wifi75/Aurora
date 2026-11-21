@@ -42,9 +42,9 @@ export function terraUrls(variant: TerraVariant = 'relief'): { day: string; nigh
   return { day: `${base()}maps/${variant === 'base' ? 'terra-base-giorno' : 'terra-giorno'}.jpg`, night: `${base()}maps/terra-notte.jpg` };
 }
 
-/** Larghezze delle foto ridotte tenute in memoria (la foto del giorno intera e' 12288 px, quella della notte 8192). */
+/** Larghezze delle foto ridotte tenute in memoria (la foto intera e' 8192 px). */
 export const PHOTO_LEVELS: readonly number[] = [1024, 2048, 4096];
-export const PHOTO_FULL = 12288;
+export const PHOTO_FULL = 8192;
 /** La foto della notte non si usa oltre questa larghezza (le luci sono sfocate di natura e la maschera costa). */
 export const NIGHT_MAX_LEVEL = 4096;
 
