@@ -2595,6 +2595,12 @@ export async function deleteWefaxImage(id: string): Promise<void> {
   await request(`/wefax/images/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
+/** Ruota di 90 gradi una cartina salvata (`left` antiorario, `right` orario) e la riscrive al posto dell'originale: torna la voce aggiornata. */
+export async function postWefaxRotate(id: string, dir: 'left' | 'right'): Promise<WefaxImageEntry> {
+  const r = (await (await request(`/wefax/images/${encodeURIComponent(id)}/rotate`, jsonInit({ dir }))).json()) as { image: WefaxImageEntry };
+  return r.image;
+}
+
 export function wefaxImageUrl(id: string): string {
   return `${BASE}/wefax/images/${encodeURIComponent(id)}`;
 }

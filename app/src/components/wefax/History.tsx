@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { deleteWefaxImage, postWefaxSlant, wefaxImageUrl, type WefaxImageEntry, type WefaxSlantPoints } from '../../api/client';
+import { deleteWefaxImage, postWefaxRotate, postWefaxSlant, wefaxImageUrl, type WefaxImageEntry, type WefaxSlantPoints } from '../../api/client';
 import { useT } from '../../i18n';
 import { askConfirm } from '../ConfirmHost';
 import { SlantOverlay } from './SlantOverlay';
+import '../../styles/wefax-ruota.css';
 
 function when(ms: number): string {
   const d = new Date(ms);
@@ -21,6 +22,9 @@ function short(ms: number): string {
 export function History({ images, onChanged }: { images: WefaxImageEntry[]; onChanged: () => void }) {
   const t = useT();
   const [open, setOpen] = useState<WefaxImageEntry | null>(null);
+  // una cartina sostituita (ruotata) ha lo stesso indirizzo: il numero fa ricaricare la miniatura
+  const [bumps, setBumps] = useState<Record<string, number>>({});
+  const thumb = (id: string) => `${wefaxImageUrl(id)}${bumps[id] ? `?v=${bumps[id]}` : ''}`;
   const sorted = [...images].sort((a, b) => b.time_ms - a.time_ms);
   // le miniature sono quadrate in una riga sola che scorre: due pulsanti ‹ › portano a sinistra e a destra di una pagina alla volta
   const strip = useRef<HTMLUListElement | null>(null);
@@ -68,7 +72,7 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
           <li key={img.id} className="wefax-thumb" title={when(img.time_ms)}>
             {/* la cartina intera; un clic la apre in grande */}
             <button type="button" className="wefax-thumb-open" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
-              <img src={wefaxImageUrl(img.id)} alt="" loading="lazy" />
+              <img src={thumb(img.id)} alt="" loading="lazy" />
               {!img.complete ? <span className="sstv-thumb-tag">{t('wefax.hist.partial')}</span> : null}
             </button>
             {/* in alto a destra, sopra la miniatura: apri, scarica, cancella */}
@@ -102,6 +106,7 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
           onFixed={(e) => {
             // raddrizzata: la nuova copia (o la stessa cartina sostituita) si vede subito, con l'elenco aggiornato
             setOpen(e);
+            setBumps((b) => ({ ...b, [e.id]: (b[e.id] ?? 0) + 1 }));
             onChanged();
           }}
         />
@@ -122,6 +127,21 @@ function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxImageEntr
   // una cartina sostituita ha lo stesso indirizzo: il numero fa ricaricare l'immagine
   const [version, setVersion] = useState(0);
   const src = `${wefaxImageUrl(entry.id)}${version > 0 ? `?v=${version}` : ''}`;
+  // ruota di 90 gradi e salva subito, al posto dell'originale (nessuna conferma: ogni clic gira ancora di un quarto)
+  const rotate = async (dir: 'left' | 'right') => {
+    setMeasuring(false);
+    setBusy(true);
+    try {
+      const e = await postWefaxRotate(entry.id, dir);
+      setNote(null);
+      setVersion((v) => v + 1);
+      onFixed(e);
+    } catch {
+      setNote({ ok: false, text: t('wefax.rotate.error') });
+    } finally {
+      setBusy(false);
+    }
+  };
   const measure = async (p: WefaxSlantPoints) => {
     setMeasuring(false);
     if (replace && !(await askConfirm(t('wefax.slant.replaceAsk')))) return;
@@ -171,6 +191,18 @@ function Lightbox({ entry, onClose, onDelete, onFixed }: { entry: WefaxImageEntr
               </button>
               <button type="button" className={actual ? 'on' : ''} aria-pressed={actual} onClick={() => setActual(true)} title={t('wefax.view.actualHint')}>
                 {t('wefax.view.actual')}
+              </button>
+            </span>
+            <span className="wefax-rotate" role="group" aria-label={t('wefax.rotate.group')}>
+              <button type="button" className="glass sstv-btn wefax-rotate-btn" disabled={busy} title={t('wefax.rotate.left')} aria-label={t('wefax.rotate.left')} onClick={() => void rotate('left')}>
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path d="M9 4L5 8l4 4M5 8h8a6 6 0 1 1-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button type="button" className="glass sstv-btn wefax-rotate-btn" disabled={busy} title={t('wefax.rotate.right')} aria-label={t('wefax.rotate.right')} onClick={() => void rotate('right')}>
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <path d="M15 4l4 4-4 4M19 8h-8a6 6 0 1 0 6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </span>
             <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={busy} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>

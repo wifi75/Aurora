@@ -1,0 +1,5 @@
+/* Pulsanti «Ruota a sinistra / a destra» nella cartina WEFAX aperta in grande */
+.wefax-rotate { display: inline-flex; gap: 0.35rem; }
+.wefax-rotate-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 0.65rem; color: var(--text); border-color: var(--border); }
+.wefax-rotate-btn svg { display: block; }
+.wefax-rotate-btn:hover:not(:disabled) { border-color: var(--accent); }

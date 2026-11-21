@@ -285,6 +285,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.192m67s99ie": "Filteren wie je CQ beantwoordt",
   "t.192s3hzez1z": "De PTT testen: “[[sw.testPtt]]” onderaan laat de radio één seconde zenden (zie het onderdeel over de knoppen onderaan): gebruik een dummy load of een geschikte antenne.",
   "t.194x3bykp1v": "Cijfers over de ontvangst: hoeveel stations je de laatste uren hebben ontvangen, de verste, het beste rapport en de balken “[[prop.stat.byBand]]” met de kleur van elke band.",
+  "t.194y9hsmjdi": "In de groot geopende kaart draaien “[[wefax.rotate.left]]” en “[[wefax.rotate.right]]” (de gebogen pijlen) de kaart bij elke klik 90 graden en slaan die meteen op in plaats van het origineel, zonder bevestiging; handig voor kaarten die zijwaarts zijn uitgezonden.",
   "t.196dmhw6fxh": "De radio gaat naar TX maar er komt geen vermogen uit: de audio naar de radio ontbreekt.",
   "t.196pyntgc9a": "[[sw.sub.jt]]",
   "t.19765yrr7rw": "[[bar.profile]]: de naam van het radioprofiel in gebruik, als je meer dan één profiel hebt ([[nav.settings]] › [[sw.sec.station]] › [[sw.pg.profiles]]).",
