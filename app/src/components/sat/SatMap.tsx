@@ -683,7 +683,7 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'relief', borders
       for (let x = 0; x < nw; x++) {
         const lat = 90 - ((y + 0.5) / nh) * 180;
         const lon = -180 + ((x + 0.5) / nw) * 360;
-        const a = nightAlpha(sunAltitudeDeg(lat, lon, sun.lat, sun.lon), photoReady ? 0.92 : 0.74);
+        const a = nightAlpha(sunAltitudeDeg(lat, lon, sun.lat, sun.lon), photoReady ? 0.68 : 0.74);
         const o = (y * nw + x) * 4;
         img.data[o] = 4;
         img.data[o + 1] = 10;
@@ -838,8 +838,14 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'relief', borders
 
     // la notte: con la Terra la foto delle luci mascherata dal Sole (bordo morbido), altrimenti un velo blu scuro
     if (!veil && photos && night) {
+      // la Terra di giorno resta visibile, scurita da un velo (coste, rilievi e nuvole nitidi); le luci delle citta' ci si sommano sopra
+      drawWorld(night);
       const lt = nightLights(pc, photos.night, night, Math.min(wanted, NIGHT_MAX_LEVEL), moving);
-      if (lt) drawWorld(lt);
+      if (lt) {
+        ctx.globalCompositeOperation = 'screen';
+        drawWorld(lt);
+        ctx.globalCompositeOperation = 'source-over';
+      }
     } else if (night) drawWorld(night);
 
     // i confini sottili sopra la foto (opzionali)
