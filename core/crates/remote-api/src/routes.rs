@@ -32,6 +32,7 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/health", get(health))
         .route("/api/v1/health/resources", get(health_resources))
         .route("/api/v1/health/files", get(health_files))
+        .route("/api/v1/log-in/status", get(crate::log_in_api::log_in_status))
         .route("/api/v1/pair/start", post(pair_start))
         .route("/api/v1/lan/check", get(lan_check))
         .route("/api/v1/lan/allow", post(lan_allow))

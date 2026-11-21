@@ -509,6 +509,18 @@ fn resend_targets(reports: &remote_api::engine_settings::Reports) -> Vec<SocketA
     out
 }
 
+/// Come ascoltare i QSO degli altri log. Non si ascolta sulle porte dove Aurora manda i QSO a un programma su questo PC (server primario e
+/// secondario, destinatari del riquadro «Integrazioni») ne' su quella dei comandi UDP: sarebbero i propri QSO di ritorno.
+fn log_in_config(reports: &remote_api::engine_settings::Reports, own_port: u16) -> qso_export::inbound::InboundConfig {
+    let mut forbidden = vec![own_port];
+    let local = |a: &SocketAddr| a.ip().is_loopback() || a.ip().is_unspecified() || a.ip().is_multicast();
+    forbidden.extend(reports.primary.iter().chain(reports.secondary.iter()).filter(|a| local(a)).map(SocketAddr::port));
+    forbidden.extend(reports.destinations.iter().filter(|d| d.enabled).filter_map(|d| d.addr()).filter(local).map(|a| a.port()));
+    forbidden.sort_unstable();
+    forbidden.dedup();
+    qso_export::inbound::InboundConfig { enabled: reports.log_in_port.is_some(), port: reports.log_in_port.unwrap_or(0), lan: reports.log_in_lan, forbidden }
+}
+
 /// Cosa serve all'emettitore UDP: tutto cio' che, se cambia, lo fa riavviare.
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct UdpSettings {
@@ -2611,6 +2623,28 @@ pub async fn run(
         }));
     }
     let live_log = enrichment.as_ref().map(|(db, worked)| (Arc::clone(db), Arc::clone(worked), log_sources.clone()));
+    // ricevitore dei QSO dagli altri log (motore proprio): i QSO vanno solo nel log di Aurora, mai di nuovo verso i destinatari
+    let log_in = engine_settings.as_ref().map(|store| {
+        let own_port = config.udp_listen.port();
+        let (tx, rx) = tokio::sync::watch::channel(log_in_config(&store.reports(), own_port));
+        let changed: Arc<dyn Fn() + Send + Sync> = match live_log.clone() {
+            Some((db, worked, sources)) => Arc::new(move || {
+                let (db, worked, sources) = (Arc::clone(&db), Arc::clone(&worked), sources.clone());
+                tokio::task::spawn_blocking(move || refresh_worked(&sources, &db, &worked));
+            }),
+            None => Arc::new(|| {}),
+        };
+        let inbound = qso_export::inbound::Inbound::spawn(Arc::clone(&logbook), rx, changed);
+        let store = Arc::clone(store);
+        let mut changes = store.subscribe();
+        tokio::spawn(async move {
+            while changes.changed().await.is_ok() {
+                let next = log_in_config(&store.reports(), own_port);
+                tx.send_if_modified(|c| if *c == next { false } else { *c = next; true });
+            }
+        });
+        inbound
+    });
     // le schede Sequenza, Generali e Notifiche del motore proprio: dalle impostazioni di Aurora alla sequenza, alle etichette e al log
     if let Some(store) = &engine_settings {
         let r = store.reports();
@@ -2946,6 +2980,10 @@ pub async fn run(
                     refresh_worked(sources, db, worked);
                 }
             })
+        })
+        .with_log_in({
+            let inbound = log_in.clone();
+            Arc::new(move || serde_json::json!(inbound.as_ref().map(|i| i.stats()).unwrap_or_default()))
         })
         .with_log_changed(match live_log.clone() {
             Some((db, worked, sources)) => Arc::new(move || refresh_worked(&sources, &db, &worked)),

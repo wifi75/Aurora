@@ -104,6 +104,10 @@ pub const EXTRA_KEYS: &[&str] = &[
     UDP_DESTINATIONS,
     // «Rimanda i QSO persi» per il server UDP secondario (voce di Aurora): con il log chiuso il QSO resta in coda
     "UDP2Resend",
+    // ricevitore dei QSO dagli altri log (voci di Aurora): acceso, porta, ascolto anche sulla rete di casa
+    "LogInEnabled",
+    "LogInPort",
+    "LogInLan",
     // soglia del ROS oltre la quale la Tx si ferma (voce di Aurora, come `stopForHighSWR` di WSJT-X)
     "SWRLimit",
     // salvataggio ADIF automatico: interruttore (spento di fabbrica) e cartella dove scrivere una copia di `aurora_log.adi` a ogni QSO (voci di Aurora)
@@ -368,6 +372,7 @@ pub fn support(key: &str) -> Support {
         // l'elenco dei destinatari UDP (riquadro «Integrazioni»): esportatore e emettitore lo rileggono a ogni modifica
         UDP_DESTINATIONS => Support::Live(Apply::Now),
         "UDP2Server" | "UDP2ServerPort" | "EnableUDP2adifBroadcast" | "UDP2Resend" => Support::Live(Apply::Now),
+        "LogInEnabled" | "LogInPort" | "LogInLan" => Support::Live(Apply::Now),
         "UDPServer" | "UDPServerPort" | "EnableUDP1adifSending" | "AcceptUDPRequests" | "AcceptUDPReplyMessages" => Support::Needs(Feature::UdpEmitter, "emitter_pending", Apply::Now),
         "WriteDecodedALLTXT" | "WriteDecodedDebugALLTXT" => Support::Needs(Feature::AllTxt, "all_txt_pending", Apply::Now),
         // scheda Sequenza: i contatori, «ferma se risponde a un altro» e «CQ rigoroso» arrivano alla sequenza a caldo (`engine_native::SequenceSettings`)
@@ -522,6 +527,10 @@ pub struct Reports {
     /// «Rimanda i QSO persi» per il secondo server UDP (`UDP2Resend`, voce di Aurora): con il log chiuso il QSO resta in coda e parte
     /// quando il log si riapre (vedi `qso_export::waiting`).
     pub secondary_resend: bool,
+    /// Ricevitore dei QSO dagli altri log (`LogInEnabled`, `LogInPort`, `LogInLan`; voci di Aurora, spento di fabbrica): `Some(porta)` se acceso.
+    pub log_in_port: Option<u16>,
+    /// Ascolta anche sulla rete di casa (0.0.0.0) invece che solo su 127.0.0.1.
+    pub log_in_lan: bool,
     /// Scrivi le decodifiche in `ALL.TXT`.
     pub all_txt: bool,
     /// Le evidenziazioni di «nuovo» (scheda Notifiche): decidono anche chi e' «gia' lavorato» e se la sequenza risponde a chiunque.
@@ -771,6 +780,10 @@ pub fn defaults() -> BTreeMap<String, String> {
         ("TxQSYAllowed", "true"),
         // «Rimanda i QSO persi» per il server secondario: acceso di base (un log chiuso non perde piu' i QSO)
         ("UDP2Resend", "true"),
+        // ricevitore dei QSO dagli altri log: spento, porta 12062, solo questo PC
+        ("LogInEnabled", "false"),
+        ("LogInPort", "12062"),
+        ("LogInLan", "false"),
         // soglia del ROS: come WSJT-X 3.0 la trasmissione si ferma oltre 2,5
         ("SWRLimit", "2.0"),
         // salvataggio ADIF automatico: spento di fabbrica, nessuna cartella
@@ -1006,7 +1019,8 @@ pub fn validate(key: &str, value: &str) -> Result<(), SettingsError> {
 fn validate_wsjtx3(key: &str, value: &str) -> Option<Result<(), SettingsError>> {
     let bad = |m: &str| Some(Err(SettingsError::BadValue(format!("{key}: {m}"))));
     match key {
-        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" | "AdifAutoSave" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "FullDuplex" | "WaitFeaturesEnabled" | "HoundAuto" | "ShowOTP" | "OTPVerify" | "BandHopping" | "newDXCCUnconfirmed" | "newGridUnconfirmed" | "WSPRnetUpload" | "UDP2Resend" | "AdifAutoSave" | "LogInEnabled" | "LogInLan" => if matches!(value, "true" | "false") { Some(Ok(())) } else { bad("vero o falso") },
+        "LogInPort" => if value.trim().parse::<u16>().is_ok_and(|p| p >= 1024) { Some(Ok(())) } else { bad("porta da 1024 a 65535") },
         "PouncePolicy" => if matches!(value, "none" | "first" | "max_dist" | "max_db" | "min_db") { Some(Ok(())) } else { bad("none, first, max_dist, max_db o min_db") },
         "FT8DecoderStart" => if matches!(value, "early" | "normal" | "late") { Some(Ok(())) } else { bad("early, normal o late") },
         "SlowPcMode" => if matches!(value, "auto" | "always" | "never") { Some(Ok(())) } else { bad("auto, always o never") },
@@ -1078,6 +1092,8 @@ pub fn interpret(values: &BTreeMap<String, String>) -> Reports {
         accept_reply: get("AcceptUDPReplyMessages").parse().ok().filter(|n| (1..=3).contains(n)).unwrap_or(1),
         secondary: truthy(values.get("EnableUDP2adifBroadcast")).then(|| parse_server(get("UDP2Server"), get("UDP2ServerPort"))).flatten(),
         secondary_resend: truthy(values.get("UDP2Resend")),
+        log_in_port: truthy(values.get("LogInEnabled")).then(|| values.get("LogInPort").and_then(|p| p.trim().parse::<u16>().ok()).filter(|p| *p >= 1024).unwrap_or(12062)),
+        log_in_lan: truthy(values.get("LogInLan")),
         all_txt: truthy(values.get("WriteDecodedALLTXT")),
         highlights: engine_jtdx::worked::HighlightFlags::from_lookup(|k| values.get(k).map(|v| v == "true")),
         seq_answer_cq: counter(values, "SeqAnswerCQCount", "SeqAnswerCQCounterValue", 2),
@@ -1865,6 +1881,9 @@ Type2MsgGen=@Variant(\0\0\0\x7f\0\0\0\x1b\x43onfiguration::Type2MsgGen\0\0\0\0\x
         assert!(validate("AdifFolder", &file.to_string_lossy()).is_err(), "un file non e' una cartella");
         std::fs::remove_file(&file).ok();
         assert!(validate("AdifAutoSave", "true").is_ok() && validate("AdifAutoSave", "si").is_err());
+        assert!(validate("LogInPort", "12062").is_ok() && validate("LogInPort", "80").is_err() && validate("LogInPort", "70000").is_err());
+        assert_eq!(interpret(&map(&[("LogInEnabled", "true")])).log_in_port, Some(12062));
+        assert_eq!(interpret(&map(&[("LogInEnabled", "false"), ("LogInPort", "12070")])).log_in_port, None);
         let on = interpret(&map(&[("AdifAutoSave", "true"), ("AdifFolder", &ok)]));
         assert!(on.adif_auto_save && on.adif_folder == ok);
     }
