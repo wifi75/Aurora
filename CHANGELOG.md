@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Conteggio delle installazioni attive: oltre al segnale giornaliero, ogni circa 40 minuti mentre Aurora e' aperta parte un «battito» anonimo (codice casuale gia' in uso, versione e livello d'uso: 0 aperta e ferma, 1 riceve o decodifica, 2 trasmette o ha fatto un QSO; mai nominativi ne' IP), solo con l'interruttore «conta le installazioni attive» acceso. Il servizio dei rapporti ha `POST /v1/battito` (tabella `battiti`, migrazione `0005_battiti.sql`, un battito ogni 5 minuti al massimo per installazione) e `GET /v1/utilizzo` per il portale Analytics (protetto): aperte e usate per giorno, versione e paese, online nell'ultima ora. Il testo dell'interruttore lo dice nelle otto lingue.
+
 - WEFAX: le cartine ricevute non occupano piu' una riga larga in fondo alla pagina: stanno in una colonna stretta accanto al visore (miniature una sotto l'altra, con apri, scarica e cancella; scorre da sola), e il riquadro del visore e' piu' basso, cosi' la pagina entra nello schermo con lo spettro e la cascata sopra. Sotto i 1100 pixel la colonna torna sotto il visore.
 
 - Satelliti, ripiego a due VFO (IC-820H, #83): se la radio rifiuta il ripiego (per esempio con il Sub spento) non resta spento per sempre e la spunta «Trasmissione con due VFO» non si toglie piu' da sola dalle impostazioni: dopo un minuto si riprova da solo, cosi' la trasmissione torna a seguire il Doppler appena il Sub e' di nuovo acceso (pacchetto di Vladimir con AO-7, 2026-11-21: il ripiego era rimasto spento dalle 07:34 e la trasmissione non si muoveva).
