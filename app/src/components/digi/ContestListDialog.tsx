@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useT } from '../../i18n';
 import { ContestError } from '../../api/contest';
@@ -9,6 +9,7 @@ import { toast } from '../../lib/toast';
 import { EXTRA_MAX, cleanExtra, readSection, writeSection } from '../../lib/contestSection';
 import { blocchiRegolamento, inCartella, pezziInline, voceAttiva, voceModificabile, type Voce } from '../../lib/contestVoci';
 import { browserStorage } from '../../lib/theme';
+import { CONTEST_MODE_TABS, contestModes, type ContestModeTab } from '../../lib/contestModes';
 import '../../styles/digi-contest.css';
 
 const why = (e: unknown) => (e instanceof ContestError ? (e.detail ?? e.code) : String(e));
@@ -22,6 +23,11 @@ function useRefresh() {
     for (const k of TEXT_CONTEST_KEYS) void client.invalidateQueries({ queryKey: [...k] });
   };
 }
+
+type ModeTab = 'all' | ContestModeTab;
+const MODE_TABS: readonly ModeTab[] = ['all', ...CONTEST_MODE_TABS];
+/** La linguetta scelta si ricorda finche' l'app resta aperta (alla riapertura della finestra riparte da dove era). */
+let lastModeTab: ModeTab = 'all';
 
 /** Sceglie il contest attivo (`null` = «Nessun contest») e lo dice. */
 export function useSelectTextContest() {
@@ -55,10 +61,35 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
   const active = list.data?.attivo ?? null;
   const current = picked === undefined ? active : picked;
   const [query, setQuery] = useState('');
-  const rows = [{ id: null as string | null, name: t('ctest.none'), notes: '' }, ...(list.data?.contest ?? [])];
-  // la ricerca guarda nome e note; «Nessun contest» resta sempre in cima
+  const contests = list.data?.contest ?? [];
+  const rows = [{ id: null as string | null, name: t('ctest.none'), notes: '' }, ...contests];
+  const [tabState, setTabState] = useState<ModeTab>(lastModeTab);
+  // i modi di ogni contest (dalle note) e quanti ne ha ogni linguetta; un contest con piu' modi sta in tutte le sue linguette
+  const modesOf = useMemo(() => new Map(contests.map((c) => [c.id, contestModes(c.notes, c.name)] as const)), [contests]);
+  const counts = useMemo(() => {
+    const n: Record<ModeTab, number> = { all: contests.length, ssb: 0, cw: 0, rtty: 0, psk: 0, digi: 0, other: 0 };
+    for (const ms of modesOf.values()) for (const m of ms) n[m] += 1;
+    return n;
+  }, [contests.length, modesOf]);
+  // una linguetta rimasta senza contest (dopo un Elimina) torna a «Tutti»
+  const tab: ModeTab = counts[tabState] === 0 ? 'all' : tabState;
+  const setTab = (m: ModeTab) => {
+    lastModeTab = m;
+    setTabState(m);
+  };
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const usable = MODE_TABS.filter((m) => counts[m] > 0 || m === 'all');
+    const i = usable.indexOf(tab);
+    const next = usable[(i + (e.key === 'ArrowRight' ? 1 : usable.length - 1)) % usable.length];
+    if (!next) return;
+    setTab(next);
+    requestAnimationFrame(() => document.getElementById(`ctest-tab-${next}`)?.focus());
+  };
+  // la ricerca guarda nome e note dentro la linguetta scelta; «Nessun contest» resta sempre in cima
   const q = query.trim().toLowerCase();
-  const shown = q === '' ? rows : rows.filter((r) => r.id === null || `${r.name} ${r.notes}`.toLowerCase().includes(q));
+  const shown = rows.filter((r) => r.id === null || ((tab === 'all' || (modesOf.get(r.id) ?? []).includes(tab)) && (q === '' || `${r.name} ${r.notes}`.toLowerCase().includes(q))));
 
   const choose = async (id: string | null) => {
     const name = rows.find((r) => r.id === id)?.name;
@@ -132,6 +163,24 @@ export function ContestListDialog({ onClose, onSelected }: { onClose(): void; on
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => (e.key === 'Escape' && query ? (e.stopPropagation(), setQuery('')) : undefined)}
         />
+        <div role="tablist" className="ctest-tabs" aria-label={t('ctest.tabs')}>
+          {MODE_TABS.map((m) => (
+            <button
+              key={m}
+              id={`ctest-tab-${m}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === m}
+              tabIndex={tab === m ? 0 : -1}
+              disabled={counts[m] === 0}
+              className={`glass sstv-btn ctest-tab${tab === m ? ' active' : ''}`}
+              onClick={() => setTab(m)}
+              onKeyDown={onTabKey}
+            >
+              {t(`ctest.tab.${m}` as 'ctest.tab.all')} <span className="ctest-tab-n">{counts[m]}</span>
+            </button>
+          ))}
+        </div>
         <div className="ctest-table-wrap">
           <table className="ctest-table">
             <thead>

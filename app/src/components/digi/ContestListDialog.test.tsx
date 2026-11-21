@@ -11,7 +11,8 @@ vi.mock('../../api/contestTesto', async (importOriginal) => ({
   exportTextContest: vi.fn(() => Promise.resolve(new Blob(['PK']))),
 }));
 vi.mock('../ConfirmHost', () => ({ askConfirm: vi.fn(() => Promise.resolve(true)) }));
-import { deleteTextContest, exportTextContest, importTextContest, selectTextContest } from '../../api/contestTesto';
+import { deleteTextContest, exportTextContest, getTextContests, importTextContest, selectTextContest } from '../../api/contestTesto';
+import { within } from '@testing-library/react';
 import { ContestListDialog, fromLocalInput, toLocalInput } from './ContestListDialog';
 
 const dialog = (onClose = vi.fn()) => (
@@ -76,5 +77,51 @@ describe('elenco dei contest', () => {
     expect(toLocalInput('')).toBe('');
     expect(fromLocalInput('2015-09-26T00:00')).toBe('20150926000000');
     expect(fromLocalInput('')).toBe('');
+  });
+});
+
+describe('linguette per modo', () => {
+  const ref = (id: string, name: string, notes: string) => ({ id, name, notes, start: '', end: '' });
+  const many = () =>
+    vi.mocked(getTextContests).mockImplementationOnce(() =>
+      Promise.resolve({ attivo: null, contest: [ref('1', 'Uno', 'CW & SSB'), ref('2', 'Due', 'RTTY 75 Baudot'), ref('3', 'Tre', 'Phone - CW - Digital'), ref('4', 'Quattro', 'Sprint')], macros: [], domini: [] }),
+    );
+  const tabs = () => within(screen.getByRole('tablist'));
+  const names = () => screen.getAllByRole('row').slice(2).map((r) => r.querySelectorAll('td')[1]?.textContent);
+
+  it('un contest con due modi compare in entrambe le linguette; il numero sta accanto al nome', async () => {
+    many();
+    render(dialog());
+    await screen.findByText('Uno');
+    expect(tabs().getByRole('tab', { name: /Tutti|All/ })).toHaveTextContent('4');
+    expect(tabs().getByRole('tab', { name: /SSB/ })).toHaveTextContent('2');
+    expect(tabs().getByRole('tab', { name: /CW/ })).toHaveTextContent('2');
+    fireEvent.click(tabs().getByRole('tab', { name: /SSB/ }));
+    expect(names()).toEqual(['Uno', 'Tre']);
+    fireEvent.click(tabs().getByRole('tab', { name: /CW/ }));
+    expect(names()).toEqual(['Uno', 'Tre']);
+    fireEvent.click(tabs().getByRole('tab', { name: /RTTY/ }));
+    expect(names()).toEqual(['Due']);
+    fireEvent.click(tabs().getByRole('tab', { name: /Altri|Other/ }));
+    expect(names()).toEqual(['Quattro']);
+  });
+
+  it('la ricerca vale dentro la linguetta; una linguetta vuota e disattivata; frecce per spostarsi', async () => {
+    many();
+    render(dialog());
+    // la linguetta scelta nella prova prima (Altri) si ricorda: si riparte da li'
+    await screen.findByText('Quattro');
+    expect(tabs().getByRole('tab', { name: /Altri|Other/ })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(tabs().getByRole('tab', { name: /Tutti|All/ }));
+    await screen.findByText('Uno');
+    expect(tabs().getByRole('tab', { name: /PSK/ })).toBeDisabled();
+    fireEvent.click(tabs().getByRole('tab', { name: /SSB/ }));
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'tre' } });
+    expect(names()).toEqual(['Tre']);
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: '' } });
+    fireEvent.keyDown(tabs().getByRole('tab', { name: /SSB/ }), { key: 'ArrowRight' });
+    expect(tabs().getByRole('tab', { name: /CW/ })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(tabs().getByRole('tab', { name: /CW/ }), { key: 'ArrowLeft' });
+    expect(tabs().getByRole('tab', { name: /SSB/ })).toHaveAttribute('aria-selected', 'true');
   });
 });

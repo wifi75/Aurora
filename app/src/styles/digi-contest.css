@@ -32,6 +32,10 @@ td.ctest-col-active { color: var(--accent, #4a9eff); }
 .ctest-missing { margin: 0.2rem 0 0.4rem; font-size: 0.85em; opacity: 0.8; word-break: break-word; }
 
 /* ricerca in cima all'elenco e righe a colori alternati */
+.ctest-tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0 0 0.5rem; }
+.ctest-tab.active { outline: 2px solid var(--accent, #4a9eff); background: color-mix(in srgb, var(--accent, #4a9eff) 22%, transparent); color: var(--text); }
+.ctest-tab:disabled { opacity: 0.45; cursor: default; }
+.ctest-tab-n { margin-left: 0.2rem; color: var(--text-muted); font-size: 0.8em; font-variant-numeric: tabular-nums; }
 .ctest-search { width: 100%; margin: 0 0 0.5rem; padding: 0.4rem 0.6rem; font-size: 0.95rem; box-sizing: border-box; }
 .ctest-table tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.045); }
 html[data-theme='light'] .ctest-table tbody tr:nth-child(even) { background: rgb(0 0 0 / 0.045); }
