@@ -5611,6 +5611,8 @@ export const NL_UI: Record<string, string> = {
   "wefax.set.autoCenter": "Beeld automatisch centreren",
   "wefax.set.autoLpm": "Regels per minuut uit de fasering",
   "wefax.set.autoSave": "Elke kaart automatisch opslaan",
+  "wefax.set.autoSlant": "Automatische scheefstand",
+  "wefax.set.autoSlantTip": "Elke 40 regels (tot regel 400) meet Aurora hoe schuin de verticale lijnen van de kaart lopen en corrigeert zelf de regelperiode, ook voor de al ontvangen regels. Dit komt bovenop de handmatige correctie.",
   "wefax.set.center": "Subdraaggolf (Hz)",
   "wefax.set.filter": "Ingangsfilter",
   "wefax.set.filter.medium": "Middel",

@@ -25,7 +25,7 @@ import { WefaxPage } from './WefaxPage';
 const SNAP: WefaxSnapshot = {
   rx: { listening: true, receiving: false, state: 'apt', ioc: 576, lpm: 120, width: 1809, rows: 0, sync: 0, level_db: -40, last_image: null },
   settings: {
-    ioc: 576, lpm_576: 120, lpm_288: 120, filter: 'medium', manual: false, auto_lpm: true, auto_center: true, auto_save: true, auto_receive: false,
+    ioc: 576, lpm_576: 120, lpm_288: 120, filter: 'medium', manual: false, auto_lpm: true, auto_center: true, auto_slant: true, auto_save: true, auto_receive: false,
     center_hz: 1900, shift_hz: 800, slant_ppm: 0, max_rows: 1200, correlation: 0.05, folder: '', afc: true, squelch: false, squelch_level: 30,
   },
   folder: 'C:\\Aurora\\wefax',
@@ -126,6 +126,16 @@ describe('WefaxPage', () => {
     await screen.findByText(/In attesa di una cartina/);
     fireEvent.click(screen.getByRole('button', { name: '+10' }));
     expect(putWefax).toHaveBeenCalledWith(expect.objectContaining({ slant_ppm: 10, ioc: 576 }));
+    unmount();
+  });
+
+  it('shows the automatic slant switch on and saves it', async () => {
+    const { unmount } = page();
+    await screen.findByText(/In attesa di una cartina/);
+    const box = screen.getByRole('checkbox', { name: 'Inclinazione automatica' });
+    expect(box).toBeChecked();
+    fireEvent.click(box);
+    expect(putWefax).toHaveBeenCalledWith(expect.objectContaining({ auto_slant: false, ioc: 576 }));
     unmount();
   });
 

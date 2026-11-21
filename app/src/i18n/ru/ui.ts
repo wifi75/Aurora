@@ -5611,6 +5611,8 @@ export const RU_UI: Record<string, string> = {
   "wefax.set.autoCenter": "Автоматически центрировать изображение",
   "wefax.set.autoLpm": "Строк в минуту по фазировке",
   "wefax.set.autoSave": "Автоматически сохранять каждую карту",
+  "wefax.set.autoSlant": "Автоматический наклон",
+  "wefax.set.autoSlantTip": "Каждые 40 строк (до 400-й) Aurora измеряет, насколько вертикальные линии карты идут по диагонали, и сама корректирует период строки, в том числе для уже принятых строк. Добавляется к ручной коррекции.",
   "wefax.set.center": "Поднесущая (Hz)",
   "wefax.set.filter": "Входной фильтр",
   "wefax.set.filter.medium": "Средний",

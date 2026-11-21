@@ -187,6 +187,10 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           <input type="checkbox" checked={settings.auto_save} onChange={(e) => save({ auto_save: e.target.checked })} />
           {t('wefax.set.autoSave')}
         </label>
+        <label className="sstv-check" title={t('wefax.set.autoSlantTip')}>
+          <input type="checkbox" checked={settings.auto_slant ?? true} onChange={(e) => save({ auto_slant: e.target.checked })} />
+          {t('wefax.set.autoSlant')}
+        </label>
         <div className="sstv-field">
           <span>
             {t('wefax.set.slant')}

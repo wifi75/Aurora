@@ -2446,6 +2446,8 @@ export interface WefaxSettings {
   manual: boolean;
   auto_lpm: boolean;
   auto_center: boolean;
+  /** Inclinazione corretta da sola dal contenuto delle prime 400 righe. Assente con un motore vecchio (si intende accesa). */
+  auto_slant?: boolean;
   auto_save: boolean;
   auto_receive: boolean;
   center_hz: number;
