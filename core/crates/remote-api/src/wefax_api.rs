@@ -226,6 +226,26 @@ pub(crate) async fn wefax_slant(State(state): State<AppState>, _: Authed, Json(b
     .map(Json)
 }
 
+/// Verso della rotazione.
+#[derive(Deserialize)]
+pub(crate) struct RotateBody {
+    /// `left` (antiorario) o `right` (orario).
+    dir: String,
+}
+
+/// Ruota di 90 gradi una cartina salvata e la riscrive al posto dell'originale (stesso id). Risponde con la voce aggiornata (larghezza e altezza scambiate).
+#[utoipa::path(post, path = "/api/v1/wefax/images/{id}/rotate", responses((status = 200, description = "Voce aggiornata"), (status = 400, description = "Verso non valido (bad_settings)"), (status = 404, description = "Cartina non trovata (not_found)")))]
+pub(crate) async fn wefax_image_rotate(State(state): State<AppState>, _: Authed, Path(id): Path<String>, Json(body): Json<RotateBody>) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    let right = match body.dir.as_str() {
+        "right" => true,
+        "left" => false,
+        _ => return Err(ApiError::new(StatusCode::BAD_REQUEST, "bad_settings").with_message("`dir` deve essere left o right".to_string())),
+    };
+    let entry = blocking(move || svc.rotate_image(&id, right)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "image": entry })))
+}
+
 /// Dimensione massima di un file da decodificare (un WAV a 44,1 kHz mono a 16 bit pesa circa 5 MB al minuto).
 pub(crate) const WEFAX_FILE_MAX_BYTES: usize = 200 * 1024 * 1024;
 

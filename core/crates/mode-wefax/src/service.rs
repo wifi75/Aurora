@@ -481,6 +481,15 @@ impl WefaxService {
         store.add(&out, extra)
     }
 
+    /// Ruota una cartina salvata di 90 gradi (`right`: orario, altrimenti antiorario) e la riscrive al posto dell'originale (stesso file e stesso id).
+    /// Larghezza e altezza della voce si scambiano; IOC e righe al minuto restano. L'immagine in ricezione non e' nell'archivio finche' non e' finita.
+    pub fn rotate_image(&self, id: &str, right: bool) -> Result<ImageEntry, WefaxError> {
+        let mut store = lock(&self.inner.store);
+        let img = crate::image_io::decode_png(&store.png(id)?)?;
+        let out = crate::image_io::rotate_quarter(&img, right);
+        store.replace(id, &out)
+    }
+
     /// Decodifica una registrazione (file WAV) come se l'audio arrivasse dalla scheda, il piu' in fretta possibile ma a blocchi e con una pausa
     /// tra l'uno e l'altro. Le cartine vanno nella cronologia anche con «Salva ogni cartina» spento. Con il file in decodifica la ricezione
     /// dal vivo e' sospesa. Torna subito: l'avanzamento si legge in `snapshot().rx` (`decoding_file`, `file_percent`).
@@ -1035,6 +1044,37 @@ mod tests {
         assert_eq!(sost.id, entry.id);
         assert_eq!(svc.images().len(), 2);
         assert!(svc.straighten_image("non-esiste", 10.0, None, false).is_err());
+        let _ = std::fs::remove_dir_all(&data);
+    }
+
+    #[test]
+    fn la_rotazione_di_una_cartina_salvata_scambia_le_misure_e_torna_indietro() {
+        let data = temp("rotazione");
+        let svc = WefaxService::open(&data);
+        // 3 x 2 con un riferimento riconoscibile: ogni pixel diverso
+        let img = GrayImage { width: 3, height: 2, data: vec![1, 2, 3, 4, 5, 6] };
+        let entry = lock(&svc.inner.store).add(&img, EntryExtra { ioc: 576, lpm: 120.0, complete: true, ..EntryExtra::default() }).expect("salva");
+        let leggi = |id: &str| crate::image_io::decode_png(&svc.image_png(id).expect("png")).expect("lettura");
+        let r = svc.rotate_image(&entry.id, true).expect("destra");
+        assert_eq!((r.id.as_str(), r.width, r.height, r.ioc, r.lpm), (entry.id.as_str(), 2, 3, 576, 120.0));
+        assert_eq!(leggi(&entry.id).data, vec![4, 1, 5, 2, 6, 3]);
+        assert_eq!(svc.image_entry(&entry.id).map(|e| (e.width, e.height)), Some((2, 3)));
+        let l = svc.rotate_image(&entry.id, false).expect("sinistra");
+        assert_eq!((l.width, l.height), (3, 2));
+        assert_eq!(leggi(&entry.id), img);
+        svc.rotate_image(&entry.id, false).expect("sinistra");
+        assert_eq!(leggi(&entry.id).data, vec![3, 6, 2, 5, 1, 4]);
+        for _ in 0..3 {
+            svc.rotate_image(&entry.id, false).expect("sinistra");
+        }
+        assert_eq!(leggi(&entry.id), img);
+        for _ in 0..4 {
+            svc.rotate_image(&entry.id, true).expect("destra");
+        }
+        assert_eq!(leggi(&entry.id), img);
+        assert_eq!(svc.images().len(), 1);
+        assert_eq!(svc.rotate_image("non-esiste", true), Err(WefaxError::NotFound));
+        assert_eq!(svc.rotate_image("../index", true), Err(WefaxError::NotFound));
         let _ = std::fs::remove_dir_all(&data);
     }
 }

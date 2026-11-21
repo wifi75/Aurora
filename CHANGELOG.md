@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, «Ruota a sinistra» e «Ruota a destra» nella cartina aperta in grande dalla cronologia: ogni clic gira la cartina di 90 gradi e la salva subito al posto dell'originale (senza conferma), utile per quelle trasmesse di lato; la miniatura si aggiorna.
+
 - WEFAX, barra in alto piu' compatta e leggibile: indicatore della frequenza della radio all'inizio, poi il menu del modo e quello delle stazioni; stato della ricezione come una sigla «RX» che lampeggia; ogni stazione mostra solo il nominativo della sua frequenza (a Pinneberg DDH3 sui 3855, DDK3 sui 7880 e DDK6 sui 13882,5 kHz) e la frequenza scelta e' in giallo; frecce ▲ ▼ piccole accanto al menu; testo leggibile nei temi chiaro e scuro; scheda «Ricezione» senza niente che sporga a destra.
 
 - WEFAX, «Misura inclinazione» anche sull'ultima cartina salvata a ricezione finita (se ne fa una copia raddrizzata, l'originale resta).

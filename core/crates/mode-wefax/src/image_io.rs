@@ -34,6 +34,20 @@ pub fn decode_png(bytes: &[u8]) -> Result<GrayImage, WefaxError> {
     Ok(GrayImage { width: info.width, height: info.height, data: buf })
 }
 
+/// Ruota l'immagine di 90 gradi: `right` in senso orario, altrimenti antiorario. Larghezza e altezza si scambiano.
+pub fn rotate_quarter(img: &GrayImage, right: bool) -> GrayImage {
+    let (w, h) = (img.width as usize, img.height as usize);
+    let mut data = vec![0u8; img.data.len()];
+    // nuova immagine: larghezza h, altezza w
+    for y in 0..h {
+        for x in 0..w {
+            let (nx, ny) = if right { (h - 1 - y, x) } else { (y, w - 1 - x) };
+            data[ny * h + nx] = img.data[y * w + x];
+        }
+    }
+    GrayImage { width: img.height, height: img.width, data }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
