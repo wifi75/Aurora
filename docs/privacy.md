@@ -8,6 +8,12 @@ Dalla 0.11.269 Aurora fa una copia automatica al giorno di impostazioni, log dei
 `copie-automatiche` della stessa cartella dati (restano le ultime 28): resta sul PC, non viene mandata da nessuna parte, e password e
 chiavi dei servizi non ci sono.
 
+Dalla 0.11.327 Aurora registra l'audio di ogni cartina WEFAX ricevuta in un file WAV nella sottocartella `wefaxudio` della cartella dati
+(si cancella dopo 7 giorni di base, impostabile, o subito se la cartina viene scartata; si spegne dalla scheda «Ricezione» del WEFAX): resta sul PC e
+non viene mandato da nessuna parte. Sempre dalla 0.11.327, «Ricevi i QSO da altri log» (spento di base) apre una porta UDP locale
+(di base 12062, solo su questo PC) per ricevere dal tuo programma di log i QSO che ti inoltra: entrano solo nel log di Aurora, non escono verso
+nessun servizio e non vengono rimandati agli altri programmi.
+
 ## Servizi accesi di fabbrica
 
 Dalla versione 0.11.102 questi servizi sono **accesi di fabbrica** e si spengono in qualunque momento:
