@@ -625,12 +625,11 @@ struct LoopState {
     rx_mode_failed: bool,
     tx_mode_failed: bool,
     uplink_last: Option<(u64, f64)>,
-    /// Il ripiego a due VFO e' stato rifiutato: spento da solo.
+    /// Il ripiego a due VFO e' stato rifiutato: fermo fino a `vfo_retry_at` (secondi del passaggio), poi si riprova da solo.
     vfo_failed: bool,
+    vfo_retry_at: f64,
     satmode_tried: bool,
     two_vfo_prev: bool,
-    /// Il ripiego si e' spento da solo: va tolta la spunta nelle impostazioni salvate.
-    disable_two_vfo: bool,
     pass_cache: Option<(u64, f64, Option<Pass>)>,
     path_cache: Vec<(f64, f64)>,
     radio_error: Option<String>,
@@ -715,6 +714,9 @@ pub fn uplink_due(last: Option<(u64, f64)>, hz: u64, t: f64, interval_s: u32, th
     (dt >= f64::from(interval_s) && diff >= 5) || (dt >= 2.0 && diff >= u64::from(threshold_hz))
 }
 
+/// Dopo un rifiuto il ripiego a due VFO si riprova dopo questi secondi.
+const VFO_RETRY_S: f64 = 60.0;
+
 /// La parte radio di un secondo di inseguimento: split o ripiego a due VFO, frequenze, modi. `true` se la ricezione ha funzionato.
 fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: &DopplerPlan, tp: &Transponder, t: f64) -> bool {
     let id = radio.link_id();
@@ -731,6 +733,10 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
         st.satmode_tried = false;
     }
     st.two_vfo_prev = s.uplink_two_vfo;
+    // un rifiuto (Sub spento, un disturbo sul cavo) non vale per sempre: dopo `VFO_RETRY_S` si riprova, con la spunta delle impostazioni intatta
+    if st.vfo_failed && t >= st.vfo_retry_at {
+        st.vfo_failed = false;
+    }
     let two_vfo = s.uplink_two_vfo && !st.vfo_failed;
     let mut ok = true;
     // radio con VFO separati: split acceso una volta; per le frequenze uguali (APRS) non serve
@@ -786,10 +792,10 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
                 }
                 Ok(false) => {}
                 Err(e) => {
-                    tracing::warn!("satelliti: la radio non accetta il ripiego a due VFO ({e}): spento");
+                    tracing::warn!("satelliti: la radio non accetta il ripiego a due VFO ({e}): riprovo tra {VFO_RETRY_S:.0} s");
                     st.vfo_failed = true;
-                    st.disable_two_vfo = true;
-                    st.radio_error = Some(format!("due VFO: {e}. Il ripiego si e' spento da solo: la trasmissione resta da impostare a mano"));
+                    st.vfo_retry_at = t + VFO_RETRY_S;
+                    st.radio_error = Some(format!("due VFO: {e}. La trasmissione resta da impostare a mano, riprovo tra {VFO_RETRY_S:.0} s"));
                 }
             }
         }
@@ -974,14 +980,6 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     let page_open = lock(&inner.seen).is_some_and(|t| t.elapsed() < PAGE_GONE);
     if settings.doppler_on && page_open && now.visible && let (Some(radio), Some(plan), Some(tp)) = (&radio, &now.plan, &transponder) && radio.ready() {
         now.radio_active = drive_radio(radio.as_ref(), st, &settings, plan, tp, t);
-        if st.disable_two_vfo {
-            st.disable_two_vfo = false;
-            let mut saved = lock(&inner.settings);
-            saved.uplink_two_vfo = false;
-            if let Ok(json) = serde_json::to_vec_pretty(&*saved) {
-                let _ = std::fs::write(inner.dir.join("satelliti.json"), json);
-            }
-        }
     } else {
         // lo split acceso per il Doppler si toglie quando il Doppler si spegne, il satellite tramonta o si lascia la pagina
         if st.split_on
@@ -1268,10 +1266,31 @@ mod tests {
             assert!(drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i)), &rs44(), f64::from(i) * 5.0));
         }
         assert_eq!(radio.count("vfo "), 1);
-        assert!(st.vfo_failed && st.disable_two_vfo);
-        assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("due VFO") && e.contains("spento")));
+        assert!(st.vfo_failed);
+        assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("due VFO") && e.contains("riprovo")));
         // la ricezione col Doppler e' continuata
         assert_eq!(radio.count("rx "), 8);
+    }
+
+    /// IC-820H con il Sub spento a meta' passaggio (pacchetto di Vladimir, #83, 2026-11-21): il ripiego si fermava per sempre, e la spunta
+    /// «Trasmissione con due VFO» si toglieva da sola dalle impostazioni salvate, anche dopo aver riacceso il Sub. Ora riprova da solo dopo
+    /// un minuto e, se la radio risponde, la trasmissione torna a seguire il Doppler.
+    #[test]
+    fn il_ripiego_riprova_da_solo_dopo_un_minuto_e_non_toglie_la_spunta() {
+        let spenta = FakeRadio { vfo_err: true, ..FakeRadio::default() };
+        let mut st = LoopState::default();
+        let s = SatSettings { uplink_two_vfo: true, ..SatSettings::default() };
+        drive_radio(&spenta, &mut st, &s, &plan_at(-5.0), &rs44(), 0.0);
+        assert!(st.vfo_failed);
+        // il Sub viene riacceso: prima del minuto non si riprova, dopo si'
+        let accesa = FakeRadio::default();
+        drive_radio(&accesa, &mut st, &s, &plan_at(-4.0), &rs44(), 30.0);
+        assert_eq!(accesa.count("vfo "), 0, "prima del minuto non si tocca la radio");
+        drive_radio(&accesa, &mut st, &s, &plan_at(-3.0), &rs44(), 61.0);
+        assert_eq!(accesa.count("vfo "), 1, "dopo il minuto si riprova");
+        assert!(!st.vfo_failed);
+        assert!(st.radio_error.is_none());
+        assert!(s.uplink_two_vfo);
     }
 
     #[test]

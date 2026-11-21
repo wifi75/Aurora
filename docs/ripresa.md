@@ -10,6 +10,9 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Dopo la 0.11.322, da fare: statistiche dell'uso reale dell'app (segnale ogni 40 minuti con campo «uso», rotta `/v1/utilizzo` del Worker `aurora-rapporti` con segreto, pagina «Applicazione» nel portale Analytics: la parte del portale e' nella sessione «Aurora-portal» con il contratto JSON; serve aggiornare l'informativa privacy) e la cartina WEFAX storta del proprietario (SeaTTY la riceve dritta; ricampionatore escluso con prova, restano la misura della riga in fasatura e il `slant_ppm`); #83 aspetta le prove con `rigctl` di Vladimir.
 
+## In preparazione (su main, NON pubblicata)
+- IC-820H (#83), pacchetto `00A5E732` (AO-7, 0.11.322, 2026-11-21 08:14-08:17): il ripiego a due VFO era rimasto spento dalle 07:34 (rifiuto con il Sub spento) e la spunta si era tolta dalle impostazioni salvate; quindi nessuna scrittura della trasmissione (`I 432143428` non supportato) e il display di trasmissione fermo. Ora `LoopState.vfo_retry_at`: dopo 60 s si riprova da solo e la spunta non si tocca (`mode-sat/src/service.rs`, prova `il_ripiego_riprova_da_solo_dopo_un_minuto_e_non_toglie_la_spunta`). Segnalazione di Vladimir: SAT e SAB accesi, RX 145,951 e TX 445,951 fermo (e' la lettura ripiegata di 300 MHz).
+
 ## Nella 0.11.322 (pubblicata 2026-11-21T08:08:07Z)
 
 - WEFAX come SeaTTY: spettro (`components/wefax/Scope.tsx`, righe rosse su nero/bianco, riga del centro, clic = centro) sopra la cascata `DigiWaterfall` (righello in Hz 1000-3000), al posto della piccola cascata della testata; interruttori AFC (acceso) e SQL con soglia (spento, 30) in testata (`AfcSql.tsx`). Core: `meter.rs` (livello in banda contro fasce di rumore, istogramma della frequenza istantanea), AFC max 150 Hz anche sul tono fisso del nero, SQL parte solo con segnale che cambia e chiude dopo 3 s. Provato solo con segnali sintetici (`tests/ricezione.rs`); pagina NON vista a schermo (anteprima senza motore).
