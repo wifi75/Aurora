@@ -517,7 +517,7 @@ impl Decoder {
         self.lpm_set();
         if !restart && slant_delta != 0.0 && self.image.is_some() {
             let applied = slant_delta * 1e-6 * self.width as f64;
-            self.straighten_written(applied, self.slant_base_row);
+            self.straighten_written(applied, self.slant_base_row, 0.0);
         }
     }
 
@@ -1137,18 +1137,21 @@ impl Decoder {
         let base = self.smpl_per_lin / (1.0 + (self.fixed_ppm() + old) * 1e-6);
         self.auto_ppm = new;
         self.set_line_len(base);
-        self.straighten_written(applied, now);
+        let t_prev = self.last_slant_pos;
+        self.straighten_written(applied, now, t_prev);
+        self.last_slant_pos = now - self.image.as_ref().map_or(0.0, |i| i.row_origin as f64);
     }
 
-    /// Raddrizza le righe gia' scritte di una correzione di `applied` pixel per riga decisa all'istante di riga `now` (rispetto alla prima):
-    /// un pixel al tempo `tau` (riga + colonna / larghezza) deve andare a destra di (adesso - max(tau, ultima correzione)) * `applied`, cosi'
-    /// le righe gia' scritte combaciano con quelle nuove (il periodo sbagliato inclina e anche stira la riga). Serve alla stima automatica e
-    /// alla correzione a mano a immagine in corso.
-    fn straighten_written(&mut self, applied: f64, now: f64) {
+    /// Raddrizza le righe gia' scritte di una correzione di `applied` pixel per riga decisa all'istante di riga `now`: un pixel al tempo `tau`
+    /// (riga + colonna / larghezza, dalla prima riga dell'immagine) deve andare a destra di (adesso - max(tau, `lower`)) * `applied`, cosi' le
+    /// righe gia' scritte combaciano con quelle nuove (il periodo sbagliato inclina e anche stira la riga). `lower` e' il tempo da cui la
+    /// correzione vale: la stima automatica passa l'istante dell'ultima correzione (le righe prima sono gia' dritte e si spostano insieme),
+    /// la correzione a mano passa 0 (e' un errore di orologio: vale per tutte le righe gia' scritte, anche dopo molte correzioni di fila).
+    fn straighten_written(&mut self, applied: f64, now: f64, lower: f64) {
         let wi = self.width;
         let shift = self.shift;
         let Some(img) = self.image.as_mut() else { return };
-        let (t_now, t_prev) = (now - img.row_origin as f64, self.last_slant_pos);
+        let (t_now, t_prev) = (now - img.row_origin as f64, lower);
         let rows = ((t_now.floor().max(0.0)) as usize + 1).min(img.rows_alloc);
         let sh_at = |r: usize, c: usize| -> f64 {
             let col = (c as i64 - i64::from(shift)).rem_euclid(wi as i64) as f64;
@@ -1169,7 +1172,6 @@ impl Decoder {
             }
         }
         img.resend = true;
-        self.last_slant_pos = t_now;
     }
 
     /// Deriva orizzontale in pixel per riga (positivo: le strutture vanno a destra scendendo) dalle righe `from..to`: mediana degli
