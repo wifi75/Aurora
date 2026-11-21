@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.323 - 2026-11-21
+
 - WEFAX: inclinazione automatica dal contenuto dell'immagine (impostazione «Inclinazione automatica», accesa di base). Ogni 40 righe, fino alla 400, il ricevitore confronta righe distanti 16 con la correlazione incrociata (spostamento fino a 5000 ppm, picco a sotto-pixel, solo righe con contrasto e picco netto), prende la mediana come deriva per riga e corregge il periodo di riga (somma alla correzione a mano e alla fasatura, massimo 5000 ppm); le righe gia' ricevute si raddrizzano e si ristirano. Con una cartina sintetica a +1500, -1500 e +300 ppm la correlazione con l'originale passa da 0,08-0,17 a 0,93-0,94 (0,9475 senza errore), senza errore non cambia niente e su immagini uniformi o rumore non si muove nulla. Provato solo con segnale sintetico.
 - WEFAX: l'elenco delle stazioni si apre da solo sull'ultima frequenza impostata, la evidenzia e la porta al centro (prima il menu del sistema la lasciava in fondo); frecce, Invio, Esc e un clic fuori funzionano come in un menu. Le miniature delle cartine ricevute mostrano la cartina intera (non piu' un ritaglio ingrandito) e le barre di scorrimento della pagina sono sottili e nei colori del tema.
 - Informativa privacy (`docs/privacy.md`) e README: dalla 0.11.323 il segnale delle installazioni aperte si ripete circa ogni 40 minuti con un livello d'uso (0 ferma, 1 ricevuto, 2 trasmesso o QSO), sempre senza nominativi e senza indirizzi.
