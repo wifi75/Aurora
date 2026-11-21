@@ -4,7 +4,7 @@
 
 use contest::cartelle::{Origine, carica, data_compatta};
 use contest::elenco::{leggi_dominio, leggi_macro};
-use contest::punti_testo::{InfoPaese, QsoTesto, qso_del_contest, valuta};
+use contest::punti_testo::{InfoPaese, QsoTesto, cabrillo, qso_del_contest, valuta};
 use dxcc::DxccDb;
 use std::path::{Path, PathBuf};
 
@@ -26,7 +26,7 @@ fn database() -> DxccDb {
 fn paese_di(db: &DxccDb, call: &str) -> Option<InfoPaese> {
     let l = db.lookup(call)?;
     let e = db.entity(l.entity);
-    Some(InfoPaese { dxcc: e.prefix.clone(), continente: e.continent.clone(), cq: l.cq_zone, itu: l.itu_zone })
+    Some(InfoPaese { dxcc: e.prefix.clone(), continente: e.continent.clone(), cq: l.cq_zone, itu: l.itu_zone, wae: l.wae.map(|w| db.entity(w).prefix.clone()).unwrap_or_default() })
 }
 
 #[test]
@@ -145,6 +145,13 @@ fn le_prove_danno_il_punteggio_atteso() {
             assert_eq!(v.punti, punti, "punti: {caso}");
             assert_eq!(trovati, molt, "moltiplicatori: {caso}");
         }
+        // Cabrillo: il nome ufficiale dichiarato in `[contest] cabrillo_contest`, il punteggio e una riga per QSO
+        let f = cabrillo(&contesto, &chiamata_propria, &valutati, &tot, "0.0.0", &[]);
+        if !c.meta.cabrillo_contest.is_empty() {
+            assert!(f.contains(&format!("CONTEST: {}\r\n", c.meta.cabrillo_contest)), "{nome}: Cabrillo senza CONTEST: {}\n{f}", c.meta.cabrillo_contest);
+        }
+        assert!(f.contains(&format!("CLAIMED-SCORE: {}\r\n", tot.punteggio)), "{nome}: Cabrillo senza il punteggio");
+        assert_eq!(f.matches("\r\nQSO: ").count(), valutati.len(), "{nome}: righe QSO del Cabrillo");
         // totali
         let t = atteso_vista;
         let intero = |k: &str| t.get(k).and_then(toml::Value::as_integer);

@@ -1,0 +1,134 @@
+# CQ WW DX CW Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 su https://www.cqww.com/rules/ («The 2026 CQ World-Wide DX Contest») e https://www.cqww.com/cabrillo.htm.
+
+[contest]
+id = "cq-ww-cw"
+nome = "CQ WW DX CW Contest"
+alias = ["CQ WW DX Contest"]      # nome interno del vecchio file CW+SSB: la cartella CW lo sostituisce, la fonia ha la sua cartella
+organizzatore = "CQ Magazine"
+sito = "https://www.cqww.com"
+regolamento_url = "https://www.cqww.com/rules/"
+cabrillo_contest = "CQ-WW-CW"
+note = "Solo CW, sei bande da 160 a 10 metri. Scambio: RST + zona CQ. Moltiplicatori: zone CQ e paesi DXCC/WAE per banda."
+
+[edizione]
+# Ultimo fine settimana pieno di novembre, sabato 00:00 - domenica 23:59:59 UTC (48 ore). Il formato conta solo l'ennesimo
+# fine settimana: 4 vale per il 2026 e il 2027 (scritti sotto); negli anni con cinque fine settimana pieni (2025, 2031) va scritta la data.
+mese = 11
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+invio_log_giorni = 2              # entro 48 ore dalla fine (2026: 1 dicembre 23:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-11-28T00:00:00Z"
+fine = "2026-11-29T23:59:59Z"
+fonte = "https://www.cqww.com/rules/ (letto il 2026-11-21): «CW: November 28-29, 2026»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-11-27T00:00:00Z"
+fine = "2027-11-28T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di novembre"
+confermata = false
+
+[bande]
+ammesse = ["160 m", "80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["cw"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+nota = "Proposta dal database dei paesi; vale quella mandata dal corrispondente (un W6 manda 03)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { cw = "599" }
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+nota = "La propria zona CQ (IO91wm = 14); si scrive in «Numero di partenza» senza incremento."
+
+[doppi]
+per = "banda"                     # una volta per banda; i doppi si tolgono senza penalita'
+
+[categorie]
+operatore = ["SO", "SOA", "MS", "M2", "MM", "MD"]   # Single Op (anche single band), Single Op Assisted, Multi-Single, Multi-Two, Multi-Multi, Multi-Distributed
+potenza = ["QRP", "LOW", "HIGH"]  # 5 W, 100 W, 1500 W
+sovrapposizioni = ["CLASSIC", "ROOKIE", "YOUTH"]
+altre = ["Checklog"]
+
+[categorie.ms]
+potenza = ["LOW", "HIGH"]         # un segnale di run per 10 minuti + un segnale per i moltiplicatori su un'altra banda
+
+[categorie.m2]
+potenza = ["HIGH"]                # due segnali su bande diverse, 8 cambi di banda per ora
+
+[categorie.mm]
+potenza = ["HIGH"]
+
+[cabrillo]
+contest = "CQ-WW-CW"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-ASSISTED", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY", "LOCATION"]
+facoltativi = ["CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "CATEGORY-STATION", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_band = ["ALL", "160M", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["CW"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+category_overlay = ["CLASSIC", "ROOKIE", "YOUTH"]
+invio = "solo caricamento web: https://www.cqww.com/logcheck/ (LOCATION: lo stato per gli USA, DX per gli altri)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Zone CQ per banda", en = "CQ zones by band" }
+ordine = 1
+moltiplicatore = "zona_cq"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

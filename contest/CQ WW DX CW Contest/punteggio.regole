@@ -1,0 +1,10 @@
+; CQ WW DX CW Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; I moltiplicatori li da' punteggio.rhai (la zona viene dallo scambio ricevuto, non dal database dei paesi).
+;
+; bands: 160, 80, 40, 20, 15, 10 m (regolamento, «Bands»).
+; points: stesso paese 0 (ma vale per zona e paese); fra paesi diversi del Nord America 2; stesso continente 1; altro continente 3.
+;   L'ordine conta: lo stesso paese viene prima dell'eccezione del Nord America.
+; mult (usata solo se lo script manca o fallisce): zone CQ e paesi per banda, zone dal database dei paesi.
+bands=160,80,40,20,15,10
+points=same_dxcc=0; my_cont:NA&cont:NA=2; same_cont=1; any=3
+mult=cq/band; dxcc/band
