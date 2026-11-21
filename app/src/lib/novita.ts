@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.324',
-    released: '2026-11-21T13:30:00Z',
+    released: '2026-11-21T11:06:04Z',
     kind: 'changed',
     title: [
       'WEFAX: pagina rifatta a schede e centrata',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.324',
-    released: '2026-11-21T13:30:00Z',
+    released: '2026-11-21T11:06:04Z',
     kind: 'new',
     title: [
       'WEFAX: ricezione più precisa',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.324',
-    released: '2026-11-21T13:30:00Z',
+    released: '2026-11-21T11:06:04Z',
     kind: 'new',
     title: [
       'WEFAX: inclinazione anche sulle cartine salvate',
@@ -86,7 +86,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.324',
-    released: '2026-11-21T13:30:00Z',
+    released: '2026-11-21T11:06:04Z',
     kind: 'new',
     title: [
       'WEFAX: decodifica da file WAV',
@@ -107,7 +107,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.324',
-    released: '2026-11-21T13:30:00Z',
+    released: '2026-11-21T11:06:04Z',
     kind: 'fixed',
     title: [
       'Pagina bianca in Chrome, ricarica, aggiornamento',
