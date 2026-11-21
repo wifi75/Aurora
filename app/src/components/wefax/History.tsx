@@ -41,11 +41,11 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
               <span>{`IOC ${img.ioc} · ${img.width}×${img.height}`}</span>
             </span>
             <span className="wefax-thumb-tools">
-              <a className="glass sstv-btn" href={wefaxImageUrl(img.id)} download={img.file}>
-                {t('wefax.hist.download')}
+              <a className="glass sstv-btn wefax-thumb-icon" href={wefaxImageUrl(img.id)} download={img.file} title={t('wefax.hist.download')} aria-label={t('wefax.hist.download')}>
+                ⬇
               </a>
-              <button type="button" className="glass sstv-btn sstv-btn--danger" onClick={() => void remove(img)}>
-                {t('wefax.hist.delete')}
+              <button type="button" className="glass sstv-btn sstv-btn--danger wefax-thumb-icon" onClick={() => void remove(img)} title={t('wefax.hist.delete')} aria-label={t('wefax.hist.delete')}>
+                ✕
               </button>
             </span>
           </li>

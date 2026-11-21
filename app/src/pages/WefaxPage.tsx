@@ -211,9 +211,12 @@ function WefaxBody({ solo }: { solo: boolean }) {
             />
             <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
           </div>
-          <Controls snap={data} onChanged={refresh} onListen={onListen} />
-          <div className="wefax-hist-row">
-            <History images={images.data ?? []} onChanged={refreshImages} />
+          {/* a destra: sopra le cartine ricevute (miniature con pulsanti piccoli, un clic le apre in grande), sotto i comandi */}
+          <div className="wefax-right">
+            <div className="wefax-hist-row">
+              <History images={images.data ?? []} onChanged={refreshImages} />
+            </div>
+            <Controls snap={data} onChanged={refresh} onListen={onListen} />
           </div>
         </div>
       ) : null}
