@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- PSK31 e PSK63, finestra di ricezione pulita come la lista «Segnali»: con l'AFC acceso la ricezione si aggancia da sola alla portante della stazione piu' vicina alla bandierina (entro ±15 Hz in PSK31, ±30 in PSK63), la segue nella deriva e ci resta anche con una stazione vicina piu' forte; prima, con la bandierina fuori di 8 Hz o piu' in PSK31, l'AFC andava dalla parte sbagliata e usciva solo spazzatura. Lo Snap in PSK porta il clic al centro del segnale e non piu' su una delle due righe laterali (a ±16 Hz in PSK31, ±31 in PSK63). Con l'interruttore Squelch spento il PSK usa comunque la soglia di base 15, come la lista: nelle pause e nel solo rumore non si scrive piu' spazzatura (per aprirlo del tutto, soglia a 0).
+
 - WEFAX, dopo una cartina finita con il tono di fine, una trasmissione con l'altro IOC che comincia subito (576 poi 288 o al contrario) si riconosce dal tono d'inizio e si riceve: lo strascico del tono di fine non fa piu' partire la fasatura a vuoto ne' spostare la sottoportante.
 
 - WEFAX, «Ruota a sinistra» e «Ruota a destra» nella cartina aperta in grande dalla cronologia: ogni clic gira la cartina di 90 gradi e la salva subito al posto dell'originale (senza conferma), utile per quelle trasmesse di lato; la miniatura si aggiorna.
