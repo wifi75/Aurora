@@ -1,0 +1,11 @@
+; WAE DX Contest RTTY - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento DARC 2025 (date 2026).
+; Ammissione e moltiplicatori li da' punteggio.rhai (tutti lavorano tutti, elenco WAE, aree numeriche).
+;
+; bands: 80, 40, 20, 15, 10 m.
+; points: 1 per QSO (il punteggio conta i QSO + i QTC, punto 9).
+; mult (ripiego se lo script manca o fallisce): paesi DXCC per banda, aree al posto del paese per W, VE, VK, ZL, ZS, JA, BY, PY, UA9.
+; mult_band: pesi dei moltiplicatori per banda (punto 7), validi anche per quelli dello script.
+bands=80,40,20,15,10
+points=any=1
+mult=dxcc/band/except:K,VE,VK,ZL,ZS,JA,BY,PY,UA9; area:K,VE,VK,ZL,ZS,JA,BY,PY,UA9/band
+mult_band=80:4,40:3,20:2,15:2,10:2

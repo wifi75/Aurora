@@ -1,0 +1,84 @@
+[Macros]
+nItems=16
+
+
+Name0=F1
+Label0=AutoCQ
+Text0=<AUTOCQ><ACQDELAY:seconds>
+
+Name1=F2
+Label1=QRZ?
+Text1=<TX>QRZ QRZ  de <MYCALL> k <RXANDCLEAR>
+
+Name2=F3
+Label2=H/M
+Text2=<TX><FIXSTARTTIME> <CALL> <GA> TU <RSTS> <NRS>  <NRS>  <NRS>  <CALL><RXANDCLEAR>
+
+Name3=F5
+Label3=CFM QSO
+Text3=<TX> CFM TU <CALL> de <MYCALL> 73 QRZ?<SAVEQSO><RXANDCLEAR><AUTOCQ><ACQDELAY:seconds> <CR><LF><CR><LF>
+
+Name4=F6
+Label4=Prev Nr
+Text4=<TX><CURSOR:TX> <CRLF> <PREVNRS>  <PREVNRS>  <PREVNRS>  <PREVNRS>  <PREVNRS>  QSL?<RXANDCLEAR>
+
+Name5=F7
+Label5=CallMyCall
+Text5=<TX> <CALL> <CALL> de <MYCALL> <MYCALL> <RXANDCLEAR>
+
+
+Name6=F8
+Label6=MY NR AG
+Text6=<TX> <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  de <MYCALL><RXANDCLEAR>
+
+Name7=F9
+Label7=QSO B4
+Text7=<TX>  <CALL> de  <MYCALL> QSO B4  ON  <QSOBEFORETIME> <RXANDCLEAR>
+
+Name8=F10
+Label8=AGAIN
+Text8=<TX>AGN AGN k..<RXANDCLEAR>
+
+Name9=AutoCqText
+Label9=AutoCQ
+Text9=<TX> CQ WAEDC TEST de <MYCALL> <MYCALL> <MYCALL> CQ <RXANDCLEAR>
+
+Name10=F11
+Label10=QTC-RX
+Text10=<QTCREAD>
+
+Name11=F12
+Label11=QTC-TX
+Text11=<QTCSEND>
+
+Name12=Ctrl-F12
+Label12=SRI NO QTC
+Text12=<TX> SRI, No QTC. 73<RXANDCLEAR>
+
+Name13=Ctrl-F11
+Label13=Have you QTC
+Text13=<TX> Have you QTC for me ?<RXANDCLEAR>
+
+Name14=Ctrl-F10
+Label14=I Have QTC
+Text14=<TX> I have QTC for you. You ready?<RXANDCLEAR>
+
+BkColor0=5748297
+BkColor1=2377947
+BkColor2=8421376
+BkColor3=65535
+BkColor4=4227327
+BkColor5=8454143
+BkColor6=4210816
+BkColor7=8421376
+BkColor8=65280
+BkColor9=255
+BkColor10=8421631
+BkColor11=255
+BkColor12=12615935
+BkColor13=33023
+BkColor14=65280
+Name15=F4
+Label15=AG RPRT
+Text15=<TX>  AGN AGN RPRT RPRT <CALL> de <MYCALL> K <RXANDCLEAR>
+BkColor15=255

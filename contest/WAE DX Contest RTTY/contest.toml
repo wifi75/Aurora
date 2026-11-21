@@ -1,0 +1,123 @@
+# WAE DX Contest RTTY - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 su https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/
+# («Worked All Europe DX Contest - Rules 2025», pagina del 2025-06-17 con le date del 2026). QTC: docs/contest-qtc.md.
+
+[contest]
+id = "wae-rtty"
+nome = "WAE DX Contest RTTY"
+organizzatore = "DARC (Deutscher Amateur-Radio-Club)"
+sito = "https://www.darc.de"
+regolamento_url = "https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/"
+cabrillo_contest = "DARC-WAEDC-RTTY"
+qtc = 2                           # tutti mandano e ricevono QTC, solo fra continenti diversi; 10 in tutto fra due stazioni
+note = "Solo RTTY, 80-10 m, 48 ore (36 per il singolo operatore). Tutti lavorano tutti. Scambio: RST + numero. 1 punto per QSO e per QTC; moltiplicatori per banda pesati (80 m x4, 40 m x3, altre x2)."
+
+[edizione]
+# Secondo fine settimana pieno di novembre, sabato 00:00 - domenica 23:59 UTC.
+mese = 11
+fine_settimana_pieno = 2
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+ore_massime = 36                  # singolo operatore: 36 ore su 48, pause di almeno 60 minuti senza QSO ne' QTC
+pausa_minima_min = 60
+invio_log_giorni = 8              # sette giorni dopo la fine (2026: 22 novembre 23:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-11-14T00:00:00Z"
+fine = "2026-11-15T23:59:59Z"
+fonte = "https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/ (letto il 2026-11-21)"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-11-13T00:00:00Z"
+fine = "2027-11-14T23:59:59Z"
+fonte = "calcolata: secondo fine settimana pieno di novembre"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+nota = "Se il corrispondente non manda il numero si scrive 000 (il QSO vale solo se porta un moltiplicatore nuovo)."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+
+[doppi]
+per = "banda"                     # ogni stazione una volta per banda
+
+[categorie]
+operatore = ["SINGLE-OP", "MULTI-OP"]
+potenza = ["LOW", "HIGH"]         # fino a 100 W, oltre 100 W (singolo operatore)
+altre = ["SWL"]
+
+[categorie.multi-op]
+potenza = ["HIGH"]                # cambi di banda ogni 10 minuti; altri trasmettitori solo per i moltiplicatori su altre bande
+
+[cabrillo]
+contest = "DARC-WAEDC-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "SPECIFIC", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["HIGH", "LOW"]
+category_mode = ["RTTY"]
+invio = "caricamento sulle pagine di dxhf2.darc.de entro sette giorni; CLUB per la classifica dei club, SPECIFIC con il DOK per le stazioni tedesche; righe QTC: dopo le righe QSO"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi e aree per banda", en = "Countries and call areas by band" }
+ordine = 1
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "qtc"
+titolo = { it = "QTC", en = "QTC" }
+ordine = 2
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori", "qtc"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "qtc", "moltiplicatori", "punteggio_finale"]

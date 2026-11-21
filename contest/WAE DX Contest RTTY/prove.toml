@@ -1,0 +1,256 @@
+# WAE DX Contest RTTY - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento DARC 2025 (https://www.darc.de/der-club/referate/conteste/wae-dx-contest/en/wae-rules/).
+# Due punti di vista: [prova] e' una stazione italiana (europea), [[altra_stazione]] una stazione degli Stati Uniti.
+# Nominativi di fantasia. Moltiplicatori: valore@modo (per banda, con il peso della banda nei totali: 80 m x4, 40 m x3, altre x2).
+# `qtc` nei totali: QTC aggiunti al punteggio come quelli salvati dalla finestra QTC (1 punto ciascuno).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2026-11-14"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["W1@RTTY"], motivo = "1 punto; area W1 su 20 m (peso 2)" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "in RTTY tutti lavorano tutti: Germania (elenco WAE)" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0015"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "stesso paese: il regolamento non lo esclude (da verificare)" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0020"
+nominativo = "IT9ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["IT9@RTTY"], motivo = "Sicilia, paese WAE a parte" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "0025"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+[[qso]]
+n = 6
+banda = 80
+modo = "RTTY"
+freq_khz = 3586
+ora_utc = "0030"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA1@RTTY"], motivo = "area JA1 su 80 m (peso 4)" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14087
+ora_utc = "0035"
+nominativo = "W1XYZ"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "area W1 gia' presa" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "RTTY"
+freq_khz = 7048
+ora_utc = "0040"
+nominativo = "VU2ABC"
+rst_inviato = "599"
+scambio_inviato = "008"
+rst_ricevuto = "599"
+scambio_ricevuto = "008"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["VU@RTTY"], motivo = "India su 40 m (peso 3)" }
+
+[[qso]]
+n = 9
+banda = 40
+modo = "RTTY"
+freq_khz = 7049
+ora_utc = "0045"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "009"
+rst_ricevuto = "599"
+scambio_ricevuto = "009"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "Germania su 40 m (peso 3)" }
+
+[[qso]]
+n = 10
+banda = 30
+modo = "RTTY"
+freq_khz = 10150
+ora_utc = "0050"
+nominativo = "DL2ABC"
+rst_inviato = "599"
+scambio_inviato = "010"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1,2,3,4,6,7,8,9 = 8; doppi 1 (n. 5); non ammessi 1 (n. 10)
+#   punti: 8; QTC mandati e ricevuti: 4
+#   moltiplicatori pesati: W1 x2 + DL x2 + I x2 + IT9 x2 + JA1 x4 + VU x3 + DL x3 = 18
+#   punteggio = (8 + 4) x 18 = 216
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 1
+punti = 8
+moltiplicatori = 18
+qtc = 4
+punteggio = 216
+
+[[altra_stazione]]
+nominativo_proprio = "K1XYZ"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0205"
+nominativo = "W6ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["W6@RTTY"], motivo = "stesso paese, area W6 (da verificare)" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0210"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "002"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "Germania" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0215"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["VE3@RTTY"], motivo = "area VE3" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 15
+modo = "RTTY"
+freq_khz = 21084
+ora_utc = "0220"
+nominativo = "JA1ABC"
+rst_inviato = "599"
+scambio_inviato = "004"
+rst_ricevuto = "599"
+scambio_ricevuto = "004"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["JA1@RTTY"], motivo = "area JA1 su 15 m" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 80
+modo = "RTTY"
+freq_khz = 3585
+ora_utc = "0225"
+nominativo = "PY1ABC"
+rst_inviato = "599"
+scambio_inviato = "005"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["PY1@RTTY"], motivo = "area PY1 su 80 m (peso 4)" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7046
+ora_utc = "0230"
+nominativo = "ZS6ABC"
+rst_inviato = "599"
+scambio_inviato = "006"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["ZS6@RTTY"], motivo = "area ZS6 su 40 m (peso 3)" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14087
+ora_utc = "0235"
+nominativo = "LU1ABC"
+rst_inviato = "599"
+scambio_inviato = "007"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["LU@RTTY"], motivo = "Argentina: paese senza aree" }
+
+# Totali (a mano): 7 QSO; punti 7; moltiplicatori W6 x2 + DL x2 + VE3 x2 + JA1 x2 + PY1 x4 + ZS6 x3 + LU x2 = 17; 7 x 17 = 119
+[altra_stazione.atteso]
+qso_ammessi = 7
+doppi = 0
+non_ammessi = 0
+punti = 7
+moltiplicatori = 17
+punteggio = 119

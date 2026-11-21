@@ -1,0 +1,85 @@
+[Macros]
+nItems=16
+
+
+Name0=F1
+Label0=AutoCQ
+Text0=<AUTOCQ><ACQDELAY:seconds>
+
+Name1=F2
+Label1=QRZ?
+Text1=<TX>QRZ QRZ  de <MYCALL> k <RXANDCLEAR>
+
+Name2=F3
+Label2=H/M
+Text2=<TX><FIXSTARTTIME> <CALL> <GA> TU <RSTS> <NRS>  <NRS>  <NRS>  <CALL><RXANDCLEAR>
+
+Name3=F4
+Label3=AG RPRT
+Text3=<TX>  AGN AGN RPRT RPRT <CALL> de <MYCALL> K <RXANDCLEAR>
+
+Name4=F6
+Label4=Prev Nr
+Text4=<TX><CURSOR:TX> <CRLF> <PREVNRS>  <PREVNRS>  <PREVNRS>  <PREVNRS>  <PREVNRS>  QSL?<RXANDCLEAR>
+
+Name5=F8
+Label5=MY NR AG
+Text5=<TX> <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  de <MYCALL><RXANDCLEAR>
+
+
+Name6=F9
+Label6=QSO B4
+Text6=<TX>  <CALL> de  <MYCALL> QSO B4  ON  <QSOBEFORETIME> <RXANDCLEAR>
+
+Name7=F10
+Label7=AGAIN
+Text7=<TX>AGN AGN k..<RXANDCLEAR>
+
+Name8=AutoCqText
+Label8=AutoCQ
+Text8=<TX> CQ WAEDC TEST de <MYCALL> <MYCALL> <MYCALL> CQ <RXANDCLEAR>
+
+Name9=F12
+Label9=QTC-TX
+Text9=<QTCSEND>
+
+Name10=Ctrl-F12
+Label10=SRI NO QTC
+Text10=<TX> SRI, No QTC. 73<RXANDCLEAR>
+
+Name11=Ctrl-F11
+Label11=Have you QTC
+Text11=<TX> Have you QTC for me ?<RXANDCLEAR>
+
+Name12=Ctrl-F10
+Label12=I Have QTC
+Text12=<TX> I have QTC for you. You ready?<RXANDCLEAR>
+
+Name13=F5
+Label13=CFM QSO
+Text13=<TX> CFM TU <CALL> de <MYCALL> 73 QRZ?<SAVEQSO><RXANDCLEAR><AUTOCQ><ACQDELAY:seconds> <CR><LF><CR><LF>
+
+Name14=F7
+Label14=CallMyCall
+Text14=<TX> <CALL> <CALL> de <MYCALL> <MYCALL> <RXANDCLEAR>
+
+Name15=F11
+Label15=QTC-RX
+Text15=<QTCREAD>
+
+BkColor0=5748297
+BkColor1=2377947
+BkColor2=8421376
+BkColor3=255
+BkColor4=4227327
+BkColor5=4210816
+BkColor6=8421376
+BkColor7=65280
+BkColor8=255
+BkColor9=255
+BkColor10=12615935
+BkColor11=33023
+BkColor12=65280
+BkColor13=65535
+BkColor14=8454143
+BkColor15=8421631
