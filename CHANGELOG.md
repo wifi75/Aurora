@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti, mappa: passando da FT8 ai Satelliti non compare piu' per un attimo la mappa semplice prima della Terra: la foto gia' caricata resta in memoria tornando sulla pagina e, mentre la prima volta carica, si vede il fondo mare scuro; la mappa semplice resta solo se la foto non si carica.
 - Satelliti, mappa: girando la rotella la foto non appare piu' sgranata al primo movimento (le copie ridotte della Terra si preparano subito dopo il caricamento, invece di disegnare dalla foto intera in qualita' bassa).
 - Satelliti, mappa: dove e' notte la Terra di giorno resta visibile, scurita da un velo, con le luci delle citta' sommate sopra (prima la foto delle luci copriva tutto: coste e rilievi sparivano e con lo zoom sembrava sgranata).
 - Satelliti, mappe: tre Terre della NASA tra cui scegliere (tutte a 8192 x 4096 px, agosto 2004): «Terra (satellite NASA)» con rilievo e fondali marini, di base e scelta da «Automatica» (non piu' «Contour HiRes»), «Terra (NASA, con rilievo)» e «Terra (NASA, solo colori)». Nomi riservati `:terra`, `:terra-rilievo`, `:terra-base`. La notte resta la foto delle luci delle citta'.

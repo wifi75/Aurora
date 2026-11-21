@@ -224,6 +224,27 @@ const closePhoto = (p: Photo): void => {
   if ('close' in p) p.close();
 };
 
+/**
+ * Le foto gia' decodificate restano in memoria anche quando si lascia la pagina (tornando dai Satelliti la mappa e' subito pronta, senza ripassare dalla
+ * mappa semplice): una sola foto del giorno alla volta (si chiude quella di un'altra Terra appena se ne chiede una nuova) e la notte.
+ */
+const photoStore = new Map<string, Promise<Photo>>();
+function getPhoto(url: string, keep: readonly string[]): Promise<Photo> {
+  for (const [u, p] of photoStore) {
+    if (!keep.includes(u)) {
+      photoStore.delete(u);
+      void p.then(closePhoto, () => undefined);
+    }
+  }
+  let have = photoStore.get(url);
+  if (!have) {
+    have = fetchPhoto(url);
+    photoStore.set(url, have);
+    have.catch(() => photoStore.delete(url));
+  }
+  return have;
+}
+
 /** Quante ricostruzioni costose (foto ridotte, notte mascherata, mappa vettoriale) sono state fatte: lo mostra la strumentazione. */
 let buildCount = 0;
 
@@ -355,6 +376,8 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'bathy', borders 
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [countries, setCountries] = useState<FeatureCollection | null>(null);
   const [photos, setPhotos] = useState<{ day: Photo; night: Photo } | null>(null);
+  // la foto non si e' potuta caricare: solo allora si ripiega sulla mappa semplice (finche' carica si vede il fondo mare)
+  const [photosFailed, setPhotosFailed] = useState(false);
   type VectorBase = { w: number; dpr: number; bucket: number; res: number; canvas: HTMLCanvasElement } | null;
   const base = useRef<VectorBase>(null);
   const bordersBase = useRef<VectorBase>(null);
@@ -595,26 +618,19 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'bathy', borders 
     }
     let alive = true;
     const urls = terraUrls(terraVariant);
-    void Promise.all([fetchPhoto(urls.day), fetchPhoto(urls.night)]).then(
+    const keep = [urls.day, urls.night];
+    setPhotosFailed(false);
+    void Promise.all([getPhoto(urls.day, keep), getPhoto(urls.night, keep)]).then(
       ([day, night]) => {
-        if (!alive) {
-          closePhoto(day);
-          closePhoto(night);
-          return;
-        }
-        setPhotos({ day, night });
+        if (alive) setPhotos({ day, night });
       },
-      () => undefined,
+      () => {
+        if (alive) setPhotosFailed(true);
+      },
     );
     return () => {
       alive = false;
-      setPhotos((p) => {
-        if (p) {
-          closePhoto(p.day);
-          closePhoto(p.night);
-        }
-        return null;
-      });
+      setPhotos(null);
     };
   }, [terra, terraVariant]);
   const photoReady = terra && photos !== null;
@@ -843,7 +859,7 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'bathy', borders 
       drawWorld(levelImage(pc.day, photos.day, wanted, moving));
       veil = false;
     } else if (image) drawWorld(image);
-    else {
+    else if (!terra || photosFailed) {
       const bc = vectorLayer(base, false);
       if (bc) drawWorld(bc);
     }
@@ -1078,7 +1094,7 @@ export function SatMap({ mapUrl, terra = false, terraVariant = 'bathy', borders 
   // cambiano i dati (non la vista): si ridisegna subito (con il canvas ridimensionato il disegno sarebbe cancellato)
   useEffect(() => {
     ctl.paintNow();
-  }, [ctl, width, image, countries, photos, photoReady, borders, night, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, trackPoly]);
+  }, [ctl, width, image, countries, photos, photoReady, terra, photosFailed, borders, night, sun.lat, sun.lon, moon.lat, moon.lon, observer, stationLabel, positions, selected, trackPoly]);
 
   /** Il satellite sotto il punto (x, y) del canvas, tenendo conto della ripetizione del mondo. */
   const pick = (x: number, y: number): number | null => {
