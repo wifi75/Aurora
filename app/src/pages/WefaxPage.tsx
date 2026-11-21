@@ -179,24 +179,28 @@ function WefaxBody({ solo }: { solo: boolean }) {
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
       {data ? (
         <div className="wefax-body">
-          {/* a sinistra: le cartine ricevute per tutta l'altezza (miniature intere, un clic le apre in grande, pulsanti piccoli per scaricare e cancellare) */}
-          <div className="wefax-hist-row">
-            <History images={images.data ?? []} onChanged={refreshImages} />
-          </div>
-          {/* al centro: la cartina in arrivo, alta quanto la pagina */}
           <div className="wefax-main">
+            {/* in alto: la cartina in arrivo */}
             <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
+            {/* sotto, diviso in due alla stessa altezza: a sinistra spettro e cascata, a destra le cartine ricevute (miniature intere, un clic le apre in grande, pulsanti piccoli per scaricare e cancellare) */}
+            <div className="wefax-band">
+              <div className="wefax-band-scope">
+                <WefaxScope
+                  centerHz={data.settings.center_hz}
+                  shiftHz={data.settings.shift_hz}
+                  afcHz={data.settings.afc ? (data.rx.afc_hz ?? 0) : 0}
+                  onCenter={(hz) => {
+                    if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
+                  }}
+                />
+              </div>
+              <div className="wefax-band-hist">
+                <History images={images.data ?? []} onChanged={refreshImages} />
+              </div>
+            </div>
           </div>
-          {/* a destra: spettro e cascata, sotto i comandi */}
+          {/* a destra: i comandi */}
           <div className="wefax-right">
-            <WefaxScope
-              centerHz={data.settings.center_hz}
-              shiftHz={data.settings.shift_hz}
-              afcHz={data.settings.afc ? (data.rx.afc_hz ?? 0) : 0}
-              onCenter={(hz) => {
-                if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
-              }}
-            />
             <Controls snap={data} onChanged={refresh} onListen={onListen} />
           </div>
         </div>

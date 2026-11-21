@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, disposizione definitiva: la cartina in arrivo in alto; sotto, divisa a meta', a sinistra spettro e cascata e a destra le cartine ricevute alla stessa altezza (con tre pulsantini sopra ogni miniatura: apri, scarica, cancella, e sotto solo la data); a destra i comandi, piu' piccoli.
+
 - WEFAX, nuova disposizione a tre colonne: a sinistra le cartine ricevute per tutta l'altezza della pagina, al centro il visore della cartina in arrivo (piu' alto, perche' sopra non c'e' piu' lo spettro), a destra lo spettro con la cascata e sotto i comandi; la casella delle frequenze e' di nuovo lunga (19 rem, carattere piccolo) e mostra la stazione intera.
 
 - Aggiornamento: premendo «Installa e riavvia» la locandina delle novita' si chiude subito e resta solo la finestra dell'aggiornamento (prima restavano aperte tutte e due, una sopra l'altra, con il testo delle novita' che si vedeva attraverso); se l'installazione non parte la locandina torna con il messaggio d'errore.

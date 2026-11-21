@@ -32,21 +32,25 @@ export function History({ images, onChanged }: { images: WefaxImageEntry[]; onCh
       <ul className="wefax-thumbs">
         {sorted.map((img) => (
           <li key={img.id} className="wefax-thumb">
-            <button type="button" className="wefax-thumb-open" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
-              <img src={wefaxImageUrl(img.id)} alt="" loading="lazy" />
-              {!img.complete ? <span className="sstv-thumb-tag">{t('wefax.hist.partial')}</span> : null}
-            </button>
-            <span className="wefax-thumb-meta">
-              <b>{when(img.time_ms)}</b>
-              <span>{`IOC ${img.ioc} · ${img.width}×${img.height}`}</span>
-            </span>
+            {/* i pulsantini stanno sopra la miniatura: apri, scarica, cancella */}
             <span className="wefax-thumb-tools">
+              <button type="button" className="glass sstv-btn wefax-thumb-icon" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
+                ⤢
+              </button>
               <a className="glass sstv-btn wefax-thumb-icon" href={wefaxImageUrl(img.id)} download={img.file} title={t('wefax.hist.download')} aria-label={t('wefax.hist.download')}>
                 ⬇
               </a>
               <button type="button" className="glass sstv-btn sstv-btn--danger wefax-thumb-icon" onClick={() => void remove(img)} title={t('wefax.hist.delete')} aria-label={t('wefax.hist.delete')}>
                 ✕
               </button>
+            </span>
+            <button type="button" className="wefax-thumb-open" onClick={() => setOpen(img)} title={t('wefax.hist.open')} aria-label={`${t('wefax.hist.open')} ${when(img.time_ms)}`}>
+              <img src={wefaxImageUrl(img.id)} alt="" loading="lazy" />
+              {!img.complete ? <span className="sstv-thumb-tag">{t('wefax.hist.partial')}</span> : null}
+            </button>
+            {/* solo la data */}
+            <span className="wefax-thumb-meta">
+              <b>{when(img.time_ms)}</b>
             </span>
           </li>
         ))}
