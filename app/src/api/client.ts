@@ -2450,6 +2450,8 @@ export interface WefaxSettings {
   auto_ioc?: boolean;
   /** Inclinazione corretta da sola dal contenuto delle prime 400 righe. Assente con un motore vecchio (si intende accesa). */
   auto_slant?: boolean;
+  /** Errore di orologio della scheda audio ricordato tra una cartina e l'altra (ppm): lo scrive il ricevitore, si azzera con `wefaxRx('reset_learned')`. */
+  learned_ppm?: number;
   auto_save: boolean;
   auto_receive: boolean;
   center_hz: number;
@@ -2526,7 +2528,7 @@ export async function putWefax(settings: WefaxSettings): Promise<WefaxSnapshot> 
 // i comandi dell'ascolto WEFAX arrivano al core nell'ordine in cui sono partiti
 const wefaxRxQueue = inOrder();
 
-export async function wefaxRx(action: 'start' | 'stop' | 'force' | 'finish' | 'cancel'): Promise<void> {
+export async function wefaxRx(action: 'start' | 'stop' | 'force' | 'finish' | 'cancel' | 'reset_learned'): Promise<void> {
   await wefaxRxQueue(() => request(`/wefax/rx/${action}`, { method: 'POST' }));
 }
 

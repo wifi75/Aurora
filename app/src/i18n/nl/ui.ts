@@ -5621,6 +5621,8 @@ export const NL_UI: Record<string, string> = {
   "wefax.set.filter.narrow": "Smal",
   "wefax.set.filter.wide": "Breed",
   "wefax.set.ioc": "IOC (breedte)",
+  "wefax.set.learned": "Geleerde ppm",
+  "wefax.set.learnedHint": "Klokfout van de geluidskaart die Aurora op de vorige kaarten heeft gemeten: wordt vanzelf toegepast op beelden zonder fasering en gaat op nul als de bemonsteringsfrequentie verandert. De knop wist hem.",
   "wefax.set.lpm": "Regels per minuut",
   "wefax.set.manual": "Handmatige modus (geen APT of fasering)",
   "wefax.set.shift": "Zwaai (Hz)",

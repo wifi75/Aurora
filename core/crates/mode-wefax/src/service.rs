@@ -59,6 +59,13 @@ pub struct WefaxSettings {
     pub shift_hz: f32,
     /// Correzione a mano del periodo di riga (ppm, positivo: righe piu' lunghe), sopra quella automatica.
     pub slant_ppm: f32,
+    /// Errore di orologio della scheda audio ricordato tra una cartina e l'altra (ppm, media pesata delle stime dell'inclinazione automatica,
+    /// al massimo 5000): si somma alla correzione a mano per le immagini senza fasatura. Lo scrive il ricevitore, non l'interfaccia: un `PUT`
+    /// con un valore diverso non lo cambia (si azzera con `reset_learned`).
+    pub learned_ppm: f32,
+    /// Peso accumulato di `learned_ppm` e frequenza di campionamento a cui si riferisce (cambiata quella, il valore si azzera).
+    pub learned_weight: f32,
+    pub learned_rate: u32,
     /// Massimo di righe di un'immagine (1200 sono il normale con IOC 576).
     pub max_rows: u32,
     /// Soglia di correlazione tra righe per il segnale perso (0,05).
@@ -91,6 +98,9 @@ impl Default for WefaxSettings {
             center_hz: d.center_hz,
             shift_hz: d.shift_hz,
             slant_ppm: 0.0,
+            learned_ppm: 0.0,
+            learned_weight: 0.0,
+            learned_rate: 0,
             max_rows: d.max_rows,
             correlation: d.correlation,
             folder: String::new(),
@@ -145,6 +155,8 @@ impl WefaxSettings {
             center_hz: self.center_hz,
             shift_hz: self.shift_hz,
             slant_ppm: self.slant_ppm,
+            learned_ppm: self.learned_ppm,
+            learned_weight: self.learned_weight,
             max_rows: self.max_rows,
             correlation: self.correlation,
             afc: self.afc,
@@ -196,6 +208,7 @@ enum Msg {
     Finish,
     Cancel,
     Config(DecoderConfig),
+    ResetLearned,
 }
 
 struct Inner {
@@ -250,6 +263,23 @@ impl Inner {
         self.rx_status_event();
     }
 
+    /// Scrive in `wefax.json` l'errore di orologio ricordato dal ricevitore (e la frequenza di campionamento a cui si riferisce) se e' cambiato.
+    fn persist_learned(&self, ppm: f32, weight: f32, rate: u32) {
+        let mut s = lock(&self.settings);
+        if (s.learned_ppm - ppm).abs() < 1e-3 && (s.learned_weight - weight).abs() < 1e-3 && s.learned_rate == rate {
+            return;
+        }
+        (s.learned_ppm, s.learned_weight, s.learned_rate) = (ppm, weight, rate);
+        match serde_json::to_vec_pretty(&*s) {
+            Ok(json) => {
+                if let Err(e) = std::fs::write(&self.settings_path, json) {
+                    tracing::warn!("WEFAX: errore di orologio ricordato non salvato: {e}");
+                }
+            }
+            Err(e) => tracing::warn!("WEFAX: errore di orologio ricordato non salvato: {e}"),
+        }
+    }
+
     /// Nessuna pagina WEFAX aperta: l'ascolto si spegne (niente piu' audio ne' CPU), salvo «Ascolto acceso all'avvio di Aurora».
     fn page_left(&self) {
         if self.listening.load(Ordering::Relaxed) && !lock(&self.settings).auto_receive {
@@ -271,6 +301,9 @@ impl WefaxService {
         let mut settings: WefaxSettings = std::fs::read(&settings_path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
         if settings.validate().is_err() {
             settings = WefaxSettings::default();
+        }
+        if !settings.learned_ppm.is_finite() || !settings.learned_weight.is_finite() {
+            (settings.learned_ppm, settings.learned_weight) = (0.0, 0.0);
         }
         let (queue, rx) = sync_channel::<Msg>(128);
         let store = ImageStore::open(&folder_of(data_dir, &settings));
@@ -329,8 +362,11 @@ impl WefaxService {
         lock(&self.inner.settings).clone()
     }
 
-    pub fn apply_settings(&self, s: WefaxSettings) -> Result<(), WefaxError> {
+    pub fn apply_settings(&self, mut s: WefaxSettings) -> Result<(), WefaxError> {
         s.validate()?;
+        // l'errore di orologio ricordato e' del ricevitore: l'interfaccia rimanda indietro il valore che ha letto, anche vecchio
+        let mut current = lock(&self.inner.settings);
+        (s.learned_ppm, s.learned_weight, s.learned_rate) = (current.learned_ppm, current.learned_weight, current.learned_rate);
         let json = serde_json::to_vec_pretty(&s).map_err(|e| WefaxError::Io(e.to_string()))?;
         std::fs::write(&self.inner.settings_path, json).map_err(|e| WefaxError::Io(e.to_string()))?;
         let folder = folder_of(&self.inner.data_dir, &s);
@@ -346,8 +382,13 @@ impl WefaxService {
             rx.width = crate::width_of(s.ioc);
         }
         let _ = self.inner.queue.send(Msg::Config(s.decoder()));
-        *lock(&self.inner.settings) = s;
+        *current = s;
         Ok(())
+    }
+
+    /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o impostazioni del sistema).
+    pub fn reset_learned(&self) {
+        let _ = self.inner.queue.send(Msg::ResetLearned);
     }
 
     pub fn start_rx(&self) {
@@ -431,6 +472,7 @@ const STATUS_EVERY: Duration = Duration::from_millis(500);
 
 fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut decoder = Decoder::new(cfg);
+    let mut rate_seen = lock(&inner.settings).learned_rate;
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
     let mut last_status = Instant::now();
@@ -444,6 +486,15 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
         let mut events = Vec::new();
         match msg {
             Some(Msg::Audio(rate, samples)) => {
+                // l'errore di orologio ricordato vale per una frequenza di campionamento: cambiata quella (altra scheda), si riparte
+                if rate != rate_seen {
+                    if rate_seen != 0 {
+                        decoder.reset_learned();
+                        tracing::info!("WEFAX: frequenza di campionamento da {rate_seen} a {rate} Hz, errore di orologio ricordato azzerato");
+                    }
+                    rate_seen = rate;
+                    inner.persist_learned(decoder.learned_ppm(), decoder.learned_weight(), rate);
+                }
                 let r = match &mut resampler {
                     Some(r) if r.in_rate() == rate => r,
                     slot => slot.insert(Resampler::new(rate)),
@@ -465,10 +516,18 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 decoder.set_config(c);
                 events = decoder.take_events();
             }
+            Some(Msg::ResetLearned) => {
+                decoder.reset_learned();
+                inner.persist_learned(0.0, 0.0, rate_seen);
+            }
             None => {}
         }
         for ev in events {
+            let finished = matches!(ev, DecoderEvent::Finished(_));
             handle(inner, &decoder, ev);
+            if finished {
+                inner.persist_learned(decoder.learned_ppm(), decoder.learned_weight(), rate_seen);
+            }
         }
         // le pagine sparite senza salutare (finestra chiusa, rete caduta) escono da sole
         if last_users.elapsed() >= Duration::from_secs(1) {
@@ -609,6 +668,58 @@ mod tests {
         let again = WefaxService::open(&data);
         assert_eq!(again.settings(), s);
         assert_eq!(again.snapshot().rx.width, 904);
+        let _ = std::fs::remove_dir_all(&data);
+    }
+
+    /// Aspetta fino a due secondi che il ricevitore (un altro thread) faccia quello che e' stato chiesto.
+    fn attendi(mut fatto: impl FnMut() -> bool) -> bool {
+        for _ in 0..200 {
+            if fatto() {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        false
+    }
+
+    #[test]
+    fn l_errore_di_orologio_ricordato_si_salva_non_si_cambia_da_fuori_e_si_azzera() {
+        let data = temp("ricordato");
+        let svc = WefaxService::open(&data);
+        svc.inner.persist_learned(1500.0, 3.0, 48_000);
+        assert_eq!(svc.settings().learned_ppm, 1500.0);
+        // l'interfaccia rimanda indietro i valori che ha letto (anche vecchi) o ne scrive altri: il valore resta quello del ricevitore
+        let mut s = svc.settings();
+        s.learned_ppm = 0.0;
+        s.learned_weight = 0.0;
+        s.slant_ppm = 12.0;
+        svc.apply_settings(s).expect("impostazioni");
+        assert_eq!(svc.settings().learned_ppm, 1500.0);
+        assert_eq!(svc.settings().slant_ppm, 12.0);
+        // e' nel file: al prossimo avvio c'e' ancora
+        let again = WefaxService::open(&data);
+        assert_eq!((again.settings().learned_ppm, again.settings().learned_rate), (1500.0, 48_000));
+        drop(again);
+        // l'azzeramento lo fa il ricevitore e lo scrive nel file
+        svc.reset_learned();
+        assert!(attendi(|| svc.settings().learned_ppm == 0.0), "azzeramento non arrivato");
+        assert_eq!(WefaxService::open(&data).settings().learned_ppm, 0.0);
+        let _ = std::fs::remove_dir_all(&data);
+    }
+
+    #[test]
+    fn cambiata_la_frequenza_di_campionamento_l_errore_ricordato_si_azzera_ma_non_all_avvio() {
+        let data = temp("rate");
+        let svc = WefaxService::open(&data);
+        svc.inner.persist_learned(800.0, 2.0, 48_000);
+        svc.start_rx();
+        // stessa frequenza di prima (dopo un riavvio di Aurora): resta
+        svc.feed(48_000, &vec![0.0; 4800]);
+        std::thread::sleep(Duration::from_millis(100));
+        assert_eq!(svc.settings().learned_ppm, 800.0);
+        // un'altra scheda a 44100 Hz: si riparte
+        svc.feed(44_100, &vec![0.0; 4410]);
+        assert!(attendi(|| svc.settings().learned_ppm == 0.0 && svc.settings().learned_rate == 44_100), "reset non arrivato");
         let _ = std::fs::remove_dir_all(&data);
     }
 

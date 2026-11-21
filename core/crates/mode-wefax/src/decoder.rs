@@ -70,6 +70,12 @@ const SLANT_PEAK_RATIO: f32 = 0.9;
 /// Coppie di righe valide minime e dispersione massima (pixel per riga) delle misure.
 const SLANT_MIN_PAIRS: usize = 5;
 const SLANT_MAX_SPREAD_PX: f64 = 0.3;
+/// Errore di orologio ricordato: righe minime con una stima valida perche' l'immagine conti, righe che danno il peso pieno, peso massimo accumulato
+/// (le immagini vecchie contano via via meno) e limite del valore (ppm).
+const LEARN_MIN_ROWS: usize = 80;
+const LEARN_FULL_ROWS: f64 = 200.0;
+const LEARN_MAX_WEIGHT: f64 = 8.0;
+const LEARN_MAX_PPM: f64 = 5000.0;
 /// Righe della fasatura che servono per dare l'allineamento.
 const PHASING_LINES: i32 = 4;
 
@@ -109,6 +115,10 @@ pub struct DecoderConfig {
     pub shift_hz: f32,
     /// Correzione a mano del periodo di riga in parti per milione (positivo: righe piu' lunghe), sopra quella automatica.
     pub slant_ppm: f32,
+    /// Errore di orologio ricordato dalle immagini precedenti (ppm) e il suo peso: valori di partenza del decodificatore (poi li tiene lui,
+    /// vedi [`Decoder::learned_ppm`]); le impostazioni nuove non li cambiano.
+    pub learned_ppm: f32,
+    pub learned_weight: f32,
     pub max_rows: u32,
     /// Soglia di correlazione tra righe sotto cui il segnale e' perso (0,05 in fldigi).
     pub correlation: f32,
@@ -139,6 +149,8 @@ impl Default for DecoderConfig {
             center_hz: 1900.0,
             shift_hz: 800.0,
             slant_ppm: 0.0,
+            learned_ppm: 0.0,
+            learned_weight: 0.0,
             max_rows: 4000,
             correlation: 0.05,
             correlation_rows: 15,
@@ -290,6 +302,13 @@ pub struct Decoder {
     /// Posizione di riga (frazionaria) al campione `slant_base_sample`: cambiando il periodo la posizione resta continua.
     slant_base_row: f64,
     slant_base_sample: i64,
+    /// Errore di orologio ricordato (ppm) e peso accumulato: si aggiunge al periodo nominale quando la fasatura non l'ha misurato.
+    learned_ppm: f64,
+    learned_weight: f64,
+    /// Periodo nominale (campioni) con cui e' stato scelto `measured_len`.
+    measured_nominal: f64,
+    /// Righe coperte dalle misure valide dell'inclinazione dell'immagine in corso.
+    slant_valid_rows: usize,
     /// Riga dell'ultima misura dell'inclinazione.
     last_slant_row: usize,
     /// Posizione di riga (relativa alla prima) dell'ultima correzione.
@@ -402,6 +421,10 @@ impl Decoder {
             lpm_img: 0.0,
             smpl_per_lin: 1.0,
             auto_ppm: 0.0,
+            learned_ppm: f64::from(cfg.learned_ppm).clamp(-LEARN_MAX_PPM, LEARN_MAX_PPM),
+            learned_weight: f64::from(cfg.learned_weight).clamp(0.0, LEARN_MAX_WEIGHT),
+            measured_nominal: 0.0,
+            slant_valid_rows: 0,
             slant_base_row: 0.0,
             slant_base_sample: 0,
             last_slant_row: 0,
@@ -475,7 +498,59 @@ impl Decoder {
             self.measured_len = None;
             self.corr_buf.clear();
         }
+        // il periodo di riga puo' cambiare a immagine in corso (correzione a mano): la posizione di riga resta continua
+        self.rebase();
         self.lpm_set();
+    }
+
+    /// Errore di orologio ricordato dalle immagini precedenti (ppm): si aggiunge al periodo nominale delle immagini senza fasatura (manuale,
+    /// «parti subito», squelch) ed e' la media pesata delle stime valide dell'inclinazione automatica, limitata a +-5000 ppm.
+    pub fn learned_ppm(&self) -> f32 {
+        self.learned_ppm as f32
+    }
+
+    /// Peso accumulato del valore ricordato (0: niente di ricordato).
+    pub fn learned_weight(&self) -> f32 {
+        self.learned_weight as f32
+    }
+
+    /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o frequenza di campionamento).
+    pub fn reset_learned(&mut self) {
+        self.learned_ppm = 0.0;
+        self.learned_weight = 0.0;
+        self.rebase();
+        self.lpm_set();
+    }
+
+    /// Fissa la posizione di riga del campione in corso come nuova base: da qui il periodo di riga puo' cambiare senza salti.
+    fn rebase(&mut self) {
+        if self.image.is_some() {
+            self.slant_base_row = self.row_pos();
+            self.slant_base_sample = self.img_sample;
+        }
+    }
+
+    /// Correzione che non viene dalla stima dell'immagine in corso: quella a mano, e l'errore ricordato se la fasatura non ha misurato il
+    /// periodo (altrimenti l'errore di orologio e' gia' dentro la misura).
+    fn fixed_ppm(&self) -> f64 {
+        f64::from(self.cfg.slant_ppm) + if self.measured_len.is_none() { self.learned_ppm } else { 0.0 }
+    }
+
+    /// A fine immagine: se l'inclinazione automatica ha avuto stime valide su abbastanza righe, l'errore totale visto (quello gia' applicato
+    /// piu' il residuo corretto sull'immagine) entra nella media pesata dell'errore ricordato.
+    fn learn_from_image(&mut self) {
+        if !self.cfg.auto_slant || self.slant_valid_rows < LEARN_MIN_ROWS {
+            return;
+        }
+        let base = match self.measured_len {
+            None => self.learned_ppm,
+            Some(len) if self.measured_nominal > 0.0 => (len / self.measured_nominal - 1.0) * 1e6,
+            Some(_) => return,
+        };
+        let sample = (base + self.auto_ppm).clamp(-LEARN_MAX_PPM, LEARN_MAX_PPM);
+        let w = (self.slant_valid_rows as f64 / LEARN_FULL_ROWS).min(1.0);
+        self.learned_ppm = ((self.learned_ppm * self.learned_weight + sample * w) / (self.learned_weight + w)).clamp(-LEARN_MAX_PPM, LEARN_MAX_PPM);
+        self.learned_weight = (self.learned_weight + w).min(LEARN_MAX_WEIGHT);
     }
 
     pub fn is_receiving(&self) -> bool {
@@ -560,6 +635,7 @@ impl Decoder {
         let rows = self.image.as_ref().map_or(0, |i| i.rows_written);
         if rows >= 2 {
             self.announce();
+            self.learn_from_image();
             let done = self.build_done("manual", true, rows);
             self.events.push(DecoderEvent::Finished(done));
         } else if self.image.as_ref().is_some_and(|i| i.announced) {
@@ -688,7 +764,7 @@ impl Decoder {
     }
 
     fn set_line_len(&mut self, base: f64) {
-        self.smpl_per_lin = base * (1.0 + (f64::from(self.cfg.slant_ppm) + self.auto_ppm) * 1e-6);
+        self.smpl_per_lin = base * (1.0 + (self.fixed_ppm() + self.auto_ppm) * 1e-6);
         self.lpm_img = 60.0 * f64::from(SR) / self.smpl_per_lin;
     }
 
@@ -883,6 +959,7 @@ impl Decoder {
             nominal = lpm_to_samples(std) as f64;
         }
         self.measured_len = Some(len).filter(|l| (l - nominal).abs() / nominal < 0.015);
+        self.measured_nominal = nominal;
         self.set_line_len(self.measured_len.unwrap_or(nominal));
     }
 
@@ -1019,6 +1096,7 @@ impl Decoder {
         let from = self.last_slant_row;
         self.last_slant_row = end;
         let Some(drift) = self.estimate_slant(from, end) else { return };
+        self.slant_valid_rows += end - from;
         if drift.abs() < SLANT_DEADBAND_PX {
             return;
         }
@@ -1033,7 +1111,7 @@ impl Decoder {
         let now = self.row_pos();
         self.slant_base_row = now;
         self.slant_base_sample = self.img_sample;
-        let base = self.smpl_per_lin / (1.0 + (f64::from(self.cfg.slant_ppm) + old) * 1e-6);
+        let base = self.smpl_per_lin / (1.0 + (self.fixed_ppm() + old) * 1e-6);
         self.auto_ppm = new;
         self.set_line_len(base);
         // Le righe scritte: un pixel al tempo `tau` (riga + colonna / larghezza) deve andare a destra di (adesso - max(tau, ultima misura)) *
@@ -1208,6 +1286,7 @@ impl Decoder {
     // ---------------------------------------------------------------- fine dell'immagine
 
     fn reset_counters(&mut self) {
+        self.slant_valid_rows = 0;
         self.slant_base_row = 0.0;
         self.slant_base_sample = 0;
         self.last_slant_row = 0;
@@ -1223,6 +1302,7 @@ impl Decoder {
     fn end_rx(&mut self) {
         self.image = None;
         self.auto_ppm = 0.0;
+        self.lpm_set();
         // lo squelch riparte solo dopo che il segnale e' sparito (il tono di stop o la portante dopo l'immagine non ne aprono un'altra)
         self.sql_armed = false;
         self.sql_open = 0;
@@ -1278,6 +1358,7 @@ impl Decoder {
                     let rows = self.image.as_ref().map_or(0, |i| i.rows_written);
                     let complete = matches!(extra, "ok" | "ok2" | "stop");
                     self.announce();
+                    self.learn_from_image();
                     let done = self.build_done(extra, complete, rows);
                     self.events.push(DecoderEvent::Finished(done));
                 }

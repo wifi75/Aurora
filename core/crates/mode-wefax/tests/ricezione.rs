@@ -813,3 +813,155 @@ fn tono_fisso_onda_quadra(hz: f64, secondi: usize) -> Vec<f32> {
         })
         .collect()
 }
+
+// ---------------------------------------------------------------- errore di orologio ricordato
+
+/// Riceve una cartina in modo manuale con il decodificatore dato (che si tiene l'errore ricordato) e dice quanto bene combacia con
+/// l'originale: (correlazione delle righe 4..30 come erano prima della prima correzione, correlazione su tutte).
+fn ricevi_con(d: &mut Decoder, ppm: f64, img: &[u8], w: usize, h: usize) -> (f64, f64) {
+    let s = Segnale { apt: false, ppm, ..Segnale::standard(576, 120) };
+    let audio = genera(&s, img, w, h);
+    // le righe come sono prima della prima correzione dell'inclinazione automatica (alla riga 41): una cartina che parte dritta lo e' gia' li'
+    let mut presto: Option<Vec<u8>> = None;
+    for chunk in audio.chunks(1024) {
+        d.push(chunk);
+        if presto.is_none()
+            && let Some((cw, rows, data)) = d.current()
+            && rows >= 36
+        {
+            assert_eq!(cw as usize, w);
+            presto = Some(data[..36 * w].to_vec());
+        }
+    }
+    let presto = presto.expect("meno di 36 righe");
+    let rx = d.finish().into_iter().find_map(|e| if let DecoderEvent::Finished(done) = e { Some(done) } else { None }).expect("immagine non chiusa");
+    let rows = rx.image.height as usize;
+    // riga di partenza e colonna dalle prime righe (profilo delle righe 4..20), poi confronto sugli intervalli
+    let mut best = (-2.0f64, 0usize, 0usize);
+    for off in 0..=4usize {
+        for dc in (0..w).step_by(2) {
+            let (mut a, mut b) = (Vec::new(), Vec::new());
+            for r in 4..20usize {
+                for x in (0..w).step_by(3) {
+                    a.push(rx.image.data[(off + r) * w + (x + dc) % w]);
+                    b.push(img[r * w + x]);
+                }
+            }
+            let c = pearson(&a, &b);
+            if c > best.0 {
+                best = (c, off, dc);
+            }
+        }
+    }
+    let (_, off, dc) = best;
+    let per = |from: usize, to: usize| {
+        let to = to.min((rows - off).min(h) - 6);
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        for r in from..to {
+            for x in 0..w {
+                a.push(rx.image.data[(off + r) * w + (x + dc) % w]);
+                b.push(img[r * w + x]);
+            }
+        }
+        pearson(&a, &b)
+    };
+    // le prime righe di prima della correzione, con lo stesso allineamento
+    let (mut a, mut b) = (Vec::new(), Vec::new());
+    for r in 4..30usize {
+        for x in 0..w {
+            a.push(presto[(off + r) * w + (x + dc) % w]);
+            b.push(img[r * w + x]);
+        }
+    }
+    (pearson(&a, &b), per(4, usize::MAX))
+}
+
+fn decoder_manuale() -> Decoder {
+    let mut c = cfg(576, 120);
+    c.manual = true;
+    c.auto_center = false;
+    Decoder::new(c)
+}
+
+#[test]
+fn la_seconda_cartina_parte_gia_dritta_con_l_errore_di_orologio_ricordato() {
+    let (w, h) = (1809usize, 260usize);
+    let img = cartina(w, h);
+    let mut d = decoder_manuale();
+    assert_eq!(d.learned_ppm(), 0.0);
+    let (presto1, tutta1) = ricevi_con(&mut d, 1500.0, &img, w, h);
+    let appreso1 = d.learned_ppm();
+    let (presto2, tutta2) = ricevi_con(&mut d, 1500.0, &img, w, h);
+    let appreso2 = d.learned_ppm();
+    eprintln!("prima cartina +1500 ppm: righe 4-30 {presto1:.3}, tutta {tutta1:.3}, appreso {appreso1:.0}; seconda: righe 4-30 {presto2:.3}, tutta {tutta2:.3}, appreso {appreso2:.0}");
+    assert!((appreso1 - 1500.0).abs() < 150.0, "appreso dopo la prima {appreso1}");
+    assert!((appreso2 - 1500.0).abs() < 150.0, "appreso dopo la seconda {appreso2}");
+    assert!(presto1 < 0.6, "la prima parte storta nelle prime righe: {presto1}");
+    assert!(presto2 > 0.9, "la seconda parte gia' dritta: {presto2}");
+    assert!(tutta2 > 0.9);
+    // un'orologio dall'altra parte: ricordare +1500 non deve rovinare una cartina corretta di -1500 (la stima corregge il residuo)
+    let (_, tutta3) = ricevi_con(&mut d, -1500.0, &img, w, h);
+    assert!(tutta3 > 0.85, "cartina a -1500 con +1500 ricordato: {tutta3}");
+    // il valore appreso si azzera a comando
+    d.reset_learned();
+    assert_eq!(d.learned_ppm(), 0.0);
+    assert_eq!(d.learned_weight(), 0.0);
+}
+
+#[test]
+fn un_immagine_uniforme_o_senza_strutture_non_cambia_il_valore_ricordato() {
+    let (w, h) = (1809usize, 200usize);
+    let uniforme = vec![128u8; w * h];
+    let mut c = cfg(576, 120);
+    c.manual = true;
+    c.auto_center = false;
+    c.learned_ppm = 1500.0;
+    c.learned_weight = 3.0;
+    let mut d = Decoder::new(c);
+    let s = Segnale { apt: false, ppm: 1500.0, ..Segnale::standard(576, 120) };
+    for chunk in genera(&s, &uniforme, w, h).chunks(1024) {
+        d.push(chunk);
+    }
+    d.finish();
+    assert_eq!(d.learned_ppm(), 1500.0);
+    assert_eq!(d.learned_weight(), 3.0);
+    // il valore di partenza e' limitato a +-5000 ppm
+    let mut c = cfg(576, 120);
+    c.learned_ppm = 90_000.0;
+    assert_eq!(Decoder::new(c).learned_ppm(), 5000.0);
+}
+
+#[test]
+fn con_la_fasatura_l_errore_ricordato_non_si_somma_alla_misura() {
+    // con +1500 ppm e la fasatura il periodo e' gia' misurato: sommare l'errore ricordato lo raddoppierebbe
+    let (w, h) = (1809usize, 260usize);
+    let img = cartina(w, h);
+    let audio = genera(&Segnale { ppm: 1500.0, ..Segnale::standard(576, 120) }, &img, w, h);
+    let corr = |learned: f32| {
+        let mut c = cfg(576, 120);
+        // senza AFC: lo sfondo grigio (215) della cartina di prova sembrerebbe un tono fisso e sposterebbe la sottoportante
+        c.afc = false;
+        c.learned_ppm = learned;
+        c.learned_weight = 3.0;
+        let mut d = Decoder::new(c);
+        let (mut fatte, mut scartate) = (Vec::new(), Vec::new());
+        for chunk in audio.chunks(1024) {
+            for ev in d.push(chunk) {
+                match ev {
+                    DecoderEvent::Finished(done) => fatte.push(done),
+                    DecoderEvent::Discarded { reason } => scartate.push(reason),
+                    _ => {}
+                }
+            }
+        }
+        assert_eq!(fatte.len(), 1, "ricordato {learned}: scartate {scartate:?}");
+        let (c, _, _) = confronta(&fatte[0], &img, w, h, 8);
+        (c, d.learned_ppm())
+    };
+    let (senza, _) = corr(0.0);
+    let (con, appreso) = corr(1500.0);
+    eprintln!("fasatura +1500 ppm: correlazione senza ricordato {senza:.4}, con +1500 ricordato {con:.4}; ricordato dopo: {appreso:.0}");
+    assert!(senza > 0.9, "senza {senza}");
+    assert!((con - senza).abs() < 0.01, "con {con}, senza {senza}");
+    assert!((appreso - 1500.0).abs() < 200.0, "ricordato {appreso}");
+}

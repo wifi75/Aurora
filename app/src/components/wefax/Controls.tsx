@@ -211,6 +211,16 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
             </button>
           </span>
           <span className="sstv-hint">{t('wefax.set.slantHint')}</span>
+          <span>
+            {t('wefax.set.learned')}
+            <b>{Math.round(settings.learned_ppm ?? 0)}</b>
+          </span>
+          <span className="wefax-slant">
+            <button type="button" className="glass sstv-btn" disabled={!settings.learned_ppm} onClick={act(() => wefaxRx('reset_learned'))}>
+              {t('wefax.set.slantReset')}
+            </button>
+          </span>
+          <span className="sstv-hint">{t('wefax.set.learnedHint')}</span>
         </div>
       </fieldset>
     </aside>

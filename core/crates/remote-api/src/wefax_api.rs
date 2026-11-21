@@ -111,6 +111,14 @@ pub(crate) async fn wefax_rx_finish(State(state): State<AppState>, _: Authed) ->
     Ok(Json(json!({ "ok": true })))
 }
 
+/// Dimentica l'errore di orologio della scheda audio ricordato tra una cartina e l'altra (`learned_ppm` torna a 0).
+#[utoipa::path(post, path = "/api/v1/wefax/rx/reset_learned", responses((status = 200, description = "Richiesta inviata: `learned_ppm` torna a 0")))]
+pub(crate) async fn wefax_rx_reset_learned(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    blocking(move || svc.reset_learned()).await?;
+    Ok(Json(json!({ "ok": true })))
+}
+
 /// Butta l'immagine in arrivo (l'ascolto resta acceso).
 #[utoipa::path(post, path = "/api/v1/wefax/rx/cancel", responses((status = 200, description = "Immagine scartata")))]
 pub(crate) async fn wefax_rx_cancel(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {

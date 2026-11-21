@@ -5621,6 +5621,8 @@ export const RU_UI: Record<string, string> = {
   "wefax.set.filter.narrow": "Узкий",
   "wefax.set.filter.wide": "Широкий",
   "wefax.set.ioc": "IOC (ширина)",
+  "wefax.set.learned": "Запомненные ppm",
+  "wefax.set.learnedHint": "Ошибка часов звуковой карты, измеренная Aurora на предыдущих картах: применяется сама к изображениям без фазировки и сбрасывается при смене частоты дискретизации. Кнопка её стирает.",
   "wefax.set.lpm": "Строк в минуту",
   "wefax.set.manual": "Ручной режим (без APT и фазировки)",
   "wefax.set.shift": "Девиация (Hz)",
