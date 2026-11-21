@@ -569,6 +569,14 @@ export const GUIDE: readonly GuideChapter[] = [
             'Se o PC estiver demasiado carregado para acompanhar o áudio, por baixo das leituras dos comandos aparece «Blocos de áudio perdidos: N»: cada bloco perdido desloca o tempo e inclina a carta, por isso fecha os outros programas pesados.',
           ],
           [
+            'L’AFC corregge la sintonia con passi di al massimo 25 Hz e senza uscire da «[[wefax.set.afcRange]]» dall’ultima sottoportante scelta a mano; dà più peso al tono di avvio e alla fasatura e dentro l’immagine è più cauto.',
+            'The AFC corrects the tuning in steps of at most 25 Hz and never leaves “[[wefax.set.afcRange]]” around the subcarrier last chosen by hand; it gives more weight to the start tone and the phasing and is more cautious inside the picture.',
+            'Der AFC korrigiert die Abstimmung in Schritten von höchstens 25 Hz und verlässt nie „[[wefax.set.afcRange]]“ um den zuletzt von Hand gewählten Hilfsträger; er gewichtet den Startton und das Phasing stärker und ist im Bild vorsichtiger.',
+            'L’AFC corrige l’accord par pas de 25 Hz au plus et sans sortir de « [[wefax.set.afcRange]] » autour de la sous-porteuse choisie en dernier à la main ; il donne plus de poids à la tonalité de début et au phasage et se montre plus prudent dans l’image.',
+            'El AFC corrige la sintonía con pasos de 25 Hz como máximo y sin salirse de «[[wefax.set.afcRange]]» respecto a la última subportadora elegida a mano; da más peso al tono de inicio y al fasado y dentro de la imagen es más prudente.',
+            'O AFC corrige a sintonia com passos de 25 Hz no máximo e sem sair de «[[wefax.set.afcRange]]» em torno da última subportadora escolhida à mão; dá mais peso ao tom de início e ao faseamento e dentro da imagem é mais cauteloso.',
+          ],
+          [
             'In «[[wefax.hist.title]]», il riquadro in alto a destra, restano le cartine ricevute con la miniatura intera: un clic le apre in grande, «[[wefax.hist.download]]» salva il PNG, «[[wefax.hist.delete]]» le cancella; i comandi stanno sotto il riquadro.',
             'In “[[wefax.hist.title]]”, the box at the top right, the received charts stay with a whole thumbnail: a click opens them large, “[[wefax.hist.download]]” saves the PNG, “[[wefax.hist.delete]]” deletes them; the controls are below the box.',
             'Unter „[[wefax.hist.title]]“, dem Feld oben rechts, bleiben die empfangenen Karten mit ganzem Vorschaubild: Ein Klick öffnet sie groß, „[[wefax.hist.download]]“ speichert das PNG, „[[wefax.hist.delete]]“ löscht sie; die Bedienelemente stehen unter dem Feld.',

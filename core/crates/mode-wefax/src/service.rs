@@ -78,6 +78,8 @@ pub struct WefaxSettings {
     pub folder: String,
     /// AFC: la sottoportante di ricezione segue il segnale se la radio e' sintonizzata un po' fuori.
     pub afc: bool,
+    /// Limite globale dell'AFC: la correzione non va oltre questi Hz dall'ultima sottoportante scelta a mano (20..400, 150 di base).
+    pub afc_range_hz: f32,
     /// Squelch (SQL): l'immagine parte quando il segnale supera `squelch_level` e si chiude quando sparisce per 3 secondi.
     pub squelch: bool,
     /// Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore).
@@ -109,6 +111,7 @@ impl Default for WefaxSettings {
             correlation: d.correlation,
             folder: String::new(),
             afc: d.afc,
+            afc_range_hz: d.afc_range_hz,
             squelch: d.squelch,
             squelch_level: d.squelch_level,
         }
@@ -139,6 +142,9 @@ impl WefaxSettings {
         if !self.correlation.is_finite() || !(0.01..=0.5).contains(&self.correlation) {
             return bad("soglia di correlazione tra 0,01 e 0,5");
         }
+        if !self.afc_range_hz.is_finite() || !(crate::decoder::AFC_RANGE_MIN_HZ..=crate::decoder::AFC_RANGE_MAX_HZ).contains(&self.afc_range_hz) {
+            return bad("limite dell'AFC tra 20 e 400 Hz");
+        }
         if !self.squelch_level.is_finite() || !(0.0..=100.0).contains(&self.squelch_level) {
             return bad("soglia dello squelch tra 0 e 100");
         }
@@ -164,6 +170,7 @@ impl WefaxSettings {
             max_rows: self.max_rows,
             correlation: self.correlation,
             afc: self.afc,
+            afc_range_hz: self.afc_range_hz,
             squelch: self.squelch,
             squelch_level: self.squelch_level,
             ..DecoderConfig::default()
@@ -775,11 +782,20 @@ mod tests {
         let s: WefaxSettings = serde_json::from_str(old).expect("impostazioni vecchie");
         assert!(s.afc);
         assert!(s.auto_ioc);
+        assert_eq!(s.afc_range_hz, 150.0);
         assert!(!s.squelch);
         assert_eq!(s.squelch_level, 30.0);
         assert!(s.validate().is_ok());
         let mut bad = s.clone();
         bad.squelch_level = 120.0;
         assert!(bad.validate().is_err());
+        for fuori in [10.0, 450.0, f32::NAN] {
+            let mut bad = s.clone();
+            bad.afc_range_hz = fuori;
+            assert!(bad.validate().is_err(), "limite {fuori}");
+        }
+        let mut ok = s.clone();
+        ok.afc_range_hz = 400.0;
+        assert!(ok.validate().is_ok());
     }
 }

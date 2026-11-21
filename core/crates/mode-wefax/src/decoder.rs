@@ -35,8 +35,17 @@ const SQL_MIN_SPREAD: f32 = 12.0;
 const AFC_MIN_LEVEL: f32 = 10.0;
 /// Sotto quale errore l'AFC non si muove (Hz).
 const AFC_DEADBAND_HZ: f32 = 3.0;
-/// Quota dell'errore corretta a ogni misura (una al secondo).
+/// Quota dell'errore corretta a ogni misura (una al secondo) e passo massimo (limite locale) sul tono d'inizio e sulla fasatura, dove l'errore
+/// si legge meglio: un salto grande si raggiunge in piu' misure.
 const AFC_GAIN: f32 = 0.7;
+const AFC_STEP_MAX_HZ: f32 = 25.0;
+/// Dentro l'immagine (il segnale e' il contenuto della cartina) l'AFC e' piu' cauto: quota, passo massimo e zona morta piu' piccoli o piu' larghi.
+const AFC_IMAGE_GAIN: f32 = 0.25;
+const AFC_IMAGE_STEP_MAX_HZ: f32 = 8.0;
+const AFC_IMAGE_DEADBAND_HZ: f32 = 6.0;
+/// Estremi ammessi per `afc_range_hz`.
+pub const AFC_RANGE_MIN_HZ: f32 = 20.0;
+pub const AFC_RANGE_MAX_HZ: f32 = 400.0;
 
 const SR: i32 = RATE as i32;
 const BYTES_PER_PIXEL: i64 = 3;
@@ -128,6 +137,8 @@ pub struct DecoderConfig {
     pub min_pixels: u32,
     /// Correzione automatica della sintonia (sposta la sottoportante del demodulatore sul segnale vero).
     pub afc: bool,
+    /// Limite globale dell'AFC: la correzione non supera questi Hz dall'ultima sottoportante scelta a mano (20..400).
+    pub afc_range_hz: f32,
     /// Squelch: l'immagine parte quando il livello del segnale supera `squelch_level` e si chiude quando resta sotto per 3 secondi.
     pub squelch: bool,
     /// Soglia dello squelch (0..100, 20 dB = 100).
@@ -156,6 +167,7 @@ impl Default for DecoderConfig {
             correlation_rows: 15,
             min_pixels: 50_000,
             afc: true,
+            afc_range_hz: AFC_MAX_HZ,
             squelch: false,
             squelch_level: 30.0,
         }
@@ -670,7 +682,7 @@ impl Decoder {
                 self.on_level(level, spread);
             }
             if let Some(&f) = freq.get(i)
-                && let Some(err) = self.afc.push(f, self.cfg.shift_hz)
+                && let Some(err) = self.afc.push(f, self.cfg.shift_hz, self.state != Fs::Image)
             {
                 self.on_afc(err);
             }
@@ -721,12 +733,17 @@ impl Decoder {
         }
     }
 
-    /// Errore di sintonia misurato dall'AFC: la sottoportante del demodulatore lo segue (solo con un segnale vero).
+    /// Errore di sintonia misurato dall'AFC: la sottoportante del demodulatore lo segue (solo con un segnale vero). Due limiti: ogni passo non
+    /// supera `AFC_STEP_MAX_HZ` (locale) e la correzione totale non esce da `afc_range_hz` dall'ultima sottoportante scelta (globale).
+    /// Sul tono d'inizio e sulla fasatura si corregge con piu' decisione che dentro l'immagine (modo manuale compreso: li' non c'e' altro).
     fn on_afc(&mut self, err_hz: f32) {
-        if !self.cfg.afc || self.meter.level() < AFC_MIN_LEVEL || err_hz.abs() < AFC_DEADBAND_HZ {
+        let (gain, step_max, dead) = if self.state == Fs::Image { (AFC_IMAGE_GAIN, AFC_IMAGE_STEP_MAX_HZ, AFC_IMAGE_DEADBAND_HZ) } else { (AFC_GAIN, AFC_STEP_MAX_HZ, AFC_DEADBAND_HZ) };
+        if !self.cfg.afc || self.meter.level() < AFC_MIN_LEVEL || err_hz.abs() < dead {
             return;
         }
-        self.afc_hz = (self.afc_hz + AFC_GAIN * err_hz).clamp(-AFC_MAX_HZ, AFC_MAX_HZ);
+        let range = self.cfg.afc_range_hz.clamp(AFC_RANGE_MIN_HZ, AFC_RANGE_MAX_HZ);
+        let step = (gain * err_hz).clamp(-step_max, step_max);
+        self.afc_hz = (self.afc_hz + step).clamp(-range, range);
         self.demod.set_center(self.rx_center());
         self.meter.set_band(self.rx_center(), self.cfg.shift_hz);
     }

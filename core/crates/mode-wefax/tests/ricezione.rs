@@ -939,8 +939,7 @@ fn con_la_fasatura_l_errore_ricordato_non_si_somma_alla_misura() {
     let audio = genera(&Segnale { ppm: 1500.0, ..Segnale::standard(576, 120) }, &img, w, h);
     let corr = |learned: f32| {
         let mut c = cfg(576, 120);
-        // senza AFC: lo sfondo grigio (215) della cartina di prova sembrerebbe un tono fisso e sposterebbe la sottoportante
-        c.afc = false;
+        // con l'AFC acceso: lo sfondo grigio uniforme (215) della cartina di prova non e' un tono fisso e non sposta la sottoportante
         c.learned_ppm = learned;
         c.learned_weight = 3.0;
         let mut d = Decoder::new(c);
@@ -964,4 +963,113 @@ fn con_la_fasatura_l_errore_ricordato_non_si_somma_alla_misura() {
     assert!(senza > 0.9, "senza {senza}");
     assert!((con - senza).abs() < 0.01, "con {con}, senza {senza}");
     assert!((appreso - 1500.0).abs() < 200.0, "ricordato {appreso}");
+}
+
+// ---------------------------------------------------------------- AFC con due limiti
+
+/// Correzione dell'AFC dopo ogni secondo di audio (un blocco da 1 s alla volta; 12000 campioni).
+fn afc_al_secondo(cfg: DecoderConfig, audio: &[f32]) -> Vec<f32> {
+    let mut d = Decoder::new(cfg);
+    audio
+        .chunks(RATE as usize)
+        .map(|c| {
+            d.push(c);
+            d.afc_hz()
+        })
+        .collect()
+}
+
+/// Un tono che sale piano da `da` Hz di `hz_al_secondo` Hz ogni secondo, per `secondi`.
+fn tono_in_deriva(da: f64, hz_al_secondo: f64, secondi: usize) -> Vec<f32> {
+    let rate = f64::from(RATE);
+    let mut phase = 0.0f64;
+    (0..RATE as usize * secondi)
+        .map(|i| {
+            phase += TAU * (da + hz_al_secondo * i as f64 / rate) / rate;
+            (0.5 * phase.sin()) as f32
+        })
+        .collect()
+}
+
+#[test]
+fn il_limite_locale_dell_afc_rallenta_un_salto_grande() {
+    // il tono del nero con la radio fuori di +100 Hz: ogni passo e' al massimo 25 Hz, il salto si raggiunge in piu' misure
+    let afc = afc_al_secondo(cfg(576, 120), &tono_fisso(1600.0, 12));
+    eprintln!("AFC a +100 Hz, un valore al secondo: {afc:.1?}");
+    let passi: Vec<f32> = std::iter::once(0.0).chain(afc.iter().copied()).collect::<Vec<_>>().windows(2).map(|w| (w[1] - w[0]).abs()).collect();
+    assert!(passi.iter().all(|&p| p <= 25.01), "passo oltre 25 Hz: {passi:?}");
+    assert!(afc[0] > 20.0 && afc[0] <= 25.01, "primo passo {}", afc[0]);
+    assert!(afc[2] <= 75.1, "dopo tre misure {} (senza il limite sarebbe gia' a 97)", afc[2]);
+    assert!((afc[11] - 100.0).abs() < 6.0, "alla fine {}", afc[11]);
+}
+
+#[test]
+fn il_limite_globale_dell_afc_ferma_la_correzione_e_la_deriva() {
+    // la radio fuori di +150 Hz con un limite di 40: la correzione si ferma li', non va oltre
+    let afc = afc_al_secondo(DecoderConfig { afc_range_hz: 40.0, ..cfg(576, 120) }, &tono_fisso(1650.0, 10));
+    eprintln!("AFC a +150 Hz con limite 40: {:.2}", afc[9]);
+    assert!(afc.iter().all(|&a| a <= 40.0), "oltre il limite: {afc:?}");
+    assert!((afc[9] - 40.0).abs() < 0.01, "alla fine {}", afc[9]);
+    // con il limite a 400 la stessa radio si segue fino in fondo
+    let afc = afc_al_secondo(DecoderConfig { afc_range_hz: 400.0, ..cfg(576, 120) }, &tono_fisso(1650.0, 12));
+    assert!((afc[11] - 150.0).abs() < 8.0, "limite 400: {}", afc[11]);
+    // una deriva lenta (5 Hz al secondo per 40 secondi, 200 Hz in tutto): con il limite a 60 la correzione si ferma a 60, con 400 la segue
+    let deriva = tono_in_deriva(1500.0, 5.0, 40);
+    let corto = afc_al_secondo(DecoderConfig { afc_range_hz: 60.0, ..cfg(576, 120) }, &deriva);
+    let lungo = afc_al_secondo(DecoderConfig { afc_range_hz: 400.0, ..cfg(576, 120) }, &deriva);
+    eprintln!("deriva di 200 Hz: limite 60 -> {:.1}, limite 400 -> {:.1}", corto[39], lungo[39]);
+    assert!(corto.iter().all(|&a| a <= 60.0), "oltre il limite: {corto:?}");
+    assert!((corto[39] - 60.0).abs() < 0.01, "limite 60: {}", corto[39]);
+    assert!(lungo[39] > 170.0, "limite 400: {}", lungo[39]);
+}
+
+#[test]
+fn l_afc_dentro_l_immagine_e_piu_cauto_e_non_scambia_una_zona_uniforme_per_un_tono() {
+    let (w, h) = (1809usize, 100usize);
+    // barre nere e bianche di larghezza varia (nero e bianco veri: due picchi per l'AFC)
+    let mut rng = Rng(31337);
+    let img: Vec<u8> = (0..h)
+        .flat_map(|_| {
+            let mut riga = Vec::with_capacity(w);
+            let mut nero = false;
+            while riga.len() < w {
+                let n = 8 + (rng.gauss().abs() * 40.0) as usize;
+                riga.extend(std::iter::repeat_n(if nero { 0u8 } else { 255 }, n.min(w - riga.len())));
+                nero = !nero;
+            }
+            riga
+        })
+        .collect();
+    // in modo manuale si e' sempre dentro l'immagine: radio fuori di +60 Hz, passi di al massimo 8 Hz
+    let s = Segnale { apt: false, offset_hz: 60.0, rumore: 0.02, ..Segnale::standard(576, 120) };
+    let mut c = cfg(576, 120);
+    c.manual = true;
+    let afc = afc_al_secondo(c.clone(), &genera(&s, &img, w, h)[..40 * RATE as usize]);
+    let passi: Vec<f32> = std::iter::once(0.0).chain(afc.iter().copied()).collect::<Vec<_>>().windows(2).map(|w| (w[1] - w[0]).abs()).collect();
+    eprintln!("AFC in immagine a +60 Hz: {:.1?}", &afc[..12]);
+    assert!(passi.iter().all(|&p| p <= 8.01), "passo oltre 8 Hz: {passi:?}");
+    assert!(afc[39] > 30.0, "l'AFC cauto segue comunque: {}", afc[39]);
+    // un tono fisso in mezzo all'immagine non si insegue (potrebbe essere una zona uniforme della cartina)
+    let afc = afc_al_secondo(c, &tono_fisso(1545.0, 10));
+    assert!(afc.iter().all(|&a| a == 0.0), "tono fisso in immagine: {afc:?}");
+}
+
+#[test]
+fn l_afc_corregge_di_piu_sul_tono_d_inizio_e_sulla_fasatura_prima_dell_immagine() {
+    let (w, h) = (1809usize, 100usize);
+    let img = immagine(w, h);
+    let s = Segnale { offset_hz: 60.0, rumore: 0.03, ..Segnale::standard(576, 120) };
+    let audio = genera(&s, &img, w, h);
+    let mut d = Decoder::new(cfg(576, 120));
+    let mut all_inizio = None;
+    for c in audio.chunks(1024) {
+        d.push(c);
+        if all_inizio.is_none() && d.rx_state() == "image" {
+            all_inizio = Some(d.afc_hz());
+        }
+    }
+    let all_inizio = all_inizio.expect("l'immagine non e' partita");
+    eprintln!("AFC a +60 Hz: all'inizio dell'immagine {all_inizio:.1} Hz");
+    // l'AFC e' arrivato sul tono d'inizio e sulla fasatura (passi da 25 Hz al massimo): dentro l'immagine finisce il lavoro con piu' cautela
+    assert!(all_inizio > 45.0 && all_inizio < 66.0, "all'inizio dell'immagine {all_inizio}");
 }

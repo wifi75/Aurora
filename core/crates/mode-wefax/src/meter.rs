@@ -108,8 +108,11 @@ impl SignalMeter {
     }
 }
 
-/// Correzione massima dell'AFC (Hz) rispetto alla sottoportante delle impostazioni.
+/// Correzione massima di partenza dell'AFC (Hz) rispetto alla sottoportante delle impostazioni (si cambia con `afc_range_hz`).
 pub const AFC_MAX_HZ: f32 = 150.0;
+/// Un tono fisso conta solo se dista dal nero o dal bianco meno di questa parte dell'escursione (4/10: a meta' tra nero e bianco, 5/10, non e'
+/// piu' ne' l'uno ne' l'altro).
+const TONE_MAX_SHIFT_FRACTION: f32 = 0.4;
 
 /// Istogramma da -1000 a +1000 Hz attorno alla sottoportante, a passi di 10 Hz.
 const HIST_BINS: usize = 200;
@@ -136,8 +139,9 @@ impl Afc {
     }
 
     /// Una frequenza istantanea (Hz rispetto alla sottoportante, NaN senza segnale). Ogni secondo di campioni restituisce, se i due picchi
-    /// di nero e bianco sono chiari, l'errore di sintonia in Hz (positivo: il segnale sta piu' in alto della sottoportante).
-    pub fn push(&mut self, rel_hz: f32, shift_hz: f32) -> Option<f32> {
+    /// di nero e bianco sono chiari, l'errore di sintonia in Hz (positivo: il segnale sta piu' in alto della sottoportante). Con `single_tone`
+    /// falso (dentro un'immagine) un solo picco non conta: puo' essere una zona uniforme della cartina e non un tono fisso.
+    pub fn push(&mut self, rel_hz: f32, shift_hz: f32, single_tone: bool) -> Option<f32> {
         if rel_hz.is_finite() {
             let b = ((rel_hz - HIST_FROM) / HIST_STEP).floor();
             if (0.0..HIST_BINS as f32).contains(&b) {
@@ -148,12 +152,12 @@ impl Afc {
         if self.samples < RATE {
             return None;
         }
-        let err = self.estimate(shift_hz);
+        let err = self.estimate(shift_hz, single_tone);
         self.reset();
         err
     }
 
-    fn estimate(&self, shift_hz: f32) -> Option<f32> {
+    fn estimate(&self, shift_hz: f32, single_tone: bool) -> Option<f32> {
         let h = &self.hist;
         let total: u64 = h.iter().map(|&v| u64::from(v)).sum();
         if total < u64::from(RATE / 4) {
@@ -175,6 +179,9 @@ impl Afc {
                 return Some((f1 + self.centroid(p2)) / 2.0);
             }
         }
+        if !single_tone {
+            return None;
+        }
         // un tono fisso (le stazioni mandano il nero, a volte il bianco, prima dell'immagine): quasi tutti i campioni in un picco stretto,
         // che deve cadere sul nero o sul bianco; l'errore e' la distanza dal piu' vicino dei due
         let around: u64 = (p1.saturating_sub(3)..=(p1 + 3).min(HIST_BINS - 1)).map(|b| u64::from(h[b])).sum();
@@ -183,7 +190,7 @@ impl Afc {
         }
         let half = shift_hz / 2.0;
         let err = if (f1 + half).abs() < (f1 - half).abs() { f1 + half } else { f1 - half };
-        (err.abs() <= AFC_MAX_HZ).then_some(err)
+        (err.abs() <= TONE_MAX_SHIFT_FRACTION * shift_hz).then_some(err)
     }
 
     /// Frequenza media dei campioni entro tre caselle dal picco.

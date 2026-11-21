@@ -176,6 +176,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           </label>
           <NumberField label={t('wefax.set.center')} value={settings.center_hz} min={1000} max={3000} onCommit={(v) => save({ center_hz: v })} />
           <NumberField label={t('wefax.set.shift')} value={settings.shift_hz} min={200} max={1500} onCommit={(v) => save({ shift_hz: v })} />
+          <NumberField label={t('wefax.set.afcRange')} value={settings.afc_range_hz ?? 150} min={20} max={400} onCommit={(v) => save({ afc_range_hz: v })} />
         </div>
         <label className="sstv-check">
           <input type="checkbox" checked={settings.manual} onChange={(e) => save({ manual: e.target.checked })} />

@@ -2462,6 +2462,8 @@ export interface WefaxSettings {
   folder: string;
   /** AFC: la sottoportante di ricezione segue il segnale. */
   afc: boolean;
+  /** Limite globale dell'AFC in Hz dall'ultima sottoportante scelta (20..400, 150 di base). Assente con un motore vecchio. */
+  afc_range_hz?: number;
   /** Squelch: l'immagine parte col segnale sopra `squelch_level` e si chiude dopo 3 s sotto. */
   squelch: boolean;
   /** Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore). */
