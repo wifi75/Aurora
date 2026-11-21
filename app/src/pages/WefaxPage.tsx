@@ -186,11 +186,12 @@ function WefaxBody({ solo }: { solo: boolean }) {
         </select>
         <h1>{t('wefax.title')}</h1>
         {badge !== 'listening' ? (
-          <span className={`sstv-badge sstv-badge--${badge}`} role="status">
-            <span className="sstv-dot" aria-hidden="true" />
-            {t(`wefax.state.${badge}`)}
+          <span className={`sstv-badge sstv-badge--${badge} wefax-rxtag`} role="status" title={t(`wefax.state.${badge}`)} aria-label={t(`wefax.state.${badge}`)}>
+            {badge === 'receiving' ? 'RX' : 'OFF'}
           </span>
         ) : null}
+        {/* l'indicatore della frequenza della radio: dopo il menu del modo e prima delle stazioni */}
+        <WefaxMini />
         {/* le stazioni meteo per banda e poi per frequenza: la radio va sulla portante (frequenza assegnata meno 1,9 kHz, in USB) */}
         <FreqPicker groups={groups} value={current?.id ?? chosen} onSelect={selectPreset} />
         <span className="wefax-step" role="group" aria-label={t('wefax.freq.label')}>
@@ -204,7 +205,6 @@ function WefaxBody({ solo }: { solo: boolean }) {
         {/* i comandi dello zoom del visore arrivano qui (stessa riga) */}
         <div id="wefax-toolbar-slot" className="wefax-toolbar-slot" />
         {data ? <AfcSql snap={data} onChanged={refresh} /> : null}
-        <WefaxMini />
         {solo ? null : <DetachButton item="wefax" />}
       </header>
       {armed ? null : <ListenGate onListen={() => setArmed(true)} />}
@@ -215,7 +215,7 @@ function WefaxBody({ solo }: { solo: boolean }) {
           <div className="wefax-main">
             {/* in alto: la cartina in arrivo */}
             <Card title={t('wefax.card.view')} className="wefax-card--view">
-              <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
+              <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} lastId={[...(images.data ?? [])].sort((a, b) => b.time_ms - a.time_ms)[0]?.id} onSaved={refreshImages} onChanged={refresh} />
             </Card>
             {/* sotto, diviso in due alla stessa altezza: a sinistra spettro e cascata, a destra le cartine ricevute (miniature intere, un clic le apre in grande, pulsanti piccoli per scaricare e cancellare) */}
             <div className="wefax-band">

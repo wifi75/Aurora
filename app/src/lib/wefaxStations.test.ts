@@ -35,3 +35,11 @@ describe('IOC e righe al minuto', () => {
     }
   });
 });
+
+describe('un nominativo per frequenza', () => {
+  it('Pinneberg: ogni frequenza mostra solo il suo nominativo', () => {
+    expect(presetAt(7_880_000 - 1900)?.call).toBe('DDK3');
+    expect(presetAt(3_855_000 - 1900)?.call).toBe('DDH3');
+    expect(presetAt(13_882_500 - 1900)?.call).toBe('DDK6');
+  });
+});

@@ -62,8 +62,11 @@ export const WEFAX_DEFAULT_LPM = 120;
 export function wefaxPresets(): WefaxPreset[] {
   const out: WefaxPreset[] = [];
   for (const s of WEFAX_STATIONS) {
-    for (const khz of s.khz) {
-      out.push({ id: `${s.call}-${khz}`, call: s.call, place: s.place, khz, dialHz: Math.round(khz * 1000) - WEFAX_CARRIER_OFFSET_HZ, band: Math.floor(khz / 1000), ioc: s.ioc ?? WEFAX_DEFAULT_IOC, lpm: s.lpm ?? WEFAX_DEFAULT_LPM });
+    // con un nominativo per frequenza (Pinneberg: DDH3 3855, DDK3 7880, DDK6 13882,5) ogni riga mostra solo il suo
+    const calls = s.call.split(' · ');
+    for (const [i, khz] of s.khz.entries()) {
+      const call = (calls.length === s.khz.length ? calls[i] : undefined) ?? s.call;
+      out.push({ id: `${s.call}-${khz}`, call, place: s.place, khz, dialHz: Math.round(khz * 1000) - WEFAX_CARRIER_OFFSET_HZ, band: Math.floor(khz / 1000), ioc: s.ioc ?? WEFAX_DEFAULT_IOC, lpm: s.lpm ?? WEFAX_DEFAULT_LPM });
     }
   }
   return out.sort((a, b) => a.khz - b.khz || a.call.localeCompare(b.call));

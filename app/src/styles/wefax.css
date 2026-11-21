@@ -370,3 +370,94 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 .wefax-file-line { display: flex; align-items: center; gap: 0.5rem; }
 .wefax-file-line .sstv-meter { flex: 1 1 auto; }
 .wefax-file-error { margin: 0; padding: 0.35rem 0.6rem; border: 1px solid var(--danger); border-radius: 10px; color: var(--danger); font-size: 0.82rem; line-height: 1.3; }
+
+/* barra in alto piu' piccola, perche' su schermi con poca risoluzione si tagliava: pillola dello stato su una riga e minuscola, pulsanti e casella delle frequenze piu' compatti; sotto 1500 px va a capo invece di tagliare */
+.wefax-page .sstv-head { gap: 0.4rem; }
+.wefax-page .sstv-head .sstv-badge { padding: 0.1rem 0.5rem; font-size: 0.68rem; line-height: 1.1; white-space: nowrap; border-radius: 999px; min-height: 0; flex: 0 0 auto; }
+.wefax-page .sstv-head .sstv-badge .sstv-dot { width: 6px; height: 6px; }
+.wefax-page .sstv-head h1 { font-size: 0.95rem; }
+.wefax-page .sstv-modesel { font-size: 0.74rem; padding: 0.15rem 0.3rem; min-height: 0; }
+.wefax-freq { font-size: 0.64rem; width: 13.5rem; max-width: 13.5rem; flex: 0 1 13.5rem; padding-block: 0.15rem; }
+.wefax-step { gap: 0.15rem; }
+.wefax-step-btn { min-height: 24px; min-width: 1.5rem; padding: 0 0.3rem; font-size: 0.6rem; }
+.wefax-toolbar-slot .wefax-toolbar { gap: 0.25rem; }
+.wefax-toolbar-slot .wefax-toolbar .sstv-btn { padding: 0.08rem 0.4rem; font-size: 0.7rem; min-width: 1.4rem; min-height: 24px; }
+.wefax-toolbar-slot .wefax-zoom { min-width: 2.4rem; font-size: 0.74rem; }
+.wefax-toolbar-slot .wefax-follow { font-size: 0.68rem; }
+.wefax-page .sstv-head .afc-sql, .wefax-page .sstv-head [class*='afc'] { font-size: 0.7rem; }
+@media (min-width: 1250px) { .wefax-page .sstv-head { flex-wrap: wrap; } }
+@media (min-width: 1300px) { .wefax-page .sstv-head { flex-wrap: nowrap; } }
+
+/* stato della ricezione: una sigla minuscola, grande come il menu del modo; RX lampeggia mentre si riceve */
+.wefax-page .sstv-head .wefax-rxtag { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-width: 2rem; height: 1.5rem; padding: 0 0.4rem; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; border-radius: 6px; }
+.wefax-page .sstv-head .wefax-rxtag.sstv-badge--receiving { animation: wefax-rx-blink 1s steps(2, start) infinite; }
+@keyframes wefax-rx-blink { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .wefax-page .sstv-head .wefax-rxtag.sstv-badge--receiving { animation: none; } }
+/* testi della casella delle frequenze ancora piu' piccoli */
+.wefax-freq, .wefax-picker-text { font-size: 0.58rem; }
+.wefax-freq { width: 12rem; max-width: 12rem; flex: 0 1 12rem; }
+.wefax-picker-list { font-size: 0.62rem; }
+.wefax-page .sstv-modesel { height: 1.5rem; }
+
+/* casella delle frequenze: piu' stretta e carattere piccolo; l'elenco aperto e' piu' largo della casella, cosi' le righe non si tagliano */
+.wefax-picker { flex: 0 1 13rem; width: 13rem; }
+.wefax-picker-text, .wefax-freq { font-size: 0.56rem; }
+.wefax-picker-list { width: max-content; min-width: 100%; max-width: 92vw; font-size: 0.58rem; }
+.wefax-picker-list [role='option'], .wefax-picker-list button { font-size: 0.58rem; white-space: nowrap; padding-block: 0.12rem; }
+
+/* frequenze un po' piu' grandi (il passo precedente era troppo piccolo); la frequenza scelta in giallo con il testo bianco; frecce del passo piccole */
+.wefax-picker-text, .wefax-freq, .wefax-picker-list, .wefax-picker-list [role='option'], .wefax-picker-list button, .wefax-picker-opt { font-size: 0.68rem; }
+.wefax-picker-text { color: var(--text, #e6edf7); }
+html[data-theme='light'] .wefax-picker-text { color: #10151f; }
+.wefax-picker-opt--now, .wefax-picker-opt--now.wefax-picker-opt--active { background: #a98200; color: #ffffff; font-weight: 700; }
+html[data-theme='light'] .wefax-picker-opt--now, html[data-theme='light'] .wefax-picker-opt--now.wefax-picker-opt--active { background: #f2c200; color: #1a1400; }
+html[data-theme='light'] .wefax-picker-opt { color: #10151f; }
+html[data-theme='light'] .wefax-picker-band { color: #4a5470; }
+.wefax-step { gap: 0.1rem; }
+.wefax-step-btn { min-height: 20px; height: 20px; min-width: 1.15rem; width: 1.15rem; padding: 0; font-size: 0.5rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.wefax-step-btn svg { width: 0.5rem; height: 0.5rem; }
+
+/* scheda «Ricezione»: niente sporge a destra. Colonna un po' piu' larga, tutto con la larghezza della scheda, testi che vanno a capo, caselle e menu dentro i bordi */
+.wefax-body { grid-template-columns: minmax(0, 1fr) clamp(230px, 19vw, 270px); }
+.wefax-card--rx, .wefax-card--rx .wefax-card-body, .wefax-card--rx .wefax-side { box-sizing: border-box; min-width: 0; max-width: 100%; }
+.wefax-card--rx .wefax-card-body { overflow-x: hidden; }
+.wefax-card--rx * { box-sizing: border-box; min-width: 0; max-width: 100%; }
+.wefax-card--rx .wefax-side { width: 100%; padding: 0.35rem; gap: 0.35rem; }
+.wefax-card--rx .sstv-readouts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 0.5rem; width: 100%; }
+.wefax-card--rx .sstv-readouts dt { font-size: 0.56rem; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wefax-card--rx .sstv-readouts dd { font-size: 0.78rem; flex-wrap: wrap; overflow: hidden; }
+.wefax-card--rx .sstv-actions, .wefax-card--rx .wefax-file { display: flex; flex-wrap: wrap; gap: 0.25rem; width: 100%; }
+.wefax-card--rx .sstv-btn { flex: 1 1 auto; padding: 0.12rem 0.35rem; font-size: 0.66rem; white-space: normal; text-align: center; line-height: 1.15; }
+.wefax-card--rx .wefax-file .sstv-btn { width: 100%; }
+.wefax-card--rx .wefax-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem; width: 100%; }
+.wefax-card--rx .sstv-field { min-width: 0; font-size: 0.62rem; }
+.wefax-card--rx .sstv-field input, .wefax-card--rx .sstv-field select, .wefax-card--rx select, .wefax-card--rx input[type='number'], .wefax-card--rx input[type='text'] { width: 100%; font-size: 0.68rem; text-overflow: ellipsis; }
+.wefax-card--rx .sstv-check { font-size: 0.64rem; line-height: 1.2; align-items: flex-start; }
+.wefax-card--rx .wefax-set { width: 100%; margin: 0; }
+.wefax-card--rx summary { font-size: 0.68rem; }
+
+/* indicatore della frequenza a sinistra, prima del menu del modo; frecce ▲▼ in un solo blocchetto piccolo (una sopra l'altra), uguale nei due temi */
+.wefax-mini { margin-left: 0; flex: 0 1 auto; }
+.wefax-step { display: inline-flex; flex-direction: column; flex: 0 0 auto; width: 1.25rem; height: 1.5rem; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--panel-raised, rgba(255,255,255,0.06)); }
+.wefax-step .wefax-step-btn { flex: 1 1 0; width: 100%; min-width: 0; min-height: 0; height: 50%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--text, #e6edf7); font-size: 0.42rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.wefax-step .wefax-step-btn + .wefax-step-btn { border-top: 1px solid var(--border); }
+.wefax-step .wefax-step-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent, #7aa2ff) 28%, transparent); }
+.wefax-step .wefax-step-btn:disabled { opacity: 0.35; }
+html[data-theme='light'] .wefax-step .wefax-step-btn { color: #10151f; }
+
+/* tutti i comandi della riga in alto piu' bassi (20 px) e con carattere piccolo, cosi' i pulsanti non sembrano enormi accanto al testo */
+.wefax-page .sstv-head .sstv-modesel, .wefax-page .sstv-head .wefax-picker-btn, .wefax-page .sstv-head .wefax-freq { height: 20px; min-height: 20px; padding-block: 0; font-size: 0.64rem; }
+.wefax-page .sstv-head .wefax-toolbar .sstv-btn { height: 20px; min-height: 20px; padding: 0 0.35rem; font-size: 0.62rem; }
+.wefax-page .sstv-head .wefax-tog, .wefax-page .sstv-head .wefax-sql-level { height: 20px; min-height: 20px; padding-block: 0; font-size: 0.62rem; line-height: 1; }
+.wefax-page .sstv-head .wefax-step { width: 1.05rem; height: 20px; }
+.wefax-page .sstv-head .wefax-zoom { font-size: 0.66rem; min-width: 2rem; }
+.wefax-page .sstv-head .rd-compact { min-height: 24px; padding: 0 6px; gap: 6px; }
+.wefax-page .sstv-head .rd-compact-freq { font-size: 15px; }
+.wefax-page .sstv-head .wefax-rxtag { height: 20px; }
+
+/* frecce ▲ ▼: due piccoli pulsanti separati, uno accanto all'altro, attaccati al menu delle stazioni */
+.wefax-page .sstv-head .wefax-step { display: inline-flex; flex-direction: row; width: auto; height: 20px; gap: 3px; border: 0; border-radius: 0; overflow: visible; background: transparent; margin-left: -0.25rem; }
+.wefax-page .sstv-head .wefax-step .wefax-step-btn { flex: 0 0 auto; width: 20px; min-width: 20px; height: 20px; min-height: 20px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-raised, rgba(255,255,255,0.06)); color: var(--text, #e6edf7); font-size: 0.55rem; line-height: 1; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.wefax-page .sstv-head .wefax-step .wefax-step-btn + .wefax-step-btn { border-top: 1px solid var(--border); }
+.wefax-page .sstv-head .wefax-step .wefax-step-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent, #7aa2ff) 30%, transparent); }
+html[data-theme='light'] .wefax-page .sstv-head .wefax-step .wefax-step-btn { color: #10151f; background: #ffffff; border-color: rgba(70, 90, 130, 0.45); }

@@ -17,7 +17,7 @@ type ZoomMode = 'fit' | number;
  * orizzontale), a pixel reali 1:1 con scorrimento nel riquadro, o con lo zoom a gradini. Durante la ricezione segue l'ultima riga
  * (si disattiva). Il riquadro occupa al massimo l'altezza dello schermo; la ricezione vive nel motore e riprende al rientro.
  */
-export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: { snapRows: number; listening: boolean; receiving: boolean; onSaved: () => void; onChanged: () => void }) {
+export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChanged }: { snapRows: number; listening: boolean; receiving: boolean; /** L'ultima cartina salvata: a ricezione finita la misura dell'inclinazione ne fa una copia raddrizzata. */ lastId?: string; onSaved: () => void; onChanged: () => void }) {
   // lo spazio sulla riga in alto della pagina dove vanno i comandi dello zoom (se la pagina lo offre)
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
@@ -132,8 +132,8 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   const shownRows = Math.max(rows, receiving ? snapRows : 0);
   // la cartina e' finita: la misura non ha piu' niente da correggere in corso
   useEffect(() => {
-    if (!receiving) setMeasuring(false);
-  }, [receiving]);
+    if (!receiving && !lastId) setMeasuring(false);
+  }, [receiving, lastId]);
   useEffect(() => {
     if (!slantNote) return;
     const id = window.setTimeout(() => setSlantNote(null), 8000);
@@ -141,9 +141,12 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
   }, [slantNote]);
   const measure = (p: WefaxSlantPoints) => {
     setMeasuring(false);
-    postWefaxSlant({ points: p }).then(
+    // a ricezione finita si corregge l'ultima cartina salvata (come copia, l'originale resta); durante la ricezione la cartina in corso
+    const onSavedChart = !receiving && lastId;
+    postWefaxSlant(onSavedChart ? { points: p, id: lastId, replace: false } : { points: p }).then(
       (r) => {
-        setSlantNote({ ok: true, text: t('wefax.slant.done', { ppm: String(Math.round(r.ppm)) }) });
+        setSlantNote({ ok: true, text: onSavedChart ? t('wefax.slant.copied', { ppm: String(Math.round(r.ppm)) }) : t('wefax.slant.done', { ppm: String(Math.round(r.ppm)) }) });
+        if (onSavedChart) onSaved();
         onChanged();
       },
       () => setSlantNote({ ok: false, text: t('wefax.slant.error') }),
@@ -172,7 +175,7 @@ export function Viewer({ snapRows, listening, receiving, onSaved, onChanged }: {
         <button type="button" className="glass sstv-btn" onClick={() => setZoom(stepZoom(scale, 1))} title={t('wefax.view.zoomIn')} aria-label={t('wefax.view.zoomIn')}>
           +
         </button>
-        <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={!receiving || shownRows < 30} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
+        <button type="button" className={`glass sstv-btn${measuring ? ' sstv-btn--primary' : ''}`} disabled={(!receiving && !lastId) || shownRows < 30} aria-pressed={measuring} title={t('wefax.slant.measureTip')} onClick={() => setMeasuring((m) => !m)}>
           {t('wefax.slant.measure')}
         </button>
         <label className="sstv-check wefax-follow">

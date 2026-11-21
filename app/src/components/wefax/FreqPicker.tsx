@@ -10,6 +10,8 @@ interface Props {
 }
 
 const label = (p: WefaxPreset) => `${formatKhz(p.khz)} kHz · ${p.call} ${p.place}`;
+/** Nella casella chiusa: frequenza, il primo nominativo e il luogo (l'elenco aperto mostra tutti i nominativi). */
+const shortLabel = label;
 
 /**
  * L'elenco delle stazioni WEFAX per banda. Al posto del menu del sistema (che non si puo' far scorrere) all'apertura l'elenco si porta da solo sulla
@@ -81,7 +83,7 @@ export function FreqPicker({ groups, value, onSelect }: Props) {
         title={t('wefax.freq.tip')}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="wefax-picker-text">{current ? label(current) : t('wefax.freq.choose')}</span>
+        <span className="wefax-picker-text">{current ? shortLabel(current) : t('wefax.freq.choose')}</span>
         <span aria-hidden="true" className="wefax-picker-caret">▾</span>
       </button>
       {open ? (

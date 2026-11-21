@@ -140,7 +140,7 @@ describe('WefaxPage', () => {
     vi.mocked(getWefax).mockResolvedValue({ ...SNAP, rx: { ...SNAP.rx, listening: false } });
     const { unmount } = page();
     expect(await screen.findByRole('button', { name: 'Avvia ascolto' })).toBeInTheDocument();
-    expect(screen.getByText('Ascolto spento')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Ascolto spento' })).toBeInTheDocument();
     unmount();
   });
 });
