@@ -1,0 +1,282 @@
+# UBA DX SSB Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento UBA 2027 (https://www.uba.be/en/hf/contest-rules/uba-dx-contest).
+# Due punti di vista: [prova] e' una stazione italiana (paese UE), [[altra_stazione]] una stazione belga.
+# Nominativi di fantasia. Moltiplicatori: valore@modo (contano una volta per banda; il controllo non mostra la banda).
+# Giorno: la domenica (il contest va dalle 13:00 del sabato alle 13:00 della domenica).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-01-31"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14201
+ora_utc = "0005"
+nominativo = "ON4ABC"
+rst_inviato = "59"
+scambio_inviato = "001"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 ACC"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["ACC@SSB", "ON4@SSB"], motivo = "Belgio: 10 punti; sezione ACC e prefisso ON4 nuovi su 20 m" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "0010"
+nominativo = "ON4ABC"
+rst_inviato = "59"
+scambio_inviato = "002"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 ACC"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda del QSO 1" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14203
+ora_utc = "0015"
+nominativo = "OO5ABC"
+rst_inviato = "59"
+scambio_inviato = "003"
+rst_ricevuto = "59"
+scambio_ricevuto = "002 XXX"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["OO5@SSB"], motivo = "Belgio non socio: 10 punti; XXX non e' una sezione, il prefisso OO5 si'" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "0020"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "004"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["DL@SSB"], motivo = "paese UE: 3 punti e moltiplicatore" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14205
+ora_utc = "0025"
+nominativo = "I2ABC"
+rst_inviato = "59"
+scambio_inviato = "005"
+rst_ricevuto = "59"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["I@SSB"], motivo = "anche l'Italia e' nell'elenco UE: 3 punti e moltiplicatore" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14206
+ora_utc = "0030"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "006"
+rst_ricevuto = "59"
+scambio_ricevuto = "020"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "fuori dall'UE: 1 punto, nessun moltiplicatore" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "SSB"
+freq_khz = 14207
+ora_utc = "0035"
+nominativo = "UA3ABC"
+rst_inviato = "59"
+scambio_inviato = "007"
+rst_ricevuto = "59"
+scambio_ricevuto = "030"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "Russia esclusa dal regolamento: 0 punti e 0 moltiplicatori" }
+
+[[qso]]
+n = 8
+banda = 40
+modo = "SSB"
+freq_khz = 7158
+ora_utc = "0040"
+nominativo = "ON4ABC"
+rst_inviato = "59"
+scambio_inviato = "008"
+rst_ricevuto = "59"
+scambio_ricevuto = "015 ACC"
+atteso = { ammesso = true, doppio = false, punti = 10, moltiplicatori = ["ACC@SSB", "ON4@SSB"], motivo = "stessa stazione su un'altra banda: sezione e prefisso nuovi su 40 m" }
+
+[[qso]]
+n = 9
+banda = 15
+modo = "SSB"
+freq_khz = 21259
+ora_utc = "0045"
+nominativo = "HB9ABC"
+rst_inviato = "59"
+scambio_inviato = "009"
+rst_ricevuto = "59"
+scambio_ricevuto = "040"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "Svizzera fuori dall'UE: 1 punto" }
+
+[[qso]]
+n = 10
+banda = 15
+modo = "SSB"
+freq_khz = 21260
+ora_utc = "0050"
+nominativo = "IT9ABC"
+rst_inviato = "59"
+scambio_inviato = "010"
+rst_ricevuto = "59"
+scambio_ricevuto = "050"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["I@SSB"], motivo = "Sicilia: paese DXCC Italia, UE, nuovo su 15 m" }
+
+[[qso]]
+n = 11
+banda = 30
+modo = "SSB"
+freq_khz = 10126
+ora_utc = "0055"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "011"
+rst_ricevuto = "59"
+scambio_ricevuto = "060"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "30 m non e' una banda del contest" }
+
+# Totali (a mano): ammessi 1,3,4,5,6,8,9,10 = 8; doppi 1 (n. 2); non ammessi 2 (n. 7 Russia, n. 11 30 m)
+#   punti: 10+10+3+3+1+10+1+3 = 41
+#   moltiplicatori: ACC@20 ON4@20 OO5@20 DL@20 I@20 ACC@40 ON4@40 I@15 = 8
+#   bonus: QSO con il Belgio 3 (n. 1, 3, 8) per 30 punti, su 8 QSO validi: 30 x 3 / 8 = 11 (per difetto)
+#   punteggio = (41 + 11) x 8 = 416
+[atteso]
+qso_ammessi = 8
+doppi = 1
+non_ammessi = 2
+punti = 41
+moltiplicatori = 8
+punteggio = 416
+
+[[altra_stazione]]
+nominativo_proprio = "ON4XYZ"
+locatore_proprio = "JO20ab"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "SSB"
+freq_khz = 14201
+ora_utc = "0105"
+nominativo = "ON5ABC"
+rst_inviato = "59"
+scambio_inviato = "001 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "001 ACC"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["ACC@SSB", "ON@SSB"], motivo = "belga con belga: 1 punto; sezione ACC e paese Belgio" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "SSB"
+freq_khz = 14202
+ora_utc = "0110"
+nominativo = "DL1ABC"
+rst_inviato = "59"
+scambio_inviato = "002 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["DL@SSB"], motivo = "belga con paese UE: 2 punti" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "SSB"
+freq_khz = 14203
+ora_utc = "0115"
+nominativo = "K1ABC"
+rst_inviato = "59"
+scambio_inviato = "003 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["K@SSB"], motivo = "belga con paese fuori dall'UE: 3 punti, per i belgi ogni paese DXCC e' moltiplicatore" }
+
+[[altra_stazione.qso]]
+n = 4
+banda = 20
+modo = "SSB"
+freq_khz = 14204
+ora_utc = "0120"
+nominativo = "IT9ABC"
+rst_inviato = "59"
+scambio_inviato = "004 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "020"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["I@SSB"], motivo = "Sicilia: Italia nell'elenco UE, 2 punti" }
+
+[[altra_stazione.qso]]
+n = 5
+banda = 20
+modo = "SSB"
+freq_khz = 14205
+ora_utc = "0125"
+nominativo = "I2ABC"
+rst_inviato = "59"
+scambio_inviato = "005 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "030"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = [], motivo = "Italia gia' presa su 20 m" }
+
+[[altra_stazione.qso]]
+n = 6
+banda = 20
+modo = "SSB"
+freq_khz = 14206
+ora_utc = "0130"
+nominativo = "ON6ABC"
+rst_inviato = "59"
+scambio_inviato = "006 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "005 XXX"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "belga non socio: 1 punto, XXX non conta e il Belgio e' gia' preso" }
+
+[[altra_stazione.qso]]
+n = 7
+banda = 40
+modo = "SSB"
+freq_khz = 7157
+ora_utc = "0135"
+nominativo = "JA1ABC"
+rst_inviato = "59"
+scambio_inviato = "007 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "040"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["JA@SSB"], motivo = "altro paese su 40 m: 3 punti" }
+
+[[altra_stazione.qso]]
+n = 8
+banda = 40
+modo = "SSB"
+freq_khz = 7158
+ora_utc = "0140"
+nominativo = "EW1ABC"
+rst_inviato = "59"
+scambio_inviato = "008 ACC"
+rst_ricevuto = "59"
+scambio_ricevuto = "050"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "Bielorussia esclusa dal regolamento" }
+
+# Totali (a mano): 7 QSO validi, 1 non ammesso; punti 1+2+3+2+2+1+3 = 14; moltiplicatori ACC ON DL K I JA = 6; i belgi non hanno bonus: 14 x 6 = 84
+[altra_stazione.atteso]
+qso_ammessi = 7
+doppi = 0
+non_ammessi = 1
+punti = 14
+moltiplicatori = 6
+punteggio = 84

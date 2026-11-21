@@ -1,0 +1,13 @@
+; UBA DX SSB Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). Regolamento UBA, edizione 2027.
+; Il bonus delle stazioni non belghe e' in punteggio.rhai.
+;
+; bands: 80, 40, 20, 15, 10 m.
+; valid: Russia (UA, UA2, UA9) e Bielorussia (EU) escluse dalle attivita' UBA: 0 punti e 0 moltiplicatori.
+; points: belgi ON 1, paesi UE 2, altri 3; gli altri ON 10, paesi UE 3, altri 1. Elenco UE del regolamento (SV/A = Monte Athos).
+;   L'ordine conta: le righe dei belgi (my_dxcc:ON) vengono prima.
+; mult (per banda): sezioni UBA per tutti (XXX non conta); per i non belgi prefissi belgi (ON4, OO5, OT1...) e paesi UE;
+;   per i belgi ogni paese DXCC.
+bands=80,40,20,15,10
+valid=not_dxcc:UA,UA9,UA2,EU
+points=my_dxcc:ON&dxcc:ON=1; my_dxcc:ON&dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,SV/A,TK,YL,YO=2; my_dxcc:ON=3; dxcc:ON=10; dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,SV/A,TK,YL,YO=3; any=1
+mult=exch/band/if:dxcc:ON/skip:XXX; wpx/band/if:dxcc:ON&not_my_dxcc:ON; dxcc/band/if:dxcc:5B,9A,9H,CT,CT3,CU,DL,EA,EA6,EA8,EI,ES,F,FG,FM,FR,FY,HA,I,IS,LX,LY,LZ,OE,OH,OH0,OJ0,OK,OM,OZ,PA,S5,SM,SP,SV,SV5,SV9,SV/A,TK,YL,YO&not_my_dxcc:ON; dxcc/band/if:my_dxcc:ON

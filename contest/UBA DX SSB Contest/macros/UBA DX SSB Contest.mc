@@ -1,0 +1,78 @@
+[Macros]
+nItems=13
+
+Name0=F2
+Label0=QRZ?
+Text0=<TX>QRZ QRZ  de <MYCALL> k <RXANDCLEAR>
+
+Name1=F3
+Label1=H/M
+Text1=<TX><FIXSTARTTIME> <CALL> <GA> TU <RSTS> <NRS>  <NRS>  <NRS> <CALL><RXANDCLEAR>
+
+Name2=F5
+Label2=CFM QSO
+Text2=<TX> CFM TU <CALL> de <MYCALL> 73 QRZ?<SAVEQSO><RXANDCLEAR><AUTOCQ><ACQDELAY:seconds> <CR><LF><CR><LF>
+
+
+Name3=F6
+Label3=Prev Nr
+Text3=<TX>  <PREVNRS>  <PREVNRS> <PREVNRS> <PREVNRS><RXANDCLEAR>
+
+
+Name4=F7
+Label4=CallMyCall
+Text4=<TX> <CALL> <CALL> de <MYCALL> <MYCALL> <RXANDCLEAR>
+
+
+Name5=F8
+Label5=MY NR AG
+Text5=<TX> <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  <NRS>  de <MYCALL> <RXANDCLEAR>
+
+Name6=F9
+Label6=QSO B4
+Text6=<TX>  <CALL> de  <MYCALL> QSO B4  ON  <QSOBEFORETIME> <RXANDCLEAR>
+
+Name7=F10
+Label7=AGAIN
+Text7=<TX>AGN AGN k..<RXANDCLEAR>
+
+
+Name8=AutoCqText
+Label8=AutoCQ
+Text8=<TX>CQ UBA TEST de <MYCALL> <MYCALL> <MYCALL><RXANDCLEAR>
+
+
+Name9=F1
+Label9=AutoCQ
+Text9=<WAVE:CQ UBA Test.wav><ACQDELAY:seconds>
+
+
+Name10=F4
+Label10=AGAIN NR
+Text10=<TX><WAVE:AGN_Nr.wav> <RXANDCLEAR>
+
+
+Name11=F12
+Label11=MY CALL x2
+Text11=<WAVE:<MYCALL>-2X.wav>
+
+
+Name12=F11
+Label12=MY CALLx1
+Text12=<WAVE:<MYCALL>-X1.wav>
+
+
+
+BkColor0=2377947
+BkColor1=8421376
+BkColor2=65535
+BkColor3=4227327
+BkColor4=8454143
+BkColor5=4210816
+BkColor6=8421376
+BkColor7=65535
+BkColor8=255
+BkColor9=5748297
+BkColor10=255
+BkColor11=65408
+BkColor12=16777088

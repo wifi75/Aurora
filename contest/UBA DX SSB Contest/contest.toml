@@ -1,0 +1,150 @@
+# UBA DX SSB Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 su https://www.uba.be/en/hf/contest-rules/uba-dx-contest («UBA DX Contest», edizione 2027, nessuna data di revisione).
+
+[contest]
+id = "uba-dx-ssb"
+nome = "UBA DX SSB Contest"
+alias = ["UBA SSB Contest"]        # nome interno del vecchio file: la cartella lo sostituisce
+organizzatore = "UBA (Union Royale Belge des Amateurs-Emetteurs)"
+sito = "https://www.uba.be"
+regolamento_url = "https://www.uba.be/en/hf/contest-rules/uba-dx-contest"
+cabrillo_contest = "UBA-DX-SSB"
+note = "Solo SSB, 80-10 m, 24 ore. Scambio: RS + numero (i belgi anche la sezione UBA). Moltiplicatori per banda: sezioni UBA, prefissi belgi e paesi UE (i belgi: paesi DXCC e sezioni)."
+
+[edizione]
+# Ultimo sabato di gennaio 13:00 UTC - domenica 13:00 UTC. Il formato conta solo l'ennesimo fine settimana pieno e non sa dire
+# «l'ultimo sabato»: 4 e' il valore che esiste in ogni anno; le date vere sono scritte sotto anno per anno e valgono al posto del calcolo.
+mese = 1
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "13:00"
+durata_ore = 24
+invio_log_giorni = 4              # entro 83 ore dalla fine (2027: 3 febbraio 23:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-01-31T13:00:00Z"
+fine = "2026-02-01T12:59:59Z"
+fonte = "calcolata: ultimo sabato di gennaio (edizione passata)"
+confermata = false
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-01-30T13:00:00Z"
+fine = "2027-01-31T12:59:59Z"
+fonte = "https://www.uba.be/en/hf/contest-rules/uba-dx-contest (letto il 2026-11-21): «January 30-31», log entro il 3 febbraio 2027"
+confermata = true
+nota = "la sezione 2 della pagina scrive le date col 2026, ma il 30 gennaio e' un sabato nel 2027; le scadenze dei log sono del 2027"
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-01-29T13:00:00Z"
+fine = "2028-01-30T12:59:59Z"
+fonte = "calcolata: ultimo sabato di gennaio"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["ssb"]
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "sezione"
+etichetta_it = "Sezione UBA"
+etichetta_en = "UBA section"
+tipo = "testo"
+quando = "dxcc:ON"
+nota = "Tre lettere (ACC, ANT...); XXX per chi non e' socio UBA (non e' moltiplicatore), UBA per ON4UBA, ON4DIG e ON4YLC."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { ssb = "59" }
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "any"
+progressivo = true
+nota = "Da 001; i belgi aggiungono la propria sezione UBA (si scrive in «Numero di partenza» dopo il numero)."
+
+[doppi]
+per = "banda"                     # il regolamento non ha una regola dei doppi: una stazione per banda, come per i moltiplicatori
+
+[categorie]
+operatore = ["A", "B", "C", "D", "E", "BASE", "F"]   # belgi: A 6 ore, B 12 ore, C 24 ore (H/L), D multi, E QRP 18 ore, BASE (ON3), F SWL
+potenza = ["HIGH", "LOW", "QRP"]  # oltre 100 W, 100 W, 10 W in SSB
+altre = ["A10", "A15", "A20", "A40", "A80", "CHP", "CLP"]   # fuori dal Belgio: monobanda H/L, singolo operatore tutte le bande H/L
+
+[categorie.d]
+potenza = ["HIGH", "LOW"]         # regola dei 10 minuti; la stazione dei moltiplicatori solo su un'altra banda
+
+[cabrillo]
+contest = "UBA-DX-SSB"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CATEGORY-MODE", "EMAIL", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-TIME", "CATEGORY-TRANSMITTER", "OPERATORS", "CLUB", "NAME", "ADDRESS", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_mode = ["SSB"]
+category_time = ["6-HOURS", "12-HOURS", "24-HOURS"]
+invio = "caricamento web: https://contestupload.uba.be/ (i belgi scrivono CATEGORY-TIME 6, 12 o 24 ore)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Sezioni UBA per banda", en = "UBA sections by band" }
+ordine = 1
+moltiplicatore = "sezione"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Prefissi belgi per banda", en = "Belgian prefixes by band" }
+ordine = 2
+moltiplicatore = "prefisso"
+per_banda = true
+per_modo = false
+quando = "not_my_dxcc:ON"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi per banda", en = "Countries by band" }
+ordine = 3
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 4
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 5
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]
