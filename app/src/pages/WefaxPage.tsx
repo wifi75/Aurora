@@ -179,7 +179,16 @@ function WefaxBody({ solo }: { solo: boolean }) {
       {snap.isError ? <p className="notice">{t('set.loadError')}</p> : null}
       {data ? (
         <div className="wefax-body">
+          {/* a sinistra: le cartine ricevute per tutta l'altezza (miniature intere, un clic le apre in grande, pulsanti piccoli per scaricare e cancellare) */}
+          <div className="wefax-hist-row">
+            <History images={images.data ?? []} onChanged={refreshImages} />
+          </div>
+          {/* al centro: la cartina in arrivo, alta quanto la pagina */}
           <div className="wefax-main">
+            <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
+          </div>
+          {/* a destra: spettro e cascata, sotto i comandi */}
+          <div className="wefax-right">
             <WefaxScope
               centerHz={data.settings.center_hz}
               shiftHz={data.settings.shift_hz}
@@ -188,13 +197,6 @@ function WefaxBody({ solo }: { solo: boolean }) {
                 if (hz !== data.settings.center_hz) void putWefax({ ...data.settings, center_hz: hz }).then(refresh, refresh);
               }}
             />
-            <Viewer snapRows={data.rx.rows} listening={data.rx.listening} receiving={data.rx.receiving} onSaved={refreshImages} onChanged={refresh} />
-          </div>
-          {/* a destra: sopra le cartine ricevute (miniature con pulsanti piccoli, un clic le apre in grande), sotto i comandi */}
-          <div className="wefax-right">
-            <div className="wefax-hist-row">
-              <History images={images.data ?? []} onChanged={refreshImages} />
-            </div>
             <Controls snap={data} onChanged={refresh} onListen={onListen} />
           </div>
         </div>

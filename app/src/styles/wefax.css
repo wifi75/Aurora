@@ -1,11 +1,11 @@
 /* Pagina WEFAX: visore adattabile allo schermo, comandi, cronologia. Riusa le classi sstv-* (badge, pulsanti, schede) e i colori del tema. */
 .wefax-page { min-width: 0; }
-.wefax-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); grid-template-areas: 'main right'; gap: 0.8rem; align-items: start; min-width: 0; }
+.wefax-body { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) minmax(280px, 360px); grid-template-areas: 'hist main right'; gap: 0.8rem; align-items: start; min-width: 0; }
 .wefax-main { grid-area: main; min-width: 0; }
 .wefax-side { grid-area: side; min-width: 0; align-self: start; }
 .wefax-right { grid-area: right; min-width: 0; display: flex; flex-direction: column; gap: 0.6rem; max-height: calc(100vh / var(--ui-zoom, 1) - 8.5rem); overflow-y: auto; overflow-x: hidden; scrollbar-gutter: stable; }
 .wefax-right .wefax-side { max-height: none; overflow: visible; flex: 0 0 auto; }
-.wefax-hist-row { min-width: 0; flex: 0 0 auto; }
+.wefax-hist-row { grid-area: hist; min-width: 0; max-height: calc(100vh / var(--ui-zoom, 1) - 8.5rem); overflow-y: auto; overflow-x: hidden; }
 
 .wefax-viewer { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 .wefax-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
@@ -45,7 +45,7 @@
 
 /* schermi stretti: una colonna, il visore prima, i comandi dopo; riquadro piu' basso per lasciare spazio alla pagina */
 @media (max-width: 900px) {
-  .wefax-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'main' 'right'; }
+  .wefax-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'main' 'right' 'hist'; }
 }
 @media (max-width: 640px) {
   .wefax-box { height: calc(60vh / var(--ui-zoom, 1)); min-height: 14rem; border-radius: 10px; }
@@ -57,7 +57,7 @@
 
 /* comandi piu' compatti, per entrare meglio e per gli schermi piccoli o con la scala del testo alta: colonna piu' stretta, caratteri e spazi ridotti,
    nessun elemento oltre il bordo; se non entra tutto, il pannello scorre dentro di se' (non la pagina) */
-.wefax-body { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 0.6rem; }
+.wefax-body { grid-template-columns: 9rem minmax(0, 1fr) minmax(240px, 300px); gap: 0.6rem; }
 .wefax-side { max-height: calc(100vh / var(--ui-zoom, 1) - 8.5rem); overflow-y: auto; overflow-x: hidden; padding-right: 0.15rem; font-size: 0.86rem; scrollbar-gutter: stable; }
 .wefax-side, .wefax-side * { min-width: 0; box-sizing: border-box; }
 .wefax-side .sstv-readouts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem 0.6rem; }
@@ -75,7 +75,7 @@
 .wefax-slant .sstv-btn { padding: 0.2rem 0.45rem; min-width: 2rem; }
 .wefax-box { height: calc(74vh / var(--ui-zoom, 1)); }
 @media (max-width: 1100px) {
-  .wefax-body { grid-template-columns: minmax(0, 1fr) minmax(220px, 260px); grid-template-areas: 'main right'; }
+  .wefax-body { grid-template-columns: 8.5rem minmax(0, 1fr) minmax(220px, 260px); grid-template-areas: 'hist main right'; }
   .wefax-side { font-size: 0.8rem; }
   .wefax-grid { grid-template-columns: minmax(0, 1fr); }
 }
@@ -161,8 +161,8 @@
 /* cartine ricevute: riquadro in alto a destra, miniature a due colonne (scorre da solo oltre una certa altezza), pulsanti piccoli; un clic apre la cartina in grande */
 .wefax-hist-row .wefax-history { padding: 0.45rem 0.5rem 0.55rem; gap: 0.4rem; border-radius: 12px; }
 .wefax-hist-row .sstv-hist-head { font-size: 0.8rem; }
-.wefax-hist-row .wefax-thumbs { max-height: 15rem; overflow-y: auto; padding-right: 0.15rem; }
-.wefax-thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+.wefax-hist-row .wefax-thumbs { padding-right: 0.15rem; }
+.wefax-thumbs { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
 .wefax-thumb { position: relative; gap: 0.15rem; border-radius: 8px; }
 .wefax-thumb-open img { height: auto; max-height: 7.5rem; object-fit: contain; object-position: center; }
 .wefax-thumb-meta { padding: 0 0.3rem; font-size: 0.64rem; }
@@ -170,14 +170,15 @@
 .wefax-thumb-tools { padding: 0 0.3rem 0.3rem; gap: 0.2rem; justify-content: flex-end; }
 .wefax-thumb-icon { padding: 0.05rem 0.35rem; font-size: 0.7rem; line-height: 1.3; min-width: 1.5rem; text-align: center; }
 /* il riquadro del visore sta nello schermo con lo spettro e la cascata sopra: niente scorrimento della pagina */
-.wefax-box { height: calc(100vh / var(--ui-zoom, 1) - 20rem); min-height: 14rem; }
+.wefax-box { height: calc(100vh / var(--ui-zoom, 1) - 11rem); min-height: 16rem; }
 @media (max-width: 900px) {
   .wefax-right { max-height: none; overflow: visible; }
+  .wefax-hist-row { max-height: none; overflow: visible; }
   .wefax-thumbs { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
 }
 
 /* elenco delle stazioni: menu proprio che si apre sulla stazione impostata per ultima, evidenziata e al centro */
-.wefax-picker { position: relative; flex: 0 1 11rem; min-width: 0; }
+.wefax-picker { position: relative; flex: 0 0 19rem; width: 19rem; min-width: 12rem; }
 .wefax-picker-btn { display: flex; align-items: center; justify-content: space-between; gap: 0.3rem; width: 100%; max-width: none; text-align: left; cursor: pointer; }
 .wefax-picker-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .wefax-picker-caret { flex: 0 0 auto; opacity: 0.7; }
@@ -190,9 +191,9 @@ html[data-theme='light'] .wefax-picker-list { background: #ffffff; }
 html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 
 /* barre di scorrimento sottili e nei colori del tema (nel riquadro del visore, nella colonna di destra, nelle miniature e nell'elenco delle stazioni) */
-.wefax-box, .wefax-right, .wefax-hist-row .wefax-thumbs, .wefax-picker-list { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-muted, #8a96b4) 55%, transparent) transparent; }
-.wefax-box::-webkit-scrollbar, .wefax-right::-webkit-scrollbar, .wefax-hist-row .wefax-thumbs::-webkit-scrollbar, .wefax-picker-list::-webkit-scrollbar { width: 8px; height: 8px; }
-.wefax-box::-webkit-scrollbar-track, .wefax-right::-webkit-scrollbar-track, .wefax-hist-row .wefax-thumbs::-webkit-scrollbar-track, .wefax-picker-list::-webkit-scrollbar-track { background: transparent; }
-.wefax-box::-webkit-scrollbar-thumb, .wefax-right::-webkit-scrollbar-thumb, .wefax-hist-row .wefax-thumbs::-webkit-scrollbar-thumb, .wefax-picker-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-muted, #8a96b4) 55%, transparent); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+.wefax-box, .wefax-right, .wefax-hist-row, .wefax-picker-list { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-muted, #8a96b4) 55%, transparent) transparent; }
+.wefax-box::-webkit-scrollbar, .wefax-right::-webkit-scrollbar, .wefax-hist-row::-webkit-scrollbar, .wefax-picker-list::-webkit-scrollbar { width: 8px; height: 8px; }
+.wefax-box::-webkit-scrollbar-track, .wefax-right::-webkit-scrollbar-track, .wefax-hist-row::-webkit-scrollbar-track, .wefax-picker-list::-webkit-scrollbar-track { background: transparent; }
+.wefax-box::-webkit-scrollbar-thumb, .wefax-right::-webkit-scrollbar-thumb, .wefax-hist-row::-webkit-scrollbar-thumb, .wefax-picker-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-muted, #8a96b4) 55%, transparent); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
 .wefax-box::-webkit-scrollbar-corner { background: transparent; }
 .wefax-right { scrollbar-gutter: auto; }
