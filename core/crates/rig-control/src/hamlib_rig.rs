@@ -1596,6 +1596,14 @@ impl HamlibRig {
                     Ok(()) => {
                         inner.sat_vfo_pair.store(id, Ordering::SeqCst);
                         let wrote = c.set_frequency(hz).and_then(|()| mode.map_or(Ok(()), |m| c.set_mode(m, 0)));
+                        // la frequenza si rilegge dal VFO di trasmissione prima di tornare a quello di ricezione e il risultato va nel registro:
+                        // se la radio accetta il comando ma il suo display non si muove (IC-820H, #83) il pacchetto dice cosa ha risposto davvero
+                        if wrote.is_ok() {
+                            match c.frequency() {
+                                Ok(read) => tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, riletta {read} Hz (scarto {} Hz)", read.abs_diff(hz)),
+                                Err(e) => tracing::info!("satelliti: trasmissione scritta {hz} Hz sul VFO {tx_vfo}, rilettura non riuscita: {}", e.0),
+                            }
+                        }
                         let back = c.set_vfo(rx_vfo);
                         return wrote.and(back).map(|()| true);
                     }
