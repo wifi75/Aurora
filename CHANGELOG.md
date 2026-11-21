@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.324 - 2026-11-21
+
 - Display radio compatto: in ricezione la lettura dell'S-meter (per esempio S9+6) sta alla fine della barra, nello stesso punto dove in trasmissione c'e' la potenza; in trasmissione la barra della potenza e il testo PWR sono rossi.
 
 - WEFAX, «Decodifica da file…»: una registrazione WAV (non compressa, PCM a 8, 16, 24 o 32 bit o float, mono o stereo, da 6000 a 96000 Hz, fino a 200 MB) si passa al ricevitore come se arrivasse dalla scheda audio, a blocchi di un quarto di secondo con una pausa tra l'uno e l'altro (molto piu' in fretta del tempo reale ma senza occupare un nucleo intero), con un decodificatore a parte (l'errore di orologio ricordato della scheda non si sporca). Percentuale nello stato (`rx.decoding_file`, `rx.file_percent`), pulsante per fermarla, cartine nella cronologia anche con il salvataggio automatico spento; durante la decodifica l'ascolto dal vivo e' sospeso. Rotte `POST /api/v1/wefax/file` (corpo binario) e `POST /api/v1/wefax/file/stop`; un file non valido da' `bad_audio` con un messaggio chiaro. Guida e testi nelle otto lingue.
