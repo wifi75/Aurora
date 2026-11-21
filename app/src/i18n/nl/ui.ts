@@ -4037,6 +4037,7 @@ export const NL_UI: Record<string, string> = {
   "sat.map.drag": "Sleep om de kaart te verschuiven · wiel om te zoomen · dubbelklik voor de hele kaart",
   "sat.map.myCountry": "Mijn land: {name}",
   "sat.map.pick": "Wereldkaart",
+  "sat.map.terraBase": "Aarde (NASA, alleen kleuren)",
   "sat.map.terra": "Aarde (NASA-satelliet)",
   "sat.map.terraHint": "Beelden van NASA Earth Observatory (Blue Marble overdag, Black Marble ’s nachts), vrij te gebruiken met bronvermelding.",
   "sat.map.title": "Kaart",

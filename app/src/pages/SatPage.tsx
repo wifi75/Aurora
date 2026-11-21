@@ -245,6 +245,7 @@ function SatBody({ snap, positions, track, passes, passesAll, allHours, setAllHo
           <SatMap
             mapUrl={mapChoice.kind === 'file' ? satMapUrl(mapChoice.name) : null}
             terra={mapChoice.kind === 'terra'}
+            terraVariant={mapChoice.kind === 'terra' ? mapChoice.variant : 'relief'}
             borders={borders}
             sun={{ lat: snap.sky.sun_lat_deg, lon: snap.sky.sun_lon_deg }}
             moon={{ lat: snap.sky.moon_lat_deg, lon: snap.sky.moon_lon_deg }}

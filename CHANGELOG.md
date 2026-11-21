@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Satelliti, mappe: la Terra di giorno e' piu' nitida (12288 x 6144 px, prima 8192) e c'e' una seconda scelta nel menu della mappa, «Terra (NASA, solo colori)», la Blue Marble di agosto senza rilievo ne' fondali marini; la notte resta la foto delle luci delle citta'. Nome riservato `:terra-base`.
 - Satelliti: sulla mappa i satelliti hanno la stessa icona (corpo con due pannelli solari) al posto del puntino e la ISS la sua sagoma con il traliccio e i pannelli; il satellite scelto ha il cerchio intorno.
 - Satelliti: la stella della stazione sulla mappa e' piu' piccola (raggio da 10 a 7 punti, contorno piu' sottile).
 - Satelliti: lo zoom automatico all'entrata nell'area di acquisizione si ferma a 3x (prima fino a 6x in «Entrambi» e 8x in «Area»); all'uscita la mappa torna intera come prima. A mano si ingrandisce ancora fino a 8x.

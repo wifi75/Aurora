@@ -8,7 +8,7 @@ import { useLang, useT } from '../../i18n';
 import { footprintPolygon, mmss, nightAlpha, sunAltitudeDeg, type LatLon } from '../../lib/satGeo';
 import type { AlertPhase, AlertView } from '../../lib/satAlerts';
 import { buildCountryList, countryAt, countryView, type CountryEntry } from '../../lib/satCountries';
-import { NIGHT_MAX_LEVEL, PHOTO_LEVELS, photoLevel, terraUrls } from '../../lib/satMapChoice';
+import { NIGHT_MAX_LEVEL, PHOTO_LEVELS, photoLevel, terraUrls, type TerraVariant } from '../../lib/satMapChoice';
 import { DEFAULT_ZOOM_MODE, FULL_VIEW, ZOOM_MAX, ZOOM_MIN, autoView, clampView, lerpView, panView, projectView, viewsClose, wheelZoomFactor, zoomAt, type MapView, type ZoomMode } from '../../lib/satView';
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   mapUrl: string | null;
   /** La Terra della NASA (foto di giorno, luci delle citta' di notte); ha la precedenza su `mapUrl`. Finche' le foto caricano resta la mappa vettoriale. */
   terra?: boolean;
+  /** Quale foto del giorno con `terra`: con rilievo e fondali (di base) o solo i colori. */
+  terraVariant?: TerraVariant;
   /** I confini degli Stati sottili sopra la foto della Terra. */
   borders?: boolean;
   sun: { lat: number; lon: number };
@@ -342,7 +344,7 @@ function placeAlerts(svg: SVGSVGElement | null, w: number, h: number, view: MapV
  * (piu' eventi nello stesso fotogramma si fondono) ridisegna il canvas. In movimento la qualita' e' ridotta, a riposo (120 ms dopo l'ultimo movimento) si rifinisce.
  * Lo stato di React con la vista serve solo all'interfaccia (pulsanti attivi) e si aggiorna al massimo 8 volte al secondo e a fine movimento.
  */
-export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, alerts = [], zoomMode = DEFAULT_ZOOM_MODE, onSelect }: Props) {
+export function SatMap({ mapUrl, terra = false, terraVariant = 'relief', borders = false, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, alerts = [], zoomMode = DEFAULT_ZOOM_MODE, onSelect }: Props) {
   const t = useT();
   const lang = useLang((st) => st.lang);
   const wrap = useRef<HTMLDivElement>(null);
@@ -592,7 +594,7 @@ export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, obse
       return;
     }
     let alive = true;
-    const urls = terraUrls();
+    const urls = terraUrls(terraVariant);
     void Promise.all([fetchPhoto(urls.day), fetchPhoto(urls.night)]).then(
       ([day, night]) => {
         if (!alive) {
@@ -614,7 +616,7 @@ export function SatMap({ mapUrl, terra = false, borders = false, sun, moon, obse
         return null;
       });
     };
-  }, [terra]);
+  }, [terra, terraVariant]);
   const photoReady = terra && photos !== null;
 
   // zoom automatico: il satellite in vista (fase lampo o fissa degli avvisi), quello scelto se ce n'e' piu' d'uno, altrimenti il primo

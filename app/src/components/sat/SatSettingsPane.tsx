@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { satUploadMap, type SatSettings, type SatSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
 import { countdown } from '../../lib/satGeo';
-import { loadBorders, PREFERRED_MAP, resolveMap, saveBorders, SAT_SIMPLE_MAP, SAT_TERRA_MAP, selectValue } from '../../lib/satMapChoice';
+import { loadBorders, PREFERRED_MAP, resolveMap, saveBorders, SAT_SIMPLE_MAP, SAT_TERRA_BASE_MAP, SAT_TERRA_MAP, selectValue } from '../../lib/satMapChoice';
 import { toast } from '../../lib/toast';
 import { SatTrackingPane } from './SatTrackingPane';
 import { useBarLabel } from '../../lib/satBarLabel';
@@ -60,6 +60,7 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
           <select value={selectValue(s.map, snap.maps)} onChange={(e) => onSave({ map: e.target.value })}>
             <option value="">{t('sat.set.mapAuto')}</option>
             <option value={SAT_TERRA_MAP}>{t('sat.map.terra')}</option>
+            <option value={SAT_TERRA_BASE_MAP}>{t('sat.map.terraBase')}</option>
             <option value={SAT_SIMPLE_MAP}>{t('sat.map.builtin')}</option>
             {snap.maps.map((m) => (
               <option key={m} value={m}>

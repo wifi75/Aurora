@@ -7,16 +7,16 @@ describe('scelta della mappa', () => {
 
   it('la scelta esplicita vince; la mappa vettoriale di prima resta quella semplice', () => {
     expect(SAT_SIMPLE_MAP).toBe(SAT_BUILTIN_MAP);
-    expect(resolveMap(SAT_TERRA_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'terra' });
+    expect(resolveMap(SAT_TERRA_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
     expect(resolveMap(SAT_BUILTIN_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'simple' });
     expect(resolveMap('mia.png', maps, PREFERRED_MAP)).toEqual({ kind: 'file', name: 'mia.png' });
   });
 
   it('senza scelta: il file preferito se c’e’, altrimenti la Terra (anche se il file scelto e’ sparito)', () => {
     expect(resolveMap('', maps, PREFERRED_MAP)).toEqual({ kind: 'file', name: 'Contour HiRes 8k.jpg' });
-    expect(resolveMap('', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra' });
-    expect(resolveMap('', [], PREFERRED_MAP)).toEqual({ kind: 'terra' });
-    expect(resolveMap('sparita.png', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra' });
+    expect(resolveMap('', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap('', [], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap('sparita.png', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
   });
 
   it('i nomi riservati non sono nomi di file validi per il core (nessuna barra, nessun «..»)', () => {
@@ -37,6 +37,12 @@ describe('foto della Terra', () => {
     const u = terraUrls();
     expect(u.day.endsWith('maps/terra-giorno.jpg')).toBe(true);
     expect(u.night.endsWith('maps/terra-notte.jpg')).toBe(true);
+    expect(terraUrls('base').day.endsWith('maps/terra-base-giorno.jpg')).toBe(true);
+  });
+
+  it('i due nomi riservati scelgono la Terra con la sua variante', () => {
+    expect(resolveMap(':terra', [], '')).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap(':terra-base', [], '')).toEqual({ kind: 'terra', variant: 'base' });
   });
 
   it('il livello e’ il piu’ piccolo che basta; oltre l’ultimo, la foto intera', () => {
