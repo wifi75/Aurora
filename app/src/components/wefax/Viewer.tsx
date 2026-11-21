@@ -197,8 +197,8 @@ export function Viewer({ snapRows, listening, receiving, lastId, onSaved, onChan
         <div className="wefax-sheet" style={{ width: shownRows === 0 ? 0 : Math.round(size.w * scale), height: shownRows === 0 ? 0 : Math.max(1, Math.round(shownRows * scale)) }}>
           <canvas
             ref={canvas}
-            width={size.w}
-            height={size.h}
+            /* niente width/height come attributi di React: ogni scrittura dell'attributo (anche con lo stesso valore) svuota il canvas e farebbe
+               sparire le righe gia' ricevute ogni volta che il foglio cresce; la misura vera si imposta a mano su `c.width` e `c.height` */
             className={`wefax-canvas${pixelated ? ' wefax-canvas--crisp' : ''}`}
             style={{ width: Math.round(size.w * scale), height: Math.round(size.h * scale) }}
             aria-label={t('wefax.view.label')}
