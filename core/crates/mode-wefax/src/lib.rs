@@ -17,6 +17,7 @@ pub mod resample;
 pub mod service;
 pub mod slant;
 pub mod store;
+pub mod wav;
 
 pub use decoder::{Decoder, DecoderConfig, DecoderEvent, Done, Source, width_of};
 pub use demod::{Filter, RATE};
@@ -34,6 +35,10 @@ pub struct GrayImage {
 pub enum WefaxError {
     BadImage(String),
     BadSettings(String),
+    /// File audio che non si legge (non e' un WAV, formato o frequenza non ammessi).
+    BadAudio(String),
+    /// Una decodifica da file e' gia' in corso.
+    Busy,
     NotFound,
     Io(String),
 }
@@ -44,6 +49,8 @@ impl WefaxError {
         match self {
             WefaxError::BadImage(_) => "bad_image",
             WefaxError::BadSettings(_) => "bad_settings",
+            WefaxError::BadAudio(_) => "bad_audio",
+            WefaxError::Busy => "busy",
             WefaxError::NotFound => "not_found",
             WefaxError::Io(_) => "write_failed",
         }
@@ -55,6 +62,8 @@ impl std::fmt::Display for WefaxError {
         match self {
             WefaxError::BadImage(e) => write!(f, "immagine non valida: {e}"),
             WefaxError::BadSettings(e) => write!(f, "impostazioni non valide: {e}"),
+            WefaxError::BadAudio(e) => write!(f, "file audio non valido: {e}"),
+            WefaxError::Busy => write!(f, "una decodifica da file e' gia' in corso"),
             WefaxError::NotFound => write!(f, "immagine non trovata"),
             WefaxError::Io(e) => write!(f, "scrittura non riuscita: {e}"),
         }

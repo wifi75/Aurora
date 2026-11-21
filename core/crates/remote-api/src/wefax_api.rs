@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use axum::{
     Json,
+    body::Bytes,
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
@@ -26,6 +27,7 @@ fn api_error(e: WefaxError) -> ApiError {
     let status = match e {
         WefaxError::NotFound => StatusCode::NOT_FOUND,
         WefaxError::Io(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        WefaxError::Busy => StatusCode::CONFLICT,
         _ => StatusCode::BAD_REQUEST,
     };
     ApiError::new(status, e.code()).with_message(e.to_string())
@@ -222,4 +224,24 @@ pub(crate) async fn wefax_slant(State(state): State<AppState>, _: Authed, Json(b
     })
     .await?
     .map(Json)
+}
+
+/// Dimensione massima di un file da decodificare (un WAV a 44,1 kHz mono a 16 bit pesa circa 5 MB al minuto).
+pub(crate) const WEFAX_FILE_MAX_BYTES: usize = 200 * 1024 * 1024;
+
+/// Decodifica una registrazione: il corpo e' il file WAV (PCM a 16 bit o float, mono o stereo, da 6000 a 96000 Hz). Torna subito; le cartine vanno
+/// nella cronologia come in ricezione e l'avanzamento sta nello stato (`rx.decoding_file`, `rx.file_percent`). Con il file in decodifica la
+/// ricezione dal vivo e' sospesa.
+#[utoipa::path(post, path = "/api/v1/wefax/file", request_body(content = Vec<u8>, content_type = "audio/wav"), responses((status = 200, description = "Decodifica avviata"), (status = 400, description = "File non valido (bad_audio)"), (status = 409, description = "Un'altra decodifica e' in corso (busy)"), (status = 413, description = "File oltre 200 MB")))]
+pub(crate) async fn wefax_file(State(state): State<AppState>, _: Authed, body: Bytes) -> Result<Json<Value>, ApiError> {
+    let svc = service(&state)?;
+    blocking(move || svc.decode_file(body)).await?.map_err(api_error)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+/// Ferma la decodifica del file in corso: l'immagine in arrivo si butta e la ricezione dal vivo riprende.
+#[utoipa::path(post, path = "/api/v1/wefax/file/stop", responses((status = 200, description = "Richiesta inviata")))]
+pub(crate) async fn wefax_file_stop(State(state): State<AppState>, _: Authed) -> Result<Json<Value>, ApiError> {
+    service(&state)?.stop_file();
+    Ok(Json(json!({ "ok": true })))
 }

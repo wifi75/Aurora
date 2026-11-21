@@ -2487,6 +2487,10 @@ export interface WefaxRxStatus {
   afc_hz?: number;
   /** Blocchi audio persi perche' il ricevitore non teneva il passo (dall'accensione dell'ascolto). Assente con un motore vecchio. */
   dropped_blocks?: number;
+  /** Una registrazione (file WAV) e' in decodifica: l'ascolto dal vivo e' sospeso. Assente con un motore vecchio. */
+  decoding_file?: boolean;
+  /** Avanzamento della decodifica del file (0..100). */
+  file_percent?: number;
   last_image: string | null;
   source?: string | null;
 }
@@ -2564,6 +2568,19 @@ export interface WefaxSlantResult {
  */
 export async function postWefaxSlant(body: { ppm?: number; points?: WefaxSlantPoints; id?: string; replace?: boolean }): Promise<WefaxSlantResult> {
   return (await (await request('/wefax/slant', jsonInit(body))).json()) as WefaxSlantResult;
+}
+
+/** Dimensione massima di un file da decodificare (come nel core). */
+export const WEFAX_FILE_MAX_BYTES = 200 * 1024 * 1024;
+
+/** Manda un file WAV da decodificare (il corpo e' il file). Torna subito: l'avanzamento sta nello stato (`rx.decoding_file`, `rx.file_percent`). */
+export async function postWefaxFile(file: Blob): Promise<void> {
+  await request('/wefax/file', { method: 'POST', headers: { 'content-type': 'audio/wav' }, body: file });
+}
+
+/** Ferma la decodifica del file in corso. */
+export async function stopWefaxFile(): Promise<void> {
+  await request('/wefax/file/stop', { method: 'POST' });
 }
 
 export async function getWefaxCurrentBlob(): Promise<Blob> {

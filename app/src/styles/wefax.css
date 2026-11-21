@@ -365,3 +365,8 @@ html[data-theme='light'] .wefax-picker-band { background: #ffffff; }
 .wefax-slant-note--bad { background: rgba(127, 29, 29, 0.92); }
 .wefax-lb-sheet { position: relative; width: 100%; line-height: 0; }
 .wefax-lb-scroll--actual .wefax-lb-sheet { width: max-content; }
+
+.wefax-file { display: flex; flex-direction: column; gap: 0.35rem; align-items: stretch; }
+.wefax-file-line { display: flex; align-items: center; gap: 0.5rem; }
+.wefax-file-line .sstv-meter { flex: 1 1 auto; }
+.wefax-file-error { margin: 0; padding: 0.35rem 0.6rem; border: 1px solid var(--danger); border-radius: 10px; color: var(--danger); font-size: 0.82rem; line-height: 1.3; }

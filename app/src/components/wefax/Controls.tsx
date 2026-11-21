@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { putWefax, wefaxRx, type WefaxSettings, type WefaxSnapshot } from '../../api/client';
+import { ApiError, postWefaxFile, putWefax, stopWefaxFile, WEFAX_FILE_MAX_BYTES, wefaxRx, type WefaxSettings, type WefaxSnapshot } from '../../api/client';
 import { useT } from '../../i18n';
 
 const SLANT_STEPS = [-10, -1, 1, 10] as const;
@@ -40,6 +40,32 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
   const act = (fn: () => Promise<void>) => () => {
     fn().then(onChanged, onChanged);
   };
+  // decodifica di una registrazione: selettore di file, esito dell'invio e avanzamento (dallo stato)
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const pickFile = (file: File | undefined) => {
+    if (!file) return;
+    setFileError(null);
+    if (file.size > WEFAX_FILE_MAX_BYTES) {
+      setFileError(t('wefax.file.tooBig'));
+      return;
+    }
+    setSending(true);
+    postWefaxFile(file)
+      .catch((e: unknown) => {
+        if (e instanceof ApiError && e.code === 'busy') setFileError(t('wefax.file.busy'));
+        else if (e instanceof ApiError && e.status === 413) setFileError(t('wefax.file.tooBig'));
+        else if (e instanceof ApiError && e.code === 'bad_audio') setFileError(t('wefax.file.bad'));
+        else setFileError(t('wefax.file.failed'));
+      })
+      .finally(() => {
+        setSending(false);
+        onChanged();
+      });
+  };
+  const decodingFile = rx.decoding_file === true;
+  const filePct = Math.round(Math.max(0, Math.min(100, rx.file_percent ?? 0)));
 
   const phase = rx.receiving ? t(`wefax.phase.${rx.state === 'apt' || rx.state === 'phasing' ? rx.state : 'image'}`) : t('wefax.phase.idle');
   const syncPct = Math.round(Math.max(0, Math.min(1, rx.sync || 0)) * 100);
@@ -47,7 +73,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
   const lpmKey = settings.ioc === 288 ? 'lpm_288' : 'lpm_576';
   const lpm = settings[lpmKey];
   const lpmChoices = snap.lpm_values.includes(lpm) ? snap.lpm_values : [...snap.lpm_values, lpm];
-  const active = snap.rx.receiving;
+  const active = snap.rx.receiving && !decodingFile;
 
   return (
     <aside className="sstv-side wefax-side">
@@ -123,7 +149,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
         <button
           type="button"
           className="glass sstv-btn"
-          disabled={!rx.listening || active}
+          disabled={!rx.listening || active || decodingFile}
           title={t('wefax.rx.forceHint')}
           onClick={act(() => {
             onListen?.(true);
@@ -140,6 +166,43 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
         </button>
       </div>
       <p className="sstv-hint">{t('wefax.rx.forceHint')}</p>
+
+      {/* una registrazione WAV si decodifica come se arrivasse dalla scheda; durante la decodifica l'ascolto dal vivo e' sospeso */}
+      <div className="wefax-file">
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".wav,audio/wav,audio/x-wav"
+          hidden
+          onChange={(e) => {
+            pickFile(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+        {decodingFile ? (
+          <>
+            <span className="wefax-file-line">
+              <span className="sstv-meter" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={filePct} aria-label={t('wefax.file.progress')}>
+                <span style={{ width: `${filePct}%` }} />
+              </span>
+              <b>{`${filePct} %`}</b>
+            </span>
+            <button type="button" className="glass sstv-btn sstv-btn--danger" onClick={act(stopWefaxFile)}>
+              {t('wefax.file.stop')}
+            </button>
+            <p className="sstv-hint">{t('wefax.file.running')}</p>
+          </>
+        ) : (
+          <button type="button" className="glass sstv-btn" disabled={sending} title={t('wefax.file.tip')} onClick={() => fileInput.current?.click()}>
+            {t('wefax.file.open')}
+          </button>
+        )}
+        {fileError ? (
+          <p className="wefax-file-error" role="alert">
+            {fileError}
+          </p>
+        ) : null}
+      </div>
 
       {/* le impostazioni sono visibili ma compatte; con un clic sul titolo si chiudono e la scheda diventa ancora piu' piccola */}
       <details className="wefax-set-details" open>

@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex, MutexGuard,
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         mpsc::{Receiver, RecvTimeoutError, SyncSender, TrySendError, sync_channel},
     },
     time::{Duration, Instant},
@@ -200,6 +200,10 @@ pub struct RxStatus {
     /// Blocchi audio buttati perche' il ricevitore non teneva il passo (dall'accensione dell'ascolto): ogni campione perso sposta il tempo
     /// e inclina l'immagine.
     pub dropped_blocks: u64,
+    /// Una registrazione (file WAV) e' in decodifica: l'ascolto dal vivo e' sospeso finche' non finisce.
+    pub decoding_file: bool,
+    /// Avanzamento della decodifica del file (0..100).
+    pub file_percent: f32,
     /// L'ultima immagine salvata.
     pub last_image: Option<String>,
     /// Come e' partita l'immagine in corso o l'ultima: `phasing`, `no_phasing`, `manual`, `forced`.
@@ -223,7 +227,26 @@ enum Msg {
     Cancel,
     Config(DecoderConfig),
     ResetLearned,
+    /// Comincia la decodifica di un file: la ricezione dal vivo si sospende e si parte con un decodificatore nuovo.
+    FileStart,
+    /// Un blocco del file (campioni mono alla frequenza del file); `done` e `total` sono i campioni per canale mandati e totali.
+    FileAudio { rate: u32, samples: Vec<f32>, done: usize, total: usize },
+    /// Fine del file (o fermato con `cancelled`): l'immagine in corso si chiude (o si butta) e la ricezione dal vivo riprende.
+    FileEnd { cancelled: bool },
 }
+
+/// Il decodificatore della registrazione in decodifica: separato da quello dal vivo, cosi' l'errore di orologio ricordato della scheda
+/// audio non si sporca con quello del file.
+struct FileJob {
+    decoder: Decoder,
+    resampler: Option<Resampler>,
+}
+
+/// Blocchi del file messi in coda al ricevitore prima di aspettare: tengono la memoria bassa e il passo lo dà il ricevitore.
+const FILE_MAX_PENDING: usize = 8;
+/// Pausa dopo ogni blocco di un quarto di secondo di audio: il ricevitore va molto piu' veloce del tempo reale (decine o centinaia di volte)
+/// ma non occupa un nucleo intero e il resto del programma respira.
+const FILE_PAUSE: Duration = Duration::from_millis(2);
 
 struct Inner {
     settings_path: PathBuf,
@@ -232,6 +255,12 @@ struct Inner {
     listening: AtomicBool,
     /// Blocchi audio persi con la coda piena, dall'accensione dell'ascolto.
     dropped: AtomicU64,
+    /// Una decodifica da file e' in corso: l'audio dal vivo non si manda al ricevitore.
+    file_active: AtomicBool,
+    /// Chi ha chiesto di fermare la decodifica del file.
+    file_stop: AtomicBool,
+    /// Blocchi del file in coda al ricevitore e non ancora decodificati.
+    file_pending: AtomicUsize,
     queue: SyncSender<Msg>,
     rx: Mutex<RxStatus>,
     current: Mutex<Option<GrayImage>>,
@@ -328,6 +357,9 @@ impl WefaxService {
             data_dir: data_dir.to_path_buf(),
             listening: AtomicBool::new(settings.auto_receive),
             dropped: AtomicU64::new(0),
+            file_active: AtomicBool::new(false),
+            file_stop: AtomicBool::new(false),
+            file_pending: AtomicUsize::new(0),
             settings: Mutex::new(settings.clone()),
             queue,
             rx: Mutex::new(RxStatus { listening: settings.auto_receive, state: "apt".into(), ioc: settings.ioc, width: crate::width_of(settings.ioc), ..RxStatus::default() }),
@@ -350,7 +382,8 @@ impl WefaxService {
 
     /// Una copia dell'audio d'ingresso (frequenza della scheda). Con l'ascolto spento non costa niente.
     pub fn feed(&self, rate: u32, samples: &[f32]) {
-        if !self.inner.listening.load(Ordering::Relaxed) {
+        // con una registrazione in decodifica l'audio dal vivo non si mescola
+        if !self.inner.listening.load(Ordering::Relaxed) || self.inner.file_active.load(Ordering::Relaxed) {
             return;
         }
         // coda piena (PC molto carico): si perde un blocco piuttosto che fermare l'audio dell'FT8, e si conta
@@ -448,6 +481,44 @@ impl WefaxService {
         store.add(&out, extra)
     }
 
+    /// Decodifica una registrazione (file WAV) come se l'audio arrivasse dalla scheda, il piu' in fretta possibile ma a blocchi e con una pausa
+    /// tra l'uno e l'altro. Le cartine vanno nella cronologia anche con «Salva ogni cartina» spento. Con il file in decodifica la ricezione
+    /// dal vivo e' sospesa. Torna subito: l'avanzamento si legge in `snapshot().rx` (`decoding_file`, `file_percent`).
+    pub fn decode_file<B: AsRef<[u8]> + Send + 'static>(&self, bytes: B) -> Result<(), WefaxError> {
+        if self.inner.file_active.swap(true, Ordering::SeqCst) {
+            return Err(WefaxError::Busy);
+        }
+        let wav = match crate::wav::parse(bytes.as_ref()) {
+            Ok(w) => w,
+            Err(e) => {
+                self.inner.file_active.store(false, Ordering::SeqCst);
+                return Err(e);
+            }
+        };
+        let inner = Arc::clone(&self.inner);
+        inner.file_stop.store(false, Ordering::SeqCst);
+        inner.file_pending.store(0, Ordering::SeqCst);
+        {
+            let mut st = lock(&inner.rx);
+            st.decoding_file = true;
+            st.file_percent = 0.0;
+        }
+        let _ = inner.queue.send(Msg::FileStart);
+        let worker = Arc::clone(&inner);
+        let spawned = std::thread::Builder::new().name("aurora-wefax-file".into()).spawn(move || feed_file(&worker, &wav, bytes.as_ref()));
+        if let Err(e) = spawned {
+            let _ = inner.queue.send(Msg::FileEnd { cancelled: true });
+            return Err(WefaxError::Io(e.to_string()));
+        }
+        inner.rx_status_event();
+        Ok(())
+    }
+
+    /// Ferma la decodifica del file: l'immagine in corso si butta e la ricezione dal vivo riprende.
+    pub fn stop_file(&self) {
+        self.inner.file_stop.store(true, Ordering::SeqCst);
+    }
+
     /// Dimentica l'errore di orologio ricordato (si cambia scheda audio o impostazioni del sistema).
     pub fn reset_learned(&self) {
         let _ = self.inner.queue.send(Msg::ResetLearned);
@@ -532,6 +603,44 @@ fn rows_event(width: u32, total_rows: u32, first: u32, count: u32, pixels: &[u8]
     }
 }
 
+/// Il file a blocchi di un quarto di secondo verso il ricevitore, con una pausa dopo ciascuno e senza mai averne piu' di `FILE_MAX_PENDING`
+/// in coda. Alla fine (o fermato) manda `FileEnd`.
+fn feed_file(inner: &Arc<Inner>, wav: &crate::wav::Wav, bytes: &[u8]) {
+    let total = wav.frames();
+    let step = (wav.rate as usize / 4).max(1);
+    let mut pos = 0usize;
+    let mut cancelled = false;
+    'feed: while pos < total {
+        while inner.file_pending.load(Ordering::Relaxed) >= FILE_MAX_PENDING {
+            if inner.file_stop.load(Ordering::Relaxed) {
+                cancelled = true;
+                break 'feed;
+            }
+            std::thread::sleep(FILE_PAUSE);
+        }
+        if inner.file_stop.load(Ordering::Relaxed) {
+            cancelled = true;
+            break;
+        }
+        let n = step.min(total - pos);
+        let mut samples = Vec::with_capacity(n);
+        wav.read(bytes, pos, n, &mut samples);
+        pos += n;
+        inner.file_pending.fetch_add(1, Ordering::Relaxed);
+        if inner.queue.send(Msg::FileAudio { rate: wav.rate, samples, done: pos, total }).is_err() {
+            // il ricevitore non c'e' piu': non resta che rimettere a posto lo stato
+            inner.file_active.store(false, Ordering::SeqCst);
+            lock(&inner.rx).decoding_file = false;
+            return;
+        }
+        std::thread::sleep(FILE_PAUSE);
+    }
+    if inner.queue.send(Msg::FileEnd { cancelled }).is_err() {
+        inner.file_active.store(false, Ordering::SeqCst);
+        lock(&inner.rx).decoding_file = false;
+    }
+}
+
 /// Ogni quanto lo stato va all'interfaccia mentre si ascolta.
 const STATUS_EVERY: Duration = Duration::from_millis(500);
 
@@ -540,6 +649,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut rate_seen = lock(&inner.settings).learned_rate;
     let mut resampler: Option<Resampler> = None;
     let mut audio = Vec::new();
+    let mut file: Option<FileJob> = None;
     let mut last_status = Instant::now();
     let mut last_users = Instant::now();
     loop {
@@ -550,6 +660,8 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
         };
         let mut events = Vec::new();
         match msg {
+            // con una registrazione in decodifica l'audio dal vivo e' sospeso (qualche blocco gia' in coda si butta)
+            Some(Msg::Audio(..)) if inner.file_active.load(Ordering::Relaxed) => {}
             Some(Msg::Audio(rate, samples)) => {
                 // l'errore di orologio ricordato vale per una frequenza di campionamento: cambiata quella (altra scheda), si riparte
                 if rate != rate_seen {
@@ -578,8 +690,58 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 events = decoder.take_events();
             }
             Some(Msg::Config(c)) => {
+                if let Some(job) = file.as_mut() {
+                    job.decoder.set_config(c.clone());
+                    for ev in job.decoder.take_events() {
+                        handle(inner, &job.decoder, ev, true);
+                    }
+                }
                 decoder.set_config(c);
                 events = decoder.take_events();
+            }
+            Some(Msg::FileStart) => {
+                // l'immagine dal vivo in arrivo si butta; il file parte con un decodificatore nuovo, senza l'errore di orologio ricordato
+                decoder.cancel();
+                events = decoder.take_events();
+                let mut c = lock(&inner.settings).decoder();
+                (c.learned_ppm, c.learned_weight) = (0.0, 0.0);
+                file = Some(FileJob { decoder: Decoder::new(c), resampler: None });
+            }
+            Some(Msg::FileAudio { rate, samples, done, total }) => {
+                inner.file_pending.fetch_sub(1, Ordering::Relaxed);
+                if let Some(job) = file.as_mut() {
+                    let r = match &mut job.resampler {
+                        Some(r) if r.in_rate() == rate => r,
+                        slot => slot.insert(Resampler::new(rate)),
+                    };
+                    audio.clear();
+                    r.process(&samples, &mut audio);
+                    for ev in job.decoder.push(&audio) {
+                        handle(inner, &job.decoder, ev, true);
+                    }
+                    lock(&inner.rx).file_percent = (done as f32 / total.max(1) as f32 * 100.0).min(100.0);
+                }
+            }
+            Some(Msg::FileEnd { cancelled }) => {
+                if let Some(mut job) = file.take() {
+                    let evs = if cancelled {
+                        job.decoder.cancel();
+                        job.decoder.take_events()
+                    } else {
+                        job.decoder.finish()
+                    };
+                    for ev in evs {
+                        handle(inner, &job.decoder, ev, true);
+                    }
+                }
+                {
+                    let mut st = lock(&inner.rx);
+                    st.decoding_file = false;
+                    st.file_percent = 0.0;
+                    st.receiving = false;
+                }
+                inner.file_active.store(false, Ordering::SeqCst);
+                inner.rx_status_event();
             }
             Some(Msg::ResetLearned) => {
                 decoder.reset_learned();
@@ -589,7 +751,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
         }
         for ev in events {
             let finished = matches!(ev, DecoderEvent::Finished(_));
-            handle(inner, &decoder, ev);
+            handle(inner, &decoder, ev, false);
             if finished {
                 inner.persist_learned(decoder.learned_ppm(), decoder.learned_weight(), rate_seen);
             }
@@ -601,28 +763,31 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 inner.page_left();
             }
         }
-        // lo stato va all'interfaccia solo con l'ascolto acceso
-        if last_status.elapsed() >= STATUS_EVERY && inner.listening.load(Ordering::Relaxed) {
+        // lo stato va all'interfaccia solo con l'ascolto acceso (o con un file in decodifica: allora e' quello del file)
+        if last_status.elapsed() >= STATUS_EVERY && (inner.listening.load(Ordering::Relaxed) || file.is_some()) {
             last_status = Instant::now();
             {
+                let shown = file.as_ref().map_or(&decoder, |j| &j.decoder);
                 let mut st = lock(&inner.rx);
-                st.level_db = decoder.level_db();
-                st.signal = decoder.signal_level();
-                st.afc_hz = decoder.afc_hz();
-                st.receiving = decoder.is_receiving();
-                st.sync = decoder.correlation();
-                st.state = decoder.rx_state().into();
-                st.lpm = decoder.lpm();
+                st.level_db = shown.level_db();
+                st.signal = shown.signal_level();
+                st.afc_hz = shown.afc_hz();
+                st.receiving = shown.is_receiving();
+                st.sync = shown.correlation();
+                st.state = shown.rx_state().into();
+                st.lpm = shown.lpm();
                 // l'IOC riconosciuto dal tono d'inizio (l'impostazione resta com'e')
-                st.ioc = decoder.config().ioc;
-                st.width = decoder.config().width();
+                st.ioc = shown.config().ioc;
+                st.width = shown.config().width();
             }
             inner.rx_status_event();
         }
     }
 }
 
-fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
+/// Un avvenimento del decodificatore verso lo stato e l'interfaccia. `force_save`: la cartina si salva anche con «Salva ogni cartina» spento
+/// (le registrazioni decodificate da file vanno sempre nella cronologia).
+fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent, force_save: bool) {
     match ev {
         DecoderEvent::Started { ioc, lpm, width, source } => {
             {
@@ -645,7 +810,7 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent) {
             }
         }
         DecoderEvent::Finished(done) => {
-            let auto_save = lock(&inner.settings).auto_save;
+            let auto_save = force_save || lock(&inner.settings).auto_save;
             let saved = if auto_save {
                 let extra = EntryExtra { ioc: done.ioc, lpm: done.lpm, correlation: Some(done.correlation), reason: Some(done.reason.clone()), source: Some(done.source.id().into()), complete: done.complete };
                 match lock(&inner.store).add(&done.image, extra) {
