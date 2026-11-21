@@ -9,6 +9,8 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 - Errori Cloudflare: solo rumore noto (rigctld che non risponde, avvisi dell'installatore, decodifica lenta su Pentium E5400, audio non trovato). Issue: nessun commento nuovo.
 
 ## In preparazione (su main, NON pubblicata)
+
+- WEFAX come SeaTTY: spettro (`components/wefax/Scope.tsx`, righe rosse su nero/bianco, riga del centro, clic = centro) sopra la cascata `DigiWaterfall` (righello in Hz 1000-3000), al posto della piccola cascata della testata; interruttori AFC (acceso) e SQL con soglia (spento, 30) in testata (`AfcSql.tsx`). Core: `meter.rs` (livello in banda contro fasce di rumore, istogramma della frequenza istantanea), AFC max 150 Hz anche sul tono fisso del nero, SQL parte solo con segnale che cambia e chiude dopo 3 s. Provato solo con segnali sintetici (`tests/ricezione.rs`); pagina NON vista a schermo (anteprima senza motore).
 - IC-820H (#83): rilettura registrata della frequenza di trasmissione dopo la scrittura sul VFO di trasmissione (`satelliti: trasmissione scritta ... riletta ...`). Vladimir (2026-11-21 06:09 UTC) dice che con SUB acceso l'RX Doppler va ma la frequenza di trasmissione sul display non cambia, e con SUB spento Aurora non vede la radio; nel `cat-comandi.log` del pacchetto 7CF56D20 le scritture `V Main` / `F 1459625xx` / `V Sub` danno RPRT 0 ogni 10 s. Hamlib: `ic820h.c` registra solo VFO A/B (niente Main/Sub, split, satmode; FIXME «What about MAIN/SUB mode? And satellite mode?»), `ic821h.c` ha il commento «backwards in satmode». Chiesto a Vladimir un pacchetto dopo un passaggio con l'ora e i due display.
 
 ## Nella 0.11.321 (pubblicata 2026-11-20T20:13:32Z)
