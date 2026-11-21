@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, barra in alto: i comandi non hanno piu' altezza fissa (le scritte e le frecce non si tagliano), sono un po' piu' grandi (22 px, carattere 11 px) e centrati sulla riga.
+
 - Finestra RX (FT8 e gli altri modi a periodi): tolte la distanza in km e l'azimut dalla riga dei messaggi, per lasciare spazio al testo; nell'elenco principale restano come prima (impostazioni «Mostra la distanza» e «Azimut»).
 
 ## 0.11.325 - 2026-11-21

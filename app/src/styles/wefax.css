@@ -461,3 +461,13 @@ html[data-theme='light'] .wefax-step .wefax-step-btn { color: #10151f; }
 .wefax-page .sstv-head .wefax-step .wefax-step-btn + .wefax-step-btn { border-top: 1px solid var(--border); }
 .wefax-page .sstv-head .wefax-step .wefax-step-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent, #7aa2ff) 30%, transparent); }
 html[data-theme='light'] .wefax-page .sstv-head .wefax-step .wefax-step-btn { color: #10151f; background: #ffffff; border-color: rgba(70, 90, 130, 0.45); }
+
+/* barra in alto: niente altezze fisse che tagliano le scritte; un po' piu' grande del passo precedente (22 px, carattere 11 px) e tutto centrato; la barra non taglia mai quello che contiene */
+.wefax-page .sstv-head { align-items: center; min-height: 2.2rem; overflow: visible; }
+.wefax-page .sstv-head .sstv-modesel, .wefax-page .sstv-head .wefax-picker-btn, .wefax-page .sstv-head .wefax-freq,
+.wefax-page .sstv-head .wefax-toolbar .sstv-btn, .wefax-page .sstv-head .wefax-tog, .wefax-page .sstv-head .wefax-sql-level, .wefax-page .sstv-head .wefax-rxtag { height: auto; min-height: 22px; padding-top: 2px; padding-bottom: 2px; line-height: 1.25; font-size: 0.7rem; box-sizing: border-box; overflow: visible; }
+.wefax-page .sstv-head .wefax-toolbar .sstv-btn { padding-left: 0.4rem; padding-right: 0.4rem; white-space: nowrap; }
+.wefax-page .sstv-head .wefax-step { height: auto; }
+.wefax-page .sstv-head .wefax-step .wefax-step-btn { width: 22px; min-width: 22px; height: 22px; min-height: 22px; font-size: 0.6rem; line-height: 1; }
+.wefax-page .sstv-head .wefax-zoom { font-size: 0.72rem; line-height: 1.25; }
+.wefax-page .sstv-head .wefax-sql-level input, .wefax-page .sstv-head input[type='number'] { font-size: 0.7rem; line-height: 1.2; min-height: 18px; }
