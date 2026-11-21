@@ -1,0 +1,9 @@
+; CQ WW RTTY DX Contest - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md).
+; Punti e moltiplicatori veri stanno in punteggio.rhai (paesi DXCC+WAE, zona dallo scambio); queste righe sono il ripiego.
+;
+; bands: 80, 40, 20, 15, 10 m (regolamento, «Bands»: niente 160 m).
+; points: stesso paese 1, stesso continente 2, altro continente 3.
+; mult: zone CQ, paesi e QTH dei W/VE (dati/qth.dom), tutti per banda.
+bands=80,40,20,15,10
+points=same_dxcc=1; same_cont=2; other_cont=3
+mult=cq/band; dxcc/band; exch/band/if:dxcc:K,VE

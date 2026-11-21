@@ -1,0 +1,155 @@
+# CQ WW RTTY DX Contest - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 su https://www.cqwwrtty.com/rules.htm (regolamento 2026) e https://www.cqwwrtty.com/cabrillo.htm.
+
+[contest]
+id = "cq-ww-rtty"
+nome = "CQ WW RTTY DX Contest"
+organizzatore = "CQ Magazine"
+sito = "https://www.cqwwrtty.com"
+regolamento_url = "https://www.cqwwrtty.com/rules.htm"
+cabrillo_contest = "CQ-WW-RTTY"
+note = "Solo RTTY 45,45 baud, da 80 a 10 metri. Scambio: RST + zona CQ (+ stato o provincia per W/VE). Moltiplicatori per banda: zone, paesi DXCC/WAE, QTH dei W/VE."
+
+[edizione]
+# Ultimo fine settimana pieno di settembre, sabato 00:00 - domenica 23:59:59 UTC. 4 vale per il 2026 e il 2027 (scritti sotto).
+mese = 9
+fine_settimana_pieno = 4
+giorno_inizio = "sabato"
+ora_inizio = "00:00"
+durata_ore = 48
+invio_log_giorni = 2              # entro 48 ore dalla fine (2026: 29 settembre 23:59 UTC)
+
+[[edizione.date]]
+anno = 2026
+inizio = "2026-09-26T00:00:00Z"
+fine = "2026-09-27T23:59:59Z"
+fonte = "https://www.cqwwrtty.com/rules.htm (letto il 2026-11-21): «September 26-27, 2026»"
+confermata = true
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-09-25T00:00:00Z"
+fine = "2027-09-26T23:59:59Z"
+fonte = "calcolata: ultimo fine settimana pieno di settembre"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # solo 45,45 baud, shift 170 Hz, ITA2
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+
+[[scambio.ricevuto]]
+nome = "qth"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "dxcc:K,VE"
+elenco = "dati/qth.dom"
+nota = "Solo USA contigui e Canada; gli altri mandano DX nel Cabrillo."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "zona"
+etichetta_it = "Zona CQ"
+etichetta_en = "CQ zone"
+tipo = "zona_cq"
+quando = "any"
+
+[[scambio.inviato]]
+nome = "qth"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "my_dxcc:K,VE"
+elenco = "dati/qth.dom"
+
+[doppi]
+per = "banda"
+
+[categorie]
+operatore = ["SO", "SOA", "MS", "M2", "MM", "MD"]
+potenza = ["QRP", "LOW", "HIGH"]
+sovrapposizioni = ["CLASSIC", "ROOKIE", "YOUTH"]
+altre = ["Checklog"]
+
+[categorie.ms]
+potenza = ["LOW", "HIGH"]         # un segnale di run + uno per i moltiplicatori; 8 cambi di banda per ora per segnale
+
+[categorie.m2]
+potenza = ["HIGH"]
+
+[categorie.mm]
+potenza = ["HIGH"]
+
+[cabrillo]
+contest = "CQ-WW-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-ASSISTED", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY", "LOCATION"]
+facoltativi = ["CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "CATEGORY-STATION", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "SOAPBOX"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_band = ["ALL", "80M", "40M", "20M", "15M", "10M"]
+category_power = ["HIGH", "LOW", "QRP"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+category_overlay = ["CLASSIC", "ROOKIE", "YOUTH"]
+invio = "solo caricamento web; riga QSO: rst zona qth, con DX al posto del qth fuori da W/VE (cabrillo.htm)"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Zone CQ per banda", en = "CQ zones by band" }
+ordine = 1
+moltiplicatore = "zona_cq"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC/WAE per banda", en = "DXCC/WAE countries by band" }
+ordine = 2
+moltiplicatore = "dxcc"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati e province W/VE per banda", en = "W/VE states and provinces by band" }
+ordine = 3
+moltiplicatore = "stato"
+dominio = "dati/qth.dom"
+per_banda = true
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 4
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 5
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

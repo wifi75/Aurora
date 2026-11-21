@@ -1,0 +1,215 @@
+# CQ WW RTTY DX Contest - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento 2026 (https://www.cqwwrtty.com/rules.htm).
+# Due punti di vista: [prova] e' una stazione italiana (zona 15), [[altra_stazione]] una stazione degli Stati Uniti (zona 5).
+# Nominativi di fantasia. Moltiplicatori: valore@modo (zone, paesi e QTH dei W/VE contano una volta per banda).
+
+[prova]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+data = "2027-09-25"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0001"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "14 DX"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["14@RTTY", "DL@RTTY"], motivo = "stesso continente, paese diverso: 2 punti" }
+
+[[qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0005"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15 DX"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["15@RTTY", "I@RTTY"], motivo = "stesso paese: 1 punto; zona e paese valgono" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0010"
+nominativo = "IT9ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "15 DX"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["IT9@RTTY"], motivo = "Sicilia (WAE) e' un altro paese europeo: 2 punti" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "0015"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05 CT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["5@RTTY", "K@RTTY", "CT@RTTY"], motivo = "altro continente: 3 punti; zona 5, Stati Uniti e Connecticut" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "0020"
+nominativo = "W1XYZ"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05 CT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = [], motivo = "altra stazione, moltiplicatori gia' presi su 20 m" }
+
+[[qso]]
+n = 6
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "0025"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05 CT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["5@RTTY", "K@RTTY", "CT@RTTY"], motivo = "stessa stazione su 40 m: non e' doppio, moltiplicatori nuovi sulla banda" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "0030"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "05 CT"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio sulla stessa banda" }
+
+[[qso]]
+n = 8
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "0035"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "04 ON"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["4@RTTY", "VE@RTTY", "ON@RTTY"], motivo = "Ontario" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14087
+ora_utc = "0040"
+nominativo = "VE8ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "01 NT"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["1@RTTY", "NWT@RTTY"], motivo = "NT e' sinonimo di NWT; VE gia' preso su 20 m" }
+
+[[qso]]
+n = 10
+banda = 20
+modo = "RTTY"
+freq_khz = 14088
+ora_utc = "0045"
+nominativo = "KL7ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "01 DX"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["KL@RTTY"], motivo = "Alaska conta solo come paese, non come stato; zona 1 gia' presa" }
+
+[[qso]]
+n = 11
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "0050"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "15"
+rst_ricevuto = "599"
+scambio_ricevuto = "14 DX"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del CQ WW RTTY" }
+
+# Totali (a mano): ammessi 1-6 e 8-10 = 9; doppi 1 (n. 7); non ammessi 1 (n. 11)
+#   punti: 2+1+2+3+3+3+3+3+3 = 23
+#   moltiplicatori: 14 DL 15 I IT9 5 K CT (20 m) + 5 K CT (40 m) + 4 VE ON 1 NWT KL (20 m) = 8 + 3 + 6 = 17
+#   punteggio = 23 x 17 = 391
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 23
+moltiplicatori = 17
+punteggio = 391
+
+[[altra_stazione]]
+nominativo_proprio = "K1ABC"
+locatore_proprio = "FN31pr"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "0101"
+nominativo = "K2ABC"
+rst_inviato = "599"
+scambio_inviato = "05 CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "05 NY"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["5@RTTY", "K@RTTY", "NY@RTTY"], motivo = "stesso paese: 1 punto; zona, paese e New York valgono" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "0105"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "05 CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "04 ON"
+atteso = { ammesso = true, doppio = false, punti = 2, moltiplicatori = ["4@RTTY", "VE@RTTY", "ON@RTTY"], motivo = "stesso continente (NA), paese diverso: 2 punti, senza eccezioni" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "0110"
+nominativo = "IU3XYZ"
+rst_inviato = "599"
+scambio_inviato = "05 CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "15 DX"
+atteso = { ammesso = true, doppio = false, punti = 3, moltiplicatori = ["15@RTTY", "I@RTTY"], motivo = "altro continente: 3 punti" }
+
+# Totali (a mano): 3 QSO, punti 1+2+3 = 6, moltiplicatori 3+3+2 = 8, punteggio 48
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 0
+punti = 6
+moltiplicatori = 8
+punteggio = 48

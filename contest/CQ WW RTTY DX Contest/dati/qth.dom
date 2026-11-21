@@ -1,0 +1,75 @@
+; QTH dei W/VE del CQ WW RTTY: 48 stati contigui piu' DC (sigle USPS) e 14 aree canadesi con le sigle del regolamento
+; (https://www.cqwwrtty.com/rules.htm, letto il 2026-11-21). Alaska e Hawaii non ci sono: contano solo come paesi.
+; Formato .dom (docs/contest-file.md). Sinonimi: NT -> NWT, PE -> PEI, NL -> NF (sigle ARRL e postali).
+CQ WW RTTY DX Contest - stati e province
+
+K:
+AL = AL
+AZ = AZ
+AR = AR
+CA = CA
+CO = CO
+CT = CT
+DE = DE
+DC = DC
+FL = FL
+GA = GA
+ID = ID
+IL = IL
+IN = IN
+IA = IA
+KS = KS
+KY = KY
+LA = LA
+ME = ME
+MD = MD
+MA = MA
+MI = MI
+MN = MN
+MS = MS
+MO = MO
+MT = MT
+NE = NE
+NV = NV
+NH = NH
+NJ = NJ
+NM = NM
+NY = NY
+NC = NC
+ND = ND
+OH = OH
+OK = OK
+OR = OR
+PA = PA
+RI = RI
+SC = SC
+SD = SD
+TN = TN
+TX = TX
+UT = UT
+VT = VT
+VA = VA
+WA = WA
+WV = WV
+WI = WI
+WY = WY
+
+VE:
+NB = NB
+NS = NS
+QC = QC
+ON = ON
+MB = MB
+SK = SK
+AB = AB
+BC = BC
+NWT = NWT
+NF = NF
+LB = LB
+NU = NU
+YT = YT
+PEI = PEI
+; sinonimi
+NT = NWT
+PE = PEI
+NL = NF
