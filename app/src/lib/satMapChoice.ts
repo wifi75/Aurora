@@ -6,15 +6,23 @@ import { SAT_BUILTIN_MAP } from './satGeo';
 
 /** La Terra dalla NASA (foto di giorno e luci delle citta' di notte). Nome riservato nell'impostazione `map`. */
 export const SAT_TERRA_MAP = ':terra';
-/** La stessa Terra senza rilievo ne' fondali marini (solo i colori). */
+/** Le altre Terre della NASA: nomi riservati, la foto del giorno (le luci della notte sono sempre le stesse). */
 export const SAT_TERRA_BASE_MAP = ':terra-base';
+export const SAT_TERRA_RELIEF_MAP = ':terra-rilievo';
+
+/** Le foto del giorno: con rilievo e fondali marini (la predefinita), con solo il rilievo, solo i colori; tutte a 8192 px. */
+export type TerraVariant = 'bathy' | 'relief' | 'base';
+export const TERRA_MAPS: Readonly<Record<string, { variant: TerraVariant; file: string }>> = {
+  [SAT_TERRA_MAP]: { variant: 'bathy', file: 'terra-giorno' },
+  [SAT_TERRA_RELIEF_MAP]: { variant: 'relief', file: 'terra-rilievo-giorno' },
+  [SAT_TERRA_BASE_MAP]: { variant: 'base', file: 'terra-base-giorno' },
+};
 /** La mappa semplice, vettoriale (e' il vecchio `:aurora`: chi l'aveva scelta la tiene). */
 export const SAT_SIMPLE_MAP = SAT_BUILTIN_MAP;
 
-/** Il file che si sceglie da solo, se c'e', quando l'utente non ha scelto nessuna mappa. */
-export const PREFERRED_MAP = 'Contour HiRes';
+/** Un file che si sceglie da solo quando l'utente non ha scelto nessuna mappa: nessuno, di base c'e' la Terra della NASA. */
+export const PREFERRED_MAP = '';
 
-export type TerraVariant = 'relief' | 'base';
 export type MapChoice = { kind: 'terra'; variant: TerraVariant } | { kind: 'simple' } | { kind: 'file'; name: string };
 
 /**
@@ -22,24 +30,25 @@ export type MapChoice = { kind: 'terra'; variant: TerraVariant } | { kind: 'simp
  * il file che comincia con `preferred` se c'e' (comportamento di sempre), altrimenti la Terra.
  */
 export function resolveMap(setting: string, maps: readonly string[], preferred: string): MapChoice {
-  if (setting === SAT_TERRA_MAP) return { kind: 'terra', variant: 'relief' };
-  if (setting === SAT_TERRA_BASE_MAP) return { kind: 'terra', variant: 'base' };
+  const terra = TERRA_MAPS[setting];
+  if (terra) return { kind: 'terra', variant: terra.variant };
   if (setting === SAT_SIMPLE_MAP) return { kind: 'simple' };
   if (setting && maps.includes(setting)) return { kind: 'file', name: setting };
   const pref = preferred ? maps.find((m) => m.startsWith(preferred)) : undefined;
-  return pref ? { kind: 'file', name: pref } : { kind: 'terra', variant: 'relief' };
+  return pref ? { kind: 'file', name: pref } : { kind: 'terra', variant: 'bathy' };
 }
 
 /** Il valore della tendina delle impostazioni per l'impostazione salvata: vuoto («Automatica») se non e' una scelta valida. */
 export function selectValue(setting: string, maps: readonly string[]): string {
-  return setting === SAT_TERRA_MAP || setting === SAT_TERRA_BASE_MAP || setting === SAT_SIMPLE_MAP || maps.includes(setting) ? setting : '';
+  return setting in TERRA_MAPS || setting === SAT_SIMPLE_MAP || maps.includes(setting) ? setting : '';
 }
 
 const base = (): string => import.meta.env.BASE_URL ?? '/';
 
 /** Gli indirizzi delle due foto incluse (cartella `public/maps`, servita con l'interfaccia: vale per il browser, il telefono e il programma). */
-export function terraUrls(variant: TerraVariant = 'relief'): { day: string; night: string } {
-  return { day: `${base()}maps/${variant === 'base' ? 'terra-base-giorno' : 'terra-giorno'}.jpg`, night: `${base()}maps/terra-notte.jpg` };
+export function terraUrls(variant: TerraVariant = 'bathy'): { day: string; night: string } {
+  const file = Object.values(TERRA_MAPS).find((m) => m.variant === variant)?.file ?? 'terra-giorno';
+  return { day: `${base()}maps/${file}.jpg`, night: `${base()}maps/terra-notte.jpg` };
 }
 
 /** Larghezze delle foto ridotte tenute in memoria (la foto intera e' 8192 px). */

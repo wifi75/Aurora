@@ -7,16 +7,18 @@ describe('scelta della mappa', () => {
 
   it('la scelta esplicita vince; la mappa vettoriale di prima resta quella semplice', () => {
     expect(SAT_SIMPLE_MAP).toBe(SAT_BUILTIN_MAP);
-    expect(resolveMap(SAT_TERRA_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap(SAT_TERRA_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'bathy' });
     expect(resolveMap(SAT_BUILTIN_MAP, maps, PREFERRED_MAP)).toEqual({ kind: 'simple' });
     expect(resolveMap('mia.png', maps, PREFERRED_MAP)).toEqual({ kind: 'file', name: 'mia.png' });
   });
 
   it('senza scelta: il file preferito se c’e’, altrimenti la Terra (anche se il file scelto e’ sparito)', () => {
-    expect(resolveMap('', maps, PREFERRED_MAP)).toEqual({ kind: 'file', name: 'Contour HiRes 8k.jpg' });
-    expect(resolveMap('', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
-    expect(resolveMap('', [], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
-    expect(resolveMap('sparita.png', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap('', maps, 'Contour HiRes')).toEqual({ kind: 'file', name: 'Contour HiRes 8k.jpg' });
+    expect(PREFERRED_MAP).toBe('');
+    expect(resolveMap('', maps, PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'bathy' });
+    expect(resolveMap('', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'bathy' });
+    expect(resolveMap('', [], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'bathy' });
+    expect(resolveMap('sparita.png', ['mia.png'], PREFERRED_MAP)).toEqual({ kind: 'terra', variant: 'bathy' });
   });
 
   it('i nomi riservati non sono nomi di file validi per il core (nessuna barra, nessun «..»)', () => {
@@ -41,7 +43,7 @@ describe('foto della Terra', () => {
   });
 
   it('i due nomi riservati scelgono la Terra con la sua variante', () => {
-    expect(resolveMap(':terra', [], '')).toEqual({ kind: 'terra', variant: 'relief' });
+    expect(resolveMap(':terra', [], '')).toEqual({ kind: 'terra', variant: 'bathy' });
     expect(resolveMap(':terra-base', [], '')).toEqual({ kind: 'terra', variant: 'base' });
   });
 

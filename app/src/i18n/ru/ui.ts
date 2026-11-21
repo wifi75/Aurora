@@ -4037,6 +4037,7 @@ export const RU_UI: Record<string, string> = {
   "sat.map.drag": "Перетащите, чтобы сдвинуть карту · колесо для масштаба · двойной щелчок — вся карта",
   "sat.map.myCountry": "Моя страна: {name}",
   "sat.map.pick": "Карта мира",
+  "sat.map.terraRelief": "Земля (NASA, с рельефом)",
   "sat.map.terraBase": "Земля (NASA, только цвета)",
   "sat.map.terra": "Земля (спутник NASA)",
   "sat.map.terraHint": "Снимки NASA Earth Observatory (Blue Marble днём, Black Marble ночью), свободно используются с указанием источника.",

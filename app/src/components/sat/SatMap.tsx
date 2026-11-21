@@ -16,7 +16,7 @@ interface Props {
   mapUrl: string | null;
   /** La Terra della NASA (foto di giorno, luci delle citta' di notte); ha la precedenza su `mapUrl`. Finche' le foto caricano resta la mappa vettoriale. */
   terra?: boolean;
-  /** Quale foto del giorno con `terra`: con rilievo e fondali (di base) o solo i colori. */
+  /** Quale foto del giorno con `terra`: con rilievo e fondali (di base), con solo il rilievo o solo i colori, a 8192 o 12288 px. */
   terraVariant?: TerraVariant;
   /** I confini degli Stati sottili sopra la foto della Terra. */
   borders?: boolean;
@@ -344,7 +344,7 @@ function placeAlerts(svg: SVGSVGElement | null, w: number, h: number, view: MapV
  * (piu' eventi nello stesso fotogramma si fondono) ridisegna il canvas. In movimento la qualita' e' ridotta, a riposo (120 ms dopo l'ultimo movimento) si rifinisce.
  * Lo stato di React con la vista serve solo all'interfaccia (pulsanti attivi) e si aggiorna al massimo 8 volte al secondo e a fine movimento.
  */
-export function SatMap({ mapUrl, terra = false, terraVariant = 'relief', borders = false, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, alerts = [], zoomMode = DEFAULT_ZOOM_MODE, onSelect }: Props) {
+export function SatMap({ mapUrl, terra = false, terraVariant = 'bathy', borders = false, sun, moon, observer, stationLabel, positions, selected, track, trackNowIndex, alerts = [], zoomMode = DEFAULT_ZOOM_MODE, onSelect }: Props) {
   const t = useT();
   const lang = useLang((st) => st.lang);
   const wrap = useRef<HTMLDivElement>(null);

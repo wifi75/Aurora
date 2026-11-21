@@ -4,7 +4,7 @@
 
 - Satelliti, mappa: girando la rotella la foto non appare piu' sgranata al primo movimento (le copie ridotte della Terra si preparano subito dopo il caricamento, invece di disegnare dalla foto intera in qualita' bassa).
 - Satelliti, mappa: dove e' notte la Terra di giorno resta visibile, scurita da un velo, con le luci delle citta' sommate sopra (prima la foto delle luci copriva tutto: coste e rilievi sparivano e con lo zoom sembrava sgranata).
-- Satelliti, mappe: c'e' una seconda scelta nel menu della mappa, «Terra (NASA, solo colori)», la Blue Marble di agosto senza rilievo ne' fondali marini (8192 x 4096 px come l'altra); la notte resta la foto delle luci delle citta'. Nome riservato `:terra-base`.
+- Satelliti, mappe: tre Terre della NASA tra cui scegliere (tutte a 8192 x 4096 px, agosto 2004): «Terra (satellite NASA)» con rilievo e fondali marini, di base e scelta da «Automatica» (non piu' «Contour HiRes»), «Terra (NASA, con rilievo)» e «Terra (NASA, solo colori)». Nomi riservati `:terra`, `:terra-rilievo`, `:terra-base`. La notte resta la foto delle luci delle citta'.
 - Satelliti: sulla mappa i satelliti hanno la stessa icona (corpo con due pannelli solari) al posto del puntino e la ISS la sua sagoma con il traliccio e i pannelli; il satellite scelto ha il cerchio intorno.
 - Satelliti: la stella della stazione sulla mappa e' piu' piccola (raggio da 10 a 7 punti, contorno piu' sottile).
 - Satelliti: lo zoom automatico all'entrata nell'area di acquisizione si ferma a 3x (prima fino a 6x in «Entrambi» e 8x in «Area»); all'uscita la mappa torna intera come prima. A mano si ingrandisce ancora fino a 8x.

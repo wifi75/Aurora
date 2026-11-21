@@ -126,6 +126,7 @@ export const satStrings = {
   'sat.map.zoomIn': ['Ingrandisci', 'Zoom in', 'Vergrößern', 'Agrandir', 'Ampliar', 'Ampliar'],
   'sat.map.zoomOut': ['Riduci', 'Zoom out', 'Verkleinern', 'Réduire', 'Reducir', 'Reduzir'],
   'sat.map.zoomFit': ['Vista intera', 'Whole map', 'Ganze Karte', 'Vue entière', 'Vista completa', 'Vista inteira'],
+  'sat.map.terraRelief': ['Terra (NASA, con rilievo)', 'Earth (NASA, with relief)', 'Erde (NASA, mit Relief)', 'Terre (NASA, avec relief)', 'Tierra (NASA, con relieve)', 'Terra (NASA, com relevo)'],
   'sat.map.terraBase': ['Terra (NASA, solo colori)', 'Earth (NASA, colours only)', 'Erde (NASA, nur Farben)', 'Terre (NASA, couleurs seulement)', 'Tierra (NASA, solo colores)', 'Terra (NASA, só cores)'],
   'sat.map.terra': ['Terra (satellite NASA)', 'Earth (NASA satellite)', 'Erde (NASA-Satellit)', 'Terre (satellite NASA)', 'Tierra (satélite NASA)', 'Terra (satélite NASA)'],
   'sat.map.builtin': ['Mappa semplice (vettoriale)', 'Simple map (vector)', 'Einfache Karte (Vektor)', 'Carte simple (vectorielle)', 'Mapa simple (vectorial)', 'Mapa simples (vetorial)'],

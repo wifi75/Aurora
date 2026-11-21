@@ -1,12 +1,13 @@
 # Mappe della Terra
 
-La pagina Satelliti ha, di base, la mappa «Terra (satellite NASA)»: la foto della Terra di giorno e, dove e' notte, la foto delle luci delle citta'. Le due immagini stanno in `app/public/maps/` e sono servite insieme all'interfaccia (`/maps/terra-giorno.jpg`, `/maps/terra-base-giorno.jpg`, `/maps/terra-notte.jpg`).
+La pagina Satelliti ha, di base, la mappa «Terra (satellite NASA)»: la foto della Terra di giorno e, dove e' notte, la foto delle luci delle citta'. Le due immagini stanno in `app/public/maps/` e sono servite insieme all'interfaccia (`/maps/terra-giorno.jpg`, `/maps/terra-rilievo-giorno.jpg`, `/maps/terra-base-giorno.jpg`, `/maps/terra-notte.jpg`).
 
 ## Fonti
 
 | File | Fonte | Originale |
 |---|---|---|
 | `terra-giorno.jpg` | NASA Earth Observatory, Blue Marble Next Generation con topografia e batimetria, agosto 2004: <https://visibleearth.nasa.gov/images/74092/august-blue-marble-next-generation-w-topography-and-bathymetry> | 21600 x 10800 px (500 m), equirettangolare |
+| `terra-rilievo-giorno.jpg` | NASA Earth Observatory, Blue Marble Next Generation con sola topografia, agosto 2004: `bmng/bmng-topography/august/world.topo.200408.3x21600x10800.jpg` su assets.science.nasa.gov | 21600 x 10800 px, equirettangolare |
 | `terra-base-giorno.jpg` | NASA Earth Observatory, Blue Marble Next Generation, solo colori (Base Map), agosto 2004: `bmng/bmng-base/august/world.200408.3x21600x10800.jpg` su assets.science.nasa.gov | 21600 x 10800 px, equirettangolare |
 | `terra-notte.jpg` | NASA Earth Observatory, Black Marble, Night Lights 2012 (3 km): <https://earthobservatory.nasa.gov/images/79765/night-lights-2012-map> (oggi <https://science.nasa.gov/earth/earth-observatory/night-lights-2012-map-79765>) | 13500 x 6750 px (3 km), equirettangolare; dati Suomi NPP VIIRS |
 
