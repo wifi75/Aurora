@@ -2630,3 +2630,8 @@ export async function postWefaxRotate(id: string, dir: 'left' | 'right'): Promis
 export function wefaxImageUrl(id: string): string {
   return `${BASE}/wefax/images/${encodeURIComponent(id)}`;
 }
+
+/** L'audio WAV registrato durante la ricezione della cartina (solo se `has_audio`). */
+export function wefaxAudioUrl(id: string): string {
+  return `${BASE}/wefax/images/${encodeURIComponent(id)}/audio`;
+}

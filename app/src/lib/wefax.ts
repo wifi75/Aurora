@@ -11,6 +11,12 @@ export function fitScale(availableWidth: number, imageWidth: number): number {
   return Math.min(2, Math.max(0.05, availableWidth / imageWidth));
 }
 
+/** Scala che fa entrare TUTTA l'immagine nel riquadro (larghezza e altezza), mai oltre 1 (pixel reali) e mai sotto 2%. */
+export function fitBoxScale(availW: number, availH: number, imgW: number, imgH: number): number {
+  if (!(availW > 0) || !(availH > 0) || !(imgW > 0) || !(imgH > 0)) return 1;
+  return Math.min(1, Math.max(0.02, Math.min(availW / imgW, availH / imgH)));
+}
+
 /** Il gradino di zoom successivo (dir 1) o precedente (dir -1) a quello di adesso; agli estremi resta dov'e'. */
 export function stepZoom(current: number, dir: 1 | -1): number {
   const eps = 1e-6;
