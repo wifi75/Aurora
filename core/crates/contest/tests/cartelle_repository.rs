@@ -4,7 +4,7 @@
 
 use contest::cartelle::{Origine, carica, data_compatta};
 use contest::elenco::{leggi_dominio, leggi_macro};
-use contest::punti_testo::{InfoPaese, QsoTesto, cabrillo, qso_del_contest, valuta};
+use contest::punti_testo::{InfoPaese, QsoTesto, aggiungi_qtc, cabrillo, qso_del_contest, valuta};
 use dxcc::DxccDb;
 use std::path::{Path, PathBuf};
 
@@ -128,7 +128,12 @@ fn le_prove_danno_il_punteggio_atteso() {
         let validi = qso_del_contest(&contesto, &qsos, ora);
         assert_eq!(validi.len(), qsos.len(), "{nome}: la finestra o i modi del contest scartano QSO della prova ({} -> {})", data_compatta(ora), contesto.start);
         let dominio = c.dominio_del_contest();
-        let (valutati, tot) = valuta(&contesto, &validi, mio.as_ref(), &|call| paese_di(&db, call), dominio.as_ref());
+        let (valutati, mut tot) = valuta(&contesto, &validi, mio.as_ref(), &|call| paese_di(&db, call), dominio.as_ref());
+        // QTC (WAE): `qtc = N` nei totali attesi li aggiunge come fa il servizio con quelli salvati, (punti + QTC) x moltiplicatori
+        if let Some(n) = atteso_vista.get("qtc").and_then(toml::Value::as_integer) {
+            assert!(contesto.qtc > 0, "{nome}: QTC attesi in un contest senza QTC");
+            aggiungi_qtc(&mut tot, u32::try_from(n).unwrap_or(0));
+        }
         assert_eq!(valutati.len(), attesi.len(), "{nome}");
         for (i, (v, a)) in valutati.iter().zip(&attesi).enumerate() {
             let n = i + 1;

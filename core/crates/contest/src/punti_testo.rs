@@ -370,9 +370,10 @@ fn valuta_con(c: &ContestTesto, qsos: &[QsoTesto], mio: Option<&InfoPaese>, paes
             for k in chiavi {
                 if molt.insert(format!("s:{k}")) {
                     riga.molt += 1;
-                    somma += 1;
                     // `DXCC:I@20` -> tipo `dxcc`, valore `I`, banda `20m`
                     let (corpo, banda_k) = k.split_once('@').map_or((k.as_str(), None), |(a, b)| (a, Some(b)));
+                    // una chiave con la banda vale il peso di `mult_band` (WAE: 80 m x4, 40 m x3), le altre 1
+                    somma += banda_k.map_or(1, |b| peso(&r, b));
                     let (tipo, valore) = corpo.split_once(':').unwrap_or(("SCRIPT", corpo));
                     let tipo = tipo.to_ascii_lowercase();
                     nuovi.push(format!("{tipo}:{valore}"));
@@ -762,6 +763,16 @@ mod tests {
         assert_eq!((t.molt, t.punteggio), (4, 12));
         assert_eq!(peso_banda(&c, "40m"), 2);
         assert_eq!(peso_banda(&c, "20m"), 1);
+    }
+
+    #[test]
+    fn moltiplicatori_dello_script_con_il_peso_della_banda() {
+        // WAE: le chiavi dello script con la banda valgono il peso di `mult_band`, quelle senza banda 1
+        let c = ContestTesto { score: "bands=80,40,20\npoints=any=1\nmult_band=80:4,40:3\n".into(), script: "fn moltiplicatori(qso) { [\"dxcc:\" + qso.dxcc + \"@\" + qso.band, \"x:\" + qso.callsign] }".into(), ..ContestTesto::default() };
+        let log = [q("DL1ABC", "80m", "RTTY", 0, ""), q("W1AW", "40m", "RTTY", 1, ""), q("IK1ABC", "20m", "RTTY", 2, "")];
+        let (_, t) = valuta(&c, &log, None, &paese, None);
+        // 80m DL x4, 40m K x3, 20m I x1 (nessun peso), piu' tre chiavi senza banda
+        assert_eq!((t.punti, t.molt, t.punteggio), (3, 4 + 3 + 1 + 3, 3 * 11));
     }
 
     #[test]

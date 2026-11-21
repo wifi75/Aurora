@@ -55,6 +55,9 @@ pub struct Meta {
     pub note: String,
     /// Altri nomi con cui il contest compare nei vecchi file `.contest` (per sostituirli: `ElencoContest::sostituito_da`).
     pub alias: Vec<String>,
+    /// I QTC del WAE (`docs/contest-qtc.md`): 0 nessuno, 1 dalle stazioni non europee alle europee (CW, SSB), 2 in entrambe le
+    /// direzioni fra continenti diversi (RTTY). Diventa `ContestTesto.qtc`.
+    pub qtc: u8,
 }
 
 /// Una data di edizione scritta nel file (`[[edizione.date]]`): vale al posto del calcolo.
@@ -415,6 +418,9 @@ pub fn carica(percorso: &Path, origine: Origine) -> Result<ContestCartella, Stri
     if !id_corto_ok(&t.contest.id) {
         return Err("contest.toml: [contest] id mancante o non valido (minuscole, cifre e trattini)".into());
     }
+    if t.contest.qtc > 2 {
+        return Err("contest.toml: [contest] qtc deve essere 0, 1 o 2".into());
+    }
     if let Some(e) = &t.edizione {
         e.controlla().map_err(|e| format!("contest.toml: {e}"))?;
     }
@@ -549,6 +555,7 @@ impl ContestCartella {
         c.grab_number_type = if zona_cq { 2 } else if numero_ricevuto { 0 } else { -1 };
         c.suggest_cq_zone = zona_cq;
         c.log_bar_mode = 1;
+        c.qtc = i32::from(self.meta.qtc.min(2));
         if let Some((nome, _)) = self.macro_principale() {
             c.macros = nome.to_string();
         }

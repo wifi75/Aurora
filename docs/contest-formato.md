@@ -29,6 +29,7 @@ contest/<Nome del contest>/
 | `[contest] id` | identificativo corto, minuscolo, con trattini |
 | `nome`, `organizzatore`, `sito`, `regolamento_url`, `note` | nome, organizzatore, pagina e regolamento ufficiali, nota per l'elenco |
 | `cabrillo_contest` | valore di `CONTEST:` nell'intestazione Cabrillo (`ARRL-10`); passa nel contest convertito e vale al posto del nome |
+| `qtc` | QTC del WAE (`docs/contest-qtc.md`): 0 nessuno (predefinito), 1 dalle stazioni non europee alle europee (CW, SSB), 2 in entrambe le direzioni fra continenti diversi (RTTY); diventa `m_iQtc` del contest convertito. Nelle prove `qtc = N` fra i totali attesi aggiunge N QTC al punteggio |
 | `[edizione]` `mese`, `fine_settimana_pieno`, `giorno_inizio`, `ora_inizio`, `durata_ore` | la regola delle date come dati: ennesimo fine settimana pieno del mese, giorno e ora UTC d'inizio, durata |
 | `ore_massime`, `pausa_minima_min`, `invio_log_giorni` | ore operabili, pausa minima, giorni per inviare il log |
 | `[[edizione.date]]` `anno`, `inizio`, `fine`, `fonte`, `confermata`, `nota` | date calcolate o lette dal calendario; `confermata = false` = da confermare |
