@@ -96,7 +96,7 @@ fn reopening_keeps_data() {
 #[test]
 fn migration_sets_user_version_4() {
     let lb = Logbook::open_in_memory().unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 6);
+    assert_eq!(lb.schema_version().unwrap(), 7);
 }
 
 fn station() -> logbook::adif::Station {
@@ -210,7 +210,7 @@ fn a_v1_database_is_migrated_keeping_its_rows() {
         .unwrap();
     }
     let lb = Logbook::open(&path).unwrap();
-    assert_eq!(lb.schema_version().unwrap(), 6);
+    assert_eq!(lb.schema_version().unwrap(), 7);
     let all = lb.all_qsos().unwrap();
     assert_eq!((all.len(), all[0].time_on.as_str(), all[0].date_off.as_str(), all[0].confirmed), (1, "123015", "20261024", None));
     drop(lb);
@@ -234,7 +234,7 @@ fn qsos_are_deleted_by_id_and_the_log_can_be_cleared() {
 #[test]
 fn deleted_qsos_are_removed_from_the_adif_file_too() {
     let text = "Aurora\n<adif_ver:5>3.1.4 <eoh>\n<CALL:5>K1ABC <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <eor>\n<call:6>DL1ABC <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <mode:3>FT8 <eor>\n";
-    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new() }];
+    let gone = vec![logbook::LogEntry { id: 1, date: "20261107".into(), time: "120030".into(), call: "K1ABC".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new(), source: String::new() }];
     let (out, n) = logbook::adif_without(text, &gone);
     assert_eq!(n, 1);
     assert!(!out.contains("K1ABC") && out.contains("DL1ABC") && out.contains("<eoh>"), "{out}");
@@ -335,7 +335,7 @@ fn the_adif_file_follows_the_correction_and_keeps_everything_else() {
 #[test]
 fn a_record_in_capitals_is_corrected_in_capitals() {
     let text = "Aurora\n<adif_ver:5>3.1.8 <EOH>\n<CALL:5>K1ABX <QSO_DATE:8>20261107 <TIME_ON:6>120015 <BAND:3>20m <MODE:3>FT8 <COMMENT:9><call:3>x <EOR>\n";
-    let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new() };
+    let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: String::new(), name: String::new(), qth: String::new(), comment: String::new(), source: String::new() };
     let new = logbook::LogEntry { call: "K1ABC".into(), name: "Joe".into(), ..old.clone() };
     let (out, n) = logbook::adif_with_edit(text, &logbook::LogChange { old, new, date_off: "20261107".into(), time_off: "120015".into() });
     assert_eq!(n, 1);
@@ -384,4 +384,40 @@ fn the_contest_exchange_is_saved_and_shown_in_the_recent_view() {
     // un QSO senza scambio resta con i campi vuoti
     let without: Vec<_> = view.qsos.iter().filter(|q| q.call == "K1ABC").collect();
     assert_eq!((without[0].exch_sent.as_str(), without[0].exch_rcvd.as_str()), ("", ""));
+}
+
+fn at(call: &str, on_ms: u64) -> QsoRecord {
+    QsoRecord { time_on_unix_ms: on_ms, time_off_unix_ms: on_ms + 60_000, time_ms: (on_ms % 86_400_000) as u32, ..qso(call, "20m", "FT8") }
+}
+
+#[test]
+fn a_received_qso_already_in_the_log_is_not_added_twice() {
+    use logbook::Received;
+    let lb = Logbook::open_in_memory().unwrap();
+    // 2026-11-07 23:58:00 UTC
+    let base = 1_794_009_480_000;
+    let mine = lb.add(&at("K1ABC", base)).unwrap();
+    // lo stesso QSO, 4 minuti dopo e oltre la mezzanotte, con banda e modo scritti in altro modo
+    let echo = QsoRecord { band: "20M".into(), mode: "ft8".into(), ..at("k1abc", base + 240_000) };
+    assert_eq!(lb.add_received(&echo, 300, "Log4OM").unwrap(), Received::Present(mine));
+    assert_eq!(lb.count().unwrap(), 1);
+    // oltre i 5 minuti e' un altro QSO
+    assert!(matches!(lb.add_received(&at("K1ABC", base + 301_000), 300, "Log4OM").unwrap(), Received::Added(_)));
+    assert_eq!(lb.count().unwrap(), 2);
+    let entries = lb.entries().unwrap();
+    assert!(entries.iter().any(|e| e.source == "Log4OM") && entries.iter().any(|e| e.source.is_empty()));
+}
+
+#[test]
+fn a_received_update_fills_only_the_missing_fields() {
+    use logbook::Received;
+    let lb = Logbook::open_in_memory().unwrap();
+    let base = 1_794_000_000_000;
+    let id = lb.add(&QsoRecord { name: String::new(), grid: String::new(), ..at("K1ABC", base) }).unwrap();
+    let update = QsoRecord { name: "Joe".into(), grid: "FN42".into(), rst_sent: "+05".into(), ..at("K1ABC", base + 30_000) };
+    assert_eq!(lb.add_received(&update, 300, "N1MM").unwrap(), Received::Completed(id));
+    assert_eq!(lb.add_received(&update, 300, "N1MM").unwrap(), Received::Present(id));
+    let e = lb.entry(id).unwrap().unwrap();
+    assert_eq!((e.name.as_str(), e.grid.as_str(), e.rst_sent.as_str()), ("Joe", "FN42", "-08"), "il rapporto c'era e resta");
+    assert_eq!(lb.count().unwrap(), 1);
 }

@@ -45,6 +45,61 @@ fn seconds_of_day(t: &str) -> u64 {
     n(0) * 3600 + n(2) * 60 + n(4)
 }
 
+/// Esito di [`Logbook::add_received`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Received {
+    /// QSO nuovo, aggiunto con questo numero.
+    Added(i64),
+    /// Lo stesso QSO c'era gia' ed e' rimasto com'era.
+    Present(i64),
+    /// Lo stesso QSO c'era gia': gli sono stati aggiunti campi che mancavano (locatore, rapporti, nome...).
+    Completed(i64),
+}
+
+/// L'inizio del QSO in ms Unix: `time_on_unix_ms`, se no la fine, se no adesso.
+fn qso_start_ms(q: &QsoRecord) -> u64 {
+    if q.time_on_unix_ms > 0 {
+        q.time_on_unix_ms
+    } else if q.time_off_unix_ms > 0 {
+        q.time_off_unix_ms
+    } else {
+        SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
+    }
+}
+
+/// Scrive un QSO nel log (`source`: vuoto = Aurora). La data e' quella dell'inizio del QSO (JTDX: `QSO_DATE`), se nota.
+fn insert_qso(conn: &Connection, q: &QsoRecord, source: &str) -> Result<i64, LogError> {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let date = if q.time_on_unix_ms > 0 { adif::utc_date(q.time_on_unix_ms / 1000) } else { adif::utc_date(now) };
+    let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
+    conn.execute(
+        "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth, comment, exch_sent, exch_rcvd, source)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+        params![
+            q.call.to_uppercase(),
+            q.grid,
+            q.band,
+            q.mode,
+            q.freq_hz as i64,
+            q.rst_sent,
+            q.rst_rcvd,
+            q.time_ms as i64,
+            date,
+            time_on,
+            date_off,
+            time_off,
+            q.state.trim().to_uppercase(),
+            q.name.trim(),
+            q.qth.trim(),
+            q.comment.trim(),
+            q.exch_sent.trim(),
+            q.exch_rcvd.trim(),
+            source.trim()
+        ],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
 /// Esito di un'importazione ADIF.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
 pub struct ImportReport {
@@ -80,10 +135,13 @@ pub struct LogEntry {
     pub qth: String,
     /// Il commento del QSO (vuoto per i QSO registrati prima che il log lo conservasse).
     pub comment: String,
+    /// Da dove arriva il QSO: vuoto = fatto in Aurora; altrimenti il programma di log che lo ha mandato (ricevitore dei QSO, `qso_export::inbound`).
+    #[serde(default)]
+    pub source: String,
 }
 
 /// Le colonne di un `LogEntry`, nell'ordine di `entry_from_row`.
-const ENTRY_COLUMNS: &str = "id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth, comment";
+const ENTRY_COLUMNS: &str = "id, date, time_on, call, band, mode, freq_hz, rst_sent, rst_rcvd, grid, name, qth, comment, source";
 
 fn entry_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<LogEntry> {
     Ok(LogEntry {
@@ -100,6 +158,7 @@ fn entry_from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<LogEntry> {
         name: r.get(10)?,
         qth: r.get(11)?,
         comment: r.get(12)?,
+        source: r.get(13)?,
     })
 }
 
@@ -265,6 +324,13 @@ impl Logbook {
                  PRAGMA user_version = 6;",
             )?;
         }
+        if version < 7 {
+            // settima versione: da dove arriva il QSO (vuoto = Aurora; altrimenti il log che lo ha mandato al ricevitore dei QSO)
+            conn.execute_batch(
+                "ALTER TABLE qso ADD COLUMN source TEXT NOT NULL DEFAULT '';
+                 PRAGMA user_version = 7;",
+            )?;
+        }
         Ok(Logbook { conn: Mutex::new(conn), path: None })
     }
 
@@ -277,36 +343,47 @@ impl Logbook {
     }
 
     pub fn add(&self, q: &QsoRecord) -> Result<i64, LogError> {
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs());
-        // la data e' quella dell'inizio del QSO (JTDX: `QSO_DATE`), se nota
-        let date = if q.time_on_unix_ms > 0 { adif::utc_date(q.time_on_unix_ms / 1000) } else { adif::utc_date(now) };
-        let (_, time_on, date_off, time_off) = adif::qso_times(q, &date);
         let conn = self.conn()?;
+        insert_qso(&conn, q, "")
+    }
+
+    /// Un QSO arrivato da un altro programma di log (ricevitore dei QSO): si aggiunge solo se il log non ha gia' lo stesso QSO (stesso
+    /// nominativo, banda e modo, inizio entro `window_secs`, anche a cavallo della mezzanotte). Se c'e' gia', del QSO arrivato si prendono
+    /// solo i campi che nel log sono vuoti (locatore, rapporti, nome, QTH, stato): niente si sovrascrive e niente si raddoppia. Controllo e
+    /// scrittura avvengono con il log bloccato: due copie dello stesso QSO arrivate insieme danno un solo QSO.
+    pub fn add_received(&self, q: &QsoRecord, window_secs: u64, source: &str) -> Result<Received, LogError> {
+        let at = qso_start_ms(q);
+        let conn = self.conn()?;
+        let mut found: Option<(i64, [String; 6])> = None;
+        {
+            let mut stmt = conn.prepare(
+                "SELECT id, date, time_on, grid, rst_sent, rst_rcvd, name, qth, state FROM qso WHERE call = ?1 AND LOWER(band) = LOWER(?2) AND UPPER(mode) = UPPER(?3)",
+            )?;
+            let rows = stmt.query_map(params![q.call.trim().to_uppercase(), q.band.trim(), q.mode.trim()], |r| {
+                Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, [r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?, r.get(8)?]))
+            })?;
+            for row in rows {
+                let (id, date, time_on, fields) = row?;
+                let Some(on) = unix_ms(&date, if time_on.is_empty() { "000000" } else { &time_on }) else { continue };
+                if on.abs_diff(at) <= window_secs.saturating_mul(1000) {
+                    found = Some((id, fields));
+                    break;
+                }
+            }
+        }
+        let Some((id, old)) = found else {
+            return Ok(Received::Added(insert_qso(&conn, q, source)?));
+        };
+        let incoming = [q.grid.trim().to_string(), q.rst_sent.trim().to_string(), q.rst_rcvd.trim().to_string(), q.name.trim().to_string(), q.qth.trim().to_string(), q.state.trim().to_uppercase()];
+        let next: Vec<String> = old.iter().zip(incoming.iter()).map(|(o, n)| if o.trim().is_empty() && !n.is_empty() { n.clone() } else { o.clone() }).collect();
+        if next.iter().zip(old.iter()).all(|(a, b)| a == b) {
+            return Ok(Received::Present(id));
+        }
         conn.execute(
-            "INSERT INTO qso (call, grid, band, mode, freq_hz, rst_sent, rst_rcvd, time_ms, date, time_on, date_off, time_off, state, name, qth, comment, exch_sent, exch_rcvd)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
-            params![
-                q.call.to_uppercase(),
-                q.grid,
-                q.band,
-                q.mode,
-                q.freq_hz as i64,
-                q.rst_sent,
-                q.rst_rcvd,
-                q.time_ms as i64,
-                date,
-                time_on,
-                date_off,
-                time_off,
-                q.state.trim().to_uppercase(),
-                q.name.trim(),
-                q.qth.trim(),
-                q.comment.trim(),
-                q.exch_sent.trim(),
-                q.exch_rcvd.trim()
-            ],
+            "UPDATE qso SET grid = ?1, rst_sent = ?2, rst_rcvd = ?3, name = ?4, qth = ?5, state = ?6 WHERE id = ?7",
+            params![next[0], next[1], next[2], next[3], next[4], next[5], id],
         )?;
-        Ok(conn.last_insert_rowid())
+        Ok(Received::Completed(id))
     }
 
     pub fn is_dupe(&self, call: &str, band: &str, mode: &str) -> Result<bool, LogError> {

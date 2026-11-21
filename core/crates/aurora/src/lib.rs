@@ -3691,7 +3691,7 @@ mod tests {
 <call:6>DL1ABC <gridsquare:4>JO31 <mode:3>FT8 <qso_date:8>20261107 <time_on:6>120115 <band:3>20m <eor>
 ";
         std::fs::write(&file, text).expect("file");
-        let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: "FN42".into(), name: String::new(), qth: String::new(), comment: String::new() };
+        let old = logbook::LogEntry { id: 1, date: "20261107".into(), time: "120015".into(), call: "K1ABX".into(), band: "20m".into(), mode: "FT8".into(), freq_hz: 0, rst_sent: String::new(), rst_rcvd: String::new(), grid: "FN42".into(), name: String::new(), qth: String::new(), comment: String::new(), source: String::new() };
         let change = logbook::LogChange { new: logbook::LogEntry { call: "K1ABC".into(), ..old.clone() }, old, date_off: "20261107".into(), time_off: "120015".into() };
         correct_in_own_file(&file, &change);
         assert_eq!(std::fs::read_to_string(&file).expect("riletto"), text.replace("K1ABX", "K1ABC"));

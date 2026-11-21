@@ -58,7 +58,8 @@ pub fn parse_records(text: &str) -> Vec<HashMap<String, String>> {
                 let Some(len) = parts.next().and_then(|l| l.trim().parse::<usize>().ok()) else {
                     continue;
                 };
-                let Some(value) = bytes.get(i..i + len) else {
+                // una lunghezza enorme (datagramma rovinato) non deve traboccare
+                let Some(value) = i.checked_add(len).and_then(|stop| bytes.get(i..stop)) else {
                     break;
                 };
                 current.insert(name, String::from_utf8_lossy(value).trim().to_string());
