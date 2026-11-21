@@ -89,6 +89,12 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
           </dd>
         </div>
       </dl>
+      {(rx.dropped_blocks ?? 0) > 0 ? (
+        <p className="wefax-dropped" role="status">
+          <b>{t('wefax.dropped', { n: String(rx.dropped_blocks) })}</b>
+          <span>{t('wefax.droppedTip')}</span>
+        </p>
+      ) : null}
 
       <div className="sstv-actions">
         {rx.listening ? (
@@ -211,7 +217,7 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
             </button>
           </span>
           <span className="sstv-hint">{t('wefax.set.slantHint')}</span>
-          <span>
+          <span title={t('wefax.set.learnedHint')}>
             {t('wefax.set.learned')}
             <b>{Math.round(settings.learned_ppm ?? 0)}</b>
           </span>
@@ -220,7 +226,6 @@ export function Controls({ snap, onChanged, onListen }: { snap: WefaxSnapshot; o
               {t('wefax.set.slantReset')}
             </button>
           </span>
-          <span className="sstv-hint">{t('wefax.set.learnedHint')}</span>
         </div>
       </fieldset>
     </aside>

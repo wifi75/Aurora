@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex, MutexGuard,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc::{Receiver, RecvTimeoutError, SyncSender, TrySendError, sync_channel},
     },
     time::{Duration, Instant},
@@ -24,6 +24,10 @@ use crate::{
 };
 
 pub type Emitter = Arc<dyn Fn(WefaxEvent) + Send + Sync>;
+
+/// Blocchi audio che la coda verso il ricevitore tiene prima di perderne (qualche secondo fino a un quarto di minuto, secondo la grandezza
+/// dei blocchi della scheda): un PC carico che rallenta il ricevitore per un po' non fa perdere audio, e chi alimenta non aspetta mai.
+const QUEUE_BLOCKS: usize = 512;
 
 /// Le righe al minuto ammesse.
 pub const LPM_VALUES: [u32; 4] = [240, 120, 90, 60];
@@ -186,6 +190,9 @@ pub struct RxStatus {
     pub signal: f32,
     /// Correzione dell'AFC (Hz sopra la sottoportante delle impostazioni).
     pub afc_hz: f32,
+    /// Blocchi audio buttati perche' il ricevitore non teneva il passo (dall'accensione dell'ascolto): ogni campione perso sposta il tempo
+    /// e inclina l'immagine.
+    pub dropped_blocks: u64,
     /// L'ultima immagine salvata.
     pub last_image: Option<String>,
     /// Come e' partita l'immagine in corso o l'ultima: `phasing`, `no_phasing`, `manual`, `forced`.
@@ -216,6 +223,8 @@ struct Inner {
     data_dir: PathBuf,
     settings: Mutex<WefaxSettings>,
     listening: AtomicBool,
+    /// Blocchi audio persi con la coda piena, dall'accensione dell'ascolto.
+    dropped: AtomicU64,
     queue: SyncSender<Msg>,
     rx: Mutex<RxStatus>,
     current: Mutex<Option<GrayImage>>,
@@ -305,12 +314,13 @@ impl WefaxService {
         if !settings.learned_ppm.is_finite() || !settings.learned_weight.is_finite() {
             (settings.learned_ppm, settings.learned_weight) = (0.0, 0.0);
         }
-        let (queue, rx) = sync_channel::<Msg>(128);
+        let (queue, rx) = sync_channel::<Msg>(QUEUE_BLOCKS);
         let store = ImageStore::open(&folder_of(data_dir, &settings));
         let inner = Arc::new(Inner {
             settings_path,
             data_dir: data_dir.to_path_buf(),
             listening: AtomicBool::new(settings.auto_receive),
+            dropped: AtomicU64::new(0),
             settings: Mutex::new(settings.clone()),
             queue,
             rx: Mutex::new(RxStatus { listening: settings.auto_receive, state: "apt".into(), ioc: settings.ioc, width: crate::width_of(settings.ioc), ..RxStatus::default() }),
@@ -336,9 +346,12 @@ impl WefaxService {
         if !self.inner.listening.load(Ordering::Relaxed) {
             return;
         }
-        // coda piena (PC molto carico): si perde un blocco piuttosto che fermare l'audio dell'FT8
+        // coda piena (PC molto carico): si perde un blocco piuttosto che fermare l'audio dell'FT8, e si conta
         if let Err(TrySendError::Full(_)) = self.inner.queue.try_send(Msg::Audio(rate, samples.to_vec())) {
-            tracing::debug!("WEFAX: blocco audio perso");
+            let n = self.inner.dropped.fetch_add(1, Ordering::Relaxed) + 1;
+            if n == 1 || n % 500 == 0 {
+                tracing::warn!("WEFAX: blocchi audio persi: {n} (il ricevitore non tiene il passo, la cartina puo' venire inclinata)");
+            }
         }
     }
 
@@ -348,8 +361,10 @@ impl WefaxService {
 
     pub fn snapshot(&self) -> Snapshot {
         let settings = lock(&self.inner.settings).clone();
+        let mut rx = lock(&self.inner.rx).clone();
+        rx.dropped_blocks = self.inner.dropped.load(Ordering::Relaxed);
         Snapshot {
-            rx: lock(&self.inner.rx).clone(),
+            rx,
             folder: lock(&self.inner.store).dir().display().to_string(),
             iocs: crate::ioc_infos(&settings),
             lpm_values: LPM_VALUES.to_vec(),
@@ -392,7 +407,10 @@ impl WefaxService {
     }
 
     pub fn start_rx(&self) {
-        self.inner.listening.store(true, Ordering::Relaxed);
+        // un ascolto nuovo riparte dal conteggio dei blocchi persi
+        if !self.inner.listening.swap(true, Ordering::Relaxed) {
+            self.inner.dropped.store(0, Ordering::Relaxed);
+        }
         lock(&self.inner.rx).listening = true;
         self.inner.rx_status_event();
     }
@@ -720,6 +738,34 @@ mod tests {
         // un'altra scheda a 44100 Hz: si riparte
         svc.feed(44_100, &vec![0.0; 4410]);
         assert!(attendi(|| svc.settings().learned_ppm == 0.0 && svc.settings().learned_rate == 44_100), "reset non arrivato");
+        let _ = std::fs::remove_dir_all(&data);
+    }
+
+    #[test]
+    fn i_blocchi_audio_persi_si_contano_senza_mai_bloccare_chi_alimenta() {
+        let data = temp("persi");
+        let svc = WefaxService::open(&data);
+        svc.start_rx();
+        // alimentazione normale: un blocco da 10 ms ogni 10 ms per due secondi, niente di perso
+        for _ in 0..200 {
+            svc.feed(48_000, &vec![0.1; 480]);
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(svc.snapshot().rx.dropped_blocks, 0, "con l'alimentazione normale non si perde niente");
+        // molto piu' veloce del ricevitore: blocchi da 100 ms a raffica, la coda si riempie, il contatore sale e feed non aspetta
+        let t = Instant::now();
+        for _ in 0..3000 {
+            svc.feed(48_000, &vec![0.1; 4800]);
+        }
+        let tempo = t.elapsed();
+        let persi = svc.snapshot().rx.dropped_blocks;
+        eprintln!("3000 blocchi da 100 ms in {tempo:?}: persi {persi}");
+        assert!(persi > 0, "il contatore doveva salire");
+        assert!(tempo < Duration::from_secs(10), "feed ha aspettato: {tempo:?}");
+        // un ascolto nuovo riparte da zero
+        svc.stop_rx();
+        svc.start_rx();
+        assert_eq!(svc.snapshot().rx.dropped_blocks, 0);
         let _ = std::fs::remove_dir_all(&data);
     }
 

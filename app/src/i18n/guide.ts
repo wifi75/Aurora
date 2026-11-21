@@ -561,6 +561,14 @@ export const GUIDE: readonly GuideChapter[] = [
             'O erro do relógio da placa de som é o mesmo para cada carta: a Aurora lembra-o de uma receção para a outra e mostra-o em «[[wefax.set.learned]]»; nas imagens sem faseamento a segunda carta começa já direita. «[[wefax.set.slantReset]]» ao lado apaga-o, e repõe-se a zero se a frequência de amostragem da entrada mudar.',
           ],
           [
+            'Se il PC è troppo carico e non riesce a stare dietro all’audio, sotto le letture dei comandi compare «Blocchi audio persi: N»: ogni blocco perso sposta il tempo e inclina la cartina, quindi chiudi gli altri programmi pesanti.',
+            'If the PC is too busy to keep up with the audio, “Audio blocks lost: N” appears under the readouts of the controls: every lost block shifts the timing and slants the chart, so close other heavy programs.',
+            'Ist der PC zu ausgelastet, um dem Audio zu folgen, erscheint unter den Anzeigen der Bedienelemente „Verlorene Audioblöcke: N“: Jeder verlorene Block verschiebt die Zeit und neigt die Karte, also schließe andere rechenintensive Programme.',
+            'Si le PC est trop chargé pour suivre l’audio, « Blocs audio perdus : N » apparaît sous les mesures des commandes : chaque bloc perdu décale le temps et incline la carte, ferme donc les autres programmes lourds.',
+            'Si el PC está demasiado cargado para seguir el audio, bajo las lecturas de los controles aparece «Bloques de audio perdidos: N»: cada bloque perdido desplaza el tiempo e inclina el mapa, así que cierra los demás programas pesados.',
+            'Se o PC estiver demasiado carregado para acompanhar o áudio, por baixo das leituras dos comandos aparece «Blocos de áudio perdidos: N»: cada bloco perdido desloca o tempo e inclina a carta, por isso fecha os outros programas pesados.',
+          ],
+          [
             'In «[[wefax.hist.title]]», il riquadro in alto a destra, restano le cartine ricevute con la miniatura intera: un clic le apre in grande, «[[wefax.hist.download]]» salva il PNG, «[[wefax.hist.delete]]» le cancella; i comandi stanno sotto il riquadro.',
             'In “[[wefax.hist.title]]”, the box at the top right, the received charts stay with a whole thumbnail: a click opens them large, “[[wefax.hist.download]]” saves the PNG, “[[wefax.hist.delete]]” deletes them; the controls are below the box.',
             'Unter „[[wefax.hist.title]]“, dem Feld oben rechts, bleiben die empfangenen Karten mit ganzem Vorschaubild: Ein Klick öffnet sie groß, „[[wefax.hist.download]]“ speichert das PNG, „[[wefax.hist.delete]]“ löscht sie; die Bedienelemente stehen unter dem Feld.',

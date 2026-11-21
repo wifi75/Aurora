@@ -5571,6 +5571,8 @@ export const NL_UI: Record<string, string> = {
   "upd.whenIdle": "Zelf bijwerken als Aurora stilstaat",
   "wefax.afc.label": "AFC",
   "wefax.afc.tip": "AFC: staat de radio iets naast de frequentie (tot 150 Hz), dan volgt de ontvangst het signaal vanzelf zodat de grijstinten kloppen. Hij stemt af op de vaste zwarttoon, de APT en de fasering.",
+  "wefax.dropped": "Verloren audioblokken: {n}",
+  "wefax.droppedTip": "De pc kan het geluid niet bijhouden en de kaart kan scheef uitvallen: sluit andere zware programma’s.",
   "wefax.freq.band": "{mhz} MHz",
   "wefax.freq.choose": "Kies een frequentie…",
   "wefax.freq.down": "Volgende lagere frequentie in de lijst",

@@ -25,6 +25,9 @@
 .wefax-set legend { padding: 0 0.4rem; font-weight: 700; }
 .wefax-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
 .wefax-grid .sstv-field input, .wefax-grid .sstv-field select { width: 100%; box-sizing: border-box; }
+.wefax-dropped { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; padding: 0.4rem 0.6rem; border: 1px solid var(--danger); border-radius: 10px; font-size: 0.82rem; line-height: 1.3; }
+.wefax-dropped b { color: var(--danger); }
+.wefax-dropped span { color: var(--text-muted); }
 .wefax-slant { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .wefax-slant .sstv-btn { padding: 0.3rem 0.6rem; min-width: 2.4rem; }
 

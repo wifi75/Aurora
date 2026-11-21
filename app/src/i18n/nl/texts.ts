@@ -258,6 +258,7 @@ export const NL_TEXTS: Record<string, string> = {
   "t.18dbxa3vv3j": "Als je op een pagina bent die geen moduspagina is (bijvoorbeeld [[nav.log]] of [[nav.dxmap]]), is er geen pil verlicht; een klik op “FT8” of “VHF” brengt je terug naar het Station.",
   "t.18ek7gn9br7": "Kies in “[[rd.layout]]” hoe het display rechtsboven staat: [[rd.layout.single]], één scherm met een grote VFO A links en VFO B rechts, of [[rd.layout.pair]].",
   "t.18h3i48p9fb": "brengt het Aurora-venster naar voren",
+  "t.18k8wqxop4z": "Als de pc het geluid niet kan bijhouden, verschijnt onder de uitlezingen van de bediening “Verloren audioblokken: N”: elk verloren blok verschuift de tijd en maakt de kaart scheef, sluit dus andere zware programma’s.",
   "t.18ly7v9rjcn": "[[cat.catmode]]: de modus die Aurora bij elke frequentiewijziging in de radio terugschrijft, omdat sommige radio’s de modus oproepen die voor de band is opgeslagen. “[[cat.catmode.none]]” (fabrieksinstelling) raakt de modus op de radio niet aan; kies voor FT8 met de audio over de USB van de radio “[[cat.catmode.data]]” (DATA-USB); “[[cat.catmode.usb]]” voor gewone USB.",
   "t.18np4trrlt0": "[[fil.decode]] · [[dec.jt65Ap]]: selectievakje, standaard uit. In JT65 decodeert het ook a priori met je roepnaam, die van de DX en de fase van de QSO (alleen met [[ctl.enable_tx]] aan). Zet het aan om zwakke signalen te horen van het station dat je roept. Naast de mode staat ook een knop “AP”.",
   "t.18o0yxassw7": "[[sstv.log.clear]]: maakt alle velden leeg.",

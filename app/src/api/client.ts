@@ -2483,6 +2483,8 @@ export interface WefaxRxStatus {
   signal?: number;
   /** Correzione dell'AFC (Hz sopra `center_hz`). */
   afc_hz?: number;
+  /** Blocchi audio persi perche' il ricevitore non teneva il passo (dall'accensione dell'ascolto). Assente con un motore vecchio. */
+  dropped_blocks?: number;
   last_image: string | null;
   source?: string | null;
 }
