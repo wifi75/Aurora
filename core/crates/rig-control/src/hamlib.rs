@@ -515,6 +515,42 @@ impl RigctldClient {
         self.ask(&format!("w {text}"), 0).map(|_| ())
     }
 
+    /// Una trama grezza con la risposta estesa di `rigctld` (`+w ...`): le righe della risposta (senza l'eco `send_cmd:`) fino a `RPRT` e il
+    /// codice di `RPRT`. Con la risposta estesa la fine e' sempre segnata; con `w` semplice non c'e' `RPRT` e non si saprebbe quando smettere.
+    pub fn send_raw_reply(&self, text: &str) -> Result<(Vec<String>, i32), RigError> {
+        let command = format!("+w {text}");
+        let started = Instant::now();
+        let result = self.ask_until_rprt(&command);
+        match &result {
+            Ok((lines, code)) => crate::trace::command(&command, &format!("{} | RPRT {code}", lines.join(" | ")), started.elapsed().as_millis(), *code == 0),
+            Err(e) => crate::trace::command(&command, &e.0, started.elapsed().as_millis(), false),
+        }
+        result
+    }
+
+    fn ask_until_rprt(&self, command: &str) -> Result<(Vec<String>, i32), RigError> {
+        self.yield_to_urgent();
+        let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
+        let (reader, writer) = &mut *io;
+        writer.write_all(format!("{command}\n").as_bytes()).map_err(|e| RigError(format!("rigctld: scrittura: {e}")))?;
+        let mut out = Vec::new();
+        for _ in 0..16 {
+            let mut line = String::new();
+            reader.read_line(&mut line).map_err(|e| RigError(format!("rigctld: lettura: {e}")))?;
+            if line.is_empty() {
+                return Err(RigError("rigctld ha chiuso la connessione".into()));
+            }
+            if let Some(rprt) = parse_rprt(&line) {
+                return Ok((out, rprt.err().unwrap_or(0)));
+            }
+            let line = line.trim();
+            if !line.starts_with("send_cmd:") {
+                out.push(line.to_string());
+            }
+        }
+        Err(RigError(format!("rigctld: risposta senza fine a «{command}»")))
+    }
+
     /// Chiede al demone di chiudere la sessione (lo lascia in vita, per altri client).
     pub fn quit(&self) {
         if let Ok(mut io) = self.io.lock() {

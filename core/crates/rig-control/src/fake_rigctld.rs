@@ -65,6 +65,27 @@ pub struct FakeState {
     refused_vfos: Mutex<Vec<String>>,
     /// VFO che la radio rifiuta con «comando rifiutato» (-9), come il Sub spento dell'IC-820H.
     rejected_vfos: Mutex<Vec<String>>,
+    /// Come risponde la finta IC-820H alle trame CI-V grezze (`+w`): vedi [`CivBehaviour`].
+    civ: Mutex<CivBehaviour>,
+}
+
+/// Il comportamento della finta IC-820H alle trame CI-V grezze (`+w ...`) sulla radio a due bande (`enable_dual_bands`): `07 D0` seleziona la
+/// banda principale, `07 D1` la secondaria, `05` scrive e `03` legge la frequenza della banda selezionata, come dal manuale. Senza
+/// `enable_dual_bands` la radio rimanda solo l'eco (come il finto modello di Hamlib).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CivBehaviour {
+    /// `07 D0`/`07 D1` rispondono FB ma non cambiano banda.
+    pub select_ignored: bool,
+    /// `07 D0`/`07 D1` rispondono FA.
+    pub select_refused: bool,
+    /// Solo l'eco, nessuna risposta della radio.
+    pub echo_only: bool,
+    /// Modo satellite «al contrario»: `07 D0` porta sulla secondaria e `07 D1` sulla principale.
+    pub inverted: bool,
+    /// Ogni ritorno sulla banda principale la sposta di 1 kHz (la ricezione cambiata dopo il ritorno).
+    pub main_moves_on_return: bool,
+    /// `05` risponde FB ma scrive 1 kHz piu' in alto (scrittura non confermata).
+    pub write_off: bool,
 }
 
 pub struct FakeRigctld {
@@ -104,6 +125,7 @@ impl FakeRigctld {
             s_fail_code: AtomicI32::new(0),
             refused_vfos: Mutex::new(Vec::new()),
             rejected_vfos: Mutex::new(Vec::new()),
+            civ: Mutex::new(CivBehaviour::default()),
         });
         let listener = TcpListener::bind("127.0.0.1:0").expect("porta locale per il finto rigctld");
         let addr = listener.local_addr().expect("indirizzo del finto rigctld");
@@ -156,6 +178,23 @@ impl FakeRigctld {
             *b = [main_hz, sub_hz];
         }
         self.state.current_band.store(0, Ordering::SeqCst);
+    }
+
+    /// Come la finta IC-820H risponde alle trame CI-V grezze.
+    pub fn set_civ(&self, behaviour: CivBehaviour) {
+        if let Ok(mut c) = self.state.civ.lock() {
+            *c = behaviour;
+        }
+    }
+
+    /// La banda selezionata della radio a due bande (0 = principale, 1 = secondaria).
+    pub fn current_band(&self) -> u8 {
+        self.state.current_band.load(Ordering::SeqCst)
+    }
+
+    /// Le trame `05` (scrittura della frequenza) ricevute.
+    pub fn civ_writes(&self) -> usize {
+        self.commands().iter().filter(|c| c.starts_with("+w ") && c.contains("\\0xE0\\0x05")).count()
     }
 
     /// Le frequenze di Main e di Sub della radio a due bande.
@@ -503,6 +542,7 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     Err(_) => "RPRT -1
 ".into(),
                 },
+                "+w" => civ_reply(state, arg),
                 "v" if state.vfo_read_unavailable.load(Ordering::SeqCst) => "RPRT -11\n".into(),
                 "v" => format!("{}
 ", state.vfo.lock().map(|v| v.clone()).unwrap_or_default()),
@@ -541,4 +581,63 @@ fn serve(stream: TcpStream, state: &FakeState) {
             return;
         }
     }
+}
+
+/// La risposta estesa di `rigctld` a `+w <trama>`: eco del comando, riga `Reply:` con i byte letti dalla porta (eco della trama e risposta
+/// della radio, come `\0xFE\0xFE...`) e `RPRT 0`.
+fn civ_reply(state: &FakeState, frame_text: &str) -> String {
+    let sent = crate::ic820h_civ::parse_bytes(&[frame_text.to_string()]);
+    let mut bytes = sent.clone();
+    let behaviour = state.civ.lock().map(|c| *c).unwrap_or_default();
+    let body: &[u8] = if sent.len() >= 5 && sent[2] == crate::ic820h_civ::RADIO_ADDR { &sent[4..sent.len() - 1] } else { &[] };
+    let answer: Option<Vec<u8>> = if !state.dual_bands.load(Ordering::SeqCst) || behaviour.echo_only {
+        None
+    } else {
+        match body {
+            [0x07, sel @ (0xD0 | 0xD1)] => {
+                if behaviour.select_refused {
+                    Some(vec![0xFA])
+                } else {
+                    if !behaviour.select_ignored {
+                        let to_sub = (*sel == 0xD1) != behaviour.inverted;
+                        let band = u8::from(to_sub);
+                        let was = state.current_band.swap(band, Ordering::SeqCst);
+                        if behaviour.main_moves_on_return
+                            && band == 0
+                            && was == 1
+                            && let Ok(mut b) = state.band_freqs.lock()
+                        {
+                            b[0] += 1_000;
+                        }
+                    }
+                    Some(vec![0xFB])
+                }
+            }
+            [0x05, bcd @ ..] => match crate::ic820h_civ::decode_freq(bcd) {
+                Some(hz) => {
+                    let band = usize::from(state.current_band.load(Ordering::SeqCst));
+                    if let Ok(mut b) = state.band_freqs.lock() {
+                        b[band] = if behaviour.write_off { hz + 1_000 } else { hz };
+                    }
+                    Some(vec![0xFB])
+                }
+                None => Some(vec![0xFA]),
+            },
+            [0x03] => {
+                let band = usize::from(state.current_band.load(Ordering::SeqCst));
+                let hz = state.band_freqs.lock().map(|b| b[band]).unwrap_or(0);
+                let mut out = vec![0x03];
+                out.extend_from_slice(&crate::ic820h_civ::encode_freq(hz).unwrap_or([0; 5]));
+                Some(out)
+            }
+            _ => Some(vec![0xFA]),
+        }
+    };
+    if let Some(answer) = answer {
+        bytes.extend_from_slice(&[0xFE, 0xFE, crate::ic820h_civ::CTRL_ADDR, crate::ic820h_civ::RADIO_ADDR]);
+        bytes.extend_from_slice(&answer);
+        bytes.push(0xFD);
+    }
+    let hex: String = bytes.iter().map(|b| format!("\\0x{b:02X}")).collect();
+    format!("send_cmd: {frame_text}\nReply: {hex} {}\nRPRT 0\n", bytes.len())
 }

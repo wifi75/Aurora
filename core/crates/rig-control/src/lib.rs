@@ -16,6 +16,7 @@ pub mod ft991link;
 pub mod hamlib;
 pub mod hamlib_restore;
 pub mod hamlib_rig;
+pub mod ic820h_civ;
 pub mod meters;
 pub mod modes;
 pub mod omnirig;

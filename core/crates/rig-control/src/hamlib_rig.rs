@@ -202,6 +202,9 @@ struct Inner {
     /// Quale banda sta su «Main» e quale su «Sub» (`MAIN_SUB_*`), letta una volta per connessione: sulle radio a due bande (IC-820H) i due VFO
     /// sono le bande 144 e 430 MHz, e una frequenza scritta nella banda sbagliata viene «ripiegata» (437,79 -> 137,79 MHz).
     sat_band_map: AtomicU8,
+    /// IC-820H: trasmissione dei satelliti con trame CI-V dirette (prova automatica, ultima scrittura, registro dei passi). Si azzera alla
+    /// riconnessione.
+    civ: Mutex<CivUplink>,
     config: RigConfig,
     connector: Connector,
     timing: Timing,
@@ -270,6 +273,54 @@ const MAIN_SUB_SAME: u8 = 3;
 
 /// Il modello Hamlib dell'IC-820H: a due bande (144 e 430 MHz), con «Main» sulla 144 e «Sub» sulla 430 di fabbrica.
 const IC_820H_MODEL: u32 = 3032;
+
+/// IC-820H con trame CI-V dirette: fra due scambi di banda passano almeno questi secondi (ogni scambio disturba la ricezione).
+const CIV_MIN_GAP: Duration = Duration::from_secs(5);
+
+/// Righe del registro dei passi CI-V tenute per il pacchetto di assistenza.
+const CIV_LOG_MAX: usize = 60;
+
+/// Lo stato della trasmissione con trame CI-V dirette dell'IC-820H.
+#[derive(Default)]
+struct CivUplink {
+    /// `None` = prova non ancora fatta; `Some(Ok)` = riuscita; `Some(Err)` = fallita (non si scrive piu' fino alla riconnessione).
+    probe: Option<Result<crate::ic820h_civ::Probe, String>>,
+    /// Ripiego spento dopo una scrittura non confermata (motivo).
+    disabled: Option<String>,
+    last_write: Option<Instant>,
+    /// Ultima scrittura confermata: trasmissione e ricezione rilette.
+    last: Option<crate::ic820h_civ::Written>,
+    /// Passi della prova e delle ultime scritture, con le risposte grezze della radio.
+    log: Vec<String>,
+}
+
+/// Il rapporto della trasmissione con trame CI-V dirette (stato dei satelliti e pacchetto di assistenza).
+#[derive(Debug, Clone, Serialize)]
+pub struct CivUplinkReport {
+    /// «non provata», «riuscita», «fallita», «spenta».
+    pub stato: String,
+    /// Il motivo (prova fallita o scrittura non confermata) o, se riuscita, quali comandi portano sulle due bande.
+    pub dettaglio: String,
+    /// Frequenze lette durante la prova: ricezione e banda secondaria (Hz).
+    pub ricezione_hz: Option<u64>,
+    pub banda_secondaria_hz: Option<u64>,
+    /// Ultima trasmissione scritta e confermata (Hz).
+    pub ultima_trasmissione_hz: Option<u64>,
+    /// I passi con le risposte grezze di rigctld.
+    pub passi: Vec<String>,
+}
+
+/// Le trame CI-V mandate con `+w` sulla sessione di `rigctld`.
+struct CivOverRigctld<'a>(&'a RigctldClient);
+
+impl crate::ic820h_civ::CivPort for CivOverRigctld<'_> {
+    fn exchange(&mut self, body: &[u8]) -> Result<(crate::ic820h_civ::Answer, String), String> {
+        let (lines, code) = self.0.send_raw_reply(&crate::ic820h_civ::frame_text(body)).map_err(|e| e.0)?;
+        // un errore di rigctld senza nessuna trama della radio resta «nessuna risposta» (la prova fallisce)
+        let answer = crate::ic820h_civ::classify(&crate::ic820h_civ::parse_bytes(&lines));
+        Ok((answer, format!("{} RPRT {code}", lines.join(" | "))))
+    }
+}
 
 /// La frequenza e' sulla banda alta (UHF e oltre)?
 fn is_uhf(hz: u64) -> bool {
@@ -610,6 +661,9 @@ impl Inner {
         self.split_unsupported.store(false, Ordering::SeqCst);
         self.sat_vfo_pair.store(0, Ordering::SeqCst);
         self.sat_band_map.store(MAIN_SUB_UNKNOWN, Ordering::SeqCst);
+        if let Ok(mut civ) = self.civ.lock() {
+            *civ = CivUplink::default();
+        }
         self.session.fetch_add(1, Ordering::SeqCst);
         // la potenza scelta l'ultima volta con + e − (la radio puo' ripartire con la sua, es. 99%)
         crate::extras::restore_power(link.client());
@@ -1158,6 +1212,7 @@ impl HamlibRig {
             session: AtomicU64::new(0),
             sat_vfo_pair: AtomicU8::new(0),
             sat_band_map: AtomicU8::new(MAIN_SUB_UNKNOWN),
+            civ: Mutex::new(CivUplink::default()),
             config,
             connector,
             timing,
@@ -1623,6 +1678,113 @@ impl HamlibRig {
         });
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         out.map_err(|e| RigError(friendly_error(&e.0)))
+    }
+
+    /// IC-820H (modello 3032, solo quello): la frequenza di trasmissione dei satelliti scritta sulla banda secondaria con trame CI-V dirette
+    /// (vedi [`crate::ic820h_civ`]). La prima volta fa la prova di sicurezza (selezione e letture, nessuna scrittura); se fallisce non scrive
+    /// mai fino alla riconnessione. `Ok(false)` = non adesso (in trasmissione, o troppo presto dopo l'ultimo scambio). Un errore spegne il ripiego.
+    pub fn set_uplink_via_civ(&self, hz: u64) -> Result<bool, RigError> {
+        let inner = &self.inner;
+        if inner.config.model != IC_820H_MODEL {
+            return Err(RigError(format!("comandi CI-V diretti solo per l'IC-820H (modello Hamlib {IC_820H_MODEL}), non per il modello {}", inner.config.model)));
+        }
+        if !valid_dial_hz(hz) {
+            return Err(RigError(format!("frequenza di trasmissione non valida: {hz} Hz")));
+        }
+        let link = inner.connected_link()?;
+        let mut civ = inner.civ.lock().map_err(|_| RigError("stato CI-V non disponibile".into()))?;
+        if let Some(why) = &civ.disabled {
+            return Err(RigError(format!("trasmissione CI-V spenta: {why}")));
+        }
+        if let Some(Err(why)) = &civ.probe {
+            return Err(RigError(format!("prova CI-V fallita: {why}")));
+        }
+        if civ.last_write.is_some_and(|t| t.elapsed() < CIV_MIN_GAP) {
+            return Ok(false);
+        }
+        // mai mentre si trasmette: lo si guarda subito prima di cambiare banda
+        if inner.transmitting() {
+            return Ok(false);
+        }
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        inner.split_command("w 07 D1/05/07 D0", "satelliti: trasmissione CI-V diretta (IC-820H)");
+        let mut log = Vec::new();
+        let known = civ.probe.clone();
+        let mut probed = None;
+        let mut wrong_band = false;
+        let out = link.client().urgent(|c| {
+            let mut port = CivOverRigctld(c);
+            let probe = match known {
+                Some(Ok(p)) => p,
+                _ => {
+                    let result = crate::ic820h_civ::probe(&mut port, &mut log);
+                    match &result {
+                        Ok(p) => tracing::info!("satelliti: prova CI-V dell'IC-820H riuscita: ricezione {} Hz, banda secondaria {} Hz, andata 07 {:02X}, ritorno 07 {:02X}", p.rx_hz, p.tx_band_hz, p.to_tx, p.to_rx),
+                        Err(e) => tracing::warn!("satelliti: prova CI-V dell'IC-820H fallita: {e}; la trasmissione non si scrive, il Doppler segue solo la ricezione"),
+                    }
+                    probed = Some(result.clone());
+                    result?
+                }
+            };
+            if inner.transmitting() {
+                return Ok(None);
+            }
+            // trasmissione nella stessa banda della ricezione (un altro transponder): non si scrive, ma il ripiego resta acceso
+            if crate::ic820h_civ::is_uhf(hz) != crate::ic820h_civ::is_uhf(probe.tx_band_hz) {
+                wrong_band = true;
+                return Err(format!("la trasmissione {hz} Hz non e' nella banda secondaria della radio ({} Hz): niente scritto", probe.tx_band_hz));
+            }
+            crate::ic820h_civ::write_tx(&mut port, &mut log, &probe, hz).map(Some)
+        });
+        inner.epoch.fetch_add(1, Ordering::SeqCst);
+        if let Some(p) = probed {
+            civ.probe = Some(p);
+        }
+        for line in &log {
+            tracing::info!("satelliti: CI-V {line}");
+        }
+        civ.log.extend(log);
+        let excess = civ.log.len().saturating_sub(CIV_LOG_MAX);
+        civ.log.drain(..excess);
+        match out {
+            Ok(Some(w)) => {
+                civ.last_write = Some(Instant::now());
+                civ.last = Some(w);
+                tracing::info!("satelliti: trasmissione CI-V scritta {hz} Hz, riletta {} Hz; ricezione riletta {} Hz", w.tx_hz, w.rx_hz);
+                Ok(true)
+            }
+            Ok(None) => Ok(false),
+            Err(e) => {
+                if matches!(civ.probe, Some(Ok(_))) && !wrong_band {
+                    tracing::warn!("satelliti: trasmissione CI-V non confermata ({e}): ripiego spento fino alla riconnessione");
+                    civ.disabled = Some(e.clone());
+                }
+                Err(RigError(e))
+            }
+        }
+    }
+
+    /// Lo stato della trasmissione con trame CI-V dirette dell'IC-820H; `None` per gli altri modelli.
+    pub fn civ_uplink_report(&self) -> Option<CivUplinkReport> {
+        if self.inner.config.model != IC_820H_MODEL {
+            return None;
+        }
+        let civ = self.inner.civ.lock().ok()?;
+        let (stato, dettaglio) = match (&civ.probe, &civ.disabled) {
+            (_, Some(why)) => ("spenta", why.clone()),
+            (None, None) => ("non provata", String::new()),
+            (Some(Err(why)), None) => ("fallita", why.clone()),
+            (Some(Ok(p)), None) => ("riuscita", format!("andata 07 {:02X}, ritorno 07 {:02X}", p.to_tx, p.to_rx)),
+        };
+        let probe = civ.probe.as_ref().and_then(|p| p.as_ref().ok());
+        Some(CivUplinkReport {
+            stato: stato.into(),
+            dettaglio,
+            ricezione_hz: probe.map(|p| p.rx_hz),
+            banda_secondaria_hz: probe.map(|p| p.tx_band_hz),
+            ultima_trasmissione_hz: civ.last.map(|w| w.tx_hz),
+            passi: civ.log.clone(),
+        })
     }
 
     /// Split DX (doppio clic su uno spot del cluster con «UP 5», «QSX 14.030»...): la ricezione va su `rx_hz` come un cambio di frequenza
@@ -2962,5 +3124,126 @@ mod tests {
         fake.clear_commands();
         assert_eq!(rig.set_uplink_via_vfo(145_900_000, None).expect("in trasmissione"), false);
         assert!(writes(&fake).is_empty());
+    }
+
+    fn ic820h(fake: &FakeRigctld, rx_hz: u64, sub_hz: u64, civ: crate::fake_rigctld::CivBehaviour) -> HamlibRig {
+        fake.enable_dual_bands(rx_hz, sub_hz);
+        fake.set_civ(civ);
+        let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
+        fake.clear_commands();
+        rig
+    }
+
+    #[test]
+    fn ic_820h_civ_probe_then_writes_the_uplink_on_the_sub_band_and_comes_back() {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, Default::default());
+        assert!(rig.set_uplink_via_civ(435_123_456).expect("scrittura CI-V"));
+        assert_eq!(fake.band_frequencies(), [145_950_000, 435_123_456]);
+        assert_eq!(fake.current_band(), 0, "la radio torna sulla banda di ricezione");
+        assert_eq!(fake.civ_writes(), 1);
+        let report = rig.civ_uplink_report().expect("rapporto");
+        assert_eq!(report.stato, "riuscita");
+        assert_eq!(report.ricezione_hz, Some(145_950_000));
+        assert_eq!(report.banda_secondaria_hz, Some(435_000_000));
+        assert_eq!(report.ultima_trasmissione_hz, Some(435_123_456));
+        // subito dopo: troppo presto, niente scambio di banda
+        fake.clear_commands();
+        assert!(!rig.set_uplink_via_civ(435_123_900).expect("troppo presto"));
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")), "{:?}", fake.commands());
+    }
+
+    #[test]
+    fn ic_820h_civ_handles_the_inverted_selection_of_the_satellite_mode() {
+        // ricezione sulla banda alta (secondaria), trasmissione sulla 145; con il modo satellite D1 porta sulla principale (al contrario)
+        let fake = FakeRigctld::start(435_800_000);
+        fake.enable_dual_bands(145_900_000, 435_800_000);
+        fake.set_civ(crate::fake_rigctld::CivBehaviour { inverted: true, ..Default::default() });
+        let c = fake.client(Duration::from_millis(500)).expect("client");
+        c.send_raw_reply(&crate::ic820h_civ::frame_text(&[0x07, 0xD0])).expect("selezione");
+        assert_eq!(fake.current_band(), 1);
+        drop(c);
+        let rig = start(&fake, RigConfig { model: 3032, ..RigConfig::default() });
+        fake.clear_commands();
+        assert!(rig.set_uplink_via_civ(145_912_345).expect("scrittura CI-V"));
+        assert_eq!(fake.band_frequencies(), [145_912_345, 435_800_000]);
+        assert_eq!(fake.current_band(), 1, "di nuovo sulla banda di ricezione");
+    }
+
+    fn assert_never_writes(civ: crate::fake_rigctld::CivBehaviour, why: &str) {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, civ);
+        let err = rig.set_uplink_via_civ(435_123_456).expect_err(why);
+        assert_eq!(fake.civ_writes(), 0, "{why}: nessuna 05 ({:?})", fake.commands());
+        assert_eq!(fake.band_frequencies()[0], if civ.main_moves_on_return { fake.band_frequencies()[0] } else { 145_950_000 }, "{why}");
+        assert_eq!(fake.band_frequencies()[1], 435_000_000, "{why}");
+        assert_eq!(fake.current_band(), 0, "{why}: la radio resta sulla banda di ricezione");
+        let report = rig.civ_uplink_report().expect("rapporto");
+        assert_eq!(report.stato, "fallita", "{why}: {report:?}");
+        assert!(!report.passi.is_empty());
+        // la prova fallita non si ripete e non scrive mai
+        fake.clear_commands();
+        assert!(rig.set_uplink_via_civ(435_123_900).is_err());
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")), "{why}: {:?}", fake.commands());
+        drop(err);
+    }
+
+    #[test]
+    fn ic_820h_civ_probe_fails_without_writing_when_d1_does_not_change_band() {
+        assert_never_writes(crate::fake_rigctld::CivBehaviour { select_ignored: true, ..Default::default() }, "D1 non cambia banda");
+    }
+
+    #[test]
+    fn ic_820h_civ_probe_fails_without_writing_when_the_radio_answers_fa() {
+        assert_never_writes(crate::fake_rigctld::CivBehaviour { select_refused: true, ..Default::default() }, "FA");
+    }
+
+    #[test]
+    fn ic_820h_civ_probe_fails_without_writing_when_only_the_echo_comes_back() {
+        assert_never_writes(crate::fake_rigctld::CivBehaviour { echo_only: true, ..Default::default() }, "solo eco");
+    }
+
+    #[test]
+    fn ic_820h_civ_probe_fails_without_writing_when_the_main_band_moves_after_the_return() {
+        assert_never_writes(crate::fake_rigctld::CivBehaviour { main_moves_on_return: true, ..Default::default() }, "principale cambiata");
+    }
+
+    #[test]
+    fn ic_820h_civ_switches_off_after_an_unconfirmed_write_and_comes_back_to_the_receive_band() {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, crate::fake_rigctld::CivBehaviour { write_off: true, ..Default::default() });
+        assert!(rig.set_uplink_via_civ(435_123_456).is_err());
+        assert_eq!(fake.band_frequencies()[0], 145_950_000, "la ricezione e' intatta");
+        assert_eq!(fake.current_band(), 0);
+        assert_eq!(rig.civ_uplink_report().expect("rapporto").stato, "spenta");
+        fake.clear_commands();
+        assert!(rig.set_uplink_via_civ(435_123_900).is_err());
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")));
+    }
+
+    #[test]
+    fn ic_820h_civ_refuses_an_uplink_on_the_receive_band_and_other_models() {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, Default::default());
+        assert!(rig.set_uplink_via_civ(145_990_000).is_err());
+        assert_eq!(fake.civ_writes(), 0);
+        assert_eq!(fake.band_frequencies(), [145_950_000, 435_000_000]);
+        assert_eq!(rig.civ_uplink_report().expect("rapporto").stato, "riuscita", "la prova resta valida");
+        assert!(rig.set_uplink_via_civ(435_100_000).expect("dopo il transponder giusto"));
+        let other = FakeRigctld::start(145_950_000);
+        let rig = start(&other, RigConfig { model: 3070, ..RigConfig::default() });
+        other.clear_commands();
+        assert!(rig.set_uplink_via_civ(435_000_000).is_err());
+        assert!(rig.civ_uplink_report().is_none());
+        assert!(other.commands().iter().all(|c| !c.starts_with("+w")));
+    }
+
+    #[test]
+    fn ic_820h_civ_never_switches_band_while_transmitting() {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, Default::default());
+        rig.inner.external_tx.store(true, Ordering::SeqCst);
+        assert!(!rig.set_uplink_via_civ(435_123_456).expect("in trasmissione"));
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")));
     }
 }
