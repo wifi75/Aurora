@@ -124,14 +124,18 @@ Aurora manda in rete» dell'installatore. Un'installazione annullata prima di co
 
 ## Conteggio delle installazioni attive
 
-Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Serve
-solo a sapere quante persone usano Aurora e con quale versione. È **acceso di fabbrica** e si spegne in Impostazioni → Assistenza
+Dalla versione 0.11.116 Aurora, una volta al giorno, dice al servizio dei rapporti «questa installazione è aperta oggi». Dalla
+versione 0.11.323 lo ripete **circa ogni 40 minuti mentre Aurora è aperta** (un «battito»), con in più un livello d'uso. Serve
+solo a sapere quante persone usano Aurora, con quale versione e quante la usano davvero ogni giorno. È **acceso di fabbrica** e si spegne in Impostazioni → Assistenza
 → «Invia statistiche».
 
 **Cosa contiene**: l'identificativo casuale dell'installazione (lo stesso dei rapporti, rigenerabile), la versione di Aurora e
 quella di Windows, il giorno, dalla 0.11.214, se hai impostato il nominativo, un **codice ricavato dal nominativo** e, dalla
 0.11.220, il **tipo di computer**: modello del processore, numero di core e memoria in GB (niente numeri di serie, nome del computer o
-indirizzi). Gli stessi dati del computer accompagnano i rapporti degli errori, per capire su quali macchine Aurora fatica. **Niente
+indirizzi). Dalla 0.11.323 ogni battito porta anche un **livello d'uso** di tre valori: 0 = aperta ma ferma, 1 = ha ricevuto o decodificato,
+2 = ha trasmesso o registrato un QSO (mai quali stazioni, mai frequenze o testi); il servizio conta quanti battiti arrivano in un giorno
+e tiene l'ora del primo e dell'ultimo, per stimare le ore di apertura e quante installazioni sono online. Gli stessi dati del
+computer accompagnano i rapporti degli errori, per capire su quali macchine Aurora fatica. **Niente
 altro**: il nominativo, il locatore, la radio, il log e le impostazioni non si mandano. Il servizio non registra l'indirizzo IP.
 Le righe restano 90 giorni, poi la pulizia notturna le cancella.
 
