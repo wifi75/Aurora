@@ -1,0 +1,74 @@
+; Stati USA (48 contigui e DC), province e territori canadesi piu' Labrador: sigle dell'elenco moltiplicatori ARRL (https://contests.arrl.org/contestmultipliers.php).
+; Copia dell'elenco dell'ARRL International DX (letto il 2026-11-17). Hawaii (KH6) e Alaska (KL7) contano come entita' DXCC (regola 5.2.2), non come stati.
+; Formato .dom (docs/contest-file.md).
+ARRL RTTY Roundup - stati e province
+
+K:
+AL = AL
+AZ = AZ
+AR = AR
+CA = CA
+CO = CO
+CT = CT
+DC = DC
+DE = DE
+FL = FL
+GA = GA
+ID = ID
+IL = IL
+IN = IN
+IA = IA
+KS = KS
+KY = KY
+LA = LA
+ME = ME
+MD = MD
+MA = MA
+MI = MI
+MN = MN
+MS = MS
+MO = MO
+MT = MT
+NE = NE
+NV = NV
+NH = NH
+NJ = NJ
+NM = NM
+NY = NY
+NC = NC
+ND = ND
+OH = OH
+OK = OK
+OR = OR
+PA = PA
+RI = RI
+SC = SC
+SD = SD
+TN = TN
+TX = TX
+UT = UT
+VT = VT
+VA = VA
+WA = WA
+WV = WV
+WI = WI
+WY = WY
+
+VE:
+AB = AB
+BC = BC
+LB = LB
+MB = MB
+NB = NB
+NF = NF
+NS = NS
+NT = NT
+NU = NU
+ON = ON
+PE = PE
+QC = QC
+SK = SK
+YT = YT
+; vecchia sigla ancora in uso nei log
+NWT = NT
+

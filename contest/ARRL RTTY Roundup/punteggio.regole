@@ -1,0 +1,9 @@
+; ARRL RTTY Roundup - regole del punteggio (sintassi della sezione [Score], docs/contest-file.md). PDF versione 3.0b.
+;
+; bands: 80, 40, 20, 15, 10 m (2.1).
+; points: 1 punto per QSO (5.1).
+; mult: una volta sola, non per banda (5.2.1). Stati USA + DC, province e territori canadesi + LB dallo scambio dei K e VE;
+;   entita' DXCC esclusi Stati Uniti e Canada (5.2.2). KH6 e KL (Alaska nel database dei paesi) sono entita' DXCC.
+bands=80,40,20,15,10
+points=any=1
+mult=exch/if:dxcc:K,VE; dxcc/except:K,VE

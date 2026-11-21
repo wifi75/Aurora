@@ -1,0 +1,152 @@
+# ARRL RTTY Roundup - metadati e dichiarazioni (formato: docs/contest-formato.md)
+# Regole lette il 2026-11-21 sul PDF «ARRL RTTY Roundup Contest Rules», versione 3.0b (categorie 1.5 del 25 ago 2022, Rules for Entry 1.2 del 15 lug 2022).
+
+[contest]
+id = "arrl-rtty-roundup"
+nome = "ARRL RTTY Roundup"
+organizzatore = "ARRL"
+sito = "https://www.arrl.org/rtty-roundup"
+regolamento_url = "https://contests.arrl.org/ContestRules/RTTY-RU-Rules.pdf"
+cabrillo_contest = "ARRL-RTTY"
+note = "Solo RTTY da 80 a 10 metri; tutti lavorano tutti. W/VE mandano RST + stato o provincia, i DX RST + numero progressivo. Moltiplicatori una volta sola."
+
+[edizione]
+# Primo fine settimana pieno di gennaio (mai il 1 gennaio), sabato 18:00 - domenica 23:59 UTC (30 ore). Gli anni con sabato 1 gennaio
+# (2028) vanno alla settimana dopo: il formato non lo sa calcolare, quindi le date sono scritte sotto.
+mese = 1
+fine_settimana_pieno = 1
+giorno_inizio = "sabato"
+ora_inizio = "18:00"
+durata_ore = 30
+ore_massime = 24                  # single op: 24 ore su 30 (regola 1.1); i multi-operatore tutte le 30
+pausa_minima_min = 30             # una o due pause di almeno 30 minuti (1.2)
+invio_log_giorni = 7              # entro 7 giorni, alle 23:59 UTC (8.1)
+
+[[edizione.date]]
+anno = 2027
+inizio = "2027-01-02T18:00:00Z"
+fine = "2027-01-03T23:59:59Z"
+fonte = "calcolata dalla regola della pagina https://www.arrl.org/rtty-roundup (primo fine settimana pieno di gennaio, mai il 1 gennaio)"
+confermata = false
+
+[[edizione.date]]
+anno = 2028
+inizio = "2028-01-08T18:00:00Z"
+fine = "2028-01-09T23:59:59Z"
+fonte = "calcolata: il 1 gennaio 2028 e' sabato, quindi il fine settimana dopo"
+confermata = false
+
+[bande]
+ammesse = ["80 m", "40 m", "20 m", "15 m", "10 m"]
+
+[modi]
+ammessi = ["rtty"]                # solo RTTY (2.2); nel Cabrillo RY (2.4). Gli altri modi digitali sono nell'ARRL International Digital Contest.
+
+[[scambio.ricevuto]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.ricevuto]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "dxcc:K,VE"
+elenco = "dati/stati.dom"
+
+[[scambio.ricevuto]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "testo"
+quando = "not_dxcc:K,VE"
+nota = "I DX (anche KH6 e KL7) mandano un numero progressivo da 1."
+
+[[scambio.inviato]]
+nome = "rst"
+etichetta_it = "Rapporto"
+etichetta_en = "Signal report"
+tipo = "rst"
+quando = "any"
+predefinito = { rtty = "599" }
+
+[[scambio.inviato]]
+nome = "stato"
+etichetta_it = "Stato o provincia"
+etichetta_en = "State or province"
+tipo = "testo"
+quando = "my_dxcc:K,VE"
+elenco = "dati/stati.dom"
+
+[[scambio.inviato]]
+nome = "numero"
+etichetta_it = "Numero"
+etichetta_en = "Serial number"
+tipo = "numero"
+quando = "not_my_dxcc:K,VE"
+progressivo = true
+
+[doppi]
+per = "banda"                     # una volta per banda (2.3); i doppi si tolgono senza penalita' (LGCK.1)
+
+[categorie]
+operatore = ["SO", "SOU", "MS", "M2", "MM"]
+potenza = ["QRP", "LOW", "HIGH"]
+sovrapposizioni = ["Limited Antennas"]
+altre = ["Checklog"]
+
+[categorie.ms]
+potenza = ["LOW", "HIGH"]         # 10 cambi di banda per ora d'orologio
+
+[categorie.m2]
+potenza = ["HIGH"]                # 6 cambi di banda per ora per trasmettitore; il log dice il trasmettitore
+
+[categorie.mm]
+potenza = ["HIGH"]
+
+[cabrillo]
+# Il PDF non scrive il valore di CONTEST: ARRL-RTTY e' quello della specifica Cabrillo, da ricontrollare.
+contest = "ARRL-RTTY"
+obbligatori = ["CALLSIGN", "CONTEST", "CATEGORY-OPERATOR", "CATEGORY-BAND", "CATEGORY-POWER", "CLAIMED-SCORE", "CREATED-BY"]
+facoltativi = ["CATEGORY-ASSISTED", "CATEGORY-TRANSMITTER", "CATEGORY-OVERLAY", "OPERATORS", "CLUB", "NAME", "ADDRESS", "EMAIL", "LOCATION"]
+category_operator = ["SINGLE-OP", "MULTI-OP", "CHECKLOG"]
+category_band = ["ALL"]
+category_power = ["QRP", "LOW", "HIGH"]
+category_assisted = ["ASSISTED", "NON-ASSISTED"]
+category_transmitter = ["ONE", "TWO", "UNLIMITED"]
+invio = "solo online: https://contest-log-submission.arrl.org"
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Stati e province", en = "States and provinces" }
+ordine = 1
+moltiplicatore = "stato"
+dominio = "dati/stati.dom"
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "moltiplicatori"
+titolo = { it = "Paesi DXCC", en = "DXCC entities" }
+ordine = 2
+moltiplicatore = "dxcc"
+escludi = ["K", "VE"]
+per_banda = false
+per_modo = false
+
+[[scheda]]
+tipo = "statistiche"
+titolo = { it = "Statistiche", en = "Statistics" }
+ordine = 3
+righe = ["banda"]
+colonne = ["qso", "doppi", "punti", "moltiplicatori"]
+
+[[scheda]]
+tipo = "punteggio"
+titolo = { it = "Punteggio", en = "Score" }
+ordine = 4
+mostra = ["punti", "moltiplicatori", "punteggio_finale"]

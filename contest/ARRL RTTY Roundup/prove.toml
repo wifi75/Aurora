@@ -1,0 +1,213 @@
+# ARRL RTTY Roundup - QSO di esempio con il risultato atteso, calcolato a mano dal regolamento (PDF versione 3.0b).
+# Due punti di vista: [prova] e' una stazione W (Connecticut), [[altra_stazione]] una stazione DX (Italia, manda il progressivo).
+# Nominativi di fantasia, edizione 2027 (inizio sabato 2 gennaio alle 18:00 UTC). Moltiplicatori una volta sola: valore@modo.
+
+[prova]
+nominativo_proprio = "K1ABC"
+locatore_proprio = "FN31pr"
+data = "2027-01-02"
+
+[[qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1800"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DL@RTTY"], motivo = "1 punto; Germania nuova" }
+
+[[qso]]
+n = 2
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1805"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "015"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "stessa stazione su un'altra banda: vale il QSO, ma i moltiplicatori contano una volta sola" }
+
+[[qso]]
+n = 3
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1810"
+nominativo = "DL1ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "001"
+atteso = { ammesso = true, doppio = true, punti = 0, moltiplicatori = [], motivo = "doppio: stessa stazione e stessa banda" }
+
+[[qso]]
+n = 4
+banda = 20
+modo = "RTTY"
+freq_khz = 14082
+ora_utc = "1815"
+nominativo = "K2ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "NY"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["NY@RTTY"], motivo = "tutti lavorano tutti: W con W vale; New York" }
+
+[[qso]]
+n = 5
+banda = 20
+modo = "RTTY"
+freq_khz = 14083
+ora_utc = "1820"
+nominativo = "VE3ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "ON"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["ON@RTTY"], motivo = "Ontario" }
+
+[[qso]]
+n = 6
+banda = 20
+modo = "RTTY"
+freq_khz = 14084
+ora_utc = "1825"
+nominativo = "KH6ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "005"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["KH6@RTTY"], motivo = "Hawaii conta come entita' DXCC (5.2.2)" }
+
+[[qso]]
+n = 7
+banda = 20
+modo = "RTTY"
+freq_khz = 14085
+ora_utc = "1830"
+nominativo = "KL7ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "006"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["KL@RTTY"], motivo = "Alaska conta come entita' DXCC (KL nel database dei paesi)" }
+
+[[qso]]
+n = 8
+banda = 15
+modo = "RTTY"
+freq_khz = 21080
+ora_utc = "1835"
+nominativo = "K3ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "DC"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["DC@RTTY"], motivo = "DC conta come stato" }
+
+[[qso]]
+n = 9
+banda = 20
+modo = "RTTY"
+freq_khz = 14086
+ora_utc = "1840"
+nominativo = "VO2ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "LB"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["LB@RTTY"], motivo = "Labrador conta a parte" }
+
+[[qso]]
+n = 10
+banda = 160
+modo = "RTTY"
+freq_khz = 1840
+ora_utc = "1845"
+nominativo = "DL2ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "007"
+atteso = { ammesso = false, doppio = false, punti = 0, moltiplicatori = [], motivo = "160 m non e' una banda del contest" }
+
+[[qso]]
+n = 11
+banda = 20
+modo = "RTTY"
+freq_khz = 14087
+ora_utc = "1850"
+nominativo = "IT9ABC"
+rst_inviato = "599"
+scambio_inviato = "CT"
+rst_ricevuto = "599"
+scambio_ricevuto = "010"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "la Sicilia non e' un'entita' DXCC: conta l'Italia" }
+
+# Totali (a mano): ammessi 1, 2, 4-9, 11 = 9; doppi 1 (n. 3); non ammessi 1 (n. 10)
+#   punti: 9 x 1 = 9; moltiplicatori: DL NY ON KH6 KL DC LB I = 8; punteggio = 9 x 8 = 72
+[atteso]
+qso_ammessi = 9
+doppi = 1
+non_ammessi = 1
+punti = 9
+moltiplicatori = 8
+punteggio = 72
+
+[[altra_stazione]]
+nominativo_proprio = "IU3ABC"
+locatore_proprio = "IO91wm"
+
+[[altra_stazione.qso]]
+n = 1
+banda = 20
+modo = "RTTY"
+freq_khz = 14080
+ora_utc = "1900"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "001"
+rst_ricevuto = "599"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["CT@RTTY"], motivo = "Connecticut" }
+
+[[altra_stazione.qso]]
+n = 2
+banda = 20
+modo = "RTTY"
+freq_khz = 14081
+ora_utc = "1905"
+nominativo = "I2ABC"
+rst_inviato = "599"
+scambio_inviato = "002"
+rst_ricevuto = "599"
+scambio_ricevuto = "003"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = ["I@RTTY"], motivo = "anche il proprio paese DXCC e' un moltiplicatore (esclusi solo USA e Canada)" }
+
+[[altra_stazione.qso]]
+n = 3
+banda = 40
+modo = "RTTY"
+freq_khz = 7040
+ora_utc = "1910"
+nominativo = "K1ABC"
+rst_inviato = "599"
+scambio_inviato = "003"
+rst_ricevuto = "599"
+scambio_ricevuto = "CT"
+atteso = { ammesso = true, doppio = false, punti = 1, moltiplicatori = [], motivo = "altra banda: QSO valido, nessun moltiplicatore nuovo" }
+
+# Totali (a mano): 3 QSO, 3 punti, moltiplicatori CT e I = 2, punteggio 6
+[altra_stazione.atteso]
+qso_ammessi = 3
+doppi = 0
+non_ammessi = 0
+punti = 3
+moltiplicatori = 2
+punteggio = 6
