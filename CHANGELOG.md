@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.322 - 2026-11-21
+
 - Satelliti, IC-820H con il Sub spento (#83): se `V Sub` e' rifiutato dalla radio (-9) Aurora non scrive piu' la frequenza di trasmissione sul «Main», che in quel caso e' la banda di ricezione: prima la ricezione 435,63 veniva sovrascritta con 145,96 e la radio restava su 145,96. Ora dice «il Sub della radio e' spento: accendilo per trasmettere sul secondo VFO» e la ricezione resta dov'e'; il Doppler segue la ricezione.
 
 - Satelliti, ripiego a due VFO (IC-820H, #83): dopo aver scritto la frequenza di trasmissione, Aurora la rilegge dal VFO di trasmissione e scrive nel registro quanto ha scritto, riletto e lo scarto, cosi' un pacchetto di assistenza dice se la radio ha accettato il comando anche quando il suo display non si muove.

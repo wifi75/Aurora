@@ -104,7 +104,7 @@ describe('texts that name Windows', () => {
   it('have a variant for the other systems, chosen from the system the engine runs on', () => {
     expect(translate('en', 'aud.vol.off')).toBe('Windows volume not available for this device.');
     expect(translate('en', 'aud.vol.off', undefined, true)).toBe('The volume of this device is set from the system audio mixer.');
-    expect(translate('it', 'aud.vol.out', undefined, true)).toBe('Livello di trasmissione (Pwr)');
+    expect(translate('it', 'aud.vol.out', undefined, true)).toBe('Livello di trasmissione (Lvl TX)');
     expect(translate('en', 'rxl.volume.value', { pct: 40, device: 'USB' }, true)).toBe('40 % of the system recording volume (USB)');
     // una chiave senza variante resta quella di sempre, su ogni sistema
     expect(keyForSystem('nav.station' as Key, true)).toBe('nav.station');

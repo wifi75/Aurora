@@ -69,3 +69,32 @@ impl Resampler {
         self.next -= drop as f64;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Per ogni frequenza di scheda audio comune i campioni prodotti sono `RATE / in_rate` di quelli entrati e un tono di 1900 Hz resta a 1900 Hz:
+    /// un errore di rapporto sposterebbe l'orologio della riga e inclinerebbe la cartina.
+    #[test]
+    fn the_resampler_keeps_the_time_base_and_the_tone_for_common_sound_card_rates() {
+        for in_rate in [8_000u32, 11_025, 16_000, 22_050, 24_000, 44_100, 48_000, 96_000] {
+            let secs = 30.0;
+            let n = (f64::from(in_rate) * secs) as usize;
+            let input: Vec<f32> = (0..n).map(|i| (TAU * 1900.0 * i as f64 / f64::from(in_rate)).sin() as f32).collect();
+            let mut r = Resampler::new(in_rate);
+            let mut out = Vec::new();
+            for chunk in input.chunks(1024) {
+                r.process(chunk, &mut out);
+            }
+            let expected = secs * f64::from(RATE);
+            let ratio = out.len() as f64 / expected;
+            assert!((ratio - 1.0).abs() < 2e-4, "{in_rate} Hz: {} campioni invece di {expected} (rapporto {ratio})", out.len());
+            // frequenza dal numero di passaggi per lo zero (saltando il transitorio iniziale)
+            let tail = &out[2_000..];
+            let crossings = tail.windows(2).filter(|w| w[0] < 0.0 && w[1] >= 0.0).count() as f64;
+            let hz = crossings / (tail.len() as f64 / f64::from(RATE));
+            assert!((hz - 1900.0).abs() < 1.0, "{in_rate} Hz: tono a {hz} Hz");
+        }
+    }
+}
