@@ -8,8 +8,8 @@ import '../../styles/digi.css';
 /** Il tratto dell'audio mostrato (Hz): come il righello di SeaTTY, il fax (1500-2300 Hz) sta nel mezzo. */
 export const SCOPE_MIN_HZ = 1000;
 export const SCOPE_MAX_HZ = 3000;
-const SPECTRUM_H = 56;
-const WATERFALL_H = 120;
+const SPECTRUM_H = 34;
+const WATERFALL_H = 56;
 
 /** Colori dal tema (lo spettro segue il chiaro e lo scuro dell'app). */
 function themeColor(el: Element, name: string, fallback: string): string {
@@ -28,6 +28,8 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
   const avg = useRef(new RowAverager());
   const row = useRef<{ fMinHz: number; fMaxHz: number; n: number } | null>(null);
   const rx = centerHz + afcHz;
+  // il campo dei valori mostrato dalla curva (come la cascata, che esalta le differenze): fondo e picco si seguono con una media lenta
+  const range = useRef<{ lo: number; hi: number } | null>(null);
   const marks = useRef({ rx, shiftHz });
   marks.current = { rx, shiftHz };
 
@@ -48,13 +50,22 @@ export function WefaxScope({ centerHz, shiftHz, afcHz, onCenter }: { centerHz: n
     const r = row.current;
     if (r && values.length > 0) {
       const binHz = (r.fMaxHz - r.fMinHz) / Math.max(1, values.length);
+      // fondo = 5% dei valori della parte mostrata, picco = il massimo: la curva riempie la striscia e segue i colori della cascata sotto
+      const first = Math.max(0, Math.floor((SCOPE_MIN_HZ - r.fMinHz) / binHz));
+      const last = Math.min(values.length, Math.ceil((SCOPE_MAX_HZ - r.fMinHz) / binHz));
+      const shown = Array.from(values.slice(first, Math.max(first + 1, last))).sort((a, b) => a - b);
+      const lo0 = shown[Math.floor(shown.length * 0.05)] ?? 0;
+      const hi0 = Math.max(lo0 + 24, shown[shown.length - 1] ?? 255);
+      const prev = range.current;
+      range.current = prev ? { lo: prev.lo + (lo0 - prev.lo) * 0.2, hi: prev.hi + (hi0 - prev.hi) * 0.2 } : { lo: lo0, hi: hi0 };
+      const { lo, hi } = range.current;
       ctx.strokeStyle = '#3b82f6';
       ctx.lineWidth = Math.max(1, dpr);
       ctx.beginPath();
       for (let x = 0; x < w; x++) {
         const hz = SCOPE_MIN_HZ + (x / w) * (SCOPE_MAX_HZ - SCOPE_MIN_HZ);
         const v = values[Math.min(values.length - 1, Math.max(0, Math.floor((hz - r.fMinHz) / binHz)))] ?? 0;
-        const y = h - 2 * dpr - (v / 255) * (h - 4 * dpr);
+        const y = h - 2 * dpr - Math.min(1, Math.max(0, (v - lo) / (hi - lo))) * (h - 4 * dpr);
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
