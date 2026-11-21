@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Pagine WEFAX e SSTV: nel menu del modo c'e' anche SSB (come nella pagina dei modi testuali).
+
 - Elenco dei contest: linguette per modo (Tutti, SSB, CW, RTTY, PSK, Digitali, Altri) col numero dei contest; un contest con piu' modi compare in ognuna delle sue linguette, la ricerca vale dentro quella scelta. I modi si ricavano dal testo delle Note (poi dal nome), con `contestModes`.
 
 ## 0.11.326 - 2026-11-21

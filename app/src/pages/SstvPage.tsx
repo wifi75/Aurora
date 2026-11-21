@@ -130,12 +130,13 @@ function SstvBody({ solo }: { solo: boolean }) {
         {/* il modo si cambia da qui: un modo testuale apre la loro pagina */}
         <select className="sstv-modesel" value="sstv" aria-label={t('digi.menu.mode')} onChange={(e) => {
           if (e.target.value === 'wefax') window.location.hash = '#/wefax';
-          else void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw');
+          else void gotoTextMode(e.target.value as 'psk31' | 'psk63' | 'rtty' | 'cw' | 'ssb');
         }}>
           <option value="psk31">PSK31</option>
           <option value="psk63">PSK63</option>
           <option value="rtty">RTTY</option>
           <option value="cw">CW</option>
+          <option value="ssb">SSB</option>
           <option value="sstv">SSTV</option>
           <option value="wefax">WEFAX</option>
         </select>
