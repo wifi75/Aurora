@@ -22,6 +22,27 @@ export const NOVITA_MAX = 40;
 
 export const NOVITA: readonly Novita[] = [
   {
+    version: '0.11.326',
+    released: '2026-11-21T16:00:00Z',
+    kind: 'changed',
+    title: [
+      'WEFAX e Finestra RX: barra più chiara, più spazio ai messaggi',
+      'WEFAX and RX window: clearer bar, more room for messages',
+      'WEFAX und RX-Fenster: klarere Leiste, mehr Platz für Nachrichten',
+      'WEFAX et fenêtre RX : barre plus claire, plus de place pour les messages',
+      'WEFAX y ventana RX: barra más clara, más espacio para los mensajes',
+      'WEFAX e janela RX: barra mais clara, mais espaço para as mensagens',
+    ],
+    text: [
+      'WEFAX, barra in alto: i comandi sono completi e centrati (niente più scritte tagliate), la barra è più compatta e leggibile, con l’indicatore della frequenza della radio all’inizio e «RX» lampeggiante durante la ricezione; accanto al menu delle stazioni ci sono piccole frecce e la frequenza scelta è evidenziata. Finestra RX (FT8 e gli altri modi a periodi): tolte distanza e azimut dalla riga dei messaggi, per lasciare spazio al testo; nell’elenco principale restano come prima.',
+      'WEFAX, top bar: the controls are complete and centred (no more clipped labels), the bar is more compact and easier to read, with the radio frequency indicator at the start and a blinking “RX” while receiving; small arrows sit next to the stations menu and the chosen frequency is highlighted. RX window (FT8 and the other period-based modes): distance and azimuth are gone from the message line, leaving room for the text; in the main list they stay as before.',
+      'WEFAX, obere Leiste: Die Bedienelemente sind vollständig und zentriert (keine abgeschnittenen Beschriftungen mehr), die Leiste ist kompakter und besser lesbar, mit der Anzeige der Funkgerätefrequenz am Anfang und blinkendem „RX“ während des Empfangs; neben dem Stationsmenü gibt es kleine Pfeile, und die gewählte Frequenz ist hervorgehoben. RX-Fenster (FT8 und die anderen Periodenmodi): Entfernung und Azimut stehen nicht mehr in der Nachrichtenzeile, damit mehr Platz für den Text bleibt; in der Hauptliste bleiben sie wie bisher.',
+      'WEFAX, barre du haut : les commandes sont complètes et centrées (plus de libellés coupés), la barre est plus compacte et plus lisible, avec l’indicateur de fréquence de la radio au début et « RX » clignotant pendant la réception ; de petites flèches se trouvent à côté du menu des stations et la fréquence choisie est mise en évidence. Fenêtre RX (FT8 et les autres modes à périodes) : distance et azimut retirés de la ligne des messages, pour laisser de la place au texte ; dans la liste principale ils restent comme avant.',
+      'WEFAX, barra superior: los controles están completos y centrados (ya no se cortan los textos), la barra es más compacta y legible, con el indicador de la frecuencia de la radio al principio y «RX» parpadeante durante la recepción; junto al menú de estaciones hay pequeñas flechas y la frecuencia elegida aparece resaltada. Ventana RX (FT8 y los demás modos por periodos): se han quitado la distancia y el azimut de la línea de mensajes, para dejar sitio al texto; en la lista principal siguen como antes.',
+      'WEFAX, barra superior: os comandos estão completos e centrados (já não há textos cortados), a barra é mais compacta e legível, com o indicador da frequência do rádio no início e «RX» intermitente durante a receção; junto ao menu das estações há pequenas setas e a frequência escolhida fica realçada. Janela RX (FT8 e os outros modos por períodos): retiradas a distância e o azimute da linha das mensagens, para deixar espaço ao texto; na lista principal ficam como antes.',
+    ],
+  },
+  {
     version: '0.11.325',
     released: '2026-11-21T13:26:50Z',
     kind: 'new',
@@ -839,27 +860,6 @@ export const NOVITA: readonly Novita[] = [
       'Par défaut le premier cluster de la liste est « IU3WJQ-7 » (cluster.iu3wjq.com:8000) et les spots partent par le cluster telnet, de celui-là même. S’il n’est pas connecté ou ne répète pas le spot (8 secondes au plus), le spot passe tout de suite au cluster connecté suivant de la liste, et ainsi de suite. Qui a déjà enregistré ses choix les garde ; si le cluster est déjà dans la liste, il est mis en tête. Le cluster demande un nom d’utilisateur et un mot de passe : tant que tu ne les écris pas, les spots passent aux suivants. TUNE : un clic lance l’accord automatique et le bouton reste allumé, en jaune, jusqu’à ce que tu l’éteignes à la main. Les noms d’utilisateur et mots de passe des clusters restent toujours mémorisés. L’espace sous l’affichage est égal à celui au-dessus.',
       'De fábrica el primer clúster de la lista es «IU3WJQ-7» (cluster.iu3wjq.com:8000) y los spots salen por el clúster telnet, justo por ese. Si no está conectado o no repite el spot (8 segundos como máximo), el spot pasa enseguida al siguiente clúster conectado de la lista, y así sucesivamente. Quien ya guardó sus elecciones las conserva; si el clúster ya está en la lista se pone el primero. El clúster pide nombre de usuario y contraseña: mientras no los escribas, los spots pasan a los siguientes. TUNE: un clic inicia la sintonía automática y el botón queda encendido, en amarillo, hasta que lo apagues a mano. Los nombres de usuario y contraseñas de los clústeres quedan siempre guardados. El espacio bajo la pantalla es igual al de arriba.',
       'De fábrica o primeiro cluster da lista é «IU3WJQ-7» (cluster.iu3wjq.com:8000) e os spots saem pelo cluster telnet, desse mesmo. Se não está ligado ou não repete o spot (8 segundos no máximo), o spot passa logo ao cluster ligado seguinte da lista, e assim por diante. Quem já guardou as suas escolhas mantém-nas; se o cluster já está na lista é posto em primeiro. O cluster pede nome de utilizador e palavra-passe: enquanto não os escreveres, os spots passam aos seguintes. TUNE: um clique inicia a sintonia automática e o botão fica aceso, em amarelo, até o desligares à mão. Os nomes de utilizador e palavras-passe dos clusters ficam sempre guardados. O espaço por baixo do ecrã é igual ao de cima.',
-    ],
-  },
-  {
-    version: '0.11.303',
-    released: '2026-11-19T19:22:50Z',
-    kind: 'fixed',
-    title: [
-      'Scritta «radio non collegata» sempre leggibile',
-      '“Radio not connected” text always readable',
-      'Hinweis „Funkgerät nicht verbunden“ immer lesbar',
-      'Texte « radio non connectée » toujours lisible',
-      'Texto «radio no conectada» siempre legible',
-      'Texto «rádio não ligado» sempre legível',
-    ],
-    text: [
-      'Con la radio spenta o non collegata la scritta al centro del display si adatta sempre alla larghezza del display e alla lunghezza del testo nella lingua scelta: prima «RADIO NON COLLEGATA» si tagliava in «RADIO NON COL» e non si leggeva. Nel disegno compatto è sparita anche la scritta piccola che spuntava sotto.',
-      'With the radio off or not connected, the text in the middle of the display now always fits the display width and the length of the text in the chosen language: before, “RADIO NOT CONNECTED” was cut and could not be read. In the compact drawing the small text that peeked out below is gone too.',
-      'Bei ausgeschaltetem oder nicht verbundenem Funkgerät passt sich der Text in der Mitte des Displays jetzt immer der Breite des Displays und der Textlänge in der gewählten Sprache an: Vorher wurde „FUNKGERÄT NICHT VERBUNDEN“ abgeschnitten und war nicht lesbar. In der kompakten Darstellung ist auch der kleine Text verschwunden, der darunter hervorschaute.',
-      'Avec le poste éteint ou non connecté, le texte au centre de l’affichage s’adapte maintenant toujours à la largeur de l’affichage et à la longueur du texte dans la langue choisie : avant, « RADIO NON CONNECTÉE » était coupé et illisible. Dans le dessin compact, le petit texte qui dépassait dessous a aussi disparu.',
-      'Con la radio apagada o no conectada, el texto del centro de la pantalla se adapta ahora siempre al ancho de la pantalla y a la longitud del texto en el idioma elegido: antes «RADIO NO CONECTADA» se cortaba y no se leía. En el dibujo compacto también ha desaparecido el texto pequeño que asomaba debajo.',
-      'Com o rádio desligado ou não ligado, o texto ao centro do ecrã adapta-se agora sempre à largura do ecrã e ao comprimento do texto na língua escolhida: antes «RÁDIO NÃO LIGADO» era cortado e não se lia. No desenho compacto desapareceu também o texto pequeno que aparecia por baixo.',
     ],
   },
 ];
