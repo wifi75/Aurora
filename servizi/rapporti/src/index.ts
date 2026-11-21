@@ -9,6 +9,8 @@
  * - GET  /v1/vai/<id>?a=<indirizzo>  conta il clic sul pulsante del messaggio <id> (solo il conto per giorno) e rimanda all'indirizzo (solo GitHub di Aurora e il sito)
  * - POST /v1/messaggi/<id>/visto  «cartolina mostrata»: solo il codice anonimo dell'installazione (chiave d'ingresso pubblica)
  * - POST /v1/messaggi/traduci  traduce titolo e testo dall'italiano nelle altre lingue (protetto da ADMIN_TOKEN, Workers AI)
+ * - POST /v1/battito  «sono aperta»: ogni circa 40 minuti codice casuale dell'installazione, versione e livello d'uso (0 fermo, 1 riceve, 2 trasmette); vale anche come /v1/attivo
+ * - GET  /v1/utilizzo?giorni=30  installazioni aperte e usate per giorno, versione e paese, online nell'ultima ora (protetto da ADMIN_TOKEN, CORS per il portale)
  * - GET  /v1/attivi  installazioni attive per giorno, settimana e versione e il totale di sempre (protetto da ADMIN_TOKEN)
  * - GET  /v1/summary errori piu' frequenti per versione e, in `antivirus`, per antivirus: errori dell'area `antivirus` e installazioni attive (protetto da ADMIN_TOKEN, un segreto di Wrangler)
  * - GET  /v1/bundle/<codice>  scarica un pacchetto dal suo codice breve (protetto da ADMIN_TOKEN)
@@ -263,6 +265,8 @@ async function pulizia(env: Env): Promise<void> {
     env.INDICE.prepare('DELETE FROM pacchetti WHERE giorno < ?1').bind(limite),
     env.INDICE.prepare('DELETE FROM antivirus_errori WHERE giorno < ?1').bind(limite),
     env.INDICE.prepare('DELETE FROM attivi WHERE giorno < ?1').bind(limite),
+    // i battiti: i conteggi dei giorni restano nello storico tramite `attivi` (ogni battito vale anche come «attiva oggi»)
+    env.INDICE.prepare('DELETE FROM battiti WHERE giorno < ?1').bind(limite),
   ]);
   // l'elenco `installazioni` (totale di sempre) non si cancella mai
 }
@@ -310,6 +314,112 @@ async function attivo(req: Request, env: Env): Promise<Response> {
   return risposta(200, { ok: true });
 }
 
+/** Ogni quanto conta al massimo un battito della stessa installazione (i piu' fitti rispondono 200 ma non si contano). */
+const BATTITO_MINIMO_MS = 5 * 60_000;
+/** Minuti fra due battiti del programma: servono per stimare le ore di apertura. */
+const MINUTI_BATTITO = 40;
+
+/** I campi di un battito validati: null se il corpo non va bene. */
+export function validaBattito(dati: Record<string, unknown>): { id: string; versione: string; uso: number } | null {
+  const id = typeof dati.installazione === 'string' ? dati.installazione : '';
+  if (!/^[0-9a-f-]{36}$/.test(id)) return null;
+  const versione = typeof dati.versione === 'string' ? dati.versione : '';
+  if (!/^[0-9A-Za-z.+-]{1,20}$/.test(versione)) return null;
+  const uso = dati.uso;
+  if (typeof uso !== 'number' || !Number.isInteger(uso) || uso < 0 || uso > 2) return null;
+  return { id, versione, uso };
+}
+
+/**
+ * Il battito di un'installazione aperta (ogni circa 40 minuti): conta i battiti del giorno, il primo e l'ultimo, il livello d'uso piu' alto.
+ * Vale anche come «attiva oggi» (stesse righe di `attivi` e `installazioni` di `attivo`). Nessun IP salvato.
+ */
+async function battito(req: Request, env: Env): Promise<Response> {
+  const corpo = await leggiCorpo(req, 512);
+  if (!corpo) return risposta(413, { error: 'troppo grande' });
+  let dati: Record<string, unknown>;
+  try {
+    const letto: unknown = JSON.parse(new TextDecoder().decode(corpo));
+    if (typeof letto !== 'object' || letto === null || Array.isArray(letto)) return risposta(400, { error: 'json' });
+    dati = letto as Record<string, unknown>;
+  } catch {
+    return risposta(400, { error: 'json' });
+  }
+  const b = validaBattito(dati);
+  if (!b) return risposta(400, { error: 'battito' });
+  const ora = Date.now();
+  const giorno = oggi();
+  const paese = corto((req as Request & { cf?: { country?: string } }).cf?.country, 2).toUpperCase() || 'XX';
+  // un battito troppo vicino al precedente non cambia la riga (la condizione del DO UPDATE lo scarta)
+  await env.INDICE.batch([
+    env.INDICE.prepare(
+      `INSERT INTO battiti (giorno, installazione, versione, paese, battiti, primo_ms, ultimo_ms, uso) VALUES (?1, ?2, ?3, ?4, 1, ?5, ?5, ?6)
+       ON CONFLICT (giorno, installazione) DO UPDATE SET battiti = battiti.battiti + 1, ultimo_ms = excluded.ultimo_ms, versione = excluded.versione,
+       paese = excluded.paese, uso = MAX(battiti.uso, excluded.uso) WHERE excluded.ultimo_ms - battiti.ultimo_ms >= ?7`,
+    ).bind(giorno, b.id, b.versione, paese, ora, b.uso, BATTITO_MINIMO_MS),
+    // «attiva oggi» come `attivo`: il sistema e la persona restano quelli mandati da `attivo`
+    env.INDICE.prepare("INSERT INTO attivi (giorno, installazione, versione, sistema, persona) VALUES (?1, ?2, ?3, '', NULL) ON CONFLICT (giorno, installazione) DO UPDATE SET versione = excluded.versione")
+      .bind(giorno, b.id, b.versione),
+    env.INDICE.prepare('INSERT INTO installazioni (installazione, prima, ultima, paese) VALUES (?1, ?2, ?2, ?3) ON CONFLICT (installazione) DO UPDATE SET ultima = excluded.ultima, paese = excluded.paese')
+      .bind(b.id, giorno, paese),
+  ]);
+  return risposta(200, { ok: true });
+}
+
+const intero = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || 0);
+const unDecimale = (v: unknown): number => Math.round(intero(v) * 10) / 10;
+
+/** Uso di oggi e dei giorni passati dai battiti: aperte, usate, ore medie, online ora, per versione, paese e installazione (niente IP ne' nominativi). */
+async function utilizzo(url: URL, env: Env): Promise<Response> {
+  const richiesti = Number.parseInt(url.searchParams.get('giorni') ?? '30', 10);
+  const giorni = Number.isFinite(richiesti) ? Math.min(90, Math.max(1, richiesti)) : 30;
+  const ora = Date.now();
+  const giornoDa = (k: number) => new Date(ora - k * 86_400_000).toISOString().slice(0, 10);
+  const oggiG = giornoDa(0);
+  const dal = giornoDa(giorni - 1);
+  const dal30 = giornoDa(29);
+  const unOra = ora - 3_600_000;
+  const media = `ROUND(AVG(battiti * ${MINUTI_BATTITO}.0 / 60), 1)`;
+  const db = env.INDICE;
+  const [online, perGiorno, perVersione, perVersioneGiorno, perPaese, inst] = await db.batch([
+    db.prepare('SELECT COUNT(DISTINCT installazione) AS n FROM battiti WHERE ultimo_ms >= ?1').bind(unOra),
+    db.prepare(`SELECT giorno, COUNT(*) AS aperte, SUM(uso >= 1) AS usate, ${media} AS ore_medie FROM battiti WHERE giorno >= ?1 GROUP BY giorno ORDER BY giorno`).bind(dal),
+    db.prepare('SELECT versione, COUNT(*) AS aperte, SUM(uso >= 1) AS usate, SUM(ultimo_ms >= ?2) AS online FROM battiti WHERE giorno = ?1 GROUP BY versione ORDER BY aperte DESC, versione').bind(oggiG, unOra),
+    db.prepare('SELECT giorno, versione, COUNT(*) AS aperte, SUM(uso >= 1) AS usate FROM battiti WHERE giorno >= ?1 GROUP BY giorno, versione ORDER BY giorno, aperte DESC').bind(dal),
+    db.prepare('SELECT paese, COUNT(*) AS aperte, SUM(uso >= 1) AS usate FROM battiti WHERE giorno = ?1 GROUP BY paese ORDER BY aperte DESC, paese').bind(oggiG),
+    db.prepare(
+      `SELECT substr(b.installazione, 1, 8) AS codice, b.versione, b.paese,
+         COALESCE(i.prima, (SELECT MIN(x.giorno) FROM battiti x WHERE x.installazione = b.installazione)) AS prima,
+         b.ultimo_ms AS ultimo_battito_ms, b.uso, b.battiti AS battiti_oggi,
+         (SELECT COUNT(DISTINCT y.giorno) FROM battiti y WHERE y.installazione = b.installazione AND y.giorno >= ?2) AS giorni_attivi_30
+       FROM battiti b LEFT JOIN installazioni i ON i.installazione = b.installazione WHERE b.giorno = ?1 ORDER BY b.ultimo_ms DESC LIMIT 2000`,
+    ).bind(oggiG, dal30),
+  ]);
+  type Riga = Record<string, unknown>;
+  const righe = (r: D1Result<unknown> | undefined) => (r?.results ?? []) as Riga[];
+  const giorniOut = righe(perGiorno).map((r) => ({ giorno: String(r.giorno), aperte: intero(r.aperte), usate: intero(r.usate), ore_medie: unDecimale(r.ore_medie) }));
+  const diOggi = giorniOut.find((g) => g.giorno === oggiG);
+  return risposta(200, {
+    generato: new Date(ora).toISOString(),
+    online_ora: intero((righe(online)[0] ?? {}).n),
+    oggi: { aperte: diOggi?.aperte ?? 0, usate: diOggi?.usate ?? 0, ore_medie: diOggi?.ore_medie ?? 0 },
+    per_giorno: giorniOut,
+    per_versione: righe(perVersione).map((r) => ({ versione: String(r.versione), aperte: intero(r.aperte), usate: intero(r.usate), online: intero(r.online) })),
+    per_versione_giorno: righe(perVersioneGiorno).map((r) => ({ giorno: String(r.giorno), versione: String(r.versione), aperte: intero(r.aperte), usate: intero(r.usate) })),
+    per_paese: righe(perPaese).map((r) => ({ paese: String(r.paese), aperte: intero(r.aperte), usate: intero(r.usate) })),
+    installazioni: righe(inst).map((r) => ({
+      codice: String(r.codice),
+      versione: String(r.versione),
+      paese: String(r.paese),
+      prima: String(r.prima ?? ''),
+      ultimo_battito_ms: intero(r.ultimo_battito_ms),
+      uso: intero(r.uso),
+      battiti_oggi: intero(r.battiti_oggi),
+      giorni_attivi_30: intero(r.giorni_attivi_30),
+    })),
+  });
+}
+
 /** Quante installazioni sono attive: oggi, ultimi 7 e 30 giorni, per versione e per giorno. */
 async function attivi(env: Env): Promise<Response> {
   const giorni = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
@@ -348,6 +458,18 @@ export default {
         const no = await ingresso(req, env);
         if (no) return no;
         return await attivo(req, env);
+      }
+      if (req.method === 'POST' && url.pathname === '/v1/battito') {
+        const no = await ingresso(req, env);
+        if (no) return no;
+        return await battito(req, env);
+      }
+      // il portale Analytics legge da un'altra origine: domanda preventiva del browser
+      if (req.method === 'OPTIONS' && url.pathname === '/v1/utilizzo') {
+        return new Response(null, { status: 204, headers: CORS_ADMIN });
+      }
+      if (req.method === 'GET' && url.pathname === '/v1/utilizzo') {
+        return conCors(amministratore(req, env) ? await utilizzo(url, env) : risposta(401, { error: 'segreto' }));
       }
       // messaggi del proprietario: pubblici da leggere, solo l'amministratore li scrive e li toglie
       if (req.method === 'GET' && url.pathname === '/v1/messaggi') {
