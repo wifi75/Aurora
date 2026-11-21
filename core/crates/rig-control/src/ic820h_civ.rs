@@ -21,11 +21,64 @@ pub const SEL_SUB: u8 = 0xD1;
 pub const TOLERANCE_HZ: u64 = 10;
 
 /// La trama CI-V completa (`FE FE 42 E0 <comando> FD`) come la vuole il comando `w` di `rigctld`: `\0xFE\0xFE...`.
+/// Le cifre sono maiuscole di proposito: con `xfd` minuscolo Hamlib conterebbe una seconda lettura e aspetterebbe fino al timeout.
 pub fn frame_text(body: &[u8]) -> String {
+    frame_bytes(body).iter().map(|b| format!("\\0x{b:02X}")).collect()
+}
+
+/// I byte della trama CI-V completa (`FE FE 42 E0 <comando> FD`).
+pub fn frame_bytes(body: &[u8]) -> Vec<u8> {
     let mut bytes = vec![0xFE, 0xFE, RADIO_ADDR, CTRL_ADDR];
     bytes.extend_from_slice(body);
     bytes.push(0xFD);
-    bytes.iter().map(|b| format!("\\0x{b:02X}")).collect()
+    bytes
+}
+
+/// I byte come li scrive il registro: `FE FE 42 E0 03 FD`.
+pub fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(" ")
+}
+
+/// La lunghezza della risposta della radio a una trama: `03` -> `FE FE E0 42 03 <5 byte BCD> FD` (11 byte), gli altri comandi -> `FB`/`FA`
+/// (6 byte).
+pub fn reply_len(body: &[u8]) -> usize {
+    if body == [0x03] { 11 } else { 6 }
+}
+
+/// Come si manda una trama attraverso `rigctld`. Il comando `w` non serve con le Icom: senza terminatore Hamlib legge fino al timeout, e
+/// con `xfd` minuscolo si ferma alla prima `FD`, cioe' all'eco della trama, e butta la risposta. Si usa `W` (send_cmd_rx) con il numero
+/// esatto di byte da leggere: prima eco piu' risposta (interfaccia CI-V che rimanda l'eco), poi, se non arriva niente, la sola risposta
+/// (interfaccia senza eco).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transport {
+    /// `W <trama> <eco + risposta>`.
+    EchoAndReply,
+    /// `W <trama> <risposta>`.
+    ReplyOnly,
+}
+
+impl Transport {
+    /// Quanti byte chiedere a `rigctld` per questa trama.
+    pub fn count(self, body: &[u8]) -> usize {
+        match self {
+            Transport::EchoAndReply => frame_bytes(body).len() + reply_len(body),
+            Transport::ReplyOnly => reply_len(body),
+        }
+    }
+
+    pub fn other(self) -> Transport {
+        match self {
+            Transport::EchoAndReply => Transport::ReplyOnly,
+            Transport::ReplyOnly => Transport::EchoAndReply,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Transport::EchoAndReply => "W eco+risposta",
+            Transport::ReplyOnly => "W solo risposta",
+        }
+    }
 }
 
 /// La frequenza in 5 byte BCD, dal byte meno significativo (1 e 10 Hz) al piu' significativo (100 MHz e 1 GHz). `None` oltre 9,99 GHz.
@@ -364,6 +417,15 @@ mod tests {
         }
         assert_eq!(encode_freq(10_000_000_000), None);
         assert_eq!(decode_freq(&[0x0A, 0, 0, 0, 0]), None);
+    }
+
+    #[test]
+    fn the_byte_counts_cover_echo_and_reply() {
+        assert_eq!(Transport::EchoAndReply.count(&[0x03]), 17);
+        assert_eq!(Transport::ReplyOnly.count(&[0x03]), 11);
+        assert_eq!(Transport::EchoAndReply.count(&[0x07, 0xD1]), 13);
+        assert_eq!(Transport::EchoAndReply.count(&[0x05, 0, 0, 0, 0, 0]), 17);
+        assert_eq!(hex(&frame_bytes(&[0x03])), "FE FE 42 E0 03 FD");
     }
 
     #[test]

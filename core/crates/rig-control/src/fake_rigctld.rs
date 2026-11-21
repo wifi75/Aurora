@@ -86,6 +86,8 @@ pub struct CivBehaviour {
     pub main_moves_on_return: bool,
     /// `05` risponde FB ma scrive 1 kHz piu' in alto (scrittura non confermata).
     pub write_off: bool,
+    /// L'interfaccia CI-V non rimanda l'eco della trama: sulla porta arriva solo la risposta della radio.
+    pub no_echo: bool,
 }
 
 pub struct FakeRigctld {
@@ -194,7 +196,7 @@ impl FakeRigctld {
 
     /// Le trame `05` (scrittura della frequenza) ricevute.
     pub fn civ_writes(&self) -> usize {
-        self.commands().iter().filter(|c| c.starts_with("+w ") && c.contains("\\0xE0\\0x05")).count()
+        self.commands().iter().filter(|c| (c.starts_with("+w ") || c.starts_with("+W ")) && c.contains("\\0xE0\\0x05")).count()
     }
 
     /// Le frequenze di Main e di Sub della radio a due bande.
@@ -542,7 +544,8 @@ fn serve(stream: TcpStream, state: &FakeState) {
                     Err(_) => "RPRT -1
 ".into(),
                 },
-                "+w" => civ_reply(state, arg),
+                "+w" => civ_reply(state, arg, None),
+                "+W" => civ_reply(state, arg, Some(arg2.parse::<usize>().unwrap_or(0))),
                 "v" if state.vfo_read_unavailable.load(Ordering::SeqCst) => "RPRT -11\n".into(),
                 "v" => format!("{}
 ", state.vfo.lock().map(|v| v.clone()).unwrap_or_default()),
@@ -583,12 +586,17 @@ fn serve(stream: TcpStream, state: &FakeState) {
     }
 }
 
-/// La risposta estesa di `rigctld` a `+w <trama>`: eco del comando, riga `Reply:` con i byte letti dalla porta (eco della trama e risposta
-/// della radio, come `\0xFE\0xFE...`) e `RPRT 0`.
-fn civ_reply(state: &FakeState, frame_text: &str) -> String {
+/// La risposta estesa di `rigctld` 4.7.2 a una trama CI-V, come fa `send_cmd` di `tests/rigctl_parse.c` con una radio Icom. La trama arriva
+/// sempre alla radio (che la esegue); sulla porta tornano l'eco (se l'interfaccia la rimanda) e la risposta della radio.
+/// - `+w <trama>` (`count` = `None`): senza terminatore Hamlib legge fino al timeout e restituisce `Reply:` vuoto; con `xfd` minuscolo nella
+///   trama si ferma alla prima `FD` (l'eco) e butta il resto.
+/// - `+W <trama> <n>`: legge esattamente `n` byte; se ne arrivano meno, timeout e `Reply:` vuoto.
+///
+/// Dopo un timeout Hamlib scrive «Reply: » senza a capo e poi `RPRT 0`.
+fn civ_reply(state: &FakeState, frame_text: &str, count: Option<usize>) -> String {
     let sent = crate::ic820h_civ::parse_bytes(&[frame_text.to_string()]);
-    let mut bytes = sent.clone();
     let behaviour = state.civ.lock().map(|c| *c).unwrap_or_default();
+    let mut port = if behaviour.no_echo { Vec::new() } else { sent.clone() };
     let body: &[u8] = if sent.len() >= 5 && sent[2] == crate::ic820h_civ::RADIO_ADDR { &sent[4..sent.len() - 1] } else { &[] };
     let answer: Option<Vec<u8>> = if !state.dual_bands.load(Ordering::SeqCst) || behaviour.echo_only {
         None
@@ -634,10 +642,25 @@ fn civ_reply(state: &FakeState, frame_text: &str) -> String {
         }
     };
     if let Some(answer) = answer {
-        bytes.extend_from_slice(&[0xFE, 0xFE, crate::ic820h_civ::CTRL_ADDR, crate::ic820h_civ::RADIO_ADDR]);
-        bytes.extend_from_slice(&answer);
-        bytes.push(0xFD);
+        port.extend_from_slice(&[0xFE, 0xFE, crate::ic820h_civ::CTRL_ADDR, crate::ic820h_civ::RADIO_ADDR]);
+        port.extend_from_slice(&answer);
+        port.push(0xFD);
     }
-    let hex: String = bytes.iter().map(|b| format!("\\0x{b:02X}")).collect();
-    format!("send_cmd: {frame_text}\nReply: {hex} {}\nRPRT 0\n", bytes.len())
+    let read: Option<Vec<u8>> = match count {
+        None if frame_text.contains("xfd") => port.iter().position(|b| *b == 0xFD).map(|end| port[..=end].to_vec()),
+        None => None,
+        Some(n) if n > 0 && port.len() >= n => Some(port[..n].to_vec()),
+        Some(_) => None,
+    };
+    let echo = match count {
+        None => format!("send_cmd: {frame_text}"),
+        Some(n) => format!("send_cmd_rx: {frame_text} {n}"),
+    };
+    match read {
+        Some(bytes) => {
+            let hex: String = bytes.iter().map(|b| format!("\\0x{b:02X}")).collect();
+            format!("{echo}\nReply: {hex} {}\nRPRT 0\n", bytes.len())
+        }
+        None => format!("{echo}\nReply: RPRT 0\n"),
+    }
 }

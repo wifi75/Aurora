@@ -73,6 +73,11 @@ pub fn parse_rprt(line: &str) -> Option<Result<(), i32>> {
     Some(if code == 0 { Ok(()) } else { Err(code) })
 }
 
+/// Un `RPRT n` in fondo alla riga, anche dopo altro testo (`Reply: RPRT 0`).
+fn rprt_in_line(line: &str) -> Option<Result<(), i32>> {
+    parse_rprt(line).or_else(|| parse_rprt(line.get(line.rfind("RPRT ")?..)?))
+}
+
 /// Il codice di Hamlib in coda a un errore di `RigctldClient::ask` («l: funzione non disponibile (-11)»); `None` se l'errore non viene da un `RPRT`.
 pub fn error_code(error: &RigError) -> Option<i32> {
     let inner = error.0.trim_end().strip_suffix(')')?;
@@ -528,6 +533,44 @@ impl RigctldClient {
         result
     }
 
+    /// Una trama grezza con lettura di un numero esatto di byte dalla porta della radio (`+W <trama> <byte>`, «send_cmd_rx»), con un'attesa
+    /// propria per la risposta di `rigctld`. Le radio Icom non hanno un terminatore di risposta nel comando `w` di `rigctld` (la ricerca di
+    /// `xfd` nella trama e' sensibile alle maiuscole e, trovata, si ferma all'eco): con il conteggio Hamlib legge eco e risposta in una volta
+    /// e, se arrivano meno byte, va in timeout e risponde `Reply:` vuoto con `RPRT 0`. Le righe e il codice come [`RigctldClient::send_raw_reply`].
+    pub fn send_raw_rx_reply(&self, text: &str, count: usize, wait: std::time::Duration) -> Result<(Vec<String>, i32), RigError> {
+        let command = format!("+W {text} {count}");
+        let started = Instant::now();
+        let previous = self.io.lock().ok().and_then(|io| io.1.read_timeout().ok().flatten());
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(Some(wait));
+        }
+        let result = self.ask_until_rprt(&command);
+        if result.is_err() {
+            // la risposta in ritardo non deve diventare quella del comando dopo: si legge e si butta fino a RPRT (al massimo l'attesa)
+            self.drain_until_rprt();
+        }
+        if let Ok(io) = self.io.lock() {
+            let _ = io.1.set_read_timeout(previous);
+        }
+        match &result {
+            Ok((lines, code)) => crate::trace::command(&command, &format!("{} | RPRT {code}", lines.join(" | ")), started.elapsed().as_millis(), *code == 0),
+            Err(e) => crate::trace::command(&command, &e.0, started.elapsed().as_millis(), false),
+        }
+        result
+    }
+
+    fn drain_until_rprt(&self) {
+        let Ok(mut io) = self.io.lock() else { return };
+        for _ in 0..16 {
+            let mut line = String::new();
+            match io.0.read_line(&mut line) {
+                Ok(0) | Err(_) => return,
+                Ok(_) if rprt_in_line(&line).is_some() => return,
+                Ok(_) => {}
+            }
+        }
+    }
+
     fn ask_until_rprt(&self, command: &str) -> Result<(Vec<String>, i32), RigError> {
         self.yield_to_urgent();
         let mut io = self.io.lock().map_err(|_| RigError("rigctld: sessione avvelenata".into()))?;
@@ -540,11 +583,16 @@ impl RigctldClient {
             if line.is_empty() {
                 return Err(RigError("rigctld ha chiuso la connessione".into()));
             }
-            if let Some(rprt) = parse_rprt(&line) {
+            // `Reply: RPRT 0`: dopo un timeout della lettura Hamlib scrive solo «Reply: » senza a capo, poi il RPRT sulla stessa riga
+            if let Some(rprt) = rprt_in_line(&line) {
+                let head = line.get(..line.rfind("RPRT ").unwrap_or(0)).unwrap_or("").trim();
+                if !head.is_empty() && !head.starts_with("send_cmd") {
+                    out.push(head.to_string());
+                }
                 return Ok((out, rprt.err().unwrap_or(0)));
             }
             let line = line.trim();
-            if !line.starts_with("send_cmd:") {
+            if !line.starts_with("send_cmd") {
                 out.push(line.to_string());
             }
         }

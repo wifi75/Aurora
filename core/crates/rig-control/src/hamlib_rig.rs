@@ -292,6 +292,8 @@ struct CivUplink {
     last: Option<crate::ic820h_civ::Written>,
     /// Passi della prova e delle ultime scritture, con le risposte grezze della radio.
     log: Vec<String>,
+    /// Il metodo di trasporto che ha avuto risposta dalla radio.
+    transport: Option<crate::ic820h_civ::Transport>,
 }
 
 /// Il rapporto della trasmissione con trame CI-V dirette (stato dei satelliti e pacchetto di assistenza).
@@ -306,19 +308,53 @@ pub struct CivUplinkReport {
     pub banda_secondaria_hz: Option<u64>,
     /// Ultima trasmissione scritta e confermata (Hz).
     pub ultima_trasmissione_hz: Option<u64>,
-    /// I passi con le risposte grezze di rigctld.
+    /// Il metodo con cui la radio ha risposto («W eco+risposta», «W solo risposta»), vuoto se nessuno.
+    pub trasporto: String,
+    /// I passi con i byte inviati e ricevuti (e il metodo) di ogni trama.
     pub passi: Vec<String>,
 }
 
-/// Le trame CI-V mandate con `+w` sulla sessione di `rigctld`.
-struct CivOverRigctld<'a>(&'a RigctldClient);
+/// Attesa della risposta di `rigctld` a una trama CI-V: Hamlib per l'IC-820H aspetta la radio 1 s (con i suoi tentativi), qui si lascia
+/// un margine; una trama che non risponde costa al massimo questo.
+const CIV_WAIT: Duration = Duration::from_secs(4);
+
+/// Le trame CI-V mandate con `+W` (lettura di un numero esatto di byte) sulla sessione di `rigctld`. Il metodo che ha avuto risposta si
+/// ricorda; se il metodo dato non riceve niente si prova l'altro (eco piu' risposta, sola risposta).
+struct CivOverRigctld<'a> {
+    client: &'a RigctldClient,
+    transport: Option<crate::ic820h_civ::Transport>,
+}
 
 impl crate::ic820h_civ::CivPort for CivOverRigctld<'_> {
     fn exchange(&mut self, body: &[u8]) -> Result<(crate::ic820h_civ::Answer, String), String> {
-        let (lines, code) = self.0.send_raw_reply(&crate::ic820h_civ::frame_text(body)).map_err(|e| e.0)?;
-        // un errore di rigctld senza nessuna trama della radio resta «nessuna risposta» (la prova fallisce)
-        let answer = crate::ic820h_civ::classify(&crate::ic820h_civ::parse_bytes(&lines));
-        Ok((answer, format!("{} RPRT {code}", lines.join(" | "))))
+        use crate::ic820h_civ::{classify, hex, parse_bytes, frame_bytes, frame_text, Answer, Transport};
+        let first = self.transport.unwrap_or(Transport::EchoAndReply);
+        let mut notes = Vec::new();
+        let mut last_err = None;
+        for method in [first, first.other()] {
+            let count = method.count(body);
+            match self.client.send_raw_rx_reply(&frame_text(body), count, CIV_WAIT) {
+                Ok((lines, code)) => {
+                    let got = parse_bytes(&lines);
+                    let answer = classify(&got);
+                    let received = if got.is_empty() { "niente (timeout di Hamlib)".to_string() } else { hex(&got) };
+                    notes.push(format!("{} ({count} byte): inviati {} | ricevuti {received} | RPRT {code}", method.name(), hex(&frame_bytes(body))));
+                    if answer != Answer::Nothing {
+                        self.transport = Some(method);
+                        return Ok((answer, notes.join(" ; ")));
+                    }
+                }
+                Err(e) => {
+                    notes.push(format!("{} ({count} byte): inviati {} | errore {}", method.name(), hex(&frame_bytes(body)), e.0));
+                    last_err = Some(e.0);
+                }
+            }
+        }
+        // nessun metodo ha avuto risposta: «nessuna risposta» (la prova fallisce, niente scritto); un errore della sessione resta errore
+        match last_err {
+            Some(e) if notes.iter().all(|n| n.contains("| errore ")) => Err(format!("{e} [{}]", notes.join(" ; "))),
+            _ => Ok((Answer::Nothing, notes.join(" ; "))),
+        }
     }
 }
 
@@ -1710,10 +1746,11 @@ impl HamlibRig {
         inner.split_command("w 07 D1/05/07 D0", "satelliti: trasmissione CI-V diretta (IC-820H)");
         let mut log = Vec::new();
         let known = civ.probe.clone();
+        let mut transport = civ.transport;
         let mut probed = None;
         let mut wrong_band = false;
         let out = link.client().urgent(|c| {
-            let mut port = CivOverRigctld(c);
+            let mut port = CivOverRigctld { client: c, transport };
             let probe = match known {
                 Some(Ok(p)) => p,
                 _ => {
@@ -1723,6 +1760,7 @@ impl HamlibRig {
                         Err(e) => tracing::warn!("satelliti: prova CI-V dell'IC-820H fallita: {e}; la trasmissione non si scrive, il Doppler segue solo la ricezione"),
                     }
                     probed = Some(result.clone());
+                    transport = port.transport;
                     result?
                 }
             };
@@ -1734,7 +1772,9 @@ impl HamlibRig {
                 wrong_band = true;
                 return Err(format!("la trasmissione {hz} Hz non e' nella banda secondaria della radio ({} Hz): niente scritto", probe.tx_band_hz));
             }
-            crate::ic820h_civ::write_tx(&mut port, &mut log, &probe, hz).map(Some)
+            let out = crate::ic820h_civ::write_tx(&mut port, &mut log, &probe, hz).map(Some);
+            transport = port.transport;
+            out
         });
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         if let Some(p) = probed {
@@ -1743,6 +1783,7 @@ impl HamlibRig {
         for line in &log {
             tracing::info!("satelliti: CI-V {line}");
         }
+        civ.transport = transport;
         civ.log.extend(log);
         let excess = civ.log.len().saturating_sub(CIV_LOG_MAX);
         civ.log.drain(..excess);
@@ -1783,6 +1824,7 @@ impl HamlibRig {
             ricezione_hz: probe.map(|p| p.rx_hz),
             banda_secondaria_hz: probe.map(|p| p.tx_band_hz),
             ultima_trasmissione_hz: civ.last.map(|w| w.tx_hz),
+            trasporto: civ.transport.map(|t| t.name().to_string()).unwrap_or_default(),
             passi: civ.log.clone(),
         })
     }
@@ -3147,10 +3189,43 @@ mod tests {
         assert_eq!(report.ricezione_hz, Some(145_950_000));
         assert_eq!(report.banda_secondaria_hz, Some(435_000_000));
         assert_eq!(report.ultima_trasmissione_hz, Some(435_123_456));
+        assert_eq!(report.trasporto, "W eco+risposta");
+        assert!(report.passi.iter().any(|p| p.contains("inviati FE FE 42 E0 07 D1 FD | ricevuti FE FE 42 E0 07 D1 FD FE FE E0 42 FB FD")), "{:?}", report.passi);
         // subito dopo: troppo presto, niente scambio di banda
         fake.clear_commands();
         assert!(!rig.set_uplink_via_civ(435_123_900).expect("troppo presto"));
-        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")), "{:?}", fake.commands());
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+W")), "{:?}", fake.commands());
+    }
+
+    /// La radio vera (pacchetto 3EFC9CF8): `+w` con la trama in maiuscolo non ha terminatore, Hamlib legge fino al timeout e non restituisce
+    /// niente; con `xfd` minuscolo si ferma all'eco. Il trasporto vecchio non vede mai la risposta della radio.
+    #[test]
+    fn ic_820h_civ_the_plain_w_command_never_returns_the_radio_answer() {
+        let fake = FakeRigctld::start(145_950_000);
+        fake.enable_dual_bands(145_950_000, 435_000_000);
+        let c = fake.client(Duration::from_millis(500)).expect("client");
+        let (lines, _) = c.send_raw_reply(&crate::ic820h_civ::frame_text(&[0x03])).expect("risposta");
+        assert_eq!(crate::ic820h_civ::classify(&crate::ic820h_civ::parse_bytes(&lines)), crate::ic820h_civ::Answer::Nothing, "{lines:?}");
+        let (lines, _) = c.send_raw_reply(&crate::ic820h_civ::frame_text(&[0x03]).to_lowercase()).expect("risposta");
+        assert_eq!(crate::ic820h_civ::classify(&crate::ic820h_civ::parse_bytes(&lines)), crate::ic820h_civ::Answer::Nothing, "solo l'eco: {lines:?}");
+        // con il numero di byte (eco + risposta) la frequenza arriva
+        let (lines, _) = c.send_raw_rx_reply(&crate::ic820h_civ::frame_text(&[0x03]), 17, Duration::from_secs(1)).expect("risposta");
+        assert_eq!(crate::ic820h_civ::classify(&crate::ic820h_civ::parse_bytes(&lines)), crate::ic820h_civ::Answer::Freq(145_950_000), "{lines:?} {:?}", fake.commands());
+    }
+
+    /// Interfaccia senza eco: la prima lettura (eco + risposta) va in timeout, la seconda (sola risposta) riesce e il metodo si ricorda.
+    #[test]
+    fn ic_820h_civ_falls_back_to_the_reply_only_count_without_echo() {
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, crate::fake_rigctld::CivBehaviour { no_echo: true, ..Default::default() });
+        assert!(rig.set_uplink_via_civ(435_123_456).expect("scrittura CI-V"));
+        assert_eq!(fake.band_frequencies(), [145_950_000, 435_123_456]);
+        assert_eq!(fake.current_band(), 0);
+        let report = rig.civ_uplink_report().expect("rapporto");
+        assert_eq!(report.trasporto, "W solo risposta");
+        assert!(report.passi.iter().any(|p| p.contains("inviati FE FE 42 E0 03 FD") && p.contains("ricevuti FE FE E0 42 03")), "{:?}", report.passi);
+        // dopo la prima trama le altre usano subito il metodo giusto: un solo `+W ... 17` (la prima lettura con eco)
+        assert!(fake.commands().iter().filter(|c| c.starts_with("+W ") && c.ends_with(" 17")).count() <= 1, "{:?}", fake.commands());
     }
 
     #[test]
@@ -3184,7 +3259,7 @@ mod tests {
         // la prova fallita non si ripete e non scrive mai
         fake.clear_commands();
         assert!(rig.set_uplink_via_civ(435_123_900).is_err());
-        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")), "{why}: {:?}", fake.commands());
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+W")), "{why}: {:?}", fake.commands());
         drop(err);
     }
 
@@ -3218,7 +3293,7 @@ mod tests {
         assert_eq!(rig.civ_uplink_report().expect("rapporto").stato, "spenta");
         fake.clear_commands();
         assert!(rig.set_uplink_via_civ(435_123_900).is_err());
-        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")));
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+W")));
     }
 
     #[test]
@@ -3235,7 +3310,7 @@ mod tests {
         other.clear_commands();
         assert!(rig.set_uplink_via_civ(435_000_000).is_err());
         assert!(rig.civ_uplink_report().is_none());
-        assert!(other.commands().iter().all(|c| !c.starts_with("+w")));
+        assert!(other.commands().iter().all(|c| !c.starts_with("+W")));
     }
 
     #[test]
@@ -3244,6 +3319,6 @@ mod tests {
         let rig = ic820h(&fake, 145_950_000, 435_000_000, Default::default());
         rig.inner.external_tx.store(true, Ordering::SeqCst);
         assert!(!rig.set_uplink_via_civ(435_123_456).expect("in trasmissione"));
-        assert!(fake.commands().iter().all(|c| !c.starts_with("+w")));
+        assert!(fake.commands().iter().all(|c| !c.starts_with("+W")));
     }
 }
