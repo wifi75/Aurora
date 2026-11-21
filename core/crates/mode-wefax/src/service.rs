@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     Decoder, DecoderConfig, DecoderEvent, Filter, GrayImage, WefaxError,
     image_io::encode_png,
+    recorder::Recorder,
     resample::Resampler,
     store::{EntryExtra, ImageEntry, ImageStore},
 };
@@ -84,7 +85,15 @@ pub struct WefaxSettings {
     pub squelch: bool,
     /// Soglia dello squelch (0..100; 100 = 20 dB sopra il rumore).
     pub squelch_level: f32,
+    /// Registra l'audio di ogni cartina in un WAV nella sottocartella `audio` (dal tono d'inizio alla chiusura; scartata la cartina, il file
+    /// si cancella).
+    pub record_audio: bool,
+    /// Giorni per cui si tengono le registrazioni (0: per sempre). La pulizia gira all'avvio e a ogni registrazione nuova.
+    pub audio_keep_days: u32,
 }
+
+/// Giorni massimi di `audio_keep_days` (dieci anni).
+pub const AUDIO_KEEP_DAYS_MAX: u32 = 3650;
 
 impl Default for WefaxSettings {
     fn default() -> Self {
@@ -114,6 +123,8 @@ impl Default for WefaxSettings {
             afc_range_hz: d.afc_range_hz,
             squelch: d.squelch,
             squelch_level: d.squelch_level,
+            record_audio: true,
+            audio_keep_days: 7,
         }
     }
 }
@@ -147,6 +158,9 @@ impl WefaxSettings {
         }
         if !self.squelch_level.is_finite() || !(0.0..=100.0).contains(&self.squelch_level) {
             return bad("soglia dello squelch tra 0 e 100");
+        }
+        if self.audio_keep_days > AUDIO_KEEP_DAYS_MAX {
+            return bad("giorni delle registrazioni tra 0 e 3650");
         }
         Ok(())
     }
@@ -204,6 +218,8 @@ pub struct RxStatus {
     pub decoding_file: bool,
     /// Avanzamento della decodifica del file (0..100).
     pub file_percent: f32,
+    /// L'audio della cartina in arrivo si sta registrando.
+    pub recording: bool,
     /// L'ultima immagine salvata.
     pub last_image: Option<String>,
     /// Come e' partita l'immagine in corso o l'ultima: `phasing`, `no_phasing`, `manual`, `forced`.
@@ -215,6 +231,8 @@ pub struct Snapshot {
     pub rx: RxStatus,
     pub settings: WefaxSettings,
     pub folder: String,
+    /// La cartella delle registrazioni (`audio` dentro quella delle cartine).
+    pub audio_folder: String,
     pub iocs: Vec<crate::IocInfo>,
     pub lpm_values: Vec<u32>,
     pub filters: Vec<&'static str>,
@@ -403,9 +421,14 @@ impl WefaxService {
         let settings = lock(&self.inner.settings).clone();
         let mut rx = lock(&self.inner.rx).clone();
         rx.dropped_blocks = self.inner.dropped.load(Ordering::Relaxed);
+        let (folder, audio_folder) = {
+            let store = lock(&self.inner.store);
+            (store.dir().display().to_string(), store.audio_dir().display().to_string())
+        };
         Snapshot {
             rx,
-            folder: lock(&self.inner.store).dir().display().to_string(),
+            folder,
+            audio_folder,
             iocs: crate::ioc_infos(&settings),
             lpm_values: LPM_VALUES.to_vec(),
             filters: vec!["narrow", "medium", "wide"],
@@ -587,6 +610,17 @@ impl WefaxService {
         lock(&self.inner.store).png(id)
     }
 
+    /// La registrazione WAV di una cartina (`NotFound` se non c'e').
+    pub fn image_audio(&self, id: &str) -> Result<Vec<u8>, WefaxError> {
+        lock(&self.inner.store).audio(id)
+    }
+
+    /// La cartella delle cartine e quella delle registrazioni.
+    pub fn folders(&self) -> (PathBuf, PathBuf) {
+        let store = lock(&self.inner.store);
+        (store.dir().to_path_buf(), store.audio_dir())
+    }
+
     pub fn delete_image(&self, id: &str) -> Result<(), WefaxError> {
         lock(&self.inner.store).delete(id)
     }
@@ -661,6 +695,13 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
     let mut file: Option<FileJob> = None;
     let mut last_status = Instant::now();
     let mut last_users = Instant::now();
+    // la registrazione dell'audio delle cartine (solo dal vivo, mai dei file): all'avvio si puliscono le registrazioni vecchie
+    let mut recorder = Recorder::new();
+    {
+        let keep = lock(&inner.settings).audio_keep_days;
+        let dir = lock(&inner.store).audio_dir();
+        recorder.prune_later(&dir, keep);
+    }
     loop {
         let msg = match queue.recv_timeout(Duration::from_millis(500)) {
             Ok(m) => Some(m),
@@ -687,6 +728,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 };
                 audio.clear();
                 r.process(&samples, &mut audio);
+                recorder.push(&audio);
                 events = decoder.push(&audio);
             }
             Some(Msg::Force) => {
@@ -697,6 +739,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
             Some(Msg::Cancel) => {
                 decoder.cancel();
                 events = decoder.take_events();
+                recorder.abort();
             }
             Some(Msg::Config(c)) => {
                 if let Some(job) = file.as_mut() {
@@ -712,6 +755,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 // l'immagine dal vivo in arrivo si butta; il file parte con un decodificatore nuovo, senza l'errore di orologio ricordato
                 decoder.cancel();
                 events = decoder.take_events();
+                recorder.abort();
                 let mut c = lock(&inner.settings).decoder();
                 (c.learned_ppm, c.learned_weight) = (0.0, 0.0);
                 file = Some(FileJob { decoder: Decoder::new(c), resampler: None });
@@ -760,8 +804,16 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
         }
         for ev in events {
             let finished = matches!(ev, DecoderEvent::Finished(_));
-            handle(inner, &decoder, ev, false);
+            // la registrazione parte con il tono d'inizio (fasatura) o con l'immagine (manuale, forzata, squelch) e si butta se la cartina
+            // si scarta o si torna ad aspettare senza una cartina finita (falso allarme)
+            match &ev {
+                DecoderEvent::State("phasing" | "image") | DecoderEvent::Started { .. } if !recorder.is_active() => start_recording(inner, &mut recorder),
+                DecoderEvent::State("apt") | DecoderEvent::Discarded { .. } => recorder.abort(),
+                _ => {}
+            }
+            let saved = handle(inner, &decoder, ev, false);
             if finished {
+                end_recording(inner, &mut recorder, saved);
                 inner.persist_learned(decoder.learned_ppm(), decoder.learned_weight(), rate_seen);
             }
         }
@@ -788,6 +840,7 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
                 // l'IOC riconosciuto dal tono d'inizio (l'impostazione resta com'e')
                 st.ioc = shown.config().ioc;
                 st.width = shown.config().width();
+                st.recording = file.is_none() && recorder.is_active();
             }
             inner.rx_status_event();
         }
@@ -796,7 +849,9 @@ fn rx_loop(inner: &Arc<Inner>, queue: Receiver<Msg>, cfg: DecoderConfig) {
 
 /// Un avvenimento del decodificatore verso lo stato e l'interfaccia. `force_save`: la cartina si salva anche con «Salva ogni cartina» spento
 /// (le registrazioni decodificate da file vanno sempre nella cronologia).
-fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent, force_save: bool) {
+/// Restituisce l'id della cartina salvata (solo per `Finished`).
+fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent, force_save: bool) -> Option<String> {
+    let mut saved_id = None;
     match ev {
         DecoderEvent::Started { ioc, lpm, width, source } => {
             {
@@ -844,6 +899,7 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent, force_save: b
             let (w, h) = (done.image.width, done.image.height);
             inner.emit(rows_event(w, h, 0, h, &done.image.data));
             *lock(&inner.current) = Some(done.image);
+            saved_id.clone_from(&saved);
             inner.emit(WefaxEvent { kind: "rx_done".into(), image_id: saved, width: Some(w), height: Some(h), ioc: Some(done.ioc), lpm: Some(done.lpm), sync: Some(done.correlation), complete: Some(done.complete), message: Some(done.reason), ..WefaxEvent::default() });
         }
         DecoderEvent::Discarded { reason } => {
@@ -864,6 +920,43 @@ fn handle(inner: &Arc<Inner>, decoder: &Decoder, ev: DecoderEvent, force_save: b
             lock(&inner.rx).state = state.into();
             inner.rx_status_event();
         }
+    }
+    saved_id
+}
+
+/// Comincia a registrare l'audio della cartina che sta arrivando (se la registrazione e' accesa).
+fn start_recording(inner: &Arc<Inner>, recorder: &mut Recorder) {
+    let (on, keep) = {
+        let s = lock(&inner.settings);
+        (s.record_audio, s.audio_keep_days)
+    };
+    if !on {
+        return;
+    }
+    let dir = lock(&inner.store).audio_dir();
+    recorder.begin(&dir, &crate::store::stamp(crate::store::now_ms()), keep);
+}
+
+/// Chiude la registrazione: il WAV prende il nome della cartina salvata e le si lega; senza cartina salvata resta con la data di chiusura.
+fn end_recording(inner: &Arc<Inner>, recorder: &mut Recorder, saved: Option<String>) {
+    if !recorder.is_active() {
+        return;
+    }
+    match saved {
+        Some(id) => {
+            let weak = Arc::downgrade(inner);
+            let name = crate::recorder::audio_name_for(&id);
+            recorder.end(
+                name,
+                Box::new(move |written| {
+                    let (Some(name), Some(inner)) = (written, weak.upgrade()) else { return };
+                    if let Err(e) = lock(&inner.store).set_audio(&id, &name) {
+                        tracing::warn!("WEFAX: registrazione {name} non legata alla cartina: {e}");
+                    }
+                }),
+            );
+        }
+        None => recorder.end(format!("wefax-{}.wav", crate::store::stamp(crate::store::now_ms())), Box::new(|_| {})),
     }
 }
 

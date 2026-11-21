@@ -30,6 +30,12 @@ pub struct ImageEntry {
     pub source: Option<String>,
     #[serde(default = "yes")]
     pub complete: bool,
+    /// La registrazione WAV della cartina esiste (nella sottocartella `audio`).
+    #[serde(default)]
+    pub has_audio: bool,
+    /// Nome del file WAV nella sottocartella `audio`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio: Option<String>,
 }
 
 fn yes() -> bool {
@@ -76,6 +82,11 @@ pub fn stamp(ms: u64) -> String {
     format!("{y:04}{m:02}{d:02}-{:02}{:02}{:02}", rem / 3600, rem / 60 % 60, rem % 60)
 }
 
+/// Un nome di registrazione senza percorsi: `wefax-....wav`.
+fn safe_audio(name: &str) -> bool {
+    name.starts_with("wefax-") && name.ends_with(".wav") && name.len() < 100 && !name.contains("..") && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+}
+
 fn safe_id(id: &str) -> bool {
     !id.is_empty() && id.len() < 80 && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
@@ -92,9 +103,21 @@ impl ImageStore {
         &self.dir
     }
 
+    /// La cartella delle registrazioni.
+    pub fn audio_dir(&self) -> PathBuf {
+        self.dir.join(crate::recorder::AUDIO_DIR)
+    }
+
+    /// La voce com'e' ora: `has_audio` solo se il file c'e' ancora (la pulizia dei giorni lo puo' aver tolto).
+    fn checked(&self, e: &ImageEntry) -> ImageEntry {
+        let mut e = e.clone();
+        e.has_audio = e.audio.as_deref().is_some_and(|a| safe_audio(a) && self.audio_dir().join(a).is_file());
+        e
+    }
+
     /// Le immagini, dalla piu' recente.
     pub fn list(&self) -> Vec<ImageEntry> {
-        let mut out = self.entries.clone();
+        let mut out: Vec<ImageEntry> = self.entries.iter().map(|e| self.checked(e)).collect();
         out.sort_by(|a, b| b.time_ms.cmp(&a.time_ms));
         out
     }
@@ -122,13 +145,13 @@ impl ImageStore {
         }
         let file = format!("{id}.png");
         std::fs::write(self.dir.join(&file), png).map_err(|e| WefaxError::Io(e.to_string()))?;
-        let entry = ImageEntry { id, file, ioc: extra.ioc, lpm: extra.lpm, width: img.width, height: img.height, time_ms, correlation: extra.correlation, reason: extra.reason, source: extra.source, complete: extra.complete };
+        let entry = ImageEntry { id, file, ioc: extra.ioc, lpm: extra.lpm, width: img.width, height: img.height, time_ms, correlation: extra.correlation, reason: extra.reason, source: extra.source, complete: extra.complete, has_audio: false, audio: None };
         self.entries.push(entry.clone());
         while self.entries.len() > MAX_IMAGES {
             let oldest = self.entries.iter().enumerate().min_by_key(|(_, e)| e.time_ms).map(|(i, _)| i);
             let Some(oldest) = oldest else { break };
             let gone = self.entries.remove(oldest);
-            let _ = std::fs::remove_file(self.dir.join(gone.file));
+            self.remove_files(&gone);
         }
         self.save_index()?;
         Ok(entry)
@@ -136,7 +159,32 @@ impl ImageStore {
 
     /// La voce di un'immagine.
     pub fn entry(&self, id: &str) -> Option<ImageEntry> {
-        self.entries.iter().find(|e| e.id == id && safe_id(id)).cloned()
+        self.entries.iter().find(|e| e.id == id && safe_id(id)).map(|e| self.checked(e))
+    }
+
+    /// Lega alla cartina `id` la sua registrazione (`name` nella cartella `audio`).
+    pub fn set_audio(&mut self, id: &str, name: &str) -> Result<(), WefaxError> {
+        if !safe_audio(name) {
+            return Err(WefaxError::NotFound);
+        }
+        let entry = self.entries.iter_mut().find(|e| e.id == id && safe_id(id)).ok_or(WefaxError::NotFound)?;
+        entry.audio = Some(name.to_string());
+        entry.has_audio = true;
+        self.save_index()
+    }
+
+    /// Il WAV della cartina `id`, se c'e'.
+    pub fn audio(&self, id: &str) -> Result<Vec<u8>, WefaxError> {
+        let entry = self.entries.iter().find(|e| e.id == id && safe_id(id)).ok_or(WefaxError::NotFound)?;
+        let name = entry.audio.as_deref().filter(|a| safe_audio(a)).ok_or(WefaxError::NotFound)?;
+        std::fs::read(self.audio_dir().join(name)).map_err(|_| WefaxError::NotFound)
+    }
+
+    fn remove_files(&self, gone: &ImageEntry) {
+        let _ = std::fs::remove_file(self.dir.join(&gone.file));
+        if let Some(a) = gone.audio.as_deref().filter(|a| safe_audio(a)) {
+            let _ = std::fs::remove_file(self.audio_dir().join(a));
+        }
     }
 
     /// Sostituisce il PNG di un'immagine con un'altra della stessa misura (la voce resta com'e', stessa data).
@@ -158,7 +206,7 @@ impl ImageStore {
     pub fn delete(&mut self, id: &str) -> Result<(), WefaxError> {
         let pos = self.entries.iter().position(|e| e.id == id).ok_or(WefaxError::NotFound)?;
         let gone = self.entries.remove(pos);
-        let _ = std::fs::remove_file(self.dir.join(gone.file));
+        self.remove_files(&gone);
         self.save_index()
     }
 }

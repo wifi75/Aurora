@@ -196,6 +196,131 @@ fn lo_stesso_segnale_a_12000_e_a_44100_hz_da_le_stesse_cartine() {
     }
 }
 
+/// Un servizio che riceve dal vivo (salvataggio automatico acceso) con la registrazione accesa o spenta.
+fn dal_vivo(name: &str, record: bool) -> (WefaxService, PathBuf) {
+    let dir = temp(name);
+    let svc = WefaxService::open(&dir);
+    let mut s = svc.settings();
+    s.lpm_576 = 120;
+    s.auto_save = true;
+    s.record_audio = record;
+    svc.apply_settings(s).expect("impostazioni");
+    svc.start_rx();
+    (svc, dir)
+}
+
+/// Il segnale alla scheda come in ricezione, a blocchi di un quarto di secondo (stanno tutti nella coda: nessuno si perde).
+fn trasmetti(svc: &WefaxService, samples: &[f32]) {
+    for block in samples.chunks(3000) {
+        svc.feed(12_000, block);
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
+fn attendi(cosa: &str, mut fatto: impl FnMut() -> bool) {
+    let start = Instant::now();
+    while !fatto() {
+        assert!(start.elapsed() < Duration::from_secs(240), "troppo lungo: {cosa}");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+/// I file della cartella delle registrazioni (vuota se non c'e').
+fn registrazioni(svc: &WefaxService) -> Vec<String> {
+    let dir = PathBuf::from(svc.snapshot().audio_folder);
+    std::fs::read_dir(dir).map(|l| l.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect()).unwrap_or_default()
+}
+
+#[test]
+fn la_ricezione_dal_vivo_si_registra_in_un_wav_che_ridecodificato_da_la_stessa_cartina() {
+    let img = immagine();
+    let segnale = genera(12_000, &img);
+    let (svc, dir) = dal_vivo("registra", true);
+    trasmetti(&svc, &segnale);
+    attendi("cartina con l'audio", || svc.images().first().is_some_and(|e| e.has_audio));
+    assert_eq!(svc.snapshot().rx.dropped_blocks, 0);
+    let entry = svc.images().remove(0);
+    assert_eq!(entry.audio.as_deref(), Some(mode_wefax::recorder::audio_name_for(&entry.id).as_str()));
+    let bytes = svc.image_audio(&entry.id).expect("wav della cartina");
+    let w = mode_wefax::wav::parse(&bytes).expect("wav valido");
+    assert_eq!((w.rate, w.channels), (12_000, 1));
+    assert_eq!(bytes.len(), 44 + w.frames() * 2, "intestazione con le misure vere");
+    let secondi = w.frames() as f64 / 12_000.0;
+    eprintln!("registrazione: {secondi:.1} s su {:.1} s di segnale", segnale.len() as f64 / 12_000.0);
+    // almeno fasatura e immagine (45 s) piu' parte del tono d'inizio, al massimo tutto il segnale
+    assert!(secondi > 47.0 && secondi <= segnale.len() as f64 / 12_000.0, "durata {secondi}");
+    assert_eq!(registrazioni(&svc), vec![mode_wefax::recorder::audio_name_for(&entry.id)], "niente file provvisori");
+    // il WAV registrato, decodificato di nuovo, da' la stessa cartina
+    let (svc2, dir2) = servizio("registra-di-nuovo");
+    svc2.decode_file(bytes).expect("decodifica della registrazione");
+    attendi_fine(&svc2);
+    let (a, b) = (cartine(&svc), cartine(&svc2));
+    assert_eq!((a.len(), b.len()), (1, 1));
+    assert_eq!((a[0].width, a[0].height), (b[0].width, b[0].height), "stessa misura");
+    let (ca, cb, tra) = (confronta(&a[0], &img), confronta(&b[0], &img), pearson(&a[0].data, &b[0].data));
+    eprintln!("dal vivo {ca:.4}, dalla registrazione {cb:.4}, tra le due {tra:.4}");
+    assert!(ca > 0.97 && cb > 0.97 && tra > 0.97, "{ca} {cb} {tra}");
+    // cancellata la cartina, se ne va anche la registrazione
+    svc.delete_image(&entry.id).expect("cancellata");
+    assert!(registrazioni(&svc).is_empty());
+    for d in [dir, dir2] {
+        let _ = std::fs::remove_dir_all(d);
+    }
+}
+
+#[test]
+fn la_cartina_scartata_cancella_la_registrazione_e_quella_spenta_non_scrive_niente() {
+    let img = immagine();
+    let segnale = genera(12_000, &img);
+    // tono d'inizio e fasatura, poi l'immagine si butta a mano: il file provvisorio sparisce
+    let (svc, dir) = dal_vivo("scartata", true);
+    let fasatura = (1.0 + 5.0 + 10.0) as usize * 12_000;
+    trasmetti(&svc, &segnale[..fasatura]);
+    attendi("registrazione partita", || svc.snapshot().rx.state != "apt" && registrazioni(&svc).iter().any(|n| n.ends_with(".wav.part")));
+    svc.cancel_rx();
+    attendi("registrazione buttata", || registrazioni(&svc).is_empty());
+    std::thread::sleep(Duration::from_millis(300));
+    assert!(registrazioni(&svc).is_empty() && svc.images().is_empty());
+    // registrazione spenta: la cartina si salva, nessuna cartella dell'audio
+    let (off, dir_off) = dal_vivo("spenta", false);
+    trasmetti(&off, &segnale);
+    attendi("cartina", || !off.images().is_empty());
+    std::thread::sleep(Duration::from_millis(300));
+    assert!(!off.images()[0].has_audio);
+    assert!(!PathBuf::from(off.snapshot().audio_folder).exists(), "con la registrazione spenta non si scrive niente");
+    for d in [dir, dir_off] {
+        let _ = std::fs::remove_dir_all(d);
+    }
+}
+
+#[test]
+fn senza_poter_scrivere_l_audio_la_ricezione_continua() {
+    let img = immagine();
+    let segnale = genera(12_000, &img);
+    let (svc, dir) = dal_vivo("disco", true);
+    // un file al posto della cartella `audio`: la registrazione non si apre, come con il disco pieno o una cartella protetta
+    let audio = PathBuf::from(svc.snapshot().audio_folder);
+    std::fs::create_dir_all(audio.parent().expect("cartella delle cartine")).expect("cartella");
+    std::fs::write(&audio, b"non una cartella").expect("file");
+    trasmetti(&svc, &segnale);
+    attendi("prima cartina", || svc.images().len() == 1);
+    trasmetti(&svc, &segnale);
+    attendi("seconda cartina", || svc.images().len() == 2);
+    assert!(svc.images().iter().all(|e| !e.has_audio));
+    assert_eq!(svc.snapshot().rx.dropped_blocks, 0);
+    for c in cartine(&svc) {
+        assert!(confronta(&c, &img) > 0.97);
+    }
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn le_impostazioni_vecchie_hanno_la_registrazione_accesa_per_sette_giorni() {
+    let s: mode_wefax::WefaxSettings = serde_json::from_str(r#"{"ioc":576,"lpm_576":120}"#).expect("impostazioni vecchie");
+    assert!(s.record_audio);
+    assert_eq!(s.audio_keep_days, 7);
+}
+
 #[test]
 fn un_file_che_non_e_un_wav_da_un_errore_pulito_e_non_blocca_il_servizio() {
     let (svc, dir) = servizio("errore");

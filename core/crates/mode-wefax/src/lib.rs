@@ -7,12 +7,14 @@
 //! - [`decoder`]: APT start e stop, fasatura, allineamento della riga, IOC 576 e 288, 60/90/120/240 righe al minuto, modo manuale e
 //!   automatico, correzione dell'inclinazione, immagine che cresce riga per riga, squelch (SQL) e AFC;
 //! - [`meter`]: livello del segnale per lo squelch e stima dell'errore di sintonia per l'AFC;
-//! - [`service`]: ricezione dall'ingresso audio, impostazioni, archivio delle cartine in `wefax/`.
+//! - [`service`]: ricezione dall'ingresso audio, impostazioni, archivio delle cartine in `wefax/`;
+//! - [`recorder`]: registrazione WAV dell'audio di ogni cartina in `wefax/audio/`.
 
 pub mod decoder;
 pub mod demod;
 pub mod image_io;
 pub mod meter;
+pub mod recorder;
 pub mod resample;
 pub mod service;
 pub mod slant;
