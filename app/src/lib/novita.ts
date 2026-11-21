@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.326',
-    released: '2026-11-21T16:00:00Z',
+    released: '2026-11-21T14:50:10Z',
     kind: 'changed',
     title: [
       'WEFAX e Finestra RX: barra più chiara, più spazio ai messaggi',
