@@ -2595,6 +2595,8 @@ not2.cyan,cyan,cyaan
 not2.yellow,yellow,geel
 aud.bandMem.title,Power by band,Vermogen per band
 aud.bandMem.on,Remember the transmit power for each band and mode,Onthoud het zendvermogen voor elke band en elke modus
+aud.tuneMem.on,"Separate level for Tune, remembered per band","Apart niveau voor Tune, per band onthouden"
+aud.tuneMem.hint,Like WSJT-X power memory for Tune: pressing Tune moves the “TX Lvl” slider to that band’s Tune level (the first time it keeps the current one) and when Tune ends the normal level comes back. You can run the carrier low without touching your QSO power. Off by default.,"Zoals het vermogensgeheugen voor Tune in WSJT-X: bij het indrukken van Tune gaat de schuif «TX-niveau» naar het Tune-niveau van die band (de eerste keer blijft het huidige) en na Tune komt het normale niveau terug. Zo kan de draaggolf laag staan zonder het QSO-vermogen te wijzigen. Standaard uit."
 aud.bandMem.hint,Like WSJT-X “Remember power settings by band”: when you change band or mode the “TX Lvl” slider goes back to the level (in dB) you had on that band; the first time you use a band it keeps the current level. Off by default.,"Zoals “Remember power settings by band” in WSJT-X: als je van band of modus wisselt, springt de schuif “TX-niveau” terug naar het niveau (in dB) dat je op die band had; de eerste keer blijft het huidige niveau. Standaard uit."
 aud.keepVol.title,Windows volumes,Windows-volumes
 aud.keepVol.on,Do not touch the Windows volumes,Windows-volumes niet aanpassen

@@ -29,6 +29,10 @@ struct BandLevels {
     /// L'ultima banda vista.
     band: Option<String>,
     levels: HashMap<String, u32>,
+    /// Il livello di «Tune» per banda (`pwrBandTuneMemory` di WSJT-X).
+    tune: HashMap<String, u32>,
+    /// Il livello normale da rimettere quando il Tune finisce (c'e' solo mentre il Tune e' in corso con la memoria accesa).
+    before_tune: Option<u32>,
 }
 
 const NO_TX: &str = "la trasmissione non e' disponibile: manca l'ingresso audio o il motore non e' partito";
@@ -93,6 +97,9 @@ pub struct SavedControls {
     /// «Ricorda la potenza per banda» (come `pwrBandTxMemory` di WSJT-X). Nei file scritti prima manca: vale la scelta di fabbrica (spenta).
     #[serde(default)]
     pub pwr_band_memory: Option<bool>,
+    /// «Livello separato per il Tune» (come `pwrBandTuneMemory` di WSJT-X). Nei file scritti prima manca: spento.
+    #[serde(default)]
+    pub pwr_tune_memory: Option<bool>,
 }
 
 fn default_fst4_period() -> u32 {
@@ -395,6 +402,10 @@ pub struct NativeControls {
     s_estimate: Mutex<Option<(crate::smeter::SEstimate, std::time::Instant)>>,
     /// Memoria del livello Pwr per banda e modo (`pwrBandTxMemory` di JTDX): spenta di fabbrica come in JTDX; spenta, il livello e' uno solo per tutte le bande.
     band_memory: AtomicBool,
+    /// Livello di uscita separato per il Tune, ricordato per banda (`pwrBandTuneMemory` di WSJT-X): spento di fabbrica.
+    tune_memory: AtomicBool,
+    /// Il Tune e' in corso (la portante e' in onda).
+    tuning: AtomicBool,
     /// STOP TX immediato (vedi `set_halt_now`).
     halt_now: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
     /// Il testo davvero messo in onda per ultimo (anche quando la sequenza lo sceglie da sola senza un messaggio selezionato).
@@ -467,7 +478,7 @@ impl Default for NativeControls {
             .filter(|c| c.kind == Kind::Toggle && c.id != "monitor")
             .map(|c| (c.id.to_string(), matches!(c.id, "autoseq" | "agc" | "show_wanted" | "tx_period" | "auto_tx" | "split" | "ap_list" | "mtd")))
             .collect();
-        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), decoding: AtomicBool::new(false), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), tx_chain: Mutex::new(None), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
+        NativeControls { automation_live: AtomicBool::new(false), caller_filter: Mutex::new(None), monitor: AtomicBool::new(true), decoding: AtomicBool::new(false), rx_df: AtomicU32::new(1500), tx_df: AtomicU32::new(1500), mode_code: AtomicU8::new(0), redecode: AtomicBool::new(false), attenuation: AtomicU32::new(DEFAULT_ATTENUATION_TENTHS), levels: Mutex::new(BandLevels::default()), switches: Mutex::new(switches), tx_view: Mutex::new(TxView::default()), fox_view: Mutex::new(aurora_core::FoxSnapshot::default()), transmitting: AtomicBool::new(false), sender: Mutex::new(None), meters: Mutex::new(None), s_estimate: Mutex::new(None), band_memory: AtomicBool::new(false), tune_memory: AtomicBool::new(false), tuning: AtomicBool::new(false), halt_now: Mutex::new(None), on_air: Mutex::new(None), attenuation_hook: Mutex::new(None), sequence: Mutex::new(None), contest: Mutex::new(None), all_txt: AtomicU8::new(1), session_grid: Mutex::new(None), swr_limit: AtomicU32::new(DEFAULT_SWR_LIMIT_HUNDREDTHS), alerts: Mutex::new(Vec::new()), tx_chain: Mutex::new(None), decoder_start: AtomicU8::new(crate::features::DecoderStart::Normal.code()), full_duplex: AtomicBool::new(false), hound_auto: AtomicBool::new(true), wait_features: AtomicBool::new(false), pounce_policy: AtomicU8::new(crate::features::PouncePolicy::First.code()), otp: Mutex::new(crate::features::OtpSettings::default()), otp_hook: Mutex::new(None), fox_verification: Mutex::new(None), ultrafox_seen_ms: AtomicU64::new(0), status_published: AtomicBool::new(false), split_probe: Mutex::new(None), tx_audio_planned: AtomicU32::new(0), erase_hook: Mutex::new(None), tx_audio_hook: Mutex::new(None), ptt_lead_ms: AtomicU32::new(DEFAULT_PTT_LEAD_MS), ptt_lead_hook: Mutex::new(None) }
     }
 }
 
@@ -678,6 +689,7 @@ impl NativeControls {
             wspr_type1: Some(crate::wspr::prefer_type1()),
             tx_level_windows: Some(tx_level_windows()),
             pwr_band_memory: Some(self.band_memory.load(Ordering::Relaxed)),
+            pwr_tune_memory: Some(self.tune_memory.load(Ordering::Relaxed)),
         }
     }
 
@@ -712,6 +724,9 @@ impl NativeControls {
             self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         } else {
             self.attenuation.store(0, Ordering::Relaxed);
+        }
+        if let Some(on) = saved.pwr_tune_memory {
+            self.tune_memory.store(on, Ordering::Relaxed);
         }
         if let Some(on) = saved.pwr_band_memory {
             self.set_band_memory(on);
@@ -751,12 +766,45 @@ impl NativeControls {
     pub fn set_attenuation(&self, tenths: u32) {
         let tenths = tenths.min(450);
         self.attenuation.store(tenths, Ordering::Relaxed);
+        let tuning = self.tuning.load(Ordering::Relaxed) && self.tune_memory.load(Ordering::Relaxed);
         if let Ok(mut memory) = self.levels.lock()
             && let Some(band) = memory.band.clone()
         {
-            memory.levels.insert(self.level_key(&band), tenths);
+            // durante il Tune con il livello separato il cursore muove il livello del Tune, non quello normale
+            if tuning {
+                memory.tune.insert(band, tenths);
+            } else {
+                memory.levels.insert(self.level_key(&band), tenths);
+            }
         }
         self.notify_attenuation(tenths);
+    }
+
+    /// Il Tune parte: con il livello separato acceso si mette quello ricordato per la banda (la prima volta resta quello in uso e lo si ricorda).
+    pub fn begin_tune(&self) {
+        if self.tuning.swap(true, Ordering::Relaxed) || !self.tune_memory.load(Ordering::Relaxed) {
+            return;
+        }
+        let Ok(mut memory) = self.levels.lock() else { return };
+        let Some(band) = memory.band.clone() else { return };
+        let now = self.attenuation.load(Ordering::Relaxed);
+        memory.before_tune = Some(now);
+        let level = *memory.tune.entry(band).or_insert(now);
+        self.attenuation.store(level, Ordering::Relaxed);
+        drop(memory);
+        self.notify_attenuation(level);
+    }
+
+    /// Il Tune e' finito (o parte una trasmissione vera): si rimette il livello normale.
+    pub fn end_tune(&self) {
+        if !self.tuning.swap(false, Ordering::Relaxed) {
+            return;
+        }
+        let Ok(mut memory) = self.levels.lock() else { return };
+        let Some(level) = memory.before_tune.take() else { return };
+        self.attenuation.store(level, Ordering::Relaxed);
+        drop(memory);
+        self.notify_attenuation(level);
     }
 
     /// Cosa scrivere in `ALL.TXT` delle decodifiche: lo cambiano le impostazioni di Aurora, vale subito.
@@ -808,6 +856,14 @@ impl NativeControls {
     /// Accende o spegne la memoria del livello per banda e modo.
     pub fn set_band_memory(&self, on: bool) {
         self.band_memory.store(on, Ordering::Relaxed);
+    }
+
+    /// Accende o spegne il livello separato per il Tune.
+    pub fn set_tune_memory(&self, on: bool) {
+        if !on {
+            self.end_tune();
+        }
+        self.tune_memory.store(on, Ordering::Relaxed);
     }
 
     /// Chi porta il livello di uscita al dispositivo (lo imposta chi ha la catena di trasmissione).
@@ -950,6 +1006,11 @@ impl NativeControls {
                 self.set_band_memory(value == 1);
                 true
             }
+            // «Livello separato per il Tune»: 1 acceso, 0 spento (di fabbrica)
+            "pwr_tune_memory" if value <= 1 => {
+                self.set_tune_memory(value == 1);
+                true
+            }
             _ => false,
         }
     }
@@ -976,6 +1037,7 @@ impl NativeControls {
             ("wspr_type1".to_string(), u32::from(crate::wspr::prefer_type1())),
             ("tx_level_windows".to_string(), u32::from(tx_level_windows())),
             ("pwr_band_memory".to_string(), u32::from(self.band_memory.load(Ordering::Relaxed))),
+            ("pwr_tune_memory".to_string(), u32::from(self.tune_memory.load(Ordering::Relaxed))),
         ]
     }
 
@@ -1563,6 +1625,31 @@ mod tests {
         controls.restore(&saved);
         assert!(controls.values().contains(&("pwr_band_memory".to_string(), 1)), "dopo il riavvio resta accesa");
         assert!(rig.set_control_value("pwr_band_memory", 2).is_err(), "valore fuori campo");
+    }
+
+    /// Il livello del Tune e' separato da quello normale e ricordato per banda; a Tune finito torna quello normale.
+    #[test]
+    fn the_tune_level_is_separate_and_remembered_per_band() {
+        let (rig, controls) = rig();
+        controls.track_band("20m");
+        rig.set_output_attenuation(100).expect("pwr");
+        // spento: il Tune usa il livello normale
+        controls.begin_tune();
+        assert_eq!(rig.output_attenuation().expect("pwr"), 100);
+        controls.end_tune();
+        rig.set_control_value("pwr_tune_memory", 1).expect("acceso");
+        assert!(controls.values().contains(&("pwr_tune_memory".to_string(), 1)));
+        // prima volta: parte dal livello in uso, poi il cursore muove solo il livello del Tune
+        controls.begin_tune();
+        assert_eq!(rig.output_attenuation().expect("pwr"), 100);
+        rig.set_output_attenuation(400).expect("pwr");
+        controls.end_tune();
+        assert_eq!(rig.output_attenuation().expect("pwr"), 100, "a Tune finito torna il livello normale");
+        controls.begin_tune();
+        assert_eq!(rig.output_attenuation().expect("pwr"), 400, "il Tune ritrova il suo livello");
+        controls.end_tune();
+        assert_eq!(controls.saved().pwr_tune_memory, Some(true));
+        assert!(rig.set_control_value("pwr_tune_memory", 2).is_err());
     }
 
     /// `m_pwrBandTxMemory` di JTDX: il livello e' ricordato per banda (e modo); al cambio di banda si ripristina quello della nuova, se mai impostato

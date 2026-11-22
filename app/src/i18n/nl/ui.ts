@@ -212,6 +212,8 @@ export const NL_UI: Record<string, string> = {
   "aud.save.1": "Gedecodeerd",
   "aud.save.2": "Alle",
   "aud.stereo": "stereo",
+  "aud.tuneMem.hint": "Zoals het vermogensgeheugen voor Tune in WSJT-X: bij het indrukken van Tune gaat de schuif «TX-niveau» naar het Tune-niveau van die band (de eerste keer blijft het huidige) en na Tune komt het normale niveau terug. Zo kan de draaggolf laag staan zonder het QSO-vermogen te wijzigen. Standaard uit.",
+  "aud.tuneMem.on": "Apart niveau voor Tune, per band onthouden",
   "aud.unset": "Zoals bij het opstarten (geen ingang gekozen)",
   "aud.vol.in": "Opnamevolume (Windows)",
   "aud.vol.in.sys": "Opnamevolume (systeem)",

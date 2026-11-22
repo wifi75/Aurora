@@ -137,6 +137,7 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
   const keepWindows = usePrefs((p) => p.prefs.keepWindowsVolume);
   const onWindows = isWindowsOs(useEngineOs((v) => v.os));
   const bandMemory = (useControlValues((v) => v.values.pwr_band_memory) ?? 0) === 1;
+  const tuneMemory = (useControlValues((v) => v.values.pwr_tune_memory) ?? 0) === 1;
   const t = useT();
   const client = useQueryClient();
   const devices = useQuery({ queryKey: ['audio-devices'], queryFn: getAudioDevices, retry: false });
@@ -276,6 +277,11 @@ export function AudioDevicesPanel({ notes }: { notes?: ReactNode } = {}) {
           <span>{t('aud.bandMem.on')}</span>
         </label>
         <Message kind="muted">{t('aud.bandMem.hint')}</Message>
+        <label className="sx-check" title={t('aud.tuneMem.hint')}>
+          <input type="checkbox" checked={tuneMemory} onChange={(e) => void postControlValue('pwr_tune_memory', e.target.checked ? 1 : 0).catch(() => undefined)} />{' '}
+          <span>{t('aud.tuneMem.on')}</span>
+        </label>
+        <Message kind="muted">{t('aud.tuneMem.hint')}</Message>
       </Group>
 
       {onWindows ? (

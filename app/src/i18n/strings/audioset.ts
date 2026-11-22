@@ -11,6 +11,22 @@ export const audioSetStrings = {
     'Recordar la potencia de transmisión para cada banda y modo',
     'Lembrar a potência de transmissão para cada banda e modo',
   ],
+  'aud.tuneMem.on': [
+    'Livello separato per il Tune, ricordato per banda',
+    'Separate level for Tune, remembered per band',
+    'Eigener Pegel für Tune, pro Band gemerkt',
+    'Niveau séparé pour Tune, mémorisé par bande',
+    'Nivel separado para Tune, recordado por banda',
+    'Nível separado para o Tune, memorizado por banda',
+  ],
+  'aud.tuneMem.hint': [
+    'Come «Remember power settings by band» per il Tune di WSJT-X: premendo Tune il cursore «Lvl TX» va sul livello del Tune di quella banda (la prima volta resta quello di adesso) e, finito il Tune, torna il livello normale. Così si regola la portante bassa senza toccare la potenza dei QSO. Spento di fabbrica.',
+    'Like WSJT-X power memory for Tune: pressing Tune moves the “TX Lvl” slider to that band’s Tune level (the first time it keeps the current one) and when Tune ends the normal level comes back. You can run the carrier low without touching your QSO power. Off by default.',
+    'Wie die Leistungsmerkung für Tune in WSJT-X: Beim Drücken von Tune springt der Regler „TX-Pegel“ auf den Tune-Pegel dieses Bandes (beim ersten Mal bleibt der aktuelle), nach Tune kommt der normale Pegel zurück. So lässt sich der Träger niedrig fahren, ohne die QSO-Leistung zu ändern. Werkseitig aus.',
+    'Comme la mémoire de puissance pour Tune de WSJT-X : en appuyant sur Tune, le curseur « Niv. TX » passe au niveau Tune de cette bande (la première fois il garde l’actuel) et, Tune terminé, le niveau normal revient. On règle la porteuse bas sans toucher la puissance des QSO. Désactivé par défaut.',
+    'Como la memoria de potencia para Tune de WSJT-X: al pulsar Tune el control «Nivel TX» pasa al nivel de Tune de esa banda (la primera vez conserva el actual) y, al terminar Tune, vuelve el nivel normal. Así se ajusta la portadora baja sin tocar la potencia de los QSO. Apagado de fábrica.',
+    'Como a memória de potência para o Tune do WSJT-X: ao premir Tune o cursor «Nível TX» passa para o nível de Tune dessa banda (da primeira vez mantém o atual) e, terminado o Tune, volta o nível normal. Assim ajusta-se a portadora baixa sem tocar na potência dos QSO. Desligado de origem.',
+  ],
   'aud.bandMem.hint': [
     'Come «Remember power settings by band» di WSJT-X: cambiando banda o modo il cursore «Lvl TX» torna al livello (in dB) che avevi su quella banda; la prima volta che usi una banda vale il livello di adesso. Spenta di fabbrica.',
     'Like WSJT-X “Remember power settings by band”: when you change band or mode the “TX Lvl” slider goes back to the level (in dB) you had on that band; the first time you use a band it keeps the current level. Off by default.',

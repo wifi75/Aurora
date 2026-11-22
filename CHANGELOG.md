@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Livello separato per il Tune (richiesta di Pascal, come `pwrBandTuneMemory` di WSJT-X): nelle impostazioni audio una casella (spenta di fabbrica) fa avere al Tune il suo livello «Lvl TX» per ogni banda; finito il Tune, o alla prima trasmissione vera, torna il livello normale.
+
 - WEFAX, «L'AFC corregge anche la radio»: nuova casella nelle impostazioni di ricezione (spenta di fabbrica, serve l'AFC acceso e la radio collegata con Hamlib): tra una cartina e l'altra, mai dentro l'immagine, lo scarto misurato dall'AFC (almeno 30 Hz) si porta sulla frequenza della radio con un solo comando di frequenza, al massimo ogni 20 secondi, e la correzione del decodificatore riparte da zero. Cambia la frequenza della radio e quella registrata. Provato con una prova automatica della decisione, non con la radio.
 - Pagine testuali (PSK, RTTY, CW): la barra dei menu (File, Modifica…) e i tasti macro hanno lo stesso carattere e gli stessi angoli degli altri modi (i colori dei tasti restano quelli della loro funzione); nella barra in basso le caselle di frequenza, larghezza e baud mostrano i numeri per intero (prima «1000,0» veniva tagliato).
 - WEFAX, «Calibra la scheda audio»: nuovo pulsante nelle impostazioni di ricezione, accanto al «ppm appreso»: dopo aver ricevuto bene una cartina da una stazione con tempi precisi (DDK3) porta l'errore appreso nel campo dell'inclinazione e lo azzera, cosi' la correzione resta fissa (come il pulsante omonimo dell'SSTV); il totale non cambia.

@@ -493,6 +493,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
     }
 
     fn halt_tx(&mut self) {
+        self.controls.end_tune();
         self.port.halt();
         self.notes.clear();
         self.on_air_tx = None;
@@ -1012,6 +1013,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let wave: Vec<f32> = (0..(secs * rate) as usize).map(|i| (2.0 * std::f64::consts::PI * f64::from(hz) * i as f64 / rate).sin() as f32 * 0.95).collect();
         // la parita' non conta (la portante parte subito): quella del periodo in corso
         let parity = if Slot::at(self.mode, now_s).is_even() { Parity::Even } else { Parity::Odd };
+        self.controls.begin_tune();
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         match self.port.start_now(TxRequest { wave, mode, parity }) {
             Ok(()) => format!("Tune: portante a {hz} Hz"),
@@ -1791,6 +1793,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         }
         let freq = self.hound_hop(freq, n, already);
         self.last_planned = Some(slot);
+        self.controls.end_tune();
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         match self.encode(&text, freq, n == 0) {
             Ok((wave, sent)) => {
@@ -1868,6 +1871,7 @@ impl<P: TxPort + ?Sized> TxDriver<P> {
         let grid = self.controls.grid_or(&self.seq.station().grid);
         let text = crate::wspr::beacon_message(&self.my_call, &grid, fst4w);
         self.last_planned = Some(slot);
+        self.controls.end_tune();
         self.port.set_attenuation(self.controls.attenuation.load(Ordering::Relaxed));
         let parity = if slot.is_even() { Parity::Even } else { Parity::Odd };
         match self.encode(&text, freq, false) {
