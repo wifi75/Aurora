@@ -620,8 +620,8 @@ fn refresh(inner: &Arc<Inner>) -> Result<usize, String> {
 #[derive(Default)]
 struct LoopState {
     last_rx: Option<u64>,
-    /// Lo scarto della manopola visto al giro prima (Hz): serve una seconda lettura uguale prima di accettarlo.
-    knob_seen: Option<f64>,
+    /// Lo scarto della manopola visto al giro prima (Hz) e da quante letture uguali di fila: serve `KNOB_CONFIRMS` prima di accettarlo.
+    knob_seen: Option<(f64, u8)>,
     /// La manopola e' in movimento: Aurora non riscrive la ricezione finche' non si ferma.
     hold_rx: bool,
     last_tx: Option<u64>,
@@ -752,24 +752,32 @@ const CIV_RETRY_S: f64 = 15.0;
 const KNOB_MIN_HZ: f64 = 300.0;
 /// Oltre questo scarto (Hz) non e' una sintonia fine ma un salto (banda, VFO scambiato): non si segue.
 const KNOB_MAX_HZ: f64 = 80_000.0;
-/// Due letture di fila entro tanti Hz: la manopola si e' fermata.
+/// Letture di fila entro tanti Hz: la manopola si e' fermata.
 const KNOB_STABLE_HZ: f64 = 200.0;
+/// Quante letture uguali di fila (circa una al secondo) servono: la radio (IC-820H) rimanda la frequenza con un ritardo di qualche secondo, e una
+/// lettura vecchia ripetuta due volte sembrava «ferma» mentre l'operatore girava ancora (pacchetto `1BBFEB78`: la frequenza tornava indietro).
+const KNOB_CONFIRMS: u8 = 4;
 
 /// La manopola della radio: `Some(scarto)` quando la ricezione letta e' diversa da quella scritta da piu' della soglia, per due letture uguali di
 /// fila (manopola ferma); `None` se non c'e' scarto o la manopola si muove ancora. Nel secondo caso, e' un movimento in corso: si veda `knob_moving`.
-fn knob_shift(seen: &mut Option<f64>, written: u64, read: u64) -> Option<f64> {
+fn knob_shift(seen: &mut Option<(f64, u8)>, written: u64, read: u64) -> Option<f64> {
     let dev = read as f64 - written as f64;
     if dev.abs() < KNOB_MIN_HZ || dev.abs() > KNOB_MAX_HZ {
         *seen = None;
         return None;
     }
     match *seen {
-        Some(prev) if (prev - dev).abs() < KNOB_STABLE_HZ => {
-            *seen = None;
-            Some(dev)
+        Some((prev, n)) if (prev - dev).abs() < KNOB_STABLE_HZ => {
+            if n + 1 >= KNOB_CONFIRMS {
+                *seen = None;
+                Some(dev)
+            } else {
+                *seen = Some((dev, n + 1));
+                None
+            }
         }
         _ => {
-            *seen = Some(dev);
+            *seen = Some((dev, 1));
             None
         }
     }
@@ -1449,15 +1457,19 @@ mod tests {
         // sotto la soglia: la stessa frequenza (arrotondamenti, passo del Doppler)
         assert_eq!(knob_shift(&mut seen, 435_650_000, 435_650_100), None);
         assert!(seen.is_none());
-        // gira ancora: due letture diverse non valgono
+        // gira ancora: letture diverse non valgono
         assert_eq!(knob_shift(&mut seen, 435_650_000, 435_652_000), None);
         assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_000), None);
-        // si ferma: due letture uguali di fila, ed e' la nuova frequenza
+        // una lettura vecchia ripetuta una o due volte (la radio ritarda) non basta
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_100), None);
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_100), None);
+        // si ferma davvero: quattro letture uguali di fila (con la prima, a 5000), ed e' la nuova frequenza
         assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_100), Some(5_100.0));
         assert!(seen.is_none(), "dopo l'accettazione si riparte da capo");
         // un salto di banda (145 -> 435 MHz) non e' una sintonia
-        assert_eq!(knob_shift(&mut seen, 145_950_000, 435_950_000), None);
-        assert_eq!(knob_shift(&mut seen, 145_950_000, 435_950_000), None);
+        for _ in 0..6 {
+            assert_eq!(knob_shift(&mut seen, 145_950_000, 435_950_000), None);
+        }
         assert!(seen.is_none());
     }
 
