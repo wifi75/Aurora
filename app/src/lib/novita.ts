@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.334',
-    released: '2026-11-22T23:00:00Z',
+    released: '2026-11-22T22:36:23Z',
     kind: 'new',
     featured: true,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.334',
-    released: '2026-11-22T23:00:00Z',
+    released: '2026-11-22T22:36:23Z',
     kind: 'fixed',
     title: [
       'CW e RTTY: il carattere in trasmissione si segna insieme all’audio',
