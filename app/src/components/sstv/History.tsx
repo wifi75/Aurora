@@ -181,7 +181,8 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
           when={when(open.time_ms)}
           onClose={() => setOpen(null)}
           onDeleted={() => {
-            setOpen(null);
+            // la foto cancellata lascia il posto alla seguente (o alla precedente): si resta nel visore per correggere o cancellare le altre
+            setOpen(siblings[at + 1] ?? siblings[at - 1] ?? null);
             onChanged();
           }}
           onReuse={() => {
