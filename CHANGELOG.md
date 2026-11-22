@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.330 - 2026-11-22
+
 - Barre del titolo: i riquadri della pagina Satelliti e della pagina WEFAX hanno la barra con lo stesso gradiente (verde menta, azzurro, lilla; nel tema scuro verde petrolio, blu, viola) delle finestre della Stazione; menu, pulsanti e campi della pagina Satelliti hanno la stessa forma degli altri modi. Guardato a schermo nel tema scuro. Restano uguali a prima le barre di SSTV e delle pagine testuali (PSK, RTTY, CW) e la pagina Fox.
 - Satelliti, seguire la manopola: con il Doppler acceso, se si gira la manopola della radio per sintonizzare una stazione (per esempio RS-44 in SSB), Aurora legge la nuova frequenza di ricezione, la prende come frequenza di discesa scelta e la trasmissione la segue con lo stesso scarto: il Doppler continua da li' e la radio non torna piu' dov'era. Si accorge del cambio dopo un paio di secondi, a manopola ferma; mentre gira non riscrive la ricezione; i salti oltre 80 kHz (cambio di banda) non si seguono. Casella «Segui la manopola della radio» nelle impostazioni dei satelliti (accesa di fabbrica). Provato con prove automatiche, non con la radio.
 - SSTV, visore delle foto: lo sfondo non e' piu' sfocato (fondo scuro pieno e riquadro con cornice); cancellando una foto il visore resta aperto e passa alla seguente (o alla precedente) invece di chiudersi.
