@@ -259,7 +259,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
   /** SSB: la pagina cambia disposizione (Log, inserimento del QSO, DX Cluster) e non mostra RX/TX, cascata e modi digitali; con un contest attivo compaiono anche Nr, punteggio, DUPE e moltiplicatori. */
   const ssbContest = snap.settings.mode === 'ssb';
   // il tratto di banda a cui porta un blocchetto: fonia in SSB, il piano IARU del modo negli altri (CW, RTTY, PSK)
-  const contestPlan = snap.settings.mode === 'ssb' ? 'SSB' : snap.settings.mode === 'cw' ? 'CW' : snap.settings.mode === 'rtty' ? 'RTTY' : snap.settings.mode === 'psk63' ? 'PSK63' : 'PSK31';
+  const contestPlan = snap.settings.mode === 'ssb' ? 'SSB' : snap.settings.mode === 'cw' ? 'CW' : snap.settings.mode === 'rtty' ? 'RTTY' : snap.settings.mode === 'psk63' ? 'PSK63' : isOliviaMode(snap.settings.mode) ? 'OLIVIA' : 'PSK31';
   const contestModeIds = (textContest ? modiDichiarati(textContest.contest) : []).map((k) => (k === 'cw' ? 'cw' : k === 'phone' ? 'ssb' : 'rtty'));
   // si disegna al momento del render (usa `save` e `sending`, definiti piu' sotto)
   const contestModeButtons = () =>
@@ -2300,7 +2300,7 @@ function DigiBody({ snap: rawSnap, onChanged }: { snap: DigiSnapshot; onChanged:
             bands={visibleBands(chosenBands, status && status.dial_hz > 0 ? bandOf(status.dial_hz) : null)}
             dialHz={status?.dial_hz ?? 0}
             mode={s.mode.toUpperCase()}
-            rows={isOliviaMode(s.mode) ? [] : bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : 'PSK31')}
+            rows={bandPlanRows(s.mode === 'rtty' ? 'RTTY' : s.mode === 'cw' ? 'CW' : s.mode === 'psk63' ? 'PSK63' : isOliviaMode(s.mode) ? 'OLIVIA' : 'PSK31')}
             locked={sending}
             onPick={(hz) => {
               setManualBand(bandOf(hz) ?? '');

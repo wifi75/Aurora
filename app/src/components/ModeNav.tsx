@@ -187,7 +187,7 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       },
     );
   };
-  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW' };
+  const TEXT_MODES: Record<string, TextMode> = { psk31: 'PSK31', psk63: 'PSK63', rtty: 'RTTY', cw: 'CW', olivia: 'OLIVIA', contestia: 'OLIVIA' };
   /** Entrando in PSK, RTTY, CW o SSTV da un'altra pagina la radio va sulla banda del loro piano IARU (se quella di adesso non lo ha, alla prima). */
   const enterText = () => {
     if (transmitting || route.name === 'digi' || (route.name === 'sstv' || route.name === 'wefax')) return;
@@ -197,8 +197,6 @@ export function ModeNav({ route, showQmap, remote }: Props) {
       const digi = await client.fetchQuery({ queryKey: ['digi'], queryFn: getDigi, staleTime: 5_000 });
       // in SSB la radio resta dov'e': il piano delle frequenze dei modi testuali non vale per la fonia
       if (digi.settings.mode === 'ssb') return;
-      // Olivia e Contestia non hanno frequenze nel piano presente: la radio resta dov'e' (non va sulle frequenze del PSK31)
-      if (digi.settings.mode === 'olivia' || digi.settings.mode === 'contestia') return;
       const text = TEXT_MODES[digi.settings.mode] ?? 'PSK31';
       name = text;
       await retuneForText(client, text);

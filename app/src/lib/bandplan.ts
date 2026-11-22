@@ -11,7 +11,7 @@ import type { FrequencyEntry } from '../api/client';
  * 3735, 7165, 14230, 21340, 28680. Regione 2 col piano ARRL, Regione 3 col piano IARU R3; dal 6 m in su il piano ARI.
  * Regione: `ALL` valida ovunque, `R1`, `R2` o `R3` solo li' (come nella tabella dei modi dell'FT8).
  */
-export type TextMode = 'PSK31' | 'PSK63' | 'RTTY' | 'SSTV' | 'CW' | 'SSB';
+export type TextMode = 'PSK31' | 'PSK63' | 'RTTY' | 'OLIVIA' | 'SSTV' | 'CW' | 'SSB';
 
 type Row = readonly [band: string, hz: number, region: 'ALL' | 'R1' | 'R2' | 'R3', preferred: boolean];
 
@@ -34,6 +34,27 @@ const PSK: readonly Row[] = [
   ['70cm', 432_088_000, 'ALL', true],
   ['23cm', 1_296_138_000, 'ALL', true],
   ['13cm', 2_320_138_000, 'ALL', true],
+];
+
+// Olivia e Contestia (MFSK): il piano IARU Regione 1 non ha frequenze di chiamata per loro, solo i tratti dei digimodi a banda stretta
+// (massimo 500 Hz): le frequenze sono dentro quei tratti, con la banda di 500 Hz (la piu' larga ammessa li') che a 1500 Hz di audio
+// resta nel tratto (160 m 1838-1840, 80 m 3580-3590, 40 m 7040-7047, 30 m 10130-10150, 20 m 14070-14089, 17 m 18095-18105,
+// 15 m 21070-21090, 12 m 24915-24925, 10 m 28070-28120). Con la banda di 1000 Hz il segnale esce da quei tratti: si usa il tratto
+// «tutti i modi» (per esempio 3600-3620, 7050-7060, 14101-14112) o si sceglie la banda piu' stretta. In Regioni 2 e 3 valgono quelle del PSK.
+const OLIVIA: readonly Row[] = [
+  ['160m', 1_838_000, 'ALL', true],
+  ['80m', 3_584_000, 'ALL', true],
+  ['40m', 7_043_000, 'R1', true],
+  ['40m', 7_070_000, 'R2', true],
+  ['40m', 7_070_000, 'R3', true],
+  ['30m', 10_138_000, 'ALL', true],
+  ['20m', 14_078_000, 'ALL', true],
+  ['17m', 18_100_000, 'ALL', true],
+  ['15m', 21_078_000, 'ALL', true],
+  ['12m', 24_920_000, 'ALL', true],
+  ['10m', 28_090_000, 'R1', true],
+  ['10m', 28_120_000, 'R2', true],
+  ['10m', 28_120_000, 'R3', true],
 ];
 
 const RTTY: readonly Row[] = [
@@ -127,7 +148,7 @@ const SSB: readonly Row[] = [
   ['6m', 50_150_000, 'ALL', true],
 ];
 
-const PLAN: Record<TextMode, readonly Row[]> = { PSK31: PSK, PSK63: PSK, RTTY, SSTV, CW, SSB };
+const PLAN: Record<TextMode, readonly Row[]> = { PSK31: PSK, PSK63: PSK, RTTY, OLIVIA, SSTV, CW, SSB };
 
 /** Le righe del piano di banda di un modo, nella forma della tabella delle frequenze (cosi' le mostra lo stesso selettore dell'FT8). */
 export function bandPlanRows(mode: TextMode): FrequencyEntry[] {
