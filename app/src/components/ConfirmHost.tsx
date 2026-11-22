@@ -32,6 +32,10 @@ function ConfirmDialog({ text, onAnswer }: { text: string; onAnswer(ok: boolean)
     ok.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onAnswer(false);
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        onAnswer(true);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { deleteSstvImage, deleteSstvImages, getSstvImageBlob, getSstvImageCleanBlob, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
+import { deleteSstvImage, deleteSstvImages, sstvImageCleanUrl, sstvImageUrl, type SstvImageEntry, type SstvModeInfo } from '../../api/client';
 import { useT } from '../../i18n';
 import { askConfirm } from '../ConfirmHost';
 
@@ -98,6 +98,21 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
     stopSelecting();
     onChanged();
   };
+  // Canc cancella le foto scelte (con la conferma, a cui Invio risponde di si')
+  const removePickedRef = useRef(removePicked);
+  removePickedRef.current = removePicked;
+  useEffect(() => {
+    if (!selecting || open) return;
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' || document.querySelector('.confirm-overlay')) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      void removePickedRef.current();
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [selecting, open]);
   const count = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).length;
   const modeName = (id: string) => modes.find((m) => m.id === id)?.name ?? id;
   // la foto aperta in grande scorre dentro la sua cronologia (stessa direzione)
@@ -216,31 +231,40 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse, onPrev, 
   }, [clean, shown]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      // con la richiesta di conferma aperta i tasti sono suoi (Invio conferma, Esc annulla): il visore non si chiude
+      if (document.querySelector('.confirm-overlay')) return;
       if (e.key === 'Escape') onClose();
       // le frecce dei cursori di pulizia restano ai cursori
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (e.key === 'ArrowLeft' && onPrev) onPrev();
       else if (e.key === 'ArrowRight' && onNext) onNext();
+      else if (e.key === 'Delete') {
+        e.preventDefault();
+        void removeRef.current();
+      }
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [onClose, onPrev, onNext]);
 
-  const save = async () => {
-    const blob = clean ? await getSstvImageCleanBlob(entry.id, applied.order, applied.level) : await getSstvImageBlob(entry.id);
-    const url = URL.createObjectURL(blob);
+  // il salvataggio e' un collegamento normale all'immagine (come «Scarica PNG» del WEFAX): il programma Windows lo scarica con la sua finestra,
+  // mentre un indirizzo blob creato al volo spesso non partiva
+  const save = () => {
     const a = document.createElement('a');
-    a.href = url;
+    a.href = clean ? sstvImageCleanUrl(entry.id, applied.order, applied.level) : sstvImageUrl(entry.id);
     a.download = clean ? entry.file.replace(/(\.[^.]*)?$/, '-pulita$1') : entry.file;
+    document.body.appendChild(a);
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    a.remove();
   };
   const remove = async () => {
     if (!(await askConfirm(t('sstv.img.deleteConfirm')))) return;
     await deleteSstvImage(entry.id);
     onDeleted();
   };
+  const removeRef = useRef(remove);
+  removeRef.current = remove;
 
   return (
     <div className="sstv-lightbox" role="dialog" aria-modal="true" aria-label={modeName} onClick={onClose}>
@@ -290,7 +314,7 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse, onPrev, 
             <button type="button" className="glass sstv-btn sstv-btn--primary" onClick={onReuse}>
               {entry.direction === 'tx' ? t('sstv.img.useBg') : t('sstv.img.reply')}
             </button>
-            <button type="button" className="glass sstv-btn" onClick={() => void save()}>
+            <button type="button" className="glass sstv-btn" onClick={save}>
               {t('sstv.img.save')}
             </button>
             <button type="button" className="glass sstv-btn sstv-btn--danger" onClick={() => void remove()}>

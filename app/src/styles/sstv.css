@@ -480,3 +480,16 @@ html[data-theme='light'] .sstv-tab[aria-selected='true'] { background: linear-gr
   .sstv-tabbody .sstv-folder { flex: none; }
   .sstv-composer .sstv-folder .sstv-photos { max-height: 12rem; }
 }
+
+/* visore: frecce rotonde e leggere, pulsanti e cursori sempre scuri (il fondo del visore e' scuro in tutti e due i temi) */
+.sstv-lightbox-nav { width: 2.6rem !important; height: 2.6rem !important; padding: 0 !important; border-radius: 999px !important; background: rgba(142, 123, 255, .16) !important; border: 1px solid rgba(142, 123, 255, .5) !important; color: #e7eef7 !important; box-shadow: none !important; }
+.sstv-lightbox-nav:not(:disabled):hover { background: rgba(142, 123, 255, .38) !important; color: #fff !important; }
+.sstv-lightbox-nav:disabled { opacity: .25; }
+.sstv-lightbox-nav .sstv-chev { width: 1.6rem; height: 1.6rem; }
+html:root:root[data-bozza] .sstv-lightbox .sstv-btn:not(.sstv-btn--pri):not(.sstv-btn--primary):not(.sstv-btn--danger) { background-color: rgba(10, 16, 32, .75) !important; color: #e7eef7 !important; border-color: rgba(142, 123, 255, .5) !important; }
+html:root:root[data-bozza] .sstv-lightbox .sstv-btn--danger { background-color: rgba(255, 90, 90, .18) !important; color: #ffb3b3 !important; border: 1px solid rgba(255, 120, 120, .6) !important; }
+html:root:root[data-bozza] .sstv-lightbox .sstv-btn--primary { background: rgba(142, 123, 255, .4) !important; color: #fff !important; border: 1px solid #8e7bff !important; }
+.sstv-lightbox .sstv-clean, .sstv-lightbox .sstv-clean span, .sstv-lightbox .sstv-slider, .sstv-lightbox .sstv-slider span, .sstv-lightbox .sstv-hint { color: #e7eef7 !important; }
+.sstv-lightbox .sstv-views { background: rgba(10, 16, 32, .75); border: 1px solid rgba(142, 123, 255, .5); }
+.sstv-lightbox .sstv-views button { color: #e7eef7; }
+.sstv-lightbox .sstv-views button.on { background: #6c58e8; color: #fff; }
