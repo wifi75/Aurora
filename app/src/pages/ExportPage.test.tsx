@@ -194,7 +194,7 @@ describe('ExportPage, dopo una cancellazione', () => {
     await screen.findByText('K1ABC');
     // si tolgono dalla scelta K1ABC: restano scelti due, che si cancellano
     await userEvent.click((screen.getByText('K1ABC').closest('tr')) as HTMLElement);
-    vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 1, qsos: [LOG.qsos[0]] });
+    vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 1, qsos: LOG.qsos.slice(0, 1) });
     await userEvent.click(screen.getByRole('button', { name: /Elimina selezionati/ }));
     await userEvent.click(await screen.findByRole('button', { name: /^OK$/ }));
     await waitFor(() => expect(deleteLogQsos).toHaveBeenCalled());
