@@ -1716,3 +1716,7 @@ html:root:root[data-bozza] .wefax-history > .sstv-hist-head {
   background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); border-bottom: 1px solid #afa9ec; color: #1d2a44;
 }
 html:root:root[data-bozza]:not([data-theme='light']) .wefax-history > .sstv-hist-head { background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8; }
+
+/* pagina Fox (resta «neon» per scelta): stessa forma dei controlli delle altre pagine (angoli di 8, testo a 600) e menu con la stessa freccia */
+html:root:root[data-bozza] .foxc :is(button.foxc-btn, select.foxc-input, input.foxc-input, button.rx-seg-item, button.chip) { border-radius: 8px !important; font-weight: 600; }
+html:root:root[data-bozza] .foxc select.foxc-input { appearance: none; -webkit-appearance: none; padding-right: 22px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9b8ff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 6px center; background-size: 12px; }

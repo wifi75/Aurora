@@ -101,7 +101,9 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
   const count = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).length;
   const modeName = (id: string) => modes.find((m) => m.id === id)?.name ?? id;
   // la foto aperta in grande scorre dentro la sua cronologia (stessa direzione)
-  const siblings = open ? images.filter((i) => (open.direction === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')) : [];
+  // le ricezioni incomplete (poche righe, sincronismo scarso) vanno in fondo alla fila: le foto buone restano davanti
+  const listOf = (d: 'rx' | 'tx') => images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx')).sort((a, b) => Number(!a.complete) - Number(!b.complete));
+  const siblings = open ? listOf(open.direction === 'tx' ? 'tx' : 'rx') : [];
   const at = open ? siblings.findIndex((i) => i.id === open.id) : -1;
   const step = (n: -1 | 1) => {
     const next = siblings[at + n];
@@ -109,14 +111,14 @@ export function History({ images, modes, onChanged, onReuse }: { images: SstvIma
   };
 
   const strip = (d: 'rx' | 'tx') => {
-    const items = images.filter((i) => (d === 'tx' ? i.direction === 'tx' : i.direction !== 'tx'));
+    const items = listOf(d);
     return (
       <ScrollStrip label={d === 'rx' ? t('sstv.hist.received') : t('sstv.hist.sent')}>
         {items.map((img) => (
           <li key={img.id}>
             <button
               type="button"
-              className={`sstv-thumb${selecting === d ? ' sstv-thumb--select' : ''}${picked.has(img.id) ? ' sstv-thumb--picked' : ''}`}
+              className={`sstv-thumb${img.complete ? '' : ' sstv-thumb--partial'}${selecting === d ? ' sstv-thumb--select' : ''}${picked.has(img.id) ? ' sstv-thumb--picked' : ''}`}
               onClick={() => (selecting === d ? toggle(img.id) : setOpen(img))}
               aria-pressed={selecting === d ? picked.has(img.id) : undefined}
               title={`${modeName(img.mode)} · ${when(img.time_ms)}`}
