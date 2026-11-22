@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Schede di WEFAX, SSTV, Propagazione e Statistiche: una finestra sola per scheda (nel WEFAX la scheda «Ricezione» e le altre avevano dentro un secondo riquadro arrotondato con il suo bordo), e le barre del titolo combaciano con il riquadro, con gli angoli in alto arrotondati (prima erano dritti e sporgevano di un paio di punti, e in SSTV il titolo si tagliava). Correzione di un difetto introdotto dalla modifica dei riquadri.
+
 - Barra del WEFAX: la pagina non ha piu' la larghezza massima, cosi' la barra si allunga quanto la finestra e tutto sta su una riga sola (prima AFC e SQL andavano a capo); il menu della stazione ha il carattere piu' grande (14,5) e il testo e' allineato a destra, vicino ai pulsanti ▲ ▼.
 - Display compatto della radio (schermi stretti e pagina WEFAX): oltre a S, potenza e ROS c'e' anche l'ALC (se la radio lo manda; senza, un trattino). Lo stile «Pannello FT-2000 con ROS, ALC e potenza» lo aveva gia'.
 

@@ -1746,11 +1746,11 @@ html:root:root[data-bozza] .digi-status select { padding: 0 22px 0 8px; min-widt
 
 /* ---- riquadri di tutte le pagine identici a quelli della Stazione (FT8): stesso filo con i colori dell'aurora, angoli di 10, barra del titolo alta 25
    con il gradiente, titolo a 12 senza grassetto, maniglia a puntini; vale per Satelliti, WEFAX, SSTV, Propagazione e Statistiche, nei due temi ---- */
-html:root:root[data-bozza] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side, .sstv-log, .sstv-screen, .prop-card, .stats-card) {
+html:root:root[data-bozza] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side:not(.wefax-side), .sstv-log, .sstv-screen, .prop-card, .stats-card) {
   border: 1px solid rgba(142, 123, 255, .6) !important; border-radius: 10px !important; box-shadow: none !important;
   background: #0a1220 !important;
 }
-html:root:root[data-bozza][data-theme='light'] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side, .sstv-log, .sstv-screen, .prop-card, .stats-card) {
+html:root:root[data-bozza][data-theme='light'] :is(.dash-card, .wefax-card, .wefax-history, .sstv-side:not(.wefax-side), .sstv-log, .sstv-screen, .prop-card, .stats-card) {
   background: linear-gradient(#ffffff, #ffffff) padding-box, linear-gradient(135deg, rgba(11, 154, 106, .75), rgba(31, 143, 208, .6) 50%, rgba(91, 69, 214, .75)) border-box !important;
 }
 html:root:root[data-bozza] .dash-card--bare { background: #07142b !important; }
@@ -1825,3 +1825,30 @@ html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-bt
 html:root:root[data-bozza] .wefax-page .wefax-picker-list .wefax-picker-opt, html:root:root[data-bozza] .wefax-page .wefax-picker-list .wefax-picker-band { font-size: 14px !important; }
 html:root:root[data-bozza] .sstv-head .wefax-picker .wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn.wefax-picker-btn { font-size: 14.5px !important; font-weight: 600 !important; }
 html:root:root[data-bozza] .wefax-page .sstv-head .wefax-picker .wefax-picker-btn .wefax-picker-text { font-size: inherit !important; }
+
+/* WEFAX: una scheda e basta, niente finestra dentro la finestra: la barra del titolo e il contenuto toccano i bordi della scheda, senza riquadri arrotondati interni */
+html:root:root[data-bozza] .wefax-page :is(.wefax-card, .wefax-history) { padding: 0 !important; overflow: hidden; }
+html:root:root[data-bozza] .wefax-page .wefax-card > .wefax-card-title,
+html:root:root[data-bozza] .wefax-page .wefax-history > .sstv-hist-head { margin: 0 !important; }
+html:root:root[data-bozza] .wefax-page .wefax-card > .wefax-card-body { padding: 0 !important; }
+html:root:root[data-bozza] .wefax-page .wefax-card--view .wefax-box,
+html:root:root[data-bozza] .wefax-page .wefax-card .wefax-scope { border-radius: 0 !important; border: 0 !important; }
+html:root:root[data-bozza] .wefax-page .wefax-card--rx .wefax-side { background: transparent !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; padding: 8px 10px !important; }
+html:root:root[data-bozza] .wefax-page .wefax-history > :not(.sstv-hist-head) { margin: 6px 8px; }
+
+/* barre del titolo che combaciano col riquadro: il margine interno delle schede e' fissato qui (non dipende piu' dalle altre regole e dalla larghezza della finestra),
+   la barra tocca i bordi con gli angoli in alto arrotondati come il riquadro */
+html:root:root[data-bozza] .sstv-page:not(.wefax-page) .sstv-side:not(.wefax-side),
+html:root:root[data-bozza] .sstv-page:not(.wefax-page) .sstv-log { padding: 0 10px 10px !important; overflow: hidden; }
+html:root:root[data-bozza] .sstv-page:not(.wefax-page) .sstv-history--both { padding: 0 10px 8px !important; overflow: hidden; }
+html:root:root[data-bozza] .sstv-side-title { margin: 0 -10px 8px !important; border-radius: 9px 9px 0 0 !important; }
+html:root:root[data-bozza] .sstv-log-title { margin: 0 -10px 6px !important; border-radius: 9px 9px 0 0 !important; }
+html:root:root[data-bozza] .sstv-history--both .sstv-hist-head,
+html:root:root[data-bozza] .sstv-side-col .sstv-history--both .sstv-hist-head { margin: 0 -10px 6px !important; border-radius: 0 !important; }
+html:root:root[data-bozza] .sstv-history--both .sstv-hist-col:first-child .sstv-hist-head { border-radius: 9px 9px 0 0 !important; }
+html:root:root[data-bozza] .prop-card { padding: 0 16px 16px !important; overflow: hidden; }
+html:root:root[data-bozza] .prop-card > h2 { margin: 0 -16px 12px !important; border-radius: 9px 9px 0 0 !important; }
+html:root:root[data-bozza] .stats-card { padding: 0 14px 12px !important; overflow: hidden; }
+html:root:root[data-bozza] :is(.stats-card > .panel-title:first-child, .stats-card > summary:first-child) { margin: 0 -14px 8px !important; border-radius: 9px 9px 0 0 !important; }
+html:root:root[data-bozza] .wefax-page .wefax-card > .wefax-card-title,
+html:root:root[data-bozza] .wefax-page .wefax-history > .sstv-hist-head { border-radius: 9px 9px 0 0 !important; }
