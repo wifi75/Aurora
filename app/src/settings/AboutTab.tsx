@@ -48,6 +48,22 @@ export function AboutTab() {
         <blockquote>{t('about.dedica')}</blockquote>
         <figcaption>{t('about.dedicaFirma')}</figcaption>
       </figure>
+      {/* sostenere Aurora: facoltativo, detto con garbo; la stella su GitHub e' l'aiuto che non costa nulla */}
+      <section className="about-donate" aria-label={t('about.donateTitle')}>
+        <span className="about-donate-heart" aria-hidden="true">♥</span>
+        <div className="about-donate-body">
+          <h3>{t('about.donateTitle')}</h3>
+          <p>{t('about.donateText')}</p>
+          <div className="about-donate-actions">
+            <a className="about-donate-btn" href={DONATE_URL} target="_blank" rel="noreferrer">
+              <span aria-hidden="true">♥</span> {t('about.donateButton')}
+            </a>
+            <a className="glass about-link about-donate-star" href={REPO} target="_blank" rel="noreferrer">
+              {t('about.star')}
+            </a>
+          </div>
+        </div>
+      </section>
       </div>
       <div className="about-col about-col--facts">
       <div className="about-facts">
@@ -95,22 +111,6 @@ export function AboutTab() {
         >
           {t('about.allNews')}
         </a>
-      </section>
-      {/* sostenere Aurora: facoltativo, detto con garbo; la stella su GitHub e' l'aiuto che non costa nulla */}
-      <section className="about-donate" aria-label={t('about.donateTitle')}>
-        <span className="about-donate-heart" aria-hidden="true">♥</span>
-        <div className="about-donate-body">
-          <h3>{t('about.donateTitle')}</h3>
-          <p>{t('about.donateText')}</p>
-          <div className="about-donate-actions">
-            <a className="about-donate-btn" href={DONATE_URL} target="_blank" rel="noreferrer">
-              <span aria-hidden="true">♥</span> {t('about.donateButton')}
-            </a>
-            <a className="glass about-link about-donate-star" href={REPO} target="_blank" rel="noreferrer">
-              {t('about.star')}
-            </a>
-          </div>
-        </div>
       </section>
       <nav className="about-links" aria-label={t('about.links')}>
         {links.map(([label, href]) => (

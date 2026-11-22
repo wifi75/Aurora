@@ -26,7 +26,7 @@ export function PersonalTab() {
               <input type="text" value={p.myqth} maxLength={40} autoComplete="address-level2" onChange={(e) => set({ myqth: e.target.value })} />
             </Field>
             <Field label={t('sw.p.email')} stack>
-              <input type="email" value={p.myemail} maxLength={80} autoComplete="email" onChange={(e) => set({ myemail: e.target.value.trim() })} />
+              <input type="text" inputMode="email" spellCheck={false} value={p.myemail} maxLength={80} autoComplete="email" onChange={(e) => set({ myemail: e.target.value.trim() })} />
             </Field>
           </Cells>
           <Message kind="muted">{t('sw.p.note')}</Message>

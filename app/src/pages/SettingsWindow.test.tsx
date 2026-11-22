@@ -43,7 +43,6 @@ describe('SettingsWindow', () => {
     expect(screen.getByRole('button', { name: /Informazioni/ })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('heading', { name: 'AURORA' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Dona con PayPal/ })).toHaveAttribute('href', 'https://www.paypal.com/donate/?hosted_button_id=MY55Q6GDQEH8L');
-    expect(await screen.findByText('0.11.239', { selector: '.sw-ver' })).toBeInTheDocument();
   });
 
   it('aperta da PSK · RTTY · CW: rami aperti fino al nodo del modo e percorso sopra il contenuto', () => {

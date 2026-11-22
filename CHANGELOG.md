@@ -4,6 +4,10 @@
 
 ## 0.11.329 - 2026-11-22
 
+- Impostazioni: Informazioni e' l'ultima voce del menu (dopo Guida e Novita') e il suo pulsante non mostra piu' il numero di versione; nella pagina Informazioni il riquadro «Sostieni Aurora» passa nella colonna di sinistra sotto la dedica e i collegamenti salgono.
+- Impostazioni › Dati personali: il campo email ha lo stesso aspetto degli altri campi (era un campo di tipo «email» senza lo stile dei campi di testo).
+- Impostazioni › Audio: il contenuto e' meno largo (elenchi e cursori non si stirano piu' su tutta la finestra).
+- Mappa DX e mappa della propagazione: lo zoom con la rotella e' continuo (prima a un quarto di livello, che sembrava a scatti).
 - Cascata: il divisore fra cascata e spettro (la barra con il trattino chiaro) si afferra di nuovo: lo strato dei marcatori Rx/Tx lo copriva e passandoci sopra si spostava la frequenza invece di ridimensionare lo spettro.
 - Satelliti, IC-820H (#83): la trasmissione con trame CI-V dirette si riprova da sola un minuto dopo un fallimento (prova o scrittura), senza dover premere «Connetti» nelle impostazioni. Prima, spegnendo SAT sulla radio la prova falliva (le due bande uguali) e restava ferma fino alla riconnessione, anche dopo aver riacceso SAT (segnalazione di Vladimir con RS-44 e AO-7).
 - PTT: cambiando radio (o modello) in Impostazioni dopo l'avvio la trasmissione continua a funzionare: prima la catena costruita all'avvio rifiutava ogni trasmissione con «PTT: radio cambiata» fino al riavvio di Aurora (pacchetto di un IC-820H con modello 3034 poi 3032: 19 trasmissioni fallite in tre ore). Con il PTT spento la catena passa alla radio nuova; con il PTT acceso sulla radio vecchia la guardia resta.

@@ -1,8 +1,8 @@
 import { useStation } from '../state/station';
 import { askConfirm } from '../components/ConfirmHost';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { connectCat, getCat, getHealth, postTune, putAutomation, putEngineSettings, putSstv } from '../api/client';
+import { connectCat, getCat, postTune, putAutomation, putEngineSettings, putSstv } from '../api/client';
 import type { AutomationRules } from '../api/automation';
 import { useT, type Key } from '../i18n';
 import { SettingsSearch } from '../settings/SettingsSearch';
@@ -167,7 +167,6 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   const [openSub, setOpenSub] = useState<string | null>(start.sub?.id ?? null);
   /** Sul telefono: l'elenco dell'albero o la pagina scelta. */
   const [view, setView] = useState<'tree' | 'page'>(initialTab && isKnownNode(initialTab) ? 'page' : 'tree');
-  const health = useQuery({ queryKey: ['health'], queryFn: getHealth, staleTime: 60_000 });
   /** Porta su un nodo (pagina, sottofamiglia, famiglia o id vecchio) aprendo i rami fino a li'. */
   const go = (node: string) => {
     const path = resolveNode(node);
@@ -353,7 +352,6 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
   const pageDef = SETTINGS_PAGES.find((x) => x.id === id) ?? SETTINGS_PAGES[SETTINGS_PAGES.length - 1]!;
   const where = resolveNode(pageDef.id);
   const accent = where.family?.color ?? '#8e7bff';
-  const version = health.data?.version ?? '';
   /** Aprire una famiglia chiude le altre; aprirla di nuovo la chiude. La pagina mostrata non cambia. */
   const toggleFamily = (fam: FamilyId) => {
     setOpenFamily((now) => (now === fam ? null : fam));
@@ -436,19 +434,7 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
             );
           })}
           <span className="sw-tree-gap" aria-hidden="true" />
-          {/* Informazioni, staccata in fondo, con la versione */}
-          <button
-            type="button"
-            id={`swtab-${INFO_ID}`}
-            className={`sw-fam sw-fam--info${pageDef.id === INFO_ID ? ' sw-on' : ''}`}
-            aria-current={pageDef.id === INFO_ID ? 'page' : undefined}
-            onClick={() => go(INFO_ID)}
-          >
-            <span className="sw-bar" aria-hidden="true" />
-            {t('sw.tab.info')}
-            {version ? <span className="sw-ver data">{version}</span> : null}
-          </button>
-          {/* Guida e Novita' sotto Informazioni: stanno nelle Impostazioni, non piu' nel menu dell'ingranaggio */}
+          {/* Guida e Novita' stanno nelle Impostazioni, non piu' nel menu dell'ingranaggio */}
           <button
             type="button"
             id={`swtab-${GUIDE_ID}`}
@@ -468,6 +454,17 @@ export function SettingsWindow({ initialTab, embedded = false, onClose }: { init
           >
             <span className="sw-bar" aria-hidden="true" />
             {t('nav.news')}
+          </button>
+          {/* Informazioni e' l'ultima voce del menu, senza il numero di versione */}
+          <button
+            type="button"
+            id={`swtab-${INFO_ID}`}
+            className={`sw-fam sw-fam--info${pageDef.id === INFO_ID ? ' sw-on' : ''}`}
+            aria-current={pageDef.id === INFO_ID ? 'page' : undefined}
+            onClick={() => go(INFO_ID)}
+          >
+            <span className="sw-bar" aria-hidden="true" />
+            {t('sw.tab.info')}
           </button>
         </nav>
         <div className="sw-content">

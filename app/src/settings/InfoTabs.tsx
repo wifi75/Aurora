@@ -11,7 +11,9 @@ export function AudioTab() {
   const native = useIsNative();
   if (native) {
     return (
-      <AudioDevicesPanel notes={<Help>{t('ens.audio.help')}</Help>} />
+      <div className="sw-narrow">
+        <AudioDevicesPanel notes={<Help>{t('ens.audio.help')}</Help>} />
+      </div>
     );
   }
   return (

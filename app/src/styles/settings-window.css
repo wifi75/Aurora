@@ -420,6 +420,8 @@ html.sw-lock,html.sw-lock body{overflow:hidden}
 /* il contenuto non finisce sotto la barra di scorrimento: spazio fisso a destra e pulsanti che vanno a capo */
 .sw-panel{padding:12px 20px 16px 18px;scrollbar-gutter:stable}
 .sw-panel .sx-field input[type='email']{width:100%;max-width:none}
+/* pagina Audio: contenuto meno largo (elenchi e cursori non si stirano su tutta la finestra) */
+.sw-panel .sw-narrow{max-width:38rem}
 
 /* i riquadri presi dai dialoghi delle pagine dei modi (PSK·RTTY·CW, Satelliti) */
 .sw-fields{display:grid;gap:12px}
