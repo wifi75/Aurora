@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Log: la pagina del log si rilegge da sola quando arriva un QSO da un altro log (Log4OM, OpsLog, HRD…) o se ne registra uno: prima il QSO era gia' nel log di Aurora (il contatore diceva «ricevuti») ma l'elenco non si aggiornava finche' non si ricaricava la pagina (segnalazione di Luc, #88). Il motore manda l'avviso `log_in` senza passare dal bus dei QSO registrati, quindi nulla viene rimandato fuori.
+
 ## 0.11.331 - 2026-11-22
 
 - Livello separato per il Tune (richiesta di Pascal, come `pwrBandTuneMemory` di WSJT-X): nelle impostazioni audio una casella (spenta di fabbrica) fa avere al Tune il suo livello «Lvl TX» per ogni banda; finito il Tune, o alla prima trasmissione vera, torna il livello normale.

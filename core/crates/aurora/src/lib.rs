@@ -2656,12 +2656,19 @@ pub async fn run(
     let log_in = engine_settings.as_ref().map(|store| {
         let own_port = config.udp_listen.port();
         let (tx, rx) = tokio::sync::watch::channel(log_in_config(&store.reports(), own_port));
+        // un QSO arrivato da un altro log: la pagina del log si rilegge subito (avviso `log_in`, senza passare dal bus dei QSO registrati, che
+        // li rimanderebbe fuori); si rinfrescano anche i «lavorati»
+        let events = bus.events();
+        let tell_screen = move || {
+            let _ = events.send(Event::Notice { id: "log_in".to_string(), detail: unix_secs().to_string() });
+        };
         let changed: Arc<dyn Fn() + Send + Sync> = match live_log.clone() {
             Some((db, worked, sources)) => Arc::new(move || {
+                tell_screen();
                 let (db, worked, sources) = (Arc::clone(&db), Arc::clone(&worked), sources.clone());
                 tokio::task::spawn_blocking(move || refresh_worked(&sources, &db, &worked));
             }),
-            None => Arc::new(|| {}),
+            None => Arc::new(move || tell_screen()),
         };
         let inbound = qso_export::inbound::Inbound::spawn(Arc::clone(&logbook), rx, changed);
         let store = Arc::clone(store);

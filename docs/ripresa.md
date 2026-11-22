@@ -4,6 +4,7 @@ Questo file dice a chi riprende il lavoro, in una sessione nuova, **a che punto 
 
 - Panic `tao` re-entrant VERIFICATO (2026-11-20) sul pacchetto F014CB6C (FTDX-101MP, installazione 0.11.297): contiene solo due panic vecchi, di 0.11.179 (2026-11-07) e 0.11.212 (2026-11-09), stesso backtrace (SendMessageW dentro un gestore di tao, `runner.rs:246`). Nessuno dalla 0.11.224 in poi: gia' superato; resta la mitigazione della 0.11.308. Il pacchetto 19044C72 (FT-891, 0.11.300) e' un altro caso: «WebView2 error 0x80070578, handle della finestra non valido» all'avvio (setup hook), non e' un re-entrant.
 
+- In preparazione (NON pubblicato): #88, il log si rilegge da solo quando arriva un QSO da un altro log (avviso `log_in`). Prova solo con compilazione e prove della pagina, non con Log4OM vera.
 - 0.11.331 PUBBLICATA (2026-11-22, 11:47:33 UTC): Tune con livello separato per banda, dB, memoria potenza, WEFAX inizio riga / calibra scheda audio / AFC che corregge la radio, Guida aggiornata. Restano: schermata grande potenza/ALC/SWR (serve il file di Pascal), calibrazione WWV/CHU in SSTV (serve una registrazione), allineamento laterale automatico di DDK3 (serve il secondo WAV).
 
 ## Giro del 2026-11-20 sera (sola lettura, nessun difetto nuovo)

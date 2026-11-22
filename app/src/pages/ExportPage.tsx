@@ -10,6 +10,7 @@ import { BAND_NAMES } from '../lib/format';
 import { toast } from '../lib/toast';
 import { Help } from '../settings/layout';
 import { coreText } from '../lib/coreText';
+import { useStation } from '../state/station';
 
 /** Righe disegnate per volta nella tabella del log. */
 const PAGE_ROWS = 300;
@@ -51,6 +52,15 @@ export function ExportPage() {
   const [editing, setEditing] = useState<LogQso | null>(null);
   const client = useQueryClient();
   const reload = () => client.invalidateQueries({ queryKey: ['log-qsos'] });
+  // il log si rilegge da solo quando si registra un QSO o ne arriva uno da un altro log (avviso `log_in`)
+  const loggedHere = useStation((s) => s.qsosLogged);
+  const loggedElsewhere = useStation((s) => s.notices.log_in?.at ?? 0);
+  const seen = useRef({ loggedHere, loggedElsewhere });
+  useEffect(() => {
+    if (seen.current.loggedHere === loggedHere && seen.current.loggedElsewhere === loggedElsewhere) return;
+    seen.current = { loggedHere, loggedElsewhere };
+    void client.invalidateQueries({ queryKey: ['log-qsos'] });
+  }, [client, loggedHere, loggedElsewhere]);
   const remove = async (all: boolean) => {
     const n = all ? (log.data?.qsos.length ?? 0) : selected.size;
     if (n === 0) return;
