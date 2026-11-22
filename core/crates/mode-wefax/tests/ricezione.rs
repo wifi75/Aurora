@@ -1321,3 +1321,90 @@ fn l_inclinazione_automatica_e_stabile_su_una_cartina_lunga_e_non_insegue_il_rum
         assert!((appreso - ppm).abs() < 0.05 * ppm.abs() + 20.0, "{ppm} ppm: appreso {appreso}");
     }
 }
+
+// ---------------------------------------------------------------- stazioni senza tono d'inizio e con la fasatura corta
+
+/// Audio di una stazione che sta ferma sul bianco, manda solo `barre` righe di fasatura (95% nero, il resto bianco ai capi) senza tono
+/// d'inizio e poi subito l'immagine, come DDK3 su 7880 kHz. `falso_apt_s`: secondi di un finto tono d'inizio all'inizio.
+fn senza_tono_d_inizio(img: &[u8], w: usize, h: usize, bianco_s: usize, barre: usize, falso_apt_s: usize, bianco_nero: f64) -> Vec<f32> {
+    let rate = f64::from(RATE);
+    let riga = rate * 60.0 / 120.0;
+    let mut out: Vec<f32> = Vec::new();
+    let mut phase = 0.0f64;
+    let mut tono = |out: &mut Vec<f32>, v: f64| {
+        phase += TAU * (1500.0 + 800.0 * v / 255.0) / rate;
+        if phase > TAU {
+            phase -= TAU;
+        }
+        out.push(0.5 * phase.sin() as f32);
+    };
+    for i in 0..falso_apt_s * RATE as usize {
+        let alto = ((2.0 * 300.0 * i as f64 / rate) as u64) % 2 == 0;
+        tono(&mut out, if alto { 255.0 } else { 0.0 });
+    }
+    for _ in 0..bianco_s * RATE as usize {
+        tono(&mut out, 255.0);
+    }
+    // barre di fasatura: nero per `bianco_nero` della riga (di norma 0,95), il resto bianco ai capi
+    let n = (barre as f64 * riga) as usize;
+    let capo = (1.0 - bianco_nero) / 2.0;
+    for i in 0..n {
+        let frac = (i as f64 / riga).fract();
+        tono(&mut out, if !(capo..=1.0 - capo).contains(&frac) { 255.0 } else { 0.0 });
+    }
+    let n = (h as f64 * riga) as usize;
+    for i in 0..n {
+        let t = i as f64 / riga;
+        let (r, col) = (t as usize, (t.fract() * w as f64) as usize);
+        tono(&mut out, f64::from(img[r.min(h - 1) * w + col.min(w - 1)]));
+    }
+    for _ in 0..3 * RATE as usize {
+        tono(&mut out, 255.0);
+    }
+    out
+}
+
+#[test]
+fn una_fasatura_corta_senza_tono_d_inizio_fa_partire_e_allinea_la_cartina() {
+    let (w, h) = (1809usize, 160usize);
+    // fondo bianco con grandi blocchi neri (come il testo e le cornici di una cartina), che danno i passaggi bianco-nero di un'immagine
+    let img: Vec<u8> = (0..w * h).map(|i| if ((i % w) / 60 + (i / w) / 7) % 5 == 0 { 0 } else { 215 }).collect();
+    // 20 s di bianco, poi tre barre (90% nero, come DDK3) e subito l'immagine
+    let audio = senza_tono_d_inizio(&img, w, h, 20, 3, 0, 0.90);
+    // senza tono di fine l'immagine si chiude a mano
+    let mut d = Decoder::new(cfg(576, 120));
+    let mut fatte: Vec<Done> = Vec::new();
+    let mut avviate = 0;
+    for c in audio.chunks(1024) {
+        for ev in d.push(c) {
+            match ev {
+                DecoderEvent::Started { .. } => avviate += 1,
+                DecoderEvent::Finished(done) => fatte.push(done),
+                _ => {}
+            }
+        }
+    }
+    for ev in d.finish() {
+        if let DecoderEvent::Finished(done) = ev {
+            fatte.push(done);
+        }
+    }
+    assert_eq!(avviate, 1);
+    assert_eq!(fatte.len(), 1);
+    let e = Esito { fatte, scartate: Vec::new(), righe: Vec::new(), avviate, ioc_cambiati: Vec::new() };
+    let (c, _off, dc) = confronta(&e.fatte[0], &img, w, h, 120);
+    eprintln!("fasatura corta: correlazione {c:.4}, scarto {dc} colonne");
+    assert!(c > 0.95, "correlazione {c}");
+    assert!(dc.abs() <= 60, "riga non allineata: {dc} colonne");
+}
+
+#[test]
+fn un_falso_tono_d_inizio_non_blocca_l_attesa_per_sempre() {
+    let (w, h) = (1809usize, 100usize);
+    let img = immagine(w, h);
+    // un finto tono d'inizio di 3 s, poi 120 s di bianco, poi una cartina vera con il suo tono d'inizio e la fasatura
+    let mut audio = senza_tono_d_inizio(&img, w, 1, 120, 0, 3, 0.95);
+    audio.extend(genera(&Segnale::standard(576, 120), &img, w, h));
+    let e = ricevi(cfg(576, 120), &audio, 1024);
+    assert!(e.fatte.iter().any(|d| d.image.height as usize >= h), "nessuna cartina completa: {} immagini, scartate {:?}", e.fatte.len(), e.scartate);
+}

@@ -94,6 +94,15 @@ const LEARN_MAX_WEIGHT: f64 = 8.0;
 const LEARN_MAX_PPM: f64 = 5000.0;
 /// Righe della fasatura che servono per dare l'allineamento.
 const PHASING_LINES: i32 = 4;
+/// Alcune stazioni (DDK3 su 7880 kHz) mandano solo due barre di fasatura, senza tono d'inizio, e poi subito l'immagine: ne esce una sola
+/// riga misurabile. Con almeno queste righe buone, finite le quali comincia l'immagine, ci si allinea lo stesso.
+const PHASING_LINES_SHORT: i32 = 1;
+/// Quota minima di nero di una riga di fasatura mentre la si aspetta (la norma e' 95%, DDK3 ne manda circa il 90%).
+const PHASE_BLACK_MIN: f64 = 0.80;
+/// Quota minima di nero dentro l'immagine, dove una barra scura della cartina non deve sembrare una fasatura.
+const PHASE_BLACK_MIN_IMAGE: f64 = 0.94;
+/// Aspettando la fasatura senza averne vista nemmeno una riga (un falso tono d'inizio), dopo tanto si torna ad aspettare il tono.
+const PHASING_WAIT_S: i64 = 90;
 
 /// Gli stati di fldigi (`fax_state`) che servono alla ricezione.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -306,6 +315,8 @@ pub struct Decoder {
     curr_phase_low: i32,
     phase_lines: i32,
     num_phase_lines: i32,
+    /// Valore di `img_sample` all'ultimo passaggio bianco-nero di una riga di fasatura buona.
+    phase_edge_sample: i64,
     phase_len_sum: i64,
     phasing_hist: [i32; 16],
     phasing_count: usize,
@@ -436,6 +447,7 @@ impl Decoder {
             curr_phase_low: 0,
             phase_lines: 0,
             num_phase_lines: 0,
+            phase_edge_sample: 0,
             phase_len_sum: 0,
             phasing_hist: [0; 16],
             phasing_count: 0,
@@ -787,7 +799,15 @@ impl Decoder {
             }
         } else {
             self.decode_apt(x);
-            if self.state == Fs::Phasing || self.state == Fs::Image {
+            if self.state == Fs::Phasing && self.phase_lines == 0 && self.img_sample > PHASING_WAIT_S * i64::from(SR) {
+                // un falso tono d'inizio: la fasatura non e' mai arrivata, si torna ad aspettare il tono
+                self.state = Fs::AptStart;
+                self.apt_count = 0;
+                self.apt_trans = 0;
+                self.img_sample = 0;
+            }
+            // anche aspettando il tono d'inizio: certe stazioni non lo mandano e cominciano con la sola fasatura
+            if self.state == Fs::Phasing || self.state == Fs::Image || self.state == Fs::AptStart {
                 self.decode_phasing(x);
             }
             if self.state == Fs::Image && self.lpm_img > 0.0 {
@@ -956,36 +976,62 @@ impl Decoder {
         } else if x < 25 && self.phase_high {
             self.phase_high = false;
             let len = f64::from(self.curr_phase_len);
-            if f64::from(self.curr_phase_high) >= 0.04 * len && f64::from(self.curr_phase_low) >= 0.94 * len && self.curr_phase_len >= (0.4 * f64::from(SR)) as i32 {
+            let black_min = if self.state == Fs::Image { PHASE_BLACK_MIN_IMAGE } else { PHASE_BLACK_MIN };
+            // aspettando il tono d'inizio (nessun APT visto) conta solo una riga che dura come il periodo nominale: il rumore non la imita
+            let nominal = lpm_to_samples(self.cfg.default_lpm()) as f64;
+            let on_time = self.state != Fs::AptStart || (len - nominal).abs() < 0.03 * nominal;
+            if on_time && f64::from(self.curr_phase_high) >= 0.04 * len && f64::from(self.curr_phase_low) >= black_min * len && self.curr_phase_len >= (0.4 * f64::from(SR)) as i32 {
                 self.phase_len_sum += i64::from(self.curr_phase_len);
                 self.phase_lines += 1;
                 self.num_phase_lines = 0;
+                self.phase_edge_sample = self.img_sample;
                 if self.phase_lines >= PHASING_LINES {
-                    let measured = self.phase_len_sum as f64 / f64::from(self.phase_lines);
-                    self.skip_phasing_to_image_save();
-                    self.apply_measured(measured);
-                    // la riga comincia 2,5% prima della fine della banda bianca della fasatura; il passaggio bianco-nero si vede con il
-                    // ritardo della media su 16 campioni e dei fronti filtrati, che i pixel dell'immagine non hanno: lo si recupera
-                    self.img_sample = (1.025 * self.smpl_per_lin) as i64 + PHASING_LATENCY;
-                    let frac = (self.img_sample as f64 % self.smpl_per_lin) / self.smpl_per_lin;
-                    self.last_col = (frac * self.width as f64) as i32;
-                    self.last_row = (self.img_sample as f64 / self.smpl_per_lin) as i64;
-                    self.fax_pix_num = i64::from(self.last_col) * BYTES_PER_PIXEL;
-                    self.pix_samples_nb = 0;
-                    self.pixel_val = 0;
+                    self.align_to_phasing(0);
                 }
-            } else if self.state == Fs::Phasing && self.phase_lines > 0 && {
+            } else if self.state == Fs::AptStart && self.phase_lines > 0 && self.img_sample - self.phase_edge_sample > (3.0 * nominal) as i64 {
+                // una riga buona isolata, di molto tempo fa, senza l'immagine che la segue: era rumore, si ricomincia
+                self.reset_phasing_counters();
+            } else if (self.state == Fs::Phasing || self.state == Fs::AptStart) && self.phase_lines > 0 && {
                 self.num_phase_lines += 1;
-                self.num_phase_lines >= 5
+                self.num_phase_lines >= 3
             } {
-                // fasatura finita ma l'allineamento non e' stato dato
-                self.pending_source = Source::NoPhasing;
-                self.skip_phasing_to_image();
+                if self.phase_lines >= PHASING_LINES_SHORT {
+                    // fasatura corta (poche righe, poi subito l'immagine): ci si allinea sull'ultima riga buona, ormai di qualche riga fa
+                    let elapsed = self.img_sample - self.phase_edge_sample;
+                    self.align_to_phasing(elapsed);
+                } else {
+                    // fasatura finita ma l'allineamento non e' stato dato
+                    self.pending_source = Source::NoPhasing;
+                    self.skip_phasing_to_image();
+                }
             }
             self.curr_phase_len = 0;
             self.curr_phase_high = 0;
             self.curr_phase_low = 0;
         }
+    }
+
+    /// Passa all'immagine allineata sulla fasatura: periodo di riga misurato e inizio della riga. `elapsed` sono i campioni passati dall'ultimo
+    /// passaggio bianco-nero buono (0 con la fasatura lunga, di piu' con quella corta, dove si e' aspettato di vedere la fine).
+    fn align_to_phasing(&mut self, elapsed: i64) {
+        // con poche righe il periodo misurato e' troppo incerto (un solo intervallo, qualche campione di troppo = migliaia di ppm di
+        // inclinazione): si tiene il nominale e al resto pensa l'inclinazione automatica
+        let measured = if self.phase_lines >= PHASING_LINES {
+            self.phase_len_sum as f64 / f64::from(self.phase_lines)
+        } else {
+            lpm_to_samples(self.cfg.default_lpm()) as f64
+        };
+        self.skip_phasing_to_image_save();
+        self.apply_measured(measured);
+        // la riga comincia 2,5% prima della fine della banda bianca della fasatura; il passaggio bianco-nero si vede con il
+        // ritardo della media su 16 campioni e dei fronti filtrati, che i pixel dell'immagine non hanno: lo si recupera
+        self.img_sample = (1.025 * self.smpl_per_lin) as i64 + PHASING_LATENCY + elapsed;
+        let frac = (self.img_sample as f64 % self.smpl_per_lin) / self.smpl_per_lin;
+        self.last_col = (frac * self.width as f64) as i32;
+        self.last_row = (self.img_sample as f64 / self.smpl_per_lin) as i64;
+        self.fax_pix_num = i64::from(self.last_col) * BYTES_PER_PIXEL;
+        self.pix_samples_nb = 0;
+        self.pixel_val = 0;
     }
 
     /// Periodo di riga misurato sulla fasatura: sceglie il numero di righe al minuto piu' vicino (entro 3) e, se il periodo e' entro
