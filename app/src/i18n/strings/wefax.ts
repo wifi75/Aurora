@@ -12,13 +12,14 @@ export const wefaxStrings = {
   'wefax.title': ['WEFAX', 'WEFAX', 'WEFAX', 'WEFAX', 'WEFAX', 'WEFAX'],
   'wefax.afc.label': ['AFC', 'AFC', 'AFC', 'AFC', 'AFC', 'AFC'],
   'wefax.afc.tip': [
-    'AFC: se la radio è sintonizzata un po’ fuori (entro il limite impostato, 150 Hz di base), la ricezione segue il segnale da sola, così i grigi restano giusti. Si regola sul tono fisso del nero, sull’APT e sulla fasatura.',
-    'AFC: if the radio is slightly off frequency (within the set limit, 150 Hz by default), reception follows the signal by itself so the greys stay right. It locks on the steady black tone, the APT and the phasing.',
-    'AFC: Ist das Funkgerät etwas verstimmt (innerhalb der eingestellten Grenze, standardmäßig 150 Hz), folgt der Empfang dem Signal selbst, damit die Grautöne stimmen. Er rastet auf den Dauerton für Schwarz, das APT und das Phasing ein.',
-    'AFC : si la radio est un peu décalée (dans la limite réglée, 150 Hz par défaut), la réception suit le signal toute seule pour garder des gris justes. Il s’accroche sur la tonalité fixe du noir, l’APT et le phasage.',
-    'AFC: si la radio está algo desintonizada (dentro del límite fijado, 150 Hz de base), la recepción sigue la señal sola para que los grises sean correctos. Se ajusta con el tono fijo del negro, el APT y el fasado.',
-    'AFC: se o rádio estiver um pouco fora de sintonia (dentro do limite definido, 150 Hz de origem), a receção segue o sinal sozinha para os cinzentos ficarem certos. Ajusta-se no tom fixo do preto, no APT e no faseamento.',
+    'AFC: se la radio è sintonizzata qualche Hz fuori dal segnale, la ricezione lo segue da sola (entro il limite impostato nelle impostazioni WEFAX), così i grigi restano giusti. Il valore sul pulsante (per esempio +36 Hz) è la correzione in corso: è normale e non indica un guasto. Si aggancia al tono fisso del nero, all’APT e alla fasatura.',
+    'AFC: if the radio is tuned a few Hz away from the signal, reception follows it by itself (within the limit set in the WEFAX settings) so the greys stay right. The value on the button (for example +36 Hz) is the correction being applied: it is normal and does not mean a fault. It locks on the steady black tone, the APT and the phasing.',
+    'AFC: Liegt das Funkgerät ein paar Hz neben dem Signal, folgt der Empfang ihm selbst (innerhalb der in den WEFAX-Einstellungen eingestellten Grenze), damit die Grautöne stimmen. Der Wert auf der Taste (zum Beispiel +36 Hz) ist die laufende Korrektur: das ist normal und kein Defekt. Er rastet auf den Dauerton für Schwarz, das APT und das Phasing ein.',
+    'AFC : si la radio est décalée de quelques Hz par rapport au signal, la réception le suit toute seule (dans la limite réglée dans les réglages WEFAX) pour garder des gris justes. La valeur sur le bouton (par exemple +36 Hz) est la correction en cours : c’est normal, pas une panne. Il s’accroche sur la tonalité fixe du noir, l’APT et le phasage.',
+    'AFC: si la radio está desintonizada unos pocos Hz respecto a la señal, la recepción la sigue sola (dentro del límite fijado en los ajustes WEFAX) para que los grises sean correctos. El valor del botón (por ejemplo +36 Hz) es la corrección en curso: es normal y no indica una avería. Se ajusta con el tono fijo del negro, el APT y el fasado.',
+    'AFC: se o rádio estiver desafinado alguns Hz em relação ao sinal, a receção segue-o sozinha (dentro do limite definido nas definições WEFAX) para os cinzentos ficarem certos. O valor no botão (por exemplo +36 Hz) é a correção em curso: é normal e não indica avaria. Ajusta-se no tom fixo do preto, no APT e no faseamento.',
   ],
+
   'wefax.sql.label': ['SQL', 'SQL', 'SQL', 'SQL', 'SQL', 'SQL'],
   'wefax.sql.tip': [
     'Squelch: quando il segnale supera la soglia e cambia (non un tono fisso) l’immagine parte da sola; si chiude quando il segnale manca da 3 secondi. Utile se manca il tono di avvio.',

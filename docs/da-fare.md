@@ -73,4 +73,4 @@ Si aggiorna a ogni chiusura: `[x]` = fatto. Elenco lungo e tecnico: `docs/mancan
 
 ## Richieste da mostrare al proprietario
 Funzioni nuove chieste da utenti (issue, rapporti): i giri orari non le implementano, le annotano qui; il proprietario le vuole vedere appena scrive. Formato: utente, issue, cosa chiede, idea in una riga.
-- (nessuna da mostrare al 2026-11-22)
+- Proprietario (2026-11-22), WEFAX: con il CAT collegato l'AFC potrebbe correggere anche la frequenza della radio (oggi sposta solo la sottoportante del decodificatore, +36 Hz non toccano il VFO). Idea: opzione «AFC corregge la radio» che sposta il VFO a passi di 10 Hz oltre una soglia, spenta di base; da decidere perche' cambia la frequenza registrata e il QSY a mano.
