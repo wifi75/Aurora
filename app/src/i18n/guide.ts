@@ -790,6 +790,51 @@ export const GUIDE: readonly GuideChapter[] = [
         ],
       },
       {
+        id: 'satKnob',
+        title: [
+          'Satelliti: seguire la manopola della radio',
+          'Satellites: following the radio’s tuning knob',
+          'Satelliten: dem Abstimmknopf des Funkgeräts folgen',
+          'Satellites : suivre la molette de la radio',
+          'Satélites: seguir el mando de sintonía de la radio',
+          'Satélites: seguir o botão de sintonia do rádio',
+        ],
+        text: [
+          'Con il Doppler acceso puoi sintonizzare una stazione girando la manopola della radio (per esempio RS-44 in SSB): Aurora legge la nuova frequenza, la prende come frequenza di ricezione scelta e la trasmissione la segue con lo stesso scarto. Se ne accorge dopo un paio di secondi a manopola ferma. I salti grandi (oltre 80 kHz, come un cambio di banda) non si seguono. La casella «[[sat.knob.on]]» è accesa di fabbrica e si può togliere.',
+          'With Doppler on you can tune a station by turning the radio’s knob (for example RS-44 in SSB): Aurora reads the new frequency, takes it as the chosen receive frequency and the transmit frequency follows with the same offset. It notices after a couple of seconds once the knob stops. Big jumps (over 80 kHz, such as a band change) are not followed. The “[[sat.knob.on]]” box is on by default and can be turned off.',
+          'Bei eingeschaltetem Doppler kannst du eine Station abstimmen, indem du am Knopf des Funkgeräts drehst (zum Beispiel RS-44 in SSB): Aurora liest die neue Frequenz, übernimmt sie als gewählte Empfangsfrequenz und die Sendefrequenz folgt mit demselben Abstand. Es bemerkt das nach ein paar Sekunden, wenn der Knopf still steht. Große Sprünge (über 80 kHz, etwa ein Bandwechsel) werden nicht verfolgt. Das Kästchen „[[sat.knob.on]]“ ist ab Werk an und lässt sich ausschalten.',
+          'Avec le Doppler activé tu peux accorder une station en tournant la molette de la radio (par exemple RS-44 en SSB) : Aurora lit la nouvelle fréquence, la prend comme fréquence de réception choisie et l’émission la suit avec le même écart. Elle le remarque après quelques secondes, molette immobile. Les grands sauts (plus de 80 kHz, comme un changement de bande) ne sont pas suivis. La case « [[sat.knob.on]] » est cochée d’usine et peut être décochée.',
+          'Con el Doppler encendido puedes sintonizar una estación girando el mando de la radio (por ejemplo RS-44 en SSB): Aurora lee la nueva frecuencia, la toma como la de recepción elegida y la transmisión la sigue con el mismo desfase. Lo nota tras un par de segundos, con el mando parado. Los saltos grandes (más de 80 kHz, como un cambio de banda) no se siguen. La casilla «[[sat.knob.on]]» viene encendida de fábrica y se puede quitar.',
+          'Com o Doppler ligado podes sintonizar uma estação rodando o botão do rádio (por exemplo RS-44 em SSB): a Aurora lê a nova frequência, toma-a como a de receção escolhida e a transmissão acompanha com o mesmo desvio. Repara passados uns segundos, com o botão parado. Os saltos grandes (mais de 80 kHz, como uma mudança de banda) não são seguidos. A caixa «[[sat.knob.on]]» vem ligada de fábrica e pode ser tirada.',
+        ],
+        steps: [
+          [
+            'Apri [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › scheda radio, gruppo «[[sat.knob.title]]», e controlla che la casella «[[sat.knob.on]]» sia accesa (togli la spunta se non vuoi che Aurora segua la manopola).',
+            'Open [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › radio tab, group “[[sat.knob.title]]”, and check that the “[[sat.knob.on]]” box is on (clear it if you do not want Aurora to follow the knob).',
+            'Öffne [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › Reiter Funkgerät, Gruppe „[[sat.knob.title]]“, und prüfe, ob das Kästchen „[[sat.knob.on]]“ an ist (nimm den Haken weg, wenn Aurora dem Knopf nicht folgen soll).',
+            'Ouvre [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › onglet radio, groupe « [[sat.knob.title]] », et vérifie que la case « [[sat.knob.on]] » est cochée (décoche-la si tu ne veux pas qu’Aurora suive la molette).',
+            'Abre [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › pestaña radio, grupo «[[sat.knob.title]]», y comprueba que la casilla «[[sat.knob.on]]» esté encendida (quita la marca si no quieres que Aurora siga el mando).',
+            'Abre [[nav.settings]] › [[sw.fam.modes]] › [[nav.sat]] › separador rádio, grupo «[[sat.knob.title]]», e confirma que a caixa «[[sat.knob.on]]» está ligada (tira a marca se não queres que a Aurora siga o botão).',
+          ],
+          [
+            'Nella pagina [[nav.sat]] accendi il Doppler e gira la manopola della radio per sintonizzare la stazione; poi lasciala ferma un paio di secondi.',
+            'On the [[nav.sat]] page turn Doppler on and turn the radio’s knob to tune the station; then leave it still for a couple of seconds.',
+            'Schalte auf der Seite [[nav.sat]] den Doppler ein und drehe am Knopf des Funkgeräts, um die Station abzustimmen; lass ihn dann ein paar Sekunden still stehen.',
+            'Dans la page [[nav.sat]] active le Doppler et tourne la molette de la radio pour accorder la station ; puis laisse-la immobile quelques secondes.',
+            'En la página [[nav.sat]] enciende el Doppler y gira el mando de la radio para sintonizar la estación; luego déjalo quieto un par de segundos.',
+            'Na página [[nav.sat]] liga o Doppler e roda o botão do rádio para sintonizar a estação; depois deixa-o parado uns segundos.',
+          ],
+          [
+            'Aurora prende la nuova frequenza come ricezione scelta e la trasmissione la segue con lo stesso scarto; il cursore «[[sat.ctl.downlink]]» della pagina si aggiorna da solo. Un salto oltre 80 kHz (cambio di banda) non viene seguito.',
+            'Aurora takes the new frequency as the chosen receive frequency and the transmit frequency follows with the same offset; the “[[sat.ctl.downlink]]” slider on the page updates by itself. A jump over 80 kHz (band change) is not followed.',
+            'Aurora übernimmt die neue Frequenz als gewählte Empfangsfrequenz und die Sendefrequenz folgt mit demselben Abstand; der Regler „[[sat.ctl.downlink]]“ auf der Seite aktualisiert sich von selbst. Ein Sprung über 80 kHz (Bandwechsel) wird nicht verfolgt.',
+            'Aurora prend la nouvelle fréquence comme réception choisie et l’émission la suit avec le même écart ; le curseur « [[sat.ctl.downlink]] » de la page se met à jour tout seul. Un saut de plus de 80 kHz (changement de bande) n’est pas suivi.',
+            'Aurora toma la nueva frecuencia como recepción elegida y la transmisión la sigue con el mismo desfase; el control «[[sat.ctl.downlink]]» de la página se actualiza solo. Un salto de más de 80 kHz (cambio de banda) no se sigue.',
+            'A Aurora toma a nova frequência como receção escolhida e a transmissão acompanha com o mesmo desvio; o cursor «[[sat.ctl.downlink]]» da página atualiza-se sozinho. Um salto de mais de 80 kHz (mudança de banda) não é seguido.',
+          ],
+        ],
+      },
+      {
         id: 'digi',
         title: ['Testo in PSK31, PSK63 e RTTY', 'Text in PSK31, PSK63 and RTTY', 'Text in PSK31, PSK63 und RTTY', 'Texte en PSK31, PSK63 et RTTY', 'Texto en PSK31, PSK63 y RTTY', 'Texto em PSK31, PSK63 e RTTY'],
         text: [
