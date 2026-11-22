@@ -280,7 +280,7 @@ export function DxMap({ settings, stations, links, spots, live, squares, homeGri
   useLayoutEffect(() => {
     const m = map.current;
     if (!m) return;
-    const layer = L.tileLayer(style.url, { attribution: style.attribution, maxNativeZoom: style.maxNativeZoom, maxZoom: 10, ...(style.subdomains ? { subdomains: style.subdomains } : {}) });
+    const layer = L.tileLayer(style.url, { attribution: style.attribution, maxNativeZoom: style.maxNativeZoom, maxZoom: 10, updateWhenZooming: false, updateInterval: 120, keepBuffer: 4, ...(style.subdomains ? { subdomains: style.subdomains } : {}) });
     m.getContainer().classList.add('worldmap--tiles');
     m.getContainer().classList.toggle('worldmap--dark-tiles', !!style.dark);
     replace('tiles', layer);

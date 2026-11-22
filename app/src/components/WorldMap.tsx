@@ -181,7 +181,7 @@ export function WorldMap({ squares, stations, receivers = [], homeGrid, selected
     if (!m) return;
     m.getContainer().classList.toggle('worldmap--tiles', tiles);
     m.getContainer().classList.remove('worldmap--tiles-failed');
-    const layer = tiles ? L.tileLayer(url, { attribution, maxNativeZoom: mapStyleId ? style.maxNativeZoom : 10, maxZoom: 10, noWrap: true, bounds: WORLD, ...(style.subdomains && mapStyleId ? { subdomains: style.subdomains } : {}) }) : null;
+    const layer = tiles ? L.tileLayer(url, { attribution, maxNativeZoom: mapStyleId ? style.maxNativeZoom : 10, maxZoom: 10, noWrap: true, bounds: WORLD, updateWhenZooming: false, updateInterval: 120, keepBuffer: 4, ...(style.subdomains && mapStyleId ? { subdomains: style.subdomains } : {}) }) : null;
     m.getContainer().classList.toggle('worldmap--dark-tiles', tiles && !!mapStyleId && !!style.dark);
     // senza internet le tessere non arrivano: allora si mostra la terra disegnata dal programma (prima appariva sempre per un attimo)
     layer?.on('tileerror', () => m.getContainer().classList.add('worldmap--tiles-failed'));

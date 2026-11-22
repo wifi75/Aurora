@@ -2,6 +2,7 @@
 
 ## Non rilasciato
 
+- Mappa DX e propagazione: zoomando le tessere della cartina non lampeggiano piu' (le tessere si aggiornano a zoom finito e quelle del livello precedente restano finche' arrivano le nuove). Non provato a schermo.
 ## 0.11.329 - 2026-11-22
 
 - Impostazioni: Informazioni e' l'ultima voce del menu (dopo Guida e Novita') e il suo pulsante non mostra piu' il numero di versione; nella pagina Informazioni il riquadro «Sostieni Aurora» passa nella colonna di sinistra sotto la dedica e i collegamenti salgono.
