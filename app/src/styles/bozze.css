@@ -313,6 +313,8 @@ html[data-theme='light'] .tx-panel .tx-list li[aria-current='true'] { border-col
 .wf-splitter:hover::after, .wf-splitter:active::after { background: #8e7bff; }
 .wf-splitter::before { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
 .wf-splitter:hover { background: color-mix(in srgb, #8e7bff 28%, transparent); }
+/* sopra lo strato dei marcatori Rx/Tx (`.wf-pad` copre tutta la cascata): senza, passandoci sopra si spostava la frequenza e il divisore non si afferrava */
+.wf-splitter { z-index: 5; }
 /* la riga in basso un po' piu' alta, per dare spazio allo spettro */
 .live-bottom { height: clamp(18rem, calc(37vh / var(--ui-zoom, 1)), 26rem); }
 
