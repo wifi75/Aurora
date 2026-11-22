@@ -5594,7 +5594,7 @@ export const NL_UI: Record<string, string> = {
   "upd.uptodate": "Aurora is bijgewerkt.",
   "upd.whenIdle": "Zelf bijwerken als Aurora stilstaat",
   "wefax.afc.label": "AFC",
-  "wefax.afc.tip": "AFC: als de radio een paar Hz naast het signaal is afgestemd, volgt de ontvangst het vanzelf (binnen de limiet die in de WEFAX-instellingen staat), zodat de grijstinten kloppen. De waarde op de knop (bijvoorbeeld +36 Hz) is de correctie die loopt: dat is normaal en geen storing. Hij vergrendelt op de vaste toon voor zwart, de APT en de fasering.",
+  "wefax.afc.tip": "AFC: als het signaal een paar Hz verschoven aankomt (het station is niet exact of drijft, of de afstemming is niet perfect), volgt de ontvangst het vanzelf binnen de limiet die in de WEFAX-instellingen staat, zodat de grijstinten kloppen. De waarde op de knop (bijvoorbeeld +36 Hz) is de correctie die loopt: dat is normaal. Hij vergrendelt op de vaste toon voor zwart, de APT en de fasering.",
   "wefax.big.audio": "Audio downloaden",
   "wefax.big.exitFullscreen": "Volledig scherm verlaten (F)",
   "wefax.big.fitHint": "Aanpassen: de hele kaart zichtbaar in het venster, in breedte en hoogte (0)",
