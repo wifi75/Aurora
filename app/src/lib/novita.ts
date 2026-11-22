@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'new',
     featured: false,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'new',
     title: [
       'WEFAX: Calibra la scheda audio e AFC sulla radio',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'fixed',
     title: [
       'WEFAX: fasatura corta senza tono d’inizio',
@@ -87,7 +87,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'new',
     title: [
       'Livelli audio in dB e opzioni per banda e Tune',
@@ -108,7 +108,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'fixed',
     title: [
       'Satelliti con la manopola (IC-820H) più affidabili',
@@ -129,7 +129,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'fixed',
     title: [
       'SSTV: visore più sicuro',
@@ -150,7 +150,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.331',
-    released: '2026-11-22T12:00:00Z',
+    released: '2026-11-22T11:47:33Z',
     kind: 'changed',
     title: [
       'Pagine testuali e barre più ordinate; Guida aggiornata',
