@@ -2274,6 +2274,8 @@ export interface SatSettings {
   uplink_two_vfo: boolean;
   /** IC-820H: trasmissione con comandi CI-V diretti dopo una prova automatica (sperimentale, spento di fabbrica). */
   uplink_civ_ic820h?: boolean;
+  /** Girando la manopola della radio la nuova ricezione diventa quella scelta e la trasmissione la segue (acceso di fabbrica). */
+  follow_knob?: boolean;
   uplink_interval_s: number;
   uplink_threshold_hz: number;
   /** Modo di ricezione e di trasmissione: Auto, USB, LSB, FM o CW. */

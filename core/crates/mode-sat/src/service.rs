@@ -61,6 +61,10 @@ pub trait SatRadio: Send + Sync {
     fn enable_satmode(&self) -> Result<(), String> {
         Err("non supportato".into())
     }
+    /// La frequenza di ricezione che la radio ha adesso (dall'ultima lettura, senza un nuovo comando): serve a capire se l'operatore ha girato la manopola.
+    fn rx_hz(&self) -> Option<u64> {
+        None
+    }
 }
 
 /// Il rotore: azimut ed elevazione.
@@ -98,6 +102,9 @@ pub struct SatSettings {
     /// IC-820H: trasmissione scritta con comandi CI-V diretti dopo una prova automatica (sperimentale, spento di fabbrica). Se acceso
     /// prende il posto del ripiego a due VFO.
     pub uplink_civ_ic820h: bool,
+    /// Se si gira la manopola della radio mentre il Doppler e' acceso, la nuova frequenza di ricezione diventa quella scelta e la trasmissione la
+    /// segue con lo stesso scarto (come fanno gli altri programmi di inseguimento); senza, Aurora la riscrive al passo seguente.
+    pub follow_knob: bool,
     /// Il ripiego aggiorna la trasmissione al massimo ogni tanti secondi (2-120)...
     pub uplink_interval_s: u32,
     /// ...o appena lo scostamento supera tanti Hz (20-5000), ma mai piu' di una volta ogni 2 s.
@@ -128,7 +135,7 @@ pub struct SatSettings {
 
 impl Default for SatSettings {
     fn default() -> Self {
-        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, uplink_two_vfo: false, uplink_civ_ic820h: false, uplink_interval_s: 10, uplink_threshold_hz: 300, rx_mode: "Auto".into(), tx_mode: "Auto".into(), rotor_lead_s: 60, rotor_start_el_deg: 0.0, rotor_interval_s: 2, rotor_after: "stay".into(), rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_after_delay_s: 10, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
+        SatSettings { selected: Some(25544), tracked: vec![25544, 44909], transponder: 0, down_hz: None, tx_offset_hz: 0.0, doppler_on: false, rotor_on: false, rotor_preposition: true, rotor_min_move_deg: 2.0, rotor_az_offset_deg: 0.0, min_el_deg: 0.0, uplink_two_vfo: false, uplink_civ_ic820h: false, follow_knob: true, uplink_interval_s: 10, uplink_threshold_hz: 300, rx_mode: "Auto".into(), tx_mode: "Auto".into(), rotor_lead_s: 60, rotor_start_el_deg: 0.0, rotor_interval_s: 2, rotor_after: "stay".into(), rotor_park_az_deg: 0.0, rotor_park_el_deg: 0.0, rotor_after_delay_s: 10, map: String::new(), tle_sources: tle::SOURCES.iter().map(|u| (*u).to_string()).collect(), tle_update_hours: 24 }
     }
 }
 
@@ -350,11 +357,8 @@ impl SatService {
     }
 
     pub fn apply_settings(&self, s: SatSettings) -> Result<(), String> {
-        s.validate()?;
-        let json = serde_json::to_vec_pretty(&s).map_err(|e| e.to_string())?;
-        std::fs::write(self.inner.dir.join("satelliti.json"), json).map_err(|e| e.to_string())?;
         let rotor_off = lock(&self.inner.settings).rotor_on && !s.rotor_on;
-        *lock(&self.inner.settings) = s;
+        store_settings(&self.inner, s)?;
         if rotor_off && let Some(r) = lock(&self.inner.rotor).clone() {
             r.stop();
         }
@@ -616,6 +620,10 @@ fn refresh(inner: &Arc<Inner>) -> Result<usize, String> {
 #[derive(Default)]
 struct LoopState {
     last_rx: Option<u64>,
+    /// Lo scarto della manopola visto al giro prima (Hz): serve una seconda lettura uguale prima di accettarlo.
+    knob_seen: Option<f64>,
+    /// La manopola e' in movimento: Aurora non riscrive la ricezione finche' non si ferma.
+    hold_rx: bool,
     last_tx: Option<u64>,
     split_on: bool,
     /// La radio non accetta il comando di split (Hamlib: «funzione non disponibile»): non lo si riprova ogni secondo e il Doppler della ricezione va avanti lo stesso.
@@ -737,6 +745,33 @@ pub fn uplink_due(last: Option<(u64, f64)>, hz: u64, t: f64, interval_s: u32, th
 /// Dopo un rifiuto il ripiego a due VFO si riprova dopo questi secondi.
 const VFO_RETRY_S: f64 = 60.0;
 
+/// Sotto questo scarto (Hz) la ricezione letta e quella scritta sono la stessa (arrotondamenti della radio e passo del Doppler).
+const KNOB_MIN_HZ: f64 = 300.0;
+/// Oltre questo scarto (Hz) non e' una sintonia fine ma un salto (banda, VFO scambiato): non si segue.
+const KNOB_MAX_HZ: f64 = 80_000.0;
+/// Due letture di fila entro tanti Hz: la manopola si e' fermata.
+const KNOB_STABLE_HZ: f64 = 200.0;
+
+/// La manopola della radio: `Some(scarto)` quando la ricezione letta e' diversa da quella scritta da piu' della soglia, per due letture uguali di
+/// fila (manopola ferma); `None` se non c'e' scarto o la manopola si muove ancora. Nel secondo caso, e' un movimento in corso: si veda `knob_moving`.
+fn knob_shift(seen: &mut Option<f64>, written: u64, read: u64) -> Option<f64> {
+    let dev = read as f64 - written as f64;
+    if dev.abs() < KNOB_MIN_HZ || dev.abs() > KNOB_MAX_HZ {
+        *seen = None;
+        return None;
+    }
+    match *seen {
+        Some(prev) if (prev - dev).abs() < KNOB_STABLE_HZ => {
+            *seen = None;
+            Some(dev)
+        }
+        _ => {
+            *seen = Some(dev);
+            None
+        }
+    }
+}
+
 /// La parte radio di un secondo di inseguimento: split o ripiego a due VFO, frequenze, modi. `true` se la ricezione ha funzionato.
 fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: &DopplerPlan, tp: &Transponder, t: f64) -> bool {
     let id = radio.link_id();
@@ -794,7 +829,7 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
         }
     }
     let rx = plan.rx_hz.round() as u64;
-    if st.last_rx.is_none_or(|last| last.abs_diff(rx) >= 5) {
+    if !st.hold_rx && st.last_rx.is_none_or(|last| last.abs_diff(rx) >= 5) {
         match radio.set_rx_hz(rx) {
             Ok(()) => st.last_rx = Some(rx),
             Err(e) => {
@@ -959,6 +994,15 @@ fn drive_rotor(rotor: &dyn SatRotator, st: &mut LoopState, s: &SatSettings, t: f
     }
 }
 
+/// Controlla, scrive su disco e rende attive le impostazioni (dall'interfaccia o dalla manopola della radio).
+fn store_settings(inner: &Inner, s: SatSettings) -> Result<(), String> {
+    s.validate()?;
+    let json = serde_json::to_vec_pretty(&s).map_err(|e| e.to_string())?;
+    std::fs::write(inner.dir.join("satelliti.json"), json).map_err(|e| e.to_string())?;
+    *lock(&inner.settings) = s;
+    Ok(())
+}
+
 fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     let settings = lock(&inner.settings).clone();
     let t = now_unix();
@@ -1012,7 +1056,28 @@ fn tick(inner: &Arc<Inner>, st: &mut LoopState) {
     let catalog = lock(&inner.catalog).clone();
     let transponder = catalog.iter().find(|c| c.norad == norad).and_then(|c| c.transponders.get(settings.transponder).cloned());
     if let Some(tp) = &transponder {
-        let down = settings.down_hz.unwrap_or_else(|| tp.down_center_hz()).clamp(tp.down_low_hz.min(tp.down_high_hz), tp.down_low_hz.max(tp.down_high_hz).max(1.0));
+        let (low, high) = (tp.down_low_hz.min(tp.down_high_hz), tp.down_low_hz.max(tp.down_high_hz).max(1.0));
+        let mut down = settings.down_hz.unwrap_or_else(|| tp.down_center_hz()).clamp(low, high);
+        // la manopola della radio: se l'operatore sintonizza una stazione, la nuova ricezione diventa la frequenza scelta (e la trasmissione la segue)
+        st.hold_rx = false;
+        let knob_page = lock(&inner.seen).is_some_and(|t| t.elapsed() < PAGE_GONE);
+        if settings.follow_knob && settings.doppler_on && knob_page && now.visible && let (Some(radio), Some(written)) = (&radio, st.last_rx) && radio.ready() && let Some(read) = radio.rx_hz() {
+            let dev = read as f64 - written as f64;
+            if let Some(shift) = knob_shift(&mut st.knob_seen, written, read) {
+                down = (down + shift).clamp(low, high);
+                let mut cur = lock(&inner.settings).clone();
+                cur.down_hz = Some(down);
+                match store_settings(inner, cur) {
+                    Ok(()) => tracing::info!("satelliti: manopola della radio, ricezione {read} Hz (scarto {shift:+.0} Hz): nuova frequenza di discesa {down:.0} Hz"),
+                    Err(e) => tracing::warn!("satelliti: manopola della radio, frequenza scelta non salvata: {e}"),
+                }
+            } else if dev.abs() >= KNOB_MIN_HZ && dev.abs() <= KNOB_MAX_HZ {
+                // la manopola gira ancora: non si riscrive la ricezione
+                st.hold_rx = true;
+            }
+        } else {
+            st.knob_seen = None;
+        }
         now.plan = Some(doppler_plan(&look, tp, down, settings.tx_offset_hz));
     }
 
@@ -1373,6 +1438,39 @@ mod tests {
         s.uplink_civ_ic820h = true;
         drive_radio(&radio, &mut st, &s, &plan_at(-2.0), &rs44(), 301.0);
         assert_eq!(radio.count("civ "), 3);
+    }
+
+    #[test]
+    fn la_manopola_si_segue_solo_se_si_ferma_e_non_e_un_salto() {
+        let mut seen = None;
+        // sotto la soglia: la stessa frequenza (arrotondamenti, passo del Doppler)
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_650_100), None);
+        assert!(seen.is_none());
+        // gira ancora: due letture diverse non valgono
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_652_000), None);
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_000), None);
+        // si ferma: due letture uguali di fila, ed e' la nuova frequenza
+        assert_eq!(knob_shift(&mut seen, 435_650_000, 435_655_100), Some(5_100.0));
+        assert!(seen.is_none(), "dopo l'accettazione si riparte da capo");
+        // un salto di banda (145 -> 435 MHz) non e' una sintonia
+        assert_eq!(knob_shift(&mut seen, 145_950_000, 435_950_000), None);
+        assert_eq!(knob_shift(&mut seen, 145_950_000, 435_950_000), None);
+        assert!(seen.is_none());
+    }
+
+    #[test]
+    fn mentre_la_manopola_gira_la_ricezione_non_si_riscrive() {
+        let radio = FakeRadio::default();
+        let mut st = LoopState::default();
+        let s = SatSettings::default();
+        drive_radio(&radio, &mut st, &s, &plan_at(-5.0), &rs44(), 0.0);
+        let scritte = radio.count("rx ");
+        st.hold_rx = true;
+        drive_radio(&radio, &mut st, &s, &plan_at(-4.0), &rs44(), 1.0);
+        assert_eq!(radio.count("rx "), scritte, "con la manopola in movimento Aurora non scrive la ricezione");
+        st.hold_rx = false;
+        drive_radio(&radio, &mut st, &s, &plan_at(-3.0), &rs44(), 2.0);
+        assert!(radio.count("rx ") > scritte, "ferma la manopola, riprende");
     }
 
     #[test]

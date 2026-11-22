@@ -569,6 +569,23 @@ export const satStrings = {
     'IC-820H: escribir la transmisión con órdenes CI-V directas (experimental)',
     'IC-820H: escrever a transmissão com comandos CI-V diretos (experimental)',
   ],
+  'sat.knob.title': ['Manopola della radio', 'Radio tuning knob', 'Abstimmknopf des Funkgeräts', 'Molette de la radio', 'Mando de sintonía de la radio', 'Botão de sintonia do rádio'],
+  'sat.knob.on': [
+    'Segui la manopola della radio',
+    'Follow the radio’s tuning knob',
+    'Dem Abstimmknopf des Funkgeräts folgen',
+    'Suivre la molette de la radio',
+    'Seguir el mando de sintonía de la radio',
+    'Seguir o botão de sintonia do rádio',
+  ],
+  'sat.knob.hint': [
+    'Se con il Doppler acceso giri la manopola per sintonizzare una stazione, Aurora prende la nuova frequenza come quella di ricezione scelta e la trasmissione la segue con lo stesso scarto: il Doppler continua da lì invece di riportare la radio dov’era. Se ne accorge dopo un paio di secondi, a manopola ferma; i salti di banda non contano.',
+    'With Doppler on, if you turn the knob to tune a station, Aurora takes the new frequency as the chosen receive frequency and the transmit frequency follows with the same offset: Doppler carries on from there instead of putting the radio back where it was. It notices after a couple of seconds, once the knob stops; band jumps do not count.',
+    'Drehen Sie bei eingeschaltetem Doppler am Knopf, um eine Station abzustimmen, übernimmt Aurora die neue Frequenz als gewählte Empfangsfrequenz und die Sendefrequenz folgt mit demselben Abstand: der Doppler läuft von dort weiter, statt das Funkgerät zurückzustellen. Es bemerkt das nach ein paar Sekunden, wenn der Knopf still steht; Bandsprünge zählen nicht.',
+    'Avec le Doppler activé, si vous tournez la molette pour accorder une station, Aurora prend la nouvelle fréquence comme fréquence de réception choisie et l’émission la suit avec le même écart : le Doppler continue à partir de là au lieu de remettre la radio où elle était. Elle le remarque après quelques secondes, molette immobile ; les sauts de bande ne comptent pas.',
+    'Con el Doppler encendido, si giras el mando para sintonizar una estación, Aurora toma la nueva frecuencia como la de recepción elegida y la transmisión la sigue con el mismo desfase: el Doppler continúa desde ahí en lugar de devolver la radio a donde estaba. Lo nota tras un par de segundos, con el mando parado; los saltos de banda no cuentan.',
+    'Com o Doppler ligado, se rodar o botão para sintonizar uma estação, a Aurora toma a nova frequência como a de receção escolhida e a transmissão acompanha com o mesmo desvio: o Doppler continua a partir daí em vez de pôr o rádio onde estava. Repara passados uns segundos, com o botão parado; os saltos de banda não contam.',
+  ],
   'sat.uplink.civHint': [
     'Solo per l’IC-820H (modello Hamlib 3032), al posto della trasmissione con due VFO. La prima volta Aurora fa una prova automatica senza scrivere frequenze: legge la banda di ricezione, passa all’altra banda, controlla che la frequenza letta sia dell’altra banda, torna indietro e controlla che la ricezione sia rimasta uguale. Se un passo non va (stessa frequenza, risposta FA, nessuna risposta, ricezione cambiata) non scrive mai niente, il Doppler segue solo la ricezione e il motivo compare qui sotto e nel pacchetto di assistenza. Se la prova riesce, scrive la trasmissione sull’altra banda al massimo ogni 5 secondi, la rilegge e torna sempre sulla banda di ricezione; mai mentre la radio trasmette. Il modo di trasmissione resta da mettere a mano.',
     'Only for the IC-820H (Hamlib model 3032), instead of transmitting with two VFOs. The first time Aurora runs an automatic test without writing any frequency: it reads the receive band, switches to the other band, checks that the frequency read belongs to the other band, switches back and checks that the receive frequency has not changed. If any step fails (same frequency, FA answer, no answer, receive frequency changed) it never writes anything, Doppler follows only the receive side and the reason appears below and in the support package. If the test succeeds, it writes the transmit frequency on the other band at most every 5 seconds, reads it back and always returns to the receive band; never while the radio is transmitting. The transmit mode must still be set by hand.',

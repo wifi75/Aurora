@@ -133,6 +133,16 @@ export function SatSettingsPane({ cat, snap, busy, onSave, onRefresh }: Props & 
       ) : null}
       {cat === 'radio' ? (
         <fieldset>
+          <legend>{t('sat.knob.title')}</legend>
+          <label className="sat-check">
+            <input type="checkbox" checked={s.follow_knob ?? true} onChange={(e) => onSave({ follow_knob: e.target.checked })} />
+            <span>{t('sat.knob.on')}</span>
+          </label>
+          <p className="sat-muted sat-small">{t('sat.knob.hint')}</p>
+        </fieldset>
+      ) : null}
+      {cat === 'radio' ? (
+        <fieldset>
           <legend>{t('sat.uplink.title')}</legend>
           <label className="sat-check">
             <input type="checkbox" checked={s.uplink_two_vfo} onChange={(e) => onSave({ uplink_two_vfo: e.target.checked })} />

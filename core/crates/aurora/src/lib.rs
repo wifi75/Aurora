@@ -2121,6 +2121,11 @@ impl mode_sat::SatRadio for SatRadioAdapter {
         self.cat.hamlib().map_or(0, |h| h.session_id())
     }
 
+    fn rx_hz(&self) -> Option<u64> {
+        // l'ultima lettura della radio (la frequenza che l'operatore ha messo con la manopola), senza un nuovo comando
+        self.cat.hamlib().ok()?.status().frequency_hz
+    }
+
     fn set_rx_mode(&self, mode: &str) -> Result<(), String> {
         self.cat.hamlib().map_err(|e| e.0)?.set_tracking_mode(mode).map_err(|e| e.0)
     }
