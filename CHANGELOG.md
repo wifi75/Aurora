@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Olivia e Contestia, secondo pezzo (ancora non nel programma): il trasmettitore in Rust (`mode-digi/src/olivia.rs`: modulatore MFSK a 8000 Hz con finestra a coseno rialzato, sovrapposizione a meta' simbolo, codice di Gray e fase casuale). Provato contro il ricevitore di fldigi 4.2.13 compilato come arbitro: il testo trasmesso torna uguale in Olivia 4/250, 8/250, 8/500, 16/500 e 32/1000, in Contestia 16/500 e anche con rumore. Mancano il ricevitore, il modo nel menu e la trasmissione dal programma.
+
 ## 0.11.333 - 2026-11-22
 
 - Olivia e Contestia, primo pezzo (non ancora nel programma, nessuna modifica visibile): il codificatore FEC riscritto in Rust (`mode-digi/src/olivia.rs`) e confrontato blocco per blocco con quello della libreria di Jalocha di fldigi 4.2.13, compilato come arbitro nelle prove (feature `fldigi-oracle`): identico per Olivia e Contestia, da 2 a 256 toni, su 200 blocchi casuali ciascuno. Seguono il modulatore, il demodulatore con l'aggancio del sincronismo, il modo nel menu dei modi testuali.

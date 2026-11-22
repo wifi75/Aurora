@@ -50,7 +50,7 @@ mod oracle {
                 fftfilt.display()
             );
         }
-        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp"), manifest.join("oracle/fldigi_olivia.cpp")];
+        let ours = [manifest.join("oracle/fldigi_rtty_rx.cpp"), manifest.join("oracle/fldigi_psk_rx.cpp"), manifest.join("oracle/fldigi_cw_rx.cpp"), manifest.join("oracle/fldigi_olivia.cpp"), manifest.join("oracle/fldigi_olivia_rx.cpp")];
         // dai sorgenti di fldigi, compilati cosi' come sono: filtro FFT (RTTY), filtro FIR e media mobile (PSK, CW), varicode (PSK)
         let theirs = [fftfilt, fldigi.join("filters/filters.cxx"), fldigi.join("psk/pskvaricode.cxx")];
         for f in ours.iter().chain(theirs.iter()) {

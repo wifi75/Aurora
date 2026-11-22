@@ -162,6 +162,172 @@ impl Encoder {
     }
 }
 
+/// Frequenza di campionamento interna di Olivia: 8000 Hz (le lunghezze dei simboli sono potenze di due su questa frequenza).
+pub const RATE_HZ: f64 = 8000.0;
+
+/// Il codice di Gray di un simbolo (i toni vicini differiscono di un solo bit).
+fn gray(binary: u8) -> u8 {
+    binary ^ (binary >> 1)
+}
+
+/// I parametri di un modo: toni, banda e dove sta il centro della banda nell'audio.
+#[derive(Clone, Copy, Debug)]
+pub struct Params {
+    pub variant: Variant,
+    /// Numero di toni: 2, 4, 8, 16, 32, 64, 128 o 256.
+    pub tones: usize,
+    /// Banda in Hz: 125, 250, 500, 1000 o 2000.
+    pub bandwidth: usize,
+    /// Il centro della banda nell'audio, in Hz.
+    pub center_hz: f64,
+}
+
+impl Params {
+    pub fn bits_per_symbol(&self) -> usize {
+        self.tones.max(2).next_power_of_two().trailing_zeros() as usize
+    }
+
+    /// Lunghezza di un simbolo in campioni a 8000 Hz: `2^(bit + 7 - log2(banda / 125))`.
+    fn symbol_len(&self) -> usize {
+        let bw_log = (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2() as usize;
+        1usize << (self.bits_per_symbol() + 7 - bw_log)
+    }
+
+    /// Il primo tono, in bin della FFT di un simbolo.
+    fn first_carrier(&self) -> usize {
+        let bandwidth = (1usize << (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2()) * 125;
+        let fc_offset = bandwidth as f64 * (1.0 - 0.5 / self.tones as f64) / 2.0;
+        let multiplier = (self.center_hz - fc_offset) / 500.0;
+        ((self.symbol_len() / 16) as f64 * multiplier) as usize + 1
+    }
+
+    /// Durata di un simbolo in secondi (la meta' della lunghezza: i simboli si sovrappongono a meta').
+    pub fn symbol_period_s(&self) -> f64 {
+        (self.symbol_len() / 2) as f64 / RATE_HZ
+    }
+}
+
+/// Il modulatore MFSK: ogni simbolo e' un tono con una finestra a coseno rialzato, i simboli si sovrappongono a meta' e la fase cambia di
+/// un quarto di giro, in verso casuale, a ogni simbolo.
+struct Modulator {
+    symbol_len: usize,
+    symbol_separ: usize,
+    first_carrier: i64,
+    cosine: Vec<f64>,
+    out_tap: Vec<f64>,
+    tap_ptr: usize,
+    wrap: i64,
+    symbol_phase: i64,
+    rng: u64,
+}
+
+impl Modulator {
+    fn new(params: &Params) -> Modulator {
+        let symbol_len = params.symbol_len();
+        let cosine = (0..symbol_len).map(|i| (2.0 * std::f64::consts::PI * i as f64 / symbol_len as f64).cos()).collect();
+        Modulator {
+            symbol_len,
+            symbol_separ: symbol_len / 2,
+            first_carrier: params.first_carrier() as i64,
+            cosine,
+            out_tap: vec![0.0; symbol_len],
+            tap_ptr: 0,
+            wrap: symbol_len as i64 - 1,
+            symbol_phase: 0,
+            rng: 0x9E37_79B9_7F4A_7C15,
+        }
+    }
+
+    /// Un bit casuale (xorshift): la fase di partenza del simbolo dopo e' sfasata di un quarto di giro in un verso o nell'altro.
+    fn coin(&mut self) -> bool {
+        self.rng ^= self.rng << 13;
+        self.rng ^= self.rng >> 7;
+        self.rng ^= self.rng << 17;
+        self.rng & 1 == 1
+    }
+
+    fn add_symbol(&mut self, freq: i64, mut phase: i64) {
+        for t in 0..self.symbol_len {
+            let shape = 1.0 - self.cosine[t];
+            self.out_tap[self.tap_ptr] += self.cosine[(phase & self.wrap) as usize] * shape;
+            phase = (phase + freq) & self.wrap;
+            self.tap_ptr = (self.tap_ptr + 1) & self.wrap as usize;
+        }
+    }
+
+    fn send(&mut self, symbol: u8) {
+        let freq = self.first_carrier + 2 * i64::from(gray(symbol));
+        let sep = self.symbol_separ as i64;
+        let len = self.symbol_len as i64;
+        self.symbol_phase = (self.symbol_phase + freq * (sep / 2 - len / 2)) & self.wrap;
+        self.add_symbol(freq, self.symbol_phase);
+        self.symbol_phase = (self.symbol_phase + freq * (sep / 2 + len / 2)) & self.wrap;
+        let differ = len / 4;
+        self.symbol_phase += if self.coin() { -differ } else { differ };
+        self.symbol_phase &= self.wrap;
+    }
+
+    /// I prossimi `symbol_separ` campioni (la meta' di un simbolo): si leggono e si azzerano nella coda di uscita.
+    fn output(&mut self) -> Vec<f64> {
+        let mut out = Vec::with_capacity(self.symbol_separ);
+        for _ in 0..self.symbol_separ {
+            out.push(self.out_tap[self.tap_ptr]);
+            self.out_tap[self.tap_ptr] = 0.0;
+            self.tap_ptr = (self.tap_ptr + 1) & self.wrap as usize;
+        }
+        out
+    }
+}
+
+/// Il trasmettitore: testo in, audio a 8000 Hz in uscita (ampiezza massima 1).
+pub struct Transmitter {
+    params: Params,
+    encoder: Encoder,
+}
+
+impl Transmitter {
+    pub fn new(params: Params) -> Option<Transmitter> {
+        let encoder = Encoder::new(params.variant, params.bits_per_symbol())?;
+        Some(Transmitter { params, encoder })
+    }
+
+    pub fn params(&self) -> &Params {
+        &self.params
+    }
+
+    /// Caratteri che il trasmettitore manda per secondo.
+    pub fn characters_per_second(&self) -> f64 {
+        self.encoder.bits_per_symbol() as f64 / (self.encoder.symbols_per_block() as f64 * self.params.symbol_period_s())
+    }
+
+    /// Tutta la trasmissione di un testo: parte con un carattere nullo (come fa la libreria), poi il testo, poi il blocco si completa con
+    /// caratteri nulli e finisce. L'audio e' a 8000 Hz; ogni mezzo simbolo e' normalizzato al suo massimo, come fa la libreria.
+    pub fn transmit(&self, text: &[u8]) -> Vec<f32> {
+        let bits = self.encoder.bits_per_symbol();
+        let mut chars = vec![0u8];
+        chars.extend_from_slice(text);
+        let mut modulator = Modulator::new(&self.params);
+        let mut audio: Vec<f32> = Vec::new();
+        let block_symbols = self.encoder.symbols_per_block();
+        for block in chars.chunks(bits) {
+            let symbols = self.encoder.encode_block(block);
+            for symbol in symbols.iter().take(block_symbols) {
+                modulator.send(*symbol);
+                let chunk = modulator.output();
+                let peak = chunk.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+                let scale = if peak > 0.0 { 1.0 / peak } else { 0.0 };
+                audio.extend(chunk.iter().map(|v| (v * scale) as f32));
+            }
+        }
+        // la coda dell'ultimo simbolo (si sovrappone a meta')
+        let chunk = modulator.output();
+        let peak = chunk.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+        let scale = if peak > 0.0 { 1.0 / peak } else { 0.0 };
+        audio.extend(chunk.iter().map(|v| (v * scale) as f32));
+        audio
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
