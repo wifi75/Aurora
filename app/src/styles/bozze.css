@@ -1675,3 +1675,44 @@ html:root:root[data-bozza][data-theme='light'] .digi-status select {
 }
 html:root:root[data-bozza][data-theme='light'] .digi-status :is(button.digi-st, select, input):hover:not(:disabled) { background-color: #ece8ff !important; }
 html:root:root[data-bozza][data-theme='light'] .digi-status :is(button.digi-st.on, button.digi-st--rx) { background-color: rgba(11, 154, 106, .18) !important; color: #075c47 !important; border-color: rgba(11, 154, 106, .55) !important; }
+
+/* pagina Satelliti: menu, pulsanti e campi delle barre con la stessa forma degli altri modi */
+html:root:root[data-bozza] .sat-page :is(select, button.sat-clear, button.sat-alerts-btn, button.sat-icon-btn):not(.sstv-btn) {
+  box-sizing: border-box; min-height: 28px !important;
+  border: 1px solid rgba(142, 123, 255, .35) !important; border-radius: 8px !important;
+  background-color: rgba(10, 16, 32, .55) !important; color: var(--text) !important; box-shadow: none !important;
+  font-size: 12px !important; font-weight: 600 !important; line-height: 1.1;
+}
+html:root:root[data-bozza] .sat-page select {
+  appearance: none; -webkit-appearance: none; padding: 0 24px 0 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7b6cf' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px;
+}
+html:root:root[data-bozza] .sat-page :is(select, button.sat-clear, button.sat-alerts-btn, button.sat-icon-btn):hover:not(:disabled) { background-color: rgba(142, 123, 255, .22) !important; }
+html:root:root[data-bozza] .sat-page button.sat-alerts-btn.on { background-color: rgba(44, 245, 164, .16) !important; border-color: rgba(44, 245, 164, .55) !important; }
+html:root:root[data-bozza][data-theme='light'] .sat-page :is(select, button.sat-clear, button.sat-alerts-btn, button.sat-icon-btn):not(.sstv-btn) {
+  border-color: rgba(91, 69, 214, .45) !important; background-color: rgba(255, 255, 255, .7) !important; color: #1d2a44 !important;
+}
+html:root:root[data-bozza][data-theme='light'] .sat-page select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d2a44' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+html:root:root[data-bozza][data-theme='light'] .sat-page :is(select, button.sat-clear, button.sat-alerts-btn, button.sat-icon-btn):hover:not(:disabled) { background-color: #ece8ff !important; }
+html:root:root[data-bozza][data-theme='light'] .sat-page button.sat-alerts-btn.on { background-color: rgba(11, 154, 106, .18) !important; border-color: rgba(11, 154, 106, .55) !important; }
+
+/* barre del titolo dei riquadri delle altre pagine (Satelliti, Propagazione...): stesso gradiente e stesso testo delle finestre della Stazione */
+html:root:root[data-bozza] .dash-bar { background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6) !important; border-bottom: 1px solid #afa9ec; border-radius: 9px 9px 0 0; }
+html:root:root[data-bozza] .dash-bar .dash-title { color: #1d2a44 !important; }
+html:root:root[data-bozza]:not([data-theme='light']) .dash-bar { background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e) !important; border-bottom-color: #3a2c6e; }
+html:root:root[data-bozza]:not([data-theme='light']) .dash-bar .dash-title { color: #e6ecf8 !important; }
+
+/* titoli dei riquadri della pagina WEFAX: barra con lo stesso gradiente delle altre pagine */
+html:root:root[data-bozza] .wefax-card .wefax-card-title {
+  margin: -4.8px -8px 6px; padding: 3px 10px; border-radius: 13px 13px 0 0; font-size: 12px; font-weight: 600;
+  background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); border-bottom: 1px solid #afa9ec; color: #1d2a44;
+}
+html:root:root[data-bozza]:not([data-theme='light']) .wefax-card .wefax-card-title { background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8; }
+html:root:root[data-bozza] .wefax-history > .sstv-hist-head {
+  margin: -4.8px -8px 4px; padding: 3px 10px; border-radius: 13px 13px 0 0; font-size: 12px; font-weight: 600;
+  background: linear-gradient(90deg, #9fe1cb, #b5d4f4 50%, #cecbf6); border-bottom: 1px solid #afa9ec; color: #1d2a44;
+}
+html:root:root[data-bozza]:not([data-theme='light']) .wefax-history > .sstv-hist-head { background: linear-gradient(90deg, #0d4a45, #1b3c66 50%, #3a2c6e); border-bottom-color: #3a2c6e; color: #e6ecf8; }
