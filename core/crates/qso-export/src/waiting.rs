@@ -38,6 +38,13 @@ pub struct Waiting {
     /// Il nominativo, per i messaggi del registro.
     #[serde(default)]
     pub call: String,
+    /// Banda, modo e istante del QSO (secondi Unix): servono a controllare se il log ha gia' il QSO prima di rimandarlo. Nei file scritti prima mancano.
+    #[serde(default)]
+    pub band: String,
+    #[serde(default)]
+    pub mode: String,
+    #[serde(default)]
+    pub when: u64,
 }
 
 /// La coda dei QSO in attesa, con il file che la conserva.
@@ -341,7 +348,7 @@ mod tests {
         let remote: SocketAddr = "192.168.1.20:2237".parse().unwrap();
         let mut q = Queue::load(Some(file.clone()));
         for (i, call) in ["K1ABC", "K2ABC"].iter().enumerate() {
-            q.push(Waiting { to: remote, record: format!("r{i}"), at: 100, call: (*call).into() });
+            q.push(Waiting { to: remote, record: format!("r{i}"), at: 100, call: (*call).into(), band: String::new(), mode: String::new(), when: 0 });
         }
         assert!(file.exists());
         assert_eq!(Queue::load(Some(file.clone())).len(), 2, "la coda resta dopo un riavvio");
@@ -352,12 +359,24 @@ mod tests {
         assert!(q.is_empty());
         assert!(!file.exists(), "vuota, il file si toglie");
         // opzione spenta: si manda subito
-        q.push(Waiting { to: remote, record: "r2".into(), at: 300, call: "K3ABC".into() });
+        q.push(Waiting { to: remote, record: "r2".into(), at: 300, call: "K3ABC".into(), band: String::new(), mode: String::new(), when: 0 });
         assert_eq!(q.due(&[], 301).len(), 1);
         // troppo vecchio: scartato
-        q.push(Waiting { to: remote, record: "r3".into(), at: 0, call: "K4ABC".into() });
+        q.push(Waiting { to: remote, record: "r3".into(), at: 0, call: "K4ABC".into(), band: String::new(), mode: String::new(), when: 0 });
         assert!(q.due(&[remote], MAX_AGE_SECS + 10).is_empty());
         assert!(q.is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Una coda scritta prima (senza banda, modo e istante) si legge ancora: quei QSO partono come prima, senza controllo.
+    #[test]
+    fn a_queue_written_by_an_older_version_is_still_read() {
+        let dir = std::env::temp_dir().join(format!("aurora-coda-vecchia-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join(FILE_NAME);
+        std::fs::write(&file, r#"[{"to":"192.168.1.20:2237","record":"r0","at":100,"call":"IU3ABC"}]"#).unwrap();
+        let q = Queue::load(Some(file));
+        assert_eq!(q.len(), 1);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

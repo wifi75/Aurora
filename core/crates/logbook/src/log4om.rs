@@ -255,6 +255,58 @@ pub fn read_all(path: &Path) -> Result<Vec<AdifQso>, LogError> {
     Ok(out)
 }
 
+/// Un QSO di cui chiedere se c'e' gia' nel log di Log4OM.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct QsoKey {
+    pub call: String,
+    pub band: String,
+    pub mode: String,
+    /// Istante del QSO (secondi Unix, UTC).
+    pub when: u64,
+}
+
+/// Quanto possono differire gli orari dello stesso QSO nei due log (Log4OM scrive l'ora di inizio, Aurora quella di fine).
+const SAME_QSO_SECS: u64 = 15 * 60;
+
+/// Giorni dal 1970-01-01 per una data del calendario (algoritmo di H. Hinnant).
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+/// `AAAAMMGG` e `HHMMSS` (anche vuoto) in secondi Unix.
+fn unix_of(date: &str, time: &str) -> Option<u64> {
+    if date.len() != 8 || !date.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    let (y, m, d) = (date[0..4].parse::<i64>().ok()?, date[4..6].parse::<i64>().ok()?, date[6..8].parse::<i64>().ok()?);
+    let t: String = time.chars().filter(char::is_ascii_digit).collect();
+    let part = |i: usize| t.get(i..i + 2).and_then(|x| x.parse::<i64>().ok()).unwrap_or(0);
+    let secs = days_from_civil(y, m, d) * 86_400 + part(0) * 3600 + part(2) * 60 + part(4);
+    u64::try_from(secs).ok()
+}
+
+/// Il QSO e' gia' nel log (`existing`, da [`read_all`])? Stesso nominativo, stessa banda, stesso modo e orario entro un quarto d'ora; se nel log
+/// manca l'ora basta lo stesso giorno. Meglio un QSO in meno che un doppione: nel dubbio (un campo vuoto) non lo si considera presente solo
+/// se il nominativo o la banda sono diversi.
+pub fn contains(existing: &[AdifQso], key: &QsoKey) -> bool {
+    let (call, band, mode) = (key.call.trim().to_uppercase(), key.band.trim().to_lowercase(), key.mode.trim().to_uppercase());
+    existing.iter().any(|q| {
+        if q.call != call || q.band != band || (!q.mode.is_empty() && !mode.is_empty() && q.mode != mode) {
+            return false;
+        }
+        match unix_of(&q.date, &q.time_on) {
+            Some(at) if !q.time_on.is_empty() => at.abs_diff(key.when) <= SAME_QSO_SECS,
+            Some(at) => at / 86_400 == key.when / 86_400,
+            None => false,
+        }
+    })
+}
+
 /// Due lettere da A a R e due cifre: «JN45».
 fn is_square(g: &str) -> bool {
     let b = g.as_bytes();
@@ -372,5 +424,38 @@ mod tests {
         assert_eq!(all.len(), 3);
         assert!(all.iter().all(|q| q.confirmed.is_none()));
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    fn log_qso(call: &str, band: &str, mode: &str, date: &str, time: &str) -> AdifQso {
+        AdifQso { call: call.into(), band: band.into(), mode: mode.into(), date: date.into(), time_on: time.into(), ..AdifQso::default() }
+    }
+
+    /// Un QSO gia' in Log4OM non si rimanda; uno che manca si'.
+    #[test]
+    fn a_qso_already_in_the_log_is_recognised_and_a_missing_one_is_not() {
+        let log = vec![log_qso("IU3ABC", "20m", "FT8", "20261122", "130000")];
+        let key = |call: &str, band: &str, mode: &str, hh: u64, mm: u64| QsoKey {
+            call: call.into(),
+            band: band.into(),
+            mode: mode.into(),
+            when: unix_of("20261122", "000000").unwrap() + hh * 3600 + mm * 60,
+        };
+        assert!(contains(&log, &key("IU3ABC", "20m", "FT8", 13, 0)), "stesso QSO");
+        assert!(contains(&log, &key("iu3abc", "20M", "ft8", 13, 1)), "maiuscole diverse e un minuto dopo (ora di fine)");
+        assert!(contains(&log, &key("IU3ABC", "20m", "FT8", 13, 14)), "entro un quarto d'ora");
+        assert!(!contains(&log, &key("IU3ABC", "20m", "FT8", 13, 20)), "stesso nominativo piu' tardi: e' un altro QSO");
+        assert!(!contains(&log, &key("IU3ABC", "40m", "FT8", 13, 0)), "altra banda");
+        assert!(!contains(&log, &key("IU3ABC", "20m", "FT4", 13, 0)), "altro modo");
+        assert!(!contains(&log, &key("IU3ABD", "20m", "FT8", 13, 0)), "altro nominativo");
+        assert!(!contains(&[], &key("IU3ABC", "20m", "FT8", 13, 0)), "log vuoto");
+    }
+
+    /// Senza l'ora nel log vale lo stesso giorno; una data illeggibile non fa mai dire «c'e' gia'».
+    #[test]
+    fn without_a_time_the_same_day_counts_and_an_unreadable_date_never_does() {
+        let key = QsoKey { call: "IU3ABC".into(), band: "20m".into(), mode: "FT8".into(), when: unix_of("20261122", "235900").unwrap() };
+        assert!(contains(&[log_qso("IU3ABC", "20m", "FT8", "20261122", "")], &key));
+        assert!(!contains(&[log_qso("IU3ABC", "20m", "FT8", "20261121", "")], &key));
+        assert!(!contains(&[log_qso("IU3ABC", "20m", "FT8", "", "")], &key));
     }
 }

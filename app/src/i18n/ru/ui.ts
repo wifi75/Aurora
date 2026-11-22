@@ -2733,7 +2733,7 @@ export const RU_UI: Record<string, string> = {
   "int.preset": "Тип",
   "int.remove": "Удалить",
   "int.resend": "Повторная отправка пропущенных QSO",
-  "int.resend.help": "Для журнала на этом ПК (127.0.0.1) с «ADIF по UDP» или «XML N1MM»: если при проведении QSO журнал закрыт, Aurora откладывает его и отправляет сама, когда журнал снова открыт (примерно через 15 секунд, в том порядке, в каком вы их провели). Каждое QSO отправляется только один раз; очередь сохраняется после закрытия Aurora и удаляется через семь дней. Если указан адрес другого ПК, узнать, открыт ли журнал, нельзя: QSO отправляются сразу, как и раньше.",
+  "int.resend.help": "For a log on this PC (127.0.0.1) with “ADIF over UDP” or “N1MM XML”: if the log is closed when you make a QSO, Aurora keeps it aside and sends it by itself when the log is opened again (after about 15 seconds, in the order you made them). Each QSO is sent only once, the queue survives closing Aurora and is dropped after seven days. With the address of another PC there is no way to know whether the log is open: QSOs are sent right away as before. If Aurora knows the Log4OM database (Settings › Log, cluster and services › Log and services), it first checks that log and does not resend the QSOs it already has: only what is missing is sent.",
   "int.tip.adif": "Для Log4OM, WaveLogGate и журналов, которые получают QSO как ADIF по UDP (порт 2333).",
   "int.tip.multicast": "Чтобы несколько программ могли слушать один порт вместе (групповой адрес 239.255.0.1).",
   "int.tip.n1mm": "Для N1MM Logger+, HRD и программ, читающих XML N1MM (порт 12060).",

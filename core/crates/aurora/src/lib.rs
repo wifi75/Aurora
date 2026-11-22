@@ -2544,6 +2544,20 @@ pub async fn run(
     };
     // «Rimanda i QSO persi»: i destinatari che lo vogliono (coda nel file `log-in-attesa.json` della cartella dei dati)
     let resend = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| resend_targets(&s.reports())).unwrap_or_default()));
+    let log4om_choice = Log4omChoice::start(&config);
+    // «Rimanda i QSO persi»: prima di rimandare si guarda nel log di Log4OM (se il suo database e' noto) e si manda solo quello che manca
+    let already_there: qso_export::AlreadyThere = {
+        let path = Arc::clone(&log4om_choice.current);
+        Arc::new(move |keys: &[(String, String, String, u64)]| {
+            let Some(db) = path.read().ok().and_then(|p| p.clone()) else { return Vec::new() };
+            let Ok(existing) = logbook::log4om::read_all(&db) else { return Vec::new() };
+            keys.iter()
+                .map(|(call, band, mode, when)| {
+                    *when > 0 && logbook::log4om::contains(&existing, &logbook::log4om::QsoKey { call: call.clone(), band: band.clone(), mode: mode.clone(), when: *when })
+                })
+                .collect()
+        })
+    };
     let _exporter = Exporter::spawn_with_resend(
         &bus,
         Arc::clone(&logbook),
@@ -2553,6 +2567,7 @@ pub async fn run(
         Arc::new(std::sync::atomic::AtomicBool::new(false)),
         Arc::clone(&resend),
         Some(config.data_dir.join(qso_export::waiting::FILE_NAME)),
+        Some(already_there),
     );
     if let Some(store) = &engine_settings {
         let (store, shared, base, resend) = (Arc::clone(store), Arc::clone(&shared_targets), targets.clone(), Arc::clone(&resend));
@@ -2575,7 +2590,6 @@ pub async fn run(
     // le evidenziazioni di «nuovo» (scheda Notifiche): decidono le etichette delle decodifiche, anche «gia' lavorato»; cambiano a caldo
     let highlight_flags: engine_jtdx::enrich::SharedFlags = Arc::new(std::sync::RwLock::new(engine_settings.as_ref().map(|s| s.reports().highlights).unwrap_or_default()));
     // il database di Log4OM2: quello scelto nelle Impostazioni vince sul rilevamento automatico, non su aurora.env
-    let log4om_choice = Log4omChoice::start(&config);
     let log_sources = LogSources { files: worked_paths, logbook: Arc::clone(&logbook), log4om: Arc::clone(&log4om_choice.current), filter: Arc::clone(&log_filter) };
     let enrichment: Option<(Arc<DxccDb>, SharedWorked)> = load_dxcc(config.cty_path.as_deref()).map(|db| {
         let worked = Arc::new(std::sync::RwLock::new(load_worked(&log_sources, &db)));

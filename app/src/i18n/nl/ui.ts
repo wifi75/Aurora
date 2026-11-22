@@ -2733,7 +2733,7 @@ export const NL_UI: Record<string, string> = {
   "int.preset": "Type",
   "int.remove": "Verwijderen",
   "int.resend": "Gemiste QSO’s opnieuw sturen",
-  "int.resend.help": "Voor een log op deze pc (127.0.0.1) met “ADIF via UDP” of “N1MM XML”: is het log gesloten wanneer je een QSO maakt, dan houdt Aurora het apart en stuurt het zelf zodra het log weer open is (na ongeveer 15 seconden, in de volgorde waarin je ze maakte). Elke QSO gaat maar één keer weg, de wachtrij blijft ook als je Aurora sluit en wordt na zeven dagen weggegooid. Met het adres van een andere pc valt niet te weten of het log open is: de QSO’s gaan zoals vroeger meteen weg.",
+  "int.resend.help": "Voor een log op deze pc (127.0.0.1) met “ADIF via UDP” of “N1MM XML”: is het log gesloten wanneer je een QSO maakt, dan houdt Aurora het apart en stuurt het zelf zodra het log weer open is (na ongeveer 15 seconden, in de volgorde waarin je ze maakte). Elke QSO gaat maar één keer weg, de wachtrij blijft ook als je Aurora sluit en wordt na zeven dagen weggegooid. Met het adres van een andere pc valt niet te weten of het log open is: de QSO’s gaan zoals vroeger meteen weg. Kent Aurora de Log4OM-database (Instellingen › Log, cluster en diensten › Log en diensten), dan controleert het eerst dat log en verstuurt geen QSO's opnieuw die het al heeft: alleen wat ontbreekt wordt verstuurd.",
   "int.tip.adif": "Voor Log4OM, WaveLogGate en logboeken die de QSO als ADIF over UDP ontvangen (poort 2333).",
   "int.tip.multicast": "Om meerdere programma’s samen op dezelfde poort te laten luisteren (groepsadres 239.255.0.1).",
   "int.tip.n1mm": "Voor N1MM Logger+, HRD en programma’s die N1MM-XML lezen (poort 12060).",

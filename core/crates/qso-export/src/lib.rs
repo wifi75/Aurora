@@ -40,6 +40,9 @@ pub struct ExportStats {
     pub last_error: Option<String>,
 }
 
+/// Dato un elenco di (nominativo, banda, modo, istante in secondi Unix), dice per ciascuno se il log di destinazione ha gia' il QSO.
+pub type AlreadyThere = Arc<dyn Fn(&[(String, String, String, u64)]) -> Vec<bool> + Send + Sync>;
+
 #[derive(Clone)]
 pub struct Exporter {
     stats: Arc<Mutex<ExportStats>>,
@@ -89,7 +92,7 @@ impl Exporter {
         now: Arc<dyn Fn() -> u64 + Send + Sync>,
         eqsl: Arc<AtomicBool>,
     ) -> Exporter {
-        Exporter::spawn_with_resend(bus, book, targets, station, now, eqsl, Arc::new(RwLock::new(Vec::new())), None)
+        Exporter::spawn_with_resend(bus, book, targets, station, now, eqsl, Arc::new(RwLock::new(Vec::new())), None, None)
     }
 
     /// Come `spawn_shared_eqsl`, con «Rimanda i QSO persi» (vedi [`waiting`]): per gli indirizzi di `resend` (ADIF su UDP e XML N1MM) un
@@ -104,6 +107,7 @@ impl Exporter {
         eqsl: Arc<AtomicBool>,
         resend: Arc<RwLock<Vec<SocketAddr>>>,
         queue_file: Option<PathBuf>,
+        already_there: Option<AlreadyThere>,
     ) -> Exporter {
         let stats = Arc::new(Mutex::new(ExportStats::default()));
         let shared = Arc::clone(&stats);
@@ -121,7 +125,21 @@ impl Exporter {
                     _ = tick.tick() => {
                         if !queue.is_empty() {
                             let wanted = resend.read().map(|r| r.clone()).unwrap_or_default();
-                            for w in queue.due(&wanted, now()) {
+                            let due = queue.due(&wanted, now());
+                            // si manda solo quello che al log manca: quelli che ha gia' (per esempio importati a mano) non si rimandano
+                            let present = match &already_there {
+                                Some(check) if due.iter().any(|w| w.when > 0) => {
+                                    let keys: Vec<(String, String, String, u64)> = due.iter().map(|w| (w.call.clone(), w.band.clone(), w.mode.clone(), w.when)).collect();
+                                    let check = Arc::clone(check);
+                                    tokio::task::spawn_blocking(move || check(&keys)).await.unwrap_or_default()
+                                }
+                                _ => Vec::new(),
+                            };
+                            for (i, w) in due.into_iter().enumerate() {
+                                if present.get(i).copied().unwrap_or(false) {
+                                    tracing::info!("QSO con {} non rimandato a {}: il log ce l'ha gia'", w.call, w.to);
+                                    continue;
+                                }
                                 let target = Target::UdpAdif(w.to);
                                 let result = send(&target, socket.as_ref(), &w.record).await;
                                 if result.is_ok() {
@@ -161,7 +179,7 @@ impl Exporter {
                                 && held.contains(to)
                                 && queue.should_hold(*to)
                             {
-                                queue.push(waiting::Waiting { to: *to, record, at: now(), call: q.call.clone() });
+                                queue.push(waiting::Waiting { to: *to, record, at: now(), call: q.call.clone(), band: q.band.clone(), mode: q.mode.clone(), when: stamp / 1000 });
                                 continue;
                             }
                             let result = send(target, socket.as_ref(), &record).await;

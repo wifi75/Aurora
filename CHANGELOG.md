@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- «Rimanda i QSO persi»: prima di rimandare i QSO tenuti da parte, se si conosce il database di Log4OM, Aurora guarda nel suo log e manda solo quello che manca (stesso nominativo, banda e modo entro un quarto d'ora = c'e' gia', non si rimanda): niente doppioni se i QSO erano gia' arrivati per altra via (per esempio importati a mano). Senza il database noto, o con code scritte da versioni precedenti, i QSO partono come prima. Provato con prove automatiche del confronto, non con una Log4OM vera.
+
 - Menu a tendina aperti: le voci hanno sempre sfondo e testo propri (scuro con testo chiaro nel tema scuro, bianco con testo scuro nel chiaro): prima, con il testo chiaro del menu su uno sfondo chiaro, non si leggeva niente (per esempio il menu dei modi dell'SSTV).
 - Barra del WEFAX: il misuratore accanto alla frequenza e il nome della stazione non sono piu' tagliati (se manca spazio la riga va a capo); la scritta «RX» in ricezione e' un riquadro verde pieno ben visibile, nei due temi (anche nella barra dell'SSTV).
 
