@@ -19,7 +19,7 @@ describe('piano di banda di Olivia e Contestia', () => {
     const righe = bandPlanRows('OLIVIA').filter((r) => r.region === 'ALL' || r.region === 'R1');
     expect(righe.length).toBe(Object.keys(TRATTI).length);
     for (const r of righe) {
-      const [da, a] = TRATTI[r.band];
+      const [da, a] = TRATTI[r.band] ?? [0, 0];
       expect(r.hz).toBeGreaterThanOrEqual(da);
       expect(r.hz + 1_750).toBeLessThanOrEqual(a);
     }
