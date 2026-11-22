@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.331 - 2026-11-22
+
 - Livello separato per il Tune (richiesta di Pascal, come `pwrBandTuneMemory` di WSJT-X): nelle impostazioni audio una casella (spenta di fabbrica) fa avere al Tune il suo livello «Lvl TX» per ogni banda; finito il Tune, o alla prima trasmissione vera, torna il livello normale.
 
 - WEFAX, «L'AFC corregge anche la radio»: nuova casella nelle impostazioni di ricezione (spenta di fabbrica, serve l'AFC acceso e la radio collegata con Hamlib): tra una cartina e l'altra, mai dentro l'immagine, lo scarto misurato dall'AFC (almeno 30 Hz) si porta sulla frequenza della radio con un solo comando di frequenza, al massimo ogni 20 secondi, e la correzione del decodificatore riparte da zero. Cambia la frequenza della radio e quella registrata. Provato con una prova automatica della decisione, non con la radio.
