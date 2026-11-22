@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.333',
-    released: '2026-11-22T18:00:00Z',
+    released: '2026-11-22T18:21:11Z',
     kind: 'fixed',
     title: [
       'Schede di WEFAX, SSTV, Propagazione e Statistiche: una finestra sola',
@@ -44,7 +44,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.333',
-    released: '2026-11-22T18:00:00Z',
+    released: '2026-11-22T18:21:11Z',
     kind: 'changed',
     title: [
       'Barra del WEFAX su una riga e ALC nel display compatto',
@@ -65,7 +65,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.333',
-    released: '2026-11-22T18:00:00Z',
+    released: '2026-11-22T18:21:11Z',
     kind: 'fixed',
     title: [
       'DX Cluster: modo «DIGI» nei tratti dei digimodi',
