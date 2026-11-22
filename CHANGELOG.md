@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+## 0.11.333 - 2026-11-22
+
 - Olivia e Contestia, primo pezzo (non ancora nel programma, nessuna modifica visibile): il codificatore FEC riscritto in Rust (`mode-digi/src/olivia.rs`) e confrontato blocco per blocco con quello della libreria di Jalocha di fldigi 4.2.13, compilato come arbitro nelle prove (feature `fldigi-oracle`): identico per Olivia e Contestia, da 2 a 256 toni, su 200 blocchi casuali ciascuno. Seguono il modulatore, il demodulatore con l'aggancio del sincronismo, il modo nel menu dei modi testuali.
 
 - DX Cluster, colonna del modo: gli spot nei tratti «narrow band modes - digimodes» del piano IARU Regione 1 (letto dal PDF dell'ARI: 1838-1843, 3570-3600, 7040-7050, 10130-10150, 14070-14099, 18095-18109, 21070-21110, 24915-24929, 28070-28150 kHz) senza altro indizio ora mostrano «DIGI» (il filtro «Digi» li trova); prima il modo restava vuoto, per esempio uno spot a 14,092 MHz con solo «QSX 14.093». Il commento e le frequenze di lavoro note (FT8, FT4, WSPR...) vincono ancora; beacon e tratti misti restano senza modo.
