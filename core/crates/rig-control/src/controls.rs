@@ -89,6 +89,8 @@ pub const CONTROLS: &[Control] = &[
     own_press("wspr_type1"),
     // «Lvl TX» (cursore del livello audio di uscita): 1 = volume di Windows dell'uscita, 0 = attenuazione del segnale generato (come WSJT-X e JTDX)
     own_press("tx_level_windows"),
+    // «Ricorda la potenza per banda» (1/0): il livello Lvl TX si ricorda per ogni banda e modo
+    own_press("pwr_band_memory"),
     // JT65: «Include averaging» (`ndepth & 16`) e «Auto Clear Avg» (`ndepth & 128`) di WSJT-X, la media dei periodi (`avg65`)
     own_toggle("jt65_avg"),
     own_toggle("jt65_auto_clr"),

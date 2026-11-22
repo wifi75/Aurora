@@ -90,6 +90,9 @@ pub struct SavedControls {
     /// Nei file scritti prima manca: vale il valore di fabbrica.
     #[serde(default)]
     pub tx_level_windows: Option<bool>,
+    /// «Ricorda la potenza per banda» (come `pwrBandTxMemory` di WSJT-X). Nei file scritti prima manca: vale la scelta di fabbrica (spenta).
+    #[serde(default)]
+    pub pwr_band_memory: Option<bool>,
 }
 
 fn default_fst4_period() -> u32 {
@@ -674,6 +677,7 @@ impl NativeControls {
             wspr_pct: Some(crate::wspr::tx_pct()),
             wspr_type1: Some(crate::wspr::prefer_type1()),
             tx_level_windows: Some(tx_level_windows()),
+            pwr_band_memory: Some(self.band_memory.load(Ordering::Relaxed)),
         }
     }
 
@@ -708,6 +712,9 @@ impl NativeControls {
             self.attenuation.store(saved.attenuation.min(450), Ordering::Relaxed);
         } else {
             self.attenuation.store(0, Ordering::Relaxed);
+        }
+        if let Some(on) = saved.pwr_band_memory {
+            self.set_band_memory(on);
         }
         JT4_SUBMODE.store(saved.jt4_sub.min(6), Ordering::Relaxed);
         JT65_SUBMODE.store(saved.jt65_sub.min(2), Ordering::Relaxed);
@@ -938,6 +945,11 @@ impl NativeControls {
                 TX_LEVEL_WINDOWS.store(value == 1, Ordering::Relaxed);
                 true
             }
+            // «Ricorda la potenza per banda»: 1 acceso, 0 spento (di fabbrica come in WSJT-X)
+            "pwr_band_memory" if value <= 1 => {
+                self.set_band_memory(value == 1);
+                true
+            }
             _ => false,
         }
     }
@@ -963,6 +975,7 @@ impl NativeControls {
             ("wspr_pct".to_string(), u32::from(crate::wspr::tx_pct())),
             ("wspr_type1".to_string(), u32::from(crate::wspr::prefer_type1())),
             ("tx_level_windows".to_string(), u32::from(tx_level_windows())),
+            ("pwr_band_memory".to_string(), u32::from(self.band_memory.load(Ordering::Relaxed))),
         ]
     }
 
@@ -1535,6 +1548,21 @@ mod tests {
         controls.tx_view.lock().expect("vista").enabled = true;
         let reading = rig.controls().expect("lettura");
         assert!(reading.contains(&("enable_tx".to_string(), true)) && reading.contains(&("auto_tx".to_string(), false)), "{reading:?}");
+    }
+
+    /// «Ricorda la potenza per banda» e' un controllo vero: si accende e si spegne dall'interfaccia, si legge e sopravvive al riavvio.
+    #[test]
+    fn the_band_memory_is_a_control_that_is_read_and_saved() {
+        let (rig, controls) = rig();
+        assert!(!controls.saved().pwr_band_memory.unwrap_or(true), "spenta di fabbrica");
+        rig.set_control_value("pwr_band_memory", 1).expect("acceso");
+        assert!(controls.values().contains(&("pwr_band_memory".to_string(), 1)));
+        let saved = controls.saved();
+        assert_eq!(saved.pwr_band_memory, Some(true));
+        controls.set_band_memory(false);
+        controls.restore(&saved);
+        assert!(controls.values().contains(&("pwr_band_memory".to_string(), 1)), "dopo il riavvio resta accesa");
+        assert!(rig.set_control_value("pwr_band_memory", 2).is_err(), "valore fuori campo");
     }
 
     /// `m_pwrBandTxMemory` di JTDX: il livello e' ricordato per banda (e modo); al cambio di banda si ripristina quello della nuova, se mai impostato
