@@ -17,8 +17,9 @@ pub const CTRL_ADDR: u8 = 0xE0;
 pub const SEL_MAIN: u8 = 0xD0;
 /// `07 D1`: banda secondaria.
 pub const SEL_SUB: u8 = 0xD1;
-/// Scarto massimo fra frequenza scritta e riletta (Hz).
-pub const TOLERANCE_HZ: u64 = 10;
+/// Scarto massimo fra frequenza scritta e riletta (Hz). La radio arrotonda al suo passo di sintonia: con 10 Hz la conferma falliva per 14 o 33 Hz
+/// (pacchetti di Vladimir, 2026-11-22) e il ripiego si spegneva senza un vero errore.
+pub const TOLERANCE_HZ: u64 = 100;
 
 /// La trama CI-V completa (`FE FE 42 E0 <comando> FD`) come la vuole il comando `w` di `rigctld`: `\0xFE\0xFE...`.
 /// Le cifre sono maiuscole di proposito: con `xfd` minuscolo Hamlib conterebbe una seconda lettura e aspetterebbe fino al timeout.
@@ -405,6 +406,14 @@ pub fn write_tx(port: &mut dyn CivPort, log: &mut Vec<String>, probe: &Probe, tx
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn la_conferma_ammette_l_arrotondamento_della_radio_ma_non_un_chilohertz() {
+        // pacchetti di Vladimir (2026-11-22): scritto 432148836 e riletto 432148850, scritto 432151597 e riletto 432151630
+        assert!(close(432_148_836, 432_148_850));
+        assert!(close(432_151_597, 432_151_630));
+        assert!(!close(432_151_597, 432_152_597), "un chilohertz di scarto e' una scrittura sbagliata");
+    }
+
     use super::*;
 
     #[test]
