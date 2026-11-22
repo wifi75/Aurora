@@ -1569,3 +1569,109 @@ html[data-theme='light'] .mguide-chip, html[data-theme='light'] .mguide-full { b
 
 /* un po' d'aria tra la barra dei comandi in alto e le finestre sotto: la griglia si accorcia di altrettanto (le righe si rimisurano), le finestre non scendono ne' si tagliano */
 .live .live-board { margin-top: 8px; }
+
+/* ---- controlli uniformi (riferimento: la barra a segmenti `.rx-seg`): stessa altezza, bordo lilla, raggio 8, testo 12px/600 centrato, in tutte le barre dei modi ---- */
+html:root:root[data-bozza] .band-row .mode-switch-btn,
+html:root:root[data-bozza] .band-row .freq-picker-btn,
+html:root:root[data-bozza] .band-row .mode-switch-sub {
+  box-sizing: border-box; height: 28px !important; min-height: 28px !important; margin-left: 0;
+  border: 1px solid rgba(142, 123, 255, .35) !important; border-radius: 8px !important;
+  background: rgba(10, 16, 32, .55) !important; color: var(--text) !important; box-shadow: none !important;
+  font: inherit; font-size: 12px !important; font-weight: 600 !important; line-height: 1; letter-spacing: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-align: center; opacity: 1;
+}
+html:root:root[data-bozza] .band-row select.mode-switch-sub {
+  appearance: none; -webkit-appearance: none; padding: 0 22px 0 11px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7b6cf' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px; text-align-last: center;
+}
+html:root:root[data-bozza] .band-row button.mode-switch-sub { padding: 0 11px; }
+html:root:root[data-bozza] .band-row .mode-switch-btn:hover:not(:disabled),
+html:root:root[data-bozza] .band-row .freq-picker-btn:hover:not(:disabled),
+html:root:root[data-bozza] .band-row .mode-switch-sub:hover:not(:disabled) { background: rgba(142, 123, 255, .22) !important; }
+html:root:root[data-bozza] .band-row .mode-switch-sub.glass--on { background: rgba(44, 245, 164, .16) !important; color: #7ff0c0 !important; }
+html:root:root[data-bozza][data-theme='light'] .band-row .mode-switch-btn,
+html:root:root[data-bozza][data-theme='light'] .band-row .freq-picker-btn,
+html:root:root[data-bozza][data-theme='light'] .band-row .mode-switch-sub { border-color: rgba(91, 69, 214, .45) !important; background: rgba(255, 255, 255, .7) !important; color: #1d2a44 !important; }
+html:root:root[data-bozza][data-theme='light'] .band-row .mode-switch-btn:hover:not(:disabled),
+html:root:root[data-bozza][data-theme='light'] .band-row .freq-picker-btn:hover:not(:disabled),
+html:root:root[data-bozza][data-theme='light'] .band-row .mode-switch-sub:hover:not(:disabled) { background: #ece8ff !important; }
+html:root:root[data-bozza][data-theme='light'] .band-row .mode-switch-sub.glass--on { background: rgba(11, 154, 106, .18) !important; color: #075c47 !important; }
+html:root:root[data-bozza][data-theme='light'] .band-row select.mode-switch-sub {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d2a44' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* testata delle pagine SSTV, WEFAX e testuali (PSK, RTTY, CW): gli stessi controlli della barra della Stazione */
+html:root:root[data-bozza] .sstv-head :is(select, button, input[type='number'], input[type='text']):not(.detach-btn):not(.sstv-btn--pri) {
+  box-sizing: border-box; height: 28px !important; min-height: 28px !important;
+  border: 1px solid rgba(142, 123, 255, .35) !important; border-radius: 8px !important;
+  background-color: rgba(10, 16, 32, .55) !important; color: var(--text) !important; box-shadow: none !important;
+  font: inherit; font-size: 12px !important; font-weight: 600 !important; line-height: 1; letter-spacing: 0;
+  display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 0 11px;
+}
+html:root:root[data-bozza] .sstv-head select {
+  appearance: none; -webkit-appearance: none; padding: 0 24px 0 11px; text-align-last: center; display: inline-block; line-height: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7b6cf' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px;
+}
+html:root:root[data-bozza] .sstv-head .wefax-step-btn { min-width: 28px; padding: 0 6px; font-size: 11px !important; }
+html:root:root[data-bozza] .sstv-head button.sstv-btn:not(.sstv-btn--pri):is([aria-label='−'], [aria-label='+']) { min-width: 28px; padding: 0 8px; }
+html:root:root[data-bozza] .sstv-head input[type='number'] { width: 52px; padding: 0 6px; }
+html:root:root[data-bozza] .sstv-head .sstv-btn--pri {
+  box-sizing: border-box; height: 28px !important; min-height: 28px !important; border-radius: 8px !important; padding: 0 11px;
+  border: 1px solid #8e7bff !important; background: rgba(142, 123, 255, .35) !important; color: #fff !important;
+  font-size: 12px !important; font-weight: 600 !important; display: inline-flex; align-items: center; justify-content: center;
+}
+html:root:root[data-bozza] .sstv-head :is(select, button, input):not(.detach-btn):hover:not(:disabled):not(.sstv-btn--pri) { background-color: rgba(142, 123, 255, .22) !important; }
+html:root:root[data-bozza] .sstv-head :is(button.on, button.wefax-tog.on, button[aria-pressed='true']):not(.detach-btn) { background-color: rgba(44, 245, 164, .16) !important; color: #7ff0c0 !important; border-color: rgba(44, 245, 164, .55) !important; }
+html:root:root[data-bozza][data-theme='light'] .sstv-head :is(select, button, input[type='number'], input[type='text']):not(.detach-btn):not(.sstv-btn--pri) {
+  border-color: rgba(91, 69, 214, .45) !important; background-color: rgba(255, 255, 255, .7) !important; color: #1d2a44 !important;
+}
+html:root:root[data-bozza][data-theme='light'] .sstv-head select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d2a44' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+html:root:root[data-bozza][data-theme='light'] .sstv-head :is(select, button, input):not(.detach-btn):hover:not(:disabled):not(.sstv-btn--pri) { background-color: #ece8ff !important; }
+html:root:root[data-bozza][data-theme='light'] .sstv-head :is(button.on, button.wefax-tog.on, button[aria-pressed='true']):not(.detach-btn) { background-color: rgba(11, 154, 106, .18) !important; color: #075c47 !important; border-color: rgba(11, 154, 106, .55) !important; }
+html:root:root[data-bozza][data-theme='light'] .sstv-head .sstv-btn--pri { background: rgba(91, 69, 214, .18) !important; color: #2b1d78 !important; border-color: #5b45d6 !important; }
+
+/* pulsanti e menu dentro le pagine SSTV e WEFAX (Ferma ascolto, Scarta, Ricevi ora, scelta del modo...): stessa forma della testata */
+html:root:root[data-bozza] .sstv-page :is(button.sstv-btn, select.sstv-mode-select, .wefax-card select):not(.sstv-btn--pri):not(.sstv-btn--primary):not(.detach-btn) {
+  box-sizing: border-box; min-height: 28px !important;
+  border: 1px solid rgba(142, 123, 255, .35) !important; border-radius: 8px !important;
+  background-color: rgba(10, 16, 32, .55) !important; color: var(--text) !important; box-shadow: none !important;
+  font-size: 12px !important; font-weight: 600 !important; line-height: 1.1; text-align: center; justify-content: center;
+}
+html:root:root[data-bozza] .sstv-page :is(button.sstv-btn--pri, button.sstv-btn--primary) {
+  box-sizing: border-box; min-height: 28px !important; border-radius: 8px !important; border: 1px solid #8e7bff !important;
+  background: rgba(142, 123, 255, .35) !important; color: #fff !important; font-size: 12px !important; font-weight: 600 !important;
+}
+html:root:root[data-bozza] .sstv-page :is(button.sstv-btn, select.sstv-mode-select):hover:not(:disabled):not(.sstv-btn--pri):not(.sstv-btn--primary) { background-color: rgba(142, 123, 255, .22) !important; }
+html:root:root[data-bozza][data-theme='light'] .sstv-page :is(button.sstv-btn, select.sstv-mode-select, .wefax-card select):not(.sstv-btn--pri):not(.sstv-btn--primary):not(.detach-btn) {
+  border-color: rgba(91, 69, 214, .45) !important; background-color: rgba(255, 255, 255, .7) !important; color: #1d2a44 !important;
+}
+html:root:root[data-bozza][data-theme='light'] .sstv-page :is(button.sstv-btn--pri, button.sstv-btn--primary) { background: rgba(91, 69, 214, .18) !important; color: #2b1d78 !important; border-color: #5b45d6 !important; }
+html:root:root[data-bozza][data-theme='light'] .sstv-page :is(button.sstv-btn, select.sstv-mode-select):hover:not(:disabled):not(.sstv-btn--pri):not(.sstv-btn--primary) { background-color: #ece8ff !important; }
+
+/* barra in basso delle pagine testuali (RX, Sq, AFC, BPF, Lock, Snap, frequenza, larghezza, baud): stessa forma delle altre barre */
+html:root:root[data-bozza] .digi-status :is(button.digi-st, select, input):not([type='checkbox']):not([type='range']) {
+  box-sizing: border-box; height: 28px !important; min-height: 28px !important;
+  border: 1px solid rgba(142, 123, 255, .35) !important; border-radius: 8px !important;
+  background-color: rgba(10, 16, 32, .55) !important; color: var(--text) !important; box-shadow: none !important;
+  font: inherit; font-size: 12px !important; font-weight: 600 !important; line-height: 1; letter-spacing: 0;
+  display: inline-flex; align-items: center; justify-content: center; text-align: center; padding: 0 11px;
+}
+html:root:root[data-bozza] .digi-status select {
+  appearance: none; -webkit-appearance: none; padding: 0 24px 0 11px; text-align-last: center; display: inline-block; line-height: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a7b6cf' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px;
+}
+html:root:root[data-bozza] .digi-status :is(button.digi-st, select, input):hover:not(:disabled) { background-color: rgba(142, 123, 255, .22) !important; }
+html:root:root[data-bozza] .digi-status :is(button.digi-st.on, button.digi-st--rx) { background-color: rgba(44, 245, 164, .16) !important; color: #7ff0c0 !important; border-color: rgba(44, 245, 164, .55) !important; }
+html:root:root[data-bozza][data-theme='light'] .digi-status :is(button.digi-st, select, input):not([type='checkbox']):not([type='range']) {
+  border-color: rgba(91, 69, 214, .45) !important; background-color: rgba(255, 255, 255, .7) !important; color: #1d2a44 !important;
+}
+html:root:root[data-bozza][data-theme='light'] .digi-status select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d2a44' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+html:root:root[data-bozza][data-theme='light'] .digi-status :is(button.digi-st, select, input):hover:not(:disabled) { background-color: #ece8ff !important; }
+html:root:root[data-bozza][data-theme='light'] .digi-status :is(button.digi-st.on, button.digi-st--rx) { background-color: rgba(11, 154, 106, .18) !important; color: #075c47 !important; border-color: rgba(11, 154, 106, .55) !important; }
