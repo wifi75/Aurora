@@ -183,6 +183,22 @@ fn next_wait(config: &Config, start_pending: bool, last: Option<&Measurement>) -
     if off { normal.min(RECHECK_WHILE_OFF) } else { normal }
 }
 
+/// Lo stesso errore ripetuto a ogni controllo (si ricontrolla ogni minuto mentre l'ora e' fuori) si scrive una volta sola nel registro:
+/// vale `true` per un errore diverso dall'ultimo scritto; un controllo riuscito azzera la memoria, cosi' un errore che torna si riscrive.
+fn new_warning(last: &mut Option<String>, failure: Option<&str>) -> bool {
+    match failure {
+        None => {
+            *last = None;
+            false
+        }
+        Some(e) if last.as_deref() == Some(e) => false,
+        Some(e) => {
+            *last = Some(e.to_string());
+            true
+        }
+    }
+}
+
 pub fn default_query() -> QueryFn {
     Arc::new(|server: &str| ntp::query(server, QUERY_TIMEOUT))
 }
@@ -320,6 +336,7 @@ impl ClockService {
             // prima il primo giro falliva e si riprovava solo dopo `interval_secs` (15 minuti), con l'avviso dell'orologio sullo schermo
             let mut start_pending = service.config().correct_at_start;
             let mut start_tries = 0u32;
+            let mut last_warning: Option<String> = None;
             loop {
                 let config = service.config();
                 let at_start = start_pending;
@@ -337,7 +354,11 @@ impl ClockService {
                     })
                     .await;
                     let measured = matches!(outcome, Ok((true, _)));
-                    if let Ok((_, Err(e))) = outcome {
+                    let failure = match &outcome {
+                        Ok((_, Err(e))) => Some(e.as_str()),
+                        _ => None,
+                    };
+                    if new_warning(&mut last_warning, failure) && let Some(e) = failure {
                         tracing::warn!("orologio: {e}");
                     }
                     if at_start {
@@ -445,6 +466,16 @@ mod tests {
         assert_eq!(*setter.calls.lock().unwrap(), vec![400.0]);
         assert!(after.corrected);
         assert_eq!(after.offset_ms, Some(3.0));
+    }
+
+    #[test]
+    fn the_same_failure_is_logged_once_until_something_else_happens() {
+        let mut last = None;
+        assert!(new_warning(&mut last, Some("correzione: serve avviare Aurora come amministratore")));
+        assert!(!new_warning(&mut last, Some("correzione: serve avviare Aurora come amministratore")), "ripetuto: niente di nuovo");
+        assert!(new_warning(&mut last, Some("correzione: nessuna risposta")), "un errore diverso si scrive");
+        assert!(!new_warning(&mut last, None));
+        assert!(new_warning(&mut last, Some("correzione: nessuna risposta")), "dopo un controllo riuscito un errore che torna si riscrive");
     }
 
     #[test]
