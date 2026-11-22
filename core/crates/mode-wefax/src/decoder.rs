@@ -27,6 +27,9 @@ const SQL_CLOSE_BLOCKS: u32 = (3 * RATE as usize / METER_BLOCK) as u32;
 /// Misure di fila sotto la soglia che riarmano lo squelch dopo un'immagine (mezzo secondo).
 /// Quota minima di potenza dei grigi di mezzo secondo su un tono d'inizio perche' conti come tono (un tono puro vale 1).
 const TONE_SHARE_MIN: f64 = 0.3;
+/// Il tono di fine (450 Hz) dentro l'immagine: potenza sul tono almeno cosi' in due finestre di mezzo secondo di fila. Nelle registrazioni vere di
+/// DDK3 sul tono e' tra 0,6 e 0,9, nel resto dell'immagine sempre sotto 0,1.
+const STOP_SHARE_MIN: f64 = 0.5;
 const SQL_REARM_BLOCKS: u32 = 6;
 /// Quanto dopo la fine di un'immagine si ignora lo strascico del tono di fine (campioni: 20 s, piu' del tono di fine di 5 s e di un
 /// eventuale silenzio nero).
@@ -364,6 +367,8 @@ pub struct Decoder {
     cnt_upd: u64,
     stable_state: Fs,
     stop_code: &'static str,
+    /// Le ultime tre finestre di mezzo secondo dentro l'immagine: c'era il tono di fine (450 Hz) per potenza?
+    stop_hit: [bool; 3],
     sig_cnt: u32,
     sig_state: Fs,
 
@@ -482,6 +487,7 @@ impl Decoder {
             cnt_upd: 0,
             stable_state: Fs::Idle,
             stop_code: "",
+            stop_hit: [false; 3],
             sig_cnt: 0,
             sig_state: Fs::Idle,
             meter: SignalMeter::new(cfg.center_hz, cfg.shift_hz),
@@ -850,6 +856,10 @@ impl Decoder {
         // e si misura quanta potenza cade su quel tono
         if self.cfg.auto_ioc && self.state == Fs::AptStart && self.image.is_none() {
             self.apt_win.push(x.clamp(0, 255) as u8);
+        } else if self.state == Fs::Image {
+            // dentro l'immagine si misura anche la potenza sul tono di fine (450 Hz): con il filtro stretto o un'inclinazione della sintonia
+            // il tono non supera le soglie fisse del conteggio e la fine sfuggiva (la cartina si chiudeva solo a segnale finito)
+            self.apt_win.push(x.clamp(0, 255) as u8);
         } else if !self.apt_win.is_empty() {
             self.apt_win.clear();
             self.alt_hit = [false; 3];
@@ -858,9 +868,23 @@ impl Decoder {
             return;
         }
         if !self.apt_win.is_empty() {
-            let other = f64::from(if self.cfg.apt_start_hz() == 300 { 675 } else { 300 });
-            let share = tone_share(&self.apt_win, other);
-            self.alt_hit = [share >= TONE_SHARE_MIN, self.alt_hit[0], self.alt_hit[1]];
+            if self.state == Fs::Image {
+                let share = tone_share(&self.apt_win, f64::from(APT_STOP_HZ));
+                self.stop_hit = [share >= STOP_SHARE_MIN, self.stop_hit[0], self.stop_hit[1]];
+                if self.stop_hit[0] && self.stop_hit[1] {
+                    // due finestre di fila (un secondo) con la potenza sui 450 Hz: e' il tono di fine, la cartina si chiude e si salva adesso
+                    self.stop_hit = [false; 3];
+                    self.apt_win.clear();
+                    self.apt_count = 0;
+                    self.apt_trans = 0;
+                    self.save_automatic("ok");
+                    return;
+                }
+            } else {
+                let other = f64::from(if self.cfg.apt_start_hz() == 300 { 675 } else { 300 });
+                let share = tone_share(&self.apt_win, other);
+                self.alt_hit = [share >= TONE_SHARE_MIN, self.alt_hit[0], self.alt_hit[1]];
+            }
             self.apt_win.clear();
         }
         self.cr3_freq = self.cr2_freq;
@@ -1426,6 +1450,7 @@ impl Decoder {
 
     fn end_rx(&mut self) {
         self.image = None;
+        self.stop_hit = [false; 3];
         self.auto_ppm = 0.0;
         self.lpm_set();
         // lo squelch riparte solo dopo che il segnale e' sparito (il tono di stop o la portante dopo l'immagine non ne aprono un'altra)

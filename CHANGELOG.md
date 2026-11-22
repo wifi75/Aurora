@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- WEFAX, la cartina si chiude e si salva quando finisce davvero: il tono di fine (450 Hz) ora si riconosce anche misurando la potenza sul tono (due finestre di mezzo secondo di fila), non solo contando le transizioni, che con il filtro stretto o una sintonia leggermente fuori non superavano le soglie. Sulle registrazioni vere di DDK3 la cartina si chiudeva da sola solo a segnale finito, da 24 a 42 secondi dopo la fine vera (con 50 righe in piu' di coda e segnata come incompleta); ora si chiude al tono, completa, con le righe giuste. Nel resto dell'immagine la potenza sui 450 Hz resta sotto 0,1, sul tono e' tra 0,6 e 0,9. Prova automatica con un tono debole e mezzo minuto di portante dopo (fallisce senza la correzione).
+
 - Pagina Log: dopo aver cancellato dei QSO, o quando ne arriva uno nuovo da un altro log, le righe non restavano scelte e il testo appariva scuro e spento (le righe non scelte sono attenuate); tornando nella pagina tornava tutto bianco. Ora dopo una cancellazione i QSO rimasti tornano tutti scelti, e un QSO nuovo si sceglie da solo se prima era scelto tutto (se avevi tolto qualche riga dalla scelta, resta com'e'). Prove automatiche: falliscono senza la correzione (segnalazione di Luc, #88).
 
 - «Rimanda i QSO persi»: prima di rimandare i QSO tenuti da parte, se si conosce il database di Log4OM, Aurora guarda nel suo log e manda solo quello che manca (stesso nominativo, banda e modo entro un quarto d'ora = c'e' gia', non si rimanda): niente doppioni se i QSO erano gia' arrivati per altra via (per esempio importati a mano). Senza il database noto, o con code scritte da versioni precedenti, i QSO partono come prima. Provato con prove automatiche del confronto, non con una Log4OM vera.

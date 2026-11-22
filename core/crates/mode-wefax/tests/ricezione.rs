@@ -18,11 +18,14 @@ struct Segnale {
     apt_start_hz: f64,
     /// Tono di partenza e di stop presenti (false: si trasmette solo l'immagine).
     apt: bool,
+    /// Il tono di stop e' debole (oscilla tra 95 e 160 invece che tra 0 e 255: non supera le soglie del conteggio, come con il filtro stretto) e
+    /// dopo di lui la portante continua per mezzo minuto (bianco): la cartina deve chiudersi dal tono, non dalla fine del segnale.
+    stop_debole: bool,
 }
 
 impl Segnale {
     fn standard(ioc: u32, lpm: u32) -> Segnale {
-        Segnale { offset_hz: 0.0, rumore: 0.0, ppm: 0.0, lpm, righe_fasatura: 30, apt_start_hz: if ioc == 288 { 675.0 } else { 300.0 }, apt: true }
+        Segnale { offset_hz: 0.0, rumore: 0.0, ppm: 0.0, lpm, righe_fasatura: 30, apt_start_hz: if ioc == 288 { 675.0 } else { 300.0 }, apt: true, stop_debole: false }
     }
 }
 
@@ -94,7 +97,14 @@ fn genera(s: &Segnale, img: &[u8], w: usize, h: usize) -> Vec<f32> {
         let n = 5 * RATE as usize;
         for i in 0..n {
             let alto = ((2.0 * 450.0 * i as f64 / rate) as u64) % 2 == 0;
-            tono(&mut out, if alto { 255.0 } else { 0.0 });
+            let (hi, lo) = if s.stop_debole { (160.0, 95.0) } else { (255.0, 0.0) };
+            tono(&mut out, if alto { hi } else { lo });
+        }
+        if s.stop_debole {
+            // la portante resta accesa (bianco) per 30 secondi dopo il tono
+            for _ in 0..(30 * RATE as usize) {
+                tono(&mut out, 255.0);
+            }
         }
         for _ in 0..RATE as usize {
             tono(&mut out, 0.0);
@@ -1441,4 +1451,19 @@ fn imposta_inizio_riga_sposta_le_righe_dell_immagine_in_corso_e_quelle_che_arriv
     let ottenuta = &spostata[r * w..(r + 1) * w];
     let uguali = atteso.iter().zip(ottenuta).filter(|(a, b)| a == b).count();
     assert!(uguali * 100 / w >= 98, "solo {uguali} colonne su {w} sono quelle attese");
+}
+
+/// Il tono di fine debole (sotto le soglie del conteggio) chiude comunque la cartina, dal tono e non mezzo minuto dopo: si misura la potenza
+/// sui 450 Hz (registrazioni vere di DDK3: il tono c'era ma il conteggio non lo vedeva e la cartina si salvava molto in ritardo).
+#[test]
+fn un_tono_di_fine_debole_chiude_la_cartina_subito() {
+    let (w, h) = (width_of(576) as usize, 120);
+    let img = immagine(w, h);
+    let audio = genera(&Segnale { stop_debole: true, ..Segnale::standard(576, 120) }, &img, w, h);
+    let e = ricevi(cfg(576, 120), &audio, 1024);
+    assert_eq!(e.fatte.len(), 1, "scartate: {:?}", e.scartate);
+    let rx = &e.fatte[0];
+    assert!(rx.complete && rx.reason == "apt_stop", "finita per {}", rx.reason);
+    // chiusa dal tono: le righe sono quelle dell'immagine (con poco in piu'), non quelle di mezzo minuto di portante
+    assert!(rx.image.height <= (h as u32) + 6, "righe {} (immagine di {h})", rx.image.height);
 }
