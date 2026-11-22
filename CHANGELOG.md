@@ -2,6 +2,9 @@
 
 ## Non rilasciato
 
+- DX Cluster, colonna del modo: gli spot nei tratti «narrow band modes - digimodes» del piano IARU Regione 1 (letto dal PDF dell'ARI: 1838-1843, 3570-3600, 7040-7050, 10130-10150, 14070-14099, 18095-18109, 21070-21110, 24915-24929, 28070-28150 kHz) senza altro indizio ora mostrano «DIGI» (il filtro «Digi» li trova); prima il modo restava vuoto, per esempio uno spot a 14,092 MHz con solo «QSX 14.093». Il commento e le frequenze di lavoro note (FT8, FT4, WSPR...) vincono ancora; beacon e tratti misti restano senza modo.
+- Display compatto della radio: prova automatica che l'ALC compare (con il valore della radio, o un trattino se non lo manda).
+
 - Schede di WEFAX, SSTV, Propagazione e Statistiche: una finestra sola per scheda (nel WEFAX la scheda «Ricezione» e le altre avevano dentro un secondo riquadro arrotondato con il suo bordo), e le barre del titolo combaciano con il riquadro, con gli angoli in alto arrotondati (prima erano dritti e sporgevano di un paio di punti, e in SSTV il titolo si tagliava). Correzione di un difetto introdotto dalla modifica dei riquadri.
 
 - Barra del WEFAX: la pagina non ha piu' la larghezza massima, cosi' la barra si allunga quanto la finestra e tutto sta su una riga sola (prima AFC e SQL andavano a capo); il menu della stazione ha il carattere piu' grande (14,5) e il testo e' allineato a destra, vicino ai pulsanti ▲ ▼.

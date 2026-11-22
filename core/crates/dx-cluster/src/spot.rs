@@ -42,25 +42,35 @@ const DIGITAL_KHZ: &[(&str, f64, &[f64])] = &[
     ("PSK31", 1.5, &[3580.0, 7040.0, 14070.0, 21070.0, 28120.0]),
 ];
 
-/// Il band plan IARU Regione 1 (come il band plan italiano): i tratti dove c'e' un solo uso. Fuori da questi (digitali misti, beacon,
+/// Il band plan IARU Regione 1 (come il band plan italiano): i tratti dove c'e' un solo uso e quelli «narrow band modes - digimodes» (modo DIGI). Fuori da questi (misti, beacon,
 /// satelliti, «tutti i modi») il modo resta vuoto: meglio niente che un modo sbagliato.
 const PLAN_KHZ: &[(f64, f64, &str)] = &[
     (1810.0, 1838.0, "CW"),
+    // i tratti «narrow band modes - digimodes» del piano (anche con le stazioni automatiche): modo digitale generico, il filtro «Digi» li trova
+    (1838.0, 1843.0, "DIGI"),
     (1842.0, 2000.0, "SSB"),
     (3500.0, 3570.0, "CW"),
+    (3570.0, 3600.0, "DIGI"),
     (3620.0, 3800.0, "SSB"),
     (7000.0, 7040.0, "CW"),
+    (7040.0, 7050.0, "DIGI"),
     (7050.0, 7200.0, "SSB"),
     (10100.0, 10130.0, "CW"),
+    (10130.0, 10150.0, "DIGI"),
     (14000.0, 14070.0, "CW"),
+    (14070.0, 14099.0, "DIGI"),
     (14112.0, 14350.0, "SSB"),
     (18068.0, 18095.0, "CW"),
+    (18095.0, 18109.0, "DIGI"),
     (18111.0, 18168.0, "SSB"),
     (21000.0, 21070.0, "CW"),
+    (21070.0, 21110.0, "DIGI"),
     (21151.0, 21450.0, "SSB"),
     (24890.0, 24915.0, "CW"),
+    (24915.0, 24929.0, "DIGI"),
     (24931.0, 24990.0, "SSB"),
     (28000.0, 28050.0, "CW"),
+    (28070.0, 28150.0, "DIGI"),
     (28225.0, 29200.0, "SSB"),
     (29520.0, 29700.0, "FM"),
     (50000.0, 50100.0, "CW"),
@@ -222,8 +232,8 @@ mod tests {
         assert_eq!(mode("DX de AA1AA: 28465.0 PY2TBK 1200Z").as_deref(), Some("SSB"));
         assert_eq!(mode("DX de AA1AA: 7056.0 C8K 1200Z").as_deref(), Some("SSB"));
         assert_eq!(mode("DX de AA1AA: 21290.0 K1ABC strong 1200Z").as_deref(), Some("SSB"));
-        // tratti misti (digitali e CW) e beacon: nessun modo
-        assert_eq!(mode("DX de AA1AA: 14085.0 K1ABC 1200Z"), None);
+        // il tratto dei digimodi del piano: modo digitale generico; beacon e tratti misti: nessun modo
+        assert_eq!(mode("DX de AA1AA: 14085.0 K1ABC 1200Z").as_deref(), Some("DIGI"));
         assert_eq!(mode("DX de AA1AA: 28200.0 K1ABC 1200Z"), None);
         // il commento vince sul band plan, e un «Digi» senza modo non diventa SSB
         assert_eq!(mode("DX de AA1AA: 7105.0 VE2EH (VarAC VARA Digi Freq) 1200Z").as_deref(), Some("VARA"));
@@ -260,5 +270,24 @@ mod tests {
         assert_eq!(band_of_khz(28074.0), Some("10m"));
         assert_eq!(band_of_khz(50313.0), Some("6m"));
         assert_eq!(band_of_khz(15000.0), None);
+    }
+
+    /// Il tratto 14089-14099 kHz del piano IARU R1 e' «narrow band modes - digimodes»: uno spot li' senza altro indizio ha il modo digitale
+    /// generico (prima restava vuoto e la colonna del modo non mostrava niente). I tratti di un solo uso e quelli misti non cambiano.
+    #[test]
+    fn a_spot_in_a_digimode_segment_of_the_band_plan_says_digi() {
+        assert_eq!(guess_mode("QSX 14.093", 14092.0).as_deref(), Some("DIGI"));
+        assert_eq!(guess_mode("", 7045.0).as_deref(), Some("DIGI"));
+        assert_eq!(guess_mode("", 10145.0).as_deref(), Some("DIGI"));
+        assert_eq!(guess_mode("", 28100.0).as_deref(), Some("DIGI"));
+        // il commento vince sul piano, e i modi di lavoro noti restano quelli
+        assert_eq!(guess_mode("CW 22 wpm", 14092.0).as_deref(), Some("CW"));
+        assert_eq!(guess_mode("", 14074.0).as_deref(), Some("FT8"));
+        // fuori dai digimodi: come prima
+        assert_eq!(guess_mode("", 14025.0).as_deref(), Some("CW"));
+        assert_eq!(guess_mode("", 14200.0).as_deref(), Some("SSB"));
+        // beacon e tratti misti: il modo resta vuoto
+        assert_eq!(guess_mode("", 14100.0), None);
+        assert_eq!(guess_mode("", 14105.0), None);
     }
 }
