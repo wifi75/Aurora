@@ -171,3 +171,5 @@ Wenn du Code oder Tabellen von Aurora in einem eigenen Projekt verwendest, bitte
 Wer Aurora weitergibt, auch verändert, muss dies unter derselben Lizenz tun und den Quellcode zur Verfügung stellen. Die in der Oberfläche enthaltenen Bibliotheken Dritter (`leaflet` für die Karte, Lizenz BSD-2-Clause, `world-atlas` und `topojson-client`, Lizenz ISC; die Hintergrundkacheln der Karte stammen von Esri und National Geographic, mit ihrer Quellenangabe auf der Karte, und die übrigen in `app/package.json` und `core/Cargo.toml` aufgeführten Abhängigkeiten) behalten ihre eigenen Lizenzen.
 
 Erdkarten: NASA Earth Observatory (Blue Marble Next Generation, Black Marble), NASA-Bilder, frei nutzbar mit Quellenangabe. Siehe [`docs/mappe.md`](docs/mappe.md) (auf Italienisch).
+
+**Marken.** Aurora ist ein unabhängiges freies Softwareprojekt von Tiziano Cassone IU3WJQ. Es ist weder mit FlexRadio Systems verbunden noch von ihnen unterstützt oder anerkannt. FlexRadio™, SmartSDR™ und AURORA™ (der Name der Transceiver-Serie von FlexRadio) sind Marken ihrer jeweiligen Inhaber und werden nur zur Bezeichnung ihrer Produkte genannt.
