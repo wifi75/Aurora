@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- PTT: cambiando radio (o modello) in Impostazioni dopo l'avvio la trasmissione continua a funzionare: prima la catena costruita all'avvio rifiutava ogni trasmissione con «PTT: radio cambiata» fino al riavvio di Aurora (pacchetto di un IC-820H con modello 3034 poi 3032: 19 trasmissioni fallite in tre ore). Con il PTT spento la catena passa alla radio nuova; con il PTT acceso sulla radio vecchia la guardia resta.
+- Orologio: lo stesso errore della correzione (per esempio «serve avviare Aurora come amministratore») si scrive nel registro una volta sola invece che a ogni controllo (ogni minuto, centinaia di righe al giorno).
 - Satelliti, mappa: passando da FT8 ai Satelliti non compare piu' per un attimo la mappa semplice prima della Terra: la foto gia' caricata resta in memoria tornando sulla pagina e, mentre la prima volta carica, si vede il fondo mare scuro; la mappa semplice resta solo se la foto non si carica.
 - Satelliti, mappa: girando la rotella la foto non appare piu' sgranata al primo movimento (le copie ridotte della Terra si preparano subito dopo il caricamento, invece di disegnare dalla foto intera in qualita' bassa).
 - Satelliti, mappa: dove e' notte la Terra di giorno resta visibile, scurita da un velo, con le luci delle citta' sommate sopra (prima la foto delle luci copriva tutto: coste e rilievi sparivano e con lo zoom sembrava sgranata).
