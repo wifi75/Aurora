@@ -23,7 +23,7 @@ export const NOVITA_MAX = 40;
 export const NOVITA: readonly Novita[] = [
   {
     version: '0.11.330',
-    released: '2026-11-22T10:00:00Z',
+    released: '2026-11-22T08:53:03Z',
     kind: 'new',
     featured: false,
     title: [
@@ -45,7 +45,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.330',
-    released: '2026-11-22T10:00:00Z',
+    released: '2026-11-22T08:53:03Z',
     kind: 'changed',
     title: [
       'Stesso stile in tutti i modi',
@@ -66,7 +66,7 @@ export const NOVITA: readonly Novita[] = [
   },
   {
     version: '0.11.330',
-    released: '2026-11-22T10:00:00Z',
+    released: '2026-11-22T08:53:03Z',
     kind: 'fixed',
     title: [
       'WEFAX: parte anche senza tono d’inizio',
