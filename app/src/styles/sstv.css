@@ -414,6 +414,11 @@ html[data-theme='light'] .sstv-log-info { color: #46556f; }
 .sstv-strip-wrap .sstv-strip { flex: 1 1 auto; min-width: 0; }
 .sstv-strip-arrow { flex: none; width: 1.7rem; padding: 0; border-radius: 8px; font-size: 0.8rem; line-height: 1; cursor: pointer; }
 .sstv-strip-arrow:disabled { opacity: 0.3; cursor: default; }
+/* frecce eleganti: un chevron sottile al posto del triangolo, in un pulsante a pillola che si accende al passaggio */
+.sstv-chev { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sstv-strip-arrow, .sstv-lightbox-nav { display: inline-flex; align-items: center; justify-content: center; color: var(--text-muted, #a7b6cf); border-radius: 999px; transition: color .15s, background .15s, border-color .15s; }
+.sstv-strip-arrow:not(:disabled):hover, .sstv-lightbox-nav:not(:disabled):hover { color: #fff; background: color-mix(in srgb, #8e7bff 30%, transparent); border-color: #8e7bff; }
+.sstv-lightbox-nav .sstv-chev { width: 1.5rem; height: 1.5rem; }
 .sstv-strip-arrow:focus-visible { outline: 2px solid #8e7bff; outline-offset: 1px; }
 .sstv-strip:focus-visible { outline: 2px solid #8e7bff; outline-offset: 1px; border-radius: 8px; }
 .sstv-lightbox-stage { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }

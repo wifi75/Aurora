@@ -51,7 +51,7 @@ function ScrollStrip({ children, label }: { children: ReactNode; label: string }
   return (
     <div className="sstv-strip-wrap">
       <button type="button" className="glass sstv-strip-arrow" disabled={!edge.prev} onClick={() => page(-1)} title={t('sstv.hist.scrollPrev')} aria-label={t('sstv.hist.scrollPrev')}>
-        ◀
+        <svg className="sstv-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
       </button>
       <ul
         ref={ref}
@@ -68,7 +68,7 @@ function ScrollStrip({ children, label }: { children: ReactNode; label: string }
         {children}
       </ul>
       <button type="button" className="glass sstv-strip-arrow" disabled={!edge.next} onClick={() => page(1)} title={t('sstv.hist.scrollNext')} aria-label={t('sstv.hist.scrollNext')}>
-        ▶
+        <svg className="sstv-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
       </button>
     </div>
   );
@@ -244,11 +244,11 @@ function Lightbox({ entry, modeName, when, onClose, onDeleted, onReuse, onPrev, 
       <figure onClick={(e) => e.stopPropagation()}>
         <div className="sstv-lightbox-stage">
           <button type="button" className="glass sstv-lightbox-nav" disabled={!onPrev} onClick={() => onPrev?.()} title={t('sstv.img.prev')} aria-label={t('sstv.img.prev')}>
-            ◀
+            <svg className="sstv-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
           </button>
           <img src={shown} alt="" className={`${smooth ? '' : 'sstv-crisp'}${busy && clean ? ' sstv-busy' : ''}`} width={entry.width} height={entry.height} onLoad={() => setBusy(false)} onError={() => setBusy(false)} />
           <button type="button" className="glass sstv-lightbox-nav" disabled={!onNext} onClick={() => onNext?.()} title={t('sstv.img.next')} aria-label={t('sstv.img.next')}>
-            ▶
+            <svg className="sstv-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
         <div className="sstv-clean">
