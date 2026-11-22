@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Pagina Log: dopo aver cancellato dei QSO, o quando ne arriva uno nuovo da un altro log, le righe non restavano scelte e il testo appariva scuro e spento (le righe non scelte sono attenuate); tornando nella pagina tornava tutto bianco. Ora dopo una cancellazione i QSO rimasti tornano tutti scelti, e un QSO nuovo si sceglie da solo se prima era scelto tutto (se avevi tolto qualche riga dalla scelta, resta com'e'). Prove automatiche: falliscono senza la correzione (segnalazione di Luc, #88).
+
 - «Rimanda i QSO persi»: prima di rimandare i QSO tenuti da parte, se si conosce il database di Log4OM, Aurora guarda nel suo log e manda solo quello che manca (stesso nominativo, banda e modo entro un quarto d'ora = c'e' gia', non si rimanda): niente doppioni se i QSO erano gia' arrivati per altra via (per esempio importati a mano). Senza il database noto, o con code scritte da versioni precedenti, i QSO partono come prima. Provato con prove automatiche del confronto, non con una Log4OM vera.
 
 - Menu a tendina aperti: le voci hanno sempre sfondo e testo propri (scuro con testo chiaro nel tema scuro, bianco con testo scuro nel chiaro): prima, con il testo chiaro del menu su uno sfondo chiaro, non si leggeva niente (per esempio il menu dei modi dell'SSTV).

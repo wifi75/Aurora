@@ -69,6 +69,8 @@ export function ExportPage() {
     try {
       const r = await deleteLogQsos(all ? { all: true } : { ids: [...selected] });
       setSelected(new Set());
+      // dopo una cancellazione i QSO rimasti tornano tutti scelti (come alla prima apertura): non restano spenti
+      selectAllNext.current = true;
       toast(t('exp.deleted', { n: r.deleted }), 'ok');
       await reload();
     } catch (error) {
@@ -79,10 +81,29 @@ export function ExportPage() {
   };
   // la prima volta che arriva il log sono scelti tutti: il caso piu' comune e' esportare l'intero log
   const primed = useRef(false);
+  // gli id che la pagina conosceva all'ultima lettura: i QSO nuovi (arrivati da un altro log o registrati adesso) si scelgono da soli se prima
+  // era scelto tutto, cosi' non compaiono spenti
+  const known = useRef<Set<number>>(new Set());
+  const selectAllNext = useRef(false);
   useEffect(() => {
-    if (!log.data || primed.current) return;
-    primed.current = true;
-    setSelected(new Set(log.data.qsos.map((q) => q.id)));
+    if (!log.data) return;
+    const ids = log.data.qsos.map((q) => q.id);
+    const idSet = new Set(ids);
+    if (!primed.current || selectAllNext.current) {
+      primed.current = true;
+      selectAllNext.current = false;
+      known.current = idSet;
+      setSelected(new Set(ids));
+      return;
+    }
+    const before = known.current;
+    known.current = idSet;
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => idSet.has(id)));
+      const wereAllSelected = [...before].every((id) => !idSet.has(id) || prev.has(id));
+      if (wereAllSelected) for (const id of ids) next.add(id);
+      return next;
+    });
   }, [log.data]);
 
   const qsos = useMemo(() => log.data?.qsos ?? [], [log.data]);

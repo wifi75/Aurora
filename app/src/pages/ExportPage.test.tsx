@@ -6,10 +6,10 @@ import type { LogQso, LogQsos } from '../api/client';
 
 vi.mock('../api/client', async () => {
   const real = await vi.importActual<typeof import('../api/client')>('../api/client');
-  return { ...real, getLogQsos: vi.fn(), saveLogAdif: vi.fn(), editLogQso: vi.fn(), deleteLogQso: vi.fn() };
+  return { ...real, getLogQsos: vi.fn(), saveLogAdif: vi.fn(), editLogQso: vi.fn(), deleteLogQso: vi.fn(), deleteLogQsos: vi.fn() };
 });
 vi.mock('../lib/toast', () => ({ toast: vi.fn() }));
-import { compactIds, deleteLogQso, editLogQso, getLogQsos, saveLogAdif } from '../api/client';
+import { compactIds, deleteLogQso, deleteLogQsos, editLogQso, getLogQsos, saveLogAdif } from '../api/client';
 import { toast } from '../lib/toast';
 import { ExportPage, filterQsos } from './ExportPage';
 
@@ -142,5 +142,63 @@ describe('ExportPage', () => {
     await waitFor(() => expect(vi.mocked(deleteLogQso)).toHaveBeenCalledWith(3));
     expect(await screen.findByText('2 selezionati su 2 mostrati (2 nel log)')).toBeInTheDocument();
     expect(screen.queryByText('K1ABC')).not.toBeInTheDocument();
+  });
+});
+
+describe('ExportPage, QSO che arrivano e QSO cancellati', () => {
+  it('a new QSO arriving while everything is selected comes up selected, not dimmed', async () => {
+    vi.mocked(getLogQsos).mockResolvedValue(LOG);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ExportPage />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText('K1ABC')).toBeInTheDocument();
+    vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 4, qsos: [q(4, 'IU3ABC', '2026-11-22'), ...LOG.qsos] });
+    await client.invalidateQueries({ queryKey: ['log-qsos'] });
+    const row = (await screen.findByText('IU3ABC')).closest('tr');
+    await waitFor(() => expect(row).toHaveClass('export-row--on'));
+    expect(screen.getByText('K1ABC').closest('tr')).toHaveClass('export-row--on');
+  });
+
+  it('a QSO the user had deselected stays deselected when a new one arrives', async () => {
+    vi.mocked(getLogQsos).mockResolvedValue(LOG);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ExportPage />
+      </QueryClientProvider>,
+    );
+    const first = (await screen.findByText('K1ABC')).closest('tr') as HTMLElement;
+    await userEvent.click(first);
+    expect(first).not.toHaveClass('export-row--on');
+    vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 4, qsos: [q(4, 'IU3ABC', '2026-11-22'), ...LOG.qsos] });
+    await client.invalidateQueries({ queryKey: ['log-qsos'] });
+    await screen.findByText('IU3ABC');
+    expect(screen.getByText('K1ABC').closest('tr')).not.toHaveClass('export-row--on');
+    expect(screen.getByText('IU3ABC').closest('tr')).not.toHaveClass('export-row--on');
+  });
+});
+
+describe('ExportPage, dopo una cancellazione', () => {
+  it('the QSOs left in the log are all selected again, not dimmed', async () => {
+    vi.mocked(getLogQsos).mockResolvedValue(LOG);
+    vi.mocked(deleteLogQsos).mockResolvedValue({ deleted: 2 });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ExportPage />
+      </QueryClientProvider>,
+    );
+    await screen.findByText('K1ABC');
+    // si tolgono dalla scelta K1ABC: restano scelti due, che si cancellano
+    await userEvent.click((screen.getByText('K1ABC').closest('tr')) as HTMLElement);
+    vi.mocked(getLogQsos).mockResolvedValue({ ...LOG, total: 1, qsos: [LOG.qsos[0]] });
+    await userEvent.click(screen.getByRole('button', { name: /Elimina selezionati/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /^OK$/ }));
+    await waitFor(() => expect(deleteLogQsos).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('DL2XYZ')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('K1ABC').closest('tr')).toHaveClass('export-row--on'));
   });
 });
