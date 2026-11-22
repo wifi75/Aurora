@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- SSTV: nelle miniature delle foto le ricezioni incomplete (poche righe, sincronismo scarso) stanno in fondo alla fila e sono attenuate, cosi' le foto buone restano davanti; il visore le scorre nello stesso ordine.
+- Fox: i controlli hanno la stessa forma delle altre pagine (angoli di 8, testo a 600, menu con la stessa freccia); la pagina resta «neon» per scelta.
 ## 0.11.330 - 2026-11-22
 
 - Barre del titolo: i riquadri della pagina Satelliti e della pagina WEFAX hanno la barra con lo stesso gradiente (verde menta, azzurro, lilla; nel tema scuro verde petrolio, blu, viola) delle finestre della Stazione; menu, pulsanti e campi della pagina Satelliti hanno la stessa forma degli altri modi. Guardato a schermo nel tema scuro. Restano uguali a prima le barre di SSTV e delle pagine testuali (PSK, RTTY, CW) e la pagina Fox.
