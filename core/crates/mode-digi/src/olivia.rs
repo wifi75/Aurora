@@ -29,7 +29,7 @@ impl Variant {
         }
     }
 
-    fn scrambling_code(self) -> u64 {
+    pub(crate) fn scrambling_code(self) -> u64 {
         match self {
             Variant::Olivia => SCRAMBLING_OLIVIA,
             Variant::Contestia => SCRAMBLING_CONTESTIA,
@@ -37,7 +37,7 @@ impl Variant {
     }
 
     /// Di quanto si ruota il codice di rimescolamento da un carattere al successivo.
-    fn shift(self) -> usize {
+    pub(crate) fn shift(self) -> usize {
         match self {
             Variant::Olivia => 13,
             Variant::Contestia => 5,
@@ -188,13 +188,13 @@ impl Params {
     }
 
     /// Lunghezza di un simbolo in campioni a 8000 Hz: `2^(bit + 7 - log2(banda / 125))`.
-    fn symbol_len(&self) -> usize {
+    pub(crate) fn symbol_len(&self) -> usize {
         let bw_log = (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2() as usize;
         1usize << (self.bits_per_symbol() + 7 - bw_log)
     }
 
     /// Il primo tono, in bin della FFT di un simbolo.
-    fn first_carrier(&self) -> usize {
+    pub(crate) fn first_carrier(&self) -> usize {
         let bandwidth = (1usize << (self.bandwidth.clamp(125, 2000) / 125).max(1).ilog2()) * 125;
         let fc_offset = bandwidth as f64 * (1.0 - 0.5 / self.tones as f64) / 2.0;
         let multiplier = (self.center_hz - fc_offset) / 500.0;

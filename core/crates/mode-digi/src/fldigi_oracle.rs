@@ -64,6 +64,7 @@ unsafe extern "C" {
     fn aurora_fldigi_olivia_rx_flush(rx: *mut c_void);
     fn aurora_fldigi_olivia_rx_take(rx: *mut c_void, buf: *mut u8, cap: usize) -> usize;
     fn aurora_fldigi_olivia_rx_snr(rx: *mut c_void) -> f64;
+    fn aurora_fldigi_olivia_rx_freq(rx: *mut c_void) -> f64;
     fn aurora_fldigi_olivia_rx_free(rx: *mut c_void);
 }
 
@@ -109,6 +110,12 @@ impl FldigiOlivia {
     pub fn snr(&self) -> f64 {
         // SAFETY: `rx` e' valido finche' vive la struttura.
         unsafe { aurora_fldigi_olivia_rx_snr(self.rx) }
+    }
+
+    /// Lo spostamento di frequenza trovato dal sincronismo, in Hz.
+    pub fn frequency_offset(&self) -> f64 {
+        // SAFETY: `rx` e' valido finche' vive la struttura.
+        unsafe { aurora_fldigi_olivia_rx_freq(self.rx) }
     }
 }
 

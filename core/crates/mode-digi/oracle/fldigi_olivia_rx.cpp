@@ -73,6 +73,11 @@ double aurora_fldigi_olivia_rx_snr(void *p) {
 	return r->ok ? (double)r->rx.SignalToNoiseRatio() : 0.0;
 }
 
+double aurora_fldigi_olivia_rx_freq(void *p) {
+	OliviaRx *r = (OliviaRx *)p;
+	return r->ok ? (double)r->rx.FrequencyOffset() : 0.0;
+}
+
 void aurora_fldigi_olivia_rx_free(void *p) { delete (OliviaRx *)p; }
 
 }

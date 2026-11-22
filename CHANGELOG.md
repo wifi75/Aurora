@@ -2,6 +2,8 @@
 
 ## Non rilasciato
 
+- Olivia e Contestia, terzo pezzo (ancora non nel programma): il ricevitore in Rust (`mode-digi/src/olivia_rx.rs`): equalizzazione dello spettro, demodulatore con FFT nostra, decodifica a decisione morbida, sincronismo su tempo e frequenza con soglia di S/N, riscritti dalla libreria di Jalocha di fldigi 4.2.13. Provato con fldigi come arbitro: sull'audio pulito stesso testo, stesso offset di frequenza e S/N entro lo 0,3%; con rumore crescente decodifica quanto fldigi (630 caratteri per variante: 330/330, 459/459, 269/270, 387/387, 325/326, 298/300); nessun panico con audio vuoto, zero, rumore, NaN; 60 secondi di audio in circa 0,1-0,2 s (350-570 volte il tempo reale, in profilo di sviluppo). Mancano il collegamento al programma (modo nel menu dei modi testuali, finestre, trasmissione) e la prova in onda.
+
 - Olivia e Contestia, secondo pezzo (ancora non nel programma): il trasmettitore in Rust (`mode-digi/src/olivia.rs`: modulatore MFSK a 8000 Hz con finestra a coseno rialzato, sovrapposizione a meta' simbolo, codice di Gray e fase casuale). Provato contro il ricevitore di fldigi 4.2.13 compilato come arbitro: il testo trasmesso torna uguale in Olivia 4/250, 8/250, 8/500, 16/500 e 32/1000, in Contestia 16/500 e anche con rumore. Mancano il ricevitore, il modo nel menu e la trasmissione dal programma.
 
 ## 0.11.333 - 2026-11-22

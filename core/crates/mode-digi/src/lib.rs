@@ -18,6 +18,7 @@
 //! - [`skim`]: decodifica di tutti i segnali CW e PSK della banda audio, con storico, nominativi e spot locali;
 //! - `cw_noise`: il rumore del ricevitore CW istante per istante (bande laterali e minimo scorrevole);
 //! - `cw_agc`: l'AGC del ricevitore CW comandato dal fondo del rumore (radio che pompa, scrosci larghi);
+//! - [`olivia`], [`olivia_rx`]: Olivia e Contestia (codificatore FEC, trasmettitore e ricevitore);
 //! - [`service`]: ascolto dall'ingresso audio, trasmissione, impostazioni e macro.
 
 pub mod band;
@@ -36,6 +37,7 @@ pub mod macro_files;
 pub mod mmtty_oracle;
 pub mod notch;
 pub mod olivia;
+pub mod olivia_rx;
 pub mod psk;
 pub mod psk_viterbi;
 pub mod recorder;
