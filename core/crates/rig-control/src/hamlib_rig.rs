@@ -276,6 +276,8 @@ const IC_820H_MODEL: u32 = 3032;
 
 /// IC-820H con trame CI-V dirette: fra due scambi di banda passano almeno questi secondi (ogni scambio disturba la ricezione).
 const CIV_MIN_GAP: Duration = Duration::from_secs(5);
+/// Dopo quanto una prova o una scrittura CI-V fallita si riprova da sola.
+const CIV_RETRY: Duration = Duration::from_secs(60);
 
 /// Righe del registro dei passi CI-V tenute per il pacchetto di assistenza.
 const CIV_LOG_MAX: usize = 60;
@@ -287,6 +289,9 @@ struct CivUplink {
     probe: Option<Result<crate::ic820h_civ::Probe, String>>,
     /// Ripiego spento dopo una scrittura non confermata (motivo).
     disabled: Option<String>,
+    /// Quando la prova e' fallita o il ripiego si e' spento: dopo `CIV_RETRY` si ricomincia da capo senza riconnettere (SAT spento e
+    /// riacceso sulla radio: la prova falliva con le due bande uguali e poi non si riprovava piu').
+    failed_at: Option<Instant>,
     last_write: Option<Instant>,
     /// Ultima scrittura confermata: trasmissione e ricezione rilette.
     last: Option<crate::ic820h_civ::Written>,
@@ -1765,6 +1770,11 @@ impl HamlibRig {
         }
         let link = inner.connected_link()?;
         let mut civ = inner.civ.lock().map_err(|_| RigError("stato CI-V non disponibile".into()))?;
+        if civ.failed_at.is_some_and(|t| t.elapsed() >= CIV_RETRY) {
+            civ.probe = None;
+            civ.disabled = None;
+            civ.failed_at = None;
+        }
         if let Some(why) = &civ.disabled {
             return Err(RigError(format!("trasmissione CI-V spenta: {why}")));
         }
@@ -1814,6 +1824,9 @@ impl HamlibRig {
         });
         inner.epoch.fetch_add(1, Ordering::SeqCst);
         if let Some(p) = probed {
+            if p.is_err() {
+                civ.failed_at = Some(Instant::now());
+            }
             civ.probe = Some(p);
         }
         for line in &log {
@@ -1835,6 +1848,7 @@ impl HamlibRig {
                 if matches!(civ.probe, Some(Ok(_))) && !wrong_band {
                     tracing::warn!("satelliti: trasmissione CI-V non confermata ({e}): ripiego spento fino alla riconnessione");
                     civ.disabled = Some(e.clone());
+                    civ.failed_at = Some(Instant::now());
                 }
                 Err(RigError(e))
             }
@@ -3314,6 +3328,22 @@ mod tests {
         assert!(rig.set_uplink_via_civ(435_123_900).is_err());
         assert!(fake.commands().iter().all(|c| !c.starts_with("+W")), "{why}: {:?}", fake.commands());
         drop(err);
+    }
+
+    #[test]
+    fn ic_820h_civ_a_failed_probe_is_tried_again_after_a_minute_without_reconnecting() {
+        // SAT spento sulla radio: la prova fallisce; riacceso, dopo un minuto si riprova da sola e scrive (prima serviva ricollegare)
+        let fake = FakeRigctld::start(145_950_000);
+        let rig = ic820h(&fake, 145_950_000, 435_000_000, crate::fake_rigctld::CivBehaviour { select_ignored: true, ..Default::default() });
+        assert!(rig.set_uplink_via_civ(435_123_456).is_err());
+        fake.set_civ(crate::fake_rigctld::CivBehaviour::default());
+        assert!(rig.set_uplink_via_civ(435_123_456).is_err(), "nel primo minuto non si riprova");
+        assert_eq!(fake.civ_writes(), 0);
+        if let Ok(mut civ) = rig.inner.civ.lock() {
+            civ.failed_at = Some(Instant::now() - CIV_RETRY - Duration::from_secs(1));
+        }
+        assert!(rig.set_uplink_via_civ(435_123_456).expect("scrittura CI-V dopo il nuovo tentativo"));
+        assert_eq!(fake.civ_writes(), 1);
     }
 
     #[test]

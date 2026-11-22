@@ -644,8 +644,10 @@ struct LoopState {
     vfo_retry_at: f64,
     satmode_tried: bool,
     two_vfo_prev: bool,
-    /// La trasmissione con trame CI-V dirette e' fallita: ferma fino alla riconnessione o a una nuova spunta (nessun nuovo tentativo da solo).
+    /// La trasmissione con trame CI-V dirette e' fallita: ferma fino a `civ_retry_at` (secondi del passaggio), poi si riprova da sola (come
+    /// il ripiego a due VFO), o prima con una nuova spunta o alla riconnessione.
     civ_failed: bool,
+    civ_retry_at: f64,
     civ_prev: bool,
     pass_cache: Option<(u64, f64, Option<Pass>)>,
     path_cache: Vec<(f64, f64)>,
@@ -758,6 +760,10 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
     if s.uplink_civ_ic820h && !st.civ_prev {
         st.civ_failed = false;
     }
+    // SAT spento e riacceso sulla radio (la prova CI-V falliva con le due bande uguali): ora che le bande sono diverse si riprova da soli
+    if st.civ_failed && t >= st.civ_retry_at {
+        st.civ_failed = false;
+    }
     st.civ_prev = s.uplink_civ_ic820h;
     // la trasmissione CI-V dell'IC-820H prende il posto del ripiego a due VFO; fallita, il Doppler segue solo la ricezione
     let civ = s.uplink_civ_ic820h;
@@ -804,8 +810,9 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
                 Ok(true) => st.uplink_last = Some((txf, t)),
                 Ok(false) => {}
                 Err(e) => {
-                    tracing::warn!("satelliti: trasmissione CI-V dell'IC-820H non disponibile ({e}): il Doppler segue solo la ricezione");
+                    tracing::warn!("satelliti: trasmissione CI-V dell'IC-820H non disponibile ({e}): il Doppler segue solo la ricezione, riprovo tra {VFO_RETRY_S:.0} s");
                     st.civ_failed = true;
+                    st.civ_retry_at = t + VFO_RETRY_S;
                     st.radio_error = Some(format!("CI-V IC-820H: {e}. La trasmissione resta da impostare a mano"));
                 }
             }
@@ -1348,22 +1355,24 @@ mod tests {
     }
 
     #[test]
-    fn la_trasmissione_ci_v_fallita_non_si_riprova_da_sola_e_la_ricezione_va_avanti() {
+    fn la_trasmissione_ci_v_fallita_si_riprova_dopo_un_minuto_e_la_ricezione_va_avanti() {
         let radio = FakeRadio { civ_err: true, ..FakeRadio::default() };
         let mut st = LoopState::default();
         let mut s = SatSettings { uplink_civ_ic820h: true, ..SatSettings::default() };
-        for i in 0..200 {
+        for i in 0..59 {
             assert!(drive_radio(&radio, &mut st, &s, &plan_at(-5.0 + f64::from(i) * 0.01), &rs44(), f64::from(i)));
         }
-        assert_eq!(radio.count("civ "), 1, "un solo tentativo, anche dopo minuti");
-        assert_eq!(radio.count("rx "), 200);
+        assert_eq!(radio.count("civ "), 1, "un solo tentativo nel primo minuto");
+        assert_eq!(radio.count("rx "), 59);
+        drive_radio(&radio, &mut st, &s, &plan_at(-4.0), &rs44(), 61.0);
+        assert_eq!(radio.count("civ "), 2, "dopo un minuto si riprova da sola (SAT riacceso sulla radio)");
         assert!(st.radio_error.as_deref().is_some_and(|e| e.contains("CI-V")));
         // spenta e riaccesa dall'operatore: si riprova una volta
         s.uplink_civ_ic820h = false;
         drive_radio(&radio, &mut st, &s, &plan_at(-3.0), &rs44(), 300.0);
         s.uplink_civ_ic820h = true;
         drive_radio(&radio, &mut st, &s, &plan_at(-2.0), &rs44(), 301.0);
-        assert_eq!(radio.count("civ "), 2);
+        assert_eq!(radio.count("civ "), 3);
     }
 
     #[test]
