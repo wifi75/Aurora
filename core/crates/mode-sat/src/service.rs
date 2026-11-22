@@ -843,7 +843,7 @@ fn drive_radio(radio: &dyn SatRadio, st: &mut LoopState, s: &SatSettings, plan: 
     }
     let txf = plan.tx_hz.round() as u64;
     if civ {
-        if ok && wants_split && !st.civ_failed && uplink_due(st.uplink_last, txf, t, s.uplink_interval_s, s.uplink_threshold_hz) {
+        if ok && wants_split && !st.civ_failed && !st.hold_rx && uplink_due(st.uplink_last, txf, t, s.uplink_interval_s, s.uplink_threshold_hz) {
             match radio.set_tx_via_civ(txf) {
                 Ok(true) => st.uplink_last = Some((txf, t)),
                 Ok(false) => {}

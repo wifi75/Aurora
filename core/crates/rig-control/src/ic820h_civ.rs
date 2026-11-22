@@ -19,7 +19,7 @@ pub const SEL_MAIN: u8 = 0xD0;
 pub const SEL_SUB: u8 = 0xD1;
 /// Scarto massimo fra frequenza scritta e riletta (Hz). La radio arrotonda al suo passo di sintonia: con 10 Hz la conferma falliva per 14 o 33 Hz
 /// (pacchetti di Vladimir, 2026-11-22) e il ripiego si spegneva senza un vero errore.
-pub const TOLERANCE_HZ: u64 = 100;
+pub const TOLERANCE_HZ: u64 = 300;
 
 /// La trama CI-V completa (`FE FE 42 E0 <comando> FD`) come la vuole il comando `w` di `rigctld`: `\0xFE\0xFE...`.
 /// Le cifre sono maiuscole di proposito: con `xfd` minuscolo Hamlib conterebbe una seconda lettura e aspetterebbe fino al timeout.
@@ -190,6 +190,9 @@ pub struct Probe {
     pub tx_band_hz: u64,
 }
 
+/// Sotto questo scarto (Hz) due letture nella stessa banda sono la stessa frequenza che si e' mossa (Doppler, manopola), non due VFO.
+pub const SAME_BAND_DRIFT_HZ: u64 = 100_000;
+
 /// La frequenza e' sulla banda alta (430 MHz)?
 pub fn is_uhf(hz: u64) -> bool {
     hz >= 300_000_000
@@ -291,8 +294,9 @@ pub fn probe(port: &mut dyn CivPort, log: &mut Vec<String>) -> Result<Probe, Str
             }
         };
         if is_uhf(other) == is_uhf(rx) {
-            if close(other, rx) {
-                // stessa banda: questa selezione non porta all'altra banda, si prova la coppia inversa
+            if other.abs_diff(rx) <= SAME_BAND_DRIFT_HZ {
+                // stessa banda (la frequenza puo' essersi mossa di poco: Doppler o manopola girata mentre si prova): questa selezione non porta
+                // all'altra banda, si prova la coppia inversa
                 same_band.push(sel_name(to_tx));
                 continue;
             }
@@ -411,6 +415,7 @@ mod tests {
         // pacchetti di Vladimir (2026-11-22): scritto 432148836 e riletto 432148850, scritto 432151597 e riletto 432151630
         assert!(close(432_148_836, 432_148_850));
         assert!(close(432_151_597, 432_151_630));
+        assert!(close(145_946_471, 145_946_690), "219 Hz: la radio che segue la manopola");
         assert!(!close(432_151_597, 432_152_597), "un chilohertz di scarto e' una scrittura sbagliata");
     }
 
